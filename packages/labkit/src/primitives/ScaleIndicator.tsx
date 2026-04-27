@@ -1,10 +1,13 @@
+import { useContext } from 'react';
+import { CanvasStackContext } from '../canvas/CanvasStackContext';
+
 export interface ScaleIndicatorProps {
-  /** Current view zoom factor (1 = no zoom). */
-  zoom: number;
-  /** World pixels per unit at zoom=1. */
-  pixelsPerUnit: number;
-  /** Unit label (e.g., 'ft', 'm', 'px'). */
-  unit: string;
+  /** Current view zoom factor. If omitted, reads from CanvasStackContext. Defaults to 1. */
+  zoom?: number;
+  /** World pixels per unit at zoom=1. Default: 1. */
+  pixelsPerUnit?: number;
+  /** Unit label. Default: 'px'. */
+  unit?: string;
   /** Target bar width in display pixels. Default: 100. */
   targetWidth?: number;
 }
@@ -24,11 +27,13 @@ function niceNumber(n: number): number {
 
 export function ScaleIndicator({
   zoom,
-  pixelsPerUnit,
-  unit,
+  pixelsPerUnit = 1,
+  unit = 'px',
   targetWidth = 100,
 }: ScaleIndicatorProps) {
-  const effectivePxPerUnit = pixelsPerUnit * zoom;
+  const ctxValue = useContext(CanvasStackContext);
+  const effectiveZoom = zoom ?? ctxValue?.view.zoom ?? 1;
+  const effectivePxPerUnit = pixelsPerUnit * effectiveZoom;
   const targetUnits = targetWidth / effectivePxPerUnit;
   const niceUnits = niceNumber(targetUnits);
   const barWidth = niceUnits * effectivePxPerUnit;

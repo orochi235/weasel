@@ -1,4 +1,5 @@
 import { render } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from './defineInstrument';
 import type { RenderContext } from './types';
@@ -65,7 +66,9 @@ describe('SineWave instrument smoke test', () => {
   });
 
   it('deserialize preserves valid data', () => {
-    expect(SineWaveInstrument.deserialize?.({ frame: 7 }, SineWaveInstrument.defaultConfig())).toEqual({
+    expect(
+      SineWaveInstrument.deserialize?.({ frame: 7 }, SineWaveInstrument.defaultConfig()),
+    ).toEqual({
       frame: 7,
     });
   });
@@ -85,7 +88,7 @@ describe('SineWave instrument smoke test', () => {
       workspace: { id: 'w', zoom: 1, setZoom: vi.fn() },
       emit: vi.fn(),
     };
-    const { container } = render(<>{SineWaveInstrument.render(ctx)}</>);
+    const { container } = render(SineWaveInstrument.render(ctx) as ReactElement);
     expect(container.querySelector('.lk-sine-wave')).not.toBeNull();
   });
 });

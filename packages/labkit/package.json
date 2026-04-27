@@ -23,6 +23,18 @@
       "types": "./dist/controls/index.d.ts",
       "import": "./dist/controls/index.js"
     },
+    "./canvas": {
+      "types": "./dist/canvas/index.d.ts",
+      "import": "./dist/canvas/index.js"
+    },
+    "./layers": {
+      "types": "./dist/layers/index.d.ts",
+      "import": "./dist/layers/index.js"
+    },
+    "./undo": {
+      "types": "./dist/undo/index.d.ts",
+      "import": "./dist/undo/index.js"
+    },
     "./state": {
       "types": "./dist/state/index.d.ts",
       "import": "./dist/state/index.js"

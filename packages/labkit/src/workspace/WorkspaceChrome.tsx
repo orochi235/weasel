@@ -16,6 +16,13 @@ import type {
   WorkspaceToolbarContext,
 } from './slotTypes';
 
+export interface UndoBindings {
+  canUndo: boolean;
+  canRedo: boolean;
+  undo: () => void;
+  redo: () => void;
+}
+
 export interface WorkspaceChromeProps {
   workspaceId: string;
   record: WorkspaceRecord;
@@ -24,6 +31,8 @@ export interface WorkspaceChromeProps {
   toolbar?: ToolbarSlot;
   sidebar?: SidebarSlot;
   statusBar?: StatusBarSlot;
+  undoBindings?: UndoBindings;
+  sidebarExtras?: ReactNode;
   children: ReactNode;
 }
 
@@ -35,6 +44,8 @@ export function WorkspaceChrome({
   toolbar,
   sidebar,
   statusBar,
+  undoBindings,
+  sidebarExtras,
   children,
 }: WorkspaceChromeProps) {
   const lab = useLabContext();
@@ -52,10 +63,10 @@ export function WorkspaceChrome({
       workspaceId,
       instrumentName: record.instrumentName,
       hasUndo: instrument.undo != null,
-      canUndo: false,
-      canRedo: false,
-      undo: () => {},
-      redo: () => {},
+      canUndo: undoBindings?.canUndo ?? false,
+      canRedo: undoBindings?.canRedo ?? false,
+      undo: undoBindings?.undo ?? (() => {}),
+      redo: undoBindings?.redo ?? (() => {}),
       zoom: record.view.zoom,
       setZoom,
       zoomIn: () => setZoom(record.view.zoom * 1.25),
@@ -70,7 +81,7 @@ export function WorkspaceChrome({
       close: () => lab.closeWorkspace(workspaceId),
       isLastWorkspace,
     };
-  }, [workspaceId, record, instrument, lab, isLastWorkspace, updateWorkspaceView]);
+  }, [workspaceId, record, instrument, lab, isLastWorkspace, updateWorkspaceView, undoBindings]);
 
   const sidebarCtx = useMemo<WorkspaceSidebarContext>(
     () => ({
@@ -127,6 +138,7 @@ export function WorkspaceChrome({
       <div className="lk-workspace__body">
         <div className="lk-workspace__sidebar">
           {sidebar ? sidebar(sidebarCtx) : <DefaultSidebar ctx={sidebarCtx} />}
+          {sidebarExtras}
         </div>
         <div className="lk-workspace__content">{children}</div>
       </div>

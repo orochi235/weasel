@@ -1,0 +1,22 @@
+.lk-canvas-stack {
+  position: relative;
+  overflow: hidden;
+  background: var(--lk-color-canvas-bg, #f6f6f6);
+  touch-action: none;
+}
+
+.lk-canvas-stack__canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.lk-canvas-stack__overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.lk-canvas-stack__overlay > * {
+  pointer-events: auto;
+}

@@ -19,6 +19,12 @@ export interface LabStoreActions {
   updateWorkspaceState: <TS>(id: string, next: TS | ((prev: TS) => TS)) => void;
   updateWorkspaceConfig: <TC>(id: string, key: keyof TC, value: TC[keyof TC]) => void;
   updateWorkspaceView: (id: string, view: WorkspaceRecord['view']) => void;
+  updateWorkspaceUndoStack: (
+    id: string,
+    next:
+      | WorkspaceRecord['undoStack']
+      | ((prev: WorkspaceRecord['undoStack']) => WorkspaceRecord['undoStack']),
+  ) => void;
   setWorkspaceInstrument: (id: string, instrumentName: string) => void;
   saveSnapshot: (workspaceId: string, name: string) => void;
   loadSnapshot: (snapshotId: string, workspaceId: string) => void;
@@ -107,6 +113,21 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
         workspaces: s.workspaces.map((w) => (w.id === id ? { ...w, view } : w)),
       }));
       scheduleFlush();
+    },
+
+    updateWorkspaceUndoStack: (id, next) => {
+      set((s) => ({
+        workspaces: s.workspaces.map((w) => {
+          if (w.id !== id) return w;
+          const undoStack =
+            typeof next === 'function'
+              ? (next as (prev: WorkspaceRecord['undoStack']) => WorkspaceRecord['undoStack'])(
+                  w.undoStack,
+                )
+              : next;
+          return { ...w, undoStack };
+        }),
+      }));
     },
 
     setWorkspaceInstrument: (id, instrumentName) => {
