@@ -5,6 +5,7 @@ import { noneAdapter } from '../state/adapters';
 import { LabStoreContext } from '../state/context';
 import { createLabStore, type LabStore } from '../state/store';
 import type { StorageAdapter, WorkspaceRecord } from '../state/types';
+import { Workspace } from '../workspace/Workspace';
 import {
   addWorkspace as addWorkspaceOp,
   cloneWorkspace as cloneWorkspaceOp,
@@ -13,6 +14,7 @@ import {
 } from '../workspace/workspaceOps';
 import { LabContext, type LabContextValue } from './LabContext';
 import { LabShell } from './LabShell';
+import { WorkspaceGrid } from './WorkspaceGrid';
 
 export interface LabProps {
   instruments: Instrument[];
@@ -148,8 +150,12 @@ export function Lab({
     <LabStoreContext.Provider value={{ store }}>
       <LabContext.Provider value={contextValue}>
         <div className={`lk-lab ${themeClass}`.trim()}>
-          <LabShell title={title ?? 'Labkit'} theme={themeValue}>
-            {children}
+          <LabShell title={title ?? 'Labkit'} theme={themeValue} header={children}>
+            <WorkspaceGrid>
+              {workspaces.map((w) => (
+                <Workspace key={w.id} id={w.id} />
+              ))}
+            </WorkspaceGrid>
           </LabShell>
         </div>
       </LabContext.Provider>
