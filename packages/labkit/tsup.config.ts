@@ -5,6 +5,7 @@ export default defineConfig({
     index: 'src/index.ts',
     'primitives/index': 'src/primitives/index.ts',
     'state/index': 'src/state/index.ts',
+    'controls/index': 'src/controls/index.ts',
   },
   format: ['esm'],
   tsconfig: './tsconfig.lib.json',

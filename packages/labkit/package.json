@@ -19,6 +19,10 @@
       "types": "./dist/primitives/index.d.ts",
       "import": "./dist/primitives/index.js"
     },
+    "./controls": {
+      "types": "./dist/controls/index.d.ts",
+      "import": "./dist/controls/index.js"
+    },
     "./state": {
       "types": "./dist/state/index.d.ts",
       "import": "./dist/state/index.js"

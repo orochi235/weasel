@@ -1,0 +1,61 @@
+.lk-control-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lk-spacing-sm, 8px);
+  padding: var(--lk-spacing-sm, 8px);
+}
+
+.lk-control-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lk-spacing-xs, 4px);
+}
+
+.lk-control-row--inline {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--lk-spacing-sm, 8px);
+}
+
+.lk-control-label {
+  font-size: var(--lk-font-size-sm, 12px);
+  color: var(--lk-color-text, #222);
+}
+
+.lk-control-input {
+  width: 100%;
+  background: var(--lk-color-surface, #fff);
+  color: var(--lk-color-text, #222);
+  border: 1px solid var(--lk-color-border, #ccc);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.lk-control-input--range {
+  padding: 0;
+  border: none;
+}
+
+.lk-control-input--checkbox {
+  width: auto;
+}
+
+.lk-control-input--color {
+  width: 40px;
+  height: 24px;
+  padding: 0;
+}
+
+.lk-control-slider-value {
+  font-size: var(--lk-font-size-sm, 12px);
+  font-variant-numeric: tabular-nums;
+  color: var(--lk-color-text-muted, #666);
+  min-width: 3ch;
+  text-align: right;
+}
+
+.lk-control-slider-row {
+  display: flex;
+  align-items: center;
+  gap: var(--lk-spacing-sm, 8px);
+}

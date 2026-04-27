@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { ConfigField } from '../instrument/types';
+import type { ConfigField } from '../controls/types';
 import type { SavedSnapshot } from '../state/types';
 
 export interface WorkspaceToolbarContext {

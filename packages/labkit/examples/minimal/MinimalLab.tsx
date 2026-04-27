@@ -4,7 +4,7 @@ import { StubInstrument } from './StubInstrument';
 export function MinimalLab() {
   return (
     <Lab
-      instruments={[StubInstrument as never]}
+      instruments={[StubInstrument]}
       defaultInstrument="Stub"
       storageKey="minimal-lab"
       title="Minimal Lab"

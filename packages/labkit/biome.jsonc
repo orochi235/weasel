@@ -1,7 +1,7 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.4.13/schema.json",
   "files": {
-    "includes": ["**", "!dist", "!storybook-static", "!node_modules", "!examples"]
+    "includes": ["**", "!dist", "!dist-examples", "!storybook-static", "!node_modules", "!examples"]
   },
   "formatter": {
     "enabled": true,

@@ -41,6 +41,8 @@ export function WorkspaceChrome({
   const storeCtx = useContext(LabStoreContext);
   if (!storeCtx) throw new Error('[labkit] WorkspaceChrome requires <LabStoreProvider>');
   const updateWorkspaceView = useStore(storeCtx.store, (s) => s.updateWorkspaceView);
+  const updateWorkspaceConfig = useStore(storeCtx.store, (s) => s.updateWorkspaceConfig);
+  const updateWorkspaceState = useStore(storeCtx.store, (s) => s.updateWorkspaceState);
 
   const toolbarCtx = useMemo<WorkspaceToolbarContext>(() => {
     const setZoom = (z: number): void => {
@@ -76,11 +78,22 @@ export function WorkspaceChrome({
       instrumentName: record.instrumentName,
       configFields: instrument.configSchema?.() ?? [],
       config: record.config,
-      setConfig: (_key, _value) => {
-        // Plan 4 wires schema-driven config; Plan 3 leaves this as a placeholder.
+      setConfig: (key, value) => {
+        const prevConfig = record.config as Record<string, unknown>;
+        if (process.env.NODE_ENV !== 'production' && !(key in prevConfig)) {
+          console.warn(
+            `[labkit] setConfig: unknown key "${key}" for instrument "${record.instrumentName}"`,
+          );
+        }
+        updateWorkspaceConfig(workspaceId, key as never, value as never);
+        if (instrument.onConfigChange) {
+          const nextConfig = { ...prevConfig, [key]: value };
+          const nextState = instrument.onConfigChange(nextConfig, prevConfig, record.state);
+          updateWorkspaceState(workspaceId, nextState as never);
+        }
       },
     }),
-    [workspaceId, record, instrument],
+    [workspaceId, record, instrument, updateWorkspaceConfig, updateWorkspaceState],
   );
 
   const statusCtx: WorkspaceStatusBarContext = {
