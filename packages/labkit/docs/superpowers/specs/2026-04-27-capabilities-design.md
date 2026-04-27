@@ -502,7 +502,7 @@ Both palette (DragDrop) and `<LayerList>` (Layers) can appear simultaneously in 
 
 5. **alwaysOn layer position in LayerList:** Pinned top or bottom. **CLAUDE'S DEFAULT:** Bottom.
 
-6. **DragOver feedback rendering:** Separate runtime-managed layer vs. instrument-owned overlay. **CLAUDE'S DEFAULT:** Runtime-managed overlay layer.
+6. **DragOver feedback rendering:** Separate runtime-managed layer vs. instrument-owned overlay. **RESOLVED (2026-04-27):** Runtime-managed overlay is the default — instruments get sensible drop-target highlighting without writing any code. Instruments that need bespoke feedback (custom indicators, snap-to-grid previews, multi-target hints) opt in by providing `dragDrop.renderOverlay?: (ctx) => ReactNode`. When defined, the runtime suppresses its default overlay and renders the instrument's instead. Plan 5d defines the `renderOverlay` signature.
 
 7. **DragOver throttling:** rAF-throttled. **CLAUDE'S DEFAULT:** Yes.
 
