@@ -13,9 +13,10 @@ describe('ScaleIndicator', () => {
     expect(screen.getByText(/1\s*ft/)).toBeInTheDocument();
   });
 
-  test('rounds non-integer zoom values for label', () => {
-    const { container } = render(<ScaleIndicator zoom={0.5} pixelsPerUnit={50} unit="ft" />);
-    expect(container.querySelector('.lk-scale-indicator')).not.toBeNull();
+  test('rounds bar to a nice number when target spans multiple units', () => {
+    // zoom=0.5, pixelsPerUnit=50 → effective 25 px/unit → 100px ≈ 4 units → niceNumber → 5
+    render(<ScaleIndicator zoom={0.5} pixelsPerUnit={50} unit="ft" />);
+    expect(screen.getByText(/5\s*ft/)).toBeInTheDocument();
   });
 
   test('uses lk-scale-indicator class', () => {

@@ -21,8 +21,7 @@
     },
     "./styles.css": "./dist/styles.css",
     "./theme-light.css": "./dist/theme-light.css",
-    "./theme-dark.css": "./dist/theme-dark.css",
-    "./src/*": "./src/*"
+    "./theme-dark.css": "./dist/theme-dark.css"
   },
   "scripts": {
     "dev": "vite",

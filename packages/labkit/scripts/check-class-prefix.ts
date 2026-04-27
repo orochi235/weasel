@@ -14,28 +14,47 @@ function walk(dir: string): void {
     if (stat.isDirectory()) {
       walk(full);
     } else if (full.endsWith('.tsx')) {
-      checkFile(full);
+      checkTsxFile(full);
+    } else if (full.endsWith('.less')) {
+      checkLessFile(full);
     }
   }
 }
 
 // Matches className="..." or className={'...'} or className={`...`}.
-// Captures the literal string for prefix validation.
-const CLASS_RE = /className=\s*\{?\s*['"`]([^'"`]+)['"`]\s*\}?/g;
+const TSX_CLASS_RE = /className=\s*\{?\s*['"`]([^'"`]+)['"`]\s*\}?/g;
+// Matches CSS class selectors: a `.` followed by an identifier starting with a letter.
+const LESS_CLASS_RE = /\.([a-zA-Z][\w-]*)/g;
 
-function checkFile(file: string): void {
+function checkTsxFile(file: string): void {
   const content = readFileSync(file, 'utf8');
   const lines = content.split('\n');
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i] ?? '';
-    for (const match of line.matchAll(CLASS_RE)) {
+    for (const match of line.matchAll(TSX_CLASS_RE)) {
       const classes = (match[1] ?? '').split(/\s+/).filter(Boolean);
       for (const cls of classes) {
-        // Skip dynamic interpolation fragments (e.g., conditional empty strings)
         if (cls === '' || cls.includes('${')) continue;
         if (!cls.startsWith('lk-')) {
           offenders.push({ file: relative(ROOT, file), line: i + 1, match: cls });
         }
+      }
+    }
+  }
+}
+
+function checkLessFile(file: string): void {
+  const content = readFileSync(file, 'utf8');
+  const lines = content.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] ?? '';
+    // Strip line comments and `@import` lines (paths look like class selectors).
+    const code = line.replace(/\/\/.*$/, '');
+    if (/^\s*@import\b/.test(code)) continue;
+    for (const match of code.matchAll(LESS_CLASS_RE)) {
+      const cls = match[1] ?? '';
+      if (!cls.startsWith('lk-')) {
+        offenders.push({ file: relative(ROOT, file), line: i + 1, match: `.${cls}` });
       }
     }
   }
@@ -50,5 +69,7 @@ if (offenders.length > 0) {
   }
   process.exit(1);
 } else {
-  console.log('All className literals in src/ use the lk- prefix.');
+  console.log(
+    'All className literals (.tsx) and class selectors (.less) in src/ use the lk- prefix.',
+  );
 }

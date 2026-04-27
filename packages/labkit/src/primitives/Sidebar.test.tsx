@@ -21,21 +21,21 @@ describe('Sidebar', () => {
     expect(screen.getByText('Controls')).toBeInTheDocument();
   });
 
-  test('hides children when collapsed prop is true', () => {
-    render(
+  test('marks the sidebar collapsed and nests body inside the collapsed root', () => {
+    const { container } = render(
       <Sidebar collapsed>
         <p>content</p>
       </Sidebar>,
     );
-    // Content is rendered but in a hidden container — test the class
-    const { container } = render(
-      <Sidebar collapsed>
-        <p>x</p>
-      </Sidebar>,
-    );
-    expect(
-      container.querySelector('.lk-sidebar')?.classList.contains('lk-sidebar--collapsed'),
-    ).toBe(true);
+    const root = container.querySelector('.lk-sidebar');
+    const body = container.querySelector('.lk-sidebar-body');
+    expect(root).not.toBeNull();
+    expect(body).not.toBeNull();
+    expect(root?.classList.contains('lk-sidebar--collapsed')).toBe(true);
+    // Body is still rendered (children stay in DOM), but lives inside the collapsed
+    // root so the CSS rule `.lk-sidebar--collapsed .lk-sidebar-body { display:none }` applies.
+    expect(body?.parentElement).toBe(root);
+    expect(body?.textContent).toBe('content');
   });
 
   test('toggle button calls onToggle when clicked', () => {
