@@ -3,7 +3,13 @@
   "version": "0.0.1",
   "description": "React widgets for building self-contained interactive lab pages",
   "type": "module",
-  "files": ["dist", "src", "AGENTS.md", "RECIPES.md", "README.md"],
+  "files": [
+    "dist",
+    "src",
+    "AGENTS.md",
+    "RECIPES.md",
+    "README.md"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
