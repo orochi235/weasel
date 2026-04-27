@@ -35,6 +35,10 @@
       "types": "./dist/undo/index.d.ts",
       "import": "./dist/undo/index.js"
     },
+    "./dragdrop": {
+      "types": "./dist/dragdrop/index.d.ts",
+      "import": "./dist/dragdrop/index.js"
+    },
     "./state": {
       "types": "./dist/state/index.d.ts",
       "import": "./dist/state/index.js"

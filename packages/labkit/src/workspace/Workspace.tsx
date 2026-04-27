@@ -2,9 +2,12 @@ import { type ReactNode, useContext, useMemo, useRef, useState } from 'react';
 import { useStore } from 'zustand/react';
 import { CanvasStack } from '../canvas/CanvasStack';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
+import { DragOverlay, useDragDrop } from '../dragdrop/DragDropRuntime';
+import { Palette } from '../dragdrop/Palette';
 import type {
   Instrument,
   LayerDescriptor,
+  PaletteItem,
   RenderContext,
   ViewTransform,
 } from '../instrument/types';
@@ -56,6 +59,7 @@ interface WorkspaceRuntimeProps {
 }
 
 function WorkspaceRuntime({ record, instrument, store, isLast }: WorkspaceRuntimeProps) {
+  const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const updateWorkspaceState = useStore(store, (s) => s.updateWorkspaceState);
   const updateWorkspaceConfig = useStore(store, (s) => s.updateWorkspaceConfig);
   const updateWorkspaceView = useStore(store, (s) => s.updateWorkspaceView);
@@ -147,14 +151,75 @@ function WorkspaceRuntime({ record, instrument, store, isLast }: WorkspaceRuntim
     return instrument.layers.ids.map((lid) => ({ id: lid, label: lid }));
   }, [instrument.layers]);
 
+  const dragDropResult = useDragDrop({
+    capability: instrument.dragDrop ?? { palette: [], onDrop: (_p, _i, s) => s },
+    canvasContainerRef,
+    view: record.view,
+    state: record.state,
+    config: record.config,
+    setState: (next) => {
+      snapshotIfNeeded('canvas.itemAdded');
+      updateWorkspaceState(record.id, next as never);
+    },
+    emit: (evt) => {
+      snapshotIfNeeded(evt);
+      bus.emit(evt);
+    },
+  });
+
+  const paletteItems: PaletteItem[] = useMemo(() => {
+    if (!instrument.dragDrop) return [];
+    const p = instrument.dragDrop.palette;
+    return typeof p === 'function' ? p(record.state, record.config) : p;
+  }, [instrument.dragDrop, record.state, record.config]);
+
+  const layersWithFeedback: CanvasLayerDescriptor[] = useMemo(() => {
+    if (!dragDropResult.drag?.feedback) return canvasLayers;
+    const fb = dragDropResult.drag.feedback;
+    const screen = dragDropResult.drag.screenPos;
+    return [
+      ...canvasLayers,
+      {
+        id: '__lk_drag_feedback',
+        visible: true,
+        render: (ctx) => {
+          const el = canvasContainerRef.current;
+          if (!el) return;
+          const r = el.getBoundingClientRect();
+          ctx.save();
+          ctx.strokeStyle = fb.ok ? '#3a7' : '#c44';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(screen.x - r.left, screen.y - r.top, 16, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        },
+      },
+    ];
+  }, [canvasLayers, dragDropResult.drag]);
+
   let body: ReactNode;
   if (instrument.canvas) {
-    body = <CanvasStack layers={canvasLayers} view={record.view} onViewChange={setView} />;
+    body = (
+      <div
+        ref={canvasContainerRef}
+        className="lk-workspace__canvas-host"
+        style={{ flex: 1, minHeight: 0, display: 'flex' }}
+      >
+        <CanvasStack layers={layersWithFeedback} view={record.view} onViewChange={setView} />
+        <DragOverlay drag={dragDropResult.drag} />
+      </div>
+    );
   } else {
     body = instrument.render(renderCtx);
   }
 
-  const sidebarExtras =
+  const paletteNode =
+    paletteItems.length > 0 ? (
+      <Palette items={paletteItems} onDragStart={dragDropResult.startDrag} />
+    ) : null;
+
+  const layerListNode =
     instrument.layers && layerDescriptors.length > 0 ? (
       <LayerList
         layers={layerDescriptors}
@@ -177,7 +242,12 @@ function WorkspaceRuntime({ record, instrument, store, isLast }: WorkspaceRuntim
       instrument={instrument}
       isLastWorkspace={isLast}
       undoBindings={undoBindings}
-      sidebarExtras={sidebarExtras}
+      sidebarExtras={
+        <>
+          {paletteNode}
+          {layerListNode}
+        </>
+      }
     >
       {body}
     </WorkspaceChrome>

@@ -29,7 +29,10 @@ export interface LayerCapability {
 }
 
 export interface DragDropCapability<TS = unknown, TC = unknown> {
-  onDrop?: (args: { state: TS; config: TC; data: unknown }) => TS;
+  palette: PaletteItem[] | ((state: TS, config: TC) => PaletteItem[]);
+  onDrop: (worldPos: Point, item: PaletteItem, state: TS, config: TC) => TS;
+  onDragOver?: (worldPos: Point, item: PaletteItem, state: TS, config: TC) => DragFeedback | null;
+  pickUp?: (hit: HitResult, state: TS, config: TC) => { item: PaletteItem; state: TS } | null;
 }
 
 export interface UndoCapability {

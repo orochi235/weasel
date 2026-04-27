@@ -38,7 +38,7 @@ describe('detectCapabilities', () => {
   });
 
   it('detects dragDrop only', () => {
-    const inst = baseInstrument({ dragDrop: {} });
+    const inst = baseInstrument({ dragDrop: { palette: [], onDrop: (_p, _i, s) => s } });
     expect(detectCapabilities(inst).hasDragDrop).toBe(true);
   });
 
@@ -51,7 +51,7 @@ describe('detectCapabilities', () => {
     const inst = baseInstrument({
       canvas: { layers: [] },
       layers: { ids: [] },
-      dragDrop: {},
+      dragDrop: { palette: [], onDrop: (_p, _i, s) => s },
       undo: {},
     });
     expect(detectCapabilities(inst)).toEqual({

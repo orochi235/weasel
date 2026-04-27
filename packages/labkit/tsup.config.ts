@@ -9,6 +9,7 @@ export default defineConfig({
     'canvas/index': 'src/canvas/index.ts',
     'layers/index': 'src/layers/index.ts',
     'undo/index': 'src/undo/index.ts',
+    'dragdrop/index': 'src/dragdrop/index.ts',
   },
   format: ['esm'],
   tsconfig: './tsconfig.lib.json',
