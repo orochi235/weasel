@@ -13,7 +13,7 @@ import type {
   WorkspaceRecord,
 } from './types';
 
-interface LabStoreActions {
+export interface LabStoreActions {
   addWorkspace: (record: Omit<WorkspaceRecord, 'undoStack'>) => void;
   removeWorkspace: (id: string) => void;
   updateWorkspaceState: <TS>(id: string, next: TS | ((prev: TS) => TS)) => void;
