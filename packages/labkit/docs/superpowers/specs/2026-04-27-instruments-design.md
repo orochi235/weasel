@@ -169,12 +169,14 @@ interface TextField extends ConfigFieldBase {
   default: string;
   placeholder?: string;
   maxLength?: number;
+  /** Milliseconds to debounce live `setConfig` calls. Default 150 ms. Set to 0 to disable. */
+  debounceMs?: number;
 }
 ```
 
 Renders: `<input type="text">`.
 
-**CLAUDE'S DEFAULT:** `setConfig` is called on every `onChange` event (live update, not debounced). Instruments that find live-text updates expensive should handle debouncing themselves inside `onConfigChange`.
+**Decision (resolved):** `setConfig` is debounced by **150 ms** by default (overridable via `debounceMs`). Live updates remain responsive but avoid storing one record per keystroke. Instruments needing finer control can set `debounceMs: 0` for live updates.
 
 #### `color`
 
@@ -259,7 +261,7 @@ const { config, setConfig } = useExperimentState(workspaceId);
 
 ### 5.4 `setConfig` unknown key behavior
 
-**CLAUDE'S DEFAULT:** `<ControlPanel>` does not guard against `setConfig` being called with a key absent from the schema. The component only calls `setConfig(field.key, value)` where `field.key` came from the schema, so in practice this should not happen. Runtime key validation (if desired) belongs in the store layer (Plan 2), not here.
+**Decision (resolved):** Plan 4 adds a dev-mode guard. `<ControlPanel>` and `useExperimentState`'s `setConfig` (when called with an instrument-aware wrapper exposed by Plan 4) check that the key exists in the active workspace's `config` object. If it doesn't, a `console.warn` is emitted in dev mode (`process.env.NODE_ENV !== 'production'`) and the call still proceeds. This catches typos in custom controls without breaking runtime behavior. The Plan 2 store remains permissive — the guard lives at the instrument boundary where the schema is known.
 
 ### 5.5 Storybook
 
@@ -566,13 +568,13 @@ A test that wires a full `SineWaveInstrument` inside a `<Workspace>` with the me
 2. **Select optgroups** — Flat options only. Any real instrument needing optgroups should file a requirement.
 3. **Color field** — Native `<input type="color">` (no alpha, limited browser UI). Upgrade to a custom picker?
 4. **ControlPanel sections/grouping** — No groups in v0. Should `ConfigFieldBase` reserve a `group?: string` property now to avoid a future breaking change?
-5. **`setConfig` unknown key** — Not guarded in `<ControlPanel>`. Should the store (Plan 2) throw or warn in dev mode when an unrecognized key is set?
+5. ~~**`setConfig` unknown key**~~ — **RESOLVED:** dev-mode `console.warn` when key is not in the workspace config. Implemented in Plan 4 at the instrument boundary (see §5.4).
 6. **`defineInstrument` runtime validation** — Currently a no-op at runtime. Should it call `validateConfigSchema` and `console.warn` in dev mode? Cost: prevents tree-shaking of `validateConfigSchema` from code paths that never register.
 7. **`serialize` default** — Falls back to identity (`(s) => s`). Would `JSON.parse(JSON.stringify(s))` (a deep clone) be safer as the default to surface non-serializable state early?
 8. **`deserialize` error fallback** — Falls back to `initialState(currentConfig)`. Should the Workspace surface a visible error state to the user rather than silently resetting?
 9. **`onConfigChange` error handling** — Currently unguarded. Should `<Workspace>` catch and log errors, keeping the previous state?
 10. **`number` field clamping** — Clamped on blur. Should out-of-range values show a visual error state while typing?
-11. **`text` field debounce** — Live `setConfig` on every keystroke. Should there be a `debounceMs?: number` prop on `TextField`?
+11. ~~**`text` field debounce**~~ — **RESOLVED:** `TextField` gets a `debounceMs?: number` prop, default 150 ms (see §4.2 `text`).
 
 ---
 
