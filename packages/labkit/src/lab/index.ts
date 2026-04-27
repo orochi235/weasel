@@ -1,9 +1,9 @@
 export type { GridDims } from './gridDims';
 export { gridDims } from './gridDims';
-export { Lab } from './Lab';
 export type { LabProps } from './Lab';
-export { LabContext, useLabContext } from './LabContext';
+export { Lab } from './Lab';
 export type { LabContextValue } from './LabContext';
+export { LabContext, useLabContext } from './LabContext';
 export type { LabShellProps, LabTheme } from './LabShell';
 export { LabShell } from './LabShell';
 export type { WorkspaceGridProps } from './WorkspaceGrid';

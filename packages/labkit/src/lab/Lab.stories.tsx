@@ -9,9 +9,7 @@ const StubInstrument: Instrument = {
   defaultConfig: () => ({ value: 50 }),
   initialState: (config) => ({ doubled: (config as { value: number }).value * 2 }),
   render: ({ state }) => (
-    <div className="lk-stub-display">
-      doubled: {(state as { doubled: number }).doubled}
-    </div>
+    <div className="lk-stub-display">doubled: {(state as { doubled: number }).doubled}</div>
   ),
 };
 
