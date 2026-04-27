@@ -1,6 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createMemoryAdapter } from './adapters';
-import { labStorageKey } from './helpers';
 import { createLabStore } from './store';
 
 function makeStore(overrides?: Partial<Parameters<typeof createLabStore>[0]>) {
@@ -141,7 +140,7 @@ describe('save/load/delete snapshots', () => {
     });
     s.getState().saveSnapshot('w1', 'snap1');
     s.getState().updateWorkspaceState('w1', { n: 99 });
-    const snapId = s.getState().savedSnapshots[0]!.id;
+    const snapId = s.getState().savedSnapshots[0]?.id ?? '';
     s.getState().loadSnapshot(snapId, 'w1');
     expect((s.getState().workspaces[0]?.state as { n: number }).n).toBe(5);
   });
@@ -157,7 +156,7 @@ describe('save/load/delete snapshots', () => {
     });
     s.getState().saveSnapshot('w1', 'snap-a');
     s.getState().setWorkspaceInstrument('w1', 'B');
-    const snapId = s.getState().savedSnapshots[0]!.id;
+    const snapId = s.getState().savedSnapshots[0]?.id ?? '';
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     s.getState().loadSnapshot(snapId, 'w1');
     expect(warn).toHaveBeenCalled();
@@ -174,7 +173,7 @@ describe('save/load/delete snapshots', () => {
       view: { zoom: 1, pan: { x: 0, y: 0 } },
     });
     s.getState().saveSnapshot('w1', 'snap');
-    const id = s.getState().savedSnapshots[0]!.id;
+    const id = s.getState().savedSnapshots[0]?.id ?? '';
     s.getState().deleteSnapshot(id);
     expect(s.getState().savedSnapshots).toHaveLength(0);
   });
