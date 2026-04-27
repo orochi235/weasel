@@ -82,20 +82,11 @@ export function Lab({
 
   const contextValue = useMemo<LabContextValue>(() => {
     const replaceWorkspaces = (next: WorkspaceRecord[]): void => {
-      const current = store.getState().workspaces;
-      const currentIds = new Set(current.map((w) => w.id));
-      const nextIds = new Set(next.map((w) => w.id));
-      for (const w of next) {
-        if (!currentIds.has(w.id)) {
-          const { undoStack: _u, ...rest } = w;
-          store.getState().addWorkspace(rest);
-        }
-      }
-      for (const w of current) {
-        if (!nextIds.has(w.id)) {
-          store.getState().removeWorkspace(w.id);
-        }
-      }
+      const currentById = new Map(store.getState().workspaces.map((w) => [w.id, w]));
+      const merged = next.map((w) => currentById.get(w.id) ?? w);
+      store.setState({ workspaces: merged });
+      // Trigger persistence flush via a tracked action.
+      store.getState().setTheme(store.getState().theme);
     };
 
     return {
