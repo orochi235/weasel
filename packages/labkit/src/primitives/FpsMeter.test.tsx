@@ -1,9 +1,11 @@
-import { describe, expect, test, vi, afterEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { FpsMeter } from './FpsMeter';
 
 describe('FpsMeter', () => {
-  afterEach(() => { vi.useRealTimers(); });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   test('renders an FPS label', () => {
     render(<FpsMeter />);

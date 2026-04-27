@@ -26,7 +26,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "npm run build:css && tsup",
+    "build": "tsup && npm run build:css",
     "build:css": "lessc src/styles.less dist/styles.css && lessc src/theme/light.less dist/theme-light.css && lessc src/theme/dark.less dist/theme-dark.css",
     "test": "vitest run",
     "test:watch": "vitest",

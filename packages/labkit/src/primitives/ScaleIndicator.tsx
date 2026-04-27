@@ -22,13 +22,18 @@ function niceNumber(n: number): number {
   return nice * 10 ** exp;
 }
 
-export function ScaleIndicator({ zoom, pixelsPerUnit, unit, targetWidth = 100 }: ScaleIndicatorProps) {
+export function ScaleIndicator({
+  zoom,
+  pixelsPerUnit,
+  unit,
+  targetWidth = 100,
+}: ScaleIndicatorProps) {
   const effectivePxPerUnit = pixelsPerUnit * zoom;
   const targetUnits = targetWidth / effectivePxPerUnit;
   const niceUnits = niceNumber(targetUnits);
   const barWidth = niceUnits * effectivePxPerUnit;
   return (
-    <div className="lk-scale-indicator" aria-label={`Scale: ${niceUnits} ${unit}`}>
+    <div className="lk-scale-indicator" role="img" aria-label={`Scale: ${niceUnits} ${unit}`}>
       <div className="lk-scale-indicator-bar" style={{ width: `${barWidth}px` }} />
       <span className="lk-scale-indicator-label">
         {niceUnits} {unit}
