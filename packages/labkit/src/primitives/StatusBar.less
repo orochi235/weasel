@@ -1,0 +1,21 @@
+.lk-status-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--lk-spacing-md);
+  padding: var(--lk-spacing-xs) var(--lk-spacing-sm);
+  background: var(--lk-bg-elevated);
+  border-top: 1px solid var(--lk-border);
+  font-size: var(--lk-font-size-sm);
+  color: var(--lk-text-muted);
+  font-family: var(--lk-font-mono);
+}
+
+.lk-status-bar-section {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lk-spacing-xs);
+  padding: 0 var(--lk-spacing-xs);
+  border-right: 1px solid var(--lk-divider);
+
+  &:last-child { border-right: none; }
+}
