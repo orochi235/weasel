@@ -1,0 +1,43 @@
+@import './tokens.less';
+
+// Resets and global element defaults
+.lk-root {
+  font-family: var(--lk-font);
+  font-size: var(--lk-font-size);
+  color: var(--lk-text);
+  background: var(--lk-bg);
+  line-height: 1.4;
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+    background: var(--lk-bg-elevated);
+    border: 1px solid var(--lk-border);
+    border-radius: var(--lk-radius);
+    height: var(--lk-control-height);
+    padding: 0 var(--lk-spacing-md);
+    cursor: pointer;
+
+    &:hover {
+      border-color: var(--lk-accent);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--lk-focus-ring);
+      outline-offset: 1px;
+    }
+
+    &:disabled {
+      color: var(--lk-text-disabled);
+      cursor: not-allowed;
+    }
+  }
+
+  input[type="range"] {
+    accent-color: var(--lk-accent);
+  }
+}
