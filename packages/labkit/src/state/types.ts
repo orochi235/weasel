@@ -49,6 +49,5 @@ export interface CreateLabStoreOptions {
 
 export type InstrumentSerializers = Record<
   string,
-  | { serialize?: (state: unknown) => unknown; deserialize?: (data: unknown) => unknown }
-  | undefined
+  { serialize?: (state: unknown) => unknown; deserialize?: (data: unknown) => unknown } | undefined
 >;
