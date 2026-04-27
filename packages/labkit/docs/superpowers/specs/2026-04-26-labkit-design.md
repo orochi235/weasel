@@ -48,16 +48,21 @@ labkit/
     theme/          # tokens, light.less, dark.less, base.less
     primitives/     # <Toolbar>, <Sidebar>, <StatusBar>, <FpsMeter>, <ScaleIndicator>
     index.ts        # public entry
+    **/*.stories.tsx  # Storybook stories colocated with each component
   examples/
     drag-lab/       # port of garden-planner/src/drag-lab — proving ground
     minimal/        # smallest possible lab (one slider, one canvas)
+  .storybook/
+    main.ts         # Storybook config (react-vite builder)
+    preview.tsx     # global decorators: theme toggle, base CSS import
   docs/
     AGENTS.md       # widget-to-source map for agent navigation
     RECIPES.md      # composition patterns
   dist/             # built output (gitignored)
+  storybook-static/ # built Storybook output (gitignored)
   package.json
   tsconfig.json
-  vite.config.ts    # dev server for examples
+  vite.config.ts    # dev server for examples (Storybook reuses)
   tsup.config.ts    # library build
   biome.jsonc
 ```
@@ -67,6 +72,7 @@ labkit/
 - **TypeScript:** strict mode, target ES2022, React 19 types
 - **Library build:** tsup → ESM + .d.ts + plain CSS (LESS compiled at build time)
 - **Examples build:** vite → static demo site
+- **Component workshop:** Storybook 8.x with `@storybook/react-vite` builder (reuses the vite config)
 - **Test:** vitest + @testing-library/react
 - **Lint/format:** biome (inherits from `garden-planner` baseline)
 - **Package manager:** npm (no monorepo tooling)
@@ -366,7 +372,9 @@ Consumers using primitives directly (no `<Lab>`) get OS-following behavior autom
 - All `className=` literals in `src/` must match `/^lk-/`
 - No inline styles in `src/` except for view transforms (canvas zoom/pan, grid template counts)
 
-## 9. Testing
+## 9. Testing & Component Workshop
+
+### Tests
 
 | Layer | What | Examples |
 |---|---|---|
@@ -376,6 +384,21 @@ Consumers using primitives directly (no `<Lab>`) get OS-following behavior autom
 | Integration | One full Lab+Instrument flow per major capability | drag-drop instrument: drop, undo, redo, save, load, clone |
 
 Coverage target: **70%+ for `src/`**, with attention to state-machine code. Snapshot tests avoided.
+
+### Storybook
+
+Every primitive ships with at least one `*.stories.tsx` file colocated with its source. Stories double as visual review surfaces and as inputs for interaction tests via `play` functions.
+
+**Setup:**
+- Storybook 8.x with `@storybook/react-vite` (reuses the project's existing vite config)
+- Global decorator in `.storybook/preview.tsx` imports `src/theme/base.less` and the dark/light token files; toolbar control toggles `lk-theme-light` / `lk-theme-dark` on the preview root
+- Addons: `@storybook/addon-essentials`, `@storybook/addon-interactions`, `@storybook/addon-a11y`
+
+**Scripts:**
+- `npm run storybook` — dev server on :6006
+- `npm run build-storybook` — static build to `storybook-static/` for hosting alongside the examples site
+
+**Story coverage v0:** Each primitive in section 6 gets a Default story plus one variant story (e.g., `<LayerList>` with `alwaysOn` items, `<ControlPanel>` showing all `ConfigField` types). Compound widgets (`<Lab>`, `<Workspace>`) get one Default story each but the heavier proving ground stays in `examples/`.
 
 ## 10. Agent-Facing Docs
 
@@ -392,7 +415,6 @@ Per-widget `AGENTS.md` — props, extension points, and "what to copy if you for
 
 ## 11. Out of Scope (v0)
 
-- Storybook — `examples/` directory is the proving ground
 - CI release pipeline (manual `npm publish` from main)
 - Drag-to-resize panes, docking layouts (`<WorkspaceGrid>` is fixed sqrt-tiling)
 - Runtime theme switching beyond `<Lab theme>` (no theme builder UI)
