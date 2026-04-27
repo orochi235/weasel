@@ -3,7 +3,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [react()],
-  root: 'examples',
+  root: 'examples/minimal',
   resolve: {
     alias: {
       '@labkit/react': new URL('./src/index.ts', import.meta.url).pathname,
