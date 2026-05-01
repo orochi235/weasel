@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useResizeInteraction } from '@/canvas-kit';
-import type { ResizeAdapter, ResizeAnchor, Op } from '@/canvas-kit';
+import { useResizeInteraction } from '@orochi235/weasel';
+import type { ResizeAdapter, ResizeAnchor, Op } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useCloneInteraction, cloneByAltDrag } from '@/canvas-kit';
-import type { InsertAdapter, Op, ClipboardSnapshot } from '@/canvas-kit';
+import { useCloneInteraction, cloneByAltDrag } from '@orochi235/weasel';
+import type { InsertAdapter, Op, ClipboardSnapshot } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }

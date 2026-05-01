@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useSelectAllAction } from './select-all';
 import type { SelectAllAdapter } from './select-all';
-import type { Op } from '@/canvas-kit';
+import type { Op } from '../..';
 
 function makeAdapter(all: string[] = [], selection: string[] = []) {
   let sel = [...selection];

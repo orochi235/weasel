@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useClipboard } from './clipboard';
-import type { InsertAdapter, Op } from '@/canvas-kit';
+import type { InsertAdapter, Op } from '../..';
 
 interface Obj { id: string; x: number; y: number }
 

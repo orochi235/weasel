@@ -6,10 +6,10 @@ import {
   createGridLayer,
   runLayers,
   useZoomInteraction,
-} from '@/canvas-kit';
+} from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
-import type { MoveAdapter, RenderLayer, UnitRegistry } from '@/canvas-kit';
-import type { Op } from '@/canvas-kit';
+import type { MoveAdapter, RenderLayer, UnitRegistry } from '@orochi235/weasel';
+import type { Op } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }

@@ -6,9 +6,9 @@ import {
   useNudgeAction,
   createSelectionOverlayLayer,
   runLayers,
-} from '@/canvas-kit';
+} from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
-import type { Op, RenderLayer } from '@/canvas-kit';
+import type { Op, RenderLayer } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }

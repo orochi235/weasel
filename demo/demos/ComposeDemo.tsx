@@ -8,8 +8,8 @@ import {
   composeSelectionPose,
   createSelectionOverlayLayer,
   runLayers,
-} from '@/canvas-kit';
-import { selectFromMarquee } from '@/canvas-kit/area-select';
+} from '@orochi235/weasel';
+import { selectFromMarquee } from '@orochi235/weasel/area-select';
 import { clientToCanvas } from '../canvasCoords';
 import type {
   MoveAdapter,
@@ -21,7 +21,7 @@ import type {
   Op,
   ClipboardSnapshot,
   RenderLayer,
-} from '@/canvas-kit';
+} from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }

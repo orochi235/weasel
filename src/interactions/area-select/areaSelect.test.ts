@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAreaSelectInteraction } from './areaSelect';
 import { selectFromMarquee } from './behaviors/selectFromMarquee';
-import type { AreaSelectAdapter, Op } from '@/canvas-kit';
+import type { AreaSelectAdapter, Op } from '../..';
 
 function makeAdapter(initial: string[] = []) {
   let selection = [...initial];

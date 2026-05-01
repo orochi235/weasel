@@ -16,9 +16,9 @@
  *
  * Per-hook subpath imports: `snapToGrid` exists for move, resize, and insert
  * with different return shapes. Import from the hook-specific subpath:
- *   import { snapToGrid } from '@/canvas-kit/move';
- *   import { snapToGrid, clampMinSize } from '@/canvas-kit/resize';
- *   import { snapToGrid } from '@/canvas-kit/insert';
+ *   import { snapToGrid } from '@orochi235/weasel/move';
+ *   import { snapToGrid, clampMinSize } from '@orochi235/weasel/resize';
+ *   import { snapToGrid } from '@orochi235/weasel/insert';
  */
 
 export * from './grid';
@@ -124,7 +124,7 @@ export { useCloneInteraction, cloneByAltDrag } from './interactions/clone';
 export type { UseCloneInteractionOptions, UseCloneInteractionReturn } from './interactions/clone';
 export type { ClonePose, CloneLayer, CloneBehavior } from './interactions/types';
 // snapToGrid / snapToContainer / snapBackOrDelete are NOT re-exported at top level —
-// import from '@/canvas-kit/move' to disambiguate from resize/insert siblings.
+// import from './move' to disambiguate from resize/insert siblings.
 export {
   createBringForwardOp,
   createSendBackwardOp,

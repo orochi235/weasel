@@ -1,0 +1,14 @@
+src
+demo
+docs
+node_modules
+.github
+.changeset
+*.test.ts
+*.test.tsx
+tsconfig.json
+tsup.config.ts
+vite.config.ts
+vitest.config.ts
+dist-demo
+coverage

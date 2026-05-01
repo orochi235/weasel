@@ -1,0 +1,12 @@
+node_modules
+dist
+dist-demo
+coverage
+.DS_Store
+*.tsbuildinfo
+.vite
+.changeset/*.md
+!.changeset/README.md
+!.changeset/config.json
+.env
+.env.local

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDuplicateAction } from './duplicate';
 import type { DuplicateAdapter } from './duplicate';
-import type { Op } from '@/canvas-kit';
+import type { Op } from '../..';
 
 interface Pose { x: number; y: number }
 

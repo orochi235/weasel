@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useEscapeAction } from './escape';
 import type { EscapeAdapter } from './escape';
-import type { Op } from '@/canvas-kit';
+import type { Op } from '../..';
 
 function makeAdapter(initial: string[] = []) {
   let selection = [...initial];

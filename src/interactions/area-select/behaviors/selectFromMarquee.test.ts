@@ -4,7 +4,7 @@ import type {
   AreaSelectAdapter,
   GestureContext,
   AreaSelectPose,
-} from '@/canvas-kit';
+} from '../../..';
 
 function makeAdapter(opts: { selection?: string[]; hits?: string[] } = {}): AreaSelectAdapter {
   return {
