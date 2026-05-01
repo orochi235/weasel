@@ -6,9 +6,16 @@ export default defineConfig({
   root: 'demo',
   base: '/weasel/',
   resolve: {
-    alias: {
-      '@orochi235/weasel': resolve(__dirname, 'src/index.ts'),
-    },
+    alias: [
+      {
+        find: /^@orochi235\/weasel\/(.*)$/,
+        replacement: resolve(__dirname, 'src/$1.ts'),
+      },
+      {
+        find: '@orochi235/weasel',
+        replacement: resolve(__dirname, 'src/index.ts'),
+      },
+    ],
   },
   plugins: [react()],
   build: {
