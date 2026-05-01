@@ -1,0 +1,22 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "src/index.ts",
+    "src/move.ts",
+    "src/resize.ts",
+    "src/insert.ts",
+    "src/area-select.ts",
+    "src/clipboard.ts",
+    "src/clone.ts"
+  ],
+  "entryPointStrategy": "expand",
+  "out": "dist-demo/api",
+  "name": "weasel API",
+  "includeVersion": true,
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "excludeExternals": true,
+  "exclude": ["**/*.test.ts", "**/*.test.tsx"],
+  "readme": "README.md",
+  "skipErrorChecking": true
+}

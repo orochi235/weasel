@@ -18,6 +18,9 @@ export function CanvasKitDemo() {
           interaction hook driving a tiny in-memory adapter, with the source for
           that demo on the right.
         </p>
+        <p>
+          <a href="./api/">Browse the API reference →</a>
+        </p>
       </header>
 
       <Card
