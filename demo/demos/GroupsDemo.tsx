@@ -249,7 +249,27 @@ export function GroupsDemo() {
   );
 }
 
-export const GROUPS_DEMO_SOURCE = `// A virtual group is just a record { id, members: string[] }. The group has
+export const GROUPS_DEMO_SOURCE = `// --- Scene (your app owns this) ---
+interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
+interface Pose { x: number; y: number; width: number; height: number }
+
+const [rects, setRects]       = useState<Rect[]>(INITIAL_RECTS);
+const [groups, setGroups]     = useState<Group[]>([{ id: 'g1', members: ['a', 'b', 'c'] }]);
+const [selection, setSelection] = useState<string[]>([]);
+const rectsRef  = useRef(rects);     rectsRef.current  = rects;
+const groupsRef = useRef(groups);    groupsRef.current = groups;
+const selRef    = useRef(selection); selRef.current    = selection;
+
+// --- Adapter implements MoveAdapter & ResizeAdapter & GroupAdapter ---
+type Adapter = MoveAdapter<Rect, Pose> & ResizeAdapter<Rect, Pose> & GroupAdapter & {
+  getSelection: () => string[];
+  setSelection: (ids: string[]) => void;
+};
+const adapter: Adapter = { /* ...getObject, getPose, setPose,
+  getGroup, getGroupsForMember, insertGroup, removeGroup,
+  addToGroup, removeFromGroup, applyBatch... */ };
+
+// A virtual group is just a record { id, members: string[] }. The group has
 // no pose of its own — its bounds are the union of the members' poses.
 
 const group: Group = { id: 'g1', members: ['a', 'b', 'c'] };

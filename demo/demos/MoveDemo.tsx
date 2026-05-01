@@ -168,7 +168,16 @@ export function MoveDemo() {
   );
 }
 
-export const MOVE_DEMO_SOURCE = `const adapter: MoveAdapter<Rect, Pose> = {
+export const MOVE_DEMO_SOURCE = `// --- Scene (your app owns this) ---
+interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
+interface Pose { x: number; y: number; width: number; height: number }
+
+const [rects, setRects] = useState<Rect[]>(INITIAL);
+const rectsRef = useRef(rects);
+rectsRef.current = rects;
+
+// --- Adapter (the bridge weasel reads/writes through) ---
+const adapter: MoveAdapter<Rect, Pose> = {
   getObject: (id) => rectsRef.current.find((r) => r.id === id),
   getPose: (id) => {
     const r = rectsRef.current.find((x) => x.id === id)!;

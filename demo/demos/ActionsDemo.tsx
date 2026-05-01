@@ -140,7 +140,29 @@ export function ActionsDemo() {
   );
 }
 
-export const ACTIONS_DEMO_SOURCE = `// Four standalone "action" hooks bind their default keybindings on the
+export const ACTIONS_DEMO_SOURCE = `// --- Scene (your app owns this) ---
+interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
+interface Pose { x: number; y: number; width: number; height: number }
+
+const [rects, setRects] = useState<Rect[]>(INITIAL);
+const [selection, setSelection] = useState<string[]>([]);
+const rectsRef = useRef(rects); rectsRef.current = rects;
+const selRef   = useRef(selection); selRef.current = selection;
+
+// --- Adapter (read selection, read/write poses, insert/remove/clone, apply op batches) ---
+const adapter = {
+  getSelection: () => selRef.current,
+  setSelection,
+  getPose:   (id) => /* lookup */,
+  setPose:   (id, pose) => setRects(...),
+  listAll:   () => rectsRef.current.map((r) => r.id),
+  insertObject: (obj) => setRects((rs) => [...rs, obj]),
+  removeObject: (id)  => setRects((rs) => rs.filter((r) => r.id !== id)),
+  cloneObject:  (id, offset) => /* return new Rect */,
+  applyBatch:   (ops) => { for (const op of ops) op.apply(adapter); },
+};
+
+// Four standalone "action" hooks bind their default keybindings on the
 // document. Each hook takes a tiny adapter that knows how to read selection,
 // look up poses, and apply an op batch — no gesture state, no overlays.
 

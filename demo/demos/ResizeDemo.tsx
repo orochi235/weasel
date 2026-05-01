@@ -97,7 +97,16 @@ export function ResizeDemo() {
   );
 }
 
-export const RESIZE_DEMO_SOURCE = `const adapter: ResizeAdapter<Rect, Pose> = {
+export const RESIZE_DEMO_SOURCE = `// --- Scene (your app owns this) ---
+interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
+interface Pose { x: number; y: number; width: number; height: number }
+
+const [rect, setRect] = useState<Rect>({ id: 'r', x: 100, y: 80, width: 180, height: 130, color: '#7fb069' });
+const rectRef = useRef(rect);
+rectRef.current = rect;
+
+// --- Adapter ---
+const adapter: ResizeAdapter<Rect, Pose> = {
   getObject: (id) => (rectRef.current.id === id ? rectRef.current : undefined),
   getPose: () => {
     const r = rectRef.current;

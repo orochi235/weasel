@@ -267,8 +267,22 @@ export function ComposeDemo() {
   );
 }
 
-export const COMPOSE_DEMO_SOURCE = `// One adapter implements MoveAdapter & ResizeAdapter & InsertAdapter & AreaSelectAdapter.
-// Structural typing means each hook accepts the wider object.
+export const COMPOSE_DEMO_SOURCE = `// --- Scene (your app owns this) ---
+interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
+interface Pose { x: number; y: number; width: number; height: number }
+
+const [rects, setRects]         = useState<Rect[]>(INITIAL);
+const [selection, setSelection] = useState<string[]>([]);
+const [mode, setMode]           = useState<'select' | 'insert'>('select');
+const rectsRef = useRef(rects);     rectsRef.current = rects;
+const selRef   = useRef(selection); selRef.current   = selection;
+const nextId   = useRef(1);
+
+// One adapter implements MoveAdapter & ResizeAdapter & InsertAdapter
+//   & AreaSelectAdapter & DeleteAdapter. Structural typing means each
+//   hook accepts the wider object.
+type Adapter = MoveAdapter<Rect, Pose> & ResizeAdapter<Rect, Pose>
+  & InsertAdapter<Rect> & AreaSelectAdapter & DeleteAdapter;
 const adapter: Adapter = { /* getObject, getPose, setPose, hitTestArea,
   commitInsert, getSelection, setSelection, applyOps, applyBatch, ... */ };
 

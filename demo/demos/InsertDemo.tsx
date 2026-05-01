@@ -95,7 +95,16 @@ export function InsertDemo() {
   );
 }
 
-export const INSERT_DEMO_SOURCE = `const adapter: InsertAdapter<Rect> = {
+export const INSERT_DEMO_SOURCE = `// --- Scene (your app owns this) ---
+interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
+
+const [rects, setRects] = useState<Rect[]>([]);
+const rectsRef = useRef(rects);
+rectsRef.current = rects;
+const nextId = useRef(0);
+
+// --- Adapter ---
+const adapter: InsertAdapter<Rect> = {
   commitInsert: (b) => ({
     id: \`r\${nextId.current++}\`,
     x: b.x, y: b.y, width: b.width, height: b.height,

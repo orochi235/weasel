@@ -122,7 +122,18 @@ export function CloneDemo() {
   );
 }
 
-export const CLONE_DEMO_SOURCE = `const adapter: InsertAdapter<Rect> = {
+export const CLONE_DEMO_SOURCE = `// --- Scene (your app owns this) ---
+interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
+interface OverlayItem { id: string; x: number; y: number }
+
+const [rects, setRects] = useState<Rect[]>(INITIAL);
+const rectsRef = useRef(rects);
+rectsRef.current = rects;
+const nextId = useRef(0);
+const [overlay, setOverlay] = useState<OverlayItem[] | null>(null);
+
+// --- Adapter (clone reuses InsertAdapter's commitPaste / snapshotSelection) ---
+const adapter: InsertAdapter<Rect> = {
   commitInsert: () => null,
   commitPaste: (clip, offset) => {
     const items = clip.items as Rect[];
