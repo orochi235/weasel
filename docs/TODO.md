@@ -17,8 +17,8 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
 
 ## Tier 2 — broad reuse
 
-- **Customizable units.** *Done v1* (`UnitRegistry` / `UnitValue`, bare-number = base unit fallback) — see `src/units.ts`. Open follow-ups:
-  - **Per-subobject scale.** Today the registry is global per consumer. Real apps want a child object (a sub-assembly in a CAD scene) to declare its own unit/scale, with conversion at the parent boundary. Likely lives on the parent/group node once Tier 1 #2 lands.
+- **Customizable units.** *Done v1* (`UnitSystem` / `UnitValue`, bare-number = base unit fallback) — see `src/units.ts`. Open follow-ups:
+  - **Per-subobject scale.** Today the unit system is global per consumer. Real apps want a child object (a sub-assembly in a CAD scene) to declare its own unit/scale, with conversion at the parent boundary. Likely lives on the parent/group node once Tier 1 #2 lands.
   - **Mixed-unit arithmetic** (`50% + 2ft`) — needs a context to resolve percentages against. Separate design problem.
   - **Per-axis units** — defer until a concrete use case appears (rare; e.g. timeline charts where x is time, y is value).
 - **Grid overlay.** Promote `renderGrid` to a first-class `RenderLayer` factory with snap-aware visual hints (subdivisions, accent lines, snap-target highlight on hover). Consumes the same `gridSnapStrategy` so visual + behavioral grid agree. Small effort, universal benefit.

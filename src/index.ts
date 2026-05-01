@@ -44,7 +44,7 @@ export {
   METRIC_MM,
   PIXELS,
 } from './units';
-export type { Unit, UnitRegistry, UnitValue } from './units';
+export type { Unit, UnitSystem, UnitValue } from './units';
 export {
   composeSelectionPose,
   createSelectionOverlayLayer,

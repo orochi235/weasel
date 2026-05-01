@@ -22,7 +22,7 @@ describe('gridSnapStrategy', () => {
     expect(s.snap({ x: 30, y: 30 }, ctx)).toEqual({ x: 36, y: 36 });
   });
 
-  it('throws when a tagged cell is given without a registry', () => {
-    expect(() => gridSnapStrategy<Pose>({ value: 1, unit: 'ft' })).toThrow(/UnitRegistry/);
+  it('throws when a tagged cell is given without a unit system', () => {
+    expect(() => gridSnapStrategy<Pose>({ value: 1, unit: 'ft' })).toThrow(/UnitSystem/);
   });
 });

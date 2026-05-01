@@ -137,12 +137,12 @@ describe('createGridLayer', () => {
     expect(calls.filter((c) => c.fn === 'fillRect')).toHaveLength(0);
   });
 
-  it('resolves a tagged cell value via the registry (1ft -> 12in spacing)', () => {
+  it('resolves a tagged cell value via the unit system (1ft -> 12in spacing)', () => {
     const { ctx, calls } = makeStubCtx();
     // 24in wide x 12in tall, cell = 1ft = 12in -> 3 vertical lines + 2 horizontal lines = 5 strokes.
     const layer = createGridLayer({
       cell: { value: 1, unit: 'ft' },
-      registry: IMPERIAL_INCHES,
+      unitSystem: IMPERIAL_INCHES,
       bounds: () => ({ x: 0, y: 0, width: 24, height: 12 }),
     });
     layer.draw(ctx, undefined);
@@ -154,13 +154,13 @@ describe('createGridLayer', () => {
     expect(moves[1].args).toEqual([12, 0]);
   });
 
-  it('throws at draw time when a tagged cell is given without a registry', () => {
+  it('throws at draw time when a tagged cell is given without a unit system', () => {
     const { ctx } = makeStubCtx();
     const layer = createGridLayer({
       cell: { value: 1, unit: 'ft' },
       bounds: () => ({ x: 0, y: 0, width: 24, height: 12 }),
     });
-    expect(() => layer.draw(ctx, undefined)).toThrow(/UnitRegistry/);
+    expect(() => layer.draw(ctx, undefined)).toThrow(/UnitSystem/);
   });
 
   it('honors custom style colors', () => {

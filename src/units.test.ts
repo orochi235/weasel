@@ -14,11 +14,11 @@ describe('resolveUnit', () => {
     expect(resolveUnit(-3.5, IMPERIAL_INCHES)).toBe(-3.5);
   });
 
-  it('does not require a registry for bare numbers', () => {
+  it('does not require a unit system for bare numbers', () => {
     expect(resolveUnit(7)).toBe(7);
   });
 
-  it('resolves tagged values using registry factors', () => {
+  it('resolves tagged values using unit system factors', () => {
     expect(resolveUnit({ value: 3, unit: 'ft' }, IMPERIAL_INCHES)).toBe(36);
     expect(resolveUnit({ value: 1, unit: 'yd' }, IMPERIAL_INCHES)).toBe(36);
     expect(resolveUnit({ value: 1, unit: 'mi' }, IMPERIAL_INCHES)).toBe(63360);
@@ -26,7 +26,7 @@ describe('resolveUnit', () => {
     expect(resolveUnit({ value: 1.5, unit: 'm' }, METRIC_MM)).toBe(1500);
   });
 
-  it('throws with a helpful message when the tag unit is not in the registry', () => {
+  it('throws with a helpful message when the tag unit is not in the system', () => {
     expect(() => resolveUnit({ value: 3, unit: 'unknown' }, IMPERIAL_INCHES)).toThrow(
       /unknown unit 'unknown'/,
     );
@@ -35,8 +35,8 @@ describe('resolveUnit', () => {
     );
   });
 
-  it('throws when a tagged value is given without a registry', () => {
-    expect(() => resolveUnit({ value: 3, unit: 'ft' })).toThrow(/requires a UnitRegistry/);
+  it('throws when a tagged value is given without a unit system', () => {
+    expect(() => resolveUnit({ value: 3, unit: 'ft' })).toThrow(/requires a UnitSystem/);
   });
 });
 
@@ -63,12 +63,12 @@ describe('formatUnit', () => {
     expect(formatUnit(13, 'ft', IMPERIAL_INCHES, { precision: 0 })).toBe('1ft');
   });
 
-  it('throws when displayUnit is not in the registry', () => {
+  it('throws when displayUnit is not in the system', () => {
     expect(() => formatUnit(100, 'unknown', IMPERIAL_INCHES)).toThrow(/unknown unit 'unknown'/);
   });
 });
 
-describe('pre-built registries', () => {
+describe('pre-built unit systems', () => {
   it('IMPERIAL_INCHES has correct factors', () => {
     expect(IMPERIAL_INCHES.base).toBe('in');
     expect(IMPERIAL_INCHES.units.in).toBe(1);
