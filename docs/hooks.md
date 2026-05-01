@@ -56,7 +56,7 @@ Resize a single object from a corner/edge anchor. See
 
 ```ts
 const resize = useResizeInteraction<Rect, Pose>(adapter, {
-  behaviors: [snapToGrid({ cell: 20 }), clampMinSize({ minWidth: 20, minHeight: 20 })],
+  behaviors: [snapToGrid({ spacing: 20 }), clampMinSize({ minWidth: 20, minHeight: 20 })],
 });
 resize.start(id, { x: 'min', y: 'min' }, wx, wy);
 ```

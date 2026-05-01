@@ -111,7 +111,7 @@ export function MoveDemo() {
     ctx.clearRect(0, 0, W, H);
 
     const gridLayer = createGridLayer({
-      cell: CELL,
+      spacing: CELL,
       unitSystem: UNITS,
       bounds: () => ({ x: 0, y: 0, width: W, height: H }),
       accentEvery: 5,
@@ -209,7 +209,7 @@ const move = useMoveInteraction<Rect, Pose>(adapter, {
 // background grid; the base layer draws committed rects (hiding overlay.hideIds);
 // a ghost layer draws the live snapped poses on top.
 const gridLayer = createGridLayer({
-  cell: CELL,
+  spacing: CELL,
   unitSystem: UNITS,
   bounds: () => ({ x: 0, y: 0, width: W, height: H }),
   accentEvery: 5,

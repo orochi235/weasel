@@ -26,7 +26,7 @@ function proposed(start: P, current: P): InsertProposed<P> {
 }
 
 describe('insert/snapToGrid', () => {
-  const b = snapToGrid<P>({ cell: 1 });
+  const b = snapToGrid<P>({ spacing: 1 });
 
   it('onStart snaps origin to grid', () => {
     const c = ctx({ x: 0.7, y: 0.3 });
@@ -41,7 +41,7 @@ describe('insert/snapToGrid', () => {
   });
 
   it('bypassKey skips both', () => {
-    const b2 = snapToGrid<P>({ cell: 1, bypassKey: 'alt' });
+    const b2 = snapToGrid<P>({ spacing: 1, bypassKey: 'alt' });
     const c = ctx({ x: 0.7, y: 0.3 }, { alt: true });
     b2.onStart!(c);
     expect(c.origin.get('gesture')).toEqual({ x: 0.7, y: 0.3 }); // unchanged

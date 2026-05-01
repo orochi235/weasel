@@ -16,11 +16,12 @@ import { resolveUnit, type UnitSystem, type UnitValue } from './units';
 /** Options for `createGridLayer`. */
 export interface GridLayerOpts {
   /**
-   * Base cell size, in world (base) units. Accepts a bare number or a tagged
+   * Distance between adjacent grid lines (also known as grid pitch),
+   * in world (base) units. Accepts a bare number or a tagged
    * `{ value, unit }`. Tagged values require `unitSystem` to be supplied.
    */
-  cell: UnitValue;
-  /** Optional unit system for resolving tagged `cell` values. */
+  spacing: UnitValue;
+  /** Optional unit system for resolving tagged `spacing` values. */
   unitSystem?: UnitSystem;
   /** Bounds of the area to cover, in world units. */
   bounds: () => { x: number; y: number; width: number; height: number };
@@ -77,7 +78,7 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
       if (b.width <= 0 || b.height <= 0) return;
 
       const { accentEvery, subdivisions } = opts;
-      const cell = resolveUnit(opts.cell, opts.unitSystem);
+      const spacing = resolveUnit(opts.spacing, opts.unitSystem);
       const x0 = b.x;
       const y0 = b.y;
       const x1 = b.x + b.width;
@@ -88,7 +89,7 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
         const hl = opts.highlight();
         if (hl) {
           ctx.fillStyle = highlightStyle.fill;
-          ctx.fillRect(x0 + hl.col * cell, y0 + hl.row * cell, cell, cell);
+          ctx.fillRect(x0 + hl.col * spacing, y0 + hl.row * spacing, spacing, spacing);
         }
       }
 
@@ -97,7 +98,7 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
       // 2. Sub-lines (finest, drawn first so cell lines paint on top).
       if (subdivisions && subdivisions > 1) {
         ctx.strokeStyle = style.sub;
-        const step = cell / subdivisions;
+        const step = spacing / subdivisions;
         for (let x = x0; x <= x1 + 1e-9; x += step) {
           // Skip lines that coincide with cell lines — those will be drawn next.
           const k = Math.round((x - x0) / step);
@@ -114,13 +115,13 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
       // 3. Cell lines (skip ones that will become accents).
       ctx.strokeStyle = style.line;
       let idx = 0;
-      for (let x = x0; x <= x1 + 1e-9; x += cell) {
+      for (let x = x0; x <= x1 + 1e-9; x += spacing) {
         const isAccent = !!accentEvery && accentEvery > 0 && idx % accentEvery === 0;
         if (!isAccent) drawVLine(ctx, x, y0, y1);
         idx++;
       }
       idx = 0;
-      for (let y = y0; y <= y1 + 1e-9; y += cell) {
+      for (let y = y0; y <= y1 + 1e-9; y += spacing) {
         const isAccent = !!accentEvery && accentEvery > 0 && idx % accentEvery === 0;
         if (!isAccent) drawHLine(ctx, y, x0, x1);
         idx++;
@@ -130,12 +131,12 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
       if (accentEvery && accentEvery > 0) {
         ctx.strokeStyle = style.accent;
         idx = 0;
-        for (let x = x0; x <= x1 + 1e-9; x += cell) {
+        for (let x = x0; x <= x1 + 1e-9; x += spacing) {
           if (idx % accentEvery === 0) drawVLine(ctx, x, y0, y1);
           idx++;
         }
         idx = 0;
-        for (let y = y0; y <= y1 + 1e-9; y += cell) {
+        for (let y = y0; y <= y1 + 1e-9; y += spacing) {
           if (idx % accentEvery === 0) drawHLine(ctx, y, x0, x1);
           idx++;
         }

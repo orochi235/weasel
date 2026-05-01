@@ -1,12 +1,12 @@
 import type { SnapStrategy } from '../../types';
 import { resolveUnit, type UnitSystem, type UnitValue } from '../../../units';
 
-/** Snap-strategy that rounds `x`/`y` to the nearest multiple of `cell` (resolved through `unitSystem`). */
+/** Snap-strategy that rounds `x`/`y` to the nearest multiple of `spacing` (resolved through `unitSystem`). */
 export function gridSnapStrategy<TPose extends { x: number; y: number }>(
-  cell: UnitValue,
+  spacing: UnitValue,
   unitSystem?: UnitSystem,
 ): SnapStrategy<TPose> {
-  const c = resolveUnit(cell, unitSystem);
+  const c = resolveUnit(spacing, unitSystem);
   return {
     snap(pose) {
       return {

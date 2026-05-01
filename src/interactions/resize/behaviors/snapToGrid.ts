@@ -7,19 +7,19 @@ import type {
 type ModKey = keyof ModifierState;
 
 export function snapToGrid<TPose extends ResizePose>(args: {
-  cell: number;
+  spacing: number;
   bypassKey?: ModKey;
   suspendBelowDim?: boolean;
 }): ResizeBehavior<TPose> {
-  const { cell, bypassKey, suspendBelowDim = true } = args;
-  const round = (v: number) => Math.round(v / cell) * cell;
+  const { spacing, bypassKey, suspendBelowDim = true } = args;
+  const round = (v: number) => Math.round(v / spacing) * spacing;
 
   return {
     onMove(ctx, { pose, anchor }) {
       if (bypassKey && ctx.modifiers[bypassKey]) return;
       const origin = ctx.origin.get(ctx.draggedIds[0])!;
-      const subX = suspendBelowDim && origin.width < cell;
-      const subY = suspendBelowDim && origin.height < cell;
+      const subX = suspendBelowDim && origin.width < spacing;
+      const subY = suspendBelowDim && origin.height < spacing;
 
       let { x, y, width, height } = pose;
       let changed = false;

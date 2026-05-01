@@ -47,7 +47,7 @@ function makeStubCtx(): StubCtx {
 describe('createGridLayer', () => {
   it('exposes id "grid" and label "Grid"', () => {
     const layer = createGridLayer({
-      cell: 10,
+      spacing: 10,
       bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
     });
     expect(layer.id).toBe('grid');
@@ -57,7 +57,7 @@ describe('createGridLayer', () => {
   it('renders nothing when bounds are zero-sized', () => {
     const { ctx, calls } = makeStubCtx();
     const layer = createGridLayer({
-      cell: 10,
+      spacing: 10,
       bounds: () => ({ x: 0, y: 0, width: 0, height: 0 }),
     });
     layer.draw(ctx, undefined);
@@ -67,7 +67,7 @@ describe('createGridLayer', () => {
   it('draws 11+11=22 lines for a 10-cell grid over 100x100 bounds', () => {
     const { ctx, calls } = makeStubCtx();
     const layer = createGridLayer({
-      cell: 10,
+      spacing: 10,
       bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
     });
     layer.draw(ctx, undefined);
@@ -78,7 +78,7 @@ describe('createGridLayer', () => {
   it('with accentEvery: 5, renders 3 accent lines per axis', () => {
     const { ctx, calls } = makeStubCtx();
     const layer = createGridLayer({
-      cell: 10,
+      spacing: 10,
       accentEvery: 5,
       bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
       style: { accent: '#ff0000', line: '#222222' },
@@ -96,7 +96,7 @@ describe('createGridLayer', () => {
     const { ctx, calls } = makeStubCtx();
     // 1x1 cell area, cell=10, subdivisions=4 -> 3 sub lines per axis.
     const layer = createGridLayer({
-      cell: 10,
+      spacing: 10,
       subdivisions: 4,
       bounds: () => ({ x: 0, y: 0, width: 10, height: 10 }),
     });
@@ -111,7 +111,7 @@ describe('createGridLayer', () => {
   it('renders highlight before any lines (fillRect comes first)', () => {
     const { ctx, calls } = makeStubCtx();
     const layer = createGridLayer({
-      cell: 10,
+      spacing: 10,
       bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
       highlight: () => ({ col: 2, row: 3 }),
     });
@@ -129,7 +129,7 @@ describe('createGridLayer', () => {
   it('skips fill when highlight returns null', () => {
     const { ctx, calls } = makeStubCtx();
     const layer = createGridLayer({
-      cell: 10,
+      spacing: 10,
       bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
       highlight: () => null,
     });
@@ -141,7 +141,7 @@ describe('createGridLayer', () => {
     const { ctx, calls } = makeStubCtx();
     // 24in wide x 12in tall, cell = 1ft = 12in -> 3 vertical lines + 2 horizontal lines = 5 strokes.
     const layer = createGridLayer({
-      cell: { value: 1, unit: 'ft' },
+      spacing: { value: 1, unit: 'ft' },
       unitSystem: IMPERIAL_INCHES,
       bounds: () => ({ x: 0, y: 0, width: 24, height: 12 }),
     });
@@ -157,7 +157,7 @@ describe('createGridLayer', () => {
   it('throws at draw time when a tagged cell is given without a unit system', () => {
     const { ctx } = makeStubCtx();
     const layer = createGridLayer({
-      cell: { value: 1, unit: 'ft' },
+      spacing: { value: 1, unit: 'ft' },
       bounds: () => ({ x: 0, y: 0, width: 24, height: 12 }),
     });
     expect(() => layer.draw(ctx, undefined)).toThrow(/UnitSystem/);
@@ -166,7 +166,7 @@ describe('createGridLayer', () => {
   it('honors custom style colors', () => {
     const { ctx, calls } = makeStubCtx();
     const layer = createGridLayer({
-      cell: 10,
+      spacing: 10,
       accentEvery: 5,
       bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
       style: { line: '#abcdef', accent: '#fedcba' },

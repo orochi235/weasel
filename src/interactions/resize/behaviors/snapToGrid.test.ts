@@ -28,7 +28,7 @@ function proposed(pose: P, anchor: ResizeAnchor): ResizeProposed<P> {
 }
 
 describe('resize/snapToGrid', () => {
-  const b = snapToGrid<P>({ cell: 1 });
+  const b = snapToGrid<P>({ spacing: 1 });
 
   it('east anchor=min: snaps east edge by adjusting width', () => {
     const r = b.onMove!(
@@ -91,7 +91,7 @@ describe('resize/snapToGrid', () => {
   });
 
   it('suspendBelowDim=false: snaps even when origin dim < cell', () => {
-    const b2 = snapToGrid<P>({ cell: 1, suspendBelowDim: false });
+    const b2 = snapToGrid<P>({ spacing: 1, suspendBelowDim: false });
     const r = b2.onMove!(
       ctx({ x: 0, y: 0, width: 0.5, height: 4 }),
       proposed({ x: 0, y: 0, width: 0.7, height: 4 }, { x: 'min', y: 'free' }),
@@ -100,7 +100,7 @@ describe('resize/snapToGrid', () => {
   });
 
   it('bypassKey skips snap entirely', () => {
-    const b2 = snapToGrid<P>({ cell: 1, bypassKey: 'alt' });
+    const b2 = snapToGrid<P>({ spacing: 1, bypassKey: 'alt' });
     const r = b2.onMove!(
       ctx({ x: 0, y: 0, width: 4, height: 4 }, { alt: true }),
       proposed({ x: 0, y: 0, width: 4.7, height: 4.7 }, { x: 'min', y: 'min' }),

@@ -171,15 +171,15 @@ resolved against a `UnitSystem` at the API boundary.
 ```ts
 import { createGridLayer, IMPERIAL_INCHES } from '@/canvas-kit';
 
-// base = 'in'. cell is 1 foot = 12 inches in the kit's internal numbers.
+// base = 'in'. spacing is 1 foot = 12 inches in the kit's internal numbers.
 createGridLayer({
-  cell: { value: 1, unit: 'ft' },
+  spacing: { value: 1, unit: 'ft' },
   unitSystem: IMPERIAL_INCHES,
   bounds,
 });
 
 // Equivalent — bare numbers are always assumed to be base units.
-createGridLayer({ cell: 12, bounds });
+createGridLayer({ spacing: 12, bounds });
 ```
 
 A `UnitSystem` is just `{ base, units }` where `units` maps each unit name

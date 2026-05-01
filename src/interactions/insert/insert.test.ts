@@ -70,7 +70,7 @@ describe('useInsertInteraction — move + end', () => {
     const { adapter } = makeAdapter();
     const { result } = renderHook(() =>
       useInsertInteraction<Obj, { x: number; y: number }>(adapter, {
-        behaviors: [snapToGrid<{ x: number; y: number }>({ cell: 1 })],
+        behaviors: [snapToGrid<{ x: number; y: number }>({ spacing: 1 })],
       }),
     );
     act(() => {

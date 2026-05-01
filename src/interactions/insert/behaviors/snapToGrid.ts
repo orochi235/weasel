@@ -6,11 +6,11 @@ import type {
 type ModKey = keyof ModifierState;
 
 export function snapToGrid<TPose extends { x: number; y: number }>(args: {
-  cell: number;
+  spacing: number;
   bypassKey?: ModKey;
 }): InsertBehavior<TPose> {
-  const { cell, bypassKey } = args;
-  const round = (v: number) => Math.round(v / cell) * cell;
+  const { spacing, bypassKey } = args;
+  const round = (v: number) => Math.round(v / spacing) * spacing;
   return {
     onStart(ctx) {
       if (bypassKey && ctx.modifiers[bypassKey]) return;

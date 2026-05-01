@@ -86,7 +86,7 @@ describe('useResizeInteraction — move', () => {
     state.set('a', { x: 0, y: 0, width: 0.5, height: 10 });
     const { result } = renderHook(() =>
       useResizeInteraction<{ id: string }, P>(adapter, {
-        behaviors: [snapToGrid<P>({ cell: 1 })],
+        behaviors: [snapToGrid<P>({ spacing: 1 })],
       }),
     );
     act(() => {
