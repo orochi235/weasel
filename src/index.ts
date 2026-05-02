@@ -152,6 +152,9 @@ export {
   flattenCubic,
   flattenQuadratic,
   DEFAULT_FLATTEN_TOLERANCE,
+  composePath,
+  decomposePath,
+  unionBoundsPath,
 } from './paths';
 export type {
   Path,

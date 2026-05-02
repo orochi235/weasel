@@ -30,3 +30,5 @@ export {
   flattenQuadratic,
   DEFAULT_FLATTEN_TOLERANCE,
 } from './flatten';
+export { composePath, decomposePath } from './compose';
+export { unionBoundsPath } from './unionBoundsPath';
