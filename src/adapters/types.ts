@@ -1,5 +1,5 @@
 import type { Op } from '../ops/types';
-import type { ClipboardSnapshot } from '../interactions/types';
+import type { ClipboardSnapshot } from '../interactions/clipboard/types';
 
 /**
  * SnapTarget — where a dragged object would re-parent to if released.

@@ -171,7 +171,32 @@ export type { RectPose } from './groups/unionBounds';
 export { withGroupOrdering } from './groups/orderedGroups';
 export * from './history';
 export * from './adapters/types';
-export * from './interactions/types';
+export type {
+  ModifierState,
+  PointerState,
+  GestureContext,
+  SnapStrategy,
+  GestureBehavior,
+  BehaviorMoveResult,
+  MoveBehavior,
+  MoveOverlay,
+  ResizeAnchor,
+  ResizePose,
+  ResizeProposed,
+  ResizeMoveResult,
+  ResizeBehavior,
+  ResizeOverlay,
+  InsertProposed,
+  InsertMoveResult,
+  InsertBehavior,
+  InsertOverlay,
+  AreaSelectPose,
+  AreaSelectProposed,
+  AreaSelectMoveResult,
+  AreaSelectBehavior,
+  AreaSelectOverlay,
+} from './interactions/gestures/types';
+export type { ClipboardSnapshot } from './interactions/clipboard/types';
 export { snap, gridSnapStrategy, pointToGridCell } from './interactions/gestures/shared';
 export { useMoveInteraction } from './interactions/gestures/move';
 export type {
@@ -239,7 +264,7 @@ export type {
 } from './interactions/actions/nudge';
 export { useCloneInteraction, cloneByAltDrag } from './interactions/gestures/clone';
 export type { UseCloneInteractionOptions, UseCloneInteractionReturn } from './interactions/gestures/clone';
-export type { ClonePose, CloneLayer, CloneBehavior } from './interactions/types';
+export type { ClonePose, CloneLayer, CloneBehavior } from './interactions/gestures/types';
 // snapToGrid / snapToContainer / snapBackOrDelete are NOT re-exported at top level —
 // import from './move' to disambiguate from resize/insert siblings.
 export {

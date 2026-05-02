@@ -3,7 +3,7 @@ import { createInsertOp } from '../../ops/create';
 import { createSetSelectionOp } from '../../ops/selection';
 import type { Op } from '../../ops/types';
 import type { InsertAdapter } from '../../adapters/types';
-import type { ClipboardSnapshot } from '../types';
+import type { ClipboardSnapshot } from './types';
 
 /** Options for `useClipboard`. */
 export interface UseClipboardOptions {
