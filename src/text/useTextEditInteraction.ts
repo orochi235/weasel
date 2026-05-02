@@ -38,9 +38,17 @@ export interface UseTextEditInteractionOptions {
   setText: (id: string, text: string) => void;
 }
 
+export interface StartEditOptions {
+  /**
+   * Where to place the caret on edit start. Number = caret offset (0..text.length);
+   * `'all'` selects the whole text (default — preserves the prior behavior).
+   */
+  caret?: number | 'all';
+}
+
 export interface UseTextEditInteractionReturn {
   editingId: string | null;
-  startEdit: (id: string) => void;
+  startEdit: (id: string, opts?: StartEditOptions) => void;
   cancelEdit: () => void;
   commit: () => void;
   isEditing: (id: string) => boolean;
@@ -55,6 +63,7 @@ export function useTextEditInteraction(
   const [editingId, setEditingId] = useState<string | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | null>(null);
+  const initialCaretRef = useRef<number | 'all'>('all');
 
   const cancelEdit = useCallback(() => {
     setEditingId(null);
@@ -72,7 +81,8 @@ export function useTextEditInteraction(
     setEditingId(null);
   }, [editingId]);
 
-  const startEdit = useCallback((id: string) => {
+  const startEdit = useCallback((id: string, opts?: StartEditOptions) => {
+    initialCaretRef.current = opts?.caret ?? 'all';
     setEditingId(id);
   }, []);
 
@@ -98,7 +108,12 @@ export function useTextEditInteraction(
     placeOverlay(overlay, getScreenPose(editingId), style);
 
     const range = document.createRange();
-    range.selectNodeContents(overlay);
+    const initial = initialCaretRef.current;
+    if (initial === 'all') {
+      range.selectNodeContents(overlay);
+    } else {
+      placeCaretAt(overlay, range, initial);
+    }
     const sel = window.getSelection();
     sel?.removeAllRanges();
     sel?.addRange(range);
@@ -140,6 +155,32 @@ export function useTextEditInteraction(
 }
 
 let OVERLAY_SEQ = 0;
+
+/**
+ * Place a collapsed caret `offset` characters into the overlay's text. Walks
+ * the overlay's child nodes (the overlay's `innerText` was set from the
+ * source string, so the DOM should be a single text node — but be defensive
+ * in case the browser normalized whitespace into a slightly different shape).
+ * Out-of-range offsets clamp to the end.
+ */
+function placeCaretAt(root: HTMLElement, range: Range, offset: number): void {
+  let remaining = offset;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let node: Text | null = walker.nextNode() as Text | null;
+  while (node) {
+    const len = node.data.length;
+    if (remaining <= len) {
+      range.setStart(node, remaining);
+      range.setEnd(node, remaining);
+      return;
+    }
+    remaining -= len;
+    node = walker.nextNode() as Text | null;
+  }
+  // Fallback: collapse at end of the root.
+  range.selectNodeContents(root);
+  range.collapse(false);
+}
 
 function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle): void {
   el.style.position = 'absolute';

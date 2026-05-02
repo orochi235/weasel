@@ -4,6 +4,7 @@ import {
   createSetTextOp,
   createTextLayer,
   gridSnapStrategy,
+  caretIndexAt,
   pointInTextPose,
   runLayers,
   setupCanvasDpr,
@@ -266,7 +267,17 @@ export function TextDemo() {
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       const [cx, cy] = clientToCanvas(e.currentTarget, e.clientX, e.clientY);
       const target = hit(cx, cy);
-      if (target) edit.startEdit(target.id);
+      if (!target) return;
+      const ctx = e.currentTarget.getContext('2d');
+      if (!ctx) {
+        edit.startEdit(target.id);
+        return;
+      }
+      const caret = caretIndexAt(ctx, cx, cy, {
+        x: target.x, y: target.y, width: target.width, height: target.height,
+        text: target.text, style: target.style,
+      });
+      edit.startEdit(target.id, { caret });
     },
     [edit],
   );
@@ -409,7 +420,7 @@ const edit = useTextEditInteraction({
 onPointerDown: hit-test → setSelection([id]) → move.start(...)
 onPointerMove: move.move(...)
 onPointerUp:   move.end()
-onDoubleClick: hit-test → edit.startEdit(id)
+onDoubleClick: hit-test → caretIndexAt(ctx, x, y, pose) → edit.startEdit(id, { caret })
 
 // --- Render: text + selection outline (the move overlay supplies live ghost poses) ---
 const textLayer = createTextLayer<TextNode>({

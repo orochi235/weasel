@@ -41,6 +41,23 @@ describe('measureText', () => {
     expect(r.lines).toEqual(['short', 'superlongword', 'end']);
   });
 
+  it('reports lineStarts pointing into the original text', () => {
+    const ctx = makeCtx();
+    // 'the quick brown' wraps to ['the quick', 'brown'] at maxWidth 100 (ten-char
+    // 'the quick' is 90, adding ' brown' overflows). 'brown' starts at index 10.
+    const wrap = measureText(ctx, 'the quick brown', 100, DEFAULT_TEXT_STYLE);
+    expect(wrap.lineStarts).toEqual([0, 10]);
+
+    // Explicit newlines: each paragraph's start advances past the '\n'.
+    const para = measureText(ctx, 'a\nbc\nd', 1000, DEFAULT_TEXT_STYLE);
+    expect(para.lines).toEqual(['a', 'bc', 'd']);
+    expect(para.lineStarts).toEqual([0, 2, 5]);
+
+    // Blank lines preserved with the right offset.
+    const blank = measureText(ctx, 'a\n\nb', 1000, DEFAULT_TEXT_STYLE);
+    expect(blank.lineStarts).toEqual([0, 2, 3]);
+  });
+
   it('reports total height as lines * fontSize * lineHeight', () => {
     const ctx = makeCtx();
     const r = measureText(ctx, 'a\nb\nc', 1000, {

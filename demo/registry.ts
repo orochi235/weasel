@@ -87,7 +87,7 @@ export const DEMOS: DemoEntry[] = [
     id: 'text',
     title: 'Text',
     category: 'Interactions',
-    description: 'createTextLayer + useTextEditInteraction + createSetTextOp, composed with useMoveInteraction, useResizeInteraction, and the selection overlay. Click to select, drag the body to move (snaps to a 10-unit grid), drag the bottom-right handle to resize (which re-wraps the text), double-click to edit; commits flow through createSetTextOp so they\'re undoable. The fourth node demonstrates themed editing — TextStyle.caretColor, selectionBackground, and selectionColor flow through to the contenteditable overlay so the in-place editor matches the canvas palette.',
+    description: 'createTextLayer + useTextEditInteraction + createSetTextOp, composed with useMoveInteraction, useResizeInteraction, and the selection overlay. Click to select, drag the body to move (snaps to a 10-unit grid), drag the bottom-right handle to resize (which re-wraps the text), double-click to edit at the clicked glyph (caretIndexAt resolves the click to a character offset and seeds the contenteditable caret); commits flow through createSetTextOp so they\'re undoable. The fourth node demonstrates themed editing — TextStyle.caretColor, selectionBackground, and selectionColor flow through to the contenteditable overlay so the in-place editor matches the canvas palette.',
     hint: 'Click to select, drag to move, drag the bottom-right handle to resize, double-click to edit. Enter commits, Shift+Enter newline, Escape cancels.',
     Component: TextDemo,
     snippet: TEXT_DEMO_SOURCE,

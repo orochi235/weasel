@@ -4,16 +4,23 @@
  * single words that exceed `maxWidth` are emitted on their own line without
  * mid-word breaking (caller can decide to clip).
  *
- * Returns the laid-out lines and the total block height in world units
- * (`lines.length * fontSize * lineHeight`). The caller owns the `ctx.font`
- * setup — pass a context whose `font` already matches `style` (use
- * `fontString(style)`).
+ * Returns the laid-out lines, the total block height in world units
+ * (`lines.length * fontSize * lineHeight`), and per-line `lineStarts` —
+ * the offset of each line's first character in the original `text`. The
+ * starts are used by `caretIndexAt` to map a clicked (x, y) back to a
+ * character offset in the source string. Trailing whitespace consumed by
+ * the wrap is not included in `lines[i]` but is implicit in the gap
+ * between `lineStarts[i] + lines[i].length` and `lineStarts[i + 1]`.
+ *
+ * The caller owns the `ctx.font` setup — pass a context whose `font`
+ * already matches `style` (use `fontString(style)`).
  */
 
 import type { ResolvedTextStyle } from './textStyle';
 
 export interface MeasuredText {
   lines: string[];
+  lineStarts: number[];
   height: number;
 }
 
@@ -24,27 +31,44 @@ export function measureText(
   style: ResolvedTextStyle,
 ): MeasuredText {
   const lines: string[] = [];
+  const lineStarts: number[] = [];
   const paragraphs = text.split('\n');
 
-  for (const paragraph of paragraphs) {
+  let pos = 0;
+  for (let pi = 0; pi < paragraphs.length; pi++) {
+    if (pi > 0) pos += 1; // step past the '\n' between paragraphs
+    const paragraph = paragraphs[pi];
     if (paragraph === '') {
       lines.push('');
+      lineStarts.push(pos);
       continue;
     }
     const words = paragraph.split(/(\s+)/).filter((w) => w.length > 0);
     let current = '';
+    let currentStart = pos;
+    let consumed = 0; // chars of `paragraph` we've already accounted for
     for (const word of words) {
+      if (current === '') currentStart = pos + consumed;
       const candidate = current + word;
       if (current === '' || ctx.measureText(candidate).width <= maxWidth) {
         current = candidate;
       } else {
         lines.push(current.trimEnd());
-        current = /^\s+$/.test(word) ? '' : word;
+        lineStarts.push(currentStart);
+        if (/^\s+$/.test(word)) {
+          current = '';
+        } else {
+          current = word;
+          currentStart = pos + consumed;
+        }
       }
+      consumed += word.length;
     }
     lines.push(current.trimEnd());
+    lineStarts.push(currentStart);
+    pos += paragraph.length;
   }
 
   const height = lines.length * style.fontSize * style.lineHeight;
-  return { lines, height };
+  return { lines, lineStarts, height };
 }

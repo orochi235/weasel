@@ -99,11 +99,12 @@ export { measureText } from './text/measureText';
 export type { MeasuredText } from './text/measureText';
 export { createTextLayer } from './text/textLayer';
 export type { TextPose, CreateTextLayerOpts } from './text/textLayer';
-export { pointInTextPose } from './text/hitTest';
+export { pointInTextPose, caretIndexAt } from './text/hitTest';
 export type { PointInTextPoseOpts } from './text/hitTest';
 export { useTextEditInteraction } from './text/useTextEditInteraction';
 export type {
   TextEditScreenPose,
+  StartEditOptions,
   UseTextEditInteractionOptions,
   UseTextEditInteractionReturn,
 } from './text/useTextEditInteraction';
