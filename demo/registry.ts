@@ -34,6 +34,8 @@ export interface DemoEntry {
   snippet: string;
   /** Full source of the demo file as it ships in this repo. */
   full: string;
+  /** Path to the demo file relative to repo root, for display in the source pane. */
+  path: string;
 }
 
 export const DEMOS: DemoEntry[] = [
@@ -46,6 +48,7 @@ export const DEMOS: DemoEntry[] = [
     Component: MoveDemo,
     snippet: MOVE_DEMO_SOURCE,
     full: MoveDemoFull,
+    path: 'demo/demos/MoveDemo.tsx',
   },
   {
     id: 'resize',
@@ -56,6 +59,7 @@ export const DEMOS: DemoEntry[] = [
     Component: ResizeDemo,
     snippet: RESIZE_DEMO_SOURCE,
     full: ResizeDemoFull,
+    path: 'demo/demos/ResizeDemo.tsx',
   },
   {
     id: 'insert',
@@ -66,6 +70,7 @@ export const DEMOS: DemoEntry[] = [
     Component: InsertDemo,
     snippet: INSERT_DEMO_SOURCE,
     full: InsertDemoFull,
+    path: 'demo/demos/InsertDemo.tsx',
   },
   {
     id: 'clone',
@@ -76,6 +81,7 @@ export const DEMOS: DemoEntry[] = [
     Component: CloneDemo,
     snippet: CLONE_DEMO_SOURCE,
     full: CloneDemoFull,
+    path: 'demo/demos/CloneDemo.tsx',
   },
   {
     id: 'text',
@@ -86,6 +92,7 @@ export const DEMOS: DemoEntry[] = [
     Component: TextDemo,
     snippet: TEXT_DEMO_SOURCE,
     full: TextDemoFull,
+    path: 'demo/demos/TextDemo.tsx',
   },
   {
     id: 'actions',
@@ -96,6 +103,7 @@ export const DEMOS: DemoEntry[] = [
     Component: ActionsDemo,
     snippet: ACTIONS_DEMO_SOURCE,
     full: ActionsDemoFull,
+    path: 'demo/demos/ActionsDemo.tsx',
   },
   {
     id: 'virtual-groups',
@@ -106,6 +114,7 @@ export const DEMOS: DemoEntry[] = [
     Component: GroupsDemo,
     snippet: GROUPS_DEMO_SOURCE,
     full: GroupsDemoFull,
+    path: 'demo/demos/GroupsDemo.tsx',
   },
   {
     id: 'nested-groups',
@@ -116,6 +125,7 @@ export const DEMOS: DemoEntry[] = [
     Component: NestedGroupsDemo,
     snippet: NESTED_GROUPS_DEMO_SOURCE,
     full: NestedGroupsDemoFull,
+    path: 'demo/demos/NestedGroupsDemo.tsx',
   },
   {
     id: 'compose',
@@ -126,6 +136,7 @@ export const DEMOS: DemoEntry[] = [
     Component: ComposeDemo,
     snippet: COMPOSE_DEMO_SOURCE,
     full: ComposeDemoFull,
+    path: 'demo/demos/ComposeDemo.tsx',
   },
   {
     id: 'quadtree',
@@ -136,6 +147,7 @@ export const DEMOS: DemoEntry[] = [
     Component: QuadtreeDemo,
     snippet: QUADTREE_DEMO_SOURCE,
     full: QuadtreeDemoFull,
+    path: 'demo/demos/QuadtreeDemo.tsx',
   },
   {
     id: 'pixel-art',
@@ -145,6 +157,7 @@ export const DEMOS: DemoEntry[] = [
     Component: PixelArtDemo,
     snippet: PIXEL_ART_DEMO_SOURCE,
     full: PixelArtDemoFull,
+    path: 'demo/demos/PixelArtDemo.tsx',
   },
 ];
 

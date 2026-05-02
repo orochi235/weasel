@@ -96,7 +96,7 @@ function DemoView({ entry, tab, setTab }: { entry: DemoEntry; tab: CodeTab; setT
           <span className="ckd-code-meta">
             {tab === 'snippet'
               ? 'Curated excerpt — the call sites that matter.'
-              : `demo/demos/${filenameFor(entry.id)}.tsx`}
+              : entry.path}
           </span>
         </div>
         <div className="ckd-source">
@@ -123,20 +123,3 @@ function DemoView({ entry, tab, setTab }: { entry: DemoEntry; tab: CodeTab; setT
   );
 }
 
-function filenameFor(id: string): string {
-  // Map registry id to demo file basename (kebab -> Pascal).
-  const map: Record<string, string> = {
-    'move': 'MoveDemo',
-    'resize': 'ResizeDemo',
-    'insert': 'InsertDemo',
-    'clone': 'CloneDemo',
-    'text': 'TextDemo',
-    'actions': 'ActionsDemo',
-    'virtual-groups': 'GroupsDemo',
-    'nested-groups': 'NestedGroupsDemo',
-    'compose': 'ComposeDemo',
-    'quadtree': 'QuadtreeDemo',
-    'pixel-art': 'PixelArtDemo',
-  };
-  return map[id] ?? id;
-}
