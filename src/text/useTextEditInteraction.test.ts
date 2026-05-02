@@ -179,10 +179,30 @@ describe('useTextEditInteraction', () => {
     expect(overlay.style.caretColor).toBe('#000');
   });
 
-  it('skips ::selection style injection when no selection theming is set', () => {
+  it('injects a default ::selection style derived from caret color', () => {
     const h = makeHarness({ a: 'hi' });
+    const opts = {
+      ...h.opts,
+      getStyle: () => ({ fill: { fill: 'solid', color: '#3366cc' } as const }),
+    };
+    const { result } = renderHook(() => useTextEditInteraction(opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    const klass = Array.from(overlay.classList).find((c) => c.startsWith('weasel-text-edit-'));
+    const ours = Array.from(document.head.querySelectorAll('style')).find((s) =>
+      s.textContent?.includes(`.${klass}::selection`),
+    );
+    expect(ours?.textContent).toContain('background: color-mix(in srgb, #3366cc 25%, transparent)');
+  });
+
+  it('skips ::selection injection when selectionBackground is "none"', () => {
+    const h = makeHarness({ a: 'hi' });
+    const opts = {
+      ...h.opts,
+      getStyle: () => ({ selectionBackground: 'none' }),
+    };
     const before = document.head.querySelectorAll('style').length;
-    const { result } = renderHook(() => useTextEditInteraction(h.opts));
+    const { result } = renderHook(() => useTextEditInteraction(opts));
     act(() => result.current.startEdit('a'));
     expect(document.head.querySelectorAll('style').length).toBe(before);
   });
@@ -206,6 +226,88 @@ describe('useTextEditInteraction', () => {
     act(() => result.current.cancelEdit());
     const after = Array.from(document.head.querySelectorAll('style'));
     expect(after.find((s) => s.textContent?.includes(`.${klass}::selection`))).toBeUndefined();
+  });
+
+  describe('multi-line navigation', () => {
+    it('seeds the overlay with multi-line text and preserves newlines through commit', () => {
+      const h = makeHarness({ a: 'first line\nsecond line\nthird line' });
+      const { result } = renderHook(() => useTextEditInteraction(h.opts));
+      act(() => result.current.startEdit('a'));
+      const overlay = getOverlay(h.container)!;
+      expect(overlay.innerText).toBe('first line\nsecond line\nthird line');
+      act(() => result.current.commit());
+      expect(h.commits).toEqual([{ id: 'a', text: 'first line\nsecond line\nthird line' }]);
+    });
+
+    it('Shift+Enter is not preempted, so the browser would insert a newline', () => {
+      const h = makeHarness({ a: 'one' });
+      const { result } = renderHook(() => useTextEditInteraction(h.opts));
+      act(() => result.current.startEdit('a'));
+      const overlay = getOverlay(h.container)!;
+      const ev = new KeyboardEvent('keydown', {
+        key: 'Enter',
+        shiftKey: true,
+        bubbles: true,
+        cancelable: true,
+      });
+      act(() => {
+        overlay.dispatchEvent(ev);
+      });
+      expect(ev.defaultPrevented).toBe(false);
+      expect(h.commits).toEqual([]);
+      expect(result.current.editingId).toBe('a');
+    });
+
+    it('places initial selection across all content (so typing replaces it)', () => {
+      const h = makeHarness({ a: 'line one\nline two' });
+      const { result } = renderHook(() => useTextEditInteraction(h.opts));
+      act(() => result.current.startEdit('a'));
+      const overlay = getOverlay(h.container)!;
+      const sel = window.getSelection()!;
+      expect(sel.rangeCount).toBe(1);
+      const range = sel.getRangeAt(0);
+      expect(range.startContainer).toBe(overlay);
+      expect(range.endContainer).toBe(overlay);
+      expect(range.startOffset).toBe(0);
+      expect(range.endOffset).toBe(overlay.childNodes.length);
+    });
+
+    it('repositioning the caret to mid-document does not affect commit text', () => {
+      const h = makeHarness({ a: 'alpha\nbeta\ngamma' });
+      const { result } = renderHook(() => useTextEditInteraction(h.opts));
+      act(() => result.current.startEdit('a'));
+      const overlay = getOverlay(h.container)!;
+      const sel = window.getSelection()!;
+      sel.removeAllRanges();
+      const r = document.createRange();
+      r.setStart(overlay, 0);
+      r.collapse(true);
+      sel.addRange(r);
+      act(() => {
+        overlay.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+      });
+      expect(h.commits).toEqual([{ id: 'a', text: 'alpha\nbeta\ngamma' }]);
+    });
+
+    it('strips a single trailing newline from innerText on commit', () => {
+      const h = makeHarness({ a: 'x' });
+      const { result } = renderHook(() => useTextEditInteraction(h.opts));
+      act(() => result.current.startEdit('a'));
+      const overlay = getOverlay(h.container)!;
+      overlay.innerText = 'edited\n';
+      act(() => result.current.commit());
+      expect(h.commits).toEqual([{ id: 'a', text: 'edited' }]);
+    });
+
+    it('preserves a blank line in the middle of the document', () => {
+      const h = makeHarness({ a: 'top\n\nbottom' });
+      const { result } = renderHook(() => useTextEditInteraction(h.opts));
+      act(() => result.current.startEdit('a'));
+      const overlay = getOverlay(h.container)!;
+      expect(overlay.innerText).toBe('top\n\nbottom');
+      act(() => result.current.commit());
+      expect(h.commits).toEqual([{ id: 'a', text: 'top\n\nbottom' }]);
+    });
   });
 
   it('does nothing when container is null', () => {

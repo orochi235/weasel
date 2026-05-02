@@ -33,8 +33,8 @@ export interface TextStyle {
   caretColor?: string;
   /**
    * Selection background color used by the edit overlay's `::selection`
-   * pseudo-element. Default: browser native (omit to inherit). Set this to
-   * theme the highlight to match the canvas.
+   * pseudo-element. Defaults to a 25%-opacity tint of `caretColor` via CSS
+   * `color-mix`. Pass `'none'` to fall back to the browser-native highlight.
    */
   selectionBackground?: string;
   /** Selection text color paired with `selectionBackground`. Default: inherits text color. */
@@ -60,6 +60,14 @@ function paintColor(p: Paint): string {
   return 'color' in p ? p.color : '#000';
 }
 
+/**
+ * Default selection background derived from `textColor` — a 25% tint via
+ * CSS `color-mix`. Caller passes `'none'` to opt out.
+ */
+function defaultSelectionBackground(textColor: string): string {
+  return `color-mix(in srgb, ${textColor} 25%, transparent)`;
+}
+
 export const DEFAULT_TEXT_STYLE: ResolvedTextStyle = {
   fontSize: 16,
   fontFamily: 'sans-serif',
@@ -69,13 +77,22 @@ export const DEFAULT_TEXT_STYLE: ResolvedTextStyle = {
   lineHeight: 1.2,
   fill: DEFAULT_FILL,
   caretColor: paintColor(DEFAULT_FILL),
-  selectionBackground: null,
+  selectionBackground: defaultSelectionBackground(paintColor(DEFAULT_FILL)),
   selectionColor: null,
 };
 
 export function resolveTextStyle(style?: TextStyle): ResolvedTextStyle {
   if (!style) return DEFAULT_TEXT_STYLE;
   const fill = style.fill ?? DEFAULT_TEXT_STYLE.fill;
+  const caretColor = style.caretColor ?? paintColor(fill);
+  let selectionBackground: string | null;
+  if (style.selectionBackground === 'none') {
+    selectionBackground = null;
+  } else if (style.selectionBackground != null) {
+    selectionBackground = style.selectionBackground;
+  } else {
+    selectionBackground = defaultSelectionBackground(caretColor);
+  }
   return {
     fontSize: style.fontSize ?? DEFAULT_TEXT_STYLE.fontSize,
     fontFamily: style.fontFamily ?? DEFAULT_TEXT_STYLE.fontFamily,
@@ -84,8 +101,8 @@ export function resolveTextStyle(style?: TextStyle): ResolvedTextStyle {
     align: style.align ?? DEFAULT_TEXT_STYLE.align,
     lineHeight: style.lineHeight ?? DEFAULT_TEXT_STYLE.lineHeight,
     fill,
-    caretColor: style.caretColor ?? paintColor(fill),
-    selectionBackground: style.selectionBackground ?? null,
+    caretColor,
+    selectionBackground,
     selectionColor: style.selectionColor ?? null,
   };
 }
