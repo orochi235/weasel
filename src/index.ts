@@ -121,6 +121,13 @@ export type {
   RenderFilledRegionOptions,
 } from './paint';
 export * from './ops';
+export {
+  composeWorldPose,
+  composeRectPose,
+  decomposeRectPose,
+  rebaseLocalPose,
+} from './transforms/composePose';
+export type { PoseAdapter } from './transforms/composePose';
 export type { Group, GroupAdapter } from './groups/types';
 export { resolveToOutermostGroup, expandToLeaves } from './groups/resolve';
 export { unionBounds } from './groups/unionBounds';
