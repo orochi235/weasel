@@ -6,7 +6,7 @@ import { CloneDemo, CLONE_DEMO_SOURCE } from './demos/CloneDemo';
 import { ComposeDemo, COMPOSE_DEMO_SOURCE } from './demos/ComposeDemo';
 import { ActionsDemo, ACTIONS_DEMO_SOURCE } from './demos/ActionsDemo';
 import { GroupsDemo, GROUPS_DEMO_SOURCE } from './demos/GroupsDemo';
-import { StructuralGroupsDemo, STRUCTURAL_GROUPS_DEMO_SOURCE } from './demos/StructuralGroupsDemo';
+import { NestedGroupsDemo, NESTED_GROUPS_DEMO_SOURCE } from './demos/NestedGroupsDemo';
 import { TextDemo, TEXT_DEMO_SOURCE } from './demos/TextDemo';
 import { PixelArtDemo, PIXEL_ART_DEMO_SOURCE } from './demos/PixelArtDemo';
 
@@ -17,7 +17,7 @@ import CloneDemoFull from './demos/CloneDemo.tsx?raw';
 import ComposeDemoFull from './demos/ComposeDemo.tsx?raw';
 import ActionsDemoFull from './demos/ActionsDemo.tsx?raw';
 import GroupsDemoFull from './demos/GroupsDemo.tsx?raw';
-import StructuralGroupsDemoFull from './demos/StructuralGroupsDemo.tsx?raw';
+import NestedGroupsDemoFull from './demos/NestedGroupsDemo.tsx?raw';
 import TextDemoFull from './demos/TextDemo.tsx?raw';
 import PixelArtDemoFull from './demos/PixelArtDemo.tsx?raw';
 
@@ -106,14 +106,14 @@ export const DEMOS: DemoEntry[] = [
     full: GroupsDemoFull,
   },
   {
-    id: 'structural-groups',
-    title: 'Structural groups',
+    id: 'nested-groups',
+    title: 'Nested groups',
     category: 'Groups',
-    description: 'Real parent/child hierarchy via setParent. Poses are local to the direct parent; the kit composes world poses via worldPoseLookup for hit-testing and selection overlays. useStructuralGroupAction (Mod+G) wraps the selection in a new parent node and rebases children\'s locals so their visual world position is preserved; useStructuralUngroupAction (Mod+Shift+G) reparents children back to the grandparent. Dragging a parent auto-cascades its descendants in the live overlay so children visually follow during the drag (no extra ops — under local-pose semantics the post-commit scene is already correct). Mod+Z / Mod+Shift+Z undo and redo.',
+    description: 'Real parent/child hierarchy via setParent. Poses are local to the direct parent; the kit composes world poses via worldPoseLookup for hit-testing and selection overlays. useNestedGroupAction (Mod+G) wraps the selection in a new parent node and rebases children\'s locals so their visual world position is preserved; useNestedUngroupAction (Mod+Shift+G) reparents children back to the grandparent. Dragging a parent auto-cascades its descendants in the live overlay so children visually follow during the drag (no extra ops — under local-pose semantics the post-commit scene is already correct). Mod+Z / Mod+Shift+Z undo and redo.',
     hint: 'Click a green rect to grab the whole group; drag and watch its children follow. Select two free rects and press Cmd+G to group them; Cmd+Shift+G to ungroup.',
-    Component: StructuralGroupsDemo,
-    snippet: STRUCTURAL_GROUPS_DEMO_SOURCE,
-    full: StructuralGroupsDemoFull,
+    Component: NestedGroupsDemo,
+    snippet: NESTED_GROUPS_DEMO_SOURCE,
+    full: NestedGroupsDemoFull,
   },
   {
     id: 'compose',

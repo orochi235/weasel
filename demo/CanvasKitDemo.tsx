@@ -124,7 +124,7 @@ function DemoView({ entry, tab, setTab }: { entry: DemoEntry; tab: CodeTab; setT
 }
 
 function filenameFor(id: string): string {
-  // Map registry id to demo file basename (kebab/structural -> Pascal).
+  // Map registry id to demo file basename (kebab -> Pascal).
   const map: Record<string, string> = {
     'move': 'MoveDemo',
     'resize': 'ResizeDemo',
@@ -133,7 +133,7 @@ function filenameFor(id: string): string {
     'text': 'TextDemo',
     'actions': 'ActionsDemo',
     'virtual-groups': 'GroupsDemo',
-    'structural-groups': 'StructuralGroupsDemo',
+    'nested-groups': 'NestedGroupsDemo',
     'compose': 'ComposeDemo',
     'pixel-art': 'PixelArtDemo',
   };

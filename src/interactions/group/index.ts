@@ -8,11 +8,11 @@ export {
   type UseUngroupActionReturn,
 } from './group';
 export {
-  useStructuralGroupAction,
-  useStructuralUngroupAction,
-  type StructuralGroupActionAdapter,
-  type UseStructuralGroupActionOptions,
-  type UseStructuralGroupActionReturn,
-  type UseStructuralUngroupActionOptions,
-  type UseStructuralUngroupActionReturn,
-} from './structuralGroup';
+  useNestedGroupAction,
+  useNestedUngroupAction,
+  type NestedGroupActionAdapter,
+  type UseNestedGroupActionOptions,
+  type UseNestedGroupActionReturn,
+  type UseNestedUngroupActionOptions,
+  type UseNestedUngroupActionReturn,
+} from './nestedGroup';

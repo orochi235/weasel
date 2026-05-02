@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import {
-  useStructuralGroupAction,
-  useStructuralUngroupAction,
-  type StructuralGroupActionAdapter,
-} from './structuralGroup';
+  useNestedGroupAction,
+  useNestedUngroupAction,
+  type NestedGroupActionAdapter,
+} from './nestedGroup';
 import { composeRectPose, decomposeRectPose } from '../../transforms/composePose';
 import type { Op } from '../../ops/types';
 
@@ -12,7 +12,7 @@ interface Rect { x: number; y: number; width: number; height: number }
 interface Obj { id: string; pose: Rect; parent: string | null }
 
 interface Harness {
-  adapter: StructuralGroupActionAdapter<Obj, Rect>;
+  adapter: NestedGroupActionAdapter<Obj, Rect>;
   selection: string[];
   scene: Map<string, Obj>;
   batches: { ops: Op[]; label: string }[];
@@ -25,7 +25,7 @@ function makeHarness(initial: Obj[], selection: string[] = []): Harness {
     selection: [...selection],
     scene,
     batches: [],
-    adapter: {} as StructuralGroupActionAdapter<Obj, Rect>,
+    adapter: {} as NestedGroupActionAdapter<Obj, Rect>,
   };
   h.adapter = ({
     getSelection: () => h.selection,
@@ -43,7 +43,7 @@ function makeHarness(initial: Obj[], selection: string[] = []): Harness {
       h.batches.push({ ops, label });
       for (const op of ops) op.apply(h.adapter);
     },
-  } as unknown) as StructuralGroupActionAdapter<Obj, Rect>;
+  } as unknown) as NestedGroupActionAdapter<Obj, Rect>;
   return h;
 }
 
@@ -60,7 +60,7 @@ function worldOf(h: Harness, id: string): Rect {
   return pose;
 }
 
-describe('useStructuralGroupAction', () => {
+describe('useNestedGroupAction', () => {
   it('inserts a new group object, reparents children, and rebases their locals so visual world position is preserved', () => {
     const h = makeHarness(
       [
@@ -72,7 +72,7 @@ describe('useStructuralGroupAction', () => {
     const aBefore = worldOf(h, 'a');
     const bBefore = worldOf(h, 'b');
     const { result } = renderHook(() =>
-      useStructuralGroupAction(h.adapter, {
+      useNestedGroupAction(h.adapter, {
         ...composeOpts,
         newGroupId: () => 'g1',
         groupFactory: ({ id, localPose, childIds }) => ({
@@ -117,7 +117,7 @@ describe('useStructuralGroupAction', () => {
     const aBefore = worldOf(h, 'a');
     const bBefore = worldOf(h, 'b');
     const { result } = renderHook(() =>
-      useStructuralGroupAction(h.adapter, {
+      useNestedGroupAction(h.adapter, {
         ...composeOpts,
         newGroupId: () => 'g1',
         groupFactory: ({ id, localPose }) => ({ id, pose: localPose, parent: null } as Obj),
@@ -145,7 +145,7 @@ describe('useStructuralGroupAction', () => {
       ['a'],
     );
     const { result } = renderHook(() =>
-      useStructuralGroupAction(h.adapter, {
+      useNestedGroupAction(h.adapter, {
         ...composeOpts,
         groupFactory: ({ id, localPose }) => ({ id, pose: localPose, parent: null } as Obj),
       }),
@@ -157,7 +157,7 @@ describe('useStructuralGroupAction', () => {
   });
 });
 
-describe('useStructuralUngroupAction', () => {
+describe('useNestedUngroupAction', () => {
   it('reparents children to grandparent and rebases their locals; deletes the group object', () => {
     // Build a state equivalent to what group() above produces.
     const h = makeHarness(
@@ -171,7 +171,7 @@ describe('useStructuralUngroupAction', () => {
     const aBefore = worldOf(h, 'a');
     const bBefore = worldOf(h, 'b');
     const { result } = renderHook(() =>
-      useStructuralUngroupAction(h.adapter, composeOpts),
+      useNestedUngroupAction(h.adapter, composeOpts),
     );
     let dissolved: string[] = [];
     act(() => { dissolved = result.current.ungroup(); });
@@ -207,7 +207,7 @@ describe('useStructuralUngroupAction', () => {
     const aBefore = worldOf(h, 'a');
     const bBefore = worldOf(h, 'b');
     const { result } = renderHook(() =>
-      useStructuralUngroupAction(h.adapter, composeOpts),
+      useNestedUngroupAction(h.adapter, composeOpts),
     );
     act(() => { result.current.ungroup(); });
 
@@ -228,7 +228,7 @@ describe('useStructuralUngroupAction', () => {
       ['leaf'],
     );
     const { result } = renderHook(() =>
-      useStructuralUngroupAction(h.adapter, composeOpts),
+      useNestedUngroupAction(h.adapter, composeOpts),
     );
     let dissolved: string[] = [];
     act(() => { dissolved = result.current.ungroup(); });
@@ -250,7 +250,7 @@ describe('round-trip: group then ungroup restores world positions', () => {
     const before = ['a', 'b', 'c'].map((id) => worldOf(h, id));
 
     const { result: gRes } = renderHook(() =>
-      useStructuralGroupAction(h.adapter, {
+      useNestedGroupAction(h.adapter, {
         ...composeOpts,
         newGroupId: () => 'g1',
         groupFactory: ({ id, localPose }) => ({ id, pose: localPose, parent: null } as Obj),
@@ -259,7 +259,7 @@ describe('round-trip: group then ungroup restores world positions', () => {
     act(() => { gRes.current.group(); });
 
     const { result: uRes } = renderHook(() =>
-      useStructuralUngroupAction(h.adapter, composeOpts),
+      useNestedUngroupAction(h.adapter, composeOpts),
     );
     act(() => { uRes.current.ungroup(); });
 

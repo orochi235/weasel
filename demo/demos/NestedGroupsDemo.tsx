@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   useMoveInteraction,
-  useStructuralGroupAction,
-  useStructuralUngroupAction,
+  useNestedGroupAction,
+  useNestedUngroupAction,
   useUndoRedoAction,
   createHistory,
   createSelectionOverlayLayer,
@@ -37,7 +37,7 @@ const INITIAL: Node[] = [
   { id: 'd',   parent: null, pose: { x: 200, y: 220, width: 70, height: 50 }, color: '#a48bd4' },
 ];
 
-export function StructuralGroupsDemo() {
+export function NestedGroupsDemo() {
   const [nodes, setNodes] = useState<Node[]>(INITIAL);
   const [selection, setSelection] = useState<string[]>([]);
   const nodesRef = useRef(nodes); nodesRef.current = nodes;
@@ -78,14 +78,14 @@ export function StructuralGroupsDemo() {
     cascadeWorldPose: worldPoseLookup(adapter, composeRectPose<Pose>),
   });
 
-  useStructuralGroupAction<Node, Pose>(adapter, {
+  useNestedGroupAction<Node, Pose>(adapter, {
     ...composeOpts,
     bindKeyboard: true,
     groupFactory: ({ id, localPose, childIds: _childIds }) => ({
       id, parent: null, pose: localPose, color: '#3a2e22', isGroup: true,
     }),
   });
-  useStructuralUngroupAction<Node, Pose>(adapter, {
+  useNestedUngroupAction<Node, Pose>(adapter, {
     ...composeOpts,
     bindKeyboard: true,
     isGroup: (_id, obj) => obj?.isGroup === true,
@@ -228,7 +228,7 @@ export function StructuralGroupsDemo() {
   );
 }
 
-export const STRUCTURAL_GROUPS_DEMO_SOURCE = `// --- Scene with real parent/child hierarchy ---
+export const NESTED_GROUPS_DEMO_SOURCE = `// --- Scene with real parent/child hierarchy ---
 interface Node {
   id: string; parent: string | null;
   pose: { x: number; y: number; width: number; height: number };
@@ -254,14 +254,14 @@ const move = useMoveInteraction(adapter, {
 });
 
 // Group / ungroup actions (Mod+G, Mod+Shift+G).
-useStructuralGroupAction(adapter, {
+useNestedGroupAction(adapter, {
   ...composeOpts,
   bindKeyboard: true,
   groupFactory: ({ id, localPose }) => ({
     id, parent: null, pose: localPose, color: '#3a2e22', isGroup: true,
   }),
 });
-useStructuralUngroupAction(adapter, {
+useNestedUngroupAction(adapter, {
   ...composeOpts,
   bindKeyboard: true,
   isGroup: (_id, obj) => obj?.isGroup === true,

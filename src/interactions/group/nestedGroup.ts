@@ -39,8 +39,8 @@ import {
 } from '../../transforms/composePose';
 import { useKeybinding } from '../../hooks/useKeybinding';
 
-/** Adapter for `useStructuralGroupAction` / `useStructuralUngroupAction`. */
-export interface StructuralGroupActionAdapter<TObject extends { id: string }, TPose>
+/** Adapter for `useNestedGroupAction` / `useNestedUngroupAction`. */
+export interface NestedGroupActionAdapter<TObject extends { id: string }, TPose>
   extends PoseAdapter<TPose> {
   /** Read current selection. */
   getSelection(): string[];
@@ -48,15 +48,15 @@ export interface StructuralGroupActionAdapter<TObject extends { id: string }, TP
    *  object so the dissolve op can invert into a re-insert. */
   getObject(id: string): TObject | undefined;
   /** Enumerate direct children of `id` (`null` = root siblings). Required
-   *  for ungroup to find the members of a structural group. Order doesn't
+   *  for ungroup to find the members of a nested group. Order doesn't
    *  matter for the hook itself; the hook does not reorder children. */
   getChildren(id: string | null): string[];
   /** Standard op-batch entry point. */
   applyBatch(ops: Op[], label: string): void;
 }
 
-/** Options for `useStructuralGroupAction`. */
-export interface UseStructuralGroupActionOptions<TObject extends { id: string }, TPose> {
+/** Options for `useNestedGroupAction`. */
+export interface UseNestedGroupActionOptions<TObject extends { id: string }, TPose> {
   /** Mint the new group scene object. Receives the chosen group id, the
    *  group's local pose (in the common parent's frame), and the child ids.
    *  The returned object is inserted into the scene before children are
@@ -86,8 +86,8 @@ export interface UseStructuralGroupActionOptions<TObject extends { id: string },
   minMembers?: number;
 }
 
-/** Return shape of `useStructuralGroupAction`. */
-export interface UseStructuralGroupActionReturn {
+/** Return shape of `useNestedGroupAction`. */
+export interface UseNestedGroupActionReturn {
   /** Imperative trigger — reparents the current selection under a newly
    *  inserted group object, rebasing each child's local pose so its visual
    *  world position is preserved. Returns the new group id, or `null` if no
@@ -117,10 +117,10 @@ function defaultGroupPoseFromChildren<TPose>(world: TPose[]): TPose {
 
 /** Selection-grouping action that inserts a real scene-graph parent and
  *  reparents the selection under it. Optionally binds Mod+G. */
-export function useStructuralGroupAction<TObject extends { id: string }, TPose>(
-  adapter: StructuralGroupActionAdapter<TObject, TPose>,
-  options: UseStructuralGroupActionOptions<TObject, TPose>,
-): UseStructuralGroupActionReturn {
+export function useNestedGroupAction<TObject extends { id: string }, TPose>(
+  adapter: NestedGroupActionAdapter<TObject, TPose>,
+  options: UseNestedGroupActionOptions<TObject, TPose>,
+): UseNestedGroupActionReturn {
   const adapterRef = useRef(adapter);
   adapterRef.current = adapter;
   const optsRef = useRef(options);
@@ -190,8 +190,8 @@ export function useStructuralGroupAction<TObject extends { id: string }, TPose>(
   return { group };
 }
 
-/** Options for `useStructuralUngroupAction`. */
-export interface UseStructuralUngroupActionOptions<TObject extends { id: string }, TPose> {
+/** Options for `useNestedUngroupAction`. */
+export interface UseNestedUngroupActionOptions<TObject extends { id: string }, TPose> {
   /** Compose a parent local + child local into the next-frame-up pose. */
   composePose: (parent: TPose, child: TPose) => TPose;
   /** Inverse of `composePose`. */
@@ -200,15 +200,15 @@ export interface UseStructuralUngroupActionOptions<TObject extends { id: string 
   bindKeyboard?: boolean;
   /** Label passed to applyBatch. Default 'Ungroup'. */
   label?: string;
-  /** Predicate: should this id be treated as a structural group (i.e.
+  /** Predicate: should this id be treated as a nested group (i.e.
    *  dissolved on ungroup)? Default: any id with at least one child. Override
    *  if your scene model distinguishes "container" from "ordinary parent"
    *  via a domain field on the object. */
   isGroup?: (id: string, object: TObject | undefined) => boolean;
 }
 
-/** Return shape of `useStructuralUngroupAction`. */
-export interface UseStructuralUngroupActionReturn {
+/** Return shape of `useNestedUngroupAction`. */
+export interface UseNestedUngroupActionReturn {
   /** Imperative trigger — for every group in the current selection,
    *  reparents its children to the grandparent (rebasing each local pose so
    *  visual world positions are preserved) and deletes the group object.
@@ -219,10 +219,10 @@ export interface UseStructuralUngroupActionReturn {
 }
 
 /** Selection-ungrouping action; optionally binds Mod+Shift+G. */
-export function useStructuralUngroupAction<TObject extends { id: string }, TPose>(
-  adapter: StructuralGroupActionAdapter<TObject, TPose>,
-  options: UseStructuralUngroupActionOptions<TObject, TPose>,
-): UseStructuralUngroupActionReturn {
+export function useNestedUngroupAction<TObject extends { id: string }, TPose>(
+  adapter: NestedGroupActionAdapter<TObject, TPose>,
+  options: UseNestedUngroupActionOptions<TObject, TPose>,
+): UseNestedUngroupActionReturn {
   const adapterRef = useRef(adapter);
   adapterRef.current = adapter;
   const optsRef = useRef(options);

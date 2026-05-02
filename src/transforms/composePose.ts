@@ -1,7 +1,7 @@
 /**
  * Pose composition for hierarchical scene graphs.
  *
- * As of the structural-groups change, `getPose(id)` on adapters returns the
+ * As of the nested-groups change, `getPose(id)` on adapters returns the
  * **local** pose — relative to the object's direct parent. Anything in the
  * kit that needs to draw, hit-test, snap, or otherwise reason about world
  * coordinates routes through `composeWorldPose`, which walks the parent

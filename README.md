@@ -4,7 +4,7 @@ A 2D scene-graph toolkit for React + canvas apps. Bring your own object type and
 
 Built for diagram editors, sketch tools, schematic editors, scene composers — anything where "objects on a canvas the user can grab, move, and arrange" is the substrate.
 
-> Pre-1.0: the API surface (paths, structural groups, per-subobject units) is still settling. Expect breaking changes between minor versions until 1.0.
+> Pre-1.0: the API surface (paths, nested groups, per-subobject units) is still settling. Expect breaking changes between minor versions until 1.0.
 
 ## Install
 

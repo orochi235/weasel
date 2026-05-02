@@ -14,7 +14,7 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
 - **Paths and compound shapes.** `TPose` is generic at the type level but resize/insert/area-select/selection-overlay all bake in `{x, y, width, height}` math. Generalize to arbitrary paths: polygons, polylines, holes, boolean composition. Move + hit-testing + selection overlay all need a path-aware contract. Foundational for any non-rect editor (diagrams, schematics, illustration, mapping).
 - **Groupable objects.** First-class group node: select-as-one, move-as-one, transform children relative to group origin. Universal across diagramming and illustration tools. *Status:*
   - Virtual groups (lasso-style `members[]` records, no scene-graph change) ship with `useGroupAction` / `useUngroupAction` and resize-as-group.
-  - Structural groups (real hierarchy nodes) ship as `useStructuralGroupAction` / `useStructuralUngroupAction`, backed by `composeWorldPose` / `rebaseLocalPose`. Adapter contract now declares poses as **local** (relative to direct parent); the kit composes world via the helper. Children's locals are auto-rebased on group/ungroup so visual world position is preserved.
+  - Nested groups (real hierarchy nodes) ship as `useNestedGroupAction` / `useNestedUngroupAction`, backed by `composeWorldPose` / `rebaseLocalPose`. Adapter contract now declares poses as **local** (relative to direct parent); the kit composes world via the helper. Children's locals are auto-rebased on group/ungroup so visual world position is preserved.
   - Snap behaviors stay local-frame by design (see project memory). Selection-overlay composer shipped as `worldPoseLookup`. `useMoveInteraction` auto-cascade shipped: when the move adapter exposes `getChildren` and the hook is given `cascadeWorldPose`, descendants are translated alongside the dragged ids in the live overlay (no extra ops — children's locals don't change when their parent's local moves).
 - **Text rendering.** *Largely done.* `createTextLayer`, `useTextEditInteraction`, `createSetTextOp`, `pointInTextPose`, and `TextStyle` (with caret/selection theming) ship; in-place edit via a contenteditable overlay is wired through op/undo. Open follow-ups:
   - **Glyph-position hit testing.** Currently hit-tests the whole pose rect; per-glyph hit-testing (for caret placement on click into existing text) is not implemented.
@@ -31,7 +31,7 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
   - **Per-axis units** — defer until a concrete use case appears (rare; e.g. timeline charts where x is time, y is value).
 ## Tier 1.5 — small additive hooks
 
-- **Selection-driven action hooks**: shipped against the existing virtual-group adapter and `History`. When structural groups (Tier 1) land, `useGroupAction` / `useUngroupAction` will compose additional ops (reparent children under the new group node) but the hook surface should not need to change.
+- **Selection-driven action hooks**: shipped against the existing virtual-group adapter and `History`. When nested groups (Tier 1) land, `useGroupAction` / `useUngroupAction` will compose additional ops (reparent children under the new group node) but the hook surface should not need to change.
 - **Grid overlay snap-target hover.** *Done.* `useGridCellHover` ships the pointer-tracking glue; pair its `getCell` with `createCellHighlightLayer` and the `spacing` your `gridSnapStrategy` already uses.
 
 ## Tier 3 — specialized but valuable
