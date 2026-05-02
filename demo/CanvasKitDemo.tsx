@@ -6,6 +6,7 @@ import { CloneDemo, CLONE_DEMO_SOURCE } from './demos/CloneDemo';
 import { ComposeDemo, COMPOSE_DEMO_SOURCE } from './demos/ComposeDemo';
 import { ActionsDemo, ACTIONS_DEMO_SOURCE } from './demos/ActionsDemo';
 import { GroupsDemo, GROUPS_DEMO_SOURCE } from './demos/GroupsDemo';
+import { StructuralGroupsDemo, STRUCTURAL_GROUPS_DEMO_SOURCE } from './demos/StructuralGroupsDemo';
 import { TextDemo, TEXT_DEMO_SOURCE } from './demos/TextDemo';
 import { PixelArtDemo, PIXEL_ART_DEMO_SOURCE } from './demos/PixelArtDemo';
 
@@ -58,11 +59,19 @@ export function CanvasKitDemo() {
       />
 
       <Card
-        title="Groups"
-        description="A virtual group around three rectangles. Clicking any member selects the whole group; dragging moves all members together; corner handles resize the group's union AABB and scale each member proportionally. Selection overlay uses the optional groupAdapter to draw a single rectangle around the group."
+        title="Virtual groups"
+        description="A virtual group around three rectangles — a side-record { id, members[] } with no scene-graph hierarchy. Clicking any member selects the whole group; dragging moves all members together; corner handles resize the group's union AABB and scale each member proportionally. Selection overlay uses the optional groupAdapter to draw a single rectangle around the group."
         hint="Click a green rect to select the group, then drag or grab a corner."
         canvas={<GroupsDemo />}
         source={GROUPS_DEMO_SOURCE}
+      />
+
+      <Card
+        title="Structural groups"
+        description="Real parent/child hierarchy via setParent. Poses are local to the direct parent; the kit composes world poses via worldPoseLookup for hit-testing and selection overlays. useStructuralGroupAction (Mod+G) wraps the selection in a new parent node and rebases children's locals so their visual world position is preserved; useStructuralUngroupAction (Mod+Shift+G) reparents children back to the grandparent. Dragging a parent auto-cascades its descendants in the live overlay so children visually follow during the drag (no extra ops — under local-pose semantics the post-commit scene is already correct). Mod+Z / Mod+Shift+Z undo and redo."
+        hint="Click a green rect to grab the whole group; drag and watch its children follow. Select two free rects and press Cmd+G to group them; Cmd+Shift+G to ungroup."
+        canvas={<StructuralGroupsDemo />}
+        source={STRUCTURAL_GROUPS_DEMO_SOURCE}
       />
 
       <Card
