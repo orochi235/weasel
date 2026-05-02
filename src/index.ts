@@ -51,6 +51,11 @@ export * from './fitToBounds';
 export * from './hooks/usePanInteraction';
 export * from './hooks/useZoomInteraction';
 export * from './hooks/useAutoCenter';
+export { useGridCellHover } from './hooks/useGridCellHover';
+export type {
+  UseGridCellHoverOptions,
+  UseGridCellHoverReturn,
+} from './hooks/useGridCellHover';
 export { useKeybinding, isEditableTarget } from './hooks/useKeybinding';
 export type { KeyBinding } from './hooks/useKeybinding';
 export * from './wheelHandler';
