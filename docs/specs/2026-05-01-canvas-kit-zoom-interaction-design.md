@@ -307,21 +307,12 @@ Unit tests in `src/canvas-kit/hooks/useZoomInteraction.test.ts`, mirroring
 ## Relationship to `computeWheelAction`
 
 `computeWheelAction` (in `wheelHandler.ts`) implements the same focal-point
-math, but it operates on a different convention:
-
-- `computeWheelAction` treats zoom as a **percentage** (defaults
-  `MIN_ZOOM=10`, `MAX_ZOOM=200`).
-- `useZoomInteraction` treats zoom as a **multiplier** (defaults `min=0.1`,
-  `max=10`).
-
-This is consistent with the rest of canvas-kit (`ViewTransform.zoom` is a
-multiplier; `worldToScreen` multiplies by it). `useZoomInteraction` does
-**not** delegate to `computeWheelAction`. Instead it inlines the focal-point
-formula (a 5-line expression) directly. `wheelHandler.ts` is preserved
-unchanged so existing callers keep working; new code should prefer the hook.
-
-A future cleanup pass can normalize `computeWheelAction` to the multiplier
-convention and have the hook delegate. Tracked as a TODO.
+math as a pure reducer, sibling to the hook. As of the Tier 1.5 cleanup pass,
+both use the multiplier convention with defaults `min=0.1`, `max=10`. The
+hook still inlines its own focal-point formula (a 5-line expression) rather
+than delegating, since the React lifecycle and ref handling don't compose
+cleanly with a pure reducer. `computeWheelAction` remains useful in
+non-React reducers and for unit testing the math in isolation.
 
 ## Migration
 

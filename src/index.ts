@@ -42,6 +42,8 @@ export { createGridLayer } from './gridLayer';
 export type { GridLayerOpts } from './gridLayer';
 export { createCellHighlightLayer } from './cellHighlightLayer';
 export type { CellHighlightLayerOpts } from './cellHighlightLayer';
+export { createChildrenLayer } from './childrenLayer';
+export type { CreateChildrenLayerOpts } from './childrenLayer';
 export {
   resolveUnit,
   formatUnit,
@@ -103,7 +105,7 @@ export type { RectPose } from './groups/unionBounds';
 export * from './history';
 export * from './adapters/types';
 export * from './interactions/types';
-export { snap, gridSnapStrategy } from './interactions/shared';
+export { snap, gridSnapStrategy, pointToGridCell } from './interactions/shared';
 export { useMoveInteraction } from './interactions/move';
 export type {
   UseMoveInteractionOptions,
@@ -126,8 +128,17 @@ export type {
   UseAreaSelectInteractionOptions,
   UseAreaSelectInteractionReturn,
 } from './interactions/area-select';
-export { useClipboard } from './interactions/clipboard';
-export type { UseClipboardOptions, UseClipboardReturn } from './interactions/clipboard';
+export {
+  useClipboard,
+  useClipboardAction,
+} from './interactions/clipboard';
+export type {
+  UseClipboardOptions,
+  UseClipboardReturn,
+  ClipboardActionAdapter,
+  UseClipboardActionOptions,
+  UseClipboardActionReturn,
+} from './interactions/clipboard';
 export { useDeleteAction } from './interactions/delete';
 export type {
   DeleteAdapter,

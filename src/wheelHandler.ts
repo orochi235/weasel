@@ -1,5 +1,16 @@
+/**
+ * Pure wheel-event reducer. Stateless sibling of `useZoomInteraction`'s
+ * `onWheel` handler — useful in tests, in non-React reducers, or anywhere
+ * the focal-point zoom math is needed without React lifecycle.
+ *
+ * Conventions match the rest of the kit: `zoom` is a multiplier where `1`
+ * means 100%. The default bounds are `{ min: 0.1, max: 10 }` (10% – 1000%),
+ * matching `useZoomInteraction`'s defaults.
+ */
+
 /** Pure viewport state consumed and returned by `computeWheelAction`. */
 export interface WheelState {
+  /** Multiplier; `1` = 100% / no zoom. */
   zoom: number;
   panX: number;
   panY: number;
@@ -15,17 +26,17 @@ export interface WheelInput {
   metaKey?: boolean;
 }
 
-const MIN_ZOOM = 10;
-const MAX_ZOOM = 200;
+const DEFAULT_MIN_ZOOM = 0.1;
+const DEFAULT_MAX_ZOOM = 10;
 
-/** Inclusive `[min, max]` zoom clamp for `computeWheelAction`. */
+/** Inclusive `[min, max]` zoom clamp for `computeWheelAction`. Multiplier scale. */
 export interface ZoomBounds { min: number; max: number; }
 
 /** Pure reducer: given current viewport state and a wheel input, return the next state (zoom, pan, or scroll). */
 export function computeWheelAction(
   state: WheelState,
   input: WheelInput,
-  bounds: ZoomBounds = { min: MIN_ZOOM, max: MAX_ZOOM },
+  bounds: ZoomBounds = { min: DEFAULT_MIN_ZOOM, max: DEFAULT_MAX_ZOOM },
 ): WheelState {
   // Shift+wheel scrolls horizontally
   if (input.shiftKey) {

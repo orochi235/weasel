@@ -1,1 +1,1 @@
-export { gridSnapStrategy } from './grid';
+export { gridSnapStrategy, pointToGridCell } from './grid';
