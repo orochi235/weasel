@@ -105,3 +105,26 @@ export function decomposeRectPose<TPose extends RectPose>(parent: TPose, world: 
     y: world.y - parent.y,
   };
 }
+
+/**
+ * Build a `(id) => world pose | null` callback over a `PoseAdapter`.
+ * Convenience for RenderLayers that take a `getPose` callback (selection
+ * overlays, debug layers, etc.) so consumers don't hand-write a
+ * `composeWorldPose` call per layer.
+ *
+ * Returns `null` when `adapter.getPose` or `adapter.getParent` throws — the
+ * common case is an id removed mid-render between selection state and the
+ * next paint. Layers should treat `null` as "skip this id."
+ */
+export function worldPoseLookup<TPose>(
+  adapter: PoseAdapter<TPose>,
+  compose: (parent: TPose, child: TPose) => TPose,
+): (id: string) => TPose | null {
+  return (id: string) => {
+    try {
+      return composeWorldPose(adapter, id, compose);
+    } catch {
+      return null;
+    }
+  };
+}

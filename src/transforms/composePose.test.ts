@@ -4,6 +4,7 @@ import {
   composeRectPose,
   decomposeRectPose,
   rebaseLocalPose,
+  worldPoseLookup,
   type PoseAdapter,
 } from './composePose';
 
@@ -106,5 +107,23 @@ describe('rebaseLocalPose', () => {
     // Re-compose with mid → original world
     const back = composeRectPose(composeWorldPose(a, 'mid', composeRectPose), local);
     expect(back).toEqual(world);
+  });
+});
+
+describe('worldPoseLookup', () => {
+  it('returns a callback that composes world poses by id', () => {
+    const a = makeAdapter({
+      g:    { pose: { x: 100, y: 200, width: 0, height: 0 }, parent: null },
+      leaf: { pose: { x: 5,   y: 7,   width: 10, height: 10 }, parent: 'g' },
+    });
+    const lookup = worldPoseLookup(a, composeRectPose);
+    expect(lookup('leaf')).toEqual({ x: 105, y: 207, width: 10, height: 10 });
+    expect(lookup('g')).toEqual({ x: 100, y: 200, width: 0, height: 0 });
+  });
+
+  it('returns null for ids the adapter does not know about', () => {
+    const a = makeAdapter({ root: { pose: { x: 0, y: 0, width: 1, height: 1 }, parent: null } });
+    const lookup = worldPoseLookup(a, composeRectPose);
+    expect(lookup('missing')).toBeNull();
   });
 });

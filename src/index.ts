@@ -126,6 +126,7 @@ export {
   composeRectPose,
   decomposeRectPose,
   rebaseLocalPose,
+  worldPoseLookup,
 } from './transforms/composePose';
 export type { PoseAdapter } from './transforms/composePose';
 export type { Group, GroupAdapter } from './groups/types';
