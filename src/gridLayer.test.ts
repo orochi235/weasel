@@ -108,35 +108,6 @@ describe('createGridLayer', () => {
     expect(strokes).toHaveLength(10);
   });
 
-  it('renders highlight before any lines (fillRect comes first)', () => {
-    const { ctx, calls } = makeStubCtx();
-    const layer = createGridLayer({
-      spacing: 10,
-      bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
-      highlight: () => ({ col: 2, row: 3 }),
-    });
-    layer.draw(ctx, undefined);
-    const firstFill = calls.findIndex((c) => c.fn === 'fillRect');
-    const firstStroke = calls.findIndex((c) => c.fn === 'stroke');
-    expect(firstFill).toBeGreaterThanOrEqual(0);
-    expect(firstStroke).toBeGreaterThanOrEqual(0);
-    expect(firstFill).toBeLessThan(firstStroke);
-    // Verify cell coords: (col*cell, row*cell, cell, cell) = (20, 30, 10, 10).
-    const fill = calls.find((c) => c.fn === 'fillRect')!;
-    expect(fill.args).toEqual([20, 30, 10, 10]);
-  });
-
-  it('skips fill when highlight returns null', () => {
-    const { ctx, calls } = makeStubCtx();
-    const layer = createGridLayer({
-      spacing: 10,
-      bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
-      highlight: () => null,
-    });
-    layer.draw(ctx, undefined);
-    expect(calls.filter((c) => c.fn === 'fillRect')).toHaveLength(0);
-  });
-
   it('resolves a tagged cell value via the unit system (1ft -> 12in spacing)', () => {
     const { ctx, calls } = makeStubCtx();
     // 24in wide x 12in tall, cell = 1ft = 12in -> 3 vertical lines + 2 horizontal lines = 5 strokes.
@@ -170,15 +141,11 @@ describe('createGridLayer', () => {
       accentEvery: 5,
       bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
       style: { line: '#abcdef', accent: '#fedcba' },
-      highlight: () => ({ col: 0, row: 0 }),
-      highlightStyle: { fill: '#123456' },
     });
     layer.draw(ctx, undefined);
     const strokes = calls.filter((c) => c.fn === 'stroke');
     const lineColors = new Set(strokes.map((s) => s.strokeStyle));
     expect(lineColors.has('#abcdef')).toBe(true);
     expect(lineColors.has('#fedcba')).toBe(true);
-    const fill = calls.find((c) => c.fn === 'fillRect')!;
-    expect(fill.fillStyle).toBe('#123456');
   });
 });

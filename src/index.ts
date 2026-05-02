@@ -37,6 +37,8 @@ export * from './LayerRenderer';
 export * from './renderGrid';
 export { createGridLayer } from './gridLayer';
 export type { GridLayerOpts } from './gridLayer';
+export { createCellHighlightLayer } from './cellHighlightLayer';
+export type { CellHighlightLayerOpts } from './cellHighlightLayer';
 export {
   resolveUnit,
   formatUnit,
@@ -55,7 +57,19 @@ export type {
 } from './selectionOverlay';
 export * from './renderLabel';
 export * from './markdownText';
-export * from './patterns';
+export { createTilePattern } from './patterns';
+export type { TilePatternOpts } from './patterns';
+export {
+  applyPaint,
+  applyStroke,
+  renderFilledRegion,
+} from './paint';
+export type {
+  Paint,
+  Stroke,
+  Region,
+  RenderFilledRegionOptions,
+} from './paint';
 export * from './ops';
 export type { Group, GroupAdapter } from './groups/types';
 export { resolveToOutermostGroup, expandToLeaves } from './groups/resolve';

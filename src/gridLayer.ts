@@ -1,13 +1,13 @@
 /**
  * Grid overlay — a reusable render layer that draws a world-space grid with
- * optional finer subdivisions, accent lines every N cells, and an optional
- * highlighted cell (e.g. a snap target preview).
+ * optional finer subdivisions and accent lines every N cells.
  *
  * The layer renders in world space — the caller is expected to have applied
  * any view transform to the canvas context already. For viewport-aware grid
  * rendering with screen-space pixel snapping, see `renderGrid` in
  * `./renderGrid.ts`; this layer is the lower-friction primitive for use
- * inside a `runLayers([...])` stack.
+ * inside a `runLayers([...])` stack. To draw a highlighted cell (snap
+ * target preview), stack `createCellHighlightLayer` alongside this one.
  */
 
 import type { RenderLayer } from './renderLayer';
@@ -35,9 +35,6 @@ export interface GridLayerOpts {
     sub?: string;
     lineWidth?: number;
   };
-  /** Optional: cell to highlight (e.g. snap target). */
-  highlight?: () => { col: number; row: number } | null;
-  highlightStyle?: { fill?: string };
 }
 
 const DEFAULT_STYLE = {
@@ -45,10 +42,6 @@ const DEFAULT_STYLE = {
   accent: '#3a2e22',
   sub: 'rgba(255,255,255,0.04)',
   lineWidth: 1,
-};
-
-const DEFAULT_HIGHLIGHT_STYLE = {
-  fill: 'rgba(127,176,105,0.15)',
 };
 
 function drawVLine(ctx: CanvasRenderingContext2D, x: number, y0: number, y1: number): void {
@@ -65,10 +58,9 @@ function drawHLine(ctx: CanvasRenderingContext2D, y: number, x0: number, x1: num
   ctx.stroke();
 }
 
-/** Build a `RenderLayer` that draws a world-space grid with optional accent lines, subdivisions, and a highlighted cell. */
+/** Build a `RenderLayer` that draws a world-space grid with optional accent lines and subdivisions. */
 export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
   const style = { ...DEFAULT_STYLE, ...(opts.style ?? {}) };
-  const highlightStyle = { ...DEFAULT_HIGHLIGHT_STYLE, ...(opts.highlightStyle ?? {}) };
 
   return {
     id: 'grid',
@@ -83,15 +75,6 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
       const y0 = b.y;
       const x1 = b.x + b.width;
       const y1 = b.y + b.height;
-
-      // 1. Highlight (under everything) — single filled cell.
-      if (opts.highlight) {
-        const hl = opts.highlight();
-        if (hl) {
-          ctx.fillStyle = highlightStyle.fill;
-          ctx.fillRect(x0 + hl.col * spacing, y0 + hl.row * spacing, spacing, spacing);
-        }
-      }
 
       ctx.lineWidth = style.lineWidth;
 

@@ -25,6 +25,7 @@ import type { RenderLayer } from './renderLayer';
 import type { GroupAdapter } from './groups/types';
 import { expandToLeaves } from './groups/resolve';
 import { unionBounds } from './groups/unionBounds';
+import { applyPaint, applyStroke, alignedStrokeRect, type Paint, type Stroke } from './paint';
 
 interface RectPose {
   x: number;
@@ -120,26 +121,31 @@ export interface SelectionOverlayLayerOpts<TPose extends RectPose> {
    * transitive leaves (using `getPose` to look up each leaf).
    */
   groupAdapter?: GroupAdapter;
-  outline?: { stroke: string; width?: number; pad?: number };
+  /** Outline stroke style + outset distance from the pose rect. */
+  outline?: Stroke & { pad?: number };
+  /** Handle visuals; pass `false` to render outlines only. */
   handles?:
     | {
         size?: number;
-        fill?: string;
-        stroke?: string;
-        strokeWidth?: number;
+        fill?: Paint;
+        outline?: Stroke;
       }
     | false;
   /** Override handle placement. Default: 4 corners. Each point is a center. */
   handlesOf?: (pose: TPose) => { x: number; y: number }[];
 }
 
-const DEFAULT_OUTLINE = { stroke: '#f0e0a8', width: 2, pad: 1 };
-const DEFAULT_HANDLES = {
-  size: 8,
-  fill: '#d4c4a8',
-  stroke: '#1a130d',
-  strokeWidth: 1,
+const DEFAULT_OUTLINE: Required<Pick<Stroke, 'paint' | 'width'>> & { pad: number } = {
+  paint: { kind: 'solid', color: '#f0e0a8' },
+  width: 2,
+  pad: 1,
 };
+const DEFAULT_HANDLE_FILL: Paint = { kind: 'solid', color: '#d4c4a8' };
+const DEFAULT_HANDLE_OUTLINE: Stroke = {
+  paint: { kind: 'solid', color: '#1a130d' },
+  width: 1,
+};
+const DEFAULT_HANDLE_SIZE = 8;
 
 function defaultHandlesOf(p: RectPose): { x: number; y: number }[] {
   return [
@@ -158,10 +164,26 @@ function defaultHandlesOf(p: RectPose): { x: number; y: number }[] {
 export function createSelectionOverlayLayer<TPose extends RectPose>(
   opts: SelectionOverlayLayerOpts<TPose>,
 ): RenderLayer<unknown> {
-  const outline = { ...DEFAULT_OUTLINE, ...(opts.outline ?? {}) };
+  const outlineOpts = opts.outline;
+  const outlineStroke: Stroke = outlineOpts
+    ? {
+        paint: outlineOpts.paint,
+        width: outlineOpts.width ?? DEFAULT_OUTLINE.width,
+        dash: outlineOpts.dash,
+        cap: outlineOpts.cap,
+        join: outlineOpts.join,
+        align: outlineOpts.align,
+      }
+    : { paint: DEFAULT_OUTLINE.paint, width: DEFAULT_OUTLINE.width };
+  const outlinePad = outlineOpts?.pad ?? DEFAULT_OUTLINE.pad;
   const handlesEnabled = opts.handles !== false;
-  const handles = handlesEnabled
-    ? { ...DEFAULT_HANDLES, ...(opts.handles === false ? {} : opts.handles ?? {}) }
+  const handlesCfg = handlesEnabled && opts.handles !== false ? opts.handles ?? {} : null;
+  const handles = handlesCfg
+    ? {
+        size: handlesCfg.size ?? DEFAULT_HANDLE_SIZE,
+        fill: handlesCfg.fill ?? DEFAULT_HANDLE_FILL,
+        outline: handlesCfg.outline ?? DEFAULT_HANDLE_OUTLINE,
+      }
     : null;
   const handlesOf = opts.handlesOf ?? defaultHandlesOf;
   const { groupAdapter } = opts;
@@ -195,27 +217,47 @@ export function createSelectionOverlayLayer<TPose extends RectPose>(
 
       // Outlines first, handles second — matches the stacking order the demo
       // and production app already use.
-      ctx.strokeStyle = outline.stroke;
-      ctx.lineWidth = outline.width;
-      const pad = outline.pad;
+      ctx.save();
+      applyStroke(ctx, outlineStroke);
+      const pad = outlinePad;
+      const align = outlineStroke.align ?? 'center';
+      const width = outlineStroke.width ?? 1;
       for (const id of ids) {
         const p = resolvePose(id);
         if (!p) continue;
-        ctx.strokeRect(p.x - pad, p.y - pad, p.width + pad * 2, p.height + pad * 2);
+        const padded = {
+          x: p.x - pad,
+          y: p.y - pad,
+          width: p.width + pad * 2,
+          height: p.height + pad * 2,
+        };
+        const r = alignedStrokeRect(padded, align, width);
+        ctx.strokeRect(r.x, r.y, r.width, r.height);
       }
+      ctx.restore();
 
       if (!handles) return;
 
-      ctx.fillStyle = handles.fill;
-      ctx.strokeStyle = handles.stroke;
-      ctx.lineWidth = handles.strokeWidth;
       const half = handles.size / 2;
+      const handleAlign = handles.outline.align ?? 'center';
+      const handleWidth = handles.outline.width ?? 1;
       for (const id of ids) {
         const p = resolvePose(id);
         if (!p) continue;
         for (const h of handlesOf(p)) {
-          ctx.fillRect(h.x - half, h.y - half, handles.size, handles.size);
-          ctx.strokeRect(h.x - half, h.y - half, handles.size, handles.size);
+          const baseRect = {
+            x: h.x - half,
+            y: h.y - half,
+            width: handles.size,
+            height: handles.size,
+          };
+          ctx.save();
+          applyPaint(ctx, handles.fill, { x: baseRect.x, y: baseRect.y });
+          ctx.fillRect(baseRect.x, baseRect.y, baseRect.width, baseRect.height);
+          applyStroke(ctx, handles.outline, { x: baseRect.x, y: baseRect.y });
+          const sr = alignedStrokeRect(baseRect, handleAlign, handleWidth);
+          ctx.strokeRect(sr.x, sr.y, sr.width, sr.height);
+          ctx.restore();
         }
       }
     },

@@ -40,14 +40,34 @@ interface StubCtx {
 
 function makeStubCtx(): StubCtx {
   const calls: RecordedCall[] = [];
+  const state = {
+    strokeStyle: '',
+    fillStyle: '',
+    lineWidth: 0,
+    lineCap: 'butt',
+    lineJoin: 'miter',
+    globalAlpha: 1,
+  };
   const record = (fn: string) =>
     vi.fn((...args: number[]) => {
       calls.push({ fn, args });
     });
   const ctx = {
-    strokeStyle: '',
-    fillStyle: '',
-    lineWidth: 0,
+    get strokeStyle() { return state.strokeStyle; },
+    set strokeStyle(v: string) { state.strokeStyle = v; },
+    get fillStyle() { return state.fillStyle; },
+    set fillStyle(v: string) { state.fillStyle = v; },
+    get lineWidth() { return state.lineWidth; },
+    set lineWidth(v: number) { state.lineWidth = v; },
+    get lineCap() { return state.lineCap; },
+    set lineCap(v: string) { state.lineCap = v; },
+    get lineJoin() { return state.lineJoin; },
+    set lineJoin(v: string) { state.lineJoin = v; },
+    get globalAlpha() { return state.globalAlpha; },
+    set globalAlpha(v: number) { state.globalAlpha = v; },
+    save: vi.fn(),
+    restore: vi.fn(),
+    setLineDash: vi.fn(),
     strokeRect: record('strokeRect'),
     fillRect: record('fillRect'),
   } as unknown as CanvasRenderingContext2D;
@@ -313,8 +333,12 @@ describe('createSelectionOverlayLayer', () => {
     const layer = createSelectionOverlayLayer<Pose>({
       getSelection: () => ['a'],
       getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }),
-      outline: { stroke: '#fff', width: 3, pad: 2 },
-      handles: { size: 4, fill: '#000', stroke: '#fff', strokeWidth: 1 },
+      outline: { paint: { kind: 'solid', color: '#fff' }, width: 3, pad: 2 },
+      handles: {
+        size: 4,
+        fill: { kind: 'solid', color: '#000' },
+        outline: { paint: { kind: 'solid', color: '#fff' }, width: 1 },
+      },
     });
     layer.draw(ctx, undefined);
     const outlineCall = calls.filter((c) => c.fn === 'strokeRect')[0];
@@ -322,5 +346,45 @@ describe('createSelectionOverlayLayer', () => {
     const fillRects = calls.filter((c) => c.fn === 'fillRect');
     // Default 4 corners, size 4 -> half=2 -> first at (-2,-2,4,4).
     expect(fillRects[0].args).toEqual([-2, -2, 4, 4]);
+  });
+
+  it('outline align: inner shifts the rect inward by width/2', () => {
+    const { ctx, calls } = makeStubCtx();
+    const layer = createSelectionOverlayLayer<Pose>({
+      getSelection: () => ['a'],
+      getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }),
+      outline: { paint: { kind: 'solid', color: '#fff' }, width: 4, pad: 0, align: 'inner' },
+      handles: false,
+    });
+    layer.draw(ctx, undefined);
+    // pose (0,0,10,10) with align=inner, width=4 -> shift inward by 2 on each side.
+    const stroke = calls.filter((c) => c.fn === 'strokeRect')[0];
+    expect(stroke.args).toEqual([2, 2, 6, 6]);
+  });
+
+  it('outline align: outer shifts the rect outward by width/2', () => {
+    const { ctx, calls } = makeStubCtx();
+    const layer = createSelectionOverlayLayer<Pose>({
+      getSelection: () => ['a'],
+      getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }),
+      outline: { paint: { kind: 'solid', color: '#fff' }, width: 4, pad: 0, align: 'outer' },
+      handles: false,
+    });
+    layer.draw(ctx, undefined);
+    const stroke = calls.filter((c) => c.fn === 'strokeRect')[0];
+    expect(stroke.args).toEqual([-2, -2, 14, 14]);
+  });
+
+  it('outline align: center matches default canvas behavior', () => {
+    const { ctx, calls } = makeStubCtx();
+    const layer = createSelectionOverlayLayer<Pose>({
+      getSelection: () => ['a'],
+      getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }),
+      outline: { paint: { kind: 'solid', color: '#fff' }, width: 4, pad: 0, align: 'center' },
+      handles: false,
+    });
+    layer.draw(ctx, undefined);
+    const stroke = calls.filter((c) => c.fn === 'strokeRect')[0];
+    expect(stroke.args).toEqual([0, 0, 10, 10]);
   });
 });
