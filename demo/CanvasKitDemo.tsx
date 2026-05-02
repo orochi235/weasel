@@ -66,8 +66,8 @@ export function CanvasKitDemo() {
 
       <Card
         title="Text"
-        description="createTextLayer + useTextEditInteraction + createSetTextOp, composed with useMoveInteraction and the selection overlay. Click to select, drag to move (snaps to a 10-unit grid), double-click to edit; commits flow through createSetTextOp so they're undoable."
-        hint="Click to select, drag to move, double-click to edit. Enter commits, Shift+Enter newline, Escape cancels."
+        description="createTextLayer + useTextEditInteraction + createSetTextOp, composed with useMoveInteraction, useResizeInteraction, and the selection overlay. Click to select, drag the body to move (snaps to a 10-unit grid), drag the bottom-right handle to resize (which re-wraps the text), double-click to edit; commits flow through createSetTextOp so they're undoable."
+        hint="Click to select, drag to move, drag the bottom-right handle to resize, double-click to edit. Enter commits, Shift+Enter newline, Escape cancels."
         canvas={<TextDemo />}
         source={TEXT_DEMO_SOURCE}
       />

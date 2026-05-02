@@ -7,7 +7,7 @@ function makeCanvas() {
   const canvas = document.createElement('canvas');
   const calls: { fn: string; args: unknown[] }[] = [];
   const ctx = {
-    scale: vi.fn((...args: unknown[]) => { calls.push({ fn: 'scale', args }); }),
+    setTransform: vi.fn((...args: unknown[]) => { calls.push({ fn: 'setTransform', args }); }),
     clearRect: vi.fn((...args: unknown[]) => { calls.push({ fn: 'clearRect', args }); }),
   } as unknown as CanvasRenderingContext2D;
   vi.spyOn(canvas, 'getContext').mockReturnValue(ctx as unknown as RenderingContext);
@@ -19,7 +19,7 @@ describe('useLayerEffect', () => {
     const renderFn = vi.fn();
     renderHook(() => {
       const ref = useRef<HTMLCanvasElement>(null);
-      useLayerEffect(ref, 100, 100, 1, true, renderFn, []);
+      useLayerEffect(ref, 100, 100, true, renderFn, [], 1);
     });
     expect(renderFn).not.toHaveBeenCalled();
   });
@@ -29,22 +29,38 @@ describe('useLayerEffect', () => {
     const renderFn = vi.fn();
     renderHook(() => {
       const ref = useRef<HTMLCanvasElement>(canvas);
-      useLayerEffect(ref, 0, 100, 1, true, renderFn, []);
+      useLayerEffect(ref, 0, 100, true, renderFn, [], 1);
     });
     expect(renderFn).not.toHaveBeenCalled();
   });
 
-  it('sizes canvas to width*dpr x height*dpr and scales ctx', () => {
+  it('sizes canvas to width*dpr x height*dpr and applies the dpr transform', () => {
     const { canvas, calls } = makeCanvas();
     const renderFn = vi.fn();
     renderHook(() => {
       const ref = useRef<HTMLCanvasElement>(canvas);
-      useLayerEffect(ref, 200, 100, 2, true, renderFn, []);
+      useLayerEffect(ref, 200, 100, true, renderFn, [], 2);
     });
     expect(canvas.width).toBe(400);
     expect(canvas.height).toBe(200);
-    expect(calls.find((c) => c.fn === 'scale')?.args).toEqual([2, 2]);
+    expect(calls.find((c) => c.fn === 'setTransform')?.args).toEqual([2, 0, 0, 2, 0, 0]);
     expect(renderFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('defaults dpr to window.devicePixelRatio when omitted', () => {
+    const original = window.devicePixelRatio;
+    Object.defineProperty(window, 'devicePixelRatio', { value: 3, configurable: true });
+    try {
+      const { canvas } = makeCanvas();
+      renderHook(() => {
+        const ref = useRef<HTMLCanvasElement>(canvas);
+        useLayerEffect(ref, 100, 50, true, vi.fn(), []);
+      });
+      expect(canvas.width).toBe(300);
+      expect(canvas.height).toBe(150);
+    } finally {
+      Object.defineProperty(window, 'devicePixelRatio', { value: original, configurable: true });
+    }
   });
 
   it('clears the canvas and skips renderFn when not visible', () => {
@@ -52,7 +68,7 @@ describe('useLayerEffect', () => {
     const renderFn = vi.fn();
     renderHook(() => {
       const ref = useRef<HTMLCanvasElement>(canvas);
-      useLayerEffect(ref, 200, 100, 1, false, renderFn, []);
+      useLayerEffect(ref, 200, 100, false, renderFn, [], 1);
     });
     expect(renderFn).not.toHaveBeenCalled();
     expect(calls.find((c) => c.fn === 'clearRect')?.args).toEqual([0, 0, 200, 100]);
@@ -64,7 +80,7 @@ describe('useLayerEffect', () => {
     const { rerender } = renderHook(
       ({ dep }: { dep: number }) => {
         const ref = useRef<HTMLCanvasElement>(canvas);
-        useLayerEffect(ref, 100, 100, 1, true, renderFn, [dep]);
+        useLayerEffect(ref, 100, 100, true, renderFn, [dep], 1);
       },
       { initialProps: { dep: 1 } },
     );

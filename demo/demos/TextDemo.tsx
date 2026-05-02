@@ -6,16 +6,19 @@ import {
   gridSnapStrategy,
   pointInTextPose,
   runLayers,
+  setupCanvasDpr,
   snap,
   useMoveInteraction,
+  useResizeInteraction,
   useTextEditInteraction,
   type MoveAdapter,
   type Op,
   type RenderLayer,
+  type ResizeAdapter,
+  type ResizeAnchor,
   type TextStyle,
 } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
-import { setupCanvasDpr } from '@orochi235/weasel';
 
 interface TextNode {
   id: string;
@@ -35,6 +38,7 @@ interface Pose {
 
 const W = 600, H = 320;
 const CELL = 10;
+const HANDLE = 8;
 
 const INITIAL: TextNode[] = [
   {
@@ -103,6 +107,23 @@ export function TextDemo() {
     behaviors: [snap(gridSnapStrategy<Pose>(CELL))],
   });
 
+  const resizeAdapter: ResizeAdapter<TextNode, Pose> = {
+    getObject: (id) => nodesRef.current.find((n) => n.id === id),
+    getPose: (id) => {
+      const n = nodesRef.current.find((x) => x.id === id)!;
+      return { x: n.x, y: n.y, width: n.width, height: n.height };
+    },
+    setPose: (id, pose) => {
+      setNodes((ns) => ns.map((n) => (n.id === id ? { ...n, ...pose } : n)));
+    },
+    applyBatch: (ops: Op[]) => {
+      for (const op of ops) op.apply(resizeAdapter);
+    },
+  };
+
+  const resize = useResizeInteraction<TextNode, Pose>(resizeAdapter, {});
+  const activeResize = useRef<{ id: string; anchor: ResizeAnchor } | null>(null);
+
   const edit = useTextEditInteraction({
     container: containerRef.current,
     getText: (id) => nodesRef.current.find((n) => n.id === id)?.text ?? '',
@@ -137,10 +158,40 @@ export function TextDemo() {
     return null;
   };
 
+  /** Bottom-right corner of the currently selected node, if any. */
+  const handleForSelection = (): { id: string; cx: number; cy: number; anchor: ResizeAnchor } | null => {
+    const id = selectionRef.current[0];
+    if (!id) return null;
+    const n = nodesRef.current.find((x) => x.id === id);
+    if (!n) return null;
+    return {
+      id,
+      cx: n.x + n.width,
+      cy: n.y + n.height,
+      anchor: { x: 'min', y: 'min' },
+    };
+  };
+
+  const hitHandle = (wx: number, wy: number) => {
+    const h = handleForSelection();
+    if (!h) return null;
+    if (Math.abs(wx - h.cx) <= HANDLE && Math.abs(wy - h.cy) <= HANDLE) return h;
+    return null;
+  };
+
   const onPointerDown = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
       if (edit.editingId) return;
       const [cx, cy] = clientToCanvas(e.currentTarget, e.clientX, e.clientY);
+
+      const handle = hitHandle(cx, cy);
+      if (handle) {
+        activeResize.current = { id: handle.id, anchor: handle.anchor };
+        e.currentTarget.setPointerCapture(e.pointerId);
+        resize.start(handle.id, handle.anchor, cx, cy);
+        return;
+      }
+
       const target = hit(cx, cy);
       if (!target) {
         setSelection([]);
@@ -157,13 +208,22 @@ export function TextDemo() {
         clientY: e.clientY,
       });
     },
-    [move, edit],
+    [move, resize, edit],
   );
 
   const onPointerMove = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
-      if (!draggingId.current) return;
       const [cx, cy] = clientToCanvas(e.currentTarget, e.clientX, e.clientY);
+      if (activeResize.current) {
+        resize.move(cx, cy, {
+          alt: e.altKey,
+          shift: e.shiftKey,
+          meta: e.metaKey,
+          ctrl: e.ctrlKey,
+        });
+        return;
+      }
+      if (!draggingId.current) return;
       move.move({
         worldX: cx,
         worldY: cy,
@@ -172,14 +232,19 @@ export function TextDemo() {
         modifiers: { alt: e.altKey, shift: e.shiftKey, meta: e.metaKey, ctrl: e.ctrlKey },
       });
     },
-    [move],
+    [move, resize],
   );
 
   const onPointerUp = useCallback(() => {
+    if (activeResize.current) {
+      activeResize.current = null;
+      resize.end();
+      return;
+    }
     if (!draggingId.current) return;
     draggingId.current = null;
     move.end();
-  }, [move]);
+  }, [move, resize]);
 
   const onDoubleClick = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -191,6 +256,22 @@ export function TextDemo() {
   );
 
   const overlay = move.overlay;
+  const resizeOverlay = resize.overlay;
+
+  /** Resolve a node's effective pose: live resize > live move > committed. */
+  const resolvePose = (n: TextNode): Pose => {
+    if (resizeOverlay && activeResize.current?.id === n.id) {
+      return resizeOverlay.currentPose;
+    }
+    const ghost = overlay?.poses?.get(n.id);
+    return {
+      x: ghost?.x ?? n.x,
+      y: ghost?.y ?? n.y,
+      width: ghost?.width ?? n.width,
+      height: ghost?.height ?? n.height,
+    };
+  };
+
   useEffect(() => {
     const c = canvasRef.current;
     if (!c) return;
@@ -209,7 +290,8 @@ export function TextDemo() {
         for (const n of nodesRef.current) {
           const hide = overlay?.hideIds?.includes(n.id);
           if (hide) continue;
-          cx.strokeRect(n.x + 0.5, n.y + 0.5, n.width, n.height);
+          const p = resolvePose(n);
+          cx.strokeRect(p.x + 0.5, p.y + 0.5, p.width, p.height);
         }
       },
     };
@@ -217,12 +299,12 @@ export function TextDemo() {
     const textLayer = createTextLayer<TextNode>({
       getTexts: () => nodesRef.current,
       getPose: (n) => {
-        const ghost = overlay?.poses?.get(n.id);
+        const p = resolvePose(n);
         return {
-          x: ghost?.x ?? n.x,
-          y: ghost?.y ?? n.y,
-          width: n.width,
-          height: n.height,
+          x: p.x,
+          y: p.y,
+          width: p.width,
+          height: p.height,
           text: n.text,
           style: n.style,
         };
@@ -235,19 +317,32 @@ export function TextDemo() {
       getPose: (id) => {
         const n = nodesRef.current.find((x) => x.id === id);
         if (!n) return null;
-        const ghost = overlay?.poses?.get(id);
-        return {
-          x: ghost?.x ?? n.x,
-          y: ghost?.y ?? n.y,
-          width: n.width,
-          height: n.height,
-        };
+        return resolvePose(n);
       },
       handles: false,
     });
 
-    runLayers(ctx, [bgLayer, textLayer, selectionLayer], undefined, {});
-  }, [nodes, selection, overlay, edit]);
+    const handleLayer: RenderLayer<unknown> = {
+      id: 'handle',
+      label: 'Resize handle',
+      draw: (cx) => {
+        const id = selectionRef.current[0];
+        if (!id) return;
+        const n = nodesRef.current.find((x) => x.id === id);
+        if (!n) return;
+        const p = resolvePose(n);
+        const hx = p.x + p.width;
+        const hy = p.y + p.height;
+        cx.fillStyle = '#fff';
+        cx.strokeStyle = '#1a130d';
+        cx.lineWidth = 1;
+        cx.fillRect(hx - HANDLE / 2, hy - HANDLE / 2, HANDLE, HANDLE);
+        cx.strokeRect(hx - HANDLE / 2, hy - HANDLE / 2, HANDLE, HANDLE);
+      },
+    };
+
+    runLayers(ctx, [bgLayer, textLayer, selectionLayer, handleLayer], undefined, {});
+  }, [nodes, selection, overlay, resizeOverlay, edit]);
 
   return (
     <div ref={containerRef} style={{ position: 'relative', width: W, height: H }}>
