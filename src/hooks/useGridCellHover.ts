@@ -15,7 +15,7 @@
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { screenToWorld, type ViewTransform } from '../grid';
-import { pointToGridCell } from '../interactions/shared/strategies/grid';
+import { pointToGridCell } from '../interactions/gestures/shared/strategies/grid';
 import type { UnitSystem, UnitValue } from '../units';
 
 export interface UseGridCellHoverOptions {

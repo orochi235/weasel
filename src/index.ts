@@ -172,29 +172,29 @@ export { withGroupOrdering } from './groups/orderedGroups';
 export * from './history';
 export * from './adapters/types';
 export * from './interactions/types';
-export { snap, gridSnapStrategy, pointToGridCell } from './interactions/shared';
-export { useMoveInteraction } from './interactions/move';
+export { snap, gridSnapStrategy, pointToGridCell } from './interactions/gestures/shared';
+export { useMoveInteraction } from './interactions/gestures/move';
 export type {
   UseMoveInteractionOptions,
   UseMoveInteractionReturn,
   MoveStartArgs,
   MoveMoveArgs,
-} from './interactions/move';
-export { useResizeInteraction } from './interactions/resize';
+} from './interactions/gestures/move';
+export { useResizeInteraction } from './interactions/gestures/resize';
 export type {
   UseResizeInteractionOptions,
   UseResizeInteractionReturn,
-} from './interactions/resize';
-export { useInsertInteraction } from './interactions/insert';
+} from './interactions/gestures/resize';
+export { useInsertInteraction } from './interactions/gestures/insert';
 export type {
   UseInsertInteractionOptions,
   UseInsertInteractionReturn,
-} from './interactions/insert';
-export { useAreaSelectInteraction } from './interactions/area-select';
+} from './interactions/gestures/insert';
+export { useAreaSelectInteraction } from './interactions/gestures/area-select';
 export type {
   UseAreaSelectInteractionOptions,
   UseAreaSelectInteractionReturn,
-} from './interactions/area-select';
+} from './interactions/gestures/area-select';
 export {
   useClipboard,
   useClipboardAction,
@@ -206,39 +206,39 @@ export type {
   UseClipboardActionOptions,
   UseClipboardActionReturn,
 } from './interactions/clipboard';
-export { useDeleteAction } from './interactions/delete';
+export { useDeleteAction } from './interactions/actions/delete';
 export type {
   DeleteAdapter,
   UseDeleteActionOptions,
   UseDeleteActionReturn,
-} from './interactions/delete';
-export { useEscapeAction } from './interactions/escape';
+} from './interactions/actions/delete';
+export { useEscapeAction } from './interactions/actions/escape';
 export type {
   EscapeAdapter,
   UseEscapeActionOptions,
   UseEscapeActionReturn,
-} from './interactions/escape';
-export { useSelectAllAction } from './interactions/select-all';
+} from './interactions/actions/escape';
+export { useSelectAllAction } from './interactions/actions/select-all';
 export type {
   SelectAllAdapter,
   UseSelectAllActionOptions,
   UseSelectAllActionReturn,
-} from './interactions/select-all';
-export { useDuplicateAction } from './interactions/duplicate';
+} from './interactions/actions/select-all';
+export { useDuplicateAction } from './interactions/actions/duplicate';
 export type {
   DuplicateAdapter,
   UseDuplicateActionOptions,
   UseDuplicateActionReturn,
-} from './interactions/duplicate';
-export { useNudgeAction } from './interactions/nudge';
+} from './interactions/actions/duplicate';
+export { useNudgeAction } from './interactions/actions/nudge';
 export type {
   NudgeAdapter,
   NudgeDirection,
   UseNudgeActionOptions,
   UseNudgeActionReturn,
-} from './interactions/nudge';
-export { useCloneInteraction, cloneByAltDrag } from './interactions/clone';
-export type { UseCloneInteractionOptions, UseCloneInteractionReturn } from './interactions/clone';
+} from './interactions/actions/nudge';
+export { useCloneInteraction, cloneByAltDrag } from './interactions/gestures/clone';
+export type { UseCloneInteractionOptions, UseCloneInteractionReturn } from './interactions/gestures/clone';
 export type { ClonePose, CloneLayer, CloneBehavior } from './interactions/types';
 // snapToGrid / snapToContainer / snapBackOrDelete are NOT re-exported at top level —
 // import from './move' to disambiguate from resize/insert siblings.
@@ -254,13 +254,13 @@ export {
   type ReorderAdapter,
   type UseReorderActionOptions,
   type UseReorderActionReturn,
-} from './interactions/reorder';
+} from './interactions/actions/reorder';
 export {
   useGroupAction,
   useUngroupAction,
   useNestedGroupAction,
   useNestedUngroupAction,
-} from './interactions/group';
+} from './interactions/actions/group';
 export type {
   GroupActionAdapter,
   UseGroupActionOptions,
@@ -272,10 +272,10 @@ export type {
   UseNestedGroupActionReturn,
   UseNestedUngroupActionOptions,
   UseNestedUngroupActionReturn,
-} from './interactions/group';
-export { useUndoRedoAction } from './interactions/undo-redo';
+} from './interactions/actions/group';
+export { useUndoRedoAction } from './interactions/actions/undo-redo';
 export type {
   UndoRedoAdapter,
   UseUndoRedoActionOptions,
   UseUndoRedoActionReturn,
-} from './interactions/undo-redo';
+} from './interactions/actions/undo-redo';
