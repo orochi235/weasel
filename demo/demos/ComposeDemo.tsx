@@ -11,6 +11,7 @@ import {
 } from '@orochi235/weasel';
 import { selectFromMarquee } from '@orochi235/weasel/area-select';
 import { clientToCanvas } from '../canvasCoords';
+import { setupCanvasDpr } from '@orochi235/weasel';
 import type {
   MoveAdapter,
   ResizeAdapter,
@@ -175,6 +176,7 @@ export function ComposeDemo() {
   useEffect(() => {
     const c = canvasRef.current; if (!c) return;
     const ctx = c.getContext('2d')!;
+    setupCanvasDpr(c, ctx, W, H);
     ctx.clearRect(0, 0, W, H);
 
     const byId = (id: string) => rects.find((r) => r.id === id);

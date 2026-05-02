@@ -26,6 +26,8 @@ export * from './dragGhost';
 export * from './thresholdDrag';
 export * from './pointerDrag';
 export * from './useCanvasSize';
+export { setupCanvasDpr, useFixedPixelRatio } from './pixelDensity';
+export type { SetupCanvasDprOptions } from './pixelDensity';
 export * from './hooks/useLayerEffect';
 export * from './fitToBounds';
 export * from './hooks/usePanInteraction';

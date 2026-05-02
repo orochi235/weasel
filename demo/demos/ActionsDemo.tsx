@@ -8,6 +8,7 @@ import {
   runLayers,
 } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
+import { setupCanvasDpr } from '@orochi235/weasel';
 import type { Op, RenderLayer } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
@@ -96,6 +97,7 @@ export function ActionsDemo() {
   useEffect(() => {
     const c = canvasRef.current; if (!c) return;
     const ctx = c.getContext('2d')!;
+    setupCanvasDpr(c, ctx, W, H);
     ctx.clearRect(0, 0, W, H);
 
     const baseLayer: RenderLayer<unknown> = {

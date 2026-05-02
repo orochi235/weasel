@@ -8,6 +8,7 @@ import {
   useZoomInteraction,
 } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
+import { setupCanvasDpr } from '@orochi235/weasel';
 import type { MoveAdapter, RenderLayer, UnitSystem } from '@orochi235/weasel';
 import type { Op } from '@orochi235/weasel';
 
@@ -108,6 +109,7 @@ export function MoveDemo() {
     const c = canvasRef.current;
     if (!c) return;
     const ctx = c.getContext('2d')!;
+    setupCanvasDpr(c, ctx, W, H);
     ctx.clearRect(0, 0, W, H);
 
     const gridLayer = createGridLayer({
