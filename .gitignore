@@ -10,3 +10,4 @@ coverage
 !.changeset/config.json
 .env
 .env.local
+.idea
