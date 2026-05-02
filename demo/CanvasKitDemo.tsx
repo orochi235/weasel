@@ -135,6 +135,7 @@ function filenameFor(id: string): string {
     'virtual-groups': 'GroupsDemo',
     'nested-groups': 'NestedGroupsDemo',
     'compose': 'ComposeDemo',
+    'quadtree': 'QuadtreeDemo',
     'pixel-art': 'PixelArtDemo',
   };
   return map[id] ?? id;

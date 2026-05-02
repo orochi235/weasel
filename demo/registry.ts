@@ -9,6 +9,7 @@ import { GroupsDemo, GROUPS_DEMO_SOURCE } from './demos/GroupsDemo';
 import { NestedGroupsDemo, NESTED_GROUPS_DEMO_SOURCE } from './demos/NestedGroupsDemo';
 import { TextDemo, TEXT_DEMO_SOURCE } from './demos/TextDemo';
 import { PixelArtDemo, PIXEL_ART_DEMO_SOURCE } from './demos/PixelArtDemo';
+import { QuadtreeDemo, QUADTREE_DEMO_SOURCE } from './demos/QuadtreeDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
@@ -20,6 +21,7 @@ import GroupsDemoFull from './demos/GroupsDemo.tsx?raw';
 import NestedGroupsDemoFull from './demos/NestedGroupsDemo.tsx?raw';
 import TextDemoFull from './demos/TextDemo.tsx?raw';
 import PixelArtDemoFull from './demos/PixelArtDemo.tsx?raw';
+import QuadtreeDemoFull from './demos/QuadtreeDemo.tsx?raw';
 
 export interface DemoEntry {
   id: string;
@@ -124,6 +126,16 @@ export const DEMOS: DemoEntry[] = [
     Component: ComposeDemo,
     snippet: COMPOSE_DEMO_SOURCE,
     full: ComposeDemoFull,
+  },
+  {
+    id: 'quadtree',
+    title: 'Quadtree overlay',
+    category: 'Composed',
+    description: 'A demo-local quadtree slotted into runLayers as a custom RenderLayer alongside weasel\'s stock layers (grid, selection overlay). The tree subdivides where rect AABBs overlap a cell; during a drag or resize, the active overlay pose is folded back into the input rects so the tree recomputes against the in-flight scene rather than the committed one.',
+    hint: 'Click to select, drag to move, drag a corner to resize. Watch the cyan cells subdivide live.',
+    Component: QuadtreeDemo,
+    snippet: QUADTREE_DEMO_SOURCE,
+    full: QuadtreeDemoFull,
   },
   {
     id: 'pixel-art',
