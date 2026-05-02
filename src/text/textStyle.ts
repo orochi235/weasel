@@ -24,8 +24,21 @@ export interface TextStyle {
   align?: 'left' | 'center' | 'right';
   /** Multiplier applied to `fontSize`. Default 1.2. */
   lineHeight?: number;
-  /** Default `{ kind: 'solid', color: '#000' }`. */
+  /** Default `{ fill: 'solid', color: '#000' }`. */
   fill?: Paint;
+  /**
+   * Caret color used by the edit overlay. Defaults to the text color when
+   * `fill` is solid; falls back to `#000` for non-solid paints.
+   */
+  caretColor?: string;
+  /**
+   * Selection background color used by the edit overlay's `::selection`
+   * pseudo-element. Default: browser native (omit to inherit). Set this to
+   * theme the highlight to match the canvas.
+   */
+  selectionBackground?: string;
+  /** Selection text color paired with `selectionBackground`. Default: inherits text color. */
+  selectionColor?: string;
 }
 
 export interface ResolvedTextStyle {
@@ -36,6 +49,15 @@ export interface ResolvedTextStyle {
   align: 'left' | 'center' | 'right';
   lineHeight: number;
   fill: Paint;
+  caretColor: string;
+  selectionBackground: string | null;
+  selectionColor: string | null;
+}
+
+const DEFAULT_FILL: Paint = { fill: 'solid', color: '#000' };
+
+function paintColor(p: Paint): string {
+  return 'color' in p ? p.color : '#000';
 }
 
 export const DEFAULT_TEXT_STYLE: ResolvedTextStyle = {
@@ -45,11 +67,15 @@ export const DEFAULT_TEXT_STYLE: ResolvedTextStyle = {
   fontStyle: 'normal',
   align: 'left',
   lineHeight: 1.2,
-  fill: { kind: 'solid', color: '#000' },
+  fill: DEFAULT_FILL,
+  caretColor: paintColor(DEFAULT_FILL),
+  selectionBackground: null,
+  selectionColor: null,
 };
 
 export function resolveTextStyle(style?: TextStyle): ResolvedTextStyle {
   if (!style) return DEFAULT_TEXT_STYLE;
+  const fill = style.fill ?? DEFAULT_TEXT_STYLE.fill;
   return {
     fontSize: style.fontSize ?? DEFAULT_TEXT_STYLE.fontSize,
     fontFamily: style.fontFamily ?? DEFAULT_TEXT_STYLE.fontFamily,
@@ -57,7 +83,10 @@ export function resolveTextStyle(style?: TextStyle): ResolvedTextStyle {
     fontStyle: style.fontStyle ?? DEFAULT_TEXT_STYLE.fontStyle,
     align: style.align ?? DEFAULT_TEXT_STYLE.align,
     lineHeight: style.lineHeight ?? DEFAULT_TEXT_STYLE.lineHeight,
-    fill: style.fill ?? DEFAULT_TEXT_STYLE.fill,
+    fill,
+    caretColor: style.caretColor ?? paintColor(fill),
+    selectionBackground: style.selectionBackground ?? null,
+    selectionColor: style.selectionColor ?? null,
   };
 }
 

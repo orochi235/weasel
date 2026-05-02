@@ -1,7 +1,7 @@
 /**
  * Built-in pattern factories — generic line/dot/scatter textures. Each
  * returns a `CanvasPattern` you can wrap in a `Paint` of
- * `{ kind: 'pattern', pattern }` and pass to anything that accepts a `Paint`
+ * `{ fill: 'pattern', pattern }` and pass to anything that accepts a `Paint`
  * (`renderFilledRegion`, `applyPaint`, layer factories' `fill` options).
  * Imported from a subpath so consumers that ship their own catalog can
  * avoid the bundle cost.

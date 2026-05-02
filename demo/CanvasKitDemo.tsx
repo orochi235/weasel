@@ -7,6 +7,7 @@ import { ComposeDemo, COMPOSE_DEMO_SOURCE } from './demos/ComposeDemo';
 import { ActionsDemo, ACTIONS_DEMO_SOURCE } from './demos/ActionsDemo';
 import { GroupsDemo, GROUPS_DEMO_SOURCE } from './demos/GroupsDemo';
 import { TextDemo, TEXT_DEMO_SOURCE } from './demos/TextDemo';
+import { PixelArtDemo, PIXEL_ART_DEMO_SOURCE } from './demos/PixelArtDemo';
 
 export function CanvasKitDemo() {
   return (
@@ -70,6 +71,13 @@ export function CanvasKitDemo() {
         hint="Click to select, drag to move, drag the bottom-right handle to resize, double-click to edit. Enter commits, Shift+Enter newline, Escape cancels."
         canvas={<TextDemo />}
         source={TEXT_DEMO_SOURCE}
+      />
+
+      <Card
+        title="Pixel art (useFixedPixelRatio)"
+        description="Side-by-side: useFixedPixelRatio() pins the dpr to 1 so the backing store matches CSS pixels exactly. The default (window.devicePixelRatio) is the right pick for most demos — but for pixel art, putImageData/getImageData workflows, and hairline alignment, a fixed 1:1 ratio keeps every world pixel landing on one backing pixel."
+        canvas={<PixelArtDemo />}
+        source={PIXEL_ART_DEMO_SOURCE}
       />
 
       <Card

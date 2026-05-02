@@ -14,10 +14,21 @@
  *   primitive that paints a rectangle or circle region with a Paint.
  */
 
-/** Color/texture strategy for fills (and, via `Stroke.paint`, strokes). */
+/**
+ * Color/texture strategy for fills (and, via `Stroke.paint`, strokes).
+ *
+ * `fill` is optional and defaults to `'solid'` — `{ color: '#abc' }` is
+ * equivalent to `{ fill: 'solid', color: '#abc' }`. Pattern paints must set
+ * `fill: 'pattern'` explicitly.
+ */
 export type Paint =
-  | { kind: 'solid'; color: string; opacity?: number }
-  | { kind: 'pattern'; pattern: CanvasPattern; opacity?: number };
+  | { fill?: 'solid'; color: string; opacity?: number }
+  | { fill: 'pattern'; pattern: CanvasPattern; opacity?: number };
+
+/** Internal: discriminate without requiring an explicit `fill: 'solid'`. */
+function isSolidPaint(paint: Paint): paint is { fill?: 'solid'; color: string; opacity?: number } {
+  return paint.fill !== 'pattern';
+}
 
 /**
  * Where a stroke sits relative to the geometric edge it strokes.
@@ -104,7 +115,7 @@ export function applyPaint(
   anchor?: { x: number; y: number },
 ): void {
   ctx.globalAlpha = paint.opacity ?? 1;
-  if (paint.kind === 'solid') {
+  if (isSolidPaint(paint)) {
     ctx.fillStyle = paint.color;
   } else {
     const a = anchor ?? { x: 0, y: 0 };
@@ -128,7 +139,7 @@ export function applyStroke(
 ): void {
   const { paint } = stroke;
   ctx.globalAlpha = paint.opacity ?? 1;
-  if (paint.kind === 'solid') {
+  if (isSolidPaint(paint)) {
     ctx.strokeStyle = paint.color;
   } else {
     const a = anchor ?? { x: 0, y: 0 };

@@ -69,7 +69,7 @@ describe('createCellHighlightLayer', () => {
     const layer = createCellHighlightLayer({
       spacing: 10,
       getCell: () => ({ col: 0, row: 0 }),
-      fill: { kind: 'solid', color: '#123456' },
+      fill: { fill: 'solid', color: '#123456' },
     });
     layer.draw(ctx, undefined);
     expect(calls[0].fillStyle).toBe('#123456');

@@ -87,7 +87,7 @@ describe('createTextLayer', () => {
         width: 100,
         height: 20,
         text: 'hi',
-        style: { fill: { kind: 'solid', color: '#abcdef' } },
+        style: { fill: { fill: 'solid', color: '#abcdef' } },
       },
     };
     const layer = createTextLayer<Node>({ getTexts: () => [node], getPose: (n) => n.pose });

@@ -48,7 +48,7 @@ const INITIAL: TextNode[] = [
     width: 240,
     height: 80,
     text: 'Click to select. Double-click to edit.\nDrag a selected node to move it.',
-    style: { fontSize: 16, fill: { kind: 'solid', color: '#1c1c1c' } },
+    style: { fontSize: 16, fill: { fill: 'solid', color: '#1c1c1c' } },
   },
   {
     id: 't2',
@@ -57,7 +57,7 @@ const INITIAL: TextNode[] = [
     width: 240,
     height: 60,
     text: 'Center-aligned.',
-    style: { fontSize: 20, align: 'center', fill: { kind: 'solid', color: '#3a4a8a' }, fontWeight: 600 },
+    style: { fontSize: 20, align: 'center', fill: { fill: 'solid', color: '#3a4a8a' }, fontWeight: 600 },
   },
   {
     id: 't3',
@@ -66,7 +66,7 @@ const INITIAL: TextNode[] = [
     width: 480,
     height: 40,
     text: 'Enter commits, Shift+Enter newline, Escape cancels.',
-    style: { fontSize: 14, fontStyle: 'italic', fill: { kind: 'solid', color: '#6a6a6a' } },
+    style: { fontSize: 14, fontStyle: 'italic', fill: { fill: 'solid', color: '#6a6a6a' } },
   },
 ];
 

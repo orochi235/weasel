@@ -186,13 +186,13 @@ export interface SelectionOverlayLayerOpts<TPose extends RectPose>
 }
 
 const DEFAULT_OUTLINE: Required<Pick<Stroke, 'paint' | 'width'>> & { pad: number } = {
-  paint: { kind: 'solid', color: '#f0e0a8' },
+  paint: { fill: 'solid', color: '#f0e0a8' },
   width: 2,
   pad: 1,
 };
-const DEFAULT_HANDLE_FILL: Paint = { kind: 'solid', color: '#d4c4a8' };
+const DEFAULT_HANDLE_FILL: Paint = { fill: 'solid', color: '#d4c4a8' };
 const DEFAULT_HANDLE_OUTLINE: Stroke = {
-  paint: { kind: 'solid', color: '#1a130d' },
+  paint: { fill: 'solid', color: '#1a130d' },
   width: 1,
 };
 const DEFAULT_HANDLE_SIZE = 8;

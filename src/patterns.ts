@@ -1,7 +1,7 @@
 /**
  * Tile-pattern primitive — a small helper for building repeating
  * `CanvasPattern` instances from a draw callback. The result plugs into a
- * `Paint` of `{ kind: 'pattern', pattern }` (see `./paint.ts`).
+ * `Paint` of `{ fill: 'pattern', pattern }` (see `./paint.ts`).
  *
  * For the rendering side (region fills, stroke strategies, paint dispatch),
  * see `./paint.ts`. For ready-to-use named patterns (hatch, crosshatch,

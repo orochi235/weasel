@@ -338,11 +338,11 @@ describe('createSelectionOverlayLayer', () => {
     const layer = createSelectionOverlayLayer<Pose>({
       getSelection: () => ['a'],
       getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }),
-      outline: { paint: { kind: 'solid', color: '#fff' }, width: 3, pad: 2 },
+      outline: { paint: { fill: 'solid', color: '#fff' }, width: 3, pad: 2 },
       handles: {
         size: 4,
-        fill: { kind: 'solid', color: '#000' },
-        outline: { paint: { kind: 'solid', color: '#fff' }, width: 1 },
+        fill: { fill: 'solid', color: '#000' },
+        outline: { paint: { fill: 'solid', color: '#fff' }, width: 1 },
       },
     });
     layer.draw(ctx, undefined);
@@ -358,7 +358,7 @@ describe('createSelectionOverlayLayer', () => {
     const layer = createSelectionOverlayLayer<Pose>({
       getSelection: () => ['a'],
       getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }),
-      outline: { paint: { kind: 'solid', color: '#fff' }, width: 4, pad: 0, align: 'inner' },
+      outline: { paint: { fill: 'solid', color: '#fff' }, width: 4, pad: 0, align: 'inner' },
       handles: false,
     });
     layer.draw(ctx, undefined);
@@ -372,7 +372,7 @@ describe('createSelectionOverlayLayer', () => {
     const layer = createSelectionOverlayLayer<Pose>({
       getSelection: () => ['a'],
       getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }),
-      outline: { paint: { kind: 'solid', color: '#fff' }, width: 4, pad: 0, align: 'outer' },
+      outline: { paint: { fill: 'solid', color: '#fff' }, width: 4, pad: 0, align: 'outer' },
       handles: false,
     });
     layer.draw(ctx, undefined);
@@ -385,7 +385,7 @@ describe('createSelectionOverlayLayer', () => {
     const layer = createSelectionOverlayLayer<Pose>({
       getSelection: () => ['a'],
       getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }),
-      outline: { paint: { kind: 'solid', color: '#fff' }, width: 4, pad: 0, align: 'center' },
+      outline: { paint: { fill: 'solid', color: '#fff' }, width: 4, pad: 0, align: 'center' },
       handles: false,
     });
     layer.draw(ctx, undefined);

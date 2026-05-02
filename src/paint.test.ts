@@ -73,7 +73,7 @@ beforeEach(() => {
 describe('applyPaint', () => {
   it('sets fillStyle to color and globalAlpha to 1 by default for solid', () => {
     const { ctx, state } = makeMainCtx();
-    const paint: Paint = { kind: 'solid', color: '#abcdef' };
+    const paint: Paint = { fill: 'solid', color: '#abcdef' };
     applyPaint(ctx, paint);
     expect(state.fillStyle).toBe('#abcdef');
     expect(state.globalAlpha).toBe(1);
@@ -81,13 +81,13 @@ describe('applyPaint', () => {
 
   it('honors explicit opacity on solid', () => {
     const { ctx, state } = makeMainCtx();
-    applyPaint(ctx, { kind: 'solid', color: '#000', opacity: 0.25 });
+    applyPaint(ctx, { fill: 'solid', color: '#000', opacity: 0.25 });
     expect(state.globalAlpha).toBe(0.25);
   });
 
   it('sets fillStyle to pattern and applies anchor transform', () => {
     const { ctx, state, fakePattern } = makeMainCtx();
-    applyPaint(ctx, { kind: 'pattern', pattern: fakePattern, opacity: 0.5 }, { x: 10, y: 20 });
+    applyPaint(ctx, { fill: 'pattern', pattern: fakePattern, opacity: 0.5 }, { x: 10, y: 20 });
     expect(state.fillStyle).toBe(fakePattern);
     expect(state.globalAlpha).toBe(0.5);
     expect(fakePattern.setTransform).toHaveBeenCalledTimes(1);
@@ -98,7 +98,7 @@ describe('applyStroke', () => {
   it('sets strokeStyle, width, and dash from a Stroke', () => {
     const { ctx, state } = makeMainCtx();
     const stroke: Stroke = {
-      paint: { kind: 'solid', color: '#fff' },
+      paint: { fill: 'solid', color: '#fff' },
       width: 3,
       dash: [4, 2],
       cap: 'round',
@@ -113,7 +113,7 @@ describe('applyStroke', () => {
 
   it('uses pattern stroke with anchor transform', () => {
     const { ctx, state, fakePattern } = makeMainCtx();
-    applyStroke(ctx, { paint: { kind: 'pattern', pattern: fakePattern } }, { x: 5, y: 7 });
+    applyStroke(ctx, { paint: { fill: 'pattern', pattern: fakePattern } }, { x: 5, y: 7 });
     expect(state.strokeStyle).toBe(fakePattern);
     expect(fakePattern.setTransform).toHaveBeenCalledTimes(1);
   });
@@ -130,7 +130,7 @@ describe('renderFilledRegion', () => {
     const { ctx, calls, state } = makeMainCtx();
     renderFilledRegion(
       ctx,
-      { kind: 'solid', color: '#123456' },
+      { fill: 'solid', color: '#123456' },
       { x: 10, y: 20, w: 100, h: 50, shape: 'rectangle' },
     );
     const fr = calls.find((c) => c.fn === 'fillRect')!;
@@ -144,7 +144,7 @@ describe('renderFilledRegion', () => {
     const { ctx, calls } = makeMainCtx();
     renderFilledRegion(
       ctx,
-      { kind: 'solid', color: 'red' },
+      { fill: 'solid', color: 'red' },
       { x: 0, y: 0, w: 40, h: 40, shape: 'circle' },
     );
     expect(calls.find((c) => c.fn === 'beginPath')).toBeDefined();
@@ -156,7 +156,7 @@ describe('renderFilledRegion', () => {
     const { ctx, fakePattern } = makeMainCtx();
     renderFilledRegion(
       ctx,
-      { kind: 'pattern', pattern: fakePattern },
+      { fill: 'pattern', pattern: fakePattern },
       { x: 12, y: 34, w: 10, h: 10, shape: 'rectangle' },
     );
     expect(fakePattern.setTransform).toHaveBeenCalledTimes(1);
@@ -166,7 +166,7 @@ describe('renderFilledRegion', () => {
     const { ctx, fakePattern } = makeMainCtx();
     renderFilledRegion(
       ctx,
-      { kind: 'pattern', pattern: fakePattern },
+      { fill: 'pattern', pattern: fakePattern },
       { x: 12, y: 34, w: 10, h: 10, shape: 'rectangle' },
       { anchor: { x: 0, y: 0 } },
     );

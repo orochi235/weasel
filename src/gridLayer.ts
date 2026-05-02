@@ -9,6 +9,7 @@
  */
 
 import type { RenderLayer } from './renderLayer';
+import { applyStroke, type Stroke } from './paint';
 import { resolveUnit, type UnitSystem, type UnitValue } from './units';
 
 /** Options for `createGridLayer`. */
@@ -27,19 +28,25 @@ export interface GridLayerOpts {
   accentEvery?: number;
   /** Optional finer subdivisions per cell. e.g. 4 -> 4 sub-lines per cell. */
   subdivisions?: number;
+  /** Per-band stroke styles. Each is a Paint+width (etc.) — see `Stroke`. */
   style?: {
-    line?: string;
-    accent?: string;
-    sub?: string;
-    lineWidth?: number;
+    line?: Stroke;
+    accent?: Stroke;
+    sub?: Stroke;
   };
 }
 
-const DEFAULT_STYLE = {
-  line: '#2a2018',
-  accent: '#3a2e22',
-  sub: 'rgba(255,255,255,0.04)',
-  lineWidth: 1,
+const DEFAULT_LINE: Stroke = {
+  paint: { fill: 'solid', color: '#2a2018' },
+  width: 1,
+};
+const DEFAULT_ACCENT: Stroke = {
+  paint: { fill: 'solid', color: '#3a2e22' },
+  width: 1,
+};
+const DEFAULT_SUB: Stroke = {
+  paint: { fill: 'solid', color: 'rgba(255,255,255,0.04)' },
+  width: 1,
 };
 
 function drawVLine(ctx: CanvasRenderingContext2D, x: number, y0: number, y1: number): void {
@@ -58,7 +65,9 @@ function drawHLine(ctx: CanvasRenderingContext2D, y: number, x0: number, x1: num
 
 /** Build a `RenderLayer` that draws a world-space grid with optional accent lines and subdivisions. */
 export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
-  const style = { ...DEFAULT_STYLE, ...(opts.style ?? {}) };
+  const line = opts.style?.line ?? DEFAULT_LINE;
+  const accent = opts.style?.accent ?? DEFAULT_ACCENT;
+  const sub = opts.style?.sub ?? DEFAULT_SUB;
 
   return {
     id: 'grid',
@@ -74,11 +83,11 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
       const x1 = b.x + b.width;
       const y1 = b.y + b.height;
 
-      ctx.lineWidth = style.lineWidth;
+      ctx.save();
 
       // 2. Sub-lines (finest, drawn first so cell lines paint on top).
       if (subdivisions && subdivisions > 1) {
-        ctx.strokeStyle = style.sub;
+        applyStroke(ctx, sub);
         const step = spacing / subdivisions;
         for (let x = x0; x <= x1 + 1e-9; x += step) {
           // Skip lines that coincide with cell lines — those will be drawn next.
@@ -94,7 +103,7 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
       }
 
       // 3. Cell lines (skip ones that will become accents).
-      ctx.strokeStyle = style.line;
+      applyStroke(ctx, line);
       let idx = 0;
       for (let x = x0; x <= x1 + 1e-9; x += spacing) {
         const isAccent = !!accentEvery && accentEvery > 0 && idx % accentEvery === 0;
@@ -110,7 +119,7 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
 
       // 4. Accent lines on top.
       if (accentEvery && accentEvery > 0) {
-        ctx.strokeStyle = style.accent;
+        applyStroke(ctx, accent);
         idx = 0;
         for (let x = x0; x <= x1 + 1e-9; x += spacing) {
           if (idx % accentEvery === 0) drawVLine(ctx, x, y0, y1);
@@ -122,6 +131,8 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
           idx++;
         }
       }
+
+      ctx.restore();
     },
   };
 }

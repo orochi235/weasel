@@ -17,7 +17,7 @@ interface StubCtx {
 
 function makeStubCtx(): StubCtx {
   const calls: RecordedCall[] = [];
-  const state = { strokeStyle: '', fillStyle: '', lineWidth: 0 };
+  const state = { strokeStyle: '', fillStyle: '', lineWidth: 0, globalAlpha: 1 };
 
   const record = (fn: string, capture: 'stroke' | 'fill' | null = null) =>
     vi.fn((...args: number[]) => {
@@ -34,6 +34,11 @@ function makeStubCtx(): StubCtx {
     set fillStyle(v: string) { state.fillStyle = v; },
     get lineWidth() { return state.lineWidth; },
     set lineWidth(v: number) { state.lineWidth = v; },
+    get globalAlpha() { return state.globalAlpha; },
+    set globalAlpha(v: number) { state.globalAlpha = v; },
+    save: vi.fn(),
+    restore: vi.fn(),
+    setLineDash: vi.fn(),
     beginPath: record('beginPath'),
     moveTo: record('moveTo'),
     lineTo: record('lineTo'),
@@ -81,7 +86,10 @@ describe('createGridLayer', () => {
       spacing: 10,
       accentEvery: 5,
       bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
-      style: { accent: '#ff0000', line: '#222222' },
+      style: {
+        accent: { paint: { fill: 'solid', color: '#ff0000' } },
+        line: { paint: { fill: 'solid', color: '#222222' } },
+      },
     });
     layer.draw(ctx, undefined);
     const strokes = calls.filter((c) => c.fn === 'stroke');
@@ -140,7 +148,10 @@ describe('createGridLayer', () => {
       spacing: 10,
       accentEvery: 5,
       bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
-      style: { line: '#abcdef', accent: '#fedcba' },
+      style: {
+        line: { paint: { fill: 'solid', color: '#abcdef' } },
+        accent: { paint: { fill: 'solid', color: '#fedcba' } },
+      },
     });
     layer.draw(ctx, undefined);
     const strokes = calls.filter((c) => c.fn === 'stroke');

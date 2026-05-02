@@ -85,10 +85,13 @@ export function useTextEditInteraction(
 
     const style = resolveTextStyle(getStyle(editingId));
     const overlay = document.createElement('div');
+    const overlayClass = `weasel-text-edit-${++OVERLAY_SEQ}`;
+    overlay.classList.add(overlayClass);
     overlay.setAttribute('contenteditable', 'true');
     overlay.spellcheck = false;
     overlay.innerText = getText(editingId);
     applyOverlayStyle(overlay, style);
+    const styleEl = installSelectionStyle(overlayClass, style);
     container.appendChild(overlay);
     overlayRef.current = overlay;
 
@@ -128,12 +131,15 @@ export function useTextEditInteraction(
       overlay.removeEventListener('keydown', onKeyDown);
       overlay.removeEventListener('blur', onBlur);
       overlay.remove();
+      styleEl?.remove();
       overlayRef.current = null;
     };
   }, [editingId, commit, cancelEdit]);
 
   return { editingId, startEdit, cancelEdit, commit, isEditing };
 }
+
+let OVERLAY_SEQ = 0;
 
 function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle): void {
   el.style.position = 'absolute';
@@ -143,13 +149,38 @@ function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle): void {
   el.style.border = '0';
   el.style.outline = 'none';
   el.style.background = 'transparent';
-  el.style.color = style.fill.kind === 'solid' ? style.fill.color : '#000';
+  el.style.color = 'color' in style.fill ? style.fill.color : '#000';
+  el.style.caretColor = style.caretColor;
   el.style.font = fontString(style);
   el.style.lineHeight = String(style.lineHeight);
   el.style.textAlign = style.align;
   el.style.whiteSpace = 'pre-wrap';
   el.style.overflowWrap = 'break-word';
   el.style.wordBreak = 'normal';
+}
+
+/**
+ * Inject a `<style>` element scoped to `overlayClass` so the edit overlay's
+ * `::selection` matches the configured colors. Returns the style element so
+ * the effect cleanup can remove it. Returns `null` when no selection
+ * theming was requested.
+ */
+function installSelectionStyle(
+  overlayClass: string,
+  style: ResolvedTextStyle,
+): HTMLStyleElement | null {
+  if (style.selectionBackground == null && style.selectionColor == null) return null;
+  const el = document.createElement('style');
+  const decls: string[] = [];
+  if (style.selectionBackground != null) {
+    decls.push(`background: ${style.selectionBackground};`);
+  }
+  if (style.selectionColor != null) {
+    decls.push(`color: ${style.selectionColor};`);
+  }
+  el.textContent = `.${overlayClass}::selection { ${decls.join(' ')} }`;
+  document.head.appendChild(el);
+  return el;
 }
 
 function placeOverlay(

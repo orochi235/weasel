@@ -21,7 +21,7 @@ export interface CellHighlightLayerOpts {
   fill?: Paint;
 }
 
-const DEFAULT_FILL: Paint = { kind: 'solid', color: 'rgba(127,176,105,0.15)' };
+const DEFAULT_FILL: Paint = { fill: 'solid', color: 'rgba(127,176,105,0.15)' };
 
 export function createCellHighlightLayer(opts: CellHighlightLayerOpts): RenderLayer<unknown> {
   const fill = opts.fill ?? DEFAULT_FILL;

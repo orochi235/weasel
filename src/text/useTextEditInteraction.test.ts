@@ -123,7 +123,7 @@ describe('useTextEditInteraction', () => {
     const h = makeHarness({ a: 'hi' });
     const opts = {
       ...h.opts,
-      getStyle: () => ({ fill: { kind: 'pattern', pattern: {} as CanvasPattern } as const }),
+      getStyle: () => ({ fill: { fill: 'pattern', pattern: {} as CanvasPattern } as const }),
     };
     const { result } = renderHook(() => useTextEditInteraction(opts));
     act(() => result.current.startEdit('a'));
@@ -135,12 +135,77 @@ describe('useTextEditInteraction', () => {
     const h = makeHarness({ a: 'hi' });
     const opts = {
       ...h.opts,
-      getStyle: () => ({ fill: { kind: 'solid', color: '#ff0000' } as const }),
+      getStyle: () => ({ fill: { fill: 'solid', color: '#ff0000' } as const }),
     };
     const { result } = renderHook(() => useTextEditInteraction(opts));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
     expect(overlay.style.color).toBe('rgb(255, 0, 0)');
+  });
+
+  it('caretColor defaults to the text color when fill is solid', () => {
+    const h = makeHarness({ a: 'hi' });
+    const opts = {
+      ...h.opts,
+      getStyle: () => ({ fill: { fill: 'solid', color: '#3366cc' } as const }),
+    };
+    const { result } = renderHook(() => useTextEditInteraction(opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    expect(overlay.style.caretColor).toBe('#3366cc');
+  });
+
+  it('honors an explicit caretColor override', () => {
+    const h = makeHarness({ a: 'hi' });
+    const opts = {
+      ...h.opts,
+      getStyle: () => ({ fill: { fill: 'solid', color: '#000' } as const, caretColor: '#ff00ff' }),
+    };
+    const { result } = renderHook(() => useTextEditInteraction(opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    expect(overlay.style.caretColor).toBe('#ff00ff');
+  });
+
+  it('caretColor falls back to #000 when fill is a pattern', () => {
+    const h = makeHarness({ a: 'hi' });
+    const opts = {
+      ...h.opts,
+      getStyle: () => ({ fill: { fill: 'pattern', pattern: {} as CanvasPattern } as const }),
+    };
+    const { result } = renderHook(() => useTextEditInteraction(opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    expect(overlay.style.caretColor).toBe('#000');
+  });
+
+  it('skips ::selection style injection when no selection theming is set', () => {
+    const h = makeHarness({ a: 'hi' });
+    const before = document.head.querySelectorAll('style').length;
+    const { result } = renderHook(() => useTextEditInteraction(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(document.head.querySelectorAll('style').length).toBe(before);
+  });
+
+  it('injects a scoped ::selection style when selectionBackground is set, and removes it on teardown', () => {
+    const h = makeHarness({ a: 'hi' });
+    const opts = {
+      ...h.opts,
+      getStyle: () => ({ selectionBackground: '#ffeb3b', selectionColor: '#000' }),
+    };
+    const { result } = renderHook(() => useTextEditInteraction(opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    const klass = Array.from(overlay.classList).find((c) => c.startsWith('weasel-text-edit-'));
+    expect(klass).toBeTruthy();
+    const styleEls = Array.from(document.head.querySelectorAll('style'));
+    const ours = styleEls.find((s) => s.textContent?.includes(`.${klass}::selection`));
+    expect(ours).toBeTruthy();
+    expect(ours?.textContent).toContain('background: #ffeb3b');
+    expect(ours?.textContent).toContain('color: #000');
+    act(() => result.current.cancelEdit());
+    const after = Array.from(document.head.querySelectorAll('style'));
+    expect(after.find((s) => s.textContent?.includes(`.${klass}::selection`))).toBeUndefined();
   });
 
   it('does nothing when container is null', () => {
