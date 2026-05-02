@@ -100,6 +100,8 @@ export type { MeasuredText } from './text/measureText';
 export { createTextLayer } from './text/textLayer';
 export type { TextPose, CreateTextLayerOpts } from './text/textLayer';
 export { pointInTextPose, caretIndexAt } from './text/hitTest';
+export { fitTextPose } from './text/fitTextPose';
+export type { FitTextPoseOptions } from './text/fitTextPose';
 export type { PointInTextPoseOpts } from './text/hitTest';
 export { useTextEditInteraction } from './text/useTextEditInteraction';
 export type {
