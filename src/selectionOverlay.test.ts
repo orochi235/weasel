@@ -449,3 +449,33 @@ describe('createSelectionHandlesLayer', () => {
     expect(calls.filter((c) => c.fn === 'fillRect')).toHaveLength(1);
   });
 });
+
+describe('non-rect TPose via getBounds', () => {
+  it('renders an outline for a polygon-shaped pose', () => {
+    const { ctx, calls } = makeStubCtx();
+    type PolyPose = { kind: 'poly'; points: { x: number; y: number }[] };
+    const tri: PolyPose = {
+      kind: 'poly',
+      points: [{ x: 10, y: 20 }, { x: 50, y: 20 }, { x: 30, y: 80 }],
+    };
+    const layer = createSelectionOverlayLayer<PolyPose>({
+      getSelection: () => ['a'],
+      getPose: () => tri,
+      getBounds: (p) => {
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const pt of p.points) {
+          if (pt.x < minX) minX = pt.x;
+          if (pt.y < minY) minY = pt.y;
+          if (pt.x > maxX) maxX = pt.x;
+          if (pt.y > maxY) maxY = pt.y;
+        }
+        return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+      },
+      handles: false,
+    });
+    layer.draw(ctx, undefined);
+    const stroke = calls.find((c) => c.fn === 'strokeRect');
+    // AABB is (10,20)..(50,80) → padded by 1 → (9,19,42,62)
+    expect(stroke?.args).toEqual([9, 19, 42, 62]);
+  });
+});

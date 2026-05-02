@@ -14,16 +14,13 @@
  *     corners) for each selected id, with the same group-resolution rules.
  *
  * `createSelectionOverlayLayer` is a thin convenience that returns a single
- * `RenderLayer` whose draw runs the outline pass then the handles pass —
- * matches what most callers want and keeps existing call sites working.
+ * `RenderLayer` whose draw runs the outline pass then the handles pass.
  *
- * All pieces are domain-agnostic: callers supply pose-shaped values and the
- * layers treat them as plain rectangles.
- *
- * Constraint: when `groupAdapter` is supplied, the generic `TPose` must be
- * assignable to `{ x; y; width; height }` because the union AABB needs those
- * fields. The signatures enforce this with a type constraint via the
- * `RectPose` bound.
+ * **Pose shape:** TPose is generic; callers must supply `getBounds(pose)`
+ * to project any pose into the AABB the renderer needs. For rect-shaped
+ * poses (`{x, y, width, height}`) pass the identity. For `Path` poses pass
+ * `boundsOfPath`. Group ids reduce via `unionBounds` over the projected
+ * AABBs.
  */
 
 import type { RenderLayer } from './renderLayer';
@@ -32,7 +29,7 @@ import { expandToLeaves } from './groups/resolve';
 import { unionBounds } from './groups/unionBounds';
 import { applyPaint, applyStroke, alignedStrokeRect, type Paint, type Stroke } from './paint';
 
-interface RectPose {
+interface Bounds {
   x: number;
   y: number;
   width: number;
@@ -57,6 +54,19 @@ export interface ComposeSelectionPoseOpts<TPose> {
   /** Fallback pose lookup (typically the stored/committed pose). */
   getStoredPose: (id: string) => TPose;
   /**
+   * Project a pose into its AABB. Used when reducing a group of leaf poses
+   * into a single union AABB. Defaults to the identity — rect-shaped poses
+   * (`{x, y, width, height}`) need no override. For `Path` poses pass
+   * `boundsOfPath`.
+   */
+  getBounds?: (pose: TPose) => Bounds;
+  /**
+   * Wrap an AABB back into a TPose. Called only when the resolver collapses
+   * a group's leaves into a single union AABB. Defaults to the identity —
+   * for `Path` poses pass `(b) => ({ kind: 'rect', ...b })`.
+   */
+  fromBounds?: (bounds: Bounds) => TPose;
+  /**
    * Optional group adapter. When supplied and the queried id is a group,
    * the resolver returns the union AABB of all transitive leaf poses
    * instead of the (non-existent) stored pose for the group id itself.
@@ -76,6 +86,8 @@ export function composeSelectionPose<TPose>(
   opts: ComposeSelectionPoseOpts<TPose>,
 ): (id: string) => TPose | null {
   const { moveOverlay, resizeOverlay, getStoredPose, groupAdapter } = opts;
+  const getBounds = opts.getBounds ?? ((pose: TPose) => pose as unknown as Bounds);
+  const fromBounds = opts.fromBounds ?? ((bounds: Bounds) => bounds as unknown as TPose);
 
   const resolveLeaf = (id: string): TPose => {
     const moved = moveOverlay?.poses.get(id);
@@ -90,23 +102,23 @@ export function composeSelectionPose<TPose>(
       if (leaves.length === 0) return null;
       const groupResizeLeafPoses =
         resizeOverlay && resizeOverlay.id === id ? resizeOverlay.leafPoses : undefined;
-      const leafPoses: TPose[] = [];
+      const leafBounds: Bounds[] = [];
       for (const leafId of leaves) {
         const moved = moveOverlay?.poses.get(leafId);
         if (moved !== undefined) {
-          leafPoses.push(moved);
+          leafBounds.push(getBounds(moved));
           continue;
         }
         const overlayLeaf = groupResizeLeafPoses?.get(leafId);
         if (overlayLeaf !== undefined) {
-          leafPoses.push(overlayLeaf);
+          leafBounds.push(getBounds(overlayLeaf));
           continue;
         }
-        leafPoses.push(getStoredPose(leafId));
+        leafBounds.push(getBounds(getStoredPose(leafId)));
       }
-      const u = unionBounds(leafPoses as unknown as RectPose[]);
+      const u = unionBounds(leafBounds);
       if (u === null) return null;
-      return u as unknown as TPose;
+      return fromBounds(u);
     }
     return resolveLeaf(id);
   };
@@ -114,35 +126,48 @@ export function composeSelectionPose<TPose>(
 
 /**
  * Build a pose resolver that handles group ids by computing the union AABB
- * of every leaf's pose (looked up via `getPose`). Non-group ids pass through
- * directly. When `groupAdapter` is omitted, every id is treated as a leaf.
+ * of every leaf's bounds. Non-group ids pass through directly. When
+ * `groupAdapter` is omitted, every id is treated as a leaf.
  */
-function makeGroupAwarePoseResolver<TPose extends RectPose>(
+function makeGroupAwareBoundsResolver<TPose>(
   getPose: (id: string) => TPose | null,
+  getBounds: (pose: TPose) => Bounds,
   groupAdapter?: GroupAdapter,
-): (id: string) => TPose | null {
-  if (groupAdapter === undefined) return getPose;
-  return (id: string): TPose | null => {
-    if (groupAdapter.getGroup(id) === undefined) return getPose(id);
+): (id: string) => Bounds | null {
+  if (groupAdapter === undefined) {
+    return (id: string) => {
+      const p = getPose(id);
+      return p === null ? null : getBounds(p);
+    };
+  }
+  return (id: string): Bounds | null => {
+    if (groupAdapter.getGroup(id) === undefined) {
+      const p = getPose(id);
+      return p === null ? null : getBounds(p);
+    }
     const leaves = expandToLeaves([id], groupAdapter);
     if (leaves.length === 0) return null;
-    const leafPoses: TPose[] = [];
+    const leafBounds: Bounds[] = [];
     for (const leafId of leaves) {
       const p = getPose(leafId);
-      if (p !== null) leafPoses.push(p);
+      if (p !== null) leafBounds.push(getBounds(p));
     }
-    if (leafPoses.length === 0) return null;
-    const u = unionBounds(leafPoses);
-    if (u === null) return null;
-    return u as TPose;
+    if (leafBounds.length === 0) return null;
+    return unionBounds(leafBounds);
   };
 }
 
 /** Shared options between outline and handles layers. */
-interface SelectionLayerCommon<TPose extends RectPose> {
+interface SelectionLayerCommon<TPose> {
   getSelection: () => string[];
   /** Return null to skip rendering for an id (e.g. resolved pose unavailable). */
   getPose: (id: string) => TPose | null;
+  /**
+   * Project a pose into its AABB. Defaults to the identity — rect-shaped
+   * poses (`{x, y, width, height}`) need no override. For `Path` poses pass
+   * `boundsOfPath`.
+   */
+  getBounds?: (pose: TPose) => Bounds;
   /**
    * Optional group adapter. When supplied, any id that resolves to a group
    * is rendered using the union bounds of all its transitive leaves.
@@ -151,28 +176,25 @@ interface SelectionLayerCommon<TPose extends RectPose> {
 }
 
 /** Options for `createSelectionOutlineLayer`. */
-export interface SelectionOutlineLayerOpts<TPose extends RectPose>
-  extends SelectionLayerCommon<TPose> {
+export interface SelectionOutlineLayerOpts<TPose> extends SelectionLayerCommon<TPose> {
   /** Outline stroke style + outset distance from the pose rect. */
   outline?: Stroke & { pad?: number };
 }
 
 /** Options for `createSelectionHandlesLayer`. */
-export interface SelectionHandlesLayerOpts<TPose extends RectPose>
-  extends SelectionLayerCommon<TPose> {
+export interface SelectionHandlesLayerOpts<TPose> extends SelectionLayerCommon<TPose> {
   /** Handle visuals. Omit for defaults. */
   handles?: {
     size?: number;
     fill?: Paint;
     outline?: Stroke;
   };
-  /** Override handle placement. Default: 4 corners. Each point is a center. */
-  handlesOf?: (pose: TPose) => { x: number; y: number }[];
+  /** Override handle placement. Default: 4 corners of the AABB. */
+  handlesOf?: (bounds: Bounds) => { x: number; y: number }[];
 }
 
 /** Options for `createSelectionOverlayLayer`. */
-export interface SelectionOverlayLayerOpts<TPose extends RectPose>
-  extends SelectionLayerCommon<TPose> {
+export interface SelectionOverlayLayerOpts<TPose> extends SelectionLayerCommon<TPose> {
   outline?: Stroke & { pad?: number };
   /** Pass `false` to render outlines only. */
   handles?:
@@ -182,7 +204,7 @@ export interface SelectionOverlayLayerOpts<TPose extends RectPose>
         outline?: Stroke;
       }
     | false;
-  handlesOf?: (pose: TPose) => { x: number; y: number }[];
+  handlesOf?: (bounds: Bounds) => { x: number; y: number }[];
 }
 
 const DEFAULT_OUTLINE: Required<Pick<Stroke, 'paint' | 'width'>> & { pad: number } = {
@@ -197,12 +219,12 @@ const DEFAULT_HANDLE_OUTLINE: Stroke = {
 };
 const DEFAULT_HANDLE_SIZE = 8;
 
-function defaultHandlesOf(p: RectPose): { x: number; y: number }[] {
+function defaultHandlesOf(b: Bounds): { x: number; y: number }[] {
   return [
-    { x: p.x, y: p.y },
-    { x: p.x + p.width, y: p.y },
-    { x: p.x, y: p.y + p.height },
-    { x: p.x + p.width, y: p.y + p.height },
+    { x: b.x, y: b.y },
+    { x: b.x + b.width, y: b.y },
+    { x: b.x, y: b.y + b.height },
+    { x: b.x + b.width, y: b.y + b.height },
   ];
 }
 
@@ -229,10 +251,10 @@ function resolveOutlineStroke(opts?: Stroke & { pad?: number }): {
   };
 }
 
-function drawOutlines<TPose extends RectPose>(
+function drawOutlines(
   ctx: CanvasRenderingContext2D,
   ids: string[],
-  resolvePose: (id: string) => TPose | null,
+  resolveBounds: (id: string) => Bounds | null,
   stroke: Stroke,
   pad: number,
 ): void {
@@ -241,13 +263,13 @@ function drawOutlines<TPose extends RectPose>(
   const align = stroke.align ?? 'center';
   const width = stroke.width ?? 1;
   for (const id of ids) {
-    const p = resolvePose(id);
-    if (!p) continue;
+    const b = resolveBounds(id);
+    if (!b) continue;
     const padded = {
-      x: p.x - pad,
-      y: p.y - pad,
-      width: p.width + pad * 2,
-      height: p.height + pad * 2,
+      x: b.x - pad,
+      y: b.y - pad,
+      width: b.width + pad * 2,
+      height: b.height + pad * 2,
     };
     const r = alignedStrokeRect(padded, align, width);
     ctx.strokeRect(r.x, r.y, r.width, r.height);
@@ -261,7 +283,7 @@ interface ResolvedHandles {
   outline: Stroke;
 }
 
-function resolveHandles(opts?: SelectionHandlesLayerOpts<RectPose>['handles']): ResolvedHandles {
+function resolveHandles(opts?: SelectionHandlesLayerOpts<unknown>['handles']): ResolvedHandles {
   return {
     size: opts?.size ?? DEFAULT_HANDLE_SIZE,
     fill: opts?.fill ?? DEFAULT_HANDLE_FILL,
@@ -269,20 +291,20 @@ function resolveHandles(opts?: SelectionHandlesLayerOpts<RectPose>['handles']): 
   };
 }
 
-function drawHandles<TPose extends RectPose>(
+function drawHandles(
   ctx: CanvasRenderingContext2D,
   ids: string[],
-  resolvePose: (id: string) => TPose | null,
+  resolveBounds: (id: string) => Bounds | null,
   handles: ResolvedHandles,
-  handlesOf: (p: TPose) => { x: number; y: number }[],
+  handlesOf: (b: Bounds) => { x: number; y: number }[],
 ): void {
   const half = handles.size / 2;
   const handleAlign = handles.outline.align ?? 'center';
   const handleWidth = handles.outline.width ?? 1;
   for (const id of ids) {
-    const p = resolvePose(id);
-    if (!p) continue;
-    for (const h of handlesOf(p)) {
+    const b = resolveBounds(id);
+    if (!b) continue;
+    for (const h of handlesOf(b)) {
       const baseRect = {
         x: h.x - half,
         y: h.y - half,
@@ -305,18 +327,19 @@ function drawHandles<TPose extends RectPose>(
  * `createSelectionHandlesLayer` (or just use `createSelectionOverlayLayer`
  * for the common case) when both passes are wanted.
  */
-export function createSelectionOutlineLayer<TPose extends RectPose>(
+export function createSelectionOutlineLayer<TPose>(
   opts: SelectionOutlineLayerOpts<TPose>,
 ): RenderLayer<unknown> {
   const { stroke, pad } = resolveOutlineStroke(opts.outline);
-  const resolvePose = makeGroupAwarePoseResolver(opts.getPose, opts.groupAdapter);
+  const getBounds = opts.getBounds ?? ((pose: TPose) => pose as unknown as Bounds);
+  const resolveBounds = makeGroupAwareBoundsResolver(opts.getPose, getBounds, opts.groupAdapter);
   return {
     id: 'selection-outline',
     label: 'Selection outline',
     draw: (ctx) => {
       const ids = opts.getSelection();
       if (ids.length === 0) return;
-      drawOutlines(ctx, ids, resolvePose, stroke, pad);
+      drawOutlines(ctx, ids, resolveBounds, stroke, pad);
     },
   };
 }
@@ -325,19 +348,20 @@ export function createSelectionOutlineLayer<TPose extends RectPose>(
  * `RenderLayer` that draws selection handles only. Stack on top of
  * `createSelectionOutlineLayer` (handles render on top of the outline).
  */
-export function createSelectionHandlesLayer<TPose extends RectPose>(
+export function createSelectionHandlesLayer<TPose>(
   opts: SelectionHandlesLayerOpts<TPose>,
 ): RenderLayer<unknown> {
   const handles = resolveHandles(opts.handles);
-  const handlesOf = opts.handlesOf ?? (defaultHandlesOf as (p: TPose) => { x: number; y: number }[]);
-  const resolvePose = makeGroupAwarePoseResolver(opts.getPose, opts.groupAdapter);
+  const handlesOf = opts.handlesOf ?? defaultHandlesOf;
+  const getBounds = opts.getBounds ?? ((pose: TPose) => pose as unknown as Bounds);
+  const resolveBounds = makeGroupAwareBoundsResolver(opts.getPose, getBounds, opts.groupAdapter);
   return {
     id: 'selection-handles',
     label: 'Selection handles',
     draw: (ctx) => {
       const ids = opts.getSelection();
       if (ids.length === 0) return;
-      drawHandles(ctx, ids, resolvePose, handles, handlesOf);
+      drawHandles(ctx, ids, resolveBounds, handles, handlesOf);
     },
   };
 }
@@ -348,14 +372,15 @@ export function createSelectionHandlesLayer<TPose extends RectPose>(
  * `createSelectionHandlesLayer` in `runLayers`. Pass `handles: false` to
  * render outlines only.
  */
-export function createSelectionOverlayLayer<TPose extends RectPose>(
+export function createSelectionOverlayLayer<TPose>(
   opts: SelectionOverlayLayerOpts<TPose>,
 ): RenderLayer<unknown> {
   const { stroke, pad } = resolveOutlineStroke(opts.outline);
   const handlesEnabled = opts.handles !== false;
   const handles = handlesEnabled ? resolveHandles(opts.handles || undefined) : null;
-  const handlesOf = opts.handlesOf ?? (defaultHandlesOf as (p: TPose) => { x: number; y: number }[]);
-  const resolvePose = makeGroupAwarePoseResolver(opts.getPose, opts.groupAdapter);
+  const handlesOf = opts.handlesOf ?? defaultHandlesOf;
+  const getBounds = opts.getBounds ?? ((pose: TPose) => pose as unknown as Bounds);
+  const resolveBounds = makeGroupAwareBoundsResolver(opts.getPose, getBounds, opts.groupAdapter);
 
   return {
     id: 'selection-overlay',
@@ -363,9 +388,9 @@ export function createSelectionOverlayLayer<TPose extends RectPose>(
     draw: (ctx) => {
       const ids = opts.getSelection();
       if (ids.length === 0) return;
-      drawOutlines(ctx, ids, resolvePose, stroke, pad);
+      drawOutlines(ctx, ids, resolveBounds, stroke, pad);
       if (!handles) return;
-      drawHandles(ctx, ids, resolvePose, handles, handlesOf);
+      drawHandles(ctx, ids, resolveBounds, handles, handlesOf);
     },
   };
 }
