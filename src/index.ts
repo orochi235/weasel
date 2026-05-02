@@ -132,6 +132,35 @@ export {
   worldPoseLookup,
 } from './transforms/composePose';
 export type { PoseAdapter } from './transforms/composePose';
+export {
+  PATH_M,
+  PATH_L,
+  PATH_C,
+  PATH_Q,
+  PATH_Z,
+  PATH_CMD_LENGTHS,
+  PathBuilder,
+  polygonFromPoints,
+  rectPath,
+  boundsOfPath,
+  pointInPath,
+  translatePath,
+  translatePolygonInPlace,
+  scalePathToBounds,
+  traceToContext,
+  createPathLayer,
+  flattenCubic,
+  flattenQuadratic,
+  DEFAULT_FLATTEN_TOLERANCE,
+} from './paths';
+export type {
+  Path,
+  PolygonPath,
+  RectPath,
+  PathFillRule,
+  PointInPathOptions,
+  CreatePathLayerOpts,
+} from './paths';
 export type { Group, GroupAdapter } from './groups/types';
 export { resolveToOutermostGroup, expandToLeaves } from './groups/resolve';
 export { unionBounds } from './groups/unionBounds';
