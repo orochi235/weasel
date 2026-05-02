@@ -153,6 +153,56 @@ describe('useMoveInteraction', () => {
     expect(result.current.overlay).toBeNull();
   });
 
+  it('cascades structurally-grouped descendants in the overlay (translated world poses, hidden in live render, no extra ops)', () => {
+    // Scene: g (root), child a parented to g, grandchild b parented to a.
+    // Poses are local. World of a = (10+1, 20+2) = (11, 22). World of b = (11+0, 22+5) = (11, 27).
+    const adapter = makeAdapter([
+      { id: 'g', pose: { x: 10, y: 20 }, parent: null },
+      { id: 'a', pose: { x: 1,  y: 2  }, parent: 'g' },
+      { id: 'b', pose: { x: 0,  y: 5  }, parent: 'a' },
+    ]);
+    adapter.getChildren = (id: string) =>
+      [...adapter.store.values()].filter((o) => o.parent === id).map((o) => o.id);
+
+    // Standalone world-pose lookup for the test (translation-only compose).
+    const worldOf = (id: string): Pose | null => {
+      const o = adapter.store.get(id);
+      if (!o) return null;
+      let world = { ...o.pose };
+      let p = o.parent;
+      while (p !== null) {
+        const pp = adapter.store.get(p)!;
+        world = { ...world, x: world.x + pp.pose.x, y: world.y + pp.pose.y };
+        p = pp.parent;
+      }
+      return world;
+    };
+
+    const { result } = renderHook(() =>
+      useMoveInteraction(adapter, { translatePose, cascadeWorldPose: worldOf }),
+    );
+    act(() => result.current.start({ ids: ['g'], worldX: 0, worldY: 0, clientX: 0, clientY: 0 }));
+    act(() => result.current.move({ worldX: 100, worldY: 200, clientX: 100, clientY: 200, modifiers: { alt: false, shift: false, meta: false, ctrl: false } }));
+
+    // Overlay carries g (in its parent's frame, here root → world) translated by (100, 200).
+    expect(result.current.overlay!.poses.get('g')).toEqual({ x: 110, y: 220 });
+    // a and b are cascaded: their original world poses translated by (100, 200).
+    expect(result.current.overlay!.poses.get('a')).toEqual({ x: 111, y: 222 });
+    expect(result.current.overlay!.poses.get('b')).toEqual({ x: 111, y: 227 });
+    // Live render hides all three so the overlay's ghosts aren't doubled.
+    expect(result.current.overlay!.hideIds).toEqual(['g', 'a', 'b']);
+    // Dragged set is unchanged — cascade is overlay-only.
+    expect(result.current.overlay!.draggedIds).toEqual(['g']);
+
+    act(() => result.current.end());
+    // Only one transform op for the dragged id; children cascade for free in scene.
+    expect(adapter.batches.length).toBe(1);
+    expect(adapter.batches[0].ops.length).toBe(1);
+    expect(adapter.store.get('g')!.pose).toEqual({ x: 110, y: 220 });
+    expect(adapter.store.get('a')!.pose).toEqual({ x: 1, y: 2 }); // local unchanged
+    expect(adapter.store.get('b')!.pose).toEqual({ x: 0, y: 5 }); // local unchanged
+  });
+
   it('overlay reflects in-flight pose; cleared on end', () => {
     const adapter = makeAdapter([{ id: 'a', pose: { x: 0, y: 0 }, parent: null }]);
     const { result } = renderHook(() => useMoveInteraction(adapter, { translatePose }));

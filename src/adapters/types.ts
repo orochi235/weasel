@@ -61,6 +61,13 @@ export interface MoveAdapter<TObject extends { id: string }, TPose> {
     worldX: number,
     worldY: number,
   ): SnapTarget<TPose> | null;
+  /** Optional: direct children of `id`. When present (alongside the
+   *  `cascadeWorldPose` option on `useMoveInteraction`), dragging an object
+   *  auto-cascades its descendants in the live overlay so structurally-
+   *  grouped children visually follow the parent during the drag. No
+   *  additional ops are generated — children's local poses don't change
+   *  when the parent's local pose moves. */
+  getChildren?(id: string): string[];
 }
 
 /**
