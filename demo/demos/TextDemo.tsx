@@ -36,7 +36,7 @@ interface Pose {
   height: number;
 }
 
-const W = 600, H = 320;
+const W = 600, H = 360;
 const CELL = 10;
 const HANDLE = 8;
 
@@ -67,6 +67,22 @@ const INITIAL: TextNode[] = [
     height: 40,
     text: 'Enter commits, Shift+Enter newline, Escape cancels.',
     style: { fontSize: 14, fontStyle: 'italic', fill: { fill: 'solid', color: '#6a6a6a' } },
+  },
+  {
+    id: 't4',
+    x: 60,
+    y: 250,
+    width: 480,
+    height: 50,
+    text: 'Themed editing — magenta caret, yellow ::selection.',
+    style: {
+      fontSize: 16,
+      fontWeight: 600,
+      fill: { color: '#7a1f5a' },
+      caretColor: '#ff00ff',
+      selectionBackground: '#ffeb3b',
+      selectionColor: '#000',
+    },
   },
 ];
 
