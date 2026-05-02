@@ -10,12 +10,17 @@ import type {
   ResizeOverlay,
   ResizePose,
 } from '../types';
+import { RECT_POSE_GEOMETRY, type PoseGeometry } from './geometry';
 
 const LERP = 0.35;
 
 /** Options for `useResizeInteraction`. */
-export interface UseResizeInteractionOptions<TPose extends ResizePose> {
-  behaviors?: ResizeBehavior<TPose>[];
+export interface UseResizeInteractionOptions<TPose> {
+  /** Behaviors are rect-typed: they read/write `{x,y,width,height}`. When
+   *  `TPose` is non-rect, pass `geometry` to project pose↔bounds; behaviors
+   *  in that case are typed `never` because none in the kit's library would
+   *  understand the pose shape. */
+  behaviors?: TPose extends ResizePose ? ResizeBehavior<TPose>[] : never;
   resizeLabel?: string;
   /** Reserved; resize is never transient in practice. Ignored. */
   transient?: boolean;
@@ -24,19 +29,25 @@ export interface UseResizeInteractionOptions<TPose extends ResizePose> {
   /** Optional: expand the incoming id into leaf ids before pose lookups.
    *  Mirrors `useMoveInteraction`'s `expandIds`. Used for virtual-group
    *  expansion: when the gesture is started against a group id, the kit
-   *  resizes by computing the union AABB of the leaves' origin poses,
+   *  resizes by computing the union AABB of the leaves' origin bounds,
    *  running the compute pipeline on that union rect (group bounds), and
-   *  scaling each leaf proportionally against origin/proposed group rects.
+   *  remapping each leaf via `geometry.remapBounds(leaf, originGroupBounds,
+   *  proposedGroupBounds)`.
    *
    *  When `expandIds` is omitted or returns the original single id, the
-   *  gesture takes the single-leaf path (unchanged from non-group resize).
+   *  gesture takes the single-leaf path (the leaf's own bounds become both
+   *  the origin and the target of the same `remapBounds` call).
    *
    *  Called once at `start()`. Returning `[]` aborts the gesture cleanly. */
   expandIds?: (ids: string[]) => string[];
+  /** Projection from `TPose` to bounds and back. Defaults to rect identity
+   *  when `TPose extends ResizePose`. Required for non-rect TPose (Path,
+   *  polygon, etc.). */
+  geometry?: PoseGeometry<TPose>;
 }
 
 /** Return shape of `useResizeInteraction`: lifecycle methods plus a live overlay snapshot. */
-export interface UseResizeInteractionReturn<TPose extends ResizePose> {
+export interface UseResizeInteractionReturn<TPose> {
   start(id: string, anchor: ResizeAnchor, worldX: number, worldY: number): void;
   move(worldX: number, worldY: number, modifiers: ModifierState): boolean;
   end(): void;
@@ -45,85 +56,71 @@ export interface UseResizeInteractionReturn<TPose extends ResizePose> {
   overlay: ResizeOverlay<TPose> | null;
 }
 
-interface State<TPose extends ResizePose> {
+interface State<TPose> {
   active: boolean;
   /** The id passed to `start()`. For a group resize this is the group id. */
   id: string | null;
   anchor: ResizeAnchor;
-  /** Origin pose threaded through the compute pipeline. For a single-leaf
-   *  resize this is the leaf's pose; for a group resize it is the union
-   *  AABB of the leaves' origin poses. */
-  origin: TPose | null;
+  /** Origin pose of the group/leaf being resized. */
+  originPose: TPose | null;
+  /** Bounds projection of `originPose`. Threaded through anchor math. */
+  originBounds: ResizePose | null;
   start: { worldX: number; worldY: number };
   ctx: GestureContext<TPose> | null;
-  lastCurrent: TPose | null;
+  lastBounds: ResizePose | null;
   /** Non-null only when expandIds produced a group expansion (>1 leaf). */
   leafIds: string[] | null;
   leafOrigins: Map<string, TPose> | null;
   /** Last proposed per-leaf poses (set during move). Used by end() to
-   *  emit one transform op per leaf without recomputing scale. */
+   *  emit one transform op per leaf without recomputing the projection. */
   leafTargets: Map<string, TPose> | null;
 }
 
-/** Compute the union AABB of N poses. Caller guarantees `poses.length >= 1`. */
-function computeUnionBounds<TPose extends ResizePose>(poses: TPose[]): TPose {
+/** Compute the union AABB of N bounds. Caller guarantees `bounds.length >= 1`. */
+function computeUnionBounds(bounds: ResizePose[]): ResizePose {
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
   let maxY = -Infinity;
-  for (const p of poses) {
-    if (p.x < minX) minX = p.x;
-    if (p.y < minY) minY = p.y;
-    if (p.x + p.width > maxX) maxX = p.x + p.width;
-    if (p.y + p.height > maxY) maxY = p.y + p.height;
+  for (const b of bounds) {
+    if (b.x < minX) minX = b.x;
+    if (b.y < minY) minY = b.y;
+    if (b.x + b.width > maxX) maxX = b.x + b.width;
+    if (b.y + b.height > maxY) maxY = b.y + b.height;
   }
-  // Carry forward the first pose's other fields so the kit doesn't drop
-  // app-specific TPose properties as the union rect flows through behaviors.
-  return { ...poses[0], x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-}
-
-/** Scale a leaf pose against origin/proposed group rects. Zero-axis-extent
- *  groups are scaled by 1 on that axis to avoid NaN. */
-function scaleLeafPose<TPose extends ResizePose>(
-  leaf: TPose,
-  origin: ResizePose,
-  proposed: ResizePose,
-): TPose {
-  const sx = origin.width === 0 ? 1 : proposed.width / origin.width;
-  const sy = origin.height === 0 ? 1 : proposed.height / origin.height;
-  return {
-    ...leaf,
-    x: proposed.x + (leaf.x - origin.x) * sx,
-    y: proposed.y + (leaf.y - origin.y) * sy,
-    width: leaf.width * sx,
-    height: leaf.height * sy,
-  };
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
 /** Pointer-driven resize interaction with anchor-relative dragging, optional group expansion, and behavior pipeline. */
-export function useResizeInteraction<TObject extends { id: string }, TPose extends ResizePose>(
+export function useResizeInteraction<TObject extends { id: string }, TPose>(
   adapter: ResizeAdapter<TObject, TPose>,
   options: UseResizeInteractionOptions<TPose>,
 ): UseResizeInteractionReturn<TPose> {
   const {
-    behaviors = [],
+    behaviors = [] as ResizeBehavior<ResizePose>[],
     resizeLabel = 'Resize',
     onGestureStart,
     onGestureEnd,
     expandIds,
-  } = options;
+    geometry = RECT_POSE_GEOMETRY as unknown as PoseGeometry<TPose>,
+  } = options as UseResizeInteractionOptions<TPose> & {
+    behaviors?: ResizeBehavior<ResizePose>[];
+  };
 
   const behaviorsRef = useRef(behaviors);
   behaviorsRef.current = behaviors;
+  const geometryRef = useRef(geometry);
+  geometryRef.current = geometry;
 
   const stateRef = useRef<State<TPose>>({
     active: false,
     id: null,
     anchor: { x: 'free', y: 'free' },
-    origin: null,
+    originPose: null,
+    originBounds: null,
     start: { worldX: 0, worldY: 0 },
     ctx: null,
-    lastCurrent: null,
+    lastBounds: null,
     leafIds: null,
     leafOrigins: null,
     leafTargets: null,
@@ -134,9 +131,10 @@ export function useResizeInteraction<TObject extends { id: string }, TPose exten
   const cleanup = useCallback(() => {
     stateRef.current.active = false;
     stateRef.current.id = null;
-    stateRef.current.origin = null;
+    stateRef.current.originPose = null;
+    stateRef.current.originBounds = null;
     stateRef.current.ctx = null;
-    stateRef.current.lastCurrent = null;
+    stateRef.current.lastBounds = null;
     stateRef.current.leafIds = null;
     stateRef.current.leafOrigins = null;
     stateRef.current.leafTargets = null;
@@ -146,35 +144,41 @@ export function useResizeInteraction<TObject extends { id: string }, TPose exten
   const start = useCallback((id: string, anchor: ResizeAnchor, worldX: number, worldY: number) => {
     const expanded = expandIds ? expandIds([id]) : [id];
     if (expanded.length === 0) {
-      // Aborted before activation.
       stateRef.current.active = false;
       return;
     }
 
-    let origin: TPose;
+    const geom = geometryRef.current;
+    let originPose: TPose;
+    let originBounds: ResizePose;
     let leafIds: string[] | null = null;
     let leafOrigins: Map<string, TPose> | null = null;
 
     if (expanded.length === 1 && expanded[0] === id) {
-      // Single-leaf path: behavior unchanged from before expandIds existed.
-      origin = adapter.getPose(id);
+      originPose = adapter.getPose(id);
+      originBounds = geom.getBounds(originPose);
     } else {
       // Group path. `id` is the group id; its leaves carry the poses.
       leafIds = expanded;
       leafOrigins = new Map<string, TPose>();
-      const leafPoses: TPose[] = [];
+      const leafBounds: ResizePose[] = [];
       for (const lid of expanded) {
         const lp = adapter.getPose(lid);
         leafOrigins.set(lid, lp);
-        leafPoses.push(lp);
+        leafBounds.push(geom.getBounds(lp));
       }
-      origin = computeUnionBounds(leafPoses);
+      originBounds = computeUnionBounds(leafBounds);
+      // Synthesize an origin pose for the group from the union rect. The
+      // group pose is only used to feed `ctx.origin` / behaviors that
+      // operate on rect fields; for non-rect TPose with no behaviors it's
+      // never consulted.
+      originPose = originBounds as unknown as TPose;
     }
 
     const ctx: GestureContext<TPose> = {
       draggedIds: [id],
-      origin: new Map([[id, origin]]),
-      current: new Map([[id, origin]]),
+      origin: new Map([[id, originPose]]),
+      current: new Map([[id, originPose]]),
       snap: null,
       modifiers: { alt: false, shift: false, meta: false, ctrl: false },
       pointer: { worldX, worldY, clientX: 0, clientY: 0 },
@@ -185,100 +189,119 @@ export function useResizeInteraction<TObject extends { id: string }, TPose exten
       active: true,
       id,
       anchor,
-      origin,
+      originPose,
+      originBounds,
       start: { worldX, worldY },
       ctx,
-      lastCurrent: origin,
+      lastBounds: originBounds,
       leafIds,
       leafOrigins,
       leafTargets: null,
     };
-    for (const b of behaviorsRef.current) b.onStart?.(ctx);
+    for (const b of behaviorsRef.current) (b as ResizeBehavior<ResizePose>).onStart?.(ctx as unknown as GestureContext<ResizePose>);
     onGestureStart?.(id);
-    setOverlay({ id, currentPose: origin, targetPose: origin, anchor });
+    setOverlay({ id, currentPose: originPose, targetPose: originPose, anchor });
   }, [adapter, expandIds, onGestureStart]);
 
   const move = useCallback((worldX: number, worldY: number, modifiers: ModifierState): boolean => {
     const s = stateRef.current;
-    if (!s.active || !s.ctx || !s.origin || !s.id) return false;
+    if (!s.active || !s.ctx || !s.originPose || !s.originBounds || !s.id) return false;
 
+    const geom = geometryRef.current;
     s.ctx.modifiers = modifiers;
     s.ctx.pointer = { worldX, worldY, clientX: 0, clientY: 0 };
 
     const dx = worldX - s.start.worldX;
     const dy = worldY - s.start.worldY;
-    const o = s.origin;
+    const ob = s.originBounds;
 
-    let nx = o.x;
-    let ny = o.y;
-    let nw = o.width;
-    let nh = o.height;
+    let nx = ob.x;
+    let ny = ob.y;
+    let nw = ob.width;
+    let nh = ob.height;
     if (s.anchor.x === 'min') {
-      nw = o.width + dx;
+      nw = ob.width + dx;
     } else if (s.anchor.x === 'max') {
-      nx = o.x + dx;
-      nw = o.width - dx;
+      nx = ob.x + dx;
+      nw = ob.width - dx;
     }
     if (s.anchor.y === 'min') {
-      nh = o.height + dy;
+      nh = ob.height + dy;
     } else if (s.anchor.y === 'max') {
-      ny = o.y + dy;
-      nh = o.height - dy;
+      ny = ob.y + dy;
+      nh = ob.height - dy;
     }
-    let proposed: TPose = { ...o, x: nx, y: ny, width: nw, height: nh };
+    let proposedBounds: ResizePose = { x: nx, y: ny, width: nw, height: nh };
 
+    // Behaviors operate in bounds-space. For rect TPose, proposed.pose IS
+    // the proposed bounds (same shape); behaviors return a TPose with rect
+    // fields rewritten, which we read back as bounds.
+    const ctxAsRect = s.ctx as unknown as GestureContext<ResizePose>;
     for (const b of behaviorsRef.current) {
-      const r = b.onMove?.(s.ctx, { pose: proposed, anchor: s.anchor });
+      const r = (b as ResizeBehavior<ResizePose>).onMove?.(ctxAsRect, {
+        pose: proposedBounds,
+        anchor: s.anchor,
+      });
       if (!r) continue;
-      if (r.pose !== undefined) proposed = r.pose;
+      if (r.pose !== undefined) {
+        proposedBounds = {
+          x: r.pose.x,
+          y: r.pose.y,
+          width: r.pose.width,
+          height: r.pose.height,
+        };
+      }
     }
 
-    s.ctx.current = new Map([[s.id, proposed]]);
+    const proposedPose = geom.remapBounds(s.originPose, s.originBounds, proposedBounds);
+    s.ctx.current = new Map([[s.id, proposedPose]]);
 
-    const last = s.lastCurrent ?? o;
+    const last = s.lastBounds ?? ob;
     const lerp = (a: number, b: number) => a + (b - a) * LERP;
-    const currentPose: TPose = {
-      ...proposed,
-      x: lerp(last.x, proposed.x),
-      y: lerp(last.y, proposed.y),
-      width: lerp(last.width, proposed.width),
-      height: lerp(last.height, proposed.height),
+    const currentBounds: ResizePose = {
+      x: lerp(last.x, proposedBounds.x),
+      y: lerp(last.y, proposedBounds.y),
+      width: lerp(last.width, proposedBounds.width),
+      height: lerp(last.height, proposedBounds.height),
     };
-    s.lastCurrent = currentPose;
+    s.lastBounds = currentBounds;
+    const currentPose = geom.remapBounds(s.originPose, s.originBounds, currentBounds);
 
     let leafPoses: Map<string, TPose> | undefined;
     if (s.leafIds && s.leafOrigins) {
       leafPoses = new Map<string, TPose>();
       for (const lid of s.leafIds) {
         const lp = s.leafOrigins.get(lid)!;
-        leafPoses.set(lid, scaleLeafPose(lp, o, proposed));
+        leafPoses.set(lid, geom.remapBounds(lp, s.originBounds, proposedBounds));
       }
       s.leafTargets = leafPoses;
     }
 
-    setOverlay({ id: s.id, currentPose, targetPose: proposed, anchor: s.anchor, leafPoses });
+    setOverlay({ id: s.id, currentPose, targetPose: proposedPose, anchor: s.anchor, leafPoses });
     return true;
   }, []);
 
   const end = useCallback(() => {
     const s = stateRef.current;
-    if (!s.active || !s.ctx || !s.origin || !s.id) {
+    if (!s.active || !s.ctx || !s.originPose || !s.originBounds || !s.id) {
       cleanup();
       onGestureEnd?.(false);
       return;
     }
+    const geom = geometryRef.current;
     const ctx = s.ctx;
-    const targetPose = ctx.current.get(s.id) ?? s.origin;
+    const targetPose = ctx.current.get(s.id) ?? s.originPose;
+    const targetBounds = geom.getBounds(targetPose);
 
     const moved =
-      targetPose.x !== s.origin.x ||
-      targetPose.y !== s.origin.y ||
-      targetPose.width !== s.origin.width ||
-      targetPose.height !== s.origin.height;
+      targetBounds.x !== s.originBounds.x ||
+      targetBounds.y !== s.originBounds.y ||
+      targetBounds.width !== s.originBounds.width ||
+      targetBounds.height !== s.originBounds.height;
 
     let ops: Op[] | null | undefined;
     for (const b of behaviorsRef.current) {
-      const r = b.onEnd?.(ctx);
+      const r = (b as ResizeBehavior<ResizePose>).onEnd?.(ctx as unknown as GestureContext<ResizePose>);
       if (r === undefined) continue;
       ops = r;
       break;
@@ -296,12 +319,12 @@ export function useResizeInteraction<TObject extends { id: string }, TPose exten
       }
       if (s.leafIds && s.leafOrigins) {
         // Group path: emit one transform op per leaf, recomputing per-leaf
-        // scaled poses from the final group target so end() doesn't depend
-        // on whether move() ran most recently.
+        // remapped poses from the final group target so end() doesn't
+        // depend on whether move() ran most recently.
         ops = [];
         for (const lid of s.leafIds) {
           const lp = s.leafOrigins.get(lid)!;
-          const to = s.leafTargets?.get(lid) ?? scaleLeafPose(lp, s.origin, targetPose);
+          const to = s.leafTargets?.get(lid) ?? geom.remapBounds(lp, s.originBounds, targetBounds);
           ops.push(
             createTransformOp<TPose>({
               id: lid,
@@ -315,7 +338,7 @@ export function useResizeInteraction<TObject extends { id: string }, TPose exten
         ops = [
           createTransformOp<TPose>({
             id: s.id,
-            from: s.origin,
+            from: s.originPose,
             to: targetPose,
             label: resizeLabel,
           }),

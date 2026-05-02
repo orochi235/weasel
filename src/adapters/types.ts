@@ -78,7 +78,7 @@ export interface MoveAdapter<TObject extends { id: string }, TPose> {
  */
 export interface ResizeAdapter<
   TObject extends { id: string },
-  TPose extends { x: number; y: number; width: number; height: number },
+  TPose,
 > {
   getObject(id: string): TObject | undefined;
   getPose(id: string): TPose;

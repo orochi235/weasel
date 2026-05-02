@@ -155,6 +155,7 @@ export {
   composePath,
   decomposePath,
   unionBoundsPath,
+  pathPoseGeometry,
 } from './paths';
 export type {
   Path,
@@ -205,10 +206,11 @@ export type {
   MoveStartArgs,
   MoveMoveArgs,
 } from './interactions/gestures/move';
-export { useResizeInteraction } from './interactions/gestures/resize';
+export { useResizeInteraction, RECT_POSE_GEOMETRY } from './interactions/gestures/resize';
 export type {
   UseResizeInteractionOptions,
   UseResizeInteractionReturn,
+  PoseGeometry,
 } from './interactions/gestures/resize';
 export { useInsertInteraction } from './interactions/gestures/insert';
 export type {

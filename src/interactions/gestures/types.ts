@@ -104,7 +104,7 @@ export type ResizeBehavior<TPose extends ResizePose> = GestureBehavior<
   ResizeMoveResult<TPose>
 >;
 
-export interface ResizeOverlay<TPose extends ResizePose> {
+export interface ResizeOverlay<TPose> {
   id: string;
   currentPose: TPose;
   targetPose: TPose;
