@@ -192,9 +192,15 @@ function placeOverlay(
     el.style.display = 'none';
     return;
   }
+  // Canvas draws with `textBaseline = 'top'` (em-square top at pose.y), but a
+  // CSS line box puts half-leading above the first glyph: (lineHeight - 1) *
+  // fontSize / 2. Shift the overlay up by that amount so editable text lands
+  // exactly where the canvas drew it.
+  const lineHeight = pose.lineHeight ?? style.lineHeight;
+  const halfLeading = (pose.fontSize * (lineHeight - 1)) / 2;
   el.style.display = '';
   el.style.left = `${pose.x}px`;
-  el.style.top = `${pose.y}px`;
+  el.style.top = `${pose.y - halfLeading}px`;
   el.style.width = `${pose.width}px`;
   el.style.minHeight = `${pose.height}px`;
   el.style.fontSize = `${pose.fontSize}px`;
