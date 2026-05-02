@@ -85,7 +85,7 @@ export function useTextEditInteraction(
 
     const style = resolveTextStyle(getStyle(editingId));
     const overlay = document.createElement('div');
-    overlay.contentEditable = 'true';
+    overlay.setAttribute('contenteditable', 'true');
     overlay.spellcheck = false;
     overlay.innerText = getText(editingId);
     applyOverlayStyle(overlay, style);

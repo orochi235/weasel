@@ -66,8 +66,8 @@ export function CanvasKitDemo() {
 
       <Card
         title="Text"
-        description="createTextLayer renders wrap-aware text in world space; useTextEditInteraction overlays a contenteditable element for in-place editing; createSetTextOp wraps the commit in an undoable op."
-        hint="Double-click any text. Enter commits, Shift+Enter newline, Escape cancels."
+        description="createTextLayer + useTextEditInteraction + createSetTextOp, composed with useMoveInteraction and the selection overlay. Click to select, drag to move (snaps to a 10-unit grid), double-click to edit; commits flow through createSetTextOp so they're undoable."
+        hint="Click to select, drag to move, double-click to edit. Enter commits, Shift+Enter newline, Escape cancels."
         canvas={<TextDemo />}
         source={TEXT_DEMO_SOURCE}
       />
