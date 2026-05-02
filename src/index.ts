@@ -1,21 +1,39 @@
 /**
- * canvas-kit — domain-agnostic 2D scene graph primitives.
+ * @orochi235/weasel — domain-agnostic 2D scene-graph primitives for React +
+ * canvas apps. No assumptions about what an "object" is beyond `{ id }`; pose
+ * shape is generic, units are pluggable, and every interaction is wired
+ * through a narrow adapter the consumer implements.
  *
- * Viewport math, pointer-driven drag, layered canvas rendering, and a few
- * generic renderers (grid, labels, markdown text). Everything in this barrel
- * is free of garden-specific types so it can power the drag-lab and any
- * future apps without a unifying domain underneath.
- *
- * Currently exposed (Tier 1 — verbatim moves from `utils/` and `canvas/`):
- *   - View transform: `ViewTransform`, `worldToScreen`, `screenToWorld`, `roundToCell`
- *   - Pointer drag: `useDragHandle`, `useDropZone`, `DragPayload`, threshold helpers
- *   - Drag ghost: `createDragGhost`
- *   - Canvas plumbing: `useCanvasSize`, `useLayerEffect`, `fitZoom`
- *   - Layer composition: `RenderLayer`, `runLayers`, `LayerRenderer`
- *   - Renderers: `createGridLayer`, `renderLabel`, markdown text utilities, pattern cache
+ * Surface map (broad strokes — see per-symbol JSDoc for detail):
+ *   - View transform & viewport: `ViewTransform`, `worldToScreen`,
+ *     `screenToWorld`, `fitZoom`, `useCanvasSize`, pixel-density helpers,
+ *     `usePanInteraction`, `useZoomInteraction`, `useAutoCenter`,
+ *     `wheelHandler`.
+ *   - Layer composition: `RenderLayer`, `runLayers`, `LayerRenderer`,
+ *     `createGridLayer`, `createCellHighlightLayer`, `createChildrenLayer`,
+ *     `createSelectionOverlayLayer` and friends, `createTextLayer`,
+ *     `createTilePattern`, `applyPaint` / `applyStroke`.
+ *   - Interactions (gesture hooks): `useMoveInteraction`,
+ *     `useResizeInteraction`, `useInsertInteraction`,
+ *     `useAreaSelectInteraction`, `useCloneInteraction`,
+ *     `useTextEditInteraction`, plus `useDragHandle` / `useDropZone` for
+ *     ad-hoc pointer drags.
+ *   - Action hooks (selection-driven, optional keybindings): `useDeleteAction`,
+ *     `useEscapeAction`, `useSelectAllAction`, `useDuplicateAction`,
+ *     `useNudgeAction`, `useReorderAction`, `useClipboardAction`,
+ *     `useGroupAction`, `useUngroupAction`, `useUndoRedoAction`.
+ *   - Op model & history: `Op`, `createInsertOp` / `createDeleteOp` /
+ *     `createTransformOp` / etc., `createHistory`, `applyBatch`-style entry
+ *     wired by every hook.
+ *   - Units: `UnitSystem`, `UnitValue`, `IMPERIAL_INCHES`, `METRIC_MM`,
+ *     `PIXELS`, `resolveUnit`, `formatUnit`.
+ *   - Adapters: `SceneAdapter`, plus narrow per-hook subsets
+ *     (`MoveAdapter`, `ResizeAdapter`, `InsertAdapter`, `OrderedAdapter`,
+ *     `GroupAdapter`, action-specific adapters).
  *
  * Per-hook subpath imports: `snapToGrid` exists for move, resize, and insert
- * with different return shapes. Import from the hook-specific subpath:
+ * with different return shapes. Import from the hook-specific subpath to pick
+ * the right one:
  *   import { snapToGrid } from '@orochi235/weasel/move';
  *   import { snapToGrid, clampMinSize } from '@orochi235/weasel/resize';
  *   import { snapToGrid } from '@orochi235/weasel/insert';
@@ -102,6 +120,7 @@ export type { Group, GroupAdapter } from './groups/types';
 export { resolveToOutermostGroup, expandToLeaves } from './groups/resolve';
 export { unionBounds } from './groups/unionBounds';
 export type { RectPose } from './groups/unionBounds';
+export { withGroupOrdering } from './groups/orderedGroups';
 export * from './history';
 export * from './adapters/types';
 export * from './interactions/types';
@@ -205,5 +224,3 @@ export type {
   UseUndoRedoActionOptions,
   UseUndoRedoActionReturn,
 } from './interactions/undo-redo';
-export type { OrderedAdapter } from './adapters/types';
-export { withGroupOrdering } from './groups/orderedGroups';

@@ -1,8 +1,10 @@
 # weasel
 
-Domain-agnostic 2D scene graph primitives for React. Viewport math, pointer-driven drag, resize, insert, clone, layered canvas rendering, and a few generic renderers — adapter-driven so you can plug your own object types in.
+A 2D scene-graph toolkit for React + canvas apps. Bring your own object type and pose shape; weasel handles the viewport math, pointer gestures (move / resize / insert / clone / area-select / text edit), layered canvas rendering, an op-based undo/redo model, and a stack of selection-driven action hooks (delete, duplicate, nudge, group, clipboard, undo/redo, …) wired to keyboard shortcuts when you ask.
 
-> Pre-1.0: the API surface (paths, groups, units-per-subobject) is still settling. Expect breaking changes between minor versions until 1.0.
+Built for diagram editors, sketch tools, schematic editors, scene composers — anything where "objects on a canvas the user can grab, move, and arrange" is the substrate.
+
+> Pre-1.0: the API surface (paths, structural groups, per-subobject units) is still settling. Expect breaking changes between minor versions until 1.0.
 
 ## Install
 
@@ -12,14 +14,26 @@ npm install @orochi235/weasel react
 
 `react` is a peer dependency (>=18).
 
-## Quickstart
+## How it fits together
+
+Every interaction takes a small, narrow **adapter** — a few methods that read the current scene and apply ops back. The kit doesn't own your scene; it asks. That keeps it agnostic to whether your scene lives in React state, Zustand, Redux, or a CRDT.
 
 ```tsx
-import { useMoveInteraction } from '@orochi235/weasel';
+import { useMoveInteraction, useDeleteAction, createHistory } from '@orochi235/weasel';
 
-// see the demo for a full working example:
-// https://orochi235.github.io/weasel/
+const history = createHistory(adapter);
+
+// Drag-to-move with snapping, history, and parent reparenting:
+const move = useMoveInteraction({
+  adapter,                       // get/set pose, applyBatch(ops)
+  behaviors: [snapToGrid(20)],
+});
+
+// Selection-aware delete with Backspace/Delete bound:
+const del = useDeleteAction(adapter, { bindKeyboard: true });
 ```
+
+See the live demo for a full working example: <https://orochi235.github.io/weasel/>
 
 ## Demo
 
