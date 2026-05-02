@@ -6,6 +6,7 @@ import { CloneDemo, CLONE_DEMO_SOURCE } from './demos/CloneDemo';
 import { ComposeDemo, COMPOSE_DEMO_SOURCE } from './demos/ComposeDemo';
 import { ActionsDemo, ACTIONS_DEMO_SOURCE } from './demos/ActionsDemo';
 import { GroupsDemo, GROUPS_DEMO_SOURCE } from './demos/GroupsDemo';
+import { TextDemo, TEXT_DEMO_SOURCE } from './demos/TextDemo';
 
 export function CanvasKitDemo() {
   return (
@@ -61,6 +62,14 @@ export function CanvasKitDemo() {
         hint="Click a green rect to select the group, then drag or grab a corner."
         canvas={<GroupsDemo />}
         source={GROUPS_DEMO_SOURCE}
+      />
+
+      <Card
+        title="Text"
+        description="createTextLayer renders wrap-aware text in world space; useTextEditInteraction overlays a contenteditable element for in-place editing; createSetTextOp wraps the commit in an undoable op."
+        hint="Double-click any text. Enter commits, Shift+Enter newline, Escape cancels."
+        canvas={<TextDemo />}
+        source={TEXT_DEMO_SOURCE}
       />
 
       <Card

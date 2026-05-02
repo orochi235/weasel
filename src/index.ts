@@ -62,6 +62,24 @@ export type {
 } from './selectionOverlay';
 export * from './renderLabel';
 export * from './markdownText';
+export {
+  DEFAULT_TEXT_STYLE,
+  resolveTextStyle,
+  fontString,
+} from './text/textStyle';
+export type { TextStyle, ResolvedTextStyle } from './text/textStyle';
+export { measureText } from './text/measureText';
+export type { MeasuredText } from './text/measureText';
+export { createTextLayer } from './text/textLayer';
+export type { TextPose, CreateTextLayerOpts } from './text/textLayer';
+export { pointInTextPose } from './text/hitTest';
+export type { PointInTextPoseOpts } from './text/hitTest';
+export { useTextEditInteraction } from './text/useTextEditInteraction';
+export type {
+  TextEditScreenPose,
+  UseTextEditInteractionOptions,
+  UseTextEditInteractionReturn,
+} from './text/useTextEditInteraction';
 export { createTilePattern } from './patterns';
 export type { TilePatternOpts } from './patterns';
 export {
