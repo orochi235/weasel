@@ -7,3 +7,12 @@ export {
   type UseUngroupActionOptions,
   type UseUngroupActionReturn,
 } from './group';
+export {
+  useStructuralGroupAction,
+  useStructuralUngroupAction,
+  type StructuralGroupActionAdapter,
+  type UseStructuralGroupActionOptions,
+  type UseStructuralGroupActionReturn,
+  type UseStructuralUngroupActionOptions,
+  type UseStructuralUngroupActionReturn,
+} from './structuralGroup';

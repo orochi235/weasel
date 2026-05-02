@@ -18,6 +18,12 @@ export interface SnapTarget<TPose = unknown> {
  * Full scene adapter. Most consumers implement narrow per-hook subsets
  * (MoveAdapter, ResizeAdapter, ClipboardAdapter, ...) — TypeScript's
  * structural typing means a wider adapter satisfies any narrower interface.
+ *
+ * **Pose semantics:** `getPose` / `setPose` work in **local** coordinates —
+ * relative to the object's direct parent (or world, for root-parented
+ * objects). The kit composes world poses via `composeWorldPose` when it
+ * needs to render, hit-test, or snap. For the common axis-aligned rect pose,
+ * `composeRectPose` / `decomposeRectPose` ship as the canonical compose pair.
  */
 export interface SceneAdapter<TObject extends { id: string }, TPose> {
   // Pull (gesture-time queries)

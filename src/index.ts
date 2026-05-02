@@ -222,6 +222,8 @@ export {
 export {
   useGroupAction,
   useUngroupAction,
+  useStructuralGroupAction,
+  useStructuralUngroupAction,
 } from './interactions/group';
 export type {
   GroupActionAdapter,
@@ -229,6 +231,11 @@ export type {
   UseGroupActionReturn,
   UseUngroupActionOptions,
   UseUngroupActionReturn,
+  StructuralGroupActionAdapter,
+  UseStructuralGroupActionOptions,
+  UseStructuralGroupActionReturn,
+  UseStructuralUngroupActionOptions,
+  UseStructuralUngroupActionReturn,
 } from './interactions/group';
 export { useUndoRedoAction } from './interactions/undo-redo';
 export type {
