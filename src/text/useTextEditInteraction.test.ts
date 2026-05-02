@@ -119,6 +119,30 @@ describe('useTextEditInteraction', () => {
     expect(h.commits).toEqual([{ id: 'a', text: 'on blur' }]);
   });
 
+  it('flattens pattern fills to a solid CSS color on the overlay', () => {
+    const h = makeHarness({ a: 'hi' });
+    const opts = {
+      ...h.opts,
+      getStyle: () => ({ fill: { kind: 'pattern', pattern: {} as CanvasPattern } as const }),
+    };
+    const { result } = renderHook(() => useTextEditInteraction(opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    expect(overlay.style.color).toBe('rgb(0, 0, 0)');
+  });
+
+  it('uses solid fill color directly on the overlay', () => {
+    const h = makeHarness({ a: 'hi' });
+    const opts = {
+      ...h.opts,
+      getStyle: () => ({ fill: { kind: 'solid', color: '#ff0000' } as const }),
+    };
+    const { result } = renderHook(() => useTextEditInteraction(opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    expect(overlay.style.color).toBe('rgb(255, 0, 0)');
+  });
+
   it('does nothing when container is null', () => {
     const h = makeHarness({ a: 'hello' });
     const opts = { ...h.opts, container: null };

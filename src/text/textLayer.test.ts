@@ -78,6 +78,24 @@ describe('createTextLayer', () => {
     }
   });
 
+  it('applies a solid fill via Paint', () => {
+    const node: Node = {
+      id: 'a',
+      pose: {
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 20,
+        text: 'hi',
+        style: { fill: { kind: 'solid', color: '#abcdef' } },
+      },
+    };
+    const layer = createTextLayer<Node>({ getTexts: () => [node], getPose: (n) => n.pose });
+    const { ctx } = makeCtx();
+    layer.draw(ctx, undefined);
+    expect(ctx.fillStyle).toBe('#abcdef');
+  });
+
   it('reads texts each draw (no caching)', () => {
     const getTexts = vi.fn(() => [] as Node[]);
     const layer = createTextLayer<Node>({ getTexts, getPose: (n) => n.pose });

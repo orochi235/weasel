@@ -5,6 +5,7 @@
  * layer like any other via `runLayers`.
  */
 
+import { applyPaint } from '../paint';
 import type { RenderLayer } from '../renderLayer';
 import { measureText } from './measureText';
 import {
@@ -44,7 +45,7 @@ export function createTextLayer<T>(opts: CreateTextLayerOpts<T>): RenderLayer<un
         const style = resolveTextStyle(pose.style);
         ctx.save();
         ctx.font = fontString(style);
-        ctx.fillStyle = style.color;
+        applyPaint(ctx, style.fill, { x: pose.x, y: pose.y });
         ctx.textBaseline = 'top';
         ctx.textAlign = style.align;
         const { lines } = measureText(ctx, pose.text, pose.width, style);

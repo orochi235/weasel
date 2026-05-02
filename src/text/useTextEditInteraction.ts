@@ -143,7 +143,7 @@ function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle): void {
   el.style.border = '0';
   el.style.outline = 'none';
   el.style.background = 'transparent';
-  el.style.color = style.color;
+  el.style.color = style.fill.kind === 'solid' ? style.fill.color : '#000';
   el.style.font = fontString(style);
   el.style.lineHeight = String(style.lineHeight);
   el.style.textAlign = style.align;

@@ -4,10 +4,12 @@
  * `DEFAULT_TEXT_STYLE` and are applied at render/measure time, never written
  * back to the pose.
  *
- * `color` is provisional: it will be replaced by `fill: Paint` (and likely
- * `stroke?: Stroke`) once the broader paint/stroke story covers text. Keep
- * the per-glyph paint anchoring questions out of v1.
+ * `fill` follows the kit-wide `Paint` model — solid color or pattern. The
+ * contenteditable edit overlay flattens non-solid fills to `'#000'` for CSS
+ * since the browser can't paint with a `CanvasPattern`.
  */
+
+import type { Paint } from '../paint';
 
 export interface TextStyle {
   /** Font size in world units. Default 16. */
@@ -22,8 +24,8 @@ export interface TextStyle {
   align?: 'left' | 'center' | 'right';
   /** Multiplier applied to `fontSize`. Default 1.2. */
   lineHeight?: number;
-  /** Provisional: will become `fill: Paint`. Default `'#000'`. */
-  color?: string;
+  /** Default `{ kind: 'solid', color: '#000' }`. */
+  fill?: Paint;
 }
 
 export interface ResolvedTextStyle {
@@ -33,7 +35,7 @@ export interface ResolvedTextStyle {
   fontStyle: 'normal' | 'italic';
   align: 'left' | 'center' | 'right';
   lineHeight: number;
-  color: string;
+  fill: Paint;
 }
 
 export const DEFAULT_TEXT_STYLE: ResolvedTextStyle = {
@@ -43,7 +45,7 @@ export const DEFAULT_TEXT_STYLE: ResolvedTextStyle = {
   fontStyle: 'normal',
   align: 'left',
   lineHeight: 1.2,
-  color: '#000',
+  fill: { kind: 'solid', color: '#000' },
 };
 
 export function resolveTextStyle(style?: TextStyle): ResolvedTextStyle {
@@ -55,7 +57,7 @@ export function resolveTextStyle(style?: TextStyle): ResolvedTextStyle {
     fontStyle: style.fontStyle ?? DEFAULT_TEXT_STYLE.fontStyle,
     align: style.align ?? DEFAULT_TEXT_STYLE.align,
     lineHeight: style.lineHeight ?? DEFAULT_TEXT_STYLE.lineHeight,
-    color: style.color ?? DEFAULT_TEXT_STYLE.color,
+    fill: style.fill ?? DEFAULT_TEXT_STYLE.fill,
   };
 }
 
