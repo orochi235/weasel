@@ -28,9 +28,7 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
   - **Per-axis units** — defer until a concrete use case appears (rare; e.g. timeline charts where x is time, y is value).
 ## Tier 1.5 — small additive hooks
 
-- **Selection-driven action hooks** still pending:
-  - `useGroupAction` / `useUngroupAction` (Ctrl+G / Ctrl+Shift+G) — wraps `createGroupOp` / `dissolveGroupOp`; ships alongside structural groups.
-  - `useUndoRedoAction` (Ctrl+Z / Ctrl+Shift+Z) — depends on history-stack design; defer until that lands.
+- **Selection-driven action hooks**: shipped against the existing virtual-group adapter and `History`. When structural groups (Tier 1) land, `useGroupAction` / `useUngroupAction` will compose additional ops (reparent children under the new group node) but the hook surface should not need to change.
 - **Grid overlay snap-target hover.** `createGridLayer` and `pointToGridCell` ship; `createCellHighlightLayer` exists. Still missing: an out-of-the-box hover-preview wiring that consumers can drop in without writing the pointer-tracking glue themselves.
 
 ## Tier 3 — specialized but valuable

@@ -188,5 +188,22 @@ export {
   type UseReorderActionOptions,
   type UseReorderActionReturn,
 } from './interactions/reorder';
+export {
+  useGroupAction,
+  useUngroupAction,
+} from './interactions/group';
+export type {
+  GroupActionAdapter,
+  UseGroupActionOptions,
+  UseGroupActionReturn,
+  UseUngroupActionOptions,
+  UseUngroupActionReturn,
+} from './interactions/group';
+export { useUndoRedoAction } from './interactions/undo-redo';
+export type {
+  UndoRedoAdapter,
+  UseUndoRedoActionOptions,
+  UseUndoRedoActionReturn,
+} from './interactions/undo-redo';
 export type { OrderedAdapter } from './adapters/types';
 export { withGroupOrdering } from './groups/orderedGroups';
