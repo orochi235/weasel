@@ -3,11 +3,9 @@
  * optional finer subdivisions and accent lines every N cells.
  *
  * The layer renders in world space — the caller is expected to have applied
- * any view transform to the canvas context already. For viewport-aware grid
- * rendering with screen-space pixel snapping, see `renderGrid` in
- * `./renderGrid.ts`; this layer is the lower-friction primitive for use
- * inside a `runLayers([...])` stack. To draw a highlighted cell (snap
- * target preview), stack `createCellHighlightLayer` alongside this one.
+ * any view transform to the canvas context already. To draw a highlighted
+ * cell (snap-target preview), stack `createCellHighlightLayer` alongside
+ * this one.
  */
 
 import type { RenderLayer } from './renderLayer';

@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { composeSelectionPose, createSelectionOverlayLayer } from './selectionOverlay';
+import {
+  composeSelectionPose,
+  createSelectionOverlayLayer,
+  createSelectionOutlineLayer,
+  createSelectionHandlesLayer,
+} from './selectionOverlay';
 import type { Group, GroupAdapter } from './groups/types';
 
 function makeGroupAdapter(groups: Group[]): GroupAdapter {
@@ -386,5 +391,61 @@ describe('createSelectionOverlayLayer', () => {
     layer.draw(ctx, undefined);
     const stroke = calls.filter((c) => c.fn === 'strokeRect')[0];
     expect(stroke.args).toEqual([0, 0, 10, 10]);
+  });
+});
+
+describe('createSelectionOutlineLayer', () => {
+  it('exposes id/label and draws an outline only (no fill)', () => {
+    const { ctx, calls } = makeStubCtx();
+    const layer = createSelectionOutlineLayer<Pose>({
+      getSelection: () => ['a'],
+      getPose: () => ({ x: 10, y: 20, width: 30, height: 40 }),
+    });
+    expect(layer.id).toBe('selection-outline');
+    layer.draw(ctx, undefined);
+    expect(calls.filter((c) => c.fn === 'strokeRect')).toHaveLength(1);
+    expect(calls.filter((c) => c.fn === 'fillRect')).toHaveLength(0);
+  });
+
+  it('resolves a group id to its union AABB', () => {
+    const { ctx, calls } = makeStubCtx();
+    const stored: Record<string, Pose> = {
+      a: { x: 0, y: 0, width: 10, height: 10 },
+      b: { x: 50, y: 50, width: 20, height: 20 },
+    };
+    const adapter = makeGroupAdapter([{ id: 'g1', members: ['a', 'b'] }]);
+    const layer = createSelectionOutlineLayer<Pose>({
+      getSelection: () => ['g1'],
+      getPose: (id: string) => stored[id] ?? null,
+      groupAdapter: adapter,
+    });
+    layer.draw(ctx, undefined);
+    const stroke = calls.filter((c) => c.fn === 'strokeRect')[0];
+    expect(stroke.args).toEqual([-1, -1, 72, 72]);
+  });
+});
+
+describe('createSelectionHandlesLayer', () => {
+  it('exposes id/label and draws fill + stroke per handle (4 by default)', () => {
+    const { ctx, calls } = makeStubCtx();
+    const layer = createSelectionHandlesLayer<Pose>({
+      getSelection: () => ['a'],
+      getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }),
+    });
+    expect(layer.id).toBe('selection-handles');
+    layer.draw(ctx, undefined);
+    expect(calls.filter((c) => c.fn === 'fillRect')).toHaveLength(4);
+    expect(calls.filter((c) => c.fn === 'strokeRect')).toHaveLength(4);
+  });
+
+  it('honors handlesOf override', () => {
+    const { ctx, calls } = makeStubCtx();
+    const layer = createSelectionHandlesLayer<Pose>({
+      getSelection: () => ['a'],
+      getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }),
+      handlesOf: () => [{ x: 5, y: 5 }],
+    });
+    layer.draw(ctx, undefined);
+    expect(calls.filter((c) => c.fn === 'fillRect')).toHaveLength(1);
   });
 });

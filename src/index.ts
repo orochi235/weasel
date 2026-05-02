@@ -12,7 +12,7 @@
  *   - Drag ghost: `createDragGhost`
  *   - Canvas plumbing: `useCanvasSize`, `useLayerEffect`, `fitZoom`
  *   - Layer composition: `RenderLayer`, `runLayers`, `LayerRenderer`
- *   - Renderers: `renderGrid`, `renderLabel`, markdown text utilities, pattern cache
+ *   - Renderers: `createGridLayer`, `renderLabel`, markdown text utilities, pattern cache
  *
  * Per-hook subpath imports: `snapToGrid` exists for move, resize, and insert
  * with different return shapes. Import from the hook-specific subpath:
@@ -31,10 +31,11 @@ export * from './fitToBounds';
 export * from './hooks/usePanInteraction';
 export * from './hooks/useZoomInteraction';
 export * from './hooks/useAutoCenter';
+export { useKeybinding, isEditableTarget } from './hooks/useKeybinding';
+export type { KeyBinding } from './hooks/useKeybinding';
 export * from './wheelHandler';
 export * from './renderLayer';
 export * from './LayerRenderer';
-export * from './renderGrid';
 export { createGridLayer } from './gridLayer';
 export type { GridLayerOpts } from './gridLayer';
 export { createCellHighlightLayer } from './cellHighlightLayer';
@@ -49,10 +50,14 @@ export {
 export type { Unit, UnitSystem, UnitValue } from './units';
 export {
   composeSelectionPose,
+  createSelectionOutlineLayer,
+  createSelectionHandlesLayer,
   createSelectionOverlayLayer,
 } from './selectionOverlay';
 export type {
   ComposeSelectionPoseOpts,
+  SelectionOutlineLayerOpts,
+  SelectionHandlesLayerOpts,
   SelectionOverlayLayerOpts,
 } from './selectionOverlay';
 export * from './renderLabel';

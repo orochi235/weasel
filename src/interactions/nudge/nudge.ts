@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { createTransformOp } from '../../ops/transform';
 import type { Op } from '../../ops/types';
+import { useKeybinding } from '../../hooks/useKeybinding';
 
 /** Cardinal direction for `useNudgeAction`. */
 export type NudgeDirection = 'up' | 'down' | 'left' | 'right';
@@ -35,15 +36,6 @@ export interface UseNudgeActionReturn {
   nudge(direction: NudgeDirection, large?: boolean): void;
 }
 
-function isEditableTarget(target: EventTarget | null): boolean {
-  if (!target || !(target instanceof Element)) return false;
-  const tag = target.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA') return true;
-  if ((target as HTMLElement).isContentEditable) return true;
-  if (target.getAttribute('contenteditable') === 'true' || target.getAttribute('contenteditable') === '') return true;
-  return false;
-}
-
 function deltaFor(direction: NudgeDirection, step: number): { dx: number; dy: number } {
   switch (direction) {
     case 'left':  return { dx: -step, dy: 0 };
@@ -52,6 +44,13 @@ function deltaFor(direction: NudgeDirection, step: number): { dx: number; dy: nu
     case 'down':  return { dx: 0, dy:  step };
   }
 }
+
+const ARROW_TO_DIR: Record<string, NudgeDirection> = {
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
+  ArrowUp: 'up',
+  ArrowDown: 'down',
+};
 
 /** Arrow-key nudge action; binds arrow keys (with optional shift modifier for larger step) by default. */
 export function useNudgeAction<TPose>(
@@ -78,24 +77,17 @@ export function useNudgeAction<TPose>(
     a.applyBatch(ops, o.label ?? 'Nudge');
   }, []);
 
-  const enableKeyboard = options.enableKeyboard ?? true;
-  useEffect(() => {
-    if (!enableKeyboard) return;
-    const handler = (e: KeyboardEvent) => {
-      let direction: NudgeDirection | null = null;
-      if (e.key === 'ArrowLeft')  direction = 'left';
-      else if (e.key === 'ArrowRight') direction = 'right';
-      else if (e.key === 'ArrowUp')    direction = 'up';
-      else if (e.key === 'ArrowDown')  direction = 'down';
-      if (!direction) return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (isEditableTarget(e.target)) return;
-      e.preventDefault();
-      nudge(direction, e.shiftKey);
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [enableKeyboard, nudge]);
+  useKeybinding(
+    {
+      key: ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'],
+      shift: 'optional',
+      enabled: options.enableKeyboard ?? true,
+    },
+    (e) => {
+      const dir = ARROW_TO_DIR[e.key];
+      if (dir) nudge(dir, e.shiftKey);
+    },
+  );
 
   return { nudge };
 }

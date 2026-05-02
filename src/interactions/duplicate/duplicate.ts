@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { createInsertOp } from '../../ops/create';
 import { createSetSelectionOp } from '../../ops/selection';
 import type { Op } from '../../ops/types';
+import { useKeybinding } from '../../hooks/useKeybinding';
 
 /** Adapter for `useDuplicateAction`. */
 export interface DuplicateAdapter<TPose> {
@@ -36,15 +37,6 @@ export interface UseDuplicateActionReturn {
   duplicate(): void;
 }
 
-function isEditableTarget(target: EventTarget | null): boolean {
-  if (!target || !(target instanceof Element)) return false;
-  const tag = target.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA') return true;
-  if ((target as HTMLElement).isContentEditable) return true;
-  if (target.getAttribute('contenteditable') === 'true' || target.getAttribute('contenteditable') === '') return true;
-  return false;
-}
-
 const DEFAULT_OFFSET = { dx: 8, dy: 8 };
 
 /** Selection-duplication action with offset; binds Ctrl/Cmd+D by default. */
@@ -73,20 +65,10 @@ export function useDuplicateAction<TPose>(
     a.applyBatch(ops, o.label ?? 'Duplicate');
   }, []);
 
-  const enableKeyboard = options.enableKeyboard ?? true;
-  useEffect(() => {
-    if (!enableKeyboard) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key !== 'd' && e.key !== 'D') return;
-      if (!(e.metaKey || e.ctrlKey)) return;
-      if (e.altKey) return;
-      if (isEditableTarget(e.target)) return;
-      e.preventDefault();
-      duplicate();
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [enableKeyboard, duplicate]);
+  useKeybinding(
+    { key: 'd', mod: true, enabled: options.enableKeyboard ?? true },
+    () => duplicate(),
+  );
 
   return { duplicate };
 }

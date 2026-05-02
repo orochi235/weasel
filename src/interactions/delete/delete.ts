@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { createDeleteOp } from '../../ops/delete';
 import { createSetSelectionOp } from '../../ops/selection';
 import type { Op } from '../../ops/types';
+import { useKeybinding } from '../../hooks/useKeybinding';
 
 /** Adapter for `useDeleteAction`. */
 export interface DeleteAdapter {
@@ -36,15 +37,6 @@ export interface UseDeleteActionReturn {
   deleteSelection(): string[];
 }
 
-function isEditableTarget(target: EventTarget | null): boolean {
-  if (!target || !(target instanceof Element)) return false;
-  const tag = target.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA') return true;
-  if ((target as HTMLElement).isContentEditable) return true;
-  if (target.getAttribute('contenteditable') === 'true' || target.getAttribute('contenteditable') === '') return true;
-  return false;
-}
-
 /** Selection-deletion action; optionally binds Delete/Backspace keys. */
 export function useDeleteAction(
   adapter: DeleteAdapter,
@@ -70,18 +62,10 @@ export function useDeleteAction(
     return ids;
   }, []);
 
-  useEffect(() => {
-    if (!options.bindKeyboard) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (isEditableTarget(e.target)) return;
-      e.preventDefault();
-      deleteSelection();
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [options.bindKeyboard, deleteSelection]);
+  useKeybinding(
+    { key: ['Delete', 'Backspace'], enabled: !!options.bindKeyboard },
+    () => { deleteSelection(); },
+  );
 
   return { deleteSelection };
 }

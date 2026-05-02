@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { createSetSelectionOp } from '../../ops/selection';
 import type { Op } from '../../ops/types';
+import { useKeybinding } from '../../hooks/useKeybinding';
 
 /** Adapter for `useEscapeAction`. */
 export interface EscapeAdapter {
@@ -24,15 +25,6 @@ export interface UseEscapeActionReturn {
   clearSelection(): void;
 }
 
-function isEditableTarget(target: EventTarget | null): boolean {
-  if (!target || !(target instanceof Element)) return false;
-  const tag = target.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA') return true;
-  if ((target as HTMLElement).isContentEditable) return true;
-  if (target.getAttribute('contenteditable') === 'true' || target.getAttribute('contenteditable') === '') return true;
-  return false;
-}
-
 /** Selection-clearing action; binds Escape on document by default. */
 export function useEscapeAction(
   adapter: EscapeAdapter,
@@ -52,19 +44,10 @@ export function useEscapeAction(
     a.applyBatch([op], o.label ?? 'Clear selection');
   }, []);
 
-  const enableKeyboard = options.enableKeyboard ?? true;
-  useEffect(() => {
-    if (!enableKeyboard) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (isEditableTarget(e.target)) return;
-      e.preventDefault();
-      clearSelection();
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [enableKeyboard, clearSelection]);
+  useKeybinding(
+    { key: 'Escape', enabled: options.enableKeyboard ?? true },
+    () => clearSelection(),
+  );
 
   return { clearSelection };
 }
