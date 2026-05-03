@@ -18,6 +18,7 @@ export interface SetupCanvasDprOptions {
   dpr?: number;
 }
 
+/** Resize a canvas's backing store for the current `devicePixelRatio` and pre-scale the context to draw in CSS pixels. */
 export function setupCanvasDpr(
   canvas: HTMLCanvasElement,
   ctx: CanvasRenderingContext2D,

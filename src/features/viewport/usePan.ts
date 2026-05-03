@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 
+/** Live viewport-pan state captured at gesture start. */
 export interface ActivePan {
   x: number;
   y: number;

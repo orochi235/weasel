@@ -18,6 +18,7 @@ import { screenToWorld, type ViewTransform } from '../viewport/viewTransform';
 import { pointToGridCell } from '../../interactions/gestures/shared/strategies/grid';
 import type { UnitSystem, UnitValue } from '../../core/units';
 
+/** Options for `useGridCellHover`. */
 export interface UseGridCellHoverOptions {
   /** Element to attach pointer listeners to (typically the canvas). */
   ref: RefObject<HTMLElement | null>;
@@ -38,6 +39,7 @@ export interface UseGridCellHoverOptions {
   enabled?: boolean;
 }
 
+/** Return shape of `useGridCellHover`. */
 export interface UseGridCellHoverReturn {
   /** Current hovered cell, or `null` when the pointer is outside the element. */
   cell: { col: number; row: number } | null;
@@ -55,6 +57,7 @@ function cellsEqual(
   return a.col === b.col && a.row === b.row;
 }
 
+/** Track which grid cell the pointer is over; pairs with `createCellHighlightLayer`. */
 export function useGridCellHover(opts: UseGridCellHoverOptions): UseGridCellHoverReturn {
   const [cell, setCell] = useState<{ col: number; row: number } | null>(null);
   const cellRef = useRef<{ col: number; row: number } | null>(null);

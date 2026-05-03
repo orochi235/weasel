@@ -11,6 +11,7 @@ export interface ThresholdDragOptions {
   onCancel?: () => void;
 }
 
+/** Handle returned by `startThresholdDrag` exposing live gesture state. */
 export interface ThresholdDragHandle {
   /** True after the pointer has moved past `threshold` and the drag is live. */
   isDragging: () => boolean;

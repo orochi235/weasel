@@ -15,11 +15,13 @@ import { measureText } from './measureText';
 import { fontString, resolveTextStyle } from './textStyle';
 import type { TextPose } from './textLayer';
 
+/** Options for `pointInTextPose`. */
 export interface PointInTextPoseOpts {
   /** Extra padding (world units) added to the rect on all sides. Default 0. */
   padding?: number;
 }
 
+/** Coarse pose-rect hit-test for a text node — suitable for click-to-edit dispatch. */
 export function pointInTextPose(
   x: number,
   y: number,

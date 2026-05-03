@@ -15,6 +15,7 @@
 import type { RenderLayer } from '../../core/layers/render';
 import type { OrderedAdapter } from '../../core/adapters/types';
 
+/** Options for `createChildrenLayer`. */
 export interface CreateChildrenLayerOpts<TData> {
   /** Layer id for the visibility/order map. Default `'children'`. */
   id?: string;
@@ -33,6 +34,7 @@ export interface CreateChildrenLayerOpts<TData> {
   alwaysOn?: boolean;
 }
 
+/** Build a `RenderLayer` that draws an `OrderedAdapter`'s children in z-order. */
 export function createChildrenLayer<TData = unknown>(
   opts: CreateChildrenLayerOpts<TData>,
 ): RenderLayer<TData> {

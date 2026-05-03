@@ -29,6 +29,7 @@ export interface RectPose {
   height: number;
 }
 
+/** Minimal adapter needed by `composeWorldPose` and friends — pose lookup plus parent walk. */
 export interface PoseAdapter<TPose> {
   getPose(id: string): TPose;
   getParent(id: string): string | null;

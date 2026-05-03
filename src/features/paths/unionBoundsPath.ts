@@ -7,6 +7,7 @@
 import { boundsOfPath } from './bounds';
 import type { Path, RectPath } from './types';
 
+/** AABB envelope over a set of `Path` instances; returns `null` for empty input. */
 export function unionBoundsPath(paths: Iterable<Path>): RectPath | null {
   let minX = Infinity;
   let minY = Infinity;

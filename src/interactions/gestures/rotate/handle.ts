@@ -5,6 +5,7 @@ import { aabbCenter, rotatePoint } from './geometry';
  *  override per-call. */
 export const DEFAULT_ROTATION_HANDLE_DISTANCE = 24;
 
+/** Rotation handle position in world coords. */
 export interface RotationHandle {
   /** Handle center in world coords. */
   cx: number;

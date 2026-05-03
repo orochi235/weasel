@@ -8,6 +8,7 @@ import type { RenderLayer } from '../../core/layers/render';
 import { applyPaint, type Paint } from '../../core/paint';
 import { resolveUnit, type UnitSystem, type UnitValue } from '../../core/units';
 
+/** Options for `createCellHighlightLayer`. */
 export interface CellHighlightLayerOpts {
   /** Cell size in world units (matches the grid's `spacing`). */
   spacing: UnitValue;
@@ -23,6 +24,7 @@ export interface CellHighlightLayerOpts {
 
 const DEFAULT_FILL: Paint = { fill: 'solid', color: 'rgba(127,176,105,0.15)' };
 
+/** Build a `RenderLayer` that fills a single grid cell — typically a snap-target preview. */
 export function createCellHighlightLayer(opts: CellHighlightLayerOpts): RenderLayer<unknown> {
   const fill = opts.fill ?? DEFAULT_FILL;
   return {

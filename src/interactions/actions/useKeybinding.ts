@@ -12,6 +12,7 @@
 
 import { useEffect, useRef } from 'react';
 
+/** Declarative keybinding description used by `useKeybinding`. */
 export interface KeyBinding {
   /**
    * Key or list of keys to match. Compared case-insensitively against

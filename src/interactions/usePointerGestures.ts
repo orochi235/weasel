@@ -38,6 +38,7 @@ export interface PointerGestureCallbackCtx {
   modifiers: ModifierState;
 }
 
+/** Options for `usePointerGestures` — wires move/resize/rotate/insert/area-select controllers into a single canvas. */
 export interface UsePointerGesturesOptions<TMovePose, TResizePose> {
   /** clientX/Y → world coords. Default: `clientToCanvas` (no pan/zoom). Apps
    *  with a viewport transform compose pan/zoom into this callback. */

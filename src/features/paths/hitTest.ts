@@ -20,11 +20,13 @@ import {
   type PolygonPath,
 } from './types';
 
+/** Options for `pointInPath`. */
 export interface PointInPathOptions {
   /** Bezier flattening tolerance in world units. Default 0.5. */
   tolerance?: number;
 }
 
+/** Filled-region hit-test for a `Path`. Rect short-circuits to AABB; polygons run ray-cast / winding per `fillRule`. */
 export function pointInPath(
   path: Path,
   x: number,

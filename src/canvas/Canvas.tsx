@@ -84,6 +84,7 @@ export const STANDARD_SLOTS = [
   'insertOverlay',
   'areaSelectOverlay',
 ] as const;
+/** Names of the slots `<Canvas>` supports out of the box (excluding the implicit cell-highlight overlay). */
 export type StandardSlotName = Exclude<(typeof STANDARD_SLOTS)[number], 'cellHighlight'>;
 
 /** Grid slot config — extends raw grid layer opts with an optional nested
@@ -202,6 +203,7 @@ export type CanvasSelectionMode = 'single' | 'multi' | 'none';
 
 const MULTI_RESIZE_TARGET_ID = '__weasel:multi-selection';
 
+/** Props for the top-level `<Canvas>` component — combines viewport, scene, gesture controllers, and slot overrides. */
 export interface CanvasProps<TObject extends { id: string } = { id: string }, TPose = unknown> {
   /** CSS-pixel width. */
   width: number;

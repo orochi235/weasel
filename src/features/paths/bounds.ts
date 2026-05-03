@@ -22,6 +22,7 @@ import {
   type RectPath,
 } from './types';
 
+/** AABB of a `Path`, returned as a `RectPath` for direct reuse with rect-fast-path machinery. */
 export function boundsOfPath(path: Path): RectPath {
   if (path.kind === 'rect') return path;
 

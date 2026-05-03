@@ -1,5 +1,6 @@
 import type { ResizeAnchor } from '../types';
 
+/** Corner resize-handle: world-space center plus the anchor that pins the opposite corner during resize. */
 export interface CornerHandle {
   cx: number;
   cy: number;

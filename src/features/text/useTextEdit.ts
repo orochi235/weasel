@@ -13,6 +13,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ResolvedTextStyle, TextStyle } from './textStyle';
 import { fontString, resolveTextStyle } from './textStyle';
 
+/** Screen-space pose passed to `useTextEdit` so the overlay can be placed and sized in CSS pixels. */
 export interface TextEditScreenPose {
   /** Top-left in CSS pixels relative to `container`. */
   x: number;
@@ -25,6 +26,7 @@ export interface TextEditScreenPose {
   lineHeight?: number;
 }
 
+/** Options for `useTextEdit`. */
 export interface UseTextEditOptions {
   /** Element the overlay is appended to. Must be `position: relative`/absolute. */
   container: HTMLElement | null;
@@ -38,6 +40,7 @@ export interface UseTextEditOptions {
   setText: (id: string, text: string) => void;
 }
 
+/** Options for `useTextEdit().startEdit`. */
 export interface StartEditOptions {
   /**
    * Where to place the caret on edit start. Number = caret offset (0..text.length);
@@ -46,6 +49,7 @@ export interface StartEditOptions {
   caret?: number | 'all';
 }
 
+/** Return shape of `useTextEdit`. */
 export interface UseTextEditReturn {
   editingId: string | null;
   startEdit: (id: string, opts?: StartEditOptions) => void;
@@ -54,6 +58,7 @@ export interface UseTextEditReturn {
   isEditing: (id: string) => boolean;
 }
 
+/** In-place text editing via a contenteditable overlay positioned over the text node's screen-space pose. */
 export function useTextEdit(
   opts: UseTextEditOptions,
 ): UseTextEditReturn {

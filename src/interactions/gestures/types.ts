@@ -1,6 +1,7 @@
 import type { Op } from '../../core/ops/types';
 import type { InsertAdapter, MoveAdapter, SnapTarget } from '../../core/adapters/types';
 
+/** Snapshot of modifier-key state at gesture dispatch. */
 export interface ModifierState {
   alt: boolean;
   shift: boolean;
@@ -8,6 +9,7 @@ export interface ModifierState {
   ctrl: boolean;
 }
 
+/** Pointer position in both world and client coords. */
 export interface PointerState {
   worldX: number;
   worldY: number;
@@ -37,6 +39,7 @@ export interface GestureContext<TPose, TObject extends { id: string } = { id: st
   scratch: Record<string, unknown>;
 }
 
+/** Pluggable per-gesture snap rule; receives the proposed pose and returns a snapped pose or `null` to skip. */
 export interface SnapStrategy<TPose> {
   snap(pose: TPose, ctx: GestureContext<TPose, { id: string }>): TPose | null;
 }
@@ -61,13 +64,16 @@ export interface GestureBehavior<TPose, TProposed, TMoveResult> {
 
 // ----- move -----
 
+/** Per-frame result a `MoveBehavior.onMove` can return to override pose / snap target. */
 export interface BehaviorMoveResult<TPose> {
   pose?: TPose;
   snap?: SnapTarget<TPose> | null;
 }
 
+/** A behavior plugged into `useMove` — shapes the proposed pose during a drag. */
 export type MoveBehavior<TPose> = GestureBehavior<TPose, TPose, BehaviorMoveResult<TPose>>;
 
+/** Live overlay state exposed by `useMove` for rendering ghosts and snap previews. */
 export interface MoveOverlay<TPose> {
   draggedIds: string[];
   poses: Map<string, TPose>;
@@ -77,11 +83,13 @@ export interface MoveOverlay<TPose> {
 
 // ----- resize -----
 
+/** Which corner/edge of the rect stays fixed during a resize. */
 export type ResizeAnchor = {
   x: 'min' | 'max' | 'free';
   y: 'min' | 'max' | 'free';
 };
 
+/** Minimum rect-shaped pose required by the resize machinery. */
 export interface ResizePose {
   x: number;
   y: number;
@@ -89,21 +97,25 @@ export interface ResizePose {
   height: number;
 }
 
+/** Per-frame proposed resize: pose plus the anchor pinning the opposite corner. */
 export interface ResizeProposed<TPose extends ResizePose> {
   pose: TPose;
   anchor: ResizeAnchor;
 }
 
+/** Per-frame result a `ResizeBehavior.onMove` can return to override the proposed pose. */
 export interface ResizeMoveResult<TPose extends ResizePose> {
   pose?: TPose;
 }
 
+/** A behavior plugged into `useResize`. */
 export type ResizeBehavior<TPose extends ResizePose> = GestureBehavior<
   TPose,
   ResizeProposed<TPose>,
   ResizeMoveResult<TPose>
 >;
 
+/** Live overlay state exposed by `useResize` for rendering the in-flight resize ghost. */
 export interface ResizeOverlay<TPose> {
   id: string;
   currentPose: TPose;
@@ -125,22 +137,26 @@ export interface RotatedPose extends ResizePose {
   rotation: number;
 }
 
+/** Per-frame proposed rotation: pose plus the candidate angle in radians. */
 export interface RotateProposed<TPose> {
   pose: TPose;
   /** Proposed rotation angle (radians). */
   rotation: number;
 }
 
+/** Per-frame result a `RotateBehavior.onMove` can return to override the proposed pose. */
 export interface RotateMoveResult<TPose> {
   pose?: TPose;
 }
 
+/** A behavior plugged into `useRotate`. */
 export type RotateBehavior<TPose> = GestureBehavior<
   TPose,
   RotateProposed<TPose>,
   RotateMoveResult<TPose>
 >;
 
+/** Live overlay state exposed by `useRotate` for rendering the in-flight rotation ghost. */
 export interface RotateOverlay<TPose> {
   id: string;
   currentPose: TPose;
@@ -158,6 +174,7 @@ export interface InsertPoint {
   y: number;
 }
 
+/** Per-frame proposed insert: the two world points plus their derived bounds and pose. */
 export interface InsertProposed<TPose> {
   start: InsertPoint;
   current: InsertPoint;
@@ -165,6 +182,7 @@ export interface InsertProposed<TPose> {
   pose: TPose;
 }
 
+/** Per-frame result an `InsertBehavior.onMove` can return to override the start/current points. */
 export interface InsertMoveResult {
   /** Override the start point (e.g. snap-to-grid on the anchor). */
   start?: InsertPoint;
@@ -180,6 +198,7 @@ export type InsertBehavior<TPose> = GestureBehavior<
   InsertMoveResult
 >;
 
+/** Live overlay state exposed by `useInsert` for rendering the in-flight insert preview. */
 export interface InsertOverlay<TPose> {
   start: InsertPoint;
   current: InsertPoint;
@@ -199,6 +218,7 @@ export interface AreaSelectPose {
   shiftHeld: boolean;
 }
 
+/** Per-frame proposed area-select state: start point, current point, and shift policy. */
 export interface AreaSelectProposed {
   start: { worldX: number; worldY: number };
   current: { worldX: number; worldY: number };
@@ -209,12 +229,14 @@ export interface AreaSelectProposed {
  *  onEnd. We return void from onMove. */
 export type AreaSelectMoveResult = void;
 
+/** A behavior plugged into `useAreaSelect`. */
 export type AreaSelectBehavior = GestureBehavior<
   AreaSelectPose,
   AreaSelectProposed,
   AreaSelectMoveResult
 >;
 
+/** Live overlay state exposed by `useAreaSelect` for rendering the marquee. */
 export interface AreaSelectOverlay {
   start: { worldX: number; worldY: number };
   current: { worldX: number; worldY: number };
@@ -223,6 +245,7 @@ export interface AreaSelectOverlay {
 
 // ----- clone -----
 
+/** Pose carried through clone gestures: ids being cloned plus the pointer/offset state. */
 export interface ClonePose {
   ids: string[];
   offset: { dx: number; dy: number };
@@ -230,8 +253,10 @@ export interface ClonePose {
   worldY: number;
 }
 
+/** Layer category a clone targets — kit-level placeholder; consumers may narrow. */
 export type CloneLayer = 'structures' | 'zones' | 'plantings';
 
+/** A behavior plugged into `useClone`; gates on modifier state and emits ops at gesture end. */
 export interface CloneBehavior {
   id: string;
   /** Default true. */

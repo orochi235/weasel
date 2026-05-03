@@ -3,6 +3,7 @@ import type { Op } from '../../../../core/ops/types';
 import type { AreaSelectAdapter } from '../../../../core/adapters/types';
 import type { AreaSelectBehavior } from '../../types';
 
+/** Default area-select behavior: replace selection with hits inside the marquee, or extend with shift held. */
 export function selectFromMarquee(): AreaSelectBehavior {
   return {
     defaultTransient: true,

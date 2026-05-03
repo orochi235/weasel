@@ -15,6 +15,7 @@ import {
   resolveTextStyle,
 } from './textStyle';
 
+/** Pose for a text node: bounding rect plus the text and optional style. */
 export interface TextPose {
   x: number;
   y: number;
@@ -24,6 +25,7 @@ export interface TextPose {
   style?: TextStyle;
 }
 
+/** Options for `createTextLayer`. */
 export interface CreateTextLayerOpts<T> {
   id?: string;
   label?: string;
@@ -33,6 +35,7 @@ export interface CreateTextLayerOpts<T> {
   isHidden?: (node: T) => boolean;
 }
 
+/** Build a `RenderLayer` that draws text nodes using their `TextPose` and resolved style. */
 export function createTextLayer<T>(opts: CreateTextLayerOpts<T>): RenderLayer<unknown> {
   const { id = 'text', label = 'Text', getTexts, getPose, isHidden } = opts;
   return {

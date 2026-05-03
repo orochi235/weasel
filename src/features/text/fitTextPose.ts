@@ -23,6 +23,7 @@ import { measureText } from './measureText';
 import { fontString, resolveTextStyle } from './textStyle';
 import type { TextPose } from './textLayer';
 
+/** Options for `fitTextPose`. */
 export interface FitTextPoseOptions {
   /** Which axis (or axes) to recompute. Default: `'height'`. */
   axis?: 'height' | 'both';
@@ -30,6 +31,7 @@ export interface FitTextPoseOptions {
   padding?: number | { x?: number; y?: number };
 }
 
+/** Recompute a `TextPose`'s `width`/`height` to fit its content; pure helper, doesn't mutate scene state. */
 export function fitTextPose(
   ctx: CanvasRenderingContext2D,
   pose: TextPose,

@@ -16,16 +16,21 @@
  * dispatch on `kind`.
  */
 
-/** Command codes. Numeric for fast Uint8Array dispatch. */
+/** Command code: moveTo. */
 export const PATH_M = 0;
+/** Command code: lineTo. */
 export const PATH_L = 1;
+/** Command code: cubic bezier (`bezierCurveTo`). */
 export const PATH_C = 2;
+/** Command code: quadratic bezier (`quadraticCurveTo`). */
 export const PATH_Q = 3;
+/** Command code: close subpath. */
 export const PATH_Z = 4;
 
 /** Float coords consumed by each command, indexed by command code. */
 export const PATH_CMD_LENGTHS: readonly number[] = [2, 2, 6, 4, 0];
 
+/** Fill rule used by polygon path hit-testing and `ctx.fill()`. */
 export type PathFillRule = 'nonzero' | 'evenodd';
 
 /**
@@ -54,4 +59,5 @@ export interface RectPath {
   height: number;
 }
 
+/** Canonical path shape — either an axis-aligned rect (fast path) or a polygon command stream. */
 export type Path = PolygonPath | RectPath;

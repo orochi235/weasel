@@ -12,6 +12,7 @@ import { traceToContext } from './canvas';
 import { boundsOfPath } from './bounds';
 import type { Path } from './types';
 
+/** Options for `createPathLayer`. */
 export interface CreatePathLayerOpts<T> {
   id?: string;
   label?: string;
@@ -25,6 +26,7 @@ export interface CreatePathLayerOpts<T> {
   isHidden?: (node: T) => boolean;
 }
 
+/** Build a `RenderLayer` that fills/strokes `Path` instances enumerated from a node list. */
 export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<unknown> {
   const { id = 'paths', label = 'Paths', getNodes, getPath, getFill, getStroke, isHidden } = opts;
   return {

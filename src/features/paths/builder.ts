@@ -21,6 +21,7 @@ import {
   type RectPath,
 } from './types';
 
+/** Fluent builder for `PolygonPath`; hides the `Uint8Array`/`Float32Array` encoding behind move/line/curve/close calls. */
 export class PathBuilder {
   private cmds: number[] = [];
   private xs: number[] = [];

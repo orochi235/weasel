@@ -10,6 +10,7 @@
 
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, type Path } from './types';
 
+/** Walk a `Path` command stream and emit it onto a Canvas2D context (caller fills/strokes/clips). */
 export function traceToContext(ctx: CanvasRenderingContext2D, path: Path): void {
   ctx.beginPath();
   if (path.kind === 'rect') {

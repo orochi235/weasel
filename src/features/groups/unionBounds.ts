@@ -9,6 +9,7 @@
 import type { RectPose } from '../../features/groups/composePose';
 export type { RectPose };
 
+/** Compute the AABB envelope of a set of rect-shaped poses; returns null when empty. */
 export function unionBounds<TPose extends RectPose>(poses: Iterable<TPose>): RectPose | null {
   let minX = Infinity;
   let minY = Infinity;

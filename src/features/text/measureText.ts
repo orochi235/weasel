@@ -18,12 +18,14 @@
 
 import type { ResolvedTextStyle } from './textStyle';
 
+/** Result of `measureText`: wrapped lines, per-line source offsets, and total block height. */
 export interface MeasuredText {
   lines: string[];
   lineStarts: number[];
   height: number;
 }
 
+/** Greedy word-wrap text measurement against `maxWidth`; preserves explicit `\n` breaks. */
 export function measureText(
   ctx: CanvasRenderingContext2D,
   text: string,

@@ -47,6 +47,7 @@ export interface DefaultLayersSelection<TPose> {
   handles?: { size?: number };
 }
 
+/** Options for `defaultLayers` — the canonical layer stack used by `<Canvas>`. */
 export interface DefaultLayersOpts<TObject extends { id: string }, TPose> {
   /** Background fill color (drawn via a fillRect over the canvas). Omit to skip. */
   background?: string;

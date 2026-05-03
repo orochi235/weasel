@@ -18,6 +18,9 @@ export const RECT_ORIGIN_PROJECTION: OriginProjection<{ x: number; y: number }> 
   translate: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
 };
 
+/** Snap-strategy that rounds the pose's origin to the nearest multiple of
+ *  `spacing` (resolved through `unitSystem`). For non-rect TPose pass an
+ *  `OriginProjection` so the strategy knows how to read/write the origin. */
 export function gridSnapStrategy<TPose extends { x: number; y: number }>(
   spacing: UnitValue,
   unitSystem?: UnitSystem,

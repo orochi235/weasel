@@ -11,6 +11,7 @@
 
 import type { Paint } from '../../core/paint';
 
+/** User-facing text style. All fields optional; defaults applied at render time via `resolveTextStyle`. */
 export interface TextStyle {
   /** Font size in world units. Default 16. */
   fontSize?: number;
@@ -41,6 +42,7 @@ export interface TextStyle {
   selectionColor?: string;
 }
 
+/** `TextStyle` with all fields filled in from defaults — what the renderer actually consumes. */
 export interface ResolvedTextStyle {
   fontSize: number;
   fontFamily: string;
@@ -68,6 +70,7 @@ function defaultSelectionBackground(textColor: string): string {
   return `color-mix(in srgb, ${textColor} 25%, transparent)`;
 }
 
+/** Default resolved style used when a `TextPose` omits `style`. */
 export const DEFAULT_TEXT_STYLE: ResolvedTextStyle = {
   fontSize: 16,
   fontFamily: 'sans-serif',
@@ -81,6 +84,7 @@ export const DEFAULT_TEXT_STYLE: ResolvedTextStyle = {
   selectionColor: null,
 };
 
+/** Fill in a partial `TextStyle` with defaults from `DEFAULT_TEXT_STYLE`. */
 export function resolveTextStyle(style?: TextStyle): ResolvedTextStyle {
   if (!style) return DEFAULT_TEXT_STYLE;
   const fill = style.fill ?? DEFAULT_TEXT_STYLE.fill;
