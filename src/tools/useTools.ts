@@ -36,6 +36,8 @@ export interface ToolsApi {
   registry: Readonly<Record<string, AnyTool>>;
   /** The dispatcher `<Canvas>` wires to its DOM events. */
   dispatcher: ToolsDispatcher;
+  /** Returns true if a tool with the given id is in the registry or alwaysOn list. */
+  has(id: string): boolean;
 }
 
 const DEFAULT_CTX: Omit<ToolCtx, 'scratch'> = {
@@ -122,5 +124,8 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
     alwaysOn: alwaysOnRef.current,
     registry: registryRef.current,
     dispatcher,
+    has(id: string): boolean {
+      return id in registryRef.current || alwaysOnRef.current.some(t => t.id === id);
+    },
   };
 }

@@ -828,7 +828,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       removeObject: adapterWithRemove.removeObject,
       applyBatch: effectiveAdapter.applyBatch?.bind(effectiveAdapter),
     },
-    { bindKeyboard: deleteEnabled, label: deleteOpts.label, filter: deleteOpts.filter },
+    { bindKeyboard: deleteEnabled && !tools?.has('delete'), label: deleteOpts.label, filter: deleteOpts.filter },
   );
 
   const nudgeCfg = gestures?.nudge;
@@ -841,7 +841,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       applyBatch: effectiveAdapter.applyBatch?.bind(effectiveAdapter),
     },
     {
-      enableKeyboard: nudgeEnabled,
+      enableKeyboard: nudgeEnabled && !tools?.has('nudge'),
       step: nudgeOpts.step,
       shiftStep: nudgeOpts.shiftStep,
       label: nudgeOpts.label,
@@ -854,7 +854,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     () => undoRedoCfg?.adapter ?? { undo: () => {}, redo: () => {}, canUndo: () => false, canRedo: () => false },
     [undoRedoCfg?.adapter],
   );
-  useUndoRedo(undoRedoAdapter, { bindKeyboard: !!undoRedoCfg });
+  useUndoRedo(undoRedoAdapter, { bindKeyboard: !!undoRedoCfg && !tools?.has('undoRedo') });
 
   const dupeCfg = gestures?.duplicate;
   useDuplicate<TPose>(
@@ -865,7 +865,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       applyBatch: effectiveAdapter.applyBatch?.bind(effectiveAdapter),
     },
     {
-      enableKeyboard: !!dupeCfg,
+      enableKeyboard: !!dupeCfg && !tools?.has('duplicate'),
       offset: dupeCfg?.offset,
       label: dupeCfg?.label,
     },
@@ -1076,12 +1076,15 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     };
   }, [onBodyHit, selectionMode, effectiveSelection]);
 
+  const selectToolHandled = !!tools?.has('select');
+  const insertToolHandled = !!tools?.has('insert');
+
   const bindings = usePointerGestures<TPose, TPose>({
-    move,
-    resize,
-    rotate,
-    insert,
-    areaSelect,
+    move: selectToolHandled ? undefined : move,
+    resize: selectToolHandled ? undefined : resize,
+    rotate: selectToolHandled ? undefined : rotate,
+    insert: insertToolHandled ? undefined : insert,
+    areaSelect: selectToolHandled ? undefined : areaSelect,
     editAnchors: editAnchorsCtl as unknown as EditAnchorsController<{ id: string }> | undefined,
     editAnchorsActive: !!editingAnchors,
     tool,

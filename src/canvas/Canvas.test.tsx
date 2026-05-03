@@ -635,4 +635,73 @@ describe('Canvas tools mode', () => {
 
     expect(select.clear).toHaveBeenCalledOnce();
   });
+
+  describe('legacy-hook dedupe', () => {
+    it('suppresses legacy delete keybinding when "delete" Tool is in alwaysOn', () => {
+      // The legacy useDelete hook attaches its own document keydown handler
+      // when bindKeyboard is true. With a 'delete' Tool in alwaysOn, Canvas
+      // must pass bindKeyboard:false so the legacy handler never fires.
+      const legacyApplyOps = vi.fn();
+
+      function Test() {
+        const delTool = defineTool({
+          id: 'delete',
+          keybinding: 'Backspace',
+          keyboard: {
+            onDown: (_e) => 'claim',
+          },
+        });
+        const activeTool = defineTool({ id: 'active' });
+        const tools = useTools({
+          active: 'active',
+          registry: { active: activeTool },
+          alwaysOn: [delTool],
+        });
+        return (
+          <Canvas
+            width={100}
+            height={100}
+            layers={{}}
+            tools={tools}
+            gestures={{
+              delete: {
+                // The legacy adapter would call legacyApplyOps if the hook fires.
+                // We detect this via a custom filter that always returns true.
+                filter: (_ids: string[]) => {
+                  legacyApplyOps();
+                  return true;
+                },
+              } as never,
+            }}
+          />
+        );
+      }
+
+      render(<Test />);
+      fireEvent.keyDown(document, { key: 'Backspace' });
+      // The filter is only called by the legacy hook; with dedupe, it should NOT fire.
+      expect(legacyApplyOps).not.toHaveBeenCalled();
+    });
+
+    it('tools.has() returns true for ids in registry and alwaysOn', () => {
+      let capturedHas: ((id: string) => boolean) | undefined;
+
+      function Test() {
+        const always = defineTool({ id: 'delete', keyboard: { onDown: () => 'pass' } });
+        const active = defineTool({ id: 'select' });
+        const tools = useTools({
+          active: 'select',
+          registry: { select: active },
+          alwaysOn: [always],
+        });
+        capturedHas = tools.has.bind(tools);
+        return <Canvas width={50} height={50} layers={{}} tools={tools} />;
+      }
+
+      render(<Test />);
+      expect(capturedHas?.('select')).toBe(true);
+      expect(capturedHas?.('delete')).toBe(true);
+      expect(capturedHas?.('nudge')).toBe(false);
+    });
+  });
 });
