@@ -29,6 +29,7 @@ export interface PointerGestureBindings {
   onPointerMove: (e: React.PointerEvent<HTMLCanvasElement>) => void;
   onPointerUp: (e: React.PointerEvent<HTMLCanvasElement>) => void;
   onPointerCancel: (e: React.PointerEvent<HTMLCanvasElement>) => void;
+  onLostPointerCapture: (e: React.PointerEvent<HTMLCanvasElement>) => void;
 }
 
 /** Context object passed to body-hit / tap-empty callbacks. */
@@ -199,6 +200,34 @@ export function usePointerGestures<TMovePose, TResizePose>(
 
   const dragKindRef = useRef<'move' | 'resize' | 'rotate' | 'insert' | 'area' | 'editAnchors' | null>(null);
 
+  // Document-level pointerup/pointercancel backstop. React's synthetic
+  // onPointerUp on the canvas only fires when the canvas is still the event
+  // target — if pointer capture is lost mid-drag (canvas remount, OS-level
+  // capture loss, release outside the window), pointerup lands on document
+  // instead. Attached on gesture start, detached on gesture end. Both the
+  // React handler and these may fire; endActiveGesture is idempotent.
+  const docListenersRef = useRef<{ up: (e: PointerEvent) => void; cancel: (e: PointerEvent) => void } | null>(null);
+  // Forward ref so listeners (created on gesture start) can call the latest
+  // endActiveGesture without re-binding when its identity changes.
+  const endActiveGestureRef = useRef<((mode: 'commit' | 'cancel') => void) | null>(null);
+
+  const detachDocListeners = useCallback(() => {
+    const ls = docListenersRef.current;
+    if (!ls) return;
+    document.removeEventListener('pointerup', ls.up);
+    document.removeEventListener('pointercancel', ls.cancel);
+    docListenersRef.current = null;
+  }, []);
+
+  const attachDocListeners = useCallback(() => {
+    if (docListenersRef.current) return;
+    const up = () => endActiveGestureRef.current?.('commit');
+    const cancel = () => endActiveGestureRef.current?.('cancel');
+    document.addEventListener('pointerup', up);
+    document.addEventListener('pointercancel', cancel);
+    docListenersRef.current = { up, cancel };
+  }, []);
+
   const onPointerDown = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
       const [wx, wy] = clientToWorld(e.currentTarget, e.clientX, e.clientY);
@@ -218,6 +247,7 @@ export function usePointerGestures<TMovePose, TResizePose>(
         if (r) {
           dragKindRef.current = 'editAnchors';
           e.currentTarget.setPointerCapture(e.pointerId);
+            attachDocListeners();
           editAnchors.start({ id: r.id, hit: r.hit, worldX: wx, worldY: wy });
           return;
         }
@@ -235,6 +265,7 @@ export function usePointerGestures<TMovePose, TResizePose>(
           if (hitRotationHandle(handle, wx, wy, handleHitRadius)) {
             dragKindRef.current = 'rotate';
             e.currentTarget.setPointerCapture(e.pointerId);
+            attachDocListeners();
             rotate.start({ id: target.id, worldX: wx, worldY: wy });
             return;
           }
@@ -248,6 +279,7 @@ export function usePointerGestures<TMovePose, TResizePose>(
             if (hitCornerHandle(h, wx, wy, handleHitRadius)) {
               dragKindRef.current = 'resize';
               e.currentTarget.setPointerCapture(e.pointerId);
+            attachDocListeners();
               resize.start(target.id, h.anchor, wx, wy);
               return;
             }
@@ -273,6 +305,7 @@ export function usePointerGestures<TMovePose, TResizePose>(
             if (dragIds.length > 0) {
               dragKindRef.current = 'move';
               e.currentTarget.setPointerCapture(e.pointerId);
+            attachDocListeners();
               move.start({
                 ids: dragIds,
                 worldX: wx,
@@ -289,12 +322,14 @@ export function usePointerGestures<TMovePose, TResizePose>(
       if (tool === 'insert' && insert) {
         dragKindRef.current = 'insert';
         e.currentTarget.setPointerCapture(e.pointerId);
+            attachDocListeners();
         insert.start(wx, wy, modifiers);
         return;
       }
       if (tool === 'select' && areaSelect) {
         dragKindRef.current = 'area';
         e.currentTarget.setPointerCapture(e.pointerId);
+            attachDocListeners();
         areaSelect.start(wx, wy, modifiers);
         return;
       }
@@ -360,29 +395,45 @@ export function usePointerGestures<TMovePose, TResizePose>(
     [clientToWorld, move, resize, rotate, insert, areaSelect, editAnchors],
   );
 
-  const onPointerUp = useCallback(() => {
-    const kind = dragKindRef.current;
-    if (!kind) return;
-    dragKindRef.current = null;
-    if (kind === 'move') move?.end();
-    else if (kind === 'resize') resize?.end();
-    else if (kind === 'rotate') rotate?.end();
-    else if (kind === 'insert') insert?.end();
-    else if (kind === 'area') areaSelect?.end();
-    else if (kind === 'editAnchors') editAnchors?.end();
-  }, [move, resize, rotate, insert, areaSelect, editAnchors]);
+  const endActiveGesture = useCallback(
+    (mode: 'commit' | 'cancel') => {
+      const kind = dragKindRef.current;
+      if (!kind) {
+        detachDocListeners();
+        return;
+      }
+      dragKindRef.current = null;
+      detachDocListeners();
+      const ctl =
+        kind === 'move' ? move
+        : kind === 'resize' ? resize
+        : kind === 'rotate' ? rotate
+        : kind === 'insert' ? insert
+        : kind === 'area' ? areaSelect
+        : kind === 'editAnchors' ? editAnchors
+        : null;
+      if (!ctl) return;
+      if (mode === 'commit') ctl.end();
+      else ctl.cancel();
+    },
+    [move, resize, rotate, insert, areaSelect, editAnchors, detachDocListeners],
+  );
+  endActiveGestureRef.current = endActiveGesture;
 
-  const onPointerCancel = useCallback(() => {
-    const kind = dragKindRef.current;
-    if (!kind) return;
-    dragKindRef.current = null;
-    if (kind === 'move') move?.cancel();
-    else if (kind === 'resize') resize?.cancel();
-    else if (kind === 'rotate') rotate?.cancel();
-    else if (kind === 'insert') insert?.cancel();
-    else if (kind === 'area') areaSelect?.cancel();
-    else if (kind === 'editAnchors') editAnchors?.cancel();
-  }, [move, resize, rotate, insert, areaSelect, editAnchors]);
+  const onPointerUp = useCallback(() => endActiveGesture('commit'), [endActiveGesture]);
+  const onPointerCancel = useCallback(() => endActiveGesture('cancel'), [endActiveGesture]);
 
-  return { onPointerDown, onPointerMove, onPointerUp, onPointerCancel };
+  // `lostpointercapture` used to be our backstop for "user released outside
+  // window," but its ordering vs `pointerup` is not reliable: when a mid-drag
+  // re-render drops implicit capture, `lostpointercapture` fires in a separate
+  // macrotask BEFORE `pointerup`, racing the gesture's own commit and causing
+  // snap-backs. The replacement is document-level pointerup/pointercancel
+  // listeners attached on gesture start (see `attachDocListeners`), which
+  // catch off-canvas releases without depending on capture being intact.
+  // We still subscribe to lostpointercapture (no-op handler kept for symmetry
+  // with the bindings shape; React requires the handler to be present for
+  // attachment to bubble correctly when consumers add their own).
+  const onLostPointerCapture = useCallback(() => {}, []);
+
+  return { onPointerDown, onPointerMove, onPointerUp, onPointerCancel, onLostPointerCapture };
 }

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { createInsertOp } from '../../../core/ops/create';
 import type { Op } from '../../../core/ops/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
@@ -69,6 +69,17 @@ export function useInsert<TObject extends { id: string }, TPose>(
   behaviorsRef.current = behaviors;
   const posefromBoundsRef = useRef(posefromBounds);
   posefromBoundsRef.current = posefromBounds;
+  // Latest-value refs so controller methods stay referentially stable.
+  const adapterRef = useRef(adapter);
+  adapterRef.current = adapter;
+  const insertLabelRef = useRef(insertLabel);
+  insertLabelRef.current = insertLabel;
+  const minBoundsRef = useRef(minBounds);
+  minBoundsRef.current = minBounds;
+  const onGestureStartRef = useRef(onGestureStart);
+  onGestureStartRef.current = onGestureStart;
+  const onGestureEndRef = useRef(onGestureEnd);
+  onGestureEndRef.current = onGestureEnd;
 
   const stateRef = useRef<{ active: boolean; ctx: GestureContext<TPose> | null }>({
     active: false,
@@ -83,8 +94,7 @@ export function useInsert<TObject extends { id: string }, TPose>(
   }, []);
 
   const start = useCallback((worldX: number, worldY: number, modifiers: ModifierState) => {
-    // ctx.origin/current store the two world points (as TPose-cast InsertPoints).
-    // Behaviors mutate them via { start, current } returns.
+    const adapter = adapterRef.current;
     const startPoint: InsertPoint = { x: worldX, y: worldY };
     const ctx: GestureContext<TPose> = {
       draggedIds: [GID],
@@ -98,11 +108,11 @@ export function useInsert<TObject extends { id: string }, TPose>(
     };
     for (const b of behaviorsRef.current) b.onStart?.(ctx);
     stateRef.current = { active: true, ctx };
-    onGestureStart?.();
+    onGestureStartRef.current?.();
     const sp = ctx.origin.get(GID) as unknown as InsertPoint;
     const bounds = boundsFrom(sp, sp);
     setOverlay({ start: sp, current: sp, bounds, pose: posefromBoundsRef.current(bounds) });
-  }, [adapter, onGestureStart]);
+  }, []);
 
   const move = useCallback((worldX: number, worldY: number, modifiers: ModifierState): boolean => {
     const s = stateRef.current;
@@ -133,6 +143,10 @@ export function useInsert<TObject extends { id: string }, TPose>(
 
   const end = useCallback(() => {
     const s = stateRef.current;
+    const adapter = adapterRef.current;
+    const insertLabel = insertLabelRef.current;
+    const minBounds = minBoundsRef.current;
+    const onGestureEnd = onGestureEndRef.current;
     if (!s.active || !s.ctx) {
       cleanup();
       onGestureEnd?.(false);
@@ -157,12 +171,21 @@ export function useInsert<TObject extends { id: string }, TPose>(
     dispatchApplyBatch(adapter, ops, insertLabel);
     cleanup();
     onGestureEnd?.(true);
-  }, [adapter, cleanup, insertLabel, minBounds.width, minBounds.height, onGestureEnd]);
+  }, [cleanup]);
 
   const cancel = useCallback(() => {
     cleanup();
-    onGestureEnd?.(false);
-  }, [cleanup, onGestureEnd]);
+    onGestureEndRef.current?.(false);
+  }, [cleanup]);
 
-  return { start, move, end, cancel, isInserting: overlay !== null, overlay, adapter };
+  // Stable controller identity — see useMove for rationale.
+  const overlayRef = useRef(overlay);
+  overlayRef.current = overlay;
+  const controller = useMemo<InsertController<TObject, TPose>>(() => ({
+    start, move, end, cancel,
+    get overlay() { return overlayRef.current; },
+    get isInserting() { return overlayRef.current !== null; },
+    get adapter() { return adapterRef.current; },
+  }), [start, move, end, cancel]);
+  return controller;
 }

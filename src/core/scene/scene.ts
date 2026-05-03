@@ -70,8 +70,18 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   let replaying = false;
 
   // ── Helpers ────────────────────────────────────────────────────────────
+  // When `batchDepth > 0` the per-op `notify()` is coalesced: we still bump
+  // the version so getVersion() reflects in-progress mutations, but we defer
+  // listener dispatch until the outermost batch closes. This avoids one
+  // React re-render per op during high-frequency gestures (e.g. snap moves
+  // that emit ~10 transform ops per pointer-move).
+  let batchDirty = false;
   function notify(): void {
     version++;
+    if (batchDepth > 0) {
+      batchDirty = true;
+      return;
+    }
     for (const listener of listeners) listener();
   }
 
@@ -440,13 +450,22 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         return fn();
       } finally {
         batchDepth--;
-        if (batchDepth === 0 && currentBatch) {
-          const finished = currentBatch;
-          currentBatch = null;
-          if (finished.ops.length > 0) {
-            undoStack.push(finished);
-            redoStack.length = 0;
-            while (undoStack.length > historyLimit) undoStack.shift();
+        if (batchDepth === 0) {
+          if (currentBatch) {
+            const finished = currentBatch;
+            currentBatch = null;
+            if (finished.ops.length > 0) {
+              undoStack.push(finished);
+              redoStack.length = 0;
+              while (undoStack.length > historyLimit) undoStack.shift();
+            }
+          }
+          // Fire one coalesced notify if any op inside the batch dirtied
+          // state. Nested batches contribute to the same flush — only the
+          // outermost emits.
+          if (batchDirty) {
+            batchDirty = false;
+            for (const listener of listeners) listener();
           }
         }
       }

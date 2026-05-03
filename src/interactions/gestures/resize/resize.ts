@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { createTransformOp } from '../../../core/ops/transform';
 import type { Op } from '../../../core/ops/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
@@ -116,6 +116,17 @@ export function useResize<TObject extends { id: string }, TPose>(
   behaviorsRef.current = behaviors;
   const geometryRef = useRef(geometry);
   geometryRef.current = geometry;
+  // Latest-value refs so controller methods stay referentially stable.
+  const adapterRef = useRef(adapter);
+  adapterRef.current = adapter;
+  const resizeLabelRef = useRef(resizeLabel);
+  resizeLabelRef.current = resizeLabel;
+  const onGestureStartRef = useRef(onGestureStart);
+  onGestureStartRef.current = onGestureStart;
+  const onGestureEndRef = useRef(onGestureEnd);
+  onGestureEndRef.current = onGestureEnd;
+  const expandIdsRef = useRef(expandIds);
+  expandIdsRef.current = expandIds;
 
   const stateRef = useRef<State<TPose>>({
     active: false,
@@ -147,6 +158,8 @@ export function useResize<TObject extends { id: string }, TPose>(
   }, []);
 
   const start = useCallback((id: string, anchor: ResizeAnchor, worldX: number, worldY: number) => {
+    const adapter = adapterRef.current;
+    const expandIds = expandIdsRef.current;
     const expanded = expandIds ? expandIds([id]) : [id];
     if (expanded.length === 0) {
       stateRef.current.active = false;
@@ -204,9 +217,9 @@ export function useResize<TObject extends { id: string }, TPose>(
       leafTargets: null,
     };
     for (const b of behaviorsRef.current) (b as ResizeBehavior<ResizePose>).onStart?.(ctx as unknown as GestureContext<ResizePose>);
-    onGestureStart?.(id);
+    onGestureStartRef.current?.(id);
     setOverlay({ id, currentPose: originPose, targetPose: originPose, anchor });
-  }, [adapter, expandIds, onGestureStart]);
+  }, []);
 
   const move = useCallback((worldX: number, worldY: number, modifiers: ModifierState): boolean => {
     const s = stateRef.current;
@@ -288,6 +301,9 @@ export function useResize<TObject extends { id: string }, TPose>(
 
   const end = useCallback(() => {
     const s = stateRef.current;
+    const adapter = adapterRef.current;
+    const resizeLabel = resizeLabelRef.current;
+    const onGestureEnd = onGestureEndRef.current;
     if (!s.active || !s.ctx || !s.originPose || !s.originBounds || !s.id) {
       cleanup();
       onGestureEnd?.(false);
@@ -355,12 +371,21 @@ export function useResize<TObject extends { id: string }, TPose>(
     }
     cleanup();
     onGestureEnd?.(true);
-  }, [adapter, cleanup, onGestureEnd, resizeLabel]);
+  }, [cleanup]);
 
   const cancel = useCallback(() => {
     cleanup();
-    onGestureEnd?.(false);
-  }, [cleanup, onGestureEnd]);
+    onGestureEndRef.current?.(false);
+  }, [cleanup]);
 
-  return { start, move, end, cancel, isResizing: overlay !== null, overlay, adapter };
+  // Stable controller identity — see useMove for rationale.
+  const overlayRef = useRef(overlay);
+  overlayRef.current = overlay;
+  const controller = useMemo<ResizeController<TObject, TPose>>(() => ({
+    start, move, end, cancel,
+    get overlay() { return overlayRef.current; },
+    get isResizing() { return overlayRef.current !== null; },
+    get adapter() { return adapterRef.current; },
+  }), [start, move, end, cancel]);
+  return controller;
 }

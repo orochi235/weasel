@@ -77,6 +77,15 @@ export function useEditAnchors<TObject extends { id: string }>(
   options: UseEditAnchorsOptions = {},
 ): EditAnchorsController<TObject> {
   const { hitRadius = 8, editLabel = 'Edit anchors', editingId = null } = options;
+  // Latest-value refs so controller methods stay referentially stable.
+  const adapterRef = useRef(adapter);
+  adapterRef.current = adapter;
+  const hitRadiusRef = useRef(hitRadius);
+  hitRadiusRef.current = hitRadius;
+  const editLabelRef = useRef(editLabel);
+  editLabelRef.current = editLabel;
+  const editingIdRef = useRef(editingId);
+  editingIdRef.current = editingId;
 
   const stateRef = useRef<DragState>({
     active: false,
@@ -107,17 +116,21 @@ export function useEditAnchors<TObject extends { id: string }>(
 
   const tryHit = useCallback(
     (worldX: number, worldY: number): { id: string; hit: AnchorHit } | null => {
+      const adapter = adapterRef.current;
+      const editingId = editingIdRef.current;
+      const hitRadius = hitRadiusRef.current;
       if (!editingId) return null;
       const pose = adapter.getPose(editingId);
       if (pose.kind !== 'polygon') return null;
       const hit = hitAnchor(pose, worldX, worldY, hitRadius);
       return hit ? { id: editingId, hit } : null;
     },
-    [adapter, editingId, hitRadius],
+    [],
   );
 
   const start = useCallback(
     (args: EditAnchorsStartArgs) => {
+      const adapter = adapterRef.current;
       const stored = adapter.getPose(args.id);
       if (stored.kind !== 'polygon') return;
       stateRef.current = {
@@ -130,7 +143,7 @@ export function useEditAnchors<TObject extends { id: string }>(
       setSelectedAnchors([args.hit.anchorIndex]);
       bump();
     },
-    [adapter, bump],
+    [bump],
   );
 
   const move = useCallback(
@@ -159,10 +172,12 @@ export function useEditAnchors<TObject extends { id: string }>(
       bump();
       return;
     }
+    const adapter = adapterRef.current;
+    const editLabel = editLabelRef.current;
     const op = createTransformOp<Path>({ id, from: originPose, to: current, label: editLabel });
     dispatchApplyBatch(adapter, [op], editLabel);
     bump();
-  }, [adapter, bump, cleanup, editLabel]);
+  }, [bump, cleanup]);
 
   const cancel = useCallback(() => {
     cleanup();
@@ -189,15 +204,20 @@ export function useEditAnchors<TObject extends { id: string }>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingId, selectedAnchors, tick, adapter]);
 
-  return {
+  // Stable controller identity — see useMove for rationale.
+  const overlayRef = useRef(overlay);
+  overlayRef.current = overlay;
+  const isActiveCb = useCallback(() => stateRef.current.active, []);
+  const controller = useMemo<EditAnchorsController<TObject>>(() => ({
     start,
     move,
     end,
     cancel,
-    isActive: () => stateRef.current.active,
-    overlay,
+    isActive: isActiveCb,
     tryHit,
     clearSelection,
-    adapter,
-  };
+    get overlay() { return overlayRef.current; },
+    get adapter() { return adapterRef.current; },
+  }), [start, move, end, cancel, isActiveCb, tryHit, clearSelection]);
+  return controller;
 }

@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useMemo } from 'react';
 import { createTransformOp } from '../../../core/ops/transform';
 import type { Op } from '../../../core/ops/types';
 import type { MoveAdapter, SnapTarget } from '../../../core/adapters/types';
@@ -93,6 +93,24 @@ export function useMove<TObject extends { id: string }, TPose>(
 
   const behaviorsRef = useRef(behaviors);
   behaviorsRef.current = behaviors;
+  // Latest-value refs so controller methods can stay referentially stable
+  // across renders even when the consumer passes inline callbacks/options.
+  const adapterRef = useRef(adapter);
+  adapterRef.current = adapter;
+  const translatePoseRef = useRef(translatePose);
+  translatePoseRef.current = translatePose;
+  const dragThresholdPxRef = useRef(dragThresholdPx);
+  dragThresholdPxRef.current = dragThresholdPx;
+  const moveLabelRef = useRef(moveLabel);
+  moveLabelRef.current = moveLabel;
+  const onGestureStartRef = useRef(onGestureStart);
+  onGestureStartRef.current = onGestureStart;
+  const onGestureEndRef = useRef(onGestureEnd);
+  onGestureEndRef.current = onGestureEnd;
+  const expandIdsRef = useRef(expandIds);
+  expandIdsRef.current = expandIds;
+  const cascadeWorldPoseRef = useRef(cascadeWorldPose);
+  cascadeWorldPoseRef.current = cascadeWorldPose;
 
   const stateRef = useRef<{
     phase: 'idle' | 'pending' | 'active';
@@ -121,6 +139,9 @@ export function useMove<TObject extends { id: string }, TPose>(
   }, []);
 
   const start = useCallback((args: MoveStartArgs) => {
+    const adapter = adapterRef.current;
+    const expandIds = expandIdsRef.current;
+    const cascadeWorldPose = cascadeWorldPoseRef.current;
     const ids = expandIds ? expandIds(args.ids) : args.ids;
     if (ids.length === 0) {
       stateRef.current.phase = 'idle';
@@ -170,18 +191,20 @@ export function useMove<TObject extends { id: string }, TPose>(
         scratch: {},
       },
     };
-  }, [adapter, expandIds, cascadeWorldPose]);
+  }, []);
 
   const move = useCallback((args: MoveMoveArgs): boolean => {
     const s = stateRef.current;
     if (s.phase === 'idle' || !s.ctx) return false;
+    const translatePose = translatePoseRef.current;
 
     if (s.phase === 'pending') {
       const dxs = args.clientX - s.startClient.x;
       const dys = args.clientY - s.startClient.y;
-      if (dxs * dxs + dys * dys < dragThresholdPx * dragThresholdPx) return true;
+      const threshold = dragThresholdPxRef.current;
+      if (dxs * dxs + dys * dys < threshold * threshold) return true;
       s.phase = 'active';
-      onGestureStart?.(s.ctx.draggedIds);
+      onGestureStartRef.current?.(s.ctx.draggedIds);
       for (const b of behaviorsRef.current) b.onStart?.(s.ctx);
     }
 
@@ -227,10 +250,13 @@ export function useMove<TObject extends { id: string }, TPose>(
 
     setOverlay({ draggedIds: ctx.draggedIds, poses: overlayPoses, snapped: snap, hideIds });
     return true;
-  }, [adapter, dragThresholdPx, onGestureStart, translatePose]);
+  }, []);
 
   const end = useCallback(() => {
     const s = stateRef.current;
+    const adapter = adapterRef.current;
+    const moveLabel = moveLabelRef.current;
+    const onGestureEnd = onGestureEndRef.current;
     if (s.phase !== 'active' || !s.ctx) {
       cleanup();
       onGestureEnd?.(false);
@@ -268,14 +294,27 @@ export function useMove<TObject extends { id: string }, TPose>(
     }
     cleanup();
     onGestureEnd?.(true);
-  }, [adapter, cleanup, moveLabel, onGestureEnd]);
+  }, [cleanup]);
 
   const cancel = useCallback(() => {
     cleanup();
-    onGestureEnd?.(false);
-  }, [cleanup, onGestureEnd]);
+    onGestureEndRef.current?.(false);
+  }, [cleanup]);
 
   const isActive = useCallback(() => stateRef.current.phase === 'active', []);
 
-  return { start, move, end, cancel, isActive, overlay, adapter };
+  // Stable controller identity: reuse the same object across renders so
+  // downstream consumers (notably `usePointerGestures`) don't rebuild their
+  // pointer-event bindings — that rebind during a drag drops the browser's
+  // implicit pointer capture and can race `lostpointercapture` ahead of
+  // `pointerup`. `overlay` is exposed as a getter so readers always see the
+  // current value despite the stable wrapper.
+  const overlayRef = useRef(overlay);
+  overlayRef.current = overlay;
+  const controller = useMemo<MoveController<TObject, TPose>>(() => ({
+    start, move, end, cancel, isActive,
+    get overlay() { return overlayRef.current; },
+    get adapter() { return adapterRef.current; },
+  }), [start, move, end, cancel, isActive]);
+  return controller;
 }

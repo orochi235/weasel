@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { createTransformOp } from '../../../core/ops/transform';
 import type { Op } from '../../../core/ops/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
@@ -109,6 +109,15 @@ export function useRotate<TObject extends { id: string }, TPose>(
   behaviorsRef.current = behaviors;
   const geometryRef = useRef(geometry);
   geometryRef.current = geometry;
+  // Latest-value refs so controller methods stay referentially stable.
+  const adapterRef = useRef(adapter);
+  adapterRef.current = adapter;
+  const rotateLabelRef = useRef(rotateLabel);
+  rotateLabelRef.current = rotateLabel;
+  const onGestureStartRef = useRef(onGestureStart);
+  onGestureStartRef.current = onGestureStart;
+  const onGestureEndRef = useRef(onGestureEnd);
+  onGestureEndRef.current = onGestureEnd;
 
   const stateRef = useRef<State<TPose>>({
     active: false,
@@ -132,6 +141,7 @@ export function useRotate<TObject extends { id: string }, TPose>(
   }, []);
 
   const start = useCallback((args: RotateStartArgs) => {
+    const adapter = adapterRef.current;
     const geom = geometryRef.current;
     const originPose = adapter.getPose(args.id);
     const rb = geom.getRotatedBounds(originPose);
@@ -160,9 +170,9 @@ export function useRotate<TObject extends { id: string }, TPose>(
     };
     for (const b of behaviorsRef.current)
       (b as RotateBehavior<RotatedPose>).onStart?.(ctx as unknown as GestureContext<RotatedPose>);
-    onGestureStart?.(args.id);
+    onGestureStartRef.current?.(args.id);
     setOverlay({ id: args.id, currentPose: originPose, targetPose: originPose, originPose });
-  }, [adapter, onGestureStart]);
+  }, []);
 
   const move = useCallback((args: RotateMoveArgs): boolean => {
     const s = stateRef.current;
@@ -210,6 +220,9 @@ export function useRotate<TObject extends { id: string }, TPose>(
 
   const end = useCallback(() => {
     const s = stateRef.current;
+    const adapter = adapterRef.current;
+    const rotateLabel = rotateLabelRef.current;
+    const onGestureEnd = onGestureEndRef.current;
     if (!s.active || !s.ctx || s.originPose === null || s.id === null) {
       cleanup();
       onGestureEnd?.(false);
@@ -255,16 +268,24 @@ export function useRotate<TObject extends { id: string }, TPose>(
     }
     cleanup();
     onGestureEnd?.(true);
-  }, [adapter, cleanup, onGestureEnd, rotateLabel]);
+  }, [cleanup]);
 
   const cancel = useCallback(() => {
     cleanup();
-    onGestureEnd?.(false);
-  }, [cleanup, onGestureEnd]);
+    onGestureEndRef.current?.(false);
+  }, [cleanup]);
 
   const isActive = useCallback(() => stateRef.current.active, []);
 
-  return { start, move, end, cancel, isActive, overlay, adapter };
+  // Stable controller identity — see useMove for rationale.
+  const overlayRef = useRef(overlay);
+  overlayRef.current = overlay;
+  const controller = useMemo<RotateController<TObject, TPose>>(() => ({
+    start, move, end, cancel, isActive,
+    get overlay() { return overlayRef.current; },
+    get adapter() { return adapterRef.current; },
+  }), [start, move, end, cancel, isActive]);
+  return controller;
 }
 
 /** Difference `to - from` normalized to `[-π, π]` so lerping wraps correctly. */

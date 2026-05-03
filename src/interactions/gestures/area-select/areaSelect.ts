@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { Op } from '../../../core/ops/types';
 import type { AreaSelectAdapter } from '../../../core/adapters/types';
 import type {
@@ -47,6 +47,17 @@ export function useAreaSelect(
   const { behaviors = [], transient: transientOpt, label = 'Area select', onGestureStart, onGestureEnd } = options;
   const behaviorsRef = useRef(behaviors);
   behaviorsRef.current = behaviors;
+  // Latest-value refs so controller methods stay referentially stable.
+  const adapterRef = useRef(adapter);
+  adapterRef.current = adapter;
+  const labelRef = useRef(label);
+  labelRef.current = label;
+  const transientOptRef = useRef(transientOpt);
+  transientOptRef.current = transientOpt;
+  const onGestureStartRef = useRef(onGestureStart);
+  onGestureStartRef.current = onGestureStart;
+  const onGestureEndRef = useRef(onGestureEnd);
+  onGestureEndRef.current = onGestureEnd;
 
   const stateRef = useRef<State>({ active: false, ctx: null });
   const [overlay, setOverlay] = useState<AreaSelectOverlay | null>(null);
@@ -58,6 +69,7 @@ export function useAreaSelect(
   }, []);
 
   const start = useCallback((worldX: number, worldY: number, modifiers: ModifierState) => {
+    const adapter = adapterRef.current;
     const startPose: AreaSelectPose = { worldX, worldY, shiftHeld: modifiers.shift };
     const ctx: GestureContext<AreaSelectPose> = {
       draggedIds: [GID],
@@ -71,13 +83,13 @@ export function useAreaSelect(
     };
     for (const b of behaviorsRef.current) b.onStart?.(ctx);
     stateRef.current = { active: true, ctx };
-    onGestureStart?.();
+    onGestureStartRef.current?.();
     setOverlay({
       start: { worldX, worldY },
       current: { worldX, worldY },
       shiftHeld: modifiers.shift,
     });
-  }, [adapter, onGestureStart]);
+  }, []);
 
   const move = useCallback((worldX: number, worldY: number, modifiers: ModifierState): boolean => {
     const s = stateRef.current;
@@ -105,6 +117,10 @@ export function useAreaSelect(
 
   const end = useCallback(() => {
     const s = stateRef.current;
+    const adapter = adapterRef.current;
+    const label = labelRef.current;
+    const transientOpt = transientOptRef.current;
+    const onGestureEnd = onGestureEndRef.current;
     if (!s.active || !s.ctx) {
       cleanup();
       onGestureEnd?.(false);
@@ -141,12 +157,21 @@ export function useAreaSelect(
     }
     cleanup();
     onGestureEnd?.(true);
-  }, [adapter, cleanup, label, onGestureEnd, transientOpt]);
+  }, [cleanup]);
 
   const cancel = useCallback(() => {
     cleanup();
-    onGestureEnd?.(false);
-  }, [cleanup, onGestureEnd]);
+    onGestureEndRef.current?.(false);
+  }, [cleanup]);
 
-  return { start, move, end, cancel, isAreaSelecting: overlay !== null, overlay, adapter };
+  // Stable controller identity — see useMove for rationale.
+  const overlayRef = useRef(overlay);
+  overlayRef.current = overlay;
+  const controller = useMemo<AreaSelectController>(() => ({
+    start, move, end, cancel,
+    get overlay() { return overlayRef.current; },
+    get isAreaSelecting() { return overlayRef.current !== null; },
+    get adapter() { return adapterRef.current; },
+  }), [start, move, end, cancel]);
+  return controller;
 }
