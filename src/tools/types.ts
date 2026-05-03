@@ -1,6 +1,7 @@
 // src/tools/types.ts
 import type { SelectionApi } from '../features/selection/useSelection';
 import type { Op } from '../core/ops/types';
+import type { View } from '../features/viewport/view';
 
 /** Outcome of a channel handler. `'claim'` stops dispatch for this event;
  *  `'pass'` lets the next slot try. Handlers that return nothing are
@@ -31,6 +32,13 @@ export interface ToolCtx<TScratch = unknown> {
    *  cast to a known shape. Phase 1 doesn't constrain this. */
   adapter: unknown;
   applyBatch: (ops: Op[], label: string) => void;
+  /** Current viewport. Reflects camera-position semantics — see
+   *  `View` JSDoc. Phase 2b is pan-only. */
+  view: View;
+  /** Mutate the viewport. In controlled mode this calls the consumer's
+   *  `onViewChange`; in uncontrolled mode it updates Canvas's internal
+   *  state. View changes are not undoable. */
+  setView: (next: View) => void;
   scratch: TScratch;
 }
 
