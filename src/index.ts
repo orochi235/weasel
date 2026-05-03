@@ -77,6 +77,13 @@ export type {
   PointerGestureBindings,
   UsePointerGesturesOptions,
 } from './interactions/usePointerGestures';
+export { useSelection } from './interactions/useSelection';
+export type {
+  SelectionApi,
+  SelectionMode,
+  SelectionExtendKey,
+  UseSelectionOptions,
+} from './interactions/useSelection';
 export * from './features/layers/renderLayer';
 export * from './features/layers/LayerRenderer';
 export { createGridLayer } from './features/layers/gridLayer';
