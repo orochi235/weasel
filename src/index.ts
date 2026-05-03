@@ -52,9 +52,9 @@
  */
 
 export * from './grid';
-export * from './dragGhost';
-export * from './thresholdDrag';
-export * from './pointerDrag';
+export * from './drag/dragGhost';
+export * from './drag/thresholdDrag';
+export * from './drag/pointerDrag';
 export * from './useCanvasSize';
 export { setupCanvasDpr, useFixedPixelRatio } from './pixelDensity';
 export type { SetupCanvasDprOptions } from './pixelDensity';
