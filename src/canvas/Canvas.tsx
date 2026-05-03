@@ -38,6 +38,9 @@ import type {
   AreaSelectController,
   UseAreaSelectOptions,
 } from '../interactions/gestures/area-select/areaSelect';
+import { useDelete } from '../interactions/actions/delete';
+import { useNudge } from '../interactions/actions/nudge';
+import { useDuplicate } from '../interactions/actions/duplicate';
 import { useEditAnchors } from '../interactions/gestures/edit-anchors/editAnchors';
 import type {
   EditAnchorsAdapter,
@@ -301,12 +304,46 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   tabIndex?: number;
   autoFocusOnPointerDown?: boolean;
 
+  /** Opt-in keyboard-driven actions wired against the canvas's effective
+   *  selection. Each key turns the action on; values may be `true` (defaults)
+   *  or a config dict. Omitting a key leaves the action unbound. */
+  gestures?: GesturesConfig<TPose>;
+
   /** Mutable ref Canvas writes overlay-aware pose/bounds lookups to on every
    *  render. Custom layers can read it from inside their `draw` closure to
    *  reflect in-flight gestures (move/resize/rotate) instead of the committed
    *  scene. Both lookups apply when an id is in the active overlay; otherwise
    *  they fall back to the adapter. */
   helpersRef?: React.MutableRefObject<CanvasHelpers<TPose> | null>;
+}
+
+/** Per-action config for the `gestures` prop. */
+export interface DeleteGestureConfig {
+  label?: string;
+  filter?: (ids: string[]) => string[];
+}
+export interface NudgeGestureConfig<TPose> {
+  step?: number;
+  shiftStep?: number;
+  label?: string;
+  /** Override pose translation. Defaults to `geometry.translate` if available,
+   *  else the rect-pose translator. */
+  translatePose?: (pose: TPose, dx: number, dy: number) => TPose;
+}
+export interface DuplicateGestureConfig {
+  cloneObject: (id: string, offset: { dx: number; dy: number }) => { id: string };
+  offset?: { dx: number; dy: number };
+  label?: string;
+}
+
+export interface GesturesConfig<TPose> {
+  /** Bind Delete/Backspace to remove the current selection. */
+  delete?: boolean | DeleteGestureConfig;
+  /** Bind arrow keys to translate the current selection (shift = larger step). */
+  nudge?: boolean | NudgeGestureConfig<TPose>;
+  /** Bind Mod+D to duplicate the current selection. Requires `cloneObject` so
+   *  always an object — there's no useful default for "what is a copy of X". */
+  duplicate?: DuplicateGestureConfig;
 }
 
 /** Live overlay-aware lookups exposed to custom layers via `helpersRef`. */
@@ -517,6 +554,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     tabIndex = 0,
     autoFocusOnPointerDown = true,
     helpersRef,
+    gestures,
   } = props;
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -636,6 +674,59 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     insertOptions ?? {},
   );
   const internalAreaSelect = useAreaSelect(selectionWiredAdapter, derivedAreaSelectOptions);
+
+  // Action gestures (Delete/Backspace, arrow nudge, Mod+D duplicate). Hooks
+  // always run; each `bindKeyboard`/`enableKeyboard` flag gates whether the
+  // underlying useKeybinding actually attaches a listener.
+  const deleteCfg = gestures?.delete;
+  const deleteEnabled = !!deleteCfg;
+  const deleteOpts = (typeof deleteCfg === 'object' ? deleteCfg : {}) as DeleteGestureConfig;
+  const adapterWithRemove = effectiveAdapter as typeof effectiveAdapter & {
+    removeObject?: (id: string) => void;
+  };
+  useDelete(
+    {
+      getSelection: () => selRef.current.get(),
+      getObject: (id) => effectiveAdapter.getObject?.(id) ?? { id },
+      setSelection: (ids) => selRef.current.set(ids),
+      removeObject: adapterWithRemove.removeObject,
+      applyBatch: effectiveAdapter.applyBatch?.bind(effectiveAdapter),
+    },
+    { bindKeyboard: deleteEnabled, label: deleteOpts.label, filter: deleteOpts.filter },
+  );
+
+  const nudgeCfg = gestures?.nudge;
+  const nudgeEnabled = !!nudgeCfg;
+  const nudgeOpts = (typeof nudgeCfg === 'object' ? nudgeCfg : {}) as NudgeGestureConfig<TPose>;
+  useNudge<TPose>(
+    {
+      getSelection: () => selRef.current.get(),
+      getPose: (id) => effectiveAdapter.getPose(id),
+      applyBatch: effectiveAdapter.applyBatch?.bind(effectiveAdapter),
+    },
+    {
+      enableKeyboard: nudgeEnabled,
+      step: nudgeOpts.step,
+      shiftStep: nudgeOpts.shiftStep,
+      label: nudgeOpts.label,
+      translatePose: nudgeOpts.translatePose ?? geometry.translate,
+    },
+  );
+
+  const dupeCfg = gestures?.duplicate;
+  useDuplicate<TPose>(
+    {
+      getSelection: () => selRef.current.get(),
+      getPose: (id) => effectiveAdapter.getPose(id),
+      cloneObject: dupeCfg?.cloneObject ?? ((id) => ({ id })),
+      applyBatch: effectiveAdapter.applyBatch?.bind(effectiveAdapter),
+    },
+    {
+      enableKeyboard: !!dupeCfg,
+      offset: dupeCfg?.offset,
+      label: dupeCfg?.label,
+    },
+  );
 
   const [editingAnchors, setEditingAnchors] = useState<{ objectId: string } | null>(null);
   const editAnchorsEnabled = editAnchorsProp !== undefined && editAnchorsProp !== false;

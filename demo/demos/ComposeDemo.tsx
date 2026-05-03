@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { arrayAdapter, Canvas, useDelete } from '@orochi235/weasel';
+import { arrayAdapter, Canvas } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -30,15 +30,6 @@ export function ComposeDemo() {
     }),
   });
 
-  useDelete(
-    {
-      getSelection: adapter.getSelection,
-      getObject: adapter.getObject,
-      setSelection: adapter.setSelection,
-    },
-    { bindKeyboard: true },
-  );
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <div style={{ display: 'flex', gap: 4 }}>
@@ -62,6 +53,7 @@ export function ComposeDemo() {
         adapter={adapter}
         selectionMode="multi"
         tool={tool}
+        gestures={{ delete: true }}
         insertOptions={{ minBounds: { width: 4, height: 4 } }}
         layers={{
           scene: {
@@ -100,18 +92,17 @@ const adapter = arrayAdapter<Rect, Pose>({
   }),
 });
 
-// Delete/Backspace removes the selection (skipped while typing in inputs).
-useDelete({ ...adapter }, { bindKeyboard: true });
-
 // Canvas owns useMove / useResize / useSelection / useInsert / useAreaSelect.
 // \`tool\` switches the empty-space drag between insert and area-select;
-// \`selectionMode="multi"\` turns on shift-extend + union-AABB drag/resize.
+// \`selectionMode="multi"\` turns on shift-extend + union-AABB drag/resize;
+// \`gestures\` opts the canvas into Delete/Backspace removal of the selection.
 return (
   <Canvas<Rect, Pose>
     width={W} height={H}
     adapter={adapter}
     selectionMode="multi"
     tool={tool}
+    gestures={{ delete: true }}
     insertOptions={{ minBounds: { width: 4, height: 4 } }}
     layers={{
       scene: { drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
