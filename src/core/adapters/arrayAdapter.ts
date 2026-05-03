@@ -148,7 +148,13 @@ export function arrayAdapter<TObject extends { id: string }, TPose>(
       return out;
     },
 
-    applyOps: (ops: Op[]) => applyOpsTo(adapter, ops),
+    // Use a method shorthand so `this` is the call-site receiver, not the
+    // adapter we're building here. That way consumers can spread additional
+    // methods on top (e.g. `{ ...arrayAdapter(...), ...selection.adapterMethods }`)
+    // and `applyOps` will dispatch ops against the merged object.
+    applyOps(ops: Op[]) {
+      applyOpsTo(this, ops);
+    },
 
     commitInsert: createDefault ? (b) => createDefault(b) : () => null,
     commitPaste: () => [],

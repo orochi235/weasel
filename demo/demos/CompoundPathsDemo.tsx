@@ -165,12 +165,7 @@ export function CompoundPathsDemo() {
       fromPose: (s, pose) => ({ ...s, pose }),
       intersectsRect: (pose, rect) => pathPoseDescriptor.intersectsRect!(pose, rect),
     });
-    const merged = { ...base, ...selection.adapterMethods };
-    // arrayAdapter.applyOps closes over its inner adapter, which doesn't see
-    // the selection methods we just spread in. Re-bind so selection ops route
-    // to useSelection.
-    merged.applyOps = (ops) => { for (const op of ops) op.apply(merged); };
-    return merged;
+    return { ...base, ...selection.adapterMethods };
   }, [selection.adapterMethods]);
 
   const hitBody = (wx: number, wy: number): string | null => {
