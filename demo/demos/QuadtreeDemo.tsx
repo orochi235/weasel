@@ -13,7 +13,6 @@ import type {
   MoveAdapter,
   ResizeAdapter,
   RenderLayer,
-  Op,
 } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
 
@@ -97,7 +96,6 @@ export function QuadtreeDemo() {
     getParent: () => null,
     setPose: (id, pose) => setRects((rs) => rs.map((r) => (r.id === id ? { ...r, ...pose } : r))),
     setParent: () => {},
-    applyBatch: (ops: Op[]) => { for (const op of ops) op.apply(moveAdapter); },
   };
 
   const resizeAdapter: ResizeAdapter<Rect, Pose> = {
@@ -107,7 +105,6 @@ export function QuadtreeDemo() {
       return { x: r.x, y: r.y, width: r.width, height: r.height };
     },
     setPose: (id, pose) => setRects((rs) => rs.map((r) => (r.id === id ? { ...r, ...pose } : r))),
-    applyBatch: (ops: Op[]) => { for (const op of ops) op.apply(resizeAdapter); },
   };
 
   const move = useMove<Rect, Pose>(moveAdapter);

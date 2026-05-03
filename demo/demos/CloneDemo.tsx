@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useClone, cloneByAltDrag } from '@orochi235/weasel';
-import type { InsertAdapter, Op, ClipboardSnapshot } from '@orochi235/weasel';
+import type { InsertAdapter, ClipboardSnapshot } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
 import { setupCanvasDpr } from '@orochi235/weasel';
 
@@ -43,7 +43,6 @@ export function CloneDemo() {
     }),
     insertObject: (obj) => setRects((rs) => [...rs, obj]),
     setSelection: () => {},
-    applyBatch: (ops: Op[]) => { for (const op of ops) op.apply(adapter); },
     getSelection: () => [],
   };
 
@@ -153,7 +152,6 @@ const adapter: InsertAdapter<Rect> = {
   }),
   insertObject: (obj) => setRects((rs) => [...rs, obj]),
   setSelection: () => {},
-  applyBatch: (ops) => { for (const op of ops) op.apply(adapter); },
   getSelection: () => [],
 };
 

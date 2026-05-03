@@ -2,6 +2,7 @@ import { useCallback, useRef } from 'react';
 import { createDeleteOp } from '../../../core/ops/delete';
 import { createSetSelectionOp } from '../../../core/ops/selection';
 import type { Op } from '../../../core/ops/types';
+import { dispatchApplyBatch } from '../../../core/ops/applyOpsTo';
 import type { InsertAdapter } from '../../../core/adapters/types';
 import { useKeybinding } from '../actions/useKeybinding';
 import { useClipboardOps, type UseClipboardOpsReturn } from './clipboardOps';
@@ -73,7 +74,7 @@ export function useClipboard<TObject extends { id: string }>(
       return createDeleteOp({ object: obj });
     });
     ops.push(createSetSelectionOp({ from: ids, to: [] }));
-    a.applyBatch(ops, optsRef.current.cutLabel ?? 'Cut');
+    dispatchApplyBatch(a, ops, optsRef.current.cutLabel ?? 'Cut');
     return ids;
   }, [cb]);
 

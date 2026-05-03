@@ -17,7 +17,6 @@ import type {
   GroupAdapter,
   MoveAdapter,
   ResizeAdapter,
-  Op,
   RenderLayer,
 } from '@orochi235/weasel';
 
@@ -57,7 +56,6 @@ export function GroupsDemo() {
     setParent: () => {},
     getSelection: () => selRef.current,
     setSelection: (ids) => setSelection(ids),
-    applyBatch: (ops: Op[]) => { for (const op of ops) op.apply(adapter); },
     // GroupAdapter
     getGroup: (id) => groupsRef.current.find((g) => g.id === id),
     getGroupsForMember: (id) =>

@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { createTransformOp } from '../../../../core/ops/transform';
 import type { Op } from '../../../../core/ops/types';
+import { dispatchApplyBatch } from '../../../../core/ops/applyOpsTo';
 import type { ResizeAdapter } from '../../../../core/adapters/types';
 import type {
   GestureContext,
@@ -346,7 +347,7 @@ export function useResize<TObject extends { id: string }, TPose>(
       }
     }
     if (ops.length > 0) {
-      adapter.applyBatch(ops, ops[0].label ?? resizeLabel);
+      dispatchApplyBatch(adapter, ops, ops[0].label ?? resizeLabel);
     }
     cleanup();
     onGestureEnd?.(true);

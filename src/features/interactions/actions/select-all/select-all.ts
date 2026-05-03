@@ -1,6 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { createSetSelectionOp } from '../../../../core/ops/selection';
 import type { Op } from '../../../../core/ops/types';
+import { dispatchApplyBatch } from '../../../../core/ops/applyOpsTo';
 import { useKeybinding } from '../useKeybinding';
 
 /** Adapter for `useSelectAll`. */
@@ -9,8 +10,10 @@ export interface SelectAllAdapter {
   getSelection(): string[];
   /** Return all selectable ids. */
   listAll(): string[];
-  /** Required: standard op-batch entry point. */
-  applyBatch(ops: Op[], label?: string): void;
+  /** Optional: op-batch entry point. When omitted, ops apply directly. */
+  applyBatch?(ops: Op[], label?: string): void;
+  /** Mutator wired by `setSelection` op when `applyBatch` is omitted. */
+  setSelection?(ids: string[]): void;
 }
 
 /** Options for `useSelectAll`. */
@@ -43,7 +46,8 @@ export function useSelectAll(
     const all = a.listAll();
     if (all.length === 0) return;
     const from = a.getSelection();
-    a.applyBatch(
+    dispatchApplyBatch(
+      a,
       [createSetSelectionOp({ from, to: all })],
       o.label ?? 'Select all',
     );

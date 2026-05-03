@@ -70,7 +70,6 @@ export function ComposeDemo() {
       .filter((r) => r.x < x + width && r.x + r.width > x && r.y < y + height && r.y + r.height > y)
       .map((r) => r.id),
     applyOps: (ops: Op[]) => { for (const op of ops) op.apply(adapter); },
-    applyBatch: (ops: Op[]) => { for (const op of ops) op.apply(adapter); },
   };
 
   const move = useMove<Rect, Pose>(adapter);
@@ -82,9 +81,6 @@ export function ComposeDemo() {
       getSelection: () => selRef.current,
       getObject: (id) => rectsRef.current.find((r) => r.id === id),
       setSelection,
-      applyBatch: (ops) => {
-        for (const op of ops) op.apply(adapter);
-      },
     },
     { bindKeyboard: true },
   );

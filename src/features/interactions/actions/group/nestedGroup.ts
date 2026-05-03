@@ -32,6 +32,7 @@ import { createReparentOp } from '../../../../core/ops/reparent';
 import { createTransformOp } from '../../../../core/ops/transform';
 import { createSetSelectionOp } from '../../../../core/ops/selection';
 import type { Op } from '../../../../core/ops/types';
+import { dispatchApplyBatch } from '../../../../core/ops/applyOpsTo';
 import {
   composeWorldPose,
   rebaseLocalPose,
@@ -51,8 +52,8 @@ export interface NestedGroupActionAdapter<TObject extends { id: string }, TPose>
    *  for ungroup to find the members of a nested group. Order doesn't
    *  matter for the hook itself; the hook does not reorder children. */
   getChildren(id: string | null): string[];
-  /** Standard op-batch entry point. */
-  applyBatch(ops: Op[], label: string): void;
+  /** Optional: op-batch entry point. When omitted, ops apply directly. */
+  applyBatch?(ops: Op[], label: string): void;
 }
 
 /** Options for `useNestedGroup`. */
@@ -178,7 +179,7 @@ export function useNestedGroup<TObject extends { id: string }, TPose>(
     }
     ops.push(createSetSelectionOp({ from: sel, to: [groupId] }));
 
-    a.applyBatch(ops, o.label ?? 'Group');
+    dispatchApplyBatch(a, ops, o.label ?? 'Group');
     return groupId;
   }, []);
 
@@ -277,7 +278,7 @@ export function useNestedUngroup<TObject extends { id: string }, TPose>(
     }
     if (dissolved.length === 0) return [];
     ops.push(createSetSelectionOp({ from: sel, to: nextSelection }));
-    a.applyBatch(ops, o.label ?? 'Ungroup');
+    dispatchApplyBatch(a, ops, o.label ?? 'Ungroup');
     return dissolved;
   }, []);
 

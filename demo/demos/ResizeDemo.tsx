@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useResize } from '@orochi235/weasel';
-import type { ResizeAdapter, ResizeAnchor, Op } from '@orochi235/weasel';
+import type { ResizeAdapter, ResizeAnchor } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
 import { setupCanvasDpr } from '@orochi235/weasel';
 
@@ -23,7 +23,6 @@ export function ResizeDemo() {
       return { x: r.x, y: r.y, width: r.width, height: r.height };
     },
     setPose: (_id, pose) => setRect((r) => ({ ...r, ...pose })),
-    applyBatch: (ops: Op[]) => { for (const op of ops) op.apply(adapter); },
   };
 
   const resize = useResize<Rect, Pose>(adapter, {});
@@ -115,7 +114,6 @@ const adapter: ResizeAdapter<Rect, Pose> = {
     return { x: r.x, y: r.y, width: r.width, height: r.height };
   },
   setPose: (_id, pose) => setRect((r) => ({ ...r, ...pose })),
-  applyBatch: (ops) => { for (const op of ops) op.apply(adapter); },
 };
 
 const resize = useResize<Rect, Pose>(adapter, {});

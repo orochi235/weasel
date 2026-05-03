@@ -52,8 +52,10 @@ export interface SceneAdapter<TObject extends { id: string }, TPose> {
   removeObject(id: string): void;
   setSelection(ids: string[]): void;
 
-  // Op submission (gesture commit point)
-  applyBatch(ops: Op[], label: string): void;
+  // Op submission (gesture commit point). Optional — when omitted, hooks
+  // fall back to a built-in dispatcher that applies each op against the
+  // adapter directly. Apps with custom history integration override this.
+  applyBatch?(ops: Op[], label: string): void;
 }
 
 /**
@@ -66,7 +68,8 @@ export interface MoveAdapter<TObject extends { id: string }, TPose> {
   getParent(id: string): string | null;
   setPose(id: string, pose: TPose): void;
   setParent(id: string, parentId: string | null): void;
-  applyBatch(ops: Op[], label: string): void;
+  /** Optional: see SceneAdapter.applyBatch. */
+  applyBatch?(ops: Op[], label: string): void;
   findSnapTarget?(
     draggedId: string,
     worldX: number,
@@ -94,7 +97,8 @@ export interface ResizeAdapter<
   getObject(id: string): TObject | undefined;
   getPose(id: string): TPose;
   setPose(id: string, pose: TPose): void;
-  applyBatch(ops: Op[], label: string): void;
+  /** Optional: see SceneAdapter.applyBatch. */
+  applyBatch?(ops: Op[], label: string): void;
 }
 
 /**
@@ -140,7 +144,8 @@ export interface InsertAdapter<TObject extends { id: string }> {
   insertObject(object: TObject): void;
   /** Mutator wired by `setSelection` ops batched alongside paste. */
   setSelection(ids: string[]): void;
-  applyBatch(ops: Op[], label: string): void;
+  /** Optional: see SceneAdapter.applyBatch. */
+  applyBatch?(ops: Op[], label: string): void;
   /** Optional: returns the current selection. Used by clone behaviors. */
   getSelection?: () => string[];
 }

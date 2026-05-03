@@ -3,6 +3,7 @@ import { createTransformOp } from '../../../../core/ops/transform';
 import type { Op } from '../../../../core/ops/types';
 import type { MoveAdapter, SnapTarget } from '../../../../core/adapters/types';
 import { translateRectPose } from '../../../../core/transforms/composePose';
+import { dispatchApplyBatch } from '../../../../core/ops/applyOpsTo';
 import type { GestureContext, MoveBehavior, MoveOverlay, ModifierState } from '../types';
 
 /** Options for `useMove`. */
@@ -259,7 +260,7 @@ export function useMove<TObject extends { id: string }, TPose>(
     }
 
     if (ops.length > 0) {
-      adapter.applyBatch(ops, ops[0].label ?? moveLabel);
+      dispatchApplyBatch(adapter, ops, ops[0].label ?? moveLabel);
     }
     cleanup();
     onGestureEnd?.(true);

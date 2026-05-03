@@ -9,7 +9,7 @@ import {
 } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
 import { setupCanvasDpr } from '@orochi235/weasel';
-import type { Op, RenderLayer } from '@orochi235/weasel';
+import type { RenderLayer } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -53,7 +53,6 @@ export function ActionsDemo() {
         color: COLORS[(nextId.current + 2) % COLORS.length],
       } as Rect;
     },
-    applyBatch: (ops: Op[]) => { for (const op of ops) op.apply(adapter); },
   };
 
   // Only bind keyboard handlers when the canvas region is focused — keeps
@@ -160,7 +159,6 @@ const adapter = {
   insertObject: (obj) => setRects((rs) => [...rs, obj]),
   removeObject: (id)  => setRects((rs) => rs.filter((r) => r.id !== id)),
   cloneObject:  (id, offset) => /* return new Rect */,
-  applyBatch:   (ops) => { for (const op of ops) op.apply(adapter); },
 };
 
 // Four standalone "action" hooks bind their default keybindings on the

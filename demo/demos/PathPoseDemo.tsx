@@ -19,7 +19,6 @@ import type {
   ResizeAdapter,
   ResizeAnchor,
   MoveAdapter,
-  Op,
 } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
 
@@ -44,7 +43,6 @@ export function PathPoseDemo() {
     getObject: (id) => (id === 'p' ? { id } : undefined),
     getPose: () => pathRef.current,
     setPose: (_id, p) => setPath(p),
-    applyBatch: (ops: Op[]) => { for (const op of ops) op.apply(resizeAdapter); },
   };
   const moveAdapter: MoveAdapter<{ id: string }, Path> = {
     getObject: (id) => (id === 'p' ? { id } : undefined),
@@ -52,7 +50,6 @@ export function PathPoseDemo() {
     getParent: () => null,
     setPose: (_id, p) => setPath(p),
     setParent: () => {},
-    applyBatch: (ops: Op[]) => { for (const op of ops) op.apply(moveAdapter); },
   };
 
   const resize = useResize<{ id: string }, Path>(resizeAdapter, {

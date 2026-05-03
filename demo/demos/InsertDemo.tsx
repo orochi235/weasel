@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useInsert } from '@orochi235/weasel';
-import type { InsertAdapter, Op, ClipboardSnapshot } from '@orochi235/weasel';
+import type { InsertAdapter, ClipboardSnapshot } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
 import { setupCanvasDpr } from '@orochi235/weasel';
 
@@ -26,7 +26,6 @@ export function InsertDemo() {
     snapshotSelection: (): ClipboardSnapshot => ({ items: [] }),
     insertObject: (obj) => setRects((rs) => [...rs, obj]),
     setSelection: () => {},
-    applyBatch: (ops: Op[]) => { for (const op of ops) op.apply(adapter); },
   };
 
   const insert = useInsert<Rect, Pose>(adapter, {
@@ -116,7 +115,6 @@ const adapter: InsertAdapter<Rect> = {
   snapshotSelection: () => ({ items: [] }),
   insertObject: (obj) => setRects((rs) => [...rs, obj]),
   setSelection: () => {},
-  applyBatch: (ops) => { for (const op of ops) op.apply(adapter); },
 };
 
 const insert = useInsert<Rect, Pose>(adapter, {

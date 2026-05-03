@@ -2,6 +2,7 @@ import { useCallback, useRef } from 'react';
 import { createInsertOp } from '../../../core/ops/create';
 import { createSetSelectionOp } from '../../../core/ops/selection';
 import type { Op } from '../../../core/ops/types';
+import { dispatchApplyBatch } from '../../../core/ops/applyOpsTo';
 import type { InsertAdapter } from '../../../core/adapters/types';
 import type { ClipboardSnapshot } from './types';
 
@@ -57,7 +58,7 @@ export function useClipboardOps<TObject extends { id: string }>(
       ...created.map((o) => createInsertOp({ object: o })),
       createSetSelectionOp({ from: beforeSel, to: newIds }),
     ];
-    a.applyBatch(ops, optsRef.current.pasteLabel);
+    dispatchApplyBatch(a, ops, optsRef.current.pasteLabel);
     // Cascade: next paste shifts again by `offset` from these copies.
     clipboardRef.current = a.snapshotSelection(newIds);
     optsRef.current.onPaste?.(newIds);

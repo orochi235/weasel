@@ -2,6 +2,7 @@ import { useCallback, useRef } from 'react';
 import { createInsertOp } from '../../../../core/ops/create';
 import { createSetSelectionOp } from '../../../../core/ops/selection';
 import type { Op } from '../../../../core/ops/types';
+import { dispatchApplyBatch } from '../../../../core/ops/applyOpsTo';
 import { useKeybinding } from '../useKeybinding';
 
 /** Adapter for `useDuplicate`. */
@@ -17,8 +18,10 @@ export interface DuplicateAdapter<TPose> {
    *  domain-specific cloning rules. The returned object is wrapped in an
    *  InsertOp by the hook. */
   cloneObject(id: string, offset: { dx: number; dy: number }): { id: string };
-  /** Required: standard op-batch entry point. */
-  applyBatch(ops: Op[], label?: string): void;
+  /** Optional: op-batch entry point. When omitted, the hook applies each op
+   *  against the adapter directly. Apps with custom history integration
+   *  override this. */
+  applyBatch?(ops: Op[], label?: string): void;
 }
 
 /** Options for `useDuplicate`. */
@@ -62,7 +65,7 @@ export function useDuplicate<TPose>(
       ...created.map((obj) => createInsertOp({ object: obj })),
       createSetSelectionOp({ from: sel, to: newIds }),
     ];
-    a.applyBatch(ops, o.label ?? 'Duplicate');
+    dispatchApplyBatch(a, ops, o.label ?? 'Duplicate');
   }, []);
 
   useKeybinding(

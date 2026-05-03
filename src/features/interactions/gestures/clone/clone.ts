@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import type { InsertAdapter } from '../../../../core/adapters/types';
 import type { Op } from '../../../../core/ops/types';
+import { dispatchApplyBatch } from '../../../../core/ops/applyOpsTo';
 import type { CloneBehavior, CloneLayer, ModifierState } from '../types';
 
 /** Options for `useClone`. */
@@ -118,7 +119,7 @@ export function useClone<T extends { id: string }>(
       worldY: s.worldY,
     };
     const ops: Op[] = s.behavior.onEnd(pose, { adapter: adapterRef.current as InsertAdapter<{ id: string }> });
-    if (ops.length > 0) adapterRef.current.applyBatch(ops, 'Clone');
+    if (ops.length > 0) dispatchApplyBatch(adapterRef.current, ops, 'Clone');
     optsRef.current.clearOverlay();
     stateRef.current = null;
     setIsCloning(false);

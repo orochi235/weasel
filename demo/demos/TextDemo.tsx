@@ -158,7 +158,7 @@ export function TextDemo() {
     setText: (id, text) => {
       const prev = nodesRef.current.find((n) => n.id === id)?.text ?? '';
       if (prev === text) return;
-      moveAdapter.applyBatch(
+      moveAdapter.applyBatch?.(
         [createSetTextOp({ id, from: prev, to: text, label: 'Edit text' })],
         'Edit text',
       );

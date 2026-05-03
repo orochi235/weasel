@@ -2,6 +2,7 @@ import { useCallback, useRef } from 'react';
 import { createDeleteOp } from '../../../../core/ops/delete';
 import { createSetSelectionOp } from '../../../../core/ops/selection';
 import type { Op } from '../../../../core/ops/types';
+import { dispatchApplyBatch } from '../../../../core/ops/applyOpsTo';
 import { useKeybinding } from '../useKeybinding';
 
 /** Adapter for `useDelete`. */
@@ -12,11 +13,13 @@ export interface DeleteAdapter {
    *  to capture the object for invert/insert. If omitted, a minimal stub
    *  `{ id }` is used — undo will only restore the id, not the full object. */
   getObject?(id: string): { id: string } | undefined | null;
-  /** Required: standard op-batch entry point. */
-  applyBatch(ops: Op[], label: string): void;
+  /** Optional: op-batch entry point. When omitted, ops apply directly. */
+  applyBatch?(ops: Op[], label: string): void;
   /** Optional: clear selection after delete. If omitted, the hook still
    *  emits a SetSelectionOp([]) alongside DeleteOps. */
   setSelection?(ids: string[]): void;
+  /** Optional: removeObject mutator wired by DeleteOp when applyBatch is omitted. */
+  removeObject?(id: string): void;
 }
 
 /** Options for `useDelete`. */
@@ -58,7 +61,7 @@ export function useDelete(
       return createDeleteOp({ object: obj });
     });
     ops.push(createSetSelectionOp({ from: sel, to: [] }));
-    a.applyBatch(ops, o.label ?? 'Delete');
+    dispatchApplyBatch(a, ops, o.label ?? 'Delete');
     return ids;
   }, []);
 

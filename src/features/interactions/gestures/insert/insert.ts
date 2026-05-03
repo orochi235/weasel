@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { createInsertOp } from '../../../../core/ops/create';
 import type { Op } from '../../../../core/ops/types';
+import { dispatchApplyBatch } from '../../../../core/ops/applyOpsTo';
 import type { InsertAdapter } from '../../../../core/adapters/types';
 import type {
   GestureContext,
@@ -129,7 +130,7 @@ export function useInsert<TObject extends { id: string }, TPose extends { x: num
       return;
     }
     const ops: Op[] = [createInsertOp({ object: created, label: insertLabel })];
-    adapter.applyBatch(ops, insertLabel);
+    dispatchApplyBatch(adapter, ops, insertLabel);
     cleanup();
     onGestureEnd?.(true);
   }, [adapter, cleanup, insertLabel, minBounds.width, minBounds.height, onGestureEnd]);

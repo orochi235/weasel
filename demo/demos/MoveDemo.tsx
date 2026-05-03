@@ -10,7 +10,6 @@ import {
 import { clientToCanvas } from '../canvasCoords';
 import { setupCanvasDpr } from '@orochi235/weasel';
 import type { MoveAdapter, RenderLayer, UnitSystem } from '@orochi235/weasel';
-import type { Op } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -45,9 +44,6 @@ export function MoveDemo() {
       setRects((rs) => rs.map((r) => (r.id === id ? { ...r, ...pose } : r)));
     },
     setParent: () => {},
-    applyBatch: (ops: Op[]) => {
-      for (const op of ops) op.apply(adapter);
-    },
   };
 
   const move = useMove<Rect, Pose>(adapter, {
@@ -188,7 +184,6 @@ const adapter: MoveAdapter<Rect, Pose> = {
   setPose: (id, pose) =>
     setRects((rs) => rs.map((r) => (r.id === id ? { ...r, ...pose } : r))),
   setParent: () => {},
-  applyBatch: (ops) => { for (const op of ops) op.apply(adapter); },
 };
 
 // Custom unit system: base is 'px' but APIs can speak in 'tile' (= 20px).

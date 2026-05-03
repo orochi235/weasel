@@ -1,6 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { createTransformOp } from '../../../../core/ops/transform';
 import type { Op } from '../../../../core/ops/types';
+import { dispatchApplyBatch } from '../../../../core/ops/applyOpsTo';
 import { translateRectPose } from '../../../../core/transforms/composePose';
 import { useKeybinding } from '../useKeybinding';
 
@@ -13,8 +14,9 @@ export interface NudgeAdapter<TPose> {
   getSelection(): string[];
   /** Read pose for an id; used as `from` for the transform op. */
   getPose(id: string): TPose;
-  /** Required: standard op-batch entry point. */
-  applyBatch(ops: Op[], label?: string): void;
+  /** Optional: op-batch entry point. When omitted, the hook applies each op
+   *  against the adapter directly. */
+  applyBatch?(ops: Op[], label?: string): void;
 }
 
 /** Options for `useNudge`. */
@@ -80,7 +82,7 @@ export function useNudge<TPose>(
       const to = translate(from, dx, dy);
       return createTransformOp<TPose>({ id, from, to });
     });
-    a.applyBatch(ops, o.label ?? 'Nudge');
+    dispatchApplyBatch(a, ops, o.label ?? 'Nudge');
   }, []);
 
   useKeybinding(

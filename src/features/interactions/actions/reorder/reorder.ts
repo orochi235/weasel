@@ -6,6 +6,7 @@ import {
   createSendToBackOp,
 } from '../../../../core/ops/reorder';
 import type { Op } from '../../../../core/ops/types';
+import { dispatchApplyBatch } from '../../../../core/ops/applyOpsTo';
 
 /** Adapter for `useReorder`; both order methods optional and the hook no-ops when either is absent. */
 export interface ReorderAdapter {
@@ -15,7 +16,8 @@ export interface ReorderAdapter {
   getChildren?(parentId: string | null): string[];
   /** Optional — when absent, every reorder method is a silent no-op. */
   setChildOrder?(parentId: string | null, ids: string[]): void;
-  applyBatch(ops: Op[], label: string): void;
+  /** Optional: op-batch entry point. When omitted, ops apply directly. */
+  applyBatch?(ops: Op[], label: string): void;
 }
 
 /** Options for `useReorder`. */
@@ -61,7 +63,7 @@ export function useReorder(
       const ids = optsRef.current.filter ? optsRef.current.filter(sel) : sel;
       if (ids.length === 0) return;
       const op = factory({ ids });
-      a.applyBatch([op], label);
+      dispatchApplyBatch(a, [op], label);
     },
     [],
   );
