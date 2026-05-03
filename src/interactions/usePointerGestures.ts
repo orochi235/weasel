@@ -80,7 +80,7 @@ export interface UsePointerGesturesOptions<TMovePose, TResizePose> {
 
   /** Empty-space tool. Default `'select'`. Picks insert vs area-select on
    *  empty-space pointer-down. Ignored if neither controller is wired. */
-  tool?: 'select' | 'insert';
+  tool?: 'select' | 'insert' | 'none';
 
   /** Currently rotatable target. The hook positions the rotation handle
    *  above the (rotated) top-center of `bounds` and dispatches
@@ -292,7 +292,7 @@ export function usePointerGestures<TMovePose, TResizePose>(
         insert.start(wx, wy, modifiers);
         return;
       }
-      if (areaSelect) {
+      if (tool === 'select' && areaSelect) {
         dragKindRef.current = 'area';
         e.currentTarget.setPointerCapture(e.pointerId);
         areaSelect.start(wx, wy, modifiers);

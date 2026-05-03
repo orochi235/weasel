@@ -67,6 +67,7 @@ import {
   type SelectionOverlayLayerOpts,
 } from '../features/selection/overlay';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../interactions/gestures/resize/geometry';
+import { pathPoseDescriptor } from '../features/paths/poseDescriptor';
 import type {
   AreaSelectOverlay,
   InsertOverlay,
@@ -240,9 +241,10 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   selectionMode?: CanvasSelectionMode;
 
   /** Empty-space tool. `'select'` (default) routes empty-space drags to
-   *  area-select; `'insert'` routes them to insert. Ignored if neither
-   *  controller is wired. */
-  tool?: 'select' | 'insert';
+   *  area-select; `'insert'` routes them to insert; `'none'` disables both
+   *  (empty-space drags are no-ops). Ignored if the corresponding controller
+   *  isn't wired. */
+  tool?: 'select' | 'insert' | 'none';
 
   /** Layer map. See module docstring for slot semantics. */
   layers: LayersMap<TObject, TPose>;
@@ -318,6 +320,30 @@ export interface CanvasHelpers<TPose> {
 }
 
 const STANDARD_SLOT_SET = new Set<string>(STANDARD_SLOTS);
+
+// Per-call dispatch: if the pose looks like a Path (`{ kind: 'polygon' | 'rect' }`)
+// route to pathPoseDescriptor; otherwise treat as a plain rect pose. Avoids
+// forcing demos with Path TPose to wire `geometry={pathPoseDescriptor}`
+// explicitly.
+const AUTO_POSE_DESCRIPTOR: PoseDescriptor<unknown> = {
+  getBounds: (p) => isPathLike(p)
+    ? pathPoseDescriptor.getBounds(p)
+    : RECT_POSE_DESCRIPTOR.getBounds(p as { x: number; y: number; width: number; height: number }),
+  remapBounds: (p, src, dst) => isPathLike(p)
+    ? pathPoseDescriptor.remapBounds(p, src, dst)
+    : RECT_POSE_DESCRIPTOR.remapBounds(p as { x: number; y: number; width: number; height: number }, src, dst),
+  translate: (p, dx, dy) => isPathLike(p)
+    ? pathPoseDescriptor.translate!(p, dx, dy)
+    : RECT_POSE_DESCRIPTOR.translate!(p as { x: number; y: number; width: number; height: number }, dx, dy),
+  intersectsRect: (p, rect) => isPathLike(p)
+    ? pathPoseDescriptor.intersectsRect!(p, rect)
+    : RECT_POSE_DESCRIPTOR.intersectsRect!(p as { x: number; y: number; width: number; height: number }, rect),
+};
+
+function isPathLike(p: unknown): p is Path {
+  return !!p && typeof p === 'object' && 'kind' in p
+    && ((p as { kind: unknown }).kind === 'polygon' || (p as { kind: unknown }).kind === 'rect');
+}
 
 function isCustomEntry(v: unknown): v is CustomLayerEntry {
   return !!v && typeof v === 'object' && 'layer' in (v as Record<string, unknown>);
@@ -476,7 +502,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     onTapEmpty,
     clientToWorld,
     handleHitRadius,
-    geometry = RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>,
+    geometry = AUTO_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>,
     onPointerDown: onPointerDownOverride,
     onPointerMove: onPointerMoveOverride,
     onPointerUp: onPointerUpOverride,

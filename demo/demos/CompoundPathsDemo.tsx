@@ -189,7 +189,6 @@ export function CompoundPathsDemo() {
         height={H}
         className="ckd-canvas"
         adapter={adapter}
-        geometry={pathPoseDescriptor}
         selectionMode="multi"
         handleHitRadius={HANDLE}
         hitBody={hitBody}
@@ -272,7 +271,8 @@ const hitBody = (wx, wy) => {
 return (
   <Canvas<Shape, Path>
     adapter={adapter}
-    geometry={pathPoseDescriptor}     // wires bounds / translate / resize remap
+    // Path TPose is auto-detected — Canvas dispatches on pose.kind so bounds /
+    // translate / resize-remap all wire up without an explicit geometry prop.
     selectionMode="multi"             // shift-click extend, union-AABB resize
     hitBody={hitBody}
     layers={{

@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react';
 import {
   Canvas,
-  pathPoseDescriptor,
   pathOriginProjection,
   polygonFromPoints,
   traceToContext,
@@ -48,7 +47,6 @@ export function PathPoseDemo() {
       height={H}
       className="ckd-canvas"
       adapter={adapter}
-      geometry={pathPoseDescriptor}
       handleHitRadius={HANDLE}
       selectionOptions={{ initial: [ID] }}
       onTapEmpty={() => {}}
@@ -81,16 +79,15 @@ const adapter: MoveAdapter<PathObj, Path> & ResizeAdapter<PathObj, Path> = {
   getParent: () => null, setParent: () => {},
 };
 
-// geometry={pathPoseDescriptor} wires up the Path-aware bounds, translate,
-// and resize-remap behind a single prop, so the default hitBody / boundsOf /
-// moveOptions.translatePose / resizeOptions.geometry all know about Paths.
+// Path TPose is auto-detected — Canvas's default geometry dispatches on
+// pose.kind, so hitBody / boundsOf / moveOptions.translatePose /
+// resizeOptions.geometry all know about Paths without an explicit prop.
 // The only Path-specific extra is the snap behavior, which reads the origin
 // via pathOriginProjection.
 return (
   <Canvas<PathObj, Path>
     width={W} height={H}
     adapter={adapter}
-    geometry={pathPoseDescriptor}
     handleHitRadius={HANDLE}
     selectionOptions={{ initial: ['p'] }}
     onTapEmpty={() => {}}

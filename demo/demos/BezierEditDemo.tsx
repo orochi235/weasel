@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import {
   Canvas,
   PathBuilder,
-  pathPoseDescriptor,
   boundsOfPath,
   pointInPath,
   traceToContext,
@@ -92,7 +91,7 @@ export function BezierEditDemo() {
       height={H}
       className="ckd-canvas"
       adapter={adapter}
-      geometry={pathPoseDescriptor}
+      tool="none"
       handleHitRadius={HANDLE}
       hitBody={hitBody}
       onTapEmpty={() => {}}
@@ -134,7 +133,7 @@ return (
   <Canvas<PathObj, Path>
     width={W} height={H}
     adapter={adapter}
-    geometry={pathPoseDescriptor}
+    tool="none"
     hitBody={hitBody}
     editAnchors
     layers={{
