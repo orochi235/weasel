@@ -15,7 +15,7 @@ export interface ToolsDispatcherOptions {
   /** Called once per channel-handler invocation to construct the ctx
    *  the handler receives. `<Canvas>` supplies world coords, modifiers,
    *  selection, adapter, and applyBatch; the dispatcher injects scratch. */
-  getCtx: (overrides?: { worldX?: number; worldY?: number }) => Omit<ToolCtx, 'scratch'>;
+  getCtx: (overrides?: { clientX?: number; clientY?: number }) => Omit<ToolCtx, 'scratch'>;
   /** Pixel distance the pointer must travel before a click is reclassified
    *  as a drag. Default 4. */
   threshold?: number;
@@ -89,7 +89,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
   function onPointerDown(e: PointerEvent): void {
     if (inFlight) return; // ignore overlapping pointers; one gesture at a time
     const slots = opts.getSlots();
-    const baseCtx = opts.getCtx({ worldX: e.clientX, worldY: e.clientY });
+    const baseCtx = opts.getCtx({ clientX: e.clientX, clientY: e.clientY });
 
     // 1. Try pointer.onDown — classification pass. If a tool claims, it has
     //    had the opportunity to mutate ctx.scratch (e.g. stash which sub-gesture
@@ -139,7 +139,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
 
   function onPointerMove(e: PointerEvent): void {
     if (!inFlight) return;
-    const baseCtx = opts.getCtx({ worldX: e.clientX, worldY: e.clientY });
+    const baseCtx = opts.getCtx({ clientX: e.clientX, clientY: e.clientY });
 
     if (inFlight.phase === 'pending') {
       const dx = e.clientX - inFlight.startClient.x;
@@ -163,7 +163,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
 
   function onPointerUp(e: PointerEvent): void {
     if (!inFlight) return;
-    const baseCtx = opts.getCtx({ worldX: e.clientX, worldY: e.clientY });
+    const baseCtx = opts.getCtx({ clientX: e.clientX, clientY: e.clientY });
 
     if (inFlight.phase === 'pending') {
       // Sub-threshold release → click.
@@ -202,7 +202,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
 
   function onWheel(e: WheelEvent): void {
     const slots = opts.getSlots();
-    const base = opts.getCtx({ worldX: e.clientX, worldY: e.clientY });
+    const base = opts.getCtx({ clientX: e.clientX, clientY: e.clientY });
     dispatchOnce<WheelEvent>(
       slots,
       (t) => t.wheel?.onWheel,
