@@ -63,7 +63,6 @@ export function ActionsDemo() {
   useDuplicate<Pose>(adapter, { enableKeyboard: focused });
   useNudge<Pose>(adapter, {
     enableKeyboard: focused,
-    translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
     step: 2,
     shiftStep: 20,
   });
@@ -172,7 +171,6 @@ useEscape(adapter);              // Esc      -> clear selection
 useSelectAll(adapter);           // Cmd/Ctrl+A -> select all
 useDuplicate<Pose>(adapter);     // Cmd/Ctrl+D -> clone selection
 useNudge<Pose>(adapter, {
-  translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
   step: 2,        // arrow keys
   shiftStep: 20,  // shift + arrow keys
 });

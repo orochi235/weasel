@@ -1,6 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { createTransformOp } from '../../../../core/ops/transform';
 import type { Op } from '../../../../core/ops/types';
+import { translateRectPose } from '../../../../core/transforms/composePose';
 import { useKeybinding } from '../useKeybinding';
 
 /** Cardinal direction for `useNudge`. */
@@ -18,8 +19,10 @@ export interface NudgeAdapter<TPose> {
 
 /** Options for `useNudge`. */
 export interface UseNudgeOptions<TPose> {
-  /** Required: pure pose translator — same shape as in move. */
-  translatePose: (pose: TPose, dx: number, dy: number) => TPose;
+  /** How to apply a `(dx, dy)` translation to a pose. Defaults to
+   *  `translateRectPose`, which assumes the pose carries top-level
+   *  `x`/`y` (the common rect-shaped case). Override for non-rect poses. */
+  translatePose?: (pose: TPose, dx: number, dy: number) => TPose;
   /** Auto-bind arrow keys on document. Default true. */
   enableKeyboard?: boolean;
   /** Label passed to applyBatch. Default 'Nudge'. */
@@ -55,7 +58,7 @@ const ARROW_TO_DIR: Record<string, NudgeDirection> = {
 /** Arrow-key nudge action; binds arrow keys (with optional shift modifier for larger step) by default. */
 export function useNudge<TPose>(
   adapter: NudgeAdapter<TPose>,
-  options: UseNudgeOptions<TPose>,
+  options: UseNudgeOptions<TPose> = {},
 ): UseNudgeReturn {
   const adapterRef = useRef(adapter);
   adapterRef.current = adapter;
@@ -69,9 +72,12 @@ export function useNudge<TPose>(
     if (sel.length === 0) return;
     const step = large ? (o.shiftStep ?? 10) : (o.step ?? 1);
     const { dx, dy } = deltaFor(direction, step);
+    const translate =
+      o.translatePose ??
+      (translateRectPose as unknown as (pose: TPose, dx: number, dy: number) => TPose);
     const ops: Op[] = sel.map((id) => {
       const from = a.getPose(id);
-      const to = o.translatePose(from, dx, dy);
+      const to = translate(from, dx, dy);
       return createTransformOp<TPose>({ id, from, to });
     });
     a.applyBatch(ops, o.label ?? 'Nudge');
