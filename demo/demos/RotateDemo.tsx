@@ -1,6 +1,5 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import {
-  arrayAdapter,
   Canvas,
   pointInRotatedRect,
 } from '@orochi235/weasel';
@@ -21,21 +20,12 @@ const INITIAL: Rect[] = [
 
 export function RotateDemo() {
   const [rects, setRects] = useState<Rect[]>(INITIAL);
-  const rectsRef = useRef(rects);
-  rectsRef.current = rects;
-
-  const adapter = arrayAdapter<Rect, RotatedPose>({
-    ref: rectsRef,
-    setItems: setRects,
-    toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height, rotation: r.rotation }),
-  });
 
   // Override hitBody so a click inside the rotated rect — not the AABB —
   // selects the object.
   const hitBody = (wx: number, wy: number): string | null => {
-    const list = rectsRef.current;
-    for (let i = list.length - 1; i >= 0; i--) {
-      if (pointInRotatedRect(list[i], wx, wy)) return list[i].id;
+    for (let i = rects.length - 1; i >= 0; i--) {
+      if (pointInRotatedRect(rects[i], wx, wy)) return rects[i].id;
     }
     return null;
   };
@@ -45,7 +35,9 @@ export function RotateDemo() {
       width={W}
       height={H}
       className="ckd-canvas"
-      adapter={adapter}
+      items={rects}
+      setItems={setRects}
+      toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height, rotation: r.rotation })}
       handleHitRadius={HANDLE}
       hitBody={hitBody}
       selectionOptions={{ initial: ['b'] }}
@@ -73,15 +65,12 @@ export function RotateDemo() {
 export const ROTATE_DEMO_SOURCE = `// --- Scene: pose carries rotation (radians, pivot=AABB center) ---
 interface Rect extends RotatedPose { id: string; color: string }
 
-const adapter = arrayAdapter<Rect, RotatedPose>({
-  ref: rectsRef, setItems: setRects,
-  toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height, rotation: r.rotation }),
-});
+const [rects, setRects] = useState<Rect[]>(INITIAL);
 
 // Override hitBody so clicks land on the rotated body, not the AABB.
 const hitBody = (wx, wy) => {
-  for (let i = rectsRef.current.length - 1; i >= 0; i--) {
-    if (pointInRotatedRect(rectsRef.current[i], wx, wy)) return rectsRef.current[i].id;
+  for (let i = rects.length - 1; i >= 0; i--) {
+    if (pointInRotatedRect(rects[i], wx, wy)) return rects[i].id;
   }
   return null;
 };
@@ -94,7 +83,9 @@ const hitBody = (wx, wy) => {
 return (
   <Canvas<Rect, RotatedPose>
     width={W} height={H}
-    adapter={adapter}
+    items={rects}
+    setItems={setRects}
+    toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height, rotation: r.rotation })}
     hitBody={hitBody}
     layers={{
       scene: {

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { arrayAdapter, Canvas } from '@orochi235/weasel';
+import { Canvas } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -16,19 +16,7 @@ type Tool = 'select' | 'insert';
 export function ComposeDemo() {
   const [rects, setRects] = useState<Rect[]>(INITIAL);
   const [tool, setTool] = useState<Tool>('select');
-  const rectsRef = useRef(rects); rectsRef.current = rects;
   const nextId = useRef(1);
-
-  const adapter = arrayAdapter<Rect, Pose>({
-    ref: rectsRef,
-    setItems: setRects,
-    toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
-    createDefault: (b) => ({
-      id: `r${nextId.current++}`,
-      x: b.x, y: b.y, width: b.width, height: b.height,
-      color: COLORS[nextId.current % COLORS.length],
-    }),
-  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -50,7 +38,14 @@ export function ComposeDemo() {
         width={W}
         height={H}
         className="ckd-canvas"
-        adapter={adapter}
+        items={rects}
+        setItems={setRects}
+        toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height })}
+        createDefault={(b) => ({
+          id: `r${nextId.current++}`,
+          x: b.x, y: b.y, width: b.width, height: b.height,
+          color: COLORS[nextId.current % COLORS.length],
+        })}
         selectionMode="multi"
         tool={tool}
         gestures={{ delete: true }}
@@ -77,21 +72,12 @@ interface Pose { x: number; y: number; width: number; height: number }
 
 const [rects, setRects] = useState<Rect[]>(INITIAL);
 const [tool, setTool]   = useState<'select' | 'insert'>('select');
-const rectsRef = useRef(rects); rectsRef.current = rects;
 const nextId   = useRef(1);
 
-// arrayAdapter satisfies MoveAdapter, ResizeAdapter, InsertAdapter, and
-// AreaSelectAdapter in one shot. \`createDefault\` is the only insert wiring
-// the consumer owns: turn a drag-rectangle into a new object.
-const adapter = arrayAdapter<Rect, Pose>({
-  ref: rectsRef, setItems: setRects,
-  toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
-  createDefault: (b) => ({
-    id: \`r\${nextId.current++}\`, ...b,
-    color: COLORS[nextId.current % COLORS.length],
-  }),
-});
-
+// No explicit adapter — Canvas synthesizes one (via the kit's arrayAdapter)
+// from items + setItems + toPose. createDefault wires insert. For groups,
+// custom history, or non-array scenes, pass an explicit \`adapter\` instead.
+//
 // Canvas owns useMove / useResize / useSelection / useInsert / useAreaSelect.
 // \`tool\` switches the empty-space drag between insert and area-select;
 // \`selectionMode="multi"\` turns on shift-extend + union-AABB drag/resize;
@@ -99,7 +85,13 @@ const adapter = arrayAdapter<Rect, Pose>({
 return (
   <Canvas<Rect, Pose>
     width={W} height={H}
-    adapter={adapter}
+    items={rects}
+    setItems={setRects}
+    toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height })}
+    createDefault={(b) => ({
+      id: \`r\${nextId.current++}\`, ...b,
+      color: COLORS[nextId.current % COLORS.length],
+    })}
     selectionMode="multi"
     tool={tool}
     gestures={{ delete: true }}

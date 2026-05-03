@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { arrayAdapter, Canvas } from '@orochi235/weasel';
+import { useState } from 'react';
+import { Canvas } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -16,21 +16,15 @@ const INITIAL: Rect[] = [
 
 export function MultiSelectDemo() {
   const [rects, setRects] = useState<Rect[]>(INITIAL);
-  const rectsRef = useRef(rects);
-  rectsRef.current = rects;
-
-  const adapter = arrayAdapter<Rect, Pose>({
-    ref: rectsRef,
-    setItems: setRects,
-    toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
-  });
 
   return (
     <Canvas<Rect, Pose>
       width={W}
       height={H}
       className="ckd-canvas"
-      adapter={adapter}
+      items={rects}
+      setItems={setRects}
+      toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height })}
       selectionMode="multi"
       handleHitRadius={HANDLE}
       layers={{
@@ -51,13 +45,9 @@ interface Rect { id: string; x: number; y: number; width: number; height: number
 interface Pose { x: number; y: number; width: number; height: number }
 
 const [rects, setRects] = useState<Rect[]>(INITIAL);
-const rectsRef = useRef(rects); rectsRef.current = rects;
 
-const adapter = arrayAdapter<Rect, Pose>({
-  ref: rectsRef, setItems: setRects,
-  toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
-});
-
+// No explicit adapter — Canvas synthesizes one from items + setItems + toPose.
+//
 // selectionMode="multi" turns on shift-click extend, draws a single union
 // AABB outline (with corner handles) when more than one item is selected,
 // and routes drag / resize through that union — Canvas wires expandIds,
@@ -65,7 +55,9 @@ const adapter = arrayAdapter<Rect, Pose>({
 return (
   <Canvas<Rect, Pose>
     width={W} height={H}
-    adapter={adapter}
+    items={rects}
+    setItems={setRects}
+    toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height })}
     selectionMode="multi"
     handleHitRadius={HANDLE}
     layers={{

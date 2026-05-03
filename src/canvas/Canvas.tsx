@@ -38,6 +38,7 @@ import type {
   AreaSelectController,
   UseAreaSelectOptions,
 } from '../interactions/gestures/area-select/areaSelect';
+import { useArrayAdapter, type UseArrayAdapterOptions } from '../core/adapters/useArrayAdapter';
 import { useDelete } from '../interactions/actions/delete';
 import { useNudge } from '../interactions/actions/nudge';
 import { useDuplicate } from '../interactions/actions/duplicate';
@@ -233,12 +234,27 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
 
   /** Combined adapter. Required for the scene slot, default hitBody/boundsOf,
    *  and the internal move/resize/rotate/insert/area-select controllers.
-   *  Optional for trivial canvases. */
+   *  Optional for trivial canvases. Mutually exclusive with `items` —
+   *  pass one or the other. */
   adapter?: MoveAdapter<TObject, TPose>
     & ResizeAdapter<TObject, TPose>
     & RotateAdapter<TObject, TPose>
     & Partial<InsertAdapter<TObject>>
     & Partial<AreaSelectAdapter>;
+
+  /** Inline scene wiring: when `adapter` is omitted and `items`/`setItems`/
+   *  `toPose` are provided, Canvas synthesizes an `arrayAdapter` internally
+   *  (via `useArrayAdapter`). The remaining ArrayAdapterConfig fields
+   *  (`fromPose`, `createDefault`, etc.) pass through. Use the explicit
+   *  `adapter` prop instead for groups, custom history, or non-array
+   *  scenes. */
+  items?: TObject[];
+  setItems?: UseArrayAdapterOptions<TObject, TPose>['setItems'];
+  toPose?: UseArrayAdapterOptions<TObject, TPose>['toPose'];
+  fromPose?: UseArrayAdapterOptions<TObject, TPose>['fromPose'];
+  createDefault?: UseArrayAdapterOptions<TObject, TPose>['createDefault'];
+  poseBounds?: UseArrayAdapterOptions<TObject, TPose>['poseBounds'];
+  intersectsRect?: UseArrayAdapterOptions<TObject, TPose>['intersectsRect'];
 
   /** Selection semantics. See {@link CanvasSelectionMode}. Default `'single'`. */
   selectionMode?: CanvasSelectionMode;
@@ -376,6 +392,13 @@ const AUTO_POSE_DESCRIPTOR: PoseDescriptor<unknown> = {
     ? pathPoseDescriptor.intersectsRect!(p, rect)
     : RECT_POSE_DESCRIPTOR.intersectsRect!(p as { x: number; y: number; width: number; height: number }, rect),
 };
+
+// Stable identities for the always-on useArrayAdapter call when the consumer
+// is on the explicit-`adapter` path (synthesized adapter is unused, but the
+// hook still runs).
+const EMPTY_ITEMS: { id: string }[] = [];
+const NOOP_SET_ITEMS = () => {};
+const NOOP_TO_POSE = (_obj: unknown) => ({}) as unknown;
 
 function aabbContains(b: Bounds, x: number, y: number): boolean {
   return x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height;
@@ -516,7 +539,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   const {
     width,
     height,
-    adapter,
+    adapter: adapterProp,
     selectionMode = 'single',
     layers: layersMap,
     move: moveOverride,
@@ -555,7 +578,31 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     autoFocusOnPointerDown = true,
     helpersRef,
     gestures,
+    items,
+    setItems,
+    toPose,
+    fromPose,
+    createDefault,
+    poseBounds,
+    intersectsRect,
   } = props;
+
+  // Synthesized arrayAdapter when `adapter` is omitted but `items`/`setItems`/
+  // `toPose` are supplied. The hook always runs (rules of hooks) — when the
+  // user is on the explicit-`adapter` path, we feed it stub args and ignore
+  // the result.
+  const synthesizedAdapter = useArrayAdapter<TObject, TPose>({
+    items: items ?? (EMPTY_ITEMS as TObject[]),
+    setItems: setItems ?? NOOP_SET_ITEMS,
+    toPose: toPose ?? (NOOP_TO_POSE as (obj: TObject) => TPose),
+    fromPose,
+    createDefault,
+    poseBounds,
+    intersectsRect,
+  });
+  const inlineSceneSupplied =
+    adapterProp === undefined && items !== undefined && setItems !== undefined && toPose !== undefined;
+  const adapter = adapterProp ?? (inlineSceneSupplied ? synthesizedAdapter : undefined);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   useImperativeHandle(ref, () => canvasRef.current as HTMLCanvasElement, []);

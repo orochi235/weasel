@@ -7,6 +7,10 @@ for cross-app reuse, not consumer-app value.
 For history of completed work that pre-dates extraction, see `git log` and
 the dated specs/plans under `specs/` and `plans/`.
 
+## Top of queue — under active discussion
+
+- **Container-rooted scene (unify flat-list and group adapters).** The arrayAdapter-as-default work shipped (Canvas now synthesizes an adapter from `items`/`setItems`/`toPose`/`fromPose`/`createDefault`/`poseBounds`/`intersectsRect` when no explicit `adapter` is passed). It collapses the boilerplate for the common flat-list case but is array-shape specific — a parallel shorthand for grouped scenes would be a second special case. The deeper move is to make every scene a tree rooted at one container: a flat list becomes a single root container whose children are leaves, a grouped scene is the same shape with deeper subtrees. Then there's *one* adapter contract (`getChildren`, `setChildOrder`, `getPose`, `setPose`, etc. — the GroupAdapter surface generalized), one default Canvas wiring, and z-order / render / hit-test all flow uniformly through `getChildren(root)`. *Why deferred:* (a) forces resolution of container layout strategies (see Tier 1.5 entry below) — root-container layout is "absolute" today but a container model invites stack/grid/flex semantics, (b) opens the root-pose question (does the root have a pose? probably identity, but resize-of-root and world-coord composition need to be defined), (c) every demo and consumer migrates, (d) the inline-props API just shipped becomes migration debt under this model — its prop names assume `items: TObject[]`, not `root: ContainerId`. Worth doing once a real second consumer (or the container-layout-strategies work) makes the array-shape special case feel cramped. Until then, the inline-props shorthand carries us.
+
 ## Tier 1 — foundational genericity gaps
 
 Without these, the kit is essentially "axis-aligned-rectangle kit."

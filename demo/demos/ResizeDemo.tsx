@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { arrayAdapter, Canvas } from '@orochi235/weasel';
+import { useState } from 'react';
+import { Canvas } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -10,21 +10,15 @@ const INITIAL: Rect = { id: 'r', x: 100, y: 80, width: 180, height: 130, color: 
 
 export function ResizeDemo() {
   const [rects, setRects] = useState<Rect[]>([INITIAL]);
-  const rectsRef = useRef(rects);
-  rectsRef.current = rects;
-
-  const adapter = arrayAdapter<Rect, Pose>({
-    ref: rectsRef,
-    setItems: setRects,
-    toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
-  });
 
   return (
     <Canvas<Rect, Pose>
       width={W}
       height={H}
       className="ckd-canvas"
-      adapter={adapter}
+      items={rects}
+      setItems={setRects}
+      toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height })}
       handleHitRadius={HANDLE}
       selectionOptions={{ initial: [INITIAL.id] }}
       onTapEmpty={() => {}}
@@ -46,20 +40,18 @@ interface Rect { id: string; x: number; y: number; width: number; height: number
 interface Pose { x: number; y: number; width: number; height: number }
 
 const [rects, setRects] = useState<Rect[]>([INITIAL]);
-const rectsRef = useRef(rects); rectsRef.current = rects;
 
-const adapter = arrayAdapter<Rect, Pose>({
-  ref: rectsRef, setItems: setRects,
-  toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
-});
-
+// No explicit adapter — Canvas synthesizes one from items + setItems + toPose.
+//
 // <Canvas> owns useResize internally. selectionOptions seeds the rect as
 // pre-selected so the corner handles are visible from the start;
 // onTapEmpty is overridden to keep selection on empty-canvas clicks.
 return (
   <Canvas<Rect, Pose>
     width={W} height={H}
-    adapter={adapter}
+    items={rects}
+    setItems={setRects}
+    toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height })}
     handleHitRadius={HANDLE}
     selectionOptions={{ initial: ['r'] }}
     onTapEmpty={() => {}}

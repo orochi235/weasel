@@ -1,7 +1,6 @@
-import { useMemo, useRef, useState } from 'react';
+import { useState } from 'react';
 import {
   Canvas,
-  arrayAdapter,
   composePath,
   pathPoseDescriptor,
   PathBuilder,
@@ -150,24 +149,10 @@ const INITIAL: Shape[] = [
 
 export function CompoundPathsDemo() {
   const [shapes, setShapes] = useState<Shape[]>(INITIAL);
-  const shapesRef = useRef(shapes);
-  shapesRef.current = shapes;
   const [toast, setToast] = useState<string | null>(null);
 
-  const adapter = useMemo(
-    () =>
-      arrayAdapter<Shape, Path>({
-        ref: shapesRef,
-        setItems: setShapes,
-        toPose: (s) => s.pose,
-        fromPose: (s, pose) => ({ ...s, pose }),
-        intersectsRect: (pose, rect) => pathPoseDescriptor.intersectsRect!(pose, rect),
-      }),
-    [],
-  );
-
   const honkBounds = () => {
-    const g = shapesRef.current.find((s) => s.id === 'goose');
+    const g = shapes.find((s) => s.id === 'goose');
     if (!g) return null;
     const b = pathPoseDescriptor.getBounds(g.pose);
     return { x: b.x + b.width / 2 - 18, y: b.y - 22, w: 36, h: 16 };
@@ -179,7 +164,11 @@ export function CompoundPathsDemo() {
         width={W}
         height={H}
         className="ckd-canvas"
-        adapter={adapter}
+        items={shapes}
+        setItems={setShapes}
+        toPose={(s) => s.pose}
+        fromPose={(s, pose) => ({ ...s, pose })}
+        intersectsRect={(pose, rect) => pathPoseDescriptor.intersectsRect!(pose, rect)}
         selectionMode="multi"
         handleHitRadius={HANDLE}
         layers={{
@@ -243,16 +232,16 @@ export const COMPOUND_PATHS_DEMO_SOURCE = `// Five non-rect shapes on one canvas
 //   - Goose: extreme aspect ratio (long neck) — stresses resize anchoring.
 //   - Octopus: open polyline tentacles + closed body subpath.
 
-const adapter = arrayAdapter<Shape, Path>({
-  ref: shapesRef, setItems: setShapes,
-  toPose: (s) => s.pose,
-  fromPose: (s, pose) => ({ ...s, pose }),
-  intersectsRect: (pose, rect) => pathPoseDescriptor.intersectsRect!(pose, rect),
-});
-
+// No explicit adapter — Canvas synthesizes one from items + setItems + toPose.
+// fromPose is needed because resize writes a new Path back; intersectsRect
+// teaches area-select about path geometry.
 return (
   <Canvas<Shape, Path>
-    adapter={adapter}
+    items={shapes}
+    setItems={setShapes}
+    toPose={(s) => s.pose}
+    fromPose={(s, pose) => ({ ...s, pose })}
+    intersectsRect={(pose, rect) => pathPoseDescriptor.intersectsRect!(pose, rect)}
     // Path TPose is auto-detected — Canvas dispatches on pose.kind so bounds /
     // translate / resize-remap, plus pointInPath silhouette hit-testing, all
     // wire up without an explicit geometry / hitBody prop.

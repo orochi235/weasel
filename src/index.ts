@@ -218,6 +218,8 @@ export * from './core/history';
 export * from './core/adapters/types';
 export { arrayAdapter } from './core/adapters/arrayAdapter';
 export type { ArrayAdapter, ArrayAdapterConfig } from './core/adapters/arrayAdapter';
+export { useArrayAdapter } from './core/adapters/useArrayAdapter';
+export type { UseArrayAdapterOptions } from './core/adapters/useArrayAdapter';
 export type {
   ModifierState,
   PointerState,
