@@ -20,7 +20,7 @@ import {
   usePointerGestures,
   type PointerGestureCallbackCtx,
 } from '../interactions/usePointerGestures';
-import type { SelectionApi } from '../interactions/useSelection';
+import type { SelectionApi } from '../features/selection/useSelection';
 import type { UseMoveReturn } from '../interactions/gestures/move/move';
 import type { UseResizeReturn } from '../interactions/gestures/resize/resize';
 

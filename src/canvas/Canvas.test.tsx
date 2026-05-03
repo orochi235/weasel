@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { createRef } from 'react';
 import { Canvas } from './Canvas';
-import { useSelection } from '../interactions/useSelection';
+import { useSelection } from '../features/selection/useSelection';
 import type { RenderLayer } from '../features/layers/render';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.

@@ -80,13 +80,13 @@ export type {
 } from './interactions/usePointerGestures';
 export { Canvas } from './canvas/Canvas';
 export type { CanvasProps } from './canvas/Canvas';
-export { useSelection } from './interactions/useSelection';
+export { useSelection } from './features/selection/useSelection';
 export type {
   SelectionApi,
   SelectionMode,
   SelectionExtendKey,
   UseSelectionOptions,
-} from './interactions/useSelection';
+} from './features/selection/useSelection';
 export * from './features/layers/render';
 export * from './features/layers/LayerRenderer';
 export { createGridLayer } from './features/grid/layer';

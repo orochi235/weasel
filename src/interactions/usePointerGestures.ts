@@ -5,7 +5,7 @@ import { cornerResizeHandles, hitCornerHandle } from './gestures/resize/cornerHa
 import type { UseMoveReturn } from './gestures/move/move';
 import type { UseResizeReturn } from './gestures/resize/resize';
 import type { ModifierState } from './gestures/types';
-import type { SelectionApi } from './useSelection';
+import type { SelectionApi } from '../features/selection/useSelection';
 
 interface Bounds {
   x: number;

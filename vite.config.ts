@@ -9,7 +9,7 @@ export default defineConfig({
     alias: [
       {
         find: /^@orochi235\/weasel\/(.*)$/,
-        replacement: resolve(__dirname, 'src/$1.ts'),
+        replacement: resolve(__dirname, 'src/subpaths/$1.ts'),
       },
       {
         find: '@orochi235/weasel',
