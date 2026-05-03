@@ -25,9 +25,9 @@ interface InFlight {
   tool: AnyTool;
   scratch: unknown;
   startClient: { x: number; y: number };
-  /** 'pending' = pointer down, sub-threshold; 'drag' = drag.onStart fired;
-   *  'pointer-claimed' = pointer.onDown returned 'claim'. */
-  phase: 'pending' | 'drag' | 'pointer-claimed';
+  /** 'pending' = pointer down, sub-threshold (or pointer.onDown claimed for
+   *  classification); 'drag' = drag.onStart fired. */
+  phase: 'pending' | 'drag';
 }
 
 export interface ToolsDispatcher {
@@ -91,25 +91,34 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     const slots = opts.getSlots();
     const baseCtx = opts.getCtx({ worldX: e.clientX, worldY: e.clientY });
 
-    // 1. Try pointer.onDown — escape hatch. If it claims, we lock the
-    //    gesture into 'pointer-claimed' phase: subsequent moves/ups still
-    //    fire pointer/drag handlers on the same tool, but neither click
-    //    nor drag.onStart will ever be triggered.
-    const claimedByDown = dispatchOnce<PointerEvent>(
-      slots,
-      (t) => t.pointer?.onDown,
-      e,
-      baseCtx,
-      (t) => getInitialScratch(t),
-    );
-    if (claimedByDown) {
-      inFlight = {
-        tool: claimedByDown,
-        scratch: getInitialScratch(claimedByDown),
-        startClient: { x: e.clientX, y: e.clientY },
-        phase: 'pointer-claimed',
-      };
-      return;
+    // 1. Try pointer.onDown — classification pass. If a tool claims, it has
+    //    had the opportunity to mutate ctx.scratch (e.g. stash which sub-gesture
+    //    was hit). We capture the post-handler scratch so drag.* handlers see
+    //    the same value. The gesture then enters `pending` phase: the drag
+    //    pipeline (threshold → onStart → onMove → onEnd) still fires normally.
+    //    This lets pointer.onDown act as a classification hook rather than a
+    //    raw-pointer escape hatch — the pattern used by useSelectTool.
+    const order: AnyTool[] = [];
+    if (slots.modifier) order.push(slots.modifier);
+    if (slots.active) order.push(slots.active);
+    for (const t of slots.alwaysOn) order.push(t);
+
+    for (const tool of order) {
+      const handler = tool.pointer?.onDown;
+      if (!handler) continue;
+      const initScratch = getInitialScratch(tool);
+      const ctx = ctxFor(initScratch, baseCtx);
+      const decision = handler(e, ctx);
+      if (decision === 'claim') {
+        // ctx.scratch may have been mutated by the handler — capture it.
+        inFlight = {
+          tool,
+          scratch: ctx.scratch,
+          startClient: { x: e.clientX, y: e.clientY },
+          phase: 'pending',
+        };
+        return;
+      }
     }
 
     // 2. No pointer.onDown claim — enter pending phase. The active tool
@@ -149,12 +158,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     if (inFlight.phase === 'drag') {
       const onMove = inFlight.tool.drag?.onMove;
       if (onMove) onMove(e, ctxFor(inFlight.scratch, baseCtx));
-      return;
     }
-
-    // 'pointer-claimed' — no drag promotion; raw pointer events keep flowing
-    // but there's no 'onMove' on pointer channel (escape-hatch users handle
-    // their own move logic). No-op here.
   }
 
   function onPointerUp(e: PointerEvent): void {
@@ -169,7 +173,6 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       const onEnd = inFlight.tool.drag?.onEnd;
       if (onEnd) onEnd(e, ctxFor(inFlight.scratch, baseCtx));
     }
-    // 'pointer-claimed' has no commit semantic at this layer.
     endGesture();
   }
 

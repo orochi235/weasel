@@ -117,7 +117,10 @@ describe('dispatcher: threshold-gated drag', () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  it('pointer.onDown is the escape hatch — fires before threshold and suppresses drag/click when claimed', () => {
+  it('pointer.onDown is a classification pass — fires before threshold and the drag pipeline still runs', () => {
+    // pointer.onDown claiming captures scratch (for sub-gesture routing like useSelectTool)
+    // but does NOT suppress drag.onStart. The gesture enters pending phase and
+    // promotes to drag normally when the threshold is crossed.
     const onDown = vi.fn(() => 'claim' as const);
     const onClick = vi.fn(() => 'claim' as const);
     const onStart = vi.fn(() => 'claim' as const);
@@ -129,11 +132,13 @@ describe('dispatcher: threshold-gated drag', () => {
     const d = makeDispatcher({ modifier: null, active: tool, alwaysOn: [] });
 
     d.onPointerDown(pointerEvent('pointerdown'));
-    d.onPointerMove(pointerEvent('pointermove', { clientX: 50, clientY: 50 }));
+    d.onPointerMove(pointerEvent('pointermove', { clientX: 50, clientY: 50 })); // crosses threshold
     d.onPointerUp(pointerEvent('pointerup'));
 
     expect(onDown).toHaveBeenCalledOnce();
-    expect(onStart).not.toHaveBeenCalled();
+    // drag.onStart fires after threshold — pointer.onDown is classification, not an escape hatch.
+    expect(onStart).toHaveBeenCalledOnce();
+    // pointer.onClick does NOT fire (gesture was promoted to drag).
     expect(onClick).not.toHaveBeenCalled();
   });
 });
