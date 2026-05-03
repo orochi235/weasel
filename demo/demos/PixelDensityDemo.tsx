@@ -1,3 +1,9 @@
+// Intentionally raw `<canvas>` + `setupCanvasDpr` — this demo's purpose is to
+// showcase manual DPR control as an escape hatch from the kit's defaults.
+// Porting it to `<Canvas>` would hide the very thing it demonstrates: how to
+// opt out of devicePixelRatio scaling (via `useFixedPixelRatio`) so that one
+// "world pixel" lands on exactly one backing pixel — the prerequisite for
+// pixel art, putImageData, and hairline-aligned rendering.
 import { useEffect, useRef } from 'react';
 import { setupCanvasDpr, useFixedPixelRatio } from '@orochi235/weasel';
 
