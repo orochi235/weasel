@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultLayers } from './defaultLayers';
+import { defaultLayers } from './defaults';
 import type { MoveOverlay } from '../../interactions/gestures/types';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number }

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { type RenderLayer, runLayers } from './renderLayer';
+import { type RenderLayer, runLayers } from './render';
 
 function makeLayer(id: string, opts: Partial<RenderLayer<number>> = {}): RenderLayer<number> {
   return {

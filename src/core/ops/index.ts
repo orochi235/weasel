@@ -4,7 +4,7 @@ export { createTransformOp } from './transform';
 export { createReparentOp } from './reparent';
 export { createInsertOp, type InsertOp } from './create';
 export { createDeleteOp } from './delete';
-export { createSetSelectionOp } from './selection';
+export { createSetSelectionOp } from './select';
 export { createSetTextOp } from './setText';
 export {
   createBringForwardOp,

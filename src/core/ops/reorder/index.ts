@@ -1,11 +1,11 @@
-import type { Op } from './types';
+import type { Op } from '../types';
 import {
   bringForward,
   sendBackward,
   bringToFront,
   sendToBack,
   moveToIndex,
-} from './reorderAlgorithms';
+} from './algorithms';
 
 interface ReorderAdapter {
   getParent?(id: string): string | null;

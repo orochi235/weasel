@@ -5,7 +5,7 @@ import {
   createBringToFrontOp,
   createSendToBackOp,
   createMoveToIndexOp,
-} from './reorder';
+} from './index';
 
 interface FakeAdapter {
   parents: Record<string, string | null>;

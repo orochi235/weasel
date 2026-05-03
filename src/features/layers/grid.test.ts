@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createGridLayer } from './gridLayer';
+import { createGridLayer } from './grid';
 import { IMPERIAL_INCHES } from '../../core/units';
 
 interface RecordedCall {

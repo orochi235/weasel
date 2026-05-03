@@ -14,7 +14,7 @@
 
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import type React from 'react';
-import { runLayers, type RenderLayer } from '../features/layers/renderLayer';
+import { runLayers, type RenderLayer } from '../features/layers/render';
 import { setupCanvasDpr } from '../features/viewport/pixelDensity';
 import {
   usePointerGestures,

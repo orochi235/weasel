@@ -1,4 +1,4 @@
-import { createSetSelectionOp } from '../../../../core/ops/selection';
+import { createSetSelectionOp } from '../../../../core/ops/select';
 import type { Op } from '../../../../core/ops/types';
 import type { AreaSelectAdapter } from '../../../../core/adapters/types';
 import type { AreaSelectBehavior } from '../../types';

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createCellHighlightLayer } from './cellHighlightLayer';
+import { createCellHighlightLayer } from './cellHighlight';
 import { IMPERIAL_INCHES } from '../../core/units';
 
 interface RecordedCall {

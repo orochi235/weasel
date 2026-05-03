@@ -30,7 +30,7 @@ import { createInsertOp } from '../../../core/ops/create';
 import { createDeleteOp } from '../../../core/ops/delete';
 import { createReparentOp } from '../../../core/ops/reparent';
 import { createTransformOp } from '../../../core/ops/transform';
-import { createSetSelectionOp } from '../../../core/ops/selection';
+import { createSetSelectionOp } from '../../../core/ops/select';
 import type { Op } from '../../../core/ops/types';
 import { dispatchApplyBatch } from '../../../core/ops/applyOpsTo';
 import {

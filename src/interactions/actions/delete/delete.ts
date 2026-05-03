@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { createDeleteOp } from '../../../core/ops/delete';
-import { createSetSelectionOp } from '../../../core/ops/selection';
+import { createSetSelectionOp } from '../../../core/ops/select';
 import type { Op } from '../../../core/ops/types';
 import { dispatchApplyBatch } from '../../../core/ops/applyOpsTo';
 import { useKeybinding } from '../useKeybinding';

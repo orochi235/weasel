@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createSetSelectionOp } from './selection';
+import { createSetSelectionOp } from './select';
 
 describe('createSetSelectionOp', () => {
   function makeAdapter() {

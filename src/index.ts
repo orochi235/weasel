@@ -58,7 +58,6 @@ export * from './features/drag/pointerDrag';
 export * from './features/viewport/useCanvasSize';
 export { setupCanvasDpr, useFixedPixelRatio } from './features/viewport/pixelDensity';
 export type { SetupCanvasDprOptions } from './features/viewport/pixelDensity';
-export * from './features/layers/useLayerEffect';
 export * from './features/viewport/fitToBounds';
 export * from './features/viewport/usePan';
 export * from './features/viewport/useZoom';
@@ -87,20 +86,20 @@ export type {
   SelectionExtendKey,
   UseSelectionOptions,
 } from './interactions/useSelection';
-export * from './features/layers/renderLayer';
+export * from './features/layers/render';
 export * from './features/layers/LayerRenderer';
-export { createGridLayer } from './features/layers/gridLayer';
-export type { GridLayerOpts } from './features/layers/gridLayer';
-export { defaultLayers } from './features/layers/defaultLayers';
+export { createGridLayer } from './features/layers/grid';
+export type { GridLayerOpts } from './features/layers/grid';
+export { defaultLayers } from './features/layers/defaults';
 export type {
   DefaultLayersOpts,
   DefaultLayersScene,
   DefaultLayersSelection,
-} from './features/layers/defaultLayers';
-export { createCellHighlightLayer } from './features/layers/cellHighlightLayer';
-export type { CellHighlightLayerOpts } from './features/layers/cellHighlightLayer';
-export { createChildrenLayer } from './features/layers/childrenLayer';
-export type { CreateChildrenLayerOpts } from './features/layers/childrenLayer';
+} from './features/layers/defaults';
+export { createCellHighlightLayer } from './features/layers/cellHighlight';
+export type { CellHighlightLayerOpts } from './features/layers/cellHighlight';
+export { createChildrenLayer } from './features/layers/children';
+export type { CreateChildrenLayerOpts } from './features/layers/children';
 export {
   resolveUnit,
   formatUnit,

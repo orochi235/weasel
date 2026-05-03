@@ -5,7 +5,7 @@ import {
   bringToFront,
   sendToBack,
   moveToIndex,
-} from './reorderAlgorithms';
+} from './algorithms';
 
 describe('bringForward', () => {
   it('moves a single id up one slot', () => {

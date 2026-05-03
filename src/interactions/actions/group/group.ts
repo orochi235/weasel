@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { createCreateGroupOp } from '../../../features/groups/ops/createGroup';
 import { createDissolveGroupOp } from '../../../features/groups/ops/dissolveGroup';
-import { createSetSelectionOp } from '../../../core/ops/selection';
+import { createSetSelectionOp } from '../../../core/ops/select';
 import type { Op } from '../../../core/ops/types';
 import { dispatchApplyBatch } from '../../../core/ops/applyOpsTo';
 import type { Group, GroupAdapter } from '../../../features/groups/types';

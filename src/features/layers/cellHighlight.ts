@@ -4,7 +4,7 @@
  * a `runLayers([...])` sequence.
  */
 
-import type { RenderLayer } from './renderLayer';
+import type { RenderLayer } from './render';
 import { applyPaint, type Paint } from '../../core/paint';
 import { resolveUnit, type UnitSystem, type UnitValue } from '../../core/units';
 

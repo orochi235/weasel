@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createChildrenLayer } from './childrenLayer';
+import { createChildrenLayer } from './children';
 
 const fakeCtx = {} as CanvasRenderingContext2D;
 
