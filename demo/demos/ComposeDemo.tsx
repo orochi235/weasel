@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Canvas } from '@orochi235/weasel';
+import { SceneCanvas, useScene } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
@@ -13,7 +13,7 @@ const INITIAL: Rect[] = [
 type Tool = 'select' | 'insert';
 
 export function ComposeDemo() {
-  const [rects, setRects] = useState<Rect[]>(INITIAL);
+  const scene = useScene({ items: INITIAL });
   const [tool, setTool] = useState<Tool>('select');
   const nextId = useRef(1);
 
@@ -33,25 +33,28 @@ export function ComposeDemo() {
           >{t}</button>
         ))}
       </div>
-      <Canvas
+      <SceneCanvas
         width={W}
         height={H}
         className="ckd-canvas"
-        items={rects}
-        setItems={setRects}
-        createDefault={(b) => ({
-          id: `r${nextId.current++}`,
-          x: b.x, y: b.y, width: b.width, height: b.height,
-          color: COLORS[nextId.current % COLORS.length],
-        })}
+        scene={scene}
         selectionMode="multi"
         tool={tool}
         gestures={{ delete: true }}
         insertOptions={{ minBounds: { width: 4, height: 4 } }}
+        commitInsert={(b) => {
+          const id = `r${nextId.current++}`;
+          const item: Rect = {
+            id,
+            x: b.x, y: b.y, width: b.width, height: b.height,
+            color: COLORS[nextId.current % COLORS.length],
+          };
+          return { id, pose: item, data: item };
+        }}
         layers={{
           scene: {
-            drawOne: (cx, r, p) => {
-              cx.fillStyle = r.color;
+            drawOne: (cx, _node, p) => {
+              cx.fillStyle = p.color;
               cx.fillRect(p.x, p.y, p.width, p.height);
             },
           },
@@ -64,37 +67,32 @@ export function ComposeDemo() {
   );
 }
 
-export const COMPOSE_DEMO_SOURCE = `// --- Scene (your app owns this) ---
+export const COMPOSE_DEMO_SOURCE = `// --- Scene (kit-owned via useScene shorthand) ---
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
-interface Pose { x: number; y: number; width: number; height: number }
 
-const [rects, setRects] = useState<Rect[]>(INITIAL);
-const [tool, setTool]   = useState<'select' | 'insert'>('select');
-const nextId   = useRef(1);
+const scene = useScene({ items: INITIAL });
+const [tool, setTool] = useState<'select' | 'insert'>('select');
+const nextId = useRef(1);
 
-// No explicit adapter — Canvas synthesizes one (via the kit's arrayAdapter)
-// from items + setItems + toPose. createDefault wires insert. For groups,
-// custom history, or non-array scenes, pass an explicit \`adapter\` instead.
-//
-// Canvas owns useMove / useResize / useSelection / useInsert / useAreaSelect.
+// SceneCanvas owns useMove / useResize / useSelection / useInsert / useAreaSelect.
 // \`tool\` switches the empty-space drag between insert and area-select;
 // \`selectionMode="multi"\` turns on shift-extend + union-AABB drag/resize;
 // \`gestures\` opts the canvas into Delete/Backspace removal of the selection.
 return (
-  <Canvas
+  <SceneCanvas
     width={W} height={H}
-    items={rects}
-    setItems={setRects}
-    createDefault={(b) => ({
-      id: \`r\${nextId.current++}\`, ...b,
-      color: COLORS[nextId.current % COLORS.length],
-    })}
+    scene={scene}
     selectionMode="multi"
     tool={tool}
     gestures={{ delete: true }}
     insertOptions={{ minBounds: { width: 4, height: 4 } }}
+    commitInsert={(b) => {
+      const id = \`r\${nextId.current++}\`;
+      const item = { id, ...b, color: COLORS[nextId.current % COLORS.length] };
+      return { id, pose: item, data: item };
+    }}
     layers={{
-      scene: { drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
+      scene: { drawOne: (cx, _node, p) => { cx.fillStyle = p.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
       selectionOverlay: { handles: { size: HANDLE } },
       insertOverlay: {},
       areaSelectOverlay: {},

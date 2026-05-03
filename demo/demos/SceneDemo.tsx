@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import {
-  Canvas,
-  sceneToAdapter,
+  SceneCanvas,
   useScene,
   useSelection,
 } from '@orochi235/weasel';
@@ -66,52 +65,6 @@ export function SceneDemo() {
 
   const selection = useSelection();
 
-  // Wrap the synthesized adapter to cascade-translate descendants when a
-  // container is moved. Scene v1 stores absolute poses (no auto-reflow), so
-  // physical containment is the consumer's responsibility — this is the
-  // recipe.
-  const adapter = useMemo(() => {
-    const base = sceneToAdapter(scene);
-    const collectDescendants = (id: string, out: string[]): void => {
-      for (const cid of scene.childrenOf(id as never)) {
-        out.push(cid);
-        collectDescendants(cid, out);
-      }
-    };
-    return {
-      ...base,
-      setPose(id: string, pose: Pose) {
-        const n = scene.get(id as never);
-        if (!n || n.kind !== 'container') {
-          base.setPose(id, pose);
-          return;
-        }
-        const dx = pose.x - n.pose.x;
-        const dy = pose.y - n.pose.y;
-        if (dx === 0 && dy === 0) {
-          base.setPose(id, pose);
-          return;
-        }
-        const desc: string[] = [];
-        collectDescendants(id, desc);
-        scene.batch('move container', () => {
-          base.setPose(id, pose);
-          for (const cid of desc) {
-            const cn = scene.get(cid as never);
-            if (!cn) continue;
-            base.setPose(cid, { ...cn.pose, x: cn.pose.x + dx, y: cn.pose.y + dy });
-          }
-        });
-      },
-    };
-  }, [scene]);
-
-  // Live overlay cascade — ghosts of descendants follow the dragged parent.
-  const cascadeWorldPose = (id: string): Pose | null => {
-    const n = scene.get(id as never);
-    return n ? n.pose : null;
-  };
-
   const recolorSelection = () => {
     const ids = selection.get();
     if (ids.length === 0) return;
@@ -135,15 +88,13 @@ export function SceneDemo() {
           Cmd/Ctrl+Z undo · Shift+Cmd/Ctrl+Z redo · drag rects to move
         </span>
       </div>
-      <Canvas
+      <SceneCanvas
         width={W}
         height={H}
         className="ckd-canvas"
-        adapter={adapter}
+        scene={scene}
         selection={selection}
         tool="none"
-        gestures={{ undoRedo: { adapter: scene } }}
-        moveOptions={{ cascadeWorldPose }}
         hitBody={(wx, wy) => {
           const ordered = [...scene.renderOrder()];
           for (let i = ordered.length - 1; i >= 0; i--) {
@@ -177,8 +128,8 @@ export function SceneDemo() {
   );
 }
 
-export const SCENE_DEMO_SOURCE = `// Kit-owned scene primitive — useScene + Canvas wired via sceneToAdapter.
-// Layers, parenting, and undo/redo are first-class on the Scene.
+export const SCENE_DEMO_SOURCE = `// Kit-owned scene primitive — useScene + SceneCanvas.
+// Layers, parenting, undo/redo, and container-cascade-on-drag are first-class.
 
 const scene = useScene<NodeData, LayerId, Pose>({
   systemLayers: [
@@ -187,7 +138,7 @@ const scene = useScene<NodeData, LayerId, Pose>({
   ],
   initial: [
     { id: 'planter-1', kind: 'container', layer: 'structures', pose, data },
-    // Cross-layer parenting: the leaf is on 'plantings', its parent on 'structures'.
+    // Cross-layer parenting: leaf on 'plantings', parent on 'structures'.
     { id: 'plant-a',  kind: 'leaf',      layer: 'plantings',  pose, data, parent: 'planter-1' },
   ],
 });
@@ -195,34 +146,12 @@ const scene = useScene<NodeData, LayerId, Pose>({
 // Consumer op participates in the same undo stack as scene.add / scene.setPose.
 scene.registerOp<SetColorPayload>('setColor', { apply, revert });
 
-// v1 Scene stores absolute poses — wrap setPose to cascade-translate
-// descendants when a container moves.
-const adapter = useMemo(() => {
-  const base = sceneToAdapter(scene);
-  return {
-    ...base,
-    setPose(id, pose) {
-      const n = scene.get(id);
-      if (!n || n.kind !== 'container') return base.setPose(id, pose);
-      const dx = pose.x - n.pose.x, dy = pose.y - n.pose.y;
-      const desc = []; collectDescendants(id, desc);
-      scene.batch('move container', () => {
-        base.setPose(id, pose);
-        for (const cid of desc) {
-          const cn = scene.get(cid);
-          base.setPose(cid, { ...cn.pose, x: cn.pose.x + dx, y: cn.pose.y + dy });
-        }
-      });
-    },
-  };
-}, [scene]);
-
 return (
-  <Canvas
-    width={W} height={H} adapter={adapter}
-    gestures={{ undoRedo: { adapter: scene } }}
-    moveOptions={{ cascadeWorldPose: (id) => scene.get(id)?.pose ?? null }}
+  <SceneCanvas
+    width={W} height={H} scene={scene}
     layers={{ scene: { drawOne: (cx, node, pose) => { /* ... */ } } }}
   />
 );
+// SceneCanvas wires sceneToAdapter, undo/redo, and container-cascade
+// (live overlay + commit-time descendant translate) by default.
 `;

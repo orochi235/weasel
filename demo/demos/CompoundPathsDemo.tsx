@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import {
-  Canvas,
+  SceneCanvas,
   composePath,
   pathPoseDescriptor,
   PathBuilder,
   polygonFromPoints,
   traceToContext,
+  useScene,
+  asNodeId,
 } from '@orochi235/weasel';
 import type { Path } from '@orochi235/weasel';
 
 interface Shape { id: string; pose: Path; fill: string; stroke?: string; label?: string }
+interface ShapeData { fill: string; stroke?: string; label?: string }
 
 const W = 720, H = 480, HANDLE = 8;
 
@@ -148,11 +151,20 @@ const INITIAL: Shape[] = [
 ];
 
 export function CompoundPathsDemo() {
-  const [shapes, setShapes] = useState<Shape[]>(INITIAL);
+  const scene = useScene<ShapeData, 'default', Path>({
+    systemLayers: [{ id: 'default' }],
+    initial: INITIAL.map((s) => ({
+      kind: 'leaf',
+      layer: 'default',
+      pose: s.pose,
+      data: { fill: s.fill, stroke: s.stroke, label: s.label },
+      id: asNodeId(s.id),
+    })),
+  });
   const [toast, setToast] = useState<string | null>(null);
 
   const honkBounds = () => {
-    const g = shapes.find((s) => s.id === 'goose');
+    const g = scene.get(asNodeId('goose'));
     if (!g) return null;
     const b = pathPoseDescriptor.getBounds(g.pose);
     return { x: b.x + b.width / 2 - 18, y: b.y - 22, w: 36, h: 16 };
@@ -160,23 +172,19 @@ export function CompoundPathsDemo() {
 
   return (
     <div style={{ position: 'relative', width: W, height: H }}>
-      <Canvas
+      <SceneCanvas
         width={W}
         height={H}
         className="ckd-canvas"
-        items={shapes}
-        setItems={setShapes}
-        toPose={(s) => s.pose}
-        fromPose={(s, pose) => ({ ...s, pose })}
-        intersectsRect={(pose, rect) => pathPoseDescriptor.intersectsRect!(pose, rect)}
+        scene={scene}
         selectionMode="multi"
-        tool="select"
+        tool="none"
         handleHitRadius={HANDLE}
         layers={{
           scene: {
-            drawOne: (cx, s, p) => {
-              cx.fillStyle = s.fill;
-              cx.strokeStyle = s.stroke ?? '#1a130d';
+            drawOne: (cx, node, p) => {
+              cx.fillStyle = node.data.fill;
+              cx.strokeStyle = node.data.stroke ?? '#1a130d';
               cx.lineWidth = 1.5;
               traceToContext(cx, p);
               if (p.kind === 'polygon' && p.fillRule === 'evenodd') cx.fill('evenodd');
@@ -185,6 +193,22 @@ export function CompoundPathsDemo() {
             },
           },
           selectionOverlay: { handles: { size: HANDLE } },
+          signature: {
+            layer: {
+              id: 'signature',
+              label: 'Signature',
+              draw: (ctx) => {
+                ctx.save();
+                ctx.font = 'italic 14px "Comic Sans MS", "Comic Sans", cursive';
+                ctx.fillStyle = '#d4c4a8';
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText('original artwork by claude', W - 10, H - 8);
+                ctx.restore();
+              },
+            },
+            after: 'selectionOverlay',
+          },
         }}
       />
       <HonkButton

@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Canvas } from '@orochi235/weasel';
+import { SceneCanvas, useScene } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
@@ -14,22 +13,21 @@ const INITIAL: Rect[] = [
 ];
 
 export function MultiSelectDemo() {
-  const [rects, setRects] = useState<Rect[]>(INITIAL);
+  const scene = useScene({ items: INITIAL });
 
   return (
-    <Canvas
+    <SceneCanvas
       width={W}
       height={H}
       className="ckd-canvas"
-      items={rects}
-      setItems={setRects}
+      scene={scene}
       selectionMode="multi"
       tool="select"
       handleHitRadius={HANDLE}
       layers={{
         scene: {
-          drawOne: (cx, r, p) => {
-            cx.fillStyle = r.color;
+          drawOne: (cx, _node, p) => {
+            cx.fillStyle = p.color;
             cx.fillRect(p.x, p.y, p.width, p.height);
           },
         },
@@ -39,29 +37,23 @@ export function MultiSelectDemo() {
   );
 }
 
-export const MULTI_SELECT_DEMO_SOURCE = `// --- Scene (your app owns this) ---
+export const MULTI_SELECT_DEMO_SOURCE = `// --- Scene (kit-owned via useScene shorthand) ---
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
-interface Pose { x: number; y: number; width: number; height: number }
 
-const [rects, setRects] = useState<Rect[]>(INITIAL);
+const scene = useScene({ items: INITIAL });
 
-// No explicit adapter — Canvas synthesizes one from items + setItems.
-// (toPose defaults to identity — works because Rect already carries pose fields.)
-//
 // selectionMode="multi" turns on shift-click extend, draws a single union
 // AABB outline (with corner handles) when more than one item is selected,
-// and routes drag / resize through that union — Canvas wires expandIds,
-// boundsOf, hitBody, and resizeTarget for you.
+// and routes drag / resize through that union.
 return (
-  <Canvas
+  <SceneCanvas
     width={W} height={H}
-    items={rects}
-    setItems={setRects}
+    scene={scene}
     selectionMode="multi"
     tool="select"
     handleHitRadius={HANDLE}
     layers={{
-      scene: { drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
+      scene: { drawOne: (cx, _node, p) => { cx.fillStyle = p.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
       selectionOverlay: { handles: { size: HANDLE } },
     }}
   />

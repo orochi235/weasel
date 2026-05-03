@@ -1,9 +1,8 @@
-import { useRef, useState } from 'react';
-import { Canvas } from '@orochi235/weasel';
+import { useRef } from 'react';
+import { SceneCanvas, useScene } from '@orochi235/weasel';
 import type { RenderLayer, CanvasHelpers } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
-interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 480, H = 360, HANDLE = 8;
 
@@ -51,7 +50,7 @@ function buildTree(bounds: { x: number; y: number; width: number; height: number
 
 function createQuadtreeLayer(
   getRects: () => Rect[],
-  helpersRef: React.RefObject<CanvasHelpers<Pose> | null>,
+  helpersRef: React.RefObject<CanvasHelpers<Rect> | null>,
 ): RenderLayer<unknown> {
   return {
     id: 'quadtree',
@@ -77,16 +76,15 @@ function createQuadtreeLayer(
 }
 
 export function QuadtreeDemo() {
-  const [rects, setRects] = useState<Rect[]>(INITIAL);
-  const helpersRef = useRef<CanvasHelpers<Pose> | null>(null);
+  const scene = useScene({ items: INITIAL });
+  const helpersRef = useRef<CanvasHelpers<Rect> | null>(null);
 
   return (
-    <Canvas
+    <SceneCanvas
       width={W}
       height={H}
       className="ckd-canvas"
-      items={rects}
-      setItems={setRects}
+      scene={scene}
       handleHitRadius={HANDLE}
       helpersRef={helpersRef}
       layers={{
@@ -96,9 +94,15 @@ export function QuadtreeDemo() {
           accentEvery: 5,
         },
         scene: {
-          drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); },
+          drawOne: (cx, _node, p) => { cx.fillStyle = p.color; cx.fillRect(p.x, p.y, p.width, p.height); },
         },
-        quadtree: { layer: createQuadtreeLayer(() => rects, helpersRef), after: 'scene' },
+        quadtree: {
+          layer: createQuadtreeLayer(
+            () => [...scene.renderOrder()].map((id) => scene.get(id)!.data),
+            helpersRef,
+          ),
+          after: 'scene',
+        },
         selectionOverlay: { handles: { size: HANDLE } },
       }}
     />
@@ -111,31 +115,19 @@ export const QUADTREE_DEMO_SOURCE = `// A custom analytical RenderLayer composed
 
 interface QuadNode { x: number; y: number; w: number; h: number; depth: number; children: QuadNode[] | null }
 
-function buildTree(bounds, rects): QuadNode {
-  const root = { ...bounds, depth: 0, children: null };
-  function visit(node) {
-    if (node.depth >= MAX_DEPTH) return;
-    let count = 0;
-    for (const r of rects) if (intersects(node, r)) { count++; if (count > 1) break; }
-    if (count <= 1) return;
-    // ...subdivide into 4 quadrants and recurse
-  }
-  visit(root);
-  return root;
-}
+function buildTree(bounds, rects): QuadNode { /* subdivide into 4 quadrants and recurse */ }
 
-// <Canvas> owns the move/resize/selection hooks. The layers map names the
-// standard slots and drops the quadtree in after 'scene'.
+const scene = useScene({ items: INITIAL });
+
 return (
-  <Canvas
+  <SceneCanvas
     width={W} height={H}
-    items={rects}
-    setItems={setRects}
+    scene={scene}
     handleHitRadius={HANDLE}
     layers={{
       grid: { spacing: 20, bounds: () => ({ x: 0, y: 0, width: W, height: H }), accentEvery: 5 },
-      scene: { drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
-      quadtree: { layer: createQuadtreeLayer(() => rects), after: 'scene' },
+      scene: { drawOne: (cx, _node, p) => { cx.fillStyle = p.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
+      quadtree: { layer: createQuadtreeLayer(() => sceneRectsLive()), after: 'scene' },
       selectionOverlay: { handles: { size: HANDLE } },
     }}
   />

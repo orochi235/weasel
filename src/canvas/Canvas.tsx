@@ -251,13 +251,21 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
    *  `useArrayAdapter`). `toPose` defaults to identity (the item *is* the
    *  pose) — supply it only when the pose is a sub-shape of the item.
    *  Use the explicit `adapter` prop instead for groups, custom history,
-   *  or non-array scenes. */
+   *  or non-array scenes.
+   *  @deprecated Use `useScene({ items })` + `<SceneCanvas>` instead. The
+   *  inline-items props will be removed in a follow-up. */
   items?: TObject[];
+  /** @deprecated Use `useScene({ items })` + `<SceneCanvas>`. */
   setItems?: UseArrayAdapterOptions<TObject, TPose>['setItems'];
+  /** @deprecated Use `useScene({ items })` + `<SceneCanvas>`. */
   toPose?: UseArrayAdapterOptions<TObject, TPose>['toPose'];
+  /** @deprecated Use `useScene({ items })` + `<SceneCanvas>`. */
   fromPose?: UseArrayAdapterOptions<TObject, TPose>['fromPose'];
+  /** @deprecated Use `useScene({ items })` + `<SceneCanvas>`. */
   createDefault?: UseArrayAdapterOptions<TObject, TPose>['createDefault'];
+  /** @deprecated Use `useScene({ items })` + `<SceneCanvas>`. */
   poseBounds?: UseArrayAdapterOptions<TObject, TPose>['poseBounds'];
+  /** @deprecated Use `useScene({ items })` + `<SceneCanvas>`. */
   intersectsRect?: UseArrayAdapterOptions<TObject, TPose>['intersectsRect'];
 
   /** Selection semantics. See {@link CanvasSelectionMode}. Default `'single'`. */
@@ -480,13 +488,15 @@ function buildMoveOverlayLayer<TObject extends { id: string }, TPose>(
     draw: (ctx) => {
       if (moveOverlay.draggedIds.length === 0) return;
       const objects = scene.objects ?? adapter?.getObjects() ?? [];
-      const byId = new Map(objects.map((o) => [o.id, o] as const));
+      // Walk objects in scene render order so cascaded descendants (carried
+      // in moveOverlay.poses but not in draggedIds) draw above their
+      // ancestors when their layer is above. Drawing draggedIds in isolation
+      // would lose parent/child z-order.
       ctx.save();
       ctx.globalAlpha = alpha;
-      for (const id of moveOverlay.draggedIds) {
-        const pose = moveOverlay.poses.get(id);
-        const obj = byId.get(id);
-        if (!pose || !obj) continue;
+      for (const obj of objects) {
+        const pose = moveOverlay.poses.get(obj.id);
+        if (pose === undefined) continue;
         drawOne(ctx, obj, pose);
       }
       ctx.restore();
@@ -1269,6 +1279,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
+      onLostPointerCapture={bindings.onLostPointerCapture}
       onDoubleClick={editAnchorsEnabled ? handleDoubleClick : undefined}
     />
   );

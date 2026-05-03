@@ -1,14 +1,14 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
 import {
-  Canvas,
-  createSetTextOp,
+  SceneCanvas,
+  asNodeId,
   createTextLayer,
   gridSnapStrategy,
   caretIndexAt,
   pointInTextPose,
+  useScene,
   useTextEdit,
   type CanvasHelpers,
-  type Op,
   type RenderLayer,
   type TextStyle,
 } from '@orochi235/weasel';
@@ -81,9 +81,16 @@ const INITIAL: TextNode[] = [
 ];
 
 export function TextDemo() {
-  const [nodes, setNodes] = useState<TextNode[]>(INITIAL);
-  const nodesRef = useRef(nodes);
-  nodesRef.current = nodes;
+  const scene = useScene({ items: INITIAL });
+
+  // Live snapshot of every node's data + current pose, in render order. Used
+  // by the custom text/outline layers and the dblclick caret resolver.
+  const liveNodes = (): TextNode[] =>
+    [...scene.renderOrder()].map((id) => {
+      const n = scene.get(id)!;
+      const p = n.pose as Pose;
+      return { ...n.data, x: p.x, y: p.y, width: p.width, height: p.height };
+    });
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   // helpersRef gives custom layers overlay-aware pose lookups so the text
@@ -91,31 +98,33 @@ export function TextDemo() {
   // the overlay fold-in.
   const helpersRef = useRef<CanvasHelpers<Pose> | null>(null);
 
-  const setText = useCallback((id: string, text: string) => {
-    setNodes((ns) => ns.map((n) => (n.id === id ? { ...n, text } : n)));
-  }, []);
+  const setText = useCallback(
+    (id: string, text: string) => {
+      const nid = asNodeId(id);
+      const n = scene.get(nid);
+      if (!n) return;
+      scene.update(nid, { data: { ...n.data, text } });
+    },
+    [scene],
+  );
 
   const edit = useTextEdit({
     container: containerRef.current,
-    getText: (id) => nodesRef.current.find((n) => n.id === id)?.text ?? '',
-    getStyle: (id) => nodesRef.current.find((n) => n.id === id)?.style,
+    getText: (id) => scene.get(asNodeId(id))?.data.text ?? '',
+    getStyle: (id) => scene.get(asNodeId(id))?.data.style,
     getScreenPose: (id) => {
-      const n = nodesRef.current.find((x) => x.id === id);
+      const n = scene.get(asNodeId(id));
       if (!n) return null;
+      const p = n.pose as Pose;
       return {
-        x: n.x,
-        y: n.y,
-        width: n.width,
-        height: n.height,
-        fontSize: n.style?.fontSize ?? 16,
+        x: p.x,
+        y: p.y,
+        width: p.width,
+        height: p.height,
+        fontSize: n.data.style?.fontSize ?? 16,
       };
     },
-    setText: (id, text) => {
-      const prev = nodesRef.current.find((n) => n.id === id)?.text ?? '';
-      if (prev === text) return;
-      const op: Op = createSetTextOp({ id, from: prev, to: text, label: 'Edit text' });
-      op.apply({ setText });
-    },
+    setText,
   });
 
   const resolvePose = (n: TextNode): Pose => {
@@ -127,7 +136,7 @@ export function TextDemo() {
   // text via createTextLayer and hide the node currently being edited (the
   // contenteditable overlay handles its own visuals).
   const textLayer: RenderLayer<unknown> = createTextLayer<TextNode>({
-    getTexts: () => nodesRef.current,
+    getTexts: liveNodes,
     getPose: (n) => {
       const p = resolvePose(n);
       return {
@@ -149,7 +158,7 @@ export function TextDemo() {
     draw: (cx) => {
       cx.strokeStyle = '#e8e8e8';
       cx.lineWidth = 1;
-      for (const n of nodesRef.current) {
+      for (const n of liveNodes()) {
         const p = resolvePose(n);
         cx.strokeRect(p.x + 0.5, p.y + 0.5, p.width, p.height);
       }
@@ -163,9 +172,10 @@ export function TextDemo() {
       const canvas = e.target instanceof HTMLCanvasElement ? e.target : null;
       if (!canvas) return;
       const [cx, cy] = clientToCanvas(canvas, e.clientX, e.clientY);
+      const nodes = liveNodes();
       let target: TextNode | null = null;
-      for (let i = nodesRef.current.length - 1; i >= 0; i--) {
-        if (pointInTextPose(cx, cy, nodesRef.current[i])) { target = nodesRef.current[i]; break; }
+      for (let i = nodes.length - 1; i >= 0; i--) {
+        if (pointInTextPose(cx, cy, nodes[i])) { target = nodes[i]; break; }
       }
       if (!target) return;
       const ctx = canvas.getContext('2d');
@@ -176,6 +186,7 @@ export function TextDemo() {
       });
       edit.startEdit(target.id, { caret });
     },
+    // liveNodes reads through `scene` (stable) on every call.
     [edit],
   );
 
@@ -185,13 +196,12 @@ export function TextDemo() {
       style={{ position: 'relative', width: W, height: H }}
       onDoubleClick={onDoubleClick}
     >
-      <Canvas
+      <SceneCanvas
         width={W}
         height={H}
         className="ckd-canvas"
         background="#fafafa"
-        items={nodes}
-        setItems={setNodes}
+        scene={scene}
         helpersRef={helpersRef}
         snap={gridSnapStrategy<Pose>(CELL)}
         handleHitRadius={HANDLE}
@@ -209,46 +219,36 @@ export function TextDemo() {
 
 export const TEXT_DEMO_SOURCE = `// --- Scene ---
 interface TextNode { id; x; y; width; height; text; style?: TextStyle }
-const [nodes, setNodes] = useState<TextNode[]>(INITIAL);
+
+const scene = useScene({ items: INITIAL });
+
+// Reads the live (post-resize) data + pose for every node.
+const liveNodes = () => [...scene.renderOrder()].map((id) => {
+  const n = scene.get(id)!;
+  return { ...n.data, ...(n.pose as Pose) };
+});
 
 // --- Text edit interaction (contenteditable overlay) ---
 const edit = useTextEdit({
   container: containerRef.current,
-  getText: (id) => find(id)?.text ?? '',
-  getStyle: (id) => find(id)?.style,
-  getScreenPose: (id) => {
-    const n = find(id);
-    return n ? { x: n.x, y: n.y, width: n.width, height: n.height,
-                 fontSize: n.style?.fontSize ?? 16 } : null;
-  },
+  getText: (id) => scene.get(asNodeId(id))?.data.text ?? '',
+  getStyle: (id) => scene.get(asNodeId(id))?.data.style,
+  getScreenPose: (id) => { /* read from node.pose */ },
   setText: (id, text) => {
-    const op = createSetTextOp({ id, from: prev, to: text, label: 'Edit text' });
-    op.apply({ setText });
+    const n = scene.get(asNodeId(id));
+    if (n) scene.update(asNodeId(id), { data: { ...n.data, text } });
   },
 });
 
-// --- Custom text layer reads overlay-aware poses via Canvas helpersRef ---
-const helpersRef = useRef<CanvasHelpers<Pose> | null>(null);
-const textLayer = createTextLayer<TextNode>({
-  getTexts: () => nodesRef.current,
-  getPose: (n) => {
-    const p = helpersRef.current?.getEffectivePose(n.id) ?? n;
-    return { x: p.x, y: p.y, width: p.width, height: p.height, text: n.text, style: n.style };
-  },
-  isHidden: (n) => edit.isEditing(n.id),
-});
-
-// <Canvas> owns useMove + useResize + useSelection; we just plug a snap
-// behavior into moveOptions and slot the text layer into the layer stack.
-// Double-click on the wrapping div routes through caretIndexAt → edit.startEdit.
+// SceneCanvas owns useMove + useResize + useSelection; \`snap\` plugs the
+// grid behavior in. Custom text layer reads overlay-aware poses via helpersRef.
 return (
   <div ref={containerRef} onDoubleClick={onDoubleClick}>
-    <Canvas
+    <SceneCanvas
       width={W} height={H}
-      items={nodes} setItems={setNodes}
-      toPose={(n) => ({ x: n.x, y: n.y, width: n.width, height: n.height })}
+      scene={scene}
       helpersRef={helpersRef}
-      moveOptions={{ behaviors: [snap(gridSnapStrategy<Pose>(10))] }}
+      snap={gridSnapStrategy<Pose>(10)}
       layers={{
         scene: null,
         'text': { layer: textLayer, before: 'selectionOverlay' },

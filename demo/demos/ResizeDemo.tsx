@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Canvas } from '@orochi235/weasel';
+import { SceneCanvas, useScene } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
@@ -8,22 +7,21 @@ const W = 400, H = 300, HANDLE = 8;
 const INITIAL: Rect = { id: 'r', x: 100, y: 80, width: 180, height: 130, color: '#7fb069' };
 
 export function ResizeDemo() {
-  const [rects, setRects] = useState<Rect[]>([INITIAL]);
+  const scene = useScene({ items: [INITIAL] });
 
   return (
-    <Canvas
+    <SceneCanvas
       width={W}
       height={H}
       className="ckd-canvas"
-      items={rects}
-      setItems={setRects}
+      scene={scene}
       handleHitRadius={HANDLE}
       selectionOptions={{ initial: [INITIAL.id] }}
       onTapEmpty={() => {}}
       layers={{
         scene: {
-          drawOne: (cx, r, p) => {
-            cx.fillStyle = r.color;
+          drawOne: (cx, _node, p) => {
+            cx.fillStyle = p.color;
             cx.fillRect(p.x, p.y, p.width, p.height);
           },
         },
@@ -33,28 +31,22 @@ export function ResizeDemo() {
   );
 }
 
-export const RESIZE_DEMO_SOURCE = `// --- Scene (your app owns this) ---
+export const RESIZE_DEMO_SOURCE = `// --- Scene (kit-owned via useScene shorthand) ---
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
-interface Pose { x: number; y: number; width: number; height: number }
 
-const [rects, setRects] = useState<Rect[]>([INITIAL]);
+const scene = useScene({ items: [INITIAL] });
 
-// No explicit adapter — Canvas synthesizes one from items + setItems.
-// (toPose defaults to identity when the item already carries pose fields.)
-//
-// <Canvas> owns useResize internally. selectionOptions seeds the rect as
-// pre-selected so the corner handles are visible from the start;
-// onTapEmpty is overridden to keep selection on empty-canvas clicks.
+// <SceneCanvas> wires sceneToAdapter + undo/redo automatically.
+// drawOne receives the Scene Node; pose === item under the trivial overload.
 return (
-  <Canvas
+  <SceneCanvas
     width={W} height={H}
-    items={rects}
-    setItems={setRects}
+    scene={scene}
     handleHitRadius={HANDLE}
     selectionOptions={{ initial: ['r'] }}
     onTapEmpty={() => {}}
     layers={{
-      scene: { drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
+      scene: { drawOne: (cx, _node, p) => { cx.fillStyle = p.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
       selectionOverlay: { handles: { size: HANDLE } },
     }}
   />

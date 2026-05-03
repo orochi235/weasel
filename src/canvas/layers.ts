@@ -162,13 +162,13 @@ export function defaultLayers<TObject extends { id: string }, TPose>(
       label: 'Move ghost',
       draw: (ctx) => {
         if (ov.draggedIds.length === 0) return;
-        const byId = new Map(scene.objects.map((o) => [o.id, o]));
         ctx.save();
         ctx.globalAlpha = ghostAlpha;
-        for (const id of ov.draggedIds) {
-          const pose = ov.poses.get(id);
-          const obj = byId.get(id);
-          if (!pose || !obj) continue;
+        // Walk objects in scene render order so cascaded descendants draw
+        // above their ancestors per the underlying layer order.
+        for (const obj of scene.objects) {
+          const pose = ov.poses.get(obj.id);
+          if (pose === undefined) continue;
           scene.drawOne(ctx, obj, pose);
         }
         ctx.restore();

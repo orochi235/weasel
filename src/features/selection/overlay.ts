@@ -375,8 +375,9 @@ function drawHandles(
   }
 }
 
-/** Draw a single rotation handle (a small square) for a rotated rect. The
- *  handle sits above the top-center of the rotated bounding box. */
+/** Draw the rotation handle as a chevron pointing toward the object center.
+ *  Two strokes meet at an apex (~120° interior angle) with the apex on the
+ *  side closer to the object — visually evokes a pair of clock hands. */
 function drawRotationHandle(
   ctx: CanvasRenderingContext2D,
   b: Bounds | RotatedBounds,
@@ -385,21 +386,27 @@ function drawRotationHandle(
 ): void {
   const rotation = rotationOf(b);
   const h = rotationHandle({ ...b, rotation }, distance);
-  const half = handles.size / 2;
-  const handleAlign = handles.outline.align ?? 'center';
-  const handleWidth = handles.outline.width ?? 1;
-  const baseRect = { x: h.cx - half, y: h.cy - half, width: handles.size, height: handles.size };
+  const size = handles.size;
+  const half = size / 2;
+  const armLen = size;
+  // Half-angle from the centerline; 60° gives a 120° interior angle at the apex.
+  const armDx = armLen * Math.sin(Math.PI / 3);
+  const armDy = armLen * Math.cos(Math.PI / 3);
   ctx.save();
-  if (rotation !== 0) {
-    ctx.translate(h.cx, h.cy);
-    ctx.rotate(rotation);
-    ctx.translate(-h.cx, -h.cy);
-  }
-  applyPaint(ctx, handles.fill, { x: baseRect.x, y: baseRect.y });
-  ctx.fillRect(baseRect.x, baseRect.y, baseRect.width, baseRect.height);
-  applyStroke(ctx, handles.outline, { x: baseRect.x, y: baseRect.y });
-  const sr = alignedStrokeRect(baseRect, handleAlign, handleWidth);
-  ctx.strokeRect(sr.x, sr.y, sr.width, sr.height);
+  ctx.translate(h.cx, h.cy);
+  if (rotation !== 0) ctx.rotate(rotation);
+  const chevronStroke: Stroke = {
+    paint: handles.fill,
+    width: (handles.outline.width ?? 1) * 2,
+  };
+  applyStroke(ctx, chevronStroke, { x: -half, y: -half });
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-armDx, half - armDy);
+  ctx.lineTo(0, half);
+  ctx.lineTo(armDx, half - armDy);
+  ctx.stroke();
   ctx.restore();
 }
 
