@@ -89,6 +89,12 @@ export * from './features/layers/renderLayer';
 export * from './features/layers/LayerRenderer';
 export { createGridLayer } from './features/layers/gridLayer';
 export type { GridLayerOpts } from './features/layers/gridLayer';
+export { defaultLayers } from './features/layers/defaultLayers';
+export type {
+  DefaultLayersOpts,
+  DefaultLayersScene,
+  DefaultLayersSelection,
+} from './features/layers/defaultLayers';
 export { createCellHighlightLayer } from './features/layers/cellHighlightLayer';
 export type { CellHighlightLayerOpts } from './features/layers/cellHighlightLayer';
 export { createChildrenLayer } from './features/layers/childrenLayer';
