@@ -79,6 +79,10 @@ export type {
   PointerGestureCallbackCtx,
 } from './interactions/usePointerGestures';
 export { Canvas } from './canvas/Canvas';
+export { SceneCanvas } from './canvas/SceneCanvas';
+export type { SceneCanvasProps } from './canvas/SceneCanvas';
+export { sceneToAdapter } from './canvas/sceneAdapter';
+export type { SceneCanvasAdapter } from './canvas/sceneAdapter';
 export type {
   CanvasProps,
   CanvasHelpers,
