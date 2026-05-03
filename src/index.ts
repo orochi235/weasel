@@ -71,6 +71,12 @@ export type {
 export { useKeybinding, isEditableTarget } from './features/interactions/actions/useKeybinding';
 export type { KeyBinding } from './features/interactions/actions/useKeybinding';
 export * from './features/viewport/wheelHandler';
+export { clientToCanvas } from './features/viewport/clientToCanvas';
+export { usePointerGestures } from './features/interactions/usePointerGestures';
+export type {
+  PointerGestureBindings,
+  UsePointerGesturesOptions,
+} from './features/interactions/usePointerGestures';
 export * from './features/layers/renderLayer';
 export * from './features/layers/LayerRenderer';
 export { createGridLayer } from './features/layers/gridLayer';
