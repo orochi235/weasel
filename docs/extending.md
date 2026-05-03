@@ -1,14 +1,51 @@
-# Extending canvas-kit
+# Extending weasel
 
-## Writing a new behavior
+Three common extension points: custom layers, custom gesture behaviors, and
+non-rect poses.
 
-A behavior is a `GestureBehavior<TPose, TProposed, TMoveResult>` plugged into
-a hook's `options.behaviors` array. Each hook pins the proposed/move-result
-shape; pick the matching alias (`MoveBehavior<TPose>`,
-`ResizeBehavior<TPose>`, `InsertBehavior<TPose>`, `AreaSelectBehavior`,
-`CloneBehavior`).
+## Custom layers
 
-The shape:
+The `layers` prop on `<Canvas>` is a tagged-discriminated map. Standard
+slot keys (`grid`, `scene`, `selectionOverlay`, …) take slot config;
+**any other key** is treated as a custom layer if its value carries a
+`.layer` field:
+
+```ts
+import type { CustomLayerEntry, RenderLayer } from '@orochi235/weasel';
+
+const hud: RenderLayer<unknown> = {
+  id: 'hud',
+  draw: (ctx) => {
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(8, 8, 120, 24);
+    ctx.fillStyle = 'white';
+    ctx.fillText('HUD', 16, 24);
+  },
+};
+
+<Canvas
+  layers={{
+    scene: { drawOne },
+    selectionOverlay: { handles: true },
+    hud: { layer: hud, after: 'selectionOverlay' } satisfies CustomLayerEntry,
+  }}
+/>
+```
+
+`after` and `before` reference a `StandardSlotName`. Omit both and the
+layer goes after every standard slot (the top of the stack). Multiple
+custom entries can share an anchor; insertion order within an anchor is
+the iteration order of the `layers` map.
+
+A `RenderLayer<TData>` is just `{ id, draw(ctx, data?, vis?), label?,
+defaultVisible?, alwaysOn? }`. Build them with the helpers the kit
+exports: `createGridLayer`, `createCellHighlightLayer`, `createTextLayer`,
+`createPathLayer`, `createChildrenLayer`, `createSelectionOverlayLayer`,
+`createTilePattern`. Or write your own — it's a function.
+
+## Custom gesture behaviors
+
+A behavior plugs into a hook's `options.behaviors` array:
 
 ```ts
 interface GestureBehavior<TPose, TProposed, TMoveResult> {
@@ -19,66 +56,101 @@ interface GestureBehavior<TPose, TProposed, TMoveResult> {
 }
 ```
 
+Each hook pins the proposed/result shape; pick the matching alias
+(`MoveBehavior<TPose>`, `ResizeBehavior<TPose>`, `InsertBehavior<TPose>`,
+`AreaSelectBehavior`, `CloneBehavior`).
+
 **Rules of thumb:**
 
-- `onMove` is the primary lever. Return a partial `TMoveResult` (e.g.
-  `{ pose: snapped }`) to refine the proposed pose; return `void` to leave it
-  alone. Behaviors run in array order — later behaviors see your refinement.
-- `onEnd` decides commit ops. First non-`undefined` return wins. Return `Op[]`
-  to commit your ops, `null` to abort the gesture, or `undefined` to fall
-  through to the next behavior (or the hook's default ops).
-- Use **`ctx.scratch`** for state that must persist across move events but die
-  at gesture end (timers, latched targets). Namespace by behavior id so two
-  behaviors don't clobber each other:
-  `ctx.scratch['snapToContainer']`. The map is wiped on every `start`.
-- Set `defaultTransient: true` if your behavior produces selection-only ops
-  (no domain mutation worth undoing). The hook commits via `applyOps` when
-  `options.transient` isn't explicitly set.
+- `onMove` returns a partial result (`{ pose: refined }` for move) to
+  refine the proposed pose; `void` leaves it alone. Behaviors run in
+  array order — later behaviors see your refinement.
+- `onEnd` decides commit ops. First non-`undefined` return wins: `Op[]`
+  commits, `null` aborts, `undefined` falls through to the next behavior
+  or the hook's default ops (move emits one `createTransformOp` per id).
+- `ctx.scratch` is a per-gesture mutable map, wiped on every `start`.
+  Namespace by behavior id to avoid collisions:
+  `ctx.scratch['snapToContainer']`.
+- `defaultTransient: true` flips the gesture to `applyOps` (no history
+  entry) unless the consumer overrides `transient` explicitly.
+  `selectFromMarquee` is the canonical example.
 
-**Reference implementations:**
+**Reference behaviors in the source:**
 
-- `src/canvas-kit/interactions/move/behaviors/snapToGrid.ts` — pure pose refinement.
-- `src/canvas-kit/interactions/move/behaviors/snapToContainer.ts` — scratch state, dwell timer, custom `onEnd` ops.
-- `src/canvas-kit/interactions/area-select/behaviors/selectFromMarquee.ts` — `defaultTransient`, `onEnd`-only.
-- `src/canvas-kit/interactions/resize/behaviors/clampMinSize.ts` — width/height clamp.
-- `src/canvas-kit/interactions/clone/behaviors/cloneByAltDrag.ts` — modifier activation + paste flow.
+- `src/interactions/gestures/move/behaviors/snapToGrid.ts` — pure pose refinement.
+- `src/interactions/gestures/move/behaviors/snapToContainer.ts` — scratch state, dwell timer, custom `onEnd`.
+- `src/interactions/gestures/area-select/behaviors/selectFromMarquee.ts` — `defaultTransient`, `onEnd`-only.
+- `src/interactions/gestures/resize/behaviors/clampMinSize.ts` — width/height clamp.
+- `src/interactions/gestures/clone/behaviors/cloneByAltDrag.ts` — modifier activation + paste flow.
 
-## Writing a new interaction hook
+## Non-rect poses
 
-Most needs are met by adding a behavior to an existing hook. Write a new hook
-when the gesture shape doesn't fit (different proposed-pose pipeline,
-different overlay, different commit timing).
+Resize, area-select, snap-origin, and the selection overlay are all
+rect-driven internally. To make them work for arbitrary `TPose` (path,
+polygon, custom blob), supply a `PoseDescriptor<TPose>`:
 
-The shared structure across `move`/`resize`/`insert`/`area-select`:
+```ts
+export interface PoseDescriptor<TPose> {
+  getBounds(pose: TPose): { x: number; y: number; width: number; height: number };
+  remapBounds(pose: TPose, src: ResizePose, dst: ResizePose): TPose;
+  translate?(pose: TPose, dx: number, dy: number): TPose;
+  intersectsRect?(pose: TPose, rect: ResizePose): boolean;
+}
+```
 
-1. **State machine.** Hold a `useRef` with `phase: 'idle' | 'pending' | 'active'`
-   (or just `active: boolean` for hooks without a threshold). Snapshot
-   `origin` poses on `start`. Move flips to `active` once past
-   `dragThresholdPx` (move-style) or immediately on `start` (others).
-2. **GestureContext.** Build it on `start`: `draggedIds`, `origin`, `current`,
-   `snap`, `modifiers`, `pointer`, `adapter`, empty `scratch`. Update
-   `modifiers` and `pointer` on every `move`.
-3. **Behavior chaining.** On `start`, call each `behavior.onStart?.(ctx)`. On
-   `move`, compute the proposed pose from raw delta, then fold each
-   `behavior.onMove?.(ctx, proposed)` result into the running `proposed`.
-4. **Overlay state.** `useState` an overlay object; `setOverlay` after each
-   `move`. Keep its shape minimal — the renderer reads it every frame.
-5. **Commit at end.** Walk behaviors looking for `onEnd` returns:
-   - `null` → cancel.
-   - `Op[]` → commit those.
-   - all `undefined` → fall back to the hook's default ops (e.g. one
-     `createTransformOp` per dragged id).
-6. **Transient resolution.** `transient = options.transient ?? behaviors.some(b => b.defaultTransient)`.
-   If transient, call `adapter.applyOps(ops)`; otherwise
-   `adapter.applyBatch(ops, label)`.
-7. **Cleanup.** Reset state, clear overlay, fire `onGestureEnd(committed)`.
+`remapBounds` is one operation that subsumes both single-leaf resize ("set
+my AABB to dst") and group resize ("scale me as a leaf inside parent's
+src→dst rect") — they're the same affine map.
 
-`useMoveInteraction` (in `src/canvas-kit/interactions/move/move.ts`) is the
-fullest reference — pending/active threshold, multi-id drag, behavior chain,
-default ops fallback. `useAreaSelectInteraction` is the simplest example of
-the transient path. `useCloneInteraction` shows a hook that opts out of the
-behavior-chain shape entirely (a single behavior runs at end) when the
-gesture doesn't fit the proposed-pose model.
+Pass via `<Canvas geometry={pathPoseDescriptor}>`. The descriptor drives
+the default `hitBody`, `boundsOf`, the selection-overlay bounds source,
+and `useResize`'s remap.
 
-Once your hook works, expose it from `src/canvas-kit/index.ts` and add a
-short entry to [hooks.md](./hooks.md).
+The kit ships:
+
+- `RECT_POSE_DESCRIPTOR` — identity for `{x,y,width,height}`. Default.
+- `pathPoseDescriptor` — implementation for `Path`.
+
+For grid snapping on a non-rect pose, also pass an `OriginProjection`:
+
+```ts
+import { gridSnapStrategy, snap, pathOriginProjection } from '@orochi235/weasel';
+
+useMove(adapter, {
+  translatePose: pathPoseDescriptor.translate,
+  behaviors: [snap(gridSnapStrategy(20, { origin: pathOriginProjection }))],
+});
+```
+
+`<Canvas>` derives `translatePose` from `geometry.translate` automatically
+(see `derivedMoveOptions` in `Canvas.tsx`); for the lower-level case where
+you call `useMove` yourself, set it explicitly.
+
+For an end-to-end working demo of all of the above, see
+`demo/demos/CompoundPathsDemo.tsx`.
+
+## Custom hooks
+
+If the gesture shape doesn't fit (different proposed-pose pipeline,
+different overlay, different commit timing), write a new hook. The shared
+structure across move/resize/insert/area-select:
+
+1. State machine with `useRef` (`phase: 'idle' | 'pending' | 'active'`).
+   Snapshot origin poses on `start`. Move flips to `active` past
+   `dragThresholdPx` (or immediately, depending on the gesture).
+2. Build `GestureContext` on `start`: `draggedIds`, `origin`, `current`,
+   `modifiers`, `pointer`, `adapter`, empty `scratch`. Update modifiers
+   and pointer on every `move`.
+3. On each `move`, compute proposed pose from raw delta, then fold each
+   `behavior.onMove?.(ctx, proposed)` into the running `proposed`.
+4. `useState` an overlay; `setOverlay(...)` after each move.
+5. Commit at `end`: walk behaviors looking for `onEnd` returns. `null` →
+   cancel, `Op[]` → commit those, all `undefined` → hook's default ops.
+6. Transient resolution: `transient = options.transient ??
+   behaviors.some(b => b.defaultTransient)`. Transient → `applyOps`,
+   otherwise → `dispatchApplyBatch`.
+
+`useMove` is the fullest reference (pending/active threshold, multi-id,
+behavior chain, default ops). `useAreaSelect` is the simplest transient
+example. `useClone` shows a hook that opts out of the proposed-pose
+pipeline entirely.

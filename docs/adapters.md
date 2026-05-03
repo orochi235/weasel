@@ -1,127 +1,151 @@
 # Adapters
 
-An adapter is the bridge between canvas-kit and your domain. The kit reads
+An **adapter** is the bridge between weasel and your scene. The kit reads
 poses, hit-tests, and commits ops through this interface; the adapter
-translates those calls into your scene-graph mutations.
+translates those calls into your domain mutations.
 
-All adapter types are defined in `src/canvas-kit/adapters/types.ts`. The full
-`SceneAdapter` is the union; per-hook narrow interfaces (`MoveAdapter`,
-`ResizeAdapter`, `InsertAdapter`, `AreaSelectAdapter`) are subsets. A single
-broad adapter satisfies all narrow interfaces structurally.
-
-## `SnapTarget<TPose>`
+The kit ships several **narrow** adapter interfaces (one per gesture or
+action). TypeScript's structural typing means a single struct that has all
+the methods satisfies all of them at once. Most apps build one adapter per
+scene and pass it to every hook.
 
 ```ts
-interface SnapTarget<TPose> {
-  parentId: string;
-  slotPose: TPose;     // world-space pose to snap to
-  metadata?: unknown;  // app-specific (slot index, hint, …)
+import type {
+  MoveAdapter, ResizeAdapter, RotateAdapter,
+  InsertAdapter, AreaSelectAdapter,
+} from '@orochi235/weasel';
+
+// One value, satisfies them all.
+const adapter: MoveAdapter<Rect, Pose>
+  & ResizeAdapter<Rect, Pose>
+  & RotateAdapter<Rect, Pose>
+  & InsertAdapter<Rect>
+  & AreaSelectAdapter = makeAdapter();
+```
+
+The narrow shapes live in `src/core/adapters/types.ts`. Action hooks
+(`useDelete`, `useDuplicate`, `useNudge`, `useGroup`, `useReorder`,
+`useUndoRedo`, `useClipboard`) each have their own narrow adapter type
+co-located with the hook.
+
+## `arrayAdapter` — the easy default
+
+`arrayAdapter<TObject, TPose>(config)` synthesizes a multi-faceted adapter
+from a `useState`-backed array. It satisfies `MoveAdapter`, `ResizeAdapter`,
+`InsertAdapter`, and `AreaSelectAdapter` out of the box.
+
+```ts
+import { arrayAdapter, useSelection } from '@orochi235/weasel';
+
+const [rects, setRects] = useState<Rect[]>(INITIAL);
+const rectsRef = useRef(rects);
+rectsRef.current = rects;
+const selection = useSelection();
+
+const adapter = {
+  ...arrayAdapter<Rect, Pose>({
+    ref: rectsRef,
+    setItems: setRects,
+    toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
+    // Optional. Defaults to shallow spread merge.
+    fromPose: (r, pose) => ({ ...r, ...pose }),
+    // Optional — needed for `commitInsert` to mint new objects.
+    createDefault: (b) => ({ id: nextId(), ...b, color: pickColor() }),
+    // Optional — needed for non-rect poses (path, polygon, …).
+    intersectsRect: (pose, rect) => pathPoseDescriptor.intersectsRect!(pose, rect),
+  }),
+  ...selection.adapterMethods,
+};
+```
+
+Spreading `selection.adapterMethods` wires `getSelection` / `setSelection`
+through the same `useSelection` instance the canvas uses, so action hooks
+and gestures stay in sync.
+
+`arrayAdapter` does **not** supply `applyBatch`. Hooks fall back to a
+built-in dispatcher (`dispatchApplyBatch`) that applies each op against the
+adapter directly. Apps with custom history wire their own `applyBatch` by
+spreading on top.
+
+### `applyOps` and the `this`-binding pattern
+
+`arrayAdapter` defines `applyOps` as a method shorthand:
+
+```ts
+applyOps(ops: Op[]) {
+  applyOpsTo(this, ops);
 }
 ```
 
-Returned by `MoveAdapter.findSnapTarget` (optional) and by snap-aware
-behaviors. The kit treats `metadata` as opaque; renderers consume it.
-
-## `SceneAdapter<TObject, TPose>`
-
-The maximal adapter. Implement what you need; types ensure unused pieces
-don't get called.
-
-| Method | Purpose |
-|---|---|
-| `getObjects()` | All objects in iteration order. |
-| `getObject(id)` | Lookup by id. |
-| `getSelection()` | Current selected ids. |
-| `hitTest(wx, wy)` | Top-most object id at world point, or null. |
-| `getPose(id)` | World pose of object. |
-| `getParent(id)` | Parent id or null. |
-| `setPose(id, pose)` | Mutate pose; called by `createTransformOp.apply`. |
-| `setParent(id, parentId)` | Reparent; called by `createReparentOp.apply`. |
-| `insertObject(object)` | Insert; called by `createInsertOp.apply`. |
-| `removeObject(id)` | Delete; called by `createDeleteOp.apply`. |
-| `setSelection(ids)` | Set selection; called by `createSetSelectionOp.apply`. |
-| `applyBatch(ops, label)` | Gesture commit — apply each op against `this` adapter and push a history entry. |
-
-## `MoveAdapter<TObject, TPose>`
-
-Subset for `useMoveInteraction`: `getObject`, `getPose`, `getParent`,
-`setPose`, `setParent`, `applyBatch`, plus optional
-`findSnapTarget(draggedId, worldX, worldY): SnapTarget<TPose> | null`.
-
-## `ResizeAdapter<TObject, TPose extends { x, y, width, height }>`
-
-`getObject`, `getPose`, `setPose`, `applyBatch`. No reparenting, no snap
-lookup. The pose constraint is inlined to avoid a circular import with
-interactions/types.
-
-## `InsertAdapter<TObject>`
-
-Used by `useInsertInteraction`, `useClipboard`, and `useCloneInteraction`.
-
-| Method | Purpose |
-|---|---|
-| `commitInsert(bounds)` | Drag-rect insert: returns one new object or null. |
-| `commitPaste(clipboard, offset, ctx?)` | Paste/clone: returns array of new objects (possibly empty). `ctx.dropPoint` carries the world drop position for clone. |
-| `snapshotSelection(ids)` | Build a `ClipboardSnapshot` for paste/clone. |
-| `getPasteOffset?(clipboard)` | Optional: per-paste offset. Default `{0,0}`. |
-| `insertObject(object)` | Mutator wired by `createInsertOp`. |
-| `setSelection(ids)` | Mutator wired by `createSetSelectionOp`. |
-| `applyBatch(ops, label)` | Gesture commit. |
-| `getSelection?()` | Optional; needed by clone behaviors. |
-
-`ClipboardSnapshot.items` is `unknown[]` — the adapter owns the shape on both
-sides (snapshot and paste). The kit never inspects entries.
-
-## `AreaSelectAdapter`
-
-`hitTestArea(rect)`, `getSelection()`, `setSelection(ids)`, `applyOps(ops)`.
-Note `applyOps` (no label, no history) — area-select is transient by default.
-If the same adapter object also implements `applyBatch`, the hook can switch
-to non-transient via `options.transient = false`.
-
-## Minimal in-memory adapter
+That `this` is the **call-site receiver**, not the original `arrayAdapter`
+object. So when you spread additional methods on top:
 
 ```ts
-interface Rect { id: string; x: number; y: number; width: number; height: number }
-interface Pose { x: number; y: number; width: number; height: number }
-
-function makeAdapter(rectsRef: React.MutableRefObject<Rect[]>, setRects: SetState<Rect[]>) {
-  const adapter: MoveAdapter<Rect, Pose> & ResizeAdapter<Rect, Pose> = {
-    getObject: (id) => rectsRef.current.find((r) => r.id === id),
-    getPose: (id) => {
-      const r = rectsRef.current.find((x) => x.id === id)!;
-      return { x: r.x, y: r.y, width: r.width, height: r.height };
-    },
-    getParent: () => null,
-    setPose: (id, pose) =>
-      setRects((rs) => rs.map((r) => (r.id === id ? { ...r, ...pose } : r))),
-    setParent: () => {},
-    applyBatch: (ops) => { for (const op of ops) op.apply(adapter); },
-  };
-  return adapter;
-}
+const adapter = {
+  ...arrayAdapter<Rect, Pose>({ ... }),
+  ...selection.adapterMethods,
+  insertObject: (obj) => setRects((rs) => [...rs, obj]),
+};
 ```
 
-Adapted from `src/canvas-kit-demo/demos/MoveDemo.tsx`. A non-trivial adapter
-adds a real history entry inside `applyBatch` (e.g. `pushHistory(garden,
-selection)` before mutating). For an op-based history, use
-`createHistory(adapter)` and route `applyBatch` through it; for snapshot
-history (this repo's pattern), capture state, apply ops in place, and push.
+…and a hook calls `adapter.applyOps(ops)`, ops dispatch against the merged
+object — including your override of `insertObject` and the
+selection-backed `setSelection`. If you copy the method off
+(`const fn = adapter.applyOps`) you'll lose `this` and ops will dispatch
+against `undefined`. Don't do that.
 
-## `OrderedAdapter` (optional mixin)
+This shipped recently; older code may have worked around it with
+hand-rolled `applyOps` wrappers — those are no longer needed.
 
-Opt into sibling z-order by implementing two methods on your scene adapter:
+## When to write a custom adapter
 
-| Method | Purpose |
+Reach for a custom adapter when:
+
+- Your scene isn't a flat array (tree of children, indexed by parent).
+- Your store is Redux/Zustand/MobX/CRDT — `arrayAdapter`'s `useState`
+  setter doesn't fit.
+- You want op-batched undo via `createHistory(adapter)` and need
+  `applyBatch` to push entries.
+- Pose extraction is expensive and you want memoization beyond the per-id
+  array scan `arrayAdapter` does.
+
+There's no base class; just implement the methods the gestures and actions
+you use require. Compose narrow types via intersection.
+
+## Adapter responsibilities by hook
+
+| Hook | Required adapter shape |
 |---|---|
-| `getChildren?(parentId)` | Ordered child ids of `parentId` (or root siblings if null). Index 0 = bottom, last = top. |
-| `setChildOrder?(parentId, ids)` | Rewrite the order of `parentId`'s children. Reorder only — no add/remove. |
+| `useMove` | `MoveAdapter<TObject, TPose>` |
+| `useResize` | `ResizeAdapter<TObject, TPose>` |
+| `useRotate` | `RotateAdapter<TObject, TPose>` |
+| `useInsert` | `InsertAdapter<TObject>` |
+| `useAreaSelect` | `AreaSelectAdapter` |
+| `useClone` | `InsertAdapter<TObject>` |
+| `useTextEdit` | none — direct callbacks (see hook signature) |
+| `useDelete` | `DeleteAdapter` (`getSelection`, optional `getObject`, optional `setSelection`/`removeObject`/`applyBatch`) |
+| `useDuplicate` | `DuplicateAdapter<TPose>` (adds `cloneObject(id, offset)`) |
+| `useNudge` | `NudgeAdapter<TPose>` (`getSelection`, `getPose`) |
+| `useReorder` | `ReorderAdapter` (with optional `getChildren`/`setChildOrder` — no-op when absent) |
+| `useGroup` / `useUngroup` | `GroupActionAdapter` (extends `GroupAdapter`) |
+| `useNestedGroup` / `useNestedUngroup` | `NestedGroupActionAdapter` |
+| `useUndoRedo` | `UndoRedoAdapter` (`undo`, `redo`, optional `canUndo`/`canRedo`) |
+| `useClipboard` | `ClipboardAdapter<TObject>` (extends `InsertAdapter`) |
+| `useSelectAll` | `SelectAllAdapter` (`getSelection`, `listAll`) |
+| `useEscape` | `EscapeAdapter` (`getSelection`) |
 
-Both are **optional**. Reorder ops and `useReorderAction` no-op when either
-is absent.
+## Optional mixins
 
-**Convention:** hit-tests iterate `getChildren` in REVERSE (top first);
-render layers iterate FORWARD (bottom first).
+- **`OrderedAdapter`** — `getChildren?(parentId): string[]`,
+  `setChildOrder?(parentId, ids)`. Convention: array order **is** z-order
+  (index 0 = bottom). Hit-tests iterate in reverse; render layers iterate
+  forward. Reorder ops and `useReorder` no-op if either method is missing.
+- **`GroupAdapter`** — virtual groups with first-class ids and
+  multi-membership. See `src/features/groups/types.ts`.
 
-For groups, `parentId === <groupId>` routes to the group's `members[]`.
-Use `withGroupOrdering(scene, groupAdapter)` to compose.
+## Snap targets
+
+`MoveAdapter.findSnapTarget?(draggedId, worldX, worldY): SnapTarget<TPose>
+| null` — optional. Returns `{ parentId, slotPose, metadata? }` describing
+where the dragged object would re-parent to if released. The kit treats
+`metadata` as opaque; renderers consume it.

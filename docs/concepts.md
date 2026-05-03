@@ -1,21 +1,78 @@
-# Core concepts
+# Concepts
 
-## Adapter pattern
+The mental model behind `@orochi235/weasel`. Read this before writing code.
 
-The kit never reads or writes domain state directly. Instead, every hook takes
-an **adapter** — a small interface the consumer implements to expose its scene
-graph. Hook-specific adapters (`MoveAdapter`, `ResizeAdapter`, `InsertAdapter`,
-`AreaSelectAdapter`) are narrow subsets of `SceneAdapter`. TypeScript's
-structural typing means a single broad adapter satisfies any narrow interface,
-so most apps write one adapter per scene and pass it to every hook.
+## `<Canvas>`
 
-The adapter is the only place domain-specific logic lives. The kit calls
-`getPose`, `setPose`, `applyBatch`, etc.; the adapter decides what those mean
-(immutable redux update, mutable mobx model, in-place mutation, …).
+A single `<canvas>` element wired up: it owns DPR setup, layer composition,
+the pointer-event router, and (by default) the `useMove` / `useResize` /
+`useRotate` / `useInsert` / `useAreaSelect` / `useSelection` hooks. Drop in an
+adapter and a `layers` map and you get click-to-select, drag-to-move,
+corner-handle resize, and a marquee for free.
 
-Defined in `src/canvas-kit/adapters/types.ts`. See [adapters.md](./adapters.md).
+```tsx
+<Canvas<Rect, Pose>
+  width={W} height={H}
+  adapter={adapter}
+  layers={{
+    scene: { drawOne: (ctx, obj, pose) => { /* draw obj at pose */ } },
+    grid: { spacing: 20, bounds: () => ({ x: 0, y: 0, width: W, height: H }) },
+    selectionOverlay: { handles: true },
+  }}
+/>
+```
 
-## Ops and history
+You can override any of the internal controllers by passing your own
+(`move`, `resize`, `selection`, …); supply `*Options` to configure the
+default ones. See [hooks.md](./hooks.md) and `src/canvas/Canvas.tsx`.
+
+## Adapter
+
+Weasel never reads or writes your scene state directly. Every gesture takes
+an **adapter** — a small object the consumer implements that exposes the
+scene to the kit (`getObjects`, `getPose`, `setPose`, …) and accepts ops
+back. Hook-specific adapters (`MoveAdapter`, `ResizeAdapter`,
+`InsertAdapter`, `AreaSelectAdapter`, `RotateAdapter`) are narrow subsets of
+a hypothetical full `SceneAdapter`. TypeScript's structural typing means
+**one struct satisfies all of them at once** — most apps write a single
+adapter and pass it to every hook.
+
+`arrayAdapter` produces a multi-faceted adapter from a `useState` array
+scene; it's the default for new apps. See [adapters.md](./adapters.md).
+
+## Pose
+
+A **pose** is the snapshot of an object the kit reads and writes. Its shape
+is up to you — generic over `TPose`. The common case is a rect:
+
+```ts
+interface Pose { x: number; y: number; width: number; height: number }
+```
+
+Other shapes ship: `RotatedPose` (rect + `rotation`), `Path` (the kit's
+polygon/cubic-bezier representation), `TextPose`. For non-rect poses, supply
+a `PoseDescriptor<TPose>` (see [extending.md](./extending.md)) so the
+rect-flavored math (resize, area-select, snap origin) still works.
+
+`getPose` / `setPose` are **local-coordinate** — relative to the object's
+parent. Rendering and hit-testing use world coords; the kit composes via
+`composeWorldPose`.
+
+## Descriptor
+
+`PoseDescriptor<TPose>` projects an arbitrary `TPose` onto the kit's
+rect-driven machinery:
+
+- `getBounds(pose) → { x, y, width, height }` — AABB.
+- `remapBounds(pose, src, dst) → pose` — affine remap on resize.
+- `translate(pose, dx, dy)` — optional, used by move and snap.
+- `intersectsRect(pose, rect)` — optional, tight test for area-select.
+
+`RECT_POSE_DESCRIPTOR` is the identity for rect poses; `pathPoseDescriptor`
+is the implementation for `Path`. Pass via `<Canvas geometry={...}>` (or
+`useResize`'s `geometry` option for the lower-level path).
+
+## Op
 
 An **op** is an invertible mutation:
 
@@ -28,202 +85,129 @@ interface Op {
 }
 ```
 
-Every interaction commits a batch of ops at gesture end. Adapters with
-op-based history call `history.applyBatch(ops, label)` to push an undoable
-entry; adapters with snapshot-based history (e.g. `src/store/history.ts` in
-this repo, which clones the whole `Garden` per entry) just apply each op's
-mutation against the current state and push their own entry alongside.
+Constructors live under `src/core/ops/`: `createTransformOp`,
+`createInsertOp`, `createDeleteOp`, `createSetSelectionOp`,
+`createBringForwardOp`, etc. Every gesture and action hook produces ops on
+commit; `dispatchApplyBatch(adapter, ops, label)` calls
+`adapter.applyBatch?.(ops, label)` if available, otherwise applies each op
+directly against the adapter.
 
-Op constructors live under `src/canvas-kit/ops/`: `createTransformOp`,
-`createReparentOp`, `createInsertOp`, `createDeleteOp`, `createSetSelectionOp`.
-Each `apply` casts the adapter to the narrow interface it needs (e.g.
-transform calls `setPose`), so the same op type works against any compatible
-adapter.
+**Transient** ops apply via `adapter.applyOps(ops)` — no history entry.
+Selection-only changes (e.g. marquee result) are transient by default.
 
-Transient gestures (area-select, marquee) commit via `applyOps(ops)` instead
-of `applyBatch(ops, label)` — they want the selection change but no history
-entry. See "defaultTransient" below.
+## Controller
 
-## Groups (virtual)
+Each gesture hook returns a **controller**: lifecycle methods (`start`,
+`move`, `end`, `cancel`) plus a live `overlay` field describing the
+in-flight gesture. Controllers are stateful but pure — they don't touch the
+DOM. `<Canvas>` reads the overlay each render and feeds the layer stack.
 
-A **virtual group** is an organizational lasso around N peer objects,
-distinct from the structural parent/child hierarchy (`getParent` /
-`setParent`). Members do not gain a parent — they remain peers — and the
-group itself has no transform or pose. Bounds, when needed, are derived
-from members on the fly.
+```ts
+const move: MoveController<Rect, Pose> = useMove(adapter, { ... });
+move.overlay; // { draggedIds, poses, snapped, hideIds } | null
+```
 
-Properties:
+## Layer
 
-- **First-class ids.** A group has an id and flows through ops and
-  selection like any other object.
-- **Multi-membership.** An object can belong to several groups at once.
-- **Nestable.** A group's id can appear as a member of another group.
-- **Selection resolves outward.** Clicking a grouped object resolves to
-  the outermost group it belongs to. Use `resolveToOutermostGroup(id,
-  adapter)`. To translate a selection back to leaves for a gesture, use
-  `expandToLeaves(ids, adapter)`. Both are acyclic-safe via a visited set.
+A `RenderLayer<TData>` is a named draw function. The `layers` prop on
+`<Canvas>` is a map of slot name → config:
 
-Ops: `createCreateGroupOp`, `createDissolveGroupOp`, `createAddToGroupOp`,
-`createRemoveFromGroupOp`. They cast the adapter to `GroupAdapter`, an
-opt-in extension consumers implement when they want groups.
+- **Standard slots** (canonical order): `grid`, `cellHighlight`, `scene`,
+  `moveOverlay`, `resizeOverlay`, `selectionOverlay`, `insertOverlay`,
+  `areaSelectOverlay`. Pass slot config (`{ drawOne, ... }` for `scene`,
+  `{ spacing, bounds }` for `grid`, etc.) or `null` to suppress.
+- **Custom layers**: any other key. Value is `{ layer, after?, before? }`
+  with a `RenderLayer` and an optional anchor slot for ordering.
 
-Phase 1 establishes only this foundation — the move/resize/clone gestures
-and rendering layers are unchanged. Wiring selection, gesture expansion,
-and group-aware overlays comes in later phases.
+```ts
+layers={{
+  scene: { drawOne: (cx, obj, pose) => { /* ... */ } },
+  hud: { layer: hudLayer, after: 'selectionOverlay' },
+}}
+```
 
-Phase 2 wires group expansion into `useMoveInteraction` and
-`useCloneInteraction` via an opt-in `expandIds(ids)` option. Consumers pass
-`(ids) => expandToLeaves(ids, groupAdapter)` to make a group-id selection
-drag every leaf member by the same delta (move) or clone every leaf with
-the same offset (clone). The kit itself stays decoupled from
-`GroupAdapter` — omit `expandIds` for identity behavior. Resize,
-area-select, insert, and selection-overlay rendering are Phase 3+.
+See [extending.md](./extending.md) for custom-layer details.
 
-## Gesture lifecycle
+## Gesture
 
-Every interaction hook follows the same shape:
+A **gesture** is a pointer-driven interaction with a start/move/end
+lifecycle. Move, resize, rotate, insert, area-select, and clone are all
+gestures. Each takes an adapter and an options object that includes a
+`behaviors` array.
 
-1. **start(...)** — adapter snapshots origin pose(s) into a `GestureContext`.
-   Hook enters `pending` (move) or `active` (resize/insert/area-select).
-2. **move(...)** — fires per pointer event. Once past `dragThresholdPx`, the
-   hook flips to `active`, fires `onStart` on each behavior, and computes a
-   **proposed pose** from raw delta. Each behavior's `onMove(ctx, proposed)`
-   may return a refined pose and/or snap target. The final pose flows into
-   the overlay state for renderers.
-3. **end()** — behaviors run `onEnd(ctx)`; the first non-`undefined` return
-   wins:
-   - `Op[]` → those ops are committed.
-   - `null` → abort silently.
-   - `undefined` → fall through to the hook's default ops (e.g. move emits a
-     `createTransformOp` per dragged id).
-4. **cancel()** — wipes overlay, no ops.
-
-The proposed-pose pipeline is the central abstraction: behaviors are pure-ish
-transformers `(ctx, proposed) → refinedProposed`, chained in registration
-order. See `src/canvas-kit/interactions/move/move.ts` for the canonical
-implementation.
-
-## Behaviors
-
-A behavior implements `GestureBehavior<TPose, TProposed, TMoveResult>`:
+A **behavior** is a small composable extension that refines the in-flight
+pose and/or supplies commit ops:
 
 ```ts
 interface GestureBehavior<TPose, TProposed, TMoveResult> {
   defaultTransient?: boolean;
-  onStart?(ctx: GestureContext<TPose>): void;
-  onMove?(ctx: GestureContext<TPose>, proposed: TProposed): TMoveResult | void;
-  onEnd?(ctx: GestureContext<TPose>): Op[] | null | void;
+  onStart?(ctx): void;
+  onMove?(ctx, proposed): TMoveResult | void;
+  onEnd?(ctx): Op[] | null | void;
 }
 ```
 
-Each hook pins `TProposed` and `TMoveResult` (e.g. move's `TMoveResult` is
-`{ pose?: TPose; snap?: SnapTarget<TPose> | null }`). Behaviors are passed in
-via `options.behaviors` and run in array order; later behaviors see refinements
-from earlier ones via the updated `proposed`.
+Behaviors run in array order; later ones see refinements from earlier ones.
+`onEnd` returns: `Op[]` to commit, `null` to abort, `undefined` to fall
+through. `ctx.scratch` is per-gesture mutable state. `defaultTransient`
+flips the gesture to `applyOps` (no history) unless `transient` is set
+explicitly. See [extending.md](./extending.md) for writing one.
 
-**Scratch space.** `ctx.scratch` is a per-gesture `Record<string, unknown>`
-that resets on every `start`. Use it for state that needs to persist across
-move events but die at end (e.g. `snapToContainer` stores a dwell timer and
-committed snap there). Namespace keys by behavior id to avoid collisions:
-`ctx.scratch['snapToContainer']`.
+Built-in behaviors: `snap(gridSnapStrategy(...))`, `snapToContainer(...)`,
+`snapBackOrDelete(...)` for move; `snapToGrid`, `clampMinSize` for resize;
+`selectFromMarquee()` for area-select; `cloneByAltDrag()` for clone.
 
-**defaultTransient.** When at least one behavior in a gesture sets this true
-(and `options.transient` isn't explicitly set), the hook commits via
-`adapter.applyOps(ops)` — ops apply but no history entry is created.
-`selectFromMarquee` is the canonical example; selection state changes don't
-clutter undo. Currently honored by `useAreaSelectInteraction`; clone behaviors
-respect it via the kit's clone hook.
+## Selection mode
 
-## Overlays
+`<Canvas selectionMode="single" | "multi" | "none">` is a single switch for
+click/drag/resize semantics:
 
-Each interaction hook returns an `overlay` field — the live state of the
-in-flight gesture, suitable for rendering on top of the static scene.
+- `single` (default): click replaces the selection with one id. Drag moves
+  the clicked object. Corner handles resize it.
+- `multi`: shift/meta/ctrl-click toggles. With multiple ids selected the
+  overlay draws one union AABB, clicks inside drag the whole set, and
+  corner handles resize the union (each member scaled via
+  `geometry.remapBounds`).
+- `none`: canvas interactions never mutate selection. `onBodyHit` /
+  `onTapEmpty` still fire so consumers can do their own picking.
 
-| Hook | Overlay shape |
-|------|---------------|
-| `useMoveInteraction` | `{ draggedIds, poses, snapped, hideIds }` |
-| `useResizeInteraction` | `{ id, currentPose, targetPose, anchor }` |
-| `useInsertInteraction` | `{ start, current }` |
-| `useAreaSelectInteraction` | `{ start, current, shiftHeld }` |
-| `useCloneInteraction` | published via `setOverlay(layer, objects)` callback |
+Override per-prop (`selection`, `hitBody`, `boundsOf`, `resizeTarget`,
+`onBodyHit`, `onTapEmpty`, `selectionOptions.mode`) when the mode-derived
+default isn't enough.
 
-Renderers read the overlay every frame and draw the dragged objects with the
-proposed pose, hiding their originals (`hideIds` for move). Resize lerps
-`currentPose` toward `targetPose` for visual smoothing — the lerp is internal
-to the hook.
+## Tool
 
-## Modifier and pointer state
+`<Canvas tool="select" | "insert">` flips what an empty-space drag does:
 
-`ModifierState = { alt, shift, meta, ctrl }` is captured at every move event
-and stored on `ctx.modifiers`. `PointerState = { worldX, worldY, clientX,
-clientY }` captures the latest pointer position in both world and client
-coordinates. Behaviors read both off `ctx` to react to keys (e.g.
-`bypassKey: 'shift'` for snap, `mods.alt` for clone activation).
+- `select` (default) routes to area-select (marquee).
+- `insert` routes to the insert gesture (drag a rectangle, adapter mints a
+  new object via `commitInsert(bounds)`).
 
-## Units
+Both are no-ops when the relevant controller isn't wired.
 
-Coordinates inside canvas-kit are bare numbers in a single base unit chosen
-by the consumer app — the kit itself never sees a unit string. To make API
-call sites self-documenting, public APIs accept `UnitValue`: either a bare
-number (interpreted as base units) or a tagged `{ value, unit }` pair that's
-resolved against a `UnitSystem` at the API boundary.
+## Putting it together
 
-```ts
-import { createGridLayer, IMPERIAL_INCHES } from '@/canvas-kit';
+```tsx
+const selection = useSelection({ mode: 'multi' });
+const adapter = {
+  ...arrayAdapter<Rect, Pose>({ ref: rectsRef, setItems: setRects, toPose }),
+  ...selection.adapterMethods,
+};
 
-// base = 'in'. spacing is 1 foot = 12 inches in the kit's internal numbers.
-createGridLayer({
-  spacing: { value: 1, unit: 'ft' },
-  unitSystem: IMPERIAL_INCHES,
-  bounds,
-});
+useDuplicate<Pose>(adapter);              // Cmd+D
+useDelete(adapter, { bindKeyboard: true }); // Backspace/Delete
 
-// Equivalent — bare numbers are always assumed to be base units.
-createGridLayer({ spacing: 12, bounds });
+return (
+  <Canvas<Rect, Pose>
+    width={W} height={H}
+    adapter={adapter}
+    selection={selection}
+    selectionMode="multi"
+    layers={{
+      scene: { drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
+      grid: { spacing: 20, bounds: () => ({ x: 0, y: 0, width: W, height: H }) },
+      selectionOverlay: { handles: true },
+    }}
+  />
+);
 ```
-
-A `UnitSystem` is just `{ base, units }` where `units` maps each unit name
-to its linear factor in base units (`{ in: 1, ft: 12, ... }`). Pre-built
-systems: `IMPERIAL_INCHES`, `METRIC_MM`, `PIXELS`. `formatUnit(36, 'ft',
-IMPERIAL_INCHES)` returns `'3ft'` for display.
-
-A unit system is only needed at sites that pass tagged values. Bare numbers
-need none. Linear factors only — no per-axis units, no mixed-unit
-arithmetic.
-
-## Sibling z-order
-
-Adapters that opt into `OrderedAdapter` expose ordered children:
-
-```ts
-interface OrderedAdapter {
-  getChildren?(parentId: string | null): string[];
-  setChildOrder?(parentId: string | null, ids: string[]): void;
-}
-```
-
-**Convention:** array order **is** z-order. Index 0 is the bottom, last
-index is the top.
-
-- **Hit-test** iterates `getChildren(...)` in **reverse** (top → bottom) so
-  the topmost visible object wins.
-- **Render layers** iterate **forward** (bottom → top) so the bottom paints
-  first and the top paints over it.
-
-The kit doesn't enforce these rules — they're documentation. Every utility
-that calls `getChildren` (area-select hit-tests, the future
-`renderChildrenLayer` factory) follows them; consumer adapters should too.
-
-For groups, `parentId === <groupId>` routes to the group's `members[]`
-array. `withGroupOrdering(scene, groupAdapter)` composes the two so a single
-`OrderedAdapter` mixin handles both leaf siblings and group members.
-
-Reorder ops: `createBringForwardOp`, `createSendBackwardOp`,
-`createBringToFrontOp`, `createSendToBackOp`, `createMoveToIndexOp`. Each
-records before-state per affected parent so undo is exact. Multi-id
-selections preserve relative order; cross-parent selections process per
-parent.
-
-`useReorderAction` exposes imperative methods and optional keyboard
-binding: `]` / `[` for forward / backward; `Shift+]` / `Shift+[` for to-
-front / to-back.
