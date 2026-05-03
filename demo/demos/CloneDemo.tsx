@@ -36,7 +36,7 @@ export function CloneDemo() {
       })),
   };
 
-  const clone = useClone<Rect>(adapter, {
+  const clone = useClone(adapter, {
     behaviors: [cloneByAltDrag()],
     setOverlay: (_layer, objects) => setOverlay(objects as OverlayItem[]),
     clearOverlay: () => setOverlay(null),

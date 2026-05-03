@@ -77,18 +77,18 @@ export function NestedGroupsDemo() {
 
   // Move with auto-cascade — overlay.poses includes both dragged ids AND
   // their descendants in world coordinates.
-  const move = useMove<Node, Pose>(adapter, {
+  const move = useMove(adapter, {
     cascadeWorldPose: worldPoseLookup(adapter, composeRectPose<Pose>),
   });
 
-  useNestedGroup<Node, Pose>(adapter, {
+  useNestedGroup(adapter, {
     ...composeOpts,
     bindKeyboard: true,
     groupFactory: ({ id, localPose }) => ({
       id, parent: null, pose: localPose, color: '#3a2e22', isGroup: true,
     }),
   });
-  useNestedUngroup<Node, Pose>(adapter, {
+  useNestedUngroup(adapter, {
     ...composeOpts,
     bindKeyboard: true,
     isGroup: (_id, obj) => obj?.isGroup === true,

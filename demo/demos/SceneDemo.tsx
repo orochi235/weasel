@@ -35,7 +35,7 @@ function makeSetColor(scene: Scene<NodeData, LayerId, Pose>): RegisteredOp<SetCo
 }
 
 export function SceneDemo() {
-  const scene = useScene<NodeData, LayerId, Pose>({
+  const scene = useScene({
     systemLayers: [
       { id: 'garden' },
       { id: 'blueprint' },
