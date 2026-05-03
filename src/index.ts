@@ -73,6 +73,7 @@ export type { KeyBinding } from './interactions/actions/useKeybinding';
 export * from './features/viewport/wheelHandler';
 export { clientToCanvas } from './features/viewport/clientToCanvas';
 export { usePointerGestures } from './interactions/usePointerGestures';
+export * from './tools';
 export type {
   PointerGestureBindings,
   UsePointerGesturesOptions,
