@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import {
   createBringForwardOp,
   createSendBackwardOp,
@@ -7,6 +7,7 @@ import {
 } from '../../../core/ops/reorder';
 import type { Op } from '../../../core/ops/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
+import { useKeybinding } from '../useKeybinding';
 
 /** Adapter for `useReorder`; both order methods optional and the hook no-ops when either is absent. */
 export interface ReorderAdapter {
@@ -22,7 +23,7 @@ export interface ReorderAdapter {
 
 /** Options for `useReorder`. */
 export interface UseReorderOptions {
-  /** Auto-bind ], [, Shift+], Shift+[ on document. Default true. */
+  /** Auto-bind Mod+] / Mod+[ (with optional Shift for to-front/to-back) on document. Default true. */
   enableKeyboard?: boolean;
   /** Optional filter — given selected ids, return the subset to reorder. */
   filter?: (ids: string[]) => string[];
@@ -36,16 +37,7 @@ export interface UseReorderReturn {
   sendToBack(): void;
 }
 
-function isEditableTarget(target: EventTarget | null): boolean {
-  if (!target || !(target instanceof Element)) return false;
-  const tag = target.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA') return true;
-  if ((target as HTMLElement).isContentEditable) return true;
-  if (target.getAttribute('contenteditable') === 'true' || target.getAttribute('contenteditable') === '') return true;
-  return false;
-}
-
-/** Sibling z-order action; binds `]`/`[` (forward/backward) and Shift-modified variants (front/back) by default. */
+/** Sibling z-order action; binds Mod+] / Mod+[ (forward/backward) and Shift-modified variants (front/back) by default. */
 export function useReorder(
   adapter: ReorderAdapter,
   options: UseReorderOptions = {},
@@ -73,22 +65,12 @@ export function useReorder(
   const bringToFront = useCallback(() => dispatch(createBringToFrontOp, 'Bring to front'), [dispatch]);
   const sendToBack = useCallback(() => dispatch(createSendToBackOp, 'Send to back'), [dispatch]);
 
-  useEffect(() => {
-    const enable = options.enableKeyboard ?? true;
-    if (!enable) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (isEditableTarget(e.target)) return;
-      if (e.key === ']' && !e.shiftKey) { e.preventDefault(); bringForward(); return; }
-      if (e.key === '[' && !e.shiftKey) { e.preventDefault(); sendBackward(); return; }
-      // Shift+] is '}' on US keyboards but e.key === ']' with shiftKey true on most
-      // browsers; check both representations to be safe.
-      if ((e.key === ']' || e.key === '}') && e.shiftKey) { e.preventDefault(); bringToFront(); return; }
-      if ((e.key === '[' || e.key === '{') && e.shiftKey) { e.preventDefault(); sendToBack(); return; }
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [options.enableKeyboard, bringForward, sendBackward, bringToFront, sendToBack]);
+  const enable = options.enableKeyboard ?? true;
+  // Browsers sometimes report Shift+] as '}' / Shift+[ as '{'; accept both.
+  useKeybinding({ key: [']', '}'], mod: true, enabled: enable }, () => bringForward());
+  useKeybinding({ key: ['[', '{'], mod: true, enabled: enable }, () => sendBackward());
+  useKeybinding({ key: [']', '}'], mod: true, shift: true, enabled: enable }, () => bringToFront());
+  useKeybinding({ key: ['[', '{'], mod: true, shift: true, enabled: enable }, () => sendToBack());
 
   return { bringForward, sendBackward, bringToFront, sendToBack };
 }

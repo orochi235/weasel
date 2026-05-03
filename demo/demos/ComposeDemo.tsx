@@ -11,8 +11,8 @@ import {
   runLayers,
   cornerResizeHandles,
   hitCornerHandle,
+  selectFromMarquee,
 } from '@orochi235/weasel';
-import { selectFromMarquee } from '@orochi235/weasel/area-select';
 import { clientToCanvas } from '../canvasCoords';
 import { setupCanvasDpr } from '@orochi235/weasel';
 import type {

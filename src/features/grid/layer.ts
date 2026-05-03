@@ -8,7 +8,7 @@
  * this one.
  */
 
-import type { RenderLayer } from '../layers/render';
+import type { RenderLayer } from '../../core/layers/render';
 import { applyStroke, type Stroke } from '../../core/paint';
 import { resolveUnit, type UnitSystem, type UnitValue } from '../../core/units';
 

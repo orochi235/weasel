@@ -1,12 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
-import {
-  useMove,
-  useResize,
-  useSelection,
-  arrayAdapter,
-  Canvas,
-  defaultLayers,
-} from '@orochi235/weasel';
+import { useRef, useState } from 'react';
+import { arrayAdapter, Canvas } from '@orochi235/weasel';
 import type { RenderLayer } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
@@ -79,74 +72,38 @@ export function QuadtreeDemo() {
   const rectsRef = useRef(rects);
   rectsRef.current = rects;
 
-  const selection = useSelection();
-
   const adapter = arrayAdapter<Rect, Pose>({
     ref: rectsRef,
     setItems: setRects,
     toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
   });
 
-  const move = useMove<Rect, Pose>(adapter);
-  const resize = useResize<Rect, Pose>(adapter, {});
-
-  const moveOverlay = move.overlay;
-  const resizeOverlay = resize.overlay;
-  const selectedIds = selection.current;
-
-  const layers = useMemo(() => {
-    // Effective rects for the quadtree: fold in active overlay poses so the
-    // tree reflects the in-flight scene during a drag.
-    const effective: Rect[] = rectsRef.current.map((r) => {
-      const moved = moveOverlay?.poses.get(r.id);
-      if (moveOverlay && moveOverlay.draggedIds.includes(r.id) && moved) return { ...r, ...moved };
-      if (resizeOverlay && resizeOverlay.id === r.id) return { ...r, ...resizeOverlay.currentPose };
-      return r;
-    });
-
-    const stack = defaultLayers<Rect, Pose>({
-      grid: {
-        spacing: 20,
-        bounds: () => ({ x: 0, y: 0, width: W, height: H }),
-        accentEvery: 5,
-      },
-      scene: {
-        objects: rects,
-        toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
-        drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); },
-      },
-      moveOverlay,
-      resizeOverlay,
-      additional: [createQuadtreeLayer(() => effective)],
-      selection: {
-        ids: selectedIds,
-        poseById: (id) => {
-          const r = effective.find((x) => x.id === id);
-          return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
-        },
-        handles: { size: HANDLE },
-      },
-    });
-    return stack;
-  }, [rects, moveOverlay, resizeOverlay, selectedIds]);
-
   return (
-    <Canvas
+    <Canvas<Rect, Pose>
       width={W}
       height={H}
       className="ckd-canvas"
-      layers={layers}
-      move={move}
-      resize={resize}
-      selection={selection}
+      adapter={adapter}
       handleHitRadius={HANDLE}
+      layers={{
+        grid: {
+          spacing: 20,
+          bounds: () => ({ x: 0, y: 0, width: W, height: H }),
+          accentEvery: 5,
+        },
+        scene: {
+          drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); },
+        },
+        quadtree: { layer: createQuadtreeLayer(() => rectsRef.current), after: 'scene' },
+        selectionOverlay: { handles: { size: HANDLE } },
+      }}
     />
   );
 }
 
 export const QUADTREE_DEMO_SOURCE = `// A custom analytical RenderLayer composed alongside weasel's stock layers.
 // The quadtree code is demo-local — weasel doesn't ship a quadtree, but any
-// layer that takes a CanvasRenderingContext2D can slot into runLayers.
+// layer that takes a CanvasRenderingContext2D can slot into the layer map.
 
 interface QuadNode { x: number; y: number; w: number; h: number; depth: number; children: QuadNode[] | null }
 
@@ -163,30 +120,19 @@ function buildTree(bounds, rects): QuadNode {
   return root;
 }
 
-// <Canvas> auto-derives hitBody and boundsOf from move/resize. We keep an
-// explicit useSelection here only because the layers stack reads
-// selection.current to draw selection handles.
-const selection = useSelection();
-const move = useMove<Rect, Pose>(adapter);
-const resize = useResize<Rect, Pose>(adapter, {});
-
-const layers = defaultLayers<Rect, Pose>({
-  grid: { spacing: 20, bounds: () => ({ x: 0, y: 0, width: W, height: H }), accentEvery: 5 },
-  scene: { objects: rects, toPose: ..., drawOne: ... },
-  moveOverlay: move.overlay,
-  resizeOverlay: resize.overlay,
-  additional: [createQuadtreeLayer(() => effective)],
-  selection: { ids: selection.current, poseById, handles: { size: HANDLE } },
-});
-
+// <Canvas> owns the move/resize/selection hooks. The layers map names the
+// standard slots and drops the quadtree in after 'scene'.
 return (
-  <Canvas
+  <Canvas<Rect, Pose>
     width={W} height={H}
-    layers={layers}
-    move={move}
-    resize={resize}
-    selection={selection}
+    adapter={adapter}
     handleHitRadius={HANDLE}
+    layers={{
+      grid: { spacing: 20, bounds: () => ({ x: 0, y: 0, width: W, height: H }), accentEvery: 5 },
+      scene: { drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
+      quadtree: { layer: createQuadtreeLayer(() => rectsRef.current), after: 'scene' },
+      selectionOverlay: { handles: { size: HANDLE } },
+    }}
   />
 );
 `;

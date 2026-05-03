@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useInsert } from '@orochi235/weasel';
-import type { InsertAdapter, ClipboardSnapshot } from '@orochi235/weasel';
+import { useCallback, useRef, useState } from 'react';
+import { Canvas, useInsert } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
-import { setupCanvasDpr } from '@orochi235/weasel';
+import type { InsertAdapter, ClipboardSnapshot, RenderLayer } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number }
@@ -28,11 +27,7 @@ export function InsertDemo() {
     setSelection: () => {},
   };
 
-  const insert = useInsert<Rect, Pose>(adapter, {
-    minBounds: { width: 4, height: 4 },
-  });
-
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const insert = useInsert<Rect, Pose>(adapter, { minBounds: { width: 4, height: 4 } });
   const drawing = useRef(false);
 
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -55,43 +50,46 @@ export function InsertDemo() {
   }, [insert]);
 
   const overlay = insert.overlay;
-  useEffect(() => {
-    const c = canvasRef.current;
-    if (!c) return;
-    const ctx = c.getContext('2d')!;
-    setupCanvasDpr(c, ctx, W, H);
-    ctx.clearRect(0, 0, W, H);
-
-    for (const r of rects) {
-      ctx.fillStyle = r.color;
-      ctx.fillRect(r.x, r.y, r.width, r.height);
-    }
-
-    if (overlay) {
+  const sceneLayer: RenderLayer<unknown> = {
+    id: 'scene', label: 'Scene',
+    draw: (cx) => {
+      for (const r of rects) {
+        cx.fillStyle = r.color;
+        cx.fillRect(r.x, r.y, r.width, r.height);
+      }
+    },
+  };
+  const marqueeLayer: RenderLayer<unknown> = {
+    id: 'marquee', label: 'Marquee',
+    draw: (cx) => {
+      if (!overlay) return;
       const x = Math.min(overlay.start.x, overlay.current.x);
       const y = Math.min(overlay.start.y, overlay.current.y);
       const w = Math.abs(overlay.current.x - overlay.start.x);
       const h = Math.abs(overlay.current.y - overlay.start.y);
-      ctx.fillStyle = 'rgba(127, 176, 105, 0.25)';
-      ctx.fillRect(x, y, w, h);
-      ctx.strokeStyle = '#7fb069';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
-      ctx.strokeRect(x, y, w, h);
-      ctx.setLineDash([]);
-    }
-  }, [rects, overlay]);
+      cx.fillStyle = 'rgba(127, 176, 105, 0.25)';
+      cx.fillRect(x, y, w, h);
+      cx.strokeStyle = '#7fb069';
+      cx.lineWidth = 1;
+      cx.setLineDash([4, 4]);
+      cx.strokeRect(x, y, w, h);
+      cx.setLineDash([]);
+    },
+  };
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="ckd-canvas"
+    <Canvas<Rect>
       width={W}
       height={H}
+      className="ckd-canvas"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
+      layers={{
+        rects: { layer: sceneLayer },
+        marquee: { layer: marqueeLayer },
+      }}
     />
   );
 }
@@ -100,15 +98,13 @@ export const INSERT_DEMO_SOURCE = `// --- Scene (your app owns this) ---
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
 const [rects, setRects] = useState<Rect[]>([]);
-const rectsRef = useRef(rects);
-rectsRef.current = rects;
 const nextId = useRef(0);
 
 // --- Adapter ---
 const adapter: InsertAdapter<Rect> = {
   commitInsert: (b) => ({
     id: \`r\${nextId.current++}\`,
-    x: b.x, y: b.y, width: b.width, height: b.height,
+    ...b,
     color: COLORS[nextId.current % COLORS.length],
   }),
   commitPaste: () => [],
@@ -117,14 +113,21 @@ const adapter: InsertAdapter<Rect> = {
   setSelection: () => {},
 };
 
-const insert = useInsert<Rect, Pose>(adapter, {
-  minBounds: { width: 4, height: 4 },
-});
+const insert = useInsert<Rect, Pose>(adapter, { minBounds: { width: 4, height: 4 } });
 
-// onPointerDown: insert.start(worldX, worldY, modifiers)
-// onPointerMove: insert.move(worldX, worldY, modifiers)
-// onPointerUp:   insert.end() — calls adapter.commitInsert(bounds),
-//                wraps the new object in an InsertOp, applies the batch.
-//
-// insert.overlay.{ start, current } drives the rubber-band rect.
+// <Canvas> renders the scene + a custom marquee layer; pointer handlers are
+// overridden to drive the insert gesture (Canvas's auto move/resize wiring
+// doesn't apply here — there's no adapter prop).
+return (
+  <Canvas<Rect>
+    width={W} height={H}
+    onPointerDown={(e) => { ... insert.start(...) }}
+    onPointerMove={(e) => insert.move(...)}
+    onPointerUp={() => insert.end()}
+    layers={{
+      rects:   { layer: sceneLayer },
+      marquee: { layer: marqueeLayer },
+    }}
+  />
+);
 `;

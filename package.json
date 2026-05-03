@@ -43,10 +43,6 @@
       "import": "./dist/insert.js",
       "types": "./dist/insert.d.ts"
     },
-    "./area-select": {
-      "import": "./dist/area-select.js",
-      "types": "./dist/area-select.d.ts"
-    },
     "./clipboard": {
       "import": "./dist/clipboard.js",
       "types": "./dist/clipboard.d.ts"

@@ -31,7 +31,7 @@ function paintSprite(ctx: CanvasRenderingContext2D, ox: number, oy: number, scal
   }
 }
 
-export function PixelArtDemo() {
+export function PixelDensityDemo() {
   const fixedRef = useRef<HTMLCanvasElement | null>(null);
   const dprRef = useRef<HTMLCanvasElement | null>(null);
   const fixedDpr = useFixedPixelRatio();
@@ -70,7 +70,7 @@ export function PixelArtDemo() {
   );
 }
 
-export const PIXEL_ART_DEMO_SOURCE = `// useFixedPixelRatio returns 1 — opt out of DPR scaling so the canvas
+export const PIXEL_DENSITY_DEMO_SOURCE = `// useFixedPixelRatio returns 1 — opt out of DPR scaling so the canvas
 // backing store matches CSS pixels exactly. Useful for putImageData,
 // hairline alignment, and pixel-art rendering where each "world pixel"
 // must land on exactly one backing pixel.

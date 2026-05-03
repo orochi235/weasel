@@ -15,7 +15,7 @@
  * `effective = rects.map(...)` boilerplate.
  */
 
-import type { RenderLayer } from '../features/layers/render';
+import type { RenderLayer } from '../core/layers/render';
 import { createGridLayer, type GridLayerOpts } from '../features/grid/layer';
 import { createSelectionOverlayLayer } from '../features/selection/overlay';
 import type { MoveOverlay, ResizeOverlay } from '../interactions/gestures/types';

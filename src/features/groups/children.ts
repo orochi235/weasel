@@ -12,7 +12,7 @@
  * without breaking existing layers.
  */
 
-import type { RenderLayer } from '../layers/render';
+import type { RenderLayer } from '../../core/layers/render';
 import type { OrderedAdapter } from '../../core/adapters/types';
 
 export interface CreateChildrenLayerOpts<TData> {

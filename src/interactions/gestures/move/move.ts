@@ -62,7 +62,7 @@ export interface MoveMoveArgs {
 }
 
 /** Return shape of `useMove`: lifecycle methods and a live overlay snapshot. */
-export interface UseMoveReturn<TObject extends { id: string }, TPose> {
+export interface MoveController<TObject extends { id: string }, TPose> {
   start(args: MoveStartArgs): void;
   move(args: MoveMoveArgs): boolean;
   end(): void;
@@ -79,7 +79,7 @@ export interface UseMoveReturn<TObject extends { id: string }, TPose> {
 export function useMove<TObject extends { id: string }, TPose>(
   adapter: MoveAdapter<TObject, TPose>,
   options: UseMoveOptions<TPose> = {},
-): UseMoveReturn<TObject, TPose> {
+): MoveController<TObject, TPose> {
   const {
     translatePose = translateRectPose as unknown as (pose: TPose, dx: number, dy: number) => TPose,
     behaviors = [],

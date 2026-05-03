@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import { MoveDemo, MOVE_DEMO_SOURCE } from './demos/MoveDemo';
 import { ResizeDemo, RESIZE_DEMO_SOURCE } from './demos/ResizeDemo';
+import { MultiSelectDemo, MULTI_SELECT_DEMO_SOURCE } from './demos/MultiSelectDemo';
 import { InsertDemo, INSERT_DEMO_SOURCE } from './demos/InsertDemo';
 import { CloneDemo, CLONE_DEMO_SOURCE } from './demos/CloneDemo';
 import { ComposeDemo, COMPOSE_DEMO_SOURCE } from './demos/ComposeDemo';
@@ -8,12 +9,13 @@ import { ActionsDemo, ACTIONS_DEMO_SOURCE } from './demos/ActionsDemo';
 import { GroupsDemo, GROUPS_DEMO_SOURCE } from './demos/GroupsDemo';
 import { NestedGroupsDemo, NESTED_GROUPS_DEMO_SOURCE } from './demos/NestedGroupsDemo';
 import { TextDemo, TEXT_DEMO_SOURCE } from './demos/TextDemo';
-import { PixelArtDemo, PIXEL_ART_DEMO_SOURCE } from './demos/PixelArtDemo';
+import { PixelDensityDemo, PIXEL_DENSITY_DEMO_SOURCE } from './demos/PixelDensityDemo';
 import { QuadtreeDemo, QUADTREE_DEMO_SOURCE } from './demos/QuadtreeDemo';
 import { PathPoseDemo, PATH_POSE_DEMO_SOURCE } from './demos/PathPoseDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
+import MultiSelectDemoFull from './demos/MultiSelectDemo.tsx?raw';
 import InsertDemoFull from './demos/InsertDemo.tsx?raw';
 import CloneDemoFull from './demos/CloneDemo.tsx?raw';
 import ComposeDemoFull from './demos/ComposeDemo.tsx?raw';
@@ -21,7 +23,7 @@ import ActionsDemoFull from './demos/ActionsDemo.tsx?raw';
 import GroupsDemoFull from './demos/GroupsDemo.tsx?raw';
 import NestedGroupsDemoFull from './demos/NestedGroupsDemo.tsx?raw';
 import TextDemoFull from './demos/TextDemo.tsx?raw';
-import PixelArtDemoFull from './demos/PixelArtDemo.tsx?raw';
+import PixelDensityDemoFull from './demos/PixelDensityDemo.tsx?raw';
 import QuadtreeDemoFull from './demos/QuadtreeDemo.tsx?raw';
 import PathPoseDemoFull from './demos/PathPoseDemo.tsx?raw';
 
@@ -97,6 +99,17 @@ export const DEMOS: DemoEntry[] = [
     path: 'demo/demos/TextDemo.tsx',
   },
   {
+    id: 'multi-select',
+    title: 'Multi-select',
+    category: 'Selection & actions',
+    description: 'selectionMode="multi" — shift-click to extend the selection. With more than one item selected, the overlay collapses to a single union AABB with corner handles, clicks inside the union drag the whole set, and the corner handles resize the union (each member is scaled via the same remapBounds path the groups demo uses).',
+    hint: 'Click a rect to select; shift-click another to add it; drag the body or grab a corner.',
+    Component: MultiSelectDemo,
+    snippet: MULTI_SELECT_DEMO_SOURCE,
+    full: MultiSelectDemoFull,
+    path: 'demo/demos/MultiSelectDemo.tsx',
+  },
+  {
     id: 'actions',
     title: 'Actions',
     category: 'Selection & actions',
@@ -163,14 +176,14 @@ export const DEMOS: DemoEntry[] = [
     path: 'demo/demos/PathPoseDemo.tsx',
   },
   {
-    id: 'pixel-art',
-    title: 'Pixel art',
+    id: 'pixel-density',
+    title: 'Pixel density',
     category: 'Rendering',
     description: 'Side-by-side: useFixedPixelRatio() pins the dpr to 1 so the backing store matches CSS pixels exactly. The default (window.devicePixelRatio) is the right pick for most demos — but for pixel art, putImageData/getImageData workflows, and hairline alignment, a fixed 1:1 ratio keeps every world pixel landing on one backing pixel.',
-    Component: PixelArtDemo,
-    snippet: PIXEL_ART_DEMO_SOURCE,
-    full: PixelArtDemoFull,
-    path: 'demo/demos/PixelArtDemo.tsx',
+    Component: PixelDensityDemo,
+    snippet: PIXEL_DENSITY_DEMO_SOURCE,
+    full: PixelDensityDemoFull,
+    path: 'demo/demos/PixelDensityDemo.tsx',
   },
 ];
 

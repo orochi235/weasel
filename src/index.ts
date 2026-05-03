@@ -79,7 +79,12 @@ export type {
   PointerGestureCallbackCtx,
 } from './interactions/usePointerGestures';
 export { Canvas } from './canvas/Canvas';
-export type { CanvasProps } from './canvas/Canvas';
+export type {
+  CanvasProps,
+  CanvasSelectionMode,
+  StandardSlotName,
+  CustomLayerEntry,
+} from './canvas/Canvas';
 export { useSelection } from './features/selection/useSelection';
 export type {
   SelectionApi,
@@ -87,16 +92,16 @@ export type {
   SelectionExtendKey,
   UseSelectionOptions,
 } from './features/selection/useSelection';
-export * from './features/layers/render';
-export * from './features/layers/LayerRenderer';
+export * from './core/layers/render';
+export * from './core/layers/LayerRenderer';
 export { createGridLayer } from './features/grid/layer';
 export type { GridLayerOpts } from './features/grid/layer';
-export { defaultLayers } from './canvas/defaults';
+export { defaultLayers } from './canvas/layers';
 export type {
   DefaultLayersOpts,
   DefaultLayersScene,
   DefaultLayersSelection,
-} from './canvas/defaults';
+} from './canvas/layers';
 export { createCellHighlightLayer } from './features/grid/cellHighlight';
 export type { CellHighlightLayerOpts } from './features/grid/cellHighlight';
 export { createChildrenLayer } from './features/groups/children';
@@ -246,7 +251,7 @@ export type { OriginProjection } from './interactions/gestures/shared';
 export { useMove } from './interactions/gestures/move';
 export type {
   UseMoveOptions,
-  UseMoveReturn,
+  MoveController,
   MoveStartArgs,
   MoveMoveArgs,
 } from './interactions/gestures/move';
@@ -258,7 +263,7 @@ export {
 } from './interactions/gestures/resize';
 export type {
   UseResizeOptions,
-  UseResizeReturn,
+  ResizeController,
   PoseGeometry,
   CornerHandle,
 } from './interactions/gestures/resize';
@@ -272,6 +277,7 @@ export type {
   UseAreaSelectOptions,
   UseAreaSelectReturn,
 } from './interactions/gestures/area-select';
+export { selectFromMarquee } from './interactions/gestures/area-select/behaviors';
 export {
   useClipboardOps,
   useClipboard,

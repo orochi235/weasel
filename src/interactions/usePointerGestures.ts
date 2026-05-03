@@ -2,8 +2,8 @@ import { useCallback, useRef } from 'react';
 import type React from 'react';
 import { clientToCanvas } from '../features/viewport/clientToCanvas';
 import { cornerResizeHandles, hitCornerHandle } from './gestures/resize/cornerHandles';
-import type { UseMoveReturn } from './gestures/move/move';
-import type { UseResizeReturn } from './gestures/resize/resize';
+import type { MoveController } from './gestures/move/move';
+import type { ResizeController } from './gestures/resize/resize';
 import type { ModifierState } from './gestures/types';
 import type { SelectionApi } from '../features/selection/useSelection';
 
@@ -40,10 +40,10 @@ export interface UsePointerGesturesOptions<TMovePose, TResizePose> {
   ) => [number, number];
 
   /** Live move interaction. Omit to disable body-drag dispatch. */
-  move?: UseMoveReturn<{ id: string }, TMovePose>;
+  move?: MoveController<{ id: string }, TMovePose>;
 
   /** Live resize interaction. Omit to disable handle-drag dispatch. */
-  resize?: UseResizeReturn<{ id: string }, TResizePose>;
+  resize?: ResizeController<{ id: string }, TResizePose>;
 
   /** Currently resizable target. Hook computes corner handles, hit-tests, and
    *  dispatches `resize.start(id, anchor, ...)`. Return `null` for none.

@@ -6,7 +6,6 @@ export default defineConfig({
     move: 'src/subpaths/move.ts',
     resize: 'src/subpaths/resize.ts',
     insert: 'src/subpaths/insert.ts',
-    'area-select': 'src/subpaths/area-select.ts',
     clipboard: 'src/subpaths/clipboard.ts',
     clone: 'src/subpaths/clone.ts',
     'patterns-builtin': 'src/subpaths/patterns-builtin.ts',

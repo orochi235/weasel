@@ -19,6 +19,7 @@ function makeAdapter(initial: Obj[]): MoveAdapter<Obj, Pose> & {
     store,
     batches,
     getObject: (id) => store.get(id),
+    getObjects: () => Array.from(store.values()),
     getPose: (id) => store.get(id)!.pose,
     getParent: (id) => store.get(id)!.parent,
     setPose: (id, pose) => {

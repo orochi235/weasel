@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useClone, cloneByAltDrag } from '@orochi235/weasel';
-import type { InsertAdapter, ClipboardSnapshot } from '@orochi235/weasel';
+import { useCallback, useRef, useState } from 'react';
+import { Canvas, useClone, cloneByAltDrag } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
-import { setupCanvasDpr } from '@orochi235/weasel';
+import type { InsertAdapter, ClipboardSnapshot, RenderLayer } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
@@ -23,8 +22,6 @@ export function CloneDemo() {
 
   const [overlay, setOverlay] = useState<OverlayItem[] | null>(null);
 
-  // Clipboard items carry the full source rects. cloneByAltDrag's onEnd will
-  // re-snapshot the selection and offset by the gesture's drag delta.
   const adapter: InsertAdapter<Rect> = {
     commitInsert: () => null,
     commitPaste: (clip: ClipboardSnapshot, offset) => {
@@ -52,7 +49,6 @@ export function CloneDemo() {
     clearOverlay: () => setOverlay(null),
   });
 
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const dragging = useRef(false);
 
   const hit = (wx: number, wy: number): Rect | null => {
@@ -85,40 +81,44 @@ export function CloneDemo() {
     clone.end();
   }, [clone]);
 
-  useEffect(() => {
-    const c = canvasRef.current;
-    if (!c) return;
-    const ctx = c.getContext('2d')!;
-    setupCanvasDpr(c, ctx, W, H);
-    ctx.clearRect(0, 0, W, H);
+  const sceneLayer: RenderLayer<unknown> = {
+    id: 'scene', label: 'Scene',
+    draw: (cx) => {
+      for (const r of rects) {
+        cx.fillStyle = r.color;
+        cx.fillRect(r.x, r.y, r.width, r.height);
+      }
+    },
+  };
 
-    for (const r of rects) {
-      ctx.fillStyle = r.color;
-      ctx.fillRect(r.x, r.y, r.width, r.height);
-    }
-
-    if (overlay) {
-      ctx.globalAlpha = 0.5;
+  const ghostLayer: RenderLayer<unknown> = {
+    id: 'clone-ghost', label: 'Clone ghost',
+    draw: (cx) => {
+      if (!overlay) return;
+      cx.globalAlpha = 0.5;
       for (const item of overlay) {
         const src = rects.find((r) => r.id === item.id);
         if (!src) continue;
-        ctx.fillStyle = src.color;
-        ctx.fillRect(item.x, item.y, src.width, src.height);
+        cx.fillStyle = src.color;
+        cx.fillRect(item.x, item.y, src.width, src.height);
       }
-      ctx.globalAlpha = 1;
-    }
-  }, [rects, overlay]);
+      cx.globalAlpha = 1;
+    },
+  };
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="ckd-canvas"
+    <Canvas<Rect>
       width={W}
       height={H}
+      className="ckd-canvas"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
+      layers={{
+        rects: { layer: sceneLayer },
+        ghost: { layer: ghostLayer },
+      }}
     />
   );
 }
@@ -128,28 +128,16 @@ interface Rect { id: string; x: number; y: number; width: number; height: number
 interface OverlayItem { id: string; x: number; y: number }
 
 const [rects, setRects] = useState<Rect[]>(INITIAL);
-const rectsRef = useRef(rects);
-rectsRef.current = rects;
-const nextId = useRef(0);
 const [overlay, setOverlay] = useState<OverlayItem[] | null>(null);
 
 // --- Adapter (clone reuses InsertAdapter's commitPaste / snapshotSelection) ---
 const adapter: InsertAdapter<Rect> = {
   commitInsert: () => null,
-  commitPaste: (clip, offset) => {
-    const items = clip.items as Rect[];
-    return items.map((src) => ({
-      ...src,
-      id: \`clone-\${nextId.current++}\`,
-      x: src.x + offset.dx,
-      y: src.y + offset.dy,
-    }));
-  },
-  snapshotSelection: (ids) => ({
-    items: ids
-      .map((id) => rectsRef.current.find((r) => r.id === id))
-      .filter((r): r is Rect => !!r),
-  }),
+  commitPaste: (clip, offset) => clip.items.map((src) => ({
+    ...src, id: \`clone-\${nextId.current++}\`,
+    x: src.x + offset.dx, y: src.y + offset.dy,
+  })),
+  snapshotSelection: (ids) => ({ items: /* selected rects */ }),
   insertObject: (obj) => setRects((rs) => [...rs, obj]),
   setSelection: () => {},
   getSelection: () => [],
@@ -157,15 +145,23 @@ const adapter: InsertAdapter<Rect> = {
 
 const clone = useClone<Rect>(adapter, {
   behaviors: [cloneByAltDrag()],
-  setOverlay: (_layer, objects) => setOverlay(objects as OverlayItem[]),
+  setOverlay: (_layer, objects) => setOverlay(objects),
   clearOverlay: () => setOverlay(null),
 });
 
-// On Alt-pointer-down over a rect:
-//   clone.start(worldX, worldY, [id], 'structures', { alt: true, ... })
-// The cloneByAltDrag behavior gates activation on alt being held.
-//
-// On move: clone.move() — overlay is republished via setOverlay.
-// On up:   clone.end() — behavior calls commitPaste with the drag offset
-//          and emits InsertOps for each cloned object.
+// <Canvas> renders the scene + clone-ghost layers; pointer handlers are
+// overridden to drive the clone gesture. The ghost layer reads from React
+// state populated by the clone hook's setOverlay callback.
+return (
+  <Canvas<Rect>
+    width={W} height={H}
+    onPointerDown={(e) => /* alt-hit-test → clone.start */}
+    onPointerMove={(e) => clone.move(...)}
+    onPointerUp={() => clone.end()}
+    layers={{
+      rects: { layer: sceneLayer },
+      ghost: { layer: ghostLayer },
+    }}
+  />
+);
 `;

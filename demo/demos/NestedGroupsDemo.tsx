@@ -55,6 +55,7 @@ export function NestedGroupsDemo() {
 
   const adapter = {
     getObject: (id: string) => byId(id),
+    getObjects: () => nodesRef.current,
     getPose: (id: string) => byId(id)!.pose,
     getParent: (id: string) => byId(id)?.parent ?? null,
     getChildren: (id: string | null) => nodesRef.current.filter((n) => n.parent === id).map((n) => n.id),

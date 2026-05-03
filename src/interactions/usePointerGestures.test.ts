@@ -3,29 +3,29 @@ import { act, renderHook } from '@testing-library/react';
 import type React from 'react';
 import { useSelection } from '../features/selection/useSelection';
 import { usePointerGestures } from './usePointerGestures';
-import type { UseMoveReturn } from './gestures/move/move';
-import type { UseResizeReturn } from './gestures/resize/resize';
+import type { MoveController } from './gestures/move/move';
+import type { ResizeController } from './gestures/resize/resize';
 
 interface Pose { x: number; y: number; width: number; height: number }
 
-function makeMove(): UseMoveReturn<{ id: string }, Pose> {
+function makeMove(): MoveController<{ id: string }, Pose> {
   return {
     start: vi.fn(),
     move: vi.fn(),
     end: vi.fn(),
     cancel: vi.fn(),
     overlay: null,
-  } as unknown as UseMoveReturn<{ id: string }, Pose>;
+  } as unknown as MoveController<{ id: string }, Pose>;
 }
 
-function makeResize(): UseResizeReturn<{ id: string }, Pose> {
+function makeResize(): ResizeController<{ id: string }, Pose> {
   return {
     start: vi.fn(),
     move: vi.fn(),
     end: vi.fn(),
     cancel: vi.fn(),
     overlay: null,
-  } as unknown as UseResizeReturn<{ id: string }, Pose>;
+  } as unknown as ResizeController<{ id: string }, Pose>;
 }
 
 interface FakePointerOpts {

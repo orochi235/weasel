@@ -1,7 +1,7 @@
 export { useMove } from './move';
 export type {
   UseMoveOptions,
-  UseMoveReturn,
+  MoveController,
   MoveStartArgs,
   MoveMoveArgs,
 } from './move';

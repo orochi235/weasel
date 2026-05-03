@@ -92,7 +92,7 @@ describe('useReorder', () => {
     expect(a.applied).toHaveLength(0);
   });
 
-  it('keyboard: "]" → bringForward, "[" → sendBackward, Shift+"]" → bringToFront, Shift+"[" → sendToBack', () => {
+  it('keyboard: Mod+] → bringForward, Mod+[ → sendBackward, Mod+Shift+] → bringToFront, Mod+Shift+[ → sendToBack', () => {
     const a = makeAdapter({
       selection: ['b'],
       parents: { a: null, b: null, c: null },
@@ -100,16 +100,16 @@ describe('useReorder', () => {
     });
     renderHook(() => useReorder(a, { enableKeyboard: true }));
 
-    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: ']' })); });
+    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: ']', metaKey: true })); });
     expect(a.applied.at(-1)?.label).toBe('Bring forward');
 
-    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: '[' })); });
+    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: '[', ctrlKey: true })); });
     expect(a.applied.at(-1)?.label).toBe('Send backward');
 
-    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: ']', shiftKey: true })); });
+    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: ']', metaKey: true, shiftKey: true })); });
     expect(a.applied.at(-1)?.label).toBe('Bring to front');
 
-    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: '[', shiftKey: true })); });
+    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: '[', ctrlKey: true, shiftKey: true })); });
     expect(a.applied.at(-1)?.label).toBe('Send to back');
   });
 
@@ -123,21 +123,20 @@ describe('useReorder', () => {
     const input = document.createElement('input');
     document.body.appendChild(input);
     input.focus();
-    act(() => { input.dispatchEvent(new KeyboardEvent('keydown', { key: ']', bubbles: true })); });
+    act(() => { input.dispatchEvent(new KeyboardEvent('keydown', { key: ']', metaKey: true, bubbles: true })); });
     expect(a.applied).toHaveLength(0);
     document.body.removeChild(input);
   });
 
-  it('keyboard guard: ignores when Cmd/Ctrl/Alt held', () => {
+  it('keyboard guard: bare "]" without Mod does NOT fire', () => {
     const a = makeAdapter({
       selection: ['b'],
       parents: { a: null, b: null, c: null },
       children: { ROOT: ['a', 'b', 'c'] },
     });
     renderHook(() => useReorder(a, { enableKeyboard: true }));
-    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: ']', metaKey: true })); });
-    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: ']', ctrlKey: true })); });
-    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: ']', altKey: true })); });
+    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: ']' })); });
+    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: '[' })); });
     expect(a.applied).toHaveLength(0);
   });
 

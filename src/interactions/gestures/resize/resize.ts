@@ -48,7 +48,7 @@ export interface UseResizeOptions<TPose> {
 }
 
 /** Return shape of `useResize`: lifecycle methods plus a live overlay snapshot. */
-export interface UseResizeReturn<TObject extends { id: string }, TPose> {
+export interface ResizeController<TObject extends { id: string }, TPose> {
   start(id: string, anchor: ResizeAnchor, worldX: number, worldY: number): void;
   move(worldX: number, worldY: number, modifiers: ModifierState): boolean;
   end(): void;
@@ -100,7 +100,7 @@ function computeUnionBounds(bounds: ResizePose[]): ResizePose {
 export function useResize<TObject extends { id: string }, TPose>(
   adapter: ResizeAdapter<TObject, TPose>,
   options: UseResizeOptions<TPose>,
-): UseResizeReturn<TObject, TPose> {
+): ResizeController<TObject, TPose> {
   const {
     behaviors = [] as ResizeBehavior<ResizePose>[],
     resizeLabel = 'Resize',

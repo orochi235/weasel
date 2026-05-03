@@ -64,9 +64,9 @@ export interface SceneAdapter<TObject extends { id: string }, TPose> {
  */
 export interface MoveAdapter<TObject extends { id: string }, TPose> {
   getObject(id: string): TObject | undefined;
-  /** Optional: enumerate all objects. When present, `<Canvas>` can derive a
-   *  default rect-pose `hitBody` from this. */
-  getObjects?(): TObject[];
+  /** Enumerate all objects. `<Canvas>` derives a default rect-pose `hitBody`
+   *  and the scene-iteration loop from this. */
+  getObjects(): TObject[];
   getPose(id: string): TPose;
   getParent(id: string): string | null;
   setPose(id: string, pose: TPose): void;

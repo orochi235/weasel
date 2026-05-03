@@ -1,4 +1,4 @@
-import type { ViewTransform } from '../viewport/viewTransform';
+import type { ViewTransform } from '../../features/viewport/viewTransform';
 
 /**
  * Base class for layer renderers. Holds shared state (view, dimensions,

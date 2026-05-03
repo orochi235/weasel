@@ -1,16 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   arrayAdapter,
+  Canvas,
   useEscape,
   useSelectAll,
   useDuplicate,
   useNudge,
-  createSelectionOverlayLayer,
-  runLayers,
+  useReorder,
+  useSelection,
 } from '@orochi235/weasel';
-import { clientToCanvas } from '../canvasCoords';
-import { setupCanvasDpr } from '@orochi235/weasel';
-import type { RenderLayer } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -25,11 +23,11 @@ const INITIAL: Rect[] = [
 
 export function ActionsDemo() {
   const [rects, setRects] = useState<Rect[]>(INITIAL);
-  const [selection, setSelection] = useState<string[]>([]);
   const [focused, setFocused] = useState(false);
   const rectsRef = useRef(rects); rectsRef.current = rects;
-  const selRef = useRef(selection); selRef.current = selection;
   const nextId = useRef(1);
+
+  const selection = useSelection();
 
   const adapter = {
     ...arrayAdapter<Rect, Pose>({
@@ -37,11 +35,16 @@ export function ActionsDemo() {
       setItems: setRects,
       toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
     }),
-    getSelection: () => selRef.current,
-    setSelection,
+    ...selection.adapterMethods,
     listAll: () => rectsRef.current.map((r) => r.id),
     insertObject: (obj: Rect) => setRects((rs) => [...rs, obj]),
     removeObject: (id: string) => setRects((rs) => rs.filter((r) => r.id !== id)),
+    getParent: (_id: string) => null,
+    getChildren: (_parent: string | null) => rectsRef.current.map((r) => r.id),
+    setChildOrder: (_parent: string | null, ids: string[]) => {
+      const byId = new Map(rectsRef.current.map((r) => [r.id, r]));
+      setRects(ids.map((id) => byId.get(id)!).filter(Boolean));
+    },
     cloneObject: (id: string, offset: { dx: number; dy: number }) => {
       const src = rectsRef.current.find((r) => r.id === id)!;
       return {
@@ -55,69 +58,11 @@ export function ActionsDemo() {
     },
   };
 
-  // Only bind keyboard handlers when the canvas region is focused — keeps
-  // multiple action demos from fighting over the same global keys.
   useEscape(adapter, { enableKeyboard: focused });
   useSelectAll(adapter, { enableKeyboard: focused });
   useDuplicate<Pose>(adapter, { enableKeyboard: focused });
-  useNudge<Pose>(adapter, {
-    enableKeyboard: focused,
-    step: 2,
-    shiftStep: 20,
-  });
-
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  const hit = (wx: number, wy: number): Rect | null => {
-    for (let i = rectsRef.current.length - 1; i >= 0; i--) {
-      const r = rectsRef.current[i];
-      if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) return r;
-    }
-    return null;
-  };
-
-  const onPointerDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
-    const [wx, wy] = clientToCanvas(e.currentTarget, e.clientX, e.clientY);
-    const target = hit(wx, wy);
-    if (!target) {
-      setSelection([]);
-      return;
-    }
-    if (e.shiftKey) {
-      setSelection((sel) =>
-        sel.includes(target.id) ? sel.filter((x) => x !== target.id) : [...sel, target.id],
-      );
-    } else {
-      setSelection([target.id]);
-    }
-  }, []);
-
-  useEffect(() => {
-    const c = canvasRef.current; if (!c) return;
-    const ctx = c.getContext('2d')!;
-    setupCanvasDpr(c, ctx, W, H);
-    ctx.clearRect(0, 0, W, H);
-
-    const baseLayer: RenderLayer<unknown> = {
-      id: 'base', label: 'Base',
-      draw: (cx) => {
-        for (const r of rects) {
-          cx.fillStyle = r.color;
-          cx.fillRect(r.x, r.y, r.width, r.height);
-        }
-      },
-    };
-
-    const selectionLayer = createSelectionOverlayLayer<Pose>({
-      getSelection: () => selection,
-      getPose: (id) => {
-        const r = rects.find((x) => x.id === id);
-        return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
-      },
-    });
-
-    runLayers(ctx, [baseLayer, selectionLayer], undefined, {});
-  }, [rects, selection]);
+  useNudge<Pose>(adapter, { enableKeyboard: focused, step: 2, shiftStep: 20 });
+  useReorder(adapter, { enableKeyboard: focused });
 
   return (
     <div
@@ -128,13 +73,24 @@ export function ActionsDemo() {
     >
       <div style={{ fontSize: 11, color: focused ? '#7fb069' : '#7a6a52' }}>
         {focused
-          ? 'Keys live: Esc / Cmd-A / Cmd-D / arrows (shift = bigger step)'
+          ? 'Keys live: Esc / Cmd-A / Cmd-D / arrows (shift = bigger step) / Cmd-[ / Cmd-]'
           : 'Click the canvas to enable keyboard shortcuts'}
       </div>
-      <canvas
-        ref={canvasRef} className="ckd-canvas" width={W} height={H}
-        onPointerDown={(e) => { e.currentTarget.focus(); onPointerDown(e); }}
-        tabIndex={-1}
+      <Canvas<Rect, Pose>
+        width={W}
+        height={H}
+        className="ckd-canvas"
+        adapter={adapter}
+        selection={selection}
+        layers={{
+          scene: {
+            drawOne: (cx, r, p) => {
+              cx.fillStyle = r.color;
+              cx.fillRect(p.x, p.y, p.width, p.height);
+            },
+          },
+          selectionOverlay: { handles: false },
+        }}
       />
     </div>
   );
@@ -145,35 +101,40 @@ interface Rect { id: string; x: number; y: number; width: number; height: number
 interface Pose { x: number; y: number; width: number; height: number }
 
 const [rects, setRects] = useState<Rect[]>(INITIAL);
-const [selection, setSelection] = useState<string[]>([]);
-const rectsRef = useRef(rects); rectsRef.current = rects;
-const selRef   = useRef(selection); selRef.current = selection;
+const selection = useSelection();
 
-// --- Adapter (read selection, read/write poses, insert/remove/clone, apply op batches) ---
+// --- Adapter (selection methods come from useSelection) ---
 const adapter = {
-  getSelection: () => selRef.current,
-  setSelection,
-  getPose:   (id) => /* lookup */,
-  setPose:   (id, pose) => setRects(...),
-  listAll:   () => rectsRef.current.map((r) => r.id),
-  insertObject: (obj) => setRects((rs) => [...rs, obj]),
-  removeObject: (id)  => setRects((rs) => rs.filter((r) => r.id !== id)),
-  cloneObject:  (id, offset) => /* return new Rect */,
+  ...arrayAdapter({...}),
+  ...selection.adapterMethods,
+  listAll, insertObject, removeObject, cloneObject,
+  // For useReorder: getParent/getChildren/setChildOrder over flat array
+  getParent: () => null,
+  getChildren: () => rectsRef.current.map((r) => r.id),
+  setChildOrder: (_p, ids) => setRects(reorderByIds(rectsRef.current, ids)),
 };
 
-// Four standalone "action" hooks bind their default keybindings on the
+// Five standalone "action" hooks bind their default keybindings on the
 // document. Each hook takes a tiny adapter that knows how to read selection,
 // look up poses, and apply an op batch — no gesture state, no overlays.
 
-useEscape(adapter);              // Esc      -> clear selection
+useEscape(adapter);              // Esc        -> clear selection
 useSelectAll(adapter);           // Cmd/Ctrl+A -> select all
 useDuplicate<Pose>(adapter);     // Cmd/Ctrl+D -> clone selection
-useNudge<Pose>(adapter, {
-  step: 2,        // arrow keys
-  shiftStep: 20,  // shift + arrow keys
-});
+useNudge<Pose>(adapter, { step: 2, shiftStep: 20 });  // arrow keys
+useReorder(adapter);             // Cmd/Ctrl+] / [ (+Shift = to front/back)
 
-// All four ignore key events that originate inside inputs/textareas/
-// contenteditables, and emit op batches via adapter.applyBatch — so they
-// integrate with any history / undo stack the consumer wires up.
+// <Canvas> handles selection (click-to-select) and renders the selection
+// outline; the action hooks above operate on the same selection state.
+return (
+  <Canvas<Rect, Pose>
+    width={W} height={H}
+    adapter={adapter}
+    selection={selection}
+    layers={{
+      scene: { drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
+      selectionOverlay: { handles: false },
+    }}
+  />
+);
 `;
