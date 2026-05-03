@@ -6,7 +6,7 @@
  */
 
 import { applyPaint } from '../paint';
-import type { RenderLayer } from '../renderLayer';
+import type { RenderLayer } from '../layers/renderLayer';
 import { measureText } from './measureText';
 import {
   type ResolvedTextStyle,

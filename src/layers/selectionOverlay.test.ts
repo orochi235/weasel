@@ -5,8 +5,8 @@ import {
   createSelectionOutlineLayer,
   createSelectionHandlesLayer,
 } from './selectionOverlay';
-import type { Group, GroupAdapter } from './groups/types';
-import { boundsOfPath, polygonFromPoints } from './paths';
+import type { Group, GroupAdapter } from '../groups/types';
+import { boundsOfPath, polygonFromPoints } from '../paths';
 
 function makeGroupAdapter(groups: Group[]): GroupAdapter {
   const byId = new Map<string, Group>(groups.map((g) => [g.id, { ...g, members: [...g.members] }]));

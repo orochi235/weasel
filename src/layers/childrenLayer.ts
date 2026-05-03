@@ -13,7 +13,7 @@
  */
 
 import type { RenderLayer } from './renderLayer';
-import type { OrderedAdapter } from './adapters/types';
+import type { OrderedAdapter } from '../adapters/types';
 
 export interface CreateChildrenLayerOpts<TData> {
   /** Layer id for the visibility/order map. Default `'children'`. */

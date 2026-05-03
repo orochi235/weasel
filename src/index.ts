@@ -71,14 +71,14 @@ export type {
 export { useKeybinding, isEditableTarget } from './hooks/useKeybinding';
 export type { KeyBinding } from './hooks/useKeybinding';
 export * from './wheelHandler';
-export * from './renderLayer';
-export * from './LayerRenderer';
-export { createGridLayer } from './gridLayer';
-export type { GridLayerOpts } from './gridLayer';
-export { createCellHighlightLayer } from './cellHighlightLayer';
-export type { CellHighlightLayerOpts } from './cellHighlightLayer';
-export { createChildrenLayer } from './childrenLayer';
-export type { CreateChildrenLayerOpts } from './childrenLayer';
+export * from './layers/renderLayer';
+export * from './layers/LayerRenderer';
+export { createGridLayer } from './layers/gridLayer';
+export type { GridLayerOpts } from './layers/gridLayer';
+export { createCellHighlightLayer } from './layers/cellHighlightLayer';
+export type { CellHighlightLayerOpts } from './layers/cellHighlightLayer';
+export { createChildrenLayer } from './layers/childrenLayer';
+export type { CreateChildrenLayerOpts } from './layers/childrenLayer';
 export {
   resolveUnit,
   formatUnit,
@@ -92,13 +92,13 @@ export {
   createSelectionOutlineLayer,
   createSelectionHandlesLayer,
   createSelectionOverlayLayer,
-} from './selectionOverlay';
+} from './layers/selectionOverlay';
 export type {
   ComposeSelectionPoseOpts,
   SelectionOutlineLayerOpts,
   SelectionHandlesLayerOpts,
   SelectionOverlayLayerOpts,
-} from './selectionOverlay';
+} from './layers/selectionOverlay';
 export * from './renderLabel';
 export * from './text/markdownText';
 export {

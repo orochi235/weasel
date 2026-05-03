@@ -9,8 +9,8 @@
  */
 
 import type { RenderLayer } from './renderLayer';
-import { applyStroke, type Stroke } from './paint';
-import { resolveUnit, type UnitSystem, type UnitValue } from './units';
+import { applyStroke, type Stroke } from '../paint';
+import { resolveUnit, type UnitSystem, type UnitValue } from '../units';
 
 /** Options for `createGridLayer`. */
 export interface GridLayerOpts {

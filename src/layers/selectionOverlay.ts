@@ -24,10 +24,10 @@
  */
 
 import type { RenderLayer } from './renderLayer';
-import type { GroupAdapter } from './groups/types';
-import { expandToLeaves } from './groups/resolve';
-import { unionBounds } from './groups/unionBounds';
-import { applyPaint, applyStroke, alignedStrokeRect, type Paint, type Stroke } from './paint';
+import type { GroupAdapter } from '../groups/types';
+import { expandToLeaves } from '../groups/resolve';
+import { unionBounds } from '../groups/unionBounds';
+import { applyPaint, applyStroke, alignedStrokeRect, type Paint, type Stroke } from '../paint';
 
 interface Bounds {
   x: number;

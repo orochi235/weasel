@@ -7,7 +7,7 @@
  */
 
 import { applyPaint, applyStroke, type Paint, type Stroke } from '../paint';
-import type { RenderLayer } from '../renderLayer';
+import type { RenderLayer } from '../layers/renderLayer';
 import { traceToContext } from './canvas';
 import { boundsOfPath } from './bounds';
 import type { Path } from './types';

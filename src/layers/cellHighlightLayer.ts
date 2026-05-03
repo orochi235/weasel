@@ -5,8 +5,8 @@
  */
 
 import type { RenderLayer } from './renderLayer';
-import { applyPaint, type Paint } from './paint';
-import { resolveUnit, type UnitSystem, type UnitValue } from './units';
+import { applyPaint, type Paint } from '../paint';
+import { resolveUnit, type UnitSystem, type UnitValue } from '../units';
 
 export interface CellHighlightLayerOpts {
   /** Cell size in world units (matches the grid's `spacing`). */

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createGridLayer } from './gridLayer';
-import { IMPERIAL_INCHES } from './units';
+import { IMPERIAL_INCHES } from '../units';
 
 interface RecordedCall {
   fn: string;
