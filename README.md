@@ -19,19 +19,23 @@ npm install @orochi235/weasel react
 Every interaction takes a small, narrow **adapter** — a few methods that read the current scene and apply ops back. The kit doesn't own your scene; it asks. That keeps it agnostic to whether your scene lives in React state, Zustand, Redux, or a CRDT.
 
 ```tsx
-import { useMoveInteraction, useDeleteAction, createHistory } from '@orochi235/weasel';
+import { useMove, useDelete, createHistory, snap, gridSnapStrategy } from '@orochi235/weasel';
 
 const history = createHistory(adapter);
 
 // Drag-to-move with snapping, history, and parent reparenting:
-const move = useMoveInteraction({
-  adapter,                       // get/set pose, applyBatch(ops)
-  behaviors: [snapToGrid(20)],
+const move = useMove(adapter, {
+  behaviors: [snap(gridSnapStrategy(20))],
 });
 
 // Selection-aware delete with Backspace/Delete bound:
-const del = useDeleteAction(adapter, { bindKeyboard: true });
+useDelete(adapter, { bindKeyboard: true });
 ```
+
+Most apps don't call the gesture hooks directly — `<Canvas>` owns useMove /
+useResize / useInsert / useAreaSelect / useSelection internally. Drop in an
+adapter and a `layers` map and you get click-to-select, drag-to-move,
+corner-handle-resize, and an `tool="insert"` mode for free.
 
 See the live demo for a full working example: <https://orochi235.github.io/weasel/>
 

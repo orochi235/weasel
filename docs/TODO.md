@@ -11,14 +11,15 @@ the dated specs/plans under `specs/` and `plans/`.
 
 Without these, the kit is essentially "axis-aligned-rectangle kit."
 
-- **Paths and compound shapes.** `TPose` is generic at the type level but resize/insert/area-select/selection-overlay all bake in `{x, y, width, height}` math. Generalize to arbitrary paths: polygons, polylines, holes, boolean composition. Move + hit-testing + selection overlay all need a path-aware contract. Foundational for any non-rect editor (diagrams, schematics, illustration, mapping). Open follow-ups (track here so they don't get lost during the migration):
+- **Paths and compound shapes.** *Phase 1 + 2 shipped.* Phase 1 (`cbf2201`) generalized the gesture math off `{x, y, width, height}`: `useResize` takes an optional `geometry: PoseDescriptor<TPose>` (default `RECT_POSE_DESCRIPTOR`, `pathPoseDescriptor` for `Path` poses) so bounds + remap-on-resize work over any pose shape; move uses `translatePose` (e.g. `translatePath`) and snap behaviors take a `PoseOriginProjection`. Phase 2 (uncommitted) shipped `CompoundPathsDemo` — five non-rect shapes (multi-contour evenodd ghost, composePath duck, disjoint hat+cape Hamburglar, extreme-aspect goose, open-polyline-tentacle octopus) all editable through the same Canvas + `geometry={pathPoseDescriptor}`. `composePath`, `polygonFromPoints`, `PathBuilder`, `pointInPath`, and `traceToContext` are all public. Open follow-ups (track here so they don't get lost during the migration):
   - **Hot-loop perf hardening.** Making paths first-class trades V8 monomorphization for polymorphism in interaction hot loops. Plan: (1) ship the `RectPath` discriminated subtype so the polygon kernels can short-circuit on the common case (O(1) AABB + hit), (2) audit pointer-move paths for per-frame allocation (resize-preview ghost vertices are the worst offender — likely needs in-place mutation or `Float32Array` ghost buffers), (3) benchmark rect-only and polygon-only scenes against the pre-migration baseline (commit hash needed before Phase 0 starts), (4) fix any regression > ~10% before sunsetting `RectPose` machinery. Defer until Phases 0–4 have landed and we have real numbers to chase, not speculative ones.
 - **Groupable objects.** First-class group node: select-as-one, move-as-one, transform children relative to group origin. Universal across diagramming and illustration tools. *Status:*
-  - Virtual groups (lasso-style `members[]` records, no scene-graph change) ship with `useGroupAction` / `useUngroupAction` and resize-as-group.
-  - Nested groups (real hierarchy nodes) ship as `useNestedGroupAction` / `useNestedUngroupAction`, backed by `composeWorldPose` / `rebaseLocalPose`. Adapter contract now declares poses as **local** (relative to direct parent); the kit composes world via the helper. Children's locals are auto-rebased on group/ungroup so visual world position is preserved.
-  - Snap behaviors stay local-frame by design (see project memory). Selection-overlay composer shipped as `worldPoseLookup`. `useMoveInteraction` auto-cascade shipped: when the move adapter exposes `getChildren` and the hook is given `cascadeWorldPose`, descendants are translated alongside the dragged ids in the live overlay (no extra ops — children's locals don't change when their parent's local moves).
-- **Text rendering.** *Largely done.* `createTextLayer`, `useTextEditInteraction`, `createSetTextOp`, `pointInTextPose`, and `TextStyle` (with caret/selection theming) ship; in-place edit via a contenteditable overlay is wired through op/undo. Open follow-ups:
-  - **Glyph-position hit testing.** *Done.* `caretIndexAt(ctx, x, y, pose)` resolves a world-space click to a character offset using the wrap's `lineStarts`; `useTextEditInteraction.startEdit(id, { caret })` seeds the contenteditable caret at that offset. TextDemo's double-click drops the caret where you clicked instead of selecting all.
+  - Virtual groups (lasso-style `members[]` records, no scene-graph change) ship with `useGroup` / `useUngroup` and resize-as-group.
+  - Nested groups (real hierarchy nodes) ship as `useNestedGroup` / `useNestedUngroup`, backed by `composeWorldPose` / `rebaseLocalPose`. Adapter contract now declares poses as **local** (relative to direct parent); the kit composes world via the helper. Children's locals are auto-rebased on group/ungroup so visual world position is preserved.
+  - Snap behaviors stay local-frame by design (see project memory). Selection-overlay composer shipped as `worldPoseLookup`. `useMove` auto-cascade shipped: when the move adapter exposes `getChildren` and the hook is given `cascadeWorldPose`, descendants are translated alongside the dragged ids in the live overlay (no extra ops — children's locals don't change when their parent's local moves).
+  - Rotation gesture shipped (`useRotate`) with a `RotatedPose` extension and a `selectionOverlay.rotationHandle` toggle; rotates around AABB center. Resize on a rotated object still operates against the AABB (deferred — see RotateDemo description).
+- **Text rendering.** *Largely done.* `createTextLayer`, `useTextEdit`, `createSetTextOp`, `pointInTextPose`, and `TextStyle` (with caret/selection theming) ship; in-place edit via a contenteditable overlay is wired through op/undo. Open follow-ups:
+  - **Glyph-position hit testing.** *Done.* `caretIndexAt(ctx, x, y, pose)` resolves a world-space click to a character offset using the wrap's `lineStarts`; `useTextEdit.startEdit(id, { caret })` seeds the contenteditable caret at that offset. TextDemo's double-click drops the caret where you clicked instead of selecting all.
   - **Cross-browser overlay alignment.** `placeOverlay` uses an empirical `(+1, -1)` CSS-px nudge to compensate for canvas/CSS rasterization disagreement. Works on the dev setup; not universally correct across browsers/fonts/DPRs. A self-correcting probe was attempted and rejected.
   - **Auto-sizing.** *Done v1* — `fitTextPose(ctx, pose, opts?)` returns a copy of the pose with `height` (or `width` and `height`, via `axis: 'both'`) recomputed to fit the wrapped/unwrapped text. Pure helper — caller decides when to recompute and writes the result back through their adapter; the kit does not own the policy.
 - **Gradient paint variants.** `Paint` is a tagged union with `solid` and `pattern` today. Adding `linear-gradient` and `radial-gradient` variants is a non-breaking extension when a real consumer asks. Each gradient type has many dials (color stops, color-space interpolation, angle vs vector, focal point for radial); design against a concrete call site rather than speculatively.
@@ -32,7 +33,7 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
   - **Per-axis units** — defer until a concrete use case appears (rare; e.g. timeline charts where x is time, y is value).
 ## Tier 1.5 — small additive hooks
 
-- **Selection-driven action hooks**: shipped against the existing virtual-group adapter and `History`. When nested groups (Tier 1) land, `useGroupAction` / `useUngroupAction` will compose additional ops (reparent children under the new group node) but the hook surface should not need to change.
+- **Selection-driven action hooks**: shipped against the existing virtual-group adapter and `History` (`useEscape`, `useSelectAll`, `useDuplicate`, `useNudge`, `useDelete`, `useReorder`, `useClipboard`, `useUndoRedo`). Nested-group variants (`useNestedGroup` / `useNestedUngroup`) shipped alongside the original virtual-group `useGroup` / `useUngroup`.
 - **Grid overlay snap-target hover.** *Done.* `useGridCellHover` ships the pointer-tracking glue; pair its `getCell` with `createCellHighlightLayer` and the `spacing` your `gridSnapStrategy` already uses.
 
 ## Tier 3 — specialized but valuable
@@ -41,10 +42,10 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
 - **Parallax plugin.** Multi-layer canvas where layers translate at different rates relative to the viewport pan. Useful for sketch/concept-canvas backgrounds, depth illusions, mapping, and game-style scenes. Likely a `RenderLayer` factory or thin wrapper over `usePanInteraction` exposing `parallaxFactor` per layer. Plugin form keeps it out of the core. Open question: does it warp `screenToWorld` for hit-testing, or is parallax purely cosmetic?
 - **d3 integration plugin.** Bridge the adapter/op model to d3 selections so consumers can drive scene updates from data joins (enter → InsertOp, update → setPose, exit → DeleteOp). Strict plugin form — d3 stays out of the core. Real audience: dashboards, network graphs, force-directed layouts, scientific viz.
 
-## Pre-extraction polish
+## Pre-1.0 polish
 
-(Tracked here so `subtree split` carries them. Re-evaluate before 0.1.0.)
+(Extraction has happened — this is the public `weasel` repo. Re-evaluate before 0.1.0.)
 
-- TODO/FIXME scan inside `src/`.
-- JSDoc audit on the barrel (`src/index.ts`).
-- README pitch draft for the public-facing repo.
+- TODO/FIXME scan inside `src/` — *not yet done.*
+- JSDoc audit on the barrel (`src/index.ts`) — *not yet done.*
+- README pitch — *initial draft landed; the `docs/` long-form (concepts/hooks/adapters/extending) still uses pre-extraction `*Interaction` / `*Action` hook names and the old `src/canvas-kit/` paths. Needs a sweep.*
