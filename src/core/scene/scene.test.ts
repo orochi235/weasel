@@ -1,0 +1,325 @@
+import { describe, expect, it } from 'vitest';
+import { createScene } from './scene';
+import { asNodeId } from './types';
+
+type Layer = 'background' | 'structures' | 'plantings';
+interface Data { label: string }
+
+const POSE = { x: 0, y: 0, width: 10, height: 10 };
+
+function makeScene() {
+  return createScene<Data, Layer>({
+    systemLayers: [
+      { id: 'background' },
+      { id: 'structures' },
+      { id: 'plantings' },
+    ],
+  });
+}
+
+describe('createScene — construction', () => {
+  it('rejects empty systemLayers', () => {
+    expect(() =>
+      createScene<Data, 'a'>({ systemLayers: [] }),
+    ).toThrow(/at least one layer/);
+  });
+
+  it('rejects duplicate system layer ids', () => {
+    expect(() =>
+      createScene<Data, 'a'>({ systemLayers: [{ id: 'a' }, { id: 'a' }] }),
+    ).toThrow(/duplicate system layer/);
+  });
+
+  it('seeds layers as visible+unlocked by default, kind=system', () => {
+    const s = makeScene();
+    expect(s.layers).toHaveLength(3);
+    for (const l of s.layers) {
+      expect(l.kind).toBe('system');
+      expect(l.visible).toBe(true);
+      expect(l.locked).toBe(false);
+    }
+  });
+
+  it('honors initial visible/locked overrides', () => {
+    const s = createScene<Data, 'a' | 'b'>({
+      systemLayers: [
+        { id: 'a', visible: false },
+        { id: 'b', locked: true },
+      ],
+    });
+    expect(s.layers[0].visible).toBe(false);
+    expect(s.layers[1].locked).toBe(true);
+  });
+
+  it('applies `initial` nodes without writing to history', () => {
+    const s = createScene<Data, Layer>({
+      systemLayers: [{ id: 'background' }, { id: 'structures' }, { id: 'plantings' }],
+      initial: [
+        { kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } },
+      ],
+    });
+    expect(s.roots).toHaveLength(1);
+    expect(s.canUndo()).toBe(false);
+  });
+});
+
+describe('add / remove / move', () => {
+  it('add returns an id and inserts the node at the end of its parent', () => {
+    const s = makeScene();
+    const a = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const b = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    expect(s.roots).toEqual([a, b]);
+    expect(s.get(a)?.data.label).toBe('a');
+  });
+
+  it('respects explicit id; throws on collision', () => {
+    const s = makeScene();
+    const id = asNodeId('explicit-1');
+    s.add({ id, kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    expect(s.get(id)).toBeDefined();
+    expect(() =>
+      s.add({ id, kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'dup' } }),
+    ).toThrow(/collision/);
+  });
+
+  it('uses generateId when no explicit id is supplied', () => {
+    let n = 0;
+    const s = createScene<Data, Layer>({
+      systemLayers: [{ id: 'background' }, { id: 'structures' }, { id: 'plantings' }],
+      generateId: () => asNodeId(`g${n++}`),
+    });
+    const a = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const b = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    expect(a).toBe('g0');
+    expect(b).toBe('g1');
+  });
+
+  it('rejects parent that is not a container', () => {
+    const s = makeScene();
+    const leaf = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    expect(() =>
+      s.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'b' }, parent: leaf }),
+    ).toThrow(/not a container/);
+  });
+
+  it('parents children under containers and tracks them in render order', () => {
+    const s = makeScene();
+    const bed = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const tomato = s.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'tomato' }, parent: bed });
+    expect(s.childrenOf(bed)).toEqual([tomato]);
+    expect(s.ancestorsOf(tomato)).toEqual([bed]);
+    // Render order: structures pass yields bed, plantings pass yields tomato.
+    const order = [...s.renderOrder()];
+    expect(order).toEqual([bed, tomato]);
+  });
+
+  it('remove deletes the subtree and is undoable', () => {
+    const s = makeScene();
+    const bed = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const t1 = s.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 't1' }, parent: bed });
+    s.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 't2' }, parent: bed });
+    s.remove(bed);
+    expect(s.get(bed)).toBeUndefined();
+    expect(s.get(t1)).toBeUndefined();
+    expect(s.roots).toEqual([]);
+    s.undo();
+    expect(s.get(bed)?.data.label).toBe('bed');
+    expect(s.childrenOf(bed)).toHaveLength(2);
+    expect(s.roots).toEqual([bed]);
+  });
+
+  it('move reparents and reindexes; cycle is rejected', () => {
+    const s = makeScene();
+    const a = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const b = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    const child = s.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'c' }, parent: a });
+    s.move(child, b);
+    expect(s.childrenOf(a)).toEqual([]);
+    expect(s.childrenOf(b)).toEqual([child]);
+    expect(() => s.move(a, a)).toThrow(/itself/);
+    // Move b under itself transitively (via child) — still itself, but test descendant case:
+    expect(() => s.move(b, child)).toThrow(/not a container/);
+  });
+
+  it('reorder shifts within current parent', () => {
+    const s = makeScene();
+    const a = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const b = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    const c = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'c' } });
+    s.reorder(c, 0);
+    expect(s.roots).toEqual([c, a, b]);
+  });
+});
+
+describe('mutations are auto-undoable', () => {
+  it('setPose / setLayer / update round-trip through undo/redo', () => {
+    const s = makeScene();
+    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    s.setPose(id, { x: 10, y: 20, width: 30, height: 40 });
+    s.setLayer(id, 'plantings');
+    s.update(id, { data: { label: 'a-renamed' } });
+    expect(s.get(id)?.pose).toEqual({ x: 10, y: 20, width: 30, height: 40 });
+    expect(s.get(id)?.layer).toBe('plantings');
+    expect(s.get(id)?.data.label).toBe('a-renamed');
+    s.undo(); // undo update
+    expect(s.get(id)?.data.label).toBe('a');
+    s.undo(); // undo setLayer
+    expect(s.get(id)?.layer).toBe('structures');
+    s.undo(); // undo setPose
+    expect(s.get(id)?.pose).toEqual(POSE);
+    s.redo();
+    expect(s.get(id)?.pose).toEqual({ x: 10, y: 20, width: 30, height: 40 });
+  });
+
+  it('setLayerVisible / setLayerLocked round-trip', () => {
+    const s = makeScene();
+    s.setLayerVisible('structures', false);
+    expect(s.layers[1].visible).toBe(false);
+    s.undo();
+    expect(s.layers[1].visible).toBe(true);
+    s.redo();
+    expect(s.layers[1].visible).toBe(false);
+  });
+
+  it('canUndo/canRedo reflect stack state', () => {
+    const s = makeScene();
+    expect(s.canUndo()).toBe(false);
+    s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    expect(s.canUndo()).toBe(true);
+    expect(s.canRedo()).toBe(false);
+    s.undo();
+    expect(s.canUndo()).toBe(false);
+    expect(s.canRedo()).toBe(true);
+  });
+
+  it('historyLimit caps the undo stack', () => {
+    const s = createScene<Data, Layer>({
+      systemLayers: [{ id: 'background' }, { id: 'structures' }, { id: 'plantings' }],
+      historyLimit: 2,
+    });
+    s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'c' } });
+    s.undo(); s.undo(); s.undo();
+    // Only the most recent two adds are undoable; the first one stays.
+    expect(s.roots).toHaveLength(1);
+  });
+});
+
+describe('batch', () => {
+  it('groups mutations into one undo entry', () => {
+    const s = makeScene();
+    s.batch('build', () => {
+      s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+      s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' } });
+      s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'c' } });
+    });
+    expect(s.roots).toHaveLength(3);
+    s.undo();
+    expect(s.roots).toEqual([]);
+    s.redo();
+    expect(s.roots).toHaveLength(3);
+  });
+
+  it('empty batch does not pollute the stack', () => {
+    const s = makeScene();
+    s.batch('noop', () => {});
+    expect(s.canUndo()).toBe(false);
+  });
+
+  it('nested batches collapse into the outer batch', () => {
+    const s = makeScene();
+    s.batch('outer', () => {
+      s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+      s.batch('inner', () => {
+        s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' } });
+      });
+    });
+    s.undo();
+    expect(s.roots).toEqual([]);
+  });
+});
+
+describe('custom op seam', () => {
+  it('registers, applies, and undoes consumer ops on the same stack', () => {
+    let external = 'before';
+    const s = makeScene();
+    s.registerOp<{ from: string; to: string }>('app:rename', {
+      apply: (p) => { external = p.to; },
+      revert: (p) => { external = p.from; },
+    });
+    s.recordOp({ kind: 'app:rename', payload: { from: 'before', to: 'after' } });
+    expect(external).toBe('after');
+    s.undo();
+    expect(external).toBe('before');
+    s.redo();
+    expect(external).toBe('after');
+  });
+
+  it('throws on unknown recordOp kind', () => {
+    const s = makeScene();
+    expect(() => s.recordOp({ kind: 'unknown', payload: {} })).toThrow(/no registered op/);
+  });
+
+  it('rejects consumer registration of kit:* prefix', () => {
+    const s = makeScene();
+    expect(() =>
+      s.registerOp('kit:hijack', { apply: () => {}, revert: () => {} }),
+    ).toThrow(/reserved/);
+  });
+
+  it('options.ops pre-registers ops at construction', () => {
+    let v = 0;
+    const s = createScene<Data, Layer>({
+      systemLayers: [{ id: 'background' }, { id: 'structures' }, { id: 'plantings' }],
+      ops: {
+        'app:bump': {
+          apply: () => { v++; },
+          revert: () => { v--; },
+        },
+      },
+    });
+    s.recordOp({ kind: 'app:bump', payload: null });
+    expect(v).toBe(1);
+    s.undo();
+    expect(v).toBe(0);
+  });
+});
+
+describe('subscribe / getVersion', () => {
+  it('notifies listeners on mutation and bumps version', () => {
+    const s = makeScene();
+    let count = 0;
+    const v0 = s.getVersion();
+    const off = s.subscribe(() => { count++; });
+    s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    expect(count).toBe(1);
+    expect(s.getVersion()).toBeGreaterThan(v0);
+    off();
+    s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    expect(count).toBe(1);
+  });
+
+  it('undo and redo also bump version', () => {
+    const s = makeScene();
+    s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const v = s.getVersion();
+    s.undo();
+    expect(s.getVersion()).toBeGreaterThan(v);
+    const v2 = s.getVersion();
+    s.redo();
+    expect(s.getVersion()).toBeGreaterThan(v2);
+  });
+});
+
+describe('renderOrder with hidden layers', () => {
+  it('does not filter hidden layers — visibility is a render-time concern', () => {
+    // The Scene's renderOrder yields nodes regardless of layer visibility;
+    // the Canvas integration is responsible for skipping hidden layers.
+    const s = makeScene();
+    const a = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    s.setLayerVisible('structures', false);
+    const order = [...s.renderOrder()];
+    expect(order).toEqual([a]);
+  });
+});

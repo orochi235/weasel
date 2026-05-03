@@ -220,6 +220,21 @@ export { arrayAdapter } from './core/adapters/arrayAdapter';
 export type { ArrayAdapter, ArrayAdapterConfig } from './core/adapters/arrayAdapter';
 export { useArrayAdapter } from './core/adapters/useArrayAdapter';
 export type { UseArrayAdapterOptions } from './core/adapters/useArrayAdapter';
+export { createScene, useScene, asNodeId } from './core/scene';
+export type {
+  AddNodeSpec,
+  ContainerNode,
+  LayerRecord,
+  LeafNode,
+  Node as SceneNode,
+  NodeId,
+  RegisteredOp,
+  Scene,
+  SystemLayerRecord,
+  SystemLayerSpec,
+  UserLayerRecord,
+  UseSceneOptions,
+} from './core/scene';
 export type {
   ModifierState,
   PointerState,
