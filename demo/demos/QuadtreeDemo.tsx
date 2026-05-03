@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   useMove,
   useResize,
+  arrayAdapter,
   createGridLayer,
   createSelectionOverlayLayer,
   runLayers,
@@ -10,8 +11,6 @@ import {
   hitCornerHandle,
 } from '@orochi235/weasel';
 import type {
-  MoveAdapter,
-  ResizeAdapter,
   RenderLayer,
 } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
@@ -87,28 +86,14 @@ export function QuadtreeDemo() {
   const rectsRef = useRef(rects);
   rectsRef.current = rects;
 
-  const moveAdapter: MoveAdapter<Rect, Pose> = {
-    getObject: (id) => rectsRef.current.find((r) => r.id === id),
-    getPose: (id) => {
-      const r = rectsRef.current.find((x) => x.id === id)!;
-      return { x: r.x, y: r.y, width: r.width, height: r.height };
-    },
-    getParent: () => null,
-    setPose: (id, pose) => setRects((rs) => rs.map((r) => (r.id === id ? { ...r, ...pose } : r))),
-    setParent: () => {},
-  };
+  const adapter = arrayAdapter<Rect, Pose>({
+    ref: rectsRef,
+    setItems: setRects,
+    toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
+  });
 
-  const resizeAdapter: ResizeAdapter<Rect, Pose> = {
-    getObject: (id) => rectsRef.current.find((r) => r.id === id),
-    getPose: (id) => {
-      const r = rectsRef.current.find((x) => x.id === id)!;
-      return { x: r.x, y: r.y, width: r.width, height: r.height };
-    },
-    setPose: (id, pose) => setRects((rs) => rs.map((r) => (r.id === id ? { ...r, ...pose } : r))),
-  };
-
-  const move = useMove<Rect, Pose>(moveAdapter);
-  const resize = useResize<Rect, Pose>(resizeAdapter, {});
+  const move = useMove<Rect, Pose>(adapter);
+  const resize = useResize<Rect, Pose>(adapter, {});
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const dragKind = useRef<'move' | 'resize' | null>(null);

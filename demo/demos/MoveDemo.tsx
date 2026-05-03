@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   useMove,
+  arrayAdapter,
   snap,
   gridSnapStrategy,
   createGridLayer,
@@ -9,7 +10,7 @@ import {
 } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
 import { setupCanvasDpr } from '@orochi235/weasel';
-import type { MoveAdapter, RenderLayer, UnitSystem } from '@orochi235/weasel';
+import type { RenderLayer, UnitSystem } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -33,18 +34,11 @@ export function MoveDemo() {
   const rectsRef = useRef(rects);
   rectsRef.current = rects;
 
-  const adapter: MoveAdapter<Rect, Pose> = {
-    getObject: (id) => rectsRef.current.find((r) => r.id === id),
-    getPose: (id) => {
-      const r = rectsRef.current.find((x) => x.id === id)!;
-      return { x: r.x, y: r.y, width: r.width, height: r.height };
-    },
-    getParent: () => null,
-    setPose: (id, pose) => {
-      setRects((rs) => rs.map((r) => (r.id === id ? { ...r, ...pose } : r)));
-    },
-    setParent: () => {},
-  };
+  const adapter = arrayAdapter<Rect, Pose>({
+    ref: rectsRef,
+    setItems: setRects,
+    toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
+  });
 
   const move = useMove<Rect, Pose>(adapter, {
     behaviors: [snap(gridSnapStrategy<Pose>(CELL, UNITS))],
@@ -174,17 +168,13 @@ const rectsRef = useRef(rects);
 rectsRef.current = rects;
 
 // --- Adapter (the bridge weasel reads/writes through) ---
-const adapter: MoveAdapter<Rect, Pose> = {
-  getObject: (id) => rectsRef.current.find((r) => r.id === id),
-  getPose: (id) => {
-    const r = rectsRef.current.find((x) => x.id === id)!;
-    return { x: r.x, y: r.y, width: r.width, height: r.height };
-  },
-  getParent: () => null,
-  setPose: (id, pose) =>
-    setRects((rs) => rs.map((r) => (r.id === id ? { ...r, ...pose } : r))),
-  setParent: () => {},
-};
+// arrayAdapter synthesizes the Move/Resize adapter shape from a useState
+// array. Override individual methods by spreading.
+const adapter = arrayAdapter<Rect, Pose>({
+  ref: rectsRef,
+  setItems: setRects,
+  toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
+});
 
 // Custom unit system: base is 'px' but APIs can speak in 'tile' (= 20px).
 // Bare numbers are still accepted everywhere — they're treated as base units.

@@ -186,6 +186,8 @@ export type { RectPose } from './features/groups/unionBounds';
 export { withGroupOrdering } from './features/groups/orderedGroups';
 export * from './core/history';
 export * from './core/adapters/types';
+export { arrayAdapter } from './core/adapters/arrayAdapter';
+export type { ArrayAdapter, ArrayAdapterConfig } from './core/adapters/arrayAdapter';
 export type {
   ModifierState,
   PointerState,
