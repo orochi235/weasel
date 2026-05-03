@@ -28,12 +28,27 @@ import type { GroupAdapter } from '../groups/types';
 import { expandToLeaves } from '../groups/resolve';
 import { unionBounds } from '../groups/unionBounds';
 import { applyPaint, applyStroke, alignedStrokeRect, type Paint, type Stroke } from '../../core/paint';
+import {
+  rotationHandle,
+  DEFAULT_ROTATION_HANDLE_DISTANCE,
+} from '../../interactions/gestures/rotate/handle';
+import { rotatePoint } from '../../interactions/gestures/rotate/geometry';
 
 interface Bounds {
   x: number;
   y: number;
   width: number;
   height: number;
+}
+
+interface RotatedBounds extends Bounds {
+  rotation: number;
+}
+
+/** Pose with an optional rotation field — surfaced from `getBounds`'s
+ *  return value so the overlay can branch into the rotated render path. */
+function rotationOf(b: Bounds | RotatedBounds): number {
+  return (b as RotatedBounds).rotation ?? 0;
 }
 
 /** Options for `composeSelectionPose`. */
@@ -191,6 +206,16 @@ export interface SelectionHandlesLayerOpts<TPose> extends SelectionLayerCommon<T
   };
   /** Override handle placement. Default: 4 corners of the AABB. */
   handlesOf?: (bounds: Bounds) => { x: number; y: number }[];
+  /** Render a rotation handle above the (rotated) top-center of the AABB.
+   *  When `true`, uses default visuals + distance. When an object, override
+   *  the world-space distance from the top edge. Defaults to `false` —
+   *  consumers opt in only when wiring `useRotate`. */
+  rotationHandle?:
+    | boolean
+    | {
+        /** World-pixel distance from the top edge to the handle center. */
+        distance?: number;
+      };
 }
 
 /** Options for `createSelectionOverlayLayer`. */
@@ -205,6 +230,12 @@ export interface SelectionOverlayLayerOpts<TPose> extends SelectionLayerCommon<T
       }
     | false;
   handlesOf?: (bounds: Bounds) => { x: number; y: number }[];
+  /** See {@link SelectionHandlesLayerOpts.rotationHandle}. */
+  rotationHandle?:
+    | boolean
+    | {
+        distance?: number;
+      };
 }
 
 const DEFAULT_OUTLINE: Required<Pick<Stroke, 'paint' | 'width'>> & { pad: number } = {
@@ -272,7 +303,20 @@ function drawOutlines(
       height: b.height + pad * 2,
     };
     const r = alignedStrokeRect(padded, align, width);
-    ctx.strokeRect(r.x, r.y, r.width, r.height);
+    const rotation = rotationOf(b);
+    if (rotation === 0) {
+      ctx.strokeRect(r.x, r.y, r.width, r.height);
+    } else {
+      // Rotate around the AABB center of the unpadded pose.
+      const cx = b.x + b.width / 2;
+      const cy = b.y + b.height / 2;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(rotation);
+      ctx.translate(-cx, -cy);
+      ctx.strokeRect(r.x, r.y, r.width, r.height);
+      ctx.restore();
+    }
   }
   ctx.restore();
 }
@@ -304,14 +348,23 @@ function drawHandles(
   for (const id of ids) {
     const b = resolveBounds(id);
     if (!b) continue;
+    const rotation = rotationOf(b);
+    const cx = b.x + b.width / 2;
+    const cy = b.y + b.height / 2;
     for (const h of handlesOf(b)) {
+      const center = rotation === 0 ? h : rotatePoint(h.x, h.y, cx, cy, rotation);
       const baseRect = {
-        x: h.x - half,
-        y: h.y - half,
+        x: center.x - half,
+        y: center.y - half,
         width: handles.size,
         height: handles.size,
       };
       ctx.save();
+      if (rotation !== 0) {
+        ctx.translate(center.x, center.y);
+        ctx.rotate(rotation);
+        ctx.translate(-center.x, -center.y);
+      }
       applyPaint(ctx, handles.fill, { x: baseRect.x, y: baseRect.y });
       ctx.fillRect(baseRect.x, baseRect.y, baseRect.width, baseRect.height);
       applyStroke(ctx, handles.outline, { x: baseRect.x, y: baseRect.y });
@@ -320,6 +373,34 @@ function drawHandles(
       ctx.restore();
     }
   }
+}
+
+/** Draw a single rotation handle (a small square) for a rotated rect. The
+ *  handle sits above the top-center of the rotated bounding box. */
+function drawRotationHandle(
+  ctx: CanvasRenderingContext2D,
+  b: Bounds | RotatedBounds,
+  handles: ResolvedHandles,
+  distance: number,
+): void {
+  const rotation = rotationOf(b);
+  const h = rotationHandle({ ...b, rotation }, distance);
+  const half = handles.size / 2;
+  const handleAlign = handles.outline.align ?? 'center';
+  const handleWidth = handles.outline.width ?? 1;
+  const baseRect = { x: h.cx - half, y: h.cy - half, width: handles.size, height: handles.size };
+  ctx.save();
+  if (rotation !== 0) {
+    ctx.translate(h.cx, h.cy);
+    ctx.rotate(rotation);
+    ctx.translate(-h.cx, -h.cy);
+  }
+  applyPaint(ctx, handles.fill, { x: baseRect.x, y: baseRect.y });
+  ctx.fillRect(baseRect.x, baseRect.y, baseRect.width, baseRect.height);
+  applyStroke(ctx, handles.outline, { x: baseRect.x, y: baseRect.y });
+  const sr = alignedStrokeRect(baseRect, handleAlign, handleWidth);
+  ctx.strokeRect(sr.x, sr.y, sr.width, sr.height);
+  ctx.restore();
 }
 
 /**
@@ -355,6 +436,7 @@ export function createSelectionHandlesLayer<TPose>(
   const handlesOf = opts.handlesOf ?? defaultHandlesOf;
   const getBounds = opts.getBounds ?? ((pose: TPose) => pose as unknown as Bounds);
   const resolveBounds = makeGroupAwareBoundsResolver(opts.getPose, getBounds, opts.groupAdapter);
+  const rotationHandleDistance = resolveRotationHandleDistance(opts.rotationHandle);
   return {
     id: 'selection-handles',
     label: 'Selection handles',
@@ -362,8 +444,23 @@ export function createSelectionHandlesLayer<TPose>(
       const ids = opts.getSelection();
       if (ids.length === 0) return;
       drawHandles(ctx, ids, resolveBounds, handles, handlesOf);
+      if (rotationHandleDistance !== null) {
+        for (const id of ids) {
+          const b = resolveBounds(id);
+          if (!b) continue;
+          drawRotationHandle(ctx, b, handles, rotationHandleDistance);
+        }
+      }
     },
   };
+}
+
+function resolveRotationHandleDistance(
+  opt: boolean | { distance?: number } | undefined,
+): number | null {
+  if (!opt) return null;
+  if (opt === true) return DEFAULT_ROTATION_HANDLE_DISTANCE;
+  return opt.distance ?? DEFAULT_ROTATION_HANDLE_DISTANCE;
 }
 
 /**
@@ -381,6 +478,7 @@ export function createSelectionOverlayLayer<TPose>(
   const handlesOf = opts.handlesOf ?? defaultHandlesOf;
   const getBounds = opts.getBounds ?? ((pose: TPose) => pose as unknown as Bounds);
   const resolveBounds = makeGroupAwareBoundsResolver(opts.getPose, getBounds, opts.groupAdapter);
+  const rotationHandleDistance = resolveRotationHandleDistance(opts.rotationHandle);
 
   return {
     id: 'selection-overlay',
@@ -391,6 +489,13 @@ export function createSelectionOverlayLayer<TPose>(
       drawOutlines(ctx, ids, resolveBounds, stroke, pad);
       if (!handles) return;
       drawHandles(ctx, ids, resolveBounds, handles, handlesOf);
+      if (rotationHandleDistance !== null) {
+        for (const id of ids) {
+          const b = resolveBounds(id);
+          if (!b) continue;
+          drawRotationHandle(ctx, b, handles, rotationHandleDistance);
+        }
+      }
     },
   };
 }

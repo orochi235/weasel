@@ -31,6 +31,7 @@ function makeAdapter(initial: { selection?: string[]; offsetOverride?: { dx: num
       : () => ({ dx: 1, dy: 1 }),
     insertObject: (o) => { inserts.push(o); },
     setSelection: (ids) => { selection = [...ids]; },
+    getSelection: () => selection,
     applyBatch: (ops, label) => {
       batches.push({ ops, label });
       for (const op of ops) op.apply(adapter as never);

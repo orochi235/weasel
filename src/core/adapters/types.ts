@@ -105,6 +105,22 @@ export interface ResizeAdapter<
 }
 
 /**
+ * Narrow adapter for `useRotate`. Mirrors `ResizeAdapter`'s shape — rotate
+ * mutates pose only and never reparents. TPose is left fully generic so
+ * non-rect rotated poses (e.g. a `RotatedPath`) compose without changes.
+ */
+export interface RotateAdapter<
+  TObject extends { id: string },
+  TPose,
+> {
+  getObject(id: string): TObject | undefined;
+  getPose(id: string): TPose;
+  setPose(id: string, pose: TPose): void;
+  /** Optional: see SceneAdapter.applyBatch. */
+  applyBatch?(ops: Op[], label: string): void;
+}
+
+/**
  * Narrow adapter for `useAreaSelect`. Transient: no checkpoint, no
  * history. The hook calls `applyOps(ops)` instead of `applyBatch(ops, label)`.
  */
@@ -149,8 +165,8 @@ export interface InsertAdapter<TObject extends { id: string }> {
   setSelection(ids: string[]): void;
   /** Optional: see SceneAdapter.applyBatch. */
   applyBatch?(ops: Op[], label: string): void;
-  /** Optional: returns the current selection. Used by clone behaviors. */
-  getSelection?: () => string[];
+  /** Returns the current selection. Used by clone behaviors. */
+  getSelection(): string[];
 }
 
 /**

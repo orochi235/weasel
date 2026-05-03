@@ -26,6 +26,7 @@ function makeAdapter(opts?: { commitReturnsNull?: boolean }) {
       inserts.push(o);
     },
     setSelection(_ids) {},
+    getSelection: () => [],
     applyBatch(ops, label) {
       batches.push({ ops, label });
       // Simulate insertObject side-effect by recording.

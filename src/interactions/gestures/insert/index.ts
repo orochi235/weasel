@@ -1,6 +1,6 @@
 export { useInsert } from './insert';
 export type {
   UseInsertOptions,
-  UseInsertReturn,
+  InsertController,
 } from './insert';
 export * from './behaviors';

@@ -23,13 +23,15 @@ export interface UseInsertOptions<TPose extends { x: number; y: number }> {
 }
 
 /** Return shape of `useInsert`: lifecycle methods plus the live drag-rectangle overlay. */
-export interface UseInsertReturn<TPose extends { x: number; y: number }> {
+export interface InsertController<TObject extends { id: string }, TPose extends { x: number; y: number }> {
   start(worldX: number, worldY: number, modifiers: ModifierState): void;
   move(worldX: number, worldY: number, modifiers: ModifierState): boolean;
   end(): void;
   cancel(): void;
   isInserting: boolean;
   overlay: InsertOverlay<TPose> | null;
+  /** The adapter passed in. Exposed so `<Canvas>` can derive defaults. */
+  adapter: InsertAdapter<TObject>;
 }
 
 const GID = 'gesture';
@@ -37,8 +39,8 @@ const GID = 'gesture';
 /** Drag-rectangle insert interaction; the adapter materializes the new object on commit. */
 export function useInsert<TObject extends { id: string }, TPose extends { x: number; y: number }>(
   adapter: InsertAdapter<TObject>,
-  options: UseInsertOptions<TPose>,
-): UseInsertReturn<TPose> {
+  options: UseInsertOptions<TPose> = {},
+): InsertController<TObject, TPose> {
   const {
     behaviors = [],
     insertLabel = 'Insert',
@@ -140,5 +142,5 @@ export function useInsert<TObject extends { id: string }, TPose extends { x: num
     onGestureEnd?.(false);
   }, [cleanup, onGestureEnd]);
 
-  return { start, move, end, cancel, isInserting: overlay !== null, overlay };
+  return { start, move, end, cancel, isInserting: overlay !== null, overlay, adapter };
 }

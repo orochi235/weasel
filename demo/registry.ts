@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import { MoveDemo, MOVE_DEMO_SOURCE } from './demos/MoveDemo';
 import { ResizeDemo, RESIZE_DEMO_SOURCE } from './demos/ResizeDemo';
+import { RotateDemo, ROTATE_DEMO_SOURCE } from './demos/RotateDemo';
 import { MultiSelectDemo, MULTI_SELECT_DEMO_SOURCE } from './demos/MultiSelectDemo';
 import { InsertDemo, INSERT_DEMO_SOURCE } from './demos/InsertDemo';
 import { CloneDemo, CLONE_DEMO_SOURCE } from './demos/CloneDemo';
@@ -15,6 +16,7 @@ import { PathPoseDemo, PATH_POSE_DEMO_SOURCE } from './demos/PathPoseDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
+import RotateDemoFull from './demos/RotateDemo.tsx?raw';
 import MultiSelectDemoFull from './demos/MultiSelectDemo.tsx?raw';
 import InsertDemoFull from './demos/InsertDemo.tsx?raw';
 import CloneDemoFull from './demos/CloneDemo.tsx?raw';
@@ -64,6 +66,17 @@ export const DEMOS: DemoEntry[] = [
     snippet: RESIZE_DEMO_SOURCE,
     full: ResizeDemoFull,
     path: 'demo/demos/ResizeDemo.tsx',
+  },
+  {
+    id: 'rotate',
+    title: 'Rotate',
+    category: 'Interactions',
+    description: 'useRotate — drag the rotation handle (above the top-center of the bounding box) to rotate the object around its AABB center. Body-drag still moves; corner handles still resize. v1 limitation: corner-resize on a rotated object operates against the AABB, so the resize math feels off until released — fixing resize-in-rotated-frame is deferred.',
+    hint: 'Click a rect to select; drag the small handle above it to rotate.',
+    Component: RotateDemo,
+    snippet: ROTATE_DEMO_SOURCE,
+    full: RotateDemoFull,
+    path: 'demo/demos/RotateDemo.tsx',
   },
   {
     id: 'insert',

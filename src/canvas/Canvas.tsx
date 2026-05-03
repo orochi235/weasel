@@ -29,7 +29,23 @@ import { useMove } from '../interactions/gestures/move/move';
 import type { MoveController, UseMoveOptions } from '../interactions/gestures/move/move';
 import { useResize } from '../interactions/gestures/resize/resize';
 import type { ResizeController, UseResizeOptions } from '../interactions/gestures/resize/resize';
-import type { MoveAdapter, ResizeAdapter } from '../core/adapters/types';
+import { useRotate } from '../interactions/gestures/rotate/rotate';
+import type { RotateController, UseRotateOptions } from '../interactions/gestures/rotate/rotate';
+import { useInsert } from '../interactions/gestures/insert/insert';
+import type { InsertController, UseInsertOptions } from '../interactions/gestures/insert/insert';
+import { useAreaSelect } from '../interactions/gestures/area-select/areaSelect';
+import type {
+  AreaSelectController,
+  UseAreaSelectOptions,
+} from '../interactions/gestures/area-select/areaSelect';
+import { selectFromMarquee } from '../interactions/gestures/area-select/behaviors';
+import type {
+  AreaSelectAdapter,
+  InsertAdapter,
+  MoveAdapter,
+  ResizeAdapter,
+  RotateAdapter,
+} from '../core/adapters/types';
 import { createGridLayer, type GridLayerOpts } from '../features/grid/layer';
 import {
   createCellHighlightLayer,
@@ -39,7 +55,13 @@ import {
   createSelectionOverlayLayer,
   type SelectionOverlayLayerOpts,
 } from '../features/selection/overlay';
-import type { MoveOverlay, ResizeOverlay } from '../interactions/gestures/types';
+import type {
+  AreaSelectOverlay,
+  InsertOverlay,
+  MoveOverlay,
+  ResizeOverlay,
+  RotateOverlay,
+} from '../interactions/gestures/types';
 
 interface Bounds {
   x: number;
@@ -58,6 +80,8 @@ export const STANDARD_SLOTS = [
   'moveOverlay',
   'resizeOverlay',
   'selectionOverlay',
+  'insertOverlay',
+  'areaSelectOverlay',
 ] as const;
 export type StandardSlotName = Exclude<(typeof STANDARD_SLOTS)[number], 'cellHighlight'>;
 
@@ -88,6 +112,24 @@ export interface MoveOverlaySlotConfig {
 }
 export type ResizeOverlaySlotConfig = Record<string, never>;
 
+/** Insert-overlay slot config — visual options for the live drag-rectangle. */
+export interface InsertOverlaySlotConfig {
+  fill?: string;
+  stroke?: string;
+  /** Dash pattern. Default `[4, 4]`. Pass `[]` for a solid stroke. */
+  dash?: number[];
+  /** Stroke width in world pixels. Default 1. */
+  lineWidth?: number;
+}
+
+/** Area-select-overlay slot config — visual options for the marquee. */
+export interface AreaSelectOverlaySlotConfig {
+  fill?: string;
+  stroke?: string;
+  dash?: number[];
+  lineWidth?: number;
+}
+
 /** Selection-overlay slot config — passed through to `createSelectionOverlayLayer`,
  *  minus the `getSelection`/`getPose` Canvas wires automatically. */
 export type SelectionOverlaySlotConfig<TPose> = Omit<
@@ -114,7 +156,9 @@ export type StandardSlotConfig<TObject extends { id: string }, TPose> =
   | SceneSlotConfig<TObject, TPose>
   | MoveOverlaySlotConfig
   | ResizeOverlaySlotConfig
-  | SelectionOverlaySlotConfig<TPose>;
+  | SelectionOverlaySlotConfig<TPose>
+  | InsertOverlaySlotConfig
+  | AreaSelectOverlaySlotConfig;
 
 export type LayerSlotValue<TObject extends { id: string }, TPose> =
   | StandardSlotConfig<TObject, TPose>
@@ -127,6 +171,8 @@ export type LayersMap<TObject extends { id: string }, TPose> = {
   moveOverlay?: MoveOverlaySlotConfig | null;
   resizeOverlay?: ResizeOverlaySlotConfig | null;
   selectionOverlay?: SelectionOverlaySlotConfig<TPose> | null;
+  insertOverlay?: InsertOverlaySlotConfig | null;
+  areaSelectOverlay?: AreaSelectOverlaySlotConfig | null;
 } & {
   [customKey: string]: LayerSlotValue<TObject, TPose> | undefined;
 };
@@ -162,11 +208,21 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   height: number;
 
   /** Combined adapter. Required for the scene slot, default hitBody/boundsOf,
-   *  and the internal move/resize controllers. Optional for trivial canvases. */
-  adapter?: MoveAdapter<TObject, TPose> & ResizeAdapter<TObject, TPose>;
+   *  and the internal move/resize/rotate/insert/area-select controllers.
+   *  Optional for trivial canvases. */
+  adapter?: MoveAdapter<TObject, TPose>
+    & ResizeAdapter<TObject, TPose>
+    & RotateAdapter<TObject, TPose>
+    & Partial<InsertAdapter<TObject>>
+    & Partial<AreaSelectAdapter>;
 
   /** Selection semantics. See {@link CanvasSelectionMode}. Default `'single'`. */
   selectionMode?: CanvasSelectionMode;
+
+  /** Empty-space tool. `'select'` (default) routes empty-space drags to
+   *  area-select; `'insert'` routes them to insert. Ignored if neither
+   *  controller is wired. */
+  tool?: 'select' | 'insert';
 
   /** Layer map. See module docstring for slot semantics. */
   layers: LayersMap<TObject, TPose>;
@@ -176,12 +232,22 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   moveOptions?: UseMoveOptions<TPose>;
   resize?: ResizeController<TObject, TPose>;
   resizeOptions?: UseResizeOptions<TPose>;
+  rotate?: RotateController<TObject, TPose>;
+  rotateOptions?: UseRotateOptions<TPose>;
+  insert?: InsertController<TObject, { x: number; y: number }>;
+  insertOptions?: UseInsertOptions<{ x: number; y: number }>;
+  areaSelect?: AreaSelectController;
+  areaSelectOptions?: UseAreaSelectOptions;
   selection?: SelectionApi;
   selectionOptions?: UseSelectionOptions;
 
   // --- Gesture overrides (escape hatches for non-rect / group-aware apps) ---
   hitBody?: (worldX: number, worldY: number) => string | string[] | null;
   resizeTarget?: () => { id: string; bounds: Bounds } | null;
+  rotateTarget?: () => { id: string; bounds: Bounds; rotation?: number } | null;
+  /** World-pixel distance from the top edge of the bounding box to the
+   *  rotation handle's center. Defaults to the kit's default. */
+  rotationHandleDistance?: number;
   boundsOf?: (id: string) => Bounds | null;
   onBodyHit?: (ids: string[], ctx: PointerGestureCallbackCtx) => void;
   onTapEmpty?: (ctx: PointerGestureCallbackCtx) => void;
@@ -210,9 +276,12 @@ function isCustomEntry(v: unknown): v is CustomLayerEntry {
 
 function buildSceneLayer<TObject extends { id: string }, TPose>(
   cfg: SceneSlotConfig<TObject, TPose>,
-  adapter: (MoveAdapter<TObject, TPose> & ResizeAdapter<TObject, TPose>) | undefined,
+  adapter:
+    | (MoveAdapter<TObject, TPose> & ResizeAdapter<TObject, TPose> & RotateAdapter<TObject, TPose>)
+    | undefined,
   moveOverlay: MoveOverlay<TPose> | null,
   resizeOverlay: ResizeOverlay<TPose> | null,
+  rotateOverlay: RotateOverlay<TPose> | null,
 ): RenderLayer<unknown> {
   const toPose =
     cfg.toPose ??
@@ -231,6 +300,7 @@ function buildSceneLayer<TObject extends { id: string }, TPose>(
         else if (resizeOverlay && resizeOverlay.id === obj.id) pose = resizeOverlay.currentPose;
         else if (resizeOverlay?.leafPoses?.has(obj.id))
           pose = resizeOverlay.leafPoses.get(obj.id)!;
+        else if (rotateOverlay && rotateOverlay.id === obj.id) pose = rotateOverlay.currentPose;
         else pose = toPose(obj);
         cfg.drawOne(ctx, obj, pose);
       }
@@ -266,6 +336,66 @@ function buildMoveOverlayLayer<TObject extends { id: string }, TPose>(
   };
 }
 
+function buildInsertOverlayLayer(
+  cfg: InsertOverlaySlotConfig | null | undefined,
+  overlay: InsertOverlay<{ x: number; y: number }> | null,
+): RenderLayer<unknown> | null {
+  if (!overlay) return null;
+  const fill = cfg?.fill ?? 'rgba(127, 176, 105, 0.25)';
+  const stroke = cfg?.stroke ?? '#7fb069';
+  const dash = cfg?.dash ?? [4, 4];
+  const lineWidth = cfg?.lineWidth ?? 1;
+  return {
+    id: 'insert-overlay',
+    label: 'Insert overlay',
+    draw: (ctx) => {
+      const x = Math.min(overlay.start.x, overlay.current.x);
+      const y = Math.min(overlay.start.y, overlay.current.y);
+      const w = Math.abs(overlay.current.x - overlay.start.x);
+      const h = Math.abs(overlay.current.y - overlay.start.y);
+      ctx.save();
+      ctx.fillStyle = fill;
+      ctx.fillRect(x, y, w, h);
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = lineWidth;
+      ctx.setLineDash(dash);
+      ctx.strokeRect(x, y, w, h);
+      ctx.setLineDash([]);
+      ctx.restore();
+    },
+  };
+}
+
+function buildAreaSelectOverlayLayer(
+  cfg: AreaSelectOverlaySlotConfig | null | undefined,
+  overlay: AreaSelectOverlay | null,
+): RenderLayer<unknown> | null {
+  if (!overlay) return null;
+  const fill = cfg?.fill ?? 'rgba(164, 139, 212, 0.18)';
+  const stroke = cfg?.stroke ?? '#a48bd4';
+  const dash = cfg?.dash ?? [3, 3];
+  const lineWidth = cfg?.lineWidth ?? 1;
+  return {
+    id: 'area-select-overlay',
+    label: 'Area select overlay',
+    draw: (ctx) => {
+      const x = Math.min(overlay.start.worldX, overlay.current.worldX);
+      const y = Math.min(overlay.start.worldY, overlay.current.worldY);
+      const w = Math.abs(overlay.current.worldX - overlay.start.worldX);
+      const h = Math.abs(overlay.current.worldY - overlay.start.worldY);
+      ctx.save();
+      ctx.fillStyle = fill;
+      ctx.fillRect(x, y, w, h);
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = lineWidth;
+      ctx.setLineDash(dash);
+      ctx.strokeRect(x, y, w, h);
+      ctx.setLineDash([]);
+      ctx.restore();
+    },
+  };
+}
+
 function CanvasInner<TObject extends { id: string }, TPose>(
   props: CanvasProps<TObject, TPose>,
   ref: React.ForwardedRef<HTMLCanvasElement>,
@@ -280,10 +410,19 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     moveOptions,
     resize: resizeOverride,
     resizeOptions,
+    rotate: rotateOverride,
+    rotateOptions,
+    insert: insertOverride,
+    insertOptions,
+    areaSelect: areaSelectOverride,
+    areaSelectOptions,
+    tool = 'select',
     selection: selectionOverride,
     selectionOptions,
     hitBody,
     resizeTarget,
+    rotateTarget,
+    rotationHandleDistance,
     boundsOf,
     onBodyHit,
     onTapEmpty,
@@ -311,10 +450,26 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       ({
         getPose: () => ({}) as TPose,
         getObjects: () => [],
-      }) as unknown as MoveAdapter<TObject, TPose> & ResizeAdapter<TObject, TPose>,
+        commitInsert: () => null,
+        commitPaste: () => [],
+        snapshotSelection: () => ({ items: [] }),
+        insertObject: () => {},
+        getSelection: () => [],
+        setSelection: () => {},
+        hitTestArea: () => [],
+        applyOps: () => {},
+      }) as unknown as MoveAdapter<TObject, TPose>
+        & ResizeAdapter<TObject, TPose>
+        & RotateAdapter<TObject, TPose>
+        & InsertAdapter<TObject>
+        & AreaSelectAdapter,
     [],
   );
-  const effectiveAdapter = adapter ?? noopAdapter;
+  const effectiveAdapter = (adapter ?? noopAdapter) as MoveAdapter<TObject, TPose>
+    & ResizeAdapter<TObject, TPose>
+    & RotateAdapter<TObject, TPose>
+    & InsertAdapter<TObject>
+    & AreaSelectAdapter;
 
   const derivedSelectionOptions = useMemo<UseSelectionOptions>(() => {
     const base = selectionOptions ?? {};
@@ -362,12 +517,46 @@ function CanvasInner<TObject extends { id: string }, TPose>(
 
   const internalMove = useMove<TObject, TPose>(effectiveAdapter, moveOptions);
   const internalResize = useResize<TObject, TPose>(effectiveAdapter, derivedResizeOptions ?? {});
+  const internalRotate = useRotate<TObject, TPose>(effectiveAdapter, rotateOptions ?? {});
+
+  // Wrap the adapter so insert/area-select see Canvas's effective selection
+  // (otherwise they'd sync through the adapter's own selection state, which
+  // arrayAdapter consumers typically leave as a no-op).
+  const selRef = useRef<SelectionApi>(effectiveSelection);
+  selRef.current = effectiveSelection;
+  const selectionWiredAdapter = useMemo(
+    () =>
+      ({
+        ...effectiveAdapter,
+        getSelection: () => selRef.current.get(),
+        setSelection: (ids: string[]) => selRef.current.set(ids),
+      }) as InsertAdapter<TObject> & AreaSelectAdapter,
+    [effectiveAdapter],
+  );
+
+  const derivedAreaSelectOptions = useMemo<UseAreaSelectOptions>(() => {
+    const base = areaSelectOptions ?? {};
+    if (base.behaviors && base.behaviors.length > 0) return base;
+    return { ...base, behaviors: [selectFromMarquee()] };
+  }, [areaSelectOptions]);
+
+  const internalInsert = useInsert<TObject, { x: number; y: number }>(
+    selectionWiredAdapter,
+    insertOptions ?? {},
+  );
+  const internalAreaSelect = useAreaSelect(selectionWiredAdapter, derivedAreaSelectOptions);
 
   const move = moveOverride ?? (adapter ? internalMove : undefined);
   const resize = resizeOverride ?? (adapter ? internalResize : undefined);
+  const rotate = rotateOverride ?? (adapter ? internalRotate : undefined);
+  const insert = insertOverride ?? (adapter ? internalInsert : undefined);
+  const areaSelect = areaSelectOverride ?? (adapter ? internalAreaSelect : undefined);
 
   const moveOverlay = move?.overlay ?? null;
   const resizeOverlay = resize?.overlay ?? null;
+  const rotateOverlay = rotate?.overlay ?? null;
+  const insertOverlay = insert?.overlay ?? null;
+  const areaSelectOverlay = areaSelect?.overlay ?? null;
 
   const baseHitBody = useMemo(() => {
     if (hitBody) return hitBody;
@@ -402,7 +591,10 @@ function CanvasInner<TObject extends { id: string }, TPose>(
         const leaf = resize.overlay.leafPoses?.get(id);
         if (leaf !== undefined) return leaf as unknown as Bounds;
       }
-      const a = move?.adapter ?? resize?.adapter;
+      if (rotate?.overlay && rotate.overlay.id === id) {
+        return rotate.overlay.currentPose as unknown as Bounds;
+      }
+      const a = move?.adapter ?? resize?.adapter ?? rotate?.adapter;
       if (!a) return null;
       try {
         return a.getPose(id) as unknown as Bounds;
@@ -410,7 +602,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
         return null;
       }
     };
-  }, [boundsOf, move, resize, moveOverlay, resizeOverlay]);
+  }, [boundsOf, move, resize, rotate, moveOverlay, resizeOverlay, rotateOverlay]);
 
   const selectedIdsForWiring = effectiveSelection.current;
   const multiActive = selectionMode === 'multi' && selectedIdsForWiring.length > 1;
@@ -510,8 +702,14 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   const bindings = usePointerGestures<TPose, TPose>({
     move,
     resize,
+    rotate,
+    insert,
+    areaSelect,
+    tool,
     hitBody: effectiveHitBody,
     resizeTarget: effectiveResizeTarget ?? resizeTarget,
+    rotateTarget,
+    rotationHandleDistance,
     selection: selectionMode === 'none' ? undefined : effectiveSelection,
     boundsOf: effectiveBoundsOf,
     onBodyHit: effectiveOnBodyHit ?? onBodyHit,
@@ -553,7 +751,13 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       !isCustomEntry(sceneCfg) &&
       (sceneCfg as SceneSlotConfig<TObject, TPose>).drawOne
     ) {
-      standardLayers.scene = buildSceneLayer(sceneCfg, adapter, moveOverlay, resizeOverlay);
+      standardLayers.scene = buildSceneLayer(
+        sceneCfg,
+        adapter,
+        moveOverlay,
+        resizeOverlay,
+        rotateOverlay,
+      );
     }
 
     const moveSlot = layersMap.moveOverlay as MoveOverlaySlotConfig | null | undefined;
@@ -602,6 +806,18 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       });
     }
 
+    const insertSlot = layersMap.insertOverlay as InsertOverlaySlotConfig | null | undefined;
+    if (insertSlot !== null) {
+      const layer = buildInsertOverlayLayer(insertSlot, insertOverlay);
+      if (layer) standardLayers.insertOverlay = layer;
+    }
+
+    const areaSlot = layersMap.areaSelectOverlay as AreaSelectOverlaySlotConfig | null | undefined;
+    if (areaSlot !== null) {
+      const layer = buildAreaSelectOverlayLayer(areaSlot, areaSelectOverlay);
+      if (layer) standardLayers.areaSelectOverlay = layer;
+    }
+
     const afterMap = new Map<string, RenderLayer<unknown>[]>();
     const beforeMap = new Map<string, RenderLayer<unknown>[]>();
     const tail: RenderLayer<unknown>[] = [];
@@ -633,7 +849,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     }
     out.push(...tail);
     return out;
-  }, [layersMap, adapter, moveOverlay, resizeOverlay, selectedIds, effectiveBoundsOf, multiActive, unionOfSelection]);
+  }, [layersMap, adapter, moveOverlay, resizeOverlay, rotateOverlay, insertOverlay, areaSelectOverlay, selectedIds, effectiveBoundsOf, multiActive, unionOfSelection]);
 
   useEffect(() => {
     const c = canvasRef.current;

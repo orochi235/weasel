@@ -32,6 +32,7 @@ function makeAdapter(initial: { selection?: string[]; offset?: { dx: number; dy:
       if (i >= 0) pool.splice(i, 1);
     },
     setSelection: (ids) => { selection = [...ids]; },
+    getSelection: () => selection,
     applyBatch: (ops, label) => {
       batches.push({ ops, label });
       for (const op of ops) op.apply(adapter as never);

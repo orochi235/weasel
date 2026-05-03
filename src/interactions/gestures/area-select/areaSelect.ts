@@ -23,13 +23,15 @@ export interface UseAreaSelectOptions {
 }
 
 /** Return shape of `useAreaSelect`: lifecycle methods and live marquee overlay. */
-export interface UseAreaSelectReturn {
+export interface AreaSelectController {
   start(worldX: number, worldY: number, modifiers: ModifierState): void;
   move(worldX: number, worldY: number, modifiers: ModifierState): boolean;
   end(): void;
   cancel(): void;
   isAreaSelecting: boolean;
   overlay: AreaSelectOverlay | null;
+  /** The adapter passed in. Exposed so `<Canvas>` can derive defaults. */
+  adapter: AreaSelectAdapter;
 }
 
 interface State {
@@ -40,8 +42,8 @@ interface State {
 /** Drag-rectangle area-select interaction; behaviors decide replace-vs-add semantics from modifiers. */
 export function useAreaSelect(
   adapter: AreaSelectAdapter,
-  options: UseAreaSelectOptions,
-): UseAreaSelectReturn {
+  options: UseAreaSelectOptions = {},
+): AreaSelectController {
   const { behaviors = [], transient: transientOpt, label = 'Area select', onGestureStart, onGestureEnd } = options;
   const behaviorsRef = useRef(behaviors);
   behaviorsRef.current = behaviors;
@@ -146,5 +148,5 @@ export function useAreaSelect(
     onGestureEnd?.(false);
   }, [cleanup, onGestureEnd]);
 
-  return { start, move, end, cancel, isAreaSelecting: overlay !== null, overlay };
+  return { start, move, end, cancel, isAreaSelecting: overlay !== null, overlay, adapter };
 }

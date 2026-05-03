@@ -1,6 +1,6 @@
 export { useAreaSelect } from './areaSelect';
 export type {
   UseAreaSelectOptions,
-  UseAreaSelectReturn,
+  AreaSelectController,
 } from './areaSelect';
 export * from './behaviors';

@@ -117,6 +117,38 @@ export interface ResizeOverlay<TPose> {
   leafPoses?: Map<string, TPose>;
 }
 
+// ----- rotate -----
+
+/** ResizePose extended with a rotation angle (radians). Pivot is the AABB
+ *  center of the unrotated `{x, y, width, height}`. */
+export interface RotatedPose extends ResizePose {
+  rotation: number;
+}
+
+export interface RotateProposed<TPose> {
+  pose: TPose;
+  /** Proposed rotation angle (radians). */
+  rotation: number;
+}
+
+export interface RotateMoveResult<TPose> {
+  pose?: TPose;
+}
+
+export type RotateBehavior<TPose> = GestureBehavior<
+  TPose,
+  RotateProposed<TPose>,
+  RotateMoveResult<TPose>
+>;
+
+export interface RotateOverlay<TPose> {
+  id: string;
+  currentPose: TPose;
+  targetPose: TPose;
+  /** Origin pose at gesture start. */
+  originPose: TPose;
+}
+
 // ----- insert -----
 
 export interface InsertProposed<TPose extends { x: number; y: number }> {

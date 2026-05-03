@@ -84,6 +84,8 @@ export type {
   CanvasSelectionMode,
   StandardSlotName,
   CustomLayerEntry,
+  InsertOverlaySlotConfig,
+  AreaSelectOverlaySlotConfig,
 } from './canvas/Canvas';
 export { useSelection } from './features/selection/useSelection';
 export type {
@@ -230,6 +232,11 @@ export type {
   ResizeMoveResult,
   ResizeBehavior,
   ResizeOverlay,
+  RotatedPose,
+  RotateProposed,
+  RotateMoveResult,
+  RotateBehavior,
+  RotateOverlay,
   InsertProposed,
   InsertMoveResult,
   InsertBehavior,
@@ -267,15 +274,34 @@ export type {
   PoseGeometry,
   CornerHandle,
 } from './interactions/gestures/resize';
+export {
+  useRotate,
+  pointInRotatedRect,
+  rotatedRectCorners,
+  rectCorners,
+  rotatePoint,
+  aabbCenter,
+  rotationHandle,
+  hitRotationHandle,
+  DEFAULT_ROTATION_HANDLE_DISTANCE,
+} from './interactions/gestures/rotate';
+export type {
+  UseRotateOptions,
+  RotateController,
+  RotateStartArgs,
+  RotateMoveArgs,
+  RotateGeometry,
+  RotationHandle,
+} from './interactions/gestures/rotate';
 export { useInsert } from './interactions/gestures/insert';
 export type {
   UseInsertOptions,
-  UseInsertReturn,
+  InsertController,
 } from './interactions/gestures/insert';
 export { useAreaSelect } from './interactions/gestures/area-select';
 export type {
   UseAreaSelectOptions,
-  UseAreaSelectReturn,
+  AreaSelectController,
 } from './interactions/gestures/area-select';
 export { selectFromMarquee } from './interactions/gestures/area-select/behaviors';
 export {
