@@ -13,6 +13,7 @@ import { TextDemo, TEXT_DEMO_SOURCE } from './demos/TextDemo';
 import { PixelDensityDemo, PIXEL_DENSITY_DEMO_SOURCE } from './demos/PixelDensityDemo';
 import { QuadtreeDemo, QUADTREE_DEMO_SOURCE } from './demos/QuadtreeDemo';
 import { PathPoseDemo, PATH_POSE_DEMO_SOURCE } from './demos/PathPoseDemo';
+import { CompoundPathsDemo, COMPOUND_PATHS_DEMO_SOURCE } from './demos/CompoundPathsDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
@@ -28,6 +29,7 @@ import TextDemoFull from './demos/TextDemo.tsx?raw';
 import PixelDensityDemoFull from './demos/PixelDensityDemo.tsx?raw';
 import QuadtreeDemoFull from './demos/QuadtreeDemo.tsx?raw';
 import PathPoseDemoFull from './demos/PathPoseDemo.tsx?raw';
+import CompoundPathsDemoFull from './demos/CompoundPathsDemo.tsx?raw';
 
 export interface DemoEntry {
   id: string;
@@ -187,6 +189,17 @@ export const DEMOS: DemoEntry[] = [
     snippet: PATH_POSE_DEMO_SOURCE,
     full: PathPoseDemoFull,
     path: 'demo/demos/PathPoseDemo.tsx',
+  },
+  {
+    id: 'compound-paths',
+    title: 'Compound paths',
+    category: 'Composed',
+    description: 'Five non-rect shapes on one canvas, all editable end-to-end. Ghost (multi-contour PolygonPath with evenodd eye holes and Q-curve curls), rubber duck (composePath fuse of separate body/head/beak/eye PolygonPaths), Hamburglar silhouette (disjoint cape + hat subpaths under one pose — verifies the selection overlay draws one outer AABB around discontinuous shapes), goose (extreme aspect ratio long neck — stresses resize anchoring), octopus (eight open-polyline tentacles around a closed body subpath — exercises the open-subpath rendering path). Hit-testing uses pointInPath against the real silhouette; marquee uses pathPoseDescriptor.intersectsRect.',
+    hint: 'Click to select, drag to move, drag a corner to resize, drag empty space for marquee, shift-click to multi-select. Click "honk" above the goose.',
+    Component: CompoundPathsDemo,
+    snippet: COMPOUND_PATHS_DEMO_SOURCE,
+    full: CompoundPathsDemoFull,
+    path: 'demo/demos/CompoundPathsDemo.tsx',
   },
   {
     id: 'pixel-density',
