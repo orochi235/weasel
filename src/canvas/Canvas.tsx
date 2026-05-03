@@ -259,10 +259,9 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   /** Selection semantics. See {@link CanvasSelectionMode}. Default `'single'`. */
   selectionMode?: CanvasSelectionMode;
 
-  /** Empty-space tool. `'select'` (default) routes empty-space drags to
-   *  area-select; `'insert'` routes them to insert; `'none'` disables both
-   *  (empty-space drags are no-ops). Ignored if the corresponding controller
-   *  isn't wired. */
+  /** Empty-space tool. `'none'` (default) treats empty-space drags as no-ops;
+   *  `'select'` routes them to area-select (marquee); `'insert'` routes them
+   *  to insert. Ignored if the corresponding controller isn't wired. */
   tool?: 'select' | 'insert' | 'none';
 
   /** Layer map. See module docstring for slot semantics. */
@@ -554,7 +553,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     areaSelectOptions,
     editAnchors: editAnchorsProp,
     editAnchorsController: editAnchorsOverride,
-    tool = 'select',
+    tool = 'none',
     selection: selectionOverride,
     selectionOptions,
     hitBody,

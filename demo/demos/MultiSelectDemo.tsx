@@ -26,6 +26,7 @@ export function MultiSelectDemo() {
       setItems={setRects}
       toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height })}
       selectionMode="multi"
+      tool="select"
       handleHitRadius={HANDLE}
       layers={{
         scene: {
@@ -59,6 +60,7 @@ return (
     setItems={setRects}
     toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height })}
     selectionMode="multi"
+    tool="select"
     handleHitRadius={HANDLE}
     layers={{
       scene: { drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); } },

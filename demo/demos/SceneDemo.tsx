@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
 import {
-  SceneCanvas,
+  Canvas,
+  sceneToAdapter,
   useScene,
   useSelection,
   useUndoRedo,
 } from '@orochi235/weasel';
-import type { RegisteredOp, Scene } from '@orochi235/weasel';
+import type { RegisteredOp, Scene, SceneNode } from '@orochi235/weasel';
 
 type LayerId = 'garden' | 'blueprint' | 'structures' | 'zones' | 'plantings';
 interface NodeData { color: string; label?: string }
@@ -21,7 +22,6 @@ const LAYER_COLORS: Record<LayerId, string> = {
   plantings: '#7fb069',
 };
 
-// Consumer op: recolor a node. Routed through the same undo stack as kit ops.
 interface SetColorPayload { id: string; from: string; to: string }
 function makeSetColor(scene: Scene<NodeData, LayerId, Pose>): RegisteredOp<SetColorPayload> {
   return {
@@ -46,16 +46,12 @@ export function SceneDemo() {
       { id: 'plantings' },
     ],
     initial: [
-      // Garden backdrop (root)
       { id: 'garden-bg' as never, kind: 'leaf', layer: 'garden',
         pose: { x: 0, y: 0, width: W, height: H }, data: { color: LAYER_COLORS.garden } },
-      // A zone (under structures? no, on zones layer)
       { id: 'zone-a' as never, kind: 'leaf', layer: 'zones',
-        pose: { x: 40, y: 40, width: 200, height: 220 }, data: { color: LAYER_COLORS.zones } },
-      // A structure (container)
+        pose: { x: 280, y: 60, width: 160, height: 200 }, data: { color: LAYER_COLORS.zones, label: 'Sun zone' } },
       { id: 'planter-1' as never, kind: 'container', layer: 'structures',
         pose: { x: 60, y: 80, width: 160, height: 100 }, data: { color: LAYER_COLORS.structures, label: 'Planter' } },
-      // A planting (leaf, parented under the structure but on a different layer — cross-layer parenting)
       { id: 'plant-a' as never, kind: 'leaf', layer: 'plantings',
         pose: { x: 80, y: 100, width: 30, height: 30 }, data: { color: LAYER_COLORS.plantings },
         parent: 'planter-1' as never },
@@ -65,14 +61,58 @@ export function SceneDemo() {
     ],
   });
 
-  // Register the consumer op once; bind to the live scene so apply/revert
-  // mutate it directly. Stable across renders via useMemo.
   useMemo(() => {
     scene.registerOp<SetColorPayload>('setColor', makeSetColor(scene));
   }, [scene]);
 
   const selection = useSelection();
   useUndoRedo(scene, { bindKeyboard: true });
+
+  // Wrap the synthesized adapter to cascade-translate descendants when a
+  // container is moved. Scene v1 stores absolute poses (no auto-reflow), so
+  // physical containment is the consumer's responsibility — this is the
+  // recipe.
+  const adapter = useMemo(() => {
+    const base = sceneToAdapter(scene);
+    const collectDescendants = (id: string, out: string[]): void => {
+      for (const cid of scene.childrenOf(id as never)) {
+        out.push(cid);
+        collectDescendants(cid, out);
+      }
+    };
+    return {
+      ...base,
+      setPose(id: string, pose: Pose) {
+        const n = scene.get(id as never);
+        if (!n || n.kind !== 'container') {
+          base.setPose(id, pose);
+          return;
+        }
+        const dx = pose.x - n.pose.x;
+        const dy = pose.y - n.pose.y;
+        if (dx === 0 && dy === 0) {
+          base.setPose(id, pose);
+          return;
+        }
+        const desc: string[] = [];
+        collectDescendants(id, desc);
+        scene.batch('move container', () => {
+          base.setPose(id, pose);
+          for (const cid of desc) {
+            const cn = scene.get(cid as never);
+            if (!cn) continue;
+            base.setPose(cid, { ...cn.pose, x: cn.pose.x + dx, y: cn.pose.y + dy });
+          }
+        });
+      },
+    };
+  }, [scene]);
+
+  // Live overlay cascade — ghosts of descendants follow the dragged parent.
+  const cascadeWorldPose = (id: string): Pose | null => {
+    const n = scene.get(id as never);
+    return n ? n.pose : null;
+  };
 
   const recolorSelection = () => {
     const ids = selection.get();
@@ -97,12 +137,26 @@ export function SceneDemo() {
           Cmd/Ctrl+Z undo · Shift+Cmd/Ctrl+Z redo · drag rects to move
         </span>
       </div>
-      <SceneCanvas<NodeData, LayerId, Pose>
+      <Canvas<SceneNode<NodeData, LayerId, Pose>, Pose>
         width={W}
         height={H}
         className="ckd-canvas"
-        scene={scene}
+        adapter={adapter}
         selection={selection}
+        tool="none"
+        moveOptions={{ cascadeWorldPose }}
+        hitBody={(wx, wy) => {
+          const ordered = [...scene.renderOrder()];
+          for (let i = ordered.length - 1; i >= 0; i--) {
+            const id = ordered[i];
+            if (id === 'garden-bg') continue;
+            const n = scene.get(id);
+            if (!n) continue;
+            const { x, y, width, height } = n.pose;
+            if (wx >= x && wx <= x + width && wy >= y && wy <= y + height) return id;
+          }
+          return null;
+        }}
         layers={{
           scene: {
             drawOne: (cx, node, p) => {
@@ -124,34 +178,53 @@ export function SceneDemo() {
   );
 }
 
-export const SCENE_DEMO_SOURCE = `// Kit-owned scene primitive — useScene + SceneCanvas wire everything.
-// Layers, parenting, and undo/redo are first-class on the Scene; consumer
-// ops register through the same undo stack as kit mutations.
+export const SCENE_DEMO_SOURCE = `// Kit-owned scene primitive — useScene + Canvas wired via sceneToAdapter.
+// Layers, parenting, and undo/redo are first-class on the Scene.
 
 const scene = useScene<NodeData, LayerId, Pose>({
   systemLayers: [
     { id: 'garden' }, { id: 'blueprint' },
-    { id: 'structures' }, { id: 'zones' }, { id: 'plantings' },
+    { id: 'zones' }, { id: 'structures' }, { id: 'plantings' },
   ],
   initial: [
-    { id: 'planter-1', kind: 'container', layer: 'structures', pose, data, },
+    { id: 'planter-1', kind: 'container', layer: 'structures', pose, data },
     // Cross-layer parenting: the leaf is on 'plantings', its parent on 'structures'.
-    { id: 'plant-a',  kind: 'leaf',     layer: 'plantings',  pose, data, parent: 'planter-1' },
+    { id: 'plant-a',  kind: 'leaf',      layer: 'plantings',  pose, data, parent: 'planter-1' },
   ],
 });
 
 // Consumer op participates in the same undo stack as scene.add / scene.setPose.
 scene.registerOp<SetColorPayload>('setColor', { apply, revert });
 
-useUndoRedo(scene, { bindKeyboard: true }); // Cmd+Z / Cmd+Shift+Z
+useUndoRedo(scene, { bindKeyboard: true });
+
+// v1 Scene stores absolute poses — wrap setPose to cascade-translate
+// descendants when a container moves.
+const adapter = useMemo(() => {
+  const base = sceneToAdapter(scene);
+  return {
+    ...base,
+    setPose(id, pose) {
+      const n = scene.get(id);
+      if (!n || n.kind !== 'container') return base.setPose(id, pose);
+      const dx = pose.x - n.pose.x, dy = pose.y - n.pose.y;
+      const desc = []; collectDescendants(id, desc);
+      scene.batch('move container', () => {
+        base.setPose(id, pose);
+        for (const cid of desc) {
+          const cn = scene.get(cid);
+          base.setPose(cid, { ...cn.pose, x: cn.pose.x + dx, y: cn.pose.y + dy });
+        }
+      });
+    },
+  };
+}, [scene]);
 
 return (
-  <SceneCanvas
-    width={W} height={H} scene={scene}
-    layers={{
-      scene: { drawOne: (cx, node, pose) => { /* ... */ } },
-      selectionOverlay: { handles: false },
-    }}
+  <Canvas
+    width={W} height={H} adapter={adapter}
+    moveOptions={{ cascadeWorldPose: (id) => scene.get(id)?.pose ?? null }}
+    layers={{ scene: { drawOne: (cx, node, pose) => { /* ... */ } } }}
   />
 );
 `;
