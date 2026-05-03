@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useResize } from './resize';
-import { pathPoseGeometry } from '../../../features/paths/poseGeometry';
+import { pathPoseDescriptor } from '../../../features/paths/poseDescriptor';
 import { polygonFromPoints, type PolygonPath, type Path } from '../../../features/paths';
 import type { Op } from '../../../core/ops/types';
 import type { ResizeAdapter } from '../../../core/adapters/types';
@@ -21,7 +21,7 @@ function makeAdapter(initial: Path) {
   return { adapter, batches, state };
 }
 
-describe('useResize — non-rect TPose via pathPoseGeometry', () => {
+describe('useResize — non-rect TPose via pathPoseDescriptor', () => {
   it('drives a polygon pose: emitted op carries a remapped polygon scaled against drag bounds', () => {
     // Triangle with AABB (0,0,10,10).
     const tri = polygonFromPoints(
@@ -35,7 +35,7 @@ describe('useResize — non-rect TPose via pathPoseGeometry', () => {
 
     const { result } = renderHook(() =>
       useResize<{ id: string }, Path>(adapter, {
-        geometry: pathPoseGeometry,
+        geometry: pathPoseDescriptor,
       }),
     );
 
@@ -76,7 +76,7 @@ describe('useResize — non-rect TPose via pathPoseGeometry', () => {
     );
     const { adapter } = makeAdapter(tri);
     const { result } = renderHook(() =>
-      useResize<{ id: string }, Path>(adapter, { geometry: pathPoseGeometry }),
+      useResize<{ id: string }, Path>(adapter, { geometry: pathPoseDescriptor }),
     );
 
     act(() => {

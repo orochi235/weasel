@@ -45,9 +45,15 @@ describe('Phase 2 type shapes', () => {
     expect(o.id).toBe('a');
   });
 
-  it('InsertOverlay carries start and current', () => {
-    interface P { x: number; y: number }
-    const o: InsertOverlay<P> = { start: { x: 0, y: 0 }, current: { x: 1, y: 1 } };
+  it('InsertOverlay carries start, current, bounds, pose', () => {
+    interface P { x: number; y: number; width: number; height: number }
+    const o: InsertOverlay<P> = {
+      start: { x: 0, y: 0 },
+      current: { x: 1, y: 1 },
+      bounds: { x: 0, y: 0, width: 1, height: 1 },
+      pose: { x: 0, y: 0, width: 1, height: 1 },
+    };
     expect(o.current.x).toBe(1);
+    expect(o.bounds.width).toBe(1);
   });
 });

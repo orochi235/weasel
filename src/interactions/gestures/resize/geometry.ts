@@ -12,14 +12,28 @@ import type { ResizePose } from '../types';
  * its own bounds; for Path or polygon poses the consumer supplies a
  * projection that knows how to read and rewrite the underlying geometry.
  */
-export interface PoseGeometry<TPose> {
+export interface PoseDescriptor<TPose> {
   getBounds(pose: TPose): ResizePose;
   remapBounds(pose: TPose, src: ResizePose, dst: ResizePose): TPose;
+  /** Translate the pose by (dx, dy). Optional — when omitted, callers fall
+   *  back to a translation derived from `remapBounds` (origin shifted, no
+   *  scale). Path-shaped poses should provide this for performance. */
+  translate?(pose: TPose, dx: number, dy: number): TPose;
+  /** True iff any portion of the pose's geometry intersects `rect`. Optional
+   *  — when omitted, area-select and similar callers test against `getBounds`
+   *  AABB (looser, but correct for axis-aligned rect poses). */
+  intersectsRect?(pose: TPose, rect: ResizePose): boolean;
+}
+
+/** AABB-vs-AABB overlap. Exported for callers building a default
+ *  `intersectsRect` from `getBounds`. */
+export function aabbIntersectsRect(b: ResizePose, r: ResizePose): boolean {
+  return b.x < r.x + r.width && b.x + b.width > r.x && b.y < r.y + r.height && b.y + b.height > r.y;
 }
 
 /** Identity geometry for `TPose extends ResizePose`. Treats the pose as its
  *  own bounds and remaps via affine scale against `src`/`dst`. */
-export const RECT_POSE_GEOMETRY: PoseGeometry<ResizePose> = {
+export const RECT_POSE_DESCRIPTOR: PoseDescriptor<ResizePose> = {
   getBounds: (p) => p,
   remapBounds: (p, src, dst) => {
     const sx = src.width === 0 ? 1 : dst.width / src.width;
@@ -32,4 +46,6 @@ export const RECT_POSE_GEOMETRY: PoseGeometry<ResizePose> = {
       height: p.height * sy,
     };
   },
+  translate: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
+  intersectsRect: (p, r) => aabbIntersectsRect(p, r),
 };

@@ -32,5 +32,5 @@ export {
 } from './flatten';
 export { composePath, decomposePath } from './compose';
 export { unionBoundsPath } from './unionBoundsPath';
-export { pathPoseGeometry } from './poseGeometry';
+export { pathPoseDescriptor } from './poseDescriptor';
 export { pathOriginProjection } from './originProjection';

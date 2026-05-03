@@ -58,7 +58,7 @@ export interface UsePointerGesturesOptions<TMovePose, TResizePose> {
 
   /** Live insert interaction. When `tool === 'insert'`, an empty-space
    *  pointer-down dispatches to `insert.start` instead of `onTapEmpty`. */
-  insert?: InsertController<{ id: string }, { x: number; y: number }>;
+  insert?: InsertController<{ id: string }, unknown>;
 
   /** Live area-select interaction. When `tool === 'select'` (or undefined),
    *  an empty-space pointer-down dispatches to `areaSelect.start` instead of

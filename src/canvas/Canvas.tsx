@@ -55,6 +55,7 @@ import {
   createSelectionOverlayLayer,
   type SelectionOverlayLayerOpts,
 } from '../features/selection/overlay';
+import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../interactions/gestures/resize/geometry';
 import type {
   AreaSelectOverlay,
   InsertOverlay,
@@ -234,12 +235,18 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   resizeOptions?: UseResizeOptions<TPose>;
   rotate?: RotateController<TObject, TPose>;
   rotateOptions?: UseRotateOptions<TPose>;
-  insert?: InsertController<TObject, { x: number; y: number }>;
-  insertOptions?: UseInsertOptions<{ x: number; y: number }>;
+  insert?: InsertController<TObject, TPose>;
+  insertOptions?: UseInsertOptions<TPose>;
   areaSelect?: AreaSelectController;
   areaSelectOptions?: UseAreaSelectOptions;
   selection?: SelectionApi;
   selectionOptions?: UseSelectionOptions;
+
+  /** Pose↔bounds projection. When supplied, drives default `hitBody`,
+   *  `boundsOf`, and the selection-overlay bounds source so non-rect TPose
+   *  (e.g. `Path`) doesn't require per-prop overrides. Defaults to the rect
+   *  identity. */
+  geometry?: PoseDescriptor<TPose>;
 
   // --- Gesture overrides (escape hatches for non-rect / group-aware apps) ---
   hitBody?: (worldX: number, worldY: number) => string | string[] | null;
@@ -338,7 +345,7 @@ function buildMoveOverlayLayer<TObject extends { id: string }, TPose>(
 
 function buildInsertOverlayLayer(
   cfg: InsertOverlaySlotConfig | null | undefined,
-  overlay: InsertOverlay<{ x: number; y: number }> | null,
+  overlay: InsertOverlay<unknown> | null,
 ): RenderLayer<unknown> | null {
   if (!overlay) return null;
   const fill = cfg?.fill ?? 'rgba(127, 176, 105, 0.25)';
@@ -349,10 +356,7 @@ function buildInsertOverlayLayer(
     id: 'insert-overlay',
     label: 'Insert overlay',
     draw: (ctx) => {
-      const x = Math.min(overlay.start.x, overlay.current.x);
-      const y = Math.min(overlay.start.y, overlay.current.y);
-      const w = Math.abs(overlay.current.x - overlay.start.x);
-      const h = Math.abs(overlay.current.y - overlay.start.y);
+      const { x, y, width: w, height: h } = overlay.bounds;
       ctx.save();
       ctx.fillStyle = fill;
       ctx.fillRect(x, y, w, h);
@@ -428,6 +432,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     onTapEmpty,
     clientToWorld,
     handleHitRadius,
+    geometry = RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>,
     onPointerDown: onPointerDownOverride,
     onPointerMove: onPointerMoveOverride,
     onPointerUp: onPointerUpOverride,
@@ -515,8 +520,19 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     return { ...(resizeOptions ?? {}), expandIds } as UseResizeOptions<TPose>;
   }, [resizeOptions, selectionMode]);
 
-  const internalMove = useMove<TObject, TPose>(effectiveAdapter, moveOptions);
-  const internalResize = useResize<TObject, TPose>(effectiveAdapter, derivedResizeOptions ?? {});
+  const derivedMoveOptions = useMemo<UseMoveOptions<TPose> | undefined>(() => {
+    const base = moveOptions ?? {};
+    if (base.translatePose || !geometry.translate) return moveOptions;
+    return { ...base, translatePose: geometry.translate };
+  }, [moveOptions, geometry]);
+  const derivedResizeOptionsFinal = useMemo<UseResizeOptions<TPose>>(() => {
+    const base = derivedResizeOptions ?? ({} as UseResizeOptions<TPose>);
+    if (base.geometry) return base;
+    return { ...base, geometry };
+  }, [derivedResizeOptions, geometry]);
+
+  const internalMove = useMove<TObject, TPose>(effectiveAdapter, derivedMoveOptions);
+  const internalResize = useResize<TObject, TPose>(effectiveAdapter, derivedResizeOptionsFinal);
   const internalRotate = useRotate<TObject, TPose>(effectiveAdapter, rotateOptions ?? {});
 
   // Wrap the adapter so insert/area-select see Canvas's effective selection
@@ -540,7 +556,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     return { ...base, behaviors: [selectFromMarquee()] };
   }, [areaSelectOptions]);
 
-  const internalInsert = useInsert<TObject, { x: number; y: number }>(
+  const internalInsert = useInsert<TObject, TPose>(
     selectionWiredAdapter,
     insertOptions ?? {},
   );
@@ -566,7 +582,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       const objs = a.getObjects();
       for (let i = objs.length - 1; i >= 0; i--) {
         const o = objs[i];
-        const p = a.getPose(o.id) as unknown as Bounds;
+        const p = geometry.getBounds(a.getPose(o.id));
         if (
           worldX >= p.x &&
           worldX <= p.x + p.width &&
@@ -578,31 +594,31 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       }
       return null;
     };
-  }, [hitBody, move]);
+  }, [hitBody, move, geometry]);
 
   const baseBoundsOf = useMemo(() => {
     if (boundsOf) return boundsOf;
     if (!move && !resize) return undefined;
     return (id: string): Bounds | null => {
       const ov = move?.overlay?.poses.get(id);
-      if (ov) return ov as unknown as Bounds;
+      if (ov) return geometry.getBounds(ov);
       if (resize?.overlay) {
-        if (resize.overlay.id === id) return resize.overlay.currentPose as unknown as Bounds;
+        if (resize.overlay.id === id) return geometry.getBounds(resize.overlay.currentPose);
         const leaf = resize.overlay.leafPoses?.get(id);
-        if (leaf !== undefined) return leaf as unknown as Bounds;
+        if (leaf !== undefined) return geometry.getBounds(leaf);
       }
       if (rotate?.overlay && rotate.overlay.id === id) {
-        return rotate.overlay.currentPose as unknown as Bounds;
+        return geometry.getBounds(rotate.overlay.currentPose);
       }
       const a = move?.adapter ?? resize?.adapter ?? rotate?.adapter;
       if (!a) return null;
       try {
-        return a.getPose(id) as unknown as Bounds;
+        return geometry.getBounds(a.getPose(id));
       } catch {
         return null;
       }
     };
-  }, [boundsOf, move, resize, rotate, moveOverlay, resizeOverlay, rotateOverlay]);
+  }, [boundsOf, move, resize, rotate, moveOverlay, resizeOverlay, rotateOverlay, geometry]);
 
   const selectedIdsForWiring = effectiveSelection.current;
   const multiActive = selectionMode === 'multi' && selectedIdsForWiring.length > 1;
@@ -778,6 +794,9 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       | undefined;
     if (selSlot !== null) {
       const cfg = (selSlot ?? {}) as SelectionOverlaySlotConfig<TPose>;
+      // Resolver returns either a real TPose (use geometry.getBounds) or a
+      // pre-projected Bounds (multi-union and the bounds-from-overlay path).
+      // We tag the latter so the overlay's getBounds short-circuits.
       const poseById =
         cfg.poseById ??
         ((id: string): TPose | null => {
@@ -785,11 +804,23 @@ function CanvasInner<TObject extends { id: string }, TPose>(
             const u = unionOfSelection(selectedIds);
             return u ? (u as unknown as TPose) : null;
           }
-          if (effectiveBoundsOf) {
-            const b = effectiveBoundsOf(id);
-            return (b as unknown as TPose) ?? null;
+          // Move/resize overlays carry TPose; surface them so geometry can
+          // project (handles non-rect TPose with rotation, etc.).
+          const ov = move?.overlay?.poses.get(id);
+          if (ov !== undefined) return ov;
+          if (resize?.overlay) {
+            if (resize.overlay.id === id) return resize.overlay.currentPose;
+            const leaf = resize.overlay.leafPoses?.get(id);
+            if (leaf !== undefined) return leaf;
           }
-          if (!adapter) return null;
+          if (rotate?.overlay && rotate.overlay.id === id) return rotate.overlay.currentPose;
+          if (!adapter) {
+            if (effectiveBoundsOf) {
+              const b = effectiveBoundsOf(id);
+              return (b as unknown as TPose) ?? null;
+            }
+            return null;
+          }
           try {
             return adapter.getPose(id);
           } catch {
@@ -803,6 +834,15 @@ function CanvasInner<TObject extends { id: string }, TPose>(
         ...cfg,
         getSelection,
         getPose: poseById,
+        getBounds:
+          cfg.getBounds ??
+          ((p: TPose): Bounds => {
+            // Multi-union path returns a pre-projected Bounds masquerading as
+            // TPose; treat that case as identity. For real TPose, defer to
+            // the configured geometry.
+            if (multiActive) return p as unknown as Bounds;
+            return geometry.getBounds(p);
+          }),
       });
     }
 

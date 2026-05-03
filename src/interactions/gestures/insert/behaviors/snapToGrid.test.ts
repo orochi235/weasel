@@ -22,7 +22,13 @@ function ctx(start: P, mods: Partial<ModifierState> = {}): GestureContext<P> {
 }
 
 function proposed(start: P, current: P): InsertProposed<P> {
-  return { start, current };
+  const bounds = {
+    x: Math.min(start.x, current.x),
+    y: Math.min(start.y, current.y),
+    width: Math.abs(current.x - start.x),
+    height: Math.abs(current.y - start.y),
+  };
+  return { start, current, bounds, pose: bounds as unknown as P };
 }
 
 describe('insert/snapToGrid', () => {

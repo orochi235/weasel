@@ -7,23 +7,29 @@ import type {
   GestureContext,
   InsertBehavior,
   InsertOverlay,
+  InsertPoint,
   ModifierState,
+  ResizePose,
 } from '../types';
 
 /** Options for `useInsert`. */
-export interface UseInsertOptions<TPose extends { x: number; y: number }> {
+export interface UseInsertOptions<TPose> {
   behaviors?: InsertBehavior<TPose>[];
   insertLabel?: string;
   /** Reserved; insert is never transient in practice. Ignored. */
   transient?: boolean;
   /** Strictly-greater-than thresholds; bounds with width <= or height <= abort. Default { width: 0, height: 0 }. */
   minBounds?: { width: number; height: number };
+  /** Construct the in-flight pose from the drag bounds. Defaults to the
+   *  identity cast (treat bounds as TPose). Override for non-rect TPose
+   *  (e.g. `(b) => rectPath(b)` or a polygon factory). */
+  posefromBounds?: (bounds: ResizePose) => TPose;
   onGestureStart?: () => void;
   onGestureEnd?: (committed: boolean) => void;
 }
 
 /** Return shape of `useInsert`: lifecycle methods plus the live drag-rectangle overlay. */
-export interface InsertController<TObject extends { id: string }, TPose extends { x: number; y: number }> {
+export interface InsertController<TObject extends { id: string }, TPose> {
   start(worldX: number, worldY: number, modifiers: ModifierState): void;
   move(worldX: number, worldY: number, modifiers: ModifierState): boolean;
   end(): void;
@@ -36,8 +42,17 @@ export interface InsertController<TObject extends { id: string }, TPose extends 
 
 const GID = 'gesture';
 
+function boundsFrom(start: InsertPoint, current: InsertPoint): ResizePose {
+  return {
+    x: Math.min(start.x, current.x),
+    y: Math.min(start.y, current.y),
+    width: Math.abs(current.x - start.x),
+    height: Math.abs(current.y - start.y),
+  };
+}
+
 /** Drag-rectangle insert interaction; the adapter materializes the new object on commit. */
-export function useInsert<TObject extends { id: string }, TPose extends { x: number; y: number }>(
+export function useInsert<TObject extends { id: string }, TPose>(
   adapter: InsertAdapter<TObject>,
   options: UseInsertOptions<TPose> = {},
 ): InsertController<TObject, TPose> {
@@ -45,12 +60,15 @@ export function useInsert<TObject extends { id: string }, TPose extends { x: num
     behaviors = [],
     insertLabel = 'Insert',
     minBounds = { width: 0, height: 0 },
+    posefromBounds = (b) => b as unknown as TPose,
     onGestureStart,
     onGestureEnd,
   } = options;
 
   const behaviorsRef = useRef(behaviors);
   behaviorsRef.current = behaviors;
+  const posefromBoundsRef = useRef(posefromBounds);
+  posefromBoundsRef.current = posefromBounds;
 
   const stateRef = useRef<{ active: boolean; ctx: GestureContext<TPose> | null }>({
     active: false,
@@ -65,11 +83,13 @@ export function useInsert<TObject extends { id: string }, TPose extends { x: num
   }, []);
 
   const start = useCallback((worldX: number, worldY: number, modifiers: ModifierState) => {
-    const startPose = { x: worldX, y: worldY } as TPose;
+    // ctx.origin/current store the two world points (as TPose-cast InsertPoints).
+    // Behaviors mutate them via { start, current } returns.
+    const startPoint: InsertPoint = { x: worldX, y: worldY };
     const ctx: GestureContext<TPose> = {
       draggedIds: [GID],
-      origin: new Map([[GID, startPose]]),
-      current: new Map([[GID, startPose]]),
+      origin: new Map([[GID, startPoint as unknown as TPose]]),
+      current: new Map([[GID, startPoint as unknown as TPose]]),
       snap: null,
       modifiers,
       pointer: { worldX, worldY, clientX: 0, clientY: 0 },
@@ -79,8 +99,9 @@ export function useInsert<TObject extends { id: string }, TPose extends { x: num
     for (const b of behaviorsRef.current) b.onStart?.(ctx);
     stateRef.current = { active: true, ctx };
     onGestureStart?.();
-    const snappedStart = ctx.origin.get(GID)!;
-    setOverlay({ start: snappedStart, current: snappedStart });
+    const sp = ctx.origin.get(GID) as unknown as InsertPoint;
+    const bounds = boundsFrom(sp, sp);
+    setOverlay({ start: sp, current: sp, bounds, pose: posefromBoundsRef.current(bounds) });
   }, [adapter, onGestureStart]);
 
   const move = useCallback((worldX: number, worldY: number, modifiers: ModifierState): boolean => {
@@ -89,20 +110,24 @@ export function useInsert<TObject extends { id: string }, TPose extends { x: num
     const ctx = s.ctx;
     ctx.modifiers = modifiers;
     ctx.pointer = { worldX, worldY, clientX: 0, clientY: 0 };
-    let current = { ...(ctx.current.get(GID) as TPose), x: worldX, y: worldY } as TPose;
-    let startPose = ctx.origin.get(GID)!;
+    let current: InsertPoint = { x: worldX, y: worldY };
+    let startPoint = ctx.origin.get(GID) as unknown as InsertPoint;
+    let bounds = boundsFrom(startPoint, current);
+    let pose = posefromBoundsRef.current(bounds);
 
     for (const b of behaviorsRef.current) {
-      const r = b.onMove?.(ctx, { start: startPose, current });
+      const r = b.onMove?.(ctx, { start: startPoint, current, bounds, pose });
       if (!r) continue;
       if (r.current !== undefined) current = r.current;
       if (r.start !== undefined) {
-        startPose = r.start;
-        ctx.origin.set(GID, startPose);
+        startPoint = r.start;
+        ctx.origin.set(GID, startPoint as unknown as TPose);
       }
+      bounds = boundsFrom(startPoint, current);
+      pose = posefromBoundsRef.current(bounds);
     }
-    ctx.current.set(GID, current);
-    setOverlay({ start: startPose, current });
+    ctx.current.set(GID, current as unknown as TPose);
+    setOverlay({ start: startPoint, current, bounds, pose });
     return true;
   }, []);
 
@@ -114,18 +139,15 @@ export function useInsert<TObject extends { id: string }, TPose extends { x: num
       return;
     }
     const ctx = s.ctx;
-    const sp = ctx.origin.get(GID)!;
-    const cp = ctx.current.get(GID)!;
-    const x = Math.min(sp.x, cp.x);
-    const y = Math.min(sp.y, cp.y);
-    const width = Math.abs(cp.x - sp.x);
-    const height = Math.abs(cp.y - sp.y);
-    if (width <= minBounds.width || height <= minBounds.height) {
+    const sp = ctx.origin.get(GID) as unknown as InsertPoint;
+    const cp = ctx.current.get(GID) as unknown as InsertPoint;
+    const bounds = boundsFrom(sp, cp);
+    if (bounds.width <= minBounds.width || bounds.height <= minBounds.height) {
       cleanup();
       onGestureEnd?.(false);
       return;
     }
-    const created = adapter.commitInsert({ x, y, width, height });
+    const created = adapter.commitInsert(bounds);
     if (!created) {
       cleanup();
       onGestureEnd?.(false);

@@ -181,7 +181,7 @@ export const DEMOS: DemoEntry[] = [
     id: 'path-pose',
     title: 'Path as pose',
     category: 'Composed',
-    description: 'A scene where the object\'s pose IS a Path — no rect→shape adapter step. useResize is generalized over TPose via the optional `geometry` opt; passing `pathPoseGeometry` lets the hook read bounds via boundsOfPath and remap every coord through an affine scale against the dragged AABB. Move uses the same translatePath the kit already exports as its translatePose. Body-drag to move; corner handles to resize.',
+    description: 'A scene where the object\'s pose IS a Path — no rect→shape adapter step. useResize is generalized over TPose via the optional `geometry` opt; passing `pathPoseDescriptor` lets the hook read bounds via boundsOfPath and remap every coord through an affine scale against the dragged AABB. Move uses the same translatePath the kit already exports as its translatePose. Body-drag to move; corner handles to resize.',
     hint: 'Drag the polygon body to move it; drag a corner to resize.',
     Component: PathPoseDemo,
     snippet: PATH_POSE_DEMO_SOURCE,

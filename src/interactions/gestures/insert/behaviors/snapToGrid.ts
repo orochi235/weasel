@@ -1,11 +1,12 @@
 import type {
   InsertBehavior,
+  InsertPoint,
   ModifierState,
 } from '../../types';
 
 type ModKey = keyof ModifierState;
 
-export function snapToGrid<TPose extends { x: number; y: number }>(args: {
+export function snapToGrid<TPose>(args: {
   spacing: number;
   bypassKey?: ModKey;
 }): InsertBehavior<TPose> {
@@ -15,13 +16,13 @@ export function snapToGrid<TPose extends { x: number; y: number }>(args: {
     onStart(ctx) {
       if (bypassKey && ctx.modifiers[bypassKey]) return;
       const id = ctx.draggedIds[0];
-      const o = ctx.origin.get(id);
+      const o = ctx.origin.get(id) as unknown as InsertPoint | undefined;
       if (!o) return;
-      ctx.origin.set(id, { ...o, x: round(o.x), y: round(o.y) } as TPose);
+      ctx.origin.set(id, { x: round(o.x), y: round(o.y) } as unknown as TPose);
     },
     onMove(ctx, { current }) {
       if (bypassKey && ctx.modifiers[bypassKey]) return;
-      return { current: { ...current, x: round(current.x), y: round(current.y) } as TPose };
+      return { current: { x: round(current.x), y: round(current.y) } };
     },
   };
 }

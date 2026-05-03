@@ -151,25 +151,42 @@ export interface RotateOverlay<TPose> {
 
 // ----- insert -----
 
-export interface InsertProposed<TPose extends { x: number; y: number }> {
-  start: TPose;
-  current: TPose;
+/** A single world-space point. Insert tracks two of these (start + current);
+ *  bounds and pose are derived per-frame. */
+export interface InsertPoint {
+  x: number;
+  y: number;
 }
 
-export interface InsertMoveResult<TPose extends { x: number; y: number }> {
-  start?: TPose;
-  current?: TPose;
+export interface InsertProposed<TPose> {
+  start: InsertPoint;
+  current: InsertPoint;
+  bounds: ResizePose;
+  pose: TPose;
 }
 
-export type InsertBehavior<TPose extends { x: number; y: number }> = GestureBehavior<
+export interface InsertMoveResult {
+  /** Override the start point (e.g. snap-to-grid on the anchor). */
+  start?: InsertPoint;
+  /** Override the current point (e.g. snap the live edge). */
+  current?: InsertPoint;
+}
+
+/** Behaviors operate over the two world points; bounds and pose are derived
+ *  by the hook from the (possibly modified) points each frame. */
+export type InsertBehavior<TPose> = GestureBehavior<
   TPose,
   InsertProposed<TPose>,
-  InsertMoveResult<TPose>
+  InsertMoveResult
 >;
 
-export interface InsertOverlay<TPose extends { x: number; y: number }> {
-  start: TPose;
-  current: TPose;
+export interface InsertOverlay<TPose> {
+  start: InsertPoint;
+  current: InsertPoint;
+  /** Axis-aligned bounding rect derived from `start`/`current`. */
+  bounds: ResizePose;
+  /** TPose constructed from `bounds` via the hook's `posefromBounds`. */
+  pose: TPose;
 }
 
 // ----- area-select -----

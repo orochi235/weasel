@@ -49,7 +49,7 @@ describe('useInsert — start/cancel', () => {
       result.current.start(1, 2, { alt: false, shift: false, meta: false, ctrl: false });
     });
     expect(result.current.isInserting).toBe(true);
-    expect(result.current.overlay).toEqual({ start: { x: 1, y: 2 }, current: { x: 1, y: 2 } });
+    expect(result.current.overlay).toMatchObject({ start: { x: 1, y: 2 }, current: { x: 1, y: 2 }, bounds: { x: 1, y: 2, width: 0, height: 0 } });
   });
 
   it('cancel clears overlay; no batch', () => {
@@ -78,11 +78,11 @@ describe('useInsert — move + end', () => {
       result.current.start(0.7, 0.3, { alt: false, shift: false, meta: false, ctrl: false });
     });
     // start was snapped to (1, 0).
-    expect(result.current.overlay).toEqual({ start: { x: 1, y: 0 }, current: { x: 1, y: 0 } });
+    expect(result.current.overlay).toMatchObject({ start: { x: 1, y: 0 }, current: { x: 1, y: 0 } });
     act(() => {
       result.current.move(4.6, 2.3, { alt: false, shift: false, meta: false, ctrl: false });
     });
-    expect(result.current.overlay).toEqual({ start: { x: 1, y: 0 }, current: { x: 5, y: 2 } });
+    expect(result.current.overlay).toMatchObject({ start: { x: 1, y: 0 }, current: { x: 5, y: 2 }, bounds: { x: 1, y: 0, width: 4, height: 2 } });
   });
 
   it('end emits one InsertOp on happy path', () => {

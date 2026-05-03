@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import {
   Canvas,
-  pathPoseGeometry,
+  pathPoseDescriptor,
   pathOriginProjection,
   polygonFromPoints,
   translatePath,
@@ -67,7 +67,7 @@ export function PathPoseDemo() {
         translatePose: translatePath,
         behaviors: [snap(gridSnapStrategy<Path>(20, { origin: pathOriginProjection }))],
       }}
-      resizeOptions={{ geometry: pathPoseGeometry }}
+      resizeOptions={{ geometry: pathPoseDescriptor }}
       layers={{
         scene: {
           drawOne: (cx, _o, p) => {
@@ -96,7 +96,7 @@ const adapter: MoveAdapter<PathObj, Path> & ResizeAdapter<PathObj, Path> = {
 
 // <Canvas> drives both move and resize over a Path TPose. The kit machinery is
 // rect-shaped, so plug in two small projections:
-//   - resizeOptions.geometry: pathPoseGeometry (read AABB, remap on resize)
+//   - resizeOptions.geometry: pathPoseDescriptor (read AABB, remap on resize)
 //   - moveOptions.translatePose + pathOriginProjection (snap-to-grid on path origin)
 // hitBody / boundsOf are explicit because the default rect-fold-in doesn't
 // know how to AABB-test a Path; selectionOverlay reads boundsOf for handles.
@@ -113,7 +113,7 @@ return (
       translatePose: translatePath,
       behaviors: [snap(gridSnapStrategy<Path>(20, { origin: pathOriginProjection }))],
     }}
-    resizeOptions={{ geometry: pathPoseGeometry }}
+    resizeOptions={{ geometry: pathPoseDescriptor }}
     layers={{
       scene: { drawOne: (cx, _o, p) => { traceToContext(cx, p); cx.fill(); cx.stroke(); } },
       selectionOverlay: { handles: { size: HANDLE } },

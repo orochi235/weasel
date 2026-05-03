@@ -34,8 +34,8 @@
  * Non-rect poses (Path, polygon, custom): the kit is generic over `TPose`.
  * Plug in two small projections so the rect-flavored machinery works on any
  * shape:
- *   - `PoseGeometry<TPose>` — read AABB + remap on resize. Default
- *     `RECT_POSE_GEOMETRY` for `{x,y,width,height}`; `pathPoseGeometry` for
+ *   - `PoseDescriptor<TPose>` — read AABB + remap on resize. Default
+ *     `RECT_POSE_DESCRIPTOR` for `{x,y,width,height}`; `pathPoseDescriptor` for
  *     `Path`. Pass via `useResize(adapter, { geometry })`.
  *   - `OriginProjection<TPose>` — read snap-origin + translate by delta. Used
  *     by `gridSnapStrategy` and `snapBackOrDelete` for non-rect poses. Default
@@ -197,7 +197,7 @@ export {
   composePath,
   decomposePath,
   unionBoundsPath,
-  pathPoseGeometry,
+  pathPoseDescriptor,
   pathOriginProjection,
 } from './features/paths';
 export type {
@@ -264,14 +264,14 @@ export type {
 } from './interactions/gestures/move';
 export {
   useResize,
-  RECT_POSE_GEOMETRY,
+  RECT_POSE_DESCRIPTOR,
   cornerResizeHandles,
   hitCornerHandle,
 } from './interactions/gestures/resize';
 export type {
   UseResizeOptions,
   ResizeController,
-  PoseGeometry,
+  PoseDescriptor,
   CornerHandle,
 } from './interactions/gestures/resize';
 export {

@@ -11,7 +11,7 @@ import type {
   ResizeOverlay,
   ResizePose,
 } from '../types';
-import { RECT_POSE_GEOMETRY, type PoseGeometry } from './geometry';
+import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from './geometry';
 
 const LERP = 0.35;
 
@@ -44,7 +44,7 @@ export interface UseResizeOptions<TPose> {
   /** Projection from `TPose` to bounds and back. Defaults to rect identity
    *  when `TPose extends ResizePose`. Required for non-rect TPose (Path,
    *  polygon, etc.). */
-  geometry?: PoseGeometry<TPose>;
+  geometry?: PoseDescriptor<TPose>;
 }
 
 /** Return shape of `useResize`: lifecycle methods plus a live overlay snapshot. */
@@ -107,7 +107,7 @@ export function useResize<TObject extends { id: string }, TPose>(
     onGestureStart,
     onGestureEnd,
     expandIds,
-    geometry = RECT_POSE_GEOMETRY as unknown as PoseGeometry<TPose>,
+    geometry = RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>,
   } = options as UseResizeOptions<TPose> & {
     behaviors?: ResizeBehavior<ResizePose>[];
   };

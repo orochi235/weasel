@@ -1,26 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { RECT_POSE_GEOMETRY, type PoseGeometry } from './geometry';
+import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from './geometry';
 import type { ResizePose } from '../types';
 
-describe('RECT_POSE_GEOMETRY.getBounds', () => {
+describe('RECT_POSE_DESCRIPTOR.getBounds', () => {
   it('returns the pose itself (identity projection)', () => {
     const pose: ResizePose = { x: 3, y: 4, width: 10, height: 20 };
-    expect(RECT_POSE_GEOMETRY.getBounds(pose)).toBe(pose);
+    expect(RECT_POSE_DESCRIPTOR.getBounds(pose)).toBe(pose);
   });
 });
 
-describe('RECT_POSE_GEOMETRY.remapBounds', () => {
+describe('RECT_POSE_DESCRIPTOR.remapBounds', () => {
   it('identity remap (src === dst) returns equivalent pose', () => {
     const pose: ResizePose = { x: 3, y: 4, width: 10, height: 20 };
     const bounds: ResizePose = { x: 0, y: 0, width: 100, height: 100 };
-    expect(RECT_POSE_GEOMETRY.remapBounds(pose, bounds, bounds)).toEqual(pose);
+    expect(RECT_POSE_DESCRIPTOR.remapBounds(pose, bounds, bounds)).toEqual(pose);
   });
 
   it('uniform scale: 2x scales position-from-origin and size by 2', () => {
     const pose: ResizePose = { x: 5, y: 10, width: 20, height: 30 };
     const src: ResizePose = { x: 0, y: 0, width: 100, height: 100 };
     const dst: ResizePose = { x: 0, y: 0, width: 200, height: 200 };
-    expect(RECT_POSE_GEOMETRY.remapBounds(pose, src, dst)).toEqual({
+    expect(RECT_POSE_DESCRIPTOR.remapBounds(pose, src, dst)).toEqual({
       x: 10,
       y: 20,
       width: 40,
@@ -32,7 +32,7 @@ describe('RECT_POSE_GEOMETRY.remapBounds', () => {
     const pose: ResizePose = { x: 10, y: 10, width: 20, height: 20 };
     const src: ResizePose = { x: 0, y: 0, width: 100, height: 50 };
     const dst: ResizePose = { x: 0, y: 0, width: 300, height: 100 };
-    expect(RECT_POSE_GEOMETRY.remapBounds(pose, src, dst)).toEqual({
+    expect(RECT_POSE_DESCRIPTOR.remapBounds(pose, src, dst)).toEqual({
       x: 30,
       y: 20,
       width: 60,
@@ -44,7 +44,7 @@ describe('RECT_POSE_GEOMETRY.remapBounds', () => {
     const pose: ResizePose = { x: 5, y: 5, width: 10, height: 10 };
     const src: ResizePose = { x: 0, y: 0, width: 100, height: 100 };
     const dst: ResizePose = { x: 50, y: -20, width: 100, height: 100 };
-    expect(RECT_POSE_GEOMETRY.remapBounds(pose, src, dst)).toEqual({
+    expect(RECT_POSE_DESCRIPTOR.remapBounds(pose, src, dst)).toEqual({
       x: 55,
       y: -15,
       width: 10,
@@ -56,7 +56,7 @@ describe('RECT_POSE_GEOMETRY.remapBounds', () => {
     const pose: ResizePose = { x: 60, y: 60, width: 20, height: 20 };
     const src: ResizePose = { x: 50, y: 50, width: 100, height: 100 };
     const dst: ResizePose = { x: 0, y: 0, width: 200, height: 200 };
-    expect(RECT_POSE_GEOMETRY.remapBounds(pose, src, dst)).toEqual({
+    expect(RECT_POSE_DESCRIPTOR.remapBounds(pose, src, dst)).toEqual({
       x: 20,
       y: 20,
       width: 40,
@@ -72,7 +72,7 @@ describe('RECT_POSE_GEOMETRY.remapBounds', () => {
     const pose: Extended = { x: 0, y: 0, width: 10, height: 10, label: 'a', rotation: 45 };
     const src: ResizePose = { x: 0, y: 0, width: 10, height: 10 };
     const dst: ResizePose = { x: 0, y: 0, width: 20, height: 20 };
-    const out = RECT_POSE_GEOMETRY.remapBounds(pose, src, dst) as Extended;
+    const out = RECT_POSE_DESCRIPTOR.remapBounds(pose, src, dst) as Extended;
     expect(out.label).toBe('a');
     expect(out.rotation).toBe(45);
     expect(out.width).toBe(20);
@@ -82,7 +82,7 @@ describe('RECT_POSE_GEOMETRY.remapBounds', () => {
     const pose: ResizePose = { x: 5, y: 10, width: 0, height: 20 };
     const src: ResizePose = { x: 5, y: 0, width: 0, height: 100 };
     const dst: ResizePose = { x: 50, y: 0, width: 200, height: 200 };
-    const out = RECT_POSE_GEOMETRY.remapBounds(pose, src, dst);
+    const out = RECT_POSE_DESCRIPTOR.remapBounds(pose, src, dst);
     expect(Number.isFinite(out.x)).toBe(true);
     expect(Number.isFinite(out.width)).toBe(true);
     expect(out).toEqual({ x: 50, y: 20, width: 0, height: 40 });
@@ -92,7 +92,7 @@ describe('RECT_POSE_GEOMETRY.remapBounds', () => {
     const pose: ResizePose = { x: 10, y: 5, width: 20, height: 0 };
     const src: ResizePose = { x: 0, y: 5, width: 100, height: 0 };
     const dst: ResizePose = { x: 0, y: 50, width: 200, height: 200 };
-    const out = RECT_POSE_GEOMETRY.remapBounds(pose, src, dst);
+    const out = RECT_POSE_DESCRIPTOR.remapBounds(pose, src, dst);
     expect(Number.isFinite(out.y)).toBe(true);
     expect(Number.isFinite(out.height)).toBe(true);
     expect(out).toEqual({ x: 20, y: 50, width: 40, height: 0 });
@@ -102,7 +102,7 @@ describe('RECT_POSE_GEOMETRY.remapBounds', () => {
     const pose: ResizePose = { x: 5, y: 5, width: 0, height: 0 };
     const src: ResizePose = { x: 5, y: 5, width: 0, height: 0 };
     const dst: ResizePose = { x: 100, y: 200, width: 50, height: 50 };
-    expect(RECT_POSE_GEOMETRY.remapBounds(pose, src, dst)).toEqual({
+    expect(RECT_POSE_DESCRIPTOR.remapBounds(pose, src, dst)).toEqual({
       x: 100,
       y: 200,
       width: 0,
@@ -111,13 +111,13 @@ describe('RECT_POSE_GEOMETRY.remapBounds', () => {
   });
 });
 
-describe('RECT_POSE_GEOMETRY type inference', () => {
+describe('RECT_POSE_DESCRIPTOR type inference', () => {
   it('works with any TPose extending ResizePose via unknown cast (matches useResize call site)', () => {
     interface RichPose extends ResizePose {
       kind: 'rect';
       meta: { tag: string };
     }
-    const geom = RECT_POSE_GEOMETRY as unknown as PoseGeometry<RichPose>;
+    const geom = RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<RichPose>;
     const pose: RichPose = {
       x: 0,
       y: 0,

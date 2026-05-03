@@ -1,10 +1,12 @@
 import { boundsOfPath } from './bounds';
+import { pointInPath } from './hitTest';
+import { translatePath } from './transform';
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, type Path, type PolygonPath } from './types';
-import type { PoseGeometry } from '../../interactions/gestures/resize/geometry';
+import { aabbIntersectsRect, type PoseDescriptor } from '../../interactions/gestures/resize/geometry';
 import type { ResizePose } from '../../interactions/gestures/types';
 
 /**
- * `PoseGeometry` for `Path` poses — wires `useResize` to operate
+ * `PoseDescriptor` for `Path` poses — wires `useResize` to operate
  * on `Path` directly. `getBounds` defers to the same `boundsOfPath` kernel
  * the rest of the kit uses; `remapBounds` does an affine scale of every
  * coord against `src`/`dst`. Degenerate axes (zero src extent) collapse to
@@ -14,7 +16,7 @@ import type { ResizePose } from '../../interactions/gestures/types';
  * knows the group's origin AABB and uses it for every leaf, instead of
  * each leaf scaling against its own AABB (which would ignore group context).
  */
-export const pathPoseGeometry: PoseGeometry<Path> = {
+export const pathPoseDescriptor: PoseDescriptor<Path> = {
   getBounds: (path) => boundsOfPath(path),
   remapBounds: (path, src, dst) => {
     const sx = src.width === 0 ? 0 : dst.width / src.width;
@@ -29,6 +31,24 @@ export const pathPoseGeometry: PoseGeometry<Path> = {
       };
     }
     return remapPolygon(path, src, dst, sx, sy);
+  },
+  translate: (path, dx, dy) => translatePath(path, dx, dy),
+  // WHY: AABB pre-test is cheap; only fall through to per-corner pointInPath
+  //      when the rect is fully inside the AABB (silhouette test).
+  intersectsRect: (path, rect) => {
+    const b = boundsOfPath(path);
+    if (!aabbIntersectsRect(b, rect)) return false;
+    if (path.kind === 'rect') return true;
+    // Sample the rect's four corners; any inside the polygon ⇒ overlap.
+    if (
+      pointInPath(path, rect.x, rect.y) ||
+      pointInPath(path, rect.x + rect.width, rect.y) ||
+      pointInPath(path, rect.x, rect.y + rect.height) ||
+      pointInPath(path, rect.x + rect.width, rect.y + rect.height)
+    ) return true;
+    // Conservative fallback: AABB overlap counts. Tighter edge-vs-edge test
+    // would be the next step; defer until a demo demands it.
+    return true;
   },
 };
 

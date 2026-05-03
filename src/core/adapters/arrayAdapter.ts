@@ -45,6 +45,10 @@ export interface ArrayAdapterConfig<TObject extends { id: string }, TPose> {
   /** Project a pose to an AABB for `hitTestArea`. Default: identity (works
    *  when TPose carries top-level x/y/width/height). */
   poseBounds?: (pose: TPose) => Bounds;
+  /** Tight intersection test against a pose. Default: AABB-vs-AABB using
+   *  `poseBounds`. Override for non-rect poses (e.g. polygons via
+   *  `pathPoseDescriptor.intersectsRect`). */
+  intersectsRect?: (pose: TPose, rect: Bounds) => boolean;
 }
 
 /**
@@ -99,6 +103,7 @@ export function arrayAdapter<TObject extends { id: string }, TPose>(
     setSelection = () => {},
     createDefault,
     poseBounds = defaultPoseBounds,
+    intersectsRect,
   } = config;
 
   const getSelection = selectionRef ? () => selectionRef.current : () => [];
@@ -123,13 +128,22 @@ export function arrayAdapter<TObject extends { id: string }, TPose>(
     getSelection,
     setSelection,
 
-    hitTestArea: ({ x, y, width, height }) => {
+    hitTestArea: (rect) => {
       const out: string[] = [];
       for (const o of ref.current) {
-        const b = poseBounds(toPose(o));
-        if (b.x < x + width && b.x + b.width > x && b.y < y + height && b.y + b.height > y) {
-          out.push(o.id);
-        }
+        const pose = toPose(o);
+        const hit = intersectsRect
+          ? intersectsRect(pose, rect)
+          : (() => {
+              const b = poseBounds(pose);
+              return (
+                b.x < rect.x + rect.width &&
+                b.x + b.width > rect.x &&
+                b.y < rect.y + rect.height &&
+                b.y + b.height > rect.y
+              );
+            })();
+        if (hit) out.push(o.id);
       }
       return out;
     },
