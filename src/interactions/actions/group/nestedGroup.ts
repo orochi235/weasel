@@ -37,7 +37,7 @@ import {
   composeWorldPose,
   rebaseLocalPose,
   type PoseAdapter,
-} from '../../../core/transforms/composePose';
+} from '../../../features/groups/composePose';
 import { useKeybinding } from '../useKeybinding';
 
 /** Adapter for `useNestedGroup` / `useNestedUngroup`. */

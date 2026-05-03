@@ -88,18 +88,18 @@ export type {
 } from './interactions/useSelection';
 export * from './features/layers/render';
 export * from './features/layers/LayerRenderer';
-export { createGridLayer } from './features/layers/grid';
-export type { GridLayerOpts } from './features/layers/grid';
-export { defaultLayers } from './features/layers/defaults';
+export { createGridLayer } from './features/grid/layer';
+export type { GridLayerOpts } from './features/grid/layer';
+export { defaultLayers } from './canvas/defaults';
 export type {
   DefaultLayersOpts,
   DefaultLayersScene,
   DefaultLayersSelection,
-} from './features/layers/defaults';
-export { createCellHighlightLayer } from './features/layers/cellHighlight';
-export type { CellHighlightLayerOpts } from './features/layers/cellHighlight';
-export { createChildrenLayer } from './features/layers/children';
-export type { CreateChildrenLayerOpts } from './features/layers/children';
+} from './canvas/defaults';
+export { createCellHighlightLayer } from './features/grid/cellHighlight';
+export type { CellHighlightLayerOpts } from './features/grid/cellHighlight';
+export { createChildrenLayer } from './features/groups/children';
+export type { CreateChildrenLayerOpts } from './features/groups/children';
 export {
   resolveUnit,
   formatUnit,
@@ -113,13 +113,13 @@ export {
   createSelectionOutlineLayer,
   createSelectionHandlesLayer,
   createSelectionOverlayLayer,
-} from './features/layers/selectionOverlay';
+} from './features/selection/overlay';
 export type {
   ComposeSelectionPoseOpts,
   SelectionOutlineLayerOpts,
   SelectionHandlesLayerOpts,
   SelectionOverlayLayerOpts,
-} from './features/layers/selectionOverlay';
+} from './features/selection/overlay';
 export * from './features/text/renderLabel';
 export * from './features/text/markdownText';
 export {
@@ -164,8 +164,8 @@ export {
   rebaseLocalPose,
   translateRectPose,
   worldPoseLookup,
-} from './core/transforms/composePose';
-export type { PoseAdapter } from './core/transforms/composePose';
+} from './features/groups/composePose';
+export type { PoseAdapter } from './features/groups/composePose';
 export {
   PATH_M,
   PATH_L,

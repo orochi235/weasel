@@ -6,7 +6,7 @@
  * all transitive leaf members).
  */
 
-import type { RectPose } from '../../core/transforms/composePose';
+import type { RectPose } from '../../features/groups/composePose';
 export type { RectPose };
 
 export function unionBounds<TPose extends RectPose>(poses: Iterable<TPose>): RectPose | null {

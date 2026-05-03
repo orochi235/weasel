@@ -4,7 +4,7 @@ import {
   createSelectionOverlayLayer,
   createSelectionOutlineLayer,
   createSelectionHandlesLayer,
-} from './selectionOverlay';
+} from './overlay';
 import type { Group, GroupAdapter } from '../groups/types';
 import { boundsOfPath, polygonFromPoints } from '../paths';
 

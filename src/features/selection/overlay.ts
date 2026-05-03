@@ -23,7 +23,7 @@
  * AABBs.
  */
 
-import type { RenderLayer } from './render';
+import type { RenderLayer } from '../layers/render';
 import type { GroupAdapter } from '../groups/types';
 import { expandToLeaves } from '../groups/resolve';
 import { unionBounds } from '../groups/unionBounds';

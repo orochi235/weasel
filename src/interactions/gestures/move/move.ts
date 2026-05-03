@@ -2,7 +2,7 @@ import { useRef, useState, useCallback } from 'react';
 import { createTransformOp } from '../../../core/ops/transform';
 import type { Op } from '../../../core/ops/types';
 import type { MoveAdapter, SnapTarget } from '../../../core/adapters/types';
-import { translateRectPose } from '../../../core/transforms/composePose';
+import { translateRectPose } from '../../../features/groups/composePose';
 import { dispatchApplyBatch } from '../../../core/ops/applyOpsTo';
 import type { GestureContext, MoveBehavior, MoveOverlay, ModifierState } from '../types';
 

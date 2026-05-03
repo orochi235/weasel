@@ -2,7 +2,7 @@ import { useCallback, useRef } from 'react';
 import { createTransformOp } from '../../../core/ops/transform';
 import type { Op } from '../../../core/ops/types';
 import { dispatchApplyBatch } from '../../../core/ops/applyOpsTo';
-import { translateRectPose } from '../../../core/transforms/composePose';
+import { translateRectPose } from '../../../features/groups/composePose';
 import { useKeybinding } from '../useKeybinding';
 
 /** Cardinal direction for `useNudge`. */

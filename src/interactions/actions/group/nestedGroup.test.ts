@@ -5,7 +5,7 @@ import {
   useNestedUngroup,
   type NestedGroupActionAdapter,
 } from './nestedGroup';
-import { composeRectPose, decomposeRectPose } from '../../../core/transforms/composePose';
+import { composeRectPose, decomposeRectPose } from '../../../features/groups/composePose';
 import type { Op } from '../../../core/ops/types';
 
 interface Rect { x: number; y: number; width: number; height: number }
