@@ -48,13 +48,17 @@ export interface UseResizeOptions<TPose> {
 }
 
 /** Return shape of `useResize`: lifecycle methods plus a live overlay snapshot. */
-export interface UseResizeReturn<TPose> {
+export interface UseResizeReturn<TObject extends { id: string }, TPose> {
   start(id: string, anchor: ResizeAnchor, worldX: number, worldY: number): void;
   move(worldX: number, worldY: number, modifiers: ModifierState): boolean;
   end(): void;
   cancel(): void;
   isResizing: boolean;
   overlay: ResizeOverlay<TPose> | null;
+  /** The adapter passed in. Exposed so downstream consumers (notably
+   *  `<Canvas>`) can derive default `boundsOf` without taking the adapter
+   *  as a separate prop. */
+  adapter: ResizeAdapter<TObject, TPose>;
 }
 
 interface State<TPose> {
@@ -96,7 +100,7 @@ function computeUnionBounds(bounds: ResizePose[]): ResizePose {
 export function useResize<TObject extends { id: string }, TPose>(
   adapter: ResizeAdapter<TObject, TPose>,
   options: UseResizeOptions<TPose>,
-): UseResizeReturn<TPose> {
+): UseResizeReturn<TObject, TPose> {
   const {
     behaviors = [] as ResizeBehavior<ResizePose>[],
     resizeLabel = 'Resize',
@@ -358,5 +362,5 @@ export function useResize<TObject extends { id: string }, TPose>(
     onGestureEnd?.(false);
   }, [cleanup, onGestureEnd]);
 
-  return { start, move, end, cancel, isResizing: overlay !== null, overlay };
+  return { start, move, end, cancel, isResizing: overlay !== null, overlay, adapter };
 }

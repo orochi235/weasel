@@ -41,8 +41,8 @@ export interface CanvasProps<TMovePose, TResizePose> {
   layers: RenderLayer<unknown>[];
 
   // --- Gesture slots (fed straight into usePointerGestures) ---
-  move?: UseMoveReturn<TMovePose>;
-  resize?: UseResizeReturn<TResizePose>;
+  move?: UseMoveReturn<{ id: string }, TMovePose>;
+  resize?: UseResizeReturn<{ id: string }, TResizePose>;
   hitBody?: (worldX: number, worldY: number) => string | string[] | null;
   resizeTarget?: () => { id: string; bounds: Bounds } | null;
   selection?: SelectionApi;

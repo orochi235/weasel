@@ -8,24 +8,24 @@ import type { UseResizeReturn } from './gestures/resize/resize';
 
 interface Pose { x: number; y: number; width: number; height: number }
 
-function makeMove(): UseMoveReturn<Pose> {
+function makeMove(): UseMoveReturn<{ id: string }, Pose> {
   return {
     start: vi.fn(),
     move: vi.fn(),
     end: vi.fn(),
     cancel: vi.fn(),
     overlay: null,
-  } as unknown as UseMoveReturn<Pose>;
+  } as unknown as UseMoveReturn<{ id: string }, Pose>;
 }
 
-function makeResize(): UseResizeReturn<Pose> {
+function makeResize(): UseResizeReturn<{ id: string }, Pose> {
   return {
     start: vi.fn(),
     move: vi.fn(),
     end: vi.fn(),
     cancel: vi.fn(),
     overlay: null,
-  } as unknown as UseResizeReturn<Pose>;
+  } as unknown as UseResizeReturn<{ id: string }, Pose>;
 }
 
 interface FakePointerOpts {

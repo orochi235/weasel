@@ -40,10 +40,10 @@ export interface UsePointerGesturesOptions<TMovePose, TResizePose> {
   ) => [number, number];
 
   /** Live move interaction. Omit to disable body-drag dispatch. */
-  move?: UseMoveReturn<TMovePose>;
+  move?: UseMoveReturn<{ id: string }, TMovePose>;
 
   /** Live resize interaction. Omit to disable handle-drag dispatch. */
-  resize?: UseResizeReturn<TResizePose>;
+  resize?: UseResizeReturn<{ id: string }, TResizePose>;
 
   /** Currently resizable target. Hook computes corner handles, hit-tests, and
    *  dispatches `resize.start(id, anchor, ...)`. Return `null` for none.

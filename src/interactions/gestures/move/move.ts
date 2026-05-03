@@ -62,20 +62,24 @@ export interface MoveMoveArgs {
 }
 
 /** Return shape of `useMove`: lifecycle methods and a live overlay snapshot. */
-export interface UseMoveReturn<TPose> {
+export interface UseMoveReturn<TObject extends { id: string }, TPose> {
   start(args: MoveStartArgs): void;
   move(args: MoveMoveArgs): boolean;
   end(): void;
   cancel(): void;
   isActive(): boolean;
   overlay: MoveOverlay<TPose> | null;
+  /** The adapter passed in. Exposed so downstream consumers (notably
+   *  `<Canvas>`) can derive default `hitBody`/`boundsOf` without taking
+   *  the adapter as a separate prop. */
+  adapter: MoveAdapter<TObject, TPose>;
 }
 
 /** Pointer-driven move interaction with composable behaviors (snap, container reparent, snap-back) and op-batched commit. */
 export function useMove<TObject extends { id: string }, TPose>(
   adapter: MoveAdapter<TObject, TPose>,
   options: UseMoveOptions<TPose> = {},
-): UseMoveReturn<TPose> {
+): UseMoveReturn<TObject, TPose> {
   const {
     translatePose = translateRectPose as unknown as (pose: TPose, dx: number, dy: number) => TPose,
     behaviors = [],
@@ -273,5 +277,5 @@ export function useMove<TObject extends { id: string }, TPose>(
 
   const isActive = useCallback(() => stateRef.current.phase === 'active', []);
 
-  return { start, move, end, cancel, isActive, overlay };
+  return { start, move, end, cancel, isActive, overlay, adapter };
 }
