@@ -18,7 +18,7 @@ import type {
 interface PathObj { id: string }
 type Pose = Path;
 
-const W = 480, H = 320, HANDLE = 8;
+const W = 720, H = 360, HANDLE = 8;
 const ID = 'curve';
 
 // An open S-curve: two cubic segments back to back.
