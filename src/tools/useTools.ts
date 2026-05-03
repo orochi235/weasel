@@ -1,7 +1,7 @@
 // src/tools/useTools.ts
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { createToolsDispatcher, type ToolsDispatcher } from './dispatcher';
-import type { Tool, ToolCtx } from './types';
+import type { AnyTool, ToolCtx } from './types';
 
 export interface UseToolsOptions {
   /** Initial active-slot tool id. Must exist in `registry`. */
@@ -9,9 +9,9 @@ export interface UseToolsOptions {
   /** Tools eligible for the active slot or modifier slot. The keys are the
    *  tool ids; the values are the tool records. A tool with `modifier` set
    *  is wired into the modifier slot whenever the engagement state matches. */
-  registry: Record<string, Tool>;
+  registry: Record<string, AnyTool>;
   /** Always-on tools — listen continuously regardless of active slot. */
-  alwaysOn?: Tool[];
+  alwaysOn?: AnyTool[];
   /** Per-event base ctx supplier. `<Canvas>` wires this to inject world
    *  coords, modifiers, selection, adapter, applyBatch. Tests can supply
    *  a stub. Optional — the dispatcher works with a default empty ctx
@@ -31,9 +31,9 @@ export interface ToolsApi {
   /** Disengage the modifier-slot tool, if any. */
   disengageModifier: () => void;
   /** All always-on tools, in registration order. */
-  alwaysOn: readonly Tool[];
+  alwaysOn: readonly AnyTool[];
   /** Full registry — for userland UI (palette buttons, etc.). */
-  registry: Readonly<Record<string, Tool>>;
+  registry: Readonly<Record<string, AnyTool>>;
   /** The dispatcher `<Canvas>` wires to its DOM events. */
   dispatcher: ToolsDispatcher;
 }

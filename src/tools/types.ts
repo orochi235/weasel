@@ -76,3 +76,10 @@ export interface Tool<TScratch = unknown> {
 
 /** Internal — which slot a tool occupies in the dispatch order. */
 export type ToolSlot = 'modifier' | 'active' | 'alwaysOn';
+
+/** Internal alias for "a Tool of any scratch type" — used in registries and
+ *  dispatchers that hold tools of heterogeneous scratch shapes. `any` is
+ *  intentional: `Tool<TScratch>` is invariant in TScratch, so `Tool<unknown>`
+ *  is too strict for containers that accept any concrete `Tool<T>`. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyTool = Tool<any>;

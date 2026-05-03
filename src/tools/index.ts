@@ -6,7 +6,7 @@ export type { UseKeybindingsOptions } from './useKeybindings';
 export { createToolsDispatcher } from './dispatcher';
 export type { ToolsDispatcher } from './dispatcher';
 export type {
-  Tool, ToolCtx, ToolModifiers, ToolSlot, Decision,
+  Tool, AnyTool, ToolCtx, ToolModifiers, ToolSlot, Decision,
   ModifierTrigger,
   PointerChannel, DragChannel, KeyboardChannel, WheelChannel,
 } from './types';

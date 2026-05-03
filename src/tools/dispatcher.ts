@@ -1,10 +1,10 @@
 // src/tools/dispatcher.ts
-import type { Tool, ToolCtx, ToolSlot, Decision } from './types';
+import type { AnyTool, ToolCtx, ToolSlot, Decision } from './types';
 
 interface SlotsState {
-  modifier: Tool | null;
-  active: Tool | null;
-  alwaysOn: Tool[];
+  modifier: AnyTool | null;
+  active: AnyTool | null;
+  alwaysOn: AnyTool[];
 }
 
 export interface ToolsDispatcherOptions {
@@ -22,7 +22,7 @@ export interface ToolsDispatcherOptions {
 }
 
 interface InFlight {
-  tool: Tool;
+  tool: AnyTool;
   scratch: unknown;
   startClient: { x: number; y: number };
   /** 'pending' = pointer down, sub-threshold; 'drag' = drag.onStart fired;
@@ -46,7 +46,6 @@ export interface ToolsDispatcher {
 }
 
 function ctxFor(
-  tool: Tool,
   scratch: unknown,
   base: Omit<ToolCtx, 'scratch'>,
 ): ToolCtx {
@@ -55,13 +54,12 @@ function ctxFor(
 
 function dispatchOnce<E>(
   slots: SlotsState,
-  channel: 'pointer' | 'drag' | 'keyboard' | 'wheel',
-  pick: (tool: Tool) => ((e: E, ctx: ToolCtx) => Decision) | undefined,
+  pick: (tool: AnyTool) => ((e: E, ctx: ToolCtx) => Decision) | undefined,
   event: E,
   baseCtx: Omit<ToolCtx, 'scratch'>,
-  scratchFor: (tool: Tool) => unknown,
-): Tool | null {
-  const order: { slot: ToolSlot; tool: Tool }[] = [];
+  scratchFor: (tool: AnyTool) => unknown,
+): AnyTool | null {
+  const order: { slot: ToolSlot; tool: AnyTool }[] = [];
   if (slots.modifier) order.push({ slot: 'modifier', tool: slots.modifier });
   if (slots.active) order.push({ slot: 'active', tool: slots.active });
   for (const t of slots.alwaysOn) order.push({ slot: 'alwaysOn', tool: t });
@@ -69,7 +67,7 @@ function dispatchOnce<E>(
   for (const { tool } of order) {
     const handler = pick(tool);
     if (!handler) continue;
-    const ctx = ctxFor(tool, scratchFor(tool), baseCtx);
+    const ctx = ctxFor(scratchFor(tool), baseCtx);
     const decision = handler(event, ctx);
     if (decision === 'claim') return tool;
   }
@@ -80,7 +78,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
   const threshold = opts.threshold ?? 4;
   let inFlight: InFlight | null = null;
 
-  function getInitialScratch(tool: Tool): unknown {
+  function getInitialScratch(tool: AnyTool): unknown {
     return tool.initScratch ? tool.initScratch() : undefined;
   }
 
@@ -99,7 +97,6 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     //    nor drag.onStart will ever be triggered.
     const claimedByDown = dispatchOnce<PointerEvent>(
       slots,
-      'pointer',
       (t) => t.pointer?.onDown,
       e,
       baseCtx,
@@ -118,8 +115,8 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     // 2. No pointer.onDown claim — enter pending phase. The active tool
     //    (the first in slot order with a drag or pointer.onClick handler)
     //    becomes the prospective gesture owner.
-    let owner: Tool | null = null;
-    for (const t of [slots.modifier, slots.active, ...slots.alwaysOn].filter(Boolean) as Tool[]) {
+    let owner: AnyTool | null = null;
+    for (const t of [slots.modifier, slots.active, ...slots.alwaysOn].filter(Boolean) as AnyTool[]) {
       if (t.drag || t.pointer?.onClick) { owner = t; break; }
     }
     if (!owner) return;
@@ -143,7 +140,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       // threshold-crossing event.
       const onStart = inFlight.tool.drag?.onStart;
       if (onStart) {
-        onStart(e, ctxFor(inFlight.tool, inFlight.scratch, baseCtx));
+        onStart(e, ctxFor(inFlight.scratch, baseCtx));
       }
       inFlight.phase = 'drag';
       return;
@@ -151,7 +148,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
 
     if (inFlight.phase === 'drag') {
       const onMove = inFlight.tool.drag?.onMove;
-      if (onMove) onMove(e, ctxFor(inFlight.tool, inFlight.scratch, baseCtx));
+      if (onMove) onMove(e, ctxFor(inFlight.scratch, baseCtx));
       return;
     }
 
@@ -167,10 +164,10 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     if (inFlight.phase === 'pending') {
       // Sub-threshold release → click.
       const onClick = inFlight.tool.pointer?.onClick;
-      if (onClick) onClick(e, ctxFor(inFlight.tool, inFlight.scratch, baseCtx));
+      if (onClick) onClick(e, ctxFor(inFlight.scratch, baseCtx));
     } else if (inFlight.phase === 'drag') {
       const onEnd = inFlight.tool.drag?.onEnd;
-      if (onEnd) onEnd(e, ctxFor(inFlight.tool, inFlight.scratch, baseCtx));
+      if (onEnd) onEnd(e, ctxFor(inFlight.scratch, baseCtx));
     }
     // 'pointer-claimed' has no commit semantic at this layer.
     endGesture();
@@ -181,7 +178,6 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     const base = opts.getCtx();
     dispatchOnce<KeyboardEvent>(
       slots,
-      'keyboard',
       (t) => t.keyboard?.onDown,
       e,
       base,
@@ -194,7 +190,6 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     const base = opts.getCtx();
     dispatchOnce<KeyboardEvent>(
       slots,
-      'keyboard',
       (t) => t.keyboard?.onUp,
       e,
       base,
@@ -207,7 +202,6 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     const base = opts.getCtx({ worldX: e.clientX, worldY: e.clientY });
     dispatchOnce<WheelEvent>(
       slots,
-      'wheel',
       (t) => t.wheel?.onWheel,
       e,
       base,
@@ -219,7 +213,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     if (!inFlight) return;
     if (inFlight.phase === 'drag') {
       const base = opts.getCtx();
-      inFlight.tool.drag?.onCancel?.(ctxFor(inFlight.tool, inFlight.scratch, base));
+      inFlight.tool.drag?.onCancel?.(ctxFor(inFlight.scratch, base));
     }
     endGesture();
   }

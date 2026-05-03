@@ -1,8 +1,8 @@
 // src/tools/dispatcher.test.ts
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { createToolsDispatcher, type ToolsDispatcher } from './dispatcher';
 import { defineTool } from './defineTool';
-import type { Tool, ToolCtx } from './types';
+import type { AnyTool, ToolCtx } from './types';
 
 function makeCtx(over: Partial<ToolCtx> = {}): ToolCtx {
   return {
@@ -25,9 +25,9 @@ function pointerEvent(type: string, init: Partial<PointerEventInit> = {}): Point
 }
 
 interface SlotsState {
-  modifier: Tool | null;
-  active: Tool | null;
-  alwaysOn: Tool[];
+  modifier: AnyTool | null;
+  active: AnyTool | null;
+  alwaysOn: AnyTool[];
 }
 
 function makeDispatcher(slots: SlotsState): ToolsDispatcher {
