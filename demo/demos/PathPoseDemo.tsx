@@ -4,8 +4,6 @@ import {
   pathPoseDescriptor,
   pathOriginProjection,
   polygonFromPoints,
-  translatePath,
-  boundsOfPath,
   traceToContext,
   snap,
   gridSnapStrategy,
@@ -44,30 +42,19 @@ export function PathPoseDemo() {
     setParent: () => {},
   };
 
-  const hitBody = (wx: number, wy: number): string | null => {
-    const b = boundsOfPath(pathRef.current);
-    if (wx >= b.x && wx <= b.x + b.width && wy >= b.y && wy <= b.y + b.height) return ID;
-    return null;
-  };
-
-  const boundsOf = (id: string) => (id === ID ? boundsOfPath(pathRef.current) : null);
-
   return (
     <Canvas<PathObj, Pose>
       width={W}
       height={H}
       className="ckd-canvas"
       adapter={adapter}
+      geometry={pathPoseDescriptor}
       handleHitRadius={HANDLE}
-      hitBody={hitBody}
-      boundsOf={boundsOf}
       selectionOptions={{ initial: [ID] }}
       onTapEmpty={() => {}}
       moveOptions={{
-        translatePose: translatePath,
         behaviors: [snap(gridSnapStrategy<Path>(20, { origin: pathOriginProjection }))],
       }}
-      resizeOptions={{ geometry: pathPoseDescriptor }}
       layers={{
         scene: {
           drawOne: (cx, _o, p) => {
@@ -94,26 +81,22 @@ const adapter: MoveAdapter<PathObj, Path> & ResizeAdapter<PathObj, Path> = {
   getParent: () => null, setParent: () => {},
 };
 
-// <Canvas> drives both move and resize over a Path TPose. The kit machinery is
-// rect-shaped, so plug in two small projections:
-//   - resizeOptions.geometry: pathPoseDescriptor (read AABB, remap on resize)
-//   - moveOptions.translatePose + pathOriginProjection (snap-to-grid on path origin)
-// hitBody / boundsOf are explicit because the default rect-fold-in doesn't
-// know how to AABB-test a Path; selectionOverlay reads boundsOf for handles.
+// geometry={pathPoseDescriptor} wires up the Path-aware bounds, translate,
+// and resize-remap behind a single prop, so the default hitBody / boundsOf /
+// moveOptions.translatePose / resizeOptions.geometry all know about Paths.
+// The only Path-specific extra is the snap behavior, which reads the origin
+// via pathOriginProjection.
 return (
   <Canvas<PathObj, Path>
     width={W} height={H}
     adapter={adapter}
+    geometry={pathPoseDescriptor}
     handleHitRadius={HANDLE}
-    hitBody={(wx, wy) => /* bounds-test path */}
-    boundsOf={(id) => boundsOfPath(pathRef.current)}
     selectionOptions={{ initial: ['p'] }}
     onTapEmpty={() => {}}
     moveOptions={{
-      translatePose: translatePath,
       behaviors: [snap(gridSnapStrategy<Path>(20, { origin: pathOriginProjection }))],
     }}
-    resizeOptions={{ geometry: pathPoseDescriptor }}
     layers={{
       scene: { drawOne: (cx, _o, p) => { traceToContext(cx, p); cx.fill(); cx.stroke(); } },
       selectionOverlay: { handles: { size: HANDLE } },

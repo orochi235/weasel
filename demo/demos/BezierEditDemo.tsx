@@ -3,7 +3,6 @@ import {
   Canvas,
   PathBuilder,
   pathPoseDescriptor,
-  translatePath,
   boundsOfPath,
   pointInPath,
   traceToContext,
@@ -52,20 +51,16 @@ export function BezierEditDemo() {
     return null;
   };
 
-  const boundsOf = (id: string) => (id === ID ? boundsOfPath(pathRef.current) : null);
-
   return (
     <Canvas<PathObj, Pose>
       width={W}
       height={H}
       className="ckd-canvas"
       adapter={adapter}
+      geometry={pathPoseDescriptor}
       handleHitRadius={HANDLE}
       hitBody={hitBody}
-      boundsOf={boundsOf}
       onTapEmpty={() => {}}
-      moveOptions={{ translatePose: translatePath }}
-      resizeOptions={{ geometry: pathPoseDescriptor }}
       editAnchors
       layers={{
         scene: {
@@ -103,10 +98,8 @@ return (
   <Canvas<PathObj, Path>
     width={W} height={H}
     adapter={adapter}
+    geometry={pathPoseDescriptor}
     hitBody={hitBody}
-    boundsOf={boundsOf}
-    moveOptions={{ translatePose: translatePath }}
-    resizeOptions={{ geometry: pathPoseDescriptor }}
     editAnchors
     layers={{
       scene: { drawOne: (cx, _o, p) => { cx.strokeStyle = '#f5b7a3'; cx.lineWidth = 2; traceToContext(cx, p); cx.stroke(); } },

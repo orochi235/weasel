@@ -8,7 +8,6 @@ import {
   pointInPath,
   polygonFromPoints,
   traceToContext,
-  useSelection,
 } from '@orochi235/weasel';
 import type { Path } from '@orochi235/weasel';
 
@@ -156,17 +155,17 @@ export function CompoundPathsDemo() {
   shapesRef.current = shapes;
   const [toast, setToast] = useState<string | null>(null);
 
-  const selection = useSelection({ mode: 'multi' });
-  const adapter = useMemo(() => {
-    const base = arrayAdapter<Shape, Path>({
-      ref: shapesRef,
-      setItems: setShapes,
-      toPose: (s) => s.pose,
-      fromPose: (s, pose) => ({ ...s, pose }),
-      intersectsRect: (pose, rect) => pathPoseDescriptor.intersectsRect!(pose, rect),
-    });
-    return { ...base, ...selection.adapterMethods };
-  }, [selection.adapterMethods]);
+  const adapter = useMemo(
+    () =>
+      arrayAdapter<Shape, Path>({
+        ref: shapesRef,
+        setItems: setShapes,
+        toPose: (s) => s.pose,
+        fromPose: (s, pose) => ({ ...s, pose }),
+        intersectsRect: (pose, rect) => pathPoseDescriptor.intersectsRect!(pose, rect),
+      }),
+    [],
+  );
 
   const hitBody = (wx: number, wy: number): string | null => {
     const arr = shapesRef.current;
@@ -192,7 +191,6 @@ export function CompoundPathsDemo() {
         adapter={adapter}
         geometry={pathPoseDescriptor}
         selectionMode="multi"
-        selection={selection}
         handleHitRadius={HANDLE}
         hitBody={hitBody}
         layers={{
