@@ -60,4 +60,4 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
 
 - TODO/FIXME scan inside `src/` — *not yet done.*
 - JSDoc audit on the barrel (`src/index.ts`) — *not yet done.*
-- README pitch — *initial draft landed; the `docs/` long-form (concepts/hooks/adapters/extending) still uses pre-extraction `*Interaction` / `*Action` hook names and the old `src/canvas-kit/` paths. Needs a sweep.*
+- README pitch — *initial draft landed; the `docs/` long-form sweep was completed (all hook names and import paths match the post-extraction surface).*
