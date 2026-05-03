@@ -128,12 +128,28 @@ layers={{
 
 See [extending.md](./extending.md) for custom-layer details.
 
+## Interaction
+
+Everything the user does to the scene is an **interaction**. The kit splits
+interactions into two kinds:
+
+- **Gestures** — pointer-driven, with a start/move/end lifecycle. They live
+  under `src/interactions/gestures/`. Each one returns a controller with a
+  live `overlay` so the in-flight state can render between frames.
+- **Actions** — discrete, one-shot mutations that don't have a drag phase.
+  They live under `src/interactions/actions/`. Most are keybinding-driven
+  (Esc, Cmd+A, Cmd+D, arrows, Cmd+Z), but they're really just functions
+  that produce ops; the keybinding wiring is optional.
+
+Same adapter, same op pipeline, same undo history. The split is about
+*how the input arrives*, not about what the code can do.
+
 ## Gesture
 
 A **gesture** is a pointer-driven interaction with a start/move/end
-lifecycle. Move, resize, rotate, insert, area-select, and clone are all
-gestures. Each takes an adapter and an options object that includes a
-`behaviors` array.
+lifecycle. Move, resize, rotate, insert, area-select, clone, and
+edit-anchors are all gestures. Each takes an adapter and an options object
+that includes a `behaviors` array.
 
 A **behavior** is a small composable extension that refines the in-flight
 pose and/or supplies commit ops:
@@ -156,6 +172,31 @@ explicitly. See [extending.md](./extending.md) for writing one.
 Built-in behaviors: `snap(gridSnapStrategy(...))`, `snapToContainer(...)`,
 `snapBackOrDelete(...)` for move; `snapToGrid`, `clampMinSize` for resize;
 `selectFromMarquee()` for area-select; `cloneByAltDrag()` for clone.
+
+## Action
+
+An **action** is a non-pointer interaction — typically a keyboard shortcut
+or a programmatic call — that produces ops in one shot. No `start`/`move`/
+`end` phases, no overlay. The hooks are bare functions you wire and forget:
+
+```ts
+useEscape(adapter);                    // Esc clears selection
+useSelectAll(adapter);                 // Cmd+A
+useDuplicate<Pose>(adapter);           // Cmd+D
+useNudge(adapter);                     // arrow keys
+useReorder(adapter);                   // Cmd+[ / Cmd+]
+useDelete(adapter, { bindKeyboard: true });
+useGroup(adapter); useUngroup(adapter);
+useNestedGroup(adapter); useNestedUngroup(adapter);
+useUndoRedo({ history });
+useClipboard(adapter);
+```
+
+Each hook accepts a `bindKeyboard: false` opt to skip its default shortcut
+so you can drive it from your own UI. Every action commits via the same
+`dispatchApplyBatch(adapter, ops, label)` pipeline as gestures, so undo,
+coalescing, and `applyBatch` overrides all work uniformly. See
+[hooks.md](./hooks.md) for the full table and default keybindings.
 
 ## Selection mode
 
