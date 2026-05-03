@@ -49,7 +49,6 @@ import {
   type AnchorEditOverlayOpts,
 } from '../interactions/gestures/edit-anchors/overlay';
 import type { Path } from '../features/paths/types';
-import { pointInPath } from '../features/paths/hitTest';
 import { selectFromMarquee } from '../interactions/gestures/area-select/behaviors';
 import type {
   AreaSelectAdapter,
@@ -799,18 +798,19 @@ function CanvasInner<TObject extends { id: string }, TPose>(
         return [cx - r.left, cy - r.top];
       });
       const [wx, wy] = cw(e.currentTarget, e.clientX, e.clientY);
-      const objs = adapter.getObjects();
-      for (let i = objs.length - 1; i >= 0; i--) {
-        const o = objs[i];
-        const pose = adapter.getPose(o.id) as unknown as Path;
+      // WHY: use the consumer's hitBody so open paths (no fill, pointInPath=false)
+      //      can still enter edit mode via their AABB-padded hit silhouette.
+      const hit = effectiveHitBody?.(wx, wy);
+      const ids = hit == null ? [] : Array.isArray(hit) ? hit : [hit];
+      for (let i = ids.length - 1; i >= 0; i--) {
+        const id = ids[i];
+        const pose = adapter.getPose(id) as unknown as Path;
         if (!pose || pose.kind !== 'polygon') continue;
-        if (pointInPath(pose, wx, wy)) {
-          setEditingAnchors({ objectId: o.id });
-          return;
-        }
+        setEditingAnchors({ objectId: id });
+        return;
       }
     },
-    [editAnchorsEnabled, adapter, clientToWorld],
+    [editAnchorsEnabled, adapter, clientToWorld, effectiveHitBody],
   );
 
   useEffect(() => {

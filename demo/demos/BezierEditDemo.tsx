@@ -70,7 +70,7 @@ export function BezierEditDemo() {
       layers={{
         scene: {
           drawOne: (cx, _o, p) => {
-            cx.strokeStyle = '#1a130d';
+            cx.strokeStyle = '#f5b7a3';
             cx.lineWidth = 2;
             cx.beginPath();
             traceToContext(cx, p);
@@ -109,7 +109,7 @@ return (
     resizeOptions={{ geometry: pathPoseDescriptor }}
     editAnchors
     layers={{
-      scene: { drawOne: (cx, _o, p) => { traceToContext(cx, p); cx.stroke(); } },
+      scene: { drawOne: (cx, _o, p) => { cx.strokeStyle = '#f5b7a3'; cx.lineWidth = 2; traceToContext(cx, p); cx.stroke(); } },
       selectionOverlay: { handles: { size: HANDLE } },
       anchorEditOverlay: { selectedAnchorFill: '#7fb069' },
     }}
