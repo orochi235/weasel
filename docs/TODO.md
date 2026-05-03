@@ -36,6 +36,8 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
 - **Selection-driven action hooks**: shipped against the existing virtual-group adapter and `History` (`useEscape`, `useSelectAll`, `useDuplicate`, `useNudge`, `useDelete`, `useReorder`, `useClipboard`, `useUndoRedo`). Nested-group variants (`useNestedGroup` / `useNestedUngroup`) shipped alongside the original virtual-group `useGroup` / `useUngroup`.
 - **Grid overlay snap-target hover.** *Done.* `useGridCellHover` ships the pointer-tracking glue; pair its `getCell` with `createCellHighlightLayer` and the `spacing` your `gridSnapStrategy` already uses.
 
+- **Container layout strategies.** Containers (groups w/ `getChildren`/`setChildOrder`) are first-class, but children are positioned by absolute pose — there's no notion of a layout owned by the container. Real apps want stack/grid/flex strategies on a container so dragging in/out of it reflows siblings. Open scope: (a) ship a `LayoutStrategy<TPose>` interface (`getChildPositions(parent, children)` + drop-target hooks), (b) just expose hooks the consumer wires (`onChildAdded`, `onChildMoved`, `getChildSlot`) and ship one or two reference strategies (vertical stack, uniform grid). Either way needs a story for how the move overlay previews the reflow.
+
 ## Tier 3 — specialized but valuable
 
 - **Bezier curves / splines (control-point editing gesture).** A path-capable kit (Tier 1 #1) gives the data shape; what's genuinely new here is the interaction pattern: editing handles on a curve. Specialized resize-like hook with non-corner anchors, plus curve sampling and hit-testing in the renderer. Useful for routing edges in node graphs, illustration, motion paths.

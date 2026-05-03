@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { arrayAdapter, Canvas } from '@orochi235/weasel';
-import type { RenderLayer } from '@orochi235/weasel';
+import type { RenderLayer, CanvasHelpers } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -49,12 +49,21 @@ function buildTree(bounds: { x: number; y: number; width: number; height: number
   return root;
 }
 
-function createQuadtreeLayer(getRects: () => Rect[]): RenderLayer<unknown> {
+function createQuadtreeLayer(
+  getRects: () => Rect[],
+  helpersRef: React.RefObject<CanvasHelpers<Pose> | null>,
+): RenderLayer<unknown> {
   return {
     id: 'quadtree',
     label: 'Quadtree',
     draw: (ctx) => {
-      const tree = buildTree({ x: 0, y: 0, width: W, height: H }, getRects());
+      // Read live (overlay-aware) bounds so the tree follows in-flight drags.
+      const live = helpersRef.current;
+      const rects = getRects().map((r) => {
+        const b = live?.getEffectiveBounds(r.id);
+        return b ? { id: r.id, x: b.x, y: b.y, width: b.width, height: b.height, color: r.color } : r;
+      });
+      const tree = buildTree({ x: 0, y: 0, width: W, height: H }, rects);
       ctx.strokeStyle = 'rgba(0, 220, 240, 0.7)';
       function walk(n: QuadNode) {
         if (!n.children) return;
@@ -71,6 +80,7 @@ export function QuadtreeDemo() {
   const [rects, setRects] = useState<Rect[]>(INITIAL);
   const rectsRef = useRef(rects);
   rectsRef.current = rects;
+  const helpersRef = useRef<CanvasHelpers<Pose> | null>(null);
 
   const adapter = arrayAdapter<Rect, Pose>({
     ref: rectsRef,
@@ -85,6 +95,7 @@ export function QuadtreeDemo() {
       className="ckd-canvas"
       adapter={adapter}
       handleHitRadius={HANDLE}
+      helpersRef={helpersRef}
       layers={{
         grid: {
           spacing: 20,
@@ -94,7 +105,7 @@ export function QuadtreeDemo() {
         scene: {
           drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); },
         },
-        quadtree: { layer: createQuadtreeLayer(() => rectsRef.current), after: 'scene' },
+        quadtree: { layer: createQuadtreeLayer(() => rectsRef.current, helpersRef), after: 'scene' },
         selectionOverlay: { handles: { size: HANDLE } },
       }}
     />

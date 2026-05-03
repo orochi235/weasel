@@ -81,6 +81,7 @@ export type {
 export { Canvas } from './canvas/Canvas';
 export type {
   CanvasProps,
+  CanvasHelpers,
   CanvasSelectionMode,
   StandardSlotName,
   CustomLayerEntry,

@@ -298,6 +298,23 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   style?: React.CSSProperties;
   tabIndex?: number;
   autoFocusOnPointerDown?: boolean;
+
+  /** Mutable ref Canvas writes overlay-aware pose/bounds lookups to on every
+   *  render. Custom layers can read it from inside their `draw` closure to
+   *  reflect in-flight gestures (move/resize/rotate) instead of the committed
+   *  scene. Both lookups apply when an id is in the active overlay; otherwise
+   *  they fall back to the adapter. */
+  helpersRef?: React.MutableRefObject<CanvasHelpers<TPose> | null>;
+}
+
+/** Live overlay-aware lookups exposed to custom layers via `helpersRef`. */
+export interface CanvasHelpers<TPose> {
+  /** Pose currently displayed for `id` — drag/resize/rotate overlay if active,
+   *  otherwise the committed pose from the adapter. Returns `null` if the id
+   *  isn't known. */
+  getEffectivePose(id: string): TPose | null;
+  /** Overlay-aware bounds for `id`. */
+  getEffectiveBounds(id: string): Bounds | null;
 }
 
 const STANDARD_SLOT_SET = new Set<string>(STANDARD_SLOTS);
@@ -469,6 +486,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     style,
     tabIndex = 0,
     autoFocusOnPointerDown = true,
+    helpersRef,
   } = props;
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -640,6 +658,28 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     };
   }, [hitBody, move, geometry]);
 
+  const effectivePoseOf = useMemo(() => {
+    return (id: string): TPose | null => {
+      const ov = move?.overlay?.poses.get(id);
+      if (ov !== undefined) return ov;
+      if (resize?.overlay) {
+        if (resize.overlay.id === id) return resize.overlay.currentPose as TPose;
+        const leaf = resize.overlay.leafPoses?.get(id);
+        if (leaf !== undefined) return leaf as TPose;
+      }
+      if (rotate?.overlay && rotate.overlay.id === id) {
+        return rotate.overlay.currentPose as TPose;
+      }
+      const a = move?.adapter ?? resize?.adapter ?? rotate?.adapter ?? adapter;
+      if (!a) return null;
+      try {
+        return a.getPose(id);
+      } catch {
+        return null;
+      }
+    };
+  }, [move, resize, rotate, moveOverlay, resizeOverlay, rotateOverlay, adapter]);
+
   const baseBoundsOf = useMemo(() => {
     if (boundsOf) return boundsOf;
     if (!move && !resize) return undefined;
@@ -700,6 +740,20 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       return baseBoundsOf(id);
     };
   }, [boundsOf, baseBoundsOf, multiActive, selectedIdsForWiring, unionOfSelection]);
+
+  // helpersRef: surface overlay-aware lookups to custom layers. Updated each
+  // render so layer.draw closures pick up live overlay state without needing
+  // their own subscription.
+  if (helpersRef) {
+    helpersRef.current = {
+      getEffectivePose: effectivePoseOf,
+      getEffectiveBounds: (id: string): Bounds | null => {
+        if (effectiveBoundsOf) return effectiveBoundsOf(id);
+        const p = effectivePoseOf(id);
+        return p == null ? null : geometry.getBounds(p);
+      },
+    };
+  }
 
   // hitBody: in multi mode with >1 selected, a click inside the union AABB
   // that doesn't land on an unselected leaf drags the whole set without
