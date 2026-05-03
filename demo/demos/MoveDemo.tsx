@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   useMove,
-  useSelection,
   arrayAdapter,
   snap,
   gridSnapStrategy,
@@ -33,8 +32,6 @@ export function MoveDemo() {
   const rectsRef = useRef(rects);
   rectsRef.current = rects;
 
-  const selection = useSelection();
-
   const adapter = arrayAdapter<Rect, Pose>({
     ref: rectsRef,
     setItems: setRects,
@@ -56,14 +53,6 @@ export function MoveDemo() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [zoomCtl]);
-
-  const hitBody = (wx: number, wy: number): string | null => {
-    for (let i = rectsRef.current.length - 1; i >= 0; i--) {
-      const r = rectsRef.current[i];
-      if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) return r.id;
-    }
-    return null;
-  };
 
   const overlay = move.overlay;
   const layers = useMemo(
@@ -103,8 +92,6 @@ export function MoveDemo() {
       className="ckd-canvas"
       layers={layers}
       move={move}
-      hitBody={hitBody}
-      selection={selection}
       clientToWorld={clientToWorld}
     />
   );
@@ -118,8 +105,7 @@ const [rects, setRects] = useState<Rect[]>(INITIAL);
 const rectsRef = useRef(rects);
 rectsRef.current = rects;
 
-// --- Adapter + selection ---
-const selection = useSelection();
+// --- Adapter ---
 const adapter = arrayAdapter<Rect, Pose>({
   ref: rectsRef,
   setItems: setRects,
@@ -144,15 +130,14 @@ const layers = defaultLayers<Rect, Pose>({
   moveOverlay: move.overlay,
 });
 
-// <Canvas> wires DPR setup, clearRect, runLayers, and pointer gestures.
+// <Canvas> wires DPR setup, clearRect, runLayers, pointer gestures, and
+// auto-derives selection + hitBody from the move adapter.
 return (
   <Canvas
     width={W}
     height={H}
     layers={layers}
     move={move}
-    hitBody={hitBody}
-    selection={selection}
   />
 );
 `;

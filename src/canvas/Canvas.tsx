@@ -12,7 +12,7 @@
  * passing callbacks via the gesture slots.
  */
 
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import type React from 'react';
 import { runLayers, type RenderLayer } from '../features/layers/render';
 import { setupCanvasDpr } from '../features/viewport/pixelDensity';
@@ -20,7 +20,7 @@ import {
   usePointerGestures,
   type PointerGestureCallbackCtx,
 } from '../interactions/usePointerGestures';
-import type { SelectionApi } from '../features/selection/useSelection';
+import { useSelection, type SelectionApi } from '../features/selection/useSelection';
 import type { UseMoveReturn } from '../interactions/gestures/move/move';
 import type { UseResizeReturn } from '../interactions/gestures/resize/resize';
 
@@ -43,9 +43,25 @@ export interface CanvasProps<TMovePose, TResizePose> {
   // --- Gesture slots (fed straight into usePointerGestures) ---
   move?: UseMoveReturn<{ id: string }, TMovePose>;
   resize?: UseResizeReturn<{ id: string }, TResizePose>;
+  /** Body hit-test. When omitted and `move` is supplied, defaults to a
+   *  rect-pose hit-test that walks `move.adapter.getObjects()` top-most
+   *  first and returns the first id whose `move.adapter.getPose(id)` AABB
+   *  contains `(worldX, worldY)`. Override for non-rect poses or domain-
+   *  specific hit-testing (e.g. group-aware resolution). */
   hitBody?: (worldX: number, worldY: number) => string | string[] | null;
   resizeTarget?: () => { id: string; bounds: Bounds } | null;
+  /** Selection api. When omitted, `<Canvas>` calls {@link useSelection}
+   *  internally with default options. Pass an explicit instance when the
+   *  app needs `multi` mode, an extend key, or to share the selection
+   *  with code outside the canvas. */
   selection?: SelectionApi;
+  /** Per-id bounds lookup (for the resize-handle target). When omitted and
+   *  `move` (and optionally `resize`) is supplied, defaults to:
+   *    1. `move.overlay?.poses.get(id)` if a move overlay is live
+   *    2. `resize.overlay.currentPose` if `resize.overlay.id === id`
+   *    3. `move.adapter.getPose(id)` (or `resize.adapter.getPose(id)`)
+   *  Assumes pose has rect fields (`x,y,width,height`). Override for non-
+   *  rect poses or to compute group bounds. */
   boundsOf?: (id: string) => Bounds | null;
   onBodyHit?: (ids: string[], ctx: PointerGestureCallbackCtx) => void;
   onTapEmpty?: (ctx: PointerGestureCallbackCtx) => void;
@@ -101,13 +117,67 @@ function CanvasInner<TMovePose, TResizePose>(
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   useImperativeHandle(ref, () => canvasRef.current as HTMLCanvasElement, []);
 
+  // Always call useSelection (React rules forbid conditional hook calls).
+  // Prefer the explicitly-supplied `selection` prop when present.
+  const fallbackSelection = useSelection();
+  const effectiveSelection: SelectionApi = selection ?? fallbackSelection;
+
+  // Default hitBody: rect-pose AABB scan over move.adapter.getObjects().
+  // Iterates in reverse so top-most (last-rendered) hits first.
+  const moveOverlay = move?.overlay ?? null;
+  const resizeOverlay = resize?.overlay ?? null;
+  const effectiveHitBody = useMemo(() => {
+    if (hitBody) return hitBody;
+    if (!move || !move.adapter.getObjects) return undefined;
+    const adapter = move.adapter;
+    return (worldX: number, worldY: number): string | null => {
+      const objs = adapter.getObjects!();
+      for (let i = objs.length - 1; i >= 0; i--) {
+        const o = objs[i];
+        const p = adapter.getPose(o.id) as unknown as Bounds;
+        if (
+          worldX >= p.x &&
+          worldX <= p.x + p.width &&
+          worldY >= p.y &&
+          worldY <= p.y + p.height
+        ) {
+          return o.id;
+        }
+      }
+      return null;
+    };
+  }, [hitBody, move]);
+
+  // Default boundsOf: move overlay → resize overlay → adapter.getPose fallback.
+  // Assumes rect-shaped pose; consumers override for non-rect.
+  const effectiveBoundsOf = useMemo(() => {
+    if (boundsOf) return boundsOf;
+    if (!move && !resize) return undefined;
+    return (id: string): Bounds | null => {
+      const ov = move?.overlay?.poses.get(id);
+      if (ov) return ov as unknown as Bounds;
+      if (resize?.overlay && resize.overlay.id === id) {
+        return resize.overlay.currentPose as unknown as Bounds;
+      }
+      const adapter = move?.adapter ?? resize?.adapter;
+      if (!adapter) return null;
+      try {
+        return adapter.getPose(id) as unknown as Bounds;
+      } catch {
+        return null;
+      }
+    };
+    // moveOverlay/resizeOverlay listed so a fresh closure is built when
+    // the overlay reference changes (state-update during a live gesture).
+  }, [boundsOf, move, resize, moveOverlay, resizeOverlay]);
+
   const bindings = usePointerGestures<TMovePose, TResizePose>({
     move,
     resize,
-    hitBody,
+    hitBody: effectiveHitBody,
     resizeTarget,
-    selection,
-    boundsOf,
+    selection: effectiveSelection,
+    boundsOf: effectiveBoundsOf,
     onBodyHit,
     onTapEmpty,
     clientToWorld,

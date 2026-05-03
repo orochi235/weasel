@@ -90,22 +90,6 @@ export function QuadtreeDemo() {
   const move = useMove<Rect, Pose>(adapter);
   const resize = useResize<Rect, Pose>(adapter, {});
 
-  const hitBody = (wx: number, wy: number): string | null => {
-    for (let i = rectsRef.current.length - 1; i >= 0; i--) {
-      const r = rectsRef.current[i];
-      if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) return r.id;
-    }
-    return null;
-  };
-
-  const boundsOf = (id: string): Pose | null => {
-    const ov = move.overlay?.poses.get(id);
-    if (ov) return ov;
-    if (resize.overlay && resize.overlay.id === id) return resize.overlay.currentPose;
-    const r = rectsRef.current.find((x) => x.id === id);
-    return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
-  };
-
   const moveOverlay = move.overlay;
   const resizeOverlay = resize.overlay;
   const selectedIds = selection.current;
@@ -154,9 +138,7 @@ export function QuadtreeDemo() {
       layers={layers}
       move={move}
       resize={resize}
-      hitBody={hitBody}
       selection={selection}
-      boundsOf={boundsOf}
       handleHitRadius={HANDLE}
     />
   );
@@ -181,7 +163,9 @@ function buildTree(bounds, rects): QuadNode {
   return root;
 }
 
-// useSelection + <Canvas> + defaultLayers handle pointer wiring for us.
+// <Canvas> auto-derives hitBody and boundsOf from move/resize. We keep an
+// explicit useSelection here only because the layers stack reads
+// selection.current to draw selection handles.
 const selection = useSelection();
 const move = useMove<Rect, Pose>(adapter);
 const resize = useResize<Rect, Pose>(adapter, {});
@@ -201,9 +185,7 @@ return (
     layers={layers}
     move={move}
     resize={resize}
-    hitBody={hitBody}
     selection={selection}
-    boundsOf={boundsOf}
     handleHitRadius={HANDLE}
   />
 );
