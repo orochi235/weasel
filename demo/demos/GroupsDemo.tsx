@@ -7,6 +7,8 @@ import {
   composeSelectionPose,
   createSelectionOverlayLayer,
   runLayers,
+  cornerResizeHandles,
+  hitCornerHandle,
 } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
 import { setupCanvasDpr } from '@orochi235/weasel';
@@ -15,7 +17,6 @@ import type {
   GroupAdapter,
   MoveAdapter,
   ResizeAdapter,
-  ResizeAnchor,
   Op,
   RenderLayer,
 } from '@orochi235/weasel';
@@ -106,13 +107,6 @@ export function GroupsDemo() {
     return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
   };
 
-  const handlesOf = (p: Pose): { cx: number; cy: number; anchor: ResizeAnchor }[] => ([
-    { cx: p.x,             cy: p.y,              anchor: { x: 'max', y: 'max' } },
-    { cx: p.x + p.width,   cy: p.y,              anchor: { x: 'min', y: 'max' } },
-    { cx: p.x,             cy: p.y + p.height,   anchor: { x: 'max', y: 'min' } },
-    { cx: p.x + p.width,   cy: p.y + p.height,   anchor: { x: 'min', y: 'min' } },
-  ]);
-
   const hit = (wx: number, wy: number): Rect | null => {
     for (let i = rectsRef.current.length - 1; i >= 0; i--) {
       const r = rectsRef.current[i];
@@ -130,8 +124,8 @@ export function GroupsDemo() {
       const group = adapter.getGroup(id);
       const pose = group ? groupBounds(id) : adapter.getPose(id);
       if (!pose) continue;
-      for (const h of handlesOf(pose)) {
-        if (Math.abs(wx - h.cx) <= HANDLE && Math.abs(wy - h.cy) <= HANDLE) {
+      for (const h of cornerResizeHandles(pose)) {
+        if (hitCornerHandle(h, wx, wy, HANDLE)) {
           gesture.current = 'resize';
           resize.start(id, h.anchor, wx, wy);
           return;

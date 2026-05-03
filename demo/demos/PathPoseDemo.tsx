@@ -11,6 +11,8 @@ import {
   setupCanvasDpr,
   snap,
   gridSnapStrategy,
+  cornerResizeHandles,
+  hitCornerHandle,
 } from '@orochi235/weasel';
 import type {
   Path,
@@ -67,20 +69,12 @@ export function PathPoseDemo() {
   const activeAnchor = useRef<ResizeAnchor | null>(null);
   const dragging = useRef(false);
 
-  const handlesOf = (p: Path): { cx: number; cy: number; anchor: ResizeAnchor }[] => {
-    const b = boundsOfPath(p);
-    return [
-      { cx: b.x,           cy: b.y,            anchor: { x: 'max', y: 'max' } },
-      { cx: b.x + b.width, cy: b.y,            anchor: { x: 'min', y: 'max' } },
-      { cx: b.x,           cy: b.y + b.height, anchor: { x: 'max', y: 'min' } },
-      { cx: b.x + b.width, cy: b.y + b.height, anchor: { x: 'min', y: 'min' } },
-    ];
-  };
+  const handlesOf = (p: Path) => cornerResizeHandles(boundsOfPath(p));
 
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     const [wx, wy] = clientToCanvas(e.currentTarget, e.clientX, e.clientY);
     for (const h of handlesOf(pathRef.current)) {
-      if (Math.abs(wx - h.cx) <= HANDLE && Math.abs(wy - h.cy) <= HANDLE) {
+      if (hitCornerHandle(h, wx, wy, HANDLE)) {
         activeAnchor.current = h.anchor;
         e.currentTarget.setPointerCapture(e.pointerId);
         resize.start('p', h.anchor, wx, wy);

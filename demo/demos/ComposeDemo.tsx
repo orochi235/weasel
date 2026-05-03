@@ -8,6 +8,8 @@ import {
   composeSelectionPose,
   createSelectionOverlayLayer,
   runLayers,
+  cornerResizeHandles,
+  hitCornerHandle,
 } from '@orochi235/weasel';
 import { selectFromMarquee } from '@orochi235/weasel/area-select';
 import { clientToCanvas } from '../canvasCoords';
@@ -18,7 +20,6 @@ import type {
   InsertAdapter,
   AreaSelectAdapter,
   DeleteAdapter,
-  ResizeAnchor,
   Op,
   ClipboardSnapshot,
   RenderLayer,
@@ -93,13 +94,6 @@ export function ComposeDemo() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const gesture = useRef<'move' | 'resize' | 'insert' | 'area' | null>(null);
 
-  const handlesOf = (r: Rect): { cx: number; cy: number; anchor: ResizeAnchor }[] => ([
-    { cx: r.x,           cy: r.y,            anchor: { x: 'max', y: 'max' } },
-    { cx: r.x + r.width, cy: r.y,            anchor: { x: 'min', y: 'max' } },
-    { cx: r.x,           cy: r.y + r.height, anchor: { x: 'max', y: 'min' } },
-    { cx: r.x + r.width, cy: r.y + r.height, anchor: { x: 'min', y: 'min' } },
-  ]);
-
   const hit = (wx: number, wy: number): Rect | null => {
     for (let i = rectsRef.current.length - 1; i >= 0; i--) {
       const r = rectsRef.current[i];
@@ -117,8 +111,8 @@ export function ComposeDemo() {
     for (const id of selRef.current) {
       const r = rectsRef.current.find((x) => x.id === id);
       if (!r) continue;
-      for (const h of handlesOf(r)) {
-        if (Math.abs(wx - h.cx) <= HANDLE && Math.abs(wy - h.cy) <= HANDLE) {
+      for (const h of cornerResizeHandles(r)) {
+        if (hitCornerHandle(h, wx, wy, HANDLE)) {
           gesture.current = 'resize';
           resize.start(r.id, h.anchor, wx, wy);
           return;
@@ -298,8 +292,8 @@ useDeleteAction(adapter, { bindKeyboard: true });
 // Pointer-down dispatcher picks which hook gets the gesture:
 function onPointerDown(e) {
   // 1. on a resize handle of a selected rect? -> resize
-  for (const id of selection) for (const h of handlesOf(byId(id)))
-    if (nearHandle(wx, wy, h)) return resize.start(id, h.anchor, wx, wy);
+  for (const id of selection) for (const h of cornerResizeHandles(byId(id)))
+    if (hitCornerHandle(h, wx, wy, HANDLE)) return resize.start(id, h.anchor, wx, wy);
 
   // 2. on an object? -> move (and select it if not already)
   const target = hit(wx, wy);

@@ -100,7 +100,7 @@ export type {
   SelectionOverlayLayerOpts,
 } from './selectionOverlay';
 export * from './renderLabel';
-export * from './markdownText';
+export * from './text/markdownText';
 export {
   DEFAULT_TEXT_STYLE,
   resolveTextStyle,
@@ -183,6 +183,7 @@ export { resolveToOutermostGroup, expandToLeaves } from './groups/resolve';
 export { unionBounds } from './groups/unionBounds';
 export type { RectPose } from './groups/unionBounds';
 export { withGroupOrdering } from './groups/orderedGroups';
+export * from './chrome';
 export * from './history';
 export * from './adapters/types';
 export type {

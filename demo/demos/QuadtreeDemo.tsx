@@ -6,11 +6,12 @@ import {
   createSelectionOverlayLayer,
   runLayers,
   setupCanvasDpr,
+  cornerResizeHandles,
+  hitCornerHandle,
 } from '@orochi235/weasel';
 import type {
   MoveAdapter,
   ResizeAdapter,
-  ResizeAnchor,
   RenderLayer,
   Op,
 } from '@orochi235/weasel';
@@ -118,13 +119,6 @@ export function QuadtreeDemo() {
   const dragKind = useRef<'move' | 'resize' | null>(null);
   const dragId = useRef<string | null>(null);
 
-  const handlesFor = (r: Rect): { cx: number; cy: number; anchor: ResizeAnchor }[] => ([
-    { cx: r.x,           cy: r.y,            anchor: { x: 'max', y: 'max' } },
-    { cx: r.x + r.width, cy: r.y,            anchor: { x: 'min', y: 'max' } },
-    { cx: r.x,           cy: r.y + r.height, anchor: { x: 'max', y: 'min' } },
-    { cx: r.x + r.width, cy: r.y + r.height, anchor: { x: 'min', y: 'min' } },
-  ]);
-
   const hit = (wx: number, wy: number): Rect | null => {
     for (let i = rectsRef.current.length - 1; i >= 0; i--) {
       const r = rectsRef.current[i];
@@ -138,8 +132,8 @@ export function QuadtreeDemo() {
     if (selectedId) {
       const sel = rectsRef.current.find((r) => r.id === selectedId);
       if (sel) {
-        for (const h of handlesFor(sel)) {
-          if (Math.abs(wx - h.cx) <= HANDLE && Math.abs(wy - h.cy) <= HANDLE) {
+        for (const h of cornerResizeHandles(sel)) {
+          if (hitCornerHandle(h, wx, wy, HANDLE)) {
             dragKind.current = 'resize';
             dragId.current = sel.id;
             e.currentTarget.setPointerCapture(e.pointerId);
