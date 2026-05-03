@@ -11,3 +11,4 @@ coverage
 .env
 .env.local
 .idea
+.playwright-mcp/
