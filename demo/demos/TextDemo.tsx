@@ -1,21 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
-  arrayAdapter,
-  createSelectionOverlayLayer,
+  Canvas,
   createSetTextOp,
   createTextLayer,
   gridSnapStrategy,
   caretIndexAt,
   pointInTextPose,
-  runLayers,
-  setupCanvasDpr,
   snap,
-  useMove,
-  useResize,
   useTextEdit,
+  type CanvasHelpers,
   type Op,
   type RenderLayer,
-  type ResizeAnchor,
   type TextStyle,
 } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
@@ -88,39 +83,18 @@ const INITIAL: TextNode[] = [
 
 export function TextDemo() {
   const [nodes, setNodes] = useState<TextNode[]>(INITIAL);
-  const [selection, setSelection] = useState<string[]>([]);
   const nodesRef = useRef(nodes);
   nodesRef.current = nodes;
-  const selectionRef = useRef(selection);
-  selectionRef.current = selection;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  // helpersRef gives custom layers overlay-aware pose lookups so the text
+  // and selection ghost follow live drag/resize without us re-implementing
+  // the overlay fold-in.
+  const helpersRef = useRef<CanvasHelpers<Pose> | null>(null);
 
   const setText = useCallback((id: string, text: string) => {
     setNodes((ns) => ns.map((n) => (n.id === id ? { ...n, text } : n)));
   }, []);
-
-  const baseAdapter = arrayAdapter<TextNode, Pose>({
-    ref: nodesRef,
-    setItems: setNodes,
-    toPose: (n) => ({ x: n.x, y: n.y, width: n.width, height: n.height }),
-  });
-
-  const moveAdapter = {
-    ...baseAdapter,
-    applyBatch: (ops: Op[], _label?: string) => {
-      const adapter = { ...moveAdapter, setText };
-      for (const op of ops) op.apply(adapter);
-    },
-  };
-
-  const move = useMove<TextNode, Pose>(moveAdapter, {
-    behaviors: [snap(gridSnapStrategy<Pose>(CELL))],
-  });
-
-  const resize = useResize<TextNode, Pose>(baseAdapter, {});
-  const activeResize = useRef<{ id: string; anchor: ResizeAnchor } | null>(null);
 
   const edit = useTextEdit({
     container: containerRef.current,
@@ -140,120 +114,63 @@ export function TextDemo() {
     setText: (id, text) => {
       const prev = nodesRef.current.find((n) => n.id === id)?.text ?? '';
       if (prev === text) return;
-      moveAdapter.applyBatch?.(
-        [createSetTextOp({ id, from: prev, to: text, label: 'Edit text' })],
-        'Edit text',
-      );
+      const op: Op = createSetTextOp({ id, from: prev, to: text, label: 'Edit text' });
+      op.apply({ setText });
     },
   });
 
-  const draggingId = useRef<string | null>(null);
-
-  const hit = (wx: number, wy: number): TextNode | null => {
-    for (let i = nodesRef.current.length - 1; i >= 0; i--) {
-      if (pointInTextPose(wx, wy, nodesRef.current[i])) return nodesRef.current[i];
-    }
-    return null;
+  const resolvePose = (n: TextNode): Pose => {
+    const overlayPose = helpersRef.current?.getEffectivePose(n.id);
+    return overlayPose ?? { x: n.x, y: n.y, width: n.width, height: n.height };
   };
 
-  /** Bottom-right corner of the currently selected node, if any. */
-  const handleForSelection = (): { id: string; cx: number; cy: number; anchor: ResizeAnchor } | null => {
-    const id = selectionRef.current[0];
-    if (!id) return null;
-    const n = nodesRef.current.find((x) => x.id === id);
-    if (!n) return null;
-    return {
-      id,
-      cx: n.x + n.width,
-      cy: n.y + n.height,
-      anchor: { x: 'min', y: 'min' },
-    };
-  };
-
-  const hitHandle = (wx: number, wy: number) => {
-    const h = handleForSelection();
-    if (!h) return null;
-    if (Math.abs(wx - h.cx) <= HANDLE && Math.abs(wy - h.cy) <= HANDLE) return h;
-    return null;
-  };
-
-  const onPointerDown = useCallback(
-    (e: React.PointerEvent<HTMLCanvasElement>) => {
-      if (edit.editingId) return;
-      const [cx, cy] = clientToCanvas(e.currentTarget, e.clientX, e.clientY);
-
-      const handle = hitHandle(cx, cy);
-      if (handle) {
-        activeResize.current = { id: handle.id, anchor: handle.anchor };
-        e.currentTarget.setPointerCapture(e.pointerId);
-        resize.start(handle.id, handle.anchor, cx, cy);
-        return;
-      }
-
-      const target = hit(cx, cy);
-      if (!target) {
-        setSelection([]);
-        return;
-      }
-      setSelection([target.id]);
-      draggingId.current = target.id;
-      e.currentTarget.setPointerCapture(e.pointerId);
-      move.start({
-        ids: [target.id],
-        worldX: cx,
-        worldY: cy,
-        clientX: e.clientX,
-        clientY: e.clientY,
-      });
+  // Custom text layer — replaces the default scene drawer so we can render
+  // text via createTextLayer and hide the node currently being edited (the
+  // contenteditable overlay handles its own visuals).
+  const textLayer: RenderLayer<unknown> = createTextLayer<TextNode>({
+    getTexts: () => nodesRef.current,
+    getPose: (n) => {
+      const p = resolvePose(n);
+      return {
+        x: p.x,
+        y: p.y,
+        width: p.width,
+        height: p.height,
+        text: n.text,
+        style: n.style,
+      };
     },
-    [move, resize, edit],
-  );
+    isHidden: (n) => edit.isEditing(n.id),
+  });
 
-  const onPointerMove = useCallback(
-    (e: React.PointerEvent<HTMLCanvasElement>) => {
-      const [cx, cy] = clientToCanvas(e.currentTarget, e.clientX, e.clientY);
-      if (activeResize.current) {
-        resize.move(cx, cy, {
-          alt: e.altKey,
-          shift: e.shiftKey,
-          meta: e.metaKey,
-          ctrl: e.ctrlKey,
-        });
-        return;
+  // Faint background outline per node so empty text boxes stay visible.
+  const outlineLayer: RenderLayer<unknown> = {
+    id: 'text-bounds',
+    label: 'Text bounds',
+    draw: (cx) => {
+      cx.strokeStyle = '#e8e8e8';
+      cx.lineWidth = 1;
+      for (const n of nodesRef.current) {
+        const p = resolvePose(n);
+        cx.strokeRect(p.x + 0.5, p.y + 0.5, p.width, p.height);
       }
-      if (!draggingId.current) return;
-      move.move({
-        worldX: cx,
-        worldY: cy,
-        clientX: e.clientX,
-        clientY: e.clientY,
-        modifiers: { alt: e.altKey, shift: e.shiftKey, meta: e.metaKey, ctrl: e.ctrlKey },
-      });
     },
-    [move, resize],
-  );
+  };
 
-  const onPointerUp = useCallback(() => {
-    if (activeResize.current) {
-      activeResize.current = null;
-      resize.end();
-      return;
-    }
-    if (!draggingId.current) return;
-    draggingId.current = null;
-    move.end();
-  }, [move, resize]);
-
+  // Suppress text-edit triggering on the same gesture that just selected a
+  // node — only an actual dblclick on the selected node enters edit mode.
   const onDoubleClick = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>) => {
-      const [cx, cy] = clientToCanvas(e.currentTarget, e.clientX, e.clientY);
-      const target = hit(cx, cy);
-      if (!target) return;
-      const ctx = e.currentTarget.getContext('2d');
-      if (!ctx) {
-        edit.startEdit(target.id);
-        return;
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const canvas = e.target instanceof HTMLCanvasElement ? e.target : null;
+      if (!canvas) return;
+      const [cx, cy] = clientToCanvas(canvas, e.clientX, e.clientY);
+      let target: TextNode | null = null;
+      for (let i = nodesRef.current.length - 1; i >= 0; i--) {
+        if (pointInTextPose(cx, cy, nodesRef.current[i])) { target = nodesRef.current[i]; break; }
       }
+      if (!target) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { edit.startEdit(target.id); return; }
       const caret = caretIndexAt(ctx, cx, cy, {
         x: target.x, y: target.y, width: target.width, height: target.height,
         text: target.text, style: target.style,
@@ -263,107 +180,30 @@ export function TextDemo() {
     [edit],
   );
 
-  const overlay = move.overlay;
-  const resizeOverlay = resize.overlay;
-
-  /** Resolve a node's effective pose: live resize > live move > committed. */
-  const resolvePose = (n: TextNode): Pose => {
-    if (resizeOverlay && activeResize.current?.id === n.id) {
-      return resizeOverlay.currentPose;
-    }
-    const ghost = overlay?.poses?.get(n.id);
-    return {
-      x: ghost?.x ?? n.x,
-      y: ghost?.y ?? n.y,
-      width: ghost?.width ?? n.width,
-      height: ghost?.height ?? n.height,
-    };
-  };
-
-  useEffect(() => {
-    const c = canvasRef.current;
-    if (!c) return;
-    const ctx = c.getContext('2d')!;
-    setupCanvasDpr(c, ctx, W, H);
-    ctx.clearRect(0, 0, W, H);
-
-    const bgLayer: RenderLayer<unknown> = {
-      id: 'bg',
-      label: 'Background',
-      draw: (cx) => {
-        cx.fillStyle = '#fafafa';
-        cx.fillRect(0, 0, W, H);
-        cx.strokeStyle = '#e8e8e8';
-        cx.lineWidth = 1;
-        for (const n of nodesRef.current) {
-          const hide = overlay?.hideIds?.includes(n.id);
-          if (hide) continue;
-          const p = resolvePose(n);
-          cx.strokeRect(p.x + 0.5, p.y + 0.5, p.width, p.height);
-        }
-      },
-    };
-
-    const textLayer = createTextLayer<TextNode>({
-      getTexts: () => nodesRef.current,
-      getPose: (n) => {
-        const p = resolvePose(n);
-        return {
-          x: p.x,
-          y: p.y,
-          width: p.width,
-          height: p.height,
-          text: n.text,
-          style: n.style,
-        };
-      },
-      isHidden: (n) => edit.isEditing(n.id),
-    });
-
-    const selectionLayer = createSelectionOverlayLayer<Pose>({
-      getSelection: () => selectionRef.current,
-      getPose: (id) => {
-        const n = nodesRef.current.find((x) => x.id === id);
-        if (!n) return null;
-        return resolvePose(n);
-      },
-      handles: false,
-    });
-
-    const handleLayer: RenderLayer<unknown> = {
-      id: 'handle',
-      label: 'Resize handle',
-      draw: (cx) => {
-        const id = selectionRef.current[0];
-        if (!id) return;
-        const n = nodesRef.current.find((x) => x.id === id);
-        if (!n) return;
-        const p = resolvePose(n);
-        const hx = p.x + p.width;
-        const hy = p.y + p.height;
-        cx.fillStyle = '#fff';
-        cx.strokeStyle = '#1a130d';
-        cx.lineWidth = 1;
-        cx.fillRect(hx - HANDLE / 2, hy - HANDLE / 2, HANDLE, HANDLE);
-        cx.strokeRect(hx - HANDLE / 2, hy - HANDLE / 2, HANDLE, HANDLE);
-      },
-    };
-
-    runLayers(ctx, [bgLayer, textLayer, selectionLayer, handleLayer], undefined, {});
-  }, [nodes, selection, overlay, resizeOverlay, edit]);
-
   return (
-    <div ref={containerRef} style={{ position: 'relative', width: W, height: H }}>
-      <canvas
-        ref={canvasRef}
-        className="ckd-canvas"
+    <div
+      ref={containerRef}
+      style={{ position: 'relative', width: W, height: H }}
+      onDoubleClick={onDoubleClick}
+    >
+      <Canvas<TextNode, Pose>
         width={W}
         height={H}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        onDoubleClick={onDoubleClick}
+        className="ckd-canvas"
+        background="#fafafa"
+        items={nodes}
+        setItems={setNodes}
+        toPose={(n) => ({ x: n.x, y: n.y, width: n.width, height: n.height })}
+        helpersRef={helpersRef}
+        moveOptions={{ behaviors: [snap(gridSnapStrategy<Pose>(CELL))] }}
+        handleHitRadius={HANDLE}
+        layers={{
+          // No default scene — the custom text layer paints everything.
+          scene: null,
+          'text-bounds': { layer: outlineLayer, before: 'selectionOverlay' },
+          'text': { layer: textLayer, before: 'selectionOverlay' },
+          selectionOverlay: { handles: { size: HANDLE } },
+        }}
       />
     </div>
   );
@@ -372,14 +212,8 @@ export function TextDemo() {
 export const TEXT_DEMO_SOURCE = `// --- Scene ---
 interface TextNode { id; x; y; width; height; text; style?: TextStyle }
 const [nodes, setNodes] = useState<TextNode[]>(INITIAL);
-const [selection, setSelection] = useState<string[]>([]);
 
-// --- Move interaction (drag a selected node) ---
-const move = useMove<TextNode, Pose>(moveAdapter, {
-  behaviors: [snap(gridSnapStrategy<Pose>(10))],
-});
-
-// --- Edit interaction (contenteditable overlay) ---
+// --- Text edit interaction (contenteditable overlay) ---
 const edit = useTextEdit({
   container: containerRef.current,
   getText: (id) => find(id)?.text ?? '',
@@ -390,32 +224,39 @@ const edit = useTextEdit({
                  fontSize: n.style?.fontSize ?? 16 } : null;
   },
   setText: (id, text) => {
-    const prev = find(id)?.text ?? '';
-    if (prev === text) return;
-    applyBatch([createSetTextOp({ id, from: prev, to: text, label: 'Edit text' })]);
+    const op = createSetTextOp({ id, from: prev, to: text, label: 'Edit text' });
+    op.apply({ setText });
   },
 });
 
-// --- Pointer routing: click selects + starts drag, double-click edits ---
-onPointerDown: hit-test → setSelection([id]) → move.start(...)
-onPointerMove: move.move(...)
-onPointerUp:   move.end()
-onDoubleClick: hit-test → caretIndexAt(ctx, x, y, pose) → edit.startEdit(id, { caret })
-
-// --- Render: text + selection outline (the move overlay supplies live ghost poses) ---
+// --- Custom text layer reads overlay-aware poses via Canvas helpersRef ---
+const helpersRef = useRef<CanvasHelpers<Pose> | null>(null);
 const textLayer = createTextLayer<TextNode>({
   getTexts: () => nodesRef.current,
-  getPose: (n) => ({
-    x: overlay?.poses?.get(n.id)?.x ?? n.x,
-    y: overlay?.poses?.get(n.id)?.y ?? n.y,
-    width: n.width, height: n.height, text: n.text, style: n.style,
-  }),
+  getPose: (n) => {
+    const p = helpersRef.current?.getEffectivePose(n.id) ?? n;
+    return { x: p.x, y: p.y, width: p.width, height: p.height, text: n.text, style: n.style };
+  },
   isHidden: (n) => edit.isEditing(n.id),
 });
-const selectionLayer = createSelectionOverlayLayer({
-  getSelection: () => selectionRef.current,
-  getPose: (id) => /* same ghost-aware pose lookup */ ...,
-  handles: false,
-});
-runLayers(ctx, [bgLayer, textLayer, selectionLayer], undefined, {});
+
+// <Canvas> owns useMove + useResize + useSelection; we just plug a snap
+// behavior into moveOptions and slot the text layer into the layer stack.
+// Double-click on the wrapping div routes through caretIndexAt → edit.startEdit.
+return (
+  <div ref={containerRef} onDoubleClick={onDoubleClick}>
+    <Canvas<TextNode, Pose>
+      width={W} height={H}
+      items={nodes} setItems={setNodes}
+      toPose={(n) => ({ x: n.x, y: n.y, width: n.width, height: n.height })}
+      helpersRef={helpersRef}
+      moveOptions={{ behaviors: [snap(gridSnapStrategy<Pose>(10))] }}
+      layers={{
+        scene: null,
+        'text': { layer: textLayer, before: 'selectionOverlay' },
+        selectionOverlay: { handles: { size: HANDLE } },
+      }}
+    />
+  </div>
+);
 `;
