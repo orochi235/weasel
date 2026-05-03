@@ -70,3 +70,53 @@ describe('runLayers', () => {
     expect(a.draw).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('runLayers — view-aware translation', () => {
+  function makeCtx() {
+    const calls: string[] = [];
+    const ctx = {
+      save: vi.fn(() => calls.push('save')),
+      restore: vi.fn(() => calls.push('restore')),
+      translate: vi.fn((x: number, y: number) => calls.push(`translate(${x},${y})`)),
+    } as unknown as CanvasRenderingContext2D;
+    return { ctx, calls };
+  }
+
+  it('legacy: when view is omitted, no save/translate/restore wrapping', () => {
+    const { ctx, calls } = makeCtx();
+    const draw = vi.fn();
+    const layers: RenderLayer<unknown>[] = [{ id: 'a', label: 'a', draw }];
+    runLayers(ctx, layers, null, {});
+    expect(draw).toHaveBeenCalledTimes(1);
+    expect(calls).toEqual([]);
+  });
+
+  it('world layer (default): translates by -view.x, -view.y around draw', () => {
+    const { ctx, calls } = makeCtx();
+    const draw = vi.fn();
+    const layers: RenderLayer<unknown>[] = [{ id: 'a', label: 'a', draw }];
+    runLayers(ctx, layers, null, {}, undefined, { x: 10, y: 20 });
+    expect(calls).toEqual(['save', 'translate(-10,-20)', 'restore']);
+  });
+
+  it('screen layer: save/restore only (no translate)', () => {
+    const { ctx, calls } = makeCtx();
+    const draw = vi.fn();
+    const layers: RenderLayer<unknown>[] = [
+      { id: 'a', label: 'a', draw, space: 'screen' },
+    ];
+    runLayers(ctx, layers, null, {}, undefined, { x: 10, y: 20 });
+    expect(calls).toEqual(['save', 'restore']);
+  });
+
+  it('explicit space: world is equivalent to default', () => {
+    const { ctx, calls } = makeCtx();
+    const draw = vi.fn();
+    const layers: RenderLayer<unknown>[] = [
+      { id: 'a', label: 'a', draw, space: 'world' },
+    ];
+    runLayers(ctx, layers, null, {}, undefined, { x: 5, y: 0 });
+    // JS template literals render -0 as "0", so the string is 'translate(-5,0)'.
+    expect(calls).toEqual(['save', 'translate(-5,0)', 'restore']);
+  });
+});
