@@ -6,6 +6,7 @@ import {
   createSelectionHandlesLayer,
 } from './selectionOverlay';
 import type { Group, GroupAdapter } from './groups/types';
+import { boundsOfPath, polygonFromPoints } from './paths';
 
 function makeGroupAdapter(groups: Group[]): GroupAdapter {
   const byId = new Map<string, Group>(groups.map((g) => [g.id, { ...g, members: [...g.members] }]));
@@ -447,6 +448,29 @@ describe('createSelectionHandlesLayer', () => {
     });
     layer.draw(ctx, undefined);
     expect(calls.filter((c) => c.fn === 'fillRect')).toHaveLength(1);
+  });
+});
+
+describe('Path TPose via boundsOfPath', () => {
+  it('renders outline + 4 corner handles around a Path AABB', () => {
+    const { ctx, calls } = makeStubCtx();
+    const tri = polygonFromPoints([
+      { x: 10, y: 20 },
+      { x: 50, y: 20 },
+      { x: 30, y: 80 },
+    ]);
+    const layer = createSelectionOverlayLayer({
+      getSelection: () => ['a'],
+      getPose: () => tri,
+      getBounds: boundsOfPath,
+    });
+    layer.draw(ctx, undefined);
+    const stroke = calls.find((c) => c.fn === 'strokeRect');
+    // AABB is (10,20)..(50,80) → padded by 1 → (9,19,42,62)
+    expect(stroke?.args).toEqual([9, 19, 42, 62]);
+    // Default 4 corner handles at AABB corners.
+    const handleFills = calls.filter((c) => c.fn === 'fillRect');
+    expect(handleFills).toHaveLength(4);
   });
 });
 

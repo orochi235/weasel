@@ -30,7 +30,6 @@ describe('useResizeInteraction — non-rect TPose via pathPoseGeometry', () => {
         { x: 10, y: 0 },
         { x: 5, y: 10 },
       ],
-      true,
     );
     const { adapter, batches } = makeAdapter(tri);
 
@@ -74,7 +73,6 @@ describe('useResizeInteraction — non-rect TPose via pathPoseGeometry', () => {
         { x: 10, y: 0 },
         { x: 5, y: 10 },
       ],
-      true,
     );
     const { adapter } = makeAdapter(tri);
     const { result } = renderHook(() =>

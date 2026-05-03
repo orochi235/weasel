@@ -10,6 +10,7 @@ import { NestedGroupsDemo, NESTED_GROUPS_DEMO_SOURCE } from './demos/NestedGroup
 import { TextDemo, TEXT_DEMO_SOURCE } from './demos/TextDemo';
 import { PixelArtDemo, PIXEL_ART_DEMO_SOURCE } from './demos/PixelArtDemo';
 import { QuadtreeDemo, QUADTREE_DEMO_SOURCE } from './demos/QuadtreeDemo';
+import { PathPoseDemo, PATH_POSE_DEMO_SOURCE } from './demos/PathPoseDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
@@ -22,6 +23,7 @@ import NestedGroupsDemoFull from './demos/NestedGroupsDemo.tsx?raw';
 import TextDemoFull from './demos/TextDemo.tsx?raw';
 import PixelArtDemoFull from './demos/PixelArtDemo.tsx?raw';
 import QuadtreeDemoFull from './demos/QuadtreeDemo.tsx?raw';
+import PathPoseDemoFull from './demos/PathPoseDemo.tsx?raw';
 
 export interface DemoEntry {
   id: string;
@@ -148,6 +150,17 @@ export const DEMOS: DemoEntry[] = [
     snippet: QUADTREE_DEMO_SOURCE,
     full: QuadtreeDemoFull,
     path: 'demo/demos/QuadtreeDemo.tsx',
+  },
+  {
+    id: 'path-pose',
+    title: 'Path as pose',
+    category: 'Composed',
+    description: 'A scene where the object\'s pose IS a Path — no rect→shape adapter step. useResizeInteraction is generalized over TPose via the optional `geometry` opt; passing `pathPoseGeometry` lets the hook read bounds via boundsOfPath and remap every coord through an affine scale against the dragged AABB. Move uses the same translatePath the kit already exports as its translatePose. Body-drag to move; corner handles to resize.',
+    hint: 'Drag the polygon body to move it; drag a corner to resize.',
+    Component: PathPoseDemo,
+    snippet: PATH_POSE_DEMO_SOURCE,
+    full: PathPoseDemoFull,
+    path: 'demo/demos/PathPoseDemo.tsx',
   },
   {
     id: 'pixel-art',
