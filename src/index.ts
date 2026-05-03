@@ -141,6 +141,7 @@ export {
   composeRectPose,
   decomposeRectPose,
   rebaseLocalPose,
+  translateRectPose,
   worldPoseLookup,
 } from './core/transforms/composePose';
 export type { PoseAdapter } from './core/transforms/composePose';

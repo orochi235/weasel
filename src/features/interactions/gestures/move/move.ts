@@ -2,11 +2,16 @@ import { useRef, useState, useCallback } from 'react';
 import { createTransformOp } from '../../../../core/ops/transform';
 import type { Op } from '../../../../core/ops/types';
 import type { MoveAdapter, SnapTarget } from '../../../../core/adapters/types';
+import { translateRectPose } from '../../../../core/transforms/composePose';
 import type { GestureContext, MoveBehavior, MoveOverlay, ModifierState } from '../types';
 
 /** Options for `useMove`. */
 export interface UseMoveOptions<TPose> {
-  translatePose: (pose: TPose, dx: number, dy: number) => TPose;
+  /** How to apply a `(dx, dy)` translation to a pose. Defaults to
+   *  `translateRectPose`, which assumes the pose carries top-level
+   *  `x`/`y` (the common rect-shaped case). Override for non-rect poses
+   *  (e.g. `Path` → `translatePath`). */
+  translatePose?: (pose: TPose, dx: number, dy: number) => TPose;
   behaviors?: MoveBehavior<TPose>[];
   dragThresholdPx?: number;
   moveLabel?: string;
@@ -68,10 +73,10 @@ export interface UseMoveReturn<TPose> {
 /** Pointer-driven move interaction with composable behaviors (snap, container reparent, snap-back) and op-batched commit. */
 export function useMove<TObject extends { id: string }, TPose>(
   adapter: MoveAdapter<TObject, TPose>,
-  options: UseMoveOptions<TPose>,
+  options: UseMoveOptions<TPose> = {},
 ): UseMoveReturn<TPose> {
   const {
-    translatePose,
+    translatePose = translateRectPose as unknown as (pose: TPose, dx: number, dy: number) => TPose,
     behaviors = [],
     dragThresholdPx = 4,
     moveLabel = 'Move',

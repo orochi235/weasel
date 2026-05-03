@@ -84,6 +84,15 @@ export function composeRectPose<TPose extends RectPose>(parent: TPose, child: TP
 }
 
 /**
+ * Translate a `RectPose`-shaped pose by `(dx, dy)`. Suitable as the default
+ * `translatePose` for `useMove` when poses carry top-level `x`/`y`. Other
+ * fields (width/height, plus any extra props on `TPose`) are preserved.
+ */
+export function translateRectPose<TPose extends RectPose>(pose: TPose, dx: number, dy: number): TPose {
+  return { ...pose, x: pose.x + dx, y: pose.y + dy };
+}
+
+/**
  * Convert `worldPose` into a local pose expressed under `newParentId`'s
  * frame. Used when reparenting so the child's visual world position is
  * preserved despite the change of frame. Inverse of one `compose` step.
