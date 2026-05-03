@@ -235,7 +235,7 @@ export type {
   AreaSelectBehavior,
   AreaSelectOverlay,
 } from './interactions/gestures/types';
-export type { ClipboardSnapshot } from './interactions/clipboard/types';
+export type { ClipboardSnapshot } from './interactions/actions/clipboard/types';
 export {
   snap,
   gridSnapStrategy,
@@ -275,14 +275,14 @@ export type {
 export {
   useClipboardOps,
   useClipboard,
-} from './interactions/clipboard';
+} from './interactions/actions/clipboard';
 export type {
   UseClipboardOpsOptions,
   UseClipboardOpsReturn,
   ClipboardAdapter,
   UseClipboardOptions,
   UseClipboardReturn,
-} from './interactions/clipboard';
+} from './interactions/actions/clipboard';
 export { useDelete } from './interactions/actions/delete';
 export type {
   DeleteAdapter,

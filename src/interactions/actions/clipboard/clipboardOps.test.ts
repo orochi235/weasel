@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useClipboardOps } from './clipboardOps';
-import type { InsertAdapter, Op } from '../..';
+import type { InsertAdapter, Op } from '../../..';
 
 interface Obj { id: string; x: number; y: number }
 

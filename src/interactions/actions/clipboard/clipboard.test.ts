@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useClipboard } from './clipboard';
 import type { ClipboardAdapter } from './clipboard';
-import type { Op } from '../..';
+import type { Op } from '../../..';
 
 interface Obj { id: string; x: number; y: number }
 

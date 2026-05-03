@@ -1,9 +1,9 @@
 import { useCallback, useRef } from 'react';
-import { createInsertOp } from '../../core/ops/create';
-import { createSetSelectionOp } from '../../core/ops/select';
-import type { Op } from '../../core/ops/types';
-import { dispatchApplyBatch } from '../../core/applyOps';
-import type { InsertAdapter } from '../../core/adapters/types';
+import { createInsertOp } from '../../../core/ops/create';
+import { createSetSelectionOp } from '../../../core/ops/select';
+import type { Op } from '../../../core/ops/types';
+import { dispatchApplyBatch } from '../../../core/applyOps';
+import type { InsertAdapter } from '../../../core/adapters/types';
 import type { ClipboardSnapshot } from './types';
 
 /** Options for `useClipboardOps`. */
