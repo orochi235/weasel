@@ -109,7 +109,7 @@ export function TextDemo() {
 
   const moveAdapter = {
     ...baseAdapter,
-    applyBatch: (ops: Op[]) => {
+    applyBatch: (ops: Op[], _label?: string) => {
       const adapter = { ...moveAdapter, setText };
       for (const op of ops) op.apply(adapter);
     },
