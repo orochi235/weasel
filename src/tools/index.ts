@@ -10,3 +10,4 @@ export type {
   ModifierTrigger,
   PointerChannel, DragChannel, KeyboardChannel, WheelChannel,
 } from './types';
+export * from './builtin';
