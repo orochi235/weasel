@@ -14,6 +14,7 @@ import { PixelDensityDemo, PIXEL_DENSITY_DEMO_SOURCE } from './demos/PixelDensit
 import { QuadtreeDemo, QUADTREE_DEMO_SOURCE } from './demos/QuadtreeDemo';
 import { PathPoseDemo, PATH_POSE_DEMO_SOURCE } from './demos/PathPoseDemo';
 import { CompoundPathsDemo, COMPOUND_PATHS_DEMO_SOURCE } from './demos/CompoundPathsDemo';
+import { BezierEditDemo, BEZIER_EDIT_DEMO_SOURCE } from './demos/BezierEditDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
@@ -30,6 +31,7 @@ import PixelDensityDemoFull from './demos/PixelDensityDemo.tsx?raw';
 import QuadtreeDemoFull from './demos/QuadtreeDemo.tsx?raw';
 import PathPoseDemoFull from './demos/PathPoseDemo.tsx?raw';
 import CompoundPathsDemoFull from './demos/CompoundPathsDemo.tsx?raw';
+import BezierEditDemoFull from './demos/BezierEditDemo.tsx?raw';
 
 export interface DemoEntry {
   id: string;
@@ -200,6 +202,17 @@ export const DEMOS: DemoEntry[] = [
     snippet: COMPOUND_PATHS_DEMO_SOURCE,
     full: CompoundPathsDemoFull,
     path: 'demo/demos/CompoundPathsDemo.tsx',
+  },
+  {
+    id: 'bezier-edit',
+    title: 'Bezier edit',
+    category: 'Composed',
+    description: 'Control-point editing on a polygon path. Click to select (selection AABB shows), double-click the curve to enter anchor-edit mode (selection AABB hides; anchor + control-handle circles + tangent lines render), drag any anchor or control to mutate the curve, Esc to exit. v1 corner-only behavior: dragging an anchor moves only its on-curve coord — adjacent controls stay put in world space (Illustrator "Convert Anchor Point" semantics). Smoothing (Figma\'s default move-anchor-moves-controls) plugs in next iteration; insert/delete anchors and marquee-select are deferred.',
+    hint: 'Click to select. Double-click to edit anchors. Drag anchors or control handles. Esc to exit edit mode.',
+    Component: BezierEditDemo,
+    snippet: BEZIER_EDIT_DEMO_SOURCE,
+    full: BezierEditDemoFull,
+    path: 'demo/demos/BezierEditDemo.tsx',
   },
   {
     id: 'pixel-density',

@@ -12,7 +12,7 @@
  * insert at `after`/`before` an existing slot, defaulting to the top.
  */
 
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { runLayers, type RenderLayer } from '../core/layers/render';
 import { setupCanvasDpr } from '../features/viewport/pixelDensity';
@@ -38,6 +38,18 @@ import type {
   AreaSelectController,
   UseAreaSelectOptions,
 } from '../interactions/gestures/area-select/areaSelect';
+import { useEditAnchors } from '../interactions/gestures/edit-anchors/editAnchors';
+import type {
+  EditAnchorsAdapter,
+  EditAnchorsController,
+  UseEditAnchorsOptions,
+} from '../interactions/gestures/edit-anchors/editAnchors';
+import {
+  createAnchorEditOverlayLayer,
+  type AnchorEditOverlayOpts,
+} from '../interactions/gestures/edit-anchors/overlay';
+import type { Path } from '../features/paths/types';
+import { pointInPath } from '../features/paths/hitTest';
 import { selectFromMarquee } from '../interactions/gestures/area-select/behaviors';
 import type {
   AreaSelectAdapter,
@@ -83,6 +95,7 @@ export const STANDARD_SLOTS = [
   'selectionOverlay',
   'insertOverlay',
   'areaSelectOverlay',
+  'anchorEditOverlay',
 ] as const;
 /** Names of the slots `<Canvas>` supports out of the box (excluding the implicit cell-highlight overlay). */
 export type StandardSlotName = Exclude<(typeof STANDARD_SLOTS)[number], 'cellHighlight'>;
@@ -124,6 +137,9 @@ export interface InsertOverlaySlotConfig {
   lineWidth?: number;
 }
 
+/** Anchor-edit-overlay slot config — visual options for anchor + control circles. */
+export type AnchorEditOverlaySlotConfig = Omit<AnchorEditOverlayOpts, 'getOverlay'>;
+
 /** Area-select-overlay slot config — visual options for the marquee. */
 export interface AreaSelectOverlaySlotConfig {
   fill?: string;
@@ -160,7 +176,8 @@ export type StandardSlotConfig<TObject extends { id: string }, TPose> =
   | ResizeOverlaySlotConfig
   | SelectionOverlaySlotConfig<TPose>
   | InsertOverlaySlotConfig
-  | AreaSelectOverlaySlotConfig;
+  | AreaSelectOverlaySlotConfig
+  | AnchorEditOverlaySlotConfig;
 
 export type LayerSlotValue<TObject extends { id: string }, TPose> =
   | StandardSlotConfig<TObject, TPose>
@@ -175,6 +192,7 @@ export type LayersMap<TObject extends { id: string }, TPose> = {
   selectionOverlay?: SelectionOverlaySlotConfig<TPose> | null;
   insertOverlay?: InsertOverlaySlotConfig | null;
   areaSelectOverlay?: AreaSelectOverlaySlotConfig | null;
+  anchorEditOverlay?: AnchorEditOverlaySlotConfig | null;
 } & {
   [customKey: string]: LayerSlotValue<TObject, TPose> | undefined;
 };
@@ -241,6 +259,12 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   insertOptions?: UseInsertOptions<TPose>;
   areaSelect?: AreaSelectController;
   areaSelectOptions?: UseAreaSelectOptions;
+  /** Wire anchor-edit mode. `true` enables defaults; an object overrides
+   *  options. When wired, double-clicking a polygon-shaped object enters
+   *  edit mode (anchor circles + control handles), and Esc exits. */
+  editAnchors?: boolean | UseEditAnchorsOptions;
+  /** Override the editAnchors controller (rare). */
+  editAnchorsController?: EditAnchorsController<TObject>;
   selection?: SelectionApi;
   selectionOptions?: UseSelectionOptions;
 
@@ -422,6 +446,8 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     insertOptions,
     areaSelect: areaSelectOverride,
     areaSelectOptions,
+    editAnchors: editAnchorsProp,
+    editAnchorsController: editAnchorsOverride,
     tool = 'select',
     selection: selectionOverride,
     selectionOptions,
@@ -563,6 +589,23 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     insertOptions ?? {},
   );
   const internalAreaSelect = useAreaSelect(selectionWiredAdapter, derivedAreaSelectOptions);
+
+  const [editingAnchors, setEditingAnchors] = useState<{ objectId: string } | null>(null);
+  const editAnchorsEnabled = editAnchorsProp !== undefined && editAnchorsProp !== false;
+  const editAnchorsOpts = (typeof editAnchorsProp === 'object' ? editAnchorsProp : {}) as UseEditAnchorsOptions;
+  const editAnchorsAdapter = useMemo<EditAnchorsAdapter<TObject>>(() => ({
+    getObject: (id) => effectiveAdapter.getObject?.(id) ?? ({ id } as TObject),
+    getPose: (id) => effectiveAdapter.getPose(id) as unknown as Path,
+    setPose: (id, pose) => (effectiveAdapter as { setPose: (id: string, pose: unknown) => void }).setPose(id, pose),
+    applyBatch: effectiveAdapter.applyBatch
+      ? (ops, label) => effectiveAdapter.applyBatch!(ops, label ?? 'Edit anchors')
+      : undefined,
+  }), [effectiveAdapter]);
+  const internalEditAnchors = useEditAnchors<TObject>(editAnchorsAdapter, {
+    ...editAnchorsOpts,
+    editingId: editingAnchors?.objectId ?? null,
+  });
+  const editAnchorsCtl = editAnchorsOverride ?? (editAnchorsEnabled ? internalEditAnchors : undefined);
 
   const move = moveOverride ?? (adapter ? internalMove : undefined);
   const resize = resizeOverride ?? (adapter ? internalResize : undefined);
@@ -723,6 +766,8 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     rotate,
     insert,
     areaSelect,
+    editAnchors: editAnchorsCtl as unknown as EditAnchorsController<{ id: string }> | undefined,
+    editAnchorsActive: !!editingAnchors,
     tool,
     hitBody: effectiveHitBody,
     resizeTarget: effectiveResizeTarget ?? resizeTarget,
@@ -745,6 +790,40 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   const handlePointerMove = onPointerMoveOverride ?? bindings.onPointerMove;
   const handlePointerUp = onPointerUpOverride ?? bindings.onPointerUp;
   const handlePointerCancel = onPointerCancelOverride ?? bindings.onPointerCancel;
+
+  const handleDoubleClick = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      if (!editAnchorsEnabled || !adapter) return;
+      const cw = clientToWorld ?? ((c: HTMLCanvasElement, cx: number, cy: number): [number, number] => {
+        const r = c.getBoundingClientRect();
+        return [cx - r.left, cy - r.top];
+      });
+      const [wx, wy] = cw(e.currentTarget, e.clientX, e.clientY);
+      const objs = adapter.getObjects();
+      for (let i = objs.length - 1; i >= 0; i--) {
+        const o = objs[i];
+        const pose = adapter.getPose(o.id) as unknown as Path;
+        if (!pose || pose.kind !== 'polygon') continue;
+        if (pointInPath(pose, wx, wy)) {
+          setEditingAnchors({ objectId: o.id });
+          return;
+        }
+      }
+    },
+    [editAnchorsEnabled, adapter, clientToWorld],
+  );
+
+  useEffect(() => {
+    if (!editingAnchors) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setEditingAnchors(null);
+        editAnchorsCtl?.cancel();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [editingAnchors, editAnchorsCtl]);
 
   const selectedIds = effectiveSelection.current;
 
@@ -829,9 +908,12 @@ function CanvasInner<TObject extends { id: string }, TPose>(
             return null;
           }
         });
+      const editingId = editingAnchors?.objectId;
       const getSelection = multiActive
         ? () => [MULTI_RESIZE_TARGET_ID]
-        : () => selectedIds;
+        : editingId
+          ? () => selectedIds.filter((id) => id !== editingId)
+          : () => selectedIds;
       standardLayers.selectionOverlay = createSelectionOverlayLayer<TPose>({
         ...cfg,
         getSelection,
@@ -858,6 +940,17 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     if (areaSlot !== null) {
       const layer = buildAreaSelectOverlayLayer(areaSlot, areaSelectOverlay);
       if (layer) standardLayers.areaSelectOverlay = layer;
+    }
+
+    const anchorEditSlot = layersMap.anchorEditOverlay as AnchorEditOverlaySlotConfig | null | undefined;
+    if (anchorEditSlot !== null && editAnchorsCtl) {
+      standardLayers.anchorEditOverlay = createAnchorEditOverlayLayer({
+        ...(anchorEditSlot ?? {}),
+        getOverlay: () => {
+          const ov = editAnchorsCtl.overlay;
+          return ov ? { pose: ov.pose, selectedAnchors: ov.selectedAnchors } : null;
+        },
+      });
     }
 
     const afterMap = new Map<string, RenderLayer<unknown>[]>();
@@ -891,7 +984,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     }
     out.push(...tail);
     return out;
-  }, [layersMap, adapter, moveOverlay, resizeOverlay, rotateOverlay, insertOverlay, areaSelectOverlay, selectedIds, effectiveBoundsOf, multiActive, unionOfSelection]);
+  }, [layersMap, adapter, moveOverlay, resizeOverlay, rotateOverlay, insertOverlay, areaSelectOverlay, selectedIds, effectiveBoundsOf, multiActive, unionOfSelection, editingAnchors, editAnchorsCtl, editAnchorsCtl?.overlay]);
 
   useEffect(() => {
     const c = canvasRef.current;
@@ -921,6 +1014,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
+      onDoubleClick={editAnchorsEnabled ? handleDoubleClick : undefined}
     />
   );
 }

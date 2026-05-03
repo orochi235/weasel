@@ -299,6 +299,24 @@ export type {
   InsertController,
 } from './interactions/gestures/insert';
 export { useAreaSelect } from './interactions/gestures/area-select';
+export {
+  useEditAnchors,
+  hitAnchor,
+  enumerateAnchors,
+  withCoord,
+  createAnchorEditOverlayLayer,
+} from './interactions/gestures/edit-anchors';
+export type {
+  UseEditAnchorsOptions,
+  EditAnchorsController,
+  EditAnchorsAdapter,
+  EditAnchorsOverlay,
+  EditAnchorsStartArgs,
+  EditAnchorsMoveArgs,
+  AnchorHit,
+  PathAnchor,
+  AnchorEditOverlayOpts,
+} from './interactions/gestures/edit-anchors';
 export type {
   UseAreaSelectOptions,
   AreaSelectController,
