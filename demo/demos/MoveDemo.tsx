@@ -51,7 +51,6 @@ export function MoveDemo() {
   };
 
   const move = useMove<Rect, Pose>(adapter, {
-    translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
     behaviors: [snap(gridSnapStrategy<Pose>(CELL, UNITS))],
   });
 
@@ -198,7 +197,6 @@ const UNITS: UnitSystem = { base: 'px', units: { px: 1, tile: 20 } };
 const CELL = { value: 1, unit: 'tile' } as const;
 
 const move = useMove<Rect, Pose>(adapter, {
-  translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
   behaviors: [snap(gridSnapStrategy<Pose>(CELL, UNITS))],
 });
 

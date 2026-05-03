@@ -110,9 +110,7 @@ export function QuadtreeDemo() {
     applyBatch: (ops: Op[]) => { for (const op of ops) op.apply(resizeAdapter); },
   };
 
-  const move = useMove<Rect, Pose>(moveAdapter, {
-    translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
-  });
+  const move = useMove<Rect, Pose>(moveAdapter);
   const resize = useResize<Rect, Pose>(resizeAdapter, {});
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);

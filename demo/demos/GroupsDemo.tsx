@@ -73,7 +73,6 @@ export function GroupsDemo() {
   // Group-aware move: when a group id is in the dragged set, expand to leaves
   // so the kit translates each leaf by the same delta.
   const move = useMove<Rect, Pose>(adapter, {
-    translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
     expandIds: (ids) => expandToLeaves(ids, adapter),
   });
   // Group-aware resize: starting a resize against a group id triggers the
@@ -275,7 +274,6 @@ const group: Group = { id: 'g1', members: ['a', 'b', 'c'] };
 // flattens a possibly-group id list into leaf ids.
 
 const move = useMove<Rect, Pose>(adapter, {
-  translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
   expandIds: (ids) => expandToLeaves(ids, adapter),  // group id -> leaves
 });
 

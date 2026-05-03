@@ -73,9 +73,7 @@ export function ComposeDemo() {
     applyBatch: (ops: Op[]) => { for (const op of ops) op.apply(adapter); },
   };
 
-  const move = useMove<Rect, Pose>(adapter, {
-    translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
-  });
+  const move = useMove<Rect, Pose>(adapter);
   const resize = useResize<Rect, Pose>(adapter, {});
   const insert = useInsert<Rect, Pose>(adapter, { minBounds: { width: 4, height: 4 } });
   const area = useAreaSelect(adapter, { behaviors: [selectFromMarquee()] });

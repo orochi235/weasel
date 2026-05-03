@@ -120,7 +120,6 @@ export function TextDemo() {
   };
 
   const move = useMove<TextNode, Pose>(moveAdapter, {
-    translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
     behaviors: [snap(gridSnapStrategy<Pose>(CELL))],
   });
 
@@ -395,7 +394,6 @@ const [selection, setSelection] = useState<string[]>([]);
 
 // --- Move interaction (drag a selected node) ---
 const move = useMove<TextNode, Pose>(moveAdapter, {
-  translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
   behaviors: [snap(gridSnapStrategy<Pose>(10))],
 });
 

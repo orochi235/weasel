@@ -74,7 +74,6 @@ export function NestedGroupsDemo() {
   const composeOpts = { composePose: composeRectPose<Pose>, decomposePose: decomposeRectPose<Pose> };
 
   const move = useMove<Node, Pose>(adapter, {
-    translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
     cascadeWorldPose: worldPoseLookup(adapter, composeRectPose<Pose>),
   });
 
@@ -249,7 +248,6 @@ const composeOpts = { composePose: composeRectPose, decomposePose: decomposeRect
 
 // Move with auto-cascade: children visually follow the dragged parent.
 const move = useMove(adapter, {
-  translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
   cascadeWorldPose: worldPoseLookup(adapter, composeRectPose),
 });
 
