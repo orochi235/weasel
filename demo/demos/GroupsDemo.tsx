@@ -165,7 +165,7 @@ export function GroupsDemo() {
   }, [rects, selectedIds, moveOv, resizeOv]);
 
   return (
-    <Canvas<Pose, Pose>
+    <Canvas
       width={W}
       height={H}
       className="ckd-canvas"

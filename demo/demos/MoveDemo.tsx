@@ -97,7 +97,7 @@ export function MoveDemo() {
   };
 
   return (
-    <Canvas<Pose, Pose>
+    <Canvas
       width={W}
       height={H}
       className="ckd-canvas"
@@ -146,7 +146,7 @@ const layers = defaultLayers<Rect, Pose>({
 
 // <Canvas> wires DPR setup, clearRect, runLayers, and pointer gestures.
 return (
-  <Canvas<Pose, Pose>
+  <Canvas
     width={W}
     height={H}
     layers={layers}

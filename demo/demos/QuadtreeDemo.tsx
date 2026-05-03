@@ -147,7 +147,7 @@ export function QuadtreeDemo() {
   }, [rects, moveOverlay, resizeOverlay, selectedIds]);
 
   return (
-    <Canvas<Pose, Pose>
+    <Canvas
       width={W}
       height={H}
       className="ckd-canvas"
@@ -196,7 +196,7 @@ const layers = defaultLayers<Rect, Pose>({
 });
 
 return (
-  <Canvas<Pose, Pose>
+  <Canvas
     width={W} height={H}
     layers={layers}
     move={move}
