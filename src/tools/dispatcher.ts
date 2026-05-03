@@ -224,7 +224,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     endGesture();
   }
 
-  return {
+  const api: ToolsDispatcher & { __setGetCtx?: (fn: typeof opts.getCtx) => void } = {
     onPointerDown,
     onPointerMove,
     onPointerUp,
@@ -234,4 +234,6 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     cancelGesture,
     hasActiveGesture: () => inFlight !== null,
   };
+  api.__setGetCtx = (fn) => { opts.getCtx = fn; };
+  return api;
 }

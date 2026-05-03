@@ -14,6 +14,9 @@
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import type React from 'react';
+import type { ToolsApi } from '../tools/useTools';
+import type { ToolsDispatcher } from '../tools/dispatcher';
+import type { Op } from '../core/ops/types';
 import { runLayers, type RenderLayer } from '../core/layers/render';
 import { setupCanvasDpr } from '../features/viewport/pixelDensity';
 import {
@@ -340,6 +343,12 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   /** Opt-in keyboard-driven actions wired against the canvas's effective
    *  selection. Each key turns the action on; values may be `true` (defaults)
    *  or a config dict. Omitting a key leaves the action unbound. */
+  /** Tool primitive substrate. When supplied, pointer/keyboard/wheel events
+   *  are routed through `tools.dispatcher` instead of the legacy
+   *  `usePointerGestures` bindings. The action-gesture hooks (delete /
+   *  nudge / undoRedo / duplicate) continue to wire from `gestures` as-is
+   *  in Phase 1; they'll move to always-on tools in Phase 2. */
+  tools?: import('../tools/useTools').ToolsApi;
   gestures?: GesturesConfig<TPose>;
 
   /** Mutable ref Canvas writes overlay-aware pose/bounds lookups to on every
@@ -561,6 +570,15 @@ function buildAreaSelectOverlayLayer(
   };
 }
 
+function resolveToolsCursor(tools: ToolsApi): string | undefined {
+  const id = tools.modifierEngaged ?? tools.active;
+  const tool = tools.registry[id];
+  if (!tool?.cursor) return undefined;
+  if (typeof tool.cursor === 'string') return tool.cursor;
+  // Function form requires a ctx; defer to Phase 2.
+  return undefined;
+}
+
 function CanvasInner<TObject extends { id: string }, TPose>(
   props: CanvasProps<TObject, TPose>,
   ref: React.ForwardedRef<HTMLCanvasElement>,
@@ -608,6 +626,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     autoFocusOnPointerDown = true,
     helpersRef,
     gestures,
+    tools,
     items,
     setItems,
     toPose,
@@ -692,6 +711,39 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       applyClick: noopSet,
     };
   }, [baseSelection, selectionMode]);
+
+  // Build the per-event base ctx the tools dispatcher injects into handlers.
+  // Refs so identity stays stable while the underlying values update.
+  const effectiveSelectionRefForCtx = useRef(effectiveSelection);
+  effectiveSelectionRefForCtx.current = effectiveSelection;
+  const effectiveAdapterRefForCtx = useRef(effectiveAdapter);
+  effectiveAdapterRefForCtx.current = effectiveAdapter;
+
+  const toolsCtxBase = useMemo(
+    () => () => ({
+      worldX: 0,
+      worldY: 0,
+      modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
+      selection: effectiveSelectionRefForCtx.current,
+      adapter: effectiveAdapterRefForCtx.current,
+      applyBatch: (ops: Op[], label: string) => {
+        const a = effectiveAdapterRefForCtx.current as { applyBatch?: (ops: Op[], label: string) => void };
+        if (a.applyBatch) a.applyBatch(ops, label);
+      },
+    }),
+    [],
+  );
+
+  // If a tools prop was passed, mutate its dispatcher's ctx supplier so
+  // handlers see the live selection/adapter/applyBatch — useTools's own
+  // default ctx is the empty test stub.
+  useEffect(() => {
+    if (!tools) return;
+    // Small monkey-patch: replace the dispatcher's getCtx by re-creating it.
+    // Phase 2 cleanup: thread getCtx through useTools properly so this isn't needed.
+    const d = tools.dispatcher as ToolsDispatcher & { __setGetCtx?: (fn: () => unknown) => void };
+    d.__setGetCtx?.(toolsCtxBase);
+  }, [tools, toolsCtxBase]);
 
   // When selectionMode === 'multi', resize handles operate on a synthetic
   // group id; expandIds rewrites that into the live selection so useResize
@@ -1045,15 +1097,42 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     handleHitRadius,
   });
 
+  // Keyboard routing through the dispatcher when tools is set.
+  useEffect(() => {
+    if (!tools) return;
+    const onDown = (e: KeyboardEvent) => tools.dispatcher.onKeyDown(e);
+    const onUp = (e: KeyboardEvent) => tools.dispatcher.onKeyUp(e);
+    document.addEventListener('keydown', onDown);
+    document.addEventListener('keyup', onUp);
+    return () => {
+      document.removeEventListener('keydown', onDown);
+      document.removeEventListener('keyup', onUp);
+    };
+  }, [tools]);
+
   const handlePointerDown =
     onPointerDownOverride ??
-    ((e: React.PointerEvent<HTMLCanvasElement>) => {
-      if (autoFocusOnPointerDown) e.currentTarget.focus();
-      bindings.onPointerDown(e);
-    });
-  const handlePointerMove = onPointerMoveOverride ?? bindings.onPointerMove;
-  const handlePointerUp = onPointerUpOverride ?? bindings.onPointerUp;
+    (tools
+      ? (e: React.PointerEvent<HTMLCanvasElement>) => {
+          if (autoFocusOnPointerDown) e.currentTarget.focus();
+          tools.dispatcher.onPointerDown(e.nativeEvent);
+        }
+      : (e: React.PointerEvent<HTMLCanvasElement>) => {
+          if (autoFocusOnPointerDown) e.currentTarget.focus();
+          bindings.onPointerDown(e);
+        });
+  const handlePointerMove = onPointerMoveOverride ??
+    (tools
+      ? (e: React.PointerEvent<HTMLCanvasElement>) => tools.dispatcher.onPointerMove(e.nativeEvent)
+      : bindings.onPointerMove);
+  const handlePointerUp = onPointerUpOverride ??
+    (tools
+      ? (e: React.PointerEvent<HTMLCanvasElement>) => tools.dispatcher.onPointerUp(e.nativeEvent)
+      : bindings.onPointerUp);
   const handlePointerCancel = onPointerCancelOverride ?? bindings.onPointerCancel;
+  const handleWheel = tools
+    ? (e: React.WheelEvent<HTMLCanvasElement>) => tools.dispatcher.onWheel(e.nativeEvent)
+    : undefined;
 
   const handleDoubleClick = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -1267,6 +1346,11 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     runLayers(ctx, layers, helpersForLayers, {});
   }, [layers, width, height, background]);
 
+  const toolsCursor = tools ? resolveToolsCursor(tools) : undefined;
+  const effectiveStyle: React.CSSProperties | undefined = toolsCursor
+    ? { ...style, cursor: toolsCursor }
+    : style;
+
   return (
     <canvas
       ref={canvasRef}
@@ -1274,12 +1358,13 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       height={height}
       tabIndex={tabIndex}
       className={className}
-      style={style}
+      style={effectiveStyle}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
-      onLostPointerCapture={bindings.onLostPointerCapture}
+      onLostPointerCapture={tools ? undefined : bindings.onLostPointerCapture}
+      onWheel={handleWheel}
       onDoubleClick={editAnchorsEnabled ? handleDoubleClick : undefined}
     />
   );

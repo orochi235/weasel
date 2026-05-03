@@ -537,3 +537,102 @@ describe('<Canvas>', () => {
     });
   });
 });
+
+import { useTools } from '../tools/useTools';
+import { defineTool } from '../tools/defineTool';
+
+describe('Canvas tools mode', () => {
+  it('routes pointer events through tools.dispatcher when tools prop is passed', () => {
+    const onDragStart = vi.fn(() => 'claim' as const);
+    const onDragEnd = vi.fn(() => 'claim' as const);
+
+    function Test() {
+      const tools = useTools({
+        active: 't',
+        registry: {
+          t: defineTool({
+            id: 't',
+            drag: { onStart: onDragStart, onEnd: onDragEnd },
+          }),
+        },
+      });
+      return <Canvas width={100} height={100} adapter={{} as never} layers={{}} tools={tools} />;
+    }
+
+    const { container } = render(<Test />);
+    const canvas = container.querySelector('canvas')!;
+    canvas.setPointerCapture = vi.fn();
+
+    fireEvent.pointerDown(canvas, { clientX: 10, clientY: 10, pointerId: 1 });
+    fireEvent.pointerMove(canvas, { clientX: 50, clientY: 10, pointerId: 1 });
+    fireEvent.pointerUp(canvas,   { clientX: 50, clientY: 10, pointerId: 1 });
+
+    expect(onDragStart).toHaveBeenCalledOnce();
+    expect(onDragEnd).toHaveBeenCalledOnce();
+  });
+
+  it('does NOT invoke usePointerGestures-derived selection clear when tools prop is passed', () => {
+    // Tap on empty space normally calls selection.clear(); with tools wired,
+    // it should route through the dispatcher instead.
+    const select = { current: [], get: vi.fn(() => []), clear: vi.fn(), set: vi.fn(), add: vi.fn(), remove: vi.fn(), toggle: vi.fn(), applyClick: vi.fn() };
+
+    function Test() {
+      const tools = useTools({
+        active: 't',
+        registry: { t: defineTool({ id: 't' }) }, // no handlers — every event passes
+      });
+      return (
+        <Canvas
+          width={100}
+          height={100}
+          adapter={{} as never}
+          layers={{}}
+          selection={select as never}
+          tools={tools}
+        />
+      );
+    }
+
+    const { container } = render(<Test />);
+    const canvas = container.querySelector('canvas')!;
+    canvas.setPointerCapture = vi.fn();
+
+    fireEvent.pointerDown(canvas, { clientX: 10, clientY: 10, pointerId: 1 });
+    fireEvent.pointerUp(canvas,   { clientX: 10, clientY: 10, pointerId: 1 });
+
+    // Without tools, selection.clear() would have been called from the
+    // usePointerGestures empty-space tap path. With tools, it must not.
+    expect(select.clear).not.toHaveBeenCalled();
+  });
+
+  it('applies the active tool cursor to the canvas style', () => {
+    function Test() {
+      const tools = useTools({
+        active: 't',
+        registry: { t: defineTool({ id: 't', cursor: 'crosshair' }) },
+      });
+      return <Canvas width={100} height={100} adapter={{} as never} layers={{}} tools={tools} />;
+    }
+
+    const { container } = render(<Test />);
+    const canvas = container.querySelector('canvas')! as HTMLCanvasElement;
+    expect(canvas.style.cursor).toBe('crosshair');
+  });
+
+  it('legacy hook-prop wiring still works when tools prop is omitted', () => {
+    // Smoke: existing Canvas.test.tsx cases all test the legacy path. Just
+    // assert that omitting `tools` does not regress: a click clears selection.
+    const select = { current: [], get: vi.fn(() => []), clear: vi.fn(), set: vi.fn(), add: vi.fn(), remove: vi.fn(), toggle: vi.fn(), applyClick: vi.fn() };
+
+    const { container } = render(
+      <Canvas width={100} height={100} layers={{}} selection={select as never} />,
+    );
+    const canvas = container.querySelector('canvas')!;
+    canvas.setPointerCapture = vi.fn();
+
+    fireEvent.pointerDown(canvas, { clientX: 10, clientY: 10, pointerId: 1 });
+    fireEvent.pointerUp(canvas,   { clientX: 10, clientY: 10, pointerId: 1 });
+
+    expect(select.clear).toHaveBeenCalledOnce();
+  });
+});
