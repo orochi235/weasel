@@ -1,5 +1,5 @@
 export type { Op } from './types';
-export { applyOpsTo, dispatchApplyBatch } from './applyOpsTo';
+export { applyOpsTo, dispatchApplyBatch } from '../applyOps';
 export { createTransformOp } from './transform';
 export { createReparentOp } from './reparent';
 export { createInsertOp, type InsertOp } from './create';

@@ -2,7 +2,7 @@ import { useCallback, useRef } from 'react';
 import { createDeleteOp } from '../../core/ops/delete';
 import { createSetSelectionOp } from '../../core/ops/select';
 import type { Op } from '../../core/ops/types';
-import { dispatchApplyBatch } from '../../core/ops/applyOpsTo';
+import { dispatchApplyBatch } from '../../core/applyOps';
 import type { InsertAdapter } from '../../core/adapters/types';
 import { useKeybinding } from '../actions/useKeybinding';
 import { useClipboardOps, type UseClipboardOpsReturn } from './clipboardOps';

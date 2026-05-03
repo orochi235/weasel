@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { createSetSelectionOp } from '../../../core/ops/select';
 import type { Op } from '../../../core/ops/types';
-import { dispatchApplyBatch } from '../../../core/ops/applyOpsTo';
+import { dispatchApplyBatch } from '../../../core/applyOps';
 import { useKeybinding } from '../useKeybinding';
 
 /** Adapter for `useEscape`. */

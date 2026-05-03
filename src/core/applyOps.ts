@@ -1,4 +1,4 @@
-import type { Op } from './types';
+import type { Op } from './ops/types';
 
 /**
  * Default `applyBatch` implementation: apply each op in order against

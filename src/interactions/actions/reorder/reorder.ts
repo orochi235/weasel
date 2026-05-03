@@ -6,7 +6,7 @@ import {
   createSendToBackOp,
 } from '../../../core/ops/reorder';
 import type { Op } from '../../../core/ops/types';
-import { dispatchApplyBatch } from '../../../core/ops/applyOpsTo';
+import { dispatchApplyBatch } from '../../../core/applyOps';
 
 /** Adapter for `useReorder`; both order methods optional and the hook no-ops when either is absent. */
 export interface ReorderAdapter {

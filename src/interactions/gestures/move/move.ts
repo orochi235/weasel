@@ -3,7 +3,7 @@ import { createTransformOp } from '../../../core/ops/transform';
 import type { Op } from '../../../core/ops/types';
 import type { MoveAdapter, SnapTarget } from '../../../core/adapters/types';
 import { translateRectPose } from '../../../features/groups/composePose';
-import { dispatchApplyBatch } from '../../../core/ops/applyOpsTo';
+import { dispatchApplyBatch } from '../../../core/applyOps';
 import type { GestureContext, MoveBehavior, MoveOverlay, ModifierState } from '../types';
 
 /** Options for `useMove`. */
