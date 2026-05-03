@@ -15,6 +15,7 @@ import { QuadtreeDemo, QUADTREE_DEMO_SOURCE } from './demos/QuadtreeDemo';
 import { PathPoseDemo, PATH_POSE_DEMO_SOURCE } from './demos/PathPoseDemo';
 import { CompoundPathsDemo, COMPOUND_PATHS_DEMO_SOURCE } from './demos/CompoundPathsDemo';
 import { BezierEditDemo, BEZIER_EDIT_DEMO_SOURCE } from './demos/BezierEditDemo';
+import { SceneDemo, SCENE_DEMO_SOURCE } from './demos/SceneDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
@@ -32,6 +33,7 @@ import QuadtreeDemoFull from './demos/QuadtreeDemo.tsx?raw';
 import PathPoseDemoFull from './demos/PathPoseDemo.tsx?raw';
 import CompoundPathsDemoFull from './demos/CompoundPathsDemo.tsx?raw';
 import BezierEditDemoFull from './demos/BezierEditDemo.tsx?raw';
+import SceneDemoFull from './demos/SceneDemo.tsx?raw';
 
 export interface DemoEntry {
   id: string;
@@ -49,6 +51,17 @@ export interface DemoEntry {
 }
 
 export const DEMOS: DemoEntry[] = [
+  {
+    id: 'scene',
+    title: 'Scene primitive',
+    category: 'Composed',
+    description: 'useScene + SceneCanvas — a kit-owned scene graph with first-class layers, parenting, and undo/redo. Five system layers (garden / blueprint / structures / zones / plantings) demonstrate the eric-shape; a leaf on the plantings layer is parented under a container on the structures layer (cross-layer parenting). A registered consumer op (`setColor`) records onto the same undo stack as kit mutations like setPose. Cmd/Ctrl+Z and Cmd/Ctrl+Shift+Z are wired via useUndoRedo.',
+    hint: 'Drag rectangles to move; click "Recolor selection" then undo with Cmd+Z.',
+    Component: SceneDemo,
+    snippet: SCENE_DEMO_SOURCE,
+    full: SceneDemoFull,
+    path: 'demo/demos/SceneDemo.tsx',
+  },
   {
     id: 'move',
     title: 'Move',
