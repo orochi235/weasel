@@ -37,7 +37,6 @@ export function RotateDemo() {
       className="ckd-canvas"
       items={rects}
       setItems={setRects}
-      toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height, rotation: r.rotation })}
       handleHitRadius={HANDLE}
       hitBody={hitBody}
       selectionOptions={{ initial: ['b'] }}
@@ -85,7 +84,6 @@ return (
     width={W} height={H}
     items={rects}
     setItems={setRects}
-    toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height, rotation: r.rotation })}
     hitBody={hitBody}
     layers={{
       scene: {

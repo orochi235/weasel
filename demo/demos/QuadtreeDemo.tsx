@@ -87,7 +87,6 @@ export function QuadtreeDemo() {
       className="ckd-canvas"
       items={rects}
       setItems={setRects}
-      toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height })}
       handleHitRadius={HANDLE}
       helpersRef={helpersRef}
       layers={{
@@ -132,7 +131,6 @@ return (
     width={W} height={H}
     items={rects}
     setItems={setRects}
-    toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height })}
     handleHitRadius={HANDLE}
     layers={{
       grid: { spacing: 20, bounds: () => ({ x: 0, y: 0, width: W, height: H }), accentEvery: 5 },

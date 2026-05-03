@@ -23,7 +23,6 @@ export function MultiSelectDemo() {
       className="ckd-canvas"
       items={rects}
       setItems={setRects}
-      toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height })}
       selectionMode="multi"
       tool="select"
       handleHitRadius={HANDLE}
@@ -46,7 +45,8 @@ interface Pose { x: number; y: number; width: number; height: number }
 
 const [rects, setRects] = useState<Rect[]>(INITIAL);
 
-// No explicit adapter — Canvas synthesizes one from items + setItems + toPose.
+// No explicit adapter — Canvas synthesizes one from items + setItems.
+// (toPose defaults to identity — works because Rect already carries pose fields.)
 //
 // selectionMode="multi" turns on shift-click extend, draws a single union
 // AABB outline (with corner handles) when more than one item is selected,
@@ -57,7 +57,6 @@ return (
     width={W} height={H}
     items={rects}
     setItems={setRects}
-    toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height })}
     selectionMode="multi"
     tool="select"
     handleHitRadius={HANDLE}

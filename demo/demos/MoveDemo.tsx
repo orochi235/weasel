@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   arrayAdapter,
-  snap,
   gridSnapStrategy,
   Canvas,
   useZoom,
@@ -84,7 +83,7 @@ export function MoveDemo() {
       className="ckd-canvas"
       adapter={adapter}
       selection={selection}
-      moveOptions={{ behaviors: [snap(gridSnapStrategy<Pose>(CELL, UNITS))] }}
+      snap={gridSnapStrategy<Pose>(CELL, UNITS)}
       clientToWorld={clientToWorld}
       layers={{
         grid: {
@@ -135,7 +134,7 @@ return (
     width={W} height={H}
     adapter={adapter}
     selection={selection}
-    moveOptions={{ behaviors: [snap(gridSnapStrategy<Pose>(CELL, UNITS))] }}
+    snap={gridSnapStrategy<Pose>(CELL, UNITS)}
     layers={{
       grid: { spacing: CELL, unitSystem: UNITS, bounds: () => ({ x: 0, y: 0, width: W, height: H }), accentEvery: 5 },
       scene: {

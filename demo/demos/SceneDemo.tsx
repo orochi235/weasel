@@ -195,8 +195,6 @@ const scene = useScene<NodeData, LayerId, Pose>({
 // Consumer op participates in the same undo stack as scene.add / scene.setPose.
 scene.registerOp<SetColorPayload>('setColor', { apply, revert });
 
-useUndoRedo(scene, { bindKeyboard: true });
-
 // v1 Scene stores absolute poses — wrap setPose to cascade-translate
 // descendants when a container moves.
 const adapter = useMemo(() => {
@@ -222,6 +220,7 @@ const adapter = useMemo(() => {
 return (
   <Canvas
     width={W} height={H} adapter={adapter}
+    gestures={{ undoRedo: { adapter: scene } }}
     moveOptions={{ cascadeWorldPose: (id) => scene.get(id)?.pose ?? null }}
     layers={{ scene: { drawOne: (cx, node, pose) => { /* ... */ } } }}
   />

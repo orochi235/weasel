@@ -6,7 +6,6 @@ import {
   gridSnapStrategy,
   caretIndexAt,
   pointInTextPose,
-  snap,
   useTextEdit,
   type CanvasHelpers,
   type Op,
@@ -193,9 +192,8 @@ export function TextDemo() {
         background="#fafafa"
         items={nodes}
         setItems={setNodes}
-        toPose={(n) => ({ x: n.x, y: n.y, width: n.width, height: n.height })}
         helpersRef={helpersRef}
-        moveOptions={{ behaviors: [snap(gridSnapStrategy<Pose>(CELL))] }}
+        snap={gridSnapStrategy<Pose>(CELL)}
         handleHitRadius={HANDLE}
         layers={{
           // No default scene — the custom text layer paints everything.

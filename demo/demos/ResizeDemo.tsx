@@ -17,7 +17,6 @@ export function ResizeDemo() {
       className="ckd-canvas"
       items={rects}
       setItems={setRects}
-      toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height })}
       handleHitRadius={HANDLE}
       selectionOptions={{ initial: [INITIAL.id] }}
       onTapEmpty={() => {}}
@@ -40,7 +39,8 @@ interface Pose { x: number; y: number; width: number; height: number }
 
 const [rects, setRects] = useState<Rect[]>([INITIAL]);
 
-// No explicit adapter — Canvas synthesizes one from items + setItems + toPose.
+// No explicit adapter — Canvas synthesizes one from items + setItems.
+// (toPose defaults to identity when the item already carries pose fields.)
 //
 // <Canvas> owns useResize internally. selectionOptions seeds the rect as
 // pre-selected so the corner handles are visible from the start;
@@ -50,7 +50,6 @@ return (
     width={W} height={H}
     items={rects}
     setItems={setRects}
-    toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height })}
     handleHitRadius={HANDLE}
     selectionOptions={{ initial: ['r'] }}
     onTapEmpty={() => {}}

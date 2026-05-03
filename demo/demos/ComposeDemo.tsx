@@ -39,7 +39,6 @@ export function ComposeDemo() {
         className="ckd-canvas"
         items={rects}
         setItems={setRects}
-        toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height })}
         createDefault={(b) => ({
           id: `r${nextId.current++}`,
           x: b.x, y: b.y, width: b.width, height: b.height,
@@ -86,7 +85,6 @@ return (
     width={W} height={H}
     items={rects}
     setItems={setRects}
-    toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height })}
     createDefault={(b) => ({
       id: \`r\${nextId.current++}\`, ...b,
       color: COLORS[nextId.current % COLORS.length],

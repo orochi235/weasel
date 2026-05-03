@@ -80,7 +80,9 @@ import type {
   MoveOverlay,
   ResizeOverlay,
   RotateOverlay,
+  SnapStrategy,
 } from '../interactions/gestures/types';
+import { snap as snapBehavior } from '../interactions/gestures/shared/snap';
 
 interface Bounds {
   x: number;
@@ -244,12 +246,12 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
     & Partial<InsertAdapter<TObject>>
     & Partial<AreaSelectAdapter>;
 
-  /** Inline scene wiring: when `adapter` is omitted and `items`/`setItems`/
-   *  `toPose` are provided, Canvas synthesizes an `arrayAdapter` internally
-   *  (via `useArrayAdapter`). The remaining ArrayAdapterConfig fields
-   *  (`fromPose`, `createDefault`, etc.) pass through. Use the explicit
-   *  `adapter` prop instead for groups, custom history, or non-array
-   *  scenes. */
+  /** Inline scene wiring: when `adapter` is omitted and `items`/`setItems`
+   *  are provided, Canvas synthesizes an `arrayAdapter` internally (via
+   *  `useArrayAdapter`). `toPose` defaults to identity (the item *is* the
+   *  pose) — supply it only when the pose is a sub-shape of the item.
+   *  Use the explicit `adapter` prop instead for groups, custom history,
+   *  or non-array scenes. */
   items?: TObject[];
   setItems?: UseArrayAdapterOptions<TObject, TPose>['setItems'];
   toPose?: UseArrayAdapterOptions<TObject, TPose>['toPose'];
@@ -294,6 +296,12 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
    *  (e.g. `Path`) doesn't require per-prop overrides. Defaults to the rect
    *  identity. */
   geometry?: PoseDescriptor<TPose>;
+
+  /** Snap strategy auto-wired into move (and resize/insert when those land).
+   *  Sweetener for the common case of `moveOptions={{ behaviors: [snap(...)] }}`.
+   *  When set, prepends a `snap(strategy)` behavior to `moveOptions.behaviors`;
+   *  consumer-supplied behaviors still run after. */
+  snap?: SnapStrategy<TPose>;
 
   // --- Gesture overrides (escape hatches for non-rect / group-aware apps) ---
   hitBody?: (worldX: number, worldY: number) => string | string[] | null;
@@ -405,7 +413,11 @@ const AUTO_POSE_DESCRIPTOR: PoseDescriptor<unknown> = {
 // hook still runs).
 const EMPTY_ITEMS: { id: string }[] = [];
 const NOOP_SET_ITEMS = () => {};
-const NOOP_TO_POSE = (_obj: unknown) => ({}) as unknown;
+// Default `toPose` when omitted on the inline-items path: the item *is* the
+// pose. Works for the common case where TObject already carries pose fields
+// (e.g. `{ id, x, y, width, height, ... }`); supply an explicit `toPose`
+// when the pose is a sub-shape of the item or computed.
+const IDENTITY_TO_POSE = (obj: unknown) => obj as unknown;
 
 function aabbContains(b: Bounds, x: number, y: number): boolean {
   return x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height;
@@ -574,6 +586,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     clientToWorld,
     handleHitRadius,
     geometry = AUTO_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>,
+    snap: snapStrategy,
     onPointerDown: onPointerDownOverride,
     onPointerMove: onPointerMoveOverride,
     onPointerUp: onPointerUpOverride,
@@ -601,14 +614,14 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   const synthesizedAdapter = useArrayAdapter<TObject, TPose>({
     items: items ?? (EMPTY_ITEMS as TObject[]),
     setItems: setItems ?? NOOP_SET_ITEMS,
-    toPose: toPose ?? (NOOP_TO_POSE as (obj: TObject) => TPose),
+    toPose: toPose ?? (IDENTITY_TO_POSE as (obj: TObject) => TPose),
     fromPose,
     createDefault,
     poseBounds,
     intersectsRect,
   });
   const inlineSceneSupplied =
-    adapterProp === undefined && items !== undefined && setItems !== undefined && toPose !== undefined;
+    adapterProp === undefined && items !== undefined && setItems !== undefined;
   const adapter = adapterProp ?? (inlineSceneSupplied ? synthesizedAdapter : undefined);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -689,9 +702,16 @@ function CanvasInner<TObject extends { id: string }, TPose>(
 
   const derivedMoveOptions = useMemo<UseMoveOptions<TPose> | undefined>(() => {
     const base = moveOptions ?? {};
-    if (base.translatePose || !geometry.translate) return moveOptions;
-    return { ...base, translatePose: geometry.translate };
-  }, [moveOptions, geometry]);
+    let next: UseMoveOptions<TPose> | undefined =
+      base.translatePose || !geometry.translate ? moveOptions : { ...base, translatePose: geometry.translate };
+    if (snapStrategy) {
+      const merged = { ...(next ?? {}) } as UseMoveOptions<TPose>;
+      const existing = merged.behaviors ?? [];
+      merged.behaviors = [snapBehavior(snapStrategy), ...existing];
+      next = merged;
+    }
+    return next;
+  }, [moveOptions, geometry, snapStrategy]);
   const derivedResizeOptionsFinal = useMemo<UseResizeOptions<TPose>>(() => {
     const base = derivedResizeOptions ?? ({} as UseResizeOptions<TPose>);
     if (base.geometry) return base;
@@ -922,19 +942,19 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     };
   }, [boundsOf, baseBoundsOf, multiActive, selectedIdsForWiring, unionOfSelection]);
 
-  // helpersRef: surface overlay-aware lookups to custom layers. Updated each
-  // render so layer.draw closures pick up live overlay state without needing
-  // their own subscription.
-  if (helpersRef) {
-    helpersRef.current = {
-      getEffectivePose: effectivePoseOf,
-      getEffectiveBounds: (id: string): Bounds | null => {
-        if (effectiveBoundsOf) return effectiveBoundsOf(id);
-        const p = effectivePoseOf(id);
-        return p == null ? null : geometry.getBounds(p);
-      },
-    };
-  }
+  // helpersForLayers: overlay-aware lookups passed to every RenderLayer.draw
+  // call (as the `data` arg) so custom layers can read live overlay state
+  // directly from their draw closure. The legacy `helpersRef` prop still
+  // mirrors the same value for back-compat.
+  const helpersForLayers: CanvasHelpers<TPose> = {
+    getEffectivePose: effectivePoseOf,
+    getEffectiveBounds: (id: string): Bounds | null => {
+      if (effectiveBoundsOf) return effectiveBoundsOf(id);
+      const p = effectivePoseOf(id);
+      return p == null ? null : geometry.getBounds(p);
+    },
+  };
+  if (helpersRef) helpersRef.current = helpersForLayers;
 
   // hitBody: in multi mode with >1 selected, a click inside the union AABB
   // that doesn't land on an unselected leaf drags the whole set without
@@ -1234,7 +1254,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       ctx.fillRect(0, 0, width, height);
       ctx.restore();
     }
-    runLayers(ctx, layers, undefined, {});
+    runLayers(ctx, layers, helpersForLayers, {});
   }, [layers, width, height, background]);
 
   return (
@@ -1260,7 +1280,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
  */
 export const Canvas = forwardRef(CanvasInner) as <
   TObject extends { id: string } = { id: string },
-  TPose = unknown,
+  TPose = TObject,
 >(
   props: CanvasProps<TObject, TPose> & { ref?: React.ForwardedRef<HTMLCanvasElement> },
 ) => ReturnType<typeof CanvasInner>;

@@ -17,7 +17,6 @@ export function InsertDemo() {
       className="ckd-canvas"
       items={rects}
       setItems={setRects}
-      toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height })}
       createDefault={(b) => ({
         id: `r${nextId.current++}`,
         x: b.x, y: b.y, width: b.width, height: b.height,
@@ -46,8 +45,9 @@ interface Rect { id: string; x: number; y: number; width: number; height: number
 const [rects, setRects] = useState<Rect[]>([]);
 const nextId = useRef(0);
 
-// No explicit adapter — Canvas synthesizes one from items + setItems + toPose.
-// createDefault wires the insert gesture's new-object factory.
+// No explicit adapter — Canvas synthesizes one from items + setItems
+// (toPose defaults to identity). createDefault wires the insert gesture's
+// new-object factory.
 //
 // Canvas owns useInsert internally; \`tool="insert"\` routes empty-space
 // pointer-down to it. The default insertOverlay slot draws the live
@@ -57,7 +57,6 @@ return (
     width={W} height={H}
     items={rects}
     setItems={setRects}
-    toPose={(r) => ({ x: r.x, y: r.y, width: r.width, height: r.height })}
     createDefault={(b) => ({
       id: \`r\${nextId.current++}\`, ...b,
       color: COLORS[nextId.current % COLORS.length],

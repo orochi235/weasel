@@ -4,7 +4,6 @@ import {
   pathOriginProjection,
   polygonFromPoints,
   traceToContext,
-  snap,
   gridSnapStrategy,
 } from '@orochi235/weasel';
 import type {
@@ -50,9 +49,7 @@ export function PathPoseDemo() {
       handleHitRadius={HANDLE}
       selectionOptions={{ initial: [ID] }}
       onTapEmpty={() => {}}
-      moveOptions={{
-        behaviors: [snap(gridSnapStrategy<Path>(20, { origin: pathOriginProjection }))],
-      }}
+      snap={gridSnapStrategy<Path>(20, { origin: pathOriginProjection })}
       layers={{
         scene: {
           drawOne: (cx, _o, p) => {
@@ -91,9 +88,7 @@ return (
     handleHitRadius={HANDLE}
     selectionOptions={{ initial: ['p'] }}
     onTapEmpty={() => {}}
-    moveOptions={{
-      behaviors: [snap(gridSnapStrategy<Path>(20, { origin: pathOriginProjection }))],
-    }}
+    snap={gridSnapStrategy<Path>(20, { origin: pathOriginProjection })}
     layers={{
       scene: { drawOne: (cx, _o, p) => { traceToContext(cx, p); cx.fill(); cx.stroke(); } },
       selectionOverlay: { handles: { size: HANDLE } },
