@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  useEscapeAction,
-  useSelectAllAction,
-  useDuplicateAction,
-  useNudgeAction,
+  useEscape,
+  useSelectAll,
+  useDuplicate,
+  useNudge,
   createSelectionOverlayLayer,
   runLayers,
 } from '@orochi235/weasel';
@@ -58,10 +58,10 @@ export function ActionsDemo() {
 
   // Only bind keyboard handlers when the canvas region is focused — keeps
   // multiple action demos from fighting over the same global keys.
-  useEscapeAction(adapter, { enableKeyboard: focused });
-  useSelectAllAction(adapter, { enableKeyboard: focused });
-  useDuplicateAction<Pose>(adapter, { enableKeyboard: focused });
-  useNudgeAction<Pose>(adapter, {
+  useEscape(adapter, { enableKeyboard: focused });
+  useSelectAll(adapter, { enableKeyboard: focused });
+  useDuplicate<Pose>(adapter, { enableKeyboard: focused });
+  useNudge<Pose>(adapter, {
     enableKeyboard: focused,
     translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
     step: 2,
@@ -168,10 +168,10 @@ const adapter = {
 // document. Each hook takes a tiny adapter that knows how to read selection,
 // look up poses, and apply an op batch — no gesture state, no overlays.
 
-useEscapeAction(adapter);              // Esc      -> clear selection
-useSelectAllAction(adapter);           // Cmd/Ctrl+A -> select all
-useDuplicateAction<Pose>(adapter);     // Cmd/Ctrl+D -> clone selection
-useNudgeAction<Pose>(adapter, {
+useEscape(adapter);              // Esc      -> clear selection
+useSelectAll(adapter);           // Cmd/Ctrl+A -> select all
+useDuplicate<Pose>(adapter);     // Cmd/Ctrl+D -> clone selection
+useNudge<Pose>(adapter, {
   translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
   step: 2,        // arrow keys
   shiftStep: 20,  // shift + arrow keys

@@ -9,9 +9,9 @@ import {
   runLayers,
   setupCanvasDpr,
   snap,
-  useMoveInteraction,
-  useResizeInteraction,
-  useTextEditInteraction,
+  useMove,
+  useResize,
+  useTextEdit,
   type MoveAdapter,
   type Op,
   type RenderLayer,
@@ -119,7 +119,7 @@ export function TextDemo() {
     },
   };
 
-  const move = useMoveInteraction<TextNode, Pose>(moveAdapter, {
+  const move = useMove<TextNode, Pose>(moveAdapter, {
     translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
     behaviors: [snap(gridSnapStrategy<Pose>(CELL))],
   });
@@ -138,10 +138,10 @@ export function TextDemo() {
     },
   };
 
-  const resize = useResizeInteraction<TextNode, Pose>(resizeAdapter, {});
+  const resize = useResize<TextNode, Pose>(resizeAdapter, {});
   const activeResize = useRef<{ id: string; anchor: ResizeAnchor } | null>(null);
 
-  const edit = useTextEditInteraction({
+  const edit = useTextEdit({
     container: containerRef.current,
     getText: (id) => nodesRef.current.find((n) => n.id === id)?.text ?? '',
     getStyle: (id) => nodesRef.current.find((n) => n.id === id)?.style,
@@ -394,13 +394,13 @@ const [nodes, setNodes] = useState<TextNode[]>(INITIAL);
 const [selection, setSelection] = useState<string[]>([]);
 
 // --- Move interaction (drag a selected node) ---
-const move = useMoveInteraction<TextNode, Pose>(moveAdapter, {
+const move = useMove<TextNode, Pose>(moveAdapter, {
   translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
   behaviors: [snap(gridSnapStrategy<Pose>(10))],
 });
 
 // --- Edit interaction (contenteditable overlay) ---
-const edit = useTextEditInteraction({
+const edit = useTextEdit({
   container: containerRef.current,
   getText: (id) => find(id)?.text ?? '',
   getStyle: (id) => find(id)?.style,

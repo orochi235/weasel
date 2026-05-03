@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useInsertInteraction } from '@orochi235/weasel';
+import { useInsert } from '@orochi235/weasel';
 import type { InsertAdapter, Op, ClipboardSnapshot } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
 import { setupCanvasDpr } from '@orochi235/weasel';
@@ -29,7 +29,7 @@ export function InsertDemo() {
     applyBatch: (ops: Op[]) => { for (const op of ops) op.apply(adapter); },
   };
 
-  const insert = useInsertInteraction<Rect, Pose>(adapter, {
+  const insert = useInsert<Rect, Pose>(adapter, {
     minBounds: { width: 4, height: 4 },
   });
 
@@ -119,7 +119,7 @@ const adapter: InsertAdapter<Rect> = {
   applyBatch: (ops) => { for (const op of ops) op.apply(adapter); },
 };
 
-const insert = useInsertInteraction<Rect, Pose>(adapter, {
+const insert = useInsert<Rect, Pose>(adapter, {
   minBounds: { width: 4, height: 4 },
 });
 

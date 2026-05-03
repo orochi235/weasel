@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  useMoveInteraction,
+  useMove,
   snap,
   gridSnapStrategy,
   createGridLayer,
   runLayers,
-  useZoomInteraction,
+  useZoom,
 } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
 import { setupCanvasDpr } from '@orochi235/weasel';
@@ -50,12 +50,12 @@ export function MoveDemo() {
     },
   };
 
-  const move = useMoveInteraction<Rect, Pose>(adapter, {
+  const move = useMove<Rect, Pose>(adapter, {
     translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
     behaviors: [snap(gridSnapStrategy<Pose>(CELL, UNITS))],
   });
 
-  const zoomCtl = useZoomInteraction({
+  const zoomCtl = useZoom({
     zoom, setZoom, pan, setPan,
     viewport: { width: W, height: H },
     sources: { wheel: true, keys: true, doubleClick: true, pinch: true },
@@ -197,7 +197,7 @@ const adapter: MoveAdapter<Rect, Pose> = {
 const UNITS: UnitSystem = { base: 'px', units: { px: 1, tile: 20 } };
 const CELL = { value: 1, unit: 'tile' } as const;
 
-const move = useMoveInteraction<Rect, Pose>(adapter, {
+const move = useMove<Rect, Pose>(adapter, {
   translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
   behaviors: [snap(gridSnapStrategy<Pose>(CELL, UNITS))],
 });

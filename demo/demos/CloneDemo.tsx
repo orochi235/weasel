@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useCloneInteraction, cloneByAltDrag } from '@orochi235/weasel';
+import { useClone, cloneByAltDrag } from '@orochi235/weasel';
 import type { InsertAdapter, Op, ClipboardSnapshot } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
 import { setupCanvasDpr } from '@orochi235/weasel';
@@ -47,7 +47,7 @@ export function CloneDemo() {
     getSelection: () => [],
   };
 
-  const clone = useCloneInteraction<Rect>(adapter, {
+  const clone = useClone<Rect>(adapter, {
     behaviors: [cloneByAltDrag()],
     setOverlay: (_layer, objects) => setOverlay(objects as OverlayItem[]),
     clearOverlay: () => setOverlay(null),
@@ -157,7 +157,7 @@ const adapter: InsertAdapter<Rect> = {
   getSelection: () => [],
 };
 
-const clone = useCloneInteraction<Rect>(adapter, {
+const clone = useClone<Rect>(adapter, {
   behaviors: [cloneByAltDrag()],
   setOverlay: (_layer, objects) => setOverlay(objects as OverlayItem[]),
   clearOverlay: () => setOverlay(null),

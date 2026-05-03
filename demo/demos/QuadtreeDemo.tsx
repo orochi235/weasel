@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  useMoveInteraction,
-  useResizeInteraction,
+  useMove,
+  useResize,
   createGridLayer,
   createSelectionOverlayLayer,
   runLayers,
@@ -110,10 +110,10 @@ export function QuadtreeDemo() {
     applyBatch: (ops: Op[]) => { for (const op of ops) op.apply(resizeAdapter); },
   };
 
-  const move = useMoveInteraction<Rect, Pose>(moveAdapter, {
+  const move = useMove<Rect, Pose>(moveAdapter, {
     translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
   });
-  const resize = useResizeInteraction<Rect, Pose>(resizeAdapter, {});
+  const resize = useResize<Rect, Pose>(resizeAdapter, {});
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const dragKind = useRef<'move' | 'resize' | null>(null);

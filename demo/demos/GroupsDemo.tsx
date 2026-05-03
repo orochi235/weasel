@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  useMoveInteraction,
-  useResizeInteraction,
+  useMove,
+  useResize,
   resolveToOutermostGroup,
   expandToLeaves,
   composeSelectionPose,
@@ -72,13 +72,13 @@ export function GroupsDemo() {
 
   // Group-aware move: when a group id is in the dragged set, expand to leaves
   // so the kit translates each leaf by the same delta.
-  const move = useMoveInteraction<Rect, Pose>(adapter, {
+  const move = useMove<Rect, Pose>(adapter, {
     translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
     expandIds: (ids) => expandToLeaves(ids, adapter),
   });
   // Group-aware resize: starting a resize against a group id triggers the
   // kit's union-AABB path. Each leaf is scaled proportionally on commit.
-  const resize = useResizeInteraction<Rect, Pose>(adapter, {
+  const resize = useResize<Rect, Pose>(adapter, {
     expandIds: (ids) => {
       const leaves = expandToLeaves(ids, adapter);
       // Single-leaf path expects expanded === [id]; only return leaves when
@@ -142,7 +142,7 @@ export function GroupsDemo() {
     const resolved = resolveToOutermostGroup(target.id, adapter);
     if (!selRef.current.includes(resolved)) setSelection([resolved]);
     gesture.current = 'move';
-    // useMoveInteraction's expandIds will expand the group id to leaves.
+    // useMove's expandIds will expand the group id to leaves.
     move.start({ ids: [resolved], worldX: wx, worldY: wy, clientX: e.clientX, clientY: e.clientY });
   }, [move, resize]);
 
@@ -274,12 +274,12 @@ const group: Group = { id: 'g1', members: ['a', 'b', 'c'] };
 // interfaces. resolveToOutermostGroup walks parent groups; expandToLeaves
 // flattens a possibly-group id list into leaf ids.
 
-const move = useMoveInteraction<Rect, Pose>(adapter, {
+const move = useMove<Rect, Pose>(adapter, {
   translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
   expandIds: (ids) => expandToLeaves(ids, adapter),  // group id -> leaves
 });
 
-const resize = useResizeInteraction<Rect, Pose>(adapter, {
+const resize = useResize<Rect, Pose>(adapter, {
   expandIds: (ids) => {
     if (ids.length === 1 && adapter.getGroup(ids[0]) === undefined) return ids;
     return expandToLeaves(ids, adapter);

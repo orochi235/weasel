@@ -1,1 +1,1 @@
-export * from '../interactions/gestures/area-select';
+export * from '../features/interactions/gestures/area-select';

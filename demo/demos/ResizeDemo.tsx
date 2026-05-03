@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useResizeInteraction } from '@orochi235/weasel';
+import { useResize } from '@orochi235/weasel';
 import type { ResizeAdapter, ResizeAnchor, Op } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
 import { setupCanvasDpr } from '@orochi235/weasel';
@@ -26,7 +26,7 @@ export function ResizeDemo() {
     applyBatch: (ops: Op[]) => { for (const op of ops) op.apply(adapter); },
   };
 
-  const resize = useResizeInteraction<Rect, Pose>(adapter, {});
+  const resize = useResize<Rect, Pose>(adapter, {});
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const activeAnchor = useRef<ResizeAnchor | null>(null);
 
@@ -118,7 +118,7 @@ const adapter: ResizeAdapter<Rect, Pose> = {
   applyBatch: (ops) => { for (const op of ops) op.apply(adapter); },
 };
 
-const resize = useResizeInteraction<Rect, Pose>(adapter, {});
+const resize = useResize<Rect, Pose>(adapter, {});
 
 // Each handle has a ResizeAnchor: { x: 'min'|'max'|'free', y: ... }.
 // 'min' anchors the side where coords stay fixed; the opposite side moves.

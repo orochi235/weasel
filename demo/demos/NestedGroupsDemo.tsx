@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  useMoveInteraction,
-  useNestedGroupAction,
-  useNestedUngroupAction,
-  useUndoRedoAction,
+  useMove,
+  useNestedGroup,
+  useNestedUngroup,
+  useUndoRedo,
   createHistory,
   createSelectionOverlayLayer,
   composeRectPose,
@@ -73,24 +73,24 @@ export function NestedGroupsDemo() {
 
   const composeOpts = { composePose: composeRectPose<Pose>, decomposePose: decomposeRectPose<Pose> };
 
-  const move = useMoveInteraction<Node, Pose>(adapter, {
+  const move = useMove<Node, Pose>(adapter, {
     translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
     cascadeWorldPose: worldPoseLookup(adapter, composeRectPose<Pose>),
   });
 
-  useNestedGroupAction<Node, Pose>(adapter, {
+  useNestedGroup<Node, Pose>(adapter, {
     ...composeOpts,
     bindKeyboard: true,
     groupFactory: ({ id, localPose, childIds: _childIds }) => ({
       id, parent: null, pose: localPose, color: '#3a2e22', isGroup: true,
     }),
   });
-  useNestedUngroupAction<Node, Pose>(adapter, {
+  useNestedUngroup<Node, Pose>(adapter, {
     ...composeOpts,
     bindKeyboard: true,
     isGroup: (_id, obj) => obj?.isGroup === true,
   });
-  useUndoRedoAction(historyRef.current, { bindKeyboard: true });
+  useUndoRedo(historyRef.current, { bindKeyboard: true });
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const dragging = useRef(false);
@@ -191,7 +191,7 @@ export function NestedGroupsDemo() {
         if (!moveOv) return;
         cx.globalAlpha = 0.7;
         // overlay.poses includes both dragged ids AND cascaded descendants
-        // (because cascadeWorldPose was supplied to useMoveInteraction).
+        // (because cascadeWorldPose was supplied to useMove).
         for (const [id, p] of moveOv.poses) {
           const src = byId(id); if (!src) continue;
           if (src.isGroup) {
@@ -248,25 +248,25 @@ const adapter = {
 const composeOpts = { composePose: composeRectPose, decomposePose: decomposeRectPose };
 
 // Move with auto-cascade: children visually follow the dragged parent.
-const move = useMoveInteraction(adapter, {
+const move = useMove(adapter, {
   translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
   cascadeWorldPose: worldPoseLookup(adapter, composeRectPose),
 });
 
 // Group / ungroup actions (Mod+G, Mod+Shift+G).
-useNestedGroupAction(adapter, {
+useNestedGroup(adapter, {
   ...composeOpts,
   bindKeyboard: true,
   groupFactory: ({ id, localPose }) => ({
     id, parent: null, pose: localPose, color: '#3a2e22', isGroup: true,
   }),
 });
-useNestedUngroupAction(adapter, {
+useNestedUngroup(adapter, {
   ...composeOpts,
   bindKeyboard: true,
   isGroup: (_id, obj) => obj?.isGroup === true,
 });
-useUndoRedoAction(history, { bindKeyboard: true });
+useUndoRedo(history, { bindKeyboard: true });
 
 // Selection overlay reads world poses via worldPoseLookup — no per-id
 // composeWorldPose call site.

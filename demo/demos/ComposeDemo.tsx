@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  useMoveInteraction,
-  useResizeInteraction,
-  useInsertInteraction,
-  useAreaSelectInteraction,
-  useDeleteAction,
+  useMove,
+  useResize,
+  useInsert,
+  useAreaSelect,
+  useDelete,
   composeSelectionPose,
   createSelectionOverlayLayer,
   runLayers,
@@ -73,13 +73,13 @@ export function ComposeDemo() {
     applyBatch: (ops: Op[]) => { for (const op of ops) op.apply(adapter); },
   };
 
-  const move = useMoveInteraction<Rect, Pose>(adapter, {
+  const move = useMove<Rect, Pose>(adapter, {
     translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
   });
-  const resize = useResizeInteraction<Rect, Pose>(adapter, {});
-  const insert = useInsertInteraction<Rect, Pose>(adapter, { minBounds: { width: 4, height: 4 } });
-  const area = useAreaSelectInteraction(adapter, { behaviors: [selectFromMarquee()] });
-  useDeleteAction(
+  const resize = useResize<Rect, Pose>(adapter, {});
+  const insert = useInsert<Rect, Pose>(adapter, { minBounds: { width: 4, height: 4 } });
+  const area = useAreaSelect(adapter, { behaviors: [selectFromMarquee()] });
+  useDelete(
     {
       getSelection: () => selRef.current,
       getObject: (id) => rectsRef.current.find((r) => r.id === id),
@@ -282,12 +282,12 @@ type Adapter = MoveAdapter<Rect, Pose> & ResizeAdapter<Rect, Pose>
 const adapter: Adapter = { /* getObject, getPose, setPose, hitTestArea,
   commitInsert, getSelection, setSelection, applyOps, applyBatch, ... */ };
 
-const move   = useMoveInteraction(adapter, { translatePose });
-const resize = useResizeInteraction(adapter, {});
-const insert = useInsertInteraction(adapter, { minBounds: { width: 4, height: 4 } });
-const area   = useAreaSelectInteraction(adapter, { behaviors: [selectFromMarquee()] });
+const move   = useMove(adapter, { translatePose });
+const resize = useResize(adapter, {});
+const insert = useInsert(adapter, { minBounds: { width: 4, height: 4 } });
+const area   = useAreaSelect(adapter, { behaviors: [selectFromMarquee()] });
 // Delete/Backspace removes the current selection (skipped while typing in inputs).
-useDeleteAction(adapter, { bindKeyboard: true });
+useDelete(adapter, { bindKeyboard: true });
 
 // Pointer-down dispatcher picks which hook gets the gesture:
 function onPointerDown(e) {

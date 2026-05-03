@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  useResizeInteraction,
-  useMoveInteraction,
+  useResize,
+  useMove,
   pathPoseGeometry,
   pathOriginProjection,
   polygonFromPoints,
@@ -55,10 +55,10 @@ export function PathPoseDemo() {
     applyBatch: (ops: Op[]) => { for (const op of ops) op.apply(moveAdapter); },
   };
 
-  const resize = useResizeInteraction<{ id: string }, Path>(resizeAdapter, {
+  const resize = useResize<{ id: string }, Path>(resizeAdapter, {
     geometry: pathPoseGeometry,
   });
-  const moveI = useMoveInteraction<{ id: string }, Path>(moveAdapter, {
+  const moveI = useMove<{ id: string }, Path>(moveAdapter, {
     translatePose: translatePath,
     behaviors: [
       snap(gridSnapStrategy<Path>(20, { origin: pathOriginProjection })),
@@ -156,12 +156,12 @@ export const PATH_POSE_DEMO_SOURCE = `// --- Scene: pose IS a Path (no rect tran
 const [path, setPath] = useState<Path>(polygonFromPoints([...]));
 
 // --- Resize: plug in pathPoseGeometry so the hook reads/writes Path bounds ---
-const resize = useResizeInteraction<{ id: string }, Path>(adapter, {
+const resize = useResize<{ id: string }, Path>(adapter, {
   geometry: pathPoseGeometry,
 });
 
 // --- Move: translatePath + grid-snap via pathOriginProjection ---
-const move = useMoveInteraction<{ id: string }, Path>(adapter, {
+const move = useMove<{ id: string }, Path>(adapter, {
   translatePose: translatePath,
   behaviors: [
     snap(gridSnapStrategy<Path>(20, { origin: pathOriginProjection })),
