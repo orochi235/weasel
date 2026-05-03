@@ -14,7 +14,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
-import { screenToWorld, type ViewTransform } from '.';
+import { screenToWorld, type ViewTransform } from '../viewport/viewTransform';
 import { pointToGridCell } from '../../interactions/gestures/shared/strategies/grid';
 import type { UnitSystem, UnitValue } from '../../core/units';
 

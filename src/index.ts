@@ -52,6 +52,7 @@
  */
 
 export * from './features/grid';
+export * from './features/viewport/viewTransform';
 export * from './features/drag/dragGhost';
 export * from './features/drag/thresholdDrag';
 export * from './features/drag/pointerDrag';

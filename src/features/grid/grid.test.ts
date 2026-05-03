@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { roundToCell, screenToWorld, worldToScreen } from '.';
+import { roundToCell } from '.';
 
 describe('roundToCell', () => {
   it('snaps to nearest grid cell', () => {
@@ -17,28 +17,5 @@ describe('roundToCell', () => {
     expect(roundToCell(0, 1)).toBe(0);
     expect(roundToCell(-0.3, 1)).toBe(0);
     expect(roundToCell(-0.7, 1)).toBe(-1);
-  });
-});
-
-describe('worldToScreen / screenToWorld', () => {
-  const view = { panX: 10, panY: 20, zoom: 2 };
-
-  it('converts world to screen coordinates', () => {
-    const [sx, sy] = worldToScreen(5, 3, view);
-    expect(sx).toBe(10 + 5 * 2);
-    expect(sy).toBe(20 + 3 * 2);
-  });
-
-  it('converts screen to world coordinates', () => {
-    const [wx, wy] = screenToWorld(20, 26, view);
-    expect(wx).toBe(5);
-    expect(wy).toBe(3);
-  });
-
-  it('roundtrips correctly', () => {
-    const [sx, sy] = worldToScreen(7, 11, view);
-    const [wx, wy] = screenToWorld(sx, sy, view);
-    expect(wx).toBeCloseTo(7);
-    expect(wy).toBeCloseTo(11);
   });
 });
