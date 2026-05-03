@@ -156,6 +156,7 @@ export {
   decomposePath,
   unionBoundsPath,
   pathPoseGeometry,
+  pathOriginProjection,
 } from './paths';
 export type {
   Path,
@@ -198,7 +199,13 @@ export type {
   AreaSelectOverlay,
 } from './interactions/gestures/types';
 export type { ClipboardSnapshot } from './interactions/clipboard/types';
-export { snap, gridSnapStrategy, pointToGridCell } from './interactions/gestures/shared';
+export {
+  snap,
+  gridSnapStrategy,
+  pointToGridCell,
+  RECT_ORIGIN_PROJECTION,
+} from './interactions/gestures/shared';
+export type { OriginProjection } from './interactions/gestures/shared';
 export { useMoveInteraction } from './interactions/gestures/move';
 export type {
   UseMoveInteractionOptions,

@@ -33,3 +33,4 @@ export {
 export { composePath, decomposePath } from './compose';
 export { unionBoundsPath } from './unionBoundsPath';
 export { pathPoseGeometry } from './poseGeometry';
+export { pathOriginProjection } from './originProjection';

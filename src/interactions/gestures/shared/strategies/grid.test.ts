@@ -11,7 +11,7 @@ describe('gridSnapStrategy', () => {
   it('snaps a pose to the nearest cell with a bare numeric cell', () => {
     const s = gridSnapStrategy<Pose>(10);
     expect(s.snap({ x: 7, y: 13 }, ctx)).toEqual({ x: 10, y: 10 });
-    expect(s.snap({ x: 24, y: -3 }, ctx)).toEqual({ x: 20, y: -0 });
+    expect(s.snap({ x: 24, y: -3 }, ctx)).toEqual({ x: 20, y: 0 });
   });
 
   it('snaps to the resolved base-unit grid when given a tagged cell', () => {
@@ -24,6 +24,35 @@ describe('gridSnapStrategy', () => {
 
   it('throws when a tagged cell is given without a unit system', () => {
     expect(() => gridSnapStrategy<Pose>({ value: 1, unit: 'ft' })).toThrow(/UnitSystem/);
+  });
+
+  it('snaps via a custom OriginProjection (Path-flavored consumer)', () => {
+    interface Polygon { points: { x: number; y: number }[] }
+    const tri: Polygon = { points: [{ x: 7, y: 13 }, { x: 17, y: 13 }, { x: 12, y: 23 }] };
+    const s = gridSnapStrategy<Polygon>(10, {
+      origin: {
+        getOrigin: (p) => {
+          let mx = Infinity, my = Infinity;
+          for (const pt of p.points) {
+            if (pt.x < mx) mx = pt.x;
+            if (pt.y < my) my = pt.y;
+          }
+          return { x: mx, y: my };
+        },
+        translate: (p, dx, dy) => ({
+          points: p.points.map((pt) => ({ x: pt.x + dx, y: pt.y + dy })),
+        }),
+      },
+    });
+    // origin (7,13) → snapped (10,10); delta (+3, -3) applied to every vertex.
+    const polyCtx = {} as unknown as GestureContext<Polygon>;
+    expect(s.snap(tri, polyCtx)).toEqual({
+      points: [
+        { x: 10, y: 10 },
+        { x: 20, y: 10 },
+        { x: 15, y: 20 },
+      ],
+    });
   });
 });
 

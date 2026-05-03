@@ -3,11 +3,14 @@ import {
   useResizeInteraction,
   useMoveInteraction,
   pathPoseGeometry,
+  pathOriginProjection,
   polygonFromPoints,
   translatePath,
   boundsOfPath,
   traceToContext,
   setupCanvasDpr,
+  snap,
+  gridSnapStrategy,
 } from '@orochi235/weasel';
 import type {
   Path,
@@ -55,6 +58,9 @@ export function PathPoseDemo() {
   });
   const moveI = useMoveInteraction<{ id: string }, Path>(moveAdapter, {
     translatePose: translatePath,
+    behaviors: [
+      snap(gridSnapStrategy<Path>(20, { origin: pathOriginProjection })),
+    ],
   });
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -160,9 +166,12 @@ const resize = useResizeInteraction<{ id: string }, Path>(adapter, {
   geometry: pathPoseGeometry,
 });
 
-// --- Move: translatePath does the projection (already TPose-generic) ---
+// --- Move: translatePath + grid-snap via pathOriginProjection ---
 const move = useMoveInteraction<{ id: string }, Path>(adapter, {
   translatePose: translatePath,
+  behaviors: [
+    snap(gridSnapStrategy<Path>(20, { origin: pathOriginProjection })),
+  ],
 });
 
 // Render via the canvas trace helper:
