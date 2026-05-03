@@ -42,6 +42,8 @@ import { useArrayAdapter, type UseArrayAdapterOptions } from '../core/adapters/u
 import { useDelete } from '../interactions/actions/delete';
 import { useNudge } from '../interactions/actions/nudge';
 import { useDuplicate } from '../interactions/actions/duplicate';
+import { useUndoRedo } from '../interactions/actions/undo-redo';
+import type { UndoRedoAdapter } from '../interactions/actions/undo-redo';
 import { useEditAnchors } from '../interactions/gestures/edit-anchors/editAnchors';
 import type {
   EditAnchorsAdapter,
@@ -350,6 +352,10 @@ export interface DuplicateGestureConfig {
   offset?: { dx: number; dy: number };
   label?: string;
 }
+export interface UndoRedoGestureConfig {
+  /** Source of the undo/redo stack — typically a `Scene` or `History`. */
+  adapter: UndoRedoAdapter;
+}
 
 export interface GesturesConfig<TPose> {
   /** Bind Delete/Backspace to remove the current selection. */
@@ -359,6 +365,8 @@ export interface GesturesConfig<TPose> {
   /** Bind Mod+D to duplicate the current selection. Requires `cloneObject` so
    *  always an object — there's no useful default for "what is a copy of X". */
   duplicate?: DuplicateGestureConfig;
+  /** Bind Mod+Z / Mod+Shift+Z to undo/redo against the supplied adapter. */
+  undoRedo?: UndoRedoGestureConfig;
 }
 
 /** Live overlay-aware lookups exposed to custom layers via `helpersRef`. */
@@ -758,6 +766,13 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       translatePose: nudgeOpts.translatePose ?? geometry.translate,
     },
   );
+
+  const undoRedoCfg = gestures?.undoRedo;
+  const undoRedoAdapter = useMemo<UndoRedoAdapter>(
+    () => undoRedoCfg?.adapter ?? { undo: () => {}, redo: () => {}, canUndo: () => false, canRedo: () => false },
+    [undoRedoCfg?.adapter],
+  );
+  useUndoRedo(undoRedoAdapter, { bindKeyboard: !!undoRedoCfg });
 
   const dupeCfg = gestures?.duplicate;
   useDuplicate<TPose>(

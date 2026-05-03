@@ -4,7 +4,6 @@ import {
   sceneToAdapter,
   useScene,
   useSelection,
-  useUndoRedo,
 } from '@orochi235/weasel';
 import type { RegisteredOp, Scene, SceneNode } from '@orochi235/weasel';
 
@@ -66,7 +65,6 @@ export function SceneDemo() {
   }, [scene]);
 
   const selection = useSelection();
-  useUndoRedo(scene, { bindKeyboard: true });
 
   // Wrap the synthesized adapter to cascade-translate descendants when a
   // container is moved. Scene v1 stores absolute poses (no auto-reflow), so
@@ -144,6 +142,7 @@ export function SceneDemo() {
         adapter={adapter}
         selection={selection}
         tool="none"
+        gestures={{ undoRedo: { adapter: scene } }}
         moveOptions={{ cascadeWorldPose }}
         hitBody={(wx, wy) => {
           const ordered = [...scene.renderOrder()];

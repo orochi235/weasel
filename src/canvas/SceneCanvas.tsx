@@ -23,9 +23,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   props: SceneCanvasProps<TData, TLayer, TPose>,
   ref: React.ForwardedRef<HTMLCanvasElement>,
 ) {
-  const { scene, ...rest } = props;
+  const { scene, gestures, ...rest } = props;
   const adapter = useMemo(() => sceneToAdapter(scene), [scene]);
-  return <Canvas<Node<TData, TLayer, TPose>, TPose> ref={ref} adapter={adapter} {...rest} />;
+  // Default the undo source to the scene; consumer can still override.
+  const wiredGestures = { undoRedo: { adapter: scene }, ...gestures };
+  return <Canvas<Node<TData, TLayer, TPose>, TPose> ref={ref} adapter={adapter} gestures={wiredGestures} {...rest} />;
 }
 
 export const SceneCanvas = forwardRef(SceneCanvasInner) as <
