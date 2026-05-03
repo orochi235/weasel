@@ -31,6 +31,18 @@
  *     (`MoveAdapter`, `ResizeAdapter`, `InsertAdapter`, `OrderedAdapter`,
  *     `GroupAdapter`, action-specific adapters).
  *
+ * Non-rect poses (Path, polygon, custom): the kit is generic over `TPose`.
+ * Plug in two small projections so the rect-flavored machinery works on any
+ * shape:
+ *   - `PoseGeometry<TPose>` — read AABB + remap on resize. Default
+ *     `RECT_POSE_GEOMETRY` for `{x,y,width,height}`; `pathPoseGeometry` for
+ *     `Path`. Pass via `useResizeInteraction(adapter, { geometry })`.
+ *   - `OriginProjection<TPose>` — read snap-origin + translate by delta. Used
+ *     by `gridSnapStrategy` and `snapBackOrDelete` for non-rect poses. Default
+ *     `RECT_ORIGIN_PROJECTION`; `pathOriginProjection` for `Path`. Pass via
+ *     `gridSnapStrategy(spacing, { origin })` or `snapBackOrDelete({ ...,
+ *     origin })`.
+ *
  * Per-hook subpath imports: `snapToGrid` exists for move, resize, and insert
  * with different return shapes. Import from the hook-specific subpath to pick
  * the right one:

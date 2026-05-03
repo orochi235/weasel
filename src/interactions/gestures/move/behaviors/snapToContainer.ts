@@ -29,7 +29,7 @@ function clearTimer<TPose>(s: SnapState<TPose>) {
   s.pendingTargetId = null;
 }
 
-export function snapToContainer<TPose extends { x: number; y: number }>(args: {
+export function snapToContainer<TPose>(args: {
   dwellMs: number;
   findTarget: (
     draggedId: string,
