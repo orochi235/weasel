@@ -1,4 +1,4 @@
-import type { ResizeAnchor } from '../interactions/gestures/types';
+import type { ResizeAnchor } from '../types';
 
 export interface CornerHandle {
   cx: number;

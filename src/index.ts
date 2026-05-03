@@ -183,7 +183,6 @@ export { resolveToOutermostGroup, expandToLeaves } from './groups/resolve';
 export { unionBounds } from './groups/unionBounds';
 export type { RectPose } from './groups/unionBounds';
 export { withGroupOrdering } from './groups/orderedGroups';
-export * from './chrome';
 export * from './history';
 export * from './adapters/types';
 export type {
@@ -226,11 +225,17 @@ export type {
   MoveStartArgs,
   MoveMoveArgs,
 } from './interactions/gestures/move';
-export { useResizeInteraction, RECT_POSE_GEOMETRY } from './interactions/gestures/resize';
+export {
+  useResizeInteraction,
+  RECT_POSE_GEOMETRY,
+  cornerResizeHandles,
+  hitCornerHandle,
+} from './interactions/gestures/resize';
 export type {
   UseResizeInteractionOptions,
   UseResizeInteractionReturn,
   PoseGeometry,
+  CornerHandle,
 } from './interactions/gestures/resize';
 export { useInsertInteraction } from './interactions/gestures/insert';
 export type {
