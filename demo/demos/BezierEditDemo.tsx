@@ -93,7 +93,7 @@ export function BezierEditDemo() {
       </div>
       <div style={{ width: W * zoom, height: H * zoom, overflow: 'hidden' }}>
         <div style={{ width: W, height: H, transform: `scale(${zoom})`, transformOrigin: '0 0' }}>
-          <Canvas<PathObj, Pose>
+          <Canvas
       width={W}
       height={H}
       className="ckd-canvas"
@@ -156,7 +156,7 @@ const INITIAL_PATH = new PathBuilder()
 return (
   <div style={{ width: W * zoom, height: H * zoom, overflow: 'hidden' }}>
     <div style={{ width: W, height: H, transform: \`scale(\${zoom})\`, transformOrigin: '0 0' }}>
-      <Canvas<PathObj, Path>
+      <Canvas
         width={W} height={H}
         adapter={adapter}
         tool="none"

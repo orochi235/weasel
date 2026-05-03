@@ -31,7 +31,7 @@ export function RotateDemo() {
   };
 
   return (
-    <Canvas<Rect, RotatedPose>
+    <Canvas
       width={W}
       height={H}
       className="ckd-canvas"
@@ -81,7 +81,7 @@ const hitBody = (wx, wy) => {
 // v1 limitation: resize on a rotated object operates on the AABB, so the
 // resize-in-rotated-frame behavior is non-intuitive. Out of scope here.
 return (
-  <Canvas<Rect, RotatedPose>
+  <Canvas
     width={W} height={H}
     items={rects}
     setItems={setRects}

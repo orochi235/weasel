@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Canvas } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
-interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 400, H = 300, HANDLE = 8;
 
@@ -18,7 +17,7 @@ export function MultiSelectDemo() {
   const [rects, setRects] = useState<Rect[]>(INITIAL);
 
   return (
-    <Canvas<Rect, Pose>
+    <Canvas
       width={W}
       height={H}
       className="ckd-canvas"
@@ -54,7 +53,7 @@ const [rects, setRects] = useState<Rect[]>(INITIAL);
 // and routes drag / resize through that union — Canvas wires expandIds,
 // boundsOf, hitBody, and resizeTarget for you.
 return (
-  <Canvas<Rect, Pose>
+  <Canvas
     width={W} height={H}
     items={rects}
     setItems={setRects}

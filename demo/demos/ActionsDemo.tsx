@@ -76,7 +76,7 @@ export function ActionsDemo() {
           ? 'Keys live: Esc / Cmd-A / Cmd-D / arrows (shift = bigger step) / Cmd-[ / Cmd-]'
           : 'Click the canvas to enable keyboard shortcuts'}
       </div>
-      <Canvas<Rect, Pose>
+      <Canvas
         width={W}
         height={H}
         className="ckd-canvas"
@@ -127,7 +127,7 @@ useReorder(adapter);             // Cmd/Ctrl+] / [ (+Shift = to front/back)
 // <Canvas> handles selection (click-to-select) and renders the selection
 // outline; the action hooks above operate on the same selection state.
 return (
-  <Canvas<Rect, Pose>
+  <Canvas
     width={W} height={H}
     adapter={adapter}
     selection={selection}

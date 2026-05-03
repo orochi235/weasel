@@ -186,7 +186,7 @@ export function TextDemo() {
       style={{ position: 'relative', width: W, height: H }}
       onDoubleClick={onDoubleClick}
     >
-      <Canvas<TextNode, Pose>
+      <Canvas
         width={W}
         height={H}
         className="ckd-canvas"
@@ -245,7 +245,7 @@ const textLayer = createTextLayer<TextNode>({
 // Double-click on the wrapping div routes through caretIndexAt → edit.startEdit.
 return (
   <div ref={containerRef} onDoubleClick={onDoubleClick}>
-    <Canvas<TextNode, Pose>
+    <Canvas
       width={W} height={H}
       items={nodes} setItems={setNodes}
       toPose={(n) => ({ x: n.x, y: n.y, width: n.width, height: n.height })}

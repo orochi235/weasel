@@ -78,7 +78,7 @@ export function MoveDemo() {
   };
 
   return (
-    <Canvas<Rect, Pose>
+    <Canvas
       width={W}
       height={H}
       className="ckd-canvas"
@@ -131,7 +131,7 @@ const CELL = { value: 1, unit: 'tile' } as const;
 // the internal move controller — here we plug in a snap-to-grid behavior.
 // Pass selection so the duplicate hook and Canvas share the same selection.
 return (
-  <Canvas<Rect, Pose>
+  <Canvas
     width={W} height={H}
     adapter={adapter}
     selection={selection}

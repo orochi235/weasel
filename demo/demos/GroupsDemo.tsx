@@ -95,7 +95,7 @@ export function GroupsDemo() {
   };
 
   return (
-    <Canvas<Rect, Pose>
+    <Canvas
       width={W}
       height={H}
       className="ckd-canvas"
@@ -171,7 +171,7 @@ const boundsOf = (id) =>
 // the layers map to drive rendering. The selection overlay's poseById uses
 // composeSelectionPose for group-aware union AABB resolution.
 return (
-  <Canvas<Rect, Pose>
+  <Canvas
     width={W} height={H}
     adapter={adapter}
     selection={selection}

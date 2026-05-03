@@ -42,7 +42,7 @@ export function PathPoseDemo() {
   };
 
   return (
-    <Canvas<PathObj, Pose>
+    <Canvas
       width={W}
       height={H}
       className="ckd-canvas"
@@ -85,7 +85,7 @@ const adapter: MoveAdapter<PathObj, Path> & ResizeAdapter<PathObj, Path> = {
 // The only Path-specific extra is the snap behavior, which reads the origin
 // via pathOriginProjection.
 return (
-  <Canvas<PathObj, Path>
+  <Canvas
     width={W} height={H}
     adapter={adapter}
     handleHitRadius={HANDLE}

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Canvas } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
-interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 400, H = 300, HANDLE = 8;
 
@@ -12,7 +11,7 @@ export function ResizeDemo() {
   const [rects, setRects] = useState<Rect[]>([INITIAL]);
 
   return (
-    <Canvas<Rect, Pose>
+    <Canvas
       width={W}
       height={H}
       className="ckd-canvas"
@@ -47,7 +46,7 @@ const [rects, setRects] = useState<Rect[]>([INITIAL]);
 // pre-selected so the corner handles are visible from the start;
 // onTapEmpty is overridden to keep selection on empty-canvas clicks.
 return (
-  <Canvas<Rect, Pose>
+  <Canvas
     width={W} height={H}
     items={rects}
     setItems={setRects}

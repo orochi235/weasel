@@ -5,7 +5,7 @@ import {
   useScene,
   useSelection,
 } from '@orochi235/weasel';
-import type { RegisteredOp, Scene, SceneNode } from '@orochi235/weasel';
+import type { RegisteredOp, Scene } from '@orochi235/weasel';
 
 type LayerId = 'garden' | 'blueprint' | 'structures' | 'zones' | 'plantings';
 interface NodeData { color: string; label?: string }
@@ -135,7 +135,7 @@ export function SceneDemo() {
           Cmd/Ctrl+Z undo · Shift+Cmd/Ctrl+Z redo · drag rects to move
         </span>
       </div>
-      <Canvas<SceneNode<NodeData, LayerId, Pose>, Pose>
+      <Canvas
         width={W}
         height={H}
         className="ckd-canvas"

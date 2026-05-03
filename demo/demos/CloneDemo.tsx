@@ -87,7 +87,7 @@ export function CloneDemo() {
   };
 
   return (
-    <Canvas<Rect, Pose>
+    <Canvas
       width={W}
       height={H}
       className="ckd-canvas"
@@ -130,7 +130,7 @@ const clone = useClone<Rect>(adapter, {
 // Override Canvas's pointer handlers to drive the clone gesture (alt-hit-test
 // → clone.start). The default scene + a custom ghost layer paint the rest.
 return (
-  <Canvas<Rect, Pose>
+  <Canvas
     width={W} height={H}
     adapter={adapter}
     selectionMode="none"

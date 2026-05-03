@@ -184,7 +184,7 @@ export function NestedGroupsDemo() {
   const selectionPoseLookup = worldPoseLookup(adapter, composeRectPose<Pose>);
 
   return (
-    <Canvas<Node, Pose>
+    <Canvas
       width={W}
       height={H}
       className="ckd-canvas"
@@ -244,7 +244,7 @@ useNestedUngroup(adapter, { ...composeOpts, bindKeyboard: true,
 // custom layers (TPose is local so the standard scene drawOne can't be
 // used directly — paint via a custom layer that walks ancestors).
 return (
-  <Canvas<Node, Pose>
+  <Canvas
     width={W} height={H}
     adapter={adapter}
     selection={selection}

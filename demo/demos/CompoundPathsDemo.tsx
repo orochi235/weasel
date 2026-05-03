@@ -160,7 +160,7 @@ export function CompoundPathsDemo() {
 
   return (
     <div style={{ position: 'relative', width: W, height: H }}>
-      <Canvas<Shape, Path>
+      <Canvas
         width={W}
         height={H}
         className="ckd-canvas"
@@ -237,7 +237,7 @@ export const COMPOUND_PATHS_DEMO_SOURCE = `// Five non-rect shapes on one canvas
 // fromPose is needed because resize writes a new Path back; intersectsRect
 // teaches area-select about path geometry.
 return (
-  <Canvas<Shape, Path>
+  <Canvas
     items={shapes}
     setItems={setShapes}
     toPose={(s) => s.pose}

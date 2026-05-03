@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import { Canvas } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
-interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 400, H = 300;
 const COLORS = ['#7fb069', '#d4a574', '#a48bd4', '#d47a7a', '#7ab8d4'];
@@ -12,7 +11,7 @@ export function InsertDemo() {
   const nextId = useRef(0);
 
   return (
-    <Canvas<Rect, Pose>
+    <Canvas
       width={W}
       height={H}
       className="ckd-canvas"
@@ -54,7 +53,7 @@ const nextId = useRef(0);
 // pointer-down to it. The default insertOverlay slot draws the live
 // drag-rectangle; pass {} to use defaults, or override fill/stroke/dash.
 return (
-  <Canvas<Rect, Pose>
+  <Canvas
     width={W} height={H}
     items={rects}
     setItems={setRects}

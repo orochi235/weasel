@@ -81,7 +81,7 @@ export function QuadtreeDemo() {
   const helpersRef = useRef<CanvasHelpers<Pose> | null>(null);
 
   return (
-    <Canvas<Rect, Pose>
+    <Canvas
       width={W}
       height={H}
       className="ckd-canvas"
@@ -128,7 +128,7 @@ function buildTree(bounds, rects): QuadNode {
 // <Canvas> owns the move/resize/selection hooks. The layers map names the
 // standard slots and drops the quadtree in after 'scene'.
 return (
-  <Canvas<Rect, Pose>
+  <Canvas
     width={W} height={H}
     items={rects}
     setItems={setRects}
