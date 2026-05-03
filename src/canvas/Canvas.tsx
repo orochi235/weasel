@@ -340,6 +340,10 @@ const AUTO_POSE_DESCRIPTOR: PoseDescriptor<unknown> = {
     : RECT_POSE_DESCRIPTOR.intersectsRect!(p as { x: number; y: number; width: number; height: number }, rect),
 };
 
+function aabbContains(b: Bounds, x: number, y: number): boolean {
+  return x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height;
+}
+
 function isPathLike(p: unknown): p is Path {
   return !!p && typeof p === 'object' && 'kind' in p
     && ((p as { kind: unknown }).kind === 'polygon' || (p as { kind: unknown }).kind === 'rect');
@@ -668,17 +672,16 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     const a = move.adapter;
     return (worldX: number, worldY: number): string | string[] | null => {
       const objs = a.getObjects();
+      const point = { x: worldX, y: worldY, width: 0, height: 0 };
       for (let i = objs.length - 1; i >= 0; i--) {
         const o = objs[i];
-        const p = geometry.getBounds(a.getPose(o.id));
-        if (
-          worldX >= p.x &&
-          worldX <= p.x + p.width &&
-          worldY >= p.y &&
-          worldY <= p.y + p.height
-        ) {
-          return o.id;
-        }
+        const pose = a.getPose(o.id);
+        // Prefer the descriptor's own intersect (handles polygon hit-testing
+        // for closed paths); fall back to AABB containment.
+        const hit = geometry.intersectsRect
+          ? geometry.intersectsRect(pose, point)
+          : aabbContains(geometry.getBounds(pose), worldX, worldY);
+        if (hit) return o.id;
       }
       return null;
     };

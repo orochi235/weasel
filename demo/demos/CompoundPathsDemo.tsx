@@ -5,7 +5,6 @@ import {
   composePath,
   pathPoseDescriptor,
   PathBuilder,
-  pointInPath,
   polygonFromPoints,
   traceToContext,
 } from '@orochi235/weasel';
@@ -167,14 +166,6 @@ export function CompoundPathsDemo() {
     [],
   );
 
-  const hitBody = (wx: number, wy: number): string | null => {
-    const arr = shapesRef.current;
-    for (let i = arr.length - 1; i >= 0; i--) {
-      if (pointInPath(arr[i].pose, wx, wy)) return arr[i].id;
-    }
-    return null;
-  };
-
   const honkBounds = () => {
     const g = shapesRef.current.find((s) => s.id === 'goose');
     if (!g) return null;
@@ -191,7 +182,6 @@ export function CompoundPathsDemo() {
         adapter={adapter}
         selectionMode="multi"
         handleHitRadius={HANDLE}
-        hitBody={hitBody}
         layers={{
           scene: {
             drawOne: (cx, s, p) => {
@@ -260,21 +250,13 @@ const adapter = arrayAdapter<Shape, Path>({
   intersectsRect: (pose, rect) => pathPoseDescriptor.intersectsRect!(pose, rect),
 });
 
-// pointInPath gives true silhouette hit-testing (vs. the default AABB hit
-// pathPoseDescriptor.getBounds would yield).
-const hitBody = (wx, wy) => {
-  for (let i = shapes.length - 1; i >= 0; i--)
-    if (pointInPath(shapes[i].pose, wx, wy)) return shapes[i].id;
-  return null;
-};
-
 return (
   <Canvas<Shape, Path>
     adapter={adapter}
     // Path TPose is auto-detected — Canvas dispatches on pose.kind so bounds /
-    // translate / resize-remap all wire up without an explicit geometry prop.
+    // translate / resize-remap, plus pointInPath silhouette hit-testing, all
+    // wire up without an explicit geometry / hitBody prop.
     selectionMode="multi"             // shift-click extend, union-AABB resize
-    hitBody={hitBody}
     layers={{
       scene: { drawOne: (cx, s, p) => { traceToContext(cx, p); cx.fill(p.kind === 'polygon' ? p.fillRule : 'nonzero'); cx.stroke(); } },
       selectionOverlay: { handles: { size: HANDLE } },

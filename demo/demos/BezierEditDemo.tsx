@@ -2,8 +2,6 @@ import { useRef, useState } from 'react';
 import {
   Canvas,
   PathBuilder,
-  boundsOfPath,
-  pointInPath,
   traceToContext,
   PATH_C,
 } from '@orochi235/weasel';
@@ -39,17 +37,6 @@ export function BezierEditDemo() {
     getParent: () => null,
     setPose: (_id, p) => setPath(p),
     setParent: () => {},
-  };
-
-  // Hit-test the curve's silhouette generously: the open path has no fill, so
-  // augment with an AABB padding so single-click still selects.
-  const hitBody = (wx: number, wy: number): string | null => {
-    const p = pathRef.current;
-    if (pointInPath(p, wx, wy)) return ID;
-    const b = boundsOfPath(p);
-    const PAD = 10;
-    if (wx >= b.x - PAD && wx <= b.x + b.width + PAD && wy >= b.y - PAD && wy <= b.y + b.height + PAD) return ID;
-    return null;
   };
 
   const appendCurve = () => {
@@ -93,7 +80,6 @@ export function BezierEditDemo() {
       adapter={adapter}
       tool="none"
       handleHitRadius={HANDLE}
-      hitBody={hitBody}
       onTapEmpty={() => {}}
       editAnchors
       layers={{
@@ -134,7 +120,6 @@ return (
     width={W} height={H}
     adapter={adapter}
     tool="none"
-    hitBody={hitBody}
     editAnchors
     layers={{
       scene: { drawOne: (cx, _o, p) => { cx.strokeStyle = '#f5b7a3'; cx.lineWidth = 2; traceToContext(cx, p); cx.stroke(); } },
