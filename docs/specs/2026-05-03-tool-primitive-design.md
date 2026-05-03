@@ -7,7 +7,7 @@
 
 `weasel` currently exposes interaction as a soup of hooks (`useMove`, `useResize`, `useRotate`, `useInsert`, `useAreaSelect`, `useEditAnchors`) wired together inside `<Canvas>`. Building a new "mode" — a pen tool, a hand tool, a text tool — means either composing existing hooks ad-hoc or forking `<Canvas>`. There's no shared substrate for "the user's currently active tool," no way to install hold-to-pan-style modifier tools, and no first-class place to declare keybindings or cursors.
 
-This spec defines a **Tool primitive**: a record describing how a single tool listens to interaction channels (pointer / drag / keyboard / wheel), plus a **palette** that holds the active tool, the modifier-engaged tool, and any always-on tools, and a `<Canvas palette={palette} />` integration point.
+This spec defines a **Tool primitive**: a record describing how a single tool listens to interaction channels (pointer / drag / keyboard / wheel), plus a **tools registry** that holds the active tool, the modifier-engaged tool, and any always-on tools, and a `<Canvas tools={tools} />` integration point. ("Palette" — the visible row of tool buttons in a UI — is userland presentation, not a kit concept.)
 
 The primitive replaces the existing gesture hooks in a phased migration: built-in tools (`select`, `hand`, `insert`) wrap the current implementations behind the new surface; once all demos are on the palette, the legacy hooks are deleted.
 
@@ -31,9 +31,9 @@ The forcing demo is "Swillustrator" — a five-tool palette (select, pen, insert
 
 ### Slots
 
-The palette has three slots. A single tool can be installed into any slot, depending on how the consumer wires it.
+The tools registry has three slots. A single tool can be installed into any slot, depending on how the consumer wires it.
 
-- **Active slot** — the user's currently selected tool. Exactly one. Switched by clicking a palette button or pressing the tool's keybinding. Persists until another tool is activated.
+- **Active slot** — the user's currently selected tool. Exactly one. Switched by userland calling `tools.setActive(id)` (typically wired to a palette button) or pressing the tool's keybinding. Persists until another tool is activated.
 - **Modifier slot** — a tool engaged temporarily *while a modifier key is held*. Hand-while-space, eyedropper-while-alt. Auto-deactivates on key-up. Zero or one at a time.
 - **Always-on slot** — tools with no notion of "active" because they only respond to discrete triggers (Backspace, arrow keys, Cmd-Z). Listen continuously, regardless of the active tool.
 
@@ -62,7 +62,7 @@ Once a gesture starts, modifiers from that point on are flags only. This matches
 ### Gesture interruption
 
 - **Modifier-slot trigger**: only engages on idle. No interruption mid-gesture.
-- **Explicit switch** (palette click or keybinding): preempts and cancels the active gesture. Current tool gets `drag.onCancel`, scratch is discarded, new tool takes over. Treated as a UX bug if it happens regularly.
+- **Explicit switch** (userland `setActive` call or keybinding): preempts and cancels the active gesture. Current tool gets `drag.onCancel`, scratch is discarded, new tool takes over. Treated as a UX bug if it happens regularly.
 
 ### Tool record
 
@@ -125,27 +125,27 @@ const pen    = defineTool({ id: 'pen',    keybinding: 'p', ... });
 const hand   = defineTool({ id: 'hand',   keybinding: 'h', modifier: 'space', ... });
 const del    = defineTool({ id: 'delete', keybinding: 'Backspace', ... }); // always-on
 
-const palette = useToolPalette({
+const tools = useTools({
   active: 'select',
-  tools: { select, pen, hand },
+  registry: { select, pen, hand },
   alwaysOn: [del, nudge, undoRedo],
 });
 
-useKeybindings(palette);                                 // wires declared bindings
-useKeybindings(palette, { overrides: { v: 'pen' } });    // remap
-useKeybindings(palette, { disable: true });              // touch app, no keyboard
+useKeybindings(tools);                                 // wires declared bindings
+useKeybindings(tools, { overrides: { v: 'pen' } });    // remap
+useKeybindings(tools, { disable: true });              // touch app, no keyboard
 
-return <Canvas palette={palette} ... />;
+return <Canvas tools={tools} ... />;
 ```
 
-The palette infers slot routing from each tool's record: tools with `modifier` go to the modifier slot, tools in `alwaysOn` go to the always-on slot, the rest are eligible for the active slot.
+The registry infers slot routing from each tool's record: tools with `modifier` go to the modifier slot, tools in `alwaysOn` go to the always-on slot, the rest are eligible for the active slot.
 
 ### Cursor handling
 
-`cursor` declared on the tool. Palette-level override:
+`cursor` declared on the tool. Registry-level override:
 
 ```ts
-useToolPalette({ ..., cursorOverride: { hand: 'grabbing' } });
+useTools({ ..., cursorOverride: { hand: 'grabbing' } });
 ```
 
 `<Canvas>` reads the active tool's cursor (or the modifier-engaged tool's, when in modifier mode) and applies it to the canvas element.
@@ -168,8 +168,8 @@ Phased — kit ships old hooks alongside the new primitive until parity is reach
 
 ### Phase 1: foundation
 
-- Add `defineTool`, `useToolPalette`, `useKeybindings`, `Tool` / `ToolCtx` / `Decision` types.
-- Add `<Canvas palette={palette} />` prop. When present, palette dispatch replaces the current gesture wiring; when absent, `<Canvas>` falls back to existing hook-based behavior.
+- Add `defineTool`, `useTools`, `useKeybindings`, `Tool` / `ToolCtx` / `Decision` types.
+- Add `<Canvas tools={tools} />` prop. When present, tools dispatch replaces the current gesture wiring; when absent, `<Canvas>` falls back to existing hook-based behavior.
 - No tools shipped yet. Pure substrate.
 
 ### Phase 2: built-in tools
@@ -180,7 +180,7 @@ Phased — kit ships old hooks alongside the new primitive until parity is reach
 
 ### Phase 3: demo migration
 
-- Port every demo from hook-props (`gestures={...}`, `tool="select"`) to `palette={...}`.
+- Port every demo from hook-props (`gestures={...}`, `tool="select"`) to `tools={...}`.
 - Each port either uses the kit-shipped built-in tools or copies a cookbook demo tool.
 
 ### Phase 4: legacy removal
@@ -192,6 +192,6 @@ Per [feedback memory](../../.claude/projects/-Users-mike-src-weasel/memory/break
 
 ## Open questions
 
-- Does `useToolPalette` need to expose the live "modifier currently engaged?" boolean for UI affordances (palette button highlight)? Probably yes — defer until UI work.
+- Does `useTools` need to expose the live "modifier currently engaged?" boolean for UI affordances (so userland palettes can highlight the engaged button)? Probably yes — defer until UI work.
 - Does `Decision` need a third value `'claim-and-stop-modifiers'` or similar for tools that want to suppress modifier-key flag updates while active? No real use case yet; punt.
 - Touch / pen-stylus pressure: out of scope. Wheel channel is the only non-pointer-non-keyboard channel for now.
