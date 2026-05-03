@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { roundToCell, screenToWorld, worldToScreen } from './grid';
+import { roundToCell, screenToWorld, worldToScreen } from '.';
 
 describe('roundToCell', () => {
   it('snaps to nearest grid cell', () => {

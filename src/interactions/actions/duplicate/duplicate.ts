@@ -2,7 +2,7 @@ import { useCallback, useRef } from 'react';
 import { createInsertOp } from '../../../ops/create';
 import { createSetSelectionOp } from '../../../ops/selection';
 import type { Op } from '../../../ops/types';
-import { useKeybinding } from '../../../hooks/useKeybinding';
+import { useKeybinding } from '../useKeybinding';
 
 /** Adapter for `useDuplicateAction`. */
 export interface DuplicateAdapter<TPose> {

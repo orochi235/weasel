@@ -1,5 +1,5 @@
 import { type RefObject, useEffect } from 'react';
-import { setupCanvasDpr } from '../pixelDensity';
+import { setupCanvasDpr } from '../viewport/pixelDensity';
 
 /**
  * Effect that DPR-scales a canvas to `width x height` (CSS px) and calls

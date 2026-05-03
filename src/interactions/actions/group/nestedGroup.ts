@@ -37,7 +37,7 @@ import {
   rebaseLocalPose,
   type PoseAdapter,
 } from '../../../transforms/composePose';
-import { useKeybinding } from '../../../hooks/useKeybinding';
+import { useKeybinding } from '../useKeybinding';
 
 /** Adapter for `useNestedGroupAction` / `useNestedUngroupAction`. */
 export interface NestedGroupActionAdapter<TObject extends { id: string }, TPose>

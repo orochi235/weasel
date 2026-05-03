@@ -55,22 +55,22 @@ export * from './grid';
 export * from './drag/dragGhost';
 export * from './drag/thresholdDrag';
 export * from './drag/pointerDrag';
-export * from './useCanvasSize';
-export { setupCanvasDpr, useFixedPixelRatio } from './pixelDensity';
-export type { SetupCanvasDprOptions } from './pixelDensity';
-export * from './hooks/useLayerEffect';
-export * from './fitToBounds';
-export * from './hooks/usePanInteraction';
-export * from './hooks/useZoomInteraction';
-export * from './hooks/useAutoCenter';
-export { useGridCellHover } from './hooks/useGridCellHover';
+export * from './viewport/useCanvasSize';
+export { setupCanvasDpr, useFixedPixelRatio } from './viewport/pixelDensity';
+export type { SetupCanvasDprOptions } from './viewport/pixelDensity';
+export * from './layers/useLayerEffect';
+export * from './viewport/fitToBounds';
+export * from './viewport/usePanInteraction';
+export * from './viewport/useZoomInteraction';
+export * from './viewport/useAutoCenter';
+export { useGridCellHover } from './grid/useGridCellHover';
 export type {
   UseGridCellHoverOptions,
   UseGridCellHoverReturn,
-} from './hooks/useGridCellHover';
-export { useKeybinding, isEditableTarget } from './hooks/useKeybinding';
-export type { KeyBinding } from './hooks/useKeybinding';
-export * from './wheelHandler';
+} from './grid/useGridCellHover';
+export { useKeybinding, isEditableTarget } from './interactions/actions/useKeybinding';
+export type { KeyBinding } from './interactions/actions/useKeybinding';
+export * from './viewport/wheelHandler';
 export * from './layers/renderLayer';
 export * from './layers/LayerRenderer';
 export { createGridLayer } from './layers/gridLayer';
@@ -99,7 +99,7 @@ export type {
   SelectionHandlesLayerOpts,
   SelectionOverlayLayerOpts,
 } from './layers/selectionOverlay';
-export * from './renderLabel';
+export * from './text/renderLabel';
 export * from './text/markdownText';
 export {
   DEFAULT_TEXT_STYLE,

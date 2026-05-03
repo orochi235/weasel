@@ -9,7 +9,7 @@ export default defineConfig({
     'area-select': 'src/entries/area-select.ts',
     clipboard: 'src/entries/clipboard.ts',
     clone: 'src/entries/clone.ts',
-    'patterns-builtin': 'src/patterns-builtin.ts',
+    'patterns-builtin': 'src/entries/patterns-builtin.ts',
   },
   format: ['esm'],
   dts: true,

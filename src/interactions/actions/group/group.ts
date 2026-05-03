@@ -4,7 +4,7 @@ import { createDissolveGroupOp } from '../../../ops/dissolveGroup';
 import { createSetSelectionOp } from '../../../ops/selection';
 import type { Op } from '../../../ops/types';
 import type { Group, GroupAdapter } from '../../../groups/types';
-import { useKeybinding } from '../../../hooks/useKeybinding';
+import { useKeybinding } from '../useKeybinding';
 
 /** Adapter for `useGroupAction` / `useUngroupAction`. */
 export interface GroupActionAdapter extends GroupAdapter {

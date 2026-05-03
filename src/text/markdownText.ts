@@ -198,7 +198,7 @@ export function layoutMarkdown(
   return { lines, width, height };
 }
 
-import type { TextRenderer } from '../renderLabel';
+import type { TextRenderer } from './renderLabel';
 
 /** Font styling options threaded through `createMarkdownRenderer`. */
 export interface MarkdownFontOptions {

@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { createTransformOp } from '../../../ops/transform';
 import type { Op } from '../../../ops/types';
-import { useKeybinding } from '../../../hooks/useKeybinding';
+import { useKeybinding } from '../useKeybinding';
 
 /** Cardinal direction for `useNudgeAction`. */
 export type NudgeDirection = 'up' | 'down' | 'left' | 'right';

@@ -11,7 +11,7 @@
  * for palette decisions.
  */
 
-import { createTilePattern } from './patterns';
+import { createTilePattern } from '.';
 
 /** Diagonal hatch (forward slash). */
 export interface HatchParams {

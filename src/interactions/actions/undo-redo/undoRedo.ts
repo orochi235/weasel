@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react';
-import { useKeybinding } from '../../../hooks/useKeybinding';
+import { useKeybinding } from '../useKeybinding';
 
 /** Adapter for `useUndoRedoAction`. Shape is the subset of `History` the hook
  *  actually needs, so consumers can wire any equivalent stack — or wrap a

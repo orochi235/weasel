@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createTilePattern } from './patterns';
+import { createTilePattern } from '.';
 
 interface OffCall { fn: string; args: unknown[] }
 

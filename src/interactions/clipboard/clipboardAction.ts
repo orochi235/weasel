@@ -3,7 +3,7 @@ import { createDeleteOp } from '../../ops/delete';
 import { createSetSelectionOp } from '../../ops/selection';
 import type { Op } from '../../ops/types';
 import type { InsertAdapter } from '../../adapters/types';
-import { useKeybinding } from '../../hooks/useKeybinding';
+import { useKeybinding } from '../actions/useKeybinding';
 import { useClipboard, type UseClipboardReturn } from './clipboard';
 
 /** Adapter for `useClipboardAction`. Extends `InsertAdapter` with the lookup

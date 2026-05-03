@@ -2,7 +2,7 @@ import { useCallback, useRef } from 'react';
 import { createDeleteOp } from '../../../ops/delete';
 import { createSetSelectionOp } from '../../../ops/selection';
 import type { Op } from '../../../ops/types';
-import { useKeybinding } from '../../../hooks/useKeybinding';
+import { useKeybinding } from '../useKeybinding';
 
 /** Adapter for `useDeleteAction`. */
 export interface DeleteAdapter {
