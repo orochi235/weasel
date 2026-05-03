@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  arrayAdapter,
   createSelectionOverlayLayer,
   createSetTextOp,
   createTextLayer,
@@ -12,10 +13,8 @@ import {
   useMove,
   useResize,
   useTextEdit,
-  type MoveAdapter,
   type Op,
   type RenderLayer,
-  type ResizeAdapter,
   type ResizeAnchor,
   type TextStyle,
 } from '@orochi235/weasel';
@@ -102,17 +101,14 @@ export function TextDemo() {
     setNodes((ns) => ns.map((n) => (n.id === id ? { ...n, text } : n)));
   }, []);
 
-  const moveAdapter: MoveAdapter<TextNode, Pose> = {
-    getObject: (id) => nodesRef.current.find((n) => n.id === id),
-    getPose: (id) => {
-      const n = nodesRef.current.find((x) => x.id === id)!;
-      return { x: n.x, y: n.y, width: n.width, height: n.height };
-    },
-    getParent: () => null,
-    setPose: (id, pose) => {
-      setNodes((ns) => ns.map((n) => (n.id === id ? { ...n, ...pose } : n)));
-    },
-    setParent: () => {},
+  const baseAdapter = arrayAdapter<TextNode, Pose>({
+    ref: nodesRef,
+    setItems: setNodes,
+    toPose: (n) => ({ x: n.x, y: n.y, width: n.width, height: n.height }),
+  });
+
+  const moveAdapter = {
+    ...baseAdapter,
     applyBatch: (ops: Op[]) => {
       const adapter = { ...moveAdapter, setText };
       for (const op of ops) op.apply(adapter);
@@ -123,21 +119,7 @@ export function TextDemo() {
     behaviors: [snap(gridSnapStrategy<Pose>(CELL))],
   });
 
-  const resizeAdapter: ResizeAdapter<TextNode, Pose> = {
-    getObject: (id) => nodesRef.current.find((n) => n.id === id),
-    getPose: (id) => {
-      const n = nodesRef.current.find((x) => x.id === id)!;
-      return { x: n.x, y: n.y, width: n.width, height: n.height };
-    },
-    setPose: (id, pose) => {
-      setNodes((ns) => ns.map((n) => (n.id === id ? { ...n, ...pose } : n)));
-    },
-    applyBatch: (ops: Op[]) => {
-      for (const op of ops) op.apply(resizeAdapter);
-    },
-  };
-
-  const resize = useResize<TextNode, Pose>(resizeAdapter, {});
+  const resize = useResize<TextNode, Pose>(baseAdapter, {});
   const activeResize = useRef<{ id: string; anchor: ResizeAnchor } | null>(null);
 
   const edit = useTextEdit({

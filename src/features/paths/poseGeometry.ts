@@ -1,7 +1,7 @@
 import { boundsOfPath } from './bounds';
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, type Path, type PolygonPath } from './types';
-import type { PoseGeometry } from '../interactions/gestures/resize/geometry';
-import type { ResizePose } from '../interactions/gestures/types';
+import type { PoseGeometry } from '../../interactions/gestures/resize/geometry';
+import type { ResizePose } from '../../interactions/gestures/types';
 
 /**
  * `PoseGeometry` for `Path` poses — wires `useResize` to operate

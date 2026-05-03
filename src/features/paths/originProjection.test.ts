@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { pathOriginProjection } from './originProjection';
 import { boundsOfPath, polygonFromPoints, type PolygonPath } from './index';
-import { gridSnapStrategy } from '../interactions/gestures/shared';
-import type { GestureContext } from '../interactions/gestures/types';
+import { gridSnapStrategy } from '../../interactions/gestures/shared';
+import type { GestureContext } from '../../interactions/gestures/types';
 import type { Path } from './index';
 
 const ctx = {} as unknown as GestureContext<Path>;

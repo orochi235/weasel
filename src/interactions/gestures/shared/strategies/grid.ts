@@ -1,0 +1,80 @@
+import type { SnapStrategy } from '../../types';
+import { resolveUnit, type UnitSystem, type UnitValue } from '../../../../core/units';
+
+/**
+ * Projection used by `gridSnapStrategy` when `TPose` doesn't expose `{x,y}`
+ * directly (Path, polygon, etc.). The strategy reads the snap point via
+ * `getOrigin`, rounds it to the grid, then asks `translate` to move the
+ * pose by the resulting delta.
+ */
+export interface OriginProjection<TPose> {
+  getOrigin(pose: TPose): { x: number; y: number };
+  translate(pose: TPose, dx: number, dy: number): TPose;
+}
+
+/** Identity projection for `TPose extends { x; y }`. */
+export const RECT_ORIGIN_PROJECTION: OriginProjection<{ x: number; y: number }> = {
+  getOrigin: (p) => ({ x: p.x, y: p.y }),
+  translate: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
+};
+
+export function gridSnapStrategy<TPose extends { x: number; y: number }>(
+  spacing: UnitValue,
+  unitSystem?: UnitSystem,
+): SnapStrategy<TPose>;
+export function gridSnapStrategy<TPose>(
+  spacing: UnitValue,
+  opts: { unitSystem?: UnitSystem; origin: OriginProjection<TPose> },
+): SnapStrategy<TPose>;
+/** Snap-strategy that rounds the pose's origin to the nearest multiple of
+ *  `spacing` (resolved through `unitSystem`). For non-rect TPose pass an
+ *  `OriginProjection` so the strategy knows how to read/write the origin. */
+export function gridSnapStrategy<TPose>(
+  spacing: UnitValue,
+  arg?: UnitSystem | { unitSystem?: UnitSystem; origin: OriginProjection<TPose> },
+): SnapStrategy<TPose> {
+  const isOpts = typeof arg === 'object' && arg !== null && 'origin' in arg;
+  const unitSystem = isOpts ? arg.unitSystem : (arg as UnitSystem | undefined);
+  const proj: OriginProjection<TPose> = isOpts
+    ? arg.origin
+    : (RECT_ORIGIN_PROJECTION as unknown as OriginProjection<TPose>);
+  const c = resolveUnit(spacing, unitSystem);
+  return {
+    snap(pose) {
+      const o = proj.getOrigin(pose);
+      const sx = Math.round(o.x / c) * c;
+      const sy = Math.round(o.y / c) * c;
+      return proj.translate(pose, sx - o.x, sy - o.y);
+    },
+  };
+}
+
+/**
+ * Compute the integer cell `{col, row}` that contains `point`, given a grid
+ * `spacing` and optional `origin` and `unitSystem`. Pair with
+ * `createCellHighlightLayer` (its `getCell` callback) to draw a snap-target
+ * preview that uses the same spacing as `gridSnapStrategy` — so the visual
+ * and behavioral grids stay in lockstep:
+ *
+ *     const SPACING = 20;
+ *     const snap = gridSnapStrategy(SPACING);
+ *     // visual grid:
+ *     createGridLayer({ spacing: SPACING, bounds: () => ... });
+ *     // hover-preview overlay:
+ *     createCellHighlightLayer({
+ *       spacing: SPACING,
+ *       getCell: () => hoverPoint && pointToGridCell(hoverPoint, SPACING),
+ *     });
+ */
+export function pointToGridCell(
+  point: { x: number; y: number },
+  spacing: UnitValue,
+  unitSystem?: UnitSystem,
+  origin: { x: number; y: number } = { x: 0, y: 0 },
+): { col: number; row: number } {
+  const s = resolveUnit(spacing, unitSystem);
+  return {
+    col: Math.floor((point.x - origin.x) / s),
+    row: Math.floor((point.y - origin.y) / s),
+  };
+}

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  arrayAdapter,
   useMove,
   useResize,
   resolveToOutermostGroup,
@@ -46,14 +47,11 @@ export function GroupsDemo() {
   const selRef = useRef(selection); selRef.current = selection;
 
   const adapter: Adapter = {
-    getObject: (id) => rectsRef.current.find((r) => r.id === id),
-    getPose: (id) => {
-      const r = rectsRef.current.find((x) => x.id === id)!;
-      return { x: r.x, y: r.y, width: r.width, height: r.height };
-    },
-    getParent: () => null,
-    setPose: (id, p) => setRects((rs) => rs.map((r) => (r.id === id ? { ...r, ...p } : r))),
-    setParent: () => {},
+    ...arrayAdapter<Rect, Pose>({
+      ref: rectsRef,
+      setItems: setRects,
+      toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
+    }),
     getSelection: () => selRef.current,
     setSelection: (ids) => setSelection(ids),
     // GroupAdapter

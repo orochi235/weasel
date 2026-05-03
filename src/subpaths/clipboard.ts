@@ -1,1 +1,1 @@
-export * from '../features/interactions/clipboard';
+export * from '../interactions/clipboard';

@@ -32,6 +32,12 @@ export default [
               message:
                 'core/ must not import from features/. Dependencies flow one way: features → core.',
             },
+            {
+              target: './src/core',
+              from: './src/interactions',
+              message:
+                'core/ must not import from interactions/. Dependencies flow one way.',
+            },
           ],
         },
       ],

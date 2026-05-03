@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  arrayAdapter,
   useEscape,
   useSelectAll,
   useDuplicate,
@@ -31,14 +32,13 @@ export function ActionsDemo() {
   const nextId = useRef(1);
 
   const adapter = {
+    ...arrayAdapter<Rect, Pose>({
+      ref: rectsRef,
+      setItems: setRects,
+      toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
+    }),
     getSelection: () => selRef.current,
     setSelection,
-    getPose: (id: string): Pose => {
-      const r = rectsRef.current.find((x) => x.id === id)!;
-      return { x: r.x, y: r.y, width: r.width, height: r.height };
-    },
-    setPose: (id: string, pose: Pose) =>
-      setRects((rs) => rs.map((r) => (r.id === id ? { ...r, ...pose } : r))),
     listAll: () => rectsRef.current.map((r) => r.id),
     insertObject: (obj: Rect) => setRects((rs) => [...rs, obj]),
     removeObject: (id: string) => setRects((rs) => rs.filter((r) => r.id !== id)),
