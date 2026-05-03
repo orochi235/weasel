@@ -1,16 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   useMove,
+  useSelection,
   arrayAdapter,
   snap,
   gridSnapStrategy,
-  createGridLayer,
-  runLayers,
+  defaultLayers,
+  Canvas,
   useZoom,
 } from '@orochi235/weasel';
-import { clientToCanvas } from '../canvasCoords';
-import { setupCanvasDpr } from '@orochi235/weasel';
-import type { RenderLayer, UnitSystem } from '@orochi235/weasel';
+import type { UnitSystem } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -34,6 +33,8 @@ export function MoveDemo() {
   const rectsRef = useRef(rects);
   rectsRef.current = rects;
 
+  const selection = useSelection();
+
   const adapter = arrayAdapter<Rect, Pose>({
     ref: rectsRef,
     setItems: setRects,
@@ -56,105 +57,55 @@ export function MoveDemo() {
     return () => window.removeEventListener('keydown', handler);
   }, [zoomCtl]);
 
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const draggingId = useRef<string | null>(null);
-
-  const hit = (wx: number, wy: number): Rect | null => {
+  const hitBody = (wx: number, wy: number): string | null => {
     for (let i = rectsRef.current.length - 1; i >= 0; i--) {
       const r = rectsRef.current[i];
-      if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) return r;
+      if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) return r.id;
     }
     return null;
   };
 
-  const onPointerDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
-    const [cx, cy] = clientToCanvas(e.currentTarget, e.clientX, e.clientY);
-    const wx = (cx - pan.x) / zoom;
-    const wy = (cy - pan.y) / zoom;
-    const h = hit(wx, wy);
-    if (!h) return;
-    draggingId.current = h.id;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    move.start({ ids: [h.id], worldX: wx, worldY: wy, clientX: e.clientX, clientY: e.clientY });
-  }, [move, pan, zoom]);
-
-  const onPointerMove = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!draggingId.current) return;
-    const [cx, cy] = clientToCanvas(e.currentTarget, e.clientX, e.clientY);
-    const wx = (cx - pan.x) / zoom;
-    const wy = (cy - pan.y) / zoom;
-    move.move({ worldX: wx, worldY: wy, clientX: e.clientX, clientY: e.clientY,
-      modifiers: { alt: e.altKey, shift: e.shiftKey, meta: e.metaKey, ctrl: e.ctrlKey } });
-  }, [move, pan, zoom]);
-
-  const onPointerUp = useCallback(() => {
-    if (!draggingId.current) return;
-    draggingId.current = null;
-    move.end();
-  }, [move]);
-
   const overlay = move.overlay;
-  useEffect(() => {
-    const c = canvasRef.current;
-    if (!c) return;
-    const ctx = c.getContext('2d')!;
-    setupCanvasDpr(c, ctx, W, H);
-    ctx.clearRect(0, 0, W, H);
+  const layers = useMemo(
+    () =>
+      defaultLayers<Rect, Pose>({
+        grid: {
+          spacing: CELL,
+          unitSystem: UNITS,
+          bounds: () => ({ x: 0, y: 0, width: W, height: H }),
+          accentEvery: 5,
+        },
+        scene: {
+          objects: rects,
+          toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
+          drawOne: (cx, r, p) => {
+            cx.fillStyle = r.color;
+            cx.fillRect(p.x, p.y, p.width, p.height);
+          },
+        },
+        moveOverlay: overlay,
+      }),
+    [rects, overlay],
+  );
 
-    const gridLayer = createGridLayer({
-      spacing: CELL,
-      unitSystem: UNITS,
-      bounds: () => ({ x: 0, y: 0, width: W, height: H }),
-      accentEvery: 5,
-    });
-
-    const baseLayer: RenderLayer<unknown> = {
-      id: 'base', label: 'Base',
-      draw: (cx) => {
-        const hide = new Set(overlay?.hideIds ?? []);
-        for (const r of rects) {
-          if (hide.has(r.id)) continue;
-          cx.fillStyle = r.color;
-          cx.fillRect(r.x, r.y, r.width, r.height);
-        }
-      },
-    };
-
-    const ghostLayer: RenderLayer<unknown> = {
-      id: 'ghost', label: 'Ghost',
-      draw: (cx) => {
-        if (!overlay) return;
-        cx.globalAlpha = 0.85;
-        for (const id of overlay.draggedIds) {
-          const p = overlay.poses.get(id);
-          const src = rects.find((r) => r.id === id);
-          if (!p || !src) continue;
-          cx.fillStyle = src.color;
-          cx.fillRect(p.x, p.y, p.width, p.height);
-        }
-        cx.globalAlpha = 1;
-      },
-    };
-
-    ctx.save();
-    ctx.translate(pan.x, pan.y);
-    ctx.scale(zoom, zoom);
-    runLayers(ctx, [gridLayer, baseLayer, ghostLayer], undefined, {});
-    ctx.restore();
-  }, [rects, overlay, zoom, pan]);
+  // Apply pan/zoom by wrapping clientToWorld for hit-testing/move math.
+  const clientToWorld = (canvas: HTMLCanvasElement, cx: number, cy: number): [number, number] => {
+    const rect = canvas.getBoundingClientRect();
+    const x = (cx - rect.left - pan.x) / zoom;
+    const y = (cy - rect.top - pan.y) / zoom;
+    return [x, y];
+  };
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="ckd-canvas"
+    <Canvas<Pose, Pose>
       width={W}
       height={H}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
-      onWheel={(e) => zoomCtl.onWheel(e)}
-      onDoubleClick={(e) => zoomCtl.onDoubleClick(e)}
+      className="ckd-canvas"
+      layers={layers}
+      move={move}
+      hitBody={hitBody}
+      selection={selection}
+      clientToWorld={clientToWorld}
     />
   );
 }
@@ -167,17 +118,14 @@ const [rects, setRects] = useState<Rect[]>(INITIAL);
 const rectsRef = useRef(rects);
 rectsRef.current = rects;
 
-// --- Adapter (the bridge weasel reads/writes through) ---
-// arrayAdapter synthesizes the Move/Resize adapter shape from a useState
-// array. Override individual methods by spreading.
+// --- Adapter + selection ---
+const selection = useSelection();
 const adapter = arrayAdapter<Rect, Pose>({
   ref: rectsRef,
   setItems: setRects,
   toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
 });
 
-// Custom unit system: base is 'px' but APIs can speak in 'tile' (= 20px).
-// Bare numbers are still accepted everywhere — they're treated as base units.
 const UNITS: UnitSystem = { base: 'px', units: { px: 1, tile: 20 } };
 const CELL = { value: 1, unit: 'tile' } as const;
 
@@ -185,19 +133,26 @@ const move = useMove<Rect, Pose>(adapter, {
   behaviors: [snap(gridSnapStrategy<Pose>(CELL, UNITS))],
 });
 
-// Pointer wiring (abridged):
-// onPointerDown: hit-test, then move.start({ ids, worldX, worldY, clientX, clientY })
-// onPointerMove: move.move({ worldX, worldY, clientX, clientY, modifiers })
-// onPointerUp:   move.end()
-//
-// Render: compose layers with runLayers. createGridLayer draws the
-// background grid; the base layer draws committed rects (hiding overlay.hideIds);
-// a ghost layer draws the live snapped poses on top.
-const gridLayer = createGridLayer({
-  spacing: CELL,
-  unitSystem: UNITS,
-  bounds: () => ({ x: 0, y: 0, width: W, height: H }),
-  accentEvery: 5,
+// Layer stack — defaultLayers folds in overlay poses + hideIds for free.
+const layers = defaultLayers<Rect, Pose>({
+  grid: { spacing: CELL, unitSystem: UNITS, bounds: () => ({ x: 0, y: 0, width: W, height: H }), accentEvery: 5 },
+  scene: {
+    objects: rects,
+    toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
+    drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); },
+  },
+  moveOverlay: move.overlay,
 });
-runLayers(ctx, [gridLayer, baseLayer, ghostLayer], undefined, {});
+
+// <Canvas> wires DPR setup, clearRect, runLayers, and pointer gestures.
+return (
+  <Canvas<Pose, Pose>
+    width={W}
+    height={H}
+    layers={layers}
+    move={move}
+    hitBody={hitBody}
+    selection={selection}
+  />
+);
 `;

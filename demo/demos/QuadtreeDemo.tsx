@@ -1,19 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   useMove,
   useResize,
+  useSelection,
   arrayAdapter,
-  createGridLayer,
-  createSelectionOverlayLayer,
-  runLayers,
-  setupCanvasDpr,
-  cornerResizeHandles,
-  hitCornerHandle,
+  Canvas,
+  defaultLayers,
 } from '@orochi235/weasel';
-import type {
-  RenderLayer,
-} from '@orochi235/weasel';
-import { clientToCanvas } from '../canvasCoords';
+import type { RenderLayer } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -82,9 +76,10 @@ function createQuadtreeLayer(getRects: () => Rect[]): RenderLayer<unknown> {
 
 export function QuadtreeDemo() {
   const [rects, setRects] = useState<Rect[]>(INITIAL);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const rectsRef = useRef(rects);
   rectsRef.current = rects;
+
+  const selection = useSelection();
 
   const adapter = arrayAdapter<Rect, Pose>({
     ref: rectsRef,
@@ -95,143 +90,74 @@ export function QuadtreeDemo() {
   const move = useMove<Rect, Pose>(adapter);
   const resize = useResize<Rect, Pose>(adapter, {});
 
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const dragKind = useRef<'move' | 'resize' | null>(null);
-  const dragId = useRef<string | null>(null);
-
-  const hit = (wx: number, wy: number): Rect | null => {
+  const hitBody = (wx: number, wy: number): string | null => {
     for (let i = rectsRef.current.length - 1; i >= 0; i--) {
       const r = rectsRef.current[i];
-      if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) return r;
+      if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) return r.id;
     }
     return null;
   };
 
-  const onPointerDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
-    const [wx, wy] = clientToCanvas(e.currentTarget, e.clientX, e.clientY);
-    if (selectedId) {
-      const sel = rectsRef.current.find((r) => r.id === selectedId);
-      if (sel) {
-        for (const h of cornerResizeHandles(sel)) {
-          if (hitCornerHandle(h, wx, wy, HANDLE)) {
-            dragKind.current = 'resize';
-            dragId.current = sel.id;
-            e.currentTarget.setPointerCapture(e.pointerId);
-            resize.start(sel.id, h.anchor, wx, wy);
-            return;
-          }
-        }
-      }
-    }
-    const target = hit(wx, wy);
-    if (!target) { setSelectedId(null); return; }
-    setSelectedId(target.id);
-    dragKind.current = 'move';
-    dragId.current = target.id;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    move.start({ ids: [target.id], worldX: wx, worldY: wy, clientX: e.clientX, clientY: e.clientY });
-  }, [move, resize, selectedId]);
-
-  const onPointerMove = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!dragKind.current) return;
-    const [wx, wy] = clientToCanvas(e.currentTarget, e.clientX, e.clientY);
-    const mods = { alt: e.altKey, shift: e.shiftKey, meta: e.metaKey, ctrl: e.ctrlKey };
-    if (dragKind.current === 'move') {
-      move.move({ worldX: wx, worldY: wy, clientX: e.clientX, clientY: e.clientY, modifiers: mods });
-    } else {
-      resize.move(wx, wy, mods);
-    }
-  }, [move, resize]);
-
-  const onPointerUp = useCallback(() => {
-    if (!dragKind.current) return;
-    if (dragKind.current === 'move') move.end();
-    else resize.end();
-    dragKind.current = null;
-    dragId.current = null;
-  }, [move, resize]);
+  const boundsOf = (id: string): Pose | null => {
+    const ov = move.overlay?.poses.get(id);
+    if (ov) return ov;
+    if (resize.overlay && resize.overlay.id === id) return resize.overlay.currentPose;
+    const r = rectsRef.current.find((x) => x.id === id);
+    return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
+  };
 
   const moveOverlay = move.overlay;
   const resizeOverlay = resize.overlay;
+  const selectedIds = selection.current;
 
-  useEffect(() => {
-    const c = canvasRef.current;
-    if (!c) return;
-    const ctx = c.getContext('2d')!;
-    setupCanvasDpr(c, ctx, W, H);
-    ctx.clearRect(0, 0, W, H);
-
-    // Effective rects: for the quadtree to refresh live during a drag, fold in the
-    // active overlay pose so the tree reflects the in-flight scene.
+  const layers = useMemo(() => {
+    // Effective rects for the quadtree: fold in active overlay poses so the
+    // tree reflects the in-flight scene during a drag.
     const effective: Rect[] = rectsRef.current.map((r) => {
-      if (moveOverlay && moveOverlay.draggedIds.includes(r.id)) {
-        const p = moveOverlay.poses.get(r.id);
-        if (p) return { ...r, ...p };
-      }
-      if (resizeOverlay && r.id === selectedId && resizeOverlay.currentPose) {
-        return { ...r, ...resizeOverlay.currentPose };
-      }
+      const moved = moveOverlay?.poses.get(r.id);
+      if (moveOverlay && moveOverlay.draggedIds.includes(r.id) && moved) return { ...r, ...moved };
+      if (resizeOverlay && resizeOverlay.id === r.id) return { ...r, ...resizeOverlay.currentPose };
       return r;
     });
 
-    const gridLayer = createGridLayer({
-      spacing: 20,
-      bounds: () => ({ x: 0, y: 0, width: W, height: H }),
-      accentEvery: 5,
+    const stack = defaultLayers<Rect, Pose>({
+      grid: {
+        spacing: 20,
+        bounds: () => ({ x: 0, y: 0, width: W, height: H }),
+        accentEvery: 5,
+      },
+      scene: {
+        objects: rects,
+        toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
+        drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); },
+      },
+      moveOverlay,
+      resizeOverlay,
+      additional: [createQuadtreeLayer(() => effective)],
+      selection: {
+        ids: selectedIds,
+        poseById: (id) => {
+          const r = effective.find((x) => x.id === id);
+          return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
+        },
+        handles: { size: HANDLE },
+      },
     });
-
-    const baseLayer: RenderLayer<unknown> = {
-      id: 'base', label: 'Rects',
-      draw: (cx) => {
-        const hide = new Set(moveOverlay?.hideIds ?? []);
-        for (const r of effective) {
-          if (hide.has(r.id)) continue;
-          cx.fillStyle = r.color;
-          cx.fillRect(r.x, r.y, r.width, r.height);
-        }
-      },
-    };
-
-    const ghostLayer: RenderLayer<unknown> = {
-      id: 'ghost', label: 'Ghost',
-      draw: (cx) => {
-        if (!moveOverlay) return;
-        cx.globalAlpha = 0.85;
-        for (const id of moveOverlay.draggedIds) {
-          const p = moveOverlay.poses.get(id);
-          const src = rectsRef.current.find((r) => r.id === id);
-          if (!p || !src) continue;
-          cx.fillStyle = src.color;
-          cx.fillRect(p.x, p.y, p.width, p.height);
-        }
-        cx.globalAlpha = 1;
-      },
-    };
-
-    const quadtreeLayer = createQuadtreeLayer(() => effective);
-
-    const selectionOverlay = createSelectionOverlayLayer<Pose>({
-      getSelection: () => (selectedId ? [selectedId] : []),
-      getPose: (id) => {
-        const r = effective.find((x) => x.id === id);
-        return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
-      },
-      handles: { size: HANDLE },
-    });
-
-    runLayers(ctx, [gridLayer, baseLayer, ghostLayer, quadtreeLayer, selectionOverlay], undefined, {});
-  }, [rects, moveOverlay, resizeOverlay, selectedId]);
+    return stack;
+  }, [rects, moveOverlay, resizeOverlay, selectedIds]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="ckd-canvas"
+    <Canvas<Pose, Pose>
       width={W}
       height={H}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
+      className="ckd-canvas"
+      layers={layers}
+      move={move}
+      resize={resize}
+      hitBody={hitBody}
+      selection={selection}
+      boundsOf={boundsOf}
+      handleHitRadius={HANDLE}
     />
   );
 }
@@ -255,41 +181,30 @@ function buildTree(bounds, rects): QuadNode {
   return root;
 }
 
-function createQuadtreeLayer(getRects: () => Rect[]): RenderLayer<unknown> {
-  return {
-    id: 'quadtree', label: 'Quadtree',
-    draw: (ctx) => {
-      const tree = buildTree({ x: 0, y: 0, width: W, height: H }, getRects());
-      function walk(n: QuadNode) {
-        if (!n.children) return;
-        ctx.lineWidth = Math.max(0.5, 2.5 - n.depth * 0.4);
-        ctx.strokeRect(n.x, n.y, n.w, n.h);
-        for (const c of n.children) walk(c);
-      }
-      walk(tree);
-    },
-  };
-}
+// useSelection + <Canvas> + defaultLayers handle pointer wiring for us.
+const selection = useSelection();
+const move = useMove<Rect, Pose>(adapter);
+const resize = useResize<Rect, Pose>(adapter, {});
 
-// During a drag, fold overlay poses back into the rect list so the quadtree
-// recomputes against the in-flight scene rather than the committed one.
-const effective = rects.map((r) => {
-  if (moveOverlay?.draggedIds.includes(r.id)) {
-    const p = moveOverlay.poses.get(r.id);
-    if (p) return { ...r, ...p };
-  }
-  if (resizeOverlay && r.id === selectedId && resizeOverlay.currentPose) {
-    return { ...r, ...resizeOverlay.currentPose };
-  }
-  return r;
+const layers = defaultLayers<Rect, Pose>({
+  grid: { spacing: 20, bounds: () => ({ x: 0, y: 0, width: W, height: H }), accentEvery: 5 },
+  scene: { objects: rects, toPose: ..., drawOne: ... },
+  moveOverlay: move.overlay,
+  resizeOverlay: resize.overlay,
+  additional: [createQuadtreeLayer(() => effective)],
+  selection: { ids: selection.current, poseById, handles: { size: HANDLE } },
 });
 
-// Compose: the custom layer is just one entry in the stack.
-runLayers(ctx, [
-  gridLayer,         // weasel — background
-  baseLayer,         // your app — committed rects
-  ghostLayer,        // your app — drag preview
-  quadtreeLayer,     // your custom analytical overlay
-  selectionOverlay,  // weasel — outline + handles
-], undefined, {});
+return (
+  <Canvas<Pose, Pose>
+    width={W} height={H}
+    layers={layers}
+    move={move}
+    resize={resize}
+    hitBody={hitBody}
+    selection={selection}
+    boundsOf={boundsOf}
+    handleHitRadius={HANDLE}
+  />
+);
 `;

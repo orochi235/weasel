@@ -78,6 +78,8 @@ export type {
   UsePointerGesturesOptions,
   PointerGestureCallbackCtx,
 } from './interactions/usePointerGestures';
+export { Canvas } from './canvas/Canvas';
+export type { CanvasProps } from './canvas/Canvas';
 export { useSelection } from './interactions/useSelection';
 export type {
   SelectionApi,
