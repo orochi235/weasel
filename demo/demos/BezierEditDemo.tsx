@@ -25,10 +25,15 @@ const INITIAL_PATH: Path = new PathBuilder()
   .curveTo(300, 260, 380, 260, 420, 100)
   .build();
 
+const ZOOM_LEVELS = [0.5, 0.75, 1, 1.5, 2, 3];
+
 export function BezierEditDemo() {
   const [path, setPath] = useState<Path>(INITIAL_PATH);
   const pathRef = useRef(path);
   pathRef.current = path;
+  const [zoom, setZoom] = useState(1);
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
 
   const adapter: MoveAdapter<PathObj, Pose> & ResizeAdapter<PathObj, Pose> = {
     getObject: (id) => (id === ID ? { id } : undefined),
@@ -61,25 +66,45 @@ export function BezierEditDemo() {
     setPath(next);
   };
 
+  // Scaled-canvas zoom: a CSS transform on the wrapper grows/shrinks the
+  // canvas pixels visually without touching its internal coords. The custom
+  // `clientToWorld` divides client→canvas-CSS-px by the live zoom so pointer
+  // math stays in content units, and `handleHitRadius` is inversely scaled so
+  // the user perceives the same screen-px tolerance at any zoom.
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <div>
+      <div style={{ display: 'flex', gap: 4 }}>
         <button
           onClick={appendCurve}
-          style={{
-            padding: '4px 10px', fontSize: 12, cursor: 'pointer',
-            background: '#2a2018', color: '#d4c4a8',
-            border: '1px solid #4a3c2e', borderRadius: 3,
-          }}
+          style={btn}
         >Add point</button>
+        <span style={{ width: 12 }} />
+        {ZOOM_LEVELS.map((z) => (
+          <button
+            key={z}
+            onClick={() => setZoom(z)}
+            style={{
+              ...btn,
+              background: zoom === z ? '#7fb069' : '#2a2018',
+              color: zoom === z ? '#1a130d' : '#d4c4a8',
+            }}
+          >{z}×</button>
+        ))}
       </div>
-      <Canvas<PathObj, Pose>
+      <div style={{ width: W * zoom, height: H * zoom, overflow: 'hidden' }}>
+        <div style={{ width: W, height: H, transform: `scale(${zoom})`, transformOrigin: '0 0' }}>
+          <Canvas<PathObj, Pose>
       width={W}
       height={H}
       className="ckd-canvas"
       adapter={adapter}
       tool="none"
-      handleHitRadius={HANDLE}
+      handleHitRadius={HANDLE / zoom}
+      clientToWorld={(canvas, cx, cy) => {
+        const r = canvas.getBoundingClientRect();
+        const z = zoomRef.current;
+        return [(cx - r.left) / z, (cy - r.top) / z];
+      }}
       onTapEmpty={() => {}}
       editAnchors
       layers={{
@@ -96,9 +121,17 @@ export function BezierEditDemo() {
         anchorEditOverlay: { selectedAnchorFill: '#7fb069' },
       }}
     />
+        </div>
+      </div>
     </div>
   );
 }
+
+const btn: React.CSSProperties = {
+  padding: '4px 10px', fontSize: 12, cursor: 'pointer',
+  background: '#2a2018', color: '#d4c4a8',
+  border: '1px solid #4a3c2e', borderRadius: 3,
+};
 
 export const BEZIER_EDIT_DEMO_SOURCE = `// --- Bezier control-point editing (Figma-style modal entry) ---
 const INITIAL_PATH = new PathBuilder()
@@ -115,17 +148,31 @@ const INITIAL_PATH = new PathBuilder()
 // v1 corner-only behavior: dragging an anchor moves only its on-curve coord;
 // adjacent control handles stay where they are in world space (no smoothing
 // yet — that's the deferred next iteration).
+//
+// Zoom is a CSS transform on the wrapper — the canvas pixels grow visually
+// without changing internal coords. \`clientToWorld\` divides by zoom so
+// pointer math stays in content units; \`handleHitRadius\` is inversely
+// scaled so the user-perceived hit tolerance is constant in screen px.
 return (
-  <Canvas<PathObj, Path>
-    width={W} height={H}
-    adapter={adapter}
-    tool="none"
-    editAnchors
-    layers={{
-      scene: { drawOne: (cx, _o, p) => { cx.strokeStyle = '#f5b7a3'; cx.lineWidth = 2; traceToContext(cx, p); cx.stroke(); } },
-      selectionOverlay: { handles: { size: HANDLE } },
-      anchorEditOverlay: { selectedAnchorFill: '#7fb069' },
-    }}
-  />
+  <div style={{ width: W * zoom, height: H * zoom, overflow: 'hidden' }}>
+    <div style={{ width: W, height: H, transform: \`scale(\${zoom})\`, transformOrigin: '0 0' }}>
+      <Canvas<PathObj, Path>
+        width={W} height={H}
+        adapter={adapter}
+        tool="none"
+        editAnchors
+        handleHitRadius={HANDLE / zoom}
+        clientToWorld={(canvas, cx, cy) => {
+          const r = canvas.getBoundingClientRect();
+          return [(cx - r.left) / zoomRef.current, (cy - r.top) / zoomRef.current];
+        }}
+        layers={{
+          scene: { drawOne: (cx, _o, p) => { cx.strokeStyle = '#f5b7a3'; cx.lineWidth = 2; traceToContext(cx, p); cx.stroke(); } },
+          selectionOverlay: { handles: { size: HANDLE } },
+          anchorEditOverlay: { selectedAnchorFill: '#7fb069' },
+        }}
+      />
+    </div>
+  </div>
 );
 `;
