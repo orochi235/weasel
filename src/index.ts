@@ -76,6 +76,7 @@ export { usePointerGestures } from './interactions/usePointerGestures';
 export type {
   PointerGestureBindings,
   UsePointerGesturesOptions,
+  PointerGestureCallbackCtx,
 } from './interactions/usePointerGestures';
 export { useSelection } from './interactions/useSelection';
 export type {

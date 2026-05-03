@@ -5,6 +5,7 @@ import { cornerResizeHandles, hitCornerHandle } from './gestures/resize/cornerHa
 import type { UseMoveReturn } from './gestures/move/move';
 import type { UseResizeReturn } from './gestures/resize/resize';
 import type { ModifierState } from './gestures/types';
+import type { SelectionApi } from './useSelection';
 
 interface Bounds {
   x: number;
@@ -19,6 +20,14 @@ export interface PointerGestureBindings {
   onPointerMove: (e: React.PointerEvent<HTMLCanvasElement>) => void;
   onPointerUp: (e: React.PointerEvent<HTMLCanvasElement>) => void;
   onPointerCancel: (e: React.PointerEvent<HTMLCanvasElement>) => void;
+}
+
+/** Context object passed to body-hit / tap-empty callbacks. */
+export interface PointerGestureCallbackCtx {
+  event: React.PointerEvent<HTMLCanvasElement>;
+  worldX: number;
+  worldY: number;
+  modifiers: ModifierState;
 }
 
 export interface UsePointerGesturesOptions<TMovePose, TResizePose> {
@@ -37,7 +46,10 @@ export interface UsePointerGesturesOptions<TMovePose, TResizePose> {
   resize?: UseResizeReturn<TResizePose>;
 
   /** Currently resizable target. Hook computes corner handles, hit-tests, and
-   *  dispatches `resize.start(id, anchor, ...)`. Return `null` for none. */
+   *  dispatches `resize.start(id, anchor, ...)`. Return `null` for none.
+   *
+   *  When omitted but `selection` and `boundsOf` are both supplied, defaults
+   *  to single-selection bounds (multi-selection returns `null`). */
   resizeTarget?: () => { id: string; bounds: Bounds } | null;
 
   /** Hit-test radius for resize handles, in world pixels. Default 8. */
@@ -47,16 +59,25 @@ export interface UsePointerGesturesOptions<TMovePose, TResizePose> {
    *  fall through to `onTapEmpty`. */
   hitBody?: (worldX: number, worldY: number) => string | string[] | null;
 
-  /** Called once a body hit has started a drag. Caller typically updates
-   *  selection state here. */
-  onBodyHit?: (
-    ids: string[],
-    event: React.PointerEvent<HTMLCanvasElement>,
-  ) => void;
+  /** Selection api (see {@link SelectionApi}). When supplied, the hook wires
+   *  selection-driven defaults: `onBodyHit` defaults to `selection.applyClick`
+   *  for the first hit id, `onTapEmpty` defaults to `selection.clear`, and
+   *  body-drag promotes-then-drags (clicking an unselected obj selects it
+   *  first, then drags the resulting selection; clicking a selected obj
+   *  drags the entire selection). Explicit callbacks override these defaults. */
+  selection?: SelectionApi;
 
-  /** Called when the pointer hit neither a handle nor a body. Caller
-   *  typically clears selection here. */
-  onTapEmpty?: (event: React.PointerEvent<HTMLCanvasElement>) => void;
+  /** Per-id bounds lookup. Combined with `selection`, defaults `resizeTarget`
+   *  to single-selection bounds when `resizeTarget` is not explicitly passed. */
+  boundsOf?: (id: string) => Bounds | null;
+
+  /** Called whenever a body hit occurs. Fires regardless of whether `move` is
+   *  wired — selection-only callers still receive notifications. */
+  onBodyHit?: (ids: string[], ctx: PointerGestureCallbackCtx) => void;
+
+  /** Called when the pointer hits neither a handle nor a body. Defaults to
+   *  `selection.clear()` when `selection` is supplied. */
+  onTapEmpty?: (ctx: PointerGestureCallbackCtx) => void;
 }
 
 /**
@@ -65,11 +86,13 @@ export interface UsePointerGesturesOptions<TMovePose, TResizePose> {
  * conversion, pointer capture, and the handle-vs-body dispatch decision.
  *
  * Caller still owns selection state, what counts as a body, and which
- * object (if any) is currently resizable.
+ * object (if any) is currently resizable. Pass a `selection` from
+ * {@link useSelection} to opt into the standard click-promote-drag flow
+ * with no extra wiring.
  *
  * Spread the returned bindings onto a `<canvas>`:
  * ```tsx
- * const bindings = usePointerGestures({ move, resize, hitBody, resizeTarget });
+ * const bindings = usePointerGestures({ move, resize, hitBody, selection });
  * return <canvas ref={canvasRef} {...bindings} />;
  * ```
  */
@@ -80,20 +103,41 @@ export function usePointerGestures<TMovePose, TResizePose>(
     clientToWorld = clientToCanvas,
     move,
     resize,
-    resizeTarget,
     handleHitRadius = 8,
     hitBody,
+    selection,
+    boundsOf,
     onBodyHit,
     onTapEmpty,
   } = options;
+
+  // Resolve resizeTarget: explicit > selection-derived
+  const explicitResizeTarget = options.resizeTarget;
+  const resizeTarget = useCallback((): { id: string; bounds: Bounds } | null => {
+    if (explicitResizeTarget) return explicitResizeTarget();
+    if (selection && boundsOf) {
+      const ids = selection.get();
+      if (ids.length !== 1) return null;
+      const b = boundsOf(ids[0]);
+      return b ? { id: ids[0], bounds: b } : null;
+    }
+    return null;
+  }, [explicitResizeTarget, selection, boundsOf]);
 
   const dragKindRef = useRef<'move' | 'resize' | null>(null);
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
       const [wx, wy] = clientToWorld(e.currentTarget, e.clientX, e.clientY);
+      const modifiers: ModifierState = {
+        alt: e.altKey,
+        shift: e.shiftKey,
+        meta: e.metaKey,
+        ctrl: e.ctrlKey,
+      };
+      const ctx: PointerGestureCallbackCtx = { event: e, worldX: wx, worldY: wy, modifiers };
 
-      if (resize && resizeTarget) {
+      if (resize) {
         const target = resizeTarget();
         if (target) {
           for (const h of cornerResizeHandles(target.bounds)) {
@@ -107,25 +151,42 @@ export function usePointerGestures<TMovePose, TResizePose>(
         }
       }
 
-      if (move && hitBody) {
+      if (hitBody) {
         const hit = hitBody(wx, wy);
         if (hit !== null) {
-          const ids = Array.isArray(hit) ? hit : [hit];
-          dragKindRef.current = 'move';
-          e.currentTarget.setPointerCapture(e.pointerId);
-          onBodyHit?.(ids, e);
-          move.start({
-            ids,
-            worldX: wx,
-            worldY: wy,
-            clientX: e.clientX,
-            clientY: e.clientY,
-          });
+          const hitIds = Array.isArray(hit) ? hit : [hit];
+          // Fire onBodyHit (explicit > selection-default).
+          if (onBodyHit) {
+            onBodyHit(hitIds, ctx);
+          } else if (selection && hitIds.length > 0) {
+            selection.applyClick(hitIds[0], modifiers);
+          }
+          // Now decide what to drag. With selection, drag the post-click
+          // selection (so click-on-unselected promotes-then-drags). Without,
+          // fall back to dragging the hit ids.
+          if (move) {
+            const dragIds = selection ? selection.get() : hitIds;
+            if (dragIds.length > 0) {
+              dragKindRef.current = 'move';
+              e.currentTarget.setPointerCapture(e.pointerId);
+              move.start({
+                ids: dragIds,
+                worldX: wx,
+                worldY: wy,
+                clientX: e.clientX,
+                clientY: e.clientY,
+              });
+            }
+          }
           return;
         }
       }
 
-      onTapEmpty?.(e);
+      if (onTapEmpty) {
+        onTapEmpty(ctx);
+      } else if (selection) {
+        selection.clear();
+      }
     },
     [
       clientToWorld,
@@ -134,6 +195,7 @@ export function usePointerGestures<TMovePose, TResizePose>(
       resizeTarget,
       handleHitRadius,
       hitBody,
+      selection,
       onBodyHit,
       onTapEmpty,
     ],
