@@ -10,7 +10,23 @@ import type {
   Path,
   MoveAdapter,
   ResizeAdapter,
+  DebugConfig,
 } from '@orochi235/weasel';
+
+const DEBUG_STATES: Array<{ label: string; config: DebugConfig | false }> = [
+  { label: 'off',          config: false },
+  { label: 'bounds',       config: { bounds: true } },
+  { label: '+origins',     config: { bounds: true, origins: true } },
+  { label: '+hitboxes',    config: { bounds: true, origins: true, hitboxes: true } },
+  { label: '+handles',     config: { bounds: true, origins: true, hitboxes: true, handles: true } },
+  { label: 'all',          config: { bounds: true, origins: true, hitboxes: true, handles: true, snap: true, layers: true } },
+];
+
+const btn: React.CSSProperties = {
+  padding: '4px 10px', fontSize: 12, cursor: 'pointer',
+  background: '#2a2018', color: '#d4c4a8',
+  border: '1px solid #4a3c2e', borderRadius: 3,
+};
 
 interface PathObj { id: string }
 type Pose = Path;
@@ -30,6 +46,8 @@ export function PathPoseDemo() {
   const [path, setPath] = useState<Path>(INITIAL_PATH);
   const pathRef = useRef(path);
   pathRef.current = path;
+  const [debugIdx, setDebugIdx] = useState(0);
+  const debug = DEBUG_STATES[debugIdx].config;
 
   const adapter: MoveAdapter<PathObj, Pose> & ResizeAdapter<PathObj, Pose> = {
     getObject: (id) => (id === ID ? { id } : undefined),
@@ -41,30 +59,41 @@ export function PathPoseDemo() {
   };
 
   return (
-    <Canvas
-      width={W}
-      height={H}
-      className="ckd-canvas"
-      adapter={adapter}
-      handleHitRadius={HANDLE}
-      selectionOptions={{ initial: [ID] }}
-      onTapEmpty={() => {}}
-      snap={gridSnapStrategy<Path>(20, { origin: pathOriginProjection })}
-      layers={{
-        scene: {
-          drawOne: (cx, _o, p) => {
-            cx.fillStyle = '#7fb069';
-            cx.strokeStyle = '#1a130d';
-            cx.lineWidth = 1.5;
-            cx.beginPath();
-            traceToContext(cx, p);
-            cx.fill();
-            cx.stroke();
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ display: 'flex', gap: 4 }}>
+        <button
+          style={btn}
+          onClick={() => setDebugIdx((i) => (i + 1) % DEBUG_STATES.length)}
+        >
+          Debug overlay: {DEBUG_STATES[debugIdx].label}
+        </button>
+      </div>
+      <Canvas
+        width={W}
+        height={H}
+        className="ckd-canvas"
+        adapter={adapter}
+        handleHitRadius={HANDLE}
+        selectionOptions={{ initial: [ID] }}
+        onTapEmpty={() => {}}
+        snap={gridSnapStrategy<Path>(20, { origin: pathOriginProjection })}
+        debug={debug}
+        layers={{
+          scene: {
+            drawOne: (cx, _o, p) => {
+              cx.fillStyle = '#7fb069';
+              cx.strokeStyle = '#1a130d';
+              cx.lineWidth = 1.5;
+              cx.beginPath();
+              traceToContext(cx, p);
+              cx.fill();
+              cx.stroke();
+            },
           },
-        },
-        selectionOverlay: { handles: { size: HANDLE } },
-      }}
-    />
+          selectionOverlay: { handles: { size: HANDLE } },
+        }}
+      />
+    </div>
   );
 }
 
