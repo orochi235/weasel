@@ -2,13 +2,12 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, fireEvent, act } from '@testing-library/react';
 import { SwillustratorDemo } from '../../../demo/demos/SwillustratorDemo';
 
-beforeAll(() => {
-  const proto = HTMLCanvasElement.prototype as unknown as {
-    getContext: (...args: unknown[]) => unknown;
-    setPointerCapture: (...args: unknown[]) => void;
-    releasePointerCapture: (...args: unknown[]) => void;
-  };
-  proto.getContext = vi.fn(() => ({
+// Latest 2D context handed out by getContext — tests inspect spies on it
+// after driving pointer events through the demo.
+let latestCtx: ReturnType<typeof makeCtx> | null = null;
+
+function makeCtx() {
+  return {
     canvas: { width: 0, height: 0 },
     clearRect: vi.fn(),
     fillRect: vi.fn(),
@@ -35,7 +34,19 @@ beforeAll(() => {
     font: '',
     textBaseline: '',
     textAlign: '',
-  } as unknown as CanvasRenderingContext2D));
+  };
+}
+
+beforeAll(() => {
+  const proto = HTMLCanvasElement.prototype as unknown as {
+    getContext: (...args: unknown[]) => unknown;
+    setPointerCapture: (...args: unknown[]) => void;
+    releasePointerCapture: (...args: unknown[]) => void;
+  };
+  proto.getContext = vi.fn(() => {
+    latestCtx = makeCtx();
+    return latestCtx as unknown as CanvasRenderingContext2D;
+  });
   proto.setPointerCapture = vi.fn();
   proto.releasePointerCapture = vi.fn();
 });
@@ -63,6 +74,39 @@ describe('SwillustratorDemo', () => {
     expect(container.textContent).toContain('tool: pen');
     act(() => { fireEvent.click(getByText(/Hand/)); });
     expect(container.textContent).toContain('tool: hand');
+  });
+
+  it('insert tool draws an overlay rect mid-drag (new overlay channel)', () => {
+    const { container, getByText } = render(<SwillustratorDemo />);
+    act(() => { fireEvent.click(getByText(/Rect/)); });
+    const canvas = container.querySelector('canvas')!;
+    // Reset call counts so we measure paint triggered by the drag, not initial.
+    latestCtx!.fillRect.mockClear();
+    latestCtx!.strokeRect.mockClear();
+    act(() => {
+      fireEvent.pointerDown(canvas, { clientX: 50, clientY: 50, pointerId: 1, button: 0 });
+      fireEvent.pointerMove(canvas, { clientX: 150, clientY: 100, pointerId: 1 });
+    });
+    // Insert overlay paints a filled + stroked rect.
+    expect(latestCtx!.fillRect).toHaveBeenCalled();
+    expect(latestCtx!.strokeRect).toHaveBeenCalled();
+    expect(latestCtx!.setLineDash).toHaveBeenCalled();
+  });
+
+  it('select tool draws an area-select marquee mid-drag in empty space', () => {
+    const { container } = render(<SwillustratorDemo />);
+    // Default tool is select; drag from clearly-empty space.
+    const canvas = container.querySelector('canvas')!;
+    latestCtx!.fillRect.mockClear();
+    latestCtx!.strokeRect.mockClear();
+    latestCtx!.setLineDash.mockClear();
+    act(() => {
+      fireEvent.pointerDown(canvas, { clientX: 480, clientY: 320, pointerId: 1, button: 0 });
+      fireEvent.pointerMove(canvas, { clientX: 560, clientY: 380, pointerId: 1 });
+    });
+    expect(latestCtx!.fillRect).toHaveBeenCalled();
+    expect(latestCtx!.strokeRect).toHaveBeenCalled();
+    expect(latestCtx!.setLineDash).toHaveBeenCalled();
   });
 
   it('keyboard shortcuts switch tools (T → text, P → pen, H → hand, V → select)', () => {

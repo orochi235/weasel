@@ -97,6 +97,26 @@ export function SwillustratorDemo() {
       const o = itemsRef.current.find((x) => x.id === id);
       return o ? { x: o.x, y: o.y, width: o.width, height: o.height } : null;
     },
+    // Mirror the scene drawOne so move/resize/rotate ghosts render via the
+    // tool overlay channel. Text nodes fall back to a bounds outline since
+    // the scene defers their pixels to the text layer.
+    drawGhost: (ctx, obj, pose) => {
+      if (!obj) return;
+      if (obj.kind === 'rect') {
+        ctx.fillStyle = obj.color;
+        ctx.fillRect(pose.x, pose.y, pose.width, pose.height);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = '#d4c4a8';
+        ctx.strokeRect(pose.x + 0.5, pose.y + 0.5, pose.width, pose.height);
+      } else {
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = '#d4c4a8';
+        ctx.setLineDash([3, 3]);
+        ctx.strokeRect(pose.x + 0.5, pose.y + 0.5, pose.width, pose.height);
+        ctx.setLineDash([]);
+      }
+    },
+    getObject: (id) => itemsRef.current.find((o) => o.id === id) ?? null,
   });
 
   const insert = useInsertTool<Obj, Pose>(adapter, { minBounds: { width: 4, height: 4 } });
@@ -224,7 +244,6 @@ export function SwillustratorDemo() {
           paths: { layer: pathLayer, before: 'selectionOverlay' },
           penPreview: { layer: penPreview, before: 'selectionOverlay' },
           selectionOverlay: {},
-          insertOverlay: {},
         }}
       />
     </div>
