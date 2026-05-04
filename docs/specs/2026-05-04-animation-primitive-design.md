@@ -200,6 +200,11 @@ interface AnimateOnSetPoseOptions<TPose> {
    *  Use case: skip animation during an active drag so the gesture's per-pointer
    *  setPose calls don't get tweened — only animate "real" programmatic moves. */
   shouldAnimate?: (id: string, from: TPose, to: TPose) => boolean;
+  /** Convenience: when true, auto-skip animation if the id is currently being
+   *  manipulated by an active gesture (move/resize). Equivalent to a
+   *  `shouldAnimate` predicate that consults the kit-internal "in-flight ids"
+   *  channel. Mutually exclusive with `shouldAnimate`. Default: false. */
+  skipDuringGesture?: boolean;
 }
 
 export function animateOnSetPose<TObject extends { id: string }, TPose>(
@@ -241,13 +246,15 @@ Common use: `animateLifecycle(adapter, animator, { enterFrom: (p) => ({ ...p, op
 
 ```ts
 interface MomentumOptions {
+  /** Required: the per-Canvas animator that will own the decay. */
+  animator: Animator;
   friction?: number;     // default 0.92
   threshold?: number;    // default 0.5 px/frame
   /** Sample window in ms for velocity computation. Default 80ms. */
   velocitySampleMs?: number;
 }
 
-export function momentum<TPose>(opts?: MomentumOptions): MoveBehavior<TPose>;
+export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose>;
 ```
 
 Records the last `velocitySampleMs` of pointer positions in the gesture context's scratch space. On `onEnd`: computes the average pointer velocity over the sample window. If above `threshold`, returns `null` (suppress the default commit) and instead fires `animator.decay(...)` with the release velocity. The decay's `onTick` translates the dragged pose by the per-frame delta and calls `setPose`. When decay finishes, the final pose is committed via a single `transform` op for history.
