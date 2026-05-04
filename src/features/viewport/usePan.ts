@@ -12,6 +12,13 @@ export interface ActivePan {
  * at pan-start so the appropriate viewport is captured for the duration of
  * the gesture (useful when the app has multiple viewports — e.g. a main
  * canvas plus a separate seed-starting view).
+ *
+ * @deprecated Phase 2b ships `useHandTool` from `@orochi235/weasel/tools`
+ * which integrates with `<Canvas view={...} />`. This hook uses
+ * `React.MouseEvent` and an inverted (additive) sign convention — incompatible
+ * with the Tool primitive dispatcher and the new `View` shape. Removal is
+ * scheduled for Phase 2c once consumers (currently only the bezier-zoom doc
+ * reference) have migrated.
  */
 export function usePan(getActive: () => ActivePan) {
   const isPanning = useRef(false);
