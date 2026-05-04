@@ -44,7 +44,7 @@ useKeybindings(tools);
         ctx.fillRect(r.x, r.y, r.width, r.height);
         // Screen-pinned: divide by view.scale so the stroke stays 2 CSS px.
         ctx.lineWidth = r.pin === 'screen' ? 2 / view.scale : 2;
-        ctx.strokeStyle = '#1a130d';
+        ctx.strokeStyle = '#d4c4a8';
         ctx.strokeRect(r.x, r.y, r.width, r.height);
       },
     },
@@ -122,7 +122,7 @@ export function ZoomDemo() {
               ctx.fillStyle = r.color;
               ctx.fillRect(r.x, r.y, r.width, r.height);
               ctx.lineWidth = r.pin === 'screen' ? 2 / v.scale : 2;
-              ctx.strokeStyle = '#1a130d';
+              ctx.strokeStyle = '#d4c4a8';
               ctx.strokeRect(r.x, r.y, r.width, r.height);
             },
           },

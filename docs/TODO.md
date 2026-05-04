@@ -11,19 +11,12 @@ the dated specs/plans under `specs/` and `plans/`.
 
 Hitbox/handle/bounds visualization for kit and consumer code. Likely shape: a `createDebugOverlayLayer({ show: { hitboxes?, handles?, bounds?, poseOrigins? } })` factory that emits a `space: 'screen'` `RenderLayer` reading from the same hit-test/handle data the interaction hooks already compute. Dev-only — gated by a flag (NODE_ENV check or explicit prop) so it tree-shakes out of prod bundles. Open: whether the overlay reads via a side channel (hit-test hook exposes its rects) or by re-running hit math purely for visualization. First consumer is the kit's own demos / debugging during Phase 2c chrome work.
 
-## Phase 2c (zoom + chrome)
+## Tool primitive follow-ups
 
-Phase 1 substrate (`defineTool`, `useTools`, `useKeybindings`, `ToolCtx`, three slots × four channels) and Phase 2a built-ins (`useSelectTool`, `useInsertTool`, `useDeleteTool`, `useNudgeTool`, `useUndoRedoTool`, `useDuplicateTool`) shipped. Phase 2b (viewport pan + `useHandTool`, active `H` + modifier `space`) shipped per `docs/specs/2026-05-03-viewport-and-hand-tool-design.md`. **Phase 2c remaining:**
+Small items surfaced during Phase 2a/2b/2c shakedown:
 
-- Zoom in `View` (`view.scale`); pinch + wheel zoom interactions.
-- `RenderLayer.space: 'screen'` opt-in for kit chrome (selection overlay, marquee, area-select, corner handles, rotation handle) — under pan-only with scale=1 the infrastructure is wired but no chrome flips; under zoom this is what keeps handles screen-px constant.
-- `handleHitRadius` semantics change (currently world-px; becomes screen-px once scale ≠ 1).
-- `drawOne(ctx, obj, pose, view)` signature — consumer-controlled stroke scaling under zoom (Illustrator-style scales-with-zoom vs map-style screen-pinned).
-- Pan-bounds / clamping policy.
-- `Cmd+0` reset (small alwaysOn Tool).
-- Physical removal of legacy `usePan` (currently `@deprecated` JSDoc only).
-
-Bezier-zoom design doc references `usePan`; that demo migrates to `useHandTool` + Canvas viewport props during Phase 2c.
+- **Function-form `cursor` support on `<Canvas>`.** `defineTool` already accepts `cursor: string | (ctx) => string` and `useHandTool` defines the function form (`grab` ↔ `grabbing`). But `Canvas.tsx`'s `resolveToolsCursor` only handles the string form (line 599: `// Function form requires a ctx; defer to Phase 2.`). Result: hand-tool cursor never updates in demos. Wire it up — needs a `ctx` shape to call the function with. Likely simplest: pass the same `toolsCtxBase` Canvas already builds for the dispatcher, with a default `scratch` derived from the active tool's in-flight gesture state (or `null` if no gesture).
+- **Re-evaluate select-on-pointerdown timing.** Phase 2a select tool selects on down to preserve UX; consider deferring selection to threshold post-merge so a click-without-drag on background doesn't immediately clear.
 
 ## Tier 1 — foundational genericity gaps
 
