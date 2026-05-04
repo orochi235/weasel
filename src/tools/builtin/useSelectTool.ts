@@ -3,6 +3,7 @@ import { useMove, type UseMoveOptions } from '../../interactions/gestures/move/m
 import { useResize, type UseResizeOptions } from '../../interactions/gestures/resize/resize';
 import { useRotate, type UseRotateOptions } from '../../interactions/gestures/rotate/rotate';
 import { useAreaSelect, type UseAreaSelectOptions } from '../../interactions/gestures/area-select/areaSelect';
+import { selectFromMarquee } from '../../interactions/gestures/area-select/behaviors/selectFromMarquee';
 import { cornerResizeHandles, hitCornerHandle } from '../../interactions/gestures/resize/cornerHandles';
 import { rotationHandle, hitRotationHandle } from '../../interactions/gestures/rotate/handle';
 import type { MoveAdapter } from '../../core/adapters/types';
@@ -107,7 +108,16 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
   const move = useMove<TObject, TPose>(adapter, options.move ?? {});
   const resize = useResize<TObject, TPose>(adapter, options.resize ?? {});
   const rotate = useRotate<TObject, TPose>(adapter, options.rotate ?? {});
-  const areaSelect = useAreaSelect(adapter, options.areaSelect ?? {});
+  // Default to selectFromMarquee so plain `useSelectTool(adapter, {...})` —
+  // with no explicit areaSelect.behaviors — actually updates the selection
+  // when the user drags an empty-space marquee. Consumers that pass their own
+  // `areaSelect.behaviors` opt out (override wins).
+  const areaSelectOptions = useMemo<UseAreaSelectOptions>(() => {
+    const provided = options.areaSelect;
+    if (provided?.behaviors) return provided;
+    return { ...(provided ?? {}), behaviors: [selectFromMarquee()] };
+  }, [options.areaSelect]);
+  const areaSelect = useAreaSelect(adapter, areaSelectOptions);
 
   const handleHitRadius = options.handleHitRadius ?? 8;
   const rotationHandleDistance = options.rotationHandleDistance ?? 24;
@@ -279,9 +289,19 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
               // first should return a single-id array; this helper is a
               // no-op in that case.
               const top = pickTopMostHit(ids, adapter) ?? ids[0];
+              // Capture pre-click selection so we can decide whether the drag
+              // moves the existing set or just the freshly-clicked object.
+              // `ctx.selection.current` is the React snapshot from the
+              // dispatcher's render — it does not reflect mutations made by
+              // applyClick during this same callback.
+              const preClick = sel;
+              const hitAlreadySelected = preClick.includes(top);
               ctx.selection.applyClick(top, ctx.modifiers);
-              // After applyClick the selection may have changed; use it if non-empty.
-              const moveIds = ctx.selection.current.length > 0 ? ctx.selection.current : [top];
+              // If the user clicked something already selected, drag the whole
+              // selection. Otherwise the click switches selection and the drag
+              // moves only the clicked object — matches Figma/Sketch behavior
+              // ("dragging an unselected object shouldn't move the old one").
+              const moveIds = hitAlreadySelected && preClick.length > 0 ? preClick : [top];
               ctx.scratch = { kind: 'move', ids: moveIds };
               return 'claim';
             }
