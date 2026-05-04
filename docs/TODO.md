@@ -7,34 +7,19 @@ for cross-app reuse, not consumer-app value.
 For history of completed work that pre-dates extraction, see `git log` and
 the dated specs/plans under `specs/` and `plans/`.
 
-## `useScene` — shipped, follow-ups remain
+## Top of queue — Tool primitive Phase 2c (zoom + chrome)
 
-Reference doc: `docs/proposals/useScene.md` (now describes the shipped surface; was originally a forward-looking proposal). Adds a third tier of scene-state ergonomics: kit-owned `Scene<TData, TLayer, TPose>` primitive with first-class container/leaf tree, orthogonal layer tags (system + future user layers), opaque domain payload, auto-undoable mutations, and a `recordOp` seam for consumer ops. Phasing as it landed:
+Phase 1 substrate (`defineTool`, `useTools`, `useKeybindings`, `ToolCtx`, three slots × four channels) and Phase 2a built-ins (`useSelectTool`, `useInsertTool`, `useDeleteTool`, `useNudgeTool`, `useUndoRedoTool`, `useDuplicateTool`) shipped. Phase 2b (viewport pan + `useHandTool`, active `H` + modifier `space`) shipped per `docs/specs/2026-05-03-viewport-and-hand-tool-design.md`. **Phase 2c remaining:**
 
-- **Phase 1 — Core Scene primitive.** *Shipped (`391ba2e`).* Types, `createScene` with all read/mutation methods, default nanoid-style id generator with three-tier precedence, internal op log + undo/redo + `batch`, `registerOp`/`recordOp`. `useScene()` glued via `useSyncExternalStore`. Vitest coverage for every mutation, undo/redo round-trip, id collisions, batches, custom op registration.
-- **Phase 2 — Canvas integration.** *Shipped (`da9675a`, `24c72eb`).* Delivered as a separate `<SceneCanvas>` component (not a `scene` prop on `<Canvas>` — keeps `<Canvas>` agnostic about scene state). `sceneToAdapter` synthesizes a `MoveAdapter & ResizeAdapter & RotateAdapter & Partial<InsertAdapter>` view; `<SceneCanvas>` wires it plus undo/redo gesture and container-cascade-on-drag (live overlay + commit-time descendant translate) by default. Render order = layers in order, then DFS within; layer visibility honored in `getObjects`. Trivial-form `useScene({ items })` shorthand added on top.
-- **Phase 3 — `useUndoRedo` wiring + SceneDemo.** *Shipped.* `useUndoRedo` exists and `<SceneCanvas>` auto-wires `gestures.undoRedo = { adapter: scene }`. `demo/demos/SceneDemo.tsx` shows the eric-shape: 5 system layers, a container on `structures` holding a cross-layer leaf on `plantings`, a registered `setColor` consumer op interleaved with kit ops on the same undo stack.
+- Zoom in `View` (`view.scale`); pinch + wheel zoom interactions.
+- `RenderLayer.space: 'screen'` opt-in for kit chrome (selection overlay, marquee, area-select, corner handles, rotation handle) — under pan-only with scale=1 the infrastructure is wired but no chrome flips; under zoom this is what keeps handles screen-px constant.
+- `handleHitRadius` semantics change (currently world-px; becomes screen-px once scale ≠ 1).
+- `drawOne(ctx, obj, pose, view)` signature — consumer-controlled stroke scaling under zoom (Illustrator-style scales-with-zoom vs map-style screen-pinned).
+- Pan-bounds / clamping policy.
+- `Cmd+0` reset (small alwaysOn Tool).
+- Physical removal of legacy `usePan` (currently `@deprecated` JSDoc only).
 
-**Open follow-ups** (see `docs/proposals/useScene.md` for the full list):
-
-- Op log serialization shape for built-in ops (consumer `recordOp` payloads are JSON-serializable; the matching guarantee for kit ops isn't pinned).
-- User-layer mutation methods (`addLayer`/`removeLayer`/`renameLayer`/`moveLayer` with `before`/`after` system-layer anchors). Data structure supports them; methods not on the interface.
-- Container layout strategies (absolute-positioning only in v1).
-- Selection in Scene vs external (today selection lives outside Scene; moving it on would let undo capture selection-at-mutation).
-- Tree-mutation invariants documented explicitly (`remove(container)` cascade, `move` cycle detection, `setLayer` on container).
-- Container-rooted-scene full unification — collapse the inline-props/explicit-adapter tiers onto Scene once the array-shape special case starts feeling like dead weight (still optional; the three-tier coexistence ships).
-
-The pre-existing "container-rooted scene" entry below is partially superseded by this work but kept as a reference for the deeper unification question still on the table.
-
-- **Container-rooted scene (unify flat-list and group adapters) — partially superseded.** The arrayAdapter-as-default work shipped (Canvas now synthesizes an adapter from `items`/`setItems`/`toPose`/`fromPose`/`createDefault`/`poseBounds`/`intersectsRect` when no explicit `adapter` is passed). It collapses the boilerplate for the common flat-list case but is array-shape specific — a parallel shorthand for grouped scenes would be a second special case. The deeper move is to make every scene a tree rooted at one container: a flat list becomes a single root container whose children are leaves, a grouped scene is the same shape with deeper subtrees. The `useScene` work above takes the first big step (kit-owned tree with leaf/container) but keeps the inline-props and explicit-adapter tiers alongside it rather than collapsing them. Full unification (one adapter contract, one default wiring) remains an option for later — once `useScene` lands and the array-shape special case starts feeling like dead weight.
-
-## Tools as a first-class primitive
-
-Today `tool` on `<Canvas>` is a 3-string enum (`'select' | 'insert' | 'none'`, default `'none'`) hard-wired to a single empty-space-drag dispatcher. Adding a 4th tool (pen, eyedropper, hand/pan, shape-stamp, …) requires editing the kit. Promote `Tool` to a registered primitive: `interface Tool { id, cursor?, … }` plus a `tools={[...]}` prop and a controlled `activeTool` selector. Built-ins (`select`, `insert`) become the default tool registry; consumers add their own without forking.
-
-**Likely substrate — interaction channels.** Before designing `Tool`, factor out the layer underneath: a tool is typically a bundle of handlers across several orthogonal *interaction channels* (pointer hover/click, threshold-promoted drag, keyboard shortcuts/commands, maybe wheel). The kit already half-has these scattered (`usePointerGestures`, `useKeybinding`, `thresholdDrag` vs `pointerDrag`) but not unified. A `Tool` would then be a thin record binding handlers per channel; the kit owns dispatch (active tool + per-event channel routing). This makes the registry meaningful instead of a grab-bag of `onFoo` props on one interface.
-
-**Open design questions.** (1) Tool *owns* the gesture hooks (`useMove`/`useResize`) it cares about, vs *configures* a kit-managed pipeline — composition gets gnarly with the latter; lean toward Tool-owns. (2) Modifier keys (space-to-pan, alt-to-eyedrop) — likely a separate `modifierTool` slot rather than overloading `activeTool`. (3) Whether `selectionMode` survives as a Canvas prop or moves onto the select tool. Defer until a second concrete tool besides select/insert wants to ship — no point designing the registry against one example.
+Bezier-zoom design doc references `usePan`; that demo migrates to `useHandTool` + Canvas viewport props during Phase 2c.
 
 ## Tier 1 — foundational genericity gaps
 
@@ -83,6 +68,14 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
 - **Bezier curves / splines (control-point editing gesture).** A path-capable kit (Tier 1 #1) gives the data shape; what's genuinely new here is the interaction pattern: editing handles on a curve. Specialized resize-like hook with non-corner anchors, plus curve sampling and hit-testing in the renderer. Useful for routing edges in node graphs, illustration, motion paths.
 - **Parallax plugin.** Multi-layer canvas where layers translate at different rates relative to the viewport pan. Useful for sketch/concept-canvas backgrounds, depth illusions, mapping, and game-style scenes. Likely a `RenderLayer` factory or thin wrapper over `usePanInteraction` exposing `parallaxFactor` per layer. Plugin form keeps it out of the core. Open question: does it warp `screenToWorld` for hit-testing, or is parallax purely cosmetic?
 - **d3 integration plugin.** Bridge the adapter/op model to d3 selections so consumers can drive scene updates from data joins (enter → InsertOp, update → setPose, exit → DeleteOp). Strict plugin form — d3 stays out of the core. Real audience: dashboards, network graphs, force-directed layouts, scientific viz.
+
+## Recently shipped (follow-ups optional)
+
+- **`useScene` — kit-owned scene primitive.** *Phases 1–3 shipped (`391ba2e`, `da9675a`, `24c72eb`).* Reference doc: `docs/proposals/useScene.md`. Adds a third tier of scene-state ergonomics: kit-owned `Scene<TData, TLayer, TPose>` primitive with first-class container/leaf tree, orthogonal layer tags, opaque domain payload, auto-undoable mutations, and a `recordOp` seam for consumer ops. `<SceneCanvas>` synthesizes an adapter and auto-wires undo/redo + container cascade. `demo/demos/SceneDemo.tsx` shows cross-layer parenting + a `setColor` consumer op on the same undo stack. **Open follow-ups (defer until consumer friction):** op log serialization shape for built-in ops; user-layer mutation methods (`addLayer`/`removeLayer`/`renameLayer`/`moveLayer`); container layout strategies (today: absolute-positioning only); selection-in-Scene vs external; tree-mutation invariants documented explicitly (`remove(container)` cascade, `move` cycle detection, `setLayer` on container); full tier unification (collapse inline-props/explicit-adapter onto Scene).
+
+- **Tool primitive Phases 1 + 2a + 2b.** Phase 1 substrate (`defineTool`, `useTools`, `useKeybindings`, `ToolCtx`, three-slot dispatcher with four channels). Phase 2a built-ins (`useSelectTool`, `useInsertTool`, `useDeleteTool`, `useNudgeTool`, `useUndoRedoTool`, `useDuplicateTool`). Phase 2b viewport pan + `useHandTool` (active `H` + modifier `space`) — see `docs/specs/2026-05-03-viewport-and-hand-tool-design.md`. Phase 2c is the active queue item above.
+
+- **Container-rooted scene (unify flat-list and group adapters) — partially superseded by `useScene`.** The arrayAdapter-as-default work shipped (Canvas synthesizes an adapter from `items`/`setItems`/`toPose`/`fromPose`/`createDefault`/`poseBounds`/`intersectsRect` when no explicit `adapter` is passed). It collapses the flat-list boilerplate but is array-shape specific. The deeper move — every scene is a tree rooted at one container — was taken by `useScene` (kit-owned tree with leaf/container) but the inline-props and explicit-adapter tiers still sit alongside rather than collapsed. Full unification (one adapter contract, one default wiring) remains an option for later.
 
 ## Pre-1.0 polish
 
