@@ -11,6 +11,7 @@ function makeCtxStub(): CanvasRenderingContext2D & {
     restore: vi.fn(),
     setTransform: vi.fn(),
     translate: vi.fn(),
+    scale: vi.fn(),
   } as unknown as CanvasRenderingContext2D & {
     setTransform: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
@@ -95,38 +96,47 @@ describe('runLayers', () => {
 });
 
 describe('runLayers — view-aware transforms', () => {
-  it('omitted view uses identity setTransform for world layers', () => {
+  it('omitted view leaves transform untouched for world layers (no scale, no translate)', () => {
     const ctx = makeCtxStub();
     const draw = vi.fn();
     const layers: RenderLayer<unknown>[] = [{ id: 'a', label: 'a', draw }];
     runLayers(ctx, layers, null, {});
-    expect(ctx.setTransform).toHaveBeenCalledWith(1, 0, 0, 1, 0, 0);
+    // Identity view: scale === 1 and pan === 0 → no transform calls.
+    expect(ctx.setTransform).not.toHaveBeenCalled();
+    expect(ctx.translate).not.toHaveBeenCalled();
     expect(draw).toHaveBeenCalledWith(ctx, null, { x: 0, y: 0, scale: 1 });
   });
 
-  it('world layer (default) at scale=1 translates by -view.x*scale, -view.y*scale', () => {
+  it('world layer at scale=1 composes a translate(-view.x, -view.y) onto the existing transform', () => {
     const ctx = makeCtxStub();
     const draw = vi.fn();
     const layers: RenderLayer<unknown>[] = [{ id: 'a', label: 'a', draw }];
     runLayers(ctx, layers, null, {}, undefined, { x: 10, y: 20, scale: 1 });
-    expect(ctx.setTransform).toHaveBeenCalledWith(1, 0, 0, 1, -10, -20);
+    expect(ctx.translate).toHaveBeenCalledWith(-10, -20);
+    expect(ctx.setTransform).not.toHaveBeenCalled();
   });
 
-  it('uses setTransform with scale for world-space layers', () => {
+  it('world layer at scale != 1 composes scale then translate', () => {
     const ctx = makeCtxStub();
     const draw = vi.fn();
     const layer: RenderLayer<null> = { id: 'a', label: 'a', draw };
     runLayers(ctx, [layer], null, {}, undefined, { x: 5, y: 10, scale: 2 });
-    expect(ctx.setTransform).toHaveBeenCalledWith(2, 0, 0, 2, -10, -20);
+    // Note: translate uses world-coord offsets, not pre-multiplied screen px.
+    // ctx.scale composes the pixel multiplication.
+    expect(ctx.scale).toHaveBeenCalledWith(2, 2);
+    expect(ctx.translate).toHaveBeenCalledWith(-5, -10);
+    expect(ctx.setTransform).not.toHaveBeenCalled();
     expect(draw).toHaveBeenCalledWith(ctx, null, { x: 5, y: 10, scale: 2 });
   });
 
-  it('uses identity setTransform for screen-space layers', () => {
+  it('screen-space layers do not modify the transform (DPR preserved)', () => {
     const ctx = makeCtxStub();
     const draw = vi.fn();
     const layer: RenderLayer<null> = { id: 'a', label: 'a', space: 'screen', draw };
     runLayers(ctx, [layer], null, {}, undefined, { x: 5, y: 10, scale: 2 });
-    expect(ctx.setTransform).toHaveBeenLastCalledWith(1, 0, 0, 1, 0, 0);
+    expect(ctx.scale).not.toHaveBeenCalled();
+    expect(ctx.translate).not.toHaveBeenCalled();
+    expect(ctx.setTransform).not.toHaveBeenCalled();
     expect(draw).toHaveBeenCalledWith(ctx, null, { x: 5, y: 10, scale: 2 });
   });
 

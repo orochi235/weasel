@@ -26,9 +26,12 @@ export interface RenderLayer<TData> {
   alwaysOn?: boolean;
   /**
    * Coordinate space the layer draws in. World-space layers (default) get
-   * `setTransform(scale, 0, 0, scale, -view.x*scale, -view.y*scale)` applied
-   * before draw. Screen-space layers get identity transform — they're
-   * responsible for any world↔screen projection.
+   * `ctx.scale(view.scale, view.scale)` then `ctx.translate(-view.x, -view.y)`
+   * composed onto whatever transform is current — so the caller's
+   * device-pixel-ratio scaling (set up by `setupCanvasDpr` once per render)
+   * is preserved. Screen-space layers get *no* extra transform; they draw
+   * directly in CSS-pixel space and must call `worldToScreen` for any
+   * world-anchored chrome.
    * Default: `'world'`.
    */
   space?: 'world' | 'screen';
@@ -43,9 +46,11 @@ export interface RenderLayer<TData> {
  *   3. `layer.defaultVisible` — falls back to `true` when absent.
  *
  * Viewport: each layer's draw is wrapped in save/restore. World-space
- * layers (default) get a `setTransform(scale, 0, 0, scale, -view.x*scale,
- * -view.y*scale)` so draws can use world coords directly. Screen-space
- * layers get an identity setTransform.
+ * layers (default) get `ctx.scale(view.scale, view.scale)` then
+ * `ctx.translate(-view.x, -view.y)` *composed* onto the existing transform,
+ * so the caller's DPR pre-scaling (from `setupCanvasDpr`) is preserved.
+ * Screen-space layers get no transform change — they draw in CSS-pixel
+ * space and must call `worldToScreen` for any world-anchored chrome.
  *
  * When `view` is omitted, an identity view is used.
  */
@@ -74,10 +79,10 @@ export function runLayers<TData>(
 
     ctx.save();
     if ((layer.space ?? 'world') === 'world') {
-      ctx.setTransform(v.scale, 0, 0, v.scale, -v.x * v.scale || 0, -v.y * v.scale || 0);
-    } else {
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      if (v.scale !== 1) ctx.scale(v.scale, v.scale);
+      if (v.x !== 0 || v.y !== 0) ctx.translate(-v.x, -v.y);
     }
+    // Screen-space layers draw under the caller's current transform (DPR).
     layer.draw(ctx, data, v);
     ctx.restore();
   }
