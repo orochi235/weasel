@@ -164,7 +164,7 @@ export function useNestedGroup<TObject extends { id: string }, TPose>(
     const ops: Op[] = [];
     ops.push(createInsertOp({ object: groupObject }));
     if (newGroupParent !== null) {
-      ops.push(createReparentOp({ id: groupId, from: null, to: newGroupParent }));
+      ops.push(createReparentOp({ id: groupId, fromParentId: null, toParentId: newGroupParent }));
     }
     for (let i = 0; i < sel.length; i++) {
       const childId = sel[i];
@@ -173,7 +173,7 @@ export function useNestedGroup<TObject extends { id: string }, TPose>(
       const childWorld = childWorldPoses[i];
       const childLocalAfter = o.decomposePose(groupWorld, childWorld);
       if (oldParent !== groupId) {
-        ops.push(createReparentOp({ id: childId, from: oldParent, to: groupId }));
+        ops.push(createReparentOp({ id: childId, fromParentId: oldParent, toParentId: groupId }));
       }
       ops.push(createTransformOp({ id: childId, from: childLocalBefore, to: childLocalAfter }));
     }
@@ -261,7 +261,7 @@ export function useNestedUngroup<TObject extends { id: string }, TPose>(
         const cid = children[i];
         const localBefore = a.getPose(cid);
         const localAfter = rebaseLocalPose(a, childWorlds[i], grandparent, o.composePose, o.decomposePose);
-        ops.push(createReparentOp({ id: cid, from: id, to: grandparent }));
+        ops.push(createReparentOp({ id: cid, fromParentId: id, toParentId: grandparent }));
         ops.push(createTransformOp({ id: cid, from: localBefore, to: localAfter }));
         push(cid);
       }
@@ -269,7 +269,7 @@ export function useNestedUngroup<TObject extends { id: string }, TPose>(
       // it back without needing to re-establish its old parent state — the
       // followup reparent inverse re-attaches it.
       if (grandparent !== null) {
-        ops.push(createReparentOp({ id, from: grandparent, to: null }));
+        ops.push(createReparentOp({ id, fromParentId: grandparent, toParentId: null }));
       }
       if (obj) {
         ops.push(createDeleteOp({ object: obj }));

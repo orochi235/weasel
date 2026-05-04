@@ -96,8 +96,8 @@ export function snapToContainer<TPose>(args: {
       if (oldParent !== snap.parentId) {
         ops.push(createReparentOp({
           id: draggedId,
-          from: oldParent,
-          to: snap.parentId,
+          fromParentId: oldParent,
+          toParentId: snap.parentId,
           label: reparentLabel,
         }));
       }

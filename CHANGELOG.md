@@ -2,16 +2,10 @@
 
 ## Unreleased
 
-### Added
-
-- `LayoutStrategy<TPose>.contains?(containerPose, point)`: optional non-AABB
-  containment predicate. `useMove`'s layout-pass hit-test consults it when
-  present, falling back to an AABB check on the container's pose. Lets
-  circular and irregular containers participate in drop-targeting without a
-  rect-shaped pose.
-
 ### Breaking
 
+- `createReparentOp` arg names changed: `from` → `fromParentId`,
+  `to` → `toParentId`. Update call sites accordingly.
 - `View` now includes `scale: number` (default 1). `viewToTransform` now produces `{ panX: -view.x*scale, panY: -view.y*scale, zoom: scale }`.
 - `RenderLayer.draw` signature is `(ctx, data, view) => void`. `runLayers` accepts an optional `view` (defaults to identity) and wraps world-space layers with `setTransform(scale, 0, 0, scale, -x*scale, -y*scale)`; screen-space layers get an identity transform.
 - `SceneSlotConfig.drawOne` (and `DefaultLayersScene.drawOne`) signature is `(ctx, obj, pose, view) => void`.
@@ -20,6 +14,15 @@
 
 ### Added
 
+- `LayoutStrategy<TPose>.contains?(containerPose, point)`: optional non-AABB
+  containment predicate. `useMove`'s layout-pass hit-test consults it when
+  present, falling back to an AABB check on the container's pose. Lets
+  circular and irregular containers participate in drop-targeting without a
+  rect-shaped pose.
+- `createReparentOp` now defaults `coalesceKey` to `reparent:${id}` so
+  successive reparents of the same id batch-merge cleanly. Default `label`
+  is `'Reparent'`. Layout strategies can return reparent ops from
+  `commitDrop` to express drop-driven parent reassignment.
 - Debug overlay subsystem: `?debug=…` URL gating + `<Canvas debug={...}>` prop.
   Six features ship: `hitboxes`, `handles`, `bounds`, `origins`, `snap`, `layers`.
   Sink threaded through `usePointerGestures`, `useResize`, `useRotate`,

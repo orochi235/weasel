@@ -4,21 +4,34 @@ interface ReparentAdapter {
   setParent(id: string, parentId: string | null): void;
 }
 
-/** Op: change `id`'s parent, inverting back to `from`. */
+/**
+ * Op: change `id`'s parent, inverting back to the prior parent.
+ *
+ * `coalesceKey` defaults to `reparent:${id}` so successive reparents of the
+ * same id batch-merge cleanly.
+ */
 export function createReparentOp(args: {
   id: string;
-  from: string | null;
-  to: string | null;
+  fromParentId: string | null;
+  toParentId: string | null;
   label?: string;
+  coalesceKey?: string;
 }): Op {
-  const { id, from, to, label } = args;
+  const { id, fromParentId, toParentId, label = 'Reparent', coalesceKey = `reparent:${id}` } = args;
   return {
     label,
+    coalesceKey,
     apply(adapter) {
-      (adapter as ReparentAdapter).setParent(id, to);
+      (adapter as ReparentAdapter).setParent(id, toParentId);
     },
     invert() {
-      return createReparentOp({ id, from: to, to: from, label });
+      return createReparentOp({
+        id,
+        fromParentId: toParentId,
+        toParentId: fromParentId,
+        label,
+        coalesceKey,
+      });
     },
   };
 }
