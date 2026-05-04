@@ -61,6 +61,8 @@
     "dev": "vite",
     "build": "tsup",
     "build:demo": "vite build && npm run build:api",
+    "dev:swill": "vite --config apps/swillustrator/vite.config.ts",
+    "build:swill": "vite build --config apps/swillustrator/vite.config.ts",
     "build:api": "typedoc",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

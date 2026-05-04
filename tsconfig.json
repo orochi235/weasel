@@ -27,6 +27,6 @@
       "@orochi235/weasel/*": ["./src/*"]
     }
   },
-  "include": ["src", "demo"],
+  "include": ["src", "demo", "apps"],
   "exclude": ["node_modules", "dist"]
 }

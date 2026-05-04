@@ -1,0 +1,149 @@
+:root {
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #1a130d;
+  color: #d4c4a8;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  overflow: hidden;
+}
+
+.swill-app {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+}
+
+.swill-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 8px;
+  border-right: 1px solid #3a2e22;
+  background: #221a13;
+  width: 88px;
+  flex-shrink: 0;
+}
+
+.swill-sidebar.right {
+  border-right: none;
+  border-left: 1px solid #3a2e22;
+  width: 180px;
+  align-items: stretch;
+}
+
+.swill-tool-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  background: transparent;
+  color: #d4c4a8;
+  border: 1px solid #3a2e22;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.swill-tool-button:hover { border-color: #5a4a38; }
+
+.swill-tool-button.active {
+  background: #d4c4a8;
+  color: #1a130d;
+  border-color: #d4c4a8;
+}
+
+.swill-tool-button .key {
+  opacity: 0.6;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+}
+
+.swill-stage {
+  flex: 1;
+  overflow: auto;
+  padding: 32px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  background:
+    repeating-linear-gradient(45deg, #1a130d 0 8px, #1f1610 8px 16px);
+}
+
+.swill-page-shadow {
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.swill-section-label {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a7a5a;
+  margin-bottom: 4px;
+}
+
+.swill-color-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.swill-color-row input[type="color"] {
+  width: 36px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid #3a2e22;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.swill-color-row code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: #a89878;
+}
+
+.swill-disclaimer {
+  position: fixed;
+  top: 12px;
+  left: 100px;
+  z-index: 10;
+  max-width: 240px;
+  padding: 8px 12px;
+  background: #b03030;
+  color: #fff5e6;
+  border: 1px solid #d04040;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.35;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.swill-statusbar {
+  position: fixed;
+  bottom: 0;
+  left: 88px;
+  right: 180px;
+  padding: 4px 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: #8a7a5a;
+  background: #221a13;
+  border-top: 1px solid #3a2e22;
+  display: flex;
+  gap: 16px;
+}

@@ -1,6 +1,7 @@
 node_modules
 dist
 dist-demo
+dist-swillustrator
 coverage
 .DS_Store
 *.tsbuildinfo
