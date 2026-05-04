@@ -20,6 +20,7 @@ import { PanDemo, PAN_DEMO_SOURCE } from './demos/PanDemo';
 import { ZoomDemo, ZOOM_DEMO_SOURCE } from './demos/ZoomDemo';
 import { SwillustratorDemo, SWILLUSTRATOR_DEMO_SOURCE } from './demos/SwillustratorDemo';
 import { AnimationDemo, ANIMATION_DEMO_SOURCE } from './demos/AnimationDemo';
+import { LayoutDemo, LAYOUT_DEMO_SOURCE } from './demos/LayoutDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
@@ -42,6 +43,7 @@ import PanDemoFull from './demos/PanDemo.tsx?raw';
 import ZoomDemoFull from './demos/ZoomDemo.tsx?raw';
 import SwillustratorDemoFull from './demos/SwillustratorDemo.tsx?raw';
 import AnimationDemoFull from './demos/AnimationDemo.tsx?raw';
+import LayoutDemoFull from './demos/LayoutDemo.tsx?raw';
 
 export interface DemoEntry {
   id: string;
@@ -91,6 +93,17 @@ export const DEMOS: DemoEntry[] = [
     snippet: ANIMATION_DEMO_SOURCE,
     full: AnimationDemoFull,
     path: 'demo/demos/AnimationDemo.tsx',
+  },
+  {
+    id: 'layout',
+    title: 'Layout',
+    category: 'Interactions',
+    description: 'Three containers side by side, one per layout strategy — freeform (absolute placement), tileGrid (2x2 cells), and snapPoint (corner snapping). All three share a single adapter and one useSelectTool. Dragging a child within its container exercises the in-container layout (cell swap, corner snap); dragging across containers reflows both sides via the layout-aware move pass.',
+    hint: 'Drag a child rect within its container or into another to see layout-driven reflow.',
+    Component: LayoutDemo,
+    snippet: LAYOUT_DEMO_SOURCE,
+    full: LayoutDemoFull,
+    path: 'demo/demos/LayoutDemo.tsx',
   },
   {
     id: 'resize',
