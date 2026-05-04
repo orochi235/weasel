@@ -591,82 +591,7 @@ git commit -m "demo(swillustrator): drop now-redundant insertOverlay slot config
 
 ---
 
-## Task 7: Remove `insert`/`areaSelect`/`move`/`resize`/`rotate` props and slot configs from Canvas
-
-This is the destructive cleanup. Order matters: every demo + test using the legacy props must be migrated *before* this task lands. NestedGroupsDemo, ComposeDemo, InsertDemo are migrated in Tasks 8–10. Run those first if a demo here breaks the build.
-
-**Files:**
-- Modify: `src/canvas/Canvas.tsx` (large)
-- Modify: `src/canvas/Canvas.test.tsx`
-- Modify: `src/canvas/layers.ts`, `src/canvas/layers.test.ts`
-- Modify: `src/index.ts`
-
-- [ ] **Step 1: Verify no demo or test still references the legacy props/configs**
-
-Run:
-```bash
-grep -rEn "insertOverlay|areaSelectOverlay|move=\\{|resize=\\{|rotate=\\{|insert=\\{|areaSelect=\\{" src/ demo/ --include="*.ts" --include="*.tsx"
-```
-
-Expected: only the deletions in `src/canvas/Canvas.tsx` itself remain. If demos still match, do Tasks 8–10 first.
-
-- [ ] **Step 2: Remove from `Canvas.tsx`**
-
-Delete (with adjacent doc lines):
-
-- The `insert`, `areaSelect`, `move`, `resize`, `rotate` props from `CanvasProps` (around lines 293–302).
-- `MoveOverlaySlotConfig`, `ResizeOverlaySlotConfig`, `InsertOverlaySlotConfig`, `AreaSelectOverlaySlotConfig` type exports (lines ~141–167).
-- `moveOverlay`, `resizeOverlay`, `insertOverlay`, `areaSelectOverlay` from `LayersMap` (lines 208–212).
-- `'moveOverlay'`, `'resizeOverlay'`, `'insertOverlay'`, `'areaSelectOverlay'` from `STANDARD_SLOTS` (lines 111–115).
-- `buildInsertOverlayLayer` and `buildAreaSelectOverlayLayer` functions (lines 557–622).
-- The `moveOverride`, `resizeOverride`, `rotateOverride`, `insertOverride`, `areaSelectOverride` destructuring + usages (lines 643–652, 1005–1015).
-- The `move?.overlay?.poses.get(id)` etc. in pose-resolution closures (lines 1040–1050) — replace with reading from the active Tool's overlay state, OR just drop the override (the tool overlay layer renders the ghost itself, scene draws committed; double-draw acceptable per spec).
-- The internal `useMove` / `useResize` / `useRotate` / `useInsert` / `useAreaSelect` calls — only if they're now unused. If `tool="select"` shorthand still relies on them, defer to Task 11 ("legacy `tool=` shorthand removal").
-- The `moveSlot`, `insertSlot`, `areaSlot` blocks in the layers useMemo (lines 1326–1409).
-
-- [ ] **Step 3: Remove re-exports**
-
-In `src/index.ts`, drop:
-```
-InsertOverlaySlotConfig,
-AreaSelectOverlaySlotConfig,
-```
-
-(and any others matching: search for `MoveOverlaySlotConfig`, `ResizeOverlaySlotConfig`.)
-
-- [ ] **Step 4: Update `src/canvas/layers.ts` / `layers.test.ts`**
-
-Drop references to the removed slots; rebalance the standard-slot ordering test.
-
-- [ ] **Step 5: Update Canvas tests**
-
-In `src/canvas/Canvas.test.tsx`, replace any test using `<Canvas insert={ctl} ...>` or `<Canvas areaSelect={ctl} ...>` with the Tool-primitive equivalent (build a `useTools({active:'insert', registry:{insert: useInsertTool(...)}})` and pass via `tools={tools}`).
-
-- [ ] **Step 6: Run all tests + typecheck**
-
-```
-npm test -- --run && npx tsc --noEmit
-```
-
-Expected: PASS, TS clean. If anything fails, the migration tasks (8–10) are incomplete.
-
-- [ ] **Step 7: Commit**
-
-```bash
-git add -A
-git commit -m "feat(canvas)!: remove typed-per-gesture overlay props and slot configs
-
-BREAKING: insert/areaSelect/move/resize/rotate props removed from
-<Canvas>, replaced by the Tool overlay channel
-(tools.getActiveOverlays). insertOverlay and areaSelectOverlay slot
-configs removed; theming flows through the Tool wrapper's
-overlayStyle option. Move/resize/rotate ghosts render via
-useSelectTool's overlay; scene draws committed state only."
-```
-
----
-
-## Task 8: Migrate `NestedGroupsDemo` to the Tool primitive
+## Task 7: Migrate `NestedGroupsDemo` to the Tool primitive
 
 Currently passes a custom `move={move}` controller via the legacy prop and reads `move.overlay?.poses.get(id)` in `selectionOverlay.poseById`. Needs migration to a `useTools` setup with a `useSelectTool` (or a custom `useMoveTool` if NestedGroups has bespoke move semantics).
 
@@ -721,7 +646,7 @@ git commit -m "demo(nested-groups): migrate to Tool primitive (drop move= prop)"
 
 ---
 
-## Task 9: Migrate `InsertDemo` to the Tool primitive
+## Task 8: Migrate `InsertDemo` to the Tool primitive
 
 `InsertDemo` uses `<SceneCanvas tool="insert" insertOptions={...} commitInsert={...} ...>`. The `tool="insert"` shorthand wires Canvas's internal `useInsert` and renders the marquee via the legacy `insertOverlay: {}` slot.
 
@@ -749,7 +674,7 @@ git commit -m "demo(insert): migrate to Tool primitive"
 
 ---
 
-## Task 10: Migrate `ComposeDemo` to the Tool primitive
+## Task 9: Migrate `ComposeDemo` to the Tool primitive
 
 `ComposeDemo` toggles `tool={tool}` between `'select'` and `'insert'` and renders both `insertOverlay: {}` and `areaSelectOverlay: {}` slots. Migrate to a `useTools` with both registered, and a button toggling `tools.setActive`.
 
@@ -767,9 +692,84 @@ git commit -m "demo(compose): migrate to Tool primitive"
 
 ---
 
+## Task 10: Remove `insert`/`areaSelect`/`move`/`resize`/`rotate` props and slot configs from Canvas
+
+Lands after Tasks 7–9 (demo migrations) so no consumer of the legacy props remains. Until those tasks ship, the legacy props coexist with the new overlay channel — both can be live simultaneously since `getActiveOverlays()` is additive.
+
+**Files:**
+- Modify: `src/canvas/Canvas.tsx` (large)
+- Modify: `src/canvas/Canvas.test.tsx`
+- Modify: `src/canvas/layers.ts`, `src/canvas/layers.test.ts`
+- Modify: `src/index.ts`
+
+- [ ] **Step 1: Verify no demo or test still references the legacy props/configs**
+
+Run:
+```bash
+grep -rEn "insertOverlay|areaSelectOverlay|move=\\{|resize=\\{|rotate=\\{|insert=\\{|areaSelect=\\{" src/ demo/ --include="*.ts" --include="*.tsx"
+```
+
+Expected: only the deletions in `src/canvas/Canvas.tsx` itself remain. If demos still match, complete Tasks 7–9 first.
+
+- [ ] **Step 2: Remove from `Canvas.tsx`**
+
+Delete (with adjacent doc lines):
+
+- The `insert`, `areaSelect`, `move`, `resize`, `rotate` props from `CanvasProps` (around lines 293–302).
+- `MoveOverlaySlotConfig`, `ResizeOverlaySlotConfig`, `InsertOverlaySlotConfig`, `AreaSelectOverlaySlotConfig` type exports (lines ~141–167).
+- `moveOverlay`, `resizeOverlay`, `insertOverlay`, `areaSelectOverlay` from `LayersMap` (lines 208–212).
+- `'moveOverlay'`, `'resizeOverlay'`, `'insertOverlay'`, `'areaSelectOverlay'` from `STANDARD_SLOTS` (lines 111–115).
+- `buildInsertOverlayLayer` and `buildAreaSelectOverlayLayer` functions (lines 557–622).
+- The `moveOverride`, `resizeOverride`, `rotateOverride`, `insertOverride`, `areaSelectOverride` destructuring + usages (lines 643–652, 1005–1015).
+- The `move?.overlay?.poses.get(id)` etc. in pose-resolution closures (lines 1040–1050) — replace with reading from the active Tool's overlay state, OR just drop the override (the tool overlay layer renders the ghost itself, scene draws committed; double-draw acceptable per spec).
+- The internal `useMove` / `useResize` / `useRotate` / `useInsert` / `useAreaSelect` calls — only if they're now unused. If `tool="select"` shorthand still relies on them, defer to Task 11 ("legacy `tool=` shorthand removal").
+- The `moveSlot`, `insertSlot`, `areaSlot` blocks in the layers useMemo (lines 1326–1409).
+
+- [ ] **Step 3: Remove re-exports**
+
+In `src/index.ts`, drop:
+```
+InsertOverlaySlotConfig,
+AreaSelectOverlaySlotConfig,
+```
+
+(and any others matching: search for `MoveOverlaySlotConfig`, `ResizeOverlaySlotConfig`.)
+
+- [ ] **Step 4: Update `src/canvas/layers.ts` / `layers.test.ts`**
+
+Drop references to the removed slots; rebalance the standard-slot ordering test.
+
+- [ ] **Step 5: Update Canvas tests**
+
+In `src/canvas/Canvas.test.tsx`, replace any test using `<Canvas insert={ctl} ...>` or `<Canvas areaSelect={ctl} ...>` with the Tool-primitive equivalent (build a `useTools({active:'insert', registry:{insert: useInsertTool(...)}})` and pass via `tools={tools}`).
+
+- [ ] **Step 6: Run all tests + typecheck**
+
+```
+npm test -- --run && npx tsc --noEmit
+```
+
+Expected: PASS, TS clean.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add -A
+git commit -m "feat(canvas)!: remove typed-per-gesture overlay props and slot configs
+
+BREAKING: insert/areaSelect/move/resize/rotate props removed from
+<Canvas>, replaced by the Tool overlay channel
+(tools.getActiveOverlays). insertOverlay and areaSelectOverlay slot
+configs removed; theming flows through the Tool wrapper's
+overlayStyle option. Move/resize/rotate ghosts render via
+useSelectTool's overlay; scene draws committed state only."
+```
+
+---
+
 ## Task 11: Remove the legacy `tool=` shorthand from Canvas / SceneCanvas
 
-After Tasks 8–10 land, no demo uses `tool="select"` or `tool="insert"`. Audit the remaining `tool=` usages — `BezierEditDemo`, `CompoundPathsDemo`, `MultiSelectDemo`, `SceneDemo` use `tool="none"` or `tool="select"`. The `tool=` shorthand is part of the legacy "Canvas owns the gesture controllers" model; under the Tool primitive consumers should pass a `tools` prop with the desired Tools registered.
+After Tasks 7–9 + 10 land, no demo uses `tool="select"` or `tool="insert"`. Audit the remaining `tool=` usages — `BezierEditDemo`, `CompoundPathsDemo`, `MultiSelectDemo`, `SceneDemo` use `tool="none"` or `tool="select"`. The `tool=` shorthand is part of the legacy "Canvas owns the gesture controllers" model; under the Tool primitive consumers should pass a `tools` prop with the desired Tools registered.
 
 **Files:**
 - Modify: `src/canvas/Canvas.tsx`
@@ -825,7 +825,7 @@ git commit -m "docs: mark tool overlay channel shipped, log v1 deferrals"
 
 (See spec for the full review pass — this section to be completed after the plan is reviewed.)
 
-**Spec coverage checked:** all bullet points from the spec's "Files to create / modify" section are mapped to tasks above. The "Migration notes" requirement that all demos migrate atomically is addressed by Tasks 8–11 landing before the destructive Task 7's prop removal — except *Task 7 is sequenced before* Tasks 8–10 in the plan as written. **Re-sequence:** swap to **Task 5 → 6 (verify) → 8 → 9 → 10 → 11 (deletions) → 7 (deletions)**, or fold Task 7's deletions into Task 11 since both are destructive cleanups. Worth a quick re-read before dispatch.
+**Spec coverage checked:** all bullet points from the spec's "Files to create / modify" section are mapped to tasks above. Sequencing: tasks 1–5 add the new channel non-destructively; task 6 verifies via Swillustrator; tasks 7–9 migrate the legacy-prop demos; tasks 10–11 are the destructive cleanups (props/slot configs first, `tool=` shorthand second); task 12 finalizes docs.
 
 **Type consistency:** `useInsertTool` adds `overlayStyle: { fill, stroke, dash, lineWidth }`; `useSelectTool` adds four parallel options (`areaSelectOverlayStyle`, `moveOverlayStyle`, `resizeOverlayStyle`, `rotateOverlayStyle`). Names match the slot configs they replace.
 
