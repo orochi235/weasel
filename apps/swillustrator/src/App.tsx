@@ -9,6 +9,7 @@ import {
   useHandTool,
   useTextTool,
   useUserPenTool,
+  useSelectAll,
   useWheelZoomTool,
   useWheelPanTool,
   useKeyboardZoomTool,
@@ -127,6 +128,14 @@ export function App() {
   const insert = useInsertTool<Obj, Pose>(adapter, { minBounds: { width: 4, height: 4 } });
   const hand = useHandTool();
   const text = useTextTool<TextObj>({
+    hitExisting: ({ worldX, worldY }) => {
+      const hit = [...itemsRef.current].reverse().find(
+        (o): o is TextObj => o.kind === 'text'
+          && worldX >= o.x && worldX <= o.x + o.width
+          && worldY >= o.y && worldY <= o.y + o.height,
+      );
+      return hit ? hit.id : null;
+    },
     commitInsert: ({ worldX, worldY }) => {
       const id = `t${nextId.current++}`;
       return {
@@ -134,6 +143,19 @@ export function App() {
         x: worldX, y: worldY, width: 180, height: 28,
         text: 'New text',
         style: { fontSize: 16, fill: { fill: 'solid', color: fillRef.current } },
+      };
+    },
+    commitInsertBounds: ({ x, y, width, height }) => {
+      const id = `t${nextId.current++}`;
+      // Match font size to box height so the text actually fills the marquee.
+      // 0.7 ≈ glyph cap-height ratio for most sans-serifs; rounds to a sane
+      // px size and floors at 8 so wee boxes stay readable.
+      const fontSize = Math.max(8, Math.round(height * 0.7));
+      return {
+        id, kind: 'text',
+        x, y, width, height,
+        text: 'New text',
+        style: { fontSize, fill: { fill: 'solid', color: fillRef.current } },
       };
     },
   });
@@ -167,6 +189,11 @@ export function App() {
     alwaysOn: [wheelZoom, wheelPan, keyZoom],
   });
   useKeybindings(tools, { overrides: { v: 'select', V: 'select', r: 'insert', R: 'insert' } });
+  useSelectAll({
+    getSelection: () => selection.current,
+    listAll: () => itemsRef.current.map((o) => o.id),
+    setSelection: (ids) => selection.set(ids),
+  });
 
   const textLayer: RenderLayer<unknown> = createTextLayer<TextObj>({
     getTexts: () => itemsRef.current.filter((o): o is TextObj => o.kind === 'text'),

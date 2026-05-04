@@ -65,10 +65,69 @@ describe('useTextTool', () => {
     expect(applyBatch).not.toHaveBeenCalled();
   });
 
-  it('has no drag handlers (click-only tool)', () => {
+  it('has no drag handlers when commitInsertBounds is omitted (click-only)', () => {
     const { result } = renderHook(() =>
       useTextTool({ commitInsert: () => ({ id: 'x', x: 0, y: 0, width: 0, height: 0, text: '' }) }),
     );
     expect(result.current.drag).toBeUndefined();
+    expect(result.current.overlay).toBeUndefined();
+  });
+
+  it('drag-to-size: onEnd commits via commitInsertBounds when marquee meets minBounds', () => {
+    const commitInsert = vi.fn();
+    const commitInsertBounds = vi.fn((b: { x: number; y: number; width: number; height: number }) => ({
+      id: 't1', x: b.x, y: b.y, width: b.width, height: b.height, text: '',
+    }));
+    const applyBatch = vi.fn();
+    const { result } = renderHook(() => useTextTool({ commitInsert, commitInsertBounds }));
+    const tool = result.current;
+
+    // Drag from (10,20) to (110,80) — 100×60 box, well above the 4×4 minimum.
+    const ctx = makeCtx({ applyBatch, worldX: 10, worldY: 20, scratch: { kind: 'idle' } as any });
+    tool.drag!.onStart!(pe(), ctx);
+    expect(ctx.scratch).toEqual({ kind: 'drag', startX: 10, startY: 20, curX: 10, curY: 20 });
+
+    ctx.worldX = 110;
+    ctx.worldY = 80;
+    tool.drag!.onMove!(pe(), ctx);
+    expect((ctx.scratch as any).curX).toBe(110);
+
+    const decision = tool.drag!.onEnd!(pe(), ctx);
+    expect(decision).toBe('claim');
+    expect(commitInsertBounds).toHaveBeenCalledWith({ x: 10, y: 20, width: 100, height: 60 });
+    expect(commitInsert).not.toHaveBeenCalled();
+    expect(applyBatch).toHaveBeenCalledTimes(1);
+    expect(ctx.scratch).toEqual({ kind: 'idle' });
+  });
+
+  it('drag-to-size: tiny drag falls back to commitInsert at the start point', () => {
+    const commitInsert = vi.fn(() => ({ id: 't1', x: 10, y: 20, width: 0, height: 0, text: '' }));
+    const commitInsertBounds = vi.fn();
+    const applyBatch = vi.fn();
+    const { result } = renderHook(() =>
+      useTextTool({ commitInsert, commitInsertBounds, minBounds: { width: 10, height: 10 } }),
+    );
+    const tool = result.current;
+    const ctx = makeCtx({ applyBatch, worldX: 10, worldY: 20, scratch: { kind: 'idle' } as any });
+    tool.drag!.onStart!(pe(), ctx);
+    ctx.worldX = 12; // 2px drag — under threshold
+    ctx.worldY = 21;
+    tool.drag!.onMove!(pe(), ctx);
+    const decision = tool.drag!.onEnd!(pe(), ctx);
+    expect(decision).toBe('claim');
+    expect(commitInsertBounds).not.toHaveBeenCalled();
+    expect(commitInsert).toHaveBeenCalledWith({ worldX: 10, worldY: 20 });
+    expect(applyBatch).toHaveBeenCalledTimes(1);
+  });
+
+  it('drag-to-size: exposes a screen-space overlay when commitInsertBounds is supplied', () => {
+    const { result } = renderHook(() =>
+      useTextTool({
+        commitInsert: () => null,
+        commitInsertBounds: () => null,
+      }),
+    );
+    expect(result.current.overlay).toBeDefined();
+    expect(result.current.overlay!.space).toBe('screen');
   });
 });

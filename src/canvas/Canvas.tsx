@@ -18,6 +18,7 @@ import type { ToolsApi } from '../tools/useTools';
 import type { ToolsDispatcher } from '../tools/dispatcher';
 import type { ToolCtx } from '../tools/types';
 import type { Op } from '../core/ops/types';
+import { dispatchApplyBatch } from '../core/applyOps';
 import type { View } from '../features/viewport/view';
 import { runLayers, type RenderLayer } from '../core/layers/render';
 import { setupCanvasDpr } from '../features/viewport/pixelDensity';
@@ -674,8 +675,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
         selection: effectiveSelectionRefForCtx.current,
         adapter: effectiveAdapterRefForCtx.current,
         applyBatch: (ops: Op[], label: string) => {
-          const a = effectiveAdapterRefForCtx.current as { applyBatch?: (ops: Op[], label: string) => void };
-          if (a.applyBatch) a.applyBatch(ops, label);
+          dispatchApplyBatch(effectiveAdapterRefForCtx.current, ops, label);
         },
         view,
         setView: setViewRef.current,
