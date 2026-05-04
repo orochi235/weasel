@@ -119,6 +119,15 @@ export function useMove<TObject extends { id: string }, TPose>(
     ctx: GestureContext<TPose, TObject> | null;
     cascadeIds: string[];
     cascadeOriginWorld: Map<string, TPose>;
+    layoutPass: {
+      destContainerId: string | null;
+      accepted: boolean;
+      layout: unknown; // LayoutStrategy<TPose>
+      container: { id: string; bounds: { x: number; y: number; width: number; height: number } } | null;
+      children: { id: string; pose: TPose }[];
+      target: unknown; // DropTarget<TPose> | null
+      sourceReflowPositions: Map<string, TPose>;
+    };
   }>({
     phase: 'idle',
     startWorld: { x: 0, y: 0 },
@@ -126,6 +135,15 @@ export function useMove<TObject extends { id: string }, TPose>(
     ctx: null,
     cascadeIds: [],
     cascadeOriginWorld: new Map(),
+    layoutPass: {
+      destContainerId: null,
+      accepted: true,
+      layout: null,
+      container: null,
+      children: [],
+      target: null,
+      sourceReflowPositions: new Map(),
+    },
   });
 
   const [overlay, setOverlay] = useState<MoveOverlay<TPose> | null>(null);
@@ -135,6 +153,15 @@ export function useMove<TObject extends { id: string }, TPose>(
     stateRef.current.ctx = null;
     stateRef.current.cascadeIds = [];
     stateRef.current.cascadeOriginWorld = new Map();
+    stateRef.current.layoutPass = {
+      destContainerId: null,
+      accepted: true,
+      layout: null,
+      container: null,
+      children: [],
+      target: null,
+      sourceReflowPositions: new Map(),
+    };
     setOverlay(null);
   }, []);
 
@@ -189,6 +216,15 @@ export function useMove<TObject extends { id: string }, TPose>(
         pointer: { worldX: args.worldX, worldY: args.worldY, clientX: args.clientX, clientY: args.clientY },
         adapter,
         scratch: {},
+      },
+      layoutPass: {
+        destContainerId: null,
+        accepted: true,
+        layout: null,
+        container: null,
+        children: [],
+        target: null,
+        sourceReflowPositions: new Map(),
       },
     };
   }, []);
@@ -248,15 +284,146 @@ export function useMove<TObject extends { id: string }, TPose>(
       hideIds = [...ctx.draggedIds, ...s.cascadeIds];
     }
 
+    // --- Layout pass (additive — runs only when adapter exposes getLayout) ---
+    let hypotheticalChildPositions = new Map<string, TPose>();
+    let sourceReflowPositions = new Map<string, TPose>();
+    let destContainerId: string | null = null;
+    let accepted = true;
+    type Layout = import('../../../layout/types').LayoutStrategy<TPose>;
+    type Target = import('../../../layout/types').DropTarget<TPose>;
+    let dest:
+      | { id: string; bounds: { x: number; y: number; width: number; height: number }; layout: unknown }
+      | null = null;
+    let destLayout: Layout | null = null;
+    let destChildren: { id: string; pose: TPose }[] = [];
+    let destTarget: Target | null = null;
+
+    const getLayout = (adapter as { getLayout?: (id: string) => unknown }).getLayout;
+    if (typeof getLayout === 'function') {
+      // Walk the parent chain from the deepest container under the pointer
+      // up to the root, picking the top-most layout-bearing container.
+      // We use bounding-box hit-test against every object that has a layout.
+      const draggedId = ctx.draggedIds[0];
+      const draggedPose = newPoses.get(draggedId)!;
+      const sourceContainerId = adapter.getParent(draggedId);
+      const draggedRect = draggedPose as unknown as { x: number; y: number; width: number; height: number };
+      const draggedCenter = {
+        x: draggedRect.x + (draggedRect.width ?? 0) / 2,
+        y: draggedRect.y + (draggedRect.height ?? 0) / 2,
+      };
+
+      // Find the top-most container whose bounds contain the dragged center
+      // AND has a non-null layout AND is not the dragged object itself.
+      const candidates: { id: string; bounds: { x: number; y: number; width: number; height: number }; layout: unknown }[] = [];
+      for (const obj of adapter.getObjects()) {
+        if (obj.id === draggedId) continue;
+        const layout = (getLayout as (id: string) => unknown).call(adapter, obj.id);
+        if (!layout) continue;
+        const bounds = adapter.getPose(obj.id) as unknown as { x: number; y: number; width: number; height: number };
+        if (
+          draggedCenter.x >= bounds.x &&
+          draggedCenter.x < bounds.x + bounds.width &&
+          draggedCenter.y >= bounds.y &&
+          draggedCenter.y < bounds.y + bounds.height
+        ) {
+          candidates.push({ id: obj.id, bounds, layout });
+        }
+      }
+
+      // "Top-most" = last one in iteration order (later siblings render on top).
+      // For deeper z-order semantics, callers can override via deferred TODO.
+      dest = candidates[candidates.length - 1] ?? null;
+
+      if (dest) {
+        const layout = dest.layout as Layout;
+        const childIds = adapter.getChildren?.(dest.id) ?? [];
+        // Pass children INCLUDING dragged when same-container; layout
+        // strategies (tileGrid) need pre-drop indexing. Filter when cross-
+        // container — dragged isn't a child of dest yet.
+        const children = childIds
+          .filter((cid) => cid !== draggedId || sourceContainerId === dest!.id)
+          .map((cid) => ({ id: cid, pose: adapter.getPose(cid) }));
+        const draggedArg = {
+          id: draggedId,
+          originPose: ctx.origin.get(draggedId)!,
+          pose: draggedPose,
+          sourceContainerId,
+        };
+        const targets = layout.getDropTargets({ id: dest.id, bounds: dest.bounds }, children, draggedArg);
+        const target: Target | null = layout.snap.pickTarget(targets, { x: args.worldX, y: args.worldY });
+        if (target === null && targets.length > 0) {
+          // The layout had targets but the snap policy rejected — treat as
+          // not-accepted (pointer is outside the policy's tolerance).
+          accepted = false;
+        } else {
+          destContainerId = dest.id;
+          accepted = true;
+          hypotheticalChildPositions = layout.reflowFor(
+            { id: dest.id, bounds: dest.bounds },
+            children,
+            draggedArg,
+            target,
+          );
+          // Source reflow: if cross-container and the source has a layout,
+          // ask the source layout for the positions of its children minus dragged.
+          if (sourceContainerId && sourceContainerId !== dest.id) {
+            const srcLayout = (getLayout as (id: string) => unknown).call(
+              adapter,
+              sourceContainerId,
+            ) as Layout | null;
+            if (srcLayout) {
+              const srcBounds = adapter.getPose(sourceContainerId) as unknown as {
+                x: number; y: number; width: number; height: number;
+              };
+              const srcChildIds = adapter.getChildren?.(sourceContainerId) ?? [];
+              const srcChildren = srcChildIds
+                .filter((cid) => cid !== draggedId)
+                .map((cid) => ({ id: cid, pose: adapter.getPose(cid) }));
+              const reflowed = srcLayout.getChildPositions(
+                { id: sourceContainerId, bounds: srcBounds },
+                srcChildren,
+              );
+              // Only emit poses that differ from current.
+              for (const [cid, newPose] of reflowed) {
+                const cur = adapter.getPose(cid) as unknown as Record<string, unknown>;
+                const next = newPose as unknown as Record<string, unknown>;
+                const same =
+                  cur.x === next.x &&
+                  cur.y === next.y &&
+                  cur.width === next.width &&
+                  cur.height === next.height;
+                if (!same) sourceReflowPositions.set(cid, newPose);
+              }
+            }
+          }
+        }
+        destLayout = layout;
+        destChildren = children;
+        destTarget = target;
+      } else {
+        accepted = false;
+      }
+    }
+
+    stateRef.current.layoutPass = {
+      destContainerId,
+      accepted,
+      layout: dest ? destLayout : null,
+      container: dest ? { id: dest.id, bounds: dest.bounds } : null,
+      children: dest ? destChildren : [],
+      target: destTarget,
+      sourceReflowPositions: new Map(sourceReflowPositions),
+    };
+
     setOverlay({
       draggedIds: ctx.draggedIds,
       poses: overlayPoses,
       snapped: snap,
       hideIds,
-      hypotheticalChildPositions: new Map(),
-      sourceReflowPositions: new Map(),
-      destContainerId: null,
-      accepted: true,
+      hypotheticalChildPositions,
+      sourceReflowPositions,
+      destContainerId,
+      accepted,
     });
     return true;
   }, []);
