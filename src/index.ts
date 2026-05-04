@@ -430,3 +430,6 @@ export type {
   UseUndoRedoOptions,
   UseUndoRedoReturn,
 } from './interactions/actions/undo-redo';
+
+// Debug overlay subsystem
+export * from './debug';
