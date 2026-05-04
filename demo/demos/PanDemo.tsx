@@ -24,7 +24,7 @@ useKeybindings(tools);
 
 export function PanDemo() {
   const [items, setItems] = useState<Rect[]>(INITIAL_ITEMS);
-  const [view, setView] = useState<View>({ x: 0, y: 0 });
+  const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
 
   // We only need select + hand for this demo.
   const selectAdapter = {
@@ -53,7 +53,7 @@ export function PanDemo() {
       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
         <span style={{ fontFamily: 'monospace' }}>tool: {tools.modifierEngaged ?? tools.active}</span>
         <span style={{ fontFamily: 'monospace' }}>view: ({view.x.toFixed(0)}, {view.y.toFixed(0)})</span>
-        <button onClick={() => setView({ x: 0, y: 0 })}>Reset view</button>
+        <button onClick={() => setView({ x: 0, y: 0, scale: 1 })}>Reset view</button>
         <span style={{ color: '#888' }}>H = hand · space (hold) = momentary hand</span>
       </div>
       <Canvas

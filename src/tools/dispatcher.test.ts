@@ -12,6 +12,9 @@ function makeCtx(over: Partial<ToolCtx> = {}): ToolCtx {
     selection: { get: () => [], set: () => {}, add: () => {}, remove: () => {}, toggle: () => {}, clear: () => {}, applyClick: () => {} } as never,
     adapter: null,
     applyBatch: () => {},
+    view: { x: 0, y: 0, scale: 1 },
+    setView: () => {},
+    canvasRect: new DOMRect(),
     scratch: undefined,
     ...over,
   };
@@ -33,7 +36,7 @@ interface SlotsState {
 function makeDispatcher(slots: SlotsState): ToolsDispatcher {
   return createToolsDispatcher({
     getSlots: () => slots,
-    getCtx: makeCtx,
+    getCtx: makeCtx as unknown as (overrides?: { clientX?: number; clientY?: number }) => Omit<ToolCtx, 'scratch'>,
     threshold: 4,
   });
 }

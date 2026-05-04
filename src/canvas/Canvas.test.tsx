@@ -738,7 +738,7 @@ describe('Canvas viewport (Phase 2b)', () => {
         items={[]}
         setItems={() => {}}
         layers={{ scene: noopScene() }}
-        defaultView={{ x: 50, y: 25 }}
+        defaultView={{ x: 50, y: 25, scale: 1 }}
         onViewChange={onViewChange}
       />,
     );
@@ -754,7 +754,7 @@ describe('Canvas viewport (Phase 2b)', () => {
         items={[]}
         setItems={() => {}}
         layers={{ scene: noopScene() }}
-        view={{ x: 10, y: 20 }}
+        view={{ x: 10, y: 20, scale: 1 }}
         onViewChange={onViewChange}
       />,
     );
@@ -765,11 +765,45 @@ describe('Canvas viewport (Phase 2b)', () => {
         items={[]}
         setItems={() => {}}
         layers={{ scene: noopScene() }}
-        view={{ x: 30, y: 40 }}
+        view={{ x: 30, y: 40, scale: 1 }}
         onViewChange={onViewChange}
       />,
     );
     // No assertion on draw side — view prop change just shouldn't throw.
+    expect(onViewChange).not.toHaveBeenCalled();
+  });
+
+  it('view defaults to scale=1 when defaultView is omitted', () => {
+    const onViewChange = vi.fn();
+    render(
+      <Canvas
+        width={100}
+        height={100}
+        items={[]}
+        setItems={() => {}}
+        layers={{ scene: noopScene() }}
+        onViewChange={onViewChange}
+      />,
+    );
+    // View change isn't fired on initial mount; this is a smoke check that the
+    // `defaultView ?? { x:0, y:0, scale:1 }` path doesn't throw on the View
+    // type's required `scale` field.
+    expect(onViewChange).not.toHaveBeenCalled();
+  });
+
+  it('accepts a scale-aware view prop without throwing', () => {
+    const onViewChange = vi.fn();
+    render(
+      <Canvas
+        width={100}
+        height={100}
+        items={[]}
+        setItems={() => {}}
+        layers={{ scene: noopScene() }}
+        view={{ x: 5, y: 5, scale: 2 }}
+        onViewChange={onViewChange}
+      />,
+    );
     expect(onViewChange).not.toHaveBeenCalled();
   });
 });

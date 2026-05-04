@@ -11,6 +11,9 @@ function makeCtx(over: Partial<ToolCtx<undefined>> = {}): ToolCtx<undefined> {
     selection: { current: [] } as any,
     adapter: {},
     applyBatch: vi.fn(),
+    view: { x: 0, y: 0, scale: 1 },
+    setView: () => {},
+    canvasRect: new DOMRect(),
     scratch: undefined,
     ...over,
   };

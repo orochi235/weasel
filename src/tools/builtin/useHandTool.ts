@@ -47,6 +47,7 @@ export function useHandTool(): Tool<HandScratch | null> {
             ctx.setView({
               x: ctx.scratch.startView.x - dx,
               y: ctx.scratch.startView.y - dy,
+              scale: ctx.scratch.startView.scale,
             });
             return 'claim';
           },

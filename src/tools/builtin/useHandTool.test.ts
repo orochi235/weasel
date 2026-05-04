@@ -11,7 +11,7 @@ function fakeEvent(clientX: number, clientY: number): PointerEvent {
   return e;
 }
 
-function makeCtx(view: View, setView: (v: View) => void): ToolCtx<unknown> {
+function makeCtx<S = unknown>(view: Omit<View, 'scale'> & { scale?: number }, setView: (v: View) => void): ToolCtx<S> {
   return {
     worldX: 0,
     worldY: 0,
@@ -19,9 +19,10 @@ function makeCtx(view: View, setView: (v: View) => void): ToolCtx<unknown> {
     selection: {} as never,
     adapter: null,
     applyBatch: () => {},
-    view,
+    view: { ...view, scale: view.scale ?? 1 },
     setView,
-    scratch: undefined,
+    canvasRect: new DOMRect(),
+    scratch: undefined as unknown as S,
   };
 }
 
@@ -37,7 +38,7 @@ describe('useHandTool', () => {
     const { result } = renderHook(() => useHandTool());
     const tool = result.current;
     const setView = vi.fn();
-    const ctx = makeCtx({ x: 30, y: 40 }, setView);
+    const ctx = makeCtx<any>({ x: 30, y: 40 }, setView);
     const decision = tool.drag!.onStart!(fakeEvent(100, 200), ctx);
     expect(decision).toBe('claim');
     // scratch is held in ctx (caller may have replaced it); we verify next move
@@ -45,13 +46,13 @@ describe('useHandTool', () => {
     const moveDecision = tool.drag!.onMove!(fakeEvent(110, 215), ctx);
     expect(moveDecision).toBe('claim');
     // dx = 10, dy = 15 → new view = startView - delta = (30-10, 40-15)
-    expect(setView).toHaveBeenCalledWith({ x: 20, y: 25 });
+    expect(setView).toHaveBeenCalledWith({ x: 20, y: 25, scale: 1 });
   });
 
   it('drag.onMove with no preceding onStart is a no-op pass', () => {
     const { result } = renderHook(() => useHandTool());
     const setView = vi.fn();
-    const ctx = makeCtx({ x: 0, y: 0 }, setView);
+    const ctx = makeCtx<any>({ x: 0, y: 0 }, setView);
     const decision = result.current.drag!.onMove!(fakeEvent(50, 50), ctx);
     // pass through — no scratch means no captured start, can't pan.
     expect(decision).toBe('pass');
@@ -62,7 +63,7 @@ describe('useHandTool', () => {
     const { result } = renderHook(() => useHandTool());
     const tool = result.current;
     const setView = vi.fn();
-    const ctx = makeCtx({ x: 0, y: 0 }, setView);
+    const ctx = makeCtx<any>({ x: 0, y: 0 }, setView);
     tool.drag!.onStart!(fakeEvent(0, 0), ctx);
     tool.drag!.onEnd!(fakeEvent(10, 10), ctx);
     setView.mockClear();
@@ -75,7 +76,7 @@ describe('useHandTool', () => {
     const { result } = renderHook(() => useHandTool());
     const tool = result.current;
     const setView = vi.fn();
-    const ctx = makeCtx({ x: 0, y: 0 }, setView);
+    const ctx = makeCtx<any>({ x: 0, y: 0 }, setView);
     expect(typeof tool.cursor).toBe('function');
     expect((tool.cursor as (ctx: ToolCtx) => string)(ctx)).toBe('grab');
     // After onStart, scratch is non-null on the ctx.

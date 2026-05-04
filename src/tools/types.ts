@@ -39,6 +39,10 @@ export interface ToolCtx<TScratch = unknown> {
    *  `onViewChange`; in uncontrolled mode it updates Canvas's internal
    *  state. View changes are not undoable. */
   setView: (next: View) => void;
+  /** Bounding rect of the canvas element in viewport coords. Used by
+   *  zoom/pan tools to convert event clientX/clientY to canvas-relative
+   *  anchors. */
+  canvasRect: DOMRect;
   scratch: TScratch;
 }
 

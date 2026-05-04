@@ -205,7 +205,7 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
     const onViewChange = vi.fn();
 
     function Harness() {
-      const [view, setView] = useState({ x: 0, y: 0 });
+      const [view, setView] = useState({ x: 0, y: 0, scale: 1 });
       const select = useSelectTool(
         {
           getPose: () => null,
@@ -258,14 +258,14 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
     canvas.dispatchEvent(mkPointerEvent('pointerup', 160, 140));
 
     // dx=50, dy=30 → view = (0-50, 0-30) = (-50, -30)
-    expect(onViewChange).toHaveBeenCalledWith({ x: -50, y: -30 });
+    expect(onViewChange).toHaveBeenCalledWith({ x: -50, y: -30, scale: 1 });
   });
 
   it('space engages momentary hand; release returns to prior tool', () => {
     const onViewChange = vi.fn();
 
     function Harness() {
-      const [view, setView] = useState({ x: 0, y: 0 });
+      const [view, setView] = useState({ x: 0, y: 0, scale: 1 });
       const select = useSelectTool(
         {
           getPose: () => null,

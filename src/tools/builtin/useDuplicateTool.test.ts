@@ -10,6 +10,9 @@ function makeCtx(): ToolCtx<undefined> {
     selection: { current: ['a'] } as any,
     adapter: {},
     applyBatch: vi.fn(),
+    view: { x: 0, y: 0, scale: 1 },
+    setView: () => {},
+    canvasRect: new DOMRect(),
     scratch: undefined,
   };
 }
