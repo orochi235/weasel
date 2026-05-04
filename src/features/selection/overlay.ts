@@ -424,7 +424,7 @@ export function createSelectionOutlineLayer<TPose>(
   return {
     id: 'selection-outline',
     label: 'Selection outline',
-    draw: (ctx) => {
+    draw: (ctx, _data, _view) => {
       const ids = opts.getSelection();
       if (ids.length === 0) return;
       drawOutlines(ctx, ids, resolveBounds, stroke, pad);
@@ -447,7 +447,7 @@ export function createSelectionHandlesLayer<TPose>(
   return {
     id: 'selection-handles',
     label: 'Selection handles',
-    draw: (ctx) => {
+    draw: (ctx, _data, _view) => {
       const ids = opts.getSelection();
       if (ids.length === 0) return;
       drawHandles(ctx, ids, resolveBounds, handles, handlesOf);
@@ -490,7 +490,7 @@ export function createSelectionOverlayLayer<TPose>(
   return {
     id: 'selection-overlay',
     label: 'Selection',
-    draw: (ctx) => {
+    draw: (ctx, _data, _view) => {
       const ids = opts.getSelection();
       if (ids.length === 0) return;
       drawOutlines(ctx, ids, resolveBounds, stroke, pad);

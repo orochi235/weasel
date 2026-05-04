@@ -10,7 +10,7 @@ describe('createChildrenLayer', () => {
       adapter: { getChildren: () => ['a', 'b', 'c'] },
       drawChild: (_ctx, id) => { draws.push(id); },
     });
-    layer.draw(fakeCtx, undefined);
+    layer.draw(fakeCtx, undefined, { x: 0, y: 0, scale: 1 });
     expect(draws).toEqual(['a', 'b', 'c']);
   });
 
@@ -22,7 +22,7 @@ describe('createChildrenLayer', () => {
       },
       drawChild: () => {},
     });
-    layer.draw(fakeCtx, undefined);
+    layer.draw(fakeCtx, undefined, { x: 0, y: 0, scale: 1 });
     expect(seen).toEqual([null]);
   });
 
@@ -35,7 +35,7 @@ describe('createChildrenLayer', () => {
       parentId: 'group-1',
       drawChild: () => {},
     });
-    layer.draw(fakeCtx, undefined);
+    layer.draw(fakeCtx, undefined, { x: 0, y: 0, scale: 1 });
     expect(seen).toEqual(['group-1']);
   });
 
@@ -49,11 +49,11 @@ describe('createChildrenLayer', () => {
       parentId: () => current,
       drawChild: () => {},
     });
-    layer.draw(fakeCtx, undefined);
+    layer.draw(fakeCtx, undefined, { x: 0, y: 0, scale: 1 });
     current = 'b';
-    layer.draw(fakeCtx, undefined);
+    layer.draw(fakeCtx, undefined, { x: 0, y: 0, scale: 1 });
     current = null;
-    layer.draw(fakeCtx, undefined);
+    layer.draw(fakeCtx, undefined, { x: 0, y: 0, scale: 1 });
     expect(seen).toEqual(['a', 'b', null]);
   });
 
@@ -63,7 +63,7 @@ describe('createChildrenLayer', () => {
       adapter: {},
       drawChild,
     });
-    layer.draw(fakeCtx, undefined);
+    layer.draw(fakeCtx, undefined, { x: 0, y: 0, scale: 1 });
     expect(drawChild).not.toHaveBeenCalled();
   });
 
@@ -73,7 +73,7 @@ describe('createChildrenLayer', () => {
       adapter: { getChildren: () => [] },
       drawChild,
     });
-    layer.draw(fakeCtx, undefined);
+    layer.draw(fakeCtx, undefined, { x: 0, y: 0, scale: 1 });
     expect(drawChild).not.toHaveBeenCalled();
   });
 
@@ -115,7 +115,7 @@ describe('createChildrenLayer', () => {
       adapter: { getChildren: () => ['x'] },
       drawChild: (ctx, id, d) => { calls.push({ ctx, id, data: d }); },
     });
-    layer.draw(fakeCtx, data);
+    layer.draw(fakeCtx, data, { x: 0, y: 0, scale: 1 });
     expect(calls).toEqual([{ ctx: fakeCtx, id: 'x', data }]);
   });
 });

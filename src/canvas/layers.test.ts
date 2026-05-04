@@ -60,12 +60,12 @@ describe('defaultLayers', () => {
     const layers = defaultLayers<Rect, Pose>({
       scene: {
         objects: RECTS,
-        drawOne: (_ctx, obj, pose) => drawn.push({ id: obj.id, pose }),
+        drawOne: (_ctx, obj, pose, _view) => drawn.push({ id: obj.id, pose }),
       },
       moveOverlay: overlay,
     });
     const sceneLayer = layers.find((l) => l.id === 'scene')!;
-    sceneLayer.draw({ canvas: { width: 100, height: 100 } } as unknown as CanvasRenderingContext2D, undefined);
+    sceneLayer.draw({ canvas: { width: 100, height: 100 } } as unknown as CanvasRenderingContext2D, undefined, { x: 0, y: 0, scale: 1 });
     // 'a' is hidden, only 'b' should be drawn.
     expect(drawn).toEqual([{ id: 'b', pose: RECTS[1] }]);
   });
@@ -81,12 +81,12 @@ describe('defaultLayers', () => {
     const layers = defaultLayers<Rect, Pose>({
       scene: {
         objects: [RECTS[0]],
-        drawOne: (_ctx, obj, pose) => drawn.push({ id: obj.id, pose }),
+        drawOne: (_ctx, obj, pose, _view) => drawn.push({ id: obj.id, pose }),
       },
       moveOverlay: overlay,
     });
     const sceneLayer = layers.find((l) => l.id === 'scene')!;
-    sceneLayer.draw({ canvas: { width: 100, height: 100 } } as unknown as CanvasRenderingContext2D, undefined);
+    sceneLayer.draw({ canvas: { width: 100, height: 100 } } as unknown as CanvasRenderingContext2D, undefined, { x: 0, y: 0, scale: 1 });
     expect(drawn[0].pose.x).toBe(99);
   });
 });

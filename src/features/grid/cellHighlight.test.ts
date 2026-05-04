@@ -38,7 +38,7 @@ describe('createCellHighlightLayer', () => {
       spacing: 10,
       getCell: () => ({ col: 2, row: 3 }),
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     expect(calls).toHaveLength(1);
     expect(calls[0].args).toEqual([20, 30, 10, 10]);
   });
@@ -49,7 +49,7 @@ describe('createCellHighlightLayer', () => {
       spacing: 10,
       getCell: () => null,
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     expect(calls).toEqual([]);
   });
 
@@ -60,7 +60,7 @@ describe('createCellHighlightLayer', () => {
       origin: () => ({ x: 5, y: 7 }),
       getCell: () => ({ col: 1, row: 1 }),
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     expect(calls[0].args).toEqual([15, 17, 10, 10]);
   });
 
@@ -71,7 +71,7 @@ describe('createCellHighlightLayer', () => {
       getCell: () => ({ col: 0, row: 0 }),
       fill: { fill: 'solid', color: '#123456' },
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     expect(calls[0].fillStyle).toBe('#123456');
   });
 
@@ -82,7 +82,7 @@ describe('createCellHighlightLayer', () => {
       unitSystem: IMPERIAL_INCHES,
       getCell: () => ({ col: 2, row: 1 }),
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     // 1ft = 12in -> rect at (24, 12, 12, 12).
     expect(calls[0].args).toEqual([24, 12, 12, 12]);
   });

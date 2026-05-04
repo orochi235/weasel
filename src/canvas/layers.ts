@@ -19,6 +19,7 @@ import type { RenderLayer } from '../core/layers/render';
 import { createGridLayer, type GridLayerOpts } from '../features/grid/layer';
 import { createSelectionOverlayLayer } from '../features/selection/overlay';
 import type { MoveOverlay, ResizeOverlay } from '../interactions/gestures/types';
+import type { View } from '../features/viewport/view';
 
 interface Bounds {
   x: number;
@@ -35,7 +36,7 @@ export interface DefaultLayersScene<TObject extends { id: string }, TPose> {
   /** Project an object to its committed pose. Defaults to `obj as unknown as TPose`. */
   toPose?: (obj: TObject) => TPose;
   /** Draw a single object given its effective pose. */
-  drawOne: (ctx: CanvasRenderingContext2D, obj: TObject, pose: TPose) => void;
+  drawOne: (ctx: CanvasRenderingContext2D, obj: TObject, pose: TPose, view: View) => void;
 }
 
 /** Selection overlay slot — passed through to `createSelectionOverlayLayer`. */
@@ -141,7 +142,7 @@ export function defaultLayers<TObject extends { id: string }, TPose>(
   layers.push({
     id: 'scene',
     label: 'Scene',
-    draw: (ctx) => {
+    draw: (ctx, _data, view) => {
       const hide = moveOverlay?.hideIds?.length
         ? new Set(moveOverlay.hideIds)
         : null;
@@ -149,7 +150,7 @@ export function defaultLayers<TObject extends { id: string }, TPose>(
         if (hide && hide.has(obj.id)) continue;
         const committed = toPose(obj);
         const pose = effectivePose(obj.id, committed, moveOverlay, resizeOverlay);
-        scene.drawOne(ctx, obj, pose);
+        scene.drawOne(ctx, obj, pose, view);
       }
     },
   });
@@ -160,7 +161,7 @@ export function defaultLayers<TObject extends { id: string }, TPose>(
     layers.push({
       id: 'move-ghost',
       label: 'Move ghost',
-      draw: (ctx) => {
+      draw: (ctx, _data, view) => {
         if (ov.draggedIds.length === 0) return;
         ctx.save();
         ctx.globalAlpha = ghostAlpha;
@@ -169,7 +170,7 @@ export function defaultLayers<TObject extends { id: string }, TPose>(
         for (const obj of scene.objects) {
           const pose = ov.poses.get(obj.id);
           if (pose === undefined) continue;
-          scene.drawOne(ctx, obj, pose);
+          scene.drawOne(ctx, obj, pose, view);
         }
         ctx.restore();
       },

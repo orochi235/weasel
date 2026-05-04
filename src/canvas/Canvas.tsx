@@ -127,7 +127,7 @@ export interface SceneSlotConfig<TObject extends { id: string }, TPose> {
   /** Project an object to its committed pose. Defaults to `adapter.getPose(obj.id)`. */
   toPose?: (obj: TObject) => TPose;
   /** Draw a single object given its effective pose. */
-  drawOne: (ctx: CanvasRenderingContext2D, obj: TObject, pose: TPose) => void;
+  drawOne: (ctx: CanvasRenderingContext2D, obj: TObject, pose: TPose, view: View) => void;
   /** Default ghost alpha for the move-overlay slot. Default 0.85. */
   ghostAlpha?: number;
 }
@@ -474,7 +474,7 @@ function buildSceneLayer<TObject extends { id: string }, TPose>(
   return {
     id: 'scene',
     label: 'Scene',
-    draw: (ctx) => {
+    draw: (ctx, _data, view) => {
       const objects = cfg.objects ?? adapter?.getObjects() ?? [];
       const hide = moveOverlay?.hideIds?.length ? new Set(moveOverlay.hideIds) : null;
       for (const obj of objects) {
@@ -487,7 +487,7 @@ function buildSceneLayer<TObject extends { id: string }, TPose>(
           pose = resizeOverlay.leafPoses.get(obj.id)!;
         else if (rotateOverlay && rotateOverlay.id === obj.id) pose = rotateOverlay.currentPose;
         else pose = toPose(obj);
-        cfg.drawOne(ctx, obj, pose);
+        cfg.drawOne(ctx, obj, pose, view);
       }
     },
   };
@@ -504,7 +504,7 @@ function buildMoveOverlayLayer<TObject extends { id: string }, TPose>(
   return {
     id: 'move-ghost',
     label: 'Move ghost',
-    draw: (ctx) => {
+    draw: (ctx, _data, view) => {
       if (moveOverlay.draggedIds.length === 0) return;
       const objects = scene.objects ?? adapter?.getObjects() ?? [];
       // Walk objects in scene render order so cascaded descendants (carried
@@ -516,7 +516,7 @@ function buildMoveOverlayLayer<TObject extends { id: string }, TPose>(
       for (const obj of objects) {
         const pose = moveOverlay.poses.get(obj.id);
         if (pose === undefined) continue;
-        drawOne(ctx, obj, pose);
+        drawOne(ctx, obj, pose, view);
       }
       ctx.restore();
     },
@@ -673,7 +673,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   // supplied we are controlled (consumer owns state). Otherwise we keep
   // internal state seeded from `defaultView`. `setView` always fires
   // `onViewChange` so consumers can persist regardless of mode.
-  const [internalView, setInternalView] = useState<View>(defaultView ?? { x: 0, y: 0 });
+  const [internalView, setInternalView] = useState<View>(defaultView ?? { x: 0, y: 0, scale: 1 });
   const effectiveView: View = viewProp ?? internalView;
   const viewRef = useRef<View>(effectiveView);
   viewRef.current = effectiveView;
@@ -758,10 +758,12 @@ function CanvasInner<TObject extends { id: string }, TPose>(
         const c = canvasRef.current;
         if (c) {
           const rect = c.getBoundingClientRect();
-          if (overrides.clientX !== undefined) worldX = (overrides.clientX - rect.left) + view.x;
-          if (overrides.clientY !== undefined) worldY = (overrides.clientY - rect.top) + view.y;
+          if (overrides.clientX !== undefined) worldX = (overrides.clientX - rect.left) / view.scale + view.x;
+          if (overrides.clientY !== undefined) worldY = (overrides.clientY - rect.top) / view.scale + view.y;
         }
       }
+      const c = canvasRef.current;
+      const rect = c ? c.getBoundingClientRect() : (typeof DOMRect !== 'undefined' ? new DOMRect() : ({ x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 } as DOMRect));
       return {
         worldX,
         worldY,
@@ -774,6 +776,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
         },
         view,
         setView: setViewRef.current,
+        canvasRect: rect,
       };
     },
     [],
@@ -1187,7 +1190,8 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       if (!editAnchorsEnabled || !adapter) return;
       const cw = clientToWorld ?? ((c: HTMLCanvasElement, cx: number, cy: number): [number, number] => {
         const r = c.getBoundingClientRect();
-        return [cx - r.left, cy - r.top];
+        const v = viewRef.current;
+        return [(cx - r.left) / v.scale + v.x, (cy - r.top) / v.scale + v.y];
       });
       const [wx, wy] = cw(e.currentTarget, e.clientX, e.clientY);
       // WHY: use the consumer's hitBody so open paths (no fill, pointInPath=false)

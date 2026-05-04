@@ -247,7 +247,7 @@ describe('createSelectionOverlayLayer', () => {
       getSelection: () => [],
       getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }),
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     expect(calls).toEqual([]);
   });
 
@@ -261,7 +261,7 @@ describe('createSelectionOverlayLayer', () => {
       getSelection: () => ['a', 'b'],
       getPose: (id) => poses[id],
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     // 1 outline strokeRect for "a" + 4 handle strokeRects for "a" = 5 strokeRects.
     const strokeRects = calls.filter((c) => c.fn === 'strokeRect');
     const fillRects = calls.filter((c) => c.fn === 'fillRect');
@@ -276,7 +276,7 @@ describe('createSelectionOverlayLayer', () => {
       getPose: () => ({ x: 10, y: 20, width: 30, height: 40 }),
       handles: false,
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     const strokeRects = calls.filter((c) => c.fn === 'strokeRect');
     expect(strokeRects).toHaveLength(1);
     expect(strokeRects[0].args).toEqual([9, 19, 32, 42]);
@@ -289,7 +289,7 @@ describe('createSelectionOverlayLayer', () => {
       getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }),
       handles: false,
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     expect(calls.filter((c) => c.fn === 'fillRect')).toHaveLength(0);
     expect(calls.filter((c) => c.fn === 'strokeRect')).toHaveLength(1);
   });
@@ -305,7 +305,7 @@ describe('createSelectionOverlayLayer', () => {
       getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }),
       handlesOf: () => customHandles,
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     const fillRects = calls.filter((c) => c.fn === 'fillRect');
     // 2 custom handles instead of default 4.
     expect(fillRects).toHaveLength(2);
@@ -327,7 +327,7 @@ describe('createSelectionOverlayLayer', () => {
       groupAdapter: adapter,
       handles: false,
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     const strokeRects = calls.filter((c) => c.fn === 'strokeRect');
     expect(strokeRects).toHaveLength(1);
     // Union 0,0,70,70 with default pad 1 -> -1,-1,72,72.
@@ -346,7 +346,7 @@ describe('createSelectionOverlayLayer', () => {
         outline: { paint: { fill: 'solid', color: '#fff' }, width: 1 },
       },
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     const outlineCall = calls.filter((c) => c.fn === 'strokeRect')[0];
     expect(outlineCall.args).toEqual([-2, -2, 14, 14]);
     const fillRects = calls.filter((c) => c.fn === 'fillRect');
@@ -362,7 +362,7 @@ describe('createSelectionOverlayLayer', () => {
       outline: { paint: { fill: 'solid', color: '#fff' }, width: 4, pad: 0, align: 'inner' },
       handles: false,
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     // pose (0,0,10,10) with align=inner, width=4 -> shift inward by 2 on each side.
     const stroke = calls.filter((c) => c.fn === 'strokeRect')[0];
     expect(stroke.args).toEqual([2, 2, 6, 6]);
@@ -376,7 +376,7 @@ describe('createSelectionOverlayLayer', () => {
       outline: { paint: { fill: 'solid', color: '#fff' }, width: 4, pad: 0, align: 'outer' },
       handles: false,
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     const stroke = calls.filter((c) => c.fn === 'strokeRect')[0];
     expect(stroke.args).toEqual([-2, -2, 14, 14]);
   });
@@ -389,7 +389,7 @@ describe('createSelectionOverlayLayer', () => {
       outline: { paint: { fill: 'solid', color: '#fff' }, width: 4, pad: 0, align: 'center' },
       handles: false,
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     const stroke = calls.filter((c) => c.fn === 'strokeRect')[0];
     expect(stroke.args).toEqual([0, 0, 10, 10]);
   });
@@ -403,7 +403,7 @@ describe('createSelectionOutlineLayer', () => {
       getPose: () => ({ x: 10, y: 20, width: 30, height: 40 }),
     });
     expect(layer.id).toBe('selection-outline');
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     expect(calls.filter((c) => c.fn === 'strokeRect')).toHaveLength(1);
     expect(calls.filter((c) => c.fn === 'fillRect')).toHaveLength(0);
   });
@@ -420,7 +420,7 @@ describe('createSelectionOutlineLayer', () => {
       getPose: (id: string) => stored[id] ?? null,
       groupAdapter: adapter,
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     const stroke = calls.filter((c) => c.fn === 'strokeRect')[0];
     expect(stroke.args).toEqual([-1, -1, 72, 72]);
   });
@@ -434,7 +434,7 @@ describe('createSelectionHandlesLayer', () => {
       getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }),
     });
     expect(layer.id).toBe('selection-handles');
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     expect(calls.filter((c) => c.fn === 'fillRect')).toHaveLength(4);
     expect(calls.filter((c) => c.fn === 'strokeRect')).toHaveLength(4);
   });
@@ -446,7 +446,7 @@ describe('createSelectionHandlesLayer', () => {
       getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }),
       handlesOf: () => [{ x: 5, y: 5 }],
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     expect(calls.filter((c) => c.fn === 'fillRect')).toHaveLength(1);
   });
 });
@@ -464,7 +464,7 @@ describe('Path TPose via boundsOfPath', () => {
       getPose: () => tri,
       getBounds: boundsOfPath,
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     const stroke = calls.find((c) => c.fn === 'strokeRect');
     // AABB is (10,20)..(50,80) → padded by 1 → (9,19,42,62)
     expect(stroke?.args).toEqual([9, 19, 42, 62]);
@@ -497,7 +497,7 @@ describe('non-rect TPose via getBounds', () => {
       },
       handles: false,
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     const stroke = calls.find((c) => c.fn === 'strokeRect');
     // AABB is (10,20)..(50,80) → padded by 1 → (9,19,42,62)
     expect(stroke?.args).toEqual([9, 19, 42, 62]);

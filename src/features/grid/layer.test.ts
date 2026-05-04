@@ -65,7 +65,7 @@ describe('createGridLayer', () => {
       spacing: 10,
       bounds: () => ({ x: 0, y: 0, width: 0, height: 0 }),
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     expect(calls).toEqual([]);
   });
 
@@ -75,7 +75,7 @@ describe('createGridLayer', () => {
       spacing: 10,
       bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     const strokes = calls.filter((c) => c.fn === 'stroke');
     expect(strokes).toHaveLength(22);
   });
@@ -91,7 +91,7 @@ describe('createGridLayer', () => {
         line: { paint: { fill: 'solid', color: '#222222' } },
       },
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     const strokes = calls.filter((c) => c.fn === 'stroke');
     // Total lines is still 22 (accent replaces, doesn't add).
     expect(strokes).toHaveLength(22);
@@ -108,7 +108,7 @@ describe('createGridLayer', () => {
       subdivisions: 4,
       bounds: () => ({ x: 0, y: 0, width: 10, height: 10 }),
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     const strokes = calls.filter((c) => c.fn === 'stroke');
     // Cell lines: 2 vertical + 2 horizontal = 4.
     // Sub lines: 3 vertical + 3 horizontal = 6.
@@ -124,7 +124,7 @@ describe('createGridLayer', () => {
       unitSystem: IMPERIAL_INCHES,
       bounds: () => ({ x: 0, y: 0, width: 24, height: 12 }),
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     const strokes = calls.filter((c) => c.fn === 'stroke');
     expect(strokes).toHaveLength(5);
     // First vertical line at x=0, second at x=12 (one foot = 12 inches).
@@ -139,7 +139,7 @@ describe('createGridLayer', () => {
       spacing: { value: 1, unit: 'ft' },
       bounds: () => ({ x: 0, y: 0, width: 24, height: 12 }),
     });
-    expect(() => layer.draw(ctx, undefined)).toThrow(/UnitSystem/);
+    expect(() => layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 })).toThrow(/UnitSystem/);
   });
 
   it('honors custom style colors', () => {
@@ -153,7 +153,7 @@ describe('createGridLayer', () => {
         accent: { paint: { fill: 'solid', color: '#fedcba' } },
       },
     });
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     const strokes = calls.filter((c) => c.fn === 'stroke');
     const lineColors = new Set(strokes.map((s) => s.strokeStyle));
     expect(lineColors.has('#abcdef')).toBe(true);

@@ -35,7 +35,7 @@ describe('createTextLayer', () => {
     ];
     const layer = createTextLayer<Node>({ getTexts: () => nodes, getPose: (n) => n.pose });
     const { ctx, calls } = makeCtx();
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     const fills = calls.filter((c) => c.op === 'fillText');
     expect(fills.map((c) => c.args[0])).toEqual(['the quick', 'brown']);
   });
@@ -51,7 +51,7 @@ describe('createTextLayer', () => {
       isHidden: (n) => n.id === 'a',
     });
     const { ctx, calls } = makeCtx();
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     const texts = calls.filter((c) => c.op === 'fillText').map((c) => c.args[0]);
     expect(texts).toEqual(['B']);
   });
@@ -72,7 +72,7 @@ describe('createTextLayer', () => {
         getPose: (n) => n.pose,
       });
       const { ctx, calls } = makeCtx();
-      layer.draw(ctx, undefined);
+      layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
       const fill = calls.find((c) => c.op === 'fillText');
       expect(fill?.args[1]).toBe(expectedX);
     }
@@ -92,7 +92,7 @@ describe('createTextLayer', () => {
     };
     const layer = createTextLayer<Node>({ getTexts: () => [node], getPose: (n) => n.pose });
     const { ctx } = makeCtx();
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     expect(ctx.fillStyle).toBe('#abcdef');
   });
 
@@ -100,8 +100,8 @@ describe('createTextLayer', () => {
     const getTexts = vi.fn(() => [] as Node[]);
     const layer = createTextLayer<Node>({ getTexts, getPose: (n) => n.pose });
     const { ctx } = makeCtx();
-    layer.draw(ctx, undefined);
-    layer.draw(ctx, undefined);
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     expect(getTexts).toHaveBeenCalledTimes(2);
   });
 });
