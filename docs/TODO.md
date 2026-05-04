@@ -17,6 +17,7 @@ Small items surfaced during Phase 2a/2b/2c shakedown:
 
 - **Function-form `cursor` support on `<Canvas>`.** `defineTool` already accepts `cursor: string | (ctx) => string` and `useHandTool` defines the function form (`grab` ↔ `grabbing`). But `Canvas.tsx`'s `resolveToolsCursor` only handles the string form (line 599: `// Function form requires a ctx; defer to Phase 2.`). Result: hand-tool cursor never updates in demos. Wire it up — needs a `ctx` shape to call the function with. Likely simplest: pass the same `toolsCtxBase` Canvas already builds for the dispatcher, with a default `scratch` derived from the active tool's in-flight gesture state (or `null` if no gesture).
 - **Re-evaluate select-on-pointerdown timing.** Phase 2a select tool selects on down to preserve UX; consider deferring selection to threshold post-merge so a click-without-drag on background doesn't immediately clear.
+- **Return path to the default tool.** `useSelectTool` declares no keybinding and `useKeybindings` has no Escape/default-tool handler — so once a demo presses `H` to switch to hand, there's no way back to select except via the space-modifier round-trip. Options: (a) give `useSelectTool` a default `keybinding: 'V'`, (b) add an Escape handler in `useKeybindings` that calls `setActive(initialActive)`, (c) document that consumers must render a tool switcher. (a)+(b) together is the least surprising for keyboard users.
 
 ## Tier 1 — foundational genericity gaps
 
