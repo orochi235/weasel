@@ -81,6 +81,21 @@ From `docs/specs/2026-05-03-tool-overlay-channel-design.md` (v1 explicit out-of-
 
 The remaining inline-gesture cleanup (drop `useMove`/`useResize`/`useRotate` + `buildSceneLayer` overlay fold-in from `Canvas.tsx`) is tracked under "Tool primitive follow-ups" above — it's the durable record of T11's deferred work pending demo + test migration of `MoveDemo`, `ActionsDemo`, `GroupsDemo`, `CloneDemo`, `BezierEditDemo`, `PathPoseDemo`.
 
+## Deferred from animation primitive (2026-05-04)
+
+From `docs/specs/2026-05-04-animation-primitive-design.md`. The `src/animation/` module ships `useAnimator` (`tween`/`spring`/`decay`), `tweenPose`/`springPose`, `animateOnSetPose`, `animateLifecycle`, and the `momentum` MoveBehavior. Out of scope:
+
+- Ambient / looping animations — `loop({...})` convenience helper. Primitive supports it via self-retriggering tween; ship sugar when a real consumer wants it.
+- Spring "no destination" mode — unify `spring`/`decay` if the seam pinches.
+- Animation events / observability — global subscribe API for debug overlays / analytics.
+- Synchronized animations / staggers — "animate N objects with 50ms stagger" one-liner.
+- Animation-aware undo — "rewind the animation" instead of cancel + jump.
+- GPU / Web Animations API bridge — offload to compositor for very large concurrent counts.
+- Scroll-driven / pointer-driven progress — animation progress as a function of an external value, not time.
+- Easing function library — `easeOutBack`, `easeInElastic`, etc.
+- Animator pause / resume / time-scale — useful for debugging.
+- Layout-strategy reflow integration — explicit hookup; today consumers compose `animateOnSetPose` over a layout-driven adapter.
+
 ## Plugin/bundling convention
 
 The kit's primitives (Tool, RenderLayer, Adapter, PoseDescriptor, Behavior, Op factory, DebugSink) are already pluggable — any external package can author one and consumers wire it in. **What's missing is a convention for bundling a feature's parts** so a single `useFooPlugin()` call returns `{ tool, layers, ops, ... }` that the consumer spreads into Canvas/useTools, instead of wiring three or four separate exports per feature.
@@ -107,7 +122,6 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
   - **Auto-sizing.** *Done v1* — `fitTextPose(ctx, pose, opts?)` returns a copy of the pose with `height` (or `width` and `height`, via `axis: 'both'`) recomputed to fit the wrapped/unwrapped text. Pure helper — caller decides when to recompute and writes the result back through their adapter; the kit does not own the policy.
 - **Gradient paint variants.** `Paint` is a tagged union with `solid` and `pattern` today. Adding `linear-gradient` and `radial-gradient` variants is a non-breaking extension when a real consumer asks. Each gradient type has many dials (color stops, color-space interpolation, angle vs vector, focal point for radial); design against a concrete call site rather than speculatively.
 - **Per-vertex coloring on paths.** Today a `Path` pose carries one fill paint applied uniformly. A per-vertex color array (one color per anchor / polygon vertex, interpolated across triangles between them) would unlock gradient maps, heatmaps, mesh shading, and "rainbow stroke" effects without leaving the kit. 2D canvas has no native barycentric interpolation, so the implementation needs either (a) a triangulation pass + per-triangle gradient fills, or (b) an offscreen WebGL bridge (heavier, but scales). Decide once a concrete consumer wants it. Sits adjacent to the gradient-variants work but is a distinct shape — gradients are paint definitions, vertex colors are pose-attached data.
-- **Animation as a primitive concept.** The kit has no story for time-based change. Today everything is a discrete pose mutation through the op log; there's no notion of "this object is currently transitioning from pose A to pose B over 200ms," no frame loop the kit owns, no interpolation API, no easing. Real consumers will want: (a) entrance/exit animations on object create/delete, (b) tween-on-pose-change so a programmatic `setPose` from one place to another visibly slides instead of teleporting, (c) ambient looping animation (a pulsing handle, a spinning loader, a swaying plant in eric), (d) gesture-driven momentum/inertia (flick-to-pan, spring-back-on-drop). Open design questions before brainstorming: who owns the frame loop (kit-global rAF vs per-Canvas vs opt-in per object)? How does animation interact with the op log and undo (do interpolated frames generate ops? are mid-flight undos jarring?)? How does it interact with the Tool primitive (can a tool publish an animated overlay)? What's the interpolation API surface — pose-shape-aware (per-pose-descriptor `lerpPose`?) or generic numeric (`animate(from, to, ms, easing)` returning a value at `t`)? Does it compose with the layout-strategy reflow (a child sliding to its new layout slot when a sibling is added)? Likely needs its own design pass — placeholder here so it doesn't get lost.
 - **Layer effects framework.** Distinct from `Paint` — effects modify pixels rather than choosing color. Likely shape: `type Effect = { kind: 'shadow' | 'blur' | 'composite' | 'clip' | 'transform'; ... }` plus an `applyEffects(ctx, effects[])` helper that mutates `ctx.shadowBlur`/`filter`/`globalCompositeOperation`/etc before a draw block. Open question on composition model: per-layer `effects?: Effect[]` option vs a wrapper layer (`withEffects(layer, effects)`). Defer until a real use case lands (selection-overlay glow on hover? drop-shadow on dragged objects?). The breadth of canvas effects (shadows, filters, blend modes, clipping, transforms) means the abstraction will over- or under-fit without a concrete first consumer.
 
 ## Tier 2 — broad reuse
