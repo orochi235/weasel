@@ -85,13 +85,17 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
         pointer: {
           onDown: (_e, ctx) => {
             const sel = ctx.selection.current;
+            // handleHitRadius is screen-px; convert to world by dividing by
+            // current view scale so the hit area matches the rendered handle
+            // size under zoom.
+            const radiusWorld = handleHitRadius / ctx.view.scale;
 
             // 1. Rotation handle (single selection only)
             if (sel.length === 1) {
               const b = options.boundsOf(sel[0]);
               if (b) {
                 const handle = rotationHandle(b, rotationHandleDistance);
-                if (hitRotationHandle(handle, ctx.worldX, ctx.worldY, handleHitRadius)) {
+                if (hitRotationHandle(handle, ctx.worldX, ctx.worldY, radiusWorld)) {
                   ctx.scratch = { kind: 'rotate', targetId: sel[0] };
                   return 'claim';
                 }
@@ -103,7 +107,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
               const b = options.boundsOf(sel[0]);
               if (b) {
                 for (const h of cornerResizeHandles(b)) {
-                  if (hitCornerHandle(h, ctx.worldX, ctx.worldY, handleHitRadius)) {
+                  if (hitCornerHandle(h, ctx.worldX, ctx.worldY, radiusWorld)) {
                     ctx.scratch = { kind: 'resize', targetId: sel[0], anchor: h.anchor };
                     return 'claim';
                   }

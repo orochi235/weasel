@@ -289,6 +289,36 @@ describe('usePointerGestures — resizeTarget derivation', () => {
     expect(resize.start).not.toHaveBeenCalled();
   });
 
+  it('handleHitRadius is screen-px: scale=2 halves the world hit radius', () => {
+    const resize = makeResize();
+    const { result: sel } = renderHook(() => useSelection({ initial: ['a'] }));
+    const bounds = { x: 0, y: 0, width: 50, height: 50 };
+    const boundsOf = (id: string) => (id === 'a' ? bounds : null);
+    // clientToWorld at scale=2 maps screen 10 -> world 5.
+    const c2w = (_c: HTMLCanvasElement, x: number, y: number): [number, number] => [x / 2, y / 2];
+    const { result } = renderHook(() =>
+      usePointerGestures({
+        clientToWorld: c2w,
+        resize,
+        selection: sel.current,
+        boundsOf,
+        handleHitRadius: 8, // 8 screen px → 4 world px at scale=2
+        getView: () => ({ x: 0, y: 0, scale: 2 }),
+      }),
+    );
+    const canvas = makeCanvas();
+    // Screen (8, 0) → world (4, 0). 4 world units from corner (0,0) — within
+    // 8/2=4 world-radius. Should hit.
+    act(() => result.current.onPointerDown(makePointer(canvas, { clientX: 8, clientY: 0 })));
+    expect(resize.start).toHaveBeenCalledTimes(1);
+
+    // Reset and try just outside: screen (10, 0) → world (5, 0). Distance 5
+    // exceeds 4 world-radius. Should miss.
+    (resize.start as ReturnType<typeof vi.fn>).mockClear();
+    act(() => result.current.onPointerDown(makePointer(canvas, { clientX: 10, clientY: 0 })));
+    expect(resize.start).not.toHaveBeenCalled();
+  });
+
   it('explicit resizeTarget overrides selection-derived default', () => {
     const resize = makeResize();
     const explicitBounds = { x: 0, y: 0, width: 50, height: 50 };

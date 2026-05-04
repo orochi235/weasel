@@ -110,6 +110,39 @@ describe('useSelectTool', () => {
     expect(ctx.scratch).toEqual(expect.objectContaining({ kind: 'resize', targetId: 'obj1' }));
   });
 
+  it('handleHitRadius is screen-px: scale=2 halves the world hit radius', () => {
+    // 100×100 object at (0,0). handleHitRadius=10 screen px → 5 world at
+    // scale=2. cornerHandle hit-test uses max-norm; worldX=6 puts the pointer
+    // outside the 5-world half-extent on the X axis. Should miss.
+    const ctxMiss = ctxOver({
+      worldX: 6,
+      worldY: 0,
+      view: { x: 0, y: 0, scale: 2 },
+      selection: { current: ['obj1'], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
+      scratch: { kind: 'idle' },
+    });
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        hitBody: () => [],
+        boundsOf: (id) => (id === 'obj1' ? { x: 0, y: 0, width: 100, height: 100 } : null),
+        handleHitRadius: 10,
+      }),
+    );
+    result.current.pointer!.onDown!(pe(), ctxMiss);
+    expect(ctxMiss.scratch).toEqual({ kind: 'area' });
+
+    // worldX=4, worldY=0 → both within 5 half-extent. Should hit.
+    const ctxHit = ctxOver({
+      worldX: 4,
+      worldY: 0,
+      view: { x: 0, y: 0, scale: 2 },
+      selection: { current: ['obj1'], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
+      scratch: { kind: 'idle' },
+    });
+    result.current.pointer!.onDown!(pe(), ctxHit);
+    expect(ctxHit.scratch).toEqual(expect.objectContaining({ kind: 'resize', targetId: 'obj1' }));
+  });
+
   it('drag.onStart after body-hit routes to move controller (claims)', () => {
     const ctx = ctxOver({
       selection: { current: ['hit-id'], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,

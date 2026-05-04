@@ -15,6 +15,7 @@ import {
 } from './gestures/rotate/handle';
 import type { ModifierState } from './gestures/types';
 import type { SelectionApi } from '../features/selection/useSelection';
+import type { View } from '../features/viewport/view';
 
 interface Bounds {
   x: number;
@@ -102,8 +103,16 @@ export interface UsePointerGesturesOptions<TMovePose, TResizePose> {
    *  to single-selection bounds (multi-selection returns `null`). */
   resizeTarget?: () => { id: string; bounds: Bounds } | null;
 
-  /** Hit-test radius for resize handles, in world pixels. Default 8. */
+  /** Hit-test radius for resize/rotation handles, in **screen** pixels.
+   *  Divided by `view.scale` (via `getView`) at compare time so the hit
+   *  area matches the visually rendered handle size under zoom.
+   *  Default 8. */
   handleHitRadius?: number;
+
+  /** Returns the current view. Used to convert `handleHitRadius` (screen px)
+   *  into world units at hit-test time. Defaults to identity (scale=1) so
+   *  legacy callers retain world-px semantics until they wire a view. */
+  getView?: () => View;
 
   /** Body hit-test for starting a move. Return id(s) to drag, or `null` to
    *  fall through to `onTapEmpty`. */
@@ -160,6 +169,7 @@ export function usePointerGestures<TMovePose, TResizePose>(
     editAnchorsActive = false,
     tool = 'select',
     handleHitRadius = 8,
+    getView,
     rotationHandleDistance = DEFAULT_ROTATION_HANDLE_DISTANCE,
     hitBody,
     selection,
@@ -238,6 +248,8 @@ export function usePointerGestures<TMovePose, TResizePose>(
         ctrl: e.ctrlKey,
       };
       const ctx: PointerGestureCallbackCtx = { event: e, worldX: wx, worldY: wy, modifiers };
+      const viewScale = getView ? getView().scale : 1;
+      const radiusWorld = handleHitRadius / viewScale;
 
       // WHY: anchor-edit takes priority over selection-overlay handles when
       //      a path is being edited; empty hits in this mode short-circuit
@@ -262,7 +274,7 @@ export function usePointerGestures<TMovePose, TResizePose>(
             { ...target.bounds, rotation: target.rotation ?? 0 },
             rotationHandleDistance,
           );
-          if (hitRotationHandle(handle, wx, wy, handleHitRadius)) {
+          if (hitRotationHandle(handle, wx, wy, radiusWorld)) {
             dragKindRef.current = 'rotate';
             e.currentTarget.setPointerCapture(e.pointerId);
             attachDocListeners();
@@ -276,7 +288,7 @@ export function usePointerGestures<TMovePose, TResizePose>(
         const target = resizeTarget();
         if (target) {
           for (const h of cornerResizeHandles(target.bounds)) {
-            if (hitCornerHandle(h, wx, wy, handleHitRadius)) {
+            if (hitCornerHandle(h, wx, wy, radiusWorld)) {
               dragKindRef.current = 'resize';
               e.currentTarget.setPointerCapture(e.pointerId);
             attachDocListeners();
@@ -354,6 +366,7 @@ export function usePointerGestures<TMovePose, TResizePose>(
       rotateTarget,
       rotationHandleDistance,
       handleHitRadius,
+      getView,
       hitBody,
       selection,
       onBodyHit,
