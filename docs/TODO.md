@@ -88,7 +88,7 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`. The `src/animation/`
 - Animation-aware undo — "rewind the animation" instead of cancel + jump.
 - GPU / Web Animations API bridge — offload to compositor for very large concurrent counts.
 - Scroll-driven / pointer-driven progress — animation progress as a function of an external value, not time.
-- Easing function library — `easeOutBack`, `easeInElastic`, etc.
+- Easing function library — *Shipped.* Full Penner family: linear + quad/cubic/quart/quint + sine/expo/circ + back/elastic/bounce, with `In`/`Out`/`InOut` variants for each. Re-exported from `src/animation/index.ts` and bundled into a `EASINGS` lookup with an `EasingName` type for demo pickers. Pre-existing `easeIn`/`easeOut`/`easeInOut` aliases preserved (resolve to the quadratic curves).
 - Animator pause / resume / time-scale — useful for debugging.
 - Layout-strategy reflow integration — explicit hookup; today consumers compose `animateOnSetPose` over a layout-driven adapter.
 

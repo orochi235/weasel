@@ -1,6 +1,20 @@
 export * from './types';
 export {
-  linear, easeIn, easeOut, easeInOut, SPRING_PRESETS,
+  linear,
+  easeIn, easeOut, easeInOut,
+  easeInQuad, easeOutQuad, easeInOutQuad,
+  easeInCubic, easeOutCubic, easeInOutCubic,
+  easeInQuart, easeOutQuart, easeInOutQuart,
+  easeInQuint, easeOutQuint, easeInOutQuint,
+  easeInSine, easeOutSine, easeInOutSine,
+  easeInExpo, easeOutExpo, easeInOutExpo,
+  easeInCirc, easeOutCirc, easeInOutCirc,
+  easeInBack, easeOutBack, easeInOutBack,
+  easeInElastic, easeOutElastic, easeInOutElastic,
+  easeInBounce, easeOutBounce, easeInOutBounce,
+  EASINGS,
+  type EasingName,
+  SPRING_PRESETS,
 } from './easings';
 export { useAnimator } from './useAnimator';
 export {
