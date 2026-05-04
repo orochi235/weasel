@@ -134,3 +134,20 @@ describe('useAreaSelect — end', () => {
     expect(batches).toEqual([]);
   });
 });
+
+import { createDebugSink } from '../../../debug/createDebugSink';
+
+describe('useAreaSelect — debug recording', () => {
+  it('records the marquee bounds during drag', () => {
+    const sink = createDebugSink({ bounds: true });
+    const { adapter } = makeAdapter();
+    const { result } = renderHook(() =>
+      useAreaSelect(adapter, { debug: sink }),
+    );
+    act(() => { result.current.start(10, 10, NO_MOD); });
+    act(() => { result.current.move(50, 40, NO_MOD); });
+    const b = sink.snapshot().bounds.find((x) => x.id === 'area-select');
+    expect(b).toBeDefined();
+    expect(b!.bounds).toEqual({ x: 10, y: 10, width: 40, height: 30 });
+  });
+});

@@ -897,9 +897,11 @@ function CanvasInner<TObject extends { id: string }, TPose>(
 
   const derivedAreaSelectOptions = useMemo<UseAreaSelectOptions>(() => {
     const base = areaSelectOptions ?? {};
-    if (base.behaviors && base.behaviors.length > 0) return base;
-    return { ...base, behaviors: [selectFromMarquee()] };
-  }, [areaSelectOptions]);
+    const withBehaviors = base.behaviors && base.behaviors.length > 0
+      ? base
+      : { ...base, behaviors: [selectFromMarquee()] };
+    return debugSink ? { ...withBehaviors, debug: debugSink } : withBehaviors;
+  }, [areaSelectOptions, debugSink]);
 
   const internalInsert = useInsert<TObject, TPose>(
     selectionWiredAdapter,

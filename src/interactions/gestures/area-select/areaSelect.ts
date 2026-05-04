@@ -8,6 +8,7 @@ import type {
   GestureContext,
   ModifierState,
 } from '../types';
+import type { DebugSink } from '../../../debug/types';
 
 const GID = 'gesture';
 
@@ -20,6 +21,10 @@ export interface UseAreaSelectOptions {
   label?: string;
   onGestureStart?: () => void;
   onGestureEnd?: (committed: boolean) => void;
+  /** Optional debug sink. When supplied, records the in-progress marquee
+   *  rectangle as a `bounds` entry under the synthetic id `'area-select'`
+   *  on every move. Tree-shakes via optional-chain when omitted. */
+  debug?: DebugSink;
 }
 
 /** Return shape of `useAreaSelect`: lifecycle methods and live marquee overlay. */
@@ -44,7 +49,7 @@ export function useAreaSelect(
   adapter: AreaSelectAdapter,
   options: UseAreaSelectOptions = {},
 ): AreaSelectController {
-  const { behaviors = [], transient: transientOpt, label = 'Area select', onGestureStart, onGestureEnd } = options;
+  const { behaviors = [], transient: transientOpt, label = 'Area select', onGestureStart, onGestureEnd, debug } = options;
   const behaviorsRef = useRef(behaviors);
   behaviorsRef.current = behaviors;
   // Latest-value refs so controller methods stay referentially stable.
@@ -58,6 +63,8 @@ export function useAreaSelect(
   onGestureStartRef.current = onGestureStart;
   const onGestureEndRef = useRef(onGestureEnd);
   onGestureEndRef.current = onGestureEnd;
+  const debugRef = useRef(debug);
+  debugRef.current = debug;
 
   const stateRef = useRef<State>({ active: false, ctx: null });
   const [overlay, setOverlay] = useState<AreaSelectOverlay | null>(null);
@@ -111,6 +118,13 @@ export function useAreaSelect(
       start: { worldX: start.worldX, worldY: start.worldY },
       current: { worldX, worldY },
       shiftHeld: start.shiftHeld,
+    });
+    // Debug: record the in-progress marquee rect under the synthetic id.
+    debugRef.current?.recordBounds('area-select', {
+      x: Math.min(start.worldX, worldX),
+      y: Math.min(start.worldY, worldY),
+      width: Math.abs(worldX - start.worldX),
+      height: Math.abs(worldY - start.worldY),
     });
     return true;
   }, []);
