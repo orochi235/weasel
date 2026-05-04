@@ -69,4 +69,11 @@ export interface LayoutStrategy<TPose> {
   ): Op[];
 
   snap: LayoutSnap<TPose>;
+
+  /** Optional: predicate for whether a world-space point is inside this
+   *  container. When absent, callers fall back to an axis-aligned bounding-box
+   *  test on the container's pose. Strategies whose containers aren't
+   *  rectangular (circles, irregular zones) implement this to override the
+   *  AABB default. */
+  contains?(containerPose: TPose, point: { x: number; y: number }): boolean;
 }

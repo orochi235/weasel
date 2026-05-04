@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Added
+
+- `LayoutStrategy<TPose>.contains?(containerPose, point)`: optional non-AABB
+  containment predicate. `useMove`'s layout-pass hit-test consults it when
+  present, falling back to an AABB check on the container's pose. Lets
+  circular and irregular containers participate in drop-targeting without a
+  rect-shaped pose.
+
 ### Breaking
 
 - `View` now includes `scale: number` (default 1). `viewToTransform` now produces `{ panX: -view.x*scale, panY: -view.y*scale, zoom: scale }`.

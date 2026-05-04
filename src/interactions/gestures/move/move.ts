@@ -301,18 +301,26 @@ export function useMove<TObject extends { id: string }, TPose>(
 
       // Find the top-most container whose bounds contain the dragged center
       // AND has a non-null layout AND is not the dragged object itself.
-      const candidates: { id: string; bounds: { x: number; y: number; width: number; height: number }; layout: unknown }[] = [];
+      // Containment uses the layout strategy's optional `contains(pose, point)`
+      // when present, falling back to an AABB test on the container's pose.
+      // The AABB fallback assumes the pose is rect-shaped — when TPose isn't
+      // rect and `contains` is absent, the call is broken (status quo;
+      // tracked in docs/TODO.md for the non-rect TPose layout case).
+      const candidates: { id: string; bounds: { x: number; y: number; width: number; height: number }; layout: Layout }[] = [];
       for (const obj of adapter.getObjects()) {
         if (obj.id === draggedId) continue;
-        const layout = (getLayout as (id: string) => unknown).call(adapter, obj.id);
+        const layout = (getLayout as (id: string) => Layout | null).call(adapter, obj.id);
         if (!layout) continue;
-        const bounds = adapter.getPose(obj.id) as unknown as { x: number; y: number; width: number; height: number };
-        if (
-          draggedCenter.x >= bounds.x &&
-          draggedCenter.x < bounds.x + bounds.width &&
-          draggedCenter.y >= bounds.y &&
-          draggedCenter.y < bounds.y + bounds.height
-        ) {
+        const cPose = adapter.getPose(obj.id);
+        const inside = layout.contains
+          ? layout.contains(cPose, { x: draggedCenter.x, y: draggedCenter.y })
+          : (() => {
+            const b = cPose as unknown as { x: number; y: number; width: number; height: number };
+            return draggedCenter.x >= b.x && draggedCenter.x < b.x + b.width
+              && draggedCenter.y >= b.y && draggedCenter.y < b.y + b.height;
+          })();
+        if (inside) {
+          const bounds = cPose as unknown as { x: number; y: number; width: number; height: number };
           candidates.push({ id: obj.id, bounds, layout });
         }
       }
