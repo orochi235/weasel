@@ -42,6 +42,34 @@ export function nearestWithin<TPose>(opts: { tolerance: number }): LayoutSnap<TP
   };
 }
 
+function rectContains(
+  r: { x: number; y: number; width: number; height: number },
+  p: { x: number; y: number },
+): boolean {
+  return p.x >= r.x && p.x < r.x + r.width && p.y >= r.y && p.y < r.y + r.height;
+}
+
+/**
+ * Region-aware snap. If the pointer falls inside any target's `hitBounds`,
+ * that target wins; otherwise falls back to nearest-origin. Useful for
+ * strategies whose targets are area-shaped (gutters, drop-zones, gridded
+ * cells) rather than point-shaped.
+ *
+ * Pointer-in-multiple-bounds order: first match in iteration order wins, so
+ * strategies should emit narrower/more-specific targets before broader ones
+ * (e.g. row-gutter before tray-corner).
+ */
+export function containedThenNearest<TPose>(): LayoutSnap<TPose> {
+  return {
+    pickTarget(targets, pointer) {
+      for (const t of targets) {
+        if (t.hitBounds && rectContains(t.hitBounds, pointer)) return t;
+      }
+      return nearestOf(targets, pointer);
+    },
+  };
+}
+
 interface CellMeta {
   cellRect: { x: number; y: number; width: number; height: number };
 }
@@ -55,20 +83,17 @@ function isCellMeta(m: unknown): m is CellMeta {
   );
 }
 
+/**
+ * Backwards-compatible cell snap. Prefer `containedThenNearest` for new
+ * strategies; this variant remains for `tileGrid` and any caller that puts
+ * its cell rect in `meta.cellRect` rather than `hitBounds`.
+ */
 export function cellAt<TPose>(): LayoutSnap<TPose> {
   return {
     pickTarget(targets, pointer) {
       for (const t of targets) {
-        if (!isCellMeta(t.meta)) continue;
-        const r = t.meta.cellRect;
-        if (
-          pointer.x >= r.x &&
-          pointer.x < r.x + r.width &&
-          pointer.y >= r.y &&
-          pointer.y < r.y + r.height
-        ) {
-          return t;
-        }
+        if (t.hitBounds && rectContains(t.hitBounds, pointer)) return t;
+        if (isCellMeta(t.meta) && rectContains(t.meta.cellRect, pointer)) return t;
       }
       return nearestOf(targets, pointer);
     },

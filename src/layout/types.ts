@@ -17,6 +17,13 @@ export interface DropTarget<TPose> {
   pose: TPose;
   /** Reference point for distance metrics (snap algorithms). */
   origin: { x: number; y: number };
+  /** Optional axis-aligned region (world units) used by region-aware snaps
+   *  (e.g. `containedThenNearest`). When present, a pointer inside this rect
+   *  is treated as a containment hit on this target. Strategies that emit
+   *  region-shaped targets (gutters, drop-zones) should populate this.
+   *  Strategies whose targets are point-like (free-form, snap-point) can omit
+   *  it and rely on `origin`-distance snaps. */
+  hitBounds?: { x: number; y: number; width: number; height: number };
   /** Strategy-private metadata (e.g. cell coords for tile-grid). */
   meta?: unknown;
 }
