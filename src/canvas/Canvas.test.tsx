@@ -3,8 +3,6 @@ import { render, fireEvent, createEvent } from '@testing-library/react';
 import { createRef, useRef, useState } from 'react';
 import { Canvas } from './Canvas';
 import { useSelection } from '../features/selection/useSelection';
-import { useMove } from '../interactions/gestures/move/move';
-import { useResize } from '../interactions/gestures/resize/resize';
 import { arrayAdapter } from '../core/adapters/arrayAdapter';
 import type { RenderLayer } from '../core/layers/render';
 import type { DebugSink, DebugSnapshot } from '../debug/types';
@@ -160,13 +158,12 @@ describe('<Canvas>', () => {
           setItems: () => {},
           toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
         });
-        const move = useMove<Rect, Pose>(adapter);
         return (
           <Canvas
             width={100}
             height={100}
             layers={{}}
-            move={move}
+            adapter={adapter}
             clientToWorld={C2W}
             onBodyHit={onBodyHit}
           />
@@ -197,13 +194,12 @@ describe('<Canvas>', () => {
           setItems: () => {},
           toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
         });
-        const move = useMove<Rect, Pose>(adapter);
         return (
           <Canvas
             width={50}
             height={50}
             layers={{}}
-            move={move}
+            adapter={adapter}
             clientToWorld={C2W}
             onBodyHit={onBodyHit}
           />
@@ -232,13 +228,12 @@ describe('<Canvas>', () => {
           setItems: () => {},
           toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
         });
-        const move = useMove<Rect, Pose>(adapter);
         return (
           <Canvas
             width={50}
             height={50}
             layers={{}}
-            move={move}
+            adapter={adapter}
             clientToWorld={C2W}
             hitBody={() => 'override'}
             onBodyHit={onBodyHit}
@@ -257,9 +252,6 @@ describe('<Canvas>', () => {
     it('default boundsOf folds move overlay → adapter fallback for resizeTarget', () => {
       // Verify by observing that resize.start fires with adapter pose when
       // selection has a single id — that path needs boundsOf.
-      // We capture by spying on resize.start via a custom resizeTarget.
-      // Easier: assert default boundsOf returns adapter pose by exercising
-      // single-selection resize-handle hit. Use selection initial=['a'].
       const startSpy = vi.fn();
       function Harness() {
         const rectsRef = useRef<Rect[]>([{ id: 'a', x: 10, y: 10, width: 40, height: 40 }]);
@@ -268,21 +260,14 @@ describe('<Canvas>', () => {
           setItems: () => {},
           toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
         });
-        const move = useMove<Rect, Pose>(adapter);
-        const resize = useResize<Rect, Pose>(adapter, {});
-        // wrap resize so we can observe start args without losing adapter
-        const wrappedResize = { ...resize, start: (...args: Parameters<typeof resize.start>) => {
-          startSpy(...args);
-          resize.start(...args);
-        } };
         const sel = useSelection({ initial: ['a'] });
         return (
           <Canvas
             width={100}
             height={100}
             layers={{}}
-            move={move}
-            resize={wrappedResize}
+            adapter={adapter}
+            resizeOptions={{ behaviors: [{ onStart: (ctx) => startSpy(ctx.draggedIds[0]) }] }}
             selection={sel}
             clientToWorld={C2W}
             handleHitRadius={8}
@@ -311,20 +296,14 @@ describe('<Canvas>', () => {
           setItems: () => {},
           toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
         });
-        const move = useMove<Rect, Pose>(adapter);
-        const resize = useResize<Rect, Pose>(adapter, {});
-        const wrappedResize = { ...resize, start: (...args: Parameters<typeof resize.start>) => {
-          startSpy(...args);
-          resize.start(...args);
-        } };
         const sel = useSelection({ initial: ['a'] });
         return (
           <Canvas
             width={1000}
             height={1000}
             layers={{}}
-            move={move}
-            resize={wrappedResize}
+            adapter={adapter}
+            resizeOptions={{ behaviors: [{ onStart: (ctx) => startSpy(ctx.draggedIds[0]) }] }}
             selection={sel}
             boundsOf={explicit}
             clientToWorld={C2W}
@@ -370,34 +349,7 @@ describe('<Canvas>', () => {
         setItems: () => {},
         toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
       });
-      const move = useMove<Rect, Pose>(adapter);
-      // When overriding resize, replicate Canvas's multi-mode expandIds so
-      // useResize's internal expansion still recognizes the synthetic id.
-      const selRef = useRef<{ get: () => string[] } | null>(null);
-      const resize = useResize<Rect, Pose>(adapter, {
-        expandIds: (ids) => {
-          if (ids.length === 1 && ids[0] === '__weasel:multi-selection') {
-            return selRef.current?.get() ?? ids;
-          }
-          return ids;
-        },
-      });
-      const wrappedMove = {
-        ...move,
-        start: (args: Parameters<typeof move.start>[0]) => {
-          props.moveStart?.(args.ids);
-          move.start(args);
-        },
-      };
-      const wrappedResize = {
-        ...resize,
-        start: (...args: Parameters<typeof resize.start>) => {
-          props.resizeStart?.(args[0]);
-          resize.start(...args);
-        },
-      };
       const sel = useSelection({ initial: props.initial, mode: props.mode === 'multi' ? 'multi' : 'single' });
-      selRef.current = sel;
       props.onSelChange?.(sel.current);
       return (
         <Canvas
@@ -405,8 +357,8 @@ describe('<Canvas>', () => {
           height={50}
           layers={{}}
           adapter={adapter}
-          move={wrappedMove}
-          resize={wrappedResize}
+          moveOptions={{ behaviors: [{ onStart: (ctx) => props.moveStart?.(ctx.draggedIds) }] }}
+          resizeOptions={{ behaviors: [{ onStart: (ctx) => props.resizeStart?.(ctx.draggedIds[0]) }] }}
           selection={sel}
           selectionMode={props.mode}
           clientToWorld={C2W}
@@ -465,7 +417,10 @@ describe('<Canvas>', () => {
       expect(sawAB).toBe(true);
       // click on a (already selected, no shift) → selection unchanged, drag whole set
       nextWorld = [10, 10];
-      fireEvent.pointerDown(canvas);
+      fireEvent.pointerDown(canvas, { clientX: 0, clientY: 0 });
+      // Cross drag threshold so the move behavior fires onStart.
+      nextWorld = [20, 20];
+      fireEvent.pointerMove(canvas, { clientX: 10, clientY: 10 });
       const lastMoveIds = moveIds[moveIds.length - 1];
       expect(new Set(lastMoveIds)).toEqual(new Set(['a', 'b']));
     });
@@ -479,7 +434,10 @@ describe('<Canvas>', () => {
       canvas.setPointerCapture = vi.fn();
       // (75, 25): inside union of a (0..50) and c (200..250) horizontally? a..c union: x in [0,250]. 75 is in union but in the gap between rects.
       nextWorld = [75, 25];
-      fireEvent.pointerDown(canvas);
+      fireEvent.pointerDown(canvas, { clientX: 0, clientY: 0 });
+      // Cross drag threshold so the move behavior fires onStart.
+      nextWorld = [85, 35];
+      fireEvent.pointerMove(canvas, { clientX: 10, clientY: 10 });
       expect(moveIds.length).toBe(1);
       expect(new Set(moveIds[0])).toEqual(new Set(['a', 'c']));
     });
@@ -528,14 +486,12 @@ describe('<Canvas>', () => {
           setItems: () => {},
           toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
         });
-        const move = useMove<Rect, Pose>(adapter);
         return (
           <Canvas
             width={300}
             height={50}
             layers={{}}
             adapter={adapter}
-            move={move}
             selectionMode="none"
             clientToWorld={C2W}
             onBodyHit={onBodyHit}

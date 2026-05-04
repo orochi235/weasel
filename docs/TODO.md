@@ -7,6 +7,33 @@ for cross-app reuse, not consumer-app value.
 For history of completed work that pre-dates extraction, see `git log` and
 the dated specs/plans under `specs/` and `plans/`.
 
+## WebGL backend rewrite (exploratory, unscheduled)
+
+Spec: `docs/specs/2026-05-03-webgl-backend-design.md`. Full renderer rewrite from Canvas 2D to WebGL2. Not on the schedule — go-criteria documented in the spec ("when at least two are true"). When pursued:
+
+- WebGPU backend after WebGL ships (separate future spec).
+- Worker-thread offload via `OffscreenCanvas` rendering in a worker — major perf win, significant API complexity. Defer until single-thread GL is shipped and measured.
+- Print/SVG export. 2D backend supports these for free via context swap; GL doesn't. Need a parallel SVG export path or 2D fallback for export.
+- Custom shader API for consumers. The `kind: 'shader'` DrawCommand exists in the spec but its public surface (program registration, uniform binding) needs its own design pass.
+- Exotic composite operations (xor, custom Porter-Duff) via framebuffer pingpong — deferred from v1 GL.
+- WebGL1 fallback — out of scope; WebGL2 only.
+- Headless server-side rendering (Node + headless-gl) — possible but not a v1 commitment.
+
+## weasel-den deferrals
+
+From `docs/specs/2026-05-03-weasel-den-design.md`:
+
+- **Versioned default keybindings.** Post-1.0, support `useStandardTools({ keybindings: 'v1' })` so default-keybinding changes don't break existing consumers. v1 locks them in.
+- **Additional packs.** `useDiagramPack` (connectors, snap-to-grid), `useWhiteboardPack` (sticky notes, freeform pen, text), `usePresentationPack` (frame tools, slide nav). Add per real consumer demand.
+- **Migrate `useSelectTool` / `useInsertTool` / `useTextTool` / `useUserPenTool` to weasel-den.** Defer until each is stable post-overlay-channel work and any further Tool API iteration. They're staying in core to keep being canonical examples for primitive design.
+- **Runtime plugin discovery.** Explicit non-goal in v1 — tools register statically via `useTools({ registry })`. Add when external authors want to ship tools without app rebuild.
+- **Public third-party extension SDK.** Deliberate exports happen during the split, but no marketing or stability guarantees yet.
+- **Per-workspace pre-commit narrowing.** Pre-commit hook should run only the workspace whose files changed (lint-staged dispatcher). Dispatcher script can land after the initial split.
+
+## Eric audit (post weasel-den or at next break)
+
+Eric (`~/src/eric`) is the side app weasel was extracted from; per project memory it remains the reference for prior-art demos and interaction patterns. Audit eric for parity with current weasel — verify it still builds against the published surface, check what divergent local copies of kit code (if any) need merging back. Trigger: user wants to implement container-layout strategies in eric next, and that's a candidate exercise for weasel's container/layout primitives.
+
 ## Top of queue — Debug overlay primitives (dev-mode system layers)
 
 Hitbox/handle/bounds visualization for kit and consumer code. Likely shape: a `createDebugOverlayLayer({ show: { hitboxes?, handles?, bounds?, poseOrigins? } })` factory that emits a `space: 'screen'` `RenderLayer` reading from the same hit-test/handle data the interaction hooks already compute. Dev-only — gated by a flag (NODE_ENV check or explicit prop) so it tree-shakes out of prod bundles. Open: whether the overlay reads via a side channel (hit-test hook exposes its rects) or by re-running hit math purely for visualization. First consumer is the kit's own demos / debugging during Phase 2c chrome work.
@@ -28,6 +55,7 @@ Small items surfaced during Phase 2a/2b/2c shakedown:
 - **Function-form `cursor` support on `<Canvas>`.** `defineTool` already accepts `cursor: string | (ctx) => string` and `useHandTool` defines the function form (`grab` ↔ `grabbing`). But `Canvas.tsx`'s `resolveToolsCursor` only handles the string form (line 599: `// Function form requires a ctx; defer to Phase 2.`). Result: hand-tool cursor never updates in demos. Wire it up — needs a `ctx` shape to call the function with. Likely simplest: pass the same `toolsCtxBase` Canvas already builds for the dispatcher, with a default `scratch` derived from the active tool's in-flight gesture state (or `null` if no gesture).
 - **Re-evaluate select-on-pointerdown timing.** Phase 2a select tool selects on down to preserve UX; consider deferring selection to threshold post-merge so a click-without-drag on background doesn't immediately clear.
 - **`resizeOverlayStyle` / `rotateOverlayStyle` options on `useSelectTool`.** Spec (`docs/specs/2026-05-03-tool-overlay-channel-design.md`) lists these alongside `areaSelectOverlayStyle`/`moveOverlayStyle`, but the resize and rotate ghost paths currently have no style-shaped fields beyond `ghostAlpha` (shared via `moveOverlayStyle`). Skipped in Task 4 — add when a real consumer asks for distinct alpha/tint per gesture mode.
+- **Drop scene-layer overlay fold-in once the legacy `tool="select"` shorthand is removed.** Task 10 of the tool-overlay-channel plan kept `buildSceneLayer` folding `moveOverlay`/`resizeOverlay`/`rotateOverlay` into the committed pose, plus the `effectivePoseOf` / `baseBoundsOf` closures and the internal `useMove`/`useResize`/`useRotate`/`useInsert`/`useAreaSelect` calls. They're still wired because `usePointerGestures` (driven by the legacy `tool="..."` prop) consumes those controllers. After Task 11 strips the prop, drop the gesture-controller hooks from `Canvas.tsx` and trim the scene fold so it draws committed poses only — the active Tool's overlay handles ghosts.
 - **Swillustrator demo (full 5-tool palette).** *Shipped.* All five tools landed (select + insert-rect + text + pen + hand). Pen ships as `useUserPenTool` + `createPenPreviewLayer` — see `docs/specs/2026-05-03-pen-tool-design.md`.
 
 ### Pen tool follow-ups (deferred from `docs/specs/2026-05-03-pen-tool-design.md`)

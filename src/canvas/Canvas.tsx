@@ -18,8 +18,6 @@ import type { ToolsApi } from '../tools/useTools';
 import type { ToolsDispatcher } from '../tools/dispatcher';
 import type { Op } from '../core/ops/types';
 import type { View } from '../features/viewport/view';
-import { viewToTransform } from '../features/viewport/view';
-import { worldToScreen } from '../features/viewport/viewTransform';
 import { runLayers, type RenderLayer } from '../core/layers/render';
 import { setupCanvasDpr } from '../features/viewport/pixelDensity';
 import {
@@ -32,18 +30,15 @@ import {
   type UseSelectionOptions,
 } from '../features/selection/useSelection';
 import { useMove } from '../interactions/gestures/move/move';
-import type { MoveController, UseMoveOptions } from '../interactions/gestures/move/move';
+import type { UseMoveOptions } from '../interactions/gestures/move/move';
 import { useResize } from '../interactions/gestures/resize/resize';
-import type { ResizeController, UseResizeOptions } from '../interactions/gestures/resize/resize';
+import type { UseResizeOptions } from '../interactions/gestures/resize/resize';
 import { useRotate } from '../interactions/gestures/rotate/rotate';
-import type { RotateController, UseRotateOptions } from '../interactions/gestures/rotate/rotate';
+import type { UseRotateOptions } from '../interactions/gestures/rotate/rotate';
 import { useInsert } from '../interactions/gestures/insert/insert';
-import type { InsertController, UseInsertOptions } from '../interactions/gestures/insert/insert';
+import type { UseInsertOptions } from '../interactions/gestures/insert/insert';
 import { useAreaSelect } from '../interactions/gestures/area-select/areaSelect';
-import type {
-  AreaSelectController,
-  UseAreaSelectOptions,
-} from '../interactions/gestures/area-select/areaSelect';
+import type { UseAreaSelectOptions } from '../interactions/gestures/area-select/areaSelect';
 import { useArrayAdapter, type UseArrayAdapterOptions } from '../core/adapters/useArrayAdapter';
 import { useDelete } from '../interactions/actions/delete';
 import { useNudge } from '../interactions/actions/nudge';
@@ -81,8 +76,6 @@ import {
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../interactions/gestures/resize/geometry';
 import { pathPoseDescriptor } from '../features/paths/poseDescriptor';
 import type {
-  AreaSelectOverlay,
-  InsertOverlay,
   MoveOverlay,
   ResizeOverlay,
   RotateOverlay,
@@ -108,11 +101,7 @@ export const STANDARD_SLOTS = [
   'grid',
   'cellHighlight',
   'scene',
-  'moveOverlay',
-  'resizeOverlay',
   'selectionOverlay',
-  'insertOverlay',
-  'areaSelectOverlay',
   'anchorEditOverlay',
 ] as const;
 /** Names of the slots `<Canvas>` supports out of the box (excluding the implicit cell-highlight overlay). */
@@ -138,33 +127,8 @@ export interface SceneSlotConfig<TObject extends { id: string }, TPose> {
   ghostAlpha?: number;
 }
 
-/** Move-overlay slot config. */
-export interface MoveOverlaySlotConfig {
-  /** Ghost alpha override (otherwise scene's `ghostAlpha` is used). */
-  ghostAlpha?: number;
-}
-export type ResizeOverlaySlotConfig = Record<string, never>;
-
-/** Insert-overlay slot config — visual options for the live drag-rectangle. */
-export interface InsertOverlaySlotConfig {
-  fill?: string;
-  stroke?: string;
-  /** Dash pattern. Default `[4, 4]`. Pass `[]` for a solid stroke. */
-  dash?: number[];
-  /** Stroke width in world pixels. Default 1. */
-  lineWidth?: number;
-}
-
 /** Anchor-edit-overlay slot config — visual options for anchor + control circles. */
 export type AnchorEditOverlaySlotConfig = Omit<AnchorEditOverlayOpts, 'getOverlay'>;
-
-/** Area-select-overlay slot config — visual options for the marquee. */
-export interface AreaSelectOverlaySlotConfig {
-  fill?: string;
-  stroke?: string;
-  dash?: number[];
-  lineWidth?: number;
-}
 
 /** Selection-overlay slot config — passed through to `createSelectionOverlayLayer`,
  *  minus the `getSelection`/`getPose` Canvas wires automatically. */
@@ -190,11 +154,7 @@ export interface CustomLayerEntry {
 export type StandardSlotConfig<TObject extends { id: string }, TPose> =
   | GridSlotConfig
   | SceneSlotConfig<TObject, TPose>
-  | MoveOverlaySlotConfig
-  | ResizeOverlaySlotConfig
   | SelectionOverlaySlotConfig<TPose>
-  | InsertOverlaySlotConfig
-  | AreaSelectOverlaySlotConfig
   | AnchorEditOverlaySlotConfig;
 
 export type LayerSlotValue<TObject extends { id: string }, TPose> =
@@ -205,11 +165,7 @@ export type LayerSlotValue<TObject extends { id: string }, TPose> =
 export type LayersMap<TObject extends { id: string }, TPose> = {
   grid?: GridSlotConfig | null;
   scene?: SceneSlotConfig<TObject, TPose> | null;
-  moveOverlay?: MoveOverlaySlotConfig | null;
-  resizeOverlay?: ResizeOverlaySlotConfig | null;
   selectionOverlay?: SelectionOverlaySlotConfig<TPose> | null;
-  insertOverlay?: InsertOverlaySlotConfig | null;
-  areaSelectOverlay?: AreaSelectOverlaySlotConfig | null;
   anchorEditOverlay?: AnchorEditOverlaySlotConfig | null;
 } & {
   [customKey: string]: LayerSlotValue<TObject, TPose> | undefined;
@@ -289,16 +245,11 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   /** Layer map. See module docstring for slot semantics. */
   layers: LayersMap<TObject, TPose>;
 
-  // --- Internal hook overrides / configuration ---
-  move?: MoveController<TObject, TPose>;
+  // --- Internal hook configuration ---
   moveOptions?: UseMoveOptions<TPose>;
-  resize?: ResizeController<TObject, TPose>;
   resizeOptions?: UseResizeOptions<TPose>;
-  rotate?: RotateController<TObject, TPose>;
   rotateOptions?: UseRotateOptions<TPose>;
-  insert?: InsertController<TObject, TPose>;
   insertOptions?: UseInsertOptions<TPose>;
-  areaSelect?: AreaSelectController;
   areaSelectOptions?: UseAreaSelectOptions;
   /** Wire anchor-edit mode. `true` enables defaults; an object overrides
    *  options. When wired, double-clicking a polygon-shaped object enters
@@ -524,103 +475,6 @@ function buildSceneLayer<TObject extends { id: string }, TPose>(
   };
 }
 
-function buildMoveOverlayLayer<TObject extends { id: string }, TPose>(
-  scene: SceneSlotConfig<TObject, TPose>,
-  adapter: (MoveAdapter<TObject, TPose> & ResizeAdapter<TObject, TPose>) | undefined,
-  moveOverlay: MoveOverlay<TPose> | null,
-  alpha: number,
-): RenderLayer<unknown> | null {
-  if (!moveOverlay) return null;
-  const drawOne = scene.drawOne;
-  return {
-    id: 'move-ghost',
-    label: 'Move ghost',
-    draw: (ctx, _data, view) => {
-      if (moveOverlay.draggedIds.length === 0) return;
-      const objects = scene.objects ?? adapter?.getObjects() ?? [];
-      // Walk objects in scene render order so cascaded descendants (carried
-      // in moveOverlay.poses but not in draggedIds) draw above their
-      // ancestors when their layer is above. Drawing draggedIds in isolation
-      // would lose parent/child z-order.
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      for (const obj of objects) {
-        const pose = moveOverlay.poses.get(obj.id);
-        if (pose === undefined) continue;
-        drawOne(ctx, obj, pose, view);
-      }
-      ctx.restore();
-    },
-  };
-}
-
-function buildInsertOverlayLayer(
-  cfg: InsertOverlaySlotConfig | null | undefined,
-  overlay: InsertOverlay<unknown> | null,
-): RenderLayer<unknown> | null {
-  if (!overlay) return null;
-  const fill = cfg?.fill ?? 'rgba(127, 176, 105, 0.25)';
-  const stroke = cfg?.stroke ?? '#7fb069';
-  const dash = cfg?.dash ?? [4, 4];
-  const lineWidth = cfg?.lineWidth ?? 1;
-  return {
-    id: 'insert-overlay',
-    label: 'Insert overlay',
-    space: 'screen',
-    draw: (ctx, _data, view) => {
-      const t = viewToTransform(view);
-      const { x, y, width: w, height: h } = overlay.bounds;
-      const [sx, sy] = worldToScreen(x, y, t);
-      const sw = w * view.scale;
-      const sh = h * view.scale;
-      ctx.save();
-      ctx.fillStyle = fill;
-      ctx.fillRect(sx, sy, sw, sh);
-      ctx.strokeStyle = stroke;
-      ctx.lineWidth = lineWidth;
-      ctx.setLineDash(dash);
-      ctx.strokeRect(sx, sy, sw, sh);
-      ctx.setLineDash([]);
-      ctx.restore();
-    },
-  };
-}
-
-function buildAreaSelectOverlayLayer(
-  cfg: AreaSelectOverlaySlotConfig | null | undefined,
-  overlay: AreaSelectOverlay | null,
-): RenderLayer<unknown> | null {
-  if (!overlay) return null;
-  const fill = cfg?.fill ?? 'rgba(164, 139, 212, 0.18)';
-  const stroke = cfg?.stroke ?? '#a48bd4';
-  const dash = cfg?.dash ?? [3, 3];
-  const lineWidth = cfg?.lineWidth ?? 1;
-  return {
-    id: 'area-select-overlay',
-    label: 'Area select overlay',
-    space: 'screen',
-    draw: (ctx, _data, view) => {
-      const t = viewToTransform(view);
-      const x = Math.min(overlay.start.worldX, overlay.current.worldX);
-      const y = Math.min(overlay.start.worldY, overlay.current.worldY);
-      const w = Math.abs(overlay.current.worldX - overlay.start.worldX);
-      const h = Math.abs(overlay.current.worldY - overlay.start.worldY);
-      const [sx, sy] = worldToScreen(x, y, t);
-      const sw = w * view.scale;
-      const sh = h * view.scale;
-      ctx.save();
-      ctx.fillStyle = fill;
-      ctx.fillRect(sx, sy, sw, sh);
-      ctx.strokeStyle = stroke;
-      ctx.lineWidth = lineWidth;
-      ctx.setLineDash(dash);
-      ctx.strokeRect(sx, sy, sw, sh);
-      ctx.setLineDash([]);
-      ctx.restore();
-    },
-  };
-}
-
 function resolveToolsCursor(tools: ToolsApi): string | undefined {
   const id = tools.modifierEngaged ?? tools.active;
   const tool = tools.registry[id];
@@ -640,15 +494,10 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     adapter: adapterProp,
     selectionMode = 'single',
     layers: layersMap,
-    move: moveOverride,
     moveOptions,
-    resize: resizeOverride,
     resizeOptions,
-    rotate: rotateOverride,
     rotateOptions,
-    insert: insertOverride,
     insertOptions,
-    areaSelect: areaSelectOverride,
     areaSelectOptions,
     editAnchors: editAnchorsProp,
     editAnchorsController: editAnchorsOverride,
@@ -1002,17 +851,15 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   });
   const editAnchorsCtl = editAnchorsOverride ?? (editAnchorsEnabled ? internalEditAnchors : undefined);
 
-  const move = moveOverride ?? (adapter ? internalMove : undefined);
-  const resize = resizeOverride ?? (adapter ? internalResize : undefined);
-  const rotate = rotateOverride ?? (adapter ? internalRotate : undefined);
-  const insert = insertOverride ?? (adapter ? internalInsert : undefined);
-  const areaSelect = areaSelectOverride ?? (adapter ? internalAreaSelect : undefined);
+  const move = adapter ? internalMove : undefined;
+  const resize = adapter ? internalResize : undefined;
+  const rotate = adapter ? internalRotate : undefined;
+  const insert = adapter ? internalInsert : undefined;
+  const areaSelect = adapter ? internalAreaSelect : undefined;
 
   const moveOverlay = move?.overlay ?? null;
   const resizeOverlay = resize?.overlay ?? null;
   const rotateOverlay = rotate?.overlay ?? null;
-  const insertOverlay = insert?.overlay ?? null;
-  const areaSelectOverlay = areaSelect?.overlay ?? null;
 
   const baseHitBody = useMemo(() => {
     if (hitBody) return hitBody;
@@ -1323,18 +1170,6 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       );
     }
 
-    const moveSlot = layersMap.moveOverlay as MoveOverlaySlotConfig | null | undefined;
-    if (moveSlot !== null && sceneCfg) {
-      const alpha =
-        (moveSlot as MoveOverlaySlotConfig | undefined)?.ghostAlpha ?? sceneCfg.ghostAlpha ?? 0.85;
-      const ghost = buildMoveOverlayLayer(sceneCfg, adapter, moveOverlay, alpha);
-      if (ghost) standardLayers.moveOverlay = ghost;
-    }
-
-    // resizeOverlay slot: the scene fold-in already paints the resized pose,
-    // so this slot is currently a no-op hook point. Reserved for a future
-    // standalone ghost rendering pass; intentionally not built here.
-
     const selSlot = layersMap.selectionOverlay as
       | SelectionOverlaySlotConfig<TPose>
       | null
@@ -1396,18 +1231,6 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       });
     }
 
-    const insertSlot = layersMap.insertOverlay as InsertOverlaySlotConfig | null | undefined;
-    if (insertSlot !== null) {
-      const layer = buildInsertOverlayLayer(insertSlot, insertOverlay);
-      if (layer) standardLayers.insertOverlay = layer;
-    }
-
-    const areaSlot = layersMap.areaSelectOverlay as AreaSelectOverlaySlotConfig | null | undefined;
-    if (areaSlot !== null) {
-      const layer = buildAreaSelectOverlayLayer(areaSlot, areaSelectOverlay);
-      if (layer) standardLayers.areaSelectOverlay = layer;
-    }
-
     const anchorEditSlot = layersMap.anchorEditOverlay as AnchorEditOverlaySlotConfig | null | undefined;
     if (anchorEditSlot !== null && editAnchorsCtl) {
       standardLayers.anchorEditOverlay = createAnchorEditOverlayLayer({
@@ -1453,7 +1276,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       out.push(...tools.getActiveOverlays());
     }
     return out;
-  }, [layersMap, adapter, moveOverlay, resizeOverlay, rotateOverlay, insertOverlay, areaSelectOverlay, selectedIds, effectiveBoundsOf, multiActive, unionOfSelection, editingAnchors, editAnchorsCtl, editAnchorsCtl?.overlay, debugSink, tools]);
+  }, [layersMap, adapter, moveOverlay, resizeOverlay, rotateOverlay, selectedIds, effectiveBoundsOf, multiActive, unionOfSelection, editingAnchors, editAnchorsCtl, editAnchorsCtl?.overlay, debugSink, tools]);
 
   // Append the debug overlay layer at the very top of the stack when debug
   // is enabled. The layer reads from `debugSink.snapshot()` and paints in

@@ -91,8 +91,6 @@ export type {
   CanvasSelectionMode,
   StandardSlotName,
   CustomLayerEntry,
-  InsertOverlaySlotConfig,
-  AreaSelectOverlaySlotConfig,
 } from './canvas/Canvas';
 export { useSelection } from './features/selection/useSelection';
 export type {
