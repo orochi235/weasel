@@ -16,6 +16,7 @@ import {
 import type { ModifierState } from './gestures/types';
 import type { SelectionApi } from '../features/selection/useSelection';
 import type { View } from '../features/viewport/view';
+import type { DebugSink, HitShape } from '../debug/types';
 
 interface Bounds {
   x: number;
@@ -137,6 +138,12 @@ export interface UsePointerGesturesOptions<TMovePose, TResizePose> {
   /** Called when the pointer hits neither a handle nor a body. Defaults to
    *  `selection.clear()` when `selection` is supplied. */
   onTapEmpty?: (ctx: PointerGestureCallbackCtx) => void;
+
+  /** Optional debug sink for the overlay subsystem. When supplied, body
+   *  hit-test results record one `recordHitbox(id, 'body', rect)` per id
+   *  that `hitBody` returns — visualises which body shapes the kit
+   *  evaluated as hit. Tree-shakes when omitted (optional-chain). */
+  debug?: DebugSink;
 }
 
 /**
@@ -176,6 +183,7 @@ export function usePointerGestures<TMovePose, TResizePose>(
     boundsOf,
     onBodyHit,
     onTapEmpty,
+    debug,
   } = options;
 
   // Resolve resizeTarget: explicit > selection-derived
@@ -303,6 +311,21 @@ export function usePointerGestures<TMovePose, TResizePose>(
         const hit = hitBody(wx, wy);
         if (hit !== null) {
           const hitIds = Array.isArray(hit) ? hit : [hit];
+          // Record body hitboxes for the overlay. `if (debug)` (not just
+          // optional-chain) because we derive a rect via `boundsOf` per id
+          // — wrap the derivation so the per-iteration cost is zero when
+          // debug is off.
+          if (debug && boundsOf) {
+            for (const id of hitIds) {
+              const b = boundsOf(id);
+              if (b) {
+                const shape: HitShape = {
+                  kind: 'rect', x: b.x, y: b.y, width: b.width, height: b.height,
+                };
+                debug.recordHitbox(id, 'body', shape);
+              }
+            }
+          }
           // Fire onBodyHit (explicit > selection-default).
           if (onBodyHit) {
             onBodyHit(hitIds, ctx);
@@ -368,9 +391,11 @@ export function usePointerGestures<TMovePose, TResizePose>(
       handleHitRadius,
       getView,
       hitBody,
+      boundsOf,
       selection,
       onBodyHit,
       onTapEmpty,
+      debug,
     ],
   );
 

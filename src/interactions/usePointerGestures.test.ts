@@ -338,3 +338,48 @@ describe('usePointerGestures — resizeTarget derivation', () => {
     expect((resize.start as ReturnType<typeof vi.fn>).mock.calls[0][0]).toBe('explicit');
   });
 });
+
+import { createDebugSink } from '../debug/createDebugSink';
+
+describe('usePointerGestures — debug recording', () => {
+  it('records a body hitbox for each id returned by hitBody', () => {
+    const sink = createDebugSink({ hitboxes: true });
+    const hitBody = () => 'a';
+    const boundsOf = (id: string) =>
+      id === 'a' ? { x: 0, y: 0, width: 50, height: 30 } : null;
+    const { result } = renderHook(() =>
+      usePointerGestures({
+        clientToWorld: IDENTITY_C2W,
+        hitBody,
+        boundsOf,
+        debug: sink,
+      }),
+    );
+    const canvas = makeCanvas();
+    act(() => {
+      result.current.onPointerDown(makePointer(canvas, { clientX: 10, clientY: 10 }));
+    });
+    const hits = sink.snapshot().hitboxes;
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits[0].kind).toBe('body');
+    expect(hits[0].id).toBe('a');
+  });
+
+  it('does not throw when debug sink is omitted', () => {
+    const hitBody = () => 'a';
+    const boundsOf = () => ({ x: 0, y: 0, width: 50, height: 30 });
+    const { result } = renderHook(() =>
+      usePointerGestures({
+        clientToWorld: IDENTITY_C2W,
+        hitBody,
+        boundsOf,
+      }),
+    );
+    const canvas = makeCanvas();
+    expect(() => {
+      act(() => {
+        result.current.onPointerDown(makePointer(canvas, { clientX: 10, clientY: 10 }));
+      });
+    }).not.toThrow();
+  });
+});

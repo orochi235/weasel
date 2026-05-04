@@ -1191,6 +1191,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     clientToWorld,
     handleHitRadius,
     getView: () => viewRef.current,
+    debug: debugSink ?? undefined,
   });
 
   // Keyboard routing through the dispatcher when tools is set.
