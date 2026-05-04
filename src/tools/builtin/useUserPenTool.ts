@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useReducer, useRef } from 'react';
 import { defineTool } from '../defineTool';
 import type { Tool, ToolCtx } from '../types';
 import { PathBuilder } from '../../features/paths/builder';
@@ -161,6 +161,18 @@ export function useUserPenTool<TPose>(
   const optsRef = useRef({ wrapPath, adapter, autoSelect, closeHitRadius });
   optsRef.current = { wrapPath, adapter, autoSelect, closeHitRadius };
 
+  // Scratch is a mutable ref (so click-by-click state survives the
+  // dispatcher's per-gesture initScratch contract). Mutations alone don't
+  // trigger React re-renders, so Canvas never re-paints and the preview
+  // layer stays invisible until something else (e.g. commit) bumps host
+  // state. Force a render after every scratch mutation so the host's
+  // <Canvas layers={{...}}> literal gets a new identity and the paint
+  // useEffect fires. Pull the trigger via ref so the memoized Tool record
+  // doesn't need to rebuild.
+  const [, forceRender] = useReducer((x: number) => x + 1, 0);
+  const forceRenderRef = useRef(forceRender);
+  forceRenderRef.current = forceRender;
+
   return useMemo(() => {
     function commit(s: PenScratch): void {
       const trailing = s.current && s.current.anchors.length > 0 ? s.current : null;
@@ -211,6 +223,7 @@ export function useUserPenTool<TPose>(
             alt: ctx.modifiers.alt,
             shift: ctx.modifiers.shift,
           };
+          forceRenderRef.current();
           return 'claim';
         },
 
@@ -230,6 +243,7 @@ export function useUserPenTool<TPose>(
               s.finishedSubpaths.push(s.current);
               s.current = null;
               s.closeHintActive = false;
+              forceRenderRef.current();
               return 'claim';
             }
           }
@@ -237,6 +251,7 @@ export function useUserPenTool<TPose>(
           // Otherwise: append a corner anchor (start a new subpath if needed).
           if (!s.current) s.current = { anchors: [], closed: false };
           s.current.anchors.push({ x: wx, y: wy });
+          forceRenderRef.current();
           return 'claim';
         },
       },
@@ -255,6 +270,7 @@ export function useUserPenTool<TPose>(
           if (down?.alt) {
             s.current.anchors[s.draggingHandleAt].altBroken = true;
           }
+          forceRenderRef.current();
           return 'claim';
         },
 
@@ -269,6 +285,7 @@ export function useUserPenTool<TPose>(
             s.cursor = { x: ctx.worldX, y: ctx.worldY };
             updateCloseHint(s, ctx.view);
           }
+          forceRenderRef.current();
           return 'claim';
         },
 
@@ -282,12 +299,14 @@ export function useUserPenTool<TPose>(
             s.draggingHandleAt = null;
             s._pendingDown = null;
           }
+          forceRenderRef.current();
           return 'claim';
         },
 
         onCancel: (ctx) => {
           ctx.scratch.draggingHandleAt = null;
           ctx.scratch._pendingDown = null;
+          forceRenderRef.current();
         },
       },
 
@@ -300,11 +319,13 @@ export function useUserPenTool<TPose>(
               s.finishedSubpaths.reduce((n, sp) => n + sp.anchors.length, 0);
             if (totalAnchors === 0) return 'pass';
             commit(s);
+            forceRenderRef.current();
             return 'claim';
           }
           if (e.key === 'Escape') {
             if (s.current === null && s.finishedSubpaths.length === 0) return 'pass';
             resetScratch(s);
+            forceRenderRef.current();
             return 'claim';
           }
           return 'pass';
