@@ -2,6 +2,7 @@
 import type { SelectionApi } from '../features/selection/useSelection';
 import type { Op } from '../core/ops/types';
 import type { View } from '../features/viewport/view';
+import type { RenderLayer } from '../core/layers/render';
 
 /** Outcome of a channel handler. `'claim'` stops dispatch for this event;
  *  `'pass'` lets the next slot try. Handlers that return nothing are
@@ -84,6 +85,13 @@ export interface Tool<TScratch = unknown> {
   keyboard?: KeyboardChannel<TScratch>;
   wheel?: WheelChannel<TScratch>;
   cursor?: string | ((ctx: ToolCtx<TScratch>) => string);
+  /** Optional overlay layer rendered on top of the scene/chrome whenever
+   *  this tool is in any active slot (active, modifier, or alwaysOn).
+   *  The layer's `draw` function reads from this tool's scratch via React
+   *  closure (re-evaluated each render). Return early from `draw` to render
+   *  nothing — typically gated on a scratch field like
+   *  `if (!scratch.overlay) return`. */
+  overlay?: RenderLayer<unknown>;
 }
 
 /** Internal — which slot a tool occupies in the dispatch order. */
