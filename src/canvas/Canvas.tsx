@@ -89,6 +89,10 @@ import type {
   SnapStrategy,
 } from '../interactions/gestures/types';
 import { snap as snapBehavior } from '../interactions/gestures/shared/snap';
+import type { DebugConfig, DebugSink, DebugSnapshot } from '../debug/types';
+import { parseDebugFlags } from '../debug/parseDebugFlags';
+import { createDebugSink } from '../debug/createDebugSink';
+import { createDebugOverlayLayer } from '../debug/createDebugOverlayLayer';
 
 interface Bounds {
   x: number;
@@ -369,6 +373,18 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
    *  scene. Both lookups apply when an id is in the active overlay; otherwise
    *  they fall back to the adapter. */
   helpersRef?: React.MutableRefObject<CanvasHelpers<TPose> | null>;
+
+  /**
+   * Debug overlay configuration.
+   *  - `undefined` (default): read `?debug=…` from the URL.
+   *  - `false`: force off, ignore URL.
+   *  - `DebugConfig` object: force on with that config, ignore URL.
+   *
+   * When enabled, the Canvas appends a screen-space `debug-overlay` layer
+   * at the top of the layer stack and threads a `DebugSink` into every
+   * interaction hook so they record hit math + handle positions.
+   */
+  debug?: DebugConfig | false;
 }
 
 /** Per-action config for the `gestures` prop. */
@@ -659,7 +675,23 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     createDefault,
     poseBounds,
     intersectsRect,
+    debug: debugProp,
   } = props;
+
+  // Resolve debug config: explicit prop wins; `undefined` falls back to URL;
+  // `false` forces off.
+  const resolvedDebugConfig = useMemo<DebugConfig | null>(() => {
+    if (debugProp === false) return null;
+    if (debugProp !== undefined) return debugProp;
+    if (typeof window === 'undefined') return null;
+    return parseDebugFlags(window.location.search);
+  }, [debugProp]);
+
+  // Lazily build one sink per Canvas mount (per resolved config).
+  const debugSink = useMemo<(DebugSink & { snapshot(): DebugSnapshot }) | null>(() => {
+    if (resolvedDebugConfig === null) return null;
+    return createDebugSink(resolvedDebugConfig);
+  }, [resolvedDebugConfig]);
 
   // Synthesized arrayAdapter when `adapter` is omitted but `items`/`setItems`/
   // `toPose` are supplied. The hook always runs (rules of hooks) — when the
@@ -1395,11 +1427,24 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     return out;
   }, [layersMap, adapter, moveOverlay, resizeOverlay, rotateOverlay, insertOverlay, areaSelectOverlay, selectedIds, effectiveBoundsOf, multiActive, unionOfSelection, editingAnchors, editAnchorsCtl, editAnchorsCtl?.overlay]);
 
+  // Append the debug overlay layer at the very top of the stack when debug
+  // is enabled. The layer reads from `debugSink.snapshot()` and paints in
+  // screen space.
+  const layersWithDebug = useMemo(() => {
+    if (!debugSink || !resolvedDebugConfig) return layers;
+    return [
+      ...layers,
+      createDebugOverlayLayer({ sink: debugSink, config: resolvedDebugConfig }),
+    ];
+  }, [layers, debugSink, resolvedDebugConfig]);
+
   useEffect(() => {
     const c = canvasRef.current;
     if (!c) return;
     const ctx = c.getContext('2d');
     if (!ctx) return;
+    // Clear sink at the top of every paint so per-frame records don't leak.
+    debugSink?.beginFrame();
     setupCanvasDpr(c, ctx, width, height);
     ctx.clearRect(0, 0, width, height);
     if (background) {
@@ -1408,8 +1453,8 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       ctx.fillRect(0, 0, width, height);
       ctx.restore();
     }
-    runLayers(ctx, layers, helpersForLayers, {}, undefined, effectiveView);
-  }, [layers, width, height, background, effectiveView]);
+    runLayers(ctx, layersWithDebug, helpersForLayers, {}, undefined, effectiveView);
+  }, [layersWithDebug, width, height, background, effectiveView, debugSink]);
 
   const toolsCursor = tools ? resolveToolsCursor(tools) : undefined;
   const effectiveStyle: React.CSSProperties | undefined = toolsCursor

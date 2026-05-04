@@ -808,3 +808,68 @@ describe('Canvas viewport (Phase 2b)', () => {
     expect(onViewChange).not.toHaveBeenCalled();
   });
 });
+
+describe('Canvas debug overlay', () => {
+  function noopScene() {
+    return { drawOne: () => {} } as const;
+  }
+
+  it('debug={false} produces no overlay layer even when URL has ?debug=all', () => {
+    const original = window.location.search;
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, search: '?debug=all' },
+      writable: true,
+    });
+    try {
+      const { container } = render(
+        <Canvas
+          width={100} height={100}
+          items={[]} setItems={() => {}}
+          layers={{ scene: noopScene() }}
+          debug={false}
+        />,
+      );
+      expect(container.querySelector('canvas')).toBeTruthy();
+    } finally {
+      Object.defineProperty(window, 'location', {
+        value: { ...window.location, search: original },
+        writable: true,
+      });
+    }
+  });
+
+  it('debug={config} accepts an explicit config object', () => {
+    const { container } = render(
+      <Canvas
+        width={100} height={100}
+        items={[]} setItems={() => {}}
+        layers={{ scene: noopScene() }}
+        debug={{ bounds: true }}
+      />,
+    );
+    expect(container.querySelector('canvas')).toBeTruthy();
+  });
+
+  it('debug undefined falls back to URL parse', () => {
+    const original = window.location.search;
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, search: '?debug=bounds' },
+      writable: true,
+    });
+    try {
+      const { container } = render(
+        <Canvas
+          width={100} height={100}
+          items={[]} setItems={() => {}}
+          layers={{ scene: noopScene() }}
+        />,
+      );
+      expect(container.querySelector('canvas')).toBeTruthy();
+    } finally {
+      Object.defineProperty(window, 'location', {
+        value: { ...window.location, search: original },
+        writable: true,
+      });
+    }
+  });
+});
