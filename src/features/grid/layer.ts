@@ -72,7 +72,7 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
   return {
     id: 'grid',
     label: 'Grid',
-    draw: (ctx: CanvasRenderingContext2D) => {
+    draw: (ctx: CanvasRenderingContext2D, _data, view) => {
       const b = opts.bounds();
       if (b.width <= 0 || b.height <= 0) return;
 
@@ -83,11 +83,19 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
       const x1 = b.x + b.width;
       const y1 = b.y + b.height;
 
+      // Stroke widths in `Stroke` are screen-pixel quantities (a 1-pixel hairline
+      // shouldn't fatten as you zoom in). The world-space layer wrapper applies
+      // a `setTransform(scale, 0, 0, scale, ...)` before draw, which would
+      // otherwise blow line widths up by `scale`. Divide once here so all three
+      // sub/cell/accent passes render at the requested screen-pixel width.
+      const px = 1 / Math.max(0.0001, view?.scale ?? 1);
+
       ctx.save();
 
       // 2. Sub-lines (finest, drawn first so cell lines paint on top).
       if (subdivisions && subdivisions > 1) {
         applyStroke(ctx, sub);
+        ctx.lineWidth = (sub.width ?? 1) * px;
         const step = spacing / subdivisions;
         for (let x = x0; x <= x1 + 1e-9; x += step) {
           // Skip lines that coincide with cell lines — those will be drawn next.
@@ -104,6 +112,7 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
 
       // 3. Cell lines (skip ones that will become accents).
       applyStroke(ctx, line);
+      ctx.lineWidth = (line.width ?? 1) * px;
       let idx = 0;
       for (let x = x0; x <= x1 + 1e-9; x += spacing) {
         const isAccent = !!accentEvery && accentEvery > 0 && idx % accentEvery === 0;
@@ -120,6 +129,7 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
       // 4. Accent lines on top.
       if (accentEvery && accentEvery > 0) {
         applyStroke(ctx, accent);
+        ctx.lineWidth = (accent.width ?? 1) * px;
         idx = 0;
         for (let x = x0; x <= x1 + 1e-9; x += spacing) {
           if (idx % accentEvery === 0) drawVLine(ctx, x, y0, y1);
