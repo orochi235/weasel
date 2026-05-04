@@ -18,6 +18,8 @@ import type { ToolsApi } from '../tools/useTools';
 import type { ToolsDispatcher } from '../tools/dispatcher';
 import type { Op } from '../core/ops/types';
 import type { View } from '../features/viewport/view';
+import { viewToTransform } from '../features/viewport/view';
+import { worldToScreen } from '../features/viewport/viewTransform';
 import { runLayers, type RenderLayer } from '../core/layers/render';
 import { setupCanvasDpr } from '../features/viewport/pixelDensity';
 import {
@@ -535,15 +537,20 @@ function buildInsertOverlayLayer(
   return {
     id: 'insert-overlay',
     label: 'Insert overlay',
-    draw: (ctx) => {
+    space: 'screen',
+    draw: (ctx, _data, view) => {
+      const t = viewToTransform(view);
       const { x, y, width: w, height: h } = overlay.bounds;
+      const [sx, sy] = worldToScreen(x, y, t);
+      const sw = w * view.scale;
+      const sh = h * view.scale;
       ctx.save();
       ctx.fillStyle = fill;
-      ctx.fillRect(x, y, w, h);
+      ctx.fillRect(sx, sy, sw, sh);
       ctx.strokeStyle = stroke;
       ctx.lineWidth = lineWidth;
       ctx.setLineDash(dash);
-      ctx.strokeRect(x, y, w, h);
+      ctx.strokeRect(sx, sy, sw, sh);
       ctx.setLineDash([]);
       ctx.restore();
     },
@@ -562,18 +569,23 @@ function buildAreaSelectOverlayLayer(
   return {
     id: 'area-select-overlay',
     label: 'Area select overlay',
-    draw: (ctx) => {
+    space: 'screen',
+    draw: (ctx, _data, view) => {
+      const t = viewToTransform(view);
       const x = Math.min(overlay.start.worldX, overlay.current.worldX);
       const y = Math.min(overlay.start.worldY, overlay.current.worldY);
       const w = Math.abs(overlay.current.worldX - overlay.start.worldX);
       const h = Math.abs(overlay.current.worldY - overlay.start.worldY);
+      const [sx, sy] = worldToScreen(x, y, t);
+      const sw = w * view.scale;
+      const sh = h * view.scale;
       ctx.save();
       ctx.fillStyle = fill;
-      ctx.fillRect(x, y, w, h);
+      ctx.fillRect(sx, sy, sw, sh);
       ctx.strokeStyle = stroke;
       ctx.lineWidth = lineWidth;
       ctx.setLineDash(dash);
-      ctx.strokeRect(x, y, w, h);
+      ctx.strokeRect(sx, sy, sw, sh);
       ctx.setLineDash([]);
       ctx.restore();
     },
