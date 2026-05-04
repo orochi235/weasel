@@ -21,6 +21,7 @@ import { ZoomDemo, ZOOM_DEMO_SOURCE } from './demos/ZoomDemo';
 import { SwillustratorDemo, SWILLUSTRATOR_DEMO_SOURCE } from './demos/SwillustratorDemo';
 import { AnimationDemo, ANIMATION_DEMO_SOURCE } from './demos/AnimationDemo';
 import { LayoutDemo, LAYOUT_DEMO_SOURCE } from './demos/LayoutDemo';
+import { DebugOverlayDemo, DEBUG_OVERLAY_DEMO_SOURCE } from './demos/DebugOverlayDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
@@ -44,6 +45,7 @@ import ZoomDemoFull from './demos/ZoomDemo.tsx?raw';
 import SwillustratorDemoFull from './demos/SwillustratorDemo.tsx?raw';
 import AnimationDemoFull from './demos/AnimationDemo.tsx?raw';
 import LayoutDemoFull from './demos/LayoutDemo.tsx?raw';
+import DebugOverlayDemoFull from './demos/DebugOverlayDemo.tsx?raw';
 
 export interface DemoEntry {
   id: string;
@@ -197,8 +199,8 @@ export const DEMOS: DemoEntry[] = [
     id: 'nested-groups',
     title: 'Nested groups',
     category: 'Groups',
-    description: 'Real parent/child hierarchy via setParent. Poses are local to the direct parent; the kit composes world poses via worldPoseLookup for hit-testing and selection overlays. useNestedGroup (Mod+G) wraps the selection in a new parent node and rebases children\'s locals so their visual world position is preserved; useNestedUngroup (Mod+Shift+G) reparents children back to the grandparent. Dragging a parent auto-cascades its descendants in the live overlay so children visually follow during the drag (no extra ops — under local-pose semantics the post-commit scene is already correct). Mod+Z / Mod+Shift+Z undo and redo.',
-    hint: 'Click a green rect to grab the whole group; drag and watch its children follow. Select two free rects and press Cmd+G to group them; Cmd+Shift+G to ungroup.',
+    description: 'Real parent/child hierarchy via setParent — supports arbitrary nesting depth. The opening scene already shows three levels: g1 contains a free leaf and a sub-group g2; g2 in turn contains its own leaves. Poses are local to the direct parent; the kit composes world poses via worldPoseLookup for hit-testing and selection overlays. useNestedGroup (Mod+G) wraps the selection in a new parent node and rebases children\'s locals so their visual world position is preserved; useNestedUngroup (Mod+Shift+G) reparents children back to the grandparent. Default click resolves to the outermost ancestor; Alt-click drills one level deeper than the deepest currently-selected ancestor (so repeated Alt-clicks step group → subgroup → leaf), letting you select any node in the tree to group/ungroup at any depth. Dragging a parent auto-cascades its descendants in the live overlay so children visually follow during the drag (no extra ops — under local-pose semantics the post-commit scene is already correct). Mod+Z / Mod+Shift+Z undo and redo.',
+    hint: 'Click a leaf to grab its outermost group. Alt-click to drill in (each Alt-click steps one level deeper). Cmd+G groups the selection at any depth; Cmd+Shift+G ungroups.',
     Component: NestedGroupsDemo,
     snippet: NESTED_GROUPS_DEMO_SOURCE,
     full: NestedGroupsDemoFull,
@@ -290,6 +292,17 @@ export const DEMOS: DemoEntry[] = [
     snippet: SWILLUSTRATOR_DEMO_SOURCE,
     full: SwillustratorDemoFull,
     path: 'demo/demos/SwillustratorDemo.tsx',
+  },
+  {
+    id: 'debug-overlay',
+    title: 'Debug overlay',
+    category: 'Tools',
+    description: 'A dev-mode overlay layer that paints what the kit\'s interaction system "sees": object bounds (AABBs), pose origins, every hit-test shape, handle positions, snap candidates, and per-layer metadata. Pass a `DebugConfig` (or `true` / `"all"`) to `<Canvas debug={...}>` and the kit appends a screen-space overlay layer wired to a per-frame debug sink. Tree-shaken when `debug` is falsy/undefined; URL fallback `?debug=all` (or `?debug=bounds,handles`) reads from `location.search`. Each chip toggles a single feature so you can isolate visualization of, say, just hitboxes vs. just snap candidates.',
+    hint: 'Toggle chips to layer the kit\'s view of the scene. Drag a box (snap chip lights up); drag a corner (handles + hitboxes light up).',
+    Component: DebugOverlayDemo,
+    snippet: DEBUG_OVERLAY_DEMO_SOURCE,
+    full: DebugOverlayDemoFull,
+    path: 'demo/demos/DebugOverlayDemo.tsx',
   },
   {
     id: 'pan',

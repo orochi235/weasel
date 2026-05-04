@@ -29,12 +29,18 @@ interface Node {
 type Pose = Node['pose'];
 
 const W = 480, H = 320;
+// Three levels of nesting out of the box: g1 contains g2 (a sub-group) +
+// a free leaf `a`; g2 in turn contains leaves `b1` and `b2`. Two free
+// leaves (c, d) sit alongside for ad-hoc grouping with Cmd+G. The data
+// path supports arbitrary depth — INITIAL just has to demonstrate it.
 const INITIAL: Node[] = [
-  { id: 'g1',  parent: null, pose: { x: 60, y: 60, width: 180, height: 110 }, color: '#3a2e22', isGroup: true },
-  { id: 'a',   parent: 'g1', pose: { x: 10, y: 10, width: 70,  height: 50  }, color: '#7fb069' },
-  { id: 'b',   parent: 'g1', pose: { x: 95, y: 45, width: 70,  height: 50  }, color: '#7fb069' },
-  { id: 'c',   parent: null, pose: { x: 300, y: 110, width: 90, height: 60 }, color: '#d4a574' },
-  { id: 'd',   parent: null, pose: { x: 200, y: 220, width: 70, height: 50 }, color: '#a48bd4' },
+  { id: 'g1',  parent: null, pose: { x:  40, y:  40, width: 230, height: 150 }, color: '#3a2e22', isGroup: true },
+  { id: 'a',   parent: 'g1', pose: { x:  10, y:  10, width:  60, height:  50 }, color: '#7fb069' },
+  { id: 'g2',  parent: 'g1', pose: { x:  85, y:  45, width: 130, height:  90 }, color: '#2e3a22', isGroup: true },
+  { id: 'b1',  parent: 'g2', pose: { x:   8, y:   8, width:  50, height:  35 }, color: '#a8d469' },
+  { id: 'b2',  parent: 'g2', pose: { x:  68, y:  45, width:  50, height:  35 }, color: '#a8d469' },
+  { id: 'c',   parent: null, pose: { x: 320, y: 110, width:  90, height:  60 }, color: '#d4a574' },
+  { id: 'd',   parent: null, pose: { x: 220, y: 230, width:  70, height:  50 }, color: '#a48bd4' },
 ];
 
 export function NestedGroupsDemo() {
@@ -109,27 +115,51 @@ export function NestedGroupsDemo() {
     return world;
   };
 
-  const resolveTopLevel = (id: string): string => {
-    let cur = id;
-    while (true) {
-      const p = adapter.getParent(cur);
-      if (p === null) return cur;
-      cur = p;
-    }
+  // Walk root → leaf so the chain reads outermost-first.
+  const ancestorChain = (id: string): string[] => {
+    const chain: string[] = [];
+    let cur: string | null = id;
+    while (cur !== null) { chain.unshift(cur); cur = adapter.getParent(cur); }
+    return chain;
   };
 
-  // Hit-test: top-down on world bounds, skipping groups so a click in empty
-  // group area is a miss. Hits resolve to the outermost group so a click
-  // anywhere inside a group selects (and drags) the whole tree.
-  const hitBody = (wx: number, wy: number): string | null => {
+  // Find the leaf under the cursor (top-down z-order, skipping group bodies).
+  const hitLeaf = (wx: number, wy: number): string | null => {
     for (let i = nodesRef.current.length - 1; i >= 0; i--) {
       const n = nodesRef.current[i]; if (n.isGroup) continue;
       const w = worldPoseOf(n.id); if (!w) continue;
       if (wx >= w.x && wx <= w.x + w.width && wy >= w.y && wy <= w.y + w.height) {
-        return resolveTopLevel(n.id);
+        return n.id;
       }
     }
     return null;
+  };
+
+  // Default Canvas hit-test (used by built-in chrome): resolve to the
+  // outermost group so a casual click selects the whole tree.
+  const hitBody = (wx: number, wy: number): string | null => {
+    const leaf = hitLeaf(wx, wy);
+    return leaf === null ? null : ancestorChain(leaf)[0];
+  };
+
+  // Alt-aware hit resolution used by the move tool's pointer.onDown.
+  // Without Alt: outermost ancestor (Figma's "select group" default).
+  // With Alt: drill one level deeper than the deepest currently-selected
+  // ancestor in the chain (repeated Alt-clicks step from group → subgroup
+  // → leaf). With Alt and nothing in the chain selected, jump straight to
+  // the leaf so users always have a fast path to the deepest object.
+  const hitForClick = (wx: number, wy: number, alt: boolean): string | null => {
+    const leaf = hitLeaf(wx, wy);
+    if (leaf === null) return null;
+    const chain = ancestorChain(leaf);
+    if (!alt) return chain[0];
+    const sel = selRef.current.get();
+    for (let i = chain.length - 1; i >= 0; i--) {
+      if (sel.includes(chain[i])) {
+        return chain[Math.min(i + 1, chain.length - 1)];
+      }
+    }
+    return chain[chain.length - 1];
   };
 
   // Custom scene layer — the standard scene slot calls drawOne with TPose,
@@ -196,15 +226,15 @@ export function NestedGroupsDemo() {
   // reading `move.overlay` for hide-ids and ghost rendering.
   const moveRef = useRef(move);
   moveRef.current = move;
-  const hitRef = useRef(hitBody);
-  hitRef.current = hitBody;
+  const hitRef = useRef(hitForClick);
+  hitRef.current = hitForClick;
   const moveTool = useMemo(() => defineTool<{ ids: string[] | null }>({
     id: 'move',
     cursor: 'default',
     initScratch: () => ({ ids: null }),
     pointer: {
       onDown: (_e, ctx) => {
-        const id = hitRef.current(ctx.worldX, ctx.worldY);
+        const id = hitRef.current(ctx.worldX, ctx.worldY, ctx.modifiers.alt);
         if (id === null) {
           ctx.selection.set([]);
           ctx.scratch = { ids: null };
@@ -326,7 +356,9 @@ return (
     adapter={adapter}
     selection={selection}
     tools={tools}
-    hitBody={hitBody}        // skip groups, resolve top-level
+    hitBody={hitBody}        // chrome hit-test: outermost group
+    /* the move tool uses an alt-aware variant in pointer.onDown that
+       drills one level deeper per Alt-click (group → subgroup → leaf) */
     gestures={{ undoRedo: { adapter: history } }}
     layers={{
       scene: null,

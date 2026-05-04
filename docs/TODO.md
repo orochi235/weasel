@@ -34,10 +34,6 @@ From `docs/specs/2026-05-03-weasel-den-design.md`:
 
 Eric (`~/src/eric`) is the side app weasel was extracted from; per project memory it remains the reference for prior-art demos and interaction patterns. Audit eric for parity with current weasel — verify it still builds against the published surface, check what divergent local copies of kit code (if any) need merging back. Trigger: user wants to implement container-layout strategies in eric next, and that's a candidate exercise for weasel's container/layout primitives.
 
-## Top of queue — Debug overlay primitives (dev-mode system layers)
-
-Hitbox/handle/bounds visualization for kit and consumer code. Likely shape: a `createDebugOverlayLayer({ show: { hitboxes?, handles?, bounds?, poseOrigins? } })` factory that emits a `space: 'screen'` `RenderLayer` reading from the same hit-test/handle data the interaction hooks already compute. Dev-only — gated by a flag (NODE_ENV check or explicit prop) so it tree-shakes out of prod bundles. Open: whether the overlay reads via a side channel (hit-test hook exposes its rects) or by re-running hit math purely for visualization. First consumer is the kit's own demos / debugging during Phase 2c chrome work.
-
 ## Viewport follow-ups (Phase 2c deferrals)
 
 Surfaced as explicit out-of-scope items in `docs/specs/2026-05-03-tool-primitive-phase-2c-design.md:158-165` and `docs/specs/2026-05-03-viewport-and-hand-tool-design.md:133-143`. Phase 2c shipped pan+zoom+chrome-screen-space; these are the tail.
@@ -188,6 +184,8 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
 - **d3 integration plugin.** Bridge the adapter/op model to d3 selections so consumers can drive scene updates from data joins (enter → InsertOp, update → setPose, exit → DeleteOp). Strict plugin form — d3 stays out of the core. Real audience: dashboards, network graphs, force-directed layouts, scientific viz.
 
 ## Recently shipped (follow-ups optional)
+
+- **Debug overlay primitives.** *Shipped.* `<Canvas debug={DebugConfig | true | 'all'}>` appends a screen-space overlay layer that paints what the kit's interaction system "sees": object bounds (AABBs), pose origins, every hit-test shape, handle positions, snap candidates, per-layer metadata. URL fallback `?debug=all` (or `?debug=bounds,handles`) reads from `location.search`. Tree-shaken when `debug` is falsy/undefined — zero runtime cost in prod. Demo: `demo/demos/DebugOverlayDemo.tsx`. Open follow-ups (defer until consumer friction): per-feature color/style configuration; debug overlay for hand/zoom tools; printable snapshot mode (rasterize debug + scene to a single image for bug reports).
 
 - **`useScene` — kit-owned scene primitive.** *Phases 1–3 shipped (`391ba2e`, `da9675a`, `24c72eb`).* Reference doc: `docs/proposals/useScene.md`. Adds a third tier of scene-state ergonomics: kit-owned `Scene<TData, TLayer, TPose>` primitive with first-class container/leaf tree, orthogonal layer tags, opaque domain payload, auto-undoable mutations, and a `recordOp` seam for consumer ops. `<SceneCanvas>` synthesizes an adapter and auto-wires undo/redo + container cascade. `demo/demos/SceneDemo.tsx` shows cross-layer parenting + a `setColor` consumer op on the same undo stack. **Open follow-ups (defer until consumer friction):** op log serialization shape for built-in ops; user-layer mutation methods (`addLayer`/`removeLayer`/`renameLayer`/`moveLayer`); container layout strategies (today: absolute-positioning only); selection-in-Scene vs external; tree-mutation invariants documented explicitly (`remove(container)` cascade, `move` cycle detection, `setLayer` on container); full tier unification (collapse inline-props/explicit-adapter onto Scene).
 
