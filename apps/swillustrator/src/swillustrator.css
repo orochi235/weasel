@@ -73,9 +73,6 @@ html, body, #root {
   flex: 1;
   overflow: auto;
   padding: 32px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
   background:
     repeating-linear-gradient(45deg, #1a130d 0 8px, #1f1610 8px 16px);
 }
@@ -84,6 +81,11 @@ html, body, #root {
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
   border-radius: 2px;
   overflow: hidden;
+  /* margin:auto centers vertically AND horizontally while preserving access
+     to overflowed top/left when the page is larger than the viewport
+     (align-items:center would clip the top edge unreachable). */
+  margin: auto;
+  width: fit-content;
 }
 
 .swill-section-label {
