@@ -23,6 +23,9 @@ export interface PoseDescriptor<TPose> {
    *  — when omitted, area-select and similar callers test against `getBounds`
    *  AABB (looser, but correct for axis-aligned rect poses). */
   intersectsRect?(pose: TPose, rect: ResizePose): boolean;
+  /** Interpolate between two poses. Optional — animation helpers fall back to
+   *  rect-shape lerp when omitted (which fails for non-rect poses). */
+  lerp?(a: TPose, b: TPose, t: number): TPose;
 }
 
 /** AABB-vs-AABB overlap. Exported for callers building a default
@@ -48,4 +51,11 @@ export const RECT_POSE_DESCRIPTOR: PoseDescriptor<ResizePose> = {
   },
   translate: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
   intersectsRect: (p, r) => aabbIntersectsRect(p, r),
+  lerp: (a, b, t) => ({
+    ...a,
+    x: a.x + (b.x - a.x) * t,
+    y: a.y + (b.y - a.y) * t,
+    width: a.width + (b.width - a.width) * t,
+    height: a.height + (b.height - a.height) * t,
+  }),
 };

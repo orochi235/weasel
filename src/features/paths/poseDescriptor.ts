@@ -50,6 +50,25 @@ export const pathPoseDescriptor: PoseDescriptor<Path> = {
     // would be the next step; defer until a demo demands it.
     return true;
   },
+  lerp: (a, b, t) => {
+    if (a.kind === 'rect' && b.kind === 'rect') {
+      return {
+        kind: 'rect',
+        x: a.x + (b.x - a.x) * t,
+        y: a.y + (b.y - a.y) * t,
+        width: a.width + (b.width - a.width) * t,
+        height: a.height + (b.height - a.height) * t,
+      };
+    }
+    if (a.kind === 'polygon' && b.kind === 'polygon' && a.coords.length === b.coords.length) {
+      const next = new Float32Array(a.coords.length);
+      for (let i = 0; i < a.coords.length; i++) {
+        next[i] = a.coords[i] + (b.coords[i] - a.coords[i]) * t;
+      }
+      return { kind: 'polygon', commands: a.commands, coords: next, fillRule: a.fillRule };
+    }
+    throw new Error('pathPoseDescriptor.lerp: incompatible path shapes');
+  },
 };
 
 function remapPolygon(path: PolygonPath, src: ResizePose, dst: ResizePose, sx: number, sy: number): PolygonPath {
