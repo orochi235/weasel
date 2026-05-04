@@ -43,6 +43,10 @@ export interface ToolsDispatcher {
    *  decide whether a modifier-key press should engage the modifier slot
    *  (no, if mid-gesture). */
   hasActiveGesture: () => boolean;
+  /** Scratch of the in-flight gesture, or `null` when idle. Exposed so
+   *  consumers (cursor resolution, debug overlays) can read what the active
+   *  tool is currently tracking. Read-only — do NOT mutate via this getter. */
+  getActiveScratch: () => unknown;
 }
 
 function ctxFor(
@@ -232,6 +236,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     onWheel,
     cancelGesture,
     hasActiveGesture: () => inFlight !== null,
+    getActiveScratch: () => inFlight?.scratch ?? null,
   };
   api.__setGetCtx = (fn) => { opts.getCtx = fn; };
   return api;

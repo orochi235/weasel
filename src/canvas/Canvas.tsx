@@ -16,6 +16,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRe
 import type React from 'react';
 import type { ToolsApi } from '../tools/useTools';
 import type { ToolsDispatcher } from '../tools/dispatcher';
+import type { ToolCtx } from '../tools/types';
 import type { Op } from '../core/ops/types';
 import type { View } from '../features/viewport/view';
 import { runLayers, type RenderLayer } from '../core/layers/render';
@@ -467,13 +468,30 @@ function buildSceneLayer<TObject extends { id: string }, TPose>(
   };
 }
 
-function resolveToolsCursor(tools: ToolsApi): string | undefined {
+function resolveToolsCursor(
+  tools: ToolsApi,
+  ctxBase?: () => Omit<ToolCtx, 'scratch'>,
+): string | undefined {
   const id = tools.modifierEngaged ?? tools.active;
   const tool = tools.registry[id];
   if (!tool?.cursor) return undefined;
   if (typeof tool.cursor === 'string') return tool.cursor;
-  // Function form requires a ctx; defer to Phase 2.
-  return undefined;
+  if (!ctxBase) return undefined;
+  // Function form: invoke at render time with the live base ctx and the
+  // dispatcher's current scratch (if a gesture is in flight). Render-time
+  // evaluation means cursor only re-resolves when the component re-renders —
+  // scratch mutations inside the dispatcher don't trigger React updates on
+  // their own. tools.modifierEngaged transitions DO re-render (state), so
+  // modifier-driven cursors (e.g. hand-while-space) update correctly.
+  // Reactive cursor changes during an in-flight gesture (e.g. grab→grabbing
+  // mid-drag) need a `gestureTick` state on useTools — tracked in TODO.
+  try {
+    const base = ctxBase();
+    const scratch = tools.dispatcher.getActiveScratch?.() ?? null;
+    return tool.cursor({ ...base, scratch });
+  } catch {
+    return undefined;
+  }
 }
 
 function CanvasInner<TObject extends { id: string }, TPose>(
@@ -1337,7 +1355,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     runLayers(ctx, layersWithDebug, helpersForLayers, {}, undefined, effectiveView);
   }, [layersWithDebug, width, height, background, effectiveView, debugSink]);
 
-  const toolsCursor = tools ? resolveToolsCursor(tools) : undefined;
+  const toolsCursor = tools ? resolveToolsCursor(tools, toolsCtxBase) : undefined;
   const effectiveStyle: React.CSSProperties | undefined = toolsCursor
     ? { ...style, cursor: toolsCursor }
     : style;

@@ -88,4 +88,52 @@ describe('useKeybindings', () => {
 
     document.body.removeChild(input);
   });
+
+  describe('Escape returns to default tool', () => {
+    it('Escape switches active tool back to the initial active by default', () => {
+      const select = defineTool({ id: 'select' });
+      const pen    = defineTool({ id: 'pen', keybinding: 'p' });
+      const { result } = renderHook(() => {
+        const tools = useTools({ active: 'select', registry: { select, pen } });
+        useKeybindings(tools);
+        return tools;
+      });
+
+      act(() => press('p'));
+      expect(result.current.active).toBe('pen');
+      act(() => press('Escape'));
+      expect(result.current.active).toBe('select');
+    });
+
+    it('explicit defaultTool wins over the snapshotted initial', () => {
+      const select = defineTool({ id: 'select' });
+      const pen    = defineTool({ id: 'pen', keybinding: 'p' });
+      const hand   = defineTool({ id: 'hand', keybinding: 'h' });
+      const { result } = renderHook(() => {
+        const tools = useTools({ active: 'select', registry: { select, pen, hand } });
+        useKeybindings(tools, { defaultTool: 'hand' });
+        return tools;
+      });
+
+      act(() => press('p'));
+      expect(result.current.active).toBe('pen');
+      act(() => press('Escape'));
+      expect(result.current.active).toBe('hand');
+    });
+
+    it('defaultTool: null disables the Escape behavior', () => {
+      const select = defineTool({ id: 'select' });
+      const pen    = defineTool({ id: 'pen', keybinding: 'p' });
+      const { result } = renderHook(() => {
+        const tools = useTools({ active: 'select', registry: { select, pen } });
+        useKeybindings(tools, { defaultTool: null });
+        return tools;
+      });
+
+      act(() => press('p'));
+      expect(result.current.active).toBe('pen');
+      act(() => press('Escape'));
+      expect(result.current.active).toBe('pen');
+    });
+  });
 });

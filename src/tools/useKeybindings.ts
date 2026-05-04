@@ -10,6 +10,10 @@ export interface UseKeybindingsOptions {
   overrides?: Record<string, string | null>;
   /** Skip all wiring. Useful for touch apps or test isolation. */
   disable?: boolean;
+  /** Tool id Escape switches to. When omitted, defaults to whatever
+   *  `tools.active` was when the hook first ran (i.e. the initial active
+   *  tool). Pass `null` to disable Escape-returns-to-default behavior. */
+  defaultTool?: string | null;
 }
 
 const MODIFIER_KEY_MAP: Record<string, ModifierTrigger> = {
@@ -28,6 +32,10 @@ export function useKeybindings(
   toolsRef.current = tools;
   const optionsRef = useRef(options);
   optionsRef.current = options;
+  // Snapshot the initial active tool — used as the Escape target when the
+  // consumer doesn't pass an explicit `defaultTool`. Captured in a ref
+  // (not state) so it survives re-renders without re-syncing.
+  const initialActiveRef = useRef(tools.active);
 
   useEffect(() => {
     if (optionsRef.current.disable) return;
@@ -63,6 +71,19 @@ export function useKeybindings(
       if (modifierTool) {
         toolsRef.current.engageModifier(modifierTool);
         return;
+      }
+
+      // Escape: return to the default tool. The opt's `defaultTool`
+      // wins; when undefined, fall back to the snapshotted initial
+      // active. `null` disables the behavior entirely.
+      if (e.key === 'Escape') {
+        const opt = optionsRef.current.defaultTool;
+        const target = opt === null ? null : (opt ?? initialActiveRef.current);
+        if (target && toolsRef.current.has(target) && toolsRef.current.active !== target) {
+          e.preventDefault();
+          toolsRef.current.setActive(target);
+          return;
+        }
       }
 
       const switchTo = resolveSwitch(e.key);

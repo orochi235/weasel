@@ -42,7 +42,7 @@ const minimalAdapter = {
 } as any;
 
 describe('useSelectTool', () => {
-  it('declares id "select" and default cursor', () => {
+  it('declares id "select", V keybinding, and default cursor', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         hitBody: () => [],
@@ -50,6 +50,7 @@ describe('useSelectTool', () => {
       }),
     );
     expect(result.current.id).toBe('select');
+    expect(result.current.keybinding).toBe('V');
     expect(result.current.cursor).toBe('default');
   });
 

@@ -236,6 +236,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
     () =>
       defineTool<SelectScratch>({
         id: 'select',
+        keybinding: 'V',
         cursor: 'default',
         overlay,
         initScratch: () => ({ kind: 'idle' }),
