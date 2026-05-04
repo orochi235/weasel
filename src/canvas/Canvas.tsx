@@ -35,10 +35,6 @@ import { useResize } from '../interactions/gestures/resize/resize';
 import type { UseResizeOptions } from '../interactions/gestures/resize/resize';
 import { useRotate } from '../interactions/gestures/rotate/rotate';
 import type { UseRotateOptions } from '../interactions/gestures/rotate/rotate';
-import { useInsert } from '../interactions/gestures/insert/insert';
-import type { UseInsertOptions } from '../interactions/gestures/insert/insert';
-import { useAreaSelect } from '../interactions/gestures/area-select/areaSelect';
-import type { UseAreaSelectOptions } from '../interactions/gestures/area-select/areaSelect';
 import { useArrayAdapter, type UseArrayAdapterOptions } from '../core/adapters/useArrayAdapter';
 import { useDelete } from '../interactions/actions/delete';
 import { useNudge } from '../interactions/actions/nudge';
@@ -56,10 +52,7 @@ import {
   type AnchorEditOverlayOpts,
 } from '../interactions/gestures/edit-anchors/overlay';
 import type { Path } from '../features/paths/types';
-import { selectFromMarquee } from '../interactions/gestures/area-select/behaviors';
 import type {
-  AreaSelectAdapter,
-  InsertAdapter,
   MoveAdapter,
   ResizeAdapter,
   RotateAdapter,
@@ -203,14 +196,13 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   height: number;
 
   /** Combined adapter. Required for the scene slot, default hitBody/boundsOf,
-   *  and the internal move/resize/rotate/insert/area-select controllers.
-   *  Optional for trivial canvases. Mutually exclusive with `items` —
-   *  pass one or the other. */
+   *  and the internal move/resize/rotate controllers. Optional for trivial
+   *  canvases. Mutually exclusive with `items` — pass one or the other.
+   *  Insert and area-select live entirely in `useInsertTool` / `useSelectTool`
+   *  now; pass those via `tools={useTools(...)}` instead. */
   adapter?: MoveAdapter<TObject, TPose>
     & ResizeAdapter<TObject, TPose>
-    & RotateAdapter<TObject, TPose>
-    & Partial<InsertAdapter<TObject>>
-    & Partial<AreaSelectAdapter>;
+    & RotateAdapter<TObject, TPose>;
 
   /** Inline scene wiring: when `adapter` is omitted and `items`/`setItems`
    *  are provided, Canvas synthesizes an `arrayAdapter` internally (via
@@ -237,11 +229,6 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   /** Selection semantics. See {@link CanvasSelectionMode}. Default `'single'`. */
   selectionMode?: CanvasSelectionMode;
 
-  /** Empty-space tool. `'none'` (default) treats empty-space drags as no-ops;
-   *  `'select'` routes them to area-select (marquee); `'insert'` routes them
-   *  to insert. Ignored if the corresponding controller isn't wired. */
-  tool?: 'select' | 'insert' | 'none';
-
   /** Layer map. See module docstring for slot semantics. */
   layers: LayersMap<TObject, TPose>;
 
@@ -249,8 +236,6 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   moveOptions?: UseMoveOptions<TPose>;
   resizeOptions?: UseResizeOptions<TPose>;
   rotateOptions?: UseRotateOptions<TPose>;
-  insertOptions?: UseInsertOptions<TPose>;
-  areaSelectOptions?: UseAreaSelectOptions;
   /** Wire anchor-edit mode. `true` enables defaults; an object overrides
    *  options. When wired, double-clicking a polygon-shaped object enters
    *  edit mode (anchor circles + control handles), and Esc exits. */
@@ -497,11 +482,8 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     moveOptions,
     resizeOptions,
     rotateOptions,
-    insertOptions,
-    areaSelectOptions,
     editAnchors: editAnchorsProp,
     editAnchorsController: editAnchorsOverride,
-    tool = 'none',
     selection: selectionOverride,
     selectionOptions,
     hitBody,
@@ -602,26 +584,14 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       ({
         getPose: () => ({}) as TPose,
         getObjects: () => [],
-        commitInsert: () => null,
-        commitPaste: () => [],
-        snapshotSelection: () => ({ items: [] }),
-        insertObject: () => {},
-        getSelection: () => [],
-        setSelection: () => {},
-        hitTestArea: () => [],
-        applyOps: () => {},
       }) as unknown as MoveAdapter<TObject, TPose>
         & ResizeAdapter<TObject, TPose>
-        & RotateAdapter<TObject, TPose>
-        & InsertAdapter<TObject>
-        & AreaSelectAdapter,
+        & RotateAdapter<TObject, TPose>,
     [],
   );
   const effectiveAdapter = (adapter ?? noopAdapter) as MoveAdapter<TObject, TPose>
     & ResizeAdapter<TObject, TPose>
-    & RotateAdapter<TObject, TPose>
-    & InsertAdapter<TObject>
-    & AreaSelectAdapter;
+    & RotateAdapter<TObject, TPose>;
 
   const derivedSelectionOptions = useMemo<UseSelectionOptions>(() => {
     const base = selectionOptions ?? {};
@@ -744,34 +714,10 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   }, [rotateOptions, debugSink]);
   const internalRotate = useRotate<TObject, TPose>(effectiveAdapter, derivedRotateOptions);
 
-  // Wrap the adapter so insert/area-select see Canvas's effective selection
-  // (otherwise they'd sync through the adapter's own selection state, which
-  // arrayAdapter consumers typically leave as a no-op).
+  // selRef tracks the live effective selection for the action-gesture hooks
+  // (delete / nudge / duplicate) which read it through getSelection callbacks.
   const selRef = useRef<SelectionApi>(effectiveSelection);
   selRef.current = effectiveSelection;
-  const selectionWiredAdapter = useMemo(
-    () =>
-      ({
-        ...effectiveAdapter,
-        getSelection: () => selRef.current.get(),
-        setSelection: (ids: string[]) => selRef.current.set(ids),
-      }) as InsertAdapter<TObject> & AreaSelectAdapter,
-    [effectiveAdapter],
-  );
-
-  const derivedAreaSelectOptions = useMemo<UseAreaSelectOptions>(() => {
-    const base = areaSelectOptions ?? {};
-    const withBehaviors = base.behaviors && base.behaviors.length > 0
-      ? base
-      : { ...base, behaviors: [selectFromMarquee()] };
-    return debugSink ? { ...withBehaviors, debug: debugSink } : withBehaviors;
-  }, [areaSelectOptions, debugSink]);
-
-  const internalInsert = useInsert<TObject, TPose>(
-    selectionWiredAdapter,
-    insertOptions ?? {},
-  );
-  const internalAreaSelect = useAreaSelect(selectionWiredAdapter, derivedAreaSelectOptions);
 
   // Action gestures (Delete/Backspace, arrow nudge, Mod+D duplicate). Hooks
   // always run; each `bindKeyboard`/`enableKeyboard` flag gates whether the
@@ -854,8 +800,6 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   const move = adapter ? internalMove : undefined;
   const resize = adapter ? internalResize : undefined;
   const rotate = adapter ? internalRotate : undefined;
-  const insert = adapter ? internalInsert : undefined;
-  const areaSelect = adapter ? internalAreaSelect : undefined;
 
   const moveOverlay = move?.overlay ?? null;
   const resizeOverlay = resize?.overlay ?? null;
@@ -1038,17 +982,13 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   }, [onBodyHit, selectionMode, effectiveSelection]);
 
   const selectToolHandled = !!tools?.has('select');
-  const insertToolHandled = !!tools?.has('insert');
 
   const bindings = usePointerGestures<TPose, TPose>({
     move: selectToolHandled ? undefined : move,
     resize: selectToolHandled ? undefined : resize,
     rotate: selectToolHandled ? undefined : rotate,
-    insert: insertToolHandled ? undefined : insert,
-    areaSelect: selectToolHandled ? undefined : areaSelect,
     editAnchors: editAnchorsCtl as unknown as EditAnchorsController<{ id: string }> | undefined,
     editAnchorsActive: !!editingAnchors,
-    tool,
     hitBody: effectiveHitBody,
     resizeTarget: effectiveResizeTarget ?? resizeTarget,
     rotateTarget,

@@ -94,7 +94,6 @@ export function SceneDemo() {
         className="ckd-canvas"
         scene={scene}
         selection={selection}
-        tool="none"
         hitBody={(wx, wy) => {
           const ordered = [...scene.renderOrder()];
           for (let i = ordered.length - 1; i >= 0; i--) {

@@ -179,7 +179,6 @@ export function CompoundPathsDemo() {
         scene={scene}
         background="#87ceeb"
         selectionMode="multi"
-        tool="none"
         handleHitRadius={HANDLE}
         layers={{
           scene: {
@@ -272,7 +271,6 @@ return (
     // translate / resize-remap, plus pointInPath silhouette hit-testing, all
     // wire up without an explicit geometry / hitBody prop.
     selectionMode="multi"             // shift-click extend, union-AABB resize
-    tool="select"                     // empty-space drag = marquee select
     layers={{
       scene: { drawOne: (cx, s, p) => { traceToContext(cx, p); cx.fill(p.kind === 'polygon' ? p.fillRule : 'nonzero'); cx.stroke(); } },
       selectionOverlay: { handles: { size: HANDLE } },

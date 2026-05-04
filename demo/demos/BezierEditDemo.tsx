@@ -98,7 +98,6 @@ export function BezierEditDemo() {
       height={H}
       className="ckd-canvas"
       adapter={adapter}
-      tool="none"
       handleHitRadius={HANDLE / zoom}
       clientToWorld={(canvas, cx, cy) => {
         const r = canvas.getBoundingClientRect();
@@ -159,7 +158,6 @@ return (
       <Canvas
         width={W} height={H}
         adapter={adapter}
-        tool="none"
         editAnchors
         handleHitRadius={HANDLE / zoom}
         clientToWorld={(canvas, cx, cy) => {
