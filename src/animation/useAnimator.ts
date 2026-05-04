@@ -37,7 +37,13 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
   const rafHandle = useRef<number | null>(null);
 
   return useMemo<Animator>(() => {
-    const now = (): number => (optsRef.current.now ?? Date.now)();
+    // Default to performance.now() so the time origin matches the
+    // requestAnimationFrame callback's DOMHighResTimeStamp argument.
+    // Using Date.now() here would mix epoch-millis with page-relative-millis,
+    // producing huge negative `elapsed` values that clamp tween `t` to 0
+    // forever (never reaching completion).
+    const now = (): number =>
+      (optsRef.current.now ?? (typeof performance !== 'undefined' ? performance.now.bind(performance) : Date.now))();
     const requestFrame = (cb: (t: number) => void): number =>
       (optsRef.current.requestFrame ?? requestAnimationFrame)(cb);
     const cancelFrame = (h: number): void =>
