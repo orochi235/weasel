@@ -7,6 +7,7 @@ import { useMove } from '../interactions/gestures/move/move';
 import { useResize } from '../interactions/gestures/resize/resize';
 import { arrayAdapter } from '../core/adapters/arrayAdapter';
 import type { RenderLayer } from '../core/layers/render';
+import type { DebugSink, DebugSnapshot } from '../debug/types';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
 beforeAll(() => {
@@ -27,6 +28,18 @@ beforeAll(() => {
       setTransform: vi.fn(),
       scale: vi.fn(),
       setLineDash: vi.fn(),
+      beginPath: vi.fn(),
+      closePath: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      arc: vi.fn(),
+      stroke: vi.fn(),
+      fill: vi.fn(),
+      fillText: vi.fn(),
+      measureText: vi.fn(() => ({ width: 10 })),
+      font: '',
+      textBaseline: '',
+      globalAlpha: 1,
       fillStyle: '',
       strokeStyle: '',
       lineWidth: 1,
@@ -848,6 +861,52 @@ describe('Canvas debug overlay', () => {
       />,
     );
     expect(container.querySelector('canvas')).toBeTruthy();
+  });
+
+  it('records bounds + origins for each item when those flags are on', () => {
+    const items = [
+      { id: 'a', x: 0, y: 0, w: 10, h: 10 },
+      { id: 'b', x: 20, y: 30, w: 5, h: 5 },
+      { id: 'c', x: 40, y: 50, w: 8, h: 8 },
+    ];
+    const sinkRef: { current: (DebugSink & { snapshot(): DebugSnapshot }) | null } = { current: null };
+    render(
+      <Canvas
+        width={100} height={100}
+        items={items} setItems={() => {}}
+        layers={{ scene: { drawOne: () => {} } }}
+        boundsOf={(id) => {
+          const it = items.find((i) => i.id === id);
+          return it ? { x: it.x, y: it.y, width: it.w, height: it.h } : null;
+        }}
+        debug={{ bounds: true, origins: true }}
+        debugSinkRef={sinkRef}
+      />,
+    );
+    const snap = sinkRef.current?.snapshot();
+    expect(snap?.bounds.length).toBeGreaterThanOrEqual(3);
+    expect(snap?.origins.length).toBeGreaterThanOrEqual(3);
+    const ids = new Set(snap!.bounds.map((b) => b.id));
+    expect(ids.has('a') && ids.has('b') && ids.has('c')).toBe(true);
+  });
+
+  it('records layer metadata once per non-overlay layer when layers flag is on', () => {
+    const sinkRef: { current: (DebugSink & { snapshot(): DebugSnapshot }) | null } = { current: null };
+    render(
+      <Canvas
+        width={100} height={100}
+        items={[]} setItems={() => {}}
+        layers={{ scene: noopScene() }}
+        debug={{ layers: true }}
+        debugSinkRef={sinkRef}
+      />,
+    );
+    const snap = sinkRef.current?.snapshot();
+    expect(snap?.layers.length).toBeGreaterThanOrEqual(1);
+    // Overlay layer itself must not be recorded.
+    expect(snap?.layers.find((l) => l.id === 'debug-overlay')).toBeUndefined();
+    // Scene layer should be there.
+    expect(snap?.layers.find((l) => l.id === 'scene')).toBeTruthy();
   });
 
   it('debug undefined falls back to URL parse', () => {

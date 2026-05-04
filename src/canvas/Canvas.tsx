@@ -385,6 +385,10 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
    * interaction hook so they record hit math + handle positions.
    */
   debug?: DebugConfig | false;
+
+  /** Test-only escape hatch: writes the live debug sink to this ref so tests
+   *  can call `snapshot()` after a render. No effect when debug is off. */
+  debugSinkRef?: React.MutableRefObject<(DebugSink & { snapshot(): DebugSnapshot }) | null>;
 }
 
 /** Per-action config for the `gestures` prop. */
@@ -485,6 +489,8 @@ function buildSceneLayer<TObject extends { id: string }, TPose>(
   moveOverlay: MoveOverlay<TPose> | null,
   resizeOverlay: ResizeOverlay<TPose> | null,
   rotateOverlay: RotateOverlay<TPose> | null,
+  debugSink: DebugSink | null,
+  boundsOfFn: ((id: string) => Bounds | null) | undefined,
 ): RenderLayer<unknown> {
   const toPose =
     cfg.toPose ??
@@ -506,6 +512,13 @@ function buildSceneLayer<TObject extends { id: string }, TPose>(
         else if (rotateOverlay && rotateOverlay.id === obj.id) pose = rotateOverlay.currentPose;
         else pose = toPose(obj);
         cfg.drawOne(ctx, obj, pose, view);
+        if (debugSink) {
+          const b = boundsOfFn ? boundsOfFn(obj.id) : null;
+          if (b) debugSink.recordBounds(obj.id, { x: b.x, y: b.y, width: b.width, height: b.height });
+          const ox = (pose as { x?: number }).x ?? (b ? b.x : 0);
+          const oy = (pose as { y?: number }).y ?? (b ? b.y : 0);
+          debugSink.recordOrigin(obj.id, { x: ox, y: oy });
+        }
       }
     },
   };
@@ -676,6 +689,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     poseBounds,
     intersectsRect,
     debug: debugProp,
+    debugSinkRef,
   } = props;
 
   // Resolve debug config: explicit prop wins; `undefined` falls back to URL;
@@ -692,6 +706,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     if (resolvedDebugConfig === null) return null;
     return createDebugSink(resolvedDebugConfig);
   }, [resolvedDebugConfig]);
+  if (debugSinkRef) debugSinkRef.current = debugSink;
 
   // Synthesized arrayAdapter when `adapter` is omitted but `items`/`setItems`/
   // `toPose` are supplied. The hook always runs (rules of hooks) — when the
@@ -1303,6 +1318,8 @@ function CanvasInner<TObject extends { id: string }, TPose>(
         moveOverlay,
         resizeOverlay,
         rotateOverlay,
+        debugSink,
+        effectiveBoundsOf,
       );
     }
 
@@ -1433,7 +1450,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     }
     out.push(...tail);
     return out;
-  }, [layersMap, adapter, moveOverlay, resizeOverlay, rotateOverlay, insertOverlay, areaSelectOverlay, selectedIds, effectiveBoundsOf, multiActive, unionOfSelection, editingAnchors, editAnchorsCtl, editAnchorsCtl?.overlay]);
+  }, [layersMap, adapter, moveOverlay, resizeOverlay, rotateOverlay, insertOverlay, areaSelectOverlay, selectedIds, effectiveBoundsOf, multiActive, unionOfSelection, editingAnchors, editAnchorsCtl, editAnchorsCtl?.overlay, debugSink]);
 
   // Append the debug overlay layer at the very top of the stack when debug
   // is enabled. The layer reads from `debugSink.snapshot()` and paints in
@@ -1453,6 +1470,14 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     if (!ctx) return;
     // Clear sink at the top of every paint so per-frame records don't leak.
     debugSink?.beginFrame();
+    if (debugSink) {
+      const arr = layersWithDebug;
+      for (let i = 0; i < arr.length; i++) {
+        const layer = arr[i];
+        if (layer.id === 'debug-overlay') continue;
+        debugSink.recordLayer(layer.id, layer.label, layer.space ?? 'world', i);
+      }
+    }
     setupCanvasDpr(c, ctx, width, height);
     ctx.clearRect(0, 0, width, height);
     if (background) {
