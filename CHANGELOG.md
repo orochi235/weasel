@@ -29,6 +29,15 @@
   point-only poses or other shapes. The `tileGrid<TPose>` signature is
   no longer constrained to `RectPose` — pass `cellToPose` whenever TPose
   doesn't carry the rect fields.
+- `useMove` layout-pass picks the top-most container in z-order when the
+  adapter implements `OrderedAdapter.getChildren`: walks the scene tree
+  from the root via `getChildren(null)` (recursing into every visited
+  node), accumulates each candidate with depth + sibling-index z-path,
+  and picks deepest-then-latest-sibling. Adapters without `getChildren`
+  retain the previous `getObjects()` iteration-order proxy. Adapters that
+  implement `getChildren` only for explicit container nodes (not for
+  `null`/root) are handled by a fallback that scans `getObjects()` for
+  unvisited root-parented siblings after the recursive walk.
 - Debug overlay subsystem: `?debug=…` URL gating + `<Canvas debug={...}>` prop.
   Six features ship: `hitboxes`, `handles`, `bounds`, `origins`, `snap`, `layers`.
   Sink threaded through `usePointerGestures`, `useResize`, `useRotate`,

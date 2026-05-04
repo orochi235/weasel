@@ -279,7 +279,7 @@ export function useMove<TObject extends { id: string }, TPose>(
     type Layout = import('../../../layout/types').LayoutStrategy<TPose>;
     type Target = import('../../../layout/types').DropTarget<TPose>;
     let dest:
-      | { id: string; bounds: { x: number; y: number; width: number; height: number }; layout: unknown }
+      | { id: string; bounds: { x: number; y: number; width: number; height: number }; layout: Layout }
       | null = null;
     let destLayout: Layout | null = null;
     let destChildren: { id: string; pose: TPose }[] = [];
@@ -306,29 +306,102 @@ export function useMove<TObject extends { id: string }, TPose>(
       // The AABB fallback assumes the pose is rect-shaped — when TPose isn't
       // rect and `contains` is absent, the call is broken (status quo;
       // tracked in docs/TODO.md for the non-rect TPose layout case).
-      const candidates: { id: string; bounds: { x: number; y: number; width: number; height: number }; layout: Layout }[] = [];
-      for (const obj of adapter.getObjects()) {
-        if (obj.id === draggedId) continue;
-        const layout = (getLayout as (id: string) => Layout | null).call(adapter, obj.id);
-        if (!layout) continue;
-        const cPose = adapter.getPose(obj.id);
-        const inside = layout.contains
-          ? layout.contains(cPose, { x: draggedCenter.x, y: draggedCenter.y })
-          : (() => {
-            const b = cPose as unknown as { x: number; y: number; width: number; height: number };
-            return draggedCenter.x >= b.x && draggedCenter.x < b.x + b.width
-              && draggedCenter.y >= b.y && draggedCenter.y < b.y + b.height;
-          })();
-        if (inside) {
-          const bounds = cPose as unknown as { x: number; y: number; width: number; height: number };
-          candidates.push({ id: obj.id, bounds, layout });
+      type Candidate = {
+        id: string;
+        bounds: { x: number; y: number; width: number; height: number };
+        layout: Layout;
+        /** Path of (depth, sibling-index) from the root, used as the z-order
+         *  sort key. Deeper wins; ties broken by later sibling-index at the
+         *  shallowest differing level. */
+        zPath: number[];
+        depth: number;
+      };
+      const candidates: Candidate[] = [];
+
+      const getChildren = (adapter as { getChildren?: (id: string | null) => string[] }).getChildren;
+      const testInside = (cPose: TPose, layout: Layout): boolean => {
+        if (layout.contains) return layout.contains(cPose, draggedCenter);
+        const b = cPose as unknown as { x: number; y: number; width: number; height: number };
+        return draggedCenter.x >= b.x && draggedCenter.x < b.x + b.width
+          && draggedCenter.y >= b.y && draggedCenter.y < b.y + b.height;
+      };
+      const considerCandidate = (id: string, zPath: number[]) => {
+        if (id === draggedId) return;
+        const layout = (getLayout as (id: string) => Layout | null).call(adapter, id);
+        if (!layout) return;
+        const cPose = adapter.getPose(id);
+        if (!testInside(cPose, layout)) return;
+        const bounds = cPose as unknown as { x: number; y: number; width: number; height: number };
+        candidates.push({ id, bounds, layout, zPath, depth: zPath.length });
+      };
+
+      if (typeof getChildren === 'function') {
+        // Z-order walk: array order IS z-order (last sibling = top).
+        // Recurse into containers, accumulating each visited id with its
+        // (depth, sibling-index) path. After collection, the deepest
+        // candidate wins; depth ties broken by lexicographic compare of
+        // zPath (later sibling at the shallowest differing level wins).
+        const visited = new Set<string>();
+        const walk = (parentId: string | null, parentPath: number[]) => {
+          const childIds = getChildren.call(adapter, parentId) ?? [];
+          for (let i = 0; i < childIds.length; i++) {
+            const childId = childIds[i];
+            if (visited.has(childId)) continue;
+            visited.add(childId);
+            const childPath = [...parentPath, i];
+            considerCandidate(childId, childPath);
+            walk(childId, childPath);
+          }
+        };
+        walk(null, []);
+        // Some adapters implement `getChildren` only for explicit container
+        // nodes and don't include root-parented siblings under
+        // `getChildren(null)`. Fall back to scanning `getObjects()` for any
+        // unvisited root (parent === null) ids and treating them as the
+        // continuation of root's sibling order, preserving iteration order
+        // as their z-index.
+        const objs = adapter.getObjects();
+        let rootIdx = (getChildren.call(adapter, null) ?? []).length;
+        for (const obj of objs) {
+          if (visited.has(obj.id)) continue;
+          if (adapter.getParent(obj.id) !== null) continue;
+          const path = [rootIdx++];
+          visited.add(obj.id);
+          considerCandidate(obj.id, path);
+          walk(obj.id, path);
+        }
+      } else {
+        // Fallback: getObjects iteration order as a paint-order proxy.
+        // Last in iteration wins. Each candidate gets a synthetic flat zPath
+        // so the same picker logic works.
+        const objs = adapter.getObjects();
+        for (let i = 0; i < objs.length; i++) {
+          considerCandidate(objs[i].id, [i]);
         }
       }
 
-      // "Top-most" = last one in iteration order (later siblings render on top).
-      // This is a paint-order proxy — see docs/TODO.md "Deferred from container
-      // layout strategies" for the real z-order walk we owe.
-      dest = candidates[candidates.length - 1] ?? null;
+      // Pick: deepest first, then later sibling-index at the shallowest
+      // differing level (lexicographic compare of zPath, descending).
+      dest = null;
+      for (const c of candidates) {
+        if (dest === null) {
+          dest = c;
+          continue;
+        }
+        const cur = dest as Candidate;
+        if (c.depth > cur.depth) {
+          dest = c;
+          continue;
+        }
+        if (c.depth < cur.depth) continue;
+        // Same depth — compare zPath lexicographically; later wins.
+        let cAfter = false;
+        for (let i = 0; i < c.zPath.length; i++) {
+          if (c.zPath[i] > cur.zPath[i]) { cAfter = true; break; }
+          if (c.zPath[i] < cur.zPath[i]) { cAfter = false; break; }
+        }
+        if (cAfter) dest = c;
+      }
 
       if (dest) {
         const layout = dest.layout as Layout;
