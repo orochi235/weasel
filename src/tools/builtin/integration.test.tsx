@@ -26,6 +26,7 @@ beforeAll(() => {
     strokeRect: vi.fn(),
     save: vi.fn(),
     restore: vi.fn(),
+    translate: vi.fn(),
     setTransform: vi.fn(),
     setLineDash: vi.fn(),
     fillStyle: '',

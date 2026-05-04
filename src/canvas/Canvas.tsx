@@ -17,6 +17,7 @@ import type React from 'react';
 import type { ToolsApi } from '../tools/useTools';
 import type { ToolsDispatcher } from '../tools/dispatcher';
 import type { Op } from '../core/ops/types';
+import type { View } from '../features/viewport/view';
 import { runLayers, type RenderLayer } from '../core/layers/render';
 import { setupCanvasDpr } from '../features/viewport/pixelDensity';
 import {
@@ -351,6 +352,15 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   tools?: import('../tools/useTools').ToolsApi;
   gestures?: GesturesConfig<TPose>;
 
+  /** Controlled viewport. When supplied, Canvas does not own the value —
+   *  the consumer must supply `onViewChange` and re-render with the new
+   *  view. See `View` JSDoc for the camera-position convention. */
+  view?: View;
+  /** Initial viewport for the uncontrolled path. Default `{x:0, y:0}`. */
+  defaultView?: View;
+  /** Fires whenever the viewport changes — in both controlled and
+   *  uncontrolled modes. */
+  onViewChange?: (next: View) => void;
   /** Mutable ref Canvas writes overlay-aware pose/bounds lookups to on every
    *  render. Custom layers can read it from inside their `draw` closure to
    *  reflect in-flight gestures (move/resize/rotate) instead of the committed
@@ -627,6 +637,9 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     helpersRef,
     gestures,
     tools,
+    view: viewProp,
+    defaultView,
+    onViewChange,
     items,
     setItems,
     toPose,
@@ -655,6 +668,23 @@ function CanvasInner<TObject extends { id: string }, TPose>(
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   useImperativeHandle(ref, () => canvasRef.current as HTMLCanvasElement, []);
+
+  // Viewport state: hybrid uncontrolled/controlled. When `viewProp` is
+  // supplied we are controlled (consumer owns state). Otherwise we keep
+  // internal state seeded from `defaultView`. `setView` always fires
+  // `onViewChange` so consumers can persist regardless of mode.
+  const [internalView, setInternalView] = useState<View>(defaultView ?? { x: 0, y: 0 });
+  const effectiveView: View = viewProp ?? internalView;
+  const viewRef = useRef<View>(effectiveView);
+  viewRef.current = effectiveView;
+  const onViewChangeRef = useRef(onViewChange);
+  onViewChangeRef.current = onViewChange;
+  const setView = useCallback((next: View) => {
+    if (viewProp === undefined) setInternalView(next);
+    onViewChangeRef.current?.(next);
+  }, [viewProp]);
+  const setViewRef = useRef(setView);
+  setViewRef.current = setView;
 
   // Internal hooks always run (rules of hooks). They consult a noop adapter
   // when none is supplied; their controllers are then unused because the
@@ -720,17 +750,32 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   effectiveAdapterRefForCtx.current = effectiveAdapter;
 
   const toolsCtxBase = useMemo(
-    () => () => ({
-      worldX: 0,
-      worldY: 0,
-      modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
-      selection: effectiveSelectionRefForCtx.current,
-      adapter: effectiveAdapterRefForCtx.current,
-      applyBatch: (ops: Op[], label: string) => {
-        const a = effectiveAdapterRefForCtx.current as { applyBatch?: (ops: Op[], label: string) => void };
-        if (a.applyBatch) a.applyBatch(ops, label);
-      },
-    }),
+    () => (overrides?: { clientX?: number; clientY?: number }) => {
+      const view = viewRef.current;
+      let worldX = 0;
+      let worldY = 0;
+      if (overrides && (overrides.clientX !== undefined || overrides.clientY !== undefined)) {
+        const c = canvasRef.current;
+        if (c) {
+          const rect = c.getBoundingClientRect();
+          if (overrides.clientX !== undefined) worldX = (overrides.clientX - rect.left) + view.x;
+          if (overrides.clientY !== undefined) worldY = (overrides.clientY - rect.top) + view.y;
+        }
+      }
+      return {
+        worldX,
+        worldY,
+        modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
+        selection: effectiveSelectionRefForCtx.current,
+        adapter: effectiveAdapterRefForCtx.current,
+        applyBatch: (ops: Op[], label: string) => {
+          const a = effectiveAdapterRefForCtx.current as { applyBatch?: (ops: Op[], label: string) => void };
+          if (a.applyBatch) a.applyBatch(ops, label);
+        },
+        view,
+        setView: setViewRef.current,
+      };
+    },
     [],
   );
 
@@ -741,7 +786,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     if (!tools) return;
     // Small monkey-patch: replace the dispatcher's getCtx by re-creating it.
     // Phase 2 cleanup: thread getCtx through useTools properly so this isn't needed.
-    const d = tools.dispatcher as ToolsDispatcher & { __setGetCtx?: (fn: () => unknown) => void };
+    const d = tools.dispatcher as ToolsDispatcher & { __setGetCtx?: (fn: (overrides?: { clientX?: number; clientY?: number }) => unknown) => void };
     d.__setGetCtx?.(toolsCtxBase);
   }, [tools, toolsCtxBase]);
 
@@ -1346,8 +1391,8 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       ctx.fillRect(0, 0, width, height);
       ctx.restore();
     }
-    runLayers(ctx, layers, helpersForLayers, {});
-  }, [layers, width, height, background]);
+    runLayers(ctx, layers, helpersForLayers, {}, undefined, effectiveView);
+  }, [layers, width, height, background, effectiveView]);
 
   const toolsCursor = tools ? resolveToolsCursor(tools) : undefined;
   const effectiveStyle: React.CSSProperties | undefined = toolsCursor

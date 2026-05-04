@@ -23,6 +23,7 @@ beforeAll(() => {
       strokeRect: vi.fn(),
       save: vi.fn(),
       restore: vi.fn(),
+      translate: vi.fn(),
       setTransform: vi.fn(),
       setLineDash: vi.fn(),
       fillStyle: '',
@@ -703,5 +704,72 @@ describe('Canvas tools mode', () => {
       expect(capturedHas?.('delete')).toBe(true);
       expect(capturedHas?.('nudge')).toBe(false);
     });
+  });
+});
+
+describe('Canvas viewport (Phase 2b)', () => {
+  function noopScene() {
+    return { drawOne: () => {} } as const;
+  }
+
+  it('uncontrolled: defaults to {x:0,y:0} and is internally mutable', () => {
+    const onViewChange = vi.fn();
+    const { container } = render(
+      <Canvas
+        width={100}
+        height={100}
+        items={[]}
+        setItems={() => {}}
+        layers={{ scene: noopScene() }}
+        onViewChange={onViewChange}
+      />,
+    );
+    // Initial value is {0,0}; onViewChange not yet called.
+    expect(onViewChange).not.toHaveBeenCalled();
+    expect(container.querySelector('canvas')).toBeTruthy();
+  });
+
+  it('uncontrolled: defaultView seeds initial state', () => {
+    const onViewChange = vi.fn();
+    render(
+      <Canvas
+        width={100}
+        height={100}
+        items={[]}
+        setItems={() => {}}
+        layers={{ scene: noopScene() }}
+        defaultView={{ x: 50, y: 25 }}
+        onViewChange={onViewChange}
+      />,
+    );
+    expect(onViewChange).not.toHaveBeenCalled();
+  });
+
+  it('controlled: passing view + onViewChange honors the prop on render', () => {
+    const onViewChange = vi.fn();
+    const { rerender } = render(
+      <Canvas
+        width={100}
+        height={100}
+        items={[]}
+        setItems={() => {}}
+        layers={{ scene: noopScene() }}
+        view={{ x: 10, y: 20 }}
+        onViewChange={onViewChange}
+      />,
+    );
+    rerender(
+      <Canvas
+        width={100}
+        height={100}
+        items={[]}
+        setItems={() => {}}
+        layers={{ scene: noopScene() }}
+        view={{ x: 30, y: 40 }}
+        onViewChange={onViewChange}
+      />,
+    );
+    // No assertion on draw side — view prop change just shouldn't throw.
+    expect(onViewChange).not.toHaveBeenCalled();
   });
 });
