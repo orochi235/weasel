@@ -64,13 +64,29 @@ describe('snapPoint', () => {
     expect(targets).toHaveLength(9);
   });
 
+  it('grid pattern with non-divisible spacing floors to the last in-bounds step', () => {
+    const layout = snapPoint<P>({ pattern: 'grid', gridSpacing: 30 });
+    const targets = layout.getDropTargets(container, [], dragged({ x: 0, y: 0 }));
+    // Spacing 30 in 100x100 container → x ∈ {0, 30, 60, 90}, same for y = 16 points.
+    expect(targets).toHaveLength(16);
+    const origins = targets.map((t) => t.origin);
+    expect(origins).toEqual(
+      expect.arrayContaining([
+        { x: 0, y: 0 },
+        { x: 90, y: 0 },
+        { x: 0, y: 90 },
+        { x: 90, y: 90 },
+      ]),
+    );
+  });
+
   it('reflowFor returns empty map', () => {
     const layout = snapPoint<P>({ pattern: 'center' });
     const reflow = layout.reflowFor(container, [], dragged({ x: 0, y: 0 }), null);
     expect(reflow.size).toBe(0);
   });
 
-  it('commitDrop emits a single setPose at the target origin when target is non-null', () => {
+  it('commitDrop emits a single transform op at the target origin when target is non-null', () => {
     const layout = snapPoint<P>({ pattern: 'center' });
     const targets = layout.getDropTargets(container, [], dragged({ x: 0, y: 0 }));
     const ops = layout.commitDrop(container, [], dragged({ x: 30, y: 30 }), targets[0]);

@@ -2,8 +2,10 @@ import { createTransformOp } from '../../core/ops/transform';
 import type { LayoutSnap, LayoutStrategy } from '../types';
 import { nearestWithin } from '../snaps';
 
+type SnapPattern = 'corners' | 'edges' | 'center' | 'grid';
+
 export interface SnapPointOptions<TPose> {
-  pattern: 'corners' | 'edges' | 'center' | 'grid';
+  pattern: SnapPattern;
   /** Spacing for the 'grid' pattern, in world units. Default 50. */
   gridSpacing?: number;
   /** Tolerance for the default snap policy (nearestWithin). Default Infinity. */
@@ -15,7 +17,7 @@ type Pt = { x: number; y: number };
 
 function buildPoints(
   bounds: { x: number; y: number; width: number; height: number },
-  pattern: SnapPointOptions<unknown>['pattern'],
+  pattern: SnapPattern,
   gridSpacing: number,
 ): Pt[] {
   switch (pattern) {
@@ -37,9 +39,11 @@ function buildPoints(
       return [{ x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }];
     case 'grid': {
       const out: Pt[] = [];
-      for (let y = bounds.y; y <= bounds.y + bounds.height + 1e-9; y += gridSpacing) {
-        for (let x = bounds.x; x <= bounds.x + bounds.width + 1e-9; x += gridSpacing) {
-          out.push({ x, y });
+      const cols = Math.floor(bounds.width / gridSpacing);
+      const rows = Math.floor(bounds.height / gridSpacing);
+      for (let j = 0; j <= rows; j++) {
+        for (let i = 0; i <= cols; i++) {
+          out.push({ x: bounds.x + i * gridSpacing, y: bounds.y + j * gridSpacing });
         }
       }
       return out;
