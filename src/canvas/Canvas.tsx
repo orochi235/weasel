@@ -1449,8 +1449,11 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       if (after) out.push(...after);
     }
     out.push(...tail);
+    if (tools) {
+      out.push(...tools.getActiveOverlays());
+    }
     return out;
-  }, [layersMap, adapter, moveOverlay, resizeOverlay, rotateOverlay, insertOverlay, areaSelectOverlay, selectedIds, effectiveBoundsOf, multiActive, unionOfSelection, editingAnchors, editAnchorsCtl, editAnchorsCtl?.overlay, debugSink]);
+  }, [layersMap, adapter, moveOverlay, resizeOverlay, rotateOverlay, insertOverlay, areaSelectOverlay, selectedIds, effectiveBoundsOf, multiActive, unionOfSelection, editingAnchors, editAnchorsCtl, editAnchorsCtl?.overlay, debugSink, tools]);
 
   // Append the debug overlay layer at the very top of the stack when debug
   // is enabled. The layer reads from `debugSink.snapshot()` and paints in

@@ -698,6 +698,61 @@ describe('Canvas tools mode', () => {
       expect(legacyApplyOps).not.toHaveBeenCalled();
     });
 
+    it('appends tools.getActiveOverlays() to the layer pipeline (rendered last)', () => {
+      const order: string[] = [];
+      const toolOverlay: RenderLayer<unknown> = {
+        id: 'tool-ov',
+        label: 'tool overlay',
+        space: 'screen',
+        draw: () => { order.push('tool-ov'); },
+      };
+      const customLayer: RenderLayer<unknown> = {
+        id: 'custom-tail',
+        label: 'custom tail',
+        space: 'screen',
+        draw: () => { order.push('custom-tail'); },
+      };
+      // A custom layer with `after: 'selectionOverlay'` exercises the slot
+      // ordering: it should still render before the tool overlay (which is
+      // appended at the very end of the pipeline).
+      const afterSel: RenderLayer<unknown> = {
+        id: 'after-sel',
+        label: 'after sel',
+        space: 'screen',
+        draw: () => { order.push('after-sel'); },
+      };
+
+      function Test() {
+        const tool = defineTool({ id: 't', overlay: toolOverlay });
+        const tools = useTools({
+          active: 't',
+          registry: { t: tool },
+        });
+        return (
+          <Canvas
+            width={50}
+            height={50}
+            layers={{
+              custom: { layer: customLayer },
+              afterSel: { layer: afterSel, after: 'selectionOverlay' },
+            }}
+            tools={tools}
+          />
+        );
+      }
+
+      render(<Test />);
+      expect(order).toContain('tool-ov');
+      // tool overlay must come AFTER selectionOverlay-anchored layers and tail.
+      const toolIdx = order.indexOf('tool-ov');
+      const afterSelIdx = order.indexOf('after-sel');
+      const customIdx = order.indexOf('custom-tail');
+      expect(afterSelIdx).toBeGreaterThanOrEqual(0);
+      expect(customIdx).toBeGreaterThanOrEqual(0);
+      expect(toolIdx).toBeGreaterThan(afterSelIdx);
+      expect(toolIdx).toBeGreaterThan(customIdx);
+    });
+
     it('tools.has() returns true for ids in registry and alwaysOn', () => {
       let capturedHas: ((id: string) => boolean) | undefined;
 
