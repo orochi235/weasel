@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { useInsertTool } from './useInsertTool';
 import type { ToolCtx } from '../types';
 
@@ -90,5 +90,58 @@ describe('useInsertTool', () => {
     result.current.drag!.onMove!(pe(), makeCtx({ worldX: 50, worldY: 50 }));
     const decision = result.current.drag!.onEnd!(pe(), makeCtx({ worldX: 50, worldY: 50 }));
     expect(decision).toBe('claim');
+  });
+});
+
+function ctxStub() {
+  return {
+    save: vi.fn(), restore: vi.fn(),
+    fillRect: vi.fn(), strokeRect: vi.fn(),
+    setLineDash: vi.fn(), scale: vi.fn(), translate: vi.fn(),
+    fillStyle: '', strokeStyle: '', lineWidth: 0,
+  } as unknown as CanvasRenderingContext2D;
+}
+
+describe('useInsertTool overlay', () => {
+  const baseAdapter = {
+    getSelection: () => [],
+    commitInsert: vi.fn((bounds: any) => ({ id: 'new', ...bounds })),
+    commitPaste: vi.fn(() => []),
+    snapshotSelection: vi.fn(),
+    insertObject: vi.fn(),
+    setSelection: vi.fn(),
+    applyBatch: vi.fn(),
+  } as any;
+
+  it('publishes a RenderLayer on the Tool record', () => {
+    const { result } = renderHook(() => useInsertTool(baseAdapter));
+    expect(result.current.overlay).toBeDefined();
+    expect(result.current.overlay!.space).toBe('screen');
+  });
+
+  it('renders nothing when no gesture in flight', () => {
+    const { result } = renderHook(() => useInsertTool(baseAdapter));
+    const ctx = ctxStub();
+    result.current.overlay!.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
+    expect(ctx.fillRect).not.toHaveBeenCalled();
+    expect(ctx.strokeRect).not.toHaveBeenCalled();
+  });
+
+  it('renders the drag rect once the underlying ctl has overlay state', () => {
+    const { result } = renderHook(() =>
+      useInsertTool(baseAdapter, {
+        overlayStyle: { fill: '#abc', stroke: '#def', dash: [2, 2] },
+      }),
+    );
+    act(() => {
+      result.current.drag!.onStart!(pe(), makeCtx({ worldX: 10, worldY: 10 }));
+      result.current.drag!.onMove!(pe(), makeCtx({ worldX: 50, worldY: 30 }));
+    });
+    const ctx = ctxStub();
+    result.current.overlay!.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
+    expect(ctx.fillRect).toHaveBeenCalled();
+    expect(ctx.strokeRect).toHaveBeenCalled();
+    expect((ctx as any).fillStyle).toBe('#abc');
+    expect((ctx as any).strokeStyle).toBe('#def');
   });
 });
