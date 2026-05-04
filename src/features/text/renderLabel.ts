@@ -15,6 +15,12 @@ export interface LabelOptions {
   width?: number;
   /** Override the pill height (content height, excluding padding). */
   height?: number;
+  /** Horizontal padding inside the pill. Default 4 (screen-pixel default). */
+  padX?: number;
+  /** Vertical padding inside the pill. Default 1 (screen-pixel default). */
+  padY?: number;
+  /** Corner radius of the pill background. Default 3 (screen-pixel default). */
+  cornerRadius?: number;
 }
 
 /** Render a text label with a 75%-opaque black pill background and white text. */
@@ -25,13 +31,20 @@ export function renderLabel(
   y: number,
   options: LabelOptions = {},
 ): void {
-  const { align = 'center', fontSize = 13, renderText, width, height } = options;
+  const {
+    align = 'center',
+    fontSize = 13,
+    renderText,
+    width,
+    height,
+    padX = 4,
+    padY = 1,
+    cornerRadius = 3,
+  } = options;
 
   ctx.save();
   ctx.font = `${fontSize}px sans-serif`;
   ctx.textBaseline = 'top';
-  const padX = 4;
-  const padY = 1;
   const contentW = width ?? ctx.measureText(text).width;
   const contentH = height ?? fontSize;
   const w = contentW + padX * 2;
@@ -40,7 +53,7 @@ export function renderLabel(
 
   ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
   ctx.beginPath();
-  ctx.roundRect(rx, y - padY, w, h, 3);
+  ctx.roundRect(rx, y - padY, w, h, cornerRadius);
   ctx.fill();
 
   ctx.textAlign = align === 'center' ? 'center' : 'left';

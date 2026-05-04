@@ -96,6 +96,13 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`. The `src/animation/`
 - Animator pause / resume / time-scale — useful for debugging.
 - Layout-strategy reflow integration — explicit hookup; today consumers compose `animateOnSetPose` over a layout-driven adapter.
 
+## Deferred from text-primitive world-unit pass (2026-05-04)
+
+From the `renderLabel` / `markdownText` world-unit safety refactor (`padX`/`padY`/`cornerRadius` configurable on `renderLabel`, multiplicative `sizeFactor` replacing additive `sizeOffset`, drop `Math.round` on line height).
+
+- Investigate whether eric (`~/src/eric`) can delete its local `labelHelpers.ts` after this lands. If consumer-side world-unit helpers still cover gaps the primitives don't (e.g. world↔screen pad conversion at the call site), capture the remaining gap as a follow-up primitive proposal.
+- Consider whether `parseMarkdownRuns`'s `[`/`(`/`]`/`)` markup should be promoted to a structured AST (today the output is a flat list of tokenized runs with composed factors, not a tree). Defer to a future "rich text" pass — the current shape is sufficient for label/markdown rendering but limits reformatting / re-styling transforms.
+
 ## Plugin/bundling convention
 
 The kit's primitives (Tool, RenderLayer, Adapter, PoseDescriptor, Behavior, Op factory, DebugSink) are already pluggable — any external package can author one and consumers wire it in. **What's missing is a convention for bundling a feature's parts** so a single `useFooPlugin()` call returns `{ tool, layers, ops, ... }` that the consumer spreads into Canvas/useTools, instead of wiring three or four separate exports per feature.

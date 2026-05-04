@@ -3,21 +3,35 @@ export interface StyledRun {
   text: string;
   bold: boolean;
   italic: boolean;
-  sizeOffset: number;
+  /** Multiplicative size factor applied to the base fontSize (default 1). */
+  sizeFactor: number;
+}
+
+/** Default multiplicative step for `[`/`(`/`]`/`)` size markup in `parseMarkdownRuns`. */
+export const DEFAULT_SIZE_STEP = 1.15;
+
+/** Options for `parseMarkdownRuns`. */
+export interface ParseMarkdownRunsOptions {
+  /** Multiplier applied per `[` (and divided per `(`). Default 1.15. */
+  sizeStep?: number;
 }
 
 /** Tokenize a small markdown subset (`*italic*`, `**bold**`, `***both***`, `[bigger]`, `(smaller)`) into styled runs. */
-export function parseMarkdownRuns(input: string): StyledRun[] {
+export function parseMarkdownRuns(
+  input: string,
+  opts: ParseMarkdownRunsOptions = {},
+): StyledRun[] {
+  const sizeStep = opts.sizeStep ?? DEFAULT_SIZE_STEP;
   const runs: StyledRun[] = [];
   let bold = false;
   let italic = false;
-  let sizeOffset = 0;
+  let sizeFactor = 1;
   let buf = '';
   let i = 0;
 
   function flush() {
     if (buf.length > 0) {
-      runs.push({ text: buf, bold, italic, sizeOffset });
+      runs.push({ text: buf, bold, italic, sizeFactor });
       buf = '';
     }
   }
@@ -51,28 +65,28 @@ export function parseMarkdownRuns(input: string): StyledRun[] {
       continue;
     }
 
-    // Size modifiers
+    // Size modifiers (multiplicative)
     if (ch === '[') {
       flush();
-      sizeOffset += 2;
+      sizeFactor *= sizeStep;
       i++;
       continue;
     }
     if (ch === ']') {
       flush();
-      sizeOffset -= 2;
+      sizeFactor /= sizeStep;
       i++;
       continue;
     }
     if (ch === '(') {
       flush();
-      sizeOffset -= 2;
+      sizeFactor /= sizeStep;
       i++;
       continue;
     }
     if (ch === ')') {
       flush();
-      sizeOffset += 2;
+      sizeFactor *= sizeStep;
       i++;
       continue;
     }
@@ -80,7 +94,7 @@ export function parseMarkdownRuns(input: string): StyledRun[] {
     // Newline
     if (ch === '\n') {
       flush();
-      runs.push({ text: '\n', bold: false, italic: false, sizeOffset: 0 });
+      runs.push({ text: '\n', bold: false, italic: false, sizeFactor: 1 });
       i++;
       continue;
     }
@@ -132,7 +146,7 @@ export function layoutMarkdown(
 
   function commitLine() {
     const effectiveFontSize = lineMaxSize > 0 ? lineMaxSize : fontSize;
-    const lineHeight = Math.round(effectiveFontSize * lineHeightFactor);
+    const lineHeight = effectiveFontSize * lineHeightFactor;
     lines.push({ runs: currentRuns, width: lineX, height: lineHeight });
     currentRuns = [];
     lineX = 0;
@@ -145,7 +159,7 @@ export function layoutMarkdown(
       continue;
     }
 
-    const effectiveSize = fontSize + run.sizeOffset;
+    const effectiveSize = fontSize * run.sizeFactor;
     lineMaxSize = Math.max(lineMaxSize, effectiveSize);
 
     if (maxWidth === Infinity) {
@@ -210,6 +224,8 @@ export interface MarkdownFontOptions {
   color?: string;
   /** Multiplier applied to font size for line height. Default 1.3. */
   lineHeight?: number;
+  /** Multiplicative step for `[`/`(`/`]`/`)` size markup in markdown parsing. Default 1.15. */
+  sizeStep?: number;
 }
 
 function buildFont(
@@ -243,14 +259,14 @@ export function createMarkdownRenderer(
   fontOpts: MarkdownFontOptions = {},
 ): { renderer: TextRenderer; strokeRenderer: TextRenderer; width: number; height: number } {
   const measure = canvasMeasure(ctx, fontOpts);
-  const parsed = parseMarkdownRuns(text);
+  const parsed = parseMarkdownRuns(text, { sizeStep: fontOpts.sizeStep });
   const layout = layoutMarkdown(parsed, maxWidth, fontSize, measure, fontOpts.lineHeight);
 
   const renderer: TextRenderer = (_ctx, _text, x, y) => {
     let lineY = y;
     for (const line of layout.lines) {
       for (const run of line.runs) {
-        const effSize = fontSize + run.sizeOffset;
+        const effSize = fontSize * run.sizeFactor;
         _ctx.font = buildFont(effSize, run.bold, run.italic, fontOpts);
         _ctx.fillStyle = fontOpts.color
           ?? (run.italic && !run.bold ? 'rgba(255, 255, 255, 0.7)' : '#FFFFFF');
@@ -265,7 +281,7 @@ export function createMarkdownRenderer(
     let lineY = y;
     for (const line of layout.lines) {
       for (const run of line.runs) {
-        const effSize = fontSize + run.sizeOffset;
+        const effSize = fontSize * run.sizeFactor;
         _ctx.font = buildFont(effSize, run.bold, run.italic, fontOpts);
         const lineOffset = (layout.width - line.width) / 2;
         _ctx.strokeText(run.text, x + lineOffset + run.x, lineY);
