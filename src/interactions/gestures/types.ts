@@ -79,6 +79,21 @@ export interface MoveOverlay<TPose> {
   poses: Map<string, TPose>;
   snapped: SnapTarget<TPose> | null;
   hideIds: string[];
+  /** Sibling poses in the destination container as a layout strategy
+   *  proposes them during the live drag. Empty when no layout is engaged. */
+  hypotheticalChildPositions: Map<string, TPose>;
+  /** Sibling poses in the source container as the source's layout strategy
+   *  proposes them when the dragged child has left it. Empty when no
+   *  cross-container reflow is in flight. */
+  sourceReflowPositions: Map<string, TPose>;
+  /** The container the drag is currently over (for highlight chrome).
+   *  null when the pointer is over no layout-bearing container. */
+  destContainerId: string | null;
+  /** False when no layout-bearing container has accepted the pointer
+   *  (pointer is over free space, or every candidate's snap returned null).
+   *  When false, gesture commits a free-space `setPose` for the dragged
+   *  child on release. */
+  accepted: boolean;
 }
 
 // ----- resize -----

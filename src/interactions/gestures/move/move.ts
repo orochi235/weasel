@@ -248,7 +248,16 @@ export function useMove<TObject extends { id: string }, TPose>(
       hideIds = [...ctx.draggedIds, ...s.cascadeIds];
     }
 
-    setOverlay({ draggedIds: ctx.draggedIds, poses: overlayPoses, snapped: snap, hideIds });
+    setOverlay({
+      draggedIds: ctx.draggedIds,
+      poses: overlayPoses,
+      snapped: snap,
+      hideIds,
+      hypotheticalChildPositions: new Map(),
+      sourceReflowPositions: new Map(),
+      destContainerId: null,
+      accepted: true,
+    });
     return true;
   }, []);
 
