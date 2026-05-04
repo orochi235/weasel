@@ -7,7 +7,8 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, fireEvent, act } from '@testing-library/react';
 import { useRef, useState } from 'react';
-import { useTools, useSelectTool, useDeleteTool } from '../';
+import { useTools, useSelectTool, useDeleteTool, useKeybindings } from '../';
+import { useHandTool } from './useHandTool';
 import { Canvas } from '../../canvas/Canvas';
 import { arrayAdapter } from '../../core/adapters/arrayAdapter';
 import { useSelection } from '../../features/selection/useSelection';
@@ -196,5 +197,118 @@ describe('Phase 2a integration', () => {
     for (const op of ops) {
       expect(typeof op.invert).toBe('function');
     }
+  });
+});
+
+describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
+  it('H switches active to hand; drag pans; view updates', async () => {
+    const onViewChange = vi.fn();
+
+    function Harness() {
+      const [view, setView] = useState({ x: 0, y: 0 });
+      const select = useSelectTool(
+        {
+          getPose: () => null,
+          getObjects: () => [],
+          getSelection: () => [],
+          setSelection: () => {},
+          hitTestArea: () => [],
+          applyOps: () => {},
+        },
+        {
+          hitBody: () => [],
+          boundsOf: () => null,
+        },
+      );
+      const hand = useHandTool();
+      const tools = useTools({ active: 'select', registry: { select, hand } });
+      useKeybindings(tools);
+      return (
+        <Canvas
+          width={200}
+          height={200}
+          items={[]}
+          setItems={() => {}}
+          view={view}
+          onViewChange={(v) => { setView(v); onViewChange(v); }}
+          tools={tools}
+          layers={{ scene: { drawOne: () => {} } }}
+        />
+      );
+    }
+
+    const { container } = render(<Harness />);
+    const canvas = container.querySelector('canvas')!;
+
+    // Switch to hand via the H key. Wrap in act() to flush the React state update.
+    act(() => { fireEvent.keyDown(document, { key: 'H' }); });
+
+    // jsdom doesn't support clientX in PointerEvent constructor; use MouseEvent
+    // (same event structure, React's onPointer* handlers receive it fine).
+    function mkPointerEvent(type: string, clientX: number, clientY: number) {
+      const e = new MouseEvent(type, { clientX, clientY, bubbles: true, cancelable: true });
+      return e;
+    }
+
+    // Pointer down + small move to cross threshold (onStart captures startClient at
+    // the threshold-crossing event) + larger move (onMove fires and calls setView).
+    canvas.dispatchEvent(mkPointerEvent('pointerdown', 100, 100));
+    canvas.dispatchEvent(mkPointerEvent('pointermove', 110, 110)); // crosses threshold → onStart; startClient=(110,110)
+    canvas.dispatchEvent(mkPointerEvent('pointermove', 160, 140)); // triggers onMove → dx=50, dy=30
+    canvas.dispatchEvent(mkPointerEvent('pointerup', 160, 140));
+
+    // dx=50, dy=30 → view = (0-50, 0-30) = (-50, -30)
+    expect(onViewChange).toHaveBeenCalledWith({ x: -50, y: -30 });
+  });
+
+  it('space engages momentary hand; release returns to prior tool', () => {
+    const onViewChange = vi.fn();
+
+    function Harness() {
+      const [view, setView] = useState({ x: 0, y: 0 });
+      const select = useSelectTool(
+        {
+          getPose: () => null,
+          getObjects: () => [],
+          getSelection: () => [],
+          setSelection: () => {},
+          hitTestArea: () => [],
+          applyOps: () => {},
+        },
+        {
+          hitBody: () => [],
+          boundsOf: () => null,
+        },
+      );
+      const hand = useHandTool();
+      const tools = useTools({ active: 'select', registry: { select, hand } });
+      useKeybindings(tools);
+      // Surface tools.modifierEngaged for the assertion.
+      (window as unknown as { __tools: typeof tools }).__tools = tools;
+      return (
+        <Canvas
+          width={200}
+          height={200}
+          items={[]}
+          setItems={() => {}}
+          view={view}
+          onViewChange={(v) => { setView(v); onViewChange(v); }}
+          tools={tools}
+          layers={{ scene: { drawOne: () => {} } }}
+        />
+      );
+    }
+
+    render(<Harness />);
+
+    act(() => { fireEvent.keyDown(document, { key: ' ' }); });
+    // Re-read from window after re-render (state update causes Harness to re-render
+    // and update window.__tools with the fresh tools snapshot).
+    const afterDown = (window as unknown as { __tools: { modifierEngaged: string | null } }).__tools;
+    expect(afterDown.modifierEngaged).toBe('hand');
+
+    act(() => { fireEvent.keyUp(document, { key: ' ' }); });
+    const afterUp = (window as unknown as { __tools: { modifierEngaged: string | null } }).__tools;
+    expect(afterUp.modifierEngaged).toBeNull();
   });
 });

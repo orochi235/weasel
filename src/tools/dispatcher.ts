@@ -146,10 +146,12 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       const dy = e.clientY - inFlight.startClient.y;
       if (dx * dx + dy * dy < threshold * threshold) return;
       // Crossed threshold: promote to drag, fire onStart with the
-      // threshold-crossing event.
+      // threshold-crossing event. Capture any scratch mutation onStart makes.
       const onStart = inFlight.tool.drag?.onStart;
       if (onStart) {
-        onStart(e, ctxFor(inFlight.scratch, baseCtx));
+        const startCtx = ctxFor(inFlight.scratch, baseCtx);
+        onStart(e, startCtx);
+        inFlight.scratch = startCtx.scratch;
       }
       inFlight.phase = 'drag';
       return;
