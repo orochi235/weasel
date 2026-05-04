@@ -96,6 +96,10 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`. The `src/animation/`
 - Animator pause / resume / time-scale — useful for debugging.
 - Layout-strategy reflow integration — explicit hookup; today consumers compose `animateOnSetPose` over a layout-driven adapter.
 
+## Deferred from container layout strategies (2026-05-04)
+
+- `useMove` layout-pass top-most container detection uses adapter `getObjects()` iteration order as a proxy for paint order. Replace with a real z-order walk via `OrderedAdapter.getChildren` once layout-aware containers need correctness here.
+
 ## Deferred from text-primitive world-unit pass (2026-05-04)
 
 From the `renderLabel` / `markdownText` world-unit safety refactor (`padX`/`padY`/`cornerRadius` configurable on `renderLabel`, multiplicative `sizeFactor` replacing additive `sizeOffset`, drop `Math.round` on line height).

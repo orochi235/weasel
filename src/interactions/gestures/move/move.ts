@@ -112,6 +112,25 @@ export function useMove<TObject extends { id: string }, TPose>(
   const cascadeWorldPoseRef = useRef(cascadeWorldPose);
   cascadeWorldPoseRef.current = cascadeWorldPose;
 
+  type LayoutPass = {
+    destContainerId: string | null;
+    accepted: boolean;
+    layout: unknown; // LayoutStrategy<TPose>
+    container: { id: string; bounds: { x: number; y: number; width: number; height: number } } | null;
+    children: { id: string; pose: TPose }[];
+    target: unknown; // DropTarget<TPose> | null
+    sourceReflowPositions: Map<string, TPose>;
+  };
+  const makeEmptyLayoutPass = (): LayoutPass => ({
+    destContainerId: null,
+    accepted: true,
+    layout: null,
+    container: null,
+    children: [],
+    target: null,
+    sourceReflowPositions: new Map(),
+  });
+
   const stateRef = useRef<{
     phase: 'idle' | 'pending' | 'active';
     startWorld: { x: number; y: number };
@@ -119,15 +138,7 @@ export function useMove<TObject extends { id: string }, TPose>(
     ctx: GestureContext<TPose, TObject> | null;
     cascadeIds: string[];
     cascadeOriginWorld: Map<string, TPose>;
-    layoutPass: {
-      destContainerId: string | null;
-      accepted: boolean;
-      layout: unknown; // LayoutStrategy<TPose>
-      container: { id: string; bounds: { x: number; y: number; width: number; height: number } } | null;
-      children: { id: string; pose: TPose }[];
-      target: unknown; // DropTarget<TPose> | null
-      sourceReflowPositions: Map<string, TPose>;
-    };
+    layoutPass: LayoutPass;
   }>({
     phase: 'idle',
     startWorld: { x: 0, y: 0 },
@@ -135,15 +146,7 @@ export function useMove<TObject extends { id: string }, TPose>(
     ctx: null,
     cascadeIds: [],
     cascadeOriginWorld: new Map(),
-    layoutPass: {
-      destContainerId: null,
-      accepted: true,
-      layout: null,
-      container: null,
-      children: [],
-      target: null,
-      sourceReflowPositions: new Map(),
-    },
+    layoutPass: makeEmptyLayoutPass(),
   });
 
   const [overlay, setOverlay] = useState<MoveOverlay<TPose> | null>(null);
@@ -153,15 +156,7 @@ export function useMove<TObject extends { id: string }, TPose>(
     stateRef.current.ctx = null;
     stateRef.current.cascadeIds = [];
     stateRef.current.cascadeOriginWorld = new Map();
-    stateRef.current.layoutPass = {
-      destContainerId: null,
-      accepted: true,
-      layout: null,
-      container: null,
-      children: [],
-      target: null,
-      sourceReflowPositions: new Map(),
-    };
+    stateRef.current.layoutPass = makeEmptyLayoutPass();
     setOverlay(null);
   }, []);
 
@@ -217,15 +212,7 @@ export function useMove<TObject extends { id: string }, TPose>(
         adapter,
         scratch: {},
       },
-      layoutPass: {
-        destContainerId: null,
-        accepted: true,
-        layout: null,
-        container: null,
-        children: [],
-        target: null,
-        sourceReflowPositions: new Map(),
-      },
+      layoutPass: makeEmptyLayoutPass(),
     };
   }, []);
 
@@ -331,7 +318,8 @@ export function useMove<TObject extends { id: string }, TPose>(
       }
 
       // "Top-most" = last one in iteration order (later siblings render on top).
-      // For deeper z-order semantics, callers can override via deferred TODO.
+      // This is a paint-order proxy — see docs/TODO.md "Deferred from container
+      // layout strategies" for the real z-order walk we owe.
       dest = candidates[candidates.length - 1] ?? null;
 
       if (dest) {
@@ -351,9 +339,12 @@ export function useMove<TObject extends { id: string }, TPose>(
         };
         const targets = layout.getDropTargets({ id: dest.id, bounds: dest.bounds }, children, draggedArg);
         const target: Target | null = layout.snap.pickTarget(targets, { x: args.worldX, y: args.worldY });
-        if (target === null && targets.length > 0) {
-          // The layout had targets but the snap policy rejected — treat as
-          // not-accepted (pointer is outside the policy's tolerance).
+        if (target === null) {
+          // A null target from the layout's snap policy is its signal "I don't
+          // accept here" — outside tolerance for snapPoint, no slot for tile
+          // strategies. Treat as not-accepted regardless of how many targets
+          // the strategy offered. Don't fall through to "drop anywhere"; that
+          // undermines snapPoint-with-tolerance and free-space contracts.
           accepted = false;
         } else {
           destContainerId = dest.id;
@@ -412,7 +403,7 @@ export function useMove<TObject extends { id: string }, TPose>(
       container: dest ? { id: dest.id, bounds: dest.bounds } : null,
       children: dest ? destChildren : [],
       target: destTarget,
-      sourceReflowPositions: new Map(sourceReflowPositions),
+      sourceReflowPositions,
     };
 
     setOverlay({

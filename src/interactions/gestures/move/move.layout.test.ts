@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { useMove } from './move';
-import { tileGrid } from '../../../layout/strategies';
+import { tileGrid, snapPoint } from '../../../layout/strategies';
 import type { LayoutStrategy } from '../../../layout/types';
 import type { MoveAdapter } from '../../../core/adapters/types';
 
@@ -140,5 +140,39 @@ describe('useMove with layout-bearing container', () => {
     const overlay = result.current.overlay!;
     expect(overlay.destContainerId).toBeNull();
     expect(overlay.accepted).toBe(false);
+  });
+
+  it('marks accepted=false when pointer is over a snapPoint container but outside tolerance', () => {
+    // Container 'C' is 100x100 with corner snap targets. Tolerance of 5 means
+    // pickTarget rejects unless the pointer is within 5 world units of a corner.
+    // Pointer at (50, 50) sits over the container but ~70 units from every corner.
+    const strategy = snapPoint<P>({ pattern: 'corners', tolerance: 5 });
+    const adapter = makeAdapter({
+      poses: {
+        C: { x: 0, y: 0, width: 100, height: 100 },
+        a: { x: 0, y: 0, width: 20, height: 20 },
+      },
+      parents: { C: null, a: 'C' },
+      children: { C: ['a'] },
+      getLayout: (id) => (id === 'C' ? strategy : null),
+    });
+    const { result } = renderHook(() => useMove(adapter));
+
+    act(() => {
+      result.current.start({ ids: ['a'], worldX: 10, worldY: 10, clientX: 10, clientY: 10 });
+    });
+    act(() => {
+      result.current.move({
+        worldX: 50,
+        worldY: 50,
+        clientX: 50,
+        clientY: 50,
+        modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+      });
+    });
+
+    const overlay = result.current.overlay!;
+    expect(overlay.accepted).toBe(false);
+    expect(overlay.destContainerId).toBeNull();
   });
 });
