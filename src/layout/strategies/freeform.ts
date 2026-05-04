@@ -6,6 +6,12 @@ export interface FreeformOptions<TPose> {
   snap?: LayoutSnap<TPose>;
 }
 
+/**
+ * Identity layout: each child stays where it's stored, no reflow, no drop
+ * targets. `snap` is accepted for API symmetry — overrides take effect only
+ * if a caller wires up an external drop-target source, since `getDropTargets`
+ * returns empty by default.
+ */
 export function freeform<TPose>(opts: FreeformOptions<TPose> = {}): LayoutStrategy<TPose> {
   const snap = opts.snap ?? none<TPose>();
 
@@ -26,12 +32,12 @@ export function freeform<TPose>(opts: FreeformOptions<TPose> = {}): LayoutStrate
       return new Map();
     },
 
-    commitDrop(_container, _children, dragged, _target) {
+    commitDrop(_container, _children, dragged, target) {
       return [
         createTransformOp<TPose>({
           id: dragged.id,
           from: dragged.originPose,
-          to: dragged.pose,
+          to: target?.pose ?? dragged.pose,
           label: 'Drop',
         }),
       ];

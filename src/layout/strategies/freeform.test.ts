@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { freeform } from './freeform';
 import { nearestWithin } from '../snaps';
 
@@ -20,7 +20,7 @@ describe('freeform', () => {
     expect(got.size).toBe(2);
   });
 
-  it('getDropTargets returns empty array (snap is none by default)', () => {
+  it('getDropTargets returns empty array (freeform never proposes targets)', () => {
     const layout = freeform<P>();
     const targets = layout.getDropTargets(
       container,
@@ -51,7 +51,7 @@ describe('freeform', () => {
     expect(reflow.size).toBe(0);
   });
 
-  it('commitDrop emits a single transform op for the dragged child', () => {
+  it('commitDrop emits a transform op that writes dragged.pose and inverts to originPose', () => {
     const layout = freeform<P>();
     const ops = layout.commitDrop(
       container,
@@ -66,8 +66,33 @@ describe('freeform', () => {
     );
     expect(ops).toHaveLength(1);
     expect(ops[0].label).toBe('Drop');
-    expect(typeof ops[0].apply).toBe('function');
-    expect(typeof ops[0].invert).toBe('function');
+
+    const setPose = vi.fn<(id: string, pose: P) => void>();
+    ops[0].apply({ setPose } as never);
+    expect(setPose).toHaveBeenCalledWith('d', { x: 12, y: 34, width: 10, height: 10 });
+
+    setPose.mockClear();
+    const inverted = ops[0].invert!();
+    inverted.apply({ setPose } as never);
+    expect(setPose).toHaveBeenCalledWith('d', { x: 0, y: 0, width: 10, height: 10 });
+  });
+
+  it('commitDrop honors target.pose when present (snap-driven destination)', () => {
+    const layout = freeform<P>();
+    const ops = layout.commitDrop(
+      container,
+      [],
+      {
+        id: 'd',
+        originPose: { x: 0, y: 0, width: 10, height: 10 },
+        pose: { x: 50, y: 50, width: 10, height: 10 },
+        sourceContainerId: null,
+      },
+      { pose: { x: 20, y: 20, width: 10, height: 10 }, origin: { x: 20, y: 20 } },
+    );
+    const setPose = vi.fn<(id: string, pose: P) => void>();
+    ops[0].apply({ setPose } as never);
+    expect(setPose).toHaveBeenCalledWith('d', { x: 20, y: 20, width: 10, height: 10 });
   });
 
   it('accepts a snap override', () => {
