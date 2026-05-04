@@ -98,8 +98,20 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`. The `src/animation/`
 
 ## Deferred from container layout strategies (2026-05-04)
 
+From the `LayoutStrategy<TPose>` module (`freeform`/`tileGrid`/`snapPoint` strategies + `useMove` integration). Spec: `docs/specs/2026-05-03-container-layout-strategies-design.md`.
+
 - `useMove` layout-pass top-most container detection uses adapter `getObjects()` iteration order as a proxy for paint order. Replace with a real z-order walk via `OrderedAdapter.getChildren` once layout-aware containers need correctness here.
 - Multi-select drag into a layout container currently falls through to the per-id transform batch (no `commitDrop` invocation, no sibling reflow). Layout-aware commit only fires when `ctx.draggedIds.length === 1`. Decide multi-select-into-layout semantics (sequential commitDrops? grouped layout API?) before lifting the guard.
+- **Drop rejection signal.** v1 layout commits a free-space `setPose` when no container accepted a drag. Needs a cleaner semantic — candidates: a dedicated cancel op, a snap-back-to-source-pose path, or having the source layout's `commitDrop` re-place the child at its origin slot.
+- **Tile-grid overflow policy.** Children beyond `cols * rows` are skipped from `getChildPositions`. Real apps may want scroll, grow-grid, or rejection — pick once a consumer asks.
+- **Strategy-aware drop regions.** A layout could expose `dropRegion(container) → Bounds` extending beyond visible bounds for forgiveness (e.g. row layouts catching pointers slightly past the row's end). Today the gesture hit-tests against container body bounds.
+- **Stateful layout strategy factories.** All v1 strategies are pure. If profiling shows recompute pain (likely only quadtree-class), promote to a factory returning `(container) → { ... }` with cached state.
+- **Animated reflow transitions.** Sibling reflow is snap-to-target in v1. Smooth interpolation during the preview is a layer above (likely a `useAnimatedReflow` hook over the now-shipped animation primitive).
+- **Quadtree / packing layouts.** Eric's quadtree strategy stays in eric (or a future plugin). Niche enough not to belong in the generic kit.
+- **Slot-based layout strategy** (rows / grid / ring arrangements à la eric's `@/model/arrangement`). Worth lifting once the v1 three settle and a kit-generic shape emerges that doesn't drag domain types.
+- **Configurable layout hit-test order.** v1 uses top-most container under the dragged center. Innermost-regardless-of-z and explicit-drop-region modes are escape hatches if a real consumer needs them.
+- **Per-strategy `acceptsDrop(dragged) → boolean`.** Today rejection is implicit (snap returns null). An explicit pre-check could short-circuit `getDropTargets` for incompatible objects (e.g. a grid that only accepts squares). Add when type-aware containers appear.
+- **Tool overlay rendering of reflowed siblings.** `MoveOverlay` now publishes `hypotheticalChildPositions` / `sourceReflowPositions`, but `useSelectTool`'s overlay doesn't yet draw them. Wire the select tool's overlay to render hypothetical poses (likely as ghosts) so users see the reflow preview during the drag.
 
 ## Deferred from text-primitive world-unit pass (2026-05-04)
 
@@ -166,8 +178,6 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
   *Surface impact:* `RenderLayer.draw` signature (needs a `view` arg), `SceneSlotConfig.drawOne` signature (gains `view`), `handleHitRadius` semantics (becomes screen-px instead of world-px), default `clientToWorld` routes through `screenToWorld`. Multi-day; ship when a real second consumer needs it (the bezier demo alone doesn't justify the surface change).
 
 - **`arrayAdapter` as the default Canvas adapter.** Today every demo wires an explicit `adapter={arrayAdapter(...)}` (or hand-rolls one). Half the kit's surface assumes the arrayAdapter shape anyway. Make `adapter` optional — when omitted, Canvas synthesizes one from a smaller required prop set (`items`/`setItems` + `toPose`/`fromPose`, or just an `items` ref + a setter). Demos with the trivial flat-list shape drop the adapter boilerplate entirely; non-trivial cases keep the explicit-adapter escape hatch. Open: name and exact prop surface (`items` + `onChange`? a single `state` prop?), and whether group/ordered scenes get a parallel default or stay explicit.
-
-- **Container layout strategies.** Containers (groups w/ `getChildren`/`setChildOrder`) are first-class, but children are positioned by absolute pose — there's no notion of a layout owned by the container. Real apps want stack/grid/flex strategies on a container so dragging in/out of it reflows siblings. Open scope: (a) ship a `LayoutStrategy<TPose>` interface (`getChildPositions(parent, children)` + drop-target hooks), (b) just expose hooks the consumer wires (`onChildAdded`, `onChildMoved`, `getChildSlot`) and ship one or two reference strategies (vertical stack, uniform grid). Either way needs a story for how the move overlay previews the reflow.
 
 ## Tier 3 — specialized but valuable
 
