@@ -38,8 +38,17 @@ export function AnimationDemo() {
       toPose: (c) => ({ x: c.x, y: c.y, width: c.width, height: c.height }),
     }),
     ...selection.adapterMethods,
-    insertObject: (obj: Card) => setCards((cs) => [...cs, obj]),
-    removeObject: (id: string) => setCards((cs) => cs.filter((c) => c.id !== id)),
+    insertObject: (obj: Card) => {
+      // Mutate the live ref synchronously so wrappers that read getPose
+      // immediately after insertObject (e.g. animateLifecycle) see the new
+      // object before React state catches up.
+      cardsRef.current = [...cardsRef.current, obj];
+      setCards(cardsRef.current);
+    },
+    removeObject: (id: string) => {
+      cardsRef.current = cardsRef.current.filter((c) => c.id !== id);
+      setCards(cardsRef.current);
+    },
     hitTestArea: (r: Pose) =>
       cardsRef.current
         .filter((o) => o.x < r.x + r.width && o.x + o.width > r.x && o.y < r.y + r.height && o.y + o.height > r.y)
