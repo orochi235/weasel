@@ -49,7 +49,7 @@ describe('animateLifecycle.insert', () => {
     const { base, insertObject, setPose } = makeAdapter(initial);
     const { result } = renderHook(() => useAnimator(clock));
     const wrapped = animateLifecycle(base as never, result.current, {
-      enterFrom: (p) => ({ ...p, width: 0, height: 0 }),
+      enterFrom: (p: RectPose) => ({ ...p, width: 0, height: 0 }),
       ms: 100,
     });
     act(() => {
@@ -73,7 +73,7 @@ describe('animateLifecycle.remove', () => {
     const { base, removeObject, setPose } = makeAdapter(initial);
     const { result } = renderHook(() => useAnimator(clock));
     const wrapped = animateLifecycle(base as never, result.current, {
-      exitTo: (p) => ({ ...p, width: 0, height: 0 }),
+      exitTo: (p: RectPose) => ({ ...p, width: 0, height: 0 }),
       ms: 100,
     });
     act(() => {
