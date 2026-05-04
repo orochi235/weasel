@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react';
-import { easeOut } from './easings';
+import { easeOut, SPRING_PRESETS } from './easings';
 import type {
   AnimationHandle,
   Animator,
@@ -19,6 +19,15 @@ interface ActiveAnimation {
 }
 
 const numericLerp = (a: number, b: number, t: number): number => a + (b - a) * t;
+
+function resolveSpringConstants(o: { preset?: string; stiffness?: number; damping?: number; mass?: number }) {
+  const preset = o.preset ? SPRING_PRESETS[o.preset as keyof typeof SPRING_PRESETS] : null;
+  return {
+    stiffness: o.stiffness ?? preset?.stiffness ?? 170,
+    damping: o.damping ?? preset?.damping ?? 26,
+    mass: o.mass ?? preset?.mass ?? 1,
+  };
+}
 
 export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
   const optsRef = useRef(opts);
@@ -107,8 +116,50 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       });
     };
 
-    const spring = <T,>(_o: SpringOptions<T>): AnimationHandle => {
-      throw new Error('spring: not implemented yet (Task 4)');
+    const spring = <T,>(o: SpringOptions<T>): AnimationHandle => {
+      const id = nextId.current++;
+      const isNumeric = typeof o.from === 'number' && typeof o.to === 'number';
+      if (!isNumeric && (!o.add || !o.subtract || !o.scale || !o.magnitude)) {
+        throw new Error('spring: add/subtract/scale/magnitude are required for non-numeric T');
+      }
+      const add = o.add ?? ((a: T, b: T) => ((a as unknown as number) + (b as unknown as number)) as unknown as T);
+      const subtract = o.subtract ?? ((a: T, b: T) => ((a as unknown as number) - (b as unknown as number)) as unknown as T);
+      const scale = o.scale ?? ((v: T, k: number) => ((v as unknown as number) * k) as unknown as T);
+      const magnitude = o.magnitude ?? ((v: T) => Math.abs(v as unknown as number));
+      const { stiffness, damping, mass } = resolveSpringConstants(o);
+      const restThreshold = o.restThreshold ?? 0.01;
+
+      let value = o.from;
+      let velocity: T = (o.velocity ?? scale(subtract(o.to, o.from), 0)) as T;
+      let lastTime: number | null = null;
+
+      return register({
+        id,
+        cancelKey: o.cancelKey,
+        tick(nowMs) {
+          if (lastTime == null) {
+            lastTime = nowMs;
+            o.onTick(value);
+            return false;
+          }
+          const dt = Math.min(0.064, (nowMs - lastTime) / 1000); // clamp big jumps
+          lastTime = nowMs;
+          // Semi-implicit Euler integration of: a = (-k(x - to) - c*v) / m
+          const displacement = subtract(value, o.to);
+          const springForce = scale(displacement, -stiffness);
+          const dampingForce = scale(velocity, -damping);
+          const accel = scale(add(springForce, dampingForce), 1 / mass);
+          velocity = add(velocity, scale(accel, dt));
+          value = add(value, scale(velocity, dt));
+          o.onTick(value);
+          if (magnitude(velocity) < restThreshold && magnitude(subtract(value, o.to)) < restThreshold) {
+            o.onTick(o.to);
+            o.onDone?.();
+            return true;
+          }
+          return false;
+        },
+      });
     };
     const decay = <T,>(_o: DecayOptions<T>): AnimationHandle => {
       throw new Error('decay: not implemented yet (Task 5)');

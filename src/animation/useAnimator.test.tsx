@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAnimator } from './useAnimator';
-import { linear } from './easings';
+import { linear, SPRING_PRESETS } from './easings';
 
 /** Minimal manual rAF driver for deterministic tests. */
 function makeClock() {
@@ -111,5 +111,61 @@ describe('useAnimator.tween', () => {
     const callsAfterSettle = requestSpy.mock.calls.length;
     act(() => clock.advance(1000));
     expect(requestSpy.mock.calls.length).toBe(callsAfterSettle);
+  });
+});
+
+describe('useAnimator.spring', () => {
+  // Reference SPRING_PRESETS so unused-import lint stays quiet across tasks.
+  void SPRING_PRESETS;
+
+  it('settles at to within rest threshold', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const ticks: number[] = [];
+    const onDone = vi.fn();
+    act(() => {
+      result.current.spring<number>({
+        from: 0,
+        to: 100,
+        preset: 'stiff',
+        onTick: (v) => ticks.push(v),
+        onDone,
+      });
+    });
+    // 5s of 16ms frames is more than enough for "stiff" to settle.
+    for (let i = 0; i < 320; i++) act(() => clock.advance(16));
+    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(ticks[ticks.length - 1]).toBeCloseTo(100, 1);
+  });
+
+  it('honors explicit stiffness/damping/mass over preset', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const onDone = vi.fn();
+    act(() => {
+      result.current.spring<number>({
+        from: 0,
+        to: 1,
+        stiffness: 500,
+        damping: 30,
+        mass: 1,
+        onTick: () => {},
+        onDone,
+      });
+    });
+    for (let i = 0; i < 200; i++) act(() => clock.advance(16));
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it('throws if T is non-numeric and vector helpers are missing', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    expect(() =>
+      result.current.spring({
+        from: { x: 0, y: 0 },
+        to: { x: 10, y: 10 },
+        onTick: () => {},
+      } as never),
+    ).toThrow(/spring/);
   });
 });
