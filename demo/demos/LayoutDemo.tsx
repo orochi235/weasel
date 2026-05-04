@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   Canvas,
   useSelectTool,
@@ -48,6 +48,13 @@ const COLORS: Record<string, string> = {
 
 export function LayoutDemo() {
   const [scene, setScene] = useState<SceneState>(INITIAL);
+  const adapterRef = useRef<{
+    setPose(id: string, pose: P): void;
+    setParent(id: string, parentId: string | null): void;
+    insertObject(o: Obj): void;
+    removeObject(id: string): void;
+    setSelection(ids: string[]): void;
+  } | null>(null);
 
   const layouts = useMemo(() => ({
     F: freeform<P>(),
@@ -97,9 +104,10 @@ export function LayoutDemo() {
       }),
     getSelection: () => [] as string[],
     setSelection: () => {},
-    applyOps: () => {},
-    applyBatch: () => {},
+    applyOps: (ops) => { for (const op of ops) op.apply(adapterRef.current!); },
+    applyBatch: (ops) => { for (const op of ops) op.apply(adapterRef.current!); },
   }), [scene, layouts]);
+  adapterRef.current = adapter;
 
   const select = useSelectTool<Obj, P>(adapter, {
     hitBody: (wx, wy) =>
