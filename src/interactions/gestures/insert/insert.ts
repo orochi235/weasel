@@ -29,6 +29,10 @@ export interface UseInsertOptions<TPose, TObject extends { id: string } = { id: 
    *  Returning null aborts. The created object is dispatched as an InsertOp
    *  under the same `insertLabel`. */
   pointInsert?: (point: { x: number; y: number }) => TObject | null;
+  /** Drag-disabled mode. When true, every release routes to pointInsert(start)
+   *  regardless of bounds — commitInsert is never called. Used by tool hooks
+   *  that wire only pointer.onClick (no marquee). */
+  clickOnly?: boolean;
   onGestureStart?: () => void;
   onGestureEnd?: (committed: boolean) => void;
 }
@@ -67,6 +71,7 @@ export function useInsert<TObject extends { id: string }, TPose>(
     minBounds = { width: 0, height: 0 },
     posefromBounds = (b) => b as unknown as TPose,
     pointInsert,
+    clickOnly = false,
     onGestureStart,
     onGestureEnd,
   } = options;
@@ -88,6 +93,8 @@ export function useInsert<TObject extends { id: string }, TPose>(
   onGestureEndRef.current = onGestureEnd;
   const pointInsertRef = useRef(pointInsert);
   pointInsertRef.current = pointInsert;
+  const clickOnlyRef = useRef(clickOnly);
+  clickOnlyRef.current = clickOnly;
 
   const stateRef = useRef<{ active: boolean; ctx: GestureContext<TPose> | null }>({
     active: false,
@@ -155,6 +162,8 @@ export function useInsert<TObject extends { id: string }, TPose>(
     const insertLabel = insertLabelRef.current;
     const minBounds = minBoundsRef.current;
     const onGestureEnd = onGestureEndRef.current;
+    const pointInsert = pointInsertRef.current;
+    const clickOnly = clickOnlyRef.current;
     if (!s.active || !s.ctx) {
       cleanup();
       onGestureEnd?.(false);
@@ -164,8 +173,8 @@ export function useInsert<TObject extends { id: string }, TPose>(
     const sp = ctx.origin.get(GID) as unknown as InsertPoint;
     const cp = ctx.current.get(GID) as unknown as InsertPoint;
     const bounds = boundsFrom(sp, cp);
-    if (bounds.width <= minBounds.width || bounds.height <= minBounds.height) {
-      const pointInsert = pointInsertRef.current;
+    const subThreshold = bounds.width <= minBounds.width || bounds.height <= minBounds.height;
+    if (clickOnly || subThreshold) {
       if (pointInsert) {
         const created = pointInsert({ x: sp.x, y: sp.y });
         if (created) {

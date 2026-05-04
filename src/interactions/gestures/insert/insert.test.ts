@@ -225,3 +225,43 @@ describe('useInsert — pointInsert fallback', () => {
     expect(batches.length).toBe(1);
   });
 });
+
+describe('useInsert — clickOnly', () => {
+  it('clickOnly: above-threshold release still routes to pointInsert (commitInsert never called)', () => {
+    const { adapter, batches } = makeAdapter();
+    const commitSpy = vi.spyOn(adapter, 'commitInsert');
+    const pointInsert = vi.fn((p: { x: number; y: number }) => ({
+      id: 'p-0', x: p.x, y: p.y, width: 0, height: 0,
+    }));
+    const { result } = renderHook(() =>
+      useInsert<Obj, { x: number; y: number }>(adapter, {
+        clickOnly: true,
+        pointInsert,
+        minBounds: { width: 4, height: 4 },
+      }),
+    );
+    act(() => {
+      result.current.start(10, 20, { alt: false, shift: false, meta: false, ctrl: false });
+      result.current.move(80, 90, { alt: false, shift: false, meta: false, ctrl: false });
+      result.current.end();
+    });
+    expect(commitSpy).not.toHaveBeenCalled();
+    expect(pointInsert).toHaveBeenCalledWith({ x: 10, y: 20 });
+    expect(batches.length).toBe(1);
+  });
+
+  it('clickOnly with pointInsert returning null does not dispatch', () => {
+    const { adapter, batches } = makeAdapter();
+    const { result } = renderHook(() =>
+      useInsert<Obj, { x: number; y: number }>(adapter, {
+        clickOnly: true,
+        pointInsert: () => null,
+      }),
+    );
+    act(() => {
+      result.current.start(10, 20, { alt: false, shift: false, meta: false, ctrl: false });
+      result.current.end();
+    });
+    expect(batches.length).toBe(0);
+  });
+});
