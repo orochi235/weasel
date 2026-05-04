@@ -91,6 +91,7 @@ export type {
   CanvasSelectionMode,
   StandardSlotName,
   CustomLayerEntry,
+  GridSlotConfig,
 } from './canvas/Canvas';
 export { useSelection } from './features/selection/useSelection';
 export type {
