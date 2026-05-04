@@ -85,6 +85,11 @@ export interface MoveAdapter<TObject extends { id: string }, TPose> {
    *  additional ops are generated — children's local poses don't change
    *  when the parent's local pose moves. */
   getChildren?(id: string): string[];
+  /** Optional: layout strategy attached to a container, or null if the
+   *  container uses absolute positioning (default behavior). When present,
+   *  `useMove` uses the strategy to compute drop targets, sibling reflow,
+   *  and the commit op batch when a drag ends over the container. */
+  getLayout?(containerId: string): import('../../layout/types').LayoutStrategy<TPose> | null;
 }
 
 /**
