@@ -169,3 +169,50 @@ describe('useAnimator.spring', () => {
     ).toThrow(/spring/);
   });
 });
+
+describe('useAnimator.decay', () => {
+  it('integrates velocity with friction until magnitude < threshold', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const ticks: number[] = [];
+    const onDone = vi.fn();
+    act(() => {
+      result.current.decay<number>({
+        from: 0,
+        velocity: 600, // px/sec
+        friction: 0.9,
+        threshold: 1,
+        add: (a, b) => a + b,
+        scale: (v, k) => v * k,
+        magnitude: (v) => Math.abs(v),
+        onTick: (v) => ticks.push(v),
+        onDone,
+      });
+    });
+    // friction 0.9/sec @ v0=600 → ~4000 frames to drop below 1px/sec
+    for (let i = 0; i < 5000; i++) act(() => clock.advance(16));
+    expect(onDone).toHaveBeenCalledTimes(1);
+    // Last value should be greater than the first (we moved in the +x direction).
+    expect(ticks[ticks.length - 1]).toBeGreaterThan(ticks[0]);
+  });
+
+  it('skips immediately when initial |velocity| is below threshold', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const onDone = vi.fn();
+    act(() => {
+      result.current.decay<number>({
+        from: 0,
+        velocity: 0.1,
+        threshold: 1,
+        add: (a, b) => a + b,
+        scale: (v, k) => v * k,
+        magnitude: (v) => Math.abs(v),
+        onTick: () => {},
+        onDone,
+      });
+    });
+    act(() => clock.advance(16));
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+});

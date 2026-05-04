@@ -161,8 +161,40 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         },
       });
     };
-    const decay = <T,>(_o: DecayOptions<T>): AnimationHandle => {
-      throw new Error('decay: not implemented yet (Task 5)');
+    const decay = <T,>(o: DecayOptions<T>): AnimationHandle => {
+      const id = nextId.current++;
+      const friction = o.friction ?? 0.95;
+      const threshold = o.threshold ?? 0.5;
+      let value = o.from;
+      let velocity = o.velocity;
+      let lastTime: number | null = null;
+
+      return register({
+        id,
+        cancelKey: o.cancelKey,
+        tick(nowMs) {
+          if (lastTime == null) {
+            lastTime = nowMs;
+            if (o.magnitude(velocity) < threshold) {
+              o.onDone?.();
+              return true;
+            }
+            o.onTick(value);
+            return false;
+          }
+          const dt = Math.min(0.064, (nowMs - lastTime) / 1000);
+          lastTime = nowMs;
+          // Per-second friction: v *= friction^dt
+          velocity = o.scale(velocity, Math.pow(friction, dt));
+          value = o.add(value, o.scale(velocity, dt));
+          o.onTick(value);
+          if (o.magnitude(velocity) < threshold) {
+            o.onDone?.();
+            return true;
+          }
+          return false;
+        },
+      });
     };
 
     return {
