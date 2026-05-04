@@ -445,6 +445,39 @@ export function useMove<TObject extends { id: string }, TPose>(
       return;
     }
 
+    const layoutPass = stateRef.current.layoutPass;
+    if (ops === undefined && layoutPass.layout && layoutPass.container) {
+      type Layout = import('../../../layout/types').LayoutStrategy<TPose>;
+      type Target = import('../../../layout/types').DropTarget<TPose>;
+      const layout = layoutPass.layout as Layout;
+      const target = layoutPass.target as Target | null;
+      const draggedId = ctx.draggedIds[0];
+      const dropOps = layout.commitDrop(
+        layoutPass.container,
+        layoutPass.children,
+        {
+          id: draggedId,
+          originPose: ctx.origin.get(draggedId)!,
+          pose: ctx.current.get(draggedId)!,
+          sourceContainerId: adapter.getParent(draggedId),
+        },
+        layoutPass.accepted ? target : null,
+      );
+      // Source-side reflow ops (cross-container case).
+      const sourceReflowOps: Op[] = [];
+      for (const [cid, newPose] of layoutPass.sourceReflowPositions) {
+        sourceReflowOps.push(
+          createTransformOp<TPose>({
+            id: cid,
+            from: adapter.getPose(cid),
+            to: newPose,
+            label: 'Source reflow',
+          }),
+        );
+      }
+      ops = [...dropOps, ...sourceReflowOps];
+    }
+
     if (ops === undefined) {
       ops = ctx.draggedIds.map((id) =>
         createTransformOp<TPose>({

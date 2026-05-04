@@ -176,3 +176,106 @@ describe('useMove with layout-bearing container', () => {
     expect(overlay.destContainerId).toBeNull();
   });
 });
+
+describe('useMove commit with layout', () => {
+  it('emits commitDrop ops on release into a layout container', () => {
+    const grid = tileGrid<P>({ cols: 2, rows: 1 });
+    const adapter = makeAdapter({
+      poses: {
+        C: { x: 0, y: 0, width: 100, height: 100 },
+        a: { x: 0, y: 0, width: 50, height: 100 },
+        b: { x: 50, y: 0, width: 50, height: 100 },
+      },
+      parents: { C: null, a: 'C', b: 'C' },
+      children: { C: ['a', 'b'] },
+      getLayout: (id) => (id === 'C' ? grid : null),
+    });
+    const { result } = renderHook(() => useMove(adapter));
+
+    act(() => {
+      result.current.start({ ids: ['a'], worldX: 25, worldY: 50, clientX: 25, clientY: 50 });
+    });
+    act(() => {
+      result.current.move({
+        worldX: 75, worldY: 50, clientX: 75, clientY: 50,
+        modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+      });
+    });
+    act(() => {
+      result.current.end();
+    });
+
+    expect(adapter.applyBatchSpy).toHaveBeenCalledTimes(1);
+    const [ops] = adapter.applyBatchSpy.mock.calls[0];
+    // Two ops: dragged 'a' moving to cell (1,0) + swap 'b' moving to cell (0,0).
+    expect(ops).toHaveLength(2);
+    expect(ops.every((o) => typeof o.apply === 'function' && typeof o.invert === 'function')).toBe(true);
+  });
+
+  it('emits free-space setPose when no container accepted', () => {
+    const grid = tileGrid<P>({ cols: 2, rows: 1 });
+    const adapter = makeAdapter({
+      poses: {
+        C: { x: 0, y: 0, width: 100, height: 100 },
+        a: { x: 0, y: 0, width: 50, height: 100 },
+      },
+      parents: { C: null, a: 'C' },
+      children: { C: ['a'] },
+      getLayout: (id) => (id === 'C' ? grid : null),
+    });
+    const { result } = renderHook(() => useMove(adapter));
+
+    act(() => {
+      result.current.start({ ids: ['a'], worldX: 25, worldY: 50, clientX: 25, clientY: 50 });
+    });
+    act(() => {
+      result.current.move({
+        worldX: 500, worldY: 500, clientX: 500, clientY: 500,
+        modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+      });
+    });
+    act(() => {
+      result.current.end();
+    });
+
+    expect(adapter.applyBatchSpy).toHaveBeenCalledTimes(1);
+    const [ops] = adapter.applyBatchSpy.mock.calls[0];
+    expect(ops).toHaveLength(1); // Single free-space transform for 'a'.
+  });
+
+  it('emits dest commitDrop + source reflow ops on cross-container drop', () => {
+    const gridA = tileGrid<P>({ cols: 2, rows: 1 });
+    const gridB = tileGrid<P>({ cols: 2, rows: 1 });
+    const adapter = makeAdapter({
+      poses: {
+        A: { x: 0, y: 0, width: 100, height: 100 },
+        B: { x: 200, y: 0, width: 100, height: 100 },
+        a1: { x: 0, y: 0, width: 50, height: 100 },
+        a2: { x: 50, y: 0, width: 50, height: 100 },
+      },
+      parents: { A: null, B: null, a1: 'A', a2: 'A' },
+      children: { A: ['a1', 'a2'], B: [] },
+      getLayout: (id) => (id === 'A' ? gridA : id === 'B' ? gridB : null),
+    });
+    const { result } = renderHook(() => useMove(adapter));
+
+    act(() => {
+      result.current.start({ ids: ['a1'], worldX: 25, worldY: 50, clientX: 25, clientY: 50 });
+    });
+    act(() => {
+      result.current.move({
+        worldX: 225, worldY: 50, clientX: 225, clientY: 50,
+        modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+      });
+    });
+    act(() => {
+      result.current.end();
+    });
+
+    expect(adapter.applyBatchSpy).toHaveBeenCalledTimes(1);
+    const [ops] = adapter.applyBatchSpy.mock.calls[0];
+    // Dest commit: a1 → cell (0,0) of B. Source reflow: a2 → cell (0,0) of A.
+    // No swap occupant in B (B is empty). So ops = [a1 drop] + [a2 reflow] = 2.
+    expect(ops).toHaveLength(2);
+  });
+});
