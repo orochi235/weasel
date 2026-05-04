@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   Canvas,
   useTools,
@@ -7,10 +7,15 @@ import {
   useInsertTool,
   useHandTool,
   useTextTool,
+  useUserPenTool,
   useWheelZoomTool,
   useWheelPanTool,
   useKeyboardZoomTool,
   createTextLayer,
+  createPenPreviewLayer,
+  createPathLayer,
+  boundsOfPath,
+  type PolygonPath,
   type RenderLayer,
   type TextStyle,
 } from '../../src';
@@ -22,11 +27,12 @@ import type { View } from '../../src/features/viewport/view';
 // pose is the same `{x,y,width,height}` shape for both kinds, so the kit's
 // rect-flavored move/resize/select machinery works without geometry overrides.
 
-type Kind = 'rect' | 'text';
+type Kind = 'rect' | 'text' | 'path';
 interface BaseObj { id: string; kind: Kind; x: number; y: number; width: number; height: number }
 interface RectObj extends BaseObj { kind: 'rect'; color: string }
 interface TextObj extends BaseObj { kind: 'text'; text: string; style?: TextStyle }
-type Obj = RectObj | TextObj;
+interface PathObj extends BaseObj { kind: 'path'; path: PolygonPath; closed: boolean; color: string }
+type Obj = RectObj | TextObj | PathObj;
 interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 600, H = 400;
@@ -41,6 +47,7 @@ const TOOL_ORDER: { id: string; label: string; key: string }[] = [
   { id: 'select', label: 'Select', key: 'V' },
   { id: 'insert', label: 'Rect',   key: 'R' },
   { id: 'text',   label: 'Text',   key: 'T' },
+  { id: 'pen',    label: 'Pen',    key: 'P' },
   { id: 'hand',   label: 'Hand',   key: 'H' },
 ];
 
@@ -109,13 +116,28 @@ export function SwillustratorDemo() {
   const wheelPan = useWheelPanTool();
   const keyZoom = useKeyboardZoomTool();
 
+  const pen = useUserPenTool<PathObj>({
+    wrapPath: (path, { closed }): PathObj => {
+      const b = boundsOfPath(path);
+      const id = `p${nextId.current++}`;
+      return { id, kind: 'path', x: b.x, y: b.y, width: b.width, height: b.height, path, closed, color: '#d4c4a8' };
+    },
+    adapter: {
+      addObject: (pose) => {
+        setItems((cur) => [...cur, pose]);
+        return pose.id;
+      },
+      setSelection: () => {}, // demo wires no selection state for new paths
+    },
+  });
+
   const tools = useTools({
     active: 'select',
-    registry: { select, insert, hand, text },
+    registry: { select, insert, hand, text, pen },
     alwaysOn: [wheelZoom, wheelPan, keyZoom],
   });
   // useSelectTool / useInsertTool ship without keybindings — palette demos
-  // wire them via overrides. useTextTool (T) and useHandTool (H) come pre-bound.
+  // wire them via overrides. useTextTool (T), useHandTool (H), useUserPenTool (P) come pre-bound.
   useKeybindings(tools, { overrides: { v: 'select', V: 'select', r: 'insert', R: 'insert' } });
 
   // Custom text layer — renders only the text-kind items. Rects are drawn in
@@ -124,6 +146,21 @@ export function SwillustratorDemo() {
     getTexts: () => itemsRef.current.filter((o): o is TextObj => o.kind === 'text'),
     getPose: (n) => ({ x: n.x, y: n.y, width: n.width, height: n.height, text: n.text, style: n.style }),
   });
+
+  const pathLayer: RenderLayer<unknown> = createPathLayer<PathObj>({
+    id: 'paths',
+    label: 'Paths',
+    getNodes: () => itemsRef.current.filter((o): o is PathObj => o.kind === 'path'),
+    getPath: (n) => n.path,
+    getFill: (n) => n.closed ? { fill: 'solid', color: n.color, alpha: 0.25 } : null,
+    getStroke: (n) => ({ paint: { fill: 'solid', color: n.color }, width: 1 }),
+  });
+
+  // Preview layer — re-create each render so it captures the current pen tool ref.
+  const penPreview: RenderLayer<unknown> = useMemo(
+    () => createPenPreviewLayer({ penTool: pen }),
+    [pen],
+  );
 
   const activeOrEngaged = tools.modifierEngaged ?? tools.active;
 
@@ -184,6 +221,8 @@ export function SwillustratorDemo() {
             },
           },
           text: { layer: textLayer, before: 'selectionOverlay' },
+          paths: { layer: pathLayer, before: 'selectionOverlay' },
+          penPreview: { layer: penPreview, before: 'selectionOverlay' },
           selectionOverlay: {},
           insertOverlay: {},
         }}
@@ -192,15 +231,16 @@ export function SwillustratorDemo() {
   );
 }
 
-export const SWILLUSTRATOR_DEMO_SOURCE = `// 4-tool palette: select / insert (rect) / text / hand. Wheel + keyboard zoom always-on.
+export const SWILLUSTRATOR_DEMO_SOURCE = `// 5-tool palette: select / insert (rect) / text / pen / hand. Wheel + keyboard zoom always-on.
 const select = useSelectTool(adapter, { hitBody, boundsOf });
 const insert = useInsertTool(adapter, { minBounds: { width: 4, height: 4 } });
 const text   = useTextTool({ commitInsert: ({ worldX, worldY }) => ({ id, kind: 'text', ... }) });
+const pen    = useUserPenTool({ wrapPath, adapter: { addObject, setSelection } });
 const hand   = useHandTool();
 
 const tools = useTools({
   active: 'select',
-  registry: { select, insert, hand, text },
+  registry: { select, insert, hand, text, pen },
   alwaysOn: [useWheelZoomTool(), useWheelPanTool(), useKeyboardZoomTool()],
 });
 useKeybindings(tools);
@@ -210,4 +250,9 @@ useKeybindings(tools);
   <button onClick={() => tools.setActive(t.id)} ... />
 ))}
 
-<Canvas tools={tools} layers={{ scene: { drawOne }, text: { layer: textLayer }, ... }} />`;
+<Canvas tools={tools} layers={{
+  scene: { drawOne },
+  text: { layer: textLayer },
+  paths: { layer: createPathLayer({ getNodes, getPath, getStroke }) },
+  penPreview: { layer: createPenPreviewLayer({ penTool: pen }) },
+}} />`;

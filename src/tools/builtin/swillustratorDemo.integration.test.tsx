@@ -41,11 +41,12 @@ beforeAll(() => {
 });
 
 describe('SwillustratorDemo', () => {
-  it('renders the four tool buttons and a canvas', () => {
+  it('renders the five tool buttons and a canvas', () => {
     const { container, getByText } = render(<SwillustratorDemo />);
     expect(getByText(/Select/)).toBeTruthy();
     expect(getByText(/Rect/)).toBeTruthy();
     expect(getByText(/Text/)).toBeTruthy();
+    expect(getByText(/Pen/)).toBeTruthy();
     expect(getByText(/Hand/)).toBeTruthy();
     expect(container.querySelector('canvas')).toBeTruthy();
   });
@@ -58,14 +59,18 @@ describe('SwillustratorDemo', () => {
     expect(container.textContent).toContain('tool: insert');
     act(() => { fireEvent.click(getByText(/Text/)); });
     expect(container.textContent).toContain('tool: text');
+    act(() => { fireEvent.click(getByText(/Pen/)); });
+    expect(container.textContent).toContain('tool: pen');
     act(() => { fireEvent.click(getByText(/Hand/)); });
     expect(container.textContent).toContain('tool: hand');
   });
 
-  it('keyboard shortcuts switch tools (T → text, H → hand, V → select)', () => {
+  it('keyboard shortcuts switch tools (T → text, P → pen, H → hand, V → select)', () => {
     const { container } = render(<SwillustratorDemo />);
     act(() => { fireEvent.keyDown(document, { key: 'T' }); });
     expect(container.textContent).toContain('tool: text');
+    act(() => { fireEvent.keyDown(document, { key: 'P' }); });
+    expect(container.textContent).toContain('tool: pen');
     act(() => { fireEvent.keyDown(document, { key: 'H' }); });
     expect(container.textContent).toContain('tool: hand');
     act(() => { fireEvent.keyDown(document, { key: 'V' }); });
