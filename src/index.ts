@@ -435,3 +435,6 @@ export type {
 
 // Debug overlay subsystem
 export * from './debug';
+
+// Animation primitives
+export * from './animation';
