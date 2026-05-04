@@ -446,7 +446,12 @@ export function useMove<TObject extends { id: string }, TPose>(
     }
 
     const layoutPass = stateRef.current.layoutPass;
-    if (ops === undefined && layoutPass.layout && layoutPass.container) {
+    if (
+      ops === undefined &&
+      layoutPass.layout &&
+      layoutPass.container &&
+      ctx.draggedIds.length === 1
+    ) {
       type Layout = import('../../../layout/types').LayoutStrategy<TPose>;
       type Target = import('../../../layout/types').DropTarget<TPose>;
       const layout = layoutPass.layout as Layout;

@@ -99,6 +99,7 @@ From `docs/specs/2026-05-04-animation-primitive-design.md`. The `src/animation/`
 ## Deferred from container layout strategies (2026-05-04)
 
 - `useMove` layout-pass top-most container detection uses adapter `getObjects()` iteration order as a proxy for paint order. Replace with a real z-order walk via `OrderedAdapter.getChildren` once layout-aware containers need correctness here.
+- Multi-select drag into a layout container currently falls through to the per-id transform batch (no `commitDrop` invocation, no sibling reflow). Layout-aware commit only fires when `ctx.draggedIds.length === 1`. Decide multi-select-into-layout semantics (sequential commitDrops? grouped layout API?) before lifting the guard.
 
 ## Deferred from text-primitive world-unit pass (2026-05-04)
 
