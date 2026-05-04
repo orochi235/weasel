@@ -160,3 +160,32 @@ describe('useEditAnchors — tryHit', () => {
     expect(r?.hit).toEqual({ anchorIndex: 1, kind: 'anchor', coordIndex: 6 });
   });
 });
+
+import { createDebugSink } from '../../../debug/createDebugSink';
+
+describe('useEditAnchors — debug recording', () => {
+  it('records one handle + one hitbox per anchor while in edit mode', () => {
+    const sink = createDebugSink({ handles: true, hitboxes: true });
+    const { adapter } = makeAdapter(makePath());
+    renderHook(() =>
+      useEditAnchors(adapter, { editingId: 'p', debug: sink }),
+    );
+    const handles = sink.snapshot().handles.filter((h) => h.kind === 'anchor');
+    const hits = sink.snapshot().hitboxes.filter((h) => h.kind === 'anchor');
+    // makePath() yields 3 anchors. (StrictMode re-renders may multiply.)
+    expect(handles.length).toBeGreaterThanOrEqual(3);
+    expect(handles.length % 3).toBe(0);
+    expect(hits.length).toBeGreaterThanOrEqual(3);
+    expect(hits.length % 3).toBe(0);
+  });
+
+  it('records nothing when not in edit mode', () => {
+    const sink = createDebugSink({ handles: true, hitboxes: true });
+    const { adapter } = makeAdapter(makePath());
+    renderHook(() =>
+      useEditAnchors(adapter, { editingId: null, debug: sink }),
+    );
+    expect(sink.snapshot().handles.length).toBe(0);
+    expect(sink.snapshot().hitboxes.length).toBe(0);
+  });
+});

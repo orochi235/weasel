@@ -983,6 +983,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   const internalEditAnchors = useEditAnchors<TObject>(editAnchorsAdapter, {
     ...editAnchorsOpts,
     editingId: editingAnchors?.objectId ?? null,
+    debug: debugSink ?? undefined,
   });
   const editAnchorsCtl = editAnchorsOverride ?? (editAnchorsEnabled ? internalEditAnchors : undefined);
 

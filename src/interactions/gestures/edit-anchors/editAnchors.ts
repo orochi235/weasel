@@ -5,7 +5,8 @@ import type { PolygonPath, Path } from '../../../features/paths/types';
 import type { ModifierState } from '../types';
 import type { Op } from '../../../core/ops/types';
 import { hitAnchor, type AnchorHit } from './handles';
-import { withCoord } from './geometry';
+import { enumerateAnchors, withCoord } from './geometry';
+import type { DebugSink } from '../../../debug/types';
 
 /** Adapter for `useEditAnchors` — narrow read/write of one object's path pose. */
 export interface EditAnchorsAdapter<TObject extends { id: string }> {
@@ -48,6 +49,11 @@ export interface UseEditAnchorsOptions {
   /** Currently editing target — when non-null the controller draws an overlay
    *  and `tryHit` accepts hit-tests. */
   editingId?: string | null;
+  /** Optional debug sink. When supplied, records per-anchor handle
+   *  positions + circular hitboxes whenever the overlay is computed
+   *  (i.e. while in edit mode). Tree-shakes via optional-chain when
+   *  omitted. */
+  debug?: DebugSink;
 }
 
 /** Return shape of `useEditAnchors`. */
@@ -76,7 +82,7 @@ export function useEditAnchors<TObject extends { id: string }>(
   adapter: EditAnchorsAdapter<TObject>,
   options: UseEditAnchorsOptions = {},
 ): EditAnchorsController<TObject> {
-  const { hitRadius = 8, editLabel = 'Edit anchors', editingId = null } = options;
+  const { hitRadius = 8, editLabel = 'Edit anchors', editingId = null, debug } = options;
   // Latest-value refs so controller methods stay referentially stable.
   const adapterRef = useRef(adapter);
   adapterRef.current = adapter;
@@ -86,6 +92,8 @@ export function useEditAnchors<TObject extends { id: string }>(
   editLabelRef.current = editLabel;
   const editingIdRef = useRef(editingId);
   editingIdRef.current = editingId;
+  const debugRef = useRef(debug);
+  debugRef.current = debug;
 
   const stateRef = useRef<DragState>({
     active: false,
@@ -194,6 +202,18 @@ export function useEditAnchors<TObject extends { id: string }>(
     if (stored.kind !== 'polygon') return null;
     const s = stateRef.current;
     const live = s.active && s.current && s.id === editingId ? s.current : stored;
+    // Debug: record per-anchor handle positions + circular hitboxes for
+    // the live (or stored) pose. `if (debug)` because we enumerate
+    // anchors and derive coords — wrap so the per-render cost is zero
+    // when debug is off.
+    const dbg = debugRef.current;
+    if (dbg) {
+      const r = hitRadiusRef.current;
+      for (const a of enumerateAnchors(live)) {
+        dbg.recordHandle(editingId, { x: a.x, y: a.y }, 'anchor');
+        dbg.recordHitbox(editingId, 'anchor', { kind: 'circle', cx: a.x, cy: a.y, r });
+      }
+    }
     return {
       id: editingId,
       pose: live,
