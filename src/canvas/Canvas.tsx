@@ -439,9 +439,15 @@ function buildSceneLayer<TObject extends { id: string }, TPose>(
       const objects = cfg.objects ?? adapter?.getObjects() ?? [];
       const hide = moveOverlay?.hideIds?.length ? new Set(moveOverlay.hideIds) : null;
       for (const obj of objects) {
-        if (hide && hide.has(obj.id)) continue;
-        let pose: TPose;
         const moved = moveOverlay?.poses.get(obj.id);
+        // hideIds is the kit's "don't paint the committed pose" signal — used
+        // both for the dragged primary and for cascade descendants whose
+        // overlay pose is provided in `moveOverlay.poses`. We must still
+        // paint those at their overlay pose, so only skip when the overlay
+        // doesn't carry a replacement (defensive — shouldn't happen in
+        // practice since useMove sets poses for every hideIds entry).
+        if (hide && hide.has(obj.id) && moved === undefined) continue;
+        let pose: TPose;
         if (moved !== undefined) pose = moved;
         else if (resizeOverlay && resizeOverlay.id === obj.id) pose = resizeOverlay.currentPose;
         else if (resizeOverlay?.leafPoses?.has(obj.id))
