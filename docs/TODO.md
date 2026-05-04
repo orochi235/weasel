@@ -71,6 +71,16 @@ Small items surfaced during Phase 2a/2b/2c shakedown:
 - **`useEditAnchorsTool` (path-editing as a Tool).** `useEditAnchors` ships as a hook (`src/interactions/gestures/edit-anchors/`) but is not wrapped as a Tool record — no built-in active-slot tool entered via double-click on a path. Originally scoped in `docs/plans/2026-05-03-tool-primitive-phase-2a.md:1401` as deferred to Phase 2c or later. Conceptually adjacent to the pen tool (both are path-shape interactions).
 - **Return path to the default tool.** `useSelectTool` declares no keybinding and `useKeybindings` has no Escape/default-tool handler — so once a demo presses `H` to switch to hand, there's no way back to select except via the space-modifier round-trip. Options: (a) give `useSelectTool` a default `keybinding: 'V'`, (b) add an Escape handler in `useKeybindings` that calls `setActive(initialActive)`, (c) document that consumers must render a tool switcher. (a)+(b) together is the least surprising for keyboard users.
 
+## Tool overlay channel deferrals
+
+From `docs/specs/2026-05-03-tool-overlay-channel-design.md` (v1 explicit out-of-scope):
+
+- **Per-overlay z-positioning.** v1 always renders tool overlays on top. Add `overlayPosition?: 'top' | 'before-selection' | 'after-selection'` field to the Tool record when a real consumer wants overlay chrome below selection handles (e.g. a snap-target highlight that should sit behind handles).
+- **Multiple overlays per Tool.** Today `Tool.overlay` is a single `RenderLayer`. If composing multiple visually distinct layers into one `draw` becomes painful, promote to `overlay?: RenderLayer | RenderLayer[]`.
+- **Subscription / push model.** Today the channel is pull (Canvas asks each frame, scratch is read via React closure). If a tool needs to push state changes outside the React render cycle, add an imperative `tools.publishOverlay(toolId, layer)` channel.
+
+The remaining inline-gesture cleanup (drop `useMove`/`useResize`/`useRotate` + `buildSceneLayer` overlay fold-in from `Canvas.tsx`) is tracked under "Tool primitive follow-ups" above — it's the durable record of T11's deferred work pending demo + test migration of `MoveDemo`, `ActionsDemo`, `GroupsDemo`, `CloneDemo`, `BezierEditDemo`, `PathPoseDemo`.
+
 ## Plugin/bundling convention
 
 The kit's primitives (Tool, RenderLayer, Adapter, PoseDescriptor, Behavior, Op factory, DebugSink) are already pluggable — any external package can author one and consumers wire it in. **What's missing is a convention for bundling a feature's parts** so a single `useFooPlugin()` call returns `{ tool, layers, ops, ... }` that the consumer spreads into Canvas/useTools, instead of wiring three or four separate exports per feature.

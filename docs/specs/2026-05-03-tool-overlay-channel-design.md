@@ -2,6 +2,7 @@
 
 **Date:** 2026-05-03
 **Status:** Spec — ready for plan
+**Status:** Implemented (with caveats) — channel + Tool overlays shipped per the design; the legacy inline `useMove`/`useResize`/`useRotate` controllers and `buildSceneLayer` overlay fold-in remain in `Canvas.tsx` pending migration of six adapter-driven demos (`MoveDemo`, `ActionsDemo`, `GroupsDemo`, `CloneDemo`, `BezierEditDemo`, `PathPoseDemo`) and their tests. Tracked in `docs/TODO.md` under "Tool primitive follow-ups."
 **Predecessor specs:** `docs/specs/2026-05-03-tool-primitive-design.md` (Tool primitive), `docs/specs/2026-05-03-tool-primitive-phase-2c-design.md` (view-aware rendering, screen-space chrome)
 
 ## Problem
