@@ -438,3 +438,6 @@ export * from './debug';
 
 // Animation primitives
 export * from './animation';
+
+// Layout strategies
+export * from './layout';
