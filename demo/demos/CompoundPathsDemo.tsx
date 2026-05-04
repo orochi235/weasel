@@ -177,6 +177,7 @@ export function CompoundPathsDemo() {
         height={H}
         className="ckd-canvas"
         scene={scene}
+        background="#87ceeb"
         selectionMode="multi"
         tool="none"
         handleHitRadius={HANDLE}
