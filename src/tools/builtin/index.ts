@@ -9,3 +9,10 @@ export { useTextTool, type UseTextToolOptions } from './useTextTool';
 export { useWheelZoomTool, type WheelZoomToolOpts } from './useWheelZoomTool';
 export { useWheelPanTool } from './useWheelPanTool';
 export { useKeyboardZoomTool, type KeyboardZoomToolOpts } from './useKeyboardZoomTool';
+export {
+  useUserPenTool,
+  type UseUserPenToolOptions,
+  type PenScratch,
+  type PenAnchor,
+  type PenSubpath,
+} from './useUserPenTool';

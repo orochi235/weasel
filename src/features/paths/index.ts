@@ -34,3 +34,8 @@ export { composePath, decomposePath } from './compose';
 export { unionBoundsPath } from './unionBoundsPath';
 export { pathPoseDescriptor } from './poseDescriptor';
 export { pathOriginProjection } from './originProjection';
+export {
+  createPenPreviewLayer,
+  type CreatePenPreviewLayerOptions,
+  type PenPreviewStyle,
+} from './penPreviewLayer';

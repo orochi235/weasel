@@ -206,6 +206,7 @@ export {
   unionBoundsPath,
   pathPoseDescriptor,
   pathOriginProjection,
+  createPenPreviewLayer,
 } from './features/paths';
 export type {
   Path,
@@ -214,7 +215,10 @@ export type {
   PathFillRule,
   PointInPathOptions,
   CreatePathLayerOpts,
+  CreatePenPreviewLayerOptions,
+  PenPreviewStyle,
 } from './features/paths';
+export { constrainTo45 } from './util/constrainTo45';
 export type { Group, GroupAdapter } from './features/groups/types';
 export { resolveToOutermostGroup, expandToLeaves } from './features/groups/resolve';
 export { unionBounds } from './features/groups/unionBounds';
