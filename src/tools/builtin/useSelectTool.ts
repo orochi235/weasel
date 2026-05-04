@@ -12,6 +12,7 @@ import type { AreaSelectAdapter } from '../../core/adapters/types';
 import type { ResizeAnchor } from '../../interactions/gestures/types';
 import { defineTool } from '../defineTool';
 import type { Tool } from '../types';
+import type { DebugSink } from '../../debug/types';
 
 /** World-space bounding rect for hit-testing handles. Uses `width`/`height` to
  *  match `cornerResizeHandles` and `rotationHandle` expectations. */
@@ -35,6 +36,11 @@ export interface UseSelectToolOptions<_TObject extends { id: string }, TPose> {
   resize?: UseResizeOptions<TPose>;
   rotate?: UseRotateOptions<TPose>;
   areaSelect?: UseAreaSelectOptions;
+  /** Optional debug sink. When supplied, records corner-handle and
+   *  rotation-handle hitboxes at the same sites as the hit checks (so the
+   *  overlay shows what the select tool actually evaluates). Tree-shakes
+   *  via optional-chain when omitted. */
+  debug?: DebugSink;
 }
 
 /** Intersection of all four sub-controller adapter interfaces.
@@ -74,6 +80,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
 
   const handleHitRadius = options.handleHitRadius ?? 8;
   const rotationHandleDistance = options.rotationHandleDistance ?? 24;
+  const debug = options.debug;
 
   return useMemo(
     () =>
@@ -95,6 +102,9 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
               const b = options.boundsOf(sel[0]);
               if (b) {
                 const handle = rotationHandle(b, rotationHandleDistance);
+                debug?.recordHitbox(sel[0], 'rotation', {
+                  kind: 'circle', cx: handle.cx, cy: handle.cy, r: radiusWorld,
+                });
                 if (hitRotationHandle(handle, ctx.worldX, ctx.worldY, radiusWorld)) {
                   ctx.scratch = { kind: 'rotate', targetId: sel[0] };
                   return 'claim';
@@ -107,6 +117,9 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
               const b = options.boundsOf(sel[0]);
               if (b) {
                 for (const h of cornerResizeHandles(b)) {
+                  debug?.recordHitbox(sel[0], 'handle', {
+                    kind: 'circle', cx: h.cx, cy: h.cy, r: radiusWorld,
+                  });
                   if (hitCornerHandle(h, ctx.worldX, ctx.worldY, radiusWorld)) {
                     ctx.scratch = { kind: 'resize', targetId: sel[0], anchor: h.anchor };
                     return 'claim';
@@ -195,6 +208,6 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
         },
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [move, resize, rotate, areaSelect, options.hitBody, options.boundsOf, handleHitRadius, rotationHandleDistance],
+    [move, resize, rotate, areaSelect, options.hitBody, options.boundsOf, handleHitRadius, rotationHandleDistance, debug],
   );
 }

@@ -189,3 +189,27 @@ describe('useSelectTool', () => {
     }
   });
 });
+
+import { createDebugSink } from '../../debug/createDebugSink';
+
+describe('useSelectTool — debug recording', () => {
+  it('records corner-handle hitboxes during pointer-down hit-test', () => {
+    const sink = createDebugSink({ hitboxes: true });
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        hitBody: () => [],
+        boundsOf: () => ({ x: 0, y: 0, width: 40, height: 30 }),
+        debug: sink,
+      }),
+    );
+    const ctx = ctxOver({
+      selection: { current: ['a'], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
+    });
+    result.current.pointer!.onDown!(pe(), ctx);
+    const hits = sink.snapshot().hitboxes;
+    const handles = hits.filter((h) => h.kind === 'handle');
+    const rotations = hits.filter((h) => h.kind === 'rotation');
+    expect(handles.length).toBe(4);
+    expect(rotations.length).toBe(1);
+  });
+});
