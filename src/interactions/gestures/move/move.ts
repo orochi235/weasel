@@ -109,8 +109,19 @@ export function useMove<TObject extends { id: string }, TPose>(
   onGestureEndRef.current = onGestureEnd;
   const expandIdsRef = useRef(expandIds);
   expandIdsRef.current = expandIds;
-  const cascadeWorldPoseRef = useRef(cascadeWorldPose);
-  cascadeWorldPoseRef.current = cascadeWorldPose;
+  // Default: when the adapter exposes getChildren but the consumer didn't
+  // supply a world-pose lookup, fall back to `adapter.getPose`. That's correct
+  // for flat scenes (LayoutDemo, MultiSelectDemo, ComposeDemo) where pose IS
+  // world. Nested-transform scenes (NestedGroups) override with a real
+  // worldPoseLookup. Without this default, dragging a parent left children
+  // behind on every demo that wired getChildren but didn't know to pass
+  // cascadeWorldPose — i.e. all of them.
+  const effectiveCascade = cascadeWorldPose
+    ?? (adapter.getChildren ? (id: string) => {
+      try { return adapter.getPose(id); } catch { return null; }
+    } : undefined);
+  const cascadeWorldPoseRef = useRef(effectiveCascade);
+  cascadeWorldPoseRef.current = effectiveCascade;
 
   type LayoutPass = {
     destContainerId: string | null;
