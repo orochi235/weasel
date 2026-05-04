@@ -7,7 +7,7 @@
  * Surface map (broad strokes — see per-symbol JSDoc for detail):
  *   - View transform & viewport: `ViewTransform`, `worldToScreen`,
  *     `screenToWorld`, `fitZoom`, `useCanvasSize`, pixel-density helpers,
- *     `usePan`, `useZoom`, `useAutoCenter`,
+ *     `useZoom`, `useAutoCenter`, `zoomAt`,
  *     `wheelHandler`.
  *   - Layer composition: `RenderLayer`, `runLayers`, `LayerRenderer`,
  *     `createGridLayer`, `createCellHighlightLayer`, `createChildrenLayer`,
@@ -60,7 +60,6 @@ export * from './features/viewport/useCanvasSize';
 export { setupCanvasDpr, useFixedPixelRatio } from './features/viewport/pixelDensity';
 export type { SetupCanvasDprOptions } from './features/viewport/pixelDensity';
 export * from './features/viewport/fitToBounds';
-export * from './features/viewport/usePan';
 export { zoomAt } from './features/viewport/zoomAt';
 export type { ZoomClampOpts } from './features/viewport/zoomAt';
 export * from './features/viewport/useZoom';
