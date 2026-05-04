@@ -33,6 +33,16 @@ import {
   DEFAULT_ROTATION_HANDLE_DISTANCE,
 } from '../../interactions/gestures/rotate/handle';
 import { rotatePoint } from '../../interactions/gestures/rotate/geometry';
+import type { View } from '../viewport/view';
+import { viewToTransform } from '../viewport/view';
+import { worldToScreen } from '../viewport/viewTransform';
+
+/** Project world AABB into screen-space AABB using the active view. */
+function projectBounds<B extends Bounds>(b: B, view: View): B {
+  const t = viewToTransform(view);
+  const [sx, sy] = worldToScreen(b.x, b.y, t);
+  return { ...b, x: sx, y: sy, width: b.width * view.scale, height: b.height * view.scale };
+}
 
 interface Bounds {
   x: number;
@@ -288,14 +298,16 @@ function drawOutlines(
   resolveBounds: (id: string) => Bounds | null,
   stroke: Stroke,
   pad: number,
+  view: View,
 ): void {
   ctx.save();
   applyStroke(ctx, stroke);
   const align = stroke.align ?? 'center';
   const width = stroke.width ?? 1;
   for (const id of ids) {
-    const b = resolveBounds(id);
-    if (!b) continue;
+    const worldB = resolveBounds(id);
+    if (!worldB) continue;
+    const b = projectBounds(worldB, view);
     const padded = {
       x: b.x - pad,
       y: b.y - pad,
@@ -303,11 +315,11 @@ function drawOutlines(
       height: b.height + pad * 2,
     };
     const r = alignedStrokeRect(padded, align, width);
-    const rotation = rotationOf(b);
+    const rotation = rotationOf(worldB);
     if (rotation === 0) {
       ctx.strokeRect(r.x, r.y, r.width, r.height);
     } else {
-      // Rotate around the AABB center of the unpadded pose.
+      // Rotate around the (projected) AABB center of the unpadded pose.
       const cx = b.x + b.width / 2;
       const cy = b.y + b.height / 2;
       ctx.save();
@@ -341,17 +353,24 @@ function drawHandles(
   resolveBounds: (id: string) => Bounds | null,
   handles: ResolvedHandles,
   handlesOf: (b: Bounds) => { x: number; y: number }[],
+  view: View,
 ): void {
   const half = handles.size / 2;
   const handleAlign = handles.outline.align ?? 'center';
   const handleWidth = handles.outline.width ?? 1;
   for (const id of ids) {
-    const b = resolveBounds(id);
-    if (!b) continue;
-    const rotation = rotationOf(b);
+    const worldB = resolveBounds(id);
+    if (!worldB) continue;
+    const b = projectBounds(worldB, view);
+    const rotation = rotationOf(worldB);
     const cx = b.x + b.width / 2;
     const cy = b.y + b.height / 2;
-    for (const h of handlesOf(b)) {
+    // Place handles using world-space handlesOf, then project each anchor to
+    // screen so handle squares stay constant size under zoom.
+    for (const hWorld of handlesOf(worldB)) {
+      const t = viewToTransform(view);
+      const [hsx, hsy] = worldToScreen(hWorld.x, hWorld.y, t);
+      const h = { x: hsx, y: hsy };
       const center = rotation === 0 ? h : rotatePoint(h.x, h.y, cx, cy, rotation);
       const baseRect = {
         x: center.x - half,
@@ -380,12 +399,17 @@ function drawHandles(
  *  side closer to the object — visually evokes a pair of clock hands. */
 function drawRotationHandle(
   ctx: CanvasRenderingContext2D,
-  b: Bounds | RotatedBounds,
+  worldB: Bounds | RotatedBounds,
   handles: ResolvedHandles,
   distance: number,
+  view: View,
 ): void {
-  const rotation = rotationOf(b);
-  const h = rotationHandle({ ...b, rotation }, distance);
+  const rotation = rotationOf(worldB);
+  // Compute the rotation-handle anchor in world space, then project to screen.
+  const hWorld = rotationHandle({ ...worldB, rotation }, distance / view.scale);
+  const t = viewToTransform(view);
+  const [scx, scy] = worldToScreen(hWorld.cx, hWorld.cy, t);
+  const h = { cx: scx, cy: scy };
   const size = handles.size;
   const half = size / 2;
   const armLen = size;
@@ -424,10 +448,11 @@ export function createSelectionOutlineLayer<TPose>(
   return {
     id: 'selection-outline',
     label: 'Selection outline',
-    draw: (ctx, _data, _view) => {
+    space: 'screen',
+    draw: (ctx, _data, view) => {
       const ids = opts.getSelection();
       if (ids.length === 0) return;
-      drawOutlines(ctx, ids, resolveBounds, stroke, pad);
+      drawOutlines(ctx, ids, resolveBounds, stroke, pad, view);
     },
   };
 }
@@ -447,15 +472,16 @@ export function createSelectionHandlesLayer<TPose>(
   return {
     id: 'selection-handles',
     label: 'Selection handles',
-    draw: (ctx, _data, _view) => {
+    space: 'screen',
+    draw: (ctx, _data, view) => {
       const ids = opts.getSelection();
       if (ids.length === 0) return;
-      drawHandles(ctx, ids, resolveBounds, handles, handlesOf);
+      drawHandles(ctx, ids, resolveBounds, handles, handlesOf, view);
       if (rotationHandleDistance !== null) {
         for (const id of ids) {
           const b = resolveBounds(id);
           if (!b) continue;
-          drawRotationHandle(ctx, b, handles, rotationHandleDistance);
+          drawRotationHandle(ctx, b, handles, rotationHandleDistance, view);
         }
       }
     },
@@ -490,17 +516,18 @@ export function createSelectionOverlayLayer<TPose>(
   return {
     id: 'selection-overlay',
     label: 'Selection',
-    draw: (ctx, _data, _view) => {
+    space: 'screen',
+    draw: (ctx, _data, view) => {
       const ids = opts.getSelection();
       if (ids.length === 0) return;
-      drawOutlines(ctx, ids, resolveBounds, stroke, pad);
+      drawOutlines(ctx, ids, resolveBounds, stroke, pad, view);
       if (!handles) return;
-      drawHandles(ctx, ids, resolveBounds, handles, handlesOf);
+      drawHandles(ctx, ids, resolveBounds, handles, handlesOf, view);
       if (rotationHandleDistance !== null) {
         for (const id of ids) {
           const b = resolveBounds(id);
           if (!b) continue;
-          drawRotationHandle(ctx, b, handles, rotationHandleDistance);
+          drawRotationHandle(ctx, b, handles, rotationHandleDistance, view);
         }
       }
     },

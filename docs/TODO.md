@@ -7,7 +7,11 @@ for cross-app reuse, not consumer-app value.
 For history of completed work that pre-dates extraction, see `git log` and
 the dated specs/plans under `specs/` and `plans/`.
 
-## Top of queue — Tool primitive Phase 2c (zoom + chrome)
+## Top of queue — Debug overlay primitives (dev-mode system layers)
+
+Hitbox/handle/bounds visualization for kit and consumer code. Likely shape: a `createDebugOverlayLayer({ show: { hitboxes?, handles?, bounds?, poseOrigins? } })` factory that emits a `space: 'screen'` `RenderLayer` reading from the same hit-test/handle data the interaction hooks already compute. Dev-only — gated by a flag (NODE_ENV check or explicit prop) so it tree-shakes out of prod bundles. Open: whether the overlay reads via a side channel (hit-test hook exposes its rects) or by re-running hit math purely for visualization. First consumer is the kit's own demos / debugging during Phase 2c chrome work.
+
+## Phase 2c (zoom + chrome)
 
 Phase 1 substrate (`defineTool`, `useTools`, `useKeybindings`, `ToolCtx`, three slots × four channels) and Phase 2a built-ins (`useSelectTool`, `useInsertTool`, `useDeleteTool`, `useNudgeTool`, `useUndoRedoTool`, `useDuplicateTool`) shipped. Phase 2b (viewport pan + `useHandTool`, active `H` + modifier `space`) shipped per `docs/specs/2026-05-03-viewport-and-hand-tool-design.md`. **Phase 2c remaining:**
 

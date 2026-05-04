@@ -381,6 +381,25 @@ describe('createSelectionOverlayLayer', () => {
     expect(stroke.args).toEqual([-2, -2, 14, 14]);
   });
 
+  it('projects bounds to screen at scale=2 with handle squares at fixed size', () => {
+    const { ctx, calls } = makeStubCtx();
+    const layer = createSelectionOverlayLayer<Pose>({
+      getSelection: () => ['a'],
+      getPose: () => ({ x: 10, y: 20, width: 30, height: 40 }),
+    });
+    // view scale=2, no offset → world (10,20) maps to screen (20,40);
+    // dimensions 30x40 → 60x80; default pad=1 → outline (19,39,62,82).
+    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 2 });
+    const stroke = calls.filter((c) => c.fn === 'strokeRect')[0];
+    expect(stroke.args).toEqual([19, 39, 62, 82]);
+    const fillRects = calls.filter((c) => c.fn === 'fillRect');
+    // Default 4 handles, default size 8 → half=4. Top-left handle anchor in
+    // screen space is (20,40); square is (16,36,8,8). Handle squares stay
+    // size=8 even at scale=2 (the whole point of screen-space chrome).
+    expect(fillRects).toHaveLength(4);
+    expect(fillRects[0].args).toEqual([16, 36, 8, 8]);
+  });
+
   it('outline align: center matches default canvas behavior', () => {
     const { ctx, calls } = makeStubCtx();
     const layer = createSelectionOverlayLayer<Pose>({
