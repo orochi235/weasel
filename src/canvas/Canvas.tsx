@@ -29,6 +29,7 @@ import {
   type SelectionApi,
   type UseSelectionOptions,
 } from '../features/selection/useSelection';
+import { pickTopMostHit } from '../tools/builtin/pickTopMostHit';
 import { useMove } from '../interactions/gestures/move/move';
 import type { UseMoveOptions } from '../interactions/gestures/move/move';
 import { useResize } from '../interactions/gestures/resize/resize';
@@ -933,7 +934,9 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     if (!multiActive) return baseHitBody;
     return (worldX: number, worldY: number): string | string[] | null => {
       const hit = baseHitBody(worldX, worldY);
-      const hitId = Array.isArray(hit) ? hit[0] ?? null : hit;
+      // pickTopMostHit so parent/child collapse in multi-mode matches
+      // single-mode (container's body shouldn't outrank its child).
+      const hitId = Array.isArray(hit) ? pickTopMostHit(hit, adapter ?? null) : hit;
       const selected = selectedIdsForWiring;
       const selectedSet = new Set(selected);
       if (hitId !== null && selectedSet.has(hitId)) {
@@ -1016,12 +1019,80 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     };
   }, [tools]);
 
+  // Document-level pointerup/pointercancel backstop for the tools dispatcher.
+  // The dispatcher is a pure in-memory state machine — it doesn't attach DOM
+  // listeners. React's onPointerUp on the canvas only fires when the canvas is
+  // still the event target; if the user moves off-canvas and releases there,
+  // the pointerup lands on document and the dispatcher never sees it, leaving
+  // the gesture in flight (move-overlay ghost leaks, no commit).
+  //
+  // Mirrors the doc-listener pattern in usePointerGestures.attachDocListeners
+  // (see the comments there): we don't rely on setPointerCapture or
+  // lostpointercapture because their ordering vs. pointerup is not reliable
+  // when mid-drag re-renders drop implicit capture.
+  //
+  // Listeners are attached on gesture start (pointerdown that the dispatcher
+  // accepted) and detached on the matching up/cancel. They forward to the
+  // dispatcher exactly like the React handlers — endActiveGesture-equivalent
+  // logic lives entirely inside the dispatcher's onPointerUp.
+  const docListenersRef = useRef<{
+    move: (e: PointerEvent) => void;
+    up: (e: PointerEvent) => void;
+    cancel: (e: PointerEvent) => void;
+  } | null>(null);
+  const detachDocListeners = useCallback(() => {
+    const ls = docListenersRef.current;
+    if (!ls) return;
+    document.removeEventListener('pointermove', ls.move);
+    document.removeEventListener('pointerup', ls.up);
+    document.removeEventListener('pointercancel', ls.cancel);
+    docListenersRef.current = null;
+  }, []);
+  const attachDocListeners = useCallback((dispatcher: ToolsDispatcher) => {
+    if (docListenersRef.current) return;
+    const canvas = canvasRef.current;
+    // Forward pointermove too: the React onPointerMove on the canvas only
+    // fires while the cursor is over the canvas. Without doc-level forwarding,
+    // a drag whose pointer leaves the canvas would freeze (no move events,
+    // no threshold promotion if still pending) until the user wanders back.
+    //
+    // Skip events whose target is the canvas — those are already routed via
+    // the React onPointerMove handler, and dispatching twice per move would
+    // double-fire drag.onMove. The same de-dupe applies to pointerup: when
+    // the release lands on the canvas, the React handler runs first; the
+    // doc listener sees the bubbled event and bails because dispatcher's
+    // gesture is already consumed (hasActiveGesture() === false).
+    const isCanvasTarget = (ev: PointerEvent) => ev.target === canvas;
+    const move = (ev: PointerEvent) => {
+      if (isCanvasTarget(ev)) return;
+      dispatcher.onPointerMove(ev);
+    };
+    const up = (ev: PointerEvent) => {
+      if (isCanvasTarget(ev)) return; // React onPointerUp already handled it
+      dispatcher.onPointerUp(ev);
+      detachDocListeners();
+    };
+    const cancel = (_ev: PointerEvent) => {
+      dispatcher.cancelGesture();
+      detachDocListeners();
+    };
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', up);
+    document.addEventListener('pointercancel', cancel);
+    docListenersRef.current = { move, up, cancel };
+  }, [detachDocListeners]);
+  // Detach on unmount (no leaked global listeners if Canvas tears down mid-drag).
+  useEffect(() => detachDocListeners, [detachDocListeners]);
+
   const handlePointerDown =
     onPointerDownOverride ??
     (tools
       ? (e: React.PointerEvent<HTMLCanvasElement>) => {
           if (autoFocusOnPointerDown) e.currentTarget.focus();
           tools.dispatcher.onPointerDown(e.nativeEvent);
+          // Only attach if the dispatcher actually started a gesture; otherwise
+          // we'd leak a listener for every empty click on the canvas.
+          if (tools.dispatcher.hasActiveGesture()) attachDocListeners(tools.dispatcher);
         }
       : (e: React.PointerEvent<HTMLCanvasElement>) => {
           if (autoFocusOnPointerDown) e.currentTarget.focus();
@@ -1033,7 +1104,12 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       : bindings.onPointerMove);
   const handlePointerUp = onPointerUpOverride ??
     (tools
-      ? (e: React.PointerEvent<HTMLCanvasElement>) => tools.dispatcher.onPointerUp(e.nativeEvent)
+      ? (e: React.PointerEvent<HTMLCanvasElement>) => {
+          tools.dispatcher.onPointerUp(e.nativeEvent);
+          // The doc-listener up handler also detaches; this branch covers the
+          // common case where the release lands on the canvas itself.
+          detachDocListeners();
+        }
       : bindings.onPointerUp);
   const handlePointerCancel = onPointerCancelOverride ?? bindings.onPointerCancel;
   const handleWheel = tools
