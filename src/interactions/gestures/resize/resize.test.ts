@@ -429,3 +429,43 @@ describe('useResize — group (expandIds)', () => {
   });
 });
 
+
+import { createDebugSink } from '../../../debug/createDebugSink';
+
+describe('useResize — debug recording', () => {
+  it('records 4 corner-handle positions on gesture start', () => {
+    const sink = createDebugSink({ handles: true });
+    const { adapter } = makeAdapter([['a', { x: 0, y: 0, width: 40, height: 30 }]]);
+    const { result } = renderHook(() =>
+      useResize<{ id: string }, P>(adapter, { debug: sink }),
+    );
+    act(() => {
+      result.current.start('a', { x: 'min', y: 'min' }, 0, 0);
+    });
+    const handles = sink.snapshot().handles.filter((h) => h.kind === 'corner');
+    expect(handles.length).toBe(4);
+  });
+
+  it('records 4 corner-handle hitboxes on gesture start', () => {
+    const sink = createDebugSink({ hitboxes: true });
+    const { adapter } = makeAdapter([['a', { x: 0, y: 0, width: 40, height: 30 }]]);
+    const { result } = renderHook(() =>
+      useResize<{ id: string }, P>(adapter, { debug: sink }),
+    );
+    act(() => {
+      result.current.start('a', { x: 'min', y: 'min' }, 0, 0);
+    });
+    const hits = sink.snapshot().hitboxes.filter((h) => h.kind === 'handle');
+    expect(hits.length).toBe(4);
+  });
+
+  it('records nothing when no debug sink is supplied', () => {
+    const { adapter } = makeAdapter();
+    const { result } = renderHook(() => useResize<{ id: string }, P>(adapter, {}));
+    expect(() => {
+      act(() => {
+        result.current.start('a', { x: 'min', y: 'min' }, 0, 0);
+      });
+    }).not.toThrow();
+  });
+});

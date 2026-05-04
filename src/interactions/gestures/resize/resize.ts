@@ -12,6 +12,8 @@ import type {
   ResizePose,
 } from '../types';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from './geometry';
+import { cornerResizeHandles } from './cornerHandles';
+import type { DebugSink } from '../../../debug/types';
 
 const LERP = 0.35;
 
@@ -45,6 +47,15 @@ export interface UseResizeOptions<TPose> {
    *  when `TPose extends ResizePose`. Required for non-rect TPose (Path,
    *  polygon, etc.). */
   geometry?: PoseDescriptor<TPose>;
+  /** Optional debug sink. When supplied, records corner-handle positions +
+   *  circular hitboxes when the gesture starts (covers the on-screen
+   *  handles for the resized target). Tree-shakes via optional-chain
+   *  when omitted. */
+  debug?: DebugSink;
+  /** Hit-test radius for corner handles, in screen pixels. Used purely for
+   *  the recorded debug hitbox circle radius — does not affect actual hit
+   *  math (which lives in `usePointerGestures`). Default `8`. */
+  handleHitRadius?: number;
 }
 
 /** Return shape of `useResize`: lifecycle methods plus a live overlay snapshot. */
@@ -108,6 +119,8 @@ export function useResize<TObject extends { id: string }, TPose>(
     onGestureEnd,
     expandIds,
     geometry = RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>,
+    debug,
+    handleHitRadius = 8,
   } = options as UseResizeOptions<TPose> & {
     behaviors?: ResizeBehavior<ResizePose>[];
   };
@@ -127,6 +140,10 @@ export function useResize<TObject extends { id: string }, TPose>(
   onGestureEndRef.current = onGestureEnd;
   const expandIdsRef = useRef(expandIds);
   expandIdsRef.current = expandIds;
+  const debugRef = useRef(debug);
+  debugRef.current = debug;
+  const handleHitRadiusRef = useRef(handleHitRadius);
+  handleHitRadiusRef.current = handleHitRadius;
 
   const stateRef = useRef<State<TPose>>({
     active: false,
@@ -216,6 +233,17 @@ export function useResize<TObject extends { id: string }, TPose>(
       leafOrigins,
       leafTargets: null,
     };
+    // Debug: record corner-handle positions + hitboxes for the active
+    // resize target. Optional-chain — when `debug` is undefined the calls
+    // short-circuit and the bundler can DCE the strategy.
+    const dbg = debugRef.current;
+    if (dbg) {
+      const r = handleHitRadiusRef.current;
+      for (const h of cornerResizeHandles(originBounds)) {
+        dbg.recordHandle(id, { x: h.cx, y: h.cy }, 'corner');
+        dbg.recordHitbox(id, 'handle', { kind: 'circle', cx: h.cx, cy: h.cy, r });
+      }
+    }
     for (const b of behaviorsRef.current) (b as ResizeBehavior<ResizePose>).onStart?.(ctx as unknown as GestureContext<ResizePose>);
     onGestureStartRef.current?.(id);
     setOverlay({ id, currentPose: originPose, targetPose: originPose, anchor });

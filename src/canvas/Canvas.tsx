@@ -868,9 +868,9 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   }, [moveOptions, geometry, snapStrategy]);
   const derivedResizeOptionsFinal = useMemo<UseResizeOptions<TPose>>(() => {
     const base = derivedResizeOptions ?? ({} as UseResizeOptions<TPose>);
-    if (base.geometry) return base;
-    return { ...base, geometry };
-  }, [derivedResizeOptions, geometry]);
+    const withGeometry = base.geometry ? base : { ...base, geometry };
+    return debugSink ? { ...withGeometry, debug: debugSink } : withGeometry;
+  }, [derivedResizeOptions, geometry, debugSink]);
 
   const internalMove = useMove<TObject, TPose>(effectiveAdapter, derivedMoveOptions);
   const internalResize = useResize<TObject, TPose>(effectiveAdapter, derivedResizeOptionsFinal);
