@@ -874,7 +874,11 @@ function CanvasInner<TObject extends { id: string }, TPose>(
 
   const internalMove = useMove<TObject, TPose>(effectiveAdapter, derivedMoveOptions);
   const internalResize = useResize<TObject, TPose>(effectiveAdapter, derivedResizeOptionsFinal);
-  const internalRotate = useRotate<TObject, TPose>(effectiveAdapter, rotateOptions ?? {});
+  const derivedRotateOptions = useMemo<UseRotateOptions<TPose>>(() => {
+    const base = rotateOptions ?? {};
+    return debugSink ? { ...base, debug: debugSink } : base;
+  }, [rotateOptions, debugSink]);
+  const internalRotate = useRotate<TObject, TPose>(effectiveAdapter, derivedRotateOptions);
 
   // Wrap the adapter so insert/area-select see Canvas's effective selection
   // (otherwise they'd sync through the adapter's own selection state, which

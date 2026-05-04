@@ -12,6 +12,8 @@ import type {
   RotatedPose,
 } from '../types';
 import { aabbCenter } from './geometry';
+import { rotationHandle, DEFAULT_ROTATION_HANDLE_DISTANCE } from './handle';
+import type { DebugSink } from '../../../debug/types';
 
 const LERP = 0.35;
 
@@ -56,6 +58,17 @@ export interface UseRotateOptions<TPose> {
   /** Project pose ↔ rotated bounds. Defaults to the identity for
    *  `RotatedPose`. Required for non-rect TPose (e.g. a rotated path). */
   geometry?: RotateGeometry<TPose>;
+  /** Optional debug sink. When supplied, records the rotation-handle
+   *  position + circular hitbox at gesture start. Tree-shakes via
+   *  optional-chain when omitted. */
+  debug?: DebugSink;
+  /** World-pixel distance from the AABB top edge to the rotation handle.
+   *  Used for debug-recording the handle position. Default
+   *  `DEFAULT_ROTATION_HANDLE_DISTANCE`. */
+  rotationHandleDistance?: number;
+  /** Hit-test radius for the rotation handle, in screen pixels. Used for
+   *  the recorded debug hitbox circle. Default `8`. */
+  handleHitRadius?: number;
 }
 
 /** Return shape of `useRotate`: lifecycle methods and a live overlay snapshot. */
@@ -101,6 +114,9 @@ export function useRotate<TObject extends { id: string }, TPose>(
     onGestureStart,
     onGestureEnd,
     geometry = ROTATED_POSE_GEOMETRY as unknown as RotateGeometry<TPose>,
+    debug,
+    rotationHandleDistance = DEFAULT_ROTATION_HANDLE_DISTANCE,
+    handleHitRadius = 8,
   } = options as UseRotateOptions<TPose> & {
     behaviors?: RotateBehavior<RotatedPose>[];
   };
@@ -118,6 +134,12 @@ export function useRotate<TObject extends { id: string }, TPose>(
   onGestureStartRef.current = onGestureStart;
   const onGestureEndRef = useRef(onGestureEnd);
   onGestureEndRef.current = onGestureEnd;
+  const debugRef = useRef(debug);
+  debugRef.current = debug;
+  const rotationHandleDistanceRef = useRef(rotationHandleDistance);
+  rotationHandleDistanceRef.current = rotationHandleDistance;
+  const handleHitRadiusRef = useRef(handleHitRadius);
+  handleHitRadiusRef.current = handleHitRadius;
 
   const stateRef = useRef<State<TPose>>({
     active: false,
@@ -171,6 +193,14 @@ export function useRotate<TObject extends { id: string }, TPose>(
     for (const b of behaviorsRef.current)
       (b as RotateBehavior<RotatedPose>).onStart?.(ctx as unknown as GestureContext<RotatedPose>);
     onGestureStartRef.current?.(args.id);
+    // Debug: record rotation handle position + hitbox.
+    const dbg = debugRef.current;
+    if (dbg) {
+      const h = rotationHandle(rb, rotationHandleDistanceRef.current);
+      const r = handleHitRadiusRef.current;
+      dbg.recordHandle(args.id, { x: h.cx, y: h.cy }, 'rotation');
+      dbg.recordHitbox(args.id, 'rotation', { kind: 'circle', cx: h.cx, cy: h.cy, r });
+    }
     setOverlay({ id: args.id, currentPose: originPose, targetPose: originPose, originPose });
   }, []);
 

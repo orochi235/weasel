@@ -154,3 +154,33 @@ describe('rotationHandle / hitRotationHandle', () => {
     expect(hitRotationHandle(h, 50 + 9, -24, 8)).toBe(false);
   });
 });
+
+import { createDebugSink } from '../../../debug/createDebugSink';
+
+describe('useRotate — debug recording', () => {
+  it('records a rotation handle position on gesture start', () => {
+    const sink = createDebugSink({ handles: true });
+    const { adapter } = makeAdapter();
+    const { result } = renderHook(() =>
+      useRotate<{ id: string }, RotatedPose>(adapter, { debug: sink }),
+    );
+    act(() => {
+      result.current.start({ id: 'a', worldX: 0, worldY: 0 });
+    });
+    const rh = sink.snapshot().handles.filter((h) => h.kind === 'rotation');
+    expect(rh.length).toBe(1);
+  });
+
+  it('records a rotation hitbox on gesture start', () => {
+    const sink = createDebugSink({ hitboxes: true });
+    const { adapter } = makeAdapter();
+    const { result } = renderHook(() =>
+      useRotate<{ id: string }, RotatedPose>(adapter, { debug: sink }),
+    );
+    act(() => {
+      result.current.start({ id: 'a', worldX: 0, worldY: 0 });
+    });
+    const hits = sink.snapshot().hitboxes.filter((h) => h.kind === 'rotation');
+    expect(hits.length).toBe(1);
+  });
+});
