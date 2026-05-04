@@ -35,6 +35,9 @@ export interface LayoutContainer {
 
 export interface LayoutDragged<TPose> {
   id: string;
+  /** The pose the dragged child currently has (pre-drop). */
+  originPose: TPose;
+  /** The pose the gesture proposes (pointer-driven, pre-snap). */
   pose: TPose;
   sourceContainerId: string | null;
 }
