@@ -23,6 +23,12 @@
   successive reparents of the same id batch-merge cleanly. Default `label`
   is `'Reparent'`. Layout strategies can return reparent ops from
   `commitDrop` to express drop-driven parent reassignment.
+- `tileGrid({ cellToPose })`: optional callback to map a cell rect + the
+  dragged pose to the new pose. Default spreads `{x,y,width,height}` over
+  the dragged pose (the existing rect-pose behavior). Override for
+  point-only poses or other shapes. The `tileGrid<TPose>` signature is
+  no longer constrained to `RectPose` — pass `cellToPose` whenever TPose
+  doesn't carry the rect fields.
 - Debug overlay subsystem: `?debug=…` URL gating + `<Canvas debug={...}>` prop.
   Six features ship: `hitboxes`, `handles`, `bounds`, `origins`, `snap`, `layers`.
   Sink threaded through `usePointerGestures`, `useResize`, `useRotate`,

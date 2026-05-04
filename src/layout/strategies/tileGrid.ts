@@ -23,9 +23,17 @@ export interface TileGridOptions<TPose> {
   /** Gap between cells, in world units. Default 0. */
   gap?: number;
   snap?: LayoutSnap<TPose>;
+  /** Optional: map a cell rect + the dragged pose to the new pose. Default
+   *  writes `{ x, y, width, height }` into the dragged pose (assumes
+   *  `RectPose`). Override for point-only poses or other shapes. The
+   *  `dragged` argument is the pre-drop pose of the child being placed —
+   *  use it to preserve fields the cell rect doesn't carry (e.g. rotation,
+   *  domain metadata). */
+  cellToPose?(
+    cellRect: { x: number; y: number; width: number; height: number },
+    dragged: TPose,
+  ): TPose;
 }
-
-type RectPose = { x: number; y: number; width: number; height: number };
 
 function cellRectAt(
   bounds: ContainerBounds,
@@ -49,16 +57,22 @@ function sortedChildIds<TPose>(children: ReadonlyArray<LayoutChild<TPose>>): str
   return children.map((c) => c.id).sort();
 }
 
-export function tileGrid<TPose extends RectPose>(
+export function tileGrid<TPose>(
   opts: TileGridOptions<TPose>,
 ): LayoutStrategy<TPose> {
   const { cols, rows } = opts;
   const gap = opts.gap ?? 0;
   const snap = opts.snap ?? cellAt<TPose>();
   const capacity = cols * rows;
+  const cellToPose: (cell: { x: number; y: number; width: number; height: number }, dragged: TPose) => TPose =
+    opts.cellToPose ?? ((cell, dragged) => {
+      // Default: spread the cell rect over the dragged pose. Preserves any
+      // extra fields the dragged pose carries.
+      return { ...(dragged as object), ...cell } as TPose;
+    });
 
-  function cellPose(bounds: ContainerBounds, col: number, row: number): TPose {
-    return cellRectAt(bounds, cols, rows, gap, col, row) as TPose;
+  function cellPose(bounds: ContainerBounds, col: number, row: number, basis: TPose): TPose {
+    return cellToPose(cellRectAt(bounds, cols, rows, gap, col, row), basis);
   }
 
   /**
@@ -84,14 +98,17 @@ export function tileGrid<TPose extends RectPose>(
     const idx = meta.row * cols + meta.col;
     const occupant = ids[idx] ?? null;
     if (occupant === null || occupant === dragged.id) return null;
-    const dop = dragged.originPose;
-    const newPose: TPose = {
-      x: dop.x,
-      y: dop.y,
-      width: dop.width,
-      height: dop.height,
-    } as TPose;
-    return { occupant, newPose };
+    // The occupant takes the dragged child's old cell. Find that cell by
+    // locating the dragged id in the same sorted-children index space.
+    const draggedIdx = ids.indexOf(dragged.id);
+    const draggedCol = draggedIdx % cols;
+    const draggedRow = Math.floor(draggedIdx / cols);
+    const oldCellRect = cellRectAt(container.bounds, cols, rows, gap, draggedCol, draggedRow);
+    // Use the occupant's own pose as the basis so any non-rect fields
+    // (rotation, domain metadata) are preserved.
+    const occupantChild = children.find((c) => c.id === occupant);
+    const basis = occupantChild ? occupantChild.pose : dragged.originPose;
+    return { occupant, newPose: cellToPose(oldCellRect, basis) };
   }
 
   return {
@@ -100,21 +117,24 @@ export function tileGrid<TPose extends RectPose>(
     getChildPositions(container, children) {
       const out = new Map<string, TPose>();
       const ids = sortedChildIds(children);
+      const byId = new Map(children.map((c) => [c.id, c.pose] as const));
       for (let i = 0; i < ids.length && i < capacity; i++) {
         const col = i % cols;
         const row = Math.floor(i / cols);
-        out.set(ids[i], cellPose(container.bounds, col, row));
+        // Use each child's own pose as the basis so non-rect fields survive
+        // the cellToPose mapping.
+        out.set(ids[i], cellPose(container.bounds, col, row, byId.get(ids[i])!));
       }
       return out;
     },
 
-    getDropTargets(container, _children, _dragged) {
+    getDropTargets(container, _children, dragged) {
       const out: DropTarget<TPose>[] = [];
       for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
           const cellRect = cellRectAt(container.bounds, cols, rows, gap, col, row);
           out.push({
-            pose: cellRect as TPose,
+            pose: cellToPose(cellRect, dragged.pose),
             origin: { x: cellRect.x + cellRect.width / 2, y: cellRect.y + cellRect.height / 2 },
             meta: { col, row, cellRect } satisfies TileMeta,
           });
@@ -144,7 +164,7 @@ export function tileGrid<TPose extends RectPose>(
         droppedPose = dragged.pose;
       } else {
         const meta = target.meta as TileMeta;
-        droppedPose = meta.cellRect as TPose;
+        droppedPose = cellToPose(meta.cellRect, dragged.pose);
         const swap = computeSwap(container, children, dragged, target);
         if (swap !== null) {
           const layoutBefore = this.getChildPositions(container, children);

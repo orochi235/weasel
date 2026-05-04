@@ -192,6 +192,52 @@ describe('tileGrid', () => {
     expect((got?.meta as { col: number }).col).toBe(1);
   });
 
+  it('cellToPose maps cell rect to point-only pose', () => {
+    type Point = { x: number; y: number };
+    const layout = tileGrid<Point>({
+      cols: 2,
+      rows: 1,
+      cellToPose: (cell) => ({ x: cell.x + cell.width / 2, y: cell.y + cell.height / 2 }),
+    });
+    const children = [
+      { id: 'a', pose: { x: 25, y: 50 } as Point },
+      { id: 'b', pose: { x: 75, y: 50 } as Point },
+    ];
+    const got = layout.getChildPositions(container, children);
+    // 100x100 container, 2x1 grid → cells at (0,0,50,100) and (50,0,50,100).
+    // Centers: (25,50), (75,50).
+    expect(got.get('a')).toEqual({ x: 25, y: 50 });
+    expect(got.get('b')).toEqual({ x: 75, y: 50 });
+  });
+
+  it('cellToPose drives the dropped pose in commitDrop (point-only pose)', () => {
+    type Point = { x: number; y: number };
+    const layout = tileGrid<Point>({
+      cols: 2,
+      rows: 1,
+      cellToPose: (cell) => ({ x: cell.x + cell.width / 2, y: cell.y + cell.height / 2 }),
+    });
+    const children = [{ id: 'a', pose: { x: 25, y: 50 } as Point }];
+    const targets = layout.getDropTargets(container, children, {
+      id: 'd',
+      originPose: { x: 0, y: 0 } as Point,
+      pose: { x: 75, y: 50 } as Point,
+      sourceContainerId: null,
+    });
+    const cell1 = targets.find((t) => (t.meta as { col: number }).col === 1)!;
+    const ops = layout.commitDrop(container, children, {
+      id: 'd',
+      originPose: { x: 0, y: 0 } as Point,
+      pose: { x: 75, y: 50 } as Point,
+      sourceContainerId: null,
+    }, cell1);
+    expect(ops).toHaveLength(1);
+    const calls: Array<{ id: string; pose: Point }> = [];
+    ops[0].apply({ setPose: (id: string, pose: Point) => calls.push({ id, pose }) });
+    // cellToPose maps cell (1,0) center → (75, 50).
+    expect(calls).toEqual([{ id: 'd', pose: { x: 75, y: 50 } }]);
+  });
+
   it('accepts a snap override', () => {
     const layout = tileGrid<P>({ cols: 2, rows: 1, snap: none<P>() });
     const targets = layout.getDropTargets(container, [], {
