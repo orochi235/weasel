@@ -17,6 +17,7 @@ import { CompoundPathsDemo, COMPOUND_PATHS_DEMO_SOURCE } from './demos/CompoundP
 import { BezierEditDemo, BEZIER_EDIT_DEMO_SOURCE } from './demos/BezierEditDemo';
 import { SceneDemo, SCENE_DEMO_SOURCE } from './demos/SceneDemo';
 import { PanDemo, PAN_DEMO_SOURCE } from './demos/PanDemo';
+import { ZoomDemo, ZOOM_DEMO_SOURCE } from './demos/ZoomDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
@@ -36,6 +37,7 @@ import CompoundPathsDemoFull from './demos/CompoundPathsDemo.tsx?raw';
 import BezierEditDemoFull from './demos/BezierEditDemo.tsx?raw';
 import SceneDemoFull from './demos/SceneDemo.tsx?raw';
 import PanDemoFull from './demos/PanDemo.tsx?raw';
+import ZoomDemoFull from './demos/ZoomDemo.tsx?raw';
 
 export interface DemoEntry {
   id: string;
@@ -238,6 +240,17 @@ export const DEMOS: DemoEntry[] = [
     snippet: PIXEL_DENSITY_DEMO_SOURCE,
     full: PixelDensityDemoFull,
     path: 'demo/demos/PixelDensityDemo.tsx',
+  },
+  {
+    id: 'zoom',
+    title: 'Zoom (Phase 2c)',
+    category: 'Viewport',
+    description: 'Three opt-in always-on tools wired alongside select + hand: useWheelZoomTool (ctrl/meta+wheel zooms about the cursor), useWheelPanTool (plain wheel pans), useKeyboardZoomTool (Cmd+= / Cmd+- / Cmd+0). Selection-overlay handles, marquee, and insert overlays now live in screen space, so chrome stays at fixed pixel size under zoom. The two demo rects show the trade-off in scene strokes: the green rect divides lineWidth by view.scale (screen-pinned, looks the same at every zoom); the purple rect uses a plain world-px stroke (grows and shrinks with zoom).',
+    hint: 'ctrl/⌘+wheel zoom · plain wheel pan · ⌘+= / ⌘+- / ⌘+0 · H drag · space drag.',
+    Component: ZoomDemo,
+    snippet: ZOOM_DEMO_SOURCE,
+    full: ZoomDemoFull,
+    path: 'demo/demos/ZoomDemo.tsx',
   },
   {
     id: 'pan',
