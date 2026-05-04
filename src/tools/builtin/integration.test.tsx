@@ -445,3 +445,94 @@ describe('Phase 2c: zoom + pan composition', () => {
     expect(onViewChange).toHaveBeenLastCalledWith({ x: -50, y: -30, scale: 2 });
   });
 });
+
+describe('Phase 2a: off-canvas pointer release backstop', () => {
+  // Repro: start a drag, move pointer off-canvas, release outside the canvas.
+  // The pointerup lands on `document`, not the canvas. Without a doc-level
+  // backstop, the dispatcher's gesture stays in flight forever — the move
+  // overlay leaks, the pose is never committed, and on re-entry the ghost is
+  // still drawn.
+  it('select tool: pointerup dispatched on document commits the move and ends the gesture', () => {
+    const applyBatch = vi.fn();
+
+    function Harness() {
+      const [rects, setRects] = useState<Rect[]>([
+        { id: 'a', x: 0, y: 0, width: 100, height: 100 },
+      ]);
+      const rectsRef = useRef(rects);
+      rectsRef.current = rects;
+      const sel = useSelection({ mode: 'single' });
+
+      const base = arrayAdapter<Rect, Pose>({
+        ref: rectsRef,
+        setItems: setRects,
+        toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
+      });
+      const adapter = { ...base, applyBatch };
+
+      const selectTool = useSelectTool(adapter, {
+        hitBody: (wx, wy) => {
+          for (let i = rectsRef.current.length - 1; i >= 0; i--) {
+            const r = rectsRef.current[i];
+            if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) {
+              return [r.id];
+            }
+          }
+          return [];
+        },
+        boundsOf: (id) => {
+          const r = rectsRef.current.find((o) => o.id === id);
+          return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
+        },
+      });
+
+      const tools = useTools({
+        active: 'select',
+        registry: { select: selectTool },
+      });
+
+      return (
+        <Canvas
+          width={200}
+          height={200}
+          layers={{}}
+          adapter={adapter}
+          selection={sel}
+          tools={tools}
+          clientToWorld={C2W}
+        />
+      );
+    }
+
+    const { container } = render(<Harness />);
+    const canvas = container.querySelector('canvas')!;
+    canvas.setPointerCapture = vi.fn();
+
+    // Pointer-down on the rect → gesture starts (pending).
+    fireEvent.pointerDown(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
+    // Move past the threshold while still on the canvas → promotes to drag.
+    fireEvent.pointerMove(canvas, { clientX: 80, clientY: 80, pointerId: 1 });
+    // Pointer leaves the canvas — the next move arrives via document
+    // (browsers route pointermove during a captured drag to the canvas; absent
+    // capture they go to whatever element is under the pointer). Dispatch on
+    // document to simulate the off-canvas position.
+    act(() => {
+      document.dispatchEvent(
+        new MouseEvent('pointermove', { clientX: 500, clientY: 500, bubbles: true }),
+      );
+    });
+    // User releases outside the canvas. With no doc-level backstop the
+    // dispatcher never sees the pointerup and the gesture leaks.
+    act(() => {
+      document.dispatchEvent(
+        new MouseEvent('pointerup', { clientX: 500, clientY: 500, bubbles: true }),
+      );
+    });
+
+    // The gesture must have committed: applyBatch fires exactly once with a
+    // 'Move' label.
+    expect(applyBatch).toHaveBeenCalledTimes(1);
+    const [, label] = applyBatch.mock.calls[0] as [Array<unknown>, string];
+    expect(label).toBe('Move');
+  });
+});
