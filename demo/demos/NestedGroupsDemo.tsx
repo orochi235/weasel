@@ -1,10 +1,12 @@
 import { useMemo, useRef, useState } from 'react';
 import {
   Canvas,
+  defineTool,
   useMove,
   useNestedGroup,
   useNestedUngroup,
   useSelection,
+  useTools,
   createHistory,
   composeRectPose,
   decomposeRectPose,
@@ -180,8 +182,72 @@ export function NestedGroupsDemo() {
   };
 
   // Selection overlay reads world poses via worldPoseLookup so the outline
-  // tracks ancestor moves correctly.
+  // tracks ancestor moves correctly. The live ghost is rendered by the
+  // move tool's own overlay channel (via `ghostLayer` reading `move.overlay`),
+  // so the selection chrome stays committed-state-only.
   const selectionPoseLookup = worldPoseLookup(adapter, composeRectPose<Pose>);
+
+  // Custom move tool — wraps the cascade-aware `useMove` controller. We can't
+  // use `useSelectTool` here because the kit's bundled move/area-select
+  // semantics don't know about nested-group hit resolution (clicks on group
+  // bodies should resolve to the outermost group, and the area-select adapter
+  // hooks aren't wired). Routing pointer/drag events here keeps the existing
+  // `useMove` cascade behaviour and lets the demo's custom layers keep
+  // reading `move.overlay` for hide-ids and ghost rendering.
+  const moveRef = useRef(move);
+  moveRef.current = move;
+  const hitRef = useRef(hitBody);
+  hitRef.current = hitBody;
+  const moveTool = useMemo(() => defineTool<{ ids: string[] | null }>({
+    id: 'move',
+    cursor: 'default',
+    initScratch: () => ({ ids: null }),
+    pointer: {
+      onDown: (_e, ctx) => {
+        const id = hitRef.current(ctx.worldX, ctx.worldY);
+        if (id === null) {
+          ctx.selection.set([]);
+          ctx.scratch = { ids: null };
+          return 'claim';
+        }
+        ctx.selection.applyClick(id, ctx.modifiers);
+        const sel = ctx.selection.current;
+        ctx.scratch = { ids: sel.length > 0 ? sel : [id] };
+        return 'claim';
+      },
+    },
+    drag: {
+      onStart: (e, ctx) => {
+        const ids = ctx.scratch.ids;
+        if (!ids || ids.length === 0) return 'pass';
+        moveRef.current.start({
+          ids, worldX: ctx.worldX, worldY: ctx.worldY,
+          clientX: e.clientX, clientY: e.clientY,
+        });
+        return 'claim';
+      },
+      onMove: (e, ctx) => {
+        if (!ctx.scratch.ids) return 'pass';
+        moveRef.current.move({
+          worldX: ctx.worldX, worldY: ctx.worldY,
+          clientX: e.clientX, clientY: e.clientY,
+          modifiers: ctx.modifiers,
+        });
+        return 'claim';
+      },
+      onEnd: (_e, ctx) => {
+        if (!ctx.scratch.ids) return 'pass';
+        moveRef.current.end();
+        return 'claim';
+      },
+      onCancel: (ctx) => {
+        if (!ctx.scratch.ids) return;
+        moveRef.current.cancel();
+      },
+    },
+  }), []);
+
+  const tools = useTools({ active: 'move', registry: { move: moveTool } });
 
   return (
     <Canvas
@@ -190,7 +256,7 @@ export function NestedGroupsDemo() {
       className="ckd-canvas"
       adapter={adapter}
       selection={selection}
-      move={move}
+      tools={tools}
       hitBody={hitBody}
       gestures={{ undoRedo: { adapter: history } }}
       layers={{
@@ -199,9 +265,7 @@ export function NestedGroupsDemo() {
         'ghost': { layer: ghostLayer, before: 'selectionOverlay' },
         selectionOverlay: {
           handles: { size: 0 },
-          // During a drag the move overlay carries the live world pose; fall
-          // back to the world-pose composition for committed nodes.
-          poseById: (id) => move.overlay?.poses.get(id) ?? selectionPoseLookup(id),
+          poseById: (id) => selectionPoseLookup(id),
         },
       }}
     />
@@ -239,16 +303,29 @@ useNestedUngroup(adapter, { ...composeOpts, bindKeyboard: true,
   isGroup: (_id, obj) => obj?.isGroup === true,
 });
 
-// <Canvas> owns the render loop, focus, dpr, selection, and undo wiring;
-// we still own the custom move controller (needs cascadeWorldPose) and the
-// custom layers (TPose is local so the standard scene drawOne can't be
-// used directly — paint via a custom layer that walks ancestors).
+// Custom move tool wraps the cascade-aware controller. useSelectTool can't
+// be used here because of the bespoke top-level group hit resolution; this
+// inline tool routes pointer/drag through the move controller and lets the
+// custom scene/ghost layers keep reading move.overlay.
+const moveTool = defineTool({
+  id: 'move', cursor: 'default',
+  initScratch: () => ({ ids: null }),
+  pointer: { onDown: (_e, ctx) => { /* hitBody → selection.applyClick → scratch.ids */ } },
+  drag: {
+    onStart: (e, ctx) => move.start({ ids: ctx.scratch.ids, ... }),
+    onMove:  (e, ctx) => move.move({ ... }),
+    onEnd:   (_e, ctx) => move.end(),
+    onCancel: (ctx) => move.cancel(),
+  },
+});
+const tools = useTools({ active: 'move', registry: { move: moveTool } });
+
 return (
   <Canvas
     width={W} height={H}
     adapter={adapter}
     selection={selection}
-    move={move}
+    tools={tools}
     hitBody={hitBody}        // skip groups, resolve top-level
     gestures={{ undoRedo: { adapter: history } }}
     layers={{
