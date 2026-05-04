@@ -69,6 +69,30 @@ describe('useSelectTool', () => {
     expect(applyClick).toHaveBeenCalledWith('hit-id', ctx.modifiers);
   });
 
+  it('pointer.onDown picks the child over its container when both are in hitBody', () => {
+    // Regression: container's bounds also cover the child, so a click inside
+    // the child returns ['F','f1'] (parent first via demo iteration order).
+    // Naively taking ids[0] selects the container. With the parent/child
+    // collapse, the deepest descendant — f1 — wins.
+    const parents: Record<string, string | null> = { F: null, f1: 'F' };
+    const adapter = {
+      ...minimalAdapter,
+      getParent: (id: string) => parents[id] ?? null,
+    } as any;
+    const applyClick = vi.fn();
+    const ctx = ctxOver({
+      selection: { current: ['f1'], applyClick, set: vi.fn(), clear: vi.fn() } as any,
+    });
+    const { result } = renderHook(() =>
+      useSelectTool(adapter, {
+        hitBody: () => ['F', 'f1'], // parent before child — buggy demo order
+        boundsOf: () => ({ x: 0, y: 0, width: 10, height: 10 }),
+      }),
+    );
+    result.current.pointer!.onDown!(pe(), ctx);
+    expect(applyClick).toHaveBeenCalledWith('f1', ctx.modifiers);
+  });
+
   it('pointer.onDown over empty stashes kind:area', () => {
     const ctx = ctxOver();
     const { result } = renderHook(() =>

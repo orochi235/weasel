@@ -16,6 +16,7 @@ import type { DebugSink } from '../../debug/types';
 import type { RenderLayer } from '../../core/layers/render';
 import { viewToTransform } from '../../features/viewport/view';
 import { worldToScreen } from '../../features/viewport/viewTransform';
+import { pickTopMostHit } from './pickTopMostHit';
 
 /** World-space bounding rect for hit-testing handles. Uses `width`/`height` to
  *  match `cornerResizeHandles` and `rotationHandle` expectations. */
@@ -271,9 +272,16 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
             // 3. Body hit → move (+ select)
             const ids = options.hitBody(ctx.worldX, ctx.worldY);
             if (ids.length > 0) {
-              ctx.selection.applyClick(ids[0], ctx.modifiers);
+              // pickTopMostHit collapses parent/child overlap (container's
+              // bounds also cover the child) and falls back to "last id" for
+              // pure sibling hits — matches the bottom-first iteration order
+              // most demos produce. Demos that already z-sort with topmost
+              // first should return a single-id array; this helper is a
+              // no-op in that case.
+              const top = pickTopMostHit(ids, adapter) ?? ids[0];
+              ctx.selection.applyClick(top, ctx.modifiers);
               // After applyClick the selection may have changed; use it if non-empty.
-              const moveIds = ctx.selection.current.length > 0 ? ctx.selection.current : ids;
+              const moveIds = ctx.selection.current.length > 0 ? ctx.selection.current : [top];
               ctx.scratch = { kind: 'move', ids: moveIds };
               return 'claim';
             }

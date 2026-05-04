@@ -4,6 +4,7 @@ export { useUndoRedoTool, type UseUndoRedoToolOptions } from './useUndoRedoTool'
 export { useDuplicateTool, type UseDuplicateToolOptions } from './useDuplicateTool';
 export { useInsertTool, type UseInsertToolOptions } from './useInsertTool';
 export { useSelectTool, type UseSelectToolOptions } from './useSelectTool';
+export { pickTopMostHit, type PickTopMostHitAdapter } from './pickTopMostHit';
 export { useHandTool } from './useHandTool';
 export { useTextTool, type UseTextToolOptions } from './useTextTool';
 export { useWheelZoomTool, type WheelZoomToolOpts } from './useWheelZoomTool';

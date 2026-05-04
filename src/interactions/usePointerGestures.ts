@@ -17,6 +17,7 @@ import type { ModifierState } from './gestures/types';
 import type { SelectionApi } from '../features/selection/useSelection';
 import type { View } from '../features/viewport/view';
 import type { DebugSink, HitShape } from '../debug/types';
+import { pickTopMostHit } from '../tools/builtin/pickTopMostHit';
 
 interface Bounds {
   x: number;
@@ -330,7 +331,11 @@ export function usePointerGestures<TMovePose, TResizePose>(
           if (onBodyHit) {
             onBodyHit(hitIds, ctx);
           } else if (selection && hitIds.length > 0) {
-            selection.applyClick(hitIds[0], modifiers);
+            // pickTopMostHit collapses parent/child overlap so a click
+            // inside a container's child selects the child, not the
+            // container. See `pickTopMostHit` for the full rule set.
+            const top = pickTopMostHit(hitIds, move?.adapter ?? null) ?? hitIds[0];
+            selection.applyClick(top, modifiers);
           }
           // Now decide what to drag. With selection, drag the post-click
           // selection (so click-on-unselected promotes-then-drags). Without,
