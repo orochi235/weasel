@@ -19,6 +19,7 @@ import { SceneDemo, SCENE_DEMO_SOURCE } from './demos/SceneDemo';
 import { PanDemo, PAN_DEMO_SOURCE } from './demos/PanDemo';
 import { ZoomDemo, ZOOM_DEMO_SOURCE } from './demos/ZoomDemo';
 import { SwillustratorDemo, SWILLUSTRATOR_DEMO_SOURCE } from './demos/SwillustratorDemo';
+import { AnimationDemo, ANIMATION_DEMO_SOURCE } from './demos/AnimationDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
@@ -40,6 +41,7 @@ import SceneDemoFull from './demos/SceneDemo.tsx?raw';
 import PanDemoFull from './demos/PanDemo.tsx?raw';
 import ZoomDemoFull from './demos/ZoomDemo.tsx?raw';
 import SwillustratorDemoFull from './demos/SwillustratorDemo.tsx?raw';
+import AnimationDemoFull from './demos/AnimationDemo.tsx?raw';
 
 export interface DemoEntry {
   id: string;
@@ -78,6 +80,17 @@ export const DEMOS: DemoEntry[] = [
     snippet: MOVE_DEMO_SOURCE,
     full: MoveDemoFull,
     path: 'demo/demos/MoveDemo.tsx',
+  },
+  {
+    id: 'animation',
+    title: 'Animation',
+    category: 'Interactions',
+    description: 'useAnimator + animateOnSetPose + animateLifecycle + momentum behavior. Programmatic setPose tweens (click "Tween A"/"Tween B"); inserts scale up from zero (click "Add card"); flicking a card releases with momentum decay.',
+    hint: 'Click a Tween button, click Add card, or drag-and-flick a card.',
+    Component: AnimationDemo,
+    snippet: ANIMATION_DEMO_SOURCE,
+    full: AnimationDemoFull,
+    path: 'demo/demos/AnimationDemo.tsx',
   },
   {
     id: 'resize',
