@@ -2,6 +2,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { createToolsDispatcher, type ToolsDispatcher } from './dispatcher';
 import type { AnyTool, ToolCtx } from './types';
+import type { RenderLayer } from '../core/layers/render';
 
 export interface UseToolsOptions {
   /** Initial active-slot tool id. Must exist in `registry`. */
@@ -38,6 +39,11 @@ export interface ToolsApi {
   dispatcher: ToolsDispatcher;
   /** Returns true if a tool with the given id is in the registry or alwaysOn list. */
   has(id: string): boolean;
+  /** All overlay layers from currently-engaged tools (active slot, modifier
+   *  slot if engaged, all alwaysOn slot tools). Filters out tools with no
+   *  `overlay` field. Order: active, then modifier (if engaged), then
+   *  alwaysOn (registration order). */
+  getActiveOverlays(): RenderLayer<unknown>[];
 }
 
 const DEFAULT_CTX: Omit<ToolCtx, 'scratch'> = {
@@ -129,6 +135,17 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
     dispatcher,
     has(id: string): boolean {
       return id in registryRef.current || alwaysOnRef.current.some(t => t.id === id);
+    },
+    getActiveOverlays(): RenderLayer<unknown>[] {
+      const out: RenderLayer<unknown>[] = [];
+      const activeTool = registryRef.current[activeRef.current];
+      if (activeTool?.overlay) out.push(activeTool.overlay);
+      const mod = modifierRef.current ? registryRef.current[modifierRef.current] : null;
+      if (mod?.overlay) out.push(mod.overlay);
+      for (const t of alwaysOnRef.current) {
+        if (t.overlay) out.push(t.overlay);
+      }
+      return out;
     },
   };
 }

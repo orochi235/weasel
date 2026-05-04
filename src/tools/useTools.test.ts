@@ -3,6 +3,11 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useTools } from './useTools';
 import { defineTool } from './defineTool';
+import type { RenderLayer } from '../core/layers/render';
+
+const mkLayer = (id: string): RenderLayer<unknown> => ({
+  id, label: id, space: 'screen', draw: () => {},
+});
 
 function pointerEvent(type: string, init: Partial<PointerEventInit> = {}): PointerEvent {
   // jsdom doesn't implement PointerEvent; synthesize via Event + assign.
@@ -96,5 +101,41 @@ describe('useTools', () => {
 
     act(() => result.current.engageModifier('hand'));
     expect(result.current.modifierEngaged).toBe(null);
+  });
+});
+
+describe('ToolsApi.getActiveOverlays', () => {
+  it('returns overlay from active tool', () => {
+    const a = defineTool({ id: 'a', overlay: mkLayer('a-ov') });
+    const { result } = renderHook(() => useTools({ active: 'a', registry: { a } }));
+    const out = result.current.getActiveOverlays();
+    expect(out.map((l) => l.id)).toEqual(['a-ov']);
+  });
+
+  it('filters out tools with no overlay', () => {
+    const a = defineTool({ id: 'a' });
+    const { result } = renderHook(() => useTools({ active: 'a', registry: { a } }));
+    expect(result.current.getActiveOverlays()).toEqual([]);
+  });
+
+  it('orders active, modifier, alwaysOn (in registration order)', () => {
+    const a = defineTool({ id: 'a', overlay: mkLayer('a-ov') });
+    const m = defineTool({ id: 'm', modifier: 'space', overlay: mkLayer('m-ov') });
+    const w1 = defineTool({ id: 'w1', overlay: mkLayer('w1-ov') });
+    const w2 = defineTool({ id: 'w2', overlay: mkLayer('w2-ov') });
+    const { result, rerender } = renderHook(() =>
+      useTools({ active: 'a', registry: { a, m }, alwaysOn: [w1, w2] }),
+    );
+    act(() => { result.current.engageModifier('m'); });
+    rerender();
+    expect(result.current.getActiveOverlays().map((l) => l.id))
+      .toEqual(['a-ov', 'm-ov', 'w1-ov', 'w2-ov']);
+  });
+
+  it('omits modifier overlay when not engaged', () => {
+    const a = defineTool({ id: 'a', overlay: mkLayer('a-ov') });
+    const m = defineTool({ id: 'm', modifier: 'space', overlay: mkLayer('m-ov') });
+    const { result } = renderHook(() => useTools({ active: 'a', registry: { a, m } }));
+    expect(result.current.getActiveOverlays().map((l) => l.id)).toEqual(['a-ov']);
   });
 });
