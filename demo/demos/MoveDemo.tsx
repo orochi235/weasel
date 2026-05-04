@@ -2,9 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import {
   arrayAdapter,
   gridSnapStrategy,
+  snap,
   Canvas,
   useZoom,
   useSelection,
+  useSelectTool,
+  useTools,
   useDuplicate,
 } from '@orochi235/weasel';
 import type { UnitSystem } from '@orochi235/weasel';
@@ -53,9 +56,37 @@ export function MoveDemo() {
         color: COLORS[(nextId.current + 2) % COLORS.length],
       } as Rect;
     },
+    // useSelectTool's adapter intersection requires AreaSelectAdapter members.
+    hitTestArea: (r: Pose) =>
+      rectsRef.current
+        .filter((o) => o.x < r.x + r.width && o.x + o.width > r.x && o.y < r.y + r.height && o.y + o.height > r.y)
+        .map((o) => o.id),
+    applyOps: () => {},
+    snapshotSelection: () => ({ items: [] }),
   };
 
   useDuplicate<Pose>(adapter);
+
+  const select = useSelectTool<Rect, Pose>(adapter, {
+    hitBody: (wx, wy) =>
+      rectsRef.current
+        .filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height)
+        .map((r) => r.id),
+    boundsOf: (id) => {
+      const r = rectsRef.current.find((x) => x.id === id);
+      return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
+    },
+    move: {
+      behaviors: [snap(gridSnapStrategy<Pose>(CELL, UNITS))],
+    },
+    drawGhost: (ctx, rect, pose) => {
+      if (!rect) return;
+      ctx.fillStyle = rect.color;
+      ctx.fillRect(pose.x, pose.y, pose.width, pose.height);
+    },
+    getObject: (id) => rectsRef.current.find((r) => r.id === id) ?? null,
+  });
+  const tools = useTools({ active: 'select', registry: { select } });
 
   const zoomCtl = useZoom({
     zoom, setZoom, pan, setPan,
@@ -83,7 +114,7 @@ export function MoveDemo() {
       className="ckd-canvas"
       adapter={adapter}
       selection={selection}
-      snap={gridSnapStrategy<Pose>(CELL, UNITS)}
+      tools={tools}
       clientToWorld={clientToWorld}
       layers={{
         grid: {
@@ -113,12 +144,16 @@ const rectsRef = useRef(rects);
 rectsRef.current = rects;
 const selection = useSelection();
 
-// --- Adapter (with selection methods + cloneObject for useDuplicate) ---
+// --- Adapter (with selection methods + cloneObject for useDuplicate +
+//     hitTestArea/applyOps/snapshotSelection for useSelectTool) ---
 const adapter = {
   ...arrayAdapter<Rect, Pose>({ ref: rectsRef, setItems: setRects, toPose: (r) => ({...}) }),
   ...selection.adapterMethods,
   insertObject: (obj) => setRects((rs) => [...rs, obj]),
   cloneObject: (id, offset) => /* mint a fresh id, copy fields, translate by offset */,
+  hitTestArea: (rect) => rectsRef.current.filter(aabbOverlap(rect)).map((r) => r.id),
+  applyOps: () => {},
+  snapshotSelection: () => ({ items: [] }),
 };
 
 useDuplicate<Pose>(adapter); // Cmd/Ctrl+D -> clone selection (offset 8,8 by default)
@@ -126,15 +161,27 @@ useDuplicate<Pose>(adapter); // Cmd/Ctrl+D -> clone selection (offset 8,8 by def
 const UNITS: UnitSystem = { base: 'px', units: { px: 1, tile: 20 } };
 const CELL = { value: 1, unit: 'tile' } as const;
 
-// <Canvas> owns useMove / useResize internally. Pass moveOptions to configure
-// the internal move controller — here we plug in a snap-to-grid behavior.
-// Pass selection so the duplicate hook and Canvas share the same selection.
+// Build the select tool with the snap behavior folded into move.behaviors.
+// The Tool publishes its own move/resize/rotate ghosts via the overlay channel.
+const select = useSelectTool<Rect, Pose>(adapter, {
+  hitBody: (wx, wy) => rectsRef.current.filter(hitOf(wx, wy)).map((r) => r.id),
+  boundsOf: (id) => boundsOfRect(rectsRef.current.find((r) => r.id === id)),
+  move: { behaviors: [snap(gridSnapStrategy<Pose>(CELL, UNITS))] },
+  drawGhost: (ctx, rect, pose) => {
+    if (!rect) return;
+    ctx.fillStyle = rect.color;
+    ctx.fillRect(pose.x, pose.y, pose.width, pose.height);
+  },
+  getObject: (id) => rectsRef.current.find((r) => r.id === id) ?? null,
+});
+const tools = useTools({ active: 'select', registry: { select } });
+
 return (
   <Canvas
     width={W} height={H}
     adapter={adapter}
     selection={selection}
-    snap={gridSnapStrategy<Pose>(CELL, UNITS)}
+    tools={tools}
     layers={{
       grid: { spacing: CELL, unitSystem: UNITS, bounds: () => ({ x: 0, y: 0, width: W, height: H }), accentEvery: 5 },
       scene: {
