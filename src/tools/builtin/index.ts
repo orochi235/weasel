@@ -5,3 +5,6 @@ export { useDuplicateTool, type UseDuplicateToolOptions } from './useDuplicateTo
 export { useInsertTool, type UseInsertToolOptions } from './useInsertTool';
 export { useSelectTool, type UseSelectToolOptions } from './useSelectTool';
 export { useHandTool } from './useHandTool';
+export { useWheelZoomTool, type WheelZoomToolOpts } from './useWheelZoomTool';
+export { useWheelPanTool } from './useWheelPanTool';
+export { useKeyboardZoomTool, type KeyboardZoomToolOpts } from './useKeyboardZoomTool';

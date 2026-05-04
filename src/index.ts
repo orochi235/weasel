@@ -61,6 +61,8 @@ export { setupCanvasDpr, useFixedPixelRatio } from './features/viewport/pixelDen
 export type { SetupCanvasDprOptions } from './features/viewport/pixelDensity';
 export * from './features/viewport/fitToBounds';
 export * from './features/viewport/usePan';
+export { zoomAt } from './features/viewport/zoomAt';
+export type { ZoomClampOpts } from './features/viewport/zoomAt';
 export * from './features/viewport/useZoom';
 export * from './features/viewport/useAutoCenter';
 export { useGridCellHover } from './features/grid/useGridCellHover';
