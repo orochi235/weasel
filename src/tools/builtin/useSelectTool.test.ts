@@ -106,6 +106,37 @@ describe('useSelectTool', () => {
     expect(ctx.scratch).toEqual({ kind: 'area' });
   });
 
+  it('pointer.onDown over empty clears selection (Figma-style click-empty deselects)', () => {
+    const clear = vi.fn();
+    const ctx = ctxOver({
+      selection: { current: ['a', 'b'], applyClick: vi.fn(), set: vi.fn(), clear } as any,
+    });
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        hitBody: () => [],
+        boundsOf: () => null,
+      }),
+    );
+    result.current.pointer!.onDown!(pe(), ctx);
+    expect(clear).toHaveBeenCalledTimes(1);
+  });
+
+  it('pointer.onDown over empty with shift held does NOT clear selection (extend-marquee path)', () => {
+    const clear = vi.fn();
+    const ctx = ctxOver({
+      modifiers: { alt: false, shift: true, meta: false, ctrl: false, space: false },
+      selection: { current: ['a', 'b'], applyClick: vi.fn(), set: vi.fn(), clear } as any,
+    });
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        hitBody: () => [],
+        boundsOf: () => null,
+      }),
+    );
+    result.current.pointer!.onDown!(pe(), ctx);
+    expect(clear).not.toHaveBeenCalled();
+  });
+
   it('initScratch returns kind:idle', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {

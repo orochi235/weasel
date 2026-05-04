@@ -65,6 +65,12 @@ export function useKeybindings(
     function onKeyDown(e: KeyboardEvent) {
       if (isEditableTarget(e.target)) return;
 
+      // Let system/browser shortcuts through (Cmd-R reload, Cmd-S save,
+      // Cmd-+/- zoom, Ctrl-Shift-anything, etc.) — these never map to
+      // tool switches. Modifier engagement still uses bare modifier keys
+      // (handled below) which arrive without a meta/ctrl combo.
+      if (e.metaKey || e.ctrlKey) return;
+
       // Modifier engagement first — modifier keys (space, alt, etc.)
       // never double as switch keybindings.
       const modifierTool = resolveModifierEngage(e.key);

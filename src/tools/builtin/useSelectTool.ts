@@ -307,7 +307,15 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
               return 'claim';
             }
 
-            // 4. Empty → area-select
+            // 4. Empty → clear selection on the down (matches Figma/Sketch:
+            //    a click in empty space deselects). Skip when an extend
+            //    modifier is held so shift-marquee-from-empty preserves
+            //    the existing set until areaSelect resolves on end.
+            //    The marquee gesture itself (set on drag.onStart) will
+            //    overwrite/extend selection again on drag.end.
+            if (!ctx.modifiers.shift && !ctx.modifiers.meta) {
+              ctx.selection.clear();
+            }
             ctx.scratch = { kind: 'area' };
             return 'claim';
           },

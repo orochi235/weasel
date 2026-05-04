@@ -42,6 +42,32 @@ describe('useKeybindings', () => {
     expect(result.current.modifierEngaged).toBe(null);
   });
 
+  it('lets meta/ctrl combos through (system shortcuts like Cmd-R reload)', () => {
+    const select = defineTool({ id: 'select', keybinding: 'v' });
+    const insert = defineTool({ id: 'insert', keybinding: 'r' });
+    const { result } = renderHook(() => {
+      const tools = useTools({ active: 'select', registry: { select, insert } });
+      useKeybindings(tools);
+      return tools;
+    });
+
+    // Cmd-R must NOT switch tools (browser reload).
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'r', metaKey: true, bubbles: true }));
+    });
+    expect(result.current.active).toBe('select');
+
+    // Ctrl-R likewise.
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'r', ctrlKey: true, bubbles: true }));
+    });
+    expect(result.current.active).toBe('select');
+
+    // Bare R still switches.
+    act(() => press('r'));
+    expect(result.current.active).toBe('insert');
+  });
+
   it('overrides remap a key to a different tool', () => {
     const select = defineTool({ id: 'select', keybinding: 'v' });
     const pen    = defineTool({ id: 'pen',    keybinding: 'p' });
