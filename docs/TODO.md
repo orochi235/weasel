@@ -7,15 +7,22 @@ for cross-app reuse, not consumer-app value.
 For history of completed work that pre-dates extraction, see `git log` and
 the dated specs/plans under `specs/` and `plans/`.
 
-## Top of queue — `useScene` redesign (in progress)
+## `useScene` — shipped, follow-ups remain
 
-Full design in `docs/proposals/useScene.md` (cut at v0.1.0). Adds a third tier of scene-state ergonomics: kit-owned `Scene<TData, TLayer>` primitive with first-class container/leaf tree, orthogonal layer tags (system + future user layers), envelope domain payload, auto-undoable mutations, and a serializable-payload `recordOp` seam for consumer ops. Implementation phases:
+Reference doc: `docs/proposals/useScene.md` (now describes the shipped surface; was originally a forward-looking proposal). Adds a third tier of scene-state ergonomics: kit-owned `Scene<TData, TLayer, TPose>` primitive with first-class container/leaf tree, orthogonal layer tags (system + future user layers), opaque domain payload, auto-undoable mutations, and a `recordOp` seam for consumer ops. Phasing as it landed:
 
-- **Phase 1 — Core Scene primitive.** Types (`NodeId`, `Node`, `LayerRecord` union, `AddNodeSpec`, `RegisteredOp`, `UseSceneOptions`), `Scene` class with all read/mutation methods, default nanoid-style id generator with three-tier precedence, internal op log + undo/redo + `batch`, `registerOp`/`recordOp`. `useScene()` hook glued via `useSyncExternalStore` so the Scene is also observable from non-React contexts. Vitest coverage for every mutation, undo/redo round-trip, id collisions, batches, custom op registration.
-- **Phase 2 — Canvas integration.** `<Canvas scene={scene} />` prop, mutually exclusive with `adapter` and the inline-props shorthand. Internally synthesize a `SceneAdapter` view over the Scene for the existing gesture/action hooks (so the gesture pipeline is unchanged). Render order = layers in order, then DFS within. Layer visibility/lock honored in draw + hit-test + area-select.
-- **Phase 3 — `useUndoRedo` wiring + SceneDemo.** One-line `useUndoRedo(scene)` keyboard binding. SceneDemo showing eric-shape: 5 system layers, a container on `structures` holding a cross-layer leaf on `plantings`, a registered consumer op interleaved with kit ops on the same undo stack.
+- **Phase 1 — Core Scene primitive.** *Shipped (`391ba2e`).* Types, `createScene` with all read/mutation methods, default nanoid-style id generator with three-tier precedence, internal op log + undo/redo + `batch`, `registerOp`/`recordOp`. `useScene()` glued via `useSyncExternalStore`. Vitest coverage for every mutation, undo/redo round-trip, id collisions, batches, custom op registration.
+- **Phase 2 — Canvas integration.** *Shipped (`da9675a`, `24c72eb`).* Delivered as a separate `<SceneCanvas>` component (not a `scene` prop on `<Canvas>` — keeps `<Canvas>` agnostic about scene state). `sceneToAdapter` synthesizes a `MoveAdapter & ResizeAdapter & RotateAdapter & Partial<InsertAdapter>` view; `<SceneCanvas>` wires it plus undo/redo gesture and container-cascade-on-drag (live overlay + commit-time descendant translate) by default. Render order = layers in order, then DFS within; layer visibility honored in `getObjects`. Trivial-form `useScene({ items })` shorthand added on top.
+- **Phase 3 — `useUndoRedo` wiring + SceneDemo.** *Shipped.* `useUndoRedo` exists and `<SceneCanvas>` auto-wires `gestures.undoRedo = { adapter: scene }`. `demo/demos/SceneDemo.tsx` shows the eric-shape: 5 system layers, a container on `structures` holding a cross-layer leaf on `plantings`, a registered `setColor` consumer op interleaved with kit ops on the same undo stack.
 
-*Deferred to a follow-up* (already documented in the proposal): user-layer mutation methods (`addLayer`/`removeLayer`/`renameLayer`/`moveLayer` with `before`/`after` system-layer anchors); container layout strategies (absolute-positioning only in v1); the container-rooted-scene full unification (the proposal preserves the existing `SceneAdapter`/inline-props tiers rather than collapsing everything onto Scene).
+**Open follow-ups** (see `docs/proposals/useScene.md` for the full list):
+
+- Op log serialization shape for built-in ops (consumer `recordOp` payloads are JSON-serializable; the matching guarantee for kit ops isn't pinned).
+- User-layer mutation methods (`addLayer`/`removeLayer`/`renameLayer`/`moveLayer` with `before`/`after` system-layer anchors). Data structure supports them; methods not on the interface.
+- Container layout strategies (absolute-positioning only in v1).
+- Selection in Scene vs external (today selection lives outside Scene; moving it on would let undo capture selection-at-mutation).
+- Tree-mutation invariants documented explicitly (`remove(container)` cascade, `move` cycle detection, `setLayer` on container).
+- Container-rooted-scene full unification — collapse the inline-props/explicit-adapter tiers onto Scene once the array-shape special case starts feeling like dead weight (still optional; the three-tier coexistence ships).
 
 The pre-existing "container-rooted scene" entry below is partially superseded by this work but kept as a reference for the deeper unification question still on the table.
 
