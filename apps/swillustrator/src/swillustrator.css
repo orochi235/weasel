@@ -73,6 +73,10 @@ html, body, #root {
   flex: 1;
   overflow: auto;
   padding: 32px;
+  /* Flex container — margin:auto on the child centers both axes WITHOUT
+     clipping overflow (unlike align-items:center, which makes the top
+     edge unreachable when content is taller than the viewport). */
+  display: flex;
   background:
     repeating-linear-gradient(45deg, #1a130d 0 8px, #1f1610 8px 16px);
 }
@@ -81,11 +85,7 @@ html, body, #root {
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
   border-radius: 2px;
   overflow: hidden;
-  /* margin:auto centers vertically AND horizontally while preserving access
-     to overflowed top/left when the page is larger than the viewport
-     (align-items:center would clip the top edge unreachable). */
   margin: auto;
-  width: fit-content;
 }
 
 .swill-section-label {
