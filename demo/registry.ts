@@ -16,6 +16,7 @@ import { PathPoseDemo, PATH_POSE_DEMO_SOURCE } from './demos/PathPoseDemo';
 import { CompoundPathsDemo, COMPOUND_PATHS_DEMO_SOURCE } from './demos/CompoundPathsDemo';
 import { BezierEditDemo, BEZIER_EDIT_DEMO_SOURCE } from './demos/BezierEditDemo';
 import { SceneDemo, SCENE_DEMO_SOURCE } from './demos/SceneDemo';
+import { PanDemo, PAN_DEMO_SOURCE } from './demos/PanDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
@@ -34,6 +35,7 @@ import PathPoseDemoFull from './demos/PathPoseDemo.tsx?raw';
 import CompoundPathsDemoFull from './demos/CompoundPathsDemo.tsx?raw';
 import BezierEditDemoFull from './demos/BezierEditDemo.tsx?raw';
 import SceneDemoFull from './demos/SceneDemo.tsx?raw';
+import PanDemoFull from './demos/PanDemo.tsx?raw';
 
 export interface DemoEntry {
   id: string;
@@ -236,6 +238,17 @@ export const DEMOS: DemoEntry[] = [
     snippet: PIXEL_DENSITY_DEMO_SOURCE,
     full: PixelDensityDemoFull,
     path: 'demo/demos/PixelDensityDemo.tsx',
+  },
+  {
+    id: 'pan',
+    title: 'Pan (Phase 2b)',
+    category: 'Viewport',
+    description: 'useHandTool wired with <Canvas view={...} onViewChange={...}>. Three rectangles spread across a coordinate range larger than the 400×300 viewport. H switches to the hand tool (sticky); space engages it momentarily. Drag to pan. The select tool remains available when neither hand activation is engaged.',
+    hint: 'H = hand tool · hold space = momentary hand · drag to pan · Reset view to return home.',
+    Component: PanDemo,
+    snippet: PAN_DEMO_SOURCE,
+    full: PanDemoFull,
+    path: 'demo/demos/PanDemo.tsx',
   },
 ];
 
