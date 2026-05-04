@@ -12,6 +12,15 @@
 
 ### Added
 
+- Debug overlay subsystem: `?debug=…` URL gating + `<Canvas debug={...}>` prop.
+  Six features ship: `hitboxes`, `handles`, `bounds`, `origins`, `snap`, `layers`.
+  Sink threaded through `usePointerGestures`, `useResize`, `useRotate`,
+  `useAreaSelect`, `useEditAnchors`, `useSelectTool`, and `gridSnapStrategy`.
+  When the prop is omitted/false, every recording call short-circuits via
+  optional chaining (tree-shakeable).
+- New exports: `parseDebugFlags`, `createDebugSink`, `createDebugOverlayLayer`,
+  `DEFAULT_DEBUG_THEME`, types `DebugConfig`, `DebugSink`, `DebugFeature`,
+  `DebugTheme`, `HitShape`, `HandleKind`.
 - `zoomAt(view, anchor, factor, opts?)` pure primitive shared by every zoom path.
 - `useWheelZoomTool` (alwaysOn, claims wheel when `ctrlKey`/meta is held; anchors zoom at cursor).
 - `useWheelPanTool` (alwaysOn, claims plain wheel; translates view by `delta / scale`).
