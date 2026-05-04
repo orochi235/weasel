@@ -438,6 +438,7 @@ export function usePointerGestures<TMovePose, TResizePose>(
       const kind = dragKindRef.current;
       if (!kind) {
         detachDocListeners();
+        debug?.clearSnap();
         return;
       }
       dragKindRef.current = null;
@@ -453,8 +454,11 @@ export function usePointerGestures<TMovePose, TResizePose>(
       if (!ctl) return;
       if (mode === 'commit') ctl.end();
       else ctl.cancel();
+      // Snap candidates persist across renders within a gesture and clear
+      // here at the end so the overlay drops them after pointer release.
+      debug?.clearSnap();
     },
-    [move, resize, rotate, insert, areaSelect, editAnchors, detachDocListeners],
+    [move, resize, rotate, insert, areaSelect, editAnchors, detachDocListeners, debug],
   );
   endActiveGestureRef.current = endActiveGesture;
 

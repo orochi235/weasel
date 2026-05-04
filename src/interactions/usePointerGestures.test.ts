@@ -365,6 +365,25 @@ describe('usePointerGestures — debug recording', () => {
     expect(hits[0].id).toBe('a');
   });
 
+  it('clears snap candidates on pointer up', () => {
+    const sink = createDebugSink({ snap: true });
+    // Pre-record a candidate so we can observe it being cleared.
+    sink.recordSnapCandidate({ x: 1, y: 2 }, true);
+    expect(sink.snapshot().snap.length).toBe(1);
+    const { result } = renderHook(() =>
+      usePointerGestures({
+        clientToWorld: IDENTITY_C2W,
+        hitBody: () => null,
+        debug: sink,
+      }),
+    );
+    const canvas = makeCanvas();
+    act(() => {
+      result.current.onPointerUp(makePointer(canvas, { clientX: 0, clientY: 0 }));
+    });
+    expect(sink.snapshot().snap.length).toBe(0);
+  });
+
   it('does not throw when debug sink is omitted', () => {
     const hitBody = () => 'a';
     const boundsOf = () => ({ x: 0, y: 0, width: 50, height: 30 });
