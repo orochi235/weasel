@@ -1,8 +1,11 @@
 import { createTransformOp } from '../../core/ops/transform';
+import type { Op } from '../../core/ops/types';
 import type {
   ContainerBounds,
   DropTarget,
   LayoutChild,
+  LayoutContainer,
+  LayoutDragged,
   LayoutSnap,
   LayoutStrategy,
 } from '../types';
@@ -46,26 +49,6 @@ function sortedChildIds<TPose>(children: ReadonlyArray<LayoutChild<TPose>>): str
   return children.map((c) => c.id).sort();
 }
 
-function findOccupantAt<TPose>(
-  layoutPositions: Map<string, TPose>,
-  cellRect: { x: number; y: number; width: number; height: number },
-  excludeId: string,
-): string | null {
-  for (const [id, pose] of layoutPositions) {
-    if (id === excludeId) continue;
-    const p = pose as unknown as RectPose;
-    if (
-      p.x === cellRect.x &&
-      p.y === cellRect.y &&
-      p.width === cellRect.width &&
-      p.height === cellRect.height
-    ) {
-      return id;
-    }
-  }
-  return null;
-}
-
 export function tileGrid<TPose extends RectPose>(
   opts: TileGridOptions<TPose>,
 ): LayoutStrategy<TPose> {
@@ -76,6 +59,39 @@ export function tileGrid<TPose extends RectPose>(
 
   function cellPose(bounds: ContainerBounds, col: number, row: number): TPose {
     return cellRectAt(bounds, cols, rows, gap, col, row) as TPose;
+  }
+
+  /**
+   * Compute the swap induced by dragging `dragged` onto `target`, if any.
+   * Returns `null` when there is no swap (cross-container drop, empty cell,
+   * or null target). The same logic backs both `reflowFor` (preview) and
+   * `commitDrop` (commit) so they cannot disagree.
+   */
+  function computeSwap(
+    container: LayoutContainer,
+    children: ReadonlyArray<LayoutChild<TPose>>,
+    dragged: LayoutDragged<TPose>,
+    target: DropTarget<TPose> | null,
+  ): { occupant: string; newPose: TPose } | null {
+    if (target === null) return null;
+    if (dragged.sourceContainerId !== container.id) return null;
+    const meta = target.meta as TileMeta;
+    // Derive occupant by cell index from the current visual layout (sorted
+    // ids include the dragged child, since the cell index corresponds to
+    // pre-drop positions). If the cell currently holds the dragged itself,
+    // no swap is needed.
+    const ids = sortedChildIds(children);
+    const idx = meta.row * cols + meta.col;
+    const occupant = ids[idx] ?? null;
+    if (occupant === null || occupant === dragged.id) return null;
+    const dop = dragged.originPose;
+    const newPose: TPose = {
+      x: dop.x,
+      y: dop.y,
+      width: dop.width,
+      height: dop.height,
+    } as TPose;
+    return { occupant, newPose };
   }
 
   return {
@@ -109,23 +125,9 @@ export function tileGrid<TPose extends RectPose>(
 
     reflowFor(container, children, dragged, target) {
       const out = new Map<string, TPose>();
-      if (target === null) return out;
-      const meta = target.meta as TileMeta;
-      const sameContainer = dragged.sourceContainerId === container.id;
-      // Use the current layout (all children including dragged) to find which
-      // sibling currently occupies the picked cell.
-      const layoutBefore = this.getChildPositions(container, children);
-      const occupant = findOccupantAt(layoutBefore, meta.cellRect, dragged.id);
-      if (occupant !== null && sameContainer) {
-        // Swap: occupant moves to dragged's previous cell.
-        const draggedOriginPose = dragged.originPose as unknown as RectPose;
-        const occupantNewPose = {
-          x: draggedOriginPose.x,
-          y: draggedOriginPose.y,
-          width: draggedOriginPose.width,
-          height: draggedOriginPose.height,
-        } as unknown as TPose;
-        out.set(occupant, occupantNewPose);
+      const swap = computeSwap(container, children, dragged, target);
+      if (swap !== null) {
+        out.set(swap.occupant, swap.newPose);
       }
       // (Cross-container occupancy: spec leaves this as deferral —
       // for v1, dropping onto an occupied cell of a different container
@@ -135,9 +137,7 @@ export function tileGrid<TPose extends RectPose>(
     },
 
     commitDrop(container, children, dragged, target) {
-      const ops = [];
-      const sameContainer = dragged.sourceContainerId === container.id;
-      const layoutBefore = this.getChildPositions(container, children);
+      const ops: Op[] = [];
 
       let droppedPose: TPose;
       if (target === null) {
@@ -145,20 +145,14 @@ export function tileGrid<TPose extends RectPose>(
       } else {
         const meta = target.meta as TileMeta;
         droppedPose = meta.cellRect as TPose;
-        const occupant = findOccupantAt(layoutBefore, meta.cellRect, dragged.id);
-        if (occupant !== null && sameContainer) {
-          const dop = dragged.originPose as unknown as RectPose;
-          const occupantNewPose = {
-            x: dop.x,
-            y: dop.y,
-            width: dop.width,
-            height: dop.height,
-          } as unknown as TPose;
+        const swap = computeSwap(container, children, dragged, target);
+        if (swap !== null) {
+          const layoutBefore = this.getChildPositions(container, children);
           ops.push(
             createTransformOp<TPose>({
-              id: occupant,
-              from: layoutBefore.get(occupant)!,
-              to: occupantNewPose,
+              id: swap.occupant,
+              from: layoutBefore.get(swap.occupant)!,
+              to: swap.newPose,
               label: 'Tile swap',
             }),
           );

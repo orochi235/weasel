@@ -136,6 +136,50 @@ describe('tileGrid', () => {
     expect(ops.every((o) => typeof o.apply === 'function' && typeof o.invert === 'function')).toBe(true);
   });
 
+  it('reflowFor swaps occupant under gap > 0 (no desync from gapped layout)', () => {
+    const layout = tileGrid<P>({ cols: 2, rows: 1, gap: 10 });
+    // 100 wide, 2 cols, 10 gap → cells width = 45. a at x=0, b at x=55.
+    const children = [
+      { id: 'a', pose: { x: 0, y: 0, width: 45, height: 100 } },
+      { id: 'b', pose: { x: 55, y: 0, width: 45, height: 100 } },
+    ];
+    const targets = layout.getDropTargets(container, children, {
+      id: 'a',
+      originPose: { x: 0, y: 0, width: 45, height: 100 },
+      pose: { x: 55, y: 0, width: 45, height: 100 },
+      sourceContainerId: 'C',
+    });
+    const cell1 = targets.find((t) => (t.meta as { col: number }).col === 1)!;
+    const reflow = layout.reflowFor(container, children, {
+      id: 'a',
+      originPose: { x: 0, y: 0, width: 45, height: 100 },
+      pose: { x: 55, y: 0, width: 45, height: 100 },
+      sourceContainerId: 'C',
+    }, cell1);
+    expect(reflow.get('b')).toEqual({ x: 0, y: 0, width: 45, height: 100 });
+    expect(reflow.has('a')).toBe(false);
+  });
+
+  it('commitDrop with target=null emits a single op with to === dragged.pose', () => {
+    const layout = tileGrid<P>({ cols: 2, rows: 1 });
+    const children = [
+      { id: 'a', pose: { x: 0, y: 0, width: 50, height: 100 } },
+    ];
+    const draggedPose = { x: 17, y: 23, width: 50, height: 100 };
+    const ops = layout.commitDrop(container, children, {
+      id: 'a',
+      originPose: { x: 0, y: 0, width: 50, height: 100 },
+      pose: draggedPose,
+      sourceContainerId: 'C',
+    }, null);
+    expect(ops).toHaveLength(1);
+    expect(ops[0].label).toBe('Tile drop');
+    // Apply against a recording adapter to confirm `to === dragged.pose`.
+    const calls: Array<{ id: string; pose: P }> = [];
+    ops[0].apply({ setPose: (id: string, pose: P) => calls.push({ id, pose }) });
+    expect(calls).toEqual([{ id: 'a', pose: draggedPose }]);
+  });
+
   it('default snap is cellAt (returns target under pointer)', () => {
     const layout = tileGrid<P>({ cols: 2, rows: 1 });
     const targets = layout.getDropTargets(container, [], {
