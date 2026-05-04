@@ -22,6 +22,7 @@ import { SwillustratorDemo, SWILLUSTRATOR_DEMO_SOURCE } from './demos/Swillustra
 import { AnimationDemo, ANIMATION_DEMO_SOURCE } from './demos/AnimationDemo';
 import { LayoutDemo, LAYOUT_DEMO_SOURCE } from './demos/LayoutDemo';
 import { DebugOverlayDemo, DEBUG_OVERLAY_DEMO_SOURCE } from './demos/DebugOverlayDemo';
+import { EasingsDemo, EASINGS_DEMO_SOURCE } from './demos/EasingsDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
@@ -46,6 +47,7 @@ import SwillustratorDemoFull from './demos/SwillustratorDemo.tsx?raw';
 import AnimationDemoFull from './demos/AnimationDemo.tsx?raw';
 import LayoutDemoFull from './demos/LayoutDemo.tsx?raw';
 import DebugOverlayDemoFull from './demos/DebugOverlayDemo.tsx?raw';
+import EasingsDemoFull from './demos/EasingsDemo.tsx?raw';
 
 export interface DemoEntry {
   id: string;
@@ -95,6 +97,17 @@ export const DEMOS: DemoEntry[] = [
     snippet: ANIMATION_DEMO_SOURCE,
     full: AnimationDemoFull,
     path: 'demo/demos/AnimationDemo.tsx',
+  },
+  {
+    id: 'easings',
+    title: 'Easings',
+    category: 'Interactions',
+    description: 'Every named curve in the kit\'s easing library tweening a marker side-by-side. Each row is one easing from the `EASINGS` lookup (`linear` + quad/cubic/quart/quint + sine/expo/circ + back/elastic/bounce, with In/Out/InOut variants); click "play all" to fire one `animator.tween` per row simultaneously, sharing a duration slider. The dim line below each track plots the curve shape (clamped to [0,1] so back/elastic overshoot rows still fit their lane — the marker itself still travels past the endpoints when the curve does).',
+    hint: 'Click "play all" to fire every easing at once; drag the slider to change duration.',
+    Component: EasingsDemo,
+    snippet: EASINGS_DEMO_SOURCE,
+    full: EasingsDemoFull,
+    path: 'demo/demos/EasingsDemo.tsx',
   },
   {
     id: 'layout',
