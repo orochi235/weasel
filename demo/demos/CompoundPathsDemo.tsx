@@ -171,6 +171,7 @@ export function CompoundPathsDemo() {
   };
 
   return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
     <div style={{ position: 'relative', width: W, height: H }}>
       <SceneCanvas
         width={W}
@@ -229,6 +230,46 @@ export function CompoundPathsDemo() {
           {toast}
         </div>
       )}
+    </div>
+      <aside
+        style={{
+          width: 340,
+          padding: 16,
+          fontFamily: '"Comic Sans MS", "Comic Sans", cursive',
+          color: '#e8d8b8',
+          lineHeight: 1.55,
+          fontSize: 14,
+        }}
+      >
+        <h3 style={{ margin: '0 0 12px', fontSize: 20, fontFamily: '"Comic Sans MS", "Comic Sans", cursive', color: '#f5c542' }}>
+          The Tale of the Ghost, the Duck, the Hamburglar, the Goose, and the Octopus
+        </h3>
+        <p style={{ marginTop: 0 }}>
+          On a sky-blue afternoon, the Ghost drifted in to find chaos already
+          unfolding. The Hamburglar (just a hat and a cape — nothing else,
+          mysteriously) was attempting to abscond with the Duck's lunch: a tidy
+          stack of compound polygons.
+        </p>
+        <p>
+          "HONK," said the Goose, who had been waiting all morning for an
+          excuse. The button above her head depressed itself with great
+          satisfaction. The Hamburglar froze. The cape rippled. The hat
+          trembled.
+        </p>
+        <p>
+          From beneath the dock, the Octopus extended six (then seven, then
+          eight) curling tentacles and gently relieved the Hamburglar of the
+          stolen polygons. The Duck quacked her thanks and offered everyone a
+          share. The Ghost, who could not eat, settled instead for haunting
+          the leftovers.
+        </p>
+        <p>
+          And so peace returned to the canvas, until the next resize.
+        </p>
+        <p style={{ fontStyle: 'italic', marginBottom: 0, fontSize: 12, opacity: 0.8 }}>
+          — a story by Claude (Opus 4.7)
+        </p>
+      </aside>
     </div>
   );
 }
