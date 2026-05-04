@@ -18,6 +18,7 @@ import { BezierEditDemo, BEZIER_EDIT_DEMO_SOURCE } from './demos/BezierEditDemo'
 import { SceneDemo, SCENE_DEMO_SOURCE } from './demos/SceneDemo';
 import { PanDemo, PAN_DEMO_SOURCE } from './demos/PanDemo';
 import { ZoomDemo, ZOOM_DEMO_SOURCE } from './demos/ZoomDemo';
+import { SwillustratorDemo, SWILLUSTRATOR_DEMO_SOURCE } from './demos/SwillustratorDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
@@ -38,6 +39,7 @@ import BezierEditDemoFull from './demos/BezierEditDemo.tsx?raw';
 import SceneDemoFull from './demos/SceneDemo.tsx?raw';
 import PanDemoFull from './demos/PanDemo.tsx?raw';
 import ZoomDemoFull from './demos/ZoomDemo.tsx?raw';
+import SwillustratorDemoFull from './demos/SwillustratorDemo.tsx?raw';
 
 export interface DemoEntry {
   id: string;
@@ -251,6 +253,17 @@ export const DEMOS: DemoEntry[] = [
     snippet: ZOOM_DEMO_SOURCE,
     full: ZoomDemoFull,
     path: 'demo/demos/ZoomDemo.tsx',
+  },
+  {
+    id: 'swillustrator',
+    title: 'Swillustrator',
+    category: 'Tools',
+    description: 'Forcing demo for the Tool primitive — four tools across every active-slot pattern: useSelectTool (default), useInsertTool (drag-to-create rect), useTextTool (click-to-create text), useHandTool (active via H, modifier-slot via space). Three always-on viewport tools (useWheelZoomTool, useWheelPanTool, useKeyboardZoomTool) round it out. The palette buttons read tools.modifierEngaged ?? tools.active to highlight the engaged tool — including the momentary hand-while-space state. Scene is a discriminated union { kind: "rect" | "text" }; rects render via the scene drawOne, text nodes via createTextLayer.',
+    hint: 'V = select · R = rect · T = text (click) · H = hand · hold space = momentary hand · ⌘+wheel zoom · plain wheel pan',
+    Component: SwillustratorDemo,
+    snippet: SWILLUSTRATOR_DEMO_SOURCE,
+    full: SwillustratorDemoFull,
+    path: 'demo/demos/SwillustratorDemo.tsx',
   },
   {
     id: 'pan',
