@@ -13,7 +13,7 @@ import type {
 } from '../types';
 
 /** Options for `useInsert`. */
-export interface UseInsertOptions<TPose> {
+export interface UseInsertOptions<TPose, TObject extends { id: string } = { id: string }> {
   behaviors?: InsertBehavior<TPose>[];
   insertLabel?: string;
   /** Reserved; insert is never transient in practice. Ignored. */
@@ -24,6 +24,11 @@ export interface UseInsertOptions<TPose> {
    *  identity cast (treat bounds as TPose). Override for non-rect TPose
    *  (e.g. `(b) => rectPath(b)` or a polygon factory). */
   posefromBounds?: (bounds: ResizePose) => TPose;
+  /** Click / sub-threshold-drag fallback. When provided, a release whose
+   *  bounds fall <= minBounds calls `pointInsert(start)` instead of aborting.
+   *  Returning null aborts. The created object is dispatched as an InsertOp
+   *  under the same `insertLabel`. */
+  pointInsert?: (point: { x: number; y: number }) => TObject | null;
   onGestureStart?: () => void;
   onGestureEnd?: (committed: boolean) => void;
 }
@@ -54,13 +59,14 @@ function boundsFrom(start: InsertPoint, current: InsertPoint): ResizePose {
 /** Drag-rectangle insert interaction; the adapter materializes the new object on commit. */
 export function useInsert<TObject extends { id: string }, TPose>(
   adapter: InsertAdapter<TObject>,
-  options: UseInsertOptions<TPose> = {},
+  options: UseInsertOptions<TPose, TObject> = {},
 ): InsertController<TObject, TPose> {
   const {
     behaviors = [],
     insertLabel = 'Insert',
     minBounds = { width: 0, height: 0 },
     posefromBounds = (b) => b as unknown as TPose,
+    pointInsert,
     onGestureStart,
     onGestureEnd,
   } = options;
@@ -80,6 +86,8 @@ export function useInsert<TObject extends { id: string }, TPose>(
   onGestureStartRef.current = onGestureStart;
   const onGestureEndRef = useRef(onGestureEnd);
   onGestureEndRef.current = onGestureEnd;
+  const pointInsertRef = useRef(pointInsert);
+  pointInsertRef.current = pointInsert;
 
   const stateRef = useRef<{ active: boolean; ctx: GestureContext<TPose> | null }>({
     active: false,
@@ -157,6 +165,17 @@ export function useInsert<TObject extends { id: string }, TPose>(
     const cp = ctx.current.get(GID) as unknown as InsertPoint;
     const bounds = boundsFrom(sp, cp);
     if (bounds.width <= minBounds.width || bounds.height <= minBounds.height) {
+      const pointInsert = pointInsertRef.current;
+      if (pointInsert) {
+        const created = pointInsert({ x: sp.x, y: sp.y });
+        if (created) {
+          const ops: Op[] = [createInsertOp({ object: created, label: insertLabel })];
+          dispatchApplyBatch(adapter, ops, insertLabel);
+          cleanup();
+          onGestureEnd?.(true);
+          return;
+        }
+      }
       cleanup();
       onGestureEnd?.(false);
       return;

@@ -14,7 +14,8 @@ export interface InsertOverlayStyle {
   lineWidth?: number;
 }
 
-export interface UseInsertToolOptions<TPose> extends UseInsertOptions<TPose> {
+export interface UseInsertToolOptions<TPose, TObject extends { id: string } = { id: string }>
+  extends UseInsertOptions<TPose, TObject> {
   overlayStyle?: InsertOverlayStyle;
 }
 
@@ -23,7 +24,7 @@ export interface UseInsertToolOptions<TPose> extends UseInsertOptions<TPose> {
  *  `useKeybindings({ overrides: { i: 'insert' } })` or similar. */
 export function useInsertTool<TObject extends { id: string }, TPose>(
   adapter: InsertAdapter<TObject>,
-  options: UseInsertToolOptions<TPose> = {},
+  options: UseInsertToolOptions<TPose, TObject> = {},
 ): Tool<undefined> {
   const ctl = useInsert<TObject, TPose>(adapter, options);
 

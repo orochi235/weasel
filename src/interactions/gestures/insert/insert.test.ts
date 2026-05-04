@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useInsert } from './insert';
 import { snapToGrid } from './behaviors/snapToGrid';
@@ -165,5 +165,63 @@ describe('useInsert — move + end', () => {
       result.current.end();
     });
     expect(batches).toEqual([]);
+  });
+});
+
+describe('useInsert — pointInsert fallback', () => {
+  it('sub-threshold release with pointInsert dispatches an InsertOp at the start point', () => {
+    const { adapter, batches } = makeAdapter();
+    const pointInsert = vi.fn((p: { x: number; y: number }) => ({
+      id: 'p-0', x: p.x, y: p.y, width: 0, height: 0,
+    }));
+    const { result } = renderHook(() =>
+      useInsert<Obj, { x: number; y: number }>(adapter, {
+        minBounds: { width: 4, height: 4 },
+        pointInsert,
+      }),
+    );
+    act(() => {
+      result.current.start(10, 20, { alt: false, shift: false, meta: false, ctrl: false });
+      result.current.move(11, 21, { alt: false, shift: false, meta: false, ctrl: false });
+      result.current.end();
+    });
+    expect(pointInsert).toHaveBeenCalledWith({ x: 10, y: 20 });
+    expect(batches.length).toBe(1);
+    expect(batches[0].ops.length).toBe(1);
+  });
+
+  it('sub-threshold release with pointInsert returning null does not dispatch', () => {
+    const { adapter, batches } = makeAdapter();
+    const pointInsert = vi.fn(() => null);
+    const { result } = renderHook(() =>
+      useInsert<Obj, { x: number; y: number }>(adapter, {
+        minBounds: { width: 4, height: 4 },
+        pointInsert,
+      }),
+    );
+    act(() => {
+      result.current.start(10, 20, { alt: false, shift: false, meta: false, ctrl: false });
+      result.current.end();
+    });
+    expect(pointInsert).toHaveBeenCalledWith({ x: 10, y: 20 });
+    expect(batches.length).toBe(0);
+  });
+
+  it('above-threshold release still uses commitInsert (pointInsert ignored)', () => {
+    const { adapter, batches } = makeAdapter();
+    const pointInsert = vi.fn();
+    const { result } = renderHook(() =>
+      useInsert<Obj, { x: number; y: number }>(adapter, {
+        minBounds: { width: 4, height: 4 },
+        pointInsert,
+      }),
+    );
+    act(() => {
+      result.current.start(10, 20, { alt: false, shift: false, meta: false, ctrl: false });
+      result.current.move(50, 80, { alt: false, shift: false, meta: false, ctrl: false });
+      result.current.end();
+    });
+    expect(pointInsert).not.toHaveBeenCalled();
+    expect(batches.length).toBe(1);
   });
 });
