@@ -32,6 +32,15 @@ Small items surfaced during Phase 2a/2b/2c shakedown:
 - **`useEditAnchorsTool` (path-editing as a Tool).** `useEditAnchors` ships as a hook (`src/interactions/gestures/edit-anchors/`) but is not wrapped as a Tool record — no built-in active-slot tool entered via double-click on a path. Originally scoped in `docs/plans/2026-05-03-tool-primitive-phase-2a.md:1401` as deferred to Phase 2c or later. Conceptually adjacent to the pen tool (both are path-shape interactions).
 - **Return path to the default tool.** `useSelectTool` declares no keybinding and `useKeybindings` has no Escape/default-tool handler — so once a demo presses `H` to switch to hand, there's no way back to select except via the space-modifier round-trip. Options: (a) give `useSelectTool` a default `keybinding: 'V'`, (b) add an Escape handler in `useKeybindings` that calls `setActive(initialActive)`, (c) document that consumers must render a tool switcher. (a)+(b) together is the least surprising for keyboard users.
 
+## Plugin/bundling convention
+
+The kit's primitives (Tool, RenderLayer, Adapter, PoseDescriptor, Behavior, Op factory, DebugSink) are already pluggable — any external package can author one and consumers wire it in. **What's missing is a convention for bundling a feature's parts** so a single `useFooPlugin()` call returns `{ tool, layers, ops, ... }` that the consumer spreads into Canvas/useTools, instead of wiring three or four separate exports per feature.
+
+- **Lightweight v1:** a documented `WeaselPlugin = { tool?, layers?, behaviors?, ... }` shape plus a `mergePluginConfig(...plugins)` helper. ~30 lines + a docs page. Defer until we have ≥2 plugin-shaped features in flight (pen, debug overlay, future grid) — designing the convention before we have multiple examples risks YAGNI.
+- **Heavier v2 (only if needed for true third-party plugins):** Canvas lifecycle hooks (mount/unmount/pre-render/post-render), capability/version negotiation against kit semver, sub-package layout (`@orochi235/weasel-pen`?). Multi-day. Don't pursue without a real third-party consumer asking.
+
+Pen tool and debug overlay both ship as separate exports first (tool + layer factory). After 2–3 plugin-shaped features have shipped this way, do a small spec pass to extract the bundling convention from the actual pattern.
+
 ## Tier 1 — foundational genericity gaps
 
 Without these, the kit is essentially "axis-aligned-rectangle kit."
