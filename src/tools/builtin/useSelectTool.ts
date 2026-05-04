@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { useMove, type UseMoveOptions } from '../../interactions/gestures/move/move';
 import { useResize, type UseResizeOptions } from '../../interactions/gestures/resize/resize';
 import { useRotate, type UseRotateOptions } from '../../interactions/gestures/rotate/rotate';
@@ -13,6 +13,9 @@ import type { ResizeAnchor } from '../../interactions/gestures/types';
 import { defineTool } from '../defineTool';
 import type { Tool } from '../types';
 import type { DebugSink } from '../../debug/types';
+import type { RenderLayer } from '../../core/layers/render';
+import { viewToTransform } from '../../features/viewport/view';
+import { worldToScreen } from '../../features/viewport/viewTransform';
 
 /** World-space bounding rect for hit-testing handles. Uses `width`/`height` to
  *  match `cornerResizeHandles` and `rotationHandle` expectations. */
@@ -23,7 +26,18 @@ export interface Bounds {
   height: number;
 }
 
-export interface UseSelectToolOptions<_TObject extends { id: string }, TPose> {
+export interface AreaSelectOverlayStyle {
+  fill?: string;
+  stroke?: string;
+  dash?: number[];
+  lineWidth?: number;
+}
+
+export interface MoveOverlayStyle {
+  ghostAlpha?: number;
+}
+
+export interface UseSelectToolOptions<TObject extends { id: string }, TPose> {
   /** Return ids of objects whose body covers (worldX, worldY). */
   hitBody: (worldX: number, worldY: number) => string[];
   /** Return the world-space bounds of `id`, or null if not found. */
@@ -41,6 +55,22 @@ export interface UseSelectToolOptions<_TObject extends { id: string }, TPose> {
    *  overlay shows what the select tool actually evaluates). Tree-shakes
    *  via optional-chain when omitted. */
   debug?: DebugSink;
+  /** Style for the area-select marquee. */
+  areaSelectOverlayStyle?: AreaSelectOverlayStyle;
+  /** Style for move/resize/rotate ghosts (currently just `ghostAlpha`). */
+  moveOverlayStyle?: MoveOverlayStyle;
+  /** Consumer's draw function for ghost objects (move/resize/rotate in-flight).
+   *  Same signature as the scene slot's `drawOne`. If omitted, ghosts are not
+   *  rendered (only the marquee draws). Optional only because some demos
+   *  (e.g. NestedGroupsDemo) compose ghosts via custom layers. */
+  drawGhost?: (
+    ctx: CanvasRenderingContext2D,
+    obj: TObject | null,
+    pose: TPose,
+    view: { x: number; y: number; scale: number },
+  ) => void;
+  /** Object lookup for the ghost render, paired with `drawGhost`. Optional. */
+  getObject?: (id: string) => TObject | null;
 }
 
 /** Intersection of all four sub-controller adapter interfaces.
@@ -82,11 +112,121 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
   const rotationHandleDistance = options.rotationHandleDistance ?? 24;
   const debug = options.debug;
 
+  // Refs let the overlay closure pull the latest style/callbacks without
+  // rebuilding the Tool record on every render.
+  const styleRefs = useRef({
+    areaSelectOverlayStyle: options.areaSelectOverlayStyle,
+    moveOverlayStyle: options.moveOverlayStyle,
+    drawGhost: options.drawGhost,
+    getObject: options.getObject,
+  });
+  styleRefs.current = {
+    areaSelectOverlayStyle: options.areaSelectOverlayStyle,
+    moveOverlayStyle: options.moveOverlayStyle,
+    drawGhost: options.drawGhost,
+    getObject: options.getObject,
+  };
+
+  // The layer is `space: 'screen'` — `runLayers` does not pre-apply the world
+  // transform. The marquee branch already lives in screen coords (via
+  // `worldToScreen`). Ghost branches reapply the world transform manually so
+  // the consumer's `drawGhost` (same signature as scene `drawOne`) sees the
+  // expected world-space ctx. Mixing the two paths in one layer keeps the
+  // select tool's overlay output as a single `RenderLayer`.
+  const overlay = useMemo<RenderLayer<unknown>>(
+    () => ({
+      id: 'select-overlay',
+      label: 'Select overlay',
+      space: 'screen',
+      draw: (ctx, _data, view) => {
+        const refs = styleRefs.current;
+
+        // 1. Area-select marquee.
+        const aOv = areaSelect.overlay;
+        if (aOv) {
+          const cfg = refs.areaSelectOverlayStyle ?? {};
+          const fill = cfg.fill ?? 'rgba(164, 139, 212, 0.18)';
+          const stroke = cfg.stroke ?? '#a48bd4';
+          const dash = cfg.dash ?? [3, 3];
+          const lineWidth = cfg.lineWidth ?? 1;
+          const t = viewToTransform(view);
+          const x = Math.min(aOv.start.worldX, aOv.current.worldX);
+          const y = Math.min(aOv.start.worldY, aOv.current.worldY);
+          const w = Math.abs(aOv.current.worldX - aOv.start.worldX);
+          const h = Math.abs(aOv.current.worldY - aOv.start.worldY);
+          const [sx, sy] = worldToScreen(x, y, t);
+          const sw = w * view.scale;
+          const sh = h * view.scale;
+          ctx.save();
+          ctx.fillStyle = fill;
+          ctx.fillRect(sx, sy, sw, sh);
+          ctx.strokeStyle = stroke;
+          ctx.lineWidth = lineWidth;
+          ctx.setLineDash(dash);
+          ctx.strokeRect(sx, sy, sw, sh);
+          ctx.setLineDash([]);
+          ctx.restore();
+          return;
+        }
+
+        const drawGhost = refs.drawGhost;
+        const getObject = refs.getObject;
+        if (!drawGhost || !getObject) return;
+
+        const ghostAlpha = refs.moveOverlayStyle?.ghostAlpha ?? 0.85;
+
+        // Apply world transform once for any ghost branch — matches the
+        // `space: 'world'` composition that `runLayers` would do.
+        const applyWorld = () => {
+          if (view.scale !== 1) ctx.scale(view.scale, view.scale);
+          if (view.x !== 0 || view.y !== 0) ctx.translate(-view.x, -view.y);
+        };
+
+        // 2. Move ghost — walk the overlay's poses.
+        const mOv = move.overlay;
+        if (mOv) {
+          ctx.save();
+          ctx.globalAlpha = ghostAlpha;
+          applyWorld();
+          for (const [id, pose] of mOv.poses) {
+            drawGhost(ctx, getObject(id), pose, view);
+          }
+          ctx.restore();
+          return;
+        }
+
+        // 3. Resize ghost — single object at currentPose.
+        const rOv = resize.overlay;
+        if (rOv) {
+          ctx.save();
+          ctx.globalAlpha = ghostAlpha;
+          applyWorld();
+          drawGhost(ctx, getObject(rOv.id), rOv.currentPose, view);
+          ctx.restore();
+          return;
+        }
+
+        // 4. Rotate ghost — single object at currentPose.
+        const rotOv = rotate.overlay;
+        if (rotOv) {
+          ctx.save();
+          ctx.globalAlpha = ghostAlpha;
+          applyWorld();
+          drawGhost(ctx, getObject(rotOv.id), rotOv.currentPose, view);
+          ctx.restore();
+          return;
+        }
+      },
+    }),
+    [move, resize, rotate, areaSelect],
+  );
+
   return useMemo(
     () =>
       defineTool<SelectScratch>({
         id: 'select',
         cursor: 'default',
+        overlay,
         initScratch: () => ({ kind: 'idle' }),
 
         pointer: {
@@ -208,6 +348,6 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
         },
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [move, resize, rotate, areaSelect, options.hitBody, options.boundsOf, handleHitRadius, rotationHandleDistance, debug],
+    [move, resize, rotate, areaSelect, overlay, options.hitBody, options.boundsOf, handleHitRadius, rotationHandleDistance, debug],
   );
 }
