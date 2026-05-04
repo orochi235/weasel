@@ -1,5 +1,6 @@
 import type { SnapStrategy } from '../../types';
 import { resolveUnit, type UnitSystem, type UnitValue } from '../../../../core/units';
+import type { DebugSink } from '../../../../debug/types';
 
 /**
  * Projection used by `gridSnapStrategy` when `TPose` doesn't expose `{x,y}`
@@ -25,28 +26,41 @@ export function gridSnapStrategy<TPose extends { x: number; y: number }>(
   spacing: UnitValue,
   unitSystem?: UnitSystem,
 ): SnapStrategy<TPose>;
+export function gridSnapStrategy<TPose extends { x: number; y: number }>(
+  spacing: UnitValue,
+  opts: { unitSystem?: UnitSystem; debug?: DebugSink },
+): SnapStrategy<TPose>;
 export function gridSnapStrategy<TPose>(
   spacing: UnitValue,
-  opts: { unitSystem?: UnitSystem; origin: OriginProjection<TPose> },
+  opts: { unitSystem?: UnitSystem; origin: OriginProjection<TPose>; debug?: DebugSink },
 ): SnapStrategy<TPose>;
 /** Snap-strategy that rounds the pose's origin to the nearest multiple of
  *  `spacing` (resolved through `unitSystem`). For non-rect TPose pass an
  *  `OriginProjection` so the strategy knows how to read/write the origin. */
 export function gridSnapStrategy<TPose>(
   spacing: UnitValue,
-  arg?: UnitSystem | { unitSystem?: UnitSystem; origin: OriginProjection<TPose> },
+  arg?: UnitSystem | { unitSystem?: UnitSystem; origin?: OriginProjection<TPose>; debug?: DebugSink },
 ): SnapStrategy<TPose> {
-  const isOpts = typeof arg === 'object' && arg !== null && 'origin' in arg;
-  const unitSystem = isOpts ? arg.unitSystem : (arg as UnitSystem | undefined);
-  const proj: OriginProjection<TPose> = isOpts
-    ? arg.origin
+  const isOpts =
+    typeof arg === 'object' &&
+    arg !== null &&
+    ('origin' in arg || 'debug' in arg || 'unitSystem' in arg) &&
+    !('base' in arg);
+  const optsArg = isOpts
+    ? (arg as { unitSystem?: UnitSystem; origin?: OriginProjection<TPose>; debug?: DebugSink })
+    : null;
+  const unitSystem = optsArg ? optsArg.unitSystem : (arg as UnitSystem | undefined);
+  const proj: OriginProjection<TPose> = optsArg && optsArg.origin
+    ? optsArg.origin
     : (RECT_ORIGIN_PROJECTION as unknown as OriginProjection<TPose>);
+  const debug: DebugSink | undefined = optsArg ? optsArg.debug : undefined;
   const c = resolveUnit(spacing, unitSystem);
   return {
     snap(pose) {
       const o = proj.getOrigin(pose);
       const sx = Math.round(o.x / c) * c;
       const sy = Math.round(o.y / c) * c;
+      debug?.recordSnapCandidate({ x: sx, y: sy }, true);
       return proj.translate(pose, sx - o.x, sy - o.y);
     },
   };

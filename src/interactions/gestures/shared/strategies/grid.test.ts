@@ -88,3 +88,23 @@ describe('pointToGridCell', () => {
     expect(() => pointToGridCell({ x: 0, y: 0 }, { value: 1, unit: 'ft' })).toThrow(/UnitSystem/);
   });
 });
+
+import { createDebugSink } from '../../../../debug/createDebugSink';
+
+describe('gridSnapStrategy — debug recording', () => {
+  it('records snap candidates when a debug sink is supplied', () => {
+    const sink = createDebugSink({ snap: true });
+    const strat = gridSnapStrategy<{ x: number; y: number; id: string }>(20, {
+      debug: sink,
+    });
+    strat.snap({ id: 'a', x: 13, y: 27 }, {} as never);
+    const recs = sink.snapshot().snap;
+    expect(recs).toHaveLength(1);
+    expect(recs[0]).toEqual({ point: { x: 20, y: 20 }, accepted: true });
+  });
+
+  it('does not record when no sink is supplied', () => {
+    const strat = gridSnapStrategy<{ x: number; y: number; id: string }>(20);
+    expect(() => strat.snap({ id: 'a', x: 13, y: 27 }, {} as never)).not.toThrow();
+  });
+});
