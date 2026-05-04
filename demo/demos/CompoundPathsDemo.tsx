@@ -245,26 +245,48 @@ export function CompoundPathsDemo() {
           The Tale of the Ghost, the Duck, the Hamburglar, the Goose, and the Octopus
         </h3>
         <p style={{ marginTop: 0 }}>
-          On a sky-blue afternoon, the Ghost drifted in to find chaos already
-          unfolding. The Hamburglar (just a hat and a cape — nothing else,
-          mysteriously) was attempting to abscond with the Duck's lunch: a tidy
-          stack of compound polygons.
+          The afternoon hung over the canvas like a damp beach towel —
+          cyan, patient, vaguely chlorinated. The Ghost drifted in expecting
+          a quiet haunt and found instead a crime in progress, which is the
+          ghost equivalent of going out for milk and walking into a heist.
+          The Hamburglar (a hat and a cape with no discernible body, like
+          a noun without a verb) was attempting to abscond with the Duck's
+          lunch: a tidy stack of compound polygons, evenodd-filled, lightly
+          seasoned.
         </p>
         <p>
-          "HONK," said the Goose, who had been waiting all morning for an
-          excuse. The button above her head depressed itself with great
-          satisfaction. The Hamburglar froze. The cape rippled. The hat
-          trembled.
+          "Excuse me," said the Duck, with the polite menace of a small
+          creature who has lawyers.
         </p>
         <p>
-          From beneath the dock, the Octopus extended six (then seven, then
-          eight) curling tentacles and gently relieved the Hamburglar of the
-          stolen polygons. The Duck quacked her thanks and offered everyone a
-          share. The Ghost, who could not eat, settled instead for haunting
-          the leftovers.
+          "<strong>HONK</strong>," said the Goose, who had been waiting all
+          morning for an excuse and roughly a decade for an audience. The
+          honk landed like a dropped piano in a library. The button above
+          her head depressed itself out of sheer peer pressure. The
+          Hamburglar froze the way only a hat can freeze — which is to say,
+          theatrically, and slightly to the left. The cape rippled. The hat
+          trembled. Somewhere, a metaphor wept.
         </p>
         <p>
-          And so peace returned to the canvas, until the next resize.
+          From beneath the dock — because of course there was a dock; there
+          is <em>always</em> a dock — the Octopus unspooled six tentacles,
+          then seven, then eight, like a magician pulling regret out of a
+          sleeve. With the gentleness of a sommelier and the precision of a
+          tax audit, she relieved the Hamburglar of the stolen polygons.
+          The cape collapsed in defeat. The hat sighed. (Hats can sigh.
+          You've just never listened.)
+        </p>
+        <p>
+          The Duck quacked her thanks in three-part harmony with herself
+          and offered everyone a share. The Ghost, who could not eat,
+          settled instead for haunting the leftovers, which is haunting on
+          easy mode. The Goose honked once more, for closure. The Octopus
+          took a bow in eight directions simultaneously, which is showing
+          off, frankly.
+        </p>
+        <p>
+          And so peace returned to the canvas — fragile, pixel-perfect,
+          and absolutely doomed to last only until the next resize.
         </p>
         <p style={{ fontStyle: 'italic', marginBottom: 0, fontSize: 12, opacity: 0.8 }}>
           — a story by Claude (Opus 4.7)
