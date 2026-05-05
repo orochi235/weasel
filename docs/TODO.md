@@ -61,7 +61,6 @@ Small items surfaced during Phase 2a/2b/2c shakedown:
 - **Double-click last anchor to open-finish** (Illustrator convention). v1 uses Enter only.
 - **Cmd+click-off to open-finish** (Illustrator convention). v1 uses Enter only.
 - **Click-on-existing-anchor-to-edit during creation.** Same scope as mid-creation editing; deferred together.
-- **`useEditAnchorsTool` (path-editing as a Tool).** `useEditAnchors` ships as a hook (`src/interactions/gestures/edit-anchors/`) but is not wrapped as a Tool record — no built-in active-slot tool entered via double-click on a path. Originally scoped in `docs/plans/2026-05-03-tool-primitive-phase-2a.md:1401` as deferred to Phase 2c or later. Conceptually adjacent to the pen tool (both are path-shape interactions).
 - **Return path to the default tool.** *Shipped.* `useSelectTool` now declares `keybinding: 'V'` and `useKeybindings` handles Escape — falls back to the snapshotted initial active tool unless a `defaultTool: string | null` option overrides (or disables) it. Tests cover all three paths.
 
 ## Tool overlay channel deferrals

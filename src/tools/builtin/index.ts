@@ -25,3 +25,8 @@ export {
   type PenAnchor,
   type PenSubpath,
 } from './useUserPenTool';
+export {
+  useEditAnchorsTool,
+  type UseEditAnchorsToolOptions,
+  type EditAnchorsScratch,
+} from './useEditAnchorsTool';
