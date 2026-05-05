@@ -173,19 +173,31 @@ const pickEvery = (wx, wy) => {
 const boundsOf = (id) =>
   adapter.getGroup(id) ? groupBounds(id) : adapter.getPose(id);
 
-// <Canvas> wires its internal move/resize via {move,resize}Options and uses
-// the layers map to drive rendering. The selection overlay's poseById uses
+// useSelectTool builds the select Tool with group-aware pickEvery/boundsOf
+// plus nested move/resize options (expandIds drives leaf vs. group behavior).
+// useTools registers it with the dispatcher; <Canvas tools={tools}> drives
+// gestures from there. The selection overlay's poseById uses
 // composeSelectionPose for group-aware union AABB resolution.
+const select = useSelectTool<Rect, Pose>(adapter, {
+  pickEvery: (wx, wy) => {
+    const id = pickEvery(wx, wy);
+    return id ? [id] : [];
+  },
+  boundsOf,
+  handleHitRadius: HANDLE,
+  move:   { expandIds: (ids) => expandToLeaves(ids, adapter) },
+  resize: { expandIds: (ids) => /* leaf-or-group */ ids },
+  drawGhost: (cx, r, p) => { if (r) { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
+  getObject: (id) => adapter.getObject(id) ?? null,
+});
+const tools = useTools({ active: 'select', registry: { select } });
+
 return (
   <Canvas
     width={W} height={H}
     adapter={adapter}
     selection={selection}
-    moveOptions={{ expandIds: (ids) => expandToLeaves(ids, adapter) }}
-    resizeOptions={{ expandIds: (ids) => /* leaf-or-group */ }}
-    pickEvery={pickEvery}
-    boundsOf={boundsOf}
-    handleHitRadius={HANDLE}
+    tools={tools}
     layers={{
       scene: { drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
       selectionOverlay: {
