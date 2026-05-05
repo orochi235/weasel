@@ -36,7 +36,7 @@ html, body, #root {
   border-right: none;
   border-left: 1px solid #3a2e22;
   width: 240px;
-  max-width: 500px;
+  max-width: 400px;
   align-items: stretch;
   padding: 12px 0;
   gap: 4px;

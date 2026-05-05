@@ -351,7 +351,7 @@ export function App() {
           const startX = e.clientX;
           const startW = sidebarWidth;
           const move = (ev: PointerEvent) => {
-            const next = Math.max(180, Math.min(500, startW + (startX - ev.clientX)));
+            const next = Math.max(180, Math.min(400, startW + (startX - ev.clientX)));
             setSidebarWidth(next);
           };
           const up = () => {
