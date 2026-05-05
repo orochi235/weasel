@@ -103,7 +103,7 @@ my AABB to dst") and group resize ("scale me as a leaf inside parent's
 src→dst rect") — they're the same affine map.
 
 Pass via `<Canvas geometry={pathPoseDescriptor}>`. The descriptor drives
-the default `hitBody`, `boundsOf`, the selection-overlay bounds source,
+the default `pickEvery`, `boundsOf`, the selection-overlay bounds source,
 and `useResize`'s remap.
 
 The kit ships:

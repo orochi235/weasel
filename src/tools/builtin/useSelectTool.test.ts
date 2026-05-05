@@ -70,7 +70,7 @@ describe('useSelectTool', () => {
     expect(applyClick).toHaveBeenCalledWith('hit-id', ctx.modifiers);
   });
 
-  it('pointer.onDown picks the child over its container when both are in hitBody', () => {
+  it('pointer.onDown picks the child over its container when both are in pickEvery', () => {
     // Regression: container's bounds also cover the child, so a click inside
     // the child returns ['F','f1'] (parent first via demo iteration order).
     // Naively taking ids[0] selects the container. With the parent/child

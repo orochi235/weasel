@@ -94,7 +94,7 @@ export function SceneDemo() {
         className="ckd-canvas"
         scene={scene}
         selection={selection}
-        hitBody={(wx, wy) => {
+        pickEvery={(wx, wy) => {
           const ordered = [...scene.renderOrder()];
           for (let i = ordered.length - 1; i >= 0; i--) {
             const id = ordered[i];

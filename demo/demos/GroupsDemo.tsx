@@ -76,7 +76,7 @@ export function GroupsDemo() {
     return adapter.getGroup(id) ? groupBounds(id) : adapter.getPose(id);
   };
 
-  const hitBody = (wx: number, wy: number): string | null => {
+  const pickEvery = (wx: number, wy: number): string | null => {
     for (let i = rectsRef.current.length - 1; i >= 0; i--) {
       const r = rectsRef.current[i];
       if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) {
@@ -88,7 +88,7 @@ export function GroupsDemo() {
 
   const select = useSelectTool<Rect, Pose>(adapter, {
     pickEvery: (wx, wy) => {
-      const id = hitBody(wx, wy);
+      const id = pickEvery(wx, wy);
       return id ? [id] : [];
     },
     boundsOf,
@@ -164,9 +164,9 @@ const adapter: Adapter = {
 useGroup(adapter, { bindKeyboard: true });
 useUngroup(adapter, { bindKeyboard: true });
 
-// hitBody resolves leaf hits to their outermost group so click-to-select
+// pickEvery resolves leaf hits to their outermost group so click-to-select
 // grabs the whole group. boundsOf computes group bounds for resize handles.
-const hitBody = (wx, wy) => {
+const pickEvery = (wx, wy) => {
   const leaf = leafHit(wx, wy);
   return leaf ? resolveToOutermostGroup(leaf.id, adapter) : null;
 };
@@ -183,7 +183,7 @@ return (
     selection={selection}
     moveOptions={{ expandIds: (ids) => expandToLeaves(ids, adapter) }}
     resizeOptions={{ expandIds: (ids) => /* leaf-or-group */ }}
-    hitBody={hitBody}
+    pickEvery={pickEvery}
     boundsOf={boundsOf}
     handleHitRadius={HANDLE}
     layers={{

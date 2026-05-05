@@ -157,7 +157,7 @@ const adapter = {
   getLayout: (id) => layouts[id] ?? null,  // <-- this opt-in unlocks layout-aware move
 };
 
-const select = useSelectTool<Obj, P>(adapter, { hitBody, boundsOf, drawGhost });
+const select = useSelectTool<Obj, P>(adapter, { pickEvery, boundsOf, drawGhost });
 const tools = useTools({ active: 'select', registry: { select } });
 
 <Canvas adapter={adapter} tools={tools} layers={{ scene: { drawOne } }} />`;

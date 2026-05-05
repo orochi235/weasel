@@ -106,7 +106,7 @@ export interface UsePointerGesturesOptions<TMovePose, TResizePose> {
 
   /** Body hit-test for starting a move. Return id(s) to drag, or `null` to
    *  fall through to `onTapEmpty`. */
-  hitBody?: (worldX: number, worldY: number) => string | string[] | null;
+  pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
 
   /** Selection api (see {@link SelectionApi}). When supplied, the hook wires
    *  selection-driven defaults: `onBodyHit` defaults to `selection.applyClick`
@@ -130,7 +130,7 @@ export interface UsePointerGesturesOptions<TMovePose, TResizePose> {
 
   /** Optional debug sink for the overlay subsystem. When supplied, body
    *  hit-test results record one `recordHitbox(id, 'body', rect)` per id
-   *  that `hitBody` returns — visualises which body shapes the kit
+   *  that `pickEvery` returns — visualises which body shapes the kit
    *  evaluated as hit. Tree-shakes when omitted (optional-chain). */
   debug?: DebugSink;
 }
@@ -147,7 +147,7 @@ export interface UsePointerGesturesOptions<TMovePose, TResizePose> {
  *
  * Spread the returned bindings onto a `<canvas>`:
  * ```tsx
- * const bindings = usePointerGestures({ move, resize, hitBody, selection });
+ * const bindings = usePointerGestures({ move, resize, pickEvery, selection });
  * return <canvas ref={canvasRef} {...bindings} />;
  * ```
  */
@@ -165,7 +165,7 @@ export function usePointerGestures<TMovePose, TResizePose>(
     handleHitRadius = 8,
     getView,
     rotationHandleDistance = DEFAULT_ROTATION_HANDLE_DISTANCE,
-    hitBody,
+    pickEvery,
     selection,
     boundsOf,
     onBodyHit,
@@ -278,8 +278,8 @@ export function usePointerGestures<TMovePose, TResizePose>(
         }
       }
 
-      if (hitBody) {
-        const hit = hitBody(wx, wy);
+      if (pickEvery) {
+        const hit = pickEvery(wx, wy);
         if (hit !== null) {
           const hitIds = Array.isArray(hit) ? hit : [hit];
           // Record body hitboxes for the overlay. `if (debug)` (not just
@@ -363,7 +363,7 @@ export function usePointerGestures<TMovePose, TResizePose>(
       rotationHandleDistance,
       handleHitRadius,
       getView,
-      hitBody,
+      pickEvery,
       boundsOf,
       selection,
       onBodyHit,

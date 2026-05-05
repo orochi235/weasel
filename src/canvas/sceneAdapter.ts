@@ -4,7 +4,7 @@
  * The Scene owns nodes/poses/parenting and auto-records ops on every mutation.
  * `<SceneCanvas>` calls `sceneToAdapter(scene)` and forwards the result to
  * `<Canvas>`'s `adapter` prop. Selection and hit-testing are not part of the
- * Scene model — Canvas's internal `useSelection` and pose-derived hitBody
+ * Scene model — Canvas's internal `useSelection` and pose-derived pickEvery
  * cover those.
  *
  * Pose semantics match the rest of the kit: `getPose` / `setPose` return /

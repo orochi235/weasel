@@ -332,7 +332,7 @@ return (
     intersectsRect={(pose, rect) => pathPoseDescriptor.intersectsRect!(pose, rect)}
     // Path TPose is auto-detected — Canvas dispatches on pose.kind so bounds /
     // translate / resize-remap, plus pointInPath silhouette hit-testing, all
-    // wire up without an explicit geometry / hitBody prop.
+    // wire up without an explicit geometry / pickEvery prop.
     selectionMode="multi"             // shift-click extend, union-AABB resize
     layers={{
       scene: { drawOne: (cx, s, p) => { traceToContext(cx, p); cx.fill(p.kind === 'polygon' ? p.fillRule : 'nonzero'); cx.stroke(); } },

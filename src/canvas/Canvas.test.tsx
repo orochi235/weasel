@@ -81,7 +81,7 @@ describe('<Canvas>', () => {
         width={50}
         height={50}
         layers={{}}
-        hitBody={() => 'a'}
+        pickEvery={() => 'a'}
         onBodyHit={onBodyHit}
         onPointerDown={onPointerDown}
       />,
@@ -99,7 +99,7 @@ describe('<Canvas>', () => {
         width={50}
         height={50}
         layers={{}}
-        hitBody={() => 'a'}
+        pickEvery={() => 'a'}
         onBodyHit={onBodyHit}
       />,
     );
@@ -126,7 +126,7 @@ describe('<Canvas>', () => {
           width={50}
           height={50}
           layers={{}}
-          hitBody={() => 'a'}
+          pickEvery={() => 'a'}
           selection={sel}
         />
       );

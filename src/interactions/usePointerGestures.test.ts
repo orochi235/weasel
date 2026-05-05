@@ -67,11 +67,11 @@ const IDENTITY_C2W = (_c: HTMLCanvasElement, x: number, y: number): [number, num
 describe('usePointerGestures — onBodyHit firing', () => {
   it('fires onBodyHit even when move is not provided', () => {
     const onBodyHit = vi.fn();
-    const hitBody = () => 'a';
+    const pickEvery = () => 'a';
     const { result } = renderHook(() =>
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
-        hitBody,
+        pickEvery,
         onBodyHit,
       }),
     );
@@ -93,7 +93,7 @@ describe('usePointerGestures — onBodyHit firing', () => {
     const { result } = renderHook(() =>
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
-        hitBody: () => 'a',
+        pickEvery: () => 'a',
         onBodyHit,
         move,
       }),
@@ -111,7 +111,7 @@ describe('usePointerGestures — selection-driven defaults', () => {
     const { result } = renderHook(() =>
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
-        hitBody: () => 'a',
+        pickEvery: () => 'a',
         selection: sel.current,
       }),
     );
@@ -125,7 +125,7 @@ describe('usePointerGestures — selection-driven defaults', () => {
     const { result } = renderHook(() =>
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
-        hitBody: () => null,
+        pickEvery: () => null,
         selection: sel.current,
       }),
     );
@@ -140,7 +140,7 @@ describe('usePointerGestures — selection-driven defaults', () => {
     const { result } = renderHook(() =>
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
-        hitBody: () => 'a',
+        pickEvery: () => 'a',
         selection: sel.current,
         onBodyHit,
       }),
@@ -157,7 +157,7 @@ describe('usePointerGestures — selection-driven defaults', () => {
     const { result } = renderHook(() =>
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
-        hitBody: () => null,
+        pickEvery: () => null,
         selection: sel.current,
         onTapEmpty,
       }),
@@ -176,7 +176,7 @@ describe('usePointerGestures — promote-then-drag', () => {
     const { result } = renderHook(() =>
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
-        hitBody: () => 'a',
+        pickEvery: () => 'a',
         move,
         selection: sel.current,
       }),
@@ -194,11 +194,11 @@ describe('usePointerGestures — promote-then-drag', () => {
     const { result: sel } = renderHook(() =>
       useSelection({ mode: 'multi', initial: ['a', 'b'] }),
     );
-    // Configure hitBody to return 'a', which is already in selection (with shift held to preserve)
+    // Configure pickEvery to return 'a', which is already in selection (with shift held to preserve)
     const { result } = renderHook(() =>
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
-        hitBody: () => 'a',
+        pickEvery: () => 'a',
         move,
         selection: sel.current,
       }),
@@ -219,7 +219,7 @@ describe('usePointerGestures — promote-then-drag', () => {
     const { result } = renderHook(() =>
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
-        hitBody: () => 'b',
+        pickEvery: () => 'b',
         move,
         selection: sel.current,
       }),
@@ -236,7 +236,7 @@ describe('usePointerGestures — promote-then-drag', () => {
     const { result } = renderHook(() =>
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
-        hitBody: () => ['x', 'y'],
+        pickEvery: () => ['x', 'y'],
         move,
       }),
     );
@@ -342,15 +342,15 @@ describe('usePointerGestures — resizeTarget derivation', () => {
 import { createDebugSink } from '../debug/createDebugSink';
 
 describe('usePointerGestures — debug recording', () => {
-  it('records a body hitbox for each id returned by hitBody', () => {
+  it('records a body hitbox for each id returned by pickEvery', () => {
     const sink = createDebugSink({ hitboxes: true });
-    const hitBody = () => 'a';
+    const pickEvery = () => 'a';
     const boundsOf = (id: string) =>
       id === 'a' ? { x: 0, y: 0, width: 50, height: 30 } : null;
     const { result } = renderHook(() =>
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
-        hitBody,
+        pickEvery,
         boundsOf,
         debug: sink,
       }),
@@ -373,7 +373,7 @@ describe('usePointerGestures — debug recording', () => {
     const { result } = renderHook(() =>
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
-        hitBody: () => null,
+        pickEvery: () => null,
         debug: sink,
       }),
     );
@@ -385,12 +385,12 @@ describe('usePointerGestures — debug recording', () => {
   });
 
   it('does not throw when debug sink is omitted', () => {
-    const hitBody = () => 'a';
+    const pickEvery = () => 'a';
     const boundsOf = () => ({ x: 0, y: 0, width: 50, height: 30 });
     const { result } = renderHook(() =>
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
-        hitBody,
+        pickEvery,
         boundsOf,
       }),
     );

@@ -40,7 +40,7 @@ export function CloneDemo() {
 
   const clone = useCloneTool(adapter, {
     behaviors: [cloneByAltDrag()],
-    hitBody: (wx, wy) => {
+    pickBest: (wx, wy) => {
       const list = rectsRef.current;
       for (let i = list.length - 1; i >= 0; i--) {
         const r = list[i];
@@ -95,11 +95,11 @@ const adapter = {
 
 // useCloneTool wraps useClone as a Tool record: the dispatcher only claims
 // pointerdown when a behavior activates for the current modifiers AND
-// hitBody finds a target — plain drags pass through to whatever else is
+// pickBest finds a target — plain drags pass through to whatever else is
 // in the active slot. The tool owns the ghost overlay internally.
 const clone = useCloneTool(adapter, {
   behaviors: [cloneByAltDrag()],
-  hitAll: (wx, wy) => /* return topmost rect id, or null */,
+  pickBest: (wx, wy) => /* return topmost rect id, or null */,
   drawGhost: (cx, items) => /* paint translucent rects at items[i].{x,y} */,
 });
 

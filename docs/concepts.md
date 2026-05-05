@@ -212,7 +212,7 @@ click/drag/resize semantics:
 - `none`: canvas interactions never mutate selection. `onBodyHit` /
   `onTapEmpty` still fire so consumers can do their own picking.
 
-Override per-prop (`selection`, `hitBody`, `boundsOf`, `resizeTarget`,
+Override per-prop (`selection`, `pickEvery`, `boundsOf`, `resizeTarget`,
 `onBodyHit`, `onTapEmpty`, `selectionOptions.mode`) when the mode-derived
 default isn't enough.
 

@@ -24,15 +24,15 @@ function makeAdapter() {
 function setup(hitId: string | null = 'a') {
   const { adapter, applied } = makeAdapter();
   const drawGhost = vi.fn();
-  const hitBody = vi.fn(() => hitId);
+  const pickBest = vi.fn(() => hitId);
   const { result } = renderHook(() =>
     useCloneTool(adapter, {
       behaviors: [cloneByAltDrag()],
-      hitBody,
+      pickBest,
       drawGhost,
     }),
   );
-  return { tool: result.current, applied, drawGhost, hitBody };
+  return { tool: result.current, applied, drawGhost, pickBest };
 }
 
 function makeCtx<S>(scratch: S, over: Partial<ToolCtx<S>> = {}): ToolCtx<S> {
@@ -73,7 +73,7 @@ describe('useCloneTool', () => {
     const { result } = renderHook(() =>
       useCloneTool(adapter, {
         behaviors: [cloneByAltDrag()],
-        hitBody: () => null,
+        pickBest: () => null,
         drawGhost: () => {},
         id: 'dup',
         cursor: 'crosshair',
@@ -84,20 +84,20 @@ describe('useCloneTool', () => {
   });
 
   it('pointer.onDown without activating modifier passes through', () => {
-    const { tool, hitBody } = setup();
+    const { tool, pickBest } = setup();
     const scratch = tool.initScratch!();
     expect(tool.pointer!.onDown!(pe(), makeCtx(scratch))).toBe('pass');
-    expect(hitBody).not.toHaveBeenCalled();
+    expect(pickBest).not.toHaveBeenCalled();
     expect(scratch.pendingId).toBeNull();
   });
 
   it('pointer.onDown with alt but no hit passes through', () => {
-    const { tool, hitBody } = setup(null);
+    const { tool, pickBest } = setup(null);
     const scratch = tool.initScratch!();
     expect(
       tool.pointer!.onDown!(pe(), makeCtx(scratch, { modifiers: altMods })),
     ).toBe('pass');
-    expect(hitBody).toHaveBeenCalled();
+    expect(pickBest).toHaveBeenCalled();
     expect(scratch.pendingId).toBeNull();
   });
 

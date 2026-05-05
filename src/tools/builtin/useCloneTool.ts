@@ -15,7 +15,7 @@ export interface CloneOverlayItem {
 }
 
 export interface CloneScratch {
-  /** Id captured by hitBody on pointer.onDown; passed to clone.start at
+  /** Id captured by pickBest on pointer.onDown; passed to clone.start at
    *  threshold-cross. `null` when the down didn't land on a body. */
   pendingId: string | null;
   /** Modifier snapshot at down — replayed into clone.start so the
@@ -32,7 +32,7 @@ export interface UseCloneToolOptions {
   behaviors: CloneBehavior[];
   /** Hit-test the world point and return the topmost cloneable id, or
    *  null if the pointer didn't land on anything cloneable. */
-  hitBody: (worldX: number, worldY: number) => string | null;
+  pickBest: (worldX: number, worldY: number) => string | null;
   /** Render the in-flight clone ghost. Receives the live overlay items
    *  (snapshot pose translated by the drag offset). The tool owns the
    *  overlay state internally so the consumer doesn't have to thread
@@ -52,7 +52,7 @@ export interface UseCloneToolOptions {
 /** Wraps `useClone` as a Tool record. The tool sits in the alwaysOn slot
  *  (or wherever the consumer puts it) and only claims pointerdowns when
  *  (a) one of the `behaviors` activates for the current modifiers and
- *  (b) `hitBody` finds a target. Encapsulates the overlay-state plumbing
+ *  (b) `pickBest` finds a target. Encapsulates the overlay-state plumbing
  *  that previously lived in every consumer (setOverlay/clearOverlay
  *  callbacks bridging React state). */
 export function useCloneTool<T extends { id: string }>(
@@ -111,7 +111,7 @@ export function useCloneTool<T extends { id: string }>(
           const mods = ctx.modifiers;
           const activates = optsRef.current.behaviors.some((b) => b.activates(mods));
           if (!activates) return 'pass';
-          const id = optsRef.current.hitBody(ctx.worldX, ctx.worldY);
+          const id = optsRef.current.pickBest(ctx.worldX, ctx.worldY);
           if (id === null) return 'pass';
           ctx.scratch.pendingId = id;
           ctx.scratch.pendingMods = { ...mods };

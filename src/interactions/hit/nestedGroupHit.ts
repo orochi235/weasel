@@ -25,7 +25,7 @@ export interface NestedGroupHitOpts<TObject extends { id: string }, TPose> {
 }
 
 export interface NestedGroupHitTester {
-  /** Outermost-ancestor pick. Suitable as the chrome-level `hitBody`: a
+  /** Outermost-ancestor pick. Suitable as the chrome-level `pickEvery`: a
    *  casual click selects the whole top-level group. Returns `null` on
    *  empty space. */
   pickOutermost: (worldX: number, worldY: number) => string | null;

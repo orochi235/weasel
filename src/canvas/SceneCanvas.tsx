@@ -4,7 +4,7 @@
  * Synthesizes a `MoveAdapter & ResizeAdapter & RotateAdapter & AreaSelectAdapter`
  * from the passed `scene` (via `sceneToAdapter`) and constructs an internal
  * `useSelectTool` + `useTools` so consumers don't have to. The caller-facing
- * API still accepts `hitBody`/`boundsOf`/`handleHitRadius`/`snap`/
+ * API still accepts `pickEvery`/`boundsOf`/`handleHitRadius`/`snap`/
  * `moveOptions`/`resizeOptions`/`rotateOptions`/`selectionOptions` — those
  * props are folded into the internal tool rather than forwarded to Canvas.
  *
@@ -29,6 +29,7 @@ import type { Op } from '../core/ops/types';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from '../features/selection/useSelection';
 import { useSelectTool, type Bounds } from '../tools/builtin/useSelectTool';
 import { useTools, type ToolsApi } from '../tools/useTools';
+import type { AnyTool } from '../tools/types';
 import type { UseMoveOptions } from '../interactions/gestures/move/move';
 import type { UseResizeOptions } from '../interactions/gestures/resize/resize';
 import type { UseRotateOptions } from '../interactions/gestures/rotate/rotate';
@@ -63,7 +64,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     | 'adapter' | 'items' | 'setItems' | 'toPose' | 'fromPose'
     | 'createDefault' | 'poseBounds' | 'intersectsRect'
     | 'moveOptions' | 'resizeOptions' | 'rotateOptions'
-    | 'snap' | 'hitBody' | 'boundsOf' | 'handleHitRadius'
+    | 'snap' | 'pickEvery' | 'boundsOf' | 'handleHitRadius'
     | 'selection' | 'selectionOptions' | 'tools'
   >
   & {
@@ -78,7 +79,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     // --- Tool-folded options (formerly forwarded to Canvas, now consumed
     //     by the internal `useSelectTool`). Ignored if the consumer passes
     //     their own `tools` prop. ---
-    hitBody?: (worldX: number, worldY: number) => string | null;
+    pickEvery?: (worldX: number, worldY: number) => string | null;
     boundsOf?: (id: string) => Bounds | null;
     handleHitRadius?: number;
     snap?: SnapStrategy<TPose>;
@@ -96,6 +97,12 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  Canvas as-is. Consumers needing extra tools (insert, etc.) take this
      *  path. */
     tools?: ToolsApi;
+
+    /** Always-on tools to register alongside the internal default select.
+     *  Use this for wheel/keyboard zoom + pan tools that should run alongside
+     *  the default select. If you supply your own `tools` prop, this is
+     *  ignored — wire `alwaysOn` through your own `useTools` call instead. */
+    alwaysOn?: AnyTool[];
   };
 
 function SceneCanvasInner<TData, TLayer extends string, TPose>(
@@ -107,7 +114,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     gestures,
     commitInsert,
     insertLayer,
-    hitBody: hitBodyProp,
+    pickEvery: pickEveryProp,
     boundsOf: boundsOfProp,
     handleHitRadius,
     snap,
@@ -117,6 +124,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selection: selectionProp,
     selectionOptions,
     tools: toolsProp,
+    alwaysOn,
     layers,
     ...rest
   } = props;
@@ -219,14 +227,14 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     return merged;
   }, [scene, moveOptions, snap]);
 
-  // Default hitBody: walk renderOrder() back-to-front (top-most first) and
+  // Default pickEvery: walk renderOrder() back-to-front (top-most first) and
   // return the first node whose pose contains the world point. Wraps the
-  // caller's `hitBody` (string-or-null) into the array form `useSelectTool`
+  // caller's `pickEvery` (string-or-null) into the array form `useSelectTool`
   // expects.
   const wiredHitBody = useMemo(() => {
     return (wx: number, wy: number): string[] => {
-      if (hitBodyProp) {
-        const id = hitBodyProp(wx, wy);
+      if (pickEveryProp) {
+        const id = pickEveryProp(wx, wy);
         return id ? [id] : [];
       }
       const ordered = [...scene.renderOrder()];
@@ -236,7 +244,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       }
       return [];
     };
-  }, [scene, hitBodyProp]);
+  }, [scene, pickEveryProp]);
 
   const wiredBoundsOf = useMemo(() => {
     return (id: string): Bounds | null => {
@@ -274,7 +282,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ...(drawGhost ? { drawGhost } : {}),
     getObject: (id: string) => scene.get(asNodeId(id)) ?? null,
   });
-  const internalTools = useTools({ active: 'select', registry: { select: internalSelect } });
+  const internalTools = useTools({
+    active: 'select',
+    registry: { select: internalSelect },
+    ...(alwaysOn ? { alwaysOn } : {}),
+  });
 
   const tools = toolsProp ?? internalTools;
 

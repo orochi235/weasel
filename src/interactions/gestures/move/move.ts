@@ -70,7 +70,7 @@ export interface MoveController<TObject extends { id: string }, TPose> {
   isActive(): boolean;
   overlay: MoveOverlay<TPose> | null;
   /** The adapter passed in. Exposed so downstream consumers (notably
-   *  `<Canvas>`) can derive default `hitBody`/`boundsOf` without taking
+   *  `<Canvas>`) can derive default `pickEvery`/`boundsOf` without taking
    *  the adapter as a separate prop. */
   adapter: MoveAdapter<TObject, TPose>;
 }

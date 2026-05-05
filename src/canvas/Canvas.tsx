@@ -4,7 +4,7 @@
  *   - clear-rect + optional background fill on every render
  *   - layer-stack composition from a map of named slots + custom layers
  *   - internal `useMove` / `useResize` / `useSelection` (overridable)
- *   - `usePointerGestures` wiring with auto-derived hitBody/boundsOf
+ *   - `usePointerGestures` wiring with auto-derived pickEvery/boundsOf
  *   - keyboard-focus plumbing (`tabIndex` + auto-focus on pointerdown)
  *
  * The `layers` prop is a map keyed by slot name. Standard slots render at a
@@ -155,7 +155,7 @@ export type LayersMap<TObject extends { id: string }, TPose> = {
  *     `onBodyHit` and `onTapEmpty` still fire so consumers can do their own
  *     picking.
  *
- * Escape hatches still apply: explicit `selection`, `hitBody`, `boundsOf`,
+ * Escape hatches still apply: explicit `selection`, `pickEvery`, `boundsOf`,
  * `resizeTarget`, `onBodyHit`, `onTapEmpty`, or `selectionOptions.mode`
  * override the `selectionMode`-derived defaults.
  */
@@ -170,7 +170,7 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   /** CSS-pixel height. */
   height: number;
 
-  /** Combined adapter. Required for the scene slot, default hitBody/boundsOf,
+  /** Combined adapter. Required for the scene slot, default pickEvery/boundsOf,
    *  and the internal move/resize/rotate controllers. Optional for trivial
    *  canvases. Mutually exclusive with `items` — pass one or the other.
    *  Insert and area-select live entirely in `useInsertTool` / `useSelectTool`
@@ -211,14 +211,14 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   selection?: SelectionApi;
   selectionOptions?: UseSelectionOptions;
 
-  /** Pose↔bounds projection. When supplied, drives default `hitBody`,
+  /** Pose↔bounds projection. When supplied, drives default `pickEvery`,
    *  `boundsOf`, and the selection-overlay bounds source so non-rect TPose
    *  (e.g. `Path`) doesn't require per-prop overrides. Defaults to the rect
    *  identity. */
   geometry?: PoseDescriptor<TPose>;
 
   // --- Gesture overrides (escape hatches for non-rect / group-aware apps) ---
-  hitBody?: (worldX: number, worldY: number) => string | string[] | null;
+  pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
   resizeTarget?: () => { id: string; bounds: Bounds } | null;
   rotateTarget?: () => { id: string; bounds: Bounds; rotation?: number } | null;
   /** World-pixel distance from the top edge of the bounding box to the
@@ -460,7 +460,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     layers: layersMap,
     selection: selectionOverride,
     selectionOptions,
-    hitBody,
+    pickEvery,
     resizeTarget,
     rotateTarget,
     rotationHandleDistance,
@@ -729,13 +729,13 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     },
   );
 
-  // Default hitBody: walk the adapter's objects back-to-front and return the
+  // Default pickEvery: walk the adapter's objects back-to-front and return the
   // first whose pose contains the world point. The active tool (selectTool)
-  // typically owns its own hitBody internally; this fallback exists for
+  // typically owns its own pickEvery internally; this fallback exists for
   // layer-level concerns (selection-overlay handle hit, custom layer queries)
   // and for the no-tools path where Canvas dispatches via usePointerGestures.
   const baseHitBody = useMemo(() => {
-    if (hitBody) return hitBody;
+    if (pickEvery) return pickEvery;
     if (!adapter) return undefined;
     const a = adapter;
     return (worldX: number, worldY: number): string | string[] | null => {
@@ -751,7 +751,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       }
       return null;
     };
-  }, [hitBody, adapter, geometry]);
+  }, [pickEvery, adapter, geometry]);
 
   // Committed pose/bounds lookups. Live overlay state during a drag now
   // arrives via the active Tool's `peekPose`/`peekBounds`; helpersForLayers
@@ -856,12 +856,12 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   };
   if (helpersRef) helpersRef.current = helpersForLayers;
 
-  // hitBody: in multi mode with >1 selected, a click inside the union AABB
+  // pickEvery: in multi mode with >1 selected, a click inside the union AABB
   // that doesn't land on an unselected leaf drags the whole set without
   // perturbing the selection. Clicks on unselected leaves fall through to
   // the base hit, so applyClick (or shift-click extend) takes over.
   const effectiveHitBody = useMemo(() => {
-    if (hitBody) return hitBody;
+    if (pickEvery) return pickEvery;
     if (!baseHitBody) return undefined;
     if (!multiActive) return baseHitBody;
     return (worldX: number, worldY: number): string | string[] | null => {
@@ -883,7 +883,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       }
       return null;
     };
-  }, [hitBody, baseHitBody, multiActive, selectedIdsForWiring, unionOfSelection]);
+  }, [pickEvery, baseHitBody, multiActive, selectedIdsForWiring, unionOfSelection]);
 
   // resizeTarget: with multi selection active, expose a synthetic id whose
   // bounds are the union of the selection. resize.expandIds (wired via
@@ -917,7 +917,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   }, [onBodyHit, selectionMode, effectiveSelection]);
 
   const bindings = usePointerGestures<TPose, TPose>({
-    hitBody: effectiveHitBody,
+    pickEvery: effectiveHitBody,
     resizeTarget: effectiveResizeTarget ?? resizeTarget,
     rotateTarget,
     rotationHandleDistance,

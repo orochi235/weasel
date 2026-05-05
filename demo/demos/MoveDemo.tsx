@@ -1,18 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  arrayAdapter,
   gridSnapStrategy,
-  snap,
-  Canvas,
-  useZoom,
+  SceneCanvas,
+  useScene,
   useSelection,
-  useSelectTool,
-  useTools,
-  useDuplicate,
+  useZoom,
 } from '@orochi235/weasel';
 import type { UnitSystem } from '@orochi235/weasel';
 
-interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
+interface NodeData { color: string }
+type LayerId = 'default';
 interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 400, H = 300;
@@ -21,71 +18,22 @@ const W = 400, H = 300;
 const UNITS: UnitSystem = { base: 'px', units: { px: 1, tile: 20 } };
 const CELL = { value: 1, unit: 'tile' } as const;
 
-const COLORS = ['#7fb069', '#d4a574', '#a48bd4', '#d47a7a', '#7ab8d4'];
-const INITIAL: Rect[] = [
-  { id: 'a', x: 40,  y: 40,  width: 60, height: 40, color: '#7fb069' },
-  { id: 'b', x: 160, y: 100, width: 80, height: 60, color: '#d4a574' },
-  { id: 'c', x: 260, y: 60,  width: 60, height: 60, color: '#a48bd4' },
-];
-
 export function MoveDemo() {
-  const [rects, setRects] = useState<Rect[]>(INITIAL);
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const rectsRef = useRef(rects);
-  rectsRef.current = rects;
-  const nextId = useRef(1);
+  const scene = useScene<NodeData, LayerId, Pose>({
+    systemLayers: [{ id: 'default' }],
+    initial: [
+      { id: 'a' as never, kind: 'leaf', layer: 'default',
+        pose: { x: 40,  y: 40,  width: 60, height: 40 }, data: { color: '#7fb069' } },
+      { id: 'b' as never, kind: 'leaf', layer: 'default',
+        pose: { x: 160, y: 100, width: 80, height: 60 }, data: { color: '#d4a574' } },
+      { id: 'c' as never, kind: 'leaf', layer: 'default',
+        pose: { x: 260, y: 60,  width: 60, height: 60 }, data: { color: '#a48bd4' } },
+    ],
+  });
   const selection = useSelection();
 
-  const adapter = {
-    ...arrayAdapter<Rect, Pose>({
-      ref: rectsRef,
-      setItems: setRects,
-      toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
-    }),
-    ...selection.adapterMethods,
-    insertObject: (obj: Rect) => setRects((rs) => [...rs, obj]),
-    cloneObject: (id: string, offset: { dx: number; dy: number }) => {
-      const src = rectsRef.current.find((r) => r.id === id)!;
-      return {
-        id: `r${nextId.current++}`,
-        x: src.x + offset.dx,
-        y: src.y + offset.dy,
-        width: src.width,
-        height: src.height,
-        color: COLORS[(nextId.current + 2) % COLORS.length],
-      } as Rect;
-    },
-    hitTestArea: (r: Pose) =>
-      rectsRef.current
-        .filter((o) => o.x < r.x + r.width && o.x + o.width > r.x && o.y < r.y + r.height && o.y + o.height > r.y)
-        .map((o) => o.id),
-    snapshotSelection: () => ({ items: [] }),
-  };
-
-  useDuplicate<Pose>(adapter);
-
-  const select = useSelectTool<Rect, Pose>(adapter, {
-    pickEvery: (wx, wy) =>
-      rectsRef.current
-        .filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height)
-        .map((r) => r.id),
-    boundsOf: (id) => {
-      const r = rectsRef.current.find((x) => x.id === id);
-      return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
-    },
-    move: {
-      behaviors: [snap(gridSnapStrategy<Pose>(CELL, UNITS))],
-    },
-    drawGhost: (ctx, rect, pose) => {
-      if (!rect) return;
-      ctx.fillStyle = rect.color;
-      ctx.fillRect(pose.x, pose.y, pose.width, pose.height);
-    },
-    getObject: (id) => rectsRef.current.find((r) => r.id === id) ?? null,
-  });
-  const tools = useTools({ active: 'select', registry: { select } });
-
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
   const zoomCtl = useZoom({
     zoom, setZoom, pan, setPan,
     viewport: { width: W, height: H },
@@ -106,13 +54,13 @@ export function MoveDemo() {
   };
 
   return (
-    <Canvas
+    <SceneCanvas
       width={W}
       height={H}
       className="ckd-canvas"
-      adapter={adapter}
+      scene={scene}
       selection={selection}
-      tools={tools}
+      snap={gridSnapStrategy<Pose>(CELL, UNITS)}
       clientToWorld={clientToWorld}
       layers={{
         grid: {
@@ -122,8 +70,8 @@ export function MoveDemo() {
           accentEvery: 5,
         },
         scene: {
-          drawOne: (cx, r, p) => {
-            cx.fillStyle = r.color;
+          drawOne: (cx, n, p) => {
+            cx.fillStyle = n.data.color;
             cx.fillRect(p.x, p.y, p.width, p.height);
           },
         },
@@ -133,59 +81,37 @@ export function MoveDemo() {
   );
 }
 
-export const MOVE_DEMO_SOURCE = `// --- Scene (your app owns this) ---
-interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
-interface Pose { x: number; y: number; width: number; height: number }
+export const MOVE_DEMO_SOURCE = `// Scene primitive owns nodes/poses/parenting and auto-records ops on every
+// mutation. SceneCanvas synthesizes the adapter + internal select tool from
+// the scene; consumers just describe their data and how to draw it.
 
-const [rects, setRects] = useState<Rect[]>(INITIAL);
-const rectsRef = useRef(rects);
-rectsRef.current = rects;
-const selection = useSelection();
-
-// --- Adapter (with selection methods + cloneObject for useDuplicate +
-//     hitTestArea/applyOps/snapshotSelection for useSelectTool) ---
-const adapter = {
-  ...arrayAdapter<Rect, Pose>({ ref: rectsRef, setItems: setRects, toPose: (r) => ({...}) }),
-  ...selection.adapterMethods,
-  insertObject: (obj) => setRects((rs) => [...rs, obj]),
-  cloneObject: (id, offset) => /* mint a fresh id, copy fields, translate by offset */,
-  hitTestArea: (rect) => rectsRef.current.filter(aabbOverlap(rect)).map((r) => r.id),
-  snapshotSelection: () => ({ items: [] }),
-};
-
-useDuplicate<Pose>(adapter); // Cmd/Ctrl+D -> clone selection (offset 8,8 by default)
+const scene = useScene<NodeData, 'default', Pose>({
+  systemLayers: [{ id: 'default' }],
+  initial: [
+    { id: 'a', kind: 'leaf', layer: 'default', pose: {...}, data: { color: '#7fb069' } },
+    { id: 'b', kind: 'leaf', layer: 'default', pose: {...}, data: { color: '#d4a574' } },
+    { id: 'c', kind: 'leaf', layer: 'default', pose: {...}, data: { color: '#a48bd4' } },
+  ],
+});
 
 const UNITS: UnitSystem = { base: 'px', units: { px: 1, tile: 20 } };
 const CELL = { value: 1, unit: 'tile' } as const;
 
-// Build the select tool with the snap behavior folded into move.behaviors.
-// The Tool publishes its own move/resize/rotate ghosts via the overlay channel.
-const select = useSelectTool<Rect, Pose>(adapter, {
-  pickEvery: (wx, wy) => rectsRef.current.filter(hitOf(wx, wy)).map((r) => r.id),
-  boundsOf: (id) => boundsOfRect(rectsRef.current.find((r) => r.id === id)),
-  move: { behaviors: [snap(gridSnapStrategy<Pose>(CELL, UNITS))] },
-  drawGhost: (ctx, rect, pose) => {
-    if (!rect) return;
-    ctx.fillStyle = rect.color;
-    ctx.fillRect(pose.x, pose.y, pose.width, pose.height);
-  },
-  getObject: (id) => rectsRef.current.find((r) => r.id === id) ?? null,
-});
-const tools = useTools({ active: 'select', registry: { select } });
-
 return (
-  <Canvas
+  <SceneCanvas
     width={W} height={H}
-    adapter={adapter}
-    selection={selection}
-    tools={tools}
+    scene={scene}
+    snap={gridSnapStrategy<Pose>(CELL, UNITS)}
+    clientToWorld={clientToWorld}
     layers={{
       grid: { spacing: CELL, unitSystem: UNITS, bounds: () => ({ x: 0, y: 0, width: W, height: H }), accentEvery: 5 },
       scene: {
-        drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); },
+        drawOne: (cx, n, p) => { cx.fillStyle = n.data.color; cx.fillRect(p.x, p.y, p.width, p.height); },
       },
       selectionOverlay: { handles: false },
     }}
   />
 );
+// SceneCanvas wires the adapter, default pickEvery (renderOrder hit), default
+// drawGhost (reuses scene.drawOne), and undo/redo via scene.batch().
 `;

@@ -2,7 +2,7 @@
  * Pick the topmost id from a body-hit list, using whatever signal the
  * adapter exposes.
  *
- * Why this exists: `hitBody` returns every id whose body covers the pointer.
+ * Why this exists: `pickEvery` returns every id whose body covers the pointer.
  * Naively taking `ids[0]` makes containers swallow clicks on their children
  * (the container's bounds also cover the hit point, and demo iteration
  * order tends to put parents before children). This helper resolves the

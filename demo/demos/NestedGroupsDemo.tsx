@@ -149,7 +149,7 @@ export function NestedGroupsDemo() {
       adapter={adapter}
       selection={selection}
       tools={tools}
-      hitBody={hitter.pickOutermost}
+      pickEvery={hitter.pickOutermost}
       gestures={{ undoRedo: { adapter: history } }}
       layers={{
         scene: {
@@ -235,7 +235,7 @@ return (
     adapter={adapter}
     selection={selection}
     tools={tools}
-    hitBody={hitter.pickOutermost}      // chrome hit-test: outermost group
+    pickEvery={hitter.pickOutermost}      // chrome hit-test: outermost group
     gestures={{ undoRedo: { adapter: history } }}
     layers={{
       scene: {

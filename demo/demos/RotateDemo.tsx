@@ -21,9 +21,9 @@ const INITIAL: Rect[] = [
 export function RotateDemo() {
   const scene = useScene({ items: INITIAL });
 
-  // Override hitBody so a click inside the rotated rect — not the AABB —
+  // Override pickEvery so a click inside the rotated rect — not the AABB —
   // selects the object. Reads live pose from the scene.
-  const hitBody = (wx: number, wy: number): string | null => {
+  const pickEvery = (wx: number, wy: number): string | null => {
     const ordered = [...scene.renderOrder()];
     for (let i = ordered.length - 1; i >= 0; i--) {
       const n = scene.get(ordered[i]);
@@ -39,7 +39,7 @@ export function RotateDemo() {
       className="ckd-canvas"
       scene={scene}
       handleHitRadius={HANDLE}
-      hitBody={hitBody}
+      pickEvery={pickEvery}
       selectionOptions={{ initial: ['b'] }}
       onTapEmpty={() => {}}
       layers={{
@@ -67,8 +67,8 @@ interface Rect extends RotatedPose { id: string; color: string }
 
 const scene = useScene({ items: INITIAL });
 
-// Override hitBody so clicks land on the rotated body, not the AABB.
-const hitBody = (wx, wy) => {
+// Override pickEvery so clicks land on the rotated body, not the AABB.
+const pickEvery = (wx, wy) => {
   const ordered = [...scene.renderOrder()];
   for (let i = ordered.length - 1; i >= 0; i--) {
     const n = scene.get(ordered[i]);
@@ -81,7 +81,7 @@ return (
   <SceneCanvas
     width={W} height={H}
     scene={scene}
-    hitBody={hitBody}
+    pickEvery={pickEvery}
     layers={{
       scene: {
         drawOne: (cx, _node, p) => {

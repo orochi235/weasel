@@ -248,7 +248,7 @@ export function SwillustratorDemo() {
 }
 
 export const SWILLUSTRATOR_DEMO_SOURCE = `// 5-tool palette: select / insert (rect) / text / pen / hand. Wheel + keyboard zoom always-on.
-const select = useSelectTool(adapter, { hitBody, boundsOf });
+const select = useSelectTool(adapter, { pickEvery, boundsOf });
 const insert = useInsertTool(adapter, { minBounds: { width: 4, height: 4 } });
 const text   = useTextTool({ commitInsert: ({ worldX, worldY }) => ({ id, kind: 'text', ... }) });
 const pen    = useUserPenTool({ wrapPath, adapter: { addObject, setSelection } });
