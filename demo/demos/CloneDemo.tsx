@@ -38,26 +38,14 @@ export function CloneDemo() {
       })),
   };
 
+  const drawRect = (cx: CanvasRenderingContext2D, r: Rect, p: Pose) => {
+    cx.fillStyle = r.color;
+    cx.fillRect(p.x, p.y, p.width, p.height);
+  };
+
   const clone = useCloneTool(adapter, {
     behaviors: [cloneByAltDrag()],
-    pickBest: (wx, wy) => {
-      const list = rectsRef.current;
-      for (let i = list.length - 1; i >= 0; i--) {
-        const r = list[i];
-        if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) return r.id;
-      }
-      return null;
-    },
-    drawGhost: (cx, items) => {
-      cx.globalAlpha = 0.5;
-      for (const item of items) {
-        const src = rectsRef.current.find((r) => r.id === item.id);
-        if (!src) continue;
-        cx.fillStyle = src.color;
-        cx.fillRect(item.x, item.y, src.width, src.height);
-      }
-      cx.globalAlpha = 1;
-    },
+    drawOne: drawRect,
   });
 
   const tools = useTools({ active: 'clone', registry: { clone } });
@@ -71,9 +59,7 @@ export function CloneDemo() {
       tools={tools}
       selectionMode="none"
       layers={{
-        scene: {
-          drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); },
-        },
+        scene: { drawOne: drawRect },
         selectionOverlay: null,
       }}
     />
@@ -93,14 +79,16 @@ const adapter = {
   })),
 };
 
-// useCloneTool wraps useClone as a Tool record: the dispatcher only claims
-// pointerdown when a behavior activates for the current modifiers AND
-// pickBest finds a target — plain drags pass through to whatever else is
-// in the active slot. The tool owns the ghost overlay internally.
+// pointerdown when a behavior activates for the current modifiers AND a
+// hit-test lands on a body — plain drags pass through. With \`drawOne\`
+// supplied, the tool synthesizes the ghost by translating each item's
+// source pose; with no \`pickBest\` supplied, it walks adapter.getObjects()
+// back-to-front via the same AUTO_POSE_DESCRIPTOR Canvas uses internally.
+const drawRect = (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); };
+
 const clone = useCloneTool(adapter, {
   behaviors: [cloneByAltDrag()],
-  pickBest: (wx, wy) => /* return topmost rect id, or null */,
-  drawGhost: (cx, items) => /* paint translucent rects at items[i].{x,y} */,
+  drawOne: drawRect,
 });
 
 const tools = useTools({ active: 'clone', registry: { clone } });
@@ -112,7 +100,7 @@ return (
     tools={tools}
     selectionMode="none"
     layers={{
-      scene: { drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
+      scene: { drawOne: drawRect },
       selectionOverlay: null,
     }}
   />

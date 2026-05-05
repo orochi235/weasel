@@ -39,7 +39,6 @@ import { useNudge } from '../interactions/actions/nudge';
 import { useDuplicate } from '../interactions/actions/duplicate';
 import { useUndoRedo } from '../interactions/actions/undo-redo';
 import type { UndoRedoAdapter } from '../interactions/actions/undo-redo';
-import type { Path } from '../features/paths/types';
 import type {
   MoveAdapter,
   ResizeAdapter,
@@ -54,8 +53,8 @@ import {
   createSelectionOverlayLayer,
   type SelectionOverlayLayerOpts,
 } from '../features/selection/overlay';
-import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../interactions/gestures/resize/geometry';
-import { pathPoseDescriptor } from '../features/paths/poseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from '../interactions/gestures/resize/autoPoseDescriptor';
+import type { PoseDescriptor } from '../interactions/gestures/resize/geometry';
 import type { DebugConfig, DebugSink, DebugSnapshot } from '../debug/types';
 import { parseDebugFlags } from '../debug/parseDebugFlags';
 import { createDebugSink } from '../debug/createDebugSink';
@@ -340,25 +339,6 @@ export interface CanvasHelpers<TPose> {
 
 const STANDARD_SLOT_SET = new Set<string>(STANDARD_SLOTS);
 
-// Per-call dispatch: if the pose looks like a Path (`{ kind: 'polygon' | 'rect' }`)
-// route to pathPoseDescriptor; otherwise treat as a plain rect pose. Avoids
-// forcing demos with Path TPose to wire `geometry={pathPoseDescriptor}`
-// explicitly.
-const AUTO_POSE_DESCRIPTOR: PoseDescriptor<unknown> = {
-  getBounds: (p) => isPathLike(p)
-    ? pathPoseDescriptor.getBounds(p)
-    : RECT_POSE_DESCRIPTOR.getBounds(p as { x: number; y: number; width: number; height: number }),
-  remapBounds: (p, src, dst) => isPathLike(p)
-    ? pathPoseDescriptor.remapBounds(p, src, dst)
-    : RECT_POSE_DESCRIPTOR.remapBounds(p as { x: number; y: number; width: number; height: number }, src, dst),
-  translate: (p, dx, dy) => isPathLike(p)
-    ? pathPoseDescriptor.translate!(p, dx, dy)
-    : RECT_POSE_DESCRIPTOR.translate!(p as { x: number; y: number; width: number; height: number }, dx, dy),
-  intersectsRect: (p, rect) => isPathLike(p)
-    ? pathPoseDescriptor.intersectsRect!(p, rect)
-    : RECT_POSE_DESCRIPTOR.intersectsRect!(p as { x: number; y: number; width: number; height: number }, rect),
-};
-
 // Stable identities for the always-on useArrayAdapter call when the consumer
 // is on the explicit-`adapter` path (synthesized adapter is unused, but the
 // hook still runs).
@@ -372,11 +352,6 @@ const IDENTITY_TO_POSE = (obj: unknown) => obj as unknown;
 
 function aabbContains(b: Bounds, x: number, y: number): boolean {
   return x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height;
-}
-
-function isPathLike(p: unknown): p is Path {
-  return !!p && typeof p === 'object' && 'kind' in p
-    && ((p as { kind: unknown }).kind === 'polygon' || (p as { kind: unknown }).kind === 'rect');
 }
 
 function isCustomEntry(v: unknown): v is CustomLayerEntry {
