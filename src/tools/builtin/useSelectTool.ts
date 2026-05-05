@@ -102,6 +102,19 @@ export interface UseSelectToolOptions<TObject extends { id: string }, TPose> {
   ) => void;
   /** Object lookup for the ghost render, paired with `drawGhost`. Optional. */
   getObject?: (id: string) => TObject | null;
+  /** Optional double-tap hook. When the dispatcher detects a double-tap (two
+   *  sub-threshold clicks within `dblTap.windowMs` / `dblTap.maxDistance`),
+   *  this fires with the world-space tap coords and the ids whose body covers
+   *  that point (via `pickEvery`). Return value is ignored — internally the
+   *  dbl-tap claim suppresses the second `onClick`. Use this to drive modal
+   *  entry (e.g. select → edit-anchors) instead of attaching `onDoubleClick`
+   *  to a wrapper DOM node. */
+  onDoubleTap?: (args: {
+    worldX: number;
+    worldY: number;
+    ids: string[];
+    event: PointerEvent;
+  }) => void;
 }
 
 /** Intersection of all four sub-controller adapter interfaces.
@@ -151,6 +164,13 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
   const handleHitRadius = options.handleHitRadius ?? 8;
   const rotationHandleDistance = options.rotationHandleDistance ?? 24;
   const debug = options.debug;
+
+  // Latest-callback ref for `onDoubleTap` so the memoized tool body picks up
+  // re-renders without rebuilding the Tool record. Same pattern as `styleRefs`.
+  const onDoubleTapRef = useRef(options.onDoubleTap);
+  onDoubleTapRef.current = options.onDoubleTap;
+  const pickEveryRef = useRef(options.pickEvery);
+  pickEveryRef.current = options.pickEvery;
 
   // Refs let the overlay closure pull the latest style/callbacks without
   // rebuilding the Tool record on every render.
@@ -389,6 +409,16 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
             if (ctx.scratch.kind === 'area' && !ctx.modifiers.shift && !ctx.modifiers.meta) {
               ctx.selection.clear();
             }
+            return 'claim';
+          },
+        },
+
+        dblTap: {
+          onTap: (e, ctx) => {
+            const cb = onDoubleTapRef.current;
+            if (!cb) return 'pass';
+            const ids = pickEveryRef.current(ctx.worldX, ctx.worldY);
+            cb({ worldX: ctx.worldX, worldY: ctx.worldY, ids, event: e });
             return 'claim';
           },
         },
