@@ -8,6 +8,8 @@ import {
   useNudge,
   useReorder,
   useSelection,
+  useSelectTool,
+  useTools,
 } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
@@ -64,6 +66,24 @@ export function ActionsDemo() {
   useNudge<Pose>(adapter, { enableKeyboard: focused, step: 2, shiftStep: 20 });
   useReorder(adapter, { enableKeyboard: focused });
 
+  const select = useSelectTool<Rect, Pose>(adapter, {
+    hitBody: (wx, wy) =>
+      rectsRef.current
+        .filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height)
+        .map((r) => r.id),
+    boundsOf: (id) => {
+      const r = rectsRef.current.find((x) => x.id === id);
+      return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
+    },
+    drawGhost: (ctx, rect, pose) => {
+      if (!rect) return;
+      ctx.fillStyle = rect.color;
+      ctx.fillRect(pose.x, pose.y, pose.width, pose.height);
+    },
+    getObject: (id) => rectsRef.current.find((r) => r.id === id) ?? null,
+  });
+  const tools = useTools({ active: 'select', registry: { select } });
+
   return (
     <div
       tabIndex={0}
@@ -82,6 +102,7 @@ export function ActionsDemo() {
         className="ckd-canvas"
         adapter={adapter}
         selection={selection}
+        tools={tools}
         layers={{
           scene: {
             drawOne: (cx, r, p) => {
