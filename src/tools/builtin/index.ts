@@ -31,6 +31,13 @@ export {
   type EditAnchorsScratch,
 } from './useEditAnchorsTool';
 export {
+  useSelectWithAnchorEdit,
+  type UseSelectWithAnchorEditOptions,
+  type UseSelectWithAnchorEditReturn,
+  type SelectWithAnchorEditAdapter,
+  type SelectWithAnchorEditAnchorsOptions,
+} from './useSelectWithAnchorEdit';
+export {
   useCloneTool,
   type UseCloneToolOptions,
   type CloneScratch,
