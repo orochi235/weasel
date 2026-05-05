@@ -25,6 +25,7 @@ import type { CanvasProps } from './Canvas';
 import { sceneToAdapter, type SceneToAdapterOptions } from './sceneAdapter';
 import type { Node, Scene } from '../core/scene/types';
 import { asNodeId } from '../core/scene/types';
+import type { Op } from '../core/ops/types';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from '../features/selection/useSelection';
 import { useSelectTool, type Bounds } from '../tools/builtin/useSelectTool';
 import { useTools, type ToolsApi } from '../tools/useTools';
@@ -170,13 +171,31 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       // Spread selection methods so the synthesized adapter satisfies
       // `AreaSelectAdapter` (which `useSelectTool` requires).
       ...selection.adapterMethods,
-      // Stubs — Scene-backed canvases that need real area-select hit-testing
-      // can override via a custom `tools` prop. The default tool's
-      // `selectFromMarquee` behavior reads back the empty array and clears
-      // the marquee; consumers wanting marquee selection should still wire
-      // their own.
-      hitTestArea: () => [] as string[],
-      applyOps: () => {},
+      // Default marquee hit-test: walk every renderOrder node and collect ids
+      // whose AABB intersects the marquee rect. Path-shaped poses use their
+      // path descriptor for a tighter test.
+      hitTestArea: (rect: { x: number; y: number; width: number; height: number }): string[] => {
+        const hits: string[] = [];
+        for (const nid of scene.renderOrder()) {
+          const n = scene.get(nid);
+          if (!n) continue;
+          if (isPathLike(n.pose) && pathPoseDescriptor.intersectsRect) {
+            if (pathPoseDescriptor.intersectsRect(n.pose, rect)) hits.push(n.id);
+            continue;
+          }
+          const b = aabbOfPose(n.pose);
+          if (b.x < rect.x + rect.width && b.x + b.width > rect.x
+            && b.y < rect.y + rect.height && b.y + b.height > rect.y) {
+            hits.push(n.id);
+          }
+        }
+        return hits;
+      },
+      // applyOps for marquee-driven SetSelection ops; actual pose mutation
+      // ops aren't expected from the default area-select behaviors.
+      applyOps: (ops: Op[]) => {
+        for (const op of ops) op.apply(selection.adapterMethods);
+      },
     };
   }, [scene, commitInsert, insertLayer, selection]);
 
