@@ -260,3 +260,47 @@ describe('dispatcher: ctx overrides', () => {
     });
   });
 });
+
+describe('dispatcher: onGestureChange', () => {
+  it('fires on pending start, drag promotion, and end', () => {
+    const onGestureChange = vi.fn();
+    const tool = defineTool({
+      id: 't',
+      drag: { onStart: () => 'pass', onMove: () => 'pass', onEnd: () => 'pass' },
+    });
+    const d = createToolsDispatcher({
+      getSlots: () => ({ modifier: null, active: tool, alwaysOn: [] }),
+      getCtx: () => makeCtx(),
+      onGestureChange,
+    });
+
+    d.onPointerDown(pointerEvent('pointerdown'));
+    expect(onGestureChange).toHaveBeenCalledTimes(1); // pending start
+
+    d.onPointerMove(pointerEvent('pointermove', { clientX: 50, clientY: 50 }));
+    expect(onGestureChange).toHaveBeenCalledTimes(2); // pending → drag
+
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 50, clientY: 50 }));
+    expect(onGestureChange).toHaveBeenCalledTimes(3); // end
+  });
+
+  it('fires on cancelGesture mid-drag', () => {
+    const onGestureChange = vi.fn();
+    const tool = defineTool({
+      id: 't',
+      drag: { onStart: () => 'pass', onCancel: () => {} },
+    });
+    const d = createToolsDispatcher({
+      getSlots: () => ({ modifier: null, active: tool, alwaysOn: [] }),
+      getCtx: () => makeCtx(),
+      onGestureChange,
+    });
+
+    d.onPointerDown(pointerEvent('pointerdown'));
+    d.onPointerMove(pointerEvent('pointermove', { clientX: 50, clientY: 50 }));
+    onGestureChange.mockClear();
+
+    d.cancelGesture();
+    expect(onGestureChange).toHaveBeenCalledTimes(1);
+  });
+});

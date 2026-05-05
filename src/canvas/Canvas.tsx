@@ -458,13 +458,9 @@ function resolveToolsCursor(
   if (typeof tool.cursor === 'string') return tool.cursor;
   if (!ctxBase) return undefined;
   // Function form: invoke at render time with the live base ctx and the
-  // dispatcher's current scratch (if a gesture is in flight). Render-time
-  // evaluation means cursor only re-resolves when the component re-renders —
-  // scratch mutations inside the dispatcher don't trigger React updates on
-  // their own. tools.modifierEngaged transitions DO re-render (state), so
-  // modifier-driven cursors (e.g. hand-while-space) update correctly.
-  // Reactive cursor changes during an in-flight gesture (e.g. grab→grabbing
-  // mid-drag) need a `gestureTick` state on useTools — tracked in TODO.
+  // dispatcher's current scratch (if a gesture is in flight). Gesture phase
+  // transitions bump `tools.gestureTick`, which forces a re-render so the
+  // cursor re-resolves mid-drag (e.g. grab→grabbing).
   try {
     const base = ctxBase();
     const scratch = tools.dispatcher.getActiveScratch?.() ?? null;

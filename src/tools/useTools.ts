@@ -41,6 +41,11 @@ export interface ToolsApi {
   registry: Readonly<Record<string, AnyTool>>;
   /** The dispatcher `<Canvas>` wires to its DOM events. */
   dispatcher: ToolsDispatcher;
+  /** Increments whenever an in-flight gesture starts, transitions phase, or
+   *  ends. Consumers (e.g. `<Canvas>` cursor resolution) include this in
+   *  their render deps to re-evaluate derived state on real DOM events
+   *  rather than waiting for an unrelated re-render. */
+  gestureTick: number;
   /** Returns true if a tool with the given id is in the registry or alwaysOn list. */
   has(id: string): boolean;
   /** All overlay layers from currently-engaged tools (active slot, modifier
@@ -73,6 +78,7 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
 
   const [active, setActiveState] = useState<string>(opts.active);
   const [modifierEngaged, setModifierEngaged] = useState<string | null>(null);
+  const [gestureTick, setGestureTick] = useState(0);
 
   // Refs so the dispatcher's getSlots/getCtx callbacks see latest values
   // without re-creating the dispatcher.
@@ -99,6 +105,7 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
           if (getCtxRef.current) return getCtxRef.current(overrides);
           return DEFAULT_CTX;
         },
+        onGestureChange: () => setGestureTick((t) => t + 1),
       }),
     [],
   );
@@ -138,6 +145,7 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
     alwaysOn: alwaysOnRef.current,
     registry: registryRef.current,
     dispatcher,
+    gestureTick,
     has(id: string): boolean {
       return id in registryRef.current || alwaysOnRef.current.some(t => t.id === id);
     },

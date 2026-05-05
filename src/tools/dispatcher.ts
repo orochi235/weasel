@@ -23,6 +23,12 @@ export interface ToolsDispatcherOptions {
   /** Pixel distance the pointer must travel before a click is reclassified
    *  as a drag. Default 4. */
   threshold?: number;
+  /** Optional callback fired whenever an in-flight gesture starts or ends
+   *  (including phase transitions pending → drag → end/cancel). `useTools`
+   *  uses this to bump a render tick so consumers reading
+   *  `dispatcher.getActiveScratch()` (e.g. function-form `cursor`) re-resolve
+   *  on real DOM events. */
+  onGestureChange?: () => void;
 }
 
 interface InFlight {
@@ -92,6 +98,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
 
   function endGesture(): void {
     inFlight = null;
+    opts.onGestureChange?.();
   }
 
   function onPointerDown(e: PointerEvent): void {
@@ -129,6 +136,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
           startClient: { x: e.clientX, y: e.clientY },
           phase: 'pending',
         };
+        opts.onGestureChange?.();
         return;
       }
     }
@@ -147,6 +155,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       startClient: { x: e.clientX, y: e.clientY },
       phase: 'pending',
     };
+    opts.onGestureChange?.();
   }
 
   function onPointerMove(e: PointerEvent): void {
@@ -170,6 +179,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
         inFlight.scratch = startCtx.scratch;
       }
       inFlight.phase = 'drag';
+      opts.onGestureChange?.();
       return;
     }
 
