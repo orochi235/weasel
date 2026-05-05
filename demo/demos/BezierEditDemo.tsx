@@ -1,16 +1,19 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   Canvas,
   PathBuilder,
-  traceToContext,
-  PATH_C,
   pathPoseDescriptor,
   pointInPath,
+  PATH_C,
+  traceToContext,
+  useEditAnchors,
+  useEditAnchorsTool,
   useSelection,
   useSelectTool,
   useTools,
 } from '@orochi235/weasel';
 import type {
+  EditAnchorsAdapter,
   Path,
   PolygonPath,
 } from '@orochi235/weasel';
@@ -37,14 +40,10 @@ export function BezierEditDemo() {
   const [zoom, setZoom] = useState(1);
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const selection = useSelection();
 
-  // Hand-rolled adapter (no `arrayAdapter`) — single-object scene. We spread
-  // `selection.adapterMethods` so the tool's areaSelect surface reads/writes
-  // the same selection state as <Canvas>. AreaSelect's `hitTestArea`/
-  // `applyOps` are stubs because this demo doesn't use marquee selection;
-  // they don't clobber anything since nothing else provides them.
   const adapter = {
     getObject: (id: string) => (id === ID ? { id } : undefined),
     getObjects: () => [{ id: ID }],
@@ -71,7 +70,41 @@ export function BezierEditDemo() {
     },
     getObject: (id) => (id === ID ? { id } : null),
   });
-  const tools = useTools({ active: 'select', registry: { select } });
+
+  // Anchor-edit gesture — driven by the tool dispatcher when 'edit-anchors'
+  // is the active slot. The consumer owns `editingId`: set it on dbl-click,
+  // clear it on Esc (via the tool's `onExit`).
+  const editAnchorsAdapter = useMemo<EditAnchorsAdapter<PathObj>>(() => ({
+    getObject: (id) => (id === ID ? { id } : undefined),
+    getPose: () => pathRef.current,
+    setPose: (_id, p) => setPath(p),
+  }), []);
+  const editAnchorsCtl = useEditAnchors<PathObj>(editAnchorsAdapter, {
+    editingId,
+    hitRadius: HANDLE / zoom,
+  });
+  const editAnchorsTool = useEditAnchorsTool(editAnchorsCtl, {
+    onExit: () => setEditingId(null),
+    overlayStyle: { selectedAnchorFill: '#7fb069' },
+  });
+
+  const tools = useTools({
+    active: editingId ? 'edit-anchors' : 'select',
+    registry: { select, 'edit-anchors': editAnchorsTool },
+  });
+
+  const onDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    const canvas = target.tagName === 'CANVAS'
+      ? (target as HTMLCanvasElement)
+      : target.querySelector('canvas');
+    if (!canvas) return;
+    const r = canvas.getBoundingClientRect();
+    const z = zoomRef.current;
+    const wx = (e.clientX - r.left) / z;
+    const wy = (e.clientY - r.top) / z;
+    if (pointInPath(pathRef.current, wx, wy)) setEditingId(ID);
+  };
 
   const appendCurve = () => {
     const p = pathRef.current;
@@ -95,18 +128,10 @@ export function BezierEditDemo() {
     setPath(next);
   };
 
-  // Scaled-canvas zoom: a CSS transform on the wrapper grows/shrinks the
-  // canvas pixels visually without touching its internal coords. The custom
-  // `clientToWorld` divides client→canvas-CSS-px by the live zoom so pointer
-  // math stays in content units, and `handleHitRadius` is inversely scaled so
-  // the user perceives the same screen-px tolerance at any zoom.
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <div style={{ display: 'flex', gap: 4 }}>
-        <button
-          onClick={appendCurve}
-          style={btn}
-        >Add point</button>
+        <button onClick={appendCurve} style={btn}>Add point</button>
         <span style={{ width: 12 }} />
         {ZOOM_LEVELS.map((z) => (
           <button
@@ -120,36 +145,37 @@ export function BezierEditDemo() {
           >{z}×</button>
         ))}
       </div>
-      <div style={{ width: W * zoom, height: H * zoom, overflow: 'hidden' }}>
+      <div
+        style={{ width: W * zoom, height: H * zoom, overflow: 'hidden' }}
+        onDoubleClick={onDoubleClick}
+      >
         <div style={{ width: W, height: H, transform: `scale(${zoom})`, transformOrigin: '0 0' }}>
           <Canvas
-      width={W}
-      height={H}
-      className="ckd-canvas"
-      adapter={adapter}
-      selection={selection}
-      tools={tools}
-      clientToWorld={(canvas, cx, cy) => {
-        const r = canvas.getBoundingClientRect();
-        const z = zoomRef.current;
-        return [(cx - r.left) / z, (cy - r.top) / z];
-      }}
-      onTapEmpty={() => {}}
-      editAnchors
-      layers={{
-        scene: {
-          drawOne: (cx, _o, p) => {
-            cx.strokeStyle = '#f5b7a3';
-            cx.lineWidth = 2;
-            cx.beginPath();
-            traceToContext(cx, p);
-            cx.stroke();
-          },
-        },
-        selectionOverlay: { handles: { size: HANDLE } },
-        anchorEditOverlay: { selectedAnchorFill: '#7fb069' },
-      }}
-    />
+            width={W}
+            height={H}
+            className="ckd-canvas"
+            adapter={adapter}
+            selection={selection}
+            tools={tools}
+            clientToWorld={(canvas, cx, cy) => {
+              const r = canvas.getBoundingClientRect();
+              const z = zoomRef.current;
+              return [(cx - r.left) / z, (cy - r.top) / z];
+            }}
+            onTapEmpty={() => {}}
+            layers={{
+              scene: {
+                drawOne: (cx, _o, p) => {
+                  cx.strokeStyle = '#f5b7a3';
+                  cx.lineWidth = 2;
+                  cx.beginPath();
+                  traceToContext(cx, p);
+                  cx.stroke();
+                },
+              },
+              selectionOverlay: { handles: { size: HANDLE } },
+            }}
+          />
         </div>
       </div>
     </div>
@@ -169,38 +195,45 @@ const INITIAL_PATH = new PathBuilder()
   .curveTo(300, 260, 380, 260, 420, 100)
   .build();
 
-// Canvas owns the editAnchors state. Double-click a polygon-shaped object's
-// body to enter edit mode; Esc exits. While editing, anchor + control-handle
-// circles render via the anchorEditOverlay slot, and the selection AABB for
-// the editing object is suppressed.
-//
-// v1 corner-only behavior: dragging an anchor moves only its on-curve coord;
-// adjacent control handles stay where they are in world space (no smoothing
-// yet — that's the deferred next iteration).
-//
-// Zoom is a CSS transform on the wrapper — the canvas pixels grow visually
-// without changing internal coords. \`clientToWorld\` divides by zoom so
-// pointer math stays in content units; \`handleHitRadius\` is inversely
-// scaled so the user-perceived hit tolerance is constant in screen px.
+// Demo owns the editingId state. Double-click a polygon body → enter edit
+// mode (active tool flips to 'edit-anchors'). Esc → onExit clears
+// editingId, which flips the active tool back to 'select'.
+const [editingId, setEditingId] = useState<string | null>(null);
+
+const select = useSelectTool<PathObj, Path>(adapter, {
+  hitBody: (wx, wy) => (pointInPath(pathRef.current, wx, wy) ? [ID] : []),
+  boundsOf: (id) => pathPoseDescriptor.getBounds(pathRef.current),
+  resize: { geometry: pathPoseDescriptor },
+  drawGhost: (cx, _o, p) => { /* trace path */ },
+  getObject: (id) => /* lookup */,
+});
+
+const editAnchorsAdapter = useMemo<EditAnchorsAdapter<PathObj>>(() => ({
+  getObject: (id) => (id === ID ? { id } : undefined),
+  getPose: () => pathRef.current,
+  setPose: (_id, p) => setPath(p),
+}), []);
+const editAnchorsCtl = useEditAnchors(editAnchorsAdapter, { editingId, hitRadius: HANDLE / zoom });
+const editAnchorsTool = useEditAnchorsTool(editAnchorsCtl, {
+  onExit: () => setEditingId(null),
+  overlayStyle: { selectedAnchorFill: '#7fb069' },
+});
+
+const tools = useTools({
+  active: editingId ? 'edit-anchors' : 'select',
+  registry: { select, 'edit-anchors': editAnchorsTool },
+});
+
 return (
-  <div style={{ width: W * zoom, height: H * zoom, overflow: 'hidden' }}>
-    <div style={{ width: W, height: H, transform: \`scale(\${zoom})\`, transformOrigin: '0 0' }}>
-      <Canvas
-        width={W} height={H}
-        adapter={adapter}
-        editAnchors
-        handleHitRadius={HANDLE / zoom}
-        clientToWorld={(canvas, cx, cy) => {
-          const r = canvas.getBoundingClientRect();
-          return [(cx - r.left) / zoomRef.current, (cy - r.top) / zoomRef.current];
-        }}
-        layers={{
-          scene: { drawOne: (cx, _o, p) => { cx.strokeStyle = '#f5b7a3'; cx.lineWidth = 2; traceToContext(cx, p); cx.stroke(); } },
-          selectionOverlay: { handles: { size: HANDLE } },
-          anchorEditOverlay: { selectedAnchorFill: '#7fb069' },
-        }}
-      />
-    </div>
+  <div onDoubleClick={(e) => /* if pointInPath → setEditingId(ID) */}>
+    <Canvas
+      adapter={adapter} selection={selection} tools={tools}
+      clientToWorld={(canvas, cx, cy) => /* zoom-aware */}
+      layers={{
+        scene: { drawOne: (cx, _o, p) => { /* trace path */ } },
+        selectionOverlay: { handles: { size: HANDLE } },
+      }}
+    />
   </div>
 );
 `;
