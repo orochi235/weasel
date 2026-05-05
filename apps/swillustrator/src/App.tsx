@@ -29,6 +29,9 @@ import {
   PropertyNumberInput,
   PropertyButton,
   PropertyReadOnly,
+  PropertyTextInput,
+  PropertySelect,
+  PropertyMiniLabel,
 } from '@orochi235/weasel-ui';
 import '@orochi235/weasel-ui/tokens.css';
 interface View { x: number; y: number; scale: number }
@@ -59,6 +62,10 @@ export function App() {
   const [fillColor, setFillColor] = useState('#7fb069');
   const [strokeColor, setStrokeColor] = useState('#1a130d');
   const [strokeWidth, setStrokeWidth] = useState(1);
+  const [docTitle, setDocTitle] = useState('Untitled');
+  const [paperSize, setPaperSize] = useState<'letter' | 'a4' | 'legal'>('letter');
+  const [gridDensity, setGridDensity] = useState(8);
+  const [sidebarWidth, setSidebarWidth] = useState(240);
   const itemsRef = useRef(items);
   itemsRef.current = items;
   const selection = useSelection({ mode: 'multi' });
@@ -336,7 +343,26 @@ export function App() {
         </div>
       </main>
 
-      <aside className="swill-sidebar right">
+      <div
+        className="swill-sidebar-resize"
+        onPointerDown={(e) => {
+          e.preventDefault();
+          (e.target as HTMLElement).setPointerCapture(e.pointerId);
+          const startX = e.clientX;
+          const startW = sidebarWidth;
+          const move = (ev: PointerEvent) => {
+            const next = Math.max(180, Math.min(500, startW + (startX - ev.clientX)));
+            setSidebarWidth(next);
+          };
+          const up = () => {
+            window.removeEventListener('pointermove', move);
+            window.removeEventListener('pointerup', up);
+          };
+          window.addEventListener('pointermove', move);
+          window.addEventListener('pointerup', up);
+        }}
+      />
+      <aside className="swill-sidebar right" style={{ width: sidebarWidth }}>
         {primary ? (
           <PropertiesPanel title={`Selection (${selectedItems.length})`}>
             <PropertyRow label="Kind">
@@ -393,6 +419,45 @@ export function App() {
             </PropertyRow>
           </PropertiesPanel>
         )}
+
+        <PropertiesPanel title="Document">
+          <PropertyRow label="Title">
+            <PropertyTextInput value={docTitle} onChange={setDocTitle} />
+          </PropertyRow>
+          <PropertyRow label="Paper">
+            <PropertySelect
+              value={paperSize}
+              onChange={setPaperSize}
+              options={[
+                { value: 'letter', label: 'US Letter' },
+                { value: 'a4', label: 'A4' },
+                { value: 'legal', label: 'Legal' },
+              ]}
+            />
+          </PropertyRow>
+        </PropertiesPanel>
+
+        <PropertiesPanel title="View">
+          <PropertyRow label="Zoom">
+            <PropertyMiniLabel span={2}>%</PropertyMiniLabel>
+            <PropertyNumberInput
+              value={Math.round(view.scale * 100)}
+              onChange={(v) => setView((cur) => ({ ...cur, scale: Math.max(0.1, v / 100) }))}
+              span={4}
+              min={10}
+              max={400}
+              step={10}
+            />
+          </PropertyRow>
+          <PropertyRow label="Grid">
+            <PropertyNumberInput value={gridDensity} onChange={setGridDensity} span={4} min={2} max={64} step={1} />
+          </PropertyRow>
+          <PropertyRow>
+            <PropertyButton onClick={() => setView({ x: 0, y: 0, scale: 1 })} span={12}>
+              Reset view
+            </PropertyButton>
+          </PropertyRow>
+        </PropertiesPanel>
 
         <div style={{ flex: 1 }} />
         <div className="swill-section-label" style={{ padding: '0 12px' }}>Scene</div>

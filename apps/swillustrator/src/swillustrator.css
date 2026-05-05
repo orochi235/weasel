@@ -36,8 +36,11 @@ html, body, #root {
   border-right: none;
   border-left: 1px solid #3a2e22;
   width: 240px;
+  max-width: 500px;
   align-items: stretch;
   padding: 12px 0;
+  gap: 4px;
+  overflow-y: auto;
   /* Dark-theme overrides for @orochi235/weasel-ui tokens. */
   --wui-text: #d4c4a8;
   --wui-text-muted: #8a7a5a;
@@ -76,6 +79,17 @@ html, body, #root {
   opacity: 0.6;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 10px;
+}
+
+.swill-sidebar-resize {
+  width: 4px;
+  flex-shrink: 0;
+  cursor: ew-resize;
+  background: transparent;
+  border-left: 1px solid #3a2e22;
+}
+.swill-sidebar-resize:hover {
+  background: #3a2e22;
 }
 
 .swill-stage {
