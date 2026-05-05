@@ -113,7 +113,7 @@ export function LayoutDemo() {
     // Returns every id whose bounds cover the point. The framework's
     // `pickTopMostHit` (inside useSelectTool) walks the parent chain to prefer
     // descendants over their ancestors — demos don't need to sort here.
-    hitBody: (wx, wy) =>
+    pickEvery: (wx, wy) =>
       Object.keys(scene.poses).filter((id) => {
         const p = scene.poses[id];
         return wx >= p.x && wx <= p.x + p.width && wy >= p.y && wy <= p.y + p.height;

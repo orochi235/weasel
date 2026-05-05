@@ -45,7 +45,7 @@ describe('useSelectTool', () => {
   it('declares id "select", V keybinding, and default cursor', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
-        hitBody: () => [],
+        pickEvery: () => [],
         boundsOf: () => ({ x: 0, y: 0, width: 10, height: 10 }),
       }),
     );
@@ -61,7 +61,7 @@ describe('useSelectTool', () => {
     });
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
-        hitBody: () => ['hit-id'],
+        pickEvery: () => ['hit-id'],
         boundsOf: () => ({ x: 0, y: 0, width: 10, height: 10 }),
       }),
     );
@@ -86,7 +86,7 @@ describe('useSelectTool', () => {
     });
     const { result } = renderHook(() =>
       useSelectTool(adapter, {
-        hitBody: () => ['F', 'f1'], // parent before child — buggy demo order
+        pickEvery: () => ['F', 'f1'], // parent before child — buggy demo order
         boundsOf: () => ({ x: 0, y: 0, width: 10, height: 10 }),
       }),
     );
@@ -98,7 +98,7 @@ describe('useSelectTool', () => {
     const ctx = ctxOver();
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
-        hitBody: () => [],
+        pickEvery: () => [],
         boundsOf: () => ({ x: 0, y: 0, width: 10, height: 10 }),
       }),
     );
@@ -113,7 +113,7 @@ describe('useSelectTool', () => {
     });
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
-        hitBody: () => [],
+        pickEvery: () => [],
         boundsOf: () => null,
       }),
     );
@@ -128,7 +128,7 @@ describe('useSelectTool', () => {
     });
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
-        hitBody: () => [],
+        pickEvery: () => [],
         boundsOf: () => null,
       }),
     );
@@ -145,7 +145,7 @@ describe('useSelectTool', () => {
     });
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
-        hitBody: () => [],
+        pickEvery: () => [],
         boundsOf: () => null,
       }),
     );
@@ -154,10 +154,59 @@ describe('useSelectTool', () => {
     expect(clear).not.toHaveBeenCalled();
   });
 
+  it('pickBest (when supplied) replaces pickEvery+pickTopMostHit on body branch', () => {
+    const pickBest = vi.fn(() => 'group-1');
+    const applyClick = vi.fn();
+    const ctx = ctxOver({
+      selection: { current: [], applyClick, set: vi.fn(), clear: vi.fn() } as any,
+    });
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        pickEvery: () => ['leaf', 'group-1'],
+        pickBest,
+        boundsOf: () => null,
+      }),
+    );
+    result.current.pointer!.onDown!(pe(), ctx);
+    expect(pickBest).toHaveBeenCalledWith(50, 50, false, []);
+    expect(applyClick).toHaveBeenCalledWith('group-1', ctx.modifiers);
+    expect(ctx.scratch).toEqual(expect.objectContaining({ kind: 'move', ids: ['group-1'] }));
+  });
+
+  it('pickBest returning null falls through to area-select', () => {
+    const ctx = ctxOver();
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        pickEvery: () => ['anything'],
+        pickBest: () => null,
+        boundsOf: () => null,
+      }),
+    );
+    result.current.pointer!.onDown!(pe(), ctx);
+    expect(ctx.scratch).toEqual({ kind: 'area' });
+  });
+
+  it('pickBest receives alt modifier and current selection', () => {
+    const pickBest = vi.fn(() => 'sub');
+    const ctx = ctxOver({
+      modifiers: { alt: true, shift: false, meta: false, ctrl: false, space: false },
+      selection: { current: ['outer'], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
+    });
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        pickEvery: () => ['outer', 'sub'],
+        pickBest,
+        boundsOf: () => null,
+      }),
+    );
+    result.current.pointer!.onDown!(pe(), ctx);
+    expect(pickBest).toHaveBeenCalledWith(50, 50, true, ['outer']);
+  });
+
   it('initScratch returns kind:idle', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
-        hitBody: () => [],
+        pickEvery: () => [],
         boundsOf: () => null,
       }),
     );
@@ -174,7 +223,7 @@ describe('useSelectTool', () => {
     });
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
-        hitBody: () => [],
+        pickEvery: () => [],
         boundsOf: (id) => id === 'obj1' ? { x: 0, y: 0, width: 100, height: 100 } : null,
         handleHitRadius: 10,
       }),
@@ -196,7 +245,7 @@ describe('useSelectTool', () => {
     });
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
-        hitBody: () => [],
+        pickEvery: () => [],
         boundsOf: (id) => (id === 'obj1' ? { x: 0, y: 0, width: 100, height: 100 } : null),
         handleHitRadius: 10,
       }),
@@ -223,7 +272,7 @@ describe('useSelectTool', () => {
     });
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
-        hitBody: () => ['hit-id'],
+        pickEvery: () => ['hit-id'],
         boundsOf: () => null,
       }),
     );
@@ -237,7 +286,7 @@ describe('useSelectTool', () => {
     });
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
-        hitBody: () => [],
+        pickEvery: () => [],
         boundsOf: () => null,
       }),
     );
@@ -248,7 +297,7 @@ describe('useSelectTool', () => {
   it('drag.onEnd claims for active scratch kinds', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
-        hitBody: () => [],
+        pickEvery: () => [],
         boundsOf: () => null,
       }),
     );
@@ -270,7 +319,7 @@ describe('useSelectTool — debug recording', () => {
     const sink = createDebugSink({ hitboxes: true });
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
-        hitBody: () => [],
+        pickEvery: () => [],
         boundsOf: () => ({ x: 0, y: 0, width: 40, height: 30 }),
         debug: sink,
       }),
@@ -323,7 +372,7 @@ describe('useSelectTool overlay', () => {
   it('publishes a RenderLayer on the Tool record', () => {
     const { result } = renderHook(() =>
       useSelectTool(adapterFor(), {
-        hitBody: () => [],
+        pickEvery: () => [],
         boundsOf: () => null,
       }),
     );
@@ -336,7 +385,7 @@ describe('useSelectTool overlay', () => {
     const drawGhost = vi.fn();
     const { result } = renderHook(() =>
       useSelectTool(adapterFor(), {
-        hitBody: () => [],
+        pickEvery: () => [],
         boundsOf: () => null,
         drawGhost,
         getObject: (id) => ({ id, x: 0, y: 0, width: 10, height: 10 }) as any,
@@ -352,7 +401,7 @@ describe('useSelectTool overlay', () => {
   it('area-select marquee renders during area-select gesture', () => {
     const { result } = renderHook(() =>
       useSelectTool(adapterFor(), {
-        hitBody: () => [],
+        pickEvery: () => [],
         boundsOf: () => null,
       }),
     );
@@ -370,7 +419,7 @@ describe('useSelectTool overlay', () => {
   it('area-select marquee respects style overrides', () => {
     const { result } = renderHook(() =>
       useSelectTool(adapterFor(), {
-        hitBody: () => [],
+        pickEvery: () => [],
         boundsOf: () => null,
         areaSelectOverlayStyle: { fill: '#abc', stroke: '#def', dash: [5, 5], lineWidth: 3 },
       }),
@@ -391,7 +440,7 @@ describe('useSelectTool overlay', () => {
     const getObject = vi.fn((id: string) => ({ id, x: 0, y: 0, width: 10, height: 10 }) as any);
     const { result } = renderHook(() =>
       useSelectTool(adapterFor(), {
-        hitBody: () => ['a', 'b'],
+        pickEvery: () => ['a', 'b'],
         boundsOf: () => null,
         drawGhost,
         getObject,
@@ -415,7 +464,7 @@ describe('useSelectTool overlay', () => {
   it('move ghost skips silently when drawGhost or getObject are missing', () => {
     const { result } = renderHook(() =>
       useSelectTool(adapterFor(), {
-        hitBody: () => ['a'],
+        pickEvery: () => ['a'],
         boundsOf: () => null,
         // no drawGhost, no getObject
       }),
@@ -440,7 +489,7 @@ describe('useSelectTool overlay', () => {
     const drawGhost = vi.fn();
     const { result } = renderHook(() =>
       useSelectTool(adapterFor(), {
-        hitBody: () => [],
+        pickEvery: () => [],
         boundsOf: () => ({ x: 0, y: 0, width: 100, height: 100 }),
         drawGhost,
         getObject: (id) => ({ id, x: 0, y: 0, width: 100, height: 100 }) as any,
@@ -470,7 +519,7 @@ describe('useSelectTool overlay', () => {
         getPose: (_id: string) => ({ x: 0, y: 0, width: 10, height: 10, rotation: 0 }),
         getObject: (id: string) => ({ id, x: 0, y: 0, width: 10, height: 10, rotation: 0 }),
       }), {
-        hitBody: () => [],
+        pickEvery: () => [],
         boundsOf: () => ({ x: 0, y: 0, width: 100, height: 100 }),
         drawGhost,
         getObject: (id) => ({ id, x: 0, y: 0, width: 10, height: 10, rotation: 0 }) as any,
@@ -499,7 +548,7 @@ describe('useSelectTool overlay', () => {
     });
     const { result } = renderHook(() =>
       useSelectTool(adapterFor(), {
-        hitBody: () => ['a'],
+        pickEvery: () => ['a'],
         boundsOf: () => null,
         drawGhost,
         getObject: (id) => ({ id, x: 0, y: 0, width: 10, height: 10 }) as any,

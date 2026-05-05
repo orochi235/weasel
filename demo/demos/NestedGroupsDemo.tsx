@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import {
   Canvas,
   defineTool,
+  nestedGroupHitTester,
   useMove,
   useNestedGroup,
   useNestedUngroup,
@@ -102,65 +103,25 @@ export function NestedGroupsDemo() {
     isGroup: (_id, obj) => obj?.isGroup === true,
   });
 
-  // Compose a node's world-space pose by walking ancestors.
-  const worldPoseOf = (id: string): Pose | null => {
-    const n = byId(id); if (!n) return null;
-    let world = { ...n.pose };
-    let p = n.parent;
-    while (p !== null) {
-      const pn = byId(p); if (!pn) break;
-      world = { ...world, x: world.x + pn.pose.x, y: world.y + pn.pose.y };
-      p = pn.parent;
-    }
-    return world;
-  };
+  // Nested-group hit resolution lives in the kit. `pickOutermost` is the
+  // chrome-level body hit (casual click → whole top-level group).
+  // `pickBest` is the alt-aware variant the move tool consults: without
+  // Alt → outermost ancestor; with Alt → one level deeper per click,
+  // drilling group → subgroup → leaf.
+  const hitter = useMemo(
+    () => nestedGroupHitTester(adapter, {
+      composePose: composeRectPose<Pose>,
+      isGroup: (_id, obj) => obj?.isGroup === true,
+    }),
+    // adapter is rebuilt every render but reads via nodesRef — closures stay live.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
-  // Walk root → leaf so the chain reads outermost-first.
-  const ancestorChain = (id: string): string[] => {
-    const chain: string[] = [];
-    let cur: string | null = id;
-    while (cur !== null) { chain.unshift(cur); cur = adapter.getParent(cur); }
-    return chain;
-  };
-
-  // Find the leaf under the cursor (top-down z-order, skipping group bodies).
-  const hitLeaf = (wx: number, wy: number): string | null => {
-    for (let i = nodesRef.current.length - 1; i >= 0; i--) {
-      const n = nodesRef.current[i]; if (n.isGroup) continue;
-      const w = worldPoseOf(n.id); if (!w) continue;
-      if (wx >= w.x && wx <= w.x + w.width && wy >= w.y && wy <= w.y + w.height) {
-        return n.id;
-      }
-    }
-    return null;
-  };
-
-  // Default Canvas hit-test (used by built-in chrome): resolve to the
-  // outermost group so a casual click selects the whole tree.
-  const hitBody = (wx: number, wy: number): string | null => {
-    const leaf = hitLeaf(wx, wy);
-    return leaf === null ? null : ancestorChain(leaf)[0];
-  };
-
-  // Alt-aware hit resolution used by the move tool's pointer.onDown.
-  // Without Alt: outermost ancestor (Figma's "select group" default).
-  // With Alt: drill one level deeper than the deepest currently-selected
-  // ancestor in the chain (repeated Alt-clicks step from group → subgroup
-  // → leaf). With Alt and nothing in the chain selected, jump straight to
-  // the leaf so users always have a fast path to the deepest object.
-  const hitForClick = (wx: number, wy: number, alt: boolean): string | null => {
-    const leaf = hitLeaf(wx, wy);
-    if (leaf === null) return null;
-    const chain = ancestorChain(leaf);
-    if (!alt) return chain[0];
-    const sel = selRef.current.get();
-    for (let i = chain.length - 1; i >= 0; i--) {
-      if (sel.includes(chain[i])) {
-        return chain[Math.min(i + 1, chain.length - 1)];
-      }
-    }
-    return chain[chain.length - 1];
-  };
+  // Compose a node's world-space pose for the custom scene/ghost layers.
+  const worldPoseOf = useMemo(() => worldPoseLookup(adapter, composeRectPose<Pose>),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []);
 
   // Custom scene layer — the standard scene slot calls drawOne with TPose,
   // but our TPose is local while we render in world coords. Painting in a
@@ -226,15 +187,20 @@ export function NestedGroupsDemo() {
   // reading `move.overlay` for hide-ids and ghost rendering.
   const moveRef = useRef(move);
   moveRef.current = move;
-  const hitRef = useRef(hitForClick);
-  hitRef.current = hitForClick;
+  const hitterRef = useRef(hitter);
+  hitterRef.current = hitter;
   const moveTool = useMemo(() => defineTool<{ ids: string[] | null }>({
     id: 'move',
     cursor: 'default',
     initScratch: () => ({ ids: null }),
     pointer: {
       onDown: (_e, ctx) => {
-        const id = hitRef.current(ctx.worldX, ctx.worldY, ctx.modifiers.alt);
+        const id = hitterRef.current.pickBest(
+          ctx.worldX,
+          ctx.worldY,
+          ctx.modifiers.alt,
+          ctx.selection.current,
+        );
         if (id === null) {
           ctx.selection.set([]);
           ctx.scratch = { ids: null };
@@ -287,7 +253,7 @@ export function NestedGroupsDemo() {
       adapter={adapter}
       selection={selection}
       tools={tools}
-      hitBody={hitBody}
+      hitBody={hitter.pickOutermost}
       gestures={{ undoRedo: { adapter: history } }}
       layers={{
         scene: null,
@@ -333,14 +299,26 @@ useNestedUngroup(adapter, { ...composeOpts, bindKeyboard: true,
   isGroup: (_id, obj) => obj?.isGroup === true,
 });
 
-// Custom move tool wraps the cascade-aware controller. useSelectTool can't
-// be used here because of the bespoke top-level group hit resolution; this
-// inline tool routes pointer/drag through the move controller and lets the
-// custom scene/ghost layers keep reading move.overlay.
+// Nested-group hit resolution lives in the kit. pickOutermost is the
+// chrome-level body hit; pickBest is the alt-aware variant the move tool
+// consults (drills one level per Alt-click: group → subgroup → leaf).
+const hitter = nestedGroupHitTester(adapter, {
+  composePose: composeRectPose,
+  isGroup: (_id, obj) => obj?.isGroup === true,
+});
+
+// Custom move tool wraps the cascade-aware controller. We can't drop in
+// useSelectTool because the demo's custom scene/ghost layers read
+// move.overlay directly. The tool just routes pointer/drag through it.
 const moveTool = defineTool({
   id: 'move', cursor: 'default',
   initScratch: () => ({ ids: null }),
-  pointer: { onDown: (_e, ctx) => { /* hitBody → selection.applyClick → scratch.ids */ } },
+  pointer: {
+    onDown: (_e, ctx) => {
+      const id = hitter.pickBest(ctx.worldX, ctx.worldY, ctx.modifiers.alt, ctx.selection.current);
+      // ...applyClick(id) → scratch.ids
+    },
+  },
   drag: {
     onStart: (e, ctx) => move.start({ ids: ctx.scratch.ids, ... }),
     onMove:  (e, ctx) => move.move({ ... }),
@@ -356,9 +334,7 @@ return (
     adapter={adapter}
     selection={selection}
     tools={tools}
-    hitBody={hitBody}        // chrome hit-test: outermost group
-    /* the move tool uses an alt-aware variant in pointer.onDown that
-       drills one level deeper per Alt-click (group → subgroup → leaf) */
+    hitBody={hitter.pickOutermost}   // chrome hit-test: outermost group
     gestures={{ undoRedo: { adapter: history } }}
     layers={{
       scene: null,

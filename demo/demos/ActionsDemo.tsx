@@ -67,7 +67,7 @@ export function ActionsDemo() {
   useReorder(adapter, { enableKeyboard: focused });
 
   const select = useSelectTool<Rect, Pose>(adapter, {
-    hitBody: (wx, wy) =>
+    pickEvery: (wx, wy) =>
       rectsRef.current
         .filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height)
         .map((r) => r.id),

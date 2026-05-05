@@ -99,7 +99,7 @@ const adapter = {
 // in the active slot. The tool owns the ghost overlay internally.
 const clone = useCloneTool(adapter, {
   behaviors: [cloneByAltDrag()],
-  hitBody: (wx, wy) => /* return topmost rect id, or null */,
+  hitAll: (wx, wy) => /* return topmost rect id, or null */,
   drawGhost: (cx, items) => /* paint translucent rects at items[i].{x,y} */,
 });
 

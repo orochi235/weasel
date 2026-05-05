@@ -57,7 +57,7 @@ export function BezierEditDemo() {
   };
 
   const select = useSelectTool<PathObj, Pose>(adapter, {
-    hitBody: (wx, wy) => (pointInPath(pathRef.current, wx, wy) ? [ID] : []),
+    pickEvery: (wx, wy) => (pointInPath(pathRef.current, wx, wy) ? [ID] : []),
     boundsOf: (id) => (id === ID ? pathPoseDescriptor.getBounds(pathRef.current) : null),
     handleHitRadius: HANDLE / zoom,
     resize: { geometry: pathPoseDescriptor },
@@ -201,7 +201,7 @@ const INITIAL_PATH = new PathBuilder()
 const [editingId, setEditingId] = useState<string | null>(null);
 
 const select = useSelectTool<PathObj, Path>(adapter, {
-  hitBody: (wx, wy) => (pointInPath(pathRef.current, wx, wy) ? [ID] : []),
+  pickEvery: (wx, wy) => (pointInPath(pathRef.current, wx, wy) ? [ID] : []),
   boundsOf: (id) => pathPoseDescriptor.getBounds(pathRef.current),
   resize: { geometry: pathPoseDescriptor },
   drawGhost: (cx, _o, p) => { /* trace path */ },

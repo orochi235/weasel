@@ -68,7 +68,7 @@ export function PathPoseDemo() {
   };
 
   const select = useSelectTool<PathObj, Pose>(adapter, {
-    hitBody: (wx, wy) => (pointInPath(pathRef.current, wx, wy) ? [ID] : []),
+    pickEvery: (wx, wy) => (pointInPath(pathRef.current, wx, wy) ? [ID] : []),
     boundsOf: (id) => (id === ID ? pathPoseDescriptor.getBounds(pathRef.current) : null),
     handleHitRadius: HANDLE,
     move: { behaviors: [snapBehavior(gridSnapStrategy<Path>(20, { origin: pathOriginProjection }))] },

@@ -60,7 +60,7 @@ export function ComposeDemo() {
     };
   }, [scene]);
 
-  const hitBody = (worldX: number, worldY: number): string[] => {
+  const pickEvery = (worldX: number, worldY: number): string[] => {
     const hits: string[] = [];
     for (const id of scene.renderOrder()) {
       const n = scene.get(id);
@@ -81,7 +81,7 @@ export function ComposeDemo() {
     return { x: p.x, y: p.y, width: p.width, height: p.height };
   };
 
-  const select = useSelectTool(selectAdapter, { hitBody, boundsOf });
+  const select = useSelectTool(selectAdapter, { pickEvery, boundsOf });
 
   // Insert-tool adapter: only commitInsert is exercised; the rest are stubs.
   // commitInsert appends a leaf to the scene and returns the rect so the
@@ -169,7 +169,7 @@ const selectAdapter = {
   applyOps: (ops) => { for (const op of ops) op.apply(base); },
   hitTestArea: (rect) => /* aabb-vs-aabb scan over scene.renderOrder() */,
 };
-const select = useSelectTool(selectAdapter, { hitBody, boundsOf });
+const select = useSelectTool(selectAdapter, { pickEvery, boundsOf });
 
 // useInsertTool needs InsertAdapter; only commitInsert is exercised here.
 const insertAdapter = {

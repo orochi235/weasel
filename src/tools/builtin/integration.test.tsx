@@ -73,7 +73,7 @@ describe('Phase 2a integration', () => {
       const adapter = { ...base, applyBatch };
 
       const selectTool = useSelectTool(adapter, {
-        hitBody: (wx, wy) => {
+        pickEvery: (wx, wy) => {
           for (let i = rectsRef.current.length - 1; i >= 0; i--) {
             const r = rectsRef.current[i];
             if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) {
@@ -160,7 +160,7 @@ describe('Phase 2a integration', () => {
       const deleteTool = useDeleteTool(adapter);
 
       const selectTool = useSelectTool(adapter, {
-        hitBody: () => [],
+        pickEvery: () => [],
         boundsOf: () => null,
       });
 
@@ -224,7 +224,7 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
           applyOps: () => {},
         },
         {
-          hitBody: () => [],
+          pickEvery: () => [],
           boundsOf: () => null,
         },
       );
@@ -288,7 +288,7 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
           applyOps: () => {},
         },
         {
-          hitBody: () => [],
+          pickEvery: () => [],
           boundsOf: () => null,
         },
       );
@@ -347,7 +347,7 @@ describe('Phase 2c: zoom + pan composition', () => {
         hitTestArea: () => [],
         applyOps: () => {},
       },
-      { hitBody: () => [], boundsOf: () => null },
+      { pickEvery: () => [], boundsOf: () => null },
     );
     const hand = useHandTool();
     const wheelZoom = useWheelZoomTool();
@@ -471,7 +471,7 @@ describe('Phase 2a: off-canvas pointer release backstop', () => {
       const adapter = { ...base, applyBatch };
 
       const selectTool = useSelectTool(adapter, {
-        hitBody: (wx, wy) => {
+        pickEvery: (wx, wy) => {
           for (let i = rectsRef.current.length - 1; i >= 0; i--) {
             const r = rectsRef.current[i];
             if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) {

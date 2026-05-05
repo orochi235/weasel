@@ -176,6 +176,11 @@ export {
   worldPoseLookup,
 } from './features/groups/composePose';
 export type { PoseAdapter } from './features/groups/composePose';
+export { nestedGroupHitTester } from './interactions/hit/nestedGroupHit';
+export type {
+  NestedGroupHitOpts,
+  NestedGroupHitTester,
+} from './interactions/hit/nestedGroupHit';
 export {
   PATH_M,
   PATH_L,

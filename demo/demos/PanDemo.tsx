@@ -40,7 +40,7 @@ export function PanDemo() {
     applyOps: () => {},
   };
   const select = useSelectTool(selectAdapter, {
-    hitBody: (wx, wy) => items.filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height).map((r) => r.id),
+    pickEvery: (wx, wy) => items.filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height).map((r) => r.id),
     boundsOf: (id) => { const r = items.find((o) => o.id === id); return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null; },
   });
   const hand = useHandTool();

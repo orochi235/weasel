@@ -48,8 +48,24 @@ export interface RotateOverlayStyle {
 }
 
 export interface UseSelectToolOptions<TObject extends { id: string }, TPose> {
-  /** Return ids of objects whose body covers (worldX, worldY). */
-  hitBody: (worldX: number, worldY: number) => string[];
+  /** Return ids of all objects whose painted body covers (worldX, worldY).
+   *  Order doesn't matter — the tool collapses parent/child overlap via
+   *  `pickTopMostHit`. */
+  pickEvery: (worldX: number, worldY: number) => string[];
+  /** Optional alt-aware selection-update hit returning the single id the
+   *  click should act on. When set, `pointer.onDown` routes the body-hit
+   *  branch through this instead of `pickTopMostHit(pickEvery(...))` — used by
+   *  nested-group consumers to resolve clicks to the outermost ancestor by
+   *  default and drill one level deeper per alt-click. Receives the live
+   *  selection so the drill step knows where to start. Returning `null`
+   *  means "no body hit". When omitted, the tool uses
+   *  `pickTopMostHit(pickEvery(...))`. */
+  pickBest?: (
+    worldX: number,
+    worldY: number,
+    alt: boolean,
+    selection: readonly string[],
+  ) => string | null;
   /** Return the world-space bounds of `id`, or null if not found. */
   boundsOf: (id: string) => Bounds | null;
   /** Square hit-radius for corner resize handles. Default: 8. */
@@ -323,15 +339,20 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
             }
 
             // 3. Body hit → move (+ select)
-            const ids = options.hitBody(ctx.worldX, ctx.worldY);
-            if (ids.length > 0) {
-              // pickTopMostHit collapses parent/child overlap (container's
-              // bounds also cover the child) and falls back to "last id" for
-              // pure sibling hits — matches the bottom-first iteration order
-              // most demos produce. Demos that already z-sort with topmost
-              // first should return a single-id array; this helper is a
-              // no-op in that case.
-              const top = pickTopMostHit(ids, adapter) ?? ids[0];
+            const top = options.pickBest
+              ? options.pickBest(ctx.worldX, ctx.worldY, ctx.modifiers.alt, sel)
+              : (() => {
+                  const ids = options.pickEvery(ctx.worldX, ctx.worldY);
+                  if (ids.length === 0) return null;
+                  // pickTopMostHit collapses parent/child overlap (container's
+                  // bounds also cover the child) and falls back to "last id" for
+                  // pure sibling hits — matches the bottom-first iteration order
+                  // most demos produce. Demos that already z-sort with topmost
+                  // first should return a single-id array; this helper is a
+                  // no-op in that case.
+                  return pickTopMostHit(ids, adapter) ?? ids[0];
+                })();
+            if (top !== null) {
               // Capture pre-click selection so we can decide whether the drag
               // moves the existing set or just the freshly-clicked object.
               // `ctx.selection.current` is the React snapshot from the
@@ -436,6 +457,6 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
         },
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [move, resize, rotate, areaSelect, overlay, options.hitBody, options.boundsOf, handleHitRadius, rotationHandleDistance, debug],
+    [move, resize, rotate, areaSelect, overlay, options.pickEvery, options.pickBest, options.boundsOf, handleHitRadius, rotationHandleDistance, debug],
   );
 }

@@ -87,7 +87,7 @@ export function GroupsDemo() {
   };
 
   const select = useSelectTool<Rect, Pose>(adapter, {
-    hitBody: (wx, wy) => {
+    pickEvery: (wx, wy) => {
       const id = hitBody(wx, wy);
       return id ? [id] : [];
     },

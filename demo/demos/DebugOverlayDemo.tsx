@@ -93,7 +93,7 @@ export function DebugOverlayDemo() {
   };
 
   const select = useSelectTool<Box, Pose>(adapter, {
-    hitBody: (wx, wy) =>
+    pickEvery: (wx, wy) =>
       boxesRef.current
         .filter((b) => wx >= b.x && wx <= b.x + b.width && wy >= b.y && wy <= b.y + b.height)
         .map((b) => b.id),

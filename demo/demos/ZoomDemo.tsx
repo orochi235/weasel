@@ -69,7 +69,7 @@ export function ZoomDemo() {
     applyOps: () => {},
   };
   const select = useSelectTool(selectAdapter, {
-    hitBody: (wx, wy) =>
+    pickEvery: (wx, wy) =>
       items
         .filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height)
         .map((r) => r.id),

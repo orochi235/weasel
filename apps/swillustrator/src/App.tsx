@@ -132,7 +132,7 @@ export function App() {
   adapterRef.current = adapter;
 
   const select = useSelectTool<Obj, Pose>(adapter, {
-    hitBody: (wx, wy) =>
+    pickEvery: (wx, wy) =>
       itemsRef.current
         .filter((o) => wx >= o.x && wx <= o.x + o.width && wy >= o.y && wy <= o.y + o.height)
         .map((o) => o.id),

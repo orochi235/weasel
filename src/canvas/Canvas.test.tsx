@@ -166,7 +166,7 @@ describe('<Canvas>', () => {
           ...sel.adapterMethods,
         };
         const select = useSelectTool<Rect, Pose>(adapter, {
-          hitBody: (wx, wy) =>
+          pickEvery: (wx, wy) =>
             rectsRef.current
               .filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height)
               .map((r) => r.id),
@@ -217,7 +217,7 @@ describe('<Canvas>', () => {
           ...sel.adapterMethods,
         };
         const select = useSelectTool<Rect, Pose>(adapter, {
-          hitBody: (wx, wy) =>
+          pickEvery: (wx, wy) =>
             rectsRef.current
               .filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height)
               .map((r) => r.id),
@@ -266,7 +266,7 @@ describe('<Canvas>', () => {
           ...sel.adapterMethods,
         };
         const select = useSelectTool<Rect, Pose>(adapter, {
-          hitBody: () => [],
+          pickEvery: () => [],
           boundsOf: explicit,
           handleHitRadius: 8,
           resize: { behaviors: [{ onStart: (ctx) => startSpy(ctx.draggedIds[0]) }] },
@@ -336,7 +336,7 @@ describe('<Canvas>', () => {
         ...sel.adapterMethods,
       };
       const select = useSelectTool<Rect, Pose>(adapter, {
-        hitBody: (wx, wy) =>
+        pickEvery: (wx, wy) =>
           rectsRef.current
             .filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height)
             .map((r) => r.id),

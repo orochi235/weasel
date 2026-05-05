@@ -265,7 +265,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   }, [sceneSlot]);
 
   const internalSelect = useSelectTool<Node<TData, TLayer, TPose>, TPose>(adapter, {
-    hitBody: wiredHitBody,
+    pickEvery: wiredHitBody,
     boundsOf: wiredBoundsOf,
     ...(handleHitRadius !== undefined ? { handleHitRadius } : {}),
     move: wiredMoveOptions,

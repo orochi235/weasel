@@ -72,7 +72,7 @@ export function AnimationDemo() {
   );
 
   const select = useSelectTool<Card, Pose>(adapter as never, {
-    hitBody: (wx, wy) =>
+    pickEvery: (wx, wy) =>
       cardsRef.current
         .filter((c) => wx >= c.x && wx <= c.x + c.width && wy >= c.y && wy <= c.y + c.height)
         .map((c) => c.id),

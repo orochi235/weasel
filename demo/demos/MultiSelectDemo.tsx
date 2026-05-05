@@ -53,7 +53,7 @@ export function MultiSelectDemo() {
     };
   }, [scene]);
 
-  const hitBody = (worldX: number, worldY: number): string[] => {
+  const pickEvery = (worldX: number, worldY: number): string[] => {
     const hits: string[] = [];
     for (const id of scene.renderOrder()) {
       const n = scene.get(id);
@@ -74,7 +74,7 @@ export function MultiSelectDemo() {
     return { x: p.x, y: p.y, width: p.width, height: p.height };
   };
 
-  const select = useSelectTool(selectAdapter, { hitBody, boundsOf });
+  const select = useSelectTool(selectAdapter, { pickEvery, boundsOf });
   const tools = useTools({ active: 'select', registry: { select } });
 
   return (
@@ -116,7 +116,7 @@ const selectAdapter = {
   applyOps: (ops) => { for (const op of ops) op.apply(base); },
   hitTestArea: (rect) => /* aabb-vs-aabb scan over scene.renderOrder() */,
 };
-const select = useSelectTool(selectAdapter, { hitBody, boundsOf });
+const select = useSelectTool(selectAdapter, { pickEvery, boundsOf });
 const tools = useTools({ active: 'select', registry: { select } });
 
 // selectionMode="multi" turns on shift-click extend, draws a single union

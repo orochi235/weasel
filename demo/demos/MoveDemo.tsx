@@ -68,7 +68,7 @@ export function MoveDemo() {
   useDuplicate<Pose>(adapter);
 
   const select = useSelectTool<Rect, Pose>(adapter, {
-    hitBody: (wx, wy) =>
+    pickEvery: (wx, wy) =>
       rectsRef.current
         .filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height)
         .map((r) => r.id),
@@ -164,7 +164,7 @@ const CELL = { value: 1, unit: 'tile' } as const;
 // Build the select tool with the snap behavior folded into move.behaviors.
 // The Tool publishes its own move/resize/rotate ghosts via the overlay channel.
 const select = useSelectTool<Rect, Pose>(adapter, {
-  hitBody: (wx, wy) => rectsRef.current.filter(hitOf(wx, wy)).map((r) => r.id),
+  pickEvery: (wx, wy) => rectsRef.current.filter(hitOf(wx, wy)).map((r) => r.id),
   boundsOf: (id) => boundsOfRect(rectsRef.current.find((r) => r.id === id)),
   move: { behaviors: [snap(gridSnapStrategy<Pose>(CELL, UNITS))] },
   drawGhost: (ctx, rect, pose) => {
