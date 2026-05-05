@@ -6,11 +6,8 @@ import {
   pointInPath,
   PATH_C,
   traceToContext,
-  useEditAnchors,
-  useEditAnchorsTool,
   useSelection,
-  useSelectTool,
-  useTools,
+  useSelectWithAnchorEdit,
 } from '@orochi235/weasel';
 import type {
   Path,
@@ -39,7 +36,6 @@ export function BezierEditDemo() {
   const [zoom, setZoom] = useState(1);
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
-  const [editingId, setEditingId] = useState<string | null>(null);
 
   const selection = useSelection();
 
@@ -51,7 +47,7 @@ export function BezierEditDemo() {
     ...selection.adapterMethods,
   };
 
-  const select = useSelectTool<PathObj, Pose>(adapter, {
+  const { tools, onDoubleClick } = useSelectWithAnchorEdit<PathObj, Pose>(adapter, {
     pickEvery: (wx, wy) => (pointInPath(pathRef.current, wx, wy) ? [ID] : []),
     boundsOf: (id) => (id === ID ? pathPoseDescriptor.getBounds(pathRef.current) : null),
     handleHitRadius: HANDLE / zoom,
@@ -64,33 +60,18 @@ export function BezierEditDemo() {
       cx.stroke();
     },
     getObject: (id) => (id === ID ? { id } : null),
-    // Dbl-tap on the path body → enter modal anchor-edit mode. The kit's
-    // dispatcher detects the double-tap; this callback receives the world
-    // coords + ids `pickEvery` reports for that point. No DOM-level
-    // `onDoubleClick` wrapper needed.
-    onDoubleTap: ({ ids }) => {
-      if (ids.includes(ID)) setEditingId(ID);
+    editAnchors: {
+      hitRadius: HANDLE / zoom,
+      overlayStyle: { selectedAnchorFill: '#7fb069' },
+    },
+    editingFilter: (ids) => (ids.includes(ID) ? ID : null),
+    clientToWorld: (canvas, cx, cy) => {
+      const r = canvas.getBoundingClientRect();
+      const z = zoomRef.current;
+      return [(cx - r.left) / z, (cy - r.top) / z];
     },
   });
 
-  // Anchor-edit gesture — driven by the tool dispatcher when 'edit-anchors'
-  // is the active slot. The consumer owns `editingId`: set it on dbl-click,
-  // clear it on Esc (via the tool's `onExit`). The select adapter's
-  // getObject/getPose/setPose superset what useEditAnchors needs, so we
-  // pass it directly (the hook stores adapter in a ref internally).
-  const editAnchorsCtl = useEditAnchors<PathObj>(adapter, {
-    editingId,
-    hitRadius: HANDLE / zoom,
-  });
-  const editAnchorsTool = useEditAnchorsTool(editAnchorsCtl, {
-    onExit: () => setEditingId(null),
-    overlayStyle: { selectedAnchorFill: '#7fb069' },
-  });
-
-  const tools = useTools({
-    active: editingId ? 'edit-anchors' : 'select',
-    registry: { select, 'edit-anchors': editAnchorsTool },
-  });
 
   const appendCurve = () => {
     const p = pathRef.current;
@@ -131,7 +112,7 @@ export function BezierEditDemo() {
           >{z}×</button>
         ))}
       </div>
-      <div style={{ width: W * zoom, height: H * zoom, overflow: 'hidden' }}>
+      <div onDoubleClick={onDoubleClick} style={{ width: W * zoom, height: H * zoom, overflow: 'hidden' }}>
         <div style={{ width: W, height: H, transform: `scale(${zoom})`, transformOrigin: '0 0' }}>
           <Canvas
             width={W}
@@ -178,45 +159,33 @@ const INITIAL_PATH = new PathBuilder()
   .curveTo(300, 260, 380, 260, 420, 100)
   .build();
 
-// Demo owns the editingId state. Double-click a polygon body → enter edit
-// mode (active tool flips to 'edit-anchors'). Esc → onExit clears
-// editingId, which flips the active tool back to 'select'.
-const [editingId, setEditingId] = useState<string | null>(null);
-
-const select = useSelectTool<PathObj, Path>(adapter, {
+// useSelectWithAnchorEdit composes select + edit-anchors with the modal
+// "double-click body → edit anchors; Escape → back to select" flip wired
+// internally. The demo no longer owns editingId.
+const { tools, onDoubleClick } = useSelectWithAnchorEdit<PathObj, Path>(adapter, {
   pickEvery: (wx, wy) => (pointInPath(pathRef.current, wx, wy) ? [ID] : []),
   boundsOf: (id) => pathPoseDescriptor.getBounds(pathRef.current),
   resize: { geometry: pathPoseDescriptor },
   drawGhost: (cx, _o, p) => { /* trace path */ },
   getObject: (id) => /* lookup */,
-  // Kit-level dbl-tap → modal entry. No DOM onDoubleClick needed.
-  onDoubleTap: ({ ids }) => { if (ids.includes(ID)) setEditingId(ID); },
-});
-
-const editAnchorsAdapter = useMemo<EditAnchorsAdapter<PathObj>>(() => ({
-  getObject: (id) => (id === ID ? { id } : undefined),
-  getPose: () => pathRef.current,
-  setPose: (_id, p) => setPath(p),
-}), []);
-const editAnchorsCtl = useEditAnchors(editAnchorsAdapter, { editingId, hitRadius: HANDLE / zoom });
-const editAnchorsTool = useEditAnchorsTool(editAnchorsCtl, {
-  onExit: () => setEditingId(null),
-  overlayStyle: { selectedAnchorFill: '#7fb069' },
-});
-
-const tools = useTools({
-  active: editingId ? 'edit-anchors' : 'select',
-  registry: { select, 'edit-anchors': editAnchorsTool },
+  editAnchors: {
+    hitRadius: HANDLE / zoom,
+    overlayStyle: { selectedAnchorFill: '#7fb069' },
+  },
+  editingFilter: (ids) => (ids.includes(ID) ? ID : null),
+  clientToWorld: (canvas, cx, cy) => /* zoom-aware */,
 });
 
 return (
-  <Canvas
-    adapter={adapter} selection={selection} tools={tools}
-    clientToWorld={(canvas, cx, cy) => /* zoom-aware */}
-    layers={{
-      scene: { drawOne: (cx, _o, p) => { /* trace path */ } },
-      selectionOverlay: { handles: { size: HANDLE } },
-    }}
-  />
+  <div onDoubleClick={onDoubleClick}>
+    <Canvas
+      adapter={adapter} selection={selection} tools={tools}
+      clientToWorld={(canvas, cx, cy) => /* zoom-aware */}
+      layers={{
+        scene: { drawOne: (cx, _o, p) => { /* trace path */ } },
+        selectionOverlay: { handles: { size: HANDLE } },
+      }}
+    />
+  </div>
 );
 `;
