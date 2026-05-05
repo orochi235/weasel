@@ -6,8 +6,7 @@ import { useInsert } from '../../interactions/gestures/insert/insert';
 import type { InsertAdapter } from '../../core/adapters/types';
 import type { ToolCtx } from '../types';
 import { applyHitExistingGate } from './hitExistingGate';
-import { viewToTransform } from '../../features/viewport/view';
-import { worldToScreen } from '../../features/viewport/viewTransform';
+import { drawMarquee, type InsertOverlayStyle } from './marquee';
 
 export interface UseTextToolOptions<TObject extends { id: string }> {
   /** Click / sub-threshold-drag insertion. Called with the cursor's world
@@ -29,12 +28,7 @@ export interface UseTextToolOptions<TObject extends { id: string }> {
    *  `{ width: 4, height: 4 }`. Ignored when `commitInsert` is omitted. */
   minBounds?: { width: number; height: number };
   /** Style for the drag-to-size marquee preview. */
-  marqueeStyle?: {
-    stroke?: string;
-    dash?: number[];
-    lineWidth?: number;
-    fill?: string;
-  };
+  marqueeStyle?: InsertOverlayStyle;
 }
 
 /** Active-slot Tool: click to create a new text object at the cursor;
@@ -90,25 +84,12 @@ export function useTextTool<TObject extends { id: string }>(
     draw: (ctx, _data, view) => {
       const ov = ctlRef.current.overlay;
       if (!ov) return;
-      const cfg = styleRef.current ?? {};
-      const stroke = cfg.stroke ?? '#a48bd4';
-      const dash = cfg.dash ?? [3, 3];
-      const lineWidth = cfg.lineWidth ?? 1;
-      const fill = cfg.fill ?? 'rgba(164, 139, 212, 0.10)';
-      const t = viewToTransform(view);
-      const { x, y, width: w, height: h } = ov.bounds;
-      const [sx, sy] = worldToScreen(x, y, t);
-      const sw = w * view.scale;
-      const sh = h * view.scale;
-      ctx.save();
-      ctx.fillStyle = fill;
-      ctx.fillRect(sx, sy, sw, sh);
-      ctx.strokeStyle = stroke;
-      ctx.lineWidth = lineWidth;
-      ctx.setLineDash(dash);
-      ctx.strokeRect(sx, sy, sw, sh);
-      ctx.setLineDash([]);
-      ctx.restore();
+      drawMarquee(ctx, view, ov.bounds, styleRef.current, {
+        fill: 'rgba(164, 139, 212, 0.10)',
+        stroke: '#a48bd4',
+        dash: [3, 3],
+        lineWidth: 1,
+      });
     },
   }), []);
 

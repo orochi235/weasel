@@ -4,16 +4,10 @@ import type { InsertAdapter } from '../../core/adapters/types';
 import { defineTool } from '../defineTool';
 import type { Tool } from '../types';
 import { applyHitExistingGate } from './hitExistingGate';
-import { viewToTransform } from '../../features/viewport/view';
-import { worldToScreen } from '../../features/viewport/viewTransform';
+import { drawMarquee, type InsertOverlayStyle } from './marquee';
 import type { RenderLayer } from '../../core/layers/render';
 
-export interface InsertOverlayStyle {
-  fill?: string;
-  stroke?: string;
-  dash?: number[];
-  lineWidth?: number;
-}
+export type { InsertOverlayStyle };
 
 export interface UseInsertToolOptions<TPose, TObject extends { id: string } = { id: string }>
   extends UseInsertOptions<TPose, TObject> {
@@ -43,25 +37,12 @@ export function useInsertTool<TObject extends { id: string }, TPose>(
     draw: (ctx, _data, view) => {
       const ov = ctl.overlay;
       if (!ov) return;
-      const cfg = styleRef.current ?? {};
-      const fill = cfg.fill ?? 'rgba(127, 176, 105, 0.25)';
-      const stroke = cfg.stroke ?? '#7fb069';
-      const dash = cfg.dash ?? [4, 4];
-      const lineWidth = cfg.lineWidth ?? 1;
-      const t = viewToTransform(view);
-      const { x, y, width: w, height: h } = ov.bounds;
-      const [sx, sy] = worldToScreen(x, y, t);
-      const sw = w * view.scale;
-      const sh = h * view.scale;
-      ctx.save();
-      ctx.fillStyle = fill;
-      ctx.fillRect(sx, sy, sw, sh);
-      ctx.strokeStyle = stroke;
-      ctx.lineWidth = lineWidth;
-      ctx.setLineDash(dash);
-      ctx.strokeRect(sx, sy, sw, sh);
-      ctx.setLineDash([]);
-      ctx.restore();
+      drawMarquee(ctx, view, ov.bounds, styleRef.current, {
+        fill: 'rgba(127, 176, 105, 0.25)',
+        stroke: '#7fb069',
+        dash: [4, 4],
+        lineWidth: 1,
+      });
     },
   }), [ctl]);
 
