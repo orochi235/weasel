@@ -1,7 +1,12 @@
-import { useCallback, useRef, useState } from 'react';
-import { arrayAdapter, Canvas, useClone, cloneByAltDrag } from '@orochi235/weasel';
-import { clientToCanvas } from '../canvasCoords';
-import type { ClipboardSnapshot, RenderLayer } from '@orochi235/weasel';
+import { useRef, useState } from 'react';
+import {
+  arrayAdapter,
+  Canvas,
+  cloneByAltDrag,
+  useCloneTool,
+  useTools,
+} from '@orochi235/weasel';
+import type { ClipboardSnapshot } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -13,13 +18,10 @@ const INITIAL: Rect[] = [
   { id: 'b', x: 220, y: 140, width: 80, height: 60, color: '#d4a574' },
 ];
 
-interface OverlayItem { id: string; x: number; y: number }
-
 export function CloneDemo() {
   const [rects, setRects] = useState<Rect[]>(INITIAL);
   const rectsRef = useRef(rects); rectsRef.current = rects;
   const nextId = useRef(0);
-  const [overlay, setOverlay] = useState<OverlayItem[] | null>(null);
 
   const adapter = {
     ...arrayAdapter<Rect, Pose>({
@@ -36,55 +38,29 @@ export function CloneDemo() {
       })),
   };
 
-  const clone = useClone(adapter, {
+  const clone = useCloneTool(adapter, {
     behaviors: [cloneByAltDrag()],
-    setOverlay: (_layer, objects) => setOverlay(objects as OverlayItem[]),
-    clearOverlay: () => setOverlay(null),
-  });
-
-  const dragging = useRef(false);
-
-  const onPointerDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!e.altKey) return;
-    const [wx, wy] = clientToCanvas(e.currentTarget, e.clientX, e.clientY);
-    const list = rectsRef.current;
-    let hit: Rect | null = null;
-    for (let i = list.length - 1; i >= 0; i--) {
-      const r = list[i];
-      if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) { hit = r; break; }
-    }
-    if (!hit) return;
-    dragging.current = true;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    clone.start(wx, wy, [hit.id], 'structures', { alt: true, shift: e.shiftKey, meta: e.metaKey, ctrl: e.ctrlKey });
-  }, [clone]);
-
-  const onPointerMove = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!dragging.current) return;
-    const [wx, wy] = clientToCanvas(e.currentTarget, e.clientX, e.clientY);
-    clone.move(wx, wy, { alt: e.altKey, shift: e.shiftKey, meta: e.metaKey, ctrl: e.ctrlKey });
-  }, [clone]);
-
-  const onPointerUp = useCallback(() => {
-    if (!dragging.current) return;
-    dragging.current = false;
-    clone.end();
-  }, [clone]);
-
-  const ghostLayer: RenderLayer<unknown> = {
-    id: 'clone-ghost', label: 'Clone ghost',
-    draw: (cx) => {
-      if (!overlay) return;
+    hitBody: (wx, wy) => {
+      const list = rectsRef.current;
+      for (let i = list.length - 1; i >= 0; i--) {
+        const r = list[i];
+        if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) return r.id;
+      }
+      return null;
+    },
+    drawGhost: (cx, items) => {
       cx.globalAlpha = 0.5;
-      for (const item of overlay) {
-        const src = rects.find((r) => r.id === item.id);
+      for (const item of items) {
+        const src = rectsRef.current.find((r) => r.id === item.id);
         if (!src) continue;
         cx.fillStyle = src.color;
         cx.fillRect(item.x, item.y, src.width, src.height);
       }
       cx.globalAlpha = 1;
     },
-  };
+  });
+
+  const tools = useTools({ active: 'clone', registry: { clone } });
 
   return (
     <Canvas
@@ -92,17 +68,13 @@ export function CloneDemo() {
       height={H}
       className="ckd-canvas"
       adapter={adapter}
+      tools={tools}
       selectionMode="none"
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
       layers={{
         scene: {
           drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); },
         },
         selectionOverlay: null,
-        ghost: { layer: ghostLayer },
       }}
     />
   );
@@ -121,26 +93,27 @@ const adapter = {
   })),
 };
 
-const clone = useClone<Rect>(adapter, {
+// useCloneTool wraps useClone as a Tool record: the dispatcher only claims
+// pointerdown when a behavior activates for the current modifiers AND
+// hitBody finds a target — plain drags pass through to whatever else is
+// in the active slot. The tool owns the ghost overlay internally.
+const clone = useCloneTool(adapter, {
   behaviors: [cloneByAltDrag()],
-  setOverlay: (_layer, objects) => setOverlay(objects),
-  clearOverlay: () => setOverlay(null),
+  hitBody: (wx, wy) => /* return topmost rect id, or null */,
+  drawGhost: (cx, items) => /* paint translucent rects at items[i].{x,y} */,
 });
 
-// Override Canvas's pointer handlers to drive the clone gesture (alt-hit-test
-// → clone.start). The default scene + a custom ghost layer paint the rest.
+const tools = useTools({ active: 'clone', registry: { clone } });
+
 return (
   <Canvas
     width={W} height={H}
     adapter={adapter}
+    tools={tools}
     selectionMode="none"
-    onPointerDown={(e) => /* alt-hit-test → clone.start */}
-    onPointerMove={(e) => clone.move(...)}
-    onPointerUp={() => clone.end()}
     layers={{
       scene: { drawOne: (cx, r, p) => { cx.fillStyle = r.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
       selectionOverlay: null,
-      ghost: { layer: ghostLayer },
     }}
   />
 );

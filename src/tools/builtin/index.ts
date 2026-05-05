@@ -30,3 +30,9 @@ export {
   type UseEditAnchorsToolOptions,
   type EditAnchorsScratch,
 } from './useEditAnchorsTool';
+export {
+  useCloneTool,
+  type UseCloneToolOptions,
+  type CloneScratch,
+  type CloneOverlayItem,
+} from './useCloneTool';
