@@ -128,8 +128,8 @@ const adapter: MoveAdapter<PathObj, Path> & ResizeAdapter<PathObj, Path> = {
 };
 
 // Path TPose is auto-detected — Canvas's default geometry dispatches on
-// pose.kind, so pickEvery / boundsOf / moveOptions.translatePose /
-// resizeOptions.geometry all know about Paths without an explicit prop.
+// pose.kind, so pickEvery / boundsOf / move.translatePose /
+// resize.geometry all know about Paths without an explicit prop.
 // The only Path-specific extra is the snap behavior, which reads the origin
 // via pathOriginProjection.
 return (
