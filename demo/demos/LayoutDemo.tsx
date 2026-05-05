@@ -7,7 +7,7 @@ import {
   tileGrid,
   snapPoint,
 } from '@orochi235/weasel';
-import type { LayoutStrategy } from '@orochi235/weasel';
+import type { LayoutStrategy, Op } from '@orochi235/weasel';
 
 // --- Scene model ---
 //
@@ -48,13 +48,7 @@ const COLORS: Record<string, string> = {
 
 export function LayoutDemo() {
   const [scene, setScene] = useState<SceneState>(INITIAL);
-  const adapterRef = useRef<{
-    setPose(id: string, pose: P): void;
-    setParent(id: string, parentId: string | null): void;
-    insertObject(o: Obj): void;
-    removeObject(id: string): void;
-    setSelection(ids: string[]): void;
-  } | null>(null);
+  const adapterRef = useRef<Parameters<Op['apply']>[0] | null>(null);
 
   const layouts = useMemo(() => ({
     F: freeform<P>(),
@@ -104,8 +98,8 @@ export function LayoutDemo() {
       }),
     getSelection: () => [] as string[],
     setSelection: () => {},
-    applyOps: (ops) => { for (const op of ops) op.apply(adapterRef.current!); },
-    applyBatch: (ops) => { for (const op of ops) op.apply(adapterRef.current!); },
+    applyOps: (ops: Op[]) => { for (const op of ops) op.apply(adapterRef.current!); },
+    applyBatch: (ops: Op[]) => { for (const op of ops) op.apply(adapterRef.current!); },
   }), [scene, layouts]);
   adapterRef.current = adapter;
 

@@ -44,7 +44,7 @@ describe('LayoutDemo', () => {
       fillStyle: '',
       strokeStyle: '',
       lineWidth: 1,
-      fillRect(x: number, y: number, w: number, h: number) {
+      fillRect(this: { fillStyle: string }, x: number, y: number, w: number, h: number) {
         calls.push({ fillStyle: this.fillStyle, x, y, w, h });
       },
     } as unknown as CanvasRenderingContext2D;

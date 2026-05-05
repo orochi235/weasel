@@ -4,6 +4,7 @@ import { useMove } from './move';
 import { tileGrid, snapPoint } from '../../../layout/strategies';
 import type { LayoutStrategy } from '../../../layout/types';
 import type { MoveAdapter } from '../../../core/adapters/types';
+import type { Op } from '../../../core/ops/types';
 
 type Obj = { id: string };
 type P = { x: number; y: number; width: number; height: number };
@@ -209,7 +210,7 @@ describe('useMove commit with layout', () => {
     const [ops] = adapter.applyBatchSpy.mock.calls[0];
     // Two ops: dragged 'a' moving to cell (1,0) + swap 'b' moving to cell (0,0).
     expect(ops).toHaveLength(2);
-    expect(ops.every((o) => typeof o.apply === 'function' && typeof o.invert === 'function')).toBe(true);
+    expect(ops.every((o: Op) => typeof o.apply === 'function' && typeof o.invert === 'function')).toBe(true);
   });
 
   it('emits free-space setPose when no container accepted', () => {
