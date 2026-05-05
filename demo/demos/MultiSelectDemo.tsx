@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import {
   asNodeId,
   SceneCanvas,
@@ -8,7 +8,6 @@ import {
   useSelectTool,
   useTools,
 } from '@orochi235/weasel';
-import type { Op } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
@@ -25,33 +24,14 @@ const INITIAL: Rect[] = [
 export function MultiSelectDemo() {
   const scene = useScene({ items: INITIAL });
   const selection = useSelection({ mode: 'multi' });
-  const selRef = useRef(selection);
-  selRef.current = selection;
 
-  const selectAdapter = useMemo(() => {
-    const base = sceneToAdapter(scene);
-    return {
-      ...base,
-      getSelection: () => selRef.current.get(),
-      setSelection: (ids: string[]) => selRef.current.set(ids),
-      applyOps: (ops: Op[]) => {
-        for (const op of ops) op.apply(base as unknown as Parameters<Op['apply']>[0]);
-      },
-      hitTestArea: (rect: { x: number; y: number; width: number; height: number }) => {
-        const hits: string[] = [];
-        for (const id of scene.renderOrder()) {
-          const n = scene.get(id);
-          if (!n) continue;
-          const p = n.pose as Rect;
-          if (p.x < rect.x + rect.width && p.x + p.width > rect.x
-              && p.y < rect.y + rect.height && p.y + p.height > rect.y) {
-            hits.push(id);
-          }
-        }
-        return hits;
-      },
-    };
-  }, [scene]);
+  // sceneToAdapter covers Move/Resize/Rotate AND AreaSelect — the marquee
+  // hitTestArea/applyOps and selection get/set are kit-defaulted from the
+  // scene + the selection passed in.
+  const selectAdapter = useMemo(
+    () => sceneToAdapter(scene, { selection }),
+    [scene, selection],
+  );
 
   const pickEvery = (worldX: number, worldY: number): string[] => {
     const hits: string[] = [];
@@ -106,16 +86,11 @@ interface Rect { id: string; x: number; y: number; width: number; height: number
 const scene = useScene({ items: INITIAL });
 const selection = useSelection({ mode: 'multi' });
 
-// useSelectTool needs MoveAdapter + ResizeAdapter + RotateAdapter +
-// AreaSelectAdapter. sceneToAdapter covers the first three; we layer on
-// selection get/set, applyOps, and a pose-based hitTestArea for the marquee.
-const selectAdapter = {
-  ...sceneToAdapter(scene),
-  getSelection: () => selection.get(),
-  setSelection: (ids) => selection.set(ids),
-  applyOps: (ops) => { for (const op of ops) op.apply(base); },
-  hitTestArea: (rect) => /* aabb-vs-aabb scan over scene.renderOrder() */,
-};
+// sceneToAdapter satisfies every narrow adapter useSelectTool needs —
+// Move/Resize/Rotate from the scene, plus the AreaSelectAdapter pieces
+// (selection get/set, applyOps, pose-based hitTestArea) wired from the
+// selection arg. No bespoke marquee glue required.
+const selectAdapter = sceneToAdapter(scene, { selection });
 const select = useSelectTool(selectAdapter, { pickEvery, boundsOf });
 const tools = useTools({ active: 'select', registry: { select } });
 
