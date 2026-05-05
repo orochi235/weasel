@@ -438,7 +438,7 @@ export function App() {
         )}
 
         <PropertiesPanel title="Colors">
-          <PropertyRow label="Fill">
+          <PropertyRow>
             <PropertySwatchGrid
               value={primary ? primaryFill : fillColor}
               options={PALETTE}
