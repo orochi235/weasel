@@ -29,6 +29,16 @@ export interface ToolsDispatcherOptions {
    *  `dispatcher.getActiveScratch()` (e.g. function-form `cursor`) re-resolve
    *  on real DOM events. */
   onGestureChange?: () => void;
+  /** Time source for double-tap detection. Defaults to `Date.now`. Override
+   *  in tests to drive the clock deterministically. */
+  now?: () => number;
+  /** Double-tap detection thresholds. */
+  dblTap?: {
+    /** Maximum interval between the two taps (ms). Default 300. */
+    windowMs?: number;
+    /** Maximum CSS-px distance between the two tap positions. Default 8. */
+    maxDistance?: number;
+  };
 }
 
 interface InFlight {
@@ -90,7 +100,15 @@ function dispatchOnce<E>(
 
 export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispatcher {
   const threshold = opts.threshold ?? 4;
+  const now = opts.now ?? (() => Date.now());
+  const dblTapWindowMs = opts.dblTap?.windowMs ?? 300;
+  const dblTapMaxDistance = opts.dblTap?.maxDistance ?? 8;
   let inFlight: InFlight | null = null;
+  /** Recorded on each sub-threshold pointerup. The next sub-threshold release
+   *  within `dblTapWindowMs` and `dblTapMaxDistance` of this point fires
+   *  `dblTap.onTap` on the active slot order. Cleared on fire (so three taps
+   *  don't stack into two dblTaps) and on any drag promotion. */
+  let lastTap: { x: number; y: number; time: number } | null = null;
 
   function getInitialScratch(tool: AnyTool): unknown {
     return tool.initScratch ? tool.initScratch() : undefined;
@@ -172,6 +190,9 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       if (dx * dx + dy * dy < threshold * threshold) return;
       // Crossed threshold: promote to drag, fire onStart with the
       // threshold-crossing event. Capture any scratch mutation onStart makes.
+      // A drag also invalidates any pending dblTap anchor — a click→drag
+      // sequence shouldn't latch into a dbl-tap when the drag completes.
+      lastTap = null;
       const onStart = inFlight.tool.drag?.onStart;
       if (onStart) {
         const startCtx = ctxFor(inFlight.scratch, baseCtx);
@@ -198,9 +219,49 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     });
 
     if (inFlight.phase === 'pending') {
-      // Sub-threshold release → click.
-      const onClick = inFlight.tool.pointer?.onClick;
-      if (onClick) onClick(e, ctxFor(inFlight.scratch, baseCtx));
+      // Sub-threshold release. First check whether this is the *second* tap
+      // of a double-tap; if so, fire `dblTap.onTap` on the active slot order.
+      // A claim suppresses `pointer.onClick`; a pass falls through to click
+      // so single-click handlers still run when no tool wants the dbl-tap.
+      const slots = opts.getSlots();
+      let dblTapClaimed = false;
+      if (lastTap !== null) {
+        const dx = e.clientX - lastTap.x;
+        const dy = e.clientY - lastTap.y;
+        const dt = now() - lastTap.time;
+        if (dt <= dblTapWindowMs && dx * dx + dy * dy <= dblTapMaxDistance * dblTapMaxDistance) {
+          // Walk slot order — modifier → active → alwaysOn — and fire the
+          // first tool whose dblTap.onTap returns 'claim'. Each tool gets a
+          // fresh scratch (dblTap is not part of a drag pipeline).
+          const order: AnyTool[] = [];
+          if (slots.modifier) order.push(slots.modifier);
+          if (slots.active) order.push(slots.active);
+          for (const t of slots.alwaysOn) order.push(t);
+          for (const tool of order) {
+            const handler = tool.dblTap?.onTap;
+            if (!handler) continue;
+            const ctx = ctxFor(getInitialScratch(tool), baseCtx);
+            const decision = handler(e, ctx);
+            if (decision === 'claim') {
+              dblTapClaimed = true;
+              break;
+            }
+          }
+          // Whether claimed or passed, the dbl-tap event consumed lastTap —
+          // a third tap shouldn't pair with the second to fire again.
+          lastTap = null;
+        }
+      }
+      if (!dblTapClaimed) {
+        const onClick = inFlight.tool.pointer?.onClick;
+        if (onClick) onClick(e, ctxFor(inFlight.scratch, baseCtx));
+        // Record this tap as a candidate first-of-pair for the next tap.
+        // (If dblTap claimed above we already cleared lastTap; recording here
+        // would let three taps fire two dblTaps.)
+        if (lastTap === null) {
+          lastTap = { x: e.clientX, y: e.clientY, time: now() };
+        }
+      }
     } else if (inFlight.phase === 'drag') {
       const onEnd = inFlight.tool.drag?.onEnd;
       if (onEnd) onEnd(e, ctxFor(inFlight.scratch, baseCtx));

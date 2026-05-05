@@ -69,6 +69,13 @@ export function BezierEditDemo() {
       cx.stroke();
     },
     getObject: (id) => (id === ID ? { id } : null),
+    // Dbl-tap on the path body → enter modal anchor-edit mode. The kit's
+    // dispatcher detects the double-tap; this callback receives the world
+    // coords + ids `pickEvery` reports for that point. No DOM-level
+    // `onDoubleClick` wrapper needed.
+    onDoubleTap: ({ ids }) => {
+      if (ids.includes(ID)) setEditingId(ID);
+    },
   });
 
   // Anchor-edit gesture — driven by the tool dispatcher when 'edit-anchors'
@@ -92,19 +99,6 @@ export function BezierEditDemo() {
     active: editingId ? 'edit-anchors' : 'select',
     registry: { select, 'edit-anchors': editAnchorsTool },
   });
-
-  const onDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLElement;
-    const canvas = target.tagName === 'CANVAS'
-      ? (target as HTMLCanvasElement)
-      : target.querySelector('canvas');
-    if (!canvas) return;
-    const r = canvas.getBoundingClientRect();
-    const z = zoomRef.current;
-    const wx = (e.clientX - r.left) / z;
-    const wy = (e.clientY - r.top) / z;
-    if (pointInPath(pathRef.current, wx, wy)) setEditingId(ID);
-  };
 
   const appendCurve = () => {
     const p = pathRef.current;
@@ -145,10 +139,7 @@ export function BezierEditDemo() {
           >{z}×</button>
         ))}
       </div>
-      <div
-        style={{ width: W * zoom, height: H * zoom, overflow: 'hidden' }}
-        onDoubleClick={onDoubleClick}
-      >
+      <div style={{ width: W * zoom, height: H * zoom, overflow: 'hidden' }}>
         <div style={{ width: W, height: H, transform: `scale(${zoom})`, transformOrigin: '0 0' }}>
           <Canvas
             width={W}
@@ -206,6 +197,8 @@ const select = useSelectTool<PathObj, Path>(adapter, {
   resize: { geometry: pathPoseDescriptor },
   drawGhost: (cx, _o, p) => { /* trace path */ },
   getObject: (id) => /* lookup */,
+  // Kit-level dbl-tap → modal entry. No DOM onDoubleClick needed.
+  onDoubleTap: ({ ids }) => { if (ids.includes(ID)) setEditingId(ID); },
 });
 
 const editAnchorsAdapter = useMemo<EditAnchorsAdapter<PathObj>>(() => ({
@@ -225,15 +218,13 @@ const tools = useTools({
 });
 
 return (
-  <div onDoubleClick={(e) => /* if pointInPath → setEditingId(ID) */}>
-    <Canvas
-      adapter={adapter} selection={selection} tools={tools}
-      clientToWorld={(canvas, cx, cy) => /* zoom-aware */}
-      layers={{
-        scene: { drawOne: (cx, _o, p) => { /* trace path */ } },
-        selectionOverlay: { handles: { size: HANDLE } },
-      }}
-    />
-  </div>
+  <Canvas
+    adapter={adapter} selection={selection} tools={tools}
+    clientToWorld={(canvas, cx, cy) => /* zoom-aware */}
+    layers={{
+      scene: { drawOne: (cx, _o, p) => { /* trace path */ } },
+      selectionOverlay: { handles: { size: HANDLE } },
+    }}
+  />
 );
 `;

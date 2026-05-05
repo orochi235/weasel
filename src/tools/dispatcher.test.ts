@@ -261,6 +261,176 @@ describe('dispatcher: ctx overrides', () => {
   });
 });
 
+describe('dispatcher: dblTap', () => {
+  // Drive the dispatcher's internal clock so tests don't rely on real timers.
+  function nowSource() {
+    let t = 0;
+    return {
+      now: () => t,
+      advance: (ms: number) => { t += ms; },
+    };
+  }
+
+  function makeDblDispatcher(slots: SlotsState, clock: { now: () => number }, opts?: { windowMs?: number; maxDistance?: number }) {
+    return createToolsDispatcher({
+      getSlots: () => slots,
+      getCtx: () => makeCtx(),
+      threshold: 4,
+      now: clock.now,
+      dblTap: opts,
+    });
+  }
+
+  it('fires dblTap.onTap on the second sub-threshold release within the window', () => {
+    const onTap = vi.fn(() => 'claim' as const);
+    const onClick = vi.fn(() => 'claim' as const);
+    const tool = defineTool({
+      id: 't',
+      pointer: { onClick },
+      dblTap: { onTap },
+    });
+    const clock = nowSource();
+    const d = makeDblDispatcher({ modifier: null, active: tool, alwaysOn: [] }, clock);
+
+    // First tap.
+    d.onPointerDown(pointerEvent('pointerdown', { clientX: 100, clientY: 100 }));
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 101, clientY: 100 }));
+    expect(onClick).toHaveBeenCalledTimes(1);
+    expect(onTap).not.toHaveBeenCalled();
+
+    clock.advance(150);
+
+    // Second tap, near the first.
+    d.onPointerDown(pointerEvent('pointerdown', { clientX: 102, clientY: 101 }));
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 102, clientY: 102 }));
+
+    expect(onTap).toHaveBeenCalledTimes(1);
+    // Second click is suppressed because dblTap.onTap claimed.
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not fire dblTap when the gap exceeds windowMs', () => {
+    const onTap = vi.fn(() => 'claim' as const);
+    const tool = defineTool({ id: 't', pointer: { onClick: () => 'claim' }, dblTap: { onTap } });
+    const clock = nowSource();
+    const d = makeDblDispatcher({ modifier: null, active: tool, alwaysOn: [] }, clock, { windowMs: 300 });
+
+    d.onPointerDown(pointerEvent('pointerdown', { clientX: 100, clientY: 100 }));
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 100, clientY: 100 }));
+
+    clock.advance(500);
+
+    d.onPointerDown(pointerEvent('pointerdown', { clientX: 100, clientY: 100 }));
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 100, clientY: 100 }));
+
+    expect(onTap).not.toHaveBeenCalled();
+  });
+
+  it('does not fire dblTap when the second tap is too far from the first', () => {
+    const onTap = vi.fn(() => 'claim' as const);
+    const tool = defineTool({ id: 't', pointer: { onClick: () => 'claim' }, dblTap: { onTap } });
+    const clock = nowSource();
+    const d = makeDblDispatcher({ modifier: null, active: tool, alwaysOn: [] }, clock, { maxDistance: 8 });
+
+    d.onPointerDown(pointerEvent('pointerdown', { clientX: 100, clientY: 100 }));
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 100, clientY: 100 }));
+
+    clock.advance(100);
+
+    d.onPointerDown(pointerEvent('pointerdown', { clientX: 200, clientY: 200 }));
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 200, clientY: 200 }));
+
+    expect(onTap).not.toHaveBeenCalled();
+  });
+
+  it('does not fire dblTap if the second gesture promotes to a drag', () => {
+    const onTap = vi.fn(() => 'claim' as const);
+    const onStart = vi.fn(() => 'claim' as const);
+    const tool = defineTool({
+      id: 't',
+      pointer: { onClick: () => 'claim' },
+      drag: { onStart, onMove: () => 'claim', onEnd: () => 'claim' },
+      dblTap: { onTap },
+    });
+    const clock = nowSource();
+    const d = makeDblDispatcher({ modifier: null, active: tool, alwaysOn: [] }, clock);
+
+    d.onPointerDown(pointerEvent('pointerdown', { clientX: 100, clientY: 100 }));
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 100, clientY: 100 }));
+
+    clock.advance(100);
+
+    d.onPointerDown(pointerEvent('pointerdown', { clientX: 100, clientY: 100 }));
+    d.onPointerMove(pointerEvent('pointermove', { clientX: 120, clientY: 100 })); // crosses threshold
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 120, clientY: 100 }));
+
+    expect(onStart).toHaveBeenCalledOnce();
+    expect(onTap).not.toHaveBeenCalled();
+  });
+
+  it('walks slot order for dblTap and stops at the first claim', () => {
+    const order: string[] = [];
+    const make = (id: string, decision: 'claim' | 'pass') =>
+      defineTool({
+        id,
+        pointer: { onClick: () => 'claim' },
+        dblTap: { onTap: () => { order.push(id); return decision; } },
+      });
+
+    const clock = nowSource();
+    const d = makeDblDispatcher(
+      { modifier: make('mod', 'pass'), active: make('act', 'claim'), alwaysOn: [make('always', 'claim')] },
+      clock,
+    );
+
+    d.onPointerDown(pointerEvent('pointerdown', { clientX: 0, clientY: 0 }));
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 0, clientY: 0 }));
+    clock.advance(100);
+    d.onPointerDown(pointerEvent('pointerdown', { clientX: 0, clientY: 0 }));
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 0, clientY: 0 }));
+
+    expect(order).toEqual(['mod', 'act']);
+  });
+
+  it('still calls pointer.onClick when no tool claims dblTap', () => {
+    const onTap = vi.fn(() => 'pass' as const);
+    const onClick = vi.fn(() => 'claim' as const);
+    const tool = defineTool({
+      id: 't',
+      pointer: { onClick },
+      dblTap: { onTap },
+    });
+    const clock = nowSource();
+    const d = makeDblDispatcher({ modifier: null, active: tool, alwaysOn: [] }, clock);
+
+    d.onPointerDown(pointerEvent('pointerdown', { clientX: 0, clientY: 0 }));
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 0, clientY: 0 }));
+    clock.advance(100);
+    d.onPointerDown(pointerEvent('pointerdown', { clientX: 0, clientY: 0 }));
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 0, clientY: 0 }));
+
+    expect(onTap).toHaveBeenCalledTimes(1);
+    expect(onClick).toHaveBeenCalledTimes(2); // both taps' clicks fire
+  });
+
+  it('does not chain a third tap into another dblTap (resets after firing)', () => {
+    const onTap = vi.fn(() => 'claim' as const);
+    const tool = defineTool({ id: 't', pointer: { onClick: () => 'claim' }, dblTap: { onTap } });
+    const clock = nowSource();
+    const d = makeDblDispatcher({ modifier: null, active: tool, alwaysOn: [] }, clock);
+
+    for (let i = 0; i < 3; i++) {
+      d.onPointerDown(pointerEvent('pointerdown', { clientX: 0, clientY: 0 }));
+      d.onPointerUp(pointerEvent('pointerup', { clientX: 0, clientY: 0 }));
+      clock.advance(100);
+    }
+
+    // Tap1 → Tap2 fires dblTap. Tap3 must not trigger another (it would
+    // require a fresh first-tap to anchor against).
+    expect(onTap).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('dispatcher: onGestureChange', () => {
   it('fires on pending start, drag promotion, and end', () => {
     const onGestureChange = vi.fn();
