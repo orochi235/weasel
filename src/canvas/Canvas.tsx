@@ -32,12 +32,6 @@ import {
   type UseSelectionOptions,
 } from '../features/selection/useSelection';
 import { pickTopMostHit } from '../tools/builtin/pickTopMostHit';
-import { useMove } from '../interactions/gestures/move/move';
-import type { UseMoveOptions } from '../interactions/gestures/move/move';
-import { useResize } from '../interactions/gestures/resize/resize';
-import type { UseResizeOptions } from '../interactions/gestures/resize/resize';
-import { useRotate } from '../interactions/gestures/rotate/rotate';
-import type { UseRotateOptions } from '../interactions/gestures/rotate/rotate';
 import { useArrayAdapter, type UseArrayAdapterOptions } from '../core/adapters/useArrayAdapter';
 import { useDelete } from '../interactions/actions/delete';
 import { useNudge } from '../interactions/actions/nudge';
@@ -71,13 +65,6 @@ import {
 } from '../features/selection/overlay';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../interactions/gestures/resize/geometry';
 import { pathPoseDescriptor } from '../features/paths/poseDescriptor';
-import type {
-  MoveOverlay,
-  ResizeOverlay,
-  RotateOverlay,
-  SnapStrategy,
-} from '../interactions/gestures/types';
-import { snap as snapBehavior } from '../interactions/gestures/shared/snap';
 import type { DebugConfig, DebugSink, DebugSnapshot } from '../debug/types';
 import { parseDebugFlags } from '../debug/parseDebugFlags';
 import { createDebugSink } from '../debug/createDebugSink';
@@ -236,9 +223,6 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   layers: LayersMap<TObject, TPose>;
 
   // --- Internal hook configuration ---
-  moveOptions?: UseMoveOptions<TPose>;
-  resizeOptions?: UseResizeOptions<TPose>;
-  rotateOptions?: UseRotateOptions<TPose>;
   /** Wire anchor-edit mode. `true` enables defaults; an object overrides
    *  options. When wired, double-clicking a polygon-shaped object enters
    *  edit mode (anchor circles + control handles), and Esc exits. */
@@ -253,12 +237,6 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
    *  (e.g. `Path`) doesn't require per-prop overrides. Defaults to the rect
    *  identity. */
   geometry?: PoseDescriptor<TPose>;
-
-  /** Snap strategy auto-wired into move (and resize/insert when those land).
-   *  Sweetener for the common case of `moveOptions={{ behaviors: [snap(...)] }}`.
-   *  When set, prepends a `snap(strategy)` behavior to `moveOptions.behaviors`;
-   *  consumer-supplied behaviors still run after. */
-  snap?: SnapStrategy<TPose>;
 
   // --- Gesture overrides (escape hatches for non-rect / group-aware apps) ---
   hitBody?: (worldX: number, worldY: number) => string | string[] | null;
@@ -420,16 +398,21 @@ function isCustomEntry(v: unknown): v is CustomLayerEntry {
   return !!v && typeof v === 'object' && 'layer' in (v as Record<string, unknown>);
 }
 
+/**
+ * Build the scene layer. Tool ghosts (in-flight drag/resize/rotate poses) are
+ * published via the overlay channel and rendered on top of this layer; we
+ * draw committed poses here, and rely on the active tool's `peekPose` to
+ * suppress the committed paint of ids it's currently ghosting via `hideIds`.
+ */
 function buildSceneLayer<TObject extends { id: string }, TPose>(
   cfg: SceneSlotConfig<TObject, TPose>,
   adapter:
     | (MoveAdapter<TObject, TPose> & ResizeAdapter<TObject, TPose> & RotateAdapter<TObject, TPose>)
     | undefined,
-  moveOverlay: MoveOverlay<TPose> | null,
-  resizeOverlay: ResizeOverlay<TPose> | null,
-  rotateOverlay: RotateOverlay<TPose> | null,
   debugSink: DebugSink | null,
   boundsOfFn: ((id: string) => Bounds | null) | undefined,
+  peekPose: ((id: string) => TPose | null) | null,
+  peekHide: (() => Iterable<string> | null) | null,
 ): RenderLayer<unknown> {
   const toPose =
     cfg.toPose ??
@@ -439,23 +422,12 @@ function buildSceneLayer<TObject extends { id: string }, TPose>(
     label: 'Scene',
     draw: (ctx, _data, view) => {
       const objects = cfg.objects ?? adapter?.getObjects() ?? [];
-      const hide = moveOverlay?.hideIds?.length ? new Set(moveOverlay.hideIds) : null;
+      const hideIter = peekHide?.() ?? null;
+      const hide = hideIter ? new Set(hideIter) : null;
       for (const obj of objects) {
-        const moved = moveOverlay?.poses.get(obj.id);
-        // hideIds is the kit's "don't paint the committed pose" signal — used
-        // both for the dragged primary and for cascade descendants whose
-        // overlay pose is provided in `moveOverlay.poses`. We must still
-        // paint those at their overlay pose, so only skip when the overlay
-        // doesn't carry a replacement (defensive — shouldn't happen in
-        // practice since useMove sets poses for every hideIds entry).
-        if (hide && hide.has(obj.id) && moved === undefined) continue;
-        let pose: TPose;
-        if (moved !== undefined) pose = moved;
-        else if (resizeOverlay && resizeOverlay.id === obj.id) pose = resizeOverlay.currentPose;
-        else if (resizeOverlay?.leafPoses?.has(obj.id))
-          pose = resizeOverlay.leafPoses.get(obj.id)!;
-        else if (rotateOverlay && rotateOverlay.id === obj.id) pose = rotateOverlay.currentPose;
-        else pose = toPose(obj);
+        const overlayPose = peekPose ? peekPose(obj.id) : null;
+        if (hide && hide.has(obj.id) && overlayPose == null) continue;
+        const pose: TPose = overlayPose ?? toPose(obj);
         cfg.drawOne(ctx, obj, pose, view);
         if (debugSink) {
           const b = boundsOfFn ? boundsOfFn(obj.id) : null;
@@ -505,9 +477,6 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     adapter: adapterProp,
     selectionMode = 'single',
     layers: layersMap,
-    moveOptions,
-    resizeOptions,
-    rotateOptions,
     editAnchors: editAnchorsProp,
     editAnchorsController: editAnchorsOverride,
     selection: selectionOverride,
@@ -522,7 +491,6 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     clientToWorld,
     handleHitRadius,
     geometry = AUTO_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>,
-    snap: snapStrategy,
     onPointerDown: onPointerDownOverride,
     onPointerMove: onPointerMoveOverride,
     onPointerUp: onPointerUpOverride,
@@ -696,49 +664,6 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     d.__setGetCtx?.(toolsCtxBase);
   }, [tools, toolsCtxBase]);
 
-  // When selectionMode === 'multi', resize handles operate on a synthetic
-  // group id; expandIds rewrites that into the live selection so useResize
-  // takes its existing group path (union AABB origin → per-leaf remap).
-  const selectionRef = useRef<SelectionApi>(effectiveSelection);
-  selectionRef.current = effectiveSelection;
-  const derivedResizeOptions = useMemo<UseResizeOptions<TPose> | undefined>(() => {
-    if (selectionMode !== 'multi') return resizeOptions;
-    const userExpand = resizeOptions?.expandIds;
-    const expandIds = (ids: string[]): string[] => {
-      if (ids.length === 1 && ids[0] === MULTI_RESIZE_TARGET_ID) {
-        return selectionRef.current.get();
-      }
-      return userExpand ? userExpand(ids) : ids;
-    };
-    return { ...(resizeOptions ?? {}), expandIds } as UseResizeOptions<TPose>;
-  }, [resizeOptions, selectionMode]);
-
-  const derivedMoveOptions = useMemo<UseMoveOptions<TPose> | undefined>(() => {
-    const base = moveOptions ?? {};
-    let next: UseMoveOptions<TPose> | undefined =
-      base.translatePose || !geometry.translate ? moveOptions : { ...base, translatePose: geometry.translate };
-    if (snapStrategy) {
-      const merged = { ...(next ?? {}) } as UseMoveOptions<TPose>;
-      const existing = merged.behaviors ?? [];
-      merged.behaviors = [snapBehavior(snapStrategy), ...existing];
-      next = merged;
-    }
-    return next;
-  }, [moveOptions, geometry, snapStrategy]);
-  const derivedResizeOptionsFinal = useMemo<UseResizeOptions<TPose>>(() => {
-    const base = derivedResizeOptions ?? ({} as UseResizeOptions<TPose>);
-    const withGeometry = base.geometry ? base : { ...base, geometry };
-    return debugSink ? { ...withGeometry, debug: debugSink } : withGeometry;
-  }, [derivedResizeOptions, geometry, debugSink]);
-
-  const internalMove = useMove<TObject, TPose>(effectiveAdapter, derivedMoveOptions);
-  const internalResize = useResize<TObject, TPose>(effectiveAdapter, derivedResizeOptionsFinal);
-  const derivedRotateOptions = useMemo<UseRotateOptions<TPose>>(() => {
-    const base = rotateOptions ?? {};
-    return debugSink ? { ...base, debug: debugSink } : base;
-  }, [rotateOptions, debugSink]);
-  const internalRotate = useRotate<TObject, TPose>(effectiveAdapter, derivedRotateOptions);
-
   // selRef tracks the live effective selection for the action-gesture hooks
   // (delete / nudge / duplicate) which read it through getSelection callbacks.
   const selRef = useRef<SelectionApi>(effectiveSelection);
@@ -822,26 +747,21 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   });
   const editAnchorsCtl = editAnchorsOverride ?? (editAnchorsEnabled ? internalEditAnchors : undefined);
 
-  const move = adapter ? internalMove : undefined;
-  const resize = adapter ? internalResize : undefined;
-  const rotate = adapter ? internalRotate : undefined;
-
-  const moveOverlay = move?.overlay ?? null;
-  const resizeOverlay = resize?.overlay ?? null;
-  const rotateOverlay = rotate?.overlay ?? null;
-
+  // Default hitBody: walk the adapter's objects back-to-front and return the
+  // first whose pose contains the world point. The active tool (selectTool)
+  // typically owns its own hitBody internally; this fallback exists for
+  // layer-level concerns (selection-overlay handle hit, custom layer queries)
+  // and for the no-tools path where Canvas dispatches via usePointerGestures.
   const baseHitBody = useMemo(() => {
     if (hitBody) return hitBody;
-    if (!move) return undefined;
-    const a = move.adapter;
+    if (!adapter) return undefined;
+    const a = adapter;
     return (worldX: number, worldY: number): string | string[] | null => {
       const objs = a.getObjects();
       const point = { x: worldX, y: worldY, width: 0, height: 0 };
       for (let i = objs.length - 1; i >= 0; i--) {
         const o = objs[i];
         const pose = a.getPose(o.id);
-        // Prefer the descriptor's own intersect (handles polygon hit-testing
-        // for closed paths); fall back to AABB containment.
         const hit = geometry.intersectsRect
           ? geometry.intersectsRect(pose, point)
           : aabbContains(geometry.getBounds(pose), worldX, worldY);
@@ -849,53 +769,31 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       }
       return null;
     };
-  }, [hitBody, move, geometry]);
+  }, [hitBody, adapter, geometry]);
 
-  const effectivePoseOf = useMemo(() => {
-    return (id: string): TPose | null => {
-      const ov = move?.overlay?.poses.get(id);
-      if (ov !== undefined) return ov;
-      if (resize?.overlay) {
-        if (resize.overlay.id === id) return resize.overlay.currentPose as TPose;
-        const leaf = resize.overlay.leafPoses?.get(id);
-        if (leaf !== undefined) return leaf as TPose;
-      }
-      if (rotate?.overlay && rotate.overlay.id === id) {
-        return rotate.overlay.currentPose as TPose;
-      }
-      const a = move?.adapter ?? resize?.adapter ?? rotate?.adapter ?? adapter;
-      if (!a) return null;
-      try {
-        return a.getPose(id);
-      } catch {
-        return null;
-      }
-    };
-  }, [move, resize, rotate, moveOverlay, resizeOverlay, rotateOverlay, adapter]);
-
+  // Committed pose/bounds lookups. Live overlay state during a drag now
+  // arrives via the active Tool's `peekPose`/`peekBounds`; helpersForLayers
+  // composes that on top of these committed lookups below.
   const baseBoundsOf = useMemo(() => {
     if (boundsOf) return boundsOf;
-    if (!move && !resize) return undefined;
+    if (!adapter) return undefined;
     return (id: string): Bounds | null => {
-      const ov = move?.overlay?.poses.get(id);
-      if (ov) return geometry.getBounds(ov);
-      if (resize?.overlay) {
-        if (resize.overlay.id === id) return geometry.getBounds(resize.overlay.currentPose);
-        const leaf = resize.overlay.leafPoses?.get(id);
-        if (leaf !== undefined) return geometry.getBounds(leaf);
-      }
-      if (rotate?.overlay && rotate.overlay.id === id) {
-        return geometry.getBounds(rotate.overlay.currentPose);
-      }
-      const a = move?.adapter ?? resize?.adapter ?? rotate?.adapter;
-      if (!a) return null;
       try {
-        return geometry.getBounds(a.getPose(id));
+        return geometry.getBounds(adapter.getPose(id));
       } catch {
         return null;
       }
     };
-  }, [boundsOf, move, resize, rotate, moveOverlay, resizeOverlay, rotateOverlay, geometry]);
+  }, [boundsOf, adapter, geometry]);
+
+  const committedPoseOf = (id: string): TPose | null => {
+    if (!adapter) return null;
+    try {
+      return adapter.getPose(id);
+    } catch {
+      return null;
+    }
+  };
 
   const selectedIdsForWiring = effectiveSelection.current;
   const multiActive = selectionMode === 'multi' && selectedIdsForWiring.length > 1;
@@ -937,11 +835,9 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   // helpersForLayers: overlay-aware lookups passed to every RenderLayer.draw
   // call (as the `data` arg) so custom layers can read live overlay state
   // directly from their draw closure. The legacy `helpersRef` prop still
-  // mirrors the same value for back-compat.
-  // Tool-routed overlay peek: when a tool is active and exposes peekPose/
-  // peekBounds, prefer its in-flight overlay state. Mirrors the inline
-  // gesture fold-in below; coexists during the Phase 7 transition so
-  // helpersRef stays overlay-aware after Task 8 strips the inline hooks.
+  // mirrors the same value for back-compat. The active Tool's `peekPose`/
+  // `peekBounds` is the only overlay source post-cleanup; falls through to
+  // the committed adapter pose / bounds when no tool is mid-gesture.
   const peekToolPose = (id: string): TPose | null => {
     if (!tools) return null;
     const tool = tools.registry[tools.modifierEngaged ?? tools.active];
@@ -961,13 +857,13 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     getEffectivePose: (id: string): TPose | null => {
       const tp = peekToolPose(id);
       if (tp != null) return tp;
-      return effectivePoseOf(id);
+      return committedPoseOf(id);
     },
     getEffectiveBounds: (id: string): Bounds | null => {
       const tb = peekToolBounds(id);
       if (tb != null) return tb;
       if (effectiveBoundsOf) return effectiveBoundsOf(id);
-      const p = effectivePoseOf(id);
+      const p = committedPoseOf(id);
       return p == null ? null : geometry.getBounds(p);
     },
   };
@@ -1033,12 +929,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     };
   }, [onBodyHit, selectionMode, effectiveSelection]);
 
-  const selectToolHandled = !!tools?.has('select');
-
   const bindings = usePointerGestures<TPose, TPose>({
-    move: selectToolHandled ? undefined : move,
-    resize: selectToolHandled ? undefined : resize,
-    rotate: selectToolHandled ? undefined : rotate,
     editAnchors: editAnchorsCtl as unknown as EditAnchorsController<{ id: string }> | undefined,
     editAnchorsActive: !!editingAnchors,
     hitBody: effectiveHitBody,
@@ -1224,14 +1115,13 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       !isCustomEntry(sceneCfg) &&
       (sceneCfg as SceneSlotConfig<TObject, TPose>).drawOne
     ) {
-      standardLayers.scene = buildSceneLayer(
+      standardLayers.scene = buildSceneLayer<TObject, TPose>(
         sceneCfg,
         adapter,
-        moveOverlay,
-        resizeOverlay,
-        rotateOverlay,
         debugSink,
         effectiveBoundsOf,
+        (id) => peekToolPose(id),
+        null,
       );
     }
 
@@ -1251,16 +1141,10 @@ function CanvasInner<TObject extends { id: string }, TPose>(
             const u = unionOfSelection(selectedIds);
             return u ? (u as unknown as TPose) : null;
           }
-          // Move/resize overlays carry TPose; surface them so geometry can
-          // project (handles non-rect TPose with rotation, etc.).
-          const ov = move?.overlay?.poses.get(id);
-          if (ov !== undefined) return ov;
-          if (resize?.overlay) {
-            if (resize.overlay.id === id) return resize.overlay.currentPose;
-            const leaf = resize.overlay.leafPoses?.get(id);
-            if (leaf !== undefined) return leaf;
-          }
-          if (rotate?.overlay && rotate.overlay.id === id) return rotate.overlay.currentPose;
+          // Active tool's overlay (move/resize/rotate ghost) wins so the
+          // selection chrome tracks the in-flight pose during a drag.
+          const tp = peekToolPose(id);
+          if (tp != null) return tp;
           if (!adapter) {
             if (effectiveBoundsOf) {
               const b = effectiveBoundsOf(id);
@@ -1341,7 +1225,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       out.push(...tools.getActiveOverlays());
     }
     return out;
-  }, [layersMap, adapter, moveOverlay, resizeOverlay, rotateOverlay, selectedIds, effectiveBoundsOf, multiActive, unionOfSelection, editingAnchors, editAnchorsCtl, editAnchorsCtl?.overlay, debugSink, tools]);
+  }, [layersMap, adapter, selectedIds, effectiveBoundsOf, multiActive, unionOfSelection, editingAnchors, editAnchorsCtl, editAnchorsCtl?.overlay, debugSink, tools]);
 
   // Append the debug overlay layer at the very top of the stack when debug
   // is enabled. The layer reads from `debugSink.snapshot()` and paints in
