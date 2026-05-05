@@ -4,12 +4,15 @@ import {
   PathBuilder,
   traceToContext,
   PATH_C,
+  pathPoseDescriptor,
+  pointInPath,
+  useSelection,
+  useSelectTool,
+  useTools,
 } from '@orochi235/weasel';
 import type {
   Path,
   PolygonPath,
-  MoveAdapter,
-  ResizeAdapter,
 } from '@orochi235/weasel';
 
 interface PathObj { id: string }
@@ -35,14 +38,40 @@ export function BezierEditDemo() {
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
 
-  const adapter: MoveAdapter<PathObj, Pose> & ResizeAdapter<PathObj, Pose> = {
-    getObject: (id) => (id === ID ? { id } : undefined),
+  const selection = useSelection();
+
+  // Hand-rolled adapter (no `arrayAdapter`) — single-object scene. We spread
+  // `selection.adapterMethods` so the tool's areaSelect surface reads/writes
+  // the same selection state as <Canvas>. AreaSelect's `hitTestArea`/
+  // `applyOps` are stubs because this demo doesn't use marquee selection;
+  // they don't clobber anything since nothing else provides them.
+  const adapter = {
+    getObject: (id: string) => (id === ID ? { id } : undefined),
     getObjects: () => [{ id: ID }],
     getPose: () => pathRef.current,
     getParent: () => null,
-    setPose: (_id, p) => setPath(p),
+    setPose: (_id: string, p: Pose) => setPath(p),
     setParent: () => {},
+    ...selection.adapterMethods,
+    hitTestArea: () => [],
+    applyOps: () => {},
   };
+
+  const select = useSelectTool<PathObj, Pose>(adapter, {
+    hitBody: (wx, wy) => (pointInPath(pathRef.current, wx, wy) ? [ID] : []),
+    boundsOf: (id) => (id === ID ? pathPoseDescriptor.getBounds(pathRef.current) : null),
+    handleHitRadius: HANDLE / zoom,
+    resize: { geometry: pathPoseDescriptor },
+    drawGhost: (cx, _o, p) => {
+      cx.strokeStyle = '#f5b7a3';
+      cx.lineWidth = 2;
+      cx.beginPath();
+      traceToContext(cx, p);
+      cx.stroke();
+    },
+    getObject: (id) => (id === ID ? { id } : null),
+  });
+  const tools = useTools({ active: 'select', registry: { select } });
 
   const appendCurve = () => {
     const p = pathRef.current;
@@ -98,7 +127,8 @@ export function BezierEditDemo() {
       height={H}
       className="ckd-canvas"
       adapter={adapter}
-      handleHitRadius={HANDLE / zoom}
+      selection={selection}
+      tools={tools}
       clientToWorld={(canvas, cx, cy) => {
         const r = canvas.getBoundingClientRect();
         const z = zoomRef.current;
