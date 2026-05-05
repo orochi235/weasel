@@ -40,6 +40,10 @@ export interface PenScratch {
    *  Used by drag.onStart (anchor lands at the down coords, not the
    *  threshold-crossing coords) and by pointer.onClick. Internal. */
   _pendingDown: { worldX: number; worldY: number; alt: boolean; shift: boolean } | null;
+  /** Timestamp + world coords of the most recent click, used to detect a
+   *  double-click on the last placed anchor (Illustrator convention for
+   *  open-finish). Internal. */
+  _lastClick: { t: number; x: number; y: number } | null;
 }
 
 export interface UseUserPenToolOptions<TPose> {
@@ -80,6 +84,7 @@ function freshScratch(): PenScratch {
     draggingHandleAt: null,
     closeHintActive: false,
     _pendingDown: null,
+    _lastClick: null,
   };
 }
 
@@ -90,7 +95,11 @@ function resetScratch(s: PenScratch): void {
   s.draggingHandleAt = null;
   s.closeHintActive = false;
   s._pendingDown = null;
+  s._lastClick = null;
 }
+
+/** Max ms between consecutive clicks to count as a double-click. */
+const DOUBLE_CLICK_MS = 300;
 
 /** Build a PolygonPath from the pen's accumulated subpaths. Cubic segments
  *  are emitted whenever either endpoint of the segment carries a handle:
@@ -255,16 +264,49 @@ export function useUserPenTool<TPose>(
           const p = down ? raw : snap ? snap(raw) : raw;
           const wx = p.x;
           const wy = p.y;
+          const radius = optsRef.current.closeHitRadius / ctx.view.scale;
+          const totalAnchors =
+            (s.current ? s.current.anchors.length : 0) +
+            s.finishedSubpaths.reduce((n, sp) => n + sp.anchors.length, 0);
+
+          // Cmd/Ctrl + click → open-finish (Illustrator convention). Wins
+          // over close-on-first-anchor: holding the modifier signals "stop
+          // editing" rather than "close to first." Needs ≥2 anchors so
+          // there's an actual path to commit.
+          if ((ctx.modifiers.meta || ctx.modifiers.ctrl) && totalAnchors >= 2) {
+            commit(s);
+            s._lastClick = null;
+            forceRenderRef.current();
+            return 'claim';
+          }
+
+          // Double-click on the last placed anchor → open-finish (Illustrator
+          // convention). We detect via prior-click timestamp + position; the
+          // dispatcher doesn't expose synthetic dblclick. Match within the
+          // close-hit radius so the second click can land slightly off.
+          const last = s._lastClick;
+          if (last && totalAnchors >= 2 && performance.now() - last.t <= DOUBLE_CLICK_MS) {
+            const cur = s.current;
+            const lastAnchor = cur && cur.anchors.length > 0
+              ? cur.anchors[cur.anchors.length - 1]
+              : null;
+            if (lastAnchor && dist(lastAnchor.x, lastAnchor.y, wx, wy) <= radius) {
+              commit(s);
+              s._lastClick = null;
+              forceRenderRef.current();
+              return 'claim';
+            }
+          }
 
           // Close-on-first-anchor (≥3 anchors).
           if (s.current && s.current.anchors.length >= 3) {
             const first = s.current.anchors[0];
-            const radius = optsRef.current.closeHitRadius / ctx.view.scale;
             if (dist(first.x, first.y, wx, wy) <= radius) {
               s.current.closed = true;
               s.finishedSubpaths.push(s.current);
               s.current = null;
               s.closeHintActive = false;
+              s._lastClick = null;
               forceRenderRef.current();
               return 'claim';
             }
@@ -273,6 +315,7 @@ export function useUserPenTool<TPose>(
           // Otherwise: append a corner anchor (start a new subpath if needed).
           if (!s.current) s.current = { anchors: [], closed: false };
           s.current.anchors.push({ x: wx, y: wy });
+          s._lastClick = { t: performance.now(), x: wx, y: wy };
           forceRenderRef.current();
           return 'claim';
         },
@@ -321,6 +364,12 @@ export function useUserPenTool<TPose>(
             applyOutHandle(s, ctx, optsRef.current.snapPoint);
             if (ctx.modifiers.alt && s.current) {
               s.current.anchors[s.draggingHandleAt].altBroken = true;
+            }
+            // Track the drag-placed anchor so a quick follow-up click on
+            // it triggers double-click open-finish, same as click-placed.
+            if (s.current) {
+              const a = s.current.anchors[s.draggingHandleAt];
+              s._lastClick = { t: performance.now(), x: a.x, y: a.y };
             }
             s.draggingHandleAt = null;
             s._pendingDown = null;

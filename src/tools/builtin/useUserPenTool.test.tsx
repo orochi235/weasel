@@ -268,6 +268,115 @@ describe('useUserPenTool', () => {
     expect(a).toBe(b);
   });
 
+  describe('Cmd+click open-finish (Illustrator convention)', () => {
+    it('Cmd+click after ≥2 anchors commits and clears the path', () => {
+      const { tool, adapter, scratch } = setup();
+      for (const [x, y] of [[0, 0], [50, 0], [50, 50]] as const) {
+        tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
+        tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
+      }
+      tool.pointer!.onDown!(pe(), makeCtx(scratch, {
+        worldX: 200, worldY: 200,
+        modifiers: { alt: false, shift: false, meta: true, ctrl: false, space: false },
+      }));
+      tool.pointer!.onClick!(pe(), makeCtx(scratch, {
+        worldX: 200, worldY: 200,
+        modifiers: { alt: false, shift: false, meta: true, ctrl: false, space: false },
+      }));
+      expect(adapter.addObject).toHaveBeenCalledTimes(1);
+      expect(scratch.current).toBeNull();
+      // The committed pose is open (Cmd+click is open-finish).
+      const lastWrap = adapter.added[adapter.added.length - 1];
+      expect(lastWrap.closed).toBe(false);
+    });
+
+    it('Cmd+click with <2 anchors does NOT commit', () => {
+      const { tool, adapter, scratch } = setup();
+      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
+      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
+      tool.pointer!.onDown!(pe(), makeCtx(scratch, {
+        worldX: 50, worldY: 50,
+        modifiers: { alt: false, shift: false, meta: true, ctrl: false, space: false },
+      }));
+      tool.pointer!.onClick!(pe(), makeCtx(scratch, {
+        worldX: 50, worldY: 50,
+        modifiers: { alt: false, shift: false, meta: true, ctrl: false, space: false },
+      }));
+      expect(adapter.addObject).not.toHaveBeenCalled();
+      // The Cmd+click fell through to corner-anchor placement.
+      expect(scratch.current!.anchors).toHaveLength(2);
+    });
+
+    it('Ctrl+click works the same as Cmd+click (cross-platform)', () => {
+      const { tool, adapter, scratch } = setup();
+      for (const [x, y] of [[0, 0], [50, 0]] as const) {
+        tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
+        tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
+      }
+      tool.pointer!.onDown!(pe(), makeCtx(scratch, {
+        worldX: 200, worldY: 200,
+        modifiers: { alt: false, shift: false, meta: false, ctrl: true, space: false },
+      }));
+      tool.pointer!.onClick!(pe(), makeCtx(scratch, {
+        worldX: 200, worldY: 200,
+        modifiers: { alt: false, shift: false, meta: false, ctrl: true, space: false },
+      }));
+      expect(adapter.addObject).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('double-click last anchor open-finish (Illustrator convention)', () => {
+    it('two clicks on the same spot within 300ms commit as open path', () => {
+      const { tool, adapter, scratch } = setup();
+      // Place two anchors first.
+      for (const [x, y] of [[0, 0], [50, 0]] as const) {
+        tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
+        tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
+      }
+      // Second click on the last anchor → open-finish.
+      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 50, worldY: 0 }));
+      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 50, worldY: 0 }));
+      expect(adapter.addObject).toHaveBeenCalledTimes(1);
+      expect(adapter.added[0].closed).toBe(false);
+      expect(scratch.current).toBeNull();
+    });
+
+    it('does NOT trigger when the second click lands far from the last anchor', () => {
+      const { tool, adapter, scratch } = setup();
+      for (const [x, y] of [[0, 0], [50, 0]] as const) {
+        tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
+        tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
+      }
+      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 500, worldY: 500 }));
+      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 500, worldY: 500 }));
+      expect(adapter.addObject).not.toHaveBeenCalled();
+      expect(scratch.current!.anchors).toHaveLength(3);
+    });
+
+    it('does NOT trigger when interval exceeds 300ms', () => {
+      const { tool, adapter, scratch } = setup();
+      for (const [x, y] of [[0, 0], [50, 0]] as const) {
+        tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
+        tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
+      }
+      // Force the last-click timestamp far back in time.
+      scratch._lastClick = { t: performance.now() - 1000, x: 50, y: 0 };
+      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 50, worldY: 0 }));
+      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 50, worldY: 0 }));
+      expect(adapter.addObject).not.toHaveBeenCalled();
+      expect(scratch.current!.anchors).toHaveLength(3);
+    });
+
+    it('does NOT trigger with <2 anchors (single anchor + repeat click)', () => {
+      const { tool, adapter, scratch } = setup();
+      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
+      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
+      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
+      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
+      expect(adapter.addObject).not.toHaveBeenCalled();
+    });
+  });
+
   describe('snapPoint', () => {
     const SPACING = 10;
     const grid = (p: { x: number; y: number }) => ({

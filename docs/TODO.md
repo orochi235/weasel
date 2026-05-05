@@ -58,8 +58,6 @@ Small items surfaced during Phase 2a/2b/2c shakedown:
 - **Mid-creation editing of placed anchors.** Append-only in v1 — to fix mistakes, finish the path and re-enter via BezierEdit. Drag-on-placed-anchor during creation embeds the BezierEdit gesture into pen creation (significant scope).
 - **Continue an existing path's open endpoint.** Click an existing open path's first/last anchor to pick it up and append. Adjacent to mid-creation editing; not in v1.
 - **Compound-path with open middle subpath.** v1 enforces "open subpath must be the last." Mixing open/closed in arbitrary order in a single multi-contour path needs a third Enter meaning (or a separate keybind for "open this subpath without committing").
-- **Double-click last anchor to open-finish** (Illustrator convention). v1 uses Enter only.
-- **Cmd+click-off to open-finish** (Illustrator convention). v1 uses Enter only.
 - **Click-on-existing-anchor-to-edit during creation.** Same scope as mid-creation editing; deferred together.
 - **Return path to the default tool.** *Shipped.* `useSelectTool` now declares `keybinding: 'V'` and `useKeybindings` handles Escape — falls back to the snapshotted initial active tool unless a `defaultTool: string | null` option overrides (or disables) it. Tests cover all three paths.
 
