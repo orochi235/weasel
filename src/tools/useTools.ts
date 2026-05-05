@@ -17,7 +17,11 @@ export interface UseToolsOptions {
    *  coords, modifiers, selection, adapter, applyBatch. Tests can supply
    *  a stub. Optional — the dispatcher works with a default empty ctx
    *  for tests that don't need the wiring. */
-  getCtx?: (overrides?: { clientX?: number; clientY?: number }) => Omit<ToolCtx, 'scratch'>;
+  getCtx?: (overrides?: {
+    clientX?: number;
+    clientY?: number;
+    modifiers?: { alt: boolean; shift: boolean; meta: boolean; ctrl: boolean };
+  }) => Omit<ToolCtx, 'scratch'>;
 }
 
 export interface ToolsApi {

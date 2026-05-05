@@ -633,25 +633,38 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   const effectiveAdapterRefForCtx = useRef(effectiveAdapter);
   effectiveAdapterRefForCtx.current = effectiveAdapter;
 
+  const clientToWorldRef = useRef(clientToWorld);
+  clientToWorldRef.current = clientToWorld;
   const toolsCtxBase = useMemo(
-    () => (overrides?: { clientX?: number; clientY?: number }) => {
+    () => (overrides?: {
+      clientX?: number;
+      clientY?: number;
+      modifiers?: { alt: boolean; shift: boolean; meta: boolean; ctrl: boolean };
+    }) => {
       const view = viewRef.current;
       let worldX = 0;
       let worldY = 0;
-      if (overrides && (overrides.clientX !== undefined || overrides.clientY !== undefined)) {
-        const c = canvasRef.current;
-        if (c) {
+      const c = canvasRef.current;
+      if (overrides && (overrides.clientX !== undefined || overrides.clientY !== undefined) && c) {
+        const cx = overrides.clientX ?? 0;
+        const cy = overrides.clientY ?? 0;
+        const cw = clientToWorldRef.current;
+        if (cw) {
+          [worldX, worldY] = cw(c, cx, cy);
+        } else {
           const rect = c.getBoundingClientRect();
-          if (overrides.clientX !== undefined) worldX = (overrides.clientX - rect.left) / view.scale + view.x;
-          if (overrides.clientY !== undefined) worldY = (overrides.clientY - rect.top) / view.scale + view.y;
+          worldX = (cx - rect.left) / view.scale + view.x;
+          worldY = (cy - rect.top) / view.scale + view.y;
         }
       }
-      const c = canvasRef.current;
       const rect = c ? c.getBoundingClientRect() : (typeof DOMRect !== 'undefined' ? new DOMRect() : ({ x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 } as DOMRect));
+      const m = overrides?.modifiers;
       return {
         worldX,
         worldY,
-        modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
+        modifiers: m
+          ? { alt: m.alt, shift: m.shift, meta: m.meta, ctrl: m.ctrl, space: false }
+          : { alt: false, shift: false, meta: false, ctrl: false, space: false },
         selection: effectiveSelectionRefForCtx.current,
         adapter: effectiveAdapterRefForCtx.current,
         applyBatch: (ops: Op[], label: string) => {
@@ -672,7 +685,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     if (!tools) return;
     // Small monkey-patch: replace the dispatcher's getCtx by re-creating it.
     // Phase 2 cleanup: thread getCtx through useTools properly so this isn't needed.
-    const d = tools.dispatcher as ToolsDispatcher & { __setGetCtx?: (fn: (overrides?: { clientX?: number; clientY?: number }) => unknown) => void };
+    const d = tools.dispatcher as ToolsDispatcher & { __setGetCtx?: (fn: (overrides?: { clientX?: number; clientY?: number; modifiers?: { alt: boolean; shift: boolean; meta: boolean; ctrl: boolean } }) => unknown) => void };
     d.__setGetCtx?.(toolsCtxBase);
   }, [tools, toolsCtxBase]);
 

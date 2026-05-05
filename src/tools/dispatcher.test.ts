@@ -212,3 +212,51 @@ describe('dispatcher: cancelGesture', () => {
     expect(onCancel).toHaveBeenCalledOnce();
   });
 });
+
+describe('dispatcher: ctx overrides', () => {
+  it('passes pointer event modifiers + clientX/Y to getCtx', () => {
+    const calls: Array<{ clientX?: number; clientY?: number; modifiers?: Record<string, boolean> }> = [];
+    const tool = defineTool({
+      id: 't',
+      drag: { onStart: () => 'pass', onMove: () => 'pass', onEnd: () => 'pass' },
+    });
+    const d = createToolsDispatcher({
+      getSlots: () => ({ modifier: null, active: tool, alwaysOn: [] }),
+      getCtx: (overrides) => {
+        calls.push({ ...overrides });
+        return makeCtx();
+      },
+    });
+
+    d.onPointerDown(pointerEvent('pointerdown', {
+      clientX: 5, clientY: 7, altKey: true, shiftKey: true,
+    } as PointerEventInit));
+
+    expect(calls.at(-1)).toEqual({
+      clientX: 5,
+      clientY: 7,
+      modifiers: { alt: true, shift: true, meta: false, ctrl: false },
+    });
+  });
+
+  it('passes keyboard modifiers to getCtx', () => {
+    const calls: Array<{ modifiers?: Record<string, boolean> }> = [];
+    const tool = defineTool({
+      id: 't',
+      keyboard: { onDown: () => 'pass' },
+    });
+    const d = createToolsDispatcher({
+      getSlots: () => ({ modifier: null, active: tool, alwaysOn: [] }),
+      getCtx: (overrides) => {
+        calls.push({ ...overrides });
+        return makeCtx();
+      },
+    });
+
+    d.onKeyDown(new KeyboardEvent('keydown', { key: 'x', metaKey: true, ctrlKey: true }));
+
+    expect(calls.at(-1)?.modifiers).toEqual({
+      alt: false, shift: false, meta: true, ctrl: true,
+    });
+  });
+});
