@@ -33,6 +33,13 @@ export interface UseInsertOptions<TPose, TObject extends { id: string } = { id: 
    *  regardless of bounds — commitInsert is never called. Used by tool hooks
    *  that wire only pointer.onClick (no marquee). */
   clickOnly?: boolean;
+  /** Override for op dispatch on commit. When set, this is called instead of
+   *  `dispatchApplyBatch(adapter, ...)`. Tool hooks that synthesize an adapter
+   *  but want commits to route through the active tool ctx's `applyBatch`
+   *  (for history integration) supply a function that reads from a ref
+   *  captured on handler entry. Read fresh on every commit, so a ref-reader
+   *  works without retriggering memos. */
+  applyBatch?: (ops: Op[], label: string) => void;
   onGestureStart?: () => void;
   onGestureEnd?: (committed: boolean) => void;
 }
@@ -72,6 +79,7 @@ export function useInsert<TObject extends { id: string }, TPose>(
     posefromBounds = (b) => b as unknown as TPose,
     pointInsert,
     clickOnly = false,
+    applyBatch,
     onGestureStart,
     onGestureEnd,
   } = options;
@@ -95,6 +103,8 @@ export function useInsert<TObject extends { id: string }, TPose>(
   pointInsertRef.current = pointInsert;
   const clickOnlyRef = useRef(clickOnly);
   clickOnlyRef.current = clickOnly;
+  const applyBatchOptionRef = useRef(applyBatch);
+  applyBatchOptionRef.current = applyBatch;
 
   const stateRef = useRef<{ active: boolean; ctx: GestureContext<TPose> | null }>({
     active: false,
@@ -164,6 +174,11 @@ export function useInsert<TObject extends { id: string }, TPose>(
     const onGestureEnd = onGestureEndRef.current;
     const pointInsert = pointInsertRef.current;
     const clickOnly = clickOnlyRef.current;
+    const applyBatchOverride = applyBatchOptionRef.current;
+    const dispatch = (ops: Op[]) => {
+      if (applyBatchOverride) applyBatchOverride(ops, insertLabel);
+      else dispatchApplyBatch(adapter, ops, insertLabel);
+    };
     if (!s.active || !s.ctx) {
       cleanup();
       onGestureEnd?.(false);
@@ -179,7 +194,7 @@ export function useInsert<TObject extends { id: string }, TPose>(
         const created = pointInsert({ x: sp.x, y: sp.y });
         if (created) {
           const ops: Op[] = [createInsertOp({ object: created, label: insertLabel })];
-          dispatchApplyBatch(adapter, ops, insertLabel);
+          dispatch(ops);
           cleanup();
           onGestureEnd?.(true);
           return;
@@ -196,7 +211,7 @@ export function useInsert<TObject extends { id: string }, TPose>(
       return;
     }
     const ops: Op[] = [createInsertOp({ object: created, label: insertLabel })];
-    dispatchApplyBatch(adapter, ops, insertLabel);
+    dispatch(ops);
     cleanup();
     onGestureEnd?.(true);
   }, [cleanup]);

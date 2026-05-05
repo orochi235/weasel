@@ -4,7 +4,7 @@ import type { Tool } from '../types';
 import type { RenderLayer } from '../../core/layers/render';
 import { useInsert } from '../../interactions/gestures/insert/insert';
 import type { InsertAdapter } from '../../core/adapters/types';
-import type { Op } from '../../core/ops/types';
+import type { ToolCtx } from '../types';
 import { applyHitExistingGate } from './hitExistingGate';
 import { viewToTransform } from '../../features/viewport/view';
 import { worldToScreen } from '../../features/viewport/viewTransform';
@@ -51,13 +51,12 @@ export function useTextTool<TObject extends { id: string }>(
   const minW = minBounds?.width ?? 4;
   const minH = minBounds?.height ?? 4;
 
-  // The gesture hook dispatches commits via `adapter.applyBatch` (or
-  // `applyOpsTo(adapter, ...)` if absent — see dispatchApplyBatch). We want
-  // commits to flow through the active tool ctx's `applyBatch` so apps with
-  // history integration get a checkpoint. Stash the latest ctx.applyBatch
-  // in a ref before invoking the controller; the synthesized adapter's
-  // applyBatch reads from it.
-  const applyBatchRef = useRef<((ops: Op[], label: string) => void) | null>(null);
+  // Capture the active tool ctx's `applyBatch` on each handler entry so the
+  // gesture hook's commit dispatch can route through it (history integration).
+  // useTextTool synthesizes its own adapter rather than taking one from the
+  // consumer (the click-first ergonomic), so there's no consumer-supplied
+  // applyBatch to call — we feed it via useInsert's `applyBatch` option.
+  const applyBatchRef = useRef<ToolCtx<undefined>['applyBatch'] | null>(null);
 
   const adapter = useMemo<InsertAdapter<TObject>>(() => ({
     commitInsert: (b) => (commitInsert ? commitInsert(b) : null),
@@ -66,9 +65,6 @@ export function useTextTool<TObject extends { id: string }>(
     insertObject: () => {},
     setSelection: () => {},
     getSelection: () => [],
-    applyBatch: (ops, label) => {
-      applyBatchRef.current?.(ops, label);
-    },
   }), [commitInsert]);
 
   const ctl = useInsert<TObject, { x: number; y: number; width: number; height: number }>(
@@ -78,6 +74,7 @@ export function useTextTool<TObject extends { id: string }>(
       clickOnly: !commitInsert,
       minBounds: { width: minW, height: minH },
       insertLabel: 'Insert text',
+      applyBatch: (ops, label) => applyBatchRef.current?.(ops, label),
     },
   );
 
