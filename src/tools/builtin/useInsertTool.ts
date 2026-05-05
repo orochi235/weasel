@@ -73,6 +73,10 @@ export function useInsertTool<TObject extends { id: string }, TPose>(
         id: 'insert',
         cursor: 'crosshair',
         overlay,
+        // Dispatch routes through the consumer-supplied adapter (gesture hook calls
+        // adapter.applyBatch / falls back to applyOpsTo). Unlike useTextTool, which
+        // synthesizes its own adapter and must capture ctx.applyBatch into a ref,
+        // useInsertTool's consumer owns the adapter and wires history themselves.
         ...(hasPointInsert
           ? {
               pointer: {

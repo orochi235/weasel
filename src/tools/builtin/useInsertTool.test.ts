@@ -154,6 +154,7 @@ describe('useInsertTool — opt-in click + hitExisting', () => {
     let decision: unknown;
     act(() => {
       decision = result.current.drag!.onStart!(pe(), ctx);
+      result.current.drag!.onMove!(pe(), ctx);
       result.current.drag!.onEnd!(pe(), ctx);
     });
     expect(decision).toBe('claim');
