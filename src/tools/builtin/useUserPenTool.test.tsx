@@ -20,7 +20,11 @@ function makeAdapter() {
   return { added, ids, addObject, setSelection };
 }
 
-function setup(over: { autoSelect?: boolean; closeHitRadius?: number } = {}) {
+function setup(over: {
+  autoSelect?: boolean;
+  closeHitRadius?: number;
+  snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
+} = {}) {
   const adapter = makeAdapter();
   const wrapPath = vi.fn((path: PolygonPath, opts: { closed: boolean }): Pose => ({
     kind: 'path', path, closed: opts.closed,
@@ -262,5 +266,57 @@ describe('useUserPenTool', () => {
     const a = tool.initScratch!();
     const b = tool.initScratch!();
     expect(a).toBe(b);
+  });
+
+  describe('snapPoint', () => {
+    const SPACING = 10;
+    const grid = (p: { x: number; y: number }) => ({
+      x: Math.round(p.x / SPACING) * SPACING,
+      y: Math.round(p.y / SPACING) * SPACING,
+    });
+
+    it('snaps corner-anchor click placement to the grid', () => {
+      const { tool, scratch } = setup({ snapPoint: grid });
+      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 12, worldY: 18 }));
+      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 12, worldY: 18 }));
+      expect(scratch.current!.anchors).toEqual([{ x: 10, y: 20 }]);
+    });
+
+    it('snaps smooth-anchor base point on drag.onStart', () => {
+      const { tool, scratch } = setup({ snapPoint: grid });
+      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 23, worldY: 7 }));
+      tool.drag!.onStart!(pe(), makeCtx(scratch, { worldX: 25, worldY: 9 }));
+      // Anchor base is the snapped pendingDown coords.
+      expect(scratch.current!.anchors[0].x).toBe(20);
+      expect(scratch.current!.anchors[0].y).toBe(10);
+    });
+
+    it('snaps the rubber-band cursor in drag.onMove (not while dragging a handle)', () => {
+      const { tool, scratch } = setup({ snapPoint: grid });
+      // Place a corner anchor first so we're in Drawing.
+      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
+      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
+      // Move (no down/drag in flight from the dispatcher's perspective for
+      // cursor preview — onMove with draggingHandleAt === null hits the
+      // rubber-band branch).
+      tool.drag!.onMove!(pe(), makeCtx(scratch, { worldX: 47, worldY: 53 }));
+      expect(scratch.cursor).toEqual({ x: 50, y: 50 });
+    });
+
+    it('snaps the outgoing-handle target while dragging a handle', () => {
+      const { tool, scratch } = setup({ snapPoint: grid });
+      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
+      tool.drag!.onStart!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
+      tool.drag!.onMove!(pe(), makeCtx(scratch, { worldX: 27, worldY: 32 }));
+      const a = scratch.current!.anchors[0];
+      expect(a.outHandle).toEqual({ x: 30, y: 30 });
+    });
+
+    it('passthrough (no snapPoint) preserves raw coords', () => {
+      const { tool, scratch } = setup();
+      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 12, worldY: 18 }));
+      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 12, worldY: 18 }));
+      expect(scratch.current!.anchors).toEqual([{ x: 12, y: 18 }]);
+    });
   });
 });

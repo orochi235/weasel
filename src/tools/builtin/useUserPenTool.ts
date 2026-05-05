@@ -56,6 +56,20 @@ export interface UseUserPenToolOptions<TPose> {
    *  Note: implemented in world space here (divided by view.scale at the
    *  call site); aligns with `useSelectTool.handleHitRadius`. */
   closeHitRadius?: number;
+  /** Optional point snapper applied to every world-space coordinate the
+   *  pen records or previews — anchor positions (corner clicks, smooth-
+   *  drag base point), the rubber-band cursor, and the outgoing-handle
+   *  target. Receives raw world coords; returns snapped world coords.
+   *  Wire to `gridSnapStrategy`-style spacing via the consumer:
+   *
+   *      snapPoint: (p) => ({
+   *        x: Math.round(p.x / SPACING) * SPACING,
+   *        y: Math.round(p.y / SPACING) * SPACING,
+   *      })
+   *
+   *  Pen state (anchor handles, etc.) is computed AFTER snapping so the
+   *  visible geometry stays grid-aligned. */
+  snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
 }
 
 function freshScratch(): PenScratch {
@@ -149,7 +163,7 @@ function dist(ax: number, ay: number, bx: number, by: number): number {
 export function useUserPenTool<TPose>(
   options: UseUserPenToolOptions<TPose>,
 ): Tool<PenScratch> {
-  const { wrapPath, adapter, autoSelect = true, closeHitRadius = 8 } = options;
+  const { wrapPath, adapter, autoSelect = true, closeHitRadius = 8, snapPoint } = options;
 
   // Persistent scratch: single ref reused across gestures so multi-click
   // state survives the dispatcher's per-gesture initScratch contract.
@@ -158,8 +172,8 @@ export function useUserPenTool<TPose>(
 
   // Latest options stashed so handlers see fresh values without rebuilding
   // the Tool record (which would lose scratch identity in the dispatcher).
-  const optsRef = useRef({ wrapPath, adapter, autoSelect, closeHitRadius });
-  optsRef.current = { wrapPath, adapter, autoSelect, closeHitRadius };
+  const optsRef = useRef({ wrapPath, adapter, autoSelect, closeHitRadius, snapPoint });
+  optsRef.current = { wrapPath, adapter, autoSelect, closeHitRadius, snapPoint };
 
   // Scratch is a mutable ref (so click-by-click state survives the
   // dispatcher's per-gesture initScratch contract). Mutations alone don't
@@ -217,9 +231,11 @@ export function useUserPenTool<TPose>(
       pointer: {
         onDown: (_e, ctx) => {
           const s = ctx.scratch;
+          const snap = optsRef.current.snapPoint;
+          const p = snap ? snap({ x: ctx.worldX, y: ctx.worldY }) : { x: ctx.worldX, y: ctx.worldY };
           s._pendingDown = {
-            worldX: ctx.worldX,
-            worldY: ctx.worldY,
+            worldX: p.x,
+            worldY: p.y,
             alt: ctx.modifiers.alt,
             shift: ctx.modifiers.shift,
           };
@@ -231,8 +247,14 @@ export function useUserPenTool<TPose>(
           const s = ctx.scratch;
           const down = s._pendingDown;
           s._pendingDown = null;
-          const wx = down ? down.worldX : ctx.worldX;
-          const wy = down ? down.worldY : ctx.worldY;
+          const snap = optsRef.current.snapPoint;
+          const raw = down
+            ? { x: down.worldX, y: down.worldY }
+            : { x: ctx.worldX, y: ctx.worldY };
+          // _pendingDown is already snapped on capture; only snap the fallback path.
+          const p = down ? raw : snap ? snap(raw) : raw;
+          const wx = p.x;
+          const wy = p.y;
 
           // Close-on-first-anchor (≥3 anchors).
           if (s.current && s.current.anchors.length >= 3) {
@@ -260,13 +282,16 @@ export function useUserPenTool<TPose>(
         onStart: (_e, ctx) => {
           const s = ctx.scratch;
           const down = s._pendingDown;
-          const ax = down ? down.worldX : ctx.worldX;
-          const ay = down ? down.worldY : ctx.worldY;
+          const snap = optsRef.current.snapPoint;
+          // _pendingDown is already snapped on capture; only snap the fallback path.
+          const fallback = snap ? snap({ x: ctx.worldX, y: ctx.worldY }) : { x: ctx.worldX, y: ctx.worldY };
+          const ax = down ? down.worldX : fallback.x;
+          const ay = down ? down.worldY : fallback.y;
           if (!s.current) s.current = { anchors: [], closed: false };
           s.current.anchors.push({ x: ax, y: ay });
           s.draggingHandleAt = s.current.anchors.length - 1;
           // Apply initial outHandle from current cursor.
-          applyOutHandle(s, ctx);
+          applyOutHandle(s, ctx, optsRef.current.snapPoint);
           if (down?.alt) {
             s.current.anchors[s.draggingHandleAt].altBroken = true;
           }
@@ -277,12 +302,13 @@ export function useUserPenTool<TPose>(
         onMove: (_e, ctx) => {
           const s = ctx.scratch;
           if (s.draggingHandleAt !== null) {
-            applyOutHandle(s, ctx);
+            applyOutHandle(s, ctx, optsRef.current.snapPoint);
             if (ctx.modifiers.alt && s.current) {
               s.current.anchors[s.draggingHandleAt].altBroken = true;
             }
           } else {
-            s.cursor = { x: ctx.worldX, y: ctx.worldY };
+            const snap = optsRef.current.snapPoint;
+            s.cursor = snap ? snap({ x: ctx.worldX, y: ctx.worldY }) : { x: ctx.worldX, y: ctx.worldY };
             updateCloseHint(s, ctx.view);
           }
           forceRenderRef.current();
@@ -292,7 +318,7 @@ export function useUserPenTool<TPose>(
         onEnd: (_e, ctx) => {
           const s = ctx.scratch;
           if (s.draggingHandleAt !== null) {
-            applyOutHandle(s, ctx);
+            applyOutHandle(s, ctx, optsRef.current.snapPoint);
             if (ctx.modifiers.alt && s.current) {
               s.current.anchors[s.draggingHandleAt].altBroken = true;
             }
@@ -336,11 +362,16 @@ export function useUserPenTool<TPose>(
   }, []);
 }
 
-function applyOutHandle<S extends PenScratch>(s: S, ctx: ToolCtx<S>): void {
+function applyOutHandle<S extends PenScratch>(
+  s: S,
+  ctx: ToolCtx<S>,
+  snap?: (p: { x: number; y: number }) => { x: number; y: number },
+): void {
   if (s.current === null || s.draggingHandleAt === null) return;
   const anchor = s.current.anchors[s.draggingHandleAt];
-  let dx = ctx.worldX - anchor.x;
-  let dy = ctx.worldY - anchor.y;
+  const target = snap ? snap({ x: ctx.worldX, y: ctx.worldY }) : { x: ctx.worldX, y: ctx.worldY };
+  let dx = target.x - anchor.x;
+  let dy = target.y - anchor.y;
   if (ctx.modifiers.shift) {
     const c = constrainTo45(dx, dy);
     dx = c.dx;

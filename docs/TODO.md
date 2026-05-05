@@ -54,7 +54,6 @@ Small items surfaced during Phase 2a/2b/2c shakedown:
 
 ### Pen tool follow-ups (deferred from `docs/specs/2026-05-03-pen-tool-design.md`)
 
-- **Snap-to-grid during pen creation.** Anchors today land at raw cursor coords; the consumer's `gridSnapStrategy` is ignored. Open: whether the rubber-band also snaps mid-preview.
 - **Snap-to-existing-anchors** (cross-path anchor snapping). Clicking near an existing path's anchor would coalesce. Useful for stitching paths; out of v1.
 - **Mid-creation editing of placed anchors.** Append-only in v1 — to fix mistakes, finish the path and re-enter via BezierEdit. Drag-on-placed-anchor during creation embeds the BezierEdit gesture into pen creation (significant scope).
 - **Continue an existing path's open endpoint.** Click an existing open path's first/last anchor to pick it up and append. Adjacent to mid-creation editing; not in v1.
