@@ -55,12 +55,13 @@ Small items surfaced during Phase 2a/2b/2c shakedown:
 - **Swillustrator demo (full 5-tool palette).** *Shipped.* All five tools landed (select + insert-rect + text + pen + hand). Pen ships as `useUserPenTool` + `createPenPreviewLayer` — see `docs/specs/2026-05-03-pen-tool-design.md`.
 - **Image / polygon / future drag-insert tools.** Deferred from `docs/specs/2026-05-04-drag-insert-primitive-design.md`. The consolidated `useInsert` + `hitExistingGate` primitive is built so adding new drag-insert tools is a thin Tool veneer, but each tool is its own task.
 - **Promote `hitExistingGate` to gate select-tool's move/resize paths.** Deferred from `docs/specs/2026-05-04-drag-insert-primitive-design.md`. Different responsibility (gating mutation gestures rather than insertion), different gesture surface — punt until a real consumer wants it.
-- Revisit useTextTool's `applyBatchRef` capture-on-entry shim. The synthesized
-  InsertAdapter has nowhere to source `applyBatch` except via ctx, so handlers
-  capture it into a ref. Cleaner alternatives: (a) per-call applyBatch override
-  on useInsert's controller methods; (b) have useTextTool take an adapter like
-  useInsertTool does and let consumers synthesize. Defer until a third drag-insert
-  tool would otherwise duplicate the shim.
+- **Replace useTextTool's `applyBatchRef` capture-on-entry shim** *(near-term cleanup)*. The synthesized InsertAdapter has nowhere to source `applyBatch` except via ctx, so each handler captures `ctx.applyBatch` into a ref before invoking the controller. It's load-bearing (commits route through the consumer's history-aware `applyBatch`), untested at the dispatch-routing seam, and asymmetric with `useInsertTool` which gets `applyBatch` from its consumer-supplied adapter. Cleaner alternatives: (a) per-call `applyBatch` override on `useInsert`'s controller methods; (b) make `useTextTool` take an adapter like `useInsertTool` does and let consumers synthesize. Pick before any third drag-insert tool ships.
+- **Test the dispatch-routing seam.** No test today distinguishes "commits flow through `ctx.applyBatch`" vs "through `adapter.applyBatch`" — a regression here (e.g. an inadvertent switch to `applyOpsTo`) would silently break history integration in consuming apps. Add an assertion that the active-tool ctx's `applyBatch` is the one called, for both `useInsertTool` and `useTextTool`.
+- **Pick one overlay-memo pattern.** `useInsertTool` declares `useMemo([ctl])` (recomputes on controller identity change) while `useTextTool` uses `useMemo([])` + a `ctlRef` (stable identity, ref read inside `draw`). Both work; the asymmetry is just drift. Settle on one when the second drag-insert tool lands.
+- **Sweep `poseFromBounds` once the `applyBatchRef` shim goes away.** The helper is no longer referenced by anything new — confirm and remove if truly dead after the shim cleanup.
+- **`useTextTool.ts` imports `Op` only for `applyBatchRef` typing.** Auto-resolves when the shim is removed; flag-don't-fix until then.
+- **Shared test scaffolding for tool hooks.** `useInsertTool.test.ts` and `useTextTool.test.ts` both hand-roll a `makeCtx` helper. Extract to `src/tools/builtin/testUtils.ts` to prevent drift as more drag-insert tools land.
+- **Extract a shared `drawMarquee(ctx, view, bounds, style, defaults)` helper.** Both `useInsertTool` and `useTextTool` overlays are near-identical 22-line `save → fillRect → strokeRect` blocks differing only in default stroke/dash/fill. Fold when the third tool would otherwise copy the third copy.
 
 ### Pen tool follow-ups (deferred from `docs/specs/2026-05-03-pen-tool-design.md`)
 
