@@ -106,12 +106,6 @@ export * from './core/layers/render';
 export * from './core/layers/LayerRenderer';
 export { createGridLayer } from './features/grid/layer';
 export type { GridLayerOpts } from './features/grid/layer';
-export { defaultLayers } from './canvas/layers';
-export type {
-  DefaultLayersOpts,
-  DefaultLayersScene,
-  DefaultLayersSelection,
-} from './canvas/layers';
 export { createCellHighlightLayer } from './features/grid/cellHighlight';
 export type { CellHighlightLayerOpts } from './features/grid/cellHighlight';
 export { createChildrenLayer } from './features/groups/children';
