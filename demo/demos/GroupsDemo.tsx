@@ -8,13 +8,10 @@ import {
   useSelection,
   useGroup,
   useUngroup,
+  useSelectTool,
+  useTools,
 } from '@orochi235/weasel';
-import type {
-  Group,
-  GroupAdapter,
-  MoveAdapter,
-  ResizeAdapter,
-} from '@orochi235/weasel';
+import type { Group } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -27,11 +24,6 @@ const INITIAL_RECTS: Rect[] = [
   { id: 'd', x: 270, y: 130, width: 60, height: 60, color: '#d4a574' },
 ];
 const INITIAL_GROUP: Group = { id: 'g1', members: ['a', 'b', 'c'] };
-
-type Adapter = MoveAdapter<Rect, Pose> & ResizeAdapter<Rect, Pose> & GroupAdapter & {
-  getSelection: () => string[];
-  setSelection: (ids: string[]) => void;
-};
 
 export function GroupsDemo() {
   const [rects, setRects] = useState<Rect[]>(INITIAL_RECTS);
@@ -48,17 +40,17 @@ export function GroupsDemo() {
     setItems: setRects,
     toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
   });
-  const adapter: Adapter = {
+  const adapter = {
     ...baseAdapter,
     ...selection.adapterMethods,
-    getGroup: (id) => groupsRef.current.find((g) => g.id === id),
-    getGroupsForMember: (id) =>
+    getGroup: (id: string) => groupsRef.current.find((g) => g.id === id),
+    getGroupsForMember: (id: string) =>
       groupsRef.current.filter((g) => g.members.includes(id)).map((g) => g.id),
-    insertGroup: (g) => setGroups((gs) => [...gs, g]),
-    removeGroup: (id) => setGroups((gs) => gs.filter((g) => g.id !== id)),
-    addToGroup: (gid, ids) =>
+    insertGroup: (g: Group) => setGroups((gs) => [...gs, g]),
+    removeGroup: (id: string) => setGroups((gs) => gs.filter((g) => g.id !== id)),
+    addToGroup: (gid: string, ids: string[]) =>
       setGroups((gs) => gs.map((g) => (g.id === gid ? { ...g, members: [...g.members, ...ids] } : g))),
-    removeFromGroup: (gid, ids) =>
+    removeFromGroup: (gid: string, ids: string[]) =>
       setGroups((gs) => gs.map((g) => (g.id === gid ? { ...g, members: g.members.filter((m) => !ids.includes(m)) } : g))),
   };
 
@@ -94,6 +86,29 @@ export function GroupsDemo() {
     return null;
   };
 
+  const select = useSelectTool<Rect, Pose>(adapter, {
+    hitBody: (wx, wy) => {
+      const id = hitBody(wx, wy);
+      return id ? [id] : [];
+    },
+    boundsOf,
+    handleHitRadius: HANDLE,
+    move: { expandIds: (ids) => expandToLeaves(ids, adapter) },
+    resize: {
+      expandIds: (ids) => {
+        if (ids.length === 1 && adapter.getGroup(ids[0]) === undefined) return ids;
+        return expandToLeaves(ids, adapter);
+      },
+    },
+    drawGhost: (ctx, rect, pose) => {
+      if (!rect) return;
+      ctx.fillStyle = rect.color;
+      ctx.fillRect(pose.x, pose.y, pose.width, pose.height);
+    },
+    getObject: (id) => rectsRef.current.find((r) => r.id === id) ?? null,
+  });
+  const tools = useTools({ active: 'select', registry: { select } });
+
   return (
     <Canvas
       width={W}
@@ -101,16 +116,7 @@ export function GroupsDemo() {
       className="ckd-canvas"
       adapter={adapter}
       selection={selection}
-      moveOptions={{ expandIds: (ids) => expandToLeaves(ids, adapter) }}
-      resizeOptions={{
-        expandIds: (ids) => {
-          if (ids.length === 1 && adapter.getGroup(ids[0]) === undefined) return ids;
-          return expandToLeaves(ids, adapter);
-        },
-      }}
-      hitBody={hitBody}
-      boundsOf={boundsOf}
-      handleHitRadius={HANDLE}
+      tools={tools}
       layers={{
         scene: {
           drawOne: (cx, r, p) => {
