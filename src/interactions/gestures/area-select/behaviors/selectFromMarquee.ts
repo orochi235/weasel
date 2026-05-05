@@ -9,6 +9,11 @@ export function selectFromMarquee(): AreaSelectBehavior {
     defaultTransient: true,
     onEnd(ctx) {
       const adapter = ctx.adapter as unknown as AreaSelectAdapter;
+      // Defensive: when the adapter omits area-select methods (opt-in
+      // marquee), `useSelectTool` already skips wiring this behavior. If a
+      // consumer wires it manually against an under-featured adapter, no-op
+      // gracefully rather than throwing.
+      if (!adapter.getSelection || !adapter.hitTestArea) return null;
       const start = ctx.origin.get('gesture')!;
       const current = ctx.current.get('gesture') ?? start;
       const x = Math.min(start.worldX, current.worldX);

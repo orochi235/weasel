@@ -59,12 +59,8 @@ export function PathPoseDemo() {
     getObject: (id: string) => (id === ID ? { id } : undefined),
     getObjects: () => [{ id: ID }],
     getPose: () => pathRef.current,
-    getParent: () => null,
     setPose: (_id: string, p: Pose) => setPath(p),
-    setParent: () => {},
     ...selection.adapterMethods,
-    hitTestArea: () => [],
-    applyOps: () => {},
   };
 
   const select = useSelectTool<PathObj, Pose>(adapter, {
@@ -129,7 +125,6 @@ const [path, setPath] = useState<Path>(polygonFromPoints([...]));
 
 const adapter: MoveAdapter<PathObj, Path> & ResizeAdapter<PathObj, Path> = {
   getObject, getObjects, getPose: () => path, setPose: (_id, p) => setPath(p),
-  getParent: () => null, setParent: () => {},
 };
 
 // Path TPose is auto-detected — Canvas's default geometry dispatches on

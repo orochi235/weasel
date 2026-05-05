@@ -53,7 +53,6 @@ export function AnimationDemo() {
       cardsRef.current
         .filter((o) => o.x < r.x + r.width && o.x + o.width > r.x && o.y < r.y + r.height && o.y + o.height > r.y)
         .map((o) => o.id),
-    applyOps: () => {},
     snapshotSelection: () => ({ items: [] }),
   }), [selection.adapterMethods]);
 

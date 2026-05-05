@@ -65,6 +65,11 @@ export interface ArrayAdapter<TObject extends { id: string }, TPose>
     AreaSelectAdapter {
   getObjects(): TObject[];
   removeObject(id: string): void;
+  // ArrayAdapter satisfies the union of all narrow adapters; redeclare the
+  // methods that are optional on AreaSelectAdapter (post-relaxation) but
+  // required on InsertAdapter so TS sees a single non-conflicting signature.
+  getSelection(): string[];
+  setSelection(ids: string[]): void;
 }
 
 function defaultFromPose<TObject extends { id: string }, TPose>(

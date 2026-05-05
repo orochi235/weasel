@@ -66,8 +66,6 @@ export function SwillustratorDemo() {
       const o = itemsRef.current.find((x) => x.id === id);
       return o ? { x: o.x, y: o.y, width: o.width, height: o.height } : { x: 0, y: 0, width: 0, height: 0 };
     },
-    getParent: () => null,
-    setParent: () => {},
     setPose: (id: string, pose: Pose) =>
       setItems((cur) => cur.map((o) => (o.id === id ? { ...o, ...pose } : o))),
     insertObject: (o: Obj) => setItems((cur) => [...cur, o]),
@@ -78,7 +76,6 @@ export function SwillustratorDemo() {
       itemsRef.current
         .filter((o) => o.x < rect.x + rect.width && o.x + o.width > rect.x && o.y < rect.y + rect.height && o.y + o.height > rect.y)
         .map((o) => o.id),
-    applyOps: () => {},
     // commitInsert is the rect-tool drag-finish factory.
     commitInsert: (b: Pose): Obj => {
       const id = `r${nextId.current++}`;

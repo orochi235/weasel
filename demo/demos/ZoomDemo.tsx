@@ -59,14 +59,10 @@ export function ZoomDemo() {
     getObject: (id: string) => items.find((r) => r.id === id),
     getPose: (id: string) => items.find((r) => r.id === id) ?? null,
     getObjects: () => items,
-    getParent: () => null,
-    setParent: () => {},
     setPose: (id: string, pose: unknown) =>
       setItems((cur) => cur.map((r) => (r.id === id ? { ...r, ...(pose as Rect) } : r))),
     getSelection: () => [] as string[],
     setSelection: () => {},
-    hitTestArea: () => [] as string[],
-    applyOps: () => {},
   };
   const select = useSelectTool(selectAdapter, {
     pickEvery: (wx, wy) =>

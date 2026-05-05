@@ -153,12 +153,21 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
   // Default to selectFromMarquee so plain `useSelectTool(adapter, {...})` —
   // with no explicit areaSelect.behaviors — actually updates the selection
   // when the user drags an empty-space marquee. Consumers that pass their own
-  // `areaSelect.behaviors` opt out (override wins).
+  // `areaSelect.behaviors` opt out (override wins). Demos that don't supply
+  // the AreaSelectAdapter methods (`hitTestArea` etc.) get an empty-behaviors
+  // areaSelect — start/move/end still run (so empty-click clear via onClick
+  // still works) but no selection mutation happens on drag commit.
+  const areaSelectCapable =
+    typeof (adapter as AreaSelectAdapter).hitTestArea === 'function' &&
+    typeof (adapter as AreaSelectAdapter).getSelection === 'function' &&
+    typeof (adapter as AreaSelectAdapter).setSelection === 'function' &&
+    typeof (adapter as AreaSelectAdapter).applyOps === 'function';
   const areaSelectOptions = useMemo<UseAreaSelectOptions>(() => {
     const provided = options.areaSelect;
     if (provided?.behaviors) return provided;
+    if (!areaSelectCapable) return { ...(provided ?? {}), behaviors: [] };
     return { ...(provided ?? {}), behaviors: [selectFromMarquee()] };
-  }, [options.areaSelect]);
+  }, [options.areaSelect, areaSelectCapable]);
   const areaSelect = useAreaSelect(adapter, areaSelectOptions);
 
   const handleHitRadius = options.handleHitRadius ?? 8;
