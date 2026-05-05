@@ -112,6 +112,12 @@ export interface Tool<TScratch = unknown> {
    *  on it; otherwise `null`. Optional companion to `peekPose` for tools that
    *  can compute bounds without round-tripping through a geometry adapter. */
   peekBounds?: (id: string) => ToolBounds | null;
+  /** Returns ids whose committed scene-render should be suppressed while this
+   *  tool is mid-gesture (e.g. cascade move's dragged + descendant ids whose
+   *  ghosts replace the committed pose). The standard scene slot consults this
+   *  alongside `peekPose` to avoid double-rendering. Returns `null` when no
+   *  gesture is in flight. */
+  peekHide?: () => Iterable<string> | null;
   /** Optional overlay layer rendered on top of the scene/chrome whenever
    *  this tool is in any active slot (active, modifier, or alwaysOn).
    *  The layer's `draw` function reads from this tool's scratch via React

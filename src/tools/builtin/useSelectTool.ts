@@ -289,6 +289,12 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
     return null;
   };
 
+  // peekHide: surface move's hideIds (dragged + cascade descendants) so the
+  // standard scene slot suppresses their committed render during a cascade
+  // drag. Resize/rotate don't hide ids — the dragged target's overlay pose
+  // simply replaces its committed pose via peekPose.
+  const peekHide = (): Iterable<string> | null => move.overlay?.hideIds ?? null;
+
   return useMemo(
     () =>
       defineTool<SelectScratch>({
@@ -297,6 +303,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
         cursor: 'default',
         overlay,
         peekPose,
+        peekHide,
         initScratch: () => ({ kind: 'idle' }),
 
         pointer: {

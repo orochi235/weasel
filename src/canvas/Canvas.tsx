@@ -826,6 +826,11 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     const p = tool?.peekPose?.(id);
     return (p ?? null) as TPose | null;
   };
+  const peekToolHide = (): Iterable<string> | null => {
+    if (!tools) return null;
+    const tool = tools.registry[tools.modifierEngaged ?? tools.active];
+    return tool?.peekHide?.() ?? null;
+  };
   const peekToolBounds = (id: string): Bounds | null => {
     if (!tools) return null;
     const tool = tools.registry[tools.modifierEngaged ?? tools.active];
@@ -1065,7 +1070,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
         debugSink,
         effectiveBoundsOf,
         (id) => peekToolPose(id),
-        null,
+        () => peekToolHide(),
       );
     }
 
