@@ -102,6 +102,66 @@ function ctxStub() {
   } as unknown as CanvasRenderingContext2D;
 }
 
+describe('useInsertTool — opt-in click + hitExisting', () => {
+  it('registers pointer.onClick when pointInsert is supplied', () => {
+    const adapter = {
+      getSelection: () => [],
+      commitInsert: vi.fn(),
+      commitPaste: vi.fn(() => []),
+      snapshotSelection: vi.fn(),
+      insertObject: vi.fn(),
+      setSelection: vi.fn(),
+      applyBatch: vi.fn(),
+    } as any;
+    const { result } = renderHook(() =>
+      useInsertTool(adapter, {
+        pointInsert: (p) => ({ id: 'i', x: p.x, y: p.y, width: 0, height: 0 }),
+      }),
+    );
+    expect(result.current.pointer?.onClick).toBeDefined();
+  });
+
+  it('does not register pointer.onClick when pointInsert is omitted', () => {
+    const adapter = {
+      getSelection: () => [],
+      commitInsert: vi.fn(),
+      commitPaste: vi.fn(() => []),
+      snapshotSelection: vi.fn(),
+      insertObject: vi.fn(),
+      setSelection: vi.fn(),
+      applyBatch: vi.fn(),
+    } as any;
+    const { result } = renderHook(() => useInsertTool(adapter, {}));
+    expect(result.current.pointer?.onClick).toBeUndefined();
+  });
+
+  it('drag.onStart with hitExisting hit selects and does not start the controller', () => {
+    const commitInsert = vi.fn();
+    const adapter = {
+      getSelection: () => [],
+      commitInsert,
+      commitPaste: vi.fn(() => []),
+      snapshotSelection: vi.fn(),
+      insertObject: vi.fn(),
+      setSelection: vi.fn(),
+      applyBatch: vi.fn(),
+    } as any;
+    const set = vi.fn();
+    const { result } = renderHook(() =>
+      useInsertTool(adapter, { hitExisting: () => 'hit-1' }),
+    );
+    const ctx = makeCtx({ selection: { current: [], set } as any });
+    let decision: unknown;
+    act(() => {
+      decision = result.current.drag!.onStart!(pe(), ctx);
+      result.current.drag!.onEnd!(pe(), ctx);
+    });
+    expect(decision).toBe('claim');
+    expect(set).toHaveBeenCalledWith(['hit-1']);
+    expect(commitInsert).not.toHaveBeenCalled();
+  });
+});
+
 describe('useInsertTool overlay', () => {
   const baseAdapter = {
     getSelection: () => [],

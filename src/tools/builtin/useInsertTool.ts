@@ -3,6 +3,7 @@ import { useInsert, type UseInsertOptions } from '../../interactions/gestures/in
 import type { InsertAdapter } from '../../core/adapters/types';
 import { defineTool } from '../defineTool';
 import type { Tool } from '../types';
+import { applyHitExistingGate } from './hitExistingGate';
 import { viewToTransform } from '../../features/viewport/view';
 import { worldToScreen } from '../../features/viewport/viewTransform';
 import type { RenderLayer } from '../../core/layers/render';
@@ -17,6 +18,9 @@ export interface InsertOverlayStyle {
 export interface UseInsertToolOptions<TPose, TObject extends { id: string } = { id: string }>
   extends UseInsertOptions<TPose, TObject> {
   overlayStyle?: InsertOverlayStyle;
+  /** Hit-test gate consulted before insertion. On hit, selects via
+   *  ctx.selection.set and skips both the click and drag paths. */
+  hitExisting?: (point: { x: number; y: number }) => string | string[] | null;
 }
 
 /** Active-slot Tool wrapping `useInsert`. Declares cursor `'crosshair'`.
@@ -26,10 +30,11 @@ export function useInsertTool<TObject extends { id: string }, TPose>(
   adapter: InsertAdapter<TObject>,
   options: UseInsertToolOptions<TPose, TObject> = {},
 ): Tool<undefined> {
-  const ctl = useInsert<TObject, TPose>(adapter, options);
+  const { hitExisting, overlayStyle, ...gestureOptions } = options;
+  const ctl = useInsert<TObject, TPose>(adapter, gestureOptions);
 
-  const styleRef = useRef(options.overlayStyle);
-  styleRef.current = options.overlayStyle;
+  const styleRef = useRef(overlayStyle);
+  styleRef.current = overlayStyle;
 
   const overlay = useMemo<RenderLayer<unknown>>(() => ({
     id: 'insert-overlay',
@@ -60,14 +65,29 @@ export function useInsertTool<TObject extends { id: string }, TPose>(
     },
   }), [ctl]);
 
+  const hasPointInsert = !!gestureOptions.pointInsert;
+
   return useMemo(
     () =>
       defineTool({
         id: 'insert',
         cursor: 'crosshair',
         overlay,
+        ...(hasPointInsert
+          ? {
+              pointer: {
+                onClick: (_e, ctx) => {
+                  if (applyHitExistingGate(ctx, hitExisting)) return 'claim';
+                  ctl.start(ctx.worldX, ctx.worldY, ctx.modifiers);
+                  ctl.end();
+                  return 'claim';
+                },
+              },
+            }
+          : {}),
         drag: {
           onStart: (_e, ctx) => {
+            if (applyHitExistingGate(ctx, hitExisting)) return 'claim';
             ctl.start(ctx.worldX, ctx.worldY, ctx.modifiers);
             return 'claim';
           },
@@ -84,6 +104,6 @@ export function useInsertTool<TObject extends { id: string }, TPose>(
           },
         },
       }),
-    [ctl, overlay],
+    [ctl, overlay, hasPointInsert, hitExisting],
   );
 }
