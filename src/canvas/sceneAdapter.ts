@@ -12,15 +12,29 @@
  * each node directly; world composition (when needed) is the renderer's job
  * via `composeWorldPose`, not the adapter's.
  */
-import type { InsertAdapter, MoveAdapter, ResizeAdapter, RotateAdapter } from '../core/adapters/types';
+import type { AreaSelectAdapter, InsertAdapter, MoveAdapter, ResizeAdapter, RotateAdapter } from '../core/adapters/types';
 import type { Op } from '../core/ops/types';
 import type { Node, Scene } from '../core/scene/types';
 import { asNodeId } from '../core/scene/types';
+import { applyOpsTo } from '../core/applyOps';
+
+interface Bounds { x: number; y: number; width: number; height: number; }
+
+/** Minimal selection contract `sceneToAdapter` needs to wire `getSelection` /
+ *  `setSelection`. Matches `useSelection().adapterMethods` plus an imperative
+ *  read; pass `useSelection()` itself or `selection.adapterMethods`. */
+export interface SceneAdapterSelection {
+  get?(): string[];
+  set?(ids: string[]): void;
+  getSelection?(): string[];
+  setSelection?(ids: string[]): void;
+}
 
 export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
   & MoveAdapter<Node<TData, TLayer, TPose>, TPose>
   & ResizeAdapter<Node<TData, TLayer, TPose>, TPose>
   & RotateAdapter<Node<TData, TLayer, TPose>, TPose>
+  & AreaSelectAdapter
   & Partial<InsertAdapter<Node<TData, TLayer, TPose>>>;
 
 /** Optional extras for the synthesized adapter. Pass `commitInsert` to wire
@@ -28,13 +42,23 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
  *  a leaf on the layer named by `layer` (default `'default'`). */
 export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
   /** Factory for new objects. Returning `null` aborts the insert. */
-  commitInsert?: (bounds: { x: number; y: number; width: number; height: number }) => {
+  commitInsert?: (bounds: Bounds) => {
     pose: TPose;
     data: TData;
     id?: string;
   } | null;
   /** Layer to place inserted nodes on. Defaults to the trivial-form layer. */
   insertLayer?: TLayer;
+  /** Selection source for `AreaSelectAdapter.getSelection` / `setSelection`.
+   *  Pass the result of `useSelection()` (or its `adapterMethods`). When
+   *  omitted, `getSelection` returns `[]` and `setSelection` is a noop —
+   *  fine for read-only or selection-less canvases, but the marquee gesture
+   *  won't update any external selection state. */
+  selection?: SceneAdapterSelection;
+  /** Project a pose to an AABB for `hitTestArea`. Default: identity (works
+   *  when TPose carries top-level x/y/width/height). Override for non-rect
+   *  poses. */
+  poseBounds?: (pose: TPose) => Bounds;
 }
 
 export function sceneToAdapter<TData, TLayer extends string, TPose>(
@@ -49,7 +73,12 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     return out;
   };
 
-  return {
+  const sel = options.selection;
+  const getSelection = sel?.getSelection ?? sel?.get ?? (() => [] as string[]);
+  const setSelection = sel?.setSelection ?? sel?.set ?? (() => {});
+  const poseBounds = options.poseBounds ?? ((p: TPose) => p as unknown as Bounds);
+
+  const adapter: SceneCanvasAdapter<TData, TLayer, TPose> = {
     getObject(id) {
       return scene.get(asNodeId(id));
     },
@@ -85,6 +114,34 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         for (const op of ops) op.apply(this);
       });
     },
+    // AreaSelectAdapter surface — included unconditionally so plain
+    // `useSelectTool(sceneToAdapter(scene, { selection }))` Just Works for the
+    // marquee gesture. `applyOps` uses the shared `applyOpsTo` dispatcher
+    // (no checkpoint, matches the transient AreaSelectAdapter contract);
+    // `hitTestArea` does an AABB-vs-AABB scan over `scene.renderOrder()` via
+    // `poseBounds` (default identity for `{x,y,width,height}` poses).
+    getSelection,
+    setSelection,
+    applyOps(ops: Op[]) {
+      applyOpsTo(this, ops);
+    },
+    hitTestArea(rect: Bounds) {
+      const out: string[] = [];
+      for (const id of scene.renderOrder()) {
+        const n = scene.get(id);
+        if (!n) continue;
+        const b = poseBounds(n.pose);
+        if (
+          b.x < rect.x + rect.width &&
+          b.x + b.width > rect.x &&
+          b.y < rect.y + rect.height &&
+          b.y + b.height > rect.y
+        ) {
+          out.push(id);
+        }
+      }
+      return out;
+    },
     // Insert support is opt-in: present only when `options.commitInsert` is.
     // The synthesized methods package the user's factory result into a leaf
     // add() against the configured layer.
@@ -111,4 +168,6 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         }
       : {}),
   };
+
+  return adapter;
 }
