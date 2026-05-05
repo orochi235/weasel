@@ -39,16 +39,6 @@ import { useNudge } from '../interactions/actions/nudge';
 import { useDuplicate } from '../interactions/actions/duplicate';
 import { useUndoRedo } from '../interactions/actions/undo-redo';
 import type { UndoRedoAdapter } from '../interactions/actions/undo-redo';
-import { useEditAnchors } from '../interactions/gestures/edit-anchors/editAnchors';
-import type {
-  EditAnchorsAdapter,
-  EditAnchorsController,
-  UseEditAnchorsOptions,
-} from '../interactions/gestures/edit-anchors/editAnchors';
-import {
-  createAnchorEditOverlayLayer,
-  type AnchorEditOverlayOpts,
-} from '../interactions/gestures/edit-anchors/overlay';
 import type { Path } from '../features/paths/types';
 import type {
   MoveAdapter,
@@ -86,7 +76,6 @@ export const STANDARD_SLOTS = [
   'cellHighlight',
   'scene',
   'selectionOverlay',
-  'anchorEditOverlay',
 ] as const;
 /** Names of the slots `<Canvas>` supports out of the box (excluding the implicit cell-highlight overlay). */
 export type StandardSlotName = Exclude<(typeof STANDARD_SLOTS)[number], 'cellHighlight'>;
@@ -110,9 +99,6 @@ export interface SceneSlotConfig<TObject extends { id: string }, TPose> {
   /** Default ghost alpha for the move-overlay slot. Default 0.85. */
   ghostAlpha?: number;
 }
-
-/** Anchor-edit-overlay slot config — visual options for anchor + control circles. */
-export type AnchorEditOverlaySlotConfig = Omit<AnchorEditOverlayOpts, 'getOverlay'>;
 
 /** Selection-overlay slot config — passed through to `createSelectionOverlayLayer`,
  *  minus the `getSelection`/`getPose` Canvas wires automatically. */
@@ -138,8 +124,7 @@ export interface CustomLayerEntry {
 export type StandardSlotConfig<TObject extends { id: string }, TPose> =
   | GridSlotConfig
   | SceneSlotConfig<TObject, TPose>
-  | SelectionOverlaySlotConfig<TPose>
-  | AnchorEditOverlaySlotConfig;
+  | SelectionOverlaySlotConfig<TPose>;
 
 export type LayerSlotValue<TObject extends { id: string }, TPose> =
   | StandardSlotConfig<TObject, TPose>
@@ -150,7 +135,6 @@ export type LayersMap<TObject extends { id: string }, TPose> = {
   grid?: GridSlotConfig | null;
   scene?: SceneSlotConfig<TObject, TPose> | null;
   selectionOverlay?: SelectionOverlaySlotConfig<TPose> | null;
-  anchorEditOverlay?: AnchorEditOverlaySlotConfig | null;
 } & {
   [customKey: string]: LayerSlotValue<TObject, TPose> | undefined;
 };
@@ -224,12 +208,6 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   layers: LayersMap<TObject, TPose>;
 
   // --- Internal hook configuration ---
-  /** Wire anchor-edit mode. `true` enables defaults; an object overrides
-   *  options. When wired, double-clicking a polygon-shaped object enters
-   *  edit mode (anchor circles + control handles), and Esc exits. */
-  editAnchors?: boolean | UseEditAnchorsOptions;
-  /** Override the editAnchors controller (rare). */
-  editAnchorsController?: EditAnchorsController<TObject>;
   selection?: SelectionApi;
   selectionOptions?: UseSelectionOptions;
 
@@ -480,8 +458,6 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     adapter: adapterProp,
     selectionMode = 'single',
     layers: layersMap,
-    editAnchors: editAnchorsProp,
-    editAnchorsController: editAnchorsOverride,
     selection: selectionOverride,
     selectionOptions,
     hitBody,
@@ -753,24 +729,6 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     },
   );
 
-  const [editingAnchors, setEditingAnchors] = useState<{ objectId: string } | null>(null);
-  const editAnchorsEnabled = editAnchorsProp !== undefined && editAnchorsProp !== false;
-  const editAnchorsOpts = (typeof editAnchorsProp === 'object' ? editAnchorsProp : {}) as UseEditAnchorsOptions;
-  const editAnchorsAdapter = useMemo<EditAnchorsAdapter<TObject>>(() => ({
-    getObject: (id) => effectiveAdapter.getObject?.(id) ?? ({ id } as TObject),
-    getPose: (id) => effectiveAdapter.getPose(id) as unknown as Path,
-    setPose: (id, pose) => (effectiveAdapter as { setPose: (id: string, pose: unknown) => void }).setPose(id, pose),
-    applyBatch: effectiveAdapter.applyBatch
-      ? (ops, label) => effectiveAdapter.applyBatch!(ops, label ?? 'Edit anchors')
-      : undefined,
-  }), [effectiveAdapter]);
-  const internalEditAnchors = useEditAnchors<TObject>(editAnchorsAdapter, {
-    ...editAnchorsOpts,
-    editingId: editingAnchors?.objectId ?? null,
-    debug: debugSink ?? undefined,
-  });
-  const editAnchorsCtl = editAnchorsOverride ?? (editAnchorsEnabled ? internalEditAnchors : undefined);
-
   // Default hitBody: walk the adapter's objects back-to-front and return the
   // first whose pose contains the world point. The active tool (selectTool)
   // typically owns its own hitBody internally; this fallback exists for
@@ -954,8 +912,6 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   }, [onBodyHit, selectionMode, effectiveSelection]);
 
   const bindings = usePointerGestures<TPose, TPose>({
-    editAnchors: editAnchorsCtl as unknown as EditAnchorsController<{ id: string }> | undefined,
-    editAnchorsActive: !!editingAnchors,
     hitBody: effectiveHitBody,
     resizeTarget: effectiveResizeTarget ?? resizeTarget,
     rotateTarget,
@@ -1080,42 +1036,6 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     ? (e: React.WheelEvent<HTMLCanvasElement>) => tools.dispatcher.onWheel(e.nativeEvent)
     : undefined;
 
-  const handleDoubleClick = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>) => {
-      if (!editAnchorsEnabled || !adapter) return;
-      const cw = clientToWorld ?? ((c: HTMLCanvasElement, cx: number, cy: number): [number, number] => {
-        const r = c.getBoundingClientRect();
-        const v = viewRef.current;
-        return [(cx - r.left) / v.scale + v.x, (cy - r.top) / v.scale + v.y];
-      });
-      const [wx, wy] = cw(e.currentTarget, e.clientX, e.clientY);
-      // WHY: use the consumer's hitBody so open paths (no fill, pointInPath=false)
-      //      can still enter edit mode via their AABB-padded hit silhouette.
-      const hit = effectiveHitBody?.(wx, wy);
-      const ids = hit == null ? [] : Array.isArray(hit) ? hit : [hit];
-      for (let i = ids.length - 1; i >= 0; i--) {
-        const id = ids[i];
-        const pose = adapter.getPose(id) as unknown as Path;
-        if (!pose || pose.kind !== 'polygon') continue;
-        setEditingAnchors({ objectId: id });
-        return;
-      }
-    },
-    [editAnchorsEnabled, adapter, clientToWorld, effectiveHitBody],
-  );
-
-  useEffect(() => {
-    if (!editingAnchors) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setEditingAnchors(null);
-        editAnchorsCtl?.cancel();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [editingAnchors, editAnchorsCtl]);
-
   const selectedIds = effectiveSelection.current;
 
   const layers = useMemo<RenderLayer<unknown>[]>(() => {
@@ -1182,12 +1102,9 @@ function CanvasInner<TObject extends { id: string }, TPose>(
             return null;
           }
         });
-      const editingId = editingAnchors?.objectId;
       const getSelection = multiActive
         ? () => [MULTI_RESIZE_TARGET_ID]
-        : editingId
-          ? () => selectedIds.filter((id) => id !== editingId)
-          : () => selectedIds;
+        : () => selectedIds;
       standardLayers.selectionOverlay = createSelectionOverlayLayer<TPose>({
         ...cfg,
         getSelection,
@@ -1201,17 +1118,6 @@ function CanvasInner<TObject extends { id: string }, TPose>(
             if (multiActive) return p as unknown as Bounds;
             return geometry.getBounds(p);
           }),
-      });
-    }
-
-    const anchorEditSlot = layersMap.anchorEditOverlay as AnchorEditOverlaySlotConfig | null | undefined;
-    if (anchorEditSlot !== null && editAnchorsCtl) {
-      standardLayers.anchorEditOverlay = createAnchorEditOverlayLayer({
-        ...(anchorEditSlot ?? {}),
-        getOverlay: () => {
-          const ov = editAnchorsCtl.overlay;
-          return ov ? { pose: ov.pose, selectedAnchors: ov.selectedAnchors } : null;
-        },
       });
     }
 
@@ -1249,7 +1155,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       out.push(...tools.getActiveOverlays());
     }
     return out;
-  }, [layersMap, adapter, selectedIds, effectiveBoundsOf, multiActive, unionOfSelection, editingAnchors, editAnchorsCtl, editAnchorsCtl?.overlay, debugSink, tools]);
+  }, [layersMap, adapter, selectedIds, effectiveBoundsOf, multiActive, unionOfSelection, debugSink, tools]);
 
   // Append the debug overlay layer at the very top of the stack when debug
   // is enabled. The layer reads from `debugSink.snapshot()` and paints in
@@ -1307,7 +1213,6 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       onPointerCancel={handlePointerCancel}
       onLostPointerCapture={tools ? undefined : bindings.onLostPointerCapture}
       onWheel={handleWheel}
-      onDoubleClick={editAnchorsEnabled ? handleDoubleClick : undefined}
     />
   );
 }

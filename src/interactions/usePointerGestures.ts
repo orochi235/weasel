@@ -7,7 +7,6 @@ import type { ResizeController } from './gestures/resize/resize';
 import type { RotateController } from './gestures/rotate/rotate';
 import type { InsertController } from './gestures/insert/insert';
 import type { AreaSelectController } from './gestures/area-select/areaSelect';
-import type { EditAnchorsController } from './gestures/edit-anchors/editAnchors';
 import {
   rotationHandle,
   hitRotationHandle,
@@ -70,17 +69,6 @@ export interface UsePointerGesturesOptions<TMovePose, TResizePose> {
    *  an empty-space pointer-down dispatches to `areaSelect.start` instead of
    *  `onTapEmpty`. */
   areaSelect?: AreaSelectController;
-
-  /** Live anchor-edit interaction. When the controller's `tryHit` returns a
-   *  hit, anchor-edit takes priority over every other dispatch path; an
-   *  empty hit while edit-mode is active calls `editAnchors.clearSelection`
-   *  and short-circuits (no body / area-select fallthrough). */
-  editAnchors?: EditAnchorsController<{ id: string }>;
-
-  /** When true, the editAnchors controller is in an active edit session.
-   *  Empty pointer-downs in this mode clear anchor selection but do NOT
-   *  fall through to area-select / tap-empty. */
-  editAnchorsActive?: boolean;
 
   /** Empty-space tool. Default `'select'`. Picks insert vs area-select on
    *  empty-space pointer-down. Ignored if neither controller is wired. */
@@ -173,8 +161,6 @@ export function usePointerGestures<TMovePose, TResizePose>(
     rotate,
     insert,
     areaSelect,
-    editAnchors,
-    editAnchorsActive = false,
     tool = 'select',
     handleHitRadius = 8,
     getView,
@@ -217,7 +203,7 @@ export function usePointerGestures<TMovePose, TResizePose>(
     [explicitRotateTarget, rotate, selection, boundsOf],
   );
 
-  const dragKindRef = useRef<'move' | 'resize' | 'rotate' | 'insert' | 'area' | 'editAnchors' | null>(null);
+  const dragKindRef = useRef<'move' | 'resize' | 'rotate' | 'insert' | 'area' | null>(null);
 
   // Document-level pointerup/pointercancel backstop. React's synthetic
   // onPointerUp on the canvas only fires when the canvas is still the event
@@ -259,22 +245,6 @@ export function usePointerGestures<TMovePose, TResizePose>(
       const ctx: PointerGestureCallbackCtx = { event: e, worldX: wx, worldY: wy, modifiers };
       const viewScale = getView ? getView().scale : 1;
       const radiusWorld = handleHitRadius / viewScale;
-
-      // WHY: anchor-edit takes priority over selection-overlay handles when
-      //      a path is being edited; empty hits in this mode short-circuit
-      //      so they don't fall through to area-select / move.
-      if (editAnchorsActive && editAnchors) {
-        const r = editAnchors.tryHit(wx, wy);
-        if (r) {
-          dragKindRef.current = 'editAnchors';
-          e.currentTarget.setPointerCapture(e.pointerId);
-            attachDocListeners();
-          editAnchors.start({ id: r.id, hit: r.hit, worldX: wx, worldY: wy });
-          return;
-        }
-        editAnchors.clearSelection();
-        return;
-      }
 
       if (rotate) {
         const target = rotateTarget();
@@ -387,8 +357,6 @@ export function usePointerGestures<TMovePose, TResizePose>(
       rotate,
       insert,
       areaSelect,
-      editAnchors,
-      editAnchorsActive,
       tool,
       resizeTarget,
       rotateTarget,
@@ -431,11 +399,9 @@ export function usePointerGestures<TMovePose, TResizePose>(
         insert.move(wx, wy, modifiers);
       } else if (kind === 'area' && areaSelect) {
         areaSelect.move(wx, wy, modifiers);
-      } else if (kind === 'editAnchors' && editAnchors) {
-        editAnchors.move({ worldX: wx, worldY: wy, modifiers });
       }
     },
-    [clientToWorld, move, resize, rotate, insert, areaSelect, editAnchors],
+    [clientToWorld, move, resize, rotate, insert, areaSelect],
   );
 
   const endActiveGesture = useCallback(
@@ -454,7 +420,6 @@ export function usePointerGestures<TMovePose, TResizePose>(
         : kind === 'rotate' ? rotate
         : kind === 'insert' ? insert
         : kind === 'area' ? areaSelect
-        : kind === 'editAnchors' ? editAnchors
         : null;
       if (!ctl) return;
       if (mode === 'commit') ctl.end();
@@ -463,7 +428,7 @@ export function usePointerGestures<TMovePose, TResizePose>(
       // here at the end so the overlay drops them after pointer release.
       debug?.clearSnap();
     },
-    [move, resize, rotate, insert, areaSelect, editAnchors, detachDocListeners, debug],
+    [move, resize, rotate, insert, areaSelect, detachDocListeners, debug],
   );
   endActiveGestureRef.current = endActiveGesture;
 
