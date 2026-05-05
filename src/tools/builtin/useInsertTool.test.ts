@@ -1,29 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useInsertTool } from './useInsertTool';
-import type { ToolCtx } from '../types';
-
-function makeCtx(over: Partial<ToolCtx<undefined>> = {}): ToolCtx<undefined> {
-  return {
-    worldX: 10,
-    worldY: 20,
-    modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
-    selection: { current: [] } as any,
-    adapter: {},
-    applyBatch: vi.fn(),
-    view: { x: 0, y: 0, scale: 1 },
-    setView: () => {},
-    canvasRect: new DOMRect(),
-    scratch: undefined,
-    ...over,
-  };
-}
-
-function pe(): PointerEvent {
-  const e = new Event('pointerdown') as PointerEvent;
-  Object.assign(e, { pointerId: 1, clientX: 0, clientY: 0, button: 0 });
-  return e;
-}
+import { makeCtx, pe } from './testUtils';
 
 describe('useInsertTool', () => {
   const baseAdapter = {

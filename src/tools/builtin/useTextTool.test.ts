@@ -1,29 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useTextTool } from './useTextTool';
-import type { ToolCtx } from '../types';
-
-function makeCtx(over: Partial<ToolCtx<undefined>> = {}): ToolCtx<undefined> {
-  return {
-    worldX: 100,
-    worldY: 200,
-    modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
-    selection: { current: [], set: vi.fn() } as unknown as ToolCtx<undefined>['selection'],
-    adapter: {},
-    applyBatch: vi.fn(),
-    view: { x: 0, y: 0, scale: 1 },
-    setView: () => {},
-    canvasRect: new DOMRect(),
-    scratch: undefined,
-    ...over,
-  };
-}
-
-function pe(): PointerEvent {
-  const e = new Event('click') as PointerEvent;
-  Object.assign(e, { pointerId: 1, clientX: 0, clientY: 0, button: 0 });
-  return e;
-}
+import { makeCtx, pe } from './testUtils';
 
 describe('useTextTool — declarations', () => {
   it('declares id "text", T keybinding, text cursor', () => {

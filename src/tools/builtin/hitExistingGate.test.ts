@@ -1,22 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { applyHitExistingGate } from './hitExistingGate';
-import type { ToolCtx } from '../types';
-
-function makeCtx(over: Partial<ToolCtx<unknown>> = {}): ToolCtx<unknown> {
-  return {
-    worldX: 10,
-    worldY: 20,
-    modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
-    selection: { current: [], set: vi.fn() } as unknown as ToolCtx['selection'],
-    adapter: {},
-    applyBatch: vi.fn(),
-    view: { x: 0, y: 0, scale: 1 },
-    setView: () => {},
-    canvasRect: new DOMRect(),
-    scratch: undefined,
-    ...over,
-  };
-}
+import { makeCtx } from './testUtils';
 
 describe('applyHitExistingGate', () => {
   it('returns false when hitExisting is undefined', () => {
