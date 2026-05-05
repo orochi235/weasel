@@ -153,6 +153,35 @@ export function PropertySelect<T extends string>(props: {
   );
 }
 
+/** Grid of color swatches. Spans the full row (12 cols). */
+export function PropertySwatchGrid(props: {
+  value: string;
+  options: { value: string; label?: string }[];
+  onChange: (v: string) => void;
+  /** Number of columns in the swatch grid (default 6). Visual only —
+   *  the grid itself always spans all 12 value columns of the panel. */
+  columns?: number;
+}) {
+  const cols = props.columns ?? 6;
+  return (
+    <div
+      className={`${s.swatchGrid} ${s.span12}`}
+      style={cols === 6 ? undefined : { gridTemplateColumns: `repeat(${cols}, 1fr)` }}
+    >
+      {props.options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          className={`${s.swatch}${o.value === props.value ? ` ${s.swatchActive}` : ''}`}
+          style={{ background: o.value }}
+          title={o.label ?? o.value}
+          onClick={() => props.onChange(o.value)}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function PropertyButton(props: {
   children: ReactNode;
   onClick: () => void;

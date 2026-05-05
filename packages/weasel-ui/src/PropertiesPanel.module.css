@@ -98,6 +98,28 @@
   background: transparent;
 }
 
+.swatchGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+.swatch {
+  width: 100%;
+  aspect-ratio: 1;
+  border: 2px solid var(--wui-panel-border);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+  background-clip: padding-box;
+}
+.swatch:hover {
+  border-color: var(--wui-text-muted);
+}
+.swatchActive {
+  border-color: var(--wui-accent);
+  box-shadow: 0 0 0 1px var(--wui-accent);
+}
+
 .button {
   padding: 4px 6px;
   border: 1px solid var(--wui-panel-border);

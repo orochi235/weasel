@@ -32,6 +32,7 @@ import {
   PropertyTextInput,
   PropertySelect,
   PropertyMiniLabel,
+  PropertySwatchGrid,
 } from '@orochi235/weasel-ui';
 import '@orochi235/weasel-ui/tokens.css';
 interface View { x: number; y: number; scale: number }
@@ -39,6 +40,22 @@ interface View { x: number; y: number; scale: number }
 // US Letter at 96dpi.
 const PAGE_W = 816;
 const PAGE_H = 1056;
+
+// Garden-ish palette borrowed from eric. Used by the Colors swatch grid.
+const PALETTE: { value: string; label: string }[] = [
+  { value: '#7fb069', label: 'Leaf' },
+  { value: '#4a7c59', label: 'Forest' },
+  { value: '#d4a574', label: 'Sand' },
+  { value: '#c97c5d', label: 'Terracotta' },
+  { value: '#b03030', label: 'Tomato' },
+  { value: '#e8c547', label: 'Sunflower' },
+  { value: '#6b8cae', label: 'Sky' },
+  { value: '#3a5a7c', label: 'Indigo' },
+  { value: '#8e6c8a', label: 'Plum' },
+  { value: '#d4c4a8', label: 'Cream' },
+  { value: '#3a2e22', label: 'Bark' },
+  { value: '#1a130d', label: 'Soil' },
+];
 
 type Kind = 'rect' | 'text' | 'path';
 interface BaseObj { id: string; kind: Kind; x: number; y: number; width: number; height: number }
@@ -419,6 +436,16 @@ export function App() {
             </PropertyRow>
           </PropertiesPanel>
         )}
+
+        <PropertiesPanel title="Colors">
+          <PropertyRow label="Fill">
+            <PropertySwatchGrid
+              value={primary ? primaryFill : fillColor}
+              options={PALETTE}
+              onChange={(v) => (primary ? applyFillToSelection(v) : setFillColor(v))}
+            />
+          </PropertyRow>
+        </PropertiesPanel>
 
         <PropertiesPanel title="Document">
           <PropertyRow label="Title">

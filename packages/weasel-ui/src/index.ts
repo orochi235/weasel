@@ -8,5 +8,6 @@ export {
   PropertyAxisInput,
   PropertyColorInput,
   PropertySelect,
+  PropertySwatchGrid,
   PropertyButton,
 } from './PropertiesPanel';
