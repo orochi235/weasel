@@ -62,6 +62,8 @@ export type { SetupCanvasDprOptions } from './features/viewport/pixelDensity';
 export * from './features/viewport/fitToBounds';
 export { zoomAt } from './features/viewport/zoomAt';
 export type { ZoomClampOpts } from './features/viewport/zoomAt';
+export { clampView } from './features/viewport/clampView';
+export type { ClampBounds, CanvasSize } from './features/viewport/clampView';
 export * from './features/viewport/useZoom';
 export * from './features/viewport/useAutoCenter';
 export { useGridCellHover } from './features/grid/useGridCellHover';

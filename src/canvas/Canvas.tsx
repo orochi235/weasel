@@ -20,6 +20,7 @@ import type { ToolCtx } from '../tools/types';
 import type { Op } from '../core/ops/types';
 import { dispatchApplyBatch } from '../core/applyOps';
 import type { View } from '../features/viewport/view';
+import { clampView } from '../features/viewport/clampView';
 import { runLayers, type RenderLayer } from '../core/layers/render';
 import { setupCanvasDpr } from '../features/viewport/pixelDensity';
 import {
@@ -284,6 +285,12 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   /** Fires whenever the viewport changes — in both controlled and
    *  uncontrolled modes. */
   onViewChange?: (next: View) => void;
+  /** Optional world-space rect that constrains pan. When supplied, every
+   *  `setView` call passes through `clampView(next, viewBounds, {width, height})`
+   *  before commit, keeping the visible rect inside `viewBounds`. If the visible
+   *  rect is larger than the bounds along an axis (zoomed out past extent), that
+   *  axis is centered. Has no effect on `scale` — wire `useZoom` bounds for that. */
+  viewBounds?: { x: number; y: number; width: number; height: number };
   /** Mutable ref Canvas writes overlay-aware pose/bounds lookups to on every
    *  render. Custom layers can read it from inside their `draw` closure to
    *  reflect in-flight gestures (move/resize/rotate) instead of the committed
@@ -506,6 +513,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     view: viewProp,
     defaultView,
     onViewChange,
+    viewBounds,
     items,
     setItems,
     toPose,
@@ -563,10 +571,14 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   viewRef.current = effectiveView;
   const onViewChangeRef = useRef(onViewChange);
   onViewChangeRef.current = onViewChange;
+  const viewBoundsRef = useRef(viewBounds);
+  viewBoundsRef.current = viewBounds;
   const setView = useCallback((next: View) => {
-    if (viewProp === undefined) setInternalView(next);
-    onViewChangeRef.current?.(next);
-  }, [viewProp]);
+    const bounds = viewBoundsRef.current;
+    const clamped = bounds ? clampView(next, bounds, { width, height }) : next;
+    if (viewProp === undefined) setInternalView(clamped);
+    onViewChangeRef.current?.(clamped);
+  }, [viewProp, width, height]);
   const setViewRef = useRef(setView);
   setViewRef.current = setView;
 
