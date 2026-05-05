@@ -85,10 +85,6 @@ export function useTextTool<TObject extends { id: string }>(
   styleRef.current = marqueeStyle;
   const ctlRef = useRef(ctl);
   ctlRef.current = ctl;
-  // Tracks whether the active drag actually started the controller (vs.
-  // hitExisting short-circuiting onStart). Subsequent onMove/onEnd should
-  // no-op when false so we don't dispatch a phantom commit.
-  const dragActiveRef = useRef(false);
 
   const overlay = useMemo<RenderLayer<unknown>>(() => ({
     id: 'text-overlay',
@@ -140,31 +136,22 @@ export function useTextTool<TObject extends { id: string }>(
           ? {
               drag: {
                 onStart: (_e, ctx) => {
-                  if (applyHitExistingGate(ctx, hitExisting)) {
-                    dragActiveRef.current = false;
-                    return 'claim';
-                  }
+                  if (applyHitExistingGate(ctx, hitExisting)) return 'claim';
                   applyBatchRef.current = ctx.applyBatch;
-                  dragActiveRef.current = true;
                   ctl.start(ctx.worldX, ctx.worldY, ctx.modifiers);
                   return 'claim';
                 },
                 onMove: (_e, ctx) => {
-                  if (!dragActiveRef.current) return 'claim';
                   ctl.move(ctx.worldX, ctx.worldY, ctx.modifiers);
                   return 'claim';
                 },
                 onEnd: () => {
-                  if (!dragActiveRef.current) return 'claim';
                   ctl.end();
-                  dragActiveRef.current = false;
                   applyBatchRef.current = null;
                   return 'claim';
                 },
                 onCancel: () => {
-                  if (!dragActiveRef.current) return;
                   ctl.cancel();
-                  dragActiveRef.current = false;
                   applyBatchRef.current = null;
                 },
               },

@@ -55,6 +55,12 @@ Small items surfaced during Phase 2a/2b/2c shakedown:
 - **Swillustrator demo (full 5-tool palette).** *Shipped.* All five tools landed (select + insert-rect + text + pen + hand). Pen ships as `useUserPenTool` + `createPenPreviewLayer` — see `docs/specs/2026-05-03-pen-tool-design.md`.
 - **Image / polygon / future drag-insert tools.** Deferred from `docs/specs/2026-05-04-drag-insert-primitive-design.md`. The consolidated `useInsert` + `hitExistingGate` primitive is built so adding new drag-insert tools is a thin Tool veneer, but each tool is its own task.
 - **Promote `hitExistingGate` to gate select-tool's move/resize paths.** Deferred from `docs/specs/2026-05-04-drag-insert-primitive-design.md`. Different responsibility (gating mutation gestures rather than insertion), different gesture surface — punt until a real consumer wants it.
+- Revisit useTextTool's `applyBatchRef` capture-on-entry shim. The synthesized
+  InsertAdapter has nowhere to source `applyBatch` except via ctx, so handlers
+  capture it into a ref. Cleaner alternatives: (a) per-call applyBatch override
+  on useInsert's controller methods; (b) have useTextTool take an adapter like
+  useInsertTool does and let consumers synthesize. Defer until a third drag-insert
+  tool would otherwise duplicate the shim.
 
 ### Pen tool follow-ups (deferred from `docs/specs/2026-05-03-pen-tool-design.md`)
 
