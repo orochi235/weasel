@@ -1,12 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   gridSnapStrategy,
   SceneCanvas,
   useScene,
   useSelection,
-  useZoom,
+  useHandTool,
+  useWheelZoomTool,
+  useWheelPanTool,
+  useKeyboardZoomTool,
 } from '@orochi235/weasel';
 import type { UnitSystem } from '@orochi235/weasel';
+import type { View } from '../../src/features/viewport/view';
 
 interface NodeData { color: string }
 type LayerId = 'default';
@@ -32,26 +36,11 @@ export function MoveDemo() {
   });
   const selection = useSelection();
 
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const zoomCtl = useZoom({
-    zoom, setZoom, pan, setPan,
-    viewport: { width: W, height: H },
-    sources: { wheel: true, keys: true, doubleClick: true, pinch: true },
-  });
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => zoomCtl.onKeyDown(e);
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [zoomCtl]);
-
-  const clientToWorld = (canvas: HTMLCanvasElement, cx: number, cy: number): [number, number] => {
-    const rect = canvas.getBoundingClientRect();
-    const x = (cx - rect.left - pan.x) / zoom;
-    const y = (cy - rect.top - pan.y) / zoom;
-    return [x, y];
-  };
+  const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
+  const hand = useHandTool();
+  const wheelZoom = useWheelZoomTool();
+  const wheelPan = useWheelPanTool();
+  const keyZoom = useKeyboardZoomTool();
 
   return (
     <SceneCanvas
@@ -61,7 +50,9 @@ export function MoveDemo() {
       scene={scene}
       selection={selection}
       snap={gridSnapStrategy<Pose>(CELL, UNITS)}
-      clientToWorld={clientToWorld}
+      view={view}
+      onViewChange={setView}
+      alwaysOn={[hand, wheelZoom, wheelPan, keyZoom]}
       layers={{
         grid: {
           spacing: CELL,
@@ -83,7 +74,8 @@ export function MoveDemo() {
 
 export const MOVE_DEMO_SOURCE = `// Scene primitive owns nodes/poses/parenting and auto-records ops on every
 // mutation. SceneCanvas synthesizes the adapter + internal select tool from
-// the scene; consumers just describe their data and how to draw it.
+// the scene; consumers just describe their data and how to draw it. Wheel/
+// keyboard zoom + pan tools come along via the alwaysOn passthrough.
 
 const scene = useScene<NodeData, 'default', Pose>({
   systemLayers: [{ id: 'default' }],
@@ -97,12 +89,20 @@ const scene = useScene<NodeData, 'default', Pose>({
 const UNITS: UnitSystem = { base: 'px', units: { px: 1, tile: 20 } };
 const CELL = { value: 1, unit: 'tile' } as const;
 
+const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
+const hand      = useHandTool();
+const wheelZoom = useWheelZoomTool();
+const wheelPan  = useWheelPanTool();
+const keyZoom   = useKeyboardZoomTool();
+
 return (
   <SceneCanvas
     width={W} height={H}
     scene={scene}
     snap={gridSnapStrategy<Pose>(CELL, UNITS)}
-    clientToWorld={clientToWorld}
+    view={view}
+    onViewChange={setView}
+    alwaysOn={[hand, wheelZoom, wheelPan, keyZoom]}
     layers={{
       grid: { spacing: CELL, unitSystem: UNITS, bounds: () => ({ x: 0, y: 0, width: W, height: H }), accentEvery: 5 },
       scene: {
@@ -113,5 +113,6 @@ return (
   />
 );
 // SceneCanvas wires the adapter, default pickEvery (renderOrder hit), default
-// drawGhost (reuses scene.drawOne), and undo/redo via scene.batch().
+// drawGhost (reuses scene.drawOne), and undo/redo via scene.batch(). The
+// alwaysOn list runs alongside the internal default select tool.
 `;
