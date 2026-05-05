@@ -1,15 +1,20 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   Canvas,
+  createDebugSink,
   pathOriginProjection,
+  pathPoseDescriptor,
+  pointInPath,
   polygonFromPoints,
   traceToContext,
   gridSnapStrategy,
+  snap as snapBehavior,
+  useSelection,
+  useSelectTool,
+  useTools,
 } from '@orochi235/weasel';
 import type {
   Path,
-  MoveAdapter,
-  ResizeAdapter,
   DebugConfig,
 } from '@orochi235/weasel';
 
@@ -49,14 +54,46 @@ export function PathPoseDemo() {
   const [debugIdx, setDebugIdx] = useState(0);
   const debug = DEBUG_STATES[debugIdx].config;
 
-  const adapter: MoveAdapter<PathObj, Pose> & ResizeAdapter<PathObj, Pose> = {
-    getObject: (id) => (id === ID ? { id } : undefined),
+  const selection = useSelection({ initial: [ID] });
+
+  // The tool's `debug` is a separate sink (only consumed by gesture internals);
+  // Canvas builds its own sink for the visible overlay layer from `debug={debug}`.
+  const toolDebugSink = useMemo(
+    () => (debug ? createDebugSink(debug) : undefined),
+    [debug],
+  );
+
+  const adapter = {
+    getObject: (id: string) => (id === ID ? { id } : undefined),
     getObjects: () => [{ id: ID }],
     getPose: () => pathRef.current,
     getParent: () => null,
-    setPose: (_id, p) => setPath(p),
+    setPose: (_id: string, p: Pose) => setPath(p),
     setParent: () => {},
+    ...selection.adapterMethods,
+    hitTestArea: () => [],
+    applyOps: () => {},
   };
+
+  const select = useSelectTool<PathObj, Pose>(adapter, {
+    hitBody: (wx, wy) => (pointInPath(pathRef.current, wx, wy) ? [ID] : []),
+    boundsOf: (id) => (id === ID ? pathPoseDescriptor.getBounds(pathRef.current) : null),
+    handleHitRadius: HANDLE,
+    move: { behaviors: [snapBehavior(gridSnapStrategy<Path>(20, { origin: pathOriginProjection }))] },
+    resize: { geometry: pathPoseDescriptor },
+    debug: toolDebugSink,
+    drawGhost: (cx, _o, p) => {
+      cx.fillStyle = '#7fb069';
+      cx.strokeStyle = '#1a130d';
+      cx.lineWidth = 1.5;
+      cx.beginPath();
+      traceToContext(cx, p);
+      cx.fill();
+      cx.stroke();
+    },
+    getObject: (id) => (id === ID ? { id } : null),
+  });
+  const tools = useTools({ active: 'select', registry: { select } });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -73,10 +110,9 @@ export function PathPoseDemo() {
         height={H}
         className="ckd-canvas"
         adapter={adapter}
-        handleHitRadius={HANDLE}
-        selectionOptions={{ initial: [ID] }}
+        selection={selection}
+        tools={tools}
         onTapEmpty={() => {}}
-        snap={gridSnapStrategy<Path>(20, { origin: pathOriginProjection })}
         debug={debug}
         layers={{
           scene: {
