@@ -92,21 +92,37 @@ describe('<Canvas>', () => {
     expect(onBodyHit).not.toHaveBeenCalled();
   });
 
-  it('auto-build pointer handler routes through usePointerGestures', () => {
-    const onBodyHit = vi.fn();
-    const { container } = render(
-      <Canvas
-        width={50}
-        height={50}
-        layers={{}}
-        pickEvery={() => 'a'}
-        onBodyHit={onBodyHit}
-      />,
-    );
+  it('auto-build pointer handler routes through tools.dispatcher', () => {
+    interface Rect { id: string; x: number; y: number; width: number; height: number }
+    interface Pose { x: number; y: number; width: number; height: number }
+    const seen: string[][] = [];
+    function Harness() {
+      const sel = useSelection({ mode: 'multi' });
+      sel.applyClick = vi.fn((id: string) => seen.push([id]));
+      const adapter = {
+        getObjects: () => [{ id: 'a', x: 0, y: 0, width: 50, height: 50 }] as Rect[],
+        getObject: (id: string) => (id === 'a'
+          ? { id: 'a', x: 0, y: 0, width: 50, height: 50 } as Rect
+          : null),
+        getPose: (id: string) => (id === 'a' ? { x: 0, y: 0, width: 50, height: 50 } : null) as Pose,
+        setPose: () => {},
+        ...sel.adapterMethods,
+      };
+      const select = useSelectTool<Rect, Pose>(adapter, {
+        pickEvery: () => ['a'],
+        boundsOf: () => ({ x: 0, y: 0, width: 50, height: 50 }),
+        drawGhost: () => {},
+        getObject: (id) => adapter.getObject(id),
+      });
+      const tools = useTools({ active: 'select', registry: { select } });
+      return <Canvas width={50} height={50} layers={{}} adapter={adapter} selection={sel} tools={tools} clientToWorld={() => [5, 5]} />;
+    }
+    const { container } = render(<Harness />);
     const canvas = container.querySelector('canvas')!;
-    canvas.setPointerCapture = vi.fn(); // jsdom missing
+    canvas.setPointerCapture = vi.fn();
     fireEvent.pointerDown(canvas, { clientX: 5, clientY: 5 });
-    expect(onBodyHit).toHaveBeenCalledTimes(1);
+    fireEvent.pointerUp(canvas, { clientX: 5, clientY: 5 });
+    expect(seen).toEqual([['a']]);
   });
 
   it('passes className and style through', () => {
@@ -118,24 +134,31 @@ describe('<Canvas>', () => {
     expect(canvas.style.display).toBe('block');
   });
 
-  it('integrates with useSelection (smoke)', () => {
+  it('integrates with useSelection through useSelectTool (smoke)', () => {
+    interface Rect { id: string; x: number; y: number; width: number; height: number }
+    interface Pose { x: number; y: number; width: number; height: number }
     function TestHarness() {
       const sel = useSelection({ mode: 'multi' });
-      return (
-        <Canvas
-          width={50}
-          height={50}
-          layers={{}}
-          pickEvery={() => 'a'}
-          selection={sel}
-        />
-      );
+      const adapter = {
+        getObjects: () => [] as Rect[],
+        getObject: () => null,
+        getPose: () => ({ x: 0, y: 0, width: 0, height: 0 }) as Pose,
+        setPose: () => {},
+        ...sel.adapterMethods,
+      };
+      const select = useSelectTool<Rect, Pose>(adapter, {
+        pickEvery: () => ['a'],
+        boundsOf: () => ({ x: 0, y: 0, width: 50, height: 50 }),
+        drawGhost: () => {},
+        getObject: () => null,
+      });
+      const tools = useTools({ active: 'select', registry: { select } });
+      return <Canvas width={50} height={50} layers={{}} adapter={adapter} selection={sel} tools={tools} />;
     }
     const { container } = render(<TestHarness />);
     const canvas = container.querySelector('canvas')!;
     canvas.setPointerCapture = vi.fn();
     fireEvent.pointerDown(canvas, { clientX: 5, clientY: 5 });
-    // No assertion needed beyond "doesn't throw"; selection state is internal.
     expect(canvas).toBeInstanceOf(HTMLCanvasElement);
   });
 
@@ -527,23 +550,6 @@ describe('Canvas tools mode', () => {
     const { container } = render(<Test />);
     const canvas = container.querySelector('canvas')! as HTMLCanvasElement;
     expect(canvas.style.cursor).toBe('crosshair');
-  });
-
-  it('legacy hook-prop wiring still works when tools prop is omitted', () => {
-    // Smoke: existing Canvas.test.tsx cases all test the legacy path. Just
-    // assert that omitting `tools` does not regress: a click clears selection.
-    const select = { current: [], get: vi.fn(() => []), clear: vi.fn(), set: vi.fn(), add: vi.fn(), remove: vi.fn(), toggle: vi.fn(), applyClick: vi.fn() };
-
-    const { container } = render(
-      <Canvas width={100} height={100} layers={{}} selection={select as never} />,
-    );
-    const canvas = container.querySelector('canvas')!;
-    canvas.setPointerCapture = vi.fn();
-
-    fireEvent.pointerDown(canvas, { clientX: 10, clientY: 10, pointerId: 1 });
-    fireEvent.pointerUp(canvas,   { clientX: 10, clientY: 10, pointerId: 1 });
-
-    expect(select.clear).toHaveBeenCalledOnce();
   });
 
   describe('legacy-hook dedupe', () => {
