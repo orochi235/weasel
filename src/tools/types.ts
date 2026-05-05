@@ -3,6 +3,7 @@ import type { SelectionApi } from '../features/selection/useSelection';
 import type { Op } from '../core/ops/types';
 import type { View } from '../features/viewport/view';
 import type { RenderLayer } from '../core/layers/render';
+import type { DebugSink } from '../debug/types';
 
 /** Outcome of a channel handler. `'claim'` stops dispatch for this event;
  *  `'pass'` lets the next slot try. Handlers that return nothing are
@@ -44,6 +45,11 @@ export interface ToolCtx<TScratch = unknown> {
    *  zoom/pan tools to convert event clientX/clientY to canvas-relative
    *  anchors. */
   canvasRect: DOMRect;
+  /** Optional debug sink. When `<Canvas debug={...}>` is enabled, Canvas
+   *  threads its sink here so tool-internal hit math (handle hitboxes,
+   *  rotation handle, etc.) lands in the same overlay as Canvas's own
+   *  bounds/origin records. Tools should call this conditionally with `?.`. */
+  debug?: DebugSink;
   scratch: TScratch;
 }
 

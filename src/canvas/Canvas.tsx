@@ -540,6 +540,8 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     return createDebugSink(resolvedDebugConfig);
   }, [resolvedDebugConfig]);
   if (debugSinkRef) debugSinkRef.current = debugSink;
+  const debugSinkRefForCtx = useRef<DebugSink | null>(null);
+  debugSinkRefForCtx.current = debugSink;
 
   // Synthesized arrayAdapter when `adapter` is omitted but `items`/`setItems`/
   // `toPose` are supplied. The hook always runs (rules of hooks) — when the
@@ -673,6 +675,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
         view,
         setView: setViewRef.current,
         canvasRect: rect,
+        debug: debugSinkRefForCtx.current ?? undefined,
       };
     },
     [],

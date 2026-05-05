@@ -277,7 +277,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
               const b = options.boundsOf(sel[0]);
               if (b) {
                 const handle = rotationHandle(b, rotationHandleDistance);
-                debug?.recordHitbox(sel[0], 'rotation', {
+                (ctx.debug ?? debug)?.recordHitbox(sel[0], 'rotation', {
                   kind: 'circle', cx: handle.cx, cy: handle.cy, r: radiusWorld,
                 });
                 if (hitRotationHandle(handle, ctx.worldX, ctx.worldY, radiusWorld)) {
@@ -292,7 +292,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
               const b = options.boundsOf(sel[0]);
               if (b) {
                 for (const h of cornerResizeHandles(b)) {
-                  debug?.recordHitbox(sel[0], 'handle', {
+                  (ctx.debug ?? debug)?.recordHitbox(sel[0], 'handle', {
                     kind: 'circle', cx: h.cx, cy: h.cy, r: radiusWorld,
                   });
                   if (hitCornerHandle(h, ctx.worldX, ctx.worldY, radiusWorld)) {

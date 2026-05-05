@@ -1,7 +1,6 @@
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Canvas,
-  createDebugSink,
   pathOriginProjection,
   pathPoseDescriptor,
   pointInPath,
@@ -56,13 +55,6 @@ export function PathPoseDemo() {
 
   const selection = useSelection({ initial: [ID] });
 
-  // The tool's `debug` is a separate sink (only consumed by gesture internals);
-  // Canvas builds its own sink for the visible overlay layer from `debug={debug}`.
-  const toolDebugSink = useMemo(
-    () => (debug ? createDebugSink(debug) : undefined),
-    [debug],
-  );
-
   const adapter = {
     getObject: (id: string) => (id === ID ? { id } : undefined),
     getObjects: () => [{ id: ID }],
@@ -81,7 +73,6 @@ export function PathPoseDemo() {
     handleHitRadius: HANDLE,
     move: { behaviors: [snapBehavior(gridSnapStrategy<Path>(20, { origin: pathOriginProjection }))] },
     resize: { geometry: pathPoseDescriptor },
-    debug: toolDebugSink,
     drawGhost: (cx, _o, p) => {
       cx.fillStyle = '#7fb069';
       cx.strokeStyle = '#1a130d';
