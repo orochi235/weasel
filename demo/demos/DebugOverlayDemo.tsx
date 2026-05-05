@@ -79,17 +79,14 @@ export function DebugOverlayDemo() {
       if (!b) throw new Error(`no box: ${id}`);
       return { x: b.x, y: b.y, width: b.width, height: b.height };
     },
-    getParent: () => null,
     setPose: (id, p) => {
       setBoxes((bs) => bs.map((b) => (b.id === id ? { ...b, ...p } : b)));
     },
-    setParent: () => {},
     hitTestArea: (r) =>
       boxesRef.current
         .filter((o) => o.x < r.x + r.width && o.x + o.width > r.x && o.y < r.y + r.height && o.y + o.height > r.y)
         .map((o) => o.id),
     ...selection.adapterMethods,
-    applyOps: () => {},
   };
 
   const select = useSelectTool<Box, Pose>(adapter, {

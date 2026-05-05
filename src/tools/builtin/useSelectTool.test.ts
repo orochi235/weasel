@@ -294,6 +294,41 @@ describe('useSelectTool', () => {
     expect(decision).toBe('claim');
   });
 
+  it('works with an adapter missing AreaSelectAdapter methods (no marquee wiring)', () => {
+    // No hitTestArea/getSelection/setSelection/applyOps — should not throw on
+    // mount, and an empty-space drag should not crash on end.
+    const flatAdapter = {
+      getObject: (id: string) => ({ id }),
+      getObjects: () => [],
+      getPose: (_id: string) => ({ x: 0, y: 0, width: 10, height: 10 }),
+      setPose: vi.fn(),
+      // no getParent, setParent, hitTestArea, getSelection, setSelection, applyOps
+    } as any;
+    const { result } = renderHook(() =>
+      useSelectTool(flatAdapter, {
+        pickEvery: () => [],
+        boundsOf: () => null,
+      }),
+    );
+    // Empty-space drag start → move → end should all be safe.
+    act(() => {
+      const c1 = ctxOver({ scratch: { kind: 'area' }, worldX: 0, worldY: 0 });
+      result.current.drag!.onStart!(pe(), c1);
+      const c2 = ctxOver({ scratch: { kind: 'area' }, worldX: 50, worldY: 30 });
+      result.current.drag!.onMove!(pe(), c2);
+      const c3 = ctxOver({ scratch: { kind: 'area' }, worldX: 50, worldY: 30 });
+      result.current.drag!.onEnd!(pe(), c3);
+    });
+    // Empty-click clear path still works (uses ctx.selection, not adapter).
+    const clear = vi.fn();
+    const ctx = ctxOver({
+      selection: { current: ['a'], applyClick: vi.fn(), set: vi.fn(), clear } as any,
+    });
+    result.current.pointer!.onDown!(pe(), ctx);
+    result.current.pointer!.onClick!(pe(), ctx);
+    expect(clear).toHaveBeenCalledTimes(1);
+  });
+
   it('drag.onEnd claims for active scratch kinds', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {

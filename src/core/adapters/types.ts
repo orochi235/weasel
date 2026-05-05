@@ -68,9 +68,14 @@ export interface MoveAdapter<TObject extends { id: string }, TPose> {
    *  and the scene-iteration loop from this. */
   getObjects(): TObject[];
   getPose(id: string): TPose;
-  getParent(id: string): string | null;
+  /** Optional. Required only by hierarchy-aware paths: layout-pass drop
+   *  targeting (`getLayout` present), nested-group hit collapse
+   *  (`pickTopMostHit`), and group-pose composition. Flat scenes may omit. */
+  getParent?(id: string): string | null;
   setPose(id: string, pose: TPose): void;
-  setParent(id: string, parentId: string | null): void;
+  /** Optional. Used only by reparent ops (e.g. drag-into-container drops via
+   *  layout strategies). Flat scenes that never reparent may omit. */
+  setParent?(id: string, parentId: string | null): void;
   /** Optional: see SceneAdapter.applyBatch. */
   applyBatch?(ops: Op[], label: string): void;
   findSnapTarget?(
@@ -129,15 +134,26 @@ export interface RotateAdapter<
  * Narrow adapter for `useAreaSelect`. Transient: no checkpoint, no
  * history. The hook calls `applyOps(ops)` instead of `applyBatch(ops, label)`.
  */
+/**
+ * Narrow adapter for `useAreaSelect`. Transient: no checkpoint, no
+ * history. The hook calls `applyOps(ops)` instead of `applyBatch(ops, label)`.
+ *
+ * All fields are **optional** — area-select is opt-in. `useSelectTool` only
+ * wires the default marquee behavior when `hitTestArea`, `getSelection`,
+ * `setSelection`, and `applyOps` are all present on the adapter; otherwise
+ * the gesture short-circuits (empty-space drags do nothing, sub-threshold
+ * empty clicks still clear selection via the tool's `onClick` path).
+ * Demos that don't need marquee selection can omit these methods entirely.
+ */
 export interface AreaSelectAdapter {
   /** Returns ids of objects intersecting the world-space rect. */
-  hitTestArea(rect: { x: number; y: number; width: number; height: number }): string[];
+  hitTestArea?(rect: { x: number; y: number; width: number; height: number }): string[];
   /** Current selection — read by behaviors to compute additive merges. */
-  getSelection(): string[];
+  getSelection?(): string[];
   /** Mutator wired by `setSelection` op. */
-  setSelection(ids: string[]): void;
+  setSelection?(ids: string[]): void;
   /** Apply ops without checkpointing or pushing a history entry. */
-  applyOps(ops: Op[]): void;
+  applyOps?(ops: Op[]): void;
 }
 
 /**

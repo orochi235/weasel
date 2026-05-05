@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Canvas,
   PathBuilder,
@@ -13,7 +13,6 @@ import {
   useTools,
 } from '@orochi235/weasel';
 import type {
-  EditAnchorsAdapter,
   Path,
   PolygonPath,
 } from '@orochi235/weasel';
@@ -48,12 +47,8 @@ export function BezierEditDemo() {
     getObject: (id: string) => (id === ID ? { id } : undefined),
     getObjects: () => [{ id: ID }],
     getPose: () => pathRef.current,
-    getParent: () => null,
     setPose: (_id: string, p: Pose) => setPath(p),
-    setParent: () => {},
     ...selection.adapterMethods,
-    hitTestArea: () => [],
-    applyOps: () => {},
   };
 
   const select = useSelectTool<PathObj, Pose>(adapter, {
@@ -73,13 +68,10 @@ export function BezierEditDemo() {
 
   // Anchor-edit gesture — driven by the tool dispatcher when 'edit-anchors'
   // is the active slot. The consumer owns `editingId`: set it on dbl-click,
-  // clear it on Esc (via the tool's `onExit`).
-  const editAnchorsAdapter = useMemo<EditAnchorsAdapter<PathObj>>(() => ({
-    getObject: (id) => (id === ID ? { id } : undefined),
-    getPose: () => pathRef.current,
-    setPose: (_id, p) => setPath(p),
-  }), []);
-  const editAnchorsCtl = useEditAnchors<PathObj>(editAnchorsAdapter, {
+  // clear it on Esc (via the tool's `onExit`). The select adapter's
+  // getObject/getPose/setPose superset what useEditAnchors needs, so we
+  // pass it directly (the hook stores adapter in a ref internally).
+  const editAnchorsCtl = useEditAnchors<PathObj>(adapter, {
     editingId,
     hitRadius: HANDLE / zoom,
   });

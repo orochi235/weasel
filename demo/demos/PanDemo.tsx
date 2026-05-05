@@ -31,13 +31,9 @@ export function PanDemo() {
     getObject: (id: string) => items.find((r) => r.id === id),
     getPose: (id: string) => items.find((r) => r.id === id) ?? null,
     getObjects: () => items,
-    getParent: () => null,
-    setParent: () => {},
     setPose: (id: string, pose: unknown) => setItems((cur) => cur.map((r) => r.id === id ? { ...r, ...(pose as Rect) } : r)),
     getSelection: () => [] as string[],
     setSelection: () => {},
-    hitTestArea: () => [] as string[],
-    applyOps: () => {},
   };
   const select = useSelectTool(selectAdapter, {
     pickEvery: (wx, wy) => items.filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height).map((r) => r.id),

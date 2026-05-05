@@ -56,7 +56,7 @@ export function NestedGroupsDemo() {
 
   const history = useMemo(() => createHistory({
     setPose: (id: string, p: Pose) => adapterRef.current.setPose(id, p),
-    setParent: (id: string, parent: string | null) => adapterRef.current.setParent(id, parent),
+    setParent: (id: string, parent: string | null) => adapterRef.current.setParent!(id, parent),
     insertObject: (n: Node) => adapterRef.current.insertObject(n),
     removeObject: (id: string) => adapterRef.current.removeObject(id),
     setSelection: (ids: string[]) => selRef.current.set(ids),

@@ -56,12 +56,10 @@ export function MoveDemo() {
         color: COLORS[(nextId.current + 2) % COLORS.length],
       } as Rect;
     },
-    // useSelectTool's adapter intersection requires AreaSelectAdapter members.
     hitTestArea: (r: Pose) =>
       rectsRef.current
         .filter((o) => o.x < r.x + r.width && o.x + o.width > r.x && o.y < r.y + r.height && o.y + o.height > r.y)
         .map((o) => o.id),
-    applyOps: () => {},
     snapshotSelection: () => ({ items: [] }),
   };
 
@@ -152,7 +150,6 @@ const adapter = {
   insertObject: (obj) => setRects((rs) => [...rs, obj]),
   cloneObject: (id, offset) => /* mint a fresh id, copy fields, translate by offset */,
   hitTestArea: (rect) => rectsRef.current.filter(aabbOverlap(rect)).map((r) => r.id),
-  applyOps: () => {},
   snapshotSelection: () => ({ items: [] }),
 };
 

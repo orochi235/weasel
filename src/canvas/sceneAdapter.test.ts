@@ -38,10 +38,10 @@ describe('sceneToAdapter', () => {
     const parent = scene.add({ kind: 'container', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'p' } });
     const child = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c' } });
     const adapter = sceneToAdapter(scene);
-    expect(adapter.getParent(child)).toBeNull();
-    adapter.setParent(child, parent);
+    expect(adapter.getParent!(child)).toBeNull();
+    adapter.setParent!(child, parent);
     expect(scene.get(child)!.parent).toBe(parent);
-    adapter.setParent(child, null);
+    adapter.setParent!(child, null);
     expect(scene.get(child)!.parent).toBeNull();
   });
 

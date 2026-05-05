@@ -162,7 +162,7 @@ export function useAreaSelect(
     const transient = transientOpt ?? behaviorsRef.current.some((b) => b.defaultTransient === true);
 
     if (transient) {
-      (adapter as AreaSelectAdapter).applyOps(collected);
+      (adapter as AreaSelectAdapter).applyOps?.(collected);
     } else {
       const adapterWithBatch = adapter as AreaSelectAdapter & {
         applyBatch?: (ops: Op[], label: string) => void;

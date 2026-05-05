@@ -83,7 +83,7 @@ export function snapToContainer<TPose>(args: {
       const snap = s.committedSnap ?? ctx.snap;
       if (!snap) return;
       const draggedId = ctx.draggedIds[0];
-      const oldParent = ctx.adapter.getParent(draggedId);
+      const oldParent = ctx.adapter.getParent?.(draggedId) ?? null;
       const fromPose = ctx.origin.get(draggedId)!;
       const ops: Op[] = [
         createTransformOp<TPose>({

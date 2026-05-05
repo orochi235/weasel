@@ -303,7 +303,7 @@ export function useMove<TObject extends { id: string }, TPose>(
       // We use bounding-box hit-test against every object that has a layout.
       const draggedId = ctx.draggedIds[0];
       const draggedPose = newPoses.get(draggedId)!;
-      const sourceContainerId = adapter.getParent(draggedId);
+      const sourceContainerId = adapter.getParent?.(draggedId) ?? null;
       const draggedRect = draggedPose as unknown as { x: number; y: number; width: number; height: number };
       const draggedCenter = {
         x: draggedRect.x + (draggedRect.width ?? 0) / 2,
@@ -375,7 +375,7 @@ export function useMove<TObject extends { id: string }, TPose>(
         let rootIdx = (getChildren.call(adapter, null) ?? []).length;
         for (const obj of objs) {
           if (visited.has(obj.id)) continue;
-          if (adapter.getParent(obj.id) !== null) continue;
+          if ((adapter.getParent?.(obj.id) ?? null) !== null) continue;
           const path = [rootIdx++];
           visited.add(obj.id);
           considerCandidate(obj.id, path);
@@ -556,7 +556,7 @@ export function useMove<TObject extends { id: string }, TPose>(
           id: draggedId,
           originPose: ctx.origin.get(draggedId)!,
           pose: ctx.current.get(draggedId)!,
-          sourceContainerId: adapter.getParent(draggedId),
+          sourceContainerId: adapter.getParent?.(draggedId) ?? null,
         },
         layoutPass.accepted ? target : null,
       );
