@@ -84,6 +84,34 @@ describe('useTextTool — click path', () => {
   });
 });
 
+describe('useTextTool — dispatch routing', () => {
+  it('routes commit dispatch through ctx.applyBatch (not adapter/applyOpsTo)', () => {
+    const pointInsert = vi.fn(() => ({ id: 't1', x: 5, y: 6, width: 10, height: 10, text: '' }));
+    const ctxApplyBatch = vi.fn();
+    const { result } = renderHook(() => useTextTool({ pointInsert }));
+    act(() => {
+      result.current.pointer!.onClick!(pe(), makeCtx({ applyBatch: ctxApplyBatch, worldX: 5, worldY: 6 }));
+    });
+    expect(ctxApplyBatch).toHaveBeenCalledTimes(1);
+    const [ops, label] = ctxApplyBatch.mock.calls[0] as [unknown[], string];
+    expect(label).toBe('Insert text');
+    expect(ops.length).toBe(1);
+  });
+
+  it('captures ctx.applyBatch fresh per handler entry (no stale ref across invocations)', () => {
+    const pointInsert = vi.fn(() => ({ id: 't1', x: 0, y: 0, width: 10, height: 10, text: '' }));
+    const first = vi.fn();
+    const second = vi.fn();
+    const { result } = renderHook(() => useTextTool({ pointInsert }));
+    act(() => {
+      result.current.pointer!.onClick!(pe(), makeCtx({ applyBatch: first }));
+      result.current.pointer!.onClick!(pe(), makeCtx({ applyBatch: second }));
+    });
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(second).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('useTextTool — drag path', () => {
   it('drag above threshold commits via commitInsert', () => {
     const pointInsert = vi.fn();

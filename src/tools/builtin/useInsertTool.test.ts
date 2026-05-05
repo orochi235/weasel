@@ -62,6 +62,26 @@ describe('useInsertTool', () => {
     expect(applyBatch).toHaveBeenCalledTimes(1);
   });
 
+  it('routes commit dispatch through adapter.applyBatch (not ctx.applyBatch)', () => {
+    const adapterApplyBatch = vi.fn();
+    const ctxApplyBatch = vi.fn();
+    const adapter = {
+      getSelection: () => [],
+      commitInsert: vi.fn(() => ({ id: 'new', x: 0, y: 0, width: 50, height: 50 })),
+      commitPaste: vi.fn(() => []),
+      snapshotSelection: vi.fn(),
+      insertObject: vi.fn(),
+      setSelection: vi.fn(),
+      applyBatch: adapterApplyBatch,
+    } as any;
+    const { result } = renderHook(() => useInsertTool(adapter, {}));
+    result.current.drag!.onStart!(pe(), makeCtx({ worldX: 0, worldY: 0, applyBatch: ctxApplyBatch }));
+    result.current.drag!.onMove!(pe(), makeCtx({ worldX: 50, worldY: 50, applyBatch: ctxApplyBatch }));
+    result.current.drag!.onEnd!(pe(), makeCtx({ worldX: 50, worldY: 50, applyBatch: ctxApplyBatch }));
+    expect(adapterApplyBatch).toHaveBeenCalledTimes(1);
+    expect(ctxApplyBatch).not.toHaveBeenCalled();
+  });
+
   it('drag.onEnd returns "claim"', () => {
     const { result } = renderHook(() => useInsertTool(baseAdapter, opts));
     result.current.drag!.onStart!(pe(), makeCtx({ worldX: 0, worldY: 0 }));
