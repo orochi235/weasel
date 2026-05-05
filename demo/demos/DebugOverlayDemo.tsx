@@ -2,6 +2,10 @@ import { useRef, useState } from 'react';
 import {
   Canvas,
   gridSnapStrategy,
+  snap as snapBehavior,
+  useSelection,
+  useSelectTool,
+  useTools,
 } from '@orochi235/weasel';
 import type {
   MoveAdapter,
@@ -65,6 +69,8 @@ export function DebugOverlayDemo() {
     enabled.handles || enabled.snap || enabled.layers
   ) ? enabled : false;
 
+  const selection = useSelection();
+
   const adapter: MoveAdapter<Box, Pose> & ResizeAdapter<Box, Pose> & AreaSelectAdapter = {
     getObject: (id) => boxesRef.current.find((b) => b.id === id),
     getObjects: () => boxesRef.current,
@@ -82,10 +88,29 @@ export function DebugOverlayDemo() {
       boxesRef.current
         .filter((o) => o.x < r.x + r.width && o.x + o.width > r.x && o.y < r.y + r.height && o.y + o.height > r.y)
         .map((o) => o.id),
-    getSelection: () => [],
-    setSelection: () => {},
+    ...selection.adapterMethods,
     applyOps: () => {},
   };
+
+  const select = useSelectTool<Box, Pose>(adapter, {
+    hitBody: (wx, wy) =>
+      boxesRef.current
+        .filter((b) => wx >= b.x && wx <= b.x + b.width && wy >= b.y && wy <= b.y + b.height)
+        .map((b) => b.id),
+    boundsOf: (id) => {
+      const b = boxesRef.current.find((x) => x.id === id);
+      return b ? { x: b.x, y: b.y, width: b.width, height: b.height } : null;
+    },
+    handleHitRadius: HANDLE,
+    move: { behaviors: [snapBehavior(gridSnapStrategy<Pose>(20))] },
+    drawGhost: (cx, b, p) => {
+      if (!b) return;
+      cx.fillStyle = b.color;
+      cx.fillRect(p.x, p.y, p.width, p.height);
+    },
+    getObject: (id) => boxesRef.current.find((b) => b.id === id) ?? null,
+  });
+  const tools = useTools({ active: 'select', registry: { select } });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -108,8 +133,8 @@ export function DebugOverlayDemo() {
         height={H}
         className="ckd-canvas"
         adapter={adapter}
-        handleHitRadius={HANDLE}
-        snap={gridSnapStrategy<Pose>(20)}
+        selection={selection}
+        tools={tools}
         debug={debug}
         layers={{
           scene: {
