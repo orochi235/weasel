@@ -3,7 +3,14 @@ export { useNudgeTool, type UseNudgeToolOptions } from './useNudgeTool';
 export { useUndoRedoTool, type UseUndoRedoToolOptions } from './useUndoRedoTool';
 export { useDuplicateTool, type UseDuplicateToolOptions } from './useDuplicateTool';
 export { useInsertTool, type UseInsertToolOptions } from './useInsertTool';
-export { useSelectTool, type UseSelectToolOptions } from './useSelectTool';
+export {
+  useSelectTool,
+  type UseSelectToolOptions,
+  type AreaSelectOverlayStyle,
+  type MoveOverlayStyle,
+  type ResizeOverlayStyle,
+  type RotateOverlayStyle,
+} from './useSelectTool';
 export { pickTopMostHit, type PickTopMostHitAdapter } from './pickTopMostHit';
 export { applyHitExistingGate } from './hitExistingGate';
 export { useHandTool } from './useHandTool';

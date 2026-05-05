@@ -39,6 +39,14 @@ export interface MoveOverlayStyle {
   ghostAlpha?: number;
 }
 
+export interface ResizeOverlayStyle {
+  ghostAlpha?: number;
+}
+
+export interface RotateOverlayStyle {
+  ghostAlpha?: number;
+}
+
 export interface UseSelectToolOptions<TObject extends { id: string }, TPose> {
   /** Return ids of objects whose body covers (worldX, worldY). */
   hitBody: (worldX: number, worldY: number) => string[];
@@ -59,8 +67,13 @@ export interface UseSelectToolOptions<TObject extends { id: string }, TPose> {
   debug?: DebugSink;
   /** Style for the area-select marquee. */
   areaSelectOverlayStyle?: AreaSelectOverlayStyle;
-  /** Style for move/resize/rotate ghosts (currently just `ghostAlpha`). */
+  /** Style for the move ghost (currently just `ghostAlpha`). */
   moveOverlayStyle?: MoveOverlayStyle;
+  /** Style for the resize ghost. Falls back to `moveOverlayStyle.ghostAlpha`
+   *  if unset, then to a default of 0.85. */
+  resizeOverlayStyle?: ResizeOverlayStyle;
+  /** Style for the rotate ghost. Same fallback chain as `resizeOverlayStyle`. */
+  rotateOverlayStyle?: RotateOverlayStyle;
   /** Consumer's draw function for ghost objects (move/resize/rotate in-flight).
    *  Same signature as the scene slot's `drawOne`. If omitted, ghosts are not
    *  rendered (only the marquee draws). Optional only because some demos
@@ -128,12 +141,16 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
   const styleRefs = useRef({
     areaSelectOverlayStyle: options.areaSelectOverlayStyle,
     moveOverlayStyle: options.moveOverlayStyle,
+    resizeOverlayStyle: options.resizeOverlayStyle,
+    rotateOverlayStyle: options.rotateOverlayStyle,
     drawGhost: options.drawGhost,
     getObject: options.getObject,
   });
   styleRefs.current = {
     areaSelectOverlayStyle: options.areaSelectOverlayStyle,
     moveOverlayStyle: options.moveOverlayStyle,
+    resizeOverlayStyle: options.resizeOverlayStyle,
+    rotateOverlayStyle: options.rotateOverlayStyle,
     drawGhost: options.drawGhost,
     getObject: options.getObject,
   };
@@ -184,7 +201,9 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
         const getObject = refs.getObject;
         if (!drawGhost || !getObject) return;
 
-        const ghostAlpha = refs.moveOverlayStyle?.ghostAlpha ?? 0.85;
+        const moveAlpha = refs.moveOverlayStyle?.ghostAlpha ?? 0.85;
+        const resizeAlpha = refs.resizeOverlayStyle?.ghostAlpha ?? moveAlpha;
+        const rotateAlpha = refs.rotateOverlayStyle?.ghostAlpha ?? moveAlpha;
 
         // Apply world transform once for any ghost branch — matches the
         // `space: 'world'` composition that `runLayers` would do.
@@ -197,7 +216,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
         const mOv = move.overlay;
         if (mOv) {
           ctx.save();
-          ctx.globalAlpha = ghostAlpha;
+          ctx.globalAlpha = moveAlpha;
           applyWorld();
           for (const [id, pose] of mOv.poses) {
             drawGhost(ctx, getObject(id), pose, view);
@@ -210,7 +229,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
         const rOv = resize.overlay;
         if (rOv) {
           ctx.save();
-          ctx.globalAlpha = ghostAlpha;
+          ctx.globalAlpha = resizeAlpha;
           applyWorld();
           drawGhost(ctx, getObject(rOv.id), rOv.currentPose, view);
           ctx.restore();
@@ -221,7 +240,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
         const rotOv = rotate.overlay;
         if (rotOv) {
           ctx.save();
-          ctx.globalAlpha = ghostAlpha;
+          ctx.globalAlpha = rotateAlpha;
           applyWorld();
           drawGhost(ctx, getObject(rotOv.id), rotOv.currentPose, view);
           ctx.restore();
