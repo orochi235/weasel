@@ -349,16 +349,25 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
               return 'claim';
             }
 
-            // 4. Empty → clear selection on the down (matches Figma/Sketch:
-            //    a click in empty space deselects). Skip when an extend
-            //    modifier is held so shift-marquee-from-empty preserves
-            //    the existing set until areaSelect resolves on end.
-            //    The marquee gesture itself (set on drag.onStart) will
-            //    overwrite/extend selection again on drag.end.
-            if (!ctx.modifiers.shift && !ctx.modifiers.meta) {
+            // 4. Empty → defer clear to onClick (sub-threshold release).
+            //    Clearing on down feels twitchy: an accidental tap on empty
+            //    space wipes selection mid-thought. The marquee path
+            //    (drag.onStart → areaSelect) overwrites selection on its
+            //    own end; the click path (no drag) handles clear in
+            //    pointer.onClick below. Shift/meta are extend modifiers and
+            //    never clear.
+            ctx.scratch = { kind: 'area' };
+            return 'claim';
+          },
+
+          onClick: (_e, ctx) => {
+            // Sub-threshold release: only the empty-hit (`area`) path needs
+            // commit-time work. Body/handle clicks already mutated selection
+            // in onDown via applyClick, so a sub-threshold release on them
+            // is a no-op here.
+            if (ctx.scratch.kind === 'area' && !ctx.modifiers.shift && !ctx.modifiers.meta) {
               ctx.selection.clear();
             }
-            ctx.scratch = { kind: 'area' };
             return 'claim';
           },
         },

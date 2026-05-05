@@ -106,7 +106,7 @@ describe('useSelectTool', () => {
     expect(ctx.scratch).toEqual({ kind: 'area' });
   });
 
-  it('pointer.onDown over empty clears selection (Figma-style click-empty deselects)', () => {
+  it('pointer.onDown over empty does NOT clear selection on the down (clear deferred to onClick)', () => {
     const clear = vi.fn();
     const ctx = ctxOver({
       selection: { current: ['a', 'b'], applyClick: vi.fn(), set: vi.fn(), clear } as any,
@@ -118,10 +118,26 @@ describe('useSelectTool', () => {
       }),
     );
     result.current.pointer!.onDown!(pe(), ctx);
+    expect(clear).not.toHaveBeenCalled();
+  });
+
+  it('pointer.onClick after empty pointerdown clears selection (sub-threshold release)', () => {
+    const clear = vi.fn();
+    const ctx = ctxOver({
+      selection: { current: ['a', 'b'], applyClick: vi.fn(), set: vi.fn(), clear } as any,
+    });
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        hitBody: () => [],
+        boundsOf: () => null,
+      }),
+    );
+    result.current.pointer!.onDown!(pe(), ctx);
+    result.current.pointer!.onClick!(pe(), ctx);
     expect(clear).toHaveBeenCalledTimes(1);
   });
 
-  it('pointer.onDown over empty with shift held does NOT clear selection (extend-marquee path)', () => {
+  it('pointer.onClick after empty pointerdown with shift held does NOT clear (extend modifier)', () => {
     const clear = vi.fn();
     const ctx = ctxOver({
       modifiers: { alt: false, shift: true, meta: false, ctrl: false, space: false },
@@ -134,6 +150,7 @@ describe('useSelectTool', () => {
       }),
     );
     result.current.pointer!.onDown!(pe(), ctx);
+    result.current.pointer!.onClick!(pe(), ctx);
     expect(clear).not.toHaveBeenCalled();
   });
 
