@@ -2,26 +2,32 @@ import { useMemo, useRef } from 'react';
 import { defineTool } from '../defineTool';
 import type { Tool } from '../types';
 import type { RenderLayer } from '../../core/layers/render';
-import { createInsertOp } from '../../core/ops/create';
+import { useInsert } from '../../interactions/gestures/insert/insert';
+import type { InsertAdapter } from '../../core/adapters/types';
+import type { Op } from '../../core/ops/types';
+import { applyHitExistingGate } from './hitExistingGate';
 import { viewToTransform } from '../../features/viewport/view';
 import { worldToScreen } from '../../features/viewport/viewTransform';
 
 export interface UseTextToolOptions<TObject extends { id: string }> {
-  /** Build a new text object at the clicked world point. Return `null` to
-   *  decline (e.g. clicked on an existing object the consumer would rather
-   *  treat as edit-entry). The kit wraps the returned object in an InsertOp
-   *  and dispatches it via `ctx.applyBatch`. */
-  commitInsert: (point: { worldX: number; worldY: number }) => TObject | null;
+  /** Click / sub-threshold-drag insertion. Called with the cursor's world
+   *  point on click and on tiny drags. Return `null` to decline (e.g. to
+   *  treat the click as edit-entry on an existing object). The kit wraps
+   *  the returned object in an InsertOp dispatched via `ctx.applyBatch`. */
+  pointInsert: (point: { x: number; y: number }) => TObject | null;
   /** Optional drag-to-size path. When provided, dragging on the canvas
-   *  draws a marquee preview and on release commits a text object whose
-   *  pose is the marquee's bounds. If the drag never crosses `minBounds`
-   *  the tool falls back to `commitInsert(start)` so a quick click-drag
-   *  still inserts at the cursor. Omit this option to keep click-only
-   *  behavior. */
-  commitInsertBounds?: (bounds: { x: number; y: number; width: number; height: number }) => TObject | null;
-  /** Minimum marquee size before `commitInsertBounds` runs (otherwise the
-   *  click fallback takes over). Default `{ width: 4, height: 4 }`. */
-  minBounds?: { width?: number; height?: number };
+   *  draws a marquee preview and on release commits via
+   *  `commitInsert(bounds)`. Sub-threshold releases fall back to
+   *  `pointInsert(start)`. Omit to keep click-only behavior — no marquee,
+   *  no drag handlers. */
+  commitInsert?: InsertAdapter<TObject>['commitInsert'];
+  /** Hit-test gate consulted before insertion. When it returns id(s), the
+   *  tool selects them via `ctx.selection.set` and skips both the click
+   *  and drag paths. Return `null` to fall through to insertion. */
+  hitExisting?: (point: { x: number; y: number }) => string | string[] | null;
+  /** Threshold below which a drag falls back to `pointInsert`. Default
+   *  `{ width: 4, height: 4 }`. Ignored when `commitInsert` is omitted. */
+  minBounds?: { width: number; height: number };
   /** Style for the drag-to-size marquee preview. */
   marqueeStyle?: {
     stroke?: string;
@@ -29,168 +35,142 @@ export interface UseTextToolOptions<TObject extends { id: string }> {
     lineWidth?: number;
     fill?: string;
   };
-  /** Optional hit-test consulted before insertion. When it returns an id
-   *  (or array of ids), the tool selects those objects via `ctx.selection.set`
-   *  instead of inserting — so clicking an existing text object selects it
-   *  rather than stamping a new one on top. Applies to both the click path
-   *  and the drag-start point of the bounds path. Return `null` to fall
-   *  through to insertion. */
-  hitExisting?: (point: { worldX: number; worldY: number }) => string | string[] | null;
 }
-
-type TextScratch =
-  | { kind: 'idle' }
-  | { kind: 'drag'; startX: number; startY: number; curX: number; curY: number };
 
 /** Active-slot Tool: click to create a new text object at the cursor;
  *  optionally drag to size its bounding box.
  *
- *  When `commitInsertBounds` is omitted the tool is click-only (legacy
- *  behavior). When provided, drag draws a dashed marquee and on release
- *  commits via `commitInsertBounds(bounds)`. Releases that didn't cross
- *  `minBounds` fall back to `commitInsert(start)` so a wobbly click still
- *  inserts at the cursor.
- *
- *  Consumers wanting double-click-to-edit on existing nodes wire that
- *  separately via `useTextEdit`. */
+ *  Thin Tool veneer over `useInsert` — same gesture hook `useInsertTool`
+ *  uses, just with click-path semantics enabled by `pointInsert`. When
+ *  `commitInsert` is omitted the gesture hook runs in `clickOnly` mode
+ *  and no drag handlers register on the Tool record. */
 export function useTextTool<TObject extends { id: string }>(
   options: UseTextToolOptions<TObject>,
-): Tool<TextScratch> {
-  const { commitInsert, commitInsertBounds, minBounds, marqueeStyle, hitExisting } = options;
+): Tool<undefined> {
+  const { pointInsert, commitInsert, hitExisting, minBounds, marqueeStyle } = options;
   const minW = minBounds?.width ?? 4;
   const minH = minBounds?.height ?? 4;
 
-  // Refs so the overlay closure pulls live scratch without rebuilding the
-  // Tool record on every drag tick.
-  const scratchRef = useRef<TextScratch>({ kind: 'idle' });
+  // The gesture hook dispatches commits via `adapter.applyBatch` (or
+  // `applyOpsTo(adapter, ...)` if absent — see dispatchApplyBatch). We want
+  // commits to flow through the active tool ctx's `applyBatch` so apps with
+  // history integration get a checkpoint. Stash the latest ctx.applyBatch
+  // in a ref before invoking the controller; the synthesized adapter's
+  // applyBatch reads from it.
+  const applyBatchRef = useRef<((ops: Op[], label: string) => void) | null>(null);
+
+  const adapter = useMemo<InsertAdapter<TObject>>(() => ({
+    commitInsert: (b) => (commitInsert ? commitInsert(b) : null),
+    commitPaste: () => [],
+    snapshotSelection: () => ({ items: [] }),
+    insertObject: () => {},
+    setSelection: () => {},
+    getSelection: () => [],
+    applyBatch: (ops, label) => {
+      applyBatchRef.current?.(ops, label);
+    },
+  }), [commitInsert]);
+
+  const ctl = useInsert<TObject, { x: number; y: number; width: number; height: number }>(
+    adapter,
+    {
+      pointInsert,
+      clickOnly: !commitInsert,
+      minBounds: { width: minW, height: minH },
+      insertLabel: 'Insert text',
+    },
+  );
+
   const styleRef = useRef(marqueeStyle);
   styleRef.current = marqueeStyle;
+  const ctlRef = useRef(ctl);
+  ctlRef.current = ctl;
+  // Tracks whether the active drag actually started the controller (vs.
+  // hitExisting short-circuiting onStart). Subsequent onMove/onEnd should
+  // no-op when false so we don't dispatch a phantom commit.
+  const dragActiveRef = useRef(false);
 
-  const overlay = useMemo<RenderLayer<unknown>>(
-    () => ({
-      id: 'text-overlay',
-      label: 'Text overlay',
-      space: 'screen',
-      draw: (ctx, _data, view) => {
-        const s = scratchRef.current;
-        if (s.kind !== 'drag') return;
-        const cfg = styleRef.current ?? {};
-        const stroke = cfg.stroke ?? '#a48bd4';
-        const dash = cfg.dash ?? [3, 3];
-        const lineWidth = cfg.lineWidth ?? 1;
-        const fill = cfg.fill ?? 'rgba(164, 139, 212, 0.10)';
-        const t = viewToTransform(view);
-        const x = Math.min(s.startX, s.curX);
-        const y = Math.min(s.startY, s.curY);
-        const w = Math.abs(s.curX - s.startX);
-        const h = Math.abs(s.curY - s.startY);
-        const [sx, sy] = worldToScreen(x, y, t);
-        const sw = w * view.scale;
-        const sh = h * view.scale;
-        ctx.save();
-        ctx.fillStyle = fill;
-        ctx.fillRect(sx, sy, sw, sh);
-        ctx.strokeStyle = stroke;
-        ctx.lineWidth = lineWidth;
-        ctx.setLineDash(dash);
-        ctx.strokeRect(sx, sy, sw, sh);
-        ctx.setLineDash([]);
-        ctx.restore();
-      },
-    }),
-    [],
-  );
+  const overlay = useMemo<RenderLayer<unknown>>(() => ({
+    id: 'text-overlay',
+    label: 'Text overlay',
+    space: 'screen',
+    draw: (ctx, _data, view) => {
+      const ov = ctlRef.current.overlay;
+      if (!ov) return;
+      const cfg = styleRef.current ?? {};
+      const stroke = cfg.stroke ?? '#a48bd4';
+      const dash = cfg.dash ?? [3, 3];
+      const lineWidth = cfg.lineWidth ?? 1;
+      const fill = cfg.fill ?? 'rgba(164, 139, 212, 0.10)';
+      const t = viewToTransform(view);
+      const { x, y, width: w, height: h } = ov.bounds;
+      const [sx, sy] = worldToScreen(x, y, t);
+      const sw = w * view.scale;
+      const sh = h * view.scale;
+      ctx.save();
+      ctx.fillStyle = fill;
+      ctx.fillRect(sx, sy, sw, sh);
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = lineWidth;
+      ctx.setLineDash(dash);
+      ctx.strokeRect(sx, sy, sw, sh);
+      ctx.setLineDash([]);
+      ctx.restore();
+    },
+  }), []);
 
   return useMemo(
     () =>
-      defineTool<TextScratch>({
+      defineTool({
         id: 'text',
         keybinding: 'T',
         cursor: 'text',
-        overlay: commitInsertBounds ? overlay : undefined,
-        initScratch: () => ({ kind: 'idle' }),
+        overlay: commitInsert ? overlay : undefined,
         pointer: {
           onClick: (_e, ctx) => {
-            if (hitExisting) {
-              const hit = hitExisting({ worldX: ctx.worldX, worldY: ctx.worldY });
-              if (hit) {
-                ctx.selection.set(Array.isArray(hit) ? hit : [hit]);
-                return 'claim';
-              }
-            }
-            const obj = commitInsert({ worldX: ctx.worldX, worldY: ctx.worldY });
-            if (!obj) return 'pass';
-            ctx.applyBatch([createInsertOp({ object: obj })], 'Insert text');
+            if (applyHitExistingGate(ctx, hitExisting)) return 'claim';
+            applyBatchRef.current = ctx.applyBatch;
+            ctl.start(ctx.worldX, ctx.worldY, ctx.modifiers);
+            ctl.end();
+            applyBatchRef.current = null;
             return 'claim';
           },
         },
-        // Drag is only wired when the consumer opts in via commitInsertBounds.
-        // Otherwise the dispatcher routes plain clicks to pointer.onClick as before.
-        ...(commitInsertBounds
+        ...(commitInsert
           ? {
               drag: {
                 onStart: (_e, ctx) => {
-                  if (hitExisting) {
-                    const hit = hitExisting({ worldX: ctx.worldX, worldY: ctx.worldY });
-                    if (hit) {
-                      ctx.selection.set(Array.isArray(hit) ? hit : [hit]);
-                      // Stay idle: subsequent onMove/onEnd no-op, no marquee.
-                      ctx.scratch = { kind: 'idle' };
-                      scratchRef.current = ctx.scratch;
-                      return 'claim';
-                    }
+                  if (applyHitExistingGate(ctx, hitExisting)) {
+                    dragActiveRef.current = false;
+                    return 'claim';
                   }
-                  ctx.scratch = {
-                    kind: 'drag',
-                    startX: ctx.worldX,
-                    startY: ctx.worldY,
-                    curX: ctx.worldX,
-                    curY: ctx.worldY,
-                  };
-                  scratchRef.current = ctx.scratch;
+                  applyBatchRef.current = ctx.applyBatch;
+                  dragActiveRef.current = true;
+                  ctl.start(ctx.worldX, ctx.worldY, ctx.modifiers);
                   return 'claim';
                 },
                 onMove: (_e, ctx) => {
-                  if (ctx.scratch.kind !== 'drag') return 'pass';
-                  ctx.scratch = {
-                    ...ctx.scratch,
-                    curX: ctx.worldX,
-                    curY: ctx.worldY,
-                  };
-                  scratchRef.current = ctx.scratch;
+                  if (!dragActiveRef.current) return 'claim';
+                  ctl.move(ctx.worldX, ctx.worldY, ctx.modifiers);
                   return 'claim';
                 },
-                onEnd: (_e, ctx) => {
-                  const s = ctx.scratch;
-                  if (s.kind !== 'drag') return 'pass';
-                  const x = Math.min(s.startX, s.curX);
-                  const y = Math.min(s.startY, s.curY);
-                  const w = Math.abs(s.curX - s.startX);
-                  const h = Math.abs(s.curY - s.startY);
-                  ctx.scratch = { kind: 'idle' };
-                  scratchRef.current = ctx.scratch;
-                  // Below threshold: behave like a click at the start point.
-                  // Tiny drags (jitter) still produce a sensibly-sized text
-                  // box at the cursor instead of a 1-pixel one.
-                  if (w < minW || h < minH) {
-                    const obj = commitInsert({ worldX: s.startX, worldY: s.startY });
-                    if (!obj) return 'pass';
-                    ctx.applyBatch([createInsertOp({ object: obj })], 'Insert text');
-                    return 'claim';
-                  }
-                  const obj = commitInsertBounds({ x, y, width: w, height: h });
-                  if (!obj) return 'pass';
-                  ctx.applyBatch([createInsertOp({ object: obj })], 'Insert text');
+                onEnd: () => {
+                  if (!dragActiveRef.current) return 'claim';
+                  ctl.end();
+                  dragActiveRef.current = false;
+                  applyBatchRef.current = null;
                   return 'claim';
                 },
-                onCancel: (ctx) => {
-                  ctx.scratch = { kind: 'idle' };
-                  scratchRef.current = ctx.scratch;
+                onCancel: () => {
+                  if (!dragActiveRef.current) return;
+                  ctl.cancel();
+                  dragActiveRef.current = false;
+                  applyBatchRef.current = null;
                 },
               },
             }
           : {}),
       }),
-    [commitInsert, commitInsertBounds, overlay, minW, minH, hitExisting],
+    [ctl, commitInsert, overlay, hitExisting],
   );
 }

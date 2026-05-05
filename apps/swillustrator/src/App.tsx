@@ -128,7 +128,7 @@ export function App() {
   const insert = useInsertTool<Obj, Pose>(adapter, { minBounds: { width: 4, height: 4 } });
   const hand = useHandTool();
   const text = useTextTool<TextObj>({
-    hitExisting: ({ worldX, worldY }) => {
+    hitExisting: ({ x: worldX, y: worldY }) => {
       const hit = [...itemsRef.current].reverse().find(
         (o): o is TextObj => o.kind === 'text'
           && worldX >= o.x && worldX <= o.x + o.width
@@ -136,7 +136,7 @@ export function App() {
       );
       return hit ? hit.id : null;
     },
-    commitInsert: ({ worldX, worldY }) => {
+    pointInsert: ({ x: worldX, y: worldY }) => {
       const id = `t${nextId.current++}`;
       return {
         id, kind: 'text',
@@ -145,7 +145,7 @@ export function App() {
         style: { fontSize: 16, fill: { fill: 'solid', color: fillRef.current } },
       };
     },
-    commitInsertBounds: ({ x, y, width, height }) => {
+    commitInsert: ({ x, y, width, height }) => {
       const id = `t${nextId.current++}`;
       // Match font size to box height so the text actually fills the marquee.
       // 0.7 ≈ glyph cap-height ratio for most sans-serifs; rounds to a sane

@@ -122,11 +122,11 @@ export function SwillustratorDemo() {
   const insert = useInsertTool<Obj, Pose>(adapter, { minBounds: { width: 4, height: 4 } });
   const hand = useHandTool();
   const text = useTextTool<TextObj>({
-    commitInsert: ({ worldX, worldY }) => {
+    pointInsert: ({ x, y }) => {
       const id = `t${nextId.current++}`;
       return {
         id, kind: 'text',
-        x: worldX, y: worldY, width: 180, height: 28,
+        x, y, width: 180, height: 28,
         text: 'New text',
         style: { fontSize: 16, fill: { fill: 'solid', color: '#d4c4a8' } },
       };
