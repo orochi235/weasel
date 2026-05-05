@@ -1,0 +1,12 @@
+/* Default CSS variables for weasel-ui components. Apps that already
+ * have a design system should skip this file and define the variables
+ * themselves. */
+:root {
+  --wui-text: #1a1a1a;
+  --wui-text-muted: #6a6a6a;
+  --wui-panel-bg: #f4f4f4;
+  --wui-panel-border: #d4d4d4;
+  --wui-input-bg: #ffffff;
+  --wui-accent: #4a8fd4;
+  --wui-danger: #c64a3a;
+}

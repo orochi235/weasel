@@ -21,6 +21,16 @@ import {
   type RenderLayer,
   type TextStyle,
 } from '@orochi235/weasel';
+import {
+  PropertiesPanel,
+  PropertyRow,
+  PropertyAxisInput,
+  PropertyColorInput,
+  PropertyNumberInput,
+  PropertyButton,
+  PropertyReadOnly,
+} from '@orochi235/weasel-ui';
+import '@orochi235/weasel-ui/tokens.css';
 interface View { x: number; y: number; scale: number }
 
 // US Letter at 96dpi.
@@ -328,102 +338,65 @@ export function App() {
 
       <aside className="swill-sidebar right">
         {primary ? (
-          <>
-            <div className="swill-section-label">
-              Selection ({selectedItems.length})
-            </div>
-            <div style={{ fontSize: 11, color: '#a89878', fontFamily: 'ui-monospace, monospace', marginBottom: 4 }}>
-              {primary.kind}{selectedItems.length > 1 ? ` +${selectedItems.length - 1}` : ''}
-            </div>
-
-            <label className="swill-color-row">
-              <input
-                type="color"
-                value={primaryFill}
-                onChange={(e) => applyFillToSelection(e.target.value)}
-              />
-              <span>Fill</span>
-              <code>{primaryFill}</code>
-            </label>
-
+          <PropertiesPanel title={`Selection (${selectedItems.length})`}>
+            <PropertyRow label="Kind">
+              <PropertyReadOnly>
+                {primary.kind}{selectedItems.length > 1 ? ` +${selectedItems.length - 1}` : ''}
+              </PropertyReadOnly>
+            </PropertyRow>
+            <PropertyRow label="Position">
+              <PropertyAxisInput axis="X" value={Math.round(primary.x)} onChange={(v) => updateSelected((o) => ({ ...o, x: v }))} />
+              <PropertyAxisInput axis="Y" value={Math.round(primary.y)} onChange={(v) => updateSelected((o) => ({ ...o, y: v }))} />
+            </PropertyRow>
+            <PropertyRow label="Size">
+              <PropertyAxisInput axis="W" value={Math.round(primary.width)} onChange={(v) => updateSelected((o) => ({ ...o, width: Math.max(1, v) }))} min={1} />
+              <PropertyAxisInput axis="H" value={Math.round(primary.height)} onChange={(v) => updateSelected((o) => ({ ...o, height: Math.max(1, v) }))} min={1} />
+            </PropertyRow>
+            <PropertyRow label="Fill">
+              <PropertyColorInput value={primaryFill} onChange={applyFillToSelection} />
+            </PropertyRow>
             {hasStrokeProps && (
               <>
-                <label className="swill-color-row">
-                  <input
-                    type="color"
-                    value={primaryStroke}
-                    onChange={(e) => applyStrokeToSelection(e.target.value)}
-                  />
-                  <span>Stroke</span>
-                  <code>{primaryStroke}</code>
-                </label>
-
-                <label className="swill-color-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 4 }}>
-                  <span style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Stroke width</span>
-                    <code>{primaryStrokeWidth}px</code>
-                  </span>
-                  <input
-                    type="range"
-                    min={0}
-                    max={20}
-                    step={1}
-                    value={primaryStrokeWidth}
-                    onChange={(e) => applyStrokeWidthToSelection(Number(e.target.value))}
-                  />
-                </label>
+                <PropertyRow label="Stroke">
+                  <PropertyColorInput value={primaryStroke} onChange={applyStrokeToSelection} />
+                </PropertyRow>
+                <PropertyRow label="Width">
+                  <PropertyNumberInput value={primaryStrokeWidth} onChange={applyStrokeWidthToSelection} min={0} max={20} step={1} span={4} />
+                </PropertyRow>
               </>
             )}
-
-            <button
-              className="swill-tool-button"
-              onClick={() => selection.clear()}
-              style={{ marginTop: 4 }}
-            >
-              <span>Deselect</span>
-            </button>
-          </>
+            <PropertyRow>
+              <PropertyButton onClick={() => selection.clear()} span={6}>Deselect</PropertyButton>
+              <PropertyButton
+                variant="danger"
+                span={6}
+                onClick={() => {
+                  const ids = new Set(selection.current);
+                  setItems((cur) => cur.filter((o) => !ids.has(o.id)));
+                  selection.clear();
+                }}
+              >
+                Delete
+              </PropertyButton>
+            </PropertyRow>
+          </PropertiesPanel>
         ) : (
-          <>
-            <div className="swill-section-label">Defaults</div>
-            <label className="swill-color-row">
-              <input
-                type="color"
-                value={fillColor}
-                onChange={(e) => setFillColor(e.target.value)}
-              />
-              <span>Fill</span>
-              <code>{fillColor}</code>
-            </label>
-            <label className="swill-color-row">
-              <input
-                type="color"
-                value={strokeColor}
-                onChange={(e) => setStrokeColor(e.target.value)}
-              />
-              <span>Stroke</span>
-              <code>{strokeColor}</code>
-            </label>
-            <label className="swill-color-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 4 }}>
-              <span style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Stroke width</span>
-                <code>{strokeWidth}px</code>
-              </span>
-              <input
-                type="range"
-                min={0}
-                max={20}
-                step={1}
-                value={strokeWidth}
-                onChange={(e) => setStrokeWidth(Number(e.target.value))}
-              />
-            </label>
-          </>
+          <PropertiesPanel title="Defaults">
+            <PropertyRow label="Fill">
+              <PropertyColorInput value={fillColor} onChange={setFillColor} />
+            </PropertyRow>
+            <PropertyRow label="Stroke">
+              <PropertyColorInput value={strokeColor} onChange={setStrokeColor} />
+            </PropertyRow>
+            <PropertyRow label="Width">
+              <PropertyNumberInput value={strokeWidth} onChange={setStrokeWidth} min={0} max={20} step={1} span={4} />
+            </PropertyRow>
+          </PropertiesPanel>
         )}
 
         <div style={{ flex: 1 }} />
-        <div className="swill-section-label">Scene</div>
-        <div style={{ fontSize: 11, color: '#a89878', fontFamily: 'ui-monospace, monospace' }}>
+        <div className="swill-section-label" style={{ padding: '0 12px' }}>Scene</div>
+        <div style={{ fontSize: 11, color: 'var(--wui-text-muted)', fontFamily: 'ui-monospace, monospace', padding: '0 12px' }}>
           {items.length} object{items.length === 1 ? '' : 's'}
         </div>
       </aside>

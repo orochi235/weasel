@@ -17,6 +17,14 @@ export default defineConfig({
         find: '@orochi235/weasel',
         replacement: resolve(repoRoot, 'src/index.ts'),
       },
+      {
+        find: /^@orochi235\/weasel-ui\/(.*)$/,
+        replacement: resolve(repoRoot, 'packages/weasel-ui/src/$1'),
+      },
+      {
+        find: '@orochi235/weasel-ui',
+        replacement: resolve(repoRoot, 'packages/weasel-ui/src/index.ts'),
+      },
     ],
   },
   plugins: [react()],

@@ -1,0 +1,117 @@
+.panel {
+  padding: 8px;
+  min-height: 200px;
+  background: var(--wui-panel-bg);
+  color: var(--wui-text);
+}
+.title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--wui-text-muted);
+  padding: 4px 8px;
+  margin-bottom: 4px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: auto repeat(12, 1fr);
+  gap: 6px 4px;
+  padding: 3px 4px;
+  font-size: 13px;
+  align-items: center;
+}
+.label {
+  color: var(--wui-text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+  padding-right: 4px;
+}
+.miniLabel {
+  color: var(--wui-text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.span1  { grid-column: span 1; }
+.span2  { grid-column: span 2; }
+.span3  { grid-column: span 3; }
+.span4  { grid-column: span 4; }
+.span5  { grid-column: span 5; }
+.span6  { grid-column: span 6; }
+.span8  { grid-column: span 8; }
+.span10 { grid-column: span 10; }
+.span12 { grid-column: span 12; }
+
+.readOnly {
+  font-size: 12px;
+  color: var(--wui-text-muted);
+  padding: 4px 6px;
+}
+
+.input {
+  padding: 4px 6px;
+  border: 1px solid var(--wui-panel-border);
+  border-radius: 4px;
+  background: var(--wui-input-bg);
+  font-size: 12px;
+  color: var(--wui-text);
+  min-width: 0;
+}
+.input[type="number"] {
+  text-align: right;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.input[type="number"]::-webkit-inner-spin-button,
+.input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.input:focus {
+  outline: none;
+  border-color: var(--wui-accent);
+}
+
+.select {
+  padding: 4px 2px;
+  border: 1px solid var(--wui-panel-border);
+  border-radius: 4px;
+  background: var(--wui-input-bg);
+  font-size: 12px;
+  color: var(--wui-text);
+  min-width: 0;
+}
+.select:focus {
+  outline: none;
+  border-color: var(--wui-accent);
+}
+
+.colorInput {
+  width: 32px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--wui-panel-border);
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.button {
+  padding: 4px 6px;
+  border: 1px solid var(--wui-panel-border);
+  border-radius: 4px;
+  background: var(--wui-input-bg);
+  color: var(--wui-text);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: center;
+}
+.button:hover {
+  border-color: var(--wui-accent);
+}
+.button.danger {
+  color: var(--wui-danger);
+}
