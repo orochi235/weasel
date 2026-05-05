@@ -938,9 +938,34 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   // call (as the `data` arg) so custom layers can read live overlay state
   // directly from their draw closure. The legacy `helpersRef` prop still
   // mirrors the same value for back-compat.
+  // Tool-routed overlay peek: when a tool is active and exposes peekPose/
+  // peekBounds, prefer its in-flight overlay state. Mirrors the inline
+  // gesture fold-in below; coexists during the Phase 7 transition so
+  // helpersRef stays overlay-aware after Task 8 strips the inline hooks.
+  const peekToolPose = (id: string): TPose | null => {
+    if (!tools) return null;
+    const tool = tools.registry[tools.modifierEngaged ?? tools.active];
+    const p = tool?.peekPose?.(id);
+    return (p ?? null) as TPose | null;
+  };
+  const peekToolBounds = (id: string): Bounds | null => {
+    if (!tools) return null;
+    const tool = tools.registry[tools.modifierEngaged ?? tools.active];
+    const b = tool?.peekBounds?.(id);
+    if (b) return b;
+    const p = tool?.peekPose?.(id);
+    return p == null ? null : geometry.getBounds(p as TPose);
+  };
+
   const helpersForLayers: CanvasHelpers<TPose> = {
-    getEffectivePose: effectivePoseOf,
+    getEffectivePose: (id: string): TPose | null => {
+      const tp = peekToolPose(id);
+      if (tp != null) return tp;
+      return effectivePoseOf(id);
+    },
     getEffectiveBounds: (id: string): Bounds | null => {
+      const tb = peekToolBounds(id);
+      if (tb != null) return tb;
       if (effectiveBoundsOf) return effectiveBoundsOf(id);
       const p = effectivePoseOf(id);
       return p == null ? null : geometry.getBounds(p);

@@ -232,6 +232,28 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
     [move, resize, rotate, areaSelect],
   );
 
+  // peekPose: aggregate in-flight overlay poses across move/resize/rotate so
+  // Canvas.helpersRef.getEffectivePose can stay overlay-aware without reaching
+  // into hook internals. Mirrors the fall-through order in Canvas.tsx's
+  // effectivePoseOf — move first (covers multi-id drags), then resize
+  // (incl. leaf poses), then rotate.
+  const peekPose = (id: string): TPose | null => {
+    const mOv = move.overlay;
+    if (mOv) {
+      const p = mOv.poses.get(id);
+      if (p !== undefined) return p as TPose;
+    }
+    const rOv = resize.overlay;
+    if (rOv) {
+      if (rOv.id === id) return rOv.currentPose as TPose;
+      const leaf = rOv.leafPoses?.get(id);
+      if (leaf !== undefined) return leaf as TPose;
+    }
+    const rotOv = rotate.overlay;
+    if (rotOv && rotOv.id === id) return rotOv.currentPose as TPose;
+    return null;
+  };
+
   return useMemo(
     () =>
       defineTool<SelectScratch>({
@@ -239,6 +261,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
         keybinding: 'V',
         cursor: 'default',
         overlay,
+        peekPose,
         initScratch: () => ({ kind: 'idle' }),
 
         pointer: {

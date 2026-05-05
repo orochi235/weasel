@@ -72,6 +72,16 @@ export interface WheelChannel<TScratch> {
  *  not eligible for the modifier slot. */
 export type ModifierTrigger = 'space' | 'alt' | 'ctrl' | 'meta' | 'shift';
 
+/** World-space AABB shape used by `peekBounds`. Matches the `{x, y, width,
+ *  height}` shape used throughout the canvas/tools layers. Inlined here to
+ *  avoid an import cycle from `tools/types` into `tools/builtin`. */
+export interface ToolBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 /** Full Tool record. */
 export interface Tool<TScratch = unknown> {
   id: string;
@@ -85,6 +95,17 @@ export interface Tool<TScratch = unknown> {
   keyboard?: KeyboardChannel<TScratch>;
   wheel?: WheelChannel<TScratch>;
   cursor?: string | ((ctx: ToolCtx<TScratch>) => string);
+  /** Returns the in-flight overlay pose for `id` if this tool is mid-gesture
+   *  on it; otherwise `null`. Lets `Canvas.helpersRef.getEffectivePose`
+   *  reflect live overlay state without reaching into hook internals. The
+   *  return type is `unknown` here because the Tool interface is pose-agnostic;
+   *  callers that know the pose shape (e.g. Canvas typed by `TPose`) cast at
+   *  the use site. */
+  peekPose?: (id: string) => unknown;
+  /** Returns the in-flight overlay bounds for `id` if this tool is mid-gesture
+   *  on it; otherwise `null`. Optional companion to `peekPose` for tools that
+   *  can compute bounds without round-tripping through a geometry adapter. */
+  peekBounds?: (id: string) => ToolBounds | null;
   /** Optional overlay layer rendered on top of the scene/chrome whenever
    *  this tool is in any active slot (active, modifier, or alwaysOn).
    *  The layer's `draw` function reads from this tool's scratch via React
