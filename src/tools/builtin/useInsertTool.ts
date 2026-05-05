@@ -29,13 +29,15 @@ export function useInsertTool<TObject extends { id: string }, TPose>(
 
   const styleRef = useRef(overlayStyle);
   styleRef.current = overlayStyle;
+  const ctlRef = useRef(ctl);
+  ctlRef.current = ctl;
 
   const overlay = useMemo<RenderLayer<unknown>>(() => ({
     id: 'insert-overlay',
     label: 'Insert overlay',
     space: 'screen',
     draw: (ctx, _data, view) => {
-      const ov = ctl.overlay;
+      const ov = ctlRef.current.overlay;
       if (!ov) return;
       drawMarquee(ctx, view, ov.bounds, styleRef.current, {
         fill: 'rgba(127, 176, 105, 0.25)',
@@ -44,7 +46,7 @@ export function useInsertTool<TObject extends { id: string }, TPose>(
         lineWidth: 1,
       });
     },
-  }), [ctl]);
+  }), []);
 
   const hasPointInsert = !!gestureOptions.pointInsert;
 
