@@ -126,7 +126,6 @@ export function BezierEditDemo() {
               const z = zoomRef.current;
               return [(cx - r.left) / z, (cy - r.top) / z];
             }}
-            onTapEmpty={() => {}}
             layers={{
               scene: {
                 drawOne: (cx, _o, p) => {

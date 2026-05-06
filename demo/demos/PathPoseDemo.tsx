@@ -99,7 +99,6 @@ export function PathPoseDemo() {
         adapter={adapter}
         selection={selection}
         tools={tools}
-        onTapEmpty={() => {}}
         debug={debug}
         layers={{
           scene: {
@@ -138,7 +137,6 @@ return (
     adapter={adapter}
     handleHitRadius={HANDLE}
     selectionOptions={{ initial: ['p'] }}
-    onTapEmpty={() => {}}
     snap={gridSnapStrategy<Path>(20, { origin: pathOriginProjection })}
     layers={{
       scene: { drawOne: (cx, _o, p) => { traceToContext(cx, p); cx.fill(); cx.stroke(); } },

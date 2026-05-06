@@ -41,7 +41,6 @@ export function RotateDemo() {
       handleHitRadius={HANDLE}
       pickEvery={pickEvery}
       selectionOptions={{ initial: ['b'] }}
-      onTapEmpty={() => {}}
       layers={{
         scene: {
           drawOne: (cx, _node, p) => {

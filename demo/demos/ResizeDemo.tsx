@@ -17,7 +17,6 @@ export function ResizeDemo() {
       scene={scene}
       handleHitRadius={HANDLE}
       selectionOptions={{ initial: [INITIAL.id] }}
-      onTapEmpty={() => {}}
       layers={{
         scene: {
           drawOne: (cx, _node, p) => {
@@ -44,7 +43,6 @@ return (
     scene={scene}
     handleHitRadius={HANDLE}
     selectionOptions={{ initial: ['r'] }}
-    onTapEmpty={() => {}}
     layers={{
       scene: { drawOne: (cx, _node, p) => { cx.fillStyle = p.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
       selectionOverlay: { handles: { size: HANDLE } },

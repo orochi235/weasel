@@ -23,7 +23,6 @@ import type { View } from '../features/viewport/view';
 import { clampView } from '../features/viewport/clampView';
 import { runLayers, type RenderLayer } from '../core/layers/render';
 import { setupCanvasDpr } from '../features/viewport/pixelDensity';
-import type { PointerGestureCallbackCtx } from '../interactions/usePointerGestures';
 import {
   useSelection,
   type SelectionApi,
@@ -147,12 +146,10 @@ export type LayersMap<TObject extends { id: string }, TPose> = {
  *     union (each member is scaled via the same `geom.remapBounds` path
  *     group resize uses).
  *   - `'none'` — selection state never updates from canvas interactions;
- *     `onBodyHit` and `onTapEmpty` still fire so consumers can do their own
- *     picking.
+ *     consumers can still do their own picking via the active tool.
  *
  * Escape hatches still apply: explicit `selection`, `pickEvery`, `boundsOf`,
- * `resizeTarget`, `onBodyHit`, `onTapEmpty`, or `selectionOptions.mode`
- * override the `selectionMode`-derived defaults.
+ * or `selectionOptions.mode` override the `selectionMode`-derived defaults.
  */
 export type CanvasSelectionMode = 'single' | 'multi' | 'none';
 
@@ -214,16 +211,8 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
 
   // --- Gesture overrides (escape hatches for non-rect / group-aware apps) ---
   pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
-  resizeTarget?: () => { id: string; bounds: Bounds } | null;
-  rotateTarget?: () => { id: string; bounds: Bounds; rotation?: number } | null;
-  /** World-pixel distance from the top edge of the bounding box to the
-   *  rotation handle's center. Defaults to the kit's default. */
-  rotationHandleDistance?: number;
   boundsOf?: (id: string) => Bounds | null;
-  onBodyHit?: (ids: string[], ctx: PointerGestureCallbackCtx) => void;
-  onTapEmpty?: (ctx: PointerGestureCallbackCtx) => void;
   clientToWorld?: (canvas: HTMLCanvasElement, cx: number, cy: number) => [number, number];
-  handleHitRadius?: number;
 
   // --- Per-event overrides — replace the auto-built handler entirely ---
   onPointerDown?: React.PointerEventHandler<HTMLCanvasElement>;
@@ -730,9 +719,9 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     [baseBoundsOf],
   );
 
-  // boundsOf: when the queried id is the synthetic multi-selection id (used
-  // by resizeTarget below), return the union of selected bounds. For real
-  // ids fall through to the base resolver.
+  // boundsOf: when the queried id is the synthetic multi-selection id, return
+  // the union of selected bounds. For real ids fall through to the base
+  // resolver.
   const effectiveBoundsOf = useMemo(() => {
     if (boundsOf) return boundsOf;
     if (!baseBoundsOf) return undefined;

@@ -75,21 +75,18 @@ describe('<Canvas>', () => {
 
   it('per-event override replaces the auto-built handler', () => {
     const onPointerDown = vi.fn();
-    const onBodyHit = vi.fn();
     const { container } = render(
       <Canvas
         width={50}
         height={50}
         layers={{}}
         pickEvery={() => 'a'}
-        onBodyHit={onBodyHit}
         onPointerDown={onPointerDown}
       />,
     );
     const canvas = container.querySelector('canvas')!;
     fireEvent.pointerDown(canvas, { clientX: 5, clientY: 5 });
     expect(onPointerDown).toHaveBeenCalledTimes(1);
-    expect(onBodyHit).not.toHaveBeenCalled();
   });
 
   it('auto-build pointer handler routes through tools.dispatcher', () => {
