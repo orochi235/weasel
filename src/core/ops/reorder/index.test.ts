@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  createBringForwardOp,
-  createSendBackwardOp,
-  createBringToFrontOp,
-  createSendToBackOp,
-  createMoveToIndexOp,
-} from './index';
+import { createReorderOp, createMoveToIndexOp } from './index';
 
 interface FakeAdapter {
   parents: Record<string, string | null>;
@@ -26,13 +20,13 @@ function makeAdapter(init: { parents: Record<string, string | null>; children: R
   return a;
 }
 
-describe('createBringForwardOp', () => {
+describe('createReorderOp / forward', () => {
   it('moves selected id up one slot among its siblings', () => {
     const a = makeAdapter({
       parents: { a: null, b: null, c: null },
       children: { ROOT: ['a', 'b', 'c'] },
     });
-    createBringForwardOp({ ids: ['a'] }).apply(a);
+    createReorderOp({ ids: ['a'], direction: 'forward' }).apply(a);
     expect(a.children.ROOT).toEqual(['b', 'a', 'c']);
   });
 
@@ -41,7 +35,7 @@ describe('createBringForwardOp', () => {
       parents: { a: null, b: null, x: 'g1', y: 'g1' },
       children: { ROOT: ['a', 'b'], g1: ['x', 'y'] },
     });
-    createBringForwardOp({ ids: ['a', 'x'] }).apply(a);
+    createReorderOp({ ids: ['a', 'x'], direction: 'forward' }).apply(a);
     expect(a.children.ROOT).toEqual(['b', 'a']);
     expect(a.children.g1).toEqual(['y', 'x']);
   });
@@ -51,7 +45,7 @@ describe('createBringForwardOp', () => {
       parents: { a: null, b: null, c: null },
       children: { ROOT: ['a', 'b', 'c'] },
     });
-    const op = createBringForwardOp({ ids: ['a'] });
+    const op = createReorderOp({ ids: ['a'], direction: 'forward' });
     op.apply(a);
     op.invert().apply(a);
     expect(a.children.ROOT).toEqual(['a', 'b', 'c']);
@@ -62,7 +56,7 @@ describe('createBringForwardOp', () => {
       getParent: () => null,
       // no getChildren / setChildOrder
     };
-    expect(() => createBringForwardOp({ ids: ['a'] }).apply(stub)).not.toThrow();
+    expect(() => createReorderOp({ ids: ['a'], direction: 'forward' }).apply(stub)).not.toThrow();
   });
 
   it('skips ids not present in their reported parent\'s children', () => {
@@ -70,18 +64,18 @@ describe('createBringForwardOp', () => {
       parents: { a: null, b: null, ghost: null },
       children: { ROOT: ['a', 'b'] }, // ghost is not actually here
     });
-    createBringForwardOp({ ids: ['ghost', 'a'] }).apply(a);
+    createReorderOp({ ids: ['ghost', 'a'], direction: 'forward' }).apply(a);
     expect(a.children.ROOT).toEqual(['b', 'a']);
   });
 });
 
-describe('createSendBackwardOp', () => {
+describe('createReorderOp / backward', () => {
   it('moves selected id down one slot', () => {
     const a = makeAdapter({
       parents: { a: null, b: null, c: null },
       children: { ROOT: ['a', 'b', 'c'] },
     });
-    createSendBackwardOp({ ids: ['c'] }).apply(a);
+    createReorderOp({ ids: ['c'], direction: 'backward' }).apply(a);
     expect(a.children.ROOT).toEqual(['a', 'c', 'b']);
   });
 
@@ -90,20 +84,20 @@ describe('createSendBackwardOp', () => {
       parents: { a: null, b: null, c: null },
       children: { ROOT: ['a', 'b', 'c'] },
     });
-    const op = createSendBackwardOp({ ids: ['c'] });
+    const op = createReorderOp({ ids: ['c'], direction: 'backward' });
     op.apply(a);
     op.invert().apply(a);
     expect(a.children.ROOT).toEqual(['a', 'b', 'c']);
   });
 });
 
-describe('createBringToFrontOp', () => {
+describe('createReorderOp / front', () => {
   it('moves ids to the end preserving relative order', () => {
     const a = makeAdapter({
       parents: { a: null, b: null, c: null, d: null },
       children: { ROOT: ['a', 'b', 'c', 'd'] },
     });
-    createBringToFrontOp({ ids: ['a', 'c'] }).apply(a);
+    createReorderOp({ ids: ['a', 'c'], direction: 'front' }).apply(a);
     expect(a.children.ROOT).toEqual(['b', 'd', 'a', 'c']);
   });
 
@@ -112,20 +106,20 @@ describe('createBringToFrontOp', () => {
       parents: { a: null, b: null, c: null },
       children: { ROOT: ['a', 'b', 'c'] },
     });
-    const op = createBringToFrontOp({ ids: ['a'] });
+    const op = createReorderOp({ ids: ['a'], direction: 'front' });
     op.apply(a);
     op.invert().apply(a);
     expect(a.children.ROOT).toEqual(['a', 'b', 'c']);
   });
 });
 
-describe('createSendToBackOp', () => {
+describe('createReorderOp / back', () => {
   it('moves ids to the start preserving relative order', () => {
     const a = makeAdapter({
       parents: { a: null, b: null, c: null, d: null },
       children: { ROOT: ['a', 'b', 'c', 'd'] },
     });
-    createSendToBackOp({ ids: ['b', 'd'] }).apply(a);
+    createReorderOp({ ids: ['b', 'd'], direction: 'back' }).apply(a);
     expect(a.children.ROOT).toEqual(['b', 'd', 'a', 'c']);
   });
 });
