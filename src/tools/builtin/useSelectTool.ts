@@ -30,7 +30,7 @@ export interface Bounds {
 
 /** Synthetic id used by `<Canvas selectionMode="multi">` to address the
  *  union-AABB target when 2+ real ids are selected. The selection-overlay
- *  layer asks `peekBounds(MULTI_RESIZE_TARGET_ID)` for the union rect; the
+ *  layer asks `previewBounds(MULTI_RESIZE_TARGET_ID)` for the union rect; the
  *  select tool synthesizes it from `getSelection()` + `boundsOf` so callers
  *  don't have to special-case it. Exported so `Canvas.tsx` (and any consumer
  *  wiring its own selection-overlay layer) can reference the same constant. */
@@ -110,7 +110,7 @@ export interface UseSelectToolOptions<TObject extends { id: string }, TPose> {
   ) => void;
   /** Object lookup for the ghost render, paired with `drawGhost`. Optional. */
   getObject?: (id: string) => TObject | null;
-  /** Returns the live selection ids. When supplied, `peekBounds` synthesizes
+  /** Returns the live selection ids. When supplied, `previewBounds` synthesizes
    *  the multi-union AABB for `MULTI_RESIZE_TARGET_ID` from `boundsOf` of each
    *  selected id — used by `<Canvas selectionMode="multi">`'s selection-overlay
    *  layer when 2+ ids are selected. Without it, the synthetic id resolves to
@@ -311,12 +311,12 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
     [move, resize, rotate, areaSelect],
   );
 
-  // peekPose: aggregate in-flight overlay poses across move/resize/rotate so
+  // previewPose: aggregate in-flight overlay poses across move/resize/rotate so
   // Canvas.helpersRef.getEffectivePose can stay overlay-aware without reaching
   // into hook internals. Mirrors the fall-through order in Canvas.tsx's
   // effectivePoseOf — move first (covers multi-id drags), then resize
   // (incl. leaf poses), then rotate.
-  const peekPose = (id: string): TPose | null => {
+  const previewPose = (id: string): TPose | null => {
     const mOv = move.overlay;
     if (mOv) {
       const p = mOv.poses.get(id);
@@ -333,18 +333,18 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
     return null;
   };
 
-  // peekBounds: synthesize the multi-union AABB for the synthetic
+  // previewBounds: synthesize the multi-union AABB for the synthetic
   // `MULTI_RESIZE_TARGET_ID` from `boundsOf` over the live selection. Lets
   // `<Canvas selectionMode="multi">`'s selection-overlay layer ask for the
-  // union via the standard `tool.peekBounds(id)` channel instead of Canvas
+  // union via the standard `tool.previewBounds(id)` channel instead of Canvas
   // having to special-case the synthetic id inline. Returns null for any other
-  // id (consumers fall through to `peekPose` → committed adapter pose →
+  // id (consumers fall through to `previewPose` → committed adapter pose →
   // geometry.getBounds, same as before).
   const getSelectionRef = useRef(options.getSelection);
   getSelectionRef.current = options.getSelection;
   const boundsOfRef = useRef(options.boundsOf);
   boundsOfRef.current = options.boundsOf;
-  const peekBounds = (id: string): ToolBounds | null => {
+  const previewBounds = (id: string): ToolBounds | null => {
     if (id !== MULTI_RESIZE_TARGET_ID) return null;
     const getSelection = getSelectionRef.current;
     if (!getSelection) return null;
@@ -366,11 +366,11 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
     return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
   };
 
-  // peekHide: surface move's hideIds (dragged + cascade descendants) so the
+  // previewIds: surface move's hideIds (dragged + cascade descendants) so the
   // standard scene slot suppresses their committed render during a cascade
   // drag. Resize/rotate don't hide ids — the dragged target's overlay pose
-  // simply replaces its committed pose via peekPose.
-  const peekHide = (): Iterable<string> | null => move.overlay?.hideIds ?? null;
+  // simply replaces its committed pose via previewPose.
+  const previewIds = (): Iterable<string> | null => move.overlay?.hideIds ?? null;
 
   return useMemo(
     () =>
@@ -379,9 +379,9 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
         keybinding: 'V',
         cursor: 'default',
         overlay,
-        peekPose,
-        peekBounds,
-        peekHide,
+        previewPose,
+        previewBounds,
+        previewIds,
         initScratch: () => ({ kind: 'idle' }),
 
         pointer: {

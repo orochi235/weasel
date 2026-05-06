@@ -88,7 +88,7 @@ export interface DblTapChannel<TScratch> {
  *  not eligible for the modifier slot. */
 export type ModifierTrigger = 'space' | 'alt' | 'ctrl' | 'meta' | 'shift';
 
-/** World-space AABB shape used by `peekBounds`. Matches the `{x, y, width,
+/** World-space AABB shape used by `previewBounds`. Matches the `{x, y, width,
  *  height}` shape used throughout the canvas/tools layers. Inlined here to
  *  avoid an import cycle from `tools/types` into `tools/builtin`. */
 export interface ToolBounds {
@@ -116,23 +116,23 @@ export interface Tool<TScratch = unknown> {
    *  attaching `onDoubleClick` to a wrapper DOM node. */
   dblTap?: DblTapChannel<TScratch>;
   cursor?: string | ((ctx: ToolCtx<TScratch>) => string);
-  /** Returns the in-flight overlay pose for `id` if this tool is mid-gesture
+  /** Returns the in-flight preview pose for `id` if this tool is mid-gesture
    *  on it; otherwise `null`. Lets `Canvas.helpersRef.getEffectivePose`
-   *  reflect live overlay state without reaching into hook internals. The
+   *  reflect live gesture state without reaching into hook internals. The
    *  return type is `unknown` here because the Tool interface is pose-agnostic;
    *  callers that know the pose shape (e.g. Canvas typed by `TPose`) cast at
    *  the use site. */
-  peekPose?: (id: string) => unknown;
-  /** Returns the in-flight overlay bounds for `id` if this tool is mid-gesture
-   *  on it; otherwise `null`. Optional companion to `peekPose` for tools that
+  previewPose?: (id: string) => unknown;
+  /** Returns the in-flight preview bounds for `id` if this tool is mid-gesture
+   *  on it; otherwise `null`. Optional companion to `previewPose` for tools that
    *  can compute bounds without round-tripping through a geometry adapter. */
-  peekBounds?: (id: string) => ToolBounds | null;
+  previewBounds?: (id: string) => ToolBounds | null;
   /** Returns ids whose committed scene-render should be suppressed while this
    *  tool is mid-gesture (e.g. cascade move's dragged + descendant ids whose
-   *  ghosts replace the committed pose). The standard scene slot consults this
-   *  alongside `peekPose` to avoid double-rendering. Returns `null` when no
-   *  gesture is in flight. */
-  peekHide?: () => Iterable<string> | null;
+   *  preview ghosts replace the committed pose). The standard scene slot
+   *  consults this alongside `previewPose` to avoid double-rendering. Returns
+   *  `null` when no gesture is in flight. */
+  previewIds?: () => Iterable<string> | null;
   /** Optional overlay layer rendered on top of the scene/chrome whenever
    *  this tool is in any active slot (active, modifier, or alwaysOn).
    *  The layer's `draw` function reads from this tool's scratch via React

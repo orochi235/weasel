@@ -119,7 +119,7 @@ export function NestedGroupsDemo() {
   // Used both as the scene's `toPose` (so we render committed nodes in
   // world space) and as the selection-overlay `poseById` (so the outline
   // tracks ancestor moves). Live overlay poses during a cascade drag flow
-  // through the select tool's `peekPose`.
+  // through the select tool's `previewPose`.
   const worldPoseOf = useMemo(
     () => worldPoseLookup(adapter, composeRectPose<Pose>),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -153,9 +153,9 @@ export function NestedGroupsDemo() {
       gestures={{ undoRedo: { adapter: history } }}
       layers={{
         scene: {
-          // Render every node at its world pose. The select tool's peekPose
+          // Render every node at its world pose. The select tool's previewPose
           // replaces this with the live overlay during a cascade drag, and
-          // peekHide suppresses dragged + descendant ids whose ghosts sit
+          // previewIds suppresses dragged + descendant ids whose ghosts sit
           // in the overlay.
           toPose: (n) => worldPoseOf(n.id) ?? n.pose,
           drawOne: (cx, n, p) => {
@@ -217,9 +217,9 @@ const hitter = nestedGroupHitTester(adapter, {
 // move tool's cascadeWorldPose so descendants follow their dragged ancestor.
 const worldPoseOf = worldPoseLookup(adapter, composeRectPose);
 
-// useSelectTool drives both pick and cascade-aware move. peekHide
+// useSelectTool drives both pick and cascade-aware move. previewIds
 // (auto-exposed) suppresses committed-pose render of dragged ids during
-// a gesture; peekPose feeds overlay world poses into the scene.
+// a gesture; previewPose feeds overlay world poses into the scene.
 const select = useSelectTool(adapter, {
   pickEvery: () => [],                  // unused — pickBest covers the body branch
   pickBest:  hitter.pickBest,

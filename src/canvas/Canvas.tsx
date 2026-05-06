@@ -342,7 +342,7 @@ function isCustomEntry(v: unknown): v is CustomLayerEntry {
 /**
  * Build the scene layer. Tool ghosts (in-flight drag/resize/rotate poses) are
  * published via the overlay channel and rendered on top of this layer; we
- * draw committed poses here, and rely on the active tool's `peekPose` to
+ * draw committed poses here, and rely on the active tool's `previewPose` to
  * suppress the committed paint of ids it's currently ghosting via `hideIds`.
  */
 function buildSceneLayer<TObject extends { id: string }, TPose>(
@@ -673,7 +673,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   );
 
   // Committed pose/bounds lookups. Live overlay state during a drag now
-  // arrives via the active Tool's `peekPose`/`peekBounds`; helpersForLayers
+  // arrives via the active Tool's `previewPose`/`previewBounds`; helpersForLayers
   // composes that on top of these committed lookups below.
   const baseBoundsOf = useMemo(() => {
     if (boundsOf) return boundsOf;
@@ -700,10 +700,10 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   const multiActive = selectionMode === 'multi' && selectedIdsForWiring.length > 1;
 
   // boundsOf: pass-through for real ids. The synthetic multi-selection id is
-  // resolved by the active tool's `peekBounds` (see `useSelectTool`'s
+  // resolved by the active tool's `previewBounds` (see `useSelectTool`'s
   // `MULTI_RESIZE_TARGET_ID` branch) — Canvas no longer special-cases it
   // inline. For overlays that read bounds outside a tool gesture, the
-  // selection-overlay path below routes through `peekToolBounds` which surfaces
+  // selection-overlay path below routes through `previewToolBounds` which surfaces
   // the tool's union synthesis.
   const effectiveBoundsOf = useMemo(() => {
     return boundsOf ?? baseBoundsOf;
@@ -712,32 +712,32 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   // helpersForLayers: overlay-aware lookups passed to every RenderLayer.draw
   // call (as the `data` arg) so custom layers can read live overlay state
   // directly from their draw closure. The legacy `helpersRef` prop still
-  // mirrors the same value for back-compat. The active Tool's `peekPose`/
-  // `peekBounds` is the only overlay source post-cleanup; falls through to
+  // mirrors the same value for back-compat. The active Tool's `previewPose`/
+  // `previewBounds` is the only overlay source post-cleanup; falls through to
   // the committed adapter pose / bounds when no tool is mid-gesture.
-  const peekToolPose = (id: string): TPose | null => {
+  const previewToolPose = (id: string): TPose | null => {
     if (!tools) return null;
     const tool = tools.registry[tools.modifierEngaged ?? tools.active];
-    const p = tool?.peekPose?.(id);
+    const p = tool?.previewPose?.(id);
     return (p ?? null) as TPose | null;
   };
-  const peekToolBounds = (id: string): Bounds | null => {
+  const previewToolBounds = (id: string): Bounds | null => {
     if (!tools) return null;
     const tool = tools.registry[tools.modifierEngaged ?? tools.active];
-    const b = tool?.peekBounds?.(id);
+    const b = tool?.previewBounds?.(id);
     if (b) return b;
-    const p = tool?.peekPose?.(id);
+    const p = tool?.previewPose?.(id);
     return p == null ? null : geometry.getBounds(p as TPose);
   };
 
   const helpersForLayers: CanvasHelpers<TPose> = {
     getEffectivePose: (id: string): TPose | null => {
-      const tp = peekToolPose(id);
+      const tp = previewToolPose(id);
       if (tp != null) return tp;
       return committedPoseOf(id);
     },
     getEffectiveBounds: (id: string): Bounds | null => {
-      const tb = peekToolBounds(id);
+      const tb = previewToolBounds(id);
       if (tb != null) return tb;
       if (effectiveBoundsOf) return effectiveBoundsOf(id);
       const p = committedPoseOf(id);
@@ -898,13 +898,13 @@ function CanvasInner<TObject extends { id: string }, TPose>(
         ((id: string): TPose | null => {
           // Active tool's overlay (move/resize/rotate ghost) wins so the
           // selection chrome tracks the in-flight pose during a drag.
-          const tp = peekToolPose(id);
+          const tp = previewToolPose(id);
           if (tp != null) return tp;
           // Tool-supplied bounds (e.g. `useSelectTool`'s multi-union for
           // `MULTI_RESIZE_TARGET_ID`) are pre-projected Bounds; the overlay's
           // `getBounds` (below) short-circuits the rect-as-TPose case via
           // the `multiActive` flag.
-          const tb = peekToolBounds(id);
+          const tb = previewToolBounds(id);
           if (tb != null) return tb as unknown as TPose;
           if (!adapter) {
             if (effectiveBoundsOf) {
