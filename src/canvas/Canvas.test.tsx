@@ -103,7 +103,7 @@ describe('<Canvas>', () => {
         getObjects: () => [{ id: 'a', x: 0, y: 0, width: 50, height: 50 }] as Rect[],
         getObject: (id: string) => (id === 'a'
           ? { id: 'a', x: 0, y: 0, width: 50, height: 50 } as Rect
-          : null),
+          : undefined),
         getPose: (id: string) => (id === 'a' ? { x: 0, y: 0, width: 50, height: 50 } : null) as Pose,
         setPose: () => {},
         ...sel.adapterMethods,
@@ -112,7 +112,7 @@ describe('<Canvas>', () => {
         pickEvery: () => ['a'],
         boundsOf: () => ({ x: 0, y: 0, width: 50, height: 50 }),
         drawGhost: () => {},
-        getObject: (id) => adapter.getObject(id),
+        getObject: (id) => adapter.getObject(id) ?? null,
       });
       const tools = useTools({ active: 'select', registry: { select } });
       return <Canvas width={50} height={50} layers={{}} adapter={adapter} selection={sel} tools={tools} clientToWorld={() => [5, 5]} />;
@@ -141,7 +141,7 @@ describe('<Canvas>', () => {
       const sel = useSelection({ mode: 'multi' });
       const adapter = {
         getObjects: () => [] as Rect[],
-        getObject: () => null,
+        getObject: () => undefined,
         getPose: () => ({ x: 0, y: 0, width: 0, height: 0 }) as Pose,
         setPose: () => {},
         ...sel.adapterMethods,
@@ -330,9 +330,6 @@ describe('<Canvas>', () => {
   describe('selectionMode', () => {
     interface Rect { id: string; x: number; y: number; width: number; height: number }
     interface Pose { x: number; y: number; width: number; height: number }
-
-    let nextWorld: [number, number] = [0, 0];
-    const C2W = (_c: HTMLCanvasElement, _x: number, _y: number): [number, number] => nextWorld;
 
     const RECTS: Rect[] = [
       { id: 'a', x: 0,   y: 0, width: 50, height: 50 },
