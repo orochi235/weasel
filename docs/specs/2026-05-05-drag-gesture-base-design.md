@@ -187,19 +187,21 @@ The new dragRect:
 - Calls `useDragGesture<DragRectInternalScratch>` where the internal scratch holds nothing extra (consumer scratch lives inside, alongside the imperative `setStart`/`setCurrent` overrides).
 - Exposes its own ctx with `start: DragRectPoint`, `current: DragRectPoint`, `bounds: DragRectBounds`, `modifiers`, `scratch`, plus the `setStart`/`setCurrent` mutators that update both the base's `start`/`current` and the dragRect's overlay state.
 - Owns the overlay state (`{ start, current, bounds }` with React `useState`).
-- Provides `wasSubThreshold` via the base's end-ctx, but **derives the value differently** — dragRect's `minBounds` check is in world units against the bounds at end, not against a per-move predicate. So:
-  - Base's `thresholdReached` is **not** used by dragRect (omitted → phase activates at `start()`).
-  - dragRect computes `wasSubThreshold` itself from `bounds.width <= minBounds.width || bounds.height <= minBounds.height` and passes that into its consumer-facing endCtx, overriding the base's `wasSubThreshold` (which would always be false for dragRect since it never has a 'pending' phase).
+- Renames its sub-threshold flag from `wasSubThreshold` to **`isSubThreshold`** to reflect the semantic distinction:
+  - Base's `wasSubThreshold` (past tense) — "during this gesture, did phase ever go active?" Retrospective phase check.
+  - dragRect's `isSubThreshold` (present tense) — "at this moment, does the end-time bounds fail the min-bounds check?" State at end.
+- Computes `isSubThreshold` itself: `bounds.width <= minBounds.width || bounds.height <= minBounds.height`. Does not consult the base's `wasSubThreshold` (which would always be `false` for dragRect since it never has a 'pending' phase).
+- Does not pass `thresholdReached` to the base — dragRect activates at `start()`.
 
-The dragRect end-ctx therefore retains its current shape exactly:
+The dragRect end-ctx becomes:
 
 ```ts
 export interface DragRectEndCtx<TScratch> extends DragRectCtx<TScratch> {
-  wasSubThreshold: boolean;
+  isSubThreshold: boolean;
 }
 ```
 
-Just computed by the wrapper now, not by the base.
+This is a breaking rename of the existing `wasSubThreshold` field on `DragRectEndCtx`. Per project memory ("breaking changes are free at this stage"), call sites get updated in the same plan task. Audit during plan stage: grep `wasSubThreshold` across the repo to enumerate call sites.
 
 The `setStart`/`setCurrent` mutators are dragRect-specific and stay in the wrapper. They write to the wrapper's overlay state and to scratch-stored copies that the wrapper hands to consumer callbacks.
 
@@ -247,7 +249,7 @@ A TODO entry tracks the deferred evaluation.
 | Risk | Mitigation |
 |---|---|
 | Stable-controller invariant gets broken by the wrapper layer (e.g., wrapper rebuilds its controller while base is stable). | Wrappers also use `useMemo` for their controller, with the same `[start, move, end, cancel]` deps. The new `useDragGesture` returns stable functions, so the wrappers see no churn. |
-| `wasSubThreshold` semantics diverge between base and dragRect. | Document explicitly in dragRect.ts: "We override the base's `wasSubThreshold` because dragRect uses an end-time bounds check, not a move-time predicate." Test both paths. |
+| Sub-threshold semantics diverge between base (`wasSubThreshold`) and dragRect (`isSubThreshold`). | Different names by design — past-tense for the base's "did phase ever go active" check, present-tense for dragRect's "bounds-at-end fails min-bounds" check. Test both paths. |
 | `onActivate` never fires for dragRect (it skips threshold), creating dead code in dragRect's wrapper. | dragRect doesn't pass `onActivate`. Base only calls it when `thresholdReached` is supplied. |
 | `useMove`'s pre-threshold `start()` work (id expansion, cascade snapshot) ends up in the wrong phase callback. | Wrapper does that work in `onStart` (which fires at start time even when threshold gates activation). Behaviors and consumer's `onGestureStart` move to `onActivate`. |
 | Restart-while-active behavior differs subtly between dragRect's existing impl and the new base. | Direct port: base's restart silently replaces state with no callbacks. Same as today. |
