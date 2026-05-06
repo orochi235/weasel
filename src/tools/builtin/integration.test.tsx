@@ -295,7 +295,7 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
       const hand = useHandTool();
       const tools = useTools({ active: 'select', registry: { select, hand } });
       useKeybindings(tools);
-      // Surface tools.modifierEngaged for the assertion.
+      // Surface tools.hotkeyEngaged for the assertion.
       (window as unknown as { __tools: typeof tools }).__tools = tools;
       return (
         <Canvas
@@ -316,12 +316,12 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
     act(() => { fireEvent.keyDown(document, { key: ' ' }); });
     // Re-read from window after re-render (state update causes Harness to re-render
     // and update window.__tools with the fresh tools snapshot).
-    const afterDown = (window as unknown as { __tools: { modifierEngaged: string | null } }).__tools;
-    expect(afterDown.modifierEngaged).toBe('hand');
+    const afterDown = (window as unknown as { __tools: { hotkeyEngaged: string | null } }).__tools;
+    expect(afterDown.hotkeyEngaged).toBe('hand');
 
     act(() => { fireEvent.keyUp(document, { key: ' ' }); });
-    const afterUp = (window as unknown as { __tools: { modifierEngaged: string | null } }).__tools;
-    expect(afterUp.modifierEngaged).toBeNull();
+    const afterUp = (window as unknown as { __tools: { hotkeyEngaged: string | null } }).__tools;
+    expect(afterUp.hotkeyEngaged).toBeNull();
   });
 });
 

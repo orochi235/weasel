@@ -11,7 +11,7 @@ interface HandScratch {
 
 /**
  * Pan-on-drag tool. Registered in both the active slot (sticky, `H` key)
- * and the modifier slot (momentary, hold `space`).
+ * and the hotkey slot (momentary, hold `space`).
  *
  * Drag handlers compute pan deltas inline. View is read from ctx.view at
  * gesture start and written via ctx.setView on every move — so the tool
@@ -28,7 +28,7 @@ export function useHandTool(): Tool<HandScratch | null> {
       defineTool<HandScratch | null>({
         id: 'hand',
         keybinding: 'H',
-        modifier: 'space',
+        hotkey: 'space',
         initScratch: () => null,
         cursor: (ctx) => (ctx.scratch ? 'grabbing' : 'grab'),
         drag: {

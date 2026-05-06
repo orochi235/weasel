@@ -2,7 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { isEditableTarget } from '../interactions/actions/useKeybinding';
 import type { ToolsApi } from './useTools';
-import type { ModifierTrigger } from './types';
+import type { HotkeyTrigger } from './types';
 
 export interface UseKeybindingsOptions {
   /** Override map: physical key → tool id. Wins over the tool's declared
@@ -16,7 +16,7 @@ export interface UseKeybindingsOptions {
   defaultTool?: string | null;
 }
 
-const MODIFIER_KEY_MAP: Record<string, ModifierTrigger> = {
+const HOTKEY_TRIGGER_MAP: Record<string, HotkeyTrigger> = {
   ' ': 'space',
   Alt: 'alt',
   Control: 'ctrl',
@@ -52,12 +52,12 @@ export function useKeybindings(
       return null;
     }
 
-    function resolveModifierEngage(key: string): string | null {
-      const trigger = MODIFIER_KEY_MAP[key];
+    function resolveHotkeyEngage(key: string): string | null {
+      const trigger = HOTKEY_TRIGGER_MAP[key];
       if (!trigger) return null;
       const reg = toolsRef.current.registry;
       for (const id in reg) {
-        if (reg[id].modifier === trigger) return id;
+        if (reg[id].hotkey === trigger) return id;
       }
       return null;
     }
@@ -73,9 +73,9 @@ export function useKeybindings(
 
       // Modifier engagement first — modifier keys (space, alt, etc.)
       // never double as switch keybindings.
-      const modifierTool = resolveModifierEngage(e.key);
-      if (modifierTool) {
-        toolsRef.current.engageModifier(modifierTool);
+      const hotkeyTool = resolveHotkeyEngage(e.key);
+      if (hotkeyTool) {
+        toolsRef.current.engageHotkey(hotkeyTool);
         return;
       }
 
@@ -100,9 +100,9 @@ export function useKeybindings(
     }
 
     function onKeyUp(e: KeyboardEvent) {
-      const modifierTool = resolveModifierEngage(e.key);
-      if (modifierTool && toolsRef.current.modifierEngaged === modifierTool) {
-        toolsRef.current.disengageModifier();
+      const hotkeyTool = resolveHotkeyEngage(e.key);
+      if (hotkeyTool && toolsRef.current.hotkeyEngaged === hotkeyTool) {
+        toolsRef.current.disengageHotkey();
       }
     }
 

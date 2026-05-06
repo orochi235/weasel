@@ -7,7 +7,7 @@ export { createToolsDispatcher } from './dispatcher';
 export type { ToolsDispatcher } from './dispatcher';
 export type {
   Tool, AnyTool, ToolCtx, ToolModifiers, ToolSlot, Decision,
-  ModifierTrigger,
+  HotkeyTrigger,
   PointerChannel, DragChannel, KeyboardChannel, WheelChannel,
 } from './types';
 export * from './builtin';

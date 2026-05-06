@@ -88,7 +88,7 @@ export function ComposeDemo() {
     registry: { select, insert },
   });
 
-  const activeOrEngaged = tools.modifierEngaged ?? tools.active;
+  const activeOrEngaged = tools.hotkeyEngaged ?? tools.active;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -158,8 +158,8 @@ const insert = useInsertTool(insertAdapter, { minBounds: { width: 4, height: 4 }
 
 const tools = useTools({ active: 'select', registry: { select, insert } });
 
-// Toggle button reads tools.modifierEngaged ?? tools.active so press-and-hold
-// modifier engagement (e.g. spacebar) lights up the right button.
+// Toggle button reads tools.hotkeyEngaged ?? tools.active so press-and-hold
+// hotkey engagement (e.g. spacebar) lights up the right button.
 return (
   <SceneCanvas
     width={W} height={H}

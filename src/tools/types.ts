@@ -11,7 +11,7 @@ import type { DebugSink } from '../debug/types';
 export type Decision = 'claim' | 'pass' | void;
 
 /** Modifier-key snapshot at event dispatch time. `space` is included
- *  because tools commonly use space as a modifier-slot trigger and may
+ *  because tools commonly use space as a hotkey-slot trigger and may
  *  also want to read it as a flag mid-gesture. */
 export interface ToolModifiers {
   alt: boolean;
@@ -84,9 +84,10 @@ export interface DblTapChannel<TScratch> {
   onTap?: (e: PointerEvent, ctx: ToolCtx<TScratch>) => Decision;
 }
 
-/** Modifier-slot trigger key. `null` (or omitted) means the tool is
- *  not eligible for the modifier slot. */
-export type ModifierTrigger = 'space' | 'alt' | 'ctrl' | 'meta' | 'shift';
+/** Hotkey-slot trigger key. The slot is engaged while this key is held —
+ *  hence "hotkey": active as long as the key is hot. `null` (or omitted)
+ *  means the tool is not eligible for the hotkey slot. */
+export type HotkeyTrigger = 'space' | 'alt' | 'ctrl' | 'meta' | 'shift';
 
 /** World-space AABB shape used by `previewBounds`. Matches the `{x, y, width,
  *  height}` shape used throughout the canvas/tools layers. Inlined here to
@@ -102,7 +103,7 @@ export interface ToolBounds {
 export interface Tool<TScratch = unknown> {
   id: string;
   keybinding?: string;
-  modifier?: ModifierTrigger;
+  hotkey?: HotkeyTrigger;
   initScratch?: () => TScratch;
   onActivate?: (ctx: ToolCtx<TScratch>) => void;
   onDeactivate?: (ctx: ToolCtx<TScratch>) => void;
@@ -134,7 +135,7 @@ export interface Tool<TScratch = unknown> {
    *  `null` when no gesture is in flight. */
   previewIds?: () => Iterable<string> | null;
   /** Optional overlay layer rendered on top of the scene/chrome whenever
-   *  this tool is in any active slot (active, modifier, or ambient).
+   *  this tool is in any active slot (active, hotkey, or ambient).
    *  The layer's `draw` function reads from this tool's scratch via React
    *  closure (re-evaluated each render). Return early from `draw` to render
    *  nothing — typically gated on a scratch field like
@@ -143,7 +144,7 @@ export interface Tool<TScratch = unknown> {
 }
 
 /** Internal — which slot a tool occupies in the dispatch order. */
-export type ToolSlot = 'modifier' | 'active' | 'ambient';
+export type ToolSlot = 'hotkey' | 'active' | 'ambient';
 
 /** Internal alias for "a Tool of any scratch type" — used in registries and
  *  dispatchers that hold tools of heterogeneous scratch shapes. `any` is

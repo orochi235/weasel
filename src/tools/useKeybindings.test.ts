@@ -28,18 +28,18 @@ describe('useKeybindings', () => {
 
   it('engages modifier-slot tool on modifier-key down, disengages on key-up', () => {
     const select = defineTool({ id: 'select' });
-    const hand   = defineTool({ id: 'hand', modifier: 'space' });
+    const hand   = defineTool({ id: 'hand', hotkey: 'space' });
     const { result } = renderHook(() => {
       const tools = useTools({ active: 'select', registry: { select, hand } });
       useKeybindings(tools);
       return tools;
     });
 
-    expect(result.current.modifierEngaged).toBe(null);
+    expect(result.current.hotkeyEngaged).toBe(null);
     act(() => press(' ', 'keydown'));
-    expect(result.current.modifierEngaged).toBe('hand');
+    expect(result.current.hotkeyEngaged).toBe('hand');
     act(() => press(' ', 'keyup'));
-    expect(result.current.modifierEngaged).toBe(null);
+    expect(result.current.hotkeyEngaged).toBe(null);
   });
 
   it('lets meta/ctrl combos through (system shortcuts like Cmd-R reload)', () => {

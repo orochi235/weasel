@@ -2,7 +2,7 @@
 import type { AnyTool, ToolCtx, ToolSlot, Decision } from './types';
 
 interface SlotsState {
-  modifier: AnyTool | null;
+  hotkey: AnyTool | null;
   active: AnyTool | null;
   ambient: AnyTool[];
 }
@@ -60,7 +60,7 @@ export interface ToolsDispatcher {
   /** Force-cancel any in-flight gesture (used on explicit tool switch). */
   cancelGesture: () => void;
   /** Whether a gesture is currently in flight. Used by `useTools` to
-   *  decide whether a modifier-key press should engage the modifier slot
+   *  decide whether a modifier-key press should engage the hotkey slot
    *  (no, if mid-gesture). */
   hasActiveGesture: () => boolean;
   /** Scratch of the in-flight gesture, or `null` when idle. Exposed so
@@ -84,7 +84,7 @@ function dispatchOnce<E>(
   scratchFor: (tool: AnyTool) => unknown,
 ): AnyTool | null {
   const order: { slot: ToolSlot; tool: AnyTool }[] = [];
-  if (slots.modifier) order.push({ slot: 'modifier', tool: slots.modifier });
+  if (slots.hotkey) order.push({ slot: 'hotkey', tool: slots.hotkey });
   if (slots.active) order.push({ slot: 'active', tool: slots.active });
   for (const t of slots.ambient) order.push({ slot: 'ambient', tool: t });
 
@@ -136,7 +136,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     //    This lets pointer.onDown act as a classification hook rather than a
     //    raw-pointer escape hatch — the pattern used by useSelectTool.
     const order: AnyTool[] = [];
-    if (slots.modifier) order.push(slots.modifier);
+    if (slots.hotkey) order.push(slots.hotkey);
     if (slots.active) order.push(slots.active);
     for (const t of slots.ambient) order.push(t);
 
@@ -163,7 +163,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     //    (the first in slot order with a drag or pointer.onClick handler)
     //    becomes the prospective gesture owner.
     let owner: AnyTool | null = null;
-    for (const t of [slots.modifier, slots.active, ...slots.ambient].filter(Boolean) as AnyTool[]) {
+    for (const t of [slots.hotkey, slots.active, ...slots.ambient].filter(Boolean) as AnyTool[]) {
       if (t.drag || t.pointer?.onClick) { owner = t; break; }
     }
     if (!owner) return;
@@ -230,11 +230,11 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
         const dy = e.clientY - lastTap.y;
         const dt = now() - lastTap.time;
         if (dt <= dblTapWindowMs && dx * dx + dy * dy <= dblTapMaxDistance * dblTapMaxDistance) {
-          // Walk slot order — modifier → active → ambient — and fire the
+          // Walk slot order — hotkey → active → ambient — and fire the
           // first tool whose dblTap.onTap returns 'claim'. Each tool gets a
           // fresh scratch (dblTap is not part of a drag pipeline).
           const order: AnyTool[] = [];
-          if (slots.modifier) order.push(slots.modifier);
+          if (slots.hotkey) order.push(slots.hotkey);
           if (slots.active) order.push(slots.active);
           for (const t of slots.ambient) order.push(t);
           for (const tool of order) {

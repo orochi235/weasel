@@ -89,7 +89,7 @@ export function ZoomDemo() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <span style={{ fontFamily: 'monospace' }}>tool: {tools.modifierEngaged ?? tools.active}</span>
+        <span style={{ fontFamily: 'monospace' }}>tool: {tools.hotkeyEngaged ?? tools.active}</span>
         <span style={{ fontFamily: 'monospace' }}>
           view: ({view.x.toFixed(0)}, {view.y.toFixed(0)}) · scale: {view.scale.toFixed(2)}
         </span>

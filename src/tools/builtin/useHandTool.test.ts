@@ -27,11 +27,11 @@ function makeCtx<S = unknown>(view: Omit<View, 'scale'> & { scale?: number }, se
 }
 
 describe('useHandTool', () => {
-  it('declares H keybinding and space modifier trigger', () => {
+  it('declares H keybinding and space hotkey trigger', () => {
     const { result } = renderHook(() => useHandTool());
     expect(result.current.id).toBe('hand');
     expect(result.current.keybinding).toBe('H');
-    expect(result.current.modifier).toBe('space');
+    expect(result.current.hotkey).toBe('space');
   });
 
   it('drag.onStart captures startView + start client coords; returns claim', () => {

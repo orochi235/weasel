@@ -50,7 +50,7 @@ export function PanDemo() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-        <span style={{ fontFamily: 'monospace' }}>tool: {tools.modifierEngaged ?? tools.active}</span>
+        <span style={{ fontFamily: 'monospace' }}>tool: {tools.hotkeyEngaged ?? tools.active}</span>
         <span style={{ fontFamily: 'monospace' }}>view: ({view.x.toFixed(0)}, {view.y.toFixed(0)})</span>
         <button onClick={() => setView({ x: 0, y: 0, scale: 1 })}>Reset view</button>
         <span style={{ color: '#888' }}>H = hand · space (hold) = momentary hand</span>

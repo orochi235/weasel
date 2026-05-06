@@ -384,7 +384,7 @@ function resolveToolsCursor(
   tools: ToolsApi,
   ctxBase?: () => Omit<ToolCtx, 'scratch'>,
 ): string | undefined {
-  const id = tools.modifierEngaged ?? tools.active;
+  const id = tools.hotkeyEngaged ?? tools.active;
   const tool = tools.registry[id];
   if (!tool?.cursor) return undefined;
   if (typeof tool.cursor === 'string') return tool.cursor;
@@ -721,13 +721,13 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   // the committed adapter pose / bounds when no tool is mid-gesture.
   const previewToolPose = (id: string): TPose | null => {
     if (!tools) return null;
-    const tool = tools.registry[tools.modifierEngaged ?? tools.active];
+    const tool = tools.registry[tools.hotkeyEngaged ?? tools.active];
     const p = tool?.previewPose?.(id);
     return (p ?? null) as TPose | null;
   };
   const previewToolBounds = (id: string): Bounds | null => {
     if (!tools) return null;
-    const tool = tools.registry[tools.modifierEngaged ?? tools.active];
+    const tool = tools.registry[tools.hotkeyEngaged ?? tools.active];
     const b = tool?.previewBounds?.(id);
     if (b) return b;
     const p = tool?.previewPose?.(id);
@@ -887,7 +887,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
         effectiveBoundsOf,
         () => {
           if (!tools) return null;
-          const t = tools.registry[tools.modifierEngaged ?? tools.active];
+          const t = tools.registry[tools.hotkeyEngaged ?? tools.active];
           const ids = t?.previewIds?.();
           if (!ids) return null;
           return ids instanceof Set ? ids : new Set(ids);

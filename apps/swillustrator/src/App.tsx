@@ -245,7 +245,7 @@ export function App() {
     [pen],
   );
 
-  const activeOrEngaged = tools.modifierEngaged ?? tools.active;
+  const activeOrEngaged = tools.hotkeyEngaged ?? tools.active;
 
   // --- Selection-aware mutation helpers ---
   // Re-read items each call so back-to-back changes within a render coalesce.

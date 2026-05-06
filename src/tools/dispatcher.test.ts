@@ -28,7 +28,7 @@ function pointerEvent(type: string, init: Partial<PointerEventInit> = {}): Point
 }
 
 interface SlotsState {
-  modifier: AnyTool | null;
+  hotkey: AnyTool | null;
   active: AnyTool | null;
   ambient: AnyTool[];
 }
@@ -51,7 +51,7 @@ describe('dispatcher: slot order', () => {
       });
 
     const d = makeDispatcher({
-      modifier: make('modA', 'pass'),
+      hotkey: make('modA', 'pass'),
       active: make('actA', 'pass'),
       ambient: [make('always1', 'pass'), make('always2', 'claim')],
     });
@@ -69,7 +69,7 @@ describe('dispatcher: slot order', () => {
       });
 
     const d = makeDispatcher({
-      modifier: make('modA', 'claim'),
+      hotkey: make('modA', 'claim'),
       active: make('actA', 'claim'),
       ambient: [],
     });
@@ -88,7 +88,7 @@ describe('dispatcher: threshold-gated drag', () => {
       pointer: { onClick },
       drag: { onStart: onDragStart },
     });
-    const d = makeDispatcher({ modifier: null, active: tool, ambient: [] });
+    const d = makeDispatcher({ hotkey: null, active: tool, ambient: [] });
 
     d.onPointerDown(pointerEvent('pointerdown', { clientX: 100, clientY: 100 }));
     d.onPointerUp(pointerEvent('pointerup', { clientX: 102, clientY: 101 }));
@@ -107,7 +107,7 @@ describe('dispatcher: threshold-gated drag', () => {
       pointer: { onClick },
       drag: { onStart, onMove, onEnd },
     });
-    const d = makeDispatcher({ modifier: null, active: tool, ambient: [] });
+    const d = makeDispatcher({ hotkey: null, active: tool, ambient: [] });
 
     d.onPointerDown(pointerEvent('pointerdown', { clientX: 100, clientY: 100 }));
     d.onPointerMove(pointerEvent('pointermove', { clientX: 110, clientY: 100 })); // crosses threshold
@@ -132,7 +132,7 @@ describe('dispatcher: threshold-gated drag', () => {
       pointer: { onDown, onClick },
       drag: { onStart },
     });
-    const d = makeDispatcher({ modifier: null, active: tool, ambient: [] });
+    const d = makeDispatcher({ hotkey: null, active: tool, ambient: [] });
 
     d.onPointerDown(pointerEvent('pointerdown'));
     d.onPointerMove(pointerEvent('pointermove', { clientX: 50, clientY: 50 })); // crosses threshold
@@ -158,7 +158,7 @@ describe('dispatcher: scratch lifecycle', () => {
         onEnd:   (_e, ctx) => { scratchSeen.push({ ...ctx.scratch }); return 'claim'; },
       },
     });
-    const d = makeDispatcher({ modifier: null, active: tool, ambient: [] });
+    const d = makeDispatcher({ hotkey: null, active: tool, ambient: [] });
 
     d.onPointerDown(pointerEvent('pointerdown'));
     d.onPointerMove(pointerEvent('pointermove', { clientX: 50, clientY: 50 }));
@@ -178,7 +178,7 @@ describe('dispatcher: scratch lifecycle', () => {
         onStart: (_e, ctx) => { scratches.push(ctx.scratch.id); return 'claim'; },
       },
     });
-    const d = makeDispatcher({ modifier: null, active: tool, ambient: [] });
+    const d = makeDispatcher({ hotkey: null, active: tool, ambient: [] });
 
     d.onPointerDown(pointerEvent('pointerdown'));
     d.onPointerMove(pointerEvent('pointermove', { clientX: 50, clientY: 50 }));
@@ -203,7 +203,7 @@ describe('dispatcher: cancelGesture', () => {
         onCancel,
       },
     });
-    const d = makeDispatcher({ modifier: null, active: tool, ambient: [] });
+    const d = makeDispatcher({ hotkey: null, active: tool, ambient: [] });
 
     d.onPointerDown(pointerEvent('pointerdown'));
     d.onPointerMove(pointerEvent('pointermove', { clientX: 50, clientY: 50 }));
@@ -221,7 +221,7 @@ describe('dispatcher: ctx overrides', () => {
       drag: { onStart: () => 'pass', onMove: () => 'pass', onEnd: () => 'pass' },
     });
     const d = createToolsDispatcher({
-      getSlots: () => ({ modifier: null, active: tool, ambient: [] }),
+      getSlots: () => ({ hotkey: null, active: tool, ambient: [] }),
       getCtx: (overrides) => {
         calls.push({ ...overrides });
         return makeCtx();
@@ -246,7 +246,7 @@ describe('dispatcher: ctx overrides', () => {
       keyboard: { onDown: () => 'pass' },
     });
     const d = createToolsDispatcher({
-      getSlots: () => ({ modifier: null, active: tool, ambient: [] }),
+      getSlots: () => ({ hotkey: null, active: tool, ambient: [] }),
       getCtx: (overrides) => {
         calls.push({ ...overrides });
         return makeCtx();
@@ -290,7 +290,7 @@ describe('dispatcher: dblTap', () => {
       dblTap: { onTap },
     });
     const clock = nowSource();
-    const d = makeDblDispatcher({ modifier: null, active: tool, ambient: [] }, clock);
+    const d = makeDblDispatcher({ hotkey: null, active: tool, ambient: [] }, clock);
 
     // First tap.
     d.onPointerDown(pointerEvent('pointerdown', { clientX: 100, clientY: 100 }));
@@ -313,7 +313,7 @@ describe('dispatcher: dblTap', () => {
     const onTap = vi.fn(() => 'claim' as const);
     const tool = defineTool({ id: 't', pointer: { onClick: () => 'claim' }, dblTap: { onTap } });
     const clock = nowSource();
-    const d = makeDblDispatcher({ modifier: null, active: tool, ambient: [] }, clock, { windowMs: 300 });
+    const d = makeDblDispatcher({ hotkey: null, active: tool, ambient: [] }, clock, { windowMs: 300 });
 
     d.onPointerDown(pointerEvent('pointerdown', { clientX: 100, clientY: 100 }));
     d.onPointerUp(pointerEvent('pointerup', { clientX: 100, clientY: 100 }));
@@ -330,7 +330,7 @@ describe('dispatcher: dblTap', () => {
     const onTap = vi.fn(() => 'claim' as const);
     const tool = defineTool({ id: 't', pointer: { onClick: () => 'claim' }, dblTap: { onTap } });
     const clock = nowSource();
-    const d = makeDblDispatcher({ modifier: null, active: tool, ambient: [] }, clock, { maxDistance: 8 });
+    const d = makeDblDispatcher({ hotkey: null, active: tool, ambient: [] }, clock, { maxDistance: 8 });
 
     d.onPointerDown(pointerEvent('pointerdown', { clientX: 100, clientY: 100 }));
     d.onPointerUp(pointerEvent('pointerup', { clientX: 100, clientY: 100 }));
@@ -353,7 +353,7 @@ describe('dispatcher: dblTap', () => {
       dblTap: { onTap },
     });
     const clock = nowSource();
-    const d = makeDblDispatcher({ modifier: null, active: tool, ambient: [] }, clock);
+    const d = makeDblDispatcher({ hotkey: null, active: tool, ambient: [] }, clock);
 
     d.onPointerDown(pointerEvent('pointerdown', { clientX: 100, clientY: 100 }));
     d.onPointerUp(pointerEvent('pointerup', { clientX: 100, clientY: 100 }));
@@ -379,7 +379,7 @@ describe('dispatcher: dblTap', () => {
 
     const clock = nowSource();
     const d = makeDblDispatcher(
-      { modifier: make('mod', 'pass'), active: make('act', 'claim'), ambient: [make('always', 'claim')] },
+      { hotkey: make('mod', 'pass'), active: make('act', 'claim'), ambient: [make('always', 'claim')] },
       clock,
     );
 
@@ -401,7 +401,7 @@ describe('dispatcher: dblTap', () => {
       dblTap: { onTap },
     });
     const clock = nowSource();
-    const d = makeDblDispatcher({ modifier: null, active: tool, ambient: [] }, clock);
+    const d = makeDblDispatcher({ hotkey: null, active: tool, ambient: [] }, clock);
 
     d.onPointerDown(pointerEvent('pointerdown', { clientX: 0, clientY: 0 }));
     d.onPointerUp(pointerEvent('pointerup', { clientX: 0, clientY: 0 }));
@@ -417,7 +417,7 @@ describe('dispatcher: dblTap', () => {
     const onTap = vi.fn(() => 'claim' as const);
     const tool = defineTool({ id: 't', pointer: { onClick: () => 'claim' }, dblTap: { onTap } });
     const clock = nowSource();
-    const d = makeDblDispatcher({ modifier: null, active: tool, ambient: [] }, clock);
+    const d = makeDblDispatcher({ hotkey: null, active: tool, ambient: [] }, clock);
 
     for (let i = 0; i < 3; i++) {
       d.onPointerDown(pointerEvent('pointerdown', { clientX: 0, clientY: 0 }));
@@ -439,7 +439,7 @@ describe('dispatcher: onGestureChange', () => {
       drag: { onStart: () => 'pass', onMove: () => 'pass', onEnd: () => 'pass' },
     });
     const d = createToolsDispatcher({
-      getSlots: () => ({ modifier: null, active: tool, ambient: [] }),
+      getSlots: () => ({ hotkey: null, active: tool, ambient: [] }),
       getCtx: () => makeCtx(),
       onGestureChange,
     });
@@ -461,7 +461,7 @@ describe('dispatcher: onGestureChange', () => {
       drag: { onStart: () => 'pass', onCancel: () => {} },
     });
     const d = createToolsDispatcher({
-      getSlots: () => ({ modifier: null, active: tool, ambient: [] }),
+      getSlots: () => ({ hotkey: null, active: tool, ambient: [] }),
       getCtx: () => makeCtx(),
       onGestureChange,
     });

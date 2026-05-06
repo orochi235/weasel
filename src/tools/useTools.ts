@@ -7,9 +7,9 @@ import type { RenderLayer } from '../core/layers/render';
 export interface UseToolsOptions {
   /** Initial active-slot tool id. Must exist in `registry`. */
   active: string;
-  /** Tools eligible for the active slot or modifier slot. The keys are the
-   *  tool ids; the values are the tool records. A tool with `modifier` set
-   *  is wired into the modifier slot whenever the engagement state matches. */
+  /** Tools eligible for the active slot or hotkey slot. The keys are the
+   *  tool ids; the values are the tool records. A tool with `hotkey` set
+   *  is wired into the hotkey slot whenever the engagement state matches. */
   registry: Record<string, AnyTool>;
   /** Always-on tools — listen continuously regardless of active slot. */
   ambient?: AnyTool[];
@@ -29,12 +29,12 @@ export interface ToolsApi {
   active: string;
   /** Set the active-slot tool. Cancels any in-flight gesture. */
   setActive: (id: string) => void;
-  /** Currently modifier-engaged tool id (or `null`). */
-  modifierEngaged: string | null;
-  /** Engage a modifier-slot tool by id. No-op if a gesture is in flight. */
-  engageModifier: (id: string) => void;
-  /** Disengage the modifier-slot tool, if any. */
-  disengageModifier: () => void;
+  /** Currently hotkey-engaged tool id (or `null`). */
+  hotkeyEngaged: string | null;
+  /** Engage a hotkey-slot tool by id. No-op if a gesture is in flight. */
+  engageHotkey: (id: string) => void;
+  /** Disengage the hotkey-slot tool, if any. */
+  disengageHotkey: () => void;
   /** All always-on tools, in registration order. */
   ambient: readonly AnyTool[];
   /** Full registry — for userland UI (palette buttons, etc.). */
@@ -48,9 +48,9 @@ export interface ToolsApi {
   gestureTick: number;
   /** Returns true if a tool with the given id is in the registry or ambient list. */
   has(id: string): boolean;
-  /** All overlay layers from currently-engaged tools (active slot, modifier
+  /** All overlay layers from currently-engaged tools (active slot, hotkey
    *  slot if engaged, all ambient slot tools). Filters out tools with no
-   *  `overlay` field. Order: active, then modifier (if engaged), then
+   *  `overlay` field. Order: active, then hotkey (if engaged), then
    *  ambient (registration order). */
   getActiveOverlays(): RenderLayer<unknown>[];
 }
@@ -77,7 +77,7 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
   }
 
   const [active, setActiveState] = useState<string>(opts.active);
-  const [modifierEngaged, setModifierEngaged] = useState<string | null>(null);
+  const [hotkeyEngaged, setHotkeyEngaged] = useState<string | null>(null);
   const [gestureTick, setGestureTick] = useState(0);
 
   // Refs so the dispatcher's getSlots/getCtx callbacks see latest values
@@ -88,8 +88,8 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
   ambientRef.current = opts.ambient ?? [];
   const activeRef = useRef(active);
   activeRef.current = active;
-  const modifierRef = useRef(modifierEngaged);
-  modifierRef.current = modifierEngaged;
+  const hotkeyRef = useRef(hotkeyEngaged);
+  hotkeyRef.current = hotkeyEngaged;
   const getCtxRef = useRef(opts.getCtx);
   getCtxRef.current = opts.getCtx;
 
@@ -97,7 +97,7 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
     () =>
       createToolsDispatcher({
         getSlots: () => ({
-          modifier: modifierRef.current ? registryRef.current[modifierRef.current] ?? null : null,
+          hotkey: hotkeyRef.current ? registryRef.current[hotkeyRef.current] ?? null : null,
           active: registryRef.current[activeRef.current] ?? null,
           ambient: ambientRef.current,
         }),
@@ -121,27 +121,27 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
     [dispatcher],
   );
 
-  const engageModifier = useCallback(
+  const engageHotkey = useCallback(
     (id: string) => {
       if (dispatcher.hasActiveGesture()) return; // mid-gesture lockout
       if (!(id in registryRef.current)) {
-        throw new Error(`engageModifier: "${id}" not in registry`);
+        throw new Error(`engageHotkey: "${id}" not in registry`);
       }
-      setModifierEngaged(id);
+      setHotkeyEngaged(id);
     },
     [dispatcher],
   );
 
-  const disengageModifier = useCallback(() => {
-    setModifierEngaged(null);
+  const disengageHotkey = useCallback(() => {
+    setHotkeyEngaged(null);
   }, []);
 
   return {
     active,
     setActive,
-    modifierEngaged,
-    engageModifier,
-    disengageModifier,
+    hotkeyEngaged,
+    engageHotkey,
+    disengageHotkey,
     ambient: ambientRef.current,
     registry: registryRef.current,
     dispatcher,
@@ -153,7 +153,7 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
       const out: RenderLayer<unknown>[] = [];
       const activeTool = registryRef.current[activeRef.current];
       if (activeTool?.overlay) out.push(activeTool.overlay);
-      const mod = modifierRef.current ? registryRef.current[modifierRef.current] : null;
+      const mod = hotkeyRef.current ? registryRef.current[hotkeyRef.current] : null;
       if (mod?.overlay) out.push(mod.overlay);
       for (const t of ambientRef.current) {
         if (t.overlay) out.push(t.overlay);

@@ -58,7 +58,7 @@ describe('Phase 1 integration: define → use → key → canvas', () => {
         active: 'select',
         registry: {
           select: defineTool({ id: 'select', drag: { onStart: selectDrag } }),
-          hand:   defineTool({ id: 'hand', modifier: 'space', drag: { onStart: handDrag } }),
+          hand:   defineTool({ id: 'hand', hotkey: 'space', drag: { onStart: handDrag } }),
         },
       });
       useKeybindings(tools);

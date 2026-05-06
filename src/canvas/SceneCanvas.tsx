@@ -302,7 +302,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       const slot = sceneSlotRef.current;
       if (!slot || !slot.drawOne) return;
       const t = toolsRef.current;
-      const tool = t.registry[t.modifierEngaged ?? t.active];
+      const tool = t.registry[t.hotkeyEngaged ?? t.active];
       const ids = tool?.previewIds?.();
       if (!ids) return;
       const sc = sceneRef.current;

@@ -30,16 +30,16 @@ describe('useTools', () => {
   });
 
   it('tracks modifier-slot engagement', () => {
-    const hand = defineTool({ id: 'hand', modifier: 'space' });
+    const hand = defineTool({ id: 'hand', hotkey: 'space' });
     const { result } = renderHook(() =>
       useTools({ active: 'select', registry: { select: defineTool({ id: 'select' }), hand } }),
     );
 
-    expect(result.current.modifierEngaged).toBe(null);
-    act(() => result.current.engageModifier('hand'));
-    expect(result.current.modifierEngaged).toBe('hand');
-    act(() => result.current.disengageModifier());
-    expect(result.current.modifierEngaged).toBe(null);
+    expect(result.current.hotkeyEngaged).toBe(null);
+    act(() => result.current.engageHotkey('hand'));
+    expect(result.current.hotkeyEngaged).toBe('hand');
+    act(() => result.current.disengageHotkey());
+    expect(result.current.hotkeyEngaged).toBe(null);
   });
 
   it('throws when active id is not in registry', () => {
@@ -85,12 +85,12 @@ describe('useTools', () => {
     expect(d.hasActiveGesture()).toBe(false);
   });
 
-  it('engageModifier is a no-op while a gesture is in flight', () => {
+  it('engageHotkey is a no-op while a gesture is in flight', () => {
     const select = defineTool({
       id: 'select',
       drag: { onStart: () => 'claim' },
     });
-    const hand = defineTool({ id: 'hand', modifier: 'space' });
+    const hand = defineTool({ id: 'hand', hotkey: 'space' });
     const { result } = renderHook(() =>
       useTools({ active: 'select', registry: { select, hand } }),
     );
@@ -99,8 +99,8 @@ describe('useTools', () => {
     d.onPointerDown(pointerEvent('pointerdown', { pointerId: 1 }));
     d.onPointerMove(pointerEvent('pointermove', { pointerId: 1, clientX: 50, clientY: 50 }));
 
-    act(() => result.current.engageModifier('hand'));
-    expect(result.current.modifierEngaged).toBe(null);
+    act(() => result.current.engageHotkey('hand'));
+    expect(result.current.hotkeyEngaged).toBe(null);
   });
 });
 
@@ -120,13 +120,13 @@ describe('ToolsApi.getActiveOverlays', () => {
 
   it('orders active, modifier, ambient (in registration order)', () => {
     const a = defineTool({ id: 'a', overlay: mkLayer('a-ov') });
-    const m = defineTool({ id: 'm', modifier: 'space', overlay: mkLayer('m-ov') });
+    const m = defineTool({ id: 'm', hotkey: 'space', overlay: mkLayer('m-ov') });
     const w1 = defineTool({ id: 'w1', overlay: mkLayer('w1-ov') });
     const w2 = defineTool({ id: 'w2', overlay: mkLayer('w2-ov') });
     const { result, rerender } = renderHook(() =>
       useTools({ active: 'a', registry: { a, m }, ambient: [w1, w2] }),
     );
-    act(() => { result.current.engageModifier('m'); });
+    act(() => { result.current.engageHotkey('m'); });
     rerender();
     expect(result.current.getActiveOverlays().map((l) => l.id))
       .toEqual(['a-ov', 'm-ov', 'w1-ov', 'w2-ov']);
@@ -134,7 +134,7 @@ describe('ToolsApi.getActiveOverlays', () => {
 
   it('omits modifier overlay when not engaged', () => {
     const a = defineTool({ id: 'a', overlay: mkLayer('a-ov') });
-    const m = defineTool({ id: 'm', modifier: 'space', overlay: mkLayer('m-ov') });
+    const m = defineTool({ id: 'm', hotkey: 'space', overlay: mkLayer('m-ov') });
     const { result } = renderHook(() => useTools({ active: 'a', registry: { a, m } }));
     expect(result.current.getActiveOverlays().map((l) => l.id)).toEqual(['a-ov']);
   });
