@@ -76,6 +76,10 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     commitInsert?: SceneToAdapterOptions<TData, TLayer, TPose>['commitInsert'];
     /** Layer for inserted nodes. Defaults to the trivial-form layer. */
     insertLayer?: TLayer;
+    /** Layout strategies keyed by container node id (or a resolver). Forwarded
+     *  to `sceneToAdapter` so `useMove`'s layout pass runs on configured
+     *  containers (reflow on enter, reparent + reflow on commit). */
+    layouts?: SceneToAdapterOptions<TData, TLayer, TPose>['layouts'];
 
     // --- Tool-folded options (formerly forwarded to Canvas, now consumed
     //     by the internal `useSelectTool`). Ignored if the consumer passes
@@ -115,6 +119,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     gestures,
     commitInsert,
     insertLayer,
+    layouts,
     pickEvery: pickEveryProp,
     boundsOf: boundsOfProp,
     handleHitRadius,
@@ -142,7 +147,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // stores absolute poses, so a container move requires translating each
   // child by the same delta in a single batch).
   const adapter = useMemo(() => {
-    const base = sceneToAdapter(scene, { commitInsert, insertLayer });
+    const base = sceneToAdapter(scene, { commitInsert, insertLayer, layouts });
     const collectDescendants = (id: string, out: string[]): void => {
       for (const cid of scene.childrenOf(asNodeId(id))) {
         out.push(cid);
@@ -206,7 +211,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         for (const op of ops) op.apply(selection.adapterMethods);
       },
     };
-  }, [scene, commitInsert, insertLayer, selection]);
+  }, [scene, commitInsert, insertLayer, layouts, selection]);
 
   // Default cascade lookup for the move overlay — reads live world pose from
   // the scene. Caller's `moveOptions.cascadeWorldPose` (if any) wins.

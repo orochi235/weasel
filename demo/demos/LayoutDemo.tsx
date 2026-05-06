@@ -1,43 +1,23 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import {
-  Canvas,
-  useSelectTool,
-  useTools,
+  asNodeId,
+  SceneCanvas,
+  useScene,
   freeform,
   tileGrid,
   snapPoint,
 } from '@orochi235/weasel';
-import type { LayoutStrategy, Op } from '@orochi235/weasel';
 
 // --- Scene model ---
 //
-// Three side-by-side container objects (F = freeform, G = tileGrid, S = snapPoint),
+// Three side-by-side container nodes (F = freeform, G = tileGrid, S = snapPoint),
 // each holding a single child rect. Dragging a child into a different container
 // triggers the layout-aware move pass: the destination strategy reflows its
 // hypothetical children, the source strategy reflows its leftovers, and the
 // commit batch reparents the dragged child + writes the reflowed poses.
 
-type Obj = { id: string; kind: 'container' | 'child' };
 type P = { x: number; y: number; width: number; height: number };
-
-interface SceneState {
-  poses: Record<string, P>;
-  parents: Record<string, string | null>;
-  children: Record<string, string[]>;
-}
-
-const INITIAL: SceneState = {
-  poses: {
-    F: { x: 10,  y: 40, width: 180, height: 180 },
-    G: { x: 210, y: 40, width: 180, height: 180 },
-    S: { x: 410, y: 40, width: 180, height: 180 },
-    f1: { x: 50,  y: 80, width: 30, height: 30 },
-    g1: { x: 210, y: 40, width: 90, height: 90 },
-    s1: { x: 420, y: 50, width: 30, height: 30 },
-  },
-  parents: { F: null, G: null, S: null, f1: 'F', g1: 'G', s1: 'S' },
-  children: { F: ['f1'], G: ['g1'], S: ['s1'] },
-};
+type Data = { color: string; isContainer: boolean };
 
 // Light fills so the containers are visible on the dark demo backdrop.
 // Children get bolder accent colors that read against the muted container fills.
@@ -46,9 +26,27 @@ const COLORS: Record<string, string> = {
   f1: '#f5b7a3', g1: '#a3f5b7', s1: '#a3b7f5',
 };
 
+const INITIAL = [
+  { id: 'F',  parent: null, kind: 'container' as const, pose: { x: 10,  y: 40, width: 180, height: 180 } },
+  { id: 'G',  parent: null, kind: 'container' as const, pose: { x: 210, y: 40, width: 180, height: 180 } },
+  { id: 'S',  parent: null, kind: 'container' as const, pose: { x: 410, y: 40, width: 180, height: 180 } },
+  { id: 'f1', parent: 'F',  kind: 'leaf' as const,      pose: { x: 50,  y: 80, width: 30,  height: 30 } },
+  { id: 'g1', parent: 'G',  kind: 'leaf' as const,      pose: { x: 210, y: 40, width: 90,  height: 90 } },
+  { id: 's1', parent: 'S',  kind: 'leaf' as const,      pose: { x: 420, y: 50, width: 30,  height: 30 } },
+];
+
 export function LayoutDemo() {
-  const [scene, setScene] = useState<SceneState>(INITIAL);
-  const adapterRef = useRef<Parameters<Op['apply']>[0] | null>(null);
+  const scene = useScene<Data, 'default', P>({
+    systemLayers: [{ id: 'default' }],
+    initial: INITIAL.map((n) => ({
+      kind: n.kind,
+      layer: 'default',
+      id: asNodeId(n.id),
+      parent: n.parent ? asNodeId(n.parent) : null,
+      pose: n.pose,
+      data: { color: COLORS[n.id] ?? '#444', isContainer: n.kind === 'container' },
+    })),
+  });
 
   const layouts = useMemo(() => ({
     F: freeform<P>(),
@@ -56,108 +54,46 @@ export function LayoutDemo() {
     S: snapPoint<P>({ pattern: 'corners' }),
   }), []);
 
-  const isContainer = (id: string) => id in layouts;
-
-  const adapter = useMemo(() => ({
-    getObject: (id: string): Obj | undefined =>
-      scene.poses[id] ? { id, kind: isContainer(id) ? 'container' : 'child' } : undefined,
-    getObjects: (): Obj[] =>
-      Object.keys(scene.poses).map((id) => ({
-        id,
-        kind: isContainer(id) ? 'container' : 'child',
-      })),
-    getPose: (id: string) => scene.poses[id],
-    getParent: (id: string) => scene.parents[id] ?? null,
-    setPose: (id: string, pose: P) => {
-      setScene((s) => ({ ...s, poses: { ...s.poses, [id]: pose } }));
-    },
-    setParent: (id: string, parentId: string | null) => {
-      setScene((s) => {
-        const oldParent = s.parents[id];
-        const nextParents = { ...s.parents, [id]: parentId };
-        const nextChildren = { ...s.children };
-        if (oldParent && nextChildren[oldParent]) {
-          nextChildren[oldParent] = nextChildren[oldParent].filter((c) => c !== id);
-        }
-        if (parentId) {
-          nextChildren[parentId] = [...(nextChildren[parentId] ?? []), id];
-        }
-        return { ...s, parents: nextParents, children: nextChildren };
-      });
-    },
-    getChildren: (id: string) => scene.children[id] ?? [],
-    getLayout: (id: string): LayoutStrategy<P> | null =>
-      (layouts as Record<string, LayoutStrategy<P> | undefined>)[id] ?? null,
-    // Area-select / select-tool plumbing (unused in this demo but required by
-    // useSelectTool's adapter intersection).
-    hitTestArea: (rect: P) =>
-      Object.keys(scene.poses).filter((id) => {
-        const p = scene.poses[id];
-        return p.x < rect.x + rect.width && p.x + p.width > rect.x &&
-               p.y < rect.y + rect.height && p.y + p.height > rect.y;
-      }),
-    getSelection: () => [] as string[],
-    setSelection: () => {},
-    applyOps: (ops: Op[]) => { for (const op of ops) op.apply(adapterRef.current!); },
-    applyBatch: (ops: Op[]) => { for (const op of ops) op.apply(adapterRef.current!); },
-  }), [scene, layouts]);
-  adapterRef.current = adapter;
-
-  const select = useSelectTool<Obj, P>(adapter, {
-    // Returns every id whose bounds cover the point. The framework's
-    // `pickTopMostHit` (inside useSelectTool) walks the parent chain to prefer
-    // descendants over their ancestors — demos don't need to sort here.
-    pickEvery: (wx, wy) =>
-      Object.keys(scene.poses).filter((id) => {
-        const p = scene.poses[id];
-        return wx >= p.x && wx <= p.x + p.width && wy >= p.y && wy <= p.y + p.height;
-      }),
-    boundsOf: (id) => scene.poses[id] ?? null,
-    drawGhost: (cx, _o, p) => {
-      cx.fillStyle = 'rgba(212, 196, 168, 0.4)';
-      cx.fillRect(p.x, p.y, p.width, p.height);
-    },
-    getObject: (id) => adapter.getObject(id) ?? null,
-  });
-  const tools = useTools({ active: 'select', registry: { select } });
-
   return (
-    <Canvas
+    <SceneCanvas
       width={620}
       height={260}
-      adapter={adapter}
-      tools={tools}
+      scene={scene}
+      layouts={layouts}
       layers={{
         scene: {
-          drawOne: (cx, o, p) => {
-            cx.fillStyle = COLORS[o.id] ?? '#444';
+          drawOne: (cx, node, p) => {
+            cx.fillStyle = node.data.color;
             cx.fillRect(p.x, p.y, p.width, p.height);
-            if (isContainer(o.id)) {
+            if (node.data.isContainer) {
               cx.strokeStyle = '#d4c4a8';
               cx.lineWidth = 1;
               cx.strokeRect(p.x + 0.5, p.y + 0.5, p.width - 1, p.height - 1);
             }
           },
         },
+        // Outline-only selection — this demo's about layout, not resize.
+        selectionOverlay: { handles: false },
       }}
     />
   );
 }
 
-export const LAYOUT_DEMO_SOURCE = `// Three containers, one of each layout strategy, sharing one adapter.
+export const LAYOUT_DEMO_SOURCE = `// Three containers, one of each layout strategy. Pass \`layouts\` to SceneCanvas
+// and the layout-aware move pass runs on those containers automatically.
+const scene = useScene<Data, 'default', P>({
+  systemLayers: [{ id: 'default' }],
+  initial: [
+    { kind: 'container', id: asNodeId('F'), parent: null, pose, data, layer: 'default' },
+    { kind: 'leaf',      id: asNodeId('f1'), parent: asNodeId('F'), pose, data, layer: 'default' },
+    // ...G, g1, S, s1
+  ],
+});
+
 const layouts = {
   F: freeform<P>(),
   G: tileGrid<P>({ cols: 2, rows: 2 }),
   S: snapPoint<P>({ pattern: 'corners' }),
 };
 
-const adapter = {
-  // ...standard MoveAdapter members...
-  getChildren: (id) => children[id] ?? [],
-  getLayout: (id) => layouts[id] ?? null,  // <-- this opt-in unlocks layout-aware move
-};
-
-const select = useSelectTool<Obj, P>(adapter, { pickEvery, boundsOf, drawGhost });
-const tools = useTools({ active: 'select', registry: { select } });
-
-<Canvas adapter={adapter} tools={tools} layers={{ scene: { drawOne } }} />`;
+<SceneCanvas scene={scene} layouts={layouts} layers={{ scene: { drawOne } }} />`;

@@ -13,6 +13,7 @@
  * via `composeWorldPose`, not the adapter's.
  */
 import type { AreaSelectAdapter, InsertAdapter, MoveAdapter, ResizeAdapter, RotateAdapter } from '../core/adapters/types';
+import type { LayoutStrategy } from '../layout/types';
 import type { Op } from '../core/ops/types';
 import type { Node, Scene } from '../core/scene/types';
 import { asNodeId } from '../core/scene/types';
@@ -59,6 +60,15 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
    *  when TPose carries top-level x/y/width/height). Override for non-rect
    *  poses. */
   poseBounds?: (pose: TPose) => Bounds;
+  /** Layout strategies keyed by container node id. When a container is
+   *  configured here, `move` runs its layout-aware pass on drag (reflow on
+   *  enter, reflow leftovers on exit, reparent + write reflowed poses on
+   *  commit). Containers without an entry behave as plain parents. Pass
+   *  either a static map, or a `getLayout(id)` function for dynamic
+   *  resolution. */
+  layouts?:
+    | Record<string, LayoutStrategy<TPose>>
+    | ((containerId: string) => LayoutStrategy<TPose> | null);
 }
 
 export function sceneToAdapter<TData, TLayer extends string, TPose>(
@@ -109,6 +119,14 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     getChildren(id) {
       return [...scene.childrenOf(asNodeId(id))];
     },
+    ...(options.layouts
+      ? {
+          getLayout: typeof options.layouts === 'function'
+            ? options.layouts
+            : (id: string) =>
+                (options.layouts as Record<string, LayoutStrategy<TPose>>)[id] ?? null,
+        }
+      : {}),
     applyBatch(ops: Op[], label: string) {
       scene.batch(label, () => {
         for (const op of ops) op.apply(this);
