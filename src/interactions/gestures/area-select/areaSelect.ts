@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import type { Op } from '../../../core/ops/types';
 import type { AreaSelectAdapter } from '../../../core/adapters/types';
 import type {
@@ -9,6 +9,7 @@ import type {
   ModifierState,
 } from '../types';
 import type { DebugSink } from '../../../debug/types';
+import { useDragRect, type DragRectCtx } from '../dragRect';
 
 const GID = 'gesture';
 
@@ -39,9 +40,8 @@ export interface AreaSelectController {
   adapter: AreaSelectAdapter;
 }
 
-interface State {
-  active: boolean;
-  ctx: GestureContext<AreaSelectPose> | null;
+interface AreaScratch {
+  startPose: AreaSelectPose;
 }
 
 /** Drag-rectangle area-select interaction; behaviors decide replace-vs-add semantics from modifiers. */
@@ -49,143 +49,137 @@ export function useAreaSelect(
   adapter: AreaSelectAdapter,
   options: UseAreaSelectOptions = {},
 ): AreaSelectController {
-  const { behaviors = [], transient: transientOpt, label = 'Area select', onGestureStart, onGestureEnd, debug } = options;
+  const {
+    behaviors = [],
+    transient: transientOpt,
+    label = 'Area select',
+    onGestureStart,
+    onGestureEnd,
+    debug,
+  } = options;
+
   const behaviorsRef = useRef(behaviors);
   behaviorsRef.current = behaviors;
-  // Latest-value refs so controller methods stay referentially stable.
   const adapterRef = useRef(adapter);
   adapterRef.current = adapter;
   const labelRef = useRef(label);
   labelRef.current = label;
   const transientOptRef = useRef(transientOpt);
   transientOptRef.current = transientOpt;
-  const onGestureStartRef = useRef(onGestureStart);
-  onGestureStartRef.current = onGestureStart;
-  const onGestureEndRef = useRef(onGestureEnd);
-  onGestureEndRef.current = onGestureEnd;
   const debugRef = useRef(debug);
   debugRef.current = debug;
 
-  const stateRef = useRef<State>({ active: false, ctx: null });
-  const [overlay, setOverlay] = useState<AreaSelectOverlay | null>(null);
+  // Holds the start-time shift state for the overlay getter — preserves
+  // today's behavior of reporting the shift state captured at gesture start
+  // rather than the live modifier value.
+  const dragShiftHeldRef = useRef<boolean>(false);
 
-  const cleanup = useCallback(() => {
-    stateRef.current.active = false;
-    stateRef.current.ctx = null;
-    setOverlay(null);
-  }, []);
+  const buildGestureCtx = (
+    drCtx: DragRectCtx<AreaScratch>,
+    startPose: AreaSelectPose,
+  ): GestureContext<AreaSelectPose> => ({
+    draggedIds: [GID],
+    origin: new Map([[GID, startPose]]),
+    current: new Map([[
+      GID,
+      {
+        worldX: drCtx.current.x,
+        worldY: drCtx.current.y,
+        shiftHeld: startPose.shiftHeld,
+      },
+    ]]),
+    snap: null,
+    modifiers: drCtx.modifiers,
+    pointer: { worldX: drCtx.current.x, worldY: drCtx.current.y, clientX: 0, clientY: 0 },
+    adapter: adapterRef.current as unknown as GestureContext<AreaSelectPose>['adapter'],
+    scratch: {},
+  });
 
-  const start = useCallback((worldX: number, worldY: number, modifiers: ModifierState) => {
-    const adapter = adapterRef.current;
-    const startPose: AreaSelectPose = { worldX, worldY, shiftHeld: modifiers.shift };
-    const ctx: GestureContext<AreaSelectPose> = {
-      draggedIds: [GID],
-      origin: new Map([[GID, startPose]]),
-      current: new Map([[GID, startPose]]),
-      snap: null,
-      modifiers,
-      pointer: { worldX, worldY, clientX: 0, clientY: 0 },
-      adapter: adapter as unknown as GestureContext<AreaSelectPose>['adapter'],
-      scratch: {},
-    };
-    for (const b of behaviorsRef.current) b.onStart?.(ctx);
-    stateRef.current = { active: true, ctx };
-    onGestureStartRef.current?.();
-    setOverlay({
-      start: { worldX, worldY },
-      current: { worldX, worldY },
-      shiftHeld: modifiers.shift,
-    });
-  }, []);
-
-  const move = useCallback((worldX: number, worldY: number, modifiers: ModifierState): boolean => {
-    const s = stateRef.current;
-    if (!s.active || !s.ctx) return false;
-    const ctx = s.ctx;
-    ctx.modifiers = modifiers;
-    ctx.pointer = { worldX, worldY, clientX: 0, clientY: 0 };
-    const start = ctx.origin.get(GID)!;
-    const current: AreaSelectPose = { worldX, worldY, shiftHeld: start.shiftHeld };
-    ctx.current.set(GID, current);
-    for (const b of behaviorsRef.current) {
-      b.onMove?.(ctx, {
-        start: { worldX: start.worldX, worldY: start.worldY },
-        current: { worldX, worldY },
-        shiftHeld: start.shiftHeld,
-      });
-    }
-    setOverlay({
-      start: { worldX: start.worldX, worldY: start.worldY },
-      current: { worldX, worldY },
-      shiftHeld: start.shiftHeld,
-    });
-    // Debug: record the in-progress marquee rect under the synthetic id.
-    debugRef.current?.recordBounds('area-select', {
-      x: Math.min(start.worldX, worldX),
-      y: Math.min(start.worldY, worldY),
-      width: Math.abs(worldX - start.worldX),
-      height: Math.abs(worldY - start.worldY),
-    });
-    return true;
-  }, []);
-
-  const end = useCallback(() => {
-    const s = stateRef.current;
-    const adapter = adapterRef.current;
-    const label = labelRef.current;
-    const transientOpt = transientOptRef.current;
-    const onGestureEnd = onGestureEndRef.current;
-    if (!s.active || !s.ctx) {
-      cleanup();
-      onGestureEnd?.(false);
-      return;
-    }
-    const ctx = s.ctx;
-    let collected: Op[] | null | undefined;
-    for (const b of behaviorsRef.current) {
-      const r = b.onEnd?.(ctx);
-      if (r === undefined) continue;
-      collected = r;
-      break;
-    }
-    if (collected === null) {
-      cleanup();
-      onGestureEnd?.(false);
-      return;
-    }
-    if (collected === undefined || collected.length === 0) {
-      cleanup();
-      onGestureEnd?.(false);
-      return;
-    }
-
-    const transient = transientOpt ?? behaviorsRef.current.some((b) => b.defaultTransient === true);
-
-    if (transient) {
-      (adapter as AreaSelectAdapter).applyOps?.(collected);
-    } else {
-      const adapterWithBatch = adapter as AreaSelectAdapter & {
-        applyBatch?: (ops: Op[], label: string) => void;
+  const dr = useDragRect<AreaScratch>({
+    initScratch: () => ({ startPose: { worldX: 0, worldY: 0, shiftHeld: false } }),
+    onStart: (ctx) => {
+      const startPose: AreaSelectPose = {
+        worldX: ctx.start.x,
+        worldY: ctx.start.y,
+        shiftHeld: ctx.modifiers.shift,
       };
-      adapterWithBatch.applyBatch?.(collected, label);
-    }
-    cleanup();
-    onGestureEnd?.(true);
-  }, [cleanup]);
+      ctx.scratch.startPose = startPose;
+      dragShiftHeldRef.current = startPose.shiftHeld;
+      const gctx = buildGestureCtx(ctx, startPose);
+      for (const b of behaviorsRef.current) b.onStart?.(gctx);
+    },
+    onMove: (ctx) => {
+      const startPose = ctx.scratch.startPose;
+      const gctx = buildGestureCtx(ctx, startPose);
+      for (const b of behaviorsRef.current) {
+        b.onMove?.(gctx, {
+          start: { worldX: startPose.worldX, worldY: startPose.worldY },
+          current: { worldX: ctx.current.x, worldY: ctx.current.y },
+          shiftHeld: startPose.shiftHeld,
+        });
+      }
+      debugRef.current?.recordBounds('area-select', ctx.bounds);
+    },
+    onEnd: (ctx) => {
+      const adapter = adapterRef.current;
+      const label = labelRef.current;
+      const transientOpt = transientOptRef.current;
+      const startPose = ctx.scratch.startPose;
+      const gctx = buildGestureCtx(ctx, startPose);
+      let collected: Op[] | null | undefined;
+      for (const b of behaviorsRef.current) {
+        const r = b.onEnd?.(gctx);
+        if (r === undefined) continue;
+        collected = r;
+        break;
+      }
+      if (collected === null) return false;
+      if (collected === undefined || collected.length === 0) return false;
+      const transient =
+        transientOpt ?? behaviorsRef.current.some((b) => b.defaultTransient === true);
+      if (transient) {
+        (adapter as AreaSelectAdapter).applyOps?.(collected);
+      } else {
+        const adapterWithBatch = adapter as AreaSelectAdapter & {
+          applyBatch?: (ops: Op[], label: string) => void;
+        };
+        adapterWithBatch.applyBatch?.(collected, label);
+      }
+      return true;
+    },
+    onCancel: () => {
+      dragShiftHeldRef.current = false;
+    },
+    onGestureStart,
+    onGestureEnd,
+  });
 
-  const cancel = useCallback(() => {
-    cleanup();
-    onGestureEndRef.current?.(false);
-  }, [cleanup]);
+  // Map dragRect overlay to AreaSelectOverlay.
+  const overlayRef = useRef<AreaSelectOverlay | null>(null);
+  overlayRef.current = dr.overlay
+    ? {
+        start: { worldX: dr.overlay.start.x, worldY: dr.overlay.start.y },
+        current: { worldX: dr.overlay.current.x, worldY: dr.overlay.current.y },
+        shiftHeld: dragShiftHeldRef.current,
+      }
+    : null;
 
-  // Stable controller identity — see useMove for rationale.
-  const overlayRef = useRef(overlay);
-  overlayRef.current = overlay;
-  const controller = useMemo<AreaSelectController>(() => ({
-    start, move, end, cancel,
-    get overlay() { return overlayRef.current; },
-    get isAreaSelecting() { return overlayRef.current !== null; },
-    get adapter() { return adapterRef.current; },
-  }), [start, move, end, cancel]);
-  return controller;
+  return useMemo<AreaSelectController>(
+    () => ({
+      start: dr.start,
+      move: dr.move,
+      end: dr.end,
+      cancel: dr.cancel,
+      get overlay() {
+        return overlayRef.current;
+      },
+      get isAreaSelecting() {
+        return overlayRef.current !== null;
+      },
+      get adapter() {
+        return adapterRef.current;
+      },
+    }),
+    [dr.start, dr.move, dr.end, dr.cancel],
+  );
 }
