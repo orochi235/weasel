@@ -3,8 +3,8 @@
  *   - DPR setup (`setupCanvasDpr`)
  *   - clear-rect + optional background fill on every render
  *   - layer-stack composition from a map of named slots + custom layers
- *   - internal `useMove` / `useResize` / `useSelection` (overridable)
- *   - `usePointerGestures` wiring with auto-derived pickEvery/boundsOf
+ *   - internal `useSelection` (overridable)
+ *   - pointer/keyboard/wheel routing through `tools.dispatcher`
  *   - keyboard-focus plumbing (`tabIndex` + auto-focus on pointerdown)
  *
  * The `layers` prop is a map keyed by slot name. Standard slots render at a
@@ -230,11 +230,10 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   /** Opt-in keyboard-driven actions wired against the canvas's effective
    *  selection. Each key turns the action on; values may be `true` (defaults)
    *  or a config dict. Omitting a key leaves the action unbound. */
-  /** Tool primitive substrate. When supplied, pointer/keyboard/wheel events
-   *  are routed through `tools.dispatcher` instead of the legacy
-   *  `usePointerGestures` bindings. The action-gesture hooks (delete /
-   *  nudge / undoRedo / duplicate) continue to wire from `gestures` as-is
-   *  in Phase 1; they'll move to always-on tools in Phase 2. */
+  /** Tool primitive substrate. Pointer/keyboard/wheel events are routed
+   *  through `tools.dispatcher`. The action-gesture hooks (delete / nudge /
+   *  undoRedo / duplicate) continue to wire from `gestures` as-is; they'll
+   *  move to always-on tools in a follow-up. */
   tools?: import('../tools/useTools').ToolsApi;
   gestures?: GesturesConfig<TPose>;
 
