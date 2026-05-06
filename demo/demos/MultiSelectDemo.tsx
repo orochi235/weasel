@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   asNodeId,
   SceneCanvas,
   sceneToAdapter,
   useScene,
+  useSelectAll,
   useSelection,
   useSelectTool,
   useTools,
@@ -54,28 +55,27 @@ export function MultiSelectDemo() {
     return { x: p.x, y: p.y, width: p.width, height: p.height };
   };
 
-  const drawGhost = (
-    cx: CanvasRenderingContext2D,
-    _o: { id: string } | null,
-    p: { x: number; y: number; width: number; height: number; color: string },
-  ) => {
-    cx.fillStyle = p.color;
-    cx.globalAlpha = 0.5;
-    cx.fillRect(p.x, p.y, p.width, p.height);
-    cx.globalAlpha = 1;
-  };
-
   const select = useSelectTool(selectAdapter, {
     pickEvery,
     boundsOf,
-    drawGhost,
-    getObject: (id) => scene.get(asNodeId(id)) ?? null,
     getSelection: () => selection.current,
   });
   const tools = useTools({ active: 'select', registry: { select } });
 
+  useSelectAll({
+    getSelection: () => selection.current,
+    listAll: () => Array.from(scene.renderOrder()),
+    setSelection: (ids) => selection.set(ids),
+  });
+
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
+    canvasRef.current?.focus();
+  }, []);
+
   return (
     <SceneCanvas
+      ref={canvasRef}
       width={W}
       height={H}
       className="ckd-canvas"
@@ -110,6 +110,13 @@ const selection = useSelection({ mode: 'multi' });
 const selectAdapter = sceneToAdapter(scene, { selection });
 const select = useSelectTool(selectAdapter, { pickEvery, boundsOf, getSelection: () => selection.current });
 const tools = useTools({ active: 'select', registry: { select } });
+
+// Cmd/Ctrl+A — kit-bound on document by default.
+useSelectAll({
+  getSelection: () => selection.current,
+  listAll: () => Array.from(scene.renderOrder()),
+  setSelection: (ids) => selection.set(ids),
+});
 
 // selectionMode="multi" turns on shift-click extend, draws a single union
 // AABB outline (with corner handles) when more than one item is selected,

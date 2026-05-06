@@ -341,9 +341,10 @@ function isCustomEntry(v: unknown): v is CustomLayerEntry {
 
 /**
  * Build the scene layer. Tool ghosts (in-flight drag/resize/rotate poses) are
- * published via the overlay channel and rendered on top of this layer; we
- * draw committed poses here, and rely on the active tool's `previewPose` to
- * suppress the committed paint of ids it's currently ghosting via `hideIds`.
+ * published via the active tool's `previewPose`/`previewIds` and rendered on
+ * top of this layer (see SceneCanvas's preview-ghost layer); we draw committed
+ * poses here, and `hideIds()` lets us skip the committed paint of ids the
+ * active tool is currently ghosting so the source doesn't show through.
  */
 function buildSceneLayer<TObject extends { id: string }, TPose>(
   cfg: SceneSlotConfig<TObject, TPose>,
@@ -352,6 +353,7 @@ function buildSceneLayer<TObject extends { id: string }, TPose>(
     | undefined,
   debugSink: DebugSink | null,
   boundsOfFn: ((id: string) => Bounds | null) | undefined,
+  hideIds: () => Set<string> | null,
 ): RenderLayer<unknown> {
   const toPose =
     cfg.toPose ??
@@ -361,7 +363,9 @@ function buildSceneLayer<TObject extends { id: string }, TPose>(
     label: 'Scene',
     draw: (ctx, _data, view) => {
       const objects = cfg.objects ?? adapter?.getObjects() ?? [];
+      const hidden = hideIds();
       for (const obj of objects) {
+        if (hidden && hidden.has(obj.id)) continue;
         const pose: TPose = toPose(obj);
         cfg.drawOne(ctx, obj, pose, view);
         if (debugSink) {
@@ -881,6 +885,13 @@ function CanvasInner<TObject extends { id: string }, TPose>(
         adapter,
         debugSink,
         effectiveBoundsOf,
+        () => {
+          if (!tools) return null;
+          const t = tools.registry[tools.modifierEngaged ?? tools.active];
+          const ids = t?.previewIds?.();
+          if (!ids) return null;
+          return ids instanceof Set ? ids : new Set(ids);
+        },
       );
     }
 

@@ -18,10 +18,11 @@
  * from `scene` knowledge (children-of-id + absolute pose lookup); consumers
  * can override either by passing their own `moveOptions.cascadeWorldPose`.
  */
-import { forwardRef, useMemo } from 'react';
+import { forwardRef, useMemo, useRef } from 'react';
 import type React from 'react';
 import { Canvas } from './Canvas';
-import type { CanvasProps } from './Canvas';
+import type { CanvasProps, LayersMap } from './Canvas';
+import type { RenderLayer } from '../core/layers/render';
 import { sceneToAdapter, type SceneToAdapterOptions } from './sceneAdapter';
 import type { Node, Scene } from '../core/scene/types';
 import { asNodeId } from '../core/scene/types';
@@ -254,24 +255,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     };
   }, [scene, boundsOfProp]);
 
-  // Extract the scene `drawOne` for ghost rendering. `layers.scene` may be
-  // explicitly null (meaning "no default scene draw"); in that case ghosts
-  // are not rendered (drawGhost stays undefined).
-  const sceneSlot = layers.scene;
-  const drawGhost = useMemo(() => {
-    if (!sceneSlot || !sceneSlot.drawOne) return undefined;
-    const drawOne = sceneSlot.drawOne;
-    return (
-      ctx: CanvasRenderingContext2D,
-      node: Node<TData, TLayer, TPose> | null,
-      pose: TPose,
-      view: { x: number; y: number; scale: number },
-    ) => {
-      if (!node) return;
-      drawOne(ctx, node, pose, view);
-    };
-  }, [sceneSlot]);
-
   const internalSelect = useSelectTool<Node<TData, TLayer, TPose>, TPose>(adapter, {
     pickEvery: wiredHitBody,
     boundsOf: wiredBoundsOf,
@@ -279,7 +262,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     move: wiredMoveOptions,
     ...(resizeOptions ? { resize: resizeOptions } : {}),
     ...(rotateOptions ? { rotate: rotateOptions } : {}),
-    ...(drawGhost ? { drawGhost } : {}),
     getObject: (id: string) => scene.get(asNodeId(id)) ?? null,
     // Live selection getter so the tool's `previewBounds` can synthesize the
     // `MULTI_RESIZE_TARGET_ID` union for `selectionMode="multi"`.
@@ -295,6 +277,49 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   const wiredGestures = { undoRedo: { adapter: scene }, ...gestures };
 
+  // Preview-ghost layer: renders in-flight gesture poses on top of the
+  // committed scene using the scene slot's `drawOne`. The active tool
+  // publishes which ids are displaced (`previewIds`) and their interim
+  // poses (`previewPose`); we simply iterate them and reuse `drawOne`.
+  // This replaces the per-tool `drawGhost` fold-in — a single SceneCanvas
+  // concern instead of every consumer wiring it.
+  const sceneSlot = layers.scene;
+  const sceneRef = useRef(scene);
+  sceneRef.current = scene;
+  const toolsRef = useRef(tools);
+  toolsRef.current = tools;
+  const sceneSlotRef = useRef(sceneSlot);
+  sceneSlotRef.current = sceneSlot;
+  const previewLayer = useMemo<RenderLayer<unknown>>(() => ({
+    id: 'preview-ghost',
+    label: 'Preview ghost',
+    draw: (ctx, _data, view) => {
+      const slot = sceneSlotRef.current;
+      if (!slot || !slot.drawOne) return;
+      const t = toolsRef.current;
+      const tool = t.registry[t.modifierEngaged ?? t.active];
+      const ids = tool?.previewIds?.();
+      if (!ids) return;
+      const sc = sceneRef.current;
+      const drawOne = slot.drawOne;
+      ctx.save();
+      ctx.globalAlpha = 0.85;
+      for (const id of ids) {
+        const pose = tool?.previewPose?.(id) as TPose | null | undefined;
+        if (pose == null) continue;
+        const node = sc.get(asNodeId(id));
+        if (!node) continue;
+        drawOne(ctx, node, pose, view);
+      }
+      ctx.restore();
+    },
+  }), []);
+
+  const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({
+    ...layers,
+    previewGhost: { layer: previewLayer, after: 'scene' },
+  }), [layers, previewLayer]);
+
   return (
     <Canvas<Node<TData, TLayer, TPose>, TPose>
       ref={ref}
@@ -302,7 +327,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       gestures={wiredGestures}
       selection={selection}
       tools={tools}
-      layers={layers}
+      layers={wiredLayers}
       {...rest}
     />
   );

@@ -366,11 +366,26 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
     return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
   };
 
-  // previewIds: surface move's hideIds (dragged + cascade descendants) so the
-  // standard scene slot suppresses their committed render during a cascade
-  // drag. Resize/rotate don't hide ids — the dragged target's overlay pose
-  // simply replaces its committed pose via previewPose.
-  const previewIds = (): Iterable<string> | null => move.overlay?.hideIds ?? null;
+  // previewIds: every id whose committed paint should be suppressed while a
+  // gesture is in flight, so the source doesn't bleed through the ghost. Move
+  // contributes its `hideIds` (dragged + cascade descendants); resize/rotate
+  // contribute their target id (and any leaf poses they republish via
+  // `previewPose`). The standard scene layer skips these ids; SceneCanvas's
+  // preview-ghost layer redraws them through the same `drawOne` for visual
+  // consistency.
+  const previewIds = (): Iterable<string> | null => {
+    const out = new Set<string>();
+    const mOv = move.overlay;
+    if (mOv) for (const id of mOv.hideIds) out.add(id);
+    const rOv = resize.overlay;
+    if (rOv) {
+      out.add(rOv.id);
+      if (rOv.leafPoses) for (const id of rOv.leafPoses.keys()) out.add(id);
+    }
+    const rotOv = rotate.overlay;
+    if (rotOv) out.add(rotOv.id);
+    return out.size > 0 ? out : null;
+  };
 
   return useMemo(
     () =>
