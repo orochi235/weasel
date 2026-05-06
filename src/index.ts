@@ -335,6 +335,15 @@ export type {
   DragRectPoint,
   DragRectBounds,
 } from './interactions/gestures/dragRect';
+export { useDragGesture } from './interactions/gestures/dragGesture';
+export type {
+  UseDragGestureOptions,
+  DragGestureController,
+  DragGestureCtx,
+  DragGestureEndCtx,
+  DragGesturePoint,
+  DragGesturePhase,
+} from './interactions/gestures/dragGesture';
 export { useAreaSelect } from './interactions/gestures/area-select';
 export {
   useEditAnchors,
