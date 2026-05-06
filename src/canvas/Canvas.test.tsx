@@ -440,35 +440,6 @@ describe('<Canvas>', () => {
       expect(new Set(lastMoveIds)).toEqual(new Set(['a', 'b']));
     });
 
-    it('none: onBodyHit override still fires', () => {
-      const onBodyHit = vi.fn();
-      function H() {
-        const rectsRef = useRef<Rect[]>(RECTS);
-        const adapter = arrayAdapter<Rect, Pose>({
-          ref: rectsRef,
-          setItems: () => {},
-          toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
-        });
-        return (
-          <Canvas
-            width={300}
-            height={50}
-            layers={{}}
-            adapter={adapter}
-            selectionMode="none"
-            clientToWorld={C2W}
-            onBodyHit={onBodyHit}
-          />
-        );
-      }
-      const { container } = render(<H />);
-      const canvas = container.querySelector('canvas')!;
-      canvas.setPointerCapture = vi.fn();
-      nextWorld = [10, 10];
-      fireEvent.pointerDown(canvas);
-      expect(onBodyHit).toHaveBeenCalledTimes(1);
-      expect(onBodyHit.mock.calls[0][0]).toEqual(['a']);
-    });
   });
 });
 

@@ -23,16 +23,12 @@ import type { View } from '../features/viewport/view';
 import { clampView } from '../features/viewport/clampView';
 import { runLayers, type RenderLayer } from '../core/layers/render';
 import { setupCanvasDpr } from '../features/viewport/pixelDensity';
-import {
-  usePointerGestures,
-  type PointerGestureCallbackCtx,
-} from '../interactions/usePointerGestures';
+import type { PointerGestureCallbackCtx } from '../interactions/usePointerGestures';
 import {
   useSelection,
   type SelectionApi,
   type UseSelectionOptions,
 } from '../features/selection/useSelection';
-import { pickTopMostHit } from '../tools/builtin/pickTopMostHit';
 import { useArrayAdapter, type UseArrayAdapterOptions } from '../core/adapters/useArrayAdapter';
 import { useDelete } from '../interactions/actions/delete';
 import { useNudge } from '../interactions/actions/nudge';
@@ -350,10 +346,6 @@ const NOOP_SET_ITEMS = () => {};
 // when the pose is a sub-shape of the item or computed.
 const IDENTITY_TO_POSE = (obj: unknown) => obj as unknown;
 
-function aabbContains(b: Bounds, x: number, y: number): boolean {
-  return x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height;
-}
-
 function isCustomEntry(v: unknown): v is CustomLayerEntry {
   return !!v && typeof v === 'object' && 'layer' in (v as Record<string, unknown>);
 }
@@ -435,15 +427,8 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     layers: layersMap,
     selection: selectionOverride,
     selectionOptions,
-    pickEvery,
-    resizeTarget,
-    rotateTarget,
-    rotationHandleDistance,
     boundsOf,
-    onBodyHit,
-    onTapEmpty,
     clientToWorld,
-    handleHitRadius,
     geometry = AUTO_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>,
     onPointerDown: onPointerDownOverride,
     onPointerMove: onPointerMoveOverride,
@@ -704,30 +689,6 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     },
   );
 
-  // Default pickEvery: walk the adapter's objects back-to-front and return the
-  // first whose pose contains the world point. The active tool (selectTool)
-  // typically owns its own pickEvery internally; this fallback exists for
-  // layer-level concerns (selection-overlay handle hit, custom layer queries)
-  // and for the no-tools path where Canvas dispatches via usePointerGestures.
-  const baseHitBody = useMemo(() => {
-    if (pickEvery) return pickEvery;
-    if (!adapter) return undefined;
-    const a = adapter;
-    return (worldX: number, worldY: number): string | string[] | null => {
-      const objs = a.getObjects();
-      const point = { x: worldX, y: worldY, width: 0, height: 0 };
-      for (let i = objs.length - 1; i >= 0; i--) {
-        const o = objs[i];
-        const pose = a.getPose(o.id);
-        const hit = geometry.intersectsRect
-          ? geometry.intersectsRect(pose, point)
-          : aabbContains(geometry.getBounds(pose), worldX, worldY);
-        if (hit) return o.id;
-      }
-      return null;
-    };
-  }, [pickEvery, adapter, geometry]);
-
   // Committed pose/bounds lookups. Live overlay state during a drag now
   // arrives via the active Tool's `peekPose`/`peekBounds`; helpersForLayers
   // composes that on top of these committed lookups below.
@@ -831,82 +792,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   };
   if (helpersRef) helpersRef.current = helpersForLayers;
 
-  // pickEvery: in multi mode with >1 selected, a click inside the union AABB
-  // that doesn't land on an unselected leaf drags the whole set without
-  // perturbing the selection. Clicks on unselected leaves fall through to
-  // the base hit, so applyClick (or shift-click extend) takes over.
-  const effectiveHitBody = useMemo(() => {
-    if (pickEvery) return pickEvery;
-    if (!baseHitBody) return undefined;
-    if (!multiActive) return baseHitBody;
-    return (worldX: number, worldY: number): string | string[] | null => {
-      const hit = baseHitBody(worldX, worldY);
-      // pickTopMostHit so parent/child collapse in multi-mode matches
-      // single-mode (container's body shouldn't outrank its child).
-      const hitId = Array.isArray(hit) ? pickTopMostHit(hit, adapter ?? null) : hit;
-      const selected = selectedIdsForWiring;
-      const selectedSet = new Set(selected);
-      if (hitId !== null && selectedSet.has(hitId)) {
-        return selected;
-      }
-      if (hitId !== null) {
-        return hit;
-      }
-      const u = unionOfSelection(selected);
-      if (u && worldX >= u.x && worldX <= u.x + u.width && worldY >= u.y && worldY <= u.y + u.height) {
-        return selected;
-      }
-      return null;
-    };
-  }, [pickEvery, baseHitBody, multiActive, selectedIdsForWiring, unionOfSelection]);
-
-  // resizeTarget: with multi selection active, expose a synthetic id whose
-  // bounds are the union of the selection. resize.expandIds (wired via
-  // derivedResizeOptions above) rewrites that id back into the leaf list so
-  // useResize takes its existing group path.
-  const effectiveResizeTarget = useMemo(() => {
-    if (resizeTarget) return resizeTarget;
-    if (!multiActive) return undefined;
-    return (): { id: string; bounds: Bounds } | null => {
-      const u = unionOfSelection(selectedIdsForWiring);
-      return u ? { id: MULTI_RESIZE_TARGET_ID, bounds: u } : null;
-    };
-  }, [resizeTarget, multiActive, selectedIdsForWiring, unionOfSelection]);
-
-  // onBodyHit: in multi mode, a hit on an already-selected id without the
-  // extend modifier preserves the selection (so the move drag covers the
-  // whole set). Hits on unselected leaves still dispatch applyClick.
-  const effectiveOnBodyHit = useMemo(() => {
-    if (onBodyHit) return onBodyHit;
-    if (selectionMode !== 'multi') return undefined;
-    return (ids: string[], ctx: PointerGestureCallbackCtx) => {
-      const sel = effectiveSelection;
-      const first = ids[0];
-      if (first === undefined) return;
-      const cur = sel.get();
-      const inSelection = cur.includes(first);
-      const extending = ctx.modifiers.shift || ctx.modifiers.meta || ctx.modifiers.ctrl;
-      if (inSelection && cur.length > 1 && !extending) return;
-      sel.applyClick(first, ctx.modifiers);
-    };
-  }, [onBodyHit, selectionMode, effectiveSelection]);
-
-  const bindings = usePointerGestures<TPose, TPose>({
-    pickEvery: effectiveHitBody,
-    resizeTarget: effectiveResizeTarget ?? resizeTarget,
-    rotateTarget,
-    rotationHandleDistance,
-    selection: selectionMode === 'none' ? undefined : effectiveSelection,
-    boundsOf: effectiveBoundsOf,
-    onBodyHit: effectiveOnBodyHit ?? onBodyHit,
-    onTapEmpty,
-    clientToWorld,
-    handleHitRadius,
-    getView: () => viewRef.current,
-    debug: debugSink ?? undefined,
-  });
-
-  // Keyboard routing through the dispatcher when tools is set.
+// Keyboard routing through the dispatcher when tools is set.
   useEffect(() => {
     if (!tools) return;
     const onDown = (e: KeyboardEvent) => tools.dispatcher.onKeyDown(e);
@@ -994,14 +880,11 @@ function CanvasInner<TObject extends { id: string }, TPose>(
           // we'd leak a listener for every empty click on the canvas.
           if (tools.dispatcher.hasActiveGesture()) attachDocListeners(tools.dispatcher);
         }
-      : (e: React.PointerEvent<HTMLCanvasElement>) => {
-          if (autoFocusOnPointerDown) e.currentTarget.focus();
-          bindings.onPointerDown(e);
-        });
+      : undefined);
   const handlePointerMove = onPointerMoveOverride ??
     (tools
       ? (e: React.PointerEvent<HTMLCanvasElement>) => tools.dispatcher.onPointerMove(e.nativeEvent)
-      : bindings.onPointerMove);
+      : undefined);
   const handlePointerUp = onPointerUpOverride ??
     (tools
       ? (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -1010,8 +893,8 @@ function CanvasInner<TObject extends { id: string }, TPose>(
           // common case where the release lands on the canvas itself.
           detachDocListeners();
         }
-      : bindings.onPointerUp);
-  const handlePointerCancel = onPointerCancelOverride ?? bindings.onPointerCancel;
+      : undefined);
+  const handlePointerCancel = onPointerCancelOverride ?? undefined;
   const handleWheel = tools
     ? (e: React.WheelEvent<HTMLCanvasElement>) => tools.dispatcher.onWheel(e.nativeEvent)
     : undefined;
@@ -1191,7 +1074,6 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
-      onLostPointerCapture={tools ? undefined : bindings.onLostPointerCapture}
       onWheel={handleWheel}
     />
   );
