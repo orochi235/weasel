@@ -363,8 +363,6 @@ function buildSceneLayer<TObject extends { id: string }, TPose>(
     | undefined,
   debugSink: DebugSink | null,
   boundsOfFn: ((id: string) => Bounds | null) | undefined,
-  peekPose: ((id: string) => TPose | null) | null,
-  peekHide: (() => Iterable<string> | null) | null,
 ): RenderLayer<unknown> {
   const toPose =
     cfg.toPose ??
@@ -374,12 +372,8 @@ function buildSceneLayer<TObject extends { id: string }, TPose>(
     label: 'Scene',
     draw: (ctx, _data, view) => {
       const objects = cfg.objects ?? adapter?.getObjects() ?? [];
-      const hideIter = peekHide?.() ?? null;
-      const hide = hideIter ? new Set(hideIter) : null;
       for (const obj of objects) {
-        const overlayPose = peekPose ? peekPose(obj.id) : null;
-        if (hide && hide.has(obj.id) && overlayPose == null) continue;
-        const pose: TPose = overlayPose ?? toPose(obj);
+        const pose: TPose = toPose(obj);
         cfg.drawOne(ctx, obj, pose, view);
         if (debugSink) {
           const b = boundsOfFn ? boundsOfFn(obj.id) : null;
@@ -762,11 +756,6 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     const p = tool?.peekPose?.(id);
     return (p ?? null) as TPose | null;
   };
-  const peekToolHide = (): Iterable<string> | null => {
-    if (!tools) return null;
-    const tool = tools.registry[tools.modifierEngaged ?? tools.active];
-    return tool?.peekHide?.() ?? null;
-  };
   const peekToolBounds = (id: string): Bounds | null => {
     if (!tools) return null;
     const tool = tools.registry[tools.modifierEngaged ?? tools.active];
@@ -927,8 +916,6 @@ function CanvasInner<TObject extends { id: string }, TPose>(
         adapter,
         debugSink,
         effectiveBoundsOf,
-        (id) => peekToolPose(id),
-        () => peekToolHide(),
       );
     }
 
