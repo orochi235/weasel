@@ -4,6 +4,7 @@ import type { Op } from '../../../core/ops/types';
 import type { MoveAdapter, SnapTarget } from '../../../core/adapters/types';
 import { translateRectPose } from '../../../features/groups/composePose';
 import { dispatchApplyBatch } from '../../../core/applyOps';
+import { useDragGesture } from '../dragGesture';
 import type { GestureContext, MoveBehavior, MoveOverlay, ModifierState } from '../types';
 
 /** Options for `useMove`. */
@@ -91,31 +92,15 @@ export function useMove<TObject extends { id: string }, TPose>(
     cascadeWorldPose,
   } = options;
 
-  const behaviorsRef = useRef(behaviors);
-  behaviorsRef.current = behaviors;
-  // Latest-value refs so controller methods can stay referentially stable
-  // across renders even when the consumer passes inline callbacks/options.
-  const adapterRef = useRef(adapter);
-  adapterRef.current = adapter;
-  const translatePoseRef = useRef(translatePose);
-  translatePoseRef.current = translatePose;
-  const dragThresholdPxRef = useRef(dragThresholdPx);
-  dragThresholdPxRef.current = dragThresholdPx;
-  const moveLabelRef = useRef(moveLabel);
-  moveLabelRef.current = moveLabel;
-  const onGestureStartRef = useRef(onGestureStart);
-  onGestureStartRef.current = onGestureStart;
-  const onGestureEndRef = useRef(onGestureEnd);
-  onGestureEndRef.current = onGestureEnd;
-  const expandIdsRef = useRef(expandIds);
-  expandIdsRef.current = expandIds;
-  // Default: when the adapter exposes getChildren but the consumer didn't
-  // supply a world-pose lookup, fall back to `adapter.getPose`. That's correct
-  // for flat scenes (LayoutDemo, MultiSelectDemo, ComposeDemo) where pose IS
-  // world. Nested-transform scenes (NestedGroups) override with a real
-  // worldPoseLookup. Without this default, dragging a parent left children
-  // behind on every demo that wired getChildren but didn't know to pass
-  // cascadeWorldPose — i.e. all of them.
+  const adapterRef = useRef(adapter); adapterRef.current = adapter;
+  const behaviorsRef = useRef(behaviors); behaviorsRef.current = behaviors;
+  const translatePoseRef = useRef(translatePose); translatePoseRef.current = translatePose;
+  const dragThresholdPxRef = useRef(dragThresholdPx); dragThresholdPxRef.current = dragThresholdPx;
+  const moveLabelRef = useRef(moveLabel); moveLabelRef.current = moveLabel;
+  const onGestureStartRef = useRef(onGestureStart); onGestureStartRef.current = onGestureStart;
+  const onGestureEndRef = useRef(onGestureEnd); onGestureEndRef.current = onGestureEnd;
+  const expandIdsRef = useRef(expandIds); expandIdsRef.current = expandIds;
+
   const effectiveCascade = cascadeWorldPose
     ?? (adapter.getChildren ? (id: string) => {
       try { return adapter.getPose(id); } catch { return null; }
@@ -126,10 +111,10 @@ export function useMove<TObject extends { id: string }, TPose>(
   type LayoutPass = {
     destContainerId: string | null;
     accepted: boolean;
-    layout: unknown; // LayoutStrategy<TPose>
+    layout: unknown;
     container: { id: string; bounds: { x: number; y: number; width: number; height: number } } | null;
     children: { id: string; pose: TPose }[];
-    target: unknown; // DropTarget<TPose> | null
+    target: unknown;
     sourceReflowPositions: Map<string, TPose>;
   };
   const makeEmptyLayoutPass = (): LayoutPass => ({
@@ -142,112 +127,35 @@ export function useMove<TObject extends { id: string }, TPose>(
     sourceReflowPositions: new Map(),
   });
 
-  const stateRef = useRef<{
-    phase: 'idle' | 'pending' | 'active';
-    startWorld: { x: number; y: number };
-    startClient: { x: number; y: number };
+  interface MoveScratch {
+    ids: string[];
     ctx: GestureContext<TPose, TObject> | null;
     cascadeIds: string[];
     cascadeOriginWorld: Map<string, TPose>;
     layoutPass: LayoutPass;
-  }>({
-    phase: 'idle',
-    startWorld: { x: 0, y: 0 },
-    startClient: { x: 0, y: 0 },
-    ctx: null,
-    cascadeIds: [],
-    cascadeOriginWorld: new Map(),
-    layoutPass: makeEmptyLayoutPass(),
-  });
+    startWorld: { x: number; y: number };
+    startClient: { x: number; y: number };
+  }
 
   const [overlay, setOverlay] = useState<MoveOverlay<TPose> | null>(null);
+  const overlayRef = useRef(overlay); overlayRef.current = overlay;
 
-  const cleanup = useCallback(() => {
-    stateRef.current.phase = 'idle';
-    stateRef.current.ctx = null;
-    stateRef.current.cascadeIds = [];
-    stateRef.current.cascadeOriginWorld = new Map();
-    stateRef.current.layoutPass = makeEmptyLayoutPass();
-    setOverlay(null);
-  }, []);
+  const pendingArgsRef = useRef<{ args: MoveStartArgs; expandedIds: string[] } | null>(null);
 
-  const start = useCallback((args: MoveStartArgs) => {
+  const doMoveCompute = useCallback((
+    scratch: MoveScratch,
+    moveArgs: MoveMoveArgs,
+  ) => {
+    const ctx = scratch.ctx;
+    if (!ctx) return;
     const adapter = adapterRef.current;
-    const expandIds = expandIdsRef.current;
-    const cascadeWorldPose = cascadeWorldPoseRef.current;
-    const ids = expandIds ? expandIds(args.ids) : args.ids;
-    if (ids.length === 0) {
-      stateRef.current.phase = 'idle';
-      stateRef.current.ctx = null;
-      return;
-    }
-    const origin = new Map<string, TPose>();
-    for (const id of ids) origin.set(id, adapter.getPose(id));
-
-    const cascadeIds: string[] = [];
-    const cascadeOriginWorld = new Map<string, TPose>();
-    if (cascadeWorldPose && adapter.getChildren) {
-      const draggedSet = new Set(ids);
-      const visited = new Set<string>(ids);
-      const queue: string[] = [...ids];
-      while (queue.length > 0) {
-        const next = queue.shift()!;
-        const children = adapter.getChildren(next);
-        if (!children) continue;
-        for (const childId of children) {
-          if (visited.has(childId)) continue;
-          visited.add(childId);
-          queue.push(childId);
-          if (draggedSet.has(childId)) continue;
-          const w = cascadeWorldPose(childId);
-          if (w === null) continue;
-          cascadeIds.push(childId);
-          cascadeOriginWorld.set(childId, w);
-        }
-      }
-    }
-
-    stateRef.current = {
-      phase: 'pending',
-      startWorld: { x: args.worldX, y: args.worldY },
-      startClient: { x: args.clientX, y: args.clientY },
-      cascadeIds,
-      cascadeOriginWorld,
-      ctx: {
-        draggedIds: ids,
-        origin,
-        current: new Map(origin),
-        snap: null,
-        modifiers: { alt: false, shift: false, meta: false, ctrl: false },
-        pointer: { worldX: args.worldX, worldY: args.worldY, clientX: args.clientX, clientY: args.clientY },
-        adapter,
-        scratch: {},
-      },
-      layoutPass: makeEmptyLayoutPass(),
-    };
-  }, []);
-
-  const move = useCallback((args: MoveMoveArgs): boolean => {
-    const s = stateRef.current;
-    if (s.phase === 'idle' || !s.ctx) return false;
     const translatePose = translatePoseRef.current;
 
-    if (s.phase === 'pending') {
-      const dxs = args.clientX - s.startClient.x;
-      const dys = args.clientY - s.startClient.y;
-      const threshold = dragThresholdPxRef.current;
-      if (dxs * dxs + dys * dys < threshold * threshold) return true;
-      s.phase = 'active';
-      onGestureStartRef.current?.(s.ctx.draggedIds);
-      for (const b of behaviorsRef.current) b.onStart?.(s.ctx);
-    }
+    ctx.modifiers = moveArgs.modifiers;
+    ctx.pointer = { worldX: moveArgs.worldX, worldY: moveArgs.worldY, clientX: moveArgs.clientX, clientY: moveArgs.clientY };
 
-    const ctx = s.ctx;
-    ctx.modifiers = args.modifiers;
-    ctx.pointer = { worldX: args.worldX, worldY: args.worldY, clientX: args.clientX, clientY: args.clientY };
-
-    const dx = args.worldX - s.startWorld.x;
-    const dy = args.worldY - s.startWorld.y;
+    const dx = moveArgs.worldX - scratch.startWorld.x;
+    const dy = moveArgs.worldY - scratch.startWorld.y;
 
     const newPoses = new Map<string, TPose>();
     let snap: SnapTarget<TPose> | null = ctx.snap;
@@ -273,13 +181,13 @@ export function useMove<TObject extends { id: string }, TPose>(
 
     let overlayPoses = newPoses;
     let hideIds: string[] = ctx.draggedIds;
-    if (s.cascadeIds.length > 0) {
+    if (scratch.cascadeIds.length > 0) {
       overlayPoses = new Map(newPoses);
-      for (const id of s.cascadeIds) {
-        const origin = s.cascadeOriginWorld.get(id)!;
+      for (const id of scratch.cascadeIds) {
+        const origin = scratch.cascadeOriginWorld.get(id)!;
         overlayPoses.set(id, translatePose(origin, dx, dy));
       }
-      hideIds = [...ctx.draggedIds, ...s.cascadeIds];
+      hideIds = [...ctx.draggedIds, ...scratch.cascadeIds];
     }
 
     // --- Layout pass (additive — runs only when adapter exposes getLayout) ---
@@ -298,9 +206,6 @@ export function useMove<TObject extends { id: string }, TPose>(
 
     const getLayout = (adapter as { getLayout?: (id: string) => unknown }).getLayout;
     if (typeof getLayout === 'function') {
-      // Walk the parent chain from the deepest container under the pointer
-      // up to the root, picking the top-most layout-bearing container.
-      // We use bounding-box hit-test against every object that has a layout.
       const draggedId = ctx.draggedIds[0];
       const draggedPose = newPoses.get(draggedId)!;
       const sourceContainerId = adapter.getParent?.(draggedId) ?? null;
@@ -310,20 +215,10 @@ export function useMove<TObject extends { id: string }, TPose>(
         y: draggedRect.y + (draggedRect.height ?? 0) / 2,
       };
 
-      // Find the top-most container whose bounds contain the dragged center
-      // AND has a non-null layout AND is not the dragged object itself.
-      // Containment uses the layout strategy's optional `contains(pose, point)`
-      // when present, falling back to an AABB test on the container's pose.
-      // The AABB fallback assumes the pose is rect-shaped — when TPose isn't
-      // rect and `contains` is absent, the call is broken (status quo;
-      // tracked in docs/TODO.md for the non-rect TPose layout case).
       type Candidate = {
         id: string;
         bounds: { x: number; y: number; width: number; height: number };
         layout: Layout;
-        /** Path of (depth, sibling-index) from the root, used as the z-order
-         *  sort key. Deeper wins; ties broken by later sibling-index at the
-         *  shallowest differing level. */
         zPath: number[];
         depth: number;
       };
@@ -347,11 +242,6 @@ export function useMove<TObject extends { id: string }, TPose>(
       };
 
       if (typeof getChildren === 'function') {
-        // Z-order walk: array order IS z-order (last sibling = top).
-        // Recurse into containers, accumulating each visited id with its
-        // (depth, sibling-index) path. After collection, the deepest
-        // candidate wins; depth ties broken by lexicographic compare of
-        // zPath (later sibling at the shallowest differing level wins).
         const visited = new Set<string>();
         const walk = (parentId: string | null, parentPath: number[]) => {
           const childIds = getChildren.call(adapter, parentId) ?? [];
@@ -365,12 +255,6 @@ export function useMove<TObject extends { id: string }, TPose>(
           }
         };
         walk(null, []);
-        // Some adapters implement `getChildren` only for explicit container
-        // nodes and don't include root-parented siblings under
-        // `getChildren(null)`. Fall back to scanning `getObjects()` for any
-        // unvisited root (parent === null) ids and treating them as the
-        // continuation of root's sibling order, preserving iteration order
-        // as their z-index.
         const objs = adapter.getObjects();
         let rootIdx = (getChildren.call(adapter, null) ?? []).length;
         for (const obj of objs) {
@@ -382,17 +266,12 @@ export function useMove<TObject extends { id: string }, TPose>(
           walk(obj.id, path);
         }
       } else {
-        // Fallback: getObjects iteration order as a paint-order proxy.
-        // Last in iteration wins. Each candidate gets a synthetic flat zPath
-        // so the same picker logic works.
         const objs = adapter.getObjects();
         for (let i = 0; i < objs.length; i++) {
           considerCandidate(objs[i].id, [i]);
         }
       }
 
-      // Pick: deepest first, then later sibling-index at the shallowest
-      // differing level (lexicographic compare of zPath, descending).
       dest = null;
       for (const c of candidates) {
         if (dest === null) {
@@ -405,7 +284,6 @@ export function useMove<TObject extends { id: string }, TPose>(
           continue;
         }
         if (c.depth < cur.depth) continue;
-        // Same depth — compare zPath lexicographically; later wins.
         let cAfter = false;
         for (let i = 0; i < c.zPath.length; i++) {
           if (c.zPath[i] > cur.zPath[i]) { cAfter = true; break; }
@@ -417,9 +295,6 @@ export function useMove<TObject extends { id: string }, TPose>(
       if (dest) {
         const layout = dest.layout as Layout;
         const childIds = adapter.getChildren?.(dest.id) ?? [];
-        // Pass children INCLUDING dragged when same-container; layout
-        // strategies (tileGrid) need pre-drop indexing. Filter when cross-
-        // container — dragged isn't a child of dest yet.
         const children = childIds
           .filter((cid) => cid !== draggedId || sourceContainerId === dest!.id)
           .map((cid) => ({ id: cid, pose: adapter.getPose(cid) }));
@@ -430,13 +305,8 @@ export function useMove<TObject extends { id: string }, TPose>(
           sourceContainerId,
         };
         const targets = layout.getDropTargets({ id: dest.id, bounds: dest.bounds }, children, draggedArg);
-        const target: Target | null = layout.snap.pickTarget(targets, { x: args.worldX, y: args.worldY });
+        const target: Target | null = layout.snap.pickTarget(targets, { x: moveArgs.worldX, y: moveArgs.worldY });
         if (target === null) {
-          // A null target from the layout's snap policy is its signal "I don't
-          // accept here" — outside tolerance for snapPoint, no slot for tile
-          // strategies. Treat as not-accepted regardless of how many targets
-          // the strategy offered. Don't fall through to "drop anywhere"; that
-          // undermines snapPoint-with-tolerance and free-space contracts.
           accepted = false;
         } else {
           destContainerId = dest.id;
@@ -447,8 +317,6 @@ export function useMove<TObject extends { id: string }, TPose>(
             draggedArg,
             target,
           );
-          // Source reflow: if cross-container and the source has a layout,
-          // ask the source layout for the positions of its children minus dragged.
           if (sourceContainerId && sourceContainerId !== dest.id) {
             const srcLayout = (getLayout as (id: string) => unknown).call(
               adapter,
@@ -466,7 +334,6 @@ export function useMove<TObject extends { id: string }, TPose>(
                 { id: sourceContainerId, bounds: srcBounds },
                 srcChildren,
               );
-              // Only emit poses that differ from current.
               for (const [cid, newPose] of reflowed) {
                 const cur = adapter.getPose(cid) as unknown as Record<string, unknown>;
                 const next = newPose as unknown as Record<string, unknown>;
@@ -488,7 +355,7 @@ export function useMove<TObject extends { id: string }, TPose>(
       }
     }
 
-    stateRef.current.layoutPass = {
+    scratch.layoutPass = {
       destContainerId,
       accepted,
       layout: dest ? destLayout : null,
@@ -508,110 +375,199 @@ export function useMove<TObject extends { id: string }, TPose>(
       destContainerId,
       accepted,
     });
-    return true;
   }, []);
 
-  const end = useCallback(() => {
-    const s = stateRef.current;
-    const adapter = adapterRef.current;
-    const moveLabel = moveLabelRef.current;
-    const onGestureEnd = onGestureEndRef.current;
-    if (s.phase !== 'active' || !s.ctx) {
-      cleanup();
-      onGestureEnd?.(false);
-      return;
-    }
-    const ctx = s.ctx;
-
-    let ops: Op[] | null | undefined;
-    for (const b of behaviorsRef.current) {
-      const r = b.onEnd?.(ctx);
-      if (r === undefined) continue;
-      ops = r;
-      break;
-    }
-
-    if (ops === null) {
-      cleanup();
-      onGestureEnd?.(false);
-      return;
-    }
-
-    const layoutPass = stateRef.current.layoutPass;
-    if (
-      ops === undefined &&
-      layoutPass.layout &&
-      layoutPass.container &&
-      ctx.draggedIds.length === 1
-    ) {
-      type Layout = import('../../../layout/types').LayoutStrategy<TPose>;
-      type Target = import('../../../layout/types').DropTarget<TPose>;
-      const layout = layoutPass.layout as Layout;
-      const target = layoutPass.target as Target | null;
-      const draggedId = ctx.draggedIds[0];
-      const dropOps = layout.commitDrop(
-        layoutPass.container,
-        layoutPass.children,
-        {
-          id: draggedId,
-          originPose: ctx.origin.get(draggedId)!,
-          pose: ctx.current.get(draggedId)!,
-          sourceContainerId: adapter.getParent?.(draggedId) ?? null,
-        },
-        layoutPass.accepted ? target : null,
-      );
-      // Source-side reflow ops (cross-container case).
-      const sourceReflowOps: Op[] = [];
-      for (const [cid, newPose] of layoutPass.sourceReflowPositions) {
-        sourceReflowOps.push(
+  const gesture = useDragGesture<MoveScratch>({
+    initScratch: () => {
+      const args = pendingArgsRef.current!.args;
+      return {
+        ids: [],
+        ctx: null,
+        cascadeIds: [],
+        cascadeOriginWorld: new Map(),
+        layoutPass: makeEmptyLayoutPass(),
+        startWorld: { x: args.worldX, y: args.worldY },
+        startClient: { x: args.clientX, y: args.clientY },
+      };
+    },
+    thresholdReached: (ctx) => {
+      // Use `!(d² < t²)` rather than `d² >= t²` so NaN inputs (jsdom
+      // PointerEvent rarely propagates clientX/Y) activate immediately —
+      // matches the pre-wrapper move's NaN-tolerant comparison.
+      const dxs = ctx.current.clientX - ctx.start.clientX;
+      const dys = ctx.current.clientY - ctx.start.clientY;
+      const t = dragThresholdPxRef.current;
+      return !(dxs * dxs + dys * dys < t * t);
+    },
+    onStart: (ctx) => {
+      const adapter = adapterRef.current;
+      const cascadeWorldPose = cascadeWorldPoseRef.current;
+      const pending = pendingArgsRef.current!;
+      const args = pending.args;
+      const ids = pending.expandedIds;
+      ctx.scratch.ids = ids;
+      const origin = new Map<string, TPose>();
+      for (const id of ids) origin.set(id, adapter.getPose(id));
+      const cascadeIds: string[] = [];
+      const cascadeOriginWorld = new Map<string, TPose>();
+      if (cascadeWorldPose && adapter.getChildren) {
+        const draggedSet = new Set(ids);
+        const visited = new Set<string>(ids);
+        const queue: string[] = [...ids];
+        while (queue.length > 0) {
+          const next = queue.shift()!;
+          const children = adapter.getChildren(next);
+          if (!children) continue;
+          for (const childId of children) {
+            if (visited.has(childId)) continue;
+            visited.add(childId);
+            queue.push(childId);
+            if (draggedSet.has(childId)) continue;
+            const w = cascadeWorldPose(childId);
+            if (w === null) continue;
+            cascadeIds.push(childId);
+            cascadeOriginWorld.set(childId, w);
+          }
+        }
+      }
+      ctx.scratch.ctx = {
+        draggedIds: ids,
+        origin,
+        current: new Map(origin),
+        snap: null,
+        modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+        pointer: { worldX: args.worldX, worldY: args.worldY, clientX: args.clientX, clientY: args.clientY },
+        adapter,
+        scratch: {},
+      };
+      ctx.scratch.cascadeIds = cascadeIds;
+      ctx.scratch.cascadeOriginWorld = cascadeOriginWorld;
+      ctx.scratch.layoutPass = makeEmptyLayoutPass();
+    },
+    onActivate: (ctx) => {
+      if (!ctx.scratch.ctx) return;
+      onGestureStartRef.current?.(ctx.scratch.ctx.draggedIds);
+      for (const b of behaviorsRef.current) b.onStart?.(ctx.scratch.ctx);
+    },
+    onMove: (ctx) => {
+      if (!ctx.scratch.ctx) return;
+      if (ctx.phase !== 'active') return;
+      doMoveCompute(ctx.scratch, {
+        worldX: ctx.current.worldX,
+        worldY: ctx.current.worldY,
+        clientX: ctx.current.clientX,
+        clientY: ctx.current.clientY,
+        modifiers: ctx.modifiers,
+      });
+    },
+    onEnd: (ctx) => {
+      const adapter = adapterRef.current;
+      const moveLabel = moveLabelRef.current;
+      if (!ctx.scratch.ctx || ctx.wasSubThreshold) {
+        setOverlay(null);
+        return false;
+      }
+      const moveCtx = ctx.scratch.ctx;
+      let ops: Op[] | null | undefined;
+      for (const b of behaviorsRef.current) {
+        const r = b.onEnd?.(moveCtx);
+        if (r === undefined) continue;
+        ops = r;
+        break;
+      }
+      if (ops === null) {
+        setOverlay(null);
+        return false;
+      }
+      const layoutPass = ctx.scratch.layoutPass;
+      if (
+        ops === undefined &&
+        layoutPass.layout &&
+        layoutPass.container &&
+        moveCtx.draggedIds.length === 1
+      ) {
+        type Layout = import('../../../layout/types').LayoutStrategy<TPose>;
+        type Target = import('../../../layout/types').DropTarget<TPose>;
+        const layout = layoutPass.layout as Layout;
+        const target = layoutPass.target as Target | null;
+        const draggedId = moveCtx.draggedIds[0];
+        const dropOps = layout.commitDrop(
+          layoutPass.container,
+          layoutPass.children,
+          {
+            id: draggedId,
+            originPose: moveCtx.origin.get(draggedId)!,
+            pose: moveCtx.current.get(draggedId)!,
+            sourceContainerId: adapter.getParent?.(draggedId) ?? null,
+          },
+          layoutPass.accepted ? target : null,
+        );
+        const sourceReflowOps: Op[] = [];
+        for (const [cid, newPose] of layoutPass.sourceReflowPositions) {
+          sourceReflowOps.push(
+            createTransformOp<TPose>({
+              id: cid,
+              from: adapter.getPose(cid),
+              to: newPose,
+              label: 'Source reflow',
+            }),
+          );
+        }
+        ops = [...dropOps, ...sourceReflowOps];
+      }
+      if (ops === undefined) {
+        ops = moveCtx.draggedIds.map((id) =>
           createTransformOp<TPose>({
-            id: cid,
-            from: adapter.getPose(cid),
-            to: newPose,
-            label: 'Source reflow',
+            id,
+            from: moveCtx.origin.get(id)!,
+            to: moveCtx.current.get(id)!,
+            label: moveLabel,
           }),
         );
       }
-      ops = [...dropOps, ...sourceReflowOps];
-    }
+      if (ops.length > 0) {
+        dispatchApplyBatch(adapter, ops, ops[0].label ?? moveLabel);
+      }
+      setOverlay(null);
+      return true;
+    },
+    onCancel: () => {
+      setOverlay(null);
+    },
+    onGestureEnd: (committed) => {
+      onGestureEndRef.current?.(committed);
+    },
+  });
 
-    if (ops === undefined) {
-      ops = ctx.draggedIds.map((id) =>
-        createTransformOp<TPose>({
-          id,
-          from: ctx.origin.get(id)!,
-          to: ctx.current.get(id)!,
-          label: moveLabel,
-        }),
-      );
-    }
+  const start = useCallback((args: MoveStartArgs) => {
+    // Run expandIds once here so we can both early-return on [] (matching the
+    // pre-wrapper "no gesture" behavior) and reuse the result in onStart.
+    const expand = expandIdsRef.current;
+    const expandedIds = expand ? expand(args.ids) : args.ids;
+    if (expandedIds.length === 0) return;
+    pendingArgsRef.current = { args, expandedIds };
+    gesture.start(
+      { worldX: args.worldX, worldY: args.worldY, clientX: args.clientX, clientY: args.clientY },
+      { alt: false, shift: false, meta: false, ctrl: false },
+    );
+  }, [gesture]);
 
-    if (ops.length > 0) {
-      dispatchApplyBatch(adapter, ops, ops[0].label ?? moveLabel);
-    }
-    cleanup();
-    onGestureEnd?.(true);
-  }, [cleanup]);
+  const move = useCallback((args: MoveMoveArgs): boolean => {
+    return gesture.move(
+      { worldX: args.worldX, worldY: args.worldY, clientX: args.clientX, clientY: args.clientY },
+      args.modifiers,
+    );
+  }, [gesture]);
 
-  const cancel = useCallback(() => {
-    cleanup();
-    onGestureEndRef.current?.(false);
-  }, [cleanup]);
+  const isActive = useCallback(() => gesture.phase === 'active', [gesture]);
 
-  const isActive = useCallback(() => stateRef.current.phase === 'active', []);
-
-  // Stable controller identity: reuse the same object across renders so
-  // downstream consumers (notably `usePointerGestures`) don't rebuild their
-  // pointer-event bindings — that rebind during a drag drops the browser's
-  // implicit pointer capture and can race `lostpointercapture` ahead of
-  // `pointerup`. `overlay` is exposed as a getter so readers always see the
-  // current value despite the stable wrapper.
-  const overlayRef = useRef(overlay);
-  overlayRef.current = overlay;
-  const controller = useMemo<MoveController<TObject, TPose>>(() => ({
-    start, move, end, cancel, isActive,
+  return useMemo<MoveController<TObject, TPose>>(() => ({
+    start,
+    move,
+    end: gesture.end,
+    cancel: gesture.cancel,
+    isActive,
     get overlay() { return overlayRef.current; },
     get adapter() { return adapterRef.current; },
-  }), [start, move, end, cancel, isActive]);
-  return controller;
+  }), [start, move, gesture.end, gesture.cancel, isActive]);
 }
