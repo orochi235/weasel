@@ -133,6 +133,7 @@ export function useAreaSelect(
         collected = r;
         break;
       }
+      dragShiftHeldRef.current = false;
       if (collected === null) return false;
       if (collected === undefined || collected.length === 0) return false;
       const transient =
@@ -154,7 +155,6 @@ export function useAreaSelect(
     onGestureEnd,
   });
 
-  // Map dragRect overlay to AreaSelectOverlay.
   const overlayRef = useRef<AreaSelectOverlay | null>(null);
   overlayRef.current = dr.overlay
     ? {
