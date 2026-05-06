@@ -113,6 +113,44 @@ describe('useDragRect', () => {
     expect(onEnd).toHaveBeenCalledOnce();
   });
 
+  it('end with throwing onEnd still cleans up and fires onGestureEnd(false)', () => {
+    const onGestureEnd = vi.fn();
+    const { result } = renderHook(() =>
+      useDragRect({
+        onEnd: () => { throw new Error('boom'); },
+        onGestureEnd,
+      }),
+    );
+    act(() => result.current.start(0, 0, NO_MODS));
+    act(() => result.current.move(10, 10, NO_MODS));
+    expect(() => act(() => result.current.end())).toThrow('boom');
+    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    // Flush the pending setOverlay(null) queued in finally before the throw escaped.
+    act(() => { /* flush */ });
+    expect(result.current.overlay).toBeNull();
+    expect(result.current.isActive).toBe(false);
+  });
+
+  it('start while active replaces state silently (no onCancel, no onEnd)', () => {
+    const onCancel = vi.fn();
+    const onEnd = vi.fn();
+    const { result } = renderHook(() => useDragRect({ onCancel, onEnd }));
+    act(() => result.current.start(0, 0, NO_MODS));
+    act(() => result.current.start(50, 50, NO_MODS));
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(onEnd).not.toHaveBeenCalled();
+    expect(result.current.overlay?.start).toEqual({ x: 50, y: 50 });
+  });
+
+  it('cancel with no active gesture is a no-op except onGestureEnd(false)', () => {
+    const onCancel = vi.fn();
+    const onGestureEnd = vi.fn();
+    const { result } = renderHook(() => useDragRect({ onCancel, onGestureEnd }));
+    act(() => result.current.cancel());
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(onGestureEnd).toHaveBeenCalledWith(false);
+  });
+
   it('setStart and setCurrent mid-gesture update bounds and overlay', () => {
     const { result } = renderHook(() =>
       useDragRect({

@@ -89,6 +89,7 @@ export function useDragRect<TScratch = unknown>(
   }, []);
 
   const start = useCallback((worldX: number, worldY: number, modifiers: ModifierState) => {
+    // Restart while active replaces state silently — no onCancel/onEnd. Matches existing gesture-hook behavior; restart abandons in-flight scratch.
     const opts = optsRef.current;
     const init = opts.initScratch ? opts.initScratch() : ({} as TScratch);
     const p: DragRectPoint = { x: worldX, y: worldY };
@@ -137,15 +138,15 @@ export function useDragRect<TScratch = unknown>(
     endCtx.setStart = baseCtx.setStart;
     endCtx.setCurrent = baseCtx.setCurrent;
     (endCtx as { wasSubThreshold: boolean }).wasSubThreshold = wasSubThreshold;
-    let committed: boolean;
+    let committed = false;
     try {
       const r = opts.onEnd?.(endCtx);
       committed = r === false ? false : true;
     } finally {
       stateRef.current = null;
       setOverlay(null);
+      opts.onGestureEnd?.(committed);
     }
-    opts.onGestureEnd?.(committed);
   }, [buildCtx]);
 
   const cancel = useCallback(() => {
