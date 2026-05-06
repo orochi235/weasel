@@ -57,11 +57,11 @@ describe('useTools', () => {
       useTools({
         active: 'select',
         registry: { select: defineTool({ id: 'select' }) },
-        alwaysOn: [del, nudge],
+        ambient: [del, nudge],
       }),
     );
 
-    expect(result.current.alwaysOn.map((t) => t.id)).toEqual(['delete', 'nudge']);
+    expect(result.current.ambient.map((t) => t.id)).toEqual(['delete', 'nudge']);
   });
 
   it('explicit setActive cancels in-flight gesture', () => {
@@ -118,13 +118,13 @@ describe('ToolsApi.getActiveOverlays', () => {
     expect(result.current.getActiveOverlays()).toEqual([]);
   });
 
-  it('orders active, modifier, alwaysOn (in registration order)', () => {
+  it('orders active, modifier, ambient (in registration order)', () => {
     const a = defineTool({ id: 'a', overlay: mkLayer('a-ov') });
     const m = defineTool({ id: 'm', modifier: 'space', overlay: mkLayer('m-ov') });
     const w1 = defineTool({ id: 'w1', overlay: mkLayer('w1-ov') });
     const w2 = defineTool({ id: 'w2', overlay: mkLayer('w2-ov') });
     const { result, rerender } = renderHook(() =>
-      useTools({ active: 'a', registry: { a, m }, alwaysOn: [w1, w2] }),
+      useTools({ active: 'a', registry: { a, m }, ambient: [w1, w2] }),
     );
     act(() => { result.current.engageModifier('m'); });
     rerender();

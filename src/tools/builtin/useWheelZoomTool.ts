@@ -15,7 +15,7 @@ export interface WheelZoomToolOpts {
  * Cmd+wheel on macOS *and* trackpad pinch, which the browser synthesizes
  * as ctrl+wheel). Zoom anchors at the cursor; uses {@link zoomAt}.
  *
- * Register via `useTools({ alwaysOn: [useWheelZoomTool()] })`.
+ * Register via `useTools({ ambient: [useWheelZoomTool()] })`.
  */
 export function useWheelZoomTool(opts: WheelZoomToolOpts = {}): Tool<null> {
   const { min, max } = opts;

@@ -134,7 +134,7 @@ export interface Tool<TScratch = unknown> {
    *  `null` when no gesture is in flight. */
   previewIds?: () => Iterable<string> | null;
   /** Optional overlay layer rendered on top of the scene/chrome whenever
-   *  this tool is in any active slot (active, modifier, or alwaysOn).
+   *  this tool is in any active slot (active, modifier, or ambient).
    *  The layer's `draw` function reads from this tool's scratch via React
    *  closure (re-evaluated each render). Return early from `draw` to render
    *  nothing — typically gated on a scratch field like
@@ -143,7 +143,7 @@ export interface Tool<TScratch = unknown> {
 }
 
 /** Internal — which slot a tool occupies in the dispatch order. */
-export type ToolSlot = 'modifier' | 'active' | 'alwaysOn';
+export type ToolSlot = 'modifier' | 'active' | 'ambient';
 
 /** Internal alias for "a Tool of any scratch type" — used in registries and
  *  dispatchers that hold tools of heterogeneous scratch shapes. `any` is

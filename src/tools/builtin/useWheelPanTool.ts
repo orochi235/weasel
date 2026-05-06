@@ -8,7 +8,7 @@ import type { Tool } from '../types';
  * `(deltaX / view.scale, deltaY / view.scale)` so a one-screen-pixel scroll
  * pans the view by one screen pixel regardless of zoom.
  *
- * Register via `useTools({ alwaysOn: [useWheelPanTool()] })`.
+ * Register via `useTools({ ambient: [useWheelPanTool()] })`.
  */
 export function useWheelPanTool(): Tool<null> {
   return useMemo(

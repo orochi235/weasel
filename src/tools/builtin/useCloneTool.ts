@@ -71,7 +71,7 @@ export interface UseCloneToolOptions<T extends { id: string } = { id: string }, 
   cursor?: string;
 }
 
-/** Wraps `useClone` as a Tool record. The tool sits in the alwaysOn slot
+/** Wraps `useClone` as a Tool record. The tool sits in the ambient slot
  *  (or wherever the consumer puts it) and only claims pointerdowns when
  *  (a) one of the `behaviors` activates for the current modifiers and
  *  (b) `pickBest` finds a target. Encapsulates the overlay-state plumbing

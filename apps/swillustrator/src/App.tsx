@@ -217,7 +217,7 @@ export function App() {
   const tools = useTools({
     active: 'select',
     registry: { select, insert, hand, text, pen },
-    alwaysOn: [wheelZoom, wheelPan, keyZoom],
+    ambient: [wheelZoom, wheelPan, keyZoom],
   });
   useKeybindings(tools, { overrides: { v: 'select', V: 'select', r: 'insert', R: 'insert' } });
   useSelectAll({

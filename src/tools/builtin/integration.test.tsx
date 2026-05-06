@@ -167,7 +167,7 @@ describe('Phase 2a integration', () => {
       const tools = useTools({
         active: 'select',
         registry: { select: selectTool },
-        alwaysOn: [deleteTool],
+        ambient: [deleteTool],
       });
 
       return (
@@ -356,7 +356,7 @@ describe('Phase 2c: zoom + pan composition', () => {
     const tools = useTools({
       active: 'select',
       registry: { select, hand },
-      alwaysOn: [wheelZoom, wheelPan, keyZoom],
+      ambient: [wheelZoom, wheelPan, keyZoom],
     });
     useKeybindings(tools);
     return (

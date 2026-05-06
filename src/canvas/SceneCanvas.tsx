@@ -106,8 +106,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     /** Always-on tools to register alongside the internal default select.
      *  Use this for wheel/keyboard zoom + pan tools that should run alongside
      *  the default select. If you supply your own `tools` prop, this is
-     *  ignored — wire `alwaysOn` through your own `useTools` call instead. */
-    alwaysOn?: AnyTool[];
+     *  ignored — wire `ambient` through your own `useTools` call instead. */
+    ambient?: AnyTool[];
   };
 
 function SceneCanvasInner<TData, TLayer extends string, TPose>(
@@ -130,7 +130,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selection: selectionProp,
     selectionOptions,
     tools: toolsProp,
-    alwaysOn,
+    ambient,
     layers,
     ...rest
   } = props;
@@ -275,7 +275,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const internalTools = useTools({
     active: 'select',
     registry: { select: internalSelect },
-    ...(alwaysOn ? { alwaysOn } : {}),
+    ...(ambient ? { ambient } : {}),
   });
 
   const tools = toolsProp ?? internalTools;

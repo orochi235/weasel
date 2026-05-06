@@ -4,7 +4,7 @@ import type { AnyTool, ToolCtx, ToolSlot, Decision } from './types';
 interface SlotsState {
   modifier: AnyTool | null;
   active: AnyTool | null;
-  alwaysOn: AnyTool[];
+  ambient: AnyTool[];
 }
 
 export interface ToolsDispatcherOptions {
@@ -86,7 +86,7 @@ function dispatchOnce<E>(
   const order: { slot: ToolSlot; tool: AnyTool }[] = [];
   if (slots.modifier) order.push({ slot: 'modifier', tool: slots.modifier });
   if (slots.active) order.push({ slot: 'active', tool: slots.active });
-  for (const t of slots.alwaysOn) order.push({ slot: 'alwaysOn', tool: t });
+  for (const t of slots.ambient) order.push({ slot: 'ambient', tool: t });
 
   for (const { tool } of order) {
     const handler = pick(tool);
@@ -138,7 +138,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     const order: AnyTool[] = [];
     if (slots.modifier) order.push(slots.modifier);
     if (slots.active) order.push(slots.active);
-    for (const t of slots.alwaysOn) order.push(t);
+    for (const t of slots.ambient) order.push(t);
 
     for (const tool of order) {
       const handler = tool.pointer?.onDown;
@@ -163,7 +163,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     //    (the first in slot order with a drag or pointer.onClick handler)
     //    becomes the prospective gesture owner.
     let owner: AnyTool | null = null;
-    for (const t of [slots.modifier, slots.active, ...slots.alwaysOn].filter(Boolean) as AnyTool[]) {
+    for (const t of [slots.modifier, slots.active, ...slots.ambient].filter(Boolean) as AnyTool[]) {
       if (t.drag || t.pointer?.onClick) { owner = t; break; }
     }
     if (!owner) return;
@@ -230,13 +230,13 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
         const dy = e.clientY - lastTap.y;
         const dt = now() - lastTap.time;
         if (dt <= dblTapWindowMs && dx * dx + dy * dy <= dblTapMaxDistance * dblTapMaxDistance) {
-          // Walk slot order — modifier → active → alwaysOn — and fire the
+          // Walk slot order — modifier → active → ambient — and fire the
           // first tool whose dblTap.onTap returns 'claim'. Each tool gets a
           // fresh scratch (dblTap is not part of a drag pipeline).
           const order: AnyTool[] = [];
           if (slots.modifier) order.push(slots.modifier);
           if (slots.active) order.push(slots.active);
-          for (const t of slots.alwaysOn) order.push(t);
+          for (const t of slots.ambient) order.push(t);
           for (const tool of order) {
             const handler = tool.dblTap?.onTap;
             if (!handler) continue;

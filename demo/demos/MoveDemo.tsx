@@ -52,7 +52,7 @@ export function MoveDemo() {
       snap={gridSnapStrategy<Pose>(CELL, UNITS)}
       view={view}
       onViewChange={setView}
-      alwaysOn={[hand, wheelZoom, wheelPan, keyZoom]}
+      ambient={[hand, wheelZoom, wheelPan, keyZoom]}
       layers={{
         grid: {
           spacing: CELL,
@@ -75,7 +75,7 @@ export function MoveDemo() {
 export const MOVE_DEMO_SOURCE = `// Scene primitive owns nodes/poses/parenting and auto-records ops on every
 // mutation. SceneCanvas synthesizes the adapter + internal select tool from
 // the scene; consumers just describe their data and how to draw it. Wheel/
-// keyboard zoom + pan tools come along via the alwaysOn passthrough.
+// keyboard zoom + pan tools come along via the ambient passthrough.
 
 const scene = useScene<NodeData, 'default', Pose>({
   systemLayers: [{ id: 'default' }],
@@ -102,7 +102,7 @@ return (
     snap={gridSnapStrategy<Pose>(CELL, UNITS)}
     view={view}
     onViewChange={setView}
-    alwaysOn={[hand, wheelZoom, wheelPan, keyZoom]}
+    ambient={[hand, wheelZoom, wheelPan, keyZoom]}
     layers={{
       grid: { spacing: CELL, unitSystem: UNITS, bounds: () => ({ x: 0, y: 0, width: W, height: H }), accentEvery: 5 },
       scene: {
@@ -114,5 +114,5 @@ return (
 );
 // SceneCanvas wires the adapter, default pickEvery (renderOrder hit), default
 // drawGhost (reuses scene.drawOne), and undo/redo via scene.batch(). The
-// alwaysOn list runs alongside the internal default select tool.
+// ambient list runs alongside the internal default select tool.
 `;

@@ -15,7 +15,7 @@ export interface KeyboardZoomToolOpts {
  * (reset). Anchors zoom at the canvas center. Treats `metaKey` and
  * `ctrlKey` interchangeably for cross-platform support.
  *
- * Register via `useTools({ alwaysOn: [useKeyboardZoomTool()] })`.
+ * Register via `useTools({ ambient: [useKeyboardZoomTool()] })`.
  */
 export function useKeyboardZoomTool(opts: KeyboardZoomToolOpts = {}): Tool<null> {
   const { min, max } = opts;

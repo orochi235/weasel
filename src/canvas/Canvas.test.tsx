@@ -518,9 +518,9 @@ describe('Canvas tools mode', () => {
   });
 
   describe('legacy-hook dedupe', () => {
-    it('suppresses legacy delete keybinding when "delete" Tool is in alwaysOn', () => {
+    it('suppresses legacy delete keybinding when "delete" Tool is in ambient', () => {
       // The legacy useDelete hook attaches its own document keydown handler
-      // when bindKeyboard is true. With a 'delete' Tool in alwaysOn, Canvas
+      // when bindKeyboard is true. With a 'delete' Tool in ambient, Canvas
       // must pass bindKeyboard:false so the legacy handler never fires.
       const legacyApplyOps = vi.fn();
 
@@ -536,7 +536,7 @@ describe('Canvas tools mode', () => {
         const tools = useTools({
           active: 'active',
           registry: { active: activeTool },
-          alwaysOn: [delTool],
+          ambient: [delTool],
         });
         return (
           <Canvas
@@ -619,7 +619,7 @@ describe('Canvas tools mode', () => {
       expect(toolIdx).toBeGreaterThan(customIdx);
     });
 
-    it('tools.has() returns true for ids in registry and alwaysOn', () => {
+    it('tools.has() returns true for ids in registry and ambient', () => {
       let capturedHas: ((id: string) => boolean) | undefined;
 
       function Test() {
@@ -628,7 +628,7 @@ describe('Canvas tools mode', () => {
         const tools = useTools({
           active: 'select',
           registry: { select: active },
-          alwaysOn: [always],
+          ambient: [always],
         });
         capturedHas = tools.has.bind(tools);
         return <Canvas width={50} height={50} layers={{}} tools={tools} />;

@@ -28,7 +28,7 @@ const hand      = useHandTool();
 const tools = useTools({
   active: 'select',
   registry: { select, hand },
-  alwaysOn: [wheelZoom, wheelPan, keyZoom],
+  ambient: [wheelZoom, wheelPan, keyZoom],
 });
 useKeybindings(tools);
 
@@ -82,7 +82,7 @@ export function ZoomDemo() {
   const tools = useTools({
     active: 'select',
     registry: { select, hand },
-    alwaysOn: [wheelZoom, wheelPan, keyZoom],
+    ambient: [wheelZoom, wheelPan, keyZoom],
   });
   useKeybindings(tools);
 
