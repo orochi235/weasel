@@ -46,7 +46,7 @@ describe('useDragRect', () => {
     expect(result.current.overlay!.bounds).toEqual({ x: 20, y: 10, width: 30, height: 40 });
   });
 
-  it('end fires onEnd with wasSubThreshold flag and onGestureEnd(committed)', () => {
+  it('end fires onEnd with isSubThreshold flag and onGestureEnd(committed)', () => {
     const onEnd = vi.fn((_ctx: DragRectEndCtx) => true);
     const onGestureEnd = vi.fn();
     const { result } = renderHook(() =>
@@ -58,7 +58,7 @@ describe('useDragRect', () => {
     expect(onEnd).toHaveBeenCalledOnce();
     const ctx = onEnd.mock.calls[0][0];
     expect(ctx.bounds).toEqual({ x: 10, y: 10, width: 2, height: 2 });
-    expect(ctx.wasSubThreshold).toBe(true);
+    expect(ctx.isSubThreshold).toBe(true);
     expect(onGestureEnd).toHaveBeenCalledWith(true);
     expect(result.current.overlay).toBeNull();
     expect(result.current.isActive).toBe(false);
@@ -166,5 +166,22 @@ describe('useDragRect', () => {
       current: { x: 30, y: 30 },
       bounds: { x: 5, y: 5, width: 25, height: 25 },
     });
+  });
+
+  it('restart while active replaces state silently — no onCancel/onEnd/onGestureEnd', () => {
+    const onCancel = vi.fn();
+    const onEnd = vi.fn();
+    const onGestureEnd = vi.fn();
+    const onStart = vi.fn();
+    const { result } = renderHook(() =>
+      useDragRect({ onCancel, onEnd, onGestureEnd, onStart }),
+    );
+    act(() => result.current.start(0, 0, NO_MODS));
+    act(() => result.current.start(50, 50, NO_MODS));
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(onEnd).not.toHaveBeenCalled();
+    expect(onGestureEnd).not.toHaveBeenCalled();
+    expect(onStart).toHaveBeenCalledTimes(2);
+    expect(result.current.overlay!.start).toEqual({ x: 50, y: 50 });
   });
 });

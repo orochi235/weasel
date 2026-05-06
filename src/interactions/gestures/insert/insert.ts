@@ -149,7 +149,7 @@ export function useInsert<TObject extends { id: string }, TPose>(
         if (applyBatchOverride) applyBatchOverride(ops, insertLabel);
         else dispatchApplyBatch(adapter, ops, insertLabel);
       };
-      if (clickOnly || ctx.wasSubThreshold) {
+      if (clickOnly || ctx.isSubThreshold) {
         if (pointInsert) {
           const created = pointInsert({ x: ctx.start.x, y: ctx.start.y });
           if (created) {

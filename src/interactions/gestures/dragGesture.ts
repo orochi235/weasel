@@ -146,7 +146,7 @@ export function useDragGesture<TScratch = unknown>(
       bumpPhase('idle');
       opts.onGestureEnd?.(committed);
     }
-  }, [buildCtx, bumpPhase]);
+  }, [bumpPhase]);
 
   const cancel = useCallback(() => {
     const s = stateRef.current;
