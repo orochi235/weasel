@@ -9,7 +9,7 @@
  *     `screenToWorld`, `fitZoom`, `useCanvasSize`, pixel-density helpers,
  *     `useZoom`, `useAutoCenter`, `zoomAt`,
  *     `wheelHandler`.
- *   - Layer composition: `RenderLayer`, `runLayers`, `LayerRenderer`,
+ *   - Layer composition: `RenderLayer`, `drawLayers`, `LayerRenderer`,
  *     `createGridLayer`, `createCellHighlightLayer`, `createChildrenLayer`,
  *     `createSelectionOverlayLayer` and friends, `createTextLayer`,
  *     `createTilePattern`, `applyPaint` / `applyStroke`.

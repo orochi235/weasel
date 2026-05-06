@@ -21,7 +21,7 @@ import type { Op } from '../core/ops/types';
 import { dispatchApplyBatch } from '../core/applyOps';
 import type { View } from '../features/viewport/view';
 import { clampView } from '../features/viewport/clampView';
-import { runLayers, type RenderLayer } from '../core/layers/render';
+import { drawLayers, type RenderLayer } from '../core/layers/render';
 import { setupCanvasDpr } from '../features/viewport/pixelDensity';
 import {
   useSelection,
@@ -1030,7 +1030,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       ctx.fillRect(0, 0, width, height);
       ctx.restore();
     }
-    runLayers(ctx, layersWithDebug, helpersForLayers, {}, undefined, effectiveView);
+    drawLayers(ctx, layersWithDebug, helpersForLayers, {}, undefined, effectiveView);
   }, [layersWithDebug, width, height, background, effectiveView, debugSink]);
 
   const toolsCursor = tools ? resolveToolsCursor(tools, toolsCtxBase) : undefined;
