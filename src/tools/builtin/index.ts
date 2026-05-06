@@ -4,6 +4,11 @@ export { useUndoRedoTool, type UseUndoRedoToolOptions } from './useUndoRedoTool'
 export { useDuplicateTool, type UseDuplicateToolOptions } from './useDuplicateTool';
 export { useInsertTool, type UseInsertToolOptions } from './useInsertTool';
 export {
+  defineDragInsertTool,
+  type DragInsertToolConfig,
+  type DragInsertToolResult,
+} from './defineDragInsertTool';
+export {
   useSelectTool,
   type UseSelectToolOptions,
   type AreaSelectOverlayStyle,
