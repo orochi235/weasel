@@ -154,6 +154,38 @@ describe('useSelectTool', () => {
     expect(clear).not.toHaveBeenCalled();
   });
 
+  it('clicking a member of a multi-selection without modifier defers the collapse to onClick (so a drag moves the whole set)', () => {
+    const applyClick = vi.fn();
+    const ctx = ctxOver({
+      selection: { current: ['a', 'b', 'c'], applyClick, set: vi.fn(), clear: vi.fn() } as any,
+    });
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        pickEvery: () => ['a'],
+        boundsOf: () => null,
+      }),
+    );
+    result.current.pointer!.onDown!(pe(), ctx);
+    expect(applyClick).not.toHaveBeenCalled();
+    expect(ctx.scratch).toEqual({ kind: 'move', ids: ['a', 'b', 'c'], deferredClickId: 'a' });
+  });
+
+  it('sub-threshold release on a deferred multi-click collapses to the clicked id', () => {
+    const applyClick = vi.fn();
+    const ctx = ctxOver({
+      selection: { current: ['a', 'b', 'c'], applyClick, set: vi.fn(), clear: vi.fn() } as any,
+    });
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        pickEvery: () => ['a'],
+        boundsOf: () => null,
+      }),
+    );
+    result.current.pointer!.onDown!(pe(), ctx);
+    result.current.pointer!.onClick!(pe(), ctx);
+    expect(applyClick).toHaveBeenCalledWith('a', ctx.modifiers);
+  });
+
   it('pickBest (when supplied) replaces pickEvery+pickTopMostHit on body branch', () => {
     const pickBest = vi.fn(() => 'group-1');
     const applyClick = vi.fn();
@@ -170,7 +202,7 @@ describe('useSelectTool', () => {
     result.current.pointer!.onDown!(pe(), ctx);
     expect(pickBest).toHaveBeenCalledWith(50, 50, false, []);
     expect(applyClick).toHaveBeenCalledWith('group-1', ctx.modifiers);
-    expect(ctx.scratch).toEqual(expect.objectContaining({ kind: 'move', ids: ['group-1'] }));
+    expect(ctx.scratch).toEqual(expect.objectContaining({ kind: 'move', ids: ['group-1'], deferredClickId: null }));
   });
 
   it('pickBest returning null falls through to area-select', () => {
@@ -268,7 +300,7 @@ describe('useSelectTool', () => {
   it('drag.onStart after body-hit routes to move controller (claims)', () => {
     const ctx = ctxOver({
       selection: { current: ['hit-id'], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
-      scratch: { kind: 'move', ids: ['hit-id'] },
+      scratch: { kind: 'move', ids: ['hit-id'], deferredClickId: null },
     });
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
@@ -337,7 +369,7 @@ describe('useSelectTool', () => {
       }),
     );
     for (const scratch of [
-      { kind: 'move', ids: ['a'] },
+      { kind: 'move', ids: ['a'], deferredClickId: null },
       { kind: 'area' },
     ] as SelectScratch[]) {
       const ctx = ctxOver({ scratch });
@@ -483,9 +515,9 @@ describe('useSelectTool overlay', () => {
     );
     act(() => {
       // start a move with two ids; need to push past drag threshold (4px default)
-      const c1 = ctxOver({ scratch: { kind: 'move', ids: ['a', 'b'] }, worldX: 0, worldY: 0 });
+      const c1 = ctxOver({ scratch: { kind: 'move', ids: ['a', 'b'], deferredClickId: null }, worldX: 0, worldY: 0 });
       result.current.drag!.onStart!(pe({ clientX: 0, clientY: 0 }), c1);
-      const c2 = ctxOver({ scratch: { kind: 'move', ids: ['a', 'b'] }, worldX: 20, worldY: 20 });
+      const c2 = ctxOver({ scratch: { kind: 'move', ids: ['a', 'b'], deferredClickId: null }, worldX: 20, worldY: 20 });
       result.current.drag!.onMove!(pe({ clientX: 50, clientY: 50 }), c2);
     });
     const ctx = ctxStub();
@@ -507,11 +539,11 @@ describe('useSelectTool overlay', () => {
     act(() => {
       result.current.drag!.onStart!(
         pe({ clientX: 0, clientY: 0 }),
-        ctxOver({ scratch: { kind: 'move', ids: ['a'] }, worldX: 0, worldY: 0 }),
+        ctxOver({ scratch: { kind: 'move', ids: ['a'], deferredClickId: null }, worldX: 0, worldY: 0 }),
       );
       result.current.drag!.onMove!(
         pe({ clientX: 50, clientY: 50 }),
-        ctxOver({ scratch: { kind: 'move', ids: ['a'] }, worldX: 20, worldY: 20 }),
+        ctxOver({ scratch: { kind: 'move', ids: ['a'], deferredClickId: null }, worldX: 20, worldY: 20 }),
       );
     });
     const ctx = ctxStub();
@@ -593,11 +625,11 @@ describe('useSelectTool overlay', () => {
     act(() => {
       result.current.drag!.onStart!(
         pe({ clientX: 0, clientY: 0 }),
-        ctxOver({ scratch: { kind: 'move', ids: ['a'] }, worldX: 0, worldY: 0 }),
+        ctxOver({ scratch: { kind: 'move', ids: ['a'], deferredClickId: null }, worldX: 0, worldY: 0 }),
       );
       result.current.drag!.onMove!(
         pe({ clientX: 50, clientY: 50 }),
-        ctxOver({ scratch: { kind: 'move', ids: ['a'] }, worldX: 20, worldY: 20 }),
+        ctxOver({ scratch: { kind: 'move', ids: ['a'], deferredClickId: null }, worldX: 20, worldY: 20 }),
       );
     });
     const ctx = ctxStub();

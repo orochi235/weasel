@@ -144,7 +144,7 @@ type SelectAdapter<TObject extends { id: string }, TPose> =
 
 export type SelectScratch =
   | { kind: 'idle' }
-  | { kind: 'move'; ids: string[] }
+  | { kind: 'move'; ids: string[]; deferredClickId: string | null }
   | { kind: 'resize'; targetId: string; anchor: ResizeAnchor }
   | { kind: 'rotate'; targetId: string }
   | { kind: 'area' };
@@ -445,13 +445,19 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
               // applyClick during this same callback.
               const preClick = sel;
               const hitAlreadySelected = preClick.includes(top);
-              ctx.selection.applyClick(top, ctx.modifiers);
+              const isExtend = ctx.modifiers.shift || ctx.modifiers.meta;
+              // When the hit is already part of a multi-selection and no
+              // extend modifier is held, defer the collapse-to-single to
+              // onClick. Otherwise applying it on down would wipe the
+              // multi-selection before a drag can move the whole set.
+              const deferClick = hitAlreadySelected && preClick.length > 1 && !isExtend;
+              if (!deferClick) ctx.selection.applyClick(top, ctx.modifiers);
               // If the user clicked something already selected, drag the whole
               // selection. Otherwise the click switches selection and the drag
               // moves only the clicked object — matches Figma/Sketch behavior
               // ("dragging an unselected object shouldn't move the old one").
               const moveIds = hitAlreadySelected && preClick.length > 0 ? preClick : [top];
-              ctx.scratch = { kind: 'move', ids: moveIds };
+              ctx.scratch = { kind: 'move', ids: moveIds, deferredClickId: deferClick ? top : null };
               return 'claim';
             }
 
@@ -467,12 +473,13 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
           },
 
           onClick: (_e, ctx) => {
-            // Sub-threshold release: only the empty-hit (`area`) path needs
-            // commit-time work. Body/handle clicks already mutated selection
-            // in onDown via applyClick, so a sub-threshold release on them
-            // is a no-op here.
+            // Sub-threshold release: empty-hit clears, and a body hit on an
+            // already-selected member of a multi-selection collapses to that
+            // single id (deferred from onDown so a drag could move the set).
             if (ctx.scratch.kind === 'area' && !ctx.modifiers.shift && !ctx.modifiers.meta) {
               ctx.selection.clear();
+            } else if (ctx.scratch.kind === 'move' && ctx.scratch.deferredClickId) {
+              ctx.selection.applyClick(ctx.scratch.deferredClickId, ctx.modifiers);
             }
             return 'claim';
           },
