@@ -1,22 +1,15 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import {
-  Canvas,
   gridSnapStrategy,
-  snap as snapBehavior,
-  useSelection,
-  useSelectTool,
-  useTools,
+  SceneCanvas,
+  useScene,
 } from '@orochi235/weasel';
 import type {
-  MoveAdapter,
-  ResizeAdapter,
-  AreaSelectAdapter,
   DebugConfig,
   DebugFeature,
 } from '@orochi235/weasel';
 
 interface Box { id: string; x: number; y: number; width: number; height: number; color: string }
-type Pose = { x: number; y: number; width: number; height: number };
 
 const W = 520, H = 320, HANDLE = 8;
 
@@ -48,9 +41,7 @@ const chip = (active: boolean): React.CSSProperties => ({
 });
 
 export function DebugOverlayDemo() {
-  const [boxes, setBoxes] = useState<Box[]>(INITIAL);
-  const boxesRef = useRef(boxes);
-  boxesRef.current = boxes;
+  const scene = useScene<Box>({ items: INITIAL });
 
   const [enabled, setEnabled] = useState<Record<DebugFeature, boolean>>({
     bounds: true, origins: true, hitboxes: false,
@@ -69,46 +60,6 @@ export function DebugOverlayDemo() {
     enabled.handles || enabled.snap || enabled.layers
   ) ? enabled : false;
 
-  const selection = useSelection();
-
-  const adapter: MoveAdapter<Box, Pose> & ResizeAdapter<Box, Pose> & AreaSelectAdapter = {
-    getObject: (id) => boxesRef.current.find((b) => b.id === id),
-    getObjects: () => boxesRef.current,
-    getPose: (id) => {
-      const b = boxesRef.current.find((x) => x.id === id);
-      if (!b) throw new Error(`no box: ${id}`);
-      return { x: b.x, y: b.y, width: b.width, height: b.height };
-    },
-    setPose: (id, p) => {
-      setBoxes((bs) => bs.map((b) => (b.id === id ? { ...b, ...p } : b)));
-    },
-    hitTestArea: (r) =>
-      boxesRef.current
-        .filter((o) => o.x < r.x + r.width && o.x + o.width > r.x && o.y < r.y + r.height && o.y + o.height > r.y)
-        .map((o) => o.id),
-    ...selection.adapterMethods,
-  };
-
-  const select = useSelectTool<Box, Pose>(adapter, {
-    pickEvery: (wx, wy) =>
-      boxesRef.current
-        .filter((b) => wx >= b.x && wx <= b.x + b.width && wy >= b.y && wy <= b.y + b.height)
-        .map((b) => b.id),
-    boundsOf: (id) => {
-      const b = boxesRef.current.find((x) => x.id === id);
-      return b ? { x: b.x, y: b.y, width: b.width, height: b.height } : null;
-    },
-    handleHitRadius: HANDLE,
-    move: { behaviors: [snapBehavior(gridSnapStrategy<Pose>(20))] },
-    drawGhost: (cx, b, p) => {
-      if (!b) return;
-      cx.fillStyle = b.color;
-      cx.fillRect(p.x, p.y, p.width, p.height);
-    },
-    getObject: (id) => boxesRef.current.find((b) => b.id === id) ?? null,
-  });
-  const tools = useTools({ active: 'select', registry: { select } });
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
@@ -125,18 +76,18 @@ export function DebugOverlayDemo() {
         <button style={btn} onClick={allOn}>all on</button>
         <button style={btn} onClick={allOff}>all off</button>
       </div>
-      <Canvas
+      <SceneCanvas
         width={W}
         height={H}
         className="ckd-canvas"
-        adapter={adapter}
-        selection={selection}
-        tools={tools}
+        scene={scene}
+        handleHitRadius={HANDLE}
+        snap={gridSnapStrategy<Box>(20)}
         debug={debug}
         layers={{
           scene: {
-            drawOne: (cx, b: Box, p: Pose) => {
-              cx.fillStyle = b.color;
+            drawOne: (cx, _node, p) => {
+              cx.fillStyle = p.color;
               cx.fillRect(p.x, p.y, p.width, p.height);
             },
           },
@@ -152,7 +103,7 @@ export function DebugOverlayDemo() {
   );
 }
 
-export const DEBUG_OVERLAY_DEMO_SOURCE = `// Pass a DebugConfig (or true / 'all') to <Canvas debug={...}> and the
+export const DEBUG_OVERLAY_DEMO_SOURCE = `// Pass a DebugConfig (or true / 'all') to <SceneCanvas debug={...}> and the
 // kit appends a screen-space overlay layer that paints what the
 // interaction system "sees": bounds, pose origins, hitboxes, handle
 // positions, snap candidates, and layer metadata.
@@ -169,13 +120,13 @@ const debug: DebugConfig = {
   layers: true,
 };
 
-<Canvas
-  adapter={adapter}
+<SceneCanvas
+  scene={scene}
   debug={debug}              // <-- this is the whole opt-in
   snap={gridSnapStrategy(20)}
   layers={{ scene: { drawOne }, selectionOverlay: { handles: true } }}
 />;
 
 // You can also leave \`debug\` undefined and append \`?debug=all\` (or
-// \`?debug=bounds,handles\`) to the URL — Canvas reads the flag from
+// \`?debug=bounds,handles\`) to the URL — SceneCanvas reads the flag from
 // location.search as a fallback.`;
