@@ -134,7 +134,6 @@ export function useMove<TObject extends { id: string }, TPose>(
     cascadeOriginWorld: Map<string, TPose>;
     layoutPass: LayoutPass;
     startWorld: { x: number; y: number };
-    startClient: { x: number; y: number };
   }
 
   const [overlay, setOverlay] = useState<MoveOverlay<TPose> | null>(null);
@@ -387,7 +386,6 @@ export function useMove<TObject extends { id: string }, TPose>(
         cascadeOriginWorld: new Map(),
         layoutPass: makeEmptyLayoutPass(),
         startWorld: { x: args.worldX, y: args.worldY },
-        startClient: { x: args.clientX, y: args.clientY },
       };
     },
     thresholdReached: (ctx) => {
@@ -443,6 +441,7 @@ export function useMove<TObject extends { id: string }, TPose>(
       ctx.scratch.cascadeIds = cascadeIds;
       ctx.scratch.cascadeOriginWorld = cascadeOriginWorld;
       ctx.scratch.layoutPass = makeEmptyLayoutPass();
+      pendingArgsRef.current = null;
     },
     onActivate: (ctx) => {
       if (!ctx.scratch.ctx) return;
@@ -451,6 +450,7 @@ export function useMove<TObject extends { id: string }, TPose>(
     },
     onMove: (ctx) => {
       if (!ctx.scratch.ctx) return;
+      // Skip pre-threshold pending moves; doMoveCompute requires post-activation ctx.
       if (ctx.phase !== 'active') return;
       doMoveCompute(ctx.scratch, {
         worldX: ctx.current.worldX,
