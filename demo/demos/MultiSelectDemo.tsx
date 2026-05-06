@@ -54,7 +54,7 @@ export function MultiSelectDemo() {
     return { x: p.x, y: p.y, width: p.width, height: p.height };
   };
 
-  const select = useSelectTool(selectAdapter, { pickEvery, boundsOf });
+  const select = useSelectTool(selectAdapter, { pickEvery, boundsOf, getSelection: () => selection.current });
   const tools = useTools({ active: 'select', registry: { select } });
 
   return (
@@ -91,7 +91,7 @@ const selection = useSelection({ mode: 'multi' });
 // (selection get/set, applyOps, pose-based hitTestArea) wired from the
 // selection arg. No bespoke marquee glue required.
 const selectAdapter = sceneToAdapter(scene, { selection });
-const select = useSelectTool(selectAdapter, { pickEvery, boundsOf });
+const select = useSelectTool(selectAdapter, { pickEvery, boundsOf, getSelection: () => selection.current });
 const tools = useTools({ active: 'select', registry: { select } });
 
 // selectionMode="multi" turns on shift-click extend, draws a single union

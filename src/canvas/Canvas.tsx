@@ -54,6 +54,7 @@ import type { DebugConfig, DebugSink, DebugSnapshot } from '../debug/types';
 import { parseDebugFlags } from '../debug/parseDebugFlags';
 import { createDebugSink } from '../debug/createDebugSink';
 import { createDebugOverlayLayer } from '../debug/createDebugOverlayLayer';
+import { MULTI_RESIZE_TARGET_ID } from '../tools/builtin/useSelectTool';
 
 interface Bounds {
   x: number;
@@ -153,7 +154,6 @@ export type LayersMap<TObject extends { id: string }, TPose> = {
  */
 export type CanvasSelectionMode = 'single' | 'multi' | 'none';
 
-const MULTI_RESIZE_TARGET_ID = '__weasel:multi-selection';
 
 /** Props for the top-level `<Canvas>` component — combines viewport, scene, gesture controllers, and slot overrides. */
 export interface CanvasProps<TObject extends { id: string } = { id: string }, TPose = unknown> {
@@ -699,39 +699,15 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   const selectedIdsForWiring = effectiveSelection.current;
   const multiActive = selectionMode === 'multi' && selectedIdsForWiring.length > 1;
 
-  const unionOfSelection = useCallback(
-    (ids: string[]): Bounds | null => {
-      if (!baseBoundsOf || ids.length === 0) return null;
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      let any = false;
-      for (const id of ids) {
-        const b = baseBoundsOf(id);
-        if (!b) continue;
-        any = true;
-        if (b.x < minX) minX = b.x;
-        if (b.y < minY) minY = b.y;
-        if (b.x + b.width > maxX) maxX = b.x + b.width;
-        if (b.y + b.height > maxY) maxY = b.y + b.height;
-      }
-      if (!any) return null;
-      return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-    },
-    [baseBoundsOf],
-  );
-
-  // boundsOf: when the queried id is the synthetic multi-selection id, return
-  // the union of selected bounds. For real ids fall through to the base
-  // resolver.
+  // boundsOf: pass-through for real ids. The synthetic multi-selection id is
+  // resolved by the active tool's `peekBounds` (see `useSelectTool`'s
+  // `MULTI_RESIZE_TARGET_ID` branch) — Canvas no longer special-cases it
+  // inline. For overlays that read bounds outside a tool gesture, the
+  // selection-overlay path below routes through `peekToolBounds` which surfaces
+  // the tool's union synthesis.
   const effectiveBoundsOf = useMemo(() => {
-    if (boundsOf) return boundsOf;
-    if (!baseBoundsOf) return undefined;
-    return (id: string): Bounds | null => {
-      if (multiActive && id === MULTI_RESIZE_TARGET_ID) {
-        return unionOfSelection(selectedIdsForWiring);
-      }
-      return baseBoundsOf(id);
-    };
-  }, [boundsOf, baseBoundsOf, multiActive, selectedIdsForWiring, unionOfSelection]);
+    return boundsOf ?? baseBoundsOf;
+  }, [boundsOf, baseBoundsOf]);
 
   // helpersForLayers: overlay-aware lookups passed to every RenderLayer.draw
   // call (as the `data` arg) so custom layers can read live overlay state
@@ -920,14 +896,16 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       const poseById =
         cfg.poseById ??
         ((id: string): TPose | null => {
-          if (multiActive && id === MULTI_RESIZE_TARGET_ID) {
-            const u = unionOfSelection(selectedIds);
-            return u ? (u as unknown as TPose) : null;
-          }
           // Active tool's overlay (move/resize/rotate ghost) wins so the
           // selection chrome tracks the in-flight pose during a drag.
           const tp = peekToolPose(id);
           if (tp != null) return tp;
+          // Tool-supplied bounds (e.g. `useSelectTool`'s multi-union for
+          // `MULTI_RESIZE_TARGET_ID`) are pre-projected Bounds; the overlay's
+          // `getBounds` (below) short-circuits the rect-as-TPose case via
+          // the `multiActive` flag.
+          const tb = peekToolBounds(id);
+          if (tb != null) return tb as unknown as TPose;
           if (!adapter) {
             if (effectiveBoundsOf) {
               const b = effectiveBoundsOf(id);
@@ -994,7 +972,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       out.push(...tools.getActiveOverlays());
     }
     return out;
-  }, [layersMap, adapter, selectedIds, effectiveBoundsOf, multiActive, unionOfSelection, debugSink, tools]);
+  }, [layersMap, adapter, selectedIds, effectiveBoundsOf, multiActive, debugSink, tools]);
 
   // Append the debug overlay layer at the very top of the stack when debug
   // is enabled. The layer reads from `debugSink.snapshot()` and paints in

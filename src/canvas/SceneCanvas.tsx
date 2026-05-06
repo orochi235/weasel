@@ -281,6 +281,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ...(rotateOptions ? { rotate: rotateOptions } : {}),
     ...(drawGhost ? { drawGhost } : {}),
     getObject: (id: string) => scene.get(asNodeId(id)) ?? null,
+    // Live selection getter so the tool's `peekBounds` can synthesize the
+    // `MULTI_RESIZE_TARGET_ID` union for `selectionMode="multi"`.
+    getSelection: () => selection.current,
   });
   const internalTools = useTools({
     active: 'select',
