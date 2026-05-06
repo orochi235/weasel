@@ -58,7 +58,7 @@ export function ComposeDemo() {
     return { x: p.x, y: p.y, width: p.width, height: p.height };
   };
 
-  const select = useSelectTool(selectAdapter, { pickEvery, boundsOf });
+  const select = useSelectTool(selectAdapter, { pickEvery, boundsOf, getSelection: () => selection.current });
 
   // Insert-tool adapter: only commitInsert is exercised; the rest are stubs.
   // commitInsert appends a leaf to the scene and returns the rect so the
@@ -141,7 +141,7 @@ const nextId = useRef(1);
 // (selection get/set, applyOps, pose-based hitTestArea) wired from the
 // selection arg. No bespoke marquee glue required.
 const selectAdapter = sceneToAdapter(scene, { selection });
-const select = useSelectTool(selectAdapter, { pickEvery, boundsOf });
+const select = useSelectTool(selectAdapter, { pickEvery, boundsOf, getSelection: () => selection.current });
 
 // useInsertTool needs InsertAdapter; only commitInsert is exercised here.
 const insertAdapter = {

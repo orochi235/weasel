@@ -12,7 +12,7 @@ import type { RotateAdapter } from '../../core/adapters/types';
 import type { AreaSelectAdapter } from '../../core/adapters/types';
 import type { ResizeAnchor } from '../../interactions/gestures/types';
 import { defineTool } from '../defineTool';
-import type { Tool } from '../types';
+import type { Tool, ToolBounds } from '../types';
 import type { DebugSink } from '../../debug/types';
 import type { RenderLayer } from '../../core/layers/render';
 import { viewToTransform } from '../../features/viewport/view';
@@ -27,6 +27,14 @@ export interface Bounds {
   width: number;
   height: number;
 }
+
+/** Synthetic id used by `<Canvas selectionMode="multi">` to address the
+ *  union-AABB target when 2+ real ids are selected. The selection-overlay
+ *  layer asks `peekBounds(MULTI_RESIZE_TARGET_ID)` for the union rect; the
+ *  select tool synthesizes it from `getSelection()` + `boundsOf` so callers
+ *  don't have to special-case it. Exported so `Canvas.tsx` (and any consumer
+ *  wiring its own selection-overlay layer) can reference the same constant. */
+export const MULTI_RESIZE_TARGET_ID = '__weasel:multi-selection';
 
 export interface AreaSelectOverlayStyle {
   fill?: string;
@@ -102,6 +110,13 @@ export interface UseSelectToolOptions<TObject extends { id: string }, TPose> {
   ) => void;
   /** Object lookup for the ghost render, paired with `drawGhost`. Optional. */
   getObject?: (id: string) => TObject | null;
+  /** Returns the live selection ids. When supplied, `peekBounds` synthesizes
+   *  the multi-union AABB for `MULTI_RESIZE_TARGET_ID` from `boundsOf` of each
+   *  selected id — used by `<Canvas selectionMode="multi">`'s selection-overlay
+   *  layer when 2+ ids are selected. Without it, the synthetic id resolves to
+   *  `null` and consumers wiring multi-mode must compute the union themselves.
+   *  `<SceneCanvas>` wires this automatically from its `selection` prop. */
+  getSelection?: () => readonly string[];
   /** Optional double-tap hook. When the dispatcher detects a double-tap (two
    *  sub-threshold clicks within `dblTap.windowMs` / `dblTap.maxDistance`),
    *  this fires with the world-space tap coords and the ids whose body covers
@@ -318,6 +333,39 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
     return null;
   };
 
+  // peekBounds: synthesize the multi-union AABB for the synthetic
+  // `MULTI_RESIZE_TARGET_ID` from `boundsOf` over the live selection. Lets
+  // `<Canvas selectionMode="multi">`'s selection-overlay layer ask for the
+  // union via the standard `tool.peekBounds(id)` channel instead of Canvas
+  // having to special-case the synthetic id inline. Returns null for any other
+  // id (consumers fall through to `peekPose` → committed adapter pose →
+  // geometry.getBounds, same as before).
+  const getSelectionRef = useRef(options.getSelection);
+  getSelectionRef.current = options.getSelection;
+  const boundsOfRef = useRef(options.boundsOf);
+  boundsOfRef.current = options.boundsOf;
+  const peekBounds = (id: string): ToolBounds | null => {
+    if (id !== MULTI_RESIZE_TARGET_ID) return null;
+    const getSelection = getSelectionRef.current;
+    if (!getSelection) return null;
+    const ids = getSelection();
+    if (ids.length < 2) return null;
+    const bof = boundsOfRef.current;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    let any = false;
+    for (const sid of ids) {
+      const b = bof(sid);
+      if (!b) continue;
+      any = true;
+      if (b.x < minX) minX = b.x;
+      if (b.y < minY) minY = b.y;
+      if (b.x + b.width > maxX) maxX = b.x + b.width;
+      if (b.y + b.height > maxY) maxY = b.y + b.height;
+    }
+    if (!any) return null;
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  };
+
   // peekHide: surface move's hideIds (dragged + cascade descendants) so the
   // standard scene slot suppresses their committed render during a cascade
   // drag. Resize/rotate don't hide ids — the dragged target's overlay pose
@@ -332,6 +380,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
         cursor: 'default',
         overlay,
         peekPose,
+        peekBounds,
         peekHide,
         initScratch: () => ({ kind: 'idle' }),
 
