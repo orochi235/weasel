@@ -265,3 +265,25 @@ describe('useInsert — clickOnly', () => {
     expect(batches.length).toBe(0);
   });
 });
+
+describe('useInsert — supports* flags', () => {
+  it('supportsPointInsert reflects whether pointInsert was supplied', () => {
+    const { adapter } = makeAdapter();
+    const without = renderHook(() => useInsert<Obj, { x: number; y: number }>(adapter, {})).result.current;
+    expect(without.supportsPointInsert).toBe(false);
+    const withFn = renderHook(() =>
+      useInsert<Obj, { x: number; y: number }>(adapter, { pointInsert: () => null }),
+    ).result.current;
+    expect(withFn.supportsPointInsert).toBe(true);
+  });
+
+  it('supportsCommitInsert is false in clickOnly mode', () => {
+    const { adapter } = makeAdapter();
+    const drag = renderHook(() => useInsert<Obj, { x: number; y: number }>(adapter, {})).result.current;
+    expect(drag.supportsCommitInsert).toBe(true);
+    const click = renderHook(() =>
+      useInsert<Obj, { x: number; y: number }>(adapter, { clickOnly: true }),
+    ).result.current;
+    expect(click.supportsCommitInsert).toBe(false);
+  });
+});

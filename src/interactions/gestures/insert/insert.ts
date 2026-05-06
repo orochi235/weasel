@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import { createInsertOp } from '../../../core/ops/create';
 import type { Op } from '../../../core/ops/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
@@ -11,6 +11,7 @@ import type {
   ModifierState,
   ResizePose,
 } from '../types';
+import { useDragRect, type DragRectCtx } from '../dragRect';
 
 /** Options for `useInsert`. */
 export interface UseInsertOptions<TPose, TObject extends { id: string } = { id: string }> {
@@ -54,18 +55,14 @@ export interface InsertController<TObject extends { id: string }, TPose> {
   overlay: InsertOverlay<TPose> | null;
   /** The adapter passed in. Exposed so `<Canvas>` can derive defaults. */
   adapter: InsertAdapter<TObject>;
+  /** True iff `pointInsert` was supplied. */
+  readonly supportsPointInsert: boolean;
+  /** True iff a non-clickOnly path is wired (drag commits will reach
+   *  `adapter.commitInsert`). False when `clickOnly: true`. */
+  readonly supportsCommitInsert: boolean;
 }
 
 const GID = 'gesture';
-
-function boundsFrom(start: InsertPoint, current: InsertPoint): ResizePose {
-  return {
-    x: Math.min(start.x, current.x),
-    y: Math.min(start.y, current.y),
-    width: Math.abs(current.x - start.x),
-    height: Math.abs(current.y - start.y),
-  };
-}
 
 /** Drag-rectangle insert interaction; the adapter materializes the new object on commit. */
 export function useInsert<TObject extends { id: string }, TPose>(
@@ -88,17 +85,10 @@ export function useInsert<TObject extends { id: string }, TPose>(
   behaviorsRef.current = behaviors;
   const posefromBoundsRef = useRef(posefromBounds);
   posefromBoundsRef.current = posefromBounds;
-  // Latest-value refs so controller methods stay referentially stable.
   const adapterRef = useRef(adapter);
   adapterRef.current = adapter;
   const insertLabelRef = useRef(insertLabel);
   insertLabelRef.current = insertLabel;
-  const minBoundsRef = useRef(minBounds);
-  minBoundsRef.current = minBounds;
-  const onGestureStartRef = useRef(onGestureStart);
-  onGestureStartRef.current = onGestureStart;
-  const onGestureEndRef = useRef(onGestureEnd);
-  onGestureEndRef.current = onGestureEnd;
   const pointInsertRef = useRef(pointInsert);
   pointInsertRef.current = pointInsert;
   const clickOnlyRef = useRef(clickOnly);
@@ -106,129 +96,101 @@ export function useInsert<TObject extends { id: string }, TPose>(
   const applyBatchOptionRef = useRef(applyBatch);
   applyBatchOptionRef.current = applyBatch;
 
-  const stateRef = useRef<{ active: boolean; ctx: GestureContext<TPose> | null }>({
-    active: false,
-    ctx: null,
-  });
-  const [overlay, setOverlay] = useState<InsertOverlay<TPose> | null>(null);
-
-  const cleanup = useCallback(() => {
-    stateRef.current.active = false;
-    stateRef.current.ctx = null;
-    setOverlay(null);
-  }, []);
-
-  const start = useCallback((worldX: number, worldY: number, modifiers: ModifierState) => {
-    const adapter = adapterRef.current;
-    const startPoint: InsertPoint = { x: worldX, y: worldY };
-    const ctx: GestureContext<TPose> = {
+  // Bridge: build a behavior-style GestureContext on demand from the dragRect ctx.
+  const buildGestureCtx = (drCtx: DragRectCtx<unknown>): GestureContext<TPose> => {
+    const startPoint: InsertPoint = drCtx.start;
+    return {
       draggedIds: [GID],
       origin: new Map([[GID, startPoint as unknown as TPose]]),
-      current: new Map([[GID, startPoint as unknown as TPose]]),
+      current: new Map([[GID, drCtx.current as unknown as TPose]]),
       snap: null,
-      modifiers,
-      pointer: { worldX, worldY, clientX: 0, clientY: 0 },
-      adapter: adapter as unknown as GestureContext<TPose>['adapter'],
+      modifiers: drCtx.modifiers,
+      pointer: { worldX: drCtx.current.x, worldY: drCtx.current.y, clientX: 0, clientY: 0 },
+      adapter: adapterRef.current as unknown as GestureContext<TPose>['adapter'],
       scratch: {},
     };
-    for (const b of behaviorsRef.current) b.onStart?.(ctx);
-    stateRef.current = { active: true, ctx };
-    onGestureStartRef.current?.();
-    const sp = ctx.origin.get(GID) as unknown as InsertPoint;
-    const bounds = boundsFrom(sp, sp);
-    setOverlay({ start: sp, current: sp, bounds, pose: posefromBoundsRef.current(bounds) });
-  }, []);
+  };
 
-  const move = useCallback((worldX: number, worldY: number, modifiers: ModifierState): boolean => {
-    const s = stateRef.current;
-    if (!s.active || !s.ctx) return false;
-    const ctx = s.ctx;
-    ctx.modifiers = modifiers;
-    ctx.pointer = { worldX, worldY, clientX: 0, clientY: 0 };
-    let current: InsertPoint = { x: worldX, y: worldY };
-    let startPoint = ctx.origin.get(GID) as unknown as InsertPoint;
-    let bounds = boundsFrom(startPoint, current);
-    let pose = posefromBoundsRef.current(bounds);
-
-    for (const b of behaviorsRef.current) {
-      const r = b.onMove?.(ctx, { start: startPoint, current, bounds, pose });
-      if (!r) continue;
-      if (r.current !== undefined) current = r.current;
-      if (r.start !== undefined) {
-        startPoint = r.start;
-        ctx.origin.set(GID, startPoint as unknown as TPose);
+  const dr = useDragRect({
+    minBounds,
+    onStart: (ctx) => {
+      const gctx = buildGestureCtx(ctx);
+      for (const b of behaviorsRef.current) b.onStart?.(gctx);
+      // Behaviors may mutate ctx.origin in onStart (e.g. snapToGrid rounds the
+      // start point). Reflect any change back into dragRect's start.
+      const mutated = gctx.origin.get(GID) as unknown as InsertPoint | undefined;
+      if (mutated && (mutated.x !== ctx.start.x || mutated.y !== ctx.start.y)) {
+        ctx.setStart(mutated);
+        // At gesture-start current === start; keep them consistent so the
+        // overlay's initial current reflects the snapped point.
+        ctx.setCurrent(mutated);
       }
-      bounds = boundsFrom(startPoint, current);
-      pose = posefromBoundsRef.current(bounds);
-    }
-    ctx.current.set(GID, current as unknown as TPose);
-    setOverlay({ start: startPoint, current, bounds, pose });
-    return true;
-  }, []);
-
-  const end = useCallback(() => {
-    const s = stateRef.current;
-    const adapter = adapterRef.current;
-    const insertLabel = insertLabelRef.current;
-    const minBounds = minBoundsRef.current;
-    const onGestureEnd = onGestureEndRef.current;
-    const pointInsert = pointInsertRef.current;
-    const clickOnly = clickOnlyRef.current;
-    const applyBatchOverride = applyBatchOptionRef.current;
-    const dispatch = (ops: Op[]) => {
-      if (applyBatchOverride) applyBatchOverride(ops, insertLabel);
-      else dispatchApplyBatch(adapter, ops, insertLabel);
-    };
-    if (!s.active || !s.ctx) {
-      cleanup();
-      onGestureEnd?.(false);
-      return;
-    }
-    const ctx = s.ctx;
-    const sp = ctx.origin.get(GID) as unknown as InsertPoint;
-    const cp = ctx.current.get(GID) as unknown as InsertPoint;
-    const bounds = boundsFrom(sp, cp);
-    const subThreshold = bounds.width <= minBounds.width || bounds.height <= minBounds.height;
-    if (clickOnly || subThreshold) {
-      if (pointInsert) {
-        const created = pointInsert({ x: sp.x, y: sp.y });
-        if (created) {
-          const ops: Op[] = [createInsertOp({ object: created, label: insertLabel })];
-          dispatch(ops);
-          cleanup();
-          onGestureEnd?.(true);
-          return;
+    },
+    onMove: (ctx) => {
+      const gctx = buildGestureCtx(ctx);
+      for (const b of behaviorsRef.current) {
+        const startPoint: InsertPoint = ctx.start;
+        const current: InsertPoint = ctx.current;
+        const bounds = ctx.bounds;
+        const pose = posefromBoundsRef.current(bounds);
+        const r = b.onMove?.(gctx, { start: startPoint, current, bounds, pose });
+        if (!r) continue;
+        if (r.start !== undefined) ctx.setStart(r.start);
+        if (r.current !== undefined) ctx.setCurrent(r.current);
+      }
+    },
+    onEnd: (ctx) => {
+      const insertLabel = insertLabelRef.current;
+      const pointInsert = pointInsertRef.current;
+      const clickOnly = clickOnlyRef.current;
+      const applyBatchOverride = applyBatchOptionRef.current;
+      const adapter = adapterRef.current;
+      const dispatch = (ops: Op[]) => {
+        if (applyBatchOverride) applyBatchOverride(ops, insertLabel);
+        else dispatchApplyBatch(adapter, ops, insertLabel);
+      };
+      if (clickOnly || ctx.wasSubThreshold) {
+        if (pointInsert) {
+          const created = pointInsert({ x: ctx.start.x, y: ctx.start.y });
+          if (created) {
+            dispatch([createInsertOp({ object: created, label: insertLabel })]);
+            return true;
+          }
         }
+        return false;
       }
-      cleanup();
-      onGestureEnd?.(false);
-      return;
-    }
-    const created = adapter.commitInsert(bounds);
-    if (!created) {
-      cleanup();
-      onGestureEnd?.(false);
-      return;
-    }
-    const ops: Op[] = [createInsertOp({ object: created, label: insertLabel })];
-    dispatch(ops);
-    cleanup();
-    onGestureEnd?.(true);
-  }, [cleanup]);
+      const created = adapter.commitInsert(ctx.bounds);
+      if (!created) return false;
+      dispatch([createInsertOp({ object: created, label: insertLabel })]);
+      return true;
+    },
+    onGestureStart,
+    onGestureEnd,
+  });
 
-  const cancel = useCallback(() => {
-    cleanup();
-    onGestureEndRef.current?.(false);
-  }, [cleanup]);
+  // Map dragRect's overlay to InsertOverlay<TPose>.
+  const overlayRef = useRef<InsertOverlay<TPose> | null>(null);
+  overlayRef.current = dr.overlay
+    ? {
+        start: dr.overlay.start,
+        current: dr.overlay.current,
+        bounds: dr.overlay.bounds,
+        pose: posefromBoundsRef.current(dr.overlay.bounds),
+      }
+    : null;
 
-  // Stable controller identity — see useMove for rationale.
-  const overlayRef = useRef(overlay);
-  overlayRef.current = overlay;
-  const controller = useMemo<InsertController<TObject, TPose>>(() => ({
-    start, move, end, cancel,
-    get overlay() { return overlayRef.current; },
-    get isInserting() { return overlayRef.current !== null; },
-    get adapter() { return adapterRef.current; },
-  }), [start, move, end, cancel]);
-  return controller;
+  return useMemo<InsertController<TObject, TPose>>(
+    () => ({
+      start: dr.start,
+      move: dr.move,
+      end: dr.end,
+      cancel: dr.cancel,
+      get overlay() { return overlayRef.current; },
+      get isInserting() { return overlayRef.current !== null; },
+      get adapter() { return adapterRef.current; },
+      get supportsPointInsert() { return pointInsertRef.current != null; },
+      get supportsCommitInsert() { return !clickOnlyRef.current; },
+    }),
+    [dr.start, dr.move, dr.end, dr.cancel],
+  );
 }
