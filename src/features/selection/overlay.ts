@@ -499,7 +499,7 @@ function resolveRotationHandleDistance(
 /**
  * Convenience wrapper that draws outlines then handles in a single layer.
  * Equivalent to stacking `createSelectionOutlineLayer` and
- * `createSelectionHandlesLayer` in `runLayers`. Pass `handles: false` to
+ * `createSelectionHandlesLayer` in `drawLayers`. Pass `handles: false` to
  * render outlines only.
  */
 export function createSelectionOverlayLayer<TPose>(

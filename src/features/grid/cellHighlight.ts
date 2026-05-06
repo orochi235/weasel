@@ -1,7 +1,7 @@
 /**
  * Cell highlight overlay — a thin render layer that fills a single grid cell
  * (e.g. a snap-target preview). Stack it under or over `createGridLayer` in
- * a `runLayers([...])` sequence.
+ * a `drawLayers([...])` sequence.
  */
 
 import type { RenderLayer } from '../../core/layers/render';

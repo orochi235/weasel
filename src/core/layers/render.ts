@@ -54,7 +54,7 @@ export interface RenderLayer<TData> {
  *
  * When `view` is omitted, an identity view is used.
  */
-export function runLayers<TData>(
+export function drawLayers<TData>(
   ctx: CanvasRenderingContext2D,
   layers: RenderLayer<TData>[],
   data: TData,

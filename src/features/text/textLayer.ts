@@ -2,7 +2,7 @@
  * Text RenderLayer. Draws each text node into world space using the node's
  * pose rect and resolved style. Wrap is width-driven (`pose.width`); height
  * is informational — overflow is not clipped at v1. Callers compose this
- * layer like any other via `runLayers`.
+ * layer like any other via `drawLayers`.
  */
 
 import { applyPaint } from '../../core/paint';

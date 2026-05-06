@@ -200,7 +200,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
     getObject: options.getObject,
   };
 
-  // The layer is `space: 'screen'` — `runLayers` does not pre-apply the world
+  // The layer is `space: 'screen'` — `drawLayers` does not pre-apply the world
   // transform. The marquee branch already lives in screen coords (via
   // `worldToScreen`). Ghost branches reapply the world transform manually so
   // the consumer's `drawGhost` (same signature as scene `drawOne`) sees the
@@ -251,7 +251,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
         const rotateAlpha = refs.rotateOverlayStyle?.ghostAlpha ?? moveAlpha;
 
         // Apply world transform once for any ghost branch — matches the
-        // `space: 'world'` composition that `runLayers` would do.
+        // `space: 'world'` composition that `drawLayers` would do.
         const applyWorld = () => {
           if (view.scale !== 1) ctx.scale(view.scale, view.scale);
           if (view.x !== 0 || view.y !== 0) ctx.translate(-view.x, -view.y);
