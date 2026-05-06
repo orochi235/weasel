@@ -1,10 +1,5 @@
 import { useCallback, useRef } from 'react';
-import {
-  createBringForwardOp,
-  createSendBackwardOp,
-  createBringToFrontOp,
-  createSendToBackOp,
-} from '../../../core/ops/reorder';
+import { createReorderOp } from '../../../core/ops/reorder';
 import type { Op } from '../../../core/ops/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
 import { useKeybinding } from '../useKeybinding';
@@ -60,10 +55,22 @@ export function useReorder(
     [],
   );
 
-  const bringForward = useCallback(() => dispatch(createBringForwardOp, 'Bring forward'), [dispatch]);
-  const sendBackward = useCallback(() => dispatch(createSendBackwardOp, 'Send backward'), [dispatch]);
-  const bringToFront = useCallback(() => dispatch(createBringToFrontOp, 'Bring to front'), [dispatch]);
-  const sendToBack = useCallback(() => dispatch(createSendToBackOp, 'Send to back'), [dispatch]);
+  const bringForward = useCallback(
+    () => dispatch(({ ids }) => createReorderOp({ ids, direction: 'forward' }), 'Bring forward'),
+    [dispatch],
+  );
+  const sendBackward = useCallback(
+    () => dispatch(({ ids }) => createReorderOp({ ids, direction: 'backward' }), 'Send backward'),
+    [dispatch],
+  );
+  const bringToFront = useCallback(
+    () => dispatch(({ ids }) => createReorderOp({ ids, direction: 'front' }), 'Bring to front'),
+    [dispatch],
+  );
+  const sendToBack = useCallback(
+    () => dispatch(({ ids }) => createReorderOp({ ids, direction: 'back' }), 'Send to back'),
+    [dispatch],
+  );
 
   const enable = options.enableKeyboard ?? true;
   // Browsers sometimes report Shift+] as '}' / Shift+[ as '{'; accept both.

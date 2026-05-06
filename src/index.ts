@@ -326,6 +326,15 @@ export type {
   UseInsertOptions,
   InsertController,
 } from './interactions/gestures/insert';
+export { useDragRect } from './interactions/gestures/dragRect';
+export type {
+  DragRectController,
+  DragRectCtx,
+  DragRectEndCtx,
+  UseDragRectOptions,
+  DragRectPoint,
+  DragRectBounds,
+} from './interactions/gestures/dragRect';
 export { useAreaSelect } from './interactions/gestures/area-select';
 export {
   useEditAnchors,
@@ -398,12 +407,10 @@ export type { ClonePose, CloneLayer, CloneBehavior } from './interactions/gestur
 // snapToGrid / snapToContainer / snapBackOrDelete are NOT re-exported at top level —
 // import from './move' to disambiguate from resize/insert siblings.
 export {
-  createBringForwardOp,
-  createSendBackwardOp,
-  createBringToFrontOp,
-  createSendToBackOp,
+  createReorderOp,
   createMoveToIndexOp,
 } from './core/ops/reorder';
+export type { ReorderDirection } from './core/ops/reorder';
 export {
   useReorder,
   type ReorderAdapter,

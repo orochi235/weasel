@@ -7,9 +7,7 @@ export { createDeleteOp } from './delete';
 export { createSetSelectionOp } from './select';
 export { createSetTextOp } from './setText';
 export {
-  createBringForwardOp,
-  createSendBackwardOp,
-  createBringToFrontOp,
-  createSendToBackOp,
+  createReorderOp,
   createMoveToIndexOp,
 } from './reorder';
+export type { ReorderDirection } from './reorder';
