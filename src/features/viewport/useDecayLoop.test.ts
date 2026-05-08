@@ -1,0 +1,96 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
+import { useDecayLoop } from './useDecayLoop';
+
+// RAF fake: collect callbacks and step them manually
+let rafCallbacks: Array<(t: number) => void> = [];
+let rafTime = 0;
+
+function stepRAF(dt = 16) {
+  rafTime += dt;
+  const cbs = rafCallbacks.splice(0);
+  for (const cb of cbs) cb(rafTime);
+}
+
+beforeEach(() => {
+  rafCallbacks = [];
+  rafTime = 0;
+  vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation((cb) => {
+    rafCallbacks.push(cb);
+    return rafCallbacks.length;
+  });
+  vi.spyOn(globalThis, 'cancelAnimationFrame').mockImplementation((id) => {
+    rafCallbacks[id - 1] = () => {};
+  });
+});
+
+afterEach(() => { vi.restoreAllMocks(); });
+
+describe('useDecayLoop', () => {
+  it('calls onTick with decaying deltas each frame', () => {
+    const onTick = vi.fn();
+    const { result } = renderHook(() => useDecayLoop());
+    act(() => {
+      result.current.start({ velocity: { vx: 1, vy: 0 }, friction: 0.9, minSpeed: 0.001, onTick });
+    });
+    act(() => { stepRAF(16); });  // first frame skipped (records lastTime)
+    act(() => { stepRAF(16); });
+    act(() => { stepRAF(16); });
+    expect(onTick).toHaveBeenCalledTimes(2);
+    const [[dx1], [dx2]] = onTick.mock.calls;
+    expect(dx1).toBeGreaterThan(dx2);  // velocity decaying
+    expect(dx1).toBeGreaterThan(0);
+  });
+
+  it('stops calling onTick when speed drops below minSpeed', () => {
+    const onTick = vi.fn();
+    const { result } = renderHook(() => useDecayLoop());
+    act(() => {
+      result.current.start({ velocity: { vx: 0.001, vy: 0 }, friction: 0.5, minSpeed: 0.01, onTick });
+    });
+    // First frame: velocity 0.001 < minSpeed 0.01 → should stop immediately
+    act(() => { stepRAF(16); });
+    expect(onTick).not.toHaveBeenCalled();
+  });
+
+  it('cancel() stops the loop', () => {
+    const onTick = vi.fn();
+    const { result } = renderHook(() => useDecayLoop());
+    act(() => {
+      result.current.start({ velocity: { vx: 1, vy: 0 }, friction: 0.9, minSpeed: 0.001, onTick });
+    });
+    act(() => { stepRAF(16); });  // first frame skipped (records lastTime)
+    act(() => { stepRAF(16); });  // first real tick
+    act(() => { result.current.cancel(); });
+    act(() => { stepRAF(16); });
+    expect(onTick).toHaveBeenCalledTimes(1);  // only the first real frame
+  });
+
+  it('calls onEnd when initial speed is below minSpeed', () => {
+    const onEnd = vi.fn();
+    const { result } = renderHook(() => useDecayLoop());
+    act(() => {
+      result.current.start({ velocity: { vx: 0.001, vy: 0 }, friction: 0.5, minSpeed: 0.01, onEnd });
+    });
+    act(() => { stepRAF(16); });
+    expect(onEnd).toHaveBeenCalledOnce();
+  });
+
+  it('start() replaces an in-flight loop', () => {
+    const onTick1 = vi.fn();
+    const onTick2 = vi.fn();
+    const { result } = renderHook(() => useDecayLoop());
+    act(() => {
+      result.current.start({ velocity: { vx: 1, vy: 0 }, friction: 0.9, minSpeed: 0.001, onTick: onTick1 });
+    });
+    act(() => { stepRAF(16); });  // first loop: first frame skipped
+    act(() => { stepRAF(16); });  // first loop ticks once
+    act(() => {
+      result.current.start({ velocity: { vx: 1, vy: 0 }, friction: 0.9, minSpeed: 0.001, onTick: onTick2 });
+    });
+    act(() => { stepRAF(16); });  // second loop's first frame (skipped - sets lastTime)
+    act(() => { stepRAF(16); });  // second loop ticks
+    expect(onTick1).toHaveBeenCalledTimes(1);  // first loop stopped
+    expect(onTick2).toHaveBeenCalledTimes(1);  // second loop running
+  });
+});
