@@ -18,11 +18,13 @@ function mid(a: { x: number; y: number }, b: { x: number; y: number }) {
 export function usePinchGesture(
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
   onPinch: (anchor: { x: number; y: number }, scaleFactor: number) => void,
+  enabled = true,
 ) {
   const onPinchRef = useRef(onPinch);
   onPinchRef.current = onPinch;
 
   useEffect(() => {
+    if (!enabled) return;
     const el = canvasRef.current;
     if (!el) return;
 
@@ -73,5 +75,5 @@ export function usePinchGesture(
       el.removeEventListener('pointerup', onUp as EventListener);
       el.removeEventListener('pointercancel', onUp as EventListener);
     };
-  }, [canvasRef]);
+  }, [canvasRef, enabled]);
 }

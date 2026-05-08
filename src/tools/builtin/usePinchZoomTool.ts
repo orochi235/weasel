@@ -7,6 +7,7 @@ import type { View } from '../../features/viewport/view';
 export interface PinchZoomToolOpts {
   min?: number;
   max?: number;
+  enabled?: boolean;
 }
 
 /**
@@ -26,7 +27,7 @@ export function usePinchZoomTool(
   viewRef.current = view;
   const setViewRef = useRef(setView);
   setViewRef.current = setView;
-  const { min = 0.1, max = 8 } = opts;
+  const { min = 0.1, max = 8, enabled = true } = opts;
 
   usePinchGesture(canvasRef, (clientAnchor, scaleFactor) => {
     const el = canvasRef.current;
@@ -34,5 +35,5 @@ export function usePinchZoomTool(
     const [cx, cy] = clientToCanvas(el, clientAnchor.x, clientAnchor.y);
     const newView = zoomAt(viewRef.current, { x: cx, y: cy }, scaleFactor, { min, max });
     setViewRef.current(newView);
-  });
+  }, enabled);
 }

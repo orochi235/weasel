@@ -18,12 +18,16 @@
  * from `scene` knowledge (children-of-id + absolute pose lookup); consumers
  * can override either by passing their own `moveOptions.cascadeWorldPose`.
  */
-import { forwardRef, useMemo, useRef } from 'react';
+import { forwardRef, useCallback, useMemo, useRef } from 'react';
 import type React from 'react';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap } from './Canvas';
 import type { RenderLayer } from '../core/layers/render';
 import { sceneToAdapter, type SceneToAdapterOptions } from './sceneAdapter';
+import { usePinchZoomTool } from '../tools/builtin/usePinchZoomTool';
+import { useHandTool } from '../tools/builtin/useHandTool';
+import { useKeyboardZoomTool } from '../tools/builtin/useKeyboardZoomTool';
+import type { View } from '../features/viewport/view';
 import type { Node, Scene } from '../core/scene/types';
 import { asNodeId } from '../core/scene/types';
 import type { Op } from '../core/ops/types';
@@ -116,6 +120,15 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  the default select. If you supply your own `tools` prop, this is
      *  ignored — wire `ambient` through your own `useTools` call instead. */
     ambient?: AnyTool[];
+
+    /** Viewport feature wiring. Each sub-key opts a feature in; pass `true`
+     *  for defaults or an object to tune. When omitted, no viewport tools
+     *  (hand, keyboard zoom, pinch) are registered by SceneCanvas. */
+    viewport?: {
+      inertia?: boolean | { friction?: number; minSpeed?: number };
+      pinchZoom?: boolean | { min?: number; max?: number };
+      animatedZoom?: boolean;
+    };
   };
 
 function SceneCanvasInner<TData, TLayer extends string, TPose>(
@@ -133,9 +146,48 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selectionOptions,
     tools: toolsProp,
     ambient,
+    viewport,
     layers,
     ...rest
   } = props;
+
+  // Extract view-related props from rest so we can intercept them for the
+  // pinch-zoom hook (which needs the current view) without breaking the
+  // controlled/uncontrolled pattern Canvas exposes.
+  const { view: viewProp, onViewChange: onViewChangeProp, defaultView, ...restProps } = rest;
+
+  // Resolve viewport config — `true` means defaults, object means overrides,
+  // anything else (undefined / false / null) disables that feature.
+  const inertiaEnabled = !!viewport?.inertia;
+  const inertiaFriction = typeof viewport?.inertia === 'object' ? viewport.inertia.friction : undefined;
+  const inertiaMinSpeed = typeof viewport?.inertia === 'object' ? viewport.inertia.minSpeed : undefined;
+  const inertiaConfig = useMemo<false | { friction?: number; minSpeed?: number }>(
+    () => inertiaEnabled ? { friction: inertiaFriction, minSpeed: inertiaMinSpeed } : false,
+    [inertiaEnabled, inertiaFriction, inertiaMinSpeed],
+  );
+  const pinchConfig: { min?: number; max?: number } | null =
+    viewport?.pinchZoom === true
+      ? {}
+      : (viewport?.pinchZoom || null);
+  const animateEnabled = !!viewport?.animatedZoom;
+
+  // Internal canvas ref so usePinchZoomTool can attach pointer listeners
+  // even when the consumer passes their own forwarded ref.
+  const internalCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Stable ref tracking the latest view for usePinchZoomTool.
+  // Updated synchronously on incoming controlled-prop renders AND via
+  // pinchSetView so the pinch gesture always sees the latest view.
+  const currentViewRef = useRef<View>(viewProp ?? defaultView ?? { x: 0, y: 0, scale: 1 });
+  if (viewProp !== undefined) currentViewRef.current = viewProp;
+
+  // Single setView callback used both by the pinch tool and as Canvas's
+  // `onViewChange` — keeps `currentViewRef` in sync (for the uncontrolled-view
+  // path where Canvas owns the state) and forwards to the consumer.
+  const handleViewChange = useCallback((v: View) => {
+    currentViewRef.current = v;
+    onViewChangeProp?.(v);
+  }, [onViewChangeProp]);
 
   const pickEveryProp = geometry?.pickEvery;
   const boundsOfProp = geometry?.boundsOf;
@@ -284,10 +336,30 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     // `MULTI_RESIZE_TARGET_ID` union for `selectionMode="multi"`.
     getSelection: () => selection.current,
   });
+  // Viewport hooks — called unconditionally (hooks cannot be conditional).
+  // Each tool is a noop when its config is absent: useHandTool with
+  // `inertia: false` behaves as the basic pan tool, useKeyboardZoomTool
+  // ignores `animate` when false, and usePinchZoomTool noops when its
+  // canvasRef is null.
+  const handToolInertia = inertiaConfig === false
+    ? undefined
+    : { friction: inertiaConfig.friction, minSpeed: inertiaConfig.minSpeed };
+  const handTool = useHandTool(handToolInertia ? { inertia: handToolInertia } : {});
+  const keyZoomTool = useKeyboardZoomTool(animateEnabled ? { animate: true } : {});
+  usePinchZoomTool(
+    internalCanvasRef,
+    currentViewRef.current,
+    handleViewChange,
+    { ...(pinchConfig ?? {}), enabled: pinchConfig !== null },
+  );
+
+  const viewportAmbient: AnyTool[] = viewport ? [handTool, keyZoomTool] : [];
+  const mergedAmbient = [...viewportAmbient, ...(ambient ?? [])];
+
   const internalTools = useTools({
     active: 'select',
     registry: { select: internalSelect },
-    ...(ambient ? { ambient } : {}),
+    ...(mergedAmbient.length ? { ambient: mergedAmbient } : {}),
   });
 
   const tools = toolsProp ?? internalTools;
@@ -337,15 +409,29 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     previewGhost: { layer: previewLayer, after: 'scene' },
   }), [layers, previewLayer]);
 
+  // Merge the forwarded ref with our internalCanvasRef so usePinchZoomTool
+  // can read the canvas element even when the consumer also forwards a ref.
+  const mergedRef = useCallback(
+    (node: HTMLCanvasElement | null) => {
+      internalCanvasRef.current = node;
+      if (typeof ref === 'function') ref(node);
+      else if (ref) (ref as React.MutableRefObject<HTMLCanvasElement | null>).current = node;
+    },
+    [ref],
+  );
+
   return (
     <Canvas<Node<TData, TLayer, TPose>, TPose>
-      ref={ref}
+      ref={mergedRef}
       adapter={adapter}
       gestures={wiredGestures}
       selection={selection}
       tools={tools}
       layers={wiredLayers}
-      {...rest}
+      {...(viewProp !== undefined ? { view: viewProp } : {})}
+      {...(defaultView !== undefined ? { defaultView } : {})}
+      onViewChange={handleViewChange}
+      {...restProps}
     />
   );
 }
