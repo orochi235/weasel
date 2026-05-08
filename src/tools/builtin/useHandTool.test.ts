@@ -108,7 +108,8 @@ describe('useHandTool with inertia', () => {
     const { result } = renderHook(() => useHandTool({ inertia: { friction: 0.9, minSpeed: 0.0001 } }));
     const tool = result.current;
     const setView = vi.fn();
-    const ctx = makeCtx({ x: 0, y: 0 }, setView);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ctx = makeCtx<any>({ x: 0, y: 0 }, setView);
 
     // Simulate a fast drag
     tool.drag!.onStart!(fakeEvent(0, 0), ctx);
@@ -128,7 +129,8 @@ describe('useHandTool with inertia', () => {
     const { result } = renderHook(() => useHandTool({ inertia: { friction: 0.9, minSpeed: 0.0001 } }));
     const tool = result.current;
     const setView = vi.fn();
-    const ctx = makeCtx({ x: 0, y: 0 }, setView);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ctx = makeCtx<any>({ x: 0, y: 0 }, setView);
 
     // Start a drag with real velocity
     tool.drag!.onStart!(fakeEvent(0, 0), ctx);
