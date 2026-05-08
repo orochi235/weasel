@@ -23,6 +23,7 @@ export { useTextTool, type UseTextToolOptions } from './useTextTool';
 export { useWheelZoomTool, type WheelZoomToolOpts } from './useWheelZoomTool';
 export { useWheelPanTool } from './useWheelPanTool';
 export { useKeyboardZoomTool, type KeyboardZoomToolOpts } from './useKeyboardZoomTool';
+export { usePinchZoomTool, type PinchZoomToolOpts } from './usePinchZoomTool';
 export {
   useUserPenTool,
   type UseUserPenToolOptions,
