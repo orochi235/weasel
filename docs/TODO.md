@@ -38,10 +38,17 @@ Eric (`~/src/eric`) is the side app weasel was extracted from; per project memor
 
 Surfaced as explicit out-of-scope items in `docs/specs/2026-05-03-tool-primitive-phase-2c-design.md:158-165` and `docs/specs/2026-05-03-viewport-and-hand-tool-design.md:133-143`. Phase 2c shipped pan+zoom+chrome-screen-space; these are the tail.
 
-- **Inertial pan / momentum.** Drag-release continues panning with friction. Lives outside the hand tool — likely a `useInertialPan` decorator or option on `useHandTool`. Originally scoped in `docs/specs/2026-05-03-tool-primitive-phase-2c-design.md:161`.
-- **Per-axis zoom** (`scaleX` ≠ `scaleY`). Real driver: timeline charts where x-axis is time and y-axis is value, zoomed independently. Forks `View` from `{x,y,scale}` to `{x,y,scaleX,scaleY}` and ripples through `worldToScreen`/`screenToWorld`/`zoomAt`. Originally scoped in `docs/specs/2026-05-03-tool-primitive-phase-2c-design.md:163`.
-- **Animated zoom transitions.** Smooth interpolated `setView` for Cmd+0 reset and `zoomTo` (programmatic frame). Trivial layer on top of `setView` per the spec. Originally scoped in `docs/specs/2026-05-03-tool-primitive-phase-2c-design.md:164` and `docs/specs/2026-05-01-canvas-kit-zoom-interaction-design.md:283`.
-- **Pinch-zoom on touch (real `TouchEvent`).** Browsers don't synthesize ctrl+wheel for native two-finger pinch on iPad/touchscreens — that path needs a separate `pinchTouch` source built on `TouchEvent` with two pointers. Originally scoped in `docs/specs/2026-05-03-tool-primitive-phase-2c-design.md:165` and `docs/specs/2026-05-01-canvas-kit-zoom-interaction-design.md:287-289`.
+- [x] **Inertial pan / momentum.** *Spec:* `docs/specs/2026-05-07-viewport-followups-design.md`. `useHandTool` gains `inertia` option; built on `useVelocityTracker` + `useDecayLoop` primitives. Configurable `boundary: 'stop' | 'bounce'`.
+- **Per-axis zoom** (`scaleX` ≠ `scaleY`). Real driver: timeline charts where x-axis is time and y-axis is value, zoomed independently. Forks `View` from `{x,y,scale}` to `{x,y,scaleX,scaleY}` and ripples through `worldToScreen`/`screenToWorld`/`zoomAt`. Deferred again from `docs/specs/2026-05-07-viewport-followups-design.md` — no current consumer needs it.
+- [x] **Animated zoom transitions.** *Spec:* `docs/specs/2026-05-07-viewport-followups-design.md`. `useKeyboardZoomTool` gains `animate` option; `useViewAnimation` exposed for programmatic `animateTo`; built on `useViewTween` primitive.
+- [x] **Pinch-zoom on touch.** *Spec:* `docs/specs/2026-05-07-viewport-followups-design.md`. `usePinchZoomTool` ambient tool built on `usePinchGesture` (`PointerEvent` multi-touch, not `TouchEvent`).
+
+### Viewport follow-up deferrals (from `docs/specs/2026-05-07-viewport-followups-design.md`)
+
+- **`useDecayLoop` `boundary: 'bounce'` spring overshoot.** v1 is linear reflection only. Add spring damping once a consumer finds linear bounce too snappy.
+- **Animated `zoomTo(bounds)` fit-to-selection.** `useViewAnimation`'s `animateTo` handles the tween; deciding *what* target view to compute from a selection bounds is a separate problem (needs a `fitViewToBounds` helper). Add when a consumer wants a "zoom to fit" button.
+- **Inertia on `useWheelPanTool`.** The `useVelocityTracker` + `useDecayLoop` primitives make this straightforward; deferred because wheel-pan inertia on a trackpad fights the OS momentum scrolling.
+- **`insertTool.create` typed discriminated union for multi-type insert.** Deferred from `docs/specs/2026-05-07-viewport-followups-design.md`. Current shape is a single factory `(bounds) => { pose, data, id? } | null`; multi-type canvases (rect vs image vs ellipse from one `<SceneCanvas>`) wire their own `tools` array (one `useInsertTool` per type) rather than folding a variant switch into `create`. Revisit if a real consumer wants the single-canvas multi-type ergonomic.
 
 ## Tool primitive follow-ups
 
