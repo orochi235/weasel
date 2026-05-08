@@ -70,7 +70,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     | 'createDefault' | 'poseBounds' | 'intersectsRect'
     | 'moveOptions' | 'resizeOptions' | 'rotateOptions'
     | 'snap' | 'pickEvery' | 'boundsOf' | 'handleHitRadius'
-    | 'selection' | 'selectionOptions' | 'tools'
+    | 'selection' | 'selectionOptions' | 'tools' | 'geometry'
   >
   & {
     scene: Scene<TData, TLayer, TPose>;
