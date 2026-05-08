@@ -36,6 +36,7 @@ import type { Op } from '../core/ops/types';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from '../features/selection/useSelection';
 import { useSelectTool, type Bounds } from '../tools/builtin/useSelectTool';
 import { useTools, type ToolsApi } from '../tools/useTools';
+import { useKeybindings } from '../tools/useKeybindings';
 import type { AnyTool } from '../tools/types';
 import type { UseMoveOptions } from '../interactions/gestures/move/move';
 import type { UseResizeOptions } from '../interactions/gestures/resize/resize';
@@ -367,16 +368,24 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     { ...(pinchConfig ?? {}), enabled: pinchConfig !== null },
   );
 
+  // keyZoom and wheelZoom are always-on (ambient); handTool must be in the
+  // registry so H keybinding and space hotkey work via useKeybindings.
   const viewportAmbient: AnyTool[] = viewport
-    ? [handTool, keyZoomTool, ...(pinchConfig !== null ? [wheelZoomTool] : [])]
+    ? [keyZoomTool, ...(pinchConfig !== null ? [wheelZoomTool] : [])]
     : [];
   const mergedAmbient = [...viewportAmbient, ...(ambient ?? [])];
 
+  const internalRegistry: Record<string, AnyTool> = viewport
+    ? { select: internalSelect, hand: handTool }
+    : { select: internalSelect };
+
   const internalTools = useTools({
     active: 'select',
-    registry: { select: internalSelect },
+    registry: internalRegistry,
     ...(mergedAmbient.length ? { ambient: mergedAmbient } : {}),
   });
+
+  useKeybindings(internalTools, { disable: !!toolsProp });
 
   const tools = toolsProp ?? internalTools;
 
