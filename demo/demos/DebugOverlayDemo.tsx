@@ -81,8 +81,10 @@ export function DebugOverlayDemo() {
         height={H}
         className="ckd-canvas"
         scene={scene}
-        handleHitRadius={HANDLE}
-        snap={gridSnapStrategy<Box>(20)}
+        selectTool={{
+          handleHitRadius: HANDLE,
+          snap: gridSnapStrategy<Box>(20),
+        }}
         debug={debug}
         layers={{
           scene: {
@@ -123,7 +125,7 @@ const debug: DebugConfig = {
 <SceneCanvas
   scene={scene}
   debug={debug}              // <-- this is the whole opt-in
-  snap={gridSnapStrategy(20)}
+  selectTool={{ snap: gridSnapStrategy(20) }}
   layers={{ scene: { drawOne }, selectionOverlay: { handles: true } }}
 />;
 

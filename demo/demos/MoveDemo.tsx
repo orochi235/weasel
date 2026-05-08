@@ -49,7 +49,7 @@ export function MoveDemo() {
       className="ckd-canvas"
       scene={scene}
       selection={selection}
-      snap={gridSnapStrategy<Pose>(CELL, UNITS)}
+      selectTool={{ snap: gridSnapStrategy<Pose>(CELL, UNITS) }}
       view={view}
       onViewChange={setView}
       ambient={[hand, wheelZoom, wheelPan, keyZoom]}
@@ -99,7 +99,7 @@ return (
   <SceneCanvas
     width={W} height={H}
     scene={scene}
-    snap={gridSnapStrategy<Pose>(CELL, UNITS)}
+    selectTool={{ snap: gridSnapStrategy<Pose>(CELL, UNITS) }}
     view={view}
     onViewChange={setView}
     ambient={[hand, wheelZoom, wheelPan, keyZoom]}

@@ -85,7 +85,7 @@ export function QuadtreeDemo() {
       height={H}
       className="ckd-canvas"
       scene={scene}
-      handleHitRadius={HANDLE}
+      selectTool={{ handleHitRadius: HANDLE }}
       helpersRef={helpersRef}
       layers={{
         grid: {
@@ -123,7 +123,7 @@ return (
   <SceneCanvas
     width={W} height={H}
     scene={scene}
-    handleHitRadius={HANDLE}
+    selectTool={{ handleHitRadius: HANDLE }}
     layers={{
       grid: { spacing: 20, bounds: () => ({ x: 0, y: 0, width: W, height: H }), accentEvery: 5 },
       scene: { drawOne: (cx, _node, p) => { cx.fillStyle = p.color; cx.fillRect(p.x, p.y, p.width, p.height); } },

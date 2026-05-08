@@ -94,17 +94,19 @@ export function SceneDemo() {
         className="ckd-canvas"
         scene={scene}
         selection={selection}
-        pickEvery={(wx, wy) => {
-          const ordered = [...scene.renderOrder()];
-          for (let i = ordered.length - 1; i >= 0; i--) {
-            const id = ordered[i];
-            if (id === 'garden-bg') continue;
-            const n = scene.get(id);
-            if (!n) continue;
-            const { x, y, width, height } = n.pose;
-            if (wx >= x && wx <= x + width && wy >= y && wy <= y + height) return id;
-          }
-          return null;
+        geometry={{
+          pickEvery: (wx, wy) => {
+            const ordered = [...scene.renderOrder()];
+            for (let i = ordered.length - 1; i >= 0; i--) {
+              const id = ordered[i];
+              if (id === 'garden-bg') continue;
+              const n = scene.get(id);
+              if (!n) continue;
+              const { x, y, width, height } = n.pose;
+              if (wx >= x && wx <= x + width && wy >= y && wy <= y + height) return id;
+            }
+            return null;
+          },
         }}
         layers={{
           scene: {

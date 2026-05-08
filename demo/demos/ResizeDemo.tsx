@@ -15,7 +15,7 @@ export function ResizeDemo() {
       height={H}
       className="ckd-canvas"
       scene={scene}
-      handleHitRadius={HANDLE}
+      selectTool={{ handleHitRadius: HANDLE }}
       selectionOptions={{ initial: [INITIAL.id] }}
       layers={{
         scene: {
@@ -41,7 +41,7 @@ return (
   <SceneCanvas
     width={W} height={H}
     scene={scene}
-    handleHitRadius={HANDLE}
+    selectTool={{ handleHitRadius: HANDLE }}
     selectionOptions={{ initial: ['r'] }}
     layers={{
       scene: { drawOne: (cx, _node, p) => { cx.fillStyle = p.color; cx.fillRect(p.x, p.y, p.width, p.height); } },

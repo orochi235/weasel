@@ -83,7 +83,7 @@ export function MultiSelectDemo() {
       selection={selection}
       selectionMode="multi"
       tools={tools}
-      handleHitRadius={HANDLE}
+      selectTool={{ handleHitRadius: HANDLE }}
       layers={{
         scene: {
           drawOne: (cx, _node, p) => {
@@ -128,7 +128,7 @@ return (
     selection={selection}
     selectionMode="multi"
     tools={tools}
-    handleHitRadius={HANDLE}
+    selectTool={{ handleHitRadius: HANDLE }}
     layers={{
       scene: { drawOne: (cx, _node, p) => { cx.fillStyle = p.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
       selectionOverlay: { handles: { size: HANDLE } },

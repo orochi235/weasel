@@ -203,8 +203,10 @@ export function TextDemo() {
         background="#fafafa"
         scene={scene}
         helpersRef={helpersRef}
-        snap={gridSnapStrategy<Pose>(CELL)}
-        handleHitRadius={HANDLE}
+        selectTool={{
+          snap: gridSnapStrategy<Pose>(CELL),
+          handleHitRadius: HANDLE,
+        }}
         layers={{
           // No default scene — the custom text layer paints everything.
           scene: null,
@@ -248,7 +250,7 @@ return (
       width={W} height={H}
       scene={scene}
       helpersRef={helpersRef}
-      snap={gridSnapStrategy<Pose>(10)}
+      selectTool={{ snap: gridSnapStrategy<Pose>(10) }}
       layers={{
         scene: null,
         'text': { layer: textLayer, before: 'selectionOverlay' },

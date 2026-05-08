@@ -76,9 +76,11 @@ export function PathPoseDemo() {
         className="ckd-canvas"
         scene={scene}
         selection={selection}
-        handleHitRadius={HANDLE}
-        snap={gridSnapStrategy<Path>(20, { origin: pathOriginProjection })}
-        resizeOptions={{ geometry: pathPoseDescriptor }}
+        selectTool={{
+          handleHitRadius: HANDLE,
+          snap: gridSnapStrategy<Path>(20, { origin: pathOriginProjection }),
+          resize: { geometry: pathPoseDescriptor },
+        }}
         debug={debug}
         layers={{
           scene: {
@@ -117,9 +119,11 @@ return (
     width={W} height={H}
     scene={scene}
     selection={selection}
-    handleHitRadius={HANDLE}
-    snap={gridSnapStrategy<Path>(20, { origin: pathOriginProjection })}
-    resizeOptions={{ geometry: pathPoseDescriptor }}
+    selectTool={{
+      handleHitRadius: HANDLE,
+      snap: gridSnapStrategy<Path>(20, { origin: pathOriginProjection }),
+      resize: { geometry: pathPoseDescriptor },
+    }}
     layers={{
       scene: { drawOne: (cx, _o, p) => { traceToContext(cx, p); cx.fill(); cx.stroke(); } },
       selectionOverlay: { handles: { size: HANDLE } },

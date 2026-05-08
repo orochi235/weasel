@@ -180,7 +180,7 @@ export function CompoundPathsDemo() {
         scene={scene}
         background="#87ceeb"
         selectionMode="multi"
-        handleHitRadius={HANDLE}
+        selectTool={{ handleHitRadius: HANDLE }}
         layers={{
           scene: {
             drawOne: (cx, node, p) => {

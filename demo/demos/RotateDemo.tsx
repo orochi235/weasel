@@ -38,8 +38,8 @@ export function RotateDemo() {
       height={H}
       className="ckd-canvas"
       scene={scene}
-      handleHitRadius={HANDLE}
-      pickEvery={pickEvery}
+      selectTool={{ handleHitRadius: HANDLE }}
+      geometry={{ pickEvery }}
       selectionOptions={{ initial: ['b'] }}
       layers={{
         scene: {
@@ -80,7 +80,7 @@ return (
   <SceneCanvas
     width={W} height={H}
     scene={scene}
-    pickEvery={pickEvery}
+    geometry={{ pickEvery }}
     layers={{
       scene: {
         drawOne: (cx, _node, p) => {
