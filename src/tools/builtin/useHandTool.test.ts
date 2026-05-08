@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
 import { useHandTool } from './useHandTool';
 import type { ToolCtx } from '../types';
 import type { View } from '../../features/viewport/view';
@@ -82,5 +82,76 @@ describe('useHandTool', () => {
     // After onStart, scratch is non-null on the ctx.
     tool.drag!.onStart!(fakeEvent(0, 0), ctx);
     expect((tool.cursor as (ctx: ToolCtx) => string)(ctx)).toBe('grabbing');
+  });
+});
+
+// RAF fake (same pattern as useDecayLoop tests)
+let rafCallbacks: Array<(t: number) => void> = [];
+let rafTime = 0;
+function stepRAF(dt = 16) {
+  rafTime += dt;
+  const cbs = rafCallbacks.splice(0);
+  for (const cb of cbs) cb(rafTime);
+}
+let nowTime = 0;
+
+describe('useHandTool with inertia', () => {
+  beforeEach(() => {
+    rafCallbacks = []; rafTime = 0; nowTime = 1000;
+    vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation((cb) => { rafCallbacks.push(cb); return rafCallbacks.length; });
+    vi.spyOn(globalThis, 'cancelAnimationFrame').mockImplementation(() => {});
+    vi.spyOn(Date, 'now').mockImplementation(() => { nowTime += 16; return nowTime; });
+  });
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it('calls setView after drag ends when inertia is configured', () => {
+    const { result } = renderHook(() => useHandTool({ inertia: { friction: 0.9, minSpeed: 0.0001 } }));
+    const tool = result.current;
+    const setView = vi.fn();
+    const ctx = makeCtx({ x: 0, y: 0 }, setView);
+
+    // Simulate a fast drag
+    tool.drag!.onStart!(fakeEvent(0, 0), ctx);
+    tool.drag!.onMove!(fakeEvent(0, 0), { ...ctx, worldX: 0, worldY: 0 });
+    for (let i = 1; i <= 5; i++) {
+      tool.drag!.onMove!(fakeEvent(i * 10, 0), { ...ctx, worldX: 0, worldY: 0 });
+    }
+    setView.mockClear();
+    tool.drag!.onEnd!(fakeEvent(50, 0), ctx);
+    // Step past useDecayLoop's first-frame skip, then one actual tick
+    act(() => { stepRAF(16); });
+    act(() => { stepRAF(16); });
+    expect(setView).toHaveBeenCalled();
+  });
+
+  it('cancels decay on next drag start', () => {
+    const { result } = renderHook(() => useHandTool({ inertia: { friction: 0.9, minSpeed: 0.0001 } }));
+    const tool = result.current;
+    const setView = vi.fn();
+    const ctx = makeCtx({ x: 0, y: 0 }, setView);
+
+    // Start a drag with real velocity
+    tool.drag!.onStart!(fakeEvent(0, 0), ctx);
+    for (let i = 1; i <= 5; i++) {
+      tool.drag!.onMove!(fakeEvent(i * 10, 0), { ...ctx, worldX: 0, worldY: 0 });
+    }
+    tool.drag!.onEnd!(fakeEvent(50, 0), ctx);
+    // First-frame skip then one real tick
+    act(() => { stepRAF(16); });
+    act(() => { stepRAF(16); });
+    // Inertia is active — verify setView was called
+    expect(setView).toHaveBeenCalled();
+
+    // New drag starts — should cancel inertia
+    tool.drag!.onStart!(fakeEvent(0, 0), ctx);
+    setView.mockClear();
+
+    // Run several more frames — inertia should NOT continue
+    act(() => { stepRAF(16); });
+    act(() => { stepRAF(16); });
+    act(() => { stepRAF(16); });
+    // setView should NOT be called by inertia after cancel
+    // (it could be called zero times; onStart itself doesn't call setView)
+    expect(setView).not.toHaveBeenCalled();
   });
 });

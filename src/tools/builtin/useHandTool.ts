@@ -1,7 +1,18 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { defineTool } from '../defineTool';
 import type { Tool } from '../types';
 import type { View } from '../../features/viewport/view';
+import { useVelocityTracker } from '../../features/viewport/useVelocityTracker';
+import { useDecayLoop } from '../../features/viewport/useDecayLoop';
+
+export interface InertiaConfig {
+  friction?: number;
+  minSpeed?: number;
+}
+
+export interface UseHandToolOptions {
+  inertia?: false | InertiaConfig;
+}
 
 interface HandScratch {
   startView: View;
@@ -22,7 +33,13 @@ interface HandScratch {
  * relative to the viewport — i.e. the camera moves *left*. So the new view
  * is `{ x: startView.x - dx, y: startView.y - dy }`.
  */
-export function useHandTool(): Tool<HandScratch | null> {
+export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | null> {
+  const inertia = opts.inertia === false ? false : opts.inertia;
+  const tracker = useVelocityTracker();
+  const decay = useDecayLoop();
+  const setViewRef = useRef<((v: View) => void) | null>(null);
+  const viewRef = useRef<View>({ x: 0, y: 0, scale: 1 });
+
   return useMemo(
     () =>
       defineTool<HandScratch | null>({
@@ -33,6 +50,10 @@ export function useHandTool(): Tool<HandScratch | null> {
         cursor: (ctx) => (ctx.scratch ? 'grabbing' : 'grab'),
         drag: {
           onStart: (e, ctx) => {
+            decay.cancel();
+            tracker.reset();
+            setViewRef.current = ctx.setView;
+            viewRef.current = ctx.view;
             ctx.scratch = {
               startView: ctx.view,
               startClientX: e.clientX,
@@ -44,22 +65,46 @@ export function useHandTool(): Tool<HandScratch | null> {
             if (!ctx.scratch) return 'pass';
             const dx = e.clientX - ctx.scratch.startClientX;
             const dy = e.clientY - ctx.scratch.startClientY;
-            ctx.setView({
+            const newView = {
               x: ctx.scratch.startView.x - dx,
               y: ctx.scratch.startView.y - dy,
               scale: ctx.scratch.startView.scale,
-            });
+            };
+            if (inertia) {
+              tracker.record(newView.x - viewRef.current.x, newView.y - viewRef.current.y, Date.now());
+            }
+            viewRef.current = newView;
+            setViewRef.current = ctx.setView;
+            ctx.setView(newView);
             return 'claim';
           },
           onEnd: (_e, ctx) => {
             ctx.scratch = null;
+            if (inertia) {
+              setViewRef.current = ctx.setView;
+              viewRef.current = ctx.view;
+              const velocity = tracker.getVelocity();
+              decay.start({
+                velocity,
+                friction: inertia.friction,
+                minSpeed: inertia.minSpeed,
+                onTick: (dvx, dvy) => {
+                  const v = viewRef.current;
+                  const next = { x: v.x + dvx, y: v.y + dvy, scale: v.scale };
+                  viewRef.current = next;
+                  setViewRef.current?.(next);
+                },
+              });
+            }
             return 'claim';
           },
           onCancel: (ctx) => {
             ctx.scratch = null;
+            decay.cancel();
           },
         },
       }),
-    [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [inertia, tracker, decay],
   );
 }
