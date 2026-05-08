@@ -70,27 +70,35 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
   >
   & {
     scene: Scene<TData, TLayer, TPose>;
-    /** Optional insert-gesture factory. When present, the synthesized adapter
-     *  exposes `commitInsert` and inserted objects are added as leaves on
-     *  `insertLayer` (default `'default'`). */
-    commitInsert?: SceneToAdapterOptions<TData, TLayer, TPose>['commitInsert'];
-    /** Layer for inserted nodes. Defaults to the trivial-form layer. */
-    insertLayer?: TLayer;
     /** Layout strategies keyed by container node id (or a resolver). Forwarded
      *  to `sceneToAdapter` so `useMove`'s layout pass runs on configured
      *  containers (reflow on enter, reparent + reflow on commit). */
     layouts?: SceneToAdapterOptions<TData, TLayer, TPose>['layouts'];
 
-    // --- Tool-folded options (formerly forwarded to Canvas, now consumed
-    //     by the internal `useSelectTool`). Ignored if the consumer passes
-    //     their own `tools` prop. ---
-    pickEvery?: (worldX: number, worldY: number) => string | null;
-    boundsOf?: (id: string) => Bounds | null;
-    handleHitRadius?: number;
-    snap?: SnapStrategy<TPose>;
-    moveOptions?: UseMoveOptions<TPose>;
-    resizeOptions?: UseResizeOptions<TPose>;
-    rotateOptions?: UseRotateOptions<TPose>;
+    // --- Geometry: hit-test + bounds overrides consumed by the internal
+    //     `useSelectTool`. Ignored if the consumer passes their own `tools`. ---
+    geometry?: {
+      pickEvery?: (worldX: number, worldY: number) => string | null;
+      boundsOf?: (id: string) => Bounds | null;
+    };
+
+    // --- Select tool options. Ignored if the consumer passes their own
+    //     `tools` prop. ---
+    selectTool?: {
+      move?: UseMoveOptions<TPose>;
+      resize?: UseResizeOptions<TPose>;
+      rotate?: UseRotateOptions<TPose>;
+      snap?: SnapStrategy<TPose>;
+      handleHitRadius?: number;
+    };
+
+    // --- Insert tool: when `create` is supplied, the synthesized adapter
+    //     exposes `commitInsert` and inserted objects are added as leaves on
+    //     `layer` (default `'default'`). ---
+    insertTool?: {
+      create: SceneToAdapterOptions<TData, TLayer, TPose>['commitInsert'];
+      layer?: TLayer;
+    };
 
     // --- Selection ---
     selection?: SelectionApi;
@@ -117,16 +125,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const {
     scene,
     gestures,
-    commitInsert,
-    insertLayer,
+    geometry,
+    selectTool: selectToolOpts,
+    insertTool,
     layouts,
-    pickEvery: pickEveryProp,
-    boundsOf: boundsOfProp,
-    handleHitRadius,
-    snap,
-    moveOptions,
-    resizeOptions,
-    rotateOptions,
     selection: selectionProp,
     selectionOptions,
     tools: toolsProp,
@@ -134,6 +136,16 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     layers,
     ...rest
   } = props;
+
+  const pickEveryProp = geometry?.pickEvery;
+  const boundsOfProp = geometry?.boundsOf;
+  const moveOptions = selectToolOpts?.move;
+  const resizeOptions = selectToolOpts?.resize;
+  const rotateOptions = selectToolOpts?.rotate;
+  const snap = selectToolOpts?.snap;
+  const handleHitRadius = selectToolOpts?.handleHitRadius;
+  const commitInsert = insertTool?.create;
+  const insertLayer = insertTool?.layer;
 
   // Selection: caller-supplied wins; otherwise build from selectionOptions.
   // Hooks always run unconditionally — when a caller supplies `selection`,
