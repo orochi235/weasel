@@ -93,4 +93,50 @@ describe('useDecayLoop', () => {
     expect(onTick1).toHaveBeenCalledTimes(1);  // first loop stopped
     expect(onTick2).toHaveBeenCalledTimes(1);  // second loop running
   });
+
+  it('boundary:stop zeroes velocity component when position hits a bound', () => {
+    const ticks: number[] = [];
+    const { result } = renderHook(() => useDecayLoop());
+    act(() => {
+      result.current.start({
+        velocity: { vx: -10, vy: 0 },  // moving left
+        friction: 1,                     // no friction — keeps constant velocity
+        minSpeed: 0.001,
+        viewBounds: { minX: -5 },        // wall at x = -5, starting at x = 0
+        boundary: 'stop',
+        initialPosition: { x: 0, y: 0 },
+        onTick: (dx) => { ticks.push(dx); },
+      });
+    });
+    act(() => { stepRAF(1); });  // first frame: skip (sets lastTime)
+    act(() => { stepRAF(1); });  // second frame: x moves to -10, clamped to -5
+    act(() => { stepRAF(1); });  // third frame: vx=0, no movement
+    // First tick clamped to -5 (not -10)
+    expect(ticks[0]).toBeCloseTo(-5);
+    // Velocity zeroed → speed < minSpeed → loop terminates after one tick
+    expect(ticks.length).toBe(1);
+  });
+
+  it('boundary:bounce reflects velocity component on bound hit', () => {
+    const ticks: number[] = [];
+    const { result } = renderHook(() => useDecayLoop());
+    act(() => {
+      result.current.start({
+        velocity: { vx: -10, vy: 0 },  // moving left
+        friction: 1,                     // no friction
+        minSpeed: 0.001,
+        viewBounds: { minX: -5 },        // wall at x = -5, starting at x = 0
+        boundary: 'bounce',
+        initialPosition: { x: 0, y: 0 },
+        onTick: (dx) => { ticks.push(dx); },
+      });
+    });
+    act(() => { stepRAF(1); });  // first frame: skip
+    act(() => { stepRAF(1); });  // second frame: hits minX, bounces
+    act(() => { stepRAF(1); });  // third frame: moving right (reflected)
+    // First tick clamped to -5 (from 0 to minX)
+    expect(ticks[0]).toBeCloseTo(-5);
+    // After bounce, velocity is positive — next tick moves right
+    expect(ticks[1]).toBeGreaterThan(0);
+  });
 });

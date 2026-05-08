@@ -1,9 +1,22 @@
 import { useCallback, useEffect, useRef } from 'react';
 
+export interface PanBounds {
+  minX?: number;
+  maxX?: number;
+  minY?: number;
+  maxY?: number;
+}
+
 export interface DecayLoopConfig {
   velocity: { vx: number; vy: number };
   friction?: number;
   minSpeed?: number;
+  /** Bounds for boundary clamping. Requires `boundary` to take effect. */
+  viewBounds?: PanBounds;
+  /** What to do when the accumulated position hits `viewBounds`. Default: no clamping. */
+  boundary?: 'stop' | 'bounce';
+  /** Starting position for internal boundary tracking. Required when `viewBounds` is set. */
+  initialPosition?: { x: number; y: number };
   onTick: (dx: number, dy: number) => void;
   onEnd?: () => void;
 }
@@ -14,6 +27,9 @@ export function useDecayLoop() {
     vx: number; vy: number;
     friction: number; minSpeed: number;
     lastTime: number | null;
+    posX: number; posY: number;
+    viewBounds: PanBounds | undefined;
+    boundary: 'stop' | 'bounce' | undefined;
     onTick: (dx: number, dy: number) => void;
     onEnd?: () => void;
   } | null>(null);
@@ -47,16 +63,41 @@ export function useDecayLoop() {
       s.onEnd?.();
       return;
     }
-    s.onTick(s.vx * dt, s.vy * dt);
+    let dx = s.vx * dt;
+    let dy = s.vy * dt;
+    if (s.viewBounds && s.boundary) {
+      const { minX, maxX, minY, maxY } = s.viewBounds;
+      const newX = s.posX + dx;
+      const newY = s.posY + dy;
+      if (s.boundary === 'stop') {
+        if (minX !== undefined && newX < minX) { dx = minX - s.posX; s.vx = 0; }
+        else if (maxX !== undefined && newX > maxX) { dx = maxX - s.posX; s.vx = 0; }
+        if (minY !== undefined && newY < minY) { dy = minY - s.posY; s.vy = 0; }
+        else if (maxY !== undefined && newY > maxY) { dy = maxY - s.posY; s.vy = 0; }
+      } else {
+        if (minX !== undefined && newX < minX) { dx = minX - s.posX; s.vx = Math.abs(s.vx); }
+        else if (maxX !== undefined && newX > maxX) { dx = maxX - s.posX; s.vx = -Math.abs(s.vx); }
+        if (minY !== undefined && newY < minY) { dy = minY - s.posY; s.vy = Math.abs(s.vy); }
+        else if (maxY !== undefined && newY > maxY) { dy = maxY - s.posY; s.vy = -Math.abs(s.vy); }
+      }
+      s.posX += dx;
+      s.posY += dy;
+    }
+    s.onTick(dx, dy);
     rafRef.current = requestAnimationFrame(tick);
   }, []);
 
   const start = useCallback((config: DecayLoopConfig) => {
     cancel();
-    const { velocity, friction = 0.92, minSpeed = 0.01, onTick, onEnd } = config;
+    const { velocity, friction = 0.92, minSpeed = 0.01, viewBounds, boundary, initialPosition, onTick, onEnd } = config;
     const speed = Math.sqrt(velocity.vx ** 2 + velocity.vy ** 2);
     if (speed < minSpeed) { onEnd?.(); return; }
-    stateRef.current = { vx: velocity.vx, vy: velocity.vy, friction, minSpeed, lastTime: null, onTick, onEnd };
+    stateRef.current = {
+      vx: velocity.vx, vy: velocity.vy, friction, minSpeed, lastTime: null,
+      posX: initialPosition?.x ?? 0, posY: initialPosition?.y ?? 0,
+      viewBounds, boundary,
+      onTick, onEnd,
+    };
     rafRef.current = requestAnimationFrame(tick);
   }, [cancel, tick]);
 

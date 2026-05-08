@@ -25,6 +25,7 @@ import type { CanvasProps, LayersMap } from './Canvas';
 import type { RenderLayer } from '../core/layers/render';
 import { sceneToAdapter, type SceneToAdapterOptions } from './sceneAdapter';
 import { usePinchZoomTool } from '../tools/builtin/usePinchZoomTool';
+import type { PanBounds } from '../features/viewport/useDecayLoop';
 import { useHandTool } from '../tools/builtin/useHandTool';
 import { useKeyboardZoomTool } from '../tools/builtin/useKeyboardZoomTool';
 import type { View } from '../features/viewport/view';
@@ -125,9 +126,9 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  for defaults or an object to tune. When omitted, no viewport tools
      *  (hand, keyboard zoom, pinch) are registered by SceneCanvas. */
     viewport?: {
-      inertia?: boolean | { friction?: number; minSpeed?: number };
+      inertia?: boolean | { friction?: number; minSpeed?: number; boundary?: 'stop' | 'bounce'; bounds?: PanBounds };
       pinchZoom?: boolean | { min?: number; max?: number };
-      animatedZoom?: boolean;
+      animatedZoom?: boolean | { duration?: number; resetDuration?: number; easing?: (t: number) => number };
     };
   };
 
@@ -159,17 +160,25 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Resolve viewport config — `true` means defaults, object means overrides,
   // anything else (undefined / false / null) disables that feature.
   const inertiaEnabled = !!viewport?.inertia;
-  const inertiaFriction = typeof viewport?.inertia === 'object' ? viewport.inertia.friction : undefined;
-  const inertiaMinSpeed = typeof viewport?.inertia === 'object' ? viewport.inertia.minSpeed : undefined;
-  const inertiaConfig = useMemo<false | { friction?: number; minSpeed?: number }>(
-    () => inertiaEnabled ? { friction: inertiaFriction, minSpeed: inertiaMinSpeed } : false,
-    [inertiaEnabled, inertiaFriction, inertiaMinSpeed],
+  const inertiaObj = typeof viewport?.inertia === 'object' ? viewport.inertia : undefined;
+  const inertiaFriction = inertiaObj?.friction;
+  const inertiaMinSpeed = inertiaObj?.minSpeed;
+  const inertiaBoundary = inertiaObj?.boundary;
+  const inertiaBounds = inertiaObj?.bounds;
+  const inertiaConfig = useMemo<false | { friction?: number; minSpeed?: number; boundary?: 'stop' | 'bounce'; bounds?: PanBounds }>(
+    () => inertiaEnabled ? { friction: inertiaFriction, minSpeed: inertiaMinSpeed, boundary: inertiaBoundary, bounds: inertiaBounds } : false,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [inertiaEnabled, inertiaFriction, inertiaMinSpeed, inertiaBoundary, inertiaBounds],
   );
   const pinchConfig: { min?: number; max?: number } | null =
     viewport?.pinchZoom === true
       ? {}
       : (viewport?.pinchZoom || null);
+  const animatedZoomObj = typeof viewport?.animatedZoom === 'object' ? viewport.animatedZoom : undefined;
   const animateEnabled = !!viewport?.animatedZoom;
+  const animateDuration = animatedZoomObj?.duration;
+  const animateResetDuration = animatedZoomObj?.resetDuration;
+  const animateEasing = animatedZoomObj?.easing;
 
   // Internal canvas ref so usePinchZoomTool can attach pointer listeners
   // even when the consumer passes their own forwarded ref.
@@ -343,9 +352,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // canvasRef is null.
   const handToolInertia = inertiaConfig === false
     ? undefined
-    : { friction: inertiaConfig.friction, minSpeed: inertiaConfig.minSpeed };
+    : { friction: inertiaConfig.friction, minSpeed: inertiaConfig.minSpeed, boundary: inertiaConfig.boundary, bounds: inertiaConfig.bounds };
   const handTool = useHandTool(handToolInertia ? { inertia: handToolInertia } : {});
-  const keyZoomTool = useKeyboardZoomTool(animateEnabled ? { animate: true } : {});
+  const keyZoomTool = useKeyboardZoomTool(animateEnabled ? { animate: true, duration: animateDuration, resetDuration: animateResetDuration, easing: animateEasing } : {});
   usePinchZoomTool(
     internalCanvasRef,
     currentViewRef.current,

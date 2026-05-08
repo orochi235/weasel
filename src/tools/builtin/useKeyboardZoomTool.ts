@@ -12,6 +12,12 @@ export interface KeyboardZoomToolOpts {
   keyStep?: number;
   /** Animate zoom transitions with a tween. Default false. */
   animate?: boolean;
+  /** Duration in ms for Cmd+=/- steps when `animate` is true. Default 200. */
+  duration?: number;
+  /** Duration in ms for Cmd+0 reset when `animate` is true. Default 350. */
+  resetDuration?: number;
+  /** Easing function when `animate` is true. Default ease-out-cubic. */
+  easing?: (t: number) => number;
 }
 
 /**
@@ -22,8 +28,10 @@ export interface KeyboardZoomToolOpts {
  * Register via `useTools({ ambient: [useKeyboardZoomTool()] })`.
  */
 export function useKeyboardZoomTool(opts: KeyboardZoomToolOpts = {}): Tool<null> {
-  const { min, max, animate = false } = opts;
+  const { min, max, animate = false, easing } = opts;
   const keyStep = opts.keyStep ?? 1.25;
+  const duration = opts.duration ?? 200;
+  const resetDuration = opts.resetDuration ?? 350;
 
   const setViewRef = useRef<((v: View) => void) | null>(null);
   const tween = useViewTween((v) => setViewRef.current?.(v));
@@ -55,8 +63,8 @@ export function useKeyboardZoomTool(opts: KeyboardZoomToolOpts = {}): Tool<null>
 
             if (!target) return 'pass';
             if (animate) {
-              const duration = e.key === '0' ? 350 : 200;
-              animateTo(ctx.view, target, { duration });
+              const d = e.key === '0' ? resetDuration : duration;
+              animateTo(ctx.view, target, { duration: d, easing });
             } else {
               ctx.setView(target);
             }
@@ -64,6 +72,6 @@ export function useKeyboardZoomTool(opts: KeyboardZoomToolOpts = {}): Tool<null>
           },
         },
       }),
-    [min, max, keyStep, animate, animateTo],
+    [min, max, keyStep, animate, duration, resetDuration, easing, animateTo],
   );
 }

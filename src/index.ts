@@ -78,7 +78,7 @@ export * from './features/viewport/wheelHandler';
 export { clientToCanvas } from './features/viewport/clientToCanvas';
 export { useVelocityTracker } from './features/viewport/useVelocityTracker';
 export { useDecayLoop } from './features/viewport/useDecayLoop';
-export type { DecayLoopConfig } from './features/viewport/useDecayLoop';
+export type { DecayLoopConfig, PanBounds } from './features/viewport/useDecayLoop';
 export { useViewTween } from './features/viewport/useViewTween';
 export { usePinchGesture } from './features/viewport/usePinchGesture';
 export { useViewAnimation } from './features/viewport/useViewAnimation';

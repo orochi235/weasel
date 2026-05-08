@@ -3,11 +3,15 @@ import { defineTool } from '../defineTool';
 import type { Tool } from '../types';
 import type { View } from '../../features/viewport/view';
 import { useVelocityTracker } from '../../features/viewport/useVelocityTracker';
-import { useDecayLoop } from '../../features/viewport/useDecayLoop';
+import { useDecayLoop, type PanBounds } from '../../features/viewport/useDecayLoop';
 
 export interface InertiaConfig {
   friction?: number;
   minSpeed?: number;
+  /** What to do when inertial pan reaches `bounds`. Default: no clamping. */
+  boundary?: 'stop' | 'bounce';
+  /** View-coordinate limits for boundary clamping. Requires `boundary` to take effect. */
+  bounds?: PanBounds;
 }
 
 export interface UseHandToolOptions {
@@ -88,6 +92,9 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | n
                 velocity,
                 friction: inertia.friction,
                 minSpeed: inertia.minSpeed,
+                boundary: inertia.boundary,
+                viewBounds: inertia.bounds,
+                initialPosition: { x: viewRef.current.x, y: viewRef.current.y },
                 onTick: (dvx, dvy) => {
                   const v = viewRef.current;
                   const next = { x: v.x + dvx, y: v.y + dvy, scale: v.scale };

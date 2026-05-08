@@ -47,8 +47,8 @@ Surfaced as explicit out-of-scope items in `docs/specs/2026-05-03-tool-primitive
 
 - **`useDecayLoop` `boundary: 'bounce'` spring overshoot.** v1 is linear reflection only. Add spring damping once a consumer finds linear bounce too snappy.
 - **Animated `zoomTo(bounds)` fit-to-selection.** `useViewAnimation`'s `animateTo` handles the tween; deciding *what* target view to compute from a selection bounds is a separate problem (needs a `fitViewToBounds` helper). Add when a consumer wants a "zoom to fit" button.
-- [ ] `viewport.inertia.boundary` ('stop'|'bounce') — add boundary clamping to useDecayLoop.onTick, thread through useHandTool
-- [ ] `viewport.animatedZoom` extended config — thread duration/easing through useKeyboardZoomTool
+- [x] `viewport.inertia.boundary` ('stop'|'bounce') — add boundary clamping to useDecayLoop.onTick, thread through useHandTool
+- [x] `viewport.animatedZoom` extended config — thread duration/easing through useKeyboardZoomTool
 - **Inertia on `useWheelPanTool`.** The `useVelocityTracker` + `useDecayLoop` primitives make this straightforward; deferred because wheel-pan inertia on a trackpad fights the OS momentum scrolling.
 - **`insertTool.create` typed discriminated union for multi-type insert.** Deferred from `docs/specs/2026-05-07-viewport-followups-design.md`. Current shape is a single factory `(bounds) => { pose, data, id? } | null`; multi-type canvases (rect vs image vs ellipse from one `<SceneCanvas>`) wire their own `tools` array (one `useInsertTool` per type) rather than folding a variant switch into `create`. Revisit if a real consumer wants the single-canvas multi-type ergonomic.
 
