@@ -76,6 +76,12 @@ export { useKeybinding, isEditableTarget } from './interactions/actions/useKeybi
 export type { KeyBinding } from './interactions/actions/useKeybinding';
 export * from './features/viewport/wheelHandler';
 export { clientToCanvas } from './features/viewport/clientToCanvas';
+export { useVelocityTracker } from './features/viewport/useVelocityTracker';
+export { useDecayLoop } from './features/viewport/useDecayLoop';
+export type { DecayLoopConfig } from './features/viewport/useDecayLoop';
+export { useViewTween } from './features/viewport/useViewTween';
+export { usePinchGesture } from './features/viewport/usePinchGesture';
+export { useViewAnimation } from './features/viewport/useViewAnimation';
 export { usePointerGestures } from './interactions/usePointerGestures';
 export * from './tools';
 export type {

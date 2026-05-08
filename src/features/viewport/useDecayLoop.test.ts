@@ -70,7 +70,7 @@ describe('useDecayLoop', () => {
     const onEnd = vi.fn();
     const { result } = renderHook(() => useDecayLoop());
     act(() => {
-      result.current.start({ velocity: { vx: 0.001, vy: 0 }, friction: 0.5, minSpeed: 0.01, onEnd });
+      result.current.start({ velocity: { vx: 0.001, vy: 0 }, friction: 0.5, minSpeed: 0.01, onTick: () => {}, onEnd });
     });
     act(() => { stepRAF(16); });
     expect(onEnd).toHaveBeenCalledOnce();
