@@ -22,6 +22,7 @@ import { AnimationDemo, ANIMATION_DEMO_SOURCE } from './demos/AnimationDemo';
 import { LayoutDemo, LAYOUT_DEMO_SOURCE } from './demos/LayoutDemo';
 import { DebugOverlayDemo, DEBUG_OVERLAY_DEMO_SOURCE } from './demos/DebugOverlayDemo';
 import { EasingsDemo, EASINGS_DEMO_SOURCE } from './demos/EasingsDemo';
+import { ViewportDemo, VIEWPORT_DEMO_SOURCE } from './demos/ViewportDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
@@ -46,6 +47,7 @@ import AnimationDemoFull from './demos/AnimationDemo.tsx?raw';
 import LayoutDemoFull from './demos/LayoutDemo.tsx?raw';
 import DebugOverlayDemoFull from './demos/DebugOverlayDemo.tsx?raw';
 import EasingsDemoFull from './demos/EasingsDemo.tsx?raw';
+import ViewportDemoFull from './demos/ViewportDemo.tsx?raw';
 
 export interface DemoEntry {
   id: string;
@@ -292,6 +294,17 @@ export const DEMOS: DemoEntry[] = [
     snippet: ZOOM_DEMO_SOURCE,
     full: ZoomDemoFull,
     path: 'demo/demos/ZoomDemo.tsx',
+  },
+  {
+    id: 'viewport',
+    title: 'Viewport (inertia · pinch · animated zoom)',
+    category: 'Viewport',
+    description: 'SceneCanvas viewport prop wires inertia pan, pinch zoom, and animated keyboard zoom in one place. Inertia uses a friction-decayed velocity loop after drag release; boundary clamping can stop or bounce the pan at configurable limits. Pinch zoom attaches pointer-event listeners directly to the canvas element (works on touch screens and Mac trackpads). Animated keyboard zoom tweens Cmd+=/- with ease-out-cubic instead of jumping.',
+    hint: 'Drag fast and release to coast · ⌘+= / ⌘+- / ⌘+0 to zoom with easing · toggle boundary to see stop vs bounce.',
+    Component: ViewportDemo,
+    snippet: VIEWPORT_DEMO_SOURCE,
+    full: ViewportDemoFull,
+    path: 'demo/demos/ViewportDemo.tsx',
   },
   {
     id: 'debug-overlay',

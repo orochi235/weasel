@@ -28,6 +28,7 @@ import { usePinchZoomTool } from '../tools/builtin/usePinchZoomTool';
 import type { PanBounds } from '../features/viewport/useDecayLoop';
 import { useHandTool } from '../tools/builtin/useHandTool';
 import { useKeyboardZoomTool } from '../tools/builtin/useKeyboardZoomTool';
+import { useWheelZoomTool } from '../tools/builtin/useWheelZoomTool';
 import type { View } from '../features/viewport/view';
 import type { Node, Scene } from '../core/scene/types';
 import { asNodeId } from '../core/scene/types';
@@ -355,6 +356,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     : { friction: inertiaConfig.friction, minSpeed: inertiaConfig.minSpeed, boundary: inertiaConfig.boundary, bounds: inertiaConfig.bounds };
   const handTool = useHandTool(handToolInertia ? { inertia: handToolInertia } : {});
   const keyZoomTool = useKeyboardZoomTool(animateEnabled ? { animate: true, duration: animateDuration, resetDuration: animateResetDuration, easing: animateEasing } : {});
+  // Trackpad pinch on Mac is delivered as ctrl+wheel, not pointer events.
+  // Register useWheelZoomTool alongside usePinchGesture so both touch and
+  // trackpad pinch are handled when pinchZoom is enabled.
+  const wheelZoomTool = useWheelZoomTool(pinchConfig !== null ? { min: pinchConfig.min, max: pinchConfig.max } : {});
   usePinchZoomTool(
     internalCanvasRef,
     currentViewRef.current,
@@ -362,7 +367,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     { ...(pinchConfig ?? {}), enabled: pinchConfig !== null },
   );
 
-  const viewportAmbient: AnyTool[] = viewport ? [handTool, keyZoomTool] : [];
+  const viewportAmbient: AnyTool[] = viewport
+    ? [handTool, keyZoomTool, ...(pinchConfig !== null ? [wheelZoomTool] : [])]
+    : [];
   const mergedAmbient = [...viewportAmbient, ...(ambient ?? [])];
 
   const internalTools = useTools({
