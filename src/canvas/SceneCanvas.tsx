@@ -357,10 +357,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     : { friction: inertiaConfig.friction, minSpeed: inertiaConfig.minSpeed, boundary: inertiaConfig.boundary, bounds: inertiaConfig.bounds };
   const handTool = useHandTool(handToolInertia ? { inertia: handToolInertia } : {});
   const keyZoomTool = useKeyboardZoomTool(animateEnabled ? { animate: true, duration: animateDuration, resetDuration: animateResetDuration, easing: animateEasing } : {});
-  // Trackpad pinch on Mac is delivered as ctrl+wheel, not pointer events.
-  // Register useWheelZoomTool alongside usePinchGesture so both touch and
-  // trackpad pinch are handled when pinchZoom is enabled.
-  const wheelZoomTool = useWheelZoomTool(pinchConfig !== null ? { min: pinchConfig.min, max: pinchConfig.max } : {});
+  // Plain wheel zooms (requireCtrl:false) — covers scroll wheel, Cmd+wheel,
+  // and Mac trackpad pinch (browser synthesizes pinch as ctrl+wheel).
+  // Touch pinch via pointer events is handled separately by usePinchZoomTool.
+  const wheelZoomOpts = pinchConfig !== null
+    ? { min: pinchConfig.min, max: pinchConfig.max, requireCtrl: false }
+    : { requireCtrl: false };
+  const wheelZoomTool = useWheelZoomTool(viewport ? wheelZoomOpts : {});
   usePinchZoomTool(
     internalCanvasRef,
     currentViewRef.current,
@@ -371,7 +374,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // keyZoom and wheelZoom are always-on (ambient); handTool must be in the
   // registry so H keybinding and space hotkey work via useKeybindings.
   const viewportAmbient: AnyTool[] = viewport
-    ? [keyZoomTool, ...(pinchConfig !== null ? [wheelZoomTool] : [])]
+    ? [keyZoomTool, wheelZoomTool]
     : [];
   const mergedAmbient = [...viewportAmbient, ...(ambient ?? [])];
 
