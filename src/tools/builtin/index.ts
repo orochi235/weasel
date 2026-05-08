@@ -42,6 +42,7 @@ export {
   type SelectWithAnchorEditAdapter,
   type SelectWithAnchorEditAnchorsOptions,
 } from './useSelectWithAnchorEdit';
+export { useRectTool, type UseRectToolOptions, type RectBounds } from './useRectTool';
 export {
   useCloneTool,
   type UseCloneToolOptions,
