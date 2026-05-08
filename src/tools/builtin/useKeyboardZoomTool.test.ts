@@ -86,3 +86,29 @@ describe('useKeyboardZoomTool', () => {
     expect(result.current.keyboard!.onDown!(e, ctx)).toBe('claim');
   });
 });
+
+describe('useKeyboardZoomTool with animate:true', () => {
+  it('does not call setView immediately when animate is true', () => {
+    vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation(() => 0);
+    vi.spyOn(globalThis, 'cancelAnimationFrame').mockImplementation(() => {});
+
+    const { result } = renderHook(() => useKeyboardZoomTool({ animate: true }));
+    const setView = vi.fn();
+    // Use the same makeCtx helper from the describe above
+    const ctx = makeCtx({ x: 0, y: 0, scale: 1 }, setView);
+    const e = new Event('keydown') as KeyboardEvent;
+    Object.assign(e, {
+      key: '=',
+      metaKey: true,
+      ctrlKey: false,
+      shiftKey: false,
+      altKey: false,
+      preventDefault: vi.fn(),
+    });
+    result.current.keyboard!.onDown!(e, ctx);
+    // setView should NOT have been called synchronously — the tween defers it
+    expect(setView).not.toHaveBeenCalled();
+
+    vi.restoreAllMocks();
+  });
+});

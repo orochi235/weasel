@@ -84,6 +84,7 @@ export { usePinchGesture } from './features/viewport/usePinchGesture';
 export { useViewAnimation } from './features/viewport/useViewAnimation';
 export { usePointerGestures } from './interactions/usePointerGestures';
 export * from './tools';
+export { usePinchZoomTool, type PinchZoomToolOpts } from './tools/builtin/usePinchZoomTool';
 export type {
   PointerGestureBindings,
   UsePointerGesturesOptions,
