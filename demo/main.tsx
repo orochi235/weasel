@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { CanvasKitDemo } from './CanvasKitDemo';
 import { BackendProvider } from './BackendContext';
 import { ActionsProvider } from '../src/interactions/actions/registry';
+import { SelectionContextProvider } from '../src/features/selection/SelectionContext';
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing #root element');
@@ -15,9 +16,11 @@ if (!container) throw new Error('Missing #root element');
 createRoot(container).render(
   <StrictMode>
     <ActionsProvider>
-      <BackendProvider>
-        <CanvasKitDemo />
-      </BackendProvider>
+      <SelectionContextProvider>
+        <BackendProvider>
+          <CanvasKitDemo />
+        </BackendProvider>
+      </SelectionContextProvider>
     </ActionsProvider>
   </StrictMode>,
 );

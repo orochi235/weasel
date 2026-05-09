@@ -133,6 +133,13 @@ export type {
   SelectionExtendKey,
   UseSelectionOptions,
 } from './features/selection/useSelection';
+// --- @experimental Selection ambient context (2026-05-09) -------------------
+export {
+  SelectionContextProvider,
+  useSelectionContext,
+  usePublishSelection,
+} from './features/selection/SelectionContext';
+export type { SelectionContextValue } from './features/selection/SelectionContext';
 export * from './core/layers/render';
 export * from './core/layers/LayerRenderer';
 export { createGridLayer } from './features/grid/layer';

@@ -1,11 +1,15 @@
 /**
- * Command palette overlay for the weasel demo. Surfaces every Action
- * registered with the surrounding `<ActionsProvider>` so visitors can
- * discover keybindings and click-to-run them.
+ * @experimental
+ * Command palette overlay. Reads every Action registered with the
+ * surrounding `<ActionsProvider>` and exposes a search-and-run UI.
  *
- * Demo-only — intentionally not registered with the registry itself
- * (registering `/` as an Action would create a chicken-and-egg loop
- * since the palette is what reveals the registry's contents).
+ * Reads the ambient selection (when an `<SelectionContextProvider>` is in
+ * scope) so the palette can show a "N selected" header — purely informational;
+ * action-availability is driven by each Action's own `enabled` predicate.
+ *
+ * Snapshot semantics: the action list and each row's `enabled` state are
+ * captured when the palette opens; live reactive updates while open are out
+ * of scope. See `Action.enabled` JSDoc in the kit.
  */
 import {
   useEffect,
@@ -15,14 +19,20 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 import {
-  useActionsRegistry, evaluateEnabled, ActionDisabledReason,
-  type Action, type ActionEnabledResult, type ActionDisabledReason as ActionDisabledReasonType, type KeyBinding,
-} from '../src/interactions/actions/registry';
+  useActionsRegistry,
+  evaluateEnabled,
+  ActionDisabledReason,
+  useSelectionContext,
+  type Action,
+  type ActionEnabledResult,
+  type KeyBinding,
+} from '@orochi235/weasel';
+import styles from './CommandPalette.module.css';
 
-/** Display strings for the closed `ActionDisabledReason` enum. The kit
- *  ships symbolic constants; the consumer maps them to user-facing copy
- *  here so localization and theming stay in app code. */
-const REASON_LABELS: Record<ActionDisabledReasonType, string> = {
+/** Display strings for the closed `ActionDisabledReason` enum. Defined here
+ *  (not in the kit) so localization and theming stay in app code; consumers
+ *  can override by passing `reasonLabels`. */
+const DEFAULT_REASON_LABELS: Record<string, string> = {
   [ActionDisabledReason.SelectionRequired]: 'Selection required',
   [ActionDisabledReason.SceneEmpty]: 'Scene is empty',
   [ActionDisabledReason.NotApplicable]: 'Not applicable here',
@@ -63,19 +73,20 @@ function formatBinding(binding: KeyBinding | undefined): string {
 export interface CommandPaletteProps {
   open: boolean;
   onClose: () => void;
+  /** Override the default symbolic-reason → display-string map. */
+  reasonLabels?: Record<string, string>;
 }
 
-export function CommandPalette({ open, onClose }: CommandPaletteProps) {
+export function CommandPalette({ open, onClose, reasonLabels }: CommandPaletteProps) {
   const registry = useActionsRegistry();
+  const selectionCtx = useSelectionContext();
   const [query, setQuery] = useState('');
   const [highlight, setHighlight] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
-  // `list()` returns a stable readonly snapshot; re-read each time we open
-  // so newly registered actions show up. We also snapshot each action's
-  // `enabled` state at open time — palette is short-lived; live reactive
-  // updates as selection changes are explicitly out of scope. See Action.enabled JSDoc.
+  const labels = reasonLabels ?? DEFAULT_REASON_LABELS;
+
   const allActions = useMemo<readonly Action[]>(
     () => (registry && open ? registry.list() : []),
     [registry, open],
@@ -96,7 +107,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const isEnabled = (a: Action): boolean => enabledById.get(a.id)?.enabled ?? true;
   const reasonFor = (a: Action): string | undefined => {
     const r = enabledById.get(a.id)?.reason;
-    return r ? REASON_LABELS[r] : undefined;
+    return r ? labels[r] : undefined;
   };
 
   /** Move the highlight to the next/prev *enabled* row. */
@@ -110,7 +121,6 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
         return;
       }
     }
-    // No enabled rows — leave highlight where it was.
   };
 
   // Reset state on open and focus the input.
@@ -118,7 +128,6 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     if (!open) return;
     setQuery('');
     setHighlight(0);
-    // Defer focus until after the input is mounted.
     const id = window.requestAnimationFrame(() => {
       inputRef.current?.focus();
     });
@@ -139,8 +148,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     el?.scrollIntoView({ block: 'nearest' });
   }, [highlight, open]);
 
-  // Escape handler at the document level so it works even if focus has
-  // escaped the overlay (e.g. backdrop click moved focus).
+  // Document-level Escape so it works even if focus left the overlay.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: globalThis.KeyboardEvent) => {
@@ -159,8 +167,6 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const trigger = (action: Action) => {
     if (!isEnabled(action)) return;
     onClose();
-    // Defer trigger to next tick so `onClose` state flush completes before
-    // any action that may itself touch focus / DOM.
     queueMicrotask(() => {
       registry?.trigger(action.id);
     });
@@ -180,18 +186,21 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     }
   };
 
+  const headerText = describeSelection(selectionCtx);
+
   return (
-    <div className="ckd-palette-backdrop" onMouseDown={onClose}>
+    <div className={styles.backdrop} onMouseDown={onClose}>
       <div
-        className="ckd-palette"
+        className={styles.palette}
         role="dialog"
         aria-modal="true"
         aria-label="Command palette"
         onMouseDown={(e) => e.stopPropagation()}
       >
+        {headerText && <div className={styles.header}>{headerText}</div>}
         <input
           ref={inputRef}
-          className="ckd-palette-input"
+          className={styles.input}
           type="text"
           placeholder="Search actions…"
           value={query}
@@ -201,14 +210,19 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
           autoComplete="off"
         />
         {!registry ? (
-          <div className="ckd-palette-empty">No actions available.</div>
+          <div className={styles.empty}>No actions available.</div>
         ) : filtered.length === 0 ? (
-          <div className="ckd-palette-empty">No matching actions.</div>
+          <div className={styles.empty}>No matching actions.</div>
         ) : (
-          <ul ref={listRef} className="ckd-palette-list" role="listbox">
+          <ul ref={listRef} className={styles.list} role="listbox">
             {filtered.map((action, idx) => {
               const enabled = isEnabled(action);
               const reason = reasonFor(action);
+              const cls = [
+                styles.row,
+                idx === highlight ? styles.rowActive : '',
+                enabled ? '' : styles.rowDisabled,
+              ].filter(Boolean).join(' ');
               return (
                 <li
                   key={action.id}
@@ -216,24 +230,24 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                   role="option"
                   aria-selected={idx === highlight}
                   aria-disabled={!enabled}
-                  className={`ckd-palette-row${idx === highlight ? ' active' : ''}${enabled ? '' : ' disabled'}`}
+                  className={cls}
                   onMouseEnter={() => { if (enabled) setHighlight(idx); }}
                   onMouseDown={(e) => { e.preventDefault(); if (enabled) trigger(action); }}
                   title={reason}
                 >
-                  <span className="ckd-palette-label">{action.label}</span>
+                  <span className={styles.label}>{action.label}</span>
                   {!enabled && reason && (
-                    <span className="ckd-palette-reason">{reason}</span>
+                    <span className={styles.reason}>{reason}</span>
                   )}
                   {action.defaultBinding && (
-                    <kbd className="ckd-palette-kbd">{formatBinding(action.defaultBinding)}</kbd>
+                    <kbd className={styles.kbd}>{formatBinding(action.defaultBinding)}</kbd>
                   )}
                 </li>
               );
             })}
           </ul>
         )}
-        <div className="ckd-palette-footer">
+        <div className={styles.footer}>
           <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
           <span><kbd>↵</kbd> run</span>
           <span><kbd>Esc</kbd> close</span>
@@ -243,14 +257,45 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   );
 }
 
+/** Pluralize an English noun for the palette header. Naïve — handles the
+ *  common (-s, -es) cases; consumers wanting an exact form should rename
+ *  their kind labels (`'paths'`) or fork this. */
+function pluralize(noun: string, count: number): string {
+  if (count === 1) return noun;
+  if (/(s|x|z|ch|sh)$/.test(noun)) return `${noun}es`;
+  if (/[^aeiou]y$/.test(noun)) return `${noun.slice(0, -1)}ies`;
+  return `${noun}s`;
+}
+
+/** Build the palette's selection header from the ambient context. Returns
+ *  `null` when no provider is in scope. */
+function describeSelection(
+  ctx: { readonly selection: readonly string[]; readonly kinds?: readonly (string | undefined)[] } | null,
+): string | null {
+  if (ctx == null) return null;
+  const n = ctx.selection.length;
+  if (n === 0) return 'No selection';
+  const kinds = ctx.kinds;
+  // All entries reported the same non-undefined kind?
+  if (kinds && kinds.length === n) {
+    const first = kinds[0];
+    if (typeof first === 'string' && kinds.every((k) => k === first)) {
+      return `${n} ${pluralize(first, n)} selected`;
+    }
+  }
+  return n === 1 ? '1 object selected' : `${n} objects selected`;
+}
+
 /**
+ * @experimental
  * Wires the `/` key to open the palette. Uses a direct document listener
- * (NOT the actions registry) to avoid the bootstrap loop noted in the
- * file header.
+ * (not the actions registry) to avoid the bootstrap loop where registering
+ * the opener as an Action would require the palette to already be open
+ * to discover it.
  */
 export function useCommandPaletteShortcut(open: boolean, setOpen: (v: boolean) => void) {
   useEffect(() => {
-    if (open) return; // already open — let the palette's own handlers take over
+    if (open) return;
     const onKey = (e: globalThis.KeyboardEvent) => {
       if (e.key !== '/') return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;

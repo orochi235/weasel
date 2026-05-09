@@ -11,3 +11,5 @@ export {
   PropertySwatchGrid,
   PropertyButton,
 } from './PropertiesPanel';
+export { CommandPalette, useCommandPaletteShortcut } from './CommandPalette';
+export type { CommandPaletteProps } from './CommandPalette';

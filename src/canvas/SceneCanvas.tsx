@@ -33,6 +33,7 @@ import type { Node, Scene } from '../core/scene/types';
 import { asNodeId } from '../core/scene/types';
 import type { Op } from '../core/ops/types';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from '../features/selection/useSelection';
+import { usePublishSelection } from '../features/selection/SelectionContext';
 import type { Bounds } from '../tools/builtin/useSelectTool';
 import { useTools, type ToolsApi } from '../tools/useTools';
 import { useKeybindings } from '../tools/useKeybindings';
@@ -139,6 +140,20 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     };
 
     /**
+     * @experimental
+     * Optional resolver: given a scene node, return a short human-readable
+     * "kind" label (e.g. `'rectangle'`, `'path'`, `'sticky note'`). When
+     * supplied, the kit publishes per-id kinds into any surrounding
+     * `<SelectionContextProvider>` so non-canvas UI (palette, status bar)
+     * can render type-aware copy. Return `undefined` to skip an entry.
+     *
+     * Default behavior when omitted: containers report `'group'`, paths
+     * (poses with a `kind` property) report `'path'`, everything else is
+     * left unlabelled.
+     */
+    describeKind?: (node: Node<TData, TLayer, TPose>) => string | undefined;
+
+    /**
      * Children rendered alongside the canvas. Useful for siblings that need
      * the same `<ActionsProvider>` scope (e.g. shortcuts overlays, probes).
      */
@@ -164,6 +179,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     layers,
     actions,
     actionDefaults,
+    describeKind,
     children,
     ...rest
   } = props;
@@ -198,6 +214,30 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // the internally-built one is unused but the hook still fires.
   const internalSelection = useSelection(selectionOptions ?? {});
   const selection = selectionProp ?? internalSelection;
+
+  // Publish the current selection (with optional per-id kind labels) into any
+  // surrounding `<SelectionContextProvider>` so non-canvas UI can read it.
+  // No-op when no provider is in scope.
+  const selectionKinds = useMemo<readonly (string | undefined)[] | undefined>(() => {
+    if (selection.current.length === 0) return undefined;
+    const out: (string | undefined)[] = [];
+    for (const id of selection.current) {
+      const node = scene.get(asNodeId(id));
+      if (!node) { out.push(undefined); continue; }
+      if (describeKind) { out.push(describeKind(node)); continue; }
+      // Default heuristic: containers -> 'group', poses with .kind -> 'path',
+      // everything else unlabelled (consumer can supply describeKind to fill in).
+      if (node.kind === 'container') { out.push('group'); continue; }
+      const pose = node.pose as unknown as { kind?: unknown } | null;
+      if (pose && typeof pose === 'object' && 'kind' in pose && typeof pose.kind === 'string') {
+        out.push('path');
+        continue;
+      }
+      out.push(undefined);
+    }
+    return out;
+  }, [selection.current, scene, describeKind]);
+  usePublishSelection(selection.current, selectionKinds);
 
   // Adapter + select tool — folded into a single hook that synthesizes both.
   const { adapter, selectTool: internalSelect } = useSceneSelectTool({

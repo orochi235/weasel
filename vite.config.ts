@@ -17,6 +17,14 @@ export default defineConfig({
         replacement: resolve(__dirname, 'packages/weasel-gl/src/index.ts'),
       },
       {
+        find: '@orochi235/weasel-ui/tokens.css',
+        replacement: resolve(__dirname, 'packages/weasel-ui/src/tokens.css'),
+      },
+      {
+        find: '@orochi235/weasel-ui',
+        replacement: resolve(__dirname, 'packages/weasel-ui/src/index.ts'),
+      },
+      {
         find: /^@orochi235\/weasel\/(.*)$/,
         replacement: resolve(__dirname, 'src/subpaths/$1.ts'),
       },
