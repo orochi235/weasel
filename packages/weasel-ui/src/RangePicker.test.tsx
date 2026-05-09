@@ -344,3 +344,61 @@ describe('RangePicker click-on-track to add', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 });
+
+describe('RangePicker remove (drag-off and right-click)', () => {
+  it('drag-off-vertical removes thumb on pointerup if onRemoveThumb returns true', () => {
+    const onChange = vi.fn();
+    const onRemoveThumb = vi.fn(() => true);
+    const { container } = render(
+      <RangePicker
+        min={0}
+        max={1}
+        thumbs={[{ value: 0.3 }, { value: 0.7 }]}
+        onChange={onChange}
+        onRemoveThumb={onRemoveThumb}
+      />,
+    );
+    const thumbs = container.querySelectorAll<HTMLElement>('[role="slider"]');
+    stubRect(thumbs[0].parentElement!, { left: 0, width: 200, top: 0, bottom: 24, height: 24 });
+
+    fireEvent.pointerDown(thumbs[0], { clientX: 60, clientY: 12, pointerId: 1, button: 0 });
+    // Drag well below the track band — y > top + height + trackHeight (24 + 24 = 48).
+    fireEvent.pointerMove(document, { clientX: 60, clientY: 100, pointerId: 1 });
+    fireEvent.pointerUp(document, { clientX: 60, clientY: 100, pointerId: 1 });
+    expect(onRemoveThumb).toHaveBeenCalledWith(0);
+    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(last).toEqual([{ value: 0.7 }]);
+  });
+
+  it('right-click on thumb removes via onRemoveThumb', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <RangePicker
+        min={0}
+        max={1}
+        thumbs={[{ value: 0.3 }, { value: 0.7 }]}
+        onChange={onChange}
+        onRemoveThumb={() => true}
+      />,
+    );
+    const thumbs = container.querySelectorAll<HTMLElement>('[role="slider"]');
+    fireEvent.contextMenu(thumbs[1]);
+    expect(onChange.mock.calls[0][0]).toEqual([{ value: 0.3 }]);
+  });
+
+  it('onRemoveThumb returning false leaves thumbs intact', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <RangePicker
+        min={0}
+        max={1}
+        thumbs={[{ value: 0.5 }]}
+        onChange={onChange}
+        onRemoveThumb={() => false}
+      />,
+    );
+    const thumb = container.querySelector('[role="slider"]') as HTMLElement;
+    fireEvent.contextMenu(thumb);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+});

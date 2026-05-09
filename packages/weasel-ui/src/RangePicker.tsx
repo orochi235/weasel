@@ -1,4 +1,4 @@
-import { useCallback, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react';
+import { useCallback, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react';
 import s from './RangePicker.module.css';
 
 export type ThumbRenderCtx = {
@@ -89,6 +89,7 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
     (index: number) => {
       const buf: T[] = thumbs.map(t => ({ ...t }));
       dragBufferRef.current = buf;
+      let droppedOff = false;
 
       const onMove = (ev: PointerEvent) => {
         const track = trackRef.current;
@@ -110,6 +111,16 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
           v = clamp(v, lower, upper);
         }
 
+        // Drop-off detection: pointer exits the track vertically by more than trackHeight.
+        const bandHeight = rect.height;
+        if (props.onRemoveThumb) {
+          if (ev.clientY < rect.top - bandHeight || ev.clientY > rect.bottom + bandHeight) {
+            droppedOff = true;
+          } else {
+            droppedOff = false;
+          }
+        }
+
         buffer[index] = { ...buffer[index], value: v };
         onChange(buffer.map(t => ({ ...t })));
       };
@@ -119,13 +130,25 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
         document.removeEventListener('pointerup', onUp);
         const buffer = dragBufferRef.current;
         dragBufferRef.current = null;
-        if (buffer && onCommit) onCommit(buffer.map(t => ({ ...t })));
+        if (!buffer) return;
+
+        if (droppedOff && props.onRemoveThumb) {
+          const accepted = props.onRemoveThumb(index);
+          if (accepted) {
+            const next = buffer.filter((_, i) => i !== index).map(t => ({ ...t })) as T[];
+            onChange(next);
+            onCommit?.(next);
+            return;
+          }
+        }
+
+        if (onCommit) onCommit(buffer.map(t => ({ ...t })));
       };
 
       document.addEventListener('pointermove', onMove);
       document.addEventListener('pointerup', onUp);
     },
-    [thumbs, onChange, onCommit, fractionToValue, min, max, step, constraint],
+    [thumbs, onChange, onCommit, fractionToValue, min, max, step, constraint, props],
   );
 
   const onThumbPointerDown = (index: number) => (e: ReactPointerEvent) => {
@@ -135,6 +158,16 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
     e.preventDefault();
     e.stopPropagation();
     beginThumbDrag(index);
+  };
+
+  const onThumbContextMenu = (index: number) => (e: ReactMouseEvent) => {
+    if (!props.onRemoveThumb) return;
+    e.preventDefault();
+    const accepted = props.onRemoveThumb(index);
+    if (!accepted) return;
+    const next = thumbs.filter((_, i) => i !== index).map(t => ({ ...t })) as T[];
+    onChange(next);
+    onCommit?.(next);
   };
 
   const onTrackPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -223,6 +256,7 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
             style={{ left: `${valueToFraction(thumb.value) * 100}%` }}
             onPointerDown={onThumbPointerDown(i)}
             onKeyDown={onThumbKeyDown(i)}
+            onContextMenu={onThumbContextMenu(i)}
           >
             {thumb.label ?? ''}
           </div>
