@@ -35,6 +35,13 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
   const animations = useRef<Map<number, ActiveAnimation>>(new Map());
   const nextId = useRef(1);
   const rafHandle = useRef<number | null>(null);
+  /**
+   * Re-entrancy counter incremented around each animation tick in tickAll.
+   * Exposed via `isTicking()`. > 0 ⇒ we're currently inside an animation's
+   * onTick; an adapter wrapper (`animateOnSetPose`) seeing this flag should
+   * write through to the base adapter rather than schedule a new tween.
+   */
+  const tickDepth = useRef(0);
 
   // StrictMode-safe cleanup: when the component unmounts (including the
   // dev-mode double-mount that StrictMode performs), cancel every running
@@ -93,7 +100,16 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         rafHandle.current = null;
         const finished: number[] = [];
         for (const anim of animations.current.values()) {
-          if (anim.tick(t)) finished.push(anim.id);
+          // Increment tick depth around each animation's tick so re-entrant
+          // calls (e.g. `decay.onTick` → `adapter.setPose` →
+          // `animateOnSetPose` checking `isTicking()`) see the flag and
+          // skip scheduling a new wrap-tween that would fight the caller.
+          tickDepth.current += 1;
+          try {
+            if (anim.tick(t)) finished.push(anim.id);
+          } finally {
+            tickDepth.current -= 1;
+          }
         }
         for (const id of finished) animations.current.delete(id);
         if (animations.current.size > 0) {
@@ -272,6 +288,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         }
         return false;
       },
+      isTicking: () => tickDepth.current > 0,
     };
   }, []);
 }

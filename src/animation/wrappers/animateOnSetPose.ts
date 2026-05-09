@@ -51,16 +51,23 @@ export function animateOnSetPose<TObject extends { id: string }, TPose>(
         adapter.setPose(id, pose);
         return;
       }
-      // Re-entrant short-circuit: when a higher-frequency animation (e.g.
-      // momentum decay) calls setPose every rAF tick, we'd otherwise spawn a
-      // brand-new 250ms tween every frame, each immediately cancelled by the
-      // next. That stackup synchronously registers ~60 tweens/sec inside the
-      // animator's own tick loop, which (a) writes back the previous `from`
-      // value at every wrap-tween's t=0 sample, undoing the decay's effect,
-      // and (b) under heavy interaction overwhelms the renderer process.
-      // If the existing target for this id matches the requested pose
-      // closely (typical when the caller is itself an animation), write
-      // through directly so the in-flight tween keeps owning the id.
+      // Re-entrant short-circuit (a): the caller IS another animation's tick
+      // (momentum decay, in-flight tween, spring) writing setPose ~60×/sec.
+      // Wrapping each call in a fresh 250ms tween fights the caller — the
+      // new tween's t=0 sample writes back the previous `from`, undoing
+      // this onTick — and when each wrap-tween settles, the very next
+      // caller-tick spawns another, looping visibly forever (cards never
+      // stop after a flick). Detect via animator.isTicking() and write
+      // through.
+      if (animator.isTicking()) {
+        adapter.setPose(id, pose);
+        return;
+      }
+      // Re-entrant short-circuit (b): a prior wrap-tween for this id is
+      // still in flight. Let it finish rather than registering a competing
+      // tween. (Earlier guard from 3af4ed8; kept alongside (a) for the case
+      // where setPose is called from outside the animator's own tick loop
+      // but a pose:<id> tween is still mid-transition.)
       if (animator.isActive('pose:' + id)) {
         adapter.setPose(id, pose);
         return;

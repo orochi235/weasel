@@ -105,6 +105,51 @@ describe('animateOnSetPose', () => {
     expect(applyBatch).not.toHaveBeenCalled();
   });
 
+  it('writes through when called from inside another animation tick (no wrap-tween storm)', () => {
+    // Regression: even with the same-id-isActive guard above, after a
+    // wrap-tween's 250ms completed, the next momentum-decay onTick (16ms
+    // later) would start a NEW wrap-tween, and 250ms after that another,
+    // ad infinitum. Visible to the user as "flicked cards never stop —
+    // they pause briefly every 250ms then continue moving until offscreen."
+    // The fix: detect via animator.isTicking() that the caller is itself an
+    // animator tick (decay's onTick, etc.) and write through directly,
+    // regardless of whether a wrap-tween is currently in flight.
+    const clock = makeClock();
+    const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 10, height: 10 }]]);
+    const { base, setPose, applyBatch } = makeAdapter(initial);
+    const { result } = renderHook(() => useAnimator(clock));
+    const wrapped = animateOnSetPose(base as never, result.current, { ms: 100 });
+
+    // Schedule a decay that calls wrapped.setPose from its onTick — same
+    // pattern as momentum-driven movement.
+    const writes: number[] = [];
+    act(() => {
+      result.current.decay<number>({
+        from: 0,
+        velocity: 50,
+        threshold: 0.5,
+        add: (a, b) => a + b,
+        scale: (v, k) => v * k,
+        magnitude: (v) => Math.abs(v),
+        onTick: (x) => {
+          writes.push(x);
+          // This is the re-entrant call. Without the isTicking() guard,
+          // each call would spawn a fresh tween → 1 + N applyBatch calls.
+          wrapped.setPose('a', { x, y: 0, width: 10, height: 10 });
+        },
+      });
+    });
+    // Drive the decay loop for several frames.
+    for (let i = 0; i < 5; i++) act(() => clock.advance(16));
+    // Decay should have ticked at least a few times.
+    expect(writes.length).toBeGreaterThan(0);
+    // CRITICAL: zero applyBatch calls — every wrapped.setPose during the
+    // decay's onTick wrote through to base directly.
+    expect(applyBatch).not.toHaveBeenCalled();
+    // setPose on the base adapter should equal the number of decay ticks.
+    expect(setPose.mock.calls.length).toBe(writes.length);
+  });
+
   it('shouldAnimate returning false writes through immediately and emits no op', () => {
     const clock = makeClock();
     const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 10, height: 10 }]]);

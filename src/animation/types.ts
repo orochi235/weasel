@@ -87,4 +87,12 @@ export interface Animator {
   cancelAll(): void;
   /** True iff at least one animation is active. With `key`, scoped to that cancelKey. */
   isActive(key?: string): boolean;
+  /**
+   * True while the animator is currently executing an animation tick. Useful
+   * for adapter wrappers (e.g. `animateOnSetPose`) that need to detect
+   * "this `setPose` was called from inside another animation's onTick"
+   * (momentum decay, in-flight tween, spring) and avoid recursively
+   * scheduling a new wrap-animation that would fight the caller.
+   */
+  isTicking(): boolean;
 }
