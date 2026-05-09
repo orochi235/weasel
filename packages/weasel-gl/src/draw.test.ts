@@ -119,3 +119,35 @@ describe('WeaselRenderer.render — kind: path (evenodd stencil two-pass)', () =
     expect(clearCalls.length).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe('WeaselRenderer.render — kind: path with stroke', () => {
+  let recorder: ReturnType<typeof makeGLRecorder>;
+  let r: WeaselRenderer;
+
+  beforeEach(() => {
+    recorder = makeGLRecorder();
+    r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
+    recorder.reset();
+  });
+
+  it('draws stroke (drawElements) when stroke is set', () => {
+    const path: RectPath = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
+    r.render([{ kind: 'path', path, stroke: { paint: { color: '#000' }, width: 2 } }]);
+    const draws = recorder.calls.filter((c) => c.name === 'drawElements');
+    expect(draws.length).toBeGreaterThan(0);
+  });
+
+  it('draws fill THEN stroke when both are set', () => {
+    const path: RectPath = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
+    r.render([{ kind: 'path', path, fill: { color: '#f00' }, stroke: { paint: { color: '#000' }, width: 2 } }]);
+    const draws = recorder.calls.filter((c) => c.name === 'drawElements');
+    expect(draws.length).toBe(2);
+  });
+
+  it('skips when neither fill nor stroke is set', () => {
+    const path: RectPath = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
+    r.render([{ kind: 'path', path }]);
+    const draws = recorder.calls.filter((c) => c.name === 'drawElements');
+    expect(draws.length).toBe(0);
+  });
+});
