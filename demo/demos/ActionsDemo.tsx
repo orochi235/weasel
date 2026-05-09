@@ -83,6 +83,11 @@ export function ActionsDemo() {
       ctx.fillStyle = rect.color;
       ctx.fillRect(pose.x, pose.y, pose.width, pose.height);
     },
+    drawGhostGL: (rect, pose): DrawCommand[] => rect == null ? [] : [{
+      kind: 'path',
+      path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
+      fill: { color: rect.color },
+    }],
     getObject: (id) => rectsRef.current.find((r) => r.id === id) ?? null,
   });
   const tools = useTools({ active: 'select', registry: { select } });

@@ -62,6 +62,11 @@ export function BezierEditDemo() {
       traceToContext(cx, p);
       cx.stroke();
     },
+    drawGhostGL: (_o, p): DrawCommand[] => [{
+      kind: 'path',
+      path: p,
+      stroke: { paint: { color: '#f5b7a3' }, width: 2 },
+    }],
     getObject: (id) => (id === ID ? { id } : null),
     editAnchors: {
       hitRadius: HANDLE / zoom,

@@ -17,7 +17,7 @@ import type { DebugSink } from '../../debug/types';
 import type { RenderLayer } from '../../core/layers/render';
 import { viewToTransform } from '../../features/viewport/view';
 import { worldToScreen } from '../../features/viewport/viewTransform';
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import { viewToMat3, type DrawCommand } from '@orochi235/weasel-gl';
 import { pickTopMostHit } from './pickTopMostHit';
 
 /** World-space bounding rect for hit-testing handles. Uses `width`/`height` to
@@ -109,6 +109,13 @@ export interface UseSelectToolOptions<TObject extends { id: string }, TPose> {
     pose: TPose,
     view: { x: number; y: number; scale: number },
   ) => void;
+  /** GL counterpart to `drawGhost`. Returns DrawCommand[] for one ghost.
+   *  Without it, ghosts are invisible under `backend='gl'` during drags. */
+  drawGhostGL?: (
+    obj: TObject | null,
+    pose: TPose,
+    view: { x: number; y: number; scale: number },
+  ) => DrawCommand[];
   /** Object lookup for the ghost render, paired with `drawGhost`. Optional. */
   getObject?: (id: string) => TObject | null;
   /** Returns the live selection ids. When supplied, `previewBounds` synthesizes
@@ -205,6 +212,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
     resizeOverlayStyle: options.resizeOverlayStyle,
     rotateOverlayStyle: options.rotateOverlayStyle,
     drawGhost: options.drawGhost,
+    drawGhostGL: options.drawGhostGL,
     getObject: options.getObject,
   });
   styleRefs.current = {
@@ -213,6 +221,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
     resizeOverlayStyle: options.resizeOverlayStyle,
     rotateOverlayStyle: options.rotateOverlayStyle,
     drawGhost: options.drawGhost,
+    drawGhostGL: options.drawGhostGL,
     getObject: options.getObject,
   };
 
@@ -308,35 +317,62 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
           return;
         }
       },
-      // GL counterpart: only the screen-space marquee branch is rendered here.
-      // The move/resize/rotate ghost branches use the consumer's 2D-only
-      // `drawGhost`; under backend='gl' those ghosts come from SceneCanvas's
-      // preview-ghost layer driven by `previewIds()`/`previewPose()` and the
-      // scene slot's `drawOneGL`. So this drawGL only handles area-select.
+      // GL counterpart: handles the screen-space marquee branch directly,
+      // and ghosts via the consumer-supplied `drawGhostGL` (mirroring the
+      // 2D `drawGhost`). When `drawGhostGL` is omitted, ghosts are invisible
+      // during drag — fallback consumers can opt into via SceneCanvas's
+      // preview-ghost layer driven by scene-slot drawOneGL instead.
       drawGL: (_data, view) => {
         const refs = styleRefs.current;
         const aOv = areaSelect.overlay;
-        if (!aOv) return [];
-        const cfg = refs.areaSelectOverlayStyle ?? {};
-        const fill = cfg.fill ?? 'rgba(164, 139, 212, 0.18)';
-        const stroke = cfg.stroke ?? '#a48bd4';
-        const dash = cfg.dash ?? [3, 3];
-        const lineWidth = cfg.lineWidth ?? 1;
-        const t = viewToTransform(view);
-        const x = Math.min(aOv.start.worldX, aOv.current.worldX);
-        const y = Math.min(aOv.start.worldY, aOv.current.worldY);
-        const w = Math.abs(aOv.current.worldX - aOv.start.worldX);
-        const h = Math.abs(aOv.current.worldY - aOv.start.worldY);
-        const [sx, sy] = worldToScreen(x, y, t);
-        const sw = w * view.scale;
-        const sh = h * view.scale;
-        const cmd: DrawCommand = {
-          kind: 'path',
-          path: { kind: 'rect', x: sx, y: sy, width: sw, height: sh },
-          fill: { color: fill },
-          stroke: { paint: { color: stroke }, width: lineWidth, dash },
-        };
-        return [cmd];
+        if (aOv) {
+          const cfg = refs.areaSelectOverlayStyle ?? {};
+          const fill = cfg.fill ?? 'rgba(164, 139, 212, 0.18)';
+          const stroke = cfg.stroke ?? '#a48bd4';
+          const dash = cfg.dash ?? [3, 3];
+          const lineWidth = cfg.lineWidth ?? 1;
+          const t = viewToTransform(view);
+          const x = Math.min(aOv.start.worldX, aOv.current.worldX);
+          const y = Math.min(aOv.start.worldY, aOv.current.worldY);
+          const w = Math.abs(aOv.current.worldX - aOv.start.worldX);
+          const h = Math.abs(aOv.current.worldY - aOv.start.worldY);
+          const [sx, sy] = worldToScreen(x, y, t);
+          const sw = w * view.scale;
+          const sh = h * view.scale;
+          return [{
+            kind: 'path',
+            path: { kind: 'rect', x: sx, y: sy, width: sw, height: sh },
+            fill: { color: fill },
+            stroke: { paint: { color: stroke }, width: lineWidth, dash },
+          }];
+        }
+
+        const drawGhostGL = refs.drawGhostGL;
+        const getObject = refs.getObject;
+        if (!drawGhostGL || !getObject) return [];
+        const moveAlpha = refs.moveOverlayStyle?.ghostAlpha ?? 0.85;
+        const resizeAlpha = refs.resizeOverlayStyle?.ghostAlpha ?? moveAlpha;
+        const rotateAlpha = refs.rotateOverlayStyle?.ghostAlpha ?? moveAlpha;
+        const wrap = (alpha: number, cmds: DrawCommand[]): DrawCommand[] =>
+          cmds.length === 0 ? [] : [{ kind: 'group', alpha, transform: viewToMat3(view), children: cmds }];
+
+        const mOv = move.overlay;
+        if (mOv) {
+          const cmds: DrawCommand[] = [];
+          for (const [id, pose] of mOv.poses) {
+            for (const c of drawGhostGL(getObject(id), pose, view)) cmds.push(c);
+          }
+          return wrap(moveAlpha, cmds);
+        }
+        const rOv = resize.overlay;
+        if (rOv) {
+          return wrap(resizeAlpha, drawGhostGL(getObject(rOv.id), rOv.currentPose, view));
+        }
+        const rotOv = rotate.overlay;
+        if (rotOv) {
+          return wrap(rotateAlpha, drawGhostGL(getObject(rotOv.id), rotOv.currentPose, view));
+        }
+        return [];
       },
     }),
     [move, resize, rotate, areaSelect],
