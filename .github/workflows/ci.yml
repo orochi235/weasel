@@ -21,3 +21,8 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      # Bundle-size visibility for the WebGL transition. Non-failing for now;
+      # hard delta-vs-main gate lands alongside the visual regression rig in
+      # step 9 (per docs/superpowers/specs/2026-05-08-webgl-transition-plan-design.md).
+      - name: Print weasel-gl bundle size
+        run: npm run bundlesize:weasel-gl
