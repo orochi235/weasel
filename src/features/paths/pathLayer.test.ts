@@ -5,7 +5,7 @@ import { rectPath } from './builder';
 import type { Path } from './types';
 import type { Paint, Stroke } from '../../core/paint';
 
-describe('createPathLayer.drawGL', () => {
+describe('createPathLayer', () => {
   it('emits one path command per visible node, wrapped in a world-transform group', () => {
     const path: Path = rectPath(0, 0, 10, 10);
     const fill: Paint = { fill: 'solid', color: '#fff' };
@@ -14,7 +14,7 @@ describe('createPathLayer.drawGL', () => {
       getPath: () => path,
       getFill: () => fill,
     });
-    const tree = layer.drawGL!(null, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    const tree = layer.draw(null, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
     expect(tree).toHaveLength(1);
     expect(tree[0].kind).toBe('group');
     const group = tree[0] as GroupDrawCommand;
@@ -31,7 +31,7 @@ describe('createPathLayer.drawGL', () => {
       getFill: () => ({ fill: 'solid', color: '#f00' }),
       isHidden: (n) => n.id === 'b',
     });
-    const tree = layer.drawGL!(null, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    const tree = layer.draw(null, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
     const group = tree[0] as GroupDrawCommand;
     expect(group.children).toHaveLength(1);
   });
@@ -43,7 +43,7 @@ describe('createPathLayer.drawGL', () => {
       getPath: () => path,
       // no getFill or getStroke
     });
-    const tree = layer.drawGL!(null, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    const tree = layer.draw(null, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
     const group = tree[0] as GroupDrawCommand;
     expect(group.children).toHaveLength(0);
   });
@@ -56,7 +56,7 @@ describe('createPathLayer.drawGL', () => {
       getPath: () => path,
       getStroke: () => stroke,
     });
-    const tree = layer.drawGL!(null, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    const tree = layer.draw(null, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
     const group = tree[0] as GroupDrawCommand;
     expect(group.children[0]).toMatchObject({ kind: 'path', path, stroke });
   });
@@ -68,7 +68,7 @@ describe('createPathLayer.drawGL', () => {
       getPath: () => path,
       getFill: () => ({ fill: 'solid', color: '#fff' }),
     });
-    const tree = layer.drawGL!(null, { x: 5, y: 7, scale: 2 }, { width: 100, height: 100 });
+    const tree = layer.draw(null, { x: 5, y: 7, scale: 2 }, { width: 100, height: 100 });
     const group = tree[0] as GroupDrawCommand;
     expect(group.transform).toBeDefined();
     expect(Array.from(group.transform!)).toEqual([2, 0, 0, 0, 2, 0, -10, -14, 1]);

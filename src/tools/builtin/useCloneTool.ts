@@ -142,59 +142,8 @@ export function useCloneTool<T extends { id: string }, TPose = unknown>(
       return null;
     };
 
-    // Default drawGhost: if `drawOne` is supplied, mirror SceneCanvas's
-    // pattern — translate each cloned item's source pose by its drag offset
-    // and invoke drawOne against the synthesized pose. If neither drawGhost
-    // nor drawOne is supplied, paint a translucent outlined rect at each
-    // item's bounds as a minimal fallback.
-    const defaultDrawGhost = (
-      cx: CanvasRenderingContext2D,
-      items: CloneOverlayItem[],
-      view: View,
-    ) => {
-      const drawOne = optsRef.current.drawOne;
-      const a = adapterRef.current as IntrospectableAdapter<T> & InsertAdapter<T>;
-      if (drawOne && a.getObjects && a.getPose) {
-        const byId = new Map<string, T>();
-        for (const o of a.getObjects()) byId.set(o.id, o);
-        cx.globalAlpha = 0.5;
-        for (const item of items) {
-          const obj = byId.get(item.id);
-          if (!obj) continue;
-          let srcPose: unknown;
-          try {
-            srcPose = a.getPose(item.id);
-          } catch {
-            continue;
-          }
-          const bounds = AUTO_POSE_DESCRIPTOR.getBounds(srcPose);
-          const dx = item.x - bounds.x;
-          const dy = item.y - bounds.y;
-          const ghostPose = AUTO_POSE_DESCRIPTOR.translate!(srcPose, dx, dy);
-          drawOne(cx, obj, ghostPose as TPose, view);
-        }
-        cx.globalAlpha = 1;
-        return;
-      }
-      // No drawOne and no custom drawGhost: minimal translucent outline at
-      // each item's snapshot bounds (translated by item.{x,y}).
-      cx.save();
-      cx.globalAlpha = 0.4;
-      cx.strokeStyle = '#888';
-      cx.lineWidth = 1;
-      for (const item of items) {
-        let pose: unknown = null;
-        if (a.getPose) {
-          try { pose = a.getPose(item.id); } catch { /* ignore */ }
-        }
-        const b = pose !== null ? AUTO_POSE_DESCRIPTOR.getBounds(pose) : { x: item.x, y: item.y, width: 0, height: 0 };
-        cx.strokeRect(item.x, item.y, b.width, b.height);
-      }
-      cx.restore();
-    };
-
-    // Default drawGhostGL: mirrors defaultDrawGhost but emits DrawCommand[].
-    // Uses drawOneGL when supplied; falls back to translucent outline rects.
+    // Default drawGhostGL: emits DrawCommand[]. Uses drawOneGL when supplied;
+    // falls back to translucent outline rects.
     const defaultDrawGhostGL = (items: CloneOverlayItem[], view: View): DrawCommand[] => {
       const drawOneGL = optsRef.current.drawOneGL;
       const a = adapterRef.current as IntrospectableAdapter<T> & InsertAdapter<T>;
@@ -243,13 +192,7 @@ export function useCloneTool<T extends { id: string }, TPose = unknown>(
     const overlay: RenderLayer<unknown> = {
       id: 'clone-ghost',
       label: 'Clone ghost',
-      draw: (cx, _data, view) => {
-        const items = overlayRef.current;
-        if (!items) return;
-        const drawGhost = optsRef.current.drawGhost ?? defaultDrawGhost;
-        drawGhost(cx, items, view);
-      },
-      drawGL: (_data, view) => {
+      draw: (_data, view) => {
         const items = overlayRef.current;
         if (!items || items.length === 0) return [];
         const fn = optsRef.current.drawGhostGL ?? defaultDrawGhostGL;

@@ -29,7 +29,7 @@ import type { RenderLayer } from '../../core/layers/render';
 import type { GroupAdapter } from '../groups/types';
 import { expandToLeaves } from '../groups/resolve';
 import { unionBounds } from '../groups/unionBounds';
-import { applyPaint, applyStroke, alignedStrokeRect, type Paint, type Stroke } from '../../core/paint';
+import { alignedStrokeRect, type Paint, type Stroke } from '../../core/paint';
 import {
   rotationHandle,
   DEFAULT_ROTATION_HANDLE_DISTANCE,
@@ -295,47 +295,6 @@ function resolveOutlineStroke(opts?: Stroke & { pad?: number }): {
   };
 }
 
-function drawOutlines(
-  ctx: CanvasRenderingContext2D,
-  ids: string[],
-  resolveBounds: (id: string) => Bounds | null,
-  stroke: Stroke,
-  pad: number,
-  view: View,
-): void {
-  ctx.save();
-  applyStroke(ctx, stroke);
-  const align = stroke.align ?? 'center';
-  const width = stroke.width ?? 1;
-  for (const id of ids) {
-    const worldB = resolveBounds(id);
-    if (!worldB) continue;
-    const b = projectBounds(worldB, view);
-    const padded = {
-      x: b.x - pad,
-      y: b.y - pad,
-      width: b.width + pad * 2,
-      height: b.height + pad * 2,
-    };
-    const r = alignedStrokeRect(padded, align, width);
-    const rotation = rotationOf(worldB);
-    if (rotation === 0) {
-      ctx.strokeRect(r.x, r.y, r.width, r.height);
-    } else {
-      // Rotate around the (projected) AABB center of the unpadded pose.
-      const cx = b.x + b.width / 2;
-      const cy = b.y + b.height / 2;
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(rotation);
-      ctx.translate(-cx, -cy);
-      ctx.strokeRect(r.x, r.y, r.width, r.height);
-      ctx.restore();
-    }
-  }
-  ctx.restore();
-}
-
 interface ResolvedHandles {
   size: number;
   fill: Paint;
@@ -348,93 +307,6 @@ function resolveHandles(opts?: SelectionHandlesLayerOpts<unknown>['handles']): R
     fill: opts?.fill ?? DEFAULT_HANDLE_FILL,
     outline: opts?.outline ?? DEFAULT_HANDLE_OUTLINE,
   };
-}
-
-function drawHandles(
-  ctx: CanvasRenderingContext2D,
-  ids: string[],
-  resolveBounds: (id: string) => Bounds | null,
-  handles: ResolvedHandles,
-  handlesOf: (b: Bounds) => { x: number; y: number }[],
-  view: View,
-): void {
-  const half = handles.size / 2;
-  const handleAlign = handles.outline.align ?? 'center';
-  const handleWidth = handles.outline.width ?? 1;
-  for (const id of ids) {
-    const worldB = resolveBounds(id);
-    if (!worldB) continue;
-    const b = projectBounds(worldB, view);
-    const rotation = rotationOf(worldB);
-    const cx = b.x + b.width / 2;
-    const cy = b.y + b.height / 2;
-    // Place handles using world-space handlesOf, then project each anchor to
-    // screen so handle squares stay constant size under zoom.
-    for (const hWorld of handlesOf(worldB)) {
-      const t = viewToTransform(view);
-      const [hsx, hsy] = worldToScreen(hWorld.x, hWorld.y, t);
-      const h = { x: hsx, y: hsy };
-      const center = rotation === 0 ? h : rotatePoint(h.x, h.y, cx, cy, rotation);
-      const baseRect = {
-        x: center.x - half,
-        y: center.y - half,
-        width: handles.size,
-        height: handles.size,
-      };
-      ctx.save();
-      if (rotation !== 0) {
-        ctx.translate(center.x, center.y);
-        ctx.rotate(rotation);
-        ctx.translate(-center.x, -center.y);
-      }
-      applyPaint(ctx, handles.fill, { x: baseRect.x, y: baseRect.y });
-      ctx.fillRect(baseRect.x, baseRect.y, baseRect.width, baseRect.height);
-      applyStroke(ctx, handles.outline, { x: baseRect.x, y: baseRect.y });
-      const sr = alignedStrokeRect(baseRect, handleAlign, handleWidth);
-      ctx.strokeRect(sr.x, sr.y, sr.width, sr.height);
-      ctx.restore();
-    }
-  }
-}
-
-/** Draw the rotation handle as a chevron pointing toward the object center.
- *  Two strokes meet at an apex (~120° interior angle) with the apex on the
- *  side closer to the object — visually evokes a pair of clock hands. */
-function drawRotationHandle(
-  ctx: CanvasRenderingContext2D,
-  worldB: Bounds | RotatedBounds,
-  handles: ResolvedHandles,
-  distance: number,
-  view: View,
-): void {
-  const rotation = rotationOf(worldB);
-  // Compute the rotation-handle anchor in world space, then project to screen.
-  const hWorld = rotationHandle({ ...worldB, rotation }, distance / view.scale);
-  const t = viewToTransform(view);
-  const [scx, scy] = worldToScreen(hWorld.cx, hWorld.cy, t);
-  const h = { cx: scx, cy: scy };
-  const size = handles.size;
-  const half = size / 2;
-  const armLen = size;
-  // Half-angle from the centerline; 60° gives a 120° interior angle at the apex.
-  const armDx = armLen * Math.sin(Math.PI / 3);
-  const armDy = armLen * Math.cos(Math.PI / 3);
-  ctx.save();
-  ctx.translate(h.cx, h.cy);
-  if (rotation !== 0) ctx.rotate(rotation);
-  const chevronStroke: Stroke = {
-    paint: handles.fill,
-    width: (handles.outline.width ?? 1) * 2,
-  };
-  applyStroke(ctx, chevronStroke, { x: -half, y: -half });
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.beginPath();
-  ctx.moveTo(-armDx, half - armDy);
-  ctx.lineTo(0, half);
-  ctx.lineTo(armDx, half - armDy);
-  ctx.stroke();
-  ctx.restore();
 }
 
 /**
@@ -621,12 +493,7 @@ export function createSelectionOutlineLayer<TPose>(
     id: 'selection-outline',
     label: 'Selection outline',
     space: 'screen',
-    draw: (ctx, _data, view) => {
-      const ids = opts.getSelection();
-      if (ids.length === 0) return;
-      drawOutlines(ctx, ids, resolveBounds, stroke, pad, view);
-    },
-    drawGL: (_data, view) => {
+    draw: (_data, view) => {
       const ids = opts.getSelection();
       if (ids.length === 0) return [];
       return outlineCommandsFor(ids, resolveBounds, stroke, pad, view);
@@ -650,19 +517,7 @@ export function createSelectionHandlesLayer<TPose>(
     id: 'selection-handles',
     label: 'Selection handles',
     space: 'screen',
-    draw: (ctx, _data, view) => {
-      const ids = opts.getSelection();
-      if (ids.length === 0) return;
-      drawHandles(ctx, ids, resolveBounds, handles, handlesOf, view);
-      if (rotationHandleDistance !== null) {
-        for (const id of ids) {
-          const b = resolveBounds(id);
-          if (!b) continue;
-          drawRotationHandle(ctx, b, handles, rotationHandleDistance, view);
-        }
-      }
-    },
-    drawGL: (_data, view) => {
+    draw: (_data, view) => {
       const ids = opts.getSelection();
       if (ids.length === 0) return [];
       const out = handleCommandsFor(ids, resolveBounds, handles, handlesOf, view);
@@ -691,7 +546,7 @@ function resolveRotationHandleDistance(
 /**
  * Convenience wrapper that draws outlines then handles in a single layer.
  * Equivalent to stacking `createSelectionOutlineLayer` and
- * `createSelectionHandlesLayer` in `drawLayers`. Pass `handles: false` to
+ * `createSelectionHandlesLayer` in a layer sequence. Pass `handles: false` to
  * render outlines only.
  */
 export function createSelectionOverlayLayer<TPose>(
@@ -709,21 +564,7 @@ export function createSelectionOverlayLayer<TPose>(
     id: 'selection-overlay',
     label: 'Selection',
     space: 'screen',
-    draw: (ctx, _data, view) => {
-      const ids = opts.getSelection();
-      if (ids.length === 0) return;
-      drawOutlines(ctx, ids, resolveBounds, stroke, pad, view);
-      if (!handles) return;
-      drawHandles(ctx, ids, resolveBounds, handles, handlesOf, view);
-      if (rotationHandleDistance !== null) {
-        for (const id of ids) {
-          const b = resolveBounds(id);
-          if (!b) continue;
-          drawRotationHandle(ctx, b, handles, rotationHandleDistance, view);
-        }
-      }
-    },
-    drawGL: (_data, view) => {
+    draw: (_data, view) => {
       const ids = opts.getSelection();
       if (ids.length === 0) return [];
       const out: DrawCommand[] = [];

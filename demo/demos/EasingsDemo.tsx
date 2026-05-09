@@ -83,48 +83,7 @@ export function EasingsDemo() {
   // Custom overlay layer: per-row labels + track lines.
   const trackLayer: RenderLayer<unknown> = {
     id: 'tracks', label: 'Tracks',
-    draw: (cx) => {
-      cx.font = '11px ui-monospace, SFMono-Regular, Menlo, monospace';
-      cx.textBaseline = 'middle';
-      for (let i = 0; i < ALL_EASINGS.length; i++) {
-        const name = ALL_EASINGS[i];
-        const col = i % COLS;
-        const row = Math.floor(i / COLS);
-        const y = TOP_PAD + row * ROW_HEIGHT + ROW_HEIGHT / 2;
-        // label
-        cx.fillStyle = '#a89878';
-        cx.textAlign = 'right';
-        cx.fillText(name, TRACK_LEFT - 8, y);
-        // track
-        cx.strokeStyle = '#3a2e22';
-        cx.lineWidth = 1;
-        cx.beginPath();
-        cx.moveTo(TRACK_LEFT, y);
-        cx.lineTo(TRACK_RIGHT, y);
-        cx.stroke();
-        // mini curve plot below the track
-        const plotY = y + 14;
-        const plotH = 8;
-        cx.strokeStyle = COLUMN_COLORS[col];
-        cx.globalAlpha = 0.5;
-        cx.beginPath();
-        const fn = EASINGS[name];
-        const samples = 32;
-        for (let s = 0; s <= samples; s++) {
-          const t = s / samples;
-          const px = TRACK_LEFT + t * TRACK_WIDTH;
-          // Clamp easings that overshoot (back/elastic) to keep the
-          // mini-plot in its lane — the marker still shows the overshoot
-          // through its actual x position.
-          const v = Math.max(0, Math.min(1, fn(t)));
-          const py = plotY + (1 - v) * plotH;
-          if (s === 0) cx.moveTo(px, py); else cx.lineTo(px, py);
-        }
-        cx.stroke();
-        cx.globalAlpha = 1;
-      }
-    },
-    drawGL: () => {
+    draw: () => {
       const cmds: DrawCommand[] = [];
       for (let i = 0; i < ALL_EASINGS.length; i++) {
         const name = ALL_EASINGS[i];

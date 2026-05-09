@@ -210,20 +210,8 @@ backend={backend}
             layer: {
               id: 'signature',
               label: 'Signature',
-              draw: (ctx) => {
-                ctx.save();
-                ctx.font = 'italic 14px "Comic Sans MS", "Comic Sans", cursive';
-                ctx.fillStyle = '#d4c4a8';
-                ctx.textAlign = 'right';
-                ctx.textBaseline = 'bottom';
-                ctx.fillText('original artwork by claude', W - 10, H - 8);
-                ctx.restore();
-              },
-              drawGL: () => {
-                // GL renders MSDF text from registered fonts only — Comic Sans
-                // isn't registered, so we use the fallback sans-serif (Inter)
-                // family. Red color makes the GL render visually obvious for
-                // the soak — distinguishes from the 2D Comic Sans rendering.
+              draw: () => {
+                // GL renders MSDF text from registered fonts only.
                 const text = 'original artwork by claude';
                 const charW = 7;
                 return [{

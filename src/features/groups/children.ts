@@ -3,9 +3,9 @@
  * pattern with a `RenderLayer` factory that consumes an `OrderedAdapter`.
  *
  * Children are drawn in z-order (forward iteration: index 0 = bottom). The
- * caller supplies a `drawChild` callback that knows how to render one object;
- * this layer is the boilerplate-free way to plug a scene graph's z-order into
- * the layer composition system.
+ * caller supplies a `drawChild` callback that emits `DrawCommand[]` for one
+ * object; this layer is the boilerplate-free way to plug a scene graph's
+ * z-order into the layer composition system.
  *
  * If the adapter doesn't implement `getChildren` (it's optional on
  * `OrderedAdapter`), the layer is a silent no-op — adopt z-order incrementally
@@ -28,17 +28,9 @@ export interface CreateChildrenLayerOpts<TData> {
   /** Parent id (null = root). Function form lets the layer follow a moving
    *  selection or focus. Default `null`. */
   parentId?: string | null | (() => string | null);
-  /** Draw one child. Called once per id in z-order (bottom → top). */
-  drawChild(ctx: CanvasRenderingContext2D, id: string, data: TData): void;
-  /**
-   * Optional GL-side draw callback. The kit aggregates per-child outputs
-   * in z-order (bottom → top) and returns the concatenated list from
-   * `drawGL`. Until consumers wire this up, the GL backend renders
-   * nothing for this layer (the 2D `drawChild` continues to work in the
-   * 2D backend). Step-7 scope decision: keep `drawGL` plumbing additive;
-   * step 8's component port surfaces a coherent integration story.
-   */
-  drawChildGL?(id: string, data: TData, view: View): DrawCommand[];
+  /** Draw one child. Called once per id in z-order (bottom → top). The
+   *  per-child outputs are concatenated into the layer's `DrawCommand[]`. */
+  drawChild(id: string, data: TData, view: View): DrawCommand[];
   /** Forwarded to the produced `RenderLayer`. */
   defaultVisible?: boolean;
   /** Forwarded to the produced `RenderLayer`. */
@@ -54,21 +46,7 @@ export function createChildrenLayer<TData = unknown>(
     label: opts.label ?? 'Children',
     defaultVisible: opts.defaultVisible,
     alwaysOn: opts.alwaysOn,
-    draw: (ctx, data) => {
-      const getChildren = opts.adapter.getChildren;
-      if (!getChildren) return;
-      const parent =
-        typeof opts.parentId === 'function'
-          ? opts.parentId()
-          : opts.parentId ?? null;
-      const ids = getChildren(parent);
-      for (const id of ids) {
-        opts.drawChild(ctx, id, data);
-      }
-    },
-    drawGL: (data, view) => {
-      const drawChildGL = opts.drawChildGL;
-      if (!drawChildGL) return [];
+    draw: (data, view) => {
       const getChildren = opts.adapter.getChildren;
       if (!getChildren) return [];
       const parent =
@@ -78,7 +56,7 @@ export function createChildrenLayer<TData = unknown>(
       const ids = getChildren(parent);
       const out: DrawCommand[] = [];
       for (const id of ids) {
-        const sub = drawChildGL(id, data, view);
+        const sub = opts.drawChild(id, data, view);
         for (const cmd of sub) out.push(cmd);
       }
       return out;

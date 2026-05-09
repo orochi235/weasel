@@ -6,7 +6,7 @@ import { defineTool } from './defineTool';
 import type { RenderLayer } from '../core/layers/render';
 
 const mkLayer = (id: string): RenderLayer<unknown> => ({
-  id, label: id, space: 'screen', draw: () => {},
+  id, label: id, space: 'screen', draw: () => [],
 });
 
 function pointerEvent(type: string, init: Partial<PointerEventInit> = {}): PointerEvent {

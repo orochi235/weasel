@@ -7,10 +7,8 @@
  */
 
 import { type DrawCommand, viewToMat3 } from '@orochi235/weasel-gl';
-import { applyPaint, applyStroke, type Paint, type Stroke } from '../../core/paint';
+import { type Paint, type Stroke } from '../../core/paint';
 import type { RenderLayer } from '../../core/layers/render';
-import { traceToContext } from './canvas';
-import { boundsOfPath } from './bounds';
 import type { Path } from './types';
 
 /** Options for `createPathLayer`. */
@@ -33,31 +31,7 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
   return {
     id,
     label,
-    draw: (ctx) => {
-      for (const node of getNodes()) {
-        if (isHidden?.(node)) continue;
-        const path = getPath(node);
-        const fill = getFill?.(node);
-        const stroke = getStroke?.(node);
-        if (fill == null && stroke == null) continue;
-        traceToContext(ctx, path);
-        if (fill != null) {
-          // Anchor fills (patterns/gradients eventually) at the path's bounds origin.
-          const b = boundsOfPath(path);
-          applyPaint(ctx, fill, { x: b.x, y: b.y });
-          if (path.kind === 'polygon' && path.fillRule === 'evenodd') {
-            ctx.fill('evenodd');
-          } else {
-            ctx.fill();
-          }
-        }
-        if (stroke != null) {
-          applyStroke(ctx, stroke, { x: 0, y: 0 });
-          ctx.stroke();
-        }
-      }
-    },
-    drawGL: (_data, view) => {
+    draw: (_data, view) => {
       const children: DrawCommand[] = [];
       for (const node of getNodes()) {
         if (isHidden?.(node)) continue;

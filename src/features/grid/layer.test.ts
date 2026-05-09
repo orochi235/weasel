@@ -1,54 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { GroupDrawCommand, PathDrawCommand } from '@orochi235/weasel-gl';
 import { createGridLayer } from './layer';
 import { IMPERIAL_INCHES } from '../../core/units';
-
-interface RecordedCall {
-  fn: string;
-  args: number[];
-  // Captured style at the time of the stroke/fill call.
-  strokeStyle?: string;
-  fillStyle?: string;
-}
-
-interface StubCtx {
-  ctx: CanvasRenderingContext2D;
-  calls: RecordedCall[];
-}
-
-function makeStubCtx(): StubCtx {
-  const calls: RecordedCall[] = [];
-  const state = { strokeStyle: '', fillStyle: '', lineWidth: 0, globalAlpha: 1 };
-
-  const record = (fn: string, capture: 'stroke' | 'fill' | null = null) =>
-    vi.fn((...args: number[]) => {
-      const c: RecordedCall = { fn, args };
-      if (capture === 'stroke') c.strokeStyle = state.strokeStyle;
-      if (capture === 'fill') c.fillStyle = state.fillStyle;
-      calls.push(c);
-    });
-
-  const ctx = {
-    get strokeStyle() { return state.strokeStyle; },
-    set strokeStyle(v: string) { state.strokeStyle = v; },
-    get fillStyle() { return state.fillStyle; },
-    set fillStyle(v: string) { state.fillStyle = v; },
-    get lineWidth() { return state.lineWidth; },
-    set lineWidth(v: number) { state.lineWidth = v; },
-    get globalAlpha() { return state.globalAlpha; },
-    set globalAlpha(v: number) { state.globalAlpha = v; },
-    save: vi.fn(),
-    restore: vi.fn(),
-    setLineDash: vi.fn(),
-    beginPath: record('beginPath'),
-    moveTo: record('moveTo'),
-    lineTo: record('lineTo'),
-    stroke: record('stroke', 'stroke'),
-    fillRect: record('fillRect', 'fill'),
-    strokeRect: record('strokeRect', 'stroke'),
-  } as unknown as CanvasRenderingContext2D;
-  return { ctx, calls };
-}
 
 describe('createGridLayer', () => {
   it('exposes id "grid" and label "Grid"', () => {
@@ -60,148 +13,67 @@ describe('createGridLayer', () => {
     expect(layer.label).toBe('Grid');
   });
 
-  it('renders nothing when bounds are zero-sized', () => {
-    const { ctx, calls } = makeStubCtx();
-    const layer = createGridLayer({
-      spacing: 10,
-      bounds: () => ({ x: 0, y: 0, width: 0, height: 0 }),
-    });
-    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
-    expect(calls).toEqual([]);
-  });
-
-  it('draws 11+11=22 lines for a 10-cell grid over 100x100 bounds', () => {
-    const { ctx, calls } = makeStubCtx();
-    const layer = createGridLayer({
-      spacing: 10,
-      bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
-    });
-    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
-    const strokes = calls.filter((c) => c.fn === 'stroke');
-    expect(strokes).toHaveLength(22);
-  });
-
-  it('with accentEvery: 5, renders 3 accent lines per axis', () => {
-    const { ctx, calls } = makeStubCtx();
-    const layer = createGridLayer({
-      spacing: 10,
-      accentEvery: 5,
-      bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
-      style: {
-        accent: { paint: { fill: 'solid', color: '#ff0000' } },
-        line: { paint: { fill: 'solid', color: '#222222' } },
-      },
-    });
-    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
-    const strokes = calls.filter((c) => c.fn === 'stroke');
-    // Total lines is still 22 (accent replaces, doesn't add).
-    expect(strokes).toHaveLength(22);
-    const accents = strokes.filter((c) => c.strokeStyle === '#ff0000');
-    // 3 accent lines per axis (at x=0, x=50, x=100; same for y) = 6 total.
-    expect(accents).toHaveLength(6);
-  });
-
-  it('with subdivisions: 4 adds sub-lines (3 per cell, per axis)', () => {
-    const { ctx, calls } = makeStubCtx();
-    // 1x1 cell area, cell=10, subdivisions=4 -> 3 sub lines per axis.
-    const layer = createGridLayer({
-      spacing: 10,
-      subdivisions: 4,
-      bounds: () => ({ x: 0, y: 0, width: 10, height: 10 }),
-    });
-    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
-    const strokes = calls.filter((c) => c.fn === 'stroke');
-    // Cell lines: 2 vertical + 2 horizontal = 4.
-    // Sub lines: 3 vertical + 3 horizontal = 6.
-    // Total: 10.
-    expect(strokes).toHaveLength(10);
-  });
-
-  it('resolves a tagged cell value via the unit system (1ft -> 12in spacing)', () => {
-    const { ctx, calls } = makeStubCtx();
-    // 24in wide x 12in tall, cell = 1ft = 12in -> 3 vertical lines + 2 horizontal lines = 5 strokes.
-    const layer = createGridLayer({
-      spacing: { value: 1, unit: 'ft' },
-      unitSystem: IMPERIAL_INCHES,
-      bounds: () => ({ x: 0, y: 0, width: 24, height: 12 }),
-    });
-    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
-    const strokes = calls.filter((c) => c.fn === 'stroke');
-    expect(strokes).toHaveLength(5);
-    // First vertical line at x=0, second at x=12 (one foot = 12 inches).
-    const moves = calls.filter((c) => c.fn === 'moveTo');
-    expect(moves[0].args).toEqual([0, 0]);
-    expect(moves[1].args).toEqual([12, 0]);
-  });
-
-  it('throws at draw time when a tagged cell is given without a unit system', () => {
-    const { ctx } = makeStubCtx();
-    const layer = createGridLayer({
-      spacing: { value: 1, unit: 'ft' },
-      bounds: () => ({ x: 0, y: 0, width: 24, height: 12 }),
-    });
-    expect(() => layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 })).toThrow(/UnitSystem/);
-  });
-
-  it('drawGL emits one path per cell line in a world-transform group', () => {
+  it('draw emits one path per cell line in a world-transform group', () => {
     const layer = createGridLayer({
       spacing: 10,
       bounds: () => ({ x: 0, y: 0, width: 30, height: 30 }),
     });
-    const tree = layer.drawGL!(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
     expect(tree).toHaveLength(1);
     const group = tree[0] as GroupDrawCommand;
     // 30/10 → 4 vertical lines + 4 horizontal lines = 8 paths.
     expect(group.children.filter((c) => c.kind === 'path')).toHaveLength(8);
   });
 
-  it('drawGL returns [] for zero-sized bounds', () => {
+  it('draw returns [] for zero-sized bounds', () => {
     const layer = createGridLayer({
       spacing: 10,
       bounds: () => ({ x: 0, y: 0, width: 0, height: 0 }),
     });
-    const tree = layer.drawGL!(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
     expect(tree).toEqual([]);
   });
 
-  it('drawGL divides stroke width by view.scale so hairlines stay 1px on screen', () => {
+  it('draw divides stroke width by view.scale so hairlines stay 1px on screen', () => {
     const layer = createGridLayer({
       spacing: 10,
       bounds: () => ({ x: 0, y: 0, width: 10, height: 10 }),
     });
-    const tree = layer.drawGL!(undefined, { x: 0, y: 0, scale: 2 }, { width: 100, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 2 }, { width: 100, height: 100 });
     const group = tree[0] as GroupDrawCommand;
     const first = group.children[0] as PathDrawCommand;
     expect(first.stroke?.width).toBe(0.5);
   });
 
-  it('drawGL with accentEvery emits accent + line bands (sub omitted)', () => {
+  it('draw with accentEvery emits accent + line bands (sub omitted)', () => {
     const layer = createGridLayer({
       spacing: 10,
       accentEvery: 5,
       bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
     });
-    const tree = layer.drawGL!(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
     const group = tree[0] as GroupDrawCommand;
     // Total cell+accent lines: 11 vlines (0..100 step 10 inclusive) + 11 hlines = 22
     expect(group.children.filter((c) => c.kind === 'path')).toHaveLength(22);
   });
 
-  it('honors custom style colors', () => {
-    const { ctx, calls } = makeStubCtx();
+  it('resolves a tagged cell value via the unit system (1ft -> 12in spacing)', () => {
     const layer = createGridLayer({
-      spacing: 10,
-      accentEvery: 5,
-      bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
-      style: {
-        line: { paint: { fill: 'solid', color: '#abcdef' } },
-        accent: { paint: { fill: 'solid', color: '#fedcba' } },
-      },
+      spacing: { value: 1, unit: 'ft' },
+      unitSystem: IMPERIAL_INCHES,
+      bounds: () => ({ x: 0, y: 0, width: 24, height: 12 }),
     });
-    layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
-    const strokes = calls.filter((c) => c.fn === 'stroke');
-    const lineColors = new Set(strokes.map((s) => s.strokeStyle));
-    expect(lineColors.has('#abcdef')).toBe(true);
-    expect(lineColors.has('#fedcba')).toBe(true);
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    const group = tree[0] as GroupDrawCommand;
+    // 24in wide x 12in tall, cell = 12in → 3 vertical lines (x=0,12,24) + 2 horizontal lines (y=0,12) = 5 paths.
+    expect(group.children.filter((c) => c.kind === 'path')).toHaveLength(5);
+  });
+
+  it('throws at draw time when a tagged cell is given without a unit system', () => {
+    const layer = createGridLayer({
+      spacing: { value: 1, unit: 'ft' },
+      bounds: () => ({ x: 0, y: 0, width: 24, height: 12 }),
+    });
+    expect(() => layer.draw(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 })).toThrow(/UnitSystem/);
   });
 });

@@ -225,104 +225,17 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
     getObject: options.getObject,
   };
 
-  // The layer is `space: 'screen'` — `drawLayers` does not pre-apply the world
-  // transform. The marquee branch already lives in screen coords (via
-  // `worldToScreen`). Ghost branches reapply the world transform manually so
-  // the consumer's `drawGhost` (same signature as scene `drawOne`) sees the
-  // expected world-space ctx. Mixing the two paths in one layer keeps the
-  // select tool's overlay output as a single `RenderLayer`.
+  // The layer is `space: 'screen'`. The marquee branch already lives in
+  // screen coords (via `worldToScreen`); ghosts go through `drawGhostGL`,
+  // wrapped in a world-transform group. When `drawGhostGL` is omitted,
+  // ghosts are invisible during drag — fallback consumers can opt in via
+  // SceneCanvas's preview-ghost layer driven by scene-slot `drawOneGL`.
   const overlay = useMemo<RenderLayer<unknown>>(
     () => ({
       id: 'select-overlay',
       label: 'Select overlay',
       space: 'screen',
-      draw: (ctx, _data, view) => {
-        const refs = styleRefs.current;
-
-        // 1. Area-select marquee.
-        const aOv = areaSelect.overlay;
-        if (aOv) {
-          const cfg = refs.areaSelectOverlayStyle ?? {};
-          const fill = cfg.fill ?? 'rgba(164, 139, 212, 0.18)';
-          const stroke = cfg.stroke ?? '#a48bd4';
-          const dash = cfg.dash ?? [3, 3];
-          const lineWidth = cfg.lineWidth ?? 1;
-          const t = viewToTransform(view);
-          const x = Math.min(aOv.start.worldX, aOv.current.worldX);
-          const y = Math.min(aOv.start.worldY, aOv.current.worldY);
-          const w = Math.abs(aOv.current.worldX - aOv.start.worldX);
-          const h = Math.abs(aOv.current.worldY - aOv.start.worldY);
-          const [sx, sy] = worldToScreen(x, y, t);
-          const sw = w * view.scale;
-          const sh = h * view.scale;
-          ctx.save();
-          ctx.fillStyle = fill;
-          ctx.fillRect(sx, sy, sw, sh);
-          ctx.strokeStyle = stroke;
-          ctx.lineWidth = lineWidth;
-          ctx.setLineDash(dash);
-          ctx.strokeRect(sx, sy, sw, sh);
-          ctx.setLineDash([]);
-          ctx.restore();
-          return;
-        }
-
-        const drawGhost = refs.drawGhost;
-        const getObject = refs.getObject;
-        if (!drawGhost || !getObject) return;
-
-        const moveAlpha = refs.moveOverlayStyle?.ghostAlpha ?? 0.85;
-        const resizeAlpha = refs.resizeOverlayStyle?.ghostAlpha ?? moveAlpha;
-        const rotateAlpha = refs.rotateOverlayStyle?.ghostAlpha ?? moveAlpha;
-
-        // Apply world transform once for any ghost branch — matches the
-        // `space: 'world'` composition that `drawLayers` would do.
-        const applyWorld = () => {
-          if (view.scale !== 1) ctx.scale(view.scale, view.scale);
-          if (view.x !== 0 || view.y !== 0) ctx.translate(-view.x, -view.y);
-        };
-
-        // 2. Move ghost — walk the overlay's poses.
-        const mOv = move.overlay;
-        if (mOv) {
-          ctx.save();
-          ctx.globalAlpha = moveAlpha;
-          applyWorld();
-          for (const [id, pose] of mOv.poses) {
-            drawGhost(ctx, getObject(id), pose, view);
-          }
-          ctx.restore();
-          return;
-        }
-
-        // 3. Resize ghost — single object at currentPose.
-        const rOv = resize.overlay;
-        if (rOv) {
-          ctx.save();
-          ctx.globalAlpha = resizeAlpha;
-          applyWorld();
-          drawGhost(ctx, getObject(rOv.id), rOv.currentPose, view);
-          ctx.restore();
-          return;
-        }
-
-        // 4. Rotate ghost — single object at currentPose.
-        const rotOv = rotate.overlay;
-        if (rotOv) {
-          ctx.save();
-          ctx.globalAlpha = rotateAlpha;
-          applyWorld();
-          drawGhost(ctx, getObject(rotOv.id), rotOv.currentPose, view);
-          ctx.restore();
-          return;
-        }
-      },
-      // GL counterpart: handles the screen-space marquee branch directly,
-      // and ghosts via the consumer-supplied `drawGhostGL` (mirroring the
-      // 2D `drawGhost`). When `drawGhostGL` is omitted, ghosts are invisible
-      // during drag — fallback consumers can opt into via SceneCanvas's
-      // preview-ghost layer driven by scene-slot drawOneGL instead.
-      drawGL: (_data, view) => {
+      draw: (_data, view) => {
         const refs = styleRefs.current;
         const aOv = areaSelect.overlay;
         if (aOv) {

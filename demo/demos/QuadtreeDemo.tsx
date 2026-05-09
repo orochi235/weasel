@@ -65,18 +65,7 @@ function createQuadtreeLayer(
   return {
     id: 'quadtree',
     label: 'Quadtree',
-    draw: (ctx) => {
-      const tree = buildLiveTree();
-      ctx.strokeStyle = 'rgba(0, 220, 240, 0.7)';
-      function walk(n: QuadNode) {
-        if (!n.children) return;
-        ctx.lineWidth = Math.max(0.5, 2.5 - n.depth * 0.4);
-        ctx.strokeRect(n.x, n.y, n.w, n.h);
-        for (const c of n.children) walk(c);
-      }
-      walk(tree);
-    },
-    drawGL: (_data, view) => {
+    draw: (_data, view) => {
       const tree = buildLiveTree();
       const cmds: DrawCommand[] = [];
       function walk(n: QuadNode) {

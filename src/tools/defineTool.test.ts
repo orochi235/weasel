@@ -45,7 +45,7 @@ describe('defineTool overlay field', () => {
       id: 'overlay-x',
       label: 'Overlay X',
       space: 'screen',
-      draw: () => {},
+      draw: () => [],
     };
     const tool = defineTool({ id: 't', overlay: layer });
     expect(tool.overlay).toBe(layer);

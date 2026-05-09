@@ -91,15 +91,6 @@ describe('useInsertTool', () => {
   });
 });
 
-function ctxStub() {
-  return {
-    save: vi.fn(), restore: vi.fn(),
-    fillRect: vi.fn(), strokeRect: vi.fn(),
-    setLineDash: vi.fn(), scale: vi.fn(), translate: vi.fn(),
-    fillStyle: '', strokeStyle: '', lineWidth: 0,
-  } as unknown as CanvasRenderingContext2D;
-}
-
 describe('useInsertTool — opt-in click + hitExisting', () => {
   it('registers pointer.onClick when pointInsert is supplied', () => {
     const adapter = {
@@ -172,21 +163,22 @@ describe('useInsertTool overlay', () => {
     applyBatch: vi.fn(),
   } as any;
 
+  const VIEW = { x: 0, y: 0, scale: 1 };
+  const DIMS = { width: 100, height: 100 };
+
   it('publishes a RenderLayer on the Tool record', () => {
     const { result } = renderHook(() => useInsertTool(baseAdapter));
     expect(result.current.overlay).toBeDefined();
     expect(result.current.overlay!.space).toBe('screen');
   });
 
-  it('renders nothing when no gesture in flight', () => {
+  it('emits no commands when no gesture in flight', () => {
     const { result } = renderHook(() => useInsertTool(baseAdapter));
-    const ctx = ctxStub();
-    result.current.overlay!.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
-    expect(ctx.fillRect).not.toHaveBeenCalled();
-    expect(ctx.strokeRect).not.toHaveBeenCalled();
+    const cmds = result.current.overlay!.draw(undefined, VIEW, DIMS);
+    expect(cmds).toEqual([]);
   });
 
-  it('renders the drag rect once the underlying ctl has overlay state', () => {
+  it('emits a marquee path command once the underlying ctl has overlay state', () => {
     const { result } = renderHook(() =>
       useInsertTool(baseAdapter, {
         overlayStyle: { fill: '#abc', stroke: '#def', dash: [2, 2] },
@@ -196,11 +188,11 @@ describe('useInsertTool overlay', () => {
       result.current.drag!.onStart!(pe(), makeCtx({ worldX: 10, worldY: 10 }));
       result.current.drag!.onMove!(pe(), makeCtx({ worldX: 50, worldY: 30 }));
     });
-    const ctx = ctxStub();
-    result.current.overlay!.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
-    expect(ctx.fillRect).toHaveBeenCalled();
-    expect(ctx.strokeRect).toHaveBeenCalled();
-    expect((ctx as any).fillStyle).toBe('#abc');
-    expect((ctx as any).strokeStyle).toBe('#def');
+    const cmds = result.current.overlay!.draw(undefined, VIEW, DIMS);
+    expect(cmds.length).toBeGreaterThan(0);
+    const first = cmds[0] as { kind: string; fill?: { color?: string }; stroke?: { paint?: { color?: string } } };
+    expect(first.kind).toBe('path');
+    expect(first.fill?.color).toBe('#abc');
+    expect(first.stroke?.paint?.color).toBe('#def');
   });
 });

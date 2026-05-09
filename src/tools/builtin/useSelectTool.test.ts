@@ -403,22 +403,6 @@ describe('useSelectTool — debug recording', () => {
   });
 });
 
-function ctxStub() {
-  return {
-    save: vi.fn(),
-    restore: vi.fn(),
-    fillRect: vi.fn(),
-    strokeRect: vi.fn(),
-    setLineDash: vi.fn(),
-    scale: vi.fn(),
-    translate: vi.fn(),
-    fillStyle: '',
-    strokeStyle: '',
-    lineWidth: 0,
-    globalAlpha: 1,
-  } as unknown as CanvasRenderingContext2D;
-}
-
 describe('useSelectTool overlay', () => {
   const adapterFor = (over: Partial<any> = {}) =>
     ({
@@ -436,6 +420,9 @@ describe('useSelectTool overlay', () => {
       ...over,
     }) as any;
 
+  const VIEW = { x: 0, y: 0, scale: 1 };
+  const DIMS = { width: 100, height: 100 };
+
   it('publishes a RenderLayer on the Tool record', () => {
     const { result } = renderHook(() =>
       useSelectTool(adapterFor(), {
@@ -448,24 +435,19 @@ describe('useSelectTool overlay', () => {
     expect(result.current.overlay!.space).toBe('screen');
   });
 
-  it('renders nothing when scratch is idle (no sub-controller engaged)', () => {
-    const drawGhost = vi.fn();
+  it('emits no commands when scratch is idle (no sub-controller engaged)', () => {
     const { result } = renderHook(() =>
       useSelectTool(adapterFor(), {
         pickEvery: () => [],
         boundsOf: () => null,
-        drawGhost,
         getObject: (id) => ({ id, x: 0, y: 0, width: 10, height: 10 }) as any,
       }),
     );
-    const ctx = ctxStub();
-    result.current.overlay!.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
-    expect(ctx.fillRect).not.toHaveBeenCalled();
-    expect(ctx.strokeRect).not.toHaveBeenCalled();
-    expect(drawGhost).not.toHaveBeenCalled();
+    const cmds = result.current.overlay!.draw(undefined, VIEW, DIMS);
+    expect(cmds).toEqual([]);
   });
 
-  it('area-select marquee renders during area-select gesture', () => {
+  it('area-select marquee emits a path command during area-select gesture', () => {
     const { result } = renderHook(() =>
       useSelectTool(adapterFor(), {
         pickEvery: () => [],
@@ -477,10 +459,9 @@ describe('useSelectTool overlay', () => {
       result.current.drag!.onStart!(pe(), ctx);
       result.current.drag!.onMove!(pe(), ctxOver({ scratch: { kind: 'area' }, worldX: 50, worldY: 30 }));
     });
-    const ctx = ctxStub();
-    result.current.overlay!.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
-    expect(ctx.fillRect).toHaveBeenCalled();
-    expect(ctx.strokeRect).toHaveBeenCalled();
+    const cmds = result.current.overlay!.draw(undefined, VIEW, DIMS);
+    expect(cmds.length).toBeGreaterThan(0);
+    expect(cmds[0].kind).toBe('path');
   });
 
   it('area-select marquee respects style overrides', () => {
@@ -495,45 +476,39 @@ describe('useSelectTool overlay', () => {
       result.current.drag!.onStart!(pe(), ctxOver({ scratch: { kind: 'area' }, worldX: 0, worldY: 0 }));
       result.current.drag!.onMove!(pe(), ctxOver({ scratch: { kind: 'area' }, worldX: 5, worldY: 5 }));
     });
-    const ctx = ctxStub();
-    result.current.overlay!.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
-    expect((ctx as any).fillStyle).toBe('#abc');
-    expect((ctx as any).strokeStyle).toBe('#def');
-    expect((ctx as any).lineWidth).toBe(3);
+    const cmds = result.current.overlay!.draw(undefined, VIEW, DIMS);
+    const first = cmds[0] as { fill?: { color?: string }; stroke?: { paint?: { color?: string }; width?: number } };
+    expect(first.fill?.color).toBe('#abc');
+    expect(first.stroke?.paint?.color).toBe('#def');
+    expect(first.stroke?.width).toBe(3);
   });
 
-  it('move ghost calls drawGhost for each id in move.overlay.poses', () => {
-    const drawGhost = vi.fn();
+  it('move ghost calls drawGhostGL for each id in move.overlay.poses', () => {
+    const drawGhostGL = vi.fn((..._args: unknown[]) => [] as any[]);
     const getObject = vi.fn((id: string) => ({ id, x: 0, y: 0, width: 10, height: 10 }) as any);
     const { result } = renderHook(() =>
       useSelectTool(adapterFor(), {
         pickEvery: () => ['a', 'b'],
         boundsOf: () => null,
-        drawGhost,
+        drawGhostGL,
         getObject,
       }),
     );
     act(() => {
-      // start a move with two ids; need to push past drag threshold (4px default)
       const c1 = ctxOver({ scratch: { kind: 'move', ids: ['a', 'b'], deferredClickId: null }, worldX: 0, worldY: 0 });
       result.current.drag!.onStart!(pe({ clientX: 0, clientY: 0 }), c1);
       const c2 = ctxOver({ scratch: { kind: 'move', ids: ['a', 'b'], deferredClickId: null }, worldX: 20, worldY: 20 });
       result.current.drag!.onMove!(pe({ clientX: 50, clientY: 50 }), c2);
     });
-    const ctx = ctxStub();
-    result.current.overlay!.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
-    expect(drawGhost).toHaveBeenCalledTimes(2);
-    // globalAlpha was set inside save/restore
-    expect(ctx.save).toHaveBeenCalled();
-    expect(ctx.restore).toHaveBeenCalled();
+    result.current.overlay!.draw(undefined, VIEW, DIMS);
+    expect(drawGhostGL).toHaveBeenCalledTimes(2);
   });
 
-  it('move ghost skips silently when drawGhost or getObject are missing', () => {
+  it('move ghost skips silently when drawGhostGL or getObject are missing', () => {
     const { result } = renderHook(() =>
       useSelectTool(adapterFor(), {
         pickEvery: () => ['a'],
         boundsOf: () => null,
-        // no drawGhost, no getObject
       }),
     );
     act(() => {
@@ -546,19 +521,16 @@ describe('useSelectTool overlay', () => {
         ctxOver({ scratch: { kind: 'move', ids: ['a'], deferredClickId: null }, worldX: 20, worldY: 20 }),
       );
     });
-    const ctx = ctxStub();
-    expect(() =>
-      result.current.overlay!.draw(ctx, undefined, { x: 0, y: 0, scale: 1 }),
-    ).not.toThrow();
+    expect(() => result.current.overlay!.draw(undefined, VIEW, DIMS)).not.toThrow();
   });
 
-  it('resize ghost calls drawGhost once with resize.overlay.currentPose', () => {
-    const drawGhost = vi.fn();
+  it('resize ghost calls drawGhostGL once with resize.overlay.currentPose', () => {
+    const drawGhostGL = vi.fn((..._args: unknown[]) => [] as any[]);
     const { result } = renderHook(() =>
       useSelectTool(adapterFor(), {
         pickEvery: () => [],
         boundsOf: () => ({ x: 0, y: 0, width: 100, height: 100 }),
-        drawGhost,
+        drawGhostGL,
         getObject: (id) => ({ id, x: 0, y: 0, width: 100, height: 100 }) as any,
       }),
     );
@@ -572,15 +544,13 @@ describe('useSelectTool overlay', () => {
         }),
       );
     });
-    const ctx = ctxStub();
-    result.current.overlay!.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
-    expect(drawGhost).toHaveBeenCalledTimes(1);
-    // pose passed should be the currentPose (origin pose at start)
-    expect(drawGhost.mock.calls[0][2]).toEqual({ x: 0, y: 0, width: 10, height: 10 });
+    result.current.overlay!.draw(undefined, VIEW, DIMS);
+    expect(drawGhostGL).toHaveBeenCalledTimes(1);
+    expect(drawGhostGL.mock.calls[0][1]).toEqual({ x: 0, y: 0, width: 10, height: 10 });
   });
 
-  it('rotate ghost calls drawGhost once with rotate.overlay.currentPose', () => {
-    const drawGhost = vi.fn();
+  it('rotate ghost calls drawGhostGL once with rotate.overlay.currentPose', () => {
+    const drawGhostGL = vi.fn((..._args: unknown[]) => [] as any[]);
     const { result } = renderHook(() =>
       useSelectTool(adapterFor({
         getPose: (_id: string) => ({ x: 0, y: 0, width: 10, height: 10, rotation: 0 }),
@@ -588,7 +558,7 @@ describe('useSelectTool overlay', () => {
       }), {
         pickEvery: () => [],
         boundsOf: () => ({ x: 0, y: 0, width: 100, height: 100 }),
-        drawGhost,
+        drawGhostGL,
         getObject: (id) => ({ id, x: 0, y: 0, width: 10, height: 10, rotation: 0 }) as any,
       }),
     );
@@ -602,22 +572,22 @@ describe('useSelectTool overlay', () => {
         }),
       );
     });
-    const ctx = ctxStub();
-    result.current.overlay!.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
-    expect(drawGhost).toHaveBeenCalledTimes(1);
-    expect(drawGhost.mock.calls[0][2]).toMatchObject({ rotation: 0 });
+    result.current.overlay!.draw(undefined, VIEW, DIMS);
+    expect(drawGhostGL).toHaveBeenCalledTimes(1);
+    expect(drawGhostGL.mock.calls[0][1]).toMatchObject({ rotation: 0 });
   });
 
   it('moveOverlayStyle.ghostAlpha overrides default 0.85', () => {
-    let observedAlpha = -1;
-    const drawGhost = vi.fn((ctx: CanvasRenderingContext2D) => {
-      observedAlpha = (ctx as any).globalAlpha;
-    });
+    const drawGhostGL = vi.fn(() => [{
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
+      fill: { color: '#000' },
+    } as const]);
     const { result } = renderHook(() =>
       useSelectTool(adapterFor(), {
         pickEvery: () => ['a'],
         boundsOf: () => null,
-        drawGhost,
+        drawGhostGL,
         getObject: (id) => ({ id, x: 0, y: 0, width: 10, height: 10 }) as any,
         moveOverlayStyle: { ghostAlpha: 0.5 },
       }),
@@ -632,8 +602,11 @@ describe('useSelectTool overlay', () => {
         ctxOver({ scratch: { kind: 'move', ids: ['a'], deferredClickId: null }, worldX: 20, worldY: 20 }),
       );
     });
-    const ctx = ctxStub();
-    result.current.overlay!.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
-    expect(observedAlpha).toBe(0.5);
+    const cmds = result.current.overlay!.draw(undefined, VIEW, DIMS);
+    // Ghost output is wrapped in a group with the alpha override.
+    expect(cmds.length).toBe(1);
+    const group = cmds[0] as { kind: string; alpha?: number };
+    expect(group.kind).toBe('group');
+    expect(group.alpha).toBe(0.5);
   });
 });

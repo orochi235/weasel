@@ -1,7 +1,7 @@
 /**
  * Top-level `<Canvas>` component that wraps a single `<canvas>` element with:
- *   - DPR setup (`setupCanvasDpr`)
- *   - clear-rect + optional background fill on every render
+ *   - WebGL backend instantiation (`WeaselRenderer`)
+ *   - background fill on every render
  *   - layer-stack composition from a map of named slots + custom layers
  *   - internal `useSelection` (overridable)
  *   - pointer/keyboard/wheel routing through `tools.dispatcher`
@@ -21,8 +21,7 @@ import type { Op } from '../core/ops/types';
 import { dispatchApplyBatch } from '../core/applyOps';
 import type { View } from '../features/viewport/view';
 import { clampView } from '../features/viewport/clampView';
-import { drawLayers, drawLayersGL, type RenderLayer } from '../core/layers/render';
-import { setupCanvasDpr } from '../features/viewport/pixelDensity';
+import { drawLayersGL, type RenderLayer } from '../core/layers/render';
 import { WeaselRenderer, viewToMat3, type DrawCommand } from '@orochi235/weasel-gl';
 import {
   useSelection,
@@ -229,14 +228,12 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
 
   // --- Visuals / DOM passthrough ---
   /**
-   * Renderer backend. `'2d'` (default) uses Canvas2D + drawLayers + setupCanvasDpr.
-   * `'gl'` instantiates a WeaselRenderer against this canvas element and dispatches
-   * each layer's drawGL output. The prop is read **once at mount**; changing it
-   * after mount is a no-op and emits a one-time console.warn — the original
-   * backend keeps running. To switch backends in a live app, remount the parent.
+   * Renderer backend. `'gl'` (default) instantiates a WeaselRenderer against
+   * this canvas element and dispatches each layer's `draw` output.
    *
-   * Default flips to `'gl'` once the soak in step 9 closes. See the WebGL
-   * transition spec for the soak exit criterion.
+   * The `'2d'` value is accepted but no longer functional — only the GL
+   * backend is implemented. The prop is retained for compatibility and will
+   * be removed in a future cleanup pass.
    */
   backend?: '2d' | 'gl';
   background?: string;
@@ -379,13 +376,16 @@ function buildSceneLayer<TObject extends { id: string }, TPose>(
   return {
     id: 'scene',
     label: 'Scene',
-    draw: (ctx, _data, view) => {
+    draw: (_data, view) => {
       const objects = cfg.objects ?? adapter?.getObjects() ?? [];
       const hidden = hideIds();
+      const children: DrawCommand[] = [];
       for (const obj of objects) {
         if (hidden && hidden.has(obj.id)) continue;
         const pose: TPose = toPose(obj);
-        cfg.drawOne(ctx, obj, pose, view);
+        if (drawOneGL) {
+          for (const cmd of drawOneGL(obj, pose, view)) children.push(cmd);
+        }
         if (debugSink) {
           const b = boundsOfFn ? boundsOfFn(obj.id) : null;
           if (b) debugSink.recordBounds(obj.id, { x: b.x, y: b.y, width: b.width, height: b.height });
@@ -394,20 +394,9 @@ function buildSceneLayer<TObject extends { id: string }, TPose>(
           debugSink.recordOrigin(obj.id, { x: ox, y: oy });
         }
       }
+      if (children.length === 0) return [];
+      return [{ kind: 'group', transform: viewToMat3(view), children }];
     },
-    ...(drawOneGL ? {
-      drawGL: (_data, view) => {
-        const objects = cfg.objects ?? adapter?.getObjects() ?? [];
-        const hidden = hideIds();
-        const children: DrawCommand[] = [];
-        for (const obj of objects) {
-          if (hidden && hidden.has(obj.id)) continue;
-          const pose: TPose = toPose(obj);
-          for (const cmd of drawOneGL(obj, pose, view)) children.push(cmd);
-        }
-        return [{ kind: 'group', transform: viewToMat3(view), children }];
-      },
-    } : {}),
   };
 }
 
@@ -456,7 +445,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     className,
     style,
     tabIndex = 0,
-    backend = '2d' as const,
+    backend = 'gl' as const,
     autoFocusOnPointerDown = true,
     helpersRef,
     gestures,
@@ -1126,18 +1115,8 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       return;
     }
 
-    // -- 2D backend (existing path) --
-    const ctx = c.getContext('2d');
-    if (!ctx) return;
-    setupCanvasDpr(c, ctx, width, height);
-    ctx.clearRect(0, 0, width, height);
-    if (background) {
-      ctx.save();
-      ctx.fillStyle = background;
-      ctx.fillRect(0, 0, width, height);
-      ctx.restore();
-    }
-    drawLayers(ctx, layersWithDebug, helpersForLayers, {}, undefined, effectiveView);
+    // 2D backend has been removed — only the GL backend is supported.
+    // Bail silently if the GL branch above didn't take (e.g. unsupported env).
   }, [layersWithDebug, width, height, background, effectiveView, debugSink]);
 
   const toolsCursor = tools ? resolveToolsCursor(tools, toolsCtxBase) : undefined;

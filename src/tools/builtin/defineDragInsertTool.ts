@@ -5,7 +5,7 @@ import type { Tool } from '../types';
 import type { RenderLayer } from '../../core/layers/render';
 import type { Op } from '../../core/ops/types';
 import { applyHitExistingGate } from './hitExistingGate';
-import { drawMarquee, marqueeDrawCommands, type InsertOverlayStyle } from './marquee';
+import { marqueeDrawCommands, type InsertOverlayStyle } from './marquee';
 import type { InsertController } from '../../interactions/gestures/insert/insert';
 
 type ApplyBatch = (ops: Op[], label: string) => void;
@@ -46,13 +46,7 @@ export function defineDragInsertTool<TObject extends { id: string }, TPose>(
       id: config.overlayId,
       label: config.overlayLabel,
       space: 'screen',
-      draw: (ctx, _data, view) => {
-        const cfg = cfgRef.current;
-        const ov = cfg.controller.overlay;
-        if (!ov) return;
-        drawMarquee(ctx, view, ov.bounds, cfg.overlayStyle, cfg.defaultStyle);
-      },
-      drawGL: (_data, view) => {
+      draw: (_data, view) => {
         const cfg = cfgRef.current;
         const ov = cfg.controller.overlay;
         if (!ov) return [];

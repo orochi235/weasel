@@ -12,6 +12,7 @@ import {
   type RenderLayer,
   type TextStyle,
 } from '@orochi235/weasel';
+import type { DrawCommand } from '@orochi235/weasel-gl';
 import { clientToCanvas } from '../canvasCoords';
 import { useBackend } from '../BackendContext';
 
@@ -157,13 +158,17 @@ export function TextDemo() {
   const outlineLayer: RenderLayer<unknown> = {
     id: 'text-bounds',
     label: 'Text bounds',
-    draw: (cx) => {
-      cx.strokeStyle = '#e8e8e8';
-      cx.lineWidth = 1;
+    draw: () => {
+      const cmds: DrawCommand[] = [];
       for (const n of liveNodes()) {
         const p = resolvePose(n);
-        cx.strokeRect(p.x + 0.5, p.y + 0.5, p.width, p.height);
+        cmds.push({
+          kind: 'path',
+          path: { kind: 'rect', x: p.x + 0.5, y: p.y + 0.5, width: p.width, height: p.height },
+          stroke: { paint: { color: '#e8e8e8' }, width: 1 },
+        });
       }
+      return cmds;
     },
   };
 

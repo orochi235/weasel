@@ -1,12 +1,12 @@
 /**
  * Cell highlight overlay — a thin render layer that fills a single grid cell
  * (e.g. a snap-target preview). Stack it under or over `createGridLayer` in
- * a `drawLayers([...])` sequence.
+ * a layer sequence.
  */
 
 import { type DrawCommand, viewToMat3 } from '@orochi235/weasel-gl';
 import type { RenderLayer } from '../../core/layers/render';
-import { applyPaint, type Paint } from '../../core/paint';
+import { type Paint } from '../../core/paint';
 import { resolveUnit, type UnitSystem, type UnitValue } from '../../core/units';
 
 /** Options for `createCellHighlightLayer`. */
@@ -31,19 +31,7 @@ export function createCellHighlightLayer(opts: CellHighlightLayerOpts): RenderLa
   return {
     id: 'cell-highlight',
     label: 'Cell highlight',
-    draw: (ctx: CanvasRenderingContext2D) => {
-      const cell = opts.getCell();
-      if (!cell) return;
-      const spacing = resolveUnit(opts.spacing, opts.unitSystem);
-      const o = opts.origin ? opts.origin() : { x: 0, y: 0 };
-      const x = o.x + cell.col * spacing;
-      const y = o.y + cell.row * spacing;
-      ctx.save();
-      applyPaint(ctx, fill, { x, y });
-      ctx.fillRect(x, y, spacing, spacing);
-      ctx.restore();
-    },
-    drawGL: (_data, view) => {
+    draw: (_data, view) => {
       const cell = opts.getCell();
       if (!cell) return [];
       const spacing = resolveUnit(opts.spacing, opts.unitSystem);

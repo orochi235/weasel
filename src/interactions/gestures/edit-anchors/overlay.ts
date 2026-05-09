@@ -61,53 +61,7 @@ export function createAnchorEditOverlayLayer(opts: AnchorEditOverlayOpts): Rende
   return {
     id: 'anchor-edit-overlay',
     label: 'Anchor edit',
-    draw: (ctx) => {
-      const ov = opts.getOverlay();
-      if (!ov) return;
-      const anchors = enumerateAnchors(ov.pose);
-      const selected = new Set(ov.selectedAnchors);
-      ctx.save();
-      // Tangent lines: anchor → controlIn / anchor → controlOut.
-      ctx.strokeStyle = tangentStroke;
-      ctx.lineWidth = 1;
-      ctx.setLineDash([]);
-      ctx.beginPath();
-      for (const a of anchors) {
-        if (a.controlIn) {
-          ctx.moveTo(a.x, a.y);
-          ctx.lineTo(a.controlIn.x, a.controlIn.y);
-        }
-        if (a.controlOut) {
-          ctx.moveTo(a.x, a.y);
-          ctx.lineTo(a.controlOut.x, a.controlOut.y);
-        }
-      }
-      ctx.stroke();
-      // Control handles (smaller, drawn first so anchors render on top).
-      ctx.lineWidth = 1;
-      for (const a of anchors) {
-        for (const c of [a.controlIn, a.controlOut]) {
-          if (!c) continue;
-          ctx.beginPath();
-          ctx.arc(c.x, c.y, controlRadius, 0, Math.PI * 2);
-          ctx.fillStyle = controlFill;
-          ctx.fill();
-          ctx.strokeStyle = controlStroke;
-          ctx.stroke();
-        }
-      }
-      // Anchors.
-      for (const a of anchors) {
-        ctx.beginPath();
-        ctx.arc(a.x, a.y, anchorRadius, 0, Math.PI * 2);
-        ctx.fillStyle = selected.has(a.anchorIndex) ? selectedAnchorFill : anchorFill;
-        ctx.fill();
-        ctx.strokeStyle = anchorStroke;
-        ctx.stroke();
-      }
-      ctx.restore();
-    },
-    drawGL: () => {
+    draw: () => {
       const ov = opts.getOverlay();
       if (!ov) return [];
       const anchors = enumerateAnchors(ov.pose);

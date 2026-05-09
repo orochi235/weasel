@@ -35,27 +35,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
   return useMemo<RenderLayer<unknown>>(() => ({
     id: 'preview-ghost',
     label: 'Preview ghost',
-    draw: (ctx, _data, view) => {
-      const slot = sceneSlotRef.current;
-      if (!slot || !slot.drawOne) return;
-      const t = toolsRef.current;
-      const tool = t.registry[t.hotkeyEngaged ?? t.active];
-      const ids = tool?.previewIds?.();
-      if (!ids) return;
-      const sc = sceneRef.current;
-      const drawOne = slot.drawOne;
-      ctx.save();
-      ctx.globalAlpha = 0.85;
-      for (const id of ids) {
-        const pose = tool?.previewPose?.(id) as TPose | null | undefined;
-        if (pose == null) continue;
-        const node = sc.get(asNodeId(id));
-        if (!node) continue;
-        drawOne(ctx, node, pose, view);
-      }
-      ctx.restore();
-    },
-    drawGL: (_data, view) => {
+    draw: (_data, view) => {
       const slot = sceneSlotRef.current;
       const drawOneGL = slot?.drawOneGL;
       if (!slot || !drawOneGL) return [];

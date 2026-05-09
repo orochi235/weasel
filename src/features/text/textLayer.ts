@@ -1,18 +1,16 @@
 /**
  * Text RenderLayer. Draws each text node into world space using the node's
  * pose rect and resolved style. Wrap is width-driven (`pose.width`); height
- * is informational — overflow is not clipped at v1. Callers compose this
- * layer like any other via `drawLayers`.
+ * is informational — overflow is not clipped at v1.
  *
- * **GL backend (`drawGL`):** the GL renderer uses MSDF text. The resolved
- * style's `fontFamily` must be registered via
- * `registerFont(family, atlasUrl)` from `@orochi235/weasel-gl` *before*
- * the GL backend dispatches this layer. Unregistered families render with
- * a warning and a fallback glyph (see `TextDrawCommand`'s contract).
+ * The GL renderer uses MSDF text. The resolved style's `fontFamily` must
+ * be registered via `registerFont(family, atlasUrl)` from
+ * `@orochi235/weasel-gl` *before* the GL backend dispatches this layer.
+ * Unregistered families render with a warning and a fallback glyph (see
+ * `TextDrawCommand`'s contract).
  */
 
 import { type DrawCommand, viewToMat3 } from '@orochi235/weasel-gl';
-import { applyPaint } from '../../core/paint';
 import type { RenderLayer } from '../../core/layers/render';
 import { measureText } from './measureText';
 import {
@@ -43,7 +41,7 @@ export interface CreateTextLayerOpts<T> {
 }
 
 /**
- * Lazily-created module-level 2D context used by `drawGL` for `measureText`.
+ * Lazily-created module-level 2D context used by `draw` for `measureText`.
  * The GL backend has no `ctx`; we keep the existing wrap behavior by
  * borrowing an offscreen 2D canvas just for width measurement.
  *
@@ -91,26 +89,7 @@ export function createTextLayer<T>(opts: CreateTextLayerOpts<T>): RenderLayer<un
   return {
     id,
     label,
-    draw: (ctx) => {
-      for (const node of getTexts()) {
-        if (isHidden?.(node)) continue;
-        const pose = getPose(node);
-        const style = resolveTextStyle(pose.style);
-        ctx.save();
-        ctx.font = fontString(style);
-        applyPaint(ctx, style.fill, { x: pose.x, y: pose.y });
-        ctx.textBaseline = 'top';
-        ctx.textAlign = style.align;
-        const { lines } = measureText(ctx, pose.text, pose.width, style);
-        const lineHeightPx = style.fontSize * style.lineHeight;
-        const xAnchor = anchorX(pose.x, pose.width, style);
-        for (let i = 0; i < lines.length; i++) {
-          ctx.fillText(lines[i], xAnchor, pose.y + i * lineHeightPx);
-        }
-        ctx.restore();
-      }
-    },
-    drawGL: (_data, view) => {
+    draw: (_data, view) => {
       const children: DrawCommand[] = [];
       const mctx = getMeasureCtx();
       for (const node of getTexts()) {

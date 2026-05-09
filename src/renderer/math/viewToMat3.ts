@@ -1,5 +1,5 @@
 /**
- * View → Mat3 helper for `drawGL` implementations on world-space layers.
+ * View → Mat3 helper for layer `draw` implementations on world-space layers.
  *
  * The kit's main package ships a `View` type at
  * `src/features/viewport/view.ts`; we re-declare a structurally compatible
@@ -19,7 +19,7 @@ export interface View {
 /**
  * Build the world→screen transform matrix for a `View`.
  * Use as the `transform` field of a `kind: 'group'` DrawCommand to wrap
- * world-space content emitted from a `drawGL` implementation.
+ * world-space content emitted from a layer `draw` implementation.
  *
  * Mapping: `screen = (world − {view.x, view.y}) × view.scale`.
  *
