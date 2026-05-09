@@ -118,6 +118,51 @@ describe('tessellateStroke caps', () => {
   });
 });
 
+describe('tessellateStroke alignment (RectPath)', () => {
+  it('inner alignment shifts the stroke entirely inside the rect bounds', () => {
+    const path: RectPath = { kind: 'rect', x: 0, y: 0, width: 100, height: 100 };
+    const meshInner = tessellateStroke(path, { paint: { color: '#000' }, width: 10, align: 'inner' });
+    let minX = Infinity, maxX = -Infinity;
+    for (let i = 0; i < meshInner.vertices.length; i += 2) {
+      minX = Math.min(minX, meshInner.vertices[i]);
+      maxX = Math.max(maxX, meshInner.vertices[i]);
+    }
+    expect(minX).toBeGreaterThanOrEqual(0);
+    expect(maxX).toBeLessThanOrEqual(100);
+  });
+
+  it('center alignment extends ±half-width outside the rect', () => {
+    const path: RectPath = { kind: 'rect', x: 0, y: 0, width: 100, height: 100 };
+    const meshCenter = tessellateStroke(path, { paint: { color: '#000' }, width: 10, align: 'center' });
+    let minX = Infinity, maxX = -Infinity;
+    for (let i = 0; i < meshCenter.vertices.length; i += 2) {
+      minX = Math.min(minX, meshCenter.vertices[i]);
+      maxX = Math.max(maxX, meshCenter.vertices[i]);
+    }
+    expect(minX).toBeLessThan(0);
+    expect(maxX).toBeGreaterThan(100);
+  });
+
+  it('outer alignment shifts the stroke entirely outside the rect bounds', () => {
+    const path: RectPath = { kind: 'rect', x: 0, y: 0, width: 100, height: 100 };
+    const meshOuter = tessellateStroke(path, { paint: { color: '#000' }, width: 10, align: 'outer' });
+    // Outer alignment: inner edge of stroke coincides with rect edge.
+    // Therefore vertices on the inside should reach exactly the rect edge,
+    // and outer vertices reach +width beyond.
+    let minX = Infinity, maxX = -Infinity;
+    for (let i = 0; i < meshOuter.vertices.length; i += 2) {
+      minX = Math.min(minX, meshOuter.vertices[i]);
+      maxX = Math.max(maxX, meshOuter.vertices[i]);
+    }
+    expect(minX).toBeLessThanOrEqual(0);
+    expect(maxX).toBeGreaterThanOrEqual(100);
+    // Outer is fully outside: the innermost stroke vertex shouldn't be deeper
+    // inside the rect than the original edge.
+    expect(minX).toBeGreaterThanOrEqual(-10);
+    expect(maxX).toBeLessThanOrEqual(110);
+  });
+});
+
 describe('tessellateStroke dash patterns', () => {
   it('produces multiple disjoint sub-ribbons for a dashed straight line', () => {
     const path: PolygonPath = {

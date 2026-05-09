@@ -1,4 +1,5 @@
 import type { Path, Stroke } from '@orochi235/weasel';
+import { alignedStrokeRect } from '@orochi235/weasel';
 import type { Mesh } from './mesh';
 import { extractPolylines, type Polyline } from './polyline';
 
@@ -42,8 +43,25 @@ export function tessellateStroke(
   if (width <= 0) return EMPTY_MESH;
   const join: Join = stroke.join ?? 'miter';
   const cap: Cap = stroke.cap ?? 'butt';
+  const align = stroke.align ?? 'center';
 
-  const polylines = extractPolylines(path, opts);
+  // RectPath fast path for inner/outer alignment: shift the rect by half-width
+  // so the ribbon's center alignment lands the stroke on the desired side of
+  // the original geometric edge. Arbitrary paths handle alignment via stencil
+  // clipping at the renderer level (not here).
+  let workingPath = path;
+  if (path.kind === 'rect' && align !== 'center') {
+    const aligned = alignedStrokeRect(path, align, width);
+    workingPath = {
+      kind: 'rect',
+      x: aligned.x,
+      y: aligned.y,
+      width: aligned.width,
+      height: aligned.height,
+    };
+  }
+
+  const polylines = extractPolylines(workingPath, opts);
   const dash = stroke.dash ?? [];
   const verts: number[] = [];
   const idx: number[] = [];
