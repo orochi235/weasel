@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { GroupState, IDENTITY_COLOR_MATRIX } from './GroupState';
-import { mat3 } from './mat3';
+import { mat3 } from '../math/mat3';
 
 describe('GroupState', () => {
   it('starts at identity transform and alpha=1', () => {

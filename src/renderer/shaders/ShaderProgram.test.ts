@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { makeGLRecorder } from '../test-utils/glRecorder';
 import { ShaderProgram, ShaderCompileError } from './ShaderProgram';
-import { VERT_SRC, FRAG_SRC, PATH_FILL_UNIFORMS, PATH_FILL_ATTRIBUTES } from './shaders/pathFill';
+import { VERT_SRC, FRAG_SRC, PATH_FILL_UNIFORMS, PATH_FILL_ATTRIBUTES } from './pathFill';
 
 describe('ShaderProgram', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;

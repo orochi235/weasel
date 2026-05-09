@@ -1,6 +1,6 @@
 import type { Path, Paint, Stroke, TextStyle } from '@orochi235/weasel';
-import type { Mat3 } from './mat3';
-import type { ShaderProgramHandle, ShaderUniform } from './registerProgram';
+import type { Mat3 } from './math/mat3';
+import type { ShaderProgramHandle, ShaderUniform } from './shaders/registerProgram';
 
 /**
  * Solid-fill paint variant (subset of the full `Paint` union from

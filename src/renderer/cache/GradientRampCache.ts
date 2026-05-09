@@ -9,7 +9,7 @@
  */
 
 import type { GradStop } from '@orochi235/weasel';
-import { parseColor } from './color';
+import { parseColor } from '../math/color';
 
 const RAMP_SIZE = 256;
 

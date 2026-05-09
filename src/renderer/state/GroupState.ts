@@ -1,4 +1,4 @@
-import { mat3, type Mat3 } from './mat3';
+import { mat3, type Mat3 } from '../math/mat3';
 
 /** Row-major 4×5 color matrix identity. */
 export const IDENTITY_COLOR_MATRIX = new Float32Array([

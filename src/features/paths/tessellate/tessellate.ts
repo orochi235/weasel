@@ -12,7 +12,7 @@ import {
   flattenCubic,
   flattenQuadratic,
 } from '@orochi235/weasel';
-import type { Mesh } from './mesh';
+import type { Mesh } from '../../../renderer/cache/mesh';
 
 export interface TessellateOptions {
   /** Flatness tolerance for bezier subdivision in path-local units. */

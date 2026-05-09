@@ -12,7 +12,7 @@
  */
 
 import { parseBmFont, type BmFont } from './FontAtlas';
-import type { GLTextureCache } from './GLTextureCache';
+import type { GLTextureCache } from '../../../renderer/cache/GLTextureCache';
 
 export interface FontEntry {
   font: BmFont;

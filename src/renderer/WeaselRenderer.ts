@@ -1,4 +1,4 @@
-import { ShaderProgram } from './ShaderProgram';
+import { ShaderProgram } from './shaders/ShaderProgram';
 import {
   VERT_SRC,
   FRAG_SRC,
@@ -26,19 +26,19 @@ import {
   GRAD_FILL_UNIFORMS,
   GRAD_FILL_ATTRIBUTES,
 } from './shaders/gradFill';
-import { GLMeshCache } from './GLMeshCache';
-import { GLTextureCache } from './GLTextureCache';
-import { GLImageCache } from './GLImageCache';
-import { GradientRampCache } from './GradientRampCache';
-import { GroupState } from './GroupState';
+import { GLMeshCache } from './cache/GLMeshCache';
+import { GLTextureCache } from './cache/GLTextureCache';
+import { GLImageCache } from './cache/GLImageCache';
+import { GradientRampCache } from './cache/GradientRampCache';
+import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
 import { dispatch, type DrawContext } from './draw';
-import { _markAllFontsNotUploaded } from './registerFont';
+import { _markAllFontsNotUploaded } from '../features/text/atlas/registerFont';
 import {
   CUSTOM_VERT_SRC, CUSTOM_ATTRIBUTES, CUSTOM_KIT_UNIFORMS,
   QUAD_VERTICES, QUAD_INDICES,
 } from './shaders/customPrelude';
-import { getProgramSource, type ShaderProgramHandle } from './registerProgram';
+import { getProgramSource, type ShaderProgramHandle } from './shaders/registerProgram';
 
 function extractUniformNames(glsl: string): string[] {
   const re = /\buniform\s+\S+\s+(\w+)\s*;/g;

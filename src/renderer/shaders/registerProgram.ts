@@ -12,7 +12,7 @@
  * Lifecycle: program sources live for the module lifetime. No unregister in v1.
  */
 
-import { type TextureHandle } from './registerTexture';
+import { type TextureHandle } from '../textures/registerTexture';
 
 export type { TextureHandle };
 

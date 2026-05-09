@@ -8,20 +8,20 @@ import type {
   ImageDrawCommand,
   ShaderDrawCommand,
 } from './DrawCommand';
-import { getTexture, type TextureHandle } from './registerTexture';
-import type { ShaderUniform } from './registerProgram';
-import type { GroupState } from './GroupState';
-import type { GLMeshCache, GLMeshHandle } from './GLMeshCache';
-import type { GLTextureCache } from './GLTextureCache';
-import type { GLImageCache, PatternRepetition } from './GLImageCache';
-import type { GradientRampCache } from './GradientRampCache';
-import type { ShaderProgram } from './ShaderProgram';
-import { mat3 } from './mat3';
-import { getMesh } from './cache';
-import { parseColor } from './color';
-import { tessellateStroke } from './stroke';
-import { getFont, ensureFontTexture } from './registerFont';
-import { layoutGlyphs, quadsToVertexBuffer, buildQuadIndexBuffer } from './GlyphLayout';
+import { getTexture, type TextureHandle } from './textures/registerTexture';
+import type { ShaderUniform } from './shaders/registerProgram';
+import type { GroupState } from './state/GroupState';
+import type { GLMeshCache, GLMeshHandle } from './cache/GLMeshCache';
+import type { GLTextureCache } from './cache/GLTextureCache';
+import type { GLImageCache, PatternRepetition } from './cache/GLImageCache';
+import type { GradientRampCache } from './cache/GradientRampCache';
+import type { ShaderProgram } from './shaders/ShaderProgram';
+import { mat3 } from './math/mat3';
+import { getMesh } from './cache/cache';
+import { parseColor } from './math/color';
+import { tessellateStroke } from '../features/paths/tessellate/stroke';
+import { getFont, ensureFontTexture } from '../features/text/atlas/registerFont';
+import { layoutGlyphs, quadsToVertexBuffer, buildQuadIndexBuffer } from '../features/text/atlas/GlyphLayout';
 
 export interface DrawContext {
   gl: WebGL2RenderingContext;

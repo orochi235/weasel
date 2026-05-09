@@ -10,12 +10,8 @@ export default defineConfig({
   resolve: {
     alias: [
       {
-        find: /^@orochi235\/weasel-gl\/(.*)$/,
-        replacement: resolve(repoRoot, 'packages/weasel-gl/src/$1.ts'),
-      },
-      {
         find: '@orochi235/weasel-gl',
-        replacement: resolve(repoRoot, 'packages/weasel-gl/src/index.ts'),
+        replacement: resolve(repoRoot, 'src/renderer/index.ts'),
       },
       {
         find: /^@orochi235\/weasel\/(.*)$/,

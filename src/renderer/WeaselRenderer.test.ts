@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { makeGLRecorder } from '../test-utils/glRecorder';
+import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 
 describe('WeaselRenderer (constructor)', () => {

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { makeGLRecorder } from '../test-utils/glRecorder';
+import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
-import { mat3 } from './mat3';
+import { mat3 } from './math/mat3';
 import type { DrawCommand } from './DrawCommand';
 
 describe('WeaselRenderer.render — kind: group', () => {
@@ -189,8 +189,8 @@ describe('WeaselRenderer.render — kind: path with stroke', () => {
   });
 });
 
-import { registerFont, _resetFontRegistryForTests } from './registerFont';
-import { FIXTURE_FONT } from './FontAtlas';
+import { registerFont, _resetFontRegistryForTests } from '../features/text/atlas/registerFont';
+import { FIXTURE_FONT } from '../features/text/atlas/FontAtlas';
 import { vi } from 'vitest';
 
 describe('WeaselRenderer.render — color matrix on text + image', () => {

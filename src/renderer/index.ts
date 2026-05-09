@@ -19,18 +19,18 @@ export type {
   ShaderDrawCommand,
   SolidPaint,
 } from './DrawCommand';
-export { mat3, type Mat3 } from './mat3';
-export { viewToMat3, type View as ViewLike } from './viewToMat3';
-export { tessellate, type TessellateOptions } from './tessellate';
-export { tessellateStroke, type StrokeOptions } from './stroke';
-export { registerFont } from './registerFont';
-export { buildGradientRamp } from './GradientRampCache';
-export { IDENTITY_COLOR_MATRIX } from './GroupState';
-export type { Mesh } from './mesh';
+export { mat3, type Mat3 } from './math/mat3';
+export { viewToMat3, type View as ViewLike } from './math/viewToMat3';
+export { tessellate, type TessellateOptions } from '../features/paths/tessellate/tessellate';
+export { tessellateStroke, type StrokeOptions } from '../features/paths/tessellate/stroke';
+export { registerFont } from '../features/text/atlas/registerFont';
+export { buildGradientRamp } from './cache/GradientRampCache';
+export { IDENTITY_COLOR_MATRIX } from './state/GroupState';
+export type { Mesh } from './cache/mesh';
 export {
   registerProgram,
   type ShaderProgramHandle,
   type ShaderUniform,
-} from './registerProgram';
-export { registerTexture, type TextureHandle } from './registerTexture';
-export { ShaderCompileError } from './ShaderProgram';
+} from './shaders/registerProgram';
+export { registerTexture, type TextureHandle } from './textures/registerTexture';
+export { ShaderCompileError } from './shaders/ShaderProgram';

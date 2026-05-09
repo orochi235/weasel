@@ -1,6 +1,6 @@
 import type { Path, Stroke } from '@orochi235/weasel';
 import { alignedStrokeRect } from '@orochi235/weasel';
-import type { Mesh } from './mesh';
+import type { Mesh } from '../../../renderer/cache/mesh';
 import { extractPolylines, type Polyline } from './polyline';
 
 export interface StrokeOptions {

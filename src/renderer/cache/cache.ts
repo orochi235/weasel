@@ -1,6 +1,6 @@
 import type { Path } from '@orochi235/weasel';
 import type { Mesh } from './mesh';
-import { tessellate, type TessellateOptions } from './tessellate';
+import { tessellate, type TessellateOptions } from '../../features/paths/tessellate/tessellate';
 
 let cache = new WeakMap<Path, Mesh>();
 
