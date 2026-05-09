@@ -1,4 +1,4 @@
-import type { Path } from '@orochi235/weasel';
+import type { Path, Stroke } from '@orochi235/weasel';
 import type { Mat3 } from './mat3';
 
 /**
@@ -12,13 +12,15 @@ export interface SolidPaint {
   opacity?: number;
 }
 
-/** DrawCommand variants implemented in step 1. */
+/** DrawCommand variants implemented through step 2 (path + stroke + group). */
 export type DrawCommand = PathDrawCommand | GroupDrawCommand;
 
 export interface PathDrawCommand {
   kind: 'path';
   path: Path;
   fill?: SolidPaint;
+  /** Stroke spec. In step 2 only solid `paint` is supported; gradients/patterns arrive in step 4. */
+  stroke?: Stroke;
 }
 
 export interface GroupDrawCommand {
