@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { easeOut, SPRING_PRESETS } from './easings';
 import type {
   AnimationHandle,
@@ -35,6 +35,44 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
   const animations = useRef<Map<number, ActiveAnimation>>(new Map());
   const nextId = useRef(1);
   const rafHandle = useRef<number | null>(null);
+
+  // StrictMode-safe cleanup: when the component unmounts (including the
+  // dev-mode double-mount that StrictMode performs), cancel every running
+  // animation and stop the RAF loop. Without this, the FIRST mount's
+  // animator keeps ticking with stale callbacks pointing at the unmounted
+  // adapter, while the SECOND mount creates its own animator on top —
+  // visible to the user as every animation playing twice.
+  const cleanupRef = useRef<(() => void) | null>(null);
+  // Tripwire: dev-only flag that every tween/spring/decay's tick reads to
+  // detect "animation fired after the host component unmounted." This is a
+  // symptom of cleanup not running (regression) — typically because someone
+  // refactored useAnimator and forgot to wire the unmount effect. The flag
+  // flips false on cleanup; ticks see it and log a one-time error so the
+  // bug is loud rather than just visually-doubled animation.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      cleanupRef.current?.();
+    };
+  }, []);
+  const trippedRef = useRef(false);
+  const tripwire = (): boolean => {
+    if (mountedRef.current) return false;
+    if (!trippedRef.current) {
+      trippedRef.current = true;
+      const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
+      if (isDev) {
+        console.error(
+          'weasel useAnimator: animation tick fired after the host component unmounted. ' +
+          'This usually means cleanup logic was bypassed — check for refactors that ' +
+          'removed the unmount effect or replaced cancelAll with a custom path.',
+        );
+      }
+    }
+    return true;
+  };
 
   return useMemo<Animator>(() => {
     // Default to performance.now() so the time origin matches the
@@ -109,6 +147,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         id,
         cancelKey: o.cancelKey,
         tick(nowMs) {
+          if (tripwire()) return true;
           const elapsed = nowMs - start;
           const t = o.ms <= 0 ? 1 : Math.min(1, Math.max(0, elapsed / o.ms));
           o.onTick(interp(o.from, o.to, easing(t)));
@@ -143,6 +182,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         id,
         cancelKey: o.cancelKey,
         tick(nowMs) {
+          if (tripwire()) return true;
           if (lastTime == null) {
             lastTime = nowMs;
             o.onTick(value);
@@ -179,6 +219,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         id,
         cancelKey: o.cancelKey,
         tick(nowMs) {
+          if (tripwire()) return true;
           if (lastTime == null) {
             lastTime = nowMs;
             if (o.magnitude(velocity) < threshold) {
@@ -203,6 +244,15 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       });
     };
 
+    const cancelAll = (): void => {
+      for (const a of animations.current.values()) a.onCancel?.();
+      animations.current.clear();
+      if (rafHandle.current != null) {
+        cancelFrame(rafHandle.current);
+        rafHandle.current = null;
+      }
+    };
+    cleanupRef.current = cancelAll;
     return {
       tween,
       spring,
@@ -214,14 +264,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         animations.current.delete(handle.id);
       },
       cancelKey: cancelByKey,
-      cancelAll: () => {
-        for (const a of animations.current.values()) a.onCancel?.();
-        animations.current.clear();
-        if (rafHandle.current != null) {
-          cancelFrame(rafHandle.current);
-          rafHandle.current = null;
-        }
-      },
+      cancelAll,
       isActive: (key) => {
         if (key == null) return animations.current.size > 0;
         for (const a of animations.current.values()) {

@@ -216,3 +216,37 @@ describe('useAnimator.decay', () => {
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('useAnimator unmount cleanup (StrictMode safety)', () => {
+  it('cancels in-flight animations and stops the rAF loop on unmount', () => {
+    const clock = makeClock();
+    const { result, unmount } = renderHook(() => useAnimator(clock));
+    const onTick = vi.fn();
+    const onDone = vi.fn();
+    act(() => {
+      result.current.tween<number>({
+        from: 0, to: 100, ms: 100, easing: linear, onTick, onDone,
+      });
+    });
+    act(() => clock.advance(16));
+    expect(onTick).toHaveBeenCalled();
+    const ticksBeforeUnmount = onTick.mock.calls.length;
+    unmount();
+    act(() => clock.advance(100));
+    expect(onTick.mock.calls.length).toBe(ticksBeforeUnmount);
+    expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it('isActive returns false after unmount even with in-flight animations', () => {
+    const clock = makeClock();
+    const { result, unmount } = renderHook(() => useAnimator(clock));
+    act(() => {
+      result.current.tween<number>({
+        from: 0, to: 100, ms: 1000, easing: linear, onTick: () => {},
+      });
+    });
+    expect(result.current.isActive()).toBe(true);
+    unmount();
+    expect(result.current.isActive()).toBe(false);
+  });
+});
