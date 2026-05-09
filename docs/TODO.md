@@ -7,9 +7,22 @@ for cross-app reuse, not consumer-app value.
 For history of completed work that pre-dates extraction, see `git log` and
 the dated specs/plans under `specs/` and `plans/`.
 
-## WebGL backend rewrite (exploratory, unscheduled)
+## WebGL transition (scheduled — incremental, parallel package)
 
-Spec: `docs/specs/2026-05-03-webgl-backend-design.md`. Full renderer rewrite from Canvas 2D to WebGL2. Not on the schedule — go-criteria documented in the spec ("when at least two are true"). When pursued:
+Spec: `docs/superpowers/specs/2026-05-08-webgl-transition-plan-design.md`. Architecture source: `docs/specs/2026-05-03-webgl-backend-design.md`. Transition is sequenced over 10 steps; per-step plans land on demand under `docs/superpowers/plans/`.
+
+- [x] Step 1 — Solid-fill paths shipped 2026-05-08 (`docs/superpowers/plans/2026-05-08-webgl-step-1-done.md`)
+- [ ] Step 2 — Strokes (plan TBW)
+- [ ] Step 3 — Text (MSDF) (plan TBW)
+- [ ] Step 4 — Image / pattern / gradient (plan TBW)
+- [ ] Step 5 — Per-vertex colors + color matrix (plan TBW)
+- [ ] Step 6 — Minimal experimental shader API (plan TBW)
+- [ ] Step 7 — Port built-in layers (plan TBW)
+- [ ] Step 8 — Canvas component port + `backend` prop soak (plan TBW)
+- [ ] Step 9 — Visual regression rig + demo soak (plan TBW)
+- [ ] Step 10 — Final swap (delete 2D, rename `weasel-gl` → `weasel`, major version bump) (plan TBW)
+
+Items deferred from the spec:
 
 - WebGPU backend after WebGL ships (separate future spec).
 - Worker-thread offload via `OffscreenCanvas` rendering in a worker — major perf win, significant API complexity. Defer until single-thread GL is shipped and measured.
