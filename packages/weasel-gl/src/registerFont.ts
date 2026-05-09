@@ -17,7 +17,6 @@ import type { GLTextureCache } from './GLTextureCache';
 export interface FontEntry {
   font: BmFont;
   bitmap: ImageBitmap;
-  textureUploaded: boolean;
 }
 
 let registry = new Map<string, FontEntry>();
@@ -59,7 +58,7 @@ export async function registerFont(
     const font = parseBmFont(rawJson);
     const bitmap = await createImageBitmap(blob);
 
-    registry.set(family, { font, bitmap, textureUploaded: false });
+    registry.set(family, { font, bitmap });
   } catch (err) {
     throw new Error(
       `weasel-gl registerFont("${family}"): ${err instanceof Error ? err.message : String(err)}`,
@@ -67,23 +66,21 @@ export async function registerFont(
   }
 }
 
+/**
+ * Ensure the font's atlas is uploaded to `textureCache`. The cache's own
+ * `has()` check handles dedup — multiple renderers each have their own
+ * textureCache, so we can't rely on a per-font flag. `upload` is a no-op
+ * if the texture is already present.
+ */
 export function ensureFontTexture(
   family: string,
   textureCache: GLTextureCache,
 ): boolean {
   const entry = registry.get(family);
   if (!entry) return false;
-  if (!entry.textureUploaded) {
-    textureCache.upload(family, entry.bitmap);
-    entry.textureUploaded = true;
-  }
+  textureCache.upload(family, entry.bitmap);
   return true;
 }
 
-/**
- * For tests / context-restore: mark all fonts as not-uploaded so the next
- * render re-uploads the atlas to a fresh GL context.
- */
-export function _markAllFontsNotUploaded(): void {
-  for (const entry of registry.values()) entry.textureUploaded = false;
-}
+/** Kept as a no-op for context-restore call sites; per-cache dedup handles it now. */
+export function _markAllFontsNotUploaded(): void {}

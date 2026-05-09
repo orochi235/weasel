@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>weasel-gl step 3 text smoke</title>
+    <style>
+      html, body { margin: 0; padding: 8px; background: #1a1a1a; color: #fff; font: 13px sans-serif; }
+      canvas { display: block; margin: 8px 0; background: #000; }
+    </style>
+  </head>
+  <body>
+    <p>Loading Inter font atlas…</p>
+    <h3>32px "Hello, World!" (Inter Regular)</h3>
+    <canvas id="cHello" width="600" height="80"></canvas>
+    <h3>16px body text — Lorem ipsum (small size)</h3>
+    <canvas id="cSmall" width="600" height="60"></canvas>
+    <h3>64px large heading</h3>
+    <canvas id="cLarge" width="600" height="120"></canvas>
+    <h3>Zoom test: same string at 4 sizes overlaid</h3>
+    <canvas id="cZoom" width="600" height="200"></canvas>
+    <script type="module" src="./text.ts"></script>
+  </body>
+</html>
