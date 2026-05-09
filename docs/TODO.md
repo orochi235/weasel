@@ -144,6 +144,24 @@ The kit's primitives (Tool, RenderLayer, Adapter, PoseDescriptor, Behavior, Op f
 
 Pen tool and debug overlay both ship as separate exports first (tool + layer factory). After 2–3 plugin-shaped features have shipped this way, do a small spec pass to extract the bundling convention from the actual pattern.
 
+### Feature-roles taxonomy (in design — informal)
+
+Working naming convention for `useFooFeature()` returns, settling in chat (2026-05-09). Each feature contributes any subset of:
+
+- **`api: FooApi`** — typed surface other features and consumer code consume (live state, refs, getters, setters). The cross-feature contract.
+- **`attrs: FooAttrs`** — native DOM attributes/handlers to spread onto the canvas host element (`tabIndex`, `onFocus`, `onDragOver`, etc.). Distinct from React props on `<SceneCanvas>` itself.
+- **`layers: FooLayers`** — slot-keyed render-layer contributions. Each entry is `<T>(current: RenderLayer<T>) => RenderLayer<T>`. **Provider and wrapper roles are deliberately collapsed:** a "provider" returns a fresh layer ignoring `current`; a "wrapper" composes with `current`. SceneCanvas seeds each slot with an empty layer and reduces all contributions in registration order.
+
+Cross-feature deps are typed function arguments (`useBlurOnEscape(focus.api)`). No registry, no string-id lookup, no install context — TypeScript imports are the dependency graph.
+
+**Watch the layers collapse decision.** Risks worth monitoring as more features land:
+
+1. *Wrapper-vs-provider intent invisible at the type level.* A reader can't tell from a feature's `layers` field alone whether the feature owns the slot or just decorates it. If this becomes a recurring confusion in code review, split the role back into `layers` (provider) + `wrappers` (transformer).
+2. *Order becomes load-bearing.* "Later contributions wrap earlier ones" is convention, not enforcement. If a consumer accidentally orders a wrapper before the provider it expected to wrap, the wrapper sees an empty layer and emits nothing. Watch for bugs of this shape.
+3. *Wrapper accidentally replaces.* `(current) => freshLayer` is a valid wrapper signature that ignores `current` — the type system can't enforce "modify, don't replace." If this happens in real code (a wrapper unintentionally swallows the provider's contribution), revisit whether splitting helps.
+
+If any of those become live problems, the rollback path is small: split `layers` into `layers: FooLayers` (provider, plain `RenderLayer<T>`) + `wrappers: FooWrappers` (slot-keyed transformer functions). The other field names (`api`, `attrs`) stay.
+
 ## Tier 1 — foundational genericity gaps
 
 Without these, the kit is essentially "axis-aligned-rectangle kit."
