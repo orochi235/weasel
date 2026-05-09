@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Canvas, useTools, useKeybindings, useHandTool, useSelectTool } from '../../src';
 import type { View } from '../../src/features/viewport/view';
+import { useBackend } from '../BackendContext';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
@@ -23,6 +24,7 @@ useKeybindings(tools);
 />`;
 
 export function PanDemo() {
+  const backend = useBackend();
   const [items, setItems] = useState<Rect[]>(INITIAL_ITEMS);
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
 
@@ -56,7 +58,8 @@ export function PanDemo() {
         <span style={{ color: '#888' }}>H = hand · space (hold) = momentary hand</span>
       </div>
       <Canvas
-        width={400}
+backend={backend}
+              width={400}
         height={300}
         items={items}
         setItems={setItems}

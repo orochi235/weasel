@@ -7,6 +7,7 @@ import {
   useTools,
 } from '@orochi235/weasel';
 import type { ClipboardSnapshot } from '@orochi235/weasel';
+import { useBackend } from '../BackendContext';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -19,6 +20,7 @@ const INITIAL: Rect[] = [
 ];
 
 export function CloneDemo() {
+  const backend = useBackend();
   const [rects, setRects] = useState<Rect[]>(INITIAL);
   const rectsRef = useRef(rects); rectsRef.current = rects;
   const nextId = useRef(0);
@@ -52,7 +54,8 @@ export function CloneDemo() {
 
   return (
     <Canvas
-      width={W}
+backend={backend}
+            width={W}
       height={H}
       className="ckd-canvas"
       adapter={adapter}

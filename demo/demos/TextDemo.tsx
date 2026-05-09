@@ -13,6 +13,7 @@ import {
   type TextStyle,
 } from '@orochi235/weasel';
 import { clientToCanvas } from '../canvasCoords';
+import { useBackend } from '../BackendContext';
 
 interface TextNode {
   id: string;
@@ -81,6 +82,7 @@ const INITIAL: TextNode[] = [
 ];
 
 export function TextDemo() {
+  const backend = useBackend();
   const scene = useScene({ items: INITIAL });
 
   // Live snapshot of every node's data + current pose, in render order. Used
@@ -197,7 +199,8 @@ export function TextDemo() {
       onDoubleClick={onDoubleClick}
     >
       <SceneCanvas
-        width={W}
+backend={backend}
+              width={W}
         height={H}
         className="ckd-canvas"
         background="#fafafa"

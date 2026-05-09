@@ -6,6 +6,7 @@ import {
   useAnimator,
 } from '@orochi235/weasel';
 import type { EasingName, RenderLayer } from '@orochi235/weasel';
+import { useBackend } from '../BackendContext';
 
 interface Marker { id: string; x: number; y: number; width: number; height: number; easing: EasingName; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -43,6 +44,7 @@ function buildInitial(): Marker[] {
 }
 
 export function EasingsDemo() {
+  const backend = useBackend();
   const [markers, setMarkers] = useState<Marker[]>(buildInitial);
   const markersRef = useRef(markers);
   markersRef.current = markers;
@@ -149,7 +151,8 @@ export function EasingsDemo() {
         </label>
       </div>
       <Canvas
-        width={W}
+backend={backend}
+              width={W}
         height={H}
         className="ckd-canvas"
         adapter={adapter}

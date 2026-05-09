@@ -7,6 +7,7 @@ import {
   tileGrid,
   snapPoint,
 } from '@orochi235/weasel';
+import { useBackend } from '../BackendContext';
 
 // --- Scene model ---
 //
@@ -36,6 +37,7 @@ const INITIAL = [
 ];
 
 export function LayoutDemo() {
+  const backend = useBackend();
   const scene = useScene<Data, 'default', P>({
     systemLayers: [{ id: 'default' }],
     initial: INITIAL.map((n) => ({
@@ -56,7 +58,8 @@ export function LayoutDemo() {
 
   return (
     <SceneCanvas
-      width={620}
+backend={backend}
+            width={620}
       height={260}
       scene={scene}
       layouts={layouts}

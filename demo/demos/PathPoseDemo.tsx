@@ -14,6 +14,7 @@ import type {
   Path,
   DebugConfig,
 } from '@orochi235/weasel';
+import { useBackend } from '../BackendContext';
 
 const DEBUG_STATES: Array<{ label: string; config: DebugConfig | false }> = [
   { label: 'off',          config: false },
@@ -42,6 +43,7 @@ const INITIAL_PATH: Path = polygonFromPoints([
 ]);
 
 export function PathPoseDemo() {
+  const backend = useBackend();
   const [debugIdx, setDebugIdx] = useState(0);
   const debug = DEBUG_STATES[debugIdx].config;
 
@@ -71,7 +73,8 @@ export function PathPoseDemo() {
         </button>
       </div>
       <SceneCanvas
-        width={W}
+backend={backend}
+              width={W}
         height={H}
         className="ckd-canvas"
         scene={scene}

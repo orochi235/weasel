@@ -6,6 +6,7 @@ import {
   useScene,
   useTools,
 } from '@orochi235/weasel';
+import { useBackend } from '../BackendContext';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
@@ -13,6 +14,7 @@ const W = 400, H = 300;
 const COLORS = ['#7fb069', '#d4a574', '#a48bd4', '#d47a7a', '#7ab8d4'];
 
 export function InsertDemo() {
+  const backend = useBackend();
   const scene = useScene<Rect>({ items: [] });
   const nextId = useRef(0);
 
@@ -43,7 +45,8 @@ export function InsertDemo() {
 
   return (
     <SceneCanvas
-      width={W}
+backend={backend}
+            width={W}
       height={H}
       className="ckd-canvas"
       scene={scene}

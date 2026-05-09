@@ -8,6 +8,7 @@ import type {
   DebugConfig,
   DebugFeature,
 } from '@orochi235/weasel';
+import { useBackend } from '../BackendContext';
 
 interface Box { id: string; x: number; y: number; width: number; height: number; color: string }
 
@@ -41,6 +42,7 @@ const chip = (active: boolean): React.CSSProperties => ({
 });
 
 export function DebugOverlayDemo() {
+  const backend = useBackend();
   const scene = useScene<Box>({ items: INITIAL });
 
   const [enabled, setEnabled] = useState<Record<DebugFeature, boolean>>({
@@ -77,7 +79,8 @@ export function DebugOverlayDemo() {
         <button style={btn} onClick={allOff}>all off</button>
       </div>
       <SceneCanvas
-        width={W}
+backend={backend}
+              width={W}
         height={H}
         className="ckd-canvas"
         scene={scene}

@@ -10,6 +10,7 @@ import {
   asNodeId,
 } from '@orochi235/weasel';
 import type { Path } from '@orochi235/weasel';
+import { useBackend } from '../BackendContext';
 
 interface Shape { id: string; pose: Path; fill: string; stroke?: string; label?: string }
 interface ShapeData { fill: string; stroke?: string; label?: string }
@@ -151,6 +152,7 @@ const INITIAL: Shape[] = [
 ];
 
 export function CompoundPathsDemo() {
+  const backend = useBackend();
   const scene = useScene<ShapeData, 'default', Path>({
     systemLayers: [{ id: 'default' }],
     initial: INITIAL.map((s) => ({
@@ -174,7 +176,8 @@ export function CompoundPathsDemo() {
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
     <div style={{ position: 'relative', width: W, height: H }}>
       <SceneCanvas
-        width={W}
+backend={backend}
+              width={W}
         height={H}
         className="ckd-canvas"
         scene={scene}

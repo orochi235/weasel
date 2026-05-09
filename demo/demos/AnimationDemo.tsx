@@ -10,6 +10,7 @@ import {
   useSelectTool,
   useTools,
 } from '@orochi235/weasel';
+import { useBackend } from '../BackendContext';
 
 interface Card { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -24,6 +25,7 @@ const INITIAL: Card[] = [
 ];
 
 export function AnimationDemo() {
+  const backend = useBackend();
   const [cards, setCards] = useState<Card[]>(INITIAL);
   const cardsRef = useRef(cards);
   cardsRef.current = cards;
@@ -117,7 +119,8 @@ export function AnimationDemo() {
         <button onClick={addCard}>Add card</button>
       </div>
       <Canvas
-        width={W}
+backend={backend}
+              width={W}
         height={H}
         className="ckd-canvas"
         adapter={adapter as never}

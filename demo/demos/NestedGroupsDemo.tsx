@@ -13,6 +13,7 @@ import {
   worldPoseLookup,
 } from '@orochi235/weasel';
 import type { MoveAdapter, Op, SelectionApi } from '@orochi235/weasel';
+import { useBackend } from '../BackendContext';
 
 interface Node {
   id: string;
@@ -38,6 +39,7 @@ const INITIAL: Node[] = [
 ];
 
 export function NestedGroupsDemo() {
+  const backend = useBackend();
   const [nodes, setNodes] = useState<Node[]>(INITIAL);
   const nodesRef = useRef(nodes); nodesRef.current = nodes;
   const selection: SelectionApi = useSelection();
@@ -143,7 +145,8 @@ export function NestedGroupsDemo() {
 
   return (
     <Canvas
-      width={W}
+backend={backend}
+            width={W}
       height={H}
       className="ckd-canvas"
       adapter={adapter}

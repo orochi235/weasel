@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { SceneCanvas, useScene } from '@orochi235/weasel';
 import type { RenderLayer, CanvasHelpers } from '@orochi235/weasel';
+import { useBackend } from '../BackendContext';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
@@ -76,12 +77,14 @@ function createQuadtreeLayer(
 }
 
 export function QuadtreeDemo() {
+  const backend = useBackend();
   const scene = useScene({ items: INITIAL });
   const helpersRef = useRef<CanvasHelpers<Rect> | null>(null);
 
   return (
     <SceneCanvas
-      width={W}
+backend={backend}
+            width={W}
       height={H}
       className="ckd-canvas"
       scene={scene}

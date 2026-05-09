@@ -11,6 +11,7 @@ import {
 } from '@orochi235/weasel';
 import type { UnitSystem } from '@orochi235/weasel';
 import type { View } from '../../src/features/viewport/view';
+import { useBackend } from '../BackendContext';
 
 interface NodeData { color: string }
 type LayerId = 'default';
@@ -23,6 +24,7 @@ const UNITS: UnitSystem = { base: 'px', units: { px: 1, tile: 20 } };
 const CELL = { value: 1, unit: 'tile' } as const;
 
 export function MoveDemo() {
+  const backend = useBackend();
   const scene = useScene<NodeData, LayerId, Pose>({
     systemLayers: [{ id: 'default' }],
     initial: [
@@ -44,7 +46,8 @@ export function MoveDemo() {
 
   return (
     <SceneCanvas
-      width={W}
+backend={backend}
+            width={W}
       height={H}
       className="ckd-canvas"
       scene={scene}
