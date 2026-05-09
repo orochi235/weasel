@@ -47,7 +47,13 @@ describe('WeaselRenderer.resize', () => {
   });
 
   it('updates the canvas drawingBuffer width/height', () => {
-    const canvas = { width: 0, height: 0, getContext: () => recorder.gl } as unknown as HTMLCanvasElement;
+    const canvas = {
+      width: 0,
+      height: 0,
+      getContext: () => recorder.gl,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    } as unknown as HTMLCanvasElement;
     const r = new WeaselRenderer({ canvas, width: 100, height: 100, dpr: 1 });
     r.resize({ width: 200, height: 150, dpr: 2 });
     expect(canvas.width).toBe(400);
