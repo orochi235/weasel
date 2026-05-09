@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactElement, ReactNode } from 'react';
+import { useCallback, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react';
 import s from './RangePicker.module.css';
 
 export type ThumbRenderCtx = {
@@ -48,12 +48,70 @@ export type RangePickerProps<T extends Thumb = Thumb> = {
   className?: string;
 };
 
-export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>): ReactElement {
-  const { thumbs, min, max, trackHeight, ariaLabel, className } = props;
+function snap(v: number, step: number | undefined, min: number): number {
+  if (step === undefined || step <= 0) return v;
+  return Math.round((v - min) / step) * step + min;
+}
 
-  const valueToFraction = (v: number): number => {
-    if (max === min) return 0;
-    return Math.max(0, Math.min(1, (v - min) / (max - min)));
+function clamp(v: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, v));
+}
+
+export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>): ReactElement {
+  const { thumbs, onChange, onCommit, min, max, step, trackHeight, ariaLabel, className } = props;
+
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  // In-flight thumb buffer during a drag; null when not dragging.
+  const dragBufferRef = useRef<T[] | null>(null);
+
+  const valueToFraction = useCallback(
+    (v: number): number => (max === min ? 0 : clamp((v - min) / (max - min), 0, 1)),
+    [min, max],
+  );
+
+  const fractionToValue = useCallback(
+    (f: number): number => min + clamp(f, 0, 1) * (max - min),
+    [min, max],
+  );
+
+  const beginThumbDrag = useCallback(
+    (index: number) => {
+      const buf: T[] = thumbs.map(t => ({ ...t }));
+      dragBufferRef.current = buf;
+
+      const onMove = (ev: PointerEvent) => {
+        const track = trackRef.current;
+        const buffer = dragBufferRef.current;
+        if (!track || !buffer) return;
+        const rect = track.getBoundingClientRect();
+        const f = clamp((ev.clientX - rect.left) / rect.width, 0, 1);
+        let v = fractionToValue(f);
+        v = snap(v, step, min);
+        v = clamp(v, min, max);
+        buffer[index] = { ...buffer[index], value: v };
+        onChange(buffer.map(t => ({ ...t })));
+      };
+
+      const onUp = () => {
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onUp);
+        const buffer = dragBufferRef.current;
+        dragBufferRef.current = null;
+        if (buffer && onCommit) onCommit(buffer.map(t => ({ ...t })));
+      };
+
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
+    },
+    [thumbs, onChange, onCommit, fractionToValue, min, max, step],
+  );
+
+  const onThumbPointerDown = (index: number) => (e: ReactPointerEvent) => {
+    // Only bail on explicit non-primary buttons (button > 0). jsdom's PointerEvent
+    // leaves `button` undefined; treat that as primary so tests can drive drags.
+    if (typeof e.button === 'number' && e.button > 0) return;
+    e.preventDefault();
+    beginThumbDrag(index);
   };
 
   return (
@@ -61,7 +119,7 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
       className={className ? `${s.root} ${className}` : s.root}
       style={trackHeight !== undefined ? ({ ['--rp-track-height' as string]: `${trackHeight}px` } as CSSProperties) : undefined}
     >
-      <div className={s.track}>
+      <div className={s.track} ref={trackRef}>
         {thumbs.map((thumb, i) => (
           <div
             key={i}
@@ -74,6 +132,7 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
             aria-label={[ariaLabel, thumb.label].filter(Boolean).join(' ') || undefined}
             className={s.thumb}
             style={{ left: `${valueToFraction(thumb.value) * 100}%` }}
+            onPointerDown={onThumbPointerDown(i)}
           >
             {thumb.label ?? ''}
           </div>
