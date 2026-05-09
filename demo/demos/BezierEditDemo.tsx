@@ -47,11 +47,13 @@ export function BezierEditDemo() {
     getObjects: () => [{ id: ID }],
     getPose: () => pathRef.current,
     setPose: (_id: string, p: Pose) => setPath(p),
-    // hitTestArea: required for drag-marquee selection to work. Returns
-    // [ID] if the path's AABB intersects the marquee rect. Without this
-    // the marquee silently no-ops (selectFromMarquee bails on missing
-    // adapter.hitTestArea). The path's pointInPath hit-test fails for
-    // open polylines, so drag-marquee is the primary selection path.
+    // hitTestArea + applyOps: required for drag-marquee selection to work.
+    // useSelectTool's areaSelectCapable check requires hitTestArea AND
+    // applyOps AND getSelection AND setSelection — the demo previously had
+    // only the last two via useSelection.adapterMethods, so the marquee
+    // gesture silently dropped its selection ops. The path's pointInPath
+    // hit-test fails for open polylines, so drag-marquee is the only
+    // working selection path.
     hitTestArea: (rect: { x: number; y: number; width: number; height: number }) => {
       const b = pathPoseDescriptor.getBounds(pathRef.current);
       const ix = Math.max(rect.x, b.x);
@@ -59,6 +61,9 @@ export function BezierEditDemo() {
       const iw = Math.min(rect.x + rect.width, b.x + b.width) - ix;
       const ih = Math.min(rect.y + rect.height, b.y + b.height) - iy;
       return iw > 0 && ih > 0 ? [ID] : [];
+    },
+    applyOps: (ops: import('@orochi235/weasel').Op[]) => {
+      for (const op of ops) op.apply(adapter);
     },
     ...selection.adapterMethods,
   };
