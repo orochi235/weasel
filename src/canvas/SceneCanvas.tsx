@@ -505,27 +505,41 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   // Resolved action set: build defaults from synthesized deps, then apply the
   // consumer's `actions` prop per spec §D resolution rules.
+  //
+  // Identity stability matters here: if `scene`/`selection`/`adapter` enter
+  // the deps array, animated demos that change them every render trigger
+  // 13 re-registrations × 60fps = ~780 register ops/sec, plus closure churn.
+  // Instead, we close over refs (read fresh every action invocation) and
+  // memoize on stable inputs only (actions / actionDefaults). `sceneRef` is
+  // already maintained earlier for the previewLayer; `selectionRef` and
+  // `adapterRef` are added here.
+  const selectionRef = useRef(selection);
+  selectionRef.current = selection;
+  const adapterRef = useRef(adapter);
+  adapterRef.current = adapter;
+
   const resolvedActions = useMemo<Action[]>(() => {
     if (actions === null) return [];
 
     const setSelection = (ids: string[]): void => {
-      selection.adapterMethods.setSelection(ids);
+      selectionRef.current.adapterMethods.setSelection(ids);
     };
-    const getSelection = (): string[] => selection.current;
+    const getSelection = (): string[] => selectionRef.current.current;
     const listAll = (): string[] => {
       const out: string[] = [];
-      for (const nid of scene.renderOrder()) out.push(String(nid));
+      for (const nid of sceneRef.current.renderOrder()) out.push(String(nid));
       return out;
     };
     const getPose = (id: string): TPose => {
-      const n = scene.get(asNodeId(id));
+      const n = sceneRef.current.get(asNodeId(id));
       return n?.pose as TPose;
     };
     const applyBatch = (ops: Op[], label?: string): void => {
-      if (typeof (adapter as { applyBatch?: unknown }).applyBatch === 'function') {
-        (adapter as { applyBatch: (ops: Op[], label: string) => void }).applyBatch(ops, label ?? '');
+      const a = adapterRef.current;
+      if (typeof (a as { applyBatch?: unknown }).applyBatch === 'function') {
+        (a as { applyBatch: (ops: Op[], label: string) => void }).applyBatch(ops, label ?? '');
       } else {
-        for (const op of ops) op.apply(adapter);
+        for (const op of ops) op.apply(a);
       }
     };
 
@@ -567,7 +581,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     }
 
     return Object.values(defaults);
-  }, [actions, actionDefaults, scene, selection, adapter]);
+  }, [actions, actionDefaults]);
 
   // Merge the forwarded ref with our internalCanvasRef so usePinchZoomTool
   // can read the canvas element even when the consumer also forwards a ref.

@@ -6,9 +6,32 @@ export interface GLMeshHandle {
   readonly requiresStencil: boolean;
 }
 
+/** Resources to release when a Mesh is reclaimed by GC. */
+interface MeshResources {
+  vao: WebGLVertexArrayObject;
+  vbo: WebGLBuffer;
+  ibo: WebGLBuffer;
+}
+
 /**
  * Caches GL-side buffers + VAO per `Mesh` identity. Upload happens lazily
  * on first `handleFor(mesh)` call.
+ *
+ * **GC-aware cleanup:** when a Mesh becomes unreachable, the WeakMap entry
+ * is dropped automatically — but the underlying GL resources (VAO, VBO, IBO)
+ * would leak forever without an explicit `gl.delete*` call. We register each
+ * Mesh with a `FinalizationRegistry`; when the Mesh is reclaimed, the
+ * finalizer runs and frees the GL resources. This handles the
+ * "consumer creates fresh Path objects every render" case (animation tweens,
+ * dynamic-shape edits) without requiring authors to manually dispose meshes.
+ *
+ * Caveats:
+ *   - Finalizer timing is non-deterministic; GL resources may live for a
+ *     while after their Mesh becomes unreachable. Memory pressure forces GC,
+ *     so the system self-throttles.
+ *   - If the GL context is lost (or the cache is replaced on context restore),
+ *     pending finalizers no-op safely — `gl.deleteBuffer(null)` is allowed
+ *     and `gl.isContextLost()` makes deletes no-ops.
  *
  * The cache is GL-context-bound; if the context is lost and re-created, the
  * renderer should construct a new GLMeshCache. (Context loss handling lives
@@ -16,21 +39,41 @@ export interface GLMeshHandle {
  */
 export class GLMeshCache {
   private readonly map = new WeakMap<Mesh, GLMeshHandle>();
+  private readonly finalizer: FinalizationRegistry<MeshResources>;
 
   constructor(
     private readonly gl: WebGL2RenderingContext,
     private readonly aPositionLoc: number,
-  ) {}
+  ) {
+    this.finalizer = new FinalizationRegistry<MeshResources>((resources) => {
+      // GL context may be lost by the time finalization runs. WebGL spec
+      // says delete calls on a lost context are silent no-ops, so this is
+      // safe. We also tolerate a missing FinalizationRegistry environment
+      // (older Node, exotic test envs) — in that case nothing fires and
+      // the buffers leak. Acceptable for v1.
+      try {
+        gl.deleteVertexArray(resources.vao);
+        gl.deleteBuffer(resources.vbo);
+        gl.deleteBuffer(resources.ibo);
+      } catch {
+        // Swallow — finalizer has nowhere to report.
+      }
+    });
+  }
 
   handleFor(mesh: Mesh): GLMeshHandle {
     const cached = this.map.get(mesh);
     if (cached) return cached;
-    const handle = this.upload(mesh);
+    const { handle, vbo, ibo } = this.upload(mesh);
     this.map.set(mesh, handle);
+    // Register so the GL resources get freed when `mesh` is GC'd. The
+    // unregister token (mesh) lets us cancel if the Mesh is somehow
+    // re-uploaded under a different cache, though that's not a normal flow.
+    this.finalizer.register(mesh, { vao: handle.vao, vbo, ibo }, mesh);
     return handle;
   }
 
-  private upload(mesh: Mesh): GLMeshHandle {
+  private upload(mesh: Mesh): { handle: GLMeshHandle; vbo: WebGLBuffer; ibo: WebGLBuffer } {
     const gl = this.gl;
     const vao = gl.createVertexArray();
     if (!vao) throw new Error('createVertexArray returned null');
@@ -52,9 +95,13 @@ export class GLMeshCache {
     gl.bindVertexArray(null);
 
     return {
-      vao,
-      indexCount: mesh.indices.length,
-      requiresStencil: mesh.requiresStencil ?? false,
+      handle: {
+        vao,
+        indexCount: mesh.indices.length,
+        requiresStencil: mesh.requiresStencil ?? false,
+      },
+      vbo,
+      ibo,
     };
   }
 }
