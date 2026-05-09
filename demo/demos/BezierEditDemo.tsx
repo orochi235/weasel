@@ -3,7 +3,6 @@ import {
   Canvas,
   PathBuilder,
   pathPoseDescriptor,
-  pointInPath,
   PATH_C,
   traceToContext,
   useSelection,

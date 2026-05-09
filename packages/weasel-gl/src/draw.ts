@@ -132,13 +132,14 @@ function setUniform(
   }
 
   if (Array.isArray(value)) {
-    switch (value.length) {
-      case 2: gl.uniform2fv(loc, value as [number, number]); break;
-      case 3: gl.uniform3fv(loc, value as [number, number, number]); break;
-      case 4: gl.uniform4fv(loc, value as [number, number, number, number]); break;
+    const arr = value as readonly number[];
+    switch (arr.length) {
+      case 2: gl.uniform2fv(loc, arr as [number, number]); break;
+      case 3: gl.uniform3fv(loc, arr as [number, number, number]); break;
+      case 4: gl.uniform4fv(loc, arr as [number, number, number, number]); break;
       default: {
         const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
-        if (isDev) throw new TypeError(`weasel-gl setUniform: array length ${value.length} not supported`);
+        if (isDev) throw new TypeError(`weasel-gl setUniform: array length ${arr.length} not supported`);
       }
     }
     return;
@@ -236,7 +237,7 @@ function drawPath(ctx: DrawContext, cmd: PathDrawCommand): void {
       && (!cmd.vertexColors || cmd.vertexColors.length === 0)
       && ctx.rectVao !== null
       && ctx.rectVbo !== null;
-    if (isSolidRectFast) {
+    if (isSolidRectFast && cmd.path.kind === 'rect') {
       drawRectFast(ctx, cmd.path, cmd.fill as { color: string; opacity?: number });
     } else {
       const mesh = getMesh(cmd.path);
