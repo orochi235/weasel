@@ -67,6 +67,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:changed": "vitest run --changed",
+    "test:related": "vitest related --run",
     "test:smoke:step1": "playwright test --config=packages/weasel-gl/dev/playwright.config.ts",
     "test:visual": "playwright test --config=tests/visual/playwright.config.ts",
     "test:visual:update": "UPDATE_SNAPSHOTS=1 playwright test --config=tests/visual/playwright.config.ts",
