@@ -32,7 +32,7 @@
 
 ## Test results
 
-- Vitest: 1408 tests pass (1358 from steps 1+2, 50 new from step 3 — FontAtlas 5, GlyphLayout 7+5, GLTextureCache 5, registerFont 4 + integration via draw).
+- Vitest: 1384 tests pass (1358 from steps 1+2, 26 new from step 3 — FontAtlas 5, GlyphLayout 12, GLTextureCache 5, registerFont 4).
 - Playwright: 3/3 smoke specs pass (smoke + synthetic + text).
 - Typecheck: clean.
 - Browser-verified: text renders crisp at 12, 16, 24, 32, 48, 64 px sizes.
