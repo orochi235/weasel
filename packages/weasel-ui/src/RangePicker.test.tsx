@@ -236,3 +236,44 @@ describe("RangePicker 'ordered' constraint", () => {
     fireEvent.pointerUp(document, { pointerId: 1 });
   });
 });
+
+describe('RangePicker per-thumb bounds (tuple form)', () => {
+  it('clamps drag to bounds', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <RangePicker
+        min={0}
+        max={1}
+        step={0.01}
+        thumbs={[{ value: 0.3, bounds: [0.1, 0.5] }]}
+        onChange={onChange}
+      />,
+    );
+    const thumb = container.querySelector('[role="slider"]') as HTMLElement;
+    stubRect(thumb.parentElement!, { left: 0, width: 200 });
+    fireEvent.pointerDown(thumb, { clientX: 60, clientY: 12, pointerId: 1, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 0, clientY: 12, pointerId: 1 });
+    expect(onChange.mock.calls[onChange.mock.calls.length - 1][0][0].value).toBe(0.1);
+    fireEvent.pointerMove(document, { clientX: 200, clientY: 12, pointerId: 1 });
+    expect(onChange.mock.calls[onChange.mock.calls.length - 1][0][0].value).toBe(0.5);
+    fireEvent.pointerUp(document, { pointerId: 1 });
+  });
+
+  it('Home snaps to bounds[0]; End snaps to bounds[1]', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <RangePicker
+        min={0}
+        max={1}
+        step={0.01}
+        thumbs={[{ value: 0.3, bounds: [0.1, 0.5] }]}
+        onChange={onChange}
+      />,
+    );
+    const thumb = container.querySelector('[role="slider"]') as HTMLElement;
+    fireEvent.keyDown(thumb, { key: 'Home' });
+    expect(onChange.mock.calls[0][0][0].value).toBe(0.1);
+    fireEvent.keyDown(thumb, { key: 'End' });
+    expect(onChange.mock.calls[1][0][0].value).toBe(0.5);
+  });
+});

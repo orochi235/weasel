@@ -62,6 +62,12 @@ function defaultStep(step: number | undefined, min: number, max: number): number
   return (max - min) / 100;
 }
 
+function resolveBounds(thumb: Thumb, ctx: BoundsCtx, fallbackMin: number, fallbackMax: number): [number, number] {
+  if (!thumb.bounds) return [fallbackMin, fallbackMax];
+  const tuple = typeof thumb.bounds === 'function' ? thumb.bounds(ctx) : thumb.bounds;
+  return [tuple[0], tuple[1]];
+}
+
 export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>): ReactElement {
   const { thumbs, onChange, onCommit, min, max, step, constraint, trackHeight, ariaLabel, className } = props;
 
@@ -93,6 +99,9 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
         let v = fractionToValue(f);
         v = snap(v, step, min);
         v = clamp(v, min, max);
+
+        const [bLo, bHi] = resolveBounds(buffer[index], { thumbs: buffer, index }, min, max);
+        v = clamp(v, bLo, bHi);
 
         if (constraint === 'ordered') {
           const gap = step !== undefined && step > 0 ? step : (max - min) / 1000;
@@ -130,7 +139,7 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
   const onThumbKeyDown = (index: number) => (e: ReactKeyboardEvent) => {
     const stepSize = defaultStep(step, min, max);
     let delta = 0;
-    let absoluteValue: number | null = null;
+    let snapTo: 'home' | 'end' | null = null;
 
     switch (e.key) {
       case 'ArrowRight':
@@ -148,10 +157,10 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
         delta = -stepSize * 10;
         break;
       case 'Home':
-        absoluteValue = min;
+        snapTo = 'home';
         break;
       case 'End':
-        absoluteValue = max;
+        snapTo = 'end';
         break;
       default:
         return;
@@ -159,10 +168,15 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
 
     e.preventDefault();
     const next = thumbs.map(t => ({ ...t }));
-    const current = next[index].value;
-    let v = absoluteValue ?? current + delta;
+    const [bLo, bHi] = resolveBounds(next[index], { thumbs: next, index }, min, max);
+    const lo = Math.max(min, bLo);
+    const hi = Math.min(max, bHi);
+    let v: number;
+    if (snapTo === 'home') v = lo;
+    else if (snapTo === 'end') v = hi;
+    else v = next[index].value + delta;
     v = snap(v, step, min);
-    v = clamp(v, min, max);
+    v = clamp(v, lo, hi);
     next[index] = { ...next[index], value: v };
     onChange(next);
     onCommit?.(next);
