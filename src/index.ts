@@ -58,8 +58,6 @@ export * from './features/drag/dragGhost';
 export * from './features/drag/thresholdDrag';
 export * from './features/drag/pointerDrag';
 export * from './features/viewport/useCanvasSize';
-export { setupCanvasDpr, useFixedPixelRatio } from './features/viewport/pixelDensity';
-export type { SetupCanvasDprOptions } from './features/viewport/pixelDensity';
 export * from './features/viewport/fitToBounds';
 export { zoomAt } from './features/viewport/zoomAt';
 export type { ZoomClampOpts } from './features/viewport/zoomAt';
