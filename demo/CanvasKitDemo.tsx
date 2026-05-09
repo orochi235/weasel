@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Highlight, themes } from 'prism-react-renderer';
 import { CATEGORIES, DEMOS, DEMOS_BY_ID, type DemoEntry } from './registry';
-import logoUrl from '../weasel.png';
+import logoUrl from './weasel-logo.png';
 
 type CodeTab = 'snippet' | 'full';
 
