@@ -14,6 +14,7 @@ import type {
   Path,
   DebugConfig,
 } from '@orochi235/weasel';
+import type { DrawCommand } from '@orochi235/weasel-gl';
 import { useBackend } from '../BackendContext';
 
 const DEBUG_STATES: Array<{ label: string; config: DebugConfig | false }> = [
@@ -96,6 +97,12 @@ backend={backend}
               cx.fill();
               cx.stroke();
             },
+            drawOneGL: (_o, p): DrawCommand[] => [{
+              kind: 'path',
+              path: p,
+              fill: { color: '#7fb069' },
+              stroke: { paint: { color: '#1a130d' }, width: 1.5 },
+            }],
           },
           selectionOverlay: { handles: { size: HANDLE } },
         }}

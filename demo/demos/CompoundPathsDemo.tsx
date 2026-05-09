@@ -10,6 +10,7 @@ import {
   asNodeId,
 } from '@orochi235/weasel';
 import type { Path } from '@orochi235/weasel';
+import type { DrawCommand } from '@orochi235/weasel-gl';
 import { useBackend } from '../BackendContext';
 
 interface Shape { id: string; pose: Path; fill: string; stroke?: string; label?: string }
@@ -195,6 +196,14 @@ backend={backend}
               else cx.fill();
               cx.stroke();
             },
+            drawOneGL: (node, p): DrawCommand[] => [{
+              kind: 'path',
+              path: p,
+              fill: { color: node.data.fill },
+              stroke: { paint: { color: node.data.stroke ?? '#1a130d' }, width: 1.5 },
+            }],
+            // drawOneGL: 'signature' is a custom screen-space RenderLayer
+            // (Comic Sans signature text) and remains 2D-only; defer to v2.
           },
           selectionOverlay: { handles: { size: HANDLE } },
           signature: {

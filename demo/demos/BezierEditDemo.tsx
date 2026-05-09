@@ -13,6 +13,7 @@ import type {
   Path,
   PolygonPath,
 } from '@orochi235/weasel';
+import type { DrawCommand } from '@orochi235/weasel-gl';
 import { useBackend } from '../BackendContext';
 
 interface PathObj { id: string }
@@ -138,6 +139,11 @@ backend={backend}
                   traceToContext(cx, p);
                   cx.stroke();
                 },
+                drawOneGL: (_o, p): DrawCommand[] => [{
+                  kind: 'path',
+                  path: p,
+                  stroke: { paint: { color: '#f5b7a3' }, width: 2 },
+                }],
               },
               selectionOverlay: { handles: { size: HANDLE } },
             }}
