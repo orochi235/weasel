@@ -5,20 +5,31 @@
   touch-action: none;
 }
 
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .track {
   position: relative;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   height: var(--rp-track-height, 24px);
   background: var(--wui-track-bg);
   border: 1px solid var(--wui-track-border);
   border-radius: 3px;
-  overflow: hidden;
   cursor: crosshair;
+  /* No `overflow: hidden` here — thumbs at extreme values would get
+   * clipped at the track edges. The gradient/track-paint clip is
+   * applied to `.trackInner` instead, which lets thumbs spill freely. */
 }
 
 .trackInner {
   position: absolute;
   inset: 0;
+  border-radius: 3px;
+  overflow: hidden;
 }
 
 .thumb {

@@ -297,6 +297,7 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
       className={className ? `${s.root} ${className}` : s.root}
       style={trackHeight !== undefined ? ({ ['--rp-track-height' as string]: `${trackHeight}px` } as CSSProperties) : undefined}
     >
+      <div className={s.row}>
       <div className={s.track} ref={trackRef} onPointerDown={onTrackPointerDown}>
         {props.renderTrack && (
           <div className={s.trackInner}>
@@ -330,20 +331,6 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
             </div>
           );
         })}
-        {placement === 'below-thumb' && (
-          <div className={s.readoutsBelow}>
-            {thumbs.map((t, i) => (
-              <span
-                key={i}
-                data-readout="below"
-                className={s.readoutBelow}
-                style={{ left: `${valueToFraction(t.value) * 100}%` }}
-              >
-                {renderReadout ? renderReadout(t, i) : defaultReadout(t)}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
       {placement === 'inline-after' && (
         <span data-readout="inline" className={s.readoutInline}>
@@ -351,6 +338,21 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
             <span key={i}>{i > 0 ? ' / ' : ''}{renderReadout ? renderReadout(t, i) : defaultReadout(t)}</span>
           ))}
         </span>
+      )}
+      </div>
+      {placement === 'below-thumb' && (
+        <div className={s.readoutsBelow}>
+          {thumbs.map((t, i) => (
+            <span
+              key={i}
+              data-readout="below"
+              className={s.readoutBelow}
+              style={{ left: `${valueToFraction(t.value) * 100}%` }}
+            >
+              {renderReadout ? renderReadout(t, i) : defaultReadout(t)}
+            </span>
+          ))}
+        </div>
       )}
     </div>
   );
