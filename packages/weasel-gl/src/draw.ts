@@ -282,6 +282,7 @@ function drawPathFillStencil(ctx: DrawContext, fill: Paint, handle: GLMeshHandle
   gl.stencilFunc(gl.NOTEQUAL, 0, 0xff);
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
   setSolidPaintUniforms(ctx, ctx.pathFill, solid.color, solid.opacity);
+  setColorMatrixUniforms(ctx, ctx.pathFill);
   gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
 
   gl.clear(gl.STENCIL_BUFFER_BIT);
@@ -317,6 +318,7 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
   gl.bindVertexArray(handle.vao);
   setProjAndModel(ctx, ctx.pathFill);
   setSolidPaintUniforms(ctx, ctx.pathFill, solid.color, solid.opacity);
+  setColorMatrixUniforms(ctx, ctx.pathFill);
   gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
 }
@@ -352,6 +354,7 @@ function drawPathStrokeStenciled(
   gl.stencilFunc(gl.EQUAL, align === 'inner' ? 1 : 0, 0xff);
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
   setSolidPaintUniforms(ctx, ctx.pathFill, solid.color, solid.opacity);
+  setColorMatrixUniforms(ctx, ctx.pathFill);
   gl.bindVertexArray(ribbonHandle.vao);
   gl.drawElements(gl.TRIANGLES, ribbonHandle.indexCount, gl.UNSIGNED_INT, 0);
 

@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>weasel-gl step 5 vertex colors + color matrix</title>
+    <style>
+      html, body { margin: 0; padding: 8px; background: #1a1a1a; color: #fff; font: 13px sans-serif; }
+      canvas { display: block; margin: 8px 0; background: #000; }
+    </style>
+  </head>
+  <body>
+    <p id="status">Initializing…</p>
+    <h3>Per-vertex color: rect with each corner a different color</h3>
+    <canvas id="cVColor" width="400" height="200"></canvas>
+    <h3>Color matrix: hue-rotate red rect by 120°</h3>
+    <canvas id="cMatrix" width="400" height="100"></canvas>
+    <h3>Composed: outer matrix tints, inner uses vertex colors</h3>
+    <canvas id="cBoth" width="400" height="200"></canvas>
+    <script type="module" src="./colors.ts"></script>
+  </body>
+</html>

@@ -1,9 +1,9 @@
 /**
  * @orochi235/weasel-gl — public barrel.
  *
- * Experimental. Surface evolves through the WebGL transition steps.
- * Through step 4: WeaselRenderer + DrawCommand types for solid/pattern/
- * gradient-fill paths, groups, strokes, MSDF text, and images.
+ * Experimental. Through step 5: WeaselRenderer + DrawCommand types for
+ * solid/pattern/gradient-fill paths, groups (with optional color matrix
+ * and per-vertex color), strokes, MSDF text, and images.
  */
 
 export const __weaselGlPackage = true as const;
@@ -22,4 +22,5 @@ export { tessellate, type TessellateOptions } from './tessellate';
 export { tessellateStroke, type StrokeOptions } from './stroke';
 export { registerFont } from './registerFont';
 export { buildGradientRamp } from './GradientRampCache';
+export { IDENTITY_COLOR_MATRIX } from './GroupState';
 export type { Mesh } from './mesh';
