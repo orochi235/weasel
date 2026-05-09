@@ -191,3 +191,48 @@ describe('RangePicker free constraint', () => {
     fireEvent.pointerUp(document, { pointerId: 1 });
   });
 });
+
+describe("RangePicker 'ordered' constraint", () => {
+  it('clamps lower thumb to (lower-neighbor, upper-neighbor − step)', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <RangePicker
+        min={0}
+        max={1}
+        step={0.01}
+        constraint="ordered"
+        thumbs={[{ value: 0.3 }, { value: 0.7 }]}
+        onChange={onChange}
+      />,
+    );
+    const thumbs = container.querySelectorAll<HTMLElement>('[role="slider"]');
+    stubRect(thumbs[0].parentElement!, { left: 0, width: 200 });
+    fireEvent.pointerDown(thumbs[0], { clientX: 60, clientY: 12, pointerId: 1, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 180, clientY: 12, pointerId: 1 });
+    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(last[0].value).toBeLessThanOrEqual(0.69);
+    expect(last[1].value).toBeCloseTo(0.7, 2);
+    fireEvent.pointerUp(document, { pointerId: 1 });
+  });
+
+  it('clamps upper thumb to (lower-neighbor + step, max)', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <RangePicker
+        min={0}
+        max={1}
+        step={0.01}
+        constraint="ordered"
+        thumbs={[{ value: 0.3 }, { value: 0.7 }]}
+        onChange={onChange}
+      />,
+    );
+    const thumbs = container.querySelectorAll<HTMLElement>('[role="slider"]');
+    stubRect(thumbs[0].parentElement!, { left: 0, width: 200 });
+    fireEvent.pointerDown(thumbs[1], { clientX: 140, clientY: 12, pointerId: 1, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 0, clientY: 12, pointerId: 1 });
+    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(last[1].value).toBeGreaterThanOrEqual(0.31);
+    fireEvent.pointerUp(document, { pointerId: 1 });
+  });
+});

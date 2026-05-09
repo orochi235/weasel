@@ -63,7 +63,7 @@ function defaultStep(step: number | undefined, min: number, max: number): number
 }
 
 export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>): ReactElement {
-  const { thumbs, onChange, onCommit, min, max, step, trackHeight, ariaLabel, className } = props;
+  const { thumbs, onChange, onCommit, min, max, step, constraint, trackHeight, ariaLabel, className } = props;
 
   const trackRef = useRef<HTMLDivElement | null>(null);
   // In-flight thumb buffer during a drag; null when not dragging.
@@ -93,6 +93,14 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
         let v = fractionToValue(f);
         v = snap(v, step, min);
         v = clamp(v, min, max);
+
+        if (constraint === 'ordered') {
+          const gap = step !== undefined && step > 0 ? step : (max - min) / 1000;
+          const lower = index > 0 ? buffer[index - 1].value + gap : min;
+          const upper = index < buffer.length - 1 ? buffer[index + 1].value - gap : max;
+          v = clamp(v, lower, upper);
+        }
+
         buffer[index] = { ...buffer[index], value: v };
         onChange(buffer.map(t => ({ ...t })));
       };
@@ -108,7 +116,7 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
       document.addEventListener('pointermove', onMove);
       document.addEventListener('pointerup', onUp);
     },
-    [thumbs, onChange, onCommit, fractionToValue, min, max, step],
+    [thumbs, onChange, onCommit, fractionToValue, min, max, step, constraint],
   );
 
   const onThumbPointerDown = (index: number) => (e: ReactPointerEvent) => {
