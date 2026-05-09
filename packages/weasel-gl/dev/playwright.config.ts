@@ -7,7 +7,7 @@ const repoRoot = resolve(here, '../../..');
 
 export default defineConfig({
   testDir: '.',
-  testMatch: /(smoke|synthetic|text|paint|colors)\.spec\.ts/,
+  testMatch: /(smoke|synthetic|text|paint|colors|shader)\.spec\.ts/,
   use: {
     baseURL: 'http://localhost:5173',
     headless: true,
