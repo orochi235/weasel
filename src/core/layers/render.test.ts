@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
-import { type RenderLayer, drawLayers } from './render';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type RenderLayer, drawLayers, drawLayersGL, _resetDrawLayersGLWarnings } from './render';
+import type { DrawCommand } from '@orochi235/weasel-gl';
 
 function makeCtxStub(): CanvasRenderingContext2D & {
   setTransform: ReturnType<typeof vi.fn>;
@@ -157,5 +158,75 @@ describe('drawLayers — view-aware transforms', () => {
     drawLayers(ctx, [layer], null, {}, undefined, { x: 0, y: 0, scale: 1 });
     expect(ctx.save).toHaveBeenCalledTimes(1);
     expect(ctx.restore).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('drawLayersGL', () => {
+  beforeEach(() => _resetDrawLayersGLWarnings());
+
+  it('returns concatenated DrawCommands from each visible layer in order', () => {
+    const aCmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { fill: 'solid', color: '#fff' } };
+    const bCmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 1, y: 1, width: 1, height: 1 }, fill: { fill: 'solid', color: '#000' } };
+    const a: RenderLayer<unknown> = {
+      id: 'a', label: 'A',
+      draw: () => {},
+      drawGL: () => [aCmd],
+    };
+    const b: RenderLayer<unknown> = {
+      id: 'b', label: 'B',
+      draw: () => {},
+      drawGL: () => [bCmd],
+    };
+    const out = drawLayersGL([a, b], null, {}, undefined, undefined, { width: 10, height: 10 });
+    expect(out).toEqual([aCmd, bCmd]);
+  });
+
+  it('honors the order array', () => {
+    const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw: () => {}, drawGL: () => [{ kind: 'group', children: [] }] };
+    const b: RenderLayer<unknown> = { id: 'b', label: 'B', draw: () => {}, drawGL: () => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { fill: 'solid', color: '#fff' } }] };
+    const out = drawLayersGL([a, b], null, {}, ['b', 'a'], undefined, { width: 10, height: 10 });
+    expect(out[0].kind).toBe('path');
+    expect(out[1].kind).toBe('group');
+  });
+
+  it('skips layers whose visibility is false', () => {
+    const dgl = vi.fn(() => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { fill: 'solid', color: '#fff' } }] as DrawCommand[]);
+    const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw: () => {}, drawGL: dgl };
+    const out = drawLayersGL([a], null, { a: false }, undefined, undefined, { width: 10, height: 10 });
+    expect(out).toEqual([]);
+    expect(dgl).not.toHaveBeenCalled();
+  });
+
+  it('always draws alwaysOn layers regardless of visibility map', () => {
+    const cmd: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { fill: 'solid', color: '#fff' } };
+    const a: RenderLayer<unknown> = { id: 'a', label: 'A', alwaysOn: true, draw: () => {}, drawGL: () => [cmd] };
+    const out = drawLayersGL([a], null, { a: false }, undefined, undefined, { width: 10, height: 10 });
+    expect(out).toEqual([cmd]);
+  });
+
+  it('warns once per layer id when drawGL is missing, then skips the layer', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw: () => {} }; // no drawGL
+    const out1 = drawLayersGL([a], null, {}, undefined, undefined, { width: 10, height: 10 });
+    const out2 = drawLayersGL([a], null, {}, undefined, undefined, { width: 10, height: 10 });
+    expect(out1).toEqual([]);
+    expect(out2).toEqual([]);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0][0]).toContain('a');
+    warnSpy.mockRestore();
+  });
+
+  it('passes view and dims through to drawGL', () => {
+    const dgl = vi.fn(() => []);
+    const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw: () => {}, drawGL: dgl };
+    drawLayersGL([a], 'data', {}, undefined, { x: 5, y: 7, scale: 2 }, { width: 320, height: 240 });
+    expect(dgl).toHaveBeenCalledWith('data', { x: 5, y: 7, scale: 2 }, { width: 320, height: 240 });
+  });
+
+  it('uses identity view when view is undefined', () => {
+    const dgl = vi.fn(() => []);
+    const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw: () => {}, drawGL: dgl };
+    drawLayersGL([a], null, {}, undefined, undefined, { width: 1, height: 1 });
+    expect(dgl).toHaveBeenCalledWith(null, { x: 0, y: 0, scale: 1 }, { width: 1, height: 1 });
   });
 });

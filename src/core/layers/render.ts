@@ -116,3 +116,64 @@ export function drawLayers<TData>(
     ctx.restore();
   }
 }
+
+const warnedMissingDrawGL = new Set<string>();
+
+/**
+ * GL counterpart to {@link drawLayers}. Walks the same visibility/order
+ * resolution as the 2D path but invokes each layer's `drawGL?(data, view, dims)`
+ * and concatenates the returned DrawCommand arrays into one flat list, ready
+ * to feed to `WeaselRenderer.render(commands)`.
+ *
+ * Layers without a `drawGL` while the GL backend is active emit a one-time
+ * `console.warn` keyed by layer id, then contribute zero commands. The 2D
+ * `draw` is never called.
+ *
+ * Unlike `drawLayers`, no transform composition happens here — each layer's
+ * `drawGL` already wraps world-space content in `kind: 'group'` with
+ * `viewToMat3(view)` (see step 7); screen-space layers emit screen-pixel
+ * coords directly.
+ */
+export function drawLayersGL<TData>(
+  layers: RenderLayer<TData>[],
+  data: TData,
+  visibility: Record<string, boolean>,
+  order: string[] | undefined,
+  view: View | undefined,
+  dims: Dims,
+): DrawCommand[] {
+  const layerById = new Map(layers.map((l) => [l.id, l]));
+  const sequence = order
+    ? order.map((id) => layerById.get(id)).filter((l): l is RenderLayer<TData> => l !== undefined)
+    : layers;
+  const v = view ?? IDENTITY_VIEW;
+  const out: DrawCommand[] = [];
+
+  for (const layer of sequence) {
+    const visible =
+      layer.alwaysOn ||
+      (layer.id in visibility ? visibility[layer.id] : (layer.defaultVisible ?? true));
+    if (!visible) continue;
+
+    if (!layer.drawGL) {
+      if (!warnedMissingDrawGL.has(layer.id)) {
+        warnedMissingDrawGL.add(layer.id);
+        console.warn(
+          `weasel: layer "${layer.id}" (${layer.label}) has no drawGL implementation; ` +
+          `skipping. The GL backend cannot dispatch the 2D draw method.`,
+        );
+      }
+      continue;
+    }
+
+    const cmds = layer.drawGL(data, v, dims);
+    for (const c of cmds) out.push(c);
+  }
+
+  return out;
+}
+
+/** @internal — exposed for tests so they can reset the warn-once memo. */
+export function _resetDrawLayersGLWarnings(): void {
+  warnedMissingDrawGL.clear();
+}
