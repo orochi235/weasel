@@ -469,3 +469,178 @@ describe('useResize — debug recording', () => {
     }).not.toThrow();
   });
 });
+
+import { ROTATED_POSE_DESCRIPTOR } from './geometry';
+import type { RotatedPose } from '../types';
+import { rotatePoint } from '../rotate/geometry';
+import { lockAspectWithModifier } from './behaviors/lockAspect';
+
+interface RP extends RotatedPose {}
+
+function makeRotatedAdapter(initial: Array<[string, RP]>) {
+  const state = new Map<string, RP>(initial.map(([k, v]) => [k, { ...v }]));
+  const batches: { ops: Op[]; label: string }[] = [];
+  const adapter: ResizeAdapter<{ id: string }, RP> = {
+    getObject: (id) => (state.has(id) ? { id } : undefined),
+    getPose: (id) => ({ ...(state.get(id)!) }),
+    setPose: (id, pose) => state.set(id, { ...pose }),
+    applyBatch: (ops, label) => {
+      batches.push({ ops, label });
+      for (const op of ops) op.apply(adapter);
+    },
+  };
+  return { adapter, batches, state };
+}
+
+function fixedCornerWorld(pose: RP, anchor: { x: 'min' | 'max'; y: 'min' | 'max' }): { x: number; y: number } {
+  const cx = pose.x + pose.width / 2;
+  const cy = pose.y + pose.height / 2;
+  // anchor names the fixed edge: 'min' → left/top edge fixed; 'max' → right/bottom edge fixed.
+  const localX = anchor.x === 'max' ? pose.x + pose.width : pose.x;
+  const localY = anchor.y === 'max' ? pose.y + pose.height : pose.y;
+  return rotatePoint(localX, localY, cx, cy, pose.rotation);
+}
+
+describe('useResize — rotated leaf: anchor invariance', () => {
+  const angles = [0, Math.PI / 6, Math.PI / 4, Math.PI / 2, -Math.PI / 4, Math.PI];
+  const anchors: Array<{ x: 'min' | 'max'; y: 'min' | 'max' }> = [
+    { x: 'min', y: 'min' }, // drag BR; fix TL
+    { x: 'min', y: 'max' }, // drag TR; fix BL
+    { x: 'max', y: 'min' }, // drag BL; fix TR
+    { x: 'max', y: 'max' }, // drag TL; fix BR
+  ];
+
+  for (const angle of angles) {
+    for (const anchor of anchors) {
+      it(`pins the fixed corner in world space (θ=${angle.toFixed(3)}, anchor=${anchor.x}/${anchor.y})`, () => {
+        const origin: RP = { x: 0, y: 0, width: 100, height: 60, rotation: angle };
+        const { adapter, state } = makeRotatedAdapter([['a', origin]]);
+        const { result } = renderHook(() =>
+          useResize<{ id: string }, RP>(adapter, { geometry: ROTATED_POSE_DESCRIPTOR }),
+        );
+
+        const fixedAtStart = fixedCornerWorld(origin, anchor);
+
+        act(() => {
+          result.current.start('a', anchor, 50, 30);
+        });
+        act(() => {
+          result.current.move(80, 50, { alt: false, shift: false, meta: false, ctrl: false });
+        });
+        act(() => {
+          result.current.end();
+        });
+
+        const final = state.get('a')!;
+        const fixedAtEnd = fixedCornerWorld(final, anchor);
+        expect(fixedAtEnd.x).toBeCloseTo(fixedAtStart.x, 5);
+        expect(fixedAtEnd.y).toBeCloseTo(fixedAtStart.y, 5);
+      });
+    }
+  }
+});
+
+describe('useResize — rotated leaf: drag projection', () => {
+  it('θ=π/2: a drag of (10, 0) world maps to a drag of (0, -10) local (CCW 90°)', () => {
+    // Origin pose at (0,0,100,60), rotated 90° CCW about its AABB center.
+    // A pointer drag of +10 in world-x corresponds, in the leaf's local frame,
+    // to -10 in y (because local axes are rotated 90° from world axes).
+    // Anchor min/min (drag bottom-right corner): local-y delta -10 means
+    // the bottom edge moves UP by 10, shrinking height to 50.
+    const origin: RP = { x: 0, y: 0, width: 100, height: 60, rotation: Math.PI / 2 };
+    const { adapter } = makeRotatedAdapter([['a', origin]]);
+    const { result } = renderHook(() =>
+      useResize<{ id: string }, RP>(adapter, { geometry: ROTATED_POSE_DESCRIPTOR }),
+    );
+    act(() => {
+      result.current.start('a', { x: 'min', y: 'min' }, 0, 0);
+    });
+    act(() => {
+      result.current.move(10, 0, { alt: false, shift: false, meta: false, ctrl: false });
+    });
+    const ov = result.current.overlay!;
+    // Local-frame width should be unchanged (drag had no x-component in local frame).
+    expect(ov.targetPose.width).toBeCloseTo(100, 5);
+    // Local-frame height should be reduced by 10.
+    expect(ov.targetPose.height).toBeCloseTo(50, 5);
+  });
+});
+
+describe('useResize — rotated leaf: behaviors operate on local-frame bounds', () => {
+  it('lockAspectWithModifier preserves local-frame width/height ratio under rotation', () => {
+    const origin: RP = { x: 0, y: 0, width: 100, height: 50, rotation: Math.PI / 4 };
+    const ratio = 100 / 50; // 2:1 in local frame.
+    const { adapter } = makeRotatedAdapter([['a', origin]]);
+    const { result } = renderHook(() =>
+      useResize<{ id: string }, RP>(adapter, {
+        geometry: ROTATED_POSE_DESCRIPTOR,
+        behaviors: [lockAspectWithModifier<RP>({ key: 'shift' })],
+      }),
+    );
+    act(() => {
+      result.current.start('a', { x: 'min', y: 'min' }, 0, 0);
+    });
+    // Drag with shift; modifier locks aspect ratio.
+    act(() => {
+      result.current.move(40, 40, { alt: false, shift: true, meta: false, ctrl: false });
+    });
+    const ov = result.current.overlay!;
+    expect(ov.targetPose.width / ov.targetPose.height).toBeCloseTo(ratio, 4);
+  });
+});
+
+describe('useResize — rotated leaf: flipped pose preserved', () => {
+  it('drag past fixed corner produces negative width; rotation preserved', () => {
+    const origin: RP = { x: 0, y: 0, width: 100, height: 60, rotation: Math.PI / 6 };
+    const { adapter, state } = makeRotatedAdapter([['a', origin]]);
+    const { result } = renderHook(() =>
+      useResize<{ id: string }, RP>(adapter, { geometry: ROTATED_POSE_DESCRIPTOR }),
+    );
+    act(() => {
+      result.current.start('a', { x: 'min', y: 'min' }, 0, 0);
+    });
+    // Big negative-x drag (in world): projected into local frame, width should
+    // go negative.
+    act(() => {
+      result.current.move(-300, 0, { alt: false, shift: false, meta: false, ctrl: false });
+    });
+    act(() => {
+      result.current.end();
+    });
+    const final = state.get('a')!;
+    expect(final.width).toBeLessThan(0);
+    expect(final.rotation).toBeCloseTo(Math.PI / 6, 5);
+  });
+});
+
+describe('useResize — group resize with rotated leaves emits a dev warning', () => {
+  it('warns once at start when any leaf has rotation != 0', () => {
+    const origin: RP = { x: 0, y: 0, width: 100, height: 60, rotation: Math.PI / 6 };
+    const { adapter } = makeRotatedAdapter([['a', origin], ['b', { ...origin, x: 200 }]]);
+    const warnings: string[] = [];
+    const origWarn = console.warn;
+    console.warn = (...args) => { warnings.push(args.join(' ')); };
+    try {
+      const { result } = renderHook(() =>
+        useResize<{ id: string }, RP>(adapter, {
+          geometry: ROTATED_POSE_DESCRIPTOR,
+          expandIds: () => ['a', 'b'],
+        }),
+      );
+      act(() => {
+        result.current.start('group', { x: 'min', y: 'min' }, 0, 0);
+      });
+      // Move a few times — warning should fire only once at start.
+      act(() => {
+        result.current.move(10, 10, { alt: false, shift: false, meta: false, ctrl: false });
+      });
+      act(() => {
+        result.current.move(20, 20, { alt: false, shift: false, meta: false, ctrl: false });
+      });
+    } finally {
+      console.warn = origWarn;
+    }
+    expect(warnings.length).toBe(1);
+    expect(warnings[0]).toMatch(/group resize with rotated leaves is not supported/);
+  });
+});

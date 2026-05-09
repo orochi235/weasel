@@ -12,7 +12,8 @@ import type {
   ResizePose,
 } from '../types';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from './geometry';
-import { cornerResizeHandles } from './cornerHandles';
+import { cornerResizeHandles, fixedCornerOf } from './cornerHandles';
+import { rotatePoint } from '../rotate/geometry';
 import type { DebugSink } from '../../../debug/types';
 
 const LERP = 0.35;
@@ -90,6 +91,13 @@ interface State<TPose> {
   /** Last proposed per-leaf poses (set during move). Used by end() to
    *  emit one transform op per leaf without recomputing the projection. */
   leafTargets: Map<string, TPose> | null;
+  /** Rotation captured at gesture start. 0 means unrotated short-circuit. */
+  originRotation: number;
+  /** World-space position of the diagonally opposite corner at start. */
+  fixedWorld: { x: number; y: number };
+  /** Set true if any leaf in the group expansion has rotation != 0;
+   *  fires the dev warning once at start. */
+  groupHasRotated: boolean;
 }
 
 /** Compute the union AABB of N bounds. Caller guarantees `bounds.length >= 1`. */
@@ -157,6 +165,9 @@ export function useResize<TObject extends { id: string }, TPose>(
     leafIds: null,
     leafOrigins: null,
     leafTargets: null,
+    originRotation: 0,
+    fixedWorld: { x: 0, y: 0 },
+    groupHasRotated: false,
   });
 
   const [overlay, setOverlay] = useState<ResizeOverlay<TPose> | null>(null);
@@ -171,6 +182,9 @@ export function useResize<TObject extends { id: string }, TPose>(
     stateRef.current.leafIds = null;
     stateRef.current.leafOrigins = null;
     stateRef.current.leafTargets = null;
+    stateRef.current.originRotation = 0;
+    stateRef.current.fixedWorld = { x: 0, y: 0 };
+    stateRef.current.groupHasRotated = false;
     setOverlay(null);
   }, []);
 
@@ -210,6 +224,33 @@ export function useResize<TObject extends { id: string }, TPose>(
       originPose = originBounds as unknown as TPose;
     }
 
+    const originRotation = geom.getRotation?.(originPose) ?? 0;
+    const fixedLocal = fixedCornerOf(originBounds, anchor);
+    const fixedWorld = originRotation === 0
+      ? fixedLocal
+      : rotatePoint(
+          fixedLocal.x, fixedLocal.y,
+          originBounds.x + originBounds.width / 2,
+          originBounds.y + originBounds.height / 2,
+          originRotation,
+        );
+
+    let groupHasRotated = false;
+    if (leafIds && leafOrigins) {
+      for (const lid of leafIds) {
+        const r = geom.getRotation?.(leafOrigins.get(lid)!) ?? 0;
+        if (r !== 0) { groupHasRotated = true; break; }
+      }
+      if (groupHasRotated && import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          'useResize: group resize with rotated leaves is not supported. ' +
+          'Falling back to AABB-frame group resize; results will be visually ' +
+          'incorrect for rotated leaves.',
+        );
+      }
+    }
+
     const ctx: GestureContext<TPose> = {
       draggedIds: [id],
       origin: new Map([[id, originPose]]),
@@ -232,6 +273,9 @@ export function useResize<TObject extends { id: string }, TPose>(
       leafIds,
       leafOrigins,
       leafTargets: null,
+      originRotation,
+      fixedWorld,
+      groupHasRotated,
     };
     // Debug: record corner-handle positions + hitboxes for the active
     // resize target. Optional-chain — when `debug` is undefined the calls
@@ -261,23 +305,50 @@ export function useResize<TObject extends { id: string }, TPose>(
     const dy = worldY - s.start.worldY;
     const ob = s.originBounds;
 
-    let nx = ob.x;
-    let ny = ob.y;
-    let nw = ob.width;
-    let nh = ob.height;
-    if (s.anchor.x === 'min') {
-      nw = ob.width + dx;
-    } else if (s.anchor.x === 'max') {
-      nx = ob.x + dx;
-      nw = ob.width - dx;
+    let proposedBounds: ResizePose;
+    if (s.originRotation === 0) {
+      // Unrotated path — bit-identical to today.
+      let nx = ob.x;
+      let ny = ob.y;
+      let nw = ob.width;
+      let nh = ob.height;
+      if (s.anchor.x === 'min') {
+        nw = ob.width + dx;
+      } else if (s.anchor.x === 'max') {
+        nx = ob.x + dx;
+        nw = ob.width - dx;
+      }
+      if (s.anchor.y === 'min') {
+        nh = ob.height + dy;
+      } else if (s.anchor.y === 'max') {
+        ny = ob.y + dy;
+        nh = ob.height - dy;
+      }
+      proposedBounds = { x: nx, y: ny, width: nw, height: nh };
+    } else {
+      // Rotated path: project drag into local frame.
+      const cs = Math.cos(-s.originRotation);
+      const sn = Math.sin(-s.originRotation);
+      const dxLocal = cs * dx - sn * dy;
+      const dyLocal = sn * dx + cs * dy;
+      let nx = ob.x;
+      let ny = ob.y;
+      let nw = ob.width;
+      let nh = ob.height;
+      if (s.anchor.x === 'min') {
+        nw = ob.width + dxLocal;
+      } else if (s.anchor.x === 'max') {
+        nx = ob.x + dxLocal;
+        nw = ob.width - dxLocal;
+      }
+      if (s.anchor.y === 'min') {
+        nh = ob.height + dyLocal;
+      } else if (s.anchor.y === 'max') {
+        ny = ob.y + dyLocal;
+        nh = ob.height - dyLocal;
+      }
+      proposedBounds = { x: nx, y: ny, width: nw, height: nh };
     }
-    if (s.anchor.y === 'min') {
-      nh = ob.height + dy;
-    } else if (s.anchor.y === 'max') {
-      ny = ob.y + dy;
-      nh = ob.height - dy;
-    }
-    let proposedBounds: ResizePose = { x: nx, y: ny, width: nw, height: nh };
 
     // Behaviors operate in bounds-space. For rect TPose, proposed.pose IS
     // the proposed bounds (same shape); behaviors return a TPose with rect
@@ -299,7 +370,23 @@ export function useResize<TObject extends { id: string }, TPose>(
       }
     }
 
-    const proposedPose = geom.remapBounds(s.originPose, s.originBounds, proposedBounds);
+    let proposedPose = geom.remapBounds(s.originPose, s.originBounds, proposedBounds);
+
+    if (s.originRotation !== 0) {
+      const newCenterX = proposedBounds.x + proposedBounds.width / 2;
+      const newCenterY = proposedBounds.y + proposedBounds.height / 2;
+      const newFixedLocal = fixedCornerOf(proposedBounds, s.anchor);
+      const newFixedWorld = rotatePoint(
+        newFixedLocal.x, newFixedLocal.y,
+        newCenterX, newCenterY,
+        s.originRotation,
+      );
+      const correctionX = s.fixedWorld.x - newFixedWorld.x;
+      const correctionY = s.fixedWorld.y - newFixedWorld.y;
+      const translate = geom.translate ?? ((p, dx, dy) => ({ ...(p as object), x: (p as { x: number }).x + dx, y: (p as { y: number }).y + dy } as TPose));
+      proposedPose = translate(proposedPose, correctionX, correctionY);
+    }
+
     s.ctx.current = new Map([[s.id, proposedPose]]);
 
     const last = s.lastBounds ?? ob;
@@ -311,7 +398,22 @@ export function useResize<TObject extends { id: string }, TPose>(
       height: lerp(last.height, proposedBounds.height),
     };
     s.lastBounds = currentBounds;
-    const currentPose = geom.remapBounds(s.originPose, s.originBounds, currentBounds);
+    let currentPose = geom.remapBounds(s.originPose, s.originBounds, currentBounds);
+
+    if (s.originRotation !== 0) {
+      const newCenterX = currentBounds.x + currentBounds.width / 2;
+      const newCenterY = currentBounds.y + currentBounds.height / 2;
+      const newFixedLocal = fixedCornerOf(currentBounds, s.anchor);
+      const newFixedWorld = rotatePoint(
+        newFixedLocal.x, newFixedLocal.y,
+        newCenterX, newCenterY,
+        s.originRotation,
+      );
+      const correctionX = s.fixedWorld.x - newFixedWorld.x;
+      const correctionY = s.fixedWorld.y - newFixedWorld.y;
+      const translate = geom.translate ?? ((p, dx, dy) => ({ ...(p as object), x: (p as { x: number }).x + dx, y: (p as { y: number }).y + dy } as TPose));
+      currentPose = translate(currentPose, correctionX, correctionY);
+    }
 
     let leafPoses: Map<string, TPose> | undefined;
     if (s.leafIds && s.leafOrigins) {
