@@ -68,6 +68,10 @@ function resolveBounds(thumb: Thumb, ctx: BoundsCtx, fallbackMin: number, fallba
   return [tuple[0], tuple[1]];
 }
 
+function defaultReadout(thumb: Thumb): string {
+  return thumb.value.toFixed(3);
+}
+
 export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>): ReactElement {
   const { thumbs, onChange, onCommit, min, max, step, constraint, trackHeight, ariaLabel, className } = props;
 
@@ -285,6 +289,9 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
     onCommit?.(next);
   };
 
+  const placement = props.readoutPlacement ?? 'none';
+  const renderReadout = props.renderReadout;
+
   return (
     <div
       className={className ? `${s.root} ${className}` : s.root}
@@ -323,7 +330,28 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
             </div>
           );
         })}
+        {placement === 'below-thumb' && (
+          <div className={s.readoutsBelow}>
+            {thumbs.map((t, i) => (
+              <span
+                key={i}
+                data-readout="below"
+                className={s.readoutBelow}
+                style={{ left: `${valueToFraction(t.value) * 100}%` }}
+              >
+                {renderReadout ? renderReadout(t, i) : defaultReadout(t)}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
+      {placement === 'inline-after' && (
+        <span data-readout="inline" className={s.readoutInline}>
+          {thumbs.map((t, i) => (
+            <span key={i}>{i > 0 ? ' / ' : ''}{renderReadout ? renderReadout(t, i) : defaultReadout(t)}</span>
+          ))}
+        </span>
+      )}
     </div>
   );
 }

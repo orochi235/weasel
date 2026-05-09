@@ -456,7 +456,7 @@ describe('RangePicker allowShiftAll', () => {
 
 describe('RangePicker renderTrack', () => {
   it('invokes renderTrack with a TrackCtx and renders its output behind thumbs', () => {
-    const renderTrack = vi.fn(() => <div data-testid="custom-track">painted</div>);
+    const renderTrack = vi.fn((_ctx: { trackWidth: number; valueToFraction: (v: number) => number }) => <div data-testid="custom-track">painted</div>);
     const { getByTestId } = render(
       <RangePicker
         min={0}
@@ -467,7 +467,7 @@ describe('RangePicker renderTrack', () => {
       />,
     );
     expect(renderTrack).toHaveBeenCalled();
-    const arg = renderTrack.mock.calls[0][0];
+    const arg = renderTrack.mock.calls[0]![0];
     expect(typeof arg.valueToFraction).toBe('function');
     expect(arg.valueToFraction(0.5)).toBeCloseTo(0.5, 5);
     expect(getByTestId('custom-track')).toBeTruthy();
@@ -498,5 +498,52 @@ describe('RangePicker thumb shape variants', () => {
       />,
     );
     expect(container.querySelector('[data-testid="x"]')).toBeTruthy();
+  });
+});
+
+describe('RangePicker readouts', () => {
+  it("'inline-after' renders one entry per thumb after the track", () => {
+    const { container } = render(
+      <RangePicker
+        min={0}
+        max={1}
+        thumbs={[{ value: 0.123 }, { value: 0.456 }]}
+        readoutPlacement="inline-after"
+        onChange={() => {}}
+      />,
+    );
+    const inline = container.querySelector('[data-readout="inline"]')!;
+    expect(inline.textContent).toContain('0.123');
+    expect(inline.textContent).toContain('0.456');
+  });
+
+  it("'below-thumb' renders one absolutely-positioned readout per thumb", () => {
+    const { container } = render(
+      <RangePicker
+        min={0}
+        max={1}
+        thumbs={[{ value: 0.25 }, { value: 0.75 }]}
+        readoutPlacement="below-thumb"
+        onChange={() => {}}
+      />,
+    );
+    const readouts = container.querySelectorAll<HTMLElement>('[data-readout="below"]');
+    expect(readouts).toHaveLength(2);
+    expect(readouts[0].style.left).toBe('25%');
+    expect(readouts[1].style.left).toBe('75%');
+  });
+
+  it('renderReadout overrides default formatting', () => {
+    const { container } = render(
+      <RangePicker
+        min={0}
+        max={1}
+        thumbs={[{ value: 0.5 }]}
+        readoutPlacement="inline-after"
+        renderReadout={(t) => `[${t.value}]`}
+        onChange={() => {}}
+      />,
+    );
+    expect(container.querySelector('[data-readout="inline"]')!.textContent).toContain('[0.5]');
   });
 });
