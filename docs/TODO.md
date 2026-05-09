@@ -15,11 +15,11 @@ Spec: `docs/superpowers/specs/2026-05-08-webgl-transition-plan-design.md`. Archi
 - [x] Step 2 — Strokes shipped 2026-05-09 (`docs/superpowers/plans/2026-05-09-webgl-step-2-done.md`)
 - [x] Step 3 — Text (MSDF) shipped 2026-05-09 (`docs/superpowers/plans/2026-05-09-webgl-step-3-done.md`)
 - [x] Step 4 — Image / pattern / gradient shipped 2026-05-09 (`docs/superpowers/plans/2026-05-09-webgl-step-4-done.md`)
-- [ ] Step 5 — Per-vertex colors + color matrix (plan ready: `2026-05-09-webgl-step-5-vertex-colors-and-color-matrix.md`)
-- [ ] Step 6 — Minimal experimental shader API (plan ready: `2026-05-09-webgl-step-6-experimental-shader-api.md`)
-- [ ] Step 7 — Port built-in layers (plan TBW)
-- [ ] Step 8 — Canvas component port + `backend` prop soak (plan TBW)
-- [ ] Step 9 — Visual regression rig + demo soak (plan ready: `2026-05-09-webgl-step-9-visual-regression-rig.md`)
+- [x] Step 5 — Per-vertex colors + color matrix shipped 2026-05-09 (`docs/superpowers/plans/2026-05-09-webgl-step-5-done.md`)
+- [x] Step 6 — Minimal experimental shader API shipped 2026-05-09 (`docs/superpowers/plans/2026-05-09-webgl-step-6-done.md`)
+- [x] Step 7 — Port built-in layers shipped 2026-05-09 (`docs/superpowers/plans/2026-05-09-webgl-step-7-done.md`)
+- [x] Step 8 — Canvas component port + `backend` prop soak shipped 2026-05-09 (`docs/superpowers/plans/2026-05-09-webgl-step-8-done.md`)
+- [x] Step 9 — Visual regression rig + demo soak shipped 2026-05-09 (`docs/superpowers/plans/2026-05-09-webgl-step-9-done.md`)
 - [ ] Step 10 — Final swap (delete 2D, rename `weasel-gl` → `weasel`, major version bump) (plan TBW)
 
 Items deferred from the spec:
@@ -176,6 +176,7 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
 - **Grid overlay snap-target hover.** *Done.* `useGridCellHover` ships the pointer-tracking glue; pair its `getCell` with `createCellHighlightLayer` and the `spacing` your `gridSnapStrategy` already uses.
 
 - **Aspect-ratio lock during resize (`shift` to constrain).** *Shipped.* `lockAspectWithModifier({ key?: 'shift' | 'alt' | 'meta' | 'ctrl' })` ResizeBehavior — drag a corner/edge with the modifier held to maintain the start-pose's W/H ratio. Default key `'shift'`. Re-exported via `@orochi235/weasel/resize`. See `src/interactions/gestures/resize/behaviors/lockAspect.ts`.
+- **Point-snap behaviors for resize/move.** Today `ResizeBehavior` operates on local-frame `ResizePose` bounds — dimensional clamps and aspect locks. There's no slot for behaviors that snap a *world-space anchor point* (e.g. the dragged corner, the AABB center, the fixed corner) to a target. For unrotated rects this is mostly redundant with bounds-frame snapping, but for **rotated** objects it's the only sensible interpretation of "snap to grid": the dragged corner lands on a grid line, and the local-frame bounds + position back-solve from there. Shape: a parallel `pointSnapBehaviors: PointSnapBehavior[]` slot on `useResize` (and `useMove`?) that fires after bounds-frame behaviors with `{ worldPoint, frame: 'dragged-corner' | 'center' | 'origin' | 'fixed-corner', proposedBounds, rotation }` and returns an optional snapped world point; the hook re-solves bounds + position so the chosen anchor lands on the snap. Open questions: which frames the kit ships (just dragged-corner? all four?), whether move's "drag handle" point is configurable, and whether `gridSnapStrategy` on `ToolCtx` should be auto-consumed by a built-in point-snap behavior (so the consumer doesn't wire it twice).
 - **Alignment guides / insert snap-to-existing-edges.** Shows snap lines when an inserted/moved object's edge or center aligns with a sibling's. Slot for a new `SnapStrategy` plus an overlay layer. Originally scoped in `docs/specs/2026-04-30-canvas-kit-resize-insert-design.md:278`.
 - **Op coalescing implementation.** `Op.coalesceKey` is declared in `src/core/ops/types.ts:13` and set on `transform`/`setText` ops, but `History.append` does not coalesce — every drag step still pushes a discrete entry (ops are batched per gesture, but per-keystroke text edits aren't merged across batches). Originally scoped in `docs/specs/2026-04-30-canvas-kit-interactions-design.md:304` as "mark `coalesceKey` field but defer logic." Decide policy (time window? consecutive same-key only?) and wire it into `History`.
 - **Drag-to-reorder UX for sibling z-order.** `createMoveToIndexOp` and `useReorder` ship the data side, but no built-in gesture or list-style sidebar drives them — consumers wire their own. Worth shipping a reference UI (a draggable layer-list panel) and/or a scene-graph drag-into-position gesture. Originally scoped in `docs/specs/2026-05-01-canvas-kit-sibling-zorder-design.md:222`.
