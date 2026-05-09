@@ -23,6 +23,7 @@ import { LayoutDemo } from './demos/LayoutDemo';
 import { DebugOverlayDemo } from './demos/DebugOverlayDemo';
 import { EasingsDemo } from './demos/EasingsDemo';
 import { ViewportDemo } from './demos/ViewportDemo';
+import { PerceptualColorSlidersDemo } from './demos/PerceptualColorSlidersDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
@@ -48,6 +49,7 @@ import LayoutDemoFull from './demos/LayoutDemo.tsx?raw';
 import DebugOverlayDemoFull from './demos/DebugOverlayDemo.tsx?raw';
 import EasingsDemoFull from './demos/EasingsDemo.tsx?raw';
 import ViewportDemoFull from './demos/ViewportDemo.tsx?raw';
+import PerceptualColorSlidersDemoFull from './demos/PerceptualColorSlidersDemo.tsx?raw';
 
 export interface DemoEntry {
   id: string;
@@ -92,6 +94,16 @@ export const DEMOS: DemoEntry[] = [
     Component: AnimationDemo,
     full: AnimationDemoFull,
     path: 'demo/demos/AnimationDemo.tsx',
+  },
+  {
+    id: 'perceptual-color-sliders',
+    title: 'Perceptual Color Sliders',
+    category: 'Composed',
+    description: 'Four representative slider variants from the perceptual-color experiment, all built on RangePicker: single-thumb hue, 2-thumb ordered L range with active-range hatching, 3-thumb chroma with per-thumb bounds, and a dynamic indices band with click-to-add, drag-off-vertical to remove, and shift-drag translate-all.',
+    hint: 'Drag thumbs; on the indices band, click empty track to add, drag a thumb up/down to remove, hold Shift to translate all.',
+    Component: PerceptualColorSlidersDemo,
+    full: PerceptualColorSlidersDemoFull,
+    path: 'demo/demos/PerceptualColorSlidersDemo.tsx',
   },
   {
     id: 'easings',
