@@ -322,7 +322,7 @@ point rendered at the canvas top-left and `scale` is pixels per world unit. The
 canonical pan+zoom representation used throughout the kit. `ViewTransform` is a
 legacy shape (`{ panX, panY, zoom }`) with the opposite sign convention for
 translation; `viewToTransform(view)` bridges between them. See
-`src/features/viewport/view.ts`.
+`src/core/viewport/view.ts`.
 
 ### Bounds / ResizeAnchor
 

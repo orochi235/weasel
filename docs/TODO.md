@@ -180,13 +180,9 @@ Rollout order suggestion: drag → patterns (no-op confirmation) → text → se
 
 **Viewport is not on this list** — it's reclassified as core infrastructure (see "Move viewport out of `src/features/`" below). Barrel-hygiene migration doesn't apply; the work is a directory move + import-site updates.
 
-### Move viewport out of `src/features/` to `src/core/`
+### ~~Move viewport out of `src/features/` to `src/core/`~~ DONE
 
-Viewport is foundational infrastructure (per `docs/taxonomy.md` Feature dependency layers): every canvas needs a `View`, every world-space draw needs `worldToScreen`/`screenToWorld`, every pointer event needs the client→world transform. It's not optional in any meaningful sense — unlike features (focus, grid, groups, text), which a consumer app can choose not to use.
-
-Plan: move `src/features/viewport/` to `src/core/viewport/`. ~18 import sites in the kit need updating; consumer-side imports through `@orochi235/weasel` are unaffected (the package barrel still re-exports the same names). Add an `index.ts` barrel at the new location and route the kit's main barrel through it.
-
-Defer until the focus/grid plan ships — separate small PR.
+Shipped. `src/features/viewport/` moved to `src/core/viewport/`; barrel added at new location; all import sites updated. Package surface unchanged.
 
 ### Rotated-resize math demo: synchronized drag
 
