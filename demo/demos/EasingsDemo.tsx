@@ -6,6 +6,7 @@ import {
   useAnimator,
 } from '@orochi235/weasel';
 import type { EasingName, RenderLayer } from '@orochi235/weasel';
+import type { DrawCommand } from '@orochi235/weasel-gl';
 import { useBackend } from '../BackendContext';
 
 interface Marker { id: string; x: number; y: number; width: number; height: number; easing: EasingName; color: string }
@@ -163,6 +164,14 @@ backend={backend}
               cx.fillStyle = m.color;
               cx.fillRect(p.x, p.y, p.width, p.height);
             },
+            drawOneGL: (m: Marker, p: Pose): DrawCommand[] => [{
+              kind: 'path',
+              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+              fill: { color: m.color },
+            }],
+            // drawOneGL: trackLayer (labels + curve plots) is a custom screen-
+            // space RenderLayer and not part of the scene slot — it remains 2D-
+            // only; defer to v2 (no GL counterpart for the curve-plot polyline).
           },
         }}
       />

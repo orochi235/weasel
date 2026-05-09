@@ -5,6 +5,7 @@ import {
   useSelection,
 } from '@orochi235/weasel';
 import type { RegisteredOp, Scene } from '@orochi235/weasel';
+import type { DrawCommand } from '@orochi235/weasel-gl';
 import { useBackend } from '../BackendContext';
 
 type LayerId = 'garden' | 'blueprint' | 'structures' | 'zones' | 'plantings';
@@ -124,6 +125,21 @@ backend={backend}
                 cx.fillText(node.data.label, p.x + 6, p.y + 14);
               }
             },
+            drawOneGL: (node, p): DrawCommand[] => [
+              {
+                kind: 'path',
+                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                fill: { color: node.data.color },
+              },
+              {
+                kind: 'path',
+                path: { kind: 'rect', x: p.x + 0.5, y: p.y + 0.5, width: p.width - 1, height: p.height - 1 },
+                stroke: { paint: { color: 'rgba(0,0,0,0.3)' }, width: 1 },
+              },
+              // drawOneGL: per-node label text intentionally omitted; would
+              // require registerFont() asset wiring at the demo level. Defer
+              // to v2.
+            ],
           },
           selectionOverlay: { handles: false },
         }}

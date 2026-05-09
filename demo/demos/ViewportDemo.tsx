@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { SceneCanvas, useScene } from '@orochi235/weasel';
+import type { DrawCommand } from '@orochi235/weasel-gl';
 import { useBackend } from '../BackendContext';
 
 type Layer = 'scene';
@@ -92,6 +93,24 @@ backend={backend}
               ctx.textAlign = 'center';
               ctx.textBaseline = 'middle';
               ctx.fillText(node.data.label, p.x + p.width / 2, p.y + p.height / 2);
+            },
+            drawOneGL: (node, pose, view): DrawCommand[] => {
+              const p = pose as Pose;
+              return [
+                {
+                  kind: 'path',
+                  path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                  fill: { color: node.data.color },
+                },
+                {
+                  kind: 'path',
+                  path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                  stroke: { paint: { color: 'rgba(255,255,255,0.25)' }, width: 1.5 / view.scale },
+                },
+                // drawOneGL: per-node text label intentionally omitted; would
+                // require registerFont() asset wiring at the demo level. Defer
+                // to v2.
+              ];
             },
           },
         }}

@@ -13,6 +13,7 @@ import {
   worldPoseLookup,
 } from '@orochi235/weasel';
 import type { MoveAdapter, Op, SelectionApi } from '@orochi235/weasel';
+import type { DrawCommand } from '@orochi235/weasel-gl';
 import { useBackend } from '../BackendContext';
 
 interface Node {
@@ -171,6 +172,29 @@ backend={backend}
               cx.fillStyle = n.color;
               cx.fillRect(p.x, p.y, p.width, p.height);
             }
+          },
+          drawOneGL: (n, p): DrawCommand[] => {
+            if (n.isGroup) {
+              return [
+                // Translucent fill via paint opacity (group-level alpha would
+                // tint the dashed stroke too).
+                {
+                  kind: 'path',
+                  path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                  fill: { color: n.color, opacity: 0.35 },
+                },
+                {
+                  kind: 'path',
+                  path: { kind: 'rect', x: p.x + 0.5, y: p.y + 0.5, width: p.width - 1, height: p.height - 1 },
+                  stroke: { paint: { color: '#5a4a38' }, width: 1, dash: [4, 3] },
+                },
+              ];
+            }
+            return [{
+              kind: 'path',
+              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+              fill: { color: n.color },
+            }];
           },
         },
         selectionOverlay: {

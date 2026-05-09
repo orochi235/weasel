@@ -4,6 +4,7 @@ import {
   useScene,
 } from '@orochi235/weasel';
 import type { RotatedPose } from '@orochi235/weasel';
+import type { DrawCommand } from '@orochi235/weasel-gl';
 import { useBackend } from '../BackendContext';
 
 interface Rect extends RotatedPose {
@@ -56,6 +57,28 @@ backend={backend}
             cx.fillStyle = p.color;
             cx.fillRect(p.x, p.y, p.width, p.height);
             cx.restore();
+          },
+          drawOneGL: (_node, p): DrawCommand[] => {
+            // Rotate around the rect's AABB center via a group transform.
+            // Compose T(cx,cy) · R(θ) · T(-cx,-cy) into a single column-major
+            // 3×3 affine. (a, b, c, d, tx, ty) for [a c tx; b d ty; 0 0 1].
+            const cxw = p.x + p.width / 2;
+            const cyw = p.y + p.height / 2;
+            const cs = Math.cos(p.rotation);
+            const sn = Math.sin(p.rotation);
+            const a = cs, b = sn, c = -sn, d = cs;
+            const tx = cxw - a * cxw - c * cyw;
+            const ty = cyw - b * cxw - d * cyw;
+            const transform = new Float32Array([a, b, 0, c, d, 0, tx, ty, 1]);
+            return [{
+              kind: 'group',
+              transform,
+              children: [{
+                kind: 'path',
+                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                fill: { color: p.color },
+              }],
+            }];
           },
         },
         selectionOverlay: { handles: { size: HANDLE }, rotationHandle: true },
