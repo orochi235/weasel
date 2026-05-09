@@ -47,6 +47,19 @@ export function BezierEditDemo() {
     getObjects: () => [{ id: ID }],
     getPose: () => pathRef.current,
     setPose: (_id: string, p: Pose) => setPath(p),
+    // hitTestArea: required for drag-marquee selection to work. Returns
+    // [ID] if the path's AABB intersects the marquee rect. Without this
+    // the marquee silently no-ops (selectFromMarquee bails on missing
+    // adapter.hitTestArea). The path's pointInPath hit-test fails for
+    // open polylines, so drag-marquee is the primary selection path.
+    hitTestArea: (rect: { x: number; y: number; width: number; height: number }) => {
+      const b = pathPoseDescriptor.getBounds(pathRef.current);
+      const ix = Math.max(rect.x, b.x);
+      const iy = Math.max(rect.y, b.y);
+      const iw = Math.min(rect.x + rect.width, b.x + b.width) - ix;
+      const ih = Math.min(rect.y + rect.height, b.y + b.height) - iy;
+      return iw > 0 && ih > 0 ? [ID] : [];
+    },
     ...selection.adapterMethods,
   };
 
