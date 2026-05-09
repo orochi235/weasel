@@ -151,6 +151,29 @@ turning into a katamari." Distinct from a [Plugin](#plugin-deferred) (which bund
 parts with consumer-facing composition rules) in that features are internal to the
 kit.
 
+**Bundle-shaped vs protocol-shaped features.** Features fall on a spectrum:
+
+- **Bundle-shaped** features are self-contained. Their primitives compose locally;
+  the rest of the kit doesn't need to know they exist. Focus, grid, patterns, text
+  are mostly bundle-shaped — if you don't import them, nothing breaks; if you do,
+  you wire them at one or two call sites.
+
+- **Protocol-shaped** features introduce a *concept* that other code must honor.
+  Selection is the canonical case: "current selection" is read by overlay layers,
+  written by gestures, threaded through [Adapter](#adapter) contracts (e.g.
+  `AreaSelectAdapter.setSelection`, `getSelection` on Move/Resize/Rotate adapters),
+  and conditioned on by [Actions](#action). The selection feature doesn't just
+  contribute (api/attrs/layers); it *imposes* — anything that interacts with the
+  scene has to understand what selection is and behave accordingly.
+
+The [Role taxonomy](#role-taxonomy) captures contributions *out* of a feature; it
+doesn't (yet) capture the protocol surface a protocol-shaped feature *requires* of
+other code. In practice the protocol surface is expressed as TypeScript
+interfaces (`SelectionApi`, `AreaSelectAdapter`, etc.) — the type system is the
+protocol contract, validated at compile time. See
+[Feature dependency layers](#feature-dependency-layers) for how this affects the
+kit's internal partial order.
+
 ### Primitive
 
 An exported building block from a feature — a hook, layer factory, type, helper,
@@ -188,6 +211,48 @@ stateful logic (gesture phase machines, selection state, history, animation) in 
 React-idiomatic way. The kit's architecture choice: no classes, no event emitters,
 no singleton stores — hooks compose. Nearly every consumer-side abstraction is
 accessed through a hook.
+
+### Feature dependency layers
+
+The kit's features form an implicit partial order based on what they import and
+what protocols they consume. Documented here so authors of new features know where
+they fit.
+
+- **Foundation** (nothing kit-internal depends on these): `viewport`, `scene`,
+  `selection`.
+- **Mid-layer** (depend on foundation): `groups` (scene + selection), `grid`
+  (viewport), `focus` (nothing internal), `paths`, `patterns`, `text`.
+- **Gestures** (depend on foundation + adapter contracts): `useMove`, `useResize`,
+  `useRotate`, `useAreaSelect`, `useInsert`, `useClone`, `useDragRect`.
+- **Actions** (depend on selection + scene): `useDuplicate`, `useDelete`,
+  `useNudge`, `useReorder`, `useSelectAll`, `useEscape`, plus the
+  [Actions Registry](#action) defaults.
+- **Tools** (depend on gestures + actions): `useSelectTool`, `useInsertTool`,
+  `useHandTool`, `useUserPenTool`, the viewport tools.
+- **Top-level** (depends on most things): `<Canvas>`, `<SceneCanvas>`.
+
+This order is not enforced at runtime; TypeScript module imports are the actual
+dependency graph. The layering above is descriptive of what existing imports
+already look like — useful for placement when adding a new feature, not a thing
+the build validates.
+
+**Cycle-breaking conventions.** Some features have bidirectional needs. Selection
+↔ scene is the canonical case:
+
+- Selection needs to react to scene mutations (e.g., remove a deleted node's id
+  from the selection set).
+- Scene's overlay layers need to react to selection changes (e.g., redraw outlines
+  when the selection changes).
+
+The kit avoids module-level cycles by making one side **subscribe** instead of
+**import**. Selection subscribes to scene's `onChange` callbacks; scene exposes
+events but does not import selection. The runtime relationship is bidirectional,
+but compile-time imports stay acyclic.
+
+**Convention:** when two features have bidirectional needs, one side owns state
+and exposes a `subscribe` (or callback) API; the other side subscribes. The
+"subscribed to" side stays oblivious of the subscriber. The static import graph
+remains a DAG.
 
 ---
 
