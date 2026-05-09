@@ -21,7 +21,7 @@ import type { Op } from '../core/ops/types';
 import { dispatchApplyBatch } from '../core/applyOps';
 import type { View } from '../features/viewport/view';
 import { clampView } from '../features/viewport/clampView';
-import { drawLayersGL, type RenderLayer } from '../core/layers/render';
+import { drawLayers, type RenderLayer } from '../core/layers/render';
 import { WeaselRenderer, viewToMat3, type DrawCommand } from '@orochi235/weasel-gl';
 import {
   useSelection,
@@ -1092,7 +1092,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
         }
       }
 
-      const commands = drawLayersGL(
+      const commands = drawLayers(
         layersWithDebug,
         helpersForLayers,
         {},

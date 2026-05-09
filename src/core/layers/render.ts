@@ -66,7 +66,7 @@ export interface RenderLayer<TData> {
  * world-space content in `kind: 'group'` with `viewToMat3(view)`;
  * screen-space layers emit screen-pixel coords directly.
  */
-export function drawLayersGL<TData>(
+export function drawLayers<TData>(
   layers: RenderLayer<TData>[],
   data: TData,
   visibility: Record<string, boolean>,

@@ -899,10 +899,10 @@ describe('backend prop', () => {
   });
 
   it('backend="gl" mounts without throwing when a custom layer with draw is present', () => {
-    // Sentinel test: confirms the prop wiring + drawLayersGL dispatch path
+    // Sentinel test: confirms the prop wiring + drawLayers dispatch path
     // doesn't throw under jsdom. The authoritative end-to-end pixel check is
     // the Playwright smoke (canvas-gl.spec.ts) — under jsdom getContext('webgl2')
-    // returns a non-null stub, so the GL branch early-returns before drawLayersGL
+    // returns a non-null stub, so the GL branch early-returns before drawLayers
     // runs and the captured arguments below stay empty. Documenting intent.
     const captured: Array<{ data: unknown; view: unknown; dims: unknown }> = [];
     const customLayer: RenderLayer<unknown> = {

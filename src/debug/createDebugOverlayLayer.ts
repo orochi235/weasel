@@ -38,19 +38,19 @@ export function createDebugOverlayLayer({
       const t = viewToTransform(view);
       const out: DrawCommand[] = [];
 
-      if (config.hitboxes) emitHitboxesGL(out, s, view, t, theme);
-      if (config.bounds) emitBoundsGL(out, s, view, t, theme);
-      if (config.handles) emitHandlesGL(out, s, t, theme);
-      if (config.origins) emitOriginsGL(out, s, t, theme);
-      if (config.snap) emitSnapGL(out, s, t, theme);
-      if (config.layers) emitLayersPanelGL(out, s, dims, theme);
+      if (config.hitboxes) emitHitboxes(out, s, view, t, theme);
+      if (config.bounds) emitBounds(out, s, view, t, theme);
+      if (config.handles) emitHandles(out, s, t, theme);
+      if (config.origins) emitOrigins(out, s, t, theme);
+      if (config.snap) emitSnap(out, s, t, theme);
+      if (config.layers) emitLayersPanel(out, s, dims, theme);
 
       return out;
     },
   };
 }
 
-// --- GL emitters (screen-space) ---
+// --- emitters (screen-space) ---
 
 function approxCircleScreen(cx: number, cy: number, r: number, segments = 24): PolygonPath {
   // Commands: M + (segments-1) L + Z. Coords: (segments) × 2 — pairs for
@@ -74,7 +74,7 @@ function rectPath(x: number, y: number, w: number, h: number): { kind: 'rect'; x
   return { kind: 'rect', x, y, width: w, height: h };
 }
 
-function emitHitboxesGL(
+function emitHitboxes(
   out: DrawCommand[],
   s: DebugSnapshot,
   view: View,
@@ -98,7 +98,7 @@ function emitHitboxesGL(
   }
 }
 
-function emitBoundsGL(
+function emitBounds(
   out: DrawCommand[],
   s: DebugSnapshot,
   view: View,
@@ -114,7 +114,7 @@ function emitBoundsGL(
   }
 }
 
-function emitHandlesGL(
+function emitHandles(
   out: DrawCommand[],
   s: DebugSnapshot,
   t: ReturnType<typeof viewToTransform>,
@@ -140,7 +140,7 @@ function emitHandlesGL(
   }
 }
 
-function emitOriginsGL(
+function emitOrigins(
   out: DrawCommand[],
   s: DebugSnapshot,
   t: ReturnType<typeof viewToTransform>,
@@ -153,7 +153,7 @@ function emitOriginsGL(
   }
 }
 
-function emitSnapGL(
+function emitSnap(
   out: DrawCommand[],
   s: DebugSnapshot,
   t: ReturnType<typeof viewToTransform>,
@@ -173,7 +173,7 @@ function emitSnapGL(
   }
 }
 
-function emitLayersPanelGL(
+function emitLayersPanel(
   out: DrawCommand[],
   s: DebugSnapshot,
   dims: Dims,
