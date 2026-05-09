@@ -125,21 +125,30 @@ backend={backend}
                 cx.fillText(node.data.label, p.x + 6, p.y + 14);
               }
             },
-            drawOneGL: (node, p): DrawCommand[] => [
-              {
-                kind: 'path',
-                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                fill: { color: node.data.color },
-              },
-              {
-                kind: 'path',
-                path: { kind: 'rect', x: p.x + 0.5, y: p.y + 0.5, width: p.width - 1, height: p.height - 1 },
-                stroke: { paint: { color: 'rgba(0,0,0,0.3)' }, width: 1 },
-              },
-              // drawOneGL: per-node label text intentionally omitted; would
-              // require registerFont() asset wiring at the demo level. Defer
-              // to v2.
-            ],
+            drawOneGL: (node, p): DrawCommand[] => {
+              const cmds: DrawCommand[] = [
+                {
+                  kind: 'path',
+                  path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                  fill: { color: node.data.color },
+                },
+                {
+                  kind: 'path',
+                  path: { kind: 'rect', x: p.x + 0.5, y: p.y + 0.5, width: p.width - 1, height: p.height - 1 },
+                  stroke: { paint: { color: 'rgba(0,0,0,0.3)' }, width: 1 },
+                },
+              ];
+              if (node.data.label) {
+                cmds.push({
+                  kind: 'text',
+                  x: p.x + 6,
+                  y: p.y + 14,
+                  text: node.data.label,
+                  style: { fontFamily: 'sans-serif', fontSize: 11, fill: { color: 'rgba(0,0,0,0.7)' } },
+                });
+              }
+              return cmds;
+            },
           },
           selectionOverlay: { handles: false },
         }}

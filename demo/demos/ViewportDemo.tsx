@@ -96,6 +96,9 @@ backend={backend}
             },
             drawOneGL: (node, pose, view): DrawCommand[] => {
               const p = pose as Pose;
+              const fontSize = 14 / view.scale;
+              const label = node.data.label;
+              const charW = fontSize * 0.6;
               return [
                 {
                   kind: 'path',
@@ -107,9 +110,15 @@ backend={backend}
                   path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
                   stroke: { paint: { color: 'rgba(255,255,255,0.25)' }, width: 1.5 / view.scale },
                 },
-                // drawOneGL: per-node text label intentionally omitted; would
-                // require registerFont() asset wiring at the demo level. Defer
-                // to v2.
+                // Center-aligned: x = center - (text_width / 2). Approximates
+                // ctx.textAlign='center' since TextDrawCommand uses left baseline.
+                {
+                  kind: 'text',
+                  x: p.x + p.width / 2 - (label.length * charW) / 2,
+                  y: p.y + p.height / 2 + fontSize / 3,  // textBaseline='middle' → shift down ~1/3 emHeight
+                  text: label,
+                  style: { fontFamily: 'sans-serif', fontSize, fill: { color: '#1a130d' } },
+                },
               ];
             },
           },
