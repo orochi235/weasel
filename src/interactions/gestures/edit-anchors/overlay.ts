@@ -1,6 +1,27 @@
 import type { RenderLayer } from '../../../core/layers/render';
-import type { PolygonPath } from '../../../features/paths/types';
+import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from '../../../features/paths/types';
 import { enumerateAnchors } from './geometry';
+import type { DrawCommand } from '@orochi235/weasel-gl';
+
+const CIRCLE_SEGMENTS = 12;
+
+function circlePath(cx: number, cy: number, r: number): PolygonPath {
+  const n = CIRCLE_SEGMENTS;
+  const commands = new Uint8Array(n + 2); // M + n*L + Z
+  const coords = new Float32Array(2 * (n + 1));
+  commands[0] = PATH_M;
+  for (let i = 0; i < n; i++) {
+    const theta = (i / n) * Math.PI * 2;
+    coords[i * 2] = cx + Math.cos(theta) * r;
+    coords[i * 2 + 1] = cy + Math.sin(theta) * r;
+    commands[i] = i === 0 ? PATH_M : PATH_L;
+  }
+  commands[n] = PATH_L;
+  coords[n * 2] = cx + r;
+  coords[n * 2 + 1] = cy;
+  commands[n + 1] = PATH_Z;
+  return { kind: 'polygon', commands, coords, fillRule: 'nonzero' };
+}
 
 /** Visual options for the anchor-edit overlay. */
 export interface AnchorEditOverlayOpts {
@@ -85,6 +106,48 @@ export function createAnchorEditOverlayLayer(opts: AnchorEditOverlayOpts): Rende
         ctx.stroke();
       }
       ctx.restore();
+    },
+    drawGL: () => {
+      const ov = opts.getOverlay();
+      if (!ov) return [];
+      const anchors = enumerateAnchors(ov.pose);
+      const selected = new Set(ov.selectedAnchors);
+      const out: DrawCommand[] = [];
+      // Tangent lines: anchor → controlIn / anchor → controlOut, each as a 2-point polygon.
+      for (const a of anchors) {
+        for (const c of [a.controlIn, a.controlOut]) {
+          if (!c) continue;
+          const commands = new Uint8Array([PATH_M, PATH_L]);
+          const coords = new Float32Array([a.x, a.y, c.x, c.y]);
+          out.push({
+            kind: 'path',
+            path: { kind: 'polygon', commands, coords, fillRule: 'nonzero' },
+            stroke: { paint: { color: tangentStroke }, width: 1 },
+          });
+        }
+      }
+      // Control handles (smaller, drawn first so anchors render on top).
+      for (const a of anchors) {
+        for (const c of [a.controlIn, a.controlOut]) {
+          if (!c) continue;
+          out.push({
+            kind: 'path',
+            path: circlePath(c.x, c.y, controlRadius),
+            fill: { color: controlFill },
+            stroke: { paint: { color: controlStroke }, width: 1 },
+          });
+        }
+      }
+      // Anchors.
+      for (const a of anchors) {
+        out.push({
+          kind: 'path',
+          path: circlePath(a.x, a.y, anchorRadius),
+          fill: { color: selected.has(a.anchorIndex) ? selectedAnchorFill : anchorFill },
+          stroke: { paint: { color: anchorStroke }, width: 1 },
+        });
+      }
+      return out;
     },
   };
 }

@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react';
 import { defineTool } from '../defineTool';
 import { useDragRect } from '../../interactions/gestures/dragRect';
 import { createInsertOp } from '../../core/ops/create';
-import { drawMarquee, type InsertOverlayStyle } from './marquee';
+import { drawMarquee, marqueeDrawCommands, type InsertOverlayStyle } from './marquee';
 import type { Tool, ToolCtx } from '../types';
 import type { View } from '../../features/viewport/view';
 
@@ -70,6 +70,11 @@ export function useRectTool<TObject extends { id: string }>(
         const ov = drRef.current.overlay;
         if (!ov) return;
         drawMarquee(ctx, view, ov.bounds, overlayStyleRef.current, DEFAULT_STYLE);
+      },
+      drawGL: (_data: unknown, view: View) => {
+        const ov = drRef.current.overlay;
+        if (!ov) return [];
+        return marqueeDrawCommands(view, ov.bounds, overlayStyleRef.current, DEFAULT_STYLE);
       },
     }),
     [],

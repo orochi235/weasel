@@ -17,6 +17,7 @@ import type { DebugSink } from '../../debug/types';
 import type { RenderLayer } from '../../core/layers/render';
 import { viewToTransform } from '../../features/viewport/view';
 import { worldToScreen } from '../../features/viewport/viewTransform';
+import type { DrawCommand } from '@orochi235/weasel-gl';
 import { pickTopMostHit } from './pickTopMostHit';
 
 /** World-space bounding rect for hit-testing handles. Uses `width`/`height` to
@@ -306,6 +307,36 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
           ctx.restore();
           return;
         }
+      },
+      // GL counterpart: only the screen-space marquee branch is rendered here.
+      // The move/resize/rotate ghost branches use the consumer's 2D-only
+      // `drawGhost`; under backend='gl' those ghosts come from SceneCanvas's
+      // preview-ghost layer driven by `previewIds()`/`previewPose()` and the
+      // scene slot's `drawOneGL`. So this drawGL only handles area-select.
+      drawGL: (_data, view) => {
+        const refs = styleRefs.current;
+        const aOv = areaSelect.overlay;
+        if (!aOv) return [];
+        const cfg = refs.areaSelectOverlayStyle ?? {};
+        const fill = cfg.fill ?? 'rgba(164, 139, 212, 0.18)';
+        const stroke = cfg.stroke ?? '#a48bd4';
+        const dash = cfg.dash ?? [3, 3];
+        const lineWidth = cfg.lineWidth ?? 1;
+        const t = viewToTransform(view);
+        const x = Math.min(aOv.start.worldX, aOv.current.worldX);
+        const y = Math.min(aOv.start.worldY, aOv.current.worldY);
+        const w = Math.abs(aOv.current.worldX - aOv.start.worldX);
+        const h = Math.abs(aOv.current.worldY - aOv.start.worldY);
+        const [sx, sy] = worldToScreen(x, y, t);
+        const sw = w * view.scale;
+        const sh = h * view.scale;
+        const cmd: DrawCommand = {
+          kind: 'path',
+          path: { kind: 'rect', x: sx, y: sy, width: sw, height: sh },
+          fill: { color: fill },
+          stroke: { paint: { color: stroke }, width: lineWidth, dash },
+        };
+        return [cmd];
       },
     }),
     [move, resize, rotate, areaSelect],
