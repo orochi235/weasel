@@ -6,7 +6,10 @@ import type {
   PathDrawCommand,
   TextDrawCommand,
   ImageDrawCommand,
+  ShaderDrawCommand,
 } from './DrawCommand';
+import { getTexture, type TextureHandle } from './registerTexture';
+import type { ShaderUniform } from './registerProgram';
 import type { GroupState } from './GroupState';
 import type { GLMeshCache, GLMeshHandle } from './GLMeshCache';
 import type { GLTextureCache } from './GLTextureCache';
@@ -31,6 +34,9 @@ export interface DrawContext {
   textureCache: GLTextureCache;
   imageCache: GLImageCache;
   gradRampCache: GradientRampCache;
+  programRegistry: Map<string, ShaderProgram>;
+  quadVbo: WebGLBuffer | null;
+  quadIbo: WebGLBuffer | null;
   state: GroupState;
   widthCss: number;
   heightCss: number;
@@ -58,11 +64,149 @@ function setColorMatrixUniforms(ctx: DrawContext, prog: ShaderProgram): void {
 
 export function dispatch(ctx: DrawContext, cmd: DrawCommand): void {
   switch (cmd.kind) {
-    case 'group': return drawGroup(ctx, cmd);
-    case 'path':  return drawPath(ctx, cmd);
-    case 'text':  return drawText(ctx, cmd);
-    case 'image': return drawImage(ctx, cmd);
+    case 'group':  return drawGroup(ctx, cmd);
+    case 'path':   return drawPath(ctx, cmd);
+    case 'text':   return drawText(ctx, cmd);
+    case 'image':  return drawImage(ctx, cmd);
+    case 'shader': return drawShader(ctx, cmd);
   }
+}
+
+const warnedUniforms = new Set<string>();
+function warnOnceUniform(programId: string, name: string): void {
+  const key = `${programId}:${name}`;
+  if (warnedUniforms.has(key)) return;
+  warnedUniforms.add(key);
+  const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
+  if (isDev) {
+    console.warn(`weasel-gl drawShader: uniform "${name}" not found in program "${programId}". ` +
+      `Check spelling, ensure it's used in the shader (unused uniforms are optimized away by the driver).`);
+  }
+}
+
+/**
+ * Bind a single ShaderUniform value to a GL uniform location.
+ *
+ * Type detection order:
+ *   1. TextureHandle (object with string `.id`) — bind to next tex unit, set sampler.
+ *   2. Float32Array — length 9 → mat3, length 16 → mat4. Other lengths throw in dev.
+ *   3. Array — uniform2fv / uniform3fv / uniform4fv based on length.
+ *   4. number — uniform1f.
+ */
+function setUniform(
+  gl: WebGL2RenderingContext,
+  loc: WebGLUniformLocation,
+  value: ShaderUniform,
+  textureCache: GLTextureCache,
+  nextTexUnit: { value: number },
+): void {
+  if (value !== null && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Float32Array)
+      && 'id' in value && typeof (value as TextureHandle).id === 'string') {
+    const handle = value as TextureHandle;
+    const entry = getTexture(handle.id);
+    if (!entry) {
+      const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
+      if (isDev) console.warn(`weasel-gl setUniform: TextureHandle "${handle.id}" not registered`);
+      return;
+    }
+    const unit = nextTexUnit.value++;
+    textureCache.upload(handle.id, entry.source);
+    textureCache.bind(handle.id, unit);
+    gl.uniform1i(loc, unit);
+    return;
+  }
+
+  if (value instanceof Float32Array) {
+    if (value.length === 9) {
+      gl.uniformMatrix3fv(loc, false, value);
+    } else if (value.length === 16) {
+      gl.uniformMatrix4fv(loc, false, value);
+    } else {
+      const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
+      if (isDev) throw new TypeError(`weasel-gl setUniform: Float32Array must be length 9 (mat3) or 16 (mat4), got ${value.length}`);
+    }
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    switch (value.length) {
+      case 2: gl.uniform2fv(loc, value as [number, number]); break;
+      case 3: gl.uniform3fv(loc, value as [number, number, number]); break;
+      case 4: gl.uniform4fv(loc, value as [number, number, number, number]); break;
+      default: {
+        const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
+        if (isDev) throw new TypeError(`weasel-gl setUniform: array length ${value.length} not supported`);
+      }
+    }
+    return;
+  }
+
+  if (typeof value === 'number') {
+    gl.uniform1f(loc, value);
+    return;
+  }
+}
+
+function drawShader(ctx: DrawContext, cmd: ShaderDrawCommand): void {
+  const { gl, programRegistry, quadVbo, quadIbo, textureCache } = ctx;
+
+  const program = programRegistry.get(cmd.program.id);
+  if (!program) {
+    console.warn(
+      `weasel-gl drawShader: program "${cmd.program.id}" not compiled on this renderer. ` +
+      `Call renderer.registerProgram(handle) after the module-level registerProgram().`,
+    );
+    return;
+  }
+  if (!quadVbo || !quadIbo) {
+    console.warn('weasel-gl drawShader: quad geometry not initialized');
+    return;
+  }
+
+  gl.useProgram(program.handle);
+
+  const aPosLoc = program.attribute('a_position');
+  const aUvLoc  = program.attribute('a_uv');
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, quadVbo);
+  if (aPosLoc !== undefined) {
+    gl.enableVertexAttribArray(aPosLoc);
+    gl.vertexAttribPointer(aPosLoc, 2, gl.FLOAT, false, 16, 0);
+  }
+  if (aUvLoc !== undefined) {
+    gl.enableVertexAttribArray(aUvLoc);
+    gl.vertexAttribPointer(aUvLoc, 2, gl.FLOAT, false, 16, 8);
+  }
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, quadIbo);
+
+  const proj = mat3.screenToClip(ctx.widthCss, ctx.heightCss);
+  const uProj = program.uniform('u_proj');
+  if (uProj !== undefined) gl.uniformMatrix3fv(uProj, false, proj);
+
+  const uBounds = program.uniform('u_bounds');
+  if (uBounds !== undefined) {
+    gl.uniform4f(uBounds, cmd.bounds.x, cmd.bounds.y, cmd.bounds.w, cmd.bounds.h);
+  }
+
+  const uView = program.uniform('u_view');
+  if (uView !== undefined) gl.uniformMatrix3fv(uView, false, ctx.state.transform);
+
+  const nextTexUnit = { value: 1 };
+  for (const [name, value] of Object.entries(cmd.uniforms)) {
+    const loc = program.uniform(name);
+    if (loc === undefined) {
+      warnOnceUniform(cmd.program.id, name);
+      continue;
+    }
+    setUniform(gl, loc, value, textureCache, nextTexUnit);
+  }
+
+  gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+
+  if (aPosLoc !== undefined) gl.disableVertexAttribArray(aPosLoc);
+  if (aUvLoc  !== undefined) gl.disableVertexAttribArray(aUvLoc);
+  gl.bindBuffer(gl.ARRAY_BUFFER, null);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 }
 
 function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {

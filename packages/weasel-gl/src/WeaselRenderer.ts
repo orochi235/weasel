@@ -34,6 +34,19 @@ import { GroupState } from './GroupState';
 import type { DrawCommand } from './DrawCommand';
 import { dispatch, type DrawContext } from './draw';
 import { _markAllFontsNotUploaded } from './registerFont';
+import {
+  CUSTOM_VERT_SRC, CUSTOM_ATTRIBUTES, CUSTOM_KIT_UNIFORMS,
+  QUAD_VERTICES, QUAD_INDICES,
+} from './shaders/customPrelude';
+import { getProgramSource, type ShaderProgramHandle } from './registerProgram';
+
+function extractUniformNames(glsl: string): string[] {
+  const re = /\buniform\s+\S+\s+(\w+)\s*;/g;
+  const names: string[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(glsl)) !== null) names.push(m[1]);
+  return names;
+}
 
 export interface WeaselRendererOptions {
   gl?: WebGL2RenderingContext;
@@ -54,6 +67,9 @@ export class WeaselRenderer {
   private textureCache: GLTextureCache;
   private imageCache: GLImageCache;
   private gradRampCache: GradientRampCache;
+  private programRegistry = new Map<string, ShaderProgram>();
+  private quadVbo: WebGLBuffer | null = null;
+  private quadIbo: WebGLBuffer | null = null;
   private readonly groupState = new GroupState();
   private widthCss: number;
   private heightCss: number;
@@ -116,6 +132,49 @@ export class WeaselRenderer {
     this.textureCache = new GLTextureCache(this.gl);
     this.imageCache = new GLImageCache(this.gl);
     this.gradRampCache = new GradientRampCache(this.gl);
+    this.uploadQuadGeometry();
+  }
+
+  private uploadQuadGeometry(): void {
+    const gl = this.gl;
+    this.quadVbo = gl.createBuffer();
+    this.quadIbo = gl.createBuffer();
+    if (!this.quadVbo || !this.quadIbo) {
+      throw new Error('WeaselRenderer: failed to create quad geometry buffers');
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.quadVbo);
+    gl.bufferData(gl.ARRAY_BUFFER, QUAD_VERTICES, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.quadIbo);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, QUAD_INDICES, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+  }
+
+  /**
+   * Compile a consumer-registered shader program against this renderer's GL context.
+   *
+   * Call once per renderer after the module-level `registerProgram()`.
+   * Throws `ShaderCompileError` if compilation fails.
+   *
+   * In dev mode, calling again with the same handle replaces the compiled program.
+   *
+   * @experimental
+   */
+  registerProgram(handle: ShaderProgramHandle): void {
+    const src = getProgramSource(handle.id);
+    if (!src) {
+      throw new Error(
+        `WeaselRenderer.registerProgram: program "${handle.id}" not found in source registry. ` +
+        `Call the module-level registerProgram() first.`,
+      );
+    }
+    const vertSrc = src.vert === '' ? CUSTOM_VERT_SRC : src.vert;
+    const fragSrc = src.frag;
+    const program = new ShaderProgram(this.gl, vertSrc, fragSrc);
+    program.lookupUniforms([...CUSTOM_KIT_UNIFORMS, ...extractUniformNames(fragSrc)]);
+    program.lookupAttributes(CUSTOM_ATTRIBUTES);
+    this.programRegistry.set(handle.id, program);
   }
 
   private applyViewport(): void {
@@ -161,6 +220,21 @@ export class WeaselRenderer {
     this.imageCache = new GLImageCache(this.gl);
     this.gradRampCache = new GradientRampCache(this.gl);
     _markAllFontsNotUploaded();
+
+    this.uploadQuadGeometry();
+    for (const id of this.programRegistry.keys()) {
+      const src = getProgramSource(id);
+      if (!src) continue;
+      const vertSrc = src.vert === '' ? CUSTOM_VERT_SRC : src.vert;
+      try {
+        const program = new ShaderProgram(this.gl, vertSrc, src.frag);
+        program.lookupUniforms([...CUSTOM_KIT_UNIFORMS, ...extractUniformNames(src.frag)]);
+        program.lookupAttributes(CUSTOM_ATTRIBUTES);
+        this.programRegistry.set(id, program);
+      } catch (e) {
+        console.error(`weasel-gl: failed to recompile program "${id}" after context restore:`, e);
+      }
+    }
   }
 
   render(commands: DrawCommand[]): void {
@@ -178,6 +252,9 @@ export class WeaselRenderer {
       textureCache: this.textureCache,
       imageCache: this.imageCache,
       gradRampCache: this.gradRampCache,
+      programRegistry: this.programRegistry,
+      quadVbo: this.quadVbo,
+      quadIbo: this.quadIbo,
       state: this.groupState,
       widthCss: this.widthCss,
       heightCss: this.heightCss,
