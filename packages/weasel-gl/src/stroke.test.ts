@@ -31,3 +31,18 @@ describe('tessellateStroke (straight, butt, no joins)', () => {
     expect(meshDefault.indices.length).toBe(meshExplicit.indices.length);
   });
 });
+
+describe('tessellateStroke joins', () => {
+  it('inserts a bevel triangle between two segments at a corner', () => {
+    // Open polyline: (0,0) → (10,0) → (10,10). One corner.
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10]),
+      fillRule: 'nonzero',
+    };
+    const mesh = tessellateStroke(path, { paint: { color: '#000' }, width: 4, join: 'bevel' });
+    // 2 ribbon segments × 2 triangles + 1 bevel triangle = 5 triangles → 15 indices.
+    expect(mesh.indices.length).toBe(15);
+  });
+});
