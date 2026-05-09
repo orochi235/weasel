@@ -227,9 +227,13 @@ function splitForDash(pl: Polyline, dash: number[]): Polyline[] {
   };
 
   let prevX = pl.points[0], prevY = pl.points[1];
-  const segCount = pl.points.length / 2 - 1;
+  const ptCount = pl.points.length / 2;
+  // For a closed polyline, append one more "virtual" segment from the last
+  // point back to the first so the closing edge gets dashed too.
+  const segCount = pl.closed ? ptCount : ptCount - 1;
   for (let i = 0; i < segCount; i++) {
-    const cx = pl.points[(i + 1) * 2], cy = pl.points[(i + 1) * 2 + 1];
+    const nextIdx = (i + 1) % ptCount;
+    const cx = pl.points[nextIdx * 2], cy = pl.points[nextIdx * 2 + 1];
     let segDx = cx - prevX, segDy = cy - prevY;
     let segLen = Math.hypot(segDx, segDy);
 
