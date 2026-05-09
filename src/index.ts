@@ -9,7 +9,7 @@
  *     `screenToWorld`, `fitZoom`, `useCanvasSize`,
  *     `useZoom`, `useAutoCenter`, `zoomAt`,
  *     `wheelHandler`.
- *   - Layer composition: `RenderLayer`, `LayerRenderer`,
+ *   - Layer composition: `RenderLayer`,
  *     `createGridLayer`, `createCellHighlightLayer`, `createChildrenLayer`,
  *     `createSelectionOverlayLayer` and friends, `createTextLayer`,
  *     `createTilePattern`.
@@ -148,7 +148,6 @@ export type {
   GateLayerOptions,
 } from './features/focus';
 export * from './core/layers/render';
-export * from './core/layers/LayerRenderer';
 export { createGridLayer } from './features/grid/layer';
 export type { GridLayerOpts } from './features/grid/layer';
 export { createCellHighlightLayer } from './features/grid/cellHighlight';
