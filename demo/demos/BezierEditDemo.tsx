@@ -69,7 +69,16 @@ export function BezierEditDemo() {
   };
 
   const { tools, onDoubleClick } = useSelectWithAnchorEdit<PathObj, Pose>(adapter, {
-    pickEvery: (wx, wy) => (pointInPath(pathRef.current, wx, wy) ? [ID] : []),
+    // pointInPath only fills closed regions, so an S-curve has no body to
+    // hit. Approximate stroke-hit: AABB containment with an 8-px slop.
+    // Lets click + double-click work on the visible curve.
+    pickEvery: (wx, wy) => {
+      const b = pathPoseDescriptor.getBounds(pathRef.current);
+      const slop = 8;
+      const inside = wx >= b.x - slop && wx <= b.x + b.width + slop
+        && wy >= b.y - slop && wy <= b.y + b.height + slop;
+      return inside ? [ID] : [];
+    },
     boundsOf: (id) => (id === ID ? pathPoseDescriptor.getBounds(pathRef.current) : null),
     handleHitRadius: HANDLE / zoom,
     resize: { geometry: pathPoseDescriptor },
