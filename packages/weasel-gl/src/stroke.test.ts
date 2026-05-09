@@ -54,20 +54,21 @@ describe('tessellateStroke joins', () => {
       fillRule: 'nonzero',
     };
     const mesh = tessellateStroke(path, { paint: { color: '#000' }, width: 4, join: 'miter' });
-    // 2 segments × 2 triangles + 1 miter triangle = 5 triangles → 15 indices.
-    expect(mesh.indices.length).toBe(15);
+    // 2 segments × 2 triangles + 2 miter triangles (apex + inner bevel half) = 6 triangles → 18 indices.
+    expect(mesh.indices.length).toBe(18);
   });
 
-  it('falls back to bevel for very acute angles (miter limit 10, half-width 2 → max miter length 20)', () => {
-    // ~5° corner: (0, 0) → (100, 0) → (200, -3). Very acute.
+  it('falls back to bevel for very acute interior angles (miter limit 10, half-width 2 → max miter length 20)', () => {
+    // Near-U-turn corner — segments turn by ~177°, interior angle ~3°.
+    // Miter length = half / sin(interior/2) ≈ 79, > 20 → fallback to bevel.
     const path: PolygonPath = {
       kind: 'polygon',
       commands: new Uint8Array([PATH_M, PATH_L, PATH_L]),
-      coords: new Float32Array([0, 0, 100, 0, 200, -3]),
+      coords: new Float32Array([0, 0, 100, 0, 0, 5]),
       fillRule: 'nonzero',
     };
     const mesh = tessellateStroke(path, { paint: { color: '#000' }, width: 4, join: 'miter' });
-    // Same triangle count as bevel since fallback kicks in.
+    // 2 ribbon × 2 + 1 bevel-fallback triangle = 5 triangles → 15 indices.
     expect(mesh.indices.length).toBe(15);
   });
 

@@ -310,10 +310,23 @@ function emitJoin(
       emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx);
       return;
     }
+    // A miter join's outer face is a kite quadrilateral with vertices
+    // (R1, apex, R0, J) — covered by TWO triangles. The bevel inner half
+    // (R1, R0, J) fills the area between the joint corner and the diagonal
+    // hypotenuse R0-R1; the outer extension (R1, apex, R0) fills from the
+    // hypotenuse to the apex point. Without the bevel half, an "inverted
+    // triangle" gap opens at every miter corner.
     const apexIdx = verts.length / 2;
     verts.push(apex[0], apex[1]);
-    if (onPositive) idx.push(aOuterEnd, apexIdx, bOuterStart);
-    else            idx.push(aOuterEnd, bOuterStart, apexIdx);
+    const jIdx = verts.length / 2;
+    verts.push(a.bx, a.by);
+    if (onPositive) {
+      idx.push(aOuterEnd, apexIdx, bOuterStart);
+      idx.push(aOuterEnd, bOuterStart, jIdx);
+    } else {
+      idx.push(aOuterEnd, bOuterStart, apexIdx);
+      idx.push(aOuterEnd, jIdx, bOuterStart);
+    }
     return;
   }
 
@@ -345,9 +358,13 @@ function emitRoundJoin(
   // Outer-side sweep: for CCW turns (cross > 0, onPositive true) outer is on
   // the -n side and the arc sweeps from R1 (south of joint) clockwise to R0
   // (east of joint) — i.e., negative sweep. For CW turns, sweep is positive.
+  // Pick the SHORT arc that crosses the outer wedge. For onPositive=true
+  // (CW turn in screen coords with y-down), the outer wedge sits where the
+  // natural sweep is positive; for onPositive=false, where it is negative.
+  // If the natural sweep has the wrong sign, wrap by ±2π.
   let sweep = endAngle - startAngle;
-  if (onPositive && sweep > 0) sweep -= 2 * Math.PI;
-  else if (!onPositive && sweep < 0) sweep += 2 * Math.PI;
+  if (onPositive && sweep < 0) sweep += 2 * Math.PI;
+  else if (!onPositive && sweep > 0) sweep -= 2 * Math.PI;
 
   const steps = Math.max(1, Math.ceil(Math.abs(sweep) / ROUND_STEP_RAD));
   const stepAngle = sweep / steps;
