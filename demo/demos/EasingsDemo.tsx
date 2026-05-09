@@ -5,7 +5,7 @@ import {
   arrayAdapter,
   useAnimator,
 } from '@orochi235/weasel';
-import type { EasingName, RenderLayer } from '@orochi235/weasel';
+import { PATH_M, PATH_L, type EasingName, type RenderLayer } from '@orochi235/weasel';
 import type { DrawCommand } from '@orochi235/weasel-gl';
 import { useBackend } from '../BackendContext';
 
@@ -123,6 +123,63 @@ export function EasingsDemo() {
         cx.stroke();
         cx.globalAlpha = 1;
       }
+    },
+    drawGL: () => {
+      const cmds: DrawCommand[] = [];
+      for (let i = 0; i < ALL_EASINGS.length; i++) {
+        const name = ALL_EASINGS[i];
+        const col = i % COLS;
+        const row = Math.floor(i / COLS);
+        const y = TOP_PAD + row * ROW_HEIGHT + ROW_HEIGHT / 2;
+        // Label as text command (right-aligned: end x = TRACK_LEFT - 8).
+        // The kit's TextDrawCommand uses x as the left baseline; approximate
+        // right-alignment by offsetting backward by ~6.5 px per char.
+        const charW = 6.6;
+        cmds.push({
+          kind: 'text',
+          x: TRACK_LEFT - 8 - name.length * charW,
+          y,
+          text: name,
+          style: { fontFamily: 'sans-serif', fontSize: 11, fill: { color: '#a89878' } },
+        });
+        // Track line as 2-point polygon path stroke.
+        cmds.push({
+          kind: 'path',
+          path: {
+            kind: 'polygon',
+            commands: new Uint8Array([PATH_M, PATH_L]),
+            coords: new Float32Array([TRACK_LEFT, y, TRACK_RIGHT, y]),
+            fillRule: 'nonzero',
+          },
+          stroke: { paint: { color: '#3a2e22' }, width: 1 },
+        });
+        // Mini curve plot.
+        const plotY = y + 14;
+        const plotH = 8;
+        const fn = EASINGS[name];
+        const samples = 32;
+        const commands = new Uint8Array(samples + 1);
+        const coords = new Float32Array((samples + 1) * 2);
+        for (let s = 0; s <= samples; s++) {
+          const t = s / samples;
+          const px = TRACK_LEFT + t * TRACK_WIDTH;
+          const v = Math.max(0, Math.min(1, fn(t)));
+          const py = plotY + (1 - v) * plotH;
+          commands[s] = s === 0 ? PATH_M : PATH_L;
+          coords[s * 2] = px;
+          coords[s * 2 + 1] = py;
+        }
+        cmds.push({
+          kind: 'group',
+          alpha: 0.5,
+          children: [{
+            kind: 'path',
+            path: { kind: 'polygon', commands, coords, fillRule: 'nonzero' },
+            stroke: { paint: { color: COLUMN_COLORS[col] }, width: 1 },
+          }],
+        });
+      }
+      return cmds;
     },
   };
 
