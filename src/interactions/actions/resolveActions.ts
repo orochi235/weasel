@@ -16,12 +16,12 @@ import {
   defaultReorderActions,
   defaultSelectAllAction,
   type NudgeDeps,
-} from '../../interactions/actions/defaults';
+} from './defaults';
 import type {
   Action,
   ActionEntry,
   ActionsProp,
-} from '../../interactions/actions/registry';
+} from './registry';
 import type { Op } from '../../core/ops/types';
 
 export interface StandardActionsDeps<TPose> {

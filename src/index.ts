@@ -89,6 +89,13 @@ export {
 export type {
   SelectAllDeps, EscapeDeps, DuplicateDeps, NudgeDeps, ReorderDeps,
 } from './interactions/actions/defaults';
+export { useStandardActions } from './interactions/actions/useStandardActions';
+export type {
+  UseStandardActionsOptions,
+  StandardActionsDeps,
+  StandardActionDefaults,
+} from './interactions/actions/useStandardActions';
+export { resolveActions } from './interactions/actions/resolveActions';
 export * from './features/viewport/wheelHandler';
 export { clientToCanvas } from './features/viewport/clientToCanvas';
 export { useVelocityTracker } from './features/viewport/useVelocityTracker';

@@ -47,7 +47,7 @@ import { ActionsProviderIfRoot } from './SceneCanvas/ActionsProviderIfRoot';
 import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
 import { useViewportTools } from './SceneCanvas/useViewportTools';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
-import { resolveActions, type StandardActionsDeps } from './SceneCanvas/resolveActions';
+import { resolveActions, type StandardActionsDeps } from '../interactions/actions/resolveActions';
 
 export type SceneCanvasProps<TData, TLayer extends string, TPose> =
   Omit<
