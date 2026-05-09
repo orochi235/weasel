@@ -56,8 +56,39 @@ function drawPath(ctx: DrawContext, cmd: PathDrawCommand): void {
   gl.bindVertexArray(null);
 }
 
-function drawPathStencil(_ctx: DrawContext, _cmd: PathDrawCommand, _handle: GLMeshHandle): void {
-  // Implemented in next task.
+function drawPathStencil(ctx: DrawContext, cmd: PathDrawCommand, handle: GLMeshHandle): void {
+  if (!cmd.fill) return;
+  const gl = ctx.gl;
+
+  gl.useProgram(ctx.pathFill.handle);
+  gl.bindVertexArray(handle.vao);
+
+  const proj = mat3.screenToClip(ctx.widthCss, ctx.heightCss);
+  gl.uniformMatrix3fv(ctx.pathFill.uniform('u_proj')!, false, proj);
+  gl.uniformMatrix3fv(ctx.pathFill.uniform('u_model')!, false, ctx.state.transform);
+
+  // Pass 1: build stencil. Disable color writes; INVERT stencil per fragment.
+  gl.enable(gl.STENCIL_TEST);
+  gl.colorMask(false, false, false, false);
+  gl.stencilMask(0xff);
+  gl.stencilFunc(gl.ALWAYS, 0, 0xff);
+  gl.stencilOp(gl.KEEP, gl.KEEP, gl.INVERT);
+  gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
+
+  // Pass 2: paint. Enable color writes; pass where stencil != 0.
+  gl.colorMask(true, true, true, true);
+  gl.stencilFunc(gl.NOTEQUAL, 0, 0xff);
+  gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
+  const [r, g, b, a] = parseColor(cmd.fill.color);
+  const opacity = cmd.fill.opacity ?? 1;
+  gl.uniform4f(ctx.pathFill.uniform('u_color')!, r, g, b, a * opacity);
+  gl.uniform1f(ctx.pathFill.uniform('u_alpha')!, ctx.state.alpha);
+  gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
+
+  // Restore: clear stencil for next path, disable stencil test.
+  gl.clear(gl.STENCIL_BUFFER_BIT);
+  gl.disable(gl.STENCIL_TEST);
+  gl.bindVertexArray(null);
 }
 
 // Re-export the projection helper so WeaselRenderer.render can compute it.

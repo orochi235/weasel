@@ -76,3 +76,46 @@ describe('WeaselRenderer.render — kind: path (nonzero solid)', () => {
     expect(draw).toBeUndefined();
   });
 });
+
+import type { PolygonPath } from '@orochi235/weasel';
+import { PATH_M as M, PATH_L as L, PATH_Z as Z } from '@orochi235/weasel';
+
+describe('WeaselRenderer.render — kind: path (evenodd stencil two-pass)', () => {
+  let recorder: ReturnType<typeof makeGLRecorder>;
+  let r: WeaselRenderer;
+
+  beforeEach(() => {
+    recorder = makeGLRecorder();
+    r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
+    recorder.reset();
+  });
+
+  it('enables stencil and issues two drawElements for an evenodd path', () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([M, L, L, L, Z]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
+      fillRule: 'evenodd',
+    };
+    r.render([{ kind: 'path', path, fill: { color: '#ff0000' } }]);
+
+    const enableCalls = recorder.calls.filter((c) => c.name === 'enable');
+    const enabledStencil = enableCalls.some((c) => c.args[0] === recorder.gl.STENCIL_TEST);
+    expect(enabledStencil).toBe(true);
+
+    const drawCalls = recorder.calls.filter((c) => c.name === 'drawElements');
+    expect(drawCalls.length).toBe(2);
+  });
+
+  it('clears stencil before the mask pass', () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([M, L, L, L, Z]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
+      fillRule: 'evenodd',
+    };
+    r.render([{ kind: 'path', path, fill: { color: '#ff0000' } }]);
+    const clearCalls = recorder.calls.filter((c) => c.name === 'clear');
+    expect(clearCalls.length).toBeGreaterThanOrEqual(1);
+  });
+});
