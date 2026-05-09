@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Highlight, themes } from 'prism-react-renderer';
 import { CATEGORIES, DEMOS, DEMOS_BY_ID, type DemoEntry } from './registry';
+import logoUrl from '../weasel.png';
 
 type CodeTab = 'snippet' | 'full';
 
@@ -31,6 +32,7 @@ export function CanvasKitDemo() {
     <div className="ckd-app">
       <aside className="ckd-sidebar">
         <header className="ckd-sidebar-header">
+          <img src={logoUrl} alt="weasel logo" className="ckd-sidebar-logo" />
           <h1>weasel</h1>
           <p>Domain-agnostic 2D scene-graph hooks for React + canvas.</p>
           <p><a href="./api/">API reference →</a></p>
