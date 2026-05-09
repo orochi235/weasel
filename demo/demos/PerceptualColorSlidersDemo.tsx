@@ -33,7 +33,7 @@ export function PerceptualColorSlidersDemo() {
   const [indices, setIndices] = useState<number[]>([25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: 16, maxWidth: 720 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: 16 }}>
       <section>
         <h3 style={{ margin: '0 0 8px' }}>Hue (single thumb)</h3>
         <RangePicker

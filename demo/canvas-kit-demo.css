@@ -225,8 +225,8 @@ a:hover { text-decoration: underline; }
   white-space: pre;
 }
 
-/* ---------- Command palette: theme overrides for weasel-ui's --wui-* tokens.
-   Component lives in @orochi235/weasel-ui; we only re-skin its CSS variables
+/* ---------- Theme overrides for weasel-ui's --wui-* tokens.
+   Components live in @orochi235/weasel-ui; we re-skin their CSS variables
    here to match the dark demo chrome. */
 :root {
   --wui-text: var(--ckd-text);
@@ -236,6 +236,10 @@ a:hover { text-decoration: underline; }
   --wui-input-bg: var(--ckd-surface-2);
   --wui-accent: var(--ckd-accent-dim);
   --wui-danger: #c64a3a;
+  --wui-track-bg: var(--ckd-surface-2);
+  --wui-track-border: var(--ckd-border-2);
+  --wui-thumb-fill: var(--ckd-muted);
+  --wui-thumb-border: var(--ckd-border);
 }
 
 /* ---------- Responsive ---------- */
