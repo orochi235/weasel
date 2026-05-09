@@ -79,6 +79,58 @@ describe('tessellate (PolygonPath, single-contour, no curves)', () => {
   });
 });
 
+import { PATH_Q as PQ, PATH_C as PC, DEFAULT_FLATTEN_TOLERANCE } from '@orochi235/weasel';
+
+describe('tessellate (PolygonPath, bezier curves)', () => {
+  it('flattens a quadratic and triangulates the resulting polyline', () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PQ, PATH_Z]),
+      coords: new Float32Array([0, 0, 5, 10, 10, 0]),
+      fillRule: 'nonzero',
+    };
+    const mesh = tessellate(path);
+    expect(mesh.vertices.length).toBeGreaterThanOrEqual(6);
+    expect(mesh.indices.length % 3).toBe(0);
+  });
+
+  it('flattens a cubic and triangulates', () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PC, PATH_L, PATH_Z]),
+      coords: new Float32Array([0, 0, 0, 10, 10, 10, 10, 0, 5, -5]),
+      fillRule: 'nonzero',
+    };
+    const mesh = tessellate(path);
+    expect(mesh.vertices.length).toBeGreaterThan(8);
+    expect(mesh.indices.length % 3).toBe(0);
+  });
+
+  it('emits more vertices when given a tighter tolerance (more subdivision)', () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PQ, PATH_Z]),
+      coords: new Float32Array([0, 0, 50, 100, 100, 0]),
+      fillRule: 'nonzero',
+    };
+    const looseMesh = tessellate(path, { flattenTolerance: 5 });
+    const tightMesh = tessellate(path, { flattenTolerance: 0.05 });
+    expect(tightMesh.vertices.length).toBeGreaterThan(looseMesh.vertices.length);
+  });
+
+  it('uses DEFAULT_FLATTEN_TOLERANCE when no option passed', () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PQ, PATH_Z]),
+      coords: new Float32Array([0, 0, 5, 10, 10, 0]),
+      fillRule: 'nonzero',
+    };
+    const a = tessellate(path);
+    const b = tessellate(path, { flattenTolerance: DEFAULT_FLATTEN_TOLERANCE });
+    expect(a.vertices.length).toBe(b.vertices.length);
+  });
+});
+
 describe('tessellate (PolygonPath, multi-contour, nonzero)', () => {
   it('triangulates a 10×10 outer square with a 4×4 inner hole (counter-wound)', () => {
     // Outer CCW: (0,0) (10,0) (10,10) (0,10)
