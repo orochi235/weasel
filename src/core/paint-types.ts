@@ -15,16 +15,26 @@
  * path tessellation and the selection overlay.
  */
 
+import type { TextureHandle } from '../renderer/textures/registerTexture';
+
 /**
  * Color/texture strategy for fills (and, via `Stroke.paint`, strokes).
  *
  * `fill` is optional and defaults to `'solid'` — `{ color: '#abc' }` is
  * equivalent to `{ fill: 'solid', color: '#abc' }`. Pattern paints must set
  * `fill: 'pattern'` explicitly.
+ *
+ * The `'pattern'` variant's payload is a `TextureHandle` (registered via
+ * `registerTexture()`). The previous `CanvasPattern`-based implementation
+ * (and its `createTilePattern` factory + `patterns-builtin` catalog) was
+ * deleted in Step 10 — see TODO.md "GL pattern factories" for the planned
+ * replacement. Until that lands no kit-level factory produces this variant;
+ * consumers can construct it directly from a `TextureHandle` if they wire
+ * the GL plumbing themselves.
  */
 export type Paint =
   | { fill?: 'solid'; color: string; opacity?: number }
-  | { fill: 'pattern'; pattern: CanvasPattern; opacity?: number }
+  | { fill: 'pattern'; pattern: TextureHandle; opacity?: number }
   | { fill: 'linear-gradient'; from: { x: number; y: number }; to: { x: number; y: number }; stops: GradStop[]; opacity?: number }
   | { fill: 'radial-gradient'; center: { x: number; y: number }; radius: number; stops: GradStop[]; opacity?: number }
   | { fill: 'conic-gradient'; center: { x: number; y: number }; angle: number; stops: GradStop[]; opacity?: number };

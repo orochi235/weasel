@@ -51,10 +51,6 @@
       "import": "./dist/clone.js",
       "types": "./dist/clone.d.ts"
     },
-    "./patterns-builtin": {
-      "import": "./dist/patterns-builtin.js",
-      "types": "./dist/patterns-builtin.d.ts"
-    },
     "./package.json": "./package.json"
   },
   "scripts": {

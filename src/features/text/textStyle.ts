@@ -6,7 +6,7 @@
  *
  * `fill` follows the kit-wide `Paint` model — solid color or pattern. The
  * contenteditable edit overlay flattens non-solid fills to `'#000'` for CSS
- * since the browser can't paint with a `CanvasPattern`.
+ * since the browser can't paint with a texture handle.
  */
 
 import type { Paint } from '../../core/paint-types';

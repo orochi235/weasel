@@ -41,7 +41,7 @@ describe('Paint gradient types (compile-time + runtime shape)', () => {
   it('pattern Paint discriminates on fill', () => {
     const p: Paint = {
       fill: 'pattern',
-      pattern: {} as CanvasPattern,
+      pattern: { id: 'test-tex' },
     };
     expect(p.fill).toBe('pattern');
   });

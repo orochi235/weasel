@@ -171,6 +171,15 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
   - **Per-axis units** — defer until a concrete use case appears (rare; e.g. timeline charts where x is time, y is value).
 ## Tier 1.5 — small additive hooks
 
+- **GL pattern factories.** `createTilePattern` and the `patterns-builtin`
+  catalog (hatch, crosshatch, dots, chunks) were CanvasPattern-based and
+  deleted in Step 10. Replacement story: render a tile to an
+  `OffscreenCanvas`, hand it to `registerTexture()`, use the resulting
+  `TextureHandle` as `Paint.fill = 'pattern'`. Wrap that pattern in a
+  `createTilePattern(draw, opts)` factory returning a `TextureHandle` so
+  the consumer surface stays one call. Until then, demos that want
+  patterns substitute solid fills.
+
 - **Typed scene-object references (medium-high priority).** Today selections, action-hook adapter callbacks, and the new `SelectionContext` all traffic in plain `string[]` ids. There's no first-class value type for "this is a scene object" — the `NodeId` brand exists in `src/core/scene/types.ts:4` but doesn't propagate out through `SelectionApi`, `getSelection`, or any of the action surfaces. Decide the right shape for a typed reference (`{ id: NodeId; kind: string }`? branded `NodeId[]` with a separate kind-resolver? `Selection` value object with helpers?) and migrate the public surface. The `SelectionContext.kinds` parallel-array shipped 2026-05-09 is a temporary half-step; consolidate it into whatever this design produces. Driver: clearer types make the palette and other selection-aware UI render correct copy without consumer wiring (e.g. `<CommandPalette>` could derive "1 rectangle selected" / "3 paths selected" / "5 mixed objects selected" from typed refs alone). Scope to consider: how groups vs leaves surface, whether kind taxonomy is open (consumer-defined strings) or closed (kit-provided enum + extension), and how the existing `arrayAdapter` / scene paths each provide kind info. Affected files at minimum: `src/features/selection/useSelection.ts`, `src/features/selection/SelectionContext.tsx`, every `*Adapter` interface that takes `getSelection`, every Action `enabled`/`run` that reads selection, and `packages/weasel-ui/src/CommandPalette.tsx`.
 - **Selection-driven action hooks**: shipped against the existing virtual-group adapter and `History` (`useEscape`, `useSelectAll`, `useDuplicate`, `useNudge`, `useDelete`, `useReorder`, `useClipboard`, `useUndoRedo`). Nested-group variants (`useNestedGroup` / `useNestedUngroup`) shipped alongside the original virtual-group `useGroup` / `useUngroup`.
 - **Grid overlay snap-target hover.** *Done.* `useGridCellHover` ships the pointer-tracking glue; pair its `getCell` with `createCellHighlightLayer` and the `spacing` your `gridSnapStrategy` already uses.
