@@ -70,4 +70,17 @@ describe('tessellateStroke joins', () => {
     // Same triangle count as bevel since fallback kicks in.
     expect(mesh.indices.length).toBe(15);
   });
+
+  it('emits at least 7 fan triangles for a round join on a 90° corner', () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10]),
+      fillRule: 'nonzero',
+    };
+    const mesh = tessellateStroke(path, { paint: { color: '#000' }, width: 4, join: 'round' });
+    // 2 ribbon × 2 triangles = 4. Round at ~10°/step over 90° ≈ 9 fan triangles.
+    // Allow ≥ 7 to permit different angular-step choices.
+    expect(mesh.indices.length / 3).toBeGreaterThanOrEqual(4 + 7);
+  });
 });

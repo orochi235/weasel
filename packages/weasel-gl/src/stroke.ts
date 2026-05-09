@@ -158,7 +158,54 @@ function emitJoin(
     return;
   }
 
-  // round join: implemented in next task.
+  if (join === 'round') {
+    emitRoundJoin(a, aOuterEnd, bOuterStart, onPositive, verts, idx);
+    return;
+  }
+}
+
+const ROUND_STEP_RAD = (10 * Math.PI) / 180;   // ~10° per fan triangle
+
+function emitRoundJoin(
+  a: Seg, aOuterEnd: number, bOuterStart: number, onPositive: boolean,
+  verts: number[], idx: number[],
+): void {
+  // Pivot = joint center; emit fresh vertex.
+  const cx = a.bx, cy = a.by;
+  const pivotIdx = verts.length / 2;
+  verts.push(cx, cy);
+
+  const startX = verts[aOuterEnd * 2] - cx;
+  const startY = verts[aOuterEnd * 2 + 1] - cy;
+  const endX = verts[bOuterStart * 2] - cx;
+  const endY = verts[bOuterStart * 2 + 1] - cy;
+  const r = Math.hypot(startX, startY);
+
+  const startAngle = Math.atan2(startY, startX);
+  const endAngle = Math.atan2(endY, endX);
+  // Outer-side sweep: for CCW turns (cross > 0, onPositive true) outer is on
+  // the -n side and the arc sweeps from R1 (south of joint) clockwise to R0
+  // (east of joint) — i.e., negative sweep. For CW turns, sweep is positive.
+  let sweep = endAngle - startAngle;
+  if (onPositive && sweep > 0) sweep -= 2 * Math.PI;
+  else if (!onPositive && sweep < 0) sweep += 2 * Math.PI;
+
+  const steps = Math.max(1, Math.ceil(Math.abs(sweep) / ROUND_STEP_RAD));
+  const stepAngle = sweep / steps;
+
+  let prevIdx = aOuterEnd;
+  for (let i = 1; i < steps; i++) {
+    const ang = startAngle + i * stepAngle;
+    const fx = cx + Math.cos(ang) * r;
+    const fy = cy + Math.sin(ang) * r;
+    const newIdx = verts.length / 2;
+    verts.push(fx, fy);
+    if (onPositive) idx.push(prevIdx, pivotIdx, newIdx);
+    else            idx.push(prevIdx, newIdx, pivotIdx);
+    prevIdx = newIdx;
+  }
+  if (onPositive) idx.push(prevIdx, pivotIdx, bOuterStart);
+  else            idx.push(prevIdx, bOuterStart, pivotIdx);
 }
 
 function emitBevel(
