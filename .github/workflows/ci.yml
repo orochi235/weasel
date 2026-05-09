@@ -21,8 +21,18 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
-      # Bundle-size visibility for the WebGL transition. Non-failing for now;
-      # hard delta-vs-main gate lands alongside the visual regression rig in
-      # step 9 (per docs/superpowers/specs/2026-05-08-webgl-transition-plan-design.md).
-      - name: Print weasel-gl bundle size
-        run: npm run bundlesize:weasel-gl
+      # Bundle-size visibility for the WebGL transition. Hard delta-vs-baseline
+      # gate landed in step 9 (per docs/superpowers/specs/2026-05-08-webgl-transition-plan-design.md).
+      # Update packages/weasel-gl/.bundle-size-baseline alongside any large
+      # intentional bundle-size change.
+      - name: Assert weasel-gl bundle size delta
+        run: |
+          CURRENT=$(npm run bundlesize:weasel-gl --silent 2>&1 | grep -oE '[0-9]+ bytes' | grep -oE '[0-9]+')
+          BASELINE=$(cat packages/weasel-gl/.bundle-size-baseline 2>/dev/null || echo 0)
+          DELTA=$((CURRENT - BASELINE))
+          echo "Bundle size: ${CURRENT} bytes (baseline: ${BASELINE}, delta: ${DELTA})"
+          if [ "$DELTA" -gt 51200 ]; then
+            echo "ERROR: bundle grew by ${DELTA} bytes (> 50KB limit)."
+            echo "Update packages/weasel-gl/.bundle-size-baseline if this is intentional."
+            exit 1
+          fi
