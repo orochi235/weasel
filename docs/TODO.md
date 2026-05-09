@@ -12,7 +12,7 @@ the dated specs/plans under `specs/` and `plans/`.
 Spec: `docs/superpowers/specs/2026-05-08-webgl-transition-plan-design.md`. Architecture source: `docs/specs/2026-05-03-webgl-backend-design.md`. Transition is sequenced over 10 steps; per-step plans land on demand under `docs/superpowers/plans/`.
 
 - [x] Step 1 — Solid-fill paths shipped 2026-05-08 (`docs/superpowers/plans/2026-05-08-webgl-step-1-done.md`)
-- [ ] Step 2 — Strokes (plan TBW)
+- [x] Step 2 — Strokes shipped 2026-05-09 (`docs/superpowers/plans/2026-05-09-webgl-step-2-done.md`)
 - [ ] Step 3 — Text (MSDF) (plan TBW)
 - [ ] Step 4 — Image / pattern / gradient (plan TBW)
 - [ ] Step 5 — Per-vertex colors + color matrix (plan TBW)

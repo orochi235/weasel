@@ -89,6 +89,27 @@ Step 1 had 28 plan tasks. Dispatching a subagent for each one — including pure
 
 ---
 
+## 8. Mock GL recorder doesn't catch geometry coverage bugs
+
+**Status:** confirmed in step 2.
+**Where it bites:** any feature that emits triangles whose *shape* matters for visual correctness — joins, fans, masks, geometry-based effects.
+
+The recorder catches "the right `drawElements` count was issued" and "the right uniforms were set." It does NOT catch:
+- Triangles whose vertices are in the wrong positions
+- Triangles with wrong winding order (visible only with face-culling enabled, but still wrong semantically)
+- Missing triangles (e.g. emitting one when two were needed to fill a quadrilateral)
+- Triangles drawn but covering the wrong area (e.g. inverted sweep direction on a fan)
+
+Step 2 caught two such bugs in the planned miter and round join code — both passed all unit tests but failed visually:
+- Miter emitted only the outer-extension triangle, missing the inner bevel half → inverted-triangle gap at every corner.
+- Round-join arc swept the long 270° way instead of the short 90° outer-wedge arc.
+
+**Required:** any task whose correctness depends on the *shape* (not just the count) of emitted geometry must be verified visually via Playwright smoke. Unit tests should additionally check **vertex positions** for at least one case (e.g. `expect(Array.from(mesh.vertices)).toEqual([...])` on a known-coordinate input), not just lengths.
+
+**Plan-time treatment:** plan pseudocode for geometry tasks is a starting sketch, not a verbatim spec. The implementer derives the math from first principles, then cross-checks against the plan. Bugs in plan-pseudocode that pass naive unit tests are routine.
+
+---
+
 ## How to update this doc
 
 Each per-step done note adds new lessons. At the end of each step, the controller folds applicable new lessons into the relevant section above and adds a new section if the lesson doesn't fit existing categories. Update the **Status** date and **Where it bites** line to keep entries scannable.
