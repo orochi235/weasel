@@ -118,25 +118,20 @@ function drawAnchorDot(
 
 /** N-segment polygon approximation of a circle. N=24 → ≤0.5px deviation at r≤8. */
 function approximateCircle(cx: number, cy: number, r: number, segments = 24): PolygonPath {
-  const cmds = new Uint8Array(segments + 2);
-  const coords = new Float32Array((segments + 1) * 2);
+  // Commands: M + (segments-1) L + Z. Coords: (segments) × 2 — one pair
+  // each for M and the (segments-1) lineTos. PATH_Z consumes no coords.
+  const cmds = new Uint8Array(segments + 1);
+  const coords = new Float32Array(segments * 2);
   cmds[0] = PATH_M;
-  let off = 0;
-  coords[off++] = cx + r;
-  coords[off++] = cy;
+  coords[0] = cx + r;
+  coords[1] = cy;
   for (let i = 1; i < segments; i++) {
     cmds[i] = PATH_L;
     const theta = (i / segments) * Math.PI * 2;
-    coords[off++] = cx + r * Math.cos(theta);
-    coords[off++] = cy + r * Math.sin(theta);
+    coords[i * 2] = cx + r * Math.cos(theta);
+    coords[i * 2 + 1] = cy + r * Math.sin(theta);
   }
-  cmds[segments] = PATH_L;
-  // Close back to start (handled by PATH_Z; the last lineTo could be the
-  // closing segment but PATH_Z is cleaner).
-  cmds[segments + 1] = PATH_Z;
-  // The trailing lineTo at index `segments` consumed two coords slots;
-  // we wrote `segments` lineTos plus one moveTo = (segments+1) coord pairs,
-  // but the array already sized for that. Trim if oversized.
+  cmds[segments] = PATH_Z;
   return {
     kind: 'polygon',
     commands: cmds,

@@ -3,7 +3,7 @@ import type { Dims, RenderLayer } from '../core/layers/render';
 import type { View } from '../features/viewport/view';
 import { viewToTransform } from '../features/viewport/view';
 import { worldToScreen } from '../features/viewport/viewTransform';
-import { PATH_L, PATH_M, type PolygonPath } from '../features/paths/types';
+import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from '../features/paths/types';
 import type {
   DebugConfig,
   DebugSink,
@@ -68,6 +68,8 @@ export function createDebugOverlayLayer({
 // --- GL emitters (screen-space) ---
 
 function approxCircleScreen(cx: number, cy: number, r: number, segments = 24): PolygonPath {
+  // Commands: M + (segments-1) L + Z. Coords: (segments) × 2 — pairs for
+  // the moveTo and the (segments-1) lineTos. PATH_Z consumes no coords.
   const cmds = new Uint8Array(segments + 1);
   const coords = new Float32Array(segments * 2);
   cmds[0] = PATH_M;
@@ -79,7 +81,7 @@ function approxCircleScreen(cx: number, cy: number, r: number, segments = 24): P
     coords[i * 2] = cx + r * Math.cos(theta);
     coords[i * 2 + 1] = cy + r * Math.sin(theta);
   }
-  cmds[segments] = PATH_L;
+  cmds[segments] = PATH_Z;
   return { kind: 'polygon', commands: cmds, coords, fillRule: 'nonzero' };
 }
 
