@@ -64,11 +64,6 @@ export { clampView } from './features/viewport/clampView';
 export type { ClampBounds, CanvasSize } from './features/viewport/clampView';
 export * from './features/viewport/useZoom';
 export * from './features/viewport/useAutoCenter';
-export { useGridCellHover } from './features/grid/useGridCellHover';
-export type {
-  UseGridCellHoverOptions,
-  UseGridCellHoverReturn,
-} from './features/grid/useGridCellHover';
 export { useKeybinding, isEditableTarget } from './interactions/actions/useKeybinding';
 export type { KeyBinding } from './interactions/actions/useKeybinding';
 
@@ -147,10 +142,6 @@ export type {
   GateLayerOptions,
 } from './features/focus';
 export * from './core/layers/render';
-export { createGridLayer } from './features/grid/layer';
-export type { GridLayerOpts } from './features/grid/layer';
-export { createCellHighlightLayer } from './features/grid/cellHighlight';
-export type { CellHighlightLayerOpts } from './features/grid/cellHighlight';
 export { createChildrenLayer } from './features/groups/children';
 export type { CreateChildrenLayerOpts } from './features/groups/children';
 export {
