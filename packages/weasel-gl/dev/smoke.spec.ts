@@ -23,16 +23,19 @@ test('step 1 smoke — red and green rects render', async ({ page }) => {
   expect(redPixel[1]).toBeLessThan(40);                 // green low
   expect(redPixel[2]).toBeLessThan(40);                 // blue low
 
-  // Sample inside the green rect at (200..300, 50..150) → center (250, 100).
+  // Sample inside the green rect ONLY (not overlapping the yellow rect).
+  // Green at 50% group alpha covers (200..300, 50..150). Yellow opaque covers
+  // (250..350, 100..200). Sample at (220, 100): green-only.
   const greenPixel = await page.evaluate(() => {
     const c = document.querySelector('canvas') as HTMLCanvasElement;
     const gl = c.getContext('webgl2')!;
     const px = new Uint8Array(4);
     const dpr = window.devicePixelRatio || 1;
-    gl.readPixels(250 * dpr, c.height - 100 * dpr, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    gl.readPixels(220 * dpr, c.height - 100 * dpr, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
     return Array.from(px);
   });
-  // Green at 50% alpha over a transparent (clear-color black) background.
+  // Green at 50% alpha over the cleared (transparent) framebuffer →
+  // premultiplied (0, 127, 0, 127) in bytes.
   expect(greenPixel[1]).toBeGreaterThan(60);
   expect(greenPixel[0]).toBeLessThan(40);
 });
