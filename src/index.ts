@@ -167,10 +167,12 @@ export {
   applyPaint,
   applyStroke,
   renderFilledRegion,
+  alignedStrokeRect,
 } from './core/paint';
 export type {
   Paint,
   Stroke,
+  StrokeAlign,
   Region,
   RenderFilledRegionOptions,
 } from './core/paint';
