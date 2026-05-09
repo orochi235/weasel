@@ -193,6 +193,67 @@ describe('SceneCanvas actions integration', () => {
     unmount();
   });
 
+  it('partial override with explicit id mismatch ignores the id field, applies override to the slot', () => {
+    const scene = makeScene();
+    const customRun = vi.fn();
+    let captured: Action | undefined;
+    function Capture() {
+      const reg = useActionsRegistry();
+      useEffect(() => { captured = reg?.list().find(a => a.id === 'duplicate'); });
+      return null;
+    }
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    render(
+      <SceneCanvas scene={scene} layers={{}} width={64} height={64}
+        actionDefaults={{ cloneObject: (id) => ({ id: id + "'" }) }}
+        actions={{ duplicate: { id: 'wrong', run: customRun, label: 'Replicate' } }}>
+        <Capture />
+      </SceneCanvas>,
+    );
+    expect(captured).toBeDefined();
+    expect(captured!.id).toBe('duplicate'); // id field ignored
+    expect(captured!.label).toBe('Replicate'); // label override applied
+    warnSpy.mockRestore();
+  });
+
+  it('label-only override keeps run + binding from default', () => {
+    const scene = makeScene();
+    let captured: Action | undefined;
+    function Capture() {
+      const reg = useActionsRegistry();
+      useEffect(() => { captured = reg?.list().find(a => a.id === 'duplicate'); });
+      return null;
+    }
+    render(
+      <SceneCanvas scene={scene} layers={{}} width={64} height={64}
+        actionDefaults={{ cloneObject: (id) => ({ id: id + "'" }) }}
+        actions={{ duplicate: { label: 'Clone' } }}>
+        <Capture />
+      </SceneCanvas>,
+    );
+    expect(captured!.label).toBe('Clone');
+    expect(captured!.defaultBinding).toEqual({ key: 'd', mod: true });
+  });
+
+  it('binding-only override keeps run + label', () => {
+    const scene = makeScene();
+    let captured: Action | undefined;
+    function Capture() {
+      const reg = useActionsRegistry();
+      useEffect(() => { captured = reg?.list().find(a => a.id === 'duplicate'); });
+      return null;
+    }
+    render(
+      <SceneCanvas scene={scene} layers={{}} width={64} height={64}
+        actionDefaults={{ cloneObject: (id) => ({ id: id + "'" }) }}
+        actions={{ duplicate: { defaultBinding: { key: 'D', mod: true, shift: true } } }}>
+        <Capture />
+      </SceneCanvas>,
+    );
+    expect(captured!.label).toBe('Duplicate');
+    expect(captured!.defaultBinding).toEqual({ key: 'D', mod: true, shift: true });
+  });
+
   it('re-mount re-registers defaults', () => {
     const scene = makeScene();
     let seen: string[] = [];

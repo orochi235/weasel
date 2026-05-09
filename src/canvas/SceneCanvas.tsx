@@ -629,12 +629,22 @@ function applyEntry(
   }
   const isFull = (e: Partial<Action>): e is Action =>
     typeof e.id === 'string' && typeof e.label === 'string' && typeof e.run === 'function';
-  if (isFull(entry)) {
+  // Full descriptor for a *new* slot id (entry.id matches slot key, or no
+  // default exists for this slot): register as-is.
+  if (isFull(entry) && (!(id in defaults) || entry.id === id)) {
     defaults[id] = entry;
     return;
   }
   if (id in defaults) {
-    // Drop the partial's id field — id is fixed by the slot key.
+    // Slot key wins over entry.id. Drop entry.id; merge the rest onto the
+    // default. Warn once when the consumer passed an explicit-but-mismatched id.
+    if (entry.id !== undefined && entry.id !== id && !warnedMissingDefault.has(`mismatch:${id}`)) {
+      warnedMissingDefault.add(`mismatch:${id}`);
+      console.warn(
+        `weasel <SceneCanvas>: actions["${id}"].id="${entry.id}" mismatches the slot key. ` +
+        `Ignoring the id field; the action remains at id="${id}".`,
+      );
+    }
     const { id: _drop, ...rest } = entry;
     void _drop;
     defaults[id] = { ...defaults[id], ...rest };
