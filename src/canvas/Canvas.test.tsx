@@ -441,6 +441,7 @@ describe('<Canvas>', () => {
 });
 
 import { defineTool } from '../tools/defineTool';
+import { ROTATED_POSE_DESCRIPTOR } from '../interactions/gestures/resize/geometry';
 
 describe('Canvas tools mode', () => {
   it('routes pointer events through tools.dispatcher when tools prop is passed', () => {
@@ -924,5 +925,46 @@ describe('backend prop', () => {
     expect(container.querySelector('canvas')).toBeTruthy();
     // Tautology: under jsdom the early-return runs before draw is invoked.
     expect(captured.length).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('Canvas baseBoundsOf synthesis', () => {
+  it('synthesized boundsOf folds rotation from descriptor.getRotation', () => {
+    // Adapter holds a rotated pose; Canvas should synthesize boundsOf that
+    // includes the rotation field when geometry={ROTATED_POSE_DESCRIPTOR}.
+    type RotPose = { id: string; x: number; y: number; width: number; height: number; rotation: number };
+    const item: RotPose = { id: 'a', x: 0, y: 0, width: 100, height: 60, rotation: Math.PI / 4 };
+
+    const adapter = {
+      getObjects: () => [item],
+      getObject: (id: string) => (id === 'a' ? item : undefined),
+      getPose: (id: string): RotPose | null => (id === 'a' ? item : null),
+      setPose: () => {},
+      getSelected: () => [],
+      setSelected: () => {},
+    };
+
+    const helpersRef: React.MutableRefObject<{ getEffectiveBounds(id: string): { x: number; y: number; width: number; height: number; rotation?: number } | null } | null> = { current: null };
+
+    function Harness() {
+      return (
+        <Canvas
+          width={200}
+          height={200}
+          layers={{}}
+          adapter={adapter as never}
+          geometry={ROTATED_POSE_DESCRIPTOR as never}
+          helpersRef={helpersRef as never}
+        />
+      );
+    }
+
+    render(<Harness />);
+
+    // helpersRef is set synchronously during render; getEffectiveBounds goes
+    // through effectiveBoundsOf → baseBoundsOf → geometry.getRotation.
+    const bounds = helpersRef.current?.getEffectiveBounds('a');
+    expect(bounds).not.toBeNull();
+    expect((bounds as { rotation?: number }).rotation).toBeCloseTo(Math.PI / 4, 5);
   });
 });

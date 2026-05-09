@@ -24,6 +24,7 @@ interface Bounds {
   y: number;
   width: number;
   height: number;
+  rotation?: number;
 }
 
 /** Pointer event handlers ready to spread onto a `<canvas>`. */

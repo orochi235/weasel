@@ -61,6 +61,7 @@ interface Bounds {
   y: number;
   width: number;
   height: number;
+  rotation?: number;
 }
 
 /** Standard slot names — render in this canonical order.
@@ -723,7 +724,10 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     if (!adapter) return undefined;
     return (id: string): Bounds | null => {
       try {
-        return geometry.getBounds(adapter.getPose(id));
+        const pose = adapter.getPose(id);
+        const b = geometry.getBounds(pose);
+        const rot = geometry.getRotation?.(pose);
+        return rot ? { ...b, rotation: rot } : b;
       } catch {
         return null;
       }
