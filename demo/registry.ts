@@ -2,6 +2,7 @@ import type { ComponentType } from 'react';
 import { MoveDemo, MOVE_DEMO_SOURCE } from './demos/MoveDemo';
 import { ResizeDemo, RESIZE_DEMO_SOURCE } from './demos/ResizeDemo';
 import { RotateDemo, ROTATE_DEMO_SOURCE } from './demos/RotateDemo';
+import { RotatedResizeMathDemo, ROTATED_RESIZE_MATH_DEMO_SOURCE } from './demos/RotatedResizeMathDemo';
 import { MultiSelectDemo, MULTI_SELECT_DEMO_SOURCE } from './demos/MultiSelectDemo';
 import { InsertDemo, INSERT_DEMO_SOURCE } from './demos/InsertDemo';
 import { CloneDemo, CLONE_DEMO_SOURCE } from './demos/CloneDemo';
@@ -27,6 +28,7 @@ import { ViewportDemo, VIEWPORT_DEMO_SOURCE } from './demos/ViewportDemo';
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
 import RotateDemoFull from './demos/RotateDemo.tsx?raw';
+import RotatedResizeMathDemoFull from './demos/RotatedResizeMathDemo.tsx?raw';
 import MultiSelectDemoFull from './demos/MultiSelectDemo.tsx?raw';
 import InsertDemoFull from './demos/InsertDemo.tsx?raw';
 import CloneDemoFull from './demos/CloneDemo.tsx?raw';
@@ -141,6 +143,17 @@ export const DEMOS: DemoEntry[] = [
     snippet: ROTATE_DEMO_SOURCE,
     full: RotateDemoFull,
     path: 'demo/demos/RotateDemo.tsx',
+  },
+  {
+    id: 'rotated-resize-math',
+    title: 'Rotated resize math',
+    category: 'Interactions',
+    description: 'Math explainer for rotated resize: drag a corner of the green rect to see the full math (drag-projection into local frame, anchor pinning, position correction). Counterexample panels added in a follow-up.',
+    hint: 'Drag a corner handle to resize the rotated rect.',
+    Component: RotatedResizeMathDemo,
+    snippet: ROTATED_RESIZE_MATH_DEMO_SOURCE,
+    full: RotatedResizeMathDemoFull,
+    path: 'demo/demos/RotatedResizeMathDemo.tsx',
   },
   {
     id: 'insert',
