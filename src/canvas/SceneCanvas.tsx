@@ -23,6 +23,7 @@ import type React from 'react';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap } from './Canvas';
 import type { RenderLayer } from '../core/layers/render';
+import { viewToMat3, type DrawCommand } from '@orochi235/weasel-gl';
 import { sceneToAdapter, type SceneToAdapterOptions } from './sceneAdapter';
 import { usePinchZoomTool } from '../tools/builtin/usePinchZoomTool';
 import type { PanBounds } from '../features/viewport/useDecayLoop';
@@ -431,6 +432,26 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         drawOne(ctx, node, pose, view);
       }
       ctx.restore();
+    },
+    drawGL: (_data, view) => {
+      const slot = sceneSlotRef.current;
+      const drawOneGL = slot?.drawOneGL;
+      if (!slot || !drawOneGL) return [];
+      const t = toolsRef.current;
+      const tool = t.registry[t.hotkeyEngaged ?? t.active];
+      const ids = tool?.previewIds?.();
+      if (!ids) return [];
+      const sc = sceneRef.current;
+      const children: DrawCommand[] = [];
+      for (const id of ids) {
+        const pose = tool?.previewPose?.(id) as TPose | null | undefined;
+        if (pose == null) continue;
+        const node = sc.get(asNodeId(id));
+        if (!node) continue;
+        for (const cmd of drawOneGL(node, pose, view)) children.push(cmd);
+      }
+      if (children.length === 0) return [];
+      return [{ kind: 'group', transform: viewToMat3(view), alpha: 0.85, children }];
     },
   }), []);
 

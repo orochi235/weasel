@@ -23,7 +23,7 @@ import type { View } from '../features/viewport/view';
 import { clampView } from '../features/viewport/clampView';
 import { drawLayers, drawLayersGL, type RenderLayer } from '../core/layers/render';
 import { setupCanvasDpr } from '../features/viewport/pixelDensity';
-import { WeaselRenderer } from '@orochi235/weasel-gl';
+import { WeaselRenderer, viewToMat3, type DrawCommand } from '@orochi235/weasel-gl';
 import {
   useSelection,
   type SelectionApi,
@@ -90,8 +90,14 @@ export interface SceneSlotConfig<TObject extends { id: string }, TPose> {
   objects?: TObject[];
   /** Project an object to its committed pose. Defaults to `adapter.getPose(obj.id)`. */
   toPose?: (obj: TObject) => TPose;
-  /** Draw a single object given its effective pose. */
+  /** Draw a single object given its effective pose. The 2D backend. */
   drawOne: (ctx: CanvasRenderingContext2D, obj: TObject, pose: TPose, view: View) => void;
+  /**
+   * Draw a single object as a `DrawCommand` tree for the GL backend. Optional
+   * through step 9; demos that don't supply it render empty under `backend='gl'`.
+   * Step 10 replaces `drawOne` with this.
+   */
+  drawOneGL?: (obj: TObject, pose: TPose, view: View) => DrawCommand[];
   /** Default ghost alpha for the move-overlay slot. Default 0.85. */
   ghostAlpha?: number;
 }
@@ -369,6 +375,7 @@ function buildSceneLayer<TObject extends { id: string }, TPose>(
   const toPose =
     cfg.toPose ??
     ((obj: TObject) => (adapter ? adapter.getPose(obj.id) : (obj as unknown as TPose)));
+  const drawOneGL = cfg.drawOneGL;
   return {
     id: 'scene',
     label: 'Scene',
@@ -388,6 +395,19 @@ function buildSceneLayer<TObject extends { id: string }, TPose>(
         }
       }
     },
+    ...(drawOneGL ? {
+      drawGL: (_data, view) => {
+        const objects = cfg.objects ?? adapter?.getObjects() ?? [];
+        const hidden = hideIds();
+        const children: DrawCommand[] = [];
+        for (const obj of objects) {
+          if (hidden && hidden.has(obj.id)) continue;
+          const pose: TPose = toPose(obj);
+          for (const cmd of drawOneGL(obj, pose, view)) children.push(cmd);
+        }
+        return [{ kind: 'group', transform: viewToMat3(view), children }];
+      },
+    } : {}),
   };
 }
 

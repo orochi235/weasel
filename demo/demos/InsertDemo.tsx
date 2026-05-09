@@ -58,6 +58,11 @@ backend={backend}
             cx.fillStyle = p.color;
             cx.fillRect(p.x, p.y, p.width, p.height);
           },
+          drawOneGL: (_node, p) => [{
+            kind: 'path',
+            path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+            fill: { color: p.color },
+          }],
         },
         selectionOverlay: null,
       }}
