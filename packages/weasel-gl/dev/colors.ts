@@ -42,14 +42,15 @@ make('cVColor', 400, 200, [{
   vertexColors: cornerColors,
 }]);
 
-// Color matrix: 120° hue rotation. Approximate via the SVG-style RGB
-// rotation matrix. For 120°: cos=−0.5, sin≈0.866.
-//   Rred = cos*R + (1-cos)/3*(R+G+B) + sin*[(B-G)/sqrt(3)]
-// The classic 4×5 hue-rotate-120° matrix:
+// Color matrix: 120° hue rotation (Red→Green→Blue cycle).
+// Naive RGB axis rotation about the (1,1,1) luma axis.
+// For +120°: pure red → pure green; pure green → pure blue; pure blue → pure red.
+//
+// Verify pure red: R' = -0.5, G' = 0.866, B' = -0.366 → clamp → (0, 0.866, 0) = green.
 const hue120 = new Float32Array([
-   -0.5,    0.866,   -0.366,  0, 0,
-   -0.366, -0.5,      0.866,  0, 0,
-    0.866, -0.366,   -0.5,    0, 0,
+   -0.5,   -0.366,   0.866,  0, 0,
+    0.866, -0.5,    -0.366,  0, 0,
+   -0.366,  0.866,  -0.5,    0, 0,
     0,      0,        0,      1, 0,
 ]);
 
