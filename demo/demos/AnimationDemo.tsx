@@ -83,7 +83,16 @@ export function AnimationDemo() {
       return c ? { x: c.x, y: c.y, width: c.width, height: c.height } : null;
     },
     move: {
-      behaviors: [momentum<Pose>({ animator, friction: 0.93 })],
+      behaviors: [
+        momentum<Pose>({
+          animator,
+          friction: 0.93,
+          // Keep flicked cards on the canvas. Bounds are on the card's
+          // top-left corner; subtract typical card dimensions (60×60) so
+          // the right and bottom edges stop at the visible boundary too.
+          bounds: { x: 0, y: 0, width: W - 60, height: H - 60 },
+        }),
+      ],
     },
     drawGhost: (ctx, card, pose) => {
       if (!card) return;

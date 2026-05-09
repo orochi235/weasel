@@ -88,4 +88,43 @@ describe('momentum', () => {
     expect(ops).toBeUndefined();
     expect(decaySpy).not.toHaveBeenCalled();
   });
+  it('clamps the per-tick position to bounds and stops on edge hit', () => {
+    // Regression: without bounds, a hard flick carries the card thousands
+    // of pixels offscreen before friction settles velocity. With bounds and
+    // policy='stop', the decay cancels as soon as the clamped position
+    // pegs the boundary on every dragged id.
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const setPose = vi.fn();
+    const ctx = makeCtx({ x: 0, y: 0, width: 10, height: 10 }, setPose);
+    const beh = momentum<RectPose>({
+      animator: result.current,
+      friction: 0.9,
+      bounds: { x: 0, y: 0, width: 100, height: 100 },
+      now: clock.now,
+    });
+    beh.onStart?.(ctx);
+    // Three samples 50ms apart, 50px right each → vx = 1000 px/s with both
+    // a sample at the cutoff boundary and one at the latest moment for the
+    // velocity calculation to compute a non-zero dt.
+    clock.advance(50);
+    ctx.pointer = { worldX: 50, worldY: 0, clientX: 50, clientY: 0 };
+    beh.onMove?.(ctx, ctx.current.get('a')!);
+    clock.advance(50);
+    ctx.pointer = { worldX: 100, worldY: 0, clientX: 100, clientY: 0 };
+    beh.onMove?.(ctx, ctx.current.get('a')!);
+    const ops = beh.onEnd?.(ctx);
+    // onEnd should have suppressed the default commit (returned null) and
+    // queued a decay that calls setPose ≥ once on its first tick.
+    expect(ops).toBeNull();
+    // Drive frames so the decay ticks.
+    for (let i = 0; i < 20; i++) clock.advance(16);
+    // Some setPose calls happened; the final position is clamped at x ≤ 100.
+    expect(setPose.mock.calls.length).toBeGreaterThan(0);
+    const lastCall = setPose.mock.calls[setPose.mock.calls.length - 1];
+    const finalPose = lastCall[1] as RectPose;
+    expect(finalPose.x).toBeLessThanOrEqual(100);
+    // Decay cancelled or finished — no animations active.
+    expect(result.current.isActive()).toBe(false);
+  });
 });

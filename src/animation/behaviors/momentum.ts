@@ -12,6 +12,27 @@ export interface MomentumOptions {
   velocitySampleMs?: number;
   /** Optional clock override for tests. Defaults to `Date.now`. */
   now?: () => number;
+  /**
+   * Optional bounds for the object's top-left corner (in world units). When
+   * supplied, momentum-driven translation is clamped: each tick's new
+   * position is constrained so the object's `(x, y)` stays inside the rect.
+   * Without bounds, a hard flick carries the object indefinitely until
+   * friction dampens velocity below `threshold`.
+   *
+   * Note: ignores object size for now — the bound is on the top-left, not
+   * the visible edges. A consumer wanting "object stays fully inside" should
+   * pass `bounds = { x: canvas.x, y: canvas.y, width: canvas.w - obj.w,
+   * height: canvas.h - obj.h }` (and accept that it doesn't adapt to
+   * variable-sized objects mid-flight).
+   */
+  bounds?: { x: number; y: number; width: number; height: number };
+  /**
+   * Boundary policy when the clamped position hits an edge. 'stop' cancels
+   * the decay (instant settle at the edge). 'continue' keeps decaying but
+   * subsequent ticks stay clamped (object drifts along the edge as friction
+   * decays the velocity). Default 'stop'.
+   */
+  boundary?: 'stop' | 'continue';
 }
 
 interface PointerSample {
@@ -29,6 +50,22 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
   const threshold = opts.threshold ?? 200;
   const sampleMs = opts.velocitySampleMs ?? 80;
   const now = opts.now ?? (() => Date.now());
+  const bounds = opts.bounds;
+  const boundaryPolicy = opts.boundary ?? 'stop';
+
+  /** Apply bounds clamp to (sx + dx, sy + dy). Returns clamped (nx, ny) and
+   *  whether either axis was clamped (signalling boundary hit). */
+  const clampToBounds = (sx: number, sy: number, dx: number, dy: number): { nx: number; ny: number; hit: boolean } => {
+    let nx = sx + dx;
+    let ny = sy + dy;
+    if (!bounds) return { nx, ny, hit: false };
+    let hit = false;
+    if (nx < bounds.x) { nx = bounds.x; hit = true; }
+    else if (nx > bounds.x + bounds.width) { nx = bounds.x + bounds.width; hit = true; }
+    if (ny < bounds.y) { ny = bounds.y; hit = true; }
+    else if (ny > bounds.y + bounds.height) { ny = bounds.y + bounds.height; hit = true; }
+    return { nx, ny, hit };
+  };
 
   const recordSample = (ctx: GestureContext<TPose>): void => {
     const samples = (ctx.scratch[SAMPLES_KEY] ??= []) as PointerSample[];
@@ -72,7 +109,12 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
       const startPoses = new Map<string, TPose>(ctx.current);
       let lastValue = { x: 0, y: 0 };
       const adapter = ctx.adapter as { setPose(id: string, p: TPose): void; applyBatch?(ops: Op[], label: string): void };
-      opts.animator.decay<RectLike>({
+      // Track per-id final positions when bounds clamping is active — used
+      // by onDone to compute the correct final transform op (not just
+      // start + decay's last delta, which may overshoot the boundary).
+      const finalPositions = new Map<string, { x: number; y: number }>();
+      let decayHandle: { cancel(): void } | null = null;
+      decayHandle = opts.animator.decay<RectLike>({
         from: { x: 0, y: 0 },
         velocity: { x: vx, y: vy },
         friction,
@@ -81,24 +123,42 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
         magnitude: (v) => Math.hypot(v.x, v.y),
         onTick: (delta) => {
           lastValue = delta;
+          let allHit = bounds !== undefined;
           for (const id of ctx.draggedIds) {
             const start = startPoses.get(id) as unknown as RectLike & TPose;
             if (!start) continue;
-            adapter.setPose(id, { ...start, x: start.x + delta.x, y: start.y + delta.y } as TPose);
+            const { nx, ny, hit } = clampToBounds(start.x, start.y, delta.x, delta.y);
+            if (!hit) allHit = false;
+            finalPositions.set(id, { x: nx, y: ny });
+            adapter.setPose(id, { ...start, x: nx, y: ny } as TPose);
+          }
+          // If 'stop' policy and every dragged id's clamped position hit
+          // the boundary, cancel the decay so the animation settles instantly
+          // instead of drifting along the edge as friction wears off.
+          if (boundaryPolicy === 'stop' && allHit && decayHandle) {
+            decayHandle.cancel();
+            // Manually fire onDone since cancel() bypasses it.
+            commitFlick();
           }
         },
         onDone: () => {
-          if (!adapter.applyBatch) return;
-          const ops: Op[] = [];
-          for (const id of ctx.draggedIds) {
-            const start = startPoses.get(id) as unknown as RectLike & TPose;
-            if (!start) continue;
-            const finalPose = { ...start, x: start.x + lastValue.x, y: start.y + lastValue.y } as TPose;
-            ops.push(createTransformOp<TPose>({ id, from: start, to: finalPose, label: 'flick' }));
-          }
-          if (ops.length > 0) adapter.applyBatch(ops, 'flick');
+          commitFlick();
         },
       });
+
+      function commitFlick(): void {
+        if (!adapter.applyBatch) return;
+        const ops: Op[] = [];
+        for (const id of ctx.draggedIds) {
+          const start = startPoses.get(id) as unknown as RectLike & TPose;
+          if (!start) continue;
+          const fp = finalPositions.get(id) ?? { x: start.x + lastValue.x, y: start.y + lastValue.y };
+          const finalPose = { ...start, x: fp.x, y: fp.y } as TPose;
+          ops.push(createTransformOp<TPose>({ id, from: start, to: finalPose, label: 'flick' }));
+        }
+        if (ops.length > 0) adapter.applyBatch(ops, 'flick');
+      }
+
       return null;
     },
   };
