@@ -402,3 +402,54 @@ describe('RangePicker remove (drag-off and right-click)', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 });
+
+describe('RangePicker allowShiftAll', () => {
+  it('shift-drag moves all thumbs by the same delta clamped to [min, max]', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <RangePicker
+        min={0}
+        max={1}
+        step={0.01}
+        thumbs={[{ value: 0.2 }, { value: 0.5 }, { value: 0.8 }]}
+        onChange={onChange}
+        allowShiftAll
+      />,
+    );
+    const thumbs = container.querySelectorAll<HTMLElement>('[role="slider"]');
+    stubRect(thumbs[1].parentElement!, { left: 0, width: 200 });
+
+    // Pointer starts at thumb[1]'s center (x=100, value=0.5). Drag right by +30 px → +0.15 delta.
+    fireEvent.pointerDown(thumbs[1], { clientX: 100, clientY: 12, pointerId: 1, button: 0, shiftKey: true });
+    fireEvent.pointerMove(document, { clientX: 130, clientY: 12, pointerId: 1, shiftKey: true });
+    const after = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(after[0].value).toBeCloseTo(0.35, 2);
+    expect(after[1].value).toBeCloseTo(0.65, 2);
+    expect(after[2].value).toBeCloseTo(0.95, 2);
+    fireEvent.pointerUp(document, { pointerId: 1, shiftKey: true });
+  });
+
+  it('clamps the shift-drag delta so no thumb crosses max', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <RangePicker
+        min={0}
+        max={1}
+        step={0.01}
+        thumbs={[{ value: 0.2 }, { value: 0.5 }, { value: 0.9 }]}
+        onChange={onChange}
+        allowShiftAll
+      />,
+    );
+    const thumbs = container.querySelectorAll<HTMLElement>('[role="slider"]');
+    stubRect(thumbs[2].parentElement!, { left: 0, width: 200 });
+    fireEvent.pointerDown(thumbs[2], { clientX: 180, clientY: 12, pointerId: 1, button: 0, shiftKey: true });
+    fireEvent.pointerMove(document, { clientX: 240, clientY: 12, pointerId: 1, shiftKey: true });
+    // Requested delta = +0.30 px-fraction, but max delta = 1 − 0.9 = 0.1.
+    const after = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(after[0].value).toBeCloseTo(0.3, 2);
+    expect(after[1].value).toBeCloseTo(0.6, 2);
+    expect(after[2].value).toBeCloseTo(1.0, 2);
+    fireEvent.pointerUp(document, { pointerId: 1, shiftKey: true });
+  });
+});

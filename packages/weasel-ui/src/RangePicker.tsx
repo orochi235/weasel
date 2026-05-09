@@ -151,13 +151,62 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
     [thumbs, onChange, onCommit, fractionToValue, min, max, step, constraint, props],
   );
 
+  const beginShiftAllDrag = useCallback(
+    (anchorX: number) => {
+      const buf: T[] = thumbs.map(t => ({ ...t }));
+      const startValues = buf.map(t => t.value);
+      dragBufferRef.current = buf;
+
+      const onMove = (ev: PointerEvent) => {
+        const track = trackRef.current;
+        const buffer = dragBufferRef.current;
+        if (!track || !buffer) return;
+        const rect = track.getBoundingClientRect();
+        const dxFraction = (ev.clientX - anchorX) / rect.width;
+        let dValue = dxFraction * (max - min);
+        dValue = snap(dValue, step, 0);
+
+        // Clamp delta so no thumb leaves [min, max] (per-thumb bounds intentionally
+        // not enforced — matches the experiment's hue-band shift-translate semantics).
+        let allowedNeg = -Infinity;
+        let allowedPos = Infinity;
+        for (let i = 0; i < startValues.length; i++) {
+          allowedNeg = Math.max(allowedNeg, min - startValues[i]);
+          allowedPos = Math.min(allowedPos, max - startValues[i]);
+        }
+        dValue = clamp(dValue, allowedNeg, allowedPos);
+
+        for (let i = 0; i < buffer.length; i++) {
+          buffer[i] = { ...buffer[i], value: clamp(startValues[i] + dValue, min, max) };
+        }
+        onChange(buffer.map(t => ({ ...t })));
+      };
+
+      const onUp = () => {
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onUp);
+        const buffer = dragBufferRef.current;
+        dragBufferRef.current = null;
+        if (buffer && onCommit) onCommit(buffer.map(t => ({ ...t })));
+      };
+
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
+    },
+    [thumbs, onChange, onCommit, min, max, step],
+  );
+
   const onThumbPointerDown = (index: number) => (e: ReactPointerEvent) => {
     // Only bail on explicit non-primary buttons (button > 0). jsdom's PointerEvent
     // leaves `button` undefined; treat that as primary so tests can drive drags.
     if (typeof e.button === 'number' && e.button > 0) return;
     e.preventDefault();
     e.stopPropagation();
-    beginThumbDrag(index);
+    if (e.shiftKey && props.allowShiftAll) {
+      beginShiftAllDrag(e.clientX);
+    } else {
+      beginThumbDrag(index);
+    }
   };
 
   const onThumbContextMenu = (index: number) => (e: ReactMouseEvent) => {
