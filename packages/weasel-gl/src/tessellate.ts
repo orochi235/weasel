@@ -108,13 +108,102 @@ function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
     return tessellateEvenodd(coords, contourStarts);
   }
 
-  // nonzero: hole indices for earcut are every contour after the first.
-  const holeIndices = contourStarts.slice(1);
-  const indices = earcut(coords, holeIndices.length > 0 ? holeIndices : undefined);
+  // nonzero compound-path tessellation:
+  //   - CCW contours (signed area > 0) are positive (filled).
+  //   - CW contours (signed area < 0) are holes; each is grouped with
+  //     the smallest positive contour that contains its first vertex.
+  //   - Each (positive, [its holes]) group is earcut'd independently;
+  //     triangles concatenated.
+  // The previous implementation passed every subsequent contour as a
+  // hole regardless of winding, which broke any path with multiple
+  // disjoint positive contours (e.g. a duck with body + head + beak,
+  // a hamburglar with hat brim + crown + cape).
+  const totalVerts = coords.length / 2;
+  const contourEnd = (i: number): number =>
+    i + 1 < contourStarts.length ? contourStarts[i + 1] : totalVerts;
+
+  const areas: number[] = contourStarts.map((s, i) => signedArea(coords, s, contourEnd(i)));
+
+  const positives: number[] = [];
+  const negatives: number[] = [];
+  for (let i = 0; i < contourStarts.length; i++) {
+    if (areas[i] > 0) positives.push(i);
+    else if (areas[i] < 0) negatives.push(i);
+  }
+
+  if (positives.length <= 1) {
+    // Single positive (or all-negative degenerate); preserve previous
+    // earcut-with-holes behavior on the whole vertex buffer.
+    const holeIndices = contourStarts.slice(1);
+    const tri = earcut(coords, holeIndices.length > 0 ? holeIndices : undefined);
+    return { vertices: new Float32Array(coords), indices: new Uint32Array(tri) };
+  }
+
+  // Multiple positives: group each negative with its containing positive
+  // (smallest-area positive whose polygon contains the negative's first vertex).
+  const holesByPositive = new Map<number, number[]>();
+  for (const n of negatives) {
+    const px = coords[contourStarts[n] * 2];
+    const py = coords[contourStarts[n] * 2 + 1];
+    let bestPos = -1;
+    let bestArea = Infinity;
+    for (const pos of positives) {
+      if (areas[pos] < bestArea && pointInContour(coords, contourStarts[pos], contourEnd(pos), px, py)) {
+        bestArea = areas[pos];
+        bestPos = pos;
+      }
+    }
+    if (bestPos >= 0) {
+      const arr = holesByPositive.get(bestPos) ?? [];
+      arr.push(n);
+      holesByPositive.set(bestPos, arr);
+    }
+  }
+
+  // Build (coords, indices) by iterating positives and appending each
+  // (positive + its holes) group as an independent earcut run.
+  const finalCoords: number[] = [];
+  const finalIndices: number[] = [];
+  for (const pos of positives) {
+    const holes = holesByPositive.get(pos) ?? [];
+    const offset = finalCoords.length / 2;
+    const groupCoords: number[] = [];
+    const groupStarts: number[] = [0];
+    for (let i = contourStarts[pos] * 2; i < contourEnd(pos) * 2; i++) groupCoords.push(coords[i]);
+    for (const h of holes) {
+      groupStarts.push(groupCoords.length / 2);
+      for (let i = contourStarts[h] * 2; i < contourEnd(h) * 2; i++) groupCoords.push(coords[i]);
+    }
+    const tri = earcut(groupCoords, groupStarts.length > 1 ? groupStarts.slice(1) : undefined);
+    for (const v of groupCoords) finalCoords.push(v);
+    for (const idx of tri) finalIndices.push(idx + offset);
+  }
+
   return {
-    vertices: new Float32Array(coords),
-    indices: new Uint32Array(indices),
+    vertices: new Float32Array(finalCoords),
+    indices: new Uint32Array(finalIndices),
   };
+}
+
+function signedArea(coords: number[], start: number, end: number): number {
+  let a = 0;
+  for (let i = start; i < end; i++) {
+    const j = i + 1 === end ? start : i + 1;
+    a += coords[i * 2] * coords[j * 2 + 1] - coords[j * 2] * coords[i * 2 + 1];
+  }
+  return a * 0.5;
+}
+
+function pointInContour(coords: number[], start: number, end: number, x: number, y: number): boolean {
+  let inside = false;
+  for (let i = start, j = end - 1; i < end; j = i++) {
+    const xi = coords[i * 2], yi = coords[i * 2 + 1];
+    const xj = coords[j * 2], yj = coords[j * 2 + 1];
+    if (((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+  }
+  return inside;
 }
 
 function tessellateEvenodd(coords: number[], contourStarts: number[]): Mesh {
