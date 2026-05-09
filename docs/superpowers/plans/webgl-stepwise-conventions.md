@@ -155,6 +155,30 @@ The stencil mask pass (pass 1) has `colorMask(false, …)` so the fragment shade
 
 ---
 
+## 12. Module-level registries store data, not GL resources
+
+**Status:** confirmed in step 6 (third instance after `registerFont` in step 3 and `registerTexture` in step 6).
+**Where it bites:** any future "register X" public API.
+
+`registerFont` stores font metrics + `ImageBitmap`. `registerTexture` stores `HTMLImageElement | ImageBitmap`. `registerProgram` stores GLSL source strings. **None** of these touch GL — actual upload / compile happens lazily when a `WeaselRenderer` consumes the registered data. This is the analog of convention §9 enforced at the registration step: module-level state is GL-context-agnostic; per-renderer caches do the dedup and own the GL handles.
+
+**Required:** new `registerX(...)` public APIs follow this pattern. Returns an opaque handle (`{ id }`); the actual GL work is on `WeaselRenderer.registerX(handle)` or implicit at draw time via a per-renderer cache.
+
+This decouples the public surface from the GL context lifecycle. Multiple renderers can consume the same registered data; context restore re-compiles / re-uploads transparently.
+
+---
+
+## 13. Consumer-facing GLSL contracts must document premultiplied alpha loudly
+
+**Status:** confirmed in step 6.
+**Where it bites:** any future API that lets consumers write GLSL the kit dispatches.
+
+§2 establishes that all kit-internal shaders output premultiplied alpha. Once consumers can write their own fragments (step 6 onward), the kit can't enforce this — only document it. Step 6 documents the requirement in **three** places: the `registerProgram` JSDoc `@remarks`, the vertex prelude header comment (visible to consumers reading the source), and the demo fragment shader's inline comment. Anything less risks consumers writing `vec4(rgb, a)` and getting over-bright translucent fragments while opaque output looks correct (so the bug only surfaces with `a < 1`).
+
+**Required:** future consumer-GLSL APIs (custom vertex shaders, post-process passes, etc.) maintain at least the JSDoc + header-comment double-warning. Inline shader-source comments in the canonical demo are the third reinforcement — easy to overlook but high value when consumers copy-paste the demo.
+
+---
+
 ## How to update this doc
 
 Each per-step done note adds new lessons. At the end of each step, the controller folds applicable new lessons into the relevant section above and adds a new section if the lesson doesn't fit existing categories. Update the **Status** date and **Where it bites** line to keep entries scannable.
