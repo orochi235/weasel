@@ -147,30 +147,3 @@ export function AnimationDemo() {
     </div>
   );
 }
-
-export const ANIMATION_DEMO_SOURCE = `// Wrap a base adapter with animateLifecycle + animateOnSetPose so
-// programmatic setPose tweens, and inserts/removes fade by scaling
-// from/to width:0,height:0. Plug \`momentum\` into the move tool's
-// behavior list to get flick-and-decay on drag release.
-
-const animator = useAnimator();
-
-const adapter = useMemo(
-  () =>
-    animateLifecycle(
-      animateOnSetPose(baseAdapter, animator, { ms: 250 }),
-      animator,
-      {
-        enterFrom: (p) => ({ ...p, width: 0, height: 0 }),
-        exitTo:    (p) => ({ ...p, width: 0, height: 0 }),
-        ms: 250,
-      },
-    ),
-  [baseAdapter, animator],
-);
-
-const select = useSelectTool(adapter, {
-  // ...
-  move: { behaviors: [momentum({ animator, friction: 0.93 })] },
-});
-`;

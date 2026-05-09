@@ -17,9 +17,9 @@ interface Rect extends RotatedPose {
 
 const W = 320, H = 240, HANDLE = 8;
 
-function INITIAL_RECT(color: string): Rect[] {
-  return [{ id: 'a', x: 80, y: 70, width: 160, height: 100, rotation: Math.PI / 6, color }];
-}
+const INITIAL_GREEN: Rect[] = [{ id: 'a', x: 80, y: 70, width: 160, height: 100, rotation: Math.PI / 6, color: '#7fb069' }];
+const INITIAL_ORANGE: Rect[] = [{ id: 'a', x: 80, y: 70, width: 160, height: 100, rotation: Math.PI / 6, color: '#d4a574' }];
+const INITIAL_PURPLE: Rect[] = [{ id: 'a', x: 80, y: 70, width: 160, height: 100, rotation: Math.PI / 6, color: '#a48bd4' }];
 
 function drawRect(_node: unknown, p: Rect): DrawCommand[] {
   const cxw = p.x + p.width / 2;
@@ -51,6 +51,7 @@ function pickEveryFor(scene: ReturnType<typeof useScene<Rect>>) {
     return null;
   };
 }
+
 
 /** Subverted descriptor: pose carries rotation, but `getRotation` lies and
  *  returns 0. `useResize` takes the unrotated path; drag delta is applied
@@ -95,7 +96,7 @@ function LedgerCaption({ scene, anchor }: { scene: ReturnType<typeof useScene<Re
 
 /** Panel 1 — the full math (correct). */
 function FullMathPanel() {
-  const scene = useScene({ items: INITIAL_RECT('#7fb069') });
+  const scene = useScene({ items: INITIAL_GREEN });
   return (
     <div>
       <SceneCanvas
@@ -111,7 +112,7 @@ function FullMathPanel() {
         selectionOptions={{ initial: ['a'] }}
         layers={{
           scene: { drawOne: drawRect },
-          selectionOverlay: { handles: { size: HANDLE }, rotationHandle: false },
+          selectionOverlay: { handles: { size: HANDLE }, rotationHandle: true },
         }}
       />
       <LedgerCaption scene={scene} anchor={{ x: 'min', y: 'min' }} />
@@ -120,7 +121,7 @@ function FullMathPanel() {
 }
 
 function NoProjectionPanel() {
-  const scene = useScene({ items: INITIAL_RECT('#d4a574') });
+  const scene = useScene({ items: INITIAL_ORANGE });
   return (
     <div>
       <SceneCanvas
@@ -136,7 +137,7 @@ function NoProjectionPanel() {
         selectionOptions={{ initial: ['a'] }}
         layers={{
           scene: { drawOne: drawRect },
-          selectionOverlay: { handles: { size: HANDLE }, rotationHandle: false },
+          selectionOverlay: { handles: { size: HANDLE }, rotationHandle: true },
         }}
       />
       <LedgerCaption scene={scene} anchor={{ x: 'min', y: 'min' }} />
@@ -145,7 +146,7 @@ function NoProjectionPanel() {
 }
 
 function NoCorrectionPanel() {
-  const scene = useScene({ items: INITIAL_RECT('#a48bd4') });
+  const scene = useScene({ items: INITIAL_PURPLE });
   return (
     <div>
       <SceneCanvas
@@ -161,7 +162,7 @@ function NoCorrectionPanel() {
         selectionOptions={{ initial: ['a'] }}
         layers={{
           scene: { drawOne: drawRect },
-          selectionOverlay: { handles: { size: HANDLE }, rotationHandle: false },
+          selectionOverlay: { handles: { size: HANDLE }, rotationHandle: true },
         }}
       />
       <LedgerCaption scene={scene} anchor={{ x: 'min', y: 'min' }} />
@@ -196,7 +197,3 @@ export function RotatedResizeMathDemo() {
     </div>
   );
 }
-
-export const ROTATED_RESIZE_MATH_DEMO_SOURCE = `// Three-panel math explainer — full math (green), no projection (orange),
-// no position correction (purple). See RotatedResizeMathDemo.tsx for the
-// full source including counterexample descriptors and anchor-invariant ledger.`;

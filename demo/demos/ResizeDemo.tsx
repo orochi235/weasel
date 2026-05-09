@@ -31,24 +31,3 @@ export function ResizeDemo() {
     />
   );
 }
-
-export const RESIZE_DEMO_SOURCE = `// --- Scene (kit-owned via useScene shorthand) ---
-interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
-
-const scene = useScene({ items: [INITIAL] });
-
-// <SceneCanvas> wires sceneToAdapter + undo/redo automatically.
-// drawOne receives the Scene Node; pose === item under the trivial overload.
-return (
-  <SceneCanvas
-    width={W} height={H}
-    scene={scene}
-    selectTool={{ handleHitRadius: HANDLE }}
-    selectionOptions={{ initial: ['r'] }}
-    layers={{
-      scene: { drawOne: (cx, _node, p) => { cx.fillStyle = p.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
-      selectionOverlay: { handles: { size: HANDLE } },
-    }}
-  />
-);
-`;

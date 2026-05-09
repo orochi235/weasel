@@ -10,19 +10,6 @@ const INITIAL_ITEMS: Rect[] = [
   { id: 'b', x: 300, y: 200, width: 80, height: 60, color: '#a48bd4' },
   { id: 'c', x: 600, y: 400, width: 80, height: 60, color: '#f0e0a8' },
 ];
-
-export const PAN_DEMO_SOURCE = `const [view, setView] = useState<View>({ x: 0, y: 0 });
-const hand = useHandTool();
-const tools = useTools({ active: 'select', registry: { select, hand } });
-useKeybindings(tools);
-
-<Canvas
-  view={view}
-  onViewChange={setView}
-  tools={tools}
-  ...
-/>`;
-
 export function PanDemo() {
   const [items, setItems] = useState<Rect[]>(INITIAL_ITEMS);
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });

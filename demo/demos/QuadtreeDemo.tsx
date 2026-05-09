@@ -123,28 +123,3 @@ export function QuadtreeDemo() {
     />
   );
 }
-
-export const QUADTREE_DEMO_SOURCE = `// A custom analytical RenderLayer composed alongside weasel's stock layers.
-// The quadtree code is demo-local — weasel doesn't ship a quadtree, but any
-// layer that takes a CanvasRenderingContext2D can slot into the layer map.
-
-interface QuadNode { x: number; y: number; w: number; h: number; depth: number; children: QuadNode[] | null }
-
-function buildTree(bounds, rects): QuadNode { /* subdivide into 4 quadrants and recurse */ }
-
-const scene = useScene({ items: INITIAL });
-
-return (
-  <SceneCanvas
-    width={W} height={H}
-    scene={scene}
-    selectTool={{ handleHitRadius: HANDLE }}
-    layers={{
-      grid: { spacing: 20, bounds: () => ({ x: 0, y: 0, width: W, height: H }), accentEvery: 5 },
-      scene: { drawOne: (cx, _node, p) => { cx.fillStyle = p.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
-      quadtree: { layer: createQuadtreeLayer(() => sceneRectsLive()), after: 'scene' },
-      selectionOverlay: { handles: { size: HANDLE } },
-    }}
-  />
-);
-`;

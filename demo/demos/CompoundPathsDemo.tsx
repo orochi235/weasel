@@ -314,32 +314,3 @@ function HonkButton({ getBounds, onHonk }: { getBounds: () => { x: number; y: nu
     </button>
   );
 }
-
-export const COMPOUND_PATHS_DEMO_SOURCE = `// Five non-rect shapes on one canvas, all editable end-to-end.
-//   - Ghost: multi-contour PolygonPath with evenodd (eye holes), Q curls.
-//   - Duck: composePath fuse of body/head/beak/eye PolygonPaths.
-//   - Hamburglar: disjoint subpaths (cape + hat) under one pose.
-//   - Goose: extreme aspect ratio (long neck) — stresses resize anchoring.
-//   - Octopus: open polyline tentacles + closed body subpath.
-
-// No explicit adapter — Canvas synthesizes one from items + setItems + toPose.
-// fromPose is needed because resize writes a new Path back; intersectsRect
-// teaches area-select about path geometry.
-return (
-  <Canvas
-    items={shapes}
-    setItems={setShapes}
-    toPose={(s) => s.pose}
-    fromPose={(s, pose) => ({ ...s, pose })}
-    intersectsRect={(pose, rect) => pathPoseDescriptor.intersectsRect!(pose, rect)}
-    // Path TPose is auto-detected — Canvas dispatches on pose.kind so bounds /
-    // translate / resize-remap, plus pointInPath silhouette hit-testing, all
-    // wire up without an explicit geometry / pickEvery prop.
-    selectionMode="multi"             // shift-click extend, union-AABB resize
-    layers={{
-      scene: { drawOne: (cx, s, p) => { traceToContext(cx, p); cx.fill(p.kind === 'polygon' ? p.fillRule : 'nonzero'); cx.stroke(); } },
-      selectionOverlay: { handles: { size: HANDLE } },
-    }}
-  />
-);
-`;

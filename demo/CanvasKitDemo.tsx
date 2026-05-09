@@ -8,8 +8,6 @@ import { CommandPalette, useCommandPaletteShortcut } from '@orochi235/weasel-ui'
 // light-theme defaults.
 import logoUrl from '../weasel-transparent@0.33x.png';
 
-type CodeTab = 'snippet' | 'full';
-
 function readHash(): string {
   const h = window.location.hash.replace(/^#/, '');
   return DEMOS_BY_ID.has(h) ? h : DEMOS[0].id;
@@ -17,7 +15,6 @@ function readHash(): string {
 
 export function CanvasKitDemo() {
   const [activeId, setActiveId] = useState<string>(() => readHash());
-  const [tab, setTab] = useState<CodeTab>('snippet');
   const [paletteOpen, setPaletteOpen] = useState(false);
   useCommandPaletteShortcut(paletteOpen, setPaletteOpen);
 
@@ -68,7 +65,7 @@ export function CanvasKitDemo() {
       </aside>
 
       <main className="ckd-main">
-        <DemoView entry={active} tab={tab} setTab={setTab} key={active.id} />
+        <DemoView entry={active} key={active.id} />
       </main>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
@@ -76,9 +73,9 @@ export function CanvasKitDemo() {
   );
 }
 
-function DemoView({ entry, tab, setTab }: { entry: DemoEntry; tab: CodeTab; setTab: (t: CodeTab) => void }) {
+function DemoView({ entry }: { entry: DemoEntry }) {
   const Component = entry.Component;
-  const code = tab === 'snippet' ? entry.snippet.trim() : entry.full.trim();
+  const code = entry.full.trim();
 
   return (
     <article className="ckd-demo">
@@ -94,24 +91,8 @@ function DemoView({ entry, tab, setTab }: { entry: DemoEntry; tab: CodeTab; setT
       </div>
 
       <div className="ckd-code-panel">
-        <div className="ckd-code-tabs" role="tablist">
-          <button
-            role="tab"
-            aria-selected={tab === 'snippet'}
-            className={tab === 'snippet' ? 'active' : ''}
-            onClick={() => setTab('snippet')}
-          >Highlights</button>
-          <button
-            role="tab"
-            aria-selected={tab === 'full'}
-            className={tab === 'full' ? 'active' : ''}
-            onClick={() => setTab('full')}
-          >Full source</button>
-          <span className="ckd-code-meta">
-            {tab === 'snippet'
-              ? 'Curated excerpt — the call sites that matter.'
-              : entry.path}
-          </span>
+        <div className="ckd-code-header">
+          <span className="ckd-code-meta">{entry.path}</span>
         </div>
         <div className="ckd-source">
           <Highlight code={code} language="tsx" theme={themes.vsDark}>

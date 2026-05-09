@@ -85,22 +85,3 @@ export function LayoutDemo() {
     />
   );
 }
-
-export const LAYOUT_DEMO_SOURCE = `// Three containers, one of each layout strategy. Pass \`layouts\` to SceneCanvas
-// and the layout-aware move pass runs on those containers automatically.
-const scene = useScene<Data, 'default', P>({
-  systemLayers: [{ id: 'default' }],
-  initial: [
-    { kind: 'container', id: asNodeId('F'), parent: null, pose, data, layer: 'default' },
-    { kind: 'leaf',      id: asNodeId('f1'), parent: asNodeId('F'), pose, data, layer: 'default' },
-    // ...G, g1, S, s1
-  ],
-});
-
-const layouts = {
-  F: freeform<P>(),
-  G: tileGrid<P>({ cols: 2, rows: 2 }),
-  S: snapPoint<P>({ pattern: 'corners' }),
-};
-
-<SceneCanvas scene={scene} layouts={layouts} layers={{ scene: { drawOne } }} />`;

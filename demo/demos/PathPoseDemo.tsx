@@ -97,34 +97,3 @@ export function PathPoseDemo() {
     </div>
   );
 }
-
-export const PATH_POSE_DEMO_SOURCE = `// --- Scene: pose IS a Path (no rect translation step) ---
-// Full useScene form because Path carries no id field — trivial form would
-// require items to BE Paths.
-const scene = useScene<{ id: string }, 'default', Path>({
-  systemLayers: [{ id: 'default' }],
-  initial: [{ kind: 'leaf', layer: 'default', pose: INITIAL_PATH, data: { id: 'p' }, id: asNodeId('p') }],
-});
-const selection = useSelection({ initial: ['p'] });
-
-// Path TPose is auto-detected — SceneCanvas's default pickEvery / boundsOf
-// dispatch on pose.kind via pathPoseDescriptor, so no manual hit-test glue.
-// The only Path-specific extras are the snap origin projection and the
-// resize geometry descriptor.
-return (
-  <SceneCanvas
-    width={W} height={H}
-    scene={scene}
-    selection={selection}
-    selectTool={{
-      handleHitRadius: HANDLE,
-      snap: gridSnapStrategy<Path>(20, { origin: pathOriginProjection }),
-      resize: { geometry: pathPoseDescriptor },
-    }}
-    layers={{
-      scene: { drawOne: (cx, _o, p) => { traceToContext(cx, p); cx.fill(); cx.stroke(); } },
-      selectionOverlay: { handles: { size: HANDLE } },
-    }}
-  />
-);
-`;

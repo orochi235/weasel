@@ -20,38 +20,6 @@ const INITIAL_ITEMS: Rect[] = [
   // Right rect: stroke pinned to 2 world px (grows with zoom).
   { id: 'world-pin',  x: 220, y:  80, width: 120, height: 90, color: '#a48bd4', pin: 'world' },
 ];
-
-export const ZOOM_DEMO_SOURCE = `const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
-const wheelZoom = useWheelZoomTool();
-const wheelPan  = useWheelPanTool();
-const keyZoom   = useKeyboardZoomTool();
-const hand      = useHandTool();
-const tools = useTools({
-  active: 'select',
-  registry: { select, hand },
-  ambient: [wheelZoom, wheelPan, keyZoom],
-});
-useKeybindings(tools);
-
-<Canvas
-  view={view}
-  onViewChange={setView}
-  tools={tools}
-  layers={{
-    scene: {
-      drawOne: (ctx, _obj, pose, view) => {
-        const r = pose as Rect;
-        ctx.fillStyle = r.color;
-        ctx.fillRect(r.x, r.y, r.width, r.height);
-        // Screen-pinned: divide by view.scale so the stroke stays 2 CSS px.
-        ctx.lineWidth = r.pin === 'screen' ? 2 / view.scale : 2;
-        ctx.strokeStyle = '#d4c4a8';
-        ctx.strokeRect(r.x, r.y, r.width, r.height);
-      },
-    },
-  }}
-/>`;
-
 export function ZoomDemo() {
   const [items, setItems] = useState<Rect[]>(INITIAL_ITEMS);
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });

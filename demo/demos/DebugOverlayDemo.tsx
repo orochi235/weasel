@@ -106,31 +106,3 @@ export function DebugOverlayDemo() {
     </div>
   );
 }
-
-export const DEBUG_OVERLAY_DEMO_SOURCE = `// Pass a DebugConfig (or true / 'all') to <SceneCanvas debug={...}> and the
-// kit appends a screen-space overlay layer that paints what the
-// interaction system "sees": bounds, pose origins, hitboxes, handle
-// positions, snap candidates, and layer metadata.
-//
-// Off in prod by default. The overlay layer + sink are tree-shaken when
-// debug is false / undefined, so there's no runtime cost when disabled.
-
-const debug: DebugConfig = {
-  bounds: true,
-  origins: true,
-  hitboxes: true,
-  handles: true,
-  snap: true,
-  layers: true,
-};
-
-<SceneCanvas
-  scene={scene}
-  debug={debug}              // <-- this is the whole opt-in
-  selectTool={{ snap: gridSnapStrategy(20) }}
-  layers={{ scene: { drawOne }, selectionOverlay: { handles: true } }}
-/>;
-
-// You can also leave \`debug\` undefined and append \`?debug=all\` (or
-// \`?debug=bounds,handles\`) to the URL — SceneCanvas reads the flag from
-// location.search as a fallback.`;

@@ -16,17 +16,6 @@ const NODES: Array<{ id: string; pose: Pose; data: Data }> = [
   { id: 'g', pose: { x: 160, y: 380, width: 100, height: 70 }, data: { color: '#f0d080', label: 'G' } },
   { id: 'h', pose: { x: 480, y: 380, width: 100, height: 70 }, data: { color: '#7fb069', label: 'H' } },
 ];
-
-export const VIEWPORT_DEMO_SOURCE = `<SceneCanvas
-  scene={scene}
-  viewport={{
-    inertia: { friction: 0.88 },
-    pinchZoom: true,
-    animatedZoom: true,
-  }}
-  layers={{ scene: { drawOne } }}
-/>`;
-
 type Boundary = 'none' | 'stop' | 'bounce';
 
 export function ViewportDemo() {

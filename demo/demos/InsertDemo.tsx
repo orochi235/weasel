@@ -62,38 +62,3 @@ export function InsertDemo() {
     />
   );
 }
-
-export const INSERT_DEMO_SOURCE = `// --- Scene (kit-owned via useScene shorthand) ---
-interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
-
-const scene = useScene<Rect>({ items: [] });
-const nextId = useRef(0);
-
-// useInsertTool needs an InsertAdapter; only commitInsert is exercised by
-// the marquee gesture, so the other members are stubs.
-const insertAdapter = useMemo(() => ({
-  commitInsert: (b) => {
-    const id = \`r\${nextId.current++}\`;
-    const item = { id, ...b, color: COLORS[nextId.current % COLORS.length] };
-    scene.add({ kind: 'leaf', layer: 'default', pose: item, data: item, id: asNodeId(id) });
-    return item;
-  },
-  commitPaste: () => [], snapshotSelection: () => ({ items: [] }),
-  insertObject: () => {}, setSelection: () => {}, getSelection: () => [],
-}), [scene]);
-const insert = useInsertTool(insertAdapter, { minBounds: { width: 4, height: 4 } });
-const tools = useTools({ active: 'insert', registry: { insert } });
-
-return (
-  <SceneCanvas
-    width={W} height={H}
-    scene={scene}
-    tools={tools}
-    selectionMode="none"
-    layers={{
-      scene: { drawOne: (cx, _node, p) => { cx.fillStyle = p.color; cx.fillRect(p.x, p.y, p.width, p.height); } },
-      selectionOverlay: null,
-    }}
-  />
-);
-`;

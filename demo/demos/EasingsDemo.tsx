@@ -192,25 +192,3 @@ export function EasingsDemo() {
     </div>
   );
 }
-
-export const EASINGS_DEMO_SOURCE = `// One marker per easing; tween x using the named curve.
-const animator = useAnimator();
-
-const play = () => {
-  for (const m of markers) {
-    animator.tween({
-      from: TRACK_LEFT,
-      to: TRACK_RIGHT - MARKER_SIZE,
-      ms: duration,
-      easing: EASINGS[m.easing],   // <-- the new library
-      onTick: (x) => setMarker(m.id, { x }),
-      cancelKey: \`easing-\${m.id}\`,
-    });
-  }
-};
-
-// Backwards-compat aliases still work:
-//   easeIn / easeOut / easeInOut → quadratic curves.
-// Full Penner family is exported individually too:
-//   easeOutBack, easeInElastic, easeInOutBounce, ...
-`;

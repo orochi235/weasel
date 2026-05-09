@@ -1,28 +1,28 @@
 import type { ComponentType } from 'react';
-import { MoveDemo, MOVE_DEMO_SOURCE } from './demos/MoveDemo';
-import { ResizeDemo, RESIZE_DEMO_SOURCE } from './demos/ResizeDemo';
-import { RotateDemo, ROTATE_DEMO_SOURCE } from './demos/RotateDemo';
-import { RotatedResizeMathDemo, ROTATED_RESIZE_MATH_DEMO_SOURCE } from './demos/RotatedResizeMathDemo';
-import { MultiSelectDemo, MULTI_SELECT_DEMO_SOURCE } from './demos/MultiSelectDemo';
-import { InsertDemo, INSERT_DEMO_SOURCE } from './demos/InsertDemo';
-import { CloneDemo, CLONE_DEMO_SOURCE } from './demos/CloneDemo';
-import { ComposeDemo, COMPOSE_DEMO_SOURCE } from './demos/ComposeDemo';
-import { ActionsDemo, ACTIONS_DEMO_SOURCE } from './demos/ActionsDemo';
-import { GroupsDemo, GROUPS_DEMO_SOURCE } from './demos/GroupsDemo';
-import { NestedGroupsDemo, NESTED_GROUPS_DEMO_SOURCE } from './demos/NestedGroupsDemo';
-import { TextDemo, TEXT_DEMO_SOURCE } from './demos/TextDemo';
-import { QuadtreeDemo, QUADTREE_DEMO_SOURCE } from './demos/QuadtreeDemo';
-import { PathPoseDemo, PATH_POSE_DEMO_SOURCE } from './demos/PathPoseDemo';
-import { CompoundPathsDemo, COMPOUND_PATHS_DEMO_SOURCE } from './demos/CompoundPathsDemo';
-import { BezierEditDemo, BEZIER_EDIT_DEMO_SOURCE } from './demos/BezierEditDemo';
-import { SceneDemo, SCENE_DEMO_SOURCE } from './demos/SceneDemo';
-import { PanDemo, PAN_DEMO_SOURCE } from './demos/PanDemo';
-import { ZoomDemo, ZOOM_DEMO_SOURCE } from './demos/ZoomDemo';
-import { AnimationDemo, ANIMATION_DEMO_SOURCE } from './demos/AnimationDemo';
-import { LayoutDemo, LAYOUT_DEMO_SOURCE } from './demos/LayoutDemo';
-import { DebugOverlayDemo, DEBUG_OVERLAY_DEMO_SOURCE } from './demos/DebugOverlayDemo';
-import { EasingsDemo, EASINGS_DEMO_SOURCE } from './demos/EasingsDemo';
-import { ViewportDemo, VIEWPORT_DEMO_SOURCE } from './demos/ViewportDemo';
+import { MoveDemo } from './demos/MoveDemo';
+import { ResizeDemo } from './demos/ResizeDemo';
+import { RotateDemo } from './demos/RotateDemo';
+import { RotatedResizeMathDemo } from './demos/RotatedResizeMathDemo';
+import { MultiSelectDemo } from './demos/MultiSelectDemo';
+import { InsertDemo } from './demos/InsertDemo';
+import { CloneDemo } from './demos/CloneDemo';
+import { ComposeDemo } from './demos/ComposeDemo';
+import { ActionsDemo } from './demos/ActionsDemo';
+import { GroupsDemo } from './demos/GroupsDemo';
+import { NestedGroupsDemo } from './demos/NestedGroupsDemo';
+import { TextDemo } from './demos/TextDemo';
+import { QuadtreeDemo } from './demos/QuadtreeDemo';
+import { PathPoseDemo } from './demos/PathPoseDemo';
+import { CompoundPathsDemo } from './demos/CompoundPathsDemo';
+import { BezierEditDemo } from './demos/BezierEditDemo';
+import { SceneDemo } from './demos/SceneDemo';
+import { PanDemo } from './demos/PanDemo';
+import { ZoomDemo } from './demos/ZoomDemo';
+import { AnimationDemo } from './demos/AnimationDemo';
+import { LayoutDemo } from './demos/LayoutDemo';
+import { DebugOverlayDemo } from './demos/DebugOverlayDemo';
+import { EasingsDemo } from './demos/EasingsDemo';
+import { ViewportDemo } from './demos/ViewportDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
@@ -56,8 +56,6 @@ export interface DemoEntry {
   description: string;
   hint?: string;
   Component: ComponentType;
-  /** Curated highlight: the call sites that matter, hand-picked. */
-  snippet: string;
   /** Full source of the demo file as it ships in this repo. */
   full: string;
   /** Path to the demo file relative to repo root, for display in the source pane. */
@@ -72,7 +70,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'useScene + SceneCanvas — a kit-owned scene graph with first-class layers, parenting, and undo/redo. Five system layers (garden / blueprint / structures / zones / plantings) demonstrate the eric-shape; a leaf on the plantings layer is parented under a container on the structures layer (cross-layer parenting). A registered consumer op (`setColor`) records onto the same undo stack as kit mutations like setPose. Cmd/Ctrl+Z and Cmd/Ctrl+Shift+Z are wired via useUndoRedo.',
     hint: 'Drag rectangles to move; click "Recolor selection" then undo with Cmd+Z.',
     Component: SceneDemo,
-    snippet: SCENE_DEMO_SOURCE,
     full: SceneDemoFull,
     path: 'demo/demos/SceneDemo.tsx',
   },
@@ -83,7 +80,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'useMove with a grid-snap behavior — drag any rectangle and watch it snap to the 20-unit grid.',
     hint: 'Drag a rectangle.',
     Component: MoveDemo,
-    snippet: MOVE_DEMO_SOURCE,
     full: MoveDemoFull,
     path: 'demo/demos/MoveDemo.tsx',
   },
@@ -94,7 +90,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'useAnimator + animateOnSetPose + animateLifecycle + momentum behavior. Programmatic setPose tweens (click "Tween A"/"Tween B"); inserts scale up from zero (click "Add card"); flicking a card releases with momentum decay.',
     hint: 'Click a Tween button, click Add card, or drag-and-flick a card.',
     Component: AnimationDemo,
-    snippet: ANIMATION_DEMO_SOURCE,
     full: AnimationDemoFull,
     path: 'demo/demos/AnimationDemo.tsx',
   },
@@ -105,7 +100,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'Every named curve in the kit\'s easing library tweening a marker side-by-side. Each row is one easing from the `EASINGS` lookup (`linear` + quad/cubic/quart/quint + sine/expo/circ + back/elastic/bounce, with In/Out/InOut variants); click "play all" to fire one `animator.tween` per row simultaneously, sharing a duration slider. The dim line below each track plots the curve shape (clamped to [0,1] so back/elastic overshoot rows still fit their lane — the marker itself still travels past the endpoints when the curve does).',
     hint: 'Click "play all" to fire every easing at once; drag the slider to change duration.',
     Component: EasingsDemo,
-    snippet: EASINGS_DEMO_SOURCE,
     full: EasingsDemoFull,
     path: 'demo/demos/EasingsDemo.tsx',
   },
@@ -116,7 +110,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'Three containers side by side, one per layout strategy — freeform (absolute placement), tileGrid (2x2 cells), and snapPoint (corner snapping). All three share a single adapter and one useSelectTool. Dragging a child within its container exercises the in-container layout (cell swap, corner snap); dragging across containers reflows both sides via the layout-aware move pass.',
     hint: 'Drag a child rect within its container or into another to see layout-driven reflow.',
     Component: LayoutDemo,
-    snippet: LAYOUT_DEMO_SOURCE,
     full: LayoutDemoFull,
     path: 'demo/demos/LayoutDemo.tsx',
   },
@@ -127,7 +120,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'useResize — grab one of the four corner handles to resize the rectangle from the opposite anchor.',
     hint: 'Drag a corner handle.',
     Component: ResizeDemo,
-    snippet: RESIZE_DEMO_SOURCE,
     full: ResizeDemoFull,
     path: 'demo/demos/ResizeDemo.tsx',
   },
@@ -138,7 +130,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'useRotate — drag the rotation handle (above the top-center of the bounding box) to rotate the object around its AABB center. Body-drag still moves; corner handles resize in the leaf\'s local frame (the diagonal corner stays pinned in world space).',
     hint: 'Click a rect to select; drag the small handle above it to rotate.',
     Component: RotateDemo,
-    snippet: ROTATE_DEMO_SOURCE,
     full: RotateDemoFull,
     path: 'demo/demos/RotateDemo.tsx',
   },
@@ -149,7 +140,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'Math explainer for rotated resize: drag the bottom-right corner of each rect and watch the "fixed corner world" ledger. Green: full math (projection + anchor pinning + position correction) — ledger stays constant. Orange: no projection — distorts on rotation. Purple: no position correction — fixed corner drifts.',
     hint: 'Drag a corner handle to resize the rotated rect.',
     Component: RotatedResizeMathDemo,
-    snippet: ROTATED_RESIZE_MATH_DEMO_SOURCE,
     full: RotatedResizeMathDemoFull,
     path: 'demo/demos/RotatedResizeMathDemo.tsx',
   },
@@ -160,7 +150,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'useInsert — drag on empty space to draw a new rectangle. Each gesture commits an InsertOp through the adapter.',
     hint: 'Drag on empty space to draw.',
     Component: InsertDemo,
-    snippet: INSERT_DEMO_SOURCE,
     full: InsertDemoFull,
     path: 'demo/demos/InsertDemo.tsx',
   },
@@ -171,7 +160,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'useClone with the cloneByAltDrag behavior — hold Alt and drag a rectangle to duplicate it at the drop point.',
     hint: 'Hold Alt and drag a rectangle.',
     Component: CloneDemo,
-    snippet: CLONE_DEMO_SOURCE,
     full: CloneDemoFull,
     path: 'demo/demos/CloneDemo.tsx',
   },
@@ -182,7 +170,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'createTextLayer + useTextEdit + createSetTextOp, composed with useMove, useResize, and the selection overlay. Click to select, drag the body to move (snaps to a 10-unit grid), drag the bottom-right handle to resize (which re-wraps the text), double-click to edit at the clicked glyph (caretIndexAt resolves the click to a character offset and seeds the contenteditable caret); commits flow through createSetTextOp so they\'re undoable. The fourth node demonstrates themed editing — TextStyle.caretColor, selectionBackground, and selectionColor flow through to the contenteditable overlay so the in-place editor matches the canvas palette.',
     hint: 'Click to select, drag to move, drag the bottom-right handle to resize, double-click to edit. Enter commits, Shift+Enter newline, Escape cancels.',
     Component: TextDemo,
-    snippet: TEXT_DEMO_SOURCE,
     full: TextDemoFull,
     path: 'demo/demos/TextDemo.tsx',
   },
@@ -193,7 +180,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'selectionMode="multi" — shift-click to extend the selection. With more than one item selected, the overlay collapses to a single union AABB with corner handles, clicks inside the union drag the whole set, and the corner handles resize the union (each member is scaled via the same remapBounds path the groups demo uses).',
     hint: 'Click a rect to select; shift-click another to add it; drag the body or grab a corner.',
     Component: MultiSelectDemo,
-    snippet: MULTI_SELECT_DEMO_SOURCE,
     full: MultiSelectDemoFull,
     path: 'demo/demos/MultiSelectDemo.tsx',
   },
@@ -204,7 +190,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'Five selection-driven action hooks — useEscape, useSelectAll, useDuplicate, useNudge, useReorder — wired with their default keybindings. Focus the demo (tabIndex container) to enable the shortcuts; arrows nudge by 2, shift+arrows by 20, Cmd-[/Cmd-] reorder z-order (shift sends to front/back).',
     hint: 'Click to focus, then press Esc / Cmd-A / Cmd-D / arrows / Cmd-[ / Cmd-].',
     Component: ActionsDemo,
-    snippet: ACTIONS_DEMO_SOURCE,
     full: ActionsDemoFull,
     path: 'demo/demos/ActionsDemo.tsx',
   },
@@ -215,7 +200,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'A virtual group around three rectangles — a side-record { id, members[] } with no scene-graph hierarchy. Clicking any member selects the whole group; dragging moves all members together; corner handles resize the group\'s union AABB and scale each member proportionally. Selection overlay uses the optional groupAdapter to draw a single rectangle around the group.',
     hint: 'Click a green rect to select the group, then drag or grab a corner.',
     Component: GroupsDemo,
-    snippet: GROUPS_DEMO_SOURCE,
     full: GroupsDemoFull,
     path: 'demo/demos/GroupsDemo.tsx',
   },
@@ -226,7 +210,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'Real parent/child hierarchy via setParent — supports arbitrary nesting depth. The opening scene already shows three levels: g1 contains a free leaf and a sub-group g2; g2 in turn contains its own leaves. Poses are local to the direct parent; the kit composes world poses via worldPoseLookup for hit-testing and selection overlays. useNestedGroup (Mod+G) wraps the selection in a new parent node and rebases children\'s locals so their visual world position is preserved; useNestedUngroup (Mod+Shift+G) reparents children back to the grandparent. Default click resolves to the outermost ancestor; Alt-click drills one level deeper than the deepest currently-selected ancestor (so repeated Alt-clicks step group → subgroup → leaf), letting you select any node in the tree to group/ungroup at any depth. Dragging a parent auto-cascades its descendants in the live overlay so children visually follow during the drag (no extra ops — under local-pose semantics the post-commit scene is already correct). Mod+Z / Mod+Shift+Z undo and redo.',
     hint: 'Click a leaf to grab its outermost group. Alt-click to drill in (each Alt-click steps one level deeper). Cmd+G groups the selection at any depth; Cmd+Shift+G ungroups.',
     Component: NestedGroupsDemo,
-    snippet: NESTED_GROUPS_DEMO_SOURCE,
     full: NestedGroupsDemoFull,
     path: 'demo/demos/NestedGroupsDemo.tsx',
   },
@@ -237,7 +220,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'Four interactions on one scene — move, resize, insert, area-select all share a single adapter and rect list. A pointer-down dispatcher picks which hook owns the gesture; selection is rendered as outlines and resize handles.',
     hint: 'Click a rect to select; drag a handle to resize; drag empty space to marquee-select; switch to Insert mode to draw new rects.',
     Component: ComposeDemo,
-    snippet: COMPOSE_DEMO_SOURCE,
     full: ComposeDemoFull,
     path: 'demo/demos/ComposeDemo.tsx',
   },
@@ -248,7 +230,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'A demo-local quadtree slotted into the Canvas layers map as a custom RenderLayer alongside weasel\'s stock layers (grid, scene, selection overlay). The tree rebuilds each frame from the committed rect AABBs and subdivides any cell that overlaps more than one rect (max depth 5). Demonstrates how to drop an analytical layer into the layer pipeline via `{ layer, after }`.',
     hint: 'Click to select, drag to move, drag a corner to resize. Watch the cyan cells subdivide live.',
     Component: QuadtreeDemo,
-    snippet: QUADTREE_DEMO_SOURCE,
     full: QuadtreeDemoFull,
     path: 'demo/demos/QuadtreeDemo.tsx',
   },
@@ -259,7 +240,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'A scene where the object\'s pose IS a Path — no rect→shape adapter step. Canvas\'s internal useResize is generalized over TPose via the optional `geometry` opt; passing `pathPoseDescriptor` lets it read bounds via boundsOfPath and remap every coord through an affine scale against the dragged AABB. Move uses the kit\'s `translatePath` as its translatePose, and snap-to-grid runs through `pathOriginProjection` so it snaps the path origin rather than every vertex. Body-drag to move; corner handles to resize.',
     hint: 'Drag the polygon body to move it; drag a corner to resize.',
     Component: PathPoseDemo,
-    snippet: PATH_POSE_DEMO_SOURCE,
     full: PathPoseDemoFull,
     path: 'demo/demos/PathPoseDemo.tsx',
   },
@@ -270,7 +250,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'Five non-rect shapes on one canvas, all editable end-to-end via Canvas + the `geometry={pathPoseDescriptor}` prop. Ghost (multi-contour PolygonPath with evenodd eye holes and Q-curve curls), rubber duck (composePath fuse of separate body/head/beak/eye PolygonPaths), Hamburglar silhouette (disjoint cape + hat subpaths under one pose — verifies the selection overlay draws one outer AABB around discontinuous shapes), goose (extreme aspect ratio long neck — stresses resize anchoring), octopus (eight open-polyline tentacles around a closed body subpath — exercises the open-subpath rendering path). Hit-testing uses pointInPath against the real silhouette; the adapter wires pathPoseDescriptor.intersectsRect for area-select.',
     hint: 'Click to select, drag to move, drag a corner to resize, shift-click to multi-select. Click "honk" above the goose.',
     Component: CompoundPathsDemo,
-    snippet: COMPOUND_PATHS_DEMO_SOURCE,
     full: CompoundPathsDemoFull,
     path: 'demo/demos/CompoundPathsDemo.tsx',
   },
@@ -281,7 +260,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'Control-point editing on a polygon path. Click to select (selection AABB shows), double-click the curve to enter anchor-edit mode (selection AABB hides; anchor + control-handle circles + tangent lines render), drag any anchor or control to mutate the curve, Esc to exit. v1 corner-only behavior: dragging an anchor moves only its on-curve coord — adjacent controls stay put in world space (Illustrator "Convert Anchor Point" semantics). Smoothing (Figma\'s default move-anchor-moves-controls) plugs in next iteration; insert/delete anchors and marquee-select are deferred.',
     hint: 'Click to select. Double-click to edit anchors. Drag anchors or control handles. Esc to exit edit mode.',
     Component: BezierEditDemo,
-    snippet: BEZIER_EDIT_DEMO_SOURCE,
     full: BezierEditDemoFull,
     path: 'demo/demos/BezierEditDemo.tsx',
   },
@@ -292,7 +270,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'Three opt-in always-on tools wired alongside select + hand: useWheelZoomTool (ctrl/meta+wheel zooms about the cursor), useWheelPanTool (plain wheel pans), useKeyboardZoomTool (Cmd+= / Cmd+- / Cmd+0). Selection-overlay handles, marquee, and insert overlays now live in screen space, so chrome stays at fixed pixel size under zoom. The two demo rects show the trade-off in scene strokes: the green rect divides lineWidth by view.scale (screen-pinned, looks the same at every zoom); the purple rect uses a plain world-px stroke (grows and shrinks with zoom).',
     hint: 'ctrl/⌘+wheel zoom · plain wheel pan · ⌘+= / ⌘+- / ⌘+0 · H drag · space drag.',
     Component: ZoomDemo,
-    snippet: ZOOM_DEMO_SOURCE,
     full: ZoomDemoFull,
     path: 'demo/demos/ZoomDemo.tsx',
   },
@@ -303,7 +280,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'SceneCanvas viewport prop wires inertia pan, pinch zoom, and animated keyboard zoom in one place. Inertia uses a friction-decayed velocity loop after drag release; boundary clamping can stop or bounce the pan at configurable limits. Pinch zoom attaches pointer-event listeners directly to the canvas element (works on touch screens and Mac trackpads). Animated keyboard zoom tweens Cmd+=/- with ease-out-cubic instead of jumping.',
     hint: 'Drag fast and release to coast · ⌘+= / ⌘+- / ⌘+0 to zoom with easing · toggle boundary to see stop vs bounce.',
     Component: ViewportDemo,
-    snippet: VIEWPORT_DEMO_SOURCE,
     full: ViewportDemoFull,
     path: 'demo/demos/ViewportDemo.tsx',
   },
@@ -314,7 +290,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'A dev-mode overlay layer that paints what the kit\'s interaction system "sees": object bounds (AABBs), pose origins, every hit-test shape, handle positions, snap candidates, and per-layer metadata. Pass a `DebugConfig` (or `true` / `"all"`) to `<Canvas debug={...}>` and the kit appends a screen-space overlay layer wired to a per-frame debug sink. Tree-shaken when `debug` is falsy/undefined; URL fallback `?debug=all` (or `?debug=bounds,handles`) reads from `location.search`. Each chip toggles a single feature so you can isolate visualization of, say, just hitboxes vs. just snap candidates.',
     hint: 'Toggle chips to layer the kit\'s view of the scene. Drag a box (snap chip lights up); drag a corner (handles + hitboxes light up).',
     Component: DebugOverlayDemo,
-    snippet: DEBUG_OVERLAY_DEMO_SOURCE,
     full: DebugOverlayDemoFull,
     path: 'demo/demos/DebugOverlayDemo.tsx',
   },
@@ -325,7 +300,6 @@ export const DEMOS: DemoEntry[] = [
     description: 'useHandTool wired with <Canvas view={...} onViewChange={...}>. Three rectangles spread across a coordinate range larger than the 400×300 viewport. H switches to the hand tool (sticky); space engages it momentarily. Drag to pan. The select tool remains available when neither hand activation is engaged.',
     hint: 'H = hand tool · hold space = momentary hand · drag to pan · Reset view to return home.',
     Component: PanDemo,
-    snippet: PAN_DEMO_SOURCE,
     full: PanDemoFull,
     path: 'demo/demos/PanDemo.tsx',
   },

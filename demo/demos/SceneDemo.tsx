@@ -142,31 +142,3 @@ export function SceneDemo() {
     </div>
   );
 }
-
-export const SCENE_DEMO_SOURCE = `// Kit-owned scene primitive — useScene + SceneCanvas.
-// Layers, parenting, undo/redo, and container-cascade-on-drag are first-class.
-
-const scene = useScene<NodeData, LayerId, Pose>({
-  systemLayers: [
-    { id: 'garden' }, { id: 'blueprint' },
-    { id: 'zones' }, { id: 'structures' }, { id: 'plantings' },
-  ],
-  initial: [
-    { id: 'planter-1', kind: 'container', layer: 'structures', pose, data },
-    // Cross-layer parenting: leaf on 'plantings', parent on 'structures'.
-    { id: 'plant-a',  kind: 'leaf',      layer: 'plantings',  pose, data, parent: 'planter-1' },
-  ],
-});
-
-// Consumer op participates in the same undo stack as scene.add / scene.setPose.
-scene.registerOp<SetColorPayload>('setColor', { apply, revert });
-
-return (
-  <SceneCanvas
-    width={W} height={H} scene={scene}
-    layers={{ scene: { drawOne: (cx, node, pose) => { /* ... */ } } }}
-  />
-);
-// SceneCanvas wires sceneToAdapter, undo/redo, and container-cascade
-// (live overlay + commit-time descendant translate) by default.
-`;
