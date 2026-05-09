@@ -7,6 +7,7 @@ import type { View } from '../../features/viewport/view';
 import { useClone, type UseCloneOptions } from '../../interactions/gestures/clone';
 import type { CloneBehavior, CloneLayer, ModifierState } from '../../interactions/gestures/types';
 import { AUTO_POSE_DESCRIPTOR } from '../../interactions/gestures/resize/autoPoseDescriptor';
+import { viewToMat3, type DrawCommand } from '@orochi235/weasel-gl';
 
 /** Live preview item published by useClone — `{id, x, y}` (snapshot pose
  *  translated by the in-flight drag offset). */
@@ -55,11 +56,17 @@ export interface UseCloneToolOptions<T extends { id: string } = { id: string }, 
    *  the SceneCanvas pattern), or falls back to a translucent rect
    *  outline if neither is supplied. */
   drawGhost?: (cx: CanvasRenderingContext2D, items: CloneOverlayItem[], view: View) => void;
+  /** GL counterpart to `drawGhost`. Returns world-space DrawCommand[] for
+   *  all in-flight ghosts. When omitted, the tool synthesizes a ghost from
+   *  `drawOneGL` (mirroring `drawGhost`'s drawOne fallback). */
+  drawGhostGL?: (items: CloneOverlayItem[], view: View) => DrawCommand[];
   /** Scene `drawOne` (the same render fn passed to
    *  `<Canvas layers={{ scene: { drawOne } }}>`). When `drawGhost` is
    *  omitted, the tool synthesizes a ghost by translating each cloned
    *  item's source pose and calling `drawOne(ctx, obj, pose, view)`. */
   drawOne?: (cx: CanvasRenderingContext2D, obj: T, pose: TPose, view: View) => void;
+  /** GL counterpart to `drawOne`. Used when `drawGhostGL` is omitted. */
+  drawOneGL?: (obj: T, pose: TPose, view: View) => DrawCommand[];
   /** CloneLayer category passed to `clone.start`. Default `'structures'`. */
   layer?: CloneLayer;
   /** Optional id-list expansion (e.g. virtual-group expansion). Forwarded
@@ -186,6 +193,53 @@ export function useCloneTool<T extends { id: string }, TPose = unknown>(
       cx.restore();
     };
 
+    // Default drawGhostGL: mirrors defaultDrawGhost but emits DrawCommand[].
+    // Uses drawOneGL when supplied; falls back to translucent outline rects.
+    const defaultDrawGhostGL = (items: CloneOverlayItem[], view: View): DrawCommand[] => {
+      const drawOneGL = optsRef.current.drawOneGL;
+      const a = adapterRef.current as IntrospectableAdapter<T> & InsertAdapter<T>;
+      if (drawOneGL && a.getObjects && a.getPose) {
+        const byId = new Map<string, T>();
+        for (const o of a.getObjects()) byId.set(o.id, o);
+        const out: DrawCommand[] = [];
+        for (const item of items) {
+          const obj = byId.get(item.id);
+          if (!obj) continue;
+          let srcPose: unknown;
+          try {
+            srcPose = a.getPose(item.id);
+          } catch {
+            continue;
+          }
+          const bounds = AUTO_POSE_DESCRIPTOR.getBounds(srcPose);
+          const dx = item.x - bounds.x;
+          const dy = item.y - bounds.y;
+          const ghostPose = AUTO_POSE_DESCRIPTOR.translate!(srcPose, dx, dy);
+          for (const c of drawOneGL(obj, ghostPose as TPose, view)) out.push(c);
+        }
+        return out;
+      }
+      // Fallback: translucent outline rects at each item's bounds.
+      const out: DrawCommand[] = [];
+      for (const item of items) {
+        let pose: unknown = null;
+        if (a.getPose) {
+          try { pose = a.getPose(item.id); } catch { /* ignore */ }
+        }
+        const b = pose !== null
+          ? AUTO_POSE_DESCRIPTOR.getBounds(pose)
+          : { x: item.x, y: item.y, width: 0, height: 0 };
+        if (b.width > 0 && b.height > 0) {
+          out.push({
+            kind: 'path',
+            path: { kind: 'rect', x: item.x, y: item.y, width: b.width, height: b.height },
+            stroke: { paint: { color: '#888' }, width: 1 },
+          });
+        }
+      }
+      return out;
+    };
+
     const overlay: RenderLayer<unknown> = {
       id: 'clone-ghost',
       label: 'Clone ghost',
@@ -194,6 +248,14 @@ export function useCloneTool<T extends { id: string }, TPose = unknown>(
         if (!items) return;
         const drawGhost = optsRef.current.drawGhost ?? defaultDrawGhost;
         drawGhost(cx, items, view);
+      },
+      drawGL: (_data, view) => {
+        const items = overlayRef.current;
+        if (!items || items.length === 0) return [];
+        const fn = optsRef.current.drawGhostGL ?? defaultDrawGhostGL;
+        const cmds = fn(items, view);
+        if (cmds.length === 0) return [];
+        return [{ kind: 'group', transform: viewToMat3(view), alpha: 0.5, children: cmds }];
       },
     };
 
