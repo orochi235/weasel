@@ -1,9 +1,11 @@
-import type { Path, Stroke, TextStyle } from '@orochi235/weasel';
+import type { Path, Paint, Stroke, TextStyle } from '@orochi235/weasel';
 import type { Mat3 } from './mat3';
 
 /**
- * Solid-fill paint variant (subset of the spec's full Paint union).
- * Step 1 supports only solid; pattern + gradients arrive in step 4.
+ * Solid-fill paint variant (subset of the full `Paint` union from
+ * `@orochi235/weasel`). Kept for back-compat with step-1/2 consumers and
+ * because some code reads `fill.color` directly. Through step 4, fills can
+ * be any `Paint` variant — solid, pattern, or gradient.
  */
 export interface SolidPaint {
   fill?: 'solid';
@@ -12,14 +14,19 @@ export interface SolidPaint {
   opacity?: number;
 }
 
-/** DrawCommand variants implemented through step 3 (path + stroke + group + text). */
-export type DrawCommand = PathDrawCommand | GroupDrawCommand | TextDrawCommand;
+/** DrawCommand variants implemented through step 4. */
+export type DrawCommand =
+  | PathDrawCommand
+  | GroupDrawCommand
+  | TextDrawCommand
+  | ImageDrawCommand;
 
 export interface PathDrawCommand {
   kind: 'path';
   path: Path;
-  fill?: SolidPaint;
-  /** Stroke spec. In step 2 only solid `paint` is supported; gradients/patterns arrive in step 4. */
+  /** Any `Paint` variant: solid, pattern, or gradient (linear/radial/conic). */
+  fill?: Paint;
+  /** Stroke spec. Only solid `paint` supported through step 4. */
   stroke?: Stroke;
 }
 
@@ -45,4 +52,19 @@ export interface TextDrawCommand {
   y: number;
   text: string;
   style: TextStyle;
+}
+
+/**
+ * Image draw command — renders `image` at screen-space rect (x, y, w, h).
+ * The image is stretched to fit; no tiling. Use a pattern Paint on a path
+ * for tiling.
+ */
+export interface ImageDrawCommand {
+  kind: 'image';
+  image: ImageBitmap;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  opacity?: number;
 }

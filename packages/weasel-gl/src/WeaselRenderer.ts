@@ -11,8 +11,22 @@ import {
   TEXT_SDF_UNIFORMS,
   TEXT_SDF_ATTRIBUTES,
 } from './shaders/textSdf';
+import {
+  IMAGE_VERT_SRC,
+  IMAGE_FRAG_SRC,
+  IMAGE_FILL_UNIFORMS,
+  IMAGE_FILL_ATTRIBUTES,
+} from './shaders/imageFill';
+import {
+  GRAD_VERT_SRC,
+  GRAD_FRAG_SRC,
+  GRAD_FILL_UNIFORMS,
+  GRAD_FILL_ATTRIBUTES,
+} from './shaders/gradFill';
 import { GLMeshCache } from './GLMeshCache';
 import { GLTextureCache } from './GLTextureCache';
+import { GLImageCache } from './GLImageCache';
+import { GradientRampCache } from './GradientRampCache';
 import { GroupState } from './GroupState';
 import type { DrawCommand } from './DrawCommand';
 import { dispatch, type DrawContext } from './draw';
@@ -30,8 +44,12 @@ export class WeaselRenderer {
   private readonly gl: WebGL2RenderingContext;
   private pathFill: ShaderProgram;
   private textSdf: ShaderProgram;
+  private imageFill: ShaderProgram;
+  private gradFill: ShaderProgram;
   private meshCache: GLMeshCache;
   private textureCache: GLTextureCache;
+  private imageCache: GLImageCache;
+  private gradRampCache: GradientRampCache;
   private readonly groupState = new GroupState();
   private widthCss: number;
   private heightCss: number;
@@ -76,10 +94,20 @@ export class WeaselRenderer {
     this.textSdf.lookupUniforms(TEXT_SDF_UNIFORMS);
     this.textSdf.lookupAttributes(TEXT_SDF_ATTRIBUTES);
 
+    this.imageFill = new ShaderProgram(this.gl, IMAGE_VERT_SRC, IMAGE_FRAG_SRC);
+    this.imageFill.lookupUniforms(IMAGE_FILL_UNIFORMS);
+    this.imageFill.lookupAttributes(IMAGE_FILL_ATTRIBUTES);
+
+    this.gradFill = new ShaderProgram(this.gl, GRAD_VERT_SRC, GRAD_FRAG_SRC);
+    this.gradFill.lookupUniforms(GRAD_FILL_UNIFORMS);
+    this.gradFill.lookupAttributes(GRAD_FILL_ATTRIBUTES);
+
     const aPos = this.pathFill.attribute('a_position');
     if (aPos === undefined) throw new Error('WeaselRenderer: a_position not found in path-fill shader');
     this.meshCache = new GLMeshCache(this.gl, aPos);
     this.textureCache = new GLTextureCache(this.gl);
+    this.imageCache = new GLImageCache(this.gl);
+    this.gradRampCache = new GradientRampCache(this.gl);
   }
 
   private applyViewport(): void {
@@ -109,11 +137,18 @@ export class WeaselRenderer {
     this.textSdf = new ShaderProgram(this.gl, TEXT_VERT_SRC, TEXT_FRAG_SRC);
     this.textSdf.lookupUniforms(TEXT_SDF_UNIFORMS);
     this.textSdf.lookupAttributes(TEXT_SDF_ATTRIBUTES);
+    this.imageFill = new ShaderProgram(this.gl, IMAGE_VERT_SRC, IMAGE_FRAG_SRC);
+    this.imageFill.lookupUniforms(IMAGE_FILL_UNIFORMS);
+    this.imageFill.lookupAttributes(IMAGE_FILL_ATTRIBUTES);
+    this.gradFill = new ShaderProgram(this.gl, GRAD_VERT_SRC, GRAD_FRAG_SRC);
+    this.gradFill.lookupUniforms(GRAD_FILL_UNIFORMS);
+    this.gradFill.lookupAttributes(GRAD_FILL_ATTRIBUTES);
     const aPos = this.pathFill.attribute('a_position');
     if (aPos === undefined) throw new Error('a_position missing after restore');
     this.meshCache = new GLMeshCache(this.gl, aPos);
     this.textureCache = new GLTextureCache(this.gl);
-    // Font atlases need re-uploading to the new context.
+    this.imageCache = new GLImageCache(this.gl);
+    this.gradRampCache = new GradientRampCache(this.gl);
     _markAllFontsNotUploaded();
   }
 
@@ -125,8 +160,12 @@ export class WeaselRenderer {
       gl,
       pathFill: this.pathFill,
       textSdf: this.textSdf,
+      imageFill: this.imageFill,
+      gradFill: this.gradFill,
       meshCache: this.meshCache,
       textureCache: this.textureCache,
+      imageCache: this.imageCache,
+      gradRampCache: this.gradRampCache,
       state: this.groupState,
       widthCss: this.widthCss,
       heightCss: this.heightCss,
@@ -148,8 +187,12 @@ export class WeaselRenderer {
   /** @internal */ _gl(): WebGL2RenderingContext { return this.gl; }
   /** @internal */ _pathFill(): ShaderProgram { return this.pathFill; }
   /** @internal */ _textSdf(): ShaderProgram { return this.textSdf; }
+  /** @internal */ _imageFill(): ShaderProgram { return this.imageFill; }
+  /** @internal */ _gradFill(): ShaderProgram { return this.gradFill; }
   /** @internal */ _meshCache(): GLMeshCache { return this.meshCache; }
   /** @internal */ _textureCache(): GLTextureCache { return this.textureCache; }
+  /** @internal */ _imageCache(): GLImageCache { return this.imageCache; }
+  /** @internal */ _gradRampCache(): GradientRampCache { return this.gradRampCache; }
   /** @internal */ _groupState(): GroupState { return this.groupState; }
   /** @internal */ _widthCss(): number { return this.widthCss; }
   /** @internal */ _heightCss(): number { return this.heightCss; }
