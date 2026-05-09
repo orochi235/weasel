@@ -1,293 +1,144 @@
-# Feature-Roles Taxonomy + Focus & Grid Migrations
+# Feature-Roles Taxonomy + Focus/Grid Barrel Hygiene
 
-**Status:** approved 2026-05-09 (informal back-and-forth in chat)
-**Marker:** `@experimental` on the public surface introduced here
+**Status:** revised 2026-05-09 (in-chat reframing — features are dev-side packaging, not consumer-facing assembly)
 
 ## Problem
 
-Today's "features" in the kit are directories under `src/features/` that export primitives — hooks, layer factories, types, helpers. There's no consistent shape that says "a feature contributes these kinds of things." Consumers wire each part of a feature individually:
+The kit's `src/features/<name>/` directories bundle related primitives, but the bundling discipline is uneven:
 
-```ts
-// Today — assembling focus by hand, every site:
-const ref = useRef<HTMLCanvasElement>(null);
-const { focused, focusProps, getFocused } = useCanvasFocus();
-const baseSelection = createSelectionOverlayLayer({ ... });
-const wrappedSelection = gateLayer({ layer: baseSelection, visible: getFocused });
-return (
-  <SceneCanvas ref={ref} {...focusProps}
-    layers={{ selectionOverlay: wrappedSelection, ... }} />
-);
-```
+- **Inconsistent barrels.** `src/features/grid/index.ts` exports just `roundToCell`; the rest of the grid feature's primitives (`useGridCellHover`, `createGridLayer`, `createCellHighlightLayer`) skip the barrel and are imported by the kit's main barrel directly from internal files. `src/features/focus/index.ts` is well-formed; the contrast is what makes the inconsistency visible.
 
-Friction:
+- **No documented dev-side convention.** Authors of new features (or refactors of existing ones) have no shared answer to "what shape should a feature's exports take?" or "what counts as a primitive vs. an internal detail?" The role categories (api / attrs / layers — see `docs/taxonomy.md`) name the parts, but there's no spec that says "this is how features are organized."
 
-1. Every multi-part feature needs the same multi-part assembly at every consumer site.
-2. No structural type tells a reader what a feature *does*. They have to read the imports.
-3. Cross-feature composition (focus wraps the selection overlay) lives in the consumer's wiring, not in the type system.
+- **No documented protocol-vs-bundle distinction.** Selection's protocol surface (`SelectionApi`, `AreaSelectAdapter`, the methods threaded into Move/Resize/Rotate adapters) is load-bearing across the kit; focus's reach is local. The taxonomy doc names the distinction; no spec has used it as a planning input.
 
-The kit's TODO already names this — the "Plugin/bundling convention" entry notes that primitives are pluggable but "what's missing is a convention for bundling a feature's parts." The TODO defers extraction until ≥2 plugin-shaped features are in flight. With focus shipped (`694b4da`–`00e6675`) and grid ready to convert, we have the trigger.
+The katamari risk: without the convention named, related code drifts into tangled multi-feature flows. The fix is dev-side discipline — not new public API.
 
 ## Goal
 
-**Primary: dev-side packaging.** Establish a typed convention for how kit-internal feature modules are structured and how their parts compose. The aim is loose coupling, clear separation of concerns, and a shape that future plugin work can build on top of without re-architecting first.
-
-**Secondary (and `@experimental`): consumer convenience.** Expose `useFocusFeature()` and `useGridFeature()` as feature-level entry points consumers *can* use if they want the bundled assembly. Consumers who prefer wiring primitives individually (`useCanvasFocus` + `gateLayer`, `useGridCellHover` + `createGridLayer` + …) keep doing so unchanged.
+**Dev-side only.** Establish and apply a convention for how feature modules organize their internals; do not introduce new consumer-facing abstractions.
 
 Concretely:
 
-1. A documented dev-side convention (`api`/`Api`, `attrs`/`Attrs`, `layers`/`Layers`) covering how feature modules export and compose their parts.
-2. `useFocusFeature()` and `useGridFeature()` as `@experimental` public hooks — the canonical assembly of each feature's primitives in the role shape. Convenience, not required.
-3. `EMPTY_LAYER` constant in `core/layers/` so wrappers can rely on a non-null upstream layer.
-4. A `<SceneCanvas features={[…]}>` prop (also `@experimental`) that spreads feature `attrs` and reduces feature `layers` contributions. This is the highest-level consumer convenience; if it sees no real-world use, it can be deprecated without touching the underlying convention.
-5. One demo migrated to `useGridFeature` as proof that the dev-side shape composes cleanly into a real consumer.
+1. **Document the convention.** `docs/taxonomy.md` already covers the role taxonomy (api/attrs/layers as a thinking tool) and the bundle-vs-protocol distinction. This spec adds a short authoring guide referencing the taxonomy: how to structure a `src/features/<name>/` directory, what belongs in the barrel, what stays internal.
 
-The low-level primitives (`useCanvasFocus`, `gateLayer`, `useGridCellHover`, `createGridLayer`, `createCellHighlightLayer`, `roundToCell`) stay public and non-experimental. They're the durable surface; the feature-level hooks are the speculative bit.
+2. **Apply the convention to focus and grid.** Focus is already mostly conformant; verify and tighten. Grid needs barrel cleanup — the index re-exports just `roundToCell`; the rest of the primitives (`useGridCellHover`, `createGridLayer`, `createCellHighlightLayer`) need to flow through the barrel too.
+
+3. **Update the kit's main barrel.** `src/index.ts` should import from feature barrels (`./features/grid`, `./features/focus`), not from feature-internal paths. This is the load-bearing discipline — once it's enforced, internal moves don't ripple through the main barrel.
+
+That's it. No new consumer-facing types, no `useFocusFeature` / `useGridFeature` hooks, no `<SceneCanvas features={[…]}>` prop, no `EMPTY_LAYER` constant. Those were all consumer-side conveniences in the previous version of this spec; per the dev-side framing they're out of scope.
 
 ## Non-goals
 
-- **Capability registry / DAG / `provides`/`requires` resolution.** The "C" path from chat — typed indirect references between features — is deferred. TypeScript imports are the dependency graph for in-tree code.
-- **Lifecycle / mixin hooks** (`onPointerDown`, `pre-/post-render`, etc.). The "B" path — chain-of-responsibility component-level behaviors — isn't in scope. Existing gesture behaviors (`MoveBehavior`, `ResizeBehavior`) cover that territory at the gesture level.
-- **Module augmentation for typed string-id capability lookup.** Not relevant here; we're using direct typed function arguments.
-- **`snapPreview` (or any new) system layer slot.** Cell-highlight stays grid-feature-internal. If a future second consumer (e.g., move-gesture snap previews, alignment-guide flashes) wants the same z-position, revisit then.
-- **Migrating every demo.** One per feature; the rest stay on primitives until the convention is stable.
-- **Promoting role-shape hooks to non-experimental.** The taxonomy is opt-in until 3+ features in this shape have stabilized.
+- **`useFocusFeature()` / `useGridFeature()` public hooks.** Consumers compose the existing primitives. The role taxonomy is a *thinking tool* for kit authors; consumers don't see it as types or runtime structures.
+- **`<SceneCanvas features={[…]}>` prop.** Consumer-facing composition slot. Out of scope.
+- **`EMPTY_LAYER` constant.** Pays off only if features ship layer-wrapping functions to consumers — i.e., if the consumer-facing role taxonomy were public. It's not. Skip.
+- **Capability registry / lifecycle behaviors / mixins.** The taxonomy doc names these as deferred concepts; this spec doesn't move on any of them.
+- **Migrating the other six features (selection, groups, paths, text, drag, viewport, patterns).** Focus + grid is the proof. If the discipline holds, extend feature-by-feature in subsequent passes. A blanket sweep risks more churn than insight.
+- **Selection's barrel.** Selection is protocol-shaped (per `docs/taxonomy.md` Feature §); its barrel + protocol surface deserve their own design pass. Out of scope here.
 
 ## Architecture
 
-### §A — Role taxonomy
+### §A — The dev-side convention (added to the docs)
 
-Each `useFooFeature()` hook returns an object with any subset of three fields:
+The taxonomy doc already covers the substance. This spec contributes a short authoring guide — likely 30-60 lines added either to `docs/taxonomy.md` (under Feature) or to a new `docs/extending.md`. Pick during implementation; the simplest landing spot is `docs/taxonomy.md` since it's already the reference text.
 
-```ts
-function useFooFeature(opts: ...): {
-  api?: FooApi;          // typed surface for cross-feature consumption
-  attrs?: FooAttrs;      // native DOM attrs/handlers for the canvas host
-  layers?: FooLayers;    // slot-keyed render-layer contributions
-};
-```
+The guide states:
 
-**`api: FooApi`** — the typed live-state handle other features and consumer code consume. Live values, refs, getters, setters. Cross-feature deps are typed function arguments: `useBlurOnEscape(focus.api)`.
+1. **Each feature is a directory under `src/features/<name>/`.** The directory bundles related primitives that share a domain.
 
-**`attrs: FooAttrs`** — DOM attributes/event handlers spread onto the canvas element via `<SceneCanvas {...feature.attrs}>`. Things the browser cares about: `tabIndex`, `onFocus`, `onPointerMove`, `aria-*`. Distinct from React props the SceneCanvas component itself defines.
+2. **Each feature has an `index.ts` barrel.** The barrel re-exports the feature's *public primitives* — the things a consumer or another feature might import. Internal helpers stay un-exported (or exported only through deeper paths if required for testing).
 
-**`layers: FooLayers`** — a slot-keyed map of `<T>(current: RenderLayer<T>) => RenderLayer<T>` contributions. Provider and wrapper roles deliberately collapsed: a "provider" returns a fresh layer ignoring `current`; a "wrapper" composes. SceneCanvas seeds each slot with `EMPTY_LAYER` and reduces all contributions in registration order.
+3. **The kit's main barrel (`src/index.ts`) imports from feature barrels, not from feature-internal paths.** This is the discipline that prevents internal restructures from rippling out.
 
-Per-feature type names follow `Foo<Role>`: `FocusApi`, `FocusAttrs`, `FocusLayers`, `GridApi`, etc. No top-level type-alias `Api<S>` / `Attrs<P>` markers — the role lives in the field name and per-feature interface name.
+4. **The role taxonomy (api/attrs/layers — `docs/taxonomy.md` §Role taxonomy) is a thinking tool, not a code shape.** When authoring a feature's primitives, sort them mentally: which ones are state surfaces (api), which contribute DOM attrs (attrs), which contribute render layers (layers). The categorization helps decide what belongs in the barrel and what stays internal. It does NOT manifest as TypeScript types or runtime structures.
 
-### §B — `EMPTY_LAYER`
+5. **For protocol-shaped features** (per `docs/taxonomy.md` Feature §): document the protocol surface explicitly. Selection's `SelectionApi` and `AreaSelectAdapter` are the model. Other features that introduce cross-cutting concepts must do the same — name the contracts other code has to satisfy, in TypeScript interfaces.
 
-`core/layers/render.ts` (or a sibling file) gains:
+### §B — Focus barrel verification
+
+`src/features/focus/index.ts` currently exports:
 
 ```ts
-export const EMPTY_LAYER: RenderLayer<unknown> = {
-  id: 'empty',
-  label: 'Empty',
-  draw: () => [],
-};
+export { useCanvasFocus } from './useCanvasFocus';
+export type { UseCanvasFocusOptions, CanvasFocusReturn } from './useCanvasFocus';
+export { gateLayer } from './gateLayer';
+export type { GateLayerOptions } from './gateLayer';
 ```
 
-Or, if a generic factory reads cleaner, a function form:
+That's already in good shape: every public primitive flows through the barrel. The kit's main barrel `src/index.ts` should import these from `./features/focus`, not from internal paths. Verify during implementation; if the main barrel currently imports from `./features/focus/useCanvasFocus` directly, change to `./features/focus`.
+
+### §C — Grid barrel cleanup
+
+Today: `src/features/grid/index.ts` only exports `roundToCell`. The kit's main barrel imports the rest of the grid feature's primitives directly from internal paths.
+
+Target shape:
 
 ```ts
-export function emptyLayer<T>(): RenderLayer<T> { return EMPTY_LAYER as RenderLayer<T>; }
+// src/features/grid/index.ts
+export { roundToCell } from './roundToCell'; // if it ends up moved out of index
+export { useGridCellHover } from './useGridCellHover';
+export type { UseGridCellHoverOptions, UseGridCellHoverReturn } from './useGridCellHover';
+export { createGridLayer } from './layer';
+export type { GridLayerOpts } from './layer';
+export { createCellHighlightLayer } from './cellHighlight';
+export type { CellHighlightLayerOpts } from './cellHighlight';
 ```
 
-Either is fine; pick whichever the existing `core/layers/` patterns prefer at implementation time.
+(Exact layout — whether `roundToCell` stays inline in `index.ts` or moves to its own file — to be decided during implementation. Either is fine.)
 
-The constant exists so wrapper authors can rely on a non-null `current` argument. The "no upstream provider" case is a no-op layer, not a `null` to pattern-match against.
+The kit's main barrel `src/index.ts` then imports grid's primitives from `./features/grid`, not from `./features/grid/useGridCellHover` etc.
 
-### §C — `useFocusFeature`
+### §D — Documentation: protocol-shape note in `docs/taxonomy.md`
 
-```ts
-// src/features/focus/useFocusFeature.ts
-import { useCanvasFocus } from './useCanvasFocus';
-import { gateLayer } from './gateLayer';
-import type { RenderLayer } from '../../core/layers/render';
+The existing taxonomy doc already includes the bundle-vs-protocol distinction in the Feature entry. This spec doesn't add to it — but the focus+grid migrations are concrete bundle-shaped examples worth name-checking in the taxonomy or in a follow-up doc when more features land in this shape.
 
-export interface FocusApi {
-  focused: boolean;
-  getFocused: () => boolean;
-  setFocused: (next: boolean) => void;
-}
-
-export interface FocusAttrs {
-  tabIndex: number;
-  onFocus: () => void;
-  onBlur: () => void;
-}
-
-export interface FocusLayers {
-  selectionOverlay: <T>(current: RenderLayer<T>) => RenderLayer<T>;
-}
-
-/**
- * @experimental
- * Focus feature in the role-taxonomy shape. Wraps `useCanvasFocus` +
- * `gateLayer` into a single hook a consumer can install with one call.
- *
- * The low-level primitives stay public and non-experimental.
- */
-export function useFocusFeature(opts?: { initial?: boolean; tabIndex?: number }): {
-  api: FocusApi;
-  attrs: FocusAttrs;
-  layers: FocusLayers;
-} {
-  const f = useCanvasFocus(opts);
-  return {
-    api: { focused: f.focused, getFocused: f.getFocused, setFocused: f.setFocused },
-    attrs: f.focusProps,
-    layers: {
-      selectionOverlay: (current) => gateLayer({ layer: current, visible: f.getFocused }),
-    },
-  };
-}
-```
-
-Re-exported from `src/features/focus/index.ts` and from the kit barrel `src/index.ts` (under the `@experimental` marker).
-
-### §D — `useGridFeature`
-
-```ts
-// src/features/grid/useGridFeature.ts
-import { useCallback, useRef, useState } from 'react';
-import type React from 'react';
-import { screenToWorld, type ViewTransform } from '../viewport/viewTransform';
-import { pointToGridCell } from '../../interactions/gestures/shared/strategies/grid';
-import type { UnitSystem, UnitValue } from '../../core/units';
-import type { RenderLayer } from '../../core/layers/render';
-import type { Paint, Stroke } from '../../core/paint-types';
-import { createGridLayer } from './layer';
-import { createCellHighlightLayer } from './cellHighlight';
-
-export interface GridApi {
-  cell: { col: number; row: number } | null;
-  getCell: () => { col: number; row: number } | null;
-}
-
-export interface GridAttrs {
-  onPointerMove: (e: React.PointerEvent<HTMLElement>) => void;
-  onPointerLeave: (e: React.PointerEvent<HTMLElement>) => void;
-  onPointerCancel: (e: React.PointerEvent<HTMLElement>) => void;
-}
-
-export interface GridLayers {
-  /** Grid lines layer in the well-known `grid` system slot. */
-  grid: <T>(current: RenderLayer<T>) => RenderLayer<T>;
-  /** Cell-hover highlight in a grid-feature-internal slot. NOT a system slot;
-   *  consumers who want this slot's z-position pinned should consume it
-   *  through this feature. */
-  highlight: <T>(current: RenderLayer<T>) => RenderLayer<T>;
-}
-
-/** @experimental */
-export function useGridFeature(opts: UseGridFeatureOptions): {
-  api: GridApi;
-  attrs: GridAttrs;
-  layers: GridLayers;
-};
-```
-
-Implementation: roughly what `src/features/grid/useGridFeature.ts` already contains in the uncommitted draft, refined to use `EMPTY_LAYER`-aware signatures (`current: RenderLayer<T>`, never `null`) and re-exported via `src/features/grid/index.ts` + the kit barrel.
-
-The grid feature's `highlight` slot is *not* a `LayersMap` system slot. It lives under whatever custom string key the consumer plugs it into:
-
-```tsx
-layers={{
-  grid: grid.layers.grid(EMPTY_LAYER),
-  // 'gridHighlight' is just a custom key; nothing kit-level depends on it
-  gridHighlight: grid.layers.highlight(EMPTY_LAYER),
-}}
-```
-
-### §E — `<SceneCanvas features={[…]}>`
-
-`SceneCanvas` accepts an `@experimental` `features` prop:
-
-```ts
-features?: ReadonlyArray<{
-  api?: unknown;
-  attrs?: Record<string, unknown>;
-  layers?: Record<string, <T>(current: RenderLayer<T>) => RenderLayer<T>>;
-}>;
-```
-
-When present, SceneCanvas:
-
-1. Spreads each feature's `attrs` onto the underlying `<canvas>` element. Conflicting keys: later features win (documented).
-2. Reduces each feature's `layers[slot]` per slot, seeded with `EMPTY_LAYER`. The reduce runs in `features` array order. The result is merged into the explicit `layers={{...}}` prop: explicit `layers[slot]` wins over the reduce when both are set.
-3. Does *not* touch `feature.api` — that's for consumer code and other features to consume directly via direct typed reference.
-
-Manual composition still works:
-
-```tsx
-const focus = useFocusFeature();
-const selection = useSelectionFeature();
-return (
-  <SceneCanvas
-    {...focus.attrs}
-    layers={{
-      selectionOverlay: focus.layers.selectionOverlay(
-        selection.layers.selectionOverlay(EMPTY_LAYER)
-      ),
-    }}
-  />
-);
-```
-
-Both paths are supported. `features={[…]}` is the high-level convenience; manual composition is the escape hatch.
-
-### §F — Demo migrations
-
-One demo per feature. Pick the simplest current consumer of each feature's primitives:
-
-- **Focus demo:** none of the existing demos directly wire focus today (focus shipped without a demo entry). Either add a tiny new demo (`FocusDemo.tsx`) or leave the new feature undemonstrated. Lean: skip the demo for focus this cycle; the SelectionContext / SceneCanvas existing demos that *would* benefit from focus stay on primitives until focus has a real consumer.
-- **Grid demo:** one of the demos already uses `createGridLayer`/`createCellHighlightLayer`/`useGridCellHover`. Find one and migrate it to `useGridFeature`. Smoke-test that the migrated demo behaves identically.
-
-The migration's value is showing the convention; we don't need exhaustive demo coverage to validate it.
+If during implementation the authoring guide grows beyond 60-80 lines, split it into `docs/extending.md` and link from `docs/taxonomy.md`. Don't pre-decide; let the doc length drive the placement.
 
 ## Risk surface
 
-Three risks worth surfacing — all flagged in the existing `docs/TODO.md` "Feature-roles taxonomy" entry, restated here for completeness:
+Three risks, none gating:
 
-### R1 — Consumer-facing pieces may be unneeded
+### R1 — Convention may not survive contact with selection
 
-The `<SceneCanvas features={[…]}>` prop and the `useFooFeature()` hooks themselves may not see real consumer use. Today's wiring (manual composition of primitives) is already explicit and typed; the feature-level convenience only pays off if consumers stack 3+ features routinely.
+Selection is protocol-shaped; the convention here was crystallized against bundle-shaped features (focus, grid). When selection's eventual migration happens, it may surface convention misfits — e.g., the api/attrs/layers thinking tool may not naturally describe "selection's protocol surface". 
 
-The dev-side organizing value is independent of consumer adoption — keeping kit features loosely coupled and shaped consistently is worth doing whether or not anyone imports `useFocusFeature` directly. The risk is specifically that we built more public surface than needed.
+**Mitigation:** the taxonomy doc already names the bundle-vs-protocol distinction; the migration of selection isn't in scope here. When it happens, expect a separate spec that extends or revises the convention.
 
-**Mitigation:** the `@experimental` marker on `useFocusFeature`, `useGridFeature`, and the `features` prop signals "may evolve or be dropped." If after 6+ months they have zero or one user, deprecate and eventually remove them; the underlying primitives stay public and the dev-side convention stays intact internally.
+### R2 — Barrel-only refactor is a breaking change for consumers using deep imports
 
-### R2 — Layers-collapse risks (already documented in TODO)
+If any consumer currently imports from `'@orochi235/weasel/internal/...'` (or via TypeScript's path mapping into a feature-internal file), the barrel cleanup that re-routes the main barrel doesn't break them — but cleaning up *ad-hoc* internal imports as part of this work might.
 
-1. Wrapper-vs-provider intent invisible at the type level.
-2. Order becomes load-bearing without enforcement.
-3. A wrapper accidentally replaces (return-fresh-from-wrapper-shape).
+**Mitigation:** the change in scope is the kit's main barrel and the feature barrels. Consumer-side import paths under `@orochi235/weasel` aren't widened or narrowed. If a deep-import consumer exists in eric or another consumer app, run the consumer's build after the change as a smoke check.
 
-Rollback path: split `layers` into `layers: FooLayers` (provider, plain `RenderLayer<T>`) + `wrappers: FooWrappers` (slot-keyed transformer functions). Field names `api` and `attrs` stay.
+### R3 — Doc bloat without action
 
-### R3 — Lock-in on the field names
+A "convention doc" that no future feature actually follows is dead weight. The convention only pays off if it shapes future work.
 
-Once `api`, `attrs`, `layers` are public (even `@experimental`), changing them is a breaking change for opted-in consumers.
-
-**Mitigation:** the `@experimental` marker is the kit's standard signal that the shape may evolve. Any rename happens in a single PR with a CHANGELOG note; consumers who opted in update their `useFooFeature` call sites.
+**Mitigation:** the doc is short (30-60 lines) and references concrete examples (focus, grid). Re-evaluate after the third feature migration: if the doc doesn't naturally inform decisions, prune it.
 
 ## Sequencing
 
-Single PR. Build order within the PR:
+Single PR. Build order:
 
-1. **`EMPTY_LAYER`.** Add to `core/layers/render.ts` (or wherever `RenderLayer` lives). Tests verify `draw()` returns `[]`.
-2. **`useFocusFeature`.** Implement; export from `src/features/focus/index.ts` + kit barrel under `@experimental`. Tests: hook returns the right shape; `layers.selectionOverlay(EMPTY_LAYER)` returns a layer that emits empty when blurred and the overlay's commands when focused.
-3. **`useGridFeature`.** Implement; export. Tests: hook returns the right shape; `layers.grid(EMPTY_LAYER)` returns a working grid layer; `layers.highlight(EMPTY_LAYER)` returns a working highlight layer; pointer attrs update `api.cell` correctly.
-4. **`<SceneCanvas features={[…]}>` prop.** Add the prop, wire the reduce + attr-spread + layer-merge logic. Tests: providing focus + grid features installs both; explicit `layers` prop overrides reduced values.
-5. **Demo migration.** One demo migrated to `useGridFeature`. Manual smoke-test parity vs. the pre-migration version.
-6. **TODO refresh.** Update `docs/TODO.md` "Feature-roles taxonomy (in design — informal)" entry to reflect what shipped: drop "in design" from the heading, link to this spec, restate the watch list under "monitoring."
-7. **Final regression sweep.** `npm run prepublishOnly`. Manual demo smoke for the migrated demo and a sample of unrelated demos.
+1. **Taxonomy doc — authoring guide section.** Add the 5-point convention (per §A) to `docs/taxonomy.md` under the Feature entry, OR carve out `docs/extending.md` and link both directions. Single doc commit.
+
+2. **Focus barrel verification.** Confirm `src/features/focus/index.ts` re-exports the primitives. Confirm `src/index.ts` imports from `./features/focus`. Fix any deep imports. No code-behavior changes; tests untouched. Commit.
+
+3. **Grid barrel cleanup.** Update `src/features/grid/index.ts` to re-export all primitives. Update `src/index.ts` to import from `./features/grid`. Verify tsc and tests stay green. Commit.
+
+4. **Final regression sweep.** `npm run prepublishOnly`. Demos still load.
+
+No new code paths to test. The work is mechanical re-routing + a doc addition. Tests remain a regression contract; if anything was wired through a deep import path that I haven't caught, the tsc step exposes it.
 
 ## Open implementation questions
 
-(Surfaced during chat; resolved at implementation time, not gating spec approval.)
+(Surfaced for resolution at implementation time, not gating spec approval.)
 
-- **Composition order of `features={[…]}` array vs. explicit `layers={{...}}`.** The spec says "explicit wins"; the implementation needs to confirm that the merge order is deterministic and documented.
-- **Type for `features` prop.** Current sketch uses `unknown` for `api` (since SceneCanvas doesn't inspect it). May need refinement; if SceneCanvas wants to expose feature `api`s back to the consumer (via context, refs, etc.), the type tightens.
-- **`EMPTY_LAYER` shape: constant vs. factory.** Pick during implementation based on existing `core/layers/` patterns.
-- **`useFocusFeature` initial-state default.** `useCanvasFocus` defaults to `initial: false`. The feature wrapper inherits that. Confirm the demo behavior matches at smoke time.
+- **`docs/taxonomy.md` vs. `docs/extending.md`.** The 5-point authoring guide is short enough to fit inside the taxonomy doc's Feature entry as a sub-section. Alternative: a fresh `docs/extending.md` for kit-author-facing how-to. Pick during implementation based on doc length.
+
+- **`roundToCell` placement.** Currently inline in `src/features/grid/index.ts` (a 4-line function). Three options: leave it; move to `src/features/grid/roundToCell.ts` and re-export; promote to a kit utility outside features. The cleanest dev-side choice: move to its own file (consistent with the rest of the grid primitives), barrel re-exports it. Verify the call sites that import `roundToCell` still resolve.
+
+- **Feature-internal symbols that are tested but not exported.** `src/features/grid/grid.test.ts` (606 bytes — minimal) exists alongside `useGridCellHover.test.ts` etc. Confirm all tests still resolve their imports after the barrel cleanup.
+
+- **`docs/TODO.md` "Feature-roles taxonomy" entry update.** The entry currently calls the taxonomy "in design — informal." After this PR, that's no longer true (the convention is documented). Update the TODO entry to "shipped" with a link to the taxonomy section and this spec.
