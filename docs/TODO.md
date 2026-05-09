@@ -168,11 +168,20 @@ Audit findings (2026-05-09 background agent): focus + grid get the convention ap
 
 - **Trivial** — drag (no `index.ts` at all; two utility functions; ~5-line barrel). paths is already conformant despite being large.
 - **Lightweight** — patterns (intentional two-tier split: core barrel + `patterns-builtin` subpath; not a hygiene bug, leave as is). text (no `index.ts`; ~10 public primitives plus an internal `atlas/` subdirectory that should stay un-exported).
-- **Heavy** — viewport (no `index.ts`; 18+ exports across many small focused modules — `useZoom`, `usePinchGesture`, `useViewTween`, `useDecayLoop`, `clampView`, etc.). Mechanical re-routing but a lot of lines.
 - **Design review needed** — selection (protocol-shaped; no `index.ts`; ambient `SelectionContextProvider` is `@experimental` with open questions about its barrel placement). Don't migrate mechanically; needs a brief design pass.
 - **Already conformant** — focus, paths, groups (groups despite being protocol-shaped — its barrel is clean).
 
-Rollout order suggestion: drag → patterns (no-op confirmation) → text → viewport → selection (after design pass). Each is its own small PR; no bundling required.
+Rollout order suggestion: drag → patterns (no-op confirmation) → text → selection (after design pass). Each is its own small PR; no bundling required.
+
+**Viewport is not on this list** — it's reclassified as core infrastructure (see "Move viewport out of `src/features/`" below). Barrel-hygiene migration doesn't apply; the work is a directory move + import-site updates.
+
+### Move viewport out of `src/features/` to `src/core/`
+
+Viewport is foundational infrastructure (per `docs/taxonomy.md` Feature dependency layers): every canvas needs a `View`, every world-space draw needs `worldToScreen`/`screenToWorld`, every pointer event needs the client→world transform. It's not optional in any meaningful sense — unlike features (focus, grid, groups, text), which a consumer app can choose not to use.
+
+Plan: move `src/features/viewport/` to `src/core/viewport/`. ~18 import sites in the kit need updating; consumer-side imports through `@orochi235/weasel` are unaffected (the package barrel still re-exports the same names). Add an `index.ts` barrel at the new location and route the kit's main barrel through it.
+
+Defer until the focus/grid plan ships — separate small PR.
 
 ### Rotated-resize math demo: synchronized drag
 

@@ -219,7 +219,10 @@ what protocols they consume. Documented here so authors of new features know whe
 they fit.
 
 - **Foundation** (nothing kit-internal depends on these): `viewport`, `scene`,
-  `selection`.
+  `selection`. Of these, `viewport` is core infrastructure (lives under `src/core/`
+  — every canvas needs a `View`, so it's not optional in any meaningful sense);
+  `scene` is also core; `selection` is a protocol-shaped feature (lives under
+  `src/features/`) that most editor-style apps will pull in.
 - **Mid-layer** (depend on foundation): `groups` (scene + selection), `grid`
   (viewport), `focus` (nothing internal), `paths`, `patterns`, `text`.
 - **Gestures** (depend on foundation + adapter contracts): `useMove`, `useResize`,
