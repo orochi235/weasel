@@ -133,7 +133,28 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
     // leaves `button` undefined; treat that as primary so tests can drive drags.
     if (typeof e.button === 'number' && e.button > 0) return;
     e.preventDefault();
+    e.stopPropagation();
     beginThumbDrag(index);
+  };
+
+  const onTrackPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (typeof e.button === 'number' && e.button > 0) return;
+    if (!props.onAddThumb) return;
+    // If the event originated on a thumb, the thumb's own handler ran first; this is a track click.
+    if ((e.target as HTMLElement).closest(`.${s.thumb}`)) return;
+    e.preventDefault();
+    const track = trackRef.current;
+    if (!track) return;
+    const rect = track.getBoundingClientRect();
+    const f = clamp((e.clientX - rect.left) / rect.width, 0, 1);
+    let v = fractionToValue(f);
+    v = snap(v, step, min);
+    v = clamp(v, min, max);
+    const created = props.onAddThumb(v);
+    if (!created) return;
+    const next = [...thumbs.map(t => ({ ...t })), created] as T[];
+    onChange(next);
+    onCommit?.(next);
   };
 
   const onThumbKeyDown = (index: number) => (e: ReactKeyboardEvent) => {
@@ -187,7 +208,7 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
       className={className ? `${s.root} ${className}` : s.root}
       style={trackHeight !== undefined ? ({ ['--rp-track-height' as string]: `${trackHeight}px` } as CSSProperties) : undefined}
     >
-      <div className={s.track} ref={trackRef}>
+      <div className={s.track} ref={trackRef} onPointerDown={onTrackPointerDown}>
         {thumbs.map((thumb, i) => (
           <div
             key={i}

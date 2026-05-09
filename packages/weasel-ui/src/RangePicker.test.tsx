@@ -302,3 +302,45 @@ describe('RangePicker per-thumb bounds (callback form)', () => {
     fireEvent.pointerUp(document, { pointerId: 1 });
   });
 });
+
+describe('RangePicker click-on-track to add', () => {
+  it('appends thumb returned by onAddThumb on track click', () => {
+    const onChange = vi.fn();
+    const onCommit = vi.fn();
+    const onAddThumb = vi.fn((at: number) => ({ value: Math.round(at * 100) / 100 }));
+    const { container } = render(
+      <RangePicker
+        min={0}
+        max={1}
+        step={0.01}
+        thumbs={[{ value: 0.5 }]}
+        onChange={onChange}
+        onCommit={onCommit}
+        onAddThumb={onAddThumb}
+      />,
+    );
+    const track = container.querySelector('[role="slider"]')!.parentElement!;
+    stubRect(track, { left: 0, width: 200 });
+    fireEvent.pointerDown(track, { clientX: 50, clientY: 12, pointerId: 1, button: 0 });
+    expect(onAddThumb).toHaveBeenCalledWith(0.25);
+    expect(onChange.mock.calls[0][0]).toEqual([{ value: 0.5 }, { value: 0.25 }]);
+    expect(onCommit.mock.calls[0][0]).toEqual([{ value: 0.5 }, { value: 0.25 }]);
+  });
+
+  it('null return is a no-op', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <RangePicker
+        min={0}
+        max={1}
+        thumbs={[{ value: 0.5 }]}
+        onChange={onChange}
+        onAddThumb={() => null}
+      />,
+    );
+    const track = container.querySelector('[role="slider"]')!.parentElement!;
+    stubRect(track, { left: 0, width: 200 });
+    fireEvent.pointerDown(track, { clientX: 50, clientY: 12, pointerId: 1, button: 0 });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+});
