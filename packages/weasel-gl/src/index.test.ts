@@ -1,9 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import * as gl from './index';
+import { WeaselRenderer, mat3, tessellate } from './index';
 
 describe('weasel-gl barrel', () => {
-  it('exports a placeholder marker so the package is importable', () => {
-    expect(gl).toHaveProperty('__weaselGlPackage');
-    expect(gl.__weaselGlPackage).toBe(true);
+  it('exports WeaselRenderer', () => {
+    expect(WeaselRenderer).toBeDefined();
+  });
+  it('exports mat3 and tessellate', () => {
+    expect(typeof mat3.identity).toBe('function');
+    expect(typeof tessellate).toBe('function');
   });
 });
