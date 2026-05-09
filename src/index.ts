@@ -54,8 +54,7 @@
 export * from './features/grid';
 export * from './core/viewport/viewTransform';
 export type { View } from './core/viewport/view';
-export * from './features/drag/thresholdDrag';
-export * from './features/drag/pointerDrag';
+export * from './features/drag';
 export * from './core/viewport/useCanvasSize';
 export * from './core/viewport/fitToBounds';
 export { zoomAt } from './core/viewport/zoomAt';
