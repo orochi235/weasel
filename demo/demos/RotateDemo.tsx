@@ -4,7 +4,7 @@ import {
   useScene,
   ROTATED_POSE_DESCRIPTOR,
 } from '@orochi235/weasel';
-import type { RotatedPose } from '@orochi235/weasel';
+import type { PoseDescriptor, RotatedPose } from '@orochi235/weasel';
 import type { DrawCommand } from '@orochi235/weasel-gl';
 import { useBackend } from '../BackendContext';
 
@@ -43,7 +43,7 @@ backend={backend}
       height={H}
       className="ckd-canvas"
       scene={scene}
-      selectTool={{ handleHitRadius: HANDLE, resize: { geometry: ROTATED_POSE_DESCRIPTOR } }}
+      selectTool={{ handleHitRadius: HANDLE, resize: { geometry: ROTATED_POSE_DESCRIPTOR as PoseDescriptor<Rect> } }}
       geometry={{ pickEvery }}
       selectionOptions={{ initial: ['b'] }}
       layers={{
@@ -96,7 +96,7 @@ return (
   <SceneCanvas
     width={W} height={H}
     scene={scene}
-    selectTool={{ handleHitRadius: HANDLE, resize: { geometry: ROTATED_POSE_DESCRIPTOR } }}
+    selectTool={{ handleHitRadius: HANDLE, resize: { geometry: ROTATED_POSE_DESCRIPTOR as PoseDescriptor<Rect> } }}
     geometry={{ pickEvery }}
     selectionOptions={{ initial: ['b'] }}
     layers={{
