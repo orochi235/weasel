@@ -39,6 +39,9 @@ export function CanvasKitDemo() {
           <h1>weasel</h1>
           <p>Domain-agnostic 2D scene-graph hooks for React + canvas.</p>
           <p><a href="./api/">API reference →</a></p>
+          <p className="ckd-sidebar-hint">
+            Press <kbd>/</kbd> for the command palette.
+          </p>
         </header>
         <nav className="ckd-nav">
           {CATEGORIES.map((cat) => (
