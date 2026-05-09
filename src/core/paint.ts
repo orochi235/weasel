@@ -126,10 +126,15 @@ export function applyPaint(
   ctx.globalAlpha = paint.opacity ?? 1;
   if (isSolidPaint(paint)) {
     ctx.fillStyle = paint.color;
-  } else {
+  } else if (paint.fill === 'pattern') {
     const a = anchor ?? { x: 0, y: 0 };
     paint.pattern.setTransform(new DOMMatrix().translateSelf(a.x, a.y));
     ctx.fillStyle = paint.pattern;
+  } else {
+    // Gradient variants are GL-only in v1. The 2D backend will be deleted
+    // in step 10; until then, gradients on the 2D path fall back to opaque
+    // black.
+    ctx.fillStyle = '#000';
   }
 }
 
@@ -150,10 +155,12 @@ export function applyStroke(
   ctx.globalAlpha = paint.opacity ?? 1;
   if (isSolidPaint(paint)) {
     ctx.strokeStyle = paint.color;
-  } else {
+  } else if (paint.fill === 'pattern') {
     const a = anchor ?? { x: 0, y: 0 };
     paint.pattern.setTransform(new DOMMatrix().translateSelf(a.x, a.y));
     ctx.strokeStyle = paint.pattern;
+  } else {
+    ctx.strokeStyle = '#000';
   }
   if (stroke.width !== undefined) ctx.lineWidth = stroke.width;
   if (stroke.dash !== undefined) ctx.setLineDash(stroke.dash);
