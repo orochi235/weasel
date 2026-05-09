@@ -131,6 +131,53 @@ describe('tessellate (PolygonPath, bezier curves)', () => {
   });
 });
 
+describe('tessellate (PolygonPath, evenodd)', () => {
+  it('emits requiresStencil: true and a naive fan per contour for evenodd', () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
+      fillRule: 'evenodd',
+    };
+    const mesh = tessellate(path);
+    expect(mesh.requiresStencil).toBe(true);
+    expect(mesh.vertices.length).toBe(8);
+    expect(mesh.indices.length).toBe(6);
+    expect(Array.from(mesh.indices)).toEqual([0, 1, 2, 0, 2, 3]);
+  });
+
+  it('emits separate fans per contour with continuous indexing for multi-contour evenodd', () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([
+        PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z,
+        PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z,
+      ]),
+      coords: new Float32Array([
+        0, 0, 10, 0, 10, 10, 0, 10,
+        3, 3, 7, 3, 7, 7, 3, 7,
+      ]),
+      fillRule: 'evenodd',
+    };
+    const mesh = tessellate(path);
+    expect(mesh.requiresStencil).toBe(true);
+    expect(mesh.vertices.length).toBe(16);
+    expect(mesh.indices.length).toBe(12);
+    expect(Array.from(mesh.indices)).toEqual([0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7]);
+  });
+
+  it('does not set requiresStencil for nonzero (uses earcut)', () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
+      fillRule: 'nonzero',
+    };
+    const mesh = tessellate(path);
+    expect(mesh.requiresStencil).toBeFalsy();
+  });
+});
+
 describe('tessellate (PolygonPath, multi-contour, nonzero)', () => {
   it('triangulates a 10×10 outer square with a 4×4 inner hole (counter-wound)', () => {
     // Outer CCW: (0,0) (10,0) (10,10) (0,10)

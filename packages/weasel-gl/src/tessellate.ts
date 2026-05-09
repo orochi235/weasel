@@ -35,14 +35,14 @@ function tessellateRect(p: RectPath): Mesh {
 interface FlattenedContours {
   /** Interleaved x,y for all contours concatenated. */
   coords: number[];
-  /** Vertex indices where each contour after the first begins. earcut's hole format. */
-  holeStarts: number[];
+  /** Vertex (not coord) index where each contour starts. First contour starts at 0. */
+  contourStarts: number[];
 }
 
 function flattenPolygon(p: PolygonPath, tolerance: number): FlattenedContours {
   const { commands, coords } = p;
   const out: number[] = [];
-  const holeStarts: number[] = [];
+  const contourStarts: number[] = [];
   let coordIdx = 0;
   let prevX = 0;
   let prevY = 0;
@@ -51,7 +51,7 @@ function flattenPolygon(p: PolygonPath, tolerance: number): FlattenedContours {
     const cmd = commands[cmdIdx];
     switch (cmd) {
       case PATH_M: {
-        if (out.length > 0) holeStarts.push(out.length / 2);
+        contourStarts.push(out.length / 2);
         prevX = coords[coordIdx];
         prevY = coords[coordIdx + 1];
         out.push(prevX, prevY);
@@ -97,15 +97,40 @@ function flattenPolygon(p: PolygonPath, tolerance: number): FlattenedContours {
     }
   }
 
-  return { coords: out, holeStarts };
+  return { coords: out, contourStarts };
 }
 
 function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
   const tolerance = opts.flattenTolerance ?? DEFAULT_FLATTEN_TOLERANCE;
-  const { coords, holeStarts } = flattenPolygon(p, tolerance);
-  const indices = earcut(coords, holeStarts.length > 0 ? holeStarts : undefined);
+  const { coords, contourStarts } = flattenPolygon(p, tolerance);
+
+  if (p.fillRule === 'evenodd') {
+    return tessellateEvenodd(coords, contourStarts);
+  }
+
+  // nonzero: hole indices for earcut are every contour after the first.
+  const holeIndices = contourStarts.slice(1);
+  const indices = earcut(coords, holeIndices.length > 0 ? holeIndices : undefined);
   return {
     vertices: new Float32Array(coords),
     indices: new Uint32Array(indices),
+  };
+}
+
+function tessellateEvenodd(coords: number[], contourStarts: number[]): Mesh {
+  const indices: number[] = [];
+  const totalVerts = coords.length / 2;
+  for (let c = 0; c < contourStarts.length; c++) {
+    const start = contourStarts[c];
+    const end = c + 1 < contourStarts.length ? contourStarts[c + 1] : totalVerts;
+    // Naive fan: pivot = start, triangles (start, i, i+1) for i in [start+1, end-1).
+    for (let i = start + 1; i < end - 1; i++) {
+      indices.push(start, i, i + 1);
+    }
+  }
+  return {
+    vertices: new Float32Array(coords),
+    indices: new Uint32Array(indices),
+    requiresStencil: true,
   };
 }
