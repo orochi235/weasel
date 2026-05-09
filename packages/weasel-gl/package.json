@@ -1,0 +1,19 @@
+{
+  "name": "@orochi235/weasel-gl",
+  "version": "0.0.0",
+  "private": true,
+  "description": "WebGL2 renderer for weasel — experimental, parallel to the 2D backend.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    },
+    "./package.json": "./package.json"
+  }
+}
