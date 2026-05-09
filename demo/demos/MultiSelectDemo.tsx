@@ -4,7 +4,6 @@ import {
   SceneCanvas,
   sceneToAdapter,
   useScene,
-  useSelectAll,
   useSelection,
   useSelectTool,
   useTools,
@@ -65,11 +64,7 @@ export function MultiSelectDemo() {
   });
   const tools = useTools({ active: 'select', registry: { select } });
 
-  useSelectAll({
-    getSelection: () => selection.current,
-    listAll: () => Array.from(scene.renderOrder()),
-    setSelection: (ids) => selection.set(ids),
-  });
+  // Cmd/Ctrl+A is auto-registered by SceneCanvas's default actions.
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
