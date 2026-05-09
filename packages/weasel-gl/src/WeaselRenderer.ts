@@ -93,8 +93,10 @@ export class WeaselRenderer {
 
     this.canvas = opts.canvas ?? null;
     if (this.canvas) {
-      this.canvas.width = opts.width * opts.dpr;
-      this.canvas.height = opts.height * opts.dpr;
+      this.canvas.width = Math.round(opts.width * opts.dpr);
+      this.canvas.height = Math.round(opts.height * opts.dpr);
+      this.canvas.style.width = `${opts.width}px`;
+      this.canvas.style.height = `${opts.height}px`;
       this.canvas.addEventListener('webglcontextlost', this.boundOnLost);
       this.canvas.addEventListener('webglcontextrestored', this.boundOnRestored);
     }
@@ -267,8 +269,10 @@ export class WeaselRenderer {
     this.heightCss = dims.height;
     this.dpr = dims.dpr;
     if (this.canvas) {
-      this.canvas.width = dims.width * dims.dpr;
-      this.canvas.height = dims.height * dims.dpr;
+      this.canvas.width = Math.round(dims.width * dims.dpr);
+      this.canvas.height = Math.round(dims.height * dims.dpr);
+      this.canvas.style.width = `${dims.width}px`;
+      this.canvas.style.height = `${dims.height}px`;
     }
     this.applyViewport();
   }
