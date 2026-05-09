@@ -68,6 +68,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:smoke:step1": "playwright test --config=packages/weasel-gl/dev/playwright.config.ts",
+    "test:visual": "playwright test --config=tests/visual/playwright.config.ts",
+    "test:visual:update": "UPDATE_SNAPSHOTS=1 playwright test --config=tests/visual/playwright.config.ts",
     "gen:font": "tsx packages/weasel-gl/scripts/gen-font.ts",
     "bundlesize:weasel-gl": "rm -rf /tmp/weasel-gl-bundle && tsup packages/weasel-gl/src/index.ts --format esm --no-dts --treeshake --target es2022 --external react --external react-dom --external @orochi235/weasel --external earcut --out-dir /tmp/weasel-gl-bundle --silent && wc -c /tmp/weasel-gl-bundle/index.js | awk '{ printf \"weasel-gl bundle: %s bytes\\n\", $1 }'",
     "lint": "tsc --noEmit",
