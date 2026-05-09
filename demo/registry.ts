@@ -11,7 +11,6 @@ import { ActionsDemo, ACTIONS_DEMO_SOURCE } from './demos/ActionsDemo';
 import { GroupsDemo, GROUPS_DEMO_SOURCE } from './demos/GroupsDemo';
 import { NestedGroupsDemo, NESTED_GROUPS_DEMO_SOURCE } from './demos/NestedGroupsDemo';
 import { TextDemo, TEXT_DEMO_SOURCE } from './demos/TextDemo';
-import { PixelDensityDemo, PIXEL_DENSITY_DEMO_SOURCE } from './demos/PixelDensityDemo';
 import { QuadtreeDemo, QUADTREE_DEMO_SOURCE } from './demos/QuadtreeDemo';
 import { PathPoseDemo, PATH_POSE_DEMO_SOURCE } from './demos/PathPoseDemo';
 import { CompoundPathsDemo, COMPOUND_PATHS_DEMO_SOURCE } from './demos/CompoundPathsDemo';
@@ -37,7 +36,6 @@ import ActionsDemoFull from './demos/ActionsDemo.tsx?raw';
 import GroupsDemoFull from './demos/GroupsDemo.tsx?raw';
 import NestedGroupsDemoFull from './demos/NestedGroupsDemo.tsx?raw';
 import TextDemoFull from './demos/TextDemo.tsx?raw';
-import PixelDensityDemoFull from './demos/PixelDensityDemo.tsx?raw';
 import QuadtreeDemoFull from './demos/QuadtreeDemo.tsx?raw';
 import PathPoseDemoFull from './demos/PathPoseDemo.tsx?raw';
 import CompoundPathsDemoFull from './demos/CompoundPathsDemo.tsx?raw';
@@ -286,16 +284,6 @@ export const DEMOS: DemoEntry[] = [
     snippet: BEZIER_EDIT_DEMO_SOURCE,
     full: BezierEditDemoFull,
     path: 'demo/demos/BezierEditDemo.tsx',
-  },
-  {
-    id: 'pixel-density',
-    title: 'Pixel density',
-    category: 'Rendering',
-    description: 'Side-by-side: useFixedPixelRatio() pins the dpr to 1 so the backing store matches CSS pixels exactly. The default (window.devicePixelRatio) is the right pick for most demos — but for pixel art, putImageData/getImageData workflows, and hairline alignment, a fixed 1:1 ratio keeps every world pixel landing on one backing pixel.',
-    Component: PixelDensityDemo,
-    snippet: PIXEL_DENSITY_DEMO_SOURCE,
-    full: PixelDensityDemoFull,
-    path: 'demo/demos/PixelDensityDemo.tsx',
   },
   {
     id: 'zoom',

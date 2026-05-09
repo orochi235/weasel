@@ -6,7 +6,7 @@
  *
  * Surface map (broad strokes — see per-symbol JSDoc for detail):
  *   - View transform & viewport: `ViewTransform`, `worldToScreen`,
- *     `screenToWorld`, `fitZoom`, `useCanvasSize`, pixel-density helpers,
+ *     `screenToWorld`, `fitZoom`, `useCanvasSize`,
  *     `useZoom`, `useAutoCenter`, `zoomAt`,
  *     `wheelHandler`.
  *   - Layer composition: `RenderLayer`, `LayerRenderer`,
