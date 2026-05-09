@@ -37,6 +37,9 @@ export interface DrawContext {
   programRegistry: Map<string, ShaderProgram>;
   quadVbo: WebGLBuffer | null;
   quadIbo: WebGLBuffer | null;
+  /** Shared rect-fill geometry (see WeaselRenderer.uploadRectGeometry). */
+  rectVao: WebGLVertexArrayObject | null;
+  rectVbo: WebGLBuffer | null;
   state: GroupState;
   widthCss: number;
   heightCss: number;
@@ -223,21 +226,59 @@ function drawPath(ctx: DrawContext, cmd: PathDrawCommand): void {
   if (!cmd.fill && !cmd.stroke) return;
 
   if (cmd.fill) {
-    const mesh = getMesh(cmd.path);
-    const handle = ctx.meshCache.handleFor(mesh);
-    if (cmd.vertexColors && cmd.vertexColors.length > 0 &&
-        (cmd.fill.fill === undefined || cmd.fill.fill === 'solid')) {
-      drawPathFillVColor(ctx, cmd, cmd.fill as { color: string; opacity?: number }, handle);
-    } else if (handle.requiresStencil) {
-      drawPathFillStencil(ctx, cmd.fill, handle);
+    // Fast path: solid-fill rect with no vertex colors → shared rect VAO,
+    // bufferSubData the 4 corners, no per-rect mesh cache entry. Avoids the
+    // GL-buffer-leak-per-frame in animated demos creating fresh Path objects
+    // every render.
+    const isSolidRectFast =
+      cmd.path.kind === 'rect'
+      && (cmd.fill.fill === undefined || cmd.fill.fill === 'solid')
+      && (!cmd.vertexColors || cmd.vertexColors.length === 0)
+      && ctx.rectVao !== null
+      && ctx.rectVbo !== null;
+    if (isSolidRectFast) {
+      drawRectFast(ctx, cmd.path, cmd.fill as { color: string; opacity?: number });
     } else {
-      drawPathFillByKind(ctx, cmd.fill, handle);
+      const mesh = getMesh(cmd.path);
+      const handle = ctx.meshCache.handleFor(mesh);
+      if (cmd.vertexColors && cmd.vertexColors.length > 0 &&
+          (cmd.fill.fill === undefined || cmd.fill.fill === 'solid')) {
+        drawPathFillVColor(ctx, cmd, cmd.fill as { color: string; opacity?: number }, handle);
+      } else if (handle.requiresStencil) {
+        drawPathFillStencil(ctx, cmd.fill, handle);
+      } else {
+        drawPathFillByKind(ctx, cmd.fill, handle);
+      }
     }
   }
 
   if (cmd.stroke) {
     drawPathStroke(ctx, cmd);
   }
+}
+
+/**
+ * Fast path for solid-fill rects: reuses one VAO/VBO/IBO across all rect
+ * renders, just bufferSubData's the 4 corner coords. Saves the
+ * createBuffer/createVertexArray/bufferData round trip per rect.
+ */
+function drawRectFast(
+  ctx: DrawContext,
+  rect: { x: number; y: number; width: number; height: number },
+  fill: { color: string; opacity?: number },
+): void {
+  const gl = ctx.gl;
+  const { x, y, width: w, height: h } = rect;
+  const corners = new Float32Array([x, y, x + w, y, x + w, y + h, x, y + h]);
+  gl.useProgram(ctx.pathFill.handle);
+  gl.bindVertexArray(ctx.rectVao);
+  gl.bindBuffer(gl.ARRAY_BUFFER, ctx.rectVbo);
+  gl.bufferSubData(gl.ARRAY_BUFFER, 0, corners);
+  setProjAndModel(ctx, ctx.pathFill);
+  setSolidPaintUniforms(ctx, ctx.pathFill, fill.color, fill.opacity);
+  setColorMatrixUniforms(ctx, ctx.pathFill);
+  gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, 0);
+  gl.bindVertexArray(null);
 }
 
 function drawPathFillVColor(

@@ -70,6 +70,10 @@ export class WeaselRenderer {
   private programRegistry = new Map<string, ShaderProgram>();
   private quadVbo: WebGLBuffer | null = null;
   private quadIbo: WebGLBuffer | null = null;
+  /** Shared rect-fill geometry: 4 verts × 2 floats (dynamic), 6-index static IBO. */
+  private rectVao: WebGLVertexArrayObject | null = null;
+  private rectVbo: WebGLBuffer | null = null;
+  private rectIbo: WebGLBuffer | null = null;
   private readonly groupState = new GroupState();
   private widthCss: number;
   private heightCss: number;
@@ -137,6 +141,33 @@ export class WeaselRenderer {
     this.imageCache = new GLImageCache(this.gl);
     this.gradRampCache = new GradientRampCache(this.gl);
     this.uploadQuadGeometry();
+    this.uploadRectGeometry(aPos);
+  }
+
+  /** Allocate the shared rect VAO + dynamic VBO (4 verts × 2 floats) + static
+   *  IBO (6 indices). drawRectFast bufferSubData's the 4 corner coords each
+   *  draw, avoiding per-rect buffer allocation in animated demos. */
+  private uploadRectGeometry(aPositionLoc: number): void {
+    const gl = this.gl;
+    this.rectVao = gl.createVertexArray();
+    this.rectVbo = gl.createBuffer();
+    this.rectIbo = gl.createBuffer();
+    if (!this.rectVao || !this.rectVbo || !this.rectIbo) {
+      throw new Error('WeaselRenderer: failed to create rect-fast geometry');
+    }
+    gl.bindVertexArray(this.rectVao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.rectVbo);
+    // Pre-allocate 8 floats (4 verts × 2 coords) of dynamic storage.
+    gl.bufferData(gl.ARRAY_BUFFER, 8 * 4, gl.DYNAMIC_DRAW);
+    gl.enableVertexAttribArray(aPositionLoc);
+    gl.vertexAttribPointer(aPositionLoc, 2, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.rectIbo);
+    gl.bufferData(
+      gl.ELEMENT_ARRAY_BUFFER,
+      new Uint32Array([0, 1, 2, 0, 2, 3]),
+      gl.STATIC_DRAW,
+    );
+    gl.bindVertexArray(null);
   }
 
   private uploadQuadGeometry(): void {
@@ -226,6 +257,7 @@ export class WeaselRenderer {
     _markAllFontsNotUploaded();
 
     this.uploadQuadGeometry();
+    this.uploadRectGeometry(aPos);
     for (const id of this.programRegistry.keys()) {
       const src = getProgramSource(id);
       if (!src) continue;
@@ -259,6 +291,8 @@ export class WeaselRenderer {
       programRegistry: this.programRegistry,
       quadVbo: this.quadVbo,
       quadIbo: this.quadIbo,
+      rectVao: this.rectVao,
+      rectVbo: this.rectVbo,
       state: this.groupState,
       widthCss: this.widthCss,
       heightCss: this.heightCss,
