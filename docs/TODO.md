@@ -162,6 +162,24 @@ Cross-feature deps are typed function arguments (`useBlurOnEscape(focus.api)`). 
 
 If any of those become live problems, the rollback path is small: split `layers` into `layers: FooLayers` (provider, plain `RenderLayer<T>`) + `wrappers: FooWrappers` (slot-keyed transformer functions). The other field names (`api`, `attrs`) stay.
 
+### Barrel-hygiene rollout
+
+Audit findings (2026-05-09 background agent): focus + grid get the convention applied as part of `docs/superpowers/plans/2026-05-09-feature-roles-focus-grid.md`. Other features ranked by migration cost:
+
+- **Trivial** — drag (no `index.ts` at all; two utility functions; ~5-line barrel). paths is already conformant despite being large.
+- **Lightweight** — patterns (intentional two-tier split: core barrel + `patterns-builtin` subpath; not a hygiene bug, leave as is). text (no `index.ts`; ~10 public primitives plus an internal `atlas/` subdirectory that should stay un-exported).
+- **Heavy** — viewport (no `index.ts`; 18+ exports across many small focused modules — `useZoom`, `usePinchGesture`, `useViewTween`, `useDecayLoop`, `clampView`, etc.). Mechanical re-routing but a lot of lines.
+- **Design review needed** — selection (protocol-shaped; no `index.ts`; ambient `SelectionContextProvider` is `@experimental` with open questions about its barrel placement). Don't migrate mechanically; needs a brief design pass.
+- **Already conformant** — focus, paths, groups (groups despite being protocol-shaped — its barrel is clean).
+
+Rollout order suggestion: drag → patterns (no-op confirmation) → text → viewport → selection (after design pass). Each is its own small PR; no bundling required.
+
+### Rotated-resize math demo: synchronized drag
+
+Right now the three-panel math explainer requires the user to drag each rect in turn and remember the previous behavior to compare. Better UX: pick the green panel as the *controller* — user drags only there. The other two panels render the same starting pose but project the controller's drag through their broken descriptors (no-projection / no-correction). All three rects move in real time off one drag input; the comparison becomes immediate and visceral.
+
+Trade-off: the counterexample panels become read-only (no grabbable corners). Fine for an explainer — the lesson is the math, not the gesture handling. Implementation: extract the resize math into a pure helper or replicate it in the demo; render each panel with its own pose computed from the controller's drag every frame. ~50-100 lines of demo refactor.
+
 ## Tier 1 — foundational genericity gaps
 
 Without these, the kit is essentially "axis-aligned-rectangle kit."
