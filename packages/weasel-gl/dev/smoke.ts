@@ -1,7 +1,10 @@
 import { WeaselRenderer, mat3 } from '../src/index';
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-const r = new WeaselRenderer({ canvas, width: 800, height: 600, dpr: window.devicePixelRatio || 1 });
+// preserveDrawingBuffer so the Playwright smoke test can readPixels after render.
+// Real consumers (and other dev pages) get the default — no perf cost paid here.
+const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true }) as WebGL2RenderingContext;
+const r = new WeaselRenderer({ gl, canvas, width: 800, height: 600, dpr: window.devicePixelRatio || 1 });
 
 r.render([
   {
