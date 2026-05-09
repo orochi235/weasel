@@ -77,6 +77,9 @@ const GL_CONSTANTS: Readonly<Record<string, number>> = {
   TEXTURE_WRAP_S: 0x2802,
   TEXTURE_WRAP_T: 0x2803,
   CLAMP_TO_EDGE: 0x812F,
+  // Wrap modes (step 4)
+  REPEAT: 0x2901,
+  MIRRORED_REPEAT: 0x8370,
 };
 
 function syntheticHandle(name: string, seq: number): { __id: string } {
