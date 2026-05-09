@@ -35,6 +35,9 @@ export class WeaselRenderer {
   private heightCss: number;
   private dpr: number;
   private canvas: HTMLCanvasElement | null = null;
+  private contextLost = false;
+  private boundOnLost = (e: Event) => this.onContextLost(e);
+  private boundOnRestored = () => this.onContextRestored();
 
   constructor(opts: WeaselRendererOptions) {
     if (!opts.gl && !opts.canvas) {
@@ -52,6 +55,8 @@ export class WeaselRenderer {
     if (this.canvas) {
       this.canvas.width = opts.width * opts.dpr;
       this.canvas.height = opts.height * opts.dpr;
+      this.canvas.addEventListener('webglcontextlost', this.boundOnLost);
+      this.canvas.addEventListener('webglcontextrestored', this.boundOnRestored);
     }
 
     // Initial GL state.
@@ -74,6 +79,31 @@ export class WeaselRenderer {
 
   private applyViewport(): void {
     this.gl.viewport(0, 0, this.widthCss * this.dpr, this.heightCss * this.dpr);
+  }
+
+  isContextLost(): boolean {
+    return this.contextLost;
+  }
+
+  private onContextLost(e: Event): void {
+    e.preventDefault();
+    this.contextLost = true;
+  }
+
+  private onContextRestored(): void {
+    this.contextLost = false;
+    this.gl.enable(this.gl.BLEND);
+    this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+    this.gl.disable(this.gl.DEPTH_TEST);
+    this.gl.disable(this.gl.CULL_FACE);
+    this.gl.clearColor(0, 0, 0, 0);
+    this.applyViewport();
+    this.pathFill = new ShaderProgram(this.gl, VERT_SRC, FRAG_SRC);
+    this.pathFill.lookupUniforms(PATH_FILL_UNIFORMS);
+    this.pathFill.lookupAttributes(PATH_FILL_ATTRIBUTES);
+    const aPos = this.pathFill.attribute('a_position');
+    if (aPos === undefined) throw new Error('a_position missing after restore');
+    this.meshCache = new GLMeshCache(this.gl, aPos);
   }
 
   resize(dims: { width: number; height: number; dpr: number }): void {
