@@ -12,7 +12,9 @@
  * without breaking existing layers.
  */
 
+import type { DrawCommand } from '@orochi235/weasel-gl';
 import type { RenderLayer } from '../../core/layers/render';
+import type { View } from '../viewport/view';
 import type { OrderedAdapter } from '../../core/adapters/types';
 
 /** Options for `createChildrenLayer`. */
@@ -28,6 +30,15 @@ export interface CreateChildrenLayerOpts<TData> {
   parentId?: string | null | (() => string | null);
   /** Draw one child. Called once per id in z-order (bottom → top). */
   drawChild(ctx: CanvasRenderingContext2D, id: string, data: TData): void;
+  /**
+   * Optional GL-side draw callback. The kit aggregates per-child outputs
+   * in z-order (bottom → top) and returns the concatenated list from
+   * `drawGL`. Until consumers wire this up, the GL backend renders
+   * nothing for this layer (the 2D `drawChild` continues to work in the
+   * 2D backend). Step-7 scope decision: keep `drawGL` plumbing additive;
+   * step 8's component port surfaces a coherent integration story.
+   */
+  drawChildGL?(id: string, data: TData, view: View): DrawCommand[];
   /** Forwarded to the produced `RenderLayer`. */
   defaultVisible?: boolean;
   /** Forwarded to the produced `RenderLayer`. */
@@ -54,6 +65,23 @@ export function createChildrenLayer<TData = unknown>(
       for (const id of ids) {
         opts.drawChild(ctx, id, data);
       }
+    },
+    drawGL: (data, view) => {
+      const drawChildGL = opts.drawChildGL;
+      if (!drawChildGL) return [];
+      const getChildren = opts.adapter.getChildren;
+      if (!getChildren) return [];
+      const parent =
+        typeof opts.parentId === 'function'
+          ? opts.parentId()
+          : opts.parentId ?? null;
+      const ids = getChildren(parent);
+      const out: DrawCommand[] = [];
+      for (const id of ids) {
+        const sub = drawChildGL(id, data, view);
+        for (const cmd of sub) out.push(cmd);
+      }
+      return out;
     },
   };
 }

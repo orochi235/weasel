@@ -23,6 +23,8 @@
  * AABBs.
  */
 
+import type { DrawCommand } from '@orochi235/weasel-gl';
+import { mat3, type Mat3 } from '@orochi235/weasel-gl';
 import type { RenderLayer } from '../../core/layers/render';
 import type { GroupAdapter } from '../groups/types';
 import { expandToLeaves } from '../groups/resolve';
@@ -36,6 +38,7 @@ import { rotatePoint } from '../../interactions/gestures/rotate/geometry';
 import type { View } from '../viewport/view';
 import { viewToTransform } from '../viewport/view';
 import { worldToScreen } from '../viewport/viewTransform';
+import { PATH_L, PATH_M, type PolygonPath } from '../paths/types';
 
 /** Project world AABB into screen-space AABB using the active view. */
 function projectBounds<B extends Bounds>(b: B, view: View): B {
@@ -435,6 +438,175 @@ function drawRotationHandle(
 }
 
 /**
+ * GL helper: build the matrix `translate(cx, cy) * rotate(θ) * translate(-cx, -cy)`
+ * used to wrap rotated outline / handle commands.
+ */
+function rotateAroundMat3(cx: number, cy: number, theta: number): Mat3 {
+  const c = Math.cos(theta);
+  const s = Math.sin(theta);
+  // Composed in column-major (matches mat3 helpers): T(cx,cy) · R(θ) · T(-cx,-cy).
+  // After expansion: a=c, b=s, c'=-s, d=c, tx=cx - c*cx + s*cy, ty=cy - s*cx - c*cy.
+  const tx = cx - c * cx + s * cy;
+  const ty = cy - s * cx - c * cy;
+  return new Float32Array([
+    c, s, 0,
+    -s, c, 0,
+    tx, ty, 1,
+  ]) as Mat3;
+}
+
+/** GL helper: emit a closed rect path (kind:'rect'). */
+function rectPathFor(x: number, y: number, width: number, height: number): { kind: 'rect'; x: number; y: number; width: number; height: number } {
+  return { kind: 'rect', x, y, width, height };
+}
+
+/** GL helper: emit an outline command for one bounds entry. */
+function outlineCommandsFor(
+  ids: string[],
+  resolveBounds: (id: string) => Bounds | null,
+  stroke: Stroke,
+  pad: number,
+  view: View,
+): DrawCommand[] {
+  const out: DrawCommand[] = [];
+  const align = stroke.align ?? 'center';
+  const width = stroke.width ?? 1;
+  for (const id of ids) {
+    const worldB = resolveBounds(id);
+    if (!worldB) continue;
+    const b = projectBounds(worldB, view);
+    const padded = {
+      x: b.x - pad,
+      y: b.y - pad,
+      width: b.width + pad * 2,
+      height: b.height + pad * 2,
+    };
+    const r = alignedStrokeRect(padded, align, width);
+    const cmd: DrawCommand = {
+      kind: 'path',
+      path: rectPathFor(r.x, r.y, r.width, r.height),
+      stroke,
+    };
+    const rotation = rotationOf(worldB);
+    if (rotation === 0) {
+      out.push(cmd);
+    } else {
+      const cx = b.x + b.width / 2;
+      const cy = b.y + b.height / 2;
+      out.push({
+        kind: 'group',
+        transform: rotateAroundMat3(cx, cy, rotation),
+        children: [cmd],
+      });
+    }
+  }
+  return out;
+}
+
+/** GL helper: emit handle fill+stroke commands for one bounds entry. */
+function handleCommandsFor(
+  ids: string[],
+  resolveBounds: (id: string) => Bounds | null,
+  handles: ResolvedHandles,
+  handlesOf: (b: Bounds) => { x: number; y: number }[],
+  view: View,
+): DrawCommand[] {
+  const out: DrawCommand[] = [];
+  const half = handles.size / 2;
+  const handleAlign = handles.outline.align ?? 'center';
+  const handleWidth = handles.outline.width ?? 1;
+  for (const id of ids) {
+    const worldB = resolveBounds(id);
+    if (!worldB) continue;
+    const b = projectBounds(worldB, view);
+    const rotation = rotationOf(worldB);
+    const cx = b.x + b.width / 2;
+    const cy = b.y + b.height / 2;
+    for (const hWorld of handlesOf(worldB)) {
+      const t = viewToTransform(view);
+      const [hsx, hsy] = worldToScreen(hWorld.x, hWorld.y, t);
+      const center = rotation === 0 ? { x: hsx, y: hsy } : rotatePoint(hsx, hsy, cx, cy, rotation);
+      const baseRect = {
+        x: center.x - half,
+        y: center.y - half,
+        width: handles.size,
+        height: handles.size,
+      };
+      const sr = alignedStrokeRect(baseRect, handleAlign, handleWidth);
+      const fillCmd: DrawCommand = {
+        kind: 'path',
+        path: rectPathFor(baseRect.x, baseRect.y, baseRect.width, baseRect.height),
+        fill: handles.fill,
+      };
+      const strokeCmd: DrawCommand = {
+        kind: 'path',
+        path: rectPathFor(sr.x, sr.y, sr.width, sr.height),
+        stroke: handles.outline,
+      };
+      if (rotation === 0) {
+        out.push(fillCmd, strokeCmd);
+      } else {
+        out.push({
+          kind: 'group',
+          transform: rotateAroundMat3(center.x, center.y, rotation),
+          children: [fillCmd, strokeCmd],
+        });
+      }
+    }
+  }
+  return out;
+}
+
+/** GL helper: emit the rotation chevron commands for one bounds entry. */
+function rotationHandleCommands(
+  worldB: Bounds | RotatedBounds,
+  handles: ResolvedHandles,
+  distance: number,
+  view: View,
+): DrawCommand[] {
+  const rotation = rotationOf(worldB);
+  const hWorld = rotationHandle({ ...worldB, rotation }, distance / view.scale);
+  const t = viewToTransform(view);
+  const [scx, scy] = worldToScreen(hWorld.cx, hWorld.cy, t);
+  const size = handles.size;
+  const half = size / 2;
+  const armLen = size;
+  const armDx = armLen * Math.sin(Math.PI / 3);
+  const armDy = armLen * Math.cos(Math.PI / 3);
+  const chevronStroke: Stroke = {
+    paint: handles.fill,
+    width: (handles.outline.width ?? 1) * 2,
+    cap: 'round',
+    join: 'round',
+  };
+  // Two-segment polyline in the chevron-local frame: (-armDx, half-armDy) →
+  // (0, half) → (armDx, half-armDy). Wrapped in a group whose transform
+  // moves the local frame to the world-projected handle center, with
+  // optional rotation.
+  const path: PolygonPath = {
+    kind: 'polygon',
+    commands: new Uint8Array([PATH_M, PATH_L, PATH_L]),
+    coords: new Float32Array([-armDx, half - armDy, 0, half, armDx, half - armDy]),
+    fillRule: 'nonzero',
+  };
+  // Build transform: translate(scx, scy) [* rotate(rotation)].
+  let transform = mat3.translate(mat3.identity(), scx, scy);
+  if (rotation !== 0) {
+    const c = Math.cos(rotation);
+    const s = Math.sin(rotation);
+    const rot = new Float32Array([c, s, 0, -s, c, 0, 0, 0, 1]) as Mat3;
+    transform = mat3.multiply(transform, rot);
+  }
+  return [
+    {
+      kind: 'group',
+      transform,
+      children: [{ kind: 'path', path, stroke: chevronStroke }],
+    },
+  ];
+}
+
+/**
  * `RenderLayer` that draws selection outlines only. Stack alongside
  * `createSelectionHandlesLayer` (or just use `createSelectionOverlayLayer`
  * for the common case) when both passes are wanted.
@@ -453,6 +625,11 @@ export function createSelectionOutlineLayer<TPose>(
       const ids = opts.getSelection();
       if (ids.length === 0) return;
       drawOutlines(ctx, ids, resolveBounds, stroke, pad, view);
+    },
+    drawGL: (_data, view) => {
+      const ids = opts.getSelection();
+      if (ids.length === 0) return [];
+      return outlineCommandsFor(ids, resolveBounds, stroke, pad, view);
     },
   };
 }
@@ -484,6 +661,21 @@ export function createSelectionHandlesLayer<TPose>(
           drawRotationHandle(ctx, b, handles, rotationHandleDistance, view);
         }
       }
+    },
+    drawGL: (_data, view) => {
+      const ids = opts.getSelection();
+      if (ids.length === 0) return [];
+      const out = handleCommandsFor(ids, resolveBounds, handles, handlesOf, view);
+      if (rotationHandleDistance !== null) {
+        for (const id of ids) {
+          const b = resolveBounds(id);
+          if (!b) continue;
+          for (const cmd of rotationHandleCommands(b, handles, rotationHandleDistance, view)) {
+            out.push(cmd);
+          }
+        }
+      }
+      return out;
     },
   };
 }
@@ -530,6 +722,24 @@ export function createSelectionOverlayLayer<TPose>(
           drawRotationHandle(ctx, b, handles, rotationHandleDistance, view);
         }
       }
+    },
+    drawGL: (_data, view) => {
+      const ids = opts.getSelection();
+      if (ids.length === 0) return [];
+      const out: DrawCommand[] = [];
+      for (const cmd of outlineCommandsFor(ids, resolveBounds, stroke, pad, view)) out.push(cmd);
+      if (!handles) return out;
+      for (const cmd of handleCommandsFor(ids, resolveBounds, handles, handlesOf, view)) out.push(cmd);
+      if (rotationHandleDistance !== null) {
+        for (const id of ids) {
+          const b = resolveBounds(id);
+          if (!b) continue;
+          for (const cmd of rotationHandleCommands(b, handles, rotationHandleDistance, view)) {
+            out.push(cmd);
+          }
+        }
+      }
+      return out;
     },
   };
 }

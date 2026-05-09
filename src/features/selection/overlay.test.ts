@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { GroupDrawCommand, PathDrawCommand } from '@orochi235/weasel-gl';
 import {
   composeSelectionPose,
   createSelectionOverlayLayer,
@@ -520,5 +521,79 @@ describe('non-rect TPose via getBounds', () => {
     const stroke = calls.find((c) => c.fn === 'strokeRect');
     // AABB is (10,20)..(50,80) → padded by 1 → (9,19,42,62)
     expect(stroke?.args).toEqual([9, 19, 42, 62]);
+  });
+});
+
+describe('createSelectionOutlineLayer.drawGL', () => {
+  it('emits one stroke path per selected id (screen-space, no group wrapper)', () => {
+    const layer = createSelectionOutlineLayer<Pose>({
+      getSelection: () => ['a'],
+      getPose: () => ({ x: 10, y: 20, width: 30, height: 40 }),
+    });
+    const tree = layer.drawGL!(undefined, { x: 0, y: 0, scale: 1 }, { width: 200, height: 200 });
+    expect(tree).toHaveLength(1);
+    expect(tree[0].kind).toBe('path');
+    expect((tree[0] as PathDrawCommand).stroke).toBeDefined();
+  });
+
+  it('returns [] when nothing is selected', () => {
+    const layer = createSelectionOutlineLayer<Pose>({
+      getSelection: () => [],
+      getPose: () => ({ x: 0, y: 0, width: 1, height: 1 }),
+    });
+    const tree = layer.drawGL!(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    expect(tree).toEqual([]);
+  });
+});
+
+describe('createSelectionHandlesLayer.drawGL', () => {
+  it('emits 4 corner handles (fill + outline path each = 8 commands)', () => {
+    const layer = createSelectionHandlesLayer<Pose>({
+      getSelection: () => ['a'],
+      getPose: () => ({ x: 0, y: 0, width: 100, height: 100 }),
+    });
+    const tree = layer.drawGL!(undefined, { x: 0, y: 0, scale: 1 }, { width: 200, height: 200 });
+    // Default 4 corners × 2 paths (fill + stroke) = 8.
+    expect(tree).toHaveLength(8);
+    expect(tree.every((c) => c.kind === 'path')).toBe(true);
+  });
+});
+
+describe('createSelectionOverlayLayer.drawGL', () => {
+  it('emits outline + handles commands in a single flat list', () => {
+    const layer = createSelectionOverlayLayer<Pose>({
+      getSelection: () => ['a'],
+      getPose: () => ({ x: 0, y: 0, width: 100, height: 100 }),
+    });
+    const tree = layer.drawGL!(undefined, { x: 0, y: 0, scale: 1 }, { width: 200, height: 200 });
+    // 1 outline + 4×2 handles = 9
+    expect(tree).toHaveLength(9);
+  });
+
+  it('emits outline only when handles: false', () => {
+    const layer = createSelectionOverlayLayer<Pose>({
+      getSelection: () => ['a'],
+      getPose: () => ({ x: 0, y: 0, width: 100, height: 100 }),
+      handles: false,
+    });
+    const tree = layer.drawGL!(undefined, { x: 0, y: 0, scale: 1 }, { width: 200, height: 200 });
+    expect(tree).toHaveLength(1);
+  });
+
+  it('wraps rotated outlines in a kind:group with a transform', () => {
+    interface RotPose extends Pose {
+      rotation: number;
+    }
+    const layer = createSelectionOverlayLayer<RotPose>({
+      getSelection: () => ['a'],
+      getPose: () => ({ x: 0, y: 0, width: 100, height: 100, rotation: Math.PI / 4 }),
+      handles: false,
+    });
+    const tree = layer.drawGL!(undefined, { x: 0, y: 0, scale: 1 }, { width: 200, height: 200 });
+    expect(tree).toHaveLength(1);
+    expect(tree[0].kind).toBe('group');
+    const group = tree[0] as GroupDrawCommand;
+    expect(group.transform).toBeDefined();
+    expect(group.children[0].kind).toBe('path');
   });
 });

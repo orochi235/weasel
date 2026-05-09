@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { DrawCommand, PathDrawCommand } from '@orochi235/weasel-gl';
 import { createChildrenLayer } from './children';
 
 const fakeCtx = {} as CanvasRenderingContext2D;
@@ -106,6 +107,43 @@ describe('createChildrenLayer', () => {
     });
     expect(layer.defaultVisible).toBe(false);
     expect(layer.alwaysOn).toBe(true);
+  });
+
+  it('drawGL aggregates drawChildGL outputs across children in z-order', () => {
+    const layer = createChildrenLayer({
+      adapter: { getChildren: () => ['a', 'b'] },
+      drawChild: () => {},
+      drawChildGL: (id): DrawCommand[] => [
+        {
+          kind: 'path',
+          path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
+          fill: { fill: 'solid', color: id === 'a' ? '#f00' : '#0f0' },
+        },
+      ],
+    });
+    const tree = layer.drawGL!(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    expect(tree).toHaveLength(2);
+    expect((tree[0] as PathDrawCommand).fill).toMatchObject({ color: '#f00' });
+    expect((tree[1] as PathDrawCommand).fill).toMatchObject({ color: '#0f0' });
+  });
+
+  it('drawGL returns [] when drawChildGL is not provided', () => {
+    const layer = createChildrenLayer({
+      adapter: { getChildren: () => ['a'] },
+      drawChild: () => {},
+    });
+    const tree = layer.drawGL!(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    expect(tree).toEqual([]);
+  });
+
+  it('drawGL returns [] when adapter has no getChildren', () => {
+    const layer = createChildrenLayer({
+      adapter: {},
+      drawChild: () => {},
+      drawChildGL: () => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 } }],
+    });
+    const tree = layer.drawGL!(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    expect(tree).toEqual([]);
   });
 
   it('drawChild receives ctx and data passthroughs', () => {
