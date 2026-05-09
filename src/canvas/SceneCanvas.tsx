@@ -22,30 +22,20 @@ import { forwardRef, useCallback, useMemo, useRef } from 'react';
 import type React from 'react';
 import type { ReactNode } from 'react';
 import {
-  ActionsProvider, useActionsRegistry, useAction,
-  type Action, type ActionsProp, type ActionEntry,
+  useAction,
+  type Action, type ActionsProp,
 } from '../interactions/actions/registry';
-import {
-  defaultSelectAllAction, defaultEscapeAction, defaultDuplicateAction,
-  defaultNudgeActions, defaultReorderActions,
-} from '../interactions/actions/defaults';
 import { translateRectPose } from '../features/groups/composePose';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap } from './Canvas';
-import type { RenderLayer } from '../core/layers/render';
-import { viewToMat3, type DrawCommand } from '@orochi235/weasel-gl';
-import { sceneToAdapter, type SceneToAdapterOptions } from './sceneAdapter';
-import { usePinchZoomTool } from '../tools/builtin/usePinchZoomTool';
+import type { SceneToAdapterOptions } from './sceneAdapter';
 import type { PanBounds } from '../features/viewport/useDecayLoop';
-import { useHandTool } from '../tools/builtin/useHandTool';
-import { useKeyboardZoomTool } from '../tools/builtin/useKeyboardZoomTool';
-import { useWheelZoomTool } from '../tools/builtin/useWheelZoomTool';
 import type { View } from '../features/viewport/view';
 import type { Node, Scene } from '../core/scene/types';
 import { asNodeId } from '../core/scene/types';
 import type { Op } from '../core/ops/types';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from '../features/selection/useSelection';
-import { useSelectTool, type Bounds } from '../tools/builtin/useSelectTool';
+import type { Bounds } from '../tools/builtin/useSelectTool';
 import { useTools, type ToolsApi } from '../tools/useTools';
 import { useKeybindings } from '../tools/useKeybindings';
 import type { AnyTool } from '../tools/types';
@@ -53,29 +43,11 @@ import type { UseMoveOptions } from '../interactions/gestures/move/move';
 import type { UseResizeOptions } from '../interactions/gestures/resize/resize';
 import type { UseRotateOptions } from '../interactions/gestures/rotate/rotate';
 import type { SnapStrategy } from '../interactions/gestures/types';
-import { snap as snapBehavior } from '../interactions/gestures/shared/snap';
-import { RECT_POSE_DESCRIPTOR } from '../interactions/gestures/resize/geometry';
-import { pathPoseDescriptor } from '../features/paths/poseDescriptor';
-import type { Path } from '../features/paths/types';
-
-// Bounds extraction mirrors Canvas's AUTO_POSE_DESCRIPTOR — picks the path
-// descriptor for `{kind:'polygon'|'rect'}` poses and falls back to rect.
-function isPathLike(p: unknown): p is Path {
-  if (!p || typeof p !== 'object') return false;
-  const k = (p as { kind?: unknown }).kind;
-  return k === 'polygon' || k === 'rect';
-}
-function aabbOfPose<TPose>(pose: TPose): Bounds {
-  if (isPathLike(pose)) return pathPoseDescriptor.getBounds(pose);
-  return RECT_POSE_DESCRIPTOR.getBounds(pose as { x: number; y: number; width: number; height: number });
-}
-function poseContains<TPose>(pose: TPose, wx: number, wy: number): boolean {
-  if (isPathLike(pose) && pathPoseDescriptor.intersectsRect) {
-    return pathPoseDescriptor.intersectsRect(pose, { x: wx, y: wy, width: 0, height: 0 });
-  }
-  const b = aabbOfPose(pose);
-  return wx >= b.x && wx <= b.x + b.width && wy >= b.y && wy <= b.y + b.height;
-}
+import { ActionsProviderIfRoot } from './SceneCanvas/ActionsProviderIfRoot';
+import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
+import { useViewportTools } from './SceneCanvas/useViewportTools';
+import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
+import { resolveActions, type StandardActionsDeps } from './SceneCanvas/resolveActions';
 
 export type SceneCanvasProps<TData, TLayer extends string, TPose> =
   Omit<
@@ -205,29 +177,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // conditional spread on the <Canvas> JSX below.
   const { view: viewProp, onViewChange: onViewChangeProp, defaultView, backend, ...restProps } = rest;
 
-  // Resolve viewport config — `true` means defaults, object means overrides,
-  // anything else (undefined / false / null) disables that feature.
-  const inertiaEnabled = !!viewport?.inertia;
-  const inertiaObj = typeof viewport?.inertia === 'object' ? viewport.inertia : undefined;
-  const inertiaFriction = inertiaObj?.friction;
-  const inertiaMinSpeed = inertiaObj?.minSpeed;
-  const inertiaBoundary = inertiaObj?.boundary;
-  const inertiaBounds = inertiaObj?.bounds;
-  const inertiaConfig = useMemo<false | { friction?: number; minSpeed?: number; boundary?: 'stop' | 'bounce'; bounds?: PanBounds }>(
-    () => inertiaEnabled ? { friction: inertiaFriction, minSpeed: inertiaMinSpeed, boundary: inertiaBoundary, bounds: inertiaBounds } : false,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [inertiaEnabled, inertiaFriction, inertiaMinSpeed, inertiaBoundary, inertiaBounds],
-  );
-  const pinchConfig: { min?: number; max?: number } | null =
-    viewport?.pinchZoom === true
-      ? {}
-      : (viewport?.pinchZoom || null);
-  const animatedZoomObj = typeof viewport?.animatedZoom === 'object' ? viewport.animatedZoom : undefined;
-  const animateEnabled = !!viewport?.animatedZoom;
-  const animateDuration = animatedZoomObj?.duration;
-  const animateResetDuration = animatedZoomObj?.resetDuration;
-  const animateEasing = animatedZoomObj?.easing;
-
   // Internal canvas ref so usePinchZoomTool can attach pointer listeners
   // even when the consumer passes their own forwarded ref.
   const internalCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -246,185 +195,39 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     onViewChangeProp?.(v);
   }, [onViewChangeProp]);
 
-  const pickEveryProp = geometry?.pickEvery;
-  const boundsOfProp = geometry?.boundsOf;
-  const moveOptions = selectToolOpts?.move;
-  const resizeOptions = selectToolOpts?.resize;
-  const rotateOptions = selectToolOpts?.rotate;
-  const snap = selectToolOpts?.snap;
-  const handleHitRadius = selectToolOpts?.handleHitRadius;
-  const commitInsert = insertTool?.create;
-  const insertLayer = insertTool?.layer;
-
   // Selection: caller-supplied wins; otherwise build from selectionOptions.
   // Hooks always run unconditionally — when a caller supplies `selection`,
   // the internally-built one is unused but the hook still fires.
   const internalSelection = useSelection(selectionOptions ?? {});
   const selection = selectionProp ?? internalSelection;
 
-  // Adapter: scene → MoveAdapter & ResizeAdapter & RotateAdapter, plus the
-  // selection adapter methods so AreaSelectAdapter is satisfied. We also
-  // wrap `setPose` to cascade container moves to descendants (Scene v1
-  // stores absolute poses, so a container move requires translating each
-  // child by the same delta in a single batch).
-  const adapter = useMemo(() => {
-    const base = sceneToAdapter(scene, { commitInsert, insertLayer, layouts });
-    const collectDescendants = (id: string, out: string[]): void => {
-      for (const cid of scene.childrenOf(asNodeId(id))) {
-        out.push(cid);
-        collectDescendants(cid, out);
-      }
-    };
-    return {
-      ...base,
-      setPose(id: string, pose: TPose) {
-        const n = scene.get(asNodeId(id));
-        if (!n || n.kind !== 'container') {
-          base.setPose(id, pose);
-          return;
-        }
-        const prev = n.pose as unknown as { x: number; y: number };
-        const next = pose as unknown as { x: number; y: number };
-        const dx = next.x - prev.x;
-        const dy = next.y - prev.y;
-        if (dx === 0 && dy === 0) {
-          base.setPose(id, pose);
-          return;
-        }
-        const desc: string[] = [];
-        collectDescendants(id, desc);
-        scene.batch('move container', () => {
-          base.setPose(id, pose);
-          for (const cid of desc) {
-            const cn = scene.get(asNodeId(cid));
-            if (!cn) continue;
-            const cp = cn.pose as unknown as { x: number; y: number };
-            base.setPose(cid, { ...(cn.pose as object), x: cp.x + dx, y: cp.y + dy } as unknown as TPose);
-          }
-        });
-      },
-      // Spread selection methods so the synthesized adapter satisfies
-      // `AreaSelectAdapter` (which `useSelectTool` requires).
-      ...selection.adapterMethods,
-      // Default marquee hit-test: walk every renderOrder node and collect ids
-      // whose AABB intersects the marquee rect. Path-shaped poses use their
-      // path descriptor for a tighter test.
-      hitTestArea: (rect: { x: number; y: number; width: number; height: number }): string[] => {
-        const hits: string[] = [];
-        for (const nid of scene.renderOrder()) {
-          const n = scene.get(nid);
-          if (!n) continue;
-          if (isPathLike(n.pose) && pathPoseDescriptor.intersectsRect) {
-            if (pathPoseDescriptor.intersectsRect(n.pose, rect)) hits.push(n.id);
-            continue;
-          }
-          const b = aabbOfPose(n.pose);
-          if (b.x < rect.x + rect.width && b.x + b.width > rect.x
-            && b.y < rect.y + rect.height && b.y + b.height > rect.y) {
-            hits.push(n.id);
-          }
-        }
-        return hits;
-      },
-      // applyOps for marquee-driven SetSelection ops; actual pose mutation
-      // ops aren't expected from the default area-select behaviors.
-      applyOps: (ops: Op[]) => {
-        for (const op of ops) op.apply(selection.adapterMethods);
-      },
-    };
-  }, [scene, commitInsert, insertLayer, layouts, selection]);
-
-  // Default cascade lookup for the move overlay — reads live world pose from
-  // the scene. Caller's `moveOptions.cascadeWorldPose` (if any) wins.
-  const wiredMoveOptions = useMemo<UseMoveOptions<TPose>>(() => {
-    const defaultCascade = (id: string): TPose | null => {
-      const n = scene.get(asNodeId(id));
-      return n ? n.pose : null;
-    };
-    const merged: UseMoveOptions<TPose> = {
-      cascadeWorldPose: defaultCascade,
-      ...(moveOptions ?? {}),
-    };
-    // If `snap` was passed at the SceneCanvas level, prepend it to the
-    // move behaviors. Caller-supplied move.behaviors still run after.
-    if (snap) {
-      const existing = merged.behaviors ?? [];
-      merged.behaviors = [snapBehavior(snap), ...existing];
-    }
-    return merged;
-  }, [scene, moveOptions, snap]);
-
-  // Default pickEvery: walk renderOrder() back-to-front (top-most first) and
-  // return the first node whose pose contains the world point. Wraps the
-  // caller's `pickEvery` (string-or-null) into the array form `useSelectTool`
-  // expects.
-  const wiredHitBody = useMemo(() => {
-    return (wx: number, wy: number): string[] => {
-      if (pickEveryProp) {
-        const id = pickEveryProp(wx, wy);
-        return id ? [id] : [];
-      }
-      const ordered = [...scene.renderOrder()];
-      for (let i = ordered.length - 1; i >= 0; i--) {
-        const n = scene.get(ordered[i]);
-        if (n && poseContains(n.pose, wx, wy)) return [n.id];
-      }
-      return [];
-    };
-  }, [scene, pickEveryProp]);
-
-  const wiredBoundsOf = useMemo(() => {
-    return (id: string): Bounds | null => {
-      if (boundsOfProp) return boundsOfProp(id);
-      const n = scene.get(asNodeId(id));
-      return n ? aabbOfPose(n.pose) : null;
-    };
-  }, [scene, boundsOfProp]);
-
-  const internalSelect = useSelectTool<Node<TData, TLayer, TPose>, TPose>(adapter, {
-    pickEvery: wiredHitBody,
-    boundsOf: wiredBoundsOf,
-    ...(handleHitRadius !== undefined ? { handleHitRadius } : {}),
-    move: wiredMoveOptions,
-    ...(resizeOptions ? { resize: resizeOptions } : {}),
-    ...(rotateOptions ? { rotate: rotateOptions } : {}),
-    getObject: (id: string) => scene.get(asNodeId(id)) ?? null,
-    // Live selection getter so the tool's `previewBounds` can synthesize the
-    // `MULTI_RESIZE_TARGET_ID` union for `selectionMode="multi"`.
-    getSelection: () => selection.current,
+  // Adapter + select tool — folded into a single hook that synthesizes both.
+  const { adapter, selectTool: internalSelect } = useSceneSelectTool({
+    scene,
+    selection,
+    geometry,
+    selectTool: selectToolOpts,
+    ...(insertTool ? { insertTool } : {}),
+    ...(layouts ? { layouts } : {}),
   });
-  // Viewport hooks — called unconditionally (hooks cannot be conditional).
-  // Each tool is a noop when its config is absent: useHandTool with
-  // `inertia: false` behaves as the basic pan tool, useKeyboardZoomTool
-  // ignores `animate` when false, and usePinchZoomTool noops when its
-  // canvasRef is null.
-  const handToolInertia = inertiaConfig === false
-    ? undefined
-    : { friction: inertiaConfig.friction, minSpeed: inertiaConfig.minSpeed, boundary: inertiaConfig.boundary, bounds: inertiaConfig.bounds };
-  const handTool = useHandTool(handToolInertia ? { inertia: handToolInertia } : {});
-  const keyZoomTool = useKeyboardZoomTool(animateEnabled ? { animate: true, duration: animateDuration, resetDuration: animateResetDuration, easing: animateEasing } : {});
-  // Plain wheel zooms (requireCtrl:false) — covers scroll wheel, Cmd+wheel,
-  // and Mac trackpad pinch (browser synthesizes pinch as ctrl+wheel).
-  // Touch pinch via pointer events is handled separately by usePinchZoomTool.
-  const wheelZoomOpts = pinchConfig !== null
-    ? { min: pinchConfig.min, max: pinchConfig.max, requireCtrl: false }
-    : { requireCtrl: false };
-  const wheelZoomTool = useWheelZoomTool(viewport ? wheelZoomOpts : {});
-  usePinchZoomTool(
-    internalCanvasRef,
-    currentViewRef.current,
-    handleViewChange,
-    { ...(pinchConfig ?? {}), enabled: pinchConfig !== null },
-  );
+
+  // Viewport tools (hand / keyboard zoom / wheel zoom / pinch zoom). All
+  // hooks run unconditionally; each is a no-op when its config is absent.
+  const { handTool, keyZoomTool, wheelZoomTool, viewportRegistered } = useViewportTools({
+    viewport,
+    canvasRef: internalCanvasRef,
+    currentView: currentViewRef.current,
+    onViewChange: handleViewChange,
+  });
 
   // keyZoom and wheelZoom are always-on (ambient); handTool must be in the
   // registry so H keybinding and space hotkey work via useKeybindings.
-  const viewportAmbient: AnyTool[] = viewport
+  const viewportAmbient: AnyTool[] = viewportRegistered
     ? [keyZoomTool, wheelZoomTool]
     : [];
   const mergedAmbient = [...viewportAmbient, ...(ambient ?? [])];
 
-  const internalRegistry: Record<string, AnyTool> = viewport
+  const internalRegistry: Record<string, AnyTool> = viewportRegistered
     ? { select: internalSelect, hand: handTool }
     : { select: internalSelect };
 
@@ -441,62 +244,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const wiredGestures = { undoRedo: { adapter: scene }, ...gestures };
 
   // Preview-ghost layer: renders in-flight gesture poses on top of the
-  // committed scene using the scene slot's `drawOne`. The active tool
-  // publishes which ids are displaced (`previewIds`) and their interim
-  // poses (`previewPose`); we simply iterate them and reuse `drawOne`.
-  // This replaces the per-tool `drawGhost` fold-in — a single SceneCanvas
-  // concern instead of every consumer wiring it.
-  const sceneSlot = layers.scene;
-  const sceneRef = useRef(scene);
-  sceneRef.current = scene;
-  const toolsRef = useRef(tools);
-  toolsRef.current = tools;
-  const sceneSlotRef = useRef(sceneSlot);
-  sceneSlotRef.current = sceneSlot;
-  const previewLayer = useMemo<RenderLayer<unknown>>(() => ({
-    id: 'preview-ghost',
-    label: 'Preview ghost',
-    draw: (ctx, _data, view) => {
-      const slot = sceneSlotRef.current;
-      if (!slot || !slot.drawOne) return;
-      const t = toolsRef.current;
-      const tool = t.registry[t.hotkeyEngaged ?? t.active];
-      const ids = tool?.previewIds?.();
-      if (!ids) return;
-      const sc = sceneRef.current;
-      const drawOne = slot.drawOne;
-      ctx.save();
-      ctx.globalAlpha = 0.85;
-      for (const id of ids) {
-        const pose = tool?.previewPose?.(id) as TPose | null | undefined;
-        if (pose == null) continue;
-        const node = sc.get(asNodeId(id));
-        if (!node) continue;
-        drawOne(ctx, node, pose, view);
-      }
-      ctx.restore();
-    },
-    drawGL: (_data, view) => {
-      const slot = sceneSlotRef.current;
-      const drawOneGL = slot?.drawOneGL;
-      if (!slot || !drawOneGL) return [];
-      const t = toolsRef.current;
-      const tool = t.registry[t.hotkeyEngaged ?? t.active];
-      const ids = tool?.previewIds?.();
-      if (!ids) return [];
-      const sc = sceneRef.current;
-      const children: DrawCommand[] = [];
-      for (const id of ids) {
-        const pose = tool?.previewPose?.(id) as TPose | null | undefined;
-        if (pose == null) continue;
-        const node = sc.get(asNodeId(id));
-        if (!node) continue;
-        for (const cmd of drawOneGL(node, pose, view)) children.push(cmd);
-      }
-      if (children.length === 0) return [];
-      return [{ kind: 'group', transform: viewToMat3(view), alpha: 0.85, children }];
-    },
-  }), []);
+  // committed scene using the scene slot's `drawOne`.
+  const previewLayer = usePreviewGhostLayer<TData, TLayer, TPose>({
+    scene,
+    tools,
+    sceneSlot: layers.scene,
+  });
 
   const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({
     ...layers,
@@ -510,77 +263,45 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // the deps array, animated demos that change them every render trigger
   // 13 re-registrations × 60fps = ~780 register ops/sec, plus closure churn.
   // Instead, we close over refs (read fresh every action invocation) and
-  // memoize on stable inputs only (actions / actionDefaults). `sceneRef` is
-  // already maintained earlier for the previewLayer; `selectionRef` and
-  // `adapterRef` are added here.
+  // memoize on stable inputs only (actions / actionDefaults).
+  const sceneRef = useRef(scene);
+  sceneRef.current = scene;
   const selectionRef = useRef(selection);
   selectionRef.current = selection;
   const adapterRef = useRef(adapter);
   adapterRef.current = adapter;
 
   const resolvedActions = useMemo<Action[]>(() => {
-    if (actions === null) return [];
-
-    const setSelection = (ids: string[]): void => {
-      selectionRef.current.adapterMethods.setSelection(ids);
-    };
-    const getSelection = (): string[] => selectionRef.current.current;
-    const listAll = (): string[] => {
-      const out: string[] = [];
-      for (const nid of sceneRef.current.renderOrder()) out.push(String(nid));
-      return out;
-    };
-    const getPose = (id: string): TPose => {
-      const n = sceneRef.current.get(asNodeId(id));
-      return n?.pose as TPose;
-    };
-    const applyBatch = (ops: Op[], label?: string): void => {
-      const a = adapterRef.current;
-      if (typeof (a as { applyBatch?: unknown }).applyBatch === 'function') {
-        (a as { applyBatch: (ops: Op[], label: string) => void }).applyBatch(ops, label ?? '');
-      } else {
-        for (const op of ops) op.apply(a);
-      }
-    };
-
-    const defaults: Record<string, Action> = {
-      selectAll: defaultSelectAllAction({ getSelection, listAll, setSelection }),
-      escape: defaultEscapeAction({ getSelection, setSelection }),
-      ...(actionDefaults?.cloneObject
-        ? {
-            duplicate: defaultDuplicateAction({
-              getSelection,
-              applyBatch,
-              cloneObject: actionDefaults.cloneObject,
-              ...(actionDefaults.duplicateOffset !== undefined
-                ? { offset: actionDefaults.duplicateOffset }
-                : {}),
-            }),
-          }
-        : {}),
-    };
-
-    const nudgeDeps: import('../interactions/actions/defaults').NudgeDeps<TPose> = {
-      getSelection,
-      getPose,
-      applyBatch,
+    const deps: StandardActionsDeps<TPose> = {
+      setSelection: (ids) => selectionRef.current.adapterMethods.setSelection(ids),
+      getSelection: () => selectionRef.current.current,
+      listAll: () => {
+        const out: string[] = [];
+        for (const nid of sceneRef.current.renderOrder()) out.push(String(nid));
+        return out;
+      },
+      getPose: (id) => {
+        const n = sceneRef.current.get(asNodeId(id));
+        return n?.pose as TPose;
+      },
+      applyBatch: (ops: Op[], label?: string) => {
+        const a = adapterRef.current;
+        if (typeof (a as { applyBatch?: unknown }).applyBatch === 'function') {
+          (a as { applyBatch: (ops: Op[], label: string) => void }).applyBatch(ops, label ?? '');
+        } else {
+          for (const op of ops) op.apply(a);
+        }
+      },
       translatePose: (p, dx, dy) =>
         translateRectPose(
           p as unknown as { x: number; y: number; width: number; height: number },
           dx, dy,
         ) as unknown as TPose,
-      ...(actionDefaults?.nudgeStep !== undefined ? { step: actionDefaults.nudgeStep } : {}),
-      ...(actionDefaults?.nudgeShiftStep !== undefined ? { shiftStep: actionDefaults.nudgeShiftStep } : {}),
     };
-    for (const a of defaultNudgeActions<TPose>(nudgeDeps)) defaults[a.id] = a;
-
-    for (const a of defaultReorderActions({ getSelection, applyBatch })) defaults[a.id] = a;
-
-    if (actions) {
-      for (const [id, entry] of Object.entries(actions)) applyEntry(defaults, id, entry);
-    }
-
-    return Object.values(defaults);
+    return resolveActions<TPose>(deps, {
+      ...(actions !== undefined ? { actions } : {}),
+      ...(actionDefaults ? { defaults: actionDefaults } : {}),
+    });
   }, [actions, actionDefaults]);
 
   // Merge the forwarded ref with our internalCanvasRef so usePinchZoomTool
@@ -622,55 +343,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 function ActionRegistrar({ action }: { action: Action }) {
   useAction(action);
   return null;
-}
-
-function ActionsProviderIfRoot({ children }: { children: ReactNode }) {
-  const parent = useActionsRegistry();
-  if (parent) return <>{children}</>;
-  return <ActionsProvider>{children}</ActionsProvider>;
-}
-
-const warnedMissingDefault = new Set<string>();
-
-function applyEntry(
-  defaults: Record<string, Action>,
-  id: string,
-  entry: ActionEntry,
-): void {
-  if (entry === null) {
-    delete defaults[id];
-    return;
-  }
-  const isFull = (e: Partial<Action>): e is Action =>
-    typeof e.id === 'string' && typeof e.label === 'string' && typeof e.run === 'function';
-  // Full descriptor for a *new* slot id (entry.id matches slot key, or no
-  // default exists for this slot): register as-is.
-  if (isFull(entry) && (!(id in defaults) || entry.id === id)) {
-    defaults[id] = entry;
-    return;
-  }
-  if (id in defaults) {
-    // Slot key wins over entry.id. Drop entry.id; merge the rest onto the
-    // default. Warn once when the consumer passed an explicit-but-mismatched id.
-    if (entry.id !== undefined && entry.id !== id && !warnedMissingDefault.has(`mismatch:${id}`)) {
-      warnedMissingDefault.add(`mismatch:${id}`);
-      console.warn(
-        `weasel <SceneCanvas>: actions["${id}"].id="${entry.id}" mismatches the slot key. ` +
-        `Ignoring the id field; the action remains at id="${id}".`,
-      );
-    }
-    const { id: _drop, ...rest } = entry;
-    void _drop;
-    defaults[id] = { ...defaults[id], ...rest };
-    return;
-  }
-  if (!warnedMissingDefault.has(id)) {
-    warnedMissingDefault.add(id);
-    console.warn(
-      `weasel <SceneCanvas>: actions["${id}"] is a partial Action but no default ` +
-      `with this id exists. Pass a complete {id, label, defaultBinding, run} descriptor.`,
-    );
-  }
 }
 
 export const SceneCanvas = forwardRef(SceneCanvasInner) as <
