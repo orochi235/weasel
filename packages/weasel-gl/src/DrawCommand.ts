@@ -28,12 +28,22 @@ export interface PathDrawCommand {
   fill?: Paint;
   /** Stroke spec. Only solid `paint` supported through step 4. */
   stroke?: Stroke;
+  /**
+   * Optional flat RGBA-per-vertex color array (length = 4 × vertexCount).
+   * Lives on the DrawCommand variant, not on `Path`.
+   */
+  vertexColors?: number[];
 }
 
 export interface GroupDrawCommand {
   kind: 'group';
   transform?: Mat3;
   alpha?: number;
+  /**
+   * Optional 4×5 color matrix (row-major, 20 numbers) — `out = M₄ₓ₄ * in + bias`.
+   * Accumulated multiplicatively down the group stack. Defaults to identity.
+   */
+  colorMatrix?: number[];
   children: DrawCommand[];
 }
 
