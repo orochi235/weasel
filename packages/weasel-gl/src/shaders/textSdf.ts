@@ -6,12 +6,14 @@
  *   a_uv        vec2   atlas UV (0..1)
  *
  * Uniforms:
- *   u_proj      mat3        screen → clip projection
- *   u_model     mat3        cumulative group transform
- *   u_atlas     sampler2D   the MSDF atlas texture (bound to TEXTURE0)
- *   u_color     vec4        text color (straight RGBA)
- *   u_alpha     float       group alpha multiplier
- *   u_aaWidth   float       smoothstep half-width for AA (default 0.05)
+ *   u_proj         mat3        screen → clip projection
+ *   u_model        mat3        cumulative group transform
+ *   u_atlas        sampler2D   the MSDF atlas texture (bound to TEXTURE0)
+ *   u_color        vec4        text color (straight RGBA)
+ *   u_alpha        float       group alpha multiplier
+ *   u_aaWidth      float       smoothstep half-width for AA (default 0.05)
+ *   u_colorMatrix  mat4        color transform applied to u_color before alpha modulation
+ *   u_colorBias    vec4        bias added after the matrix (identity = zero bias)
  *
  * Output: PREMULTIPLIED alpha — `vec4(color.rgb * a, a)` per conventions §2.
  * Blend func: ONE / ONE_MINUS_SRC_ALPHA.
@@ -43,6 +45,8 @@ uniform sampler2D u_atlas;
 uniform vec4 u_color;
 uniform float u_alpha;
 uniform float u_aaWidth;
+uniform mat4 u_colorMatrix;
+uniform vec4 u_colorBias;
 out vec4 outColor;
 
 float median(float r, float g, float b) {
@@ -53,14 +57,17 @@ void main() {
   vec3 sdf = texture(u_atlas, v_uv).rgb;
   float sdfVal = median(sdf.r, sdf.g, sdf.b);
   float aaW = u_aaWidth > 0.0 ? u_aaWidth : 0.05;
-  float coverage = smoothstep(0.5 - aaW, 0.5 + aaW, sdfVal);
-  float a = u_color.a * coverage * u_alpha;
-  outColor = vec4(u_color.rgb * a, a);
+  float msdfAlpha = smoothstep(0.5 - aaW, 0.5 + aaW, sdfVal);
+  vec4 src = vec4(u_color.rgb, u_color.a);
+  vec4 mapped = clamp(u_colorMatrix * src + u_colorBias, 0.0, 1.0);
+  float a = mapped.a * msdfAlpha * u_alpha;
+  outColor = vec4(mapped.rgb * a, a);
 }
 `;
 
 export const TEXT_SDF_UNIFORMS = [
   'u_proj', 'u_model', 'u_atlas', 'u_color', 'u_alpha', 'u_aaWidth',
+  'u_colorMatrix', 'u_colorBias',
 ] as const;
 
 export const TEXT_SDF_ATTRIBUTES = ['a_position', 'a_uv'] as const;

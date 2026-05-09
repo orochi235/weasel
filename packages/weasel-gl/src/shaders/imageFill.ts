@@ -6,11 +6,13 @@
  *   a_uv        vec2   texture coordinate 0..1
  *
  * Uniforms:
- *   u_proj      mat3        screen → clip projection
- *   u_model     mat3        cumulative group transform
- *   u_sampler   sampler2D   image texture (TEXTURE0)
- *   u_opacity   float       overall opacity, 0..1
- *   u_alpha     float       group alpha, 0..1
+ *   u_proj         mat3        screen → clip projection
+ *   u_model        mat3        cumulative group transform
+ *   u_sampler      sampler2D   image texture (TEXTURE0)
+ *   u_opacity      float       overall opacity, 0..1
+ *   u_alpha        float       group alpha, 0..1
+ *   u_colorMatrix  mat4        color transform applied to sampled texel before premultiply
+ *   u_colorBias    vec4        bias added after the matrix (identity = zero bias)
  *
  * Output convention §2: PREMULTIPLIED alpha — `vec4(rgb * a, a)`.
  * Pattern fills reuse this shader; wrapping is baked into the texture state.
@@ -36,16 +38,20 @@ in vec2 v_uv;
 uniform sampler2D u_sampler;
 uniform float u_opacity;
 uniform float u_alpha;
+uniform mat4 u_colorMatrix;
+uniform vec4 u_colorBias;
 out vec4 outColor;
 void main() {
   vec4 texel = texture(u_sampler, v_uv);
-  float a = texel.a * u_opacity * u_alpha;
-  outColor = vec4(texel.rgb * a, a);
+  vec4 mapped = clamp(u_colorMatrix * texel + u_colorBias, 0.0, 1.0);
+  float a = mapped.a * u_opacity * u_alpha;
+  outColor = vec4(mapped.rgb * a, a);
 }
 `;
 
 export const IMAGE_FILL_UNIFORMS = [
   'u_proj', 'u_model', 'u_sampler', 'u_opacity', 'u_alpha',
+  'u_colorMatrix', 'u_colorBias',
 ] as const;
 
 export const IMAGE_FILL_ATTRIBUTES = ['a_position', 'a_uv'] as const;

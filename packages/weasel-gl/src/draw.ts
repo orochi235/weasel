@@ -46,9 +46,11 @@ export interface DrawContext {
 }
 
 /**
- * Upload the cumulative color matrix from GroupState to a path-fill shader's
+ * Upload the cumulative color matrix from GroupState to a shader's
  * `u_colorMatrix` (mat4) and `u_colorBias` (vec4) uniforms. Splits the 4×5
- * row-major form into a column-major mat4 + vec4 bias.
+ * row-major form into a column-major mat4 + vec4 bias. Used by every shader
+ * that accepts the group color matrix: pathFill, pathFillVColor, textSdf,
+ * imageFill.
  */
 function setColorMatrixUniforms(ctx: DrawContext, prog: ShaderProgram): void {
   const gl = ctx.gl;
@@ -384,6 +386,7 @@ function drawPathFillPattern(
   gl.useProgram(ctx.imageFill.handle);
   gl.bindVertexArray(handle.vao);
   setProjAndModel(ctx, ctx.imageFill);
+  setColorMatrixUniforms(ctx, ctx.imageFill);
   ctx.imageCache.bind(image, 0);
   gl.uniform1i(ctx.imageFill.uniform('u_sampler')!, 0);
   gl.uniform1f(ctx.imageFill.uniform('u_opacity')!, fill.opacity ?? 1);
@@ -611,6 +614,7 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW);
 
   setProjAndModel(ctx, ctx.textSdf);
+  setColorMatrixUniforms(ctx, ctx.textSdf);
 
   let r = 0, g = 0, b = 0, a = 1;
   if (style.fill && 'color' in style.fill) {
@@ -676,6 +680,7 @@ function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW);
 
   setProjAndModel(ctx, ctx.imageFill);
+  setColorMatrixUniforms(ctx, ctx.imageFill);
   ctx.imageCache.bind(cmd.image, 0);
   gl.uniform1i(ctx.imageFill.uniform('u_sampler')!, 0);
   gl.uniform1f(ctx.imageFill.uniform('u_opacity')!, cmd.opacity ?? 1);
