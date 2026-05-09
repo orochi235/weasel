@@ -141,14 +141,14 @@ The lerp path mirrors today's: lerp `lastBounds → behavedBoundsLocal` to produ
 ```ts
 export function fixedCornerOf(bounds: ResizePose, anchor: ResizeAnchor): { x: number; y: number } {
   return {
-    x: anchor.x === 'min' ? bounds.x + bounds.width : bounds.x,
-    y: anchor.y === 'min' ? bounds.y + bounds.height : bounds.y,
+    x: anchor.x === 'max' ? bounds.x + bounds.width : bounds.x,
+    y: anchor.y === 'max' ? bounds.y + bounds.height : bounds.y,
   };
 }
 ```
 Lives next to `cornerResizeHandles` in `resize/cornerHandles.ts`. Pure function; trivially testable.
 
-Sanity check: `cornerResizeHandles` returns four handles whose `anchor` is the opposite-corner pin direction (top-left handle → `anchor: { x: 'max', y: 'max' }`). For that handle, `fixedCornerOf` returns `(x + w, y + h)` — the bottom-right corner. Matches.
+Sanity check: `cornerResizeHandles` returns the bottom-right handle with `anchor: { x: 'min', y: 'min' }` (each handle's `anchor` records which axis edges are *fixed*). For that handle, `fixedCornerOf` returns `(x, y)` — the top-left corner. Matches.
 
 ### §D — Hit-test integration
 
