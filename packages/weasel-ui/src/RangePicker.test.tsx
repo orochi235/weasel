@@ -277,3 +277,28 @@ describe('RangePicker per-thumb bounds (tuple form)', () => {
     expect(onChange.mock.calls[1][0][0].value).toBe(0.5);
   });
 });
+
+describe('RangePicker per-thumb bounds (callback form)', () => {
+  it('callback receives the in-flight thumb buffer and clamps using neighbor values', () => {
+    const onChange = vi.fn();
+    // Two thumbs; thumb 0 cannot exceed thumb 1's value − 0.05.
+    const thumbsProp = [
+      {
+        value: 0.3,
+        bounds: ({ thumbs }: { thumbs: readonly { value: number }[]; index: number }) =>
+          [0, thumbs[1].value - 0.05] as [number, number],
+      },
+      { value: 0.7 },
+    ];
+    const { container } = render(
+      <RangePicker min={0} max={1} step={0.01} thumbs={thumbsProp} onChange={onChange} />,
+    );
+    const thumbs = container.querySelectorAll<HTMLElement>('[role="slider"]');
+    stubRect(thumbs[0].parentElement!, { left: 0, width: 200 });
+    fireEvent.pointerDown(thumbs[0], { clientX: 60, clientY: 12, pointerId: 1, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 200, clientY: 12, pointerId: 1 });
+    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(last[0].value).toBeCloseTo(0.65, 2); // 0.7 − 0.05
+    fireEvent.pointerUp(document, { pointerId: 1 });
+  });
+});
