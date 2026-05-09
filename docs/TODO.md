@@ -144,9 +144,14 @@ The kit's primitives (Tool, RenderLayer, Adapter, PoseDescriptor, Behavior, Op f
 
 Pen tool and debug overlay both ship as separate exports first (tool + layer factory). After 2–3 plugin-shaped features have shipped this way, do a small spec pass to extract the bundling convention from the actual pattern.
 
-### Feature-roles taxonomy (in design — informal)
+### Feature-roles taxonomy
 
-Working naming convention for `useFooFeature()` returns, settling in chat (2026-05-09). Each feature contributes any subset of:
+**Documented 2026-05-09** in `docs/taxonomy.md` (Feature § + the feature-authoring guide). The convention is: each feature is a directory under `src/features/<name>/`; the `index.ts` re-exports public primitives; the kit's main barrel imports through feature barrels, not internal paths. The role taxonomy (api / attrs / layers) is a thinking tool, not a code shape.
+
+Spec: `docs/superpowers/specs/2026-05-09-feature-roles-focus-grid-design.md`.
+Plan: `docs/superpowers/plans/2026-05-09-feature-roles-focus-grid.md`.
+
+Each feature contributes any subset of:
 
 - **`api: FooApi`** — typed surface other features and consumer code consume (live state, refs, getters, setters). The cross-feature contract.
 - **`attrs: FooAttrs`** — native DOM attributes/handlers to spread onto the canvas host element (`tabIndex`, `onFocus`, `onDragOver`, etc.). Distinct from React props on `<SceneCanvas>` itself.
