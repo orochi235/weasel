@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 export default defineConfig({
   root: 'demo',
   base: '/weasel/',
-  publicDir: resolve(__dirname, 'packages/weasel-gl/fonts'),
+  publicDir: resolve(__dirname, 'assets/fonts'),
   resolve: {
     alias: [
       {
