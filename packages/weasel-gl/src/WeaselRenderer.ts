@@ -2,8 +2,11 @@ import { ShaderProgram } from './ShaderProgram';
 import {
   VERT_SRC,
   FRAG_SRC,
+  VCOLOR_VERT_SRC,
+  VCOLOR_FRAG_SRC,
   PATH_FILL_UNIFORMS,
   PATH_FILL_ATTRIBUTES,
+  PATH_FILL_VCOLOR_ATTRIBUTES,
 } from './shaders/pathFill';
 import {
   TEXT_VERT_SRC,
@@ -43,6 +46,7 @@ export interface WeaselRendererOptions {
 export class WeaselRenderer {
   private readonly gl: WebGL2RenderingContext;
   private pathFill: ShaderProgram;
+  private pathFillVColor: ShaderProgram;
   private textSdf: ShaderProgram;
   private imageFill: ShaderProgram;
   private gradFill: ShaderProgram;
@@ -90,6 +94,10 @@ export class WeaselRenderer {
     this.pathFill.lookupUniforms(PATH_FILL_UNIFORMS);
     this.pathFill.lookupAttributes(PATH_FILL_ATTRIBUTES);
 
+    this.pathFillVColor = new ShaderProgram(this.gl, VCOLOR_VERT_SRC, VCOLOR_FRAG_SRC);
+    this.pathFillVColor.lookupUniforms(PATH_FILL_UNIFORMS);
+    this.pathFillVColor.lookupAttributes(PATH_FILL_VCOLOR_ATTRIBUTES);
+
     this.textSdf = new ShaderProgram(this.gl, TEXT_VERT_SRC, TEXT_FRAG_SRC);
     this.textSdf.lookupUniforms(TEXT_SDF_UNIFORMS);
     this.textSdf.lookupAttributes(TEXT_SDF_ATTRIBUTES);
@@ -134,6 +142,9 @@ export class WeaselRenderer {
     this.pathFill = new ShaderProgram(this.gl, VERT_SRC, FRAG_SRC);
     this.pathFill.lookupUniforms(PATH_FILL_UNIFORMS);
     this.pathFill.lookupAttributes(PATH_FILL_ATTRIBUTES);
+    this.pathFillVColor = new ShaderProgram(this.gl, VCOLOR_VERT_SRC, VCOLOR_FRAG_SRC);
+    this.pathFillVColor.lookupUniforms(PATH_FILL_UNIFORMS);
+    this.pathFillVColor.lookupAttributes(PATH_FILL_VCOLOR_ATTRIBUTES);
     this.textSdf = new ShaderProgram(this.gl, TEXT_VERT_SRC, TEXT_FRAG_SRC);
     this.textSdf.lookupUniforms(TEXT_SDF_UNIFORMS);
     this.textSdf.lookupAttributes(TEXT_SDF_ATTRIBUTES);
@@ -159,6 +170,7 @@ export class WeaselRenderer {
     const ctx: DrawContext = {
       gl,
       pathFill: this.pathFill,
+      pathFillVColor: this.pathFillVColor,
       textSdf: this.textSdf,
       imageFill: this.imageFill,
       gradFill: this.gradFill,
@@ -186,6 +198,7 @@ export class WeaselRenderer {
 
   /** @internal */ _gl(): WebGL2RenderingContext { return this.gl; }
   /** @internal */ _pathFill(): ShaderProgram { return this.pathFill; }
+  /** @internal */ _pathFillVColor(): ShaderProgram { return this.pathFillVColor; }
   /** @internal */ _textSdf(): ShaderProgram { return this.textSdf; }
   /** @internal */ _imageFill(): ShaderProgram { return this.imageFill; }
   /** @internal */ _gradFill(): ShaderProgram { return this.gradFill; }

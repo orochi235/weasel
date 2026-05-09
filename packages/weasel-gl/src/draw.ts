@@ -23,6 +23,7 @@ import { layoutGlyphs, quadsToVertexBuffer, buildQuadIndexBuffer } from './Glyph
 export interface DrawContext {
   gl: WebGL2RenderingContext;
   pathFill: ShaderProgram;
+  pathFillVColor: ShaderProgram;
   textSdf: ShaderProgram;
   imageFill: ShaderProgram;
   gradFill: ShaderProgram;
@@ -35,6 +36,26 @@ export interface DrawContext {
   heightCss: number;
 }
 
+/**
+ * Upload the cumulative color matrix from GroupState to a path-fill shader's
+ * `u_colorMatrix` (mat4) and `u_colorBias` (vec4) uniforms. Splits the 4×5
+ * row-major form into a column-major mat4 + vec4 bias.
+ */
+function setColorMatrixUniforms(ctx: DrawContext, prog: ShaderProgram): void {
+  const gl = ctx.gl;
+  const cm = ctx.state.colorMatrix; // row-major 4×5
+  const m4 = new Float32Array(16);
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 4; col++) {
+      m4[col * 4 + row] = cm[row * 5 + col];
+    }
+  }
+  const mLoc = prog.uniform('u_colorMatrix');
+  const bLoc = prog.uniform('u_colorBias');
+  if (mLoc !== undefined) gl.uniformMatrix4fv(mLoc, false, m4);
+  if (bLoc !== undefined) gl.uniform4f(bLoc, cm[4], cm[9], cm[14], cm[19]);
+}
+
 export function dispatch(ctx: DrawContext, cmd: DrawCommand): void {
   switch (cmd.kind) {
     case 'group': return drawGroup(ctx, cmd);
@@ -45,7 +66,11 @@ export function dispatch(ctx: DrawContext, cmd: DrawCommand): void {
 }
 
 function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
-  ctx.state.push({ transform: cmd.transform, alpha: cmd.alpha });
+  ctx.state.push({
+    transform: cmd.transform,
+    alpha: cmd.alpha,
+    colorMatrix: cmd.colorMatrix,
+  });
   for (const child of cmd.children) dispatch(ctx, child);
   ctx.state.pop();
 }
@@ -56,7 +81,10 @@ function drawPath(ctx: DrawContext, cmd: PathDrawCommand): void {
   if (cmd.fill) {
     const mesh = getMesh(cmd.path);
     const handle = ctx.meshCache.handleFor(mesh);
-    if (handle.requiresStencil) {
+    if (cmd.vertexColors && cmd.vertexColors.length > 0 &&
+        (cmd.fill.fill === undefined || cmd.fill.fill === 'solid')) {
+      drawPathFillVColor(ctx, cmd, cmd.fill as { color: string; opacity?: number }, handle);
+    } else if (handle.requiresStencil) {
       drawPathFillStencil(ctx, cmd.fill, handle);
     } else {
       drawPathFillByKind(ctx, cmd.fill, handle);
@@ -66,6 +94,35 @@ function drawPath(ctx: DrawContext, cmd: PathDrawCommand): void {
   if (cmd.stroke) {
     drawPathStroke(ctx, cmd);
   }
+}
+
+function drawPathFillVColor(
+  ctx: DrawContext,
+  cmd: PathDrawCommand,
+  fill: { color: string; opacity?: number },
+  handle: GLMeshHandle,
+): void {
+  const gl = ctx.gl;
+  const prog = ctx.pathFillVColor;
+  gl.useProgram(prog.handle);
+  gl.bindVertexArray(handle.vao);
+  setProjAndModel(ctx, prog);
+  setSolidPaintUniforms(ctx, prog, fill.color, fill.opacity);
+  setColorMatrixUniforms(ctx, prog);
+
+  const colors = new Float32Array(cmd.vertexColors!);
+  const colorVbo = gl.createBuffer();
+  if (!colorVbo) throw new Error('drawPathFillVColor: createBuffer (color VBO) returned null');
+  gl.bindBuffer(gl.ARRAY_BUFFER, colorVbo);
+  gl.bufferData(gl.ARRAY_BUFFER, colors, gl.DYNAMIC_DRAW);
+  const aVColorLoc = prog.attribute('a_vertexColor');
+  if (aVColorLoc !== undefined) {
+    gl.enableVertexAttribArray(aVColorLoc);
+    gl.vertexAttribPointer(aVColorLoc, 4, gl.FLOAT, false, 0, 0);
+  }
+
+  gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
+  gl.bindVertexArray(null);
 }
 
 function setProjAndModel(ctx: DrawContext, prog: ShaderProgram): void {
@@ -107,6 +164,7 @@ function drawPathFillSolid(
   gl.bindVertexArray(handle.vao);
   setProjAndModel(ctx, ctx.pathFill);
   setSolidPaintUniforms(ctx, ctx.pathFill, fill.color, fill.opacity);
+  setColorMatrixUniforms(ctx, ctx.pathFill);
   gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
 }
