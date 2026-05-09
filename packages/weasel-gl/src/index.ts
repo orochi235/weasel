@@ -20,6 +20,7 @@ export type {
   SolidPaint,
 } from './DrawCommand';
 export { mat3, type Mat3 } from './mat3';
+export { viewToMat3, type View as ViewLike } from './viewToMat3';
 export { tessellate, type TessellateOptions } from './tessellate';
 export { tessellateStroke, type StrokeOptions } from './stroke';
 export { registerFont } from './registerFont';

@@ -1,6 +1,19 @@
+import type { DrawCommand } from '@orochi235/weasel-gl';
 import type { View } from '../../features/viewport/view';
 
 const IDENTITY_VIEW: View = { x: 0, y: 0, scale: 1 };
+
+/**
+ * Canvas size in CSS pixels — passed to `drawGL` for layers that anchor to
+ * canvas edges (e.g. the debug overlay's layer-list panel). Today's 2D
+ * `draw` reads it via `ctx.canvas.width` (device pixels — DPR-multiplied);
+ * the GL backend supplies it explicitly so layers don't have to know about
+ * DPR.
+ */
+export interface Dims {
+  width: number;
+  height: number;
+}
 
 /**
  * A single named render sub-layer within a canvas renderer.
@@ -12,8 +25,24 @@ export interface RenderLayer<TData> {
   id: string;
   /** Human-readable name for UI toggles. */
   label: string;
-  /** Draw this layer's content onto the canvas. */
+  /**
+   * Draw this layer's content onto the canvas. The 2D backend.
+   * Stays unchanged through the GL transition; replaced by `drawGL` in the
+   * final step.
+   */
   draw: (ctx: CanvasRenderingContext2D, data: TData, view: View) => void;
+  /**
+   * Emit a DrawCommand tree for the GL backend to dispatch. Optional
+   * during the GL transition — layers ship `drawGL` incrementally. The 2D
+   * dispatcher (`drawLayers`) ignores this field; only the GL dispatcher
+   * (lands in a later step) reads it.
+   *
+   * For world-space layers (the default), wrap world-space content in a
+   * `kind: 'group'` whose `transform` is `viewToMat3(view)` so it maps to
+   * screen coords. For screen-space layers (`space: 'screen'`), emit
+   * commands in screen-space CSS pixels directly, matching the 2D path.
+   */
+  drawGL?: (data: TData, view: View, dims: Dims) => DrawCommand[];
   /**
    * Whether the layer is shown when no explicit visibility entry exists.
    * Defaults to `true` when absent.

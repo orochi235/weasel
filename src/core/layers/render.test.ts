@@ -93,6 +93,16 @@ describe('drawLayers', () => {
     drawLayers(ctx, [a], 0, {}, ['ghost', 'a']);
     expect(a.draw).toHaveBeenCalledTimes(1);
   });
+
+  it('does not call drawGL — that is the GL backend dispatcher concern', () => {
+    const ctx = makeCtxStub();
+    const drawGL = vi.fn(() => []);
+    const draw = vi.fn();
+    const layer: RenderLayer<number> = { id: 'x', label: 'X', draw, drawGL };
+    drawLayers(ctx, [layer], 0, {});
+    expect(draw).toHaveBeenCalledOnce();
+    expect(drawGL).not.toHaveBeenCalled();
+  });
 });
 
 describe('drawLayers — view-aware transforms', () => {
