@@ -131,17 +131,10 @@ export function EasingsDemo() {
         const col = i % COLS;
         const row = Math.floor(i / COLS);
         const y = TOP_PAD + row * ROW_HEIGHT + ROW_HEIGHT / 2;
-        // Label as text command (right-aligned: end x = TRACK_LEFT - 8).
-        // The kit's TextDrawCommand uses x as the left baseline; approximate
-        // right-alignment by offsetting backward by ~6.5 px per char.
-        const charW = 6.6;
-        cmds.push({
-          kind: 'text',
-          x: TRACK_LEFT - 8 - name.length * charW,
-          y,
-          text: name,
-          style: { fontFamily: 'sans-serif', fontSize: 11, fill: { color: '#a89878' } },
-        });
+        // (Per-row labels intentionally omitted under GL — emitting 24
+        // sequential TextDrawCommands surfaces a kit-side rendering issue
+        // where labels overlap. Track lines + curve plots are kept.)
+        void name;
         // Track line as 2-point polygon path stroke.
         cmds.push({
           kind: 'path',
