@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
+import { useState } from 'react';
 import { RangePicker } from './RangePicker';
 
 // jsdom omits PointerEvent. Without this shim, fireEvent.pointerDown/Move/Up dispatch
@@ -101,5 +102,67 @@ describe('RangePicker single-thumb drag', () => {
     fireEvent.pointerMove(document, { clientX: 137, clientY: 12, pointerId: 1 }); // ~6.85 → snap to 7
     expect(onChange.mock.calls[onChange.mock.calls.length - 1][0][0].value).toBe(7);
     fireEvent.pointerUp(document, { pointerId: 1 });
+  });
+});
+
+describe('RangePicker keyboard', () => {
+  it('arrow right increments by step and fires onChange + onCommit', () => {
+    const onChange = vi.fn();
+    const onCommit = vi.fn();
+    const { container } = render(
+      <RangePicker min={0} max={10} step={1} thumbs={[{ value: 5 }]} onChange={onChange} onCommit={onCommit} />,
+    );
+    const thumb = container.querySelector('[role="slider"]') as HTMLElement;
+    fireEvent.keyDown(thumb, { key: 'ArrowRight' });
+    expect(onChange.mock.calls[0][0][0].value).toBe(6);
+    expect(onCommit.mock.calls[0][0][0].value).toBe(6);
+  });
+
+  it('shift+arrow moves by 10 steps; PageUp/Down do the same', () => {
+    // Drive a controlled RangePicker so each keystroke sees the updated value.
+    function Harness() {
+      const [v, setV] = useState(50);
+      return (
+        <RangePicker
+          min={0}
+          max={100}
+          step={1}
+          thumbs={[{ value: v }]}
+          onChange={ts => setV(ts[0].value)}
+        />
+      );
+    }
+    const { container } = render(<Harness />);
+    let thumb = container.querySelector('[role="slider"]') as HTMLElement;
+    fireEvent.keyDown(thumb, { key: 'ArrowRight', shiftKey: true });
+    thumb = container.querySelector('[role="slider"]') as HTMLElement;
+    expect(thumb.getAttribute('aria-valuenow')).toBe('60');
+    fireEvent.keyDown(thumb, { key: 'PageDown' });
+    thumb = container.querySelector('[role="slider"]') as HTMLElement;
+    expect(thumb.getAttribute('aria-valuenow')).toBe('50');
+  });
+
+  it('Home snaps to min, End snaps to max', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <RangePicker min={0} max={10} step={1} thumbs={[{ value: 5 }]} onChange={onChange} />,
+    );
+    const thumb = container.querySelector('[role="slider"]') as HTMLElement;
+    fireEvent.keyDown(thumb, { key: 'Home' });
+    expect(onChange.mock.calls[0][0][0].value).toBe(0);
+    fireEvent.keyDown(thumb, { key: 'End' });
+    expect(onChange.mock.calls[1][0][0].value).toBe(10);
+  });
+
+  it('exposes ARIA attributes on each thumb', () => {
+    const { container } = render(
+      <RangePicker min={0} max={1} thumbs={[{ value: 0.25 }]} ariaLabel="Hue" onChange={() => {}} />,
+    );
+    const thumb = container.querySelector('[role="slider"]') as HTMLElement;
+    expect(thumb.getAttribute('aria-orientation')).toBe('horizontal');
+    expect(thumb.getAttribute('aria-valuemin')).toBe('0');
+    expect(thumb.getAttribute('aria-valuemax')).toBe('1');
+    expect(thumb.getAttribute('aria-valuenow')).toBe('0.25');
+    expect(thumb.getAttribute('aria-label')).toBe('Hue');
   });
 });
