@@ -308,6 +308,9 @@ function drawPathFillVColor(
 
   gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
+  // The per-vertex color VBO is freshly allocated per draw; free it now
+  // (after unbinding the VAO) so we don't leak one buffer per vColor draw.
+  gl.deleteBuffer(colorVbo);
 }
 
 function setProjAndModel(ctx: DrawContext, prog: ShaderProgram): void {
@@ -496,7 +499,11 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
   const solid = stroke.paint as { color: string; opacity?: number };
   const mesh = tessellateStroke(cmd.path, stroke);
   if (mesh.indices.length === 0) return;
-  const handle = ctx.meshCache.handleFor(mesh);
+  // tessellateStroke returns a freshly-built Mesh every frame; routing it
+  // through the WeakMap cache would leak GL buffers until GC fires (which
+  // doesn't happen fast enough under heavy interaction). Use the transient
+  // pool so the renderer frees these at end-of-frame.
+  const handle = ctx.meshCache.uploadTransient(mesh);
 
   const gl = ctx.gl;
   gl.useProgram(ctx.pathFill.handle);
@@ -517,11 +524,13 @@ function drawPathStrokeStenciled(
   const solid = stroke.paint as { color: string; opacity?: number };
   const widerStroke: Stroke = { ...stroke, width: (stroke.width ?? 1) * 2, align: 'center' };
 
+  // getMesh memoizes by Path identity, so fillMesh is safe to cache normally.
   const fillMesh = getMesh(cmd.path);
   const fillHandle = ctx.meshCache.handleFor(fillMesh);
   const ribbonMesh = tessellateStroke(cmd.path, widerStroke);
   if (ribbonMesh.indices.length === 0) return;
-  const ribbonHandle = ctx.meshCache.handleFor(ribbonMesh);
+  // The ribbon mesh is freshly tessellated each frame; transient.
+  const ribbonHandle = ctx.meshCache.uploadTransient(ribbonMesh);
 
   const gl = ctx.gl;
   gl.useProgram(ctx.pathFill.handle);
@@ -615,6 +624,11 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
 
   gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
+  // Each text draw allocates a fresh VAO/VBO/IBO; free them now so animated
+  // text demos don't leak one set per frame.
+  gl.deleteVertexArray(vao);
+  gl.deleteBuffer(vbo);
+  gl.deleteBuffer(ibo);
 }
 
 function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
@@ -668,6 +682,11 @@ function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
 
   gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
+  // Same deal as drawText: free the per-draw VAO/VBO/IBO immediately to
+  // avoid leaking one set per image render.
+  gl.deleteVertexArray(vao);
+  gl.deleteBuffer(vbo);
+  gl.deleteBuffer(ibo);
 }
 
 export { mat3, getMesh };

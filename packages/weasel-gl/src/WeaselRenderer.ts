@@ -276,6 +276,11 @@ export class WeaselRenderer {
   render(commands: DrawCommand[]): void {
     if (this.contextLost) return;
     const gl = this.gl;
+    // Free GL resources whose Mesh was GC'd since the last frame. Done here
+    // (top of render, before any draws) because GL state is known clean —
+    // no VAO bound, no draw in flight. Deleting from the FinalizationRegistry
+    // callback directly was racy and caused mid-draw crashes.
+    this.meshCache.drainPendingDeletes();
     gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
     const ctx: DrawContext = {
       gl,
@@ -298,6 +303,10 @@ export class WeaselRenderer {
       heightCss: this.heightCss,
     };
     for (const cmd of commands) dispatch(ctx, cmd);
+    // Free transient resources allocated during this frame (e.g. per-frame
+    // stroke ribbons from tessellateStroke). Done after all draws complete
+    // so we never delete a buffer that's still bound to a pending draw.
+    this.meshCache.freeTransient();
   }
 
   resize(dims: { width: number; height: number; dpr: number }): void {

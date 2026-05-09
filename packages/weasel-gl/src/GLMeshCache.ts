@@ -17,21 +17,25 @@ interface MeshResources {
  * Caches GL-side buffers + VAO per `Mesh` identity. Upload happens lazily
  * on first `handleFor(mesh)` call.
  *
- * **GC-aware cleanup:** when a Mesh becomes unreachable, the WeakMap entry
- * is dropped automatically — but the underlying GL resources (VAO, VBO, IBO)
- * would leak forever without an explicit `gl.delete*` call. We register each
- * Mesh with a `FinalizationRegistry`; when the Mesh is reclaimed, the
- * finalizer runs and frees the GL resources. This handles the
- * "consumer creates fresh Path objects every render" case (animation tweens,
- * dynamic-shape edits) without requiring authors to manually dispose meshes.
+ * **GC-aware cleanup (deferred-delete queue):** when a Mesh becomes
+ * unreachable, the WeakMap entry is dropped automatically — but the
+ * underlying GL resources (VAO, VBO, IBO) would leak forever without an
+ * explicit `gl.delete*` call. We register each Mesh with a
+ * `FinalizationRegistry`; when the Mesh is reclaimed, the finalizer pushes
+ * the resources onto an internal queue. The renderer drains this queue at
+ * the start of each `render()` call (via `drainPendingDeletes()`), when GL
+ * is in a known state — no VAO bound, no draw mid-flight. Deleting from the
+ * finalizer directly was racy (it could fire between two `gl.bindVertexArray`
+ * calls inside `dispatch()`, sometimes corrupting the next draw); deferring
+ * the actual delete to a known-safe point keeps the use-after-free risk to
+ * zero.
  *
  * Caveats:
- *   - Finalizer timing is non-deterministic; GL resources may live for a
- *     while after their Mesh becomes unreachable. Memory pressure forces GC,
- *     so the system self-throttles.
- *   - If the GL context is lost (or the cache is replaced on context restore),
- *     pending finalizers no-op safely — `gl.deleteBuffer(null)` is allowed
- *     and `gl.isContextLost()` makes deletes no-ops.
+ *   - Finalizer timing is non-deterministic; resources may live for a frame
+ *     or two beyond their Mesh, but they will be reclaimed.
+ *   - If the GL context is lost between finalizer and drain, the drain
+ *     no-ops safely (`gl.isContextLost()` makes deletes no-ops, and
+ *     `gl.deleteBuffer(null)` is allowed).
  *
  * The cache is GL-context-bound; if the context is lost and re-created, the
  * renderer should construct a new GLMeshCache. (Context loss handling lives
@@ -40,20 +44,20 @@ interface MeshResources {
 export class GLMeshCache {
   private readonly map = new WeakMap<Mesh, GLMeshHandle>();
   private readonly finalizer: FinalizationRegistry<MeshResources>;
+  private readonly pendingDeletes: MeshResources[] = [];
+  /** Transient resources allocated this frame; freed at end of render(). */
+  private readonly transientThisFrame: MeshResources[] = [];
 
   constructor(
     private readonly gl: WebGL2RenderingContext,
     private readonly aPositionLoc: number,
   ) {
-    this.finalizer = new FinalizationRegistry<MeshResources>((_resources) => {
-      // DISABLED 2026-05-09: deleting GL resources from a finalizer caused
-      // use-after-free crashes in browser dev (likely the dispatch loop was
-      // mid-draw with one of these buffers bound when GC fired). The
-      // registration scaffolding is kept so a future fix (deferred delete
-      // queue, idle-callback flush) can drop in without re-instrumenting
-      // the cache. For now buffers leak — bounded in practice by the
-      // rect fast-path bypassing this cache for the most-churned case.
-      void _resources;
+    this.finalizer = new FinalizationRegistry<MeshResources>((resources) => {
+      // Defer the actual gl.delete* until the renderer's next render(),
+      // when no VAO/buffer is bound mid-draw. Direct deletion from the
+      // finalizer caused use-after-free crashes when GC fired between
+      // bindVertexArray and drawElements inside dispatch().
+      this.pendingDeletes.push(resources);
     });
   }
 
@@ -67,6 +71,72 @@ export class GLMeshCache {
     // re-uploaded under a different cache, though that's not a normal flow.
     this.finalizer.register(mesh, { vao: handle.vao, vbo, ibo }, mesh);
     return handle;
+  }
+
+  /**
+   * Upload a Mesh that the caller knows is single-use (e.g. the per-frame
+   * stroke ribbon from `tessellateStroke`). Returns a handle backed by fresh
+   * GL resources that the renderer will free deterministically at the end
+   * of the current frame via `freeTransient()`. Bypasses the WeakMap cache
+   * and the FinalizationRegistry, so transient meshes never wait on GC.
+   */
+  uploadTransient(mesh: Mesh): GLMeshHandle {
+    const { handle, vbo, ibo } = this.upload(mesh);
+    this.transientThisFrame.push({ vao: handle.vao, vbo, ibo });
+    return handle;
+  }
+
+  /**
+   * Free all transient resources allocated since the last call. Called by
+   * the renderer at the end of each `render()`. Safe under context loss.
+   */
+  freeTransient(): void {
+    if (this.transientThisFrame.length === 0) return;
+    const gl = this.gl;
+    if (gl.isContextLost()) {
+      this.transientThisFrame.length = 0;
+      return;
+    }
+    for (const r of this.transientThisFrame) {
+      gl.deleteVertexArray(r.vao);
+      gl.deleteBuffer(r.vbo);
+      gl.deleteBuffer(r.ibo);
+    }
+    this.transientThisFrame.length = 0;
+  }
+
+  /** @internal — for tests asserting the transient-list size. */
+  _transientCount(): number {
+    return this.transientThisFrame.length;
+  }
+
+  /**
+   * Free GL resources whose Mesh has been GC'd since the last drain.
+   * Called by the renderer at the top of each `render()`, before any draws.
+   */
+  drainPendingDeletes(): void {
+    if (this.pendingDeletes.length === 0) return;
+    const gl = this.gl;
+    if (gl.isContextLost()) {
+      this.pendingDeletes.length = 0;
+      return;
+    }
+    for (const r of this.pendingDeletes) {
+      gl.deleteVertexArray(r.vao);
+      gl.deleteBuffer(r.vbo);
+      gl.deleteBuffer(r.ibo);
+    }
+    this.pendingDeletes.length = 0;
+  }
+
+  /** @internal — for tests asserting the queue size. */
+  _pendingDeleteCount(): number {
+    return this.pendingDeletes.length;
+  }
+
+  /** @internal — for tests that need to simulate the finalizer firing. */
+  _enqueueDeleteForTest(resources: MeshResources): void {
+    this.pendingDeletes.push(resources);
   }
 
   private upload(mesh: Mesh): { handle: GLMeshHandle; vbo: WebGLBuffer; ibo: WebGLBuffer } {
