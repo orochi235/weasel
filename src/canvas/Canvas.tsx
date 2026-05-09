@@ -945,8 +945,8 @@ function CanvasInner<TObject extends { id: string }, TPose>(
           }
         });
       const getSelection = multiActive
-        ? (): string[] => [MULTI_RESIZE_TARGET_ID]
-        : (): string[] => selectedIds as readonly string[] as string[];
+        ? (): readonly NodeId[] => [MULTI_RESIZE_TARGET_ID as NodeId]
+        : (): readonly NodeId[] => selectedIds as readonly NodeId[];
       standardLayers.selectionOverlay = createSelectionOverlayLayer<TPose>({
         ...cfg,
         getSelection,

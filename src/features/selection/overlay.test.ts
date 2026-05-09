@@ -7,6 +7,7 @@ import {
   createSelectionHandlesLayer,
 } from './overlay';
 import type { Group, GroupAdapter } from '../groups/types';
+import { asNodeId } from '../../core/scene/types';
 
 function makeGroupAdapter(groups: Group[]): GroupAdapter {
   const byId = new Map<string, Group>(groups.map((g) => [g.id, { ...g, members: [...g.members] }]));
@@ -202,7 +203,7 @@ describe('createSelectionOverlayLayer', () => {
 describe('createSelectionOutlineLayer', () => {
   it('emits one stroke path per selected id (screen-space, no group wrapper)', () => {
     const layer = createSelectionOutlineLayer<Pose>({
-      getSelection: () => ['a'],
+      getSelection: () => [asNodeId('a')],
       getPose: () => ({ x: 10, y: 20, width: 30, height: 40 }),
     });
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
@@ -224,7 +225,7 @@ describe('createSelectionOutlineLayer', () => {
 describe('createSelectionHandlesLayer', () => {
   it('emits 4 corner handles (fill + outline path each = 8 commands)', () => {
     const layer = createSelectionHandlesLayer<Pose>({
-      getSelection: () => ['a'],
+      getSelection: () => [asNodeId('a')],
       getPose: () => ({ x: 0, y: 0, width: 100, height: 100 }),
     });
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
@@ -236,7 +237,7 @@ describe('createSelectionHandlesLayer', () => {
 describe('createSelectionOverlayLayer.draw', () => {
   it('emits outline + handles commands in a single flat list', () => {
     const layer = createSelectionOverlayLayer<Pose>({
-      getSelection: () => ['a'],
+      getSelection: () => [asNodeId('a')],
       getPose: () => ({ x: 0, y: 0, width: 100, height: 100 }),
     });
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
@@ -246,7 +247,7 @@ describe('createSelectionOverlayLayer.draw', () => {
 
   it('emits outline only when handles: false', () => {
     const layer = createSelectionOverlayLayer<Pose>({
-      getSelection: () => ['a'],
+      getSelection: () => [asNodeId('a')],
       getPose: () => ({ x: 0, y: 0, width: 100, height: 100 }),
       handles: false,
     });
@@ -259,7 +260,7 @@ describe('createSelectionOverlayLayer.draw', () => {
       rotation: number;
     }
     const layer = createSelectionOverlayLayer<RotPose>({
-      getSelection: () => ['a'],
+      getSelection: () => [asNodeId('a')],
       getPose: () => ({ x: 0, y: 0, width: 100, height: 100, rotation: Math.PI / 4 }),
       handles: false,
     });

@@ -25,6 +25,7 @@
 
 import type { DrawCommand } from '@orochi235/weasel-gl';
 import { mat3, type Mat3 } from '@orochi235/weasel-gl';
+import type { NodeId } from '../../core/scene/types';
 import type { RenderLayer } from '../../core/layers/render';
 import type { GroupAdapter } from '../groups/types';
 import { expandToLeaves } from '../groups/resolve';
@@ -187,8 +188,12 @@ function makeGroupAwareBoundsResolver<TPose>(
 
 /** Shared options between outline and handles layers. */
 interface SelectionLayerCommon<TPose> {
-  getSelection: () => string[];
-  /** Return null to skip rendering for an id (e.g. resolved pose unavailable). */
+  getSelection: () => readonly NodeId[];
+  /** Return null to skip rendering for an id (e.g. resolved pose unavailable).
+   *  Takes `string` rather than `NodeId` because the group-aware bounds
+   *  resolver internally walks expanded leaf ids via `GroupAdapter`, which
+   *  is generic over arbitrary string ids. NodeIds flow in fine — a NodeId
+   *  is a string. */
   getPose: (id: string) => TPose | null;
   /**
    * Project a pose into its AABB. Defaults to the identity — rect-shaped
@@ -334,7 +339,7 @@ function rectPathFor(x: number, y: number, width: number, height: number): { kin
 
 /** GL helper: emit an outline command for one bounds entry. */
 function outlineCommandsFor(
-  ids: string[],
+  ids: readonly string[],
   resolveBounds: (id: string) => Bounds | null,
   stroke: Stroke,
   pad: number,
@@ -377,7 +382,7 @@ function outlineCommandsFor(
 
 /** GL helper: emit handle fill+stroke commands for one bounds entry. */
 function handleCommandsFor(
-  ids: string[],
+  ids: readonly string[],
   resolveBounds: (id: string) => Bounds | null,
   handles: ResolvedHandles,
   handlesOf: (b: Bounds) => { x: number; y: number }[],
