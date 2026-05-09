@@ -138,6 +138,15 @@ export {
   usePublishSelection,
 } from './features/selection/SelectionContext';
 export type { SelectionContextValue } from './features/selection/SelectionContext';
+export {
+  useCanvasFocus,
+  gateLayer,
+} from './features/focus';
+export type {
+  UseCanvasFocusOptions,
+  CanvasFocusReturn,
+  GateLayerOptions,
+} from './features/focus';
 export * from './core/layers/render';
 export * from './core/layers/LayerRenderer';
 export { createGridLayer } from './features/grid/layer';
