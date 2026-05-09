@@ -16,6 +16,9 @@ import { cornerResizeHandles, fixedCornerOf } from './cornerHandles';
 import { rotatePoint } from '../rotate/geometry';
 import type { DebugSink } from '../../../debug/types';
 
+const defaultTranslate = <TPose>(p: TPose, dx: number, dy: number): TPose =>
+  ({ ...(p as object), x: (p as { x: number }).x + dx, y: (p as { y: number }).y + dy } as TPose);
+
 const LERP = 0.35;
 
 /** Options for `useResize`. */
@@ -95,9 +98,6 @@ interface State<TPose> {
   originRotation: number;
   /** World-space position of the diagonally opposite corner at start. */
   fixedWorld: { x: number; y: number };
-  /** Set true if any leaf in the group expansion has rotation != 0;
-   *  fires the dev warning once at start. */
-  groupHasRotated: boolean;
 }
 
 /** Compute the union AABB of N bounds. Caller guarantees `bounds.length >= 1`. */
@@ -167,7 +167,6 @@ export function useResize<TObject extends { id: string }, TPose>(
     leafTargets: null,
     originRotation: 0,
     fixedWorld: { x: 0, y: 0 },
-    groupHasRotated: false,
   });
 
   const [overlay, setOverlay] = useState<ResizeOverlay<TPose> | null>(null);
@@ -184,7 +183,6 @@ export function useResize<TObject extends { id: string }, TPose>(
     stateRef.current.leafTargets = null;
     stateRef.current.originRotation = 0;
     stateRef.current.fixedWorld = { x: 0, y: 0 };
-    stateRef.current.groupHasRotated = false;
     setOverlay(null);
   }, []);
 
@@ -235,19 +233,21 @@ export function useResize<TObject extends { id: string }, TPose>(
           originRotation,
         );
 
-    let groupHasRotated = false;
     if (leafIds && leafOrigins) {
-      for (const lid of leafIds) {
-        const r = geom.getRotation?.(leafOrigins.get(lid)!) ?? 0;
-        if (r !== 0) { groupHasRotated = true; break; }
-      }
-      if (groupHasRotated && import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          'useResize: group resize with rotated leaves is not supported. ' +
-          'Falling back to AABB-frame group resize; results will be visually ' +
-          'incorrect for rotated leaves.',
-        );
+      const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
+      if (isDev) {
+        for (const lid of leafIds) {
+          const r = geom.getRotation?.(leafOrigins.get(lid)!) ?? 0;
+          if (r !== 0) {
+            // eslint-disable-next-line no-console
+            console.warn(
+              'useResize: group resize with rotated leaves is not supported. ' +
+              'Falling back to AABB-frame group resize; results will be visually ' +
+              'incorrect for rotated leaves.',
+            );
+            break;
+          }
+        }
       }
     }
 
@@ -275,7 +275,6 @@ export function useResize<TObject extends { id: string }, TPose>(
       leafTargets: null,
       originRotation,
       fixedWorld,
-      groupHasRotated,
     };
     // Debug: record corner-handle positions + hitboxes for the active
     // resize target. Optional-chain — when `debug` is undefined the calls
@@ -383,7 +382,7 @@ export function useResize<TObject extends { id: string }, TPose>(
       );
       const correctionX = s.fixedWorld.x - newFixedWorld.x;
       const correctionY = s.fixedWorld.y - newFixedWorld.y;
-      const translate = geom.translate ?? ((p, dx, dy) => ({ ...(p as object), x: (p as { x: number }).x + dx, y: (p as { y: number }).y + dy } as TPose));
+      const translate = geom.translate ?? defaultTranslate<TPose>;
       proposedPose = translate(proposedPose, correctionX, correctionY);
     }
 
@@ -411,7 +410,7 @@ export function useResize<TObject extends { id: string }, TPose>(
       );
       const correctionX = s.fixedWorld.x - newFixedWorld.x;
       const correctionY = s.fixedWorld.y - newFixedWorld.y;
-      const translate = geom.translate ?? ((p, dx, dy) => ({ ...(p as object), x: (p as { x: number }).x + dx, y: (p as { y: number }).y + dy } as TPose));
+      const translate = geom.translate ?? defaultTranslate<TPose>;
       currentPose = translate(currentPose, correctionX, correctionY);
     }
 
