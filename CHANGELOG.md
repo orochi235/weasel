@@ -68,6 +68,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Public types: `Action`, `ActionEntry`, `ActionsProp`, `ActionsRegistry`,
   `KeyBinding`.
 
+#### Rotated resize
+
+- `useResize` operates in the leaf's local frame when the pose carries
+  rotation. The drag delta is projected through `R(−θ)`, anchor math runs
+  in local frame, and the diagonally opposite world-space corner is pinned.
+  Bit-identical for unrotated leaves (rotation = 0 short-circuits to today's
+  path).
+- New `ROTATED_POSE_DESCRIPTOR: PoseDescriptor<RotatedPose>` for the standard
+  rotated-rect case. `PoseDescriptor` gains optional `getRotation?(pose):
+  number` so consumer pose types can opt into the rotation-aware path.
+- New `fixedCornerOf(bounds, anchor): {x, y}` helper exposed via the
+  `/resize` subpath barrel.
+- Hit-test rotates handle positions to match the overlay's drawn handles —
+  pointer events on visible handles register correctly on rotated objects.
+- Group resize with rotated children remains unsupported; dev-mode
+  `console.warn` fires once per gesture when any leaf has rotation ≠ 0.
+- New demo: `demo/demos/RotatedResizeMathDemo.tsx` — three-panel math
+  explainer with two counterexample descriptors (no projection, no position
+  correction) plus live anchor-invariant ledger captions.
+
 #### Other
 
 - Plain scroll wheel zoom in `SceneCanvas.viewport`; trackpad pinch fix.
