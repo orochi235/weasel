@@ -2,6 +2,7 @@ import {
   SceneCanvas,
   pointInRotatedRect,
   useScene,
+  ROTATED_POSE_DESCRIPTOR,
 } from '@orochi235/weasel';
 import type { RotatedPose } from '@orochi235/weasel';
 import type { DrawCommand } from '@orochi235/weasel-gl';
@@ -42,7 +43,7 @@ backend={backend}
       height={H}
       className="ckd-canvas"
       scene={scene}
-      selectTool={{ handleHitRadius: HANDLE }}
+      selectTool={{ handleHitRadius: HANDLE, resize: { geometry: ROTATED_POSE_DESCRIPTOR } }}
       geometry={{ pickEvery }}
       selectionOptions={{ initial: ['b'] }}
       layers={{
@@ -95,7 +96,9 @@ return (
   <SceneCanvas
     width={W} height={H}
     scene={scene}
+    selectTool={{ handleHitRadius: HANDLE, resize: { geometry: ROTATED_POSE_DESCRIPTOR } }}
     geometry={{ pickEvery }}
+    selectionOptions={{ initial: ['b'] }}
     layers={{
       scene: {
         drawOne: (cx, _node, p) => {
