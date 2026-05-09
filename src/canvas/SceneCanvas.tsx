@@ -20,6 +20,16 @@
  */
 import { forwardRef, useCallback, useMemo, useRef } from 'react';
 import type React from 'react';
+import type { ReactNode } from 'react';
+import {
+  ActionsProvider, useActionsRegistry, useAction,
+  type Action, type ActionsProp, type ActionEntry,
+} from '../interactions/actions/registry';
+import {
+  defaultSelectAllAction, defaultEscapeAction, defaultDuplicateAction,
+  defaultNudgeActions, defaultReorderActions,
+} from '../interactions/actions/defaults';
+import { translateRectPose } from '../features/groups/composePose';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap } from './Canvas';
 import type { RenderLayer } from '../core/layers/render';
@@ -133,6 +143,36 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
       pinchZoom?: boolean | { min?: number; max?: number };
       animatedZoom?: boolean | { duration?: number; resetDuration?: number; easing?: (t: number) => number };
     };
+
+    /**
+     * @experimental
+     * Override / disable / extend the default action set. Resolution rules:
+     * see `docs/superpowers/specs/2026-05-09-actions-registry-design.md` §D.
+     * Pass `null` to disable all defaults.
+     */
+    actions?: ActionsProp;
+
+    /**
+     * @experimental
+     * Inputs the kit can't synthesize on its own — currently `cloneObject`
+     * for the `duplicate` default. When omitted, the `duplicate` default is
+     * silently dropped from the registered set.
+     */
+    actionDefaults?: {
+      cloneObject?: (id: string, offset: { dx: number; dy: number }) => { id: string };
+      /** Per-clone offset for the duplicate default. Default {dx:8,dy:8}. */
+      duplicateOffset?: { dx: number; dy: number };
+      /** Base nudge step. Default 1. */
+      nudgeStep?: number;
+      /** Shifted nudge step. Default 10. */
+      nudgeShiftStep?: number;
+    };
+
+    /**
+     * Children rendered alongside the canvas. Useful for siblings that need
+     * the same `<ActionsProvider>` scope (e.g. shortcuts overlays, probes).
+     */
+    children?: ReactNode;
   };
 
 function SceneCanvasInner<TData, TLayer extends string, TPose>(
@@ -152,6 +192,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ambient,
     viewport,
     layers,
+    actions,
+    actionDefaults,
+    children,
     ...rest
   } = props;
 
@@ -460,6 +503,72 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     previewGhost: { layer: previewLayer, after: 'scene' },
   }), [layers, previewLayer]);
 
+  // Resolved action set: build defaults from synthesized deps, then apply the
+  // consumer's `actions` prop per spec §D resolution rules.
+  const resolvedActions = useMemo<Action[]>(() => {
+    if (actions === null) return [];
+
+    const setSelection = (ids: string[]): void => {
+      selection.adapterMethods.setSelection(ids);
+    };
+    const getSelection = (): string[] => selection.current;
+    const listAll = (): string[] => {
+      const out: string[] = [];
+      for (const nid of scene.renderOrder()) out.push(String(nid));
+      return out;
+    };
+    const getPose = (id: string): TPose => {
+      const n = scene.get(asNodeId(id));
+      return n?.pose as TPose;
+    };
+    const applyBatch = (ops: Op[], label?: string): void => {
+      if (typeof (adapter as { applyBatch?: unknown }).applyBatch === 'function') {
+        (adapter as { applyBatch: (ops: Op[], label: string) => void }).applyBatch(ops, label ?? '');
+      } else {
+        for (const op of ops) op.apply(adapter);
+      }
+    };
+
+    const defaults: Record<string, Action> = {
+      selectAll: defaultSelectAllAction({ getSelection, listAll, setSelection }),
+      escape: defaultEscapeAction({ getSelection, setSelection }),
+      ...(actionDefaults?.cloneObject
+        ? {
+            duplicate: defaultDuplicateAction({
+              getSelection,
+              applyBatch,
+              cloneObject: actionDefaults.cloneObject,
+              ...(actionDefaults.duplicateOffset !== undefined
+                ? { offset: actionDefaults.duplicateOffset }
+                : {}),
+            }),
+          }
+        : {}),
+    };
+
+    const nudgeDeps: import('../interactions/actions/defaults').NudgeDeps<TPose> = {
+      getSelection,
+      getPose,
+      applyBatch,
+      translatePose: (p, dx, dy) =>
+        translateRectPose(
+          p as unknown as { x: number; y: number; width: number; height: number },
+          dx, dy,
+        ) as unknown as TPose,
+      ...(actionDefaults?.nudgeStep !== undefined ? { step: actionDefaults.nudgeStep } : {}),
+      ...(actionDefaults?.nudgeShiftStep !== undefined ? { shiftStep: actionDefaults.nudgeShiftStep } : {}),
+    };
+    for (const a of defaultNudgeActions<TPose>(nudgeDeps)) defaults[a.id] = a;
+
+    for (const a of defaultReorderActions({ getSelection, applyBatch })) defaults[a.id] = a;
+
+    if (actions) {
+      for (const [id, entry] of Object.entries(actions)) applyEntry(defaults, id, entry);
+    }
+
+    return Object.values(defaults);
+  }, [actions, actionDefaults, scene, selection, adapter]);
+
   // Merge the forwarded ref with our internalCanvasRef so usePinchZoomTool
   // can read the canvas element even when the consumer also forwards a ref.
   const mergedRef = useCallback(
@@ -471,7 +580,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [ref],
   );
 
-  return (
+  const canvas = (
     <Canvas<Node<TData, TLayer, TPose>, TPose>
       ref={mergedRef}
       adapter={adapter}
@@ -486,6 +595,58 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       {...restProps}
     />
   );
+
+  return (
+    <ActionsProviderIfRoot>
+      {canvas}
+      {resolvedActions.map((a) => <ActionRegistrar key={a.id} action={a} />)}
+      {children}
+    </ActionsProviderIfRoot>
+  );
+}
+
+function ActionRegistrar({ action }: { action: Action }) {
+  useAction(action);
+  return null;
+}
+
+function ActionsProviderIfRoot({ children }: { children: ReactNode }) {
+  const parent = useActionsRegistry();
+  if (parent) return <>{children}</>;
+  return <ActionsProvider>{children}</ActionsProvider>;
+}
+
+const warnedMissingDefault = new Set<string>();
+
+function applyEntry(
+  defaults: Record<string, Action>,
+  id: string,
+  entry: ActionEntry,
+): void {
+  if (entry === null) {
+    delete defaults[id];
+    return;
+  }
+  const isFull = (e: Partial<Action>): e is Action =>
+    typeof e.id === 'string' && typeof e.label === 'string' && typeof e.run === 'function';
+  if (isFull(entry)) {
+    defaults[id] = entry;
+    return;
+  }
+  if (id in defaults) {
+    // Drop the partial's id field — id is fixed by the slot key.
+    const { id: _drop, ...rest } = entry;
+    void _drop;
+    defaults[id] = { ...defaults[id], ...rest };
+    return;
+  }
+  if (!warnedMissingDefault.has(id)) {
+    warnedMissingDefault.add(id);
+    console.warn(
+      `weasel <SceneCanvas>: actions["${id}"] is a partial Action but no default ` +
+      `with this id exists. Pass a complete {id, label, defaultBinding, run} descriptor.`,
+    );
+  }
 }
 
 export const SceneCanvas = forwardRef(SceneCanvasInner) as <
