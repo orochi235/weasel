@@ -22,19 +22,7 @@ function INITIAL_RECT(color: string): Rect[] {
   return [{ id: 'a', x: 80, y: 70, width: 160, height: 100, rotation: Math.PI / 6, color }];
 }
 
-function drawRect(cx: CanvasRenderingContext2D, p: Rect): void {
-  const cxw = p.x + p.width / 2;
-  const cyw = p.y + p.height / 2;
-  cx.save();
-  cx.translate(cxw, cyw);
-  cx.rotate(p.rotation);
-  cx.translate(-cxw, -cyw);
-  cx.fillStyle = p.color;
-  cx.fillRect(p.x, p.y, p.width, p.height);
-  cx.restore();
-}
-
-function drawRectGL(_node: unknown, p: Rect): DrawCommand[] {
+function drawRect(_node: unknown, p: Rect): DrawCommand[] {
   const cxw = p.x + p.width / 2;
   const cyw = p.y + p.height / 2;
   const cs = Math.cos(p.rotation);
@@ -125,7 +113,7 @@ function FullMathPanel() {
         geometry={{ pickEvery: pickEveryFor(scene) }}
         selectionOptions={{ initial: ['a'] }}
         layers={{
-          scene: { drawOne: (cx, _n, p) => drawRect(cx, p), drawOneGL: drawRectGL },
+          scene: { drawOne: drawRect },
           selectionOverlay: { handles: { size: HANDLE }, rotationHandle: false },
         }}
       />
@@ -152,7 +140,7 @@ function NoProjectionPanel() {
         geometry={{ pickEvery: pickEveryFor(scene) }}
         selectionOptions={{ initial: ['a'] }}
         layers={{
-          scene: { drawOne: (cx, _n, p) => drawRect(cx, p), drawOneGL: drawRectGL },
+          scene: { drawOne: drawRect },
           selectionOverlay: { handles: { size: HANDLE }, rotationHandle: false },
         }}
       />
@@ -179,7 +167,7 @@ function NoCorrectionPanel() {
         geometry={{ pickEvery: pickEveryFor(scene) }}
         selectionOptions={{ initial: ['a'] }}
         layers={{
-          scene: { drawOne: (cx, _n, p) => drawRect(cx, p), drawOneGL: drawRectGL },
+          scene: { drawOne: drawRect },
           selectionOverlay: { handles: { size: HANDLE }, rotationHandle: false },
         }}
       />
