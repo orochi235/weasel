@@ -1,96 +1,105 @@
-# WebGL Step 9 — Done (Rig + Wide GL Audit)
+# WebGL Step 9 — Done (Rig + Wide GL Audit + Live Soak Round)
 
 **Plan:** [`2026-05-09-webgl-step-9-visual-regression-rig.md`](./2026-05-09-webgl-step-9-visual-regression-rig.md)
-**Date completed:** 2026-05-09 — scaffolding + audit / soak still pending CI
+**Date completed:** 2026-05-09 — rig + drawGL audit shipped; iterative soak still pending CI
 
-> **Honest framing:** This step's plan was the visual regression rig + a 30-day soak gate. The rig (tasks 1–8, 11–13) shipped; the soak (tasks 9, 10, 14–16) is deferred to actual CI infrastructure and a real 30-day window. **More importantly,** running the rig immediately surfaced a much bigger gap than expected: most demos were rendering empty under `backend='gl'` because the scene-slot wrapper and several tool/gesture overlay layers had never been ported. Step 7 ported public layer factories; step 8 flagged two SceneCanvas system layers; step 9 was the first time the *full* GL surface got exercised end-to-end. That deep-dive consumed most of the session and produced 6 follow-up commits beyond the rig itself.
+> **Honest framing:** Step 9's plan was the visual regression rig + a 30-day soak gate. The rig (tasks 1–8, 11–13) shipped; soak tasks (9, 10, 14–16) need CI infrastructure and a 30-day window. Far more importantly, the user did a live soak in the demo browser during this session. That surfaced an **enormous** number of GL-backend gaps that went undetected through steps 7 and 8 because the visual rig hadn't actually been driven against any rendered output. ~30 commits in this single session closed the major ones; many smaller follow-ups remain. The commit graph from `cda92c3` (`SceneSlotConfig.drawOneGL` wiring) onward is the trail.
 
 ## What shipped
 
 ### Visual regression rig (the original step 9 scope)
 
-- **`?backend=2d|gl` query string in demo app** via a `BackendContext` provider. All 24 demos wired (`PixelDensityDemo` left raw — uses bare `<canvas>`).
+- **`?backend=2d|gl` query string** in demo via `BackendContext` provider. All 24 demos wired. `PixelDensityDemo` left raw (bare `<canvas>`).
 - **`tests/visual/playwright.config.ts`** — port 5174, 1280×800 @1×, single worker, `ubuntu-22.04`-pinned.
-- **`tests/visual/diff.ts`** — pixelmatch harness with `assertMatchesBaseline` + `UPDATE_SNAPSHOTS=1` write-mode.
-- **24 visual specs**, one per demo, with 5% tolerance overrides on text/compound-paths/bezier-edit/pixel-density.
-- **`.github/workflows/visual.yml`** — runs visual suite on PRs, uploads baselines artifact on failure.
-- **Bundle-size CI gate hardened** to fail on > 50KB delta. Baseline captured at 67542 bytes.
+- **`tests/visual/diff.ts`** — pixelmatch harness with `assertMatchesBaseline` + `UPDATE_SNAPSHOTS=1`.
+- **24 visual specs**, one per demo, tolerance overrides on text/compound-paths/bezier-edit/pixel-density.
+- **`.github/workflows/visual.yml`** runs visual suite on PRs.
+- **Bundle-size CI gate hardened** to fail on > 50KB delta.
 - **`CONTRIBUTING.md`** documents the visual-regression workflow.
-- **npm scripts**: `test:visual`, `test:visual:update`.
 
-### Bug fixes surfaced by the rig
+### Bug fixes surfaced by the live soak
 
-- **DPR / canvas style**: `WeaselRenderer` set the backing-store dims (`canvas.width = cssWidth × dpr`) but never set `canvas.style.width/height`. Under `backend='gl'` on Retina displays, a `width=400` demo laid out at 800 CSS px in the DOM. The 2D path's `setupCanvasDpr` always set both. Fixed `WeaselRenderer.constructor` and `WeaselRenderer.resize`.
-- **`splitForDash` ignored `closed: true`**: 4-point closed rect polylines were dashed across only 3 segments — left edge of every marquee was undashed. Now iterates `ptCount` segments with wraparound when closed.
+#### Kit-side (affect every consumer)
 
-### GL surface gaps closed (the hard part)
+- **DPR / canvas style**: `WeaselRenderer` now sets `canvas.style.width/height` (CSS layout size) in addition to the backing-store dims. Previously canvases laid out at 2× their intended CSS size on Retina.
+- **`splitForDash` for closed polylines**: closing edge of every closed-polyline marquee was undashed (left edge of every rect-marquee invisible). Now iterates `ptCount` segments with wraparound.
+- **Tessellator for compound paths**: previous nonzero implementation passed every contour after the first as a hole to earcut. Now detects winding direction relative to the first contour; same-sign contours are independent positives, opposite-sign ones are holes (grouped by point-in-polygon containment) or orphans (promoted to positives if not contained). Significantly improves duck/octopus/hamburglar — though octopus tentacles remain imperfect because they're open polylines under nonzero, a semantic mismatch with `ctx.fill()`.
+- **Rect-path cache by dimensions**: `getMesh` now caches rect paths by `${x}_${y}_${width}_${height}` instead of Path identity. Animated demos creating fresh Path objects per frame no longer leak GL buffers via per-frame cache misses. 1024-entry cap.
+- **`<Canvas>` `background` prop honored under GL**: prepends a screen-space rect command with the background color when set. Mirrors what the 2D path does via `ctx.fillRect`.
 
-The rig's first run revealed that most demos rendered empty under `backend='gl'`. Drag-select still worked (selection logic reads scene state), but nothing visible — the user reported "I can drag-select nested groups and tell that the objects are actually there, but they're invisible until then." Step 7's port covered public layer factories, step 8 flagged two system layers — but **the scene-slot wrapper and five tool/gesture overlay layers had never been audited**.
+#### GL surface gaps closed
 
-Closed in this session:
+The audit revealed 6 layers without `drawGL` beyond what step 7/8 covered. All ported in this session:
 
-- **`SceneSlotConfig.drawOneGL?`** in `src/canvas/Canvas.tsx`. `buildSceneLayer` adds `RenderLayer.drawGL` when supplied; wraps per-object commands in `kind: 'group'` with `viewToMat3(view)`.
-- **`SceneCanvas.previewLayer.drawGL`** uses `slot.drawOneGL` for in-flight gesture preview (move/resize/rotate ghosts).
-- **`defineDragInsertTool` overlay**: in-flight insert/text marquee. New `marqueeDrawCommands` helper next to `drawMarquee`; both factories share the math.
-- **`useRectTool` overlay**: rect-tool marquee — also goes through `marqueeDrawCommands`.
-- **`useSelectTool` overlay** (area-select branch): the screen-space marquee for drag-select. Move/resize/rotate ghost branches stay 2D-only because `SceneCanvas`'s preview-ghost layer covers them via `slot.drawOneGL`.
-- **`createAnchorEditOverlayLayer`**: bezier anchor-edit overlay (tangent lines, control handles, anchors). Circles emit as 12-segment polygon paths via a local `circlePath` helper.
+1. **`buildSceneLayer` (Canvas.tsx)** — `SceneSlotConfig.drawOneGL?` option; `RenderLayer.drawGL` wraps per-object commands in `viewToMat3(view)` group.
+2. **`SceneCanvas.previewLayer`** — uses `slot.drawOneGL` for in-flight gesture preview (move/resize/rotate ghosts) with alpha=0.85.
+3. **`defineDragInsertTool`** — in-flight insert/text marquee. New `marqueeDrawCommands` helper.
+4. **`useRectTool`** — rect-tool marquee (uses same `marqueeDrawCommands`).
+5. **`useSelectTool`** — area-select marquee branch + new `drawGhostGL?` option for move/resize/rotate ghosts. The 2D-only `drawGhost` callback stays; consumers using bare `<Canvas>` (not SceneCanvas) opt in to `drawGhostGL` for ghost rendering during drag.
+6. **`useCloneTool`** — new `drawGhostGL?` and `drawOneGL?` options parallel to 2D versions. Default GL ghost mirrors the 2D fallback (translucent outline rect).
+7. **`createAnchorEditOverlayLayer`** — bezier edit overlay (tangent lines, control handles, anchors as 12-segment polygon circles).
 
-### Demo ports
+### Demo opt-ins
 
-22 demos got `drawOneGL` callbacks alongside their existing `drawOne`. Three commits, grouped by complexity:
+22 demos got `drawOneGL` callbacks alongside `drawOne` (initial implementer pass). 6 demos got `drawGhostGL` opt-ins on `useSelectTool`/`useCloneTool` (Actions, Animation, NestedGroups, Groups, BezierEdit, Clone). Custom non-scene RenderLayers in 2 demos got `drawGL`:
+- **`QuadtreeDemo`** quadtree-cell overlay (rect strokes, world-space)
+- **`EasingsDemo`** track lines + curve plots + per-row labels
+- **`CompoundPathsDemo` signature** ("original artwork by claude" — falls back to sans-serif since Comic Sans isn't a registered MSDF font; rendered red under GL to make the GL render path visually obvious)
 
-- **12 simple-rect demos**: Actions, Animation, Clone, Compose, DebugOverlay, Groups, Layout, Move, MultiSelect, Pan, Resize, Zoom. Mechanical: `ctx.fillRect` → `{ kind: 'path', path: { kind: 'rect', ... }, fill: { color } }`.
-- **5 strokes/rotation/alpha demos**: Easings (scene rect only), Rotate (T·R·T composed inline as column-major Mat3), NestedGroups, Viewport, Scene.
-- **4 path-rendering demos**: Quadtree (scene rects), BezierEdit, PathPose, CompoundPaths. Path is the same type on both sides of the kit boundary, so most ports were one-line.
+### Font registration
 
-`InsertDemo` had been ported earlier as proof-of-concept. `TextDemo` needed no demo-side change — `createTextLayer`'s built-in `drawGL` covered it. `PixelDensityDemo` is bare `<canvas>` and not affected by the backend prop.
+- **`vite.config.ts`** `publicDir → packages/weasel-gl/fonts` so the inter atlas is served at `/weasel/inter/inter.json` + `/inter.png`.
+- **`BackendProvider`** awaits `registerFont('sans-serif', …)` + `registerFont('Inter', …)` before mounting children when `backend='gl'`. First paint includes glyphs.
 
-### Convention §17
+### New conventions
 
-Captured the lesson: **audit *every* layer for `drawGL`, not just the public ones**. The grep audit (in §17) is what would have caught the gap before step 9 ran. Step 7's port skipped scene-slot + tool overlays; step 8's done note flagged two but didn't enumerate the rest; step 9 was the first time the full surface ran end-to-end.
+- **§17 (Audit *every* layer for `drawGL`)** — captured the lesson before the soak began. The grep recipe: `grep -rl "draw: (ctx" src/ | xargs grep -L "drawGL"`. Should run *before* asserting GL correctness on any future step.
 
 ## Notable deviations from plan
 
-- **Tasks 9, 10, 14, 15, 16 deferred**: baseline capture on `ubuntu-22.04`, iterative GL switchover, default flip, 30-day soak start, soak exit. These need the real CI runner *and* a calendar window we can't compress in a single session.
-- **The "scaffolding only" framing was incomplete.** I scoped the implementer to tasks 1–8 + 11–13 thinking the rig would "just need baselines later." It actually couldn't have produced meaningful diffs even with baselines because half the rendering surface didn't exist under GL. The right framing was "step 9 is the rig PLUS a comprehensive GL-surface audit." Future-you: do the audit FIRST.
-- **Implementer mis-reported the visual rig output as expected ("23 GL specs fail with dimension mismatch")**: the dimension mismatch was a real DPR bug (now fixed), not the plan-anticipated "no baseline" failure shape. I read the report at face value initially; should have bisected the failures instead of accepting the framing.
+- **Soak compressed into one session.** The plan called for a 30-day soak window with iterative per-demo fix cycles. The user did a live soak in the demo browser; ~30 fix commits in one session compressed weeks of plan-time work. Real soak still needed to catch regressions over time, but the major rendering gaps are closed.
+- **Octopus tentacles intentionally left imperfect.** They're open polylines under nonzero fill rule — `ctx.fill()` implicitly closes them and produces strange-looking fills that the GL tessellator can't easily match. Documented as a semantic mismatch; not fixable without changing `ctx.fill()` semantics or asking the demo to use `evenodd`/closed paths.
+- **Easings text overlap pre-dates GL.** User identified during soak that emitting one TextDrawCommand per easing label produces multi-glyph overlap — but that's a pre-existing bug in the demo or 2D rendering, not GL-specific. Restored the labels to drawGL after temporarily removing them.
+- **Tasks 9, 10, 14–16 deferred** to actual CI infrastructure + soak window. These are process / time-based, not code.
+- **`PathPoseDemo` background-draggable, `SceneDemo` cream background draggable** — the user surfaced these but they're pre-existing gesture issues, not backend-related. Out of scope for this session.
 
 ## Test results
 
-- **Vitest: 1476/1476 pass**.
-- **Playwright (existing GL smoke suite): 17/17 pass**. Visual rig is a separate test config not run in this session beyond verifying it boots; expects baselines to come from CI.
-- **Typecheck**: only the pre-existing `draw.ts(138,84)` warning, unchanged from step 7/8.
-- **Browser-verified**: every demo at `?backend=gl#<id>` renders scene content. Drag-insert / rect-tool / area-select marquees render correctly with dashed strokes on all four edges. The user did the verification interactively across many demos during the session.
-
-## Lessons folded into conventions
-
-- **§17 (new)** — Audit *every* layer for `drawGL`, not just the public ones. Grep recipe included.
+- **Vitest: 1477/1477 pass** (180 test files; +1 from baseline-set test split).
+- **Playwright (existing GL smoke suite): 17/17 pass**. Visual rig's 24 specs aren't run in this session — they expect baselines from CI.
+- **Typecheck**: clean for `packages/weasel-gl` modulo one pre-existing `draw.ts(138,84)` warning unchanged from steps 7/8.
+- **Browser-verified** by the user across many demos under both backends. Most demos render correctly under GL after this session's fixes. Gaps documented below.
 
 ## Open follow-ups
 
 ### Soak gate (cannot run in this session)
 
-- **Task 9** — capture 2D baselines on `ubuntu-22.04` runner. Push the branch to a PR; let CI run `test:visual:update` and commit the baseline PNGs. This MUST happen on the pinned runner image; macOS Retina baselines are not portable.
-- **Task 10** — iterative GL switchover: per-demo, run the visual suite under `backend='gl'`, fix divergences (text-baseline drift, stroke AA differences), iterate until ≤ 2% diff.
-- **Task 14** — flip the demo's default backend to `'gl'` (one-line change once 10 is green).
-- **Tasks 15–16** — 30-day soak clock + exit criterion.
+- **Task 9** — capture 2D baselines on `ubuntu-22.04` runner.
+- **Task 10** — iterative GL switchover with diff-tolerance-based fixes.
+- **Task 14** — flip default backend to `'gl'`.
+- **Tasks 15–16** — 30-day soak clock + exit.
 
-### Remaining drawGL gaps (must close before flipping default)
+### Known visual gaps (not yet fixed; user-surfaced during soak)
 
-- **`useCloneTool`'s `drawGhost` callback**: 2D-only API. Clone preview ghosts are invisible under `backend='gl'`. Needs a parallel `drawGhostGL?` option (or a default that uses scene-slot `drawOneGL`).
-- **`EasingsDemo` track curve-plot RenderLayer**: custom screen-space layer with only `draw` — the curve plot doesn't render under GL.
-- **`QuadtreeDemo` quadtree-cell overlay**: same shape as Easings — custom layer needs `drawGL`.
-- **`CompoundPathsDemo` Comic Sans signature**: 2D-only text layer; needs `registerFont` + `kind: 'text'` port.
-- **`ViewportDemo` / `SceneDemo` per-node text labels**: deferred; need `registerFont` asset wiring at the demo level.
-- **`useEditAnchorsTool` overlay**: ported (anchor-edit overlay), but the circle approximation uses 12 segments — visually fine at typical sizes; might shimmer at large radii. Acceptable for v1.
+- **BezierEdit selection**: `pickEvery` uses `pointInPath` which returns false for open paths. Click-selection has never worked on this demo regardless of backend (the user re-reported it after my first explanation; unclear if there's a different selection mechanism we're both missing). Drag-marquee selection should work after the marquee + drawGL fixes.
+- **Easings labels overlapping glyphs**: pre-existing demo bug per user — not GL-specific. Notation in done note for future fix.
+- **AnimationDemo lag after first drag-release**: rect-cache fix should help but not yet user-verified. If still laggy, deeper profiling needed (React rerender storms, DPR scale loop, etc.).
+- **Octopus tentacles partial fill**: open polylines under nonzero — semantic mismatch.
 
-### Pre-existing
+### Known kit-API gaps (architectural follow-up)
 
-- **`packages/weasel-gl/src/draw.ts(138,84)`** typecheck warning — flagged in step 7 and 8; clean up in step 10.
+- **`Canvas` `background` honors color string but not Paint variants** — gradient/pattern backgrounds aren't supported under either backend. Out of scope.
+- **`useCloneTool.drawGhostGL` default fallback** uses outline rects when `drawOneGL` isn't supplied. Consumers who set `drawOne` but forget `drawOneGL` get the fallback under GL; a future improvement could synthesize the GL ghost from `drawOne` via a 2D-canvas-to-DrawCommand bridge (not in scope).
+- **Rect cache dimensions key uses raw float strings** — sub-pixel motion (e.g., 100.5px → 100.6px → 100.7px) thrashes the cache. Quantizing to int-pixels would help but lose smooth animation. Could be a future optimization.
 
-## Process lessons (process, not code)
+### Architectural
 
-1. **Run the comprehensive grep audit BEFORE shipping a "GL works end-to-end" step.** §17 captures the recipe.
-2. **An implementer's report saying "X is the expected failure shape" deserves bisect verification when X feels off.** I lost ~30 min of investigation time accepting the implementer's framing of "dimension mismatch is the no-baseline shape" before bisecting and finding it was a real DPR bug.
-3. **Step 9 is a soak, not a feature ship.** The rig is a means to the end. The real exit criterion is "30 days of `'gl'` default with zero regression bugs." That criterion can't be met in a single session and shouldn't be claimed prematurely.
+- **`<Canvas>` is 1055 lines.** Step 10's swap halves it; further decomposition is a follow-up.
+- **Pre-existing `draw.ts(138,84)` typecheck warning** still standing — clean up in step 10.
+
+## Process lessons (in addition to §17)
+
+1. **Live soak finds bugs that planning misses by an order of magnitude.** The plan estimated step 9 as "rig + iterative fix-loop." The reality was "rig + ~30 immediate kit-and-demo fixes that should have been caught in steps 7 and 8 if there had been any rendered-output testing."
+2. **An implementer's "expected failure shape" report deserves verification when something feels off.** Lost ~30 min early in the session accepting the implementer's framing that "dimension mismatch is the no-baseline shape" before bisecting and finding the real DPR bug.
+3. **Compound paths under nonzero fill are a semantic minefield.** Multi-positive vs outer-with-holes vs orphan-opposite-wound subpaths — the right algorithm depends on author intent that the path data doesn't always communicate. Document the contract in spec; recommend `evenodd` for ambiguous cases.
+4. **Tool/gesture overlay layers are easy to forget** when porting public layer factories. They don't show up in a public API audit because they're internal to `useSelectTool`, `useCloneTool`, etc. The §17 grep recipe explicitly catches them.
