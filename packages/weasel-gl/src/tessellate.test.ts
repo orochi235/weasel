@@ -78,3 +78,26 @@ describe('tessellate (PolygonPath, single-contour, no curves)', () => {
     expect(mesh.indices.length).toBe(294);
   });
 });
+
+describe('tessellate (PolygonPath, multi-contour, nonzero)', () => {
+  it('triangulates a 10×10 outer square with a 4×4 inner hole (counter-wound)', () => {
+    // Outer CCW: (0,0) (10,0) (10,10) (0,10)
+    // Inner CW (hole): (3,3) (3,7) (7,7) (7,3)
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([
+        PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z,         // outer
+        PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z,         // hole
+      ]),
+      coords: new Float32Array([
+        0, 0, 10, 0, 10, 10, 0, 10,                     // outer (CCW)
+        3, 3, 3, 7, 7, 7, 7, 3,                         // hole  (CW)
+      ]),
+      fillRule: 'nonzero',
+    };
+    const mesh = tessellate(path);
+    // 8 vertices total (4 outer + 4 hole), 8 triangles around the hole.
+    expect(mesh.vertices.length).toBe(16);
+    expect(mesh.indices.length).toBe(24);                // earcut emits 8 triangles for this case
+  });
+});
