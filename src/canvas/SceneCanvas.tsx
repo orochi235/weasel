@@ -186,10 +186,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   // Extract view-related props from rest so we can intercept them for the
   // pinch-zoom hook (which needs the current view) without breaking the
-  // controlled/uncontrolled pattern Canvas exposes. `backend` is also pulled
-  // out so we can forward it explicitly (not via the rest spread) — see the
-  // conditional spread on the <Canvas> JSX below.
-  const { view: viewProp, onViewChange: onViewChangeProp, defaultView, backend, ...restProps } = rest;
+  // controlled/uncontrolled pattern Canvas exposes.
+  const { view: viewProp, onViewChange: onViewChangeProp, defaultView, ...restProps } = rest;
 
   // Internal canvas ref so usePinchZoomTool can attach pointer listeners
   // even when the consumer passes their own forwarded ref.
@@ -351,7 +349,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       selection={selection}
       tools={tools}
       layers={wiredLayers}
-      {...(backend !== undefined ? { backend } : {})}
       {...(viewProp !== undefined ? { view: viewProp } : {})}
       {...(defaultView !== undefined ? { defaultView } : {})}
       onViewChange={handleViewChange}

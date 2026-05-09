@@ -43,19 +43,8 @@ beforeAll(() => {
   proto.releasePointerCapture = vi.fn();
 });
 
-describe('SceneCanvas backend prop', () => {
-  it('accepts backend prop without throwing', () => {
-    function Demo() {
-      const scene = useScene<{ id: string }>({ items: [] });
-      return (
-        <SceneCanvas scene={scene} width={64} height={64} backend="gl" layers={{}} />
-      );
-    }
-    const { container } = render(<Demo />);
-    expect(container.querySelector('canvas')).toBeTruthy();
-  });
-
-  it('default (no backend) still renders a canvas', () => {
+describe('SceneCanvas', () => {
+  it('renders a canvas', () => {
     function Demo() {
       const scene = useScene<{ id: string }>({ items: [] });
       return <SceneCanvas scene={scene} width={64} height={64} layers={{}} />;
