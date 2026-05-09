@@ -45,19 +45,15 @@ export class GLMeshCache {
     private readonly gl: WebGL2RenderingContext,
     private readonly aPositionLoc: number,
   ) {
-    this.finalizer = new FinalizationRegistry<MeshResources>((resources) => {
-      // GL context may be lost by the time finalization runs. WebGL spec
-      // says delete calls on a lost context are silent no-ops, so this is
-      // safe. We also tolerate a missing FinalizationRegistry environment
-      // (older Node, exotic test envs) — in that case nothing fires and
-      // the buffers leak. Acceptable for v1.
-      try {
-        gl.deleteVertexArray(resources.vao);
-        gl.deleteBuffer(resources.vbo);
-        gl.deleteBuffer(resources.ibo);
-      } catch {
-        // Swallow — finalizer has nowhere to report.
-      }
+    this.finalizer = new FinalizationRegistry<MeshResources>((_resources) => {
+      // DISABLED 2026-05-09: deleting GL resources from a finalizer caused
+      // use-after-free crashes in browser dev (likely the dispatch loop was
+      // mid-draw with one of these buffers bound when GC fired). The
+      // registration scaffolding is kept so a future fix (deferred delete
+      // queue, idle-callback flush) can drop in without re-instrumenting
+      // the cache. For now buffers leak — bounded in practice by the
+      // rect fast-path bypassing this cache for the most-churned case.
+      void _resources;
     });
   }
 
