@@ -7,9 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 0.2.0 — 2026-05-09
+
+### Breaking changes (final WebGL swap — Step 10)
+
+- **2D backend removed.** `<Canvas>` and `<SceneCanvas>` no longer accept `backend?: '2d' | 'gl'`. WebGL2 is the only backend. The kit's existing `background`, `view`, `scene`, etc. props are unchanged; just the `backend` switch is gone.
+- **`@orochi235/weasel-gl` deleted as a separate package.** All renderer source folded into `@orochi235/weasel`:
+  - GL machinery → `src/renderer/` (`WeaselRenderer`, `draw`, `state/`, `math/`, `cache/`, `shaders/`, `textures/`)
+  - Font atlasing → `src/features/text/atlas/` (`FontAtlas`, `GlyphLayout`, `registerFont`)
+  - Path tessellation → `src/features/paths/tessellate/` (`tessellate`, `polyline`, `stroke`)
+  - Font assets → `assets/fonts/inter/`
+- **`RenderLayer` interface simplified** to a single required `draw(view, ...): DrawCommand[]`. The 2D `draw(ctx, ...)` and GL-suffixed `drawGL(...)` are gone.
+- **Pair renames** for the same reason: `SceneSlotConfig.drawOneGL` → `drawOne`, `*Tool.drawGhostGL` → `drawGhost`, `createChildrenLayer.drawChildGL` → `drawChild`. The 2D originals are deleted.
+- **`drawLayersGL` renamed to `drawLayers`** (Phase-B coda), and the 6 debug-overlay `emit*GL` helpers dropped their `GL` suffixes (file-private).
+- **Deleted exports:** `applyPaint`, `applyStroke`, `renderFilledRegion`, `RenderFilledRegionOptions`, `setupCanvasDpr`, `useFixedPixelRatio`, `SetupCanvasDprOptions`, `LayerRenderer` (abstract base class), `traceToContext`, `dragGhost` (`createDragGhost`).
+- **Pattern API rebuilt on `TextureHandle`.** `createTilePattern(opts)` now takes `{ size, draw }` (no `ctx`), renders the tile to an `OffscreenCanvas` internally, and returns a `TextureHandle | null` via `registerTexture`. Each built-in (`hatch`, `crosshatch`, `dots`, `chunks`) drops its `ctx` parameter and returns a `TextureHandle | null`. The `Paint` `'pattern'` variant's payload is now `TextureHandle` (not `CanvasPattern`).
+- **`Paint`, `Stroke`, `Region`, `StrokeAlign`, `GradStop` types preserved.** They moved to `src/core/paint-types.ts` (the implementation file `paint.ts` is gone). Public surface re-exports are unchanged.
+- **`PixelDensityDemo` retired.** Its only purpose was demonstrating the deleted DPR helpers.
+
+### Build / tooling
+
+- `tsup.config.ts` `patterns-builtin` entry restored (after the C3 deletion + port).
+- `package.json` `./patterns-builtin` export block restored.
+- Vite `publicDir` updated to `assets/fonts`.
+- Dropped weasel-gl-specific scripts: `test:smoke:step1`, `gen:font`, `bundlesize:weasel-gl`.
+
+### Migration notes (in-repo)
+
+Demos and `apps/swillustrator` were updated in this release. No external consumers exist. The TypeScript types and re-export paths above tell the whole story; no migration guide ships.
+
 ### Added
 
-#### WebGL2 backend (`@experimental`)
+#### `<SelectionContextProvider>` (`@experimental`)
+
+- Ambient context publishing the active selection (`readonly string[]`) and an optional parallel `kinds` array so non-canvas UI (palette, status bar) can render type-aware copy ("3 paths selected"). `SceneCanvas` auto-publishes; consumers can override per-id labels via a `describeKind?: (node) => string` prop.
+- New exports: `SelectionContextProvider`, `useSelectionContext`, `usePublishSelection`, `SelectionContextValue`.
+
+#### Command palette extracted to `@orochi235/weasel-ui`
+
+- The demo's `<CommandPalette>` is now part of `packages/weasel-ui/` (alongside `<PropertiesPanel>`). Hooks (`useActionsRegistry`, `useAction`, `evaluateEnabled`, `ActionDisabledReason`) stay in the kit.
+- The palette renders a kind-aware header ("1 path selected", "3 objects selected", "No selection") when `<SelectionContextProvider>` is in scope.
+
+#### WebGL2 backend (carried over from the 0.1.x soak)
+
+These items shipped as the `@experimental` GL backend during Steps 1–9; in 0.2.0 they're the only backend.
 
 - New workspace package `@orochi235/weasel-gl` housing the GL2 renderer.
 - `WeaselRenderer` with WebGL2 context lifecycle, DPR-aware resize, and

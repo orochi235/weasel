@@ -1,6 +1,6 @@
 # weasel
 
-2D scene-graph hooks for React + canvas, with an experimental WebGL2 backend. Bring your own object type and pose shape; weasel handles the viewport math, pointer gestures (move / resize / insert / clone / area-select / text edit), layered canvas rendering, an op-based undo/redo model, and a stack of selection-driven action hooks (delete, duplicate, nudge, group, clipboard, undo/redo, …) wired to keyboard shortcuts when you ask.
+Domain-agnostic 2D scene-graph hooks for React, rendered on WebGL2. Bring your own object type and pose shape; weasel handles the viewport math, pointer gestures (move / resize / insert / clone / area-select / text edit), layered scene rendering, an op-based undo/redo model, and a stack of selection-driven action hooks (delete, duplicate, nudge, group, clipboard, undo/redo, …) wired to keyboard shortcuts when you ask.
 
 Built for diagram editors, sketch tools, schematic editors, scene composers — anything where "objects on a canvas the user can grab, move, and arrange" is the substrate.
 
@@ -15,7 +15,7 @@ Built for diagram editors, sketch tools, schematic editors, scene composers — 
 - Layered canvas rendering with debug overlays
 - Path poses, rect poses, rotated poses; first-class compound paths
 - Viewport with zoom/pan tools, momentum, and boundary clamping
-- Two backends: Canvas 2D (default) and WebGL2 (`@experimental`)
+- WebGL2 renderer with MSDF text, gradients, patterns, and per-vertex colors
 - Custom fragment shaders via `registerProgram` (`@experimental`)
 
 ## Install
@@ -55,25 +55,17 @@ See the live demo for a full working example: <https://orochi235.github.io/wease
 
 Live demo: <https://orochi235.github.io/weasel/>
 
-## Backends
+## Text rendering
 
-`<Canvas>` and `<SceneCanvas>` accept a `backend?: '2d' | 'gl'` prop. The default is `'2d'` (Canvas 2D); `'gl'` opts into the WebGL2 backend implemented in `@orochi235/weasel-gl`.
-
-```tsx
-<SceneCanvas scene={scene} selection={selection} backend="gl" />
-```
-
-The GL backend is `@experimental` until the visual-regression soak completes (see the WebGL transition roadmap). When the soak lands, the default flips to `'gl'` and the 2D path is removed in a major version. Until then both backends are first-class:
-
-- `RenderLayer` gained an additive `drawGL?` method. Layers without `drawGL` warn-once under `backend='gl'` and skip; the 2D `draw` path is unchanged.
-- A `<canvas>` element holds one context type for life. Switching `backend` after mount warns once; remount the canvas to actually switch.
-- Text under `backend='gl'` uses MSDF atlases. Register fonts before the first paint:
+Text is rendered via MSDF atlases. Register fonts before the first paint:
 
 ```tsx
-import { registerFont } from '@orochi235/weasel-gl';
+import { registerFont } from '@orochi235/weasel';
 
 await registerFont('Inter', '/fonts/inter.json');
 ```
+
+The kit ships a prebuilt Inter atlas under `assets/fonts/inter/`. To regenerate or add fonts, see the `gen:font` workflow notes in the docs.
 
 ## Actions registry
 
@@ -102,10 +94,10 @@ The `actions` prop accepts `null` (disable all defaults), a partial override of 
 
 ## Custom shaders (`@experimental`)
 
-The GL backend supports `kind: 'shader'` `DrawCommand`s for layers that want a custom fragment shader. Register the program once, then emit a draw command with uniforms and bounds:
+The renderer supports `kind: 'shader'` `DrawCommand`s for layers that want a custom fragment shader. Register the program once, then emit a draw command with uniforms and bounds:
 
 ```tsx
-import { registerProgram, registerTexture } from '@orochi235/weasel-gl';
+import { registerProgram, registerTexture } from '@orochi235/weasel';
 
 const voronoi = registerProgram(
   'voronoi',
@@ -118,7 +110,7 @@ const voronoi = registerProgram(
   `,
 );
 
-// Inside a RenderLayer.drawGL, return a tree of DrawCommands:
+// Inside a RenderLayer.draw, return a tree of DrawCommands:
 return {
   kind: 'shader',
   program: voronoi,
