@@ -29,7 +29,7 @@ import type { RenderLayer } from '../../core/layers/render';
 import type { GroupAdapter } from '../groups/types';
 import { expandToLeaves } from '../groups/resolve';
 import { unionBounds } from '../groups/unionBounds';
-import { alignedStrokeRect, type Paint, type Stroke } from '../../core/paint';
+import { alignedStrokeRect, type Paint, type Stroke } from '../../core/paint-types';
 import {
   rotationHandle,
   DEFAULT_ROTATION_HANDLE_DISTANCE,

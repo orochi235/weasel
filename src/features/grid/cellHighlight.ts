@@ -6,7 +6,7 @@
 
 import { type DrawCommand, viewToMat3 } from '@orochi235/weasel-gl';
 import type { RenderLayer } from '../../core/layers/render';
-import { type Paint } from '../../core/paint';
+import { type Paint } from '../../core/paint-types';
 import { resolveUnit, type UnitSystem, type UnitValue } from '../../core/units';
 
 /** Options for `createCellHighlightLayer`. */

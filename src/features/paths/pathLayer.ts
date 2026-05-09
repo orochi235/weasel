@@ -7,7 +7,7 @@
  */
 
 import { type DrawCommand, viewToMat3 } from '@orochi235/weasel-gl';
-import { type Paint, type Stroke } from '../../core/paint';
+import { type Paint, type Stroke } from '../../core/paint-types';
 import type { RenderLayer } from '../../core/layers/render';
 import type { Path } from './types';
 

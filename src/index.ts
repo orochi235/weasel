@@ -193,20 +193,14 @@ export type {
 } from './features/text/useTextEdit';
 export { createTilePattern } from './features/patterns';
 export type { TilePatternOpts } from './features/patterns';
-export {
-  applyPaint,
-  applyStroke,
-  renderFilledRegion,
-  alignedStrokeRect,
-} from './core/paint';
+export { alignedStrokeRect } from './core/paint-types';
 export type {
   Paint,
   GradStop,
   Stroke,
   StrokeAlign,
   Region,
-  RenderFilledRegionOptions,
-} from './core/paint';
+} from './core/paint-types';
 export * from './core/ops';
 export {
   composeWorldPose,
