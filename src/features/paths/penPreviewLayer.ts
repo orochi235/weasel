@@ -10,9 +10,11 @@
  * argument.
  */
 
+import type { DrawCommand } from '@orochi235/weasel-gl';
 import type { RenderLayer } from '../../core/layers/render';
 import type { Tool } from '../../tools/types';
 import type { PenScratch, PenAnchor, PenSubpath } from '../../tools/builtin/useUserPenTool';
+import { PATH_C, PATH_L, PATH_M, PATH_Z, type PolygonPath } from './types';
 
 export interface PenPreviewStyle {
   anchorFill?: string;
@@ -114,6 +116,93 @@ function drawAnchorDot(
   ctx.stroke();
 }
 
+/** N-segment polygon approximation of a circle. N=24 → ≤0.5px deviation at r≤8. */
+function approximateCircle(cx: number, cy: number, r: number, segments = 24): PolygonPath {
+  const cmds = new Uint8Array(segments + 2);
+  const coords = new Float32Array((segments + 1) * 2);
+  cmds[0] = PATH_M;
+  let off = 0;
+  coords[off++] = cx + r;
+  coords[off++] = cy;
+  for (let i = 1; i < segments; i++) {
+    cmds[i] = PATH_L;
+    const theta = (i / segments) * Math.PI * 2;
+    coords[off++] = cx + r * Math.cos(theta);
+    coords[off++] = cy + r * Math.sin(theta);
+  }
+  cmds[segments] = PATH_L;
+  // Close back to start (handled by PATH_Z; the last lineTo could be the
+  // closing segment but PATH_Z is cleaner).
+  cmds[segments + 1] = PATH_Z;
+  // The trailing lineTo at index `segments` consumed two coords slots;
+  // we wrote `segments` lineTos plus one moveTo = (segments+1) coord pairs,
+  // but the array already sized for that. Trim if oversized.
+  return {
+    kind: 'polygon',
+    commands: cmds,
+    coords,
+    fillRule: 'nonzero',
+  };
+}
+
+/**
+ * Build a `PolygonPath` for a pen subpath in screen space. Mirrors the
+ * `strokeSubpath` 2D body — moves to the first anchor in screen coords,
+ * emits cubic beziers when out/in handles are present, otherwise
+ * linear segments.
+ */
+function subpathToPath(
+  sp: PenSubpath,
+  view: { x: number; y: number; scale: number },
+): PolygonPath | null {
+  if (sp.anchors.length === 0) return null;
+  const cmds: number[] = [];
+  const xs: number[] = [];
+  const [sx, sy] = w2s(sp.anchors[0].x, sp.anchors[0].y, view);
+  cmds.push(PATH_M);
+  xs.push(sx, sy);
+  for (let i = 1; i < sp.anchors.length; i++) {
+    const prev = sp.anchors[i - 1];
+    const curr = sp.anchors[i];
+    const out = prev.outHandle;
+    const inH = curr.inHandle ?? mirror(prev, out);
+    const [tx, ty] = w2s(curr.x, curr.y, view);
+    if (out || curr.inHandle) {
+      const c1 = out ?? prev;
+      const c2 = inH ?? curr;
+      const [c1x, c1y] = w2s(c1.x, c1.y, view);
+      const [c2x, c2y] = w2s(c2.x, c2.y, view);
+      cmds.push(PATH_C);
+      xs.push(c1x, c1y, c2x, c2y, tx, ty);
+    } else {
+      cmds.push(PATH_L);
+      xs.push(tx, ty);
+    }
+  }
+  if (sp.closed) {
+    const last = sp.anchors[sp.anchors.length - 1];
+    const first = sp.anchors[0];
+    const out = last.outHandle;
+    const inH = first.inHandle ?? mirror(last, out);
+    if (out || first.inHandle) {
+      const c1 = out ?? last;
+      const c2 = inH ?? first;
+      const [c1x, c1y] = w2s(c1.x, c1.y, view);
+      const [c2x, c2y] = w2s(c2.x, c2.y, view);
+      const [tx, ty] = w2s(first.x, first.y, view);
+      cmds.push(PATH_C);
+      xs.push(c1x, c1y, c2x, c2y, tx, ty);
+    }
+    cmds.push(PATH_Z);
+  }
+  return {
+    kind: 'polygon',
+    commands: new Uint8Array(cmds),
+    coords: new Float32Array(xs),
+    fillRule: 'nonzero',
+  };
+}
+
 export function createPenPreviewLayer(
   opts: CreatePenPreviewLayerOptions,
 ): RenderLayer<unknown> {
@@ -194,6 +283,113 @@ export function createPenPreviewLayer(
           ctx.stroke();
         }
       }
+    },
+    drawGL: (_data, view) => {
+      const s = getScratch();
+      const out: DrawCommand[] = [];
+
+      // (1) Finished subpaths — faded outline.
+      for (const sp of s.finishedSubpaths) {
+        const path = subpathToPath(sp, view);
+        if (path === null) continue;
+        out.push({
+          kind: 'path',
+          path,
+          stroke: { paint: { fill: 'solid', color: style.finishedSubpathStroke }, width: 1 },
+        });
+      }
+
+      const cur = s.current;
+      if (!cur && s.cursor === null) return out;
+
+      // (2) Current subpath — bright outline.
+      if (cur) {
+        const path = subpathToPath(cur, view);
+        if (path !== null) {
+          out.push({
+            kind: 'path',
+            path,
+            stroke: { paint: { fill: 'solid', color: style.rubberBandStroke }, width: 1 },
+          });
+        }
+      }
+
+      // (3) Rubber-band from latest anchor to cursor.
+      if (cur && cur.anchors.length > 0 && s.cursor && s.draggingHandleAt === null) {
+        const last = cur.anchors[cur.anchors.length - 1];
+        const out2 = last.outHandle;
+        const [sx, sy] = w2s(last.x, last.y, view);
+        const [cx, cy] = w2s(s.cursor.x, s.cursor.y, view);
+        let path: PolygonPath;
+        if (out2) {
+          const [c1x, c1y] = w2s(out2.x, out2.y, view);
+          path = {
+            kind: 'polygon',
+            commands: new Uint8Array([PATH_M, PATH_C]),
+            coords: new Float32Array([sx, sy, c1x, c1y, cx, cy, cx, cy]),
+            fillRule: 'nonzero',
+          };
+        } else {
+          path = {
+            kind: 'polygon',
+            commands: new Uint8Array([PATH_M, PATH_L]),
+            coords: new Float32Array([sx, sy, cx, cy]),
+            fillRule: 'nonzero',
+          };
+        }
+        out.push({
+          kind: 'path',
+          path,
+          stroke: { paint: { fill: 'solid', color: style.rubberBandStroke }, width: 1 },
+        });
+      }
+
+      // (4) Anchor dots + handles.
+      if (cur) {
+        for (let i = 0; i < cur.anchors.length; i++) {
+          const a = cur.anchors[i];
+          const [ax, ay] = w2s(a.x, a.y, view);
+          out.push({
+            kind: 'path',
+            path: approximateCircle(ax, ay, ANCHOR_RADIUS_PX),
+            fill: { fill: 'solid', color: style.anchorFill },
+            stroke: { paint: { fill: 'solid', color: style.anchorStroke }, width: 1 },
+          });
+          // Handle line + dot (only the latest anchor, per spec).
+          if (i === cur.anchors.length - 1 && a.outHandle) {
+            const [hx, hy] = w2s(a.outHandle.x, a.outHandle.y, view);
+            const linePath: PolygonPath = {
+              kind: 'polygon',
+              commands: new Uint8Array([PATH_M, PATH_L]),
+              coords: new Float32Array([ax, ay, hx, hy]),
+              fillRule: 'nonzero',
+            };
+            out.push({
+              kind: 'path',
+              path: linePath,
+              stroke: { paint: { fill: 'solid', color: style.handleStroke }, width: 1 },
+            });
+            out.push({
+              kind: 'path',
+              path: approximateCircle(hx, hy, HANDLE_DOT_RADIUS_PX),
+              fill: { fill: 'solid', color: style.handleStroke },
+            });
+          }
+        }
+
+        // (5) Close-hint ring on first anchor.
+        if (s.closeHintActive && cur.anchors.length >= 3) {
+          const first = cur.anchors[0];
+          const [fx, fy] = w2s(first.x, first.y, view);
+          out.push({
+            kind: 'path',
+            path: approximateCircle(fx, fy, CLOSE_HINT_RADIUS_PX),
+            stroke: { paint: { fill: 'solid', color: style.closeHintFill }, width: 1.5 },
+          });
+        }
+      }
+
+      return out;
     },
   };
 }
