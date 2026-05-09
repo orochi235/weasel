@@ -1,4 +1,5 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { registerFont } from '@orochi235/weasel-gl';
 
 /**
  * Visual-regression backend selection.
@@ -27,6 +28,31 @@ export function BackendProvider({ children }: { children: ReactNode }) {
   // backend switches, so a static read is sufficient — no need to react to
   // query-string changes mid-session.
   const backend = readBackendFromQuery();
+  const [fontReady, setFontReady] = useState(backend === '2d');
+
+  useEffect(() => {
+    if (backend !== 'gl') return;
+    let cancelled = false;
+    // Register the inter MSDF atlas under both 'sans-serif' (default
+    // fontFamily of resolveTextStyle) and 'Inter' so demos that use either
+    // get glyphs under backend='gl'. The font assets are served from
+    // packages/weasel-gl/fonts via the publicDir override in vite.config.ts.
+    const base = `${import.meta.env.BASE_URL}inter`;
+    Promise.all([
+      registerFont('sans-serif', `${base}/inter.json`, `${base}/inter.png`),
+      registerFont('Inter',      `${base}/inter.json`, `${base}/inter.png`),
+    ])
+      .then(() => { if (!cancelled) setFontReady(true); })
+      .catch((e) => {
+        console.warn('demo: failed to register Inter font for backend=gl:', e);
+        if (!cancelled) setFontReady(true);
+      });
+    return () => { cancelled = true; };
+  }, [backend]);
+
+  // Block rendering until the font is registered under backend='gl' so the
+  // first paint includes glyphs. Under backend='2d' fontReady defaults true.
+  if (!fontReady) return null;
   return <BackendContext.Provider value={backend}>{children}</BackendContext.Provider>;
 }
 
