@@ -207,6 +207,19 @@ The cheap version is: include the layer in the multi-layer smoke scene's playwri
 
 ---
 
+## 16. React lifecycle gotchas under jsdom for GL contexts
+
+**Status:** confirmed in step 8.
+**Where it bites:** any unit test that mounts a React component with `backend='gl'` (or otherwise calls `canvas.getContext('webgl2')`).
+
+jsdom's `HTMLCanvasElement.getContext` returns a non-null 2D-shaped mock even when called with `'webgl2'`. A naïve `if (!gl) return;` guard treats the mock as a real WebGL2 context and proceeds to call `new WeaselRenderer({gl, ...})`, which then fails on the first `gl.enable(...)` call.
+
+**Required:** when wiring a GL renderer into a React lifecycle that has unit-test coverage, add a duck-type runtime check (`typeof gl.enable === 'function'` is sufficient) before assuming the context is real. Wrap `new WeaselRenderer({...})` in a try/catch as a defense-in-depth fallback.
+
+The "real" verification is always Playwright (convention §1) — jsdom unit tests can verify wiring (refs, effects, dispose ordering) but not GL semantics.
+
+---
+
 ## How to update this doc
 
 Each per-step done note adds new lessons. At the end of each step, the controller folds applicable new lessons into the relevant section above and adds a new section if the lesson doesn't fit existing categories. Update the **Status** date and **Where it bites** line to keep entries scannable.
