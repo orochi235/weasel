@@ -117,3 +117,35 @@ describe('tessellateStroke caps', () => {
     expect(meshRound.indices.length).toBe(meshButt.indices.length);
   });
 });
+
+describe('tessellateStroke dash patterns', () => {
+  it('produces multiple disjoint sub-ribbons for a dashed straight line', () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L]),
+      coords: new Float32Array([0, 0, 100, 0]),
+      fillRule: 'nonzero',
+    };
+    const mesh = tessellateStroke(path, {
+      paint: { color: '#000' },
+      width: 4,
+      dash: [10, 10],
+      cap: 'butt',
+      join: 'bevel',
+    });
+    // 100 / 20 = 5 dash periods → 5 "on" sub-segments → 10 triangles → 30 indices.
+    expect(mesh.indices.length).toBe(30);
+  });
+
+  it('an empty or omitted dash array produces a continuous ribbon', () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L]),
+      coords: new Float32Array([0, 0, 100, 0]),
+      fillRule: 'nonzero',
+    };
+    const meshNoDash = tessellateStroke(path, { paint: { color: '#000' }, width: 4 });
+    const meshEmptyDash = tessellateStroke(path, { paint: { color: '#000' }, width: 4, dash: [] });
+    expect(meshEmptyDash.indices.length).toBe(meshNoDash.indices.length);
+  });
+});

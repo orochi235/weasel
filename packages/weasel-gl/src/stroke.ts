@@ -44,11 +44,15 @@ export function tessellateStroke(
   const cap: Cap = stroke.cap ?? 'butt';
 
   const polylines = extractPolylines(path, opts);
+  const dash = stroke.dash ?? [];
   const verts: number[] = [];
   const idx: number[] = [];
 
   for (const pl of polylines) {
-    expandPolyline(pl, width, join, cap, verts, idx);
+    const subs = dash.length > 0 ? splitForDash(pl, dash) : [pl];
+    for (const sub of subs) {
+      expandPolyline(sub, width, join, cap, verts, idx);
+    }
   }
 
   return {
@@ -182,6 +186,61 @@ function emitCap(
     if (atEnd) idx.push(prevIdx, rightIdx, pivotIdx);
     else       idx.push(prevIdx, pivotIdx, rightIdx);
   }
+}
+
+/**
+ * Split a polyline into open sub-polylines for the "on" portions of a dash
+ * pattern. Each output sub-polyline gets caps from the stroke's `cap` setting.
+ * The "off" portions become invisible gaps.
+ */
+function splitForDash(pl: Polyline, dash: number[]): Polyline[] {
+  const out: Polyline[] = [];
+  let dashIdx = 0;
+  let dashRemaining = dash[0];
+  let onPhase = true;
+  let current: Polyline | null = onPhase ? { points: [pl.points[0], pl.points[1]], closed: false } : null;
+
+  const advance = () => {
+    if (current && current.points.length >= 4) out.push(current);
+    current = null;
+    dashIdx = (dashIdx + 1) % dash.length;
+    dashRemaining = dash[dashIdx];
+    onPhase = !onPhase;
+  };
+
+  let prevX = pl.points[0], prevY = pl.points[1];
+  const segCount = pl.points.length / 2 - 1;
+  for (let i = 0; i < segCount; i++) {
+    const cx = pl.points[(i + 1) * 2], cy = pl.points[(i + 1) * 2 + 1];
+    let segDx = cx - prevX, segDy = cy - prevY;
+    let segLen = Math.hypot(segDx, segDy);
+
+    while (segLen > 1e-9) {
+      if (segLen <= dashRemaining) {
+        if (onPhase && current) current.points.push(cx, cy);
+        dashRemaining -= segLen;
+        prevX = cx; prevY = cy;
+        segLen = 0;
+        if (dashRemaining <= 1e-9) {
+          advance();
+          if (onPhase) current = { points: [prevX, prevY], closed: false };
+        }
+      } else {
+        const t = dashRemaining / segLen;
+        const ix = prevX + segDx * t;
+        const iy = prevY + segDy * t;
+        if (onPhase && current) current.points.push(ix, iy);
+        prevX = ix; prevY = iy;
+        segDx = cx - prevX; segDy = cy - prevY;
+        segLen = Math.hypot(segDx, segDy);
+        advance();
+        if (onPhase) current = { points: [prevX, prevY], closed: false };
+      }
+    }
+  }
+
+  if (current && current.points.length >= 4) out.push(current);
+  return out;
 }
 
 function makeSeg(ax: number, ay: number, bx: number, by: number, half: number): Seg | null {
