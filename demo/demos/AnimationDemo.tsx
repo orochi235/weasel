@@ -90,6 +90,11 @@ export function AnimationDemo() {
       ctx.fillStyle = card.color;
       ctx.fillRect(pose.x, pose.y, pose.width, pose.height);
     },
+    drawGhostGL: (card, pose): DrawCommand[] => card == null ? [] : [{
+      kind: 'path',
+      path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
+      fill: { color: card.color },
+    }],
     getObject: (id) => cardsRef.current.find((c) => c.id === id) ?? null,
   });
   const tools = useTools({ active: 'select', registry: { select } });

@@ -1113,6 +1113,15 @@ function CanvasInner<TObject extends { id: string }, TPose>(
         effectiveView,
         { width, height },
       );
+      // Honor the `background` prop by prepending a screen-space rect command.
+      // Mirrors what the 2D path does via ctx.fillRect at this point.
+      if (background) {
+        commands.unshift({
+          kind: 'path',
+          path: { kind: 'rect', x: 0, y: 0, width, height },
+          fill: { color: background },
+        });
+      }
       renderer.render(commands);
       return;
     }

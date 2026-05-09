@@ -139,6 +139,11 @@ export function NestedGroupsDemo() {
       cx.fillStyle = 'rgba(127, 176, 105, 0.35)';
       cx.fillRect(p.x, p.y, p.width, p.height);
     },
+    drawGhostGL: (_o, p): DrawCommand[] => [{
+      kind: 'path',
+      path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+      fill: { color: 'rgba(127, 176, 105, 0.35)' },
+    }],
     getObject: (id) => adapter.getObject(id) ?? null,
     move: { cascadeWorldPose: worldPoseOf },
   });
