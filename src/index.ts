@@ -163,29 +163,7 @@ export type {
   SelectionHandlesLayerOpts,
   SelectionOverlayLayerOpts,
 } from './features/selection/overlay';
-export * from './features/text/renderLabel';
-export * from './features/text/markdownText';
-export {
-  DEFAULT_TEXT_STYLE,
-  resolveTextStyle,
-  fontString,
-} from './features/text/textStyle';
-export type { TextStyle, ResolvedTextStyle } from './features/text/textStyle';
-export { measureText } from './features/text/measureText';
-export type { MeasuredText } from './features/text/measureText';
-export { createTextLayer } from './features/text/textLayer';
-export type { TextPose, CreateTextLayerOpts } from './features/text/textLayer';
-export { pointInTextPose, caretIndexAt } from './features/text/hitTest';
-export { fitTextPose } from './features/text/fitTextPose';
-export type { FitTextPoseOptions } from './features/text/fitTextPose';
-export type { PointInTextPoseOpts } from './features/text/hitTest';
-export { useTextEdit } from './features/text/useTextEdit';
-export type {
-  TextEditScreenPose,
-  StartEditOptions,
-  UseTextEditOptions,
-  UseTextEditReturn,
-} from './features/text/useTextEdit';
+export * from './features/text';
 export { createTilePattern } from './features/patterns';
 export type { TilePatternOpts } from './features/patterns';
 export { alignedStrokeRect } from './core/paint-types';
