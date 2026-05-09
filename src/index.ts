@@ -74,6 +74,21 @@ export type {
 } from './features/grid/useGridCellHover';
 export { useKeybinding, isEditableTarget } from './interactions/actions/useKeybinding';
 export type { KeyBinding } from './interactions/actions/useKeybinding';
+
+// --- @experimental Actions Registry (2026-05-09) ----------------------------
+export {
+  ActionsProvider, useActionsRegistry, useAction,
+} from './interactions/actions/registry';
+export type {
+  Action, ActionEntry, ActionsProp, ActionsRegistry,
+} from './interactions/actions/registry';
+export {
+  defaultSelectAllAction, defaultEscapeAction, defaultDuplicateAction,
+  defaultNudgeActions, defaultReorderActions,
+} from './interactions/actions/defaults';
+export type {
+  SelectAllDeps, EscapeDeps, DuplicateDeps, NudgeDeps, ReorderDeps,
+} from './interactions/actions/defaults';
 export * from './features/viewport/wheelHandler';
 export { clientToCanvas } from './features/viewport/clientToCanvas';
 export { useVelocityTracker } from './features/viewport/useVelocityTracker';

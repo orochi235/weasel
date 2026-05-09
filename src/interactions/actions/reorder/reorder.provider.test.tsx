@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { useEffect } from 'react';
 import { render } from '@testing-library/react';
 import { useReorder } from './reorder';

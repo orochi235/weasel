@@ -31,7 +31,7 @@ beforeAll(() => {
 function makeScene(): Scene<D, L, P> {
   const s = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   s.batch('seed', () => {
-    s.add({ data: { kind: 'rect' }, layer: 'main' as L, pose: { x: 0, y: 0, width: 10, height: 10 } as P });
+    s.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L, pose: { x: 0, y: 0, width: 10, height: 10 } as P });
   });
   return s;
 }
