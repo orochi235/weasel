@@ -1,6 +1,6 @@
 /**
  * Top-level `<Canvas>` component that wraps a single `<canvas>` element with:
- *   - WebGL backend instantiation (`WeaselRenderer`)
+ *   - WebGL renderer instantiation (`WeaselRenderer`)
  *   - background fill on every render
  *   - layer-stack composition from a map of named slots + custom layers
  *   - internal `useSelection` (overridable)
@@ -222,15 +222,6 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   onPointerCancel?: React.PointerEventHandler<HTMLCanvasElement>;
 
   // --- Visuals / DOM passthrough ---
-  /**
-   * Renderer backend. `'gl'` (default) instantiates a WeaselRenderer against
-   * this canvas element and dispatches each layer's `draw` output.
-   *
-   * The `'2d'` value is accepted but no longer functional — only the GL
-   * backend is implemented. The prop is retained for compatibility and will
-   * be removed in a future cleanup pass.
-   */
-  backend?: '2d' | 'gl';
   background?: string;
   className?: string;
   style?: React.CSSProperties;
@@ -440,7 +431,6 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     className,
     style,
     tabIndex = 0,
-    backend = 'gl' as const,
     autoFocusOnPointerDown = true,
     helpersRef,
     gestures,
@@ -498,29 +488,9 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   useImperativeHandle(ref, () => canvasRef.current as HTMLCanvasElement, []);
 
-  // GL renderer (lazy-instantiated on first paint when backend === 'gl').
-  // The 2D path leaves these untouched — `glRendererRef.current` stays null.
+  // GL renderer (lazy-instantiated on first paint).
   const glRendererRef = useRef<WeaselRenderer | null>(null);
   const lastResizeRef = useRef<{ w: number; h: number; dpr: number } | null>(null);
-
-  // Track the mount-time backend; warn once if a re-render passes a different
-  // value. The backend is bound to the underlying <canvas> element for life
-  // (a canvas's GL context type cannot change without remounting the DOM
-  // node), so a post-mount prop change is intentionally a no-op.
-  const initialBackendRef = useRef(backend);
-  const warnedBackendChangeRef = useRef(false);
-  useEffect(() => {
-    if (warnedBackendChangeRef.current) return;
-    if (backend !== initialBackendRef.current) {
-      warnedBackendChangeRef.current = true;
-      console.warn(
-        `weasel <Canvas>: backend prop changed from "${initialBackendRef.current}" to ` +
-        `"${backend}" after mount. Backend is bound to the underlying <canvas> element ` +
-        `and cannot change at runtime — the original backend keeps running. ` +
-        `To switch, remount the parent component.`,
-      );
-    }
-  }, [backend]);
 
   // Viewport state: hybrid uncontrolled/controlled. When `viewProp` is
   // supplied we are controlled (consumer owns state). Otherwise we keep
@@ -1054,67 +1024,55 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       }
     }
 
-    // Backend bound at mount — read initialBackendRef, not the live prop, so a
-    // post-mount change is a true no-op. (The change-warning effect runs separately.)
-    const effectiveBackend = initialBackendRef.current;
-
-    if (effectiveBackend === 'gl') {
-      // -- GL backend --
-      let renderer = glRendererRef.current;
-      if (!renderer) {
-        const dpr = window.devicePixelRatio || 1;
-        const gl = c.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true });
-        if (!gl || typeof (gl as Partial<WebGL2RenderingContext>).enable !== 'function') {
-          // jsdom or unsupported environment — bail silently (test envs hit
-          // this; jsdom returns a non-null stub but lacks WebGL2 methods).
-          return;
-        }
-        try {
-          renderer = new WeaselRenderer({
-            gl: gl as WebGL2RenderingContext,
-            canvas: c,
-            width,
-            height,
-            dpr,
-          });
-        } catch {
-          // Test env or context creation failure — bail silently.
-          return;
-        }
-        glRendererRef.current = renderer;
-        lastResizeRef.current = { w: width, h: height, dpr };
-      } else {
-        const dpr = window.devicePixelRatio || 1;
-        const last = lastResizeRef.current;
-        if (!last || last.w !== width || last.h !== height || last.dpr !== dpr) {
-          renderer.resize({ width, height, dpr });
-          lastResizeRef.current = { w: width, h: height, dpr };
-        }
+    let renderer = glRendererRef.current;
+    if (!renderer) {
+      const dpr = window.devicePixelRatio || 1;
+      const gl = c.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true });
+      if (!gl || typeof (gl as Partial<WebGL2RenderingContext>).enable !== 'function') {
+        // jsdom or unsupported environment — bail silently (test envs hit
+        // this; jsdom returns a non-null stub but lacks WebGL2 methods).
+        return;
       }
-
-      const commands = drawLayers(
-        layersWithDebug,
-        helpersForLayers,
-        {},
-        undefined,
-        effectiveView,
-        { width, height },
-      );
-      // Honor the `background` prop by prepending a screen-space rect command.
-      // Mirrors what the 2D path does via ctx.fillRect at this point.
-      if (background) {
-        commands.unshift({
-          kind: 'path',
-          path: { kind: 'rect', x: 0, y: 0, width, height },
-          fill: { color: background },
+      try {
+        renderer = new WeaselRenderer({
+          gl: gl as WebGL2RenderingContext,
+          canvas: c,
+          width,
+          height,
+          dpr,
         });
+      } catch {
+        // Test env or context creation failure — bail silently.
+        return;
       }
-      renderer.render(commands);
-      return;
+      glRendererRef.current = renderer;
+      lastResizeRef.current = { w: width, h: height, dpr };
+    } else {
+      const dpr = window.devicePixelRatio || 1;
+      const last = lastResizeRef.current;
+      if (!last || last.w !== width || last.h !== height || last.dpr !== dpr) {
+        renderer.resize({ width, height, dpr });
+        lastResizeRef.current = { w: width, h: height, dpr };
+      }
     }
 
-    // 2D backend has been removed — only the GL backend is supported.
-    // Bail silently if the GL branch above didn't take (e.g. unsupported env).
+    const commands = drawLayers(
+      layersWithDebug,
+      helpersForLayers,
+      {},
+      undefined,
+      effectiveView,
+      { width, height },
+    );
+    // Honor the `background` prop by prepending a screen-space rect command.
+    if (background) {
+      commands.unshift({
+        kind: 'path',
+        path: { kind: 'rect', x: 0, y: 0, width, height },
+        fill: { color: background },
+      });
+    }
+    renderer.render(commands);
   }, [layersWithDebug, width, height, background, effectiveView, debugSink]);
 
   const toolsCursor = tools ? resolveToolsCursor(tools, toolsCtxBase) : undefined;

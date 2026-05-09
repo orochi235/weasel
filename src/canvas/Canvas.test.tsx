@@ -858,52 +858,37 @@ describe('Canvas debug overlay', () => {
   });
 });
 
-describe('backend prop', () => {
-  it('accepts default backend (gl) and renders without error', () => {
+describe('GL renderer', () => {
+  it('renders without error with default props', () => {
     const { container } = render(
       <Canvas width={100} height={100} layers={{}} />,
     );
     expect(container.querySelector('canvas')).toBeTruthy();
   });
 
-  it('emits exactly one console.warn when backend prop changes after mount', () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const { rerender } = render(
-      <Canvas width={100} height={100} layers={{}} backend="gl" />,
-    );
-    expect(warnSpy).not.toHaveBeenCalled();
-    rerender(<Canvas width={100} height={100} layers={{}} backend="2d" />);
-    expect(warnSpy).toHaveBeenCalledTimes(1);
-    expect(warnSpy.mock.calls[0][0]).toMatch(/backend.*after mount/i);
-    // Second change does not produce a second warning (still one total).
-    rerender(<Canvas width={100} height={100} layers={{}} backend="gl" />);
-    expect(warnSpy).toHaveBeenCalledTimes(1);
-    warnSpy.mockRestore();
-  });
-
-  it('backend="gl" calls getContext("webgl2") with preserveDrawingBuffer + stencil', () => {
+  it('calls getContext("webgl2") with preserveDrawingBuffer + stencil', () => {
     const getCtxSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext');
-    render(<Canvas width={100} height={100} layers={{}} backend="gl" />);
+    render(<Canvas width={100} height={100} layers={{}} />);
     const webgl2Calls = getCtxSpy.mock.calls.filter((c) => c[0] === 'webgl2');
     expect(webgl2Calls.length).toBeGreaterThan(0);
     expect(webgl2Calls[0][1]).toMatchObject({ preserveDrawingBuffer: true, stencil: true });
     getCtxSpy.mockRestore();
   });
 
-  it('backend="gl" does not call getContext("2d")', () => {
+  it('does not call getContext("2d")', () => {
     const getCtxSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext');
-    render(<Canvas width={100} height={100} layers={{}} backend="gl" />);
+    render(<Canvas width={100} height={100} layers={{}} />);
     const twoDCalls = getCtxSpy.mock.calls.filter((c) => c[0] === '2d');
     expect(twoDCalls).toHaveLength(0);
     getCtxSpy.mockRestore();
   });
 
-  it('backend="gl" mounts without throwing when a custom layer with draw is present', () => {
-    // Sentinel test: confirms the prop wiring + drawLayers dispatch path
-    // doesn't throw under jsdom. The authoritative end-to-end pixel check is
-    // the Playwright smoke (canvas-gl.spec.ts) — under jsdom getContext('webgl2')
-    // returns a non-null stub, so the GL branch early-returns before drawLayers
-    // runs and the captured arguments below stay empty. Documenting intent.
+  it('mounts without throwing when a custom layer with draw is present', () => {
+    // Sentinel test: confirms the drawLayers dispatch path doesn't throw under
+    // jsdom. The authoritative end-to-end pixel check is the Playwright smoke
+    // (canvas-gl.spec.ts) — under jsdom getContext('webgl2') returns a non-null
+    // stub, so the GL branch early-returns before drawLayers runs and the
+    // captured arguments below stay empty. Documenting intent.
     const captured: Array<{ data: unknown; view: unknown; dims: unknown }> = [];
     const customLayer: RenderLayer<unknown> = {
       id: 'capture',
@@ -918,7 +903,6 @@ describe('backend prop', () => {
         width={300}
         height={200}
         layers={{ myCustom: { layer: customLayer } }}
-        backend="gl"
         defaultView={{ x: 10, y: 20, scale: 2 }}
       />,
     );
