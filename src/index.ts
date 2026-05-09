@@ -11,7 +11,8 @@
  *     `wheelHandler`.
  *   - Layer composition: `RenderLayer`, `LayerRenderer`,
  *     `createGridLayer`, `createCellHighlightLayer`, `createChildrenLayer`,
- *     `createSelectionOverlayLayer` and friends, `createTextLayer`.
+ *     `createSelectionOverlayLayer` and friends, `createTextLayer`,
+ *     `createTilePattern`.
  *   - Interactions (gesture hooks): `useMove`,
  *     `useResize`, `useInsert`,
  *     `useAreaSelect`, `useClone`,
@@ -137,6 +138,15 @@ export {
   usePublishSelection,
 } from './features/selection/SelectionContext';
 export type { SelectionContextValue } from './features/selection/SelectionContext';
+export {
+  useCanvasFocus,
+  gateLayer,
+} from './features/focus';
+export type {
+  UseCanvasFocusOptions,
+  CanvasFocusReturn,
+  GateLayerOptions,
+} from './features/focus';
 export * from './core/layers/render';
 export * from './core/layers/LayerRenderer';
 export { createGridLayer } from './features/grid/layer';
@@ -188,6 +198,8 @@ export type {
   UseTextEditOptions,
   UseTextEditReturn,
 } from './features/text/useTextEdit';
+export { createTilePattern } from './features/patterns';
+export type { TilePatternOpts } from './features/patterns';
 export { alignedStrokeRect } from './core/paint-types';
 export type {
   Paint,

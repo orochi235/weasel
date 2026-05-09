@@ -25,12 +25,10 @@ import type { TextureHandle } from '../renderer/textures/registerTexture';
  * `fill: 'pattern'` explicitly.
  *
  * The `'pattern'` variant's payload is a `TextureHandle` (registered via
- * `registerTexture()`). The previous `CanvasPattern`-based implementation
- * (and its `createTilePattern` factory + `patterns-builtin` catalog) was
- * deleted in Step 10 — see TODO.md "GL pattern factories" for the planned
- * replacement. Until that lands no kit-level factory produces this variant;
- * consumers can construct it directly from a `TextureHandle` if they wire
- * the GL plumbing themselves.
+ * `registerTexture()`). The kit-level factory `createTilePattern` (and the
+ * `patterns-builtin` catalog: `hatch`, `crosshatch`, `dots`, `chunks`)
+ * produces these handles by rendering a tile to an `OffscreenCanvas` and
+ * registering the resulting `ImageBitmap` as a GL texture.
  */
 export type Paint =
   | { fill?: 'solid'; color: string; opacity?: number }

@@ -8,6 +8,7 @@ export default defineConfig({
     insert: 'src/subpaths/insert.ts',
     clipboard: 'src/subpaths/clipboard.ts',
     clone: 'src/subpaths/clone.ts',
+    'patterns-builtin': 'src/subpaths/patterns-builtin.ts',
   },
   format: ['esm'],
   dts: true,

@@ -13,7 +13,7 @@ import type { ShaderUniform } from './shaders/registerProgram';
 import type { GroupState } from './state/GroupState';
 import type { GLMeshCache, GLMeshHandle } from './cache/GLMeshCache';
 import type { GLTextureCache } from './cache/GLTextureCache';
-import type { GLImageCache, PatternRepetition } from './cache/GLImageCache';
+import type { GLImageCache } from './cache/GLImageCache';
 import type { GradientRampCache } from './cache/GradientRampCache';
 import type { ShaderProgram } from './shaders/ShaderProgram';
 import { mat3 } from './math/mat3';
@@ -365,29 +365,25 @@ function drawPathFillPattern(
   fill: Extract<Paint, { fill: 'pattern' }>,
   handle: GLMeshHandle,
 ): void {
-  // CanvasPattern's image / repetition are non-standard but present in major browsers.
-  const patternAny = fill.pattern as unknown as {
-    image?: ImageBitmap | HTMLImageElement | HTMLCanvasElement;
-    repetition?: PatternRepetition | string | null;
-  };
-  const image = patternAny.image;
-  if (!image) {
-    console.warn('weasel-gl: CanvasPattern has no .image; skipping pattern fill.');
+  const tex = fill.pattern as TextureHandle;
+  const entry = getTexture(tex.id);
+  if (!entry) {
+    const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
+    if (isDev) console.warn(`weasel-gl: pattern TextureHandle "${tex.id}" not registered`);
     return;
   }
-  const rep = (patternAny.repetition ?? 'repeat') as PatternRepetition;
-  ctx.imageCache.upload(image, image, rep);
+  ctx.textureCache.upload(tex.id, entry.source);
 
   // Pattern is rendered with the image-fill shader, with the path's fill mesh.
-  // UV is derived from path-local coords / image dims; for v1 we use the
-  // path-local position directly as the UV (a 1:1 mapping). This means the
-  // pattern repeats every image-pixel-count units of path-local space.
+  // UV is derived from path-local coords; for v1 we use the path-local
+  // position directly as the UV (1:1). The pattern repeats every
+  // image-pixel-count units of path-local space, matching the prior behavior.
   const gl = ctx.gl;
   gl.useProgram(ctx.imageFill.handle);
   gl.bindVertexArray(handle.vao);
   setProjAndModel(ctx, ctx.imageFill);
   setColorMatrixUniforms(ctx, ctx.imageFill);
-  ctx.imageCache.bind(image, 0);
+  ctx.textureCache.bind(tex.id, 0);
   gl.uniform1i(ctx.imageFill.uniform('u_sampler')!, 0);
   gl.uniform1f(ctx.imageFill.uniform('u_opacity')!, fill.opacity ?? 1);
   gl.uniform1f(ctx.imageFill.uniform('u_alpha')!, ctx.state.alpha);
