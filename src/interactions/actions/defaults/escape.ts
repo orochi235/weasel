@@ -1,0 +1,25 @@
+import type { Action } from '../registry';
+
+/** @experimental */
+export interface EscapeDeps {
+  getSelection: () => string[];
+  setSelection: (ids: string[]) => void;
+}
+
+/**
+ * @experimental
+ * Factory for the default `escape` Action. Clears selection. No-op when
+ * selection is empty.
+ */
+export function defaultEscapeAction(deps: EscapeDeps): Action {
+  return {
+    id: 'escape',
+    label: 'Escape',
+    defaultBinding: { key: 'Escape' },
+    run: () => {
+      const sel = deps.getSelection();
+      if (sel.length === 0) return;
+      deps.setSelection([]);
+    },
+  };
+}
