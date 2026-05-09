@@ -12,7 +12,6 @@ import {
   useTools,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '@orochi235/weasel-gl';
-import { useBackend } from '../BackendContext';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -26,7 +25,6 @@ const INITIAL: Rect[] = [
 ];
 
 export function ActionsDemo() {
-  const backend = useBackend();
   const [rects, setRects] = useState<Rect[]>(INITIAL);
   const [focused, setFocused] = useState(false);
   const rectsRef = useRef(rects); rectsRef.current = rects;
@@ -100,8 +98,7 @@ export function ActionsDemo() {
           : 'Click the canvas to enable keyboard shortcuts'}
       </div>
       <Canvas
-backend={backend}
-              width={W}
+        width={W}
         height={H}
         className="ckd-canvas"
         adapter={adapter}

@@ -12,7 +12,6 @@ import type {
   PolygonPath,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '@orochi235/weasel-gl';
-import { useBackend } from '../BackendContext';
 
 interface PathObj { id: string }
 type Pose = Path;
@@ -30,7 +29,6 @@ const INITIAL_PATH: Path = new PathBuilder()
 const ZOOM_LEVELS = [0.5, 0.75, 1, 1.5, 2, 3];
 
 export function BezierEditDemo() {
-  const backend = useBackend();
   const [path, setPath] = useState<Path>(INITIAL_PATH);
   const pathRef = useRef(path);
   pathRef.current = path;
@@ -141,8 +139,7 @@ export function BezierEditDemo() {
       <div onDoubleClick={onDoubleClick} style={{ width: W * zoom, height: H * zoom, overflow: 'hidden' }}>
         <div style={{ width: W, height: H, transform: `scale(${zoom})`, transformOrigin: '0 0' }}>
           <Canvas
-backend={backend}
-                  width={W}
+            width={W}
             height={H}
             className="ckd-canvas"
             adapter={adapter}

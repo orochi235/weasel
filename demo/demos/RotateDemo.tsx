@@ -6,7 +6,6 @@ import {
 } from '@orochi235/weasel';
 import type { PoseDescriptor, RotatedPose } from '@orochi235/weasel';
 import type { DrawCommand } from '@orochi235/weasel-gl';
-import { useBackend } from '../BackendContext';
 
 interface Rect extends RotatedPose {
   id: string;
@@ -22,7 +21,6 @@ const INITIAL: Rect[] = [
 ];
 
 export function RotateDemo() {
-  const backend = useBackend();
   const scene = useScene({ items: INITIAL });
 
   // Override pickEvery so a click inside the rotated rect — not the AABB —
@@ -38,8 +36,7 @@ export function RotateDemo() {
 
   return (
     <SceneCanvas
-backend={backend}
-            width={W}
+      width={W}
       height={H}
       className="ckd-canvas"
       scene={scene}

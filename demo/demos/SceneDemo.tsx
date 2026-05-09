@@ -6,7 +6,6 @@ import {
 } from '@orochi235/weasel';
 import type { RegisteredOp, Scene } from '@orochi235/weasel';
 import type { DrawCommand } from '@orochi235/weasel-gl';
-import { useBackend } from '../BackendContext';
 
 type LayerId = 'garden' | 'blueprint' | 'structures' | 'zones' | 'plantings';
 interface NodeData { color: string; label?: string }
@@ -37,7 +36,6 @@ function makeSetColor(scene: Scene<NodeData, LayerId, Pose>): RegisteredOp<SetCo
 }
 
 export function SceneDemo() {
-  const backend = useBackend();
   const scene = useScene({
     systemLayers: [
       { id: 'garden' },
@@ -92,8 +90,7 @@ export function SceneDemo() {
         </span>
       </div>
       <SceneCanvas
-backend={backend}
-              width={W}
+        width={W}
         height={H}
         className="ckd-canvas"
         scene={scene}

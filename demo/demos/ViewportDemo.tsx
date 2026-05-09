@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { SceneCanvas, useScene } from '@orochi235/weasel';
 import type { DrawCommand } from '@orochi235/weasel-gl';
-import { useBackend } from '../BackendContext';
 
 type Layer = 'scene';
 interface Data { color: string; label: string }
@@ -31,7 +30,6 @@ export const VIEWPORT_DEMO_SOURCE = `<SceneCanvas
 type Boundary = 'none' | 'stop' | 'bounce';
 
 export function ViewportDemo() {
-  const backend = useBackend();
   const [boundary, setBoundary] = useState<Boundary>('none');
   const [inertiaOn, setInertiaOn] = useState(true);
 
@@ -69,8 +67,7 @@ export function ViewportDemo() {
         </span>
       </div>
       <SceneCanvas
-backend={backend}
-              scene={scene}
+        scene={scene}
         width={480}
         height={320}
         background="#1a130d"

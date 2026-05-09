@@ -9,7 +9,6 @@ import {
 } from '@orochi235/weasel';
 import type { PoseDescriptor, RotatedPose } from '@orochi235/weasel';
 import type { DrawCommand } from '@orochi235/weasel-gl';
-import { useBackend } from '../BackendContext';
 
 interface Rect extends RotatedPose {
   id: string;
@@ -96,12 +95,10 @@ function LedgerCaption({ scene, anchor }: { scene: ReturnType<typeof useScene<Re
 
 /** Panel 1 — the full math (correct). */
 function FullMathPanel() {
-  const backend = useBackend();
   const scene = useScene({ items: INITIAL_RECT('#7fb069') });
   return (
     <div>
       <SceneCanvas
-        backend={backend}
         width={W}
         height={H}
         className="ckd-canvas"
@@ -123,12 +120,10 @@ function FullMathPanel() {
 }
 
 function NoProjectionPanel() {
-  const backend = useBackend();
   const scene = useScene({ items: INITIAL_RECT('#d4a574') });
   return (
     <div>
       <SceneCanvas
-        backend={backend}
         width={W}
         height={H}
         className="ckd-canvas"
@@ -150,12 +145,10 @@ function NoProjectionPanel() {
 }
 
 function NoCorrectionPanel() {
-  const backend = useBackend();
   const scene = useScene({ items: INITIAL_RECT('#a48bd4') });
   return (
     <div>
       <SceneCanvas
-        backend={backend}
         width={W}
         height={H}
         className="ckd-canvas"

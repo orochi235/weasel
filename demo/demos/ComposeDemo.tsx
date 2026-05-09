@@ -10,7 +10,6 @@ import {
   useTools,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '@orochi235/weasel-gl';
-import { useBackend } from '../BackendContext';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
@@ -27,7 +26,6 @@ const TOOL_ORDER: { id: 'select' | 'insert'; label: string }[] = [
 ];
 
 export function ComposeDemo() {
-  const backend = useBackend();
   const scene = useScene<Rect>({ items: INITIAL });
   const selection = useSelection({ mode: 'multi' });
   const nextId = useRef(1);
@@ -110,8 +108,7 @@ export function ComposeDemo() {
         ))}
       </div>
       <SceneCanvas
-backend={backend}
-              width={W}
+        width={W}
         height={H}
         className="ckd-canvas"
         scene={scene}

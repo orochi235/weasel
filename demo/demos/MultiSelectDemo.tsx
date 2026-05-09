@@ -9,7 +9,6 @@ import {
   useTools,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '@orochi235/weasel-gl';
-import { useBackend } from '../BackendContext';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
@@ -24,7 +23,6 @@ const INITIAL: Rect[] = [
 ];
 
 export function MultiSelectDemo() {
-  const backend = useBackend();
   const scene = useScene({ items: INITIAL });
   const selection = useSelection({ mode: 'multi' });
 
@@ -73,8 +71,7 @@ export function MultiSelectDemo() {
 
   return (
     <SceneCanvas
-backend={backend}
-            ref={canvasRef}
+      ref={canvasRef}
       width={W}
       height={H}
       className="ckd-canvas"

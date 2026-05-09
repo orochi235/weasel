@@ -8,7 +8,6 @@ import {
   snapPoint,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '@orochi235/weasel-gl';
-import { useBackend } from '../BackendContext';
 
 // --- Scene model ---
 //
@@ -38,7 +37,6 @@ const INITIAL = [
 ];
 
 export function LayoutDemo() {
-  const backend = useBackend();
   const scene = useScene<Data, 'default', P>({
     systemLayers: [{ id: 'default' }],
     initial: INITIAL.map((n) => ({
@@ -59,8 +57,7 @@ export function LayoutDemo() {
 
   return (
     <SceneCanvas
-backend={backend}
-            width={620}
+      width={620}
       height={260}
       scene={scene}
       layouts={layouts}

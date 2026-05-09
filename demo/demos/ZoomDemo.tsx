@@ -11,7 +11,6 @@ import {
 } from '../../src';
 import type { DrawCommand } from '@orochi235/weasel-gl';
 import type { View } from '../../src/features/viewport/view';
-import { useBackend } from '../BackendContext';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string; pin: 'screen' | 'world' }
 
@@ -54,7 +53,6 @@ useKeybindings(tools);
 />`;
 
 export function ZoomDemo() {
-  const backend = useBackend();
   const [items, setItems] = useState<Rect[]>(INITIAL_ITEMS);
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
 
@@ -106,8 +104,7 @@ export function ZoomDemo() {
         <span>Right (purple): stroke = 2 (world-scaled)</span>
       </div>
       <Canvas
-backend={backend}
-              width={400}
+        width={400}
         height={300}
         items={items}
         setItems={setItems}

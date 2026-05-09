@@ -13,7 +13,6 @@ import {
 } from '@orochi235/weasel';
 import type { Group } from '@orochi235/weasel';
 import type { DrawCommand } from '@orochi235/weasel-gl';
-import { useBackend } from '../BackendContext';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -28,7 +27,6 @@ const INITIAL_RECTS: Rect[] = [
 const INITIAL_GROUP: Group = { id: 'g1', members: ['a', 'b', 'c'] };
 
 export function GroupsDemo() {
-  const backend = useBackend();
   const [rects, setRects] = useState<Rect[]>(INITIAL_RECTS);
   const [groups, setGroups] = useState<Group[]>([INITIAL_GROUP]);
   const rectsRef = useRef(rects); rectsRef.current = rects;
@@ -114,8 +112,7 @@ export function GroupsDemo() {
 
   return (
     <Canvas
-backend={backend}
-            width={W}
+      width={W}
       height={H}
       className="ckd-canvas"
       adapter={adapter}
