@@ -31,7 +31,7 @@
 
 ## Test results
 
-- Vitest: 1372/1372 tests pass (1332 existing + 40 new from step 2 across stroke, polyline, and draw-stroke tests).
+- Vitest: 1358/1358 tests pass (1332 from step 1 + 26 new from step 2 — stroke 15, polyline 5, draw-stroke 6).
 - Playwright smoke: 2/2 specs pass against headless Chromium (existing smoke + 4 new synthetic canvases auto-covered by the existing scene-paints-non-empty-pixels assertion).
 - Typecheck: clean.
 - Browser-verified: caps render distinct, joins render correctly (no notches), dash patterns visible, all three rect alignments correct, polygon stencil-clip contains the stroke.
