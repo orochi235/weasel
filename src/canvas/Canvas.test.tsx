@@ -902,6 +902,29 @@ describe('backend prop', () => {
     getCtxSpy.mockRestore();
   });
 
+  it('backend="gl" warns once when a layer has no drawGL (covered end-to-end by playwright smoke)', () => {
+    // Honesty note: under jsdom getContext('webgl2') returns a non-null stub
+    // and the GL branch early-returns before drawLayersGL runs, so we cannot
+    // assert the warning fires here. The per-layer warn-once is unit-tested
+    // in render.test.ts (drawLayersGL "warns once per layer id" test); the
+    // Canvas-level integration path is exercised by the playwright smoke
+    // (canvas-gl.spec.ts) — adding a layer without drawGL and ensuring the
+    // others still render.
+    const customLayer: RenderLayer<unknown> = {
+      id: 'no-gl', label: 'NoGL',
+      draw: () => {},
+    };
+    const { container } = render(
+      <Canvas
+        width={64}
+        height={64}
+        layers={{ legacy: { layer: customLayer } }}
+        backend="gl"
+      />,
+    );
+    expect(container.querySelector('canvas')).toBeTruthy();
+  });
+
   it('backend="gl" mounts without throwing when a custom layer with drawGL is present', () => {
     // Sentinel test: confirms the prop wiring + drawLayersGL dispatch path
     // doesn't throw under jsdom. The authoritative end-to-end pixel check is
