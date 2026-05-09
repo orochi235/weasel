@@ -111,7 +111,7 @@ describe('<Canvas>', () => {
       const select = useSelectTool<Rect, Pose>(adapter, {
         pickEvery: () => ['a'],
         boundsOf: () => ({ x: 0, y: 0, width: 50, height: 50 }),
-        drawGhost: () => {},
+        drawGhost: () => [],
         getObject: (id) => adapter.getObject(id) ?? null,
       });
       const tools = useTools({ active: 'select', registry: { select } });
@@ -149,7 +149,7 @@ describe('<Canvas>', () => {
       const select = useSelectTool<Rect, Pose>(adapter, {
         pickEvery: () => ['a'],
         boundsOf: () => ({ x: 0, y: 0, width: 50, height: 50 }),
-        drawGhost: () => {},
+        drawGhost: () => [],
         getObject: () => null,
       });
       const tools = useTools({ active: 'select', registry: { select } });

@@ -23,7 +23,7 @@ function makeAdapter() {
 
 function setup(hitId: string | null = 'a') {
   const { adapter, applied } = makeAdapter();
-  const drawGhost = vi.fn();
+  const drawGhost = vi.fn(() => []);
   const pickBest = vi.fn(() => hitId);
   const { result } = renderHook(() =>
     useCloneTool(adapter, {
@@ -74,7 +74,7 @@ describe('useCloneTool', () => {
       useCloneTool(adapter, {
         behaviors: [cloneByAltDrag()],
         pickBest: () => null,
-        drawGhost: () => {},
+        drawGhost: () => [],
         id: 'dup',
         cursor: 'crosshair',
       }),

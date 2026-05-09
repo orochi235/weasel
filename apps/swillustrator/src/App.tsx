@@ -138,21 +138,28 @@ export function App() {
       const o = itemsRef.current.find((x) => x.id === id);
       return o ? { x: o.x, y: o.y, width: o.width, height: o.height } : null;
     },
-    drawGhost: (ctx, obj, pose) => {
-      if (!obj) return;
+    drawGhost: (obj, pose): DrawCommand[] => {
+      if (!obj) return [];
       if (obj.kind === 'rect') {
-        ctx.fillStyle = obj.fill;
-        ctx.fillRect(pose.x, pose.y, pose.width, pose.height);
-        ctx.lineWidth = obj.strokeWidth;
-        ctx.strokeStyle = obj.stroke;
-        ctx.strokeRect(pose.x + 0.5, pose.y + 0.5, pose.width, pose.height);
-      } else {
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = '#888';
-        ctx.setLineDash([3, 3]);
-        ctx.strokeRect(pose.x + 0.5, pose.y + 0.5, pose.width, pose.height);
-        ctx.setLineDash([]);
+        const cmds: DrawCommand[] = [{
+          kind: 'path',
+          path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
+          fill: { color: obj.fill },
+        }];
+        if (obj.strokeWidth > 0) {
+          cmds.push({
+            kind: 'path',
+            path: { kind: 'rect', x: pose.x + 0.5, y: pose.y + 0.5, width: pose.width, height: pose.height },
+            stroke: { paint: { color: obj.stroke }, width: obj.strokeWidth },
+          });
+        }
+        return cmds;
       }
+      return [{
+        kind: 'path',
+        path: { kind: 'rect', x: pose.x + 0.5, y: pose.y + 0.5, width: pose.width, height: pose.height },
+        stroke: { paint: { color: '#888' }, width: 1, dash: [3, 3] },
+      }];
     },
     getObject: (id) => itemsRef.current.find((o) => o.id === id) ?? null,
   });

@@ -41,11 +41,7 @@ export function CloneDemo() {
       })),
   };
 
-  const drawRect = (cx: CanvasRenderingContext2D, r: Rect, p: Pose) => {
-    cx.fillStyle = r.color;
-    cx.fillRect(p.x, p.y, p.width, p.height);
-  };
-  const drawRectGL = (r: Rect, p: Pose): DrawCommand[] => [{
+  const drawRect = (r: Rect, p: Pose): DrawCommand[] => [{
     kind: 'path',
     path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
     fill: { color: r.color },
@@ -54,7 +50,6 @@ export function CloneDemo() {
   const clone = useCloneTool(adapter, {
     behaviors: [cloneByAltDrag()],
     drawOne: drawRect,
-    drawOneGL: drawRectGL,
   });
 
   const tools = useTools({ active: 'clone', registry: { clone } });

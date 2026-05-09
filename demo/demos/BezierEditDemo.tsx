@@ -4,7 +4,6 @@ import {
   PathBuilder,
   pathPoseDescriptor,
   PATH_C,
-  traceToContext,
   useSelection,
   useSelectWithAnchorEdit,
 } from '@orochi235/weasel';
@@ -81,14 +80,7 @@ export function BezierEditDemo() {
     boundsOf: (id) => (id === ID ? pathPoseDescriptor.getBounds(pathRef.current) : null),
     handleHitRadius: HANDLE / zoom,
     resize: { geometry: pathPoseDescriptor },
-    drawGhost: (cx, _o, p) => {
-      cx.strokeStyle = '#f5b7a3';
-      cx.lineWidth = 2;
-      cx.beginPath();
-      traceToContext(cx, p);
-      cx.stroke();
-    },
-    drawGhostGL: (_o, p): DrawCommand[] => [{
+    drawGhost: (_o, p): DrawCommand[] => [{
       kind: 'path',
       path: p,
       stroke: { paint: { color: '#f5b7a3' }, width: 2 },

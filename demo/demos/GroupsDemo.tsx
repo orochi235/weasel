@@ -103,12 +103,7 @@ export function GroupsDemo() {
         return expandToLeaves(ids, adapter);
       },
     },
-    drawGhost: (ctx, rect, pose) => {
-      if (!rect) return;
-      ctx.fillStyle = rect.color;
-      ctx.fillRect(pose.x, pose.y, pose.width, pose.height);
-    },
-    drawGhostGL: (rect, pose): DrawCommand[] => rect == null ? [] : [{
+    drawGhost: (rect, pose): DrawCommand[] => rect == null ? [] : [{
       kind: 'path',
       path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
       fill: { color: rect.color },

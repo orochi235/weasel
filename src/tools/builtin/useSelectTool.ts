@@ -100,18 +100,10 @@ export interface UseSelectToolOptions<TObject extends { id: string }, TPose> {
   /** Style for the rotate ghost. Same fallback chain as `resizeOverlayStyle`. */
   rotateOverlayStyle?: RotateOverlayStyle;
   /** Consumer's draw function for ghost objects (move/resize/rotate in-flight).
-   *  Same signature as the scene slot's `drawOne`. If omitted, ghosts are not
-   *  rendered (only the marquee draws). Optional only because some demos
+   *  Returns world-space DrawCommand[] for one ghost. If omitted, ghosts are
+   *  not rendered (only the marquee draws). Optional only because some demos
    *  (e.g. NestedGroupsDemo) compose ghosts via custom layers. */
   drawGhost?: (
-    ctx: CanvasRenderingContext2D,
-    obj: TObject | null,
-    pose: TPose,
-    view: { x: number; y: number; scale: number },
-  ) => void;
-  /** GL counterpart to `drawGhost`. Returns DrawCommand[] for one ghost.
-   *  Without it, ghosts are invisible under `backend='gl'` during drags. */
-  drawGhostGL?: (
     obj: TObject | null,
     pose: TPose,
     view: { x: number; y: number; scale: number },
@@ -212,7 +204,6 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
     resizeOverlayStyle: options.resizeOverlayStyle,
     rotateOverlayStyle: options.rotateOverlayStyle,
     drawGhost: options.drawGhost,
-    drawGhostGL: options.drawGhostGL,
     getObject: options.getObject,
   });
   styleRefs.current = {
@@ -221,13 +212,12 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
     resizeOverlayStyle: options.resizeOverlayStyle,
     rotateOverlayStyle: options.rotateOverlayStyle,
     drawGhost: options.drawGhost,
-    drawGhostGL: options.drawGhostGL,
     getObject: options.getObject,
   };
 
   // The layer is `space: 'screen'`. The marquee branch already lives in
-  // screen coords (via `worldToScreen`); ghosts go through `drawGhostGL`,
-  // wrapped in a world-transform group. When `drawGhostGL` is omitted,
+  // screen coords (via `worldToScreen`); ghosts go through `drawGhost`,
+  // wrapped in a world-transform group. When `drawGhost` is omitted,
   // ghosts are invisible during drag — fallback consumers can opt in via
   // SceneCanvas's preview-ghost layer driven by scene-slot `drawOne`.
   const overlay = useMemo<RenderLayer<unknown>>(
@@ -260,9 +250,9 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
           }];
         }
 
-        const drawGhostGL = refs.drawGhostGL;
+        const drawGhost = refs.drawGhost;
         const getObject = refs.getObject;
-        if (!drawGhostGL || !getObject) return [];
+        if (!drawGhost || !getObject) return [];
         const moveAlpha = refs.moveOverlayStyle?.ghostAlpha ?? 0.85;
         const resizeAlpha = refs.resizeOverlayStyle?.ghostAlpha ?? moveAlpha;
         const rotateAlpha = refs.rotateOverlayStyle?.ghostAlpha ?? moveAlpha;
@@ -273,17 +263,17 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
         if (mOv) {
           const cmds: DrawCommand[] = [];
           for (const [id, pose] of mOv.poses) {
-            for (const c of drawGhostGL(getObject(id), pose, view)) cmds.push(c);
+            for (const c of drawGhost(getObject(id), pose, view)) cmds.push(c);
           }
           return wrap(moveAlpha, cmds);
         }
         const rOv = resize.overlay;
         if (rOv) {
-          return wrap(resizeAlpha, drawGhostGL(getObject(rOv.id), rOv.currentPose, view));
+          return wrap(resizeAlpha, drawGhost(getObject(rOv.id), rOv.currentPose, view));
         }
         const rotOv = rotate.overlay;
         if (rotOv) {
-          return wrap(rotateAlpha, drawGhostGL(getObject(rotOv.id), rotOv.currentPose, view));
+          return wrap(rotateAlpha, drawGhost(getObject(rotOv.id), rotOv.currentPose, view));
         }
         return [];
       },

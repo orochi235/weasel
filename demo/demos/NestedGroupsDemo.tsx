@@ -135,11 +135,7 @@ export function NestedGroupsDemo() {
     pickEvery: () => [], // unused — pickBest takes over the body branch
     pickBest: (wx, wy, alt, sel) => hitter.pickBest(wx, wy, alt, sel),
     boundsOf: (id) => worldPoseOf(id),
-    drawGhost: (cx, _o, p) => {
-      cx.fillStyle = 'rgba(127, 176, 105, 0.35)';
-      cx.fillRect(p.x, p.y, p.width, p.height);
-    },
-    drawGhostGL: (_o, p): DrawCommand[] => [{
+    drawGhost: (_o, p): DrawCommand[] => [{
       kind: 'path',
       path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
       fill: { color: 'rgba(127, 176, 105, 0.35)' },

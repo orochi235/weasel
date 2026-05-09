@@ -483,14 +483,14 @@ describe('useSelectTool overlay', () => {
     expect(first.stroke?.width).toBe(3);
   });
 
-  it('move ghost calls drawGhostGL for each id in move.overlay.poses', () => {
-    const drawGhostGL = vi.fn((..._args: unknown[]) => [] as any[]);
+  it('move ghost calls drawGhost for each id in move.overlay.poses', () => {
+    const drawGhost = vi.fn((..._args: unknown[]) => [] as any[]);
     const getObject = vi.fn((id: string) => ({ id, x: 0, y: 0, width: 10, height: 10 }) as any);
     const { result } = renderHook(() =>
       useSelectTool(adapterFor(), {
         pickEvery: () => ['a', 'b'],
         boundsOf: () => null,
-        drawGhostGL,
+        drawGhost,
         getObject,
       }),
     );
@@ -501,10 +501,10 @@ describe('useSelectTool overlay', () => {
       result.current.drag!.onMove!(pe({ clientX: 50, clientY: 50 }), c2);
     });
     result.current.overlay!.draw(undefined, VIEW, DIMS);
-    expect(drawGhostGL).toHaveBeenCalledTimes(2);
+    expect(drawGhost).toHaveBeenCalledTimes(2);
   });
 
-  it('move ghost skips silently when drawGhostGL or getObject are missing', () => {
+  it('move ghost skips silently when drawGhost or getObject are missing', () => {
     const { result } = renderHook(() =>
       useSelectTool(adapterFor(), {
         pickEvery: () => ['a'],
@@ -524,13 +524,13 @@ describe('useSelectTool overlay', () => {
     expect(() => result.current.overlay!.draw(undefined, VIEW, DIMS)).not.toThrow();
   });
 
-  it('resize ghost calls drawGhostGL once with resize.overlay.currentPose', () => {
-    const drawGhostGL = vi.fn((..._args: unknown[]) => [] as any[]);
+  it('resize ghost calls drawGhost once with resize.overlay.currentPose', () => {
+    const drawGhost = vi.fn((..._args: unknown[]) => [] as any[]);
     const { result } = renderHook(() =>
       useSelectTool(adapterFor(), {
         pickEvery: () => [],
         boundsOf: () => ({ x: 0, y: 0, width: 100, height: 100 }),
-        drawGhostGL,
+        drawGhost,
         getObject: (id) => ({ id, x: 0, y: 0, width: 100, height: 100 }) as any,
       }),
     );
@@ -545,12 +545,12 @@ describe('useSelectTool overlay', () => {
       );
     });
     result.current.overlay!.draw(undefined, VIEW, DIMS);
-    expect(drawGhostGL).toHaveBeenCalledTimes(1);
-    expect(drawGhostGL.mock.calls[0][1]).toEqual({ x: 0, y: 0, width: 10, height: 10 });
+    expect(drawGhost).toHaveBeenCalledTimes(1);
+    expect(drawGhost.mock.calls[0][1]).toEqual({ x: 0, y: 0, width: 10, height: 10 });
   });
 
-  it('rotate ghost calls drawGhostGL once with rotate.overlay.currentPose', () => {
-    const drawGhostGL = vi.fn((..._args: unknown[]) => [] as any[]);
+  it('rotate ghost calls drawGhost once with rotate.overlay.currentPose', () => {
+    const drawGhost = vi.fn((..._args: unknown[]) => [] as any[]);
     const { result } = renderHook(() =>
       useSelectTool(adapterFor({
         getPose: (_id: string) => ({ x: 0, y: 0, width: 10, height: 10, rotation: 0 }),
@@ -558,7 +558,7 @@ describe('useSelectTool overlay', () => {
       }), {
         pickEvery: () => [],
         boundsOf: () => ({ x: 0, y: 0, width: 100, height: 100 }),
-        drawGhostGL,
+        drawGhost,
         getObject: (id) => ({ id, x: 0, y: 0, width: 10, height: 10, rotation: 0 }) as any,
       }),
     );
@@ -573,12 +573,12 @@ describe('useSelectTool overlay', () => {
       );
     });
     result.current.overlay!.draw(undefined, VIEW, DIMS);
-    expect(drawGhostGL).toHaveBeenCalledTimes(1);
-    expect(drawGhostGL.mock.calls[0][1]).toMatchObject({ rotation: 0 });
+    expect(drawGhost).toHaveBeenCalledTimes(1);
+    expect(drawGhost.mock.calls[0][1]).toMatchObject({ rotation: 0 });
   });
 
   it('moveOverlayStyle.ghostAlpha overrides default 0.85', () => {
-    const drawGhostGL = vi.fn(() => [{
+    const drawGhost = vi.fn(() => [{
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
       fill: { color: '#000' },
@@ -587,7 +587,7 @@ describe('useSelectTool overlay', () => {
       useSelectTool(adapterFor(), {
         pickEvery: () => ['a'],
         boundsOf: () => null,
-        drawGhostGL,
+        drawGhost,
         getObject: (id) => ({ id, x: 0, y: 0, width: 10, height: 10 }) as any,
         moveOverlayStyle: { ghostAlpha: 0.5 },
       }),
