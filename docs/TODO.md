@@ -20,7 +20,7 @@ Spec: `docs/superpowers/specs/2026-05-08-webgl-transition-plan-design.md`. Archi
 - [x] Step 7 — Port built-in layers shipped 2026-05-09 (`docs/superpowers/plans/2026-05-09-webgl-step-7-done.md`)
 - [x] Step 8 — Canvas component port + `backend` prop soak shipped 2026-05-09 (`docs/superpowers/plans/2026-05-09-webgl-step-8-done.md`)
 - [x] Step 9 — Visual regression rig + demo soak shipped 2026-05-09 (`docs/superpowers/plans/2026-05-09-webgl-step-9-done.md`)
-- [ ] Step 10 — Final swap (delete 2D, rename `weasel-gl` → `weasel`, major version bump) (plan TBW)
+- [x] Step 10 — Final swap shipped 2026-05-09 (`docs/superpowers/plans/2026-05-09-webgl-step-10-done.md`)
 
 Items deferred from the spec:
 
