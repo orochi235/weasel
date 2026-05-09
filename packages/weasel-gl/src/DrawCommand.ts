@@ -1,4 +1,4 @@
-import type { Path, Stroke } from '@orochi235/weasel';
+import type { Path, Stroke, TextStyle } from '@orochi235/weasel';
 import type { Mat3 } from './mat3';
 
 /**
@@ -12,8 +12,8 @@ export interface SolidPaint {
   opacity?: number;
 }
 
-/** DrawCommand variants implemented through step 2 (path + stroke + group). */
-export type DrawCommand = PathDrawCommand | GroupDrawCommand;
+/** DrawCommand variants implemented through step 3 (path + stroke + group + text). */
+export type DrawCommand = PathDrawCommand | GroupDrawCommand | TextDrawCommand;
 
 export interface PathDrawCommand {
   kind: 'path';
@@ -28,4 +28,21 @@ export interface GroupDrawCommand {
   transform?: Mat3;
   alpha?: number;
   children: DrawCommand[];
+}
+
+/**
+ * Text draw command. Renders `text` at (`x`, `y`) in screen space.
+ *
+ * `style.fontFamily` must match a family registered via `registerFont()`.
+ * If the font isn't registered yet, `drawText` logs a warning and skips.
+ *
+ * Step 3 scope: single-line, left-to-right, ASCII + Latin-1 only.
+ * Multi-line wrapping lands in step 7 (port of createTextLayer).
+ */
+export interface TextDrawCommand {
+  kind: 'text';
+  x: number;
+  y: number;
+  text: string;
+  style: TextStyle;
 }
