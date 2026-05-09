@@ -27,6 +27,7 @@ export interface Bounds {
   y: number;
   width: number;
   height: number;
+  rotation?: number;
 }
 
 /** Synthetic id used by `<Canvas selectionMode="multi">` to address the

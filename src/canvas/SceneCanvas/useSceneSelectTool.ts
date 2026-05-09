@@ -181,7 +181,15 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     return (id: string): Bounds | null => {
       if (boundsOfProp) return boundsOfProp(id);
       const n = scene.get(asNodeId(id));
-      return n ? aabbOfPose(n.pose) : null;
+      if (!n) return null;
+      const b = aabbOfPose(n.pose);
+      // Surface rotation to the overlay directly from the pose. Independent
+      // of any gesture-side descriptor (notably `selectTool.resize.geometry`,
+      // which the rotated-resize math demo deliberately subverts to
+      // demonstrate counterexamples — the overlay must keep showing the
+      // rect's true rotation regardless).
+      const rot = (n.pose as { rotation?: number }).rotation;
+      return rot ? { ...b, rotation: rot } : b;
     };
   }, [scene, boundsOfProp]);
 

@@ -429,7 +429,11 @@ function handleCommandsFor(
   return out;
 }
 
-/** GL helper: emit the rotation chevron commands for one bounds entry. */
+/** GL helper: emit a curved double-headed arrow indicating bidirectional
+ *  rotation. The arc opens *toward* the object (apex on top, mouth pointing
+ *  down) so the affordance reads as a small "rotate" badge sitting above
+ *  the rect. Two arrowheads at the arc endpoints point along the tangent,
+ *  signaling that rotation goes either direction. */
 function rotationHandleCommands(
   worldB: Bounds | RotatedBounds,
   handles: ResolvedHandles,
@@ -441,26 +445,89 @@ function rotationHandleCommands(
   const t = viewToTransform(view);
   const [scx, scy] = worldToScreen(hWorld.cx, hWorld.cy, t);
   const size = handles.size;
-  const half = size / 2;
-  const armLen = size;
-  const armDx = armLen * Math.sin(Math.PI / 3);
-  const armDy = armLen * Math.cos(Math.PI / 3);
-  const chevronStroke: Stroke = {
+  const arcRadius = size;
+  // Arc spans ~240° (from 150° to -30° measured from arc center, going
+  // CCW). The arc center is the handle anchor; the arc itself bulges
+  // *toward the rect* (downward, since the handle sits above the AABB).
+  const ARC_HALF_ANGLE = (Math.PI * 240) / 360 / 2; // 120°
+  const N_SEGS = 18;
+  const arcWidth = (handles.outline.width ?? 1) * 1.5;
+  const stroke: Stroke = {
     paint: handles.fill,
-    width: (handles.outline.width ?? 1) * 2,
+    width: arcWidth,
     cap: 'round',
     join: 'round',
   };
-  // Two-segment polyline in the chevron-local frame: (-armDx, half-armDy) →
-  // (0, half) → (armDx, half-armDy). Wrapped in a group whose transform
-  // moves the local frame to the world-projected handle center, with
-  // optional rotation.
-  const path: PolygonPath = {
+  // Build the arc as a polyline in handle-local coords. Arc bulges *away*
+  // from the rect (upward in canvas space, since the handle sits above the
+  // AABB top edge): apex at -y, endpoints at +y near the rect side.
+  const cmds: number[] = [PATH_M];
+  const xs: number[] = [];
+  const ys: number[] = [];
+  for (let i = 0; i <= N_SEGS; i++) {
+    const t = i / N_SEGS;
+    const angle = ARC_HALF_ANGLE - t * ARC_HALF_ANGLE * 2;
+    xs.push(arcRadius * Math.sin(angle));
+    ys.push(-arcRadius * Math.cos(angle));
+    if (i > 0) cmds.push(PATH_L);
+  }
+  const arcCoords: number[] = [];
+  for (let i = 0; i < xs.length; i++) {
+    arcCoords.push(xs[i], ys[i]);
+  }
+  const arcPath: PolygonPath = {
     kind: 'polygon',
-    commands: new Uint8Array([PATH_M, PATH_L, PATH_L]),
-    coords: new Float32Array([-armDx, half - armDy, 0, half, armDx, half - armDy]),
+    commands: new Uint8Array(cmds),
+    coords: new Float32Array(arcCoords),
     fillRule: 'nonzero',
   };
+  // Arrowheads: small filled triangles at each endpoint, pointing along
+  // the tangent (away from the arc body). Tangent at endpoint = derivative
+  // of (sin(angle), cos(angle)) wrt angle = (cos(angle), -sin(angle)).
+  // At +ARC_HALF_ANGLE the tangent points "outward and slightly up"; at
+  // -ARC_HALF_ANGLE the tangent points the other way.
+  const headLen = size * 0.6;
+  const headWidth = size * 0.4;
+  const arrowHead = (endX: number, endY: number, tx: number, ty: number): PolygonPath => {
+    // Normalize tangent.
+    const len = Math.hypot(tx, ty) || 1;
+    const ux = tx / len;
+    const uy = ty / len;
+    // Perpendicular (rotate tangent 90° CCW).
+    const px = -uy;
+    const py = ux;
+    // Triangle: tip is endX+ux*headLen, base is endX (with +/- headWidth/2 along p).
+    const tipX = endX + ux * headLen;
+    const tipY = endY + uy * headLen;
+    const baseLeftX = endX + px * (headWidth / 2);
+    const baseLeftY = endY + py * (headWidth / 2);
+    const baseRightX = endX - px * (headWidth / 2);
+    const baseRightY = endY - py * (headWidth / 2);
+    return {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L]),
+      coords: new Float32Array([tipX, tipY, baseLeftX, baseLeftY, baseRightX, baseRightY, tipX, tipY]),
+      fillRule: 'nonzero',
+    };
+  };
+  // Endpoint A (right side, angle = +ARC_HALF_ANGLE). Arc point:
+  // (sin(a)·R, -cos(a)·R). Tangent (d/da) = (cos(a)·R, sin(a)·R) — points
+  // outward/down at the right end. Use as "rotate further clockwise" arrow.
+  const angleA = ARC_HALF_ANGLE;
+  const endAX = arcRadius * Math.sin(angleA);
+  const endAY = -arcRadius * Math.cos(angleA);
+  const tangentAX = Math.cos(angleA);
+  const tangentAY = Math.sin(angleA);
+  // Endpoint B (left side, angle = -ARC_HALF_ANGLE): tangent in the
+  // outward direction is the negation of the above.
+  const angleB = -ARC_HALF_ANGLE;
+  const endBX = arcRadius * Math.sin(angleB);
+  const endBY = -arcRadius * Math.cos(angleB);
+  const tangentBX = -Math.cos(angleB);
+  const tangentBY = -Math.sin(angleB);
+  const headA = arrowHead(endAX, endAY, tangentAX, tangentAY);
+  const headB = arrowHead(endBX, endBY, tangentBX, tangentBY);
+  const headFill: Paint = handles.fill;
   // Build transform: translate(scx, scy) [* rotate(rotation)].
   let transform = mat3.translate(mat3.identity(), scx, scy);
   if (rotation !== 0) {
@@ -473,7 +540,11 @@ function rotationHandleCommands(
     {
       kind: 'group',
       transform,
-      children: [{ kind: 'path', path, stroke: chevronStroke }],
+      children: [
+        { kind: 'path', path: arcPath, stroke },
+        { kind: 'path', path: headA, fill: headFill },
+        { kind: 'path', path: headB, fill: headFill },
+      ],
     },
   ];
 }
