@@ -21,10 +21,8 @@
 import { forwardRef, useCallback, useMemo, useRef } from 'react';
 import type React from 'react';
 import type { ReactNode } from 'react';
-import {
-  useAction,
-  type Action, type ActionsProp,
-} from '../interactions/actions/registry';
+import { type ActionsProp } from '../interactions/actions/registry';
+import { useStandardActions } from '../interactions/actions/useStandardActions';
 import { translateRectPose } from '../features/groups/composePose';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap } from './Canvas';
@@ -47,7 +45,7 @@ import { ActionsProviderIfRoot } from './SceneCanvas/ActionsProviderIfRoot';
 import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
 import { useViewportTools } from './SceneCanvas/useViewportTools';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
-import { resolveActions, type StandardActionsDeps } from '../interactions/actions/resolveActions';
+import type { StandardActionsDeps, StandardActionDefaults } from '../interactions/actions/resolveActions';
 
 export type SceneCanvasProps<TData, TLayer extends string, TPose> =
   Omit<
@@ -256,53 +254,43 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     previewGhost: { layer: previewLayer, after: 'scene' },
   }), [layers, previewLayer]);
 
-  // Resolved action set: build defaults from synthesized deps, then apply the
-  // consumer's `actions` prop per spec §D resolution rules.
-  //
-  // Identity stability matters here: if `scene`/`selection`/`adapter` enter
-  // the deps array, animated demos that change them every render trigger
-  // 13 re-registrations × 60fps = ~780 register ops/sec, plus closure churn.
-  // Instead, we close over refs (read fresh every action invocation) and
-  // memoize on stable inputs only (actions / actionDefaults).
+  // Standard-action deps: closures over the live scene / selection / adapter
+  // so the resolved actions always read current state. `useStandardActions`
+  // stabilizes via refs internally — these closures are passed every render
+  // but the registered Action descriptors are not re-registered.
   const sceneRef = useRef(scene);
   sceneRef.current = scene;
-  const selectionRef = useRef(selection);
-  selectionRef.current = selection;
   const adapterRef = useRef(adapter);
   adapterRef.current = adapter;
+  const selectionRef = useRef(selection);
+  selectionRef.current = selection;
 
-  const resolvedActions = useMemo<Action[]>(() => {
-    const deps: StandardActionsDeps<TPose> = {
-      setSelection: (ids) => selectionRef.current.adapterMethods.setSelection(ids),
-      getSelection: () => selectionRef.current.current,
-      listAll: () => {
-        const out: string[] = [];
-        for (const nid of sceneRef.current.renderOrder()) out.push(String(nid));
-        return out;
-      },
-      getPose: (id) => {
-        const n = sceneRef.current.get(asNodeId(id));
-        return n?.pose as TPose;
-      },
-      applyBatch: (ops: Op[], label?: string) => {
-        const a = adapterRef.current;
-        if (typeof (a as { applyBatch?: unknown }).applyBatch === 'function') {
-          (a as { applyBatch: (ops: Op[], label: string) => void }).applyBatch(ops, label ?? '');
-        } else {
-          for (const op of ops) op.apply(a);
-        }
-      },
-      translatePose: (p, dx, dy) =>
-        translateRectPose(
-          p as unknown as { x: number; y: number; width: number; height: number },
-          dx, dy,
-        ) as unknown as TPose,
-    };
-    return resolveActions<TPose>(deps, {
-      ...(actions !== undefined ? { actions } : {}),
-      ...(actionDefaults ? { defaults: actionDefaults } : {}),
-    });
-  }, [actions, actionDefaults]);
+  const standardActionsDeps = useMemo<StandardActionsDeps<TPose>>(() => ({
+    setSelection: (ids) => selectionRef.current.adapterMethods.setSelection(ids),
+    getSelection: () => selectionRef.current.current,
+    listAll: () => {
+      const out: string[] = [];
+      for (const nid of sceneRef.current.renderOrder()) out.push(String(nid));
+      return out;
+    },
+    getPose: (id) => {
+      const n = sceneRef.current.get(asNodeId(id));
+      return n?.pose as TPose;
+    },
+    applyBatch: (ops: Op[], label?: string) => {
+      const a = adapterRef.current;
+      if (typeof (a as { applyBatch?: unknown }).applyBatch === 'function') {
+        (a as { applyBatch: (ops: Op[], label: string) => void }).applyBatch(ops, label ?? '');
+      } else {
+        for (const op of ops) op.apply(a);
+      }
+    },
+    translatePose: (p, dx, dy) =>
+      translateRectPose(
+        p as unknown as { x: number; y: number; width: number; height: number },
+        dx, dy,
+      ) as unknown as TPose,
+  }), []);
 
   // Merge the forwarded ref with our internalCanvasRef so usePinchZoomTool
   // can read the canvas element even when the consumer also forwards a ref.
@@ -334,14 +322,32 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   return (
     <ActionsProviderIfRoot>
       {canvas}
-      {resolvedActions.map((a) => <ActionRegistrar key={a.id} action={a} />)}
+      <StandardActionsRegistrar
+        deps={standardActionsDeps}
+        actions={actions}
+        defaults={actionDefaults}
+      />
       {children}
     </ActionsProviderIfRoot>
   );
 }
 
-function ActionRegistrar({ action }: { action: Action }) {
-  useAction(action);
+/**
+ * Registers the kit's default action set into whatever `<ActionsProvider>`
+ * is in scope. Lives inside `<ActionsProviderIfRoot>` so it sees both
+ * parent-supplied registries and SceneCanvas's auto-mounted one.
+ */
+function StandardActionsRegistrar<TPose>({
+  deps, actions, defaults,
+}: {
+  deps: StandardActionsDeps<TPose>;
+  actions: ActionsProp | undefined;
+  defaults: StandardActionDefaults<TPose> | undefined;
+}) {
+  useStandardActions(deps, {
+    ...(actions !== undefined ? { actions } : {}),
+    ...(defaults !== undefined ? { defaults } : {}),
+  });
   return null;
 }
 
