@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from './geometry';
-import type { ResizePose } from '../types';
+import { RECT_POSE_DESCRIPTOR, ROTATED_POSE_DESCRIPTOR, type PoseDescriptor } from './geometry';
+import type { ResizePose, RotatedPose } from '../types';
 
 describe('RECT_POSE_DESCRIPTOR.getBounds', () => {
   it('returns the pose itself (identity projection)', () => {
@@ -135,5 +135,37 @@ describe('RECT_POSE_DESCRIPTOR type inference', () => {
     expect(out.meta).toEqual({ tag: 't' });
     expect(out.width).toBe(20);
     expect(geom.getBounds(pose)).toBe(pose);
+  });
+});
+
+describe('ROTATED_POSE_DESCRIPTOR', () => {
+  const pose: RotatedPose = { x: 5, y: 6, width: 10, height: 20, rotation: Math.PI / 3 };
+
+  it('getRotation reads pose.rotation', () => {
+    expect(ROTATED_POSE_DESCRIPTOR.getRotation!(pose)).toBe(Math.PI / 3);
+  });
+
+  it('getBounds reads x/y/width/height (rotation ignored)', () => {
+    const bounds = ROTATED_POSE_DESCRIPTOR.getBounds(pose);
+    expect(bounds.x).toBe(5);
+    expect(bounds.y).toBe(6);
+    expect(bounds.width).toBe(10);
+    expect(bounds.height).toBe(20);
+  });
+
+  it('remapBounds preserves rotation field across rect→rect remap', () => {
+    const src = { x: 5, y: 6, width: 10, height: 20 };
+    const dst = { x: 0, y: 0, width: 20, height: 40 };
+    const out = ROTATED_POSE_DESCRIPTOR.remapBounds(pose, src, dst);
+    expect(out.rotation).toBe(Math.PI / 3);
+    expect(out.x).toBe(0);
+    expect(out.width).toBe(20);
+  });
+
+  it('translate preserves rotation field', () => {
+    const out = ROTATED_POSE_DESCRIPTOR.translate!(pose, 1, 2);
+    expect(out.rotation).toBe(Math.PI / 3);
+    expect(out.x).toBe(6);
+    expect(out.y).toBe(8);
   });
 });

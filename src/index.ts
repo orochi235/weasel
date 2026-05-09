@@ -334,6 +334,7 @@ export type {
 export {
   useResize,
   RECT_POSE_DESCRIPTOR,
+  ROTATED_POSE_DESCRIPTOR,
   cornerResizeHandles,
   hitCornerHandle,
 } from './interactions/gestures/resize';

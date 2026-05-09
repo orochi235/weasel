@@ -1,4 +1,4 @@
-import type { ResizePose } from '../types';
+import type { ResizePose, RotatedPose } from '../types';
 
 /**
  * Bridges arbitrary `TPose` shapes into the resize hook's bounds-driven math.
@@ -26,6 +26,13 @@ export interface PoseDescriptor<TPose> {
   /** Interpolate between two poses. Optional — animation helpers fall back to
    *  rect-shape lerp when omitted (which fails for non-rect poses). */
   lerp?(a: TPose, b: TPose, t: number): TPose;
+  /** Read the pose's rotation in radians. Pivot is the AABB center
+   *  (`getBounds(pose)` center). Default 0 when omitted — descriptor
+   *  declares "this pose has no rotation." When supplied and non-zero,
+   *  `useResize` projects the drag delta into the leaf's local frame,
+   *  runs anchor math there, and translates the resulting pose so the
+   *  diagonally opposite world-space corner is pinned. */
+  getRotation?(pose: TPose): number;
 }
 
 /** AABB-vs-AABB overlap. Exported for callers building a default
@@ -58,4 +65,18 @@ export const RECT_POSE_DESCRIPTOR: PoseDescriptor<ResizePose> = {
     width: a.width + (b.width - a.width) * t,
     height: a.height + (b.height - a.height) * t,
   }),
+};
+
+/** Identity geometry for `RotatedPose`. Inherits rect-shape projection
+ *  from `RECT_POSE_DESCRIPTOR` (the `RotatedPose extends ResizePose`
+ *  subtype lets the rect descriptor's methods apply directly; `remapBounds`
+ *  preserves the `rotation` field via `...p` spread). Adds `getRotation` so
+ *  `useResize` knows to take the rotation-aware math path. */
+export const ROTATED_POSE_DESCRIPTOR: PoseDescriptor<RotatedPose> = {
+  getBounds: RECT_POSE_DESCRIPTOR.getBounds as PoseDescriptor<RotatedPose>['getBounds'],
+  remapBounds: RECT_POSE_DESCRIPTOR.remapBounds as PoseDescriptor<RotatedPose>['remapBounds'],
+  translate: RECT_POSE_DESCRIPTOR.translate as PoseDescriptor<RotatedPose>['translate'],
+  intersectsRect: RECT_POSE_DESCRIPTOR.intersectsRect as PoseDescriptor<RotatedPose>['intersectsRect'],
+  lerp: RECT_POSE_DESCRIPTOR.lerp as PoseDescriptor<RotatedPose>['lerp'],
+  getRotation: (p) => p.rotation,
 };
