@@ -223,3 +223,5 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
 - TODO/FIXME scan inside `src/` — *not yet done.*
 - JSDoc audit on the barrel (`src/index.ts`) — *not yet done.*
 - README pitch — *initial draft landed; the `docs/` long-form sweep was completed (all hook names and import paths match the post-extraction surface).*
+
+- **`gen:font` script.** Was at `packages/weasel-gl/scripts/gen-font.ts`; deleted in Step 10. If we ever regenerate the Inter MSDF atlas, restore the script under `scripts/gen-font.ts` at repo root using `msdf-bmfont-xml`. The current atlas (`assets/fonts/inter/inter.{json,png}`) was regenerated cleanly so the script is not on the critical path.

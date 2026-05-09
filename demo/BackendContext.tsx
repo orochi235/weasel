@@ -36,7 +36,7 @@ export function BackendProvider({ children }: { children: ReactNode }) {
     // Register the inter MSDF atlas under both 'sans-serif' (default
     // fontFamily of resolveTextStyle) and 'Inter' so demos that use either
     // get glyphs under backend='gl'. The font assets are served from
-    // packages/weasel-gl/fonts via the publicDir override in vite.config.ts.
+    // assets/fonts via the publicDir override in vite.config.ts.
     const base = `${import.meta.env.BASE_URL}inter`;
     Promise.all([
       registerFont('sans-serif', `${base}/inter.json`, `${base}/inter.png`),
