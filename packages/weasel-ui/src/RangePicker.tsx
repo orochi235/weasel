@@ -291,6 +291,14 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
       style={trackHeight !== undefined ? ({ ['--rp-track-height' as string]: `${trackHeight}px` } as CSSProperties) : undefined}
     >
       <div className={s.track} ref={trackRef} onPointerDown={onTrackPointerDown}>
+        {props.renderTrack && (
+          <div className={s.trackInner}>
+            {props.renderTrack({
+              trackWidth: trackRef.current?.getBoundingClientRect().width ?? 0,
+              valueToFraction,
+            })}
+          </div>
+        )}
         {thumbs.map((thumb, i) => (
           <div
             key={i}

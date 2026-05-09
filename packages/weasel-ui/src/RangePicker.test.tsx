@@ -453,3 +453,23 @@ describe('RangePicker allowShiftAll', () => {
     fireEvent.pointerUp(document, { pointerId: 1, shiftKey: true });
   });
 });
+
+describe('RangePicker renderTrack', () => {
+  it('invokes renderTrack with a TrackCtx and renders its output behind thumbs', () => {
+    const renderTrack = vi.fn(() => <div data-testid="custom-track">painted</div>);
+    const { getByTestId } = render(
+      <RangePicker
+        min={0}
+        max={1}
+        thumbs={[{ value: 0.5 }]}
+        onChange={() => {}}
+        renderTrack={renderTrack}
+      />,
+    );
+    expect(renderTrack).toHaveBeenCalled();
+    const arg = renderTrack.mock.calls[0][0];
+    expect(typeof arg.valueToFraction).toBe('function');
+    expect(arg.valueToFraction(0.5)).toBeCloseTo(0.5, 5);
+    expect(getByTestId('custom-track')).toBeTruthy();
+  });
+});
