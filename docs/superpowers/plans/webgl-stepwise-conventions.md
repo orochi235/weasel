@@ -220,6 +220,38 @@ The "real" verification is always Playwright (convention §1) — jsdom unit tes
 
 ---
 
+## 17. Audit *every* layer for `drawGL`, not just the public ones
+
+**Status:** confirmed in step 9 (the hard way).
+**Where it bites:** any future step that depends on "the GL backend renders all layers correctly."
+
+Step 7 ported the eight **public** layer factories (`createPathLayer`, `createTextLayer`, `createGridLayer`, `createCellHighlightLayer`, `createChildrenLayer`, `createSelectionOverlayLayer`, `createPenPreviewLayer`, `createDebugOverlayLayer`). Step 8's done note flagged that two **system layers** inside `SceneCanvas` (`preview-ghost`, `select-overlay`) didn't have `drawGL`. Step 9 then proceeded with the visual regression rig assuming the rest of the surface was covered. It wasn't:
+
+- `buildSceneLayer` (the scene slot wrapper inside `Canvas.tsx`) wraps consumer-supplied `drawOne` callbacks — every demo's actual scene content. No `drawGL` until step 9 added `SceneSlotConfig.drawOneGL?`.
+- Tool/gesture **internal overlay layers** were never audited:
+  - `defineDragInsertTool` (insert/text marquee)
+  - `useRectTool` (rect-tool marquee)
+  - `useSelectTool` (area-select marquee + ghost branches)
+  - `useCloneTool` (clone preview)
+  - `createAnchorEditOverlayLayer` (bezier edit)
+
+Result: every demo showed empty content under `backend='gl'`. The Step 9 visual rig couldn't have produced meaningful diffs even if baselines existed.
+
+**Required:** before declaring "the GL backend works," run an exhaustive grep audit:
+
+```bash
+# Files with a 2D draw callback but no drawGL
+grep -rl "draw: (ctx\|draw: function\|draw(ctx" src/ --include="*.ts" --include="*.tsx" \
+  | xargs grep -L "drawGL" \
+  | grep -v test
+```
+
+Plus search for `RenderLayer<` declarations and `draw:` properties using varied parameter names (`cx`, `ctx`, etc.). The grep above misses `draw: (cx, ...)` style — vary the regex to catch all conventions used in the codebase.
+
+This audit must happen **before** the GL backend's correctness is asserted, not after. The grep is cheap; the alternative is a soak window that can't actually soak because the rendering surface is incomplete.
+
+---
+
 ## How to update this doc
 
 Each per-step done note adds new lessons. At the end of each step, the controller folds applicable new lessons into the relevant section above and adds a new section if the lesson doesn't fit existing categories. Update the **Status** date and **Where it bites** line to keep entries scannable.
