@@ -109,47 +109,56 @@ function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
   }
 
   // nonzero compound-path tessellation:
-  //   - CCW contours (signed area > 0) are positive (filled).
-  //   - CW contours (signed area < 0) are holes; each is grouped with
-  //     the smallest positive contour that contains its first vertex.
+  //   - The first contour establishes the reference winding direction.
+  //   - Subsequent contours with the SAME winding as the first are positives
+  //     (filled, disjoint shapes).
+  //   - Subsequent contours with OPPOSITE winding are holes; each is grouped
+  //     with the smallest positive whose polygon contains its first vertex.
   //   - Each (positive, [its holes]) group is earcut'd independently;
   //     triangles concatenated.
-  // The previous implementation passed every subsequent contour as a
-  // hole regardless of winding, which broke any path with multiple
-  // disjoint positive contours (e.g. a duck with body + head + beak,
-  // a hamburglar with hat brim + crown + cape).
+  // Authors mostly write disjoint-positives-with-same-winding; the previous
+  // implementation passed every subsequent contour as a hole, which broke
+  // those (a duck with body+head+beak, a hamburglar with brim+crown+cape).
+  // Using shoelace sign relative to the first contour avoids guessing about
+  // screen-down vs math-up axis conventions.
   const totalVerts = coords.length / 2;
   const contourEnd = (i: number): number =>
     i + 1 < contourStarts.length ? contourStarts[i + 1] : totalVerts;
 
+  if (contourStarts.length <= 1) {
+    const tri = earcut(coords);
+    return { vertices: new Float32Array(coords), indices: new Uint32Array(tri) };
+  }
+
   const areas: number[] = contourStarts.map((s, i) => signedArea(coords, s, contourEnd(i)));
+  const refSign = Math.sign(areas[0]) || 1;
 
   const positives: number[] = [];
   const negatives: number[] = [];
   for (let i = 0; i < contourStarts.length; i++) {
-    if (areas[i] > 0) positives.push(i);
-    else if (areas[i] < 0) negatives.push(i);
+    if (areas[i] === 0) continue; // degenerate
+    if (Math.sign(areas[i]) === refSign) positives.push(i);
+    else negatives.push(i);
   }
 
-  if (positives.length <= 1) {
-    // Single positive (or all-negative degenerate); preserve previous
-    // earcut-with-holes behavior on the whole vertex buffer.
+  if (positives.length === 1 && negatives.length > 0) {
+    // Classic outer-with-holes pattern; pass directly to earcut.
     const holeIndices = contourStarts.slice(1);
-    const tri = earcut(coords, holeIndices.length > 0 ? holeIndices : undefined);
+    const tri = earcut(coords, holeIndices);
     return { vertices: new Float32Array(coords), indices: new Uint32Array(tri) };
   }
 
-  // Multiple positives: group each negative with its containing positive
-  // (smallest-area positive whose polygon contains the negative's first vertex).
+  // Group each hole with the smallest positive that contains its first vertex.
   const holesByPositive = new Map<number, number[]>();
   for (const n of negatives) {
     const px = coords[contourStarts[n] * 2];
     const py = coords[contourStarts[n] * 2 + 1];
     let bestPos = -1;
-    let bestArea = Infinity;
+    let bestAbsArea = Infinity;
     for (const pos of positives) {
-      if (areas[pos] < bestArea && pointInContour(coords, contourStarts[pos], contourEnd(pos), px, py)) {
-        bestArea = areas[pos];
+      const absArea = Math.abs(areas[pos]);
+      if (absArea < bestAbsArea && pointInContour(coords, contourStarts[pos], contourEnd(pos), px, py)) {
+        bestAbsArea = absArea;
         bestPos = pos;
       }
     }
@@ -160,8 +169,7 @@ function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
     }
   }
 
-  // Build (coords, indices) by iterating positives and appending each
-  // (positive + its holes) group as an independent earcut run.
+  // Build (coords, indices) by iterating positives.
   const finalCoords: number[] = [];
   const finalIndices: number[] = [];
   for (const pos of positives) {
