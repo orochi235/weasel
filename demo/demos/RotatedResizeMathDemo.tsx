@@ -22,7 +22,7 @@ import type { ResizeAdapter } from '@orochi235/weasel';
 import type { DrawCommand } from '@orochi235/weasel-gl';
 
 type RectScene = ReturnType<typeof useScene<Rect>>;
-type PanelId = 'green' | 'orange' | 'purple';
+type PanelId = 'green' | 'orange' | 'purple' | 'teal';
 
 interface Rect extends RotatedPose {
   id: string;
@@ -34,6 +34,7 @@ const W = 320, H = 240, HANDLE = 8;
 const INITIAL_GREEN: Rect[] = [{ id: 'a', x: 80, y: 70, width: 160, height: 100, rotation: Math.PI / 6, color: '#7fb069' }];
 const INITIAL_ORANGE: Rect[] = [{ id: 'a', x: 80, y: 70, width: 160, height: 100, rotation: Math.PI / 6, color: '#d4a574' }];
 const INITIAL_PURPLE: Rect[] = [{ id: 'a', x: 80, y: 70, width: 160, height: 100, rotation: Math.PI / 6, color: '#a48bd4' }];
+const INITIAL_TEAL: Rect[] = [{ id: 'a', x: 80, y: 70, width: 160, height: 100, rotation: Math.PI / 6, color: '#5b9aa0' }];
 
 function drawRect(_node: unknown, p: Rect): DrawCommand[] {
   const cxw = p.x + p.width / 2;
@@ -85,10 +86,21 @@ const NO_CORRECTION_DESCRIPTOR = {
   translate: (p: RotatedPose) => p,  // no-op
 } as unknown as PoseDescriptor<Rect>;
 
-// TODO(rotated-resize): add a third counterexample that demonstrates
-// rotation-pivot drift (re-applying rotation around the post-resize AABB
-// center each frame). Requires a custom gesture controller; defer to a
-// follow-up demo iteration.
+/** Subverted descriptor: full math runs (projection + correction), but
+ *  `remapBounds` couples the rotation property to the AABB diagonal angle,
+ *  which changes whenever the aspect ratio does. Visible failure: as you
+ *  resize, the rect rotates — the rotation pivot effectively follows the
+ *  diagonal as the rect's shape changes. The kit's correct behavior keeps
+ *  rotation orthogonal to bounds so the gesture only changes shape. */
+const COUPLED_ROTATION_DESCRIPTOR = {
+  ...ROTATED_POSE_DESCRIPTOR,
+  remapBounds: (origin: Rect, originBounds: { x: number; y: number; width: number; height: number }, newBounds: { x: number; y: number; width: number; height: number }): Rect => {
+    const base = (ROTATED_POSE_DESCRIPTOR as unknown as PoseDescriptor<Rect>).remapBounds(origin, originBounds, newBounds);
+    const originDiag = Math.atan2(originBounds.height, originBounds.width);
+    const newDiag = Math.atan2(newBounds.height, newBounds.width);
+    return { ...base, rotation: base.rotation + (newDiag - originDiag) };
+  },
+} as unknown as PoseDescriptor<Rect>;
 
 function LedgerCaption({ scene, anchor }: { scene: RectScene; anchor: { x: 'min' | 'max'; y: 'min' | 'max' } }) {
   const node = scene.get(asNodeId('a'));
@@ -253,18 +265,19 @@ function Panel({
  *  controller's overlay) are shown instead of the committed scene poses, so
  *  the divergence animates in real time rather than only on release. */
 function StackedOverlayPanel({
-  green, orange, purple, ghosts,
+  green, orange, purple, teal, ghosts,
 }: {
-  green: RectScene; orange: RectScene; purple: RectScene;
-  ghosts: { green: Rect | null; orange: Rect | null; purple: Rect | null };
+  green: RectScene; orange: RectScene; purple: RectScene; teal: RectScene;
+  ghosts: { green: Rect | null; orange: Rect | null; purple: Rect | null; teal: Rect | null };
 }) {
   useSyncExternalStore(green.subscribe, green.getVersion, green.getVersion);
   useSyncExternalStore(orange.subscribe, orange.getVersion, orange.getVersion);
   useSyncExternalStore(purple.subscribe, purple.getVersion, purple.getVersion);
+  useSyncExternalStore(teal.subscribe, teal.getVersion, teal.getVersion);
 
   const pick = (s: RectScene, ghost: Rect | null): Rect | undefined =>
     ghost ?? (s.get(asNodeId('a'))?.pose as Rect | undefined);
-  const poses = [pick(green, ghosts.green), pick(orange, ghosts.orange), pick(purple, ghosts.purple)]
+  const poses = [pick(green, ghosts.green), pick(orange, ghosts.orange), pick(purple, ghosts.purple), pick(teal, ghosts.teal)]
     .filter((p): p is Rect => !!p);
 
   return (
@@ -299,13 +312,15 @@ export function RotatedResizeMathDemo() {
   const greenScene = useScene<Rect>({ items: INITIAL_GREEN });
   const orangeScene = useScene<Rect>({ items: INITIAL_ORANGE });
   const purpleScene = useScene<Rect>({ items: INITIAL_PURPLE });
+  const tealScene = useScene<Rect>({ items: INITIAL_TEAL });
 
   // One ResizeAdapter per scene. Memoized so controllers see stable refs.
   const greenAdapter = useMemo(() => adapterForScene(greenScene), [greenScene]);
   const orangeAdapter = useMemo(() => adapterForScene(orangeScene), [orangeScene]);
   const purpleAdapter = useMemo(() => adapterForScene(purpleScene), [purpleScene]);
+  const tealAdapter = useMemo(() => adapterForScene(tealScene), [tealScene]);
 
-  // Three controllers, one per descriptor. Each runs its own resize math
+  // Four controllers, one per descriptor. Each runs its own resize math
   // against its own scene; the parent drives them all from a single drag.
   const greenCtl = useResize(greenAdapter, {
     geometry: ROTATED_POSE_DESCRIPTOR as PoseDescriptor<Rect>,
@@ -316,11 +331,14 @@ export function RotatedResizeMathDemo() {
   const purpleCtl = useResize(purpleAdapter, {
     geometry: NO_CORRECTION_DESCRIPTOR,
   });
+  const tealCtl = useResize(tealAdapter, {
+    geometry: COUPLED_ROTATION_DESCRIPTOR,
+  });
 
   // Drag state: which DOM element captured the pointer, plus the controllers
-  // we're driving (always all three; held in a ref to keep handlers stable).
+  // we're driving (always all four; held in a ref to keep handlers stable).
   const controllersRef = useRef<ResizeController<{ id: string }, Rect>[]>([]);
-  controllersRef.current = [greenCtl, orangeCtl, purpleCtl];
+  controllersRef.current = [greenCtl, orangeCtl, purpleCtl, tealCtl];
   const draggingRef = useRef(false);
   const captureTargetRef = useRef<Element | null>(null);
   const capturePointerIdRef = useRef<number | null>(null);
@@ -336,6 +354,7 @@ export function RotatedResizeMathDemo() {
     green: INITIAL_GREEN[0].color,
     orange: INITIAL_ORANGE[0].color,
     purple: INITIAL_PURPLE[0].color,
+    teal: INITIAL_TEAL[0].color,
   };
   const ghostColorFor = (panel: PanelId): string =>
     activePanel ? COLORS[activePanel] : COLORS[panel];
@@ -462,22 +481,24 @@ export function RotatedResizeMathDemo() {
       <header style={{ marginBottom: 12 }}>
         <h2 style={{ marginTop: 0 }}>Rotated resize: the math, with counterexamples</h2>
         <p>
-          Resizing a rotated rect requires three coordinated steps. Each panel
-          below runs the same drag against the same starting pose, but skips one
-          step. Drag any corner handle in any panel &mdash; all three rects resize
-          in lockstep, each through its own pose descriptor, so one input drives
-          three diverging outputs. The &ldquo;fixed corner world&rdquo; ledger
-          below each panel should stay constant in the full-math panel; it
+          Resizing a rotated rect requires three coordinated steps, and a fourth
+          discipline: keep the rotation property orthogonal to the resize. Each
+          panel below runs the same drag against the same starting pose, but
+          subverts one piece. Drag any corner handle in any panel &mdash; all four
+          rects resize in lockstep, each through its own pose descriptor, so one
+          input drives four diverging outputs. The &ldquo;fixed corner world&rdquo;
+          ledger below each panel should stay constant in the full-math panel; it
           drifts in the counterexamples.
         </p>
         <ul>
-          <li><strong>Full math (green):</strong> drag is projected into local frame, anchor math runs there, position is corrected so the diagonal corner stays pinned.</li>
+          <li><strong>Full math (green):</strong> drag is projected into local frame, anchor math runs there, position is corrected so the diagonal corner stays pinned, and rotation is preserved unchanged.</li>
           <li><strong>No projection (orange):</strong> drag delta applied in world frame &mdash; distorts on rotation.</li>
           <li><strong>No correction (purple):</strong> projection on; position correction disabled &mdash; the perceived fixed corner drifts.</li>
-          <li><strong>Live overlay:</strong> all three rects stacked at 60% opacity so divergence shows up as color separation.</li>
+          <li><strong>Coupled rotation (teal):</strong> projection + correction both run, but rotation is coupled to the AABB diagonal angle &mdash; the rect rotates as you resize, the way it would if the rotation pivot drifted with size.</li>
+          <li><strong>Live overlay:</strong> all four rects stacked at 60% opacity so divergence shows up as color separation.</li>
         </ul>
       </header>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
         <Panel
           scene={greenScene}
           ghostPose={greenCtl.overlay?.currentPose ?? null}
@@ -502,12 +523,21 @@ export function RotatedResizeMathDemo() {
           fixedCurrent={purpleCtl.overlay ? fixedCornerWorld(purpleCtl.overlay.currentPose, purpleCtl.overlay.anchor) : null}
           onPointerDown={(e) => handlePointerDown('purple', e)}
         />
+        <Panel
+          scene={tealScene}
+          ghostPose={tealCtl.overlay?.currentPose ?? null}
+          ghostColor={ghostColorFor('teal')}
+          fixedOrigin={originFixed}
+          fixedCurrent={tealCtl.overlay ? fixedCornerWorld(tealCtl.overlay.currentPose, tealCtl.overlay.anchor) : null}
+          onPointerDown={(e) => handlePointerDown('teal', e)}
+        />
         <StackedOverlayPanel
-          green={greenScene} orange={orangeScene} purple={purpleScene}
+          green={greenScene} orange={orangeScene} purple={purpleScene} teal={tealScene}
           ghosts={{
             green: greenCtl.overlay?.currentPose ?? null,
             orange: orangeCtl.overlay?.currentPose ?? null,
             purple: purpleCtl.overlay?.currentPose ?? null,
+            teal: tealCtl.overlay?.currentPose ?? null,
           }}
         />
       </div>
