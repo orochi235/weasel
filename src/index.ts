@@ -54,7 +54,6 @@
 export * from './features/grid';
 export * from './features/viewport/viewTransform';
 export type { View } from './features/viewport/view';
-export * from './features/drag/dragGhost';
 export * from './features/drag/thresholdDrag';
 export * from './features/drag/pointerDrag';
 export * from './features/viewport/useCanvasSize';
@@ -237,7 +236,6 @@ export {
   translatePath,
   translatePolygonInPlace,
   scalePathToBounds,
-  traceToContext,
   createPathLayer,
   flattenCubic,
   flattenQuadratic,

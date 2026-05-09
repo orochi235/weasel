@@ -23,7 +23,6 @@ export {
   translatePolygonInPlace,
   scalePathToBounds,
 } from './transform';
-export { traceToContext } from './canvas';
 export { createPathLayer, type CreatePathLayerOpts } from './pathLayer';
 export {
   flattenCubic,
