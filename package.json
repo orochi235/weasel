@@ -81,6 +81,7 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
+    "@fontsource/inter": "5.0.20",
     "@playwright/test": "1.47.2",
     "@testing-library/react": "^16.3.0",
     "@types/earcut": "2.1.4",
