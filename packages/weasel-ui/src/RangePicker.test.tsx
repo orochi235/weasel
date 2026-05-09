@@ -473,3 +473,30 @@ describe('RangePicker renderTrack', () => {
     expect(getByTestId('custom-track')).toBeTruthy();
   });
 });
+
+describe('RangePicker thumb shape variants', () => {
+  it('shape="notched" renders the notched class', () => {
+    const { container } = render(
+      <RangePicker
+        min={0}
+        max={1}
+        thumbs={[{ value: 0.5, shape: 'notched' }]}
+        onChange={() => {}}
+      />,
+    );
+    const thumb = container.querySelector('[role="slider"]') as HTMLElement;
+    expect(thumb.className).toContain('notched');
+  });
+
+  it('shape={ render } uses the custom render', () => {
+    const { container } = render(
+      <RangePicker
+        min={0}
+        max={1}
+        thumbs={[{ value: 0.5, shape: { render: () => <span data-testid="x">X</span> } }]}
+        onChange={() => {}}
+      />,
+    );
+    expect(container.querySelector('[data-testid="x"]')).toBeTruthy();
+  });
+});

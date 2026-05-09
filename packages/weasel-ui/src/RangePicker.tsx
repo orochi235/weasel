@@ -299,25 +299,30 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
             })}
           </div>
         )}
-        {thumbs.map((thumb, i) => (
-          <div
-            key={i}
-            role="slider"
-            tabIndex={0}
-            aria-orientation="horizontal"
-            aria-valuemin={min}
-            aria-valuemax={max}
-            aria-valuenow={thumb.value}
-            aria-label={[ariaLabel, thumb.label].filter(Boolean).join(' ') || undefined}
-            className={s.thumb}
-            style={{ left: `${valueToFraction(thumb.value) * 100}%` }}
-            onPointerDown={onThumbPointerDown(i)}
-            onKeyDown={onThumbKeyDown(i)}
-            onContextMenu={onThumbContextMenu(i)}
-          >
-            {thumb.label ?? ''}
-          </div>
-        ))}
+        {thumbs.map((thumb, i) => {
+          const isNotched = thumb.shape === 'notched';
+          const customRender = typeof thumb.shape === 'object' && thumb.shape !== null ? thumb.shape.render : null;
+          const cls = `${s.thumb}${isNotched ? ` ${s.notched}` : ''}`;
+          return (
+            <div
+              key={i}
+              role="slider"
+              tabIndex={0}
+              aria-orientation="horizontal"
+              aria-valuemin={min}
+              aria-valuemax={max}
+              aria-valuenow={thumb.value}
+              aria-label={[ariaLabel, thumb.label].filter(Boolean).join(' ') || undefined}
+              className={cls}
+              style={{ left: `${valueToFraction(thumb.value) * 100}%` }}
+              onPointerDown={onThumbPointerDown(i)}
+              onKeyDown={onThumbKeyDown(i)}
+              onContextMenu={onThumbContextMenu(i)}
+            >
+              {customRender ? customRender({ width: 14, height: 24, isActive: false }) : (thumb.label ?? '')}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -69,3 +69,13 @@
   color: var(--wui-text-muted);
   vertical-align: middle;
 }
+
+.notched {
+  background: var(--thumb-svg, none);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-color: transparent;
+  border: none;
+  /* Default notched SVG (down-pointing pentagon, matches the perceptual-color experiment). */
+  --thumb-svg: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 30' preserveAspectRatio='none'%3E%3Cpolygon points='0,0 2.52,0 7,10.3 11.48,0 14,0 14,30 0,30' fill='rgba(255,255,255,0.62)' stroke='rgba(0,0,0,0.55)' stroke-width='0.75' stroke-linejoin='miter'/%3E%3C/svg%3E");
+}
