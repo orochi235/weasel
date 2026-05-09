@@ -21,8 +21,9 @@ import type { Op } from '../core/ops/types';
 import { dispatchApplyBatch } from '../core/applyOps';
 import type { View } from '../features/viewport/view';
 import { clampView } from '../features/viewport/clampView';
-import { drawLayers, type RenderLayer } from '../core/layers/render';
+import { drawLayers, drawLayersGL, type RenderLayer } from '../core/layers/render';
 import { setupCanvasDpr } from '../features/viewport/pixelDensity';
+import { WeaselRenderer } from '@orochi235/weasel-gl';
 import {
   useSelection,
   type SelectionApi,
@@ -492,6 +493,11 @@ function CanvasInner<TObject extends { id: string }, TPose>(
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   useImperativeHandle(ref, () => canvasRef.current as HTMLCanvasElement, []);
+
+  // GL renderer (lazy-instantiated on first paint when backend === 'gl').
+  // The 2D path leaves these untouched — `glRendererRef.current` stays null.
+  const glRendererRef = useRef<WeaselRenderer | null>(null);
+  const lastResizeRef = useRef<{ w: number; h: number; dpr: number } | null>(null);
 
   // Track the mount-time backend; warn once if a re-render passes a different
   // value. The backend is bound to the underlying <canvas> element for life
@@ -1029,8 +1035,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   useEffect(() => {
     const c = canvasRef.current;
     if (!c) return;
-    const ctx = c.getContext('2d');
-    if (!ctx) return;
+
     // Clear sink at the top of every paint so per-frame records don't leak.
     debugSink?.beginFrame();
     if (debugSink) {
@@ -1041,6 +1046,60 @@ function CanvasInner<TObject extends { id: string }, TPose>(
         debugSink.recordLayer(layer.id, layer.label, layer.space ?? 'world', i);
       }
     }
+
+    // Backend bound at mount — read initialBackendRef, not the live prop, so a
+    // post-mount change is a true no-op. (The change-warning effect runs separately.)
+    const effectiveBackend = initialBackendRef.current;
+
+    if (effectiveBackend === 'gl') {
+      // -- GL backend --
+      let renderer = glRendererRef.current;
+      if (!renderer) {
+        const dpr = window.devicePixelRatio || 1;
+        const gl = c.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true });
+        if (!gl || typeof (gl as Partial<WebGL2RenderingContext>).enable !== 'function') {
+          // jsdom or unsupported environment — bail silently (test envs hit
+          // this; jsdom returns a non-null stub but lacks WebGL2 methods).
+          return;
+        }
+        try {
+          renderer = new WeaselRenderer({
+            gl: gl as WebGL2RenderingContext,
+            canvas: c,
+            width,
+            height,
+            dpr,
+          });
+        } catch {
+          // Test env or context creation failure — bail silently.
+          return;
+        }
+        glRendererRef.current = renderer;
+        lastResizeRef.current = { w: width, h: height, dpr };
+      } else {
+        const dpr = window.devicePixelRatio || 1;
+        const last = lastResizeRef.current;
+        if (!last || last.w !== width || last.h !== height || last.dpr !== dpr) {
+          renderer.resize({ width, height, dpr });
+          lastResizeRef.current = { w: width, h: height, dpr };
+        }
+      }
+
+      const commands = drawLayersGL(
+        layersWithDebug,
+        helpersForLayers,
+        {},
+        undefined,
+        effectiveView,
+        { width, height },
+      );
+      renderer.render(commands);
+      return;
+    }
+
+    // -- 2D backend (existing path) --
+    const ctx = c.getContext('2d');
+    if (!ctx) return;
     setupCanvasDpr(c, ctx, width, height);
     ctx.clearRect(0, 0, width, height);
     if (background) {

@@ -876,4 +876,29 @@ describe('backend prop', () => {
     expect(warnSpy).toHaveBeenCalledTimes(1);
     warnSpy.mockRestore();
   });
+
+  it('backend="gl" calls getContext("webgl2") with preserveDrawingBuffer + stencil', () => {
+    const getCtxSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext');
+    render(<Canvas width={100} height={100} layers={{}} backend="gl" />);
+    const webgl2Calls = getCtxSpy.mock.calls.filter((c) => c[0] === 'webgl2');
+    expect(webgl2Calls.length).toBeGreaterThan(0);
+    expect(webgl2Calls[0][1]).toMatchObject({ preserveDrawingBuffer: true, stencil: true });
+    getCtxSpy.mockRestore();
+  });
+
+  it('backend="gl" does not call getContext("2d")', () => {
+    const getCtxSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext');
+    render(<Canvas width={100} height={100} layers={{}} backend="gl" />);
+    const twoDCalls = getCtxSpy.mock.calls.filter((c) => c[0] === '2d');
+    expect(twoDCalls).toHaveLength(0);
+    getCtxSpy.mockRestore();
+  });
+
+  it('backend="2d" (default) still calls getContext("2d")', () => {
+    const getCtxSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext');
+    render(<Canvas width={100} height={100} layers={{}} />);
+    const twoDCalls = getCtxSpy.mock.calls.filter((c) => c[0] === '2d');
+    expect(twoDCalls.length).toBeGreaterThan(0);
+    getCtxSpy.mockRestore();
+  });
 });
