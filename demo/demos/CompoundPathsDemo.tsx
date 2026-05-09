@@ -219,6 +219,21 @@ backend={backend}
                 ctx.fillText('original artwork by claude', W - 10, H - 8);
                 ctx.restore();
               },
+              drawGL: () => {
+                // GL renders MSDF text from registered fonts only — Comic Sans
+                // isn't registered, so we use the fallback sans-serif (Inter)
+                // family. Red color makes the GL render visually obvious for
+                // the soak — distinguishes from the 2D Comic Sans rendering.
+                const text = 'original artwork by claude';
+                const charW = 7;
+                return [{
+                  kind: 'text',
+                  x: W - 10 - text.length * charW,
+                  y: H - 8 - 14,
+                  text,
+                  style: { fontFamily: 'sans-serif', fontSize: 14, fill: { color: '#ff3344' } },
+                }];
+              },
             },
             after: 'selectionOverlay',
           },
