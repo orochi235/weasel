@@ -14,7 +14,20 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
-import { useActionsRegistry, type Action, type KeyBinding } from '../src/interactions/actions/registry';
+import {
+  useActionsRegistry, evaluateEnabled, ActionDisabledReason,
+  type Action, type ActionEnabledResult, type ActionDisabledReason as ActionDisabledReasonType, type KeyBinding,
+} from '../src/interactions/actions/registry';
+
+/** Display strings for the closed `ActionDisabledReason` enum. The kit
+ *  ships symbolic constants; the consumer maps them to user-facing copy
+ *  here so localization and theming stay in app code. */
+const REASON_LABELS: Record<ActionDisabledReasonType, string> = {
+  [ActionDisabledReason.SelectionRequired]: 'Selection required',
+  [ActionDisabledReason.SceneEmpty]: 'Scene is empty',
+  [ActionDisabledReason.NotApplicable]: 'Not applicable here',
+  [ActionDisabledReason.PredicateThrew]: '(predicate threw)',
+};
 
 const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
 
@@ -60,17 +73,45 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const listRef = useRef<HTMLUListElement>(null);
 
   // `list()` returns a stable readonly snapshot; re-read each time we open
-  // so newly registered actions show up.
+  // so newly registered actions show up. We also snapshot each action's
+  // `enabled` state at open time — palette is short-lived; live reactive
+  // updates as selection changes are explicitly out of scope. See Action.enabled JSDoc.
   const allActions = useMemo<readonly Action[]>(
     () => (registry && open ? registry.list() : []),
     [registry, open],
   );
+
+  const enabledById = useMemo<ReadonlyMap<string, ActionEnabledResult>>(() => {
+    const m = new Map<string, ActionEnabledResult>();
+    for (const a of allActions) m.set(a.id, evaluateEnabled(a));
+    return m;
+  }, [allActions]);
 
   const filtered = useMemo<readonly Action[]>(() => {
     const q = query.trim().toLowerCase();
     if (!q) return allActions;
     return allActions.filter((a) => a.label.toLowerCase().includes(q));
   }, [allActions, query]);
+
+  const isEnabled = (a: Action): boolean => enabledById.get(a.id)?.enabled ?? true;
+  const reasonFor = (a: Action): string | undefined => {
+    const r = enabledById.get(a.id)?.reason;
+    return r ? REASON_LABELS[r] : undefined;
+  };
+
+  /** Move the highlight to the next/prev *enabled* row. */
+  const moveHighlight = (delta: 1 | -1): void => {
+    if (filtered.length === 0) return;
+    let i = highlight;
+    for (let step = 0; step < filtered.length; step++) {
+      i = (i + delta + filtered.length) % filtered.length;
+      if (isEnabled(filtered[i])) {
+        setHighlight(i);
+        return;
+      }
+    }
+    // No enabled rows — leave highlight where it was.
+  };
 
   // Reset state on open and focus the input.
   useEffect(() => {
@@ -116,6 +157,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   if (!open) return null;
 
   const trigger = (action: Action) => {
+    if (!isEnabled(action)) return;
     onClose();
     // Defer trigger to next tick so `onClose` state flush completes before
     // any action that may itself touch focus / DOM.
@@ -127,14 +169,14 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const onInputKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setHighlight((h) => Math.min(filtered.length - 1, h + 1));
+      moveHighlight(1);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setHighlight((h) => Math.max(0, h - 1));
+      moveHighlight(-1);
     } else if (e.key === 'Enter') {
       e.preventDefault();
       const action = filtered[highlight];
-      if (action) trigger(action);
+      if (action && isEnabled(action)) trigger(action);
     }
   };
 
@@ -164,22 +206,31 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
           <div className="ckd-palette-empty">No matching actions.</div>
         ) : (
           <ul ref={listRef} className="ckd-palette-list" role="listbox">
-            {filtered.map((action, idx) => (
-              <li
-                key={action.id}
-                data-idx={idx}
-                role="option"
-                aria-selected={idx === highlight}
-                className={`ckd-palette-row${idx === highlight ? ' active' : ''}`}
-                onMouseEnter={() => setHighlight(idx)}
-                onMouseDown={(e) => { e.preventDefault(); trigger(action); }}
-              >
-                <span className="ckd-palette-label">{action.label}</span>
-                {action.defaultBinding && (
-                  <kbd className="ckd-palette-kbd">{formatBinding(action.defaultBinding)}</kbd>
-                )}
-              </li>
-            ))}
+            {filtered.map((action, idx) => {
+              const enabled = isEnabled(action);
+              const reason = reasonFor(action);
+              return (
+                <li
+                  key={action.id}
+                  data-idx={idx}
+                  role="option"
+                  aria-selected={idx === highlight}
+                  aria-disabled={!enabled}
+                  className={`ckd-palette-row${idx === highlight ? ' active' : ''}${enabled ? '' : ' disabled'}`}
+                  onMouseEnter={() => { if (enabled) setHighlight(idx); }}
+                  onMouseDown={(e) => { e.preventDefault(); if (enabled) trigger(action); }}
+                  title={reason}
+                >
+                  <span className="ckd-palette-label">{action.label}</span>
+                  {!enabled && reason && (
+                    <span className="ckd-palette-reason">{reason}</span>
+                  )}
+                  {action.defaultBinding && (
+                    <kbd className="ckd-palette-kbd">{formatBinding(action.defaultBinding)}</kbd>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
         <div className="ckd-palette-footer">

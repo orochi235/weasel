@@ -77,10 +77,11 @@ export type { KeyBinding } from './interactions/actions/useKeybinding';
 
 // --- @experimental Actions Registry (2026-05-09) ----------------------------
 export {
-  ActionsProvider, useActionsRegistry, useAction,
+  ActionsProvider, useActionsRegistry, useAction, evaluateEnabled,
+  ActionDisabledReason,
 } from './interactions/actions/registry';
 export type {
-  Action, ActionEntry, ActionsProp, ActionsRegistry,
+  Action, ActionEntry, ActionsProp, ActionsRegistry, ActionEnabledResult,
 } from './interactions/actions/registry';
 export {
   defaultSelectAllAction, defaultEscapeAction, defaultDuplicateAction,

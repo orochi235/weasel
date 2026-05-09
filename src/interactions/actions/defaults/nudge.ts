@@ -1,6 +1,7 @@
 import { createTransformOp } from '../../../core/ops/transform';
 import type { Op } from '../../../core/ops/types';
 import type { Action } from '../registry';
+import { ActionDisabledReason } from '../registry';
 
 /** @experimental */
 export interface NudgeDeps<TPose> {
@@ -57,6 +58,7 @@ export function defaultNudgeActions<TPose>(deps: NudgeDeps<TPose>): Action[] {
         });
         deps.applyBatch(ops, 'Nudge');
       },
+      enabled: () => (deps.getSelection().length > 0 ? true : ActionDisabledReason.SelectionRequired),
     };
   }
 }

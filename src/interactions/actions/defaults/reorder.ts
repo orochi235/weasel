@@ -1,6 +1,7 @@
 import { createReorderOp } from '../../../core/ops/reorder';
 import type { Op } from '../../../core/ops/types';
 import type { Action } from '../registry';
+import { ActionDisabledReason } from '../registry';
 
 /** @experimental */
 export interface ReorderDeps {
@@ -27,6 +28,7 @@ export function defaultReorderActions(deps: ReorderDeps): Action[] {
         if (ids.length === 0) return;
         deps.applyBatch([createReorderOp({ ids, direction: 'forward' })], 'Bring forward');
       },
+      enabled: () => (deps.getSelection().length > 0 ? true : ActionDisabledReason.SelectionRequired),
     },
     {
       id: 'reorder.backward',
@@ -37,6 +39,7 @@ export function defaultReorderActions(deps: ReorderDeps): Action[] {
         if (ids.length === 0) return;
         deps.applyBatch([createReorderOp({ ids, direction: 'backward' })], 'Send backward');
       },
+      enabled: () => (deps.getSelection().length > 0 ? true : ActionDisabledReason.SelectionRequired),
     },
   ];
 }

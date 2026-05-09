@@ -26,6 +26,105 @@ export interface Action {
   label: string;
   defaultBinding?: KeyBinding;
   run: () => void;
+  /**
+   * @experimental
+   * Optional predicate the command palette consults when rendering. Return
+   * `true` when the action is currently triggerable. Return a reason string
+   * (e.g. `'Selection required'`) when disabled — the palette greys out
+   * the row, skips it in keyboard nav, ignores clicks, and shows the
+   * reason next to the label. Keystroke dispatch (the registered binding)
+   * is unaffected; the action's own `run` should self-guard.
+   *
+   * **Contract:** must be pure (no side effects), fast (< 4ms in dev), and
+   * must not throw. If a call throws or exceeds the budget in dev mode,
+   * `evaluateEnabled` logs a one-time warning per action id; throws are
+   * caught and treated as disabled with reason `'(predicate threw)'`.
+   *
+   * Snapshot-on-open semantics: the palette evaluates `enabled` once when
+   * opened and does NOT re-evaluate on selection changes while open. Live
+   * reactive updates are deferred — palette is short-lived.
+   *
+   * The reason set is a closed enum — to add a new reason, edit
+   * `ActionDisabledReason` and the consumer's display map.
+   */
+  enabled?: () => true | ActionDisabledReason;
+}
+
+/**
+ * @experimental
+ * Closed enum of reasons an action might report itself as disabled. The
+ * consumer (palette, menu, etc.) maps these symbolic values to display
+ * strings via its own label map — see `demo/CommandPalette.tsx` for the
+ * canonical mapping.
+ */
+export const ActionDisabledReason = {
+  SelectionRequired: 'selection-required',
+  SceneEmpty: 'scene-empty',
+  NotApplicable: 'not-applicable',
+  /** Sentinel: the predicate threw. Surfaced by `evaluateEnabled`'s catch. */
+  PredicateThrew: 'predicate-threw',
+} as const;
+export type ActionDisabledReason =
+  (typeof ActionDisabledReason)[keyof typeof ActionDisabledReason];
+
+/**
+ * @experimental
+ * Result of evaluating an Action's `enabled` predicate.
+ */
+export interface ActionEnabledResult {
+  enabled: boolean;
+  reason?: ActionDisabledReason;
+}
+
+/**
+ * @internal
+ * Safely evaluate an action's `enabled` predicate. Returns `{enabled: true}`
+ * when no predicate is supplied. Catches throws and treats them as disabled
+ * with reason `'(predicate threw)'`. In dev mode, warns once per action id
+ * when a single call exceeds 4ms (single frame at 240fps — generous; real
+ * predicates should be sub-millisecond).
+ */
+const enabledSlowWarned = new Set<string>();
+const enabledThrewWarned = new Set<string>();
+const ENABLED_BUDGET_MS = 4;
+export function evaluateEnabled(action: Action): ActionEnabledResult {
+  if (!action.enabled) return { enabled: true };
+  const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
+  const now = (typeof performance !== 'undefined' && typeof performance.now === 'function')
+    ? () => performance.now()
+    : () => Date.now();
+  const start = isDev ? now() : 0;
+  try {
+    const result = action.enabled();
+    if (isDev) {
+      const elapsed = now() - start;
+      if (elapsed > ENABLED_BUDGET_MS && !enabledSlowWarned.has(action.id)) {
+        enabledSlowWarned.add(action.id);
+        console.warn(
+          `weasel actions: enabled() for action "${action.id}" took ${elapsed.toFixed(2)}ms ` +
+          `(budget ${ENABLED_BUDGET_MS}ms). The predicate must be pure and fast — see Action.enabled JSDoc.`,
+        );
+      }
+    }
+    if (result === true) return { enabled: true };
+    return { enabled: false, reason: result };
+  } catch (e) {
+    if (isDev && !enabledThrewWarned.has(action.id)) {
+      enabledThrewWarned.add(action.id);
+      console.warn(
+        `weasel actions: enabled() for action "${action.id}" threw; treating as disabled. ` +
+        `The predicate must not throw — see Action.enabled JSDoc.`,
+        e,
+      );
+    }
+    return { enabled: false, reason: ActionDisabledReason.PredicateThrew };
+  }
+}
+
+/** @internal Test helper: reset warn-once dedup so tests can repro-fire warnings. */
+export function _resetEnabledWarnsForTests(): void {
+  enabledSlowWarned.clear();
+  enabledThrewWarned.clear();
 }
 
 /**

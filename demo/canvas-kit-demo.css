@@ -317,6 +317,16 @@ a:hover { text-decoration: underline; }
   color: #fff;
 }
 
+.ckd-palette-row.disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.ckd-palette-row.disabled:hover {
+  background: transparent;
+  color: var(--ckd-text);
+}
+
 .ckd-palette-label {
   flex: 1 1 auto;
   min-width: 0;

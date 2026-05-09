@@ -1,4 +1,5 @@
 import type { Action } from '../registry';
+import { ActionDisabledReason } from '../registry';
 
 /** @experimental */
 export interface EscapeDeps {
@@ -21,5 +22,6 @@ export function defaultEscapeAction(deps: EscapeDeps): Action {
       if (sel.length === 0) return;
       deps.setSelection([]);
     },
+    enabled: () => (deps.getSelection().length > 0 ? true : ActionDisabledReason.SelectionRequired),
   };
 }

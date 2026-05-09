@@ -2,6 +2,7 @@ import { createInsertOp } from '../../../core/ops/create';
 import { createSetSelectionOp } from '../../../core/ops/select';
 import type { Op } from '../../../core/ops/types';
 import type { Action } from '../registry';
+import { ActionDisabledReason } from '../registry';
 
 /** @experimental */
 export interface DuplicateDeps {
@@ -34,5 +35,6 @@ export function defaultDuplicateAction(deps: DuplicateDeps): Action {
       ];
       deps.applyBatch(ops, 'Duplicate');
     },
+    enabled: () => (deps.getSelection().length > 0 ? true : ActionDisabledReason.SelectionRequired),
   };
 }

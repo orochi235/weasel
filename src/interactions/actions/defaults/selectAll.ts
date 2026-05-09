@@ -1,4 +1,5 @@
 import type { Action } from '../registry';
+import { ActionDisabledReason } from '../registry';
 
 /** @experimental */
 export interface SelectAllDeps {
@@ -23,5 +24,6 @@ export function defaultSelectAllAction(deps: SelectAllDeps): Action {
       if (all.length === 0) return;
       deps.setSelection(all);
     },
+    enabled: () => (deps.listAll().length > 0 ? true : ActionDisabledReason.SceneEmpty),
   };
 }
