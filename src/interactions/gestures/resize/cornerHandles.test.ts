@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cornerResizeHandles, hitCornerHandle } from './cornerHandles';
+import { cornerResizeHandles, fixedCornerOf, hitCornerHandle } from './cornerHandles';
 
 describe('cornerResizeHandles', () => {
   it('returns 4 handles at the bounds corners with opposite-corner anchors', () => {
@@ -23,5 +23,29 @@ describe('hitCornerHandle', () => {
   it('misses outside radius on either axis', () => {
     expect(hitCornerHandle(h, 105, 100, 4)).toBe(false);
     expect(hitCornerHandle(h, 100, 95, 4)).toBe(false);
+  });
+});
+
+describe('fixedCornerOf', () => {
+  const b = { x: 10, y: 20, width: 30, height: 40 };
+
+  it('anchor min/min (drag bottom-right): fixed corner is top-left', () => {
+    expect(fixedCornerOf(b, { x: 'min', y: 'min' })).toEqual({ x: 40, y: 60 });
+  });
+
+  it('anchor min/max (drag top-right): fixed corner is bottom-left', () => {
+    expect(fixedCornerOf(b, { x: 'min', y: 'max' })).toEqual({ x: 40, y: 20 });
+  });
+
+  it('anchor max/min (drag bottom-left): fixed corner is top-right', () => {
+    expect(fixedCornerOf(b, { x: 'max', y: 'min' })).toEqual({ x: 10, y: 60 });
+  });
+
+  it('anchor max/max (drag top-left): fixed corner is bottom-right', () => {
+    expect(fixedCornerOf(b, { x: 'max', y: 'max' })).toEqual({ x: 10, y: 20 });
+  });
+
+  it('anchor free axis: fixed coord is the bounds origin on that axis', () => {
+    expect(fixedCornerOf(b, { x: 'free', y: 'min' })).toEqual({ x: 10, y: 60 });
   });
 });

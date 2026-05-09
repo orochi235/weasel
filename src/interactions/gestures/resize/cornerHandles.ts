@@ -38,3 +38,20 @@ export function hitCornerHandle(
   return Math.abs(px - handle.cx) <= radius
     && Math.abs(py - handle.cy) <= radius;
 }
+
+/** The corner that does NOT move under a resize gesture with the given
+ *  anchor. Used by the rotated-resize math to pin a world-space invariant.
+ *
+ *  Convention: `anchor.x === 'min'` means the min-x edge moves, so the
+ *  fixed corner sits at `x = bounds.x + bounds.width` (max-x). `'free'` on
+ *  an axis means that axis doesn't move; the fixed coord is the bounds
+ *  origin on that axis. */
+export function fixedCornerOf(
+  bounds: Bounds,
+  anchor: ResizeAnchor,
+): { x: number; y: number } {
+  return {
+    x: anchor.x === 'min' ? bounds.x + bounds.width : bounds.x,
+    y: anchor.y === 'min' ? bounds.y + bounds.height : bounds.y,
+  };
+}
