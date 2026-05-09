@@ -73,6 +73,38 @@ describe('animateOnSetPose', () => {
     expect(applyBatch).toHaveBeenCalledTimes(1);
   });
 
+  it('writes through directly when a tween is already in flight for the same id', () => {
+    // Regression: under momentum decay, the wrapper used to spawn a fresh
+    // 250ms tween every rAF tick (~60/sec), each immediately cancelled by the
+    // next frame's call. That stackup caused the AnimationDemo GL backend to
+    // crash after a single high-velocity drag (the wrap-tween's t=0 sample
+    // fights the decay's onTick, and the cycle of register/cancel overwhelms
+    // the renderer process). The fix: when a tween for this id is already
+    // active, the second setPose writes through to the base adapter, leaving
+    // the in-flight tween to finish naturally.
+    const clock = makeClock();
+    const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 10, height: 10 }]]);
+    const { base, setPose, applyBatch } = makeAdapter(initial);
+    const { result } = renderHook(() => useAnimator(clock));
+    const wrapped = animateOnSetPose(base as never, result.current, { ms: 100 });
+    // First call: starts a tween. applyBatch records exactly one op for it.
+    act(() => {
+      wrapped.setPose('a', { x: 100, y: 0, width: 10, height: 10 });
+    });
+    expect(applyBatch).toHaveBeenCalledTimes(1);
+    expect(result.current.isActive('pose:a')).toBe(true);
+    setPose.mockClear();
+    applyBatch.mockClear();
+
+    // Second call (mid-tween): writes through. No new tween, no new op.
+    act(() => {
+      wrapped.setPose('a', { x: 110, y: 0, width: 10, height: 10 });
+    });
+    expect(setPose).toHaveBeenCalledTimes(1);
+    expect(setPose).toHaveBeenCalledWith('a', { x: 110, y: 0, width: 10, height: 10 });
+    expect(applyBatch).not.toHaveBeenCalled();
+  });
+
   it('shouldAnimate returning false writes through immediately and emits no op', () => {
     const clock = makeClock();
     const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 10, height: 10 }]]);

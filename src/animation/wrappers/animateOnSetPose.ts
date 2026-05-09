@@ -51,6 +51,20 @@ export function animateOnSetPose<TObject extends { id: string }, TPose>(
         adapter.setPose(id, pose);
         return;
       }
+      // Re-entrant short-circuit: when a higher-frequency animation (e.g.
+      // momentum decay) calls setPose every rAF tick, we'd otherwise spawn a
+      // brand-new 250ms tween every frame, each immediately cancelled by the
+      // next. That stackup synchronously registers ~60 tweens/sec inside the
+      // animator's own tick loop, which (a) writes back the previous `from`
+      // value at every wrap-tween's t=0 sample, undoing the decay's effect,
+      // and (b) under heavy interaction overwhelms the renderer process.
+      // If the existing target for this id matches the requested pose
+      // closely (typical when the caller is itself an animation), write
+      // through directly so the in-flight tween keeps owning the id.
+      if (animator.isActive('pose:' + id)) {
+        adapter.setPose(id, pose);
+        return;
+      }
       if (opts.spring) {
         springPose(animator, adapter as never, {
           id,
