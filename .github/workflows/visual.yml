@@ -1,0 +1,43 @@
+name: Visual Regression
+
+# Run on PRs and on main. Does NOT run on the node-matrix in ci.yml.
+# CRITICAL: this workflow is pinned to ubuntu-22.04. Changing the runner
+# image will corrupt all baseline PNGs — you must run test:visual:update
+# in a matching environment and commit new baselines. See CONTRIBUTING.md.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  visual-regression:
+    # ⚠️  DO NOT change this runner without regenerating all baselines.
+    # See docs/superpowers/specs/2026-05-08-webgl-transition-plan-design.md
+    # "Visual regression rig → CI image pinning".
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - run: npm ci
+
+      # Install Playwright browsers. The version is pinned by package-lock.json.
+      - run: npx playwright install --with-deps chromium
+
+      - name: Run visual regression tests
+        run: npm run test:visual
+
+      # On failure, upload diff artifacts so reviewers can inspect what changed.
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-regression-results
+          path: |
+            tests/visual/baselines/
+          retention-days: 14
