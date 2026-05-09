@@ -1,8 +1,9 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { createSetSelectionOp } from '../../../core/ops/select';
 import type { Op } from '../../../core/ops/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
 import { useKeybinding } from '../useKeybinding';
+import { useActionsRegistry, type Action } from '../registry';
 
 /** Adapter for `useEscape`. */
 export interface EscapeAdapter {
@@ -47,8 +48,22 @@ export function useEscape(
     dispatchApplyBatch(a, [op], o.label ?? 'Clear selection');
   }, []);
 
+  const reg = useActionsRegistry();
+  const enableKeyboard = options.enableKeyboard ?? true;
+
+  useEffect(() => {
+    if (!reg || !enableKeyboard) return;
+    const action: Action = {
+      id: 'escape',
+      label: 'Escape',
+      defaultBinding: { key: 'Escape' },
+      run: () => clearSelection(),
+    };
+    return reg.register(action);
+  }, [reg, enableKeyboard, clearSelection]);
+
   useKeybinding(
-    { key: 'Escape', enabled: options.enableKeyboard ?? true },
+    { key: 'Escape', enabled: enableKeyboard && reg == null },
     () => clearSelection(),
   );
 

@@ -1,8 +1,10 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { createReorderOp } from '../../../core/ops/reorder';
 import type { Op } from '../../../core/ops/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
 import { useKeybinding } from '../useKeybinding';
+import { useActionsRegistry } from '../registry';
+import { defaultReorderActions } from '../defaults/reorder';
 
 /** Adapter for `useReorder`; both order methods optional and the hook no-ops when either is absent. */
 export interface ReorderAdapter {
@@ -72,10 +74,38 @@ export function useReorder(
     [dispatch],
   );
 
+  const reg = useActionsRegistry();
   const enable = options.enableKeyboard ?? true;
+
+  // Provider path: register forward/backward through the registry. Front/back
+  // variants stay on the always-on useKeybinding fallback below — the v1
+  // single-binding-per-Action limit doesn't model the Shift-modified pair.
+  useEffect(() => {
+    if (!reg || !enable) return;
+    const actions = defaultReorderActions({
+      getSelection: () => adapterRef.current.getSelection(),
+      applyBatch: (ops, label) => {
+        const a = adapterRef.current;
+        const ids = optsRef.current.filter
+          ? optsRef.current.filter(a.getSelection())
+          : a.getSelection();
+        if (ids.length === 0) return;
+        // The factory already builds ops from getSelection(); apply via the
+        // adapter so its applyBatch (or fallback) handles it identically.
+        if (!a.getChildren || !a.setChildOrder) return;
+        dispatchApplyBatch(a, ops, label ?? '');
+      },
+    });
+    const unregs = actions.map((act) => reg.register(act));
+    return () => { for (const u of unregs) u(); };
+  }, [reg, enable]);
+
   // Browsers sometimes report Shift+] as '}' / Shift+[ as '{'; accept both.
-  useKeybinding({ key: [']', '}'], mod: true, enabled: enable }, () => bringForward());
-  useKeybinding({ key: ['[', '{'], mod: true, enabled: enable }, () => sendBackward());
+  // forward/backward route through the registry when in a provider scope.
+  useKeybinding({ key: [']', '}'], mod: true, enabled: enable && reg == null }, () => bringForward());
+  useKeybinding({ key: ['[', '{'], mod: true, enabled: enable && reg == null }, () => sendBackward());
+  // front/back: registry doesn't model these in v1; keep them always-on so
+  // Shift+Mod+] / Shift+Mod+[ still work whether or not a provider is mounted.
   useKeybinding({ key: [']', '}'], mod: true, shift: true, enabled: enable }, () => bringToFront());
   useKeybinding({ key: ['[', '{'], mod: true, shift: true, enabled: enable }, () => sendToBack());
 

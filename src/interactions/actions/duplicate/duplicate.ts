@@ -1,9 +1,10 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { createInsertOp } from '../../../core/ops/create';
 import { createSetSelectionOp } from '../../../core/ops/select';
 import type { Op } from '../../../core/ops/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
 import { useKeybinding } from '../useKeybinding';
+import { useActionsRegistry, type Action } from '../registry';
 
 /** Adapter for `useDuplicate`. */
 export interface DuplicateAdapter<TPose> {
@@ -68,8 +69,22 @@ export function useDuplicate<TPose>(
     dispatchApplyBatch(a, ops, o.label ?? 'Duplicate');
   }, []);
 
+  const reg = useActionsRegistry();
+  const enableKeyboard = options.enableKeyboard ?? true;
+
+  useEffect(() => {
+    if (!reg || !enableKeyboard) return;
+    const action: Action = {
+      id: 'duplicate',
+      label: 'Duplicate',
+      defaultBinding: { key: 'd', mod: true },
+      run: () => duplicate(),
+    };
+    return reg.register(action);
+  }, [reg, enableKeyboard, duplicate]);
+
   useKeybinding(
-    { key: 'd', mod: true, enabled: options.enableKeyboard ?? true },
+    { key: 'd', mod: true, enabled: enableKeyboard && reg == null },
     () => duplicate(),
   );
 

@@ -1,9 +1,11 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { createTransformOp } from '../../../core/ops/transform';
 import type { Op } from '../../../core/ops/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
 import { translateRectPose } from '../../../features/groups/composePose';
 import { useKeybinding } from '../useKeybinding';
+import { useActionsRegistry } from '../registry';
+import { defaultNudgeActions } from '../defaults/nudge';
 
 /** Cardinal direction for `useNudge`. */
 export type NudgeDirection = 'up' | 'down' | 'left' | 'right';
@@ -85,11 +87,33 @@ export function useNudge<TPose>(
     dispatchApplyBatch(a, ops, o.label ?? 'Nudge');
   }, []);
 
+  const reg = useActionsRegistry();
+  const enableKeyboard = options.enableKeyboard ?? true;
+
+  useEffect(() => {
+    if (!reg || !enableKeyboard) return;
+    const a = adapterRef.current;
+    const o = optsRef.current;
+    const actions = defaultNudgeActions<TPose>({
+      getSelection: () => a.getSelection(),
+      getPose: (id) => a.getPose(id),
+      translatePose:
+        o.translatePose ??
+        (translateRectPose as unknown as (pose: TPose, dx: number, dy: number) => TPose),
+      applyBatch: (ops, label) => dispatchApplyBatch(a, ops, label ?? 'Nudge'),
+      ...(o.step !== undefined ? { step: o.step } : {}),
+      ...(o.shiftStep !== undefined ? { shiftStep: o.shiftStep } : {}),
+    });
+    const unregs = actions.map((act) => reg.register(act));
+    return () => { for (const u of unregs) u(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reg, enableKeyboard]);
+
   useKeybinding(
     {
       key: ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'],
       shift: 'optional',
-      enabled: options.enableKeyboard ?? true,
+      enabled: enableKeyboard && reg == null,
     },
     (e) => {
       const dir = ARROW_TO_DIR[e.key];
