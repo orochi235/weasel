@@ -1,0 +1,24 @@
+import { WeaselRenderer, mat3 } from '../src/index';
+
+const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+const r = new WeaselRenderer({ canvas, width: 800, height: 600, dpr: window.devicePixelRatio || 1 });
+
+r.render([
+  {
+    kind: 'path',
+    path: { kind: 'rect', x: 50, y: 50, width: 100, height: 100 },
+    fill: { color: '#ff0000' },
+  },
+  {
+    kind: 'group',
+    transform: mat3.translate(mat3.identity(), 200, 50),
+    alpha: 0.5,
+    children: [
+      {
+        kind: 'path',
+        path: { kind: 'rect', x: 0, y: 0, width: 100, height: 100 },
+        fill: { color: '#00ff00' },
+      },
+    ],
+  },
+]);
