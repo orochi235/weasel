@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { SceneCanvas, useScene } from '@orochi235/weasel';
 import type { RenderLayer, CanvasHelpers } from '@orochi235/weasel';
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import { viewToMat3, type DrawCommand } from '@orochi235/weasel-gl';
 import { useBackend } from '../BackendContext';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
@@ -54,17 +54,19 @@ function createQuadtreeLayer(
   getRects: () => Rect[],
   helpersRef: React.RefObject<CanvasHelpers<Rect> | null>,
 ): RenderLayer<unknown> {
+  const buildLiveTree = () => {
+    const live = helpersRef.current;
+    const rects = getRects().map((r) => {
+      const b = live?.getEffectiveBounds(r.id);
+      return b ? { id: r.id, x: b.x, y: b.y, width: b.width, height: b.height, color: r.color } : r;
+    });
+    return buildTree({ x: 0, y: 0, width: W, height: H }, rects);
+  };
   return {
     id: 'quadtree',
     label: 'Quadtree',
     draw: (ctx) => {
-      // Read live (overlay-aware) bounds so the tree follows in-flight drags.
-      const live = helpersRef.current;
-      const rects = getRects().map((r) => {
-        const b = live?.getEffectiveBounds(r.id);
-        return b ? { id: r.id, x: b.x, y: b.y, width: b.width, height: b.height, color: r.color } : r;
-      });
-      const tree = buildTree({ x: 0, y: 0, width: W, height: H }, rects);
+      const tree = buildLiveTree();
       ctx.strokeStyle = 'rgba(0, 220, 240, 0.7)';
       function walk(n: QuadNode) {
         if (!n.children) return;
@@ -73,6 +75,22 @@ function createQuadtreeLayer(
         for (const c of n.children) walk(c);
       }
       walk(tree);
+    },
+    drawGL: (_data, view) => {
+      const tree = buildLiveTree();
+      const cmds: DrawCommand[] = [];
+      function walk(n: QuadNode) {
+        if (!n.children) return;
+        const width = Math.max(0.5, 2.5 - n.depth * 0.4);
+        cmds.push({
+          kind: 'path',
+          path: { kind: 'rect', x: n.x, y: n.y, width: n.w, height: n.h },
+          stroke: { paint: { color: 'rgba(0, 220, 240, 0.7)' }, width },
+        });
+        for (const c of n.children) walk(c);
+      }
+      walk(tree);
+      return cmds.length === 0 ? [] : [{ kind: 'group', transform: viewToMat3(view), children: cmds }];
     },
   };
 }
