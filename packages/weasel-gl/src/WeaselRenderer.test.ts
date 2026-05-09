@@ -30,3 +30,27 @@ describe('WeaselRenderer (constructor)', () => {
     expect(names).toContain('linkProgram');
   });
 });
+
+describe('WeaselRenderer.resize', () => {
+  let recorder: ReturnType<typeof makeGLRecorder>;
+  beforeEach(() => {
+    recorder = makeGLRecorder();
+  });
+
+  it('updates viewport on resize', () => {
+    const r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
+    recorder.reset();
+    r.resize({ width: 1024, height: 768, dpr: 2 });
+    const viewportCall = recorder.calls.find((c) => c.name === 'viewport');
+    expect(viewportCall).toBeDefined();
+    expect(viewportCall!.args).toEqual([0, 0, 2048, 1536]);
+  });
+
+  it('updates the canvas drawingBuffer width/height', () => {
+    const canvas = { width: 0, height: 0, getContext: () => recorder.gl } as unknown as HTMLCanvasElement;
+    const r = new WeaselRenderer({ canvas, width: 100, height: 100, dpr: 1 });
+    r.resize({ width: 200, height: 150, dpr: 2 });
+    expect(canvas.width).toBe(400);
+    expect(canvas.height).toBe(300);
+  });
+});

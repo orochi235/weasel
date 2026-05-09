@@ -34,6 +34,7 @@ export class WeaselRenderer {
   private widthCss: number;
   private heightCss: number;
   private dpr: number;
+  private canvas: HTMLCanvasElement | null = null;
 
   constructor(opts: WeaselRendererOptions) {
     if (!opts.gl && !opts.canvas) {
@@ -46,6 +47,12 @@ export class WeaselRenderer {
     this.widthCss = opts.width;
     this.heightCss = opts.height;
     this.dpr = opts.dpr;
+
+    this.canvas = opts.canvas ?? null;
+    if (this.canvas) {
+      this.canvas.width = opts.width * opts.dpr;
+      this.canvas.height = opts.height * opts.dpr;
+    }
 
     // Initial GL state.
     this.gl.enable(this.gl.BLEND);
@@ -67,6 +74,17 @@ export class WeaselRenderer {
 
   private applyViewport(): void {
     this.gl.viewport(0, 0, this.widthCss * this.dpr, this.heightCss * this.dpr);
+  }
+
+  resize(dims: { width: number; height: number; dpr: number }): void {
+    this.widthCss = dims.width;
+    this.heightCss = dims.height;
+    this.dpr = dims.dpr;
+    if (this.canvas) {
+      this.canvas.width = dims.width * dims.dpr;
+      this.canvas.height = dims.height * dims.dpr;
+    }
+    this.applyViewport();
   }
 
   /** @internal */ _gl(): WebGL2RenderingContext { return this.gl; }
