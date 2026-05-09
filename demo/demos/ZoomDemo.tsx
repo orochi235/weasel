@@ -9,6 +9,7 @@ import {
   useWheelPanTool,
   useKeyboardZoomTool,
 } from '../../src';
+import type { DrawCommand } from '@orochi235/weasel-gl';
 import type { View } from '../../src/features/viewport/view';
 import { useBackend } from '../BackendContext';
 
@@ -123,6 +124,16 @@ backend={backend}
               ctx.lineWidth = r.pin === 'screen' ? 2 / v.scale : 2;
               ctx.strokeStyle = '#d4c4a8';
               ctx.strokeRect(r.x, r.y, r.width, r.height);
+            },
+            drawOneGL: (_obj, pose, v): DrawCommand[] => {
+              const r = pose as Rect;
+              const lineWidth = r.pin === 'screen' ? 2 / v.scale : 2;
+              return [{
+                kind: 'path',
+                path: { kind: 'rect', x: r.x, y: r.y, width: r.width, height: r.height },
+                fill: { color: r.color },
+                stroke: { paint: { color: '#d4c4a8' }, width: lineWidth },
+              }];
             },
           },
         }}

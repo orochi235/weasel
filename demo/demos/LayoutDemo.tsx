@@ -7,6 +7,7 @@ import {
   tileGrid,
   snapPoint,
 } from '@orochi235/weasel';
+import type { DrawCommand } from '@orochi235/weasel-gl';
 import { useBackend } from '../BackendContext';
 
 // --- Scene model ---
@@ -73,6 +74,21 @@ backend={backend}
               cx.lineWidth = 1;
               cx.strokeRect(p.x + 0.5, p.y + 0.5, p.width - 1, p.height - 1);
             }
+          },
+          drawOneGL: (node, p): DrawCommand[] => {
+            const cmds: DrawCommand[] = [{
+              kind: 'path',
+              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+              fill: { color: node.data.color },
+            }];
+            if (node.data.isContainer) {
+              cmds.push({
+                kind: 'path',
+                path: { kind: 'rect', x: p.x + 0.5, y: p.y + 0.5, width: p.width - 1, height: p.height - 1 },
+                stroke: { paint: { color: '#d4c4a8' }, width: 1 },
+              });
+            }
+            return cmds;
           },
         },
         // Outline-only selection — this demo's about layout, not resize.

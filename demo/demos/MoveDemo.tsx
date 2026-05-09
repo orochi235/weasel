@@ -10,6 +10,7 @@ import {
   useKeyboardZoomTool,
 } from '@orochi235/weasel';
 import type { UnitSystem } from '@orochi235/weasel';
+import type { DrawCommand } from '@orochi235/weasel-gl';
 import type { View } from '../../src/features/viewport/view';
 import { useBackend } from '../BackendContext';
 
@@ -68,6 +69,11 @@ backend={backend}
             cx.fillStyle = n.data.color;
             cx.fillRect(p.x, p.y, p.width, p.height);
           },
+          drawOneGL: (n, p): DrawCommand[] => [{
+            kind: 'path',
+            path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+            fill: { color: n.data.color },
+          }],
         },
         selectionOverlay: { handles: false },
       }}

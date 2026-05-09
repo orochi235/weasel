@@ -7,6 +7,7 @@ import {
   useTools,
 } from '@orochi235/weasel';
 import type { ClipboardSnapshot } from '@orochi235/weasel';
+import type { DrawCommand } from '@orochi235/weasel-gl';
 import { useBackend } from '../BackendContext';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
@@ -62,7 +63,14 @@ backend={backend}
       tools={tools}
       selectionMode="none"
       layers={{
-        scene: { drawOne: drawRect },
+        scene: {
+          drawOne: drawRect,
+          drawOneGL: (r, p): DrawCommand[] => [{
+            kind: 'path',
+            path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+            fill: { color: r.color },
+          }],
+        },
         selectionOverlay: null,
       }}
     />

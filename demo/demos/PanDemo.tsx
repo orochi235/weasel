@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Canvas, useTools, useKeybindings, useHandTool, useSelectTool } from '../../src';
+import type { DrawCommand } from '@orochi235/weasel-gl';
 import type { View } from '../../src/features/viewport/view';
 import { useBackend } from '../BackendContext';
 
@@ -73,6 +74,14 @@ backend={backend}
               const r = pose as Rect;
               ctx.fillStyle = r.color;
               ctx.fillRect(r.x, r.y, r.width, r.height);
+            },
+            drawOneGL: (_obj, pose): DrawCommand[] => {
+              const r = pose as Rect;
+              return [{
+                kind: 'path',
+                path: { kind: 'rect', x: r.x, y: r.y, width: r.width, height: r.height },
+                fill: { color: r.color },
+              }];
             },
           },
         }}

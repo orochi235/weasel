@@ -12,6 +12,7 @@ import {
   useTools,
 } from '@orochi235/weasel';
 import type { Group } from '@orochi235/weasel';
+import type { DrawCommand } from '@orochi235/weasel-gl';
 import { useBackend } from '../BackendContext';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
@@ -126,6 +127,11 @@ backend={backend}
             cx.fillStyle = r.color;
             cx.fillRect(p.x, p.y, p.width, p.height);
           },
+          drawOneGL: (r, p): DrawCommand[] => [{
+            kind: 'path',
+            path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+            fill: { color: r.color },
+          }],
         },
         selectionOverlay: {
           groupAdapter: adapter,
