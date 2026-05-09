@@ -31,14 +31,14 @@ function buildScene(count: number): DrawCommand[] {
 
 const make = (id: string, w: number, h: number, scene: DrawCommand[]) => {
   const c = document.getElementById(id) as HTMLCanvasElement;
-  const gl = c.getContext('webgl2', { preserveDrawingBuffer: true }) as WebGL2RenderingContext;
+  const gl = c.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true }) as WebGL2RenderingContext;
   const r = new WeaselRenderer({ gl, canvas: c, width: w, height: h, dpr: window.devicePixelRatio || 1 });
   r.render(scene);
 };
 
 make('c10', 800, 200, buildScene(10));
 make('c100', 800, 200, buildScene(100));
-make('c1000', 800, 600, buildScene(1000));
+make('c1000', 800, 200, buildScene(1000));
 
 // Evenodd: outer 200×200 square + inner 100×100 square. Stencil sorts overlap → ring.
 const ringPath: PolygonPath = {
