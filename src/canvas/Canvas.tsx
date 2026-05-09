@@ -221,6 +221,17 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   onPointerCancel?: React.PointerEventHandler<HTMLCanvasElement>;
 
   // --- Visuals / DOM passthrough ---
+  /**
+   * Renderer backend. `'2d'` (default) uses Canvas2D + drawLayers + setupCanvasDpr.
+   * `'gl'` instantiates a WeaselRenderer against this canvas element and dispatches
+   * each layer's drawGL output. The prop is read **once at mount**; changing it
+   * after mount is a no-op and emits a one-time console.warn — the original
+   * backend keeps running. To switch backends in a live app, remount the parent.
+   *
+   * Default flips to `'gl'` once the soak in step 9 closes. See the WebGL
+   * transition spec for the soak exit criterion.
+   */
+  backend?: '2d' | 'gl';
   background?: string;
   className?: string;
   style?: React.CSSProperties;
@@ -424,6 +435,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     className,
     style,
     tabIndex = 0,
+    backend = '2d' as const,
     autoFocusOnPointerDown = true,
     helpersRef,
     gestures,
@@ -480,6 +492,25 @@ function CanvasInner<TObject extends { id: string }, TPose>(
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   useImperativeHandle(ref, () => canvasRef.current as HTMLCanvasElement, []);
+
+  // Track the mount-time backend; warn once if a re-render passes a different
+  // value. The backend is bound to the underlying <canvas> element for life
+  // (a canvas's GL context type cannot change without remounting the DOM
+  // node), so a post-mount prop change is intentionally a no-op.
+  const initialBackendRef = useRef(backend);
+  const warnedBackendChangeRef = useRef(false);
+  useEffect(() => {
+    if (warnedBackendChangeRef.current) return;
+    if (backend !== initialBackendRef.current) {
+      warnedBackendChangeRef.current = true;
+      console.warn(
+        `weasel <Canvas>: backend prop changed from "${initialBackendRef.current}" to ` +
+        `"${backend}" after mount. Backend is bound to the underlying <canvas> element ` +
+        `and cannot change at runtime — the original backend keeps running. ` +
+        `To switch, remount the parent component.`,
+      );
+    }
+  }, [backend]);
 
   // Viewport state: hybrid uncontrolled/controlled. When `viewProp` is
   // supplied we are controlled (consumer owns state). Otherwise we keep

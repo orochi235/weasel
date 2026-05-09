@@ -853,3 +853,27 @@ describe('Canvas debug overlay', () => {
     }
   });
 });
+
+describe('backend prop', () => {
+  it('accepts backend="2d" (default) and renders without error', () => {
+    const { container } = render(
+      <Canvas width={100} height={100} layers={{}} />,
+    );
+    expect(container.querySelector('canvas')).toBeTruthy();
+  });
+
+  it('emits exactly one console.warn when backend prop changes after mount', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { rerender } = render(
+      <Canvas width={100} height={100} layers={{}} backend="2d" />,
+    );
+    expect(warnSpy).not.toHaveBeenCalled();
+    rerender(<Canvas width={100} height={100} layers={{}} backend="gl" />);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0][0]).toMatch(/backend.*after mount/i);
+    // Second change does not produce a second warning (still one total).
+    rerender(<Canvas width={100} height={100} layers={{}} backend="2d" />);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    warnSpy.mockRestore();
+  });
+});
