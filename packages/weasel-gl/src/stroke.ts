@@ -41,13 +41,14 @@ export function tessellateStroke(
   const width = stroke.width ?? 1;
   if (width <= 0) return EMPTY_MESH;
   const join: Join = stroke.join ?? 'miter';
+  const cap: Cap = stroke.cap ?? 'butt';
 
   const polylines = extractPolylines(path, opts);
   const verts: number[] = [];
   const idx: number[] = [];
 
   for (const pl of polylines) {
-    expandPolyline(pl, width, join, verts, idx);
+    expandPolyline(pl, width, join, cap, verts, idx);
   }
 
   return {
@@ -60,6 +61,7 @@ function expandPolyline(
   pl: Polyline,
   width: number,
   join: Join,
+  cap: Cap,
   verts: number[],
   idx: number[],
 ): void {
@@ -99,6 +101,86 @@ function expandPolyline(
   const joinCount = pl.closed ? segs.length : segs.length - 1;
   for (let j = 0; j < joinCount; j++) {
     emitJoin(segs, segBaseIdx, j, half, join, verts, idx);
+  }
+
+  // Caps on open polylines only.
+  if (!pl.closed && cap !== 'butt') {
+    const first = segs[0];
+    const firstBase = segBaseIdx[0];
+    emitCap(first, firstBase + 0, firstBase + 1, /* atEnd */ false, half, cap, verts, idx);
+
+    const last = segs[segs.length - 1];
+    const lastBase = segBaseIdx[segs.length - 1];
+    emitCap(last, lastBase + 2, lastBase + 3, /* atEnd */ true, half, cap, verts, idx);
+  }
+}
+
+const ROUND_CAP_STEP_RAD = (10 * Math.PI) / 180;
+
+/**
+ * Emit a cap at one end of a segment. `leftIdx`/`rightIdx` are the buffer
+ * indices of the L (perpendicular +n) and R (perpendicular -n) vertices at
+ * the segment endpoint where the cap attaches. `atEnd` chooses which end of
+ * the segment to extend from (and which cap-direction sign to use).
+ */
+function emitCap(
+  seg: Seg, leftIdx: number, rightIdx: number, atEnd: boolean,
+  half: number, cap: Cap,
+  verts: number[], idx: number[],
+): void {
+  // Outward direction = forward at end, backward at start.
+  const sign = atEnd ? 1 : -1;
+  const dx = (seg.bx - seg.ax) / seg.len * sign;
+  const dy = (seg.by - seg.ay) / seg.len * sign;
+  const cx = atEnd ? seg.bx : seg.ax;
+  const cy = atEnd ? seg.by : seg.ay;
+
+  if (cap === 'square') {
+    const ox = cx + dx * half;
+    const oy = cy + dy * half;
+    const lOut = verts.length / 2;
+    verts.push(ox + seg.nx, oy + seg.ny);
+    const rOut = verts.length / 2;
+    verts.push(ox - seg.nx, oy - seg.ny);
+    // Two triangles forming the cap rectangle. Wind so triangles are CCW
+    // viewed from the front; orientation symmetric for start vs. end caps.
+    if (atEnd) {
+      idx.push(leftIdx, lOut, rOut, leftIdx, rOut, rightIdx);
+    } else {
+      idx.push(leftIdx, rOut, lOut, leftIdx, rightIdx, rOut);
+    }
+    return;
+  }
+
+  if (cap === 'round') {
+    // Pivot vertex at the endpoint center; fan from L through the outward
+    // 180° arc to R.
+    const pivotIdx = verts.length / 2;
+    verts.push(cx, cy);
+
+    // Starting angle: direction from pivot to L (= +n direction).
+    const startAngle = Math.atan2(seg.ny, seg.nx);
+    // Sweep 180° toward the outward direction. The outward unit is (dx, dy);
+    // we rotate from +n to -n the "outward" way. The dot product of (dx, dy)
+    // with the perpendicular tells us which way around the arc to go.
+    // A start-cap (sign = -1) sweeps backward; end-cap (sign = +1) sweeps forward.
+    const sweep = atEnd ? -Math.PI : Math.PI;
+    const steps = Math.max(1, Math.ceil(Math.abs(sweep) / ROUND_CAP_STEP_RAD));
+    const stepAngle = sweep / steps;
+
+    let prevIdx = leftIdx;
+    for (let i = 1; i < steps; i++) {
+      const ang = startAngle + i * stepAngle;
+      const fx = cx + Math.cos(ang) * half;
+      const fy = cy + Math.sin(ang) * half;
+      const newIdx = verts.length / 2;
+      verts.push(fx, fy);
+      if (atEnd) idx.push(prevIdx, newIdx, pivotIdx);
+      else       idx.push(prevIdx, pivotIdx, newIdx);
+      prevIdx = newIdx;
+    }
+    if (atEnd) idx.push(prevIdx, rightIdx, pivotIdx);
+    else       idx.push(prevIdx, pivotIdx, rightIdx);
   }
 }
 

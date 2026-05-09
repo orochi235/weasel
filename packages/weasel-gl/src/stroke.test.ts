@@ -79,8 +79,41 @@ describe('tessellateStroke joins', () => {
       fillRule: 'nonzero',
     };
     const mesh = tessellateStroke(path, { paint: { color: '#000' }, width: 4, join: 'round' });
-    // 2 ribbon × 2 triangles = 4. Round at ~10°/step over 90° ≈ 9 fan triangles.
-    // Allow ≥ 7 to permit different angular-step choices.
     expect(mesh.indices.length / 3).toBeGreaterThanOrEqual(4 + 7);
+  });
+});
+
+describe('tessellateStroke caps', () => {
+  it('square caps extend an open polyline by half-width at each end', () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L]),
+      coords: new Float32Array([0, 0, 10, 0]),
+      fillRule: 'nonzero',
+    };
+    const meshButt = tessellateStroke(path, { paint: { color: '#000' }, width: 4, cap: 'butt' });
+    const meshSquare = tessellateStroke(path, { paint: { color: '#000' }, width: 4, cap: 'square' });
+    // Square caps add 2 triangles per cap × 2 caps = 4 extra triangles.
+    expect(meshSquare.indices.length).toBe(meshButt.indices.length + 4 * 3);
+  });
+
+  it('round caps add fan triangles at each endpoint', () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L]),
+      coords: new Float32Array([0, 0, 10, 0]),
+      fillRule: 'nonzero',
+    };
+    const meshButt = tessellateStroke(path, { paint: { color: '#000' }, width: 4, cap: 'butt' });
+    const meshRound = tessellateStroke(path, { paint: { color: '#000' }, width: 4, cap: 'round' });
+    // Round caps over 180° at ~10°/step → ~18 fan triangles per cap × 2 caps.
+    expect((meshRound.indices.length - meshButt.indices.length) / 3).toBeGreaterThanOrEqual(2 * 14);
+  });
+
+  it('caps are NOT emitted on closed polylines', () => {
+    const path: RectPath = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
+    const meshButt = tessellateStroke(path, { paint: { color: '#000' }, width: 2, cap: 'butt', join: 'bevel' });
+    const meshRound = tessellateStroke(path, { paint: { color: '#000' }, width: 2, cap: 'round', join: 'bevel' });
+    expect(meshRound.indices.length).toBe(meshButt.indices.length);
   });
 });
