@@ -45,7 +45,10 @@ export class WeaselRenderer {
     if (!opts.gl && !opts.canvas) {
       throw new Error('WeaselRenderer requires either gl or canvas');
     }
-    const gl = opts.gl ?? opts.canvas!.getContext('webgl2');
+    // `stencil: true` is required for evenodd path rendering (stencil two-pass).
+    // Defaults are otherwise standard: `premultipliedAlpha: true` matches our
+    // shader's premultiplied-alpha output.
+    const gl = opts.gl ?? opts.canvas!.getContext('webgl2', { stencil: true });
     if (!gl) throw new Error('WeaselRenderer: WebGL2 not available');
     this.gl = gl as WebGL2RenderingContext;
 
@@ -63,7 +66,7 @@ export class WeaselRenderer {
 
     // Initial GL state.
     this.gl.enable(this.gl.BLEND);
-    this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+    this.gl.blendFunc(this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
     this.gl.disable(this.gl.DEPTH_TEST);
     this.gl.disable(this.gl.CULL_FACE);
     this.gl.clearColor(0, 0, 0, 0);
@@ -95,7 +98,7 @@ export class WeaselRenderer {
   private onContextRestored(): void {
     this.contextLost = false;
     this.gl.enable(this.gl.BLEND);
-    this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+    this.gl.blendFunc(this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
     this.gl.disable(this.gl.DEPTH_TEST);
     this.gl.disable(this.gl.CULL_FACE);
     this.gl.clearColor(0, 0, 0, 0);

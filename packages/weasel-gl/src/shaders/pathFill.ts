@@ -9,9 +9,15 @@
  *   - u_color     vec4     RGBA, 0..1 components, straight (non-premultiplied) alpha
  *   - u_alpha     float    group-alpha multiplier, 0..1
  *
- * Output: vec4 outColor with `u_color.rgb` and `u_color.a * u_alpha` as alpha.
+ * Output: vec4 outColor with PREMULTIPLIED alpha — `u_color.rgb * a, a` where
+ * `a = u_color.a * u_alpha`. Browsers default `getContext('webgl2')` to
+ * `premultipliedAlpha: true`, so the browser composites the canvas over the
+ * page expecting premultiplied pixels. Outputting straight-alpha here causes
+ * the browser composition to over-brighten translucent fills (RGB > alpha is
+ * undefined for premultiplied input).
  *
- * Blend: caller (renderer) sets `gl.blendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA)`.
+ * Blend: caller (renderer) sets `gl.blendFunc(ONE, ONE_MINUS_SRC_ALPHA)` to
+ * match the premultiplied output.
  */
 
 export const VERT_SRC = /* glsl */ `#version 300 es
@@ -31,7 +37,8 @@ uniform vec4 u_color;
 uniform float u_alpha;
 out vec4 outColor;
 void main() {
-  outColor = vec4(u_color.rgb, u_color.a * u_alpha);
+  float a = u_color.a * u_alpha;
+  outColor = vec4(u_color.rgb * a, a);
 }
 `;
 

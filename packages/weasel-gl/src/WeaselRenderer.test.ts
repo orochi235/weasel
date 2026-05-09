@@ -14,7 +14,8 @@ describe('WeaselRenderer (constructor)', () => {
     expect(names).toContain('enable');
     expect(names).toContain('blendFunc');
     const blendFuncCall = recorder.calls.find((c) => c.name === 'blendFunc')!;
-    expect(blendFuncCall.args).toEqual([recorder.gl.SRC_ALPHA, recorder.gl.ONE_MINUS_SRC_ALPHA]);
+    // Premultiplied alpha blend — matches shader output of (rgb * a, a).
+    expect(blendFuncCall.args).toEqual([recorder.gl.ONE, recorder.gl.ONE_MINUS_SRC_ALPHA]);
   });
 
   it('sets initial viewport to width × dpr by height × dpr', () => {
