@@ -109,8 +109,21 @@ function drawPathStroke(ctx: DrawContext, cmd: PathDrawCommand): void {
   if (paint.fill && paint.fill !== 'solid') {
     throw new Error('weasel-gl step 2: stroke.paint must be solid; gradient/pattern arrives in step 4');
   }
-  const solid = paint as { color: string; opacity?: number };
 
+  const align = stroke.align ?? 'center';
+  // PolygonPath with inner/outer goes through stencil clipping. RectPath has
+  // its alignment baked into the stroke geometry by tessellateStroke (Task 10).
+  if (cmd.path.kind === 'polygon' && align !== 'center') {
+    drawPathStrokeStenciled(ctx, cmd, align);
+    return;
+  }
+
+  drawPathStrokeUnclipped(ctx, cmd);
+}
+
+function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
+  const stroke = cmd.stroke!;
+  const solid = stroke.paint as { color: string; opacity?: number };
   const mesh = tessellateStroke(cmd.path, stroke);
   if (mesh.indices.length === 0) return;
   const handle = ctx.meshCache.handleFor(mesh);
@@ -124,9 +137,58 @@ function drawPathStroke(ctx: DrawContext, cmd: PathDrawCommand): void {
   gl.bindVertexArray(null);
 }
 
+/**
+ * Stencil-clip the stroke ribbon to the path interior (inner) or exterior
+ * (outer). Pass 1 builds a stencil mask from the path's *fill* triangulation;
+ * pass 2 draws a doubled-width ribbon and the stencil keeps only the half on
+ * the desired side.
+ *
+ * Note (per stepwise-conventions §1): unit tests with the GL recorder mock
+ * stencil ops away. Visual correctness must be verified with a Playwright
+ * smoke test against a real browser (Task 13).
+ */
+function drawPathStrokeStenciled(
+  ctx: DrawContext,
+  cmd: PathDrawCommand,
+  align: 'inner' | 'outer',
+): void {
+  const stroke = cmd.stroke!;
+  const solid = stroke.paint as { color: string; opacity?: number };
+  // Double the width and force center alignment; stencil keeps the desired half.
+  const widerStroke: Stroke = { ...stroke, width: (stroke.width ?? 1) * 2, align: 'center' };
+
+  const fillMesh = getMesh(cmd.path);
+  const fillHandle = ctx.meshCache.handleFor(fillMesh);
+  const ribbonMesh = tessellateStroke(cmd.path, widerStroke);
+  if (ribbonMesh.indices.length === 0) return;
+  const ribbonHandle = ctx.meshCache.handleFor(ribbonMesh);
+
+  const gl = ctx.gl;
+  gl.useProgram(ctx.pathFill.handle);
+  setProjAndModel(ctx);
+
+  // Pass 1: build the path-interior stencil mask. Disable color writes.
+  gl.enable(gl.STENCIL_TEST);
+  gl.colorMask(false, false, false, false);
+  gl.stencilMask(0xff);
+  gl.stencilFunc(gl.ALWAYS, 1, 0xff);
+  gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
+  gl.bindVertexArray(fillHandle.vao);
+  gl.drawElements(gl.TRIANGLES, fillHandle.indexCount, gl.UNSIGNED_INT, 0);
+
+  // Pass 2: draw the ribbon clipped to inside (inner) or outside (outer).
+  gl.colorMask(true, true, true, true);
+  gl.stencilFunc(gl.EQUAL, align === 'inner' ? 1 : 0, 0xff);
+  gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
+  setSolidPaintUniforms(ctx, solid.color, solid.opacity);
+  gl.bindVertexArray(ribbonHandle.vao);
+  gl.drawElements(gl.TRIANGLES, ribbonHandle.indexCount, gl.UNSIGNED_INT, 0);
+
+  gl.clear(gl.STENCIL_BUFFER_BIT);
+  gl.disable(gl.STENCIL_TEST);
+  gl.bindVertexArray(null);
+}
+
 // Re-export the projection helper so WeaselRenderer.render can compute it.
 export { mat3, getMesh };
 
-// Avoid an unused-type warning on the standalone Stroke import (used in
-// future stencil-clipped stroke task).
-export type _StrokeMarker = Stroke;

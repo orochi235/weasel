@@ -150,4 +150,41 @@ describe('WeaselRenderer.render — kind: path with stroke', () => {
     const draws = recorder.calls.filter((c) => c.name === 'drawElements');
     expect(draws.length).toBe(0);
   });
+
+  it('uses stencil two-pass when stroking a PolygonPath with align: inner', () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([M, L, L, L, Z]),
+      coords: new Float32Array([0, 0, 100, 0, 100, 100, 0, 100]),
+      fillRule: 'nonzero',
+    };
+    r.render([{ kind: 'path', path, stroke: { paint: { color: '#000' }, width: 10, align: 'inner' } }]);
+    const enableCalls = recorder.calls.filter((c) => c.name === 'enable');
+    expect(enableCalls.some((c) => c.args[0] === recorder.gl.STENCIL_TEST)).toBe(true);
+    expect(recorder.calls.find((c) => c.name === 'stencilFunc')).toBeDefined();
+    // Mask pass + paint pass = 2 drawElements minimum.
+    const draws = recorder.calls.filter((c) => c.name === 'drawElements');
+    expect(draws.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('does NOT use stencil when stroking a PolygonPath with align: center', () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([M, L, L, L, Z]),
+      coords: new Float32Array([0, 0, 100, 0, 100, 100, 0, 100]),
+      fillRule: 'nonzero',
+    };
+    r.render([{ kind: 'path', path, stroke: { paint: { color: '#000' }, width: 10, align: 'center' } }]);
+    const enableCalls = recorder.calls.filter((c) => c.name === 'enable');
+    const stencilEnabled = enableCalls.some((c) => c.args[0] === recorder.gl.STENCIL_TEST);
+    expect(stencilEnabled).toBe(false);
+  });
+
+  it('does NOT use stencil for RectPath (alignment baked into geometry)', () => {
+    const path: RectPath = { kind: 'rect', x: 0, y: 0, width: 100, height: 100 };
+    r.render([{ kind: 'path', path, stroke: { paint: { color: '#000' }, width: 10, align: 'inner' } }]);
+    const enableCalls = recorder.calls.filter((c) => c.name === 'enable');
+    const stencilEnabled = enableCalls.some((c) => c.args[0] === recorder.gl.STENCIL_TEST);
+    expect(stencilEnabled).toBe(false);
+  });
 });
