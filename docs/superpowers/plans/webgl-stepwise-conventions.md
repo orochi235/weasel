@@ -110,6 +110,27 @@ Step 2 caught two such bugs in the planned miter and round join code — both pa
 
 ---
 
+## 9. Don't track per-renderer state on shared registry entries
+
+**Status:** confirmed in step 3.
+**Where it bites:** any module-level registry whose entries reference resources owned by per-renderer caches.
+
+Step 3's first attempt at `registerFont` stored a `textureUploaded: boolean` flag on each `FontEntry`. The intent was to skip re-uploading the atlas on subsequent draws. But each `WeaselRenderer` has its own `GLTextureCache`, so the first renderer set the flag → second renderer's `ensureFontTexture` saw "already uploaded" and skipped → its own texture cache was empty → `bind()` threw at draw time.
+
+**Required:** when a module-level registry holds resources that get consumed by per-renderer caches, the dedup must live in the cache's own state, not on the registry entry. Make `cache.upload(id, …)` idempotent (check `has(id)` first) and have callers always invoke `upload` rather than guarding behind a registry-side flag.
+
+This generalizes: any module-level singleton that supplies resources to per-instance objects must not assume one consumer. Even single-canvas apps re-create renderers (context loss, hot-reload, etc.), so the assumption breaks across time as well as across instances.
+
+---
+
+## Updates from step 3
+
+**§1 (browser context defaults):** smoke-test sample pattern matters. Diagonal sampling worked for full-canvas scenes (steps 1–2) but missed the text region in step 3 (text occupies a narrow horizontal strip). Default to **grid sampling** (e.g. 16×16 cell centers) for any future smoke spec; reserve diagonal for scenes that genuinely cover the canvas.
+
+**§3 (`--save-exact`):** plan-time version pinning is risky. The step-3 plan specified `msdf-bmfont-xml@6.0.0` which doesn't exist on npm; latest stable is 2.8.0. **Required:** when adding a new dep, run `npm view <pkg> versions --json | tail` first, then pin the actual latest. Same applies to plan-time CLI flag specs — run `<tool> --help` before writing the wrapper script.
+
+---
+
 ## How to update this doc
 
 Each per-step done note adds new lessons. At the end of each step, the controller folds applicable new lessons into the relevant section above and adds a new section if the lesson doesn't fit existing categories. Update the **Status** date and **Where it bites** line to keep entries scannable.

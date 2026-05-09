@@ -13,7 +13,7 @@ Spec: `docs/superpowers/specs/2026-05-08-webgl-transition-plan-design.md`. Archi
 
 - [x] Step 1 — Solid-fill paths shipped 2026-05-08 (`docs/superpowers/plans/2026-05-08-webgl-step-1-done.md`)
 - [x] Step 2 — Strokes shipped 2026-05-09 (`docs/superpowers/plans/2026-05-09-webgl-step-2-done.md`)
-- [ ] Step 3 — Text (MSDF) (plan TBW)
+- [x] Step 3 — Text (MSDF) shipped 2026-05-09 (`docs/superpowers/plans/2026-05-09-webgl-step-3-done.md`)
 - [ ] Step 4 — Image / pattern / gradient (plan TBW)
 - [ ] Step 5 — Per-vertex colors + color matrix (plan TBW)
 - [ ] Step 6 — Minimal experimental shader API (plan TBW)
