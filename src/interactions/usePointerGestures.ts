@@ -12,6 +12,7 @@ import {
   hitRotationHandle,
   DEFAULT_ROTATION_HANDLE_DISTANCE,
 } from './gestures/rotate/handle';
+import { rotatePoint } from './gestures/rotate/geometry';
 import type { ModifierState } from './gestures/types';
 import type { SelectionApi } from '../features/selection/useSelection';
 import type { View } from '../features/viewport/view';
@@ -91,7 +92,7 @@ export interface UsePointerGesturesOptions<TMovePose, TResizePose> {
    *
    *  When omitted but `selection` and `boundsOf` are both supplied, defaults
    *  to single-selection bounds (multi-selection returns `null`). */
-  resizeTarget?: () => { id: string; bounds: Bounds } | null;
+  resizeTarget?: () => { id: string; bounds: Bounds; rotation?: number } | null;
 
   /** Hit-test radius for resize/rotation handles, in **screen** pixels.
    *  Divided by `view.scale` (via `getView`) at compare time so the hit
@@ -175,13 +176,15 @@ export function usePointerGestures<TMovePose, TResizePose>(
 
   // Resolve resizeTarget: explicit > selection-derived
   const explicitResizeTarget = options.resizeTarget;
-  const resizeTarget = useCallback((): { id: string; bounds: Bounds } | null => {
+  const resizeTarget = useCallback((): { id: string; bounds: Bounds; rotation?: number } | null => {
     if (explicitResizeTarget) return explicitResizeTarget();
     if (selection && boundsOf) {
       const ids = selection.get();
       if (ids.length !== 1) return null;
       const b = boundsOf(ids[0]);
-      return b ? { id: ids[0], bounds: b } : null;
+      if (!b) return null;
+      const rotation = (b as Bounds & { rotation?: number }).rotation;
+      return { id: ids[0], bounds: b, rotation };
     }
     return null;
   }, [explicitResizeTarget, selection, boundsOf]);
@@ -266,11 +269,18 @@ export function usePointerGestures<TMovePose, TResizePose>(
       if (resize) {
         const target = resizeTarget();
         if (target) {
+          const rot = target.rotation ?? 0;
+          const cx = target.bounds.x + target.bounds.width / 2;
+          const cy = target.bounds.y + target.bounds.height / 2;
           for (const h of cornerResizeHandles(target.bounds)) {
-            if (hitCornerHandle(h, wx, wy, radiusWorld)) {
+            const center = rot === 0
+              ? { x: h.cx, y: h.cy }
+              : rotatePoint(h.cx, h.cy, cx, cy, rot);
+            const rotatedHandle = { cx: center.x, cy: center.y, anchor: h.anchor };
+            if (hitCornerHandle(rotatedHandle, wx, wy, radiusWorld)) {
               dragKindRef.current = 'resize';
               e.currentTarget.setPointerCapture(e.pointerId);
-            attachDocListeners();
+              attachDocListeners();
               resize.start(target.id, h.anchor, wx, wy);
               return;
             }

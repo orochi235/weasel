@@ -339,6 +339,44 @@ describe('usePointerGestures — resizeTarget derivation', () => {
   });
 });
 
+import { rotatePoint } from './gestures/rotate/geometry';
+
+describe('usePointerGestures — rotated resize handle hit-test', () => {
+  it('hits the rotated-corner position, not the unrotated AABB corner', () => {
+    // Setup: 100×60 rect at (0,0), rotated π/4. The unrotated bottom-right
+    // corner is at (100, 60); the rotated bottom-right corner sits at the
+    // image of (100, 60) under R(π/4) about center (50, 30).
+    const bounds = { x: 0, y: 0, width: 100, height: 60 };
+    const center = { x: 50, y: 30 };
+    const rotation = Math.PI / 4;
+    const rotatedBR = rotatePoint(100, 60, center.x, center.y, rotation);
+
+    const resize = makeResize();
+    const { result } = renderHook(() =>
+      usePointerGestures({
+        clientToWorld: IDENTITY_C2W,
+        resize,
+        resizeTarget: () => ({ id: 'a', bounds, rotation }),
+        handleHitRadius: 8,
+      }),
+    );
+    const canvas = makeCanvas();
+
+    // Click at the rotated-corner world position — should fire resize.start.
+    act(() => result.current.onPointerDown(makePointer(canvas, { clientX: rotatedBR.x, clientY: rotatedBR.y })));
+    expect(resize.start).toHaveBeenCalledTimes(1);
+    const args = (resize.start as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(args[0]).toBe('a');
+    expect(args[1]).toEqual({ x: 'min', y: 'min' }); // BR anchor pins TL (min,min)
+
+    (resize.start as ReturnType<typeof vi.fn>).mockClear();
+
+    // Click at the unrotated AABB BR corner (100, 60) — should NOT fire resize.start.
+    act(() => result.current.onPointerDown(makePointer(canvas, { clientX: 100, clientY: 60 })));
+    expect(resize.start).not.toHaveBeenCalled();
+  });
+});
+
 import { createDebugSink } from '../debug/createDebugSink';
 
 describe('usePointerGestures — debug recording', () => {
