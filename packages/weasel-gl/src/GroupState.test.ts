@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { GroupState } from './GroupState';
+import { GroupState, IDENTITY_COLOR_MATRIX } from './GroupState';
 import { mat3 } from './mat3';
 
 describe('GroupState', () => {
@@ -50,5 +50,54 @@ describe('GroupState', () => {
   it('pop() at the root throws (helps catch unbalanced renderer code)', () => {
     const s = new GroupState();
     expect(() => s.pop()).toThrow();
+  });
+});
+
+describe('GroupState — colorMatrix', () => {
+  it('starts at identity colorMatrix', () => {
+    const s = new GroupState();
+    expect(Array.from(s.colorMatrix)).toEqual(Array.from(IDENTITY_COLOR_MATRIX));
+  });
+
+  it('push with no colorMatrix leaves colorMatrix unchanged', () => {
+    const s = new GroupState();
+    s.push({ alpha: 0.5 });
+    expect(Array.from(s.colorMatrix)).toEqual(Array.from(IDENTITY_COLOR_MATRIX));
+  });
+
+  it('push with identity colorMatrix produces identity', () => {
+    const s = new GroupState();
+    s.push({ colorMatrix: IDENTITY_COLOR_MATRIX });
+    expect(Array.from(s.colorMatrix)).toEqual(Array.from(IDENTITY_COLOR_MATRIX));
+  });
+
+  it('pop() after colorMatrix push restores identity', () => {
+    const s = new GroupState();
+    const negR = new Float32Array([-1,0,0,0,1, 0,1,0,0,0, 0,0,1,0,0, 0,0,0,1,0]);
+    s.push({ colorMatrix: negR });
+    s.pop();
+    expect(Array.from(s.colorMatrix)).toEqual(Array.from(IDENTITY_COLOR_MATRIX));
+  });
+
+  it('compose4x5: outer bias is added', () => {
+    const addR = new Float32Array([1,0,0,0,0.1, 0,1,0,0,0, 0,0,1,0,0, 0,0,0,1,0]);
+    const s = new GroupState();
+    s.push({ colorMatrix: addR });
+    s.push({ colorMatrix: addR });
+    expect(s.colorMatrix[4]).toBeCloseTo(0.2, 5);
+  });
+
+  it('compose4x5: nested matrices compose in correct order (inner first)', () => {
+    // Swap R and G
+    const swapRG = new Float32Array([0,1,0,0,0, 1,0,0,0,0, 0,0,1,0,0, 0,0,0,1,0]);
+    // Swap G and B
+    const swapGB = new Float32Array([1,0,0,0,0, 0,0,1,0,0, 0,1,0,0,0, 0,0,0,1,0]);
+    const s = new GroupState();
+    s.push({ colorMatrix: swapRG }); // outer
+    s.push({ colorMatrix: swapGB }); // inner — applied first
+    // Input (R,G,B) → swapGB → (R,B,G) → swapRG → (B,R,G)
+    expect(s.colorMatrix[0]).toBeCloseTo(0, 5);
+    expect(s.colorMatrix[1]).toBeCloseTo(0, 5);
+    expect(s.colorMatrix[2]).toBeCloseTo(1, 5);
   });
 });
