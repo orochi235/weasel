@@ -66,6 +66,17 @@ const GL_CONSTANTS: Readonly<Record<string, number>> = {
   FRONT_AND_BACK: 0x0408,
   // Misc constants used in step 1
   COLOR_WRITEMASK: 0x0C23,
+  // Textures (step 3)
+  TEXTURE_2D: 0x0DE1,
+  TEXTURE0: 0x84C0,
+  RGBA: 0x1908,
+  UNSIGNED_BYTE: 0x1401,
+  TEXTURE_MIN_FILTER: 0x2801,
+  TEXTURE_MAG_FILTER: 0x2800,
+  LINEAR: 0x2601,
+  TEXTURE_WRAP_S: 0x2802,
+  TEXTURE_WRAP_T: 0x2803,
+  CLAMP_TO_EDGE: 0x812F,
 };
 
 function syntheticHandle(name: string, seq: number): { __id: string } {
