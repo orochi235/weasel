@@ -4,6 +4,7 @@
  * a `drawLayers([...])` sequence.
  */
 
+import { type DrawCommand, viewToMat3 } from '@orochi235/weasel-gl';
 import type { RenderLayer } from '../../core/layers/render';
 import { applyPaint, type Paint } from '../../core/paint';
 import { resolveUnit, type UnitSystem, type UnitValue } from '../../core/units';
@@ -41,6 +42,22 @@ export function createCellHighlightLayer(opts: CellHighlightLayerOpts): RenderLa
       applyPaint(ctx, fill, { x, y });
       ctx.fillRect(x, y, spacing, spacing);
       ctx.restore();
+    },
+    drawGL: (_data, view) => {
+      const cell = opts.getCell();
+      if (!cell) return [];
+      const spacing = resolveUnit(opts.spacing, opts.unitSystem);
+      const o = opts.origin ? opts.origin() : { x: 0, y: 0 };
+      const x = o.x + cell.col * spacing;
+      const y = o.y + cell.row * spacing;
+      const children: DrawCommand[] = [
+        {
+          kind: 'path',
+          path: { kind: 'rect', x, y, width: spacing, height: spacing },
+          fill,
+        },
+      ];
+      return [{ kind: 'group', transform: viewToMat3(view), children }];
     },
   };
 }

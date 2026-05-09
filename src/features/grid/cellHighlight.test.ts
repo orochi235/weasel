@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { GroupDrawCommand } from '@orochi235/weasel-gl';
 import { createCellHighlightLayer } from './cellHighlight';
 import { IMPERIAL_INCHES } from '../../core/units';
 
@@ -73,6 +74,27 @@ describe('createCellHighlightLayer', () => {
     });
     layer.draw(ctx, undefined, { x: 0, y: 0, scale: 1 });
     expect(calls[0].fillStyle).toBe('#123456');
+  });
+
+  it('drawGL emits one rect path command at the cell coords', () => {
+    const layer = createCellHighlightLayer({
+      spacing: 20,
+      getCell: () => ({ col: 2, row: 3 }),
+    });
+    const tree = layer.drawGL!(undefined, { x: 0, y: 0, scale: 1 }, { width: 200, height: 200 });
+    expect(tree).toHaveLength(1);
+    const group = tree[0] as GroupDrawCommand;
+    expect(group.children).toHaveLength(1);
+    expect(group.children[0]).toMatchObject({
+      kind: 'path',
+      path: { kind: 'rect', x: 40, y: 60, width: 20, height: 20 },
+    });
+  });
+
+  it('drawGL returns [] when getCell returns null', () => {
+    const layer = createCellHighlightLayer({ spacing: 20, getCell: () => null });
+    const tree = layer.drawGL!(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    expect(tree).toEqual([]);
   });
 
   it('resolves a tagged spacing value via the unit system', () => {
