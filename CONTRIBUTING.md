@@ -1,5 +1,28 @@
 # Contributing to weasel
 
+## Fast inner-loop tests (Test Impact Analysis)
+
+The full vitest suite (~1500+ tests) runs in ~12s, but for tight inner loops
+the kit ships two scoped test scripts that ride on vitest's import-graph
+analysis:
+
+- `npm run test:changed` — runs only specs whose import graph touches files
+  changed since `HEAD`. Ideal for "I made an edit; do related tests still
+  pass?" checks before pushing.
+- `npm run test:related <file>...` — runs only specs that depend on the
+  given files. Useful when you know exactly which sources you touched.
+- `npm run test:watch` — vitest's watch mode already does TIA implicitly
+  (re-runs only related specs on save). Daily-driver for live coding.
+
+**These scripts are for local fast feedback only.** CI and `prepublishOnly`
+both run the full `npm run test`. Affected-test selection has known gaps
+(transitive type-only imports, env-dependent behavior); the full suite is
+the authoritative gate. Don't rely on `test:changed` to clear a PR — push
+and let CI run the full thing.
+
+Playwright suites (`test:visual`, `test:smoke:step1`) don't have native TIA
+and are small enough to run in full when needed.
+
 ## Visual regression tests
 
 The visual regression suite (`tests/visual/`) captures per-demo screenshots and
