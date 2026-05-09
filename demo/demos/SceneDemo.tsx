@@ -114,18 +114,7 @@ backend={backend}
         }}
         layers={{
           scene: {
-            drawOne: (cx, node, p) => {
-              cx.fillStyle = node.data.color;
-              cx.fillRect(p.x, p.y, p.width, p.height);
-              cx.strokeStyle = 'rgba(0,0,0,0.3)';
-              cx.strokeRect(p.x + 0.5, p.y + 0.5, p.width - 1, p.height - 1);
-              if (node.data.label) {
-                cx.fillStyle = 'rgba(0,0,0,0.7)';
-                cx.font = '11px sans-serif';
-                cx.fillText(node.data.label, p.x + 6, p.y + 14);
-              }
-            },
-            drawOneGL: (node, p): DrawCommand[] => {
+            drawOne: (node, p): DrawCommand[] => {
               const cmds: DrawCommand[] = [
                 {
                   kind: 'path',

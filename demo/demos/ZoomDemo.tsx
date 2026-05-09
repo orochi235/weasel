@@ -117,15 +117,7 @@ backend={backend}
         background="#1a130d"
         layers={{
           scene: {
-            drawOne: (ctx, _obj, pose, v) => {
-              const r = pose as Rect;
-              ctx.fillStyle = r.color;
-              ctx.fillRect(r.x, r.y, r.width, r.height);
-              ctx.lineWidth = r.pin === 'screen' ? 2 / v.scale : 2;
-              ctx.strokeStyle = '#d4c4a8';
-              ctx.strokeRect(r.x, r.y, r.width, r.height);
-            },
-            drawOneGL: (_obj, pose, v): DrawCommand[] => {
+            drawOne: (_obj, pose, v): DrawCommand[] => {
               const r = pose as Rect;
               const lineWidth = r.pin === 'screen' ? 2 / v.scale : 2;
               return [{

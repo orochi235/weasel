@@ -128,11 +128,7 @@ backend={backend}
       tools={tools}
       layers={{
         scene: {
-          drawOne: (cx, r, p) => {
-            cx.fillStyle = r.color;
-            cx.fillRect(p.x, p.y, p.width, p.height);
-          },
-          drawOneGL: (r, p): DrawCommand[] => [{
+          drawOne: (r, p): DrawCommand[] => [{
             kind: 'path',
             path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
             fill: { color: r.color },

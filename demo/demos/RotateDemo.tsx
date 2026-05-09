@@ -47,18 +47,7 @@ backend={backend}
       selectionOptions={{ initial: ['b'] }}
       layers={{
         scene: {
-          drawOne: (cx, _node, p) => {
-            const cxw = p.x + p.width / 2;
-            const cyw = p.y + p.height / 2;
-            cx.save();
-            cx.translate(cxw, cyw);
-            cx.rotate(p.rotation);
-            cx.translate(-cxw, -cyw);
-            cx.fillStyle = p.color;
-            cx.fillRect(p.x, p.y, p.width, p.height);
-            cx.restore();
-          },
-          drawOneGL: (_node, p): DrawCommand[] => {
+          drawOne: (_node, p): DrawCommand[] => {
             // Rotate around the rect's AABB center via a group transform.
             // Compose T(cx,cy) · R(θ) · T(-cx,-cy) into a single column-major
             // 3×3 affine. (a, b, c, d, tx, ty) for [a c tx; b d ty; 0 0 1].

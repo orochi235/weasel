@@ -647,7 +647,7 @@ describe('Canvas tools mode', () => {
 
 describe('Canvas viewport (Phase 2b)', () => {
   function noopScene() {
-    return { drawOne: () => {} } as const;
+    return { drawOne: () => [] } as const;
   }
 
   it('uncontrolled: defaults to {x:0,y:0} and is internally mutable', () => {
@@ -748,7 +748,7 @@ describe('Canvas viewport (Phase 2b)', () => {
 
 describe('Canvas debug overlay', () => {
   function noopScene() {
-    return { drawOne: () => {} } as const;
+    return { drawOne: () => [] } as const;
   }
 
   it('debug={false} produces no overlay layer even when URL has ?debug=all', () => {
@@ -798,7 +798,7 @@ describe('Canvas debug overlay', () => {
       <Canvas
         width={100} height={100}
         items={items} setItems={() => {}}
-        layers={{ scene: { drawOne: () => {} } }}
+        layers={{ scene: { drawOne: () => [] } }}
         boundsOf={(id) => {
           const it = items.find((i) => i.id === id);
           return it ? { x: it.x, y: it.y, width: it.w, height: it.h } : null;

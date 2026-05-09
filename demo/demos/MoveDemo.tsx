@@ -65,11 +65,7 @@ backend={backend}
           accentEvery: 5,
         },
         scene: {
-          drawOne: (cx, n, p) => {
-            cx.fillStyle = n.data.color;
-            cx.fillRect(p.x, p.y, p.width, p.height);
-          },
-          drawOneGL: (n, p): DrawCommand[] => [{
+          drawOne: (n, p): DrawCommand[] => [{
             kind: 'path',
             path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
             fill: { color: n.data.color },

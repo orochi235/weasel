@@ -81,20 +81,7 @@ backend={backend}
         }}
         layers={{
           scene: {
-            drawOne: (ctx, node, pose, view) => {
-              const p = pose as Pose;
-              ctx.fillStyle = node.data.color;
-              ctx.fillRect(p.x, p.y, p.width, p.height);
-              ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-              ctx.lineWidth = 1.5 / view.scale;
-              ctx.strokeRect(p.x, p.y, p.width, p.height);
-              ctx.fillStyle = '#1a130d';
-              ctx.font = `bold ${14 / view.scale}px sans-serif`;
-              ctx.textAlign = 'center';
-              ctx.textBaseline = 'middle';
-              ctx.fillText(node.data.label, p.x + p.width / 2, p.y + p.height / 2);
-            },
-            drawOneGL: (node, pose, view): DrawCommand[] => {
+            drawOne: (node, pose, view): DrawCommand[] => {
               const p = pose as Pose;
               const fontSize = 14 / view.scale;
               const label = node.data.label;

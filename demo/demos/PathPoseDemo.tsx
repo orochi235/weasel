@@ -4,7 +4,6 @@ import {
   pathOriginProjection,
   pathPoseDescriptor,
   polygonFromPoints,
-  traceToContext,
   gridSnapStrategy,
   SceneCanvas,
   useScene,
@@ -88,16 +87,7 @@ backend={backend}
         debug={debug}
         layers={{
           scene: {
-            drawOne: (cx, _o, p) => {
-              cx.fillStyle = '#7fb069';
-              cx.strokeStyle = '#1a130d';
-              cx.lineWidth = 1.5;
-              cx.beginPath();
-              traceToContext(cx, p);
-              cx.fill();
-              cx.stroke();
-            },
-            drawOneGL: (_o, p): DrawCommand[] => [{
+            drawOne: (_o, p): DrawCommand[] => [{
               kind: 'path',
               path: p,
               fill: { color: '#7fb069' },

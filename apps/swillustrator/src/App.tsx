@@ -21,6 +21,7 @@ import {
   type RenderLayer,
   type TextStyle,
 } from '@orochi235/weasel';
+import type { DrawCommand } from '@orochi235/weasel-gl';
 import {
   PropertiesPanel,
   PropertyRow,
@@ -335,17 +336,22 @@ export function App() {
             background="#fafafa"
             layers={{
               scene: {
-                drawOne: (ctx, _obj, pose) => {
+                drawOne: (_obj, pose): DrawCommand[] => {
                   const o = pose as unknown as Obj;
-                  if (o.kind === 'rect') {
-                    ctx.fillStyle = o.fill;
-                    ctx.fillRect(o.x, o.y, o.width, o.height);
-                    if (o.strokeWidth > 0) {
-                      ctx.lineWidth = o.strokeWidth;
-                      ctx.strokeStyle = o.stroke;
-                      ctx.strokeRect(o.x + 0.5, o.y + 0.5, o.width, o.height);
-                    }
+                  if (o.kind !== 'rect') return [];
+                  const cmds: DrawCommand[] = [{
+                    kind: 'path',
+                    path: { kind: 'rect', x: o.x, y: o.y, width: o.width, height: o.height },
+                    fill: { color: o.fill },
+                  }];
+                  if (o.strokeWidth > 0) {
+                    cmds.push({
+                      kind: 'path',
+                      path: { kind: 'rect', x: o.x + 0.5, y: o.y + 0.5, width: o.width, height: o.height },
+                      stroke: { paint: { color: o.stroke }, width: o.strokeWidth },
+                    });
                   }
+                  return cmds;
                 },
               },
               text: { layer: textLayer, before: 'selectionOverlay' },

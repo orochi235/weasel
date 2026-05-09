@@ -89,14 +89,8 @@ export interface SceneSlotConfig<TObject extends { id: string }, TPose> {
   objects?: TObject[];
   /** Project an object to its committed pose. Defaults to `adapter.getPose(obj.id)`. */
   toPose?: (obj: TObject) => TPose;
-  /** Draw a single object given its effective pose. The 2D backend. */
-  drawOne: (ctx: CanvasRenderingContext2D, obj: TObject, pose: TPose, view: View) => void;
-  /**
-   * Draw a single object as a `DrawCommand` tree for the GL backend. Optional
-   * through step 9; demos that don't supply it render empty under `backend='gl'`.
-   * Step 10 replaces `drawOne` with this.
-   */
-  drawOneGL?: (obj: TObject, pose: TPose, view: View) => DrawCommand[];
+  /** Draw a single object as a `DrawCommand` tree. */
+  drawOne: (obj: TObject, pose: TPose, view: View) => DrawCommand[];
   /** Default ghost alpha for the move-overlay slot. Default 0.85. */
   ghostAlpha?: number;
 }
@@ -372,7 +366,7 @@ function buildSceneLayer<TObject extends { id: string }, TPose>(
   const toPose =
     cfg.toPose ??
     ((obj: TObject) => (adapter ? adapter.getPose(obj.id) : (obj as unknown as TPose)));
-  const drawOneGL = cfg.drawOneGL;
+  const drawOne = cfg.drawOne;
   return {
     id: 'scene',
     label: 'Scene',
@@ -383,8 +377,8 @@ function buildSceneLayer<TObject extends { id: string }, TPose>(
       for (const obj of objects) {
         if (hidden && hidden.has(obj.id)) continue;
         const pose: TPose = toPose(obj);
-        if (drawOneGL) {
-          for (const cmd of drawOneGL(obj, pose, view)) children.push(cmd);
+        if (drawOne) {
+          for (const cmd of drawOne(obj, pose, view)) children.push(cmd);
         }
         if (debugSink) {
           const b = boundsOfFn ? boundsOfFn(obj.id) : null;

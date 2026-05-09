@@ -70,12 +70,7 @@ backend={backend}
         background="#1a130d"
         layers={{
           scene: {
-            drawOne: (ctx, _obj, pose) => {
-              const r = pose as Rect;
-              ctx.fillStyle = r.color;
-              ctx.fillRect(r.x, r.y, r.width, r.height);
-            },
-            drawOneGL: (_obj, pose): DrawCommand[] => {
+            drawOne: (_obj, pose): DrawCommand[] => {
               const r = pose as Rect;
               return [{
                 kind: 'path',

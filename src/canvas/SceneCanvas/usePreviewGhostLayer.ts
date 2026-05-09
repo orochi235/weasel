@@ -1,7 +1,7 @@
 /**
  * Preview-ghost render layer for `<SceneCanvas>`. Renders in-flight gesture
- * poses on top of the committed scene by reusing the scene slot's `drawOne` /
- * `drawOneGL`. The active tool publishes which ids are displaced
+ * poses on top of the committed scene by reusing the scene slot's `drawOne`.
+ * The active tool publishes which ids are displaced
  * (`previewIds`) and their interim poses (`previewPose`); this layer iterates
  * them and delegates to the slot's draw functions.
  *
@@ -37,8 +37,8 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
     label: 'Preview ghost',
     draw: (_data, view) => {
       const slot = sceneSlotRef.current;
-      const drawOneGL = slot?.drawOneGL;
-      if (!slot || !drawOneGL) return [];
+      const drawOne = slot?.drawOne;
+      if (!slot || !drawOne) return [];
       const t = toolsRef.current;
       const tool = t.registry[t.hotkeyEngaged ?? t.active];
       const ids = tool?.previewIds?.();
@@ -50,7 +50,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
         if (pose == null) continue;
         const node = sc.get(asNodeId(id));
         if (!node) continue;
-        for (const cmd of drawOneGL(node, pose, view)) children.push(cmd);
+        for (const cmd of drawOne(node, pose, view)) children.push(cmd);
       }
       if (children.length === 0) return [];
       return [{ kind: 'group', transform: viewToMat3(view), alpha: 0.85, children }];

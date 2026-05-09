@@ -70,8 +70,7 @@ backend={backend}
       selectionMode="none"
       layers={{
         scene: {
-          drawOne: drawRect,
-          drawOneGL: (r, p): DrawCommand[] => [{
+          drawOne: (r, p): DrawCommand[] => [{
             kind: 'path',
             path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
             fill: { color: r.color },

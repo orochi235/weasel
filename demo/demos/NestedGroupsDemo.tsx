@@ -167,18 +167,7 @@ backend={backend}
           // previewIds suppresses dragged + descendant ids whose ghosts sit
           // in the overlay.
           toPose: (n) => worldPoseOf(n.id) ?? n.pose,
-          drawOne: (cx, n, p) => {
-            if (n.isGroup) {
-              cx.fillStyle = n.color; cx.globalAlpha = 0.35;
-              cx.fillRect(p.x, p.y, p.width, p.height); cx.globalAlpha = 1;
-              cx.strokeStyle = '#5a4a38'; cx.setLineDash([4, 3]);
-              cx.strokeRect(p.x + 0.5, p.y + 0.5, p.width - 1, p.height - 1); cx.setLineDash([]);
-            } else {
-              cx.fillStyle = n.color;
-              cx.fillRect(p.x, p.y, p.width, p.height);
-            }
-          },
-          drawOneGL: (n, p): DrawCommand[] => {
+          drawOne: (n, p): DrawCommand[] => {
             if (n.isGroup) {
               return [
                 // Translucent fill via paint opacity (group-level alpha would

@@ -174,16 +174,12 @@ backend={backend}
         layers={{
           tracks: { layer: trackLayer, before: 'scene' },
           scene: {
-            drawOne: (cx, m: Marker, p: Pose) => {
-              cx.fillStyle = m.color;
-              cx.fillRect(p.x, p.y, p.width, p.height);
-            },
-            drawOneGL: (m: Marker, p: Pose): DrawCommand[] => [{
+            drawOne: (m: Marker, p: Pose): DrawCommand[] => [{
               kind: 'path',
               path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
               fill: { color: m.color },
             }],
-            // drawOneGL: trackLayer (labels + curve plots) is a custom screen-
+            // drawOne: trackLayer (labels + curve plots) is a custom screen-
             // space RenderLayer and not part of the scene slot — it remains 2D-
             // only; defer to v2 (no GL counterpart for the curve-plot polyline).
           },

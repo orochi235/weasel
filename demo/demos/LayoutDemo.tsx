@@ -66,16 +66,7 @@ backend={backend}
       layouts={layouts}
       layers={{
         scene: {
-          drawOne: (cx, node, p) => {
-            cx.fillStyle = node.data.color;
-            cx.fillRect(p.x, p.y, p.width, p.height);
-            if (node.data.isContainer) {
-              cx.strokeStyle = '#d4c4a8';
-              cx.lineWidth = 1;
-              cx.strokeRect(p.x + 0.5, p.y + 0.5, p.width - 1, p.height - 1);
-            }
-          },
-          drawOneGL: (node, p): DrawCommand[] => {
+          drawOne: (node, p): DrawCommand[] => {
             const cmds: DrawCommand[] = [{
               kind: 'path',
               path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },

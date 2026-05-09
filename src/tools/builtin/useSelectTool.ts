@@ -229,7 +229,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
   // screen coords (via `worldToScreen`); ghosts go through `drawGhostGL`,
   // wrapped in a world-transform group. When `drawGhostGL` is omitted,
   // ghosts are invisible during drag — fallback consumers can opt in via
-  // SceneCanvas's preview-ghost layer driven by scene-slot `drawOneGL`.
+  // SceneCanvas's preview-ghost layer driven by scene-slot `drawOne`.
   const overlay = useMemo<RenderLayer<unknown>>(
     () => ({
       id: 'select-overlay',

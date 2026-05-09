@@ -163,14 +163,7 @@ backend={backend}
             }}
             layers={{
               scene: {
-                drawOne: (cx, _o, p) => {
-                  cx.strokeStyle = '#f5b7a3';
-                  cx.lineWidth = 2;
-                  cx.beginPath();
-                  traceToContext(cx, p);
-                  cx.stroke();
-                },
-                drawOneGL: (_o, p): DrawCommand[] => [{
+                drawOne: (_o, p): DrawCommand[] => [{
                   kind: 'path',
                   path: p,
                   stroke: { paint: { color: '#f5b7a3' }, width: 2 },

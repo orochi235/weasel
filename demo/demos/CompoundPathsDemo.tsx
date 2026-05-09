@@ -5,7 +5,6 @@ import {
   pathPoseDescriptor,
   PathBuilder,
   polygonFromPoints,
-  traceToContext,
   useScene,
   asNodeId,
 } from '@orochi235/weasel';
@@ -187,22 +186,13 @@ backend={backend}
         selectTool={{ handleHitRadius: HANDLE }}
         layers={{
           scene: {
-            drawOne: (cx, node, p) => {
-              cx.fillStyle = node.data.fill;
-              cx.strokeStyle = node.data.stroke ?? '#1a130d';
-              cx.lineWidth = 1.5;
-              traceToContext(cx, p);
-              if (p.kind === 'polygon' && p.fillRule === 'evenodd') cx.fill('evenodd');
-              else cx.fill();
-              cx.stroke();
-            },
-            drawOneGL: (node, p): DrawCommand[] => [{
+            drawOne: (node, p): DrawCommand[] => [{
               kind: 'path',
               path: p,
               fill: { color: node.data.fill },
               stroke: { paint: { color: node.data.stroke ?? '#1a130d' }, width: 1.5 },
             }],
-            // drawOneGL: 'signature' is a custom screen-space RenderLayer
+            // drawOne: 'signature' is a custom screen-space RenderLayer
             // (Comic Sans signature text) and remains 2D-only; defer to v2.
           },
           selectionOverlay: { handles: { size: HANDLE } },

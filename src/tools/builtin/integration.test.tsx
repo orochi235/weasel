@@ -240,7 +240,7 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
           view={view}
           onViewChange={(v) => { setView(v); onViewChange(v); }}
           tools={tools}
-          layers={{ scene: { drawOne: () => {} } }}
+          layers={{ scene: { drawOne: () => [] } }}
         />
       );
     }
@@ -306,7 +306,7 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
           view={view}
           onViewChange={(v) => { setView(v); onViewChange(v); }}
           tools={tools}
-          layers={{ scene: { drawOne: () => {} } }}
+          layers={{ scene: { drawOne: () => [] } }}
         />
       );
     }
@@ -368,7 +368,7 @@ describe('Phase 2c: zoom + pan composition', () => {
         view={view}
         onViewChange={(v) => { setView(v); onViewChange(v); }}
         tools={tools}
-        layers={{ scene: { drawOne: () => {} } }}
+        layers={{ scene: { drawOne: () => [] } }}
       />
     );
   }

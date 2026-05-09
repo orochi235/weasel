@@ -105,13 +105,12 @@ backend={backend}
           accentEvery: 5,
         },
         scene: {
-          drawOne: (cx, _node, p) => { cx.fillStyle = p.color; cx.fillRect(p.x, p.y, p.width, p.height); },
-          drawOneGL: (_node, p): DrawCommand[] => [{
+          drawOne: (_node, p): DrawCommand[] => [{
             kind: 'path',
             path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
             fill: { color: p.color },
           }],
-          // drawOneGL: the quadtree-cell overlay (createQuadtreeLayer) is a
+          // drawOne: the quadtree-cell overlay (createQuadtreeLayer) is a
           // separate RenderLayer, not a scene slot — remains 2D-only; defer
           // to v2.
         },
