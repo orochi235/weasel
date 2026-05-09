@@ -148,8 +148,12 @@ function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
     return { vertices: new Float32Array(coords), indices: new Uint32Array(tri) };
   }
 
-  // Group each hole with the smallest positive that contains its first vertex.
+  // Group each opposite-wound contour with the smallest positive that
+  // contains its first vertex. Orphans (opposite-wound but not inside any
+  // positive) get promoted to independent positives — author probably
+  // intended them as separate shapes with inconsistent winding.
   const holesByPositive = new Map<number, number[]>();
+  const orphanPositives: number[] = [];
   for (const n of negatives) {
     const px = coords[contourStarts[n] * 2];
     const py = coords[contourStarts[n] * 2 + 1];
@@ -166,13 +170,17 @@ function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
       const arr = holesByPositive.get(bestPos) ?? [];
       arr.push(n);
       holesByPositive.set(bestPos, arr);
+    } else {
+      orphanPositives.push(n);
     }
   }
+
+  const allPositives = [...positives, ...orphanPositives];
 
   // Build (coords, indices) by iterating positives.
   const finalCoords: number[] = [];
   const finalIndices: number[] = [];
-  for (const pos of positives) {
+  for (const pos of allPositives) {
     const holes = holesByPositive.get(pos) ?? [];
     const offset = finalCoords.length / 2;
     const groupCoords: number[] = [];
