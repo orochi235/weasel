@@ -10,7 +10,7 @@ test('step 1 synthetic — every scene paints non-empty pixels', async ({ page }
   await page.waitForSelector('canvas');
   await page.waitForTimeout(300);
 
-  const canvasIds = ['c10', 'c100', 'c1000', 'cEvenodd'];
+  const canvasIds = ['c10', 'c100', 'c1000', 'cEvenodd', 'cCaps', 'cJoins', 'cDash', 'cAlign'];
   for (const id of canvasIds) {
     const nonEmpty = await page.evaluate((cid) => {
       const c = document.getElementById(cid) as HTMLCanvasElement;
