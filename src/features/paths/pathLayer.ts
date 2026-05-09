@@ -6,6 +6,7 @@
  * separate from the visual style record (the typical scene-graph layout).
  */
 
+import { type DrawCommand, viewToMat3 } from '@orochi235/weasel-gl';
 import { applyPaint, applyStroke, type Paint, type Stroke } from '../../core/paint';
 import type { RenderLayer } from '../../core/layers/render';
 import { traceToContext } from './canvas';
@@ -55,6 +56,23 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
           ctx.stroke();
         }
       }
+    },
+    drawGL: (_data, view) => {
+      const children: DrawCommand[] = [];
+      for (const node of getNodes()) {
+        if (isHidden?.(node)) continue;
+        const path = getPath(node);
+        const fill = getFill?.(node);
+        const stroke = getStroke?.(node);
+        if (fill == null && stroke == null) continue;
+        children.push({
+          kind: 'path',
+          path,
+          ...(fill != null ? { fill } : {}),
+          ...(stroke != null ? { stroke } : {}),
+        });
+      }
+      return [{ kind: 'group', transform: viewToMat3(view), children }];
     },
   };
 }
