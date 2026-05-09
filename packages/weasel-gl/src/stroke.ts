@@ -109,8 +109,11 @@ function makeSeg(ax: number, ay: number, bx: number, by: number, half: number): 
   return { ax, ay, bx, by, nx: (-dy / len) * half, ny: (dx / len) * half, len };
 }
 
+/** Canvas2D's default miter limit. `Stroke` doesn't currently have a `miterLimit` field; document deferred. */
+const MITER_LIMIT = 10;
+
 function emitJoin(
-  segs: Seg[], segBaseIdx: number[], j: number, _half: number, join: Join,
+  segs: Seg[], segBaseIdx: number[], j: number, half: number, join: Join,
   verts: number[], idx: number[],
 ): void {
   const a = segs[j];
@@ -124,19 +127,60 @@ function emitJoin(
   if (cross === 0) return;                                       // straight (collinear), no wedge
   const onPositive = cross > 0;
 
-  // Outer-side vertex indices at the joint:
-  // when cross > 0 (CCW turn), outer is on the -n side (R1, R0).
-  // when cross < 0 (CW turn), outer is on the +n side (L1, L0).
   const aOuterEnd = onPositive ? aBase + 3 : aBase + 2;
   const bOuterStart = onPositive ? bBase + 1 : bBase + 0;
 
   if (join === 'bevel') {
-    // Add the joint center as a fresh vertex; emit one triangle.
-    const jIdx = verts.length / 2;
-    verts.push(a.bx, a.by);
-    if (onPositive) idx.push(aOuterEnd, jIdx, bOuterStart);
-    else            idx.push(aOuterEnd, bOuterStart, jIdx);     // CCW orientation
+    emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx);
     return;
   }
-  // miter / round join branches added in following tasks.
+
+  if (join === 'miter') {
+    // Compute apex: intersection of A's outer edge extended forward and
+    // B's outer edge extended backward. If miter length > MITER_LIMIT * half,
+    // fall back to bevel.
+    const aOX = verts[aOuterEnd * 2], aOY = verts[aOuterEnd * 2 + 1];
+    const bOX = verts[bOuterStart * 2], bOY = verts[bOuterStart * 2 + 1];
+    const apex = lineLineIntersect(aOX, aOY, adx, ady, bOX, bOY, -bdx, -bdy);
+    if (!apex) {
+      emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx);
+      return;
+    }
+    const miterLen = Math.hypot(apex[0] - a.bx, apex[1] - a.by);
+    if (miterLen > MITER_LIMIT * half) {
+      emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx);
+      return;
+    }
+    const apexIdx = verts.length / 2;
+    verts.push(apex[0], apex[1]);
+    if (onPositive) idx.push(aOuterEnd, apexIdx, bOuterStart);
+    else            idx.push(aOuterEnd, bOuterStart, apexIdx);
+    return;
+  }
+
+  // round join: implemented in next task.
+}
+
+function emitBevel(
+  a: Seg, aOuterEnd: number, bOuterStart: number, onPositive: boolean,
+  verts: number[], idx: number[],
+): void {
+  const jIdx = verts.length / 2;
+  verts.push(a.bx, a.by);
+  if (onPositive) idx.push(aOuterEnd, jIdx, bOuterStart);
+  else            idx.push(aOuterEnd, bOuterStart, jIdx);
+}
+
+/**
+ * Solve for the intersection of line A (point ap, direction ad) with line B
+ * (point bp, direction bd). Returns null if parallel or near-parallel.
+ */
+function lineLineIntersect(
+  apx: number, apy: number, adx: number, ady: number,
+  bpx: number, bpy: number, bdx: number, bdy: number,
+): [number, number] | null {
+  const denom = adx * bdy - ady * bdx;
+  if (Math.abs(denom) < 1e-9) return null;
+  const t = ((bpx - apx) * bdy - (bpy - apy) * bdx) / denom;
+  return [apx + t * adx, apy + t * ady];
 }

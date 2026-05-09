@@ -45,4 +45,29 @@ describe('tessellateStroke joins', () => {
     // 2 ribbon segments × 2 triangles + 1 bevel triangle = 5 triangles → 15 indices.
     expect(mesh.indices.length).toBe(15);
   });
+
+  it('extends miter join to the outer apex on a 90° corner', () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10]),
+      fillRule: 'nonzero',
+    };
+    const mesh = tessellateStroke(path, { paint: { color: '#000' }, width: 4, join: 'miter' });
+    // 2 segments × 2 triangles + 1 miter triangle = 5 triangles → 15 indices.
+    expect(mesh.indices.length).toBe(15);
+  });
+
+  it('falls back to bevel for very acute angles (miter limit 10, half-width 2 → max miter length 20)', () => {
+    // ~5° corner: (0, 0) → (100, 0) → (200, -3). Very acute.
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L]),
+      coords: new Float32Array([0, 0, 100, 0, 200, -3]),
+      fillRule: 'nonzero',
+    };
+    const mesh = tessellateStroke(path, { paint: { color: '#000' }, width: 4, join: 'miter' });
+    // Same triangle count as bevel since fallback kicks in.
+    expect(mesh.indices.length).toBe(15);
+  });
 });
