@@ -159,26 +159,23 @@ If any of those become live problems, the rollback path is small: split `layers`
 
 ### Barrel-hygiene rollout
 
-Audit findings (2026-05-09 background agent): focus + grid get the convention applied as part of `docs/superpowers/plans/2026-05-09-feature-roles-focus-grid.md`. Other features ranked by migration cost:
+Status (2026-05-09):
 
-- **Trivial** — drag (no `index.ts` at all; two utility functions; ~5-line barrel). paths is already conformant despite being large.
-- **Lightweight** — patterns (intentional two-tier split: core barrel + `patterns-builtin` subpath; not a hygiene bug, leave as is). text (no `index.ts`; ~10 public primitives plus an internal `atlas/` subdirectory that should stay un-exported).
-- **Design review needed** — selection (protocol-shaped; no `index.ts`; ambient `SelectionContextProvider` is `@experimental` with open questions about its barrel placement). Don't migrate mechanically; needs a brief design pass.
-- **Already conformant** — focus, paths, groups (groups despite being protocol-shaped — its barrel is clean).
+- **drag** — *Shipped* (`36f776b`). Feature barrel added; main barrel routes through it.
+- **text** — *Shipped* (`83127ae`). Feature barrel added; main barrel collapses 19 deep-import lines into one wildcard. Internal `atlas/` subdirectory stays out of the public surface (renderer reaches it directly).
+- **patterns** — *Confirmed conformant.* Two-tier split (core `index.ts` + `patterns-builtin` subpath) is intentional; barrel is clean; no hygiene change needed.
+- **focus, paths, groups** — Already conformant; no change needed.
+- **selection** — *Pending design review.* Protocol-shaped; no `index.ts`; ambient `SelectionContextProvider` is `@experimental` with open questions about its barrel placement. Don't migrate mechanically.
 
-Rollout order suggestion: drag → patterns (no-op confirmation) → text → selection (after design pass). Each is its own small PR; no bundling required.
-
-**Viewport is not on this list** — it's reclassified as core infrastructure (see "Move viewport out of `src/features/`" below). Barrel-hygiene migration doesn't apply; the work is a directory move + import-site updates.
+**Viewport is not on this list** — reclassified as core infrastructure (see "Move viewport out of `src/features/`" below). Barrel-hygiene migration doesn't apply; the work was a directory move + import-site updates (shipped).
 
 ### ~~Move viewport out of `src/features/` to `src/core/`~~ DONE
 
 Shipped. `src/features/viewport/` moved to `src/core/viewport/`; barrel added at new location; all import sites updated. Package surface unchanged.
 
-### Rotated-resize math demo: synchronized drag
+### ~~Rotated-resize math demo: synchronized drag~~ DONE
 
-Right now the three-panel math explainer requires the user to drag each rect in turn and remember the previous behavior to compare. Better UX: pick the green panel as the *controller* — user drags only there. The other two panels render the same starting pose but project the controller's drag through their broken descriptors (no-projection / no-correction). All three rects move in real time off one drag input; the comparison becomes immediate and visceral.
-
-Trade-off: the counterexample panels become read-only (no grabbable corners). Fine for an explainer — the lesson is the math, not the gesture handling. Implementation: extract the resize math into a pure helper or replicate it in the demo; render each panel with its own pose computed from the controller's drag every frame. ~50-100 lines of demo refactor.
+Shipped (`b979544`). All three panels remain interactive but a unified parent-level driver fans the gesture out to all three controllers in lockstep — one input, three diverging outputs. Includes a 4th `StackedOverlayPanel` (live mirror of all three rects), in-flight ghost previews colored by the active panel, fixed-corner markers (static + live), and a world-space grid for spatial reference.
 
 ## Tier 1 — foundational genericity gaps
 
