@@ -23,11 +23,20 @@
  */
 export type Paint =
   | { fill?: 'solid'; color: string; opacity?: number }
-  | { fill: 'pattern'; pattern: CanvasPattern; opacity?: number };
+  | { fill: 'pattern'; pattern: CanvasPattern; opacity?: number }
+  | { fill: 'linear-gradient'; from: { x: number; y: number }; to: { x: number; y: number }; stops: GradStop[]; opacity?: number }
+  | { fill: 'radial-gradient'; center: { x: number; y: number }; radius: number; stops: GradStop[]; opacity?: number }
+  | { fill: 'conic-gradient'; center: { x: number; y: number }; angle: number; stops: GradStop[]; opacity?: number };
+
+/** A single color stop within a gradient. `offset` is in 0..1. */
+export interface GradStop {
+  offset: number;
+  color: string;
+}
 
 /** Internal: discriminate without requiring an explicit `fill: 'solid'`. */
 function isSolidPaint(paint: Paint): paint is { fill?: 'solid'; color: string; opacity?: number } {
-  return paint.fill !== 'pattern';
+  return paint.fill === undefined || paint.fill === 'solid';
 }
 
 /**

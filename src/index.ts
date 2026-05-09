@@ -171,6 +171,7 @@ export {
 } from './core/paint';
 export type {
   Paint,
+  GradStop,
   Stroke,
   StrokeAlign,
   Region,
