@@ -1,0 +1,71 @@
+.root {
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.track {
+  position: relative;
+  width: 100%;
+  height: var(--rp-track-height, 24px);
+  background: var(--wui-track-bg);
+  border: 1px solid var(--wui-track-border);
+  border-radius: 3px;
+  overflow: hidden;
+  cursor: crosshair;
+}
+
+.trackInner {
+  position: absolute;
+  inset: 0;
+}
+
+.thumb {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+  margin-left: -7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--wui-thumb-fill);
+  border: 1px solid var(--wui-thumb-border);
+  border-radius: 3px;
+  cursor: ew-resize;
+  font: 500 0.65rem/1 ui-sans-serif, system-ui, sans-serif;
+  color: var(--wui-text);
+}
+
+.thumb:focus-visible {
+  outline: 2px solid var(--wui-accent);
+  outline-offset: 1px;
+}
+
+.thumbActive {
+  /* Visual marker for the dragging/focused thumb; subclass-overridable. */
+  z-index: 1;
+}
+
+.readoutsBelow {
+  position: relative;
+  height: 14px;
+  margin-top: 4px;
+}
+
+.readoutBelow {
+  position: absolute;
+  transform: translateX(-50%);
+  font: 500 0.65rem/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--wui-text-muted);
+  white-space: nowrap;
+}
+
+.readoutInline {
+  display: inline-block;
+  margin-left: 8px;
+  font: 500 0.7rem/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--wui-text-muted);
+  vertical-align: middle;
+}

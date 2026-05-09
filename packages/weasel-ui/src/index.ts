@@ -13,3 +13,14 @@ export {
 } from './PropertiesPanel';
 export { CommandPalette, useCommandPaletteShortcut } from './CommandPalette';
 export type { CommandPaletteProps } from './CommandPalette';
+export { RangePicker } from './RangePicker';
+export type {
+  RangePickerProps,
+  Thumb,
+  ThumbShape,
+  ThumbRenderCtx,
+  BoundsCtx,
+  TrackCtx,
+} from './RangePicker';
+export { paintGradientTrack } from './paintGradientTrack';
+export type { GradientTrackOpts } from './paintGradientTrack';

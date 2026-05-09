@@ -9,4 +9,8 @@
   --wui-input-bg: #ffffff;
   --wui-accent: #4a8fd4;
   --wui-danger: #c64a3a;
+  --wui-track-bg: #e3e3e3;
+  --wui-track-border: #c2c2c2;
+  --wui-thumb-fill: #ffffff;
+  --wui-thumb-border: #6a6a6a;
 }
