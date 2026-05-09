@@ -87,7 +87,7 @@ const fixedWorld = originRotation === 0
   : rotatePoint(fixedLocal.x, fixedLocal.y, originCenter.x, originCenter.y, originRotation);
 ```
 
-`fixedCornerOf(bounds, anchor)` returns the corner *not* moving under the gesture. For `anchor.x === 'min'` the moving edge is `x = bounds.x`; the fixed corner sits at `x = bounds.x + bounds.width`. Same for y. (Convention matches `cornerResizeHandles` exactly: each handle's `anchor` records which axis edges move.) This is a five-line helper added next to `cornerResizeHandles`.
+`fixedCornerOf(bounds, anchor)` returns the corner *not* moving under the gesture. The convention is set by the existing `useResize` math: `anchor.x === 'min'` keeps `x` unchanged and grows `width` by the drag delta — i.e., the *min-x edge is the fixed anchor* and the max-x edge moves. The fixed corner therefore sits at `x = bounds.x` when `anchor.x === 'min'` and at `x = bounds.x + bounds.width` when `anchor.x === 'max'`. Same for y. This is a five-line helper added next to `cornerResizeHandles`.
 
 `move(worldX, worldY, modifiers)` branches on `originRotation`:
 
