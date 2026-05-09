@@ -12,7 +12,7 @@
  *   - Layer composition: `RenderLayer`, `LayerRenderer`,
  *     `createGridLayer`, `createCellHighlightLayer`, `createChildrenLayer`,
  *     `createSelectionOverlayLayer` and friends, `createTextLayer`,
- *     `createTilePattern`, `applyPaint` / `applyStroke`.
+ *     `createTilePattern`.
  *   - Interactions (gesture hooks): `useMove`,
  *     `useResize`, `useInsert`,
  *     `useAreaSelect`, `useClone`,
