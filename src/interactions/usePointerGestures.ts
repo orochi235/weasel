@@ -1,6 +1,7 @@
 import { useCallback, useRef } from 'react';
 import type React from 'react';
-import { clientToCanvas } from '../features/viewport/clientToCanvas';
+import { clientToCanvas } from '../core/viewport/clientToCanvas';
+import type { NodeId } from '../core/scene/types';
 import { cornerResizeHandles, hitCornerHandle } from './gestures/resize/cornerHandles';
 import type { MoveController } from './gestures/move/move';
 import type { ResizeController } from './gestures/resize/resize';
@@ -15,7 +16,7 @@ import {
 import { rotatePoint } from './gestures/rotate/geometry';
 import type { ModifierState } from './gestures/types';
 import type { SelectionApi } from '../features/selection/useSelection';
-import type { View } from '../features/viewport/view';
+import type { View } from '../core/viewport/view';
 import type { DebugSink, HitShape } from '../debug/types';
 import { pickTopMostHit } from '../tools/builtin/pickTopMostHit';
 
@@ -316,7 +317,7 @@ export function usePointerGestures<TMovePose, TResizePose>(
             // inside a container's child selects the child, not the
             // container. See `pickTopMostHit` for the full rule set.
             const top = pickTopMostHit(hitIds, move?.adapter ?? null) ?? hitIds[0];
-            selection.applyClick(top, modifiers);
+            selection.applyClick(top as NodeId, modifiers);
           }
           // Now decide what to drag. With selection, drag the post-click
           // selection (so click-on-unselected promotes-then-drags). Without,

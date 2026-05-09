@@ -11,7 +11,7 @@ import {
 } from '@orochi235/weasel';
 import type { UnitSystem } from '@orochi235/weasel';
 import type { DrawCommand } from '@orochi235/weasel-gl';
-import type { View } from '../../src/features/viewport/view';
+import type { View } from '../../src/core/viewport/view';
 
 interface NodeData { color: string }
 type LayerId = 'default';

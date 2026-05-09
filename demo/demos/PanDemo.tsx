@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Canvas, useTools, useKeybindings, useHandTool, useSelectTool } from '../../src';
 import type { DrawCommand } from '@orochi235/weasel-gl';
-import type { View } from '../../src/features/viewport/view';
+import type { View } from '../../src/core/viewport/view';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 

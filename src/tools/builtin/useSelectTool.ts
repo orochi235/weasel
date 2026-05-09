@@ -11,12 +11,13 @@ import type { ResizeAdapter } from '../../core/adapters/types';
 import type { RotateAdapter } from '../../core/adapters/types';
 import type { AreaSelectAdapter } from '../../core/adapters/types';
 import type { ResizeAnchor } from '../../interactions/gestures/types';
+import type { NodeId } from '../../core/scene/types';
 import { defineTool } from '../defineTool';
 import type { Tool, ToolBounds } from '../types';
 import type { DebugSink } from '../../debug/types';
 import type { RenderLayer } from '../../core/layers/render';
-import { viewToTransform } from '../../features/viewport/view';
-import { worldToScreen } from '../../features/viewport/viewTransform';
+import { viewToTransform } from '../../core/viewport/view';
+import { worldToScreen } from '../../core/viewport/viewTransform';
 import { viewToMat3, type DrawCommand } from '@orochi235/weasel-gl';
 import { pickTopMostHit } from './pickTopMostHit';
 
@@ -430,19 +431,19 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
               // dispatcher's render — it does not reflect mutations made by
               // applyClick during this same callback.
               const preClick = sel;
-              const hitAlreadySelected = preClick.includes(top);
+              const hitAlreadySelected = preClick.includes(top as NodeId);
               const isExtend = ctx.modifiers.shift || ctx.modifiers.meta;
               // When the hit is already part of a multi-selection and no
               // extend modifier is held, defer the collapse-to-single to
               // onClick. Otherwise applying it on down would wipe the
               // multi-selection before a drag can move the whole set.
               const deferClick = hitAlreadySelected && preClick.length > 1 && !isExtend;
-              if (!deferClick) ctx.selection.applyClick(top, ctx.modifiers);
+              if (!deferClick) ctx.selection.applyClick(top as NodeId, ctx.modifiers);
               // If the user clicked something already selected, drag the whole
               // selection. Otherwise the click switches selection and the drag
               // moves only the clicked object — matches Figma/Sketch behavior
               // ("dragging an unselected object shouldn't move the old one").
-              const moveIds = hitAlreadySelected && preClick.length > 0 ? preClick : [top];
+              const moveIds: string[] = hitAlreadySelected && preClick.length > 0 ? [...preClick] : [top];
               ctx.scratch = { kind: 'move', ids: moveIds, deferredClickId: deferClick ? top : null };
               return 'claim';
             }
@@ -465,7 +466,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
             if (ctx.scratch.kind === 'area' && !ctx.modifiers.shift && !ctx.modifiers.meta) {
               ctx.selection.clear();
             } else if (ctx.scratch.kind === 'move' && ctx.scratch.deferredClickId) {
-              ctx.selection.applyClick(ctx.scratch.deferredClickId, ctx.modifiers);
+              ctx.selection.applyClick(ctx.scratch.deferredClickId as NodeId, ctx.modifiers);
             }
             return 'claim';
           },

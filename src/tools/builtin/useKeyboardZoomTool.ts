@@ -1,9 +1,9 @@
 import { useMemo, useRef } from 'react';
 import { defineTool } from '../defineTool';
 import type { Tool } from '../types';
-import { zoomAt } from '../../features/viewport/zoomAt';
-import { useViewTween } from '../../features/viewport/useViewTween';
-import type { View } from '../../features/viewport/view';
+import { zoomAt } from '../../core/viewport/zoomAt';
+import { useViewTween } from '../../core/viewport/useViewTween';
+import type { View } from '../../core/viewport/view';
 
 export interface KeyboardZoomToolOpts {
   min?: number;

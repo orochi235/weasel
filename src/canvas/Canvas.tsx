@@ -19,8 +19,9 @@ import type { ToolsDispatcher } from '../tools/dispatcher';
 import type { ToolCtx } from '../tools/types';
 import type { Op } from '../core/ops/types';
 import { dispatchApplyBatch } from '../core/applyOps';
-import type { View } from '../features/viewport/view';
-import { clampView } from '../features/viewport/clampView';
+import type { NodeId } from '../core/scene/types';
+import type { View } from '../core/viewport/view';
+import { clampView } from '../core/viewport/clampView';
 import { drawLayers, type RenderLayer } from '../core/layers/render';
 import { WeaselRenderer, viewToMat3, type DrawCommand } from '@orochi235/weasel-gl';
 import {
@@ -280,7 +281,7 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
 /** Per-action config for the `gestures` prop. */
 export interface DeleteGestureConfig {
   label?: string;
-  filter?: (ids: string[]) => string[];
+  filter?: (ids: NodeId[]) => NodeId[];
 }
 export interface NudgeGestureConfig<TPose> {
   step?: number;
@@ -291,7 +292,7 @@ export interface NudgeGestureConfig<TPose> {
   translatePose?: (pose: TPose, dx: number, dy: number) => TPose;
 }
 export interface DuplicateGestureConfig {
-  cloneObject: (id: string, offset: { dx: number; dy: number }) => { id: string };
+  cloneObject: (id: NodeId, offset: { dx: number; dy: number }) => { id: NodeId };
   offset?: { dx: number; dy: number };
   label?: string;
 }
@@ -944,8 +945,8 @@ function CanvasInner<TObject extends { id: string }, TPose>(
           }
         });
       const getSelection = multiActive
-        ? () => [MULTI_RESIZE_TARGET_ID]
-        : () => selectedIds;
+        ? (): string[] => [MULTI_RESIZE_TARGET_ID]
+        : (): string[] => selectedIds as readonly string[] as string[];
       standardLayers.selectionOverlay = createSelectionOverlayLayer<TPose>({
         ...cfg,
         getSelection,

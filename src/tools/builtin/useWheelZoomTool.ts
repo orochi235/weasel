@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { defineTool } from '../defineTool';
 import type { Tool } from '../types';
-import { zoomAt } from '../../features/viewport/zoomAt';
+import { zoomAt } from '../../core/viewport/zoomAt';
 
 export interface WheelZoomToolOpts {
   min?: number;

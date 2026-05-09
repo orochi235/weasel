@@ -2,7 +2,7 @@
  * View → Mat3 helper for layer `draw` implementations on world-space layers.
  *
  * The kit's main package ships a `View` type at
- * `src/features/viewport/view.ts`; we re-declare a structurally compatible
+ * `src/core/viewport/view.ts`; we re-declare a structurally compatible
  * shape here to avoid a runtime cross-package import. Exported as
  * `ViewLike` from the package barrel.
  */

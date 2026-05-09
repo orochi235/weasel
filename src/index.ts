@@ -52,18 +52,18 @@
  */
 
 export * from './features/grid';
-export * from './features/viewport/viewTransform';
-export type { View } from './features/viewport/view';
+export * from './core/viewport/viewTransform';
+export type { View } from './core/viewport/view';
 export * from './features/drag/thresholdDrag';
 export * from './features/drag/pointerDrag';
-export * from './features/viewport/useCanvasSize';
-export * from './features/viewport/fitToBounds';
-export { zoomAt } from './features/viewport/zoomAt';
-export type { ZoomClampOpts } from './features/viewport/zoomAt';
-export { clampView } from './features/viewport/clampView';
-export type { ClampBounds, CanvasSize } from './features/viewport/clampView';
-export * from './features/viewport/useZoom';
-export * from './features/viewport/useAutoCenter';
+export * from './core/viewport/useCanvasSize';
+export * from './core/viewport/fitToBounds';
+export { zoomAt } from './core/viewport/zoomAt';
+export type { ZoomClampOpts } from './core/viewport/zoomAt';
+export { clampView } from './core/viewport/clampView';
+export type { ClampBounds, CanvasSize } from './core/viewport/clampView';
+export * from './core/viewport/useZoom';
+export * from './core/viewport/useAutoCenter';
 export { useKeybinding, isEditableTarget } from './interactions/actions/useKeybinding';
 export type { KeyBinding } from './interactions/actions/useKeybinding';
 
@@ -89,14 +89,14 @@ export type {
   StandardActionDefaults,
 } from './interactions/actions/useStandardActions';
 export { resolveActions } from './interactions/actions/resolveActions';
-export * from './features/viewport/wheelHandler';
-export { clientToCanvas } from './features/viewport/clientToCanvas';
-export { useVelocityTracker } from './features/viewport/useVelocityTracker';
-export { useDecayLoop } from './features/viewport/useDecayLoop';
-export type { DecayLoopConfig, PanBounds } from './features/viewport/useDecayLoop';
-export { useViewTween } from './features/viewport/useViewTween';
-export { usePinchGesture } from './features/viewport/usePinchGesture';
-export { useViewAnimation } from './features/viewport/useViewAnimation';
+export * from './core/viewport/wheelHandler';
+export { clientToCanvas } from './core/viewport/clientToCanvas';
+export { useVelocityTracker } from './core/viewport/useVelocityTracker';
+export { useDecayLoop } from './core/viewport/useDecayLoop';
+export type { DecayLoopConfig, PanBounds } from './core/viewport/useDecayLoop';
+export { useViewTween } from './core/viewport/useViewTween';
+export { usePinchGesture } from './core/viewport/usePinchGesture';
+export { useViewAnimation } from './core/viewport/useViewAnimation';
 export { usePointerGestures } from './interactions/usePointerGestures';
 export * from './tools';
 export { usePinchZoomTool, type PinchZoomToolOpts } from './tools/builtin/usePinchZoomTool';

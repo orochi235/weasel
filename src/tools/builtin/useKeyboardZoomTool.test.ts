@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useKeyboardZoomTool } from './useKeyboardZoomTool';
 import type { ToolCtx } from '../types';
-import type { View } from '../../features/viewport/view';
+import type { View } from '../../core/viewport/view';
 
 function makeCtx(view: View, setView: (v: View) => void, rect: Partial<DOMRect> = {}): ToolCtx<null> {
   const r = new DOMRect(rect.x ?? 0, rect.y ?? 0, rect.width ?? 200, rect.height ?? 100);

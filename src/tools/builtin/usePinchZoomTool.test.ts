@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { usePinchZoomTool } from './usePinchZoomTool';
-import type { View } from '../../features/viewport/view';
+import type { View } from '../../core/viewport/view';
 
 function makeCanvas() {
   const listeners = new Map<string, Set<EventListener>>();

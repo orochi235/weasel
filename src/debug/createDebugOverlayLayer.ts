@@ -1,8 +1,8 @@
 import type { DrawCommand, PathDrawCommand } from '@orochi235/weasel-gl';
 import type { Dims, RenderLayer } from '../core/layers/render';
-import type { View } from '../features/viewport/view';
-import { viewToTransform } from '../features/viewport/view';
-import { worldToScreen } from '../features/viewport/viewTransform';
+import type { View } from '../core/viewport/view';
+import { viewToTransform } from '../core/viewport/view';
+import { worldToScreen } from '../core/viewport/viewTransform';
 import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from '../features/paths/types';
 import type {
   DebugConfig,

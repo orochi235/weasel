@@ -14,7 +14,7 @@
 
 import type { DrawCommand } from '@orochi235/weasel-gl';
 import type { RenderLayer } from '../../core/layers/render';
-import type { View } from '../viewport/view';
+import type { View } from '../../core/viewport/view';
 import type { OrderedAdapter } from '../../core/adapters/types';
 
 /** Options for `createChildrenLayer`. */

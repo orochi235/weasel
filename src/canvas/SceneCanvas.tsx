@@ -27,10 +27,10 @@ import { translateRectPose } from '../features/groups/composePose';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap } from './Canvas';
 import type { SceneToAdapterOptions } from './sceneAdapter';
-import type { PanBounds } from '../features/viewport/useDecayLoop';
-import type { View } from '../features/viewport/view';
+import type { PanBounds } from '../core/viewport/useDecayLoop';
+import type { View } from '../core/viewport/view';
 import type { Node, Scene } from '../core/scene/types';
-import { asNodeId } from '../core/scene/types';
+import type { NodeId } from '../core/scene/types';
 import type { Op } from '../core/ops/types';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from '../features/selection/useSelection';
 import { usePublishSelection } from '../features/selection/SelectionContext';
@@ -130,7 +130,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * silently dropped from the registered set.
      */
     actionDefaults?: {
-      cloneObject?: (id: string, offset: { dx: number; dy: number }) => { id: string };
+      cloneObject?: (id: NodeId, offset: { dx: number; dy: number }) => { id: NodeId };
       /** Per-clone offset for the duplicate default. Default {dx:8,dy:8}. */
       duplicateOffset?: { dx: number; dy: number };
       /** Base nudge step. Default 1. */
@@ -220,7 +220,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     if (selection.current.length === 0) return undefined;
     const out: (string | undefined)[] = [];
     for (const id of selection.current) {
-      const node = scene.get(asNodeId(id));
+      const node = scene.get(id);
       if (!node) { out.push(undefined); continue; }
       if (describeKind) { out.push(describeKind(node)); continue; }
       // Default heuristic: containers -> 'group', poses with .kind -> 'path',
@@ -305,14 +305,14 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   const standardActionsDeps = useMemo<StandardActionsDeps<TPose>>(() => ({
     setSelection: (ids) => selectionRef.current.adapterMethods.setSelection(ids),
-    getSelection: () => selectionRef.current.current,
+    getSelection: () => [...selectionRef.current.current],
     listAll: () => {
-      const out: string[] = [];
-      for (const nid of sceneRef.current.renderOrder()) out.push(String(nid));
+      const out: NodeId[] = [];
+      for (const nid of sceneRef.current.renderOrder()) out.push(nid);
       return out;
     },
     getPose: (id) => {
-      const n = sceneRef.current.get(asNodeId(id));
+      const n = sceneRef.current.get(id);
       return n?.pose as TPose;
     },
     applyBatch: (ops: Op[], label?: string) => {
