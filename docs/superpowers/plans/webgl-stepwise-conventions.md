@@ -131,6 +131,30 @@ This generalizes: any module-level singleton that supplies resources to per-inst
 
 ---
 
+## 10. Required uniforms must be set on every draw that binds the program
+
+**Status:** confirmed in step 5.
+**Where it bites:** any step that retroactively adds a required uniform to a shared shader program.
+
+Step 5 added `u_colorMatrix` + `u_colorBias` to the existing `pathFill` shader. The plan only mentioned setting them in `drawPathFillSolid` (the "main" path). In practice, `pathFill` is bound from four different functions: `drawPathFillSolid`, `drawPathFillStencil` (pass 2), `drawPathStrokeUnclipped`, and `drawPathStrokeStenciled` (pass 2). Forgetting any one site → that site reads a zero matrix → renders black or empty. Pass-1 of stencil paths has color writes off, so the missing uniform is invisible there but bites pass 2.
+
+**Required:** when adding a uniform to a shared shader, audit every `useProgram(prog)` call site. The pattern is to wrap the binding in a `set<X>Uniforms(prog)` helper and grep-verify that every `useProgram(prog)` call is followed by every required `set<X>Uniforms` helper before the *first* `drawElements` that emits color-writing pixels.
+
+A unit test of "renderer issues `uniformMatrix4fv` for u_colorMatrix" only catches the *first* call site; the recorder is happy if any one place sets it. Visual smoke (Playwright pixel readback) is what catches the missing call sites.
+
+---
+
+## 11. Two-pass stencil paths defer uniform setup to pass 2
+
+**Status:** confirmed in step 5.
+**Where it bites:** any new uniform on a shader bound by an existing two-pass stencil path.
+
+The stencil mask pass (pass 1) has `colorMask(false, …)` so the fragment shader's color output doesn't matter — uniforms can be unset. Pass 2 turns color writes on and needs every required uniform configured. Easy to forget to set them between passes because pass 1 looks like it's "already drawing" with the program bound.
+
+**Required:** in two-pass stencil functions, set color/paint/matrix uniforms **immediately before pass 2's `drawElements`**, not at the top of the function. This makes the requirement local and visible at the line that needs it. See `drawPathFillStencil` and `drawPathStrokeStenciled` in `draw.ts` for the canonical layout.
+
+---
+
 ## How to update this doc
 
 Each per-step done note adds new lessons. At the end of each step, the controller folds applicable new lessons into the relevant section above and adds a new section if the lesson doesn't fit existing categories. Update the **Status** date and **Where it bites** line to keep entries scannable.
