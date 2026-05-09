@@ -14,12 +14,12 @@ Spec: `docs/superpowers/specs/2026-05-08-webgl-transition-plan-design.md`. Archi
 - [x] Step 1 — Solid-fill paths shipped 2026-05-08 (`docs/superpowers/plans/2026-05-08-webgl-step-1-done.md`)
 - [x] Step 2 — Strokes shipped 2026-05-09 (`docs/superpowers/plans/2026-05-09-webgl-step-2-done.md`)
 - [x] Step 3 — Text (MSDF) shipped 2026-05-09 (`docs/superpowers/plans/2026-05-09-webgl-step-3-done.md`)
-- [ ] Step 4 — Image / pattern / gradient (plan TBW)
-- [ ] Step 5 — Per-vertex colors + color matrix (plan TBW)
-- [ ] Step 6 — Minimal experimental shader API (plan TBW)
+- [x] Step 4 — Image / pattern / gradient shipped 2026-05-09 (`docs/superpowers/plans/2026-05-09-webgl-step-4-done.md`)
+- [ ] Step 5 — Per-vertex colors + color matrix (plan ready: `2026-05-09-webgl-step-5-vertex-colors-and-color-matrix.md`)
+- [ ] Step 6 — Minimal experimental shader API (plan ready: `2026-05-09-webgl-step-6-experimental-shader-api.md`)
 - [ ] Step 7 — Port built-in layers (plan TBW)
 - [ ] Step 8 — Canvas component port + `backend` prop soak (plan TBW)
-- [ ] Step 9 — Visual regression rig + demo soak (plan TBW)
+- [ ] Step 9 — Visual regression rig + demo soak (plan ready: `2026-05-09-webgl-step-9-visual-regression-rig.md`)
 - [ ] Step 10 — Final swap (delete 2D, rename `weasel-gl` → `weasel`, major version bump) (plan TBW)
 
 Items deferred from the spec:
