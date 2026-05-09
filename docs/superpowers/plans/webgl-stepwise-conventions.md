@@ -179,6 +179,34 @@ This decouples the public surface from the GL context lifecycle. Multiple render
 
 ---
 
+## 14. Cross-package imports require aliases in *every* vite/vitest config
+
+**Status:** confirmed in step 7.
+**Where it bites:** any step that adds a new cross-workspace value import.
+
+Step 7's `pathLayer.ts` imported `viewToMat3` from `@orochi235/weasel-gl`. The vitest config got the new alias (catching unit tests). The **dev vite config didn't**, and *every* dev page broke in the browser — including pages like `smoke.ts` and `colors.ts` that don't directly use the new import. The dependency chain runs `dev page → WeaselRenderer → draw.ts → @orochi235/weasel (existing) → src/index.ts → pathLayer.ts → @orochi235/weasel-gl (new bare specifier, unresolved)`.
+
+**Required:** when adding a new cross-package import, mirror the alias into every vite/vitest config in the project — not just the one whose tests you're running. Search for `defineConfig` across the repo and audit each `resolve.alias` block. The alias mismatch fails *only at browser load time*, so unit tests passing is not sufficient evidence the dev pages still work. Convention §1 (real-browser smoke required) is what catches this.
+
+This generalizes §4 (vitest needs the same path aliases as vite): every config-shaped resolver needs the same alias set.
+
+---
+
+## 15. Tree-shape tests are necessary but insufficient for geometry-emitting layers
+
+**Status:** confirmed in step 7.
+**Where it bites:** any layer port whose `drawGL` emits `PolygonPath` command streams.
+
+Step 7's `createPenPreviewLayer` and `createDebugOverlayLayer` use `approximateCircle` to emit anchor dots and origin crosshairs. The first commit had an off-by-one in the command-stream length: more `coords` than the `commands` array described. Tree-shape tests counted commands and pixel-checked that *some* commands existed — both passed. The bug surfaced only when the implementer eyeballed the rendered scene.
+
+Counterpart in §8: "mock GL recorder doesn't catch geometry coverage bugs." This generalizes to layer ports — the *layer's tree shape test* counts what the layer emits, not whether the emission is internally consistent.
+
+**Required:** any task whose `drawGL` emits `PolygonPath` commands must include either (a) a pixel-level assertion against the layer's expected output, or (b) at least one buffer-walk assertion that the first N coords correspond to the first N commands' positions. Counting alone is insufficient.
+
+The cheap version is: include the layer in the multi-layer smoke scene's playwright spec — if it renders garbage in a real browser, the smoke fails. The thorough version is a tree-shape test that asserts on coords by index.
+
+---
+
 ## How to update this doc
 
 Each per-step done note adds new lessons. At the end of each step, the controller folds applicable new lessons into the relevant section above and adds a new section if the lesson doesn't fit existing categories. Update the **Status** date and **Where it bites** line to keep entries scannable.
