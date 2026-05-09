@@ -5,33 +5,33 @@ import {
   PATH_FILL_UNIFORMS,
   PATH_FILL_ATTRIBUTES,
 } from './shaders/pathFill';
+import {
+  TEXT_VERT_SRC,
+  TEXT_FRAG_SRC,
+  TEXT_SDF_UNIFORMS,
+  TEXT_SDF_ATTRIBUTES,
+} from './shaders/textSdf';
 import { GLMeshCache } from './GLMeshCache';
+import { GLTextureCache } from './GLTextureCache';
 import { GroupState } from './GroupState';
 import type { DrawCommand } from './DrawCommand';
 import { dispatch, type DrawContext } from './draw';
+import { _markAllFontsNotUploaded } from './registerFont';
 
 export interface WeaselRendererOptions {
-  /** GL context. In production, callers usually pass `canvas` instead. */
   gl?: WebGL2RenderingContext;
-  /** Canvas. Used when `gl` is not provided. */
   canvas?: HTMLCanvasElement;
-  /** CSS-pixel width. */
   width: number;
-  /** CSS-pixel height. */
   height: number;
-  /** Device pixel ratio. */
   dpr: number;
 }
 
-/**
- * The WebGL2 renderer. One instance per `<canvas>` element. Holds the GL
- * context, the path-fill program, the GL-side mesh cache, and the group
- * state stack. Owns DPR (no external `setupCanvasDpr` is needed).
- */
 export class WeaselRenderer {
   private readonly gl: WebGL2RenderingContext;
   private pathFill: ShaderProgram;
+  private textSdf: ShaderProgram;
   private meshCache: GLMeshCache;
+  private textureCache: GLTextureCache;
   private readonly groupState = new GroupState();
   private widthCss: number;
   private heightCss: number;
@@ -45,9 +45,6 @@ export class WeaselRenderer {
     if (!opts.gl && !opts.canvas) {
       throw new Error('WeaselRenderer requires either gl or canvas');
     }
-    // `stencil: true` is required for evenodd path rendering (stencil two-pass).
-    // Defaults are otherwise standard: `premultipliedAlpha: true` matches our
-    // shader's premultiplied-alpha output.
     const gl = opts.gl ?? opts.canvas!.getContext('webgl2', { stencil: true });
     if (!gl) throw new Error('WeaselRenderer: WebGL2 not available');
     this.gl = gl as WebGL2RenderingContext;
@@ -64,7 +61,6 @@ export class WeaselRenderer {
       this.canvas.addEventListener('webglcontextrestored', this.boundOnRestored);
     }
 
-    // Initial GL state.
     this.gl.enable(this.gl.BLEND);
     this.gl.blendFunc(this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
     this.gl.disable(this.gl.DEPTH_TEST);
@@ -72,14 +68,18 @@ export class WeaselRenderer {
     this.gl.clearColor(0, 0, 0, 0);
     this.applyViewport();
 
-    // Compile the built-in path-fill program.
     this.pathFill = new ShaderProgram(this.gl, VERT_SRC, FRAG_SRC);
     this.pathFill.lookupUniforms(PATH_FILL_UNIFORMS);
     this.pathFill.lookupAttributes(PATH_FILL_ATTRIBUTES);
 
+    this.textSdf = new ShaderProgram(this.gl, TEXT_VERT_SRC, TEXT_FRAG_SRC);
+    this.textSdf.lookupUniforms(TEXT_SDF_UNIFORMS);
+    this.textSdf.lookupAttributes(TEXT_SDF_ATTRIBUTES);
+
     const aPos = this.pathFill.attribute('a_position');
     if (aPos === undefined) throw new Error('WeaselRenderer: a_position not found in path-fill shader');
     this.meshCache = new GLMeshCache(this.gl, aPos);
+    this.textureCache = new GLTextureCache(this.gl);
   }
 
   private applyViewport(): void {
@@ -106,9 +106,15 @@ export class WeaselRenderer {
     this.pathFill = new ShaderProgram(this.gl, VERT_SRC, FRAG_SRC);
     this.pathFill.lookupUniforms(PATH_FILL_UNIFORMS);
     this.pathFill.lookupAttributes(PATH_FILL_ATTRIBUTES);
+    this.textSdf = new ShaderProgram(this.gl, TEXT_VERT_SRC, TEXT_FRAG_SRC);
+    this.textSdf.lookupUniforms(TEXT_SDF_UNIFORMS);
+    this.textSdf.lookupAttributes(TEXT_SDF_ATTRIBUTES);
     const aPos = this.pathFill.attribute('a_position');
     if (aPos === undefined) throw new Error('a_position missing after restore');
     this.meshCache = new GLMeshCache(this.gl, aPos);
+    this.textureCache = new GLTextureCache(this.gl);
+    // Font atlases need re-uploading to the new context.
+    _markAllFontsNotUploaded();
   }
 
   render(commands: DrawCommand[]): void {
@@ -118,7 +124,9 @@ export class WeaselRenderer {
     const ctx: DrawContext = {
       gl,
       pathFill: this.pathFill,
+      textSdf: this.textSdf,
       meshCache: this.meshCache,
+      textureCache: this.textureCache,
       state: this.groupState,
       widthCss: this.widthCss,
       heightCss: this.heightCss,
@@ -139,7 +147,9 @@ export class WeaselRenderer {
 
   /** @internal */ _gl(): WebGL2RenderingContext { return this.gl; }
   /** @internal */ _pathFill(): ShaderProgram { return this.pathFill; }
+  /** @internal */ _textSdf(): ShaderProgram { return this.textSdf; }
   /** @internal */ _meshCache(): GLMeshCache { return this.meshCache; }
+  /** @internal */ _textureCache(): GLTextureCache { return this.textureCache; }
   /** @internal */ _groupState(): GroupState { return this.groupState; }
   /** @internal */ _widthCss(): number { return this.widthCss; }
   /** @internal */ _heightCss(): number { return this.heightCss; }
