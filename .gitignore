@@ -13,3 +13,5 @@ coverage
 .env.local
 .idea
 .playwright-mcp/
+playwright-report/
+test-results/
