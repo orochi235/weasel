@@ -3,13 +3,14 @@ import { useEffect } from 'react';
 import { render } from '@testing-library/react';
 import { useEscape } from './escape';
 import { ActionsProvider, useActionsRegistry, type ActionsRegistry } from '../registry';
+import { asNodeId } from '../../../core/scene/types';
 
 describe('useEscape back-compat with ActionsProvider', () => {
   it('registers an action when wrapped in ActionsProvider; unregisters on unmount', () => {
     let regSnap: ActionsRegistry | null = null;
     function Probe() { const r = useActionsRegistry(); useEffect(() => { regSnap = r; }); return null; }
     function Host() {
-      useEscape({ getSelection: () => ['x'], setSelection: vi.fn() });
+      useEscape({ getSelection: () => [asNodeId('x')], setSelection: vi.fn() });
       return null;
     }
     const { unmount, rerender } = render(
@@ -27,7 +28,7 @@ describe('useEscape back-compat with ActionsProvider', () => {
   it('falls back to direct keydown listener when no provider is in scope', () => {
     const setSelection = vi.fn();
     function Host() {
-      useEscape({ getSelection: () => ['x'], setSelection });
+      useEscape({ getSelection: () => [asNodeId('x')], setSelection });
       return null;
     }
     render(<Host />);
@@ -39,7 +40,7 @@ describe('useEscape back-compat with ActionsProvider', () => {
     let regSnap: ActionsRegistry | null = null;
     function Probe() { const r = useActionsRegistry(); useEffect(() => { regSnap = r; }); return null; }
     function Host() {
-      useEscape({ getSelection: () => ['x'], setSelection: vi.fn() });
+      useEscape({ getSelection: () => [asNodeId('x')], setSelection: vi.fn() });
       return null;
     }
     render(
@@ -56,7 +57,7 @@ describe('useEscape back-compat with ActionsProvider', () => {
     const setSelection = vi.fn();
     let imperative: (() => void) | undefined;
     function Host() {
-      const { clearSelection } = useEscape({ getSelection: () => ['x'], setSelection });
+      const { clearSelection } = useEscape({ getSelection: () => [asNodeId('x')], setSelection });
       imperative = clearSelection;
       return null;
     }

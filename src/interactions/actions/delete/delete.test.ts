@@ -3,9 +3,10 @@ import { renderHook, act } from '@testing-library/react';
 import { useDelete } from './delete';
 import type { DeleteAdapter } from './delete';
 import type { Op } from '../../..';
+import { type NodeId } from '../../../core/scene/types';
 
 function makeAdapter(initial: string[] = []) {
-  let selection = [...initial];
+  let selection = [...initial] as NodeId[];
   const batches: { ops: Op[]; label: string }[] = [];
   const adapter: DeleteAdapter = {
     getSelection: () => selection,
@@ -16,7 +17,7 @@ function makeAdapter(initial: string[] = []) {
   return {
     adapter,
     batches,
-    setSel: (ids: string[]) => { selection = [...ids]; },
+    setSel: (ids: string[]) => { selection = [...ids] as NodeId[]; },
     getSel: () => selection,
   };
 }

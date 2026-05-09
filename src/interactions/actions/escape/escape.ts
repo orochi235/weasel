@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { createSetSelectionOp } from '../../../core/ops/select';
 import type { Op } from '../../../core/ops/types';
+import type { NodeId } from '../../../core/scene/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
 import { useKeybinding } from '../useKeybinding';
 import { useActionsRegistry, type Action } from '../registry';
@@ -8,11 +9,11 @@ import { useActionsRegistry, type Action } from '../registry';
 /** Adapter for `useEscape`. */
 export interface EscapeAdapter {
   /** Read current selection. */
-  getSelection(): string[];
+  getSelection(): NodeId[];
   /** Optional: op-batch entry point. When omitted, ops apply directly. */
   applyBatch?(ops: Op[], label?: string): void;
   /** Mutator wired by `setSelection` op when `applyBatch` is omitted. */
-  setSelection?(ids: string[]): void;
+  setSelection?(ids: NodeId[]): void;
 }
 
 /** Options for `useEscape`. */

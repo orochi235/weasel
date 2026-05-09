@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { defaultNudgeActions } from './nudge';
 import type { Op } from '../../../core/ops/types';
+import { asNodeId } from '../../../core/scene/types';
 
 type Pose = { x: number; y: number; width: number; height: number };
 
@@ -12,7 +13,7 @@ function applyOp(op: Op): { id?: string; pose?: Pose } {
 
 function makeDeps() {
   return {
-    getSelection: () => ['a'],
+    getSelection: () => [asNodeId('a')],
     getPose: (_id: string): Pose => ({ x: 10, y: 10, width: 1, height: 1 }),
     translatePose: (p: Pose, dx: number, dy: number) => ({ ...p, x: p.x + dx, y: p.y + dy }),
     applyBatch: vi.fn(),
@@ -86,7 +87,7 @@ describe('defaultNudgeActions', () => {
 
   it('default step=1, shiftStep=10 when not provided', () => {
     const deps = {
-      getSelection: () => ['a'],
+      getSelection: () => [asNodeId('a')],
       getPose: () => ({ x: 0, y: 0, width: 1, height: 1 }),
       translatePose: (p: Pose, dx: number, dy: number) => ({ ...p, x: p.x + dx, y: p.y + dy }),
       applyBatch: vi.fn(),

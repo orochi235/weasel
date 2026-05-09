@@ -3,15 +3,16 @@ import { renderHook, act } from '@testing-library/react';
 import { useEscape } from './escape';
 import type { EscapeAdapter } from './escape';
 import type { Op } from '../../..';
+import { type NodeId } from '../../../core/scene/types';
 
 function makeAdapter(initial: string[] = []) {
-  let selection = [...initial];
+  let selection = [...initial] as NodeId[];
   const batches: { ops: Op[]; label: string }[] = [];
   const adapter: EscapeAdapter = {
     getSelection: () => selection,
     applyBatch: (ops, label) => { batches.push({ ops, label: label ?? '' }); },
   };
-  return { adapter, batches, setSel: (ids: string[]) => { selection = [...ids]; } };
+  return { adapter, batches, setSel: (ids: string[]) => { selection = [...ids] as NodeId[]; } };
 }
 
 describe('useEscape', () => {

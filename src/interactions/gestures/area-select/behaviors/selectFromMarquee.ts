@@ -1,5 +1,6 @@
 import { createSetSelectionOp } from '../../../../core/ops/select';
 import type { Op } from '../../../../core/ops/types';
+import type { NodeId } from '../../../../core/scene/types';
 import type { AreaSelectAdapter } from '../../../../core/adapters/types';
 import type { AreaSelectBehavior } from '../../types';
 
@@ -38,7 +39,7 @@ export function selectFromMarquee(): AreaSelectBehavior {
           to = hits;
         }
       }
-      const ops: Op[] = [createSetSelectionOp({ from, to })];
+      const ops: Op[] = [createSetSelectionOp({ from: from as NodeId[], to: to as NodeId[] })];
       return ops;
     },
   };

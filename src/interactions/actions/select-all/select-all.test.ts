@@ -3,13 +3,14 @@ import { renderHook, act } from '@testing-library/react';
 import { useSelectAll } from './select-all';
 import type { SelectAllAdapter } from './select-all';
 import type { Op } from '../../..';
+import { type NodeId } from '../../../core/scene/types';
 
 function makeAdapter(all: string[] = [], selection: string[] = []) {
-  let sel = [...selection];
+  let sel = [...selection] as NodeId[];
   const batches: { ops: Op[]; label: string }[] = [];
   const adapter: SelectAllAdapter = {
     getSelection: () => sel,
-    listAll: () => all,
+    listAll: () => all as NodeId[],
     applyBatch: (ops, label) => { batches.push({ ops, label: label ?? '' }); },
   };
   return { adapter, batches };

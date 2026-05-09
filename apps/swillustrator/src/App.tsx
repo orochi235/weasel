@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import {
+  asNodeId,
   Canvas,
   useTools,
   useKeybindings,
@@ -17,6 +18,7 @@ import {
   createPenPreviewLayer,
   createPathLayer,
   boundsOfPath,
+  type NodeId,
   type PolygonPath,
   type RenderLayer,
   type TextStyle,
@@ -107,8 +109,8 @@ export function App() {
       setItems((cur) => cur.map((o) => (o.id === id ? { ...o, ...pose } : o))),
     insertObject: (o: Obj) => setItems((cur) => [...cur, o]),
     removeObject: (id: string) => setItems((cur) => cur.filter((o) => o.id !== id)),
-    getSelection: () => selection.current,
-    setSelection: (ids: string[]) => selection.set(ids),
+    getSelection: () => [...selection.current],
+    setSelection: (ids: string[]) => selection.set(ids as NodeId[]),
     hitTestArea: (rect: Pose) =>
       itemsRef.current
         .filter((o) => o.x < rect.x + rect.width && o.x + o.width > rect.x && o.y < rect.y + rect.height && o.y + o.height > rect.y)
@@ -229,8 +231,8 @@ export function App() {
   });
   useKeybindings(tools, { overrides: { v: 'select', V: 'select', r: 'insert', R: 'insert' } });
   useSelectAll({
-    getSelection: () => selection.current,
-    listAll: () => itemsRef.current.map((o) => o.id),
+    getSelection: () => [...selection.current],
+    listAll: () => itemsRef.current.map((o) => asNodeId(o.id)),
     setSelection: (ids) => selection.set(ids),
   });
 
@@ -258,12 +260,12 @@ export function App() {
   // --- Selection-aware mutation helpers ---
   // Re-read items each call so back-to-back changes within a render coalesce.
   const updateSelected = (patch: (o: Obj) => Obj): void => {
-    const ids = new Set(selection.current);
+    const ids = new Set<string>(selection.current);
     if (ids.size === 0) return;
     setItems((cur) => cur.map((o) => (ids.has(o.id) ? patch(o) : o)));
   };
 
-  const selectedItems = items.filter((o) => selection.current.includes(o.id));
+  const selectedItems = items.filter((o) => (selection.current as readonly string[]).includes(o.id));
   const primary = selectedItems[0];
   const hasStrokeProps = primary && primary.kind !== 'text';
 
@@ -424,7 +426,7 @@ export function App() {
                 variant="danger"
                 span={6}
                 onClick={() => {
-                  const ids = new Set(selection.current);
+                  const ids = new Set<string>(selection.current);
                   setItems((cur) => cur.filter((o) => !ids.has(o.id)));
                   selection.clear();
                 }}

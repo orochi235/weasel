@@ -3,6 +3,7 @@ import { createTransformOp } from '../../../core/ops/transform';
 import type { Op } from '../../../core/ops/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
 import { translateRectPose } from '../../../features/groups/composePose';
+import type { NodeId } from '../../../core/scene/types';
 import { useKeybinding } from '../useKeybinding';
 import { useActionsRegistry } from '../registry';
 import { defaultNudgeActions } from '../defaults/nudge';
@@ -13,9 +14,9 @@ export type NudgeDirection = 'up' | 'down' | 'left' | 'right';
 /** Adapter for `useNudge`. */
 export interface NudgeAdapter<TPose> {
   /** Read current selection. */
-  getSelection(): string[];
+  getSelection(): NodeId[];
   /** Read pose for an id; used as `from` for the transform op. */
-  getPose(id: string): TPose;
+  getPose(id: NodeId): TPose;
   /** Optional: op-batch entry point. When omitted, the hook applies each op
    *  against the adapter directly. */
   applyBatch?(ops: Op[], label?: string): void;

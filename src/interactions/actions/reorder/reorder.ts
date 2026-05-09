@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { createReorderOp } from '../../../core/ops/reorder';
 import type { Op } from '../../../core/ops/types';
+import type { NodeId } from '../../../core/scene/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
 import { useKeybinding } from '../useKeybinding';
 import { useActionsRegistry } from '../registry';
@@ -8,7 +9,7 @@ import { defaultReorderActions } from '../defaults/reorder';
 
 /** Adapter for `useReorder`; both order methods optional and the hook no-ops when either is absent. */
 export interface ReorderAdapter {
-  getSelection(): string[];
+  getSelection(): NodeId[];
   getParent(id: string): string | null;
   /** Optional — when absent, every reorder method is a silent no-op. */
   getChildren?(parentId: string | null): string[];
@@ -23,7 +24,7 @@ export interface UseReorderOptions {
   /** Auto-bind Mod+] / Mod+[ (with optional Shift for to-front/to-back) on document. Default true. */
   enableKeyboard?: boolean;
   /** Optional filter — given selected ids, return the subset to reorder. */
-  filter?: (ids: string[]) => string[];
+  filter?: (ids: NodeId[]) => NodeId[];
 }
 
 /** Return shape of `useReorder`: imperative bring/send methods. */

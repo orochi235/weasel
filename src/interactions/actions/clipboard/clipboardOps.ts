@@ -2,6 +2,7 @@ import { useCallback, useRef } from 'react';
 import { createInsertOp } from '../../../core/ops/create';
 import { createSetSelectionOp } from '../../../core/ops/select';
 import type { Op } from '../../../core/ops/types';
+import type { NodeId } from '../../../core/scene/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
 import type { InsertAdapter } from '../../../core/adapters/types';
 import type { ClipboardSnapshot } from './types';
@@ -10,9 +11,9 @@ import type { ClipboardSnapshot } from './types';
 export interface UseClipboardOpsOptions {
   /** How the hook reads "current selection" for copy. The kit doesn't assume
    *  a global selection store; each consumer wires this. */
-  getSelection: () => string[];
+  getSelection: () => NodeId[];
   /** Called after a successful paste with the ids of the newly inserted objects. */
-  onPaste?: (newIds: string[]) => void;
+  onPaste?: (newIds: NodeId[]) => void;
   /** Label for the history entry produced by paste. Default 'Paste'. */
   pasteLabel?: string;
 }
@@ -52,7 +53,7 @@ export function useClipboardOps<TObject extends { id: string }>(
     const offset = a.getPasteOffset?.(cb) ?? { dx: 0, dy: 0 };
     const created = a.commitPaste(cb, offset);
     if (created.length === 0) return;
-    const newIds = created.map((o) => o.id);
+    const newIds = created.map((o) => o.id as NodeId);
     const beforeSel = optsRef.current.getSelection();
     const ops: Op[] = [
       ...created.map((o) => createInsertOp({ object: o })),

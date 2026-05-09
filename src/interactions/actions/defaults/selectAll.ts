@@ -1,13 +1,14 @@
+import type { NodeId } from '../../../core/scene/types';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
 
 /** @experimental */
 export interface SelectAllDeps {
-  getSelection: () => string[];
-  listAll: () => string[];
+  getSelection: () => NodeId[];
+  listAll: () => NodeId[];
   /** Mutator that applies the new selection. Typically wired from
    *  `selection.adapterMethods.setSelection` in `<SceneCanvas>`. */
-  setSelection: (ids: string[]) => void;
+  setSelection: (ids: NodeId[]) => void;
 }
 
 /**

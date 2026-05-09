@@ -3,6 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useClipboard } from './clipboard';
 import type { ClipboardAdapter } from './clipboard';
 import type { Op } from '../../..';
+import { asNodeId } from '../../../core/scene/types';
 
 interface Obj { id: string; x: number; y: number }
 
@@ -63,7 +64,7 @@ describe('useClipboard', () => {
     const helpers = makeAdapter();
     helpers.seed({ id: 'a', x: 0, y: 0 });
     const { result } = renderHook(() =>
-      useClipboard(helpers.adapter, { getSelection: () => ['a'] }),
+      useClipboard(helpers.adapter, { getSelection: () => [asNodeId('a')] }),
     );
     act(() => { result.current.copy(); });
     expect(helpers.batches).toEqual([]);
@@ -74,7 +75,7 @@ describe('useClipboard', () => {
     const helpers = makeAdapter();
     helpers.seed({ id: 'a', x: 0, y: 0 });
     const { result } = renderHook(() =>
-      useClipboard(helpers.adapter, { getSelection: () => ['a'] }),
+      useClipboard(helpers.adapter, { getSelection: () => [asNodeId('a')] }),
     );
     act(() => { result.current.copy(); });
     act(() => { result.current.paste(); });
@@ -88,7 +89,7 @@ describe('useClipboard', () => {
       const helpers = makeAdapter();
       helpers.seed({ id: 'a', x: 5, y: 7 });
       const { result } = renderHook(() =>
-        useClipboard(helpers.adapter, { getSelection: () => ['a'] }),
+        useClipboard(helpers.adapter, { getSelection: () => [asNodeId('a')] }),
       );
       let returned: string[] = [];
       act(() => { returned = result.current.cut(); });
@@ -116,7 +117,7 @@ describe('useClipboard', () => {
       const helpers = makeAdapter({ offset: { dx: 2, dy: 3 } });
       helpers.seed({ id: 'a', x: 10, y: 20 });
       const { result } = renderHook(() =>
-        useClipboard(helpers.adapter, { getSelection: () => ['a'] }),
+        useClipboard(helpers.adapter, { getSelection: () => [asNodeId('a')] }),
       );
       act(() => { result.current.cut(); });
       act(() => { result.current.paste(); });
@@ -129,7 +130,7 @@ describe('useClipboard', () => {
       helpers.seed({ id: 'a', x: 0, y: 0 });
       const { result } = renderHook(() =>
         useClipboard(helpers.adapter, {
-          getSelection: () => ['a'],
+          getSelection: () => [asNodeId('a')],
           cutLabel: 'Cut node',
         }),
       );
@@ -144,7 +145,7 @@ describe('useClipboard', () => {
       const adapter = { ...helpers.adapter };
       delete (adapter as { getObject?: unknown }).getObject;
       const { result } = renderHook(() =>
-        useClipboard(adapter, { getSelection: () => ['a'] }),
+        useClipboard(adapter, { getSelection: () => [asNodeId('a')] }),
       );
       act(() => { result.current.cut(); });
       expect(helpers.batches).toHaveLength(1);
@@ -170,7 +171,7 @@ describe('useClipboard', () => {
       helpers.seed({ id: 'a', x: 0, y: 0 });
       const { result } = renderHook(() =>
         useClipboard(helpers.adapter, {
-          getSelection: () => ['a'],
+          getSelection: () => [asNodeId('a')],
           bindKeyboard: true,
         }),
       );
@@ -184,7 +185,7 @@ describe('useClipboard', () => {
       helpers.seed({ id: 'a', x: 0, y: 0 });
       renderHook(() =>
         useClipboard(helpers.adapter, {
-          getSelection: () => ['a'],
+          getSelection: () => [asNodeId('a')],
           bindKeyboard: true,
         }),
       );
@@ -198,7 +199,7 @@ describe('useClipboard', () => {
       helpers.seed({ id: 'a', x: 0, y: 0 });
       const { result } = renderHook(() =>
         useClipboard(helpers.adapter, {
-          getSelection: () => ['a'],
+          getSelection: () => [asNodeId('a')],
           bindKeyboard: true,
         }),
       );
@@ -213,7 +214,7 @@ describe('useClipboard', () => {
       helpers.seed({ id: 'a', x: 0, y: 0 });
       renderHook(() =>
         useClipboard(helpers.adapter, {
-          getSelection: () => ['a'],
+          getSelection: () => [asNodeId('a')],
           bindKeyboard: true,
         }),
       );
@@ -226,7 +227,7 @@ describe('useClipboard', () => {
       helpers.seed({ id: 'a', x: 0, y: 0 });
       const { result } = renderHook(() =>
         useClipboard(helpers.adapter, {
-          getSelection: () => ['a'],
+          getSelection: () => [asNodeId('a')],
           bindKeyboard: true,
         }),
       );
@@ -239,7 +240,7 @@ describe('useClipboard', () => {
       helpers.seed({ id: 'a', x: 0, y: 0 });
       renderHook(() =>
         useClipboard(helpers.adapter, {
-          getSelection: () => ['a'],
+          getSelection: () => [asNodeId('a')],
           bindKeyboard: true,
         }),
       );
@@ -264,7 +265,7 @@ describe('useClipboard', () => {
       helpers.seed({ id: 'a', x: 0, y: 0 });
       renderHook(() =>
         useClipboard(helpers.adapter, {
-          getSelection: () => ['a'],
+          getSelection: () => [asNodeId('a')],
           bindKeyboard: true,
         }),
       );
@@ -278,7 +279,7 @@ describe('useClipboard', () => {
     const helpers = makeAdapter();
     helpers.seed({ id: 'a', x: 0, y: 0 });
     const { result } = renderHook(() =>
-      useClipboard(helpers.adapter, { getSelection: () => ['a'] }),
+      useClipboard(helpers.adapter, { getSelection: () => [asNodeId('a')] }),
     );
     act(() => {
       document.dispatchEvent(new KeyboardEvent('keydown', {

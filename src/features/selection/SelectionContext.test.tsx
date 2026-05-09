@@ -5,6 +5,7 @@ import {
   useSelectionContext,
   usePublishSelection,
 } from './SelectionContext';
+import { asNodeId, type NodeId } from '../../core/scene/types';
 import { useState, type ReactNode } from 'react';
 
 const wrap = ({ children }: { children: ReactNode }) => (
@@ -26,21 +27,21 @@ describe('useSelectionContext', () => {
 
   it('reflects published ids through the context', () => {
     const { result } = renderHook(() => useSelectionContext(), { wrapper: wrap });
-    act(() => result.current!.publishSelection(['a', 'b']));
+    act(() => result.current!.publishSelection([asNodeId('a'), asNodeId('b')]));
     expect(result.current!.selection).toEqual(['a', 'b']);
   });
 
   it('publishes parallel kinds when supplied', () => {
     const { result } = renderHook(() => useSelectionContext(), { wrapper: wrap });
-    act(() => result.current!.publishSelection(['a', 'b'], ['rect', 'path']));
+    act(() => result.current!.publishSelection([asNodeId('a'), asNodeId('b')], ['rect', 'path']));
     expect(result.current!.kinds).toEqual(['rect', 'path']);
   });
 
   it('clears kinds when re-published without them', () => {
     const { result } = renderHook(() => useSelectionContext(), { wrapper: wrap });
-    act(() => result.current!.publishSelection(['a'], ['rect']));
+    act(() => result.current!.publishSelection([asNodeId('a')], ['rect']));
     expect(result.current!.kinds).toEqual(['rect']);
-    act(() => result.current!.publishSelection(['a']));
+    act(() => result.current!.publishSelection([asNodeId('a')]));
     expect(result.current!.kinds).toBeUndefined();
   });
 });
@@ -48,11 +49,11 @@ describe('useSelectionContext', () => {
 describe('SelectionContextProvider re-render gating', () => {
   it('does not bump the context value when republished with content-equal ids', () => {
     const { result } = renderHook(() => useSelectionContext(), { wrapper: wrap });
-    act(() => result.current!.publishSelection(['a', 'b']));
+    act(() => result.current!.publishSelection([asNodeId('a'), asNodeId('b')]));
     const valueAfterFirst = result.current;
     const selectionRef = result.current!.selection;
     // Republish with a fresh array reference but identical contents.
-    act(() => result.current!.publishSelection(['a', 'b']));
+    act(() => result.current!.publishSelection([asNodeId('a'), asNodeId('b')]));
     // Selection array reference is preserved (no setState fired) so the
     // context value object is also unchanged — consumers selecting on
     // either reference avoid a re-render.
@@ -74,8 +75,8 @@ describe('SelectionContextProvider re-render gating', () => {
       </SelectionContextProvider>,
     );
     const baseline = renders;
-    act(() => result.current!.publishSelection(['a'], ['rect']));
-    act(() => result.current!.publishSelection(['a'], ['path']));
+    act(() => result.current!.publishSelection([asNodeId('a')], ['rect']));
+    act(() => result.current!.publishSelection([asNodeId('a')], ['path']));
     // A kind change with a stable id list should still propagate. We can't
     // count exact renders across separate trees, but the publishing tree's
     // own consumer should now see the latest kinds.
@@ -86,34 +87,34 @@ describe('SelectionContextProvider re-render gating', () => {
 
 describe('usePublishSelection', () => {
   it('publishes ids into the surrounding provider', () => {
-    function Publisher({ ids }: { ids: string[] }) {
+    function Publisher({ ids }: { ids: NodeId[] }) {
       usePublishSelection(ids);
       return null;
     }
-    function Reader({ onCtx }: { onCtx: (sel: readonly string[]) => void }) {
+    function Reader({ onCtx }: { onCtx: (sel: readonly NodeId[]) => void }) {
       const ctx = useSelectionContext();
       onCtx(ctx?.selection ?? []);
       return null;
     }
-    let last: readonly string[] = [];
+    let last: readonly NodeId[] = [];
     const { rerender } = render(
       <SelectionContextProvider>
-        <Publisher ids={['x']} />
+        <Publisher ids={[asNodeId('x')]} />
         <Reader onCtx={(s) => { last = s; }} />
       </SelectionContextProvider>,
     );
-    expect(last).toEqual(['x']);
+    expect(last).toEqual([asNodeId('x')]);
     rerender(
       <SelectionContextProvider>
-        <Publisher ids={['x', 'y']} />
+        <Publisher ids={[asNodeId('x'), asNodeId('y')]} />
         <Reader onCtx={(s) => { last = s; }} />
       </SelectionContextProvider>,
     );
-    expect(last).toEqual(['x', 'y']);
+    expect(last).toEqual([asNodeId('x'), asNodeId('y')]);
   });
 
   it('publishes kinds when supplied', () => {
-    function Publisher({ ids, kinds }: { ids: string[]; kinds?: (string | undefined)[] }) {
+    function Publisher({ ids, kinds }: { ids: NodeId[]; kinds?: (string | undefined)[] }) {
       usePublishSelection(ids, kinds);
       return null;
     }
@@ -125,7 +126,7 @@ describe('usePublishSelection', () => {
     let lastKinds: readonly (string | undefined)[] | undefined;
     render(
       <SelectionContextProvider>
-        <Publisher ids={['a', 'b']} kinds={['rect', 'path']} />
+        <Publisher ids={[asNodeId('a'), asNodeId('b')]} kinds={['rect', 'path']} />
         <Reader onCtx={(k) => { lastKinds = k; }} />
       </SelectionContextProvider>,
     );
@@ -134,7 +135,7 @@ describe('usePublishSelection', () => {
 
   it('is a no-op outside any provider', () => {
     function Publisher() {
-      usePublishSelection(['z']);
+      usePublishSelection([asNodeId('z')]);
       return <div>ok</div>;
     }
     // Must not throw.
@@ -145,7 +146,7 @@ describe('usePublishSelection', () => {
     let publishCalls = 0;
     function CountingProvider({ children }: { children: ReactNode }) {
       const [state, setState] = useState<{
-        selection: readonly string[];
+        selection: readonly NodeId[];
         kinds: readonly (string | undefined)[] | undefined;
       }>({ selection: [], kinds: undefined });
       // Wrap the real provider but instrument by counting publishSelection calls.
@@ -156,31 +157,31 @@ describe('usePublishSelection', () => {
       void state; void setState; void publishCalls;
       return <SelectionContextProvider>{children}</SelectionContextProvider>;
     }
-    function Publisher({ ids }: { ids: string[] }) {
+    function Publisher({ ids }: { ids: NodeId[] }) {
       // Always pass a fresh array reference with the same contents.
       usePublishSelection([...ids]);
       return null;
     }
-    function Reader({ onChange }: { onChange: (sel: readonly string[]) => void }) {
+    function Reader({ onChange }: { onChange: (sel: readonly NodeId[]) => void }) {
       const ctx = useSelectionContext();
       onChange(ctx?.selection ?? []);
       return null;
     }
     let observedSelections = 0;
-    let lastSel: readonly string[] = [];
-    const onChange = (sel: readonly string[]) => {
+    let lastSel: readonly NodeId[] = [];
+    const onChange = (sel: readonly NodeId[]) => {
       if (sel !== lastSel) { observedSelections++; lastSel = sel; }
     };
     const { rerender } = render(
       <CountingProvider>
-        <Publisher ids={['a']} />
+        <Publisher ids={[asNodeId('a')]} />
         <Reader onChange={onChange} />
       </CountingProvider>,
     );
     const after1 = observedSelections;
     rerender(
       <CountingProvider>
-        <Publisher ids={['a']} />
+        <Publisher ids={[asNodeId('a')]} />
         <Reader onChange={onChange} />
       </CountingProvider>,
     );

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { createInsertOp } from '../../../core/ops/create';
 import { createSetSelectionOp } from '../../../core/ops/select';
 import type { Op } from '../../../core/ops/types';
+import type { NodeId } from '../../../core/scene/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
 import { useKeybinding } from '../useKeybinding';
 import { useActionsRegistry, type Action } from '../registry';
@@ -9,16 +10,16 @@ import { useActionsRegistry, type Action } from '../registry';
 /** Adapter for `useDuplicate`. */
 export interface DuplicateAdapter<TPose> {
   /** Read current selection. */
-  getSelection(): string[];
+  getSelection(): NodeId[];
   /** Read pose for an id (currently unused at op-emit time but exposed for
    *  symmetry with other selection-driven hooks; consumers commonly need it
    *  inside `cloneObject`). */
-  getPose(id: string): TPose;
+  getPose(id: NodeId): TPose;
   /** Materialize a new object that is a copy of `id`, translated by `offset`.
    *  Implementations are responsible for assigning a fresh id and for any
    *  domain-specific cloning rules. The returned object is wrapped in an
    *  InsertOp by the hook. */
-  cloneObject(id: string, offset: { dx: number; dy: number }): { id: string };
+  cloneObject(id: NodeId, offset: { dx: number; dy: number }): { id: NodeId };
   /** Optional: op-batch entry point. When omitted, the hook applies each op
    *  against the adapter directly. Apps with custom history integration
    *  override this. */

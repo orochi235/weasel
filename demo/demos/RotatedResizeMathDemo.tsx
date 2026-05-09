@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from 'react';
 import {
   SceneCanvas,
   pointInRotatedRect,
@@ -9,6 +10,8 @@ import {
 } from '@orochi235/weasel';
 import type { PoseDescriptor, RotatedPose } from '@orochi235/weasel';
 import type { DrawCommand } from '@orochi235/weasel-gl';
+
+type RectScene = ReturnType<typeof useScene<Rect>>;
 
 interface Rect extends RotatedPose {
   id: string;
@@ -41,7 +44,7 @@ function drawRect(_node: unknown, p: Rect): DrawCommand[] {
   }];
 }
 
-function pickEveryFor(scene: ReturnType<typeof useScene<Rect>>) {
+function pickEveryFor(scene: RectScene) {
   return (wx: number, wy: number): string | null => {
     const ordered = [...scene.renderOrder()];
     for (let i = ordered.length - 1; i >= 0; i--) {
@@ -76,7 +79,7 @@ const NO_CORRECTION_DESCRIPTOR = {
 // center each frame). Requires a custom gesture controller; defer to a
 // follow-up demo iteration.
 
-function LedgerCaption({ scene, anchor }: { scene: ReturnType<typeof useScene<Rect>>; anchor: { x: 'min' | 'max'; y: 'min' | 'max' } }) {
+function LedgerCaption({ scene, anchor }: { scene: RectScene; anchor: { x: 'min' | 'max'; y: 'min' | 'max' } }) {
   const node = scene.get(asNodeId('a'));
   if (!node) return null;
   const p = node.pose;
@@ -95,8 +98,7 @@ function LedgerCaption({ scene, anchor }: { scene: ReturnType<typeof useScene<Re
 }
 
 /** Panel 1 — the full math (correct). */
-function FullMathPanel() {
-  const scene = useScene({ items: INITIAL_GREEN });
+function FullMathPanel({ scene }: { scene: RectScene }) {
   return (
     <div>
       <SceneCanvas
@@ -109,7 +111,7 @@ function FullMathPanel() {
           resize: { geometry: ROTATED_POSE_DESCRIPTOR as PoseDescriptor<Rect> },
         }}
         geometry={{ pickEvery: pickEveryFor(scene) }}
-        selectionOptions={{ initial: ['a'] }}
+        selectionOptions={{ initial: [asNodeId('a')] }}
         layers={{
           scene: { drawOne: drawRect },
           selectionOverlay: { handles: { size: HANDLE }, rotationHandle: true },
@@ -120,8 +122,7 @@ function FullMathPanel() {
   );
 }
 
-function NoProjectionPanel() {
-  const scene = useScene({ items: INITIAL_ORANGE });
+function NoProjectionPanel({ scene }: { scene: RectScene }) {
   return (
     <div>
       <SceneCanvas
@@ -134,7 +135,7 @@ function NoProjectionPanel() {
           resize: { geometry: NO_PROJECTION_DESCRIPTOR },
         }}
         geometry={{ pickEvery: pickEveryFor(scene) }}
-        selectionOptions={{ initial: ['a'] }}
+        selectionOptions={{ initial: [asNodeId('a')] }}
         layers={{
           scene: { drawOne: drawRect },
           selectionOverlay: { handles: { size: HANDLE }, rotationHandle: true },
@@ -145,8 +146,7 @@ function NoProjectionPanel() {
   );
 }
 
-function NoCorrectionPanel() {
-  const scene = useScene({ items: INITIAL_PURPLE });
+function NoCorrectionPanel({ scene }: { scene: RectScene }) {
   return (
     <div>
       <SceneCanvas
@@ -159,7 +159,7 @@ function NoCorrectionPanel() {
           resize: { geometry: NO_CORRECTION_DESCRIPTOR },
         }}
         geometry={{ pickEvery: pickEveryFor(scene) }}
-        selectionOptions={{ initial: ['a'] }}
+        selectionOptions={{ initial: [asNodeId('a')] }}
         layers={{
           scene: { drawOne: drawRect },
           selectionOverlay: { handles: { size: HANDLE }, rotationHandle: true },
@@ -170,7 +170,50 @@ function NoCorrectionPanel() {
   );
 }
 
+/** Non-interactive overlay: live mirror of all three rects, 60% opacity, so
+ *  divergence between the full-math panel and the counterexamples is visible
+ *  at a glance without needing to compare three canvases by eye. */
+function StackedOverlayPanel({ green, orange, purple }: { green: RectScene; orange: RectScene; purple: RectScene }) {
+  useSyncExternalStore(green.subscribe, green.getVersion, green.getVersion);
+  useSyncExternalStore(orange.subscribe, orange.getVersion, orange.getVersion);
+  useSyncExternalStore(purple.subscribe, purple.getVersion, purple.getVersion);
+
+  const poses = [green, orange, purple]
+    .map((s) => s.get(asNodeId('a'))?.pose as Rect | undefined)
+    .filter((p): p is Rect => !!p);
+
+  return (
+    <div>
+      <svg width={W} height={H} className="ckd-canvas" style={{ display: 'block', pointerEvents: 'none' }}>
+        {poses.map((p, i) => {
+          const cx = p.x + p.width / 2;
+          const cy = p.y + p.height / 2;
+          const deg = (p.rotation * 180) / Math.PI;
+          return (
+            <rect
+              key={i}
+              x={p.x}
+              y={p.y}
+              width={p.width}
+              height={p.height}
+              fill={p.color}
+              fillOpacity={0.6}
+              transform={`rotate(${deg} ${cx} ${cy})`}
+            />
+          );
+        })}
+      </svg>
+      <pre style={{ fontSize: 11, margin: 0, fontFamily: 'monospace' }}>
+        live overlay (non-interactive)
+      </pre>
+    </div>
+  );
+}
+
 export function RotatedResizeMathDemo() {
+  const greenScene = useScene<Rect>({ items: INITIAL_GREEN });
+  const orangeScene = useScene<Rect>({ items: INITIAL_ORANGE });
+  const purpleScene = useScene<Rect>({ items: INITIAL_PURPLE });
   return (
     <div>
       <header style={{ marginBottom: 12 }}>
@@ -187,12 +230,14 @@ export function RotatedResizeMathDemo() {
           <li><strong>Full math (green):</strong> drag is projected into local frame, anchor math runs there, position is corrected so the diagonal corner stays pinned.</li>
           <li><strong>No projection (orange):</strong> drag delta applied in world frame &mdash; distorts on rotation.</li>
           <li><strong>No correction (purple):</strong> projection on; position correction disabled &mdash; the perceived fixed corner drifts.</li>
+          <li><strong>Live overlay:</strong> all three rects stacked at 60% opacity so divergence shows up as color separation.</li>
         </ul>
       </header>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        <FullMathPanel />
-        <NoProjectionPanel />
-        <NoCorrectionPanel />
+        <FullMathPanel scene={greenScene} />
+        <NoProjectionPanel scene={orangeScene} />
+        <NoCorrectionPanel scene={purpleScene} />
+        <StackedOverlayPanel green={greenScene} orange={orangeScene} purple={purpleScene} />
       </div>
     </div>
   );

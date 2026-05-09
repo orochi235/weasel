@@ -1,4 +1,4 @@
-import { SceneCanvas, useScene } from '@orochi235/weasel';
+import { asNodeId, SceneCanvas, useScene } from '@orochi235/weasel';
 import type { DrawCommand } from '@orochi235/weasel-gl';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
@@ -17,7 +17,7 @@ export function ResizeDemo() {
       className="ckd-canvas"
       scene={scene}
       selectTool={{ handleHitRadius: HANDLE }}
-      selectionOptions={{ initial: [INITIAL.id] }}
+      selectionOptions={{ initial: [asNodeId(INITIAL.id)] }}
       layers={{
         scene: {
           drawOne: (_node, p): DrawCommand[] => [{

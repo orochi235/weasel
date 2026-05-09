@@ -58,7 +58,7 @@ export function PathPoseDemo() {
       id: asNodeId(ID),
     }],
   });
-  const selection = useSelection({ initial: [ID] });
+  const selection = useSelection({ initial: [asNodeId(ID)] });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

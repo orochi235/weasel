@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createSetSelectionOp } from './select';
+import { asNodeId } from '../scene/types';
 
 describe('createSetSelectionOp', () => {
   function makeAdapter() {
@@ -12,13 +13,13 @@ describe('createSetSelectionOp', () => {
 
   it('apply sets the new selection', () => {
     const adapter = makeAdapter();
-    createSetSelectionOp({ from: ['a'], to: ['b', 'c'] }).apply(adapter as any);
+    createSetSelectionOp({ from: [asNodeId('a')], to: [asNodeId('b'), asNodeId('c')] }).apply(adapter as any);
     expect(adapter.calls).toEqual([['b', 'c']]);
   });
 
   it('invert swaps from and to', () => {
     const adapter = makeAdapter();
-    createSetSelectionOp({ from: ['a'], to: ['b', 'c'] }).invert().apply(adapter as any);
+    createSetSelectionOp({ from: [asNodeId('a')], to: [asNodeId('b'), asNodeId('c')] }).invert().apply(adapter as any);
     expect(adapter.calls).toEqual([['a']]);
   });
 });

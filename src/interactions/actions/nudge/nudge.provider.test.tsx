@@ -4,14 +4,15 @@ import { render } from '@testing-library/react';
 import { useNudge } from './nudge';
 import { ActionsProvider, useActionsRegistry, type ActionsRegistry } from '../registry';
 import type { Op } from '../../../core/ops/types';
+import { asNodeId, type NodeId } from '../../../core/scene/types';
 
 type Pose = { x: number; y: number; width: number; height: number };
 
 function makeAdapter() {
   const batches: { ops: Op[]; label: string }[] = [];
   return {
-    getSelection: () => ['a'],
-    getPose: (_id: string): Pose => ({ x: 0, y: 0, width: 1, height: 1 }),
+    getSelection: () => [asNodeId('a')],
+    getPose: (_id: NodeId): Pose => ({ x: 0, y: 0, width: 1, height: 1 }),
     applyBatch: (ops: Op[], label?: string) => batches.push({ ops, label: label ?? '' }),
     batches,
   };

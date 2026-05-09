@@ -14,7 +14,7 @@
 import { useMemo } from 'react';
 import { sceneToAdapter, type SceneToAdapterOptions } from '../sceneAdapter';
 import { useSelectTool, type Bounds } from '../../tools/builtin/useSelectTool';
-import type { Node, Scene } from '../../core/scene/types';
+import type { Node, Scene, NodeId } from '../../core/scene/types';
 import { asNodeId } from '../../core/scene/types';
 import type { Op } from '../../core/ops/types';
 import type { SelectionApi } from '../../features/selection/useSelection';
@@ -109,9 +109,12 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
           }
         });
       },
-      // Spread selection methods so the synthesized adapter satisfies
-      // `AreaSelectAdapter` (which `useSelectTool` requires).
-      ...selection.adapterMethods,
+      // Selection methods, widened to `string[]` so the synthesized adapter
+      // satisfies `AreaSelectAdapter` (which keeps the kit-internal adapter
+      // contract on plain `string[]`; the brand lives on the public selection
+      // surface, not on adapter shapes).
+      getSelection: (): string[] => [...selection.adapterMethods.getSelection()],
+      setSelection: (ids: string[]) => selection.adapterMethods.setSelection(ids as NodeId[]),
       // Default marquee hit-test: walk every renderOrder node and collect ids
       // whose AABB intersects the marquee rect. Path-shaped poses use their
       // path descriptor for a tighter test.

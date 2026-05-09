@@ -32,6 +32,7 @@ import { createReparentOp } from '../../../core/ops/reparent';
 import { createTransformOp } from '../../../core/ops/transform';
 import { createSetSelectionOp } from '../../../core/ops/select';
 import type { Op } from '../../../core/ops/types';
+import type { NodeId } from '../../../core/scene/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
 import {
   composeWorldPose,
@@ -44,7 +45,7 @@ import { useKeybinding } from '../useKeybinding';
 export interface NestedGroupActionAdapter<TObject extends { id: string }, TPose>
   extends PoseAdapter<TPose> {
   /** Read current selection. */
-  getSelection(): string[];
+  getSelection(): NodeId[];
   /** Look up an existing scene object — used by ungroup to recover the group
    *  object so the dissolve op can invert into a re-insert. */
   getObject(id: string): TObject | undefined;
@@ -177,7 +178,7 @@ export function useNestedGroup<TObject extends { id: string }, TPose>(
       }
       ops.push(createTransformOp({ id: childId, from: childLocalBefore, to: childLocalAfter }));
     }
-    ops.push(createSetSelectionOp({ from: sel, to: [groupId] }));
+    ops.push(createSetSelectionOp({ from: sel, to: [groupId as NodeId] }));
 
     dispatchApplyBatch(a, ops, o.label ?? 'Group');
     return groupId;
@@ -277,7 +278,7 @@ export function useNestedUngroup<TObject extends { id: string }, TPose>(
       dissolved.push(id);
     }
     if (dissolved.length === 0) return [];
-    ops.push(createSetSelectionOp({ from: sel, to: nextSelection }));
+    ops.push(createSetSelectionOp({ from: sel, to: nextSelection as NodeId[] }));
     dispatchApplyBatch(a, ops, o.label ?? 'Ungroup');
     return dissolved;
   }, []);

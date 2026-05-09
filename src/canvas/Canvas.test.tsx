@@ -3,6 +3,7 @@ import { render, fireEvent, createEvent } from '@testing-library/react';
 import { createRef, useRef, useState } from 'react';
 import { Canvas } from './Canvas';
 import { useSelection } from '../features/selection/useSelection';
+import { asNodeId, type NodeId } from '../core/scene/types';
 import { arrayAdapter } from '../core/adapters/arrayAdapter';
 import { useSelectTool } from '../tools/builtin/useSelectTool';
 import { useTools } from '../tools/useTools';
@@ -179,7 +180,7 @@ describe('<Canvas>', () => {
         const rectsRef = useRef(rects);
         rectsRef.current = rects;
         const sel = useSelection();
-        seen.push(sel.current);
+        seen.push([...sel.current]);
         const adapter = {
           ...arrayAdapter<Rect, Pose>({
             ref: rectsRef,
@@ -230,7 +231,7 @@ describe('<Canvas>', () => {
       function Harness() {
         const rectsRef = useRef(rects);
         const sel = useSelection();
-        seen.push(sel.current);
+        seen.push([...sel.current]);
         const adapter = {
           ...arrayAdapter<Rect, Pose>({
             ref: rectsRef,
@@ -279,7 +280,7 @@ describe('<Canvas>', () => {
       const startSpy = vi.fn();
       function Harness() {
         const rectsRef = useRef<Rect[]>([{ id: 'a', x: 0, y: 0, width: 5, height: 5 }]);
-        const sel = useSelection({ initial: ['a'] });
+        const sel = useSelection({ initial: [asNodeId('a')] });
         const adapter = {
           ...arrayAdapter<Rect, Pose>({
             ref: rectsRef,
@@ -345,8 +346,8 @@ describe('<Canvas>', () => {
       resizeStart?: (id: string) => void;
     }) {
       const rectsRef = useRef<Rect[]>(RECTS);
-      const sel = useSelection({ initial: props.initial, mode: props.mode });
-      props.onSelChange?.(sel.current);
+      const sel = useSelection({ initial: props.initial as readonly NodeId[] | undefined, mode: props.mode });
+      props.onSelChange?.([...sel.current]);
       const adapter = {
         ...arrayAdapter<Rect, Pose>({
           ref: rectsRef,

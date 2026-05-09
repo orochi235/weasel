@@ -12,7 +12,7 @@ import {
   decomposeRectPose,
   worldPoseLookup,
 } from '@orochi235/weasel';
-import type { MoveAdapter, Op, SelectionApi } from '@orochi235/weasel';
+import type { MoveAdapter, NodeId, Op, SelectionApi } from '@orochi235/weasel';
 import type { DrawCommand } from '@orochi235/weasel-gl';
 
 interface Node {
@@ -53,7 +53,7 @@ export function NestedGroupsDemo() {
     setParent: (id: string, parent: string | null) => adapterRef.current.setParent!(id, parent),
     insertObject: (n: Node) => adapterRef.current.insertObject(n),
     removeObject: (id: string) => adapterRef.current.removeObject(id),
-    setSelection: (ids: string[]) => selRef.current.set(ids),
+    setSelection: (ids: string[]) => selRef.current.set(ids as NodeId[]),
   }), []);
 
   const byId = (id: string) => nodesRef.current.find((n) => n.id === id);
@@ -65,7 +65,7 @@ export function NestedGroupsDemo() {
     getParent: (id: string) => byId(id)?.parent ?? null,
     getChildren: (id: string | null) => nodesRef.current.filter((n) => n.parent === id).map((n) => n.id),
     getSelection: () => selRef.current.get(),
-    setSelection: (ids: string[]) => selRef.current.set(ids),
+    setSelection: (ids: string[]) => selRef.current.set(ids as NodeId[]),
     setPose: (id: string, p: Pose) =>
       setNodes((ns) => ns.map((n) => (n.id === id ? { ...n, pose: { ...p } } : n))),
     setParent: (id: string, parent: string | null) =>

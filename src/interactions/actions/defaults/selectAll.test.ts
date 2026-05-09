@@ -1,10 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { defaultSelectAllAction } from './selectAll';
+import { asNodeId } from '../../../core/scene/types';
 
 describe('defaultSelectAllAction', () => {
   const baseDeps = {
     getSelection: () => [],
-    listAll: () => ['a', 'b', 'c'],
+    listAll: () => [asNodeId('a'), asNodeId('b'), asNodeId('c')],
     setSelection: vi.fn(),
   };
 
@@ -25,7 +26,7 @@ describe('defaultSelectAllAction', () => {
     const setSelection = vi.fn();
     const a = defaultSelectAllAction({
       getSelection: () => [],
-      listAll: () => ['a', 'b'],
+      listAll: () => [asNodeId('a'), asNodeId('b')],
       setSelection,
     });
     a.run();

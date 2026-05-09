@@ -11,6 +11,7 @@ import {
   type StandardActionsDeps,
   type UseStandardActionsOptions,
 } from './useStandardActions';
+import { asNodeId } from '../../core/scene/types';
 
 type Pose = { x: number; y: number; width: number; height: number };
 
@@ -66,7 +67,7 @@ describe('useStandardActions', () => {
       <ActionsProvider>
         <Host
           deps={makeDeps()}
-          options={{ defaults: { cloneObject: (id) => ({ id: id + "'" }) } }}
+          options={{ defaults: { cloneObject: (id) => ({ id: asNodeId(id + "'") }) } }}
         />
         <ProbeIds onIds={(ids) => seen.push(ids)} />
       </ActionsProvider>,
@@ -100,7 +101,7 @@ describe('useStandardActions', () => {
           deps={makeDeps()}
           options={{
             actions: { selectAll: null },
-            defaults: { cloneObject: (id) => ({ id: id + "'" }) },
+            defaults: { cloneObject: (id) => ({ id: asNodeId(id + "'") }) },
           }}
         />
         <ProbeIds onIds={(ids) => seen.push(ids)} />
@@ -121,7 +122,7 @@ describe('useStandardActions', () => {
           deps={makeDeps()}
           options={{
             actions: { duplicate: { run: customRun } },
-            defaults: { cloneObject: (id) => ({ id: id + "'" }) },
+            defaults: { cloneObject: (id) => ({ id: asNodeId(id + "'") }) },
           }}
         />
         <ProbeAction id="duplicate" onAction={(a) => { captured = a; }} />
@@ -146,7 +147,7 @@ describe('useStandardActions', () => {
             actions: {
               copy: { id: 'copy', label: 'Copy', defaultBinding: { key: 'c', mod: true }, run: copyRun },
             },
-            defaults: { cloneObject: (id) => ({ id: id + "'" }) },
+            defaults: { cloneObject: (id) => ({ id: asNodeId(id + "'") }) },
           }}
         />
         <ProbeIds onIds={(ids) => seen.push(ids)} />
@@ -188,7 +189,7 @@ describe('useStandardActions', () => {
         <ActionsProvider>
           <Host
             deps={makeDeps()}
-            options={{ defaults: { cloneObject: (id) => ({ id: id + "'" }) } }}
+            options={{ defaults: { cloneObject: (id) => ({ id: asNodeId(id + "'") }) } }}
           />
           <Capture snapshot="a" />
           <Capture snapshot="b" />
@@ -220,7 +221,7 @@ describe('useStandardActions', () => {
 
   it('keydown dispatches the consumer setSelection via deps', () => {
     const setSelection = vi.fn();
-    const listAll = vi.fn(() => ['a', 'b', 'c']);
+    const listAll = vi.fn(() => [asNodeId('a'), asNodeId('b'), asNodeId('c')]);
     render(
       <ActionsProvider>
         <Host deps={makeDeps({ setSelection, listAll })} />
@@ -232,7 +233,7 @@ describe('useStandardActions', () => {
 
   it('keydown applyBatch reaches the consumer for nudge', () => {
     const applyBatch = vi.fn();
-    const getSelection = vi.fn(() => ['n1']);
+    const getSelection = vi.fn(() => [asNodeId('n1')]);
     render(
       <ActionsProvider>
         <Host
@@ -260,7 +261,7 @@ describe('useStandardActions', () => {
       <ActionsProvider>
         <Host
           deps={makeDeps()}
-          options={{ defaults: { cloneObject: (id) => ({ id: id + "'" }) } }}
+          options={{ defaults: { cloneObject: (id) => ({ id: asNodeId(id + "'") }) } }}
         />
         <Probe />
       </ActionsProvider>,

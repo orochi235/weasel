@@ -3,13 +3,14 @@ import { renderHook, act } from '@testing-library/react';
 import { useNudge } from './nudge';
 import type { NudgeAdapter } from './nudge';
 import type { Op } from '../../..';
+import { type NodeId } from '../../../core/scene/types';
 
 interface Pose { x: number; y: number }
 
 const translatePose = (p: Pose, dx: number, dy: number): Pose => ({ x: p.x + dx, y: p.y + dy });
 
 function makeAdapter(initial: string[] = []) {
-  let selection = [...initial];
+  let selection: NodeId[] = [...initial] as NodeId[];
   const poses: Record<string, Pose> = { a: { x: 0, y: 0 }, b: { x: 10, y: 20 } };
   const batches: { ops: Op[]; label: string }[] = [];
   const adapter: NudgeAdapter<Pose> = {
@@ -17,7 +18,7 @@ function makeAdapter(initial: string[] = []) {
     getPose: (id) => poses[id] ?? { x: 0, y: 0 },
     applyBatch: (ops, label) => { batches.push({ ops, label: label ?? '' }); },
   };
-  return { adapter, batches, setSel: (ids: string[]) => { selection = [...ids]; }, poses };
+  return { adapter, batches, setSel: (ids: string[]) => { selection = [...ids] as NodeId[]; }, poses };
 }
 
 // Capture what setPose was called with by applying an op against a stub adapter.

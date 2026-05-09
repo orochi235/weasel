@@ -14,6 +14,7 @@ import { useWheelPanTool } from './useWheelPanTool';
 import { useKeyboardZoomTool } from './useKeyboardZoomTool';
 import { Canvas } from '../../canvas/Canvas';
 import { arrayAdapter } from '../../core/adapters/arrayAdapter';
+import { asNodeId } from '../../core/scene/types';
 import { useSelection } from '../../features/selection/useSelection';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
@@ -154,10 +155,13 @@ describe('Phase 2a integration', () => {
       // which calls applyBatch when present.
       const adapter = { ...base, applyBatch };
 
-      const sel = useSelection({ initial: ['a'], mode: 'single' });
-      selRef.current = sel.current;
+      const sel = useSelection({ initial: [asNodeId('a')], mode: 'single' });
+      selRef.current = [...sel.current];
 
-      const deleteTool = useDeleteTool(adapter);
+      const deleteTool = useDeleteTool({
+        ...adapter,
+        getSelection: () => [...sel.current],
+      });
 
       const selectTool = useSelectTool(adapter, {
         pickEvery: () => [],

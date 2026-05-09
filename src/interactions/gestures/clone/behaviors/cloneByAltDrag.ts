@@ -1,5 +1,6 @@
 import { createInsertOp } from '../../../../core/ops/create';
 import { createSetSelectionOp } from '../../../../core/ops/select';
+import type { NodeId } from '../../../../core/scene/types';
 import type { CloneBehavior } from '../../types';
 
 /** Clone-on-alt-drag behavior for `useClone`; activates when Alt/Option is held at drag start. */
@@ -17,7 +18,7 @@ export function cloneByAltDrag(): CloneBehavior {
       const from = ctx.adapter.getSelection?.() ?? [];
       return [
         ...created.map((o) => createInsertOp({ object: o })),
-        createSetSelectionOp({ from, to: newIds }),
+        createSetSelectionOp({ from: from as NodeId[], to: newIds as NodeId[] }),
       ];
     },
   };

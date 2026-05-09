@@ -1,5 +1,6 @@
 import {
   SceneCanvas,
+  asNodeId,
   pointInRotatedRect,
   useScene,
   ROTATED_POSE_DESCRIPTOR,
@@ -42,7 +43,7 @@ export function RotateDemo() {
       scene={scene}
       selectTool={{ handleHitRadius: HANDLE, resize: { geometry: ROTATED_POSE_DESCRIPTOR as PoseDescriptor<Rect> } }}
       geometry={{ pickEvery }}
-      selectionOptions={{ initial: ['b'] }}
+      selectionOptions={{ initial: [asNodeId('b')] }}
       layers={{
         scene: {
           drawOne: (_node, p): DrawCommand[] => {

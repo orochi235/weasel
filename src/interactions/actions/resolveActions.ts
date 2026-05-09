@@ -23,18 +23,19 @@ import type {
   ActionsProp,
 } from './registry';
 import type { Op } from '../../core/ops/types';
+import type { NodeId } from '../../core/scene/types';
 
 export interface StandardActionsDeps<TPose> {
-  getSelection: () => string[];
-  setSelection: (ids: string[]) => void;
-  listAll: () => string[];
-  getPose: (id: string) => TPose;
+  getSelection: () => NodeId[];
+  setSelection: (ids: NodeId[]) => void;
+  listAll: () => NodeId[];
+  getPose: (id: NodeId) => TPose;
   applyBatch: (ops: Op[], label?: string) => void;
   translatePose: (pose: TPose, dx: number, dy: number) => TPose;
 }
 
 export interface StandardActionDefaults<TPose> {
-  cloneObject?: (id: string, offset: { dx: number; dy: number }) => { id: string };
+  cloneObject?: (id: NodeId, offset: { dx: number; dy: number }) => { id: NodeId };
   duplicateOffset?: { dx: number; dy: number };
   nudgeStep?: number;
   nudgeShiftStep?: number;

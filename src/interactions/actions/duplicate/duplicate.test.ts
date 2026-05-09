@@ -3,11 +3,12 @@ import { renderHook, act } from '@testing-library/react';
 import { useDuplicate } from './duplicate';
 import type { DuplicateAdapter } from './duplicate';
 import type { Op } from '../../..';
+import { asNodeId, type NodeId } from '../../../core/scene/types';
 
 interface Pose { x: number; y: number }
 
 function makeAdapter(initial: string[] = []) {
-  let selection = [...initial];
+  let selection = [...initial] as NodeId[];
   const poses: Record<string, Pose> = { a: { x: 0, y: 0 }, b: { x: 10, y: 20 }, c: { x: 5, y: 5 } };
   const batches: { ops: Op[]; label: string }[] = [];
   let counter = 0;
@@ -16,7 +17,7 @@ function makeAdapter(initial: string[] = []) {
     getPose: (id) => poses[id] ?? { x: 0, y: 0 },
     cloneObject: (id, offset) => {
       counter += 1;
-      const newId = `${id}-clone-${counter}`;
+      const newId = asNodeId(`${id}-clone-${counter}`);
       const p = poses[id] ?? { x: 0, y: 0 };
       const newObj = { id: newId, x: p.x + offset.dx, y: p.y + offset.dy };
       poses[newId] = { x: newObj.x, y: newObj.y };
@@ -26,7 +27,7 @@ function makeAdapter(initial: string[] = []) {
   };
   return {
     adapter, batches,
-    setSel: (ids: string[]) => { selection = [...ids]; },
+    setSel: (ids: string[]) => { selection = [...ids] as NodeId[]; },
     poses,
   };
 }

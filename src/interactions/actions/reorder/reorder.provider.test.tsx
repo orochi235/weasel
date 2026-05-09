@@ -4,13 +4,14 @@ import { render } from '@testing-library/react';
 import { useReorder } from './reorder';
 import { ActionsProvider, useActionsRegistry, type ActionsRegistry } from '../registry';
 import type { Op } from '../../../core/ops/types';
+import { asNodeId, type NodeId } from '../../../core/scene/types';
 
 interface FakeAdapter {
-  selection: string[];
+  selection: NodeId[];
   parents: Record<string, string | null>;
   children: Record<string, string[]>;
   applied: Array<{ ops: Op[]; label: string }>;
-  getSelection(): string[];
+  getSelection(): NodeId[];
   getParent(id: string): string | null;
   getChildren(parentId: string | null): string[];
   setChildOrder(parentId: string | null, ids: string[]): void;
@@ -19,7 +20,7 @@ interface FakeAdapter {
 
 function makeAdapter(): FakeAdapter {
   const a: FakeAdapter = {
-    selection: ['b'],
+    selection: [asNodeId('b')],
     parents: { a: null, b: null, c: null },
     children: { ROOT: ['a', 'b', 'c'] },
     applied: [],

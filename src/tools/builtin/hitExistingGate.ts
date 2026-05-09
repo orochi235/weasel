@@ -1,3 +1,4 @@
+import type { NodeId } from '../../core/scene/types';
 import type { ToolCtx } from '../types';
 
 /** Hit-existing gate shared by the drag-insert tool hooks. When the consumer
@@ -14,6 +15,7 @@ export function applyHitExistingGate(
   if (!hitExisting) return false;
   const hit = hitExisting({ x: ctx.worldX, y: ctx.worldY });
   if (!hit) return false;
-  ctx.selection.set(Array.isArray(hit) ? hit : [hit]);
+  const ids = Array.isArray(hit) ? hit : [hit];
+  ctx.selection.set(ids as NodeId[]);
   return true;
 }

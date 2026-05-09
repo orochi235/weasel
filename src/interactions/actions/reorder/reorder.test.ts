@@ -2,13 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useReorder } from './reorder';
 import type { Op } from '../../../core/ops/types';
+import { type NodeId } from '../../../core/scene/types';
 
 interface FakeAdapter {
-  selection: string[];
+  selection: NodeId[];
   parents: Record<string, string | null>;
   children: Record<string, string[]>;
   applied: Array<{ ops: Op[]; label: string }>;
-  getSelection(): string[];
+  getSelection(): NodeId[];
   getParent(id: string): string | null;
   getChildren(parentId: string | null): string[];
   setChildOrder(parentId: string | null, ids: string[]): void;
@@ -17,7 +18,7 @@ interface FakeAdapter {
 
 function makeAdapter(opts: { selection?: string[]; parents?: Record<string, string | null>; children?: Record<string, string[]> } = {}): FakeAdapter {
   const a: FakeAdapter = {
-    selection: opts.selection ?? [],
+    selection: (opts.selection ?? []) as NodeId[],
     parents: opts.parents ?? {},
     children: Object.fromEntries(Object.entries(opts.children ?? {}).map(([k, v]) => [k, v.slice()])),
     applied: [],

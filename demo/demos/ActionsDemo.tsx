@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import {
   arrayAdapter,
+  asNodeId,
   Canvas,
   useEscape,
   useSelectAll,
@@ -10,6 +11,7 @@ import {
   useSelection,
   useSelectTool,
   useTools,
+  type NodeId,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '@orochi235/weasel-gl';
 
@@ -39,7 +41,7 @@ export function ActionsDemo() {
       toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
     }),
     ...selection.adapterMethods,
-    listAll: () => rectsRef.current.map((r) => r.id),
+    listAll: (): NodeId[] => rectsRef.current.map((r) => asNodeId(r.id)),
     insertObject: (obj: Rect) => setRects((rs) => [...rs, obj]),
     removeObject: (id: string) => setRects((rs) => rs.filter((r) => r.id !== id)),
     getParent: (_id: string) => null,
@@ -48,16 +50,16 @@ export function ActionsDemo() {
       const byId = new Map(rectsRef.current.map((r) => [r.id, r]));
       setRects(ids.map((id) => byId.get(id)!).filter(Boolean));
     },
-    cloneObject: (id: string, offset: { dx: number; dy: number }) => {
+    cloneObject: (id: NodeId, offset: { dx: number; dy: number }): { id: NodeId } => {
       const src = rectsRef.current.find((r) => r.id === id)!;
       return {
-        id: `r${nextId.current++}`,
+        id: asNodeId(`r${nextId.current++}`),
         x: src.x + offset.dx,
         y: src.y + offset.dy,
         width: src.width,
         height: src.height,
         color: COLORS[(nextId.current + 2) % COLORS.length],
-      } as Rect;
+      } as Rect & { id: NodeId };
     },
   };
 

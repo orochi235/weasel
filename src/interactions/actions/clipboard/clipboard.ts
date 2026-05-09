@@ -2,6 +2,7 @@ import { useCallback, useRef } from 'react';
 import { createDeleteOp } from '../../../core/ops/delete';
 import { createSetSelectionOp } from '../../../core/ops/select';
 import type { Op } from '../../../core/ops/types';
+import type { NodeId } from '../../../core/scene/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
 import type { InsertAdapter } from '../../../core/adapters/types';
 import { useKeybinding } from '../useKeybinding';
@@ -25,7 +26,7 @@ export interface ClipboardAdapter<TObject extends { id: string }>
 /** Options for `useClipboard`. */
 export interface UseClipboardOptions {
   /** Reads the current selection. Used by all three operations. */
-  getSelection: () => string[];
+  getSelection: () => NodeId[];
   /** Auto-bind Mod+C / Mod+X / Mod+V on document. Default false. */
   bindKeyboard?: boolean;
   /** Label for the cut batch. Default 'Cut'. */
@@ -33,7 +34,7 @@ export interface UseClipboardOptions {
   /** Label for the paste batch. Default 'Paste'. */
   pasteLabel?: string;
   /** Called after a successful paste with the ids of the new objects. */
-  onPaste?: (newIds: string[]) => void;
+  onPaste?: (newIds: NodeId[]) => void;
 }
 
 /** Return shape of `useClipboard`. */
@@ -41,7 +42,7 @@ export interface UseClipboardReturn extends UseClipboardOpsReturn {
   /** Snapshot the selection into the clipboard, then delete the originals.
    *  Returns the ids that were cut (= the selection at call time), or `[]` on
    *  empty selection. */
-  cut(): string[];
+  cut(): NodeId[];
 }
 
 /** Selection-driven copy / cut / paste with optional Mod+C, Mod+X, Mod+V
@@ -62,7 +63,7 @@ export function useClipboard<TObject extends { id: string }>(
   const optsRef = useRef(options);
   optsRef.current = options;
 
-  const cut = useCallback((): string[] => {
+  const cut = useCallback((): NodeId[] => {
     const ids = optsRef.current.getSelection();
     if (ids.length === 0) return [];
     // Snapshot first — the adapter's `snapshotSelection` reads live scene
@@ -70,7 +71,7 @@ export function useClipboard<TObject extends { id: string }>(
     cb.copy();
     const a = adapterRef.current;
     const ops: Op[] = ids.map((id) => {
-      const obj = a.getObject?.(id) ?? ({ id } as TObject);
+      const obj = a.getObject?.(id) ?? ({ id } as unknown as TObject);
       return createDeleteOp({ object: obj });
     });
     ops.push(createSetSelectionOp({ from: ids, to: [] }));

@@ -2,22 +2,23 @@ import { useCallback, useRef } from 'react';
 import { createDeleteOp } from '../../../core/ops/delete';
 import { createSetSelectionOp } from '../../../core/ops/select';
 import type { Op } from '../../../core/ops/types';
+import type { NodeId } from '../../../core/scene/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
 import { useKeybinding } from '../useKeybinding';
 
 /** Adapter for `useDelete`. */
 export interface DeleteAdapter {
   /** Read current selection. */
-  getSelection(): string[];
+  getSelection(): NodeId[];
   /** Optional: provide the object for a given id; required by `createDeleteOp`
    *  to capture the object for invert/insert. If omitted, a minimal stub
    *  `{ id }` is used — undo will only restore the id, not the full object. */
-  getObject?(id: string): { id: string } | undefined | null;
+  getObject?(id: NodeId): { id: string } | undefined | null;
   /** Optional: op-batch entry point. When omitted, ops apply directly. */
   applyBatch?(ops: Op[], label: string): void;
   /** Optional: clear selection after delete. If omitted, the hook still
    *  emits a SetSelectionOp([]) alongside DeleteOps. */
-  setSelection?(ids: string[]): void;
+  setSelection?(ids: NodeId[]): void;
   /** Optional: removeObject mutator wired by DeleteOp when applyBatch is omitted. */
   removeObject?(id: string): void;
 }
@@ -30,14 +31,14 @@ export interface UseDeleteOptions {
   label?: string;
   /** Optional filter: given selected ids, return the subset to actually delete.
    *  Used by consumers to protect locked or undeletable objects. */
-  filter?: (ids: string[]) => string[];
+  filter?: (ids: NodeId[]) => NodeId[];
 }
 
 /** Return shape of `useDelete`. */
 export interface UseDeleteReturn {
   /** Imperative trigger — deletes the current selection. Returns the ids
    *  that were deleted (after filter). Returns [] if nothing was deleted. */
-  deleteSelection(): string[];
+  deleteSelection(): NodeId[];
 }
 
 /** Selection-deletion action; optionally binds Delete/Backspace keys. */
@@ -50,7 +51,7 @@ export function useDelete(
   const optsRef = useRef(options);
   optsRef.current = options;
 
-  const deleteSelection = useCallback((): string[] => {
+  const deleteSelection = useCallback((): NodeId[] => {
     const a = adapterRef.current;
     const o = optsRef.current;
     const sel = a.getSelection();

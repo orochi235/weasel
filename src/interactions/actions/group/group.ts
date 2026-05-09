@@ -5,12 +5,13 @@ import { createSetSelectionOp } from '../../../core/ops/select';
 import type { Op } from '../../../core/ops/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
 import type { Group, GroupAdapter } from '../../../features/groups/types';
+import type { NodeId } from '../../../core/scene/types';
 import { useKeybinding } from '../useKeybinding';
 
 /** Adapter for `useGroup` / `useUngroup`. */
 export interface GroupActionAdapter extends GroupAdapter {
   /** Read current selection. */
-  getSelection(): string[];
+  getSelection(): NodeId[];
   /** Optional: op-batch entry point. When omitted, ops apply directly. */
   applyBatch?(ops: Op[], label: string): void;
 }
@@ -60,7 +61,7 @@ export function useGroup(
     const g: Group = { id, members: [...sel] };
     const ops: Op[] = [
       createCreateGroupOp({ group: g }),
-      createSetSelectionOp({ from: sel, to: [id] }),
+      createSetSelectionOp({ from: sel, to: [id as NodeId] }),
     ];
     dispatchApplyBatch(a, ops, o.label ?? 'Group');
     return id;
@@ -128,7 +129,7 @@ export function useUngroup(
     if (dissolved.length === 0) return [];
 
     const ops: Op[] = dissolved.map(({ group }) => createDissolveGroupOp({ group }));
-    ops.push(createSetSelectionOp({ from: sel, to: nextSelection }));
+    ops.push(createSetSelectionOp({ from: sel, to: nextSelection as NodeId[] }));
     dispatchApplyBatch(a, ops, o.label ?? 'Ungroup');
     return dissolved.map((d) => d.group.id);
   }, []);

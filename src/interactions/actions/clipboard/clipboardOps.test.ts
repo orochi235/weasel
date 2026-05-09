@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useClipboardOps } from './clipboardOps';
 import type { InsertAdapter, Op } from '../../..';
+import { asNodeId } from '../../../core/scene/types';
 
 interface Obj { id: string; x: number; y: number }
 
@@ -71,7 +72,7 @@ describe('useClipboardOps', () => {
     const helpers = makeAdapter();
     helpers.seed({ id: 'a', x: 0, y: 0 });
     const { result } = renderHook(() =>
-      useClipboardOps(helpers.adapter, { getSelection: () => ['a'] }),
+      useClipboardOps(helpers.adapter, { getSelection: () => [asNodeId('a')] }),
     );
     act(() => { result.current.copy(); });
     act(() => { result.current.paste(); });
@@ -87,7 +88,7 @@ describe('useClipboardOps', () => {
     const helpers = makeAdapter({ offsetOverride: { dx: 1, dy: 1 } });
     helpers.seed({ id: 'a', x: 0, y: 0 });
     const { result } = renderHook(() =>
-      useClipboardOps(helpers.adapter, { getSelection: () => ['a'] }),
+      useClipboardOps(helpers.adapter, { getSelection: () => [asNodeId('a')] }),
     );
     act(() => { result.current.copy(); });
     act(() => { result.current.paste(); });
@@ -107,7 +108,7 @@ describe('useClipboardOps', () => {
     let calls = 0;
     const { result } = renderHook(() =>
       useClipboardOps(helpers.adapter, {
-        getSelection: () => { calls += 1; return ['a']; },
+        getSelection: () => { calls += 1; return [asNodeId('a')]; },
       }),
     );
     act(() => { result.current.copy(); });
@@ -121,7 +122,7 @@ describe('useClipboardOps', () => {
     const seen: string[][] = [];
     const { result } = renderHook(() =>
       useClipboardOps(helpers.adapter, {
-        getSelection: () => ['a'],
+        getSelection: () => [asNodeId('a')],
         onPaste: (ids) => seen.push(ids),
       }),
     );

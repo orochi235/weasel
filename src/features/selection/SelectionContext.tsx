@@ -27,12 +27,13 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import type { NodeId } from '../../core/scene/types';
 
 /** @experimental */
 export interface SelectionContextValue {
   /** The most-recently-published selection. Empty array when no canvas
    *  has published or when the active canvas's selection is empty. */
-  readonly selection: readonly string[];
+  readonly selection: readonly NodeId[];
   /** Optional per-id kind label, parallel to `selection`. Publishers that
    *  know their domain populate it (e.g. `'rectangle'`, `'path'`, `'group'`)
    *  so consumers can render type-aware copy. Sparse entries (`undefined`)
@@ -44,7 +45,7 @@ export interface SelectionContextValue {
   /** Publish the calling canvas's selection. Idempotent — calling with
    *  the same array (by content equality) does not trigger a re-render
    *  of the consumer tree. */
-  publishSelection(ids: readonly string[], kinds?: readonly (string | undefined)[]): void;
+  publishSelection(ids: readonly NodeId[], kinds?: readonly (string | undefined)[]): void;
 }
 
 const SelectionContext = createContext<SelectionContextValue | null>(null);
@@ -56,13 +57,13 @@ const SelectionContext = createContext<SelectionContextValue | null>(null);
  */
 export function SelectionContextProvider({ children }: { children: ReactNode }): ReactNode {
   const [state, setState] = useState<{
-    selection: readonly string[];
+    selection: readonly NodeId[];
     kinds: readonly (string | undefined)[] | undefined;
   }>({ selection: [], kinds: undefined });
   const lastSerializedRef = useRef<string>('');
 
   const publishSelection = useCallback((
-    ids: readonly string[],
+    ids: readonly NodeId[],
     kinds?: readonly (string | undefined)[],
   ): void => {
     // Cheap content equality via JSON serialization over both ids and kinds.
@@ -106,7 +107,7 @@ export function useSelectionContext(): SelectionContextValue | null {
  * consumers call `useSelectionContext()` and `publishSelection` directly.
  */
 export function usePublishSelection(
-  ids: readonly string[],
+  ids: readonly NodeId[],
   kinds?: readonly (string | undefined)[],
 ): void {
   const ctx = useContext(SelectionContext);

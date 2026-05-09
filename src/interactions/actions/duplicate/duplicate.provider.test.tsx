@@ -4,15 +4,16 @@ import { render } from '@testing-library/react';
 import { useDuplicate } from './duplicate';
 import { ActionsProvider, useActionsRegistry, type ActionsRegistry } from '../registry';
 import type { Op } from '../../../core/ops/types';
+import { asNodeId, type NodeId } from '../../../core/scene/types';
 
 type Pose = { x: number; y: number };
 
 function makeAdapter() {
   const batches: { ops: Op[]; label: string }[] = [];
   return {
-    getSelection: () => ['a'],
-    getPose: (_id: string): Pose => ({ x: 0, y: 0 }),
-    cloneObject: (id: string) => ({ id: id + "'" }),
+    getSelection: () => [asNodeId('a')],
+    getPose: (_id: NodeId): Pose => ({ x: 0, y: 0 }),
+    cloneObject: (id: NodeId) => ({ id: asNodeId(id + "'") }),
     applyBatch: (ops: Op[], label?: string) => batches.push({ ops, label: label ?? '' }),
     batches,
   };

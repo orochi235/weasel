@@ -1,12 +1,13 @@
 import { createTransformOp } from '../../../core/ops/transform';
 import type { Op } from '../../../core/ops/types';
+import type { NodeId } from '../../../core/scene/types';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
 
 /** @experimental */
 export interface NudgeDeps<TPose> {
-  getSelection: () => string[];
-  getPose: (id: string) => TPose;
+  getSelection: () => NodeId[];
+  getPose: (id: NodeId) => TPose;
   translatePose: (pose: TPose, dx: number, dy: number) => TPose;
   applyBatch: (ops: Op[], label?: string) => void;
   step?: number;

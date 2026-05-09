@@ -1,13 +1,14 @@
 import { createInsertOp } from '../../../core/ops/create';
 import { createSetSelectionOp } from '../../../core/ops/select';
 import type { Op } from '../../../core/ops/types';
+import type { NodeId } from '../../../core/scene/types';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
 
 /** @experimental */
 export interface DuplicateDeps {
-  getSelection: () => string[];
-  cloneObject: (id: string, offset: { dx: number; dy: number }) => { id: string };
+  getSelection: () => NodeId[];
+  cloneObject: (id: NodeId, offset: { dx: number; dy: number }) => { id: NodeId };
   applyBatch: (ops: Op[], label?: string) => void;
   /** Per-clone translation. Default {dx:8, dy:8}. */
   offset?: { dx: number; dy: number };

@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
+import type { NodeId } from '../../core/scene/types';
 
 /**
  * Selection click policy. `single` always replaces; `multi` toggles when the
@@ -12,32 +13,32 @@ export type SelectionExtendKey = 'shift' | 'meta' | 'ctrl';
 /** API returned by {@link useSelection}. */
 export interface SelectionApi {
   /** Current selection. Re-renders trigger when this reference changes. */
-  current: string[];
+  current: readonly NodeId[];
   /** Imperative read for use inside event callbacks (avoids stale closures). */
-  get(): string[];
+  get(): NodeId[];
   /** Replace selection. */
-  set(ids: string[]): void;
+  set(ids: NodeId[]): void;
   /** Add id (multi-mode appends; single-mode replaces). */
-  add(id: string): void;
+  add(id: NodeId): void;
   /** Remove id from selection. */
-  remove(id: string): void;
+  remove(id: NodeId): void;
   /** Toggle id in/out of selection. */
-  toggle(id: string): void;
+  toggle(id: NodeId): void;
   /** Clear selection. */
   clear(): void;
   /** True if id is selected. */
-  contains(id: string): boolean;
+  contains(id: NodeId): boolean;
   /**
    * Apply a click to the selection per the configured mode/extend key.
    * - `single`: replaces selection with `[id]`, regardless of modifiers.
    * - `multi`: with the extend key held, toggles `id` in/out of the selection;
    *   otherwise replaces with `[id]`.
    */
-  applyClick(id: string, modifiers: { shift: boolean; meta: boolean; ctrl: boolean }): void;
+  applyClick(id: NodeId, modifiers: { shift: boolean; meta: boolean; ctrl: boolean }): void;
   /** Pre-built methods for spreading into an adapter that needs them. */
   adapterMethods: {
-    getSelection: () => string[];
-    setSelection: (ids: string[]) => void;
+    getSelection: () => NodeId[];
+    setSelection: (ids: NodeId[]) => void;
   };
 }
 
@@ -48,7 +49,7 @@ export interface UseSelectionOptions {
   /** Default `'shift'`. Ignored in single-mode. */
   extend?: SelectionExtendKey;
   /** Default `[]`. */
-  initial?: string[];
+  initial?: readonly NodeId[];
 }
 
 /**
@@ -66,19 +67,19 @@ export interface UseSelectionOptions {
  */
 export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
   const { mode = 'single', extend = 'shift', initial = [] } = opts;
-  const [current, setCurrent] = useState<string[]>(initial);
-  const ref = useRef<string[]>(current);
+  const [current, setCurrent] = useState<NodeId[]>(() => [...initial]);
+  const ref = useRef<NodeId[]>(current);
   ref.current = current;
 
   const get = useCallback(() => ref.current, []);
 
-  const set = useCallback((ids: string[]) => {
+  const set = useCallback((ids: NodeId[]) => {
     ref.current = ids;
     setCurrent(ids);
   }, []);
 
   const add = useCallback(
-    (id: string) => {
+    (id: NodeId) => {
       if (mode === 'single') {
         set([id]);
         return;
@@ -90,7 +91,7 @@ export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
   );
 
   const remove = useCallback(
-    (id: string) => {
+    (id: NodeId) => {
       if (!ref.current.includes(id)) return;
       set(ref.current.filter((x) => x !== id));
     },
@@ -98,7 +99,7 @@ export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
   );
 
   const toggle = useCallback(
-    (id: string) => {
+    (id: NodeId) => {
       if (ref.current.includes(id)) {
         set(ref.current.filter((x) => x !== id));
       } else {
@@ -112,10 +113,10 @@ export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
     set([]);
   }, [set]);
 
-  const contains = useCallback((id: string) => ref.current.includes(id), []);
+  const contains = useCallback((id: NodeId) => ref.current.includes(id), []);
 
   const applyClick = useCallback(
-    (id: string, modifiers: { shift: boolean; meta: boolean; ctrl: boolean }) => {
+    (id: NodeId, modifiers: { shift: boolean; meta: boolean; ctrl: boolean }) => {
       if (mode === 'single') {
         set([id]);
         return;
@@ -137,7 +138,7 @@ export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
   const adapterMethods = useMemo(
     () => ({
       getSelection: () => ref.current,
-      setSelection: (ids: string[]) => set(ids),
+      setSelection: (ids: NodeId[]) => set(ids),
     }),
     [set],
   );

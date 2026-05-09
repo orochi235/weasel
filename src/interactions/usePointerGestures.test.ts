@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type React from 'react';
 import { useSelection } from '../features/selection/useSelection';
+import { asNodeId } from '../core/scene/types';
 import { usePointerGestures } from './usePointerGestures';
 import type { MoveController } from './gestures/move/move';
 import type { ResizeController } from './gestures/resize/resize';
@@ -121,7 +122,7 @@ describe('usePointerGestures — selection-driven defaults', () => {
   });
 
   it('default onTapEmpty clears selection', () => {
-    const { result: sel } = renderHook(() => useSelection({ initial: ['x'] }));
+    const { result: sel } = renderHook(() => useSelection({ initial: [asNodeId('x')] }));
     const { result } = renderHook(() =>
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
@@ -153,7 +154,7 @@ describe('usePointerGestures — selection-driven defaults', () => {
 
   it('explicit onTapEmpty overrides selection.clear default', () => {
     const onTapEmpty = vi.fn();
-    const { result: sel } = renderHook(() => useSelection({ initial: ['x'] }));
+    const { result: sel } = renderHook(() => useSelection({ initial: [asNodeId('x')] }));
     const { result } = renderHook(() =>
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
@@ -192,7 +193,7 @@ describe('usePointerGestures — promote-then-drag', () => {
   it('clicking already-selected obj drags whole selection', () => {
     const move = makeMove();
     const { result: sel } = renderHook(() =>
-      useSelection({ mode: 'multi', initial: ['a', 'b'] }),
+      useSelection({ mode: 'multi', initial: [asNodeId('a'), asNodeId('b')] }),
     );
     // Configure pickEvery to return 'a', which is already in selection (with shift held to preserve)
     const { result } = renderHook(() =>
@@ -214,7 +215,7 @@ describe('usePointerGestures — promote-then-drag', () => {
   it('shift-click on unselected adds to selection and drags whole post-click set', () => {
     const move = makeMove();
     const { result: sel } = renderHook(() =>
-      useSelection({ mode: 'multi', initial: ['a'] }),
+      useSelection({ mode: 'multi', initial: [asNodeId('a')] }),
     );
     const { result } = renderHook(() =>
       usePointerGestures({
@@ -250,7 +251,7 @@ describe('usePointerGestures — promote-then-drag', () => {
 describe('usePointerGestures — resizeTarget derivation', () => {
   it('derives resizeTarget from single selection + boundsOf', () => {
     const resize = makeResize();
-    const { result: sel } = renderHook(() => useSelection({ initial: ['a'] }));
+    const { result: sel } = renderHook(() => useSelection({ initial: [asNodeId('a')] }));
     const bounds = { x: 0, y: 0, width: 50, height: 50 };
     const boundsOf = (id: string) => (id === 'a' ? bounds : null);
     const { result } = renderHook(() =>
@@ -273,7 +274,7 @@ describe('usePointerGestures — resizeTarget derivation', () => {
   it('multi-selection yields no resizeTarget', () => {
     const resize = makeResize();
     const { result: sel } = renderHook(() =>
-      useSelection({ mode: 'multi', initial: ['a', 'b'] }),
+      useSelection({ mode: 'multi', initial: [asNodeId('a'), asNodeId('b')] }),
     );
     const boundsOf = () => ({ x: 0, y: 0, width: 50, height: 50 });
     const { result } = renderHook(() =>
@@ -291,7 +292,7 @@ describe('usePointerGestures — resizeTarget derivation', () => {
 
   it('handleHitRadius is screen-px: scale=2 halves the world hit radius', () => {
     const resize = makeResize();
-    const { result: sel } = renderHook(() => useSelection({ initial: ['a'] }));
+    const { result: sel } = renderHook(() => useSelection({ initial: [asNodeId('a')] }));
     const bounds = { x: 0, y: 0, width: 50, height: 50 };
     const boundsOf = (id: string) => (id === 'a' ? bounds : null);
     // clientToWorld at scale=2 maps screen 10 -> world 5.
@@ -322,7 +323,7 @@ describe('usePointerGestures — resizeTarget derivation', () => {
   it('explicit resizeTarget overrides selection-derived default', () => {
     const resize = makeResize();
     const explicitBounds = { x: 0, y: 0, width: 50, height: 50 };
-    const { result: sel } = renderHook(() => useSelection({ initial: ['ignored'] }));
+    const { result: sel } = renderHook(() => useSelection({ initial: [asNodeId('ignored')] }));
     const { result } = renderHook(() =>
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,

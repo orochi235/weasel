@@ -1,12 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { defaultReorderActions } from './reorder';
 import type { Op } from '../../../core/ops/types';
+import { asNodeId, type NodeId } from '../../../core/scene/types';
 
 interface FakeAdapter {
-  selection: string[];
+  selection: NodeId[];
   parents: Record<string, string | null>;
   children: Record<string, string[]>;
-  getSelection(): string[];
+  getSelection(): NodeId[];
   getParent(id: string): string | null;
   getChildren(parentId: string | null): string[];
   setChildOrder(parentId: string | null, ids: string[]): void;
@@ -14,7 +15,7 @@ interface FakeAdapter {
 
 function makeAdapter(): FakeAdapter {
   return {
-    selection: ['b'],
+    selection: [asNodeId('b')],
     parents: { a: null, b: null, c: null },
     children: { ROOT: ['a', 'b', 'c'] },
     getSelection() { return this.selection.slice(); },
@@ -26,15 +27,15 @@ function makeAdapter(): FakeAdapter {
 
 describe('defaultReorderActions', () => {
   it('returns 2 actions: reorder.forward, reorder.backward', () => {
-    const acts = defaultReorderActions({ getSelection: () => ['a'], applyBatch: vi.fn() });
+    const acts = defaultReorderActions({ getSelection: () => [asNodeId('a')], applyBatch: vi.fn() });
     expect(acts.map(a => a.id).sort()).toEqual(['reorder.backward', 'reorder.forward']);
   });
   it('forward binding = Mod+]', () => {
-    const a = defaultReorderActions({ getSelection: () => ['a'], applyBatch: vi.fn() }).find(x => x.id === 'reorder.forward')!;
+    const a = defaultReorderActions({ getSelection: () => [asNodeId('a')], applyBatch: vi.fn() }).find(x => x.id === 'reorder.forward')!;
     expect(a.defaultBinding).toEqual({ key: [']', '}'], mod: true });
   });
   it('backward binding = Mod+[', () => {
-    const a = defaultReorderActions({ getSelection: () => ['a'], applyBatch: vi.fn() }).find(x => x.id === 'reorder.backward')!;
+    const a = defaultReorderActions({ getSelection: () => [asNodeId('a')], applyBatch: vi.fn() }).find(x => x.id === 'reorder.backward')!;
     expect(a.defaultBinding).toEqual({ key: ['[', '{'], mod: true });
   });
   it('forward run() emits a reorder op that brings selected ids forward', () => {
