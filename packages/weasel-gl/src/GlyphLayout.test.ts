@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { parseBmFont, FIXTURE_FONT } from './FontAtlas';
-import { layoutGlyphs } from './GlyphLayout';
+import { layoutGlyphs, quadsToVertexBuffer, buildQuadIndexBuffer } from './GlyphLayout';
 
 const font = parseBmFont(FIXTURE_FONT);
 const style = { fontSize: 32, align: 'left' as const, baseline: 'alphabetic' as const };
@@ -57,5 +57,38 @@ describe('layoutGlyphs', () => {
     expect(quads).toHaveLength(0);
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('937'));
     warnSpy.mockRestore();
+  });
+});
+
+describe('quadsToVertexBuffer', () => {
+  it('produces 16 floats per quad (4 verts × 4 components)', () => {
+    const quads = layoutGlyphs('AB', style, font);
+    const buf = quadsToVertexBuffer(quads);
+    expect(buf.length).toBe(quads.length * 16);
+  });
+
+  it('first four values of first quad are x0,y0,u0,v0 of first glyph', () => {
+    const quads = layoutGlyphs('A', style, font);
+    const buf = quadsToVertexBuffer(quads);
+    expect(buf[0]).toBeCloseTo(quads[0].x0);
+    expect(buf[1]).toBeCloseTo(quads[0].y0);
+    expect(buf[2]).toBeCloseTo(quads[0].u0);
+    expect(buf[3]).toBeCloseTo(quads[0].v0);
+  });
+});
+
+describe('buildQuadIndexBuffer', () => {
+  it('produces 6 indices per quad', () => {
+    expect(buildQuadIndexBuffer(3).length).toBe(18);
+  });
+
+  it('first two triangles of first quad are [0,1,2] and [1,3,2]', () => {
+    const idx = buildQuadIndexBuffer(1);
+    expect(Array.from(idx)).toEqual([0, 1, 2, 1, 3, 2]);
+  });
+
+  it('second quad starts at base vertex 4', () => {
+    const idx = buildQuadIndexBuffer(2);
+    expect(Array.from(idx.slice(6))).toEqual([4, 5, 6, 5, 7, 6]);
   });
 });
