@@ -1,8 +1,9 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { createSetSelectionOp } from '../../../core/ops/select';
 import type { Op } from '../../../core/ops/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
 import { useKeybinding } from '../useKeybinding';
+import { useActionsRegistry, type Action } from '../registry';
 
 /** Adapter for `useSelectAll`. */
 export interface SelectAllAdapter {
@@ -30,7 +31,12 @@ export interface UseSelectAllReturn {
   selectAll(): void;
 }
 
-/** Select-all action; binds Ctrl/Cmd+A on document by default. */
+/**
+ * Select-all action; binds Ctrl/Cmd+A on document by default. When a parent
+ * `<ActionsProvider>` is in scope, the binding is registered with the
+ * registry instead of attaching its own keydown listener — so a single
+ * scope-level listener handles dispatch.
+ */
 export function useSelectAll(
   adapter: SelectAllAdapter,
   options: UseSelectAllOptions = {},
@@ -53,8 +59,24 @@ export function useSelectAll(
     );
   }, []);
 
+  const reg = useActionsRegistry();
+  const enableKeyboard = options.enableKeyboard ?? true;
+
+  // Provider path: register an Action; cleanup unregisters.
+  useEffect(() => {
+    if (!reg || !enableKeyboard) return;
+    const action: Action = {
+      id: 'selectAll',
+      label: 'Select All',
+      defaultBinding: { key: 'a', mod: true },
+      run: () => selectAll(),
+    };
+    return reg.register(action);
+  }, [reg, enableKeyboard, selectAll]);
+
+  // Fallback path: direct keydown when no provider.
   useKeybinding(
-    { key: 'a', mod: true, enabled: options.enableKeyboard ?? true },
+    { key: 'a', mod: true, enabled: enableKeyboard && reg == null },
     () => selectAll(),
   );
 
