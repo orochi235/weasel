@@ -1,5 +1,24 @@
 import { describe, it, expect } from 'vitest';
-import { parseColor } from './color';
+import { parseColor, parseColorToRgba255 } from './color';
+
+describe('parseColorToRgba255', () => {
+  it('returns integer 0..255 components for #ffffff', () => {
+    expect(parseColorToRgba255('#ffffff')).toEqual([255, 255, 255, 255]);
+  });
+
+  it('returns [0,0,0,255] for #000000', () => {
+    expect(parseColorToRgba255('#000000')).toEqual([0, 0, 0, 255]);
+  });
+
+  it('handles rgba with fractional alpha', () => {
+    const [r, g, b, a] = parseColorToRgba255('rgba(255, 0, 0, 0.5)');
+    expect(r).toBe(255);
+    expect(g).toBe(0);
+    expect(b).toBe(0);
+    expect(a).toBeGreaterThanOrEqual(127);
+    expect(a).toBeLessThanOrEqual(128);
+  });
+});
 
 describe('parseColor', () => {
   it('parses #rrggbb', () => {

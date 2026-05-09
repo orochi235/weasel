@@ -25,6 +25,17 @@ export function parseColor(input: string): [number, number, number, number] {
   throw new Error(`parseColor: unrecognized color "${input}"`);
 }
 
+/** Same as `parseColor` but returns integer 0..255 components. */
+export function parseColorToRgba255(input: string): [number, number, number, number] {
+  const [r, g, b, a] = parseColor(input);
+  return [
+    Math.round(r * 255),
+    Math.round(g * 255),
+    Math.round(b * 255),
+    Math.round(a * 255),
+  ];
+}
+
 function parseHex(s: string): [number, number, number, number] {
   const hex = s.slice(1);
   if (hex.length === 3) {
