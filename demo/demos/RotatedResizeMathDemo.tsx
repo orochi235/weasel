@@ -308,6 +308,78 @@ function StackedOverlayPanel({
   );
 }
 
+/** Per-component median of three numbers. */
+function median3(x: number, y: number, z: number): number {
+  if (x > y) [x, y] = [y, x];
+  if (y > z) [y, z] = [z, y];
+  if (x > y) [x, y] = [y, x];
+  return y;
+}
+
+/** Triple modular redundancy: per-component median of three poses. Each
+ *  broken descriptor in this demo differs from `correct` in exactly one
+ *  component (orange wrong on width/height, purple wrong on x/y, teal
+ *  wrong on rotation), so the median across the three recovers the
+ *  correct pose, frame-by-frame. */
+function medianPose(a: Rect, b: Rect, c: Rect): Rect {
+  return {
+    id: a.id,
+    color: a.color,
+    x: median3(a.x, b.x, c.x),
+    y: median3(a.y, b.y, c.y),
+    width: median3(a.width, b.width, c.width),
+    height: median3(a.height, b.height, c.height),
+    rotation: median3(a.rotation, b.rotation, c.rotation),
+  };
+}
+
+/** Non-interactive panel: per-component median of orange/purple/teal,
+ *  rendered in green's color. Should track the green panel exactly during
+ *  any drag — visual proof that the three failure modes are orthogonal. */
+function MedianPanel({
+  orange, purple, teal, ghosts,
+}: {
+  orange: RectScene; purple: RectScene; teal: RectScene;
+  ghosts: { orange: Rect | null; purple: Rect | null; teal: Rect | null };
+}) {
+  useSyncExternalStore(orange.subscribe, orange.getVersion, orange.getVersion);
+  useSyncExternalStore(purple.subscribe, purple.getVersion, purple.getVersion);
+  useSyncExternalStore(teal.subscribe, teal.getVersion, teal.getVersion);
+
+  const pick = (s: RectScene, ghost: Rect | null): Rect | undefined =>
+    ghost ?? (s.get(asNodeId('a'))?.pose as Rect | undefined);
+  const a = pick(orange, ghosts.orange);
+  const b = pick(purple, ghosts.purple);
+  const c = pick(teal, ghosts.teal);
+  if (!a || !b || !c) return null;
+  const m = medianPose(a, b, c);
+  const greenColor = INITIAL_GREEN[0].color;
+  const cx = m.x + m.width / 2;
+  const cy = m.y + m.height / 2;
+  const deg = (m.rotation * 180) / Math.PI;
+  return (
+    <div>
+      <svg width={W} height={H} className="ckd-canvas" style={{ display: 'block', pointerEvents: 'none', overflow: 'visible' }}>
+        <rect
+          x={m.x}
+          y={m.y}
+          width={m.width}
+          height={m.height}
+          fill={greenColor}
+          fillOpacity={0.5}
+          stroke="white"
+          strokeWidth={1.5}
+          strokeDasharray="4 3"
+          transform={`rotate(${deg} ${cx} ${cy})`}
+        />
+      </svg>
+      <pre style={{ fontSize: 11, margin: 0, fontFamily: 'monospace' }}>
+        median(orange, purple, teal) = green
+      </pre>
+    </div>
+  );
+}
+
 export function RotatedResizeMathDemo() {
   const greenScene = useScene<Rect>({ items: INITIAL_GREEN });
   const orangeScene = useScene<Rect>({ items: INITIAL_ORANGE });
@@ -496,6 +568,7 @@ export function RotatedResizeMathDemo() {
           <li><strong>No correction (purple):</strong> projection on; position correction disabled &mdash; the perceived fixed corner drifts.</li>
           <li><strong>Coupled rotation (teal):</strong> projection + correction both run, but rotation is coupled to the AABB diagonal angle &mdash; the rect rotates as you resize, the way it would if the rotation pivot drifted with size.</li>
           <li><strong>Live overlay:</strong> all four rects stacked at 60% opacity so divergence shows up as color separation.</li>
+          <li><strong>Median panel:</strong> per-component median of orange + purple + teal. Each broken descriptor differs from green in exactly one component (width/height, x/y, or rotation), so the median across the three recovers the correct pose &mdash; should track green exactly. Triple modular redundancy in action.</li>
         </ul>
       </header>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
@@ -535,6 +608,14 @@ export function RotatedResizeMathDemo() {
           green={greenScene} orange={orangeScene} purple={purpleScene} teal={tealScene}
           ghosts={{
             green: greenCtl.overlay?.currentPose ?? null,
+            orange: orangeCtl.overlay?.currentPose ?? null,
+            purple: purpleCtl.overlay?.currentPose ?? null,
+            teal: tealCtl.overlay?.currentPose ?? null,
+          }}
+        />
+        <MedianPanel
+          orange={orangeScene} purple={purpleScene} teal={tealScene}
+          ghosts={{
             orange: orangeCtl.overlay?.currentPose ?? null,
             purple: purpleCtl.overlay?.currentPose ?? null,
             teal: tealCtl.overlay?.currentPose ?? null,
