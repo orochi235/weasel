@@ -11,10 +11,20 @@ describe('mesh cache', () => {
     expect(a).toBe(b);
   });
 
-  it('returns different Meshes for different Path object identities (even with same coords)', () => {
+  it('rect paths with the same dimensions hit the same cache entry', () => {
+    // Rect paths are cached by dimensions string (not Path identity) so
+    // animated demos that construct fresh Path objects every frame don't
+    // leak GL buffers via per-frame cache misses.
     _resetCacheForTests();
     const a = getMesh({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 });
     const b = getMesh({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 });
+    expect(a).toBe(b);
+  });
+
+  it('rect paths with different dimensions produce different meshes', () => {
+    _resetCacheForTests();
+    const a = getMesh({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 });
+    const b = getMesh({ kind: 'rect', x: 0, y: 0, width: 20, height: 10 });
     expect(a).not.toBe(b);
   });
 
