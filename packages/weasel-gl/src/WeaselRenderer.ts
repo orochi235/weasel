@@ -7,6 +7,8 @@ import {
 } from './shaders/pathFill';
 import { GLMeshCache } from './GLMeshCache';
 import { GroupState } from './GroupState';
+import type { DrawCommand } from './DrawCommand';
+import { dispatch, type DrawContext } from './draw';
 
 export interface WeaselRendererOptions {
   /** GL context. In production, callers usually pass `canvas` instead. */
@@ -104,6 +106,21 @@ export class WeaselRenderer {
     const aPos = this.pathFill.attribute('a_position');
     if (aPos === undefined) throw new Error('a_position missing after restore');
     this.meshCache = new GLMeshCache(this.gl, aPos);
+  }
+
+  render(commands: DrawCommand[]): void {
+    if (this.contextLost) return;
+    const gl = this.gl;
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+    const ctx: DrawContext = {
+      gl,
+      pathFill: this.pathFill,
+      meshCache: this.meshCache,
+      state: this.groupState,
+      widthCss: this.widthCss,
+      heightCss: this.heightCss,
+    };
+    for (const cmd of commands) dispatch(ctx, cmd);
   }
 
   resize(dims: { width: number; height: number; dpr: number }): void {
