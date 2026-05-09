@@ -166,3 +166,28 @@ describe('RangePicker keyboard', () => {
     expect(thumb.getAttribute('aria-label')).toBe('Hue');
   });
 });
+
+describe('RangePicker free constraint', () => {
+  it('thumbs may pass each other; onChange preserves index order', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <RangePicker
+        min={0}
+        max={1}
+        step={0.01}
+        thumbs={[{ value: 0.3 }, { value: 0.7 }]}
+        onChange={onChange}
+      />,
+    );
+    const thumbs = container.querySelectorAll<HTMLElement>('[role="slider"]');
+    stubRect(thumbs[0].parentElement!, { left: 0, width: 200 });
+
+    // Drag thumb 0 (start at 0.3 → x=60) past thumb 1 (at 0.7 → x=140) to x=180 (~0.9).
+    fireEvent.pointerDown(thumbs[0], { clientX: 60, clientY: 12, pointerId: 1, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 180, clientY: 12, pointerId: 1 });
+    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(last[0].value).toBeCloseTo(0.9, 2);
+    expect(last[1].value).toBeCloseTo(0.7, 2);
+    fireEvent.pointerUp(document, { pointerId: 1 });
+  });
+});
