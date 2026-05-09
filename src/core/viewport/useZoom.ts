@@ -1,6 +1,14 @@
 import { useCallback, useMemo } from 'react';
 
-/** Options for `useZoom`. `sources` toggles which input devices may trigger zoom. */
+/**
+ * @deprecated Prefer the viewport-tools idiom: pair `useWheelZoomTool`,
+ * `useKeyboardZoomTool`, `useWheelPanTool`, and `useHandTool` and pass them
+ * via `<SceneCanvas ambient={[...]} />` (or `useTools({ ambient: [...] })`).
+ * `useZoom` was the original controller-style API; it remains exported with
+ * full test coverage, but no kit-internal hooks (the viewport tools above
+ * use `zoomAt` directly), no demo, and no app currently consumes it. Slated
+ * for removal in a future major.
+ */
 export interface UseZoomOptions {
   zoom: number;
   setZoom: (next: number) => void;
@@ -20,7 +28,11 @@ export interface UseZoomOptions {
   wheelRequiresModifier?: boolean;
 }
 
-/** Handlers and imperative actions returned by `useZoom`. */
+/**
+ * @deprecated See `UseZoomOptions` deprecation note. Prefer the viewport-
+ * tools idiom (`useWheelZoomTool`, `useKeyboardZoomTool`, `useHandTool`,
+ * `useWheelPanTool`).
+ */
 export interface UseZoomReturn {
   onWheel(e: WheelEvent | React.WheelEvent): void;
   onKeyDown(e: KeyboardEvent | React.KeyboardEvent): void;
@@ -41,7 +53,17 @@ function isEditableTarget(t: EventTarget | null): boolean {
   return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
 }
 
-/** Wheel/key/double-click zoom with focal-point preservation; returns event handlers and `zoomTo`/`zoomBy`/`reset`. */
+/**
+ * Wheel/key/double-click zoom with focal-point preservation; returns event handlers and `zoomTo`/`zoomBy`/`reset`.
+ *
+ * @deprecated Prefer the viewport-tools idiom — pair `useWheelZoomTool`,
+ * `useKeyboardZoomTool`, `useWheelPanTool`, and `useHandTool` and pass them
+ * via `<SceneCanvas ambient={[...]} />` (or `useTools({ ambient: [...] })`).
+ * The viewport tools cover the same input surface and integrate with the
+ * tool dispatcher, selection, and other gestures — `useZoom` does not.
+ * No demo, no kit-internal hook, and no app currently consumes `useZoom`;
+ * slated for removal in a future major.
+ */
 export function useZoom(
   opts: UseZoomOptions,
 ): UseZoomReturn {
