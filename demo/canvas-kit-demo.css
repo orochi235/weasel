@@ -45,7 +45,7 @@ a:hover { text-decoration: underline; }
 
 .ckd-sidebar-logo {
   display: block;
-  width: 96px;
+  width: 100%;
   height: auto;
   margin: 0 0 10px;
 }
