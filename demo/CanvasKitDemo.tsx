@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Highlight, themes } from 'prism-react-renderer';
 import { CATEGORIES, DEMOS, DEMOS_BY_ID, type DemoEntry } from './registry';
+import { CommandPalette, useCommandPaletteShortcut } from './CommandPalette';
 import logoUrl from '../weasel-transparent@0.33x.png';
 
 type CodeTab = 'snippet' | 'full';
@@ -13,6 +14,8 @@ function readHash(): string {
 export function CanvasKitDemo() {
   const [activeId, setActiveId] = useState<string>(() => readHash());
   const [tab, setTab] = useState<CodeTab>('snippet');
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  useCommandPaletteShortcut(paletteOpen, setPaletteOpen);
 
   useEffect(() => {
     const onHash = () => setActiveId(readHash());
@@ -60,6 +63,8 @@ export function CanvasKitDemo() {
       <main className="ckd-main">
         <DemoView entry={active} tab={tab} setTab={setTab} key={active.id} />
       </main>
+
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
   );
 }
