@@ -601,4 +601,59 @@ describe('Phase 2a integration', () => {
     const [, batchLabel] = applyBatch.mock.calls[0] as [unknown, string];
     expect(batchLabel).toBe('Resize');
   });
+
+  it('cross-tool: rotation affordance fires while a non-select tool is active', () => {
+    const applyBatch = vi.fn();
+    function Harness() {
+      const [rects, setRects] = useState<Rect[]>([
+        { id: 'a', x: 0, y: 0, width: 100, height: 100 },
+      ]);
+      const rectsRef = useRef(rects);
+      rectsRef.current = rects;
+      const sel = useSelection({ initial: [asNodeId('a')], mode: 'single' });
+      const base = arrayAdapter<Rect, Pose>({
+        ref: rectsRef, setItems: setRects,
+        toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
+      });
+      const adapter = { ...base, ...sel.adapterMethods, applyBatch };
+      const select = useSelectTool(adapter, {});
+      const noop = defineTool({ id: 'noop', drag: { onStart: () => 'claim' } });
+      // select must be in ambient so its affordance overlay is surfaced
+      // while noop is active (per Task 12's findings).
+      const tools = useTools({
+        active: 'noop',
+        registry: { noop },
+        ambient: [select],
+      });
+      return (
+        <Canvas
+          width={200} height={200} layers={{}}
+          adapter={adapter} selection={sel} tools={tools} clientToWorld={C2W}
+          boundsOf={(id) => {
+            const r = rectsRef.current.find((x) => x.id === id);
+            return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
+          }}
+        />
+      );
+    }
+    const { container } = render(<Harness />);
+    const canvas = container.querySelector('canvas')!;
+    canvas.setPointerCapture = () => {};
+    // Bounds (0,0,100,100). Top-center (50, 0). Default rotation handle
+    // distance is 24 world-px above → handle center at (50, -24).
+    // Use dispatchEvent (not fireEvent) so clientX/Y reaches the native event.
+    canvas.dispatchEvent(new MouseEvent('pointerdown', {
+      clientX: 50, clientY: -24, bubbles: true, cancelable: true,
+    }));
+    canvas.dispatchEvent(new MouseEvent('pointermove', {
+      clientX: 60, clientY: -20, bubbles: true, cancelable: true,
+    }));
+    canvas.dispatchEvent(new MouseEvent('pointerup', {
+      clientX: 60, clientY: -20, bubbles: true, cancelable: true,
+    }));
+    // useRotate → applyBatch with a Transform op labeled 'Rotate'.
+    expect(applyBatch).toHaveBeenCalledTimes(1);
+    const [, label] = applyBatch.mock.calls[0] as [unknown, string];
+    expect(label).toBe('Rotate');
+  });
 });
