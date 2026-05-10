@@ -2,12 +2,15 @@ import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, fireEvent, createEvent } from '@testing-library/react';
 import { createRef, useRef, useState } from 'react';
 import { Canvas } from './Canvas';
+import { SceneCanvas } from './SceneCanvas';
+import { useScene } from '../core/scene/useScene';
 import { useSelection } from '../features/selection/useSelection';
 import { asNodeId, type NodeId } from '../core/scene/types';
 import { arrayAdapter } from '../core/adapters/arrayAdapter';
 import { useSelectTool } from '../tools/builtin/useSelectTool';
 import { useTools } from '../tools/useTools';
 import type { RenderLayer } from '../core/layers/render';
+import { registerProgram } from '@orochi235/weasel-gl';
 import type { DebugSink, DebugSnapshot } from '../debug/types';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
@@ -910,6 +913,33 @@ describe('GL renderer', () => {
     expect(container.querySelector('canvas')).toBeTruthy();
     // Tautology: under jsdom the early-return runs before draw is invoked.
     expect(captured.length).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('Canvas shaders prop', () => {
+  it('accepts a shaders array and renders without throwing', () => {
+    const handle = registerProgram(
+      'smoke-test-shader',
+      '',
+      `#version 300 es
+       precision highp float;
+       out vec4 outColor;
+       void main() { outColor = vec4(0.0, 0.0, 0.0, 1.0); }`,
+    );
+    function Demo() {
+      const scene = useScene<{ id: string }>({ items: [] });
+      return (
+        <SceneCanvas
+          width={100}
+          height={100}
+          shaders={[handle]}
+          scene={scene}
+          layers={{}}
+        />
+      );
+    }
+    const { container } = render(<Demo />);
+    expect(container.querySelector('canvas')).toBeTruthy();
   });
 });
 

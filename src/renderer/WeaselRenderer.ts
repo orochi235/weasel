@@ -41,11 +41,22 @@ import {
 import { getProgramSource, type ShaderProgramHandle } from './shaders/registerProgram';
 
 function extractUniformNames(glsl: string): string[] {
-  const re = /\buniform\s+\S+\s+(\w+)\s*;/g;
+  const reScalar = /\buniform\s+\S+\s+(\w+)\s*;/g;
+  const reArray  = /\buniform\s+\S+\s+(\w+)\s*\[\s*(\d+)\s*\]\s*;/g;
   const names: string[] = [];
   let m: RegExpExecArray | null;
-  while ((m = re.exec(glsl)) !== null) names.push(m[1]);
+  while ((m = reScalar.exec(glsl)) !== null) names.push(m[1]);
+  while ((m = reArray.exec(glsl)) !== null) {
+    const name = m[1];
+    const size = parseInt(m[2], 10);
+    for (let i = 0; i < size; i++) names.push(`${name}[${i}]`);
+  }
   return names;
+}
+
+/** @internal Test helper — exported so the regex behavior can be unit-tested. */
+export function _extractUniformNamesForTests(glsl: string): string[] {
+  return extractUniformNames(glsl);
 }
 
 export interface WeaselRendererOptions {

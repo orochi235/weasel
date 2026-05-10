@@ -26,6 +26,7 @@ import { useStandardActions } from '../interactions/actions/useStandardActions';
 import { translateRectPose } from '../features/groups/composePose';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap } from './Canvas';
+import type { ShaderProgramHandle } from '@orochi235/weasel-gl';
 import type { SceneToAdapterOptions } from './sceneAdapter';
 import type { PanBounds } from '../core/viewport/useDecayLoop';
 import type { View } from '../core/viewport/view';
@@ -158,6 +159,12 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * the same `<ActionsProvider>` scope (e.g. shortcuts overlays, probes).
      */
     children?: ReactNode;
+
+    /**
+     * Custom shader programs to compile on the renderer. Forwarded directly
+     * to `<Canvas shaders={...} />`. See `CanvasProps.shaders` for details.
+     */
+    shaders?: ShaderProgramHandle[];
   };
 
 function SceneCanvasInner<TData, TLayer extends string, TPose>(
@@ -181,6 +188,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     actionDefaults,
     describeKind,
     children,
+    shaders,
     ...rest
   } = props;
 
@@ -352,6 +360,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       {...(viewProp !== undefined ? { view: viewProp } : {})}
       {...(defaultView !== undefined ? { defaultView } : {})}
       onViewChange={handleViewChange}
+      shaders={shaders}
       {...restProps}
     />
   );

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `Canvas` / `SceneCanvas` `shaders?: ShaderProgramHandle[]` prop — registers
+  custom shader programs on the underlying renderer at init time and on
+  prop change. Pairs with the experimental `registerProgram` /
+  `ShaderDrawCommand` API. (#TBD)
+
 ## 0.2.0 — 2026-05-09
 
 ### Breaking changes (final WebGL swap — Step 10)

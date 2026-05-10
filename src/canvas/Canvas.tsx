@@ -23,7 +23,7 @@ import type { NodeId } from '../core/scene/types';
 import type { View } from '../core/viewport/view';
 import { clampView } from '../core/viewport/clampView';
 import { drawLayers, type RenderLayer } from '../core/layers/render';
-import { WeaselRenderer, viewToMat3, type DrawCommand } from '@orochi235/weasel-gl';
+import { WeaselRenderer, viewToMat3, type DrawCommand, type ShaderProgramHandle } from '@orochi235/weasel-gl';
 import {
   useSelection,
   type SelectionApi,
@@ -276,6 +276,14 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   /** Test-only escape hatch: writes the live debug sink to this ref so tests
    *  can call `snapshot()` after a render. No effect when debug is off. */
   debugSinkRef?: React.MutableRefObject<(DebugSink & { snapshot(): DebugSnapshot }) | null>;
+
+  /**
+   * Custom shader programs to compile on the renderer. Each handle must come
+   * from a module-level `registerProgram()` call. Compiled once per handle id
+   * on first render (or on context restore). Pass a stable reference (e.g.
+   * defined at module scope) — the array is read at renderer init time.
+   */
+  shaders?: ShaderProgramHandle[];
 }
 
 /** Per-action config for the `gestures` prop. */
@@ -338,6 +346,20 @@ const IDENTITY_TO_POSE = (obj: unknown) => obj as unknown;
 
 function isCustomEntry(v: unknown): v is CustomLayerEntry {
   return !!v && typeof v === 'object' && 'layer' in (v as Record<string, unknown>);
+}
+
+function registerShadersOnRenderer(
+  renderer: WeaselRenderer,
+  shaders: ShaderProgramHandle[] | undefined,
+): void {
+  if (!shaders) return;
+  for (const handle of shaders) {
+    try {
+      renderer.registerProgram(handle);
+    } catch (e) {
+      console.warn(`Canvas: failed to register shader "${handle.id}":`, e);
+    }
+  }
 }
 
 /**
@@ -449,6 +471,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     intersectsRect,
     debug: debugProp,
     debugSinkRef,
+    shaders,
   } = props;
 
   // Resolve debug config: explicit prop wins; `undefined` falls back to URL;
@@ -1048,6 +1071,8 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       }
       glRendererRef.current = renderer;
       lastResizeRef.current = { w: width, h: height, dpr };
+      // Shader registration is handled entirely by the shaderIdKey effect below;
+      // do not call registerShadersOnRenderer here to avoid double compilation.
     } else {
       const dpr = window.devicePixelRatio || 1;
       const last = lastResizeRef.current;
@@ -1075,6 +1100,16 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     }
     renderer.render(commands);
   }, [layersWithDebug, width, height, background, effectiveView, debugSink]);
+
+  const shaderIdKey = shaders?.map((h) => h.id).join('|') ?? '';
+  useEffect(() => {
+    const renderer = glRendererRef.current;
+    if (!renderer) return;
+    registerShadersOnRenderer(renderer, shaders);
+    // shaderIdKey is a stable string derived from handle ids — avoids
+    // recompiling when the parent passes a new array literal each render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shaderIdKey]);
 
   const toolsCursor = tools ? resolveToolsCursor(tools, toolsCtxBase) : undefined;
   const effectiveStyle: React.CSSProperties | undefined = toolsCursor
