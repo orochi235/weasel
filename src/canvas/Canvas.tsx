@@ -954,6 +954,29 @@ function CanvasInner<TObject extends { id: string }, TPose>(
           // the `multiActive` flag.
           const tb = previewToolBounds(id);
           if (tb != null) return tb as unknown as TPose;
+          // Multi-union fallback: when no tool synthesizes the synthetic
+          // multi-resize id (e.g. when active tool isn't `useSelectTool`),
+          // Canvas computes it from the live selection. Without this, multi
+          // selections committed by sibling tools (lasso, custom area-select)
+          // wouldn't render their union AABB chrome.
+          if (multiActive && id === MULTI_RESIZE_TARGET_ID && effectiveBoundsOf) {
+            const ids = selectedIds;
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            let any = false;
+            for (const sid of ids) {
+              const b = effectiveBoundsOf(sid);
+              if (!b) continue;
+              any = true;
+              if (b.x < minX) minX = b.x;
+              if (b.y < minY) minY = b.y;
+              if (b.x + b.width > maxX) maxX = b.x + b.width;
+              if (b.y + b.height > maxY) maxY = b.y + b.height;
+            }
+            if (any) {
+              return { x: minX, y: minY, width: maxX - minX, height: maxY - minY } as unknown as TPose;
+            }
+            return null;
+          }
           if (!adapter) {
             if (effectiveBoundsOf) {
               const b = effectiveBoundsOf(id);
