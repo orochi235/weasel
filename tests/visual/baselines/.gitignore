@@ -1,7 +1,0 @@
-# Baseline PNGs are NOT yet committed. They must be captured on the
-# ubuntu-22.04 runner (see .github/workflows/visual.yml) — locally-captured
-# baselines from macOS / other Linux versions will not match CI.
-#
-# Once the soak procedure (step 9 task 9) runs on CI and uploads the captured
-# baselines, this .gitignore should be deleted and the *.png files committed.
-*.png
