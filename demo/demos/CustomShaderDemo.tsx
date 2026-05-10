@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { SceneCanvas, useScene } from '@orochi235/weasel';
+import { SceneCanvas, useHandleDrag, useScene } from '@orochi235/weasel';
 import type { RenderLayer } from '@orochi235/weasel';
 import {
   registerProgram, registerTexture, viewToMat3,
@@ -224,38 +224,37 @@ function SeedHandles({
   return (
     <svg width={width} height={height} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
       {seeds.map((s, i) => (
-        <circle
-          key={i}
-          cx={s.x * width}
-          cy={s.y * height}
-          r={6}
-          fill="#fff"
-          stroke="#222"
-          strokeWidth={2}
-          style={{ pointerEvents: 'auto', cursor: 'grab' }}
-          onPointerDown={(e) => {
-            e.preventDefault();
-            const target = e.currentTarget;
-            target.setPointerCapture(e.pointerId);
-            const svg = target.ownerSVGElement!;
-            const rect = svg.getBoundingClientRect();
-            const move = (ev: PointerEvent) => {
-              const x = (ev.clientX - rect.left) / rect.width;
-              const y = (ev.clientY - rect.top) / rect.height;
-              setSeeds((prev) => prev.map((p, j) => j === i ? { x: clamp01(x), y: clamp01(y) } : p));
-            };
-            const up = () => {
-              target.removeEventListener('pointermove', move as EventListener);
-              target.removeEventListener('pointerup', up);
-              target.removeEventListener('pointercancel', up);
-            };
-            target.addEventListener('pointermove', move as EventListener);
-            target.addEventListener('pointerup', up);
-            target.addEventListener('pointercancel', up);
-          }}
-        />
+        <SeedHandle key={i} seed={s} index={i} width={width} height={height} setSeeds={setSeeds} />
       ))}
     </svg>
+  );
+}
+
+function SeedHandle({
+  seed, index, width, height, setSeeds,
+}: {
+  seed: { x: number; y: number };
+  index: number;
+  width: number;
+  height: number;
+  setSeeds: (s: { x: number; y: number }[] | ((p: { x: number; y: number }[]) => { x: number; y: number }[])) => void;
+}) {
+  const drag = useHandleDrag<SVGCircleElement>({
+    onMove: ({ x, y }) => {
+      setSeeds((prev) => prev.map((p, j) => j === index ? { x: clamp01(x / width), y: clamp01(y / height) } : p));
+    },
+  });
+  return (
+    <circle
+      cx={seed.x * width}
+      cy={seed.y * height}
+      r={6}
+      fill="#fff"
+      stroke="#222"
+      strokeWidth={2}
+      style={{ pointerEvents: 'auto', cursor: 'grab' }}
+      {...drag}
+    />
   );
 }
 

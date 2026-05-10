@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { SceneCanvas, useScene, polygonFromPoints } from '@orochi235/weasel';
+import { SceneCanvas, hexToRgba, polygonFromPoints, rgbaToHex, useHandleDrag, useScene } from '@orochi235/weasel';
 import type { RenderLayer } from '@orochi235/weasel';
 import { viewToMat3, type DrawCommand } from '@orochi235/weasel-gl';
 
@@ -119,6 +119,9 @@ function VertexHandle({
 }) {
   const swatchHex = rgbaToHex(v.rgba);
   const colorRef = useRef<HTMLInputElement>(null);
+  const drag = useHandleDrag<SVGCircleElement>({
+    onMove: ({ x, y }) => onMove(x, y),
+  });
   return (
     <g style={{ pointerEvents: 'auto' }}>
       <circle
@@ -129,22 +132,7 @@ function VertexHandle({
         stroke="#fff"
         strokeWidth={2}
         style={{ cursor: 'grab' }}
-        onPointerDown={(e) => {
-          e.preventDefault();
-          const target = e.currentTarget;
-          target.setPointerCapture(e.pointerId);
-          const svg = target.ownerSVGElement!;
-          const rect = svg.getBoundingClientRect();
-          const move = (ev: PointerEvent) => onMove(ev.clientX - rect.left, ev.clientY - rect.top);
-          const up = () => {
-            target.removeEventListener('pointermove', move as EventListener);
-            target.removeEventListener('pointerup', up);
-            target.removeEventListener('pointercancel', up);
-          };
-          target.addEventListener('pointermove', move as EventListener);
-          target.addEventListener('pointerup', up);
-          target.addEventListener('pointercancel', up);
-        }}
+        {...drag}
         onDoubleClick={(e) => {
           e.preventDefault();
           colorRef.current?.click();
@@ -161,20 +149,4 @@ function VertexHandle({
       </foreignObject>
     </g>
   );
-}
-
-function rgbaToHex(rgba: [number, number, number, number]): string {
-  const [r, g, b] = rgba;
-  const f = (n: number) => Math.round(n * 255).toString(16).padStart(2, '0');
-  return `#${f(r)}${f(g)}${f(b)}`;
-}
-
-function hexToRgba(h: string): [number, number, number, number] {
-  const s = h.slice(1);
-  return [
-    parseInt(s.slice(0, 2), 16) / 255,
-    parseInt(s.slice(2, 4), 16) / 255,
-    parseInt(s.slice(4, 6), 16) / 255,
-    1.0,
-  ];
 }

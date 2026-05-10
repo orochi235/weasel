@@ -76,10 +76,10 @@ export type {
 } from './interactions/actions/registry';
 export {
   defaultSelectAllAction, defaultEscapeAction, defaultDuplicateAction,
-  defaultNudgeActions, defaultReorderActions,
+  defaultNudgeActions, defaultReorderActions, defaultFlipActions,
 } from './interactions/actions/defaults';
 export type {
-  SelectAllDeps, EscapeDeps, DuplicateDeps, NudgeDeps, ReorderDeps,
+  SelectAllDeps, EscapeDeps, DuplicateDeps, NudgeDeps, ReorderDeps, FlipDeps,
 } from './interactions/actions/defaults';
 export { useStandardActions } from './interactions/actions/useStandardActions';
 export type {
@@ -290,6 +290,13 @@ export {
   RECT_ORIGIN_PROJECTION,
 } from './interactions/gestures/shared';
 export type { OriginProjection } from './interactions/gestures/shared';
+export {
+  guideSnapStrategy,
+  DEFAULT_GUIDE_TOLERANCE_PX,
+} from './interactions/gestures/shared/strategies/guides';
+export type { GuideSnapOptions } from './interactions/gestures/shared/strategies/guides';
+export { useGuides, createGuidesLayer } from './features/guides';
+export type { Guide, UseGuidesReturn, GuidesLayerOpts } from './features/guides';
 export { useMove } from './interactions/gestures/move';
 export type {
   UseMoveOptions,
@@ -418,6 +425,28 @@ export type {
   UseNudgeOptions,
   UseNudgeReturn,
 } from './interactions/actions/nudge';
+export { useFlip, flipPoseViaDescriptor } from './interactions/actions/flip';
+export type {
+  FlipAdapter,
+  FlipAxis,
+  UseFlipOptions,
+  UseFlipReturn,
+} from './interactions/actions/flip';
+export { useAlign, alignDeltaFor, translatePoseViaDescriptor } from './interactions/actions/align';
+export type {
+  AlignAdapter,
+  AlignEdge,
+  UseAlignOptions,
+  UseAlignReturn,
+} from './interactions/actions/align';
+export { useDistribute } from './interactions/actions/distribute';
+export type {
+  DistributeAdapter,
+  DistributeAxis,
+  DistributeMode,
+  UseDistributeOptions,
+  UseDistributeReturn,
+} from './interactions/actions/distribute';
 export { useClone, cloneByAltDrag } from './interactions/gestures/clone';
 export type { UseCloneOptions, UseCloneReturn } from './interactions/gestures/clone';
 export type { ClonePose, CloneLayer, CloneBehavior } from './interactions/gestures/types';
@@ -467,3 +496,12 @@ export * from './animation';
 
 // Layout strategies
 export * from './layout';
+
+// Color helpers
+export {
+  parseColor,
+  parseColorToRgba255,
+  normalizeHex,
+  hexToRgba,
+  rgbaToHex,
+} from './renderer/math/color';

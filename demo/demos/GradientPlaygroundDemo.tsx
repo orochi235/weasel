@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { SceneCanvas, useScene } from '@orochi235/weasel';
+import { SceneCanvas, hexToRgba, normalizeHex, rgbaToHex, useHandleDrag, useScene } from '@orochi235/weasel';
 import type { Paint, RenderLayer } from '@orochi235/weasel';
 import { viewToMat3, type DrawCommand } from '@orochi235/weasel-gl';
 
@@ -177,36 +177,6 @@ function HandleOverlay({
   width: number;
   height: number;
 }) {
-  function startDrag(
-    e: React.PointerEvent,
-    onMove: (x: number, y: number) => void,
-  ) {
-    e.preventDefault();
-    const target = e.currentTarget as SVGElement;
-    target.setPointerCapture(e.pointerId);
-    const svg = target.ownerSVGElement!;
-    const rect = svg.getBoundingClientRect();
-    const move = (ev: PointerEvent) =>
-      onMove(ev.clientX - rect.left, ev.clientY - rect.top);
-    const up = () => {
-      target.removeEventListener('pointermove', move as EventListener);
-      target.removeEventListener('pointerup', up);
-      target.removeEventListener('pointercancel', up);
-      target.releasePointerCapture(e.pointerId);
-    };
-    target.addEventListener('pointermove', move as EventListener);
-    target.addEventListener('pointerup', up);
-    target.addEventListener('pointercancel', up);
-  }
-
-  const handleProps = {
-    r: 7,
-    fill: '#fff',
-    stroke: '#222',
-    strokeWidth: 2,
-    style: { cursor: 'grab' as const, pointerEvents: 'auto' as const },
-  };
-
   if (variant === 'linear-gradient') {
     const { from, to } = state.linear;
     return (
@@ -224,30 +194,18 @@ function HandleOverlay({
           strokeOpacity={0.6}
           strokeDasharray="4 4"
         />
-        <circle
-          {...handleProps}
+        <DragCircle
           cx={from.x}
           cy={from.y}
-          onPointerDown={(e) =>
-            startDrag(e, (x, y) =>
-              setState((s) => ({
-                ...s,
-                linear: { ...s.linear, from: { x, y } },
-              }))
-            )
+          onMove={(x, y) =>
+            setState((s) => ({ ...s, linear: { ...s.linear, from: { x, y } } }))
           }
         />
-        <circle
-          {...handleProps}
+        <DragCircle
           cx={to.x}
           cy={to.y}
-          onPointerDown={(e) =>
-            startDrag(e, (x, y) =>
-              setState((s) => ({
-                ...s,
-                linear: { ...s.linear, to: { x, y } },
-              }))
-            )
+          onMove={(x, y) =>
+            setState((s) => ({ ...s, linear: { ...s.linear, to: { x, y } } }))
           }
         />
       </svg>
@@ -272,36 +230,24 @@ function HandleOverlay({
           strokeOpacity={0.4}
           strokeDasharray="4 4"
         />
-        <circle
-          {...handleProps}
+        <DragCircle
           cx={center.x}
           cy={center.y}
-          onPointerDown={(e) =>
-            startDrag(e, (x, y) =>
-              setState((s) => ({
-                ...s,
-                radial: { ...s.radial, center: { x, y } },
-              }))
-            )
+          onMove={(x, y) =>
+            setState((s) => ({ ...s, radial: { ...s.radial, center: { x, y } } }))
           }
         />
-        <circle
-          {...handleProps}
+        <DragCircle
           cx={edge.x}
           cy={edge.y}
-          onPointerDown={(e) =>
-            startDrag(e, (x, y) => {
-              const dx = x - state.radial.center.x;
-              const dy = y - state.radial.center.y;
-              setState((s) => ({
-                ...s,
-                radial: {
-                  ...s.radial,
-                  radius: Math.max(8, Math.hypot(dx, dy)),
-                },
-              }));
-            })
-          }
+          onMove={(x, y) => {
+            const dx = x - state.radial.center.x;
+            const dy = y - state.radial.center.y;
+            setState((s) => ({
+              ...s,
+              radial: { ...s.radial, radius: Math.max(8, Math.hypot(dx, dy)) },
+            }));
+          }}
         />
       </svg>
     );
@@ -328,35 +274,39 @@ function HandleOverlay({
         strokeOpacity={0.6}
         strokeDasharray="4 4"
       />
-      <circle
-        {...handleProps}
+      <DragCircle
         cx={center.x}
         cy={center.y}
-        onPointerDown={(e) =>
-          startDrag(e, (x, y) =>
-            setState((s) => ({
-              ...s,
-              conic: { ...s.conic, center: { x, y } },
-            }))
-          )
+        onMove={(x, y) =>
+          setState((s) => ({ ...s, conic: { ...s.conic, center: { x, y } } }))
         }
       />
-      <circle
-        {...handleProps}
+      <DragCircle
         cx={tip.x}
         cy={tip.y}
-        onPointerDown={(e) =>
-          startDrag(e, (x, y) => {
-            const dx = x - state.conic.center.x;
-            const dy = y - state.conic.center.y;
-            setState((s) => ({
-              ...s,
-              conic: { ...s.conic, angle: Math.atan2(dy, dx) },
-            }));
-          })
-        }
+        onMove={(x, y) => {
+          const dx = x - state.conic.center.x;
+          const dy = y - state.conic.center.y;
+          setState((s) => ({ ...s, conic: { ...s.conic, angle: Math.atan2(dy, dx) } }));
+        }}
       />
     </svg>
+  );
+}
+
+function DragCircle({ cx, cy, onMove }: { cx: number; cy: number; onMove: (x: number, y: number) => void }) {
+  const drag = useHandleDrag<SVGCircleElement>({ onMove: ({ x, y }) => onMove(x, y) });
+  return (
+    <circle
+      cx={cx}
+      cy={cy}
+      r={7}
+      fill="#fff"
+      stroke="#222"
+      strokeWidth={2}
+      style={{ cursor: 'grab', pointerEvents: 'auto' }}
+      {...drag}
+    />
   );
 }
 
@@ -468,6 +418,10 @@ function StopHandle({
 }) {
   const colorRef = useRef<HTMLInputElement>(null);
   const [hovered, setHovered] = useState(false);
+  const drag = useHandleDrag<HTMLDivElement>({
+    onMove: ({ x }) => onMove(x / stripWidth),
+    getRect: (t) => t.parentElement!,
+  });
   return (
     <div
       onContextMenu={(e) => {
@@ -483,22 +437,7 @@ function StopHandle({
         width: 16,
         height: 28,
       }}
-      onPointerDown={(e) => {
-        e.preventDefault();
-        const stripEl = e.currentTarget.parentElement as HTMLElement;
-        const rect = stripEl.getBoundingClientRect();
-        const move = (ev: PointerEvent) => {
-          onMove((ev.clientX - rect.left) / rect.width);
-        };
-        const up = () => {
-          window.removeEventListener('pointermove', move);
-          window.removeEventListener('pointerup', up);
-          window.removeEventListener('pointercancel', up);
-        };
-        window.addEventListener('pointermove', move);
-        window.addEventListener('pointerup', up);
-        window.addEventListener('pointercancel', up);
-      }}
+      {...drag}
     >
       <div
         onClick={(e) => {
@@ -563,27 +502,9 @@ function StopHandle({
 // ---------------------------------------------------------------------------
 
 function lerpHex(a: string, b: string, t: number): string {
-  const ac = hexToRgb(a),
-    bc = hexToRgb(b);
-  const r = Math.round(ac.r + (bc.r - ac.r) * t);
-  const g = Math.round(ac.g + (bc.g - ac.g) * t);
-  const bl = Math.round(ac.b + (bc.b - ac.b) * t);
-  return `#${[r, g, bl].map((n) => n.toString(16).padStart(2, '0')).join('')}`;
-}
-
-function hexToRgb(h: string): { r: number; g: number; b: number } {
-  const s = normalizeHex(h).slice(1);
-  return {
-    r: parseInt(s.slice(0, 2), 16),
-    g: parseInt(s.slice(2, 4), 16),
-    b: parseInt(s.slice(4, 6), 16),
-  };
-}
-
-function normalizeHex(h: string): string {
-  if (h.length === 4)
-    return `#${h[1]}${h[1]}${h[2]}${h[2]}${h[3]}${h[3]}`;
-  return h;
+  const [ar, ag, ab] = hexToRgba(a);
+  const [br, bg, bb] = hexToRgba(b);
+  return rgbaToHex([ar + (br - ar) * t, ag + (bg - ag) * t, ab + (bb - ab) * t, 1]);
 }
 
 function clamp01(n: number): number {

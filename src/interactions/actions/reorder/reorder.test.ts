@@ -86,6 +86,69 @@ describe('useReorder', () => {
     expect(a.children.g1).toEqual(['y', 'x']);
   });
 
+  it('multi-id bringToFront preserves relative order of selection at top, in a single batch', () => {
+    const a = makeAdapter({
+      selection: ['a', 'c'],
+      parents: { a: null, b: null, c: null, d: null },
+      children: { ROOT: ['a', 'b', 'c', 'd'] },
+    });
+    const { result } = renderHook(() => useReorder(a, { enableKeyboard: false }));
+    act(() => { result.current.bringToFront(); });
+    expect(a.applied).toHaveLength(1);
+    expect(a.applied[0].ops).toHaveLength(1);
+    expect(a.children.ROOT).toEqual(['b', 'd', 'a', 'c']);
+  });
+
+  it('multi-id sendToBack preserves relative order of selection at bottom, in a single batch', () => {
+    const a = makeAdapter({
+      selection: ['b', 'd'],
+      parents: { a: null, b: null, c: null, d: null },
+      children: { ROOT: ['a', 'b', 'c', 'd'] },
+    });
+    const { result } = renderHook(() => useReorder(a, { enableKeyboard: false }));
+    act(() => { result.current.sendToBack(); });
+    expect(a.applied).toHaveLength(1);
+    expect(a.children.ROOT).toEqual(['b', 'd', 'a', 'c']);
+  });
+
+  it('multi-id bringForward bubbles each up one, preserves relative order, single batch', () => {
+    const a = makeAdapter({
+      selection: ['b', 'd'],
+      parents: { a: null, b: null, c: null, d: null, e: null },
+      children: { ROOT: ['a', 'b', 'c', 'd', 'e'] },
+    });
+    const { result } = renderHook(() => useReorder(a, { enableKeyboard: false }));
+    act(() => { result.current.bringForward(); });
+    expect(a.applied).toHaveLength(1);
+    expect(a.children.ROOT).toEqual(['a', 'c', 'b', 'e', 'd']);
+  });
+
+  it('multi-id sendBackward drops each down one, preserves relative order, single batch', () => {
+    const a = makeAdapter({
+      selection: ['b', 'd'],
+      parents: { a: null, b: null, c: null, d: null, e: null },
+      children: { ROOT: ['a', 'b', 'c', 'd', 'e'] },
+    });
+    const { result } = renderHook(() => useReorder(a, { enableKeyboard: false }));
+    act(() => { result.current.sendBackward(); });
+    expect(a.applied).toHaveLength(1);
+    expect(a.children.ROOT).toEqual(['b', 'a', 'd', 'c', 'e']);
+  });
+
+  it('multi-id bringToFront across parents emits one batch with one op covering both parents', () => {
+    const a = makeAdapter({
+      selection: ['a', 'c', 'x'],
+      parents: { a: null, b: null, c: null, x: 'g1', y: 'g1', z: 'g1' },
+      children: { ROOT: ['a', 'b', 'c'], g1: ['x', 'y', 'z'] },
+    });
+    const { result } = renderHook(() => useReorder(a, { enableKeyboard: false }));
+    act(() => { result.current.bringToFront(); });
+    expect(a.applied).toHaveLength(1);
+    expect(a.applied[0].ops).toHaveLength(1);
+    expect(a.children.ROOT).toEqual(['b', 'a', 'c']);
+    expect(a.children.g1).toEqual(['y', 'z', 'x']);
+  });
+
   it('empty selection is a no-op', () => {
     const a = makeAdapter({ selection: [], parents: {}, children: { ROOT: [] } });
     const { result } = renderHook(() => useReorder(a, { enableKeyboard: false }));

@@ -36,6 +36,47 @@ export function parseColorToRgba255(input: string): [number, number, number, num
   ];
 }
 
+/**
+ * Canonicalize a hex color string to lowercase `#rrggbb` or `#rrggbbaa`.
+ *
+ * Accepts: `#rgb`, `#rrggbb`, `#rrggbbaa`, with or without the leading `#`,
+ * any case. Throws on other inputs.
+ */
+export function normalizeHex(input: string): string {
+  const trimmed = input.trim();
+  const body = (trimmed.startsWith('#') ? trimmed.slice(1) : trimmed).toLowerCase();
+  if (!/^[0-9a-f]+$/.test(body)) {
+    throw new Error(`normalizeHex: invalid hex "${input}"`);
+  }
+  if (body.length === 3) {
+    return `#${body[0]}${body[0]}${body[1]}${body[1]}${body[2]}${body[2]}`;
+  }
+  if (body.length === 6 || body.length === 8) {
+    return `#${body}`;
+  }
+  throw new Error(`normalizeHex: invalid hex "${input}"`);
+}
+
+/**
+ * Parse a hex color into [r, g, b, a] with 0..1 components. Accepts the same
+ * forms as `normalizeHex`, including a missing leading `#`.
+ */
+export function hexToRgba(input: string): [number, number, number, number] {
+  return parseHex(normalizeHex(input));
+}
+
+/**
+ * Format [r, g, b, a] (0..1 components) as a hex string. Emits `#rrggbb` when
+ * alpha is exactly 1 (or omitted), otherwise `#rrggbbaa`.
+ */
+export function rgbaToHex(rgba: readonly [number, number, number, number] | readonly [number, number, number]): string {
+  const [r, g, b] = rgba;
+  const a = rgba.length === 4 ? rgba[3] : 1;
+  const f = (n: number) => Math.max(0, Math.min(255, Math.round(n * 255))).toString(16).padStart(2, '0');
+  const base = `#${f(r)}${f(g)}${f(b)}`;
+  return a >= 1 ? base : `${base}${f(a)}`;
+}
+
 function parseHex(s: string): [number, number, number, number] {
   const hex = s.slice(1);
   if (hex.length === 3) {

@@ -5,4 +5,4 @@ export type {
   MoveStartArgs,
   MoveMoveArgs,
 } from './move';
-export { snapToGrid, snapToContainer, snapBackOrDelete } from './behaviors';
+export { snapToGrid, snapToContainer, snapBackOrDelete, snapToGuides } from './behaviors';

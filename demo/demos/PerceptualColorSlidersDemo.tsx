@@ -1,34 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { RangePicker, paintGradientTrack, type Thumb } from '@orochi235/weasel-ui';
-import { SceneCanvas, useScene, polygonFromPoints } from '@orochi235/weasel';
+import { RangePicker, chromaAt, oklchToHex, paintGradientTrack, type ChromaCurve, type Thumb } from '@orochi235/weasel-ui';
+import { SceneCanvas, hexToRgba, polygonFromPoints, useScene } from '@orochi235/weasel';
 import type { RenderLayer } from '@orochi235/weasel';
 import { viewToMat3, type DrawCommand } from '@orochi235/weasel-gl';
-
-// Minimal OKLCH → sRGB hex (clamped). Sufficient for a demo gradient.
-function oklchToHex(L: number, C: number, Hdeg: number): string {
-  const h = (Hdeg * Math.PI) / 180;
-  const a = C * Math.cos(h);
-  const b = C * Math.sin(h);
-  const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
-  const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
-  const s_ = L - 0.0894841775 * a - 1.291485548 * b;
-  const lr = l_ ** 3, mr = m_ ** 3, sr = s_ ** 3;
-  const r = 4.0767416621 * lr - 3.3077115913 * mr + 0.2309699292 * sr;
-  const g = -1.2684380046 * lr + 2.6097574011 * mr - 0.3413193965 * sr;
-  const bl = -0.0041960863 * lr - 0.7034186147 * mr + 1.707614701 * sr;
-  const linToSrgb = (u: number) => (u <= 0.0031308 ? 12.92 * u : 1.055 * Math.pow(u, 1 / 2.4) - 0.055);
-  const toByte = (u: number) => Math.max(0, Math.min(255, Math.round(linToSrgb(u) * 255)));
-  const hh = (n: number) => n.toString(16).padStart(2, '0');
-  return `#${hh(toByte(r))}${hh(toByte(g))}${hh(toByte(bl))}`;
-}
-
-/** Parse `#rrggbb` into RGBA floats (0..1). For vertexColors. */
-function hexToRgba01(hex: string): [number, number, number, number] {
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
-  return [r, g, b, 1];
-}
 
 type CThumb = Thumb & { key: 'cTop' | 'cPeak' | 'cBot' };
 
@@ -62,24 +36,19 @@ interface RampParams {
   chroma: { cTop: number; cPeak: number; cBot: number };
 }
 
-/** Piecewise-linear chroma curve over L. */
-function chromaAt(L: number, p: RampParams): number {
-  const [lo, hi] = p.lRange;
-  if (L <= lo) return p.chroma.cBot;
-  if (L >= hi) return p.chroma.cTop;
-  if (L <= p.midL) return p.chroma.cBot + (p.chroma.cPeak - p.chroma.cBot) * ((L - lo) / (p.midL - lo));
-  return p.chroma.cPeak + (p.chroma.cTop - p.chroma.cPeak) * ((L - p.midL) / (hi - p.midL));
-}
-
 /** Tailwind-style index → L. 0 → lightest, 1000 → darkest. */
 function lAtIndex(idx: number, lRange: [number, number]): number {
   const t = Math.max(0, Math.min(1, idx / 1000));
   return lRange[1] + t * (lRange[0] - lRange[1]);
 }
 
+function curveOf(p: RampParams): ChromaCurve {
+  return { lRange: p.lRange, midL: p.midL, cBot: p.chroma.cBot, cPeak: p.chroma.cPeak, cTop: p.chroma.cTop };
+}
+
 function colorAtIndex(idx: number, p: RampParams): string {
   const L = lAtIndex(idx, p.lRange);
-  return oklchToHex(L, chromaAt(L, p), p.hue);
+  return oklchToHex(L, chromaAt(L, curveOf(p)), p.hue);
 }
 
 /** Three-way segmented toggle for bounds mode. Single-selection radio
@@ -190,7 +159,7 @@ function ChromaCurveDiagram({ params, bounds }: { params: RampParams; bounds: Ch
     label: 'Chroma curve (vertex colors)',
     draw: (_data, view) => {
       const path = polygonFromPoints(points.map(p => ({ x: xAt(p.L), y: yAt(p.C) })));
-      const colors = points.flatMap(p => hexToRgba01(p.color));
+      const colors = points.flatMap(p => hexToRgba(p.color));
       // The vertex-color render path is gated by `cmd.fill` being truthy
       // (see src/renderer/draw.ts:231). Pass a placeholder solid fill;
       // the per-vertex colors override it via the `pathFillVColor` shader.

@@ -24,3 +24,5 @@ export type {
 } from './RangePicker';
 export { paintGradientTrack } from './paintGradientTrack';
 export type { GradientTrackOpts } from './paintGradientTrack';
+export { oklchToHex, chromaAt } from './color/oklch';
+export type { ChromaCurve, ChromaCurvePoint } from './color/oklch';
