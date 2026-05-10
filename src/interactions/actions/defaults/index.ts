@@ -4,3 +4,5 @@ export { defaultDuplicateAction, type DuplicateDeps } from './duplicate';
 export { defaultNudgeActions, type NudgeDeps } from './nudge';
 export { defaultReorderActions, type ReorderDeps } from './reorder';
 export { defaultFlipActions, type FlipDeps } from './flip';
+export { defaultAlignActions, type AlignDeps } from './align';
+export { defaultDistributeActions, type DistributeDeps } from './distribute';

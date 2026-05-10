@@ -77,9 +77,11 @@ export type {
 export {
   defaultSelectAllAction, defaultEscapeAction, defaultDuplicateAction,
   defaultNudgeActions, defaultReorderActions, defaultFlipActions,
+  defaultAlignActions, defaultDistributeActions,
 } from './interactions/actions/defaults';
 export type {
   SelectAllDeps, EscapeDeps, DuplicateDeps, NudgeDeps, ReorderDeps, FlipDeps,
+  AlignDeps, DistributeDeps,
 } from './interactions/actions/defaults';
 export { useStandardActions } from './interactions/actions/useStandardActions';
 export type {
