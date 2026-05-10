@@ -31,8 +31,15 @@ export interface PathDrawCommand {
   /** Stroke spec. Only solid `paint` supported through step 4. */
   stroke?: Stroke;
   /**
-   * Optional flat RGBA-per-vertex color array (length = 4 × vertexCount).
-   * Lives on the DrawCommand variant, not on `Path`.
+   * Optional flat RGBA-per-vertex color array (length = 4 × vertexCount,
+   * floats in 0..1 — same convention the renderer uses for `Paint.color`
+   * after parsing). Lives on the DrawCommand variant, not on `Path`.
+   *
+   * **`fill` must also be set when using `vertexColors`.** The renderer
+   * only enters the per-vertex shader path when the command has a fill
+   * (the fill provides the opacity uniform; the vertex colors override
+   * the fill's color). Pass any solid `fill` (e.g. `{ color: '#fff' }`)
+   * as the placeholder; the per-vertex colors win in the shader.
    */
   vertexColors?: number[];
 }

@@ -32,6 +32,14 @@ function hexToRgba01(hex: string): [number, number, number, number] {
 
 type CThumb = Thumb & { key: 'cTop' | 'cPeak' | 'cBot' };
 
+/** Per-thumb chroma bounds. Drives both the slider's `bounds:` config and
+ *  the diagram's range-line annotations, so they can't drift apart. */
+const CHROMA_BOUNDS = {
+  cTop:  [0, 0.06] as [number, number],
+  cPeak: [0, 0.22] as [number, number],
+  cBot:  [0, 0.10] as [number, number],
+};
+
 interface RampParams {
   hue: number;
   midL: number;
@@ -109,9 +117,9 @@ const yAt = (C: number) => DIAGRAM_PAD.t + (1 - C / MAX_C) * PLOT_H;
 function ChromaCurveDiagram({ params }: { params: RampParams }) {
   const [lo, hi] = params.lRange;
   const points = [
-    { L: lo, C: params.chroma.cBot, label: 'B', color: oklchToHex(lo, params.chroma.cBot, params.hue) },
-    { L: params.midL, C: params.chroma.cPeak, label: 'P', color: oklchToHex(params.midL, params.chroma.cPeak, params.hue) },
-    { L: hi, C: params.chroma.cTop, label: 'T', color: oklchToHex(hi, params.chroma.cTop, params.hue) },
+    { L: lo,         C: params.chroma.cBot,  label: 'B', color: oklchToHex(lo,         params.chroma.cBot,  params.hue), bounds: CHROMA_BOUNDS.cBot },
+    { L: params.midL, C: params.chroma.cPeak, label: 'P', color: oklchToHex(params.midL, params.chroma.cPeak, params.hue), bounds: CHROMA_BOUNDS.cPeak },
+    { L: hi,         C: params.chroma.cTop,  label: 'T', color: oklchToHex(hi,         params.chroma.cTop,  params.hue), bounds: CHROMA_BOUNDS.cTop },
   ];
 
   // Custom render layer: a single 3-vertex polygon with per-vertex colors,
@@ -170,6 +178,23 @@ function ChromaCurveDiagram({ params }: { params: RampParams }) {
         ))}
         {/* X marker at midL */}
         <line x1={xAt(params.midL)} y1={DIAGRAM_PAD.t} x2={xAt(params.midL)} y2={DIAGRAM_PAD.t + PLOT_H} stroke="rgba(255,255,255,0.10)" strokeDasharray="2 3" />
+        {/* Per-vertex slider-range tracks: dashed vertical line at each
+         *  point's L, spanning [0, maxBound] of that thumb's chroma slider,
+         *  with small perpendicular tails at each end. Drawn before the
+         *  curve so the curve+control-points sit on top. */}
+        {points.map((p, i) => {
+          const x = xAt(p.L);
+          const yTop = yAt(p.bounds[1]);
+          const yBot = yAt(p.bounds[0]);
+          const tail = 4;
+          return (
+            <g key={`range-${i}`} stroke="rgba(255,255,255,0.35)" strokeWidth={1}>
+              <line x1={x} y1={yTop} x2={x} y2={yBot} strokeDasharray="2 2" />
+              <line x1={x - tail} y1={yTop} x2={x + tail} y2={yTop} />
+              <line x1={x - tail} y1={yBot} x2={x + tail} y2={yBot} />
+            </g>
+          );
+        })}
         {/* Curve outline */}
         <path d={pathD} fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth={1.25} />
         {/* Control points */}
@@ -247,9 +272,9 @@ export function PerceptualColorSlidersDemo() {
             min={0} max={0.22} step={0.005}
             constraint="free"
             thumbs={[
-              { value: chroma.cTop,  label: 'T', key: 'cTop',  bounds: [0, 0.06] },
-              { value: chroma.cPeak, label: 'P', key: 'cPeak', bounds: [0, 0.22] },
-              { value: chroma.cBot,  label: 'B', key: 'cBot',  bounds: [0, 0.10] },
+              { value: chroma.cTop,  label: 'T', key: 'cTop',  bounds: CHROMA_BOUNDS.cTop  },
+              { value: chroma.cPeak, label: 'P', key: 'cPeak', bounds: CHROMA_BOUNDS.cPeak },
+              { value: chroma.cBot,  label: 'B', key: 'cBot',  bounds: CHROMA_BOUNDS.cBot  },
             ]}
             onChange={ts => {
               const next = { ...chroma };
