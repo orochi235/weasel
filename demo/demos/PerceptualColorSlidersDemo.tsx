@@ -36,10 +36,10 @@ interface RampParams {
   chroma: { cTop: number; cPeak: number; cBot: number };
 }
 
-/** Index → L. 0 → darkest, 1000 → lightest. */
+/** Index → L. 0 → lightest, 1000 → darkest. */
 function lAtIndex(idx: number, lRange: [number, number]): number {
   const t = Math.max(0, Math.min(1, idx / 1000));
-  return lRange[0] + t * (lRange[1] - lRange[0]);
+  return lRange[1] - t * (lRange[1] - lRange[0]);
 }
 
 function curveOf(p: RampParams): ChromaCurve {
@@ -348,7 +348,7 @@ export function PerceptualColorSlidersDemo() {
             allowShiftAll
             renderTrack={paintGradientTrack({
               gradient: t => {
-                const c = Math.round((1 - t) * 255);
+                const c = Math.round(t * 255);
                 return `rgb(${c}, ${c}, ${c})`;
               },
             })}
