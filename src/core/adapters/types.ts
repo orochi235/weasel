@@ -157,6 +157,29 @@ export interface AreaSelectAdapter {
 }
 
 /**
+ * Hit mode for `LassoSelectAdapter.hitTestLasso`:
+ *   - 'centers'   — bounds center inside polygon.
+ *   - 'intersect' — bounds intersect polygon (any overlap).
+ *   - 'enclosed'  — bounds fully inside polygon.
+ */
+export type LassoHitMode = 'centers' | 'intersect' | 'enclosed';
+
+/**
+ * Narrow adapter for `useLassoSelect`. Extends `AreaSelectAdapter` with a
+ * polygon hit-test method. Transient — uses `applyOps` like its rectangular
+ * sibling. `hitTestLasso` is optional; when omitted, `useLassoTool` skips
+ * wiring the default behavior (same opt-in pattern as `hitTestArea`).
+ */
+export interface LassoSelectAdapter extends AreaSelectAdapter {
+  /** Hit-test against a closed polygon. Vertex order may be CW or CCW; the
+   *  closing edge from last → first is implicit. */
+  hitTestLasso?(
+    polygon: ReadonlyArray<{ x: number; y: number }>,
+    mode: LassoHitMode,
+  ): string[];
+}
+
+/**
  * Narrow adapter for `useInsert` and `useClipboardOps`. The kit knows
  * nothing about what tool is active or what shape to construct; it asks the
  * adapter to produce object(s) given gesture or paste inputs.
