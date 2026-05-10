@@ -23,8 +23,8 @@
  * AABBs.
  */
 
-import type { DrawCommand } from '@orochi235/weasel-gl';
-import { mat3, type Mat3 } from '@orochi235/weasel-gl';
+import type { DrawCommand } from '../../renderer';
+import { mat3, type Mat3 } from '../../renderer';
 import type { NodeId } from '../../core/scene/types';
 import type { RenderLayer } from '../../core/layers/render';
 import type { GroupAdapter } from '../groups/types';

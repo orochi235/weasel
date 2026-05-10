@@ -9,7 +9,7 @@
  * concern instead of every consumer wiring it.
  */
 import { useMemo, useRef } from 'react';
-import { viewToMat3, type DrawCommand } from '@orochi235/weasel-gl';
+import { viewToMat3, type DrawCommand } from '../../renderer';
 import type { RenderLayer } from '../../core/layers/render';
 import type { LayersMap } from '../Canvas';
 import type { Node, Scene } from '../../core/scene/types';

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { DrawCommand, PathDrawCommand } from '@orochi235/weasel-gl';
+import type { DrawCommand, PathDrawCommand } from '../../renderer';
 import { createChildrenLayer } from './children';
 
 const VIEW = { x: 0, y: 0, scale: 1 };

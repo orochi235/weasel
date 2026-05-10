@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { gateLayer } from './gateLayer';
 import type { RenderLayer } from '../../core/layers/render';
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import type { DrawCommand } from '../../renderer';
 
 const stubView = { x: 0, y: 0, scale: 1 };
 const stubDims = { width: 100, height: 100 };

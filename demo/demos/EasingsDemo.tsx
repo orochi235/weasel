@@ -6,7 +6,7 @@ import {
   useAnimator,
 } from '@orochi235/weasel';
 import { PATH_M, PATH_L, type EasingName, type RenderLayer } from '@orochi235/weasel';
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import type { DrawCommand } from '../../src/renderer';
 import { RangePicker } from '@orochi235/weasel-ui';
 
 interface Marker { id: string; x: number; y: number; width: number; height: number; easing: EasingName; color: string }

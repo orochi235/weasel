@@ -26,7 +26,7 @@ import { useStandardActions } from '../interactions/actions/useStandardActions';
 import { translateRectPose } from '../features/groups/composePose';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap } from './Canvas';
-import type { ShaderProgramHandle } from '@orochi235/weasel-gl';
+import type { ShaderProgramHandle } from '../renderer';
 import type { SceneToAdapterOptions } from './sceneAdapter';
 import type { PanBounds } from '../core/viewport/useDecayLoop';
 import type { View } from '../core/viewport/view';

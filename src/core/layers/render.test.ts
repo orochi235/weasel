@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { type RenderLayer, drawLayers } from './render';
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import type { DrawCommand } from '../../renderer';
 
 describe('drawLayers', () => {
   it('returns concatenated DrawCommands from each visible layer in order', () => {

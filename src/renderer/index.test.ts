@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { WeaselRenderer, mat3, tessellate } from './index';
 
-describe('weasel-gl barrel', () => {
+describe('renderer barrel', () => {
   it('exports WeaselRenderer', () => {
     expect(WeaselRenderer).toBeDefined();
   });

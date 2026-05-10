@@ -25,8 +25,7 @@
     "paths": {
       "@orochi235/weasel": ["./src/index.ts"],
       "@orochi235/weasel/*": ["./src/*"],
-      "@orochi235/weasel-ui": ["./packages/weasel-ui/src/index.ts"],
-      "@orochi235/weasel-gl": ["./src/renderer/index.ts"]
+      "@orochi235/weasel-ui": ["./packages/weasel-ui/src/index.ts"]
     }
   },
   "include": ["src", "demo", "apps", "packages/weasel-ui/src", "packages/weasel-hud/src"],

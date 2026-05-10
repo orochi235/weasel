@@ -1,4 +1,4 @@
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import type { DrawCommand } from '../../renderer';
 import type { View } from '../../core/viewport/view';
 
 const IDENTITY_VIEW: View = { x: 0, y: 0, scale: 1 };

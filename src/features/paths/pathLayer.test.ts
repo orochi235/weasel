@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { GroupDrawCommand } from '@orochi235/weasel-gl';
+import type { GroupDrawCommand } from '../../renderer';
 import { createPathLayer } from './pathLayer';
 import { rectPath } from './builder';
 import type { Path } from './types';

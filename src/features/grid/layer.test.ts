@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { GroupDrawCommand, PathDrawCommand } from '@orochi235/weasel-gl';
+import type { GroupDrawCommand, PathDrawCommand } from '../../renderer';
 import { createGridLayer } from './layer';
 import { IMPERIAL_INCHES } from '../../core/units';
 

@@ -23,7 +23,7 @@ import type { NodeId } from '../core/scene/types';
 import type { View } from '../core/viewport/view';
 import { clampView } from '../core/viewport/clampView';
 import { drawLayers, type RenderLayer } from '../core/layers/render';
-import { WeaselRenderer, viewToMat3, type DrawCommand, type ShaderProgramHandle } from '@orochi235/weasel-gl';
+import { WeaselRenderer, viewToMat3, type DrawCommand, type ShaderProgramHandle } from '../renderer';
 import {
   useSelection,
   type SelectionApi,

@@ -4,7 +4,7 @@ import type { RenderLayer } from '@orochi235/weasel';
 import {
   registerProgram, registerTexture, viewToMat3,
   type DrawCommand, type ShaderProgramHandle, type TextureHandle,
-} from '@orochi235/weasel-gl';
+} from '../../src/renderer';
 import weaselMarkUrl from '../assets/weasel-mark.png';
 
 const PANEL_W = 240;

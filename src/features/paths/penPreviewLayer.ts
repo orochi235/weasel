@@ -10,7 +10,7 @@
  * argument.
  */
 
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import type { DrawCommand } from '../../renderer';
 import type { RenderLayer } from '../../core/layers/render';
 import type { Tool } from '../../tools/types';
 import type { PenScratch, PenAnchor, PenSubpath } from '../../tools/builtin/useUserPenTool';

@@ -56,6 +56,6 @@ describe('registerFont', () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('network error'));
     await expect(
       registerFont('bad', '/bad.json', '/bad.png'),
-    ).rejects.toThrow('weasel-gl registerFont');
+    ).rejects.toThrow('weasel registerFont');
   });
 });

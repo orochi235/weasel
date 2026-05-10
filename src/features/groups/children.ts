@@ -12,7 +12,7 @@
  * without breaking existing layers.
  */
 
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import type { DrawCommand } from '../../renderer';
 import type { RenderLayer } from '../../core/layers/render';
 import type { View } from '../../core/viewport/view';
 import type { OrderedAdapter } from '../../core/adapters/types';

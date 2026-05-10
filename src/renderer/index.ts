@@ -1,13 +1,9 @@
 /**
- * @orochi235/weasel-gl — public barrel.
- *
- * Experimental. Through step 6: WeaselRenderer + DrawCommand types for
+ * Renderer barrel. WeaselRenderer + DrawCommand types for
  * solid/pattern/gradient-fill paths, groups (with optional color matrix
  * and per-vertex color), strokes, MSDF text, images, plus an experimental
  * custom shader API (registerProgram, registerTexture, kind:'shader').
  */
-
-export const __weaselGlPackage = true as const;
 
 export { WeaselRenderer, type WeaselRendererOptions } from './WeaselRenderer';
 export type {

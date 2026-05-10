@@ -84,7 +84,7 @@ function warnOnceUniform(programId: string, name: string): void {
   warnedUniforms.add(key);
   const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
   if (isDev) {
-    console.warn(`weasel-gl drawShader: uniform "${name}" not found in program "${programId}". ` +
+    console.warn(`weasel drawShader: uniform "${name}" not found in program "${programId}". ` +
       `Check spelling, ensure it's used in the shader (unused uniforms are optimized away by the driver).`);
   }
 }
@@ -111,7 +111,7 @@ function setUniform(
     const entry = getTexture(handle.id);
     if (!entry) {
       const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
-      if (isDev) console.warn(`weasel-gl setUniform: TextureHandle "${handle.id}" not registered`);
+      if (isDev) console.warn(`weasel setUniform: TextureHandle "${handle.id}" not registered`);
       return;
     }
     const unit = nextTexUnit.value++;
@@ -128,7 +128,7 @@ function setUniform(
       gl.uniformMatrix4fv(loc, false, value);
     } else {
       const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
-      if (isDev) throw new TypeError(`weasel-gl setUniform: Float32Array must be length 9 (mat3) or 16 (mat4), got ${value.length}`);
+      if (isDev) throw new TypeError(`weasel setUniform: Float32Array must be length 9 (mat3) or 16 (mat4), got ${value.length}`);
     }
     return;
   }
@@ -141,7 +141,7 @@ function setUniform(
       case 4: gl.uniform4fv(loc, arr as [number, number, number, number]); break;
       default: {
         const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
-        if (isDev) throw new TypeError(`weasel-gl setUniform: array length ${arr.length} not supported`);
+        if (isDev) throw new TypeError(`weasel setUniform: array length ${arr.length} not supported`);
       }
     }
     return;
@@ -159,13 +159,13 @@ function drawShader(ctx: DrawContext, cmd: ShaderDrawCommand): void {
   const program = programRegistry.get(cmd.program.id);
   if (!program) {
     console.warn(
-      `weasel-gl drawShader: program "${cmd.program.id}" not compiled on this renderer. ` +
+      `weasel drawShader: program "${cmd.program.id}" not compiled on this renderer. ` +
       `Call renderer.registerProgram(handle) after the module-level registerProgram().`,
     );
     return;
   }
   if (!quadVbo || !quadIbo) {
-    console.warn('weasel-gl drawShader: quad geometry not initialized');
+    console.warn('weasel drawShader: quad geometry not initialized');
     return;
   }
 
@@ -369,7 +369,7 @@ function drawPathFillPattern(
   const entry = getTexture(tex.id);
   if (!entry) {
     const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
-    if (isDev) console.warn(`weasel-gl: pattern TextureHandle "${tex.id}" not registered`);
+    if (isDev) console.warn(`weasel: pattern TextureHandle "${tex.id}" not registered`);
     return;
   }
   ctx.textureCache.upload(tex.id, entry.source);
@@ -448,7 +448,7 @@ function drawPathFillStencil(ctx: DrawContext, fill: Paint, handle: GLMeshHandle
   // Step-4 evenodd stencil only supports solid fills cleanly. For non-solid,
   // fall back to a single-pass solid-equivalent (deferred refinement).
   if (fill.fill !== undefined && fill.fill !== 'solid') {
-    console.warn('weasel-gl: evenodd stencil with non-solid fill not supported in step 4; rendering solid black.');
+    console.warn('weasel: evenodd stencil with non-solid fill not supported in step 4; rendering solid black.');
   }
   const solid = (fill.fill === undefined || fill.fill === 'solid')
     ? (fill as { color: string; opacity?: number })
@@ -482,7 +482,7 @@ function drawPathStroke(ctx: DrawContext, cmd: PathDrawCommand): void {
   const stroke = cmd.stroke!;
   const paint = stroke.paint;
   if (paint.fill !== undefined && paint.fill !== 'solid') {
-    throw new Error('weasel-gl step 2: stroke.paint must be solid; gradient/pattern arrives in step 5+');
+    throw new Error('weasel step 2: stroke.paint must be solid; gradient/pattern arrives in step 5+');
   }
 
   const align = stroke.align ?? 'center';
@@ -562,7 +562,7 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   const family = style.fontFamily;
 
   if (!ensureFontTexture(family, ctx.textureCache)) {
-    console.warn(`weasel-gl drawText: font "${family}" not registered; call registerFont() first.`);
+    console.warn(`weasel drawText: font "${family}" not registered; call registerFont() first.`);
     return;
   }
 

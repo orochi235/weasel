@@ -12,7 +12,7 @@ import {
   useTools,
 } from '@orochi235/weasel';
 import type { LassoHitMode } from '@orochi235/weasel';
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import type { DrawCommand } from '../../src/renderer';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 

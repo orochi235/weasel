@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { GroupDrawCommand, PathDrawCommand } from '@orochi235/weasel-gl';
+import type { GroupDrawCommand, PathDrawCommand } from '../../renderer';
 import {
   composeSelectionPose,
   createSelectionOverlayLayer,

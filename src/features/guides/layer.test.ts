@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PathDrawCommand } from '@orochi235/weasel-gl';
+import type { PathDrawCommand } from '../../renderer';
 import { createGuidesLayer } from './layer';
 import type { Guide } from './types';
 

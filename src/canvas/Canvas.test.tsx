@@ -10,7 +10,7 @@ import { arrayAdapter } from '../core/adapters/arrayAdapter';
 import { useSelectTool } from '../tools/builtin/useSelectTool';
 import { useTools } from '../tools/useTools';
 import type { RenderLayer } from '../core/layers/render';
-import { registerProgram } from '@orochi235/weasel-gl';
+import { registerProgram } from '../renderer';
 import type { DebugSink, DebugSnapshot } from '../debug/types';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.

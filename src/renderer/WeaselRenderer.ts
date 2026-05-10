@@ -279,7 +279,7 @@ export class WeaselRenderer {
         program.lookupAttributes(CUSTOM_ATTRIBUTES);
         this.programRegistry.set(id, program);
       } catch (e) {
-        console.error(`weasel-gl: failed to recompile program "${id}" after context restore:`, e);
+        console.error(`weasel: failed to recompile program "${id}" after context restore:`, e);
       }
     }
   }

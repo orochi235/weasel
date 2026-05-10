@@ -7,7 +7,7 @@ import {
   tileGrid,
   snapPoint,
 } from '@orochi235/weasel';
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import type { DrawCommand } from '../../src/renderer';
 
 // --- Scene model ---
 //

@@ -13,7 +13,7 @@ import {
   worldPoseLookup,
 } from '@orochi235/weasel';
 import type { MoveAdapter, NodeId, Op, SelectionApi } from '@orochi235/weasel';
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import type { DrawCommand } from '../../src/renderer';
 
 interface Node {
   id: string;

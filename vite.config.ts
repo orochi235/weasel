@@ -9,10 +9,6 @@ export default defineConfig({
   resolve: {
     alias: [
       {
-        find: '@orochi235/weasel-gl',
-        replacement: resolve(__dirname, 'src/renderer/index.ts'),
-      },
-      {
         find: '@orochi235/weasel-ui/tokens.css',
         replacement: resolve(__dirname, 'packages/weasel-ui/src/tokens.css'),
       },

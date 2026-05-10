@@ -8,7 +8,7 @@
  * the visual guide and the snap target in lockstep.
  */
 
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import type { DrawCommand } from '../../renderer';
 import type { RenderLayer } from '../../core/layers/render';
 import { type Stroke } from '../../core/paint-types';
 import { PATH_L, PATH_M, type PolygonPath } from '../paths/types';

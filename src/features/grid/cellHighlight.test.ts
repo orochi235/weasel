@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { GroupDrawCommand } from '@orochi235/weasel-gl';
+import type { GroupDrawCommand } from '../../renderer';
 import { createCellHighlightLayer } from './cellHighlight';
 import { IMPERIAL_INCHES } from '../../core/units';
 

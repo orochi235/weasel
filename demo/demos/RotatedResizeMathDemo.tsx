@@ -19,7 +19,7 @@ import type {
   ModifierState,
 } from '@orochi235/weasel';
 import type { ResizeAdapter } from '@orochi235/weasel';
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import type { DrawCommand } from '../../src/renderer';
 
 type RectScene = ReturnType<typeof useScene<Rect>>;
 type PanelId = 'green' | 'orange' | 'purple' | 'teal';

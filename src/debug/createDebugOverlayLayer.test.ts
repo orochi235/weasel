@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { PathDrawCommand } from '@orochi235/weasel-gl';
+import type { PathDrawCommand } from '../renderer';
 import { createDebugOverlayLayer } from './createDebugOverlayLayer';
 import { createDebugSink } from './createDebugSink';
 

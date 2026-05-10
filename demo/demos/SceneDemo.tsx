@@ -5,7 +5,7 @@ import {
   useSelection,
 } from '@orochi235/weasel';
 import type { RegisteredOp, Scene } from '@orochi235/weasel';
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import type { DrawCommand } from '../../src/renderer';
 
 type LayerId = 'garden' | 'blueprint' | 'structures' | 'zones' | 'plantings';
 interface NodeData { color: string; label?: string }

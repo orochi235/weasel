@@ -6,7 +6,7 @@
  * separate from the visual style record (the typical scene-graph layout).
  */
 
-import { type DrawCommand, viewToMat3 } from '@orochi235/weasel-gl';
+import { type DrawCommand, viewToMat3 } from '../../renderer';
 import { type Paint, type Stroke } from '../../core/paint-types';
 import type { RenderLayer } from '../../core/layers/render';
 import type { Path } from './types';

@@ -61,7 +61,7 @@ export async function registerFont(
     registry.set(family, { font, bitmap });
   } catch (err) {
     throw new Error(
-      `weasel-gl registerFont("${family}"): ${err instanceof Error ? err.message : String(err)}`,
+      `weasel registerFont("${family}"): ${err instanceof Error ? err.message : String(err)}`,
     );
   }
 }

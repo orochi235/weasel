@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { defineTool } from '../defineTool';
 import type { Tool } from '../types';
 import type { RenderLayer } from '../../core/layers/render';
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import type { DrawCommand } from '../../renderer';
 import { viewToTransform } from '../../core/viewport/view';
 import { worldToScreen } from '../../core/viewport/viewTransform';
 import { PathBuilder } from '../../features/paths/builder';

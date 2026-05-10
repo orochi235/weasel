@@ -17,7 +17,7 @@ import type { DebugSink } from '../../debug/types';
 import type { RenderLayer } from '../../core/layers/render';
 import { viewToTransform } from '../../core/viewport/view';
 import { worldToScreen } from '../../core/viewport/viewTransform';
-import { viewToMat3, type DrawCommand } from '@orochi235/weasel-gl';
+import { viewToMat3, type DrawCommand } from '../../renderer';
 import { pickTopMostHit } from './pickTopMostHit';
 import { createReorderOp } from '../../core/ops/reorder';
 import { dispatchApplyBatch } from '../../core/applyOps';

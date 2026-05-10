@@ -6,7 +6,7 @@ import {
   ROTATED_POSE_DESCRIPTOR,
 } from '@orochi235/weasel';
 import type { PoseDescriptor, RotatedPose } from '@orochi235/weasel';
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import type { DrawCommand } from '../../src/renderer';
 
 interface Rect extends RotatedPose {
   id: string;

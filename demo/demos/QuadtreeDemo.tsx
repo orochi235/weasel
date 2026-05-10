@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { SceneCanvas, useScene } from '@orochi235/weasel';
 import type { RenderLayer, CanvasHelpers } from '@orochi235/weasel';
-import { viewToMat3, type DrawCommand } from '@orochi235/weasel-gl';
+import { viewToMat3, type DrawCommand } from '../../src/renderer';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 

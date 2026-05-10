@@ -12,7 +12,7 @@ import type {
   Path,
   PolygonPath,
 } from '@orochi235/weasel';
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import type { DrawCommand } from '../../src/renderer';
 
 interface PathObj { id: string }
 type Pose = Path;

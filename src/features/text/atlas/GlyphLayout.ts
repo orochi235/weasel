@@ -59,7 +59,7 @@ export function layoutGlyphs(
       const fb = font.charMap.get(FALLBACK_CODEPOINT);
       if (!fb) {
         console.warn(
-          `weasel-gl text: no glyph for codepoint ${cp} and no fallback '?'; skipping.`,
+          `weasel text: no glyph for codepoint ${cp} and no fallback '?'; skipping.`,
         );
         prevCp = cp;
         continue;

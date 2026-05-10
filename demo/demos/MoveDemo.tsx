@@ -10,7 +10,7 @@ import {
   useKeyboardZoomTool,
 } from '@orochi235/weasel';
 import type { UnitSystem } from '@orochi235/weasel';
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import type { DrawCommand } from '../../src/renderer';
 import type { View } from '../../src/core/viewport/view';
 
 interface NodeData { color: string }

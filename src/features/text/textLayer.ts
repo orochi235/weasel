@@ -4,13 +4,13 @@
  * is informational — overflow is not clipped at v1.
  *
  * The GL renderer uses MSDF text. The resolved style's `fontFamily` must
- * be registered via `registerFont(family, atlasUrl)` from
- * `@orochi235/weasel-gl` *before* the GL backend dispatches this layer.
- * Unregistered families render with a warning and a fallback glyph (see
+ * be registered via `registerFont(family, atlasUrl)` from the renderer
+ * module *before* the GL backend dispatches this layer. Unregistered
+ * families render with a warning and a fallback glyph (see
  * `TextDrawCommand`'s contract).
  */
 
-import { type DrawCommand, viewToMat3 } from '@orochi235/weasel-gl';
+import { type DrawCommand, viewToMat3 } from '../../renderer';
 import type { RenderLayer } from '../../core/layers/render';
 import { measureText } from './measureText';
 import {

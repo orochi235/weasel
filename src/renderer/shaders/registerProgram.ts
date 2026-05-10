@@ -93,7 +93,7 @@ export function registerProgram(
   frag: string,
 ): ShaderProgramHandle {
   if (registry.has(id) && !isDev()) {
-    throw new Error(`weasel-gl registerProgram: duplicate program id "${id}". ` +
+    throw new Error(`weasel registerProgram: duplicate program id "${id}". ` +
       `In production, re-registration is not allowed. Pass a unique id or call in dev mode.`);
   }
   registry.set(id, { vert, frag });

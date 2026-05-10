@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SceneCanvas, useScene } from '@orochi235/weasel';
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import type { DrawCommand } from '../../src/renderer';
 
 type Layer = 'scene';
 interface Data { color: string; label: string }

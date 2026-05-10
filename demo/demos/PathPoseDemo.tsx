@@ -13,7 +13,7 @@ import type {
   Path,
   DebugConfig,
 } from '@orochi235/weasel';
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import type { DrawCommand } from '../../src/renderer';
 
 const DEBUG_STATES: Array<{ label: string; config: DebugConfig | false }> = [
   { label: 'off',          config: false },
