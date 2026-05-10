@@ -116,6 +116,16 @@ export interface Tool<TScratch = unknown> {
    *  enter modal modes (e.g. select → edit-anchors) without consumers
    *  attaching `onDoubleClick` to a wrapper DOM node. */
   dblTap?: DblTapChannel<TScratch>;
+  /**
+   * State-aware predicate. When true, this tool claims every pointerdown
+   * and bypasses the affordance layer hit-test pipeline. Used by tools
+   * in modal states (pen mid-path, text mid-edit) where affordance hits
+   * would otherwise interrupt the in-progress gesture.
+   *
+   * Default: undefined (treated as false). Called once per pointerdown
+   * with the tool's current ctx (scratch + view + modifiers).
+   */
+  claimsAll?: (ctx: ToolCtx<TScratch>) => boolean;
   cursor?: string | ((ctx: ToolCtx<TScratch>) => string);
   /** Returns the in-flight preview pose for `id` if this tool is mid-gesture
    *  on it; otherwise `null`. Lets `Canvas.helpersRef.getEffectivePose`
