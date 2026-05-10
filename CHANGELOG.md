@@ -7,12 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 0.3.0 — 2026-05-09
+
 ### Added
 
 - `Canvas` / `SceneCanvas` `shaders?: ShaderProgramHandle[]` prop — registers
   custom shader programs on the underlying renderer at init time and on
   prop change. Pairs with the experimental `registerProgram` /
-  `ShaderDrawCommand` API. (#TBD)
+  `ShaderDrawCommand` API. Pass a stable (e.g. module-scope) array
+  reference; the prop is keyed by the joined handle ids so an inline literal
+  won't trigger recompiles each render.
+
+### Fixed
+
+- `extractUniformNames` (the helper that pre-populates uniform locations for
+  custom shader programs) now expands array uniform declarations into per-slot
+  names. A shader declaring `uniform vec3 u_ripples[8];` previously produced
+  no entries — neither `u_ripples` nor `u_ripples[0]`...`u_ripples[7]`.
+  Consumer-side `ShaderDrawCommand.uniforms` keyed `'u_ripples[i]'` would
+  silently fail to bind. Array uniforms now resolve correctly per slot.
 
 ## 0.2.0 — 2026-05-09
 

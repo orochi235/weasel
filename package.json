@@ -1,6 +1,6 @@
 {
   "name": "@orochi235/weasel",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Domain-agnostic 2D scene graph primitives for React: viewport math, drag/resize/insert/clone interactions, layered canvas rendering.",
   "license": "MIT",
   "author": "orochi235",
