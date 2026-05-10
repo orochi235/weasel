@@ -29,6 +29,7 @@ import { GradientPlaygroundDemo } from './demos/GradientPlaygroundDemo';
 import { VertexColorsDemo } from './demos/VertexColorsDemo';
 import { ColorMatrixDemo } from './demos/ColorMatrixDemo';
 import { CustomShaderDemo } from './demos/CustomShaderDemo';
+import { LassoDemo } from './demos/LassoDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
@@ -60,6 +61,7 @@ import GradientPlaygroundDemoFull from './demos/GradientPlaygroundDemo.tsx?raw';
 import VertexColorsDemoFull from './demos/VertexColorsDemo.tsx?raw';
 import ColorMatrixDemoFull from './demos/ColorMatrixDemo.tsx?raw';
 import CustomShaderDemoFull from './demos/CustomShaderDemo.tsx?raw';
+import LassoDemoFull from './demos/LassoDemo.tsx?raw';
 
 export interface DemoEntry {
   id: string;
@@ -204,6 +206,16 @@ export const DEMOS: DemoEntry[] = [
     Component: MultiSelectDemo,
     full: MultiSelectDemoFull,
     path: 'demo/demos/MultiSelectDemo.tsx',
+  },
+  {
+    id: 'lasso',
+    title: 'Lasso',
+    category: 'Selection & actions',
+    description: 'useLassoTool — free-form polygon selection sibling to the rectangular marquee. Press L to switch from select to lasso, then drag to paint a closed polygon. The on-screen radio toggles the hit mode plumbed through `selectFromLasso({ mode })`: `centers` (rect center inside polygon — Photoshop-style snap), `intersect` (any overlap — Figma default), `enclosed` (rect fully inside — strict). Backed by `arrayAdapter`/`sceneToAdapter`\'s default `hitTestLasso`, which composes `polygonContainsRectCenter` / `polygonIntersectsRect` / `polygonContainsRect` from `@orochi235/weasel`.',
+    hint: 'Press L for lasso, drag to paint a polygon. Switch the radio to compare hit modes.',
+    Component: LassoDemo,
+    full: LassoDemoFull,
+    path: 'demo/demos/LassoDemo.tsx',
   },
   {
     id: 'actions',

@@ -12,12 +12,25 @@
  * each node directly; world composition (when needed) is the renderer's job
  * via `composeWorldPose`, not the adapter's.
  */
-import type { AreaSelectAdapter, InsertAdapter, MoveAdapter, ResizeAdapter, RotateAdapter } from '../core/adapters/types';
+import type {
+  AreaSelectAdapter,
+  InsertAdapter,
+  LassoHitMode,
+  LassoSelectAdapter,
+  MoveAdapter,
+  ResizeAdapter,
+  RotateAdapter,
+} from '../core/adapters/types';
 import type { LayoutStrategy } from '../layout/types';
 import type { Op } from '../core/ops/types';
 import type { Node, Scene } from '../core/scene/types';
 import { asNodeId } from '../core/scene/types';
 import { applyOpsTo } from '../core/applyOps';
+import {
+  polygonContainsRect,
+  polygonContainsRectCenter,
+  polygonIntersectsRect,
+} from '../features/paths/polygonHitTestRect';
 
 interface Bounds { x: number; y: number; width: number; height: number; }
 
@@ -36,6 +49,7 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
   & ResizeAdapter<Node<TData, TLayer, TPose>, TPose>
   & RotateAdapter<Node<TData, TLayer, TPose>, TPose>
   & AreaSelectAdapter
+  & LassoSelectAdapter
   & Partial<InsertAdapter<Node<TData, TLayer, TPose>>>;
 
 /** Optional extras for the synthesized adapter. Pass `commitInsert` to wire
@@ -157,6 +171,21 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         ) {
           out.push(id);
         }
+      }
+      return out;
+    },
+    hitTestLasso(polygon, mode: LassoHitMode) {
+      if (polygon.length < 3) return [];
+      const out: string[] = [];
+      for (const id of scene.renderOrder()) {
+        const n = scene.get(id);
+        if (!n) continue;
+        const b = poseBounds(n.pose);
+        const hit =
+          mode === 'centers' ? polygonContainsRectCenter(polygon, b) :
+          mode === 'enclosed' ? polygonContainsRect(polygon, b) :
+          polygonIntersectsRect(polygon, b);
+        if (hit) out.push(id);
       }
       return out;
     },
