@@ -1094,6 +1094,15 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
       onWheel={handleWheel}
+      // Suppress the browser's default right-click menu over the canvas.
+      // Canvases are interaction surfaces; the browser's context menu
+      // (Save Image / Inspect Element / etc.) is almost never what the
+      // user wants, and right-click is a useful gesture surface that
+      // tools may consume. Consumers using right-click for their own
+      // gestures should add their own onContextMenu handler — calling
+      // `e.preventDefault()` is the no-op default; calling something
+      // else still works (this handler runs before the default menu).
+      onContextMenu={(e) => e.preventDefault()}
     />
   );
 }
