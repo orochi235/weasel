@@ -348,7 +348,7 @@ export function PerceptualColorSlidersDemo() {
             allowShiftAll
             renderTrack={paintGradientTrack({
               gradient: t => {
-                const c = Math.round(t * 255);
+                const c = Math.round((1 - t) * 255);
                 return `rgb(${c}, ${c}, ${c})`;
               },
             })}
