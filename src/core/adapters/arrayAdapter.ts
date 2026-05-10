@@ -2,9 +2,16 @@ import type { MutableRefObject } from 'react';
 import type {
   AreaSelectAdapter,
   InsertAdapter,
+  LassoHitMode,
+  LassoSelectAdapter,
   MoveAdapter,
   ResizeAdapter,
 } from './types';
+import {
+  polygonContainsRect,
+  polygonContainsRectCenter,
+  polygonIntersectsRect,
+} from '../../features/paths/polygonHitTestRect';
 import type { Op } from '../ops/types';
 import { applyOpsTo } from '../applyOps';
 
@@ -62,7 +69,8 @@ export interface ArrayAdapter<TObject extends { id: string }, TPose>
   extends MoveAdapter<TObject, TPose>,
     ResizeAdapter<TObject, TPose>,
     InsertAdapter<TObject>,
-    AreaSelectAdapter {
+    AreaSelectAdapter,
+    LassoSelectAdapter {
   getObjects(): TObject[];
   removeObject(id: string): void;
   // ArrayAdapter satisfies the union of all narrow adapters; redeclare the
@@ -148,6 +156,21 @@ export function arrayAdapter<TObject extends { id: string }, TPose>(
                 b.y + b.height > rect.y
               );
             })();
+        if (hit) out.push(o.id);
+      }
+      return out;
+    },
+
+    hitTestLasso: (polygon, mode: LassoHitMode) => {
+      if (polygon.length < 3) return [];
+      const out: string[] = [];
+      for (const o of ref.current) {
+        const pose = toPose(o);
+        const b = poseBounds(pose);
+        const hit =
+          mode === 'centers' ? polygonContainsRectCenter(polygon, b) :
+          mode === 'enclosed' ? polygonContainsRect(polygon, b) :
+          polygonIntersectsRect(polygon, b);
         if (hit) out.push(o.id);
       }
       return out;
