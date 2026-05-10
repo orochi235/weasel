@@ -240,6 +240,7 @@ a:hover { text-decoration: underline; }
   --wui-track-border: var(--ckd-border-2);
   --wui-thumb-fill: var(--ckd-muted);
   --wui-thumb-border: var(--ckd-border);
+  --wui-thumb-text: #000;
 }
 
 /* ---------- Responsive ---------- */

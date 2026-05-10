@@ -34,19 +34,36 @@
 
 .thumb {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  /* Thumb extends 2px above + below the track for grabbability + visual
+   * weight. Track itself stays its natural height; the thumb just spills. */
+  top: -2px;
+  bottom: -2px;
   width: 14px;
   margin-left: -7px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--wui-thumb-fill);
+  background: color-mix(in srgb, var(--wui-thumb-fill) 70%, transparent);
   border: 1px solid var(--wui-thumb-border);
   border-radius: 3px;
   cursor: ew-resize;
+  /* Frosted-glass over the (often colorful) track. Cheap on modern GPUs;
+   * gracefully degrades to just the partial-alpha background on engines
+   * without backdrop-filter support. */
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  /* Subtle raise — sells the "thumb is on top of the track" hierarchy. */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   font: 500 0.65rem/1 ui-sans-serif, system-ui, sans-serif;
-  color: var(--wui-text);
+  font-variant-numeric: tabular-nums;
+  /* Thumb text reads against `--wui-thumb-fill`, which can differ from the
+   * surrounding panel text color. Default = dark; consumers re-skin via
+   * `--wui-thumb-text` if they pick a dark thumb fill. */
+  color: var(--wui-thumb-text);
+  /* White halo so labels stay legible over wildly varying gradient
+   * backgrounds (e.g. labels 'T' / 'P' / 'B' over teal, hue 200° over
+   * yellow-green, etc.). */
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.7);
 }
 
 .thumb:focus-visible {
