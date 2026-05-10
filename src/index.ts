@@ -120,7 +120,7 @@ export type {
   CustomLayerEntry,
   GridSlotConfig,
 } from './canvas/Canvas';
-export type { CanvasExtensionApi, PointerInterceptor } from './canvas/canvasExtension';
+export type { CanvasExtensionApi } from './canvas/canvasExtension';
 export { useSelection } from './core/selection/useSelection';
 export type {
   SelectionApi,

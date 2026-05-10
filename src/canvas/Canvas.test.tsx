@@ -72,7 +72,6 @@ describe('<Canvas>', () => {
     render(<Canvas ref={ref} width={50} height={50} layers={{}} />);
     expect(typeof ref.current?.requestRedraw).toBe('function');
     expect(typeof ref.current?.registerLayer).toBe('function');
-    expect(typeof ref.current?.installPointerInterceptor).toBe('function');
   });
 
   it('mounts without throwing when a custom layer is supplied', () => {

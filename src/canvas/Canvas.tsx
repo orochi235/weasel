@@ -523,9 +523,8 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   useImperativeHandle(ref, () => ({
     element: canvasRef.current,
     requestRedraw,
-    // registerLayer + installPointerInterceptor added in subsequent tasks
+    // registerLayer added in Task A3
     registerLayer: () => () => {},
-    installPointerInterceptor: () => () => {},
   }), [canvasRef, requestRedraw]);
 
   // GL renderer (lazy-instantiated on first paint).
