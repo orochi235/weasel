@@ -155,6 +155,11 @@ export {
 } from './core/units';
 export type { Unit, UnitSystem, UnitValue } from './core/units';
 export {
+  composeAffordanceLayer,
+  type Affordance,
+  type HitResult,
+} from './affordances';
+export {
   composeSelectionPose,
   createSelectionOutlineLayer,
   createSelectionHandlesLayer,
