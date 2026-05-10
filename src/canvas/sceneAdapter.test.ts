@@ -55,6 +55,54 @@ describe('sceneToAdapter', () => {
     expect(adapter.getChildren!(c1)).toEqual([]);
   });
 
+  it('getChildren(null) returns root siblings (added for reorder ops)', () => {
+    const scene = makeScene();
+    const a = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'a' } });
+    const b = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'b' } });
+    const c = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c' } });
+    const adapter = sceneToAdapter(scene);
+    expect(adapter.getChildren!(null)).toEqual([a, b, c]);
+  });
+
+  it('hitTestLasso routes through polygon helpers per mode', () => {
+    const scene = makeScene();
+    const a = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'a' } });
+    const b = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 20, y: 0, width: 10, height: 10 }, data: { label: 'b' } });
+    const adapter = sceneToAdapter(scene);
+    // Polygon enclosing only A.
+    const poly = [{ x: -5, y: -5 }, { x: 15, y: -5 }, { x: 15, y: 15 }, { x: -5, y: 15 }];
+    expect(adapter.hitTestLasso!(poly, 'centers').sort()).toEqual([a].sort());
+    // Wide polygon — both fully inside.
+    const wide = [{ x: -5, y: -5 }, { x: 35, y: -5 }, { x: 35, y: 15 }, { x: -5, y: 15 }];
+    expect(adapter.hitTestLasso!(wide, 'enclosed').sort()).toEqual([a, b].sort());
+    // Degenerate.
+    expect(adapter.hitTestLasso!([{ x: 0, y: 0 }, { x: 1, y: 1 }], 'intersect')).toEqual([]);
+  });
+
+  it('setChildOrder reorders root siblings via scene.batch (single undo entry)', () => {
+    const scene = makeScene();
+    const a = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'a' } });
+    const b = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'b' } });
+    const c = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c' } });
+    const adapter = sceneToAdapter(scene);
+    // Bring 'a' to the front by writing the new order [b, c, a].
+    adapter.setChildOrder!(null, [b, c, a]);
+    expect([...scene.roots]).toEqual([b, c, a]);
+    // One undo step rolls the batch back.
+    scene.undo();
+    expect([...scene.roots]).toEqual([a, b, c]);
+  });
+
+  it('setChildOrder reorders container children', () => {
+    const scene = makeScene();
+    const p = scene.add({ kind: 'container', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'p' } });
+    const c1 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c1' }, parent: p });
+    const c2 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c2' }, parent: p });
+    const adapter = sceneToAdapter(scene);
+    adapter.setChildOrder!(p, [c2, c1]);
+    expect(adapter.getChildren!(p)).toEqual([c2, c1]);
+  });
+
   it('applyBatch wraps ops in scene.batch (single undo entry)', () => {
     const scene = makeScene();
     const id = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'x' } });

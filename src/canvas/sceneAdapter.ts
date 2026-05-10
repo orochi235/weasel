@@ -44,12 +44,21 @@ export interface SceneAdapterSelection {
   setSelection?(ids: string[]): void;
 }
 
+/** Sibling z-order surface used by reorder ops. Inlined here (rather than
+ *  pulled from `core/ops/reorder` to avoid import cycles); the `null` parent
+ *  channel addresses the root sibling list. */
+interface ReorderAdapter {
+  getChildren(parentId: string | null): string[];
+  setChildOrder(parentId: string | null, ids: string[]): void;
+}
+
 export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
   & MoveAdapter<Node<TData, TLayer, TPose>, TPose>
   & ResizeAdapter<Node<TData, TLayer, TPose>, TPose>
   & RotateAdapter<Node<TData, TLayer, TPose>, TPose>
   & AreaSelectAdapter
   & LassoSelectAdapter
+  & ReorderAdapter
   & Partial<InsertAdapter<Node<TData, TLayer, TPose>>>;
 
 /** Optional extras for the synthesized adapter. Pass `commitInsert` to wire
@@ -131,7 +140,27 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       scene.move(asNodeId(id), parentId === null ? null : asNodeId(parentId));
     },
     getChildren(id) {
+      // Reorder ops call this with parentId === null to mean "root siblings."
+      // The kit's existing callers always pass a string, so this widening is
+      // additive — falls through to scene.childrenOf for the typed path and
+      // returns scene.roots for the null path.
+      if (id === null) return [...scene.roots];
       return [...scene.childrenOf(asNodeId(id))];
+    },
+    setChildOrder(parentId, ids) {
+      // Batched reorder: each scene.reorder call is its own kit:move log
+      // entry, but scene.batch wraps them into one undo unit + one notify.
+      scene.batch('Reorder', () => {
+        for (let i = 0; i < ids.length; i++) {
+          // Skip ids that are already in the target slot to avoid useless
+          // log entries.
+          const current = parentId === null
+            ? scene.roots
+            : scene.childrenOf(asNodeId(parentId));
+          if (current[i] === ids[i]) continue;
+          scene.reorder(asNodeId(ids[i]), i);
+        }
+      });
     },
     ...(options.layouts
       ? {

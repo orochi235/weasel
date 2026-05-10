@@ -198,6 +198,48 @@ describe('createSelectionOverlayLayer', () => {
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
     expect(tree).toEqual([]);
   });
+
+  it('getOutlineIds drives per-item outline pass independently of getSelection', () => {
+    // Multi-mode setup: getSelection returns the synthetic union id (pose
+    // looked up below); getOutlineIds returns the real members so the
+    // outline pass strokes each one.
+    const SYNTHETIC = '__multi__';
+    const poses: Record<string, Pose> = {
+      [SYNTHETIC]: { x: 0, y: 0, width: 100, height: 100 },
+      a: { x: 10, y: 10, width: 20, height: 20 },
+      b: { x: 60, y: 60, width: 20, height: 20 },
+    };
+    // Vary getOutlineIds across two layer configs and verify the count
+    // delta — anything else (handles, etc.) is invariant since getSelection
+    // is identical in both.
+    const oneOutline = createSelectionOverlayLayer<Pose>({
+      getSelection: () => [asNodeId(SYNTHETIC)],
+      getOutlineIds: () => [asNodeId('a')],
+      getPose: (id) => poses[id] ?? null,
+      handles: { size: 8 },
+    });
+    const twoOutlines = createSelectionOverlayLayer<Pose>({
+      getSelection: () => [asNodeId(SYNTHETIC)],
+      getOutlineIds: () => [asNodeId('a'), asNodeId('b')],
+      getPose: (id) => poses[id] ?? null,
+      handles: { size: 8 },
+    });
+    const oneTree = oneOutline.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    const twoTree = twoOutlines.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    // Adding one more outline id should add exactly one more drawcommand.
+    expect(twoTree.length - oneTree.length).toBe(1);
+  });
+
+  it('getOutlineIds defaults to getSelection when omitted', () => {
+    const layer = createSelectionOverlayLayer<Pose>({
+      getSelection: () => [asNodeId('a')],
+      getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }),
+      handles: false,
+    });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    // Outline pass only (handles disabled). One stroke for the selected id.
+    expect(tree.filter((c) => c.kind === 'path').length).toBe(1);
+  });
 });
 
 describe('createSelectionOutlineLayer', () => {
