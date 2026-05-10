@@ -520,12 +520,21 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   const [redrawNonce, setRedrawNonce] = useState(0);
   const requestRedraw = useCallback(() => setRedrawNonce(n => n + 1), []);
 
+  const extrasRef = useRef<Set<RenderLayer<unknown>>>(new Set());
+  const registerLayer = useCallback((layer: RenderLayer<unknown>) => {
+    extrasRef.current.add(layer);
+    setRedrawNonce(n => n + 1);
+    return () => {
+      extrasRef.current.delete(layer);
+      setRedrawNonce(n => n + 1);
+    };
+  }, []);
+
   useImperativeHandle(ref, () => ({
     element: canvasRef.current,
     requestRedraw,
-    // registerLayer added in Task A3
-    registerLayer: () => () => {},
-  }), [canvasRef, requestRedraw]);
+    registerLayer,
+  }), [canvasRef, requestRedraw, registerLayer]);
 
   // GL renderer (lazy-instantiated on first paint).
   const glRendererRef = useRef<WeaselRenderer | null>(null);
@@ -1129,12 +1138,13 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   // is enabled. The layer reads from `debugSink.snapshot()` and paints in
   // screen space.
   const layersWithDebug = useMemo(() => {
-    if (!debugSink || !resolvedDebugConfig) return layers;
-    return [
-      ...layers,
-      createDebugOverlayLayer({ sink: debugSink, config: resolvedDebugConfig }),
-    ];
-  }, [layers, debugSink, resolvedDebugConfig]);
+    const base = debugSink && resolvedDebugConfig
+      ? [...layers, createDebugOverlayLayer({ sink: debugSink, config: resolvedDebugConfig })]
+      : layers;
+    return [...base, ...extrasRef.current];
+    // redrawNonce drives re-reads of extrasRef when layers are registered/detached.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layers, debugSink, resolvedDebugConfig, redrawNonce]);
 
   useEffect(() => {
     const c = canvasRef.current;

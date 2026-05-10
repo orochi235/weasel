@@ -1010,4 +1010,43 @@ describe('Canvas baseBoundsOf synthesis', () => {
     await waitForFrame();
     expect(beginFrameSpy).toHaveBeenCalled();
   });
+
+  it('registerLayer adds a layer to the active stack and detach removes it', async () => {
+    // Under jsdom the GL path bails before layer.draw runs, so we observe
+    // draw-pass participation indirectly via debugSink.beginFrame (same proxy
+    // the requestRedraw test uses).
+    const sinkRef: { current: (DebugSink & { snapshot(): DebugSnapshot }) | null } = { current: null };
+    const extra: RenderLayer<unknown> = {
+      id: 'extra', label: 'extra', space: 'screen',
+      draw: () => [],
+    };
+    const ref = React.createRef<CanvasExtensionApi>();
+    render(
+      <Canvas
+        ref={ref}
+        width={100} height={100}
+        layers={{}}
+        debug={{ layers: true }}
+        debugSinkRef={sinkRef}
+      />
+    );
+    await waitForFrame();
+
+    // After registerLayer, a new frame should be triggered.
+    let detach: (() => void) | undefined;
+    const beginFrameSpy = vi.spyOn(sinkRef.current!, 'beginFrame');
+    act(() => { detach = ref.current?.registerLayer(extra); });
+    await waitForFrame();
+    expect(beginFrameSpy).toHaveBeenCalled();
+
+    // After detach + another redraw, beginFrame fires again but the extra layer
+    // should be absent from the snapshot's layer list.
+    beginFrameSpy.mockClear();
+    act(() => { detach?.(); });
+    act(() => { ref.current?.requestRedraw(); });
+    await waitForFrame();
+    expect(beginFrameSpy).toHaveBeenCalled();
+    const snapshot = sinkRef.current!.snapshot();
+    expect(snapshot.layers.some(l => l.id === 'extra')).toBe(false);
+  });
 });
