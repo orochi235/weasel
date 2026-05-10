@@ -60,8 +60,11 @@ export interface RotateOverlayStyle {
 export interface UseSelectToolOptions<TObject extends { id: string }, TPose> {
   /** Return ids of all objects whose painted body covers (worldX, worldY).
    *  Order doesn't matter — the tool collapses parent/child overlap via
-   *  `pickTopMostHit`. */
-  pickEvery: (worldX: number, worldY: number) => string[];
+   *  `pickTopMostHit`. When omitted, defaults to a rect AABB-vs-point scan
+   *  over `adapter.getObjects()` using `poseBounds` (identity by default,
+   *  works for `{x,y,width,height}` poses). Override for tighter shapes
+   *  (path / polygon hit-tests). */
+  pickEvery?: (worldX: number, worldY: number) => string[];
   /** Optional alt-aware selection-update hit returning the single id the
    *  click should act on. When set, `pointer.onDown` routes the body-hit
    *  branch through this instead of `pickTopMostHit(pickEvery(...))` — used by
@@ -76,8 +79,14 @@ export interface UseSelectToolOptions<TObject extends { id: string }, TPose> {
     alt: boolean,
     selection: readonly string[],
   ) => string | null;
-  /** Return the world-space bounds of `id`, or null if not found. */
-  boundsOf: (id: string) => Bounds | null;
+  /** Return the world-space bounds of `id`, or null if not found. When
+   *  omitted, defaults to `poseBounds(adapter.getPose(id))`, mirroring the
+   *  default `pickEvery`. Override when your TPose isn't AABB-shaped. */
+  boundsOf?: (id: string) => Bounds | null;
+  /** Project a pose to its AABB. Default: identity (works for poses that
+   *  carry top-level `x`/`y`/`width`/`height`). Used as the fallback
+   *  projection for the auto-derived `pickEvery` and `boundsOf`. */
+  poseBounds?: (pose: TPose) => Bounds;
   /** Square hit-radius for corner resize handles. Default: 8. */
   handleHitRadius?: number;
   /** Distance from top edge of bounds to rotation handle center. Default: 24. */
@@ -188,8 +197,32 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
   // re-renders without rebuilding the Tool record. Same pattern as `styleRefs`.
   const onDoubleTapRef = useRef(options.onDoubleTap);
   onDoubleTapRef.current = options.onDoubleTap;
-  const pickEveryRef = useRef(options.pickEvery);
-  pickEveryRef.current = options.pickEvery;
+
+  // pickEvery / boundsOf defaults — for any rect-pose adapter the kit can
+  // derive both from `adapter.getObjects()` + `adapter.getPose(id)` +
+  // poseBounds (identity by default). Consumers override for tighter shapes
+  // (e.g. path-pose canvases) or for a domain-specific pick order.
+  const poseBoundsFn = options.poseBounds ?? ((p: TPose) => p as unknown as Bounds);
+  const pickEveryFn = options.pickEvery ?? ((worldX: number, worldY: number): string[] => {
+    const out: string[] = [];
+    for (const obj of adapter.getObjects()) {
+      const b = poseBoundsFn(adapter.getPose(obj.id));
+      if (worldX >= b.x && worldX <= b.x + b.width
+          && worldY >= b.y && worldY <= b.y + b.height) {
+        out.push(obj.id);
+      }
+    }
+    return out;
+  });
+  const boundsOfFn = options.boundsOf ?? ((id: string): Bounds | null => {
+    try {
+      return poseBoundsFn(adapter.getPose(id));
+    } catch {
+      return null;
+    }
+  });
+  const pickEveryRef = useRef(pickEveryFn);
+  pickEveryRef.current = pickEveryFn;
 
   // Refs let the overlay closure pull the latest style/callbacks without
   // rebuilding the Tool record on every render.
@@ -307,8 +340,8 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
   // geometry.getBounds, same as before).
   const getSelectionRef = useRef(options.getSelection);
   getSelectionRef.current = options.getSelection;
-  const boundsOfRef = useRef(options.boundsOf);
-  boundsOfRef.current = options.boundsOf;
+  const boundsOfRef = useRef(boundsOfFn);
+  boundsOfRef.current = boundsOfFn;
   const previewBounds = (id: string): ToolBounds | null => {
     if (id !== MULTI_RESIZE_TARGET_ID) return null;
     const getSelection = getSelectionRef.current;
@@ -374,7 +407,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
 
             // 1. Rotation handle (single selection only)
             if (sel.length === 1) {
-              const b = options.boundsOf(sel[0]);
+              const b = boundsOfFn(sel[0]);
               if (b) {
                 const handle = rotationHandle(b, rotationHandleDistance);
                 (ctx.debug ?? debug)?.recordHitbox(sel[0], 'rotation', {
@@ -389,7 +422,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
 
             // 2. Corner resize handles (single selection only)
             if (sel.length === 1) {
-              const b = options.boundsOf(sel[0]);
+              const b = boundsOfFn(sel[0]);
               if (b) {
                 for (const h of cornerResizeHandles(b)) {
                   (ctx.debug ?? debug)?.recordHitbox(sel[0], 'handle', {
@@ -407,7 +440,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
             const top = options.pickBest
               ? options.pickBest(ctx.worldX, ctx.worldY, ctx.modifiers.alt, sel)
               : (() => {
-                  const ids = options.pickEvery(ctx.worldX, ctx.worldY);
+                  const ids = pickEveryFn(ctx.worldX, ctx.worldY);
                   if (ids.length === 0) return null;
                   // pickTopMostHit collapses parent/child overlap (container's
                   // bounds also cover the child) and falls back to "last id" for
@@ -539,6 +572,6 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
         },
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [move, resize, rotate, areaSelect, overlay, options.pickEvery, options.pickBest, options.boundsOf, handleHitRadius, rotationHandleDistance, debug],
+    [move, resize, rotate, areaSelect, overlay, pickEveryFn, options.pickBest, boundsOfFn, handleHitRadius, rotationHandleDistance, debug],
   );
 }

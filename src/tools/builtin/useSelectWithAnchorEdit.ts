@@ -87,11 +87,27 @@ export function useSelectWithAnchorEdit<TObject extends { id: string }, TPose>(
 ): UseSelectWithAnchorEditReturn {
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  // pickEvery is now optional on UseSelectToolOptions — fall back to the
+  // same rect AABB-vs-point default useSelectTool itself uses.
+  const poseBoundsForFallback = options.poseBounds ?? ((p: TPose) => p as unknown as { x: number; y: number; width: number; height: number });
+  const pickEveryFallback = (worldX: number, worldY: number): string[] => {
+    const out: string[] = [];
+    for (const obj of adapter.getObjects()) {
+      const b = poseBoundsForFallback(adapter.getPose(obj.id));
+      if (worldX >= b.x && worldX <= b.x + b.width
+          && worldY >= b.y && worldY <= b.y + b.height) {
+        out.push(obj.id);
+      }
+    }
+    return out;
+  };
   // Latest-value refs so `onDoubleClick` doesn't need to re-bind on every
   // render (and so `pickEvery` / `editingFilter` / `clientToWorld` updates
   // don't churn it).
-  const pickEveryRef = useRef(options.pickEvery);
-  pickEveryRef.current = options.pickEvery;
+  const pickEveryRef = useRef<(worldX: number, worldY: number) => string[]>(
+    options.pickEvery ?? pickEveryFallback,
+  );
+  pickEveryRef.current = options.pickEvery ?? pickEveryFallback;
   const editingFilterRef = useRef(options.editingFilter);
   editingFilterRef.current = options.editingFilter;
   const clientToWorldRef = useRef(options.clientToWorld);

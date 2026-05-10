@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  asNodeId,
   SceneCanvas,
   sceneToAdapter,
   selectFromLasso,
@@ -58,30 +57,10 @@ export function LassoDemo() {
     [scene, selection],
   );
 
-  const pickEvery = (worldX: number, worldY: number): string[] => {
-    const hits: string[] = [];
-    for (const id of scene.renderOrder()) {
-      const n = scene.get(id);
-      if (!n) continue;
-      const p = n.pose as Rect;
-      if (worldX >= p.x && worldX <= p.x + p.width
-          && worldY >= p.y && worldY <= p.y + p.height) {
-        hits.push(id);
-      }
-    }
-    return hits;
-  };
-
-  const boundsOf = (id: string) => {
-    const n = scene.get(asNodeId(id));
-    if (!n) return null;
-    const p = n.pose as Rect;
-    return { x: p.x, y: p.y, width: p.width, height: p.height };
-  };
-
+  // pickEvery / boundsOf are auto-derived from the adapter (rect-pose AABB
+  // scan) — no boilerplate needed for the common case. Override either if
+  // your TPose isn't `{x,y,width,height}`-shaped.
   const select = useSelectTool(adapter, {
-    pickEvery,
-    boundsOf,
     getSelection: () => selection.current,
     areaSelect: { behaviors: [selectFromMarquee()] },
   });

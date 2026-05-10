@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
 import {
-  asNodeId,
   SceneCanvas,
   sceneToAdapter,
   selectFromMarquee,
@@ -35,30 +34,9 @@ export function MultiSelectDemo() {
     [scene, selection],
   );
 
-  const pickEvery = (worldX: number, worldY: number): string[] => {
-    const hits: string[] = [];
-    for (const id of scene.renderOrder()) {
-      const n = scene.get(id);
-      if (!n) continue;
-      const p = n.pose as Rect;
-      if (worldX >= p.x && worldX <= p.x + p.width
-          && worldY >= p.y && worldY <= p.y + p.height) {
-        hits.push(id);
-      }
-    }
-    return hits;
-  };
-
-  const boundsOf = (id: string) => {
-    const n = scene.get(asNodeId(id));
-    if (!n) return null;
-    const p = n.pose as Rect;
-    return { x: p.x, y: p.y, width: p.width, height: p.height };
-  };
-
+  // pickEvery / boundsOf default to a rect AABB scan over the adapter —
+  // no boilerplate needed for the common rect-pose case.
   const select = useSelectTool(selectAdapter, {
-    pickEvery,
-    boundsOf,
     getSelection: () => selection.current,
     // Marquee is opt-in at the kit level — restored here because the demo's
     // whole point is multi-selection.
