@@ -440,7 +440,10 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     endGesture();
   }
 
-  const api: ToolsDispatcher & { __setGetCtx?: (fn: typeof opts.getCtx) => void } = {
+  const api: ToolsDispatcher & {
+    __setGetCtx?: (fn: typeof opts.getCtx) => void;
+    __setHitTestContext?: (fn: typeof opts.getHitTestContext) => void;
+  } = {
     onPointerDown,
     onPointerMove,
     onPointerUp,
@@ -452,5 +455,6 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     getActiveScratch: () => inFlight?.scratch ?? null,
   };
   api.__setGetCtx = (fn) => { opts.getCtx = fn; };
+  api.__setHitTestContext = (fn) => { opts.getHitTestContext = fn; };
   return api;
 }

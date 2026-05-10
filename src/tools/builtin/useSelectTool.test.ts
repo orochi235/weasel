@@ -245,36 +245,12 @@ describe('useSelectTool', () => {
     expect(result.current.initScratch!()).toEqual({ kind: 'idle' });
   });
 
-  it('pointer.onDown over resize handle stashes kind:resize', () => {
-    // Single selected object with known bounds — pointer directly on top-left corner handle
-    const ctx = ctxOver({
-      worldX: 0,
-      worldY: 0,
-      selection: { current: ['obj1'], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
-      scratch: { kind: 'idle' },
-    });
-    const { result } = renderHook(() =>
-      useSelectTool(minimalAdapter, {
-        pickEvery: () => [],
-        boundsOf: (id) => id === 'obj1' ? { x: 0, y: 0, width: 100, height: 100 } : null,
-        handleHitRadius: 10,
-      }),
-    );
-    result.current.pointer!.onDown!(pe({ clientX: 0, clientY: 0 }), ctx);
-    expect(ctx.scratch).toEqual(expect.objectContaining({ kind: 'resize', targetId: 'obj1' }));
-  });
-
-  it('handleHitRadius is screen-px: scale=2 halves the world hit radius', () => {
-    // 100×100 object at (0,0). handleHitRadius=10 screen px → 5 world at
-    // scale=2. cornerHandle hit-test uses max-norm; worldX=6 puts the pointer
-    // outside the 5-world half-extent on the X axis. Should miss.
-    const ctxMiss = ctxOver({
-      worldX: 6,
-      worldY: 0,
-      view: { x: 0, y: 0, scale: 2 },
-      selection: { current: ['obj1'], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
-      scratch: { kind: 'idle' },
-    });
+  it('overlay.hitTest over resize handle returns a HitResult that drives useResize', () => {
+    // Corner-handle hits now flow through the tool's overlay.hitTest (the
+    // affordance pipeline), not pointer.onDown. The dispatcher walks the
+    // active tool's overlay layers and routes the resulting drag channel
+    // for the gesture. We invoke the overlay's hitTest directly with the
+    // ChromeState shape it expects.
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => [],
@@ -282,19 +258,43 @@ describe('useSelectTool', () => {
         handleHitRadius: 10,
       }),
     );
-    result.current.pointer!.onDown!(pe(), ctxMiss);
-    expect(ctxMiss.scratch).toEqual({ kind: 'area' });
+    const chromeState = {
+      selection: ['obj1'],
+      multiActive: false,
+      unionBounds: null,
+      boundsOf: (id: string) => (id === 'obj1' ? { x: 0, y: 0, width: 100, height: 100 } : null),
+      modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+    } as any;
+    const view = { x: 0, y: 0, scale: 1 };
+    const dims = { width: 200, height: 200 };
+    const hit = result.current.overlay!.hitTest!(0, 0, chromeState, view, dims);
+    expect(hit).not.toBeNull();
+    expect(hit!.initialScratch).toEqual(expect.objectContaining({ targetId: 'obj1' }));
+    expect(typeof hit!.drag.onStart).toBe('function');
+  });
 
-    // worldX=4, worldY=0 → both within 5 half-extent. Should hit.
-    const ctxHit = ctxOver({
-      worldX: 4,
-      worldY: 0,
-      view: { x: 0, y: 0, scale: 2 },
-      selection: { current: ['obj1'], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
-      scratch: { kind: 'idle' },
-    });
-    result.current.pointer!.onDown!(pe(), ctxHit);
-    expect(ctxHit.scratch).toEqual(expect.objectContaining({ kind: 'resize', targetId: 'obj1' }));
+  it('overlay.hitTest: handleHitRadius is screen-px (scale=2 halves world hit radius)', () => {
+    // 100×100 object at (0,0). handleHitRadius=10 screen px → 5 world at
+    // scale=2. cornerHandle hit-test uses max-norm; worldX=6 is outside the
+    // 5-world half-extent on the X axis (miss). worldX=4 is inside (hit).
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        pickEvery: () => [],
+        boundsOf: (id) => (id === 'obj1' ? { x: 0, y: 0, width: 100, height: 100 } : null),
+        handleHitRadius: 10,
+      }),
+    );
+    const chromeState = {
+      selection: ['obj1'],
+      multiActive: false,
+      unionBounds: null,
+      boundsOf: (id: string) => (id === 'obj1' ? { x: 0, y: 0, width: 100, height: 100 } : null),
+      modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+    } as any;
+    const view = { x: 0, y: 0, scale: 2 };
+    const dims = { width: 200, height: 200 };
+    expect(result.current.overlay!.hitTest!(6, 0, chromeState, view, dims)).toBeNull();
+    expect(result.current.overlay!.hitTest!(4, 0, chromeState, view, dims)).not.toBeNull();
   });
 
   it('drag.onStart after body-hit routes to move controller (claims)', () => {
@@ -382,7 +382,12 @@ describe('useSelectTool', () => {
 import { createDebugSink } from '../../debug/createDebugSink';
 
 describe('useSelectTool — debug recording', () => {
-  it('records corner-handle hitboxes during pointer-down hit-test', () => {
+  it('records the rotation hitbox during pointer-down hit-test', () => {
+    // After Task 11, corner-handle hits route through the affordance
+    // pipeline (overlay.hitTest), not pointer.onDown — so the inline
+    // `recordHitbox('handle', ...)` calls are gone. Only the rotation
+    // hit-test still runs in pointer.onDown today; recording for
+    // affordances is a future concern.
     const sink = createDebugSink({ hitboxes: true });
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
@@ -396,9 +401,7 @@ describe('useSelectTool — debug recording', () => {
     });
     result.current.pointer!.onDown!(pe(), ctx);
     const hits = sink.snapshot().hitboxes;
-    const handles = hits.filter((h) => h.kind === 'handle');
     const rotations = hits.filter((h) => h.kind === 'rotation');
-    expect(handles.length).toBe(4);
     expect(rotations.length).toBe(1);
   });
 });

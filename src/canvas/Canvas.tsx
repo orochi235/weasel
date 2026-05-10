@@ -646,7 +646,15 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     if (!tools) return;
     // Small monkey-patch: replace the dispatcher's getCtx by re-creating it.
     // Phase 2 cleanup: thread getCtx through useTools properly so this isn't needed.
-    const d = tools.dispatcher as ToolsDispatcher & { __setGetCtx?: (fn: (overrides?: { clientX?: number; clientY?: number; modifiers?: { alt: boolean; shift: boolean; meta: boolean; ctrl: boolean } }) => unknown) => void };
+    const d = tools.dispatcher as ToolsDispatcher & {
+      __setGetCtx?: (fn: (overrides?: { clientX?: number; clientY?: number; modifiers?: { alt: boolean; shift: boolean; meta: boolean; ctrl: boolean } }) => unknown) => void;
+      __setHitTestContext?: (fn: (() => {
+        layers: readonly RenderLayer<unknown>[];
+        chromeState: ChromeState;
+        view: View;
+        dims: { width: number; height: number };
+      } | null) | undefined) => void;
+    };
     d.__setGetCtx?.(toolsCtxBase);
   }, [tools, toolsCtxBase]);
 
@@ -764,6 +772,44 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     }),
     [selectedIdsForWiring, multiActive, effectiveBoundsOf],
   );
+
+  // Wire the dispatcher's hit-test context. The active tool's overlay (and
+  // hotkey/ambient overlays) are the affordance-layer pipeline: overlays
+  // that publish a `hitTest` (e.g. select tool's corner-resize affordance)
+  // get walked top-down on pointerdown so cross-tool hits (lasso → corner
+  // resize) route through the affordance instead of the foreground tool's
+  // drag.onStart. The closure reads refs so it always sees the latest
+  // layers / chromeState / view / dims without re-installing on every
+  // paint.
+  const hitTestRefs = useRef({ tools, chromeState, view: effectiveView, width, height });
+  hitTestRefs.current = { tools, chromeState, view: effectiveView, width, height };
+  useEffect(() => {
+    if (!tools) return;
+    const d = tools.dispatcher as ToolsDispatcher & {
+      __setHitTestContext?: (fn: (() => {
+        layers: readonly RenderLayer<unknown>[];
+        chromeState: ChromeState;
+        view: View;
+        dims: { width: number; height: number };
+      } | null) | undefined) => void;
+    };
+    d.__setHitTestContext?.(() => {
+      const r = hitTestRefs.current;
+      if (!r.tools) return null;
+      // `getActiveOverlays` returns [active, hotkey?, ...ambient]; reverse
+      // for top-down so the foreground-most tool's affordances fire first.
+      const overlays = r.tools.getActiveOverlays();
+      return {
+        layers: [...overlays].reverse(),
+        chromeState: r.chromeState,
+        view: r.view,
+        dims: { width: r.width, height: r.height },
+      };
+    });
+    return () => {
+      d.__setHitTestContext?.(undefined);
+    };
+  }, [tools]);
 
   // helpersForLayers: overlay-aware lookups passed to every RenderLayer.draw
   // call (as the `data` arg) so custom layers can read live overlay state

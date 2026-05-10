@@ -3,8 +3,13 @@ import { useMove, type UseMoveOptions } from '../../interactions/gestures/move/m
 import { useResize, type UseResizeOptions } from '../../interactions/gestures/resize/resize';
 import { useRotate, type UseRotateOptions } from '../../interactions/gestures/rotate/rotate';
 import { useAreaSelect, type UseAreaSelectOptions } from '../../interactions/gestures/area-select/areaSelect';
-import { cornerResizeHandles, hitCornerHandle } from '../../interactions/gestures/resize/cornerHandles';
 import { rotationHandle, hitRotationHandle } from '../../interactions/gestures/rotate/handle';
+import { composeAffordanceLayer } from '../../affordances/composeAffordanceLayer';
+import {
+  createCornerResizeAffordance,
+  type CornerResizeScratch,
+} from '../../affordances/cornerResize';
+import type { Affordance, HitResult } from '../../affordances/types';
 import type { MoveAdapter } from '../../core/adapters/types';
 import type { ResizeAdapter } from '../../core/adapters/types';
 import type { RotateAdapter } from '../../core/adapters/types';
@@ -202,6 +207,12 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
   const rotationHandleDistance = options.rotationHandleDistance ?? 24;
   const debug = options.debug;
 
+  // Latest-callback ref for the resize controller — the affordance's
+  // wrapped drag channel closes over this so we don't have to rebuild the
+  // wrapper every render. Mirrors the styleRefs / pickEveryRef pattern.
+  const resizeRef = useRef(resize);
+  resizeRef.current = resize;
+
   // Latest-callback ref for `onDoubleTap` so the memoized tool body picks up
   // re-renders without rebuilding the Tool record. Same pattern as `styleRefs`.
   const onDoubleTapRef = useRef(options.onDoubleTap);
@@ -252,15 +263,19 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
     getObject: options.getObject,
   };
 
+  // Ghost / marquee overlay. Owned by the gesture controllers — these are
+  // decorative chrome (move/resize/rotate ghosts + area-select marquee),
+  // NOT affordances, so they live outside the affordance layer.
+  //
   // The layer is `space: 'screen'`. The marquee branch already lives in
   // screen coords (via `worldToScreen`); ghosts go through `drawGhost`,
   // wrapped in a world-transform group. When `drawGhost` is omitted,
   // ghosts are invisible during drag — fallback consumers can opt in via
   // SceneCanvas's preview-ghost layer driven by scene-slot `drawOne`.
-  const overlay = useMemo<RenderLayer<unknown>>(
+  const ghostOverlay = useMemo<RenderLayer<unknown>>(
     () => ({
-      id: 'select-overlay',
-      label: 'Select overlay',
+      id: 'select-overlay-ghosts',
+      label: 'Select overlay ghosts',
       space: 'screen',
       draw: (_data, view) => {
         const refs = styleRefs.current;
@@ -316,6 +331,89 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
       },
     }),
     [move, resize, rotate, areaSelect],
+  );
+
+  // Corner-resize affordance. Defaults to the same `handleHitRadius` the
+  // tool exposes so the affordance's hit math matches what users
+  // configure (mirroring what the old inline corner-handle test did).
+  const cornerAff = useMemo(
+    () => createCornerResizeAffordance({ handleHitRadius }),
+    [handleHitRadius],
+  );
+
+  // Wrap the affordance's hitTest to substitute its stub drag channel
+  // with one that delegates to `useResize`. Render returns [] for now —
+  // Canvas's existing `selectionOverlay` slot still draws the corner
+  // handles via the legacy path; flipping that on (so the affordance
+  // becomes the only handle painter) is a Phase 5 task. The hitTest
+  // path is the load-bearing piece: it's what lets cross-tool hits
+  // (e.g. lasso → corner resize) route to useResize without a slot
+  // hand-off.
+  //
+  // Multi-mode synthetic target (`MULTI_RESIZE_TARGET_ID`) is NOT
+  // routed through useResize — the controller doesn't natively handle
+  // a synthetic union id. We return null so the affordance pipeline
+  // doesn't claim, and the dispatcher falls through to the existing
+  // slot-walk pointer.onDown path. Multi-mode corner resize remains a
+  // separate concern.
+  const cornerAffWrapped: Affordance = useMemo(
+    () => ({
+      id: cornerAff.id,
+      render: () => [],
+      hitTest: (wx, wy, state, view): HitResult | null => {
+        const inner = cornerAff.hitTest?.(wx, wy, state, view);
+        if (!inner) return null;
+        const scratch = inner.initialScratch as CornerResizeScratch;
+        if (scratch.targetId === MULTI_RESIZE_TARGET_ID) return null;
+        const result: HitResult<CornerResizeScratch> = {
+          drag: {
+            onStart: (_e, dctx) => {
+              resizeRef.current.start(scratch.targetId, scratch.anchor, dctx.worldX, dctx.worldY);
+              return 'claim';
+            },
+            onMove: (_e, dctx) => {
+              resizeRef.current.move(dctx.worldX, dctx.worldY, dctx.modifiers);
+              return 'claim';
+            },
+            onEnd: (_e, _dctx) => {
+              resizeRef.current.end();
+              return 'claim';
+            },
+            onCancel: () => {
+              resizeRef.current.cancel();
+            },
+          },
+          initialScratch: scratch,
+        };
+        return result as HitResult;
+      },
+    }),
+    [cornerAff],
+  );
+
+  const affordanceOverlay = useMemo(
+    () => composeAffordanceLayer('select-affordances', 'Select affordances', [cornerAffWrapped]),
+    [cornerAffWrapped],
+  );
+
+  // Combined Tool overlay: ghost layer (bottom) + affordance layer (top).
+  // hitTest comes from the affordance layer so dispatcher-side hit-test
+  // pipelines can route corner-handle hits through it. Ghosts have no
+  // hitTest of their own.
+  const overlay = useMemo<RenderLayer<unknown>>(
+    () => ({
+      id: 'select-overlay',
+      label: 'Select overlay',
+      space: 'screen',
+      draw: (data, view, dims) => {
+        const ghosts = ghostOverlay.draw(data, view, dims);
+        const aff = affordanceOverlay.draw(data as never, view, dims);
+        return [...ghosts, ...aff];
+      },
+      hitTest: (wx, wy, data, view, dims) =>
+        affordanceOverlay.hitTest(wx, wy, data as never, view, dims),
+    }),
+    [ghostOverlay, affordanceOverlay],
   );
 
   // previewPose: aggregate in-flight overlay poses across move/resize/rotate so
@@ -429,21 +527,13 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
               }
             }
 
-            // 2. Corner resize handles (single selection only)
-            if (sel.length === 1) {
-              const b = boundsOfFn(sel[0]);
-              if (b) {
-                for (const h of cornerResizeHandles(b)) {
-                  (ctx.debug ?? debug)?.recordHitbox(sel[0], 'handle', {
-                    kind: 'circle', cx: h.cx, cy: h.cy, r: radiusWorld,
-                  });
-                  if (hitCornerHandle(h, ctx.worldX, ctx.worldY, radiusWorld)) {
-                    ctx.scratch = { kind: 'resize', targetId: sel[0], anchor: h.anchor };
-                    return 'claim';
-                  }
-                }
-              }
-            }
+            // 2. Corner resize handles: handled by the corner-resize
+            //    affordance (see `cornerAffWrapped` above). The dispatcher's
+            //    affordance-layer hit-test pipeline routes those hits
+            //    directly to `useResize` via the wrapped drag channel,
+            //    bypassing pointer.onDown for the handle case. We don't
+            //    drop the radiusWorld var because it's still used elsewhere
+            //    (rotation hitbox above).
 
             // 3. Body hit → move (+ select)
             const top = options.pickBest

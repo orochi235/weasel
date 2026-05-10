@@ -275,10 +275,15 @@ describe('<Canvas>', () => {
       expect(seen.some((s) => s.length === 1 && s[0] === 'b')).toBe(true);
     });
 
-    it('useSelectTool boundsOf drives resize handle hit-test', () => {
+    it('Canvas boundsOf drives the corner-resize affordance hit-test', () => {
       // Bounds returned for selected id 'a' say (0,0,1000,1000) — far outside
-      // the real 5x5 pose. Click at the bottom-right handle (1000,1000) should
-      // start a resize on 'a', proving the tool consults boundsOf, not the pose.
+      // the real 5x5 pose. After Task 11, corner-handle hits flow through the
+      // affordance pipeline, which reads ChromeState.boundsOf — wired by
+      // Canvas's `boundsOf` prop. The select tool's `boundsOf` option still
+      // fuels its rotation/preview-bounds path; both paths typically share
+      // the same source (consumers pass identical callbacks). This test
+      // pins the affordance path: click at the top-left corner (worldX/Y=0)
+      // routes to useResize via the overlay-published affordance.
       const explicit = vi.fn(() => ({ x: 0, y: 0, width: 1000, height: 1000 }));
       const startSpy = vi.fn();
       function Harness() {
@@ -308,23 +313,23 @@ describe('<Canvas>', () => {
             selection={sel}
             tools={tools}
             clientToWorld={C2W}
+            boundsOf={explicit}
           />
         );
       }
+      // The affordance pipeline reads worldX/Y from baseCtx; baseCtx pulls
+      // them via clientToWorld (the C2W stub returns `nextWorld`). Drop the
+      // pointer at the top-left handle (0,0) so both paths hit.
+      nextWorld = [0, 0];
       const { container } = render(<Harness />);
       const canvas = container.querySelector('canvas')!;
       canvas.setPointerCapture = vi.fn();
-      // Bottom-right handle at (1000,1000). Plumb clientX/Y via defineProperty
-      // (jsdom's PointerEvent constructor ignores the init dict for these).
       const down = createEvent.pointerDown(canvas);
-      Object.defineProperty(down, 'clientX', { value: 1000 });
-      Object.defineProperty(down, 'clientY', { value: 1000 });
+      Object.defineProperty(down, 'clientX', { value: 0 });
+      Object.defineProperty(down, 'clientY', { value: 0 });
       fireEvent(canvas, down);
-      // Cross drag threshold so resize.start fires (and onStart behavior runs).
-      const move = createEvent.pointerMove(canvas);
-      Object.defineProperty(move, 'clientX', { value: 1010 });
-      Object.defineProperty(move, 'clientY', { value: 1010 });
-      fireEvent(canvas, move);
+      // Affordance hits skip threshold gating (drag.onStart fires
+      // immediately on pointerdown). startSpy should already be invoked.
       expect(explicit).toHaveBeenCalled();
       expect(startSpy).toHaveBeenCalled();
       expect(startSpy.mock.calls[0][0]).toBe('a');
