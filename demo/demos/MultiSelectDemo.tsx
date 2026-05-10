@@ -8,6 +8,7 @@ import {
   useSelectTool,
   useTools,
 } from '@orochi235/weasel';
+import type { CanvasExtensionApi } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
@@ -46,9 +47,9 @@ export function MultiSelectDemo() {
 
   // Cmd/Ctrl+A is auto-registered by SceneCanvas's default actions.
 
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const canvasRef = useRef<CanvasExtensionApi | null>(null);
   useEffect(() => {
-    canvasRef.current?.focus();
+    canvasRef.current?.element?.focus();
   }, []);
 
   return (

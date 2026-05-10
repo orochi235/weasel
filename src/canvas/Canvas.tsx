@@ -14,6 +14,7 @@
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import type React from 'react';
+import type { CanvasExtensionApi } from './canvasExtension';
 import type { ToolsApi } from '../tools/useTools';
 import type { ToolsDispatcher } from '../tools/dispatcher';
 import type { ToolCtx } from '../tools/types';
@@ -438,7 +439,7 @@ function resolveToolsCursor(
 
 function CanvasInner<TObject extends { id: string }, TPose>(
   props: CanvasProps<TObject, TPose>,
-  ref: React.ForwardedRef<HTMLCanvasElement>,
+  ref: React.ForwardedRef<CanvasExtensionApi>,
 ) {
   const {
     width,
@@ -515,7 +516,17 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   const adapter = adapterProp ?? (inlineSceneSupplied ? synthesizedAdapter : undefined);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  useImperativeHandle(ref, () => canvasRef.current as HTMLCanvasElement, []);
+
+  const [redrawNonce, setRedrawNonce] = useState(0);
+  const requestRedraw = useCallback(() => setRedrawNonce(n => n + 1), []);
+
+  useImperativeHandle(ref, () => ({
+    element: canvasRef.current,
+    requestRedraw,
+    // registerLayer + installPointerInterceptor added in subsequent tasks
+    registerLayer: () => () => {},
+    installPointerInterceptor: () => () => {},
+  }), [canvasRef, requestRedraw]);
 
   // GL renderer (lazy-instantiated on first paint).
   const glRendererRef = useRef<WeaselRenderer | null>(null);
@@ -1192,7 +1203,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       });
     }
     renderer.render(commands);
-  }, [layersWithDebug, width, height, background, effectiveView, debugSink]);
+  }, [layersWithDebug, width, height, background, effectiveView, debugSink, redrawNonce]);
 
   const shaderIdKey = shaders?.map((h) => h.id).join('|') ?? '';
   useEffect(() => {
@@ -1243,5 +1254,5 @@ export const Canvas = forwardRef(CanvasInner) as <
   TObject extends { id: string } = { id: string },
   TPose = TObject,
 >(
-  props: CanvasProps<TObject, TPose> & { ref?: React.ForwardedRef<HTMLCanvasElement> },
+  props: CanvasProps<TObject, TPose> & { ref?: React.ForwardedRef<CanvasExtensionApi> },
 ) => ReturnType<typeof CanvasInner>;

@@ -11,7 +11,7 @@ import {
   useSelectTool,
   useTools,
 } from '@orochi235/weasel';
-import type { LassoHitMode } from '@orochi235/weasel';
+import type { CanvasExtensionApi, LassoHitMode } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
@@ -93,8 +93,8 @@ export function LassoDemo() {
   // `tools=` prop is supplied; the consumer owns the wiring.
   useKeybindings(tools);
 
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  useEffect(() => { canvasRef.current?.focus(); }, []);
+  const canvasRef = useRef<CanvasExtensionApi | null>(null);
+  useEffect(() => { canvasRef.current?.element?.focus(); }, []);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

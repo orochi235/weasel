@@ -12,7 +12,7 @@ import {
   useTools,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
-import type { AlignEdge, DistributeAxis, DistributeMode } from '@orochi235/weasel';
+import type { AlignEdge, CanvasExtensionApi, DistributeAxis, DistributeMode } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
@@ -83,8 +83,8 @@ export function AlignDistributeFlipDemo() {
   });
   const tools = useTools({ active: 'select', registry: { select } });
 
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  useEffect(() => { canvasRef.current?.focus(); }, []);
+  const canvasRef = useRef<CanvasExtensionApi | null>(null);
+  useEffect(() => { canvasRef.current?.element?.focus(); }, []);
 
   // Pre-select all five so every button has an immediate visible effect.
   useEffect(() => {

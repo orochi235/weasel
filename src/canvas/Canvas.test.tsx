@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeAll } from 'vitest';
-import { render, fireEvent, createEvent } from '@testing-library/react';
-import { createRef, useRef, useState } from 'react';
+import { render, fireEvent, createEvent, act } from '@testing-library/react';
+import React, { createRef, useRef, useState } from 'react';
 import { Canvas } from './Canvas';
 import { SceneCanvas } from './SceneCanvas';
 import { useScene } from '../core/scene/useScene';
@@ -12,6 +12,9 @@ import { useTools } from '../tools/useTools';
 import type { RenderLayer } from '../core/layers/render';
 import { registerProgram } from '../renderer';
 import type { DebugSink, DebugSnapshot } from '../debug/types';
+import type { CanvasExtensionApi } from './canvasExtension';
+
+const waitForFrame = () => new Promise<void>(r => requestAnimationFrame(() => r()));
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
 beforeAll(() => {
@@ -64,10 +67,12 @@ describe('<Canvas>', () => {
     expect(canvas!.getAttribute('tabindex')).toBe('0');
   });
 
-  it('forwards a ref to the underlying <canvas>', () => {
-    const ref = createRef<HTMLCanvasElement>();
+  it('forwards a ref exposing CanvasExtensionApi', () => {
+    const ref = createRef<CanvasExtensionApi>();
     render(<Canvas ref={ref} width={50} height={50} layers={{}} />);
-    expect(ref.current).toBeInstanceOf(HTMLCanvasElement);
+    expect(typeof ref.current?.requestRedraw).toBe('function');
+    expect(typeof ref.current?.registerLayer).toBe('function');
+    expect(typeof ref.current?.installPointerInterceptor).toBe('function');
   });
 
   it('mounts without throwing when a custom layer is supplied', () => {
@@ -986,5 +991,24 @@ describe('Canvas baseBoundsOf synthesis', () => {
     const bounds = helpersRef.current?.getEffectiveBounds('a');
     expect(bounds).not.toBeNull();
     expect((bounds as { rotation?: number }).rotation).toBeCloseTo(Math.PI / 4, 5);
+  });
+
+  it('requestRedraw on the ref bumps the redraw effect', async () => {
+    const sinkRef: { current: (DebugSink & { snapshot(): DebugSnapshot }) | null } = { current: null };
+    const ref = React.createRef<CanvasExtensionApi>();
+    render(
+      <Canvas
+        ref={ref}
+        width={200} height={200}
+        layers={{}}
+        debug={{ layers: true }}
+        debugSinkRef={sinkRef}
+      />
+    );
+    await waitForFrame();
+    const beginFrameSpy = vi.spyOn(sinkRef.current!, 'beginFrame');
+    act(() => { ref.current?.requestRedraw(); });
+    await waitForFrame();
+    expect(beginFrameSpy).toHaveBeenCalled();
   });
 });

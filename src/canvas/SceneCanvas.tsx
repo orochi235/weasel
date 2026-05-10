@@ -26,6 +26,7 @@ import { useStandardActions } from '../interactions/actions/useStandardActions';
 import { translateRectPose } from '../features/groups/composePose';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap } from './Canvas';
+import type { CanvasExtensionApi } from './canvasExtension';
 import type { ShaderProgramHandle } from '../renderer';
 import type { SceneToAdapterOptions } from './sceneAdapter';
 import type { PanBounds } from '../core/viewport/useDecayLoop';
@@ -174,7 +175,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
 function SceneCanvasInner<TData, TLayer extends string, TPose>(
   props: SceneCanvasProps<TData, TLayer, TPose>,
-  ref: React.ForwardedRef<HTMLCanvasElement>,
+  ref: React.ForwardedRef<CanvasExtensionApi>,
 ) {
   const {
     scene,
@@ -346,10 +347,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Merge the forwarded ref with our internalCanvasRef so usePinchZoomTool
   // can read the canvas element even when the consumer also forwards a ref.
   const mergedRef = useCallback(
-    (node: HTMLCanvasElement | null) => {
-      internalCanvasRef.current = node;
+    (node: CanvasExtensionApi | null) => {
+      internalCanvasRef.current = node?.element ?? null;
       if (typeof ref === 'function') ref(node);
-      else if (ref) (ref as React.MutableRefObject<HTMLCanvasElement | null>).current = node;
+      else if (ref) (ref as React.MutableRefObject<CanvasExtensionApi | null>).current = node;
     },
     [ref],
   );
@@ -405,5 +406,5 @@ function StandardActionsRegistrar<TPose>({
 export const SceneCanvas = forwardRef(SceneCanvasInner) as <
   TData, TLayer extends string, TPose,
 >(
-  props: SceneCanvasProps<TData, TLayer, TPose> & { ref?: React.Ref<HTMLCanvasElement> },
+  props: SceneCanvasProps<TData, TLayer, TPose> & { ref?: React.Ref<CanvasExtensionApi> },
 ) => ReturnType<typeof SceneCanvasInner>;
