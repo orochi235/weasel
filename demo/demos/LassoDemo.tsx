@@ -65,17 +65,29 @@ export function LassoDemo() {
     areaSelect: { behaviors: [selectFromMarquee()] },
   });
 
+  // toolsRef lets the lasso's onGestureEnd flip back to 'select' after
+  // commit without rebuilding the lasso Tool record (which would lose
+  // gesture state mid-flight). Forward declaration via ref since `tools`
+  // isn't constructed until below.
+  const toolsRef = useRef<ReturnType<typeof useTools> | null>(null);
+
   // Lasso tool reads `mode` through a behavior that captures the latest value
   // each render — recreating the behavior with a fresh closure is the simplest
-  // way to make the on-screen mode toggle live.
+  // way to make the on-screen mode toggle live. After a lasso gesture commits,
+  // flip the active tool back to 'select' so corner handles on the multi-union
+  // chrome become draggable (Photoshop / Illustrator convention).
   const lasso = useLassoTool(adapter, {
     behaviors: [selectFromLasso({ mode })],
+    onGestureEnd: (committed) => {
+      if (committed) toolsRef.current?.setActive('select');
+    },
   });
 
   const tools = useTools({
-    active: 'lasso',
+    active: 'select',
     registry: { select, lasso },
   });
+  toolsRef.current = tools;
   // Wire V (select) and L (lasso) so the consumer can swap active tools by
   // keystroke. SceneCanvas disables its internal keybindings whenever a
   // `tools=` prop is supplied; the consumer owns the wiring.
@@ -101,7 +113,7 @@ export function LassoDemo() {
           </label>
         ))}
         <span style={{ marginLeft: 'auto', opacity: 0.7 }}>
-          Active: <code>{tools.active}</code>
+          Press <kbd>L</kbd> for lasso · Active: <code>{tools.active}</code>
         </span>
       </div>
       <SceneCanvas
