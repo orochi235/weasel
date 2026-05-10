@@ -254,6 +254,12 @@ export interface SelectionOverlayLayerOpts<TPose> extends SelectionLayerCommon<T
     | {
         distance?: number;
       };
+  /** Optional separate id list for the per-item outline pass. Use this in
+   *  multi-selection contexts where the handle pass works against a synthetic
+   *  union id (e.g. `MULTI_RESIZE_TARGET_ID`) but consumers still want to
+   *  see outlines around each real member. When omitted, the outline pass
+   *  uses the same `getSelection` ids as the handle pass. */
+  getOutlineIds?: () => readonly NodeId[];
 }
 
 const DEFAULT_OUTLINE: Required<Pick<Stroke, 'paint' | 'width'>> & { pad: number } = {
@@ -643,8 +649,9 @@ export function createSelectionOverlayLayer<TPose>(
     draw: (_data, view) => {
       const ids = opts.getSelection();
       if (ids.length === 0) return [];
+      const outlineIds = opts.getOutlineIds ? opts.getOutlineIds() : ids;
       const out: DrawCommand[] = [];
-      for (const cmd of outlineCommandsFor(ids, resolveBounds, stroke, pad, view)) out.push(cmd);
+      for (const cmd of outlineCommandsFor(outlineIds, resolveBounds, stroke, pad, view)) out.push(cmd);
       if (!handles) return out;
       for (const cmd of handleCommandsFor(ids, resolveBounds, handles, handlesOf, view)) out.push(cmd);
       if (rotationHandleDistance !== null) {

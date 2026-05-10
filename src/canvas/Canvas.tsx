@@ -993,9 +993,17 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       const getSelection = multiActive
         ? (): readonly NodeId[] => [MULTI_RESIZE_TARGET_ID as NodeId]
         : (): readonly NodeId[] => selectedIds as readonly NodeId[];
+      // Per-item outline pass: in multi mode, the handle pass works against
+      // the synthetic union id, but the outline pass still wants the real
+      // member ids so each selected object reads as "this is selected." In
+      // single mode the two coincide.
+      const getOutlineIds = multiActive
+        ? (): readonly NodeId[] => selectedIds as readonly NodeId[]
+        : undefined;
       standardLayers.selectionOverlay = createSelectionOverlayLayer<TPose>({
         ...cfg,
         getSelection,
+        ...(getOutlineIds ? { getOutlineIds } : {}),
         getPose: poseById,
         getBounds:
           cfg.getBounds ??
