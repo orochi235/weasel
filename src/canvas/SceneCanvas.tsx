@@ -43,6 +43,7 @@ import type { UseMoveOptions } from '../interactions/gestures/move/move';
 import type { UseResizeOptions } from '../interactions/gestures/resize/resize';
 import type { UseRotateOptions } from '../interactions/gestures/rotate/rotate';
 import type { SnapStrategy } from '../interactions/gestures/types';
+import type { UseAreaSelectOptions } from '../interactions/gestures/area-select/areaSelect';
 import { ActionsProviderIfRoot } from './SceneCanvas/ActionsProviderIfRoot';
 import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
 import { useViewportTools } from './SceneCanvas/useViewportTools';
@@ -80,6 +81,10 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
       rotate?: UseRotateOptions<TPose>;
       snap?: SnapStrategy<TPose>;
       handleHitRadius?: number;
+      /** Marquee area-select. Default: no behaviors (a drag from empty space
+       *  doesn't mutate the selection). Pass
+       *  `{ behaviors: [selectFromMarquee()] }` to enable rubber-band select. */
+      areaSelect?: UseAreaSelectOptions;
     };
 
     // --- Insert tool: when `create` is supplied, the synthesized adapter

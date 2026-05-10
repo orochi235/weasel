@@ -22,6 +22,7 @@ import type { UseMoveOptions } from '../../interactions/gestures/move/move';
 import type { UseResizeOptions } from '../../interactions/gestures/resize/resize';
 import type { UseRotateOptions } from '../../interactions/gestures/rotate/rotate';
 import type { SnapStrategy } from '../../interactions/gestures/types';
+import type { UseAreaSelectOptions } from '../../interactions/gestures/area-select/areaSelect';
 import { snap as snapBehavior } from '../../interactions/gestures/shared/snap';
 import { pathPoseDescriptor } from '../../features/paths/poseDescriptor';
 import { aabbOfPose, isPathLike, poseContains } from './poseGeometry';
@@ -39,6 +40,7 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
     rotate?: UseRotateOptions<TPose>;
     snap?: SnapStrategy<TPose>;
     handleHitRadius?: number;
+    areaSelect?: UseAreaSelectOptions;
   };
   insertTool?: {
     create: SceneToAdapterOptions<TData, TLayer, TPose>['commitInsert'];
@@ -70,6 +72,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   const rotateOptions = opts?.rotate;
   const snap = opts?.snap;
   const handleHitRadius = opts?.handleHitRadius;
+  const areaSelectOptions = opts?.areaSelect;
   const commitInsert = insertTool?.create;
   const insertLayer = insertTool?.layer;
 
@@ -203,6 +206,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     move: wiredMoveOptions,
     ...(resizeOptions ? { resize: resizeOptions } : {}),
     ...(rotateOptions ? { rotate: rotateOptions } : {}),
+    ...(areaSelectOptions ? { areaSelect: areaSelectOptions } : {}),
     getObject: (id: string) => scene.get(asNodeId(id)) ?? null,
     getSelection: () => selection.current,
   });

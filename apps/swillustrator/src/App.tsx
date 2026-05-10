@@ -11,6 +11,7 @@ import {
   useTextTool,
   useUserPenTool,
   useSelectAll,
+  selectFromMarquee,
   useWheelZoomTool,
   useWheelPanTool,
   useKeyboardZoomTool,
@@ -164,6 +165,9 @@ export function App() {
       }];
     },
     getObject: (id) => itemsRef.current.find((o) => o.id === id) ?? null,
+    // Marquee is opt-in at the kit level — illustration apps want
+    // rubber-band selection across drawn objects.
+    areaSelect: { behaviors: [selectFromMarquee()] },
   });
 
   const insert = useInsertTool<Obj, Pose>(adapter, { minBounds: { width: 4, height: 4 } });

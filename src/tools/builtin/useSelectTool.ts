@@ -3,7 +3,6 @@ import { useMove, type UseMoveOptions } from '../../interactions/gestures/move/m
 import { useResize, type UseResizeOptions } from '../../interactions/gestures/resize/resize';
 import { useRotate, type UseRotateOptions } from '../../interactions/gestures/rotate/rotate';
 import { useAreaSelect, type UseAreaSelectOptions } from '../../interactions/gestures/area-select/areaSelect';
-import { selectFromMarquee } from '../../interactions/gestures/area-select/behaviors/selectFromMarquee';
 import { cornerResizeHandles, hitCornerHandle } from '../../interactions/gestures/resize/cornerHandles';
 import { rotationHandle, hitRotationHandle } from '../../interactions/gestures/rotate/handle';
 import type { MoveAdapter } from '../../core/adapters/types';
@@ -167,24 +166,18 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
   const move = useMove<TObject, TPose>(adapter, options.move ?? {});
   const resize = useResize<TObject, TPose>(adapter, options.resize ?? {});
   const rotate = useRotate<TObject, TPose>(adapter, options.rotate ?? {});
-  // Default to selectFromMarquee so plain `useSelectTool(adapter, {...})` —
-  // with no explicit areaSelect.behaviors — actually updates the selection
-  // when the user drags an empty-space marquee. Consumers that pass their own
-  // `areaSelect.behaviors` opt out (override wins). Demos that don't supply
-  // the AreaSelectAdapter methods (`hitTestArea` etc.) get an empty-behaviors
-  // areaSelect — start/move/end still run (so empty-click clear via onClick
-  // still works) but no selection mutation happens on drag commit.
-  const areaSelectCapable =
-    typeof (adapter as AreaSelectAdapter).hitTestArea === 'function' &&
-    typeof (adapter as AreaSelectAdapter).getSelection === 'function' &&
-    typeof (adapter as AreaSelectAdapter).setSelection === 'function' &&
-    typeof (adapter as AreaSelectAdapter).applyOps === 'function';
+  // Default to no marquee behaviors. start/move/end still run (so empty-click
+  // clear via onClick keeps working) but a drag from empty space doesn't
+  // mutate the selection unless the consumer opts in with
+  // `areaSelect: { behaviors: [selectFromMarquee()] }`. Most demos don't
+  // need marquee selection, and consumers that do should declare it
+  // explicitly rather than getting it as an invisible side effect of mounting
+  // a select tool.
   const areaSelectOptions = useMemo<UseAreaSelectOptions>(() => {
     const provided = options.areaSelect;
     if (provided?.behaviors) return provided;
-    if (!areaSelectCapable) return { ...(provided ?? {}), behaviors: [] };
-    return { ...(provided ?? {}), behaviors: [selectFromMarquee()] };
-  }, [options.areaSelect, areaSelectCapable]);
+    return { ...(provided ?? {}), behaviors: [] };
+  }, [options.areaSelect]);
   const areaSelect = useAreaSelect(adapter, areaSelectOptions);
 
   const handleHitRadius = options.handleHitRadius ?? 8;

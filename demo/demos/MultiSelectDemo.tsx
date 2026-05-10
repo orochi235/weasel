@@ -3,6 +3,7 @@ import {
   asNodeId,
   SceneCanvas,
   sceneToAdapter,
+  selectFromMarquee,
   useScene,
   useSelection,
   useSelectTool,
@@ -59,6 +60,9 @@ export function MultiSelectDemo() {
     pickEvery,
     boundsOf,
     getSelection: () => selection.current,
+    // Marquee is opt-in at the kit level — restored here because the demo's
+    // whole point is multi-selection.
+    areaSelect: { behaviors: [selectFromMarquee()] },
   });
   const tools = useTools({ active: 'select', registry: { select } });
 

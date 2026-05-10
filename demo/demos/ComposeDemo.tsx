@@ -3,6 +3,7 @@ import {
   asNodeId,
   SceneCanvas,
   sceneToAdapter,
+  selectFromMarquee,
   useInsertTool,
   useScene,
   useSelection,
@@ -59,7 +60,14 @@ export function ComposeDemo() {
     return { x: p.x, y: p.y, width: p.width, height: p.height };
   };
 
-  const select = useSelectTool(selectAdapter, { pickEvery, boundsOf, getSelection: () => selection.current });
+  const select = useSelectTool(selectAdapter, {
+    pickEvery,
+    boundsOf,
+    getSelection: () => selection.current,
+    // Marquee is opt-in at the kit level — restored here because the demo
+    // description ("drag empty space to marquee-select") references it.
+    areaSelect: { behaviors: [selectFromMarquee()] },
+  });
 
   // Insert-tool adapter: only commitInsert is exercised; the rest are stubs.
   // commitInsert appends a leaf to the scene and returns the rect so the

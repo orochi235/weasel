@@ -4,6 +4,7 @@ import {
   PathBuilder,
   pathPoseDescriptor,
   PATH_C,
+  selectFromMarquee,
   useSelection,
   useSelectWithAnchorEdit,
 } from '@orochi235/weasel';
@@ -78,6 +79,10 @@ export function BezierEditDemo() {
     boundsOf: (id) => (id === ID ? pathPoseDescriptor.getBounds(pathRef.current) : null),
     handleHitRadius: HANDLE / zoom,
     resize: { geometry: pathPoseDescriptor },
+    // Marquee is opt-in at the kit level — restored here because pointInPath
+    // hit-testing fails on the open polyline, so drag-marquee is the only
+    // working selection path.
+    areaSelect: { behaviors: [selectFromMarquee()] },
     drawGhost: (_o, p): DrawCommand[] => [{
       kind: 'path',
       path: p,
