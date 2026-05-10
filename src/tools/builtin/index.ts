@@ -44,6 +44,7 @@ export {
   type SelectWithAnchorEditAnchorsOptions,
 } from './useSelectWithAnchorEdit';
 export { useRectTool, type UseRectToolOptions, type RectBounds } from './useRectTool';
+export { useLassoTool, type UseLassoToolOptions } from './useLassoTool';
 export {
   useCloneTool,
   type UseCloneToolOptions,

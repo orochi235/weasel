@@ -284,6 +284,11 @@ export type {
   AreaSelectMoveResult,
   AreaSelectBehavior,
   AreaSelectOverlay,
+  LassoSelectPose,
+  LassoSelectProposed,
+  LassoSelectMoveResult,
+  LassoSelectBehavior,
+  LassoSelectOverlay,
 } from './interactions/gestures/types';
 export type { ClipboardSnapshot } from './interactions/actions/clipboard/types';
 export {
@@ -386,6 +391,15 @@ export type {
   AreaSelectController,
 } from './interactions/gestures/area-select';
 export { selectFromMarquee } from './interactions/gestures/area-select/behaviors';
+export { useLassoSelect } from './interactions/gestures/lasso-select';
+export type {
+  UseLassoSelectOptions,
+  LassoSelectController,
+} from './interactions/gestures/lasso-select';
+export {
+  selectFromLasso,
+  type SelectFromLassoOptions,
+} from './interactions/gestures/lasso-select/behaviors/selectFromLasso';
 export {
   useClipboardOps,
   useClipboard,

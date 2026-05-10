@@ -19,6 +19,11 @@ export { PathBuilder, polygonFromPoints, rectPath } from './builder';
 export { boundsOfPath } from './bounds';
 export { pointInPath, type PointInPathOptions } from './hitTest';
 export {
+  polygonContainsRectCenter,
+  polygonContainsRect,
+  polygonIntersectsRect,
+} from './polygonHitTestRect';
+export {
   translatePath,
   translatePolygonInPlace,
   scalePathToBounds,
