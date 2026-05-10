@@ -28,6 +28,8 @@ import { worldToScreen } from '../../core/viewport/viewTransform';
 import { viewToMat3, type DrawCommand } from '../../renderer';
 import { pickTopMostHit } from './pickTopMostHit';
 import { createReorderOp } from '../../core/ops/reorder';
+import { createTransformOp } from '../../core/ops/transform';
+import { RECT_POSE_DESCRIPTOR } from '../../interactions/gestures/resize/geometry';
 import { dispatchApplyBatch } from '../../core/applyOps';
 
 /** World-space bounding rect for hit-testing handles. Uses `width`/`height` to
@@ -364,6 +366,11 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
   // doesn't claim, and the dispatcher falls through to the existing
   // slot-walk pointer.onDown path. Multi-mode corner resize remains a
   // separate concern.
+  // Latest-callback ref so the multi-resize drag handlers see the current
+  // adapter without rebuilding the wrapper.
+  const adapterRef = useRef(adapter);
+  adapterRef.current = adapter;
+
   const cornerAffWrapped: Affordance = useMemo(
     () => ({
       id: cornerAff.id,
@@ -372,7 +379,119 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
         const inner = cornerAff.hitTest?.(wx, wy, state, view);
         if (!inner) return null;
         const scratch = inner.initialScratch as CornerResizeScratch;
-        if (scratch.targetId === MULTI_RESIZE_TARGET_ID) return null;
+
+        // Multi-mode: synthesize the resize gesture here in the wrapper.
+        // useResize doesn't natively handle MULTI_RESIZE_TARGET_ID; we
+        // snapshot the union AABB + per-leaf poses at hit-time, then on
+        // each move compute a `dst` union from the anchor + pointer
+        // delta and apply remapBounds per leaf via transient applyOps.
+        // On end, commit one batched Transform op per leaf so undo
+        // collapses the gesture into a single history entry.
+        if (scratch.targetId === MULTI_RESIZE_TARGET_ID) {
+          if (!state.unionBounds || state.selection.length < 2) return null;
+          const startUnion = { ...state.unionBounds };
+          const a = adapterRef.current;
+          // Snapshot every leaf's pose at gesture start.
+          const startPoses = new Map<string, TPose>();
+          for (const id of state.selection) {
+            try {
+              startPoses.set(id, a.getPose(id));
+            } catch {
+              // Skip ids whose pose isn't readable.
+            }
+          }
+          if (startPoses.size === 0) return null;
+
+          // Compute the dst union given the anchor + new pointer position.
+          // The anchor pins the corner OPPOSITE the dragged handle:
+          //   anchor.x='min' → left edge fixed, right edge moves with pointer.
+          //   anchor.x='max' → right edge fixed, left edge moves.
+          // Same for y.
+          const dstFor = (pointerX: number, pointerY: number): {
+            x: number; y: number; width: number; height: number;
+          } => {
+            const left = scratch.anchor.x === 'min' ? startUnion.x : pointerX;
+            const right = scratch.anchor.x === 'min' ? pointerX : startUnion.x + startUnion.width;
+            const top = scratch.anchor.y === 'min' ? startUnion.y : pointerY;
+            const bottom = scratch.anchor.y === 'min' ? pointerY : startUnion.y + startUnion.height;
+            return {
+              x: Math.min(left, right),
+              y: Math.min(top, bottom),
+              width: Math.abs(right - left),
+              height: Math.abs(bottom - top),
+            };
+          };
+
+          // Apply the per-leaf remap from startUnion → dst via the kit's
+          // pose descriptor. RECT_POSE_DESCRIPTOR works for any pose
+          // shape that's structurally Bounds-like — the demos we ship
+          // all use rect poses, so this is fine for v1.
+          const applyAt = (pointerX: number, pointerY: number, transient: boolean) => {
+            const dst = dstFor(pointerX, pointerY);
+            const ops = [];
+            for (const [id, from] of startPoses) {
+              const to = RECT_POSE_DESCRIPTOR.remapBounds(
+                from as unknown as { x: number; y: number; width: number; height: number },
+                startUnion,
+                dst,
+              ) as unknown as TPose;
+              ops.push(createTransformOp<TPose>({ id, from, to }));
+            }
+            if (ops.length === 0) return;
+            if (transient) {
+              (a as { applyOps?: (ops: ReturnType<typeof createTransformOp>[]) => void }).applyOps?.(ops);
+            } else {
+              // Commit via the batched path so the gesture is one
+              // undo entry. Use dispatchApplyBatch convention via the
+              // adapter's applyBatch when available.
+              const ab = (a as { applyBatch?: (ops: ReturnType<typeof createTransformOp>[], label: string) => void }).applyBatch;
+              if (ab) {
+                ab(ops, 'Resize');
+              } else {
+                (a as { applyOps?: (ops: ReturnType<typeof createTransformOp>[]) => void }).applyOps?.(ops);
+              }
+            }
+          };
+
+          let lastPointer = { x: 0, y: 0 };
+          const result: HitResult<CornerResizeScratch> = {
+            drag: {
+              onStart: (_e, dctx) => {
+                lastPointer = { x: dctx.worldX, y: dctx.worldY };
+                // Don't apply on start — the pointer is at the handle
+                // corner, so dst === startUnion (no-op).
+                return 'claim';
+              },
+              onMove: (_e, dctx) => {
+                lastPointer = { x: dctx.worldX, y: dctx.worldY };
+                applyAt(dctx.worldX, dctx.worldY, /* transient */ true);
+                return 'claim';
+              },
+              onEnd: (_e, _dctx) => {
+                // Commit the final pose via applyBatch for a single
+                // undo entry. Transient writes during move have already
+                // landed; this re-applies the same final transform
+                // through the history path.
+                applyAt(lastPointer.x, lastPointer.y, /* transient */ false);
+                return 'claim';
+              },
+              onCancel: () => {
+                // Roll back to the start poses via a transient apply.
+                const ops = [];
+                for (const [id, from] of startPoses) {
+                  ops.push(createTransformOp<TPose>({ id, from, to: from }));
+                }
+                if (ops.length > 0) {
+                  (a as { applyOps?: (ops: ReturnType<typeof createTransformOp>[]) => void }).applyOps?.(ops);
+                }
+              },
+            },
+            initialScratch: scratch,
+          };
+          return result as HitResult;
+        }
+
+        // Single-selection path (existing): delegate to useResize.
         const result: HitResult<CornerResizeScratch> = {
           drag: {
             onStart: (_e, dctx) => {
