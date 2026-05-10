@@ -51,6 +51,23 @@ export interface RenderLayer<TData> {
    * Default: `'world'`.
    */
   space?: 'world' | 'screen';
+  /**
+   * Optional hit-test. When defined, the dispatcher consults this on
+   * pointerdown (top-down layer order) before falling through to the
+   * active tool's slot walk. First non-null result wins; null means
+   * "I don't claim this hit, try the next layer."
+   *
+   * Coordinates are world-space. The `data` arg is the layer's
+   * configured data slot (same as `draw`); `view` and `dims` mirror
+   * `draw`'s arguments.
+   */
+  hitTest?: (
+    worldX: number,
+    worldY: number,
+    data: TData,
+    view: View,
+    dims: Dims,
+  ) => import('../../affordances/types').HitResult | null;
 }
 
 /**
