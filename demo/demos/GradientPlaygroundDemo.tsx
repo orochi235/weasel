@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
-import { SceneCanvas, hexToRgba, normalizeHex, rgbaToHex, useHandleDrag, useScene } from '@orochi235/weasel';
+import { SceneCanvas, hexToRgba, rgbaToHex, useHandleDrag, useScene } from '@orochi235/weasel';
 import type { Paint, RenderLayer } from '@orochi235/weasel';
 import { viewToMat3, type DrawCommand } from '@orochi235/weasel-gl';
+import { RangePicker, paintGradientTrack, type Thumb } from '@orochi235/weasel-ui';
 
 const W = 600;
 const H = 400;
@@ -311,8 +312,10 @@ function DragCircle({ cx, cy, onMove }: { cx: number; cy: number; onMove: (x: nu
 }
 
 // ---------------------------------------------------------------------------
-// Stop strip
+// Stop strip (RangePicker-based)
 // ---------------------------------------------------------------------------
+
+type StopThumb = Thumb & { key: string; color: string };
 
 function StopStrip({
   stops,
@@ -321,181 +324,52 @@ function StopStrip({
   stops: Stop[];
   setStops: (s: Stop[]) => void;
 }) {
-  const stripRef = useRef<HTMLDivElement>(null);
+  const sorted = [...stops].sort((a, b) => a.offset - b.offset);
 
-  function bgStyle(): React.CSSProperties {
-    const css = `linear-gradient(to right, ${stops
-      .map((s) => `${s.color} ${s.offset * 100}%`)
-      .join(', ')})`;
-    return { background: css };
-  }
+  const thumbs: StopThumb[] = sorted.map(s => ({
+    value: s.offset,
+    key: s.id,
+    color: s.color,
+  }));
 
-  function onStripClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (e.target !== stripRef.current) return;
-    const rect = stripRef.current!.getBoundingClientRect();
-    const offset = Math.max(
-      0,
-      Math.min(1, (e.clientX - rect.left) / rect.width),
-    );
-    const sorted = [...stops].sort((a, b) => a.offset - b.offset);
-    let lo = sorted[0],
-      hi = sorted[sorted.length - 1];
+  function gradientAtT(t: number): string {
+    if (sorted.length === 0) return '#000';
+    if (sorted.length === 1) return sorted[0].color;
+    if (t <= sorted[0].offset) return sorted[0].color;
+    if (t >= sorted[sorted.length - 1].offset) return sorted[sorted.length - 1].color;
     for (let i = 0; i < sorted.length - 1; i++) {
-      if (offset >= sorted[i].offset && offset <= sorted[i + 1].offset) {
-        lo = sorted[i];
-        hi = sorted[i + 1];
-        break;
+      if (t >= sorted[i].offset && t <= sorted[i + 1].offset) {
+        const frac = (t - sorted[i].offset) / Math.max(1e-6, sorted[i + 1].offset - sorted[i].offset);
+        return lerpHex(sorted[i].color, sorted[i + 1].color, frac);
       }
     }
-    const t = (offset - lo.offset) / Math.max(1e-6, hi.offset - lo.offset);
-    const color = lerpHex(lo.color, hi.color, t);
-    setStops(
-      [...sorted, { id: `s${++nextStopId}`, offset, color }].sort(
-        (a, b) => a.offset - b.offset,
-      ),
-    );
+    return sorted[sorted.length - 1].color;
   }
 
   return (
     <div style={{ marginTop: 12 }}>
-      <div
-        ref={stripRef}
-        onClick={onStripClick}
-        style={{
-          width: W,
-          height: 28,
-          border: '1px solid #555',
-          position: 'relative',
-          ...bgStyle(),
+      <RangePicker<StopThumb>
+        min={0} max={1} step={0.005}
+        constraint="free"
+        thumbs={thumbs}
+        onChange={ts => {
+          setStops(ts.map(t => ({ id: t.key, offset: t.value, color: t.color })));
         }}
-      >
-        {stops.map((s, i) => (
-          <StopHandle
-            key={s.id}
-            stop={s}
-            stripWidth={W}
-            onMove={(offset) => {
-              const next = stops.map((x, j) =>
-                j === i ? { ...x, offset: clamp01(offset) } : x,
-              );
-              setStops(next.sort((a, b) => a.offset - b.offset));
-            }}
-            onRecolor={(color) => {
-              const next = stops.map((x, j) => (j === i ? { ...x, color } : x));
-              setStops(next);
-            }}
-            onDelete={() => {
-              if (stops.length <= 2) return;
-              setStops(stops.filter((_, j) => j !== i));
-            }}
-          />
-        ))}
-      </div>
+        onAddThumb={atValue => {
+          const color = gradientAtT(atValue);
+          return { value: atValue, key: `s${++nextStopId}`, color };
+        }}
+        onRemoveThumb={() => sorted.length > 2}
+        renderTrack={paintGradientTrack({ gradient: gradientAtT })}
+        readoutPlacement="none"
+      />
       <small style={{ color: '#888', display: 'block', marginTop: 4 }}>
-        Click the strip to add a stop · drag to move · click swatch to recolor
-        · right-click or × button to delete
+        Click the track to add a stop · drag to move · drag off to remove (min 2)
       </small>
     </div>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Stop handle
-// ---------------------------------------------------------------------------
-
-function StopHandle({
-  stop,
-  stripWidth,
-  onMove,
-  onRecolor,
-  onDelete,
-}: {
-  stop: Stop;
-  stripWidth: number;
-  onMove: (offset: number) => void;
-  onRecolor: (color: string) => void;
-  onDelete: () => void;
-}) {
-  const colorRef = useRef<HTMLInputElement>(null);
-  const [hovered, setHovered] = useState(false);
-  const drag = useHandleDrag<HTMLDivElement>({
-    onMove: ({ x }) => onMove(x / stripWidth),
-    getRect: (t) => t.parentElement!,
-  });
-  return (
-    <div
-      onContextMenu={(e) => {
-        e.preventDefault();
-        onDelete();
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: stop.offset * stripWidth - 8,
-        width: 16,
-        height: 28,
-      }}
-      {...drag}
-    >
-      <div
-        onClick={(e) => {
-          e.stopPropagation();
-          colorRef.current?.click();
-        }}
-        style={{
-          width: 16,
-          height: 28,
-          background: stop.color,
-          border: '2px solid #fff',
-          cursor: 'grab',
-        }}
-      />
-      {hovered && (
-        <button
-          aria-label="Delete stop"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          style={{
-            position: 'absolute',
-            top: -6,
-            right: -6,
-            width: 12,
-            height: 12,
-            padding: 0,
-            background: 'rgba(0,0,0,0.5)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '50%',
-            fontSize: 9,
-            lineHeight: '12px',
-            textAlign: 'center',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          ×
-        </button>
-      )}
-      <input
-        ref={colorRef}
-        type="color"
-        value={normalizeHex(stop.color)}
-        onChange={(e) => onRecolor(e.target.value)}
-        style={{
-          position: 'absolute',
-          visibility: 'hidden',
-          pointerEvents: 'none',
-        }}
-      />
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Colour helpers
@@ -507,6 +381,3 @@ function lerpHex(a: string, b: string, t: number): string {
   return rgbaToHex([ar + (br - ar) * t, ag + (bg - ag) * t, ab + (bb - ab) * t, 1]);
 }
 
-function clamp01(n: number): number {
-  return Math.max(0, Math.min(1, n));
-}

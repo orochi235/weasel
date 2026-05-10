@@ -7,6 +7,7 @@ import {
 } from '@orochi235/weasel';
 import { PATH_M, PATH_L, type EasingName, type RenderLayer } from '@orochi235/weasel';
 import type { DrawCommand } from '@orochi235/weasel-gl';
+import { RangePicker } from '@orochi235/weasel-ui';
 
 interface Marker { id: string; x: number; y: number; width: number; height: number; easing: EasingName; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -151,15 +152,15 @@ export function EasingsDemo() {
         >play all</button>
         <label style={{ fontSize: 12, color: '#a89878', display: 'flex', alignItems: 'center', gap: 6 }}>
           duration
-          <input
-            type="range"
-            min={300}
-            max={4000}
-            step={100}
-            value={duration}
-            onChange={(e) => setDuration(Number(e.target.value))}
-            style={{ width: 140 }}
-          />
+          <div style={{ width: 140 }}>
+            <RangePicker
+              min={300} max={4000} step={100}
+              thumbs={[{ value: duration }]}
+              onChange={ts => setDuration(ts[0].value)}
+              ariaLabel="Duration"
+              readoutPlacement="none"
+            />
+          </div>
           <span style={{ fontVariantNumeric: 'tabular-nums', minWidth: 48 }}>{duration} ms</span>
         </label>
       </div>
