@@ -1,5 +1,9 @@
 // src/tools/dispatcher.ts
 import type { AnyTool, ToolCtx, ToolSlot, Decision } from './types';
+import type { RenderLayer } from '../core/layers/render';
+import type { ChromeState } from '../core/selection/chromeState';
+import type { View } from '../core/viewport/view';
+import type { HitResult } from '../affordances/types';
 
 interface SlotsState {
   hotkey: AnyTool | null;
@@ -39,6 +43,23 @@ export interface ToolsDispatcherOptions {
     /** Maximum CSS-px distance between the two tap positions. Default 8. */
     maxDistance?: number;
   };
+  /**
+   * Optional. Returns the hit-test pipeline inputs:
+   *   - `layers`: visible RenderLayers ordered TOP-DOWN (highest z-index first).
+   *   - `chromeState`: passed as the `data` arg to each layer's hitTest call.
+   *   - `view` / `dims`: passed to layer.hitTest for screen-space conversion.
+   *
+   * When supplied, the dispatcher consults each layer's hitTest on
+   * pointerdown (top-down order) before the existing slot walk. Returns
+   * null (or omit the callback entirely) to disable the layer pipeline —
+   * legacy behavior.
+   */
+  getHitTestContext?: () => {
+    layers: readonly RenderLayer<unknown>[];
+    chromeState: ChromeState;
+    view: View;
+    dims: { width: number; height: number };
+  } | null;
 }
 
 interface InFlight {
@@ -114,8 +135,69 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     return tool.initScratch ? tool.initScratch() : undefined;
   }
 
+  function tryClaimsAll(tool: AnyTool, baseCtx: Omit<ToolCtx, 'scratch'>): boolean {
+    if (!tool.claimsAll) return false;
+    const ctx = ctxFor(getInitialScratch(tool), baseCtx);
+    return tool.claimsAll(ctx);
+  }
+
   function endGesture(): void {
     inFlight = null;
+    opts.onGestureChange?.();
+  }
+
+  function startSlotGesture(tool: AnyTool, e: PointerEvent, baseCtx: Omit<ToolCtx, 'scratch'>): void {
+    // Modal claim path: route to the tool's pointer.onDown then drag pipeline,
+    // same as the legacy path. The fact that claimsAll returned true is just a
+    // signal that we shouldn't have walked layers — once we're past that
+    // branch, the gesture shape is identical.
+    const handler = tool.pointer?.onDown;
+    const initScratch = getInitialScratch(tool);
+    const ctx = ctxFor(initScratch, baseCtx);
+    let claimedScratch: unknown = initScratch;
+    if (handler) {
+      const decision = handler(e, ctx);
+      if (decision === 'claim') {
+        claimedScratch = ctx.scratch;
+      }
+    }
+    inFlight = {
+      tool,
+      scratch: claimedScratch,
+      startClient: { x: e.clientX, y: e.clientY },
+      phase: 'pending',
+    };
+    opts.onGestureChange?.();
+  }
+
+  function startAffordanceGesture(result: HitResult, e: PointerEvent): void {
+    // Synthesize a virtual tool whose drag channel comes from the layer's
+    // hit result. The dispatcher only references inFlight.tool.drag for
+    // subsequent pointermove / pointerup; other Tool fields aren't
+    // consulted mid-gesture, so the virtual record is sufficient.
+    const virtualTool: AnyTool = {
+      id: '__affordance__',
+      drag: result.drag,
+    } as AnyTool;
+    // Build a minimal ctx for onStart. Use the same baseCtx the slot walk
+    // would have used.
+    const baseCtx = opts.getCtx({
+      clientX: e.clientX,
+      clientY: e.clientY,
+      modifiers: { alt: !!e.altKey, shift: !!e.shiftKey, meta: !!e.metaKey, ctrl: !!e.ctrlKey },
+    });
+    const startCtx = ctxFor(result.initialScratch, baseCtx);
+    // Affordance hits skip threshold gating — the layer already decided
+    // this is a gesture, not a click. Jump straight to 'drag' phase and
+    // fire onStart immediately so subsequent moves route to onMove.
+    result.drag.onStart?.(e, startCtx);
+    inFlight = {
+      tool: virtualTool,
+      // Capture any scratch mutation from onStart.
+      scratch: startCtx.scratch,
+      startClient: { x: e.clientX, y: e.clientY },
+      phase: 'drag',
+    };
     opts.onGestureChange?.();
   }
 
@@ -128,7 +210,43 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       modifiers: { alt: !!e.altKey, shift: !!e.shiftKey, meta: !!e.metaKey, ctrl: !!e.ctrlKey },
     });
 
-    // 1. Try pointer.onDown — classification pass. If a tool claims, it has
+    // 1. Modal claim check (hotkey > active). A tool whose state-aware
+    //    `claimsAll` returns true bypasses the affordance layer pipeline
+    //    entirely — used by tools mid-modal (pen mid-path, text mid-edit)
+    //    where affordance hits would otherwise interrupt.
+    if (slots.hotkey && tryClaimsAll(slots.hotkey, baseCtx)) {
+      startSlotGesture(slots.hotkey, e, baseCtx);
+      return;
+    }
+    if (slots.active && tryClaimsAll(slots.active, baseCtx)) {
+      startSlotGesture(slots.active, e, baseCtx);
+      return;
+    }
+
+    // 2. Layer hit-test pipeline. Walk visible layers top-down; first
+    //    non-null HitResult routes the gesture to the layer-supplied
+    //    drag channel (with optional initial scratch).
+    const hitCtx = opts.getHitTestContext?.();
+    if (hitCtx) {
+      for (const layer of hitCtx.layers) {
+        if (!layer.hitTest) continue;
+        const result = layer.hitTest(
+          baseCtx.worldX,
+          baseCtx.worldY,
+          // The dispatcher can't statically resolve TData per layer; the
+          // contract is that every layer with hitTest expects ChromeState.
+          hitCtx.chromeState as never,
+          hitCtx.view,
+          hitCtx.dims,
+        );
+        if (result !== null) {
+          startAffordanceGesture(result, e);
+          return;
+        }
+      }
+    }
+
+    // 3. Try pointer.onDown — classification pass. If a tool claims, it has
     //    had the opportunity to mutate ctx.scratch (e.g. stash which sub-gesture
     //    was hit). We capture the post-handler scratch so drag.* handlers see
     //    the same value. The gesture then enters `pending` phase: the drag
@@ -159,7 +277,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       }
     }
 
-    // 2. No pointer.onDown claim — enter pending phase. The active tool
+    // 4. No pointer.onDown claim — enter pending phase. The active tool
     //    (the first in slot order with a drag or pointer.onClick handler)
     //    becomes the prospective gesture owner.
     let owner: AnyTool | null = null;

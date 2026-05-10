@@ -474,3 +474,104 @@ describe('dispatcher: onGestureChange', () => {
     expect(onGestureChange).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('dispatcher: affordance hit-test pipeline', () => {
+  function makeChromeState() {
+    return {
+      selection: [],
+      multiActive: false,
+      boundsOf: () => null,
+      unionBounds: null,
+      modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
+    } as never;
+  }
+
+  it('layer hitTest claim routes drag.onStart/onMove/onEnd to the layer-supplied channel', () => {
+    const events: string[] = [];
+    const drag = {
+      onStart: () => { events.push('start'); return undefined; },
+      onMove: () => { events.push('move'); return undefined; },
+      onEnd: () => { events.push('end'); return undefined; },
+    };
+    const layer = {
+      id: 'aff',
+      label: 'A',
+      draw: () => [],
+      hitTest: () => ({ drag }),
+    };
+    const dispatcher = createToolsDispatcher({
+      getSlots: () => ({ hotkey: null, active: null, ambient: [] }),
+      getCtx: makeCtx as unknown as (overrides?: { clientX?: number; clientY?: number }) => Omit<ToolCtx, 'scratch'>,
+      getHitTestContext: () => ({
+        layers: [layer as never],
+        chromeState: makeChromeState(),
+        view: { x: 0, y: 0, scale: 1 },
+        dims: { width: 100, height: 100 },
+      }),
+    });
+    dispatcher.onPointerDown(pointerEvent('pointerdown', { clientX: 5, clientY: 5 }));
+    dispatcher.onPointerMove(pointerEvent('pointermove', { clientX: 6, clientY: 6 }));
+    dispatcher.onPointerUp(pointerEvent('pointerup', { clientX: 6, clientY: 6 }));
+    expect(events).toEqual(['start', 'move', 'end']);
+  });
+
+  it('null layer hitTest falls through; layer was consulted exactly once', () => {
+    const layerHitTest = vi.fn(() => null);
+    const layer = { id: 'aff', label: 'A', draw: () => [], hitTest: layerHitTest as never };
+    const dispatcher = createToolsDispatcher({
+      getSlots: () => ({ hotkey: null, active: null, ambient: [] }),
+      getCtx: makeCtx as unknown as (overrides?: { clientX?: number; clientY?: number }) => Omit<ToolCtx, 'scratch'>,
+      getHitTestContext: () => ({
+        layers: [layer as never],
+        chromeState: makeChromeState(),
+        view: { x: 0, y: 0, scale: 1 },
+        dims: { width: 100, height: 100 },
+      }),
+    });
+    dispatcher.onPointerDown(pointerEvent('pointerdown', { clientX: 5, clientY: 5 }));
+    expect(layerHitTest).toHaveBeenCalledTimes(1);
+    expect(layerHitTest).toHaveBeenCalledWith(
+      expect.any(Number), expect.any(Number),
+      expect.anything(), expect.anything(), expect.anything(),
+    );
+  });
+
+  it('modal claim (active.claimsAll → true) bypasses the layer pipeline', () => {
+    const events: string[] = [];
+    const layerHitTest = vi.fn(() => null);
+    const activeOnDown = () => { events.push('active.onDown'); return 'claim' as const; };
+    const dispatcher = createToolsDispatcher({
+      getSlots: () => ({
+        hotkey: null,
+        active: { id: 'pen', pointer: { onDown: activeOnDown }, claimsAll: () => true } as never,
+        ambient: [],
+      }),
+      getCtx: makeCtx as unknown as (overrides?: { clientX?: number; clientY?: number }) => Omit<ToolCtx, 'scratch'>,
+      getHitTestContext: () => ({
+        layers: [{ id: 'aff', label: 'A', draw: () => [], hitTest: layerHitTest as never } as never],
+        chromeState: makeChromeState(),
+        view: { x: 0, y: 0, scale: 1 },
+        dims: { width: 100, height: 100 },
+      }),
+    });
+    dispatcher.onPointerDown(pointerEvent('pointerdown', { clientX: 5, clientY: 5 }));
+    expect(layerHitTest).not.toHaveBeenCalled();
+    expect(events).toContain('active.onDown');
+  });
+
+  it('absent getHitTestContext: pure legacy slot-walk behavior preserved', () => {
+    // No getHitTestContext supplied. Dispatcher should fall through directly
+    // to the slot walk. Existing pointer.onDown handlers fire as before.
+    const onDown = vi.fn(() => 'claim' as const);
+    const dispatcher = createToolsDispatcher({
+      getSlots: () => ({
+        hotkey: null,
+        active: { id: 't', pointer: { onDown } } as never,
+        ambient: [],
+      }),
+      getCtx: makeCtx as unknown as (overrides?: { clientX?: number; clientY?: number }) => Omit<ToolCtx, 'scratch'>,
+    });
+    dispatcher.onPointerDown(pointerEvent('pointerdown', { clientX: 5, clientY: 5 }));
+    expect(onDown).toHaveBeenCalledTimes(1);
+  });
+});
