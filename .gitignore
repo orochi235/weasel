@@ -15,4 +15,5 @@ coverage
 .playwright-mcp/
 playwright-report/
 test-results/
-.claude/
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
