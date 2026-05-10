@@ -3,12 +3,15 @@ import { useMove, type UseMoveOptions } from '../../interactions/gestures/move/m
 import { useResize, type UseResizeOptions } from '../../interactions/gestures/resize/resize';
 import { useRotate, type UseRotateOptions } from '../../interactions/gestures/rotate/rotate';
 import { useAreaSelect, type UseAreaSelectOptions } from '../../interactions/gestures/area-select/areaSelect';
-import { rotationHandle, hitRotationHandle } from '../../interactions/gestures/rotate/handle';
 import { composeAffordanceLayer } from '../../affordances/composeAffordanceLayer';
 import {
   createCornerResizeAffordance,
   type CornerResizeScratch,
 } from '../../affordances/cornerResize';
+import {
+  createRotationAffordance,
+  type RotationScratch,
+} from '../../affordances/rotationHandle';
 import type { Affordance, HitResult } from '../../affordances/types';
 import type { MoveAdapter } from '../../core/adapters/types';
 import type { ResizeAdapter } from '../../core/adapters/types';
@@ -175,11 +178,12 @@ export type SelectScratch =
 
 /** Active-slot Tool wrapping `useMove`/`useResize`/`useRotate`/`useAreaSelect`.
  *
- *  Hit-test priority on pointer-down (single selection only for handles):
- *  1. Rotation handle
- *  2. Corner resize handles
- *  3. Body hit → move + immediate selection
- *  4. Empty → area-select marquee
+ *  Hit-test priority:
+ *  1. Affordance layer (rotation handle, corner resize handles) — routed by
+ *     the dispatcher's affordance-layer pipeline directly into useRotate /
+ *     useResize, bypassing pointer.onDown.
+ *  2. pointer.onDown body hit → move + immediate selection.
+ *  3. pointer.onDown empty → area-select marquee (or click-to-clear).
  *
  *  `scratch` routes `drag.*` to the matching controller. */
 export function useSelectTool<TObject extends { id: string }, TPose>(
@@ -205,7 +209,11 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
 
   const handleHitRadius = options.handleHitRadius ?? 8;
   const rotationHandleDistance = options.rotationHandleDistance ?? 24;
-  const debug = options.debug;
+  // `options.debug` is still part of the public API (for future affordance
+  // hitbox recording), but the inline pointer.onDown hit-tests that used it
+  // are gone — both rotation and corner-resize live in affordances now.
+  // Reference `options.debug` from the deps array directly to keep linting
+  // honest without resurrecting the local alias.
 
   // Latest-callback ref for the resize controller — the affordance's
   // wrapped drag channel closes over this so we don't have to rebuild the
@@ -391,9 +399,74 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
     [cornerAff],
   );
 
+  // Rotation affordance. Same wiring pattern as `cornerAffWrapped`: the
+  // affordance owns hit-test geometry, but the drag channel delegates to
+  // `useRotate` via a latest-callback ref so we don't rebuild the wrapper
+  // every render. Render returns [] to avoid double-painting with the
+  // legacy selectionOverlay slot's rotation handle (Canvas still draws it
+  // via createSelectionOverlayLayer). Phase 5 flips this back to
+  // `rotationAff.render` once the slot is reshaped.
+  const rotateRef = useRef(rotate);
+  rotateRef.current = rotate;
+
+  const rotationAff = useMemo(
+    () => createRotationAffordance({
+      distance: rotationHandleDistance,
+      handleHitRadius,
+    }),
+    [rotationHandleDistance, handleHitRadius],
+  );
+
+  const rotationAffWrapped: Affordance = useMemo(
+    () => ({
+      id: rotationAff.id,
+      render: () => [],
+      hitTest: (wx, wy, state, view): HitResult | null => {
+        const inner = rotationAff.hitTest?.(wx, wy, state, view);
+        if (!inner) return null;
+        const scratch = inner.initialScratch as RotationScratch;
+        // Multi-mode rotation against the synthetic union isn't supported by
+        // useRotate today — pass through so the click falls through to the
+        // slot walk. Real scene ids drive useRotate normally.
+        if (scratch.targetId === MULTI_RESIZE_TARGET_ID) return null;
+        const result: HitResult<RotationScratch> = {
+          drag: {
+            onStart: (_e, dctx) => {
+              rotateRef.current.start({ id: scratch.targetId, worldX: dctx.worldX, worldY: dctx.worldY });
+              return 'claim';
+            },
+            onMove: (_e, dctx) => {
+              rotateRef.current.move({ worldX: dctx.worldX, worldY: dctx.worldY, modifiers: dctx.modifiers });
+              return 'claim';
+            },
+            onEnd: (_e, _dctx) => {
+              rotateRef.current.end();
+              return 'claim';
+            },
+            onCancel: () => {
+              rotateRef.current.cancel();
+            },
+          },
+          initialScratch: scratch,
+        };
+        return result as HitResult;
+      },
+    }),
+    [rotationAff],
+  );
+
+  // Composite order: corner-resize first, rotation second.
+  // `composeAffordanceLayer` walks hitTest in REVERSE (last → first), so
+  // rotation is tested before corner-resize. That's the right priority —
+  // the rotation handle floats above the bounds top, so a hit on it wins
+  // over a corner-handle hit on the same point (which shouldn't happen
+  // geometrically anyway, but the ordering is defensible).
   const affordanceOverlay = useMemo(
-    () => composeAffordanceLayer('select-affordances', 'Select affordances', [cornerAffWrapped]),
-    [cornerAffWrapped],
+    () => composeAffordanceLayer('select-affordances', 'Select affordances', [
+      cornerAffWrapped,
+      rotationAffWrapped,
+    ]),
+    [cornerAffWrapped, rotationAffWrapped],
   );
 
   // Combined Tool overlay: ghost layer (bottom) + affordance layer (top).
@@ -507,35 +580,15 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
         pointer: {
           onDown: (_e, ctx) => {
             const sel = ctx.selection.current;
-            // handleHitRadius is screen-px; convert to world by dividing by
-            // current view scale so the hit area matches the rendered handle
-            // size under zoom.
-            const radiusWorld = handleHitRadius / ctx.view.scale;
 
-            // 1. Rotation handle (single selection only)
-            if (sel.length === 1) {
-              const b = boundsOfFn(sel[0]);
-              if (b) {
-                const handle = rotationHandle(b, rotationHandleDistance);
-                (ctx.debug ?? debug)?.recordHitbox(sel[0], 'rotation', {
-                  kind: 'circle', cx: handle.cx, cy: handle.cy, r: radiusWorld,
-                });
-                if (hitRotationHandle(handle, ctx.worldX, ctx.worldY, radiusWorld)) {
-                  ctx.scratch = { kind: 'rotate', targetId: sel[0] };
-                  return 'claim';
-                }
-              }
-            }
+            // Handles (rotation + corner-resize) are handled by their
+            // respective affordances (see `cornerAffWrapped` and
+            // `rotationAffWrapped` above). The dispatcher's affordance-layer
+            // hit-test pipeline routes those hits directly to `useResize` /
+            // `useRotate` via the wrapped drag channels, bypassing
+            // pointer.onDown entirely for the handle case.
 
-            // 2. Corner resize handles: handled by the corner-resize
-            //    affordance (see `cornerAffWrapped` above). The dispatcher's
-            //    affordance-layer hit-test pipeline routes those hits
-            //    directly to `useResize` via the wrapped drag channel,
-            //    bypassing pointer.onDown for the handle case. We don't
-            //    drop the radiusWorld var because it's still used elsewhere
-            //    (rotation hitbox above).
-
-            // 3. Body hit → move (+ select)
+            // 1. Body hit → move (+ select)
             const top = options.pickBest
               ? options.pickBest(ctx.worldX, ctx.worldY, ctx.modifiers.alt, sel)
               : (() => {
@@ -590,7 +643,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
               return 'claim';
             }
 
-            // 4. Empty → defer clear to onClick (sub-threshold release).
+            // 2. Empty → defer clear to onClick (sub-threshold release).
             //    Clearing on down feels twitchy: an accidental tap on empty
             //    space wipes selection mid-thought. The marquee path
             //    (drag.onStart → areaSelect) overwrites selection on its
@@ -688,6 +741,6 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
         },
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [move, resize, rotate, areaSelect, overlay, pickEveryFn, options.pickBest, boundsOfFn, handleHitRadius, rotationHandleDistance, debug],
+    [move, resize, rotate, areaSelect, overlay, pickEveryFn, options.pickBest, boundsOfFn, handleHitRadius, rotationHandleDistance, options.debug],
   );
 }

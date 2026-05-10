@@ -382,12 +382,13 @@ describe('useSelectTool', () => {
 import { createDebugSink } from '../../debug/createDebugSink';
 
 describe('useSelectTool — debug recording', () => {
-  it('records the rotation hitbox during pointer-down hit-test', () => {
-    // After Task 11, corner-handle hits route through the affordance
-    // pipeline (overlay.hitTest), not pointer.onDown — so the inline
-    // `recordHitbox('handle', ...)` calls are gone. Only the rotation
-    // hit-test still runs in pointer.onDown today; recording for
-    // affordances is a future concern.
+  it('does not record handle hitboxes in pointer.onDown after the affordance migration', () => {
+    // Task 11 moved corner-handle hits to the affordance pipeline; Task 14
+    // moved rotation-handle hits the same way. Both inline
+    // `recordHitbox(...)` call sites are gone from pointer.onDown. Recording
+    // for the affordance pipeline is a future concern. This test pins the
+    // current state so a regression that adds inline recording back gets
+    // caught.
     const sink = createDebugSink({ hitboxes: true });
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
@@ -401,8 +402,8 @@ describe('useSelectTool — debug recording', () => {
     });
     result.current.pointer!.onDown!(pe(), ctx);
     const hits = sink.snapshot().hitboxes;
-    const rotations = hits.filter((h) => h.kind === 'rotation');
-    expect(rotations.length).toBe(1);
+    expect(hits.filter((h) => h.kind === 'rotation')).toHaveLength(0);
+    expect(hits.filter((h) => h.kind === 'handle')).toHaveLength(0);
   });
 });
 
