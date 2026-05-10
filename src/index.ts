@@ -427,10 +427,11 @@ export type {
   UseNudgeOptions,
   UseNudgeReturn,
 } from './interactions/actions/nudge';
-export { useFlip, flipPoseViaDescriptor } from './interactions/actions/flip';
+export { useFlip, flipPoseAboutBounds, flipPoseViaDescriptor } from './interactions/actions/flip';
 export type {
   FlipAdapter,
   FlipAxis,
+  FlipPivot,
   UseFlipOptions,
   UseFlipReturn,
 } from './interactions/actions/flip';

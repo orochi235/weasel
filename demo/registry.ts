@@ -8,6 +8,7 @@ import { InsertDemo } from './demos/InsertDemo';
 import { CloneDemo } from './demos/CloneDemo';
 import { ComposeDemo } from './demos/ComposeDemo';
 import { ActionsDemo } from './demos/ActionsDemo';
+import { AlignDistributeFlipDemo } from './demos/AlignDistributeFlipDemo';
 import { GroupsDemo } from './demos/GroupsDemo';
 import { NestedGroupsDemo } from './demos/NestedGroupsDemo';
 import { TextDemo } from './demos/TextDemo';
@@ -38,6 +39,7 @@ import InsertDemoFull from './demos/InsertDemo.tsx?raw';
 import CloneDemoFull from './demos/CloneDemo.tsx?raw';
 import ComposeDemoFull from './demos/ComposeDemo.tsx?raw';
 import ActionsDemoFull from './demos/ActionsDemo.tsx?raw';
+import AlignDistributeFlipDemoFull from './demos/AlignDistributeFlipDemo.tsx?raw';
 import GroupsDemoFull from './demos/GroupsDemo.tsx?raw';
 import NestedGroupsDemoFull from './demos/NestedGroupsDemo.tsx?raw';
 import TextDemoFull from './demos/TextDemo.tsx?raw';
@@ -212,6 +214,16 @@ export const DEMOS: DemoEntry[] = [
     Component: ActionsDemo,
     full: ActionsDemoFull,
     path: 'demo/demos/ActionsDemo.tsx',
+  },
+  {
+    id: 'align-distribute-flip',
+    title: 'Align / Distribute / Flip',
+    category: 'Selection & actions',
+    description: 'useAlign + useDistribute + useFlip — three multi-selection action hooks against a flat-list scene. All five rects are pre-selected; the toolbar buttons trigger the imperative API directly. Align operates on the union AABB (six edges + centers); Distribute spaces items along an axis (centers vs gaps modes); Flip mirrors each pose about its own AABB by default. Flip also auto-binds Shift+H / Shift+V on the document. Each operation emits a single batched op so undo collapses to one step.',
+    hint: 'Click a rect to drop the multi-select; shift-click to extend. Try the toolbar; ⇧H / ⇧V flip.',
+    Component: AlignDistributeFlipDemo,
+    full: AlignDistributeFlipDemoFull,
+    path: 'demo/demos/AlignDistributeFlipDemo.tsx',
   },
   {
     id: 'virtual-groups',

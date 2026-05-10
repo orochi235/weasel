@@ -1,10 +1,12 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { createTransformOp } from '../../../core/ops/transform';
 import type { Op } from '../../../core/ops/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
 import type { NodeId } from '../../../core/scene/types';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../../gestures/resize/geometry';
 import type { ResizePose } from '../../gestures/types';
+import { useActionsRegistry } from '../registry';
+import { defaultAlignActions } from '../defaults/align';
 
 /** Edge or center the selection should align to within the selection's union AABB. */
 export type AlignEdge = 'left' | 'right' | 'top' | 'bottom' | 'center-x' | 'center-y';
@@ -104,6 +106,24 @@ export function useAlign<TPose>(
     if (ops.length === 0) return;
     dispatchApplyBatch(a, ops, o.label ?? 'Align');
   }, []);
+
+  // Auto-register the six default align actions when an ActionsProvider is in
+  // scope. Deps read from refs so prop changes flow through without churn.
+  const reg = useActionsRegistry();
+  useEffect(() => {
+    if (!reg) return;
+    const actions = defaultAlignActions<TPose>({
+      getSelection: () => adapterRef.current.getSelection(),
+      getPose: (id) => adapterRef.current.getPose(id),
+      geometry:
+        optsRef.current.geometry ??
+        (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>),
+      applyBatch: (ops, label) =>
+        dispatchApplyBatch(adapterRef.current, ops, label ?? optsRef.current.label ?? 'Align'),
+    });
+    const unregs = actions.map((act) => reg.register(act));
+    return () => { for (const u of unregs) u(); };
+  }, [reg]);
 
   return { align };
 }

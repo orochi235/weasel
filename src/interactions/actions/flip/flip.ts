@@ -11,6 +11,16 @@ import { defaultFlipActions } from '../defaults/flip';
 /** Axis for `useFlip`. `'x'` mirrors horizontally (left↔right); `'y'` mirrors vertically (top↔bottom). */
 export type FlipAxis = 'x' | 'y';
 
+/** How a multi-selection flip chooses its pivot.
+ *
+ *  - `'each'` — every pose mirrors about its own AABB; spatial layout of the
+ *    selection is unchanged, individual items are reflected in place.
+ *  - `'union'` — every pose mirrors about the selection's union AABB; items
+ *    swap sides as well as reflect, matching Illustrator/Figma defaults.
+ *
+ *  Single-selection flips produce identical results in either mode. */
+export type FlipPivot = 'each' | 'union';
+
 /** Adapter for `useFlip`. */
 export interface FlipAdapter<TPose> {
   getSelection(): NodeId[];
@@ -24,6 +34,8 @@ export interface UseFlipOptions<TPose> {
    *  for `{x,y,width,height}` poses. Pass `pathPoseDescriptor` for `Path`
    *  poses so polygon coords reflect correctly. */
   geometry?: PoseDescriptor<TPose>;
+  /** Multi-selection pivot. Default `'each'` (per-item own AABB). */
+  pivot?: FlipPivot;
   /** Auto-bind Shift+H / Shift+V on document. Default true. */
   enableKeyboard?: boolean;
   /** Label passed to applyBatch. Default 'Flip'. */
@@ -38,25 +50,56 @@ export interface UseFlipReturn {
   flipVertical(): void;
 }
 
-/** Reflect `pose` across the centerline of its own AABB along `axis`, using
- *  `geometry` to read bounds and remap. Each pose is mirrored about its own
- *  bounds — multi-selection flips do NOT pivot on a shared union AABB.
+/** Reflect `pose` across the centerline of `pivotBounds` along `axis`, using
+ *  `geometry` to read bounds and remap. The pose's own AABB is read once to
+ *  compute the reflected destination rect; coords inside the pose are then
+ *  remapped through the affine that takes its own bounds → reflected dst.
  *
  *  Why: `remapBounds` with a negative-extent `dst` rect is the kit's existing
- *  affine-projection primitive. For path/polygon poses it correctly reflects
- *  every coord. For rect-shaped poses it produces a negative width/height
- *  that we fold back into x/y so the persisted pose stays canonical. */
+ *  affine-projection primitive. For path/polygon poses it reflects every
+ *  coord; for rect-shaped poses it produces a negative width/height that we
+ *  fold back into x/y so the persisted pose stays canonical. */
+export function flipPoseAboutBounds<TPose>(
+  pose: TPose,
+  axis: FlipAxis,
+  geometry: PoseDescriptor<TPose>,
+  pivotBounds: { x: number; y: number; width: number; height: number },
+): TPose {
+  const src = geometry.getBounds(pose);
+  const cxPivot = pivotBounds.x + pivotBounds.width / 2;
+  const cyPivot = pivotBounds.y + pivotBounds.height / 2;
+  // Reflect [src.x, src.x+src.width] across cxPivot using the kit's negative-extent
+  // convention: with width < 0, dst occupies [dst.x + dst.width, dst.x]. The
+  // reflected segment is [2*cx - (src.x+src.width), 2*cx - src.x], so dst.x is
+  // the larger end (2*cx - src.x) and dst.width = -src.width.
+  const dst = axis === 'x'
+    ? { x: 2 * cxPivot - src.x, y: src.y, width: -src.width, height: src.height }
+    : { x: src.x, y: 2 * cyPivot - src.y, width: src.width, height: -src.height };
+  const next = geometry.remapBounds(pose, src, dst);
+  return normalizeNegativeExtent(next);
+}
+
+/** Reflect `pose` across the centerline of its own AABB along `axis`. Thin
+ *  wrapper over {@link flipPoseAboutBounds} with `pivotBounds = own bounds`. */
 export function flipPoseViaDescriptor<TPose>(
   pose: TPose,
   axis: FlipAxis,
   geometry: PoseDescriptor<TPose>,
 ): TPose {
-  const src = geometry.getBounds(pose);
-  const dst = axis === 'x'
-    ? { x: src.x + src.width, y: src.y, width: -src.width, height: src.height }
-    : { x: src.x, y: src.y + src.height, width: src.width, height: -src.height };
-  const next = geometry.remapBounds(pose, src, dst);
-  return normalizeNegativeExtent(next);
+  return flipPoseAboutBounds(pose, axis, geometry, geometry.getBounds(pose));
+}
+
+function unionAabb(rs: { x: number; y: number; width: number; height: number }[]): {
+  x: number; y: number; width: number; height: number;
+} {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const r of rs) {
+    if (r.x < minX) minX = r.x;
+    if (r.y < minY) minY = r.y;
+    if (r.x + r.width > maxX) maxX = r.x + r.width;
+    if (r.y + r.height > maxY) maxY = r.y + r.height;
+  }
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
 function normalizeNegativeExtent<TPose>(pose: TPose): TPose {
@@ -99,9 +142,14 @@ export function useFlip<TPose>(
     const geom =
       o.geometry ??
       (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>);
-    const ops: Op[] = sel.map((id) => {
-      const from = a.getPose(id);
-      const to = flipPoseViaDescriptor(from, axis, geom);
+    const pivot = o.pivot ?? 'each';
+    const poses = sel.map((id) => a.getPose(id));
+    const unionPivot = pivot === 'union' ? unionAabb(poses.map((p) => geom.getBounds(p))) : null;
+    const ops: Op[] = sel.map((id, i) => {
+      const from = poses[i];
+      const to = unionPivot
+        ? flipPoseAboutBounds(from, axis, geom, unionPivot)
+        : flipPoseViaDescriptor(from, axis, geom);
       return createTransformOp<TPose>({ id, from, to });
     });
     dispatchApplyBatch(a, ops, o.label ?? 'Flip');
@@ -115,15 +163,16 @@ export function useFlip<TPose>(
 
   useEffect(() => {
     if (!reg || !enableKeyboard) return;
-    const a = adapterRef.current;
     const o = optsRef.current;
     const actions = defaultFlipActions<TPose>({
-      getSelection: () => a.getSelection(),
-      getPose: (id) => a.getPose(id),
+      getSelection: () => adapterRef.current.getSelection(),
+      getPose: (id) => adapterRef.current.getPose(id),
       geometry:
         o.geometry ??
         (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>),
-      applyBatch: (ops, label) => dispatchApplyBatch(a, ops, label ?? 'Flip'),
+      pivot: () => optsRef.current.pivot ?? 'each',
+      applyBatch: (ops, label) =>
+        dispatchApplyBatch(adapterRef.current, ops, label ?? 'Flip'),
     });
     const unregs = actions.map((act) => reg.register(act));
     return () => { for (const u of unregs) u(); };
