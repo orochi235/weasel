@@ -5,3 +5,8 @@ export {
   type CornerResizeAffordanceOptions,
   type CornerResizeScratch,
 } from './cornerResize';
+export {
+  createRotationAffordance,
+  type RotationAffordanceOptions,
+  type RotationScratch,
+} from './rotationHandle';

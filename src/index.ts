@@ -157,10 +157,13 @@ export type { Unit, UnitSystem, UnitValue } from './core/units';
 export {
   composeAffordanceLayer,
   createCornerResizeAffordance,
+  createRotationAffordance,
   type Affordance,
   type HitResult,
   type CornerResizeAffordanceOptions,
   type CornerResizeScratch,
+  type RotationAffordanceOptions,
+  type RotationScratch,
 } from './affordances';
 export {
   composeSelectionPose,
