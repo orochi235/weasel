@@ -1,0 +1,62 @@
+import type { Widget } from './widget';
+import type { HudHost } from './host';
+
+export interface Hud {
+  add(widget: Widget): void;
+  remove(widget: Widget): void;
+  widgets(): readonly Widget[];
+  markDirty(): void;
+  bind(host: HudHost): void;
+  unbind(): void;
+  /** True after bind() and before unbind(). */
+  readonly attached: boolean;
+}
+
+export function createHud(): Hud {
+  const list: Widget[] = [];
+  let host: HudHost | null = null;
+  let detached = false;
+
+  const requestRedraw = () => { host?.requestRedraw(); };
+
+  // NOTE: factory methods (rect, text, image, label, button) inject
+  // `onChange: () => requestRedraw()` into widget options so widget setters
+  // trigger redraws automatically. Widgets created via the bare factories
+  // (createRect etc.) don't get this and must be added via hud.add() — their
+  // setters won't auto-redraw, which is by design (the bare factories are
+  // for unit tests and advanced consumers who want to manage redraws
+  // explicitly).
+
+  return {
+    get attached() { return host !== null; },
+    add(widget) {
+      if (detached) {
+        console.warn('weasel-hud: add() called on a detached HUD; ignored.');
+        return;
+      }
+      list.push(widget);
+      requestRedraw();
+    },
+    remove(widget) {
+      const i = list.indexOf(widget);
+      if (i === -1) return;
+      list.splice(i, 1);
+      try { widget.dispose(); } catch (e) {
+        console.error('weasel-hud: widget.dispose threw', e);
+      }
+      requestRedraw();
+    },
+    widgets() { return list; },
+    markDirty() { requestRedraw(); },
+    bind(h) {
+      if (host) throw new Error('weasel-hud: HUD is already bound to a host.');
+      host = h;
+      detached = false;
+      if (list.length > 0) requestRedraw();
+    },
+    unbind() {
+      host = null;
+      detached = true;
+    },
+  };
+}
