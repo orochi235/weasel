@@ -29,6 +29,7 @@ import {
   type SelectionApi,
   type UseSelectionOptions,
 } from '../core/selection/useSelection';
+import { buildChromeState, type ChromeState } from '../core/selection/chromeState';
 import { useArrayAdapter, type UseArrayAdapterOptions } from '../core/adapters/useArrayAdapter';
 import { useDelete } from '../interactions/actions/delete';
 import { useNudge } from '../interactions/actions/nudge';
@@ -329,6 +330,10 @@ export interface CanvasHelpers<TPose> {
   getEffectivePose(id: string): TPose | null;
   /** Overlay-aware bounds for `id`. */
   getEffectiveBounds(id: string): Bounds | null;
+  /** Returns the live ChromeState built once per render. Affordances and
+   *  custom layers that need overlay-aware selection state (selection ids,
+   *  bounds, multi-union AABB, modifier flags) read from this. */
+  getChromeState(): ChromeState;
 }
 
 const STANDARD_SLOT_SET = new Set<string>(STANDARD_SLOTS);
@@ -750,6 +755,16 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     return boundsOf ?? baseBoundsOf;
   }, [boundsOf, baseBoundsOf]);
 
+  const chromeState: ChromeState = useMemo(
+    () => buildChromeState({
+      selection: selectedIdsForWiring,
+      multiActive,
+      effectiveBoundsOf: (id) => (effectiveBoundsOf ? effectiveBoundsOf(id) : null),
+      modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+    }),
+    [selectedIdsForWiring, multiActive, effectiveBoundsOf],
+  );
+
   // helpersForLayers: overlay-aware lookups passed to every RenderLayer.draw
   // call (as the `data` arg) so custom layers can read live overlay state
   // directly from their draw closure. The legacy `helpersRef` prop still
@@ -784,6 +799,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       const p = committedPoseOf(id);
       return p == null ? null : geometry.getBounds(p);
     },
+    getChromeState: () => chromeState,
   };
   if (helpersRef) helpersRef.current = helpersForLayers;
 
