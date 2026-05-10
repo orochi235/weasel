@@ -99,8 +99,8 @@ function OutputSwatchRow({ indices, params }: { indices: number[]; params: RampP
   );
 }
 
-const DIAGRAM_W = 320;
-const DIAGRAM_H = 220;
+const DIAGRAM_W = 512;
+const DIAGRAM_H = 352;
 const DIAGRAM_PAD = { l: 28, r: 12, t: 24, b: 28 };
 const PLOT_W = DIAGRAM_W - DIAGRAM_PAD.l - DIAGRAM_PAD.r;
 const PLOT_H = DIAGRAM_H - DIAGRAM_PAD.t - DIAGRAM_PAD.b;
