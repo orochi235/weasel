@@ -1,8 +1,7 @@
 /**
  * Visual regression spec: compound-paths demo.
  *
- * Captures the canvas under backend='2d' (baseline) and backend='gl', then
- * asserts pixel diff ≤ 5%.
+ * Captures the canvas and asserts pixel diff ≤ 5% vs the committed baseline.
  *
  * Interaction sequence:
  *   1. Initial mount — capture static scene.
@@ -19,12 +18,7 @@ const BASELINE_DIR = resolve(import.meta.dirname, 'baselines');
 // Per-demo tolerance: 5% — see file header for justification.
 const OPTS: DiffOptions = { maxDiffRatio: 0.05 };
 
-test(`${DEMO_ID} — 2d baseline capture`, async ({ page }) => {
-  const png = await captureCanvas(page, `/?backend=2d#${DEMO_ID}`);
-  assertMatchesBaseline(png, resolve(BASELINE_DIR, `${DEMO_ID}-2d.png`), OPTS);
-});
-
-test(`${DEMO_ID} — gl matches 2d baseline`, async ({ page }) => {
-  const glPng = await captureCanvas(page, `/?backend=gl#${DEMO_ID}`);
-  assertMatchesBaseline(glPng, resolve(BASELINE_DIR, `${DEMO_ID}-2d.png`), OPTS);
+test(`${DEMO_ID} — visual baseline`, async ({ page }) => {
+  const png = await captureCanvas(page, `/#${DEMO_ID}`);
+  assertMatchesBaseline(png, resolve(BASELINE_DIR, `${DEMO_ID}.png`), OPTS);
 });

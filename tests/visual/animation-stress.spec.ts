@@ -1,7 +1,7 @@
 /**
- * Stress harness: drag Card 'a' in AnimationDemo 100 times under backend=gl.
+ * Stress harness: drag Card 'a' in AnimationDemo 100 times.
  *
- * Goal: prove the GL backend doesn't accumulate lag, leak GPU resources, or
+ * Goal: prove the GL renderer doesn't accumulate lag, leak GPU resources, or
  * crash across many drag-release cycles. Tweens run for ~250ms after each
  * release; the harness waits long enough for that to settle, then drives the
  * next drag.
@@ -29,7 +29,7 @@ test('animation demo: 100 drag-release cycles without lag or crash', async ({ pa
   });
   page.on('crash', () => consoleErrors.push('page crashed'));
 
-  await page.goto('/weasel/?backend=gl#animation');
+  await page.goto('/weasel/#animation');
   await page.waitForSelector('canvas');
   // Wait for the initial enter animation (250ms) plus a margin.
   await page.waitForTimeout(500);
