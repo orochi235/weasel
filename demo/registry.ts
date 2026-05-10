@@ -24,6 +24,10 @@ import { DebugOverlayDemo } from './demos/DebugOverlayDemo';
 import { EasingsDemo } from './demos/EasingsDemo';
 import { ViewportDemo } from './demos/ViewportDemo';
 import { PerceptualColorSlidersDemo } from './demos/PerceptualColorSlidersDemo';
+import { GradientPlaygroundDemo } from './demos/GradientPlaygroundDemo';
+import { VertexColorsDemo } from './demos/VertexColorsDemo';
+import { ColorMatrixDemo } from './demos/ColorMatrixDemo';
+import { CustomShaderDemo } from './demos/CustomShaderDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
@@ -50,6 +54,10 @@ import DebugOverlayDemoFull from './demos/DebugOverlayDemo.tsx?raw';
 import EasingsDemoFull from './demos/EasingsDemo.tsx?raw';
 import ViewportDemoFull from './demos/ViewportDemo.tsx?raw';
 import PerceptualColorSlidersDemoFull from './demos/PerceptualColorSlidersDemo.tsx?raw';
+import GradientPlaygroundDemoFull from './demos/GradientPlaygroundDemo.tsx?raw';
+import VertexColorsDemoFull from './demos/VertexColorsDemo.tsx?raw';
+import ColorMatrixDemoFull from './demos/ColorMatrixDemo.tsx?raw';
+import CustomShaderDemoFull from './demos/CustomShaderDemo.tsx?raw';
 
 export interface DemoEntry {
   id: string;
@@ -304,6 +312,46 @@ export const DEMOS: DemoEntry[] = [
     Component: DebugOverlayDemo,
     full: DebugOverlayDemoFull,
     path: 'demo/demos/DebugOverlayDemo.tsx',
+  },
+  {
+    id: 'gradient-playground',
+    title: 'Gradient playground',
+    category: 'Paint & shading',
+    description: 'Interactive editor for the three gradient paint variants — linear, radial, conic. Drag the on-canvas handles to set the gradient geometry (linear endpoints, radial center+radius, conic center+angle). Below the canvas, click the strip to add a stop, drag stops to reposition, click a swatch to recolor, right-click to delete. Showcases the `linear-gradient` / `radial-gradient` / `conic-gradient` Paint variants shipped with the WebGL backend.',
+    hint: 'drag handles · click strip to add stops · drag stop to move · click swatch to recolor',
+    Component: GradientPlaygroundDemo,
+    full: GradientPlaygroundDemoFull,
+    path: 'demo/demos/GradientPlaygroundDemo.tsx',
+  },
+  {
+    id: 'vertex-colors',
+    title: 'Per-vertex colors',
+    category: 'Paint & shading',
+    description: 'A heptagon whose fill is driven by an RGBA-per-vertex array — no Paint object, just colors baked onto the geometry. Drag a vertex handle to move it; double-click to recolor. Colors interpolate smoothly across the triangulated interior. Demonstrates the `vertexColors` field on `PathDrawCommand`, emitted from a custom `RenderLayer` slotted into the Canvas layers map.',
+    hint: 'drag vertex to move · double-click vertex to recolor',
+    Component: VertexColorsDemo,
+    full: VertexColorsDemoFull,
+    path: 'demo/demos/VertexColorsDemo.tsx',
+  },
+  {
+    id: 'color-matrix',
+    title: 'Stacked color matrices',
+    category: 'Paint & shading',
+    description: 'Three nested groups, each with its own preset color matrix (Identity / Grayscale / Sepia / Invert / Hue+90° / Brightness×1.5). The same base palette renders inside each group, so you can see the cumulative effect — inner-group leaves see all three matrices composed multiplicatively. Click a preset button under any group to swap that group\'s matrix and watch the entire subtree retint. Demonstrates `GroupDrawCommand.colorMatrix`.',
+    hint: 'click presets to retint each group · matrices compose down the stack',
+    Component: ColorMatrixDemo,
+    full: ColorMatrixDemoFull,
+    path: 'demo/demos/ColorMatrixDemo.tsx',
+  },
+  {
+    id: 'custom-shader',
+    title: 'Custom shaders',
+    category: 'Paint & shading',
+    description: 'Three custom GLSL shader panels: plasma (animated sin/cos field that follows the cursor), ripple (click anywhere to spawn an expanding ring on a sampled image), and voronoi (drag the white seed points to reshape the cellular pattern). Each panel registers its program at module scope via `registerProgram()` and emits a `ShaderDrawCommand` over a panel-bound rect; the renderer compiles them via the new `shaders` prop on SceneCanvas. Custom shader API is `@experimental`.',
+    hint: 'plasma follows cursor · click ripple panel · drag voronoi seeds',
+    Component: CustomShaderDemo,
+    full: CustomShaderDemoFull,
+    path: 'demo/demos/CustomShaderDemo.tsx',
   },
   {
     id: 'pan',
