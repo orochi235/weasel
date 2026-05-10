@@ -128,6 +128,14 @@ layers={{
 
 See [extending.md](./extending.md) for custom-layer details.
 
+**Hit-test channel.** Layers may declare an optional `hitTest(worldX, worldY, data, view, dims): HitResult | null` that the dispatcher consults on pointerdown. The dispatcher walks layers top-down (highest z-index first); the first layer whose `hitTest` returns a non-null `HitResult` owns the gesture — the supplied `drag` channel runs as if it were the active tool. This is how affordances stay hittable regardless of which tool is active.
+
+## Affordance
+
+A reusable factory primitive that produces a `{ render, hitTest? }` triple. Tools that own chrome (selection handles, rotation handle, anchor dots) compose affordances rather than reimplementing the render + hit-test logic inline. The kit ships `createCornerResizeAffordance` and `createRotationAffordance`; both read state from a kit-built `ChromeState` object so the affordance code stays pure (no React, no scene access).
+
+The point of the abstraction: **visible chrome is hittable independent of the active tool.** Without affordances, each tool's overlay rendered handles but each tool's `pointer.onDown` had to hit-test those handles separately. With affordances, the dispatcher walks all visible layers' hit-tests top-down on pointerdown; a corner-handle click fires the resize gesture even when a non-select tool is active.
+
 ## Interaction
 
 Everything the user does to the scene is an **interaction**. The kit splits

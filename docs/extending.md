@@ -43,6 +43,71 @@ exports: `createGridLayer`, `createCellHighlightLayer`, `createTextLayer`,
 `createPathLayer`, `createChildrenLayer`, `createSelectionOverlayLayer`,
 `createTilePattern`. Or write your own — it's a function.
 
+## Custom affordances
+
+Affordances are reusable chrome primitives. Each affordance is a small object: `{ id, render, hitTest? }`. Tools that want chrome (selection handles, anchor dots, snap-target highlights, etc.) compose affordances into their overlay rather than reimplementing the hit-test logic inline.
+
+```ts
+import {
+  createCornerResizeAffordance,
+  composeAffordanceLayer,
+  type Affordance,
+} from '@orochi235/weasel';
+
+// 1. Build an affordance instance via a kit-shipped factory.
+const corners = createCornerResizeAffordance({
+  handleHitRadius: 8,    // world-px hit zone (divided by view.scale at runtime)
+  handleSize: 8,         // screen-px visual size
+});
+
+// 2. Wrap if you need to substitute the affordance's stub drag channel
+//    with one that drives your own gesture controllers:
+const wrappedCorners: Affordance = {
+  id: corners.id,
+  render: corners.render,
+  hitTest: (wx, wy, state, view) => {
+    const inner = corners.hitTest?.(wx, wy, state, view);
+    if (!inner) return null;
+    const scratch = inner.initialScratch as { anchor: ResizeAnchor; targetId: string };
+    return {
+      drag: {
+        onStart: (_e, ctx) => { /* call into your useResize controller */ return 'claim'; },
+        onMove:  (_e, ctx) => { /* ... */ return 'claim'; },
+        onEnd:   (_e, ctx) => { /* ... */ return 'claim'; },
+        onCancel: () => { /* ... */ },
+      },
+      initialScratch: scratch,
+    };
+  },
+};
+
+// 3. Compose multiple affordances into a single overlay RenderLayer.
+const overlay = composeAffordanceLayer(
+  'my-tool-overlay',
+  'My tool chrome',
+  [wrappedCorners /*, ...other affordances */],
+);
+
+// 4. Plug it into your tool's overlay field:
+const myTool = defineTool({
+  id: 'my-tool',
+  overlay,
+  // ... drag, pointer, keyboard channels ...
+});
+```
+
+Affordances read state from `ChromeState` — a kit-built read-only object that Canvas constructs each render. `ChromeState` exposes:
+
+- `selection: readonly NodeId[]` — currently selected ids.
+- `multiActive: boolean` — true when ≥2 ids are selected in multi-mode.
+- `boundsOf(id): Bounds | null` — overlay-aware bounds (returns ghost bounds during a drag).
+- `unionBounds: Bounds | null` — multi-union AABB when `multiActive`.
+- `modifiers: ModifierState` — alt/shift/meta/ctrl at the time of the call.
+
+The dispatcher consults each layer's `hitTest` on pointerdown before falling through to the active-tool slot walk — so an affordance hit fires the gesture even when a different tool is active. This is the principle: visible chrome is always hittable.
+
+If your tool is in a modal state where chrome hits would interrupt the gesture (pen mid-path, text mid-edit), set `Tool.claimsAll(ctx) => true` for that state. The dispatcher will bypass the layer pipeline entirely.
+
 ## Custom gesture behaviors
 
 A behavior plugs into a hook's `options.behaviors` array:

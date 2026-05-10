@@ -22,7 +22,17 @@ an optional hotkey-slot trigger, and a `cursor`. The active tool receives pointe
 and keyboard events routed from the canvas by the [Tool registry](#tool-registry).
 Distinct from [Gesture hooks](#gesture) in that a Tool is a stateful mode (the user
 switches between tools) while a gesture hook is a direct binding to a pointer
-interaction. See `src/tools/types.ts:103`.
+interaction. Tools in modal states (pen mid-path, text mid-edit) can opt into an
+optional `claimsAll(ctx)` predicate that bypasses the affordance layer hit-test
+pipeline for the duration of the modal state. See `src/tools/types.ts:103`.
+
+### Affordance
+
+A reusable factory primitive that produces a `{ id, render, hitTest? }` triple consumed by tools. Lives in `src/affordances/`. Tools compose multiple affordances into a single overlay layer via `composeAffordanceLayer`. The dispatcher consults each composite layer's `hitTest` on pointerdown (top-down z-order) before falling through to the active-tool slot walk — so visible chrome is hittable regardless of which tool is currently active.
+
+Examples: `createCornerResizeAffordance`, `createRotationAffordance`. See `src/affordances/types.ts`.
+
+The factory pattern: each affordance instance is bound to one tool/context at runtime (it closes over that tool's controllers via the wrapper drag channel), but the factory function is reusable across tools.
 
 ### Tool registry
 
@@ -39,7 +49,7 @@ A `RenderLayer<TData>` is a named draw function: `{ id, label, draw(data, view, 
 Layers are the kit's composable rendering primitive. Each frame the canvas reduces
 the active layer stack into a flat `DrawCommand[]` tree and hands it to the
 WebGL renderer. Layers declare whether they operate in world space (default) or
-screen space. See `src/core/layers/render.ts`.
+screen space. Layers may declare an optional `hitTest(worldX, worldY, data, view, dims)` that the dispatcher consults on pointerdown before the slot walk; first non-null result wins. See `src/core/layers/render.ts`.
 
 ### Slot
 
@@ -124,7 +134,9 @@ click policy (`'single'` replaces; `'multi'` toggles with extend key). The
 `adapterMethods` sub-object (`{ getSelection, setSelection }`) is designed to be
 spread directly into adapters. Selection participates in the `@experimental`
 [`SelectionContext`](#selectioncontext) for non-canvas UI. See
-`src/features/selection/useSelection.ts`.
+`src/core/selection/useSelection.ts`. The kit-level `ChromeState` (the
+affordance-facing read-only view) is built from the `SelectionApi` via
+`buildChromeState`; lives in `src/core/selection/chromeState.ts`.
 
 ### SelectionContext
 
@@ -215,6 +227,10 @@ and `docs/superpowers/specs/2026-05-09-feature-roles-focus-grid-design.md` §A):
 A `useFooFeature()` hook returns any subset of `{ api?, attrs?, layers? }`. The
 taxonomy is `@experimental` — promoted to stable once ≥3 features have shipped in
 this shape.
+
+### Chrome state
+
+The `ChromeState` object built once per Canvas render and passed to every affordance's `render` and `hitTest` call. Source of truth for selection ids, derived bounds (overlay-aware), multi-union AABB (lazy), and modifier flags. Read-only; affordances dispatch gestures via their drag channel's `ToolCtx`, not through `ChromeState`. See `src/core/selection/chromeState.ts`.
 
 ### Hook
 
@@ -421,7 +437,12 @@ combined `createSelectionOverlayLayer`. The overlay reads overlay-aware pose
 lookups (live gesture pose wins over committed adapter pose) so handles track
 objects during a drag. The selection overlay is screen-space-constant for handle
 sizes but world-space for object positions. See
-`src/features/selection/overlay.ts`.
+`src/features/selection/overlay.ts`. Phases of the chrome-affordances refactor
+(spec: `docs/superpowers/specs/2026-05-10-chrome-affordances-design.md`) introduced
+kit-level affordance factories (`createCornerResizeAffordance`,
+`createRotationAffordance`) that render the same chrome via reusable primitives;
+`createSelectionOverlayLayer` still exists as the legacy presentational helper.
+The two coexist until Phase 5 cleanup completes.
 
 ---
 
