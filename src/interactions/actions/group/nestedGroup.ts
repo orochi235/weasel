@@ -25,7 +25,7 @@
  * this is transparent because every child's local pose is rebased.
  */
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { createInsertOp } from '../../../core/ops/create';
 import { createDeleteOp } from '../../../core/ops/delete';
 import { createReparentOp } from '../../../core/ops/reparent';
@@ -40,6 +40,7 @@ import {
   type PoseAdapter,
 } from '../../../features/groups/composePose';
 import { useKeybinding } from '../useKeybinding';
+import { useActionsRegistry, type Action } from '../registry';
 
 /** Adapter for `useNestedGroup` / `useNestedUngroup`. */
 export interface NestedGroupActionAdapter<TObject extends { id: string }, TPose>
@@ -77,8 +78,9 @@ export interface UseNestedGroupOptions<TObject extends { id: string }, TPose> {
    *  anchor the group elsewhere — e.g., at the first child's origin, or to
    *  carry extra non-rect fields. */
   groupPoseFromChildren?: (childWorldPoses: TPose[]) => TPose;
-  /** Auto-bind Mod+G on document. Default false. */
-  bindKeyboard?: boolean;
+  /** Auto-bind Mod+G on document and register a `nestedGroup` action into
+   *  any surrounding `<ActionsProvider>`. Default true. */
+  enableKeyboard?: boolean;
   /** Mint the id for the new group. Default: `g_${time}_${random}`. */
   newGroupId?: () => string;
   /** Label passed to applyBatch. Default 'Group'. */
@@ -184,8 +186,22 @@ export function useNestedGroup<TObject extends { id: string }, TPose>(
     return groupId;
   }, []);
 
+  const reg = useActionsRegistry();
+  const enableKeyboard = options.enableKeyboard ?? true;
+
+  useEffect(() => {
+    if (!reg || !enableKeyboard) return;
+    const action: Action = {
+      id: 'nestedGroup',
+      label: 'Group',
+      defaultBinding: { key: 'g', mod: true },
+      run: () => { group(); },
+    };
+    return reg.register(action);
+  }, [reg, enableKeyboard, group]);
+
   useKeybinding(
-    { key: 'g', mod: true, enabled: !!options.bindKeyboard },
+    { key: 'g', mod: true, enabled: enableKeyboard && reg == null },
     () => { group(); },
   );
 
@@ -198,8 +214,9 @@ export interface UseNestedUngroupOptions<TObject extends { id: string }, TPose> 
   composePose: (parent: TPose, child: TPose) => TPose;
   /** Inverse of `composePose`. */
   decomposePose: (parent: TPose, world: TPose) => TPose;
-  /** Auto-bind Mod+Shift+G on document. Default false. */
-  bindKeyboard?: boolean;
+  /** Auto-bind Mod+Shift+G on document and register a `nestedUngroup` action
+   *  into any surrounding `<ActionsProvider>`. Default true. */
+  enableKeyboard?: boolean;
   /** Label passed to applyBatch. Default 'Ungroup'. */
   label?: string;
   /** Predicate: should this id be treated as a nested group (i.e.
@@ -283,8 +300,22 @@ export function useNestedUngroup<TObject extends { id: string }, TPose>(
     return dissolved;
   }, []);
 
+  const reg = useActionsRegistry();
+  const enableKeyboard = options.enableKeyboard ?? true;
+
+  useEffect(() => {
+    if (!reg || !enableKeyboard) return;
+    const action: Action = {
+      id: 'nestedUngroup',
+      label: 'Ungroup',
+      defaultBinding: { key: 'g', mod: true, shift: true },
+      run: () => { ungroup(); },
+    };
+    return reg.register(action);
+  }, [reg, enableKeyboard, ungroup]);
+
   useKeybinding(
-    { key: 'g', mod: true, shift: true, enabled: !!options.bindKeyboard },
+    { key: 'g', mod: true, shift: true, enabled: enableKeyboard && reg == null },
     () => { ungroup(); },
   );
 

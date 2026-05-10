@@ -8,13 +8,13 @@ export interface UseDeleteToolOptions extends UseDeleteOptions {}
 /** Always-on Tool wrapping `useDelete`. Declares its own keybinding
  *  (`Backspace`); also handles `Delete` inside the handler since `Tool.keybinding`
  *  is single-valued. The legacy hook's document-level keybinding is suppressed
- *  by passing `bindKeyboard: false` — the dispatcher fires this tool instead. */
+ *  by passing `enableKeyboard: false` — the dispatcher fires this tool instead. */
 export function useDeleteTool(
   adapter: DeleteAdapter,
   options: UseDeleteToolOptions = {},
 ): Tool<undefined> {
-  // bindKeyboard: false — the Tool owns its keybinding via the dispatcher.
-  const ctl = useDelete(adapter, { ...options, bindKeyboard: false });
+  // enableKeyboard: false — the Tool owns its keybinding via the dispatcher.
+  const ctl = useDelete(adapter, { ...options, enableKeyboard: false });
 
   return useMemo(
     () =>

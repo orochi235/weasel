@@ -90,14 +90,12 @@ export function NestedGroupsDemo() {
 
   useNestedGroup(adapter, {
     ...composeOpts,
-    bindKeyboard: true,
     groupFactory: ({ id, localPose }) => ({
       id, parent: null, pose: localPose, color: '#3a2e22', isGroup: true,
     }),
   });
   useNestedUngroup(adapter, {
     ...composeOpts,
-    bindKeyboard: true,
     isGroup: (_id, obj) => obj?.isGroup === true,
   });
 

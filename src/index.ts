@@ -78,10 +78,11 @@ export {
   defaultSelectAllAction, defaultEscapeAction, defaultDuplicateAction,
   defaultNudgeActions, defaultReorderActions, defaultFlipActions,
   defaultAlignActions, defaultDistributeActions,
+  defaultDeleteAction, defaultGroupAction, defaultUngroupAction,
 } from './interactions/actions/defaults';
 export type {
   SelectAllDeps, EscapeDeps, DuplicateDeps, NudgeDeps, ReorderDeps, FlipDeps,
-  AlignDeps, DistributeDeps,
+  AlignDeps, DistributeDeps, DeleteDeps, GroupDeps, UngroupDeps,
 } from './interactions/actions/defaults';
 export { useStandardActions } from './interactions/actions/useStandardActions';
 export type {

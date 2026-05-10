@@ -90,10 +90,10 @@ describe('useDelete', () => {
     expect(result.current.deleteSelection).toBe(first);
   });
 
-  describe('bindKeyboard: true', () => {
+  describe('enableKeyboard: true', () => {
     it('Delete key on document fires the action', () => {
       const helpers = makeAdapter(['a']);
-      renderHook(() => useDelete(helpers.adapter, { bindKeyboard: true }));
+      renderHook(() => useDelete(helpers.adapter, { enableKeyboard: true }));
       act(() => {
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true, cancelable: true }));
       });
@@ -102,7 +102,7 @@ describe('useDelete', () => {
 
     it('Backspace also fires', () => {
       const helpers = makeAdapter(['a']);
-      renderHook(() => useDelete(helpers.adapter, { bindKeyboard: true }));
+      renderHook(() => useDelete(helpers.adapter, { enableKeyboard: true }));
       act(() => {
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true, cancelable: true }));
       });
@@ -111,7 +111,7 @@ describe('useDelete', () => {
 
     it('Delete with meta key does NOT fire', () => {
       const helpers = makeAdapter(['a']);
-      renderHook(() => useDelete(helpers.adapter, { bindKeyboard: true }));
+      renderHook(() => useDelete(helpers.adapter, { enableKeyboard: true }));
       act(() => {
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', metaKey: true, bubbles: true, cancelable: true }));
       });
@@ -120,7 +120,7 @@ describe('useDelete', () => {
 
     it('Delete on an <input> target does NOT fire', () => {
       const helpers = makeAdapter(['a']);
-      renderHook(() => useDelete(helpers.adapter, { bindKeyboard: true }));
+      renderHook(() => useDelete(helpers.adapter, { enableKeyboard: true }));
       const input = document.createElement('input');
       document.body.appendChild(input);
       try {
@@ -135,7 +135,7 @@ describe('useDelete', () => {
 
     it('does NOT fire on contenteditable target', () => {
       const helpers = makeAdapter(['a']);
-      renderHook(() => useDelete(helpers.adapter, { bindKeyboard: true }));
+      renderHook(() => useDelete(helpers.adapter, { enableKeyboard: true }));
       const div = document.createElement('div');
       div.setAttribute('contenteditable', 'true');
       document.body.appendChild(div);
@@ -150,16 +150,25 @@ describe('useDelete', () => {
 
     it('preventDefault is called on a fire', () => {
       const helpers = makeAdapter(['a']);
-      renderHook(() => useDelete(helpers.adapter, { bindKeyboard: true }));
+      renderHook(() => useDelete(helpers.adapter, { enableKeyboard: true }));
       const ev = new KeyboardEvent('keydown', { key: 'Delete', bubbles: true, cancelable: true });
       act(() => { document.dispatchEvent(ev); });
       expect(ev.defaultPrevented).toBe(true);
     });
   });
 
-  it('bindKeyboard default (false): document keydown does nothing', () => {
+  it('default (enableKeyboard: true): document keydown fires', () => {
     const helpers = makeAdapter(['a']);
     renderHook(() => useDelete(helpers.adapter));
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true, cancelable: true }));
+    });
+    expect(helpers.batches).toHaveLength(1);
+  });
+
+  it('enableKeyboard: false suppresses the document binding', () => {
+    const helpers = makeAdapter(['a']);
+    renderHook(() => useDelete(helpers.adapter, { enableKeyboard: false }));
     act(() => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true, cancelable: true }));
     });
@@ -168,7 +177,7 @@ describe('useDelete', () => {
 
   it('listener is removed on unmount', () => {
     const helpers = makeAdapter(['a']);
-    const { unmount } = renderHook(() => useDelete(helpers.adapter, { bindKeyboard: true }));
+    const { unmount } = renderHook(() => useDelete(helpers.adapter, { enableKeyboard: true }));
     unmount();
     act(() => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true, cancelable: true }));

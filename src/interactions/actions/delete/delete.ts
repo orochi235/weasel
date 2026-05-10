@@ -1,10 +1,11 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { createDeleteOp } from '../../../core/ops/delete';
 import { createSetSelectionOp } from '../../../core/ops/select';
 import type { Op } from '../../../core/ops/types';
 import type { NodeId } from '../../../core/scene/types';
 import { dispatchApplyBatch } from '../../../core/applyOps';
 import { useKeybinding } from '../useKeybinding';
+import { useActionsRegistry, type Action } from '../registry';
 
 /** Adapter for `useDelete`. */
 export interface DeleteAdapter {
@@ -25,8 +26,9 @@ export interface DeleteAdapter {
 
 /** Options for `useDelete`. */
 export interface UseDeleteOptions {
-  /** Auto-bind Delete and Backspace keys on document. Default false. */
-  bindKeyboard?: boolean;
+  /** Auto-bind Delete and Backspace on document and register a `delete`
+   *  action into any surrounding `<ActionsProvider>`. Default true. */
+  enableKeyboard?: boolean;
   /** Label passed to applyBatch. Default 'Delete'. */
   label?: string;
   /** Optional filter: given selected ids, return the subset to actually delete.
@@ -41,7 +43,9 @@ export interface UseDeleteReturn {
   deleteSelection(): NodeId[];
 }
 
-/** Selection-deletion action; optionally binds Delete/Backspace keys. */
+/** Selection-deletion action; binds Delete/Backspace by default. Registers a
+ *  `delete` action into a surrounding `<ActionsProvider>` when one is in
+ *  scope; otherwise falls back to a document keydown listener. */
 export function useDelete(
   adapter: DeleteAdapter,
   options: UseDeleteOptions = {},
@@ -66,8 +70,22 @@ export function useDelete(
     return ids;
   }, []);
 
+  const reg = useActionsRegistry();
+  const enableKeyboard = options.enableKeyboard ?? true;
+
+  useEffect(() => {
+    if (!reg || !enableKeyboard) return;
+    const action: Action = {
+      id: 'delete',
+      label: 'Delete',
+      defaultBinding: { key: ['Delete', 'Backspace'] },
+      run: () => { deleteSelection(); },
+    };
+    return reg.register(action);
+  }, [reg, enableKeyboard, deleteSelection]);
+
   useKeybinding(
-    { key: ['Delete', 'Backspace'], enabled: !!options.bindKeyboard },
+    { key: ['Delete', 'Backspace'], enabled: enableKeyboard && reg == null },
     () => { deleteSelection(); },
   );
 

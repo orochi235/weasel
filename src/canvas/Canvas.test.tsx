@@ -528,8 +528,8 @@ describe('Canvas tools mode', () => {
   describe('legacy-hook dedupe', () => {
     it('suppresses legacy delete keybinding when "delete" Tool is in ambient', () => {
       // The legacy useDelete hook attaches its own document keydown handler
-      // when bindKeyboard is true. With a 'delete' Tool in ambient, Canvas
-      // must pass bindKeyboard:false so the legacy handler never fires.
+      // when enableKeyboard is true. With a 'delete' Tool in ambient, Canvas
+      // must pass enableKeyboard:false so the legacy handler never fires.
       const legacyApplyOps = vi.fn();
 
       function Test() {

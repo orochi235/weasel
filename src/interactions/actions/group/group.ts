@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { createCreateGroupOp } from '../../../features/groups/ops/createGroup';
 import { createDissolveGroupOp } from '../../../features/groups/ops/dissolveGroup';
 import { createSetSelectionOp } from '../../../core/ops/select';
@@ -7,6 +7,7 @@ import { dispatchApplyBatch } from '../../../core/applyOps';
 import type { Group, GroupAdapter } from '../../../features/groups/types';
 import type { NodeId } from '../../../core/scene/types';
 import { useKeybinding } from '../useKeybinding';
+import { useActionsRegistry, type Action } from '../registry';
 
 /** Adapter for `useGroup` / `useUngroup`. */
 export interface GroupActionAdapter extends GroupAdapter {
@@ -18,8 +19,9 @@ export interface GroupActionAdapter extends GroupAdapter {
 
 /** Options for `useGroup`. */
 export interface UseGroupOptions {
-  /** Auto-bind Mod+G on document. Default false. */
-  bindKeyboard?: boolean;
+  /** Auto-bind Mod+G on document and register a `group` action into any
+   *  surrounding `<ActionsProvider>`. Default true. */
+  enableKeyboard?: boolean;
   /** Mint the id for the new group. Default: `g_${Date.now()}_${random}`. */
   newGroupId?: () => string;
   /** Label passed to applyBatch. Default 'Group'. */
@@ -41,7 +43,8 @@ function defaultMintId(): string {
   return `g_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-/** Selection-grouping action; optionally binds Mod+G. */
+/** Selection-grouping action; binds Mod+G and registers a `group` action
+ *  into a surrounding `<ActionsProvider>` by default. */
 export function useGroup(
   adapter: GroupActionAdapter,
   options: UseGroupOptions = {},
@@ -67,8 +70,22 @@ export function useGroup(
     return id;
   }, []);
 
+  const reg = useActionsRegistry();
+  const enableKeyboard = options.enableKeyboard ?? true;
+
+  useEffect(() => {
+    if (!reg || !enableKeyboard) return;
+    const action: Action = {
+      id: 'group',
+      label: 'Group',
+      defaultBinding: { key: 'g', mod: true },
+      run: () => { group(); },
+    };
+    return reg.register(action);
+  }, [reg, enableKeyboard, group]);
+
   useKeybinding(
-    { key: 'g', mod: true, enabled: !!options.bindKeyboard },
+    { key: 'g', mod: true, enabled: enableKeyboard && reg == null },
     () => { group(); },
   );
 
@@ -77,8 +94,9 @@ export function useGroup(
 
 /** Options for `useUngroup`. */
 export interface UseUngroupOptions {
-  /** Auto-bind Mod+Shift+G on document. Default false. */
-  bindKeyboard?: boolean;
+  /** Auto-bind Mod+Shift+G on document and register an `ungroup` action into
+   *  any surrounding `<ActionsProvider>`. Default true. */
+  enableKeyboard?: boolean;
   /** Label passed to applyBatch. Default 'Ungroup'. */
   label?: string;
 }
@@ -92,7 +110,8 @@ export interface UseUngroupReturn {
   ungroup(): string[];
 }
 
-/** Selection-ungrouping action; optionally binds Mod+Shift+G. */
+/** Selection-ungrouping action; binds Mod+Shift+G and registers an `ungroup`
+ *  action into a surrounding `<ActionsProvider>` by default. */
 export function useUngroup(
   adapter: GroupActionAdapter,
   options: UseUngroupOptions = {},
@@ -134,8 +153,22 @@ export function useUngroup(
     return dissolved.map((d) => d.group.id);
   }, []);
 
+  const reg = useActionsRegistry();
+  const enableKeyboard = options.enableKeyboard ?? true;
+
+  useEffect(() => {
+    if (!reg || !enableKeyboard) return;
+    const action: Action = {
+      id: 'ungroup',
+      label: 'Ungroup',
+      defaultBinding: { key: 'g', mod: true, shift: true },
+      run: () => { ungroup(); },
+    };
+    return reg.register(action);
+  }, [reg, enableKeyboard, ungroup]);
+
   useKeybinding(
-    { key: 'g', mod: true, shift: true, enabled: !!options.bindKeyboard },
+    { key: 'g', mod: true, shift: true, enabled: enableKeyboard && reg == null },
     () => { ungroup(); },
   );
 

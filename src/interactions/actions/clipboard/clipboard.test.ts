@@ -154,7 +154,7 @@ describe('useClipboard', () => {
     });
   });
 
-  describe('bindKeyboard: true', () => {
+  describe('enableKeyboard: true (default)', () => {
     function fire(key: string, opts: KeyboardEventInit = {}) {
       const ev = new KeyboardEvent('keydown', {
         key,
@@ -172,7 +172,7 @@ describe('useClipboard', () => {
       const { result } = renderHook(() =>
         useClipboard(helpers.adapter, {
           getSelection: () => [asNodeId('a')],
-          bindKeyboard: true,
+          enableKeyboard: true,
         }),
       );
       act(() => { fire('c', { metaKey: true }); });
@@ -186,7 +186,7 @@ describe('useClipboard', () => {
       renderHook(() =>
         useClipboard(helpers.adapter, {
           getSelection: () => [asNodeId('a')],
-          bindKeyboard: true,
+          enableKeyboard: true,
         }),
       );
       act(() => { fire('x', { metaKey: true }); });
@@ -200,7 +200,7 @@ describe('useClipboard', () => {
       const { result } = renderHook(() =>
         useClipboard(helpers.adapter, {
           getSelection: () => [asNodeId('a')],
-          bindKeyboard: true,
+          enableKeyboard: true,
         }),
       );
       act(() => { result.current.copy(); });
@@ -215,7 +215,7 @@ describe('useClipboard', () => {
       renderHook(() =>
         useClipboard(helpers.adapter, {
           getSelection: () => [asNodeId('a')],
-          bindKeyboard: true,
+          enableKeyboard: true,
         }),
       );
       act(() => { fire('x', { ctrlKey: true }); });
@@ -228,7 +228,7 @@ describe('useClipboard', () => {
       const { result } = renderHook(() =>
         useClipboard(helpers.adapter, {
           getSelection: () => [asNodeId('a')],
-          bindKeyboard: true,
+          enableKeyboard: true,
         }),
       );
       act(() => { fire('c'); });
@@ -241,7 +241,7 @@ describe('useClipboard', () => {
       renderHook(() =>
         useClipboard(helpers.adapter, {
           getSelection: () => [asNodeId('a')],
-          bindKeyboard: true,
+          enableKeyboard: true,
         }),
       );
       const input = document.createElement('input');
@@ -266,7 +266,7 @@ describe('useClipboard', () => {
       renderHook(() =>
         useClipboard(helpers.adapter, {
           getSelection: () => [asNodeId('a')],
-          bindKeyboard: true,
+          enableKeyboard: true,
         }),
       );
       let ev: KeyboardEvent;
@@ -275,11 +275,14 @@ describe('useClipboard', () => {
     });
   });
 
-  it('bindKeyboard default (false): Mod+C does nothing', () => {
+  it('enableKeyboard: false suppresses Mod+C', () => {
     const helpers = makeAdapter();
     helpers.seed({ id: 'a', x: 0, y: 0 });
     const { result } = renderHook(() =>
-      useClipboard(helpers.adapter, { getSelection: () => [asNodeId('a')] }),
+      useClipboard(helpers.adapter, {
+        getSelection: () => [asNodeId('a')],
+        enableKeyboard: false,
+      }),
     );
     act(() => {
       document.dispatchEvent(new KeyboardEvent('keydown', {

@@ -651,8 +651,8 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   selRef.current = effectiveSelection;
 
   // Action gestures (Delete/Backspace, arrow nudge, Mod+D duplicate). Hooks
-  // always run; each `bindKeyboard`/`enableKeyboard` flag gates whether the
-  // underlying useKeybinding actually attaches a listener.
+  // always run; each hook's `enableKeyboard` flag gates whether the underlying
+  // useKeybinding actually attaches a listener.
   const deleteCfg = gestures?.delete;
   const deleteEnabled = !!deleteCfg;
   const deleteOpts = (typeof deleteCfg === 'object' ? deleteCfg : {}) as DeleteGestureConfig;
@@ -667,7 +667,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       removeObject: adapterWithRemove.removeObject,
       applyBatch: effectiveAdapter.applyBatch?.bind(effectiveAdapter),
     },
-    { bindKeyboard: deleteEnabled && !tools?.has('delete'), label: deleteOpts.label, filter: deleteOpts.filter },
+    { enableKeyboard: deleteEnabled && !tools?.has('delete'), label: deleteOpts.label, filter: deleteOpts.filter },
   );
 
   const nudgeCfg = gestures?.nudge;

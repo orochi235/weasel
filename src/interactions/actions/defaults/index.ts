@@ -6,3 +6,5 @@ export { defaultReorderActions, type ReorderDeps } from './reorder';
 export { defaultFlipActions, type FlipDeps } from './flip';
 export { defaultAlignActions, type AlignDeps } from './align';
 export { defaultDistributeActions, type DistributeDeps } from './distribute';
+export { defaultDeleteAction, type DeleteDeps } from './delete';
+export { defaultGroupAction, defaultUngroupAction, type GroupDeps, type UngroupDeps } from './group';

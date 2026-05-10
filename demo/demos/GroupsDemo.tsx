@@ -55,8 +55,8 @@ export function GroupsDemo() {
       setGroups((gs) => gs.map((g) => (g.id === gid ? { ...g, members: g.members.filter((m) => !ids.includes(m)) } : g))),
   };
 
-  useGroup(adapter, { bindKeyboard: true });
-  useUngroup(adapter, { bindKeyboard: true });
+  useGroup(adapter);
+  useUngroup(adapter);
 
   const groupBounds = (groupId: string): Pose | null => {
     const leaves = expandToLeaves([groupId], adapter);
