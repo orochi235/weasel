@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { RangePicker, paintGradientTrack, type Thumb } from '@orochi235/weasel-ui';
 import { SceneCanvas, useScene, polygonFromPoints } from '@orochi235/weasel';
 import type { RenderLayer } from '@orochi235/weasel';
@@ -32,15 +32,27 @@ function hexToRgba01(hex: string): [number, number, number, number] {
 
 type CThumb = Thumb & { key: 'cTop' | 'cPeak' | 'cBot' };
 
-/** Per-thumb chroma bounds. Three modes drive the slider's `bounds:`
- *  config and the diagram's range-line annotations together so they
- *  can't drift apart. */
-type BoundsMode = 'open' | 'default' | 'tight';
+/** Three modes drive the per-thumb bounds for both the chroma and L
+ *  sliders, plus the diagram's range-line annotations. Tied together so
+ *  the slider constraints and the visualization stay in sync. */
+type BoundsMode = 'unconstrained' | 'default' | 'conservative';
 type ChromaBounds = { cTop: [number, number]; cPeak: [number, number]; cBot: [number, number] };
+type LBounds = { dark: [number, number]; light: [number, number] };
+
 const CHROMA_BOUNDS: Record<BoundsMode, ChromaBounds> = {
-  open:    { cTop: [0, 0.22], cPeak: [0, 0.22], cBot: [0, 0.22] },
-  default: { cTop: [0, 0.06], cPeak: [0, 0.22], cBot: [0, 0.10] },
-  tight:   { cTop: [0, 0.03], cPeak: [0, 0.11], cBot: [0, 0.05] },
+  unconstrained: { cTop: [0, 0.22], cPeak: [0, 0.22], cBot: [0, 0.22] },
+  default:       { cTop: [0, 0.06], cPeak: [0, 0.22], cBot: [0, 0.10] },
+  conservative:  { cTop: [0, 0.03], cPeak: [0, 0.11], cBot: [0, 0.05] },
+};
+
+/** L bounds: how far each L thumb can reach. At extreme L, OKLCH can
+ *  represent very little chroma (everything clips to black or white), so
+ *  the default mode keeps each thumb away from those zones. `conservative`
+ *  pulls in further; `unconstrained` allows the full [0, 1] range. */
+const L_BOUNDS: Record<BoundsMode, LBounds> = {
+  unconstrained: { dark: [0,    1], light: [0, 1]    },
+  default:       { dark: [0.05, 1], light: [0, 0.97] },
+  conservative:  { dark: [0.15, 1], light: [0, 0.90] },
 };
 
 interface RampParams {
@@ -68,6 +80,50 @@ function lAtIndex(idx: number, lRange: [number, number]): number {
 function colorAtIndex(idx: number, p: RampParams): string {
   const L = lAtIndex(idx, p.lRange);
   return oklchToHex(L, chromaAt(L, p), p.hue);
+}
+
+/** Three-way segmented toggle for bounds mode. Single-selection radio
+ *  group styled as inline buttons. */
+function BoundsModeToggle({ mode, onChange }: { mode: BoundsMode; onChange: (m: BoundsMode) => void }) {
+  const options: BoundsMode[] = ['unconstrained', 'default', 'conservative'];
+  return (
+    <div role="radiogroup" aria-label="OKLCH bounds mode" style={{ display: 'flex', marginBottom: 10, border: '1px solid var(--ckd-border-2)', borderRadius: 4, overflow: 'hidden', width: 'fit-content' }}>
+      {options.map((opt, i) => {
+        const active = mode === opt;
+        return (
+          <label
+            key={opt}
+            role="radio"
+            aria-checked={active}
+            tabIndex={active ? 0 : -1}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight' || e.key === 'ArrowDown') onChange(options[(i + 1) % options.length]);
+              else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') onChange(options[(i - 1 + options.length) % options.length]);
+            }}
+            style={{
+              padding: '4px 10px',
+              fontSize: 11,
+              fontFamily: 'ui-monospace, monospace',
+              cursor: 'pointer',
+              background: active ? 'var(--ckd-accent-dim)' : 'transparent',
+              color: active ? 'var(--ckd-text)' : 'var(--ckd-muted)',
+              borderLeft: i === 0 ? 'none' : '1px solid var(--ckd-border-2)',
+              userSelect: 'none',
+            }}
+          >
+            <input
+              type="radio"
+              name="bounds-mode"
+              checked={active}
+              onChange={() => onChange(opt)}
+              style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
+            />
+            {opt}
+          </label>
+        );
+      })}
+    </div>
+  );
 }
 
 /** Output swatch: row of color tiles, one per index. */
@@ -227,13 +283,26 @@ export function PerceptualColorSlidersDemo() {
 
   const [indices, setIndices] = useState<number[]>([25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900]);
 
-  // Bounds-mode checkboxes. Independent toggles; `tight` wins if both are
-  // checked (it's the more restrictive of the two, and "further constrain"
-  // only makes sense as an intent if it overrides "remove").
-  const [removeBounds, setRemoveBounds] = useState(false);
-  const [furtherConstrain, setFurtherConstrain] = useState(false);
-  const boundsMode: BoundsMode = furtherConstrain ? 'tight' : removeBounds ? 'open' : 'default';
+  // Bounds mode applies to both the chroma and L sliders, plus the
+  // diagram's range tracks. Three-way: unconstrained / default / conservative.
+  const [boundsMode, setBoundsMode] = useState<BoundsMode>('default');
   const chromaBounds = CHROMA_BOUNDS[boundsMode];
+  const lBounds = L_BOUNDS[boundsMode];
+
+  // Clamp existing values when the mode tightens to keep thumbs in-bounds.
+  // (Loosening the mode never invalidates current state, so this is a no-op
+  // when transitioning unconstrained ← anything.)
+  useEffect(() => {
+    setLRange(prev => [
+      Math.max(prev[0], lBounds.dark[0]),
+      Math.min(prev[1], lBounds.light[1]),
+    ]);
+    setChroma(prev => ({
+      cTop:  Math.min(prev.cTop,  chromaBounds.cTop[1]),
+      cPeak: Math.min(prev.cPeak, chromaBounds.cPeak[1]),
+      cBot:  Math.min(prev.cBot,  chromaBounds.cBot[1]),
+    }));
+  }, [boundsMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const params: RampParams = { hue, midL, lRange, chroma };
 
@@ -264,8 +333,8 @@ export function PerceptualColorSlidersDemo() {
             min={0} max={1} step={0.005}
             constraint="ordered"
             thumbs={[
-              { value: lRange[0], label: '↓', shape: 'notched' },
-              { value: lRange[1], label: '↑', shape: 'notched' },
+              { value: lRange[0], label: '↓', shape: 'notched', bounds: lBounds.dark  },
+              { value: lRange[1], label: '↑', shape: 'notched', bounds: lBounds.light },
             ]}
             onChange={ts => setLRange([ts[0].value, ts[1].value])}
             readoutPlacement="below-thumb"
@@ -321,19 +390,10 @@ export function PerceptualColorSlidersDemo() {
 
       <div style={{ position: 'sticky', top: 16 }}>
         <h3 style={{ margin: '0 0 8px', fontSize: 11, color: 'var(--ckd-faint)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>C as function of L</h3>
-        <div style={{ display: 'flex', gap: 14, marginBottom: 8, fontSize: 11, color: 'var(--ckd-muted)' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-            <input type="checkbox" checked={removeBounds} onChange={e => setRemoveBounds(e.target.checked)} />
-            remove OKLCH boundaries
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-            <input type="checkbox" checked={furtherConstrain} onChange={e => setFurtherConstrain(e.target.checked)} />
-            further constrain
-          </label>
-        </div>
+        <BoundsModeToggle mode={boundsMode} onChange={setBoundsMode} />
         <ChromaCurveDiagram params={params} bounds={chromaBounds} />
         <div style={{ fontSize: 10, color: 'var(--ckd-faint)', marginTop: 8, lineHeight: 1.4 }}>
-          Triangle interior rendered via <code>PathDrawCommand.vertexColors</code> — each corner carries its OKLCH color, the kit's <code>pathFillVColor</code> shader interpolates across. Dashed range tracks show each thumb's allowed slide range; toggle the checkboxes to lift or tighten them.
+          Triangle interior rendered via <code>PathDrawCommand.vertexColors</code> — each corner carries its OKLCH color, the kit's <code>pathFillVColor</code> shader interpolates across. Dashed range tracks show each thumb's allowed slide range; the toggle above adjusts the L and chroma slider bounds together.
         </div>
       </div>
     </div>
