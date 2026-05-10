@@ -9,7 +9,7 @@ import { useRef, useState } from 'react';
 import { render, fireEvent } from '@testing-library/react';
 import { Canvas } from '../../canvas/Canvas';
 import { arrayAdapter } from '../../core/adapters/arrayAdapter';
-import { useSelection } from '../../features/selection/useSelection';
+import { useSelection } from '../../core/selection/useSelection';
 import { useTools } from '../useTools';
 import { useSelectTool } from './useSelectTool';
 import { asNodeId } from '../../core/scene/types';

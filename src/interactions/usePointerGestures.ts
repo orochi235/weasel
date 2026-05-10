@@ -15,7 +15,7 @@ import {
 } from './gestures/rotate/handle';
 import { rotatePoint } from './gestures/rotate/geometry';
 import type { ModifierState } from './gestures/types';
-import type { SelectionApi } from '../features/selection/useSelection';
+import type { SelectionApi } from '../core/selection/useSelection';
 import type { View } from '../core/viewport/view';
 import type { DebugSink, HitShape } from '../debug/types';
 import { pickTopMostHit } from '../tools/builtin/pickTopMostHit';

@@ -15,7 +15,7 @@ import { useKeyboardZoomTool } from './useKeyboardZoomTool';
 import { Canvas } from '../../canvas/Canvas';
 import { arrayAdapter } from '../../core/adapters/arrayAdapter';
 import { asNodeId } from '../../core/scene/types';
-import { useSelection } from '../../features/selection/useSelection';
+import { useSelection } from '../../core/selection/useSelection';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
 beforeAll(() => {

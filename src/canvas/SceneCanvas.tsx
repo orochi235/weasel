@@ -33,7 +33,7 @@ import type { View } from '../core/viewport/view';
 import type { Node, Scene } from '../core/scene/types';
 import type { NodeId } from '../core/scene/types';
 import type { Op } from '../core/ops/types';
-import { useSelection, type SelectionApi, type UseSelectionOptions } from '../features/selection/useSelection';
+import { useSelection, type SelectionApi, type UseSelectionOptions } from '../core/selection/useSelection';
 import { usePublishSelection } from '../features/selection/SelectionContext';
 import type { Bounds } from '../tools/builtin/useSelectTool';
 import { useTools, type ToolsApi } from '../tools/useTools';

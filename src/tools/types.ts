@@ -1,5 +1,5 @@
 // src/tools/types.ts
-import type { SelectionApi } from '../features/selection/useSelection';
+import type { SelectionApi } from '../core/selection/useSelection';
 import type { Op } from '../core/ops/types';
 import type { View } from '../core/viewport/view';
 import type { RenderLayer } from '../core/layers/render';

@@ -28,7 +28,7 @@ import {
   useSelection,
   type SelectionApi,
   type UseSelectionOptions,
-} from '../features/selection/useSelection';
+} from '../core/selection/useSelection';
 import { useArrayAdapter, type UseArrayAdapterOptions } from '../core/adapters/useArrayAdapter';
 import { useDelete } from '../interactions/actions/delete';
 import { useNudge } from '../interactions/actions/nudge';

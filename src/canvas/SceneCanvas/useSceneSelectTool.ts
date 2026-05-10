@@ -17,7 +17,7 @@ import { useSelectTool, type Bounds } from '../../tools/builtin/useSelectTool';
 import type { Node, Scene, NodeId } from '../../core/scene/types';
 import { asNodeId } from '../../core/scene/types';
 import type { Op } from '../../core/ops/types';
-import type { SelectionApi } from '../../features/selection/useSelection';
+import type { SelectionApi } from '../../core/selection/useSelection';
 import type { UseMoveOptions } from '../../interactions/gestures/move/move';
 import type { UseResizeOptions } from '../../interactions/gestures/resize/resize';
 import type { UseRotateOptions } from '../../interactions/gestures/rotate/rotate';

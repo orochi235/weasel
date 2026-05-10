@@ -4,7 +4,7 @@ import { createRef, useRef, useState } from 'react';
 import { Canvas } from './Canvas';
 import { SceneCanvas } from './SceneCanvas';
 import { useScene } from '../core/scene/useScene';
-import { useSelection } from '../features/selection/useSelection';
+import { useSelection } from '../core/selection/useSelection';
 import { asNodeId, type NodeId } from '../core/scene/types';
 import { arrayAdapter } from '../core/adapters/arrayAdapter';
 import { useSelectTool } from '../tools/builtin/useSelectTool';

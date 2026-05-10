@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type React from 'react';
-import { useSelection } from '../features/selection/useSelection';
+import { useSelection } from '../core/selection/useSelection';
 import { asNodeId } from '../core/scene/types';
 import { usePointerGestures } from './usePointerGestures';
 import type { MoveController } from './gestures/move/move';

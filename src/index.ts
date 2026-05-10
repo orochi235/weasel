@@ -120,13 +120,13 @@ export type {
   CustomLayerEntry,
   GridSlotConfig,
 } from './canvas/Canvas';
-export { useSelection } from './features/selection/useSelection';
+export { useSelection } from './core/selection/useSelection';
 export type {
   SelectionApi,
   SelectionMode,
   SelectionExtendKey,
   UseSelectionOptions,
-} from './features/selection/useSelection';
+} from './core/selection/useSelection';
 // --- @experimental Selection ambient context (2026-05-09) -------------------
 export {
   SelectionContextProvider,

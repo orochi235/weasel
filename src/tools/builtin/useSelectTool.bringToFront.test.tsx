@@ -14,7 +14,7 @@ import { Canvas } from '../../canvas/Canvas';
 import { SceneCanvas } from '../../canvas/SceneCanvas';
 import { sceneToAdapter } from '../../canvas/sceneAdapter';
 import { useScene } from '../../core/scene/useScene';
-import { useSelection } from '../../features/selection/useSelection';
+import { useSelection } from '../../core/selection/useSelection';
 import { useTools } from '../useTools';
 import { useSelectTool } from './useSelectTool';
 import { arrayAdapter } from '../../core/adapters/arrayAdapter';
