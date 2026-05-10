@@ -1,0 +1,41 @@
+name: Visual Regression — Update Baselines
+
+# Captures fresh baselines on the pinned ubuntu-22.04 runner and uploads
+# them as a downloadable artifact. After downloading, commit the PNGs to
+# tests/visual/baselines/ and delete tests/visual/baselines/.gitignore.
+#
+# This is the manual-trigger companion to `visual.yml`. Use it when:
+#   - A code change intentionally alters canvas output (re-baseline).
+#   - Bootstrapping the rig for the first time (initial soak run).
+#
+# CRITICAL: pinned to ubuntu-22.04 to match the verification workflow.
+# Changing this runner image must be coordinated with `visual.yml`.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  capture:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Capture baselines (UPDATE_SNAPSHOTS=1)
+        run: npm run test:visual:update
+
+      - name: Upload captured baselines
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-baselines
+          path: tests/visual/baselines/*.png
+          retention-days: 30

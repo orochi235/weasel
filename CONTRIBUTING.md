@@ -40,21 +40,35 @@ Doing so will produce baselines that fail in CI.
 
 ### Updating baselines
 
-When an intentional code change alters canvas output:
+When an intentional code change alters canvas output, or when bootstrapping
+the rig for the first time:
 
 1. Pull the latest main branch.
-2. Run `npm run test:visual:update` **inside the CI Docker image** or on the
-   GitHub Actions runner directly. The fastest path:
+2. Trigger the **Visual Regression — Update Baselines** workflow on GitHub
+   Actions:
    ```bash
-   # Option A — push the branch; GitHub Actions captures updated baselines
-   # in an artifacts archive (see visual.yml upload-artifact step).
-   # Download the artifact, copy the PNGs into tests/visual/baselines/, commit.
-
-   # Option B — use act (local GitHub Actions runner) on Linux:
-   act push -W .github/workflows/visual.yml --env UPDATE_SNAPSHOTS=1
+   gh workflow run visual-update.yml
+   gh run watch  # follow until the run completes
    ```
-3. Review the diff of changed PNGs in the PR before merging.
-4. CI must green before merging.
+   Or trigger it from the Actions tab in the GitHub UI.
+3. Download the captured baselines artifact:
+   ```bash
+   gh run download <run-id> --name visual-baselines --dir tests/visual/baselines
+   ```
+4. If `tests/visual/baselines/.gitignore` still exists, delete it now (first
+   commit of baselines for the rig).
+5. Review the changed PNGs (`git diff --stat tests/visual/baselines/`) and
+   visually spot-check any that look wrong before staging.
+6. Commit the spec changes (if any) and the new/updated PNGs together.
+7. Trigger the verification workflow to confirm green:
+   ```bash
+   gh workflow run visual.yml
+   ```
+
+**Local capture is not supported.** Baselines are pixel-exact and must come
+from `ubuntu-22.04` with the Playwright Chromium pinned by
+`package-lock.json`. macOS / Windows / `ubuntu-latest` captures will not
+match CI.
 
 ### Adding a new demo
 
