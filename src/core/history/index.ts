@@ -1,2 +1,2 @@
 export { createHistory } from './history';
-export type { History } from './history';
+export type { History, CreateHistoryOptions } from './history';
