@@ -262,8 +262,20 @@ function SeedHandle({
 // Main demo
 // ---------------------------------------------------------------------------
 
+/** Read `?frozenTime=N` from the URL once at mount; if present, return that
+ *  fixed seconds-since-start instead of a live RAF loop. Used by the visual-
+ *  regression spec to pin every panel to a deterministic frame. */
+function readFrozenTime(): number | null {
+  if (typeof window === 'undefined') return null;
+  const raw = new URLSearchParams(window.location.search).get('frozenTime');
+  if (raw === null) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
 export function CustomShaderDemo() {
-  const [time, setTime] = useState(0);
+  const frozen = useMemo(() => readFrozenTime(), []);
+  const [time, setTime] = useState(frozen ?? 0);
   const [mouse, setMouse] = useState<[number, number]>([0.5, 0.5]);
   const [ripples, setRipples] = useState<Ripple[]>([]);
   const [mutableSeeds, setMutableSeeds] = useState<{ x: number; y: number }[]>(() =>
@@ -273,8 +285,10 @@ export function CustomShaderDemo() {
     })));
   const tex = useWeaselMarkTexture();
 
-  // Animation loop
+  // Animation loop — skipped when `?frozenTime=N` is present so visual specs
+  // can capture a deterministic frame.
   useEffect(() => {
+    if (frozen !== null) return;
     let raf = 0;
     const start = performance.now();
     const tick = () => {
@@ -283,7 +297,7 @@ export function CustomShaderDemo() {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [frozen]);
 
   // Drop expired ripples
   useEffect(() => {
