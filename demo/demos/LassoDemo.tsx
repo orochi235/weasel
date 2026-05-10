@@ -5,6 +5,7 @@ import {
   sceneToAdapter,
   selectFromLasso,
   selectFromMarquee,
+  useKeybindings,
   useLassoTool,
   useScene,
   useSelection,
@@ -96,6 +97,10 @@ export function LassoDemo() {
     active: 'select',
     registry: { select, lasso },
   });
+  // Wire L (lasso) and V (select) so the consumer can swap active tools by
+  // keystroke. SceneCanvas disables its internal keybindings whenever a
+  // `tools=` prop is supplied; the consumer owns the wiring.
+  useKeybindings(tools);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => { canvasRef.current?.focus(); }, []);
