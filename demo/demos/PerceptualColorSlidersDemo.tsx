@@ -32,12 +32,15 @@ function hexToRgba01(hex: string): [number, number, number, number] {
 
 type CThumb = Thumb & { key: 'cTop' | 'cPeak' | 'cBot' };
 
-/** Per-thumb chroma bounds. Drives both the slider's `bounds:` config and
- *  the diagram's range-line annotations, so they can't drift apart. */
-const CHROMA_BOUNDS = {
-  cTop:  [0, 0.06] as [number, number],
-  cPeak: [0, 0.22] as [number, number],
-  cBot:  [0, 0.10] as [number, number],
+/** Per-thumb chroma bounds. Three modes drive the slider's `bounds:`
+ *  config and the diagram's range-line annotations together so they
+ *  can't drift apart. */
+type BoundsMode = 'open' | 'default' | 'tight';
+type ChromaBounds = { cTop: [number, number]; cPeak: [number, number]; cBot: [number, number] };
+const CHROMA_BOUNDS: Record<BoundsMode, ChromaBounds> = {
+  open:    { cTop: [0, 0.22], cPeak: [0, 0.22], cBot: [0, 0.22] },
+  default: { cTop: [0, 0.06], cPeak: [0, 0.22], cBot: [0, 0.10] },
+  tight:   { cTop: [0, 0.03], cPeak: [0, 0.11], cBot: [0, 0.05] },
 };
 
 interface RampParams {
@@ -114,12 +117,12 @@ const yAt = (C: number) => DIAGRAM_PAD.t + (1 - C / MAX_C) * PLOT_H;
  *  vertex carries the OKLCH color at its (L, C, hue), so the interior fill
  *  smoothly interpolates between the three corner colors. Frame, gridlines,
  *  and control-point markers are an SVG overlay above the canvas. */
-function ChromaCurveDiagram({ params }: { params: RampParams }) {
+function ChromaCurveDiagram({ params, bounds }: { params: RampParams; bounds: ChromaBounds }) {
   const [lo, hi] = params.lRange;
   const points = [
-    { L: lo,         C: params.chroma.cBot,  label: 'B', color: oklchToHex(lo,         params.chroma.cBot,  params.hue), bounds: CHROMA_BOUNDS.cBot },
-    { L: params.midL, C: params.chroma.cPeak, label: 'P', color: oklchToHex(params.midL, params.chroma.cPeak, params.hue), bounds: CHROMA_BOUNDS.cPeak },
-    { L: hi,         C: params.chroma.cTop,  label: 'T', color: oklchToHex(hi,         params.chroma.cTop,  params.hue), bounds: CHROMA_BOUNDS.cTop },
+    { L: lo,         C: params.chroma.cBot,  label: 'B', color: oklchToHex(lo,         params.chroma.cBot,  params.hue), bounds: bounds.cBot },
+    { L: params.midL, C: params.chroma.cPeak, label: 'P', color: oklchToHex(params.midL, params.chroma.cPeak, params.hue), bounds: bounds.cPeak },
+    { L: hi,         C: params.chroma.cTop,  label: 'T', color: oklchToHex(hi,         params.chroma.cTop,  params.hue), bounds: bounds.cTop },
   ];
 
   // Custom render layer: a single 3-vertex polygon with per-vertex colors,
@@ -224,6 +227,14 @@ export function PerceptualColorSlidersDemo() {
 
   const [indices, setIndices] = useState<number[]>([25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900]);
 
+  // Bounds-mode checkboxes. Independent toggles; `tight` wins if both are
+  // checked (it's the more restrictive of the two, and "further constrain"
+  // only makes sense as an intent if it overrides "remove").
+  const [removeBounds, setRemoveBounds] = useState(false);
+  const [furtherConstrain, setFurtherConstrain] = useState(false);
+  const boundsMode: BoundsMode = furtherConstrain ? 'tight' : removeBounds ? 'open' : 'default';
+  const chromaBounds = CHROMA_BOUNDS[boundsMode];
+
   const params: RampParams = { hue, midL, lRange, chroma };
 
   return (
@@ -272,9 +283,9 @@ export function PerceptualColorSlidersDemo() {
             min={0} max={0.22} step={0.005}
             constraint="free"
             thumbs={[
-              { value: chroma.cTop,  label: 'T', key: 'cTop',  bounds: CHROMA_BOUNDS.cTop  },
-              { value: chroma.cPeak, label: 'P', key: 'cPeak', bounds: CHROMA_BOUNDS.cPeak },
-              { value: chroma.cBot,  label: 'B', key: 'cBot',  bounds: CHROMA_BOUNDS.cBot  },
+              { value: chroma.cTop,  label: 'T', key: 'cTop',  bounds: chromaBounds.cTop  },
+              { value: chroma.cPeak, label: 'P', key: 'cPeak', bounds: chromaBounds.cPeak },
+              { value: chroma.cBot,  label: 'B', key: 'cBot',  bounds: chromaBounds.cBot  },
             ]}
             onChange={ts => {
               const next = { ...chroma };
@@ -310,9 +321,19 @@ export function PerceptualColorSlidersDemo() {
 
       <div style={{ position: 'sticky', top: 16 }}>
         <h3 style={{ margin: '0 0 8px', fontSize: 11, color: 'var(--ckd-faint)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>C as function of L</h3>
-        <ChromaCurveDiagram params={params} />
+        <div style={{ display: 'flex', gap: 14, marginBottom: 8, fontSize: 11, color: 'var(--ckd-muted)' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+            <input type="checkbox" checked={removeBounds} onChange={e => setRemoveBounds(e.target.checked)} />
+            remove OKLCH boundaries
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+            <input type="checkbox" checked={furtherConstrain} onChange={e => setFurtherConstrain(e.target.checked)} />
+            further constrain
+          </label>
+        </div>
+        <ChromaCurveDiagram params={params} bounds={chromaBounds} />
         <div style={{ fontSize: 10, color: 'var(--ckd-faint)', marginTop: 8, lineHeight: 1.4 }}>
-          Triangle interior rendered via <code>PathDrawCommand.vertexColors</code> — each corner carries its OKLCH color, the kit's <code>pathFillVColor</code> shader interpolates across.
+          Triangle interior rendered via <code>PathDrawCommand.vertexColors</code> — each corner carries its OKLCH color, the kit's <code>pathFillVColor</code> shader interpolates across. Dashed range tracks show each thumb's allowed slide range; toggle the checkboxes to lift or tighten them.
         </div>
       </div>
     </div>
