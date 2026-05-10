@@ -258,6 +258,41 @@ export interface AreaSelectOverlay {
   shiftHeld: boolean;
 }
 
+// ----- lasso-select -----
+
+/** Pose carried through lasso-select gestures: the world point under the
+ *  cursor at gesture start, plus the shift-key state at start. */
+export interface LassoSelectPose {
+  worldX: number;
+  worldY: number;
+  shiftHeld: boolean;
+}
+
+/** Per-frame proposed lasso state: full vertex history + shift policy. */
+export interface LassoSelectProposed {
+  vertices: ReadonlyArray<{ x: number; y: number }>;
+  shiftHeld: boolean;
+}
+
+/** onMove for lasso-select doesn't shape ops; behaviors only need to react
+ *  in onEnd. We return void from onMove. */
+export type LassoSelectMoveResult = void;
+
+/** A behavior plugged into `useLassoSelect`. */
+export type LassoSelectBehavior = GestureBehavior<
+  LassoSelectPose,
+  LassoSelectProposed,
+  LassoSelectMoveResult
+>;
+
+/** Live overlay state exposed by `useLassoSelect` for rendering the
+ *  in-progress polyline + dashed close-line. */
+export interface LassoSelectOverlay {
+  vertices: ReadonlyArray<{ x: number; y: number }>;
+  current: { worldX: number; worldY: number };
+  shiftHeld: boolean;
+}
+
 // ----- clone -----
 
 /** Pose carried through clone gestures: ids being cloned plus the pointer/offset state. */
