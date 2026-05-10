@@ -22,6 +22,13 @@ All 10 steps shipped between 2026-05-08 and 2026-05-09. Kit is GL-only at 0.2.0.
 - **WebGL1 fallback** — out of scope; WebGL2 only.
 - **Headless server-side rendering** (Node + headless-gl) — possible but not a v1 commitment.
 
+### Post-transition demo follow-ups (added 2026-05-09)
+
+- [x] **"Paint & shading" demos.** *Shipped 0.3.0.* Four demos covering gradient paint variants, per-vertex path colors, stacked color matrices, and the experimental custom-shader API. Spec: `docs/superpowers/specs/2026-05-09-webgl-features-demos-design.md`. Plan: `docs/superpowers/plans/2026-05-09-webgl-features-demos.md`. Drove a small public-API addition (`shaders` prop on `Canvas`/`SceneCanvas`) and a kit fix (`extractUniformNames` now expands array uniform slots).
+- **Visual-regression coverage for the new demos.** The Step 9 rig is in place; the four "Paint & shading" demos are obvious fixture candidates. Add per-demo entries that cover at least the default state of each (gradient default seed, vertex-color heptagon, three-group color matrix at presets, one frame of each shader panel).
+- **Promote `ShaderDrawCommand` past `@experimental`.** Three real consumers now exist (plasma / ripple / voronoi panels), enough to validate the surface. Open questions before stabilization: (a) array uniform binding shape — currently consumers must pass per-slot keys (`u_ripples[0]`, `u_ripples[1]`, …); should the kit accept a flat `Float32Array` and split it? (b) hot-reload story for `registerProgram` re-registration; (c) how to expose the renderer's program registry without leaking internals (`shaders` prop is the seam, but consumers writing custom RenderLayers may want more).
+- **`extractUniformNames` regex coverage.** Currently handles scalar uniforms and `T name[N];` arrays. Doesn't handle: matrix arrays (`mat3 u_xforms[4];`), GLSL preprocessor branches, nested struct uniforms, or layout qualifiers on the LHS. Bite-the-bullet rewrite probably wants a small GLSL-prelude parser. Defer until a consumer hits a gap.
+
 ## weasel-den deferrals
 
 From `docs/specs/2026-05-03-weasel-den-design.md`:
