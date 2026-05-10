@@ -7,7 +7,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, fireEvent, act } from '@testing-library/react';
 import { useRef, useState } from 'react';
-import { useTools, useSelectTool, useDeleteTool, useKeybindings } from '../';
+import { useTools, useSelectTool, useDeleteTool, useKeybindings, defineTool } from '../';
 import { useHandTool } from './useHandTool';
 import { useWheelZoomTool } from './useWheelZoomTool';
 import { useWheelPanTool } from './useWheelPanTool';
@@ -538,5 +538,67 @@ describe('Phase 2a: off-canvas pointer release backstop', () => {
     expect(applyBatch).toHaveBeenCalledTimes(1);
     const [, label] = applyBatch.mock.calls[0] as [Array<unknown>, string];
     expect(label).toBe('Move');
+  });
+});
+
+describe('Phase 2a integration', () => {
+  it('cross-tool: corner-resize affordance fires while a non-select tool is active', () => {
+    const applyBatch = vi.fn();
+    function Harness() {
+      const [rects, setRects] = useState<Rect[]>([
+        { id: 'a', x: 0, y: 0, width: 100, height: 100 },
+      ]);
+      const rectsRef = useRef(rects);
+      rectsRef.current = rects;
+      // Seed selection on 'a' so the affordance has a render target.
+      const sel = useSelection({ initial: [asNodeId('a')], mode: 'single' });
+      const base = arrayAdapter<Rect, Pose>({
+        ref: rectsRef, setItems: setRects,
+        toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
+      });
+      const adapter = { ...base, ...sel.adapterMethods, applyBatch };
+      const select = useSelectTool(adapter, {});
+      // The noop tool is the active slot; select is in ambient so its overlay
+      // is always walked by the hit-test pipeline regardless of which tool
+      // occupies the active slot — its corner-resize affordance should fire.
+      const noop = defineTool({ id: 'noop', drag: { onStart: () => 'claim' } });
+      const tools = useTools({
+        active: 'noop',
+        registry: { noop },
+        ambient: [select],
+      });
+      return (
+        <Canvas
+          width={200} height={200} layers={{}}
+          adapter={adapter} selection={sel} tools={tools} clientToWorld={C2W}
+          // Pass boundsOf at the Canvas level so ChromeState.boundsOf resolves
+          // correctly for the affordance's hit-test.
+          boundsOf={(id) => {
+            const r = rectsRef.current.find((x) => x.id === id);
+            return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
+          }}
+        />
+      );
+    }
+    const { container } = render(<Harness />);
+    const canvas = container.querySelector('canvas')!;
+    canvas.setPointerCapture = () => {};
+    // Bounds (0,0,100,100). Bottom-right corner is (100, 100).
+    // Use MouseEvent (same structure as PointerEvent for clientX) so that
+    // e.clientX is populated on the native event — fireEvent.pointerDown does
+    // not propagate clientX to the nativeEvent in jsdom.
+    function mkPtr(type: string, clientX: number, clientY: number) {
+      return new MouseEvent(type, { clientX, clientY, bubbles: true, cancelable: true });
+    }
+    // Click → tiny move → release.
+    canvas.dispatchEvent(mkPtr('pointerdown', 100, 100));
+    canvas.dispatchEvent(mkPtr('pointermove', 110, 110));
+    canvas.dispatchEvent(mkPtr('pointerup', 110, 110));
+    // useResize → applyBatch with a Transform op labeled 'Resize'. If the
+    // affordance pipeline is broken, the click would route to noop's
+    // drag.onStart instead, and applyBatch wouldn't fire.
+    expect(applyBatch).toHaveBeenCalledTimes(1);
+    const [, batchLabel] = applyBatch.mock.calls[0] as [unknown, string];
+    expect(batchLabel).toBe('Resize');
   });
 });
