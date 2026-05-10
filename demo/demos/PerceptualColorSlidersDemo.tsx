@@ -36,10 +36,10 @@ interface RampParams {
   chroma: { cTop: number; cPeak: number; cBot: number };
 }
 
-/** Tailwind-style index → L. 0 → lightest, 1000 → darkest. */
+/** Index → L. 0 → darkest, 1000 → lightest. */
 function lAtIndex(idx: number, lRange: [number, number]): number {
   const t = Math.max(0, Math.min(1, idx / 1000));
-  return lRange[1] + t * (lRange[0] - lRange[1]);
+  return lRange[0] + t * (lRange[1] - lRange[0]);
 }
 
 function curveOf(p: RampParams): ChromaCurve {
