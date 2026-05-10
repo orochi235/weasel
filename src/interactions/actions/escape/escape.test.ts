@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useEscape } from './escape';
 import type { EscapeAdapter } from './escape';
 import type { Op } from '../../..';
-import { type NodeId } from '../../../core/scene/types';
+import { type NodeId } from 'core/scene/types';
 
 function makeAdapter(initial: string[] = []) {
   let selection = [...initial] as NodeId[];

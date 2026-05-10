@@ -1,4 +1,4 @@
-import type { RectPose } from '../../features/groups/composePose';
+import type { RectPose } from 'features/groups/composePose';
 
 /** Opaque branded id. Treat as opaque outside the kit. */
 export type NodeId = string & { readonly __brand: 'NodeId' };

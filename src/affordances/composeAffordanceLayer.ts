@@ -1,6 +1,6 @@
-import type { RenderLayer } from '../core/layers/render';
+import type { RenderLayer } from 'core/layers/render';
 import type { DrawCommand } from '../renderer';
-import type { ChromeState } from '../core/selection/chromeState';
+import type { ChromeState } from 'core/selection/chromeState';
 import type { Affordance, HitResult } from './types';
 
 /**

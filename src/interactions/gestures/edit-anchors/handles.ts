@@ -1,4 +1,4 @@
-import type { PolygonPath } from '../../../features/paths/types';
+import type { PolygonPath } from 'features/paths/types';
 import { enumerateAnchors, type PathAnchor } from './geometry';
 
 /** Result of a hit-test against a path's anchors / control handles. */

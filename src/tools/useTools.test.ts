@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useTools } from './useTools';
 import { defineTool } from './defineTool';
-import type { RenderLayer } from '../core/layers/render';
+import type { RenderLayer } from 'core/layers/render';
 
 const mkLayer = (id: string): RenderLayer<unknown> => ({
   id, label: id, space: 'screen', draw: () => [],

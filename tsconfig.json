@@ -25,7 +25,13 @@
     "paths": {
       "@orochi235/weasel": ["./src/index.ts"],
       "@orochi235/weasel/*": ["./src/*"],
-      "@orochi235/weasel-ui": ["./packages/weasel-ui/src/index.ts"]
+      "@orochi235/weasel-ui": ["./packages/weasel-ui/src/index.ts"],
+      "core/*": ["./src/core/*"],
+      "features/*": ["./src/features/*"],
+      "affordances/*": ["./src/affordances/*"],
+      "interactions/*": ["./src/interactions/*"],
+      "tools/*": ["./src/tools/*"],
+      "canvas/*": ["./src/canvas/*"]
     }
   },
   "include": ["src", "demo", "apps", "packages/weasel-ui/src", "packages/weasel-hud/src"],

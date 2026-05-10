@@ -7,7 +7,7 @@ import type { ReactNode } from 'react';
 import {
   ActionsProvider,
   useActionsRegistry,
-} from '../../interactions/actions/registry';
+} from 'interactions/actions/registry';
 
 export function ActionsProviderIfRoot({ children }: { children: ReactNode }) {
   const parent = useActionsRegistry();

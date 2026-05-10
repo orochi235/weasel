@@ -10,15 +10,15 @@
 import { describe, it, expect, vi } from 'vitest';
 import { useRef, useState } from 'react';
 import { render, fireEvent } from '@testing-library/react';
-import { Canvas } from '../../canvas/Canvas';
-import { SceneCanvas } from '../../canvas/SceneCanvas';
-import { sceneToAdapter } from '../../canvas/sceneAdapter';
-import { useScene } from '../../core/scene/useScene';
-import { useSelection } from '../../core/selection/useSelection';
+import { Canvas } from 'canvas/Canvas';
+import { SceneCanvas } from 'canvas/SceneCanvas';
+import { sceneToAdapter } from 'canvas/sceneAdapter';
+import { useScene } from 'core/scene/useScene';
+import { useSelection } from 'core/selection/useSelection';
 import { useTools } from '../useTools';
 import { useSelectTool } from './useSelectTool';
-import { arrayAdapter } from '../../core/adapters/arrayAdapter';
-import { asNodeId } from '../../core/scene/types';
+import { arrayAdapter } from 'core/adapters/arrayAdapter';
+import { asNodeId } from 'core/scene/types';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number }
 interface Pose { x: number; y: number; width: number; height: number }

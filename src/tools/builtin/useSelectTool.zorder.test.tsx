@@ -7,12 +7,12 @@
 import { describe, it, expect } from 'vitest';
 import { useRef, useState } from 'react';
 import { render, fireEvent } from '@testing-library/react';
-import { Canvas } from '../../canvas/Canvas';
-import { arrayAdapter } from '../../core/adapters/arrayAdapter';
-import { useSelection } from '../../core/selection/useSelection';
+import { Canvas } from 'canvas/Canvas';
+import { arrayAdapter } from 'core/adapters/arrayAdapter';
+import { useSelection } from 'core/selection/useSelection';
 import { useTools } from '../useTools';
 import { useSelectTool } from './useSelectTool';
-import { asNodeId } from '../../core/scene/types';
+import { asNodeId } from 'core/scene/types';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number }
 interface Pose { x: number; y: number; width: number; height: number }

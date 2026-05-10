@@ -6,7 +6,7 @@
  * all transitive leaf members).
  */
 
-import type { RectPose } from '../../features/groups/composePose';
+import type { RectPose } from 'features/groups/composePose';
 export type { RectPose };
 
 /** Compute the AABB envelope of a set of rect-shaped poses; returns null when empty. */

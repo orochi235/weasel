@@ -2,11 +2,11 @@ import { useMemo, useRef } from 'react';
 import type { MutableRefObject } from 'react';
 import { defineTool } from '../defineTool';
 import type { Tool } from '../types';
-import type { RenderLayer } from '../../core/layers/render';
-import type { Op } from '../../core/ops/types';
+import type { RenderLayer } from 'core/layers/render';
+import type { Op } from 'core/ops/types';
 import { applyHitExistingGate } from './hitExistingGate';
 import { marqueeDrawCommands, type InsertOverlayStyle } from './marquee';
-import type { InsertController } from '../../interactions/gestures/insert/insert';
+import type { InsertController } from 'interactions/gestures/insert/insert';
 
 type ApplyBatch = (ops: Op[], label: string) => void;
 

@@ -1,7 +1,7 @@
-import { createSetSelectionOp } from '../../../../core/ops/select';
-import type { Op } from '../../../../core/ops/types';
-import type { NodeId } from '../../../../core/scene/types';
-import type { AreaSelectAdapter } from '../../../../core/adapters/types';
+import { createSetSelectionOp } from 'core/ops/select';
+import type { Op } from 'core/ops/types';
+import type { NodeId } from 'core/scene/types';
+import type { AreaSelectAdapter } from 'core/adapters/types';
 import type { AreaSelectBehavior } from '../../types';
 
 /** Default area-select behavior: replace selection with hits inside the marquee, or extend with shift held. */

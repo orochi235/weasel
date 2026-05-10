@@ -1,9 +1,9 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { useMove } from './move';
-import { polygonFromPoints, translatePath, type Path, type PolygonPath } from '../../../features/paths';
-import type { MoveAdapter } from '../../../core/adapters/types';
-import type { Op } from '../../../core/ops/types';
+import { polygonFromPoints, translatePath, type Path, type PolygonPath } from 'features/paths';
+import type { MoveAdapter } from 'core/adapters/types';
+import type { Op } from 'core/ops/types';
 
 function makeAdapter(initial: Path) {
   const store = new Map<string, Path>([['a', initial]]);

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { snapToContainer } from './snapToContainer';
 import type { GestureContext } from '../../types';
-import type { SnapTarget } from '../../../../core/adapters/types';
+import type { SnapTarget } from 'core/adapters/types';
 
 interface Pose { x: number; y: number }
 

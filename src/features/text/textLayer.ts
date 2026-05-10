@@ -11,7 +11,7 @@
  */
 
 import { type DrawCommand, viewToMat3 } from '../../renderer';
-import type { RenderLayer } from '../../core/layers/render';
+import type { RenderLayer } from 'core/layers/render';
 import { measureText } from './measureText';
 import {
   type ResolvedTextStyle,

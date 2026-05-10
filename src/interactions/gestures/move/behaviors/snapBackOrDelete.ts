@@ -1,5 +1,5 @@
-import { createDeleteOp } from '../../../../core/ops/delete';
-import type { Op } from '../../../../core/ops/types';
+import { createDeleteOp } from 'core/ops/delete';
+import type { Op } from 'core/ops/types';
 import type { MoveBehavior } from '../../types';
 import {
   RECT_ORIGIN_PROJECTION,

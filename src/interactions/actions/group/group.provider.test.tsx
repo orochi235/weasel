@@ -4,9 +4,9 @@ import { render } from '@testing-library/react';
 import { useGroup, useUngroup } from './group';
 import type { GroupActionAdapter } from './group';
 import { ActionsProvider, useActionsRegistry, type ActionsRegistry } from '../registry';
-import type { Op } from '../../../core/ops/types';
-import { asNodeId } from '../../../core/scene/types';
-import type { Group } from '../../../features/groups/types';
+import type { Op } from 'core/ops/types';
+import { asNodeId } from 'core/scene/types';
+import type { Group } from 'features/groups/types';
 
 function makeAdapter(initialGroups: Group[] = []) {
   const groups = new Map(initialGroups.map((g) => [g.id, g]));

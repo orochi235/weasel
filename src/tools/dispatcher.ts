@@ -1,9 +1,9 @@
 // src/tools/dispatcher.ts
 import type { AnyTool, ToolCtx, ToolSlot, Decision } from './types';
-import type { RenderLayer } from '../core/layers/render';
-import type { ChromeState } from '../core/selection/chromeState';
-import type { View } from '../core/viewport/view';
-import type { HitResult } from '../affordances/types';
+import type { RenderLayer } from 'core/layers/render';
+import type { ChromeState } from 'core/selection/chromeState';
+import type { View } from 'core/viewport/view';
+import type { HitResult } from 'affordances/types';
 
 interface SlotsState {
   hotkey: AnyTool | null;

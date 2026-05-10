@@ -1,6 +1,6 @@
 // src/tools/useKeybindings.ts
 import { useEffect, useRef } from 'react';
-import { isEditableTarget } from '../interactions/actions/useKeybinding';
+import { isEditableTarget } from 'interactions/actions/useKeybinding';
 import type { ToolsApi } from './useTools';
 import type { HotkeyTrigger } from './types';
 

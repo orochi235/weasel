@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useAnimator } from '../useAnimator';
 import { momentum } from './momentum';
-import type { GestureContext } from '../../interactions/gestures/types';
+import type { GestureContext } from 'interactions/gestures/types';
 
 interface RectPose { x: number; y: number; width: number; height: number }
 

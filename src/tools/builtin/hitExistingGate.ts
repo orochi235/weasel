@@ -1,4 +1,4 @@
-import type { NodeId } from '../../core/scene/types';
+import type { NodeId } from 'core/scene/types';
 import type { ToolCtx } from '../types';
 
 /** Hit-existing gate shared by the drag-insert tool hooks. When the consumer

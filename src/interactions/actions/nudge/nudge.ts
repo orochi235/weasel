@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { createTransformOp } from '../../../core/ops/transform';
-import type { Op } from '../../../core/ops/types';
-import { dispatchApplyBatch } from '../../../core/applyOps';
-import { translateRectPose } from '../../../features/groups/composePose';
-import type { NodeId } from '../../../core/scene/types';
+import { createTransformOp } from 'core/ops/transform';
+import type { Op } from 'core/ops/types';
+import { dispatchApplyBatch } from 'core/applyOps';
+import { translateRectPose } from 'features/groups/composePose';
+import type { NodeId } from 'core/scene/types';
 import { useKeybinding } from '../useKeybinding';
 import { useActionsRegistry } from '../registry';
 import { defaultNudgeActions } from '../defaults/nudge';

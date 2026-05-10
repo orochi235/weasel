@@ -9,8 +9,8 @@
  */
 
 import type { DrawCommand } from '../../renderer';
-import type { RenderLayer } from '../../core/layers/render';
-import { type Stroke } from '../../core/paint-types';
+import type { RenderLayer } from 'core/layers/render';
+import { type Stroke } from 'core/paint-types';
 import { PATH_L, PATH_M, type PolygonPath } from '../paths/types';
 import type { Guide } from './types';
 

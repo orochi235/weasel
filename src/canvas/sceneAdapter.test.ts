@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createScene } from '../core/scene/scene';
+import { createScene } from 'core/scene/scene';
 import { sceneToAdapter } from './sceneAdapter';
 
 interface Data { label: string; }

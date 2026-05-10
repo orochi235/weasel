@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { defaultDistributeActions } from './distribute';
 import { RECT_POSE_DESCRIPTOR } from '../../gestures/resize/geometry';
-import type { Op } from '../../../core/ops/types';
-import { asNodeId } from '../../../core/scene/types';
+import type { Op } from 'core/ops/types';
+import { asNodeId } from 'core/scene/types';
 
 interface Pose { x: number; y: number; width: number; height: number }
 

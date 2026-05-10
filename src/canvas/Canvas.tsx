@@ -14,49 +14,49 @@
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import type React from 'react';
-import type { ToolsApi } from '../tools/useTools';
-import type { ToolsDispatcher } from '../tools/dispatcher';
-import type { ToolCtx } from '../tools/types';
-import type { Op } from '../core/ops/types';
-import { dispatchApplyBatch } from '../core/applyOps';
-import type { NodeId } from '../core/scene/types';
-import type { View } from '../core/viewport/view';
-import { clampView } from '../core/viewport/clampView';
-import { drawLayers, type RenderLayer } from '../core/layers/render';
+import type { ToolsApi } from 'tools/useTools';
+import type { ToolsDispatcher } from 'tools/dispatcher';
+import type { ToolCtx } from 'tools/types';
+import type { Op } from 'core/ops/types';
+import { dispatchApplyBatch } from 'core/applyOps';
+import type { NodeId } from 'core/scene/types';
+import type { View } from 'core/viewport/view';
+import { clampView } from 'core/viewport/clampView';
+import { drawLayers, type RenderLayer } from 'core/layers/render';
 import { WeaselRenderer, viewToMat3, type DrawCommand, type ShaderProgramHandle } from '../renderer';
 import {
   useSelection,
   type SelectionApi,
   type UseSelectionOptions,
-} from '../core/selection/useSelection';
-import { buildChromeState, type ChromeState } from '../core/selection/chromeState';
-import { useArrayAdapter, type UseArrayAdapterOptions } from '../core/adapters/useArrayAdapter';
-import { useDelete } from '../interactions/actions/delete';
-import { useNudge } from '../interactions/actions/nudge';
-import { useDuplicate } from '../interactions/actions/duplicate';
-import { useUndoRedo } from '../interactions/actions/undo-redo';
-import type { UndoRedoAdapter } from '../interactions/actions/undo-redo';
+} from 'core/selection/useSelection';
+import { buildChromeState, type ChromeState } from 'core/selection/chromeState';
+import { useArrayAdapter, type UseArrayAdapterOptions } from 'core/adapters/useArrayAdapter';
+import { useDelete } from 'interactions/actions/delete';
+import { useNudge } from 'interactions/actions/nudge';
+import { useDuplicate } from 'interactions/actions/duplicate';
+import { useUndoRedo } from 'interactions/actions/undo-redo';
+import type { UndoRedoAdapter } from 'interactions/actions/undo-redo';
 import type {
   MoveAdapter,
   ResizeAdapter,
   RotateAdapter,
-} from '../core/adapters/types';
-import { createGridLayer, type GridLayerOpts } from '../features/grid/layer';
+} from 'core/adapters/types';
+import { createGridLayer, type GridLayerOpts } from 'features/grid/layer';
 import {
   createCellHighlightLayer,
   type CellHighlightLayerOpts,
-} from '../features/grid/cellHighlight';
+} from 'features/grid/cellHighlight';
 import {
   createSelectionOverlayLayer,
   type SelectionOverlayLayerOpts,
-} from '../features/selection/overlay';
-import { AUTO_POSE_DESCRIPTOR } from '../interactions/gestures/resize/autoPoseDescriptor';
-import type { PoseDescriptor } from '../interactions/gestures/resize/geometry';
+} from 'features/selection/overlay';
+import { AUTO_POSE_DESCRIPTOR } from 'interactions/gestures/resize/autoPoseDescriptor';
+import type { PoseDescriptor } from 'interactions/gestures/resize/geometry';
 import type { DebugConfig, DebugSink, DebugSnapshot } from '../debug/types';
 import { parseDebugFlags } from '../debug/parseDebugFlags';
 import { createDebugSink } from '../debug/createDebugSink';
 import { createDebugOverlayLayer } from '../debug/createDebugOverlayLayer';
-import { MULTI_RESIZE_TARGET_ID } from '../tools/builtin/useSelectTool';
+import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/useSelectTool';
 
 interface Bounds {
   x: number;

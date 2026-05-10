@@ -1,9 +1,9 @@
 import { useMemo, useRef } from 'react';
 import { defineTool } from '../defineTool';
 import type { Tool } from '../types';
-import type { View } from '../../core/viewport/view';
-import { useVelocityTracker } from '../../core/viewport/useVelocityTracker';
-import { useDecayLoop, type PanBounds } from '../../core/viewport/useDecayLoop';
+import type { View } from 'core/viewport/view';
+import { useVelocityTracker } from 'core/viewport/useVelocityTracker';
+import { useDecayLoop, type PanBounds } from 'core/viewport/useDecayLoop';
 
 export interface InertiaConfig {
   friction?: number;

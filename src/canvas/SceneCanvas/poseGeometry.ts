@@ -6,10 +6,10 @@
  * for everything else. Used by hit-test, marquee, and bounds extraction so the
  * SceneCanvas defaults work uniformly across rect-shaped and path-shaped poses.
  */
-import type { Bounds } from '../../tools/builtin/useSelectTool';
-import { RECT_POSE_DESCRIPTOR } from '../../interactions/gestures/resize/geometry';
-import { pathPoseDescriptor } from '../../features/paths/poseDescriptor';
-import type { Path } from '../../features/paths/types';
+import type { Bounds } from 'tools/builtin/useSelectTool';
+import { RECT_POSE_DESCRIPTOR } from 'interactions/gestures/resize/geometry';
+import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
+import type { Path } from 'features/paths/types';
 
 export function isPathLike(p: unknown): p is Path {
   if (!p || typeof p !== 'object') return false;

@@ -4,7 +4,7 @@ import type {
   GestureContext,
   LassoSelectPose,
 } from '../../types';
-import type { LassoSelectAdapter, LassoHitMode } from '../../../../core/adapters/types';
+import type { LassoSelectAdapter, LassoHitMode } from 'core/adapters/types';
 
 function ctx(opts: {
   vertices: { x: number; y: number }[];

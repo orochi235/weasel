@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { createReorderOp } from '../../../core/ops/reorder';
-import type { Op } from '../../../core/ops/types';
-import type { NodeId } from '../../../core/scene/types';
-import { dispatchApplyBatch } from '../../../core/applyOps';
+import { createReorderOp } from 'core/ops/reorder';
+import type { Op } from 'core/ops/types';
+import type { NodeId } from 'core/scene/types';
+import { dispatchApplyBatch } from 'core/applyOps';
 import { useKeybinding } from '../useKeybinding';
 import { useActionsRegistry } from '../registry';
 import { defaultReorderActions } from '../defaults/reorder';

@@ -1,7 +1,7 @@
 // src/tools/integration.test.tsx
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, act } from '@testing-library/react';
-import { Canvas } from '../canvas/Canvas';
+import { Canvas } from 'canvas/Canvas';
 import { useTools } from './useTools';
 import { useKeybindings } from './useKeybindings';
 import { defineTool } from './defineTool';

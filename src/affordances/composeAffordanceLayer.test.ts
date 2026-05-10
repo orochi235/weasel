@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { composeAffordanceLayer } from './composeAffordanceLayer';
 import type { Affordance } from './types';
-import type { ChromeState } from '../core/selection/chromeState';
+import type { ChromeState } from 'core/selection/chromeState';
 
 const NO_MOD = { alt: false, shift: false, meta: false, ctrl: false };
 const VIEW = { x: 0, y: 0, scale: 1 };

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { defaultSelectAllAction } from './selectAll';
-import { asNodeId } from '../../../core/scene/types';
+import { asNodeId } from 'core/scene/types';
 
 describe('defaultSelectAllAction', () => {
   const baseDeps = {

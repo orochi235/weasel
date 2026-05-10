@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDistribute } from './distribute';
 import type { DistributeAdapter } from './distribute';
-import type { Op } from '../../../core/ops/types';
-import { type NodeId } from '../../../core/scene/types';
-import { pathPoseDescriptor } from '../../../features/paths/poseDescriptor';
-import { polygonFromPoints } from '../../../features/paths/builder';
-import type { Path } from '../../../features/paths/types';
+import type { Op } from 'core/ops/types';
+import { type NodeId } from 'core/scene/types';
+import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
+import { polygonFromPoints } from 'features/paths/builder';
+import type { Path } from 'features/paths/types';
 
 interface RectPose { x: number; y: number; width: number; height: number; tag?: string }
 

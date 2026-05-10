@@ -4,8 +4,8 @@ import { render } from '@testing-library/react';
 import { useClipboard } from './clipboard';
 import type { ClipboardAdapter } from './clipboard';
 import { ActionsProvider, useActionsRegistry, type ActionsRegistry } from '../registry';
-import type { Op } from '../../../core/ops/types';
-import { asNodeId } from '../../../core/scene/types';
+import type { Op } from 'core/ops/types';
+import { asNodeId } from 'core/scene/types';
 
 interface Obj { id: string; x: number; y: number }
 

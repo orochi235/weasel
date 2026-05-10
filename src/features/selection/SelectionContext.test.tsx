@@ -5,7 +5,7 @@ import {
   useSelectionContext,
   usePublishSelection,
 } from './SelectionContext';
-import { asNodeId, type NodeId } from '../../core/scene/types';
+import { asNodeId, type NodeId } from 'core/scene/types';
 import { useState, type ReactNode } from 'react';
 
 const wrap = ({ children }: { children: ReactNode }) => (

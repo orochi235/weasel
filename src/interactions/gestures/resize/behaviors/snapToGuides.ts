@@ -3,8 +3,8 @@ import type {
   ResizeBehavior,
   ResizePose,
 } from '../../types';
-import type { Guide } from '../../../../features/guides/types';
-import type { View } from '../../../../core/viewport/view';
+import type { Guide } from 'features/guides/types';
+import type { View } from 'core/viewport/view';
 import { DEFAULT_GUIDE_TOLERANCE_PX } from '../../shared/strategies/guides';
 
 type ModKey = keyof ModifierState;

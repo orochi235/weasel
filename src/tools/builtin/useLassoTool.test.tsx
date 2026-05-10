@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useLassoTool } from './useLassoTool';
-import type { LassoSelectAdapter } from '../../core/adapters/types';
+import type { LassoSelectAdapter } from 'core/adapters/types';
 
 function makeAdapter(hits: string[] = []): LassoSelectAdapter & { applyOps: ReturnType<typeof vi.fn> } {
   const applyOps = vi.fn();

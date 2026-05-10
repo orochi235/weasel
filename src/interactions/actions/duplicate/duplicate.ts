@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { createInsertOp } from '../../../core/ops/create';
-import { createSetSelectionOp } from '../../../core/ops/select';
-import type { Op } from '../../../core/ops/types';
-import type { NodeId } from '../../../core/scene/types';
-import { dispatchApplyBatch } from '../../../core/applyOps';
+import { createInsertOp } from 'core/ops/create';
+import { createSetSelectionOp } from 'core/ops/select';
+import type { Op } from 'core/ops/types';
+import type { NodeId } from 'core/scene/types';
+import { dispatchApplyBatch } from 'core/applyOps';
 import { useKeybinding } from '../useKeybinding';
 import { useActionsRegistry, type Action } from '../registry';
 

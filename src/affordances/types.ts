@@ -1,7 +1,7 @@
-import type { DragChannel } from '../tools/types';
-import type { ChromeState } from '../core/selection/chromeState';
+import type { DragChannel } from 'tools/types';
+import type { ChromeState } from 'core/selection/chromeState';
 import type { DrawCommand } from '../renderer';
-import type { View } from '../core/viewport/view';
+import type { View } from 'core/viewport/view';
 
 /**
  * @experimental

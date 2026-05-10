@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useNudge } from './nudge';
 import type { NudgeAdapter } from './nudge';
 import type { Op } from '../../..';
-import { type NodeId } from '../../../core/scene/types';
+import { type NodeId } from 'core/scene/types';
 
 interface Pose { x: number; y: number }
 

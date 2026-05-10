@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useInsert } from './insert';
 import { snapToGrid } from './behaviors/snapToGrid';
-import type { Op } from '../../../core/ops/types';
-import type { InsertAdapter } from '../../../core/adapters/types';
+import type { Op } from 'core/ops/types';
+import type { InsertAdapter } from 'core/adapters/types';
 
 interface Obj { id: string; x: number; y: number; width: number; height: number }
 

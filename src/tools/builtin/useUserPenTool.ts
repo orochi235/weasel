@@ -1,8 +1,8 @@
 import { useMemo, useReducer, useRef } from 'react';
 import { defineTool } from '../defineTool';
 import type { Tool, ToolCtx } from '../types';
-import { PathBuilder } from '../../features/paths/builder';
-import type { PolygonPath } from '../../features/paths/types';
+import { PathBuilder } from 'features/paths/builder';
+import type { PolygonPath } from 'features/paths/types';
 import { constrainTo45 } from '../../util/constrainTo45';
 
 /**

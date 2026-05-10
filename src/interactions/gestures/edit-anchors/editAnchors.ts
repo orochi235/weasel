@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createTransformOp } from '../../../core/ops/transform';
-import { dispatchApplyBatch } from '../../../core/applyOps';
-import type { PolygonPath, Path } from '../../../features/paths/types';
+import { createTransformOp } from 'core/ops/transform';
+import { dispatchApplyBatch } from 'core/applyOps';
+import type { PolygonPath, Path } from 'features/paths/types';
 import type { ModifierState } from '../types';
-import type { Op } from '../../../core/ops/types';
+import type { Op } from 'core/ops/types';
 import { hitAnchor, type AnchorHit } from './handles';
 import { enumerateAnchors, withCoord } from './geometry';
 import type { DebugSink } from '../../../debug/types';

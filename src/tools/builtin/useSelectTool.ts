@@ -1,36 +1,36 @@
 import { useMemo, useRef } from 'react';
-import { useMove, type UseMoveOptions } from '../../interactions/gestures/move/move';
-import { useResize, type UseResizeOptions } from '../../interactions/gestures/resize/resize';
-import { useRotate, type UseRotateOptions } from '../../interactions/gestures/rotate/rotate';
-import { useAreaSelect, type UseAreaSelectOptions } from '../../interactions/gestures/area-select/areaSelect';
-import { composeAffordanceLayer } from '../../affordances/composeAffordanceLayer';
+import { useMove, type UseMoveOptions } from 'interactions/gestures/move/move';
+import { useResize, type UseResizeOptions } from 'interactions/gestures/resize/resize';
+import { useRotate, type UseRotateOptions } from 'interactions/gestures/rotate/rotate';
+import { useAreaSelect, type UseAreaSelectOptions } from 'interactions/gestures/area-select/areaSelect';
+import { composeAffordanceLayer } from 'affordances/composeAffordanceLayer';
 import {
   createCornerResizeAffordance,
   type CornerResizeScratch,
-} from '../../affordances/cornerResize';
+} from 'affordances/cornerResize';
 import {
   createRotationAffordance,
   type RotationScratch,
-} from '../../affordances/rotationHandle';
-import type { Affordance, HitResult } from '../../affordances/types';
-import type { MoveAdapter } from '../../core/adapters/types';
-import type { ResizeAdapter } from '../../core/adapters/types';
-import type { RotateAdapter } from '../../core/adapters/types';
-import type { AreaSelectAdapter } from '../../core/adapters/types';
-import type { ResizeAnchor } from '../../interactions/gestures/types';
-import type { NodeId } from '../../core/scene/types';
+} from 'affordances/rotationHandle';
+import type { Affordance, HitResult } from 'affordances/types';
+import type { MoveAdapter } from 'core/adapters/types';
+import type { ResizeAdapter } from 'core/adapters/types';
+import type { RotateAdapter } from 'core/adapters/types';
+import type { AreaSelectAdapter } from 'core/adapters/types';
+import type { ResizeAnchor } from 'interactions/gestures/types';
+import type { NodeId } from 'core/scene/types';
 import { defineTool } from '../defineTool';
 import type { Tool, ToolBounds } from '../types';
 import type { DebugSink } from '../../debug/types';
-import type { RenderLayer } from '../../core/layers/render';
-import { viewToTransform } from '../../core/viewport/view';
-import { worldToScreen } from '../../core/viewport/viewTransform';
+import type { RenderLayer } from 'core/layers/render';
+import { viewToTransform } from 'core/viewport/view';
+import { worldToScreen } from 'core/viewport/viewTransform';
 import { viewToMat3, type DrawCommand } from '../../renderer';
 import { pickTopMostHit } from './pickTopMostHit';
-import { createReorderOp } from '../../core/ops/reorder';
-import { createTransformOp } from '../../core/ops/transform';
-import { RECT_POSE_DESCRIPTOR } from '../../interactions/gestures/resize/geometry';
-import { dispatchApplyBatch } from '../../core/applyOps';
+import { createReorderOp } from 'core/ops/reorder';
+import { createTransformOp } from 'core/ops/transform';
+import { RECT_POSE_DESCRIPTOR } from 'interactions/gestures/resize/geometry';
+import { dispatchApplyBatch } from 'core/applyOps';
 
 /** World-space bounding rect for hit-testing handles. Uses `width`/`height` to
  *  match `cornerResizeHandles` and `rotationHandle` expectations. */

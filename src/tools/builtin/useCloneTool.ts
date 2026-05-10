@@ -1,12 +1,12 @@
 import { useMemo, useReducer, useRef } from 'react';
 import { defineTool } from '../defineTool';
 import type { Tool } from '../types';
-import type { RenderLayer } from '../../core/layers/render';
-import type { InsertAdapter } from '../../core/adapters/types';
-import type { View } from '../../core/viewport/view';
-import { useClone, type UseCloneOptions } from '../../interactions/gestures/clone';
-import type { CloneBehavior, CloneLayer, ModifierState } from '../../interactions/gestures/types';
-import { AUTO_POSE_DESCRIPTOR } from '../../interactions/gestures/resize/autoPoseDescriptor';
+import type { RenderLayer } from 'core/layers/render';
+import type { InsertAdapter } from 'core/adapters/types';
+import type { View } from 'core/viewport/view';
+import { useClone, type UseCloneOptions } from 'interactions/gestures/clone';
+import type { CloneBehavior, CloneLayer, ModifierState } from 'interactions/gestures/types';
+import { AUTO_POSE_DESCRIPTOR } from 'interactions/gestures/resize/autoPoseDescriptor';
 import { viewToMat3, type DrawCommand } from '../../renderer';
 
 /** Live preview item published by useClone — `{id, x, y}` (snapshot pose

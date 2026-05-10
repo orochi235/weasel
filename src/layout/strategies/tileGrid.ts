@@ -1,5 +1,5 @@
-import { createTransformOp } from '../../core/ops/transform';
-import type { Op } from '../../core/ops/types';
+import { createTransformOp } from 'core/ops/transform';
+import type { Op } from 'core/ops/types';
 import type {
   ContainerBounds,
   DropTarget,

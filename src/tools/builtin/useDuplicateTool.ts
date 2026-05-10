@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useDuplicate, type DuplicateAdapter, type UseDuplicateOptions } from '../../interactions/actions/duplicate/duplicate';
+import { useDuplicate, type DuplicateAdapter, type UseDuplicateOptions } from 'interactions/actions/duplicate/duplicate';
 import { defineTool } from '../defineTool';
 import type { Tool } from '../types';
 

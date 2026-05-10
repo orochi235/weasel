@@ -9,7 +9,7 @@
  * since the browser can't paint with a texture handle.
  */
 
-import type { Paint } from '../../core/paint-types';
+import type { Paint } from 'core/paint-types';
 
 /** User-facing text style. All fields optional; defaults applied at render time via `resolveTextStyle`. */
 export interface TextStyle {

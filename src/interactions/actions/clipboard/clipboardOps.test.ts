@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useClipboardOps } from './clipboardOps';
 import type { InsertAdapter, Op } from '../../..';
-import { asNodeId } from '../../../core/scene/types';
+import { asNodeId } from 'core/scene/types';
 
 interface Obj { id: string; x: number; y: number }
 

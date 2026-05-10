@@ -3,7 +3,7 @@ import type { GroupDrawCommand } from '../../renderer';
 import { createPathLayer } from './pathLayer';
 import { rectPath } from './builder';
 import type { Path } from './types';
-import type { Paint, Stroke } from '../../core/paint-types';
+import type { Paint, Stroke } from 'core/paint-types';
 
 describe('createPathLayer', () => {
   it('emits one path command per visible node, wrapped in a world-transform group', () => {

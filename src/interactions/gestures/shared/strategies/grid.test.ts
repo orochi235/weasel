@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { gridSnapStrategy, pointToGridCell } from './grid';
-import { IMPERIAL_INCHES } from '../../../../core/units';
+import { IMPERIAL_INCHES } from 'core/units';
 import type { GestureContext } from '../../types';
 
 interface Pose { x: number; y: number }

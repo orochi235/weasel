@@ -1,6 +1,6 @@
 import { tweenPose, springPose } from '../poseHelpers';
-import type { PoseDescriptor } from '../../interactions/gestures/resize/geometry';
-import type { SceneAdapter } from '../../core/adapters/types';
+import type { PoseDescriptor } from 'interactions/gestures/resize/geometry';
+import type { SceneAdapter } from 'core/adapters/types';
 import type { Animator, EasingFn, SpringPresetName } from '../types';
 
 export interface AnimateOnSetPoseOptions<TPose> {

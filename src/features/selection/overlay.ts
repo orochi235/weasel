@@ -25,20 +25,20 @@
 
 import type { DrawCommand } from '../../renderer';
 import { mat3, type Mat3 } from '../../renderer';
-import type { NodeId } from '../../core/scene/types';
-import type { RenderLayer } from '../../core/layers/render';
+import type { NodeId } from 'core/scene/types';
+import type { RenderLayer } from 'core/layers/render';
 import type { GroupAdapter } from '../groups/types';
 import { expandToLeaves } from '../groups/resolve';
 import { unionBounds } from '../groups/unionBounds';
-import { alignedStrokeRect, type Paint, type Stroke } from '../../core/paint-types';
+import { alignedStrokeRect, type Paint, type Stroke } from 'core/paint-types';
 import {
   rotationHandle,
   DEFAULT_ROTATION_HANDLE_DISTANCE,
-} from '../../interactions/gestures/rotate/handle';
-import { rotatePoint } from '../../interactions/gestures/rotate/geometry';
-import type { View } from '../../core/viewport/view';
-import { viewToTransform } from '../../core/viewport/view';
-import { worldToScreen } from '../../core/viewport/viewTransform';
+} from 'interactions/gestures/rotate/handle';
+import { rotatePoint } from 'interactions/gestures/rotate/geometry';
+import type { View } from 'core/viewport/view';
+import { viewToTransform } from 'core/viewport/view';
+import { worldToScreen } from 'core/viewport/viewTransform';
 import { PATH_L, PATH_M, type PolygonPath } from '../paths/types';
 
 /** Project world AABB into screen-space AABB using the active view. */

@@ -13,18 +13,18 @@
  */
 import { useMemo } from 'react';
 import { sceneToAdapter, type SceneToAdapterOptions } from '../sceneAdapter';
-import { useSelectTool, type Bounds } from '../../tools/builtin/useSelectTool';
-import type { Node, Scene, NodeId } from '../../core/scene/types';
-import { asNodeId } from '../../core/scene/types';
-import type { Op } from '../../core/ops/types';
-import type { SelectionApi } from '../../core/selection/useSelection';
-import type { UseMoveOptions } from '../../interactions/gestures/move/move';
-import type { UseResizeOptions } from '../../interactions/gestures/resize/resize';
-import type { UseRotateOptions } from '../../interactions/gestures/rotate/rotate';
-import type { SnapStrategy } from '../../interactions/gestures/types';
-import type { UseAreaSelectOptions } from '../../interactions/gestures/area-select/areaSelect';
-import { snap as snapBehavior } from '../../interactions/gestures/shared/snap';
-import { pathPoseDescriptor } from '../../features/paths/poseDescriptor';
+import { useSelectTool, type Bounds } from 'tools/builtin/useSelectTool';
+import type { Node, Scene, NodeId } from 'core/scene/types';
+import { asNodeId } from 'core/scene/types';
+import type { Op } from 'core/ops/types';
+import type { SelectionApi } from 'core/selection/useSelection';
+import type { UseMoveOptions } from 'interactions/gestures/move/move';
+import type { UseResizeOptions } from 'interactions/gestures/resize/resize';
+import type { UseRotateOptions } from 'interactions/gestures/rotate/rotate';
+import type { SnapStrategy } from 'interactions/gestures/types';
+import type { UseAreaSelectOptions } from 'interactions/gestures/area-select/areaSelect';
+import { snap as snapBehavior } from 'interactions/gestures/shared/snap';
+import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
 import { aabbOfPose, isPathLike, poseContains } from './poseGeometry';
 
 export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {

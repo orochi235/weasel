@@ -1,4 +1,4 @@
-import type { Op } from '../../../core/ops/types';
+import type { Op } from 'core/ops/types';
 import type { Group, GroupAdapter } from '../types';
 import { createCreateGroupOp } from './createGroup';
 

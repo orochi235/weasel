@@ -1,6 +1,6 @@
-import { createTransformOp } from '../../../core/ops/transform';
-import type { Op } from '../../../core/ops/types';
-import type { NodeId } from '../../../core/scene/types';
+import { createTransformOp } from 'core/ops/transform';
+import type { Op } from 'core/ops/types';
+import type { NodeId } from 'core/scene/types';
 import type { PoseDescriptor } from '../../gestures/resize/geometry';
 import type { ResizePose } from '../../gestures/types';
 import { alignDeltaFor, translatePoseViaDescriptor, type AlignEdge } from '../align/align';

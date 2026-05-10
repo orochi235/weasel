@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createRef } from 'react';
 import { useGridCellHover } from './useGridCellHover';
-import type { ViewTransform } from '../../core/viewport/viewTransform';
+import type { ViewTransform } from 'core/viewport/viewTransform';
 
 function makeRect(left = 0, top = 0, width = 500, height = 500): DOMRect {
   return {

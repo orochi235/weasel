@@ -12,11 +12,11 @@
 
 import { useCallback, useRef, useState } from 'react';
 import type React from 'react';
-import { screenToWorld, type ViewTransform } from '../../core/viewport/viewTransform';
-import { pointToGridCell } from '../../interactions/gestures/shared/strategies/grid';
-import type { UnitSystem, UnitValue } from '../../core/units';
-import type { RenderLayer } from '../../core/layers/render';
-import type { Paint, Stroke } from '../../core/paint-types';
+import { screenToWorld, type ViewTransform } from 'core/viewport/viewTransform';
+import { pointToGridCell } from 'interactions/gestures/shared/strategies/grid';
+import type { UnitSystem, UnitValue } from 'core/units';
+import type { RenderLayer } from 'core/layers/render';
+import type { Paint, Stroke } from 'core/paint-types';
 import { createGridLayer } from './layer';
 import { createCellHighlightLayer } from './cellHighlight';
 

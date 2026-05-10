@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createRotationAffordance } from './rotationHandle';
-import type { ChromeState } from '../core/selection/chromeState';
-import { asNodeId } from '../core/scene/types';
+import type { ChromeState } from 'core/selection/chromeState';
+import { asNodeId } from 'core/scene/types';
 
 const NO_MOD = { alt: false, shift: false, meta: false, ctrl: false };
 const VIEW = { x: 0, y: 0, scale: 1 };

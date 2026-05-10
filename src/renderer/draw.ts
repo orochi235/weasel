@@ -19,9 +19,9 @@ import type { ShaderProgram } from './shaders/ShaderProgram';
 import { mat3 } from './math/mat3';
 import { getMesh } from './cache/cache';
 import { parseColor } from './math/color';
-import { tessellateStroke } from '../features/paths/tessellate/stroke';
-import { getFont, ensureFontTexture } from '../features/text/atlas/registerFont';
-import { layoutGlyphs, quadsToVertexBuffer, buildQuadIndexBuffer } from '../features/text/atlas/GlyphLayout';
+import { tessellateStroke } from 'features/paths/tessellate/stroke';
+import { getFont, ensureFontTexture } from 'features/text/atlas/registerFont';
+import { layoutGlyphs, quadsToVertexBuffer, buildQuadIndexBuffer } from 'features/text/atlas/GlyphLayout';
 
 export interface DrawContext {
   gl: WebGL2RenderingContext;

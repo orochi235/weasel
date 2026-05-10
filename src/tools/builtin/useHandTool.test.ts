@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useHandTool } from './useHandTool';
 import type { ToolCtx } from '../types';
-import type { View } from '../../core/viewport/view';
+import type { View } from 'core/viewport/view';
 
 function fakeEvent(clientX: number, clientY: number): PointerEvent {
   // jsdom doesn't implement PointerEvent constructor; fake it.

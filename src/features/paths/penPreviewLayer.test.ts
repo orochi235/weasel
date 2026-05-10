@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createPenPreviewLayer } from './penPreviewLayer';
-import { useUserPenTool, type PenScratch } from '../../tools/builtin/useUserPenTool';
+import { useUserPenTool, type PenScratch } from 'tools/builtin/useUserPenTool';
 import { renderHook } from '@testing-library/react';
 import type { PolygonPath } from './types';
 

@@ -1,5 +1,5 @@
-import type { Path } from '../../../features/paths/types';
-import { pathPoseDescriptor } from '../../../features/paths/poseDescriptor';
+import type { Path } from 'features/paths/types';
+import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from './geometry';
 
 /** True for Path-shaped poses (`{kind: 'polygon' | 'rect'}`). Useful for

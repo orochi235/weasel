@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useFlip, flipPoseAboutBounds, flipPoseViaDescriptor } from './flip';
 import type { FlipAdapter } from './flip';
-import type { Op } from '../../../core/ops/types';
-import { type NodeId } from '../../../core/scene/types';
-import { pathPoseDescriptor } from '../../../features/paths/poseDescriptor';
-import { PathBuilder, polygonFromPoints } from '../../../features/paths/builder';
-import { composePath } from '../../../features/paths/compose';
-import type { Path } from '../../../features/paths/types';
+import type { Op } from 'core/ops/types';
+import { type NodeId } from 'core/scene/types';
+import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
+import { PathBuilder, polygonFromPoints } from 'features/paths/builder';
+import { composePath } from 'features/paths/compose';
+import type { Path } from 'features/paths/types';
 
 interface RectPose { x: number; y: number; width: number; height: number; tag?: string }
 

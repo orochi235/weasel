@@ -1,5 +1,5 @@
 import type { SnapStrategy } from '../../types';
-import { resolveUnit, type UnitSystem, type UnitValue } from '../../../../core/units';
+import { resolveUnit, type UnitSystem, type UnitValue } from 'core/units';
 import type { DebugSink } from '../../../../debug/types';
 
 /**

@@ -1,4 +1,4 @@
-import type { Op } from '../core/ops/types';
+import type { Op } from 'core/ops/types';
 
 export type ContainerBounds = {
   x: number;

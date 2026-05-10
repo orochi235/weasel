@@ -1,5 +1,5 @@
-import type { RenderLayer } from '../../../core/layers/render';
-import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from '../../../features/paths/types';
+import type { RenderLayer } from 'core/layers/render';
+import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from 'features/paths/types';
 import { enumerateAnchors } from './geometry';
 import type { DrawCommand } from '../../../renderer';
 

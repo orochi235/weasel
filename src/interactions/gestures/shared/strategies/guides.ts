@@ -1,6 +1,6 @@
 import type { SnapStrategy } from '../../types';
-import type { Guide } from '../../../../features/guides/types';
-import type { View } from '../../../../core/viewport/view';
+import type { Guide } from 'features/guides/types';
+import type { View } from 'core/viewport/view';
 import type { OriginProjection } from './grid';
 import { RECT_ORIGIN_PROJECTION } from './grid';
 

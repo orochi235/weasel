@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { defaultNudgeActions } from './nudge';
-import type { Op } from '../../../core/ops/types';
-import { asNodeId } from '../../../core/scene/types';
+import type { Op } from 'core/ops/types';
+import { asNodeId } from 'core/scene/types';
 
 type Pose = { x: number; y: number; width: number; height: number };
 

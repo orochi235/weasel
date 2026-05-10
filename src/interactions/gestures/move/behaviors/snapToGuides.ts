@@ -1,6 +1,6 @@
 import type { ModifierState, MoveBehavior } from '../../types';
-import type { Guide } from '../../../../features/guides/types';
-import type { View } from '../../../../core/viewport/view';
+import type { Guide } from 'features/guides/types';
+import type { View } from 'core/viewport/view';
 import type { OriginProjection } from '../../shared/strategies/grid';
 import { snap } from '../../shared/snap';
 import { guideSnapStrategy } from '../../shared/strategies/guides';

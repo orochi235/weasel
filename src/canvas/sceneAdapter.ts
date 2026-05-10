@@ -20,17 +20,17 @@ import type {
   MoveAdapter,
   ResizeAdapter,
   RotateAdapter,
-} from '../core/adapters/types';
+} from 'core/adapters/types';
 import type { LayoutStrategy } from '../layout/types';
-import type { Op } from '../core/ops/types';
-import type { Node, Scene } from '../core/scene/types';
-import { asNodeId } from '../core/scene/types';
-import { applyOpsTo } from '../core/applyOps';
+import type { Op } from 'core/ops/types';
+import type { Node, Scene } from 'core/scene/types';
+import { asNodeId } from 'core/scene/types';
+import { applyOpsTo } from 'core/applyOps';
 import {
   polygonContainsRect,
   polygonContainsRectCenter,
   polygonIntersectsRect,
-} from '../features/paths/polygonHitTestRect';
+} from 'features/paths/polygonHitTestRect';
 
 interface Bounds { x: number; y: number; width: number; height: number; }
 

@@ -1,5 +1,5 @@
-import type { Op } from '../../core/ops/types';
-import type { InsertAdapter, MoveAdapter, SnapTarget } from '../../core/adapters/types';
+import type { Op } from 'core/ops/types';
+import type { InsertAdapter, MoveAdapter, SnapTarget } from 'core/adapters/types';
 
 /** Snapshot of modifier-key state at gesture dispatch. */
 export interface ModifierState {

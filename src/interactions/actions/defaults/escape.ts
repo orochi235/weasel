@@ -1,4 +1,4 @@
-import type { NodeId } from '../../../core/scene/types';
+import type { NodeId } from 'core/scene/types';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
 

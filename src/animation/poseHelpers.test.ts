@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAnimator } from './useAnimator';
 import { tweenPose } from './poseHelpers';
-import type { Op } from '../core/ops/types';
+import type { Op } from 'core/ops/types';
 
 interface RectPose { x: number; y: number; width: number; height: number }
 interface Obj { id: string }

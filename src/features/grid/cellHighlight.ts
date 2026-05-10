@@ -5,9 +5,9 @@
  */
 
 import { type DrawCommand, viewToMat3 } from '../../renderer';
-import type { RenderLayer } from '../../core/layers/render';
-import { type Paint } from '../../core/paint-types';
-import { resolveUnit, type UnitSystem, type UnitValue } from '../../core/units';
+import type { RenderLayer } from 'core/layers/render';
+import { type Paint } from 'core/paint-types';
+import { resolveUnit, type UnitSystem, type UnitValue } from 'core/units';
 
 /** Options for `createCellHighlightLayer`. */
 export interface CellHighlightLayerOpts {

@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useClipboard } from './clipboard';
 import type { ClipboardAdapter } from './clipboard';
 import type { Op } from '../../..';
-import { asNodeId } from '../../../core/scene/types';
+import { asNodeId } from 'core/scene/types';
 
 interface Obj { id: string; x: number; y: number }
 

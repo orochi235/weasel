@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createCornerResizeAffordance } from './cornerResize';
-import type { ChromeState } from '../core/selection/chromeState';
-import { asNodeId } from '../core/scene/types';
-import { MULTI_RESIZE_TARGET_ID } from '../tools/builtin/useSelectTool';
+import type { ChromeState } from 'core/selection/chromeState';
+import { asNodeId } from 'core/scene/types';
+import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/useSelectTool';
 
 const NO_MOD = { alt: false, shift: false, meta: false, ctrl: false };
 const VIEW = { x: 0, y: 0, scale: 1 };

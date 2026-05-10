@@ -2,7 +2,7 @@ export {
   useSelection,
   type SelectionApi,
   type UseSelectionOptions,
-} from '../../core/selection';
+} from 'core/selection';
 export {
   createSelectionOverlayLayer,
   createSelectionOutlineLayer,

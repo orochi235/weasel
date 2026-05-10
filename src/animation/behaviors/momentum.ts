@@ -1,6 +1,6 @@
-import { createTransformOp } from '../../core/ops/transform';
-import type { Op } from '../../core/ops/types';
-import type { MoveBehavior, GestureContext } from '../../interactions/gestures/types';
+import { createTransformOp } from 'core/ops/transform';
+import type { Op } from 'core/ops/types';
+import type { MoveBehavior, GestureContext } from 'interactions/gestures/types';
 import type { Animator } from '../types';
 
 export interface MomentumOptions {

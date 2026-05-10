@@ -1,10 +1,10 @@
-import { createSetSelectionOp } from '../../../../core/ops/select';
-import type { Op } from '../../../../core/ops/types';
-import type { NodeId } from '../../../../core/scene/types';
+import { createSetSelectionOp } from 'core/ops/select';
+import type { Op } from 'core/ops/types';
+import type { NodeId } from 'core/scene/types';
 import type {
   LassoHitMode,
   LassoSelectAdapter,
-} from '../../../../core/adapters/types';
+} from 'core/adapters/types';
 import type { LassoSelectBehavior } from '../../types';
 
 const SCRATCH_KEY = 'lassoSelect.vertices';

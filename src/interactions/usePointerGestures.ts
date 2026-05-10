@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react';
 import type React from 'react';
-import { clientToCanvas } from '../core/viewport/clientToCanvas';
-import type { NodeId } from '../core/scene/types';
+import { clientToCanvas } from 'core/viewport/clientToCanvas';
+import type { NodeId } from 'core/scene/types';
 import { cornerResizeHandles, hitCornerHandle } from './gestures/resize/cornerHandles';
 import type { MoveController } from './gestures/move/move';
 import type { ResizeController } from './gestures/resize/resize';
@@ -15,10 +15,10 @@ import {
 } from './gestures/rotate/handle';
 import { rotatePoint } from './gestures/rotate/geometry';
 import type { ModifierState } from './gestures/types';
-import type { SelectionApi } from '../core/selection/useSelection';
-import type { View } from '../core/viewport/view';
+import type { SelectionApi } from 'core/selection/useSelection';
+import type { View } from 'core/viewport/view';
 import type { DebugSink, HitShape } from '../debug/types';
-import { pickTopMostHit } from '../tools/builtin/pickTopMostHit';
+import { pickTopMostHit } from 'tools/builtin/pickTopMostHit';
 
 interface Bounds {
   x: number;

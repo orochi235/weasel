@@ -1,8 +1,8 @@
 import { useMemo, useRef } from 'react';
-import { createInsertOp } from '../../../core/ops/create';
-import type { Op } from '../../../core/ops/types';
-import { dispatchApplyBatch } from '../../../core/applyOps';
-import type { InsertAdapter } from '../../../core/adapters/types';
+import { createInsertOp } from 'core/ops/create';
+import type { Op } from 'core/ops/types';
+import { dispatchApplyBatch } from 'core/applyOps';
+import type { InsertAdapter } from 'core/adapters/types';
 import type {
   GestureContext,
   InsertBehavior,

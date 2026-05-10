@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
-import type { InsertAdapter } from '../../../core/adapters/types';
-import type { Op } from '../../../core/ops/types';
-import { dispatchApplyBatch } from '../../../core/applyOps';
+import type { InsertAdapter } from 'core/adapters/types';
+import type { Op } from 'core/ops/types';
+import { dispatchApplyBatch } from 'core/applyOps';
 import type { CloneBehavior, CloneLayer, ModifierState } from '../types';
 
 /** Options for `useClone`. */

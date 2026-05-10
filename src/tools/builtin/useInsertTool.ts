@@ -1,5 +1,5 @@
-import { useInsert, type UseInsertOptions } from '../../interactions/gestures/insert/insert';
-import type { InsertAdapter } from '../../core/adapters/types';
+import { useInsert, type UseInsertOptions } from 'interactions/gestures/insert/insert';
+import type { InsertAdapter } from 'core/adapters/types';
 import type { Tool } from '../types';
 import { defineDragInsertTool } from './defineDragInsertTool';
 import { type InsertOverlayStyle } from './marquee';

@@ -8,7 +8,7 @@
  * a static value would lock in whatever the predicate returned at
  * construction time.
  */
-import type { RenderLayer } from '../../core/layers/render';
+import type { RenderLayer } from 'core/layers/render';
 
 export interface GateLayerOptions<TData> {
   /** The wrapped layer. Its `id`, `label`, `defaultVisible`, `alwaysOn`,

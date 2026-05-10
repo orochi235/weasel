@@ -3,13 +3,13 @@ import { render, fireEvent, createEvent } from '@testing-library/react';
 import { createRef, useRef, useState } from 'react';
 import { Canvas } from './Canvas';
 import { SceneCanvas } from './SceneCanvas';
-import { useScene } from '../core/scene/useScene';
-import { useSelection } from '../core/selection/useSelection';
-import { asNodeId, type NodeId } from '../core/scene/types';
-import { arrayAdapter } from '../core/adapters/arrayAdapter';
-import { useSelectTool } from '../tools/builtin/useSelectTool';
-import { useTools } from '../tools/useTools';
-import type { RenderLayer } from '../core/layers/render';
+import { useScene } from 'core/scene/useScene';
+import { useSelection } from 'core/selection/useSelection';
+import { asNodeId, type NodeId } from 'core/scene/types';
+import { arrayAdapter } from 'core/adapters/arrayAdapter';
+import { useSelectTool } from 'tools/builtin/useSelectTool';
+import { useTools } from 'tools/useTools';
+import type { RenderLayer } from 'core/layers/render';
 import { registerProgram } from '../renderer';
 import type { DebugSink, DebugSnapshot } from '../debug/types';
 
@@ -449,8 +449,8 @@ describe('<Canvas>', () => {
   });
 });
 
-import { defineTool } from '../tools/defineTool';
-import { ROTATED_POSE_DESCRIPTOR } from '../interactions/gestures/resize/geometry';
+import { defineTool } from 'tools/defineTool';
+import { ROTATED_POSE_DESCRIPTOR } from 'interactions/gestures/resize/geometry';
 
 describe('Canvas tools mode', () => {
   it('routes pointer events through tools.dispatcher when tools prop is passed', () => {

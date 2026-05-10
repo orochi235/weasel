@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAnimator } from '../useAnimator';
 import { animateOnSetPose } from './animateOnSetPose';
-import type { Op } from '../../core/ops/types';
+import type { Op } from 'core/ops/types';
 
 interface RectPose { x: number; y: number; width: number; height: number }
 function makeAdapter(initial: Map<string, RectPose>) {

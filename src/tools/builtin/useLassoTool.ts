@@ -1,17 +1,17 @@
 import { useMemo } from 'react';
 import { defineTool } from '../defineTool';
 import type { Tool } from '../types';
-import type { RenderLayer } from '../../core/layers/render';
+import type { RenderLayer } from 'core/layers/render';
 import type { DrawCommand } from '../../renderer';
-import { viewToTransform } from '../../core/viewport/view';
-import { worldToScreen } from '../../core/viewport/viewTransform';
-import { PathBuilder } from '../../features/paths/builder';
+import { viewToTransform } from 'core/viewport/view';
+import { worldToScreen } from 'core/viewport/viewTransform';
+import { PathBuilder } from 'features/paths/builder';
 import {
   useLassoSelect,
   type UseLassoSelectOptions,
-} from '../../interactions/gestures/lasso-select/lassoSelect';
-import { selectFromLasso } from '../../interactions/gestures/lasso-select/behaviors/selectFromLasso';
-import type { LassoHitMode, LassoSelectAdapter } from '../../core/adapters/types';
+} from 'interactions/gestures/lasso-select/lassoSelect';
+import { selectFromLasso } from 'interactions/gestures/lasso-select/behaviors/selectFromLasso';
+import type { LassoHitMode, LassoSelectAdapter } from 'core/adapters/types';
 
 export interface UseLassoToolOptions extends Pick<UseLassoSelectOptions,
   'behaviors' | 'transient' | 'label' | 'onGestureStart' | 'onGestureEnd' |

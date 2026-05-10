@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react';
-import type { Op } from '../../../core/ops/types';
-import type { AreaSelectAdapter } from '../../../core/adapters/types';
+import type { Op } from 'core/ops/types';
+import type { AreaSelectAdapter } from 'core/adapters/types';
 import type {
   AreaSelectBehavior,
   AreaSelectOverlay,

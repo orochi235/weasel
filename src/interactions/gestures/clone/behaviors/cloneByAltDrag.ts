@@ -1,6 +1,6 @@
-import { createInsertOp } from '../../../../core/ops/create';
-import { createSetSelectionOp } from '../../../../core/ops/select';
-import type { NodeId } from '../../../../core/scene/types';
+import { createInsertOp } from 'core/ops/create';
+import { createSetSelectionOp } from 'core/ops/select';
+import type { NodeId } from 'core/scene/types';
 import type { CloneBehavior } from '../../types';
 
 /** Clone-on-alt-drag behavior for `useClone`; activates when Alt/Option is held at drag start. */

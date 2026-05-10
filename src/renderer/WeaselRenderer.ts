@@ -33,7 +33,7 @@ import { GradientRampCache } from './cache/GradientRampCache';
 import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
 import { dispatch, type DrawContext } from './draw';
-import { _markAllFontsNotUploaded } from '../features/text/atlas/registerFont';
+import { _markAllFontsNotUploaded } from 'features/text/atlas/registerFont';
 import {
   CUSTOM_VERT_SRC, CUSTOM_ATTRIBUTES, CUSTOM_KIT_UNIFORMS,
   QUAD_VERTICES, QUAD_INDICES,

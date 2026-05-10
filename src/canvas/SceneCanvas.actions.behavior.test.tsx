@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
-import { createScene } from '../core/scene/scene';
-import type { Scene } from '../core/scene/types';
+import { createScene } from 'core/scene/scene';
+import type { Scene } from 'core/scene/types';
 
 type D = { kind: 'rect' };
 type L = 'main';

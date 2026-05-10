@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useResize } from './resize';
-import { pathPoseDescriptor } from '../../../features/paths/poseDescriptor';
-import { polygonFromPoints, type PolygonPath, type Path } from '../../../features/paths';
-import type { Op } from '../../../core/ops/types';
-import type { ResizeAdapter } from '../../../core/adapters/types';
+import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
+import { polygonFromPoints, type PolygonPath, type Path } from 'features/paths';
+import type { Op } from 'core/ops/types';
+import type { ResizeAdapter } from 'core/adapters/types';
 
 function makeAdapter(initial: Path) {
   const state = new Map<string, Path>([['a', initial]]);

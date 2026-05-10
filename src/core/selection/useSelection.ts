@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import type { NodeId } from '../../core/scene/types';
+import type { NodeId } from 'core/scene/types';
 
 /**
  * Selection click policy. `single` always replaces; `multi` toggles when the

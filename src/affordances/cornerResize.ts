@@ -1,16 +1,16 @@
 import type { Affordance, HitResult } from './types';
-import type { ChromeState, Bounds } from '../core/selection/chromeState';
+import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { DrawCommand } from '../renderer';
-import type { View } from '../core/viewport/view';
-import type { DragChannel } from '../tools/types';
-import type { ResizeAnchor } from '../interactions/gestures/types';
+import type { View } from 'core/viewport/view';
+import type { DragChannel } from 'tools/types';
+import type { ResizeAnchor } from 'interactions/gestures/types';
 import {
   cornerResizeHandles,
   hitCornerHandle,
-} from '../interactions/gestures/resize/cornerHandles';
-import { viewToTransform } from '../core/viewport/view';
-import { worldToScreen } from '../core/viewport/viewTransform';
-import { MULTI_RESIZE_TARGET_ID } from '../tools/builtin/useSelectTool';
+} from 'interactions/gestures/resize/cornerHandles';
+import { viewToTransform } from 'core/viewport/view';
+import { worldToScreen } from 'core/viewport/viewTransform';
+import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/useSelectTool';
 
 export interface CornerResizeAffordanceOptions {
   /** Hit radius (world-px) for the corner handles. Default 8. Divided by

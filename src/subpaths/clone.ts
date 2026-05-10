@@ -1,1 +1,1 @@
-export * from '../interactions/gestures/clone';
+export * from 'interactions/gestures/clone';

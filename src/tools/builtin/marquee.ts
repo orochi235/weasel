@@ -1,6 +1,6 @@
-import type { View } from '../../core/viewport/view';
-import { viewToTransform } from '../../core/viewport/view';
-import { worldToScreen } from '../../core/viewport/viewTransform';
+import type { View } from 'core/viewport/view';
+import { viewToTransform } from 'core/viewport/view';
+import { worldToScreen } from 'core/viewport/viewTransform';
 import type { DrawCommand } from '../../renderer';
 
 export interface InsertOverlayStyle {

@@ -3,8 +3,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { useMove } from './move';
 import { tileGrid, snapPoint } from '../../../layout/strategies';
 import type { LayoutStrategy } from '../../../layout/types';
-import type { MoveAdapter } from '../../../core/adapters/types';
-import type { Op } from '../../../core/ops/types';
+import type { MoveAdapter } from 'core/adapters/types';
+import type { Op } from 'core/ops/types';
 
 type Obj = { id: string };
 type P = { x: number; y: number; width: number; height: number };

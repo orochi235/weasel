@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { GroupDrawCommand, PathDrawCommand } from '../../renderer';
 import { createGridLayer } from './layer';
-import { IMPERIAL_INCHES } from '../../core/units';
+import { IMPERIAL_INCHES } from 'core/units';
 
 describe('createGridLayer', () => {
   it('exposes id "grid" and label "Grid"', () => {

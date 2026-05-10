@@ -1,7 +1,7 @@
-import { createInsertOp } from '../../../core/ops/create';
-import { createSetSelectionOp } from '../../../core/ops/select';
-import type { Op } from '../../../core/ops/types';
-import type { NodeId } from '../../../core/scene/types';
+import { createInsertOp } from 'core/ops/create';
+import { createSetSelectionOp } from 'core/ops/select';
+import type { Op } from 'core/ops/types';
+import type { NodeId } from 'core/scene/types';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
 

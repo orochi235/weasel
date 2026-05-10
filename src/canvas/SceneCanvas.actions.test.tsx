@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { useEffect } from 'react';
 import { render } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
-import { ActionsProvider, useActionsRegistry, type Action } from '../interactions/actions/registry';
-import { createScene } from '../core/scene/scene';
-import type { Scene } from '../core/scene/types';
-import { asNodeId } from '../core/scene/types';
+import { ActionsProvider, useActionsRegistry, type Action } from 'interactions/actions/registry';
+import { createScene } from 'core/scene/scene';
+import type { Scene } from 'core/scene/types';
+import { asNodeId } from 'core/scene/types';
 
 type D = { kind: 'rect' };
 type L = 'main';

@@ -1,7 +1,7 @@
-import { createTransformOp } from '../../../../core/ops/transform';
-import { createReparentOp } from '../../../../core/ops/reparent';
-import type { Op } from '../../../../core/ops/types';
-import type { SnapTarget } from '../../../../core/adapters/types';
+import { createTransformOp } from 'core/ops/transform';
+import { createReparentOp } from 'core/ops/reparent';
+import type { Op } from 'core/ops/types';
+import type { SnapTarget } from 'core/adapters/types';
 import type { MoveBehavior, GestureContext } from '../../types';
 
 interface SnapState<TPose> {

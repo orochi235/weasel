@@ -26,19 +26,19 @@
  */
 
 import { useCallback, useEffect, useRef } from 'react';
-import { createInsertOp } from '../../../core/ops/create';
-import { createDeleteOp } from '../../../core/ops/delete';
-import { createReparentOp } from '../../../core/ops/reparent';
-import { createTransformOp } from '../../../core/ops/transform';
-import { createSetSelectionOp } from '../../../core/ops/select';
-import type { Op } from '../../../core/ops/types';
-import type { NodeId } from '../../../core/scene/types';
-import { dispatchApplyBatch } from '../../../core/applyOps';
+import { createInsertOp } from 'core/ops/create';
+import { createDeleteOp } from 'core/ops/delete';
+import { createReparentOp } from 'core/ops/reparent';
+import { createTransformOp } from 'core/ops/transform';
+import { createSetSelectionOp } from 'core/ops/select';
+import type { Op } from 'core/ops/types';
+import type { NodeId } from 'core/scene/types';
+import { dispatchApplyBatch } from 'core/applyOps';
 import {
   composeWorldPose,
   rebaseLocalPose,
   type PoseAdapter,
-} from '../../../features/groups/composePose';
+} from 'features/groups/composePose';
 import { useKeybinding } from '../useKeybinding';
 import { useActionsRegistry, type Action } from '../registry';
 

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useDelete, type DeleteAdapter, type UseDeleteOptions } from '../../interactions/actions/delete/delete';
+import { useDelete, type DeleteAdapter, type UseDeleteOptions } from 'interactions/actions/delete/delete';
 import { defineTool } from '../defineTool';
 import type { Tool } from '../types';
 

@@ -6,7 +6,7 @@ import {
   type EditAnchorsStartArgs,
   createAnchorEditOverlayLayer,
   type AnchorEditOverlayOpts,
-} from '../../interactions/gestures/edit-anchors';
+} from 'interactions/gestures/edit-anchors';
 
 export interface EditAnchorsScratch {
   /** Captured on pointer.onDown when the down landed on an anchor or

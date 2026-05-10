@@ -11,7 +11,7 @@ import {
   polygonContainsRect,
   polygonContainsRectCenter,
   polygonIntersectsRect,
-} from '../../features/paths/polygonHitTestRect';
+} from 'features/paths/polygonHitTestRect';
 import type { Op } from '../ops/types';
 import { applyOpsTo } from '../applyOps';
 

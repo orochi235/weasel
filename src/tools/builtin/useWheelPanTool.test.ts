@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useWheelPanTool } from './useWheelPanTool';
 import type { ToolCtx } from '../types';
-import type { View } from '../../core/viewport/view';
+import type { View } from 'core/viewport/view';
 
 function makeCtx(view: View, setView: (v: View) => void): ToolCtx<null> {
   return {

@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useDelete } from './delete';
 import type { DeleteAdapter } from './delete';
 import type { Op } from '../../..';
-import { type NodeId } from '../../../core/scene/types';
+import { type NodeId } from 'core/scene/types';
 
 function makeAdapter(initial: string[] = []) {
   let selection = [...initial] as NodeId[];

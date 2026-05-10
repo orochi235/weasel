@@ -1,1 +1,1 @@
-export * from '../interactions/gestures/resize';
+export * from 'interactions/gestures/resize';

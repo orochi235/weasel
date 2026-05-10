@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useUndoRedo, type UndoRedoAdapter, type UseUndoRedoOptions } from '../../interactions/actions/undo-redo/undoRedo';
+import { useUndoRedo, type UndoRedoAdapter, type UseUndoRedoOptions } from 'interactions/actions/undo-redo/undoRedo';
 import { defineTool } from '../defineTool';
 import type { Tool } from '../types';
 

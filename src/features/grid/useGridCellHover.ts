@@ -14,9 +14,9 @@
  */
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
-import { screenToWorld, type ViewTransform } from '../../core/viewport/viewTransform';
-import { pointToGridCell } from '../../interactions/gestures/shared/strategies/grid';
-import type { UnitSystem, UnitValue } from '../../core/units';
+import { screenToWorld, type ViewTransform } from 'core/viewport/viewTransform';
+import { pointToGridCell } from 'interactions/gestures/shared/strategies/grid';
+import type { UnitSystem, UnitValue } from 'core/units';
 
 /** Options for `useGridCellHover`. */
 export interface UseGridCellHoverOptions {

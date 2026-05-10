@@ -5,7 +5,7 @@ import {
   PATH_Q,
   PATH_Z,
   type PolygonPath,
-} from '../../../features/paths/types';
+} from 'features/paths/types';
 
 /** A single anchor on a `PolygonPath`, with its incoming/outgoing bezier
  *  control points (when present). `coordIndex` points at the anchor's own

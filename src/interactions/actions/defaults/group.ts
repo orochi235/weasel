@@ -1,9 +1,9 @@
-import { createCreateGroupOp } from '../../../features/groups/ops/createGroup';
-import { createDissolveGroupOp } from '../../../features/groups/ops/dissolveGroup';
-import { createSetSelectionOp } from '../../../core/ops/select';
-import type { Op } from '../../../core/ops/types';
-import type { NodeId } from '../../../core/scene/types';
-import type { Group } from '../../../features/groups/types';
+import { createCreateGroupOp } from 'features/groups/ops/createGroup';
+import { createDissolveGroupOp } from 'features/groups/ops/dissolveGroup';
+import { createSetSelectionOp } from 'core/ops/select';
+import type { Op } from 'core/ops/types';
+import type { NodeId } from 'core/scene/types';
+import type { Group } from 'features/groups/types';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
 

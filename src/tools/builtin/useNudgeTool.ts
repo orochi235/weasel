@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useNudge, type NudgeAdapter, type UseNudgeOptions } from '../../interactions/actions/nudge/nudge';
+import { useNudge, type NudgeAdapter, type UseNudgeOptions } from 'interactions/actions/nudge/nudge';
 import { defineTool } from '../defineTool';
 import type { Tool } from '../types';
 

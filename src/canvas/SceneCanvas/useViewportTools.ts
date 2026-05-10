@@ -9,13 +9,13 @@
  * `keyZoom`/`wheelZoom` from the ambient tools and `hand` from the registry.
  */
 import { type RefObject, useMemo } from 'react';
-import { useHandTool } from '../../tools/builtin/useHandTool';
-import { useKeyboardZoomTool } from '../../tools/builtin/useKeyboardZoomTool';
-import { useWheelZoomTool } from '../../tools/builtin/useWheelZoomTool';
-import { usePinchZoomTool } from '../../tools/builtin/usePinchZoomTool';
-import type { View } from '../../core/viewport/view';
-import type { PanBounds } from '../../core/viewport/useDecayLoop';
-import type { AnyTool } from '../../tools/types';
+import { useHandTool } from 'tools/builtin/useHandTool';
+import { useKeyboardZoomTool } from 'tools/builtin/useKeyboardZoomTool';
+import { useWheelZoomTool } from 'tools/builtin/useWheelZoomTool';
+import { usePinchZoomTool } from 'tools/builtin/usePinchZoomTool';
+import type { View } from 'core/viewport/view';
+import type { PanBounds } from 'core/viewport/useDecayLoop';
+import type { AnyTool } from 'tools/types';
 
 export interface ViewportConfig {
   inertia?:

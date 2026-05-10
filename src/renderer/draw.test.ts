@@ -189,8 +189,8 @@ describe('WeaselRenderer.render — kind: path with stroke', () => {
   });
 });
 
-import { registerFont, _resetFontRegistryForTests } from '../features/text/atlas/registerFont';
-import { FIXTURE_FONT } from '../features/text/atlas/FontAtlas';
+import { registerFont, _resetFontRegistryForTests } from 'features/text/atlas/registerFont';
+import { FIXTURE_FONT } from 'features/text/atlas/FontAtlas';
 import { vi } from 'vitest';
 
 describe('WeaselRenderer.render — color matrix on text + image', () => {

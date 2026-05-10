@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { createTransformOp } from '../../../core/ops/transform';
-import type { Op } from '../../../core/ops/types';
-import { dispatchApplyBatch } from '../../../core/applyOps';
-import type { RotateAdapter } from '../../../core/adapters/types';
+import { createTransformOp } from 'core/ops/transform';
+import type { Op } from 'core/ops/types';
+import { dispatchApplyBatch } from 'core/applyOps';
+import type { RotateAdapter } from 'core/adapters/types';
 import type {
   GestureContext,
   ModifierState,

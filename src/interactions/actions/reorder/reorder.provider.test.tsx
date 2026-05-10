@@ -3,8 +3,8 @@ import { useEffect } from 'react';
 import { render } from '@testing-library/react';
 import { useReorder } from './reorder';
 import { ActionsProvider, useActionsRegistry, type ActionsRegistry } from '../registry';
-import type { Op } from '../../../core/ops/types';
-import { asNodeId, type NodeId } from '../../../core/scene/types';
+import type { Op } from 'core/ops/types';
+import { asNodeId, type NodeId } from 'core/scene/types';
 
 interface FakeAdapter {
   selection: NodeId[];

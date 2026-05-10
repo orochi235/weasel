@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useLassoSelect } from './lassoSelect';
-import type { LassoSelectAdapter } from '../../../core/adapters/types';
+import type { LassoSelectAdapter } from 'core/adapters/types';
 import type { LassoSelectBehavior } from '../types';
 
 const NO_MOD = { alt: false, shift: false, meta: false, ctrl: false };

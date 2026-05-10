@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { GroupDrawCommand } from '../../renderer';
 import { createCellHighlightLayer } from './cellHighlight';
-import { IMPERIAL_INCHES } from '../../core/units';
+import { IMPERIAL_INCHES } from 'core/units';
 
 describe('createCellHighlightLayer', () => {
   it('exposes id and label', () => {

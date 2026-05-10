@@ -2,7 +2,7 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { useMove } from './move';
 import type { LayoutStrategy } from '../../../layout/types';
-import type { MoveAdapter } from '../../../core/adapters/types';
+import type { MoveAdapter } from 'core/adapters/types';
 
 type Obj = { id: string };
 type P = { x: number; y: number; width: number; height: number };

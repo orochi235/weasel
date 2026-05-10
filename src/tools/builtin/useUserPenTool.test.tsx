@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useUserPenTool } from './useUserPenTool';
 import type { ToolCtx } from '../types';
-import type { PolygonPath } from '../../features/paths/types';
+import type { PolygonPath } from 'features/paths/types';
 
 interface Pose { kind: 'path'; path: PolygonPath; closed: boolean }
 

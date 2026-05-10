@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { defaultEscapeAction } from './escape';
-import { asNodeId } from '../../../core/scene/types';
+import { asNodeId } from 'core/scene/types';
 
 describe('defaultEscapeAction', () => {
   it('id="escape", label="Escape", binding={key: "Escape"}', () => {

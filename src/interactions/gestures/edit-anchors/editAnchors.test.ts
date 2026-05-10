@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { PathBuilder } from '../../../features/paths/builder';
-import type { Path, PolygonPath } from '../../../features/paths/types';
-import type { Op } from '../../../core/ops/types';
+import { PathBuilder } from 'features/paths/builder';
+import type { Path, PolygonPath } from 'features/paths/types';
+import type { Op } from 'core/ops/types';
 import { useEditAnchors } from './editAnchors';
 import { enumerateAnchors } from './geometry';
 import { hitAnchor } from './handles';

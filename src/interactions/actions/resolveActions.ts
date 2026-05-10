@@ -22,8 +22,8 @@ import type {
   ActionEntry,
   ActionsProp,
 } from './registry';
-import type { Op } from '../../core/ops/types';
-import type { NodeId } from '../../core/scene/types';
+import type { Op } from 'core/ops/types';
+import type { NodeId } from 'core/scene/types';
 
 export interface StandardActionsDeps<TPose> {
   getSelection: () => NodeId[];

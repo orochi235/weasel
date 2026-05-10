@@ -1,8 +1,8 @@
 import { useMemo, useRef } from 'react';
-import type { Op } from '../../core/ops/types';
+import type { Op } from 'core/ops/types';
 import type { Tool } from '../types';
-import { useInsert } from '../../interactions/gestures/insert/insert';
-import type { InsertAdapter } from '../../core/adapters/types';
+import { useInsert } from 'interactions/gestures/insert/insert';
+import type { InsertAdapter } from 'core/adapters/types';
 import { defineDragInsertTool } from './defineDragInsertTool';
 import { type InsertOverlayStyle } from './marquee';
 

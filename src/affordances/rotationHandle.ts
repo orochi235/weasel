@@ -1,16 +1,16 @@
 import type { Affordance, HitResult } from './types';
-import type { ChromeState, Bounds } from '../core/selection/chromeState';
+import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { DrawCommand } from '../renderer';
-import type { View } from '../core/viewport/view';
-import type { DragChannel } from '../tools/types';
+import type { View } from 'core/viewport/view';
+import type { DragChannel } from 'tools/types';
 import {
   rotationHandle,
   hitRotationHandle,
   DEFAULT_ROTATION_HANDLE_DISTANCE,
-} from '../interactions/gestures/rotate/handle';
-import { viewToTransform } from '../core/viewport/view';
-import { worldToScreen } from '../core/viewport/viewTransform';
-import { MULTI_RESIZE_TARGET_ID } from '../tools/builtin/useSelectTool';
+} from 'interactions/gestures/rotate/handle';
+import { viewToTransform } from 'core/viewport/view';
+import { worldToScreen } from 'core/viewport/viewTransform';
+import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/useSelectTool';
 
 export interface RotationAffordanceOptions {
   /** World-pixel distance from the bounds top edge to the handle center.

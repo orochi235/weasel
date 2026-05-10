@@ -2,7 +2,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { createToolsDispatcher, type ToolsDispatcher } from './dispatcher';
 import type { AnyTool, ToolCtx } from './types';
-import type { RenderLayer } from '../core/layers/render';
+import type { RenderLayer } from 'core/layers/render';
 
 export interface UseToolsOptions {
   /** Initial active-slot tool id. Must exist in `registry`. */

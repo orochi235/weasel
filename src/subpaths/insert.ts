@@ -1,1 +1,1 @@
-export * from '../interactions/gestures/insert';
+export * from 'interactions/gestures/insert';

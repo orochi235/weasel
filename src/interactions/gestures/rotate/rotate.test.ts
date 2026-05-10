@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useRotate } from './rotate';
 import { pointInRotatedRect, rotationHandle, hitRotationHandle } from './index';
-import type { RotateAdapter } from '../../../core/adapters/types';
-import type { Op } from '../../../core/ops/types';
+import type { RotateAdapter } from 'core/adapters/types';
+import type { Op } from 'core/ops/types';
 import type { RotatedPose } from '../types';
 
 function makeAdapter(initial?: Array<[string, RotatedPose]>) {

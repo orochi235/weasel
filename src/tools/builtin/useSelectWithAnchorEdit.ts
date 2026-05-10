@@ -6,9 +6,9 @@ import {
   useEditAnchors,
   type EditAnchorsAdapter,
   type UseEditAnchorsOptions,
-} from '../../interactions/gestures/edit-anchors';
+} from 'interactions/gestures/edit-anchors';
 import { useTools, type ToolsApi } from '../useTools';
-import type { MoveAdapter, ResizeAdapter, RotateAdapter, AreaSelectAdapter } from '../../core/adapters/types';
+import type { MoveAdapter, ResizeAdapter, RotateAdapter, AreaSelectAdapter } from 'core/adapters/types';
 
 /** Adapter intersection required for the inner select tool plus the
  *  edit-anchors controller. Same shape as the demo's hand-rolled adapter. */

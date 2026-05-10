@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { createTransformOp } from '../../../core/ops/transform';
-import type { Op } from '../../../core/ops/types';
-import { dispatchApplyBatch } from '../../../core/applyOps';
-import type { NodeId } from '../../../core/scene/types';
+import { createTransformOp } from 'core/ops/transform';
+import type { Op } from 'core/ops/types';
+import { dispatchApplyBatch } from 'core/applyOps';
+import type { NodeId } from 'core/scene/types';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../../gestures/resize/geometry';
 import type { ResizePose } from '../../gestures/types';
 import { useActionsRegistry } from '../registry';

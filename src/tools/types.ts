@@ -1,8 +1,8 @@
 // src/tools/types.ts
-import type { SelectionApi } from '../core/selection/useSelection';
-import type { Op } from '../core/ops/types';
-import type { View } from '../core/viewport/view';
-import type { RenderLayer } from '../core/layers/render';
+import type { SelectionApi } from 'core/selection/useSelection';
+import type { Op } from 'core/ops/types';
+import type { View } from 'core/viewport/view';
+import type { RenderLayer } from 'core/layers/render';
 import type { DebugSink } from '../debug/types';
 
 /** Outcome of a channel handler. `'claim'` stops dispatch for this event;

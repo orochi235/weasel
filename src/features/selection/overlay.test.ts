@@ -7,7 +7,7 @@ import {
   createSelectionHandlesLayer,
 } from './overlay';
 import type { Group, GroupAdapter } from '../groups/types';
-import { asNodeId } from '../../core/scene/types';
+import { asNodeId } from 'core/scene/types';
 
 function makeGroupAdapter(groups: Group[]): GroupAdapter {
   const byId = new Map<string, Group>(groups.map((g) => [g.id, { ...g, members: [...g.members] }]));

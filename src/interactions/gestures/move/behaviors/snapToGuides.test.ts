@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { snapToGuides } from './snapToGuides';
-import type { Guide } from '../../../../features/guides/types';
+import type { Guide } from 'features/guides/types';
 import type { GestureContext, ModifierState } from '../../types';
 
 interface Pose { x: number; y: number }

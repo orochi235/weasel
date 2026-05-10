@@ -27,7 +27,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { NodeId } from '../../core/scene/types';
+import type { NodeId } from 'core/scene/types';
 
 /** @experimental */
 export interface SelectionContextValue {

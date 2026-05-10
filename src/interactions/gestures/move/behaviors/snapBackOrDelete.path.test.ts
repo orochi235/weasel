@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { snapBackOrDelete } from './snapBackOrDelete';
-import { polygonFromPoints, pathOriginProjection, type Path } from '../../../../features/paths';
+import { polygonFromPoints, pathOriginProjection, type Path } from 'features/paths';
 import type { GestureContext } from '../../types';
 
 function ctx(originPose: Path, currentPose: Path): GestureContext<Path> {

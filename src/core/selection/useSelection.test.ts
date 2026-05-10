@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { useSelection } from './useSelection';
-import { asNodeId } from '../../core/scene/types';
+import { asNodeId } from 'core/scene/types';
 
 const NO_MODS = { shift: false, meta: false, ctrl: false };
 const a = asNodeId('a');

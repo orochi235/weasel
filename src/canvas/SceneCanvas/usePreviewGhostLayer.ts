@@ -10,11 +10,11 @@
  */
 import { useMemo, useRef } from 'react';
 import { viewToMat3, type DrawCommand } from '../../renderer';
-import type { RenderLayer } from '../../core/layers/render';
+import type { RenderLayer } from 'core/layers/render';
 import type { LayersMap } from '../Canvas';
-import type { Node, Scene } from '../../core/scene/types';
-import { asNodeId } from '../../core/scene/types';
-import type { ToolsApi } from '../../tools/useTools';
+import type { Node, Scene } from 'core/scene/types';
+import { asNodeId } from 'core/scene/types';
+import type { ToolsApi } from 'tools/useTools';
 
 export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: {
   scene: Scene<TData, TLayer, TPose>;

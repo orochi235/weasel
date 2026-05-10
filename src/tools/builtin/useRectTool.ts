@@ -1,10 +1,10 @@
 import { useMemo, useRef } from 'react';
 import { defineTool } from '../defineTool';
-import { useDragRect } from '../../interactions/gestures/dragRect';
-import { createInsertOp } from '../../core/ops/create';
+import { useDragRect } from 'interactions/gestures/dragRect';
+import { createInsertOp } from 'core/ops/create';
 import { marqueeDrawCommands, type InsertOverlayStyle } from './marquee';
 import type { Tool, ToolCtx } from '../types';
-import type { View } from '../../core/viewport/view';
+import type { View } from 'core/viewport/view';
 
 export interface RectBounds {
   x: number;

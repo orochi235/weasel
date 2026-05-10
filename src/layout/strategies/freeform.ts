@@ -1,4 +1,4 @@
-import { createTransformOp } from '../../core/ops/transform';
+import { createTransformOp } from 'core/ops/transform';
 import type { LayoutSnap, LayoutStrategy } from '../types';
 import { none } from '../snaps';
 

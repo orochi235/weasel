@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { useSelectWithAnchorEdit } from './useSelectWithAnchorEdit';
-import { PathBuilder } from '../../features/paths/builder';
-import type { Path, PolygonPath } from '../../features/paths/types';
+import { PathBuilder } from 'features/paths/builder';
+import type { Path, PolygonPath } from 'features/paths/types';
 
 interface PathObj { id: string }
 

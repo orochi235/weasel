@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { render } from '@testing-library/react';
 import { useSelectAll } from './select-all';
 import { ActionsProvider, useActionsRegistry, type ActionsRegistry } from '../registry';
-import { asNodeId } from '../../../core/scene/types';
+import { asNodeId } from 'core/scene/types';
 
 describe('useSelectAll back-compat with ActionsProvider', () => {
   it('registers an action when wrapped in ActionsProvider; unregisters on unmount', () => {

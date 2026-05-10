@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { useMove } from './move';
 import { snapToGrid } from './behaviors/snapToGrid';
 import { snapBackOrDelete } from './behaviors/snapBackOrDelete';
-import type { MoveAdapter } from '../../../core/adapters/types';
-import type { Op } from '../../../core/ops/types';
+import type { MoveAdapter } from 'core/adapters/types';
+import type { Op } from 'core/ops/types';
 
 interface Pose { x: number; y: number }
 interface Obj { id: string; pose: Pose; parent: string | null }

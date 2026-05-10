@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { defaultDuplicateAction } from './duplicate';
-import { asNodeId, type NodeId } from '../../../core/scene/types';
+import { asNodeId, type NodeId } from 'core/scene/types';
 
 describe('defaultDuplicateAction', () => {
   const cloneObject = vi.fn((id: NodeId) => ({ id: asNodeId(id + "'") }));

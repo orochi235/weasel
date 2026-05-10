@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useGroup, useUngroup, type GroupActionAdapter } from './group';
-import type { Group } from '../../../features/groups/types';
-import type { Op } from '../../../core/ops/types';
+import type { Group } from 'features/groups/types';
+import type { Op } from 'core/ops/types';
 
 interface Harness {
   adapter: GroupActionAdapter;

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { nestedGroupHitTester } from './nestedGroupHit';
-import { composeRectPose } from '../../features/groups/composePose';
+import { composeRectPose } from 'features/groups/composePose';
 
 interface Node {
   id: string;

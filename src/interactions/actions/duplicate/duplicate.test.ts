@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useDuplicate } from './duplicate';
 import type { DuplicateAdapter } from './duplicate';
 import type { Op } from '../../..';
-import { asNodeId, type NodeId } from '../../../core/scene/types';
+import { asNodeId, type NodeId } from 'core/scene/types';
 
 interface Pose { x: number; y: number }
 

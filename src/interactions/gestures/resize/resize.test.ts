@@ -4,8 +4,8 @@ import { useResize } from './resize';
 import { clampMinSize } from './behaviors/clampMinSize';
 import { snapToGrid } from './behaviors/snapToGrid';
 import type { ResizeBehavior, ResizePose } from '../types';
-import type { Op } from '../../../core/ops/types';
-import type { ResizeAdapter } from '../../../core/adapters/types';
+import type { Op } from 'core/ops/types';
+import type { ResizeAdapter } from 'core/adapters/types';
 
 interface P extends ResizePose {}
 

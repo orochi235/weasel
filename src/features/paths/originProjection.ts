@@ -1,7 +1,7 @@
 import { boundsOfPath } from './bounds';
 import { translatePath } from './transform';
 import type { Path } from './types';
-import type { OriginProjection } from '../../interactions/gestures/shared/strategies/grid';
+import type { OriginProjection } from 'interactions/gestures/shared/strategies/grid';
 
 /**
  * `OriginProjection` for `Path` poses. The "origin" is the top-left of the

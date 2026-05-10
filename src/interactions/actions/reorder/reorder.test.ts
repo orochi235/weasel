@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useReorder } from './reorder';
-import type { Op } from '../../../core/ops/types';
-import { type NodeId } from '../../../core/scene/types';
+import type { Op } from 'core/ops/types';
+import { type NodeId } from 'core/scene/types';
 
 interface FakeAdapter {
   selection: NodeId[];

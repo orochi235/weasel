@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
-import type { Op } from '../../../core/ops/types';
-import type { LassoSelectAdapter } from '../../../core/adapters/types';
+import type { Op } from 'core/ops/types';
+import type { LassoSelectAdapter } from 'core/adapters/types';
 import type {
   GestureContext,
   LassoSelectBehavior,

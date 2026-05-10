@@ -1,1 +1,1 @@
-export * from '../features/patterns/patterns-builtin';
+export * from 'features/patterns/patterns-builtin';

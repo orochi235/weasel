@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAlign, alignDeltaFor, translatePoseViaDescriptor } from './align';
 import type { AlignAdapter } from './align';
-import type { Op } from '../../../core/ops/types';
-import { type NodeId } from '../../../core/scene/types';
-import { pathPoseDescriptor } from '../../../features/paths/poseDescriptor';
-import { polygonFromPoints } from '../../../features/paths/builder';
-import type { Path } from '../../../features/paths/types';
+import type { Op } from 'core/ops/types';
+import { type NodeId } from 'core/scene/types';
+import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
+import { polygonFromPoints } from 'features/paths/builder';
+import type { Path } from 'features/paths/types';
 
 interface RectPose { x: number; y: number; width: number; height: number; tag?: string }
 

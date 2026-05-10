@@ -1,5 +1,5 @@
 import type { NodeId } from '../scene/types';
-import type { ModifierState } from '../../interactions/gestures/types';
+import type { ModifierState } from 'interactions/gestures/types';
 
 /** AABB used for selection chrome bounds. Mirrors `Bounds` in
  *  `src/core/adapters/types` but inlined here to avoid an import cycle. */

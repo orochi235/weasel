@@ -7,8 +7,8 @@
  */
 
 import { type DrawCommand, viewToMat3 } from '../../renderer';
-import { type Paint, type Stroke } from '../../core/paint-types';
-import type { RenderLayer } from '../../core/layers/render';
+import { type Paint, type Stroke } from 'core/paint-types';
+import type { RenderLayer } from 'core/layers/render';
 import type { Path } from './types';
 
 /** Options for `createPathLayer`. */

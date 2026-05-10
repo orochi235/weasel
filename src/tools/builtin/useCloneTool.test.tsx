@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useCloneTool } from './useCloneTool';
-import { cloneByAltDrag } from '../../interactions/gestures/clone/behaviors/cloneByAltDrag';
+import { cloneByAltDrag } from 'interactions/gestures/clone/behaviors/cloneByAltDrag';
 import type { InsertAdapter, Op } from '../../index';
 import type { ToolCtx } from '../types';
 

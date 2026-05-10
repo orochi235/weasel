@@ -11,7 +11,7 @@ import {
   type StandardActionsDeps,
   type UseStandardActionsOptions,
 } from './useStandardActions';
-import { asNodeId } from '../../core/scene/types';
+import { asNodeId } from 'core/scene/types';
 
 type Pose = { x: number; y: number; width: number; height: number };
 

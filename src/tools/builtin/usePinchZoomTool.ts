@@ -1,8 +1,8 @@
 import { useRef } from 'react';
-import { usePinchGesture } from '../../core/viewport/usePinchGesture';
-import { zoomAt } from '../../core/viewport/zoomAt';
-import { clientToCanvas } from '../../core/viewport/clientToCanvas';
-import type { View } from '../../core/viewport/view';
+import { usePinchGesture } from 'core/viewport/usePinchGesture';
+import { zoomAt } from 'core/viewport/zoomAt';
+import { clientToCanvas } from 'core/viewport/clientToCanvas';
+import type { View } from 'core/viewport/view';
 
 export interface PinchZoomToolOpts {
   min?: number;

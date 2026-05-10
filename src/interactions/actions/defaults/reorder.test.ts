@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { defaultReorderActions } from './reorder';
-import type { Op } from '../../../core/ops/types';
-import { asNodeId, type NodeId } from '../../../core/scene/types';
+import type { Op } from 'core/ops/types';
+import { asNodeId, type NodeId } from 'core/scene/types';
 
 interface FakeAdapter {
   selection: NodeId[];
