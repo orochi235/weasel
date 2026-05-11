@@ -121,6 +121,7 @@
     "2d"
   ],
   "dependencies": {
-    "earcut": "2.2.4"
+    "earcut": "2.2.4",
+    "polygon-clipping": "^0.15.7"
   }
 }
