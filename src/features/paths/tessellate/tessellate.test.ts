@@ -200,3 +200,52 @@ describe('tessellate (PolygonPath, multi-contour, nonzero)', () => {
     expect(mesh.indices.length).toBe(24);                // earcut emits 8 triangles for this case
   });
 });
+
+import { PathBuilder, polygonFromPoints, rectPath } from '../builder';
+
+describe('tessellate — anchor parameterization', () => {
+  it('a rect mesh carries 4 anchor indices matching the corners', () => {
+    const mesh = tessellate(rectPath(0, 0, 10, 10));
+    expect(mesh.anchorA).toBeDefined();
+    expect(mesh.anchorB).toBeDefined();
+    expect(mesh.anchorT).toBeDefined();
+    expect(mesh.anchorA!.length).toBe(mesh.vertices.length / 2);
+    // Each rect vertex pinned to its own anchor.
+    expect(Array.from(mesh.anchorA!)).toEqual([0, 1, 2, 3]);
+    expect(Array.from(mesh.anchorB!)).toEqual([0, 1, 2, 3]);
+    expect(Array.from(mesh.anchorT!)).toEqual([0, 0, 0, 0]);
+  });
+
+  it('a triangle polygon mesh has one anchor per vertex', () => {
+    const p = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }]);
+    const mesh = tessellate(p);
+    expect(mesh.anchorA!.length).toBe(3);
+    expect(Array.from(mesh.anchorA!)).toEqual([0, 1, 2]);
+  });
+
+  it('a cubic-bezier-only polygon emits anchor params interpolating across the curve', () => {
+    // Closed: M → C → L → Z (anchor 0 at the M, anchor 1 at the C destination,
+    // anchor 2 at the L closing point). Flat polyline has many interior points.
+    const p = new PathBuilder()
+      .moveTo(0, 0)
+      .curveTo(0, 100, 100, 100, 100, 0)
+      .lineTo(0, 0)
+      .close()
+      .build();
+    const mesh = tessellate(p);
+    const n = mesh.vertices.length / 2;
+    expect(mesh.anchorA!.length).toBe(n);
+    // First vertex should be anchor 0 (the M).
+    expect(mesh.anchorA![0]).toBe(0);
+    expect(mesh.anchorB![0]).toBe(0);
+    // Some interior vertex along the curve must have anchorA = 0, anchorB = 1, t in (0,1).
+    let foundInterior = false;
+    for (let i = 1; i < n; i++) {
+      if (mesh.anchorA![i] === 0 && mesh.anchorB![i] === 1 && mesh.anchorT![i] > 0 && mesh.anchorT![i] < 1) {
+        foundInterior = true;
+        break;
+      }
+    }
+    expect(foundInterior).toBe(true);
+  });
+});
