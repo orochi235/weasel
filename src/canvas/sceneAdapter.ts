@@ -75,6 +75,7 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
       setSelection(ids: string[]): void;
       insertNode(node: Node<TData, TLayer, TPose>): void;
       removeNode(id: string): void;
+      applyBatch(ops: Op[], label: string): void;
     };
 
 /** Optional extras for the synthesized adapter. Pass `commitInsert` to wire
