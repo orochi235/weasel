@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SceneCanvas, useScene } from '@orochi235/weasel';
+import { SceneCanvas, useScene, textCommand } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
 
 type Layer = 'scene';
@@ -85,13 +85,12 @@ export function ViewportDemo() {
                 },
                 // Center-aligned: x = center - (text_width / 2). Approximates
                 // ctx.textAlign='center' since TextDrawCommand uses left baseline.
-                {
-                  kind: 'text',
-                  x: p.x + p.width / 2 - (label.length * charW) / 2,
-                  y: p.y + p.height / 2 + fontSize / 3,  // textBaseline='middle' → shift down ~1/3 emHeight
-                  text: label,
-                  style: { fontFamily: 'sans-serif', fontSize, fill: { color: '#1a130d' } },
-                },
+                textCommand(
+                  p.x + p.width / 2 - (label.length * charW) / 2,
+                  p.y + p.height / 2 + fontSize / 3,  // textBaseline='middle' → shift down ~1/3 emHeight
+                  label,
+                  { fontFamily: 'sans-serif', fontSize, fill: { fill: 'solid', color: '#1a130d' } },
+                ),
               ];
             },
           },
