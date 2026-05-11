@@ -66,6 +66,25 @@ describe('pathContainsPolygon', () => {
     const poly = [{ x: 5, y: 5 }, { x: 15, y: 5 }, { x: 10, y: 15 }];
     expect(pathContainsPolygon(rect, poly)).toBe(false);
   });
+  it('polygon path contains an inner polygon', () => {
+    const big = polygonFromPoints([
+      { x: 0, y: 0 }, { x: 20, y: 0 }, { x: 10, y: 20 },
+    ]);
+    const small = [{ x: 8, y: 4 }, { x: 12, y: 4 }, { x: 10, y: 8 }];
+    expect(pathContainsPolygon(big, small)).toBe(true);
+  });
+  it('polygon path does not contain a polygon that extends outside', () => {
+    const triPath = polygonFromPoints([
+      { x: 0, y: 0 }, { x: 10, y: 0 }, { x: 5, y: 10 },
+    ]);
+    const spill = [{ x: 5, y: 1 }, { x: 100, y: 1 }, { x: 50, y: 50 }];
+    expect(pathContainsPolygon(triPath, spill)).toBe(false);
+  });
+  it('pathContainsPolygon returns false for empty polygon argument', () => {
+    expect(pathContainsPolygon(rect, [])).toBe(false);
+    const triPath = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 5, y: 10 }]);
+    expect(pathContainsPolygon(triPath, [])).toBe(false);
+  });
 });
 
 describe('pathIntersectsPolygon', () => {
@@ -76,5 +95,22 @@ describe('pathIntersectsPolygon', () => {
   it('rect path does not intersect polygon entirely outside', () => {
     const poly = [{ x: 50, y: 50 }, { x: 60, y: 50 }, { x: 55, y: 60 }];
     expect(pathIntersectsPolygon(rect, poly)).toBe(false);
+  });
+  it('polygon path intersects polygon that crosses its edge', () => {
+    const triPath = polygonFromPoints([
+      { x: 0, y: 0 }, { x: 10, y: 0 }, { x: 5, y: 10 },
+    ]);
+    const crossing = [{ x: -5, y: 5 }, { x: 15, y: 5 }, { x: 5, y: -5 }];
+    expect(pathIntersectsPolygon(triPath, crossing)).toBe(true);
+  });
+  it('polygon path does not intersect polygon entirely outside', () => {
+    const triPath = polygonFromPoints([
+      { x: 0, y: 0 }, { x: 10, y: 0 }, { x: 5, y: 10 },
+    ]);
+    const far = [{ x: 100, y: 100 }, { x: 110, y: 100 }, { x: 105, y: 110 }];
+    expect(pathIntersectsPolygon(triPath, far)).toBe(false);
+  });
+  it('pathIntersectsPolygon returns false for empty polygon argument', () => {
+    expect(pathIntersectsPolygon(rect, [])).toBe(false);
   });
 });

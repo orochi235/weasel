@@ -64,8 +64,8 @@ function rectToVerts(r: Rect): Vec2[] {
 
 /** Convex/concave polygon containment: every vertex of `inner` lies inside `outer`. */
 function polygonContainsPolygon(outer: readonly Vec2[], inner: readonly Vec2[]): boolean {
-  return pointInPolygon(outer, inner[0].x, inner[0].y)
-    && inner.every((p) => pointInPolygon(outer, p.x, p.y));
+  if (inner.length === 0) return false; // empty inner can't be "contained"
+  return inner.every((p) => pointInPolygon(outer, p.x, p.y));
 }
 
 /** Even-odd ray-cast point-in-polygon. */
@@ -85,6 +85,7 @@ function pointInPolygon(poly: readonly Vec2[], px: number, py: number): boolean 
 
 /** Edge-vs-edge segment intersection check. */
 function polygonsIntersect(a: readonly Vec2[], b: readonly Vec2[]): boolean {
+  if (a.length === 0 || b.length === 0) return false; // nothing to intersect
   // Quick containment check — one polygon fully inside the other?
   if (pointInPolygon(a, b[0].x, b[0].y)) return true;
   if (pointInPolygon(b, a[0].x, a[0].y)) return true;
@@ -148,6 +149,7 @@ export function pathIntersectsRect(path: Path, rect: Rect): boolean {
 
 /** Returns true if every vertex of `polygon` lies inside `path`. */
 export function pathContainsPolygon(path: Path, polygon: readonly Vec2[]): boolean {
+  if (polygon.length === 0) return false; // empty polygon can't be "contained"
   if (path.kind === 'rect') {
     return polygon.every(
       (p) =>
