@@ -77,3 +77,16 @@ describe('pathSubtract', () => {
     expect(s.commands.length).toBe(0);
   });
 });
+
+import { pathExclude } from './booleans';
+
+describe('pathExclude', () => {
+  it('returns symmetric difference (in one or the other, not both)', () => {
+    const a = r(0, 0, 10, 10);
+    const b = r(5, 5, 10, 10);
+    const x = pathExclude(a, b);
+    expect(pointInPath(x, 2, 2)).toBe(true);
+    expect(pointInPath(x, 12, 12)).toBe(true);
+    expect(pointInPath(x, 7, 7)).toBe(false);
+  });
+});

@@ -39,3 +39,12 @@ export function pathSubtract(a: Path, b: Path): PolygonPath {
   );
   return multiPolygonToPath(result);
 }
+
+/** Symmetric difference (XOR) of N paths. Commutative. */
+export function pathExclude(...paths: Path[]): PolygonPath {
+  if (paths.length === 0) return multiPolygonToPath([]);
+  const mps = paths.map((p) => pathToMultiPolygon(p));
+  const [head, ...rest] = mps;
+  const result = polygonClipping.xor(head, ...rest);
+  return multiPolygonToPath(result);
+}
