@@ -86,7 +86,7 @@ export const DEMOS: DemoEntry[] = [
     id: 'scene',
     title: 'Scene primitive',
     category: 'Foundations',
-    description: 'useScene + SceneCanvas — a kit-owned scene graph with first-class layers, parenting, and undo/redo. Five system layers (garden / blueprint / structures / zones / plantings) demonstrate the eric-shape; a leaf on the plantings layer is parented under a container on the structures layer (cross-layer parenting). A registered consumer op (`setColor`) records onto the same undo stack as kit mutations like setPose. Cmd/Ctrl+Z and Cmd/Ctrl+Shift+Z are wired via useUndoRedo.',
+    description: 'useScene + SceneCanvas — a kit-owned scene graph with first-class layers, parenting, and undo/redo. Five system layers (garden / blueprint / structures / zones / plantings) demonstrate the eric-shape; two plant leaves are parented under a planter container on the structures layer. A registered consumer op (`setColor`) records onto the same undo stack as kit mutations like setPose. Cmd/Ctrl+Z and Cmd/Ctrl+Shift+Z are wired via useUndoRedo.',
     hint: 'Drag rectangles to move; click "Recolor selection" then undo with Cmd+Z.',
     Component: SceneDemo,
     full: SceneDemoFull,

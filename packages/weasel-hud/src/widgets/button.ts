@@ -1,5 +1,6 @@
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent, PointerClaim } from '../widget';
-import type { DrawCommand, PathDrawCommand, TextDrawCommand } from '../../../../src/renderer';
+import type { DrawCommand, PathDrawCommand } from '../../../../src/renderer';
+import { textCommand } from '../../../../src/features/text/textCommand';
 
 export type ButtonEvent = 'press' | 'hover' | 'leave';
 export type ButtonHandler = () => void;
@@ -77,17 +78,16 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
         path: { kind: 'rect', x, y, width: w, height: h },
         fill: { fill: 'solid', color: bodyColor },
       };
-      const text: TextDrawCommand = {
-        kind: 'text',
-        x: x + 8,                    // 8px left padding
-        y: y + h / 2 + fontSize / 3, // rough vertical center
-        text: label,
-        style: {
+      const text = textCommand(
+        x + 8,                    // 8px left padding
+        y + h / 2 + fontSize / 3, // rough vertical center
+        label,
+        {
           fontFamily: opts.fontFamily ?? ctx.defaultFont,
           fontSize,
           fill: { fill: 'solid', color: textColor },
         },
-      };
+      );
       return [body, text];
     },
     hitTest(x, y) {

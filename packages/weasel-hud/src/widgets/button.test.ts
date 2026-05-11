@@ -62,8 +62,8 @@ describe('button widget', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'a' });
     b.setLabel('b');
     const cmds = b.draw(ctx);
-    const txt = cmds.find(c => c.kind === 'text') as { text: string };
-    expect(txt.text).toBe('b');
+    const txt = cmds.find(c => c.kind === 'text') as { runs: Array<{ text: string }> };
+    expect(txt.runs[0].text).toBe('b');
   });
 
   it('off() removes a handler', () => {

@@ -5,6 +5,7 @@ import {
   useAnimator,
   useScene,
   asNodeId,
+  textCommand,
 } from '@orochi235/weasel';
 import { PATH_M, PATH_L, type EasingName, type RenderLayer } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
@@ -91,20 +92,12 @@ export function EasingsDemo() {
         const y = TOP_PAD + row * ROW_HEIGHT + ROW_HEIGHT / 2;
         // Per-row label. Right-aligned approximation: x = right_edge - text_width.
         const charW = 6.6;
-        cmds.push({
-          kind: 'text',
-          x: TRACK_LEFT - 8 - name.length * charW,
+        cmds.push(textCommand(
+          TRACK_LEFT - 8 - name.length * charW,
           y,
-          runs: [{
-            text: name,
-            fontFamily: 'sans-serif',
-            fontSize: 11,
-            fontWeight: 400,
-            fontStyle: 'normal',
-            fill: { fill: 'solid', color: '#a89878' },
-          }],
-          style: { fontFamily: 'sans-serif', fontSize: 11, fill: { fill: 'solid', color: '#a89878' } },
-        });
+          name,
+          { fontFamily: 'sans-serif', fontSize: 11, fill: { fill: 'solid', color: '#a89878' } },
+        ));
         // Track line as 2-point polygon path stroke.
         cmds.push({
           kind: 'path',

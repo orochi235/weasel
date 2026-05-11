@@ -10,7 +10,7 @@ describe('text widget', () => {
     const t = createText({ id: 't', x: 0, y: 10, text: 'hi', fontSize: 14, color: '#000', fontFamily: 'Foo' });
     const cmds = t.draw(ctx);
     expect(cmds).toHaveLength(1);
-    expect(cmds[0]).toMatchObject({ kind: 'text', text: 'hi', x: 0, y: 10 });
+    expect(cmds[0]).toMatchObject({ kind: 'text', runs: [{ text: 'hi' }], x: 0, y: 10 });
     expect((cmds[0] as { style: { fontFamily: string } }).style.fontFamily).toBe('Foo');
   });
 
@@ -24,7 +24,7 @@ describe('text widget', () => {
     const t = createText({ id: 't', x: 0, y: 10, text: 'a', fontSize: 14, color: '#000' });
     t.setText('b');
     const cmds = t.draw(ctx);
-    expect((cmds[0] as { text: string }).text).toBe('b');
+    expect((cmds[0] as { runs: Array<{ text: string }> }).runs[0].text).toBe('b');
   });
 
   it('onChange fires when state mutates', () => {

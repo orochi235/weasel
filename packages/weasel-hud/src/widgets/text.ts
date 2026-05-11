@@ -1,5 +1,6 @@
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent, PointerClaim } from '../widget';
-import type { DrawCommand, TextDrawCommand } from '../../../../src/renderer';
+import type { DrawCommand } from '../../../../src/renderer';
+import { textCommand } from '../../../../src/features/text/textCommand';
 
 export interface TextOptions {
   id: string;
@@ -42,18 +43,16 @@ export function createText(opts: TextOptions): TextWidget {
     setText(t) { assertNotDisposed(); text = t; opts.onChange?.(); },
     draw(ctx: HudDrawCtx): DrawCommand[] {
       const color = opts.color ?? ctx.tokens.text;
-      const cmd: TextDrawCommand = {
-        kind: 'text',
-        x: bounds.x,
-        y: bounds.y,
+      return [textCommand(
+        bounds.x,
+        bounds.y,
         text,
-        style: {
+        {
           fontFamily: opts.fontFamily ?? ctx.defaultFont,
           fontSize: opts.fontSize,
           fill: { fill: 'solid', color },
         },
-      };
-      return [cmd];
+      )];
     },
     hitTest() { return false; },   // text is passive in v1
     onPointer(_e: HudPointerEvent): PointerClaim { return 'pass'; },
