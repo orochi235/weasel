@@ -18,9 +18,7 @@ export type HudPointerEvent =
   | { type: 'down'; x: number; y: number; native: PointerEvent }
   | { type: 'move'; x: number; y: number; native: PointerEvent }
   | { type: 'up'; x: number; y: number; native: PointerEvent }
-  | { type: 'cancel'; native: PointerEvent }
-  | { type: 'hovermove'; x: number; y: number; native: PointerEvent }
-  | { type: 'hoverleave'; native: PointerEvent | null };
+  | { type: 'cancel'; native: PointerEvent };
 
 export type PointerClaim = 'claim' | 'pass';
 

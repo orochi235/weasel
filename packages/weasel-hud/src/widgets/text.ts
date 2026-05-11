@@ -11,6 +11,9 @@ export interface TextOptions {
   fontFamily?: string;
   /** Injected by Hud factories to trigger redraw on mutation. */
   onChange?: () => void;
+  /** Injected by Hud factories. Called from dispose() to remove this widget
+   *  from its HUD's list. No-op for bare-factory consumers. */
+  removeFromHud?: () => void;
 }
 
 export interface TextWidget extends Widget {
@@ -21,16 +24,22 @@ export interface TextWidget extends Widget {
 }
 
 export function createText(opts: TextOptions): TextWidget {
+  let disposed = false;
   let bounds: WidgetBounds = { x: opts.x, y: opts.y, w: 0, h: opts.fontSize };
   let text = opts.text;
   let hidden = false;
+
+  const assertNotDisposed = () => {
+    if (disposed) throw new Error('weasel-hud: cannot mutate a disposed widget.');
+  };
+
   return {
     id: opts.id,
     get bounds() { return bounds; },
     get hidden() { return hidden; },
-    setBounds(b) { bounds = { ...b }; opts.onChange?.(); },
-    setHidden(h) { hidden = h; opts.onChange?.(); },
-    setText(t) { text = t; opts.onChange?.(); },
+    setBounds(b) { assertNotDisposed(); bounds = { ...b }; opts.onChange?.(); },
+    setHidden(h) { assertNotDisposed(); hidden = h; opts.onChange?.(); },
+    setText(t) { assertNotDisposed(); text = t; opts.onChange?.(); },
     draw(ctx: HudDrawCtx): DrawCommand[] {
       const cmd: TextDrawCommand = {
         kind: 'text',
@@ -47,6 +56,10 @@ export function createText(opts: TextOptions): TextWidget {
     },
     hitTest() { return false; },   // text is passive in v1
     onPointer(_e: HudPointerEvent): PointerClaim { return 'pass'; },
-    dispose() {},
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      opts.removeFromHud?.();
+    },
   };
 }

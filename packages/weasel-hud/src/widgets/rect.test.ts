@@ -48,4 +48,28 @@ describe('rect widget', () => {
   it('throws on zero/negative bounds', () => {
     expect(() => createRect({ id: 'r1', x: 0, y: 0, w: 0, h: 10, fill: '#fff' })).toThrow();
   });
+
+  it('throws on setter after dispose', () => {
+    const r = createRect({ id: 'r1', x: 0, y: 0, w: 10, h: 10, fill: '#000' });
+    r.dispose();
+    expect(() => r.setFill('#fff')).toThrow();
+    expect(() => r.setBounds({ x: 0, y: 0, w: 5, h: 5 })).toThrow();
+    expect(() => r.setHidden(true)).toThrow();
+  });
+
+  it('dispose() is idempotent — calling twice does not throw', () => {
+    const r = createRect({ id: 'r1', x: 0, y: 0, w: 10, h: 10, fill: '#000' });
+    r.dispose();
+    expect(() => r.dispose()).not.toThrow();
+  });
+
+  it('dispose() calls removeFromHud', () => {
+    const removeFromHud = vi.fn();
+    const r = createRect({ id: 'r1', x: 0, y: 0, w: 10, h: 10, fill: '#000', removeFromHud });
+    r.dispose();
+    expect(removeFromHud).toHaveBeenCalledTimes(1);
+    // second dispose should not call it again
+    r.dispose();
+    expect(removeFromHud).toHaveBeenCalledTimes(1);
+  });
 });

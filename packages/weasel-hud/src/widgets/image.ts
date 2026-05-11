@@ -8,6 +8,9 @@ export interface ImageOptions {
   opacity?: number;
   /** Injected by Hud factories to trigger redraw on mutation. */
   onChange?: () => void;
+  /** Injected by Hud factories. Called from dispose() to remove this widget
+   *  from its HUD's list. No-op for bare-factory consumers. */
+  removeFromHud?: () => void;
 }
 
 export interface ImageWidget extends Widget {
@@ -21,16 +24,22 @@ export function createImage(opts: ImageOptions): ImageWidget {
   if (opts.w <= 0 || opts.h <= 0) {
     throw new Error(`createImage: bounds must have positive w/h (got ${opts.w}x${opts.h})`);
   }
+  let disposed = false;
   let bounds: WidgetBounds = { x: opts.x, y: opts.y, w: opts.w, h: opts.h };
   let image = opts.image;
   let hidden = false;
+
+  const assertNotDisposed = () => {
+    if (disposed) throw new Error('weasel-hud: cannot mutate a disposed widget.');
+  };
+
   return {
     id: opts.id,
     get bounds() { return bounds; },
     get hidden() { return hidden; },
-    setBounds(b) { bounds = { ...b }; opts.onChange?.(); },
-    setHidden(h) { hidden = h; opts.onChange?.(); },
-    setImage(img) { image = img; opts.onChange?.(); },
+    setBounds(b) { assertNotDisposed(); bounds = { ...b }; opts.onChange?.(); },
+    setHidden(h) { assertNotDisposed(); hidden = h; opts.onChange?.(); },
+    setImage(img) { assertNotDisposed(); image = img; opts.onChange?.(); },
     draw(_ctx: HudDrawCtx): DrawCommand[] {
       const cmd: ImageDrawCommand = {
         kind: 'image', image,
@@ -44,6 +53,10 @@ export function createImage(opts: ImageOptions): ImageWidget {
       return x >= bounds.x && x < bounds.x + bounds.w && y >= bounds.y && y < bounds.y + bounds.h;
     },
     onPointer(_e: HudPointerEvent): PointerClaim { return 'pass'; },
-    dispose() {},
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      opts.removeFromHud?.();
+    },
   };
 }

@@ -73,4 +73,30 @@ describe('button widget', () => {
     b.onPointer({ type: 'up', x: 5, y: 5, native: {} as PointerEvent });
     expect(press).not.toHaveBeenCalled();
   });
+
+  it('throws on setter after dispose', () => {
+    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    b.dispose();
+    expect(() => b.setLabel('y')).toThrow();
+    expect(() => b.setBounds({ x: 0, y: 0, w: 10, h: 10 })).toThrow();
+    expect(() => b.setHidden(true)).toThrow();
+    expect(() => b.on('press', () => {})).toThrow();
+    expect(() => b.off('press', () => {})).toThrow();
+  });
+
+  it('dispose() is idempotent — calling twice does not throw', () => {
+    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    b.dispose();
+    expect(() => b.dispose()).not.toThrow();
+  });
+
+  it('dispose() calls removeFromHud', () => {
+    const removeFromHud = vi.fn();
+    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x', removeFromHud });
+    b.dispose();
+    expect(removeFromHud).toHaveBeenCalledTimes(1);
+    // second dispose should not call it again
+    b.dispose();
+    expect(removeFromHud).toHaveBeenCalledTimes(1);
+  });
 });

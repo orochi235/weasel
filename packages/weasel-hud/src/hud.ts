@@ -42,6 +42,17 @@ export function createHud(): Hud {
   // for unit tests and advanced consumers who want to manage redraws
   // explicitly).
 
+  /** Build the removeFromHud callback for a factory-created widget. */
+  const makeRemoveFromHud = (getWidget: () => Widget | null) => () => {
+    const w = getWidget();
+    if (!w) return;
+    const i = list.indexOf(w);
+    if (i !== -1) {
+      list.splice(i, 1);
+      requestRedraw();
+    }
+  };
+
   return {
     get attached() { return host !== null; },
     add(widget) {
@@ -74,31 +85,41 @@ export function createHud(): Hud {
       detached = true;
     },
     rect(opts) {
-      const w = createRect({ ...opts, onChange: () => requestRedraw() });
+      let w: RectWidget | null = null;
+      const removeFromHud = makeRemoveFromHud(() => w);
+      w = createRect({ ...opts, onChange: () => requestRedraw(), removeFromHud });
       list.push(w);
       requestRedraw();
       return w;
     },
     text(opts) {
-      const w = createText({ ...opts, onChange: () => requestRedraw() });
+      let w: TextWidget | null = null;
+      const removeFromHud = makeRemoveFromHud(() => w);
+      w = createText({ ...opts, onChange: () => requestRedraw(), removeFromHud });
       list.push(w);
       requestRedraw();
       return w;
     },
     image(opts) {
-      const w = createImage({ ...opts, onChange: () => requestRedraw() });
+      let w: ImageWidget | null = null;
+      const removeFromHud = makeRemoveFromHud(() => w);
+      w = createImage({ ...opts, onChange: () => requestRedraw(), removeFromHud });
       list.push(w);
       requestRedraw();
       return w;
     },
     label(opts) {
-      const w = createLabel({ ...opts, onChange: () => requestRedraw() });
+      let w: LabelWidget | null = null;
+      const removeFromHud = makeRemoveFromHud(() => w);
+      w = createLabel({ ...opts, onChange: () => requestRedraw(), removeFromHud });
       list.push(w);
       requestRedraw();
       return w;
     },
     button(opts) {
-      const w = createButton({ ...opts, onChange: () => requestRedraw() });
+      let w: ButtonWidget | null = null;
+      const removeFromHud = makeRemoveFromHud(() => w);
+      w = createButton({ ...opts, onChange: () => requestRedraw(), removeFromHud });
       list.push(w);
       requestRedraw();
       return w;

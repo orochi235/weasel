@@ -94,4 +94,33 @@ describe('Hud', () => {
     r.setFill('#fff');
     expect(host.redrawCount).toBe(before + 1);
   });
+
+  it('widget.dispose() removes the widget from the hud', () => {
+    const hud = createHud();
+    hud.bind(makeHost());
+    const r = hud.rect({ id: 'r', x: 0, y: 0, w: 10, h: 10, fill: '#000' });
+    expect(hud.widgets()).toEqual([r]);
+    r.dispose();
+    expect(hud.widgets()).toEqual([]);
+  });
+
+  it('widget.dispose() is idempotent — calling twice does not throw', () => {
+    const hud = createHud();
+    hud.bind(makeHost());
+    const r = hud.rect({ id: 'r', x: 0, y: 0, w: 10, h: 10, fill: '#000' });
+    r.dispose();
+    expect(() => r.dispose()).not.toThrow();
+    expect(hud.widgets()).toEqual([]);
+  });
+
+  it('hud.remove() followed by widget.dispose() does not double-remove', () => {
+    const hud = createHud();
+    hud.bind(makeHost());
+    const r = hud.rect({ id: 'r', x: 0, y: 0, w: 10, h: 10, fill: '#000' });
+    hud.remove(r);
+    expect(hud.widgets()).toEqual([]);
+    // dispose should be a no-op now (already disposed by hud.remove)
+    expect(() => r.dispose()).not.toThrow();
+    expect(hud.widgets()).toEqual([]);
+  });
 });
