@@ -9,3 +9,4 @@ export type {
 } from './widget';
 export type { HudHost } from './host';
 export { DEFAULT_FONT_FAMILY, registerDefaultFont } from './fonts/registerDefaultFont';
+export type { RectOptions, RectWidget } from './widgets/rect';

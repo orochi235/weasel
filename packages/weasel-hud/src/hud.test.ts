@@ -76,4 +76,22 @@ describe('Hud', () => {
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
   });
+
+  it('rect() factory creates widget and adds it to the list', () => {
+    const hud = createHud();
+    const host = makeHost();
+    hud.bind(host);
+    const r = hud.rect({ id: 'r', x: 0, y: 0, w: 10, h: 10, fill: '#000' });
+    expect(hud.widgets()).toEqual([r]);
+  });
+
+  it('mutating a hud-managed rect triggers redraw via injected onChange', () => {
+    const hud = createHud();
+    const host = makeHost();
+    hud.bind(host);
+    const r = hud.rect({ id: 'r', x: 0, y: 0, w: 10, h: 10, fill: '#000' });
+    const before = host.redrawCount;
+    r.setFill('#fff');
+    expect(host.redrawCount).toBe(before + 1);
+  });
 });

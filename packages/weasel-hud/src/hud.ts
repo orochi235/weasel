@@ -1,5 +1,6 @@
 import type { Widget } from './widget';
 import type { HudHost } from './host';
+import { createRect, type RectOptions, type RectWidget } from './widgets/rect';
 
 export interface Hud {
   add(widget: Widget): void;
@@ -10,6 +11,8 @@ export interface Hud {
   unbind(): void;
   /** True after bind() and before unbind(). */
   readonly attached: boolean;
+  /** Create a rect widget, add it to the HUD, and wire onChange → markDirty. */
+  rect(opts: RectOptions): RectWidget;
 }
 
 export function createHud(): Hud {
@@ -57,6 +60,12 @@ export function createHud(): Hud {
     unbind() {
       host = null;
       detached = true;
+    },
+    rect(opts) {
+      const w = createRect({ ...opts, onChange: () => requestRedraw() });
+      list.push(w);
+      requestRedraw();
+      return w;
     },
   };
 }
