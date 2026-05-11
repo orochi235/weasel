@@ -806,14 +806,14 @@ function drawTextGroup(ctx: DrawContext, group: LaidOutGroup): void {
 
   const gl = ctx.gl;
 
-  // Pack quads into a vertex buffer (stride 16 bytes: x, y, u, v floats).
-  const vertices = new Float32Array(group.quads.length * 4 * 4);
+  // Pack quads into a vertex buffer (stride 20 bytes: x, y, u, v, baselineY floats).
+  const vertices = new Float32Array(group.quads.length * 4 * 5);
   let vi = 0;
   for (const q of group.quads) {
-    vertices[vi++] = q.x0; vertices[vi++] = q.y0; vertices[vi++] = q.u0; vertices[vi++] = q.v0;
-    vertices[vi++] = q.x1; vertices[vi++] = q.y0; vertices[vi++] = q.u1; vertices[vi++] = q.v0;
-    vertices[vi++] = q.x0; vertices[vi++] = q.y1; vertices[vi++] = q.u0; vertices[vi++] = q.v1;
-    vertices[vi++] = q.x1; vertices[vi++] = q.y1; vertices[vi++] = q.u1; vertices[vi++] = q.v1;
+    vertices[vi++] = q.x0; vertices[vi++] = q.y0; vertices[vi++] = q.u0; vertices[vi++] = q.v0; vertices[vi++] = q.baselineY;
+    vertices[vi++] = q.x1; vertices[vi++] = q.y0; vertices[vi++] = q.u1; vertices[vi++] = q.v0; vertices[vi++] = q.baselineY;
+    vertices[vi++] = q.x0; vertices[vi++] = q.y1; vertices[vi++] = q.u0; vertices[vi++] = q.v1; vertices[vi++] = q.baselineY;
+    vertices[vi++] = q.x1; vertices[vi++] = q.y1; vertices[vi++] = q.u1; vertices[vi++] = q.v1; vertices[vi++] = q.baselineY;
   }
   const indices = new Uint32Array(group.quads.length * 6);
   let ii = 0;
@@ -832,9 +832,10 @@ function drawTextGroup(ctx: DrawContext, group: LaidOutGroup): void {
   gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
   gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
 
-  const stride = 16;
+  const stride = 20;
   const aPosLoc = ctx.textSdf.attribute('a_position');
   const aUvLoc  = ctx.textSdf.attribute('a_uv');
+  const aBaseLoc = ctx.textSdf.attribute('a_baselineY');
   if (aPosLoc !== undefined) {
     gl.enableVertexAttribArray(aPosLoc);
     gl.vertexAttribPointer(aPosLoc, 2, gl.FLOAT, false, stride, 0);
@@ -842,6 +843,10 @@ function drawTextGroup(ctx: DrawContext, group: LaidOutGroup): void {
   if (aUvLoc !== undefined) {
     gl.enableVertexAttribArray(aUvLoc);
     gl.vertexAttribPointer(aUvLoc, 2, gl.FLOAT, false, stride, 8);
+  }
+  if (aBaseLoc !== undefined) {
+    gl.enableVertexAttribArray(aBaseLoc);
+    gl.vertexAttribPointer(aBaseLoc, 1, gl.FLOAT, false, stride, 16);
   }
 
   const ibo = gl.createBuffer();
@@ -863,9 +868,12 @@ function drawTextGroup(ctx: DrawContext, group: LaidOutGroup): void {
   const uSynthBold = ctx.textSdf.uniform('u_synthBold');
   if (uSynthBold !== undefined) gl.uniform1f(uSynthBold, synthBoldAmount);
 
-  // u_synthItalic stays 0 until Task 8 lands the vertex-shader skew.
+  // u_synthItalic: vertex-shader skew angle (radians) applied when the
+  // resolver fell back from a missing italic variant to the upright atlas.
+  // 12° (≈0.2094 rad) matches the conventional CSS `font-style: oblique`.
+  const synthItalicAmount = group.synthetic.italic ? 0.2094 : 0;
   const uSynthItalic = ctx.textSdf.uniform('u_synthItalic');
-  if (uSynthItalic !== undefined) gl.uniform1f(uSynthItalic, 0);
+  if (uSynthItalic !== undefined) gl.uniform1f(uSynthItalic, synthItalicAmount);
 
   ctx.textureCache.bind(textureCacheKey(group.family, group.weight, group.style), 0);
   gl.uniform1i(ctx.textSdf.uniform('u_atlas')!, 0);

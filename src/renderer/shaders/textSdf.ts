@@ -27,11 +27,19 @@
 export const TEXT_VERT_SRC = /* glsl */ `#version 300 es
 in vec2 a_position;
 in vec2 a_uv;
+in float a_baselineY;
 uniform mat3 u_proj;
 uniform mat3 u_model;
+uniform float u_synthItalic;
 out vec2 v_uv;
 void main() {
-  vec3 screen = u_model * vec3(a_position, 1.0);
+  // Synthetic italic: shift x by (a_baselineY - a_position.y) * tan(angle).
+  // Above-baseline vertices (lower y in screen coords) lean further right.
+  vec2 skewed = vec2(
+    a_position.x + (a_baselineY - a_position.y) * tan(u_synthItalic),
+    a_position.y
+  );
+  vec3 screen = u_model * vec3(skewed, 1.0);
   vec3 clip   = u_proj  * vec3(screen.xy, 1.0);
   gl_Position = vec4(clip.xy, 0.0, 1.0);
   v_uv = a_uv;
@@ -71,7 +79,7 @@ void main() {
 
 export const TEXT_SDF_UNIFORMS = [
   'u_proj', 'u_model', 'u_atlas', 'u_color', 'u_alpha', 'u_aaWidth',
-  'u_synthBold', 'u_colorMatrix', 'u_colorBias',
+  'u_synthBold', 'u_synthItalic', 'u_colorMatrix', 'u_colorBias',
 ] as const;
 
-export const TEXT_SDF_ATTRIBUTES = ['a_position', 'a_uv'] as const;
+export const TEXT_SDF_ATTRIBUTES = ['a_position', 'a_uv', 'a_baselineY'] as const;

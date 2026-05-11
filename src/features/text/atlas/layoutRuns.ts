@@ -20,6 +20,9 @@ import { resolveFontVariant, type ResolveResult } from './registerFont';
 export interface LaidOutQuad {
   x0: number; y0: number; x1: number; y1: number;
   u0: number; v0: number; u1: number; v1: number;
+  /** Y coordinate of the line's baseline (penY at quad emission). Used by the
+   *  synthetic-italic vertex skew so above-baseline vertices lean right. */
+  baselineY: number;
 }
 
 export interface LaidOutGroup {
@@ -288,7 +291,7 @@ export function layoutRuns(
       const v0 = e.glyph.y / atlasH;
       const u1 = (e.glyph.x + e.glyph.width) / atlasW;
       const v1 = (e.glyph.y + e.glyph.height) / atlasH;
-      e.group.quads.push({ x0: qx0, y0: qy0, x1: qx1, y1: qy1, u0, v0, u1, v1 });
+      e.group.quads.push({ x0: qx0, y0: qy0, x1: qx1, y1: qy1, u0, v0, u1, v1, baselineY: penY });
       penX += e.advance;
     }
     maxLineWidth = Math.max(maxLineWidth, line.width);
