@@ -13,7 +13,7 @@
  * boolean ops are defined on closed regions; polylines have zero area
  * and would otherwise be silently dropped.
  */
-import { PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z, type Path } from './types';
+import { PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z, type Path, type PolygonPath } from './types';
 import { flattenCubic, flattenQuadratic, DEFAULT_FLATTEN_TOLERANCE } from './flatten';
 
 /** A `[x, y]` 2-tuple. */
@@ -116,4 +116,43 @@ export function pathToMultiPolygon(
   // re-classifies winding internally during the op, so we don't need to
   // pre-sort outer/hole rings.
   return rings.map((r) => [r]);
+}
+
+/** Convert a `MultiPolygon` to a `PolygonPath` with `fillRule: 'nonzero'`. */
+export function multiPolygonToPath(mp: MultiPolygon): PolygonPath {
+  // First pass: count total commands and coord floats.
+  let nCmds = 0;
+  let nCoords = 0;
+  for (const poly of mp) {
+    for (const ring of poly) {
+      if (ring.length < 4) continue; // 3 unique + 1 closing minimum
+      // Drop the repeated closing vertex; emit M + (n-2) L + Z.
+      const unique = ring.length - 1;
+      nCmds += 1 + (unique - 1) + 1; // M + L*(unique-1) + Z
+      nCoords += unique * 2;
+    }
+  }
+  const commands = new Uint8Array(nCmds);
+  const coords = new Float32Array(nCoords);
+  let ci = 0;
+  let pi = 0;
+  for (const poly of mp) {
+    for (const ring of poly) {
+      if (ring.length < 4) continue;
+      const unique = ring.length - 1;
+      // M (first vertex)
+      commands[ci++] = PATH_M;
+      coords[pi++] = ring[0][0];
+      coords[pi++] = ring[0][1];
+      // L for vertices 1..unique-1
+      for (let k = 1; k < unique; k++) {
+        commands[ci++] = PATH_L;
+        coords[pi++] = ring[k][0];
+        coords[pi++] = ring[k][1];
+      }
+      // Z
+      commands[ci++] = PATH_Z;
+    }
+  }
+  return { kind: 'polygon', commands, coords, fillRule: 'nonzero' };
 }
