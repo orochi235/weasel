@@ -3,21 +3,21 @@ import { arrayAdapter, type ArrayAdapter, type ArrayAdapterConfig } from './arra
 
 /** Options for `useArrayAdapter` — same shape as `ArrayAdapterConfig` minus the
  *  `ref` field, which the hook manages internally from `items`. */
-export type UseArrayAdapterOptions<TObject extends { id: string }, TPose> =
-  Omit<ArrayAdapterConfig<TObject, TPose>, 'ref' | 'setItems'> & {
-    items: TObject[];
-    setItems: ArrayAdapterConfig<TObject, TPose>['setItems'];
+export type UseArrayAdapterOptions<TNode extends { id: string }, TPose> =
+  Omit<ArrayAdapterConfig<TNode, TPose>, 'ref' | 'setItems'> & {
+    items: TNode[];
+    setItems: ArrayAdapterConfig<TNode, TPose>['setItems'];
   };
 
 /** Hook wrapper around `arrayAdapter` that owns the live items ref. Eliminates
  *  the `useRef + ref.current = items` boilerplate every flat-list scene needs.
  *  Returns a fresh adapter each render — matches how consumers built it inline
  *  before, and the gesture hooks already capture the adapter via internal refs. */
-export function useArrayAdapter<TObject extends { id: string }, TPose>(
-  options: UseArrayAdapterOptions<TObject, TPose>,
-): ArrayAdapter<TObject, TPose> {
+export function useArrayAdapter<TNode extends { id: string }, TPose>(
+  options: UseArrayAdapterOptions<TNode, TPose>,
+): ArrayAdapter<TNode, TPose> {
   const { items, ...rest } = options;
   const ref = useRef(items);
   ref.current = items;
-  return arrayAdapter<TObject, TPose>({ ref, ...rest });
+  return arrayAdapter<TNode, TPose>({ ref, ...rest });
 }

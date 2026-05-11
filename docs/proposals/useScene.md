@@ -29,7 +29,7 @@ The kit offers two ways to wire a scene into `<Canvas>`:
    `<Canvas adapter={...} />`. Maximum flexibility, maximum boilerplate.
 
 2. **Inline-props shorthand.** `<Canvas items setItems toPose fromPose
-   createDefault ... />` synthesizes an `arrayAdapter` against a `TObject[]`
+   createDefault ... />` synthesizes an `arrayAdapter` against a `TNode[]`
    the consumer holds in `useState`. Drastically reduces ceremony for the
    common case, but assumes the scene is a flat array.
 
@@ -53,7 +53,7 @@ orthogonal tags, and bundles undo/redo so consumers don't reinvent it.
 
 | Tier | API | When to use |
 |------|-----|-------------|
-| 1. Inline-props shorthand | `<Canvas items setItems toPose fromPose createDefault ... />` | Flat list, consumer already has `useState<TObject[]>`, no nesting needed. |
+| 1. Inline-props shorthand | `<Canvas items setItems toPose fromPose createDefault ... />` | Flat list, consumer already has `useState<TNode[]>`, no nesting needed. |
 | 2. `useScene()` + `<SceneCanvas>` | `const scene = useScene<TData, TLayer, TPose>(opts); <SceneCanvas scene={scene} />` | Anything from a flat list to a container tree with named layers. Default choice for new apps. |
 | 3. Explicit adapter | `<Canvas adapter={myAdapter} />` | BYO state container — the consumer has an external store (Zustand, Redux, CRDT, Yjs document, etc.) and needs the kit to read through to it without duplicating storage. |
 

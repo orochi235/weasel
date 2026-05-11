@@ -9,7 +9,7 @@ interface Pose { kind: 'path'; path: PolygonPath; closed: boolean }
 const DIMS = { width: 400, height: 400 };
 
 function setup() {
-  const adapter = { addObject: vi.fn(() => 'id'), setSelection: vi.fn() };
+  const adapter = { addNode: vi.fn(() => 'id'), setSelection: vi.fn() };
   const wrapPath = (path: PolygonPath, opts: { closed: boolean }): Pose =>
     ({ kind: 'path', path, closed: opts.closed });
   const { result } = renderHook(() => useUserPenTool<Pose>({ wrapPath, adapter }));

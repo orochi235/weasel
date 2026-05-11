@@ -14,7 +14,7 @@ import type {
 import { useDragRect, type DragRectCtx } from '../dragRect';
 
 /** Options for `useInsert`. */
-export interface UseInsertOptions<TPose, TObject extends { id: string } = { id: string }> {
+export interface UseInsertOptions<TPose, TNode extends { id: string } = { id: string }> {
   behaviors?: InsertBehavior<TPose>[];
   insertLabel?: string;
   /** Reserved; insert is never transient in practice. Ignored. */
@@ -29,7 +29,7 @@ export interface UseInsertOptions<TPose, TObject extends { id: string } = { id: 
    *  bounds fall <= minBounds calls `pointInsert(start)` instead of aborting.
    *  Returning null aborts. The created object is dispatched as an InsertOp
    *  under the same `insertLabel`. */
-  pointInsert?: (point: { x: number; y: number }) => TObject | null;
+  pointInsert?: (point: { x: number; y: number }) => TNode | null;
   /** Drag-disabled mode. When true, every release routes to pointInsert(start)
    *  regardless of bounds — commitInsert is never called. Used by tool hooks
    *  that wire only pointer.onClick (no marquee). */
@@ -46,7 +46,7 @@ export interface UseInsertOptions<TPose, TObject extends { id: string } = { id: 
 }
 
 /** Return shape of `useInsert`: lifecycle methods plus the live drag-rectangle overlay. */
-export interface InsertController<TObject extends { id: string }, TPose> {
+export interface InsertController<TNode extends { id: string }, TPose> {
   start(worldX: number, worldY: number, modifiers: ModifierState): void;
   move(worldX: number, worldY: number, modifiers: ModifierState): boolean;
   end(): void;
@@ -54,7 +54,7 @@ export interface InsertController<TObject extends { id: string }, TPose> {
   isInserting: boolean;
   overlay: InsertOverlay<TPose> | null;
   /** The adapter passed in. Exposed so `<Canvas>` can derive defaults. */
-  adapter: InsertAdapter<TObject>;
+  adapter: InsertAdapter<TNode>;
   /** True iff `pointInsert` was supplied. */
   readonly supportsPointInsert: boolean;
   /** True iff a non-clickOnly path is wired (drag commits will reach
@@ -65,10 +65,10 @@ export interface InsertController<TObject extends { id: string }, TPose> {
 const GID = 'gesture';
 
 /** Drag-rectangle insert interaction; the adapter materializes the new object on commit. */
-export function useInsert<TObject extends { id: string }, TPose>(
-  adapter: InsertAdapter<TObject>,
-  options: UseInsertOptions<TPose, TObject> = {},
-): InsertController<TObject, TPose> {
+export function useInsert<TNode extends { id: string }, TPose>(
+  adapter: InsertAdapter<TNode>,
+  options: UseInsertOptions<TPose, TNode> = {},
+): InsertController<TNode, TPose> {
   const {
     behaviors = [],
     insertLabel = 'Insert',
@@ -153,7 +153,7 @@ export function useInsert<TObject extends { id: string }, TPose>(
         if (pointInsert) {
           const created = pointInsert({ x: ctx.start.x, y: ctx.start.y });
           if (created) {
-            dispatch([createInsertOp({ object: created, label: insertLabel })]);
+            dispatch([createInsertOp({ node: created, label: insertLabel })]);
             return true;
           }
         }
@@ -161,7 +161,7 @@ export function useInsert<TObject extends { id: string }, TPose>(
       }
       const created = adapter.commitInsert(ctx.bounds);
       if (!created) return false;
-      dispatch([createInsertOp({ object: created, label: insertLabel })]);
+      dispatch([createInsertOp({ node: created, label: insertLabel })]);
       return true;
     },
     onGestureStart,
@@ -179,7 +179,7 @@ export function useInsert<TObject extends { id: string }, TPose>(
       }
     : null;
 
-  return useMemo<InsertController<TObject, TPose>>(
+  return useMemo<InsertController<TNode, TPose>>(
     () => ({
       start: dr.start,
       move: dr.move,

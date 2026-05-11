@@ -30,7 +30,7 @@ function makeAdapter(initial: { selection?: string[]; offsetOverride?: { dx: num
     getPasteOffset: initial.offsetOverride
       ? () => initial.offsetOverride!
       : () => ({ dx: 1, dy: 1 }),
-    insertObject: (o) => { inserts.push(o); },
+    insertNode: (o) => { inserts.push(o); },
     setSelection: (ids) => { selection = [...ids]; },
     getSelection: () => selection,
     applyBatch: (ops, label) => {

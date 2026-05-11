@@ -26,7 +26,7 @@ function keyEvent(key: string): KeyboardEvent {
 
 describe('useDeleteTool', () => {
   it('returns a Tool with id "delete" and keybinding "Backspace"', () => {
-    const adapter = { getSelection: () => ['a'], getObject: () => ({ id: 'a' }), applyBatch: vi.fn() } as any;
+    const adapter = { getSelection: () => ['a'], getNode: () => ({ id: 'a' }), applyBatch: vi.fn() } as any;
     const { result } = renderHook(() => useDeleteTool(adapter));
     expect(result.current.id).toBe('delete');
     expect(result.current.keybinding).toBe('Backspace');
@@ -36,7 +36,7 @@ describe('useDeleteTool', () => {
   it('claims Backspace and Delete; passes other keys', () => {
     const adapter = {
       getSelection: () => ['a'],
-      getObject: () => ({ id: 'a' }),
+      getNode: () => ({ id: 'a' }),
       applyBatch: vi.fn(), // intercept ops so we don't need full adapter surface
     } as any;
     const { result } = renderHook(() => useDeleteTool(adapter));
@@ -50,7 +50,7 @@ describe('useDeleteTool', () => {
     const applyBatch = vi.fn();
     const adapter = {
       getSelection: () => ['a', 'b'],
-      getObject: (id: string) => ({ id }),
+      getNode: (id: string) => ({ id }),
       applyBatch,
     } as any;
     const { result } = renderHook(() => useDeleteTool(adapter));
@@ -66,7 +66,7 @@ describe('useDeleteTool', () => {
     const applyBatch = vi.fn();
     const adapter = {
       getSelection: () => [],
-      getObject: () => null,
+      getNode: () => null,
       applyBatch,
     } as any;
     const { result } = renderHook(() => useDeleteTool(adapter));

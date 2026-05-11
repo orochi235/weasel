@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Switch Canvas's scene-layer builder from flat (`adapter.getObjects()` loop) to hierarchical (tree walk emitting nested `GroupDrawCommand`s), and enforce that container subtrees stay on a single layer.
+**Goal:** Switch Canvas's scene-layer builder from flat (`adapter.getNodes()` loop) to hierarchical (tree walk emitting nested `GroupDrawCommand`s), and enforce that container subtrees stay on a single layer.
 
-**Architecture:** New `buildSceneTree(adapter, drawOne, view)` pure function does the tree walk. Canvas's `buildSceneLayer` picks hierarchical vs flat based on a capability check on the adapter (`getLayers` + `getObject` + `getChildren`). Scene mutation paths (`add`, `move`, `setLayer`) gain cross-layer-subtree validation; `setLayer` on a container cascades through descendants atomically.
+**Architecture:** New `buildSceneTree(adapter, drawOne, view)` pure function does the tree walk. Canvas's `buildSceneLayer` picks hierarchical vs flat based on a capability check on the adapter (`getLayers` + `getNode` + `getChildren`). Scene mutation paths (`add`, `move`, `setLayer`) gain cross-layer-subtree validation; `setLayer` on a container cascades through descendants atomically.
 
 **Tech Stack:** TypeScript, vitest, React (testing), the existing weasel scene + renderer types. WebGL renderer is unchanged (already handles nested groups via state stack).
 
@@ -481,7 +481,7 @@ getLayers() {
 },
 ```
 
-Place it near the other read methods (`getObject`, `getObjects`, etc.).
+Place it near the other read methods (`getNode`, `getNodes`, etc.).
 
 - [ ] **Step 6: Update `SceneCanvasAdapter` type to include it**
 
@@ -529,7 +529,7 @@ git commit -m "feat(adapters): optional getLayers() for hierarchical render"
 - Create: `src/canvas/buildSceneTree.ts`
 - Create: `src/canvas/buildSceneTree.test.ts`
 
-The core new module. Pure function — takes the adapter (which must implement `getLayers`, `getObject`, `getChildren`, `getPose`), a `drawOne` callback, and the current view; returns a `DrawCommand[]` shaped as one group per visible layer, with each group's children being the per-root subtree groups.
+The core new module. Pure function — takes the adapter (which must implement `getLayers`, `getNode`, `getChildren`, `getPose`), a `drawOne` callback, and the current view; returns a `DrawCommand[]` shaped as one group per visible layer, with each group's children being the per-root subtree groups.
 
 This task writes all the test cases (flat, single container, nested, hidden layer, empty drawOne), runs them all, then implements `buildSceneTree` once to make them all pass. The function is small enough that test-driving each case separately is more overhead than value.
 
@@ -663,9 +663,9 @@ Create `src/canvas/buildSceneTree.ts`:
 import type { DrawCommand, GroupDrawCommand } from '../renderer';
 import type { View } from 'core/viewport/view';
 
-interface HierarchicalAdapter<TObject, TPose> {
+interface HierarchicalAdapter<TNode, TPose> {
   getLayers(): readonly { id: string; visible: boolean }[];
-  getObject(id: string): TObject | undefined;
+  getNode(id: string): TNode | undefined;
   getChildren(parentId: string | null): readonly string[];
   getPose(id: string): TPose;
 }
@@ -685,17 +685,17 @@ interface HierarchicalAdapter<TObject, TPose> {
  * needs to be stable regardless of whether the node has children.
  */
 export function buildSceneTree<
-  TObject extends { id: string; layer: string },
+  TNode extends { id: string; layer: string },
   TPose,
 >(
-  adapter: HierarchicalAdapter<TObject, TPose>,
-  drawOne: (obj: TObject, pose: TPose, view: View) => DrawCommand[],
+  adapter: HierarchicalAdapter<TNode, TPose>,
+  drawOne: (obj: TNode, pose: TPose, view: View) => DrawCommand[],
   view: View,
 ): DrawCommand[] {
   const out: DrawCommand[] = [];
 
   function buildNodeGroup(id: string): GroupDrawCommand {
-    const node = adapter.getObject(id);
+    const node = adapter.getNode(id);
     if (!node) return { kind: 'group', children: [] };
     const pose = adapter.getPose(id);
     const self = drawOne(node, pose, view);
@@ -711,7 +711,7 @@ export function buildSceneTree<
     if (!layer.visible) continue;
     const layerGroup: GroupDrawCommand = { kind: 'group', children: [] };
     for (const rootId of adapter.getChildren(null)) {
-      const rootNode = adapter.getObject(rootId);
+      const rootNode = adapter.getNode(rootId);
       if (!rootNode || rootNode.layer !== layer.id) continue;
       layerGroup.children.push(buildNodeGroup(rootId));
     }
@@ -752,11 +752,11 @@ git commit -m "feat(canvas): buildSceneTree — hierarchical scene-layer emitter
 - Modify: `src/canvas/Canvas.tsx` (the `buildSceneLayer` helper, ~line 377)
 - Modify: `src/canvas/Canvas.test.tsx`
 
-`buildSceneLayer` today does a flat loop over `adapter.getObjects()`. Add a capability check: if the adapter exposes `getLayers` AND `getObject` AND `getChildren`, use `buildSceneTree`. Otherwise, fall back to the existing flat loop.
+`buildSceneLayer` today does a flat loop over `adapter.getNodes()`. Add a capability check: if the adapter exposes `getLayers` AND `getNode` AND `getChildren`, use `buildSceneTree`. Otherwise, fall back to the existing flat loop.
 
 - [ ] **Step 1: Re-read the existing `buildSceneLayer`**
 
-Read `src/canvas/Canvas.tsx` lines 377-410-ish. Note the `cfg.objects ?? adapter?.getObjects() ?? []` precedence — if a consumer passes explicit `objects`, that bypasses the adapter entirely. Hierarchical only fires when `objects` is absent AND the adapter has the capability.
+Read `src/canvas/Canvas.tsx` lines 377-410-ish. Note the `cfg.objects ?? adapter?.getNodes() ?? []` precedence — if a consumer passes explicit `objects`, that bypasses the adapter entirely. Hierarchical only fires when `objects` is absent AND the adapter has the capability.
 
 - [ ] **Step 2: Export `buildSceneLayer` for tests**
 
@@ -843,30 +843,30 @@ In `src/canvas/Canvas.tsx`:
    ```ts
    import { buildSceneTree } from './buildSceneTree';
    ```
-2. Inside `buildSceneLayer`, change the `draw` callback. Read the existing body (it ignores `_data`, calls `adapter?.getObjects()`, etc.). Replace it with:
+2. Inside `buildSceneLayer`, change the `draw` callback. Read the existing body (it ignores `_data`, calls `adapter?.getNodes()`, etc.). Replace it with:
 
    ```ts
    draw: (_data, view) => {
      const hidden = hideIds();
-     // Capability check: hierarchical render needs getLayers + getObject +
+     // Capability check: hierarchical render needs getLayers + getNode +
      // getChildren on the adapter, and no explicit `cfg.objects` override.
      const a = adapter as unknown as {
        getLayers?: () => readonly { id: string; visible: boolean }[];
-       getObject?: (id: string) => unknown;
+       getNode?: (id: string) => unknown;
        getChildren?: (parentId: string | null) => readonly string[];
        getPose?: (id: string) => TPose;
      };
      if (
        cfg.objects === undefined &&
        typeof a.getLayers === 'function' &&
-       typeof a.getObject === 'function' &&
+       typeof a.getNode === 'function' &&
        typeof a.getChildren === 'function' &&
        drawOne
      ) {
        // Wrap drawOne with the hide-list filter — hidden ids contribute
        // empty draw commands but still get their wrapper group so tree
        // shape stays stable.
-       const filteredDrawOne = (obj: TObject, pose: TPose, v: View): DrawCommand[] => {
+       const filteredDrawOne = (obj: TNode, pose: TPose, v: View): DrawCommand[] => {
          if (hidden && hidden.has(obj.id)) return [];
          const cmds = drawOne(obj, pose, v);
          if (debugSink) {
@@ -885,7 +885,7 @@ In `src/canvas/Canvas.tsx`:
        );
      }
      // Flat fallback (unchanged): the existing body of `draw` continues here.
-     const objects = cfg.objects ?? adapter?.getObjects() ?? [];
+     const objects = cfg.objects ?? adapter?.getNodes() ?? [];
      const children: DrawCommand[] = [];
      for (const obj of objects) {
        if (hidden && hidden.has(obj.id)) continue;

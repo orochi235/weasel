@@ -25,9 +25,9 @@ export function ZoomDemo() {
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
 
   const selectAdapter = {
-    getObject: (id: string) => items.find((r) => r.id === id),
+    getNode: (id: string) => items.find((r) => r.id === id),
     getPose: (id: string) => items.find((r) => r.id === id) ?? null,
-    getObjects: () => items,
+    getNodes: () => items,
     setPose: (id: string, pose: unknown) =>
       setItems((cur) => cur.map((r) => (r.id === id ? { ...r, ...(pose as Rect) } : r))),
     getSelection: () => [] as string[],

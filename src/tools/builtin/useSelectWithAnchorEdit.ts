@@ -12,12 +12,12 @@ import type { MoveAdapter, ResizeAdapter, RotateAdapter, AreaSelectAdapter } fro
 
 /** Adapter intersection required for the inner select tool plus the
  *  edit-anchors controller. Same shape as the demo's hand-rolled adapter. */
-export type SelectWithAnchorEditAdapter<TObject extends { id: string }, TPose> =
-  & MoveAdapter<TObject, TPose>
-  & ResizeAdapter<TObject, TPose>
-  & RotateAdapter<TObject, TPose>
+export type SelectWithAnchorEditAdapter<TNode extends { id: string }, TPose> =
+  & MoveAdapter<TNode, TPose>
+  & ResizeAdapter<TNode, TPose>
+  & RotateAdapter<TNode, TPose>
   & AreaSelectAdapter
-  & EditAnchorsAdapter<TObject>;
+  & EditAnchorsAdapter<TNode>;
 
 /** Sub-options forwarded to `useEditAnchors` + `useEditAnchorsTool`. The
  *  `editingId` is owned by the helper and not exposed here — flips happen
@@ -38,8 +38,8 @@ export interface SelectWithAnchorEditAnchorsOptions {
 }
 
 /** Options for the modal select-with-anchor-edit helper. */
-export interface UseSelectWithAnchorEditOptions<TObject extends { id: string }, TPose>
-  extends UseSelectToolOptions<TObject, TPose> {
+export interface UseSelectWithAnchorEditOptions<TNode extends { id: string }, TPose>
+  extends UseSelectToolOptions<TNode, TPose> {
   /** Edit-anchors sub-options (hit radius, overlay style, etc.). */
   editAnchors?: SelectWithAnchorEditAnchorsOptions;
   /** Filter applied to the ids `pickEvery` returns at the double-click point.
@@ -81,9 +81,9 @@ export interface UseSelectWithAnchorEditReturn {
  *  `<Canvas>` and wire `onDoubleClick` to the wrapping element (the
  *  `<canvas>` itself doesn't receive double-click events when nested under a
  *  transformed wrapper — the prior demo pattern). */
-export function useSelectWithAnchorEdit<TObject extends { id: string }, TPose>(
-  adapter: SelectWithAnchorEditAdapter<TObject, TPose>,
-  options: UseSelectWithAnchorEditOptions<TObject, TPose>,
+export function useSelectWithAnchorEdit<TNode extends { id: string }, TPose>(
+  adapter: SelectWithAnchorEditAdapter<TNode, TPose>,
+  options: UseSelectWithAnchorEditOptions<TNode, TPose>,
 ): UseSelectWithAnchorEditReturn {
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -92,7 +92,7 @@ export function useSelectWithAnchorEdit<TObject extends { id: string }, TPose>(
   const poseBoundsForFallback = options.poseBounds ?? ((p: TPose) => p as unknown as { x: number; y: number; width: number; height: number });
   const pickEveryFallback = (worldX: number, worldY: number): string[] => {
     const out: string[] = [];
-    for (const obj of adapter.getObjects()) {
+    for (const obj of adapter.getNodes()) {
       const b = poseBoundsForFallback(adapter.getPose(obj.id));
       if (worldX >= b.x && worldX <= b.x + b.width
           && worldY >= b.y && worldY <= b.y + b.height) {
@@ -113,16 +113,16 @@ export function useSelectWithAnchorEdit<TObject extends { id: string }, TPose>(
   const clientToWorldRef = useRef(options.clientToWorld);
   clientToWorldRef.current = options.clientToWorld;
 
-  const select = useSelectTool<TObject, TPose>(adapter, options);
+  const select = useSelectTool<TNode, TPose>(adapter, options);
 
   const editAnchorsOpts = options.editAnchors;
-  const editAnchorsCtl = useEditAnchors<TObject>(adapter, {
+  const editAnchorsCtl = useEditAnchors<TNode>(adapter, {
     editingId,
     hitRadius: editAnchorsOpts?.hitRadius,
     editLabel: editAnchorsOpts?.editLabel,
   });
 
-  const editAnchorsTool = useEditAnchorsTool<TObject>(editAnchorsCtl, {
+  const editAnchorsTool = useEditAnchorsTool<TNode>(editAnchorsCtl, {
     id: editAnchorsOpts?.toolId,
     keybinding: editAnchorsOpts?.keybinding,
     cursor: editAnchorsOpts?.cursor,

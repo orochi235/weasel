@@ -13,7 +13,7 @@ function makeAdapter() {
     commitInsert: () => null,
     commitPaste: () => [{ id: 'new1' } as Obj],
     snapshotSelection: (ids) => ({ items: ids.map((id) => ({ id })) }),
-    insertObject: () => {},
+    insertNode: () => {},
     setSelection: () => {},
     applyBatch: (ops, label) => { applied.push({ ops, label: label ?? '' }); },
     getSelection: () => [],

@@ -913,10 +913,10 @@ Identify what stays:
 Replace the body of `useMove` (the function definition, lines 79–617). Keep all imports and surrounding type definitions unchanged. The new body:
 
 ```ts
-export function useMove<TObject extends { id: string }, TPose>(
-  adapter: MoveAdapter<TObject, TPose>,
+export function useMove<TNode extends { id: string }, TPose>(
+  adapter: MoveAdapter<TNode, TPose>,
   options: UseMoveOptions<TPose> = {},
-): MoveController<TObject, TPose> {
+): MoveController<TNode, TPose> {
   const {
     translatePose = translateRectPose as unknown as (pose: TPose, dx: number, dy: number) => TPose,
     behaviors = [],
@@ -967,7 +967,7 @@ export function useMove<TObject extends { id: string }, TPose>(
   // Wrapper-owned scratch threaded through the base.
   interface MoveScratch {
     ids: string[];
-    ctx: GestureContext<TPose, TObject> | null;
+    ctx: GestureContext<TPose, TNode> | null;
     cascadeIds: string[];
     cascadeOriginWorld: Map<string, TPose>;
     layoutPass: LayoutPass;
@@ -1199,7 +1199,7 @@ export function useMove<TObject extends { id: string }, TPose>(
 
   const isActive = useCallback(() => gesture.phase === 'active', [gesture]);
 
-  return useMemo<MoveController<TObject, TPose>>(() => ({
+  return useMemo<MoveController<TNode, TPose>>(() => ({
     start,
     move,
     end: gesture.end,

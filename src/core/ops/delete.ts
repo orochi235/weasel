@@ -2,22 +2,22 @@ import type { Op } from './types';
 import { createInsertOp } from './create';
 
 interface DeleteAdapter {
-  removeObject(id: string): void;
+  removeNode(id: string): void;
 }
 
-/** Op: remove `object` from the scene; inverts to a re-insert of the captured object. */
-export function createDeleteOp<TObject extends { id: string }>(args: {
-  object: TObject;
+/** Op: remove `node` from the scene; inverts to a re-insert of the captured node. */
+export function createDeleteOp<TNode extends { id: string }>(args: {
+  node: TNode;
   label?: string;
 }): Op {
-  const { object, label } = args;
+  const { node, label } = args;
   return {
     label,
     apply(adapter) {
-      (adapter as DeleteAdapter).removeObject(object.id);
+      (adapter as DeleteAdapter).removeNode(node.id);
     },
     invert() {
-      return createInsertOp({ object, label });
+      return createInsertOp({ node, label });
     },
   };
 }

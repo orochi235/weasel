@@ -31,8 +31,8 @@ Behaviors are passed via `options.behaviors` and run in array order. See
 
 ### `useMove(adapter, options)`
 
-Drag selected objects. Adapter: `MoveAdapter<TObject, TPose>` (`getObject`,
-`getObjects`, `getPose`, `getParent`, `setPose`, `setParent`, optional
+Drag selected objects. Adapter: `MoveAdapter<TNode, TPose>` (`getNode`,
+`getNodes`, `getPose`, `getParent`, `setPose`, `setParent`, optional
 `applyBatch`, optional `findSnapTarget`, optional `getChildren`).
 
 Options of note: `translatePose` (defaults to `translateRectPose` for poses
@@ -50,7 +50,7 @@ Default ops: one `createTransformOp` per dragged id.
 
 ### `useResize(adapter, options)`
 
-Resize from a corner anchor. Adapter: `ResizeAdapter<TObject, TPose>`.
+Resize from a corner anchor. Adapter: `ResizeAdapter<TNode, TPose>`.
 Pose-shape-agnostic via `options.geometry: PoseDescriptor<TPose>` (defaults
 to `RECT_POSE_DESCRIPTOR`).
 
@@ -63,7 +63,7 @@ The overlay carries both `targetPose` (snapped/clamped) and `currentPose`
 ### `useRotate(adapter, options)`
 
 Rotate a single object via a handle above the AABB top-center. Adapter:
-`RotateAdapter<TObject, TPose>`. Useful exports: `rotationHandle`,
+`RotateAdapter<TNode, TPose>`. Useful exports: `rotationHandle`,
 `hitRotationHandle`, `pointInRotatedRect`, `DEFAULT_ROTATION_HANDLE_DISTANCE`.
 
 `<Canvas>` enables this when the `selectionOverlay` config sets
@@ -71,9 +71,9 @@ Rotate a single object via a handle above the AABB top-center. Adapter:
 
 ### `useInsert(adapter, options)`
 
-Drag-rectangle that mints a new object. Adapter: `InsertAdapter<TObject>` —
+Drag-rectangle that mints a new object. Adapter: `InsertAdapter<TNode>` —
 `commitInsert(bounds)` returns the new object or `null` to abort, plus
-`insertObject`, `setSelection`, `getSelection`, the clipboard methods.
+`insertNode`, `setSelection`, `getSelection`, the clipboard methods.
 
 Options: `behaviors`, `minBounds` (strictly-greater thresholds; default
 `{0,0}`), `posefromBounds` (override for non-rect TPose, e.g.
@@ -91,7 +91,7 @@ isn't undoable). Pass `transient: false` to push a history entry.
 
 ### `useClone(adapter, options)`
 
-Modifier-gated clone gesture. Adapter: `InsertAdapter<TObject>`. Options:
+Modifier-gated clone gesture. Adapter: `InsertAdapter<TNode>`. Options:
 `behaviors: CloneBehavior[]` (kit ships `cloneByAltDrag()`), `setOverlay` /
 `clearOverlay` (push-based — the hook calls these so the consumer renders
 the ghost copy).
@@ -131,7 +131,7 @@ and returns imperative trigger methods.
 | `useEscape` | Escape (on by default) | `clearSelection()` | |
 | `useSelectAll` | Mod+A (on by default) | `selectAll()` | Adapter: `getSelection`, `listAll`. |
 | `useDelete` | Delete, Backspace (off by default) | `deleteSelection(): string[]` | Optional `filter(ids)` to protect locked objects. |
-| `useDuplicate` | Mod+D (on by default) | `duplicate()` | Adapter implements `cloneObject(id, offset)`. Default offset `{8,8}`. |
+| `useDuplicate` | Mod+D (on by default) | `duplicate()` | Adapter implements `cloneNode(id, offset)`. Default offset `{8,8}`. |
 | `useNudge` | Arrow keys (Shift = larger step, on by default) | `nudge(direction, large?)` | `step` default 1, `shiftStep` default 10. |
 | `useReorder` | Mod+] / Mod+[ / Mod+Shift+] / Mod+Shift+[ (on by default) | `bringForward()` etc. | No-ops without `OrderedAdapter` methods. |
 | `useDelete` | (see above) | | Pairs with the action via `bindKeyboard`. |

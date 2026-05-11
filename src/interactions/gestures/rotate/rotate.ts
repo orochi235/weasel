@@ -72,7 +72,7 @@ export interface UseRotateOptions<TPose> {
 }
 
 /** Return shape of `useRotate`: lifecycle methods and a live overlay snapshot. */
-export interface RotateController<TObject extends { id: string }, TPose> {
+export interface RotateController<TNode extends { id: string }, TPose> {
   start(args: RotateStartArgs): void;
   move(args: RotateMoveArgs): boolean;
   end(): void;
@@ -80,7 +80,7 @@ export interface RotateController<TObject extends { id: string }, TPose> {
   isActive(): boolean;
   overlay: RotateOverlay<TPose> | null;
   /** The adapter passed in. Exposed for symmetry with move/resize. */
-  adapter: RotateAdapter<TObject, TPose>;
+  adapter: RotateAdapter<TNode, TPose>;
 }
 
 interface State<TPose> {
@@ -104,10 +104,10 @@ interface State<TPose> {
 /** Pointer-driven rotation interaction. Pivot is the AABB center; the
  *  rotation delta is the change in pointer angle around that pivot. Single
  *  TransformOp on commit. */
-export function useRotate<TObject extends { id: string }, TPose>(
-  adapter: RotateAdapter<TObject, TPose>,
+export function useRotate<TNode extends { id: string }, TPose>(
+  adapter: RotateAdapter<TNode, TPose>,
   options: UseRotateOptions<TPose> = {},
-): RotateController<TObject, TPose> {
+): RotateController<TNode, TPose> {
   const {
     behaviors = [] as RotateBehavior<RotatedPose>[],
     rotateLabel = 'Rotate',
@@ -310,7 +310,7 @@ export function useRotate<TObject extends { id: string }, TPose>(
   // Stable controller identity — see useMove for rationale.
   const overlayRef = useRef(overlay);
   overlayRef.current = overlay;
-  const controller = useMemo<RotateController<TObject, TPose>>(() => ({
+  const controller = useMemo<RotateController<TNode, TPose>>(() => ({
     start, move, end, cancel, isActive,
     get overlay() { return overlayRef.current; },
     get adapter() { return adapterRef.current; },

@@ -13,8 +13,8 @@ export interface RectBounds {
   height: number;
 }
 
-export interface UseRectToolOptions<TObject extends { id: string }> {
-  create: (bounds: RectBounds) => TObject | null;
+export interface UseRectToolOptions<TNode extends { id: string }> {
+  create: (bounds: RectBounds) => TNode | null;
   label?: string;
   minBounds?: { width: number; height: number };
   overlayStyle?: InsertOverlayStyle;
@@ -35,8 +35,8 @@ const DEFAULT_STYLE = {
  * Role model for tools that create scene objects: uses `ctx.applyBatch` +
  * `createInsertOp` directly rather than routing through adapter.commitInsert.
  */
-export function useRectTool<TObject extends { id: string }>(
-  options: UseRectToolOptions<TObject>,
+export function useRectTool<TNode extends { id: string }>(
+  options: UseRectToolOptions<TNode>,
 ): Tool<null> {
   const { create, label = 'Insert rectangle', minBounds, overlayStyle } = options;
 
@@ -51,9 +51,9 @@ export function useRectTool<TObject extends { id: string }>(
     onEnd: (ctx) => {
       const applyBatch = applyBatchRef.current;
       if (!applyBatch) return false;
-      const object = createRef.current(ctx.bounds);
-      if (!object) return false;
-      applyBatch([createInsertOp({ object, label })], label);
+      const node = createRef.current(ctx.bounds);
+      if (!node) return false;
+      applyBatch([createInsertOp({ node, label })], label);
       return true;
     },
   });

@@ -42,15 +42,15 @@ export function ActionsDemo() {
     }),
     ...selection.adapterMethods,
     listAll: (): NodeId[] => rectsRef.current.map((r) => asNodeId(r.id)),
-    insertObject: (obj: Rect) => setRects((rs) => [...rs, obj]),
-    removeObject: (id: string) => setRects((rs) => rs.filter((r) => r.id !== id)),
+    insertNode: (obj: Rect) => setRects((rs) => [...rs, obj]),
+    removeNode: (id: string) => setRects((rs) => rs.filter((r) => r.id !== id)),
     getParent: (_id: string) => null,
     getChildren: (_parent: string | null) => rectsRef.current.map((r) => r.id),
     setChildOrder: (_parent: string | null, ids: string[]) => {
       const byId = new Map(rectsRef.current.map((r) => [r.id, r]));
       setRects(ids.map((id) => byId.get(id)!).filter(Boolean));
     },
-    cloneObject: (id: NodeId, offset: { dx: number; dy: number }): { id: NodeId } => {
+    cloneNode: (id: NodeId, offset: { dx: number; dy: number }): { id: NodeId } => {
       const src = rectsRef.current.find((r) => r.id === id)!;
       return {
         id: asNodeId(`r${nextId.current++}`),
@@ -83,7 +83,7 @@ export function ActionsDemo() {
       path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
       fill: { color: rect.color },
     }],
-    getObject: (id) => rectsRef.current.find((r) => r.id === id) ?? null,
+    getNode: (id) => rectsRef.current.find((r) => r.id === id) ?? null,
   });
   const tools = useTools({ active: 'select', registry: { select } });
 

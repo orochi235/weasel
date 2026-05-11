@@ -19,7 +19,7 @@ function makeAdapter(initial: Path) {
   let pose: Path = initial;
   const batches: { ops: Op[]; label?: string }[] = [];
   const adapter = {
-    getObject: (id: string) => (id === 'p' ? { id } : undefined),
+    getNode: (id: string) => (id === 'p' ? { id } : undefined),
     getPose: (_id: string) => pose,
     setPose: (_id: string, p: Path) => { pose = p; },
     applyBatch: (ops: Op[], label?: string) => {

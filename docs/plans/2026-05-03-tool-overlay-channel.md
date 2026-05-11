@@ -258,7 +258,7 @@ import type { InsertAdapter } from '../../core/adapters/types';
 
 interface Pose { x: number; y: number; width: number; height: number }
 const adapter: InsertAdapter<{ id: string }> = {
-  insertObject: vi.fn(),
+  insertNode: vi.fn(),
   commitInsert: ({ x, y, width, height }) => ({ id: 'r0', x, y, width, height } as any),
 };
 
@@ -437,7 +437,7 @@ In `src/tools/builtin/useSelectTool.ts`:
     view: { x: number; y: number; scale: number },
   ) => void;
   /** Object lookup for ghost rendering — needed by move overlay's poses map. */
-  getObject?: (id: string) => unknown | null;
+  getNode?: (id: string) => unknown | null;
 ```
 
 2. Build a single `RenderLayer` that:
@@ -447,7 +447,7 @@ In `src/tools/builtin/useSelectTool.ts`:
    - For resize: draws the new bounds rect outline + scaled ghost via `drawGhost` of `resize.overlay.currentPose`.
    - For rotate: draws the rotated ghost via `drawGhost` of `rotate.overlay.currentPose`.
 
-3. Use `useRef` for the four style options + `drawGhost` + `getObject` so the overlay layer's draw closure sees latest values without rebuilding the Tool record.
+3. Use `useRef` for the four style options + `drawGhost` + `getNode` so the overlay layer's draw closure sees latest values without rebuilding the Tool record.
 
 4. Add `overlay` to the returned `defineTool({...})`.
 
@@ -543,13 +543,13 @@ layers={{
 }}
 ```
 
-If `useSelectTool` needs `drawGhost` / `getObject` for move/resize/rotate ghosts (see Task 4), wire them here:
+If `useSelectTool` needs `drawGhost` / `getNode` for move/resize/rotate ghosts (see Task 4), wire them here:
 
 ```ts
 const select = useSelectTool<Obj, Pose>(adapter, {
   hitBody, boundsOf,
   drawGhost: (ctx, _obj, pose) => { /* same drawOne logic, scoped to ghost */ },
-  getObject: (id) => itemsRef.current.find((o) => o.id === id) ?? null,
+  getNode: (id) => itemsRef.current.find((o) => o.id === id) ?? null,
 });
 ```
 

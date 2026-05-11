@@ -18,8 +18,8 @@ function makeAdapter(opts: {
     poses[id] = p;
   });
   return {
-    getObject: (id) => ({ id }),
-    getObjects: () => Object.keys(poses).map((id) => ({ id })),
+    getNode: (id) => ({ id }),
+    getNodes: () => Object.keys(poses).map((id) => ({ id })),
     getPose: (id) => poses[id],
     getParent: (id) => opts.parents[id] ?? null,
     setPose: setPoseSpy,

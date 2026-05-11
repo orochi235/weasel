@@ -18,8 +18,8 @@ function makeAdapter(initial: Obj[]): MoveAdapter<Obj, Pose> & {
   return {
     store,
     batches,
-    getObject: (id) => store.get(id),
-    getObjects: () => Array.from(store.values()),
+    getNode: (id) => store.get(id),
+    getNodes: () => Array.from(store.values()),
     getPose: (id) => store.get(id)!.pose,
     getParent: (id) => store.get(id)!.parent,
     setPose: (id, pose) => {
@@ -32,8 +32,8 @@ function makeAdapter(initial: Obj[]): MoveAdapter<Obj, Pose> & {
       for (const op of ops) op.apply({
         setPose: (id: string, pose: Pose) => { store.get(id)!.pose = { ...pose }; },
         setParent: (id: string, p: string | null) => { store.get(id)!.parent = p; },
-        insertObject: (o: Obj) => store.set(o.id, o),
-        removeObject: (id: string) => store.delete(id),
+        insertNode: (o: Obj) => store.set(o.id, o),
+        removeNode: (id: string) => store.delete(id),
       });
       batches.push({ ops, label });
     },

@@ -10,11 +10,11 @@ import type { InsertController } from 'interactions/gestures/insert/insert';
 
 type ApplyBatch = (ops: Op[], label: string) => void;
 
-export interface DragInsertToolConfig<TObject extends { id: string }, TPose> {
+export interface DragInsertToolConfig<TNode extends { id: string }, TPose> {
   id: string;
   cursor: string;
   keybinding?: string;
-  controller: InsertController<TObject, TPose>;
+  controller: InsertController<TNode, TPose>;
   overlayId: string;
   overlayLabel: string;
   defaultStyle: { fill: string; stroke: string; dash: number[]; lineWidth: number };
@@ -33,8 +33,8 @@ export interface DragInsertToolResult {
   applyBatchRef: MutableRefObject<ApplyBatch | null>;
 }
 
-export function defineDragInsertTool<TObject extends { id: string }, TPose>(
-  config: DragInsertToolConfig<TObject, TPose>,
+export function defineDragInsertTool<TNode extends { id: string }, TPose>(
+  config: DragInsertToolConfig<TNode, TPose>,
 ): DragInsertToolResult {
   const cfgRef = useRef(config);
   cfgRef.current = config;

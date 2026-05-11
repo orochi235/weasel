@@ -532,7 +532,7 @@ Replace the body of `useInsert` (everything from `const behaviorsRef = useRef(be
       }
     : null;
 
-  return useMemo<InsertController<TObject, TPose>>(
+  return useMemo<InsertController<TNode, TPose>>(
     () => ({
       start: dr.start,
       move: dr.move,
@@ -572,14 +572,14 @@ Drop the now-unused `boundsFrom` helper and the local `useState`/`useCallback` i
 Update the `InsertController` interface (still in this file) to add the two new flags:
 
 ```ts
-export interface InsertController<TObject extends { id: string }, TPose> {
+export interface InsertController<TNode extends { id: string }, TPose> {
   start(worldX: number, worldY: number, modifiers: ModifierState): void;
   move(worldX: number, worldY: number, modifiers: ModifierState): boolean;
   end(): void;
   cancel(): void;
   isInserting: boolean;
   overlay: InsertOverlay<TPose> | null;
-  adapter: InsertAdapter<TObject>;
+  adapter: InsertAdapter<TNode>;
   /** True iff `pointInsert` was supplied. */
   readonly supportsPointInsert: boolean;
   /** True iff a non-clickOnly path is wired (drag commits will reach
@@ -624,7 +624,7 @@ const makeAdapter = (): InsertAdapter<{ id: string }> => ({
   commitInsert: () => ({ id: 'x' }),
   commitPaste: () => [],
   snapshotSelection: () => ({ items: [] }),
-  insertObject: () => {},
+  insertNode: () => {},
   setSelection: () => {},
   getSelection: () => [],
 });
@@ -940,11 +940,11 @@ import type { InsertController } from '../../interactions/gestures/insert/insert
 
 type ApplyBatch = (ops: Op[], label: string) => void;
 
-export interface DragInsertToolConfig<TObject extends { id: string }, TPose> {
+export interface DragInsertToolConfig<TNode extends { id: string }, TPose> {
   id: string;
   cursor: string;
   keybinding?: string;
-  controller: InsertController<TObject, TPose>;
+  controller: InsertController<TNode, TPose>;
   overlayId: string;
   overlayLabel: string;
   defaultStyle: { fill: string; stroke: string; dash: number[]; lineWidth: number };
@@ -963,8 +963,8 @@ export interface DragInsertToolResult {
   applyBatchRef: MutableRefObject<ApplyBatch | null>;
 }
 
-export function defineDragInsertTool<TObject extends { id: string }, TPose>(
-  config: DragInsertToolConfig<TObject, TPose>,
+export function defineDragInsertTool<TNode extends { id: string }, TPose>(
+  config: DragInsertToolConfig<TNode, TPose>,
 ): DragInsertToolResult {
   const cfgRef = useRef(config);
   cfgRef.current = config;
@@ -1141,20 +1141,20 @@ import { type InsertOverlayStyle } from './marquee';
 
 export type { InsertOverlayStyle };
 
-export interface UseInsertToolOptions<TPose, TObject extends { id: string } = { id: string }>
-  extends UseInsertOptions<TPose, TObject> {
+export interface UseInsertToolOptions<TPose, TNode extends { id: string } = { id: string }>
+  extends UseInsertOptions<TPose, TNode> {
   overlayStyle?: InsertOverlayStyle;
   /** Hit-test gate consulted before insertion. On hit, selects via
    *  ctx.selection.set and skips both the click and drag paths. */
   hitExisting?: (point: { x: number; y: number }) => string | string[] | null;
 }
 
-export function useInsertTool<TObject extends { id: string }, TPose>(
-  adapter: InsertAdapter<TObject>,
-  options: UseInsertToolOptions<TPose, TObject> = {},
+export function useInsertTool<TNode extends { id: string }, TPose>(
+  adapter: InsertAdapter<TNode>,
+  options: UseInsertToolOptions<TPose, TNode> = {},
 ): Tool<undefined> {
   const { hitExisting, overlayStyle, ...gestureOptions } = options;
-  const controller = useInsert<TObject, TPose>(adapter, gestureOptions);
+  const controller = useInsert<TNode, TPose>(adapter, gestureOptions);
   const { tool } = defineDragInsertTool({
     id: 'insert',
     cursor: 'crosshair',
@@ -1210,16 +1210,16 @@ import { type InsertOverlayStyle } from './marquee';
 
 type ApplyBatch = (ops: Op[], label: string) => void;
 
-export interface UseTextToolOptions<TObject extends { id: string }> {
-  pointInsert: (point: { x: number; y: number }) => TObject | null;
-  commitInsert?: InsertAdapter<TObject>['commitInsert'];
+export interface UseTextToolOptions<TNode extends { id: string }> {
+  pointInsert: (point: { x: number; y: number }) => TNode | null;
+  commitInsert?: InsertAdapter<TNode>['commitInsert'];
   hitExisting?: (point: { x: number; y: number }) => string | string[] | null;
   minBounds?: { width: number; height: number };
   marqueeStyle?: InsertOverlayStyle;
 }
 
-export function useTextTool<TObject extends { id: string }>(
-  options: UseTextToolOptions<TObject>,
+export function useTextTool<TNode extends { id: string }>(
+  options: UseTextToolOptions<TNode>,
 ): Tool<undefined> {
   const { pointInsert, commitInsert, hitExisting, minBounds, marqueeStyle } = options;
 
@@ -1228,19 +1228,19 @@ export function useTextTool<TObject extends { id: string }>(
   // and clears it on end/cancel; useInsert.applyBatch reads through it.
   const applyBatchRef = useRef<ApplyBatch | null>(null);
 
-  const adapter = useMemo<InsertAdapter<TObject>>(
+  const adapter = useMemo<InsertAdapter<TNode>>(
     () => ({
       commitInsert: (b) => (commitInsert ? commitInsert(b) : null),
       commitPaste: () => [],
       snapshotSelection: () => ({ items: [] }),
-      insertObject: () => {},
+      insertNode: () => {},
       setSelection: () => {},
       getSelection: () => [],
     }),
     [commitInsert],
   );
 
-  const controller = useInsert<TObject, { x: number; y: number; width: number; height: number }>(
+  const controller = useInsert<TNode, { x: number; y: number; width: number; height: number }>(
     adapter,
     {
       pointInsert,

@@ -23,15 +23,15 @@ interface Bounds {
 }
 
 /** Configuration for `arrayAdapter`. */
-export interface ArrayAdapterConfig<TObject extends { id: string }, TPose> {
+export interface ArrayAdapterConfig<TNode extends { id: string }, TPose> {
   /** Live ref to the current array. */
-  ref: MutableRefObject<TObject[]>;
+  ref: MutableRefObject<TNode[]>;
   /** Functional setter (typically the second value from `useState`). */
-  setItems: (updater: (items: TObject[]) => TObject[]) => void;
+  setItems: (updater: (items: TNode[]) => TNode[]) => void;
   /** Project an object to its pose. Required. */
-  toPose: (obj: TObject) => TPose;
+  toPose: (obj: TNode) => TPose;
   /** Merge a new pose back into an object. Default: shallow spread. */
-  fromPose?: (obj: TObject, pose: TPose) => TObject;
+  fromPose?: (obj: TNode, pose: TPose) => TNode;
   /** Optional parent lookup. Default returns `null`. */
   getParent?: (id: string) => string | null;
   /** Optional reparent mutator. Default is a noop. */
@@ -47,7 +47,7 @@ export interface ArrayAdapterConfig<TObject extends { id: string }, TPose> {
   /** Factory for `commitInsert` — invoked at the end of an insert drag.
    *  Consumers own id generation and any palette/payload fields. Returning
    *  `null` aborts the insert. When omitted, `commitInsert` returns `null`. */
-  createDefault?: (bounds: Bounds) => TObject | null;
+  createDefault?: (bounds: Bounds) => TNode | null;
 
   /** Project a pose to an AABB for `hitTestArea`. Default: identity (works
    *  when TPose carries top-level x/y/width/height). */
@@ -65,14 +65,14 @@ export interface ArrayAdapterConfig<TObject extends { id: string }, TPose> {
  * `InsertAdapter`/`AreaSelectAdapter`, and the corresponding gesture hook
  * simply produces no commit.
  */
-export interface ArrayAdapter<TObject extends { id: string }, TPose>
-  extends MoveAdapter<TObject, TPose>,
-    ResizeAdapter<TObject, TPose>,
-    InsertAdapter<TObject>,
+export interface ArrayAdapter<TNode extends { id: string }, TPose>
+  extends MoveAdapter<TNode, TPose>,
+    ResizeAdapter<TNode, TPose>,
+    InsertAdapter<TNode>,
     AreaSelectAdapter,
     LassoSelectAdapter {
-  getObjects(): TObject[];
-  removeObject(id: string): void;
+  getNodes(): TNode[];
+  removeNode(id: string): void;
   // ArrayAdapter satisfies the union of all narrow adapters; redeclare the
   // methods that are optional on AreaSelectAdapter (post-relaxation) but
   // required on InsertAdapter so TS sees a single non-conflicting signature.
@@ -80,11 +80,11 @@ export interface ArrayAdapter<TObject extends { id: string }, TPose>
   setSelection(ids: string[]): void;
 }
 
-function defaultFromPose<TObject extends { id: string }, TPose>(
-  obj: TObject,
+function defaultFromPose<TNode extends { id: string }, TPose>(
+  obj: TNode,
   pose: TPose,
-): TObject {
-  return { ...obj, ...(pose as object) } as TObject;
+): TNode {
+  return { ...obj, ...(pose as object) } as TNode;
 }
 
 function defaultPoseBounds<TPose>(pose: TPose): Bounds {
@@ -101,9 +101,9 @@ function defaultPoseBounds<TPose>(pose: TPose): Bounds {
  * dispatcher (see `dispatchApplyBatch`). Apps with custom history
  * integration supply their own via spread.
  */
-export function arrayAdapter<TObject extends { id: string }, TPose>(
-  config: ArrayAdapterConfig<TObject, TPose>,
-): ArrayAdapter<TObject, TPose> {
+export function arrayAdapter<TNode extends { id: string }, TPose>(
+  config: ArrayAdapterConfig<TNode, TPose>,
+): ArrayAdapter<TNode, TPose> {
   const {
     ref,
     setItems,
@@ -121,9 +121,9 @@ export function arrayAdapter<TObject extends { id: string }, TPose>(
 
   const getSelection = selectionRef ? () => selectionRef.current : () => [];
 
-  const adapter: ArrayAdapter<TObject, TPose> = {
-    getObject: (id) => ref.current.find((o) => o.id === id),
-    getObjects: () => ref.current,
+  const adapter: ArrayAdapter<TNode, TPose> = {
+    getNode: (id) => ref.current.find((o) => o.id === id),
+    getNodes: () => ref.current,
     getPose: (id) => {
       const obj = ref.current.find((o) => o.id === id);
       if (!obj) throw new Error(`arrayAdapter.getPose: id "${id}" not found`);
@@ -135,8 +135,8 @@ export function arrayAdapter<TObject extends { id: string }, TPose>(
     getParent,
     setParent,
 
-    insertObject: (obj) => setItems((items) => [...items, obj]),
-    removeObject: (id) => setItems((items) => items.filter((o) => o.id !== id)),
+    insertNode: (obj) => setItems((items) => [...items, obj]),
+    removeNode: (id) => setItems((items) => items.filter((o) => o.id !== id)),
 
     getSelection,
     setSelection,
@@ -189,12 +189,12 @@ export function arrayAdapter<TObject extends { id: string }, TPose>(
     snapshotSelection: (ids) => ({
       items: ids
         .map((id) => ref.current.find((o) => o.id === id))
-        .filter((o): o is TObject => !!o),
+        .filter((o): o is TNode => !!o),
     }),
   };
 
   if (getChildren) {
-    (adapter as ArrayAdapter<TObject, TPose> & { getChildren: (id: string) => string[] }).getChildren =
+    (adapter as ArrayAdapter<TNode, TPose> & { getChildren: (id: string) => string[] }).getChildren =
       (id) => getChildren(id) ?? [];
   }
 

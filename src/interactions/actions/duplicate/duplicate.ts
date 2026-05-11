@@ -13,13 +13,13 @@ export interface DuplicateAdapter<TPose> {
   getSelection(): NodeId[];
   /** Read pose for an id (currently unused at op-emit time but exposed for
    *  symmetry with other selection-driven hooks; consumers commonly need it
-   *  inside `cloneObject`). */
+   *  inside `cloneNode`). */
   getPose(id: NodeId): TPose;
   /** Materialize a new object that is a copy of `id`, translated by `offset`.
    *  Implementations are responsible for assigning a fresh id and for any
    *  domain-specific cloning rules. The returned object is wrapped in an
    *  InsertOp by the hook. */
-  cloneObject(id: NodeId, offset: { dx: number; dy: number }): { id: NodeId };
+  cloneNode(id: NodeId, offset: { dx: number; dy: number }): { id: NodeId };
   /** Optional: op-batch entry point. When omitted, the hook applies each op
    *  against the adapter directly. Apps with custom history integration
    *  override this. */
@@ -60,11 +60,11 @@ export function useDuplicate<TPose>(
     const sel = a.getSelection();
     if (sel.length === 0) return;
     const offset = o.offset ?? DEFAULT_OFFSET;
-    const created = sel.map((id) => a.cloneObject(id, offset));
+    const created = sel.map((id) => a.cloneNode(id, offset));
     if (created.length === 0) return;
     const newIds = created.map((c) => c.id);
     const ops: Op[] = [
-      ...created.map((obj) => createInsertOp({ object: obj })),
+      ...created.map((obj) => createInsertOp({ node: obj })),
       createSetSelectionOp({ from: sel, to: newIds }),
     ];
     dispatchApplyBatch(a, ops, o.label ?? 'Duplicate');

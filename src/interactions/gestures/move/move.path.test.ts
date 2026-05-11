@@ -9,8 +9,8 @@ function makeAdapter(initial: Path) {
   const store = new Map<string, Path>([['a', initial]]);
   const batches: { ops: Op[]; label: string }[] = [];
   const adapter: MoveAdapter<{ id: string }, Path> = {
-    getObject: (id) => (store.has(id) ? { id } : undefined),
-    getObjects: () => Array.from(store.keys()).map((id) => ({ id })),
+    getNode: (id) => (store.has(id) ? { id } : undefined),
+    getNodes: () => Array.from(store.keys()).map((id) => ({ id })),
     getPose: (id) => store.get(id)!,
     getParent: () => null,
     setPose: (id, pose) => store.set(id, pose),

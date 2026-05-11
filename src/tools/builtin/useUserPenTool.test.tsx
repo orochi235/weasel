@@ -11,13 +11,13 @@ function makeAdapter() {
   const ids: string[] = [];
   let n = 0;
   const setSelection = vi.fn();
-  const addObject = vi.fn((p: Pose) => {
+  const addNode = vi.fn((p: Pose) => {
     const id = `o${++n}`;
     added.push(p);
     ids.push(id);
     return id;
   });
-  return { added, ids, addObject, setSelection };
+  return { added, ids, addNode, setSelection };
 }
 
 function setup(over: {
@@ -178,7 +178,7 @@ describe('useUserPenTool', () => {
     expect(dec).toBe('claim');
     expect(wrapPath).toHaveBeenCalledTimes(1);
     expect(wrapPath.mock.calls[0][1]).toEqual({ closed: false });
-    expect(adapter.addObject).toHaveBeenCalledTimes(1);
+    expect(adapter.addNode).toHaveBeenCalledTimes(1);
     expect(adapter.setSelection).toHaveBeenCalledWith([adapter.ids[0]]);
     expect(scratch.current).toBeNull();
     expect(scratch.finishedSubpaths).toEqual([]);
@@ -199,7 +199,7 @@ describe('useUserPenTool', () => {
     tool.keyboard!.onDown!(ke('Enter'), makeCtx(scratch));
     expect(wrapPath).toHaveBeenCalledTimes(1);
     expect(wrapPath.mock.calls[0][1]).toEqual({ closed: true });
-    expect(adapter.addObject).toHaveBeenCalledTimes(1);
+    expect(adapter.addNode).toHaveBeenCalledTimes(1);
   });
 
   it('Esc → discards everything', () => {
@@ -211,7 +211,7 @@ describe('useUserPenTool', () => {
     tool.keyboard!.onDown!(ke('Escape'), makeCtx(scratch));
     expect(scratch.current).toBeNull();
     expect(scratch.finishedSubpaths).toEqual([]);
-    expect(adapter.addObject).not.toHaveBeenCalled();
+    expect(adapter.addNode).not.toHaveBeenCalled();
   });
 
   it('tool-switch (onDeactivate) with ≥2 anchors → commits', () => {
@@ -221,7 +221,7 @@ describe('useUserPenTool', () => {
       tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
     }
     tool.onDeactivate!(makeCtx(scratch));
-    expect(adapter.addObject).toHaveBeenCalledTimes(1);
+    expect(adapter.addNode).toHaveBeenCalledTimes(1);
     expect(wrapPath.mock.calls[0][1]).toEqual({ closed: false });
   });
 
@@ -230,18 +230,18 @@ describe('useUserPenTool', () => {
     tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
     tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
     tool.onDeactivate!(makeCtx(scratch));
-    expect(adapter.addObject).not.toHaveBeenCalled();
+    expect(adapter.addNode).not.toHaveBeenCalled();
     expect(scratch.current).toBeNull();
   });
 
-  it('autoSelect: false → addObject called but setSelection not called', () => {
+  it('autoSelect: false → addNode called but setSelection not called', () => {
     const { tool, scratch, adapter } = setup({ autoSelect: false });
     for (const [x, y] of [[0, 0], [100, 0], [50, 80]] as const) {
       tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
       tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
     }
     tool.keyboard!.onDown!(ke('Enter'), makeCtx(scratch));
-    expect(adapter.addObject).toHaveBeenCalled();
+    expect(adapter.addNode).toHaveBeenCalled();
     expect(adapter.setSelection).not.toHaveBeenCalled();
   });
 
@@ -283,7 +283,7 @@ describe('useUserPenTool', () => {
         worldX: 200, worldY: 200,
         modifiers: { alt: false, shift: false, meta: true, ctrl: false, space: false },
       }));
-      expect(adapter.addObject).toHaveBeenCalledTimes(1);
+      expect(adapter.addNode).toHaveBeenCalledTimes(1);
       expect(scratch.current).toBeNull();
       // The committed pose is open (Cmd+click is open-finish).
       const lastWrap = adapter.added[adapter.added.length - 1];
@@ -302,7 +302,7 @@ describe('useUserPenTool', () => {
         worldX: 50, worldY: 50,
         modifiers: { alt: false, shift: false, meta: true, ctrl: false, space: false },
       }));
-      expect(adapter.addObject).not.toHaveBeenCalled();
+      expect(adapter.addNode).not.toHaveBeenCalled();
       // The Cmd+click fell through to corner-anchor placement.
       expect(scratch.current!.anchors).toHaveLength(2);
     });
@@ -321,7 +321,7 @@ describe('useUserPenTool', () => {
         worldX: 200, worldY: 200,
         modifiers: { alt: false, shift: false, meta: false, ctrl: true, space: false },
       }));
-      expect(adapter.addObject).toHaveBeenCalledTimes(1);
+      expect(adapter.addNode).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -336,7 +336,7 @@ describe('useUserPenTool', () => {
       // Second click on the last anchor → open-finish.
       tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 50, worldY: 0 }));
       tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 50, worldY: 0 }));
-      expect(adapter.addObject).toHaveBeenCalledTimes(1);
+      expect(adapter.addNode).toHaveBeenCalledTimes(1);
       expect(adapter.added[0].closed).toBe(false);
       expect(scratch.current).toBeNull();
     });
@@ -349,7 +349,7 @@ describe('useUserPenTool', () => {
       }
       tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 500, worldY: 500 }));
       tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 500, worldY: 500 }));
-      expect(adapter.addObject).not.toHaveBeenCalled();
+      expect(adapter.addNode).not.toHaveBeenCalled();
       expect(scratch.current!.anchors).toHaveLength(3);
     });
 
@@ -363,7 +363,7 @@ describe('useUserPenTool', () => {
       scratch._lastClick = { t: performance.now() - 1000, x: 50, y: 0 };
       tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 50, worldY: 0 }));
       tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 50, worldY: 0 }));
-      expect(adapter.addObject).not.toHaveBeenCalled();
+      expect(adapter.addNode).not.toHaveBeenCalled();
       expect(scratch.current!.anchors).toHaveLength(3);
     });
 
@@ -373,7 +373,7 @@ describe('useUserPenTool', () => {
       tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
       tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
       tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-      expect(adapter.addObject).not.toHaveBeenCalled();
+      expect(adapter.addNode).not.toHaveBeenCalled();
     });
   });
 

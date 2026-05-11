@@ -315,8 +315,8 @@ function makeAdapter() {
   const inserts: Obj[] = [];
   const removes: string[] = [];
   return {
-    insertObject: (o: Obj) => inserts.push(o),
-    removeObject: (id: string) => removes.push(id),
+    insertNode: (o: Obj) => inserts.push(o),
+    removeNode: (id: string) => removes.push(id),
     inserts,
     removes,
   };
@@ -399,19 +399,19 @@ Expected: FAIL — modules not found for `./create`, `./delete`, `./selection`.
 import type { Op } from './types';
 import { createDeleteOp } from './delete';
 
-interface CreateAdapter<TObject> {
-  insertObject(object: TObject): void;
+interface CreateAdapter<TNode> {
+  insertNode(object: TNode): void;
 }
 
-export function createCreateOp<TObject extends { id: string }>(args: {
-  object: TObject;
+export function createCreateOp<TNode extends { id: string }>(args: {
+  object: TNode;
   label?: string;
 }): Op {
   const { object, label } = args;
   return {
     label,
     apply(adapter) {
-      (adapter as CreateAdapter<TObject>).insertObject(object);
+      (adapter as CreateAdapter<TNode>).insertNode(object);
     },
     invert() {
       return createDeleteOp({ object, label });
@@ -429,18 +429,18 @@ import type { Op } from './types';
 import { createCreateOp } from './create';
 
 interface DeleteAdapter {
-  removeObject(id: string): void;
+  removeNode(id: string): void;
 }
 
-export function createDeleteOp<TObject extends { id: string }>(args: {
-  object: TObject;
+export function createDeleteOp<TNode extends { id: string }>(args: {
+  object: TNode;
   label?: string;
 }): Op {
   const { object, label } = args;
   return {
     label,
     apply(adapter) {
-      (adapter as DeleteAdapter).removeObject(object.id);
+      (adapter as DeleteAdapter).removeNode(object.id);
     },
     invert() {
       return createCreateOp({ object, label });
@@ -728,10 +728,10 @@ export interface SnapTarget<TPose = unknown> {
  * (MoveAdapter, ResizeAdapter, ClipboardAdapter, ...) — TypeScript's
  * structural typing means a wider adapter satisfies any narrower interface.
  */
-export interface SceneAdapter<TObject extends { id: string }, TPose> {
+export interface SceneAdapter<TNode extends { id: string }, TPose> {
   // Pull (gesture-time queries)
-  getObjects(): TObject[];
-  getObject(id: string): TObject | undefined;
+  getNodes(): TNode[];
+  getNode(id: string): TNode | undefined;
   getSelection(): string[];
   hitTest(worldX: number, worldY: number): string | null;
   getPose(id: string): TPose;
@@ -740,8 +740,8 @@ export interface SceneAdapter<TObject extends { id: string }, TPose> {
   // Mutators (called by op apply methods)
   setPose(id: string, pose: TPose): void;
   setParent(id: string, parentId: string | null): void;
-  insertObject(object: TObject): void;
-  removeObject(id: string): void;
+  insertNode(object: TNode): void;
+  removeNode(id: string): void;
   setSelection(ids: string[]): void;
 
   // Op submission (gesture commit point)
@@ -752,7 +752,7 @@ export interface SceneAdapter<TObject extends { id: string }, TPose> {
  * Narrow adapter for `useMoveInteraction`. Includes optional snap-target
  * lookup; apps without container-snapping leave it out.
  */
-export interface MoveAdapter<TObject extends { id: string }, TPose> {
+export interface MoveAdapter<TNode extends { id: string }, TPose> {
   getPose(id: string): TPose;
   getParent(id: string): string | null;
   setPose(id: string, pose: TPose): void;
@@ -1257,7 +1257,7 @@ function ctx(originPose: Pose, currentPose: Pose, objectsById: Record<string, an
     modifiers: { alt: false, shift: false, meta: false, ctrl: false },
     pointer: { worldX: currentPose.x, worldY: currentPose.y, clientX: 0, clientY: 0 },
     adapter: {
-      getObject: (id: string) => objectsById[id],
+      getNode: (id: string) => objectsById[id],
     } as any,
     scratch: {},
   };
@@ -1339,8 +1339,8 @@ export function snapBackOrDelete<TPose extends { x: number; y: number }>(args: {
       }
       if (onFreeRelease === 'delete') {
         const obj = (ctx.adapter as unknown as {
-          getObject?(id: string): { id: string } | undefined;
-        }).getObject?.(id);
+          getNode?(id: string): { id: string } | undefined;
+        }).getNode?.(id);
         if (!obj) return; // can't delete without snapshot; defer
         const ops: Op[] = [createDeleteOp({ object: obj, label: deleteLabel })];
         return ops;
@@ -1431,8 +1431,8 @@ function makeAdapter(initial: Obj[]): MoveAdapter<Obj, Pose> & {
       for (const op of ops) op.apply({
         setPose: (id: string, pose: Pose) => store.get(id)!.pose = { ...pose },
         setParent: (id: string, p: string | null) => store.get(id)!.parent = p,
-        insertObject: (o: Obj) => store.set(o.id, o),
-        removeObject: (id: string) => store.delete(id),
+        insertNode: (o: Obj) => store.set(o.id, o),
+        removeNode: (id: string) => store.delete(id),
       });
       batches.push({ ops, label });
     },
@@ -1581,8 +1581,8 @@ export interface UseMoveInteractionReturn<TPose> {
   overlay: MoveOverlay<TPose> | null;
 }
 
-export function useMoveInteraction<TObject extends { id: string }, TPose>(
-  adapter: MoveAdapter<TObject, TPose>,
+export function useMoveInteraction<TNode extends { id: string }, TPose>(
+  adapter: MoveAdapter<TNode, TPose>,
   options: UseMoveInteractionOptions<TPose>,
 ): UseMoveInteractionReturn<TPose> {
   const {
@@ -1849,19 +1849,19 @@ describe('plantingMoveAdapter', () => {
     expect(updated.parentId).toBe(bed2.id);
   });
 
-  it('removeObject removes the planting', () => {
+  it('removeNode removes the planting', () => {
     const { planting } = setup();
     const a = createPlantingMoveAdapter();
-    a.removeObject(planting.id);
+    a.removeNode(planting.id);
     expect(useGardenStore.getState().garden.plantings).toHaveLength(0);
   });
 
-  it('insertObject re-creates a deleted planting (round-trip)', () => {
+  it('insertNode re-creates a deleted planting (round-trip)', () => {
     const { planting } = setup();
     const a = createPlantingMoveAdapter();
     const snapshot = useGardenStore.getState().garden.plantings.find((p) => p.id === planting.id)!;
-    a.removeObject(planting.id);
-    a.insertObject(snapshot);
+    a.removeNode(planting.id);
+    a.insertNode(snapshot);
     const restored = useGardenStore.getState().garden.plantings.find((p) => p.id === planting.id)!;
     expect(restored.x).toBe(snapshot.x);
     expect(restored.y).toBe(snapshot.y);
@@ -1900,9 +1900,9 @@ function getParent(id: string): { id: string; x: number; y: number } | undefined
 }
 
 export function createPlantingMoveAdapter(): MoveAdapter<Planting, PlantingPose> & {
-  insertObject(p: Planting): void;
-  removeObject(id: string): void;
-  getObject(id: string): Planting | undefined;
+  insertNode(p: Planting): void;
+  removeNode(id: string): void;
+  getNode(id: string): Planting | undefined;
 } {
   return {
     getPose(id) {
@@ -1914,7 +1914,7 @@ export function createPlantingMoveAdapter(): MoveAdapter<Planting, PlantingPose>
     getParent(id) {
       return getPlanting(id)?.parentId ?? null;
     },
-    getObject(id) {
+    getNode(id) {
       return getPlanting(id);
     },
     setPose(id, pose) {
@@ -1928,7 +1928,7 @@ export function createPlantingMoveAdapter(): MoveAdapter<Planting, PlantingPose>
     setParent(id, parentId) {
       useGardenStore.getState().updatePlanting(id, { parentId: parentId ?? '' });
     },
-    insertObject(planting) {
+    insertNode(planting) {
       const fresh = createPlanting({
         parentId: planting.parentId,
         x: planting.x,
@@ -1943,7 +1943,7 @@ export function createPlantingMoveAdapter(): MoveAdapter<Planting, PlantingPose>
         },
       }));
     },
-    removeObject(id) {
+    removeNode(id) {
       useGardenStore.getState().removePlanting(id);
     },
     findSnapTarget(draggedId, worldX, worldY): SnapTarget<PlantingPose> | null {
@@ -1976,12 +1976,12 @@ export function createPlantingMoveAdapter(): MoveAdapter<Planting, PlantingPose>
         setParent: (id: string, p: string | null) => {
           useGardenStore.getState().updatePlanting(id, { parentId: p ?? '' });
         },
-        insertObject: (planting: Planting) => {
+        insertNode: (planting: Planting) => {
           useGardenStore.setState((s) => ({
             garden: { ...s.garden, plantings: [...s.garden.plantings, planting] },
           }));
         },
-        removeObject: (id: string) => {
+        removeNode: (id: string) => {
           useGardenStore.getState().removePlanting(id);
         },
       });
@@ -2101,10 +2101,10 @@ export function createZoneMoveAdapter(): MoveAdapter<Zone, ZonePose> {
           useGardenStore.getState().updateZone(id, { x: pose.x, y: pose.y });
         },
         setParent: () => {},
-        insertObject: (z: Zone) => {
+        insertNode: (z: Zone) => {
           useGardenStore.setState((s) => ({ garden: { ...s.garden, zones: [...s.garden.zones, z] } }));
         },
-        removeObject: (id: string) => {
+        removeNode: (id: string) => {
           useGardenStore.setState((s) => ({ garden: { ...s.garden, zones: s.garden.zones.filter((z) => z.id !== id) } }));
         },
       });
@@ -2186,10 +2186,10 @@ export function createStructureMoveAdapter(): MoveAdapter<Structure, StructurePo
         setParent: (id: string, p: string | null) => {
           useGardenStore.getState().updateStructure(id, { parentId: p ?? '' });
         },
-        insertObject: (s: Structure) => {
+        insertNode: (s: Structure) => {
           useGardenStore.setState((st) => ({ garden: { ...st.garden, structures: [...st.garden.structures, s] } }));
         },
-        removeObject: (id: string) => {
+        removeNode: (id: string) => {
           useGardenStore.setState((st) => ({ garden: { ...st.garden, structures: st.garden.structures.filter((s) => s.id !== id) } }));
         },
       });

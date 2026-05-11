@@ -10,7 +10,7 @@ This is a working doc. Not a redesign proposal.
 
 ## Method
 
-Read every prop on `CanvasProps<TObject, TPose>` (Canvas.tsx:231), bin it
+Read every prop on `CanvasProps<TNode, TPose>` (Canvas.tsx:231), bin it
 by the question it answers from the consumer's POV, look for patterns.
 Where a prop straddles two bins, note it — those are the seams worth
 investigating.
@@ -100,7 +100,7 @@ The opt-in keyboard-driven actions.
 
 - `gestures: { delete, nudge, duplicate, undoRedo }` — each entry is
   `boolean | { ...config }` (except `duplicate`, which always needs a
-  `cloneObject`, and `undoRedo`, which always needs an `adapter`).
+  `cloneNode`, and `undoRedo`, which always needs an `adapter`).
 
 ### 10. Interaction — per-event escape hatches
 
@@ -196,7 +196,7 @@ The current flat surface stays as a sugar layer on top (or as a
 deprecated alias) so the migration is mechanical.
 
 ```ts
-export interface CanvasProps<TObject extends { id: string } = { id: string }, TPose = unknown> {
+export interface CanvasProps<TNode extends { id: string } = { id: string }, TPose = unknown> {
   // -----------------------------------------------------------------
   // 1. element — sizing + DOM passthrough
   // -----------------------------------------------------------------
@@ -213,7 +213,7 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   // -----------------------------------------------------------------
   // 2. scene — what objects exist + how their poses are interpreted
   // -----------------------------------------------------------------
-  scene: SceneSource<TObject, TPose> & {
+  scene: SceneSource<TNode, TPose> & {
     /** PoseDescriptor — bounds / translate / remap-on-resize / intersectsRect.
      *  Subsumes the existing `poseBounds` + `intersectsRect` on the items
      *  shorthand (seam #1). */
@@ -232,7 +232,7 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
   // 3. render — layers + visuals that aren't on the element
   // -----------------------------------------------------------------
   render: {
-    layers: LayersMap<TObject, TPose>;
+    layers: LayersMap<TNode, TPose>;
   };
 
   // -----------------------------------------------------------------
@@ -257,12 +257,12 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
      *    - `{ options }` (configure the default hook)
      *    - `{ controller }` (replace the hook entirely)
      *    - `{ controller, options }` (replace + configure) */
-    move?: GestureSlot<MoveController<TObject, TPose>, UseMoveOptions<TPose>>;
-    resize?: GestureSlot<ResizeController<TObject, TPose>, UseResizeOptions<TPose>>;
-    rotate?: GestureSlot<RotateController<TObject, TPose>, UseRotateOptions<TPose>>;
-    insert?: GestureSlot<InsertController<TObject, TPose>, UseInsertOptions<TPose>>;
+    move?: GestureSlot<MoveController<TNode, TPose>, UseMoveOptions<TPose>>;
+    resize?: GestureSlot<ResizeController<TNode, TPose>, UseResizeOptions<TPose>>;
+    rotate?: GestureSlot<RotateController<TNode, TPose>, UseRotateOptions<TPose>>;
+    insert?: GestureSlot<InsertController<TNode, TPose>, UseInsertOptions<TPose>>;
     areaSelect?: GestureSlot<AreaSelectController, UseAreaSelectOptions>;
-    editAnchors?: GestureSlot<EditAnchorsController<TObject>, UseEditAnchorsOptions>
+    editAnchors?: GestureSlot<EditAnchorsController<TNode>, UseEditAnchorsOptions>
       | boolean;
 
     /** Pipeline-level wiring — answers the kit asks of the domain mid-gesture.
@@ -306,22 +306,22 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
 }
 
 /** Either an explicit adapter or the inline-items shorthand. */
-export type SceneSource<TObject extends { id: string }, TPose> =
+export type SceneSource<TNode extends { id: string }, TPose> =
   | {
-      adapter: MoveAdapter<TObject, TPose>
-        & ResizeAdapter<TObject, TPose>
-        & RotateAdapter<TObject, TPose>
-        & Partial<InsertAdapter<TObject>>
+      adapter: MoveAdapter<TNode, TPose>
+        & ResizeAdapter<TNode, TPose>
+        & RotateAdapter<TNode, TPose>
+        & Partial<InsertAdapter<TNode>>
         & Partial<AreaSelectAdapter>;
       items?: never;
     }
   | {
       adapter?: never;
-      items: TObject[];
-      setItems: UseArrayAdapterOptions<TObject, TPose>['setItems'];
-      toPose: UseArrayAdapterOptions<TObject, TPose>['toPose'];
-      fromPose?: UseArrayAdapterOptions<TObject, TPose>['fromPose'];
-      createDefault?: UseArrayAdapterOptions<TObject, TPose>['createDefault'];
+      items: TNode[];
+      setItems: UseArrayAdapterOptions<TNode, TPose>['setItems'];
+      toPose: UseArrayAdapterOptions<TNode, TPose>['toPose'];
+      fromPose?: UseArrayAdapterOptions<TNode, TPose>['fromPose'];
+      createDefault?: UseArrayAdapterOptions<TNode, TPose>['createDefault'];
       // poseBounds + intersectsRect dropped — supplied via scene.geometry instead.
     };
 
@@ -430,7 +430,7 @@ interaction?: {
   keyboard?: {
     delete?:     boolean | DeleteBehaviorConfig;
     nudge?:      boolean | NudgeBehaviorConfig<TPose>;
-    duplicate?:  DuplicateBehaviorConfig;       // requires cloneObject
+    duplicate?:  DuplicateBehaviorConfig;       // requires cloneNode
     undoRedo?:   UndoRedoBehaviorConfig;        // requires adapter
     escape?:     boolean | EscapeBehaviorConfig;
     selectAll?:  boolean | SelectAllBehaviorConfig;

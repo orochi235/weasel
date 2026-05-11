@@ -112,10 +112,10 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
   const poseBounds = options.poseBounds ?? ((p: TPose) => p as unknown as Bounds);
 
   const adapter: SceneCanvasAdapter<TData, TLayer, TPose> = {
-    getObject(id) {
+    getNode(id) {
       return scene.get(asNodeId(id));
     },
-    getObjects() {
+    getNodes() {
       const visible = visibleLayers();
       const out: Node<TData, TLayer, TPose>[] = [];
       for (const id of scene.renderOrder()) {
@@ -236,7 +236,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
             });
             return scene.get(id) ?? null;
           },
-          insertObject: (_node: Node<TData, TLayer, TPose>) => {
+          insertNode: (_node: Node<TData, TLayer, TPose>) => {
             // Kit-side InsertOp path: re-add by spec. Used for redo.
             // Trivial Scene path doesn't expose a serializable InsertOp seam
             // yet; commitInsert above covers the live-drag commit case.

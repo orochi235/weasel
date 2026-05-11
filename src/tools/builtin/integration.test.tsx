@@ -218,9 +218,9 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
       const [view, setView] = useState({ x: 0, y: 0, scale: 1 });
       const select = useSelectTool(
         {
-          getObject: () => undefined,
+          getNode: () => undefined,
           getPose: () => null,
-          getObjects: () => [],
+          getNodes: () => [],
           getParent: () => null,
           setParent: () => {},
           setPose: () => {},
@@ -282,9 +282,9 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
       const [view, setView] = useState({ x: 0, y: 0, scale: 1 });
       const select = useSelectTool(
         {
-          getObject: () => undefined,
+          getNode: () => undefined,
           getPose: () => null,
-          getObjects: () => [],
+          getNodes: () => [],
           getParent: () => null,
           setParent: () => {},
           setPose: () => {},
@@ -342,9 +342,9 @@ describe('Phase 2c: zoom + pan composition', () => {
     const [view, setView] = useState(initialView);
     const select = useSelectTool(
       {
-        getObject: () => undefined,
+        getNode: () => undefined,
         getPose: () => null,
-        getObjects: () => [],
+        getNodes: () => [],
         getParent: () => null,
         setParent: () => {},
         setPose: () => {},

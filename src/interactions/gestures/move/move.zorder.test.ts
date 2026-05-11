@@ -17,7 +17,7 @@ interface AdapterOpts {
   getLayout: (id: string) => LayoutStrategy<P> | null;
   /** When true, do NOT install `getChildren` (test the fallback path). */
   omitGetChildren?: boolean;
-  /** Iteration order for `getObjects` — used by the fallback path. */
+  /** Iteration order for `getNodes` — used by the fallback path. */
   iterationOrder?: string[];
 }
 
@@ -28,8 +28,8 @@ function makeAdapter(opts: AdapterOpts): MoveAdapter<Obj, P> {
   });
   const all = opts.iterationOrder ?? Object.keys(poses);
   const adapter: MoveAdapter<Obj, P> = {
-    getObject: (id) => ({ id }),
-    getObjects: () => all.map((id) => ({ id })),
+    getNode: (id) => ({ id }),
+    getNodes: () => all.map((id) => ({ id })),
     getPose: (id) => poses[id],
     getParent: (id) => opts.parents[id] ?? null,
     setPose: setPoseSpy,
@@ -91,9 +91,9 @@ describe('useMove z-order-aware container pick', () => {
     expect(result.current.overlay!.destContainerId).toBe('B');
   });
 
-  it('picks A when sibling order puts A on top (z-order is the source of truth, not getObjects iteration)', () => {
+  it('picks A when sibling order puts A on top (z-order is the source of truth, not getNodes iteration)', () => {
     // Same setup but reverse the sibling order: A is last, so A is on top.
-    // getObjects iterates in a CONFLICTING order to prove the z-order walk
+    // getNodes iterates in a CONFLICTING order to prove the z-order walk
     // dominates the iteration-order proxy.
     const layout = acceptAllLayout();
     const adapter = makeAdapter({
@@ -152,7 +152,7 @@ describe('useMove z-order-aware container pick', () => {
     expect(result.current.overlay!.destContainerId).toBe('I');
   });
 
-  it('falls back to getObjects iteration order when getChildren is absent', () => {
+  it('falls back to getNodes iteration order when getChildren is absent', () => {
     // getChildren omitted — the fallback (last-in-iteration wins) decides.
     const layout = acceptAllLayout();
     const adapter = makeAdapter({

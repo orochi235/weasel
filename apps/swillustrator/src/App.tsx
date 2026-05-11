@@ -100,16 +100,16 @@ export function App() {
 
   const adapterRef = useRef<typeof adapter | null>(null);
   const adapter = {
-    getObject: (id: string) => itemsRef.current.find((o) => o.id === id),
-    getObjects: () => itemsRef.current,
+    getNode: (id: string) => itemsRef.current.find((o) => o.id === id),
+    getNodes: () => itemsRef.current,
     getPose: (id: string): Pose => {
       const o = itemsRef.current.find((x) => x.id === id);
       return o ? { x: o.x, y: o.y, width: o.width, height: o.height } : { x: 0, y: 0, width: 0, height: 0 };
     },
     setPose: (id: string, pose: Pose) =>
       setItems((cur) => cur.map((o) => (o.id === id ? { ...o, ...pose } : o))),
-    insertObject: (o: Obj) => setItems((cur) => [...cur, o]),
-    removeObject: (id: string) => setItems((cur) => cur.filter((o) => o.id !== id)),
+    insertNode: (o: Obj) => setItems((cur) => [...cur, o]),
+    removeNode: (id: string) => setItems((cur) => cur.filter((o) => o.id !== id)),
     getSelection: () => [...selection.current],
     setSelection: (ids: string[]) => selection.set(ids as NodeId[]),
     hitTestArea: (rect: Pose) =>
@@ -164,7 +164,7 @@ export function App() {
         stroke: { paint: { color: '#888' }, width: 1, dash: [3, 3] },
       }];
     },
-    getObject: (id) => itemsRef.current.find((o) => o.id === id) ?? null,
+    getNode: (id) => itemsRef.current.find((o) => o.id === id) ?? null,
     // Marquee is opt-in at the kit level — illustration apps want
     // rubber-band selection across drawn objects.
     areaSelect: { behaviors: [selectFromMarquee()] },
@@ -220,7 +220,7 @@ export function App() {
       };
     },
     adapter: {
-      addObject: (pose) => {
+      addNode: (pose) => {
         setItems((cur) => [...cur, pose]);
         return pose.id;
       },

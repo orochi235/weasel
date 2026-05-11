@@ -30,7 +30,7 @@ default ones. See [hooks.md](./hooks.md) and `src/canvas/Canvas.tsx`.
 
 Weasel never reads or writes your scene state directly. Every gesture takes
 an **adapter** — a small object the consumer implements that exposes the
-scene to the kit (`getObjects`, `getPose`, `setPose`, …) and accepts ops
+scene to the kit (`getNodes`, `getPose`, `setPose`, …) and accepts ops
 back. Hook-specific adapters (`MoveAdapter`, `ResizeAdapter`,
 `InsertAdapter`, `AreaSelectAdapter`, `RotateAdapter`) are narrow subsets of
 a hypothetical full `SceneAdapter`. TypeScript's structural typing means

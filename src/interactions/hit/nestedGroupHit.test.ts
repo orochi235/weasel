@@ -21,8 +21,8 @@ const NODES: Node[] = [
 ];
 
 const adapter = {
-  getObject: (id: string) => NODES.find((n) => n.id === id),
-  getObjects: () => NODES,
+  getNode: (id: string) => NODES.find((n) => n.id === id),
+  getNodes: () => NODES,
   getPose: (id: string) => NODES.find((n) => n.id === id)!.pose,
   getParent: (id: string) => NODES.find((n) => n.id === id)?.parent ?? null,
 };
@@ -79,8 +79,8 @@ describe('nestedGroupHitTester', () => {
     ];
     const t = nestedGroupHitTester(
       {
-        getObject: (id) => cnodes.find((n) => n.id === id),
-        getObjects: () => cnodes,
+        getNode: (id) => cnodes.find((n) => n.id === id),
+        getNodes: () => cnodes,
         getPose: (id) => cnodes.find((n) => n.id === id)!.pose,
         getParent: () => null,
       },

@@ -33,7 +33,7 @@ export function InsertDemo() {
     },
     commitPaste: () => [],
     snapshotSelection: () => ({ items: [] }),
-    insertObject: () => {},
+    insertNode: () => {},
     setSelection: () => {},
     getSelection: () => [] as string[],
   }), [scene]);

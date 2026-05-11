@@ -30,7 +30,7 @@
 
 **Modify:**
 
-- `src/core/adapters/types.ts` — add optional `getLayout?(containerId: string): LayoutStrategy<TPose> | null` to `MoveAdapter`. (Pose generic comes through naturally since `MoveAdapter` is already `<TObject, TPose>`.)
+- `src/core/adapters/types.ts` — add optional `getLayout?(containerId: string): LayoutStrategy<TPose> | null` to `MoveAdapter`. (Pose generic comes through naturally since `MoveAdapter` is already `<TNode, TPose>`.)
 - `src/interactions/gestures/types.ts` — extend `MoveOverlay<TPose>` with `hypotheticalChildPositions: Map<string, TPose>`, `sourceReflowPositions: Map<string, TPose>`, `destContainerId: string | null`, `accepted: boolean`. Default-empty maps when no layout is engaged.
 - `src/interactions/gestures/move/move.ts` — in `move()`: after pose-translation, run the layout pass and update overlay fields. In `end()`: when a layout accepted the drop, prefer `strategy.commitDrop(...)` ops + cross-container source-reflow ops over the default `createTransformOp` batch.
 - `src/index.ts` — export the layout module: `export * from './layout';`.
@@ -1454,8 +1454,8 @@ function makeAdapter(opts: {
   });
   const applyBatchSpy = vi.fn();
   return {
-    getObject: (id) => ({ id }),
-    getObjects: () => Object.keys(poses).map((id) => ({ id })),
+    getNode: (id) => ({ id }),
+    getNodes: () => Object.keys(poses).map((id) => ({ id })),
     getPose: (id) => poses[id],
     getParent: (id) => opts.parents[id] ?? null,
     setPose: setPoseSpy,
@@ -1608,7 +1608,7 @@ if (typeof getLayout === 'function') {
   // Find the top-most container whose bounds contain the dragged center
   // AND has a non-null layout AND is not the dragged object itself.
   const candidates: { id: string; bounds: { x: number; y: number; width: number; height: number }; layout: unknown }[] = [];
-  for (const obj of adapter.getObjects()) {
+  for (const obj of adapter.getNodes()) {
     if (obj.id === draggedId) continue;
     const layout = (getLayout as (id: string) => unknown).call(adapter, obj.id);
     if (!layout) continue;
@@ -1721,7 +1721,7 @@ const stateRef = useRef<{
   phase: 'idle' | 'pending' | 'active';
   startWorld: { x: number; y: number };
   startClient: { x: number; y: number };
-  ctx: GestureContext<TPose, TObject> | null;
+  ctx: GestureContext<TPose, TNode> | null;
   cascadeIds: string[];
   cascadeOriginWorld: Map<string, TPose>;
   layoutPass: {
@@ -2093,8 +2093,8 @@ export function LayoutDemo() {
   }), []);
 
   const adapter: MoveAdapter<Obj, P> = useMemo(() => ({
-    getObject: (id) => ({ id, kind: id in layouts ? 'container' : 'child' }),
-    getObjects: () => Object.keys(scene.poses).map((id) => ({
+    getNode: (id) => ({ id, kind: id in layouts ? 'container' : 'child' }),
+    getNodes: () => Object.keys(scene.poses).map((id) => ({
       id,
       kind: id in layouts ? 'container' : 'child' as const,
     })),

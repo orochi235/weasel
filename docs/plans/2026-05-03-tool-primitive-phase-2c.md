@@ -293,7 +293,7 @@ git commit -m "feat(layers): RenderLayer.draw takes view; world layers transform
 
 ```ts
 // DefaultLayersScene.drawOne becomes:
-drawOne: (ctx: CanvasRenderingContext2D, obj: TObject, pose: TPose, view: View) => void;
+drawOne: (ctx: CanvasRenderingContext2D, obj: TNode, pose: TPose, view: View) => void;
 
 // Inside the scene draw:
 draw: (ctx, _data, view) => {

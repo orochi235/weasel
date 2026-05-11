@@ -26,9 +26,9 @@ function makeAdapter(initial: { selection?: string[]; offset?: { dx: number; dy:
       return { items: pool.filter((p) => ids.includes(p.id)) };
     },
     getPasteOffset: () => initial.offset ?? { dx: 1, dy: 1 },
-    getObject: (id) => pool.find((p) => p.id === id),
-    insertObject: (o) => { pool.push(o); },
-    removeObject: (id) => {
+    getNode: (id) => pool.find((p) => p.id === id),
+    insertNode: (o) => { pool.push(o); },
+    removeNode: (id) => {
       const i = pool.findIndex((p) => p.id === id);
       if (i >= 0) pool.splice(i, 1);
     },
@@ -138,18 +138,18 @@ describe('useClipboard', () => {
       expect(helpers.batches[0].label).toBe('Cut node');
     });
 
-    it('falls back to stub object when getObject is omitted', () => {
+    it('falls back to stub object when getNode is omitted', () => {
       const helpers = makeAdapter();
       helpers.seed({ id: 'a', x: 0, y: 0 });
-      // strip getObject
+      // strip getNode
       const adapter = { ...helpers.adapter };
-      delete (adapter as { getObject?: unknown }).getObject;
+      delete (adapter as { getNode?: unknown }).getNode;
       const { result } = renderHook(() =>
         useClipboard(adapter, { getSelection: () => [asNodeId('a')] }),
       );
       act(() => { result.current.cut(); });
       expect(helpers.batches).toHaveLength(1);
-      // Op still runs; the stub satisfies removeObject(id).
+      // Op still runs; the stub satisfies removeNode(id).
       expect(helpers.pool.find((p) => p.id === 'a')).toBeUndefined();
     });
   });

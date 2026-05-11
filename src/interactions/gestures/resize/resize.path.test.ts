@@ -10,7 +10,7 @@ function makeAdapter(initial: Path) {
   const state = new Map<string, Path>([['a', initial]]);
   const batches: { ops: Op[]; label: string }[] = [];
   const adapter: ResizeAdapter<{ id: string }, Path> = {
-    getObject: (id) => (state.has(id) ? { id } : undefined),
+    getNode: (id) => (state.has(id) ? { id } : undefined),
     getPose: (id) => state.get(id)!,
     setPose: (id, pose) => state.set(id, pose),
     applyBatch: (ops, label) => {

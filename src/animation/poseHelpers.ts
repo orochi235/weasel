@@ -46,9 +46,9 @@ function recordTransformOp<TPose>(
   adapter.applyBatch([op], label);
 }
 
-export function tweenPose<TObject extends { id: string }, TPose>(
+export function tweenPose<TNode extends { id: string }, TPose>(
   animator: Animator,
-  adapter: SceneAdapter<TObject, TPose>,
+  adapter: SceneAdapter<TNode, TPose>,
   opts: TweenPoseOptions<TPose>,
 ): AnimationHandle {
   const geometry = (opts.geometry ?? (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>));
@@ -72,9 +72,9 @@ export function tweenPose<TObject extends { id: string }, TPose>(
   });
 }
 
-export function springPose<TObject extends { id: string }, TPose>(
+export function springPose<TNode extends { id: string }, TPose>(
   animator: Animator,
-  adapter: SceneAdapter<TObject, TPose>,
+  adapter: SceneAdapter<TNode, TPose>,
   opts: SpringPoseOptions<TPose>,
 ): AnimationHandle {
   const geometry = (opts.geometry ?? (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>));

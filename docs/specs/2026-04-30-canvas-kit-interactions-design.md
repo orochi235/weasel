@@ -41,8 +41,8 @@ Built-in factories (kit-shipped):
 |---|---|---|
 | `createTransformOp` | `{ id, from: TPose, to: TPose }` | `setPose(id, to)` / swap from/to |
 | `createReparentOp` | `{ id, from: parentId\|null, to: parentId\|null }` | `setParent(id, to)` / swap |
-| `createCreateOp` | `{ object: TObject }` | `insertObject(object)` / `createDeleteOp` |
-| `createDeleteOp` | `{ object: TObject }` | `removeObject(id)` / `createCreateOp` |
+| `createCreateOp` | `{ object: TNode }` | `insertNode(object)` / `createDeleteOp` |
+| `createDeleteOp` | `{ object: TNode }` | `removeNode(id)` / `createCreateOp` |
 | `createSetSelectionOp` | `{ from: string[], to: string[] }` | `setSelection(to)` / swap |
 
 `TPose` is opaque to the kit. The app declares its pose shape per object type:
@@ -61,10 +61,10 @@ Multi-op gestures use `applyBatch(ops, label)`. A planting drag that re-parents 
 ## SceneAdapter
 
 ```ts
-interface SceneAdapter<TObject, TPose> {
+interface SceneAdapter<TNode, TPose> {
   // Pull (gesture-time queries)
-  getObjects(): TObject[];
-  getObject(id: string): TObject | undefined;
+  getNodes(): TNode[];
+  getNode(id: string): TNode | undefined;
   getSelection(): string[];
   hitTest(worldX: number, worldY: number): string | null;
   getPose(id: string): TPose;
@@ -73,8 +73,8 @@ interface SceneAdapter<TObject, TPose> {
   // Mutators (called by op `apply` methods)
   setPose(id: string, pose: TPose): void;
   setParent(id: string, parentId: string | null): void;
-  insertObject(object: TObject): void;
-  removeObject(id: string): void;
+  insertNode(object: TNode): void;
+  removeNode(id: string): void;
   setSelection(ids: string[]): void;
 
   // Op submission (gesture commit point)
@@ -89,8 +89,8 @@ Per-hook narrow adapter interfaces (`MoveAdapter`, `ResizeAdapter`, `ClipboardAd
 ## Hook shape
 
 ```ts
-function useMoveInteraction<TObject, TPose>(
-  adapter: MoveAdapter<TObject, TPose>,
+function useMoveInteraction<TNode, TPose>(
+  adapter: MoveAdapter<TNode, TPose>,
   options: UseMoveInteractionOptions<TPose>,
 ): {
   bind: (el: HTMLElement | null) => void;

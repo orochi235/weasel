@@ -40,8 +40,8 @@ export function BezierEditDemo() {
   const selection = useSelection();
 
   const adapter = {
-    getObject: (id: string) => (id === ID ? { id } : undefined),
-    getObjects: () => [{ id: ID }],
+    getNode: (id: string) => (id === ID ? { id } : undefined),
+    getNodes: () => [{ id: ID }],
     getPose: () => pathRef.current,
     setPose: (_id: string, p: Pose) => setPath(p),
     // hitTestArea + applyOps: required for drag-marquee selection to work.
@@ -88,7 +88,7 @@ export function BezierEditDemo() {
       path: p,
       stroke: { paint: { color: '#f5b7a3' }, width: 2 },
     }],
-    getObject: (id) => (id === ID ? { id } : null),
+    getNode: (id) => (id === ID ? { id } : null),
     editAnchors: {
       hitRadius: HANDLE / zoom,
       overlayStyle: { selectedAnchorFill: '#7fb069' },

@@ -22,7 +22,7 @@ A small, composable animation module under `src/animation/`. Three layers:
 
 1. **Imperative animator core** (`useAnimator`) — per-Canvas rAF loop, three primitives: `tween` (duration + easing), `spring` (physics, retargets gracefully), `decay` (velocity-only, no destination — for momentum). Generic over any value `T` via interpolator/vector callbacks.
 2. **Pose helpers** — `tweenPose` / `springPose` close over the adapter and a pose descriptor's `lerp` method so the common "animate id from current pose to new pose" call site is a one-liner.
-3. **Adapter wrappers** (declarative) — `animateOnSetPose`, `animateLifecycle`, plus a `momentum` `MoveBehavior` plug-in. These wrap an existing adapter and turn its `setPose` / `insertObject` / `removeObject` calls into animations transparently.
+3. **Adapter wrappers** (declarative) — `animateOnSetPose`, `animateLifecycle`, plus a `momentum` `MoveBehavior` plug-in. These wrap an existing adapter and turn its `setPose` / `insertNode` / `removeNode` calls into animations transparently.
 
 The op log sees the **destination** pose (or insert/remove) once at animation start; in-flight frames bypass the op machinery and call `adapter.setPose` directly. Undo jumps to the pre-animation pose, history stays clean, and live state always reflects what's on screen.
 
@@ -165,15 +165,15 @@ interface TweenPoseOptions<TPose> {
   onDone?: () => void;
 }
 
-export function tweenPose<TObject extends { id: string }, TPose>(
+export function tweenPose<TNode extends { id: string }, TPose>(
   animator: Animator,
-  adapter: SceneAdapter<TObject, TPose>,
+  adapter: SceneAdapter<TNode, TPose>,
   opts: TweenPoseOptions<TPose>,
 ): AnimationHandle;
 
-export function springPose<TObject extends { id: string }, TPose>(
+export function springPose<TNode extends { id: string }, TPose>(
   animator: Animator,
-  adapter: SceneAdapter<TObject, TPose>,
+  adapter: SceneAdapter<TNode, TPose>,
   opts: SpringPoseOptions<TPose>,  // mirrors TweenPoseOptions but with spring fields
 ): AnimationHandle;
 ```
@@ -207,11 +207,11 @@ interface AnimateOnSetPoseOptions<TPose> {
   skipDuringGesture?: boolean;
 }
 
-export function animateOnSetPose<TObject extends { id: string }, TPose>(
-  adapter: SceneAdapter<TObject, TPose>,
+export function animateOnSetPose<TNode extends { id: string }, TPose>(
+  adapter: SceneAdapter<TNode, TPose>,
   animator: Animator,
   opts?: AnimateOnSetPoseOptions<TPose>,
-): SceneAdapter<TObject, TPose>;
+): SceneAdapter<TNode, TPose>;
 ```
 
 Wraps the adapter's `setPose`. On call, instead of writing the pose immediately, kicks off `tweenPose` (or `springPose`). The op-log entry is recorded once at animation start (transform from old → new), and the visible pose interpolates.
@@ -231,14 +231,14 @@ interface LifecycleAnimation<TPose> {
   geometry?: PoseDescriptor<TPose>;
 }
 
-export function animateLifecycle<TObject extends { id: string }, TPose>(
-  adapter: SceneAdapter<TObject, TPose>,
+export function animateLifecycle<TNode extends { id: string }, TPose>(
+  adapter: SceneAdapter<TNode, TPose>,
   animator: Animator,
   opts: LifecycleAnimation<TPose>,
-): SceneAdapter<TObject, TPose>;
+): SceneAdapter<TNode, TPose>;
 ```
 
-Wraps `insertObject` / `removeObject`. On insert: applies the object as normal (op fires, scene state correct), then immediately calls `setPose(id, enterFrom(finalPose))` and kicks a tween from there to `finalPose`. On remove: kicks the exit tween first (tweens current → `exitTo(current)`), and only calls the underlying `removeObject` in `onDone`. If undo fires mid-exit, the wrapper cancels the exit animation and the object is back where it was. (Mid-enter undo cancels the tween and removes the object — same as if the user had hit undo right after insert.)
+Wraps `insertNode` / `removeNode`. On insert: applies the object as normal (op fires, scene state correct), then immediately calls `setPose(id, enterFrom(finalPose))` and kicks a tween from there to `finalPose`. On remove: kicks the exit tween first (tweens current → `exitTo(current)`), and only calls the underlying `removeNode` in `onDone`. If undo fires mid-exit, the wrapper cancels the exit animation and the object is back where it was. (Mid-enter undo cancels the tween and removes the object — same as if the user had hit undo right after insert.)
 
 Common use: `animateLifecycle(adapter, animator, { enterFrom: (p) => ({ ...p, opacity: 0 }), exitTo: (p) => ({ ...p, opacity: 0 }), ms: 250 })` — requires the consumer's pose to carry an opacity field, or use `geometry` with a custom `lerp` that knows how to interpolate alpha. Scale-from-zero variant: `enterFrom: (p) => ({ ...p, width: 0, height: 0 })`.
 
@@ -337,7 +337,7 @@ function MyScene() {
 - `src/animation/easings.test.ts` — boundary values (`f(0) === 0`, `f(1) === 1`), shape sanity.
 - `src/animation/poseHelpers.test.ts` — `tweenPose` calls `setPose` at expected times; cancelKey collision cancels prior; `recordOp: false` skips the op emit.
 - `src/animation/wrappers/animateOnSetPose.test.tsx` — wrapped adapter's `setPose` triggers a tween, not an immediate write. `shouldAnimate` predicate respected. Underlying op is recorded once.
-- `src/animation/wrappers/animateLifecycle.test.tsx` — insert tweens from `enterFrom` to final; remove tweens to `exitTo` before underlying `removeObject` fires; mid-animation undo cancels.
+- `src/animation/wrappers/animateLifecycle.test.tsx` — insert tweens from `enterFrom` to final; remove tweens to `exitTo` before underlying `removeNode` fires; mid-animation undo cancels.
 - `src/animation/behaviors/momentum.test.tsx` — pointer-move history captured; on end, decay fires with computed velocity; below-threshold flicks skip decay.
 - `demo/demos/__tests__/animationDemo.integration.test.tsx` — drives the three demo paths.
 

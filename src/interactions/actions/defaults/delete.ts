@@ -10,7 +10,7 @@ export interface DeleteDeps {
   getSelection: () => NodeId[];
   /** Optional: capture the full object so the inverse `InsertOp` can restore
    *  the original payload on undo. If omitted, a stub `{ id }` is used. */
-  getObject?: (id: NodeId) => { id: string } | undefined | null;
+  getNode?: (id: NodeId) => { id: string } | undefined | null;
   applyBatch: (ops: Op[], label?: string) => void;
   /** Optional: subset of selection that should actually delete. Used to
    *  protect locked items. */
@@ -32,8 +32,8 @@ export function defaultDeleteAction(deps: DeleteDeps): Action {
       const ids = deps.filter ? deps.filter(sel) : sel;
       if (ids.length === 0) return;
       const ops: Op[] = ids.map((id) => {
-        const obj = deps.getObject?.(id) ?? { id };
-        return createDeleteOp({ object: obj });
+        const obj = deps.getNode?.(id) ?? { id };
+        return createDeleteOp({ node: obj });
       });
       ops.push(createSetSelectionOp({ from: sel, to: [] }));
       deps.applyBatch(ops, 'Delete');

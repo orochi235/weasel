@@ -132,12 +132,12 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /**
      * @experimental
-     * Inputs the kit can't synthesize on its own — currently `cloneObject`
+     * Inputs the kit can't synthesize on its own — currently `cloneNode`
      * for the `duplicate` default. When omitted, the `duplicate` default is
      * silently dropped from the registered set.
      */
     actionDefaults?: {
-      cloneObject?: (id: NodeId, offset: { dx: number; dy: number }) => { id: NodeId };
+      cloneNode?: (id: NodeId, offset: { dx: number; dy: number }) => { id: NodeId };
       /** Per-clone offset for the duplicate default. Default {dx:8,dy:8}. */
       duplicateOffset?: { dx: number; dy: number };
       /** Base nudge step. Default 1. */

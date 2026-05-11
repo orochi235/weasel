@@ -1,7 +1,7 @@
 /**
  * Pure resolver for the `actions` prop. Given a `StandardActionsDeps`-shaped
  * deps bundle, the consumer's `actions` prop, and the `defaults` overrides
- * (cloneObject / nudgeStep / etc.), produces the final `Action[]` per spec
+ * (cloneNode / nudgeStep / etc.), produces the final `Action[]` per spec
  * §D resolution rules.
  *
  * No React imports — `<SceneCanvas>` and `useStandardActions` both wrap this
@@ -35,7 +35,7 @@ export interface StandardActionsDeps<TPose> {
 }
 
 export interface StandardActionDefaults<TPose> {
-  cloneObject?: (id: NodeId, offset: { dx: number; dy: number }) => { id: NodeId };
+  cloneNode?: (id: NodeId, offset: { dx: number; dy: number }) => { id: NodeId };
   duplicateOffset?: { dx: number; dy: number };
   nudgeStep?: number;
   nudgeShiftStep?: number;
@@ -70,12 +70,12 @@ export function resolveActions<TPose>(
       getSelection: deps.getSelection,
       setSelection: deps.setSelection,
     }),
-    ...(actionDefaults?.cloneObject
+    ...(actionDefaults?.cloneNode
       ? {
           duplicate: defaultDuplicateAction({
             getSelection: deps.getSelection,
             applyBatch: deps.applyBatch,
-            cloneObject: actionDefaults.cloneObject,
+            cloneNode: actionDefaults.cloneNode,
             ...(actionDefaults.duplicateOffset !== undefined
               ? { offset: actionDefaults.duplicateOffset }
               : {}),

@@ -13,7 +13,7 @@ function ctx(originPose: Pose, currentPose: Pose, objectsById: Record<string, an
     modifiers: { alt: false, shift: false, meta: false, ctrl: false },
     pointer: { worldX: currentPose.x, worldY: currentPose.y, clientX: 0, clientY: 0 },
     adapter: {
-      getObject: (id: string) => objectsById[id],
+      getNode: (id: string) => objectsById[id],
     } as any,
     scratch: {},
   };

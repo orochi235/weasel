@@ -6,20 +6,20 @@ import { type InsertOverlayStyle } from './marquee';
 
 export type { InsertOverlayStyle };
 
-export interface UseInsertToolOptions<TPose, TObject extends { id: string } = { id: string }>
-  extends UseInsertOptions<TPose, TObject> {
+export interface UseInsertToolOptions<TPose, TNode extends { id: string } = { id: string }>
+  extends UseInsertOptions<TPose, TNode> {
   overlayStyle?: InsertOverlayStyle;
   /** Hit-test gate consulted before insertion. On hit, selects via
    *  ctx.selection.set and skips both the click and drag paths. */
   hitExisting?: (point: { x: number; y: number }) => string | string[] | null;
 }
 
-export function useInsertTool<TObject extends { id: string }, TPose>(
-  adapter: InsertAdapter<TObject>,
-  options: UseInsertToolOptions<TPose, TObject> = {},
+export function useInsertTool<TNode extends { id: string }, TPose>(
+  adapter: InsertAdapter<TNode>,
+  options: UseInsertToolOptions<TPose, TNode> = {},
 ): Tool<undefined> {
   const { hitExisting, overlayStyle, ...gestureOptions } = options;
-  const controller = useInsert<TObject, TPose>(adapter, gestureOptions);
+  const controller = useInsert<TNode, TPose>(adapter, gestureOptions);
   const { tool } = defineDragInsertTool({
     id: 'insert',
     cursor: 'crosshair',

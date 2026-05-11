@@ -43,8 +43,8 @@ export interface UseEditAnchorsToolOptions {
  *  at threshold-cross; `drag.onMove` calls `controller.move`;
  *  `drag.onEnd` calls `controller.end`. Escape cancels the drag and
  *  invokes `onExit` so the consumer can drop edit mode. */
-export function useEditAnchorsTool<TObject extends { id: string }>(
-  controller: EditAnchorsController<TObject>,
+export function useEditAnchorsTool<TNode extends { id: string }>(
+  controller: EditAnchorsController<TNode>,
   options: UseEditAnchorsToolOptions = {},
 ): Tool<EditAnchorsScratch> {
   const ctrlRef = useRef(controller);

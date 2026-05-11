@@ -25,14 +25,14 @@ function keyEvent(key: string, opts: { metaKey?: boolean; ctrlKey?: boolean; pre
 
 describe('useDuplicateTool', () => {
   it('declares id "duplicate" and meta+d keybinding', () => {
-    const adapter = { getSelection: () => ['a'], getObject: () => ({ id: 'a' }), cloneObject: (o: any) => ({ ...o, id: 'a2' }), applyOps: vi.fn() } as any;
+    const adapter = { getSelection: () => ['a'], getNode: () => ({ id: 'a' }), cloneNode: (o: any) => ({ ...o, id: 'a2' }), applyOps: vi.fn() } as any;
     const { result } = renderHook(() => useDuplicateTool(adapter, {}));
     expect(result.current.id).toBe('duplicate');
     expect(result.current.keybinding).toBe('meta+d');
   });
 
   it('claims meta+d / ctrl+d; passes plain d', () => {
-    const adapter = { getSelection: () => ['a'], getPose: () => ({}), cloneObject: (_id: string) => ({ id: 'a2' }), applyBatch: vi.fn() } as any;
+    const adapter = { getSelection: () => ['a'], getPose: () => ({}), cloneNode: (_id: string) => ({ id: 'a2' }), applyBatch: vi.fn() } as any;
     const { result } = renderHook(() => useDuplicateTool(adapter, {}));
     expect(result.current.keyboard!.onDown!(keyEvent('d', { metaKey: true }), makeCtx())).toBe('claim');
     expect(result.current.keyboard!.onDown!(keyEvent('d', { ctrlKey: true }), makeCtx())).toBe('claim');

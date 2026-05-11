@@ -27,7 +27,7 @@ In `src/canvas-kit/adapters/types.ts`, change:
 commitPaste(
   clipboard: ClipboardSnapshot,
   offset: { dx: number; dy: number },
-): TObject[];
+): TNode[];
 ```
 
 to:
@@ -37,7 +37,7 @@ commitPaste(
   clipboard: ClipboardSnapshot,
   offset: { dx: number; dy: number },
   ctx?: { dropPoint?: { worldX: number; worldY: number } },
-): TObject[];
+): TNode[];
 ```
 
 - [ ] **Step 0.2: Match the Garden adapter signature**
@@ -299,7 +299,7 @@ function makeAdapter(seedSelection: string[] = []): InsertAdapter<Obj> & {
       return [{ id: 'new1' }] as Obj[];
     }),
     snapshotSelection: (ids: string[]) => ({ items: ids.map((id) => ({ id })) }),
-    insertObject: (_o: Obj) => {},
+    insertNode: (_o: Obj) => {},
     setSelection: (ids: string[]) => { a.selection = [...ids]; },
     applyBatch: (ops: Op[], _label: string) => { a.applied.push(...ops); },
     getSelection: () => a.selection,
@@ -442,7 +442,7 @@ function makeAdapter() {
     commitInsert: () => null,
     commitPaste: () => [{ id: 'new1' } as Obj],
     snapshotSelection: (ids) => ({ items: ids.map((id) => ({ id })) }),
-    insertObject: () => {},
+    insertNode: () => {},
     setSelection: () => {},
     applyBatch: (ops, label) => { applied.push({ ops, label }); },
     getSelection: () => [],

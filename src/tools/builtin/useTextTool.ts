@@ -8,16 +8,16 @@ import { type InsertOverlayStyle } from './marquee';
 
 type ApplyBatch = (ops: Op[], label: string) => void;
 
-export interface UseTextToolOptions<TObject extends { id: string }> {
-  pointInsert: (point: { x: number; y: number }) => TObject | null;
-  commitInsert?: InsertAdapter<TObject>['commitInsert'];
+export interface UseTextToolOptions<TNode extends { id: string }> {
+  pointInsert: (point: { x: number; y: number }) => TNode | null;
+  commitInsert?: InsertAdapter<TNode>['commitInsert'];
   hitExisting?: (point: { x: number; y: number }) => string | string[] | null;
   minBounds?: { width: number; height: number };
   marqueeStyle?: InsertOverlayStyle;
 }
 
-export function useTextTool<TObject extends { id: string }>(
-  options: UseTextToolOptions<TObject>,
+export function useTextTool<TNode extends { id: string }>(
+  options: UseTextToolOptions<TNode>,
 ): Tool<undefined> {
   const { pointInsert, commitInsert, hitExisting, minBounds, marqueeStyle } = options;
 
@@ -26,19 +26,19 @@ export function useTextTool<TObject extends { id: string }>(
   // and clears it on end/cancel; useInsert.applyBatch reads through it.
   const applyBatchRef = useRef<ApplyBatch | null>(null);
 
-  const adapter = useMemo<InsertAdapter<TObject>>(
+  const adapter = useMemo<InsertAdapter<TNode>>(
     () => ({
       commitInsert: (b) => (commitInsert ? commitInsert(b) : null),
       commitPaste: () => [],
       snapshotSelection: () => ({ items: [] }),
-      insertObject: () => {},
+      insertNode: () => {},
       setSelection: () => {},
       getSelection: () => [],
     }),
     [commitInsert],
   );
 
-  const controller = useInsert<TObject, { x: number; y: number; width: number; height: number }>(
+  const controller = useInsert<TNode, { x: number; y: number; width: number; height: number }>(
     adapter,
     {
       pointInsert,

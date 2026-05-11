@@ -22,18 +22,18 @@ function makeAdapter(opts?: { commitReturnsNull?: boolean }) {
     snapshotSelection(_ids) {
       return { items: [] };
     },
-    insertObject(o) {
+    insertNode(o) {
       inserts.push(o);
     },
     setSelection(_ids) {},
     getSelection: () => [],
     applyBatch(ops, label) {
       batches.push({ ops, label });
-      // Simulate insertObject side-effect by recording.
+      // Simulate insertNode side-effect by recording.
       for (const op of ops) {
         op.apply({
-          insertObject: (o: Obj) => inserts.push(o),
-          removeObject: () => {},
+          insertNode: (o: Obj) => inserts.push(o),
+          removeNode: () => {},
         });
       }
     },

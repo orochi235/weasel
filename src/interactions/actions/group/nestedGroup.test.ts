@@ -30,13 +30,13 @@ function makeHarness(initial: Obj[], selection: string[] = []): Harness {
   h.adapter = ({
     getSelection: () => h.selection,
     setSelection: (ids: string[]) => { h.selection = [...ids]; },
-    getObject: (id: string) => h.scene.get(id),
+    getNode: (id: string) => h.scene.get(id),
     getPose: (id: string) => h.scene.get(id)!.pose,
     setPose: (id: string, pose: Rect) => { h.scene.get(id)!.pose = { ...pose }; },
     getParent: (id: string) => h.scene.get(id)!.parent,
     setParent: (id: string, parent: string | null) => { h.scene.get(id)!.parent = parent; },
-    insertObject: (obj: Obj) => { h.scene.set(obj.id, { ...obj, pose: { ...obj.pose } }); },
-    removeObject: (id: string) => { h.scene.delete(id); },
+    insertNode: (obj: Obj) => { h.scene.set(obj.id, { ...obj, pose: { ...obj.pose } }); },
+    removeNode: (id: string) => { h.scene.delete(id); },
     getChildren: (id: string | null) =>
       [...h.scene.values()].filter((o) => o.parent === id).map((o) => o.id),
     applyBatch: (ops: Op[], label: string) => {

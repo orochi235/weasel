@@ -1,8 +1,9 @@
 /**
  * @orochi235/weasel — domain-agnostic 2D scene-graph primitives for React +
- * canvas apps. No assumptions about what an "object" is beyond `{ id }`; pose
- * shape is generic, units are pluggable, and every interaction is wired
- * through a narrow adapter the consumer implements.
+ * canvas apps. A scene is a tree of `SceneNode`s; the kit makes no assumption
+ * about a node's payload beyond `{ id }`. Pose shape is generic, units are
+ * pluggable, and every interaction is wired through a narrow adapter the
+ * consumer implements.
  *
  * Surface map (broad strokes — see per-symbol JSDoc for detail):
  *   - View transform & viewport: `ViewTransform`, `worldToScreen`,

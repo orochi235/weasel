@@ -1092,7 +1092,7 @@ export function PanDemo() {
     getSelection: () => [],
     setSelection: () => {},
     getPose: (id) => items.find((r) => r.id === id) ?? null,
-    getObjects: () => items,
+    getNodes: () => items,
     setPose: (id, pose) => setItems((cur) => cur.map((r) => r.id === id ? { ...r, ...(pose as Rect) } : r)),
     applyBatch: () => {},
   });
@@ -1204,7 +1204,7 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
         getSelection: () => [],
         setSelection: () => {},
         getPose: () => null,
-        getObjects: () => [],
+        getNodes: () => [],
         setPose: () => {},
         applyBatch: () => {},
       });
@@ -1249,7 +1249,7 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
         getSelection: () => [],
         setSelection: () => {},
         getPose: () => null,
-        getObjects: () => [],
+        getNodes: () => [],
         setPose: () => {},
         applyBatch: () => {},
       });

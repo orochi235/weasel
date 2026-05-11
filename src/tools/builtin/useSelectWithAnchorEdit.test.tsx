@@ -13,8 +13,8 @@ function makePath(): PolygonPath {
 function makeAdapter(initial: Path) {
   let pose: Path = initial;
   return {
-    getObject: (id: string) => (id === 'p' ? { id } : undefined),
-    getObjects: () => [{ id: 'p' }],
+    getNode: (id: string) => (id === 'p' ? { id } : undefined),
+    getNodes: () => [{ id: 'p' }],
     getPose: (_id: string) => pose,
     getParent: () => null,
     setPose: (_id: string, p: Path) => { pose = p; },

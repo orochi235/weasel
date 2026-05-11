@@ -44,23 +44,23 @@ export function NestedGroupsDemo() {
   const selection: SelectionApi = useSelection();
   const selRef = useRef(selection); selRef.current = selection;
   const adapterRef = useRef<MoveAdapter<Node, Pose> & {
-    insertObject: (n: Node) => void;
-    removeObject: (id: string) => void;
+    insertNode: (n: Node) => void;
+    removeNode: (id: string) => void;
   }>(null!);
 
   const history = useMemo(() => createHistory({
     setPose: (id: string, p: Pose) => adapterRef.current.setPose(id, p),
     setParent: (id: string, parent: string | null) => adapterRef.current.setParent!(id, parent),
-    insertObject: (n: Node) => adapterRef.current.insertObject(n),
-    removeObject: (id: string) => adapterRef.current.removeObject(id),
+    insertNode: (n: Node) => adapterRef.current.insertNode(n),
+    removeNode: (id: string) => adapterRef.current.removeNode(id),
     setSelection: (ids: string[]) => selRef.current.set(ids as NodeId[]),
   }), []);
 
   const byId = (id: string) => nodesRef.current.find((n) => n.id === id);
 
   const adapter = {
-    getObject: (id: string) => byId(id),
-    getObjects: () => nodesRef.current,
+    getNode: (id: string) => byId(id),
+    getNodes: () => nodesRef.current,
     getPose: (id: string) => byId(id)!.pose,
     getParent: (id: string) => byId(id)?.parent ?? null,
     getChildren: (id: string | null) => nodesRef.current.filter((n) => n.parent === id).map((n) => n.id),
@@ -70,8 +70,8 @@ export function NestedGroupsDemo() {
       setNodes((ns) => ns.map((n) => (n.id === id ? { ...n, pose: { ...p } } : n))),
     setParent: (id: string, parent: string | null) =>
       setNodes((ns) => ns.map((n) => (n.id === id ? { ...n, parent } : n))),
-    insertObject: (n: Node) => setNodes((ns) => [...ns, n]),
-    removeObject: (id: string) => setNodes((ns) => ns.filter((n) => n.id !== id)),
+    insertNode: (n: Node) => setNodes((ns) => [...ns, n]),
+    removeNode: (id: string) => setNodes((ns) => ns.filter((n) => n.id !== id)),
     applyBatch: (ops: Op[], label: string) => history.applyBatch(ops, label),
     applyOps: (ops: Op[]) => history.applyBatch(ops, 'select'),
     hitTestArea: (rect: Pose) =>
@@ -136,7 +136,7 @@ export function NestedGroupsDemo() {
       path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
       fill: { color: 'rgba(127, 176, 105, 0.35)' },
     }],
-    getObject: (id) => adapter.getObject(id) ?? null,
+    getNode: (id) => adapter.getNode(id) ?? null,
     move: { cascadeWorldPose: worldPoseOf },
   });
   const tools = useTools({ active: 'select', registry: { select } });

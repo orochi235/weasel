@@ -13,17 +13,17 @@ export interface LifecycleAnimation<TPose> {
   geometry?: PoseDescriptor<TPose>;
 }
 
-export function animateLifecycle<TObject extends { id: string; pose?: TPose }, TPose>(
-  adapter: SceneAdapter<TObject, TPose>,
+export function animateLifecycle<TNode extends { id: string; pose?: TPose }, TPose>(
+  adapter: SceneAdapter<TNode, TPose>,
   animator: Animator,
   opts: LifecycleAnimation<TPose>,
-): SceneAdapter<TObject, TPose> {
+): SceneAdapter<TNode, TPose> {
   const ms = opts.ms ?? 200;
 
   return {
     ...adapter,
-    insertObject(object: TObject): void {
-      adapter.insertObject(object);
+    insertNode(object: TNode): void {
+      adapter.insertNode(object);
       if (!opts.enterFrom) return;
       const final = adapter.getPose(object.id);
       const start = opts.enterFrom(final);
@@ -37,9 +37,9 @@ export function animateLifecycle<TObject extends { id: string; pose?: TPose }, T
         recordOp: false,
       });
     },
-    removeObject(id: string): void {
+    removeNode(id: string): void {
       if (!opts.exitTo) {
-        adapter.removeObject(id);
+        adapter.removeNode(id);
         return;
       }
       const current = adapter.getPose(id);
@@ -50,7 +50,7 @@ export function animateLifecycle<TObject extends { id: string; pose?: TPose }, T
         easing: opts.easing,
         geometry: opts.geometry,
         recordOp: false,
-        onDone: () => adapter.removeObject(id),
+        onDone: () => adapter.removeNode(id),
       });
     },
   };

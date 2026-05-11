@@ -10,16 +10,16 @@ function makeAdapter(initial: Map<string, RectPose>) {
   const applyBatch = vi.fn((_ops: Op[], _label: string) => {});
   return {
     base: {
-      getObjects: () => [],
-      getObject: (id: string) => (initial.has(id) ? { id } : undefined),
+      getNodes: () => [],
+      getNode: (id: string) => (initial.has(id) ? { id } : undefined),
       getSelection: () => [],
       hitTest: () => null,
       getPose: (id: string) => initial.get(id)!,
       getParent: () => null,
       setPose,
       setParent: () => {},
-      insertObject: () => {},
-      removeObject: () => {},
+      insertNode: () => {},
+      removeNode: () => {},
       setSelection: () => {},
       applyBatch,
     },

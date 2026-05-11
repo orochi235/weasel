@@ -14,14 +14,14 @@ export interface DeleteAdapter {
   /** Optional: provide the object for a given id; required by `createDeleteOp`
    *  to capture the object for invert/insert. If omitted, a minimal stub
    *  `{ id }` is used — undo will only restore the id, not the full object. */
-  getObject?(id: NodeId): { id: string } | undefined | null;
+  getNode?(id: NodeId): { id: string } | undefined | null;
   /** Optional: op-batch entry point. When omitted, ops apply directly. */
   applyBatch?(ops: Op[], label: string): void;
   /** Optional: clear selection after delete. If omitted, the hook still
    *  emits a SetSelectionOp([]) alongside DeleteOps. */
   setSelection?(ids: NodeId[]): void;
-  /** Optional: removeObject mutator wired by DeleteOp when applyBatch is omitted. */
-  removeObject?(id: string): void;
+  /** Optional: removeNode mutator wired by DeleteOp when applyBatch is omitted. */
+  removeNode?(id: string): void;
 }
 
 /** Options for `useDelete`. */
@@ -62,8 +62,8 @@ export function useDelete(
     const ids = o.filter ? o.filter(sel) : sel;
     if (ids.length === 0) return [];
     const ops: Op[] = ids.map((id) => {
-      const obj = a.getObject?.(id) ?? { id };
-      return createDeleteOp({ object: obj });
+      const obj = a.getNode?.(id) ?? { id };
+      return createDeleteOp({ node: obj });
     });
     ops.push(createSetSelectionOp({ from: sel, to: [] }));
     dispatchApplyBatch(a, ops, o.label ?? 'Delete');

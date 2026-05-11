@@ -4,7 +4,7 @@
 
 **Goal:** Ship a `src/animation/` module — a per-Canvas rAF-driven animator (`tween` / `spring` / `decay`), pose-aware helpers (`tweenPose` / `springPose`), three adapter wrappers (`animateOnSetPose`, `animateLifecycle`), and a `momentum` `MoveBehavior`, all composable with the existing scene/move stack.
 
-**Architecture:** The animator owns one rAF loop per Canvas, ticking active animations and writing through `adapter.setPose` directly (bypassing op generation). One transform op fires at animation start so undo/history stay clean. Wrappers compose by intercepting `setPose` / `insertObject` / `removeObject` on a base adapter. The `momentum` behavior plugs into `useMove`'s existing behavior pipeline and triggers a `decay` on release.
+**Architecture:** The animator owns one rAF loop per Canvas, ticking active animations and writing through `adapter.setPose` directly (bypassing op generation). One transform op fires at animation start so undo/history stay clean. Wrappers compose by intercepting `setPose` / `insertNode` / `removeNode` on a base adapter. The `momentum` behavior plugs into `useMove`'s existing behavior pipeline and triggers a `decay` on release.
 
 **Tech Stack:** TypeScript + React (animator is a hook), Vitest with `now`-injection for deterministic frame ticks. No new runtime deps.
 
@@ -1047,8 +1047,8 @@ interface Obj { id: string }
 function makeAdapter(initial: Map<string, RectPose>) {
   const ops: { ops: Op[]; label: string }[] = [];
   const adapter = {
-    getObjects: () => [],
-    getObject: (id: string): Obj | undefined => (initial.has(id) ? { id } : undefined),
+    getNodes: () => [],
+    getNode: (id: string): Obj | undefined => (initial.has(id) ? { id } : undefined),
     getSelection: () => [],
     hitTest: () => null,
     getPose: (id: string) => initial.get(id)!,
@@ -1057,8 +1057,8 @@ function makeAdapter(initial: Map<string, RectPose>) {
       initial.set(id, pose);
     }),
     setParent: () => {},
-    insertObject: () => {},
-    removeObject: () => {},
+    insertNode: () => {},
+    removeNode: () => {},
     setSelection: () => {},
     applyBatch: vi.fn((batch: Op[], label: string) => {
       ops.push({ ops: batch, label });
@@ -1211,9 +1211,9 @@ function recordTransformOp<TPose>(
   adapter.applyBatch([op], label);
 }
 
-export function tweenPose<TObject extends { id: string }, TPose>(
+export function tweenPose<TNode extends { id: string }, TPose>(
   animator: Animator,
-  adapter: SceneAdapter<TObject, TPose>,
+  adapter: SceneAdapter<TNode, TPose>,
   opts: TweenPoseOptions<TPose>,
 ): AnimationHandle {
   const geometry = (opts.geometry ?? (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>));
@@ -1237,9 +1237,9 @@ export function tweenPose<TObject extends { id: string }, TPose>(
   });
 }
 
-export function springPose<TObject extends { id: string }, TPose>(
+export function springPose<TNode extends { id: string }, TPose>(
   animator: Animator,
-  adapter: SceneAdapter<TObject, TPose>,
+  adapter: SceneAdapter<TNode, TPose>,
   opts: SpringPoseOptions<TPose>,
 ): AnimationHandle {
   const geometry = (opts.geometry ?? (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>));
@@ -1318,16 +1318,16 @@ function makeAdapter(initial: Map<string, RectPose>) {
   const applyBatch = vi.fn((_ops: Op[], _label: string) => {});
   return {
     base: {
-      getObjects: () => [],
-      getObject: (id: string) => (initial.has(id) ? { id } : undefined),
+      getNodes: () => [],
+      getNode: (id: string) => (initial.has(id) ? { id } : undefined),
       getSelection: () => [],
       hitTest: () => null,
       getPose: (id: string) => initial.get(id)!,
       getParent: () => null,
       setPose,
       setParent: () => {},
-      insertObject: () => {},
-      removeObject: () => {},
+      insertNode: () => {},
+      removeNode: () => {},
       setSelection: () => {},
       applyBatch,
     },
@@ -1440,11 +1440,11 @@ export interface AnimateOnSetPoseOptions<TPose> {
   opLabel?: string;
 }
 
-export function animateOnSetPose<TObject extends { id: string }, TPose>(
-  adapter: SceneAdapter<TObject, TPose>,
+export function animateOnSetPose<TNode extends { id: string }, TPose>(
+  adapter: SceneAdapter<TNode, TPose>,
   animator: Animator,
   opts: AnimateOnSetPoseOptions<TPose> = {},
-): SceneAdapter<TObject, TPose> {
+): SceneAdapter<TNode, TPose> {
   const ms = opts.ms ?? 200;
   const skipPredicate = (id: string, from: TPose, to: TPose): boolean => {
     if (opts.shouldAnimate) return !opts.shouldAnimate(id, from, to);
@@ -1512,7 +1512,7 @@ EOF
 
 ### Task 9: `animateLifecycle` wrapper
 
-Wrap insert/remove so they tween from `enterFrom` and to `exitTo` respectively. Underlying `removeObject` only fires after the exit tween settles.
+Wrap insert/remove so they tween from `enterFrom` and to `exitTo` respectively. Underlying `removeNode` only fires after the exit tween settles.
 
 **Files:**
 - Create: `src/animation/wrappers/animateLifecycle.ts`
@@ -1531,25 +1531,25 @@ interface RectPose { x: number; y: number; width: number; height: number }
 interface Obj { id: string; pose: RectPose }
 
 function makeAdapter(initial: Map<string, RectPose>) {
-  const insertObject = vi.fn((o: Obj) => initial.set(o.id, o.pose));
-  const removeObject = vi.fn((id: string) => initial.delete(id));
+  const insertNode = vi.fn((o: Obj) => initial.set(o.id, o.pose));
+  const removeNode = vi.fn((id: string) => initial.delete(id));
   const setPose = vi.fn((id: string, p: RectPose) => initial.set(id, p));
   return {
     base: {
-      getObjects: () => [],
-      getObject: (id: string) => (initial.has(id) ? { id, pose: initial.get(id)! } : undefined),
+      getNodes: () => [],
+      getNode: (id: string) => (initial.has(id) ? { id, pose: initial.get(id)! } : undefined),
       getSelection: () => [],
       hitTest: () => null,
       getPose: (id: string) => initial.get(id)!,
       getParent: () => null,
       setPose,
       setParent: () => {},
-      insertObject,
-      removeObject,
+      insertNode,
+      removeNode,
       setSelection: () => {},
     },
-    insertObject,
-    removeObject,
+    insertNode,
+    removeNode,
     setPose,
   };
 }
@@ -1570,16 +1570,16 @@ describe('animateLifecycle.insert', () => {
   it('inserts immediately, then tweens visible pose from enterFrom to final', () => {
     const clock = makeClock();
     const initial = new Map<string, RectPose>();
-    const { base, insertObject, setPose } = makeAdapter(initial);
+    const { base, insertNode, setPose } = makeAdapter(initial);
     const { result } = renderHook(() => useAnimator(clock));
     const wrapped = animateLifecycle(base as never, result.current, {
       enterFrom: (p) => ({ ...p, width: 0, height: 0 }),
       ms: 100,
     });
     act(() => {
-      wrapped.insertObject({ id: 'a', pose: { x: 10, y: 10, width: 20, height: 20 } } as never);
+      wrapped.insertNode({ id: 'a', pose: { x: 10, y: 10, width: 20, height: 20 } } as never);
     });
-    expect(insertObject).toHaveBeenCalledTimes(1);
+    expect(insertNode).toHaveBeenCalledTimes(1);
     // First setPose call should have set the entry pose (width 0).
     expect(setPose).toHaveBeenCalledWith('a', { x: 10, y: 10, width: 0, height: 0 });
     act(() => clock.advance(0));
@@ -1591,24 +1591,24 @@ describe('animateLifecycle.insert', () => {
 });
 
 describe('animateLifecycle.remove', () => {
-  it('tweens to exitTo first, calls removeObject only after settle', () => {
+  it('tweens to exitTo first, calls removeNode only after settle', () => {
     const clock = makeClock();
     const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 20, height: 20 }]]);
-    const { base, removeObject, setPose } = makeAdapter(initial);
+    const { base, removeNode, setPose } = makeAdapter(initial);
     const { result } = renderHook(() => useAnimator(clock));
     const wrapped = animateLifecycle(base as never, result.current, {
       exitTo: (p) => ({ ...p, width: 0, height: 0 }),
       ms: 100,
     });
     act(() => {
-      wrapped.removeObject('a');
+      wrapped.removeNode('a');
     });
-    expect(removeObject).not.toHaveBeenCalled();
+    expect(removeNode).not.toHaveBeenCalled();
     act(() => clock.advance(0));
     act(() => clock.advance(100));
     const last = setPose.mock.calls[setPose.mock.calls.length - 1][1];
     expect(last.width).toBeCloseTo(0, 1);
-    expect(removeObject).toHaveBeenCalledWith('a');
+    expect(removeNode).toHaveBeenCalledWith('a');
   });
 });
 ```
@@ -1636,17 +1636,17 @@ export interface LifecycleAnimation<TPose> {
   geometry?: PoseDescriptor<TPose>;
 }
 
-export function animateLifecycle<TObject extends { id: string; pose?: TPose }, TPose>(
-  adapter: SceneAdapter<TObject, TPose>,
+export function animateLifecycle<TNode extends { id: string; pose?: TPose }, TPose>(
+  adapter: SceneAdapter<TNode, TPose>,
   animator: Animator,
   opts: LifecycleAnimation<TPose>,
-): SceneAdapter<TObject, TPose> {
+): SceneAdapter<TNode, TPose> {
   const ms = opts.ms ?? 200;
 
   return {
     ...adapter,
-    insertObject(object: TObject): void {
-      adapter.insertObject(object);
+    insertNode(object: TNode): void {
+      adapter.insertNode(object);
       if (!opts.enterFrom) return;
       const final = adapter.getPose(object.id);
       const start = opts.enterFrom(final);
@@ -1660,9 +1660,9 @@ export function animateLifecycle<TObject extends { id: string; pose?: TPose }, T
         recordOp: false,
       });
     },
-    removeObject(id: string): void {
+    removeNode(id: string): void {
       if (!opts.exitTo) {
-        adapter.removeObject(id);
+        adapter.removeNode(id);
         return;
       }
       const current = adapter.getPose(id);
@@ -1673,7 +1673,7 @@ export function animateLifecycle<TObject extends { id: string; pose?: TPose }, T
         easing: opts.easing,
         geometry: opts.geometry,
         recordOp: false,
-        onDone: () => adapter.removeObject(id),
+        onDone: () => adapter.removeNode(id),
       });
     },
   };
@@ -1776,8 +1776,8 @@ function makeCtx(initialPose: RectPose, setPose: (id: string, p: RectPose) => vo
     modifiers: { shift: false, alt: false, ctrl: false, meta: false } as never,
     pointer: { worldX: 0, worldY: 0, clientX: 0, clientY: 0 } as never,
     adapter: {
-      getObject: () => ({ id: 'a' }),
-      getObjects: () => [{ id: 'a' }],
+      getNode: () => ({ id: 'a' }),
+      getNodes: () => [{ id: 'a' }],
       getPose: (id: string) => initialPose,
       getParent: () => null,
       setPose: (id: string, p: RectPose) => { setPose(id, p); },
@@ -2194,7 +2194,7 @@ describe('AnimationDemo', () => {
 });
 ```
 
-NOTE: if the kit's `<Canvas>` renders to `<canvas>` (raster) rather than `<svg>`, querying `rect` won't work. In that case, swap the assertion to count via the adapter (e.g., expose a data attribute on the wrapping div, or call `getObjects()` on a hoisted adapter). The reviewer should reject the test if it asserts on something that doesn't exist in the rendered output.
+NOTE: if the kit's `<Canvas>` renders to `<canvas>` (raster) rather than `<svg>`, querying `rect` won't work. In that case, swap the assertion to count via the adapter (e.g., expose a data attribute on the wrapping div, or call `getNodes()` on a hoisted adapter). The reviewer should reject the test if it asserts on something that doesn't exist in the rendered output.
 
 - [ ] **Step 2: Run test to verify it passes**
 

@@ -11,17 +11,17 @@ import { useClipboardOps, type UseClipboardOpsReturn } from './clipboardOps';
 
 /** Adapter for `useClipboard`. Extends `InsertAdapter` with the lookup
  *  needed by `cut` (capture the object so the resulting `DeleteOp` can invert
- *  back to an `InsertOp`). `removeObject` is also required so `DeleteOp.apply`
+ *  back to an `InsertOp`). `removeNode` is also required so `DeleteOp.apply`
  *  can take effect against the same adapter. */
-export interface ClipboardAdapter<TObject extends { id: string }>
-  extends InsertAdapter<TObject> {
+export interface ClipboardAdapter<TNode extends { id: string }>
+  extends InsertAdapter<TNode> {
   /** Capture the full object for `cut` so undo can re-insert it intact. If
    *  omitted, `cut` falls back to a stub `{ id }` — undo will only restore the
    *  id, not the original object payload. */
-  getObject?(id: string): TObject | undefined;
+  getNode?(id: string): TNode | undefined;
   /** Mutator wired by `DeleteOp.apply`. Required for `cut` to actually remove
    *  the originals. */
-  removeObject(id: string): void;
+  removeNode(id: string): void;
 }
 
 /** Options for `useClipboard`. */
@@ -54,8 +54,8 @@ export interface UseClipboardReturn extends UseClipboardOpsReturn {
  *  actions (`clipboard.copy`, `clipboard.cut`, `clipboard.paste`) into a
  *  surrounding `<ActionsProvider>` when one is in scope, or falls back to
  *  document keydown listeners when not. */
-export function useClipboard<TObject extends { id: string }>(
-  adapter: ClipboardAdapter<TObject>,
+export function useClipboard<TNode extends { id: string }>(
+  adapter: ClipboardAdapter<TNode>,
   options: UseClipboardOptions,
 ): UseClipboardReturn {
   const cb = useClipboardOps(adapter, {
@@ -77,8 +77,8 @@ export function useClipboard<TObject extends { id: string }>(
     cb.copy();
     const a = adapterRef.current;
     const ops: Op[] = ids.map((id) => {
-      const obj = a.getObject?.(id) ?? ({ id } as unknown as TObject);
-      return createDeleteOp({ object: obj });
+      const obj = a.getNode?.(id) ?? ({ id } as unknown as TNode);
+      return createDeleteOp({ node: obj });
     });
     ops.push(createSetSelectionOp({ from: ids, to: [] }));
     dispatchApplyBatch(a, ops, optsRef.current.cutLabel ?? 'Cut');

@@ -19,8 +19,8 @@
 - New `<SceneCanvas>` props (both `@experimental`):
   - `actions?: ActionsProp` — `null` to disable all defaults; otherwise a
     record of `{ id → entry }` for partial override / disable / extension.
-  - `actionDefaults?: { cloneObject, duplicateOffset, nudgeStep,
-    nudgeShiftStep }` for inputs the kit can't synthesize. `cloneObject`
+  - `actionDefaults?: { cloneNode, duplicateOffset, nudgeStep,
+    nudgeShiftStep }` for inputs the kit can't synthesize. `cloneNode`
     gates the duplicate default — when omitted, duplicate is silently
     dropped from the registered set.
 - Auto-mount: when no parent `<ActionsProvider>` is in scope, SceneCanvas

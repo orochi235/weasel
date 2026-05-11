@@ -108,8 +108,8 @@ describe('<Canvas>', () => {
       const sel = useSelection({ mode: 'multi' });
       sel.applyClick = vi.fn((id: string) => seen.push([id]));
       const adapter = {
-        getObjects: () => [{ id: 'a', x: 0, y: 0, width: 50, height: 50 }] as Rect[],
-        getObject: (id: string) => (id === 'a'
+        getNodes: () => [{ id: 'a', x: 0, y: 0, width: 50, height: 50 }] as Rect[],
+        getNode: (id: string) => (id === 'a'
           ? { id: 'a', x: 0, y: 0, width: 50, height: 50 } as Rect
           : undefined),
         getPose: (id: string) => (id === 'a' ? { x: 0, y: 0, width: 50, height: 50 } : null) as Pose,
@@ -120,7 +120,7 @@ describe('<Canvas>', () => {
         pickEvery: () => ['a'],
         boundsOf: () => ({ x: 0, y: 0, width: 50, height: 50 }),
         drawGhost: () => [],
-        getObject: (id) => adapter.getObject(id) ?? null,
+        getNode: (id) => adapter.getNode(id) ?? null,
       });
       const tools = useTools({ active: 'select', registry: { select } });
       return <Canvas width={50} height={50} layers={{}} adapter={adapter} selection={sel} tools={tools} clientToWorld={() => [5, 5]} />;
@@ -148,8 +148,8 @@ describe('<Canvas>', () => {
     function TestHarness() {
       const sel = useSelection({ mode: 'multi' });
       const adapter = {
-        getObjects: () => [] as Rect[],
-        getObject: () => undefined,
+        getNodes: () => [] as Rect[],
+        getNode: () => undefined,
         getPose: () => ({ x: 0, y: 0, width: 0, height: 0 }) as Pose,
         setPose: () => {},
         ...sel.adapterMethods,
@@ -158,7 +158,7 @@ describe('<Canvas>', () => {
         pickEvery: () => ['a'],
         boundsOf: () => ({ x: 0, y: 0, width: 50, height: 50 }),
         drawGhost: () => [],
-        getObject: () => null,
+        getNode: () => null,
       });
       const tools = useTools({ active: 'select', registry: { select } });
       return <Canvas width={50} height={50} layers={{}} adapter={adapter} selection={sel} tools={tools} />;
@@ -1054,8 +1054,8 @@ describe('Canvas baseBoundsOf synthesis', () => {
     const item: RotPose = { id: 'a', x: 0, y: 0, width: 100, height: 60, rotation: Math.PI / 4 };
 
     const adapter = {
-      getObjects: () => [item],
-      getObject: (id: string) => (id === 'a' ? item : undefined),
+      getNodes: () => [item],
+      getNode: (id: string) => (id === 'a' ? item : undefined),
       getPose: (id: string): RotPose | null => (id === 'a' ? item : null),
       setPose: () => {},
       getSelected: () => [],

@@ -33,12 +33,12 @@ Phase 1's `MoveBehavior<TPose>` becomes a special case of:
 
 ```ts
 interface GestureBehavior<TPose, TProposed> {
-  onStart?(ctx: GestureContext<TObject, TPose>): void;
+  onStart?(ctx: GestureContext<TNode, TPose>): void;
   onMove?(
-    ctx: GestureContext<TObject, TPose>,
+    ctx: GestureContext<TNode, TPose>,
     proposed: TProposed,
   ): { /* per-hook fields */ } | void;
-  onEnd?(ctx: GestureContext<TObject, TPose>): Op[] | null | void;
+  onEnd?(ctx: GestureContext<TNode, TPose>): Op[] | null | void;
 }
 
 type MoveBehavior<TPose>   = GestureBehavior<TPose, TPose>;
@@ -61,8 +61,8 @@ type InsertBehavior<TPose> = GestureBehavior<TPose, { start: TPose; current: TPo
 interface ResizePose { x: number; y: number; width: number; height: number }
 type ResizeAnchor = { x: 'min'|'max'|'free'; y: 'min'|'max'|'free' };
 
-interface ResizeAdapter<TObject extends { id: string }, TPose extends ResizePose> {
-  getObject(id: string): TObject | undefined;
+interface ResizeAdapter<TNode extends { id: string }, TPose extends ResizePose> {
+  getNode(id: string): TNode | undefined;
   getPose(id: string): TPose;
   setPose(id: string, pose: TPose): void;
   applyBatch(ops: Op[], label: string): void;
@@ -101,8 +101,8 @@ The hook does not own resize-handle hit-testing — the consumer detects the han
 ```ts
 interface InsertBounds { x: number; y: number; width: number; height: number }
 
-interface InsertAdapter<TObject extends { id: string }> {
-  commitInsert(bounds: InsertBounds): TObject | null;   // null = abort (e.g., no active tool)
+interface InsertAdapter<TNode extends { id: string }> {
+  commitInsert(bounds: InsertBounds): TNode | null;   // null = abort (e.g., no active tool)
   applyBatch(ops: Op[], label: string): void;
 }
 
@@ -257,7 +257,7 @@ const insert = useInsertInteraction(insertAdapter, {
 - `useInsertInteraction.test.ts` — degenerate bounds abort with no batch; commit emits `[CreateOp({ object })]`; `commitInsert` returning null aborts; cancel produces no batch.
 
 **Garden integration**:
-- `zoneResize.test.ts` / `structureResize.test.ts` — adapter wrappers thread checkpoint correctly; `getObject` round-trips.
+- `zoneResize.test.ts` / `structureResize.test.ts` — adapter wrappers thread checkpoint correctly; `getNode` round-trips.
 - `insert.test.ts` — `commitInsert` chooses zone vs structure by `plottingTool.category`; returns null when no tool active.
 
 **Manual smoke** after CanvasStack migration: drag handle resize, sub-grid resize, alt-bypass, insert structures and zones, escape during gesture.

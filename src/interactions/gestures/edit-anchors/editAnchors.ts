@@ -9,8 +9,8 @@ import { enumerateAnchors, withCoord } from './geometry';
 import type { DebugSink } from '../../../debug/types';
 
 /** Adapter for `useEditAnchors` — narrow read/write of one object's path pose. */
-export interface EditAnchorsAdapter<TObject extends { id: string }> {
-  getObject(id: string): TObject | undefined;
+export interface EditAnchorsAdapter<TNode extends { id: string }> {
+  getNode(id: string): TNode | undefined;
   /** Must return a `Path`; only `kind === 'polygon'` is editable. */
   getPose(id: string): Path;
   setPose(id: string, pose: Path): void;
@@ -57,7 +57,7 @@ export interface UseEditAnchorsOptions {
 }
 
 /** Return shape of `useEditAnchors`. */
-export interface EditAnchorsController<TObject extends { id: string }> {
+export interface EditAnchorsController<TNode extends { id: string }> {
   start(args: EditAnchorsStartArgs): void;
   move(args: EditAnchorsMoveArgs): boolean;
   end(): void;
@@ -67,7 +67,7 @@ export interface EditAnchorsController<TObject extends { id: string }> {
   tryHit(worldX: number, worldY: number): { id: string; hit: AnchorHit } | null;
   /** Clear the highlighted anchor selection (stays in edit mode). */
   clearSelection(): void;
-  adapter: EditAnchorsAdapter<TObject>;
+  adapter: EditAnchorsAdapter<TNode>;
 }
 
 interface DragState {
@@ -78,10 +78,10 @@ interface DragState {
   current: PolygonPath | null;
 }
 
-export function useEditAnchors<TObject extends { id: string }>(
-  adapter: EditAnchorsAdapter<TObject>,
+export function useEditAnchors<TNode extends { id: string }>(
+  adapter: EditAnchorsAdapter<TNode>,
   options: UseEditAnchorsOptions = {},
-): EditAnchorsController<TObject> {
+): EditAnchorsController<TNode> {
   const { hitRadius = 8, editLabel = 'Edit anchors', editingId = null, debug } = options;
   // Latest-value refs so controller methods stay referentially stable.
   const adapterRef = useRef(adapter);
@@ -228,7 +228,7 @@ export function useEditAnchors<TObject extends { id: string }>(
   const overlayRef = useRef(overlay);
   overlayRef.current = overlay;
   const isActiveCb = useCallback(() => stateRef.current.active, []);
-  const controller = useMemo<EditAnchorsController<TObject>>(() => ({
+  const controller = useMemo<EditAnchorsController<TNode>>(() => ({
     start,
     move,
     end,

@@ -43,13 +43,13 @@ import { useKeybinding } from '../useKeybinding';
 import { useActionsRegistry, type Action } from '../registry';
 
 /** Adapter for `useNestedGroup` / `useNestedUngroup`. */
-export interface NestedGroupActionAdapter<TObject extends { id: string }, TPose>
+export interface NestedGroupActionAdapter<TNode extends { id: string }, TPose>
   extends PoseAdapter<TPose> {
   /** Read current selection. */
   getSelection(): NodeId[];
   /** Look up an existing scene object — used by ungroup to recover the group
    *  object so the dissolve op can invert into a re-insert. */
-  getObject(id: string): TObject | undefined;
+  getNode(id: string): TNode | undefined;
   /** Enumerate direct children of `id` (`null` = root siblings). Required
    *  for ungroup to find the members of a nested group. Order doesn't
    *  matter for the hook itself; the hook does not reorder children. */
@@ -59,12 +59,12 @@ export interface NestedGroupActionAdapter<TObject extends { id: string }, TPose>
 }
 
 /** Options for `useNestedGroup`. */
-export interface UseNestedGroupOptions<TObject extends { id: string }, TPose> {
+export interface UseNestedGroupOptions<TNode extends { id: string }, TPose> {
   /** Mint the new group scene object. Receives the chosen group id, the
    *  group's local pose (in the common parent's frame), and the child ids.
    *  The returned object is inserted into the scene before children are
    *  reparented under it. */
-  groupFactory: (args: { id: string; localPose: TPose; childIds: string[] }) => TObject;
+  groupFactory: (args: { id: string; localPose: TPose; childIds: string[] }) => TNode;
   /** Compose a parent local + child local into the equivalent pose one frame
    *  up. For axis-aligned rects, pass `composeRectPose`. */
   composePose: (parent: TPose, child: TPose) => TPose;
@@ -121,9 +121,9 @@ function defaultGroupPoseFromChildren<TPose>(world: TPose[]): TPose {
 
 /** Selection-grouping action that inserts a real scene-graph parent and
  *  reparents the selection under it. Optionally binds Mod+G. */
-export function useNestedGroup<TObject extends { id: string }, TPose>(
-  adapter: NestedGroupActionAdapter<TObject, TPose>,
-  options: UseNestedGroupOptions<TObject, TPose>,
+export function useNestedGroup<TNode extends { id: string }, TPose>(
+  adapter: NestedGroupActionAdapter<TNode, TPose>,
+  options: UseNestedGroupOptions<TNode, TPose>,
 ): UseNestedGroupReturn {
   const adapterRef = useRef(adapter);
   adapterRef.current = adapter;
@@ -165,7 +165,7 @@ export function useNestedGroup<TObject extends { id: string }, TPose>(
       : o.composePose(composeWorldPose(a, newGroupParent, o.composePose), groupLocal);
 
     const ops: Op[] = [];
-    ops.push(createInsertOp({ object: groupObject }));
+    ops.push(createInsertOp({ node: groupObject }));
     if (newGroupParent !== null) {
       ops.push(createReparentOp({ id: groupId, fromParentId: null, toParentId: newGroupParent }));
     }
@@ -209,7 +209,7 @@ export function useNestedGroup<TObject extends { id: string }, TPose>(
 }
 
 /** Options for `useNestedUngroup`. */
-export interface UseNestedUngroupOptions<TObject extends { id: string }, TPose> {
+export interface UseNestedUngroupOptions<TNode extends { id: string }, TPose> {
   /** Compose a parent local + child local into the next-frame-up pose. */
   composePose: (parent: TPose, child: TPose) => TPose;
   /** Inverse of `composePose`. */
@@ -223,7 +223,7 @@ export interface UseNestedUngroupOptions<TObject extends { id: string }, TPose> 
    *  dissolved on ungroup)? Default: any id with at least one child. Override
    *  if your scene model distinguishes "container" from "ordinary parent"
    *  via a domain field on the object. */
-  isGroup?: (id: string, object: TObject | undefined) => boolean;
+  isGroup?: (id: string, object: TNode | undefined) => boolean;
 }
 
 /** Return shape of `useNestedUngroup`. */
@@ -238,9 +238,9 @@ export interface UseNestedUngroupReturn {
 }
 
 /** Selection-ungrouping action; optionally binds Mod+Shift+G. */
-export function useNestedUngroup<TObject extends { id: string }, TPose>(
-  adapter: NestedGroupActionAdapter<TObject, TPose>,
-  options: UseNestedUngroupOptions<TObject, TPose>,
+export function useNestedUngroup<TNode extends { id: string }, TPose>(
+  adapter: NestedGroupActionAdapter<TNode, TPose>,
+  options: UseNestedUngroupOptions<TNode, TPose>,
 ): UseNestedUngroupReturn {
   const adapterRef = useRef(adapter);
   adapterRef.current = adapter;
@@ -266,7 +266,7 @@ export function useNestedUngroup<TObject extends { id: string }, TPose>(
 
     const ops: Op[] = [];
     for (const id of sel) {
-      const obj = a.getObject(id);
+      const obj = a.getNode(id);
       if (!isGroup(id, obj)) {
         push(id);
         continue;
@@ -290,7 +290,7 @@ export function useNestedUngroup<TObject extends { id: string }, TPose>(
         ops.push(createReparentOp({ id, fromParentId: grandparent, toParentId: null }));
       }
       if (obj) {
-        ops.push(createDeleteOp({ object: obj }));
+        ops.push(createDeleteOp({ node: obj }));
       }
       dissolved.push(id);
     }

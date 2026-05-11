@@ -131,7 +131,7 @@ function keyEvent(key: string): KeyboardEvent {
 
 describe('useDeleteTool', () => {
   it('returns a Tool with id "delete" and keybinding "Backspace"', () => {
-    const adapter = { getSelection: () => ['a'], getObject: () => ({ id: 'a' }), applyOps: vi.fn() } as any;
+    const adapter = { getSelection: () => ['a'], getNode: () => ({ id: 'a' }), applyOps: vi.fn() } as any;
     const { result } = renderHook(() => useDeleteTool(adapter));
     expect(result.current.id).toBe('delete');
     expect(result.current.keybinding).toBe('Backspace');
@@ -139,7 +139,7 @@ describe('useDeleteTool', () => {
   });
 
   it('claims Backspace and Delete; passes other keys', () => {
-    const adapter = { getSelection: () => ['a'], getObject: () => ({ id: 'a' }), applyOps: vi.fn() } as any;
+    const adapter = { getSelection: () => ['a'], getNode: () => ({ id: 'a' }), applyOps: vi.fn() } as any;
     const { result } = renderHook(() => useDeleteTool(adapter));
     expect(result.current.keyboard!.onDown!(keyEvent('Backspace'), makeCtx())).toBe('claim');
     expect(result.current.keyboard!.onDown!(keyEvent('Delete'), makeCtx())).toBe('claim');
@@ -150,7 +150,7 @@ describe('useDeleteTool', () => {
     const applyOps = vi.fn();
     const adapter = {
       getSelection: () => ['a', 'b'],
-      getObject: (id: string) => ({ id }),
+      getNode: (id: string) => ({ id }),
       applyOps,
     } as any;
     const { result } = renderHook(() => useDeleteTool(adapter));
@@ -166,7 +166,7 @@ describe('useDeleteTool', () => {
     const applyOps = vi.fn();
     const adapter = {
       getSelection: () => [],
-      getObject: () => null,
+      getNode: () => null,
       applyOps,
     } as any;
     const { result } = renderHook(() => useDeleteTool(adapter));
@@ -575,14 +575,14 @@ function keyEvent(key: string, opts: { metaKey?: boolean; ctrlKey?: boolean; pre
 
 describe('useDuplicateTool', () => {
   it('declares id "duplicate" and meta+d keybinding', () => {
-    const adapter = { getSelection: () => ['a'], getObject: () => ({ id: 'a' }), cloneObject: (o: any) => ({ ...o, id: 'a2' }), applyOps: vi.fn() } as any;
+    const adapter = { getSelection: () => ['a'], getNode: () => ({ id: 'a' }), cloneNode: (o: any) => ({ ...o, id: 'a2' }), applyOps: vi.fn() } as any;
     const { result } = renderHook(() => useDuplicateTool(adapter, {}));
     expect(result.current.id).toBe('duplicate');
     expect(result.current.keybinding).toBe('meta+d');
   });
 
   it('claims meta+d / ctrl+d; passes plain d', () => {
-    const adapter = { getSelection: () => ['a'], getObject: () => ({ id: 'a' }), cloneObject: (o: any) => ({ ...o, id: 'a2' }), applyOps: vi.fn() } as any;
+    const adapter = { getSelection: () => ['a'], getNode: () => ({ id: 'a' }), cloneNode: (o: any) => ({ ...o, id: 'a2' }), applyOps: vi.fn() } as any;
     const { result } = renderHook(() => useDuplicateTool(adapter, {}));
     expect(result.current.keyboard!.onDown!(keyEvent('d', { metaKey: true }), makeCtx())).toBe('claim');
     expect(result.current.keyboard!.onDown!(keyEvent('d', { ctrlKey: true }), makeCtx())).toBe('claim');
@@ -669,7 +669,7 @@ Note: `useInsert` already does its own threshold internally (its `start` enters 
 
 - [ ] **Step 1: Confirm useInsert API**
 
-Read `src/interactions/gestures/insert/insert.ts`. Signature: `useInsert<TObject, TPose>(adapter, options) → InsertController { start, move, end, cancel, isInserting, overlay }`.
+Read `src/interactions/gestures/insert/insert.ts`. Signature: `useInsert<TNode, TPose>(adapter, options) → InsertController { start, move, end, cancel, isInserting, overlay }`.
 
 - [ ] **Step 2: Write failing test**
 
@@ -754,11 +754,11 @@ import type { Tool } from '../types';
 
 export interface UseInsertToolOptions<TPose> extends UseInsertOptions<TPose> {}
 
-export function useInsertTool<TObject, TPose>(
-  adapter: InsertAdapter<TObject>,
+export function useInsertTool<TNode, TPose>(
+  adapter: InsertAdapter<TNode>,
   options: UseInsertToolOptions<TPose>,
 ): Tool<undefined> {
-  const ctl = useInsert<TObject, TPose>(adapter, options);
+  const ctl = useInsert<TNode, TPose>(adapter, options);
 
   return useMemo(
     () =>
@@ -908,8 +908,8 @@ function ctxOver(over: Partial<ToolCtx> = {}): ToolCtx {
 const minimalAdapter = {
   getSelection: () => [],
   setSelection: vi.fn(),
-  getObject: (id: string) => ({ id }),
-  getObjects: () => [],
+  getNode: (id: string) => ({ id }),
+  getNodes: () => [],
   getPose: (_id: string) => ({ x: 0, y: 0, w: 10, h: 10 }),
   applyOps: vi.fn(),
 } as any;
@@ -987,7 +987,7 @@ import type { Tool } from '../types';
 
 interface Bounds { x: number; y: number; w: number; h: number }
 
-export interface UseSelectToolOptions<TObject, TPose> {
+export interface UseSelectToolOptions<TNode, TPose> {
   hitBody: (worldX: number, worldY: number) => string[];
   boundsOf: (id: string) => Bounds | null;
   handleHitRadius?: number;
@@ -998,9 +998,9 @@ export interface UseSelectToolOptions<TObject, TPose> {
   areaSelect?: UseAreaSelectOptions;
 }
 
-type Adapter<TObject, TPose> = MoveAdapter<TObject, TPose>
-  & ResizeAdapter<TObject, TPose>
-  & RotateAdapter<TObject, TPose>
+type Adapter<TNode, TPose> = MoveAdapter<TNode, TPose>
+  & ResizeAdapter<TNode, TPose>
+  & RotateAdapter<TNode, TPose>
   & AreaSelectAdapter;
 
 type SelectScratch =
@@ -1010,13 +1010,13 @@ type SelectScratch =
   | { kind: 'rotate'; targetId: string }
   | { kind: 'area' };
 
-export function useSelectTool<TObject extends { id: string }, TPose>(
-  adapter: Adapter<TObject, TPose>,
-  options: UseSelectToolOptions<TObject, TPose>,
+export function useSelectTool<TNode extends { id: string }, TPose>(
+  adapter: Adapter<TNode, TPose>,
+  options: UseSelectToolOptions<TNode, TPose>,
 ): Tool<SelectScratch> {
-  const move = useMove<TObject, TPose>(adapter, options.move ?? {});
-  const resize = useResize<TObject, TPose>(adapter, options.resize ?? {});
-  const rotate = useRotate<TObject, TPose>(adapter, options.rotate ?? {});
+  const move = useMove<TNode, TPose>(adapter, options.move ?? {});
+  const resize = useResize<TNode, TPose>(adapter, options.resize ?? {});
+  const rotate = useRotate<TNode, TPose>(adapter, options.rotate ?? {});
   const areaSelect = useAreaSelect(adapter, options.areaSelect ?? {});
 
   const handleHitRadius = options.handleHitRadius ?? 8;
@@ -1143,7 +1143,7 @@ If the import path is wrong (the survey didn't pin them down — find them with 
 Run: `pnpm vitest run src/tools/builtin/useSelectTool.test.ts && pnpm typecheck`
 Expected: PASS (3/3 unit tests), clean.
 
-If TypeScript complains about `Adapter<TObject, TPose>` intersection (some hook adapters may have conflicting overloads of the same method name), narrow the intersection by switching to a generic `unknown` cast inside the controller calls and letting userland's adapter satisfy each underlying hook's adapter interface separately. If you hit this, **stop and report** with the exact error.
+If TypeScript complains about `Adapter<TNode, TPose>` intersection (some hook adapters may have conflicting overloads of the same method name), narrow the intersection by switching to a generic `unknown` cast inside the controller calls and letting userland's adapter satisfy each underlying hook's adapter interface separately. If you hit this, **stop and report** with the exact error.
 
 - [ ] **Step 7: Commit**
 

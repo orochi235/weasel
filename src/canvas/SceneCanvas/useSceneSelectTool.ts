@@ -207,7 +207,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     ...(resizeOptions ? { resize: resizeOptions } : {}),
     ...(rotateOptions ? { rotate: rotateOptions } : {}),
     ...(areaSelectOptions ? { areaSelect: areaSelectOptions } : {}),
-    getObject: (id: string) => scene.get(asNodeId(id)) ?? null,
+    getNode: (id: string) => scene.get(asNodeId(id)) ?? null,
     getSelection: () => selection.current,
   });
 

@@ -50,7 +50,7 @@ describe('SceneCanvas actions integration', () => {
     const scene = makeScene();
     const seen: string[][] = [];
     render(
-      <SceneCanvas scene={scene} layers={{}} width={64} height={64} actionDefaults={{ cloneObject: (id) => ({ id: asNodeId(id + "'") }) }}>
+      <SceneCanvas scene={scene} layers={{}} width={64} height={64} actionDefaults={{ cloneNode: (id) => ({ id: asNodeId(id + "'") }) }}>
         <Probe onReg={(ids) => seen.push(ids)} />
       </SceneCanvas>,
     );
@@ -78,7 +78,7 @@ describe('SceneCanvas actions integration', () => {
     const seen: string[][] = [];
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
-        actionDefaults={{ cloneObject: (id) => ({ id: asNodeId(id + "'") }) }}
+        actionDefaults={{ cloneNode: (id) => ({ id: asNodeId(id + "'") }) }}
         actions={{ selectAll: null }}>
         <Probe onReg={(ids) => seen.push(ids)} />
       </SceneCanvas>,
@@ -98,7 +98,7 @@ describe('SceneCanvas actions integration', () => {
     }
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
-        actionDefaults={{ cloneObject: (id) => ({ id: asNodeId(id + "'") }) }}
+        actionDefaults={{ cloneNode: (id) => ({ id: asNodeId(id + "'") }) }}
         actions={{ duplicate: { run: customRun } }}>
         <Capture />
       </SceneCanvas>,
@@ -117,7 +117,7 @@ describe('SceneCanvas actions integration', () => {
     const seen: string[][] = [];
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
-        actionDefaults={{ cloneObject: (id) => ({ id: asNodeId(id + "'") }) }}
+        actionDefaults={{ cloneNode: (id) => ({ id: asNodeId(id + "'") }) }}
         actions={{
           copy: { id: 'copy', label: 'Copy', defaultBinding: { key: 'c', mod: true }, run: copyRun },
         }}>
@@ -133,7 +133,7 @@ describe('SceneCanvas actions integration', () => {
     const seen: string[][] = [];
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
-        actionDefaults={{ cloneObject: (id) => ({ id: asNodeId(id + "'") }) }}
+        actionDefaults={{ cloneNode: (id) => ({ id: asNodeId(id + "'") }) }}
         actions={{
           selectAll: null,
           duplicate: { run: vi.fn() },
@@ -184,7 +184,7 @@ describe('SceneCanvas actions integration', () => {
     function Probe3() { const r = useActionsRegistry(); useEffect(() => { seen = r ? r.list().map(a => a.id) : []; }); return null; }
     const { unmount, rerender } = render(
       <ActionsProvider>
-        <SceneCanvas scene={scene} layers={{}} width={64} height={64} actionDefaults={{ cloneObject: (id) => ({ id: asNodeId(id + "'") }) }} />
+        <SceneCanvas scene={scene} layers={{}} width={64} height={64} actionDefaults={{ cloneNode: (id) => ({ id: asNodeId(id + "'") }) }} />
         <Probe3 />
       </ActionsProvider>,
     );
@@ -206,7 +206,7 @@ describe('SceneCanvas actions integration', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
-        actionDefaults={{ cloneObject: (id) => ({ id: asNodeId(id + "'") }) }}
+        actionDefaults={{ cloneNode: (id) => ({ id: asNodeId(id + "'") }) }}
         actions={{ duplicate: { id: 'wrong', run: customRun, label: 'Replicate' } }}>
         <Capture />
       </SceneCanvas>,
@@ -227,7 +227,7 @@ describe('SceneCanvas actions integration', () => {
     }
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
-        actionDefaults={{ cloneObject: (id) => ({ id: asNodeId(id + "'") }) }}
+        actionDefaults={{ cloneNode: (id) => ({ id: asNodeId(id + "'") }) }}
         actions={{ duplicate: { label: 'Clone' } }}>
         <Capture />
       </SceneCanvas>,
@@ -246,7 +246,7 @@ describe('SceneCanvas actions integration', () => {
     }
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
-        actionDefaults={{ cloneObject: (id) => ({ id: asNodeId(id + "'") }) }}
+        actionDefaults={{ cloneNode: (id) => ({ id: asNodeId(id + "'") }) }}
         actions={{ duplicate: { defaultBinding: { key: 'D', mod: true, shift: true } } }}>
         <Capture />
       </SceneCanvas>,
@@ -261,7 +261,7 @@ describe('SceneCanvas actions integration', () => {
     function Probe4() { const r = useActionsRegistry(); useEffect(() => { seen = r ? r.list().map(a => a.id) : []; }); return null; }
     const { rerender } = render(
       <ActionsProvider>
-        <SceneCanvas scene={scene} layers={{}} width={64} height={64} actionDefaults={{ cloneObject: (id) => ({ id: asNodeId(id + "'") }) }} />
+        <SceneCanvas scene={scene} layers={{}} width={64} height={64} actionDefaults={{ cloneNode: (id) => ({ id: asNodeId(id + "'") }) }} />
         <Probe4 />
       </ActionsProvider>,
     );
@@ -270,7 +270,7 @@ describe('SceneCanvas actions integration', () => {
     expect(seen).not.toContain('selectAll');
     rerender(
       <ActionsProvider>
-        <SceneCanvas scene={scene} layers={{}} width={64} height={64} actionDefaults={{ cloneObject: (id) => ({ id: asNodeId(id + "'") }) }} />
+        <SceneCanvas scene={scene} layers={{}} width={64} height={64} actionDefaults={{ cloneNode: (id) => ({ id: asNodeId(id + "'") }) }} />
         <Probe4 />
       </ActionsProvider>,
     );

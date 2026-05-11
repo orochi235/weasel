@@ -40,7 +40,7 @@ interface UseUserPenToolOptions<TPose> {
   /** Insert the wrapped pose into the scene; return the new id so the
    *  pen tool can auto-select it after commit. */
   adapter: {
-    addObject: (pose: TPose) => string;
+    addNode: (pose: TPose) => string;
     setSelection: (ids: string[]) => void;
   };
 
@@ -152,7 +152,7 @@ export function createPenPreviewLayer<TPose>(
    then `L` (corner) or `C` (smooth — control points come from
    anchor.inHandle and anchor.outHandle) per segment, then `Z` if closed.
 2. Call `wrapPath(path, { closed: <true if all subpaths closed> })`.
-3. Call `adapter.addObject(pose)` → get back the new id.
+3. Call `adapter.addNode(pose)` → get back the new id.
 4. If `autoSelect !== false`, call `adapter.setSelection([newId])`.
 5. Reset scratch to Idle state.
 

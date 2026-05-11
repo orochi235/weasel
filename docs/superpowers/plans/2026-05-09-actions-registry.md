@@ -909,10 +909,10 @@ These two share the same factory shape; one task, one commit.
   import { defaultDuplicateAction } from './duplicate';
 
   describe('defaultDuplicateAction', () => {
-    const cloneObject = vi.fn((id: string) => ({ id: id + "'" }));
+    const cloneNode = vi.fn((id: string) => ({ id: id + "'" }));
 
     it('id="duplicate", label="Duplicate", binding={key:"d", mod:true}', () => {
-      const a = defaultDuplicateAction({ getSelection: () => ['a'], cloneObject, applyBatch: vi.fn() });
+      const a = defaultDuplicateAction({ getSelection: () => ['a'], cloneNode, applyBatch: vi.fn() });
       expect(a.id).toBe('duplicate');
       expect(a.label).toBe('Duplicate');
       expect(a.defaultBinding).toEqual({ key: 'd', mod: true });
@@ -921,7 +921,7 @@ These two share the same factory shape; one task, one commit.
       const applyBatch = vi.fn();
       const a = defaultDuplicateAction({
         getSelection: () => ['a', 'b'],
-        cloneObject: (id) => ({ id: id + "'" }),
+        cloneNode: (id) => ({ id: id + "'" }),
         applyBatch,
       });
       a.run();
@@ -931,13 +931,13 @@ These two share the same factory shape; one task, one commit.
     });
     it('run() is a no-op on empty selection', () => {
       const applyBatch = vi.fn();
-      const a = defaultDuplicateAction({ getSelection: () => [], cloneObject, applyBatch });
+      const a = defaultDuplicateAction({ getSelection: () => [], cloneNode, applyBatch });
       a.run();
       expect(applyBatch).not.toHaveBeenCalled();
     });
-    it('uses default offset {dx:8, dy:8} passed to cloneObject', () => {
+    it('uses default offset {dx:8, dy:8} passed to cloneNode', () => {
       const clone = vi.fn((id: string) => ({ id: id + "'" }));
-      const a = defaultDuplicateAction({ getSelection: () => ['a'], cloneObject: clone, applyBatch: vi.fn() });
+      const a = defaultDuplicateAction({ getSelection: () => ['a'], cloneNode: clone, applyBatch: vi.fn() });
       a.run();
       expect(clone).toHaveBeenCalledWith('a', { dx: 8, dy: 8 });
     });
@@ -983,7 +983,7 @@ These two share the same factory shape; one task, one commit.
   /** @experimental */
   export interface DuplicateDeps {
     getSelection: () => string[];
-    cloneObject: (id: string, offset: { dx: number; dy: number }) => { id: string };
+    cloneNode: (id: string, offset: { dx: number; dy: number }) => { id: string };
     applyBatch: (ops: Op[], label?: string) => void;
     /** Per-clone translation. Default {dx:8, dy:8}. */
     offset?: { dx: number; dy: number };
@@ -999,7 +999,7 @@ These two share the same factory shape; one task, one commit.
       run: () => {
         const sel = deps.getSelection();
         if (sel.length === 0) return;
-        const created = sel.map((id) => deps.cloneObject(id, offset));
+        const created = sel.map((id) => deps.cloneNode(id, offset));
         if (created.length === 0) return;
         const ops: Op[] = [
           ...created.map((obj) => createInsertOp({ object: obj })),
@@ -1342,7 +1342,7 @@ Two actions: `reorder.forward` (Mod+]), `reorder.backward` (Mod+[). Front/back v
   - `getPose` → `(id) => scene.get(asNodeId(id))?.pose` (synchronous; SceneCanvas already resolves this via the synthesized adapter)
   - `translatePose` → `translateRectPose` from `features/groups/composePose` (matches `useNudge`'s default)
   - `applyBatch` → `adapter.applyBatch` (synthesized adapter exposes it)
-  - `cloneObject` → consumer-supplied via a new optional `actionDefaults?: { cloneObject?(id, offset): {id:string} }` prop on SceneCanvas. When omitted, the duplicate default is auto-disabled (factory not built; defaults map omits `duplicate`).
+  - `cloneNode` → consumer-supplied via a new optional `actionDefaults?: { cloneNode?(id, offset): {id:string} }` prop on SceneCanvas. When omitted, the duplicate default is auto-disabled (factory not built; defaults map omits `duplicate`).
 
 - The auto-mount uses a small inner component pattern: SceneCanvas wraps its children in an `<ActionsProviderIfRoot>` that detects the parent context via `useActionsRegistry()` and conditionally renders `<ActionsProvider>`.
 
@@ -1378,7 +1378,7 @@ Two actions: `reorder.forward` (Mod+]), `reorder.backward` (Mod+[). Front/back v
       const scene = makeScene();
       const seen: string[][] = [];
       render(
-        <SceneCanvas scene={scene} actionDefaults={{ cloneObject: (id) => ({ id: id + "'" }) }}>
+        <SceneCanvas scene={scene} actionDefaults={{ cloneNode: (id) => ({ id: id + "'" }) }}>
           <Probe onReg={(ids) => seen.push(ids)} />
         </SceneCanvas>,
       );
@@ -1409,7 +1409,7 @@ Two actions: `reorder.forward` (Mod+]), `reorder.backward` (Mod+[). Front/back v
       const seen: string[][] = [];
       render(
         <SceneCanvas scene={scene}
-          actionDefaults={{ cloneObject: (id) => ({ id: id + "'" }) }}
+          actionDefaults={{ cloneNode: (id) => ({ id: id + "'" }) }}
           actions={{ selectAll: null }}>
           <Probe onReg={(ids) => seen.push(ids)} />
         </SceneCanvas>,
@@ -1429,7 +1429,7 @@ Two actions: `reorder.forward` (Mod+]), `reorder.backward` (Mod+[). Front/back v
       }
       render(
         <SceneCanvas scene={scene}
-          actionDefaults={{ cloneObject: (id) => ({ id: id + "'" }) }}
+          actionDefaults={{ cloneNode: (id) => ({ id: id + "'" }) }}
           actions={{ duplicate: { run: customRun } }}>
           <Capture />
         </SceneCanvas>,
@@ -1448,7 +1448,7 @@ Two actions: `reorder.forward` (Mod+]), `reorder.backward` (Mod+[). Front/back v
       const seen: string[][] = [];
       render(
         <SceneCanvas scene={scene}
-          actionDefaults={{ cloneObject: (id) => ({ id: id + "'" }) }}
+          actionDefaults={{ cloneNode: (id) => ({ id: id + "'" }) }}
           actions={{
             copy: { id: 'copy', label: 'Copy', defaultBinding: { key: 'c', mod: true }, run: copyRun },
           }}>
@@ -1464,7 +1464,7 @@ Two actions: `reorder.forward` (Mod+]), `reorder.backward` (Mod+[). Front/back v
       const seen: string[][] = [];
       render(
         <SceneCanvas scene={scene}
-          actionDefaults={{ cloneObject: (id) => ({ id: id + "'" }) }}
+          actionDefaults={{ cloneNode: (id) => ({ id: id + "'" }) }}
           actions={{
             selectAll: null,
             duplicate: { run: vi.fn() },
@@ -1516,7 +1516,7 @@ Two actions: `reorder.forward` (Mod+]), `reorder.backward` (Mod+[). Front/back v
       const { unmount, rerender } = render(
         <ActionsProvider>
           <Probe3 />
-          <SceneCanvas scene={scene} actionDefaults={{ cloneObject: (id) => ({ id: id + "'" }) }} />
+          <SceneCanvas scene={scene} actionDefaults={{ cloneNode: (id) => ({ id: id + "'" }) }} />
         </ActionsProvider>,
       );
       expect(seen).toContain('selectAll');
@@ -1533,7 +1533,7 @@ Two actions: `reorder.forward` (Mod+]), `reorder.backward` (Mod+[). Front/back v
       const { rerender } = render(
         <ActionsProvider>
           <Probe4 />
-          <SceneCanvas scene={scene} actionDefaults={{ cloneObject: (id) => ({ id: id + "'" }) }} />
+          <SceneCanvas scene={scene} actionDefaults={{ cloneNode: (id) => ({ id: id + "'" }) }} />
         </ActionsProvider>,
       );
       expect(seen).toContain('selectAll');
@@ -1542,7 +1542,7 @@ Two actions: `reorder.forward` (Mod+]), `reorder.backward` (Mod+[). Front/back v
       rerender(
         <ActionsProvider>
           <Probe4 />
-          <SceneCanvas scene={scene} actionDefaults={{ cloneObject: (id) => ({ id: id + "'" }) }} />
+          <SceneCanvas scene={scene} actionDefaults={{ cloneNode: (id) => ({ id: id + "'" }) }} />
         </ActionsProvider>,
       );
       expect(seen).toContain('selectAll');
@@ -1579,12 +1579,12 @@ Two actions: `reorder.forward` (Mod+]), `reorder.backward` (Mod+[). Front/back v
 
   /**
    * @experimental
-   * Inputs the kit can't synthesize on its own — currently only `cloneObject`
+   * Inputs the kit can't synthesize on its own — currently only `cloneNode`
    * for the `duplicate` default. When omitted, the `duplicate` default is
    * silently dropped from the registered set.
    */
   actionDefaults?: {
-    cloneObject?: (id: string, offset: { dx: number; dy: number }) => { id: string };
+    cloneNode?: (id: string, offset: { dx: number; dy: number }) => { id: string };
     /** Per-clone offset for the duplicate default. Default {dx:8,dy:8}. */
     duplicateOffset?: { dx: number; dy: number };
     /** Base nudge step. Default 1. */
@@ -1625,10 +1625,10 @@ Two actions: `reorder.forward` (Mod+]), `reorder.backward` (Mod+[). Front/back v
     const defaults: Record<string, Action> = {
       selectAll: defaultSelectAllAction({ getSelection, listAll, setSelection }),
       escape: defaultEscapeAction({ getSelection, setSelection }),
-      ...(actionDefaults?.cloneObject
+      ...(actionDefaults?.cloneNode
         ? { duplicate: defaultDuplicateAction({
             getSelection, applyBatch,
-            cloneObject: actionDefaults.cloneObject,
+            cloneNode: actionDefaults.cloneNode,
             offset: actionDefaults.duplicateOffset,
           }) }
         : {}),
@@ -1773,7 +1773,7 @@ Two actions: `reorder.forward` (Mod+]), `reorder.backward` (Mod+[). Front/back v
   describe('SceneCanvas keydown dispatch', () => {
     it('Cmd+A triggers selectAll (selection becomes all ids)', () => {
       const scene = makeScene();
-      render(<SceneCanvas scene={scene} actionDefaults={{ cloneObject: (id) => ({ id: id + "'" }) }} />);
+      render(<SceneCanvas scene={scene} actionDefaults={{ cloneNode: (id) => ({ id: id + "'" }) }} />);
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', metaKey: true, bubbles: true }));
       // Side-effect assertion: at least one id selected (we don't have direct access
       // to selection state without a probe; ensure no throw and event consumed).
@@ -2009,7 +2009,7 @@ Each hook follows the **identical pattern** from Task 11. Group them into one ta
 ### Subtask 12b — `useDuplicate`
 
 - [ ] **Step 1.** Tests mirror Task 11; Action `id: 'duplicate'`, `defaultBinding: { key: 'd', mod: true }`.
-- [ ] **Step 2.** Refactor `duplicate.ts`. Note: the hook needs the `cloneObject` from its adapter to build `run`; the action's run wraps `duplicate()`.
+- [ ] **Step 2.** Refactor `duplicate.ts`. Note: the hook needs the `cloneNode` from its adapter to build `run`; the action's run wraps `duplicate()`.
 - [ ] **Step 3.** Run — green. Commit `feat(actions): useDuplicate registers into ActionsProvider when present`.
 
 ### Subtask 12c — `useNudge`
@@ -2151,7 +2151,7 @@ These five tests assert the spec §D resolution rules verbatim. Most are covered
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       render(
         <SceneCanvas scene={scene}
-          actionDefaults={{ cloneObject: (id) => ({ id: id + "'" }) }}
+          actionDefaults={{ cloneNode: (id) => ({ id: id + "'" }) }}
           actions={{ duplicate: { id: 'wrong', run: customRun, label: 'Replicate' } }}>
           <Capture />
         </SceneCanvas>,
@@ -2177,7 +2177,7 @@ These five tests assert the spec §D resolution rules verbatim. Most are covered
       }
       render(
         <SceneCanvas scene={scene}
-          actionDefaults={{ cloneObject: (id) => ({ id: id + "'" }) }}
+          actionDefaults={{ cloneNode: (id) => ({ id: id + "'" }) }}
           actions={{ duplicate: { label: 'Clone' } }}>
           <Capture />
         </SceneCanvas>,
@@ -2196,7 +2196,7 @@ These five tests assert the spec §D resolution rules verbatim. Most are covered
       }
       render(
         <SceneCanvas scene={scene}
-          actionDefaults={{ cloneObject: (id) => ({ id: id + "'" }) }}
+          actionDefaults={{ cloneNode: (id) => ({ id: id + "'" }) }}
           actions={{ duplicate: { defaultBinding: { key: 'D', mod: true, shift: true } } }}>
           <Capture />
         </SceneCanvas>,
@@ -2435,7 +2435,7 @@ All sections covered.
   reorder×2) exported from `@orochi235/weasel` and used by `<SceneCanvas>` to
   auto-register defaults when a scene + selection are present.
 - New `<SceneCanvas>` props: `actions?: ActionsProp` (override / disable /
-  extend) and `actionDefaults?: { cloneObject, duplicateOffset, nudgeStep, nudgeShiftStep }`
+  extend) and `actionDefaults?: { cloneNode, duplicateOffset, nudgeStep, nudgeShiftStep }`
   (kit-unsynthesizable inputs).
 - Standalone hooks (`useSelectAll`, `useEscape`, `useDuplicate`, `useNudge`,
   `useReorder`) refactored: register into a parent provider when one is in

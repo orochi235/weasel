@@ -28,8 +28,8 @@ function ctxOver(over: Partial<ToolCtx<SelectScratch>> = {}): ToolCtx<SelectScra
 
 const minimalAdapter = {
   // MoveAdapter
-  getObject: (id: string) => ({ id }),
-  getObjects: () => [],
+  getNode: (id: string) => ({ id }),
+  getNodes: () => [],
   getPose: (_id: string) => ({ x: 0, y: 0, width: 10, height: 10 }),
   getParent: (_id: string) => null,
   setPose: vi.fn(),
@@ -330,8 +330,8 @@ describe('useSelectTool', () => {
     // No hitTestArea/getSelection/setSelection/applyOps — should not throw on
     // mount, and an empty-space drag should not crash on end.
     const flatAdapter = {
-      getObject: (id: string) => ({ id }),
-      getObjects: () => [],
+      getNode: (id: string) => ({ id }),
+      getNodes: () => [],
       getPose: (_id: string) => ({ x: 0, y: 0, width: 10, height: 10 }),
       setPose: vi.fn(),
       // no getParent, setParent, hitTestArea, getSelection, setSelection, applyOps
@@ -410,8 +410,8 @@ describe('useSelectTool — debug recording', () => {
 describe('useSelectTool overlay', () => {
   const adapterFor = (over: Partial<any> = {}) =>
     ({
-      getObject: (id: string) => ({ id, x: 0, y: 0, width: 10, height: 10 }),
-      getObjects: () => [{ id: 'obj1', x: 0, y: 0, width: 10, height: 10 }],
+      getNode: (id: string) => ({ id, x: 0, y: 0, width: 10, height: 10 }),
+      getNodes: () => [{ id: 'obj1', x: 0, y: 0, width: 10, height: 10 }],
       getPose: (_id: string) => ({ x: 0, y: 0, width: 10, height: 10 }),
       getParent: (_id: string) => null,
       setPose: vi.fn(),
@@ -444,7 +444,7 @@ describe('useSelectTool overlay', () => {
       useSelectTool(adapterFor(), {
         pickEvery: () => [],
         boundsOf: () => null,
-        getObject: (id) => ({ id, x: 0, y: 0, width: 10, height: 10 }) as any,
+        getNode: (id) => ({ id, x: 0, y: 0, width: 10, height: 10 }) as any,
       }),
     );
     const cmds = result.current.overlay!.draw(undefined, VIEW, DIMS);
@@ -489,13 +489,13 @@ describe('useSelectTool overlay', () => {
 
   it('move ghost calls drawGhost for each id in move.overlay.poses', () => {
     const drawGhost = vi.fn((..._args: unknown[]) => [] as any[]);
-    const getObject = vi.fn((id: string) => ({ id, x: 0, y: 0, width: 10, height: 10 }) as any);
+    const getNode = vi.fn((id: string) => ({ id, x: 0, y: 0, width: 10, height: 10 }) as any);
     const { result } = renderHook(() =>
       useSelectTool(adapterFor(), {
         pickEvery: () => ['a', 'b'],
         boundsOf: () => null,
         drawGhost,
-        getObject,
+        getNode,
       }),
     );
     act(() => {
@@ -508,7 +508,7 @@ describe('useSelectTool overlay', () => {
     expect(drawGhost).toHaveBeenCalledTimes(2);
   });
 
-  it('move ghost skips silently when drawGhost or getObject are missing', () => {
+  it('move ghost skips silently when drawGhost or getNode are missing', () => {
     const { result } = renderHook(() =>
       useSelectTool(adapterFor(), {
         pickEvery: () => ['a'],
@@ -535,7 +535,7 @@ describe('useSelectTool overlay', () => {
         pickEvery: () => [],
         boundsOf: () => ({ x: 0, y: 0, width: 100, height: 100 }),
         drawGhost,
-        getObject: (id) => ({ id, x: 0, y: 0, width: 100, height: 100 }) as any,
+        getNode: (id) => ({ id, x: 0, y: 0, width: 100, height: 100 }) as any,
       }),
     );
     act(() => {
@@ -558,12 +558,12 @@ describe('useSelectTool overlay', () => {
     const { result } = renderHook(() =>
       useSelectTool(adapterFor({
         getPose: (_id: string) => ({ x: 0, y: 0, width: 10, height: 10, rotation: 0 }),
-        getObject: (id: string) => ({ id, x: 0, y: 0, width: 10, height: 10, rotation: 0 }),
+        getNode: (id: string) => ({ id, x: 0, y: 0, width: 10, height: 10, rotation: 0 }),
       }), {
         pickEvery: () => [],
         boundsOf: () => ({ x: 0, y: 0, width: 100, height: 100 }),
         drawGhost,
-        getObject: (id) => ({ id, x: 0, y: 0, width: 10, height: 10, rotation: 0 }) as any,
+        getNode: (id) => ({ id, x: 0, y: 0, width: 10, height: 10, rotation: 0 }) as any,
       }),
     );
     act(() => {
@@ -592,7 +592,7 @@ describe('useSelectTool overlay', () => {
         pickEvery: () => ['a'],
         boundsOf: () => null,
         drawGhost,
-        getObject: (id) => ({ id, x: 0, y: 0, width: 10, height: 10 }) as any,
+        getNode: (id) => ({ id, x: 0, y: 0, width: 10, height: 10 }) as any,
         moveOverlayStyle: { ghostAlpha: 0.5 },
       }),
     );

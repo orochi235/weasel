@@ -15,7 +15,7 @@ function makeAdapter(initial?: Array<[string, P]>) {
   );
   const batches: { ops: Op[]; label: string }[] = [];
   const adapter: ResizeAdapter<{ id: string }, P> = {
-    getObject: (id) => (state.has(id) ? { id } : undefined),
+    getNode: (id) => (state.has(id) ? { id } : undefined),
     getPose: (id) => ({ ...(state.get(id)!) }),
     setPose: (id, pose) => state.set(id, { ...pose }),
     applyBatch: (ops, label) => {
@@ -481,7 +481,7 @@ function makeRotatedAdapter(initial: Array<[string, RP]>) {
   const state = new Map<string, RP>(initial.map(([k, v]) => [k, { ...v }]));
   const batches: { ops: Op[]; label: string }[] = [];
   const adapter: ResizeAdapter<{ id: string }, RP> = {
-    getObject: (id) => (state.has(id) ? { id } : undefined),
+    getNode: (id) => (state.has(id) ? { id } : undefined),
     getPose: (id) => ({ ...(state.get(id)!) }),
     setPose: (id, pose) => state.set(id, { ...pose }),
     applyBatch: (ops, label) => {

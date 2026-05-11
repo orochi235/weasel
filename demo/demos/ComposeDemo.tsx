@@ -85,7 +85,7 @@ export function ComposeDemo() {
     },
     commitPaste: () => [],
     snapshotSelection: () => ({ items: [] }),
-    insertObject: () => {},
+    insertNode: () => {},
     setSelection: () => {},
     getSelection: () => [] as string[],
   }), [scene]);

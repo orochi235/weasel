@@ -213,7 +213,7 @@ Public surface unchanged (same options, same `InsertController` shape). Implemen
 **New on the controller:**
 
 ```ts
-export interface InsertController<TObject, TPose> {
+export interface InsertController<TNode, TPose> {
   // ... existing ...
   /** True iff `pointInsert` was supplied. Surfaces to the tool-veneer primitive
    *  so it knows whether to register `pointer.onClick`. */
@@ -255,7 +255,7 @@ May 4 spec is dropped (it had only one call site; folded into the primitive).
 ```ts
 import type { InsertController } from '../../interactions/gestures/insert/insert';
 
-export interface DragInsertToolConfig<TObject extends { id: string }, TPose> {
+export interface DragInsertToolConfig<TNode extends { id: string }, TPose> {
   /** Tool id, e.g. 'insert' or 'text'. */
   id: string;
   /** Tool cursor while active, e.g. 'crosshair' or 'text'. */
@@ -264,7 +264,7 @@ export interface DragInsertToolConfig<TObject extends { id: string }, TPose> {
   keybinding?: string;
   /** The insert controller from useInsert. supportsPointInsert/supportsCommitInsert
    *  on the controller drive handler-registration conditionals. */
-  controller: InsertController<TObject, TPose>;
+  controller: InsertController<TNode, TPose>;
   /** Overlay layer id, e.g. 'insert-overlay' or 'text-overlay'. Must be unique
    *  across simultaneously-mounted tools. */
   overlayId: string;
@@ -288,8 +288,8 @@ export interface DragInsertToolResult {
   applyBatchRef: React.MutableRefObject<((ops: Op[], label: string) => void) | null>;
 }
 
-export function defineDragInsertTool<TObject extends { id: string }, TPose>(
-  config: DragInsertToolConfig<TObject, TPose>,
+export function defineDragInsertTool<TNode extends { id: string }, TPose>(
+  config: DragInsertToolConfig<TNode, TPose>,
 ): DragInsertToolResult;
 ```
 
@@ -322,12 +322,12 @@ read. One code path, no per-wrapper conditional.
 Collapses to:
 
 ```ts
-export function useInsertTool<TObject extends { id: string }, TPose>(
-  adapter: InsertAdapter<TObject>,
-  options: UseInsertToolOptions<TPose, TObject> = {},
+export function useInsertTool<TNode extends { id: string }, TPose>(
+  adapter: InsertAdapter<TNode>,
+  options: UseInsertToolOptions<TPose, TNode> = {},
 ): Tool<undefined> {
   const { hitExisting, overlayStyle, ...gestureOptions } = options;
-  const controller = useInsert<TObject, TPose>(adapter, gestureOptions);
+  const controller = useInsert<TNode, TPose>(adapter, gestureOptions);
   const { tool } = defineDragInsertTool({
     id: 'insert',
     cursor: 'crosshair',
@@ -349,8 +349,8 @@ Public surface unchanged. ~10 lines of body.
 Collapses to:
 
 ```ts
-export function useTextTool<TObject extends { id: string }>(
-  options: UseTextToolOptions<TObject>,
+export function useTextTool<TNode extends { id: string }>(
+  options: UseTextToolOptions<TNode>,
 ): Tool<undefined> {
   const { pointInsert, commitInsert, hitExisting, minBounds, marqueeStyle } = options;
   // applyBatchRef declared first so we can pass it into useInsert before
@@ -360,11 +360,11 @@ export function useTextTool<TObject extends { id: string }>(
   // wiring; the ergonomic is "useInsert reads applyBatch via a ref the primitive
   // owns."
   const applyBatchRef = useRef<((ops: Op[], label: string) => void) | null>(null);
-  const adapter = useMemo<InsertAdapter<TObject>>(() => ({
+  const adapter = useMemo<InsertAdapter<TNode>>(() => ({
     commitInsert: (b) => (commitInsert ? commitInsert(b) : null),
     commitPaste: () => [],
     snapshotSelection: () => ({ items: [] }),
-    insertObject: () => {},
+    insertNode: () => {},
     setSelection: () => {},
     getSelection: () => [],
   }), [commitInsert]);

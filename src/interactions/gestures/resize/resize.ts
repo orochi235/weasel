@@ -63,7 +63,7 @@ export interface UseResizeOptions<TPose> {
 }
 
 /** Return shape of `useResize`: lifecycle methods plus a live overlay snapshot. */
-export interface ResizeController<TObject extends { id: string }, TPose> {
+export interface ResizeController<TNode extends { id: string }, TPose> {
   start(id: string, anchor: ResizeAnchor, worldX: number, worldY: number): void;
   move(worldX: number, worldY: number, modifiers: ModifierState): boolean;
   end(): void;
@@ -73,7 +73,7 @@ export interface ResizeController<TObject extends { id: string }, TPose> {
   /** The adapter passed in. Exposed so downstream consumers (notably
    *  `<Canvas>`) can derive default `boundsOf` without taking the adapter
    *  as a separate prop. */
-  adapter: ResizeAdapter<TObject, TPose>;
+  adapter: ResizeAdapter<TNode, TPose>;
 }
 
 interface State<TPose> {
@@ -116,10 +116,10 @@ function computeUnionBounds(bounds: ResizePose[]): ResizePose {
 }
 
 /** Pointer-driven resize interaction with anchor-relative dragging, optional group expansion, and behavior pipeline. */
-export function useResize<TObject extends { id: string }, TPose>(
-  adapter: ResizeAdapter<TObject, TPose>,
+export function useResize<TNode extends { id: string }, TPose>(
+  adapter: ResizeAdapter<TNode, TPose>,
   options: UseResizeOptions<TPose>,
-): ResizeController<TObject, TPose> {
+): ResizeController<TNode, TPose> {
   const {
     behaviors = [] as ResizeBehavior<ResizePose>[],
     resizeLabel = 'Resize',
@@ -510,7 +510,7 @@ export function useResize<TObject extends { id: string }, TPose>(
   // Stable controller identity — see useMove for rationale.
   const overlayRef = useRef(overlay);
   overlayRef.current = overlay;
-  const controller = useMemo<ResizeController<TObject, TPose>>(() => ({
+  const controller = useMemo<ResizeController<TNode, TPose>>(() => ({
     start, move, end, cancel,
     get overlay() { return overlayRef.current; },
     get isResizing() { return overlayRef.current !== null; },

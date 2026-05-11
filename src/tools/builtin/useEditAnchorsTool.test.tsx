@@ -20,7 +20,7 @@ function makeAdapter(initial: Path) {
   const batches: { ops: Op[]; label?: string }[] = [];
   return {
     adapter: {
-      getObject: (id: string) => (id === 'p' ? { id } : undefined),
+      getNode: (id: string) => (id === 'p' ? { id } : undefined),
       getPose: (_id: string) => pose,
       setPose: (_id: string, p: Path) => { pose = p; },
       applyBatch: (ops: Op[], label?: string) => {

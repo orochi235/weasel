@@ -363,13 +363,13 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `SpringPoseOptions.recordOp?` | field | `boolean` |  |
 | `SpringPoseOptions.opLabel?` | field | `string` |  |
 | `SpringPoseOptions.onDone?` | field | `() => void` |  |
-| `tweenPose` | function | `(animator: Animator, adapter: SceneAdapter<TObject, TPose>, opts: TweenPoseOptions<TPose>) => AnimationHandle` |  |
+| `tweenPose` | function | `(animator: Animator, adapter: SceneAdapter<TNode, TPose>, opts: TweenPoseOptions<TPose>) => AnimationHandle` |  |
 | `tweenPose.animator` | param | `animator: Animator` |  |
-| `tweenPose.adapter` | param | `adapter: SceneAdapter<TObject, TPose>` |  |
+| `tweenPose.adapter` | param | `adapter: SceneAdapter<TNode, TPose>` |  |
 | `tweenPose.opts` | param | `opts: TweenPoseOptions<TPose>` |  |
-| `springPose` | function | `(animator: Animator, adapter: SceneAdapter<TObject, TPose>, opts: SpringPoseOptions<TPose>) => AnimationHandle` |  |
+| `springPose` | function | `(animator: Animator, adapter: SceneAdapter<TNode, TPose>, opts: SpringPoseOptions<TPose>) => AnimationHandle` |  |
 | `springPose.animator` | param | `animator: Animator` |  |
-| `springPose.adapter` | param | `adapter: SceneAdapter<TObject, TPose>` |  |
+| `springPose.adapter` | param | `adapter: SceneAdapter<TNode, TPose>` |  |
 | `springPose.opts` | param | `opts: SpringPoseOptions<TPose>` |  |
 
 ## src/animation/types.ts
@@ -453,8 +453,8 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `LifecycleAnimation.ms?` | field | `number` |  |
 | `LifecycleAnimation.easing?` | field | `EasingFn` |  |
 | `LifecycleAnimation.geometry?` | field | `PoseDescriptor<TPose>` |  |
-| `animateLifecycle` | function | `(adapter: SceneAdapter<TObject, TPose>, animator: Animator, opts: LifecycleAnimation<TPose>) => SceneAdapter<TObject, TPose>` |  |
-| `animateLifecycle.adapter` | param | `adapter: SceneAdapter<TObject, TPose>` |  |
+| `animateLifecycle` | function | `(adapter: SceneAdapter<TNode, TPose>, animator: Animator, opts: LifecycleAnimation<TPose>) => SceneAdapter<TNode, TPose>` |  |
+| `animateLifecycle.adapter` | param | `adapter: SceneAdapter<TNode, TPose>` |  |
 | `animateLifecycle.animator` | param | `animator: Animator` |  |
 | `animateLifecycle.opts` | param | `opts: LifecycleAnimation<TPose>` |  |
 
@@ -471,8 +471,8 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `AnimateOnSetPoseOptions.skipDuringGesture?` | field | `boolean` | Convenience: when true, auto-skip animation if the id is currently being manipulated by an active gesture. |
 | `AnimateOnSetPoseOptions.gestureScope?` | field | `ReadonlySet<string>` | Optional: a Set the kit (or app) populates with ids currently being manipulated by a gesture. |
 | `AnimateOnSetPoseOptions.opLabel?` | field | `string` | Op label for the recorded transform op. |
-| `animateOnSetPose` | function | `(adapter: SceneAdapter<TObject, TPose>, animator: Animator, opts: AnimateOnSetPoseOptions<TPose> = {}) => SceneAdapter<TObject, TPose>` |  |
-| `animateOnSetPose.adapter` | param | `adapter: SceneAdapter<TObject, TPose>` |  |
+| `animateOnSetPose` | function | `(adapter: SceneAdapter<TNode, TPose>, animator: Animator, opts: AnimateOnSetPoseOptions<TPose> = {}) => SceneAdapter<TNode, TPose>` |  |
+| `animateOnSetPose.adapter` | param | `adapter: SceneAdapter<TNode, TPose>` |  |
 | `animateOnSetPose.animator` | param | `animator: Animator` |  |
 | `animateOnSetPose.opts` | param | `opts: AnimateOnSetPoseOptions<TPose> = {}` |  |
 
@@ -493,32 +493,32 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `StandardSlotName` | type | `Exclude<(typeof STANDARD_SLOTS)[number], 'cellHighlight'>` | Names of the slots `<Canvas>` supports out of the box (excluding the implicit cell-highlight overlay). |
 | `GridSlotConfig` | type | `GridLayerOpts & { /** Cell-highlight overlay; omit or set to `null` to skip. */ highlight?: CellHighlightLayerOpts \| null; }` | Grid slot config — extends raw grid layer opts with an optional nested `highlight` sub-config. |
 | `SceneSlotConfig` | interface | `{ objects, toPose, drawOne, ghostAlpha }` | Scene slot config — describes how to draw one object with its effective pose. |
-| `SceneSlotConfig.objects?` | field | `TObject[]` | Override `adapter.getObjects()` for the object iteration. |
-| `SceneSlotConfig.toPose?` | field | `(obj: TObject) => TPose` | Project an object to its committed pose. |
-| `SceneSlotConfig.drawOne` | field | `(ctx: CanvasRenderingContext2D, obj: TObject, pose: TPose, view: View) => void` | Draw a single object given its effective pose. |
+| `SceneSlotConfig.objects?` | field | `TNode[]` | Override `adapter.getNodes()` for the object iteration. |
+| `SceneSlotConfig.toPose?` | field | `(obj: TNode) => TPose` | Project an object to its committed pose. |
+| `SceneSlotConfig.drawOne` | field | `(ctx: CanvasRenderingContext2D, obj: TNode, pose: TPose, view: View) => void` | Draw a single object given its effective pose. |
 | `SceneSlotConfig.ghostAlpha?` | field | `number` | Default ghost alpha for the move-overlay slot. |
 | `SelectionOverlaySlotConfig` | type | `Omit< SelectionOverlayLayerOpts<TPose>, 'getSelection' \| 'getPose' > & { /** Override the auto-wired pose lookup (overlay-aware → adapter fallback). */ poseById?: (id: string) => TPose \| null; }` | Selection-overlay slot config — passed through to `createSelectionOverlayLayer`, minus the `getSelection`/`getPose` Canvas wires automatically. |
 | `CustomLayerEntry` | interface | `{ layer, after, before }` | Custom layer entry — any key not in `STANDARD_SLOTS`. |
 | `CustomLayerEntry.layer` | field | `RenderLayer<unknown>` |  |
 | `CustomLayerEntry.after?` | field | `StandardSlotName` | Insert immediately after the named standard slot. |
 | `CustomLayerEntry.before?` | field | `StandardSlotName` | Insert immediately before the named standard slot. |
-| `StandardSlotConfig` | type | `\| GridSlotConfig \| SceneSlotConfig<TObject, TPose> \| SelectionOverlaySlotConfig<TPose>` | Per-slot config union. |
-| `LayerSlotValue` | type | `\| StandardSlotConfig<TObject, TPose> \| CustomLayerEntry \| null` |  |
-| `LayersMap` | type | `{ grid?: GridSlotConfig \| null; scene?: SceneSlotConfig<TObject, TPose> \| null; selectionOverlay?: SelectionOverlaySlotConfig<TPose> \| null; } & { [customKey: string]: LayerSlotValue<TObject, TPose> \|...` |  |
+| `StandardSlotConfig` | type | `\| GridSlotConfig \| SceneSlotConfig<TNode, TPose> \| SelectionOverlaySlotConfig<TPose>` | Per-slot config union. |
+| `LayerSlotValue` | type | `\| StandardSlotConfig<TNode, TPose> \| CustomLayerEntry \| null` |  |
+| `LayersMap` | type | `{ grid?: GridSlotConfig \| null; scene?: SceneSlotConfig<TNode, TPose> \| null; selectionOverlay?: SelectionOverlaySlotConfig<TPose> \| null; } & { [customKey: string]: LayerSlotValue<TNode, TPose> \|...` |  |
 | `CanvasSelectionMode` | type | `'single' \| 'multi' \| 'none'` | High-level selection semantics. |
 | `CanvasProps` | interface | `{ width, height, adapter, items, setItems, toPose, fromPose, createDefault, poseBounds, intersectsRect, ... }` | Props for the top-level `<Canvas>` component — combines viewport, scene, gesture controllers, and slot overrides. |
 | `CanvasProps.width` | field | `number` | CSS-pixel width. |
 | `CanvasProps.height` | field | `number` | CSS-pixel height. |
-| `CanvasProps.adapter?` | field | `MoveAdapter<TObject, TPose> & ResizeAdapter<TObject, TPose> & RotateAdapter<TObject, TPose>` | Combined adapter. |
-| `CanvasProps.items?` | field | `TObject[]` | Inline scene wiring: when `adapter` is omitted and `items`/`setItems` are provided, Canvas synthesizes an `arrayAdapter` internally (via `useArrayAdapter`). |
-| `CanvasProps.setItems?` | field | `UseArrayAdapterOptions<TObject, TPose>['setItems']` | @deprecated Use `useScene({ items })` + `<SceneCanvas>`. |
-| `CanvasProps.toPose?` | field | `UseArrayAdapterOptions<TObject, TPose>['toPose']` | @deprecated Use `useScene({ items })` + `<SceneCanvas>`. |
-| `CanvasProps.fromPose?` | field | `UseArrayAdapterOptions<TObject, TPose>['fromPose']` | @deprecated Use `useScene({ items })` + `<SceneCanvas>`. |
-| `CanvasProps.createDefault?` | field | `UseArrayAdapterOptions<TObject, TPose>['createDefault']` | @deprecated Use `useScene({ items })` + `<SceneCanvas>`. |
-| `CanvasProps.poseBounds?` | field | `UseArrayAdapterOptions<TObject, TPose>['poseBounds']` | @deprecated Use `useScene({ items })` + `<SceneCanvas>`. |
-| `CanvasProps.intersectsRect?` | field | `UseArrayAdapterOptions<TObject, TPose>['intersectsRect']` | @deprecated Use `useScene({ items })` + `<SceneCanvas>`. |
+| `CanvasProps.adapter?` | field | `MoveAdapter<TNode, TPose> & ResizeAdapter<TNode, TPose> & RotateAdapter<TNode, TPose>` | Combined adapter. |
+| `CanvasProps.items?` | field | `TNode[]` | Inline scene wiring: when `adapter` is omitted and `items`/`setItems` are provided, Canvas synthesizes an `arrayAdapter` internally (via `useArrayAdapter`). |
+| `CanvasProps.setItems?` | field | `UseArrayAdapterOptions<TNode, TPose>['setItems']` | @deprecated Use `useScene({ items })` + `<SceneCanvas>`. |
+| `CanvasProps.toPose?` | field | `UseArrayAdapterOptions<TNode, TPose>['toPose']` | @deprecated Use `useScene({ items })` + `<SceneCanvas>`. |
+| `CanvasProps.fromPose?` | field | `UseArrayAdapterOptions<TNode, TPose>['fromPose']` | @deprecated Use `useScene({ items })` + `<SceneCanvas>`. |
+| `CanvasProps.createDefault?` | field | `UseArrayAdapterOptions<TNode, TPose>['createDefault']` | @deprecated Use `useScene({ items })` + `<SceneCanvas>`. |
+| `CanvasProps.poseBounds?` | field | `UseArrayAdapterOptions<TNode, TPose>['poseBounds']` | @deprecated Use `useScene({ items })` + `<SceneCanvas>`. |
+| `CanvasProps.intersectsRect?` | field | `UseArrayAdapterOptions<TNode, TPose>['intersectsRect']` | @deprecated Use `useScene({ items })` + `<SceneCanvas>`. |
 | `CanvasProps.selectionMode?` | field | `CanvasSelectionMode` | Selection semantics. |
-| `CanvasProps.layers` | field | `LayersMap<TObject, TPose>` | Layer map. |
+| `CanvasProps.layers` | field | `LayersMap<TNode, TPose>` | Layer map. |
 | `CanvasProps.selection?` | field | `SelectionApi` | --- Internal hook configuration --- |
 | `CanvasProps.selectionOptions?` | field | `UseSelectionOptions` |  |
 | `CanvasProps.geometry?` | field | `PoseDescriptor<TPose>` | Pose↔bounds projection. |
@@ -551,8 +551,8 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `NudgeGestureConfig.shiftStep?` | field | `number` |  |
 | `NudgeGestureConfig.label?` | field | `string` |  |
 | `NudgeGestureConfig.translatePose?` | field | `(pose: TPose, dx: number, dy: number) => TPose` | Override pose translation. |
-| `DuplicateGestureConfig` | interface | `{ cloneObject, offset, label }` |  |
-| `DuplicateGestureConfig.cloneObject` | field | `(id: string, offset: { dx: number; dy: number }) => { id: string }` |  |
+| `DuplicateGestureConfig` | interface | `{ cloneNode, offset, label }` |  |
+| `DuplicateGestureConfig.cloneNode` | field | `(id: string, offset: { dx: number; dy: number }) => { id: string }` |  |
 | `DuplicateGestureConfig.offset?` | field | `{ dx: number; dy: number }` |  |
 | `DuplicateGestureConfig.label?` | field | `string` |  |
 | `UndoRedoGestureConfig` | interface | `{ adapter }` |  |
@@ -565,7 +565,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `CanvasHelpers` | interface | `{ getEffectivePose, getEffectiveBounds }` | Live overlay-aware lookups exposed to custom layers via `helpersRef`. |
 | `CanvasHelpers.getEffectivePose` | field | `TPose \| null` | Pose currently displayed for `id` — drag/resize/rotate overlay if active, otherwise the committed pose from the adapter. |
 | `CanvasHelpers.getEffectiveBounds` | field | `Bounds \| null` | Overlay-aware bounds for `id`. |
-| `Canvas` | const | `forwardRef(CanvasInner) as < TObject extends { id: string } = { id: string }, TPose = TObject, >( props: CanvasProps<TOb` | Forward-ref'd `<canvas>` wrapper. |
+| `Canvas` | const | `forwardRef(CanvasInner) as < TNode extends { id: string } = { id: string }, TPose = TNode, >( props: CanvasProps<TOb` | Forward-ref'd `<canvas>` wrapper. |
 
 ## src/canvas/SceneCanvas.tsx
 
@@ -598,25 +598,25 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
 | `ArrayAdapterConfig` | interface | `{ ref, setItems, toPose, fromPose, getParent, setParent, getChildren, selectionRef, setSelection, createDefault, ... }` | Configuration for `arrayAdapter`. |
-| `ArrayAdapterConfig.ref` | field | `MutableRefObject<TObject[]>` | Live ref to the current array. |
-| `ArrayAdapterConfig.setItems` | field | `(updater: (items: TObject[]) => TObject[]) => void` | Functional setter (typically the second value from `useState`). |
-| `ArrayAdapterConfig.toPose` | field | `(obj: TObject) => TPose` | Project an object to its pose. |
-| `ArrayAdapterConfig.fromPose?` | field | `(obj: TObject, pose: TPose) => TObject` | Merge a new pose back into an object. |
+| `ArrayAdapterConfig.ref` | field | `MutableRefObject<TNode[]>` | Live ref to the current array. |
+| `ArrayAdapterConfig.setItems` | field | `(updater: (items: TNode[]) => TNode[]) => void` | Functional setter (typically the second value from `useState`). |
+| `ArrayAdapterConfig.toPose` | field | `(obj: TNode) => TPose` | Project an object to its pose. |
+| `ArrayAdapterConfig.fromPose?` | field | `(obj: TNode, pose: TPose) => TNode` | Merge a new pose back into an object. |
 | `ArrayAdapterConfig.getParent?` | field | `(id: string) => string \| null` | Optional parent lookup. |
 | `ArrayAdapterConfig.setParent?` | field | `(id: string, parentId: string \| null) => void` | Optional reparent mutator. |
 | `ArrayAdapterConfig.getChildren?` | field | `(id: string) => string[] \| undefined` | Optional children lookup. |
 | `ArrayAdapterConfig.selectionRef?` | field | `MutableRefObject<string[]>` | Live ref to the current selection. |
 | `ArrayAdapterConfig.setSelection?` | field | `(ids: string[]) => void` | Selection setter. |
-| `ArrayAdapterConfig.createDefault?` | field | `(bounds: Bounds) => TObject \| null` | Factory for `commitInsert` — invoked at the end of an insert drag. |
+| `ArrayAdapterConfig.createDefault?` | field | `(bounds: Bounds) => TNode \| null` | Factory for `commitInsert` — invoked at the end of an insert drag. |
 | `ArrayAdapterConfig.poseBounds?` | field | `(pose: TPose) => Bounds` | Project a pose to an AABB for `hitTestArea`. |
 | `ArrayAdapterConfig.intersectsRect?` | field | `(pose: TPose, rect: Bounds) => boolean` | Tight intersection test against a pose. |
-| `ArrayAdapter` | interface | `{ getObjects, removeObject, getSelection, setSelection }` | Combined adapter satisfying every narrow adapter the kit ships. |
-| `ArrayAdapter.getObjects` | field | `TObject[]` |  |
-| `ArrayAdapter.removeObject` | field | `void` |  |
+| `ArrayAdapter` | interface | `{ getNodes, removeNode, getSelection, setSelection }` | Combined adapter satisfying every narrow adapter the kit ships. |
+| `ArrayAdapter.getNodes` | field | `TNode[]` |  |
+| `ArrayAdapter.removeNode` | field | `void` |  |
 | `ArrayAdapter.getSelection` | field | `string[]` | required on InsertAdapter so TS sees a single non-conflicting signature. |
 | `ArrayAdapter.setSelection` | field | `void` |  |
-| `arrayAdapter` | function | `(config: ArrayAdapterConfig<TObject, TPose>) => ArrayAdapter<TObject, TPose>` | Synthesize a many-faceted adapter from a `useState`-array scene. |
-| `arrayAdapter.config` | param | `config: ArrayAdapterConfig<TObject, TPose>` |  |
+| `arrayAdapter` | function | `(config: ArrayAdapterConfig<TNode, TPose>) => ArrayAdapter<TNode, TPose>` | Synthesize a many-faceted adapter from a `useState`-array scene. |
+| `arrayAdapter.config` | param | `config: ArrayAdapterConfig<TNode, TPose>` |  |
 
 ## src/core/adapters/types.ts
 
@@ -628,22 +628,22 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `SnapTarget.parentId` | field | `string` |  |
 | `SnapTarget.slotPose` | field | `TPose` |  |
 | `SnapTarget.metadata?` | field | `unknown` |  |
-| `SceneAdapter` | interface | `{ getObjects, getObject, getSelection, hitTest, getPose, getParent, setPose, setParent, insertObject, removeObject, ... }` | Full scene adapter. |
-| `SceneAdapter.getObjects` | field | `TObject[]` | Pull (gesture-time queries) |
-| `SceneAdapter.getObject` | field | `TObject \| undefined` |  |
+| `SceneAdapter` | interface | `{ getNodes, getNode, getSelection, hitTest, getPose, getParent, setPose, setParent, insertNode, removeNode, ... }` | Full scene adapter. |
+| `SceneAdapter.getNodes` | field | `TNode[]` | Pull (gesture-time queries) |
+| `SceneAdapter.getNode` | field | `TNode \| undefined` |  |
 | `SceneAdapter.getSelection` | field | `string[]` |  |
 | `SceneAdapter.hitTest` | field | `string \| null` |  |
 | `SceneAdapter.getPose` | field | `TPose` |  |
 | `SceneAdapter.getParent` | field | `string \| null` |  |
 | `SceneAdapter.setPose` | field | `void` | Mutators (called by op apply methods) |
 | `SceneAdapter.setParent` | field | `void` |  |
-| `SceneAdapter.insertObject` | field | `void` |  |
-| `SceneAdapter.removeObject` | field | `void` |  |
+| `SceneAdapter.insertNode` | field | `void` |  |
+| `SceneAdapter.removeNode` | field | `void` |  |
 | `SceneAdapter.setSelection` | field | `void` |  |
 | `SceneAdapter.applyBatch?` | field | `void` | adapter directly. |
-| `MoveAdapter` | interface | `{ getObject, getObjects, getPose, getParent, setPose, setParent, applyBatch, findSnapTarget, getChildren, getLayout }` | Narrow adapter for `useMove`. |
-| `MoveAdapter.getObject` | field | `TObject \| undefined` |  |
-| `MoveAdapter.getObjects` | field | `TObject[]` | Enumerate all objects. |
+| `MoveAdapter` | interface | `{ getNode, getNodes, getPose, getParent, setPose, setParent, applyBatch, findSnapTarget, getChildren, getLayout }` | Narrow adapter for `useMove`. |
+| `MoveAdapter.getNode` | field | `TNode \| undefined` |  |
+| `MoveAdapter.getNodes` | field | `TNode[]` | Enumerate all objects. |
 | `MoveAdapter.getPose` | field | `TPose` |  |
 | `MoveAdapter.getParent?` | field | `string \| null` | Optional. |
 | `MoveAdapter.setPose` | field | `void` |  |
@@ -652,13 +652,13 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `MoveAdapter.findSnapTarget?` | field | `SnapTarget<TPose> \| null` |  |
 | `MoveAdapter.getChildren?` | field | `string[]` | Optional: direct children of `id`. |
 | `MoveAdapter.getLayout?` | field | `import('../../layout/types').LayoutStrategy<TPose> \| null` | Optional: layout strategy attached to a container, or null if the container uses absolute positioning (default behavior). |
-| `ResizeAdapter` | interface | `{ getObject, getPose, setPose, applyBatch }` | Narrow adapter for `useResize`. |
-| `ResizeAdapter.getObject` | field | `TObject \| undefined` |  |
+| `ResizeAdapter` | interface | `{ getNode, getPose, setPose, applyBatch }` | Narrow adapter for `useResize`. |
+| `ResizeAdapter.getNode` | field | `TNode \| undefined` |  |
 | `ResizeAdapter.getPose` | field | `TPose` |  |
 | `ResizeAdapter.setPose` | field | `void` |  |
 | `ResizeAdapter.applyBatch?` | field | `void` | Optional: see SceneAdapter.applyBatch. |
-| `RotateAdapter` | interface | `{ getObject, getPose, setPose, applyBatch }` | Narrow adapter for `useRotate`. |
-| `RotateAdapter.getObject` | field | `TObject \| undefined` |  |
+| `RotateAdapter` | interface | `{ getNode, getPose, setPose, applyBatch }` | Narrow adapter for `useRotate`. |
+| `RotateAdapter.getNode` | field | `TNode \| undefined` |  |
 | `RotateAdapter.getPose` | field | `TPose` |  |
 | `RotateAdapter.setPose` | field | `void` |  |
 | `RotateAdapter.applyBatch?` | field | `void` | Optional: see SceneAdapter.applyBatch. |
@@ -667,12 +667,12 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `AreaSelectAdapter.getSelection?` | field | `string[]` | Current selection — read by behaviors to compute additive merges. |
 | `AreaSelectAdapter.setSelection?` | field | `void` | Mutator wired by `setSelection` op. |
 | `AreaSelectAdapter.applyOps?` | field | `void` | Apply ops without checkpointing or pushing a history entry. |
-| `InsertAdapter` | interface | `{ commitInsert, commitPaste, snapshotSelection, getPasteOffset, insertObject, setSelection, applyBatch, getSelection }` | Narrow adapter for `useInsert` and `useClipboardOps`. |
-| `InsertAdapter.commitInsert` | field | `TObject \| null` |  |
-| `InsertAdapter.commitPaste` | field | `TObject[]` |  |
+| `InsertAdapter` | interface | `{ commitInsert, commitPaste, snapshotSelection, getPasteOffset, insertNode, setSelection, applyBatch, getSelection }` | Narrow adapter for `useInsert` and `useClipboardOps`. |
+| `InsertAdapter.commitInsert` | field | `TNode \| null` |  |
+| `InsertAdapter.commitPaste` | field | `TNode[]` |  |
 | `InsertAdapter.snapshotSelection` | field | `ClipboardSnapshot` |  |
 | `InsertAdapter.getPasteOffset?` | field | `{ dx: number; dy: number }` |  |
-| `InsertAdapter.insertObject` | field | `void` | Mutator wired by `insertObject`-using ops (kit-side InsertOp). |
+| `InsertAdapter.insertNode` | field | `void` | Mutator wired by `insertNode`-using ops (kit-side InsertOp). |
 | `InsertAdapter.setSelection` | field | `void` | Mutator wired by `setSelection` ops batched alongside paste. |
 | `InsertAdapter.applyBatch?` | field | `void` | Optional: see SceneAdapter.applyBatch. |
 | `InsertAdapter.getSelection` | field | `string[]` | Returns the current selection. |
@@ -684,9 +684,9 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
-| `UseArrayAdapterOptions` | type | `Omit<ArrayAdapterConfig<TObject, TPose>, 'ref' \| 'setItems'> & { items: TObject[]; setItems: ArrayAdapterConfig<TObject, TPose>['setItems']; }` | Options for `useArrayAdapter` — same shape as `ArrayAdapterConfig` minus the `ref` field, which the hook manages internally from `items`. |
-| `useArrayAdapter` | hook | `(options: UseArrayAdapterOptions<TObject, TPose>) => ArrayAdapter<TObject, TPose>` | Hook wrapper around `arrayAdapter` that owns the live items ref. |
-| `useArrayAdapter.options` | param | `options: UseArrayAdapterOptions<TObject, TPose>` |  |
+| `UseArrayAdapterOptions` | type | `Omit<ArrayAdapterConfig<TNode, TPose>, 'ref' \| 'setItems'> & { items: TNode[]; setItems: ArrayAdapterConfig<TNode, TPose>['setItems']; }` | Options for `useArrayAdapter` — same shape as `ArrayAdapterConfig` minus the `ref` field, which the hook manages internally from `items`. |
+| `useArrayAdapter` | hook | `(options: UseArrayAdapterOptions<TNode, TPose>) => ArrayAdapter<TNode, TPose>` | Hook wrapper around `arrayAdapter` that owns the live items ref. |
+| `useArrayAdapter.options` | param | `options: UseArrayAdapterOptions<TNode, TPose>` |  |
 
 ## src/core/applyOps.ts
 
@@ -774,15 +774,15 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
 | `InsertOp` | type | `Op` | Type alias for ops produced by `createInsertOp`. |
-| `createInsertOp` | function | `(args: { object: TObject; label?: string; }) => InsertOp` | Op: insert `object` into the scene; inverts to a delete of the same id. |
-| `createInsertOp.args` | param | `args: { object: TObject; label?: string; }` |  |
+| `createInsertOp` | function | `(args: { object: TNode; label?: string; }) => InsertOp` | Op: insert `object` into the scene; inverts to a delete of the same id. |
+| `createInsertOp.args` | param | `args: { object: TNode; label?: string; }` |  |
 
 ## src/core/ops/delete.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
-| `createDeleteOp` | function | `(args: { object: TObject; label?: string; }) => Op` | Op: remove `object` from the scene; inverts to a re-insert of the captured object. |
-| `createDeleteOp.args` | param | `args: { object: TObject; label?: string; }` |  |
+| `createDeleteOp` | function | `(args: { object: TNode; label?: string; }) => Op` | Op: remove `object` from the scene; inverts to a re-insert of the captured object. |
+| `createDeleteOp.args` | param | `args: { object: TNode; label?: string; }` |  |
 
 ## src/core/ops/index.ts
 
@@ -2435,9 +2435,9 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
-| `ClipboardAdapter` | interface | `{ getObject, removeObject }` | Adapter for `useClipboard`. |
-| `ClipboardAdapter.getObject?` | field | `TObject \| undefined` | Capture the full object for `cut` so undo can re-insert it intact. |
-| `ClipboardAdapter.removeObject` | field | `void` | Mutator wired by `DeleteOp.apply`. |
+| `ClipboardAdapter` | interface | `{ getNode, removeNode }` | Adapter for `useClipboard`. |
+| `ClipboardAdapter.getNode?` | field | `TNode \| undefined` | Capture the full object for `cut` so undo can re-insert it intact. |
+| `ClipboardAdapter.removeNode` | field | `void` | Mutator wired by `DeleteOp.apply`. |
 | `UseClipboardOptions` | interface | `{ getSelection, bindKeyboard, cutLabel, pasteLabel, onPaste }` | Options for `useClipboard`. |
 | `UseClipboardOptions.getSelection` | field | `() => string[]` | Reads the current selection. |
 | `UseClipboardOptions.bindKeyboard?` | field | `boolean` | Auto-bind Mod+C / Mod+X / Mod+V on document. |
@@ -2446,8 +2446,8 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `UseClipboardOptions.onPaste?` | field | `(newIds: string[]) => void` | Called after a successful paste with the ids of the new objects. |
 | `UseClipboardReturn` | interface | `{ cut }` | Return shape of `useClipboard`. |
 | `UseClipboardReturn.cut` | field | `string[]` | Snapshot the selection into the clipboard, then delete the originals. |
-| `useClipboard` | hook | `(adapter: ClipboardAdapter<TObject>, options: UseClipboardOptions) => UseClipboardReturn` | Selection-driven copy / cut / paste with optional Mod+C, Mod+X, Mod+V keyboard bindings. |
-| `useClipboard.adapter` | param | `adapter: ClipboardAdapter<TObject>` |  |
+| `useClipboard` | hook | `(adapter: ClipboardAdapter<TNode>, options: UseClipboardOptions) => UseClipboardReturn` | Selection-driven copy / cut / paste with optional Mod+C, Mod+X, Mod+V keyboard bindings. |
+| `useClipboard.adapter` | param | `adapter: ClipboardAdapter<TNode>` |  |
 | `useClipboard.options` | param | `options: UseClipboardOptions` |  |
 
 ## src/interactions/actions/clipboard/clipboardOps.ts
@@ -2462,8 +2462,8 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `UseClipboardOpsReturn.copy` | field | `void` |  |
 | `UseClipboardOpsReturn.paste` | field | `void` |  |
 | `UseClipboardOpsReturn.isEmpty` | field | `boolean` |  |
-| `useClipboardOps` | hook | `(adapter: InsertAdapter<TObject>, options: UseClipboardOpsOptions) => UseClipboardOpsReturn` | In-memory copy/paste of selections via `InsertAdapter.snapshotSelection` / `commitPaste`. |
-| `useClipboardOps.adapter` | param | `adapter: InsertAdapter<TObject>` |  |
+| `useClipboardOps` | hook | `(adapter: InsertAdapter<TNode>, options: UseClipboardOpsOptions) => UseClipboardOpsReturn` | In-memory copy/paste of selections via `InsertAdapter.snapshotSelection` / `commitPaste`. |
+| `useClipboardOps.adapter` | param | `adapter: InsertAdapter<TNode>` |  |
 | `useClipboardOps.options` | param | `options: UseClipboardOpsOptions` |  |
 
 ## src/interactions/actions/clipboard/index.ts
@@ -2488,12 +2488,12 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
-| `DeleteAdapter` | interface | `{ getSelection, getObject, applyBatch, setSelection, removeObject }` | Adapter for `useDelete`. |
+| `DeleteAdapter` | interface | `{ getSelection, getNode, applyBatch, setSelection, removeNode }` | Adapter for `useDelete`. |
 | `DeleteAdapter.getSelection` | field | `string[]` | Read current selection. |
-| `DeleteAdapter.getObject?` | field | `{ id: string } \| undefined \| null` | Optional: provide the object for a given id; required by `createDeleteOp` to capture the object for invert/insert. |
+| `DeleteAdapter.getNode?` | field | `{ id: string } \| undefined \| null` | Optional: provide the object for a given id; required by `createDeleteOp` to capture the object for invert/insert. |
 | `DeleteAdapter.applyBatch?` | field | `void` | Optional: op-batch entry point. |
 | `DeleteAdapter.setSelection?` | field | `void` | Optional: clear selection after delete. |
-| `DeleteAdapter.removeObject?` | field | `void` | Optional: removeObject mutator wired by DeleteOp when applyBatch is omitted. |
+| `DeleteAdapter.removeNode?` | field | `void` | Optional: removeNode mutator wired by DeleteOp when applyBatch is omitted. |
 | `UseDeleteOptions` | interface | `{ bindKeyboard, label, filter }` | Options for `useDelete`. |
 | `UseDeleteOptions.bindKeyboard?` | field | `boolean` | Auto-bind Delete and Backspace keys on document. |
 | `UseDeleteOptions.label?` | field | `string` | Label passed to applyBatch. |
@@ -2517,10 +2517,10 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
-| `DuplicateAdapter` | interface | `{ getSelection, getPose, cloneObject, applyBatch }` | Adapter for `useDuplicate`. |
+| `DuplicateAdapter` | interface | `{ getSelection, getPose, cloneNode, applyBatch }` | Adapter for `useDuplicate`. |
 | `DuplicateAdapter.getSelection` | field | `string[]` | Read current selection. |
-| `DuplicateAdapter.getPose` | field | `TPose` | Read pose for an id (currently unused at op-emit time but exposed for symmetry with other selection-driven hooks; consumers commonly need it inside `cloneObject |
-| `DuplicateAdapter.cloneObject` | field | `{ id: string }` | Materialize a new object that is a copy of `id`, translated by `offset`. |
+| `DuplicateAdapter.getPose` | field | `TPose` | Read pose for an id (currently unused at op-emit time but exposed for symmetry with other selection-driven hooks; consumers commonly need it inside `cloneNode |
+| `DuplicateAdapter.cloneNode` | field | `{ id: string }` | Materialize a new object that is a copy of `id`, translated by `offset`. |
 | `DuplicateAdapter.applyBatch?` | field | `void` | Optional: op-batch entry point. |
 | `UseDuplicateOptions` | interface | `{ enableKeyboard, label, offset }` | Options for `useDuplicate`. |
 | `UseDuplicateOptions.enableKeyboard?` | field | `boolean` | Auto-bind Ctrl/Cmd+D on document. |
@@ -2616,13 +2616,13 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
-| `NestedGroupActionAdapter` | interface | `{ getSelection, getObject, getChildren, applyBatch }` | Adapter for `useNestedGroup` / `useNestedUngroup`. |
+| `NestedGroupActionAdapter` | interface | `{ getSelection, getNode, getChildren, applyBatch }` | Adapter for `useNestedGroup` / `useNestedUngroup`. |
 | `NestedGroupActionAdapter.getSelection` | field | `string[]` | Read current selection. |
-| `NestedGroupActionAdapter.getObject` | field | `TObject \| undefined` | Look up an existing scene object — used by ungroup to recover the group object so the dissolve op can invert into a re-insert. |
+| `NestedGroupActionAdapter.getNode` | field | `TNode \| undefined` | Look up an existing scene object — used by ungroup to recover the group object so the dissolve op can invert into a re-insert. |
 | `NestedGroupActionAdapter.getChildren` | field | `string[]` | Enumerate direct children of `id` (`null` = root siblings). |
 | `NestedGroupActionAdapter.applyBatch?` | field | `void` | Optional: op-batch entry point. |
 | `UseNestedGroupOptions` | interface | `{ groupFactory, composePose, decomposePose, groupPoseFromChildren, bindKeyboard, newGroupId, label, minMembers }` | Options for `useNestedGroup`. |
-| `UseNestedGroupOptions.groupFactory` | field | `(args: { id: string; localPose: TPose; childIds: string[] }) => TObject` | Mint the new group scene object. |
+| `UseNestedGroupOptions.groupFactory` | field | `(args: { id: string; localPose: TPose; childIds: string[] }) => TNode` | Mint the new group scene object. |
 | `UseNestedGroupOptions.composePose` | field | `(parent: TPose, child: TPose) => TPose` | Compose a parent local + child local into the equivalent pose one frame up. |
 | `UseNestedGroupOptions.decomposePose` | field | `(parent: TPose, world: TPose) => TPose` | Inverse of `composePose`: recover a child's local from its world pose given the parent's world pose. |
 | `UseNestedGroupOptions.groupPoseFromChildren?` | field | `(childWorldPoses: TPose[]) => TPose` | Compute the group's local pose given the world poses of its children. |
@@ -2632,20 +2632,20 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `UseNestedGroupOptions.minMembers?` | field | `number` | Minimum selection size that produces a group. |
 | `UseNestedGroupReturn` | interface | `{ group }` | Return shape of `useNestedGroup`. |
 | `UseNestedGroupReturn.group` | field | `string \| null` | Imperative trigger — reparents the current selection under a newly inserted group object, rebasing each child's local pose so its visual world position is prese |
-| `useNestedGroup` | hook | `(adapter: NestedGroupActionAdapter<TObject, TPose>, options: UseNestedGroupOptions<TObject, TPose>) => UseNestedGroupReturn` | Selection-grouping action that inserts a real scene-graph parent and reparents the selection under it. |
-| `useNestedGroup.adapter` | param | `adapter: NestedGroupActionAdapter<TObject, TPose>` |  |
-| `useNestedGroup.options` | param | `options: UseNestedGroupOptions<TObject, TPose>` |  |
+| `useNestedGroup` | hook | `(adapter: NestedGroupActionAdapter<TNode, TPose>, options: UseNestedGroupOptions<TNode, TPose>) => UseNestedGroupReturn` | Selection-grouping action that inserts a real scene-graph parent and reparents the selection under it. |
+| `useNestedGroup.adapter` | param | `adapter: NestedGroupActionAdapter<TNode, TPose>` |  |
+| `useNestedGroup.options` | param | `options: UseNestedGroupOptions<TNode, TPose>` |  |
 | `UseNestedUngroupOptions` | interface | `{ composePose, decomposePose, bindKeyboard, label, isGroup }` | Options for `useNestedUngroup`. |
 | `UseNestedUngroupOptions.composePose` | field | `(parent: TPose, child: TPose) => TPose` | Compose a parent local + child local into the next-frame-up pose. |
 | `UseNestedUngroupOptions.decomposePose` | field | `(parent: TPose, world: TPose) => TPose` | Inverse of `composePose`. |
 | `UseNestedUngroupOptions.bindKeyboard?` | field | `boolean` | Auto-bind Mod+Shift+G on document. |
 | `UseNestedUngroupOptions.label?` | field | `string` | Label passed to applyBatch. |
-| `UseNestedUngroupOptions.isGroup?` | field | `(id: string, object: TObject \| undefined) => boolean` | Predicate: should this id be treated as a nested group (i.e. |
+| `UseNestedUngroupOptions.isGroup?` | field | `(id: string, object: TNode \| undefined) => boolean` | Predicate: should this id be treated as a nested group (i.e. |
 | `UseNestedUngroupReturn` | interface | `{ ungroup }` | Return shape of `useNestedUngroup`. |
 | `UseNestedUngroupReturn.ungroup` | field | `string[]` | Imperative trigger — for every group in the current selection, reparents its children to the grandparent (rebasing each local pose so visual world positions are |
-| `useNestedUngroup` | hook | `(adapter: NestedGroupActionAdapter<TObject, TPose>, options: UseNestedUngroupOptions<TObject, TPose>) => UseNestedUngroupReturn` | Selection-ungrouping action; optionally binds Mod+Shift+G. |
-| `useNestedUngroup.adapter` | param | `adapter: NestedGroupActionAdapter<TObject, TPose>` |  |
-| `useNestedUngroup.options` | param | `options: UseNestedUngroupOptions<TObject, TPose>` |  |
+| `useNestedUngroup` | hook | `(adapter: NestedGroupActionAdapter<TNode, TPose>, options: UseNestedUngroupOptions<TNode, TPose>) => UseNestedUngroupReturn` | Selection-ungrouping action; optionally binds Mod+Shift+G. |
+| `useNestedUngroup.adapter` | param | `adapter: NestedGroupActionAdapter<TNode, TPose>` |  |
+| `useNestedUngroup.options` | param | `options: UseNestedUngroupOptions<TNode, TPose>` |  |
 
 ## src/interactions/actions/nudge/index.ts
 
@@ -2869,8 +2869,8 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
-| `EditAnchorsAdapter` | interface | `{ getObject, getPose, setPose, applyBatch }` | Adapter for `useEditAnchors` — narrow read/write of one object's path pose. |
-| `EditAnchorsAdapter.getObject` | field | `TObject \| undefined` |  |
+| `EditAnchorsAdapter` | interface | `{ getNode, getPose, setPose, applyBatch }` | Adapter for `useEditAnchors` — narrow read/write of one object's path pose. |
+| `EditAnchorsAdapter.getNode` | field | `TNode \| undefined` |  |
 | `EditAnchorsAdapter.getPose` | field | `Path` | Must return a `Path`; only `kind === 'polygon'` is editable. |
 | `EditAnchorsAdapter.setPose` | field | `void` |  |
 | `EditAnchorsAdapter.applyBatch?` | field | `(ops: Op[], label?: string) => void` |  |
@@ -2902,9 +2902,9 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `EditAnchorsController.overlay` | field | `EditAnchorsOverlay \| null` |  |
 | `EditAnchorsController.tryHit` | field | `{ id: string; hit: AnchorHit } \| null` |  |
 | `EditAnchorsController.clearSelection` | field | `void` | Clear the highlighted anchor selection (stays in edit mode). |
-| `EditAnchorsController.adapter` | field | `EditAnchorsAdapter<TObject>` |  |
-| `useEditAnchors` | hook | `(adapter: EditAnchorsAdapter<TObject>, options: UseEditAnchorsOptions = {}) => EditAnchorsController<TObject>` |  |
-| `useEditAnchors.adapter` | param | `adapter: EditAnchorsAdapter<TObject>` |  |
+| `EditAnchorsController.adapter` | field | `EditAnchorsAdapter<TNode>` |  |
+| `useEditAnchors` | hook | `(adapter: EditAnchorsAdapter<TNode>, options: UseEditAnchorsOptions = {}) => EditAnchorsController<TNode>` |  |
+| `useEditAnchors.adapter` | param | `adapter: EditAnchorsAdapter<TNode>` |  |
 | `useEditAnchors.options` | param | `options: UseEditAnchorsOptions = {}` |  |
 
 ## src/interactions/gestures/edit-anchors/geometry.ts
@@ -3009,7 +3009,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `UseInsertOptions.transient?` | field | `boolean` | Reserved; insert is never transient in practice. |
 | `UseInsertOptions.minBounds?` | field | `{ width: number; height: number }` | Strictly-greater-than thresholds; bounds with width <= or height <= abort. |
 | `UseInsertOptions.posefromBounds?` | field | `(bounds: ResizePose) => TPose` | Construct the in-flight pose from the drag bounds. |
-| `UseInsertOptions.pointInsert?` | field | `(point: { x: number; y: number }) => TObject \| null` | Click / sub-threshold-drag fallback. |
+| `UseInsertOptions.pointInsert?` | field | `(point: { x: number; y: number }) => TNode \| null` | Click / sub-threshold-drag fallback. |
 | `UseInsertOptions.clickOnly?` | field | `boolean` | Drag-disabled mode. |
 | `UseInsertOptions.applyBatch?` | field | `(ops: Op[], label: string) => void` | Override for op dispatch on commit. |
 | `UseInsertOptions.onGestureStart?` | field | `() => void` |  |
@@ -3021,10 +3021,10 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `InsertController.cancel` | field | `void` |  |
 | `InsertController.isInserting` | field | `boolean` |  |
 | `InsertController.overlay` | field | `InsertOverlay<TPose> \| null` |  |
-| `InsertController.adapter` | field | `InsertAdapter<TObject>` | The adapter passed in. |
-| `useInsert` | hook | `(adapter: InsertAdapter<TObject>, options: UseInsertOptions<TPose, TObject> = {}) => InsertController<TObject, TPose>` | Drag-rectangle insert interaction; the adapter materializes the new object on commit. |
-| `useInsert.adapter` | param | `adapter: InsertAdapter<TObject>` |  |
-| `useInsert.options` | param | `options: UseInsertOptions<TPose, TObject> = {}` |  |
+| `InsertController.adapter` | field | `InsertAdapter<TNode>` | The adapter passed in. |
+| `useInsert` | hook | `(adapter: InsertAdapter<TNode>, options: UseInsertOptions<TPose, TNode> = {}) => InsertController<TNode, TPose>` | Drag-rectangle insert interaction; the adapter materializes the new object on commit. |
+| `useInsert.adapter` | param | `adapter: InsertAdapter<TNode>` |  |
+| `useInsert.options` | param | `options: UseInsertOptions<TPose, TNode> = {}` |  |
 
 ## src/interactions/gestures/move/behaviors/index.ts
 
@@ -3105,9 +3105,9 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `MoveController.cancel` | field | `void` |  |
 | `MoveController.isActive` | field | `boolean` |  |
 | `MoveController.overlay` | field | `MoveOverlay<TPose> \| null` |  |
-| `MoveController.adapter` | field | `MoveAdapter<TObject, TPose>` | The adapter passed in. |
-| `useMove` | hook | `(adapter: MoveAdapter<TObject, TPose>, options: UseMoveOptions<TPose> = {}) => MoveController<TObject, TPose>` | Pointer-driven move interaction with composable behaviors (snap, container reparent, snap-back) and op-batched commit. |
-| `useMove.adapter` | param | `adapter: MoveAdapter<TObject, TPose>` |  |
+| `MoveController.adapter` | field | `MoveAdapter<TNode, TPose>` | The adapter passed in. |
+| `useMove` | hook | `(adapter: MoveAdapter<TNode, TPose>, options: UseMoveOptions<TPose> = {}) => MoveController<TNode, TPose>` | Pointer-driven move interaction with composable behaviors (snap, container reparent, snap-back) and op-batched commit. |
+| `useMove.adapter` | param | `adapter: MoveAdapter<TNode, TPose>` |  |
 | `useMove.options` | param | `options: UseMoveOptions<TPose> = {}` |  |
 
 ## src/interactions/gestures/resize/autoPoseDescriptor.ts
@@ -3205,9 +3205,9 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `ResizeController.cancel` | field | `void` |  |
 | `ResizeController.isResizing` | field | `boolean` |  |
 | `ResizeController.overlay` | field | `ResizeOverlay<TPose> \| null` |  |
-| `ResizeController.adapter` | field | `ResizeAdapter<TObject, TPose>` | The adapter passed in. |
-| `useResize` | hook | `(adapter: ResizeAdapter<TObject, TPose>, options: UseResizeOptions<TPose>) => ResizeController<TObject, TPose>` | Pointer-driven resize interaction with anchor-relative dragging, optional group expansion, and behavior pipeline. |
-| `useResize.adapter` | param | `adapter: ResizeAdapter<TObject, TPose>` |  |
+| `ResizeController.adapter` | field | `ResizeAdapter<TNode, TPose>` | The adapter passed in. |
+| `useResize` | hook | `(adapter: ResizeAdapter<TNode, TPose>, options: UseResizeOptions<TPose>) => ResizeController<TNode, TPose>` | Pointer-driven resize interaction with anchor-relative dragging, optional group expansion, and behavior pipeline. |
+| `useResize.adapter` | param | `adapter: ResizeAdapter<TNode, TPose>` |  |
 | `useResize.options` | param | `options: UseResizeOptions<TPose>` |  |
 
 ## src/interactions/gestures/rotate/geometry.ts
@@ -3300,9 +3300,9 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `RotateController.cancel` | field | `void` |  |
 | `RotateController.isActive` | field | `boolean` |  |
 | `RotateController.overlay` | field | `RotateOverlay<TPose> \| null` |  |
-| `RotateController.adapter` | field | `RotateAdapter<TObject, TPose>` | The adapter passed in. |
-| `useRotate` | hook | `(adapter: RotateAdapter<TObject, TPose>, options: UseRotateOptions<TPose> = {}) => RotateController<TObject, TPose>` | Pointer-driven rotation interaction. |
-| `useRotate.adapter` | param | `adapter: RotateAdapter<TObject, TPose>` |  |
+| `RotateController.adapter` | field | `RotateAdapter<TNode, TPose>` | The adapter passed in. |
+| `useRotate` | hook | `(adapter: RotateAdapter<TNode, TPose>, options: UseRotateOptions<TPose> = {}) => RotateController<TNode, TPose>` | Pointer-driven rotation interaction. |
+| `useRotate.adapter` | param | `adapter: RotateAdapter<TNode, TPose>` |  |
 | `useRotate.options` | param | `options: UseRotateOptions<TPose> = {}` |  |
 | `ResizePose` | reexport | `re-export of ResizePose` |  |
 
@@ -3377,7 +3377,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `GestureContext.snap` | field | `SnapTarget<TPose> \| null` |  |
 | `GestureContext.modifiers` | field | `ModifierState` |  |
 | `GestureContext.pointer` | field | `PointerState` |  |
-| `GestureContext.adapter` | field | `MoveAdapter<TObject, TPose>` |  |
+| `GestureContext.adapter` | field | `MoveAdapter<TNode, TPose>` |  |
 | `GestureContext.scratch` | field | `Record<string, unknown>` | Per-gesture mutable store. |
 | `SnapStrategy` | interface | `{ snap }` | Pluggable per-gesture snap rule; receives the proposed pose and returns a snapped pose or `null` to skip. |
 | `SnapStrategy.snap` | field | `TPose \| null` |  |
@@ -3482,13 +3482,13 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `NestedGroupHitOpts` | interface | `{ composePose, poseBounds, isGroup }` |  |
 | `NestedGroupHitOpts.composePose` | field | `(parent: TPose, child: TPose) => TPose` | Compose a child's local pose into world coords given its parent's world pose. |
 | `NestedGroupHitOpts.poseBounds?` | field | `(pose: TPose) => RectBounds` | Derive an axis-aligned bounding rect from a (world-space) pose. |
-| `NestedGroupHitOpts.isGroup?` | field | `(id: string, obj: TObject \| undefined) => boolean` | Predicate for "this object is a group body". |
+| `NestedGroupHitOpts.isGroup?` | field | `(id: string, obj: TNode \| undefined) => boolean` | Predicate for "this object is a group body". |
 | `NestedGroupHitTester` | interface | `{ pickOutermost, pickBest }` |  |
 | `NestedGroupHitTester.pickOutermost` | field | `(worldX: number, worldY: number) => string \| null` | Outermost-ancestor pick. |
 | `NestedGroupHitTester.pickBest` | field | `( worldX: number, worldY: number, alt: boolean, selection: readonly string[], ) => string \| null` | Alt-aware selection-update pick. |
-| `nestedGroupHitTester` | function | `(adapter: HitAdapter<TObject, TPose>, opts: NestedGroupHitOpts<TObject, TPose>) => NestedGroupHitTester` |  |
-| `nestedGroupHitTester.adapter` | param | `adapter: HitAdapter<TObject, TPose>` |  |
-| `nestedGroupHitTester.opts` | param | `opts: NestedGroupHitOpts<TObject, TPose>` |  |
+| `nestedGroupHitTester` | function | `(adapter: HitAdapter<TNode, TPose>, opts: NestedGroupHitOpts<TNode, TPose>) => NestedGroupHitTester` |  |
+| `nestedGroupHitTester.adapter` | param | `adapter: HitAdapter<TNode, TPose>` |  |
+| `nestedGroupHitTester.opts` | param | `opts: NestedGroupHitOpts<TNode, TPose>` |  |
 
 ## src/interactions/usePointerGestures.ts
 
@@ -3808,8 +3808,8 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `UseEditAnchorsToolOptions.cursor?` | field | `string` | Cursor. |
 | `UseEditAnchorsToolOptions.overlayStyle?` | field | `Partial<Omit<AnchorEditOverlayOpts, 'getOverlay'>>` | Visual style overrides for the anchor-edit overlay. |
 | `UseEditAnchorsToolOptions.onExit?` | field | `() => void` | Optional callback for Escape — consumers typically clear their `editingId` state to exit edit mode entirely. |
-| `useEditAnchorsTool` | hook | `(controller: EditAnchorsController<TObject>, options: UseEditAnchorsToolOptions = {}) => Tool<EditAnchorsScratch>` | Wraps `useEditAnchors` as a Tool record so anchor-editing becomes an active-slot tool. |
-| `useEditAnchorsTool.controller` | param | `controller: EditAnchorsController<TObject>` |  |
+| `useEditAnchorsTool` | hook | `(controller: EditAnchorsController<TNode>, options: UseEditAnchorsToolOptions = {}) => Tool<EditAnchorsScratch>` | Wraps `useEditAnchors` as a Tool record so anchor-editing becomes an active-slot tool. |
+| `useEditAnchorsTool.controller` | param | `controller: EditAnchorsController<TNode>` |  |
 | `useEditAnchorsTool.options` | param | `options: UseEditAnchorsToolOptions = {}` |  |
 
 ## src/tools/builtin/useHandTool.ts
@@ -3826,9 +3826,9 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `UseInsertToolOptions` | interface | `{ overlayStyle, hitExisting }` |  |
 | `UseInsertToolOptions.overlayStyle?` | field | `InsertOverlayStyle` |  |
 | `UseInsertToolOptions.hitExisting?` | field | `(point: { x: number; y: number }) => string \| string[] \| null` | Hit-test gate consulted before insertion. |
-| `useInsertTool` | hook | `(adapter: InsertAdapter<TObject>, options: UseInsertToolOptions<TPose, TObject> = {}) => Tool<undefined>` | Active-slot Tool wrapping `useInsert`. |
-| `useInsertTool.adapter` | param | `adapter: InsertAdapter<TObject>` |  |
-| `useInsertTool.options` | param | `options: UseInsertToolOptions<TPose, TObject> = {}` |  |
+| `useInsertTool` | hook | `(adapter: InsertAdapter<TNode>, options: UseInsertToolOptions<TPose, TNode> = {}) => Tool<undefined>` | Active-slot Tool wrapping `useInsert`. |
+| `useInsertTool.adapter` | param | `adapter: InsertAdapter<TNode>` |  |
+| `useInsertTool.options` | param | `options: UseInsertToolOptions<TPose, TNode> = {}` |  |
 
 ## src/tools/builtin/useKeyboardZoomTool.ts
 
@@ -3885,19 +3885,19 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `UseSelectToolOptions.moveOverlayStyle?` | field | `MoveOverlayStyle` | Style for the move ghost (currently just `ghostAlpha`). |
 | `UseSelectToolOptions.resizeOverlayStyle?` | field | `ResizeOverlayStyle` | Style for the resize ghost. |
 | `UseSelectToolOptions.rotateOverlayStyle?` | field | `RotateOverlayStyle` | Style for the rotate ghost. |
-| `UseSelectToolOptions.drawGhost?` | field | `( ctx: CanvasRenderingContext2D, obj: TObject \| null, pose: TPose, view: { x: number; y: number; scale: number }, ) => void` | Consumer's draw function for ghost objects (move/resize/rotate in-flight). |
-| `UseSelectToolOptions.getObject?` | field | `(id: string) => TObject \| null` | Object lookup for the ghost render, paired with `drawGhost`. |
+| `UseSelectToolOptions.drawGhost?` | field | `( ctx: CanvasRenderingContext2D, obj: TNode \| null, pose: TPose, view: { x: number; y: number; scale: number }, ) => void` | Consumer's draw function for ghost objects (move/resize/rotate in-flight). |
+| `UseSelectToolOptions.getNode?` | field | `(id: string) => TNode \| null` | Object lookup for the ghost render, paired with `drawGhost`. |
 | `UseSelectToolOptions.onDoubleTap?` | field | `(args: { worldX: number; worldY: number; ids: string[]; event: PointerEvent; }) => void` | Optional double-tap hook. |
 | `SelectScratch` | type | `\| { kind: 'idle' } \| { kind: 'move'; ids: string[] } \| { kind: 'resize'; targetId: string; anchor: ResizeAnchor } \| { kind: 'rotate'; targetId: string } \| { kind: 'area' }` |  |
-| `useSelectTool` | hook | `(adapter: SelectAdapter<TObject, TPose>, options: UseSelectToolOptions<TObject, TPose>) => Tool<SelectScratch>` | Active-slot Tool wrapping `useMove`/`useResize`/`useRotate`/`useAreaSelect`. |
-| `useSelectTool.adapter` | param | `adapter: SelectAdapter<TObject, TPose>` |  |
-| `useSelectTool.options` | param | `options: UseSelectToolOptions<TObject, TPose>` |  |
+| `useSelectTool` | hook | `(adapter: SelectAdapter<TNode, TPose>, options: UseSelectToolOptions<TNode, TPose>) => Tool<SelectScratch>` | Active-slot Tool wrapping `useMove`/`useResize`/`useRotate`/`useAreaSelect`. |
+| `useSelectTool.adapter` | param | `adapter: SelectAdapter<TNode, TPose>` |  |
+| `useSelectTool.options` | param | `options: UseSelectToolOptions<TNode, TPose>` |  |
 
 ## src/tools/builtin/useSelectWithAnchorEdit.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
-| `SelectWithAnchorEditAdapter` | type | `& MoveAdapter<TObject, TPose> & ResizeAdapter<TObject, TPose> & RotateAdapter<TObject, TPose> & AreaSelectAdapter & EditAnchorsAdapter<TObject>` | Adapter intersection required for the inner select tool plus the edit-anchors controller. |
+| `SelectWithAnchorEditAdapter` | type | `& MoveAdapter<TNode, TPose> & ResizeAdapter<TNode, TPose> & RotateAdapter<TNode, TPose> & AreaSelectAdapter & EditAnchorsAdapter<TNode>` | Adapter intersection required for the inner select tool plus the edit-anchors controller. |
 | `SelectWithAnchorEditAnchorsOptions` | interface | `{ hitRadius, editLabel, toolId, keybinding, cursor, overlayStyle }` | Sub-options forwarded to `useEditAnchors` + `useEditAnchorsTool`. |
 | `SelectWithAnchorEditAnchorsOptions.hitRadius?` | field | `number` | World-space hit radius for anchor + control handles. |
 | `SelectWithAnchorEditAnchorsOptions.editLabel?` | field | `UseEditAnchorsOptions['editLabel']` | History label for the anchor-edit transform. |
@@ -3913,22 +3913,22 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `UseSelectWithAnchorEditReturn.tools` | field | `ToolsApi` | Tools API — pass straight to `<Canvas tools={tools}>`. |
 | `UseSelectWithAnchorEditReturn.onDoubleClick` | field | `(e: React.MouseEvent<HTMLElement>) => void` | Wrap the canvas container with this on `onDoubleClick`. |
 | `UseSelectWithAnchorEditReturn.editingId` | field | `string \| null` | Currently editing id, if any — exposed for consumer UI (status bars, cursor hints). |
-| `useSelectWithAnchorEdit` | hook | `(adapter: SelectWithAnchorEditAdapter<TObject, TPose>, options: UseSelectWithAnchorEditOptions<TObject, TPose>) => UseSelectWithAnchorEditReturn` | Compose `useSelectTool` + `useEditAnchors` + `useEditAnchorsTool` + `useTools` with the modal "double-click to enter anchor edit, Escape to exit" state machine  |
-| `useSelectWithAnchorEdit.adapter` | param | `adapter: SelectWithAnchorEditAdapter<TObject, TPose>` |  |
-| `useSelectWithAnchorEdit.options` | param | `options: UseSelectWithAnchorEditOptions<TObject, TPose>` |  |
+| `useSelectWithAnchorEdit` | hook | `(adapter: SelectWithAnchorEditAdapter<TNode, TPose>, options: UseSelectWithAnchorEditOptions<TNode, TPose>) => UseSelectWithAnchorEditReturn` | Compose `useSelectTool` + `useEditAnchors` + `useEditAnchorsTool` + `useTools` with the modal "double-click to enter anchor edit, Escape to exit" state machine  |
+| `useSelectWithAnchorEdit.adapter` | param | `adapter: SelectWithAnchorEditAdapter<TNode, TPose>` |  |
+| `useSelectWithAnchorEdit.options` | param | `options: UseSelectWithAnchorEditOptions<TNode, TPose>` |  |
 
 ## src/tools/builtin/useTextTool.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
 | `UseTextToolOptions` | interface | `{ pointInsert, commitInsert, hitExisting, minBounds, marqueeStyle }` |  |
-| `UseTextToolOptions.pointInsert` | field | `(point: { x: number; y: number }) => TObject \| null` | Click / sub-threshold-drag insertion. |
-| `UseTextToolOptions.commitInsert?` | field | `InsertAdapter<TObject>['commitInsert']` | Optional drag-to-size path. |
+| `UseTextToolOptions.pointInsert` | field | `(point: { x: number; y: number }) => TNode \| null` | Click / sub-threshold-drag insertion. |
+| `UseTextToolOptions.commitInsert?` | field | `InsertAdapter<TNode>['commitInsert']` | Optional drag-to-size path. |
 | `UseTextToolOptions.hitExisting?` | field | `(point: { x: number; y: number }) => string \| string[] \| null` | Hit-test gate consulted before insertion. |
 | `UseTextToolOptions.minBounds?` | field | `{ width: number; height: number }` | Threshold below which a drag falls back to `pointInsert`. |
 | `UseTextToolOptions.marqueeStyle?` | field | `InsertOverlayStyle` | Style for the drag-to-size marquee preview. |
-| `useTextTool` | hook | `(options: UseTextToolOptions<TObject>) => Tool<undefined>` | Active-slot Tool: click to create a new text object at the cursor; optionally drag to size its bounding box. |
-| `useTextTool.options` | param | `options: UseTextToolOptions<TObject>` |  |
+| `useTextTool` | hook | `(options: UseTextToolOptions<TNode>) => Tool<undefined>` | Active-slot Tool: click to create a new text object at the cursor; optionally drag to size its bounding box. |
+| `useTextTool.options` | param | `options: UseTextToolOptions<TNode>` |  |
 
 ## src/tools/builtin/useUndoRedoTool.ts
 
@@ -3962,7 +3962,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `PenScratch._lastClick` | field | `{ t: number; x: number; y: number } \| null` | Timestamp + world coords of the most recent click, used to detect a double-click on the last placed anchor (Illustrator convention for open-finish). |
 | `UseUserPenToolOptions` | interface | `{ wrapPath, adapter, autoSelect, closeHitRadius, snapPoint }` |  |
 | `UseUserPenToolOptions.wrapPath` | field | `(path: PolygonPath, opts: { closed: boolean }) => TPose` | Wrap a finished PolygonPath in the consumer's pose type. |
-| `UseUserPenToolOptions.adapter` | field | `{ addObject: (pose: TPose) => string; setSelection: (ids: string[]) => void; }` | Insert + select adapter. |
+| `UseUserPenToolOptions.adapter` | field | `{ addNode: (pose: TPose) => string; setSelection: (ids: string[]) => void; }` | Insert + select adapter. |
 | `UseUserPenToolOptions.autoSelect?` | field | `boolean` | Auto-select the new object after commit. |
 | `UseUserPenToolOptions.closeHitRadius?` | field | `number` | Screen-px hit radius for "click first anchor to close". |
 | `UseUserPenToolOptions.snapPoint?` | field | `(p: { x: number; y: number }) => { x: number; y: number }` | Optional point snapper applied to every world-space coordinate the pen records or previews — anchor positions (corner clicks, smooth- drag base point), the rubb |

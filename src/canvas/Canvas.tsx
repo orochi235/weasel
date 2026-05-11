@@ -88,13 +88,13 @@ export type GridSlotConfig = GridLayerOpts & {
 };
 
 /** Scene slot config — describes how to draw one object with its effective pose. */
-export interface SceneSlotConfig<TObject extends { id: string }, TPose> {
-  /** Override `adapter.getObjects()` for the object iteration. */
-  objects?: TObject[];
+export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
+  /** Override `adapter.getNodes()` for the object iteration. */
+  objects?: TNode[];
   /** Project an object to its committed pose. Defaults to `adapter.getPose(obj.id)`. */
-  toPose?: (obj: TObject) => TPose;
+  toPose?: (obj: TNode) => TPose;
   /** Draw a single object as a `DrawCommand` tree. */
-  drawOne: (obj: TObject, pose: TPose, view: View) => DrawCommand[];
+  drawOne: (obj: TNode, pose: TPose, view: View) => DrawCommand[];
   /** Default ghost alpha for the move-overlay slot. Default 0.85. */
   ghostAlpha?: number;
 }
@@ -120,22 +120,22 @@ export interface CustomLayerEntry {
 }
 
 /** Per-slot config union. The key narrows it in practice. */
-export type StandardSlotConfig<TObject extends { id: string }, TPose> =
+export type StandardSlotConfig<TNode extends { id: string }, TPose> =
   | GridSlotConfig
-  | SceneSlotConfig<TObject, TPose>
+  | SceneSlotConfig<TNode, TPose>
   | SelectionOverlaySlotConfig<TPose>;
 
-export type LayerSlotValue<TObject extends { id: string }, TPose> =
-  | StandardSlotConfig<TObject, TPose>
+export type LayerSlotValue<TNode extends { id: string }, TPose> =
+  | StandardSlotConfig<TNode, TPose>
   | CustomLayerEntry
   | null;
 
-export type LayersMap<TObject extends { id: string }, TPose> = {
+export type LayersMap<TNode extends { id: string }, TPose> = {
   grid?: GridSlotConfig | null;
-  scene?: SceneSlotConfig<TObject, TPose> | null;
+  scene?: SceneSlotConfig<TNode, TPose> | null;
   selectionOverlay?: SelectionOverlaySlotConfig<TPose> | null;
 } & {
-  [customKey: string]: LayerSlotValue<TObject, TPose> | undefined;
+  [customKey: string]: LayerSlotValue<TNode, TPose> | undefined;
 };
 
 /**
@@ -160,7 +160,7 @@ export type CanvasSelectionMode = 'single' | 'multi' | 'none';
 
 
 /** Props for the top-level `<Canvas>` component — combines viewport, scene, gesture controllers, and slot overrides. */
-export interface CanvasProps<TObject extends { id: string } = { id: string }, TPose = unknown> {
+export interface CanvasProps<TNode extends { id: string } = { id: string }, TPose = unknown> {
   /** CSS-pixel width. */
   width: number;
   /** CSS-pixel height. */
@@ -171,9 +171,9 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
    *  canvases. Mutually exclusive with `items` — pass one or the other.
    *  Insert and area-select live entirely in `useInsertTool` / `useSelectTool`
    *  now; pass those via `tools={useTools(...)}` instead. */
-  adapter?: MoveAdapter<TObject, TPose>
-    & ResizeAdapter<TObject, TPose>
-    & RotateAdapter<TObject, TPose>;
+  adapter?: MoveAdapter<TNode, TPose>
+    & ResizeAdapter<TNode, TPose>
+    & RotateAdapter<TNode, TPose>;
 
   /** Inline scene wiring: when `adapter` is omitted and `items`/`setItems`
    *  are provided, Canvas synthesizes an `arrayAdapter` internally (via
@@ -183,25 +183,25 @@ export interface CanvasProps<TObject extends { id: string } = { id: string }, TP
    *  or non-array scenes.
    *  @deprecated Use `useScene({ items })` + `<SceneCanvas>` instead. The
    *  inline-items props will be removed in a follow-up. */
-  items?: TObject[];
+  items?: TNode[];
   /** @deprecated Use `useScene({ items })` + `<SceneCanvas>`. */
-  setItems?: UseArrayAdapterOptions<TObject, TPose>['setItems'];
+  setItems?: UseArrayAdapterOptions<TNode, TPose>['setItems'];
   /** @deprecated Use `useScene({ items })` + `<SceneCanvas>`. */
-  toPose?: UseArrayAdapterOptions<TObject, TPose>['toPose'];
+  toPose?: UseArrayAdapterOptions<TNode, TPose>['toPose'];
   /** @deprecated Use `useScene({ items })` + `<SceneCanvas>`. */
-  fromPose?: UseArrayAdapterOptions<TObject, TPose>['fromPose'];
+  fromPose?: UseArrayAdapterOptions<TNode, TPose>['fromPose'];
   /** @deprecated Use `useScene({ items })` + `<SceneCanvas>`. */
-  createDefault?: UseArrayAdapterOptions<TObject, TPose>['createDefault'];
+  createDefault?: UseArrayAdapterOptions<TNode, TPose>['createDefault'];
   /** @deprecated Use `useScene({ items })` + `<SceneCanvas>`. */
-  poseBounds?: UseArrayAdapterOptions<TObject, TPose>['poseBounds'];
+  poseBounds?: UseArrayAdapterOptions<TNode, TPose>['poseBounds'];
   /** @deprecated Use `useScene({ items })` + `<SceneCanvas>`. */
-  intersectsRect?: UseArrayAdapterOptions<TObject, TPose>['intersectsRect'];
+  intersectsRect?: UseArrayAdapterOptions<TNode, TPose>['intersectsRect'];
 
   /** Selection semantics. See {@link CanvasSelectionMode}. Default `'single'`. */
   selectionMode?: CanvasSelectionMode;
 
   /** Layer map. See module docstring for slot semantics. */
-  layers: LayersMap<TObject, TPose>;
+  layers: LayersMap<TNode, TPose>;
 
   // --- Internal hook configuration ---
   selection?: SelectionApi;
@@ -302,7 +302,7 @@ export interface NudgeGestureConfig<TPose> {
   translatePose?: (pose: TPose, dx: number, dy: number) => TPose;
 }
 export interface DuplicateGestureConfig {
-  cloneObject: (id: NodeId, offset: { dx: number; dy: number }) => { id: NodeId };
+  cloneNode: (id: NodeId, offset: { dx: number; dy: number }) => { id: NodeId };
   offset?: { dx: number; dy: number };
   label?: string;
 }
@@ -316,7 +316,7 @@ export interface GesturesConfig<TPose> {
   delete?: boolean | DeleteGestureConfig;
   /** Bind arrow keys to translate the current selection (shift = larger step). */
   nudge?: boolean | NudgeGestureConfig<TPose>;
-  /** Bind Mod+D to duplicate the current selection. Requires `cloneObject` so
+  /** Bind Mod+D to duplicate the current selection. Requires `cloneNode` so
    *  always an object — there's no useful default for "what is a copy of X". */
   duplicate?: DuplicateGestureConfig;
   /** Bind Mod+Z / Mod+Shift+Z to undo/redo against the supplied adapter. */
@@ -345,7 +345,7 @@ const STANDARD_SLOT_SET = new Set<string>(STANDARD_SLOTS);
 const EMPTY_ITEMS: { id: string }[] = [];
 const NOOP_SET_ITEMS = () => {};
 // Default `toPose` when omitted on the inline-items path: the item *is* the
-// pose. Works for the common case where TObject already carries pose fields
+// pose. Works for the common case where TNode already carries pose fields
 // (e.g. `{ id, x, y, width, height, ... }`); supply an explicit `toPose`
 // when the pose is a sub-shape of the item or computed.
 const IDENTITY_TO_POSE = (obj: unknown) => obj as unknown;
@@ -375,10 +375,10 @@ function registerShadersOnRenderer(
  * poses here, and `hideIds()` lets us skip the committed paint of ids the
  * active tool is currently ghosting so the source doesn't show through.
  */
-function buildSceneLayer<TObject extends { id: string }, TPose>(
-  cfg: SceneSlotConfig<TObject, TPose>,
+function buildSceneLayer<TNode extends { id: string }, TPose>(
+  cfg: SceneSlotConfig<TNode, TPose>,
   adapter:
-    | (MoveAdapter<TObject, TPose> & ResizeAdapter<TObject, TPose> & RotateAdapter<TObject, TPose>)
+    | (MoveAdapter<TNode, TPose> & ResizeAdapter<TNode, TPose> & RotateAdapter<TNode, TPose>)
     | undefined,
   debugSink: DebugSink | null,
   boundsOfFn: ((id: string) => Bounds | null) | undefined,
@@ -386,13 +386,13 @@ function buildSceneLayer<TObject extends { id: string }, TPose>(
 ): RenderLayer<unknown> {
   const toPose =
     cfg.toPose ??
-    ((obj: TObject) => (adapter ? adapter.getPose(obj.id) : (obj as unknown as TPose)));
+    ((obj: TNode) => (adapter ? adapter.getPose(obj.id) : (obj as unknown as TPose)));
   const drawOne = cfg.drawOne;
   return {
     id: 'scene',
     label: 'Scene',
     draw: (_data, view) => {
-      const objects = cfg.objects ?? adapter?.getObjects() ?? [];
+      const objects = cfg.objects ?? adapter?.getNodes() ?? [];
       const hidden = hideIds();
       const children: DrawCommand[] = [];
       for (const obj of objects) {
@@ -437,8 +437,8 @@ function resolveToolsCursor(
   }
 }
 
-function CanvasInner<TObject extends { id: string }, TPose>(
-  props: CanvasProps<TObject, TPose>,
+function CanvasInner<TNode extends { id: string }, TPose>(
+  props: CanvasProps<TNode, TPose>,
   ref: React.ForwardedRef<CanvasExtensionApi>,
 ) {
   const {
@@ -502,10 +502,10 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   // `toPose` are supplied. The hook always runs (rules of hooks) — when the
   // user is on the explicit-`adapter` path, we feed it stub args and ignore
   // the result.
-  const synthesizedAdapter = useArrayAdapter<TObject, TPose>({
-    items: items ?? (EMPTY_ITEMS as TObject[]),
+  const synthesizedAdapter = useArrayAdapter<TNode, TPose>({
+    items: items ?? (EMPTY_ITEMS as TNode[]),
     setItems: setItems ?? NOOP_SET_ITEMS,
-    toPose: toPose ?? (IDENTITY_TO_POSE as (obj: TObject) => TPose),
+    toPose: toPose ?? (IDENTITY_TO_POSE as (obj: TNode) => TPose),
     fromPose,
     createDefault,
     poseBounds,
@@ -568,15 +568,15 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     () =>
       ({
         getPose: () => ({}) as TPose,
-        getObjects: () => [],
-      }) as unknown as MoveAdapter<TObject, TPose>
-        & ResizeAdapter<TObject, TPose>
-        & RotateAdapter<TObject, TPose>,
+        getNodes: () => [],
+      }) as unknown as MoveAdapter<TNode, TPose>
+        & ResizeAdapter<TNode, TPose>
+        & RotateAdapter<TNode, TPose>,
     [],
   );
-  const effectiveAdapter = (adapter ?? noopAdapter) as MoveAdapter<TObject, TPose>
-    & ResizeAdapter<TObject, TPose>
-    & RotateAdapter<TObject, TPose>;
+  const effectiveAdapter = (adapter ?? noopAdapter) as MoveAdapter<TNode, TPose>
+    & ResizeAdapter<TNode, TPose>
+    & RotateAdapter<TNode, TPose>;
 
   const derivedSelectionOptions = useMemo<UseSelectionOptions>(() => {
     const base = selectionOptions ?? {};
@@ -689,14 +689,14 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   const deleteEnabled = !!deleteCfg;
   const deleteOpts = (typeof deleteCfg === 'object' ? deleteCfg : {}) as DeleteGestureConfig;
   const adapterWithRemove = effectiveAdapter as typeof effectiveAdapter & {
-    removeObject?: (id: string) => void;
+    removeNode?: (id: string) => void;
   };
   useDelete(
     {
       getSelection: () => selRef.current.get(),
-      getObject: (id) => effectiveAdapter.getObject?.(id) ?? { id },
+      getNode: (id) => effectiveAdapter.getNode?.(id) ?? { id },
       setSelection: (ids) => selRef.current.set(ids),
-      removeObject: adapterWithRemove.removeObject,
+      removeNode: adapterWithRemove.removeNode,
       applyBatch: effectiveAdapter.applyBatch?.bind(effectiveAdapter),
     },
     { enableKeyboard: deleteEnabled && !tools?.has('delete'), label: deleteOpts.label, filter: deleteOpts.filter },
@@ -732,7 +732,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
     {
       getSelection: () => selRef.current.get(),
       getPose: (id) => effectiveAdapter.getPose(id),
-      cloneObject: dupeCfg?.cloneObject ?? ((id) => ({ id })),
+      cloneNode: dupeCfg?.cloneNode ?? ((id) => ({ id })),
       applyBatch: effectiveAdapter.applyBatch?.bind(effectiveAdapter),
     },
     {
@@ -1017,13 +1017,13 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       }
     }
 
-    const sceneCfg = layersMap.scene as SceneSlotConfig<TObject, TPose> | null | undefined;
+    const sceneCfg = layersMap.scene as SceneSlotConfig<TNode, TPose> | null | undefined;
     if (
       sceneCfg &&
       !isCustomEntry(sceneCfg) &&
-      (sceneCfg as SceneSlotConfig<TObject, TPose>).drawOne
+      (sceneCfg as SceneSlotConfig<TNode, TPose>).drawOne
     ) {
-      standardLayers.scene = buildSceneLayer<TObject, TPose>(
+      standardLayers.scene = buildSceneLayer<TNode, TPose>(
         sceneCfg,
         adapter,
         debugSink,
@@ -1286,8 +1286,8 @@ function CanvasInner<TObject extends { id: string }, TPose>(
  * TypeScript will infer them from the `adapter` (or `move`/`resize`) prop.
  */
 export const Canvas = forwardRef(CanvasInner) as <
-  TObject extends { id: string } = { id: string },
-  TPose = TObject,
+  TNode extends { id: string } = { id: string },
+  TPose = TNode,
 >(
-  props: CanvasProps<TObject, TPose> & { ref?: React.ForwardedRef<CanvasExtensionApi> },
+  props: CanvasProps<TNode, TPose> & { ref?: React.ForwardedRef<CanvasExtensionApi> },
 ) => ReturnType<typeof CanvasInner>;

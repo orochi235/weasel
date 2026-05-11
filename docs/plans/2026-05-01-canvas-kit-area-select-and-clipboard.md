@@ -120,23 +120,23 @@ Replace the entire file:
 import type { Op } from './types';
 import { createDeleteOp } from './delete';
 
-interface InsertAdapter<TObject> {
-  insertObject(object: TObject): void;
+interface InsertAdapter<TNode> {
+  insertNode(object: TNode): void;
 }
 
 /** Type alias for ops produced by `createInsertOp`. Carries no extra type info today;
  *  exists so consumers can name the op type when needed. */
 export type InsertOp = Op;
 
-export function createInsertOp<TObject extends { id: string }>(args: {
-  object: TObject;
+export function createInsertOp<TNode extends { id: string }>(args: {
+  object: TNode;
   label?: string;
 }): InsertOp {
   const { object, label } = args;
   return {
     label,
     apply(adapter) {
-      (adapter as InsertAdapter<TObject>).insertObject(object);
+      (adapter as InsertAdapter<TNode>).insertNode(object);
     },
     invert() {
       return createDeleteOp({ object, label });
@@ -457,20 +457,20 @@ Then extend the existing `InsertAdapter`. Replace the current `InsertAdapter` bl
  * supplied by the consumer (passed to `useClipboard` options if needed; see
  * the hook for resolution order).
  */
-export interface InsertAdapter<TObject extends { id: string }> {
-  commitInsert(bounds: { x: number; y: number; width: number; height: number }): TObject | null;
-  commitPaste(clipboard: ClipboardSnapshot, offset: { dx: number; dy: number }): TObject[];
+export interface InsertAdapter<TNode extends { id: string }> {
+  commitInsert(bounds: { x: number; y: number; width: number; height: number }): TNode | null;
+  commitPaste(clipboard: ClipboardSnapshot, offset: { dx: number; dy: number }): TNode[];
   snapshotSelection(ids: string[]): ClipboardSnapshot;
   getPasteOffset?(clipboard: ClipboardSnapshot): { dx: number; dy: number };
-  /** Mutator wired by `insertObject`-using ops (kit-side InsertOp). */
-  insertObject(object: TObject): void;
+  /** Mutator wired by `insertNode`-using ops (kit-side InsertOp). */
+  insertNode(object: TNode): void;
   /** Mutator wired by `setSelection` ops batched alongside paste. */
   setSelection(ids: string[]): void;
   applyBatch(ops: Op[], label: string): void;
 }
 ```
 
-Note: `insertObject` and `setSelection` were previously implicit on the InsertAdapter (the op called them on the adapter at apply-time). We now make them explicit on the interface so paste can rely on them.
+Note: `insertNode` and `setSelection` were previously implicit on the InsertAdapter (the op called them on the adapter at apply-time). We now make them explicit on the interface so paste can rely on them.
 
 (`AreaSelectPose` is imported but not actually referenced in this snippet — it's exported through the types module so consumers can import it. Drop the import to satisfy `noUnusedLocals`:)
 
@@ -1443,7 +1443,7 @@ interface SnapshotItem {
 }
 
 export interface GardenInsertAdapter extends InsertAdapter<GardenObj> {
-  removeObject(id: string): void;
+  removeNode(id: string): void;
 }
 
 export function createInsertAdapter(): GardenInsertAdapter {
@@ -1537,7 +1537,7 @@ export function createInsertAdapter(): GardenInsertAdapter {
       const cell = useGardenStore.getState().garden.gridCellSizeFt;
       return { dx: cell, dy: cell };
     },
-    insertObject(obj) {
+    insertNode(obj) {
       if ('cultivarId' in obj) {
         useGardenStore.setState((s) => ({
           garden: { ...s.garden, plantings: [...s.garden.plantings, obj as Planting] },
@@ -1552,7 +1552,7 @@ export function createInsertAdapter(): GardenInsertAdapter {
         }));
       }
     },
-    removeObject(id) {
+    removeNode(id) {
       useGardenStore.setState((s) => ({
         garden: {
           ...s.garden,
@@ -1646,7 +1646,7 @@ function makeAdapter(initial: { selection?: string[]; offsetOverride?: { dx: num
     getPasteOffset: initial.offsetOverride
       ? () => initial.offsetOverride!
       : () => ({ dx: 1, dy: 1 }),
-    insertObject: (o) => { inserts.push(o); },
+    insertNode: (o) => { inserts.push(o); },
     setSelection: (ids) => { selection = [...ids]; },
     applyBatch: (ops, label) => {
       batches.push({ ops, label });
@@ -1784,8 +1784,8 @@ export interface UseClipboardReturn {
 
 const EMPTY: ClipboardSnapshot = { items: [] };
 
-export function useClipboard<TObject extends { id: string }>(
-  adapter: InsertAdapter<TObject>,
+export function useClipboard<TNode extends { id: string }>(
+  adapter: InsertAdapter<TNode>,
   options: UseClipboardOptions,
 ): UseClipboardReturn {
   const { getSelection, onPaste, pasteLabel = 'Paste' } = options;

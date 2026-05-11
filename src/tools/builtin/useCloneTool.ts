@@ -32,7 +32,7 @@ export interface CloneScratch {
  *  these — when present and `pickBest`/`drawGhost` are omitted, the tool
  *  derives sensible defaults. */
 interface IntrospectableAdapter<T> {
-  getObjects?(): T[];
+  getNodes?(): T[];
   getPose?(id: string): unknown;
 }
 
@@ -44,7 +44,7 @@ export interface UseCloneToolOptions<T extends { id: string } = { id: string }, 
   behaviors: CloneBehavior[];
   /** Hit-test the world point and return the topmost cloneable id, or
    *  null if the pointer didn't land on anything cloneable. Optional —
-   *  when omitted, the tool walks `adapter.getObjects()` back-to-front and
+   *  when omitted, the tool walks `adapter.getNodes()` back-to-front and
    *  tests pointer containment against `adapter.getPose(id)` via the same
    *  AUTO_POSE_DESCRIPTOR Canvas uses for its own pickEvery fallback. */
   pickBest?: (worldX: number, worldY: number) => string | null;
@@ -120,8 +120,8 @@ export function useCloneTool<T extends { id: string }, TPose = unknown>(
     // fallback Canvas builds at the layer level.
     const defaultPickBest = (worldX: number, worldY: number): string | null => {
       const a = adapterRef.current as IntrospectableAdapter<T> & InsertAdapter<T>;
-      if (!a.getObjects || !a.getPose) return null;
-      const objs = a.getObjects();
+      if (!a.getNodes || !a.getPose) return null;
+      const objs = a.getNodes();
       const point = { x: worldX, y: worldY, width: 0, height: 0 };
       for (let i = objs.length - 1; i >= 0; i--) {
         const o = objs[i];
@@ -141,9 +141,9 @@ export function useCloneTool<T extends { id: string }, TPose = unknown>(
     const defaultDrawGhost = (items: CloneOverlayItem[], view: View): DrawCommand[] => {
       const drawOne = optsRef.current.drawOne;
       const a = adapterRef.current as IntrospectableAdapter<T> & InsertAdapter<T>;
-      if (drawOne && a.getObjects && a.getPose) {
+      if (drawOne && a.getNodes && a.getPose) {
         const byId = new Map<string, T>();
-        for (const o of a.getObjects()) byId.set(o.id, o);
+        for (const o of a.getNodes()) byId.set(o.id, o);
         const out: DrawCommand[] = [];
         for (const item of items) {
           const obj = byId.get(item.id);

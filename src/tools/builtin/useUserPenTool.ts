@@ -51,7 +51,7 @@ export interface UseUserPenToolOptions<TPose> {
   wrapPath: (path: PolygonPath, opts: { closed: boolean }) => TPose;
   /** Insert + select adapter. */
   adapter: {
-    addObject: (pose: TPose) => string;
+    addNode: (pose: TPose) => string;
     setSelection: (ids: string[]) => void;
   };
   /** Auto-select the new object after commit. Default `true`. */
@@ -205,7 +205,7 @@ export function useUserPenTool<TPose>(
         (trailing === null || trailing.closed);
       const path = buildPath(s.finishedSubpaths, trailing);
       const pose = optsRef.current.wrapPath(path, { closed: allClosed });
-      const id = optsRef.current.adapter.addObject(pose);
+      const id = optsRef.current.adapter.addNode(pose);
       if (optsRef.current.autoSelect) optsRef.current.adapter.setSelection([id]);
       resetScratch(s);
     }

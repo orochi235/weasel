@@ -2,7 +2,7 @@
 
 **Status:** design approved 2026-05-10. Phase 1 of a two-phase rollout. Phase 2 (the actual `clip` API and stencil renderer) will be specced separately after Phase 1 lands.
 
-**Goal:** Switch Canvas's scene-layer builder from flat (`adapter.getObjects()` loop) to hierarchical (tree walk emitting nested `GroupDrawCommand`s). Add validation that forbids cross-layer subtrees, since subtree-bounded rendering cannot honor today's cross-layer escape behavior.
+**Goal:** Switch Canvas's scene-layer builder from flat (`adapter.getNodes()` loop) to hierarchical (tree walk emitting nested `GroupDrawCommand`s). Add validation that forbids cross-layer subtrees, since subtree-bounded rendering cannot honor today's cross-layer escape behavior.
 
 **Non-goals:**
 - The `clip` API itself (Phase 2).
@@ -14,7 +14,7 @@
 
 ## Motivation
 
-Garden needs nested clipping: regions clip beds, beds clip plantings. The renderer-side path Eric proposed (`clip?: Path` on `GroupDrawCommand`) requires that the kit emit hierarchical group commands in the first place. Today it doesn't — Canvas's scene layer iterates `adapter.getObjects()` flat and concatenates each node's `drawOne` output into a single list. Phase 1 fixes that. Phase 2 will add the `clip` channel on top.
+Garden needs nested clipping: regions clip beds, beds clip plantings. The renderer-side path Eric proposed (`clip?: Path` on `GroupDrawCommand`) requires that the kit emit hierarchical group commands in the first place. Today it doesn't — Canvas's scene layer iterates `adapter.getNodes()` flat and concatenates each node's `drawOne` output into a single list. Phase 1 fixes that. Phase 2 will add the `clip` channel on top.
 
 ## Decisions locked in
 
@@ -33,12 +33,12 @@ Garden needs nested clipping: regions clip beds, beds clip plantings. The render
 Pure function:
 
 ```ts
-export function buildSceneTree<TObject extends { id: string; kind?: 'leaf' | 'container'; layer?: string }, TPose>(
-  adapter: HierarchicalRenderAdapter<TObject, string> & {
+export function buildSceneTree<TNode extends { id: string; kind?: 'leaf' | 'container'; layer?: string }, TPose>(
+  adapter: HierarchicalRenderAdapter<TNode, string> & {
     getPose(id: string): TPose;
     getChildren(parentId: string | null): readonly string[];
   },
-  drawOne: (obj: TObject, pose: TPose, view: View) => DrawCommand[],
+  drawOne: (obj: TNode, pose: TPose, view: View) => DrawCommand[],
   view: View,
 ): DrawCommand[];
 ```
@@ -54,13 +54,13 @@ for each layer in adapter.getLayers(), in order:
   if not layer.visible: skip
   layerGroup = { kind: 'group', children: [] }
   for each rootId in adapter.getChildren(null):
-    rootNode = adapter.getObject(rootId)
+    rootNode = adapter.getNode(rootId)
     if rootNode.layer !== layer.id: skip
     layerGroup.children.push(buildNodeGroup(rootId))
   output.push(layerGroup)
 
 buildNodeGroup(id):
-  node = adapter.getObject(id)
+  node = adapter.getNode(id)
   pose = adapter.getPose(id)
   self = drawOne(node, pose, view)
   children = adapter.getChildren(id).map(buildNodeGroup)
@@ -71,25 +71,25 @@ A leaf with no children still gets a wrapper group containing only its own draw 
 
 ### Modified: `src/core/adapters/types.ts` — new optional surface
 
-Today's adapter exposes `getObject`, `getObjects`, `getPose`, `getChildren(parentId | null)`. For hierarchical rendering we need two more — both optional, so hand-rolled adapters keep working:
+Today's adapter exposes `getNode`, `getNodes`, `getPose`, `getChildren(parentId | null)`. For hierarchical rendering we need two more — both optional, so hand-rolled adapters keep working:
 
 ```ts
-interface HierarchicalRenderAdapter<TObject, TLayer extends string> {
+interface HierarchicalRenderAdapter<TNode, TLayer extends string> {
   /** Visible layers in render order. When absent, hierarchical render
    *  falls back to a single implicit layer. */
   getLayers?(): readonly { id: TLayer; visible: boolean }[];
   /** The node, including its `kind` and `layer`. Used by `buildSceneTree`
    *  to know whether to recurse (`kind === 'container'`) and which layer
    *  group to place the wrapper in. */
-  getObject?(id: string): TObject | undefined;
+  getNode?(id: string): TNode | undefined;
 }
 ```
 
-`getObject` already exists on `sceneToAdapter`; `getLayers` is added there. Both are additive.
+`getNode` already exists on `sceneToAdapter`; `getLayers` is added there. Both are additive.
 
 ### Modified: `src/canvas/Canvas.tsx`
 
-`buildSceneLayer` gets a capability check. If the adapter exposes `getLayers` + `getObject` + `getChildren`, use `buildSceneTree`. Otherwise, fall back to today's flat loop.
+`buildSceneLayer` gets a capability check. If the adapter exposes `getLayers` + `getNode` + `getChildren`, use `buildSceneTree`. Otherwise, fall back to today's flat loop.
 
 Consumers with hand-rolled adapters (`arrayAdapter`, etc.) lack `getLayers` and hit the flat path — no behavior change for them.
 
@@ -148,7 +148,7 @@ The renderer (WebGL `drawGroup`) already handles nested groups via its state sta
 
 | Component | Responsibility | Dependencies |
 |-----------|---------------|--------------|
-| `buildSceneTree` | Walk adapter tree, produce nested DrawCommand groups | `HierarchicalRenderAdapter` (`getLayers`, `getObject`, `getChildren`, `getPose`), consumer's `drawOne`, current `View` |
+| `buildSceneTree` | Walk adapter tree, produce nested DrawCommand groups | `HierarchicalRenderAdapter` (`getLayers`, `getNode`, `getChildren`, `getPose`), consumer's `drawOne`, current `View` |
 | `Canvas.buildSceneLayer` | Choose hierarchical vs flat path based on adapter shape | `buildSceneTree`, today's flat loop |
 | `Scene` mutation validation | Reject cross-layer subtree creation; cascade `setLayer` over containers | Scene's internal node map + layer lookup |
 

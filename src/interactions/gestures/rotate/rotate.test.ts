@@ -12,7 +12,7 @@ function makeAdapter(initial?: Array<[string, RotatedPose]>) {
   );
   const batches: { ops: Op[]; label: string }[] = [];
   const adapter: RotateAdapter<{ id: string }, RotatedPose> = {
-    getObject: (id) => (state.has(id) ? { id } : undefined),
+    getNode: (id) => (state.has(id) ? { id } : undefined),
     getPose: (id) => ({ ...state.get(id)! }),
     setPose: (id, pose) => state.set(id, { ...pose }),
     applyBatch: (ops, label) => {

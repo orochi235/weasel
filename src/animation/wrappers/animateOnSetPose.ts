@@ -31,11 +31,11 @@ export interface AnimateOnSetPoseOptions<TPose> {
   opLabel?: string;
 }
 
-export function animateOnSetPose<TObject extends { id: string }, TPose>(
-  adapter: SceneAdapter<TObject, TPose>,
+export function animateOnSetPose<TNode extends { id: string }, TPose>(
+  adapter: SceneAdapter<TNode, TPose>,
   animator: Animator,
   opts: AnimateOnSetPoseOptions<TPose> = {},
-): SceneAdapter<TObject, TPose> {
+): SceneAdapter<TNode, TPose> {
   const ms = opts.ms ?? 200;
   const skipPredicate = (id: string, from: TPose, to: TPose): boolean => {
     if (opts.shouldAnimate) return !opts.shouldAnimate(id, from, to);

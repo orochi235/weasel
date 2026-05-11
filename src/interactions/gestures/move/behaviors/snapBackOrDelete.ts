@@ -33,7 +33,7 @@ export function snapBackOrDelete<TPose>(args: {
       // Snapshot the dragged objects at gesture start so delete can undo.
       const snapshots = new Map<string, { id: string }>();
       for (const id of ctx.draggedIds) {
-        const obj = ctx.adapter.getObject(id) ?? { id };
+        const obj = ctx.adapter.getNode(id) ?? { id };
         snapshots.set(id, obj);
       }
       ctx.scratch['snapBackOrDelete.snapshots'] = snapshots;
@@ -55,7 +55,7 @@ export function snapBackOrDelete<TPose>(args: {
           | Map<string, { id: string }>
           | undefined;
         const obj = snapshots?.get(id) ?? { id };
-        const ops: Op[] = [createDeleteOp({ object: obj, label: deleteLabel })];
+        const ops: Op[] = [createDeleteOp({ node: obj, label: deleteLabel })];
         return ops;
       }
       return;

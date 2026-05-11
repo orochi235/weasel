@@ -2,14 +2,14 @@ import { worldPoseLookup } from 'features/groups/composePose';
 
 interface RectBounds { x: number; y: number; width: number; height: number }
 
-interface HitAdapter<TObject extends { id: string }, TPose> {
-  getObject: (id: string) => TObject | undefined;
-  getObjects: () => TObject[];
+interface HitAdapter<TNode extends { id: string }, TPose> {
+  getNode: (id: string) => TNode | undefined;
+  getNodes: () => TNode[];
   getPose: (id: string) => TPose;
   getParent: (id: string) => string | null;
 }
 
-export interface NestedGroupHitOpts<TObject extends { id: string }, TPose> {
+export interface NestedGroupHitOpts<TNode extends { id: string }, TPose> {
   /** Compose a child's local pose into world coords given its parent's world
    *  pose. Same shape as `composeRectPose` (the default expectation). */
   composePose: (parent: TPose, child: TPose) => TPose;
@@ -21,7 +21,7 @@ export interface NestedGroupHitOpts<TObject extends { id: string }, TPose> {
    *  for which this returns true so a click on a group's painted body resolves
    *  to a child leaf, not the group itself. Default: never (treat every object
    *  as hittable). */
-  isGroup?: (id: string, obj: TObject | undefined) => boolean;
+  isGroup?: (id: string, obj: TNode | undefined) => boolean;
 }
 
 export interface NestedGroupHitTester {
@@ -48,9 +48,9 @@ const defaultPoseBounds = <TPose>(pose: TPose): RectBounds => {
   return { x: p.x, y: p.y, width: p.width, height: p.height };
 };
 
-export function nestedGroupHitTester<TObject extends { id: string }, TPose>(
-  adapter: HitAdapter<TObject, TPose>,
-  opts: NestedGroupHitOpts<TObject, TPose>,
+export function nestedGroupHitTester<TNode extends { id: string }, TPose>(
+  adapter: HitAdapter<TNode, TPose>,
+  opts: NestedGroupHitOpts<TNode, TPose>,
 ): NestedGroupHitTester {
   const poseBounds = opts.poseBounds ?? defaultPoseBounds<TPose>;
   const isGroup = opts.isGroup ?? (() => false);
@@ -67,7 +67,7 @@ export function nestedGroupHitTester<TObject extends { id: string }, TPose>(
   };
 
   const hitLeaf = (wx: number, wy: number): string | null => {
-    const objs = adapter.getObjects();
+    const objs = adapter.getNodes();
     for (let i = objs.length - 1; i >= 0; i--) {
       const o = objs[i];
       if (isGroup(o.id, o)) continue;

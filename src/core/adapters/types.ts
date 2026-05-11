@@ -13,9 +13,9 @@ export interface ClipboardSnapshot {
 }
 
 /**
- * SnapTarget — where a dragged object would re-parent to if released.
+ * SnapTarget — where a dragged node would re-parent to if released.
  *
- * `slotPose` is the pose (in world coordinates) the object should snap to
+ * `slotPose` is the pose (in world coordinates) the node should snap to
  * within the target. `metadata` is an opaque pass-through for app-specific
  * snap details (slot index, visual hint, etc.).
  */
@@ -31,15 +31,15 @@ export interface SnapTarget<TPose = unknown> {
  * structural typing means a wider adapter satisfies any narrower interface.
  *
  * **Pose semantics:** `getPose` / `setPose` work in **local** coordinates —
- * relative to the object's direct parent (or world, for root-parented
- * objects). The kit composes world poses via `composeWorldPose` when it
- * needs to render, hit-test, or snap. For the common axis-aligned rect pose,
+ * relative to the node's direct parent (or world, for root-parented nodes).
+ * The kit composes world poses via `composeWorldPose` when it needs to
+ * render, hit-test, or snap. For the common axis-aligned rect pose,
  * `composeRectPose` / `decomposeRectPose` ship as the canonical compose pair.
  */
-export interface SceneAdapter<TObject extends { id: string }, TPose> {
+export interface SceneAdapter<TNode extends { id: string }, TPose> {
   // Pull (gesture-time queries)
-  getObjects(): TObject[];
-  getObject(id: string): TObject | undefined;
+  getNodes(): TNode[];
+  getNode(id: string): TNode | undefined;
   getSelection(): string[];
   hitTest(worldX: number, worldY: number): string | null;
   getPose(id: string): TPose;
@@ -48,8 +48,8 @@ export interface SceneAdapter<TObject extends { id: string }, TPose> {
   // Mutators (called by op apply methods)
   setPose(id: string, pose: TPose): void;
   setParent(id: string, parentId: string | null): void;
-  insertObject(object: TObject): void;
-  removeObject(id: string): void;
+  insertNode(node: TNode): void;
+  removeNode(id: string): void;
   setSelection(ids: string[]): void;
 
   // Op submission (gesture commit point). Optional — when omitted, hooks
@@ -62,11 +62,11 @@ export interface SceneAdapter<TObject extends { id: string }, TPose> {
  * Narrow adapter for `useMove`. Includes optional snap-target
  * lookup; apps without container-snapping leave it out.
  */
-export interface MoveAdapter<TObject extends { id: string }, TPose> {
-  getObject(id: string): TObject | undefined;
-  /** Enumerate all objects. `<Canvas>` derives a default rect-pose `pickEvery`
+export interface MoveAdapter<TNode extends { id: string }, TPose> {
+  getNode(id: string): TNode | undefined;
+  /** Enumerate all nodes. `<Canvas>` derives a default rect-pose `pickEvery`
    *  and the scene-iteration loop from this. */
-  getObjects(): TObject[];
+  getNodes(): TNode[];
   getPose(id: string): TPose;
   /** Optional. Required only by hierarchy-aware paths: layout-pass drop
    *  targeting (`getLayout` present), nested-group hit collapse
@@ -84,7 +84,7 @@ export interface MoveAdapter<TObject extends { id: string }, TPose> {
     worldY: number,
   ): SnapTarget<TPose> | null;
   /** Optional: direct children of `id`. When present (alongside the
-   *  `cascadeWorldPose` option on `useMove`), dragging an object
+   *  `cascadeWorldPose` option on `useMove`), dragging a node
    *  auto-cascades its descendants in the live overlay so structurally-
    *  grouped children visually follow the parent during the drag. No
    *  additional ops are generated — children's local poses don't change
@@ -104,10 +104,10 @@ export interface MoveAdapter<TObject extends { id: string }, TPose> {
  * import with interactions/types.ts.
  */
 export interface ResizeAdapter<
-  TObject extends { id: string },
+  TNode extends { id: string },
   TPose,
 > {
-  getObject(id: string): TObject | undefined;
+  getNode(id: string): TNode | undefined;
   getPose(id: string): TPose;
   setPose(id: string, pose: TPose): void;
   /** Optional: see SceneAdapter.applyBatch. */
@@ -120,10 +120,10 @@ export interface ResizeAdapter<
  * non-rect rotated poses (e.g. a `RotatedPath`) compose without changes.
  */
 export interface RotateAdapter<
-  TObject extends { id: string },
+  TNode extends { id: string },
   TPose,
 > {
-  getObject(id: string): TObject | undefined;
+  getNode(id: string): TNode | undefined;
   getPose(id: string): TPose;
   setPose(id: string, pose: TPose): void;
   /** Optional: see SceneAdapter.applyBatch. */
@@ -146,7 +146,7 @@ export interface RotateAdapter<
  * Demos that don't need marquee selection can omit these methods entirely.
  */
 export interface AreaSelectAdapter {
-  /** Returns ids of objects intersecting the world-space rect. */
+  /** Returns ids of nodes intersecting the world-space rect. */
   hitTestArea?(rect: { x: number; y: number; width: number; height: number }): string[];
   /** Current selection — read by behaviors to compute additive merges. */
   getSelection?(): string[];
@@ -182,11 +182,11 @@ export interface LassoSelectAdapter extends AreaSelectAdapter {
 /**
  * Narrow adapter for `useInsert` and `useClipboardOps`. The kit knows
  * nothing about what tool is active or what shape to construct; it asks the
- * adapter to produce object(s) given gesture or paste inputs.
+ * adapter to produce node(s) given gesture or paste inputs.
  *
- * Drag-rectangle path: `commitInsert(bounds)` returns one new object or null.
+ * Drag-rectangle path: `commitInsert(bounds)` returns one new node or null.
  * Clipboard paste path: `commitPaste(clipboard, offset)` returns the array of
- *   newly-materialized objects (in order). Both empty array and array of
+ *   newly-materialized nodes (in order). Both empty array and array of
  *   length N are valid; the kit wraps each entry in an `InsertOp`.
  *
  * `snapshotSelection(ids)` builds the payload that paste later consumes.
@@ -194,17 +194,17 @@ export interface LassoSelectAdapter extends AreaSelectAdapter {
  * supplied by the consumer (passed to `useClipboardOps` options if needed; see
  * the hook for resolution order).
  */
-export interface InsertAdapter<TObject extends { id: string }> {
-  commitInsert(bounds: { x: number; y: number; width: number; height: number }): TObject | null;
+export interface InsertAdapter<TNode extends { id: string }> {
+  commitInsert(bounds: { x: number; y: number; width: number; height: number }): TNode | null;
   commitPaste(
     clipboard: ClipboardSnapshot,
     offset: { dx: number; dy: number },
     ctx?: { dropPoint?: { worldX: number; worldY: number } },
-  ): TObject[];
+  ): TNode[];
   snapshotSelection(ids: string[]): ClipboardSnapshot;
   getPasteOffset?(clipboard: ClipboardSnapshot): { dx: number; dy: number };
-  /** Mutator wired by `insertObject`-using ops (kit-side InsertOp). */
-  insertObject(object: TObject): void;
+  /** Mutator wired by `insertNode`-using ops (kit-side InsertOp). */
+  insertNode(node: TNode): void;
   /** Mutator wired by `setSelection` ops batched alongside paste. */
   setSelection(ids: string[]): void;
   /** Optional: see SceneAdapter.applyBatch. */

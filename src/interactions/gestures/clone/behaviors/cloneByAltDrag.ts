@@ -17,7 +17,7 @@ export function cloneByAltDrag(): CloneBehavior {
       const newIds = created.map((o: { id: string }) => o.id);
       const from = ctx.adapter.getSelection?.() ?? [];
       return [
-        ...created.map((o) => createInsertOp({ object: o })),
+        ...created.map((o) => createInsertOp({ node: o })),
         createSetSelectionOp({ from: from as NodeId[], to: newIds as NodeId[] }),
       ];
     },

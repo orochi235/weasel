@@ -125,7 +125,7 @@ function LedgerCaption({ scene, anchor }: { scene: RectScene; anchor: { x: 'min'
  *  `RotatedResizeMathDemo` owns those concerns and just needs each controller
  *  to read/write pose on its scene. */
 const adapterForScene = (scene: RectScene): ResizeAdapter<{ id: string }, Rect> => ({
-  getObject: (id) => {
+  getNode: (id) => {
     const n = scene.get(asNodeId(id));
     return n ? { id: n.id } : undefined;
   },

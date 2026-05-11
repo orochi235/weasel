@@ -12,14 +12,14 @@ function makeScene() {
 }
 
 describe('sceneToAdapter', () => {
-  it('getObjects returns nodes in render order, hidden layers filtered', () => {
+  it('getNodes returns nodes in render order, hidden layers filtered', () => {
     const scene = makeScene();
     const a = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'a' } });
     const b = scene.add({ kind: 'leaf', layer: 'fg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'b' } });
     const adapter = sceneToAdapter(scene);
-    expect(adapter.getObjects().map((n) => n.id)).toEqual([a, b]);
+    expect(adapter.getNodes().map((n) => n.id)).toEqual([a, b]);
     scene.setLayerVisible('bg', false);
-    expect(adapter.getObjects().map((n) => n.id)).toEqual([b]);
+    expect(adapter.getNodes().map((n) => n.id)).toEqual([b]);
   });
 
   it('getPose / setPose round-trip and record undo', () => {

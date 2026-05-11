@@ -15,7 +15,7 @@ starting and the action committing. Promoting it to a peer term:
   Translates raw pointer/keyboard events into a normalized intent stream
   (`start/move/end/cancel`, modifier state, world coords).
 - **Action** — the model effect. `translatePose`, `deleteIds`,
-  `insertObject`, `setText`, `reorderChildren`. Pure committer; takes
+  `insertNode`, `setText`, `reorderChildren`. Pure committer; takes
   resolved arguments, emits ops, dispatches via `applyBatch`. No input
   awareness, no rendering.
 - **Feedback** — the live preview/affordance rendered between gesture
@@ -150,7 +150,7 @@ src/interactions/
   actions/              # unchanged; pure committers
     translatePose.ts    # NEW: extracted from move/clone/nudge
     transformPose.ts    # NEW: extracted from resize/rotate
-    insertObject.ts     # NEW: extracted from insert
+    insertNode.ts     # NEW: extracted from insert
     setPathCoord.ts     # NEW: extracted from edit-anchors
     delete/ nudge/ duplicate/ clipboard/ ...
   feedback/             # NEW: shared rendering primitives

@@ -30,7 +30,7 @@ co-located with the hook.
 
 ## `arrayAdapter` — the easy default
 
-`arrayAdapter<TObject, TPose>(config)` synthesizes a multi-faceted adapter
+`arrayAdapter<TNode, TPose>(config)` synthesizes a multi-faceted adapter
 from a `useState`-backed array. It satisfies `MoveAdapter`, `ResizeAdapter`,
 `InsertAdapter`, and `AreaSelectAdapter` out of the box.
 
@@ -84,12 +84,12 @@ object. So when you spread additional methods on top:
 const adapter = {
   ...arrayAdapter<Rect, Pose>({ ... }),
   ...selection.adapterMethods,
-  insertObject: (obj) => setRects((rs) => [...rs, obj]),
+  insertNode: (obj) => setRects((rs) => [...rs, obj]),
 };
 ```
 
 …and a hook calls `adapter.applyOps(ops)`, ops dispatch against the merged
-object — including your override of `insertObject` and the
+object — including your override of `insertNode` and the
 selection-backed `setSelection`. If you copy the method off
 (`const fn = adapter.applyOps`) you'll lose `this` and ops will dispatch
 against `undefined`. Don't do that.
@@ -116,21 +116,21 @@ you use require. Compose narrow types via intersection.
 
 | Hook | Required adapter shape |
 |---|---|
-| `useMove` | `MoveAdapter<TObject, TPose>` |
-| `useResize` | `ResizeAdapter<TObject, TPose>` |
-| `useRotate` | `RotateAdapter<TObject, TPose>` |
-| `useInsert` | `InsertAdapter<TObject>` |
+| `useMove` | `MoveAdapter<TNode, TPose>` |
+| `useResize` | `ResizeAdapter<TNode, TPose>` |
+| `useRotate` | `RotateAdapter<TNode, TPose>` |
+| `useInsert` | `InsertAdapter<TNode>` |
 | `useAreaSelect` | `AreaSelectAdapter` |
-| `useClone` | `InsertAdapter<TObject>` |
+| `useClone` | `InsertAdapter<TNode>` |
 | `useTextEdit` | none — direct callbacks (see hook signature) |
-| `useDelete` | `DeleteAdapter` (`getSelection`, optional `getObject`, optional `setSelection`/`removeObject`/`applyBatch`) |
-| `useDuplicate` | `DuplicateAdapter<TPose>` (adds `cloneObject(id, offset)`) |
+| `useDelete` | `DeleteAdapter` (`getSelection`, optional `getNode`, optional `setSelection`/`removeNode`/`applyBatch`) |
+| `useDuplicate` | `DuplicateAdapter<TPose>` (adds `cloneNode(id, offset)`) |
 | `useNudge` | `NudgeAdapter<TPose>` (`getSelection`, `getPose`) |
 | `useReorder` | `ReorderAdapter` (with optional `getChildren`/`setChildOrder` — no-op when absent) |
 | `useGroup` / `useUngroup` | `GroupActionAdapter` (extends `GroupAdapter`) |
 | `useNestedGroup` / `useNestedUngroup` | `NestedGroupActionAdapter` |
 | `useUndoRedo` | `UndoRedoAdapter` (`undo`, `redo`, optional `canUndo`/`canRedo`) |
-| `useClipboard` | `ClipboardAdapter<TObject>` (extends `InsertAdapter`) |
+| `useClipboard` | `ClipboardAdapter<TNode>` (extends `InsertAdapter`) |
 | `useSelectAll` | `SelectAllAdapter` (`getSelection`, `listAll`) |
 | `useEscape` | `EscapeAdapter` (`getSelection`) |
 

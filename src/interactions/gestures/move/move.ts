@@ -63,7 +63,7 @@ export interface MoveMoveArgs {
 }
 
 /** Return shape of `useMove`: lifecycle methods and a live overlay snapshot. */
-export interface MoveController<TObject extends { id: string }, TPose> {
+export interface MoveController<TNode extends { id: string }, TPose> {
   start(args: MoveStartArgs): void;
   move(args: MoveMoveArgs): boolean;
   end(): void;
@@ -73,14 +73,14 @@ export interface MoveController<TObject extends { id: string }, TPose> {
   /** The adapter passed in. Exposed so downstream consumers (notably
    *  `<Canvas>`) can derive default `pickEvery`/`boundsOf` without taking
    *  the adapter as a separate prop. */
-  adapter: MoveAdapter<TObject, TPose>;
+  adapter: MoveAdapter<TNode, TPose>;
 }
 
 /** Pointer-driven move interaction with composable behaviors (snap, container reparent, snap-back) and op-batched commit. */
-export function useMove<TObject extends { id: string }, TPose>(
-  adapter: MoveAdapter<TObject, TPose>,
+export function useMove<TNode extends { id: string }, TPose>(
+  adapter: MoveAdapter<TNode, TPose>,
   options: UseMoveOptions<TPose> = {},
-): MoveController<TObject, TPose> {
+): MoveController<TNode, TPose> {
   const {
     translatePose = translateRectPose as unknown as (pose: TPose, dx: number, dy: number) => TPose,
     behaviors = [],
@@ -129,7 +129,7 @@ export function useMove<TObject extends { id: string }, TPose>(
 
   interface MoveScratch {
     ids: string[];
-    ctx: GestureContext<TPose, TObject> | null;
+    ctx: GestureContext<TPose, TNode> | null;
     cascadeIds: string[];
     cascadeOriginWorld: Map<string, TPose>;
     layoutPass: LayoutPass;
@@ -254,7 +254,7 @@ export function useMove<TObject extends { id: string }, TPose>(
           }
         };
         walk(null, []);
-        const objs = adapter.getObjects();
+        const objs = adapter.getNodes();
         let rootIdx = (getChildren.call(adapter, null) ?? []).length;
         for (const obj of objs) {
           if (visited.has(obj.id)) continue;
@@ -265,7 +265,7 @@ export function useMove<TObject extends { id: string }, TPose>(
           walk(obj.id, path);
         }
       } else {
-        const objs = adapter.getObjects();
+        const objs = adapter.getNodes();
         for (let i = 0; i < objs.length; i++) {
           considerCandidate(objs[i].id, [i]);
         }
@@ -561,7 +561,7 @@ export function useMove<TObject extends { id: string }, TPose>(
 
   const isActive = useCallback(() => gesture.phase === 'active', [gesture]);
 
-  return useMemo<MoveController<TObject, TPose>>(() => ({
+  return useMemo<MoveController<TNode, TPose>>(() => ({
     start,
     move,
     end: gesture.end,

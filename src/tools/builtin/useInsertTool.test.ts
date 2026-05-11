@@ -9,7 +9,7 @@ describe('useInsertTool', () => {
     commitInsert: vi.fn((bounds: any) => ({ id: 'new', ...bounds })),
     commitPaste: vi.fn(() => []),
     snapshotSelection: vi.fn(),
-    insertObject: vi.fn(),
+    insertNode: vi.fn(),
     setSelection: vi.fn(),
     applyBatch: vi.fn(),
   } as any;
@@ -50,7 +50,7 @@ describe('useInsertTool', () => {
       commitInsert,
       commitPaste: vi.fn(() => []),
       snapshotSelection: vi.fn(),
-      insertObject: vi.fn(),
+      insertNode: vi.fn(),
       setSelection: vi.fn(),
       applyBatch,
     } as any;
@@ -70,7 +70,7 @@ describe('useInsertTool', () => {
       commitInsert: vi.fn(() => ({ id: 'new', x: 0, y: 0, width: 50, height: 50 })),
       commitPaste: vi.fn(() => []),
       snapshotSelection: vi.fn(),
-      insertObject: vi.fn(),
+      insertNode: vi.fn(),
       setSelection: vi.fn(),
       applyBatch: adapterApplyBatch,
     } as any;
@@ -98,7 +98,7 @@ describe('useInsertTool — opt-in click + hitExisting', () => {
       commitInsert: vi.fn(),
       commitPaste: vi.fn(() => []),
       snapshotSelection: vi.fn(),
-      insertObject: vi.fn(),
+      insertNode: vi.fn(),
       setSelection: vi.fn(),
       applyBatch: vi.fn(),
     } as any;
@@ -116,7 +116,7 @@ describe('useInsertTool — opt-in click + hitExisting', () => {
       commitInsert: vi.fn(),
       commitPaste: vi.fn(() => []),
       snapshotSelection: vi.fn(),
-      insertObject: vi.fn(),
+      insertNode: vi.fn(),
       setSelection: vi.fn(),
       applyBatch: vi.fn(),
     } as any;
@@ -131,7 +131,7 @@ describe('useInsertTool — opt-in click + hitExisting', () => {
       commitInsert,
       commitPaste: vi.fn(() => []),
       snapshotSelection: vi.fn(),
-      insertObject: vi.fn(),
+      insertNode: vi.fn(),
       setSelection: vi.fn(),
       applyBatch: vi.fn(),
     } as any;
@@ -158,7 +158,7 @@ describe('useInsertTool overlay', () => {
     commitInsert: vi.fn((bounds: any) => ({ id: 'new', ...bounds })),
     commitPaste: vi.fn(() => []),
     snapshotSelection: vi.fn(),
-    insertObject: vi.fn(),
+    insertNode: vi.fn(),
     setSelection: vi.fn(),
     applyBatch: vi.fn(),
   } as any;

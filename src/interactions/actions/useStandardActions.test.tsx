@@ -61,13 +61,13 @@ describe('useStandardActions', () => {
     return <>{children}</>;
   }
 
-  it('registers all 15 default actions when cloneObject is supplied', () => {
+  it('registers all 15 default actions when cloneNode is supplied', () => {
     const seen: string[][] = [];
     render(
       <ActionsProvider>
         <Host
           deps={makeDeps()}
-          options={{ defaults: { cloneObject: (id) => ({ id: asNodeId(id + "'") }) } }}
+          options={{ defaults: { cloneNode: (id) => ({ id: asNodeId(id + "'") }) } }}
         />
         <ProbeIds onIds={(ids) => seen.push(ids)} />
       </ActionsProvider>,
@@ -101,7 +101,7 @@ describe('useStandardActions', () => {
           deps={makeDeps()}
           options={{
             actions: { selectAll: null },
-            defaults: { cloneObject: (id) => ({ id: asNodeId(id + "'") }) },
+            defaults: { cloneNode: (id) => ({ id: asNodeId(id + "'") }) },
           }}
         />
         <ProbeIds onIds={(ids) => seen.push(ids)} />
@@ -122,7 +122,7 @@ describe('useStandardActions', () => {
           deps={makeDeps()}
           options={{
             actions: { duplicate: { run: customRun } },
-            defaults: { cloneObject: (id) => ({ id: asNodeId(id + "'") }) },
+            defaults: { cloneNode: (id) => ({ id: asNodeId(id + "'") }) },
           }}
         />
         <ProbeAction id="duplicate" onAction={(a) => { captured = a; }} />
@@ -147,7 +147,7 @@ describe('useStandardActions', () => {
             actions: {
               copy: { id: 'copy', label: 'Copy', defaultBinding: { key: 'c', mod: true }, run: copyRun },
             },
-            defaults: { cloneObject: (id) => ({ id: asNodeId(id + "'") }) },
+            defaults: { cloneNode: (id) => ({ id: asNodeId(id + "'") }) },
           }}
         />
         <ProbeIds onIds={(ids) => seen.push(ids)} />
@@ -189,7 +189,7 @@ describe('useStandardActions', () => {
         <ActionsProvider>
           <Host
             deps={makeDeps()}
-            options={{ defaults: { cloneObject: (id) => ({ id: asNodeId(id + "'") }) } }}
+            options={{ defaults: { cloneNode: (id) => ({ id: asNodeId(id + "'") }) } }}
           />
           <Capture snapshot="a" />
           <Capture snapshot="b" />
@@ -207,7 +207,7 @@ describe('useStandardActions', () => {
     void reg;
   });
 
-  it('without cloneObject, duplicate is dropped', () => {
+  it('without cloneNode, duplicate is dropped', () => {
     const seen: string[][] = [];
     render(
       <ActionsProvider>
@@ -261,7 +261,7 @@ describe('useStandardActions', () => {
       <ActionsProvider>
         <Host
           deps={makeDeps()}
-          options={{ defaults: { cloneObject: (id) => ({ id: asNodeId(id + "'") }) } }}
+          options={{ defaults: { cloneNode: (id) => ({ id: asNodeId(id + "'") }) } }}
         />
         <Probe />
       </ActionsProvider>,

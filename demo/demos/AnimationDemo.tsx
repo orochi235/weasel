@@ -39,14 +39,14 @@ export function AnimationDemo() {
       toPose: (c) => ({ x: c.x, y: c.y, width: c.width, height: c.height }),
     }),
     ...selection.adapterMethods,
-    insertObject: (obj: Card) => {
+    insertNode: (obj: Card) => {
       // Mutate the live ref synchronously so wrappers that read getPose
-      // immediately after insertObject (e.g. animateLifecycle) see the new
+      // immediately after insertNode (e.g. animateLifecycle) see the new
       // object before React state catches up.
       cardsRef.current = [...cardsRef.current, obj];
       setCards(cardsRef.current);
     },
-    removeObject: (id: string) => {
+    removeNode: (id: string) => {
       cardsRef.current = cardsRef.current.filter((c) => c.id !== id);
       setCards(cardsRef.current);
     },
@@ -97,7 +97,7 @@ export function AnimationDemo() {
       path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
       fill: { color: card.color },
     }],
-    getObject: (id) => cardsRef.current.find((c) => c.id === id) ?? null,
+    getNode: (id) => cardsRef.current.find((c) => c.id === id) ?? null,
   });
   const tools = useTools({ active: 'select', registry: { select } });
 
@@ -109,7 +109,7 @@ export function AnimationDemo() {
 
   const addCard = () => {
     const id = `n${nextId.current++}`;
-    adapter.insertObject({
+    adapter.insertNode({
       id,
       x: 200 + Math.random() * 100,
       y: 250,

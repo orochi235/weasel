@@ -111,15 +111,15 @@ The hook publishes `overlay` analogous to insert. The renderer reads the overlay
 `InsertAdapter` becomes:
 
 ```ts
-interface InsertAdapter<TObject extends { id: string }> {
+interface InsertAdapter<TNode extends { id: string }> {
   /** Drag-rectangle source. */
-  commitInsert(bounds: InsertBounds): TObject | null;
+  commitInsert(bounds: InsertBounds): TNode | null;
 
   /** Clipboard source. Returns the materialized objects (in order). */
   commitPaste(
     clipboard: ClipboardSnapshot,
     offset: { dx: number; dy: number },
-  ): TObject[];
+  ): TNode[];
 
   /** Optional. Default returns one grid cell down-right. */
   getPasteOffset?(
@@ -173,7 +173,7 @@ Repo-wide rename of the existing factory and type:
 - `createCreateOp` → `createInsertOp`
 - `CreateOp` → `InsertOp`
 
-The op semantics are unchanged — same payload (`{ object: TObject }`), same `apply` (calls `adapter.insertObject(object)`). Touched files: kit op definitions, all kit hook implementations that emit it (insert hook, future paste path), and any tests asserting the op shape. Done as Task 0 to keep subsequent diffs clean.
+The op semantics are unchanged — same payload (`{ object: TNode }`), same `apply` (calls `adapter.insertNode(object)`). Touched files: kit op definitions, all kit hook implementations that emit it (insert hook, future paste path), and any tests asserting the op shape. Done as Task 0 to keep subsequent diffs clean.
 
 ## File layout
 

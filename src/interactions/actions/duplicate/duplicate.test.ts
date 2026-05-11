@@ -15,7 +15,7 @@ function makeAdapter(initial: string[] = []) {
   const adapter: DuplicateAdapter<Pose> = {
     getSelection: () => selection,
     getPose: (id) => poses[id] ?? { x: 0, y: 0 },
-    cloneObject: (id, offset) => {
+    cloneNode: (id, offset) => {
       counter += 1;
       const newId = asNodeId(`${id}-clone-${counter}`);
       const p = poses[id] ?? { x: 0, y: 0 };
@@ -54,7 +54,7 @@ describe('useDuplicate', () => {
     const helpers = makeAdapter(['a']);
     const { result } = renderHook(() => useDuplicate(helpers.adapter));
     act(() => { result.current.duplicate(); });
-    // cloneObject was invoked with the default offset; verify via the cloned pose
+    // cloneNode was invoked with the default offset; verify via the cloned pose
     const clone = Object.entries(helpers.poses).find(([k]) => k.startsWith('a-clone'));
     expect(clone).toBeDefined();
     expect(clone![1]).toEqual({ x: 8, y: 8 });

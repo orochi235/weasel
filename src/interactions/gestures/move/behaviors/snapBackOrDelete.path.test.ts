@@ -12,7 +12,7 @@ function ctx(originPose: Path, currentPose: Path): GestureContext<Path> {
     modifiers: { alt: false, shift: false, meta: false, ctrl: false },
     pointer: { worldX: 0, worldY: 0, clientX: 0, clientY: 0 },
     adapter: {
-      getObject: (id: string) => ({ id }),
+      getNode: (id: string) => ({ id }),
     } as any,
     scratch: {},
   };

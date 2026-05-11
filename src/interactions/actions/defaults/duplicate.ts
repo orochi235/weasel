@@ -8,7 +8,7 @@ import { ActionDisabledReason } from '../registry';
 /** @experimental */
 export interface DuplicateDeps {
   getSelection: () => NodeId[];
-  cloneObject: (id: NodeId, offset: { dx: number; dy: number }) => { id: NodeId };
+  cloneNode: (id: NodeId, offset: { dx: number; dy: number }) => { id: NodeId };
   applyBatch: (ops: Op[], label?: string) => void;
   /** Per-clone translation. Default {dx:8, dy:8}. */
   offset?: { dx: number; dy: number };
@@ -28,10 +28,10 @@ export function defaultDuplicateAction(deps: DuplicateDeps): Action {
     run: () => {
       const sel = deps.getSelection();
       if (sel.length === 0) return;
-      const created = sel.map((id) => deps.cloneObject(id, offset));
+      const created = sel.map((id) => deps.cloneNode(id, offset));
       if (created.length === 0) return;
       const ops: Op[] = [
-        ...created.map((obj) => createInsertOp({ object: obj })),
+        ...created.map((obj) => createInsertOp({ node: obj })),
         createSetSelectionOp({ from: sel, to: created.map((c) => c.id) }),
       ];
       deps.applyBatch(ops, 'Duplicate');

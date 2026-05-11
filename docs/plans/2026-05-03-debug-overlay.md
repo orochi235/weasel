@@ -1393,7 +1393,7 @@ debug?.recordHitbox(id, 'anchor', { kind: 'circle', cx: ax, cy: ay, r });
 
 - [ ] **Step 4: Thread from Canvas**
 
-In `Canvas.tsx`, extend the `useEditAnchors<TObject>(editAnchorsAdapter, { ... })` options with `debug: debugSink ?? undefined`.
+In `Canvas.tsx`, extend the `useEditAnchors<TNode>(editAnchorsAdapter, { ... })` options with `debug: debugSink ?? undefined`.
 
 - [ ] **Step 5: Run + commit**
 

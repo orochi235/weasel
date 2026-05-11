@@ -1,5 +1,54 @@
 import type { RectPose } from 'features/groups/composePose';
 
+/**
+ * # SceneNode — the thing in the scene
+ *
+ * A `SceneNode` is the single canonical unit of a weasel scene. Everything
+ * the user sees on the canvas — a shape, a group, an annotation, a tile —
+ * is one of these. Containers and leaves are both nodes; the kit has no
+ * other concept of "scene element."
+ *
+ * ## Three orthogonal slots
+ *
+ * Every node carries three independent slots, plus its tree position:
+ *
+ *   - **`data: TData`** — app-defined payload. The kit never inspects it.
+ *     Color, label, kind, glyph, sample-rate, whatever the app's domain
+ *     calls for. Mutated via `Scene.update(id, { data })`.
+ *
+ *   - **`pose: TPose`** — local transform, relative to the node's direct
+ *     parent (or world, for root nodes). Default `RectPose` is
+ *     `{ x, y, width, height }`, but `TPose` is fully generic so apps can
+ *     use rotated rects, paths, ellipses, etc. The kit composes world
+ *     poses via `composeWorldPose` when rendering / hit-testing / snapping.
+ *
+ *   - **`layer: TLayer`** — a string tag associating the node with a
+ *     visual `RenderLayer` at draw time. Separate from `LayerRecord` (the
+ *     per-layer visible/locked metadata held by the `Scene`).
+ *
+ * Tree position lives on the node itself: every node has a `parent` (or
+ * `null` for roots), and `ContainerNode` adds an ordered `children: NodeId[]`.
+ *
+ * ## Identity is by `NodeId`, not by reference
+ *
+ * Nodes are addressed by `NodeId` everywhere outside the scene tree:
+ * selection is `NodeId[]`, ops reference `NodeId`s, adapter methods accept
+ * `string` ids and look up the node on demand. The `Node` object itself is
+ * a snapshot of current state — don't hold references to it across scene
+ * updates; look up by id when you need the latest.
+ *
+ * Picking helpers (`pickBest`, `pickEvery`) likewise return ids, not nodes —
+ * they're hit-testing primitives that stay ignorant of node payload shape.
+ *
+ * ## Vocabulary
+ *
+ * The kit-internal name is `Node`; the public re-export is `SceneNode`
+ * (avoids collision with DOM `Node` at call sites). Adapter methods speak
+ * the same vocabulary: `getNode`, `getNodes`, `insertNode`, `removeNode`,
+ * `cloneNode`, `addNode`. Older code, demos, and comments may still say
+ * "object" or "item" — those are historical aliases for the same concept.
+ */
+
 /** Opaque branded id. Treat as opaque outside the kit. */
 export type NodeId = string & { readonly __brand: 'NodeId' };
 

@@ -10,7 +10,7 @@ function makeAdapter(initial: string[] = []) {
   const batches: { ops: Op[]; label: string }[] = [];
   const adapter: DeleteAdapter = {
     getSelection: () => selection,
-    getObject: (id) => ({ id }),
+    getNode: (id) => ({ id }),
     setSelection: (ids) => { selection = [...ids]; },
     applyBatch: (ops, label) => { batches.push({ ops, label }); },
   };

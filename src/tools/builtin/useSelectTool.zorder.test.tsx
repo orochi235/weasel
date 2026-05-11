@@ -41,7 +41,7 @@ describe('useSelectTool — default pickEvery z-order', () => {
       const adapter = { ...base, ...sel.adapterMethods };
 
       // No pickEvery / boundsOf — relies on the new defaults (rect AABB
-      // scan over adapter.getObjects()).
+      // scan over adapter.getNodes()).
       const selectTool = useSelectTool(adapter, {});
       const tools = useTools({ active: 'select', registry: { select: selectTool } });
 

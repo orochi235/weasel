@@ -10,8 +10,8 @@ interface Obj { id: string }
 function makeAdapter(initial: Map<string, RectPose>) {
   const ops: { ops: Op[]; label: string }[] = [];
   const adapter = {
-    getObjects: () => [],
-    getObject: (id: string): Obj | undefined => (initial.has(id) ? { id } : undefined),
+    getNodes: () => [],
+    getNode: (id: string): Obj | undefined => (initial.has(id) ? { id } : undefined),
     getSelection: () => [],
     hitTest: () => null,
     getPose: (id: string) => initial.get(id)!,
@@ -20,8 +20,8 @@ function makeAdapter(initial: Map<string, RectPose>) {
       initial.set(id, pose);
     }),
     setParent: () => {},
-    insertObject: () => {},
-    removeObject: () => {},
+    insertNode: () => {},
+    removeNode: () => {},
     setSelection: () => {},
     applyBatch: vi.fn((batch: Op[], label: string) => {
       ops.push({ ops: batch, label });

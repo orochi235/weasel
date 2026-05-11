@@ -170,7 +170,7 @@ export function snapBackOrDelete<TPose extends { x: number; y: number }>(args: {
     onStart(ctx) {
       const snapshots = new Map<string, { id: string }>();
       for (const id of ctx.draggedIds) {
-        const obj = ctx.adapter.getObject(id) ?? { id };
+        const obj = ctx.adapter.getNode(id) ?? { id };
         snapshots.set(id, obj);
       }
       ctx.scratch['snapBackOrDelete.snapshots'] = snapshots;
@@ -342,14 +342,14 @@ export interface PointerState {
  * onMove. `scratch` is per-gesture key/value storage that resets at the
  * next gesture start.
  */
-export interface GestureContext<TPose, TObject extends { id: string } = { id: string }> {
+export interface GestureContext<TPose, TNode extends { id: string } = { id: string }> {
   draggedIds: string[];
   origin: Map<string, TPose>;
   current: Map<string, TPose>;
   snap: SnapTarget<TPose> | null;
   modifiers: ModifierState;
   pointer: PointerState;
-  adapter: MoveAdapter<TObject, TPose>;
+  adapter: MoveAdapter<TNode, TPose>;
   /**
    * Per-gesture mutable store. Keys should be namespaced by behavior name to avoid
    * collisions: `'behaviorName'` for a single value, `'behaviorName.field'` for
@@ -461,8 +461,8 @@ import type { ResizePose } from '../interactions/types';
  * Narrow adapter for `useResizeInteraction`. Mirrors `MoveAdapter`'s shape
  * minus reparenting and snap-target lookup.
  */
-export interface ResizeAdapter<TObject extends { id: string }, TPose extends ResizePose> {
-  getObject(id: string): TObject | undefined;
+export interface ResizeAdapter<TNode extends { id: string }, TPose extends ResizePose> {
+  getNode(id: string): TNode | undefined;
   getPose(id: string): TPose;
   setPose(id: string, pose: TPose): void;
   applyBatch(ops: Op[], label: string): void;
@@ -473,8 +473,8 @@ export interface ResizeAdapter<TObject extends { id: string }, TPose extends Res
  * what tool is active or what shape to construct; it asks the adapter to
  * produce an object given the gesture bounds. Returning `null` aborts.
  */
-export interface InsertAdapter<TObject extends { id: string }> {
-  commitInsert(bounds: { x: number; y: number; width: number; height: number }): TObject | null;
+export interface InsertAdapter<TNode extends { id: string }> {
+  commitInsert(bounds: { x: number; y: number; width: number; height: number }): TNode | null;
   applyBatch(ops: Op[], label: string): void;
 }
 ```
@@ -1106,7 +1106,7 @@ function makeAdapter() {
   ]);
   const batches: { ops: Op[]; label: string }[] = [];
   const adapter: ResizeAdapter<{ id: string }, P> = {
-    getObject: (id) => (state.has(id) ? { id } : undefined),
+    getNode: (id) => (state.has(id) ? { id } : undefined),
     getPose: (id) => ({ ...(state.get(id)!) }),
     setPose: (id, pose) => state.set(id, { ...pose }),
     applyBatch: (ops, label) => {
@@ -1195,8 +1195,8 @@ interface State<TPose extends ResizePose> {
   lastCurrent: TPose | null;
 }
 
-export function useResizeInteraction<TObject extends { id: string }, TPose extends ResizePose>(
-  adapter: ResizeAdapter<TObject, TPose>,
+export function useResizeInteraction<TNode extends { id: string }, TPose extends ResizePose>(
+  adapter: ResizeAdapter<TNode, TPose>,
   options: UseResizeInteractionOptions<TPose>,
 ): UseResizeInteractionReturn<TPose> {
   const {
@@ -1669,10 +1669,10 @@ describe('createZoneResizeAdapter', () => {
     expect(a.getPose('z1')).toEqual({ x: 1, y: 2, width: 4, height: 5 });
   });
 
-  it('getObject returns the zone', () => {
+  it('getNode returns the zone', () => {
     const a = createZoneResizeAdapter();
-    expect(a.getObject('z1')?.id).toBe('z1');
-    expect(a.getObject('missing')).toBeUndefined();
+    expect(a.getNode('z1')?.id).toBe('z1');
+    expect(a.getNode('missing')).toBeUndefined();
   });
 
   it('applyBatch checkpoints + applies; undo restores', () => {
@@ -1711,7 +1711,7 @@ export function createZoneResizeAdapter(): ResizeAdapter<Zone, ZoneResizePose> {
     return useGardenStore.getState().garden.zones.find((z) => z.id === id);
   }
   const adapter: ResizeAdapter<Zone, ZoneResizePose> = {
-    getObject(id) {
+    getNode(id) {
       return getZone(id);
     },
     getPose(id) {
@@ -1799,7 +1799,7 @@ export function createStructureResizeAdapter(): ResizeAdapter<Structure, Structu
     return useGardenStore.getState().garden.structures.find((s) => s.id === id);
   }
   const adapter: ResizeAdapter<Structure, StructureResizePose> = {
-    getObject(id) {
+    getNode(id) {
       return getStructure(id);
     },
     getPose(id) {
@@ -2015,11 +2015,11 @@ function makeAdapter(opts?: { commitReturnsNull?: boolean }) {
     },
     applyBatch(ops, label) {
       batches.push({ ops, label });
-      // Simulate insertObject side-effect by recording.
+      // Simulate insertNode side-effect by recording.
       for (const op of ops) {
         op.apply({
-          insertObject: (o: Obj) => inserts.push(o),
-          removeObject: () => {},
+          insertNode: (o: Obj) => inserts.push(o),
+          removeNode: () => {},
         });
       }
     },
@@ -2091,8 +2091,8 @@ export interface UseInsertInteractionReturn<TPose extends { x: number; y: number
 
 const GID = 'gesture';
 
-export function useInsertInteraction<TObject extends { id: string }, TPose extends { x: number; y: number }>(
-  adapter: InsertAdapter<TObject>,
+export function useInsertInteraction<TNode extends { id: string }, TPose extends { x: number; y: number }>(
+  adapter: InsertAdapter<TNode>,
   options: UseInsertInteractionOptions<TPose>,
 ): UseInsertInteractionReturn<TPose> {
   const {
@@ -2393,9 +2393,9 @@ Reads `useUiStore.getState().plottingTool` in `commitInsert`. Returns `null` if 
 - Create: `src/canvas/adapters/insert.test.ts`
 - Create: `src/canvas/adapters/insert.ts`
 
-The legacy `usePlotInteraction.end` calls `addStructure({ type, x, y, width, height })` or `addZone({ x, y, width, height, color, pattern })` directly on the store. The store auto-assigns ids. To make `commitInsert` return the constructed object (which the kit then wraps in a CreateOp), we use a different mutation path: we construct the object with our own id, then `applyBatch` calls `insertObject` (an adapter-level mutator) to drop it into the store.
+The legacy `usePlotInteraction.end` calls `addStructure({ type, x, y, width, height })` or `addZone({ x, y, width, height, color, pattern })` directly on the store. The store auto-assigns ids. To make `commitInsert` return the constructed object (which the kit then wraps in a CreateOp), we use a different mutation path: we construct the object with our own id, then `applyBatch` calls `insertNode` (an adapter-level mutator) to drop it into the store.
 
-The kit's `createCreateOp` requires the adapter to expose `insertObject`. So `insertAdapter` adds that mutator alongside `applyBatch` and `commitInsert`.
+The kit's `createCreateOp` requires the adapter to expose `insertNode`. So `insertAdapter` adds that mutator alongside `applyBatch` and `commitInsert`.
 
 - [ ] **Step 9.1: Write failing tests**
 
@@ -2474,8 +2474,8 @@ import type { InsertAdapter, Op } from '@/canvas-kit';
 type GardenObj = (Structure | Zone) & { id: string };
 
 export interface GardenInsertAdapter extends InsertAdapter<GardenObj> {
-  insertObject(obj: GardenObj): void;
-  removeObject(id: string): void;
+  insertNode(obj: GardenObj): void;
+  removeNode(id: string): void;
 }
 
 function makeId(prefix: string) {
@@ -2513,7 +2513,7 @@ export function createInsertAdapter(): GardenInsertAdapter {
       }
       return null;
     },
-    insertObject(obj) {
+    insertNode(obj) {
       // Decide layer by structural shape: a structure has `type`, a zone doesn't.
       if ('type' in obj) {
         useGardenStore.setState((st) => ({
@@ -2525,7 +2525,7 @@ export function createInsertAdapter(): GardenInsertAdapter {
         }));
       }
     },
-    removeObject(id) {
+    removeNode(id) {
       useGardenStore.setState((st) => ({
         garden: {
           ...st.garden,

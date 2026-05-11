@@ -16,9 +16,9 @@ export function PanDemo() {
 
   // We only need select + hand for this demo.
   const selectAdapter = {
-    getObject: (id: string) => items.find((r) => r.id === id),
+    getNode: (id: string) => items.find((r) => r.id === id),
     getPose: (id: string) => items.find((r) => r.id === id) ?? null,
-    getObjects: () => items,
+    getNodes: () => items,
     setPose: (id: string, pose: unknown) => setItems((cur) => cur.map((r) => r.id === id ? { ...r, ...(pose as Rect) } : r)),
     getSelection: () => [] as string[],
     setSelection: () => {},

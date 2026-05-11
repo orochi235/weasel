@@ -69,11 +69,11 @@ export interface RotateOverlayStyle {
   ghostAlpha?: number;
 }
 
-export interface UseSelectToolOptions<TObject extends { id: string }, TPose> {
+export interface UseSelectToolOptions<TNode extends { id: string }, TPose> {
   /** Return ids of all objects whose painted body covers (worldX, worldY).
    *  Order doesn't matter — the tool collapses parent/child overlap via
    *  `pickTopMostHit`. When omitted, defaults to a rect AABB-vs-point scan
-   *  over `adapter.getObjects()` using `poseBounds` (identity by default,
+   *  over `adapter.getNodes()` using `poseBounds` (identity by default,
    *  works for `{x,y,width,height}` poses). Override for tighter shapes
    *  (path / polygon hit-tests). */
   pickEvery?: (worldX: number, worldY: number) => string[];
@@ -126,12 +126,12 @@ export interface UseSelectToolOptions<TObject extends { id: string }, TPose> {
    *  not rendered (only the marquee draws). Optional only because some demos
    *  (e.g. NestedGroupsDemo) compose ghosts via custom layers. */
   drawGhost?: (
-    obj: TObject | null,
+    obj: TNode | null,
     pose: TPose,
     view: { x: number; y: number; scale: number },
   ) => DrawCommand[];
   /** Object lookup for the ghost render, paired with `drawGhost`. Optional. */
-  getObject?: (id: string) => TObject | null;
+  getNode?: (id: string) => TNode | null;
   /** Returns the live selection ids. When supplied, `previewBounds` synthesizes
    *  the multi-union AABB for `MULTI_RESIZE_TARGET_ID` from `boundsOf` of each
    *  selected id — used by `<Canvas selectionMode="multi">`'s selection-overlay
@@ -162,13 +162,13 @@ export interface UseSelectToolOptions<TObject extends { id: string }, TPose> {
 }
 
 /** Intersection of all four sub-controller adapter interfaces.
- *  The narrow adapters share compatible `getObject`/`getPose`/`setPose`/`applyBatch`
+ *  The narrow adapters share compatible `getNode`/`getPose`/`setPose`/`applyBatch`
  *  shapes; `AreaSelectAdapter` adds `hitTestArea`/`applyOps`/`setSelection`/`getSelection`.
  *  No conflicting overloads — intersection is safe. */
-type SelectAdapter<TObject extends { id: string }, TPose> =
-  MoveAdapter<TObject, TPose>
-  & ResizeAdapter<TObject, TPose>
-  & RotateAdapter<TObject, TPose>
+type SelectAdapter<TNode extends { id: string }, TPose> =
+  MoveAdapter<TNode, TPose>
+  & ResizeAdapter<TNode, TPose>
+  & RotateAdapter<TNode, TPose>
   & AreaSelectAdapter;
 
 export type SelectScratch =
@@ -188,13 +188,13 @@ export type SelectScratch =
  *  3. pointer.onDown empty → area-select marquee (or click-to-clear).
  *
  *  `scratch` routes `drag.*` to the matching controller. */
-export function useSelectTool<TObject extends { id: string }, TPose>(
-  adapter: SelectAdapter<TObject, TPose>,
-  options: UseSelectToolOptions<TObject, TPose>,
+export function useSelectTool<TNode extends { id: string }, TPose>(
+  adapter: SelectAdapter<TNode, TPose>,
+  options: UseSelectToolOptions<TNode, TPose>,
 ): Tool<SelectScratch> {
-  const move = useMove<TObject, TPose>(adapter, options.move ?? {});
-  const resize = useResize<TObject, TPose>(adapter, options.resize ?? {});
-  const rotate = useRotate<TObject, TPose>(adapter, options.rotate ?? {});
+  const move = useMove<TNode, TPose>(adapter, options.move ?? {});
+  const resize = useResize<TNode, TPose>(adapter, options.resize ?? {});
+  const rotate = useRotate<TNode, TPose>(adapter, options.rotate ?? {});
   // Default to no marquee behaviors. start/move/end still run (so empty-click
   // clear via onClick keeps working) but a drag from empty space doesn't
   // mutate the selection unless the consumer opts in with
@@ -229,13 +229,13 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
   onDoubleTapRef.current = options.onDoubleTap;
 
   // pickEvery / boundsOf defaults — for any rect-pose adapter the kit can
-  // derive both from `adapter.getObjects()` + `adapter.getPose(id)` +
+  // derive both from `adapter.getNodes()` + `adapter.getPose(id)` +
   // poseBounds (identity by default). Consumers override for tighter shapes
   // (e.g. path-pose canvases) or for a domain-specific pick order.
   const poseBoundsFn = options.poseBounds ?? ((p: TPose) => p as unknown as Bounds);
   const pickEveryFn = options.pickEvery ?? ((worldX: number, worldY: number): string[] => {
     const out: string[] = [];
-    for (const obj of adapter.getObjects()) {
+    for (const obj of adapter.getNodes()) {
       const b = poseBoundsFn(adapter.getPose(obj.id));
       if (worldX >= b.x && worldX <= b.x + b.width
           && worldY >= b.y && worldY <= b.y + b.height) {
@@ -262,7 +262,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
     resizeOverlayStyle: options.resizeOverlayStyle,
     rotateOverlayStyle: options.rotateOverlayStyle,
     drawGhost: options.drawGhost,
-    getObject: options.getObject,
+    getNode: options.getNode,
   });
   styleRefs.current = {
     areaSelectOverlayStyle: options.areaSelectOverlayStyle,
@@ -270,7 +270,7 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
     resizeOverlayStyle: options.resizeOverlayStyle,
     rotateOverlayStyle: options.rotateOverlayStyle,
     drawGhost: options.drawGhost,
-    getObject: options.getObject,
+    getNode: options.getNode,
   };
 
   // Ghost / marquee overlay. Owned by the gesture controllers — these are
@@ -313,8 +313,8 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
         }
 
         const drawGhost = refs.drawGhost;
-        const getObject = refs.getObject;
-        if (!drawGhost || !getObject) return [];
+        const getNode = refs.getNode;
+        if (!drawGhost || !getNode) return [];
         const moveAlpha = refs.moveOverlayStyle?.ghostAlpha ?? 0.85;
         const resizeAlpha = refs.resizeOverlayStyle?.ghostAlpha ?? moveAlpha;
         const rotateAlpha = refs.rotateOverlayStyle?.ghostAlpha ?? moveAlpha;
@@ -325,17 +325,17 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
         if (mOv) {
           const cmds: DrawCommand[] = [];
           for (const [id, pose] of mOv.poses) {
-            for (const c of drawGhost(getObject(id), pose, view)) cmds.push(c);
+            for (const c of drawGhost(getNode(id), pose, view)) cmds.push(c);
           }
           return wrap(moveAlpha, cmds);
         }
         const rOv = resize.overlay;
         if (rOv) {
-          return wrap(resizeAlpha, drawGhost(getObject(rOv.id), rOv.currentPose, view));
+          return wrap(resizeAlpha, drawGhost(getNode(rOv.id), rOv.currentPose, view));
         }
         const rotOv = rotate.overlay;
         if (rotOv) {
-          return wrap(rotateAlpha, drawGhost(getObject(rotOv.id), rotOv.currentPose, view));
+          return wrap(rotateAlpha, drawGhost(getNode(rotOv.id), rotOv.currentPose, view));
         }
         return [];
       },

@@ -28,8 +28,8 @@ export interface UseClipboardOpsReturn {
 const EMPTY: ClipboardSnapshot = { items: [] };
 
 /** In-memory copy/paste of selections via `InsertAdapter.snapshotSelection` / `commitPaste`. */
-export function useClipboardOps<TObject extends { id: string }>(
-  adapter: InsertAdapter<TObject>,
+export function useClipboardOps<TNode extends { id: string }>(
+  adapter: InsertAdapter<TNode>,
   options: UseClipboardOpsOptions,
 ): UseClipboardOpsReturn {
   const { getSelection, onPaste, pasteLabel = 'Paste' } = options;
@@ -56,7 +56,7 @@ export function useClipboardOps<TObject extends { id: string }>(
     const newIds = created.map((o) => o.id as NodeId);
     const beforeSel = optsRef.current.getSelection();
     const ops: Op[] = [
-      ...created.map((o) => createInsertOp({ object: o })),
+      ...created.map((o) => createInsertOp({ node: o })),
       createSetSelectionOp({ from: beforeSel, to: newIds }),
     ];
     dispatchApplyBatch(a, ops, optsRef.current.pasteLabel);
