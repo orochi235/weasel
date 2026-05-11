@@ -64,28 +64,29 @@ function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
   let prevY = 0;
   let prevAnchor = -1;
 
-  const beginContour = () => {
+  const beginContour = (): Polyline => {
     pts = [];
     aA = [];
     aB = [];
     aT = [];
-    current = { points: pts, closed: false };
-    out.push(current);
+    const next: Polyline = { points: pts, closed: false };
+    out.push(next);
+    return next;
   };
 
-  const commit = () => {
-    if (!current || !pts || !aA || !aB || !aT) return;
-    current.anchorA = new Uint32Array(aA);
-    current.anchorB = new Uint32Array(aB);
-    current.anchorT = new Float32Array(aT);
+  const commit = (target: Polyline): void => {
+    if (!pts || !aA || !aB || !aT) return;
+    target.anchorA = new Uint32Array(aA);
+    target.anchorB = new Uint32Array(aB);
+    target.anchorT = new Float32Array(aT);
   };
 
   for (let cmdIdx = 0; cmdIdx < commands.length; cmdIdx++) {
     const cmd = commands[cmdIdx];
     switch (cmd) {
       case PATH_M: {
-        if (current) commit();
-        beginContour();
+        if (current) commit(current);
+        current = beginContour();
         prevX = coords[coordIdx];
         prevY = coords[coordIdx + 1];
         pts!.push(prevX, prevY);
@@ -167,6 +168,6 @@ function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
     }
   }
 
-  if (current) commit();
+  if (current) commit(current);
   return out;
 }
