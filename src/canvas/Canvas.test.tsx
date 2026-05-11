@@ -1181,6 +1181,36 @@ describe('buildSceneLayer hierarchical path', () => {
     expect(bedGroup.children).toHaveLength(2); // bed paint + plant wrapper
   });
 
+  it('cfg.toPose is honored on the hierarchical path', () => {
+    // cfg.toPose returns a transformed pose; the draw call should see the
+    // transformed value, not the raw adapter.getPose result.
+    const scene = createScene<{ label: string }, 'bg', typeof POSE>({
+      systemLayers: [{ id: 'bg' }],
+    });
+    scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'node' } });
+    const adapter = sceneToAdapter(scene);
+
+    const TRANSFORMED_POSE = { x: 99, y: 88, width: 10, height: 10 };
+    const seenPoses: typeof POSE[] = [];
+
+    const layer = buildSceneLayer(
+      {
+        toPose: () => TRANSFORMED_POSE,
+        drawOne: (_node, pose) => {
+          seenPoses.push(pose as typeof POSE);
+          return [];
+        },
+      },
+      adapter as never,
+      null,
+      () => null,
+      () => null,
+    );
+    layer.draw(null, VIEW, DIMS);
+    expect(seenPoses).toHaveLength(1);
+    expect(seenPoses[0]).toEqual(TRANSFORMED_POSE);
+  });
+
   it('falls back to flat output for non-scene adapter (no getLayers)', () => {
     interface Rect { id: string; x: number; y: number; width: number; height: number }
     type Pose = { x: number; y: number; width: number; height: number };

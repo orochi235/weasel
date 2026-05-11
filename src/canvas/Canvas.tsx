@@ -419,11 +419,22 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
           }
           return cmds;
         };
+        // Honor cfg.toPose on the hierarchical path by shimming getPose on the
+        // adapter so buildSceneTree routes through it instead of the raw adapter.
+        const hierarchicalAdapter = cfg.toPose
+          ? {
+              ...a,
+              getPose: (id: string) => {
+                const obj = a.getNode!(id);
+                return obj ? toPose(obj as TNode) : a.getPose!(id);
+              },
+            }
+          : a;
         return [{
           kind: 'group',
           transform: viewToMat3(view),
           children: buildSceneTree(
-            a as Parameters<typeof buildSceneTree>[0],
+            hierarchicalAdapter as Parameters<typeof buildSceneTree>[0],
             filteredDrawOne as unknown as Parameters<typeof buildSceneTree>[1],
             view,
           ),
