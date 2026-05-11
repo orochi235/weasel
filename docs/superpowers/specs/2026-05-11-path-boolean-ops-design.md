@@ -9,7 +9,7 @@ Promoted from Tier 3 by consumer demand. Background and motivation:
 
 Ship the **core four** polygon-boolean operations plus **Divide** as pure
 functions over `Path`, and expose them as a multi-selection-driven action
-hook `useBooleanOps`. v1 is destructive (Illustrator "Unite" semantics): the
+hook `useBooleans`. v1 is destructive (Illustrator "Unite" semantics): the
 hook replaces the source paths with one (or, for Divide, several) new path
 in a single undoable batch.
 
@@ -20,7 +20,7 @@ move to medium-priority TODO entries.
 ## Scope
 
 **In:** `pathUnion`, `pathIntersect`, `pathSubtract`, `pathExclude`,
-`pathDivide`; `useBooleanOps` hook; an engine adapter over
+`pathDivide`; `useBooleans` hook; an engine adapter over
 `polygon-clipping`; unit tests; one Playwright visual baseline.
 
 **Out:**
@@ -94,23 +94,24 @@ Adapter behavior:
   inputs → `pathToMultiPolygon` → `polygonClipping.<op>` →
   `multiPolygonToPath`.
 
-### Action hook — `src/interactions/actions/boolean-ops/`
+### Action hook — `src/interactions/actions/booleans/`
 
-Directory layout (mirrors `align/`, `flip/`, `group/`):
+Directory layout (mirrors `align/`, `flip/`, `group/` — dir name and core
+file name match):
 
 ```
-boolean-ops/
+booleans/
   index.ts
-  booleanOps.ts          // pure core: (paths in z-order, op) -> batch
-  booleanOps.test.ts
-  useBooleanOps.ts       // React hook surface
-  useBooleanOps.test.tsx
+  booleans.ts            // pure core: (paths in z-order, op) -> batch
+  booleans.test.ts
+  useBooleans.ts         // React hook surface
+  useBooleans.test.tsx
 ```
 
-`useBooleanOps()` returns five callables:
+`useBooleans()` returns five callables:
 
 ```ts
-interface BooleanOpsActions {
+interface BooleanActions {
   union(): void;
   intersect(): void;
   subtract(): void;
@@ -154,7 +155,7 @@ Semantics:
 ```ts
 export { pathUnion, pathIntersect, pathSubtract, pathExclude, pathDivide }
   from './features/paths/booleans';
-export { useBooleanOps } from './interactions/actions/boolean-ops';
+export { useBooleans } from './interactions/actions/booleans';
 ```
 
 The engine adapter is *not* exported — it's an internal contract.
@@ -201,7 +202,7 @@ Round-trip a representative set of `Path`s through
 `pathToMultiPolygon` → `multiPolygonToPath` and assert geometric
 equivalence via point sampling against the original `pointInPath`.
 
-### Hook — `useBooleanOps.test.tsx`
+### Hook — `useBooleans.test.tsx`
 
 Mounted with a seeded scene; for each op assert:
 
