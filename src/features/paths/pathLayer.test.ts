@@ -149,7 +149,7 @@ describe('createPathLayer — getStrokeVertexColors', () => {
       getPath: () => path,
       getStrokeVertexColors: () => colors,
     });
-    const out = layer.draw(undefined, { x: 0, y: 0, scale: 1 } as any);
+    const out = layer.draw(undefined, { x: 0, y: 0, scale: 1 } as any, { width: 100, height: 100 });
     const cmd = (out[0] as any).children[0];
     expect(cmd.stroke.vertexColors).toEqual(colors);
     expect(cmd.stroke.paint).toEqual({ color: '#ffffff' });
@@ -165,7 +165,7 @@ describe('createPathLayer — getStrokeVertexColors', () => {
       getStroke: () => ({ paint: { color: '#000' }, width: 3 }),
       getStrokeVertexColors: () => colors,
     });
-    const out = layer.draw(undefined, { x: 0, y: 0, scale: 1 } as any);
+    const out = layer.draw(undefined, { x: 0, y: 0, scale: 1 } as any, { width: 100, height: 100 });
     const cmd = (out[0] as any).children[0];
     expect(cmd.stroke.vertexColors).toEqual(colors);
     expect(cmd.stroke.paint).toEqual({ color: '#000' });
