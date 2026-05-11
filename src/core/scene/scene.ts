@@ -700,7 +700,6 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   // __clipCacheSize: used only by test files to assert prune behaviour.
   (scene as unknown as { __clipCacheSize: () => number }).__clipCacheSize =
     () => pendingClipPatches.size;
-  (scene as unknown as { __registry: typeof registry }).__registry = registry;
 
   return scene;
 }
@@ -716,6 +715,7 @@ export function sceneFromJSON<TData, TLayer extends string, TPose>(
     registry?: SceneRegistry<TPose>;
     historyLimit?: number;
     generateId?: () => NodeId;
+    ops?: Readonly<Record<string, RegisteredOp<unknown>>>;
   },
 ): Scene<TData, TLayer, TPose> {
   if (json.version !== 1) {
@@ -749,5 +749,6 @@ export function sceneFromJSON<TData, TLayer extends string, TPose>(
     registry,
     ...(options.historyLimit !== undefined ? { historyLimit: options.historyLimit } : {}),
     ...(options.generateId !== undefined ? { generateId: options.generateId } : {}),
+    ...(options.ops !== undefined ? { ops: options.ops } : {}),
   });
 }
