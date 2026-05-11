@@ -499,6 +499,11 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         if (p.kind !== 'container') {
           throw new Error(`Scene: parent "${parent}" is not a container`);
         }
+        if (p.layer !== spec.layer) {
+          throw new Error(
+            `Scene: cannot place node '${spec.id ?? '<new>'}' on layer '${spec.layer}' under parent '${spec.parent}' on layer '${p.layer}' — subtree layer must match parent`,
+          );
+        }
       }
       const sibs = siblingsOf(parent);
       const index = spec.index ?? sibs.length;

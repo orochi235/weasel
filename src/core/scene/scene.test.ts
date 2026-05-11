@@ -61,6 +61,18 @@ describe('createScene — construction', () => {
     expect(s.roots).toHaveLength(1);
     expect(s.canUndo()).toBe(false);
   });
+
+  it('rejects cross-layer subtrees expressed via createScene({ initial })', () => {
+    expect(() =>
+      createScene<{ label: string }, 'structures' | 'plantings', typeof POSE>({
+        systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
+        initial: [
+          { id: asNodeId('bed'), kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } },
+          { id: asNodeId('plant'), kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'plant' }, parent: asNodeId('bed') },
+        ],
+      }),
+    ).toThrow(/subtree layer must match parent/);
+  });
 });
 
 describe('add / remove / move', () => {
