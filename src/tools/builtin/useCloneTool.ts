@@ -70,6 +70,11 @@ export interface UseCloneToolOptions<T extends { id: string } = { id: string }, 
   id?: string;
   /** Cursor while the activating modifier is held. Default `'copy'`. */
   cursor?: string;
+  /** When true, alt-drag clones the entire selection if the hit id is in
+   *  the selection; otherwise clones just the hit (the default behavior).
+   *  Matches the Figma/Illustrator alt-drag UX. Requires
+   *  `adapter.getSelection()` to be implemented. Default false. */
+  cloneSelection?: boolean;
 }
 
 /** Wraps `useClone` as a Tool record. The tool sits in the ambient slot
@@ -220,10 +225,15 @@ export function useCloneTool<T extends { id: string }, TPose = unknown>(
         onStart: (_e, ctx) => {
           const { pendingId, pendingMods } = ctx.scratch;
           if (pendingId === null || pendingMods === null) return 'pass';
+          let ids: string[] = [pendingId];
+          if (optsRef.current.cloneSelection) {
+            const sel = adapterRef.current.getSelection?.() ?? [];
+            if (sel.includes(pendingId)) ids = [...sel];
+          }
           cloneRef.current.start(
             ctx.worldX,
             ctx.worldY,
-            [pendingId],
+            ids,
             optsRef.current.layer ?? 'structures',
             pendingMods,
           );

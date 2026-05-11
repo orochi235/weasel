@@ -7,22 +7,26 @@ import type { ToolCtx } from '../types';
 
 interface Obj { id: string }
 
-function makeAdapter() {
+function makeAdapter(opts: { selection?: string[] } = {}) {
   const applied: Array<{ ops: Op[]; label: string }> = [];
+  const idsLog: string[][] = [];
   const adapter: InsertAdapter<Obj> = {
     commitInsert: () => null,
-    commitPaste: () => [{ id: 'new1' } as Obj],
-    snapshotSelection: (ids) => ({ items: ids.map((id) => ({ id })) }),
+    commitPaste: (snap) => snap.items.map((item) => ({ id: `new-${(item as { id: string }).id}` }) as Obj),
+    snapshotSelection: (ids) => { idsLog.push([...ids]); return { items: ids.map((id) => ({ id })) }; },
     insertNode: () => {},
     setSelection: () => {},
     applyBatch: (ops, label) => { applied.push({ ops, label: label ?? '' }); },
-    getSelection: () => [],
+    getSelection: () => opts.selection ?? [],
   };
-  return { adapter, applied };
+  return { adapter, applied, idsLog };
 }
 
-function setup(hitId: string | null = 'a') {
-  const { adapter, applied } = makeAdapter();
+function setup(
+  hitId: string | null = 'a',
+  opts: { selection?: string[]; cloneSelection?: boolean } = {},
+) {
+  const { adapter, applied, idsLog } = makeAdapter({ selection: opts.selection });
   const drawGhost = vi.fn(() => []);
   const pickBest = vi.fn(() => hitId);
   const { result } = renderHook(() =>
@@ -30,9 +34,10 @@ function setup(hitId: string | null = 'a') {
       behaviors: [cloneByAltDrag()],
       pickBest,
       drawGhost,
+      cloneSelection: opts.cloneSelection,
     }),
   );
-  return { tool: result.current, applied, drawGhost, pickBest };
+  return { tool: result.current, applied, idsLog, drawGhost, pickBest };
 }
 
 function makeCtx<S>(scratch: S, over: Partial<ToolCtx<S>> = {}): ToolCtx<S> {
@@ -140,5 +145,63 @@ describe('useCloneTool', () => {
     tool.drag!.onMove!(pe(), makeCtx(scratch, { worldX: 5, worldY: 5, modifiers: altMods }));
     tool.drag!.onCancel!(makeCtx(scratch));
     expect(applied).toHaveLength(0);
+  });
+
+  it('cloneSelection=false: clones just the hit even when hit is selected', () => {
+    const { tool, idsLog } = setup('a', { selection: ['a', 'b', 'c'] });
+    const scratch = tool.initScratch!();
+    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0, modifiers: altMods }));
+    tool.drag!.onStart!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0, modifiers: altMods }));
+    expect(idsLog[0]).toEqual(['a']);
+  });
+
+  it('cloneSelection=true: hit in selection → clones the whole selection', () => {
+    const { tool, applied, idsLog } = setup('a', { selection: ['a', 'b', 'c'], cloneSelection: true });
+    const scratch = tool.initScratch!();
+    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0, modifiers: altMods }));
+    tool.drag!.onStart!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0, modifiers: altMods }));
+    expect(idsLog[0]).toEqual(['a', 'b', 'c']);
+    tool.drag!.onMove!(pe(), makeCtx(scratch, { worldX: 10, worldY: 10, modifiers: altMods }));
+    tool.drag!.onEnd!(pe(), makeCtx(scratch));
+    expect(applied).toHaveLength(1);
+    // 3 InsertOps (one per cloned item) + 1 SetSelectionOp = 4 total
+    expect(applied[0].ops).toHaveLength(4);
+  });
+
+  it('cloneSelection=true: hit NOT in selection → clones just the hit', () => {
+    const { tool, idsLog } = setup('a', { selection: ['b', 'c'], cloneSelection: true });
+    const scratch = tool.initScratch!();
+    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0, modifiers: altMods }));
+    tool.drag!.onStart!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0, modifiers: altMods }));
+    expect(idsLog[0]).toEqual(['a']);
+  });
+
+  it('cloneSelection=true: empty selection → clones just the hit', () => {
+    const { tool, idsLog } = setup('a', { selection: [], cloneSelection: true });
+    const scratch = tool.initScratch!();
+    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0, modifiers: altMods }));
+    tool.drag!.onStart!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0, modifiers: altMods }));
+    expect(idsLog[0]).toEqual(['a']);
+  });
+
+  it('cloneSelection=true: adapter without getSelection → clones just the hit (no crash)', () => {
+    const { adapter, idsLog } = makeAdapter();
+    // Remove getSelection entirely
+    const adapterWithoutGetSelection = { ...adapter, getSelection: undefined } as unknown as typeof adapter;
+    const { result } = renderHook(() =>
+      useCloneTool(adapterWithoutGetSelection, {
+        behaviors: [cloneByAltDrag()],
+        pickBest: () => 'a',
+        drawGhost: () => [],
+        cloneSelection: true,
+      }),
+    );
+    const tool = result.current;
+    const scratch = tool.initScratch!();
+    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0, modifiers: altMods }));
+    expect(() => {
+      tool.drag!.onStart!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0, modifiers: altMods }));
+    }).not.toThrow();
+    expect(idsLog[0]).toEqual(['a']);
   });
 });
