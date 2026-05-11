@@ -68,6 +68,25 @@ export interface RenderLayer<TData> {
     view: View,
     dims: Dims,
   ) => import('../../affordances/types').HitResult | null;
+  /**
+   * Called on every pointermove when no gesture is currently captured.
+   * Lets layers (e.g. HUD widgets) track hover state without participating
+   * in the drag pipeline. Coords are world-space; the layer is responsible
+   * for any further conversion (e.g. world→screen for screen-space layers)
+   * and for its own throttling.
+   */
+  onUncapturedMove?: (
+    worldX: number,
+    worldY: number,
+    evt: PointerEvent,
+    view: View,
+    dims: Dims,
+  ) => void;
+  /**
+   * Called when the cursor leaves the canvas element. Lets layers clear
+   * any hover state they're holding.
+   */
+  onUncapturedLeave?: () => void;
 }
 
 /**

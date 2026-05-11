@@ -1,7 +1,7 @@
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent, PointerClaim } from '../widget';
 import type { DrawCommand, PathDrawCommand, TextDrawCommand } from '../../../../src/renderer';
 
-export type ButtonEvent = 'press';
+export type ButtonEvent = 'press' | 'hover' | 'leave';
 export type ButtonHandler = () => void;
 
 export interface ButtonOptions {
@@ -10,6 +10,7 @@ export interface ButtonOptions {
   label: string;
   fill?: string;
   pressedFill?: string;
+  hoverFill?: string;
   textColor?: string;
   fontSize?: number;
   fontFamily?: string;
@@ -38,13 +39,17 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
   let hidden = false;
   let label = opts.label;
   let pressed = false;
+  let hovering = false;
   const fill = opts.fill ?? '#ffffff';
   const pressedFill = opts.pressedFill ?? '#e0e0e0';
+  const hoverFill = opts.hoverFill ?? '#f5f5f5';
   const textColor = opts.textColor ?? '#1a1a1a';
   const fontSize = opts.fontSize ?? 13;
 
   const handlers: Record<ButtonEvent, Set<ButtonHandler>> = {
     press: new Set(),
+    hover: new Set(),
+    leave: new Set(),
   };
   const emit = (e: ButtonEvent) => { for (const h of handlers[e]) h(); };
 
@@ -66,7 +71,7 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
     off(event, handler) { assertNotDisposed(); handlers[event].delete(handler); },
     draw(ctx: HudDrawCtx): DrawCommand[] {
       const { x, y, w, h } = bounds;
-      const bodyColor = pressed ? pressedFill : fill;
+      const bodyColor = pressed ? pressedFill : hovering ? hoverFill : fill;
       const body: PathDrawCommand = {
         kind: 'path',
         path: { kind: 'rect', x, y, width: w, height: h },
@@ -106,6 +111,12 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
           return 'pass';
         case 'cancel':
           if (pressed) { pressed = false; opts.onChange?.(); }
+          return 'pass';
+        case 'hovermove':
+          if (!hovering) { hovering = true; emit('hover'); opts.onChange?.(); }
+          return 'pass';
+        case 'hoverleave':
+          if (hovering) { hovering = false; emit('leave'); opts.onChange?.(); }
           return 'pass';
       }
     },

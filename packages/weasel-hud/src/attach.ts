@@ -4,6 +4,7 @@ import type { RenderLayer } from '../../../src/core/layers/render';
 import type { DrawCommand } from '../../../src/renderer';
 import type { HitResult } from '../../../src/affordances/types';
 import type { DragChannel } from '../../../src/tools/types';
+import type { View } from '../../../src/core/viewport/view';
 import { viewToTransform } from '../../../src/core/viewport/view';
 import { worldToScreen } from '../../../src/core/viewport/viewTransform';
 import { DEFAULT_FONT_FAMILY, registerDefaultFont } from './fonts/registerDefaultFont';
@@ -26,6 +27,18 @@ export function attachHud(api: CanvasExtensionApi, hud: Hud): () => void {
       console.warn('weasel-hud: failed to register default font', err);
     });
 
+  // Track the currently-hovered widget at the closure level.
+  let lastHovered: Widget | null = null;
+
+  const findTopmostHit = (sx: number, sy: number): Widget | null => {
+    const list = hud.widgets();
+    for (let i = list.length - 1; i >= 0; i--) {
+      const w = list[i];
+      if (!w.hidden && w.hitTest(sx, sy)) return w;
+    }
+    return null;
+  };
+
   const layer: RenderLayer<unknown> = {
     id: 'weasel-hud',
     label: 'HUD',
@@ -43,12 +56,7 @@ export function attachHud(api: CanvasExtensionApi, hud: Hud): () => void {
       // Convert world to screen so we can hit-test widget bounds.
       const t = viewToTransform(view);
       const [sx, sy] = worldToScreen(worldX, worldY, t);
-      const widgets = hud.widgets();
-      let hit: Widget | null = null;
-      for (let i = widgets.length - 1; i >= 0; i--) {
-        const w = widgets[i];
-        if (!w.hidden && w.hitTest(sx, sy)) { hit = w; break; }
-      }
+      const hit = findTopmostHit(sx, sy);
       if (!hit) return null;
 
       // Build a drag channel that routes events into hit.onPointer.
@@ -82,6 +90,24 @@ export function attachHud(api: CanvasExtensionApi, hud: Hud): () => void {
         initialScratch: { widget: hit },
       };
       return result as HitResult;
+    },
+    onUncapturedMove: (worldX, worldY, evt, view: View) => {
+      const t = viewToTransform(view);
+      const [sx, sy] = worldToScreen(worldX, worldY, t);
+      const hit = findTopmostHit(sx, sy);
+      if (hit !== lastHovered) {
+        if (lastHovered) lastHovered.onPointer({ type: 'hoverleave', native: evt } satisfies HudPointerEvent);
+        if (hit) hit.onPointer({ type: 'hovermove', x: sx, y: sy, native: evt } satisfies HudPointerEvent);
+        lastHovered = hit;
+        api.requestRedraw();
+      }
+    },
+    onUncapturedLeave: () => {
+      if (lastHovered) {
+        lastHovered.onPointer({ type: 'hoverleave', native: null } satisfies HudPointerEvent);
+        lastHovered = null;
+        api.requestRedraw();
+      }
     },
   };
 

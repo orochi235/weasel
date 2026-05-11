@@ -99,4 +99,19 @@ describe('button widget', () => {
     b.dispose();
     expect(removeFromHud).toHaveBeenCalledTimes(1);
   });
+
+  it('hover event fires on hovermove transition', () => {
+    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    const hover = vi.fn();
+    const leave = vi.fn();
+    b.on('hover', hover);
+    b.on('leave', leave);
+
+    b.onPointer({ type: 'hovermove', x: 5, y: 5, native: {} as PointerEvent });
+    expect(hover).toHaveBeenCalledTimes(1);
+    b.onPointer({ type: 'hovermove', x: 6, y: 6, native: {} as PointerEvent });
+    expect(hover).toHaveBeenCalledTimes(1);  // no re-fire while hovering
+    b.onPointer({ type: 'hoverleave', native: null });
+    expect(leave).toHaveBeenCalledTimes(1);
+  });
 });

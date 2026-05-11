@@ -961,9 +961,31 @@ function CanvasInner<TObject extends { id: string }, TPose>(
         }
       : undefined);
   const handlePointerMove = onPointerMoveOverride ??
-    (tools
-      ? (e: React.PointerEvent<HTMLCanvasElement>) => tools.dispatcher.onPointerMove(e.nativeEvent)
-      : undefined);
+    ((e: React.PointerEvent<HTMLCanvasElement>) => {
+      tools?.dispatcher.onPointerMove(e.nativeEvent);
+      // Dispatch onUncapturedMove to layers when no gesture is captured.
+      const gestureActive = tools?.dispatcher.hasActiveGesture() ?? false;
+      if (!gestureActive) {
+        const c = e.currentTarget;
+        const view = viewRef.current;
+        const cw = clientToWorldRef.current;
+        let worldX: number;
+        let worldY: number;
+        if (cw) {
+          [worldX, worldY] = cw(c, e.clientX, e.clientY);
+        } else {
+          const rect = c.getBoundingClientRect();
+          worldX = (e.clientX - rect.left) / view.scale + view.x;
+          worldY = (e.clientY - rect.top) / view.scale + view.y;
+        }
+        for (const layer of layersWithDebug) {
+          layer.onUncapturedMove?.(worldX, worldY, e.nativeEvent, view, { width, height });
+        }
+      }
+    });
+  const handlePointerLeave = (_e: React.PointerEvent<HTMLCanvasElement>) => {
+    for (const layer of layersWithDebug) layer.onUncapturedLeave?.();
+  };
   const handlePointerUp = onPointerUpOverride ??
     (tools
       ? (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -1244,6 +1266,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
+      onPointerLeave={handlePointerLeave}
       onWheel={handleWheel}
       // Suppress the browser's default right-click menu over the canvas.
       // Canvases are interaction surfaces; the browser's context menu

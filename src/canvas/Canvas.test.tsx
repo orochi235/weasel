@@ -453,6 +453,100 @@ describe('<Canvas>', () => {
   });
 });
 
+describe('Canvas onUncapturedMove / onUncapturedLeave', () => {
+  it('layer.onUncapturedMove fires on pointermove when no gesture is captured', () => {
+    const moveSpy = vi.fn();
+    const layer: RenderLayer<unknown> = {
+      id: 'tracker', label: 'tracker', space: 'screen',
+      draw: () => [],
+      onUncapturedMove: moveSpy,
+    };
+    const ref = createRef<CanvasExtensionApi>();
+    const { container } = render(
+      <Canvas
+        ref={ref}
+        width={100} height={100}
+        layers={{ custom: { layer } }}
+        clientToWorld={(_canvas, cx, cy) => [cx, cy]}
+      />
+    );
+    const canvas = container.querySelector('canvas')!;
+    // Use createEvent + defineProperty pattern — jsdom's PointerEvent ignores
+    // clientX/Y from the init dict shorthand (same pattern as other Canvas tests).
+    const ev = createEvent.pointerMove(canvas);
+    Object.defineProperty(ev, 'clientX', { value: 30 });
+    Object.defineProperty(ev, 'clientY', { value: 40 });
+    fireEvent(canvas, ev);
+    expect(moveSpy).toHaveBeenCalled();
+    const call = moveSpy.mock.calls[0];
+    expect(call[0]).toBe(30);  // worldX
+    expect(call[1]).toBe(40);  // worldY
+  });
+
+  it('layer.onUncapturedLeave fires on pointerleave', () => {
+    const leaveSpy = vi.fn();
+    const layer: RenderLayer<unknown> = {
+      id: 'tracker', label: 'tracker', space: 'screen',
+      draw: () => [],
+      onUncapturedLeave: leaveSpy,
+    };
+    const ref = createRef<CanvasExtensionApi>();
+    const { container } = render(
+      <Canvas
+        ref={ref}
+        width={100} height={100}
+        layers={{ custom: { layer } }}
+      />
+    );
+    const canvas = container.querySelector('canvas')!;
+    fireEvent.pointerLeave(canvas);
+    expect(leaveSpy).toHaveBeenCalled();
+  });
+
+  it('layer.onUncapturedMove is suppressed when a gesture is active', () => {
+    const moveSpy = vi.fn();
+    const layer: RenderLayer<unknown> = {
+      id: 'tracker', label: 'tracker', space: 'screen',
+      draw: () => [],
+      onUncapturedMove: moveSpy,
+    };
+    // Mock a tools object with a dispatcher that reports an active gesture.
+    const mockDispatcher = {
+      onPointerDown: vi.fn(),
+      onPointerMove: vi.fn(),
+      onPointerUp: vi.fn(),
+      cancelGesture: vi.fn(),
+      onKeyDown: vi.fn(),
+      onKeyUp: vi.fn(),
+      onWheel: vi.fn(),
+      hasActiveGesture: vi.fn(() => true),
+      getActiveScratch: vi.fn(() => null),
+      __setGetCtx: vi.fn(),
+      __setHitTestContext: vi.fn(),
+    };
+    const mockTools = {
+      active: 't',
+      hotkeyEngaged: null,
+      gestureTick: 0,
+      registry: {},
+      dispatcher: mockDispatcher,
+      getActiveOverlays: () => [],
+      has: () => false,
+    } as never;
+    const { container } = render(
+      <Canvas
+        width={100} height={100}
+        layers={{ custom: { layer } }}
+        tools={mockTools}
+        clientToWorld={(_canvas, cx, cy) => [cx, cy]}
+      />
+    );
+    const canvas = container.querySelector('canvas')!;
+    fireEvent.pointerMove(canvas, { clientX: 10, clientY: 20 });
+    expect(moveSpy).not.toHaveBeenCalled();
+  });
+});
+
 import { defineTool } from 'tools/defineTool';
 import { ROTATED_POSE_DESCRIPTOR } from 'interactions/gestures/resize/geometry';
 

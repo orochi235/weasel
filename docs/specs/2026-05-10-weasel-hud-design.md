@@ -127,11 +127,12 @@ Plus type-specific setters: `button.setLabel`, `label.setText`, `text.setText`,
 `textColor`, `font`) are accepted at creation and mutable via setters.
 
 **Events** in v1:
-- `button`: `press`
+- `button`: `press`, `hover`, `leave`
 - Other widgets: none in v1
 
-Hover/leave events deferred to v1.1; require non-captured pointermove tracking
-that the dispatcher's affordance pipeline doesn't surface.
+Hover/leave are dispatched via `RenderLayer.onUncapturedMove` / `onUncapturedLeave`,
+a generic canvas-level channel that fires on pointermoves when no gesture is
+captured. Not specific to weasel-hud — any layer can use it.
 
 ### Internal model
 

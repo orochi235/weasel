@@ -55,4 +55,18 @@ describe('attachHud', () => {
     attachHud(api, hud);
     expect(() => attachHud(api, hud)).toThrow();
   });
+
+  it('onUncapturedMove fires hovermove on the topmost-hit widget', () => {
+    const hud = createHud();
+    const api = makeApi();
+    attachHud(api, hud);
+    const hoverFn = vi.fn();
+    const btn = hud.button({ id: 'b', x: 10, y: 10, w: 50, h: 20, label: 'x' });
+    btn.on('hover', hoverFn);
+
+    // Simulate the canvas dispatching onUncapturedMove under identity view
+    // (worldX/Y = canvas pixels).
+    api._layer!.onUncapturedMove!(20, 15, {} as PointerEvent, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    expect(hoverFn).toHaveBeenCalledTimes(1);
+  });
 });
