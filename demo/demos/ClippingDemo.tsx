@@ -1,6 +1,8 @@
-import { asNodeId, polygonFromPoints, SceneCanvas, useScene } from '@orochi235/weasel';
+import { useState, useSyncExternalStore } from 'react';
+import { polygonFromPoints, SceneCanvas, sceneFromJSON } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
 import type { Path } from '../../src/features/paths/types';
+import sceneJson from './data/clipping.scene.json';
 
 interface Item { id: string; label: string; color: string; }
 type Pose = { x: number; y: number; width: number; height: number };
@@ -21,35 +23,12 @@ function ellipsePath(pose: Pose, segments = 48): Path {
 }
 
 export function ClippingDemo() {
-  const scene = useScene<Item, 'default', Pose>({
-    systemLayers: [{ id: 'default' }],
-    initial: [
-      {
-        id: asNodeId('bed'),
-        kind: 'container',
-        layer: 'default',
-        pose: { x: 80, y: 50, width: 240, height: 200 },
-        data: { id: 'bed', label: 'bed', color: '#5a4a3a' },
-        clipFromPose: (pose: Pose) => ellipsePath(pose),
-      },
-      {
-        id: asNodeId('p1'),
-        parent: asNodeId('bed'),
-        kind: 'leaf',
-        layer: 'default',
-        pose: { x: 40, y: 100, width: 120, height: 80 },
-        data: { id: 'p1', label: 'p1', color: '#7fb069' },
-      },
-      {
-        id: asNodeId('p2'),
-        parent: asNodeId('bed'),
-        kind: 'leaf',
-        layer: 'default',
-        pose: { x: 240, y: 120, width: 140, height: 100 },
-        data: { id: 'p2', label: 'p2', color: '#d4a574' },
-      },
-    ],
-  });
+  const [scene] = useState(() =>
+    sceneFromJSON(sceneJson as never, {
+      registry: { clipFromPose: { ellipse: ellipsePath } },
+    }),
+  );
+  useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
 
   return (
     <SceneCanvas
