@@ -32,30 +32,59 @@ beforeEach(() => {
 
 describe('registerFont', () => {
   it('stores a parsed BmFont after successful fetch', async () => {
-    await registerFont('inter', '/fonts/inter/inter.json', '/fonts/inter/inter.png');
-    const entry = getFont('inter');
+    await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const entry = getFont('inter', 400, 'normal');
     expect(entry).not.toBeNull();
     expect(entry!.font.info.face).toBe('Inter');
     expect(entry!.font.charMap.size).toBe(2);
   });
 
   it('calling twice for the same family is a no-op (returns same entry)', async () => {
-    await registerFont('inter', '/fonts/inter/inter.json', '/fonts/inter/inter.png');
-    const first = getFont('inter');
-    await registerFont('inter', '/fonts/inter/inter.json', '/fonts/inter/inter.png');
-    const second = getFont('inter');
+    await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const first = getFont('inter', 400, 'normal');
+    await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const second = getFont('inter', 400, 'normal');
     expect(first).toBe(second);
     expect((global.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBe(2);
   });
 
   it('getFont returns null for unknown family', () => {
-    expect(getFont('unknown')).toBeNull();
+    expect(getFont('unknown', 400, 'normal')).toBeNull();
   });
 
   it('rejects with an informative error when fetch fails', async () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('network error'));
     await expect(
-      registerFont('bad', '/bad.json', '/bad.png'),
+      registerFont('bad', {}, '/bad.json', '/bad.png'),
     ).rejects.toThrow('weasel registerFont');
+  });
+});
+
+describe('registerFont variants', () => {
+  it('stores regular and bold separately under the same family', async () => {
+    await registerFont('inter', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    await registerFont('inter', { weight: 700, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    expect(getFont('inter', 400, 'normal')).not.toBeNull();
+    expect(getFont('inter', 700, 'normal')).not.toBeNull();
+    expect(getFont('inter', 400, 'normal')).not.toBe(getFont('inter', 700, 'normal'));
+  });
+
+  it('stores italic separately from normal', async () => {
+    await registerFont('inter', { style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    await registerFont('inter', { style: 'italic' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    expect(getFont('inter', 400, 'normal')).not.toBe(getFont('inter', 400, 'italic'));
+  });
+
+  it('defaults weight to 400 and style to normal when variant fields are omitted', async () => {
+    await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    expect(getFont('inter', 400, 'normal')).not.toBeNull();
+  });
+
+  it('re-registering the same (family, weight, style) is a no-op', async () => {
+    await registerFont('inter', { weight: 700 }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const first = getFont('inter', 700, 'normal');
+    await registerFont('inter', { weight: 700 }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const second = getFont('inter', 700, 'normal');
+    expect(first).toBe(second);
   });
 });

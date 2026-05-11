@@ -1,14 +1,10 @@
 /**
  * FontRegistry and registerFont() public API.
  *
- * registerFont(family, metricsUrl, atlasUrl) is async: fetches JSON metrics
- * + PNG atlas and stores both in the module-level registry. At render time
- * WeaselRenderer calls ensureFontTexture() to lazily upload the atlas
- * ImageBitmap to GL — keeps registerFont GL-context-agnostic.
- *
- * CJK coverage: deferred. The default Inter atlas covers ASCII + Latin-1.
- * Extending coverage requires generating a larger atlas and calling
- * registerFont with the extended metrics + PNG.
+ * Variants are keyed by (family, weight, style). registerFont() takes a
+ * FontVariant alongside the family and the two URLs; the registry stores
+ * entries in a two-level Map so resolveFontVariant() can iterate a family's
+ * variants for the fallback chain.
  */
 
 import { parseBmFont, type BmFont } from './FontAtlas';
@@ -19,23 +15,51 @@ export interface FontEntry {
   bitmap: ImageBitmap;
 }
 
-let registry = new Map<string, FontEntry>();
+export interface FontVariant {
+  weight?: number;
+  style?: 'normal' | 'italic';
+}
+
+type FontStyle = 'normal' | 'italic';
+
+let registry = new Map<string, Map<string, FontEntry>>();
+
+function variantKey(weight: number, style: FontStyle): string {
+  return `${weight}|${style}`;
+}
+
+function normalizeVariant(v: FontVariant): { weight: number; style: FontStyle } {
+  return {
+    weight: v.weight ?? 400,
+    style: v.style ?? 'normal',
+  };
+}
 
 /** Test helper. Do not call from product code. */
 export function _resetFontRegistryForTests(): void {
   registry = new Map();
 }
 
-export function getFont(family: string): FontEntry | null {
-  return registry.get(family) ?? null;
+/** Exact lookup — does NOT walk the fallback chain. Use `resolveFontVariant` (Task 6) for that. */
+export function getFont(
+  family: string,
+  weight: number = 400,
+  style: FontStyle = 'normal',
+): FontEntry | null {
+  return registry.get(family)?.get(variantKey(weight, style)) ?? null;
 }
 
 export async function registerFont(
   family: string,
+  variant: FontVariant,
   metricsUrl: string,
   atlasUrl: string,
 ): Promise<void> {
-  if (registry.has(family)) return;
+  const { weight, style } = normalizeVariant(variant);
+  const key = variantKey(weight, style);
+
+  let familyMap = registry.get(family);
+  if (familyMap?.has(key)) return;
 
   try {
     const [metricsRes, atlasRes] = await Promise.all([
@@ -58,28 +82,38 @@ export async function registerFont(
     const font = parseBmFont(rawJson);
     const bitmap = await createImageBitmap(blob);
 
-    registry.set(family, { font, bitmap });
+    if (!familyMap) {
+      familyMap = new Map();
+      registry.set(family, familyMap);
+    }
+    familyMap.set(key, { font, bitmap });
   } catch (err) {
     throw new Error(
-      `weasel registerFont("${family}"): ${err instanceof Error ? err.message : String(err)}`,
+      `weasel registerFont("${family}" ${weight}/${style}): ${err instanceof Error ? err.message : String(err)}`,
     );
   }
 }
 
 /**
- * Ensure the font's atlas is uploaded to `textureCache`. The cache's own
- * `has()` check handles dedup — multiple renderers each have their own
- * textureCache, so we can't rely on a per-font flag. `upload` is a no-op
- * if the texture is already present.
+ * Ensure the atlas for `(family, weight, style)` is uploaded to
+ * `textureCache`. Cache key is `${family}|${weight}|${style}` so each
+ * variant occupies its own texture slot.
  */
 export function ensureFontTexture(
   family: string,
+  weight: number,
+  style: FontStyle,
   textureCache: GLTextureCache,
 ): boolean {
-  const entry = registry.get(family);
+  const entry = getFont(family, weight, style);
   if (!entry) return false;
-  textureCache.upload(family, entry.bitmap);
+  textureCache.upload(textureCacheKey(family, weight, style), entry.bitmap);
   return true;
+}
+
+/** The texture cache key used by `ensureFontTexture` for a given variant. */
+export function textureCacheKey(family: string, weight: number, style: FontStyle): string {
+  return `${family}|${weight}|${style}`;
 }
 
 /** Kept as a no-op for context-restore call sites; per-cache dedup handles it now. */
