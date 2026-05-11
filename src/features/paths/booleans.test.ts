@@ -90,3 +90,30 @@ describe('pathExclude', () => {
     expect(pointInPath(x, 7, 7)).toBe(false);
   });
 });
+
+import { pathDivide } from './booleans';
+import type { PolygonPath } from './types';
+
+describe('pathDivide', () => {
+  it('two overlapping rects → three non-empty regions (A-only, B-only, A∩B)', () => {
+    const a = r(0, 0, 10, 10);
+    const b = r(5, 5, 10, 10);
+    const parts = pathDivide(a, b);
+    expect(parts).toHaveLength(3);
+    for (const p of parts) {
+      expect(p.commands.length).toBeGreaterThan(0);
+    }
+    const inside = (path: PolygonPath, x: number, y: number) => pointInPath(path, x, y);
+    const counts = [2, 7, 12].map((c) =>
+      parts.filter((p) => inside(p, c, c)).length,
+    );
+    for (const k of counts) expect(k).toBe(1);
+  });
+
+  it('two disjoint rects → two regions (just the inputs)', () => {
+    const a = r(0, 0, 5, 5);
+    const b = r(10, 10, 5, 5);
+    const parts = pathDivide(a, b);
+    expect(parts).toHaveLength(2);
+  });
+});
