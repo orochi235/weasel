@@ -256,7 +256,7 @@ export { arrayAdapter } from './core/adapters/arrayAdapter';
 export type { ArrayAdapter, ArrayAdapterConfig } from './core/adapters/arrayAdapter';
 export { useArrayAdapter } from './core/adapters/useArrayAdapter';
 export type { UseArrayAdapterOptions } from './core/adapters/useArrayAdapter';
-export { createScene, useScene, asNodeId } from './core/scene';
+export { createScene, sceneFromJSON, useScene, asNodeId } from './core/scene';
 export type {
   AddNodeSpec,
   ContainerNode,
