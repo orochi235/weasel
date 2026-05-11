@@ -593,13 +593,36 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
   const solid = stroke.paint as { color: string; opacity?: number };
   const mesh = tessellateStroke(cmd.path, stroke);
   if (mesh.indices.length === 0) return;
-  // tessellateStroke returns a freshly-built Mesh every frame; routing it
-  // through the WeakMap cache would leak GL buffers until GC fires (which
-  // doesn't happen fast enough under heavy interaction). Use the transient
-  // pool so the renderer frees these at end-of-frame.
+  // tessellateStroke returns a freshly-built Mesh every frame; route through
+  // the transient pool so the renderer frees these at end-of-frame.
   const handle = ctx.meshCache.uploadTransient(mesh);
 
   const gl = ctx.gl;
+  if (stroke.vertexColors && stroke.vertexColors.length > 0) {
+    const prog = ctx.pathFillVColor;
+    gl.useProgram(prog.handle);
+    gl.bindVertexArray(handle.vao);
+    setProjAndModel(ctx, prog);
+    setSolidPaintUniforms(ctx, prog, solid.color, solid.opacity);
+    setColorMatrixUniforms(ctx, prog);
+
+    const expanded = expandAnchorColors(stroke.vertexColors, handle);
+    const colorVbo = gl.createBuffer();
+    if (!colorVbo) throw new Error('drawPathStrokeUnclipped: createBuffer (color VBO) returned null');
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorVbo);
+    gl.bufferData(gl.ARRAY_BUFFER, expanded, gl.DYNAMIC_DRAW);
+    const aVColorLoc = prog.attribute('a_vertexColor');
+    if (aVColorLoc !== undefined) {
+      gl.enableVertexAttribArray(aVColorLoc);
+      gl.vertexAttribPointer(aVColorLoc, 4, gl.FLOAT, false, 0, 0);
+    }
+    gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
+    gl.bindVertexArray(null);
+    // Per-draw color VBO; free after VAO unbind to avoid leak per stroke vColor draw.
+    gl.deleteBuffer(colorVbo);
+    return;
+  }
+
   gl.useProgram(ctx.pathFill.handle);
   gl.bindVertexArray(handle.vao);
   setProjAndModel(ctx, ctx.pathFill);
@@ -627,8 +650,10 @@ function drawPathStrokeStenciled(
   const ribbonHandle = ctx.meshCache.uploadTransient(ribbonMesh);
 
   const gl = ctx.gl;
-  gl.useProgram(ctx.pathFill.handle);
-  setProjAndModel(ctx, ctx.pathFill);
+  const useVColor = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
+  const prog = useVColor ? ctx.pathFillVColor : ctx.pathFill;
+  gl.useProgram(prog.handle);
+  setProjAndModel(ctx, prog);
 
   gl.enable(gl.STENCIL_TEST);
   gl.colorMask(false, false, false, false);
@@ -641,10 +666,26 @@ function drawPathStrokeStenciled(
   gl.colorMask(true, true, true, true);
   gl.stencilFunc(gl.EQUAL, align === 'inner' ? 1 : 0, 0x01);
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
-  setSolidPaintUniforms(ctx, ctx.pathFill, solid.color, solid.opacity);
-  setColorMatrixUniforms(ctx, ctx.pathFill);
+  setSolidPaintUniforms(ctx, prog, solid.color, solid.opacity);
+  setColorMatrixUniforms(ctx, prog);
   gl.bindVertexArray(ribbonHandle.vao);
+
+  let colorVbo: WebGLBuffer | null = null;
+  if (useVColor) {
+    const expanded = expandAnchorColors(stroke.vertexColors!, ribbonHandle);
+    colorVbo = gl.createBuffer();
+    if (!colorVbo) throw new Error('drawPathStrokeStenciled: createBuffer (color VBO) returned null');
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorVbo);
+    gl.bufferData(gl.ARRAY_BUFFER, expanded, gl.DYNAMIC_DRAW);
+    const aVColorLoc = prog.attribute('a_vertexColor');
+    if (aVColorLoc !== undefined) {
+      gl.enableVertexAttribArray(aVColorLoc);
+      gl.vertexAttribPointer(aVColorLoc, 4, gl.FLOAT, false, 0, 0);
+    }
+  }
+
   gl.drawElements(gl.TRIANGLES, ribbonHandle.indexCount, gl.UNSIGNED_INT, 0);
+  if (colorVbo) gl.deleteBuffer(colorVbo);
 
   gl.stencilMask(0x01);
   gl.clear(gl.STENCIL_BUFFER_BIT);
