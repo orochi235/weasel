@@ -189,6 +189,62 @@ describe('WeaselRenderer.render — kind: path with stroke', () => {
   });
 });
 
+describe('WeaselRenderer.render — stencil bit discipline', () => {
+  let recorder: ReturnType<typeof makeGLRecorder>;
+  let r: WeaselRenderer;
+
+  beforeEach(() => {
+    recorder = makeGLRecorder();
+    r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
+    recorder.reset();
+  });
+
+  it('drawPathFillStencil only touches bit 0 — clip-level bits 1-7 survive', () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([M, L, L, L, Z]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
+      fillRule: 'evenodd',
+    };
+    r.render([{ kind: 'path', path, fill: { color: '#ff0000' } }]);
+
+    const stencilMaskCalls = recorder.calls.filter((c) => c.name === 'stencilMask');
+    expect(stencilMaskCalls.length).toBeGreaterThan(0);
+    for (const call of stencilMaskCalls) {
+      expect(call.args[0]).toBe(0x01);
+    }
+
+    const stencilFuncCalls = recorder.calls.filter((c) => c.name === 'stencilFunc');
+    expect(stencilFuncCalls.length).toBeGreaterThan(0);
+    for (const call of stencilFuncCalls) {
+      // stencilFunc(func, ref, mask) — mask is args[2]
+      expect(call.args[2]).toBe(0x01);
+    }
+  });
+
+  it('drawPathStrokeStenciled only touches bit 0 — clip-level bits 1-7 survive', () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([M, L, L, L, Z]),
+      coords: new Float32Array([0, 0, 100, 0, 100, 100, 0, 100]),
+      fillRule: 'nonzero',
+    };
+    r.render([{ kind: 'path', path, stroke: { paint: { color: '#000' }, width: 10, align: 'inner' } }]);
+
+    const stencilMaskCalls = recorder.calls.filter((c) => c.name === 'stencilMask');
+    expect(stencilMaskCalls.length).toBeGreaterThan(0);
+    for (const call of stencilMaskCalls) {
+      expect(call.args[0]).toBe(0x01);
+    }
+
+    const stencilFuncCalls = recorder.calls.filter((c) => c.name === 'stencilFunc');
+    expect(stencilFuncCalls.length).toBeGreaterThan(0);
+    for (const call of stencilFuncCalls) {
+      expect(call.args[2]).toBe(0x01);
+    }
+  });
+});
+
 import { registerFont, _resetFontRegistryForTests } from 'features/text/atlas/registerFont';
 import { FIXTURE_FONT } from 'features/text/atlas/FontAtlas';
 import { vi } from 'vitest';

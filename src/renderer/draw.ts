@@ -461,18 +461,19 @@ function drawPathFillStencil(ctx: DrawContext, fill: Paint, handle: GLMeshHandle
 
   gl.enable(gl.STENCIL_TEST);
   gl.colorMask(false, false, false, false);
-  gl.stencilMask(0xff);
-  gl.stencilFunc(gl.ALWAYS, 0, 0xff);
+  gl.stencilMask(0x01);
+  gl.stencilFunc(gl.ALWAYS, 0, 0x01);
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.INVERT);
   gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
 
   gl.colorMask(true, true, true, true);
-  gl.stencilFunc(gl.NOTEQUAL, 0, 0xff);
+  gl.stencilFunc(gl.NOTEQUAL, 0, 0x01);
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
   setSolidPaintUniforms(ctx, ctx.pathFill, solid.color, solid.opacity);
   setColorMatrixUniforms(ctx, ctx.pathFill);
   gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
 
+  gl.stencilMask(0x01);
   gl.clear(gl.STENCIL_BUFFER_BIT);
   gl.disable(gl.STENCIL_TEST);
   gl.bindVertexArray(null);
@@ -538,20 +539,21 @@ function drawPathStrokeStenciled(
 
   gl.enable(gl.STENCIL_TEST);
   gl.colorMask(false, false, false, false);
-  gl.stencilMask(0xff);
-  gl.stencilFunc(gl.ALWAYS, 1, 0xff);
+  gl.stencilMask(0x01);
+  gl.stencilFunc(gl.ALWAYS, 1, 0x01);
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
   gl.bindVertexArray(fillHandle.vao);
   gl.drawElements(gl.TRIANGLES, fillHandle.indexCount, gl.UNSIGNED_INT, 0);
 
   gl.colorMask(true, true, true, true);
-  gl.stencilFunc(gl.EQUAL, align === 'inner' ? 1 : 0, 0xff);
+  gl.stencilFunc(gl.EQUAL, align === 'inner' ? 1 : 0, 0x01);
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
   setSolidPaintUniforms(ctx, ctx.pathFill, solid.color, solid.opacity);
   setColorMatrixUniforms(ctx, ctx.pathFill);
   gl.bindVertexArray(ribbonHandle.vao);
   gl.drawElements(gl.TRIANGLES, ribbonHandle.indexCount, gl.UNSIGNED_INT, 0);
 
+  gl.stencilMask(0x01);
   gl.clear(gl.STENCIL_BUFFER_BIT);
   gl.disable(gl.STENCIL_TEST);
   gl.bindVertexArray(null);
