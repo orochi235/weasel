@@ -4,6 +4,9 @@ export interface GLMeshHandle {
   readonly vao: WebGLVertexArrayObject;
   readonly indexCount: number;
   readonly requiresStencil: boolean;
+  readonly anchorA?: Uint32Array;
+  readonly anchorB?: Uint32Array;
+  readonly anchorT?: Float32Array;
 }
 
 /** Resources to release when a Mesh is reclaimed by GC. */
@@ -165,6 +168,9 @@ export class GLMeshCache {
         vao,
         indexCount: mesh.indices.length,
         requiresStencil: mesh.requiresStencil ?? false,
+        anchorA: mesh.anchorA,
+        anchorB: mesh.anchorB,
+        anchorT: mesh.anchorT,
       },
       vbo,
       ibo,

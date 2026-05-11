@@ -284,6 +284,29 @@ function drawRectFast(
   gl.bindVertexArray(null);
 }
 
+function expandAnchorColors(perAnchor: number[], handle: GLMeshHandle): Float32Array {
+  const aA = handle.anchorA;
+  const aB = handle.anchorB;
+  const aT = handle.anchorT;
+  if (!aA || !aB || !aT) {
+    // Legacy fallback: mesh lacks anchor params (e.g. non-path mesh). Treat
+    // the caller-provided array as already per-vertex.
+    return new Float32Array(perAnchor);
+  }
+  const n = aA.length;
+  const out = new Float32Array(n * 4);
+  for (let i = 0; i < n; i++) {
+    const a4 = aA[i] * 4;
+    const b4 = aB[i] * 4;
+    const t = aT[i];
+    out[i * 4 + 0] = perAnchor[a4 + 0] + (perAnchor[b4 + 0] - perAnchor[a4 + 0]) * t;
+    out[i * 4 + 1] = perAnchor[a4 + 1] + (perAnchor[b4 + 1] - perAnchor[a4 + 1]) * t;
+    out[i * 4 + 2] = perAnchor[a4 + 2] + (perAnchor[b4 + 2] - perAnchor[a4 + 2]) * t;
+    out[i * 4 + 3] = perAnchor[a4 + 3] + (perAnchor[b4 + 3] - perAnchor[a4 + 3]) * t;
+  }
+  return out;
+}
+
 function drawPathFillVColor(
   ctx: DrawContext,
   cmd: PathDrawCommand,
@@ -298,11 +321,11 @@ function drawPathFillVColor(
   setSolidPaintUniforms(ctx, prog, fill.color, fill.opacity);
   setColorMatrixUniforms(ctx, prog);
 
-  const colors = new Float32Array(cmd.vertexColors!);
+  const expanded = expandAnchorColors(cmd.vertexColors!, handle);
   const colorVbo = gl.createBuffer();
   if (!colorVbo) throw new Error('drawPathFillVColor: createBuffer (color VBO) returned null');
   gl.bindBuffer(gl.ARRAY_BUFFER, colorVbo);
-  gl.bufferData(gl.ARRAY_BUFFER, colors, gl.DYNAMIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, expanded, gl.DYNAMIC_DRAW);
   const aVColorLoc = prog.attribute('a_vertexColor');
   if (aVColorLoc !== undefined) {
     gl.enableVertexAttribArray(aVColorLoc);
@@ -311,8 +334,6 @@ function drawPathFillVColor(
 
   gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
-  // The per-vertex color VBO is freshly allocated per draw; free it now
-  // (after unbinding the VAO) so we don't leak one buffer per vColor draw.
   gl.deleteBuffer(colorVbo);
 }
 
