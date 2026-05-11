@@ -93,9 +93,8 @@ export function layoutMarkdown(
   }
 
   for (const run of runs) {
-    // Split on newlines: markdownToRuns embeds newlines inside runs; the old
-    // parseMarkdownRuns emitted { text: '\n' } sentinel runs. Both are handled
-    // by splitting every run's text on '\n'.
+    // markdownToRuns embeds newlines inside runs; split on '\n' so each
+    // segment becomes its own line via commitLine().
     const segments = run.text.split('\n');
     for (let si = 0; si < segments.length; si++) {
       if (si > 0) commitLine();
