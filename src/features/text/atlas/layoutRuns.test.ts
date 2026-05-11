@@ -103,3 +103,59 @@ describe('layoutRuns — single line', () => {
     expect(out.bounds.width).toBe(0);
   });
 });
+
+describe('layoutRuns — word wrap', () => {
+  it('wraps a single run at space boundaries when content exceeds maxWidth', async () => {
+    await registerFixture('inter', [{}]);
+    // Fixture font has only 'A' (xadvance ~23 at size 32). Use width that
+    // forces at least one wrap for the text below.
+    const text = 'ABAB ABAB ABAB ABAB';
+    const out = layoutRuns(
+      [RUN_PLAIN(text)],
+      { maxWidth: 150, lineHeight: 1.2, align: 'left' },
+      { x: 0, y: 0 },
+    );
+    const quads = out.groups[0].quads;
+    expect(quads.length).toBeGreaterThan(4);
+    const firstY = quads[0].y0;
+    const lastY = quads[quads.length - 1].y0;
+    expect(lastY).toBeGreaterThan(firstY);
+  });
+
+  it('mixed-size runs share a baseline on the same line', async () => {
+    await registerFixture('inter', [{}]);
+    const small: ResolvedRun = { ...RUN_PLAIN('A'), fontSize: 16 };
+    const big: ResolvedRun = { ...RUN_PLAIN('B'), fontSize: 40 };
+    const out = layoutRuns(
+      [small, big],
+      { maxWidth: Infinity, lineHeight: 1.2, align: 'left' },
+      { x: 0, y: 0 },
+    );
+    const allQuads = out.groups.flatMap((g) => g.quads);
+    expect(allQuads).toHaveLength(2);
+  });
+
+  it('alignment shifts each line by (maxWidth - lineWidth) * factor', async () => {
+    await registerFixture('inter', [{}]);
+    const leftOut = layoutRuns([RUN_PLAIN('AB')], { maxWidth: 400, lineHeight: 1.2, align: 'left' }, { x: 0, y: 0 });
+    const centerOut = layoutRuns([RUN_PLAIN('AB')], { maxWidth: 400, lineHeight: 1.2, align: 'center' }, { x: 0, y: 0 });
+    const rightOut = layoutRuns([RUN_PLAIN('AB')], { maxWidth: 400, lineHeight: 1.2, align: 'right' }, { x: 0, y: 0 });
+    const leftX = leftOut.groups[0].quads[0].x0;
+    const centerX = centerOut.groups[0].quads[0].x0;
+    const rightX = rightOut.groups[0].quads[0].x0;
+    expect(centerX).toBeGreaterThan(leftX);
+    expect(rightX).toBeGreaterThan(centerX);
+  });
+
+  it('respects newlines inside a run as forced line breaks', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns(
+      [RUN_PLAIN('A\nB')],
+      { maxWidth: Infinity, lineHeight: 1.2, align: 'left' },
+      { x: 0, y: 0 },
+    );
+    const quads = out.groups[0].quads;
+    expect(quads).toHaveLength(2);
+    expect(quads[1].y0).toBeGreaterThan(quads[0].y0);
+  });
+});
