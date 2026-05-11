@@ -312,6 +312,7 @@ export class WeaselRenderer {
       state: this.groupState,
       widthCss: this.widthCss,
       heightCss: this.heightCss,
+      clipDepth: 0,
     };
     for (const cmd of commands) dispatch(ctx, cmd);
     // Free transient resources allocated during this frame (e.g. per-frame

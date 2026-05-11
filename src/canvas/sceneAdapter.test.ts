@@ -133,4 +133,86 @@ describe('sceneToAdapter', () => {
     scene.undo();
     expect(scene.get(id)!.pose).toEqual({ x: 0, y: 0, width: 1, height: 1 });
   });
+
+  it('hitTestArea respects ancestor clipFromPose', () => {
+    // Bed with clip rect at (25..75, 25..75); two children: one in the corner (outside clip), one in center (inside).
+    // Marquee covers the entire bed.
+    const scene = createScene<Data, 'bg', Pose>({
+      systemLayers: [{ id: 'bg' }],
+    });
+    const bed = scene.add({
+      kind: 'container',
+      layer: 'bg',
+      pose: { x: 0, y: 0, width: 100, height: 100 },
+      data: { label: 'bed' },
+      clipFromPose: () => ({ kind: 'rect', x: 25, y: 25, width: 50, height: 50 }),
+    });
+    scene.add({
+      kind: 'leaf', layer: 'bg', parent: bed,
+      pose: { x: 5, y: 5, width: 10, height: 10 },
+      data: { label: 'corner' },
+    });
+    scene.add({
+      kind: 'leaf', layer: 'bg', parent: bed,
+      pose: { x: 40, y: 40, width: 10, height: 10 },
+      data: { label: 'center' },
+    });
+    const adapter = sceneToAdapter(scene);
+    const hits = adapter.hitTestArea!({ x: 0, y: 0, width: 100, height: 100 });
+    const labels = hits.map((id) => scene.get(id as never)!.data.label);
+    expect(labels).toContain('center');     // inside clip
+    expect(labels).not.toContain('corner'); // outside clip
+  });
+
+  it('hitTestLasso respects ancestor clipFromPose', () => {
+    const scene = createScene<Data, 'bg', Pose>({
+      systemLayers: [{ id: 'bg' }],
+    });
+    const bed = scene.add({
+      kind: 'container', layer: 'bg',
+      pose: { x: 0, y: 0, width: 100, height: 100 },
+      data: { label: 'bed' },
+      clipFromPose: () => ({ kind: 'rect', x: 25, y: 25, width: 50, height: 50 }),
+    });
+    scene.add({
+      kind: 'leaf', layer: 'bg', parent: bed,
+      pose: { x: 5, y: 5, width: 10, height: 10 },
+      data: { label: 'corner' },
+    });
+    scene.add({
+      kind: 'leaf', layer: 'bg', parent: bed,
+      pose: { x: 40, y: 40, width: 10, height: 10 },
+      data: { label: 'center' },
+    });
+    const adapter = sceneToAdapter(scene);
+    const poly = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }];
+    const hits = adapter.hitTestLasso!(poly, 'intersect');
+    const labels = hits.map((id) => scene.get(id as never)!.data.label);
+    expect(labels).toContain('center');
+    expect(labels).not.toContain('corner');
+  });
+
+  it('clipFromPose is called once per query (cached during walk)', () => {
+    const scene = createScene<Data, 'bg', Pose>({
+      systemLayers: [{ id: 'bg' }],
+    });
+    let callCount = 0;
+    const bed = scene.add({
+      kind: 'container', layer: 'bg',
+      pose: { x: 0, y: 0, width: 100, height: 100 },
+      data: { label: 'bed' },
+      clipFromPose: () => { callCount++; return { kind: 'rect', x: 25, y: 25, width: 50, height: 50 }; },
+    });
+    for (let i = 0; i < 5; i++) {
+      scene.add({
+        kind: 'leaf', layer: 'bg', parent: bed,
+        pose: { x: i * 10, y: 30, width: 5, height: 5 },
+        data: { label: `p${i}` },
+      });
+    }
+    const adapter = sceneToAdapter(scene);
+    callCount = 0;
+    adapter.hitTestArea!({ x: 0, y: 0, width: 100, height: 100 });
+    expect(callCount).toBe(1);  // called once for the bed, not 5 times
+  });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { registerFont, getFont, _resetFontRegistryForTests } from './registerFont';
+import { registerFont, getFont, resolveFontVariant, _resetFontRegistryForTests } from './registerFont';
 import { FIXTURE_FONT } from './FontAtlas';
 
 function stubFetch() {
@@ -32,30 +32,141 @@ beforeEach(() => {
 
 describe('registerFont', () => {
   it('stores a parsed BmFont after successful fetch', async () => {
-    await registerFont('inter', '/fonts/inter/inter.json', '/fonts/inter/inter.png');
-    const entry = getFont('inter');
+    await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const entry = getFont('inter', 400, 'normal');
     expect(entry).not.toBeNull();
     expect(entry!.font.info.face).toBe('Inter');
     expect(entry!.font.charMap.size).toBe(2);
   });
 
   it('calling twice for the same family is a no-op (returns same entry)', async () => {
-    await registerFont('inter', '/fonts/inter/inter.json', '/fonts/inter/inter.png');
-    const first = getFont('inter');
-    await registerFont('inter', '/fonts/inter/inter.json', '/fonts/inter/inter.png');
-    const second = getFont('inter');
+    await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const first = getFont('inter', 400, 'normal');
+    await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const second = getFont('inter', 400, 'normal');
     expect(first).toBe(second);
     expect((global.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBe(2);
   });
 
   it('getFont returns null for unknown family', () => {
-    expect(getFont('unknown')).toBeNull();
+    expect(getFont('unknown', 400, 'normal')).toBeNull();
   });
 
   it('rejects with an informative error when fetch fails', async () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('network error'));
     await expect(
-      registerFont('bad', '/bad.json', '/bad.png'),
+      registerFont('bad', {}, '/bad.json', '/bad.png'),
     ).rejects.toThrow('weasel registerFont');
+  });
+});
+
+describe('registerFont variants', () => {
+  it('stores regular and bold separately under the same family', async () => {
+    await registerFont('inter', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    await registerFont('inter', { weight: 700, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    expect(getFont('inter', 400, 'normal')).not.toBeNull();
+    expect(getFont('inter', 700, 'normal')).not.toBeNull();
+    expect(getFont('inter', 400, 'normal')).not.toBe(getFont('inter', 700, 'normal'));
+  });
+
+  it('stores italic separately from normal', async () => {
+    await registerFont('inter', { style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    await registerFont('inter', { style: 'italic' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    expect(getFont('inter', 400, 'normal')).not.toBe(getFont('inter', 400, 'italic'));
+  });
+
+  it('defaults weight to 400 and style to normal when variant fields are omitted', async () => {
+    await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    expect(getFont('inter', 400, 'normal')).not.toBeNull();
+  });
+
+  it('re-registering the same (family, weight, style) is a no-op', async () => {
+    await registerFont('inter', { weight: 700 }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const first = getFont('inter', 700, 'normal');
+    await registerFont('inter', { weight: 700 }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const second = getFont('inter', 700, 'normal');
+    expect(first).toBe(second);
+  });
+});
+
+describe('resolveFontVariant', () => {
+  it('returns exact match with no synthetic flags', async () => {
+    await registerFont('inter', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const r = resolveFontVariant('inter', 400, 'normal');
+    expect(r.entry).not.toBeNull();
+    expect(r.synthetic).toEqual({ bold: false, italic: false });
+  });
+
+  it('falls back from missing italic to normal with synthetic.italic=true', async () => {
+    await registerFont('inter', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const r = resolveFontVariant('inter', 400, 'italic');
+    expect(r.entry).not.toBeNull();
+    expect(r.synthetic).toEqual({ bold: false, italic: true });
+  });
+
+  it('falls back from missing bold to regular with synthetic.bold=true', async () => {
+    await registerFont('inter', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const r = resolveFontVariant('inter', 700, 'normal');
+    expect(r.entry).not.toBeNull();
+    expect(r.synthetic).toEqual({ bold: true, italic: false });
+  });
+
+  it('falls back from missing bold-italic to bold with synthetic.italic=true (real bold)', async () => {
+    await registerFont('inter', { weight: 700, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const r = resolveFontVariant('inter', 700, 'italic');
+    expect(r.entry).not.toBeNull();
+    expect(r.synthetic).toEqual({ bold: false, italic: true });
+  });
+
+  it('falls back from missing bold-italic to italic with synthetic.bold=true (real italic)', async () => {
+    await registerFont('inter', { weight: 400, style: 'italic' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const r = resolveFontVariant('inter', 700, 'italic');
+    expect(r.entry).not.toBeNull();
+    expect(r.synthetic).toEqual({ bold: true, italic: false });
+  });
+
+  it('prefers the nearer weight in the same bucket', async () => {
+    await registerFont('inter', { weight: 700, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    await registerFont('inter', { weight: 900, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const r = resolveFontVariant('inter', 750, 'normal');
+    expect(r.entry).toBe(getFont('inter', 700, 'normal'));
+  });
+
+  it('breaks weight-distance ties by picking the heavier weight', async () => {
+    await registerFont('inter', { weight: 700, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    await registerFont('inter', { weight: 900, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const r = resolveFontVariant('inter', 800, 'normal');
+    expect(r.entry).toBe(getFont('inter', 900, 'normal'));
+  });
+
+  it('returns null entry when the family has no variants', () => {
+    const r = resolveFontVariant('missing', 400, 'normal');
+    expect(r.entry).toBeNull();
+    expect(r.synthetic).toEqual({ bold: false, italic: false });
+  });
+
+  it('reports resolved weight/style on exact match', async () => {
+    await registerFont('inter', { weight: 700, style: 'italic' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const r = resolveFontVariant('inter', 700, 'italic');
+    expect(r.resolved).toEqual({ weight: 700, style: 'italic' });
+  });
+
+  it('reports resolved weight/style after step 2 nearest-weight fallback', async () => {
+    await registerFont('inter', { weight: 700, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const r = resolveFontVariant('inter', 750, 'normal');
+    // Resolved to the registered 700 — cache key must use 700, not the requested 750.
+    expect(r.resolved).toEqual({ weight: 700, style: 'normal' });
+  });
+
+  it('reports resolved weight/style after step 4 italic-drop fallback', async () => {
+    await registerFont('inter', { weight: 700, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const r = resolveFontVariant('inter', 700, 'italic');
+    expect(r.resolved).toEqual({ weight: 700, style: 'normal' });
+  });
+
+  it('reports requested weight/style when nothing resolves (null entry)', () => {
+    const r = resolveFontVariant('missing', 750, 'italic');
+    expect(r.entry).toBeNull();
+    expect(r.resolved).toEqual({ weight: 750, style: 'italic' });
   });
 });

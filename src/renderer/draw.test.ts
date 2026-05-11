@@ -3,7 +3,7 @@ import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { mat3 } from './math/mat3';
 import type { DrawCommand } from './DrawCommand';
-import { pushClip, popClip, type DrawContext } from './draw';
+import { pushClip, popClip, drawGroup, dispatch, type DrawContext } from './draw';
 
 /**
  * Build a DrawContext backed by a GL recorder. Mirrors what WeaselRenderer.render
@@ -32,6 +32,7 @@ function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeof makeG
     state: r._groupState(),
     widthCss: r._widthCss(),
     heightCss: r._heightCss(),
+    clipDepth: 0,
   };
   return { ctx, calls: recorder.calls, gl: recorder.gl };
 }
@@ -300,7 +301,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
     global.createImageBitmap = vi.fn().mockResolvedValue({
       width: 512, height: 512, close: vi.fn(),
     } as unknown as ImageBitmap);
-    await registerFont('inter', '/fonts/inter.json', '/fonts/inter.png');
+    await registerFont('inter', {}, '/fonts/inter.json', '/fonts/inter.png');
 
     recorder = makeGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
@@ -429,5 +430,166 @@ describe('pushClip / popClip', () => {
     // stencilOp ZERO for the write
     const so = calls.find((c) => c.name === 'stencilOp');
     expect(so!.args).toEqual([gl.KEEP, gl.KEEP, gl.ZERO]);
+  });
+});
+
+import type { GroupDrawCommand } from './DrawCommand';
+
+describe('drawGroup clip integration', () => {
+  it('drawGroup with cmd.clip pushes clip and children draw under the test', () => {
+    const { ctx, calls, gl } = createRecorderCtx();
+    const cmd: GroupDrawCommand = {
+      kind: 'group',
+      clip: { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 },
+      children: [{
+        kind: 'path' as const,
+        path: { kind: 'rect' as const, x: 0, y: 0, width: 5, height: 5 },
+        fill: { color: '#fff' },
+      }],
+    };
+    drawGroup(ctx, cmd);
+    // Find: stencilMask(0x02) before child draw, stencilFunc(EQUAL, 0x02, 0x02)
+    // during child, popClip-style stencilOp ZERO after children.
+    const idxPushMask = calls.findIndex(
+      (c) => c.name === 'stencilMask' && c.args[0] === 0x02
+    );
+    const idxChildTest = calls.findIndex(
+      (c, i) => i > idxPushMask
+        && c.name === 'stencilFunc'
+        && c.args[1] === 0x02
+        && c.args[2] === 0x02
+    );
+    const idxPop = calls.findIndex(
+      (c, i) => i > idxChildTest
+        && c.name === 'stencilOp'
+        && c.args[2] === gl.ZERO
+    );
+    expect(idxPushMask).toBeGreaterThanOrEqual(0);
+    expect(idxChildTest).toBeGreaterThan(idxPushMask);
+    expect(idxPop).toBeGreaterThan(idxChildTest);
+  });
+
+  it('drawGroup without cmd.clip does not touch clip-level stencil bits', () => {
+    const { ctx, calls } = createRecorderCtx();
+    const cmd: GroupDrawCommand = {
+      kind: 'group',
+      children: [{
+        kind: 'path' as const,
+        path: { kind: 'rect' as const, x: 0, y: 0, width: 5, height: 5 },
+        fill: { color: '#fff' },
+      }],
+    };
+    drawGroup(ctx, cmd);
+    // No stencilMask writes to bits 1-7.
+    const clipBitWrites = calls.filter(
+      (c) => c.name === 'stencilMask'
+        && c.args[0] !== 0x01
+        && c.args[0] !== 0xff
+        && c.args[0] !== 0
+    );
+    expect(clipBitWrites).toEqual([]);
+  });
+
+  it('drawGroup throws at depth 8', () => {
+    // Build a chain of 8 nested clip groups.
+    let cmd: GroupDrawCommand = {
+      kind: 'group',
+      children: [{
+        kind: 'path',
+        path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
+        fill: { color: '#fff' },
+      }],
+    };
+    for (let i = 0; i < 8; i++) {
+      cmd = {
+        kind: 'group',
+        clip: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+        children: [cmd],
+      };
+    }
+    const { ctx } = createRecorderCtx();
+    expect(() => drawGroup(ctx, cmd)).toThrow(/clip nesting depth exceeded \(max 7\)/);
+  });
+});
+
+// Helper: a minimal polygon path for evenodd fill.
+const POLYGON_EVENODD: PolygonPath = {
+  kind: 'polygon',
+  commands: new Uint8Array([M, L, L, L, Z]),
+  coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
+  fillRule: 'evenodd',
+};
+
+// Helper: a polygon path for stroke-stencil (inner/outer) — needs visible area.
+const POLYGON_NONZERO: PolygonPath = {
+  kind: 'polygon',
+  commands: new Uint8Array([M, L, L, L, Z]),
+  coords: new Float32Array([0, 0, 100, 0, 100, 100, 0, 100]),
+  fillRule: 'nonzero',
+};
+
+describe('stencil-shaded passes honor ancestor clip', () => {
+  it('drawPathFillStencil shaded pass uses EQUAL clipMask|0x01 when clipDepth=2', () => {
+    const { ctx, calls, gl } = createRecorderCtx();
+    ctx.clipDepth = 2;
+    // ancestorMask(2) = 0x06, so shaded ref = 0x07, mask = 0x07
+    dispatch(ctx, { kind: 'path', path: POLYGON_EVENODD, fill: { color: '#f00' } });
+
+    // The shaded pass stencilFunc is the last EQUAL call (write pass uses ALWAYS).
+    const equalCalls = calls.filter(
+      (c) => c.name === 'stencilFunc' && c.args[0] === gl.EQUAL
+    );
+    expect(equalCalls.length).toBeGreaterThan(0);
+    const shadedSF = equalCalls[equalCalls.length - 1];
+    expect(shadedSF.args).toEqual([gl.EQUAL, 0x07, 0x07]);
+  });
+
+  it('drawPathFillStencil shaded pass collapses to EQUAL 0x01 0x01 when clipDepth=0', () => {
+    const { ctx, calls, gl } = createRecorderCtx();
+    ctx.clipDepth = 0;
+    dispatch(ctx, { kind: 'path', path: POLYGON_EVENODD, fill: { color: '#f00' } });
+
+    const equalCalls = calls.filter(
+      (c) => c.name === 'stencilFunc' && c.args[0] === gl.EQUAL
+    );
+    expect(equalCalls.length).toBeGreaterThan(0);
+    const shadedSF = equalCalls[equalCalls.length - 1];
+    expect(shadedSF.args).toEqual([gl.EQUAL, 0x01, 0x01]);
+  });
+
+  it('drawPathStrokeStenciled inner shaded pass uses EQUAL clipMask|0x01 when clipDepth=1', () => {
+    const { ctx, calls, gl } = createRecorderCtx();
+    ctx.clipDepth = 1;
+    // ancestorMask(1) = 0x02, inner ref = 0x03, mask = 0x03
+    dispatch(ctx, {
+      kind: 'path',
+      path: POLYGON_NONZERO,
+      stroke: { paint: { color: '#000' }, width: 10, align: 'inner' },
+    });
+
+    const equalCalls = calls.filter(
+      (c) => c.name === 'stencilFunc' && c.args[0] === gl.EQUAL
+    );
+    expect(equalCalls.length).toBeGreaterThan(0);
+    const shadedSF = equalCalls[equalCalls.length - 1];
+    expect(shadedSF.args).toEqual([gl.EQUAL, 0x03, 0x03]);
+  });
+
+  it('drawPathStrokeStenciled outer shaded pass: ref=clipMask, mask=clipMask|0x01 when clipDepth=1', () => {
+    const { ctx, calls, gl } = createRecorderCtx();
+    ctx.clipDepth = 1;
+    // ancestorMask(1) = 0x02, outer ref = 0x02 (bit 0 NOT set), mask = 0x03
+    dispatch(ctx, {
+      kind: 'path',
+      path: POLYGON_NONZERO,
+      stroke: { paint: { color: '#000' }, width: 10, align: 'outer' },
+    });
+
+    const equalCalls = calls.filter(
+      (c) => c.name === 'stencilFunc' && c.args[0] === gl.EQUAL
+    );
+    expect(equalCalls.length).toBeGreaterThan(0);
+    const shadedSF = equalCalls[equalCalls.length - 1];
+    expect(shadedSF.args).toEqual([gl.EQUAL, 0x02, 0x03]);
   });
 });

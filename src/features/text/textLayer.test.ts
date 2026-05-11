@@ -42,4 +42,37 @@ describe('createTextLayer', () => {
     expect(group.children).toHaveLength(1);
     expect(group.children[0]).toMatchObject({ text: 'B' });
   });
+
+  it('accepts a node with `runs` and emits the concatenated text', () => {
+    const layer = createTextLayer<Node>({
+      getTexts: () => [{
+        id: 'n',
+        pose: {
+          x: 0, y: 0, width: 200, height: 40,
+          text: 'a b',
+          runs: [{ text: 'a ' }, { text: 'b', bold: true }],
+        },
+      }],
+      getPose: (n) => n.pose,
+    });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    const group = tree[0] as { children: { kind: string; text?: string }[] };
+    expect(group.children).toHaveLength(1);
+    expect(group.children[0]).toMatchObject({ kind: 'text', text: 'a b' });
+  });
+
+  it('throws when runs are present but runsToPlainText(runs) !== text', () => {
+    const layer = createTextLayer<Node>({
+      getTexts: () => [{
+        id: 'bad',
+        pose: {
+          x: 0, y: 0, width: 200, height: 40,
+          text: 'a b',
+          runs: [{ text: 'WRONG' }],
+        },
+      }],
+      getPose: (n) => n.pose,
+    });
+    expect(() => layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS)).toThrow(/invariant/i);
+  });
 });

@@ -8,5 +8,5 @@ import atlasUrl from './inter.png?url';
 export const DEFAULT_FONT_FAMILY = 'weasel-hud-default';
 
 export async function registerDefaultFont(): Promise<void> {
-  await registerFont(DEFAULT_FONT_FAMILY, metricsUrl, atlasUrl);
+  await registerFont(DEFAULT_FONT_FAMILY, {}, metricsUrl, atlasUrl);
 }

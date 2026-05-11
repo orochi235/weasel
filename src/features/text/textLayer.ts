@@ -4,15 +4,17 @@
  * is informational — overflow is not clipped at v1.
  *
  * The GL renderer uses MSDF text. The resolved style's `fontFamily` must
- * be registered via `registerFont(family, atlasUrl)` from the renderer
- * module *before* the GL backend dispatches this layer. Unregistered
- * families render with a warning and a fallback glyph (see
+ * be registered via `registerFont(family, variant, metricsUrl, atlasUrl)`
+ * from the renderer module *before* the GL backend dispatches this layer.
+ * Unregistered families render with a warning and no glyphs (see
  * `TextDrawCommand`'s contract).
  */
 
 import { type DrawCommand, viewToMat3 } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { measureText } from './measureText';
+import type { StyledRun } from './runs';
+import { runsToPlainText } from './runs';
 import {
   type ResolvedTextStyle,
   type TextStyle,
@@ -27,6 +29,8 @@ export interface TextPose {
   width: number;
   height: number;
   text: string;
+  /** Rich-text runs. When present, `runsToPlainText(runs)` must equal `text`. */
+  runs?: StyledRun[];
   style?: TextStyle;
 }
 
@@ -95,6 +99,13 @@ export function createTextLayer<T>(opts: CreateTextLayerOpts<T>): RenderLayer<un
       for (const node of getTexts()) {
         if (isHidden?.(node)) continue;
         const pose = getPose(node);
+        if (pose.runs && runsToPlainText(pose.runs) !== pose.text) {
+          throw new Error(
+            `weasel createTextLayer: TextPose invariant violated — ` +
+            `runsToPlainText(runs) !== text. Either omit \`runs\` or keep it ` +
+            `synchronized with \`text\`.`,
+          );
+        }
         const style = resolveTextStyle(pose.style);
         mctx.font = fontString(style);
         const { lines } = measureText(mctx, pose.text, pose.width, style);
