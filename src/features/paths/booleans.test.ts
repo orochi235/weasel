@@ -27,3 +27,24 @@ describe('pathUnion', () => {
     expect(pointInPath(u, 7, 7)).toBe(false);
   });
 });
+
+import { pathIntersect } from './booleans';
+
+describe('pathIntersect', () => {
+  it('returns only the overlapping region of two overlapping rects', () => {
+    const a = r(0, 0, 10, 10);
+    const b = r(5, 5, 10, 10);
+    const i = pathIntersect(a, b);
+    expect(pointInPath(i, 7, 7)).toBe(true);
+    expect(pointInPath(i, 2, 2)).toBe(false);
+    expect(pointInPath(i, 12, 12)).toBe(false);
+  });
+
+  it('returns an empty path when inputs are disjoint', () => {
+    const a = r(0, 0, 5, 5);
+    const b = r(10, 10, 5, 5);
+    const i = pathIntersect(a, b);
+    expect(i.commands.length).toBe(0);
+    expect(i.coords.length).toBe(0);
+  });
+});

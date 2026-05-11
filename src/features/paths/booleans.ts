@@ -21,3 +21,12 @@ export function pathUnion(...paths: Path[]): PolygonPath {
   const result = polygonClipping.union(head, ...rest);
   return multiPolygonToPath(result);
 }
+
+/** Intersection of N paths. Commutative. Empty result is an empty path. */
+export function pathIntersect(...paths: Path[]): PolygonPath {
+  if (paths.length === 0) return multiPolygonToPath([]);
+  const mps = paths.map((p) => pathToMultiPolygon(p));
+  const [head, ...rest] = mps;
+  const result = polygonClipping.intersection(head, ...rest);
+  return multiPolygonToPath(result);
+}
