@@ -497,7 +497,6 @@ function applyClipTest(ctx: DrawContext): void {
   gl.enable(gl.STENCIL_TEST);
   gl.stencilFunc(gl.EQUAL, mask, mask);
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
-  gl.stencilMask(0x01);  // subsequent path-stencil work stays in bit 0
 }
 
 // ─── Clip-stencil helpers ────────────────────────────────────────────────────
@@ -592,8 +591,9 @@ function drawPathFillStencil(ctx: DrawContext, fill: Paint, handle: GLMeshHandle
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.INVERT);
   gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
 
+  const clipMask = ancestorMask(ctx.clipDepth);
   gl.colorMask(true, true, true, true);
-  gl.stencilFunc(gl.NOTEQUAL, 0, 0x01);
+  gl.stencilFunc(gl.EQUAL, clipMask | 0x01, clipMask | 0x01);
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
   setSolidPaintUniforms(ctx, ctx.pathFill, solid.color, solid.opacity);
   setColorMatrixUniforms(ctx, ctx.pathFill);
@@ -672,8 +672,13 @@ function drawPathStrokeStenciled(
   gl.bindVertexArray(fillHandle.vao);
   gl.drawElements(gl.TRIANGLES, fillHandle.indexCount, gl.UNSIGNED_INT, 0);
 
+  const clipMask = ancestorMask(ctx.clipDepth);
   gl.colorMask(true, true, true, true);
-  gl.stencilFunc(gl.EQUAL, align === 'inner' ? 1 : 0, 0x01);
+  if (align === 'inner') {
+    gl.stencilFunc(gl.EQUAL, clipMask | 0x01, clipMask | 0x01);
+  } else {
+    gl.stencilFunc(gl.EQUAL, clipMask, clipMask | 0x01);
+  }
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
   setSolidPaintUniforms(ctx, ctx.pathFill, solid.color, solid.opacity);
   setColorMatrixUniforms(ctx, ctx.pathFill);
