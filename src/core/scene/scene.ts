@@ -8,6 +8,7 @@ import {
   type NodeId,
   type RegisteredOp,
   type Scene,
+  type SceneRegistry,
   type SerializedNode,
   type SerializedScene,
   type SystemLayerSpec,
@@ -697,13 +698,56 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   // Attach private state accessors directly on the returned object, hidden
   // behind `as unknown` because Scene<> is the public interface.
   // __clipCacheSize: used only by test files to assert prune behaviour.
-  // __registry / __reverseClipFromPose: consumed by toJSON (Task 2) and
-  //   accessible for testing. Do NOT use these outside of kit-internal code.
   (scene as unknown as { __clipCacheSize: () => number }).__clipCacheSize =
     () => pendingClipPatches.size;
   (scene as unknown as { __registry: typeof registry }).__registry = registry;
-  (scene as unknown as { __reverseClipFromPose: typeof reverseClipFromPose }).__reverseClipFromPose =
-    reverseClipFromPose;
 
   return scene;
+}
+
+/** Reconstruct a Scene from a JSON snapshot produced by `scene.toJSON()`.
+ *  Function fields (e.g., `clipFromPose`) are resolved by string key via the
+ *  registry passed in `options`. Throws on unknown version, unknown registry
+ *  keys, or invalid scene shape (cross-layer subtrees, unknown layer ids).
+ *  Loaded scenes start with empty history — undo/redo is NOT serialized. */
+export function sceneFromJSON<TData, TLayer extends string, TPose>(
+  json: SerializedScene<TData, TLayer, TPose>,
+  options: {
+    registry?: SceneRegistry<TPose>;
+    historyLimit?: number;
+    generateId?: () => NodeId;
+  },
+): Scene<TData, TLayer, TPose> {
+  if (json.version !== 1) {
+    throw new Error(`sceneFromJSON: unsupported version ${json.version}; only v1 supported`);
+  }
+  const registry = options.registry ?? {};
+  const initial: AddNodeSpec<TData, TLayer, TPose>[] = json.nodes.map((n) => {
+    const spec: AddNodeSpec<TData, TLayer, TPose> = {
+      id: n.id as NodeId,
+      kind: n.kind,
+      layer: n.layer,
+      pose: n.pose,
+      data: n.data,
+    };
+    if (n.parent !== undefined) spec.parent = n.parent as NodeId;
+    if (n.clipFromPoseKey !== undefined) {
+      const fn = registry.clipFromPose?.[n.clipFromPoseKey];
+      if (!fn) {
+        throw new Error(
+          `sceneFromJSON: unknown clipFromPose key '${n.clipFromPoseKey}'. ` +
+          `Register a function with this key in the registry option.`
+        );
+      }
+      (spec as { clipFromPose?: typeof fn }).clipFromPose = fn;
+    }
+    return spec;
+  });
+  return createScene<TData, TLayer, TPose>({
+    systemLayers: json.systemLayers,
+    initial,
+    registry,
+    ...(options.historyLimit !== undefined ? { historyLimit: options.historyLimit } : {}),
+    ...(options.generateId !== undefined ? { generateId: options.generateId } : {}),
+  });
 }

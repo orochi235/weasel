@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { createScene } from './scene';
+import { createScene, sceneFromJSON } from './scene';
 import { asNodeId } from './types';
+import type { SerializedScene } from './types';
 
 type Layer = 'background' | 'structures' | 'plantings';
 interface Data { label: string }
@@ -697,5 +698,126 @@ describe('scene.toJSON', () => {
     const json = scene.toJSON();
     const bedNode = json.nodes.find((n) => n.id === bed)!;
     expect(bedNode.clipFromPoseKey).toBeUndefined();
+  });
+});
+
+describe('sceneFromJSON', () => {
+  it('reconstructs a flat scene from JSON', () => {
+    const original = makeScene();
+    const a = original.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    original.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    const json = original.toJSON();
+    const restored = sceneFromJSON(json, {});
+    expect([...restored.roots]).toContain(asNodeId(a));
+    expect(restored.get(asNodeId(a))?.data.label).toBe('a');
+  });
+
+  it('reconstructs parent/child relationships', () => {
+    const original = makeScene();
+    const bed = original.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const plant = original.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'p' }, parent: bed });
+    const json = original.toJSON();
+    const restored = sceneFromJSON(json, {});
+    expect(restored.get(asNodeId(plant))?.parent).toBe(asNodeId(bed));
+    expect([...restored.childrenOf(asNodeId(bed))]).toEqual([asNodeId(plant)]);
+  });
+
+  it('restores layer visibility and locked state', () => {
+    const original = makeScene();
+    original.setLayerVisible('structures', false);
+    original.setLayerLocked('plantings', true);
+    const json = original.toJSON();
+    const restored = sceneFromJSON(json, {});
+    const structures = restored.layers.find((l) => l.id === 'structures')!;
+    const plantings = restored.layers.find((l) => l.id === 'plantings')!;
+    expect(structures.visible).toBe(false);
+    expect(plantings.locked).toBe(true);
+  });
+
+  it('resolves clipFromPoseKey via the registry', () => {
+    const factory = (_pose: typeof POSE) => ({ kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 });
+    const original = createScene<Data, 'structures' | 'plantings', typeof POSE>({
+      systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
+      registry: { clipFromPose: { 'ellipse': factory } },
+    });
+    const bed = original.add({
+      kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' },
+      clipFromPose: factory,
+    });
+    const json = original.toJSON();
+    const restored = sceneFromJSON(json, {
+      registry: { clipFromPose: { 'ellipse': factory } },
+    });
+    const restoredBed = restored.get(asNodeId(bed));
+    expect(restoredBed?.kind).toBe('container');
+    expect((restoredBed as { clipFromPose?: unknown }).clipFromPose).toBe(factory);
+  });
+
+  it('clipFromPose survives undo+redo after loading', () => {
+    const factory = (_pose: typeof POSE) => ({ kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 });
+    const json: SerializedScene<Data, 'structures', typeof POSE> = {
+      version: 1,
+      systemLayers: [{ id: 'structures' }],
+      nodes: [{
+        id: 'bed',
+        kind: 'container',
+        layer: 'structures',
+        pose: POSE,
+        data: { label: 'bed' },
+        clipFromPoseKey: 'ellipse',
+      }],
+    };
+    const scene = sceneFromJSON(json, { registry: { clipFromPose: { 'ellipse': factory } } });
+    const leaf = scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'l' } });
+    scene.undo();
+    scene.redo();
+    const bed = scene.get(asNodeId('bed'));
+    expect((bed as { clipFromPose?: unknown }).clipFromPose).toBe(factory);
+    void leaf;
+  });
+
+  it('throws on unknown version', () => {
+    const json = { version: 2, systemLayers: [{ id: 'structures' as const }], nodes: [] };
+    expect(() => sceneFromJSON(json as never, {})).toThrow(/unsupported version/);
+  });
+
+  it('throws on unknown clipFromPoseKey', () => {
+    const json: SerializedScene<Data, 'structures', typeof POSE> = {
+      version: 1,
+      systemLayers: [{ id: 'structures' }],
+      nodes: [{
+        id: 'bed',
+        kind: 'container',
+        layer: 'structures',
+        pose: POSE,
+        data: { label: 'bed' },
+        clipFromPoseKey: 'nonexistent',
+      }],
+    };
+    expect(() => sceneFromJSON(json, { registry: {} })).toThrow(/unknown clipFromPose key 'nonexistent'/);
+  });
+
+  it('rejects cross-layer subtrees in JSON via assertSubtreeLayer', () => {
+    const json: SerializedScene<Data, 'structures' | 'plantings', typeof POSE> = {
+      version: 1,
+      systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
+      nodes: [
+        { id: 'bed', kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } },
+        { id: 'plant', kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'p' }, parent: 'bed' },
+      ],
+    };
+    expect(() => sceneFromJSON(json, {})).toThrow(/subtree layer must match parent/);
+  });
+
+  it('full round-trip: toJSON → sceneFromJSON → toJSON produces equivalent output', () => {
+    const original = makeScene();
+    const bed = original.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    original.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'p1' }, parent: bed });
+    original.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'p2' }, parent: bed });
+    original.setLayerVisible('plantings', false);
+    const json1 = original.toJSON();
+    const restored = sceneFromJSON(json1, {});
+    const json2 = restored.toJSON();
+    expect(json2).toEqual(json1);
   });
 });
