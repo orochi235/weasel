@@ -70,6 +70,13 @@ export interface Stroke {
   join?: 'miter' | 'round' | 'bevel';
   /** Where the stroke sits relative to the geometric edge. Default `'center'`. */
   align?: StrokeAlign;
+  /**
+   * Per-anchor RGBA, flat (length = 4 × countPathAnchors(path)). Each
+   * value in 0..1. Arc-length interpolated across the tessellated ribbon
+   * between consecutive anchors. When set, `paint` is still required —
+   * its `opacity` (and color, as a placeholder) flow through the shader.
+   */
+  vertexColors?: number[];
 }
 
 /**
