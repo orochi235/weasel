@@ -54,3 +54,60 @@ export function runsToMarkdown(runs: readonly StyledRun[]): string {
   }
   return out;
 }
+
+/**
+ * Parse a small markdown subset (`**bold**`, `*italic*`, `***both***`) into
+ * styled runs. Backslash escapes `\*` and `\\`. Newlines are preserved as
+ * literal characters inside a run — they're not run-boundary markers in
+ * this format.
+ */
+export function markdownToRuns(input: string): StyledRun[] {
+  const runs: StyledRun[] = [];
+  let bold = false;
+  let italic = false;
+  let buf = '';
+  let i = 0;
+
+  function flush(): void {
+    if (buf.length === 0) return;
+    const run: StyledRun = { text: buf };
+    if (bold) run.bold = true;
+    if (italic) run.italic = true;
+    runs.push(run);
+    buf = '';
+  }
+
+  while (i < input.length) {
+    const ch = input[i];
+
+    if (ch === '\\' && i + 1 < input.length && '*\\'.includes(input[i + 1])) {
+      buf += input[i + 1];
+      i += 2;
+      continue;
+    }
+
+    if (ch === '*') {
+      let count = 0;
+      while (i + count < input.length && input[i + count] === '*') count++;
+      flush();
+      if (count >= 3) {
+        bold = !bold;
+        italic = !italic;
+        i += 3;
+      } else if (count === 2) {
+        bold = !bold;
+        i += 2;
+      } else {
+        italic = !italic;
+        i += 1;
+      }
+      continue;
+    }
+
+    buf += ch;
+    i++;
+  }
+
+  flush();
+  return runs;
+}

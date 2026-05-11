@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toRuns, runsToPlainText, runsToMarkdown, type StyledRun } from './runs';
+import { toRuns, runsToPlainText, runsToMarkdown, markdownToRuns, type StyledRun } from './runs';
 
 describe('toRuns', () => {
   it('wraps a string into a single run', () => {
@@ -75,5 +75,52 @@ describe('runsToMarkdown', () => {
 
   it('escapes literal backslashes in plain text', () => {
     expect(runsToMarkdown([{ text: 'a\\b' }])).toBe('a\\\\b');
+  });
+});
+
+describe('markdownToRuns', () => {
+  it('returns a single plain run for unstyled text', () => {
+    expect(markdownToRuns('hello')).toEqual([{ text: 'hello' }]);
+  });
+
+  it('parses **bold**', () => {
+    expect(markdownToRuns('**bold**')).toEqual([{ text: 'bold', bold: true }]);
+  });
+
+  it('parses *italic*', () => {
+    expect(markdownToRuns('*italic*')).toEqual([{ text: 'italic', italic: true }]);
+  });
+
+  it('parses ***bold italic***', () => {
+    expect(markdownToRuns('***both***')).toEqual([{ text: 'both', bold: true, italic: true }]);
+  });
+
+  it('parses mixed inline styles', () => {
+    expect(markdownToRuns('a **b** c')).toEqual([
+      { text: 'a ' },
+      { text: 'b', bold: true },
+      { text: ' c' },
+    ]);
+  });
+
+  it('parses bold containing italic', () => {
+    expect(markdownToRuns('**a *b* c**')).toEqual([
+      { text: 'a ', bold: true },
+      { text: 'b', bold: true, italic: true },
+      { text: ' c', bold: true },
+    ]);
+  });
+
+  it('preserves embedded newlines inside a run (does not split)', () => {
+    expect(markdownToRuns('a\nb')).toEqual([{ text: 'a\nb' }]);
+  });
+
+  it('honors backslash escapes for asterisks', () => {
+    expect(markdownToRuns('a\\*b')).toEqual([{ text: 'a*b' }]);
+  });
+
+  it('round-trips plain → md → runs → md', () => {
+    const md = '**hello** *world*';
+    expect(runsToMarkdown(markdownToRuns(md))).toBe(md);
   });
 });
