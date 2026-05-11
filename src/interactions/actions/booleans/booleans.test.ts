@@ -137,3 +137,101 @@ describe('applyBooleanOp — operation-specific behavior', () => {
     expect(h.state.batches[0].label).toBe('Union');
   });
 });
+
+// Z-order-aware harness: adapter exposes `getZOrder` plus the
+// `ReorderAdapter` contract (`getChildren` / `setChildOrder`), so the kit
+// emits a `createMoveToIndexOp` after the inserts to drop results into the
+// topmost source's z-slot.
+function makeZOrderedAdapter(initialOrder: { id: string; path: Path }[]) {
+  // A single ordered list under parentId=null. Newly-inserted nodes append
+  // to the end (mirrors a typical flat-array scene). `setChildOrder`
+  // replaces the order outright.
+  const order: string[] = initialOrder.map((n) => n.id);
+  const paths = new Map(initialOrder.map((n) => [n.id, n.path]));
+  let nextId = 1;
+  const adapter: BooleansAdapter & {
+    getChildren(parentId: string | null): string[];
+    setChildOrder(parentId: string | null, ids: string[]): void;
+    getParent(id: string): string | null;
+  } = {
+    getSelection: () => initialOrder.map((n) => n.id as NodeId),
+    getWorldPath: (id) => paths.get(id),
+    compareZ: (a, b) => order.indexOf(a) - order.indexOf(b),
+    getZOrder: (id) => ({ parentId: null, index: order.indexOf(id) }),
+    createPathNode: (path) => {
+      const id = `result_${nextId++}`;
+      paths.set(id, path);
+      return { id };
+    },
+    insertNode: (node) => { if (!order.includes(node.id)) order.push(node.id); },
+    removeNode: (id) => {
+      const i = order.indexOf(id);
+      if (i >= 0) order.splice(i, 1);
+      paths.delete(id);
+    },
+    getChildren: (_parentId) => order.slice(),
+    setChildOrder: (_parentId, ids) => { order.length = 0; order.push(...ids); },
+    getParent: (_id) => null,
+    setSelection: () => {},
+    applyBatch: (ops) => {
+      for (const op of ops) op.apply(adapter);
+    },
+  };
+  return { adapter, order };
+}
+
+describe('applyBooleanOp — z-position via getZOrder', () => {
+  it('places the union result at the topmost source\'s z-slot', () => {
+    // Bottom-up order: a, b, c, d. Selection: b and c. Topmost in
+    // selection = c at index 2.
+    const h = makeZOrderedAdapter([
+      rect('a', 0, 0, 10, 10),
+      rect('b', 0, 0, 10, 10),
+      rect('c', 5, 5, 10, 10),
+      rect('d', 0, 0, 10, 10),
+    ]);
+    // Restrict selection to b + c only.
+    h.adapter.getSelection = () => ['b' as NodeId, 'c' as NodeId];
+    applyBooleanOp(h.adapter, 'union');
+    // After deletes + insert + move: order is [a, result, d] with the
+    // result occupying what was c's slot (index 2 pre-batch → index 1
+    // post-deletes since 'b' at index 1 was also removed).
+    expect(h.order).toHaveLength(3); // a, result, d
+    expect(h.order[0]).toBe('a');
+    expect(h.order[2]).toBe('d');
+    // The middle slot is the new result node.
+    expect(h.order[1]).toMatch(/^result_/);
+  });
+
+  it('places all divide results contiguously at the topmost source\'s slot', () => {
+    const h = makeZOrderedAdapter([
+      rect('a', 0, 0, 10, 10),
+      rect('b', 0, 0, 10, 10),  // back of selection
+      rect('c', 5, 5, 10, 10),  // top of selection
+      rect('d', 0, 0, 10, 10),
+    ]);
+    h.adapter.getSelection = () => ['b' as NodeId, 'c' as NodeId];
+    applyBooleanOp(h.adapter, 'divide');
+    // Three result nodes replace b + c at the topmost slot (c's original
+    // index = 2 → index 1 after deletes). Final order: [a, r1, r2, r3, d].
+    expect(h.order).toHaveLength(5);
+    expect(h.order[0]).toBe('a');
+    expect(h.order[4]).toBe('d');
+    for (let i = 1; i <= 3; i++) expect(h.order[i]).toMatch(/^result_/);
+  });
+
+  it('falls back to default insert when adapter omits getZOrder', () => {
+    // Same makeAdapter shape as the earlier tests — no getZOrder. The
+    // result lands wherever insertNode defaults to (end of state.inserted).
+    const h = makeAdapter([
+      rect('a', 0, 0, 10, 10),
+      rect('b', 5, 5, 10, 10),
+    ]);
+    expect(h.adapter.getZOrder).toBeUndefined();
+    const result = applyBooleanOp(h.adapter, 'union');
+    expect(result.kind).toBe('applied');
+    // Confirm the batch doesn't include a MoveToIndex op (just delete +
+    // insert + setSelection = 4 ops total).
+    expect(h.state.batches[0].ops).toHaveLength(4);
+  });
+});
