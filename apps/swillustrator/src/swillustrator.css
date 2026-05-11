@@ -42,13 +42,13 @@ html, body, #root {
   gap: 4px;
   overflow-y: auto;
   /* Dark-theme overrides for @orochi235/weasel-ui tokens. */
-  --wui-text: #d4c4a8;
-  --wui-text-muted: #8a7a5a;
-  --wui-panel-bg: transparent;
-  --wui-panel-border: #3a2e22;
-  --wui-input-bg: #1a130d;
-  --wui-accent: #d4c4a8;
-  --wui-danger: #b03030;
+  --wzl-text: #d4c4a8;
+  --wzl-text-muted: #8a7a5a;
+  --wzl-panel-bg: transparent;
+  --wzl-panel-border: #3a2e22;
+  --wzl-input-bg: #1a130d;
+  --wzl-accent: #d4c4a8;
+  --wzl-danger: #b03030;
 }
 
 .swill-tool-button {

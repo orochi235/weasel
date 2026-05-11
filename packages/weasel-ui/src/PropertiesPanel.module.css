@@ -1,15 +1,15 @@
 .panel {
   padding: 8px;
   min-height: 200px;
-  background: var(--wui-panel-bg);
-  color: var(--wui-text);
+  background: var(--wzl-panel-bg);
+  color: var(--wzl-text);
 }
 .title {
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--wui-text-muted);
+  color: var(--wzl-text-muted);
   padding: 4px 8px;
   margin-bottom: 4px;
 }
@@ -23,13 +23,13 @@
   align-items: center;
 }
 .label {
-  color: var(--wui-text-muted);
+  color: var(--wzl-text-muted);
   font-size: 12px;
   white-space: nowrap;
   padding-right: 4px;
 }
 .miniLabel {
-  color: var(--wui-text-muted);
+  color: var(--wzl-text-muted);
   font-size: 12px;
   text-align: center;
 }
@@ -46,17 +46,17 @@
 
 .readOnly {
   font-size: 12px;
-  color: var(--wui-text-muted);
+  color: var(--wzl-text-muted);
   padding: 4px 6px;
 }
 
 .input {
   padding: 4px 6px;
-  border: 1px solid var(--wui-panel-border);
+  border: 1px solid var(--wzl-panel-border);
   border-radius: 4px;
-  background: var(--wui-input-bg);
+  background: var(--wzl-input-bg);
   font-size: 12px;
-  color: var(--wui-text);
+  color: var(--wzl-text);
   min-width: 0;
 }
 .input[type="number"] {
@@ -71,28 +71,28 @@
 }
 .input:focus {
   outline: none;
-  border-color: var(--wui-accent);
+  border-color: var(--wzl-accent);
 }
 
 .select {
   padding: 4px 2px;
-  border: 1px solid var(--wui-panel-border);
+  border: 1px solid var(--wzl-panel-border);
   border-radius: 4px;
-  background: var(--wui-input-bg);
+  background: var(--wzl-input-bg);
   font-size: 12px;
-  color: var(--wui-text);
+  color: var(--wzl-text);
   min-width: 0;
 }
 .select:focus {
   outline: none;
-  border-color: var(--wui-accent);
+  border-color: var(--wzl-accent);
 }
 
 .colorInput {
   width: 32px;
   height: 24px;
   padding: 0;
-  border: 1px solid var(--wui-panel-border);
+  border: 1px solid var(--wzl-panel-border);
   border-radius: 4px;
   cursor: pointer;
   background: transparent;
@@ -106,34 +106,34 @@
 .swatch {
   width: 100%;
   aspect-ratio: 1;
-  border: 2px solid var(--wui-panel-border);
+  border: 2px solid var(--wzl-panel-border);
   border-radius: 4px;
   cursor: pointer;
   padding: 0;
   background-clip: padding-box;
 }
 .swatch:hover {
-  border-color: var(--wui-text-muted);
+  border-color: var(--wzl-text-muted);
 }
 .swatchActive {
-  border-color: var(--wui-accent);
-  box-shadow: 0 0 0 1px var(--wui-accent);
+  border-color: var(--wzl-accent);
+  box-shadow: 0 0 0 1px var(--wzl-accent);
 }
 
 .button {
   padding: 4px 6px;
-  border: 1px solid var(--wui-panel-border);
+  border: 1px solid var(--wzl-panel-border);
   border-radius: 4px;
-  background: var(--wui-input-bg);
-  color: var(--wui-text);
+  background: var(--wzl-input-bg);
+  color: var(--wzl-text);
   font-size: 12px;
   font-family: inherit;
   cursor: pointer;
   text-align: center;
 }
 .button:hover {
-  border-color: var(--wui-accent);
+  border-color: var(--wzl-accent);
 }
 .button.danger {
-  color: var(--wui-danger);
+  color: var(--wzl-danger);
 }

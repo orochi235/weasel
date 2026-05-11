@@ -16,7 +16,6 @@
       "import": "./src/index.ts",
       "types": "./src/index.ts"
     },
-    "./tokens.css": "./src/tokens.css",
     "./package.json": "./package.json"
   },
   "peerDependencies": {

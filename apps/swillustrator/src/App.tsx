@@ -38,7 +38,7 @@ import {
   PropertyMiniLabel,
   PropertySwatchGrid,
 } from '@orochi235/weasel-ui';
-import '@orochi235/weasel-ui/tokens.css';
+import '@orochi235/weasel-theme/tokens.css';
 interface View { x: number; y: number; scale: number }
 
 // US Letter at 96dpi.

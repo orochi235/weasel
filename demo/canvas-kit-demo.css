@@ -225,22 +225,22 @@ a:hover { text-decoration: underline; }
   white-space: pre;
 }
 
-/* ---------- Theme overrides for weasel-ui's --wui-* tokens.
+/* ---------- Theme overrides for weasel-ui's --wzl-* tokens.
    Components live in @orochi235/weasel-ui; we re-skin their CSS variables
    here to match the dark demo chrome. */
 :root {
-  --wui-text: var(--ckd-text);
-  --wui-text-muted: var(--ckd-faint);
-  --wui-panel-bg: var(--ckd-surface);
-  --wui-panel-border: var(--ckd-border-2);
-  --wui-input-bg: var(--ckd-surface-2);
-  --wui-accent: var(--ckd-accent-dim);
-  --wui-danger: #c64a3a;
-  --wui-track-bg: var(--ckd-surface-2);
-  --wui-track-border: var(--ckd-border-2);
-  --wui-thumb-fill: var(--ckd-muted);
-  --wui-thumb-border: var(--ckd-border);
-  --wui-thumb-text: #000;
+  --wzl-text: var(--ckd-text);
+  --wzl-text-muted: var(--ckd-faint);
+  --wzl-panel-bg: var(--ckd-surface);
+  --wzl-panel-border: var(--ckd-border-2);
+  --wzl-input-bg: var(--ckd-surface-2);
+  --wzl-accent: var(--ckd-accent-dim);
+  --wzl-danger: #c64a3a;
+  --wzl-track-bg: var(--ckd-surface-2);
+  --wzl-track-border: var(--ckd-border-2);
+  --wzl-thumb-fill: var(--ckd-muted);
+  --wzl-thumb-border: var(--ckd-border);
+  --wzl-thumb-text: #000;
 }
 
 /* ---------- Responsive ---------- */

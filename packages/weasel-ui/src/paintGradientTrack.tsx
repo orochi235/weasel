@@ -31,8 +31,8 @@ export function paintGradientTrack(opts: GradientTrackOpts): (ctx: TrackCtx) => 
       const lowPct = ctx.valueToFraction(activeRange[0]) * 100;
       const highPct = ctx.valueToFraction(activeRange[1]) * 100;
       const h = { ...DEFAULT_HATCH, ...hatch };
-      const stripe = `repeating-linear-gradient(${h.angleDeg}deg, transparent 0 ${h.stripe}px, var(--wui-panel-bg, #fafbfc) ${h.stripe}px ${h.stripe + h.gap}px)`;
-      const dimColor = `color-mix(in srgb, var(--wui-panel-bg, #fafbfc) ${h.dim}%, transparent)`;
+      const stripe = `repeating-linear-gradient(${h.angleDeg}deg, transparent 0 ${h.stripe}px, var(--wzl-panel-bg, #fafbfc) ${h.stripe}px ${h.stripe + h.gap}px)`;
+      const dimColor = `color-mix(in srgb, var(--wzl-panel-bg, #fafbfc) ${h.dim}%, transparent)`;
       const dimOverlay = `linear-gradient(${dimColor}, ${dimColor})`;
 
       if (lowPct > 0) {
