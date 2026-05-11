@@ -31,6 +31,7 @@ import { VertexColorsDemo } from './demos/VertexColorsDemo';
 import { ColorMatrixDemo } from './demos/ColorMatrixDemo';
 import { CustomShaderDemo } from './demos/CustomShaderDemo';
 import { LassoDemo } from './demos/LassoDemo';
+import { ClipboardDemo } from './demos/ClipboardDemo';
 import { ClippingDemo } from './demos/ClippingDemo';
 import { HudDemo } from './demos/HudDemo';
 
@@ -66,6 +67,7 @@ import VertexColorsDemoFull from './demos/VertexColorsDemo.tsx?raw';
 import ColorMatrixDemoFull from './demos/ColorMatrixDemo.tsx?raw';
 import CustomShaderDemoFull from './demos/CustomShaderDemo.tsx?raw';
 import LassoDemoFull from './demos/LassoDemo.tsx?raw';
+import ClipboardDemoFull from './demos/ClipboardDemo.tsx?raw';
 import ClippingDemoFull from './demos/ClippingDemo.tsx?raw';
 import HudDemoFull from './demos/HudDemo.tsx?raw';
 
@@ -166,6 +168,16 @@ export const DEMOS: DemoEntry[] = [
     Component: CloneDemo,
     full: CloneDemoFull,
     path: 'demo/demos/CloneDemo.tsx',
+  },
+  {
+    id: 'clipboard',
+    title: 'Clipboard',
+    category: 'Tools',
+    description: 'useClipboard with getDropPoint wired to the pointer position — Cmd+C, move the mouse, Cmd+V lands the paste at the cursor.',
+    hint: 'Click a rect, Cmd+C, move the mouse, Cmd+V.',
+    Component: ClipboardDemo,
+    full: ClipboardDemoFull,
+    path: 'demo/demos/ClipboardDemo.tsx',
   },
   {
     id: 'text',
