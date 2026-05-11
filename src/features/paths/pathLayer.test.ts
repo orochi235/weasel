@@ -109,14 +109,15 @@ describe('createPathLayer — getVertexColors', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const path = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }]);
     // 3 anchors → expects 12 floats; supply 8.
+    // Mismatched colors drop both the array and the placeholder, skipping the node entirely.
     const layer = createPathLayer({
       getNodes: () => [{ id: 'wrong' }],
       getPath: () => path,
       getVertexColors: () => [1, 0, 0, 1, 0, 1, 0, 1],
     });
     const out = layer.draw(undefined, { x: 0, y: 0, scale: 1 } as any, { width: 100, height: 100 });
-    const cmd = (out[0] as any).children[0];
-    expect(cmd.vertexColors).toBeUndefined();
+    const group = out[0] as any;
+    expect(group.children).toHaveLength(0);
     expect(warn).toHaveBeenCalledTimes(1);
     warn.mockRestore();
   });
@@ -128,6 +129,7 @@ describe('createPathLayer — getVertexColors', () => {
       id: 'L1',
       getNodes: () => [{ id: 'wrong' }],
       getPath: () => path,
+      getFill: () => ({ color: '#f00' }), // Explicit fill so node is rendered despite bad colors
       getVertexColors: () => [1, 0, 0, 1],
     });
     layer.draw(undefined, { x: 0, y: 0, scale: 1 } as any, { width: 100, height: 100 });

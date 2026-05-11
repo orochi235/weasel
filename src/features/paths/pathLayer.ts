@@ -60,7 +60,9 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
     label,
     draw: (_data, view) => {
       const children: DrawCommand[] = [];
-      for (const node of getNodes()) {
+      const nodes = getNodes();
+      for (let idx = 0; idx < nodes.length; idx++) {
+        const node = nodes[idx];
         if (isHidden?.(node)) continue;
         const path = getPath(node);
         const fillFromHook = getFill?.(node);
@@ -68,7 +70,7 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
         const vColors = getVertexColors?.(node);
         const strokeVColors = getStrokeVertexColors?.(node);
 
-        const nodeKey = (node as { id?: string }).id ?? String(children.length);
+        const nodeKey = (node as { id?: string }).id ?? String(idx);
         const expectedLen = 4 * countPathAnchors(path);
 
         let useVColors: number[] | null = null;
@@ -103,16 +105,16 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
           }
         }
 
-        // Synthesize placeholder whenever the hook was provided and returned a
-        // non-null value — even if the array was dropped for length mismatch.
-        // This keeps the path visible in the dev-error case.
+        // Synthesize placeholder only when colors validate (useVColors != null),
+        // not on any raw hook return. Mismatched-length arrays drop both the
+        // colors and placeholder so the dev signal (console warning) isn't duplicated.
         const fill: Paint | undefined =
           fillFromHook != null ? fillFromHook
-          : (vColors != null ? PLACEHOLDER_FILL : undefined);
+          : (useVColors != null ? PLACEHOLDER_FILL : undefined);
 
         const baseStroke: Stroke | undefined =
           strokeFromHook != null ? strokeFromHook
-          : (strokeVColors != null ? PLACEHOLDER_STROKE : undefined);
+          : (useStrokeVColors != null ? PLACEHOLDER_STROKE : undefined);
 
         const stroke: Stroke | undefined =
           baseStroke != null && useStrokeVColors != null
