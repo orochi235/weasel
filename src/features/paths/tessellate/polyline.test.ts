@@ -4,6 +4,7 @@ import {
   type PolygonPath,
   type RectPath,
 } from '@orochi235/weasel';
+import { PathBuilder, polygonFromPoints, rectPath } from '../builder';
 import { extractPolylines } from './polyline';
 
 describe('extractPolylines', () => {
@@ -70,8 +71,6 @@ describe('extractPolylines', () => {
     expect(out[1].points.length).toBe(8);
   });
 });
-
-import { PathBuilder, polygonFromPoints, rectPath } from '../builder';
 
 describe('extractPolylines — anchor parameterization', () => {
   it('a triangle polygon emits one anchor index per output point', () => {

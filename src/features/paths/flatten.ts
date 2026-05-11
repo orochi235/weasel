@@ -82,8 +82,8 @@ export function flattenQuadratic(
 /**
  * Like `flattenCubic` but also appends, for each new flattened point, its
  * arc-length fraction `t` (relative to the polyline distance accumulated so
- * far inside this curve) to `tOut`. Caller then post-processes the segment's
- * `tOut` range by dividing each by the segment's total flattened arc length
+ * far inside this curve) to `arcOut`. Caller then post-processes the segment's
+ * `arcOut` range by dividing each by the segment's total flattened arc length
  * to yield t ∈ (0, 1].
  *
  * The returned values are *cumulative distance from the segment start*, not
@@ -99,9 +99,8 @@ export function flattenCubicWithArcLen(
   tolerance: number,
   out: number[],
   arcOut: number[],
-  prevAccum: number,
 ): number {
-  return flattenCubicArcRec(x0, y0, x1, y1, x2, y2, x3, y3, tolerance, out, arcOut, prevAccum);
+  return flattenCubicArcRec(x0, y0, x1, y1, x2, y2, x3, y3, tolerance, out, arcOut, 0);
 }
 
 function flattenCubicArcRec(
@@ -143,9 +142,8 @@ export function flattenQuadraticWithArcLen(
   tolerance: number,
   out: number[],
   arcOut: number[],
-  prevAccum: number,
 ): number {
-  return flattenQuadraticArcRec(x0, y0, x1, y1, x2, y2, tolerance, out, arcOut, prevAccum);
+  return flattenQuadraticArcRec(x0, y0, x1, y1, x2, y2, tolerance, out, arcOut, 0);
 }
 
 function flattenQuadraticArcRec(

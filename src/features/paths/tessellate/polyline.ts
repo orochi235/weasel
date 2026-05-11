@@ -115,7 +115,7 @@ function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
         const targetAnchor = anchorCounter;
         const segStart = pts!.length / 2;
         const arcAccum: number[] = [];
-        const total = flattenQuadraticWithArcLen(prevX, prevY, cx, cy, ex, ey, tolerance, pts!, arcAccum, 0);
+        const total = flattenQuadraticWithArcLen(prevX, prevY, cx, cy, ex, ey, tolerance, pts!, arcAccum);
         // Fill anchorA/B/T for each newly-appended point (count = arcAccum.length).
         // All interior + final points have A = prevAnchor, B = targetAnchor.
         for (let k = 0; k < arcAccum.length; k++) {
@@ -142,7 +142,7 @@ function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
         const targetAnchor = anchorCounter;
         const segStart = pts!.length / 2;
         const arcAccum: number[] = [];
-        const total = flattenCubicWithArcLen(prevX, prevY, c1x, c1y, c2x, c2y, ex, ey, tolerance, pts!, arcAccum, 0);
+        const total = flattenCubicWithArcLen(prevX, prevY, c1x, c1y, c2x, c2y, ex, ey, tolerance, pts!, arcAccum);
         for (let k = 0; k < arcAccum.length; k++) {
           aA!.push(prevAnchor);
           aB!.push(targetAnchor);
