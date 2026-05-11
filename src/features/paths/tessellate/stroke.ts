@@ -187,7 +187,7 @@ function emitCap(
   half: number, cap: Cap,
   verts: number[], idx: number[],
   anchorA: number[], anchorB: number[], anchorT: number[],
-  _endA: number, _endB: number, _endT: number,
+  endA: number, endB: number, endT: number,
 ): void {
   // Outward direction = forward at end, backward at start.
   const sign = atEnd ? 1 : -1;
@@ -201,10 +201,10 @@ function emitCap(
     const oy = cy + dy * half;
     const lOut = verts.length / 2;
     verts.push(ox + seg.nx, oy + seg.ny);
-    anchorA.push(0); anchorB.push(0); anchorT.push(0);
+    anchorA.push(endA); anchorB.push(endB); anchorT.push(endT);
     const rOut = verts.length / 2;
     verts.push(ox - seg.nx, oy - seg.ny);
-    anchorA.push(0); anchorB.push(0); anchorT.push(0);
+    anchorA.push(endA); anchorB.push(endB); anchorT.push(endT);
     // Two triangles forming the cap rectangle. Wind so triangles are CCW
     // viewed from the front; orientation symmetric for start vs. end caps.
     if (atEnd) {
@@ -220,7 +220,7 @@ function emitCap(
     // 180° arc to R.
     const pivotIdx = verts.length / 2;
     verts.push(cx, cy);
-    anchorA.push(0); anchorB.push(0); anchorT.push(0);
+    anchorA.push(endA); anchorB.push(endB); anchorT.push(endT);
 
     // Starting angle: direction from pivot to L (= +n direction).
     const startAngle = Math.atan2(seg.ny, seg.nx);
@@ -239,7 +239,7 @@ function emitCap(
       const fy = cy + Math.sin(ang) * half;
       const newIdx = verts.length / 2;
       verts.push(fx, fy);
-      anchorA.push(0); anchorB.push(0); anchorT.push(0);
+      anchorA.push(endA); anchorB.push(endB); anchorT.push(endT);
       if (atEnd) idx.push(prevIdx, newIdx, pivotIdx);
       else       idx.push(prevIdx, pivotIdx, newIdx);
       prevIdx = newIdx;

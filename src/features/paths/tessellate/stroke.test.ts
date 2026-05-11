@@ -267,3 +267,41 @@ describe('tessellateStroke — anchor params: segments', () => {
     expect(foundInterior).toBe(true);
   });
 });
+
+describe('tessellateStroke — anchor params: caps', () => {
+  it('round-cap fan vertices at the start inherit anchor 0 params', () => {
+    const p = new PathBuilder().moveTo(0, 0).lineTo(50, 0).build();
+    const mesh = tessellateStroke(p, { paint: { color: '#fff' }, width: 10, cap: 'round' });
+    // Find vertices near the start endpoint (close to (0, 0)) — they should
+    // be cap-emitted and tagged with anchor 0.
+    let countNearStart = 0;
+    let allHaveAnchor0 = true;
+    for (let i = 0; i < mesh.anchorA!.length; i++) {
+      const vx = mesh.vertices[i * 2];
+      const vy = mesh.vertices[i * 2 + 1];
+      if (vx < 0 || Math.hypot(vx, vy) < 5) {
+        countNearStart++;
+        if (mesh.anchorA![i] !== 0 || mesh.anchorB![i] !== 0) allHaveAnchor0 = false;
+      }
+    }
+    expect(countNearStart).toBeGreaterThan(0);
+    expect(allHaveAnchor0).toBe(true);
+  });
+
+  it('square-cap vertices at the end inherit the endpoint anchor', () => {
+    const p = new PathBuilder().moveTo(0, 0).lineTo(50, 0).build();
+    const mesh = tessellateStroke(p, { paint: { color: '#fff' }, width: 6, cap: 'square' });
+    // End is anchor 1. Vertices past x=50 are square-cap-emitted.
+    let countPastEnd = 0;
+    let allHaveAnchor1 = true;
+    for (let i = 0; i < mesh.anchorA!.length; i++) {
+      const vx = mesh.vertices[i * 2];
+      if (vx > 50) {
+        countPastEnd++;
+        if (mesh.anchorA![i] !== 1 || mesh.anchorB![i] !== 1) allHaveAnchor1 = false;
+      }
+    }
+    expect(countPastEnd).toBeGreaterThan(0);
+    expect(allHaveAnchor1).toBe(true);
+  });
+});
