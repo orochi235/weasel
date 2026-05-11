@@ -158,7 +158,7 @@ function expandPolyline(
   // Joins between consecutive segments. (Task 6b will thread anchor params here.)
   const joinCount = pl.closed ? segs.length : segs.length - 1;
   for (let j = 0; j < joinCount; j++) {
-    emitJoin(segs, segBaseIdx, j, half, join, verts, idx, anchorA, anchorB, anchorT, segSrcIdx, plA, plB, plT, pl.closed);
+    emitJoin(segs, segBaseIdx, j, half, join, verts, idx, anchorA, anchorB, anchorT, segSrcIdx, plA, plB, plT);
   }
 
   // Caps. (Task 6c will thread anchor params here.)
@@ -324,7 +324,6 @@ function emitJoin(
   anchorA: number[], anchorB: number[], anchorT: number[],
   segSrcIdx: number[],
   plA: Uint32Array, plB: Uint32Array, plT: Float32Array,
-  closed: boolean,
 ): void {
   const a = segs[j];
   const b = segs[(j + 1) % segs.length];
@@ -345,7 +344,10 @@ function emitJoin(
   // on a closed polyline, j+1 wraps to segment 0 whose start is the closer
   // segment's endpoint, which is polyline point 0.
   const nextSeg = (j + 1) % segs.length;
-  const cornerSrc = closed && j === segs.length - 1 ? 0 : segSrcIdx[nextSeg];
+  // The corner anchor is the start of the next segment (shared endpoint).
+  // For a closed path's final join, nextSeg wraps to 0, whose start is
+  // polyline point 0 — correct.
+  const cornerSrc = segSrcIdx[nextSeg];
   const cornerA = plA[cornerSrc];
   const cornerB = plB[cornerSrc];
   const cornerT = plT[cornerSrc];
