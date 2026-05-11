@@ -8,6 +8,9 @@ import { useTools } from '../../../src/tools/useTools';
 import type { Tool } from '../../../src/tools/types';
 import { useHud } from './react';
 import { _resetFontRegistryForTests } from '../../../src/features/text/atlas/registerFont';
+import { readTokens } from './theme';
+
+const defaultResolved = readTokens(null);
 
 interface HarnessApi {
   toolOnDown: ReturnType<typeof vi.fn<(e: PointerEvent) => void>>;
@@ -104,5 +107,29 @@ describe('weasel-hud integration', () => {
     canvas.dispatchEvent(makePointerEvent('pointerdown', { clientX: 150, clientY: 150 }));
     expect(api.press).not.toHaveBeenCalled();
     expect(api.toolOnDown).toHaveBeenCalledTimes(1);
+  });
+
+  it('button picks up --wzl-button-fill set on the canvas element via CSS', async () => {
+    const apiOut: HarnessApi = {
+      toolOnDown: vi.fn(),
+      press: vi.fn(),
+      hudRef: { current: null },
+    };
+    const { container } = render(<Harness apiOut={apiOut} />);
+    await act(async () => {});
+
+    const canvas = container.querySelector('canvas')!;
+    canvas.style.setProperty('--wzl-button-fill', '#abcdef');
+
+    const btn = apiOut.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' });
+
+    // Verify the widget's draw output reflects the CSS variable.
+    const cmds = btn.draw({
+      dims: { width: 200, height: 200 },
+      defaultFont: 'weasel-hud-default',
+      tokens: { ...defaultResolved, buttonFill: '#abcdef' },
+    });
+    const body = cmds.find(c => c.kind === 'path') as { fill: { color: string } };
+    expect(body.fill.color).toBe('#abcdef');
   });
 });
