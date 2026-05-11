@@ -1,64 +1,47 @@
 import { useState } from 'react';
 import {
-  Canvas,
-  useTools,
-  useKeybindings,
+  SceneCanvas,
+  useScene,
+  useSelection,
   useHandTool,
-  useSelectTool,
   useWheelZoomTool,
   useWheelPanTool,
   useKeyboardZoomTool,
-} from '../../src';
+} from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
 import type { View } from '../../src/core/viewport/view';
 
-interface Rect { id: string; x: number; y: number; width: number; height: number; color: string; pin: 'screen' | 'world' }
+interface NodeData { color: string; pin: 'screen' | 'world' }
+type LayerId = 'default';
+interface Pose { x: number; y: number; width: number; height: number }
 
-const INITIAL_ITEMS: Rect[] = [
-  // Left rect: stroke pinned to 2 screen px (compensates for view.scale).
-  { id: 'screen-pin', x:  60, y:  80, width: 120, height: 90, color: '#7fb069', pin: 'screen' },
-  // Right rect: stroke pinned to 2 world px (grows with zoom).
-  { id: 'world-pin',  x: 220, y:  80, width: 120, height: 90, color: '#a48bd4', pin: 'world' },
-];
+const W = 400, H = 300;
+
 export function ZoomDemo() {
-  const [items, setItems] = useState<Rect[]>(INITIAL_ITEMS);
-  const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
-
-  const selectAdapter = {
-    getNode: (id: string) => items.find((r) => r.id === id),
-    getPose: (id: string) => items.find((r) => r.id === id) ?? null,
-    getNodes: () => items,
-    setPose: (id: string, pose: unknown) =>
-      setItems((cur) => cur.map((r) => (r.id === id ? { ...r, ...(pose as Rect) } : r))),
-    getSelection: () => [] as string[],
-    setSelection: () => {},
-  };
-  const select = useSelectTool(selectAdapter, {
-    pickEvery: (wx, wy) =>
-      items
-        .filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height)
-        .map((r) => r.id),
-    boundsOf: (id) => {
-      const r = items.find((o) => o.id === id);
-      return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
-    },
+  const scene = useScene<NodeData, LayerId, Pose>({
+    systemLayers: [{ id: 'default' }],
+    initial: [
+      // Left rect: stroke pinned to 2 screen px (compensates for view.scale).
+      { id: 'screen-pin' as never, kind: 'leaf', layer: 'default',
+        pose: { x:  60, y: 80, width: 120, height: 90 },
+        data: { color: '#7fb069', pin: 'screen' } },
+      // Right rect: stroke pinned to 2 world px (grows with zoom).
+      { id: 'world-pin' as never, kind: 'leaf', layer: 'default',
+        pose: { x: 220, y: 80, width: 120, height: 90 },
+        data: { color: '#a48bd4', pin: 'world' } },
+    ],
   });
+  const selection = useSelection();
+
+  const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
   const hand = useHandTool();
   const wheelZoom = useWheelZoomTool();
   const wheelPan = useWheelPanTool();
   const keyZoom = useKeyboardZoomTool();
 
-  const tools = useTools({
-    active: 'select',
-    registry: { select, hand },
-    ambient: [wheelZoom, wheelPan, keyZoom],
-  });
-  useKeybindings(tools);
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <span style={{ fontFamily: 'monospace' }}>tool: {tools.hotkeyEngaged ?? tools.active}</span>
         <span style={{ fontFamily: 'monospace' }}>
           view: ({view.x.toFixed(0)}, {view.y.toFixed(0)}) · scale: {view.scale.toFixed(2)}
         </span>
@@ -71,28 +54,28 @@ export function ZoomDemo() {
         <span>Left (green): stroke = 2 / view.scale (screen-pinned)</span>
         <span>Right (purple): stroke = 2 (world-scaled)</span>
       </div>
-      <Canvas
-        width={400}
-        height={300}
-        items={items}
-        setItems={setItems}
+      <SceneCanvas
+        width={W}
+        height={H}
+        className="ckd-canvas"
+        scene={scene}
+        selection={selection}
         view={view}
         onViewChange={setView}
-        tools={tools}
-        background="#1a130d"
+        ambient={[hand, wheelZoom, wheelPan, keyZoom]}
         layers={{
           scene: {
-            drawOne: (_obj, pose, v): DrawCommand[] => {
-              const r = pose as Rect;
-              const lineWidth = r.pin === 'screen' ? 2 / v.scale : 2;
+            drawOne: (n, p, v): DrawCommand[] => {
+              const lineWidth = n.data.pin === 'screen' ? 2 / v.scale : 2;
               return [{
                 kind: 'path',
-                path: { kind: 'rect', x: r.x, y: r.y, width: r.width, height: r.height },
-                fill: { color: r.color },
+                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                fill: { color: n.data.color },
                 stroke: { paint: { color: '#d4c4a8' }, width: lineWidth },
               }];
             },
           },
+          selectionOverlay: { handles: false },
         }}
       />
     </div>

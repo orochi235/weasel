@@ -1,16 +1,16 @@
-import { useMemo, useRef, useState } from 'react';
+import { useState } from 'react';
 import {
-  Canvas,
   EASINGS,
-  arrayAdapter,
+  SceneCanvas,
   useAnimator,
+  useScene,
+  asNodeId,
 } from '@orochi235/weasel';
 import { PATH_M, PATH_L, type EasingName, type RenderLayer } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
 import { RangePicker } from '@orochi235/weasel-ui';
 
 interface Marker { id: string; x: number; y: number; width: number; height: number; easing: EasingName; color: string }
-interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 600, H = 520;
 const COLS = 3;
@@ -45,35 +45,35 @@ function buildInitial(): Marker[] {
 }
 
 export function EasingsDemo() {
-  const [markers, setMarkers] = useState<Marker[]>(buildInitial);
-  const markersRef = useRef(markers);
-  markersRef.current = markers;
+  const scene = useScene<Marker>({ items: buildInitial() });
   const animator = useAnimator();
   const [duration, setDuration] = useState(1400);
 
-  const adapter = useMemo(() => ({
-    ...arrayAdapter<Marker, Pose>({
-      ref: markersRef,
-      setItems: setMarkers,
-      toPose: (m) => ({ x: m.x, y: m.y, width: m.width, height: m.height }),
-    }),
-  }), []);
-
   const play = (): void => {
     animator.cancelAll();
-    setMarkers(buildInitial());
+    for (const m of buildInitial()) {
+      const id = asNodeId(m.id);
+      const current = scene.get(id);
+      if (!current) continue;
+      scene.setPose(id, { ...(current.pose as Marker), x: TRACK_LEFT, y: m.y });
+    }
     // Defer one frame so the reset position lands before tweens start.
     requestAnimationFrame(() => {
-      for (const m of markersRef.current) {
+      for (const id of scene.renderOrder()) {
+        const node = scene.get(id);
+        if (!node) continue;
+        const marker = node.pose as Marker;
         animator.tween({
           from: TRACK_LEFT,
           to: TRACK_RIGHT - MARKER_SIZE,
           ms: duration,
-          easing: EASINGS[m.easing],
+          easing: EASINGS[marker.easing],
           onTick: (x) => {
-            setMarkers((arr) => arr.map((mm) => (mm.id === m.id ? { ...mm, x } : mm)));
+            const cur = scene.get(id);
+            if (!cur) return;
+            scene.setPose(id, { ...(cur.pose as Marker), x });
           },
-          cancelKey: `easing-${m.id}`,
+          cancelKey: `easing-${marker.id}`,
         });
       }
     });
@@ -95,8 +95,15 @@ export function EasingsDemo() {
           kind: 'text',
           x: TRACK_LEFT - 8 - name.length * charW,
           y,
-          text: name,
-          style: { fontFamily: 'sans-serif', fontSize: 11, fill: { color: '#a89878' } },
+          runs: [{
+            text: name,
+            fontFamily: 'sans-serif',
+            fontSize: 11,
+            fontWeight: 400,
+            fontStyle: 'normal',
+            fill: { fill: 'solid', color: '#a89878' },
+          }],
+          style: { fontFamily: 'sans-serif', fontSize: 11, fill: { fill: 'solid', color: '#a89878' } },
         });
         // Track line as 2-point polygon path stroke.
         cmds.push({
@@ -164,23 +171,22 @@ export function EasingsDemo() {
           <span style={{ fontVariantNumeric: 'tabular-nums', minWidth: 48 }}>{duration} ms</span>
         </label>
       </div>
-      <Canvas
+      <SceneCanvas
         width={W}
         height={H}
         className="ckd-canvas"
-        adapter={adapter}
+        scene={scene}
+        selectionMode="none"
         layers={{
           tracks: { layer: trackLayer, before: 'scene' },
           scene: {
-            drawOne: (m: Marker, p: Pose): DrawCommand[] => [{
+            drawOne: (_n, p): DrawCommand[] => [{
               kind: 'path',
               path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { color: m.color },
+              fill: { color: (p as Marker).color },
             }],
-            // drawOne: trackLayer (labels + curve plots) is a custom screen-
-            // space RenderLayer and not part of the scene slot — it remains 2D-
-            // only; defer to v2 (no GL counterpart for the curve-plot polyline).
           },
+          selectionOverlay: null,
         }}
       />
       <div style={{ fontSize: 12, color: '#a89878', maxWidth: W }}>

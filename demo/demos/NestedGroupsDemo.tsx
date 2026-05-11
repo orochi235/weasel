@@ -1,172 +1,176 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import {
-  Canvas,
+  asNodeId,
   nestedGroupHitTester,
+  SceneCanvas,
+  sceneToAdapter,
   useNestedGroup,
   useNestedUngroup,
+  useScene,
   useSelectTool,
   useSelection,
   useTools,
-  createHistory,
-  composeRectPose,
-  decomposeRectPose,
-  worldPoseLookup,
 } from '@orochi235/weasel';
-import type { MoveAdapter, NodeId, Op, SelectionApi } from '@orochi235/weasel';
+import type { NodeId, SceneNode } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
 
-interface Node {
-  id: string;
-  parent: string | null;
-  pose: { x: number; y: number; width: number; height: number };
-  color: string;
-  isGroup?: boolean;
-}
-type Pose = Node['pose'];
+interface NodeData { color: string }
+type LayerId = 'default';
+interface Pose { x: number; y: number; width: number; height: number }
+type DemoNode = SceneNode<NodeData, LayerId, Pose>;
 
 const W = 480, H = 320;
-// g1 contains g2 (a sub-group) + a free leaf `a`; g2 in turn contains
-// b1, b2. Two free leaves (c, d) sit alongside for ad-hoc grouping with
-// Cmd+G. The data path supports arbitrary depth.
-const INITIAL: Node[] = [
-  { id: 'g1',  parent: null, pose: { x:  40, y:  40, width: 230, height: 150 }, color: '#3a2e22', isGroup: true },
-  { id: 'a',   parent: 'g1', pose: { x:  10, y:  10, width:  60, height:  50 }, color: '#7fb069' },
-  { id: 'g2',  parent: 'g1', pose: { x:  85, y:  45, width: 130, height:  90 }, color: '#2e3a22', isGroup: true },
-  { id: 'b1',  parent: 'g2', pose: { x:   8, y:   8, width:  50, height:  35 }, color: '#a8d469' },
-  { id: 'b2',  parent: 'g2', pose: { x:  68, y:  45, width:  50, height:  35 }, color: '#a8d469' },
-  { id: 'c',   parent: null, pose: { x: 320, y: 110, width:  90, height:  60 }, color: '#d4a574' },
-  { id: 'd',   parent: null, pose: { x: 220, y: 230, width:  70, height:  50 }, color: '#a48bd4' },
+
+// Scene v1 stores absolute world poses, so the kit's compose/decompose
+// reduces to identity here. Group/ungroup math becomes a no-op: children's
+// world poses are already correct; reparenting only changes the tree.
+const composeAbs = <P,>(_parent: P, child: P): P => child;
+const decomposeAbs = <P,>(_parent: P, world: P): P => world;
+
+// g1 contains g2 (a sub-group) + a free leaf `a`; g2 in turn contains b1, b2.
+// Free leaves c, d sit alongside for ad-hoc grouping with Cmd+G. The data
+// path supports arbitrary depth.
+const INITIAL = [
+  { id: asNodeId('g1'), kind: 'container' as const, layer: 'default' as const,
+    pose: { x: 40, y: 40, width: 230, height: 150 }, data: { color: '#3a2e22' } },
+  { id: asNodeId('a'), parent: asNodeId('g1'), kind: 'leaf' as const, layer: 'default' as const,
+    pose: { x: 50, y: 50, width: 60, height: 50 }, data: { color: '#7fb069' } },
+  { id: asNodeId('g2'), parent: asNodeId('g1'), kind: 'container' as const, layer: 'default' as const,
+    pose: { x: 125, y: 85, width: 130, height: 90 }, data: { color: '#2e3a22' } },
+  { id: asNodeId('b1'), parent: asNodeId('g2'), kind: 'leaf' as const, layer: 'default' as const,
+    pose: { x: 133, y: 93, width: 50, height: 35 }, data: { color: '#a8d469' } },
+  { id: asNodeId('b2'), parent: asNodeId('g2'), kind: 'leaf' as const, layer: 'default' as const,
+    pose: { x: 193, y: 130, width: 50, height: 35 }, data: { color: '#a8d469' } },
+  { id: asNodeId('c'), kind: 'leaf' as const, layer: 'default' as const,
+    pose: { x: 320, y: 110, width: 90, height: 60 }, data: { color: '#d4a574' } },
+  { id: asNodeId('d'), kind: 'leaf' as const, layer: 'default' as const,
+    pose: { x: 220, y: 230, width: 70, height: 50 }, data: { color: '#a48bd4' } },
 ];
 
 export function NestedGroupsDemo() {
-  const [nodes, setNodes] = useState<Node[]>(INITIAL);
-  const nodesRef = useRef(nodes); nodesRef.current = nodes;
-  const selection: SelectionApi = useSelection();
-  const selRef = useRef(selection); selRef.current = selection;
-  const adapterRef = useRef<MoveAdapter<Node, Pose> & {
-    insertNode: (n: Node) => void;
-    removeNode: (id: string) => void;
-  }>(null!);
+  const scene = useScene<NodeData, LayerId, Pose>({
+    systemLayers: [{ id: 'default' }],
+    initial: INITIAL,
+  });
+  const selection = useSelection();
 
-  const history = useMemo(() => createHistory({
-    setPose: (id: string, p: Pose) => adapterRef.current.setPose(id, p),
-    setParent: (id: string, parent: string | null) => adapterRef.current.setParent!(id, parent),
-    insertNode: (n: Node) => adapterRef.current.insertNode(n),
-    removeNode: (id: string) => adapterRef.current.removeNode(id),
-    setSelection: (ids: string[]) => selRef.current.set(ids as NodeId[]),
-  }), []);
-
-  const byId = (id: string) => nodesRef.current.find((n) => n.id === id);
-
-  const adapter = {
-    getNode: (id: string) => byId(id),
-    getNodes: () => nodesRef.current,
-    getPose: (id: string) => byId(id)!.pose,
-    getParent: (id: string) => byId(id)?.parent ?? null,
-    getChildren: (id: string | null) => nodesRef.current.filter((n) => n.parent === id).map((n) => n.id),
-    getSelection: () => selRef.current.get(),
-    setSelection: (ids: string[]) => selRef.current.set(ids as NodeId[]),
-    setPose: (id: string, p: Pose) =>
-      setNodes((ns) => ns.map((n) => (n.id === id ? { ...n, pose: { ...p } } : n))),
-    setParent: (id: string, parent: string | null) =>
-      setNodes((ns) => ns.map((n) => (n.id === id ? { ...n, parent } : n))),
-    insertNode: (n: Node) => setNodes((ns) => [...ns, n]),
-    removeNode: (id: string) => setNodes((ns) => ns.filter((n) => n.id !== id)),
-    applyBatch: (ops: Op[], label: string) => history.applyBatch(ops, label),
-    applyOps: (ops: Op[]) => history.applyBatch(ops, 'select'),
-    hitTestArea: (rect: Pose) =>
-      nodesRef.current
-        .filter((n) => {
-          const w = worldPoseOfRef.current(n.id);
-          if (!w) return false;
-          return w.x < rect.x + rect.width && w.x + w.width > rect.x &&
-                 w.y < rect.y + rect.height && w.y + w.height > rect.y;
-        })
-        .map((n) => n.id),
-  };
-  adapterRef.current = adapter;
-
-  const composeOpts = { composePose: composeRectPose<Pose>, decomposePose: decomposeRectPose<Pose> };
+  // sceneToAdapter handles the bulk of the adapter contract; we layer on
+  // (a) cascade-aware setPose so dragging a container moves its descendants
+  // on commit, and (b) insertNode/removeNode so useNestedGroup's Insert/Delete
+  // ops route into scene.add/remove (and stay undoable through scene.batch).
+  const adapter = useMemo(() => {
+    const base = sceneToAdapter(scene, { selection });
+    const collectDesc = (root: string, out: string[]): void => {
+      for (const cid of scene.childrenOf(asNodeId(root))) {
+        out.push(cid);
+        collectDesc(cid, out);
+      }
+    };
+    return {
+      ...base,
+      // sceneToAdapter's getSelection / getParent are typed string-based and
+      // partial; the nested-group hooks want concrete NodeId[] / non-optional.
+      getSelection: (): NodeId[] => [...selection.adapterMethods.getSelection()],
+      getParent: (id: string): string | null => scene.get(asNodeId(id))?.parent ?? null,
+      setPose(id: string, pose: Pose) {
+        const node = scene.get(asNodeId(id));
+        if (!node || node.kind !== 'container') {
+          base.setPose(id, pose);
+          return;
+        }
+        const dx = pose.x - node.pose.x;
+        const dy = pose.y - node.pose.y;
+        if (dx === 0 && dy === 0) {
+          base.setPose(id, pose);
+          return;
+        }
+        const desc: string[] = [];
+        collectDesc(id, desc);
+        scene.batch('move container', () => {
+          base.setPose(id, pose);
+          for (const cid of desc) {
+            const cn = scene.get(asNodeId(cid));
+            if (!cn) continue;
+            base.setPose(cid, { ...cn.pose, x: cn.pose.x + dx, y: cn.pose.y + dy });
+          }
+        });
+      },
+      insertNode(n: DemoNode) {
+        scene.add({
+          id: n.id,
+          kind: n.kind,
+          layer: n.layer,
+          pose: n.pose,
+          data: n.data,
+          ...(n.parent !== null ? { parent: n.parent } : {}),
+        });
+      },
+      removeNode(id: string) {
+        scene.remove(asNodeId(id));
+      },
+    };
+  }, [scene, selection]);
 
   useNestedGroup(adapter, {
-    ...composeOpts,
-    groupFactory: ({ id, localPose }) => ({
-      id, parent: null, pose: localPose, color: '#3a2e22', isGroup: true,
+    composePose: composeAbs,
+    decomposePose: decomposeAbs,
+    groupFactory: ({ id, localPose }): DemoNode => ({
+      id: asNodeId(id),
+      kind: 'container',
+      layer: 'default',
+      pose: localPose,
+      data: { color: '#3a2e22' },
+      parent: null,
+      children: [],
     }),
   });
   useNestedUngroup(adapter, {
-    ...composeOpts,
-    isGroup: (_id, obj) => obj?.isGroup === true,
+    composePose: composeAbs,
+    decomposePose: decomposeAbs,
+    isGroup: (_id, obj) => obj?.kind === 'container',
   });
 
-  // Nested-group hit resolution lives in the kit. `pickOutermost` is the
-  // chrome-level body hit (casual click → whole top-level group).
-  // `pickBest` is the alt-aware variant the select tool consults: without
-  // Alt → outermost ancestor; with Alt → one level deeper per click,
-  // drilling group → subgroup → leaf.
+  // Nested-group hit resolution: `pickOutermost` is the chrome-level body
+  // hit (casual click → whole top-level group). `pickBest` is the alt-aware
+  // variant the select tool consults: without Alt → outermost ancestor;
+  // with Alt → one level deeper per click, drilling group → subgroup → leaf.
   const hitter = useMemo(
     () => nestedGroupHitTester(adapter, {
-      composePose: composeRectPose<Pose>,
-      isGroup: (_id, obj) => obj?.isGroup === true,
+      composePose: composeAbs,
+      isGroup: (_id, obj) => obj?.kind === 'container',
     }),
-    // adapter is rebuilt every render but reads via nodesRef — closures stay live.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [adapter],
   );
 
-  // World-pose lookup composes a node's pose by walking its parent chain.
-  // Used both as the scene's `toPose` (so we render committed nodes in
-  // world space) and as the selection-overlay `poseById` (so the outline
-  // tracks ancestor moves). Live overlay poses during a cascade drag flow
-  // through the select tool's `previewPose`.
-  const worldPoseOf = useMemo(
-    () => worldPoseLookup(adapter, composeRectPose<Pose>),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
-  const worldPoseOfRef = useRef(worldPoseOf);
-  worldPoseOfRef.current = worldPoseOf;
-
-  const select = useSelectTool<Node, Pose>(adapter, {
-    pickEvery: () => [], // unused — pickBest takes over the body branch
+  const select = useSelectTool<DemoNode, Pose>(adapter, {
+    pickEvery: () => [],
     pickBest: (wx, wy, alt, sel) => hitter.pickBest(wx, wy, alt, sel),
-    boundsOf: (id) => worldPoseOf(id),
-    drawGhost: (_o, p): DrawCommand[] => [{
-      kind: 'path',
-      path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-      fill: { color: 'rgba(127, 176, 105, 0.35)' },
-    }],
+    boundsOf: (id) => scene.get(asNodeId(id))?.pose ?? null,
     getNode: (id) => adapter.getNode(id) ?? null,
-    move: { cascadeWorldPose: worldPoseOf },
+    getSelection: () => selection.current,
   });
   const tools = useTools({ active: 'select', registry: { select } });
 
   return (
-    <Canvas
+    <SceneCanvas
       width={W}
       height={H}
       className="ckd-canvas"
-      adapter={adapter}
+      scene={scene}
       selection={selection}
       tools={tools}
-      pickEvery={hitter.pickOutermost}
-      gestures={{ undoRedo: { adapter: history } }}
+      geometry={{ pickEvery: hitter.pickOutermost }}
       layers={{
         scene: {
-          // Render every node at its world pose. The select tool's previewPose
-          // replaces this with the live overlay during a cascade drag, and
-          // previewIds suppresses dragged + descendant ids whose ghosts sit
-          // in the overlay.
-          toPose: (n) => worldPoseOf(n.id) ?? n.pose,
-          drawOne: (n, p): DrawCommand[] => {
-            if (n.isGroup) {
+          drawOne: (node, p): DrawCommand[] => {
+            if (node.kind === 'container') {
               return [
                 // Translucent fill via paint opacity (group-level alpha would
                 // tint the dashed stroke too).
                 {
                   kind: 'path',
                   path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                  fill: { color: n.color, opacity: 0.35 },
+                  fill: { color: node.data.color, opacity: 0.35 },
                 },
                 {
                   kind: 'path',
@@ -178,14 +182,11 @@ export function NestedGroupsDemo() {
             return [{
               kind: 'path',
               path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { color: n.color },
+              fill: { color: node.data.color },
             }];
           },
         },
-        selectionOverlay: {
-          handles: { size: 0 },
-          poseById: (id) => worldPoseOf(id),
-        },
+        selectionOverlay: { handles: { size: 0 } },
       }}
     />
   );
