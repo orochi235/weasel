@@ -322,9 +322,9 @@ function emitJoin(
   segs: Seg[], segBaseIdx: number[], j: number, half: number, join: Join,
   verts: number[], idx: number[],
   anchorA: number[], anchorB: number[], anchorT: number[],
-  _segSrcIdx: number[],
-  _plA: Uint32Array, _plB: Uint32Array, _plT: Float32Array,
-  _closed: boolean,
+  segSrcIdx: number[],
+  plA: Uint32Array, plB: Uint32Array, plT: Float32Array,
+  closed: boolean,
 ): void {
   const a = segs[j];
   const b = segs[(j + 1) % segs.length];
@@ -340,8 +340,18 @@ function emitJoin(
   const aOuterEnd = onPositive ? aBase + 3 : aBase + 2;
   const bOuterStart = onPositive ? bBase + 1 : bBase + 0;
 
+  // The corner of join `j` is the start of segment `j+1` (which is the END of
+  // segment `j` — they share the same polyline point). For the wraparound join
+  // on a closed polyline, j+1 wraps to segment 0 whose start is the closer
+  // segment's endpoint, which is polyline point 0.
+  const nextSeg = (j + 1) % segs.length;
+  const cornerSrc = closed && j === segs.length - 1 ? 0 : segSrcIdx[nextSeg];
+  const cornerA = plA[cornerSrc];
+  const cornerB = plB[cornerSrc];
+  const cornerT = plT[cornerSrc];
+
   if (join === 'bevel') {
-    emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT);
+    emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT);
     return;
   }
 
@@ -353,12 +363,12 @@ function emitJoin(
     const bOX = verts[bOuterStart * 2], bOY = verts[bOuterStart * 2 + 1];
     const apex = lineLineIntersect(aOX, aOY, adx, ady, bOX, bOY, -bdx, -bdy);
     if (!apex) {
-      emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT);
+      emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT);
       return;
     }
     const miterLen = Math.hypot(apex[0] - a.bx, apex[1] - a.by);
     if (miterLen > MITER_LIMIT * half) {
-      emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT);
+      emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT);
       return;
     }
     // A miter join's outer face is a kite quadrilateral with vertices
@@ -369,10 +379,10 @@ function emitJoin(
     // triangle" gap opens at every miter corner.
     const apexIdx = verts.length / 2;
     verts.push(apex[0], apex[1]);
-    anchorA.push(0); anchorB.push(0); anchorT.push(0);
+    anchorA.push(cornerA); anchorB.push(cornerB); anchorT.push(cornerT);
     const jIdx = verts.length / 2;
     verts.push(a.bx, a.by);
-    anchorA.push(0); anchorB.push(0); anchorT.push(0);
+    anchorA.push(cornerA); anchorB.push(cornerB); anchorT.push(cornerT);
     if (onPositive) {
       idx.push(aOuterEnd, apexIdx, bOuterStart);
       idx.push(aOuterEnd, bOuterStart, jIdx);
@@ -384,7 +394,7 @@ function emitJoin(
   }
 
   if (join === 'round') {
-    emitRoundJoin(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT);
+    emitRoundJoin(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT);
     return;
   }
 }
@@ -395,12 +405,13 @@ function emitRoundJoin(
   a: Seg, aOuterEnd: number, bOuterStart: number, onPositive: boolean,
   verts: number[], idx: number[],
   anchorA: number[], anchorB: number[], anchorT: number[],
+  cornerA: number, cornerB: number, cornerT: number,
 ): void {
   // Pivot = joint center; emit fresh vertex.
   const cx = a.bx, cy = a.by;
   const pivotIdx = verts.length / 2;
   verts.push(cx, cy);
-  anchorA.push(0); anchorB.push(0); anchorT.push(0);
+  anchorA.push(cornerA); anchorB.push(cornerB); anchorT.push(cornerT);
 
   const startX = verts[aOuterEnd * 2] - cx;
   const startY = verts[aOuterEnd * 2 + 1] - cy;
@@ -431,7 +442,7 @@ function emitRoundJoin(
     const fy = cy + Math.sin(ang) * r;
     const newIdx = verts.length / 2;
     verts.push(fx, fy);
-    anchorA.push(0); anchorB.push(0); anchorT.push(0);
+    anchorA.push(cornerA); anchorB.push(cornerB); anchorT.push(cornerT);
     if (onPositive) idx.push(prevIdx, pivotIdx, newIdx);
     else            idx.push(prevIdx, newIdx, pivotIdx);
     prevIdx = newIdx;
@@ -444,10 +455,11 @@ function emitBevel(
   a: Seg, aOuterEnd: number, bOuterStart: number, onPositive: boolean,
   verts: number[], idx: number[],
   anchorA: number[], anchorB: number[], anchorT: number[],
+  cornerA: number, cornerB: number, cornerT: number,
 ): void {
   const jIdx = verts.length / 2;
   verts.push(a.bx, a.by);
-  anchorA.push(0); anchorB.push(0); anchorT.push(0);
+  anchorA.push(cornerA); anchorB.push(cornerB); anchorT.push(cornerT);
   if (onPositive) idx.push(aOuterEnd, jIdx, bOuterStart);
   else            idx.push(aOuterEnd, bOuterStart, jIdx);
 }

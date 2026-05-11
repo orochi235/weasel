@@ -197,6 +197,48 @@ describe('tessellateStroke dash patterns', () => {
   });
 });
 
+describe('tessellateStroke — anchor params: joins', () => {
+  it('miter join apex inherits the corner anchor (A === B at the corner)', () => {
+    const p = new PathBuilder().moveTo(0, 0).lineTo(10, 0).lineTo(10, 10).build();
+    const mesh = tessellateStroke(p, { paint: { color: '#fff' }, width: 2, join: 'miter' });
+    // The corner is anchor 1 (the middle L). Vertices far from origin (past the
+    // corner) must be tagged with anchor 1 or 2 — not the placeholder 0.
+    for (let i = 0; i < mesh.anchorA!.length; i++) {
+      const vx = mesh.vertices[i * 2];
+      const vy = mesh.vertices[i * 2 + 1];
+      if (vx > 5 || vy > 5) {
+        expect(Math.max(mesh.anchorA![i], mesh.anchorB![i])).toBeGreaterThan(0);
+      }
+    }
+    // And specifically the corner anchor (1) should be present.
+    let foundCornerAnchor = false;
+    for (let i = 0; i < mesh.anchorA!.length; i++) {
+      if (mesh.anchorA![i] === 1 && mesh.anchorB![i] === 1) {
+        foundCornerAnchor = true;
+        break;
+      }
+    }
+    expect(foundCornerAnchor).toBe(true);
+  });
+
+  it('round join fan vertices share the corner anchor index', () => {
+    const p = new PathBuilder().moveTo(0, 0).lineTo(10, 0).lineTo(10, 10).build();
+    const mesh = tessellateStroke(p, { paint: { color: '#fff' }, width: 4, join: 'round' });
+    // Find the cluster of round-join fan vertices around the corner (10, 0).
+    // They should all be tagged with anchor 1.
+    let foundFanWithAnchor1 = 0;
+    for (let i = 0; i < mesh.anchorA!.length; i++) {
+      const vx = mesh.vertices[i * 2];
+      const vy = mesh.vertices[i * 2 + 1];
+      // Vertices within ~4px of (10, 0) on the outer side.
+      if (Math.hypot(vx - 10, vy) < 4 && mesh.anchorA![i] === 1 && mesh.anchorB![i] === 1) {
+        foundFanWithAnchor1++;
+      }
+    }
+    expect(foundFanWithAnchor1).toBeGreaterThan(0);
+  });
+});
+
 describe('tessellateStroke — anchor params: segments', () => {
   it('a 2-point line emits 4 ribbon vertices each pinned to its endpoint anchor', () => {
     const p = new PathBuilder().moveTo(0, 0).lineTo(10, 0).build();
