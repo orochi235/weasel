@@ -730,10 +730,11 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     const bof = boundsOfRef.current;
     // Prefer per-leaf preview pose during a drag (so the union AABB tracks
     // the in-flight move overlay); fall back to committed bounds otherwise.
-    const poseBounds = options.poseBounds;
+    // `poseBoundsFn` has an identity default that works when TPose extends
+    // Bounds (the common case), so we always have a pose→bounds projection.
     const leafBounds = (sid: string): Bounds | null => {
       const p = previewPose(sid);
-      if (p != null && poseBounds) return poseBounds(p) as Bounds;
+      if (p != null) return poseBoundsFn(p);
       return bof(sid);
     };
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
