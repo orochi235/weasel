@@ -1,111 +1,6 @@
-/** A contiguous styled span of text produced by `parseMarkdownRuns`. */
-export interface StyledRun {
-  text: string;
-  bold: boolean;
-  italic: boolean;
-  /** Multiplicative size factor applied to the base fontSize (default 1). */
-  sizeFactor: number;
-}
+import { markdownToRuns, type StyledRun } from './runs';
 
-/** Default multiplicative step for `[`/`(`/`]`/`)` size markup in `parseMarkdownRuns`. */
-export const DEFAULT_SIZE_STEP = 1.15;
-
-/** Options for `parseMarkdownRuns`. */
-export interface ParseMarkdownRunsOptions {
-  /** Multiplier applied per `[` (and divided per `(`). Default 1.15. */
-  sizeStep?: number;
-}
-
-/** Tokenize a small markdown subset (`*italic*`, `**bold**`, `***both***`, `[bigger]`, `(smaller)`) into styled runs. */
-export function parseMarkdownRuns(
-  input: string,
-  opts: ParseMarkdownRunsOptions = {},
-): StyledRun[] {
-  const sizeStep = opts.sizeStep ?? DEFAULT_SIZE_STEP;
-  const runs: StyledRun[] = [];
-  let bold = false;
-  let italic = false;
-  let sizeFactor = 1;
-  let buf = '';
-  let i = 0;
-
-  function flush() {
-    if (buf.length > 0) {
-      runs.push({ text: buf, bold, italic, sizeFactor });
-      buf = '';
-    }
-  }
-
-  while (i < input.length) {
-    const ch = input[i];
-
-    // Backslash escape
-    if (ch === '\\' && i + 1 < input.length && '*[]()\\'.includes(input[i + 1])) {
-      buf += input[i + 1];
-      i += 2;
-      continue;
-    }
-
-    // Asterisks toggle bold/italic
-    if (ch === '*') {
-      let count = 0;
-      while (i + count < input.length && input[i + count] === '*') count++;
-      flush();
-      if (count >= 3) {
-        bold = !bold;
-        italic = !italic;
-        i += 3;
-      } else if (count === 2) {
-        bold = !bold;
-        i += 2;
-      } else {
-        italic = !italic;
-        i += 1;
-      }
-      continue;
-    }
-
-    // Size modifiers (multiplicative)
-    if (ch === '[') {
-      flush();
-      sizeFactor *= sizeStep;
-      i++;
-      continue;
-    }
-    if (ch === ']') {
-      flush();
-      sizeFactor /= sizeStep;
-      i++;
-      continue;
-    }
-    if (ch === '(') {
-      flush();
-      sizeFactor /= sizeStep;
-      i++;
-      continue;
-    }
-    if (ch === ')') {
-      flush();
-      sizeFactor *= sizeStep;
-      i++;
-      continue;
-    }
-
-    // Newline
-    if (ch === '\n') {
-      flush();
-      runs.push({ text: '\n', bold: false, italic: false, sizeFactor: 1 });
-      i++;
-      continue;
-    }
-
-    buf += ch;
-    i++;
-  }
-
-  flush();
-  return runs;
-}
+export type { StyledRun };
 
 /** Width-measurement strategy for `layoutMarkdown`; canvas-backed default supplied by `createMarkdownRenderer`. */
 export type MeasureFn = (text: string, fontSize: number, bold: boolean, italic: boolean) => number;
@@ -153,36 +48,31 @@ export function layoutMarkdown(
     lineMaxSize = 0;
   }
 
-  for (const run of runs) {
-    if (run.text === '\n') {
-      commitLine();
-      continue;
-    }
-
-    const effectiveSize = fontSize * run.sizeFactor;
+  function processSegment(segRun: StyledRun) {
+    const effectiveSize = segRun.fontSize ?? fontSize;
     lineMaxSize = Math.max(lineMaxSize, effectiveSize);
 
     if (maxWidth === Infinity) {
-      const w = measure(run.text, effectiveSize, run.bold, run.italic);
-      currentRuns.push({ ...run, x: lineX });
+      const w = measure(segRun.text, effectiveSize, segRun.bold ?? false, segRun.italic ?? false);
+      currentRuns.push({ ...segRun, x: lineX });
       lineX += w;
-      continue;
+      return;
     }
 
     // Word-wrap: split run text by spaces
-    const words = run.text.split(/ /);
+    const words = segRun.text.split(/ /);
     let wordBuf = '';
 
     for (let wi = 0; wi < words.length; wi++) {
       const word = words[wi];
       const candidate = wordBuf.length > 0 ? wordBuf + ' ' + word : word;
-      const candidateW = measure(candidate, effectiveSize, run.bold, run.italic);
+      const candidateW = measure(candidate, effectiveSize, segRun.bold ?? false, segRun.italic ?? false);
 
       if (lineX + candidateW > maxWidth && (lineX > 0 || wordBuf.length > 0)) {
         // Flush current wordBuf as a run on the current line
         if (wordBuf.length > 0) {
-          const w = measure(wordBuf, effectiveSize, run.bold, run.italic);
-          currentRuns.push({ ...run, text: wordBuf, x: lineX });
+          const w = measure(wordBuf, effectiveSize, segRun.bold ?? false, segRun.italic ?? false);
+          currentRuns.push({ ...segRun, text: wordBuf, x: lineX });
           lineX += w;
         }
         commitLine();
@@ -196,9 +86,23 @@ export function layoutMarkdown(
 
     // Flush remaining wordBuf
     if (wordBuf.length > 0) {
-      const w = measure(wordBuf, effectiveSize, run.bold, run.italic);
-      currentRuns.push({ ...run, text: wordBuf, x: lineX });
+      const w = measure(wordBuf, effectiveSize, segRun.bold ?? false, segRun.italic ?? false);
+      currentRuns.push({ ...segRun, text: wordBuf, x: lineX });
       lineX += w;
+    }
+  }
+
+  for (const run of runs) {
+    // Split on newlines: markdownToRuns embeds newlines inside runs; the old
+    // parseMarkdownRuns emitted { text: '\n' } sentinel runs. Both are handled
+    // by splitting every run's text on '\n'.
+    const segments = run.text.split('\n');
+    for (let si = 0; si < segments.length; si++) {
+      if (si > 0) commitLine();
+      const seg = segments[si];
+      if (seg.length > 0) {
+        processSegment({ ...run, text: seg });
+      }
     }
   }
 
@@ -224,8 +128,6 @@ export interface MarkdownFontOptions {
   color?: string;
   /** Multiplier applied to font size for line height. Default 1.3. */
   lineHeight?: number;
-  /** Multiplicative step for `[`/`(`/`]`/`)` size markup in markdown parsing. Default 1.15. */
-  sizeStep?: number;
 }
 
 function buildFont(
@@ -259,15 +161,15 @@ export function createMarkdownRenderer(
   fontOpts: MarkdownFontOptions = {},
 ): { renderer: TextRenderer; strokeRenderer: TextRenderer; width: number; height: number } {
   const measure = canvasMeasure(ctx, fontOpts);
-  const parsed = parseMarkdownRuns(text, { sizeStep: fontOpts.sizeStep });
+  const parsed = markdownToRuns(text);
   const layout = layoutMarkdown(parsed, maxWidth, fontSize, measure, fontOpts.lineHeight);
 
   const renderer: TextRenderer = (_ctx, _text, x, y) => {
     let lineY = y;
     for (const line of layout.lines) {
       for (const run of line.runs) {
-        const effSize = fontSize * run.sizeFactor;
-        _ctx.font = buildFont(effSize, run.bold, run.italic, fontOpts);
+        const effSize = run.fontSize ?? fontSize;
+        _ctx.font = buildFont(effSize, run.bold ?? false, run.italic ?? false, fontOpts);
         _ctx.fillStyle = fontOpts.color
           ?? (run.italic && !run.bold ? 'rgba(255, 255, 255, 0.7)' : '#FFFFFF');
         const lineOffset = (layout.width - line.width) / 2;
@@ -281,8 +183,8 @@ export function createMarkdownRenderer(
     let lineY = y;
     for (const line of layout.lines) {
       for (const run of line.runs) {
-        const effSize = fontSize * run.sizeFactor;
-        _ctx.font = buildFont(effSize, run.bold, run.italic, fontOpts);
+        const effSize = run.fontSize ?? fontSize;
+        _ctx.font = buildFont(effSize, run.bold ?? false, run.italic ?? false, fontOpts);
         const lineOffset = (layout.width - line.width) / 2;
         _ctx.strokeText(run.text, x + lineOffset + run.x, lineY);
       }

@@ -1,5 +1,13 @@
 export * from './renderLabel';
-export * from './markdownText';
+export { createMarkdownRenderer, layoutMarkdown } from './markdownText';
+export type { MarkdownFontOptions, MeasureFn, PositionedRun, LayoutLine, LayoutResult } from './markdownText';
+export {
+  toRuns,
+  runsToPlainText,
+  runsToMarkdown,
+  markdownToRuns,
+} from './runs';
+export type { StyledRun } from './runs';
 export {
   DEFAULT_TEXT_STYLE,
   resolveTextStyle,
