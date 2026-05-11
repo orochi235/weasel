@@ -324,7 +324,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
       kind: 'group',
       colorMatrix: NO_RED,
       children: [
-        { kind: 'text', x: 0, y: 0, text: 'A', style: { fontFamily: 'inter', fontSize: 32, fill: { color: '#fff' } } },
+        { kind: 'text', x: 0, y: 0, runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' } }], align: 'left', style: { fontFamily: 'inter', fontSize: 32, fill: { color: '#fff' } } },
       ],
     };
     r.render([cmd]);
@@ -360,7 +360,9 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
 
   it('uploads identity u_colorMatrix on text draws with no enclosing group transform', () => {
     const cmd: DrawCommand = {
-      kind: 'text', x: 0, y: 0, text: 'A',
+      kind: 'text', x: 0, y: 0,
+      runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' } }],
+      align: 'left',
       style: { fontFamily: 'inter', fontSize: 32, fill: { color: '#fff' } },
     };
     r.render([cmd]);

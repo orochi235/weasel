@@ -3,6 +3,7 @@ import {
   SceneCanvas,
   useScene,
   useSelection,
+  textCommand,
 } from '@orochi235/weasel';
 import type { RegisteredOp, Scene } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
@@ -125,13 +126,12 @@ export function SceneDemo() {
                 },
               ];
               if (node.data.label) {
-                cmds.push({
-                  kind: 'text',
-                  x: p.x + 6,
-                  y: p.y + 14,
-                  text: node.data.label,
-                  style: { fontFamily: 'sans-serif', fontSize: 11, fill: { color: 'rgba(0,0,0,0.7)' } },
-                });
+                cmds.push(textCommand(
+                  p.x + 6,
+                  p.y + 14,
+                  node.data.label,
+                  { fontFamily: 'sans-serif', fontSize: 11, fill: { fill: 'solid', color: 'rgba(0,0,0,0.7)' } },
+                ));
               }
               return cmds;
             },
