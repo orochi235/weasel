@@ -305,3 +305,36 @@ describe('tessellateStroke — anchor params: caps', () => {
     expect(allHaveAnchor1).toBe(true);
   });
 });
+
+describe('tessellateStroke — anchor params: dashed segments', () => {
+  it('dashed stroke vertices inherit interpolated anchor params from their source segment', () => {
+    // Single straight segment between anchors 0 and 1. Dashing splits it into
+    // multiple sub-polylines. Every emitted ribbon vertex should still be tagged
+    // with anchor 0 OR 1, never out-of-range.
+    const p = new PathBuilder().moveTo(0, 0).lineTo(100, 0).build();
+    const mesh = tessellateStroke(p, { paint: { color: '#fff' }, width: 2, dash: [10, 5] });
+    for (let i = 0; i < mesh.anchorA!.length; i++) {
+      const a = mesh.anchorA![i];
+      const b = mesh.anchorB![i];
+      expect(a).toBeGreaterThanOrEqual(0);
+      expect(a).toBeLessThanOrEqual(1);
+      expect(b).toBeGreaterThanOrEqual(0);
+      expect(b).toBeLessThanOrEqual(1);
+    }
+
+    // The dash splits along a single M→L segment whose start is anchor 0 and
+    // end is anchor 1. The first sub-dash's first ribbon vertex should carry
+    // anchor 0 (or interpolated toward 0 with t small); the last sub-dash's
+    // last ribbon vertex should carry anchor 1 (or interpolated toward 1).
+    // We verify the simpler invariant: at least one vertex with anchor 1
+    // exists (some dash boundary lands at the end).
+    let foundAnchor1 = false;
+    for (let i = 0; i < mesh.anchorA!.length; i++) {
+      if (mesh.anchorA![i] === 1 || mesh.anchorB![i] === 1) {
+        foundAnchor1 = true;
+        break;
+      }
+    }
+    expect(foundAnchor1).toBe(true);
+  });
+});

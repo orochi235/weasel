@@ -252,18 +252,37 @@ function emitCap(
 /**
  * Split a polyline into open sub-polylines for the "on" portions of a dash
  * pattern. Each output sub-polyline gets caps from the stroke's `cap` setting.
- * The "off" portions become invisible gaps.
+ * The "off" portions become invisible gaps. Anchor params are carried through:
+ * sub-polyline endpoints inherit their source polyline-point's anchor params;
+ * dash boundaries that land mid-segment (between two polyline points) snap
+ * their anchor params to whichever endpoint they're closer to when the
+ * segment crosses a path-anchor boundary, otherwise interpolate `t` linearly.
  */
 function splitForDash(pl: Polyline, dash: number[]): Polyline[] {
   const out: Polyline[] = [];
+  const plA = pl.anchorA ?? new Uint32Array(pl.points.length / 2);
+  const plB = pl.anchorB ?? new Uint32Array(pl.points.length / 2);
+  const plT = pl.anchorT ?? new Float32Array(pl.points.length / 2);
+
   let dashIdx = 0;
   let dashRemaining = dash[0];
   let onPhase = true;
-  let current: Polyline | null = onPhase ? { points: [pl.points[0], pl.points[1]], closed: false } : null;
+  let curPts: number[] | null = onPhase ? [pl.points[0], pl.points[1]] : null;
+  let curA: number[] | null = onPhase ? [plA[0]] : null;
+  let curB: number[] | null = onPhase ? [plB[0]] : null;
+  let curT: number[] | null = onPhase ? [plT[0]] : null;
 
-  const advance = () => {
-    if (current && current.points.length >= 4) out.push(current);
-    current = null;
+  const flushAndAdvance = () => {
+    if (curPts && curPts.length >= 4) {
+      out.push({
+        points: curPts,
+        closed: false,
+        anchorA: new Uint32Array(curA!),
+        anchorB: new Uint32Array(curB!),
+        anchorT: new Float32Array(curT!),
+      });
+    }
+    curPts = null; curA = null; curB = null; curT = null;
     dashIdx = (dashIdx + 1) % dash.length;
     dashRemaining = dash[dashIdx];
     onPhase = !onPhase;
@@ -271,40 +290,76 @@ function splitForDash(pl: Polyline, dash: number[]): Polyline[] {
 
   let prevX = pl.points[0], prevY = pl.points[1];
   const ptCount = pl.points.length / 2;
-  // For a closed polyline, append one more "virtual" segment from the last
-  // point back to the first so the closing edge gets dashed too.
   const segCount = pl.closed ? ptCount : ptCount - 1;
+
   for (let i = 0; i < segCount; i++) {
     const nextIdx = (i + 1) % ptCount;
     const cx = pl.points[nextIdx * 2], cy = pl.points[nextIdx * 2 + 1];
-    let segDx = cx - prevX, segDy = cy - prevY;
-    let segLen = Math.hypot(segDx, segDy);
+    const startA = plA[i], startB = plB[i], startT = plT[i];
+    const endA = plA[nextIdx], endB = plB[nextIdx], endT = plT[nextIdx];
+    const segFullDx = cx - prevX, segFullDy = cy - prevY;
+    const segFullLen = Math.hypot(segFullDx, segFullDy);
+    let segDx = segFullDx, segDy = segFullDy;
+    let segLen = segFullLen;
+    let traveled = 0;
 
     while (segLen > 1e-9) {
       if (segLen <= dashRemaining) {
-        if (onPhase && current) current.points.push(cx, cy);
+        if (onPhase && curPts) {
+          curPts.push(cx, cy);
+          curA!.push(endA); curB!.push(endB); curT!.push(endT);
+        }
         dashRemaining -= segLen;
         prevX = cx; prevY = cy;
+        traveled = segFullLen;
         segLen = 0;
         if (dashRemaining <= 1e-9) {
-          advance();
-          if (onPhase) current = { points: [prevX, prevY], closed: false };
+          flushAndAdvance();
+          if (onPhase) {
+            curPts = [prevX, prevY];
+            curA = [endA]; curB = [endB]; curT = [endT];
+          }
         }
       } else {
-        const t = dashRemaining / segLen;
-        const ix = prevX + segDx * t;
-        const iy = prevY + segDy * t;
-        if (onPhase && current) current.points.push(ix, iy);
+        const tConsume = dashRemaining / segLen;
+        const ix = prevX + segDx * tConsume;
+        const iy = prevY + segDy * tConsume;
+        traveled += dashRemaining;
+        const frac = traveled / segFullLen;
+        let mA: number, mB: number, mT: number;
+        if (startA === endA && startB === endB) {
+          mA = startA; mB = startB;
+          mT = startT + (endT - startT) * frac;
+        } else {
+          // Cross-anchor segment: pick the nearer endpoint's params.
+          if (frac < 0.5) { mA = startA; mB = startB; mT = startT; }
+          else            { mA = endA; mB = endB; mT = endT; }
+        }
+        if (onPhase && curPts) {
+          curPts.push(ix, iy);
+          curA!.push(mA); curB!.push(mB); curT!.push(mT);
+        }
         prevX = ix; prevY = iy;
         segDx = cx - prevX; segDy = cy - prevY;
         segLen = Math.hypot(segDx, segDy);
-        advance();
-        if (onPhase) current = { points: [prevX, prevY], closed: false };
+        flushAndAdvance();
+        if (onPhase) {
+          curPts = [prevX, prevY];
+          curA = [mA]; curB = [mB]; curT = [mT];
+        }
       }
     }
   }
 
-  if (current && current.points.length >= 4) out.push(current);
+  if (curPts && curPts.length >= 4) {
+    out.push({
+      points: curPts,
+      closed: false,
+      anchorA: new Uint32Array(curA!),
+      anchorB: new Uint32Array(curB!),
+      anchorT: new Float32Array(curT!),
+    });
+  }
   return out;
 }
 
