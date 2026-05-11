@@ -72,4 +72,8 @@ describe('runsToMarkdown', () => {
   it('escapes literal asterisks in plain text', () => {
     expect(runsToMarkdown([{ text: 'a*b' }])).toBe('a\\*b');
   });
+
+  it('escapes literal backslashes in plain text', () => {
+    expect(runsToMarkdown([{ text: 'a\\b' }])).toBe('a\\\\b');
+  });
 });
