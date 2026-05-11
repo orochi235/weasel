@@ -18,7 +18,7 @@ Garden needs nested clipping: regions clip beds, beds clip plantings. The render
 
 - **`clipFromPose?: (pose: TPose) => Path | null` on `ContainerNode`.** Derived, not static — re-evaluated each render. Returning `null` means "no clip for this container right now."
 - **Intersection semantics.** Nested clips intersect; a child can never escape an ancestor's clip. Standard SVG/Figma/Canvas2D behavior.
-- **Stencil bit-partitioning.** High 3 bits of the 8-bit stencil hold the clip depth (0–7); low 5 bits remain owned by the existing path-stencil code (evenodd, stroke alignment). 7 nested clips max; throw on attempt to push deeper.
+- **Stencil bit-partitioning, single-bit-per-level.** Bit 0 of the 8-bit stencil is owned by the existing path-stencil code (evenodd and stroke alignment each need exactly one bit). Bits 1–7 hold one bit per clip level: bit N is set wherever level N's clip path covered. Maximum 7 nested clip levels; throw on attempt to push deeper. Single-pass push/pop per clip.
 - **Clip path is in world-space.** Same as the kit's poses. No group transform stack to compose against.
 - **Fill rule inherited from the path.** A clip path's `fillRule` field determines coverage exactly the same way it does for a fill — `nonzero` (default) or `evenodd`. No separate `clipFillRule`.
 - **Strokes respect clipping.** A stroke draw under an active clip stack runs through the same `stencilFunc` test as fills; ribbons clip cleanly.
@@ -84,35 +84,63 @@ function buildNodeGroup(id: string): GroupDrawCommand {
 
 ### Renderer changes: `src/renderer/draw.ts`
 
-**DrawContext state stack** gains a `clipDepth: number` field initialized to 0. `drawGroup` reads it for `stencilFunc` ref and increments/decrements on push/pop.
+**DrawContext state stack** gains a `clipDepth: number` field initialized to 0. `drawGroup` reads it for the `stencilFunc` test and increments/decrements on push/pop.
 
-**Stencil bit layout:**
-- High 3 bits (`0xE0`): clip depth, 0–7.
-- Low 5 bits (`0x1F`): owned by existing path-stencil code.
+**Stencil bit layout (single-bit-per-level):**
+- **Bit 0** (mask `0x01`): owned by existing path-stencil code (evenodd fill, stroke alignment — each needs only one bit's worth of "marked vs unmarked").
+- **Bit N** (where N = 1..7, mask `1 << N`): set wherever clip level N's path covered. Multiple bits set means multiple ancestor clips cover that pixel.
+- The "ancestor bits at depth D" pattern is `((1 << (D + 1)) - 1) & 0xFE` — bits 1..D, with bit 0 excluded. Call it `ancestorMask(D)`.
 
 **Audit of existing stencil call sites:**
 - `drawPathFillStencil`:
-  - `gl.stencilMask(0xFF)` → `gl.stencilMask(0x1F)` (both pass writes).
-  - `gl.stencilFunc(gl.NOTEQUAL, 0, 0xFF)` → `gl.stencilFunc(gl.NOTEQUAL, 0, 0x1F)`.
-  - Before `gl.clear(STENCIL_BUFFER_BIT)`: explicitly set `gl.stencilMask(0x1F)` so the clear only wipes the low bits.
-- `drawPathStrokeStenciled`: same narrowing pattern.
+  - `gl.stencilMask(0xFF)` → `gl.stencilMask(0x01)` (only writes bit 0).
+  - `gl.stencilFunc(gl.NOTEQUAL, 0, 0xFF)` → `gl.stencilFunc(gl.NOTEQUAL, 0, 0x01)` (only tests bit 0).
+  - Before `gl.clear(STENCIL_BUFFER_BIT)`: explicitly set `gl.stencilMask(0x01)` so the clear only wipes bit 0.
+- `drawPathStrokeStenciled`: same narrowing — `0xFF` → `0x01` everywhere.
 
 **New helpers in `draw.ts`:**
 
 `pushClip(ctx, path, newDepth)`:
 ```ts
+// Goal: set bit (1 << newDepth) wherever (a) the clip path's fragment passes AND
+//       (b) all ancestor bits 1..(newDepth - 1) are already set.
+const ancestors = ancestorMask(newDepth - 1);   // bits 1..(newDepth-1); 0 when newDepth === 1
+const newBit = 1 << newDepth;                    // the bit we're about to set
+
 gl.enable(STENCIL_TEST);
-gl.colorMask(false, false, false, false);   // stencil-only pass
-gl.stencilMask(0xE0);                       // write only high 3 bits
-gl.stencilFunc(EQUAL, currentDepth << 5, 0xE0); // only inside current clip
+gl.colorMask(false, false, false, false);       // stencil-only pass
+gl.stencilMask(newBit);                          // only write the new level's bit
+gl.stencilFunc(EQUAL, ancestors, ancestors);     // only where all ancestors' bits are set
 gl.stencilOp(KEEP, KEEP, REPLACE);
-// Rasterize clip path via existing tessellation + drawElements with ref = newDepth << 5.
-// REPLACE writes (ref & stencilMask) | (old & ~stencilMask).
-// Where stencilFunc fails (outside ancestors' clip), no write. Intersection automatic.
+// drawElements with stencilFunc.ref includes newBit as well; REPLACE writes
+// (ref & stencilMask) | (old & ~stencilMask) = newBit | old. So bit newDepth flips on
+// where the comparison passed; all other bits stay.
+//
+// Sharing ref between stencilFunc and stencilOp works here because:
+//   - For the comparison: only the `ancestors` bits in ref are inspected
+//     (stencilFunc.mask = ancestors). The newBit in ref is ignored for the test.
+//   - For the write: only newBit in ref is written (stencilMask = newBit).
+// Set ref = ancestors | newBit and both ops are satisfied.
 gl.colorMask(true, true, true, true);
 ```
 
-`popClip(ctx, path, oldDepth)`: same as push, but with `ref = oldDepth << 5`, redrawing the popped clip's geometry to restore the prior depth value.
+`popClip(ctx, path, oldDepth)` — clears bit (oldDepth + 1) along the popped clip path so ancestor state at depth oldDepth is restored:
+```ts
+const ancestors = ancestorMask(oldDepth);        // bits 1..oldDepth
+const oldBit = 1 << (oldDepth + 1);              // the bit we're clearing
+
+gl.stencilMask(oldBit);                          // only touch the old bit
+gl.stencilFunc(EQUAL, ancestors | oldBit, ancestors | oldBit);
+// "Where ancestors are set AND oldBit is set" — i.e., the pixels we marked on push.
+gl.stencilOp(KEEP, KEEP, REPLACE);
+// ref's oldBit = 0 → REPLACE clears oldBit; ancestors bits not in stencilMask, preserved.
+// Need ref to satisfy both stencilFunc (ancestors | oldBit) and stencilMask write (no oldBit).
+// Trick: stencilFunc.ref = ancestors | oldBit (compares full pattern), and we use
+// stencilOp REPLACE which writes ref & stencilMask = (ancestors | oldBit) & oldBit = oldBit.
+// But we want to CLEAR oldBit, not set it. Use stencilOp(KEEP, KEEP, ZERO) instead —
+// where the test passes, zero out the masked bits (oldBit only).
+gl.stencilOp(KEEP, KEEP, ZERO);
+```
 
 `drawGroup` becomes clip-aware:
 ```ts
@@ -139,7 +167,13 @@ function drawGroup(ctx, cmd) {
 }
 ```
 
-**Child draw call sites** — every code path that draws a fragment (paths, strokes, text, images, shaders) prepends a `stencilFunc(EQUAL, ctx.state.clipDepth << 5, 0xE0)` when `clipDepth > 0`. Implemented as a single helper called from each draw function. When `clipDepth === 0`, the helper disables `STENCIL_TEST` (no overhead for non-clipped trees, which is the common case).
+**Child draw call sites** — every code path that draws a fragment (paths, strokes, text, images, shaders) prepends, when `ctx.state.clipDepth > 0`:
+```ts
+const mask = ancestorMask(ctx.state.clipDepth);    // bits 1..clipDepth
+gl.stencilFunc(EQUAL, mask, mask);                 // all ancestor bits must be set
+gl.stencilOp(KEEP, KEEP, KEEP);                    // child draws don't touch stencil
+```
+When `clipDepth === 0`, the helper disables `STENCIL_TEST` (no overhead for non-clipped trees, which is the common case).
 
 ### Hit-test integration: `src/canvas/sceneAdapter.ts` + `src/features/paths/`
 
@@ -247,7 +281,7 @@ pickEvery(x, y) / hitTestArea(rect) / hitTestLasso(polygon, mode)
 
 ### Renderer (`src/renderer/draw.test.ts`)
 
-- **Bit-partitioning audit:** simulate stencil state with high bits set (clip depth = 1), run `drawPathFillStencil`, confirm high bits unchanged. Same for `drawPathStrokeStenciled`.
+- **Bit-partitioning audit:** simulate stencil state with bits 1..7 holding clip-level values, run `drawPathFillStencil`, confirm bits 1..7 unchanged after the fill completes (only bit 0 should be touched and cleared). Same for `drawPathStrokeStenciled`.
 - **Clip push/pop sequence:** assert the GL call recorder receives the expected `stencilFunc` / `stencilOp` / `stencilMask` / `colorMask` calls for a single clip push and pop.
 - **Depth-limit throw:** simulate 7 nested clip pushes; the 8th throws with the specific error message.
 - **Nested clip integration:** build a `GroupDrawCommand` tree with 2 levels of clipping; verify the recorded GL sequence matches expected stencil ordering.
@@ -285,4 +319,4 @@ pickEvery(x, y) / hitTestArea(rect) / hitTestLasso(polygon, mode)
 
 ## Release notes (one-liner)
 
-> Container nodes can declare a clip path via `clipFromPose?: (pose) => Path | null`. The renderer rasterizes the clip into the stencil buffer (high 3 bits reserved for clip depth, max 7 nested levels); descendants paint only where all ancestor clips intersect. Hit-test pipeline mirrors the same intersection logic — a point/rect/lasso query that falls outside an ancestor's clip excludes the descendant from results. Path-stencil code (evenodd fills, inner/outer strokes) was audited to use only the low 5 stencil bits and doesn't conflict with clip state.
+> Container nodes can declare a clip path via `clipFromPose?: (pose) => Path | null`. The renderer rasterizes the clip into the stencil buffer (bit 0 stays with the existing path stencil; bits 1–7 hold one bit per clip nesting level, max 7); descendants paint only where all ancestor clip bits are set. Hit-test pipeline mirrors the same intersection logic — a point/rect/lasso query that falls outside an ancestor's clip excludes the descendant from results. Path-stencil code (evenodd fills, inner/outer strokes) was audited to use only bit 0 and doesn't conflict with clip state.
