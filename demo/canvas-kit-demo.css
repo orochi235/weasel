@@ -210,6 +210,35 @@ a:hover { text-decoration: underline; }
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
+.ckd-code-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.ckd-code-tab {
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: none;
+  padding: 4px 10px;
+  font-size: 11px;
+  color: var(--ckd-faint);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  cursor: pointer;
+  border-radius: 3px 3px 0 0;
+}
+
+.ckd-code-tab:hover {
+  color: var(--ckd-fg);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.ckd-code-tab.is-active {
+  color: var(--ckd-fg);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--ckd-border-2);
+}
+
 .ckd-source {
   padding: 12px 14px;
   overflow: auto;

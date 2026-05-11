@@ -67,6 +67,24 @@ import LassoDemoFull from './demos/LassoDemo.tsx?raw';
 import ClippingDemoFull from './demos/ClippingDemo.tsx?raw';
 import HudDemoFull from './demos/HudDemo.tsx?raw';
 
+// Scene-data JSON for demos that load via `sceneFromJSON`. Surfaced alongside
+// the TSX in the source pane so consumers can see the format.
+import ClippingSceneJson from './demos/data/clipping.scene.json?raw';
+import SceneSceneJson from './demos/data/scene.scene.json?raw';
+import NestedGroupsSceneJson from './demos/data/nested-groups.scene.json?raw';
+import LayoutSceneJson from './demos/data/layout.scene.json?raw';
+
+/** Extra source pane entry: typically a companion file (scene JSON, fixture)
+ *  that the demo loads alongside its TSX. Surfaced as a tab in the code panel. */
+export interface DemoExtra {
+  /** Tab label and pane-meta path (e.g. `demo/demos/data/clipping.scene.json`). */
+  path: string;
+  /** Raw file contents. */
+  code: string;
+  /** prism-react-renderer language. */
+  language: 'json' | 'tsx' | 'ts' | 'css' | 'md';
+}
+
 export interface DemoEntry {
   id: string;
   title: string;
@@ -78,6 +96,8 @@ export interface DemoEntry {
   full: string;
   /** Path to the demo file relative to repo root, for display in the source pane. */
   path: string;
+  /** Additional source files (e.g. scene JSON) shown as extra tabs. */
+  extras?: DemoExtra[];
 }
 
 export const DEMOS: DemoEntry[] = [
@@ -91,6 +111,7 @@ export const DEMOS: DemoEntry[] = [
     Component: SceneDemo,
     full: SceneDemoFull,
     path: 'demo/demos/SceneDemo.tsx',
+    extras: [{ path: 'demo/demos/data/scene.scene.json', code: SceneSceneJson, language: 'json' }],
   },
 
   // ─── Tools ────────────────────────────────────────────────────────────────
@@ -217,6 +238,7 @@ export const DEMOS: DemoEntry[] = [
     Component: NestedGroupsDemo,
     full: NestedGroupsDemoFull,
     path: 'demo/demos/NestedGroupsDemo.tsx',
+    extras: [{ path: 'demo/demos/data/nested-groups.scene.json', code: NestedGroupsSceneJson, language: 'json' }],
   },
   {
     id: 'clipping',
@@ -227,6 +249,7 @@ export const DEMOS: DemoEntry[] = [
     Component: ClippingDemo,
     full: ClippingDemoFull,
     path: 'demo/demos/ClippingDemo.tsx',
+    extras: [{ path: 'demo/demos/data/clipping.scene.json', code: ClippingSceneJson, language: 'json' }],
   },
 
   // ─── Geometry ─────────────────────────────────────────────────────────────
@@ -281,6 +304,7 @@ export const DEMOS: DemoEntry[] = [
     Component: LayoutDemo,
     full: LayoutDemoFull,
     path: 'demo/demos/LayoutDemo.tsx',
+    extras: [{ path: 'demo/demos/data/layout.scene.json', code: LayoutSceneJson, language: 'json' }],
   },
 
   // ─── Animation ────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Highlight, themes } from 'prism-react-renderer';
 import { CATEGORIES, DEMOS, DEMOS_BY_ID, type DemoEntry } from './registry';
 import { CommandPalette, useCommandPaletteShortcut } from '@orochi235/weasel-ui';
@@ -75,7 +75,19 @@ export function WeaselDemos() {
 
 function DemoView({ entry }: { entry: DemoEntry }) {
   const Component = entry.Component;
-  const code = entry.full.trim();
+  // Tabs: the demo's primary TSX is always first; extras (e.g. scene JSON) follow.
+  const tabs = useMemo(
+    () => [
+      { path: entry.path, code: entry.full.trim(), language: 'tsx' as const },
+      ...(entry.extras ?? []),
+    ],
+    [entry],
+  );
+  const [activeTab, setActiveTab] = useState(0);
+  // Reset to the TSX tab when switching demos so we don't try to keep an
+  // out-of-range index from the previous entry.
+  useEffect(() => { setActiveTab(0); }, [entry]);
+  const current = tabs[activeTab];
 
   return (
     <article className="ckd-demo">
@@ -92,10 +104,27 @@ function DemoView({ entry }: { entry: DemoEntry }) {
 
       <div className="ckd-code-panel">
         <div className="ckd-code-header">
-          <span className="ckd-code-meta">{entry.path}</span>
+          {tabs.length > 1 ? (
+            <div className="ckd-code-tabs" role="tablist">
+              {tabs.map((tab, i) => (
+                <button
+                  key={tab.path}
+                  type="button"
+                  role="tab"
+                  aria-selected={i === activeTab}
+                  className={`ckd-code-tab${i === activeTab ? ' is-active' : ''}`}
+                  onClick={() => setActiveTab(i)}
+                >
+                  {tab.path.split('/').pop()}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <span className="ckd-code-meta">{entry.path}</span>
+          )}
         </div>
         <div className="ckd-source">
-          <Highlight code={code} language="tsx" theme={themes.vsDark}>
+          <Highlight code={current.code} language={current.language} theme={themes.vsDark}>
             {({ className, style, tokens, getLineProps, getTokenProps }) => (
               <pre className={className} style={{ ...style, background: 'transparent', margin: 0 }}>
                 {tokens.map((line, i) => {
