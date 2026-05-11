@@ -224,6 +224,8 @@ export {
   createPathLayer,
   flattenCubic,
   flattenQuadratic,
+  flattenCubicWithArcLen,
+  flattenQuadraticWithArcLen,
   DEFAULT_FLATTEN_TOLERANCE,
   composePath,
   decomposePath,

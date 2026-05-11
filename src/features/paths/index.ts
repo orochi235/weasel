@@ -33,6 +33,8 @@ export { createPathLayer, type CreatePathLayerOpts } from './pathLayer';
 export {
   flattenCubic,
   flattenQuadratic,
+  flattenCubicWithArcLen,
+  flattenQuadraticWithArcLen,
   DEFAULT_FLATTEN_TOLERANCE,
 } from './flatten';
 export { composePath, decomposePath } from './compose';
