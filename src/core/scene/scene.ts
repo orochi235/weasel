@@ -113,11 +113,13 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     nodeLayer: TLayer,
     parentId: NodeId,
     parentLayer: TLayer,
+    verb: 'place' | 'relayer' = 'place',
   ): void {
     if (parentLayer !== nodeLayer) {
-      throw new Error(
-        `Scene: cannot place node '${nodeId ?? '<new>'}' on layer '${nodeLayer}' under parent '${parentId}' on layer '${parentLayer}' — subtree layer must match parent`,
-      );
+      const action = verb === 'place'
+        ? `cannot place node '${nodeId ?? '<new>'}' on layer '${nodeLayer}' under parent '${parentId}' on layer '${parentLayer}'`
+        : `cannot setLayer('${nodeId ?? '<new>'}', '${nodeLayer}') — node has parent '${parentId}' on layer '${parentLayer}'`;
+      throw new Error(`Scene: ${action} — subtree layer must match parent`);
     }
   }
 
@@ -366,8 +368,9 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       const node = requireNode(id);
       if (node.parent !== null) {
         const parentNode = requireNode(node.parent);
-        assertSubtreeLayer(id, layer, node.parent, parentNode.layer);
+        assertSubtreeLayer(id, layer, node.parent, parentNode.layer, 'relayer');
       }
+      if (node.layer === layer) return;
       // DFS preorder: collect id + all descendants.
       const subtree: NodeId[] = [];
       const stack: NodeId[] = [id];

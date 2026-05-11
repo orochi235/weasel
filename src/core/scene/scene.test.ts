@@ -229,6 +229,19 @@ describe('setLayer — parent rejection and cascade', () => {
     expect(s.get(bed)?.layer).toBe('structures');
     expect(s.get(leaf)?.layer).toBe('structures');
   });
+
+  it('setLayer with current layer is a no-op (no history entry added)', () => {
+    const s = makeScene();
+    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    // Record how many entries are in the stack before the no-op call.
+    // We can detect a new entry by checking canUndo before/after (the stack
+    // starts non-empty due to the add above, but a no-op must not push another).
+    s.setLayer(id, 'structures'); // same layer — should be a no-op
+    // One undo step should undo the original `add`, not a spurious setLayer.
+    s.undo();
+    expect(s.get(id)).toBeUndefined(); // node is gone — only the add was on the stack
+    expect(s.canUndo()).toBe(false);   // nothing else was pushed
+  });
 });
 
 describe('mutations are auto-undoable', () => {
