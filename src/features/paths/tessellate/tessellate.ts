@@ -46,9 +46,9 @@ interface FlattenedContours {
 function flattenPolygon(p: PolygonPath, tolerance: number): FlattenedContours {
   const { commands, coords } = p;
   const out: number[] = [];
-  const aA: number[] = [];
-  const aB: number[] = [];
-  const aT: number[] = [];
+  const anchorA: number[] = [];
+  const anchorB: number[] = [];
+  const anchorT: number[] = [];
   const contourStarts: number[] = [];
   let coordIdx = 0;
   let prevX = 0;
@@ -64,9 +64,9 @@ function flattenPolygon(p: PolygonPath, tolerance: number): FlattenedContours {
         prevX = coords[coordIdx];
         prevY = coords[coordIdx + 1];
         out.push(prevX, prevY);
-        aA.push(anchorCounter);
-        aB.push(anchorCounter);
-        aT.push(0);
+        anchorA.push(anchorCounter);
+        anchorB.push(anchorCounter);
+        anchorT.push(0);
         prevAnchor = anchorCounter;
         anchorCounter++;
         coordIdx += 2;
@@ -76,9 +76,9 @@ function flattenPolygon(p: PolygonPath, tolerance: number): FlattenedContours {
         prevX = coords[coordIdx];
         prevY = coords[coordIdx + 1];
         out.push(prevX, prevY);
-        aA.push(anchorCounter);
-        aB.push(anchorCounter);
-        aT.push(0);
+        anchorA.push(anchorCounter);
+        anchorB.push(anchorCounter);
+        anchorT.push(0);
         prevAnchor = anchorCounter;
         anchorCounter++;
         coordIdx += 2;
@@ -89,18 +89,18 @@ function flattenPolygon(p: PolygonPath, tolerance: number): FlattenedContours {
         const ex = coords[coordIdx + 2], ey = coords[coordIdx + 3];
         const target = anchorCounter;
         const arcAccum: number[] = [];
-        const startIdx = out.length / 2;
+        const anchorStart = anchorA.length;
         const total = flattenQuadraticWithArcLen(prevX, prevY, cx, cy, ex, ey, tolerance, out, arcAccum);
         for (let k = 0; k < arcAccum.length; k++) {
-          aA.push(prevAnchor);
-          aB.push(target);
-          aT.push(total > 0 ? arcAccum[k] / total : 0);
+          anchorA.push(prevAnchor);
+          anchorB.push(target);
+          anchorT.push(total > 0 ? arcAccum[k] / total : 0);
         }
         // Pin the last point (anchor-exact).
-        const lastIdx = startIdx + arcAccum.length - 1;
-        aA[lastIdx] = target;
-        aB[lastIdx] = target;
-        aT[lastIdx] = 0;
+        const lastIdx = anchorStart + arcAccum.length - 1;
+        anchorA[lastIdx] = target;
+        anchorB[lastIdx] = target;
+        anchorT[lastIdx] = 0;
         prevX = ex; prevY = ey;
         prevAnchor = target;
         anchorCounter++;
@@ -113,17 +113,17 @@ function flattenPolygon(p: PolygonPath, tolerance: number): FlattenedContours {
         const ex = coords[coordIdx + 4], ey = coords[coordIdx + 5];
         const target = anchorCounter;
         const arcAccum: number[] = [];
-        const startIdx = out.length / 2;
+        const anchorStart = anchorA.length;
         const total = flattenCubicWithArcLen(prevX, prevY, c1x, c1y, c2x, c2y, ex, ey, tolerance, out, arcAccum);
         for (let k = 0; k < arcAccum.length; k++) {
-          aA.push(prevAnchor);
-          aB.push(target);
-          aT.push(total > 0 ? arcAccum[k] / total : 0);
+          anchorA.push(prevAnchor);
+          anchorB.push(target);
+          anchorT.push(total > 0 ? arcAccum[k] / total : 0);
         }
-        const lastIdx = startIdx + arcAccum.length - 1;
-        aA[lastIdx] = target;
-        aB[lastIdx] = target;
-        aT[lastIdx] = 0;
+        const lastIdx = anchorStart + arcAccum.length - 1;
+        anchorA[lastIdx] = target;
+        anchorB[lastIdx] = target;
+        anchorT[lastIdx] = 0;
         prevX = ex; prevY = ey;
         prevAnchor = target;
         anchorCounter++;
@@ -138,7 +138,7 @@ function flattenPolygon(p: PolygonPath, tolerance: number): FlattenedContours {
     }
   }
 
-  return { coords: out, contourStarts, anchorA: aA, anchorB: aB, anchorT: aT };
+  return { coords: out, contourStarts, anchorA, anchorB, anchorT };
 }
 
 function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
@@ -148,6 +148,20 @@ function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
   if (p.fillRule === 'evenodd') {
     return tessellateEvenoddWithAnchors(coords, contourStarts, anchorA, anchorB, anchorT);
   }
+
+  // nonzero compound-path tessellation:
+  //   - The first contour establishes the reference winding direction.
+  //   - Subsequent contours with the SAME winding as the first are positives
+  //     (filled, disjoint shapes).
+  //   - Subsequent contours with OPPOSITE winding are holes; each is grouped
+  //     with the smallest positive whose polygon contains its first vertex.
+  //   - Each (positive, [its holes]) group is earcut'd independently;
+  //     triangles concatenated.
+  // Authors mostly write disjoint-positives-with-same-winding; the previous
+  // implementation passed every subsequent contour as a hole, which broke
+  // those (a duck with body+head+beak, a hamburglar with brim+crown+cape).
+  // Using shoelace sign relative to the first contour avoids guessing about
+  // screen-down vs math-up axis conventions.
 
   const totalVerts = coords.length / 2;
   const contourEnd = (i: number): number =>
@@ -176,6 +190,7 @@ function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
   }
 
   if (positives.length === 1 && negatives.length > 0) {
+    // Classic outer-with-holes pattern; pass directly to earcut.
     const holeIndices = contourStarts.slice(1);
     const tri = earcut(coords, holeIndices);
     return {
@@ -187,6 +202,10 @@ function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
     };
   }
 
+  // Group each opposite-wound contour with the smallest positive that
+  // contains its first vertex. Orphans (opposite-wound but not inside any
+  // positive) get promoted to independent positives — author probably
+  // intended them as separate shapes with inconsistent winding.
   const holesByPositive = new Map<number, number[]>();
   const orphanPositives: number[] = [];
   for (const n of negatives) {
