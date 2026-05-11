@@ -1,13 +1,21 @@
 import { useMemo, useRef, useState } from 'react';
-import { SceneCanvas, hexToRgba, polygonFromPoints, rgbaToHex, useHandleDrag, useScene } from '@orochi235/weasel';
-import type { RenderLayer } from '@orochi235/weasel';
-import { viewToMat3, type DrawCommand } from '../../src/renderer';
+import {
+  SceneCanvas,
+  createPathLayer,
+  hexToRgba,
+  polygonFromPoints,
+  rgbaToHex,
+  useHandleDrag,
+  useScene,
+} from '@orochi235/weasel';
+import type { Path } from '@orochi235/weasel';
 
 const W = 600;
 const H = 400;
 const N = 7;
 
 interface Vertex { x: number; y: number; rgba: [number, number, number, number]; }
+interface HeptagonNode { id: string; path: Path; colors: number[]; }
 
 const RAINBOW: [number, number, number, number][] = [
   [1.0, 0.2, 0.3, 1.0],
@@ -35,21 +43,19 @@ export function VertexColorsDemo() {
   const [verts, setVerts] = useState<Vertex[]>(makeHeptagon);
   const [showHandles, setShowHandles] = useState(true);
 
-  const layer: RenderLayer<unknown> = useMemo(() => ({
+  const node: HeptagonNode = useMemo(() => ({
+    id: 'heptagon',
+    path: polygonFromPoints(verts.map((v) => ({ x: v.x, y: v.y }))),
+    colors: verts.flatMap((v) => v.rgba),
+  }), [verts]);
+
+  const layer = useMemo(() => createPathLayer<HeptagonNode>({
     id: 'vertex-colored-poly',
     label: 'Vertex-colored polygon',
-    draw: (_data, view) => {
-      const path = polygonFromPoints(verts.map((v) => ({ x: v.x, y: v.y })));
-      const colors = verts.flatMap((v) => v.rgba);
-      const cmd: DrawCommand = {
-        kind: 'path',
-        path,
-        fill: { color: '#ffffff' },  // required: drawPath bails without a fill; per-vertex colors modulate this
-        vertexColors: colors,
-      };
-      return [{ kind: 'group', transform: viewToMat3(view), children: [cmd] }];
-    },
-  }), [verts]);
+    getNodes: () => [node],
+    getPath: (n) => n.path,
+    getVertexColors: (n) => n.colors,
+  }), [node]);
 
   const scene = useScene<never, 'default'>({
     systemLayers: [{ id: 'default' }],
