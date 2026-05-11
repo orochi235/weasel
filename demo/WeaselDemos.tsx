@@ -13,7 +13,7 @@ function readHash(): string {
   return DEMOS_BY_ID.has(h) ? h : DEMOS[0].id;
 }
 
-export function CanvasKitDemo() {
+export function WeaselDemos() {
   const [activeId, setActiveId] = useState<string>(() => readHash());
   const [paletteOpen, setPaletteOpen] = useState(false);
   useCommandPaletteShortcut(paletteOpen, setPaletteOpen);

@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { CanvasKitDemo } from './CanvasKitDemo';
+import { WeaselDemos } from './WeaselDemos';
 import { ActionsProvider } from '../src/interactions/actions/registry';
 import { SelectionContextProvider } from '../src/features/selection/SelectionContext';
 
@@ -16,7 +16,7 @@ createRoot(container).render(
   <StrictMode>
     <ActionsProvider>
       <SelectionContextProvider>
-        <CanvasKitDemo />
+        <WeaselDemos />
       </SelectionContextProvider>
     </ActionsProvider>
   </StrictMode>,
