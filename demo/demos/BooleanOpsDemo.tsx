@@ -1,0 +1,129 @@
+import { useMemo } from 'react';
+import {
+  pathUnion,
+  pathIntersect,
+  pathSubtract,
+  pathExclude,
+  pathDivide,
+  PATH_M,
+  PATH_L,
+  PATH_Z,
+  SceneCanvas,
+  useScene,
+} from '@orochi235/weasel';
+import type { PolygonPath } from '@orochi235/weasel';
+import type { DrawCommand } from '../../src/renderer';
+
+const W = 240;
+const H = 200;
+
+/** 32-gon circle approximation centered at (cx, cy). */
+function circle(cx: number, cy: number, r: number, n = 32): PolygonPath {
+  const commands = new Uint8Array(n + 1);
+  const coords = new Float32Array(n * 2);
+  commands[0] = PATH_M;
+  for (let i = 1; i < n; i++) commands[i] = PATH_L;
+  commands[n] = PATH_Z;
+  for (let i = 0; i < n; i++) {
+    const t = (i / n) * Math.PI * 2;
+    coords[i * 2] = cx + Math.cos(t) * r;
+    coords[i * 2 + 1] = cy + Math.sin(t) * r;
+  }
+  return { kind: 'polygon', commands, coords, fillRule: 'nonzero' };
+}
+
+const RECT_INPUT: PolygonPath = {
+  kind: 'polygon',
+  commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
+  coords: new Float32Array([40, 50, 140, 50, 140, 140, 40, 140]),
+  fillRule: 'nonzero',
+};
+const CIRCLE_INPUT = circle(120, 115, 55);
+
+const RECT_COLOR = '#7fb069';
+const CIRCLE_COLOR = '#d4a574';
+const RESULT_COLOR = '#a48bd4';
+const DIVIDE_COLORS = ['#7fb069', '#d4a574', '#a48bd4', '#7ab8d4', '#d47a7a'];
+
+interface PanelItem {
+  id: string;
+  path: PolygonPath;
+  color: string;
+}
+
+function Panel({ id, paths }: { id: string; paths: PanelItem[] }) {
+  const scene = useScene<PanelItem>({ items: paths });
+  return (
+    <SceneCanvas
+      width={W}
+      height={H}
+      className="ckd-canvas"
+      scene={scene}
+      selectionMode="multi"
+      layers={{
+        scene: {
+          drawOne: (node): DrawCommand[] => [{
+            kind: 'path',
+            path: node.data.path,
+            fill: { color: node.data.color },
+          }],
+        },
+      }}
+      data-panel={id}
+    />
+  );
+}
+
+export function BooleanOpsDemo() {
+  const unionResult = useMemo(() => pathUnion(RECT_INPUT, CIRCLE_INPUT), []);
+  const intersectResult = useMemo(() => pathIntersect(RECT_INPUT, CIRCLE_INPUT), []);
+  const subtractResult = useMemo(() => pathSubtract(RECT_INPUT, CIRCLE_INPUT), []);
+  const excludeResult = useMemo(() => pathExclude(RECT_INPUT, CIRCLE_INPUT), []);
+  const divideResults = useMemo(() => pathDivide(RECT_INPUT, CIRCLE_INPUT), []);
+
+  const dividePaths = useMemo(
+    () => divideResults.map((p, i) => ({
+      id: `d${i}`,
+      path: p,
+      color: DIVIDE_COLORS[i % DIVIDE_COLORS.length],
+    })),
+    [divideResults],
+  );
+
+  return (
+    <div className="ckd-boolops-grid">
+      <div className="ckd-boolops-panel">
+        <h3 className="ckd-boolops-label">Inputs</h3>
+        <Panel id="inputs" paths={[
+          { id: 'rect', path: RECT_INPUT, color: RECT_COLOR },
+          { id: 'circle', path: CIRCLE_INPUT, color: CIRCLE_COLOR },
+        ]} />
+      </div>
+
+      <div className="ckd-boolops-panel">
+        <h3 className="ckd-boolops-label">Union</h3>
+        <Panel id="union" paths={[{ id: 'u', path: unionResult, color: RESULT_COLOR }]} />
+      </div>
+
+      <div className="ckd-boolops-panel">
+        <h3 className="ckd-boolops-label">Intersect</h3>
+        <Panel id="intersect" paths={[{ id: 'i', path: intersectResult, color: RESULT_COLOR }]} />
+      </div>
+
+      <div className="ckd-boolops-panel">
+        <h3 className="ckd-boolops-label">Subtract</h3>
+        <Panel id="subtract" paths={[{ id: 's', path: subtractResult, color: RESULT_COLOR }]} />
+      </div>
+
+      <div className="ckd-boolops-panel">
+        <h3 className="ckd-boolops-label">Exclude</h3>
+        <Panel id="exclude" paths={[{ id: 'x', path: excludeResult, color: RESULT_COLOR }]} />
+      </div>
+
+      <div className="ckd-boolops-panel">
+        <h3 className="ckd-boolops-label">Divide</h3>
+        <Panel id="divide" paths={dividePaths} />
+      </div>
+    </div>
+  );
+}

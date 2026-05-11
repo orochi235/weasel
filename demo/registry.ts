@@ -16,6 +16,7 @@ import { QuadtreeDemo } from './demos/QuadtreeDemo';
 import { PathPoseDemo } from './demos/PathPoseDemo';
 import { CompoundPathsDemo } from './demos/CompoundPathsDemo';
 import { BezierEditDemo } from './demos/BezierEditDemo';
+import { BooleanOpsDemo } from './demos/BooleanOpsDemo';
 import { SceneDemo } from './demos/SceneDemo';
 import { PanDemo } from './demos/PanDemo';
 import { ZoomDemo } from './demos/ZoomDemo';
@@ -50,6 +51,7 @@ import QuadtreeDemoFull from './demos/QuadtreeDemo.tsx?raw';
 import PathPoseDemoFull from './demos/PathPoseDemo.tsx?raw';
 import CompoundPathsDemoFull from './demos/CompoundPathsDemo.tsx?raw';
 import BezierEditDemoFull from './demos/BezierEditDemo.tsx?raw';
+import BooleanOpsDemoFull from './demos/BooleanOpsDemo.tsx?raw';
 import SceneDemoFull from './demos/SceneDemo.tsx?raw';
 import PanDemoFull from './demos/PanDemo.tsx?raw';
 import ZoomDemoFull from './demos/ZoomDemo.tsx?raw';
@@ -259,6 +261,16 @@ export const DEMOS: DemoEntry[] = [
     Component: BezierEditDemo,
     full: BezierEditDemoFull,
     path: 'demo/demos/BezierEditDemo.tsx',
+  },
+  {
+    id: 'boolean-ops',
+    title: 'Boolean ops',
+    category: 'Geometry',
+    description: 'Five Pathfinder-style polygon-boolean operations on path geometry: union, intersect, subtract (back minus front, Illustrator "Minus Front" semantics), exclude (XOR), divide (fracture along intersections). Backed by `pathUnion` / `pathIntersect` / `pathSubtract` / `pathExclude` / `pathDivide` from the kit, which wrap a vendored `polygon-clipping` engine. The `useBooleans` hook composes these into one undoable selection action. The demo input pairs a rect with a 32-gon circle approximation; each panel shows the boolean result statically.',
+    hint: 'Static demo — no interaction. Compare the five op outputs to the input pair.',
+    Component: BooleanOpsDemo,
+    full: BooleanOpsDemoFull,
+    path: 'demo/demos/BooleanOpsDemo.tsx',
   },
 
   // ─── Composition ──────────────────────────────────────────────────────────
