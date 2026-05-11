@@ -13,6 +13,80 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ResolvedTextStyle, TextStyle } from './textStyle';
 import { fontString, resolveTextStyle } from './textStyle';
 import type { StyledRun } from './runs';
+import { runsToPlainText } from './runs';
+import { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset } from './domRuns';
+
+type StyleFlag = 'bold' | 'italic';
+
+/**
+ * Split a flat `StyledRun[]` at the given character boundaries and toggle
+ * `flag` on every run that overlaps `[start, end)`. Returns a new array
+ * with adjacent identical runs coalesced. If every run in range already
+ * has the flag set, the function clears the flag; otherwise it sets it.
+ */
+function toggleFlagInRange(
+  runs: readonly StyledRun[],
+  start: number,
+  end: number,
+  flag: StyleFlag,
+): StyledRun[] {
+  if (start >= end) return runs.slice();
+  let pos = 0;
+  let allSet = true;
+  for (const r of runs) {
+    const a = Math.max(pos, start);
+    const b = Math.min(pos + r.text.length, end);
+    if (a < b) {
+      if (!r[flag]) { allSet = false; break; }
+    }
+    pos += r.text.length;
+  }
+  const setTo = !allSet;
+
+  const out: StyledRun[] = [];
+  pos = 0;
+  for (const r of runs) {
+    const rEnd = pos + r.text.length;
+    const a = Math.max(pos, start);
+    const b = Math.min(rEnd, end);
+    if (a < b) {
+      if (pos < a) out.push({ ...r, text: r.text.slice(0, a - pos) });
+      const inside: StyledRun = { ...r, text: r.text.slice(a - pos, b - pos) };
+      if (setTo) inside[flag] = true; else delete inside[flag];
+      out.push(inside);
+      if (b < rEnd) out.push({ ...r, text: r.text.slice(b - pos) });
+    } else {
+      out.push({ ...r });
+    }
+    pos = rEnd;
+  }
+
+  return coalesceRuns(out);
+}
+
+function styledKey(r: StyledRun): string {
+  return [
+    r.bold ? '1' : '0',
+    r.italic ? '1' : '0',
+    r.fontFamily ?? '',
+    r.fontSize ?? '',
+    r.fill && 'color' in r.fill ? r.fill.color : '',
+  ].join('|');
+}
+
+function coalesceRuns(runs: readonly StyledRun[]): StyledRun[] {
+  const out: StyledRun[] = [];
+  for (const r of runs) {
+    if (r.text.length === 0) continue;
+    const prev = out[out.length - 1];
+    if (prev && styledKey(prev) === styledKey(r)) {
+      prev.text += r.text;
+    } else {
+      out.push({ ...r });
+    }
+  }
+  return out;
+}
 
 /** Screen-space pose passed to `useTextEdit` so the overlay can be placed and sized in CSS pixels. */
 export interface TextEditScreenPose {
@@ -96,8 +170,19 @@ export function useTextEdit(
       setEditingId(null);
       return;
     }
-    const text = overlay.innerText.replace(/\n$/, '');
-    optsRef.current.setText(id, text);
+    // Match the init-time guard: only treat the overlay as rich-text when
+    // getRuns returned a non-empty array (an empty array fell through to
+    // plain-text init, so commit should too).
+    const currentRuns = optsRef.current.getRuns?.(id);
+    const usedRuns = currentRuns != null && currentRuns.length > 0;
+    if (usedRuns && optsRef.current.setRuns) {
+      const runs = domToRuns(overlay);
+      optsRef.current.setText(id, runsToPlainText(runs));
+      optsRef.current.setRuns(id, runs);
+    } else {
+      const text = overlay.innerText.replace(/\n$/, '');
+      optsRef.current.setText(id, text);
+    }
     setEditingId(null);
   }, [editingId]);
 
@@ -119,7 +204,12 @@ export function useTextEdit(
     overlay.classList.add(overlayClass);
     overlay.setAttribute('contenteditable', 'true');
     overlay.spellcheck = false;
-    overlay.innerText = getText(editingId);
+    const initialRuns = optsRef.current.getRuns?.(editingId);
+    if (initialRuns && initialRuns.length > 0) {
+      runsToDom(initialRuns, overlay);
+    } else {
+      overlay.innerText = getText(editingId);
+    }
     applyOverlayStyle(overlay, style);
     const styleEl = installSelectionStyle(overlayClass, style);
     container.appendChild(overlay);
@@ -139,19 +229,98 @@ export function useTextEdit(
     sel?.addRange(range);
     overlay.focus();
 
+    function handleStyleToggle(flag: StyleFlag): void {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      const range = sel.getRangeAt(0);
+      if (range.collapsed) {
+        togglePending(flag);
+        return;
+      }
+      const startChar = domPositionToCharOffset(overlay, range.startContainer, range.startOffset);
+      const endChar = domPositionToCharOffset(overlay, range.endContainer, range.endOffset);
+      const current = domToRuns(overlay);
+      const next = toggleFlagInRange(current, startChar, endChar, flag);
+      runsToDom(next, overlay);
+      const a = charOffsetToDomPosition(overlay, startChar);
+      const b = charOffsetToDomPosition(overlay, endChar);
+      if (a && b) {
+        const newRange = document.createRange();
+        newRange.setStart(a.node, a.offset);
+        newRange.setEnd(b.node, b.offset);
+        sel.removeAllRanges();
+        sel.addRange(newRange);
+      }
+    }
+
+    function togglePending(flag: StyleFlag): void {
+      const key = flag === 'bold' ? 'pendingBold' : 'pendingItalic';
+      if (overlay.dataset[key] === '1') {
+        delete overlay.dataset[key];
+      } else {
+        overlay.dataset[key] = '1';
+      }
+    }
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         commit();
-      } else if (e.key === 'Escape') {
+        return;
+      }
+      if (e.key === 'Escape') {
         e.preventDefault();
         cancelEdit();
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'b' || e.key === 'i' || e.key === 'B' || e.key === 'I')) {
+        e.preventDefault();
+        const flag: StyleFlag = e.key.toLowerCase() === 'b' ? 'bold' : 'italic';
+        handleStyleToggle(flag);
       }
     };
     const onBlur = () => commit();
 
+    const onBeforeInput = (ie: InputEvent) => {
+      if (ie.inputType !== 'insertText' || !ie.data) return;
+      const pendingBold = overlay.dataset.pendingBold === '1';
+      const pendingItalic = overlay.dataset.pendingItalic === '1';
+      ie.preventDefault();
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      if (pendingBold || pendingItalic) {
+        // Insert a new styled span for the pending-style character.
+        const span = document.createElement('span');
+        span.setAttribute('data-run', '');
+        if (pendingBold) span.style.fontWeight = '700';
+        if (pendingItalic) span.style.fontStyle = 'italic';
+        span.textContent = ie.data;
+        range.insertNode(span);
+        const after = document.createRange();
+        after.setStartAfter(span);
+        after.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(after);
+        delete overlay.dataset.pendingBold;
+        delete overlay.dataset.pendingItalic;
+      } else {
+        // No pending style — insert the character as a plain text node at the
+        // caret position so the surrounding run's span absorbs it.
+        const textNode = document.createTextNode(ie.data);
+        range.insertNode(textNode);
+        const after = document.createRange();
+        after.setStartAfter(textNode);
+        after.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(after);
+      }
+    };
+
     overlay.addEventListener('keydown', onKeyDown);
     overlay.addEventListener('blur', onBlur);
+    overlay.addEventListener('beforeinput', onBeforeInput);
 
     const tick = () => {
       const pose = optsRef.current.getScreenPose(editingId);
@@ -165,6 +334,7 @@ export function useTextEdit(
       rafRef.current = null;
       overlay.removeEventListener('keydown', onKeyDown);
       overlay.removeEventListener('blur', onBlur);
+      overlay.removeEventListener('beforeinput', onBeforeInput);
       overlay.remove();
       styleEl?.remove();
       overlayRef.current = null;
