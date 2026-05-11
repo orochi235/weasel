@@ -24,7 +24,7 @@ import type { NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import { clampView } from 'core/viewport/clampView';
 import { drawLayers, type RenderLayer } from 'core/layers/render';
-import { WeaselRenderer, type DrawCommand, type ShaderProgramHandle } from '../renderer';
+import { WeaselRenderer, viewToMat3, type DrawCommand, type ShaderProgramHandle } from '../renderer';
 import {
   useSelection,
   type SelectionApi,
@@ -419,11 +419,15 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
           }
           return cmds;
         };
-        return buildSceneTree(
-          a as Parameters<typeof buildSceneTree>[0],
-          filteredDrawOne as unknown as Parameters<typeof buildSceneTree>[1],
-          view,
-        );
+        return [{
+          kind: 'group',
+          transform: viewToMat3(view),
+          children: buildSceneTree(
+            a as Parameters<typeof buildSceneTree>[0],
+            filteredDrawOne as unknown as Parameters<typeof buildSceneTree>[1],
+            view,
+          ),
+        }];
       }
       // Flat fallback — keep existing body verbatim.
       const objects = cfg.objects ?? adapter?.getNodes() ?? [];
@@ -442,7 +446,11 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
           debugSink.recordOrigin(obj.id, { x: ox, y: oy });
         }
       }
-      return children;
+      return [{
+        kind: 'group',
+        transform: viewToMat3(view),
+        children,
+      }];
     },
   };
 }

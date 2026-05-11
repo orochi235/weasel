@@ -1169,7 +1169,11 @@ describe('buildSceneLayer hierarchical path', () => {
     );
     const out = layer.draw(null, VIEW, DIMS) as DrawCommand[];
     expect(out).toHaveLength(1);
-    const bgGroup = out[0] as { kind: string; children: DrawCommand[] };
+    const viewGroup = out[0] as { kind: string; transform: unknown; children: DrawCommand[] };
+    expect(viewGroup.kind).toBe('group');
+    expect(viewGroup.transform).toBeDefined();  // viewToMat3(view) is set
+    expect(viewGroup.children).toHaveLength(1);
+    const bgGroup = viewGroup.children[0] as { kind: string; children: DrawCommand[] };
     expect(bgGroup.kind).toBe('group');
     expect(bgGroup.children).toHaveLength(1);
     const bedGroup = bgGroup.children[0] as { kind: string; children: DrawCommand[] };
@@ -1195,7 +1199,12 @@ describe('buildSceneLayer hierarchical path', () => {
       () => null,
     );
     const out = layer.draw(null, VIEW, DIMS) as DrawCommand[];
-    expect(out.every((c) => c.kind === 'path')).toBe(true);
     expect(out).toHaveLength(1);
+    const viewGroup = out[0] as { kind: string; transform: unknown; children: DrawCommand[] };
+    expect(viewGroup.kind).toBe('group');
+    expect(viewGroup.transform).toBeDefined();
+    // Inside the view-transform wrapper: the flat commands
+    expect(viewGroup.children).toHaveLength(1);
+    expect(viewGroup.children[0].kind).toBe('path');
   });
 });
