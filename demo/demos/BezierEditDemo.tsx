@@ -4,6 +4,7 @@ import {
   PathBuilder,
   pathPoseDescriptor,
   PATH_C,
+  countPathAnchors,
   selectFromMarquee,
   useSelection,
   useSelectWithAnchorEdit,
@@ -28,6 +29,31 @@ const INITIAL_PATH: Path = new PathBuilder()
   .build();
 
 const ZOOM_LEVELS = [0.5, 0.75, 1, 1.5, 2, 3];
+
+function rainbowColors(n: number): number[] {
+  const out: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const h = (i * 360) / Math.max(1, n);
+    const [r, g, b] = hslToRgb(h, 0.8, 0.6);
+    out.push(r, g, b, 1);
+  }
+  return out;
+}
+
+function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const hp = h / 60;
+  const x = c * (1 - Math.abs((hp % 2) - 1));
+  let r = 0, g = 0, b = 0;
+  if (hp < 1) { r = c; g = x; }
+  else if (hp < 2) { r = x; g = c; }
+  else if (hp < 3) { g = c; b = x; }
+  else if (hp < 4) { g = x; b = c; }
+  else if (hp < 5) { r = x; b = c; }
+  else { r = c; b = x; }
+  const m = l - c / 2;
+  return [r + m, g + m, b + m];
+}
 
 export function BezierEditDemo() {
   const [path, setPath] = useState<Path>(INITIAL_PATH);
@@ -83,11 +109,14 @@ export function BezierEditDemo() {
     // hit-testing fails on the open polyline, so drag-marquee is the only
     // working selection path.
     areaSelect: { behaviors: [selectFromMarquee()] },
-    drawGhost: (_o, p): DrawCommand[] => [{
-      kind: 'path',
-      path: p,
-      stroke: { paint: { color: '#f5b7a3' }, width: 2 },
-    }],
+    drawGhost: (_o, p): DrawCommand[] => {
+      const colors = rainbowColors(countPathAnchors(p));
+      return [{
+        kind: 'path',
+        path: p,
+        stroke: { paint: { color: '#ffffff' }, width: 2, vertexColors: colors },
+      }];
+    },
     getNode: (id) => (id === ID ? { id } : null),
     editAnchors: {
       hitRadius: HANDLE / zoom,
@@ -157,11 +186,14 @@ export function BezierEditDemo() {
             }}
             layers={{
               scene: {
-                drawOne: (_o, p): DrawCommand[] => [{
-                  kind: 'path',
-                  path: p,
-                  stroke: { paint: { color: '#f5b7a3' }, width: 2 },
-                }],
+                drawOne: (_o, p): DrawCommand[] => {
+                  const colors = rainbowColors(countPathAnchors(p));
+                  return [{
+                    kind: 'path',
+                    path: p,
+                    stroke: { paint: { color: '#ffffff' }, width: 2, vertexColors: colors },
+                  }];
+                },
               },
               selectionOverlay: { handles: { size: HANDLE } },
             }}
