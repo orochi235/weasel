@@ -31,3 +31,4 @@ export type {
 } from './useTextEdit';
 export { resolveRuns } from './runs/resolveRuns';
 export type { ResolvedRun } from './runs/resolveRuns';
+export { textCommand } from './textCommand';
