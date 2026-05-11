@@ -146,6 +146,13 @@ export function TextDemo() {
       };
     },
     setText,
+    getRuns: (id) => scene.get(asNodeId(id))?.data.runs,
+    setRuns: (id, runs) => {
+      const nid = asNodeId(id);
+      const n = scene.get(nid);
+      if (!n) return;
+      scene.update(nid, { data: { ...n.data, runs } });
+    },
   });
 
   const resolvePose = (n: TextNode): Pose => {
