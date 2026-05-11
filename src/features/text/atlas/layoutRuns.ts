@@ -56,6 +56,9 @@ interface LayoutContext {
 
 function fillKey(p: Paint): string {
   if ('color' in p) return `s:${p.color}:${p.opacity ?? 1}`;
+  // Non-solid paints (gradients/patterns) defeat grouping in this slice —
+  // every occurrence gets its own group. Acceptable in v1 since per-run
+  // non-solid fills are rare; revisit if it bites perf.
   return `nx:${Math.random()}`;
 }
 
