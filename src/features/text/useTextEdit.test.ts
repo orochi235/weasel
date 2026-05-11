@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { useTextEdit } from './useTextEdit';
 import type { UseTextEditOptions } from './useTextEdit';
+import type { StyledRun } from './runs';
 
 function makeHarness(initial: Record<string, string>) {
   const texts = { ...initial };
@@ -317,5 +318,76 @@ describe('useTextEdit', () => {
     act(() => result.current.startEdit('a'));
     expect(getOverlay(document.body)).toBeNull();
     expect(result.current.editingId).toBe('a');
+  });
+});
+
+function makeRichHarness(initial: Record<string, { text: string; runs?: StyledRun[] }>) {
+  const data = { ...initial };
+  const container = document.createElement('div');
+  document.body.appendChild(container);
+  const textCommits: Array<{ id: string; text: string }> = [];
+  const runCommits: Array<{ id: string; runs: StyledRun[] }> = [];
+  const opts: UseTextEditOptions = {
+    container,
+    getText: (id) => data[id]?.text ?? '',
+    getStyle: () => ({ fontSize: 16 }),
+    getScreenPose: (id) => (id in data ? { x: 0, y: 0, width: 200, height: 40, fontSize: 16 } : null),
+    setText: (id, text) => { data[id] = { ...data[id], text }; textCommits.push({ id, text }); },
+    getRuns: (id) => data[id]?.runs,
+    setRuns: (id, runs) => { data[id] = { ...data[id], runs }; runCommits.push({ id, runs }); },
+  };
+  return { opts, container, data, textCommits, runCommits };
+}
+
+describe('useTextEdit — rich-text init and commit', () => {
+  it('builds a styled span overlay when getRuns returns runs', () => {
+    const h = makeRichHarness({
+      a: { text: 'a b', runs: [{ text: 'a ' }, { text: 'b', bold: true }] },
+    });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    const spans = overlay.querySelectorAll('span[data-run]');
+    expect(spans).toHaveLength(2);
+    expect(spans[0].textContent).toBe('a ');
+    expect((spans[1] as HTMLSpanElement).style.fontWeight).toBe('700');
+  });
+
+  it('falls back to plain innerText when getRuns is omitted or returns nothing', () => {
+    const h = makeHarness({ a: 'hello' });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    expect(overlay.querySelectorAll('span[data-run]')).toHaveLength(0);
+    expect(overlay.innerText).toBe('hello');
+  });
+
+  it('commit walks DOM via domToRuns and calls setRuns + setText', () => {
+    const h = makeRichHarness({
+      a: { text: 'a b', runs: [{ text: 'a ' }, { text: 'b', bold: true }] },
+    });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    const tail = document.createElement('span');
+    tail.setAttribute('data-run', '');
+    tail.textContent = ' c';
+    overlay.appendChild(tail);
+    act(() => result.current.commit());
+    expect(h.runCommits).toEqual([{
+      id: 'a',
+      runs: [{ text: 'a ' }, { text: 'b', bold: true }, { text: ' c' }],
+    }]);
+    expect(h.textCommits).toEqual([{ id: 'a', text: 'a b c' }]);
+  });
+
+  it('commit on a plain-text edit (no setRuns) only fires setText', () => {
+    const h = makeHarness({ a: 'hi' });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    overlay.innerText = 'edited';
+    act(() => result.current.commit());
+    expect(h.commits).toEqual([{ id: 'a', text: 'edited' }]);
   });
 });

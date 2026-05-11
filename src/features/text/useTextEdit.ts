@@ -12,6 +12,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ResolvedTextStyle, TextStyle } from './textStyle';
 import { fontString, resolveTextStyle } from './textStyle';
+import type { StyledRun } from './runs';
+import { runsToPlainText } from './runs';
+import { runsToDom, domToRuns } from './domRuns';
 
 /** Screen-space pose passed to `useTextEdit` so the overlay can be placed and sized in CSS pixels. */
 export interface TextEditScreenPose {
@@ -38,6 +41,20 @@ export interface UseTextEditOptions {
   getScreenPose: (id: string) => TextEditScreenPose | null;
   /** Commit text. Caller wraps in op/undo. */
   setText: (id: string, text: string) => void;
+  /**
+   * Optional: read the current rich-text runs for `id`. When provided AND
+   * returns a non-empty array, the overlay renders the runs as styled
+   * `<span data-run>` elements; otherwise the overlay is seeded with plain
+   * text via `getText`.
+   */
+  getRuns?: (id: string) => readonly StyledRun[] | undefined;
+  /**
+   * Optional: commit rich-text runs back to the node. When omitted, only
+   * `setText` is called with the plain-text form on commit. When provided,
+   * commit calls both `setText` (with `runsToPlainText(runs)`) and
+   * `setRuns(id, runs)`.
+   */
+  setRuns?: (id: string, runs: StyledRun[]) => void;
 }
 
 /** Options for `useTextEdit().startEdit`. */
@@ -81,8 +98,15 @@ export function useTextEdit(
       setEditingId(null);
       return;
     }
-    const text = overlay.innerText.replace(/\n$/, '');
-    optsRef.current.setText(id, text);
+    const usedRuns = optsRef.current.getRuns?.(id) != null;
+    if (usedRuns && optsRef.current.setRuns) {
+      const runs = domToRuns(overlay);
+      optsRef.current.setText(id, runsToPlainText(runs));
+      optsRef.current.setRuns(id, runs);
+    } else {
+      const text = overlay.innerText.replace(/\n$/, '');
+      optsRef.current.setText(id, text);
+    }
     setEditingId(null);
   }, [editingId]);
 
@@ -104,7 +128,12 @@ export function useTextEdit(
     overlay.classList.add(overlayClass);
     overlay.setAttribute('contenteditable', 'true');
     overlay.spellcheck = false;
-    overlay.innerText = getText(editingId);
+    const initialRuns = optsRef.current.getRuns?.(editingId);
+    if (initialRuns && initialRuns.length > 0) {
+      runsToDom(initialRuns, overlay);
+    } else {
+      overlay.innerText = getText(editingId);
+    }
     applyOverlayStyle(overlay, style);
     const styleEl = installSelectionStyle(overlayClass, style);
     container.appendChild(overlay);
