@@ -38,6 +38,9 @@ export interface UseClipboardOptions {
   pasteLabel?: string;
   /** Called after a successful paste with the ids of the new objects. */
   onPaste?: (newIds: NodeId[]) => void;
+  /** Pulled once per paste() call. When non-null, threaded to commitPaste
+   *  as `ctx.dropPoint`. See useClipboardOps for full semantics. */
+  getDropPoint?: () => { worldX: number; worldY: number } | null;
 }
 
 /** Return shape of `useClipboard`. */
@@ -62,6 +65,7 @@ export function useClipboard<TNode extends { id: string }>(
     getSelection: options.getSelection,
     onPaste: options.onPaste,
     pasteLabel: options.pasteLabel,
+    getDropPoint: options.getDropPoint,
   });
 
   const adapterRef = useRef(adapter);

@@ -11,9 +11,11 @@ function makeAdapter(initial: { selection?: string[]; offsetOverride?: { dx: num
   let nextId = 0;
   const inserts: Obj[] = [];
   const batches: { ops: Op[]; label: string }[] = [];
+  const pasteCtxLog: ({ dropPoint?: { worldX: number; worldY: number } } | undefined)[] = [];
   const adapter: InsertAdapter<Obj> = {
     commitInsert: () => null,
-    commitPaste(clipboard, offset) {
+    commitPaste(clipboard, offset, ctx) {
+      pasteCtxLog.push(ctx);
       const out: Obj[] = [];
       for (const raw of clipboard.items) {
         const src = raw as Obj;
@@ -42,6 +44,7 @@ function makeAdapter(initial: { selection?: string[]; offsetOverride?: { dx: num
     adapter,
     inserts,
     batches,
+    pasteCtxLog,
     getSelection: () => selection,
     seed(o: Obj) { inserts.push(o); selection = [o.id]; },
   };
@@ -129,5 +132,75 @@ describe('useClipboardOps', () => {
     act(() => { result.current.copy(); });
     act(() => { result.current.paste(); });
     expect(seen).toEqual([['n0']]);
+  });
+
+  it('passes { dropPoint } as third arg when getDropPoint returns a point', () => {
+    const helpers = makeAdapter();
+    helpers.seed({ id: 'a', x: 0, y: 0 });
+    const { result } = renderHook(() =>
+      useClipboardOps(helpers.adapter, {
+        getSelection: () => [asNodeId('a')],
+        getDropPoint: () => ({ worldX: 50, worldY: 60 }),
+      }),
+    );
+    act(() => { result.current.copy(); });
+    act(() => { result.current.paste(); });
+    expect(helpers.pasteCtxLog).toEqual([{ dropPoint: { worldX: 50, worldY: 60 } }]);
+  });
+
+  it('passes undefined ctx when getDropPoint returns null', () => {
+    const helpers = makeAdapter();
+    helpers.seed({ id: 'a', x: 0, y: 0 });
+    const { result } = renderHook(() =>
+      useClipboardOps(helpers.adapter, {
+        getSelection: () => [asNodeId('a')],
+        getDropPoint: () => null,
+      }),
+    );
+    act(() => { result.current.copy(); });
+    act(() => { result.current.paste(); });
+    expect(helpers.pasteCtxLog).toEqual([undefined]);
+  });
+
+  it('omits ctx when getDropPoint option is not provided (regression)', () => {
+    const helpers = makeAdapter();
+    helpers.seed({ id: 'a', x: 0, y: 0 });
+    const { result } = renderHook(() =>
+      useClipboardOps(helpers.adapter, { getSelection: () => [asNodeId('a')] }),
+    );
+    act(() => { result.current.copy(); });
+    act(() => { result.current.paste(); });
+    expect(helpers.pasteCtxLog).toEqual([undefined]);
+  });
+
+  it('calls getDropPoint exactly once per paste()', () => {
+    const helpers = makeAdapter();
+    helpers.seed({ id: 'a', x: 0, y: 0 });
+    let calls = 0;
+    const { result } = renderHook(() =>
+      useClipboardOps(helpers.adapter, {
+        getSelection: () => [asNodeId('a')],
+        getDropPoint: () => { calls++; return { worldX: 1, worldY: 2 }; },
+      }),
+    );
+    act(() => { result.current.copy(); });
+    act(() => { result.current.paste(); });
+    expect(calls).toBe(1);
+  });
+
+  it('still cascades: second paste reads the just-pasted ids as source', () => {
+    const helpers = makeAdapter();
+    helpers.seed({ id: 'a', x: 0, y: 0 });
+    const { result } = renderHook(() =>
+      useClipboardOps(helpers.adapter, {
+        getSelection: () => [asNodeId('a')],
+        getDropPoint: () => ({ worldX: 50, worldY: 60 }),
+      }),
+    );
+    act(() => { result.current.copy(); });
+    act(() => { result.current.paste(); });
+    act(() => { result.current.paste(); });
+    expect(helpers.pasteCtxLog).toHaveLength(2);
+    expect(helpers.inserts.length).toBeGreaterThanOrEqual(2);
   });
 });
