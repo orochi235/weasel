@@ -24,10 +24,10 @@ import type { ReactNode } from 'react';
 import { type ActionsProp } from 'interactions/actions/registry';
 import { useStandardActions } from 'interactions/actions/useStandardActions';
 import { translateRectPose } from 'features/groups/composePose';
+import type { DrawCommand, ShaderProgramHandle } from '../renderer';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap } from './Canvas';
 import type { CanvasExtensionApi } from './canvasExtension';
-import type { ShaderProgramHandle } from '../renderer';
 import type { SceneToAdapterOptions } from './sceneAdapter';
 import type { PanBounds } from 'core/viewport/useDecayLoop';
 import type { View } from 'core/viewport/view';
@@ -50,6 +50,68 @@ import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
 import { useViewportTools } from './SceneCanvas/useViewportTools';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import type { StandardActionsDeps, StandardActionDefaults } from 'interactions/actions/resolveActions';
+
+/** Default size in CSS pixels for selection corner-handles AND their
+ *  hit-test radius. Used by the SceneCanvas defaults; consumers override
+ *  via `selectTool.handleHitRadius` or `layers.selectionOverlay.handles.size`. */
+export const DEFAULT_HANDLE_SIZE = 8;
+
+/** Default scene-slot `drawOne`. Paints each node as a filled rect using
+ *  `node.data.color` if present, falling back to neutral gray. Assumes
+ *  TPose carries `{ x, y, width, height }` — consumers with non-rect
+ *  poses (paths, polygons) must supply their own `drawOne`. */
+export function defaultDrawOne<TData, TLayer extends string, TPose>(
+  node: Node<TData, TLayer, TPose>,
+  pose: TPose,
+): DrawCommand[] {
+  const p = pose as unknown as { x: number; y: number; width: number; height: number };
+  const color = (node.data as { color?: string } | null)?.color ?? '#888';
+  return [{
+    kind: 'path',
+    path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+    fill: { color },
+  }];
+}
+
+/** Deep-merge user-supplied `layers` with kit defaults. Slots the user
+ *  doesn't mention get filled with defaults; slots explicitly set to
+ *  `null` are dropped (the existing "disable this slot" convention).
+ *  Partial slot configs (e.g. `{ scene: { drawOne: customFn } }`) are
+ *  shallow-spread on top of the default slot config. */
+export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
+  user: LayersMap<Node<TData, TLayer, TPose>, TPose> | undefined,
+): LayersMap<Node<TData, TLayer, TPose>, TPose> {
+  const defaults = {
+    scene: { drawOne: defaultDrawOne as (
+      node: Node<TData, TLayer, TPose>,
+      pose: TPose,
+    ) => DrawCommand[] },
+    selectionOverlay: { handles: { size: DEFAULT_HANDLE_SIZE } },
+  };
+
+  if (!user) return defaults as LayersMap<Node<TData, TLayer, TPose>, TPose>;
+
+  // Start from a shallow copy of the user map so unknown slots pass through.
+  const result: LayersMap<Node<TData, TLayer, TPose>, TPose> = { ...user };
+
+  if (!('scene' in user)) {
+    result.scene = defaults.scene;
+  } else if (user.scene === null) {
+    result.scene = null;
+  } else {
+    result.scene = { ...defaults.scene, ...user.scene };
+  }
+
+  if (!('selectionOverlay' in user)) {
+    result.selectionOverlay = defaults.selectionOverlay;
+  } else if (user.selectionOverlay === null) {
+    result.selectionOverlay = null;
+  } else {
+    result.selectionOverlay = { ...defaults.selectionOverlay, ...user.selectionOverlay };
+  }
+
+  return result;
+}
 
 export type SceneCanvasProps<TData, TLayer extends string, TPose> =
   Omit<
