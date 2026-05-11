@@ -233,6 +233,11 @@ export {
   pathPoseDescriptor,
   pathOriginProjection,
   createPenPreviewLayer,
+  pathUnion,
+  pathIntersect,
+  pathSubtract,
+  pathExclude,
+  pathDivide,
 } from './features/paths';
 export type {
   Path,
