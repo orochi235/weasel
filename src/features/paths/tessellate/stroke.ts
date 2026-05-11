@@ -10,6 +10,9 @@ export interface StrokeOptions {
 const EMPTY_MESH: Mesh = {
   vertices: new Float32Array(0),
   indices: new Uint32Array(0),
+  anchorA: new Uint32Array(0),
+  anchorB: new Uint32Array(0),
+  anchorT: new Float32Array(0),
 };
 
 type Cap = 'butt' | 'round' | 'square';
@@ -65,17 +68,23 @@ export function tessellateStroke(
   const dash = stroke.dash ?? [];
   const verts: number[] = [];
   const idx: number[] = [];
+  const anchorA: number[] = [];
+  const anchorB: number[] = [];
+  const anchorT: number[] = [];
 
   for (const pl of polylines) {
     const subs = dash.length > 0 ? splitForDash(pl, dash) : [pl];
     for (const sub of subs) {
-      expandPolyline(sub, width, join, cap, verts, idx);
+      expandPolyline(sub, width, join, cap, verts, idx, anchorA, anchorB, anchorT);
     }
   }
 
   return {
     vertices: new Float32Array(verts),
     indices: new Uint32Array(idx),
+    anchorA: new Uint32Array(anchorA),
+    anchorB: new Uint32Array(anchorB),
+    anchorT: new Float32Array(anchorT),
   };
 }
 
@@ -86,54 +95,82 @@ function expandPolyline(
   cap: Cap,
   verts: number[],
   idx: number[],
+  anchorA: number[],
+  anchorB: number[],
+  anchorT: number[],
 ): void {
   const half = width / 2;
   const pts = pl.points;
   const segCount = pts.length / 2 - 1;
   if (segCount < 1) return;
 
+  // Anchor params per polyline point (set by extractPolylines; splitForDash
+  // will re-derive these in Task 6d). Default to A=B=0,t=0 if missing.
+  const plA = pl.anchorA ?? new Uint32Array(pts.length / 2);
+  const plB = pl.anchorB ?? new Uint32Array(pts.length / 2);
+  const plT = pl.anchorT ?? new Float32Array(pts.length / 2);
+
   const segs: Seg[] = [];
+  const segSrcIdx: number[] = [];  // For each seg, the polyline-point index of its start.
   for (let s = 0; s < segCount; s++) {
     const seg = makeSeg(pts[s * 2], pts[s * 2 + 1], pts[(s + 1) * 2], pts[(s + 1) * 2 + 1], half);
-    if (seg) segs.push(seg);
+    if (seg) {
+      segs.push(seg);
+      segSrcIdx.push(s);
+    }
   }
+  let closerSrcIdx = -1;
   if (pl.closed && segs.length >= 1) {
     const last = segs[segs.length - 1];
     const first = segs[0];
     const closer = makeSeg(last.bx, last.by, first.ax, first.ay, half);
-    if (closer) segs.push(closer);
+    if (closer) {
+      segs.push(closer);
+      closerSrcIdx = pts.length / 2 - 1;  // start is the last polyline point.
+      segSrcIdx.push(closerSrcIdx);
+    }
   }
   if (segs.length === 0) return;
 
-  // Emit one ribbon quad per segment. Record each segment's base vertex index.
+  // Emit ribbon quads. For each emitted vertex, record the (A, B, t) of the
+  // source polyline point that the geometric vertex sits at.
   const segBaseIdx: number[] = [];
-  for (const seg of segs) {
+  for (let s = 0; s < segs.length; s++) {
+    const seg = segs[s];
+    const startSrc = segSrcIdx[s];
+    // End-source index for the seg. For closer (closed-path wraparound), end is point 0.
+    const endSrc = (s === segs.length - 1 && pl.closed && closerSrcIdx >= 0) ? 0 : startSrc + 1;
     const base = verts.length / 2;
     segBaseIdx.push(base);
-    verts.push(seg.ax + seg.nx, seg.ay + seg.ny);  // 0: L0
-    verts.push(seg.ax - seg.nx, seg.ay - seg.ny);  // 1: R0
-    verts.push(seg.bx + seg.nx, seg.by + seg.ny);  // 2: L1
-    verts.push(seg.bx - seg.nx, seg.by - seg.ny);  // 3: R1
+    // L0, R0 — at seg.ax/ay; inherit start-source anchor params.
+    verts.push(seg.ax + seg.nx, seg.ay + seg.ny);
+    anchorA.push(plA[startSrc]); anchorB.push(plB[startSrc]); anchorT.push(plT[startSrc]);
+    verts.push(seg.ax - seg.nx, seg.ay - seg.ny);
+    anchorA.push(plA[startSrc]); anchorB.push(plB[startSrc]); anchorT.push(plT[startSrc]);
+    // L1, R1 — at seg.bx/by; inherit end-source anchor params.
+    verts.push(seg.bx + seg.nx, seg.by + seg.ny);
+    anchorA.push(plA[endSrc]); anchorB.push(plB[endSrc]); anchorT.push(plT[endSrc]);
+    verts.push(seg.bx - seg.nx, seg.by - seg.ny);
+    anchorA.push(plA[endSrc]); anchorB.push(plB[endSrc]); anchorT.push(plT[endSrc]);
     idx.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
   }
 
-  // Joins between consecutive segments. For a closed polyline, the closing
-  // segment is already in `segs`, so we have N segments and N joins.
-  // For open, N segments and N-1 joins.
+  // Joins between consecutive segments. (Task 6b will thread anchor params here.)
   const joinCount = pl.closed ? segs.length : segs.length - 1;
   for (let j = 0; j < joinCount; j++) {
-    emitJoin(segs, segBaseIdx, j, half, join, verts, idx);
+    emitJoin(segs, segBaseIdx, j, half, join, verts, idx, anchorA, anchorB, anchorT, segSrcIdx, plA, plB, plT);
   }
 
-  // Caps on open polylines only.
+  // Caps. (Task 6c will thread anchor params here.)
   if (!pl.closed && cap !== 'butt') {
     const first = segs[0];
     const firstBase = segBaseIdx[0];
-    emitCap(first, firstBase + 0, firstBase + 1, /* atEnd */ false, half, cap, verts, idx);
+    emitCap(first, firstBase + 0, firstBase + 1, false, half, cap, verts, idx, anchorA, anchorB, anchorT, plA[0], plB[0], plT[0]);
 
     const last = segs[segs.length - 1];
     const lastBase = segBaseIdx[segs.length - 1];
-    emitCap(last, lastBase + 2, lastBase + 3, /* atEnd */ true, half, cap, verts, idx);
+    const lastSrc = segSrcIdx[segs.length - 1] + 1;
+    emitCap(last, lastBase + 2, lastBase + 3, true, half, cap, verts, idx, anchorA, anchorB, anchorT, plA[lastSrc], plB[lastSrc], plT[lastSrc]);
   }
 }
 
@@ -149,6 +186,8 @@ function emitCap(
   seg: Seg, leftIdx: number, rightIdx: number, atEnd: boolean,
   half: number, cap: Cap,
   verts: number[], idx: number[],
+  anchorA: number[], anchorB: number[], anchorT: number[],
+  endA: number, endB: number, endT: number,
 ): void {
   // Outward direction = forward at end, backward at start.
   const sign = atEnd ? 1 : -1;
@@ -162,8 +201,10 @@ function emitCap(
     const oy = cy + dy * half;
     const lOut = verts.length / 2;
     verts.push(ox + seg.nx, oy + seg.ny);
+    anchorA.push(endA); anchorB.push(endB); anchorT.push(endT);
     const rOut = verts.length / 2;
     verts.push(ox - seg.nx, oy - seg.ny);
+    anchorA.push(endA); anchorB.push(endB); anchorT.push(endT);
     // Two triangles forming the cap rectangle. Wind so triangles are CCW
     // viewed from the front; orientation symmetric for start vs. end caps.
     if (atEnd) {
@@ -179,6 +220,7 @@ function emitCap(
     // 180° arc to R.
     const pivotIdx = verts.length / 2;
     verts.push(cx, cy);
+    anchorA.push(endA); anchorB.push(endB); anchorT.push(endT);
 
     // Starting angle: direction from pivot to L (= +n direction).
     const startAngle = Math.atan2(seg.ny, seg.nx);
@@ -197,6 +239,7 @@ function emitCap(
       const fy = cy + Math.sin(ang) * half;
       const newIdx = verts.length / 2;
       verts.push(fx, fy);
+      anchorA.push(endA); anchorB.push(endB); anchorT.push(endT);
       if (atEnd) idx.push(prevIdx, newIdx, pivotIdx);
       else       idx.push(prevIdx, pivotIdx, newIdx);
       prevIdx = newIdx;
@@ -209,18 +252,37 @@ function emitCap(
 /**
  * Split a polyline into open sub-polylines for the "on" portions of a dash
  * pattern. Each output sub-polyline gets caps from the stroke's `cap` setting.
- * The "off" portions become invisible gaps.
+ * The "off" portions become invisible gaps. Anchor params are carried through:
+ * sub-polyline endpoints inherit their source polyline-point's anchor params;
+ * dash boundaries that land mid-segment (between two polyline points) snap
+ * their anchor params to whichever endpoint they're closer to when the
+ * segment crosses a path-anchor boundary, otherwise interpolate `t` linearly.
  */
 function splitForDash(pl: Polyline, dash: number[]): Polyline[] {
   const out: Polyline[] = [];
+  const plA = pl.anchorA ?? new Uint32Array(pl.points.length / 2);
+  const plB = pl.anchorB ?? new Uint32Array(pl.points.length / 2);
+  const plT = pl.anchorT ?? new Float32Array(pl.points.length / 2);
+
   let dashIdx = 0;
   let dashRemaining = dash[0];
   let onPhase = true;
-  let current: Polyline | null = onPhase ? { points: [pl.points[0], pl.points[1]], closed: false } : null;
+  let curPts: number[] | null = onPhase ? [pl.points[0], pl.points[1]] : null;
+  let curA: number[] | null = onPhase ? [plA[0]] : null;
+  let curB: number[] | null = onPhase ? [plB[0]] : null;
+  let curT: number[] | null = onPhase ? [plT[0]] : null;
 
-  const advance = () => {
-    if (current && current.points.length >= 4) out.push(current);
-    current = null;
+  const flushAndAdvance = () => {
+    if (curPts && curPts.length >= 4) {
+      out.push({
+        points: curPts,
+        closed: false,
+        anchorA: new Uint32Array(curA!),
+        anchorB: new Uint32Array(curB!),
+        anchorT: new Float32Array(curT!),
+      });
+    }
+    curPts = null; curA = null; curB = null; curT = null;
     dashIdx = (dashIdx + 1) % dash.length;
     dashRemaining = dash[dashIdx];
     onPhase = !onPhase;
@@ -228,40 +290,76 @@ function splitForDash(pl: Polyline, dash: number[]): Polyline[] {
 
   let prevX = pl.points[0], prevY = pl.points[1];
   const ptCount = pl.points.length / 2;
-  // For a closed polyline, append one more "virtual" segment from the last
-  // point back to the first so the closing edge gets dashed too.
   const segCount = pl.closed ? ptCount : ptCount - 1;
+
   for (let i = 0; i < segCount; i++) {
     const nextIdx = (i + 1) % ptCount;
     const cx = pl.points[nextIdx * 2], cy = pl.points[nextIdx * 2 + 1];
-    let segDx = cx - prevX, segDy = cy - prevY;
-    let segLen = Math.hypot(segDx, segDy);
+    const startA = plA[i], startB = plB[i], startT = plT[i];
+    const endA = plA[nextIdx], endB = plB[nextIdx], endT = plT[nextIdx];
+    const segFullDx = cx - prevX, segFullDy = cy - prevY;
+    const segFullLen = Math.hypot(segFullDx, segFullDy);
+    let segDx = segFullDx, segDy = segFullDy;
+    let segLen = segFullLen;
+    let traveled = 0;
 
     while (segLen > 1e-9) {
       if (segLen <= dashRemaining) {
-        if (onPhase && current) current.points.push(cx, cy);
+        if (onPhase && curPts) {
+          curPts.push(cx, cy);
+          curA!.push(endA); curB!.push(endB); curT!.push(endT);
+        }
         dashRemaining -= segLen;
         prevX = cx; prevY = cy;
+        traveled = segFullLen;
         segLen = 0;
         if (dashRemaining <= 1e-9) {
-          advance();
-          if (onPhase) current = { points: [prevX, prevY], closed: false };
+          flushAndAdvance();
+          if (onPhase) {
+            curPts = [prevX, prevY];
+            curA = [endA]; curB = [endB]; curT = [endT];
+          }
         }
       } else {
-        const t = dashRemaining / segLen;
-        const ix = prevX + segDx * t;
-        const iy = prevY + segDy * t;
-        if (onPhase && current) current.points.push(ix, iy);
+        const tConsume = dashRemaining / segLen;
+        const ix = prevX + segDx * tConsume;
+        const iy = prevY + segDy * tConsume;
+        traveled += dashRemaining;
+        const frac = traveled / segFullLen;
+        let mA: number, mB: number, mT: number;
+        if (startA === endA && startB === endB) {
+          mA = startA; mB = startB;
+          mT = startT + (endT - startT) * frac;
+        } else {
+          // Cross-anchor segment: pick the nearer endpoint's params.
+          if (frac < 0.5) { mA = startA; mB = startB; mT = startT; }
+          else            { mA = endA; mB = endB; mT = endT; }
+        }
+        if (onPhase && curPts) {
+          curPts.push(ix, iy);
+          curA!.push(mA); curB!.push(mB); curT!.push(mT);
+        }
         prevX = ix; prevY = iy;
         segDx = cx - prevX; segDy = cy - prevY;
         segLen = Math.hypot(segDx, segDy);
-        advance();
-        if (onPhase) current = { points: [prevX, prevY], closed: false };
+        flushAndAdvance();
+        if (onPhase) {
+          curPts = [prevX, prevY];
+          curA = [mA]; curB = [mB]; curT = [mT];
+        }
       }
     }
   }
 
-  if (current && current.points.length >= 4) out.push(current);
+  if (curPts && curPts.length >= 4) {
+    out.push({
+      points: curPts,
+      closed: false,
+      anchorA: new Uint32Array(curA!),
+      anchorB: new Uint32Array(curB!),
+      anchorT: new Float32Array(curT!),
+    });
+  }
   return out;
 }
 
@@ -278,6 +376,9 @@ const MITER_LIMIT = 10;
 function emitJoin(
   segs: Seg[], segBaseIdx: number[], j: number, half: number, join: Join,
   verts: number[], idx: number[],
+  anchorA: number[], anchorB: number[], anchorT: number[],
+  segSrcIdx: number[],
+  plA: Uint32Array, plB: Uint32Array, plT: Float32Array,
 ): void {
   const a = segs[j];
   const b = segs[(j + 1) % segs.length];
@@ -293,8 +394,21 @@ function emitJoin(
   const aOuterEnd = onPositive ? aBase + 3 : aBase + 2;
   const bOuterStart = onPositive ? bBase + 1 : bBase + 0;
 
+  // The corner of join `j` is the start of segment `j+1` (which is the END of
+  // segment `j` — they share the same polyline point). For the wraparound join
+  // on a closed polyline, j+1 wraps to segment 0 whose start is the closer
+  // segment's endpoint, which is polyline point 0.
+  const nextSeg = (j + 1) % segs.length;
+  // The corner anchor is the start of the next segment (shared endpoint).
+  // For a closed path's final join, nextSeg wraps to 0, whose start is
+  // polyline point 0 — correct.
+  const cornerSrc = segSrcIdx[nextSeg];
+  const cornerA = plA[cornerSrc];
+  const cornerB = plB[cornerSrc];
+  const cornerT = plT[cornerSrc];
+
   if (join === 'bevel') {
-    emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx);
+    emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT);
     return;
   }
 
@@ -306,12 +420,12 @@ function emitJoin(
     const bOX = verts[bOuterStart * 2], bOY = verts[bOuterStart * 2 + 1];
     const apex = lineLineIntersect(aOX, aOY, adx, ady, bOX, bOY, -bdx, -bdy);
     if (!apex) {
-      emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx);
+      emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT);
       return;
     }
     const miterLen = Math.hypot(apex[0] - a.bx, apex[1] - a.by);
     if (miterLen > MITER_LIMIT * half) {
-      emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx);
+      emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT);
       return;
     }
     // A miter join's outer face is a kite quadrilateral with vertices
@@ -322,8 +436,10 @@ function emitJoin(
     // triangle" gap opens at every miter corner.
     const apexIdx = verts.length / 2;
     verts.push(apex[0], apex[1]);
+    anchorA.push(cornerA); anchorB.push(cornerB); anchorT.push(cornerT);
     const jIdx = verts.length / 2;
     verts.push(a.bx, a.by);
+    anchorA.push(cornerA); anchorB.push(cornerB); anchorT.push(cornerT);
     if (onPositive) {
       idx.push(aOuterEnd, apexIdx, bOuterStart);
       idx.push(aOuterEnd, bOuterStart, jIdx);
@@ -335,7 +451,7 @@ function emitJoin(
   }
 
   if (join === 'round') {
-    emitRoundJoin(a, aOuterEnd, bOuterStart, onPositive, verts, idx);
+    emitRoundJoin(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT);
     return;
   }
 }
@@ -345,11 +461,14 @@ const ROUND_STEP_RAD = (10 * Math.PI) / 180;   // ~10° per fan triangle
 function emitRoundJoin(
   a: Seg, aOuterEnd: number, bOuterStart: number, onPositive: boolean,
   verts: number[], idx: number[],
+  anchorA: number[], anchorB: number[], anchorT: number[],
+  cornerA: number, cornerB: number, cornerT: number,
 ): void {
   // Pivot = joint center; emit fresh vertex.
   const cx = a.bx, cy = a.by;
   const pivotIdx = verts.length / 2;
   verts.push(cx, cy);
+  anchorA.push(cornerA); anchorB.push(cornerB); anchorT.push(cornerT);
 
   const startX = verts[aOuterEnd * 2] - cx;
   const startY = verts[aOuterEnd * 2 + 1] - cy;
@@ -380,6 +499,7 @@ function emitRoundJoin(
     const fy = cy + Math.sin(ang) * r;
     const newIdx = verts.length / 2;
     verts.push(fx, fy);
+    anchorA.push(cornerA); anchorB.push(cornerB); anchorT.push(cornerT);
     if (onPositive) idx.push(prevIdx, pivotIdx, newIdx);
     else            idx.push(prevIdx, newIdx, pivotIdx);
     prevIdx = newIdx;
@@ -391,9 +511,12 @@ function emitRoundJoin(
 function emitBevel(
   a: Seg, aOuterEnd: number, bOuterStart: number, onPositive: boolean,
   verts: number[], idx: number[],
+  anchorA: number[], anchorB: number[], anchorT: number[],
+  cornerA: number, cornerB: number, cornerT: number,
 ): void {
   const jIdx = verts.length / 2;
   verts.push(a.bx, a.by);
+  anchorA.push(cornerA); anchorB.push(cornerB); anchorT.push(cornerT);
   if (onPositive) idx.push(aOuterEnd, jIdx, bOuterStart);
   else            idx.push(aOuterEnd, bOuterStart, jIdx);
 }

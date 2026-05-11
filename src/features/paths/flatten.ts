@@ -78,3 +78,98 @@ export function flattenQuadratic(
   flattenQuadratic(x0, y0, x01, y01, x012, y012, tolerance, out);
   flattenQuadratic(x012, y012, x12, y12, x2, y2, tolerance, out);
 }
+
+/**
+ * Like `flattenCubic` but also appends, for each new flattened point, its
+ * arc-length fraction `t` (relative to the polyline distance accumulated so
+ * far inside this curve) to `arcOut`. Caller then post-processes the segment's
+ * `arcOut` range by dividing each by the segment's total flattened arc length
+ * to yield t ∈ (0, 1].
+ *
+ * The returned values are *cumulative distance from the segment start*, not
+ * normalized fractions. Two-pass design (accumulate, then divide) keeps the
+ * recursive splitter simple — it doesn't need to know the total length up
+ * front.
+ */
+export function flattenCubicWithArcLen(
+  x0: number, y0: number,
+  x1: number, y1: number,
+  x2: number, y2: number,
+  x3: number, y3: number,
+  tolerance: number,
+  out: number[],
+  arcOut: number[],
+): number {
+  return flattenCubicArcRec(x0, y0, x1, y1, x2, y2, x3, y3, tolerance, out, arcOut, 0);
+}
+
+function flattenCubicArcRec(
+  x0: number, y0: number,
+  x1: number, y1: number,
+  x2: number, y2: number,
+  x3: number, y3: number,
+  tolerance: number,
+  out: number[],
+  arcOut: number[],
+  accum: number,
+): number {
+  const d1 = distPointToLine(x1, y1, x0, y0, x3, y3);
+  const d2 = distPointToLine(x2, y2, x0, y0, x3, y3);
+  if (Math.max(d1, d2) <= tolerance) {
+    const lastX = out.length >= 2 ? out[out.length - 2] : x0;
+    const lastY = out.length >= 2 ? out[out.length - 1] : y0;
+    const seg = Math.hypot(x3 - lastX, y3 - lastY);
+    accum += seg;
+    out.push(x3, y3);
+    arcOut.push(accum);
+    return accum;
+  }
+  const x01 = (x0 + x1) * 0.5, y01 = (y0 + y1) * 0.5;
+  const x12 = (x1 + x2) * 0.5, y12 = (y1 + y2) * 0.5;
+  const x23 = (x2 + x3) * 0.5, y23 = (y2 + y3) * 0.5;
+  const x012 = (x01 + x12) * 0.5, y012 = (y01 + y12) * 0.5;
+  const x123 = (x12 + x23) * 0.5, y123 = (y12 + y23) * 0.5;
+  const x0123 = (x012 + x123) * 0.5, y0123 = (y012 + y123) * 0.5;
+  accum = flattenCubicArcRec(x0, y0, x01, y01, x012, y012, x0123, y0123, tolerance, out, arcOut, accum);
+  accum = flattenCubicArcRec(x0123, y0123, x123, y123, x23, y23, x3, y3, tolerance, out, arcOut, accum);
+  return accum;
+}
+
+export function flattenQuadraticWithArcLen(
+  x0: number, y0: number,
+  x1: number, y1: number,
+  x2: number, y2: number,
+  tolerance: number,
+  out: number[],
+  arcOut: number[],
+): number {
+  return flattenQuadraticArcRec(x0, y0, x1, y1, x2, y2, tolerance, out, arcOut, 0);
+}
+
+function flattenQuadraticArcRec(
+  x0: number, y0: number,
+  x1: number, y1: number,
+  x2: number, y2: number,
+  tolerance: number,
+  out: number[],
+  arcOut: number[],
+  accum: number,
+): number {
+  const d = distPointToLine(x1, y1, x0, y0, x2, y2);
+  if (d <= tolerance) {
+    const lastX = out.length >= 2 ? out[out.length - 2] : x0;
+    const lastY = out.length >= 2 ? out[out.length - 1] : y0;
+    const seg = Math.hypot(x2 - lastX, y2 - lastY);
+    accum += seg;
+    out.push(x2, y2);
+    arcOut.push(accum);
+    return accum;
+  }
+  const x01 = (x0 + x1) * 0.5, y01 = (y0 + y1) * 0.5;
+  const x12 = (x1 + x2) * 0.5, y12 = (y1 + y2) * 0.5;
+  const x012 = (x01 + x12) * 0.5, y012 = (y01 + y12) * 0.5;
+  accum = flattenQuadraticArcRec(x0, y0, x01, y01, x012, y012, tolerance, out, arcOut, accum);
+  accum = flattenQuadraticArcRec(x012, y012, x12, y12, x2, y2, tolerance, out, arcOut, accum);
+  return accum;
+}
+

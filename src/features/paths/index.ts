@@ -17,6 +17,7 @@ export {
 } from './types';
 export { PathBuilder, polygonFromPoints, rectPath } from './builder';
 export { boundsOfPath } from './bounds';
+export { countPathAnchors } from './anchors';
 export { pointInPath, type PointInPathOptions } from './hitTest';
 export {
   polygonContainsRectCenter,
@@ -32,6 +33,8 @@ export { createPathLayer, type CreatePathLayerOpts } from './pathLayer';
 export {
   flattenCubic,
   flattenQuadratic,
+  flattenCubicWithArcLen,
+  flattenQuadraticWithArcLen,
   DEFAULT_FLATTEN_TOLERANCE,
 } from './flatten';
 export { composePath, decomposePath } from './compose';
