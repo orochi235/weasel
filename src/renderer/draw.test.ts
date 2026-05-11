@@ -3,7 +3,7 @@ import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { mat3 } from './math/mat3';
 import type { DrawCommand } from './DrawCommand';
-import { pushClip, popClip, type DrawContext } from './draw';
+import { pushClip, popClip, drawGroup, type DrawContext } from './draw';
 
 /**
  * Build a DrawContext backed by a GL recorder. Mirrors what WeaselRenderer.render
@@ -32,6 +32,7 @@ function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeof makeG
     state: r._groupState(),
     widthCss: r._widthCss(),
     heightCss: r._heightCss(),
+    clipDepth: 0,
   };
   return { ctx, calls: recorder.calls, gl: recorder.gl };
 }
@@ -429,5 +430,84 @@ describe('pushClip / popClip', () => {
     // stencilOp ZERO for the write
     const so = calls.find((c) => c.name === 'stencilOp');
     expect(so!.args).toEqual([gl.KEEP, gl.KEEP, gl.ZERO]);
+  });
+});
+
+import type { GroupDrawCommand } from './DrawCommand';
+
+describe('drawGroup clip integration', () => {
+  it('drawGroup with cmd.clip pushes clip and children draw under the test', () => {
+    const { ctx, calls, gl } = createRecorderCtx();
+    const cmd: GroupDrawCommand = {
+      kind: 'group',
+      clip: { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 },
+      children: [{
+        kind: 'path' as const,
+        path: { kind: 'rect' as const, x: 0, y: 0, width: 5, height: 5 },
+        fill: { color: '#fff' },
+      }],
+    };
+    drawGroup(ctx, cmd);
+    // Find: stencilMask(0x02) before child draw, stencilFunc(EQUAL, 0x02, 0x02)
+    // during child, popClip-style stencilOp ZERO after children.
+    const idxPushMask = calls.findIndex(
+      (c) => c.name === 'stencilMask' && c.args[0] === 0x02
+    );
+    const idxChildTest = calls.findIndex(
+      (c, i) => i > idxPushMask
+        && c.name === 'stencilFunc'
+        && c.args[1] === 0x02
+        && c.args[2] === 0x02
+    );
+    const idxPop = calls.findIndex(
+      (c, i) => i > idxChildTest
+        && c.name === 'stencilOp'
+        && c.args[2] === gl.ZERO
+    );
+    expect(idxPushMask).toBeGreaterThanOrEqual(0);
+    expect(idxChildTest).toBeGreaterThan(idxPushMask);
+    expect(idxPop).toBeGreaterThan(idxChildTest);
+  });
+
+  it('drawGroup without cmd.clip does not touch clip-level stencil bits', () => {
+    const { ctx, calls } = createRecorderCtx();
+    const cmd: GroupDrawCommand = {
+      kind: 'group',
+      children: [{
+        kind: 'path' as const,
+        path: { kind: 'rect' as const, x: 0, y: 0, width: 5, height: 5 },
+        fill: { color: '#fff' },
+      }],
+    };
+    drawGroup(ctx, cmd);
+    // No stencilMask writes to bits 1-7.
+    const clipBitWrites = calls.filter(
+      (c) => c.name === 'stencilMask'
+        && c.args[0] !== 0x01
+        && c.args[0] !== 0xff
+        && c.args[0] !== 0
+    );
+    expect(clipBitWrites).toEqual([]);
+  });
+
+  it('drawGroup throws at depth 8', () => {
+    // Build a chain of 8 nested clip groups.
+    let cmd: GroupDrawCommand = {
+      kind: 'group',
+      children: [{
+        kind: 'path',
+        path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
+        fill: { color: '#fff' },
+      }],
+    };
+    for (let i = 0; i < 8; i++) {
+      cmd = {
+        kind: 'group',
+        clip: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+        children: [cmd],
+      };
+    }
+    const { ctx } = createRecorderCtx();
+    expect(() => drawGroup(ctx, cmd)).toThrow(/clip nesting depth exceeded \(max 7\)/);
   });
 });

@@ -43,6 +43,13 @@ export interface DrawContext {
   state: GroupState;
   widthCss: number;
   heightCss: number;
+  /**
+   * Current clip nesting depth. Tracked as a flat scalar on DrawContext (not
+   * part of GroupState's per-frame stack) because it must survive pop() during
+   * drawGroup teardown — we decrement it manually after popClip. Starts at 0;
+   * incremented/decremented symmetrically by drawGroup around cmd.clip pushes.
+   */
+  clipDepth: number;
 }
 
 /**
@@ -207,6 +214,7 @@ function drawShader(ctx: DrawContext, cmd: ShaderDrawCommand): void {
     setUniform(gl, loc, value, textureCache, nextTexUnit);
   }
 
+  applyClipTest(ctx);
   gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
   if (aPosLoc !== undefined) gl.disableVertexAttribArray(aPosLoc);
@@ -215,13 +223,30 @@ function drawShader(ctx: DrawContext, cmd: ShaderDrawCommand): void {
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 }
 
-function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
+export function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
   ctx.state.push({
     transform: cmd.transform,
     alpha: cmd.alpha,
     colorMatrix: cmd.colorMatrix,
   });
+  if (cmd.clip) {
+    const newDepth = ctx.clipDepth + 1;
+    if (newDepth > 7) {
+      ctx.state.pop();
+      throw new Error(
+        'weasel: clip nesting depth exceeded (max 7). You can\'t nest more than 7 levels ' +
+        'of clipped containers in a single draw tree. Flatten the hierarchy or compose ' +
+        'poses outside the scene graph.',
+      );
+    }
+    pushClip(ctx, cmd.clip, newDepth);
+    ctx.clipDepth = newDepth;
+  }
   for (const child of cmd.children) dispatch(ctx, child);
+  if (cmd.clip) {
+    popClip(ctx, cmd.clip, ctx.clipDepth - 1);
+    ctx.clipDepth -= 1;
+  }
   ctx.state.pop();
 }
 
@@ -280,6 +305,7 @@ function drawRectFast(
   setProjAndModel(ctx, ctx.pathFill);
   setSolidPaintUniforms(ctx, ctx.pathFill, fill.color, fill.opacity);
   setColorMatrixUniforms(ctx, ctx.pathFill);
+  applyClipTest(ctx);
   gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
 }
@@ -309,6 +335,7 @@ function drawPathFillVColor(
     gl.vertexAttribPointer(aVColorLoc, 4, gl.FLOAT, false, 0, 0);
   }
 
+  applyClipTest(ctx);
   gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
   // The per-vertex color VBO is freshly allocated per draw; free it now
@@ -356,6 +383,7 @@ function drawPathFillSolid(
   setProjAndModel(ctx, ctx.pathFill);
   setSolidPaintUniforms(ctx, ctx.pathFill, fill.color, fill.opacity);
   setColorMatrixUniforms(ctx, ctx.pathFill);
+  applyClipTest(ctx);
   gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
 }
@@ -387,6 +415,7 @@ function drawPathFillPattern(
   gl.uniform1i(ctx.imageFill.uniform('u_sampler')!, 0);
   gl.uniform1f(ctx.imageFill.uniform('u_opacity')!, fill.opacity ?? 1);
   gl.uniform1f(ctx.imageFill.uniform('u_alpha')!, ctx.state.alpha);
+  applyClipTest(ctx);
   gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
 }
@@ -440,8 +469,35 @@ function drawPathFillGradient(
     gl.uniform1f(ctx.gradFill.uniform('u_gradAngle')!, fill.angle);
   }
 
+  applyClipTest(ctx);
   gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
+}
+
+// ─── Per-fragment clip test ───────────────────────────────────────────────────
+
+/**
+ * Set the stencil test for the current clip depth. Called by every
+ * fragment-producing draw before its drawElements call when clipDepth > 0.
+ * At clipDepth = 0, disables STENCIL_TEST (zero-overhead common case).
+ *
+ * Note: not called by drawPathFillStencil / drawPathStrokeStenciled, which
+ * manage their own stencil state (evenodd / inner-outer stencil). Those paths
+ * coexist with clip bits because they use bit 0 exclusively while clip levels
+ * occupy bits 1-7.
+ */
+function applyClipTest(ctx: DrawContext): void {
+  const gl = ctx.gl;
+  const depth = ctx.clipDepth;
+  if (depth === 0) {
+    gl.disable(gl.STENCIL_TEST);
+    return;
+  }
+  const mask = ancestorMask(depth);
+  gl.enable(gl.STENCIL_TEST);
+  gl.stencilFunc(gl.EQUAL, mask, mask);
+  gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
+  gl.stencilMask(0x01);  // subsequent path-stencil work stays in bit 0
 }
 
 // ─── Clip-stencil helpers ────────────────────────────────────────────────────
@@ -582,6 +638,7 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
   setProjAndModel(ctx, ctx.pathFill);
   setSolidPaintUniforms(ctx, ctx.pathFill, solid.color, solid.opacity);
   setColorMatrixUniforms(ctx, ctx.pathFill);
+  applyClipTest(ctx);
   gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
 }
@@ -695,6 +752,7 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   ctx.textureCache.bind(family, 0);
   gl.uniform1i(ctx.textSdf.uniform('u_atlas')!, 0);
 
+  applyClipTest(ctx);
   gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
   // Each text draw allocates a fresh VAO/VBO/IBO; free them now so animated
@@ -754,6 +812,7 @@ function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
   gl.uniform1f(ctx.imageFill.uniform('u_opacity')!, cmd.opacity ?? 1);
   gl.uniform1f(ctx.imageFill.uniform('u_alpha')!, ctx.state.alpha);
 
+  applyClipTest(ctx);
   gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
   // Same deal as drawText: free the per-draw VAO/VBO/IBO immediately to
