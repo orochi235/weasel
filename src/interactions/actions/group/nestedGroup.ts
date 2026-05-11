@@ -45,8 +45,10 @@ import { useActionsRegistry, type Action } from '../registry';
 /** Adapter for `useNestedGroup` / `useNestedUngroup`. */
 export interface NestedGroupActionAdapter<TNode extends { id: string }, TPose>
   extends PoseAdapter<TPose> {
-  /** Read current selection. */
-  getSelection(): NodeId[];
+  /** Read current selection. String-typed so a scene-backed adapter (whose
+   *  selection surface speaks `string[]`) plugs in directly; the hook brands
+   *  ids back to `NodeId` internally where the scene API requires it. */
+  getSelection(): string[];
   /** Look up an existing scene object — used by ungroup to recover the group
    *  object so the dissolve op can invert into a re-insert. */
   getNode(id: string): TNode | undefined;
@@ -180,7 +182,7 @@ export function useNestedGroup<TNode extends { id: string }, TPose>(
       }
       ops.push(createTransformOp({ id: childId, from: childLocalBefore, to: childLocalAfter }));
     }
-    ops.push(createSetSelectionOp({ from: sel, to: [groupId as NodeId] }));
+    ops.push(createSetSelectionOp({ from: sel as NodeId[], to: [groupId as NodeId] }));
 
     dispatchApplyBatch(a, ops, o.label ?? 'Group');
     return groupId;
@@ -295,7 +297,7 @@ export function useNestedUngroup<TNode extends { id: string }, TPose>(
       dissolved.push(id);
     }
     if (dissolved.length === 0) return [];
-    ops.push(createSetSelectionOp({ from: sel, to: nextSelection as NodeId[] }));
+    ops.push(createSetSelectionOp({ from: sel as NodeId[], to: nextSelection as NodeId[] }));
     dispatchApplyBatch(a, ops, o.label ?? 'Ungroup');
     return dissolved;
   }, []);

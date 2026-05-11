@@ -11,7 +11,7 @@ import {
   useSelection,
   useTools,
 } from '@orochi235/weasel';
-import type { NodeId, SceneNode } from '@orochi235/weasel';
+import type { SceneNode } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
 
 interface NodeData { color: string }
@@ -54,62 +54,14 @@ export function NestedGroupsDemo() {
   });
   const selection = useSelection();
 
-  // sceneToAdapter handles the bulk of the adapter contract; we layer on
-  // (a) cascade-aware setPose so dragging a container moves its descendants
-  // on commit, and (b) insertNode/removeNode so useNestedGroup's Insert/Delete
-  // ops route into scene.add/remove (and stay undoable through scene.batch).
-  const adapter = useMemo(() => {
-    const base = sceneToAdapter(scene, { selection });
-    const collectDesc = (root: string, out: string[]): void => {
-      for (const cid of scene.childrenOf(asNodeId(root))) {
-        out.push(cid);
-        collectDesc(cid, out);
-      }
-    };
-    return {
-      ...base,
-      // sceneToAdapter's getSelection / getParent are typed string-based and
-      // partial; the nested-group hooks want concrete NodeId[] / non-optional.
-      getSelection: (): NodeId[] => [...selection.adapterMethods.getSelection()],
-      getParent: (id: string): string | null => scene.get(asNodeId(id))?.parent ?? null,
-      setPose(id: string, pose: Pose) {
-        const node = scene.get(asNodeId(id));
-        if (!node || node.kind !== 'container') {
-          base.setPose(id, pose);
-          return;
-        }
-        const dx = pose.x - node.pose.x;
-        const dy = pose.y - node.pose.y;
-        if (dx === 0 && dy === 0) {
-          base.setPose(id, pose);
-          return;
-        }
-        const desc: string[] = [];
-        collectDesc(id, desc);
-        scene.batch('move container', () => {
-          base.setPose(id, pose);
-          for (const cid of desc) {
-            const cn = scene.get(asNodeId(cid));
-            if (!cn) continue;
-            base.setPose(cid, { ...cn.pose, x: cn.pose.x + dx, y: cn.pose.y + dy });
-          }
-        });
-      },
-      insertNode(n: DemoNode) {
-        scene.add({
-          id: n.id,
-          kind: n.kind,
-          layer: n.layer,
-          pose: n.pose,
-          data: n.data,
-          ...(n.parent !== null ? { parent: n.parent } : {}),
-        });
-      },
-      removeNode(id: string) {
-        scene.remove(asNodeId(id));
-      },
-    };
-  }, [scene, selection]);
+  // `cascadeContainerPose: 'rect'` opts into the scene v1 "containers translate
+  // descendants on setPose" semantic so dragging a group moves its children.
+  // Everything else — insertNode/removeNode, getParent, getSelection — comes
+  // out of sceneToAdapter at the right shape for the nested-group hooks.
+  const adapter = useMemo(
+    () => sceneToAdapter(scene, { selection, cascadeContainerPose: 'rect' }),
+    [scene, selection],
+  );
 
   useNestedGroup(adapter, {
     composePose: composeAbs,

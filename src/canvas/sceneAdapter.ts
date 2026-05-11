@@ -34,6 +34,7 @@ import {
 } from 'features/paths/polygonHitTestRect';
 import type { Path } from 'features/paths/types';
 import { pathIntersectsRect } from 'features/paths/pathHitTest';
+import { translateRectPose } from 'features/groups/composePose';
 
 interface Bounds { x: number; y: number; width: number; height: number; }
 
@@ -63,7 +64,18 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
   & LassoSelectAdapter
   & LayerEnumerableAdapter<TLayer>
   & ReorderAdapter
-  & Partial<InsertAdapter<Node<TData, TLayer, TPose>>>;
+  & Partial<InsertAdapter<Node<TData, TLayer, TPose>>>
+  // Tighten the parts that are optional on the underlying adapter contracts
+  // but unconditionally provided by a scene-backed adapter. Anything that
+  // routes scene mutations through this adapter (kit InsertOps, hierarchical
+  // hooks like useNestedGroup, etc.) can rely on these being present.
+  & {
+      getParent(id: string): string | null;
+      getSelection(): string[];
+      setSelection(ids: string[]): void;
+      insertNode(node: Node<TData, TLayer, TPose>): void;
+      removeNode(id: string): void;
+    };
 
 /** Optional extras for the synthesized adapter. Pass `commitInsert` to wire
  *  the insert gesture into a Scene-owned canvas; the returned object becomes
@@ -96,6 +108,14 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
   layouts?:
     | Record<string, LayoutStrategy<TPose>>
     | ((containerId: string) => LayoutStrategy<TPose> | null);
+  /** When set, `setPose(id, ...)` on a container node cascades the translation
+   *  to every descendant. Scene v1 stores absolute poses, so dragging a
+   *  container needs to translate its children to keep them visually attached
+   *  to their parent. Pass `'rect'` to use the built-in `translateRectPose`
+   *  (works for any `TPose extends { x: number; y: number }`); pass a custom
+   *  `(pose, dx, dy) => pose` for non-rect pose shapes. Omit to leave setPose
+   *  primitive — containers move but their descendants don't follow. */
+  cascadeContainerPose?: 'rect' | ((pose: TPose, dx: number, dy: number) => TPose);
 }
 
 // ─── Clip-aware hierarchical walk ────────────────────────────────────────────
@@ -200,6 +220,11 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
   const setSelection = sel?.setSelection ?? sel?.set ?? (() => {});
   const poseBounds = options.poseBounds ?? ((p: TPose) => p as unknown as Bounds);
 
+  const cascadeTranslate: ((pose: TPose, dx: number, dy: number) => TPose) | null =
+    options.cascadeContainerPose === 'rect'
+      ? (translateRectPose as unknown as (pose: TPose, dx: number, dy: number) => TPose)
+      : options.cascadeContainerPose ?? null;
+
   const adapter: SceneCanvasAdapter<TData, TLayer, TPose> = {
     getNode(id) {
       return scene.get(asNodeId(id));
@@ -223,6 +248,41 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       return n?.parent ?? null;
     },
     setPose(id, pose) {
+      // Container cascade (opt-in): under scene v1's absolute-pose semantics,
+      // moving a container needs to translate every descendant by the same
+      // delta so children visually stay attached. We compute dx/dy from the
+      // top-level (x, y) of before/after — the only shape contract the cascade
+      // requires of TPose; everything else flows through the supplied
+      // translatePose. The whole cascade lands as one scene.batch so undo
+      // collapses to a single step.
+      if (cascadeTranslate !== null) {
+        const node = scene.get(asNodeId(id));
+        if (node && node.kind === 'container') {
+          const before = node.pose as unknown as { x: number; y: number };
+          const after = pose as unknown as { x: number; y: number };
+          const dx = after.x - before.x;
+          const dy = after.y - before.y;
+          if (dx !== 0 || dy !== 0) {
+            const descIds: string[] = [];
+            const collect = (rootId: string): void => {
+              for (const cid of scene.childrenOf(asNodeId(rootId))) {
+                descIds.push(cid);
+                collect(cid);
+              }
+            };
+            collect(id);
+            scene.batch('setPose', () => {
+              scene.setPose(asNodeId(id), pose);
+              for (const cid of descIds) {
+                const cn = scene.get(asNodeId(cid));
+                if (!cn) continue;
+                scene.setPose(asNodeId(cid), cascadeTranslate(cn.pose, dx, dy));
+              }
+            });
+            return;
+          }
+        }
+      }
       scene.setPose(asNodeId(id), pose);
     },
     setParent(id, parentId) {
@@ -267,6 +327,26 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         for (const op of ops) op.apply(this);
       });
     },
+    // Node-mutation surface used by kit InsertOps / DeleteOps (e.g.
+    // useNestedGroup wrapping the selection in a new container node, or its
+    // inverse). Re-adds via the full structural spec so the round-trip
+    // survives undo/redo; removes by id.
+    insertNode(node: Node<TData, TLayer, TPose>) {
+      scene.add({
+        kind: node.kind,
+        layer: node.layer,
+        pose: node.pose,
+        data: node.data,
+        id: node.id,
+        ...(node.parent !== null ? { parent: node.parent } : {}),
+        ...(node.kind === 'container' && node.clipFromPose
+          ? { clipFromPose: node.clipFromPose }
+          : {}),
+      });
+    },
+    removeNode(id: string) {
+      scene.remove(asNodeId(id));
+    },
     // AreaSelectAdapter surface — included unconditionally so plain
     // `useSelectTool(sceneToAdapter(scene, { selection }))` Just Works for the
     // marquee gesture. `applyOps` uses the shared `applyOpsTo` dispatcher
@@ -300,9 +380,10 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         );
       });
     },
-    // Insert support is opt-in: present only when `options.commitInsert` is.
-    // The synthesized methods package the user's factory result into a leaf
-    // add() against the configured layer.
+    // commitInsert (gesture-time leaf insert) is opt-in: present only when
+    // `options.commitInsert` is. The full insertNode/removeNode mutators
+    // above are always present so kit-side InsertOp / DeleteOp round-trip
+    // through scene.add / scene.remove regardless.
     ...(options.commitInsert
       ? {
           commitInsert: (bounds: { x: number; y: number; width: number; height: number }) => {
@@ -317,11 +398,6 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
               ...(created.id ? { id: asNodeId(created.id) } : {}),
             });
             return scene.get(id) ?? null;
-          },
-          insertNode: (_node: Node<TData, TLayer, TPose>) => {
-            // Kit-side InsertOp path: re-add by spec. Used for redo.
-            // Trivial Scene path doesn't expose a serializable InsertOp seam
-            // yet; commitInsert above covers the live-drag commit case.
           },
         }
       : {}),
