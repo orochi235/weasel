@@ -1,6 +1,8 @@
 import type { Widget } from './widget';
 import type { HudHost } from './host';
 import { createRect, type RectOptions, type RectWidget } from './widgets/rect';
+import { createText, type TextOptions, type TextWidget } from './widgets/text';
+import { createImage, type ImageOptions, type ImageWidget } from './widgets/image';
 
 export interface Hud {
   add(widget: Widget): void;
@@ -13,6 +15,10 @@ export interface Hud {
   readonly attached: boolean;
   /** Create a rect widget, add it to the HUD, and wire onChange → markDirty. */
   rect(opts: RectOptions): RectWidget;
+  /** Create a text widget, add it to the HUD, and wire onChange → markDirty. */
+  text(opts: TextOptions): TextWidget;
+  /** Create an image widget, add it to the HUD, and wire onChange → markDirty. */
+  image(opts: ImageOptions): ImageWidget;
 }
 
 export function createHud(): Hud {
@@ -63,6 +69,18 @@ export function createHud(): Hud {
     },
     rect(opts) {
       const w = createRect({ ...opts, onChange: () => requestRedraw() });
+      list.push(w);
+      requestRedraw();
+      return w;
+    },
+    text(opts) {
+      const w = createText({ ...opts, onChange: () => requestRedraw() });
+      list.push(w);
+      requestRedraw();
+      return w;
+    },
+    image(opts) {
+      const w = createImage({ ...opts, onChange: () => requestRedraw() });
       list.push(w);
       requestRedraw();
       return w;
