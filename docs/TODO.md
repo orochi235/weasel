@@ -7,6 +7,89 @@ for cross-app reuse, not consumer-app value.
 For history of completed work that pre-dates extraction, see `git log` and
 the dated specs/plans under `specs/` and `plans/`.
 
+## Active priority — path boolean operations (Pathfinder) — 2026-05-11
+
+**Promoted from Tier 3 by consumer demand (eric).** Boolean ops on `Path`
+poses: union, intersection, difference (front-minus-back), exclusion (XOR),
+and the Illustrator Pathfinder companion ops (divide, trim, merge, crop,
+outline). Reference UX is Illustrator's Pathfinder palette and Figma's
+boolean ops; SVG `<feComposite>` is the same operator family.
+
+**Why now.** Phase-2 nested clipping shipped in 0.4.0 unlocked one of the two
+masking shapes consumers want (intersection — "constrain children to a
+region"). The other shape — *combine geometry into a single outline* — is
+not addressable by clip and keeps surfacing in real consumer code:
+
+- **eric** (compound structure outlines): `structureLayersWorld.ts` strokes
+  each member of a multi-rect group individually because there's no way to
+  emit one outline path for the union. Result: visible interior seam lines
+  where adjacent members touch. Workaround would require either a polygon-
+  union lib vendored consumer-side or living with the seams (eric chose to
+  live with them).
+- **eric** (zone cutouts, anticipated): raised beds with built-in trellises,
+  paths cut through plantable zones, etc. — all need difference / minus-front.
+- **eric** (compound-clip equivalent): the existing `clip?: Path` field
+  takes a single path, so a clip with a hole (e.g. "everywhere inside the
+  bed except the trellis well") needs path-subtraction upstream of the
+  clip. Today not expressible.
+
+The pattern: clip is intersection-only and operates at render time. Boolean
+ops compose geometry at model time and produce a new `Path` that can flow
+into fills, strokes, or `clip` fields uniformly. They unlock the "compound
+shape" half of compound-and-clip; we've shipped the clip half.
+
+**Likely shape.**
+
+- Pure functions: `pathUnion(...paths)`, `pathIntersect(a, b)`,
+  `pathSubtract(a, b)` (a − b), `pathExclude(a, b)`. Each returns a `Path`
+  (likely a `PolygonPath` with multiple contours since unions can produce
+  holes).
+- Selection-driven action hook (`usePathfinder`) that takes the current
+  multi-selection's poses, runs the chosen op, and writes a single
+  replacement path through the existing op pipeline (so undo is one step).
+- All ops live alongside the existing path utilities (`composePath`,
+  `polygonFromPoints`, `PathBuilder`) and the polygon kernels in
+  `pointInPath` / `boundsOfPath`.
+
+**Open design questions.**
+
+- **Algorithm.** Vatti, Greiner-Hormann, and Martinez are the three credible
+  options for general polygon clipping. Martinez (the Martinez-Rueda-Feito
+  variant) handles degeneracies cleanly and has clean public-domain
+  implementations (e.g. `polygon-clipping`, `martinez-polygon-clipping`).
+  Bring in a vendored lib (~30 KB minified) or implement in-tree? Vendoring
+  is faster; in-tree avoids the dependency surface and lets us tune to
+  weasel's `PolygonPath` shape directly.
+- **Bezier handling.** Two paths: (a) flatten cubic/quadratic segments to
+  polygons before clipping (uses existing `flattenCubic`/`flattenQuadratic`,
+  loses curvature in the result), or (b) true curve booleans (substantially
+  harder; Skia and PathKit have implementations to learn from). v1 is
+  flatten-then-clip — matches what every JS lib in this space does and
+  matches `pointInPath`'s existing flatten approach.
+- **Result preservation.** Does the op consume the source paths
+  (destructive, like Illustrator's "Unite") or produce a new path while
+  preserving the source as a non-destructive group (like Figma's boolean
+  ops)? Probably ship destructive first; non-destructive is a Tier-2 layer
+  on top.
+- **Even-odd vs non-zero fill rule.** Output contours need a fill rule
+  that matches the renderer's stencil expectations. The clip
+  implementation already settled this for `clip?: Path`; mirror that.
+- **Numerical robustness.** All polygon-clipping libraries trip on
+  near-collinear edges, T-junctions, and degenerate vertices. The chosen
+  lib's robustness story is part of the algorithm decision.
+
+**Out of scope for v1.**
+
+- Boolean ops on stroked paths (treating a stroke as a region, then
+  clipping). Wants stroke-to-fill conversion first.
+- Live preview during a Pathfinder gesture (e.g. holding the op key while
+  hovering paths to see the result). Action-hook fire-and-forget first.
+- Pathfinder against text glyphs. Needs glyph-to-path extraction; separate
+  problem.
+
+**Tier-3 entry below is now a pointer to this section.** When this lands, it
+collapses back into the "recently shipped" tail.
+
 ## WebGL transition — DONE 2026-05-09
 
 All 10 steps shipped between 2026-05-08 and 2026-05-09. Kit is GL-only at 0.2.0. Spec: `docs/superpowers/specs/2026-05-08-webgl-transition-plan-design.md`. Per-step done.md plans live under `docs/superpowers/plans/2026-05-09-webgl-step-*-done.md`.
@@ -246,7 +329,7 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
 
 ## Tier 3 — specialized but valuable
 
-- **Pathfinder-style shape merge operations.** Boolean ops on `Path` poses — union, intersection, subtract (front-minus-back), exclude (xor), divide, trim, merge, crop, outline. Illustrator's Pathfinder panel + Figma's boolean ops are the reference UX. Likely a `pathfinder.union(a, b)` family of pure functions returning a new `Path`, plus a selection-driven action hook (`usePathfinder`) that takes the current multi-selection and writes a single replacement path via the existing op pipeline. Open: which polygon-clipping algorithm to bring in (Vatti vs Greiner-Hormann vs Martinez), Bezier handling (flatten-then-clip vs true curve booleans), and whether the result preserves the source shapes as a non-destructive group.
+- **Pathfinder-style shape merge operations.** *Promoted to top of file — see § "Active priority — path boolean operations (Pathfinder)" — 2026-05-11.* Driven by eric's compound-structure outline seams and anticipated zone-cutout cases. Tier-3 pointer kept here so the genericity-tier reading still surfaces it.
 - **Bezier curves / splines (control-point editing gesture).** A path-capable kit (Tier 1 #1) gives the data shape; what's genuinely new here is the interaction pattern: editing handles on a curve. Specialized resize-like hook with non-corner anchors, plus curve sampling and hit-testing in the renderer. Useful for routing edges in node graphs, illustration, motion paths.
 - **Parallax plugin.** Multi-layer canvas where layers translate at different rates relative to the viewport pan. Useful for sketch/concept-canvas backgrounds, depth illusions, mapping, and game-style scenes. Likely a `RenderLayer` factory or thin wrapper over `usePanInteraction` exposing `parallaxFactor` per layer. Plugin form keeps it out of the core. Open question: does it warp `screenToWorld` for hit-testing, or is parallax purely cosmetic?
 - **d3 integration plugin.** Bridge the adapter/op model to d3 selections so consumers can drive scene updates from data joins (enter → InsertOp, update → setPose, exit → DeleteOp). Strict plugin form — d3 stays out of the core. Real audience: dashboards, network graphs, force-directed layouts, scientific viz.
