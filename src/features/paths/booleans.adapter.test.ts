@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { pathToMultiPolygon, multiPolygonToPath } from './booleans.adapter';
 import type { RectPath, PolygonPath } from './types';
+import type { MultiPolygon } from './booleans.adapter';
 import { PATH_M, PATH_L, PATH_Z } from './types';
 import { pointInPath } from './hitTest';
 
@@ -69,7 +70,7 @@ describe('pathToMultiPolygon', () => {
 
 describe('multiPolygonToPath', () => {
   it('emits one M/L*/Z per ring with nonzero fillRule', () => {
-    const mp = [
+    const mp: MultiPolygon = [
       [[
         [0, 0],
         [10, 0],
@@ -94,7 +95,7 @@ describe('multiPolygonToPath', () => {
   });
 
   it('emits multiple rings for a polygon-with-hole', () => {
-    const mp = [
+    const mp: MultiPolygon = [
       [
         [[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]],
         [[2, 2], [8, 2], [8, 8], [2, 8], [2, 2]],
