@@ -108,6 +108,19 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     return i;
   }
 
+  function assertSubtreeLayer(
+    nodeId: string | undefined,
+    nodeLayer: TLayer,
+    parentId: NodeId,
+    parentLayer: TLayer,
+  ): void {
+    if (parentLayer !== nodeLayer) {
+      throw new Error(
+        `Scene: cannot place node '${nodeId ?? '<new>'}' on layer '${nodeLayer}' under parent '${parentId}' on layer '${parentLayer}' — subtree layer must match parent`,
+      );
+    }
+  }
+
   function siblingsOf(parent: NodeId | null): NodeId[] {
     if (parent === null) return state.roots;
     const p = requireNode(parent);
@@ -311,11 +324,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         if (p.kind !== 'container') {
           throw new Error(`Scene: parent "${parent}" is not a container`);
         }
-        if (p.layer !== spec.layer) {
-          throw new Error(
-            `Scene: cannot place node '${spec.id ?? '<new>'}' on layer '${spec.layer}' under parent '${parent}' on layer '${p.layer}' — subtree layer must match parent`,
-          );
-        }
+        assertSubtreeLayer(spec.id, spec.layer, parent, p.layer);
       }
       const sibs = siblingsOf(parent);
       const index = spec.index ?? sibs.length;
@@ -499,11 +508,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         if (p.kind !== 'container') {
           throw new Error(`Scene: parent "${parent}" is not a container`);
         }
-        if (p.layer !== spec.layer) {
-          throw new Error(
-            `Scene: cannot place node '${spec.id ?? '<new>'}' on layer '${spec.layer}' under parent '${spec.parent}' on layer '${p.layer}' — subtree layer must match parent`,
-          );
-        }
+        assertSubtreeLayer(spec.id, spec.layer, parent, p.layer);
       }
       const sibs = siblingsOf(parent);
       const index = spec.index ?? sibs.length;
