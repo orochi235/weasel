@@ -424,6 +424,85 @@ function pressKey(overlay: HTMLElement, key: string, mods: { meta?: boolean; ctr
   }));
 }
 
+function placeCaretAtChar(overlay: HTMLElement, charOffset: number): void {
+  const range = document.createRange();
+  let remaining = charOffset;
+  const walker = document.createTreeWalker(overlay, NodeFilter.SHOW_TEXT);
+  let node = walker.nextNode() as Text | null;
+  while (node) {
+    if (remaining <= node.data.length) {
+      range.setStart(node, remaining);
+      range.setEnd(node, remaining);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+      return;
+    }
+    remaining -= node.data.length;
+    node = walker.nextNode() as Text | null;
+  }
+}
+
+function dispatchBeforeInput(overlay: HTMLElement, data: string): void {
+  const ev = new InputEvent('beforeinput', {
+    inputType: 'insertText',
+    data,
+    bubbles: true,
+    cancelable: true,
+  });
+  overlay.dispatchEvent(ev);
+}
+
+describe('useTextEdit — Cmd-B/I with collapsed caret (pending style)', () => {
+  it('Cmd-B at caret then typing wraps the next character in a bold run', () => {
+    const h = makeRichHarness({ a: { text: 'abc', runs: [{ text: 'abc' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    placeCaretAtChar(overlay, 3);
+    act(() => pressKey(overlay, 'b', { meta: true }));
+    act(() => dispatchBeforeInput(overlay, 'X'));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([
+      { text: 'abc' },
+      { text: 'X', bold: true },
+    ]);
+  });
+
+  it('pending style stacks bold + italic', () => {
+    const h = makeRichHarness({ a: { text: 'a', runs: [{ text: 'a' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    placeCaretAtChar(overlay, 1);
+    act(() => pressKey(overlay, 'b', { meta: true }));
+    act(() => pressKey(overlay, 'i', { meta: true }));
+    act(() => dispatchBeforeInput(overlay, 'Y'));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([
+      { text: 'a' },
+      { text: 'Y', bold: true, italic: true },
+    ]);
+  });
+
+  it('pending style clears after one inserted character', () => {
+    const h = makeRichHarness({ a: { text: 'a', runs: [{ text: 'a' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    placeCaretAtChar(overlay, 1);
+    act(() => pressKey(overlay, 'b', { meta: true }));
+    act(() => dispatchBeforeInput(overlay, 'X'));
+    act(() => dispatchBeforeInput(overlay, 'Y'));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([
+      { text: 'a' },
+      { text: 'X', bold: true },
+      { text: 'Y' },
+    ]);
+  });
+});
+
 describe('useTextEdit — Cmd-B/I on range selection', () => {
   it('Cmd-B over plain text wraps the selected range in a bold run', () => {
     const h = makeRichHarness({ a: { text: 'one two three', runs: [{ text: 'one two three' }] } });

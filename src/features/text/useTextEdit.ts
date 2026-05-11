@@ -230,7 +230,7 @@ export function useTextEdit(
       if (!sel || sel.rangeCount === 0) return;
       const range = sel.getRangeAt(0);
       if (range.collapsed) {
-        // Pending-style path lands in Task 7.
+        togglePending(flag);
         return;
       }
       const startChar = domPositionToCharOffset(overlay, range.startContainer, range.startOffset);
@@ -246,6 +246,15 @@ export function useTextEdit(
         newRange.setEnd(b.node, b.offset);
         sel.removeAllRanges();
         sel.addRange(newRange);
+      }
+    }
+
+    function togglePending(flag: StyleFlag): void {
+      const key = flag === 'bold' ? 'pendingBold' : 'pendingItalic';
+      if (overlay.dataset[key] === '1') {
+        delete overlay.dataset[key];
+      } else {
+        overlay.dataset[key] = '1';
       }
     }
 
@@ -268,8 +277,47 @@ export function useTextEdit(
     };
     const onBlur = () => commit();
 
+    const onBeforeInput = (e: Event) => {
+      const ie = e as InputEvent;
+      if (ie.inputType !== 'insertText' || !ie.data) return;
+      const pendingBold = overlay.dataset.pendingBold === '1';
+      const pendingItalic = overlay.dataset.pendingItalic === '1';
+      ie.preventDefault();
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      if (pendingBold || pendingItalic) {
+        // Insert a new styled span for the pending-style character.
+        const span = document.createElement('span');
+        span.setAttribute('data-run', '');
+        if (pendingBold) span.style.fontWeight = '700';
+        if (pendingItalic) span.style.fontStyle = 'italic';
+        span.textContent = ie.data;
+        range.insertNode(span);
+        const after = document.createRange();
+        after.setStartAfter(span);
+        after.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(after);
+        delete overlay.dataset.pendingBold;
+        delete overlay.dataset.pendingItalic;
+      } else {
+        // No pending style — insert the character as a plain text node at the
+        // caret position so the surrounding run's span absorbs it.
+        const textNode = document.createTextNode(ie.data);
+        range.insertNode(textNode);
+        const after = document.createRange();
+        after.setStartAfter(textNode);
+        after.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(after);
+      }
+    };
+
     overlay.addEventListener('keydown', onKeyDown);
     overlay.addEventListener('blur', onBlur);
+    overlay.addEventListener('beforeinput', onBeforeInput);
 
     const tick = () => {
       const pose = optsRef.current.getScreenPose(editingId);
@@ -283,6 +331,7 @@ export function useTextEdit(
       rafRef.current = null;
       overlay.removeEventListener('keydown', onKeyDown);
       overlay.removeEventListener('blur', onBlur);
+      overlay.removeEventListener('beforeinput', onBeforeInput);
       overlay.remove();
       styleEl?.remove();
       overlayRef.current = null;
