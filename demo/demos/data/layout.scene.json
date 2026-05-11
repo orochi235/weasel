@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "systemLayers": [{ "id": "default" }],
+  "nodes": [
+    {
+      "id": "F",
+      "kind": "container",
+      "layer": "default",
+      "pose": { "x": 10, "y": 40, "width": 180, "height": 180 },
+      "data": { "color": "#a89878", "isContainer": true }
+    },
+    {
+      "id": "G",
+      "kind": "container",
+      "layer": "default",
+      "pose": { "x": 210, "y": 40, "width": 180, "height": 180 },
+      "data": { "color": "#88a878", "isContainer": true }
+    },
+    {
+      "id": "S",
+      "kind": "container",
+      "layer": "default",
+      "pose": { "x": 410, "y": 40, "width": 180, "height": 180 },
+      "data": { "color": "#7888a8", "isContainer": true }
+    },
+    {
+      "id": "f1",
+      "parent": "F",
+      "kind": "leaf",
+      "layer": "default",
+      "pose": { "x": 50, "y": 80, "width": 30, "height": 30 },
+      "data": { "color": "#f5b7a3", "isContainer": false }
+    },
+    {
+      "id": "g1",
+      "parent": "G",
+      "kind": "leaf",
+      "layer": "default",
+      "pose": { "x": 210, "y": 40, "width": 90, "height": 90 },
+      "data": { "color": "#a3f5b7", "isContainer": false }
+    },
+    {
+      "id": "s1",
+      "parent": "S",
+      "kind": "leaf",
+      "layer": "default",
+      "pose": { "x": 420, "y": 50, "width": 30, "height": 30 },
+      "data": { "color": "#a3b7f5", "isContainer": false }
+    }
+  ]
+}

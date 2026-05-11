@@ -1,13 +1,14 @@
-import { useMemo } from 'react';
+import { useState, useMemo, useSyncExternalStore } from 'react';
 import {
-  asNodeId,
   SceneCanvas,
-  useScene,
+  sceneFromJSON,
   freeform,
   tileGrid,
   snapPoint,
 } from '@orochi235/weasel';
+import type { SerializedScene } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
+import sceneJson from './data/layout.scene.json';
 
 // --- Scene model ---
 //
@@ -20,34 +21,14 @@ import type { DrawCommand } from '../../src/renderer';
 type P = { x: number; y: number; width: number; height: number };
 type Data = { color: string; isContainer: boolean };
 
-// Light fills so the containers are visible on the dark demo backdrop.
-// Children get bolder accent colors that read against the muted container fills.
-const COLORS: Record<string, string> = {
-  F: '#a89878', G: '#88a878', S: '#7888a8',
-  f1: '#f5b7a3', g1: '#a3f5b7', s1: '#a3b7f5',
-};
-
-const INITIAL = [
-  { id: 'F',  parent: null, kind: 'container' as const, pose: { x: 10,  y: 40, width: 180, height: 180 } },
-  { id: 'G',  parent: null, kind: 'container' as const, pose: { x: 210, y: 40, width: 180, height: 180 } },
-  { id: 'S',  parent: null, kind: 'container' as const, pose: { x: 410, y: 40, width: 180, height: 180 } },
-  { id: 'f1', parent: 'F',  kind: 'leaf' as const,      pose: { x: 50,  y: 80, width: 30,  height: 30 } },
-  { id: 'g1', parent: 'G',  kind: 'leaf' as const,      pose: { x: 210, y: 40, width: 90,  height: 90 } },
-  { id: 's1', parent: 'S',  kind: 'leaf' as const,      pose: { x: 420, y: 50, width: 30,  height: 30 } },
-];
-
 export function LayoutDemo() {
-  const scene = useScene<Data, 'default', P>({
-    systemLayers: [{ id: 'default' }],
-    initial: INITIAL.map((n) => ({
-      kind: n.kind,
-      layer: 'default',
-      id: asNodeId(n.id),
-      parent: n.parent ? asNodeId(n.parent) : null,
-      pose: n.pose,
-      data: { color: COLORS[n.id] ?? '#444', isContainer: n.kind === 'container' },
-    })),
-  });
+  const [scene] = useState(() =>
+    sceneFromJSON(
+      sceneJson as unknown as SerializedScene<Data, 'default', P>,
+      {},
+    ),
+  );
+  useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
 
   const layouts = useMemo(() => ({
     F: freeform<P>(),
