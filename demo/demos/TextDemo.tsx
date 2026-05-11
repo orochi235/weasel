@@ -10,6 +10,7 @@ import {
   useTextEdit,
   type CanvasHelpers,
   type RenderLayer,
+  type StyledRun,
   type TextStyle,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
@@ -22,6 +23,7 @@ interface TextNode {
   width: number;
   height: number;
   text: string;
+  runs?: StyledRun[];
   style?: TextStyle;
 }
 interface Pose {
@@ -78,6 +80,24 @@ const INITIAL: TextNode[] = [
       selectionBackground: '#ffeb3b',
       selectionColor: '#000',
     },
+  },
+  {
+    id: 't5',
+    x: 30,
+    y: 310,
+    width: 540,
+    height: 40,
+    text: 'Inline runs: bold word, italic word, bold-italic word.',
+    runs: [
+      { text: 'Inline runs: ' },
+      { text: 'bold', bold: true },
+      { text: ' word, ' },
+      { text: 'italic', italic: true },
+      { text: ' word, ' },
+      { text: 'bold-italic', bold: true, italic: true },
+      { text: ' word.' },
+    ],
+    style: { fontSize: 16, fill: { fill: 'solid', color: '#1c1c1c' } },
   },
 ];
 
