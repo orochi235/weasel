@@ -45,6 +45,7 @@ uniform sampler2D u_atlas;
 uniform vec4 u_color;
 uniform float u_alpha;
 uniform float u_aaWidth;
+uniform float u_synthBold;
 uniform mat4 u_colorMatrix;
 uniform vec4 u_colorBias;
 out vec4 outColor;
@@ -57,7 +58,10 @@ void main() {
   vec3 sdf = texture(u_atlas, v_uv).rgb;
   float sdfVal = median(sdf.r, sdf.g, sdf.b);
   float aaW = u_aaWidth > 0.0 ? u_aaWidth : 0.05;
-  float msdfAlpha = smoothstep(0.5 - aaW, 0.5 + aaW, sdfVal);
+  // u_synthBold shifts the SDF threshold to thicken strokes when the
+  // resolver fell back from a missing bold variant to the regular atlas.
+  float threshold = 0.5 - u_synthBold;
+  float msdfAlpha = smoothstep(threshold - aaW, threshold + aaW, sdfVal);
   vec4 src = vec4(u_color.rgb, u_color.a);
   vec4 mapped = clamp(u_colorMatrix * src + u_colorBias, 0.0, 1.0);
   float a = mapped.a * msdfAlpha * u_alpha;
@@ -67,7 +71,7 @@ void main() {
 
 export const TEXT_SDF_UNIFORMS = [
   'u_proj', 'u_model', 'u_atlas', 'u_color', 'u_alpha', 'u_aaWidth',
-  'u_colorMatrix', 'u_colorBias',
+  'u_synthBold', 'u_colorMatrix', 'u_colorBias',
 ] as const;
 
 export const TEXT_SDF_ATTRIBUTES = ['a_position', 'a_uv'] as const;

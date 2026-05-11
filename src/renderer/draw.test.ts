@@ -677,3 +677,61 @@ describe('C2: frame-start stencilMask(0xFF) before clear', () => {
     expect(maskBeforeClear).toBe(true);
   });
 });
+
+describe('drawText synthetic-bold', () => {
+  beforeEach(() => {
+    const encoder = new TextEncoder();
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith('.json')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(FIXTURE_FONT) });
+      }
+      return Promise.resolve({
+        ok: true,
+        blob: () => Promise.resolve(new Blob([encoder.encode('PNG')], { type: 'image/png' })),
+      });
+    }) as typeof fetch;
+    global.createImageBitmap = vi.fn().mockResolvedValue({
+      width: 512, height: 512, close: vi.fn(),
+    } as unknown as ImageBitmap);
+  });
+
+  it('sets u_synthBold to ~0.08 when a group has synthetic.bold=true', async () => {
+    _resetFontRegistryForTests();
+    // Register only the regular weight; request bold via a run → synthetic.bold=true
+    await registerFont('inter', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, {
+      kind: 'text', x: 0, y: 0,
+      runs: [{
+        text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 700,
+        fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+      }],
+      maxWidth: Infinity, align: 'left', style: {},
+    });
+    // Find u_synthBold uniform sets via uniform1f calls. The exact location
+    // (which arg index is the value) is calls.find by uniform location: the
+    // recorder tracks uniform1f as `{ name: 'uniform1f', args: [loc, value] }`.
+    const synthBoldVals = calls
+      .filter((c) => c.name === 'uniform1f')
+      .map((c) => c.args[1] as number);
+    expect(synthBoldVals.some((v) => Math.abs(v - 0.08) < 1e-6)).toBe(true);
+  });
+
+  it('sets u_synthBold to 0 for an exact-match variant', async () => {
+    _resetFontRegistryForTests();
+    await registerFont('inter', { weight: 700, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, {
+      kind: 'text', x: 0, y: 0,
+      runs: [{
+        text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 700,
+        fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+      }],
+      maxWidth: Infinity, align: 'left', style: {},
+    });
+    const synthBoldVals = calls
+      .filter((c) => c.name === 'uniform1f')
+      .map((c) => c.args[1] as number);
+    expect(synthBoldVals.some((v) => Math.abs(v - 0.08) < 1e-6)).toBe(false);
+  });
+});

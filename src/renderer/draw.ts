@@ -856,10 +856,15 @@ function drawTextGroup(ctx: DrawContext, group: LaidOutGroup): void {
   }
   gl.uniform4f(ctx.textSdf.uniform('u_color')!, r, g, b, a);
 
-  // Synthetic uniforms — wired to 0 for now; Tasks 7 & 8 light them up.
+  // u_synthBold: SDF threshold shift when the resolver fell back from a
+  // missing bold variant to the regular atlas. 0.08 was tuned empirically
+  // to thicken Inter strokes ~1px at 16px size without breaking topology.
+  const synthBoldAmount = group.synthetic.bold ? 0.08 : 0;
   const uSynthBold = ctx.textSdf.uniform('u_synthBold');
+  if (uSynthBold !== undefined) gl.uniform1f(uSynthBold, synthBoldAmount);
+
+  // u_synthItalic stays 0 until Task 8 lands the vertex-shader skew.
   const uSynthItalic = ctx.textSdf.uniform('u_synthItalic');
-  if (uSynthBold !== undefined) gl.uniform1f(uSynthBold, 0);
   if (uSynthItalic !== undefined) gl.uniform1f(uSynthItalic, 0);
 
   ctx.textureCache.bind(textureCacheKey(group.family, group.weight, group.style), 0);
