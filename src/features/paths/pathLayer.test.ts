@@ -139,3 +139,36 @@ describe('createPathLayer — getVertexColors', () => {
     warn.mockRestore();
   });
 });
+
+describe('createPathLayer — getStrokeVertexColors', () => {
+  it('threads stroke vertex colors onto Stroke.vertexColors with placeholder stroke', () => {
+    const path = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }]);
+    const colors = [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1];
+    const layer = createPathLayer({
+      getNodes: () => [{ id: 'a' }],
+      getPath: () => path,
+      getStrokeVertexColors: () => colors,
+    });
+    const out = layer.draw(undefined, { x: 0, y: 0, scale: 1 } as any);
+    const cmd = (out[0] as any).children[0];
+    expect(cmd.stroke.vertexColors).toEqual(colors);
+    expect(cmd.stroke.paint).toEqual({ color: '#ffffff' });
+    expect(cmd.stroke.width).toBe(1);
+  });
+
+  it('threads stroke vertex colors onto an existing Stroke (overriding any pre-set vertexColors)', () => {
+    const path = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }]);
+    const colors = [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1];
+    const layer = createPathLayer({
+      getNodes: () => [{ id: 'a' }],
+      getPath: () => path,
+      getStroke: () => ({ paint: { color: '#000' }, width: 3 }),
+      getStrokeVertexColors: () => colors,
+    });
+    const out = layer.draw(undefined, { x: 0, y: 0, scale: 1 } as any);
+    const cmd = (out[0] as any).children[0];
+    expect(cmd.stroke.vertexColors).toEqual(colors);
+    expect(cmd.stroke.paint).toEqual({ color: '#000' });
+    expect(cmd.stroke.width).toBe(3);
+  });
+});
