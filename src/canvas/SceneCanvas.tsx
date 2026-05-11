@@ -121,9 +121,17 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     | 'moveOptions' | 'resizeOptions' | 'rotateOptions'
     | 'snap' | 'pickEvery' | 'boundsOf' | 'handleHitRadius'
     | 'selection' | 'selectionOptions' | 'tools' | 'geometry'
+    | 'layers'   // stripped so we can re-add as optional below
   >
   & {
     scene: Scene<TData, TLayer, TPose>;
+
+    /** Layer configuration. When omitted, SceneCanvas applies kit defaults
+     *  (a scene slot that paints `node.data.color` rects + a default
+     *  selection overlay). Partial slot configs deep-merge with the
+     *  defaults; pass `slot: null` to suppress a default explicitly. */
+    layers?: LayersMap<Node<TData, TLayer, TPose>, TPose>;
+
     /** Layout strategies keyed by container node id (or a resolver). Forwarded
      *  to `sceneToAdapter` so `useMove`'s layout pass runs on configured
      *  containers (reflow on enter, reparent + reflow on commit). */
@@ -314,11 +322,18 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   usePublishSelection(selection.current, selectionKinds);
 
   // Adapter + select tool — folded into a single hook that synthesizes both.
+  // Apply the DEFAULT_HANDLE_SIZE fallback here so useSceneSelectTool always
+  // receives a concrete radius even when the caller omits selectTool entirely.
+  const selectToolWithDefaults = useMemo(() => ({
+    handleHitRadius: DEFAULT_HANDLE_SIZE,
+    ...selectToolOpts,
+  }), [selectToolOpts]);
+
   const { adapter, selectTool: internalSelect } = useSceneSelectTool({
     scene,
     selection,
     geometry,
-    selectTool: selectToolOpts,
+    selectTool: selectToolWithDefaults,
     ...(insertTool ? { insertTool } : {}),
     ...(layouts ? { layouts } : {}),
   });
@@ -355,18 +370,26 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   const wiredGestures = { undoRedo: { adapter: scene }, ...gestures };
 
+  // Merge caller-supplied layers with kit defaults. When `layers` is omitted
+  // the result is the full default set (scene + selectionOverlay). Partial
+  // configs deep-merge; `null` slot values suppress a default explicitly.
+  const mergedLayers = useMemo(
+    () => mergeLayersWithDefaults(layers),
+    [layers],
+  );
+
   // Preview-ghost layer: renders in-flight gesture poses on top of the
   // committed scene using the scene slot's `drawOne`.
   const previewLayer = usePreviewGhostLayer<TData, TLayer, TPose>({
     scene,
     tools,
-    sceneSlot: layers.scene,
+    sceneSlot: mergedLayers.scene,
   });
 
   const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({
-    ...layers,
+    ...mergedLayers,
     previewGhost: { layer: previewLayer, after: 'scene' },
-  }), [layers, previewLayer]);
+  }), [mergedLayers, previewLayer]);
 
   // Standard-action deps: closures over the live scene / selection / adapter
   // so the resolved actions always read current state. `useStandardActions`

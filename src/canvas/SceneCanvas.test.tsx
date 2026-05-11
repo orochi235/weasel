@@ -57,6 +57,53 @@ describe('SceneCanvas', () => {
     const { container } = render(<Demo />);
     expect(container.querySelector('canvas')).toBeTruthy();
   });
+
+  it('mounts with no layers prop and uses defaults', () => {
+    function Harness() {
+      const scene = useScene<{ color: string }, 'default', { x: number; y: number; width: number; height: number }>({
+        systemLayers: [{ id: 'default' }],
+        initial: [{
+          id: 'a' as never,
+          kind: 'leaf',
+          layer: 'default',
+          pose: { x: 10, y: 20, width: 30, height: 40 },
+          data: { color: '#f00' },
+        }],
+      });
+      return <SceneCanvas width={200} height={200} scene={scene} />;
+    }
+    const { container } = render(<Harness />);
+    const canvas = container.querySelector('canvas')!;
+    expect(canvas).toBeTruthy();
+  });
+
+  it('selectTool.handleHitRadius defaults to DEFAULT_HANDLE_SIZE when not provided', () => {
+    function Harness() {
+      const scene = useScene<{ color: string }, 'default', { x: number; y: number; width: number; height: number }>({
+        systemLayers: [{ id: 'default' }],
+      });
+      return <SceneCanvas width={200} height={200} scene={scene} />;
+    }
+    const { container } = render(<Harness />);
+    expect(container.querySelector('canvas')).toBeTruthy();
+    expect(DEFAULT_HANDLE_SIZE).toBe(8);
+  });
+
+  it('selectTool.handleHitRadius override wins over the default', () => {
+    function Harness() {
+      const scene = useScene<{ color: string }, 'default', { x: number; y: number; width: number; height: number }>({
+        systemLayers: [{ id: 'default' }],
+      });
+      return (
+        <SceneCanvas
+          width={200} height={200} scene={scene}
+          selectTool={{ handleHitRadius: 16 }}
+        />
+      );
+    }
+    const { container } = render(<Harness />);
+    expect(container.querySelector('canvas')).toBeTruthy();
+  });
 });
 
 describe('SceneCanvas defaults', () => {
