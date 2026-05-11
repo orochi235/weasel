@@ -7,6 +7,7 @@ import {
   polygonFromPoints,
   useScene,
   asNodeId,
+  textCommand,
 } from '@orochi235/weasel';
 import type { Path } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
@@ -201,13 +202,12 @@ export function CompoundPathsDemo() {
                 // GL renders MSDF text from registered fonts only.
                 const text = 'original artwork by claude';
                 const charW = 7;
-                return [{
-                  kind: 'text',
-                  x: W - 10 - text.length * charW,
-                  y: H - 8 - 14,
+                return [textCommand(
+                  W - 10 - text.length * charW,
+                  H - 8 - 14,
                   text,
-                  style: { fontFamily: 'sans-serif', fontSize: 14, fill: { color: '#ff3344' } },
-                }];
+                  { fontFamily: 'sans-serif', fontSize: 14, fill: { fill: 'solid', color: '#ff3344' } },
+                )];
               },
             },
             after: 'selectionOverlay',

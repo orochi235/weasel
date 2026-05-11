@@ -728,10 +728,18 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     const ids = getSelection();
     if (ids.length < 2) return null;
     const bof = boundsOfRef.current;
+    // Prefer per-leaf preview pose during a drag (so the union AABB tracks
+    // the in-flight move overlay); fall back to committed bounds otherwise.
+    const poseBounds = options.poseBounds;
+    const leafBounds = (sid: string): Bounds | null => {
+      const p = previewPose(sid);
+      if (p != null && poseBounds) return poseBounds(p) as Bounds;
+      return bof(sid);
+    };
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     let any = false;
     for (const sid of ids) {
-      const b = bof(sid);
+      const b = leafBounds(sid);
       if (!b) continue;
       any = true;
       if (b.x < minX) minX = b.x;

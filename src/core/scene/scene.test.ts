@@ -435,3 +435,162 @@ describe('renderOrder with hidden layers', () => {
     expect(order).toEqual([a]);
   });
 });
+
+// ─── C3: redo restores clipFromPose ──────────────────────────────────────────
+
+describe('undo/redo of container add preserves clipFromPose', () => {
+  it('undo+redo of a container add preserves clipFromPose', () => {
+    const scene = createScene<Data, 'structures'>({
+      systemLayers: [{ id: 'structures' }],
+    });
+    const fn = (pose: typeof POSE) => ({
+      kind: 'rect' as const,
+      x: pose.x,
+      y: pose.y,
+      width: pose.width,
+      height: pose.height,
+    });
+    const id = scene.add({
+      kind: 'container',
+      layer: 'structures',
+      pose: POSE,
+      data: { label: 'bed' },
+      clipFromPose: fn,
+    });
+    // Node is present with clipFromPose immediately after add.
+    expect(scene.get(id)?.kind).toBe('container');
+    expect((scene.get(id) as { clipFromPose?: unknown }).clipFromPose).toBe(fn);
+
+    scene.undo();
+    expect(scene.get(id)).toBeUndefined();
+
+    scene.redo();
+    const node = scene.get(id);
+    expect(node?.kind).toBe('container');
+    // clipFromPose must survive the undo/redo round-trip.
+    expect((node as { clipFromPose?: unknown }).clipFromPose).toBe(fn);
+  });
+
+  it('clipFromPose is callable and returns the correct clip after redo', () => {
+    const scene = createScene<Data, 'structures'>({
+      systemLayers: [{ id: 'structures' }],
+    });
+    const fn = (_pose: typeof POSE) => ({ kind: 'rect' as const, x: 5, y: 5, width: 20, height: 20 });
+    const id = scene.add({
+      kind: 'container',
+      layer: 'structures',
+      pose: POSE,
+      data: { label: 'bed' },
+      clipFromPose: fn,
+    });
+    scene.undo();
+    scene.redo();
+    const node = scene.get(id);
+    const cfp = (node as { clipFromPose?: (p: typeof POSE) => unknown }).clipFromPose;
+    expect(cfp?.(POSE)).toEqual({ kind: 'rect', x: 5, y: 5, width: 20, height: 20 });
+  });
+});
+
+// ─── pendingClipPatches leak-prune ───────────────────────────────────────────
+
+/** Helper to access the test-only cache-size hook. */
+function cacheSize(scene: unknown): number {
+  return (scene as { __clipCacheSize: () => number }).__clipCacheSize();
+}
+
+describe('pendingClipPatches pruning', () => {
+  it('prunes cache entry when redoStack is cleared by a new op', () => {
+    const scene = createScene<Data, 'structures'>({
+      systemLayers: [{ id: 'structures' }],
+    });
+    const fn = () => ({ kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 });
+    const id = scene.add({
+      kind: 'container',
+      layer: 'structures',
+      pose: POSE,
+      data: { label: 'bed' },
+      clipFromPose: fn,
+    });
+    // Cache has one entry for the container.
+    expect(cacheSize(scene)).toBe(1);
+
+    // Undo removes the node from state.nodes; entry stays in cache for redo.
+    scene.undo();
+    expect(scene.get(id)).toBeUndefined();
+    expect(cacheSize(scene)).toBe(1);
+
+    // A new op branches the timeline: redoStack is cleared. The container is
+    // absent from state.nodes, so the cache entry must be pruned.
+    scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'other' } });
+    expect(cacheSize(scene)).toBe(0);
+  });
+
+  it('does NOT prune cache entry when node is still in state.nodes at redo-stack clear', () => {
+    // If a container is added and then another op runs (clearing the redo stack
+    // which was already empty), the container is still live — entry must survive.
+    const scene = createScene<Data, 'structures'>({
+      systemLayers: [{ id: 'structures' }],
+    });
+    const fn = () => ({ kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 });
+    scene.add({
+      kind: 'container',
+      layer: 'structures',
+      pose: POSE,
+      data: { label: 'bed' },
+      clipFromPose: fn,
+    });
+    expect(cacheSize(scene)).toBe(1);
+    // Another op without undo — redo stack was already empty, nothing to prune.
+    scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'other' } });
+    // Node is still in state.nodes → entry must not be pruned.
+    expect(cacheSize(scene)).toBe(1);
+  });
+
+  it('prunes cache entry when undo-stack overflow evicts a kit:add for a removed node', () => {
+    const scene = createScene<Data, 'structures'>({
+      systemLayers: [{ id: 'structures' }],
+      historyLimit: 2,
+    });
+    const fn = () => ({ kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 });
+    // Add a clipped container, then immediately remove it (so it leaves state.nodes).
+    const id = scene.add({
+      kind: 'container',
+      layer: 'structures',
+      pose: POSE,
+      data: { label: 'bed' },
+      clipFromPose: fn,
+    });
+    scene.remove(id);
+    // Undo stack: [kit:add(id), kit:remove(id)]. Cache still has the entry.
+    expect(cacheSize(scene)).toBe(1);
+
+    // Two more ops push the kit:add entry off the undo stack (limit=2).
+    scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'x' } });
+    scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'y' } });
+    // kit:add(id) is now evicted. Node is absent from state.nodes → pruned.
+    expect(cacheSize(scene)).toBe(0);
+  });
+
+  it('prunes cache entry via batch when redoStack is cleared', () => {
+    const scene = createScene<Data, 'structures'>({
+      systemLayers: [{ id: 'structures' }],
+    });
+    const fn = () => ({ kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 });
+    const id = scene.add({
+      kind: 'container',
+      layer: 'structures',
+      pose: POSE,
+      data: { label: 'bed' },
+      clipFromPose: fn,
+    });
+    scene.undo();
+    expect(cacheSize(scene)).toBe(1);
+
+    // Branch via a batch (triggers the batch-path redo-clear code).
+    scene.batch('add-more', () => {
+      scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'x' } });
+    });
+    expect(scene.get(id)).toBeUndefined();
+    expect(cacheSize(scene)).toBe(0);
+  });
+});

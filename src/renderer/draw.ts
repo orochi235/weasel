@@ -553,6 +553,9 @@ function rasterizePathToStencil(ctx: DrawContext, path: Path): void {
  * Push a clip level. Rasterizes the clip path into the stencil buffer,
  * setting bit `newDepth` where (a) the path's fragment passes AND (b) all
  * ancestor clip bits are already set.
+ *
+ * Invariant: restores stencilMask(0xFF) on exit so callers (draw functions)
+ * can rely on an unnarrowed mask after clip ops complete.
  */
 export function pushClip(ctx: DrawContext, path: Path, newDepth: number): void {
   const gl = ctx.gl;
@@ -569,14 +572,28 @@ export function pushClip(ctx: DrawContext, path: Path, newDepth: number): void {
   rasterizePathToStencil(ctx, path);
 
   gl.colorMask(true, true, true, true);
+  // Restore full mask so subsequent draw functions don't inherit a narrowed mask.
+  gl.stencilMask(0xFF);
 }
 
 /**
  * Pop a clip level. Rasterizes the same path again, clearing bit
  * `oldDepth + 1` where it was set during the matching push.
+ *
+ * Must re-enable STENCIL_TEST because child draw functions (drawPathFillStencil,
+ * drawPathStrokeStenciled) call gl.disable(STENCIL_TEST) at their end. If
+ * one of those was the last child before popClip runs, the test would be off
+ * and rasterizePathToStencil would write nothing.
+ *
+ * Invariant: restores stencilMask(0xFF) on exit so callers are not left with
+ * a narrowed mask.
  */
 export function popClip(ctx: DrawContext, path: Path, oldDepth: number): void {
   const gl = ctx.gl;
+  // Re-enable stencil: child draw functions (evenodd/stenciled-stroke) disable
+  // it at their end; we must set it before writing the clear pass.
+  gl.enable(gl.STENCIL_TEST);
+
   const oldBit = 1 << (oldDepth + 1);
   const ref = ancestorMask(oldDepth) | oldBit;
 
@@ -588,6 +605,8 @@ export function popClip(ctx: DrawContext, path: Path, oldDepth: number): void {
   rasterizePathToStencil(ctx, path);
 
   gl.colorMask(true, true, true, true);
+  // Restore full mask so subsequent draw functions don't inherit a narrowed mask.
+  gl.stencilMask(0xFF);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -241,10 +241,12 @@ describe('WeaselRenderer.render — stencil bit discipline', () => {
     };
     r.render([{ kind: 'path', path, fill: { color: '#ff0000' } }]);
 
+    // The function must only set stencilMask to 0x01 (bit 0) or 0xFF (the
+    // frame-start full-restore from WeaselRenderer.render). Never a clip-bit mask.
     const stencilMaskCalls = recorder.calls.filter((c) => c.name === 'stencilMask');
     expect(stencilMaskCalls.length).toBeGreaterThan(0);
     for (const call of stencilMaskCalls) {
-      expect(call.args[0]).toBe(0x01);
+      expect([0x01, 0xFF]).toContain(call.args[0]);
     }
 
     const stencilFuncCalls = recorder.calls.filter((c) => c.name === 'stencilFunc');
@@ -264,10 +266,11 @@ describe('WeaselRenderer.render — stencil bit discipline', () => {
     };
     r.render([{ kind: 'path', path, stroke: { paint: { color: '#000' }, width: 10, align: 'inner' } }]);
 
+    // The function must only set stencilMask to 0x01 (bit 0) or 0xFF (frame-start restore).
     const stencilMaskCalls = recorder.calls.filter((c) => c.name === 'stencilMask');
     expect(stencilMaskCalls.length).toBeGreaterThan(0);
     for (const call of stencilMaskCalls) {
-      expect(call.args[0]).toBe(0x01);
+      expect([0x01, 0xFF]).toContain(call.args[0]);
     }
 
     const stencilFuncCalls = recorder.calls.filter((c) => c.name === 'stencilFunc');
@@ -321,7 +324,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
       kind: 'group',
       colorMatrix: NO_RED,
       children: [
-        { kind: 'text', x: 0, y: 0, text: 'A', style: { fontFamily: 'inter', fontSize: 32, fill: { color: '#fff' } } },
+        { kind: 'text', x: 0, y: 0, runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' } }], align: 'left', style: { fontFamily: 'inter', fontSize: 32, fill: { color: '#fff' } } },
       ],
     };
     r.render([cmd]);
@@ -357,7 +360,9 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
 
   it('uploads identity u_colorMatrix on text draws with no enclosing group transform', () => {
     const cmd: DrawCommand = {
-      kind: 'text', x: 0, y: 0, text: 'A',
+      kind: 'text', x: 0, y: 0,
+      runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' } }],
+      align: 'left',
       style: { fontFamily: 'inter', fontSize: 32, fill: { color: '#fff' } },
     };
     r.render([cmd]);
@@ -591,5 +596,84 @@ describe('stencil-shaded passes honor ancestor clip', () => {
     expect(equalCalls.length).toBeGreaterThan(0);
     const shadedSF = equalCalls[equalCalls.length - 1];
     expect(shadedSF.args).toEqual([gl.EQUAL, 0x02, 0x03]);
+  });
+});
+
+// ─── C1/I4 ────────────────────────────────────────────────────────────────────
+
+describe('C1/I4: popClip enables STENCIL_TEST after evenodd child disables it', () => {
+  it('popClip enables STENCIL_TEST even after a child disabled it', () => {
+    const { ctx, calls, gl } = createRecorderCtx();
+    const cmd: GroupDrawCommand = {
+      kind: 'group',
+      clip: { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 },
+      children: [{
+        kind: 'path' as const,
+        // evenodd polygon child — drawPathFillStencil ends with disable(STENCIL_TEST)
+        path: POLYGON_EVENODD,
+        fill: { color: '#f00' },
+      }],
+    };
+    drawGroup(ctx, cmd);
+
+    // Find the popClip's stencilOp(KEEP, KEEP, ZERO) — the clear pass.
+    // findLastIndex is ES2023+; use a manual reverse scan for TS compat.
+    let popClipIdx = -1;
+    for (let i = calls.length - 1; i >= 0; i--) {
+      if (calls[i].name === 'stencilOp' && calls[i].args[2] === gl.ZERO) {
+        popClipIdx = i;
+        break;
+      }
+    }
+    expect(popClipIdx).toBeGreaterThanOrEqual(0);
+
+    // Walk backwards from the pop; confirm enable(STENCIL_TEST) appears before
+    // any disable(STENCIL_TEST) in that backward scan.
+    let foundEnable = false;
+    for (let i = popClipIdx; i >= 0; i--) {
+      if (calls[i].name === 'disable' && calls[i].args[0] === gl.STENCIL_TEST) break;
+      if (calls[i].name === 'enable' && calls[i].args[0] === gl.STENCIL_TEST) {
+        foundEnable = true;
+        break;
+      }
+    }
+    expect(foundEnable).toBe(true);
+  });
+
+  it('pushClip and popClip restore stencilMask(0xFF) on exit', () => {
+    const { ctx, calls } = createRecorderCtx();
+    const cmd: GroupDrawCommand = {
+      kind: 'group',
+      clip: { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 },
+      children: [],
+    };
+    drawGroup(ctx, cmd);
+
+    // After the full group (push + pop), the last stencilMask call should be 0xFF.
+    const stencilMaskCalls = calls.filter((c) => c.name === 'stencilMask');
+    expect(stencilMaskCalls.length).toBeGreaterThan(0);
+    const last = stencilMaskCalls[stencilMaskCalls.length - 1];
+    expect(last.args[0]).toBe(0xFF);
+  });
+});
+
+// ─── C2 ───────────────────────────────────────────────────────────────────────
+
+describe('C2: frame-start stencilMask(0xFF) before clear', () => {
+  it('render() sets stencilMask(0xFF) before clear(STENCIL_BUFFER_BIT)', () => {
+    const recorder = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
+    recorder.reset();
+    r.render([]);
+    const calls = recorder.calls;
+    const clearIdx = calls.findIndex(
+      (c) => c.name === 'clear' && (c.args[0] as number) & recorder.gl.STENCIL_BUFFER_BIT,
+    );
+    expect(clearIdx).toBeGreaterThanOrEqual(0);
+    // stencilMask(0xFF) must appear before the clear.
+    const maskBeforeClear = calls
+      .slice(0, clearIdx)
+      .some((c) => c.name === 'stencilMask' && c.args[0] === 0xFF);
+    expect(maskBeforeClear).toBe(true);
   });
 });

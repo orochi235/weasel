@@ -4,6 +4,7 @@ import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from 'features/paths/types';
+import { textCommand } from 'features/text/textCommand';
 import type {
   DebugConfig,
   DebugSink,
@@ -201,17 +202,16 @@ function emitLayersPanel(
     fill: { fill: 'solid', color: theme.layerTextBg },
   });
   for (let i = 0; i < lines.length; i++) {
-    out.push({
-      kind: 'text',
-      x: x + padX,
-      y: y + padY + i * lineH,
-      text: lines[i],
-      style: {
+    out.push(textCommand(
+      x + padX,
+      y + padY + i * lineH,
+      lines[i],
+      {
         fill: { fill: 'solid', color: theme.layerText },
         fontFamily: 'ui-monospace, Menlo, monospace',
         fontSize: 11,
       },
-    });
+    ));
   }
 }
 

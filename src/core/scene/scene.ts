@@ -42,6 +42,24 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     layerIndex: new Map(),
   };
 
+  /**
+   * Side-channel cache of `clipFromPose` functions keyed by node id.
+   * Because `clipFromPose` is a function it cannot travel through the
+   * serializable op payload. When `scene.add` or the `initial` loader calls
+   * `patchClipFromPose`, we also store the function here so the `kit:add`
+   * redo path can re-attach it after replaying the op.
+   *
+   * Entries are pruned at two natural hook points to prevent unbounded growth:
+   *   1. When `redoStack` is cleared by a new op (branch-on-edit): any kit:add
+   *      in the discarded entries that references a node absent from
+   *      `state.nodes` is permanently unreachable — its cache entry is dropped.
+   *   2. When `undoStack` overflows `historyLimit` and evicts the oldest entry:
+   *      same reasoning applies to the evicted entries.
+   * Invariant: after pruning, no entry remains for a node that is both absent
+   * from `state.nodes` AND unreachable via any remaining undo/redo log entry.
+   */
+  const pendingClipPatches = new Map<NodeId, NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>>();
+
   for (let i = 0; i < options.systemLayers.length; i++) {
     const spec = options.systemLayers[i];
     if (state.layerIndex.has(spec.id)) {
@@ -86,6 +104,26 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     for (const listener of listeners) listener();
   }
 
+  /**
+   * Prune `pendingClipPatches` entries for nodes that were referenced only by
+   * the given dropped log entries (redoStack entries being discarded, or
+   * undoStack entries evicted by `historyLimit`). An entry is safe to drop
+   * when the node is absent from `state.nodes` — meaning its only path back
+   * into the scene was through these now-unreachable log entries.
+   */
+  function pruneCacheForDroppedEntries(droppedEntries: LogEntry[]): void {
+    if (pendingClipPatches.size === 0) return;
+    for (const entry of droppedEntries) {
+      for (const op of entry.ops) {
+        if (op.kind !== 'kit:add') continue;
+        const id = (op.payload as { id?: NodeId }).id;
+        if (id && !state.nodes.has(id) && pendingClipPatches.has(id)) {
+          pendingClipPatches.delete(id);
+        }
+      }
+    }
+  }
+
   function pushEntry(entry: LogEntry): void {
     if (replaying) return;
     if (currentBatch) {
@@ -93,8 +131,17 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       return;
     }
     undoStack.push(entry);
-    redoStack.length = 0;
-    while (undoStack.length > historyLimit) undoStack.shift();
+    // Hook 1: clear the redo stack ("branch on edit"). Any kit:add in the
+    // cleared entries that refers to a node no longer in state.nodes is
+    // permanently unreachable — drop the corresponding cache entry.
+    const droppedRedo = redoStack.splice(0);
+    pruneCacheForDroppedEntries(droppedRedo);
+    // Hook 2: evict the oldest undo entries that overflow historyLimit.
+    // Evicted entries are also permanently unreachable.
+    while (undoStack.length > historyLimit) {
+      const evicted = undoStack.shift()!;
+      pruneCacheForDroppedEntries([evicted]);
+    }
   }
 
   function requireNode(id: NodeId): Node<TData, TLayer, TPose> {
@@ -161,11 +208,15 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
   /** Post-patch `clipFromPose` onto a container node after its `kit:add` op
    *  runs. The function cannot travel through the serializable op payload, so
-   *  we attach it directly to the live node here. No-op for leaves or when
-   *  the spec has no `clipFromPose`. */
+   *  we attach it directly to the live node here. Also caches the function in
+   *  `pendingClipPatches` so the `kit:add` redo path can re-attach it.
+   *  No-op for leaves or when the spec has no `clipFromPose`. */
   function patchClipFromPose(spec: AddNodeSpec<TData, TLayer, TPose>, id: NodeId): void {
     if (spec.kind === 'container' && spec.clipFromPose !== undefined) {
       (state.nodes.get(id) as ContainerNode<TData, TLayer, TPose>).clipFromPose = spec.clipFromPose;
+      // Cache for redo: kit:add apply doesn't have access to the spec, so we
+      // keep the function reference here and re-attach it after redo replays.
+      pendingClipPatches.set(id, spec.clipFromPose as NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>);
     }
   }
 
@@ -189,10 +240,22 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         : ({ kind: 'leaf', id: p.id, layer: p.layer, pose: p.pose, data: p.data, parent: p.parent } as LeafNode<TData, TLayer, TPose>);
       state.nodes.set(p.id, node);
       attach(p.id, p.parent, p.index);
+      // Re-attach clipFromPose from the side-channel cache. This is the redo
+      // path: the original apply (via scene.add) calls patchClipFromPose which
+      // stores the function; redo replays kit:add without a spec, so we restore
+      // from the cache instead.
+      if (p.kind === 'container') {
+        const cached = pendingClipPatches.get(p.id);
+        if (cached) {
+          (node as ContainerNode<TData, TLayer, TPose>).clipFromPose = cached;
+        }
+      }
     },
     revert: (p) => {
       detach(p.id);
       state.nodes.delete(p.id);
+      // Note: we intentionally do NOT delete the pendingClipPatches entry —
+      // redo will re-apply the node and re-attach clipFromPose from it.
     },
   });
 
@@ -517,8 +580,14 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
             currentBatch = null;
             if (finished.ops.length > 0) {
               undoStack.push(finished);
-              redoStack.length = 0;
-              while (undoStack.length > historyLimit) undoStack.shift();
+              // Hook 1 (batch path): same redo-stack clear as pushEntry.
+              const droppedRedo = redoStack.splice(0);
+              pruneCacheForDroppedEntries(droppedRedo);
+              // Hook 2 (batch path): historyLimit eviction.
+              while (undoStack.length > historyLimit) {
+                const evicted = undoStack.shift()!;
+                pruneCacheForDroppedEntries([evicted]);
+              }
             }
           }
           // Fire one coalesced notify if any op inside the batch dirtied
@@ -567,6 +636,14 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     }
     notify();
   }
+
+  // ── Test-only internal access ──────────────────────────────────────────
+  // Attach a cache-size accessor directly on the returned object so unit tests
+  // can assert prune behaviour without heap inspection. Hidden behind `as unknown`
+  // because Scene<> is the public interface; `__clipCacheSize` is not on it.
+  // Do NOT use this outside of test files.
+  (scene as unknown as { __clipCacheSize: () => number }).__clipCacheSize =
+    () => pendingClipPatches.size;
 
   return scene;
 }

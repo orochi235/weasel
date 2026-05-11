@@ -1,16 +1,16 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import {
-  arrayAdapter,
-  Canvas,
+  asNodeId,
   cloneByAltDrag,
+  SceneCanvas,
   useCloneTool,
+  useScene,
   useTools,
 } from '@orochi235/weasel';
 import type { ClipboardSnapshot } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
-interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 400, H = 300;
 
@@ -20,26 +20,44 @@ const INITIAL: Rect[] = [
 ];
 
 export function CloneDemo() {
-  const [rects, setRects] = useState<Rect[]>(INITIAL);
-  const rectsRef = useRef(rects); rectsRef.current = rects;
+  const scene = useScene<Rect>({ items: INITIAL });
   const nextId = useRef(0);
 
-  const adapter = {
-    ...arrayAdapter<Rect, Pose>({
-      ref: rectsRef,
-      setItems: setRects,
-      toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
+  const adapter = useMemo(() => ({
+    getNodes: (): Rect[] => {
+      const out: Rect[] = [];
+      for (const id of scene.renderOrder()) {
+        const n = scene.get(id);
+        if (n) out.push(n.data as Rect);
+      }
+      return out;
+    },
+    getPose: (id: string): Rect => scene.get(asNodeId(id))!.pose as Rect,
+    getSelection: () => [] as string[],
+    setSelection: () => {},
+    snapshotSelection: (ids: string[]): ClipboardSnapshot => ({
+      items: ids.map((id) => scene.get(asNodeId(id))!.data as Rect),
     }),
-    commitPaste: (clip: ClipboardSnapshot, offset: { dx: number; dy: number }) =>
+    commitInsert: () => null,
+    commitPaste: (clip: ClipboardSnapshot, offset: { dx: number; dy: number }): Rect[] =>
       (clip.items as Rect[]).map((src) => ({
         ...src,
         id: `clone-${nextId.current++}`,
         x: src.x + offset.dx,
         y: src.y + offset.dy,
       })),
-  };
+    insertNode: (rect: Rect) => {
+      scene.add({
+        kind: 'leaf',
+        layer: 'default',
+        pose: rect,
+        data: rect,
+        id: asNodeId(rect.id),
+      });
+    },
+  }), [scene]);
 
-  const drawRect = (r: Rect, p: Pose): DrawCommand[] => [{
+  const drawRect = (r: Rect, p: Rect): DrawCommand[] => [{
     kind: 'path',
     path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
     fill: { color: r.color },
@@ -53,19 +71,19 @@ export function CloneDemo() {
   const tools = useTools({ active: 'clone', registry: { clone } });
 
   return (
-    <Canvas
+    <SceneCanvas
       width={W}
       height={H}
       className="ckd-canvas"
-      adapter={adapter}
+      scene={scene}
       tools={tools}
       selectionMode="none"
       layers={{
         scene: {
-          drawOne: (r, p): DrawCommand[] => [{
+          drawOne: (n, p): DrawCommand[] => [{
             kind: 'path',
             path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-            fill: { color: r.color },
+            fill: { color: (n.data as Rect).color },
           }],
         },
         selectionOverlay: null,

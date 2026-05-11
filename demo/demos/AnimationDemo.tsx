@@ -1,11 +1,13 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import {
   animateLifecycle,
   animateOnSetPose,
-  arrayAdapter,
-  Canvas,
+  asNodeId,
   momentum,
+  SceneCanvas,
+  sceneToAdapter,
   useAnimator,
+  useScene,
   useSelection,
   useSelectTool,
   useTools,
@@ -25,37 +27,45 @@ const INITIAL: Card[] = [
 ];
 
 export function AnimationDemo() {
-  const [cards, setCards] = useState<Card[]>(INITIAL);
-  const cardsRef = useRef(cards);
-  cardsRef.current = cards;
-  const nextId = useRef(1);
+  const scene = useScene<Card>({ items: INITIAL });
   const selection = useSelection();
   const animator = useAnimator();
+  const nextId = useRef(1);
 
-  const baseAdapter = useMemo(() => ({
-    ...arrayAdapter<Card, Pose>({
-      ref: cardsRef,
-      setItems: setCards,
-      toPose: (c) => ({ x: c.x, y: c.y, width: c.width, height: c.height }),
-    }),
-    ...selection.adapterMethods,
-    insertNode: (obj: Card) => {
-      // Mutate the live ref synchronously so wrappers that read getPose
-      // immediately after insertNode (e.g. animateLifecycle) see the new
-      // object before React state catches up.
-      cardsRef.current = [...cardsRef.current, obj];
-      setCards(cardsRef.current);
-    },
-    removeNode: (id: string) => {
-      cardsRef.current = cardsRef.current.filter((c) => c.id !== id);
-      setCards(cardsRef.current);
-    },
-    hitTestArea: (r: Pose) =>
-      cardsRef.current
-        .filter((o) => o.x < r.x + r.width && o.x + o.width > r.x && o.y < r.y + r.height && o.y + o.height > r.y)
-        .map((o) => o.id),
-    snapshotSelection: () => ({ items: [] }),
-  }), [selection.adapterMethods]);
+  const baseAdapter = useMemo(() => {
+    const base = sceneToAdapter(scene, { selection });
+    return {
+      ...base,
+      // animateLifecycle/animateOnSetPose call insertNode with a {id, ...} card
+      // shape and read getPose immediately. Scene mutations are synchronous
+      // over a mutable store, so scene.get(id) works the next line over.
+      insertNode: (card: Card) => {
+        scene.add({
+          kind: 'leaf',
+          layer: 'default',
+          pose: card,
+          data: card,
+          id: asNodeId(card.id),
+        });
+      },
+      removeNode: (id: string) => {
+        scene.remove(asNodeId(id));
+      },
+      hitTest: (worldX: number, worldY: number): string | null => {
+        const order = [...scene.renderOrder()];
+        for (let i = order.length - 1; i >= 0; i--) {
+          const n = scene.get(order[i]);
+          if (!n) continue;
+          const p = n.pose as Pose;
+          if (worldX >= p.x && worldX <= p.x + p.width && worldY >= p.y && worldY <= p.y + p.height) {
+            return order[i];
+          }
+        }
+        return null;
+      },
+      snapshotSelection: () => ({ items: [] }),
+    };
+  }, [scene, selection]);
 
   const adapter = useMemo(
     () =>
@@ -72,14 +82,6 @@ export function AnimationDemo() {
   );
 
   const select = useSelectTool<Card, Pose>(adapter as never, {
-    pickEvery: (wx, wy) =>
-      cardsRef.current
-        .filter((c) => wx >= c.x && wx <= c.x + c.width && wy >= c.y && wy <= c.y + c.height)
-        .map((c) => c.id),
-    boundsOf: (id) => {
-      const c = cardsRef.current.find((x) => x.id === id);
-      return c ? { x: c.x, y: c.y, width: c.width, height: c.height } : null;
-    },
     move: {
       behaviors: [
         momentum<Pose>({
@@ -95,16 +97,16 @@ export function AnimationDemo() {
     drawGhost: (card, pose): DrawCommand[] => card == null ? [] : [{
       kind: 'path',
       path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-      fill: { color: card.color },
+      fill: { color: (card as unknown as Card).color },
     }],
-    getNode: (id) => cardsRef.current.find((c) => c.id === id) ?? null,
   });
   const tools = useTools({ active: 'select', registry: { select } });
 
   const tweenTo = (id: string, x: number, y: number) => {
-    const c = cardsRef.current.find((s) => s.id === id);
-    if (!c) return;
-    adapter.setPose(id, { x, y, width: c.width, height: c.height });
+    const node = scene.get(asNodeId(id));
+    if (!node) return;
+    const p = node.pose as Pose;
+    adapter.setPose(id, { x, y, width: p.width, height: p.height });
   };
 
   const addCard = () => {
@@ -126,19 +128,19 @@ export function AnimationDemo() {
         <button onClick={() => tweenTo('b', 100, 300)}>Tween B → (100, 300)</button>
         <button onClick={addCard}>Add card</button>
       </div>
-      <Canvas
+      <SceneCanvas
         width={W}
         height={H}
         className="ckd-canvas"
-        adapter={adapter as never}
+        scene={scene}
         selection={selection}
         tools={tools}
         layers={{
           scene: {
-            drawOne: (c: Card, p: Pose): DrawCommand[] => [{
+            drawOne: (_n, p): DrawCommand[] => [{
               kind: 'path',
               path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { color: c.color },
+              fill: { color: (p as Card).color },
             }],
           },
           selectionOverlay: { handles: false },

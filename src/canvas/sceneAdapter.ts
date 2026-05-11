@@ -122,9 +122,9 @@ function nodeBoundsPassClips(
  * ancestor-clip chain: descendants whose bounds don't intersect any ancestor
  * clip are excluded from results even if they satisfy the geometry callback.
  *
- * Containers themselves are tested by `nodeTest` and included in results when
- * they pass — this preserves existing behavior where containers can be
- * marquee-selected by their own AABB.
+ * Containers are gated on ancestor clips before their own geometry test —
+ * consistent with leaves. A container whose AABB doesn't pass the enclosing
+ * grandparent clip is not included, and neither are its children.
  */
 function walkClipAware<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
@@ -140,8 +140,15 @@ function walkClipAware<TData, TLayer extends string, TPose>(
     if (!node) return;
 
     if (node.kind === 'container') {
-      // Test this container's own geometry (preserves existing flat-walk
-      // behavior — containers can be marquee-selected by their AABB).
+      // Gate the container on ancestor clips first, same as leaves.
+      // A container outside its grandparent's clip is invisible — exclude it
+      // and skip its children entirely.
+      if (ancestorClips.length > 0) {
+        const b = poseBounds(node.pose);
+        if (!nodeBoundsPassClips(ancestorClips, b)) return;
+      }
+
+      // Test this container's own geometry.
       if (nodeTest(node)) results.push(nodeId);
 
       // Compute this container's clip exactly once per query visit.

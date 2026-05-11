@@ -1,68 +1,61 @@
 import { useState } from 'react';
-import { Canvas, useTools, useKeybindings, useHandTool, useSelectTool } from '../../src';
+import {
+  SceneCanvas,
+  useScene,
+  useSelection,
+  useHandTool,
+} from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
 import type { View } from '../../src/core/viewport/view';
 
-interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
+interface NodeData { color: string }
+type LayerId = 'default';
+interface Pose { x: number; y: number; width: number; height: number }
 
-const INITIAL_ITEMS: Rect[] = [
-  { id: 'a', x:  50, y:  50, width: 80, height: 60, color: '#7fb069' },
-  { id: 'b', x: 300, y: 200, width: 80, height: 60, color: '#a48bd4' },
-  { id: 'c', x: 600, y: 400, width: 80, height: 60, color: '#f0e0a8' },
-];
+const W = 400, H = 300;
+
 export function PanDemo() {
-  const [items, setItems] = useState<Rect[]>(INITIAL_ITEMS);
+  const scene = useScene<NodeData, LayerId, Pose>({
+    systemLayers: [{ id: 'default' }],
+    initial: [
+      { id: 'a' as never, kind: 'leaf', layer: 'default',
+        pose: { x:  50, y:  50, width: 80, height: 60 }, data: { color: '#7fb069' } },
+      { id: 'b' as never, kind: 'leaf', layer: 'default',
+        pose: { x: 300, y: 200, width: 80, height: 60 }, data: { color: '#a48bd4' } },
+      { id: 'c' as never, kind: 'leaf', layer: 'default',
+        pose: { x: 600, y: 400, width: 80, height: 60 }, data: { color: '#f0e0a8' } },
+    ],
+  });
+  const selection = useSelection();
+
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
-
-  // We only need select + hand for this demo.
-  const selectAdapter = {
-    getNode: (id: string) => items.find((r) => r.id === id),
-    getPose: (id: string) => items.find((r) => r.id === id) ?? null,
-    getNodes: () => items,
-    setPose: (id: string, pose: unknown) => setItems((cur) => cur.map((r) => r.id === id ? { ...r, ...(pose as Rect) } : r)),
-    getSelection: () => [] as string[],
-    setSelection: () => {},
-  };
-  const select = useSelectTool(selectAdapter, {
-    pickEvery: (wx, wy) => items.filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height).map((r) => r.id),
-    boundsOf: (id) => { const r = items.find((o) => o.id === id); return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null; },
-  });
   const hand = useHandTool();
-
-  const tools = useTools({
-    active: 'select',
-    registry: { select, hand },
-  });
-  useKeybindings(tools);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-        <span style={{ fontFamily: 'monospace' }}>tool: {tools.hotkeyEngaged ?? tools.active}</span>
         <span style={{ fontFamily: 'monospace' }}>view: ({view.x.toFixed(0)}, {view.y.toFixed(0)})</span>
         <button onClick={() => setView({ x: 0, y: 0, scale: 1 })}>Reset view</button>
         <span style={{ color: '#888' }}>H = hand · space (hold) = momentary hand</span>
       </div>
-      <Canvas
-        width={400}
-        height={300}
-        items={items}
-        setItems={setItems}
+      <SceneCanvas
+        width={W}
+        height={H}
+        className="ckd-canvas"
+        scene={scene}
+        selection={selection}
         view={view}
         onViewChange={setView}
-        tools={tools}
-        background="#1a130d"
+        ambient={[hand]}
         layers={{
           scene: {
-            drawOne: (_obj, pose): DrawCommand[] => {
-              const r = pose as Rect;
-              return [{
-                kind: 'path',
-                path: { kind: 'rect', x: r.x, y: r.y, width: r.width, height: r.height },
-                fill: { color: r.color },
-              }];
-            },
+            drawOne: (n, p): DrawCommand[] => [{
+              kind: 'path',
+              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+              fill: { color: n.data.color },
+            }],
           },
+          selectionOverlay: { handles: false },
         }}
       />
     </div>

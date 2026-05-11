@@ -292,6 +292,9 @@ export class WeaselRenderer {
     // no VAO bound, no draw in flight. Deleting from the FinalizationRegistry
     // callback directly was racy and caused mid-draw crashes.
     this.meshCache.drainPendingDeletes();
+    // Ensure all stencil bits are cleared regardless of any mask left over
+    // from the previous frame's clip ops.
+    gl.stencilMask(0xFF);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
     const ctx: DrawContext = {
       gl,
