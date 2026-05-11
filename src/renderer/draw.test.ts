@@ -3,6 +3,38 @@ import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { mat3 } from './math/mat3';
 import type { DrawCommand } from './DrawCommand';
+import { pushClip, popClip, type DrawContext } from './draw';
+
+/**
+ * Build a DrawContext backed by a GL recorder. Mirrors what WeaselRenderer.render
+ * assembles internally, using the _*() accessors exposed for testing.
+ */
+function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeof makeGLRecorder>['calls']; gl: ReturnType<typeof makeGLRecorder>['gl'] } {
+  const recorder = makeGLRecorder();
+  const r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
+  recorder.reset();
+  const ctx: DrawContext = {
+    gl: recorder.gl,
+    pathFill: r._pathFill(),
+    pathFillVColor: r._pathFillVColor(),
+    textSdf: r._textSdf(),
+    imageFill: r._imageFill(),
+    gradFill: r._gradFill(),
+    meshCache: r._meshCache(),
+    textureCache: r._textureCache(),
+    imageCache: r._imageCache(),
+    gradRampCache: r._gradRampCache(),
+    programRegistry: new Map(),
+    quadVbo: null,
+    quadIbo: null,
+    rectVao: null,
+    rectVbo: null,
+    state: r._groupState(),
+    widthCss: r._widthCss(),
+    heightCss: r._heightCss(),
+  };
+  return { ctx, calls: recorder.calls, gl: recorder.gl };
+}
 
 describe('WeaselRenderer.render — kind: group', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
@@ -349,5 +381,53 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
       return arr[0] === 1 && arr[5] === 1 && arr[10] === 1 && arr[15] === 1;
     });
     expect(identityUploaded).toBe(true);
+  });
+});
+
+describe('pushClip / popClip', () => {
+  it('pushClip(level=1): sets bit 1 wherever the clip path covers, no ancestor test needed', () => {
+    const { ctx, calls, gl } = createRecorderCtx();
+    const path = { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 };
+    pushClip(ctx, path, /* newDepth */ 1);
+    // stencilMask should be 0x02 (bit 1) for the write
+    expect(calls.find((c) => c.name === 'stencilMask' && c.args[0] === 0x02)).toBeDefined();
+    // stencilFunc EQUAL ref=0x02 mask=0x00 (no ancestors at depth 1)
+    const sf = calls.find((c) => c.name === 'stencilFunc');
+    expect(sf!.args).toEqual([gl.EQUAL, 0x02, 0x00]);
+    // stencilOp KEEP KEEP REPLACE
+    const so = calls.find((c) => c.name === 'stencilOp');
+    expect(so!.args).toEqual([gl.KEEP, gl.KEEP, gl.REPLACE]);
+    // colorMask false then true (stencil-only pass)
+    const cmCalls = calls.filter((c) => c.name === 'colorMask');
+    expect(cmCalls[0].args).toEqual([false, false, false, false]);
+    expect(cmCalls[cmCalls.length - 1].args).toEqual([true, true, true, true]);
+  });
+
+  it('pushClip(level=3): only writes bit 3 where bits 1+2 are already set', () => {
+    const { ctx, calls, gl } = createRecorderCtx();
+    const path = { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 };
+    pushClip(ctx, path, /* newDepth */ 3);
+    const sf = calls.find((c) => c.name === 'stencilFunc');
+    // ref includes bits 1, 2, 3 (=0x0E); mask is ancestors only (bits 1+2 = 0x06)
+    expect(sf!.args).toEqual([gl.EQUAL, 0x0E, 0x06]);
+    // stencilMask for the new bit (filter out the 0x01 narrowing from
+    // surrounding code if present)
+    const clipSm = calls.find((c) => c.name === 'stencilMask' && c.args[0] !== 0x01);
+    expect(clipSm!.args).toEqual([0x08]);  // bit 3
+  });
+
+  it('popClip(oldDepth=2): clears bit 3 along the path, preserves ancestor bits', () => {
+    const { ctx, calls, gl } = createRecorderCtx();
+    const path = { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 };
+    popClip(ctx, path, /* oldDepth */ 2);
+    // ref = ancestorMask(2) | (1 << 3) = 0x06 | 0x08 = 0x0E
+    const sf = calls.find((c) => c.name === 'stencilFunc');
+    expect(sf!.args).toEqual([gl.EQUAL, 0x0E, 0x0E]);
+    // stencilMask = bit 3 only (filter out 0x01 narrowing if any)
+    const clipSm = calls.find((c) => c.name === 'stencilMask' && c.args[0] !== 0x01);
+    expect(clipSm!.args).toEqual([0x08]);
+    // stencilOp ZERO for the write
+    const so = calls.find((c) => c.name === 'stencilOp');
+    expect(so!.args).toEqual([gl.KEEP, gl.KEEP, gl.ZERO]);
   });
 });

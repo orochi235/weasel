@@ -1,4 +1,4 @@
-import type { Stroke, Paint } from '@orochi235/weasel';
+import type { Stroke, Paint, Path } from '@orochi235/weasel';
 import { resolveTextStyle } from '@orochi235/weasel';
 import type {
   DrawCommand,
@@ -443,6 +443,76 @@ function drawPathFillGradient(
   gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
 }
+
+// ─── Clip-stencil helpers ────────────────────────────────────────────────────
+
+/**
+ * Bit-mask for ancestor clip levels.
+ * Returns bits 1..depth (inclusive).
+ * depth=0 → 0x00; depth=1 → 0x02; depth=3 → 0x0E.
+ */
+function ancestorMask(depth: number): number {
+  return depth === 0 ? 0 : ((1 << (depth + 1)) - 1) & 0xFE;
+}
+
+/**
+ * Rasterize a path into the stencil buffer using the pathFill shader geometry.
+ * The caller is responsible for setting stencilFunc / stencilOp / stencilMask
+ * and colorMask before calling.
+ */
+function rasterizePathToStencil(ctx: DrawContext, path: Path): void {
+  const gl = ctx.gl;
+  const mesh = getMesh(path);
+  const handle = ctx.meshCache.handleFor(mesh);
+  gl.useProgram(ctx.pathFill.handle);
+  gl.bindVertexArray(handle.vao);
+  setProjAndModel(ctx, ctx.pathFill);
+  gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
+  gl.bindVertexArray(null);
+}
+
+/**
+ * Push a clip level. Rasterizes the clip path into the stencil buffer,
+ * setting bit `newDepth` where (a) the path's fragment passes AND (b) all
+ * ancestor clip bits are already set.
+ */
+export function pushClip(ctx: DrawContext, path: Path, newDepth: number): void {
+  const gl = ctx.gl;
+  const ancestors = ancestorMask(newDepth - 1);
+  const newBit = 1 << newDepth;
+  const ref = ancestors | newBit;
+
+  gl.enable(gl.STENCIL_TEST);
+  gl.colorMask(false, false, false, false);
+  gl.stencilMask(newBit);
+  gl.stencilFunc(gl.EQUAL, ref, ancestors);
+  gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
+
+  rasterizePathToStencil(ctx, path);
+
+  gl.colorMask(true, true, true, true);
+}
+
+/**
+ * Pop a clip level. Rasterizes the same path again, clearing bit
+ * `oldDepth + 1` where it was set during the matching push.
+ */
+export function popClip(ctx: DrawContext, path: Path, oldDepth: number): void {
+  const gl = ctx.gl;
+  const oldBit = 1 << (oldDepth + 1);
+  const ref = ancestorMask(oldDepth) | oldBit;
+
+  gl.colorMask(false, false, false, false);
+  gl.stencilMask(oldBit);
+  gl.stencilFunc(gl.EQUAL, ref, ref);
+  gl.stencilOp(gl.KEEP, gl.KEEP, gl.ZERO);
+
+  rasterizePathToStencil(ctx, path);
+
+  gl.colorMask(true, true, true, true);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function drawPathFillStencil(ctx: DrawContext, fill: Paint, handle: GLMeshHandle): void {
   // Step-4 evenodd stencil only supports solid fills cleanly. For non-solid,
