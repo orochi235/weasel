@@ -32,3 +32,9 @@ export type {
 export { resolveRuns } from './runs/resolveRuns';
 export type { ResolvedRun } from './runs/resolveRuns';
 export { textCommand } from './textCommand';
+export {
+  runsToDom,
+  domToRuns,
+  charOffsetToDomPosition,
+  domPositionToCharOffset,
+} from './domRuns';

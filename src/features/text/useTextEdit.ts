@@ -170,7 +170,11 @@ export function useTextEdit(
       setEditingId(null);
       return;
     }
-    const usedRuns = optsRef.current.getRuns?.(id) != null;
+    // Match the init-time guard: only treat the overlay as rich-text when
+    // getRuns returned a non-empty array (an empty array fell through to
+    // plain-text init, so commit should too).
+    const currentRuns = optsRef.current.getRuns?.(id);
+    const usedRuns = currentRuns != null && currentRuns.length > 0;
     if (usedRuns && optsRef.current.setRuns) {
       const runs = domToRuns(overlay);
       optsRef.current.setText(id, runsToPlainText(runs));
@@ -277,8 +281,7 @@ export function useTextEdit(
     };
     const onBlur = () => commit();
 
-    const onBeforeInput = (e: Event) => {
-      const ie = e as InputEvent;
+    const onBeforeInput = (ie: InputEvent) => {
       if (ie.inputType !== 'insertText' || !ie.data) return;
       const pendingBold = overlay.dataset.pendingBold === '1';
       const pendingItalic = overlay.dataset.pendingItalic === '1';
