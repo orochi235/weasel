@@ -818,8 +818,11 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       // `getActiveOverlays` returns [active, hotkey?, ...ambient]; reverse
       // for top-down so the foreground-most tool's affordances fire first.
       const overlays = r.tools.getActiveOverlays();
+      const extras = Array.from(extrasRef.current);
+      // Top-down walk order: extras first (HUDs on top), then tool overlays
+      // (reversed so foreground-most tool's overlays fire before ambient ones).
       return {
-        layers: [...overlays].reverse(),
+        layers: [...extras, ...overlays.reverse()],
         chromeState: r.chromeState,
         view: r.view,
         dims: { width: r.width, height: r.height },
