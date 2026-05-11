@@ -166,6 +166,7 @@ export function TextDemo() {
         width: p.width,
         height: p.height,
         text: n.text,
+        runs: n.runs,
         style: n.style,
       };
     },

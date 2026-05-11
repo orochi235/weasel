@@ -291,7 +291,10 @@ export function layoutRuns(
       const v0 = e.glyph.y / atlasH;
       const u1 = (e.glyph.x + e.glyph.width) / atlasW;
       const v1 = (e.glyph.y + e.glyph.height) / atlasH;
-      e.group.quads.push({ x0: qx0, y0: qy0, x1: qx1, y1: qy1, u0, v0, u1, v1, baselineY: penY });
+      // Typographic baseline (not the top of the line box) — above-baseline
+      // vertices have y < baselineY so synthetic italic skew leans them right.
+      const baselineY = penY + e.font.common.base * scale;
+      e.group.quads.push({ x0: qx0, y0: qy0, x1: qx1, y1: qy1, u0, v0, u1, v1, baselineY });
       penX += e.advance;
     }
     maxLineWidth = Math.max(maxLineWidth, line.width);

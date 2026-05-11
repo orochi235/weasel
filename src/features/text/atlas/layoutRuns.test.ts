@@ -102,6 +102,19 @@ describe('layoutRuns — single line', () => {
     expect(out.groups).toHaveLength(0);
     expect(out.bounds.width).toBe(0);
   });
+
+  it('records the typographic baseline (not the line-box top) on each quad', async () => {
+    await registerFixture('inter', [{}]);
+    // FIXTURE_FONT: info.size=32, common.base=29.
+    // RUN_PLAIN: fontSize=32 → scale=1.
+    // origin.y=100 → expected baselineY = 100 + 29 * 1 = 129.
+    const out = layoutRuns(
+      [RUN_PLAIN('A')],
+      { maxWidth: Infinity, lineHeight: 1.2, align: 'left' },
+      { x: 0, y: 100 },
+    );
+    expect(out.groups[0].quads[0].baselineY).toBe(129);
+  });
 });
 
 describe('layoutRuns — word wrap', () => {
