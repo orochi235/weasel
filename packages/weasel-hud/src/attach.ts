@@ -45,7 +45,7 @@ export function attachHud(api: CanvasExtensionApi, hud: Hud): () => void {
     label: 'HUD',
     space: 'screen',
     draw: (_data, _view, dims): DrawCommand[] => {
-      const ctx = { dims, defaultFont: DEFAULT_FONT_FAMILY, tokens: readTokens(null) };
+      const ctx = { dims, defaultFont: DEFAULT_FONT_FAMILY, tokens: readTokens(api.element) };
       const out: DrawCommand[] = [];
       for (const w of hud.widgets()) {
         if (w.hidden) continue;
