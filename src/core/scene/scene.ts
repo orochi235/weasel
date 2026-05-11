@@ -334,6 +334,12 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
         parent, index,
       }, `add ${spec.kind}`);
+      // clipFromPose is a function and cannot travel through the serializable
+      // op payload. Patch it directly onto the live node after the op applies.
+      const maybeClip = (spec as { clipFromPose?: ContainerNode<TData, TLayer, TPose>['clipFromPose'] }).clipFromPose;
+      if (spec.kind === 'container' && maybeClip !== undefined) {
+        (state.nodes.get(id) as ContainerNode<TData, TLayer, TPose>).clipFromPose = maybeClip;
+      }
       return id;
     },
 

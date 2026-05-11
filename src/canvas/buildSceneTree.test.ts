@@ -102,4 +102,57 @@ describe('buildSceneTree', () => {
     const bgGroup = out[0] as { children: DrawCommand[] };
     expect(bgGroup.children).toHaveLength(3);
   });
+
+  it('container with clipFromPose returning a path → group has clip field set', () => {
+    const scene = makeScene();
+    const clipPath: import('../features/paths/types').Path = {
+      kind: 'rect', x: 0, y: 0, width: 50, height: 50,
+    };
+    const bed = scene.add({
+      kind: 'container',
+      layer: 'bg',
+      pose: POSE,
+      data: { label: 'bed' },
+      clipFromPose: () => clipPath,
+    } as never);
+    scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'p' }, parent: bed });
+    const adapter = sceneToAdapter(scene);
+    const out = buildSceneTree(adapter as never, labelDraw as never, VIEW);
+    const bgGroup = out[0] as { children: DrawCommand[] };
+    const bedGroup = bgGroup.children[0] as { kind: string; clip?: unknown; children: DrawCommand[] };
+    expect(bedGroup.clip).toBe(clipPath);
+  });
+
+  it('container with clipFromPose returning null → group has no clip field', () => {
+    const scene = makeScene();
+    scene.add({
+      kind: 'container', layer: 'bg', pose: POSE, data: { label: 'bed' },
+      clipFromPose: () => null,
+    } as never);
+    const adapter = sceneToAdapter(scene);
+    const out = buildSceneTree(adapter as never, labelDraw as never, VIEW);
+    const bedGroup = (out[0] as { children: DrawCommand[] }).children[0] as { clip?: unknown };
+    expect(bedGroup.clip).toBeUndefined();
+  });
+
+  it('container without clipFromPose → group has no clip field', () => {
+    const scene = makeScene();
+    scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'bed' } });
+    const adapter = sceneToAdapter(scene);
+    const out = buildSceneTree(adapter as never, labelDraw as never, VIEW);
+    const bedGroup = (out[0] as { children: DrawCommand[] }).children[0] as { clip?: unknown };
+    expect(bedGroup.clip).toBeUndefined();
+  });
+
+  it('clipFromPose is called with the live pose, not a stale value', () => {
+    const scene = makeScene();
+    let received: typeof POSE | null = null;
+    scene.add({
+      kind: 'container', layer: 'bg', pose: POSE, data: { label: 'bed' },
+      clipFromPose: (pose: Pose) => { received = pose; return null; },
+    } as never);
+    const adapter = sceneToAdapter(scene);
+    buildSceneTree(adapter as never, labelDraw as never, VIEW);
+    expect(received).toEqual(POSE);
+  });
 });

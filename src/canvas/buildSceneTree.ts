@@ -42,7 +42,14 @@ export function buildSceneTree<
     for (const cid of childIds) {
       children.push(buildNodeGroup(cid));
     }
-    return { kind: 'group', children };
+
+    const group: GroupDrawCommand = { kind: 'group', children };
+    const maybeContainer = node as { kind?: string; clipFromPose?: (pose: TPose) => unknown };
+    if (maybeContainer.kind === 'container' && typeof maybeContainer.clipFromPose === 'function') {
+      const clip = maybeContainer.clipFromPose(pose);
+      if (clip) group.clip = clip as GroupDrawCommand['clip'];
+    }
+    return group;
   }
 
   for (const layer of adapter.getLayers()) {
