@@ -438,18 +438,22 @@ export function useSelectTool<TObject extends { id: string }, TPose>(
               ops.push(createTransformOp<TPose>({ id, from, to }));
             }
             if (ops.length === 0) return;
+            // IMPORTANT: invoke as method calls so `this` binds to the
+            // adapter — `sceneToAdapter`'s `applyBatch` reads `this.setPose`
+            // inside its `scene.batch` callback. Extracting the function and
+            // calling it detached throws "Cannot read properties of undefined
+            // (reading 'setPose')" mid-onEnd, which the dispatcher can't
+            // recover from (inFlight stays set, blocking subsequent gestures).
+            const aa = a as {
+              applyOps?: (ops: ReturnType<typeof createTransformOp>[]) => void;
+              applyBatch?: (ops: ReturnType<typeof createTransformOp>[], label: string) => void;
+            };
             if (transient) {
-              (a as { applyOps?: (ops: ReturnType<typeof createTransformOp>[]) => void }).applyOps?.(ops);
+              aa.applyOps?.(ops);
+            } else if (aa.applyBatch) {
+              aa.applyBatch(ops, 'Resize');
             } else {
-              // Commit via the batched path so the gesture is one
-              // undo entry. Use dispatchApplyBatch convention via the
-              // adapter's applyBatch when available.
-              const ab = (a as { applyBatch?: (ops: ReturnType<typeof createTransformOp>[], label: string) => void }).applyBatch;
-              if (ab) {
-                ab(ops, 'Resize');
-              } else {
-                (a as { applyOps?: (ops: ReturnType<typeof createTransformOp>[]) => void }).applyOps?.(ops);
-              }
+              aa.applyOps?.(ops);
             }
           };
 

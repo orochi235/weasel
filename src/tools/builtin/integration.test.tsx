@@ -8,6 +8,8 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, fireEvent, act } from '@testing-library/react';
 import { useRef, useState } from 'react';
 import { useTools, useSelectTool, useDeleteTool, useKeybindings, defineTool } from '../';
+import { sceneToAdapter } from 'canvas/sceneAdapter';
+import { useScene } from 'core/scene/useScene';
 import { useHandTool } from './useHandTool';
 import { useWheelZoomTool } from './useWheelZoomTool';
 import { useWheelPanTool } from './useWheelPanTool';
@@ -655,5 +657,101 @@ describe('Phase 2a integration', () => {
     expect(applyBatch).toHaveBeenCalledTimes(1);
     const [, label] = applyBatch.mock.calls[0] as [unknown, string];
     expect(label).toBe('Rotate');
+  });
+
+  it('multi-mode corner-resize ends cleanly on pointerup (one applyBatch with Resize)', () => {
+    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
+    function Harness() {
+      const [rects, setRects] = useState<Rect[]>([
+        { id: 'a', x: 0, y: 0, width: 50, height: 50 },
+        { id: 'b', x: 60, y: 60, width: 40, height: 40 },
+      ]);
+      const rectsRef = useRef(rects);
+      rectsRef.current = rects;
+      // Seed selection on both so multi-mode chrome activates.
+      const sel = useSelection({ initial: [asNodeId('a'), asNodeId('b')], mode: 'multi' });
+      const base = arrayAdapter<Rect, Pose>({
+        ref: rectsRef, setItems: setRects,
+        toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
+      });
+      const adapter = { ...base, ...sel.adapterMethods, applyBatch, applyOps };
+      const select = useSelectTool(adapter, {});
+      const tools = useTools({ active: 'select', registry: { select } });
+      return (
+        <Canvas
+          width={200} height={200} layers={{}}
+          adapter={adapter} selection={sel} selectionMode="multi" tools={tools} clientToWorld={C2W}
+          boundsOf={(id) => {
+            const r = rectsRef.current.find((x) => x.id === id);
+            return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
+          }}
+        />
+      );
+    }
+    const { container } = render(<Harness />);
+    const canvas = container.querySelector('canvas')!;
+    canvas.setPointerCapture = () => {};
+    // Union AABB is (0,0,100,100). SE corner at (100, 100).
+    canvas.dispatchEvent(new MouseEvent('pointerdown', {
+      clientX: 100, clientY: 100, bubbles: true, cancelable: true,
+    }));
+    canvas.dispatchEvent(new MouseEvent('pointermove', {
+      clientX: 120, clientY: 120, bubbles: true, cancelable: true,
+    }));
+    canvas.dispatchEvent(new MouseEvent('pointerup', {
+      clientX: 120, clientY: 120, bubbles: true, cancelable: true,
+    }));
+    // The gesture must commit exactly one Resize batch on pointerup. If the
+    // drag couldn't be "dropped," applyBatch wouldn't fire at all.
+    expect(applyBatch).toHaveBeenCalledTimes(1);
+    const [, label] = applyBatch.mock.calls[0] as [unknown, string];
+    expect(label).toBe('Resize');
+  });
+
+  it('multi-mode corner-resize via sceneToAdapter (real applyBatch, not stubbed)', () => {
+    // Regression: sceneToAdapter.applyBatch uses `this.setPose` inside its
+    // scene.batch callback. The multi-resize handler previously destructured
+    // `applyBatch` off the adapter and called it as a detached function,
+    // losing `this` and throwing "Cannot read properties of undefined
+    // (reading 'setPose')" inside onEnd. That left the dispatcher's inFlight
+    // stuck — the gesture "couldn't be dropped." This test exercises the
+    // real applyBatch (no vi.fn() override) to lock that in.
+    let sceneRef: ReturnType<typeof useScene<Rect>> | null = null;
+    function Harness() {
+      const scene = useScene<Rect>({ items: [
+        { id: 'a', x: 0, y: 0, width: 50, height: 50 },
+        { id: 'b', x: 60, y: 60, width: 40, height: 40 },
+      ]});
+      sceneRef = scene;
+      const sel = useSelection({ initial: [asNodeId('a'), asNodeId('b')], mode: 'multi' });
+      const adapter = sceneToAdapter(scene, { selection: sel });
+      const tool = useSelectTool(adapter as never, {});
+      const tools = useTools({ active: 'select', registry: { select: tool } });
+      return (
+        <Canvas width={200} height={200} layers={{}}
+          adapter={adapter as never} selection={sel} selectionMode="multi" tools={tools} clientToWorld={C2W}
+          boundsOf={(id) => {
+            const n = scene.get(asNodeId(id));
+            if (!n) return null;
+            const p = n.pose as Pose;
+            return { x: p.x, y: p.y, width: p.width, height: p.height };
+          }}
+        />
+      );
+    }
+    const { container } = render(<Harness />);
+    const canvas = container.querySelector('canvas')!;
+    canvas.setPointerCapture = () => {};
+    // Union AABB (0,0,100,100). SE corner at (100,100). Drag to (120,120).
+    canvas.dispatchEvent(new MouseEvent('pointerdown', { clientX: 100, clientY: 100, bubbles: true, cancelable: true }));
+    canvas.dispatchEvent(new MouseEvent('pointermove', { clientX: 120, clientY: 120, bubbles: true, cancelable: true }));
+    canvas.dispatchEvent(new MouseEvent('pointerup', { clientX: 120, clientY: 120, bubbles: true, cancelable: true }));
+    // The leaves must have resized proportionally — proves onEnd's applyBatch
+    // didn't throw, and the gesture committed.
+    const a = sceneRef!.get(asNodeId('a'))!.pose as Pose;
+    const b = sceneRef!.get(asNodeId('b'))!.pose as Pose;
+    expect(a.width).toBeGreaterThan(50);
+    expect(b.width).toBeGreaterThan(40);
   });
 });
