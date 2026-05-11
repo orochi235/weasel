@@ -6,6 +6,7 @@ import {
   type Stroke,
 } from '@orochi235/weasel';
 import { tessellateStroke } from './stroke';
+import { PathBuilder } from '../builder';
 
 describe('tessellateStroke (straight, butt, no joins)', () => {
   it('expands a rect outline into a ribbon mesh', () => {
@@ -193,5 +194,34 @@ describe('tessellateStroke dash patterns', () => {
     const meshNoDash = tessellateStroke(path, { paint: { color: '#000' }, width: 4 });
     const meshEmptyDash = tessellateStroke(path, { paint: { color: '#000' }, width: 4, dash: [] });
     expect(meshEmptyDash.indices.length).toBe(meshNoDash.indices.length);
+  });
+});
+
+describe('tessellateStroke — anchor params: segments', () => {
+  it('a 2-point line emits 4 ribbon vertices each pinned to its endpoint anchor', () => {
+    const p = new PathBuilder().moveTo(0, 0).lineTo(10, 0).build();
+    const mesh = tessellateStroke(p, { paint: { color: '#fff' }, width: 2 });
+    expect(mesh.anchorA).toBeDefined();
+    expect(mesh.anchorA!.length).toBe(mesh.vertices.length / 2);
+    // First two vertices (L0, R0) at the M anchor; next two (L1, R1) at the L anchor.
+    expect(mesh.anchorA![0]).toBe(0);
+    expect(mesh.anchorA![1]).toBe(0);
+    expect(mesh.anchorA![2]).toBe(1);
+    expect(mesh.anchorA![3]).toBe(1);
+    expect(mesh.anchorT![0]).toBe(0);
+    expect(mesh.anchorT![3]).toBe(0);
+  });
+
+  it('a cubic bezier stroke has interior ribbon vertices with t in (0,1)', () => {
+    const p = new PathBuilder().moveTo(0, 0).curveTo(0, 50, 100, 50, 100, 0).build();
+    const mesh = tessellateStroke(p, { paint: { color: '#fff' }, width: 2 });
+    let foundInterior = false;
+    for (let i = 0; i < mesh.anchorA!.length; i++) {
+      if (mesh.anchorA![i] === 0 && mesh.anchorB![i] === 1 && mesh.anchorT![i] > 0 && mesh.anchorT![i] < 1) {
+        foundInterior = true;
+        break;
+      }
+    }
+    expect(foundInterior).toBe(true);
   });
 });
