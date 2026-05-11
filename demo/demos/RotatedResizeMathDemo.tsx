@@ -242,13 +242,12 @@ function Panel({
         height={H}
         className="ckd-canvas"
         scene={scene}
-        selectTool={{ handleHitRadius: HANDLE }}
         geometry={{ pickEvery: pickEveryFor(scene) }}
         selectionOptions={{ initial: [asNodeId('a')] }}
         layers={{
           grid: GRID,
           scene: { drawOne: drawRect },
-          selectionOverlay: { handles: { size: HANDLE }, rotationHandle: false },
+          selectionOverlay: { rotationHandle: false },
         }}
       />
       {ghostPose && <GhostRect pose={ghostPose} color={ghostColor} />}

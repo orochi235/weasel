@@ -13,7 +13,7 @@ interface Rect extends RotatedPose {
   color: string;
 }
 
-const W = 400, H = 300, HANDLE = 8;
+const W = 400, H = 300;
 
 const INITIAL: Rect[] = [
   { id: 'a', x: 50,  y: 80,  width: 90, height: 60, rotation: 0,            color: '#7fb069' },
@@ -41,7 +41,7 @@ export function RotateDemo() {
       height={H}
       className="ckd-canvas"
       scene={scene}
-      selectTool={{ handleHitRadius: HANDLE, resize: { geometry: ROTATED_POSE_DESCRIPTOR as PoseDescriptor<Rect> } }}
+      selectTool={{ resize: { geometry: ROTATED_POSE_DESCRIPTOR as PoseDescriptor<Rect> } }}
       geometry={{ pickEvery }}
       selectionOptions={{ initial: [asNodeId('b')] }}
       layers={{
@@ -69,7 +69,7 @@ export function RotateDemo() {
             }];
           },
         },
-        selectionOverlay: { handles: { size: HANDLE }, rotationHandle: true },
+        selectionOverlay: { rotationHandle: true },
       }}
     />
   );

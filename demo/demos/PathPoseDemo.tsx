@@ -30,7 +30,7 @@ const btn: React.CSSProperties = {
   border: '1px solid #4a3c2e', borderRadius: 3,
 };
 
-const W = 400, H = 300, HANDLE = 8;
+const W = 400, H = 300;
 const ID = 'p';
 
 const INITIAL_PATH: Path = polygonFromPoints([
@@ -77,7 +77,6 @@ export function PathPoseDemo() {
         scene={scene}
         selection={selection}
         selectTool={{
-          handleHitRadius: HANDLE,
           snap: gridSnapStrategy<Path>(20, { origin: pathOriginProjection }),
           resize: { geometry: pathPoseDescriptor },
         }}
@@ -91,7 +90,6 @@ export function PathPoseDemo() {
               stroke: { paint: { color: '#1a130d' }, width: 1.5 },
             }],
           },
-          selectionOverlay: { handles: { size: HANDLE } },
         }}
       />
     </div>

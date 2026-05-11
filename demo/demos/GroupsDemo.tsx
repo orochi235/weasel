@@ -17,7 +17,7 @@ import type { DrawCommand } from '../../src/renderer';
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }
 
-const W = 400, H = 300, HANDLE = 8;
+const W = 400, H = 300;
 const INITIAL_RECTS: Rect[] = [
   { id: 'a', x: 60,  y: 60,  width: 60, height: 50, color: '#7fb069' },
   { id: 'b', x: 140, y: 90,  width: 70, height: 60, color: '#7fb069' },
@@ -93,7 +93,6 @@ export function GroupsDemo() {
       return id ? [id] : [];
     },
     boundsOf,
-    handleHitRadius: HANDLE,
     move: { expandIds: (ids) => expandToLeaves(ids, adapter) },
     resize: {
       expandIds: (ids) => {
@@ -128,7 +127,6 @@ export function GroupsDemo() {
         },
         selectionOverlay: {
           groupAdapter: adapter,
-          handles: { size: HANDLE },
           // Pose lookup composes move/resize overlays + the group-aware union
           // AABB, matching what composeSelectionPose offers. Required because
           // the auto-wired pose lookup goes through boundsOf which already

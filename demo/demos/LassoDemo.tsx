@@ -12,11 +12,10 @@ import {
   useTools,
 } from '@orochi235/weasel';
 import type { CanvasExtensionApi, LassoHitMode } from '@orochi235/weasel';
-import type { DrawCommand } from '../../src/renderer';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
-const W = 480, H = 320, HANDLE = 8;
+const W = 480, H = 320;
 
 // A scattering of small shapes — enough variety that each hit mode produces
 // visibly different selection outcomes for the same lasso path.
@@ -125,17 +124,6 @@ export function LassoDemo() {
         selection={selection}
         selectionMode="multi"
         tools={tools}
-        selectTool={{ handleHitRadius: HANDLE }}
-        layers={{
-          scene: {
-            drawOne: (_node, p): DrawCommand[] => [{
-              kind: 'path',
-              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { color: p.color },
-            }],
-          },
-          selectionOverlay: { handles: { size: HANDLE } },
-        }}
       />
     </div>
   );

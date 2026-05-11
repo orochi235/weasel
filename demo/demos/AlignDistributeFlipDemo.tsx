@@ -11,12 +11,11 @@ import {
   useSelectTool,
   useTools,
 } from '@orochi235/weasel';
-import type { DrawCommand } from '../../src/renderer';
 import type { AlignEdge, CanvasExtensionApi, DistributeAxis, DistributeMode } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
-const W = 480, H = 320, HANDLE = 8;
+const W = 480, H = 320;
 
 // Five rects, irregular sizes and offsets — every align edge and both
 // distribute axes have a visible effect from this start state.
@@ -141,17 +140,6 @@ export function AlignDistributeFlipDemo() {
         selection={selection}
         selectionMode="multi"
         tools={tools}
-        selectTool={{ handleHitRadius: HANDLE }}
-        layers={{
-          scene: {
-            drawOne: (_node, p): DrawCommand[] => [{
-              kind: 'path',
-              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { color: p.color },
-            }],
-          },
-          selectionOverlay: { handles: { size: HANDLE } },
-        }}
       />
     </div>
   );

@@ -9,11 +9,10 @@ import {
   useTools,
 } from '@orochi235/weasel';
 import type { CanvasExtensionApi } from '@orochi235/weasel';
-import type { DrawCommand } from '../../src/renderer';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
-const W = 400, H = 300, HANDLE = 8;
+const W = 400, H = 300;
 
 const INITIAL: Rect[] = [
   { id: 'a', x: 40,  y: 40,  width: 70, height: 50, color: '#7fb069' },
@@ -62,17 +61,6 @@ export function MultiSelectDemo() {
       selection={selection}
       selectionMode="multi"
       tools={tools}
-      selectTool={{ handleHitRadius: HANDLE }}
-      layers={{
-        scene: {
-          drawOne: (_node, p): DrawCommand[] => [{
-            kind: 'path',
-            path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-            fill: { color: p.color },
-          }],
-        },
-        selectionOverlay: { handles: { size: HANDLE } },
-      }}
     />
   );
 }

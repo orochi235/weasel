@@ -5,7 +5,7 @@ import { viewToMat3, type DrawCommand } from '../../src/renderer';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
-const W = 480, H = 360, HANDLE = 8;
+const W = 480, H = 360;
 
 const INITIAL: Rect[] = [
   { id: 'a', x:  40, y:  40, width: 120, height:  90, color: '#7fb069' },
@@ -93,23 +93,12 @@ export function QuadtreeDemo() {
       height={H}
       className="ckd-canvas"
       scene={scene}
-      selectTool={{ handleHitRadius: HANDLE }}
       helpersRef={helpersRef}
       layers={{
         grid: {
           spacing: 20,
           bounds: () => ({ x: 0, y: 0, width: W, height: H }),
           accentEvery: 5,
-        },
-        scene: {
-          drawOne: (_node, p): DrawCommand[] => [{
-            kind: 'path',
-            path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-            fill: { color: p.color },
-          }],
-          // drawOne: the quadtree-cell overlay (createQuadtreeLayer) is a
-          // separate RenderLayer, not a scene slot — remains 2D-only; defer
-          // to v2.
         },
         quadtree: {
           layer: createQuadtreeLayer(
@@ -118,7 +107,6 @@ export function QuadtreeDemo() {
           ),
           after: 'scene',
         },
-        selectionOverlay: { handles: { size: HANDLE } },
       }}
     />
   );

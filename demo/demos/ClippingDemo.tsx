@@ -1,10 +1,8 @@
 import { useState, useSyncExternalStore } from 'react';
 import { polygonFromPoints, SceneCanvas, sceneFromJSON } from '@orochi235/weasel';
-import type { DrawCommand } from '../../src/renderer';
 import type { Path } from '../../src/features/paths/types';
 import sceneJson from './data/clipping.scene.json';
 
-interface Item { id: string; label: string; color: string; }
 type Pose = { x: number; y: number; width: number; height: number };
 
 const W = 400, H = 300;
@@ -36,18 +34,6 @@ export function ClippingDemo() {
       height={H}
       className="ckd-canvas"
       scene={scene}
-      layers={{
-        scene: {
-          drawOne: (node, p): DrawCommand[] => {
-            const data = node.data as Item;
-            return [{
-              kind: 'path',
-              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { color: data.color },
-            }];
-          },
-        },
-      }}
     />
   );
 }

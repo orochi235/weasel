@@ -35,8 +35,6 @@ interface Pose {
 
 const W = 600, H = 360;
 const CELL = 10;
-const HANDLE = 8;
-
 const INITIAL: TextNode[] = [
   {
     id: 't1',
@@ -238,14 +236,12 @@ export function TextDemo() {
         helpersRef={helpersRef}
         selectTool={{
           snap: gridSnapStrategy<TextNode>(CELL),
-          handleHitRadius: HANDLE,
         }}
         layers={{
           // No default scene — the custom text layer paints everything.
           scene: null,
           'text-bounds': { layer: outlineLayer, before: 'selectionOverlay' },
           'text': { layer: textLayer, before: 'selectionOverlay' },
-          selectionOverlay: { handles: { size: HANDLE } },
         }}
       />
     </div>

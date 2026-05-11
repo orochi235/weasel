@@ -10,11 +10,9 @@ import {
   useSelectTool,
   useTools,
 } from '@orochi235/weasel';
-import type { DrawCommand } from '../../src/renderer';
-
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
-const W = 400, H = 300, HANDLE = 8;
+const W = 400, H = 300;
 const COLORS = ['#7fb069', '#d4a574', '#a48bd4', '#d47a7a', '#7ab8d4'];
 const INITIAL: Rect[] = [
   { id: 'a', x: 40, y: 50, width: 80, height: 60, color: '#7fb069' },
@@ -124,16 +122,6 @@ export function ComposeDemo() {
         selectionMode="multi"
         tools={tools}
         gestures={{ delete: true }}
-        layers={{
-          scene: {
-            drawOne: (_node, p): DrawCommand[] => [{
-              kind: 'path',
-              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { color: p.color },
-            }],
-          },
-          selectionOverlay: { handles: { size: HANDLE } },
-        }}
       />
     </div>
   );
