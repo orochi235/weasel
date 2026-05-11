@@ -1,4 +1,4 @@
-import type { Path, Paint, Stroke, TextStyle } from '@orochi235/weasel';
+import type { Path, Paint, Stroke, TextStyle, ResolvedRun } from '@orochi235/weasel';
 import type { Mat3 } from './math/mat3';
 import type { ShaderProgramHandle, ShaderUniform } from './shaders/registerProgram';
 
@@ -63,19 +63,21 @@ export interface GroupDrawCommand {
 }
 
 /**
- * Text draw command. Renders `text` at (`x`, `y`) in screen space.
+ * Text draw command. Renders one or more runs at (`x`, `y`) in screen
+ * space, optionally word-wrapping at `maxWidth`. The renderer resolves
+ * each run's `(fontFamily, fontWeight, fontStyle)` to an MSDF atlas via
+ * `resolveFontVariant` and bucket-draws by atlas + color group.
  *
- * `style.fontFamily` must match a family registered via `registerFont()`.
- * If the font isn't registered yet, `drawText` logs a warning and skips.
- *
- * Step 3 scope: single-line, left-to-right, ASCII + Latin-1 only.
- * Multi-line wrapping lands in step 7 (port of createTextLayer).
+ * `style` carries node-level defaults (`lineHeight`, anti-alias width)
+ * that don't belong on individual runs.
  */
 export interface TextDrawCommand {
   kind: 'text';
   x: number;
   y: number;
-  text: string;
+  runs: ResolvedRun[];
+  maxWidth?: number;
+  align?: 'left' | 'center' | 'right';
   style: TextStyle;
 }
 
