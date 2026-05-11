@@ -1,7 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createText } from './text';
+import { readTokens } from '../theme';
 
-const ctx = { dims: { width: 100, height: 100 }, defaultFont: 'Default' };
+const DEFAULT_RESOLVED_TOKENS = readTokens(null);
+const ctx = { dims: { width: 100, height: 100 }, defaultFont: 'Default', tokens: DEFAULT_RESOLVED_TOKENS };
 
 describe('text widget', () => {
   it('emits a TextDrawCommand using the supplied style', () => {

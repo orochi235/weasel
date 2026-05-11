@@ -1,4 +1,5 @@
 import type { DrawCommand } from '../../../src/renderer';
+import type { ResolvedTokens } from './theme';
 
 export interface WidgetBounds {
   x: number;
@@ -12,6 +13,10 @@ export interface HudDrawCtx {
   dims: { width: number; height: number };
   /** Family name of the auto-registered default font. */
   defaultFont: string;
+  /** Resolved design tokens from the canvas element's computed style.
+   *  Re-read on every draw, so live CSS changes (dark-mode toggle, etc.)
+   *  take effect on the next state-driven redraw. */
+  tokens: ResolvedTokens;
 }
 
 export type HudPointerEvent =

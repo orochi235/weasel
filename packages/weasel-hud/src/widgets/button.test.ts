@@ -1,7 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createButton } from './button';
+import { readTokens } from '../theme';
 
-const ctx = { dims: { width: 100, height: 100 }, defaultFont: 'D' };
+const DEFAULT_RESOLVED_TOKENS = readTokens(null);
+const ctx = { dims: { width: 100, height: 100 }, defaultFont: 'D', tokens: DEFAULT_RESOLVED_TOKENS };
 
 describe('button widget', () => {
   it('draws a body rect and a label', () => {

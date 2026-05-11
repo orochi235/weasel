@@ -9,6 +9,7 @@ import { viewToTransform } from '../../../src/core/viewport/view';
 import { worldToScreen } from '../../../src/core/viewport/viewTransform';
 import { DEFAULT_FONT_FAMILY, registerDefaultFont } from './fonts/registerDefaultFont';
 import type { Widget, HudPointerEvent } from './widget';
+import { readTokens } from './theme';
 
 interface HudDragScratch {
   widget: Widget;
@@ -44,7 +45,7 @@ export function attachHud(api: CanvasExtensionApi, hud: Hud): () => void {
     label: 'HUD',
     space: 'screen',
     draw: (_data, _view, dims): DrawCommand[] => {
-      const ctx = { dims, defaultFont: DEFAULT_FONT_FAMILY };
+      const ctx = { dims, defaultFont: DEFAULT_FONT_FAMILY, tokens: readTokens(null) };
       const out: DrawCommand[] = [];
       for (const w of hud.widgets()) {
         if (w.hidden) continue;
