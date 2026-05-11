@@ -214,6 +214,15 @@ export interface InsertAdapter<TNode extends { id: string }> {
 }
 
 /**
+ * Optional surface that lets `buildSceneTree` walk the adapter by layer.
+ * Adapters that don't implement this fall back to flat rendering in Canvas's
+ * scene layer.
+ */
+export interface LayerEnumerableAdapter<TLayer extends string = string> {
+  getLayers?(): readonly { id: TLayer; visible: boolean }[];
+}
+
+/**
  * Optional adapter mixin for sibling z-order.
  *
  * Both methods are optional. Reorder ops and `useReorder` no-op when

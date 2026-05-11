@@ -103,6 +103,17 @@ describe('sceneToAdapter', () => {
     expect(adapter.getChildren!(p)).toEqual([c2, c1]);
   });
 
+  it('getLayers returns visible layers in order, reflects visibility changes', () => {
+    const scene = makeScene();
+    const adapter = sceneToAdapter(scene);
+    expect(adapter.getLayers!().map((l) => l.id)).toEqual(['bg', 'fg']);
+    expect(adapter.getLayers!().every((l) => l.visible)).toBe(true);
+    scene.setLayerVisible('bg', false);
+    const after = adapter.getLayers!();
+    expect(after.find((l) => l.id === 'bg')?.visible).toBe(false);
+    expect(after.find((l) => l.id === 'fg')?.visible).toBe(true);
+  });
+
   it('applyBatch wraps ops in scene.batch (single undo entry)', () => {
     const scene = makeScene();
     const id = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'x' } });

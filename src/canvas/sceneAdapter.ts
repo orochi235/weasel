@@ -17,6 +17,7 @@ import type {
   InsertAdapter,
   LassoHitMode,
   LassoSelectAdapter,
+  LayerEnumerableAdapter,
   MoveAdapter,
   ResizeAdapter,
   RotateAdapter,
@@ -58,6 +59,7 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
   & RotateAdapter<Node<TData, TLayer, TPose>, TPose>
   & AreaSelectAdapter
   & LassoSelectAdapter
+  & LayerEnumerableAdapter<TLayer>
   & ReorderAdapter
   & Partial<InsertAdapter<Node<TData, TLayer, TPose>>>;
 
@@ -161,6 +163,9 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
           scene.reorder(asNodeId(ids[i]), i);
         }
       });
+    },
+    getLayers() {
+      return scene.layers.map((l) => ({ id: l.id, visible: l.visible }));
     },
     ...(options.layouts
       ? {
