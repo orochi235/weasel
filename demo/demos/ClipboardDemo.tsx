@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   arrayAdapter,
   asNodeId,
@@ -22,7 +22,9 @@ const INITIAL: Rect[] = [
 ];
 
 export function ClipboardDemo() {
-  const itemsRef = useRef<Rect[]>(INITIAL);
+  const [items, setItems] = useState<Rect[]>(INITIAL);
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
   const nextId = useRef(0);
   const dropPointRef = useRef<{ worldX: number; worldY: number } | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -32,9 +34,7 @@ export function ClipboardDemo() {
   const adapter = useMemo(() => {
     const base = arrayAdapter<Rect, Rect>({
       ref: itemsRef,
-      setItems: (update) => {
-        itemsRef.current = typeof update === 'function' ? update(itemsRef.current) : update;
-      },
+      setItems,
       toPose: (r) => r,
     });
     return {
