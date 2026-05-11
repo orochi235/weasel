@@ -3,8 +3,11 @@ import {
   asNodeId,
   cloneByAltDrag,
   SceneCanvas,
+  sceneToAdapter,
   useCloneTool,
   useScene,
+  useSelection,
+  useSelectTool,
   useTools,
 } from '@orochi235/weasel';
 import type { ClipboardSnapshot } from '@orochi235/weasel';
@@ -23,18 +26,10 @@ export function CloneDemo() {
   const scene = useScene<Rect>({ items: INITIAL });
   const nextId = useRef(0);
 
+  const selection = useSelection({ mode: 'multi', extend: 'shift' });
+
   const adapter = useMemo(() => ({
-    getNodes: (): Rect[] => {
-      const out: Rect[] = [];
-      for (const id of scene.renderOrder()) {
-        const n = scene.get(id);
-        if (n) out.push(n.data as Rect);
-      }
-      return out;
-    },
-    getPose: (id: string): Rect => scene.get(asNodeId(id))!.pose as Rect,
-    getSelection: () => [] as string[],
-    setSelection: () => {},
+    ...sceneToAdapter(scene, { selection }),
     snapshotSelection: (ids: string[]): ClipboardSnapshot => ({
       items: ids.map((id) => scene.get(asNodeId(id))!.data as Rect),
     }),
@@ -55,7 +50,28 @@ export function CloneDemo() {
         id: asNodeId(rect.id),
       });
     },
-  }), [scene]);
+  }), [scene, selection]);
+
+  const pickEvery = (worldX: number, worldY: number): string[] => {
+    const hits: string[] = [];
+    for (const id of scene.renderOrder()) {
+      const n = scene.get(id);
+      if (!n) continue;
+      const p = n.pose as Rect;
+      if (worldX >= p.x && worldX <= p.x + p.width
+          && worldY >= p.y && worldY <= p.y + p.height) {
+        hits.push(id);
+      }
+    }
+    return hits;
+  };
+
+  const boundsOf = (id: string) => {
+    const n = scene.get(asNodeId(id));
+    if (!n) return null;
+    const p = n.pose as Rect;
+    return { x: p.x, y: p.y, width: p.width, height: p.height };
+  };
 
   const drawRect = (r: Rect, p: Rect): DrawCommand[] => [{
     kind: 'path',
@@ -66,9 +82,16 @@ export function CloneDemo() {
   const clone = useCloneTool(adapter, {
     behaviors: [cloneByAltDrag()],
     drawOne: drawRect,
+    cloneSelection: true,
   });
 
-  const tools = useTools({ active: 'clone', registry: { clone } });
+  const select = useSelectTool(adapter, {
+    pickEvery,
+    boundsOf,
+    getSelection: () => selection.current,
+  });
+
+  const tools = useTools({ active: 'select', registry: { select, clone } });
 
   return (
     <SceneCanvas
@@ -76,8 +99,9 @@ export function CloneDemo() {
       height={H}
       className="ckd-canvas"
       scene={scene}
+      selection={selection}
+      selectionMode="multi"
       tools={tools}
-      selectionMode="none"
       layers={{
         scene: {
           drawOne: (n, p): DrawCommand[] => [{
@@ -86,7 +110,6 @@ export function CloneDemo() {
             fill: { color: (n.data as Rect).color },
           }],
         },
-        selectionOverlay: null,
       }}
     />
   );
