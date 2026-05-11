@@ -124,7 +124,9 @@ export interface ResolveResult {
   synthetic: { bold: boolean; italic: boolean };
 }
 
-const NULL_RESULT: ResolveResult = { entry: null, synthetic: { bold: false, italic: false } };
+function nullResolveResult(): ResolveResult {
+  return { entry: null, synthetic: { bold: false, italic: false } };
+}
 
 function weightBucket(w: number): 'regular' | 'bold' {
   return w >= 600 ? 'bold' : 'regular';
@@ -142,7 +144,7 @@ export function resolveFontVariant(
   style: FontStyle,
 ): ResolveResult {
   const familyMap = registry.get(family);
-  if (!familyMap || familyMap.size === 0) return NULL_RESULT;
+  if (!familyMap || familyMap.size === 0) return nullResolveResult();
 
   // 1. Exact match
   const exact = familyMap.get(variantKey(weight, style));
@@ -234,5 +236,5 @@ export function resolveFontVariant(
     };
   }
 
-  return NULL_RESULT;
+  return nullResolveResult();
 }
