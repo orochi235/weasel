@@ -391,3 +391,90 @@ describe('useTextEdit — rich-text init and commit', () => {
     expect(h.commits).toEqual([{ id: 'a', text: 'edited' }]);
   });
 });
+
+function selectChars(overlay: HTMLElement, start: number, end: number): void {
+  const range = document.createRange();
+  function findPos(target: number): { node: Node; offset: number } | null {
+    let remaining = target;
+    const walker = document.createTreeWalker(overlay, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode() as Text | null;
+    while (node) {
+      if (remaining <= node.data.length) return { node, offset: remaining };
+      remaining -= node.data.length;
+      node = walker.nextNode() as Text | null;
+    }
+    return null;
+  }
+  const a = findPos(start)!;
+  const b = findPos(end)!;
+  range.setStart(a.node, a.offset);
+  range.setEnd(b.node, b.offset);
+  const sel = window.getSelection();
+  sel?.removeAllRanges();
+  sel?.addRange(range);
+}
+
+function pressKey(overlay: HTMLElement, key: string, mods: { meta?: boolean; ctrl?: boolean } = {}): void {
+  overlay.dispatchEvent(new KeyboardEvent('keydown', {
+    key,
+    metaKey: mods.meta ?? false,
+    ctrlKey: mods.ctrl ?? false,
+    bubbles: true,
+    cancelable: true,
+  }));
+}
+
+describe('useTextEdit — Cmd-B/I on range selection', () => {
+  it('Cmd-B over plain text wraps the selected range in a bold run', () => {
+    const h = makeRichHarness({ a: { text: 'one two three', runs: [{ text: 'one two three' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    selectChars(overlay, 4, 7);  // 'two'
+    act(() => pressKey(overlay, 'b', { meta: true }));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([
+      { text: 'one ' },
+      { text: 'two', bold: true },
+      { text: ' three' },
+    ]);
+  });
+
+  it('Cmd-B over an already-bold range removes the bold flag', () => {
+    const h = makeRichHarness({
+      a: {
+        text: 'one two three',
+        runs: [{ text: 'one ' }, { text: 'two', bold: true }, { text: ' three' }],
+      },
+    });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    selectChars(overlay, 4, 7);
+    act(() => pressKey(overlay, 'b', { meta: true }));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'one two three' }]);
+  });
+
+  it('Cmd-I toggles italic independently of bold', () => {
+    const h = makeRichHarness({ a: { text: 'abc', runs: [{ text: 'abc', bold: true }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    selectChars(overlay, 0, 3);
+    act(() => pressKey(overlay, 'i', { meta: true }));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'abc', bold: true, italic: true }]);
+  });
+
+  it('Ctrl-B (non-Mac) toggles bold on the selection', () => {
+    const h = makeRichHarness({ a: { text: 'xyz', runs: [{ text: 'xyz' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    selectChars(overlay, 0, 3);
+    act(() => pressKey(overlay, 'b', { ctrl: true }));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'xyz', bold: true }]);
+  });
+});
