@@ -334,6 +334,8 @@ function drawPathFillVColor(
 
   gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
+  // The per-vertex color VBO is freshly allocated per draw; free it now
+  // (after unbinding the VAO) so we don't leak one buffer per vColor draw.
   gl.deleteBuffer(colorVbo);
 }
 
