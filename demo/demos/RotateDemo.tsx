@@ -1,7 +1,6 @@
 import {
   SceneCanvas,
   asNodeId,
-  pointInRotatedRect,
   useScene,
   ROTATED_POSE_DESCRIPTOR,
 } from '@orochi235/weasel';
@@ -24,17 +23,6 @@ const INITIAL: Rect[] = [
 export function RotateDemo() {
   const scene = useScene({ items: INITIAL });
 
-  // Override pickEvery so a click inside the rotated rect — not the AABB —
-  // selects the object. Reads live pose from the scene.
-  const pickEvery = (wx: number, wy: number): string | null => {
-    const ordered = [...scene.renderOrder()];
-    for (let i = ordered.length - 1; i >= 0; i--) {
-      const n = scene.get(ordered[i]);
-      if (n && pointInRotatedRect(n.pose, wx, wy)) return n.id;
-    }
-    return null;
-  };
-
   return (
     <SceneCanvas
       width={W}
@@ -42,7 +30,6 @@ export function RotateDemo() {
       className="ckd-canvas"
       scene={scene}
       selectTool={{ resize: { geometry: ROTATED_POSE_DESCRIPTOR as PoseDescriptor<Rect> } }}
-      geometry={{ pickEvery }}
       selectionOptions={{ initial: [asNodeId('b')] }}
       layers={{
         scene: {

@@ -25,7 +25,7 @@ import type { SnapStrategy } from 'interactions/gestures/types';
 import type { UseAreaSelectOptions } from 'interactions/gestures/area-select/areaSelect';
 import { snap as snapBehavior } from 'interactions/gestures/shared/snap';
 import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
-import { aabbOfPose, isPathLike, poseContains } from './poseGeometry';
+import { aabbOfPose, isPathLike, poseContainsRotated } from './poseGeometry';
 
 export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
   scene: Scene<TData, TLayer, TPose>;
@@ -167,7 +167,10 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   // Default pickEvery: walk renderOrder() back-to-front (top-most first) and
   // return the first node whose pose contains the world point. Wraps the
   // caller's `pickEvery` (string-or-null) into the array form `useSelectTool`
-  // expects.
+  // expects. When the configured resize geometry exposes `getRotation`, the
+  // shared `poseContainsRotated` projects the click into the pose's local
+  // frame so rotated rects pick correctly without a per-demo override.
+  const getRotation = resizeOptions?.geometry?.getRotation;
   const wiredHitBody = useMemo(() => {
     return (wx: number, wy: number): string[] => {
       if (pickEveryProp) {
@@ -177,11 +180,11 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       const ordered = [...scene.renderOrder()];
       for (let i = ordered.length - 1; i >= 0; i--) {
         const n = scene.get(ordered[i]);
-        if (n && poseContains(n.pose, wx, wy)) return [n.id];
+        if (n && poseContainsRotated(n.pose, wx, wy, getRotation)) return [n.id];
       }
       return [];
     };
-  }, [scene, pickEveryProp]);
+  }, [scene, pickEveryProp, getRotation]);
 
   const wiredBoundsOf = useMemo(() => {
     return (id: string): Bounds | null => {

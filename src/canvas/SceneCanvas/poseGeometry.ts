@@ -8,6 +8,7 @@
  */
 import type { Bounds } from 'tools/builtin/useSelectTool';
 import { RECT_POSE_DESCRIPTOR } from 'interactions/gestures/resize/geometry';
+import { pointInRotatedRect } from 'interactions/gestures/rotate/geometry';
 import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
 import type { Path } from 'features/paths/types';
 
@@ -30,4 +31,27 @@ export function poseContains<TPose>(pose: TPose, wx: number, wy: number): boolea
   }
   const b = aabbOfPose(pose);
   return wx >= b.x && wx <= b.x + b.width && wy >= b.y && wy <= b.y + b.height;
+}
+
+/**
+ * Containment for `<SceneCanvas>`'s default `pickEvery`. Delegates to
+ * `poseContains` for path-shaped poses and unrotated rects. When the resize
+ * geometry exposes a non-zero rotation for the pose, projects the click into
+ * the pose's local frame and AABB-tests there. Path poses are intentionally
+ * unaffected — their `kind` already encodes their geometry.
+ */
+export function poseContainsRotated<TPose>(
+  pose: TPose,
+  wx: number,
+  wy: number,
+  getRotation: ((pose: TPose) => number) | undefined,
+): boolean {
+  if (getRotation && !isPathLike(pose)) {
+    const rot = getRotation(pose);
+    if (rot) {
+      const b = aabbOfPose(pose);
+      return pointInRotatedRect({ ...b, rotation: rot }, wx, wy);
+    }
+  }
+  return poseContains(pose, wx, wy);
 }
