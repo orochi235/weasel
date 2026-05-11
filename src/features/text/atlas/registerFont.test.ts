@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { registerFont, getFont, _resetFontRegistryForTests } from './registerFont';
+import { registerFont, getFont, resolveFontVariant, _resetFontRegistryForTests } from './registerFont';
 import { FIXTURE_FONT } from './FontAtlas';
 
 function stubFetch() {
@@ -86,5 +86,62 @@ describe('registerFont variants', () => {
     await registerFont('inter', { weight: 700 }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
     const second = getFont('inter', 700, 'normal');
     expect(first).toBe(second);
+  });
+});
+
+describe('resolveFontVariant', () => {
+  it('returns exact match with no synthetic flags', async () => {
+    await registerFont('inter', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const r = resolveFontVariant('inter', 400, 'normal');
+    expect(r.entry).not.toBeNull();
+    expect(r.synthetic).toEqual({ bold: false, italic: false });
+  });
+
+  it('falls back from missing italic to normal with synthetic.italic=true', async () => {
+    await registerFont('inter', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const r = resolveFontVariant('inter', 400, 'italic');
+    expect(r.entry).not.toBeNull();
+    expect(r.synthetic).toEqual({ bold: false, italic: true });
+  });
+
+  it('falls back from missing bold to regular with synthetic.bold=true', async () => {
+    await registerFont('inter', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const r = resolveFontVariant('inter', 700, 'normal');
+    expect(r.entry).not.toBeNull();
+    expect(r.synthetic).toEqual({ bold: true, italic: false });
+  });
+
+  it('falls back from missing bold-italic to bold with synthetic.italic=true (real bold)', async () => {
+    await registerFont('inter', { weight: 700, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const r = resolveFontVariant('inter', 700, 'italic');
+    expect(r.entry).not.toBeNull();
+    expect(r.synthetic).toEqual({ bold: false, italic: true });
+  });
+
+  it('falls back from missing bold-italic to italic with synthetic.bold=true (real italic)', async () => {
+    await registerFont('inter', { weight: 400, style: 'italic' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const r = resolveFontVariant('inter', 700, 'italic');
+    expect(r.entry).not.toBeNull();
+    expect(r.synthetic).toEqual({ bold: true, italic: false });
+  });
+
+  it('prefers the nearer weight in the same bucket', async () => {
+    await registerFont('inter', { weight: 700, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    await registerFont('inter', { weight: 900, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const r = resolveFontVariant('inter', 750, 'normal');
+    expect(r.entry).toBe(getFont('inter', 700, 'normal'));
+  });
+
+  it('breaks weight-distance ties by picking the heavier weight', async () => {
+    await registerFont('inter', { weight: 700, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    await registerFont('inter', { weight: 900, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const r = resolveFontVariant('inter', 800, 'normal');
+    expect(r.entry).toBe(getFont('inter', 900, 'normal'));
+  });
+
+  it('returns null entry when the family has no variants', () => {
+    const r = resolveFontVariant('missing', 400, 'normal');
+    expect(r.entry).toBeNull();
+    expect(r.synthetic).toEqual({ bold: false, italic: false });
   });
 });

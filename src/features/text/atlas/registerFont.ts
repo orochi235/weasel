@@ -118,3 +118,121 @@ export function textureCacheKey(family: string, weight: number, style: FontStyle
 
 /** Kept as a no-op for context-restore call sites; per-cache dedup handles it now. */
 export function _markAllFontsNotUploaded(): void {}
+
+export interface ResolveResult {
+  entry: FontEntry | null;
+  synthetic: { bold: boolean; italic: boolean };
+}
+
+const NULL_RESULT: ResolveResult = { entry: null, synthetic: { bold: false, italic: false } };
+
+function weightBucket(w: number): 'regular' | 'bold' {
+  return w >= 600 ? 'bold' : 'regular';
+}
+
+/**
+ * Resolve a `(family, weight, style)` request to a registered font entry,
+ * walking the fallback chain when an exact match isn't available. Returns
+ * synthetic flags describing the gap between requested and resolved so the
+ * renderer can apply SDF-thicken / vertex-skew fakes.
+ */
+export function resolveFontVariant(
+  family: string,
+  weight: number,
+  style: FontStyle,
+): ResolveResult {
+  const familyMap = registry.get(family);
+  if (!familyMap || familyMap.size === 0) return NULL_RESULT;
+
+  // 1. Exact match
+  const exact = familyMap.get(variantKey(weight, style));
+  if (exact) return { entry: exact, synthetic: { bold: false, italic: false } };
+
+  // 2. Same style, nearest weight in same bucket (ties broken by higher weight)
+  const requestedBucket = weightBucket(weight);
+  let bestSameStyle: { entry: FontEntry; weight: number; distance: number } | null = null;
+  for (const [key, entry] of familyMap) {
+    const [wStr, s] = key.split('|') as [string, FontStyle];
+    const w = Number(wStr);
+    if (s !== style) continue;
+    if (weightBucket(w) !== requestedBucket) continue;
+    const distance = Math.abs(w - weight);
+    if (
+      bestSameStyle === null ||
+      distance < bestSameStyle.distance ||
+      (distance === bestSameStyle.distance && w > bestSameStyle.weight)
+    ) {
+      bestSameStyle = { entry, weight: w, distance };
+    }
+  }
+  if (bestSameStyle) {
+    return {
+      entry: bestSameStyle.entry,
+      synthetic: { bold: false, italic: false },
+    };
+  }
+
+  // 3. (family, 400, style)
+  const sameStyleRegular = familyMap.get(variantKey(400, style));
+  if (sameStyleRegular) {
+    return {
+      entry: sameStyleRegular,
+      synthetic: {
+        bold: weight >= 600,
+        italic: false,
+      },
+    };
+  }
+
+  // 4. (family, weight, 'normal') — same weight, no italic
+  const sameWeightNormal = familyMap.get(variantKey(weight, 'normal'));
+  if (sameWeightNormal) {
+    return {
+      entry: sameWeightNormal,
+      synthetic: {
+        bold: false,
+        italic: style === 'italic',
+      },
+    };
+  }
+
+  // 4b. Nearest weight, normal style, same bucket
+  let bestNormal: { entry: FontEntry; weight: number; distance: number } | null = null;
+  for (const [key, entry] of familyMap) {
+    const [wStr, s] = key.split('|') as [string, FontStyle];
+    const w = Number(wStr);
+    if (s !== 'normal') continue;
+    if (weightBucket(w) !== requestedBucket) continue;
+    const distance = Math.abs(w - weight);
+    if (
+      bestNormal === null ||
+      distance < bestNormal.distance ||
+      (distance === bestNormal.distance && w > bestNormal.weight)
+    ) {
+      bestNormal = { entry, weight: w, distance };
+    }
+  }
+  if (bestNormal) {
+    return {
+      entry: bestNormal.entry,
+      synthetic: {
+        bold: false,
+        italic: style === 'italic',
+      },
+    };
+  }
+
+  // 5. (family, 400, 'normal') — last resort within family
+  const regular = familyMap.get(variantKey(400, 'normal'));
+  if (regular) {
+    return {
+      entry: regular,
+      synthetic: {
+        bold: weight >= 600,
+        italic: style === 'italic',
+      },
+    };
+  }
+
+  return NULL_RESULT;
+}
