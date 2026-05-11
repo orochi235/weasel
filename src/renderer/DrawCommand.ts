@@ -31,9 +31,11 @@ export interface PathDrawCommand {
   /** Stroke spec. Only solid `paint` supported through step 4. */
   stroke?: Stroke;
   /**
-   * Optional flat RGBA-per-vertex color array (length = 4 × vertexCount,
-   * floats in 0..1 — same convention the renderer uses for `Paint.color`
-   * after parsing). Lives on the DrawCommand variant, not on `Path`.
+   * Optional flat RGBA-per-path-anchor color array (length =
+   * `4 × countPathAnchors(path)`, floats in 0..1). The renderer
+   * arc-length-interpolates these per-anchor colors across the
+   * flattened/triangulated mesh between consecutive anchors using the
+   * mesh's `anchorA` / `anchorB` / `anchorT` parameterization.
    *
    * **`fill` must also be set when using `vertexColors`.** The renderer
    * only enters the per-vertex shader path when the command has a fill
