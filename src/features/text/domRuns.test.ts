@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { runsToDom } from './domRuns';
+import { domToRuns } from './domRuns';
 import type { StyledRun } from './runs';
 
 describe('runsToDom', () => {
@@ -61,5 +62,81 @@ describe('runsToDom', () => {
     runsToDom([{ text: 'new' }], parent);
     expect(parent.querySelectorAll('p')).toHaveLength(0);
     expect(parent.querySelectorAll('span[data-run]')).toHaveLength(1);
+  });
+});
+
+describe('domToRuns', () => {
+  let parent: HTMLDivElement;
+  beforeEach(() => {
+    parent = document.createElement('div');
+    document.body.appendChild(parent);
+  });
+
+  it('returns runs from a freshly-built span sequence', () => {
+    runsToDom([{ text: 'a ' }, { text: 'b', bold: true }, { text: ' c' }], parent);
+    expect(domToRuns(parent)).toEqual([
+      { text: 'a ' },
+      { text: 'b', bold: true },
+      { text: ' c' },
+    ]);
+  });
+
+  it('coalesces adjacent identical runs', () => {
+    const s1 = document.createElement('span');
+    s1.setAttribute('data-run', '');
+    s1.style.fontWeight = '700';
+    s1.textContent = 'a';
+    const s2 = document.createElement('span');
+    s2.setAttribute('data-run', '');
+    s2.style.fontWeight = '700';
+    s2.textContent = 'b';
+    parent.append(s1, s2);
+    expect(domToRuns(parent)).toEqual([{ text: 'ab', bold: true }]);
+  });
+
+  it('treats <br> as a newline character in the preceding run', () => {
+    const s = document.createElement('span');
+    s.setAttribute('data-run', '');
+    s.textContent = 'a';
+    parent.append(s, document.createElement('br'));
+    const s2 = document.createElement('span');
+    s2.setAttribute('data-run', '');
+    s2.textContent = 'b';
+    parent.append(s2);
+    expect(domToRuns(parent)).toEqual([{ text: 'a\nb' }]);
+  });
+
+  it('treats <div> boundaries as newlines', () => {
+    const d1 = document.createElement('div');
+    d1.textContent = 'a';
+    const d2 = document.createElement('div');
+    d2.textContent = 'b';
+    parent.append(d1, d2);
+    expect(domToRuns(parent)).toEqual([{ text: 'a\nb' }]);
+  });
+
+  it('flattens nested <b> / <strong> / <i> / <em> into bold / italic flags', () => {
+    parent.innerHTML = '<b>bold</b><i>it</i><strong>str</strong><em>em</em>';
+    expect(domToRuns(parent)).toEqual([
+      { text: 'bold', bold: true },
+      { text: 'it', italic: true },
+      { text: 'str', bold: true },
+      { text: 'em', italic: true },
+    ]);
+  });
+
+  it('returns empty array for empty parent', () => {
+    expect(domToRuns(parent)).toEqual([]);
+  });
+
+  it('round-trips runsToDom → domToRuns', () => {
+    const runs: StyledRun[] = [
+      { text: 'plain ' },
+      { text: 'bold', bold: true },
+      { text: ' both ', italic: true, bold: true },
+      { text: 'tail' },
+    ];
+    runsToDom(runs, parent);
+    expect(domToRuns(parent)).toEqual(runs);
   });
 });

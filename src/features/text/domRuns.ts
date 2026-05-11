@@ -15,6 +15,102 @@ function solidColor(p: Paint | undefined): string | null {
   return null;
 }
 
+interface StyleState {
+  bold: boolean;
+  italic: boolean;
+  fontSize?: number;
+  fontFamily?: string;
+  color?: string;
+}
+
+const EMPTY_STYLE: StyleState = { bold: false, italic: false };
+
+function styleStateFromElement(el: Element, parent: StyleState): StyleState {
+  const next: StyleState = { ...parent };
+  const tag = el.tagName;
+  if (tag === 'B' || tag === 'STRONG') next.bold = true;
+  if (tag === 'I' || tag === 'EM') next.italic = true;
+  if (el instanceof HTMLElement) {
+    const fw = el.style.fontWeight;
+    if (fw === '700' || fw === 'bold') next.bold = true;
+    if (fw === '400' || fw === 'normal') next.bold = false;
+    const fs = el.style.fontStyle;
+    if (fs === 'italic') next.italic = true;
+    if (fs === 'normal') next.italic = false;
+    if (el.style.fontSize) {
+      const px = parseFloat(el.style.fontSize);
+      if (Number.isFinite(px)) next.fontSize = px;
+    }
+    if (el.style.fontFamily) next.fontFamily = el.style.fontFamily;
+    if (el.style.color) next.color = el.style.color;
+  }
+  return next;
+}
+
+function styleEquals(a: StyleState, b: StyleState): boolean {
+  return (
+    a.bold === b.bold &&
+    a.italic === b.italic &&
+    a.fontSize === b.fontSize &&
+    a.fontFamily === b.fontFamily &&
+    a.color === b.color
+  );
+}
+
+function toRun(text: string, style: StyleState): StyledRun {
+  const run: StyledRun = { text };
+  if (style.bold) run.bold = true;
+  if (style.italic) run.italic = true;
+  if (style.fontSize != null) run.fontSize = style.fontSize;
+  if (style.fontFamily != null) run.fontFamily = style.fontFamily;
+  if (style.color != null) run.fill = { fill: 'solid', color: style.color };
+  return run;
+}
+
+/** Walk an overlay tree and emit a coalesced `StyledRun[]`. */
+export function domToRuns(parent: HTMLElement): StyledRun[] {
+  const fragments: Array<{ text: string; style: StyleState }> = [];
+
+  function visit(node: Node, style: StyleState): void {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = (node as Text).data;
+      if (text.length > 0) fragments.push({ text, style });
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    const el = node as Element;
+    if (el.tagName === 'BR') {
+      fragments.push({ text: '\n', style });
+      return;
+    }
+    if (el.tagName === 'DIV' && fragments.length > 0) {
+      fragments.push({ text: '\n', style });
+    }
+    const nextStyle = styleStateFromElement(el, style);
+    for (const child of Array.from(el.childNodes)) {
+      visit(child, nextStyle);
+    }
+  }
+
+  for (const child of Array.from(parent.childNodes)) {
+    visit(child, EMPTY_STYLE);
+  }
+
+  // Coalesce adjacent fragments with identical style.
+  const runs: StyledRun[] = [];
+  let i = 0;
+  while (i < fragments.length) {
+    let j = i + 1;
+    while (j < fragments.length && styleEquals(fragments[i].style, fragments[j].style)) {
+      j++;
+    }
+    const merged = fragments.slice(i, j).map((f) => f.text).join('');
+    runs.push(toRun(merged, fragments[i].style));
+    i = j;
+  }
+  return runs;
+}
+
 /** Build a flat sequence of `<span data-run>` children from `runs`, replacing any existing children of `parent`. */
 export function runsToDom(runs: readonly StyledRun[], parent: HTMLElement): void {
   parent.replaceChildren();
