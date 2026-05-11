@@ -73,11 +73,14 @@ export function CloneDemo() {
     return { x: p.x, y: p.y, width: p.width, height: p.height };
   };
 
-  const drawRect = (r: Rect, p: Rect): DrawCommand[] => [{
-    kind: 'path',
-    path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-    fill: { color: r.color },
-  }];
+  const drawRect = (n: { data: Rect } | Rect, p: Rect): DrawCommand[] => {
+    const r = 'data' in n ? n.data : n;
+    return [{
+      kind: 'path',
+      path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+      fill: { color: r.color },
+    }];
+  };
 
   const clone = useCloneTool(adapter, {
     behaviors: [cloneByAltDrag()],
@@ -91,7 +94,11 @@ export function CloneDemo() {
     getSelection: () => selection.current,
   });
 
-  const tools = useTools({ active: 'select', registry: { select, clone } });
+  const tools = useTools({
+    active: 'clone',
+    registry: { select, clone },
+    ambient: [select],
+  });
 
   return (
     <SceneCanvas
