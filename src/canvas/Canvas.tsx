@@ -837,10 +837,22 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     () => buildChromeState({
       selection: selectedIdsForWiring,
       multiActive,
-      effectiveBoundsOf: (id) => (effectiveBoundsOf ? effectiveBoundsOf(id) : null),
+      // Prefer the active tool's previewBounds (live during a drag) so
+      // resize/rotation handles track the dragged object. Falls back to
+      // committed bounds when no gesture is in flight.
+      effectiveBoundsOf: (id) => {
+        if (tools) {
+          const tool = tools.registry[tools.hotkeyEngaged ?? tools.active];
+          const b = tool?.previewBounds?.(id);
+          if (b) return b as Bounds;
+          const p = tool?.previewPose?.(id);
+          if (p != null) return geometry.getBounds(p as TPose);
+        }
+        return effectiveBoundsOf ? effectiveBoundsOf(id) : null;
+      },
       modifiers: { alt: false, shift: false, meta: false, ctrl: false },
     }),
-    [selectedIdsForWiring, multiActive, effectiveBoundsOf],
+    [selectedIdsForWiring, multiActive, effectiveBoundsOf, tools, geometry],
   );
 
   // Wire the dispatcher's hit-test context. The active tool's overlay (and
