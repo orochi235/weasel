@@ -362,9 +362,38 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     },
 
     setLayer(id, layer) {
-      const node = requireNode(id);
       requireLayerIndex(layer);
-      executeAndLog('kit:setLayer', { id, from: node.layer, to: layer }, 'setLayer');
+      const node = requireNode(id);
+      if (node.parent !== null) {
+        const parentNode = requireNode(node.parent);
+        assertSubtreeLayer(id, layer, node.parent, parentNode.layer);
+      }
+      // DFS preorder: collect id + all descendants.
+      const subtree: NodeId[] = [];
+      const stack: NodeId[] = [id];
+      while (stack.length > 0) {
+        const curId = stack.pop()!;
+        const cur = state.nodes.get(curId);
+        if (!cur) continue;
+        subtree.push(curId);
+        if (cur.kind === 'container') {
+          for (let i = cur.children.length - 1; i >= 0; i--) {
+            stack.push(cur.children[i]);
+          }
+        }
+      }
+      if (subtree.length === 1) {
+        // Fast path: single node, no batch needed.
+        executeAndLog('kit:setLayer', { id, from: node.layer, to: layer }, 'setLayer');
+      } else {
+        scene.batch('setLayer', () => {
+          for (const sid of subtree) {
+            const cur = requireNode(sid);
+            if (cur.layer === layer) continue;
+            executeAndLog('kit:setLayer', { id: sid, from: cur.layer, to: layer }, 'setLayer');
+          }
+        });
+      }
     },
 
     move(id, parent, index) {

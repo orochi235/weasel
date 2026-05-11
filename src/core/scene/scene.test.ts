@@ -194,6 +194,43 @@ describe('add / remove / move', () => {
   });
 });
 
+describe('setLayer — parent rejection and cascade', () => {
+  it('setLayer rejects when the node has a parent on a different layer', () => {
+    const s = makeScene();
+    const bed = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const plant = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'p' }, parent: bed });
+    expect(() => s.setLayer(plant, 'plantings')).toThrow(/subtree layer must match parent/);
+  });
+
+  it('setLayer succeeds on a leaf with no parent', () => {
+    const s = makeScene();
+    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    s.setLayer(id, 'plantings');
+    expect(s.get(id)?.layer).toBe('plantings');
+  });
+
+  it('setLayer on a container cascades through all descendants', () => {
+    const s = makeScene();
+    const bed = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const sub = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'sub' }, parent: bed });
+    const leaf = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'leaf' }, parent: sub });
+    s.setLayer(bed, 'plantings');
+    expect(s.get(bed)?.layer).toBe('plantings');
+    expect(s.get(sub)?.layer).toBe('plantings');
+    expect(s.get(leaf)?.layer).toBe('plantings');
+  });
+
+  it('setLayer cascade is one undo step', () => {
+    const s = makeScene();
+    const bed = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const leaf = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'leaf' }, parent: bed });
+    s.setLayer(bed, 'plantings');
+    s.undo();
+    expect(s.get(bed)?.layer).toBe('structures');
+    expect(s.get(leaf)?.layer).toBe('structures');
+  });
+});
+
 describe('mutations are auto-undoable', () => {
   it('setPose / setLayer / update round-trip through undo/redo', () => {
     const s = makeScene();
