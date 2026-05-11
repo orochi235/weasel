@@ -32,6 +32,8 @@ import {
   polygonContainsRectCenter,
   polygonIntersectsRect,
 } from 'features/paths/polygonHitTestRect';
+import type { Path } from 'features/paths/types';
+import { pathIntersectsRect } from 'features/paths/pathHitTest';
 
 interface Bounds { x: number; y: number; width: number; height: number; }
 
@@ -94,6 +96,84 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
   layouts?:
     | Record<string, LayoutStrategy<TPose>>
     | ((containerId: string) => LayoutStrategy<TPose> | null);
+}
+
+// ─── Clip-aware hierarchical walk ────────────────────────────────────────────
+
+/**
+ * Test whether a node's bounds pass all accumulated ancestor clips.
+ * A clip "passes" for a child when the child's bounds intersect the clip
+ * region — i.e., some part of the child is visible through the clip.
+ */
+function nodeBoundsPassClips(
+  clips: readonly Path[],
+  bounds: Bounds,
+): boolean {
+  for (const clip of clips) {
+    if (!pathIntersectsRect(clip, bounds)) return false;
+  }
+  return true;
+}
+
+/**
+ * Walk the scene tree hierarchically (roots → children via DFS), evaluating
+ * each node against a geometry callback. When a container has `clipFromPose`,
+ * the clip is evaluated once for that container and accumulated into an
+ * ancestor-clip chain: descendants whose bounds don't intersect any ancestor
+ * clip are excluded from results even if they satisfy the geometry callback.
+ *
+ * Containers themselves are tested by `nodeTest` and included in results when
+ * they pass — this preserves existing behavior where containers can be
+ * marquee-selected by their own AABB.
+ */
+function walkClipAware<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  poseBounds: (pose: TPose) => Bounds,
+  nodeTest: (node: Node<TData, TLayer, TPose>) => boolean,
+): string[] {
+  const results: string[] = [];
+
+  // `ancestorClips` accumulates clip paths from parent containers.
+  // Each entry is computed exactly once when visiting that container.
+  function walk(nodeId: string, ancestorClips: readonly Path[]): void {
+    const node = scene.get(asNodeId(nodeId));
+    if (!node) return;
+
+    if (node.kind === 'container') {
+      // Test this container's own geometry (preserves existing flat-walk
+      // behavior — containers can be marquee-selected by their AABB).
+      if (nodeTest(node)) results.push(nodeId);
+
+      // Compute this container's clip exactly once per query visit.
+      const childClips: readonly Path[] =
+        typeof node.clipFromPose === 'function'
+          ? (() => {
+              const clip = node.clipFromPose(node.pose);
+              return clip !== null ? [...ancestorClips, clip] : ancestorClips;
+            })()
+          : ancestorClips;
+
+      // Recurse into children, propagating the accumulated clip chain.
+      for (const childId of scene.childrenOf(asNodeId(nodeId))) {
+        walk(childId, childClips);
+      }
+    } else {
+      // Leaf node — included only if it passes all ancestor clips AND the
+      // geometry test. The clip chain is empty for plain trees, so
+      // nodeBoundsPassClips short-circuits to true with no clip overhead.
+      if (ancestorClips.length > 0) {
+        const b = poseBounds(node.pose);
+        if (!nodeBoundsPassClips(ancestorClips, b)) return;
+      }
+      if (nodeTest(node)) results.push(nodeId);
+    }
+  }
+
+  for (const rootId of scene.roots) {
+    walk(rootId, []);
+  }
+
+  return results;
 }
 
 export function sceneToAdapter<TData, TLayer extends string, TPose>(
@@ -192,36 +272,26 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       applyOpsTo(this, ops);
     },
     hitTestArea(rect: Bounds) {
-      const out: string[] = [];
-      for (const id of scene.renderOrder()) {
-        const n = scene.get(id);
-        if (!n) continue;
+      return walkClipAware(scene, poseBounds, (n) => {
         const b = poseBounds(n.pose);
-        if (
+        return (
           b.x < rect.x + rect.width &&
           b.x + b.width > rect.x &&
           b.y < rect.y + rect.height &&
           b.y + b.height > rect.y
-        ) {
-          out.push(id);
-        }
-      }
-      return out;
+        );
+      });
     },
     hitTestLasso(polygon, mode: LassoHitMode) {
       if (polygon.length < 3) return [];
-      const out: string[] = [];
-      for (const id of scene.renderOrder()) {
-        const n = scene.get(id);
-        if (!n) continue;
+      return walkClipAware(scene, poseBounds, (n) => {
         const b = poseBounds(n.pose);
-        const hit =
+        return (
           mode === 'centers' ? polygonContainsRectCenter(polygon, b) :
           mode === 'enclosed' ? polygonContainsRect(polygon, b) :
-          polygonIntersectsRect(polygon, b);
-        if (hit) out.push(id);
-      }
-      return out;
+          polygonIntersectsRect(polygon, b)
+        );
+      });
     },
     // Insert support is opt-in: present only when `options.commitInsert` is.
     // The synthesized methods package the user's factory result into a leaf
