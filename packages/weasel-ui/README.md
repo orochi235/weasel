@@ -12,22 +12,22 @@ yet).
 - Input primitives — `PropertyTextInput`, `PropertyNumberInput`,
   `PropertyAxisInput` (X/Y or W/H pair), `PropertyColorInput`,
   `PropertySelect`, `PropertyButton`, `PropertyReadOnly`.
-- `tokens.css` — neutral CSS-variable defaults. Apps either import this
-  or define the variables themselves.
 
 ## CSS variables
 
-Components read these (defaulted in `tokens.css`):
+Components read `--wzl-*` tokens from `@orochi235/weasel-theme`. Import
+`@orochi235/weasel-theme/tokens.css` in your app shell for sensible
+defaults, or define the variables yourself at any DOM scope.
 
 | Variable | Purpose |
 |---|---|
-| `--wui-text` | Primary text |
-| `--wui-text-muted` | Labels, secondary text |
-| `--wui-panel-bg` | Panel background |
-| `--wui-panel-border` | Panel/input border |
-| `--wui-input-bg` | Input field background |
-| `--wui-accent` | Focused-input border, primary action |
-| `--wui-danger` | Destructive button text |
+| `--wzl-text` | Primary text |
+| `--wzl-text-muted` | Labels, secondary text |
+| `--wzl-panel-bg` | Panel background |
+| `--wzl-panel-border` | Panel/input border |
+| `--wzl-input-bg` | Input field background |
+| `--wzl-accent` | Focused-input border, primary action |
+| `--wzl-danger` | Destructive button text |
 
 ## Why a separate package
 
