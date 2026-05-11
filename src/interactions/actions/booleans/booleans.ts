@@ -16,6 +16,7 @@ import {
 import type { Path, PolygonPath } from 'features/paths/types';
 import { createInsertOp } from 'core/ops/create';
 import { createDeleteOp } from 'core/ops/delete';
+import { createMoveToIndexOp } from 'core/ops/reorder';
 import { createSetSelectionOp } from 'core/ops/select';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
@@ -24,12 +25,32 @@ import { dispatchApplyBatch } from 'core/applyOps';
 /** The five v1 operations. */
 export type BooleanOp = 'union' | 'intersect' | 'subtract' | 'exclude' | 'divide';
 
+/**
+ * z-position descriptor for a path node. `parentId` is the direct parent
+ * (or `null` for a top-level node); `index` is the position within that
+ * parent's child order. Used by the optional `getZOrder` hook below to
+ * reposition the result of a boolean op at the topmost source's slot.
+ */
+export interface BooleanZOrder {
+  parentId: string | null;
+  index: number;
+}
+
 /** Adapter the hook and the pure core both consume. */
 export interface BooleansAdapter {
   getSelection(): NodeId[];
   getWorldPath(id: NodeId): Path | undefined;
   compareZ(a: NodeId, b: NodeId): number;
   createPathNode(path: Path): { id: string };
+  /**
+   * Optional: return the parent + child-index of `id` so the result of a
+   * boolean op can be placed in the topmost source's z-slot. Adapters that
+   * also expose `getChildren`/`setChildOrder` (the `ReorderAdapter`
+   * contract) will have the kit emit a `createMoveToIndexOp` after the
+   * inserts. Adapters that omit this method get v1 behavior — the result
+   * lands wherever the adapter's plain `insertNode` defaults to.
+   */
+  getZOrder?(id: NodeId): BooleanZOrder | undefined;
   applyBatch?(ops: Op[], label?: string): void;
   setSelection?(ids: NodeId[]): void;
   insertNode?(node: { id: string }): void;
@@ -96,10 +117,42 @@ export function applyBooleanOp(
   results = results.filter((p) => !isEmpty(p));
   if (results.length === 0) return { kind: 'noop', reason: 'empty-result' };
 
+  // Capture the topmost source's z-slot before we mutate the scene. The
+  // topmost source is the last entry (entries are back-to-front ascending).
+  // We adjust for selected members that sit below the topmost in the same
+  // parent — their deletions collapse the parent's child list before the
+  // reorder runs, so the visual slot the topmost occupied lives at a lower
+  // index after the deletes. Members in a different parent don't affect
+  // this parent's indexing.
+  const topmostId = entries[entries.length - 1].id;
+  const topAnchor = adapter.getZOrder?.(topmostId);
+  let targetIndex = topAnchor?.index;
+  if (topAnchor && adapter.getZOrder) {
+    let shift = 0;
+    for (let i = 0; i < entries.length - 1; i++) {
+      const z = adapter.getZOrder(entries[i].id);
+      if (z && z.parentId === topAnchor.parentId && z.index < topAnchor.index) {
+        shift++;
+      }
+    }
+    targetIndex = topAnchor.index - shift;
+  }
+
   const newNodes = results.map((p) => adapter.createPathNode(p));
   const ops: Op[] = [];
   for (const e of entries) ops.push(createDeleteOp({ node: { id: e.id } }));
   for (const n of newNodes) ops.push(createInsertOp({ node: n }));
+  if (topAnchor && targetIndex !== undefined) {
+    // After the deletes, the topmost source's index is no longer occupied;
+    // moving the new nodes to the adjusted index drops them into that slot.
+    // For divide (N outputs), they form a contiguous block in input order
+    // starting at the target index.
+    ops.push(createMoveToIndexOp({
+      ids: newNodes.map((n) => n.id),
+      parentId: topAnchor.parentId,
+      index: targetIndex,
+    }));
+  }
   ops.push(createSetSelectionOp({
     from: sel,
     to: newNodes.map((n) => n.id as NodeId),
