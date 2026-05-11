@@ -153,6 +153,22 @@ describe('add / remove / move', () => {
     expect(() => s.move(b, child)).toThrow(/not a container/);
   });
 
+  it('rejects move() onto a parent on a different layer', () => {
+    const s = makeScene();
+    const bed1 = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed1' } });
+    const bed2 = s.add({ kind: 'container', layer: 'plantings',  pose: POSE, data: { label: 'bed2' } });
+    const plant = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'p' }, parent: bed1 });
+    expect(() => s.move(plant, bed2)).toThrow(/subtree layer must match parent/);
+  });
+
+  it('allows move(id, null) regardless of layer', () => {
+    const s = makeScene();
+    const bed = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const plant = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'p' }, parent: bed });
+    s.move(plant, null);
+    expect(s.childrenOf(bed)).toEqual([]);
+  });
+
   it('reorder shifts within current parent', () => {
     const s = makeScene();
     const a = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });

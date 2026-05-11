@@ -374,6 +374,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         if (p.kind !== 'container') {
           throw new Error(`Scene: parent "${parent}" is not a container`);
         }
+        assertSubtreeLayer(id, node.layer, parent, p.layer);
         // Cycle check: parent must not be id or a descendant of id.
         if (parent === id) throw new Error('Scene: cannot parent a node to itself');
         const desc: NodeId[] = [];
