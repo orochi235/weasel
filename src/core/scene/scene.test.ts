@@ -608,3 +608,94 @@ describe('pendingClipPatches pruning', () => {
     expect(cacheSize(scene)).toBe(0);
   });
 });
+
+describe('scene.toJSON', () => {
+  it('captures a flat scene with no parents', () => {
+    const scene = createScene<Data, 'structures' | 'plantings'>({
+      systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
+    });
+    const a = scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const b = scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    const json = scene.toJSON();
+    expect(json.version).toBe(1);
+    expect(json.systemLayers.map((l) => l.id)).toEqual(['structures', 'plantings']);
+    expect(json.nodes).toHaveLength(2);
+    expect(json.nodes[0]).toMatchObject({ id: a, kind: 'leaf', layer: 'structures', pose: POSE });
+    expect(json.nodes[1]).toMatchObject({ id: b, kind: 'leaf', layer: 'structures', pose: POSE });
+    expect(json.nodes[0].parent).toBeUndefined();
+  });
+
+  it('captures parent ids for nested subtrees', () => {
+    const scene = createScene<Data, 'structures' | 'plantings'>({
+      systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
+    });
+    const bed = scene.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const plant = scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'p' }, parent: bed });
+    const json = scene.toJSON();
+    const plantNode = json.nodes.find((n) => n.id === plant)!;
+    expect(plantNode.parent).toBe(bed);
+  });
+
+  it('captures layer visible=false and locked=true; omits defaults', () => {
+    const scene = createScene<Data, 'structures' | 'plantings'>({
+      systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
+    });
+    scene.setLayerVisible('structures', false);
+    scene.setLayerLocked('plantings', true);
+    const json = scene.toJSON();
+    const s = json.systemLayers.find((l) => l.id === 'structures')!;
+    const p = json.systemLayers.find((l) => l.id === 'plantings')!;
+    expect(s.visible).toBe(false);
+    expect(s.locked).toBeUndefined();
+    expect(p.visible).toBeUndefined();
+    expect(p.locked).toBe(true);
+  });
+
+  it('preserves layer-major DFS preorder in nodes array', () => {
+    const scene = createScene<Data, 'structures' | 'plantings'>({
+      systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
+    });
+    const a = scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const b = scene.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'b' } });
+    const c = scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'c' } });
+    const json = scene.toJSON();
+    expect(json.nodes.map((n) => n.id)).toEqual([a, c, b]);
+  });
+
+  it('writes clipFromPoseKey when the factory is in the registry', () => {
+    const factory = (_pose: typeof POSE) => ({ kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 });
+    const scene = createScene<Data, 'structures' | 'plantings', typeof POSE>({
+      systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
+      registry: { clipFromPose: { 'ellipse': factory } },
+    });
+    const bed = scene.add({
+      kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' },
+      clipFromPose: factory,
+    });
+    const json = scene.toJSON();
+    const bedNode = json.nodes.find((n) => n.id === bed)!;
+    expect(bedNode.clipFromPoseKey).toBe('ellipse');
+  });
+
+  it('throws when a container has clipFromPose but no matching registry key', () => {
+    const scene = createScene<Data, 'structures', typeof POSE>({
+      systemLayers: [{ id: 'structures' }],
+      registry: {},
+    });
+    scene.add({
+      kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' },
+      clipFromPose: () => ({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 }),
+    });
+    expect(() => scene.toJSON()).toThrow(/no matching registry key/);
+  });
+
+  it('omits clipFromPoseKey for containers without clipFromPose', () => {
+    const scene = createScene<Data, 'structures' | 'plantings'>({
+      systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
+    });
+    const bed = scene.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const json = scene.toJSON();
+    const bedNode = json.nodes.find((n) => n.id === bed)!;
+    expect(bedNode.clipFromPoseKey).toBeUndefined();
+  });
+});

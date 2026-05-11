@@ -8,6 +8,9 @@ import {
   type NodeId,
   type RegisteredOp,
   type Scene,
+  type SerializedNode,
+  type SerializedScene,
+  type SystemLayerSpec,
   type UseSceneOptions,
 } from './types';
 
@@ -361,6 +364,26 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     }
   }
 
+  /** Layer-major DFS-preorder iterator. Shared by renderOrder() and toJSON(). */
+  function* renderOrderInternal(): Iterable<NodeId> {
+    // For each layer in order, walk the entire tree DFS-preorder, yielding
+    // any node whose layer matches.
+    for (const layer of state.layers) {
+      const stack: NodeId[] = [...state.roots].reverse();
+      while (stack.length > 0) {
+        const id = stack.pop()!;
+        const node = state.nodes.get(id);
+        if (!node) continue;
+        if (node.layer === layer.id) yield id;
+        if (node.kind === 'container') {
+          for (let i = node.children.length - 1; i >= 0; i--) {
+            stack.push(node.children[i]);
+          }
+        }
+      }
+    }
+  }
+
   const scene: Scene<TData, TLayer, TPose> = {
     get nodes() { return state.nodes; },
     get roots() { return state.roots; },
@@ -383,23 +406,8 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       return out;
     },
 
-    *renderOrder() {
-      // For each layer in order, walk the entire tree DFS-preorder, yielding
-      // any node whose layer matches.
-      for (const layer of state.layers) {
-        const stack: NodeId[] = [...state.roots].reverse();
-        while (stack.length > 0) {
-          const id = stack.pop()!;
-          const node = state.nodes.get(id);
-          if (!node) continue;
-          if (node.layer === layer.id) yield id;
-          if (node.kind === 'container') {
-            for (let i = node.children.length - 1; i >= 0; i--) {
-              stack.push(node.children[i]);
-            }
-          }
-        }
-      }
+    renderOrder() {
+      return renderOrderInternal();
     },
 
     add(spec) {
@@ -613,6 +621,40 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
           }
         }
       }
+    },
+
+    toJSON(): SerializedScene<TData, TLayer, TPose> {
+      const nodes: SerializedNode<TData, TLayer, TPose>[] = [];
+      for (const id of renderOrderInternal()) {
+        const n = state.nodes.get(id);
+        if (!n) continue;
+        const out: SerializedNode<TData, TLayer, TPose> = {
+          id,
+          kind: n.kind,
+          layer: n.layer,
+          pose: n.pose,
+          data: n.data,
+        };
+        if (n.parent != null) out.parent = n.parent;
+        if (n.kind === 'container' && n.clipFromPose) {
+          const key = reverseClipFromPose.get(n.clipFromPose);
+          if (!key) {
+            throw new Error(
+              `Scene.toJSON: container '${id}' has clipFromPose but no matching registry key. ` +
+              `The function must be registered via createScene's registry option to round-trip.`
+            );
+          }
+          out.clipFromPoseKey = key;
+        }
+        nodes.push(out);
+      }
+      const systemLayers = state.layers.map((l) => {
+        const layer: SystemLayerSpec<TLayer> = { id: l.id };
+        if (l.visible === false) layer.visible = false;
+        if (l.locked === true) layer.locked = true;
+        return layer;
+      });
+      return { version: 1, systemLayers, nodes };
     },
 
     subscribe(listener) {

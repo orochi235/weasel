@@ -209,6 +209,13 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   canRedo(): boolean;
   batch<T>(label: string, fn: () => T): T;
 
+  // Serialization
+  /** Snapshot the current scene state to a JSON-serializable shape.
+   *  History (undo/redo stacks) is NOT captured. Function fields like
+   *  `ContainerNode.clipFromPose` are translated to string keys via the
+   *  scene's registry; throws if any function field has no matching key. */
+  toJSON(): SerializedScene<TData, TLayer, TPose>;
+
   // Subscription (used by useScene; also for non-React observers)
   subscribe(listener: () => void): () => void;
   /** Monotonically increasing version. Snapshot for `useSyncExternalStore`. */
