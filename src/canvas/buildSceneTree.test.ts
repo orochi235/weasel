@@ -91,4 +91,15 @@ describe('buildSceneTree', () => {
     expect(leafWrapper.kind).toBe('group');
     expect(leafWrapper.children).toHaveLength(0);
   });
+
+  it('multiple top-level roots on the same layer are all wrapped in that layer group', () => {
+    const scene = makeScene();
+    scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'a' } });
+    scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'b' } });
+    scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'c' } });
+    const adapter = sceneToAdapter(scene);
+    const out = buildSceneTree(adapter as never, labelDraw as never, VIEW);
+    const bgGroup = out[0] as { children: DrawCommand[] };
+    expect(bgGroup.children).toHaveLength(3);
+  });
 });
