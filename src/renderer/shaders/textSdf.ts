@@ -1,9 +1,10 @@
 /**
  * GLSL ES 3.0 sources for the built-in MSDF text shader.
  *
- * Vertex inputs (interleaved, stride 16 bytes = 4 × float):
- *   a_position  vec2   screen-space x,y of the glyph quad vertex
- *   a_uv        vec2   atlas UV (0..1)
+ * Vertex inputs (interleaved, stride 20 bytes = 5 × float):
+ *   a_position   vec2   screen-space x,y of the glyph quad vertex
+ *   a_uv         vec2   atlas UV (0..1)
+ *   a_baselineY  float  line baseline Y in screen space (for synth-italic skew)
  *
  * Uniforms:
  *   u_proj         mat3        screen → clip projection
