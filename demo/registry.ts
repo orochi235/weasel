@@ -30,6 +30,7 @@ import { VertexColorsDemo } from './demos/VertexColorsDemo';
 import { ColorMatrixDemo } from './demos/ColorMatrixDemo';
 import { CustomShaderDemo } from './demos/CustomShaderDemo';
 import { LassoDemo } from './demos/LassoDemo';
+import { ClippingDemo } from './demos/ClippingDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
@@ -62,6 +63,7 @@ import VertexColorsDemoFull from './demos/VertexColorsDemo.tsx?raw';
 import ColorMatrixDemoFull from './demos/ColorMatrixDemo.tsx?raw';
 import CustomShaderDemoFull from './demos/CustomShaderDemo.tsx?raw';
 import LassoDemoFull from './demos/LassoDemo.tsx?raw';
+import ClippingDemoFull from './demos/ClippingDemo.tsx?raw';
 import { HudDemo } from './demos/HudDemo';
 import HudDemoFull from './demos/HudDemo.tsx?raw';
 
@@ -258,6 +260,16 @@ export const DEMOS: DemoEntry[] = [
     Component: NestedGroupsDemo,
     full: NestedGroupsDemoFull,
     path: 'demo/demos/NestedGroupsDemo.tsx',
+  },
+  {
+    id: 'clipping',
+    title: 'Clipping',
+    category: 'Groups',
+    description: 'Elliptical container clip with two overhanging children. The brown "bed" container carries a clipFromPose that returns an ellipse path; the green and orange child rects extend beyond the ellipse boundary and are clipped to it. Canonical visual regression baseline for Phase 2 nested clipping.',
+    hint: 'The green and orange rects overhang the ellipse — only the portions inside are visible.',
+    Component: ClippingDemo,
+    full: ClippingDemoFull,
+    path: 'demo/demos/ClippingDemo.tsx',
   },
   {
     id: 'compose',
