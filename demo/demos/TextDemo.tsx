@@ -97,7 +97,7 @@ export function TextDemo() {
   // helpersRef gives custom layers overlay-aware pose lookups so the text
   // and selection ghost follow live drag/resize without us re-implementing
   // the overlay fold-in.
-  const helpersRef = useRef<CanvasHelpers<Pose> | null>(null);
+  const helpersRef = useRef<CanvasHelpers<TextNode> | null>(null);
 
   const setText = useCallback(
     (id: string, text: string) => {
@@ -209,7 +209,7 @@ export function TextDemo() {
         scene={scene}
         helpersRef={helpersRef}
         selectTool={{
-          snap: gridSnapStrategy<Pose>(CELL),
+          snap: gridSnapStrategy<TextNode>(CELL),
           handleHitRadius: HANDLE,
         }}
         layers={{

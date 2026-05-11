@@ -1,4 +1,5 @@
 import type { RectPose } from 'features/groups/composePose';
+import type { Path } from 'features/paths/types';
 
 /**
  * # SceneNode — the thing in the scene
@@ -72,6 +73,12 @@ export interface ContainerNode<TData, TLayer extends string, TPose = RectPose>
   extends NodeBase<TData, TLayer, TPose> {
   kind: 'container';
   children: NodeId[];
+  /** Optional clip-path source. Re-evaluated each render. Returning `null`
+   *  means "no clip for this container right now"; an empty / zero-area path
+   *  means "clip everything out" (children render nowhere). When set, the
+   *  renderer rasterizes the returned path into the stencil buffer and
+   *  paints descendants only where it covers. Phase 2 of nested clipping. */
+  clipFromPose?: (pose: TPose) => Path | null;
 }
 
 export type Node<TData, TLayer extends string, TPose = RectPose> =

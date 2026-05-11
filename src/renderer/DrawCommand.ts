@@ -53,6 +53,12 @@ export interface GroupDrawCommand {
    * Accumulated multiplicatively down the group stack. Defaults to identity.
    */
   colorMatrix?: number[];
+  /** Optional clip path. When set, the renderer rasterizes this path into
+   *  the stencil buffer before drawing `children`; the children paint only
+   *  where the clip covers. Nested groups with clips intersect — a child
+   *  cannot escape an ancestor's clip. Max 7 nesting levels; the renderer
+   *  throws if exceeded. Phase 2 of nested clipping. */
+  clip?: Path;
   children: DrawCommand[];
 }
 
