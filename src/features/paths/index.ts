@@ -17,6 +17,7 @@ export {
 } from './types';
 export { PathBuilder, polygonFromPoints, rectPath } from './builder';
 export { boundsOfPath } from './bounds';
+export { countPathAnchors } from './anchors';
 export { pointInPath, type PointInPathOptions } from './hitTest';
 export {
   polygonContainsRectCenter,

@@ -216,6 +216,7 @@ export {
   polygonFromPoints,
   rectPath,
   boundsOfPath,
+  countPathAnchors,
   pointInPath,
   translatePath,
   translatePolygonInPlace,
