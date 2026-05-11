@@ -83,3 +83,57 @@ describe('applyBooleanOp', () => {
     expect(result.kind).toBe('noop');
   });
 });
+
+describe('applyBooleanOp — operation-specific behavior', () => {
+  it('subtract: noop when < 2 paths selected', () => {
+    const h = makeAdapter([rect('a', 0, 0, 10, 10)]);
+    const result = applyBooleanOp(h.adapter, 'subtract');
+    expect(result).toEqual({ kind: 'noop', reason: 'too-few-for-subtract' });
+    expect(h.state.batches).toHaveLength(0);
+  });
+
+  it('subtract: result is back − front (z-order: back first)', () => {
+    // 'a' at index 0 (back), 'b' at index 1 (front)
+    const h = makeAdapter([
+      rect('a', 0, 0, 10, 10),
+      rect('b', 5, 5, 10, 10),
+    ]);
+    const result = applyBooleanOp(h.adapter, 'subtract');
+    expect(result.kind).toBe('applied');
+    expect(h.state.inserted).toHaveLength(1);
+    // Sanity check the result has content.
+    const path = (h.state.inserted[0] as any).path as { commands: Uint8Array };
+    expect(path.commands.length).toBeGreaterThan(0);
+  });
+
+  it('intersect of disjoint inputs: noop with reason empty-result', () => {
+    const h = makeAdapter([
+      rect('a', 0, 0, 5, 5),
+      rect('b', 10, 10, 5, 5),
+    ]);
+    const result = applyBooleanOp(h.adapter, 'intersect');
+    expect(result).toEqual({ kind: 'noop', reason: 'empty-result' });
+    expect(h.state.batches).toHaveLength(0);
+  });
+
+  it('divide: emits one node per region (3 for two overlapping rects)', () => {
+    const h = makeAdapter([
+      rect('a', 0, 0, 10, 10),
+      rect('b', 5, 5, 10, 10),
+    ]);
+    const result = applyBooleanOp(h.adapter, 'divide');
+    expect(result.kind).toBe('applied');
+    expect(h.state.inserted).toHaveLength(3);
+    expect(h.state.selection).toHaveLength(3);
+  });
+
+  it('one batch is dispatched per applied op (single undo step)', () => {
+    const h = makeAdapter([
+      rect('a', 0, 0, 10, 10),
+      rect('b', 5, 5, 10, 10),
+    ]);
+    applyBooleanOp(h.adapter, 'union');
+    expect(h.state.batches).toHaveLength(1);
+    expect(h.state.batches[0].label).toBe('Union');
+  });
+});
