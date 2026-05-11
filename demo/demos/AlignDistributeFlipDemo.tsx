@@ -57,7 +57,9 @@ export function AlignDistributeFlipDemo() {
 
   const { align } = useAlign<Rect>(actionAdapter);
   const { distribute } = useDistribute<Rect>(actionAdapter);
-  const { flip, flipHorizontal, flipVertical } = useFlip<Rect>(actionAdapter);
+  const { flip, flipHorizontal, flipVertical } = useFlip<Rect>(actionAdapter, {
+    pivot: 'union',
+  });
 
   const pickEvery = (worldX: number, worldY: number): string[] => {
     const hits: string[] = [];
@@ -90,9 +92,10 @@ export function AlignDistributeFlipDemo() {
   useEffect(() => { canvasRef.current?.element?.focus(); }, []);
 
   // Pre-select all five so every button has an immediate visible effect.
+  const setSelection = selection.set;
   useEffect(() => {
-    selection.set(INITIAL.map((r) => asNodeId(r.id)));
-  }, [selection]);
+    setSelection(INITIAL.map((r) => asNodeId(r.id)));
+  }, [setSelection]);
 
   const ALIGN_BTNS: { edge: AlignEdge; label: string }[] = [
     { edge: 'left', label: 'Align L' },
