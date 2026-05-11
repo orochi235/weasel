@@ -98,17 +98,17 @@ describe('add / remove / move', () => {
     const s = makeScene();
     const leaf = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
     expect(() =>
-      s.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'b' }, parent: leaf }),
+      s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' }, parent: leaf }),
     ).toThrow(/not a container/);
   });
 
   it('parents children under containers and tracks them in render order', () => {
     const s = makeScene();
     const bed = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
-    const tomato = s.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'tomato' }, parent: bed });
+    const tomato = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'tomato' }, parent: bed });
     expect(s.childrenOf(bed)).toEqual([tomato]);
     expect(s.ancestorsOf(tomato)).toEqual([bed]);
-    // Render order: structures pass yields bed, plantings pass yields tomato.
+    // Render order: structures pass yields bed then tomato.
     const order = [...s.renderOrder()];
     expect(order).toEqual([bed, tomato]);
   });
@@ -116,8 +116,8 @@ describe('add / remove / move', () => {
   it('remove deletes the subtree and is undoable', () => {
     const s = makeScene();
     const bed = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
-    const t1 = s.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 't1' }, parent: bed });
-    s.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 't2' }, parent: bed });
+    const t1 = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 't1' }, parent: bed });
+    s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 't2' }, parent: bed });
     s.remove(bed);
     expect(s.get(bed)).toBeUndefined();
     expect(s.get(t1)).toBeUndefined();
@@ -132,7 +132,7 @@ describe('add / remove / move', () => {
     const s = makeScene();
     const a = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'a' } });
     const b = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'b' } });
-    const child = s.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'c' }, parent: a });
+    const child = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'c' }, parent: a });
     s.move(child, b);
     expect(s.childrenOf(a)).toEqual([]);
     expect(s.childrenOf(b)).toEqual([child]);
@@ -148,6 +148,21 @@ describe('add / remove / move', () => {
     const c = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'c' } });
     s.reorder(c, 0);
     expect(s.roots).toEqual([c, a, b]);
+  });
+
+  it('rejects a child added on a different layer than its parent', () => {
+    const s = makeScene();
+    const bed = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    expect(() =>
+      s.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'plant' }, parent: bed }),
+    ).toThrow(/subtree layer must match parent/);
+  });
+
+  it('accepts a child added on the same layer as its parent', () => {
+    const s = makeScene();
+    const bed = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const plant = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'plant' }, parent: bed });
+    expect(s.childrenOf(bed)).toEqual([plant]);
   });
 });
 
