@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toRuns, runsToPlainText, type StyledRun } from './runs';
+import { toRuns, runsToPlainText, runsToMarkdown, type StyledRun } from './runs';
 
 describe('toRuns', () => {
   it('wraps a string into a single run', () => {
@@ -39,5 +39,37 @@ describe('runsToPlainText', () => {
 
   it('preserves embedded newlines', () => {
     expect(runsToPlainText([{ text: 'a\n', bold: true }, { text: 'b' }])).toBe('a\nb');
+  });
+});
+
+describe('runsToMarkdown', () => {
+  it('returns plain text unchanged when no run is styled', () => {
+    expect(runsToMarkdown([{ text: 'hello world' }])).toBe('hello world');
+  });
+
+  it('wraps a bold run in **', () => {
+    expect(runsToMarkdown([{ text: 'bold', bold: true }])).toBe('**bold**');
+  });
+
+  it('wraps an italic run in *', () => {
+    expect(runsToMarkdown([{ text: 'em', italic: true }])).toBe('*em*');
+  });
+
+  it('wraps a bold-italic run in ***', () => {
+    expect(runsToMarkdown([{ text: 'both', bold: true, italic: true }])).toBe('***both***');
+  });
+
+  it('joins adjacent runs without separators', () => {
+    expect(
+      runsToMarkdown([
+        { text: 'a ' },
+        { text: 'b', bold: true },
+        { text: ' c' },
+      ]),
+    ).toBe('a **b** c');
+  });
+
+  it('escapes literal asterisks in plain text', () => {
+    expect(runsToMarkdown([{ text: 'a*b' }])).toBe('a\\*b');
   });
 });

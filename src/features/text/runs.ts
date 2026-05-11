@@ -38,3 +38,19 @@ export function runsToPlainText(runs: readonly StyledRun[]): string {
   for (const r of runs) out += r.text;
   return out;
 }
+
+function escapeMarkdown(s: string): string {
+  return s.replace(/\\/g, '\\\\').replace(/\*/g, '\\*');
+}
+
+export function runsToMarkdown(runs: readonly StyledRun[]): string {
+  let out = '';
+  for (const r of runs) {
+    const escaped = escapeMarkdown(r.text);
+    if (r.bold && r.italic) out += `***${escaped}***`;
+    else if (r.bold) out += `**${escaped}**`;
+    else if (r.italic) out += `*${escaped}*`;
+    else out += escaped;
+  }
+  return out;
+}
