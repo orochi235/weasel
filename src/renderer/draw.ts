@@ -20,8 +20,8 @@ import { mat3 } from './math/mat3';
 import { getMesh } from './cache/cache';
 import { parseColor } from './math/color';
 import { tessellateStroke } from 'features/paths/tessellate/stroke';
-import { resolveFontVariant, ensureFontTexture, textureCacheKey } from 'features/text/atlas/registerFont';
-import { layoutGlyphs, quadsToVertexBuffer, buildQuadIndexBuffer } from 'features/text/atlas/GlyphLayout';
+import { ensureFontTexture, textureCacheKey } from 'features/text/atlas/registerFont';
+import { layoutRuns, type LaidOutGroup } from 'features/text/atlas/layoutRuns';
 
 export interface DrawContext {
   gl: WebGL2RenderingContext;
@@ -774,59 +774,61 @@ function drawPathStrokeStenciled(
   gl.bindVertexArray(null);
 }
 
-function normalizeFontWeight(w: number | string | undefined): number {
-  if (w === undefined) return 400;
-  if (typeof w === 'number') return w;
-  if (w === 'bold') return 700;
-  if (w === 'normal') return 400;
-  const parsed = Number(w);
-  return Number.isFinite(parsed) ? parsed : 400;
-}
-
 function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   const style = resolveTextStyle(cmd.style);
-  const family = style.fontFamily;
-  const weight = normalizeFontWeight(style.fontWeight);
-  const fontStyle = style.fontStyle;
+  const lineHeight = style.lineHeight;
+  const align = cmd.align ?? style.align;
+  const maxWidth = cmd.maxWidth ?? Infinity;
 
-  const resolved = resolveFontVariant(family, weight, fontStyle);
-  if (!resolved.entry) {
-    console.warn(
-      `weasel drawText: no atlas registered for "${family}" ${weight}/${fontStyle}; call registerFont() first.`,
-    );
-    return;
-  }
-
-  // Cache key targets the *resolved* variant, which may differ from the
-  // requested (family, weight, style) when fallback kicked in. Slice 2
-  // will wire the synthetic flags into shader uniforms so the resolved
-  // atlas can paint with bold-thicken / italic-skew compensation.
-  const cacheW = resolved.resolved.weight;
-  const cacheS = resolved.resolved.style;
-  if (!ensureFontTexture(family, cacheW, cacheS, ctx.textureCache)) return;
-
-  const entry = resolved.entry;
-
-  const quads = layoutGlyphs(
-    cmd.text,
-    { fontSize: style.fontSize, align: style.align, baseline: 'alphabetic' },
-    entry.font,
+  const laid = layoutRuns(
+    cmd.runs,
+    { maxWidth, lineHeight, align },
     { x: cmd.x, y: cmd.y },
   );
-  if (quads.length === 0) return;
-
-  const vertices = quadsToVertexBuffer(quads);
-  const indices = buildQuadIndexBuffer(quads.length);
+  if (laid.groups.length === 0) return;
 
   const gl = ctx.gl;
   gl.useProgram(ctx.textSdf.handle);
+  setProjAndModel(ctx, ctx.textSdf);
+  setColorMatrixUniforms(ctx, ctx.textSdf);
+  gl.uniform1f(ctx.textSdf.uniform('u_alpha')!, ctx.state.alpha);
+  gl.uniform1f(ctx.textSdf.uniform('u_aaWidth')!, 0.05);
+  applyClipTest(ctx);
+
+  for (const group of laid.groups) {
+    drawTextGroup(ctx, group);
+  }
+}
+
+function drawTextGroup(ctx: DrawContext, group: LaidOutGroup): void {
+  if (!ensureFontTexture(group.family, group.weight, group.style, ctx.textureCache)) return;
+  if (group.quads.length === 0) return;
+
+  const gl = ctx.gl;
+
+  // Pack quads into a vertex buffer (stride 16 bytes: x, y, u, v floats).
+  const vertices = new Float32Array(group.quads.length * 4 * 4);
+  let vi = 0;
+  for (const q of group.quads) {
+    vertices[vi++] = q.x0; vertices[vi++] = q.y0; vertices[vi++] = q.u0; vertices[vi++] = q.v0;
+    vertices[vi++] = q.x1; vertices[vi++] = q.y0; vertices[vi++] = q.u1; vertices[vi++] = q.v0;
+    vertices[vi++] = q.x0; vertices[vi++] = q.y1; vertices[vi++] = q.u0; vertices[vi++] = q.v1;
+    vertices[vi++] = q.x1; vertices[vi++] = q.y1; vertices[vi++] = q.u1; vertices[vi++] = q.v1;
+  }
+  const indices = new Uint32Array(group.quads.length * 6);
+  let ii = 0;
+  for (let q = 0; q < group.quads.length; q++) {
+    const base = q * 4;
+    indices[ii++] = base;     indices[ii++] = base + 1; indices[ii++] = base + 2;
+    indices[ii++] = base + 1; indices[ii++] = base + 3; indices[ii++] = base + 2;
+  }
 
   const vao = gl.createVertexArray();
-  if (!vao) throw new Error('drawText: createVertexArray returned null');
+  if (!vao) throw new Error('drawTextGroup: createVertexArray returned null');
   gl.bindVertexArray(vao);
 
   const vbo = gl.createBuffer();
-  if (!vbo) throw new Error('drawText: createBuffer (VBO) returned null');
+  if (!vbo) throw new Error('drawTextGroup: createBuffer (VBO) returned null');
   gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
   gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
 
@@ -843,29 +845,28 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   }
 
   const ibo = gl.createBuffer();
-  if (!ibo) throw new Error('drawText: createBuffer (IBO) returned null');
+  if (!ibo) throw new Error('drawTextGroup: createBuffer (IBO) returned null');
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW);
 
-  setProjAndModel(ctx, ctx.textSdf);
-  setColorMatrixUniforms(ctx, ctx.textSdf);
-
+  // Per-group fill (color uniform).
   let r = 0, g = 0, b = 0, a = 1;
-  if (style.fill && 'color' in style.fill) {
-    [r, g, b, a] = parseColor(style.fill.color);
+  if ('color' in group.fill) {
+    [r, g, b, a] = parseColor(group.fill.color);
   }
   gl.uniform4f(ctx.textSdf.uniform('u_color')!, r, g, b, a);
-  gl.uniform1f(ctx.textSdf.uniform('u_alpha')!, ctx.state.alpha);
-  gl.uniform1f(ctx.textSdf.uniform('u_aaWidth')!, 0.05);
 
-  ctx.textureCache.bind(textureCacheKey(family, cacheW, cacheS), 0);
+  // Synthetic uniforms — wired to 0 for now; Tasks 7 & 8 light them up.
+  const uSynthBold = ctx.textSdf.uniform('u_synthBold');
+  const uSynthItalic = ctx.textSdf.uniform('u_synthItalic');
+  if (uSynthBold !== undefined) gl.uniform1f(uSynthBold, 0);
+  if (uSynthItalic !== undefined) gl.uniform1f(uSynthItalic, 0);
+
+  ctx.textureCache.bind(textureCacheKey(group.family, group.weight, group.style), 0);
   gl.uniform1i(ctx.textSdf.uniform('u_atlas')!, 0);
 
-  applyClipTest(ctx);
   gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
-  // Each text draw allocates a fresh VAO/VBO/IBO; free them now so animated
-  // text demos don't leak one set per frame.
   gl.deleteVertexArray(vao);
   gl.deleteBuffer(vbo);
   gl.deleteBuffer(ibo);
