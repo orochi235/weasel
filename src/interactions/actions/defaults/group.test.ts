@@ -1,0 +1,166 @@
+/**
+ * Tests for the default group / ungroup action factories. Pure factories
+ * — `defaultGroupAction(deps)` and `defaultUngroupAction(deps)` — that
+ * package selection-driven mutations into `Action` descriptors with
+ * keyboard bindings, `run`, and `enabled`. The corresponding hook
+ * (`useGroup`/`useUngroup`) tests cover the full React loop; this test
+ * pins the factory-level contract.
+ */
+import { describe, it, expect, vi } from 'vitest';
+import { defaultGroupAction, defaultUngroupAction } from './group';
+import type { NodeId } from 'core/scene/types';
+import type { Group } from 'features/groups/types';
+import { ActionDisabledReason } from '../registry';
+
+describe('defaultGroupAction', () => {
+  const baseDeps = () => ({
+    getSelection: () => ['a' as NodeId, 'b' as NodeId],
+    applyBatch: vi.fn(),
+  });
+
+  it('emits id=group with Mod+G default binding', () => {
+    const action = defaultGroupAction(baseDeps());
+    expect(action.id).toBe('group');
+    expect(action.label).toBe('Group');
+    expect(action.defaultBinding).toEqual({ key: 'g', mod: true });
+  });
+
+  it('run() dispatches a CreateGroupOp + SetSelectionOp on a ≥2 selection', () => {
+    const deps = baseDeps();
+    const action = defaultGroupAction({ ...deps, newGroupId: () => 'g1' });
+    action.run();
+    expect(deps.applyBatch).toHaveBeenCalledOnce();
+    const [ops, label] = deps.applyBatch.mock.calls[0];
+    expect(label).toBe('Group');
+    expect(ops).toHaveLength(2);
+  });
+
+  it('uses provided newGroupId to mint the id', () => {
+    const deps = baseDeps();
+    const action = defaultGroupAction({ ...deps, newGroupId: () => 'custom-id' });
+    action.run();
+    // Inspect the first op's batch — it's a create-group op carrying the id.
+    // We can't introspect easily without applying; instead verify the
+    // selection-set op references custom-id.
+    const [ops] = deps.applyBatch.mock.calls[0];
+    const mockAdapter = { setSelection: vi.fn() };
+    ops[1].apply(mockAdapter);
+    expect(mockAdapter.setSelection).toHaveBeenCalledWith(['custom-id']);
+  });
+
+  it('no-op below minMembers (default 2)', () => {
+    const deps = { getSelection: () => ['only' as NodeId], applyBatch: vi.fn() };
+    defaultGroupAction(deps).run();
+    expect(deps.applyBatch).not.toHaveBeenCalled();
+  });
+
+  it('respects custom minMembers', () => {
+    const deps = {
+      getSelection: () => ['a' as NodeId, 'b' as NodeId, 'c' as NodeId],
+      applyBatch: vi.fn(),
+    };
+    // minMembers=4 → 3 selected → no-op.
+    defaultGroupAction({ ...deps, minMembers: 4, newGroupId: () => 'g1' }).run();
+    expect(deps.applyBatch).not.toHaveBeenCalled();
+  });
+
+  it('enabled returns true ≥ minMembers, SelectionRequired below', () => {
+    const a = defaultGroupAction({ getSelection: () => ['only' as NodeId], applyBatch: vi.fn() });
+    expect(a.enabled?.()).toBe(ActionDisabledReason.SelectionRequired);
+    const b = defaultGroupAction(baseDeps());
+    expect(b.enabled?.()).toBe(true);
+  });
+
+  it('default newGroupId mints a string with the g_ prefix', () => {
+    const deps = baseDeps();
+    const action = defaultGroupAction(deps);
+    action.run();
+    const [ops] = deps.applyBatch.mock.calls[0];
+    const mockAdapter = { setSelection: vi.fn() };
+    ops[1].apply(mockAdapter);
+    const [[id]] = mockAdapter.setSelection.mock.calls[0];
+    expect(id).toMatch(/^g_/);
+  });
+});
+
+describe('defaultUngroupAction', () => {
+  const g1: Group = { id: 'g1', members: ['a', 'b', 'c'] };
+
+  it('emits id=ungroup with Mod+Shift+G binding', () => {
+    const a = defaultUngroupAction({
+      getSelection: () => [],
+      getGroup: () => undefined,
+      applyBatch: vi.fn(),
+    });
+    expect(a.id).toBe('ungroup');
+    expect(a.defaultBinding).toEqual({ key: 'g', mod: true, shift: true });
+  });
+
+  it('dissolves selected groups; selection becomes members + non-group ids', () => {
+    const applyBatch = vi.fn();
+    const a = defaultUngroupAction({
+      getSelection: () => ['x' as NodeId, 'g1' as NodeId],
+      getGroup: (id) => (id === 'g1' ? g1 : undefined),
+      applyBatch,
+    });
+    a.run();
+    expect(applyBatch).toHaveBeenCalledOnce();
+    const [ops, label] = applyBatch.mock.calls[0];
+    expect(label).toBe('Ungroup');
+    // One DissolveGroupOp + one SetSelectionOp.
+    expect(ops).toHaveLength(2);
+    const mockAdapter = { setSelection: vi.fn() };
+    ops[1].apply(mockAdapter);
+    expect(mockAdapter.setSelection).toHaveBeenCalledWith(['x', 'a', 'b', 'c']);
+  });
+
+  it('dedupes members shared across multiple dissolved groups', () => {
+    const g2: Group = { id: 'g2', members: ['b', 'c', 'd'] };
+    const applyBatch = vi.fn();
+    const a = defaultUngroupAction({
+      getSelection: () => ['g1' as NodeId, 'g2' as NodeId],
+      getGroup: (id) => (id === 'g1' ? g1 : id === 'g2' ? g2 : undefined),
+      applyBatch,
+    });
+    a.run();
+    const [ops] = applyBatch.mock.calls[0];
+    const mockAdapter = { setSelection: vi.fn() };
+    ops[2].apply(mockAdapter);
+    expect(mockAdapter.setSelection).toHaveBeenCalledWith(['a', 'b', 'c', 'd']);
+  });
+
+  it('no-op when nothing in selection is a group', () => {
+    const applyBatch = vi.fn();
+    defaultUngroupAction({
+      getSelection: () => ['a' as NodeId, 'b' as NodeId],
+      getGroup: () => undefined,
+      applyBatch,
+    }).run();
+    expect(applyBatch).not.toHaveBeenCalled();
+  });
+
+  it('no-op on empty selection', () => {
+    const applyBatch = vi.fn();
+    defaultUngroupAction({
+      getSelection: () => [],
+      getGroup: () => undefined,
+      applyBatch,
+    }).run();
+    expect(applyBatch).not.toHaveBeenCalled();
+  });
+
+  it('enabled returns true iff any selected id is a group', () => {
+    const groupInSel = defaultUngroupAction({
+      getSelection: () => ['g1' as NodeId],
+      getGroup: (id) => (id === 'g1' ? g1 : undefined),
+      applyBatch: vi.fn(),
+    });
+    expect(groupInSel.enabled?.()).toBe(true);
+    const noGroup = defaultUngroupAction({
+      getSelection: () => ['a' as NodeId],
+      getGroup: () => undefined,
+      applyBatch: vi.fn(),
+    });
+    expect(noGroup.enabled?.()).toBe(ActionDisabledReason.SelectionRequired);
+  });
+});
