@@ -1,12 +1,13 @@
-import { useMemo } from 'react';
+import { useState, useMemo, useSyncExternalStore } from 'react';
 import {
   SceneCanvas,
-  useScene,
+  sceneFromJSON,
   useSelection,
   textCommand,
 } from '@orochi235/weasel';
-import type { RegisteredOp, Scene } from '@orochi235/weasel';
+import type { RegisteredOp, Scene, SerializedScene } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
+import sceneJson from './data/scene.scene.json';
 
 type LayerId = 'garden' | 'blueprint' | 'structures' | 'zones' | 'plantings';
 interface NodeData { color: string; label?: string }
@@ -14,13 +15,6 @@ interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 480, H = 320;
 
-const LAYER_COLORS: Record<LayerId, string> = {
-  garden: '#f4e9d8',
-  blueprint: '#cfd8e3',
-  structures: '#d4a574',
-  zones: 'rgba(164, 139, 212, 0.55)',
-  plantings: '#7fb069',
-};
 
 interface SetColorPayload { id: string; from: string; to: string }
 function makeSetColor(scene: Scene<NodeData, LayerId, Pose>): RegisteredOp<SetColorPayload> {
@@ -37,29 +31,10 @@ function makeSetColor(scene: Scene<NodeData, LayerId, Pose>): RegisteredOp<SetCo
 }
 
 export function SceneDemo() {
-  const scene = useScene({
-    systemLayers: [
-      { id: 'garden' },
-      { id: 'blueprint' },
-      { id: 'zones' },
-      { id: 'structures' },
-      { id: 'plantings' },
-    ],
-    initial: [
-      { id: 'garden-bg' as never, kind: 'leaf', layer: 'garden',
-        pose: { x: 0, y: 0, width: W, height: H }, data: { color: LAYER_COLORS.garden } },
-      { id: 'zone-a' as never, kind: 'leaf', layer: 'zones',
-        pose: { x: 280, y: 60, width: 160, height: 200 }, data: { color: LAYER_COLORS.zones, label: 'Sun zone' } },
-      { id: 'planter-1' as never, kind: 'container', layer: 'structures',
-        pose: { x: 60, y: 80, width: 160, height: 100 }, data: { color: LAYER_COLORS.structures, label: 'Planter' } },
-      { id: 'plant-a' as never, kind: 'leaf', layer: 'structures',
-        pose: { x: 80, y: 100, width: 30, height: 30 }, data: { color: LAYER_COLORS.plantings },
-        parent: 'planter-1' as never },
-      { id: 'plant-b' as never, kind: 'leaf', layer: 'structures',
-        pose: { x: 130, y: 110, width: 30, height: 30 }, data: { color: LAYER_COLORS.plantings },
-        parent: 'planter-1' as never },
-    ],
-  });
+  const [scene] = useState(() =>
+    sceneFromJSON(sceneJson as unknown as SerializedScene<NodeData, LayerId, Pose>, {}),
+  );
+  useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
 
   useMemo(() => {
     scene.registerOp<SetColorPayload>('setColor', makeSetColor(scene));
