@@ -127,3 +127,52 @@ export function runsToDom(runs: readonly StyledRun[], parent: HTMLElement): void
     parent.appendChild(span);
   }
 }
+
+/**
+ * Walk the overlay's text nodes in document order and find the text node
+ * + offset that corresponds to plain-text character position `offset`.
+ * Offsets beyond the total text length clamp to the end of the last text
+ * node. Returns `{ node: parent, offset: 0 }` when there are no text nodes.
+ */
+export function charOffsetToDomPosition(
+  parent: HTMLElement,
+  offset: number,
+): { node: Node; offset: number } | null {
+  let remaining = offset;
+  const walker = document.createTreeWalker(parent, NodeFilter.SHOW_TEXT);
+  let last: Text | null = null;
+  let node = walker.nextNode() as Text | null;
+  while (node) {
+    const len = node.data.length;
+    if (remaining <= len) {
+      return { node, offset: remaining };
+    }
+    remaining -= len;
+    last = node;
+    node = walker.nextNode() as Text | null;
+  }
+  if (last) return { node: last, offset: last.data.length };
+  return { node: parent, offset: 0 };
+}
+
+/**
+ * Inverse of `charOffsetToDomPosition`. Walks text nodes in document order;
+ * sums the lengths of every text node preceding `node` and adds `offset`.
+ * If `node` is an element (not a text node), counts to the end of the
+ * preceding text content.
+ */
+export function domPositionToCharOffset(
+  parent: HTMLElement,
+  node: Node,
+  offset: number,
+): number {
+  let total = 0;
+  const walker = document.createTreeWalker(parent, NodeFilter.SHOW_TEXT);
+  let cur = walker.nextNode() as Text | null;
+  while (cur) {
+    if (cur === node) return total + offset;
+    total += cur.data.length;
+    cur = walker.nextNode() as Text | null;
+  }
+  return total;
+}

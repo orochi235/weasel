@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { runsToDom } from './domRuns';
-import { domToRuns } from './domRuns';
+import { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset } from './domRuns';
 import type { StyledRun } from './runs';
 
 describe('runsToDom', () => {
@@ -138,5 +137,72 @@ describe('domToRuns', () => {
     ];
     runsToDom(runs, parent);
     expect(domToRuns(parent)).toEqual(runs);
+  });
+});
+
+describe('charOffsetToDomPosition', () => {
+  let parent: HTMLDivElement;
+  beforeEach(() => {
+    parent = document.createElement('div');
+    document.body.appendChild(parent);
+  });
+
+  it('returns the first text node and the requested offset for offset within first run', () => {
+    runsToDom([{ text: 'hello' }, { text: ' world', bold: true }], parent);
+    const pos = charOffsetToDomPosition(parent, 3);
+    expect(pos).not.toBeNull();
+    expect(pos!.node.nodeType).toBe(Node.TEXT_NODE);
+    expect((pos!.node as Text).data).toBe('hello');
+    expect(pos!.offset).toBe(3);
+  });
+
+  it('advances into the next text node when offset spans run boundaries', () => {
+    runsToDom([{ text: 'hello' }, { text: ' world', bold: true }], parent);
+    const pos = charOffsetToDomPosition(parent, 7);
+    expect(pos!.node.nodeType).toBe(Node.TEXT_NODE);
+    expect((pos!.node as Text).data).toBe(' world');
+    expect(pos!.offset).toBe(2);
+  });
+
+  it('clamps to the end when offset exceeds total length', () => {
+    runsToDom([{ text: 'hi' }], parent);
+    const pos = charOffsetToDomPosition(parent, 999);
+    expect(pos!.node.nodeType).toBe(Node.TEXT_NODE);
+    expect(pos!.offset).toBe(2);
+  });
+
+  it('returns offset 0 in the parent itself when overlay is empty', () => {
+    const pos = charOffsetToDomPosition(parent, 0);
+    expect(pos!.node).toBe(parent);
+    expect(pos!.offset).toBe(0);
+  });
+});
+
+describe('domPositionToCharOffset', () => {
+  let parent: HTMLDivElement;
+  beforeEach(() => {
+    parent = document.createElement('div');
+    document.body.appendChild(parent);
+  });
+
+  it('returns 0 for the start of the first text node', () => {
+    runsToDom([{ text: 'abc' }, { text: 'def', bold: true }], parent);
+    const textNode = parent.querySelectorAll('span[data-run]')[0].firstChild as Text;
+    expect(domPositionToCharOffset(parent, textNode, 0)).toBe(0);
+  });
+
+  it('counts characters from preceding text nodes when position is in a later node', () => {
+    runsToDom([{ text: 'abc' }, { text: 'def', bold: true }], parent);
+    const second = parent.querySelectorAll('span[data-run]')[1].firstChild as Text;
+    expect(domPositionToCharOffset(parent, second, 2)).toBe(5);
+  });
+
+  it('round-trips char → dom → char', () => {
+    runsToDom([{ text: 'hello ' }, { text: 'bold', bold: true }, { text: ' tail' }], parent);
+    for (const off of [0, 3, 6, 8, 10, 15]) {
+      const pos = charOffsetToDomPosition(parent, off);
+      expect(pos).not.toBeNull();
+      expect(domPositionToCharOffset(parent, pos!.node, pos!.offset)).toBe(Math.min(off, 15));
+    }
   });
 });
