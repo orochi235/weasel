@@ -114,7 +114,7 @@ describe('buildSceneTree', () => {
       pose: POSE,
       data: { label: 'bed' },
       clipFromPose: () => clipPath,
-    } as never);
+    });
     scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'p' }, parent: bed });
     const adapter = sceneToAdapter(scene);
     const out = buildSceneTree(adapter as never, labelDraw as never, VIEW);
@@ -128,7 +128,7 @@ describe('buildSceneTree', () => {
     scene.add({
       kind: 'container', layer: 'bg', pose: POSE, data: { label: 'bed' },
       clipFromPose: () => null,
-    } as never);
+    });
     const adapter = sceneToAdapter(scene);
     const out = buildSceneTree(adapter as never, labelDraw as never, VIEW);
     const bedGroup = (out[0] as { children: DrawCommand[] }).children[0] as { clip?: unknown };
@@ -150,7 +150,7 @@ describe('buildSceneTree', () => {
     scene.add({
       kind: 'container', layer: 'bg', pose: POSE, data: { label: 'bed' },
       clipFromPose: (pose: Pose) => { received = pose; return null; },
-    } as never);
+    });
     const adapter = sceneToAdapter(scene);
     buildSceneTree(adapter as never, labelDraw as never, VIEW);
     expect(received).toEqual(POSE);

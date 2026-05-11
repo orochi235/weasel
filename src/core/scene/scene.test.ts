@@ -73,6 +73,25 @@ describe('createScene — construction', () => {
       }),
     ).toThrow(/subtree layer must match parent/);
   });
+
+  it('createScene({ initial }) preserves clipFromPose on container nodes', () => {
+    const scene = createScene<Data, 'structures', typeof POSE>({
+      systemLayers: [{ id: 'structures' }],
+      initial: [
+        {
+          id: asNodeId('bed'),
+          kind: 'container',
+          layer: 'structures',
+          pose: POSE,
+          data: { label: 'bed' },
+          clipFromPose: () => ({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 }),
+        },
+      ],
+    });
+    const node = scene.get(asNodeId('bed'));
+    expect(node?.kind).toBe('container');
+    expect(typeof (node as { clipFromPose?: unknown }).clipFromPose).toBe('function');
+  });
 });
 
 describe('add / remove / move', () => {

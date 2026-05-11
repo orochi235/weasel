@@ -115,6 +115,9 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   index?: number;
   /** Explicit id wins over the Scene's `generateId` and the kit default. */
   id?: NodeId;
+  /** Only meaningful when `kind === 'container'`. Attach a clip-path function
+   *  to the node; ignored for leaves. Mirrors `ContainerNode.clipFromPose`. */
+  clipFromPose?: (pose: TPose) => Path | null;
 }
 
 export interface RegisteredOp<P> {

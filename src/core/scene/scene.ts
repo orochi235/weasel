@@ -1,5 +1,6 @@
 import {
   asNodeId,
+  type AddNodeSpec,
   type ContainerNode,
   type LayerRecord,
   type LeafNode,
@@ -155,6 +156,16 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     for (const c of n.children) {
       out.push(c);
       descendants(c, out);
+    }
+  }
+
+  /** Post-patch `clipFromPose` onto a container node after its `kit:add` op
+   *  runs. The function cannot travel through the serializable op payload, so
+   *  we attach it directly to the live node here. No-op for leaves or when
+   *  the spec has no `clipFromPose`. */
+  function patchClipFromPose(spec: AddNodeSpec<TData, TLayer, TPose>, id: NodeId): void {
+    if (spec.kind === 'container' && spec.clipFromPose !== undefined) {
+      (state.nodes.get(id) as ContainerNode<TData, TLayer, TPose>).clipFromPose = spec.clipFromPose;
     }
   }
 
@@ -336,10 +347,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       }, `add ${spec.kind}`);
       // clipFromPose is a function and cannot travel through the serializable
       // op payload. Patch it directly onto the live node after the op applies.
-      const maybeClip = (spec as { clipFromPose?: ContainerNode<TData, TLayer, TPose>['clipFromPose'] }).clipFromPose;
-      if (spec.kind === 'container' && maybeClip !== undefined) {
-        (state.nodes.get(id) as ContainerNode<TData, TLayer, TPose>).clipFromPose = maybeClip;
-      }
+      patchClipFromPose(spec, id);
       return id;
     },
 
@@ -555,6 +563,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
         parent, index,
       });
+      patchClipFromPose(spec, id);
     }
     notify();
   }
