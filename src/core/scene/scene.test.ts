@@ -435,3 +435,58 @@ describe('renderOrder with hidden layers', () => {
     expect(order).toEqual([a]);
   });
 });
+
+// ─── C3: redo restores clipFromPose ──────────────────────────────────────────
+
+describe('undo/redo of container add preserves clipFromPose', () => {
+  it('undo+redo of a container add preserves clipFromPose', () => {
+    const scene = createScene<Data, 'structures'>({
+      systemLayers: [{ id: 'structures' }],
+    });
+    const fn = (pose: typeof POSE) => ({
+      kind: 'rect' as const,
+      x: pose.x,
+      y: pose.y,
+      width: pose.width,
+      height: pose.height,
+    });
+    const id = scene.add({
+      kind: 'container',
+      layer: 'structures',
+      pose: POSE,
+      data: { label: 'bed' },
+      clipFromPose: fn,
+    });
+    // Node is present with clipFromPose immediately after add.
+    expect(scene.get(id)?.kind).toBe('container');
+    expect((scene.get(id) as { clipFromPose?: unknown }).clipFromPose).toBe(fn);
+
+    scene.undo();
+    expect(scene.get(id)).toBeUndefined();
+
+    scene.redo();
+    const node = scene.get(id);
+    expect(node?.kind).toBe('container');
+    // clipFromPose must survive the undo/redo round-trip.
+    expect((node as { clipFromPose?: unknown }).clipFromPose).toBe(fn);
+  });
+
+  it('clipFromPose is callable and returns the correct clip after redo', () => {
+    const scene = createScene<Data, 'structures'>({
+      systemLayers: [{ id: 'structures' }],
+    });
+    const fn = (_pose: typeof POSE) => ({ kind: 'rect' as const, x: 5, y: 5, width: 20, height: 20 });
+    const id = scene.add({
+      kind: 'container',
+      layer: 'structures',
+      pose: POSE,
+      data: { label: 'bed' },
+      clipFromPose: fn,
+    });
+    scene.undo();
+    scene.redo();
+    const node = scene.get(id);
+    const cfp = (node as { clipFromPose?: (p: typeof POSE) => unknown }).clipFromPose;
+    expect(cfp?.(POSE)).toEqual({ kind: 'rect', x: 5, y: 5, width: 20, height: 20 });
+  });
+});
