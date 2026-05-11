@@ -216,3 +216,93 @@ describe('sceneToAdapter', () => {
     expect(callCount).toBe(1);  // called once for the bed, not 5 times
   });
 });
+
+// ─── I3: walkClipAware gates containers on ancestor clips ─────────────────────
+
+describe('I3: walkClipAware gates containers on ancestor clips', () => {
+  // 3-deep nesting: region → bed → leaf.
+  // region has a clip at (50..100, 50..100).
+  // bed is at (0..30, 0..30) — OUTSIDE the region clip.
+  // leaf is at (5..15, 5..15) — INSIDE the bed but OUTSIDE the region clip.
+  // Query rect covers the full 200×200 area.
+  // Expected: neither bed nor leaf should be in the results.
+  it('excludes container and its children when container is outside ancestor clip', () => {
+    const scene = createScene<Data, 'bg', Pose>({
+      systemLayers: [{ id: 'bg' }],
+    });
+    // region: 200×200 with a narrow clip at (50..100, 50..100)
+    const region = scene.add({
+      kind: 'container',
+      layer: 'bg',
+      pose: { x: 0, y: 0, width: 200, height: 200 },
+      data: { label: 'region' },
+      clipFromPose: () => ({ kind: 'rect', x: 50, y: 50, width: 50, height: 50 }),
+    });
+    // bed: entirely inside the region's AABB but outside the clip.
+    const bed = scene.add({
+      kind: 'container',
+      layer: 'bg',
+      pose: { x: 0, y: 0, width: 30, height: 30 },
+      data: { label: 'bed' },
+      parent: region,
+    });
+    // leaf: inside the bed, also outside the region clip.
+    const leaf = scene.add({
+      kind: 'leaf',
+      layer: 'bg',
+      pose: { x: 5, y: 5, width: 10, height: 10 },
+      data: { label: 'leaf' },
+      parent: bed,
+    });
+
+    const adapter = sceneToAdapter(scene);
+    const hits = adapter.hitTestArea!({ x: 0, y: 0, width: 200, height: 200 });
+    const ids = new Set(hits);
+
+    // region is the top-level container: no ancestor clips, so it's included
+    // if its AABB passes the query rect (it does: full 200×200).
+    expect(ids.has(region)).toBe(true);
+
+    // bed is a child of region; region's clip excludes it — not included.
+    expect(ids.has(bed)).toBe(false);
+
+    // leaf is a grandchild; also excluded because bed (its parent) is excluded.
+    expect(ids.has(leaf)).toBe(false);
+  });
+
+  it('includes container and leaf when they are inside the ancestor clip', () => {
+    const scene = createScene<Data, 'bg', Pose>({
+      systemLayers: [{ id: 'bg' }],
+    });
+    const region = scene.add({
+      kind: 'container',
+      layer: 'bg',
+      pose: { x: 0, y: 0, width: 200, height: 200 },
+      data: { label: 'region' },
+      clipFromPose: () => ({ kind: 'rect', x: 50, y: 50, width: 100, height: 100 }),
+    });
+    // bed: inside the region clip (60..120, 60..120).
+    const bed = scene.add({
+      kind: 'container',
+      layer: 'bg',
+      pose: { x: 60, y: 60, width: 60, height: 60 },
+      data: { label: 'bed' },
+      parent: region,
+    });
+    const leaf = scene.add({
+      kind: 'leaf',
+      layer: 'bg',
+      pose: { x: 65, y: 65, width: 10, height: 10 },
+      data: { label: 'leaf' },
+      parent: bed,
+    });
+
+    const adapter = sceneToAdapter(scene);
+    const hits = adapter.hitTestArea!({ x: 0, y: 0, width: 200, height: 200 });
+    const ids = new Set(hits);
+
+    expect(ids.has(region)).toBe(true);
+    expect(ids.has(bed)).toBe(true);
+    expect(ids.has(leaf)).toBe(true);
+  });
+});
