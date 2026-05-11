@@ -1,4 +1,6 @@
 import { useMemo, useRef } from 'react';
+import { pathContainsPoint } from 'features/paths/pathHitTest';
+import type { Path } from 'features/paths/types';
 import { useMove, type UseMoveOptions } from 'interactions/gestures/move/move';
 import { useResize, type UseResizeOptions } from 'interactions/gestures/resize/resize';
 import { useRotate, type UseRotateOptions } from 'interactions/gestures/rotate/rotate';
@@ -234,14 +236,86 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   // (e.g. path-pose canvases) or for a domain-specific pick order.
   const poseBoundsFn = options.poseBounds ?? ((p: TPose) => p as unknown as Bounds);
   const pickEveryFn = options.pickEvery ?? ((worldX: number, worldY: number): string[] => {
+    // Detect whether the adapter exposes a hierarchical surface (getChildren +
+    // getNode). Scene-derived adapters (sceneToAdapter) provide both; plain
+    // flat adapters (arrayAdapter) may not. When both are present, perform a
+    // clip-aware hierarchical walk so that leaves occluded by an ancestor
+    // container's clipFromPose are excluded. When absent, fall back to the
+    // original flat scan over getNodes() — same O(n) AABB test as before.
+    const hier = adapter as unknown as {
+      getNode?: (id: string) => unknown;
+      getChildren?: (parentId: string | null) => readonly string[];
+    };
+
+    if (typeof hier.getChildren !== 'function' || typeof hier.getNode !== 'function') {
+      // Flat-adapter path (no hierarchy surface).
+      const out: string[] = [];
+      for (const obj of adapter.getNodes()) {
+        const b = poseBoundsFn(adapter.getPose(obj.id));
+        if (worldX >= b.x && worldX <= b.x + b.width
+            && worldY >= b.y && worldY <= b.y + b.height) {
+          out.push(obj.id);
+        }
+      }
+      return out;
+    }
+
+    // Clip-aware hierarchical walk (analogous to walkClipAware in sceneAdapter,
+    // but for point queries using pathContainsPoint instead of pathIntersectsRect).
     const out: string[] = [];
-    for (const obj of adapter.getNodes()) {
-      const b = poseBoundsFn(adapter.getPose(obj.id));
-      if (worldX >= b.x && worldX <= b.x + b.width
-          && worldY >= b.y && worldY <= b.y + b.height) {
-        out.push(obj.id);
+
+    function walk(parentId: string | null, ancestorClips: readonly Path[]): void {
+      for (const childId of hier.getChildren!(parentId)) {
+        const node = hier.getNode!(childId) as {
+          kind?: string;
+          clipFromPose?: (pose: TPose) => Path | null;
+        };
+        const pose = adapter.getPose(childId);
+
+        if (node.kind === 'container') {
+          // Compute this container's own clip, if any.
+          let ownClip: Path | null = null;
+          if (typeof node.clipFromPose === 'function') {
+            ownClip = node.clipFromPose(pose);
+          }
+
+          // Containers are hit-tested against their AABB, but if the container
+          // has a clip the click must also lie within that clip. This mirrors
+          // the semantic that clicking outside the visible (clipped) region of
+          // a container should not select it.
+          const b = poseBoundsFn(pose);
+          const inAabb = worldX >= b.x && worldX <= b.x + b.width
+              && worldY >= b.y && worldY <= b.y + b.height;
+          const inClip = ownClip === null || pathContainsPoint(ownClip, worldX, worldY);
+          // Also gate on ancestor clips.
+          let passesAncestors = true;
+          for (const clip of ancestorClips) {
+            if (!pathContainsPoint(clip, worldX, worldY)) { passesAncestors = false; break; }
+          }
+          if (inAabb && inClip && passesAncestors) {
+            out.push(childId);
+          }
+
+          // Build child clip chain: append own clip if present.
+          const childClips: readonly Path[] =
+            ownClip !== null ? [...ancestorClips, ownClip] : ancestorClips;
+
+          walk(childId, childClips);
+        } else {
+          // Leaf node: excluded if point lies outside any ancestor clip.
+          for (const clip of ancestorClips) {
+            if (!pathContainsPoint(clip, worldX, worldY)) return;
+          }
+          const b = poseBoundsFn(pose);
+          if (worldX >= b.x && worldX <= b.x + b.width
+              && worldY >= b.y && worldY <= b.y + b.height) {
+            out.push(childId);
+          }
+        }
       }
     }
+
+    walk(null, []);
     return out;
   });
   const boundsOfFn = options.boundsOf ?? ((id: string): Bounds | null => {
