@@ -14,6 +14,7 @@
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import type React from 'react';
+import type { CanvasExtensionApi } from './canvasExtension';
 import type { ToolsApi } from 'tools/useTools';
 import type { ToolsDispatcher } from 'tools/dispatcher';
 import type { ToolCtx } from 'tools/types';
@@ -438,7 +439,7 @@ function resolveToolsCursor(
 
 function CanvasInner<TObject extends { id: string }, TPose>(
   props: CanvasProps<TObject, TPose>,
-  ref: React.ForwardedRef<HTMLCanvasElement>,
+  ref: React.ForwardedRef<CanvasExtensionApi>,
 ) {
   const {
     width,
@@ -515,7 +516,25 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   const adapter = adapterProp ?? (inlineSceneSupplied ? synthesizedAdapter : undefined);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  useImperativeHandle(ref, () => canvasRef.current as HTMLCanvasElement, []);
+
+  const [redrawNonce, setRedrawNonce] = useState(0);
+  const requestRedraw = useCallback(() => setRedrawNonce(n => n + 1), []);
+
+  const extrasRef = useRef<Set<RenderLayer<unknown>>>(new Set());
+  const registerLayer = useCallback((layer: RenderLayer<unknown>) => {
+    extrasRef.current.add(layer);
+    setRedrawNonce(n => n + 1);
+    return () => {
+      extrasRef.current.delete(layer);
+      setRedrawNonce(n => n + 1);
+    };
+  }, []);
+
+  useImperativeHandle(ref, () => ({
+    element: canvasRef.current,
+    requestRedraw,
+    registerLayer,
+  }), [canvasRef, requestRedraw, registerLayer]);
 
   // GL renderer (lazy-instantiated on first paint).
   const glRendererRef = useRef<WeaselRenderer | null>(null);
@@ -799,8 +818,11 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       // `getActiveOverlays` returns [active, hotkey?, ...ambient]; reverse
       // for top-down so the foreground-most tool's affordances fire first.
       const overlays = r.tools.getActiveOverlays();
+      const extras = Array.from(extrasRef.current);
+      // Top-down walk order: extras first (HUDs on top), then tool overlays
+      // (reversed so foreground-most tool's overlays fire before ambient ones).
       return {
-        layers: [...overlays].reverse(),
+        layers: [...extras, ...overlays.reverse()],
         chromeState: r.chromeState,
         view: r.view,
         dims: { width: r.width, height: r.height },
@@ -1119,12 +1141,13 @@ function CanvasInner<TObject extends { id: string }, TPose>(
   // is enabled. The layer reads from `debugSink.snapshot()` and paints in
   // screen space.
   const layersWithDebug = useMemo(() => {
-    if (!debugSink || !resolvedDebugConfig) return layers;
-    return [
-      ...layers,
-      createDebugOverlayLayer({ sink: debugSink, config: resolvedDebugConfig }),
-    ];
-  }, [layers, debugSink, resolvedDebugConfig]);
+    const base = debugSink && resolvedDebugConfig
+      ? [...layers, createDebugOverlayLayer({ sink: debugSink, config: resolvedDebugConfig })]
+      : layers;
+    return [...base, ...extrasRef.current];
+    // redrawNonce drives re-reads of extrasRef when layers are registered/detached.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layers, debugSink, resolvedDebugConfig, redrawNonce]);
 
   useEffect(() => {
     const c = canvasRef.current;
@@ -1192,7 +1215,7 @@ function CanvasInner<TObject extends { id: string }, TPose>(
       });
     }
     renderer.render(commands);
-  }, [layersWithDebug, width, height, background, effectiveView, debugSink]);
+  }, [layersWithDebug, width, height, background, effectiveView, debugSink, redrawNonce]);
 
   const shaderIdKey = shaders?.map((h) => h.id).join('|') ?? '';
   useEffect(() => {
@@ -1243,5 +1266,5 @@ export const Canvas = forwardRef(CanvasInner) as <
   TObject extends { id: string } = { id: string },
   TPose = TObject,
 >(
-  props: CanvasProps<TObject, TPose> & { ref?: React.ForwardedRef<HTMLCanvasElement> },
+  props: CanvasProps<TObject, TPose> & { ref?: React.ForwardedRef<CanvasExtensionApi> },
 ) => ReturnType<typeof CanvasInner>;

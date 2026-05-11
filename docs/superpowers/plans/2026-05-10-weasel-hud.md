@@ -12,13 +12,49 @@
 
 ---
 
+## Post-rebase amendment (2026-05-10, mid-execution)
+
+After Task A1 and A2 were committed, the worktree was rebased onto `main`,
+which had picked up a substantial chrome-affordance system in the interim:
+
+- `RenderLayer<TData>` gained an optional `hitTest(worldX, worldY, data, view, dims): HitResult | null`
+- `ToolsDispatcher` integrated a hit-test pipeline via `getHitTestContext` —
+  on pointerdown, the dispatcher walks visible layers top-down, consults each
+  layer's `hitTest`, and routes a claim into the affordance's drag channel
+  before falling through to the active-tool slot walk
+- `Affordance` and `HitResult` types live in `src/affordances/`
+- A tool can opt out via `claimsAll(ctx)`
+
+**Consequence for this plan:**
+
+- **Task A4 (`installPointerInterceptor`) is deleted.** The dispatcher pipeline
+  already provides the input-claim mechanism the HUD needs. The HUD's layer
+  will simply implement `RenderLayer.hitTest` and participate in the standard
+  pipeline. `CanvasExtensionApi` is simplified to `{ element, requestRedraw, registerLayer }`.
+- **Stage A is now A1, A2, A3.**
+- **Stage B's input model changes** (Task B4): instead of installing a separate
+  pointer interceptor, `attachHud` registers a single `RenderLayer<unknown>`
+  whose `hitTest` walks the HUD's widget list, converts world→screen, and
+  returns a `HitResult` whose drag channel routes events to the hit widget's
+  `onPointer`. The widget protocol from Task B1 stays as designed — the change
+  is purely in how the HUD layer wraps it for the dispatcher.
+- **B4's detailed implementation will be re-specified when we get there**,
+  because it needs to model a `HitResult`'s drag channel and that wasn't
+  expressible in the original plan. Tasks B1, B2, B3 are unchanged.
+
+The interface code touched by this amendment (`canvasExtension.ts`, the
+`useImperativeHandle` in `Canvas.tsx`, the related test, and the `index.ts`
+re-export) is updated in the same commit as this note.
+
+---
+
 ## File Structure
 
-**Stage A — Canvas extension API (weasel core)**
-- Modify: `src/canvas/Canvas.tsx` — add ref-exposed `requestRedraw`, `registerLayer`, `installPointerInterceptor`; chain interceptors before the tool dispatcher; merge registered layers into the layer stack
-- Modify: `src/canvas/Canvas.test.tsx` — coverage for the three hooks and interceptor chaining
-- Create: `src/canvas/canvasExtension.ts` — `CanvasExtensionApi` type + `PointerInterceptor` type
-- Modify: `src/index.ts` — export the new types
+**Stage A — Canvas extension API (weasel core)** *(A4 removed; see amendment above)*
+- Modify: `src/canvas/Canvas.tsx` — add ref-exposed `requestRedraw`, `registerLayer`; merge registered layers into the layer stack
+- Modify: `src/canvas/Canvas.test.tsx` — coverage for the two hooks
+- Create: `src/canvas/canvasExtension.ts` — `CanvasExtensionApi` type
+- Modify: `src/index.ts` — export the new type
 
 **Stage B — HUD core (no widgets)**
 - Create: `packages/weasel-hud/src/widget.ts` — `Widget`, `HudPointerEvent`, `HudDrawCtx` types
@@ -63,21 +99,26 @@ The HUD package needs three hooks the canvas does not currently expose externall
 // src/canvas/canvasExtension.ts
 import type { RenderLayer } from '../core/layers/render';
 
-export type PointerInterceptor = (evt: PointerEvent) => 'claim' | 'pass';
-
 export interface CanvasExtensionApi {
+  /** The underlying HTMLCanvasElement. Null until the canvas mounts. */
+  readonly element: HTMLCanvasElement | null;
   requestRedraw(): void;
   registerLayer(layer: RenderLayer<unknown>): () => void;
-  installPointerInterceptor(handler: PointerInterceptor): () => void;
 }
 ```
+
+> **Note (post-rebase amendment):** Originally this API also included
+> `installPointerInterceptor`. That has been removed — the new dispatcher
+> hit-test pipeline (added on `main` between when this plan was written
+> and when execution began) supersedes it. See the amendment at the top
+> of this file. Task A4 is deleted.
 
 - [ ] **Step 2: Re-export from the package barrel**
 
 In `src/index.ts`, find the section that re-exports canvas types and append:
 
 ```ts
-export type { CanvasExtensionApi, PointerInterceptor } from './canvas/canvasExtension';
+export type { CanvasExtensionApi } from './canvas/canvasExtension';
 ```
 
 - [ ] **Step 3: Typecheck**
@@ -91,9 +132,10 @@ Expected: clean.
 git add src/canvas/canvasExtension.ts src/index.ts
 git commit -m "feat(canvas): introduce CanvasExtensionApi types
 
-Three hooks for external consumers (HUDs, debug overlays, async asset
+Two hooks for external consumers (HUDs, debug overlays, async asset
 loaders) to plug into the canvas without touching internals:
-requestRedraw, registerLayer, installPointerInterceptor."
+requestRedraw and registerLayer. Plus `element` for direct canvas
+access."
 ```
 
 ---
@@ -283,119 +325,11 @@ git commit -m "feat(canvas): registerLayer extension hook for external layer plu
 
 ---
 
-### Task A4: implement installPointerInterceptor
+### ~~Task A4: installPointerInterceptor~~ — DELETED
 
-**Files:**
-- Modify: `src/canvas/Canvas.tsx` — interceptor chain in front of `tools.dispatcher.onPointerDown`
-
-- [ ] **Step 1: Write the failing test**
-
-```tsx
-it('installPointerInterceptor pre-empts tools dispatcher when an interceptor claims', () => {
-  const dispatcherSpy = vi.fn();
-  const tools = { dispatcher: { onPointerDown: dispatcherSpy, /* ...stubs */ } };
-  const claimingInterceptor: PointerInterceptor = () => 'claim';
-  const ref = React.createRef<CanvasExtensionApi>();
-
-  const { container } = render(
-    <Canvas
-      ref={ref}
-      width={100} height={100}
-      adapter={mockAdapter}
-      items={[]} setItems={() => {}}
-      layers={{}}
-      tools={tools as never}
-    />
-  );
-  act(() => { ref.current?.installPointerInterceptor(claimingInterceptor); });
-
-  const canvas = container.querySelector('canvas')!;
-  fireEvent.pointerDown(canvas, { clientX: 10, clientY: 10 });
-  expect(dispatcherSpy).not.toHaveBeenCalled();
-});
-
-it('installPointerInterceptor falls through to tools dispatcher when no interceptor claims', () => {
-  const dispatcherSpy = vi.fn();
-  const tools = { dispatcher: { onPointerDown: dispatcherSpy, /* ...stubs */ } };
-  const passInterceptor: PointerInterceptor = () => 'pass';
-  const ref = React.createRef<CanvasExtensionApi>();
-
-  const { container } = render(
-    <Canvas
-      ref={ref}
-      width={100} height={100}
-      adapter={mockAdapter}
-      items={[]} setItems={() => {}}
-      layers={{}}
-      tools={tools as never}
-    />
-  );
-  act(() => { ref.current?.installPointerInterceptor(passInterceptor); });
-
-  const canvas = container.querySelector('canvas')!;
-  fireEvent.pointerDown(canvas, { clientX: 10, clientY: 10 });
-  expect(dispatcherSpy).toHaveBeenCalledTimes(1);
-});
-```
-
-(Stub the rest of the dispatcher methods as needed to satisfy the type — `onPointerMove: vi.fn()`, etc. Crib from existing tests in the file.)
-
-- [ ] **Step 2: Run tests to verify they fail**
-
-Run: `pnpm exec vitest run src/canvas/Canvas.test.tsx -t "installPointerInterceptor"`
-Expected: FAIL — interceptor stub is a no-op; dispatcher always sees the event.
-
-- [ ] **Step 3: Implement the interceptor chain**
-
-In `Canvas.tsx`:
-
-```tsx
-const interceptorsRef = useRef<Set<PointerInterceptor>>(new Set());
-const installPointerInterceptor = useCallback((handler: PointerInterceptor) => {
-  interceptorsRef.current.add(handler);
-  return () => { interceptorsRef.current.delete(handler); };
-}, []);
-```
-
-Wrap the existing handler (around line 885 — the one that calls `tools.dispatcher.onPointerDown(e.nativeEvent)`):
-
-```tsx
-const handlePointerDown =
-  onPointerDownOverride ??
-  ((e: React.PointerEvent<HTMLCanvasElement>) => {
-    // NEW: walk interceptors in insertion order; stop on first claim
-    for (const handler of interceptorsRef.current) {
-      if (handler(e.nativeEvent) === 'claim') return;
-    }
-    if (autoFocusOnPointerDown ?? true) (e.currentTarget as HTMLElement).focus();
-    if (tools) {
-      tools.dispatcher.onPointerDown(e.nativeEvent);
-      if (tools.dispatcher.hasActiveGesture()) attachDocListeners(tools.dispatcher);
-    }
-  });
-```
-
-Then update the imperative handle:
-
-```tsx
-useImperativeHandle(ref, () => ({
-  requestRedraw,
-  registerLayer,
-  installPointerInterceptor,
-}), [requestRedraw, registerLayer, installPointerInterceptor]);
-```
-
-- [ ] **Step 4: Run all canvas tests**
-
-Run: `pnpm exec vitest run src/canvas/Canvas.test.tsx`
-Expected: all pass — no regressions in the existing pointerdown paths (the interceptor list is empty by default, so behavior is unchanged for current consumers).
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/canvas/Canvas.tsx src/canvas/Canvas.test.tsx
-git commit -m "feat(canvas): installPointerInterceptor for HUD-style input claim"
-```
+See the post-rebase amendment at the top of this file. The dispatcher's
+new hit-test pipeline subsumes this. Stage B's HUD layer participates in
+that pipeline directly via `RenderLayer.hitTest`.
 
 ---
 

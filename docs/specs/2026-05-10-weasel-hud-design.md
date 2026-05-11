@@ -127,8 +127,11 @@ Plus type-specific setters: `button.setLabel`, `label.setText`, `text.setText`,
 `textColor`, `font`) are accepted at creation and mutable via setters.
 
 **Events** in v1:
-- `button`: `press`, `hover`, `leave`
+- `button`: `press`
 - Other widgets: none in v1
+
+Hover/leave events deferred to v1.1; require non-captured pointermove tracking
+that the dispatcher's affordance pipeline doesn't surface.
 
 ### Internal model
 

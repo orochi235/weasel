@@ -62,6 +62,8 @@ import VertexColorsDemoFull from './demos/VertexColorsDemo.tsx?raw';
 import ColorMatrixDemoFull from './demos/ColorMatrixDemo.tsx?raw';
 import CustomShaderDemoFull from './demos/CustomShaderDemo.tsx?raw';
 import LassoDemoFull from './demos/LassoDemo.tsx?raw';
+import { HudDemo } from './demos/HudDemo';
+import HudDemoFull from './demos/HudDemo.tsx?raw';
 
 export interface DemoEntry {
   id: string;
@@ -386,6 +388,16 @@ export const DEMOS: DemoEntry[] = [
     Component: PanDemo,
     full: PanDemoFull,
     path: 'demo/demos/PanDemo.tsx',
+  },
+  {
+    id: 'hud',
+    title: 'HUD widgets',
+    category: 'HUD',
+    description: 'A button widget rendered by @orochi235/weasel-hud in screen space over a WebGL canvas. useHud attaches a HUD layer to the canvas; hud.button() creates a click-counter button. Press events fire in the HUD dispatcher before the active tool sees the pointer down, so tool interactions are never disrupted by HUD clicks.',
+    hint: 'Click the "Click me" button — the label updates with the click count.',
+    Component: HudDemo,
+    full: HudDemoFull,
+    path: 'demo/demos/HudDemo.tsx',
   },
 ];
 
