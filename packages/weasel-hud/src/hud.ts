@@ -4,6 +4,7 @@ import { createRect, type RectOptions, type RectWidget } from './widgets/rect';
 import { createText, type TextOptions, type TextWidget } from './widgets/text';
 import { createImage, type ImageOptions, type ImageWidget } from './widgets/image';
 import { createLabel, type LabelOptions, type LabelWidget } from './widgets/label';
+import { createButton, type ButtonOptions, type ButtonWidget } from './widgets/button';
 
 export interface Hud {
   add(widget: Widget): void;
@@ -22,6 +23,8 @@ export interface Hud {
   image(opts: ImageOptions): ImageWidget;
   /** Create a label widget, add it to the HUD, and wire onChange → markDirty. */
   label(opts: LabelOptions): LabelWidget;
+  /** Create a button widget, add it to the HUD, and wire onChange → markDirty. */
+  button(opts: ButtonOptions): ButtonWidget;
 }
 
 export function createHud(): Hud {
@@ -90,6 +93,12 @@ export function createHud(): Hud {
     },
     label(opts) {
       const w = createLabel({ ...opts, onChange: () => requestRedraw() });
+      list.push(w);
+      requestRedraw();
+      return w;
+    },
+    button(opts) {
+      const w = createButton({ ...opts, onChange: () => requestRedraw() });
       list.push(w);
       requestRedraw();
       return w;
