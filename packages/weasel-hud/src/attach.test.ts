@@ -69,4 +69,26 @@ describe('attachHud', () => {
     api._layer!.onUncapturedMove!(20, 15, {} as PointerEvent, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
     expect(hoverFn).toHaveBeenCalledTimes(1);
   });
+
+  it('layer.draw resolves tokens from the canvas element', () => {
+    const hud = createHud();
+    const canvas = document.createElement('canvas');
+    canvas.style.setProperty('--wzl-button-fill', '#abcdef');
+    document.body.appendChild(canvas);
+    try {
+      const api: CanvasExtensionApi = {
+        element: canvas,
+        requestRedraw: vi.fn(),
+        registerLayer: vi.fn(() => () => {}),
+      };
+      attachHud(api, hud);
+      hud.button({ id: 'b', x: 0, y: 0, w: 50, h: 20, label: 'x' });
+      const registeredLayer = (api.registerLayer as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const cmds = registeredLayer.draw(null, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+      const buttonBody = cmds.find((c: { kind: string }) => c.kind === 'path') as { fill: { color: string } };
+      expect(buttonBody.fill.color).toBe('#abcdef');
+    } finally {
+      canvas.remove();
+    }
+  });
 });
