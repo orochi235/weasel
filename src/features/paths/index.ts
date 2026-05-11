@@ -46,3 +46,10 @@ export {
   type CreatePenPreviewLayerOptions,
   type PenPreviewStyle,
 } from './penPreviewLayer';
+export {
+  pathUnion,
+  pathIntersect,
+  pathSubtract,
+  pathExclude,
+  pathDivide,
+} from './booleans';

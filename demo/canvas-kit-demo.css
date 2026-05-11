@@ -272,6 +272,27 @@ a:hover { text-decoration: underline; }
   --wzl-thumb-text: #000;
 }
 
+/* ---------- Boolean ops demo ---------- */
+.ckd-boolops-grid {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 12px;
+  align-items: start;
+}
+
+.ckd-boolops-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ckd-boolops-label {
+  font-size: 12px;
+  margin: 0;
+  color: var(--ckd-muted);
+  font-weight: 500;
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 880px) {
   .ckd-app {

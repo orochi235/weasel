@@ -164,7 +164,10 @@ The engine adapter is *not* exported — it's an internal contract.
 
 Add `polygon-clipping` (mfogel) as a regular `dependency` in `package.json`:
 
-- ~30 KB minified, MIT-licensed, zero transitive deps.
+- ~30 KB minified, MIT-licensed. Two small transitive deps:
+  `robust-predicates` (Unlicense) and `splaytree` (MIT). Both are
+  single-purpose data-structure libs with no further deps; total install
+  surface stays small.
 - Martinez-Rueda-Feito algorithm; handles all four boolean ops natively
   with multipolygon + hole output.
 - Battle-tested in production by Turf.js and several other GIS / CAD libs.

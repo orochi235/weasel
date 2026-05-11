@@ -233,6 +233,11 @@ export {
   pathPoseDescriptor,
   pathOriginProjection,
   createPenPreviewLayer,
+  pathUnion,
+  pathIntersect,
+  pathSubtract,
+  pathExclude,
+  pathDivide,
 } from './features/paths';
 export type {
   Path,
@@ -524,6 +529,13 @@ export type {
   UseUndoRedoOptions,
   UseUndoRedoReturn,
 } from './interactions/actions/undo-redo';
+export { useBooleans, applyBooleanOp } from './interactions/actions/booleans';
+export type {
+  BooleanOp,
+  BooleansAdapter,
+  BooleanOpResult,
+  UseBooleansReturn,
+} from './interactions/actions/booleans';
 
 // Debug overlay subsystem
 export * from './debug';
