@@ -40,7 +40,7 @@ export function _resetFontRegistryForTests(): void {
   registry = new Map();
 }
 
-/** Exact lookup — does NOT walk the fallback chain. Use `resolveFontVariant` (Task 6) for that. */
+/** Exact lookup — does NOT walk the fallback chain. Use `resolveFontVariant` for that. */
 export function getFont(
   family: string,
   weight: number = 400,
@@ -121,11 +121,23 @@ export function _markAllFontsNotUploaded(): void {}
 
 export interface ResolveResult {
   entry: FontEntry | null;
+  /**
+   * The (weight, style) pair that was actually matched. May differ from
+   * the requested values when the resolver walked the fallback chain.
+   * Use these for cache-key lookup; the synthetic flags describe the
+   * gap between requested and resolved for shader-side compensation.
+   * When `entry` is null, these mirror the requested values.
+   */
+  resolved: { weight: number; style: FontStyle };
   synthetic: { bold: boolean; italic: boolean };
 }
 
-function nullResolveResult(): ResolveResult {
-  return { entry: null, synthetic: { bold: false, italic: false } };
+function nullResolveResult(weight: number, style: FontStyle): ResolveResult {
+  return {
+    entry: null,
+    resolved: { weight, style },
+    synthetic: { bold: false, italic: false },
+  };
 }
 
 function weightBucket(w: number): 'regular' | 'bold' {
@@ -144,11 +156,17 @@ export function resolveFontVariant(
   style: FontStyle,
 ): ResolveResult {
   const familyMap = registry.get(family);
-  if (!familyMap || familyMap.size === 0) return nullResolveResult();
+  if (!familyMap || familyMap.size === 0) return nullResolveResult(weight, style);
 
   // 1. Exact match
   const exact = familyMap.get(variantKey(weight, style));
-  if (exact) return { entry: exact, synthetic: { bold: false, italic: false } };
+  if (exact) {
+    return {
+      entry: exact,
+      resolved: { weight, style },
+      synthetic: { bold: false, italic: false },
+    };
+  }
 
   // 2. Same style, nearest weight in same bucket (ties broken by higher weight)
   const requestedBucket = weightBucket(weight);
@@ -170,6 +188,7 @@ export function resolveFontVariant(
   if (bestSameStyle) {
     return {
       entry: bestSameStyle.entry,
+      resolved: { weight: bestSameStyle.weight, style },
       synthetic: { bold: false, italic: false },
     };
   }
@@ -179,6 +198,7 @@ export function resolveFontVariant(
   if (sameStyleRegular) {
     return {
       entry: sameStyleRegular,
+      resolved: { weight: 400, style },
       synthetic: {
         bold: weight >= 600,
         italic: false,
@@ -191,6 +211,7 @@ export function resolveFontVariant(
   if (sameWeightNormal) {
     return {
       entry: sameWeightNormal,
+      resolved: { weight, style: 'normal' },
       synthetic: {
         bold: false,
         italic: style === 'italic',
@@ -217,6 +238,7 @@ export function resolveFontVariant(
   if (bestNormal) {
     return {
       entry: bestNormal.entry,
+      resolved: { weight: bestNormal.weight, style: 'normal' },
       synthetic: {
         bold: false,
         italic: style === 'italic',
@@ -229,6 +251,7 @@ export function resolveFontVariant(
   if (regular) {
     return {
       entry: regular,
+      resolved: { weight: 400, style: 'normal' },
       synthetic: {
         bold: weight >= 600,
         italic: style === 'italic',
@@ -236,5 +259,5 @@ export function resolveFontVariant(
     };
   }
 
-  return nullResolveResult();
+  return nullResolveResult(weight, style);
 }

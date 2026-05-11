@@ -144,4 +144,29 @@ describe('resolveFontVariant', () => {
     expect(r.entry).toBeNull();
     expect(r.synthetic).toEqual({ bold: false, italic: false });
   });
+
+  it('reports resolved weight/style on exact match', async () => {
+    await registerFont('inter', { weight: 700, style: 'italic' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const r = resolveFontVariant('inter', 700, 'italic');
+    expect(r.resolved).toEqual({ weight: 700, style: 'italic' });
+  });
+
+  it('reports resolved weight/style after step 2 nearest-weight fallback', async () => {
+    await registerFont('inter', { weight: 700, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const r = resolveFontVariant('inter', 750, 'normal');
+    // Resolved to the registered 700 — cache key must use 700, not the requested 750.
+    expect(r.resolved).toEqual({ weight: 700, style: 'normal' });
+  });
+
+  it('reports resolved weight/style after step 4 italic-drop fallback', async () => {
+    await registerFont('inter', { weight: 700, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const r = resolveFontVariant('inter', 700, 'italic');
+    expect(r.resolved).toEqual({ weight: 700, style: 'normal' });
+  });
+
+  it('reports requested weight/style when nothing resolves (null entry)', () => {
+    const r = resolveFontVariant('missing', 750, 'italic');
+    expect(r.entry).toBeNull();
+    expect(r.resolved).toEqual({ weight: 750, style: 'italic' });
+  });
 });

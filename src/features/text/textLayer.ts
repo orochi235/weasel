@@ -4,9 +4,9 @@
  * is informational — overflow is not clipped at v1.
  *
  * The GL renderer uses MSDF text. The resolved style's `fontFamily` must
- * be registered via `registerFont(family, atlasUrl)` from the renderer
- * module *before* the GL backend dispatches this layer. Unregistered
- * families render with a warning and a fallback glyph (see
+ * be registered via `registerFont(family, variant, metricsUrl, atlasUrl)`
+ * from the renderer module *before* the GL backend dispatches this layer.
+ * Unregistered families render with a warning and no glyphs (see
  * `TextDrawCommand`'s contract).
  */
 

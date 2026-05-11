@@ -700,10 +700,6 @@ function normalizeFontWeight(w: number | string | undefined): number {
   return Number.isFinite(parsed) ? parsed : 400;
 }
 
-function lowerBucketWeight(w: number): number {
-  return w >= 600 ? 400 : w;
-}
-
 function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   const style = resolveTextStyle(cmd.style);
   const family = style.fontFamily;
@@ -718,14 +714,12 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
     return;
   }
 
-  // The cache key targets the *resolved* variant, which may differ from the
-  // requested (family, weight, style) when fallback kicked in. Synthetic
-  // flags would let us request a different atlas (e.g. drop bold → 400);
-  // for slice 1 we conservatively translate the fallback into an exact
-  // resolved-variant cache key. Slice 2 wires the synthetic uniforms into
-  // the shader for visible bold/italic fallback rendering.
-  const cacheW = resolved.synthetic.bold ? lowerBucketWeight(weight) : weight;
-  const cacheS = resolved.synthetic.italic ? 'normal' : fontStyle;
+  // Cache key targets the *resolved* variant, which may differ from the
+  // requested (family, weight, style) when fallback kicked in. Slice 2
+  // will wire the synthetic flags into shader uniforms so the resolved
+  // atlas can paint with bold-thicken / italic-skew compensation.
+  const cacheW = resolved.resolved.weight;
+  const cacheS = resolved.resolved.style;
   if (!ensureFontTexture(family, cacheW, cacheS, ctx.textureCache)) return;
 
   const entry = resolved.entry;
