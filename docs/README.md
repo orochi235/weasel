@@ -16,6 +16,9 @@ Read in roughly this order:
   as the default.
 - [extending.md](./extending.md) — custom layers, custom gesture behaviors,
   non-rect poses via `PoseDescriptor<TPose>`.
+- [scene-serialization.md](./scene-serialization.md) — `scene.toJSON()` and
+  `sceneFromJSON()`: snapshot + restore a scene, the JSON shape, the function
+  registry for `clipFromPose`, and loading static `*.scene.json` files.
 
 For working code, the `demo/` directory has runnable consumers
 (`MoveDemo`, `RotateDemo`, `CompoundPathsDemo`, `InsertDemo`, …); run them
