@@ -42,6 +42,20 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     layerIndex: new Map(),
   };
 
+  // Per-scene registry for non-serializable function fields. The forward map
+  // (key -> function) is used by sceneFromJSON; the reverse map (function ->
+  // key) is used by toJSON to identify which factory a container is using.
+  const registry = options.registry ?? {};
+  const reverseClipFromPose = new Map<
+    NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>,
+    string
+  >();
+  if (registry.clipFromPose) {
+    for (const [key, fn] of Object.entries(registry.clipFromPose)) {
+      reverseClipFromPose.set(fn, key);
+    }
+  }
+
   /**
    * Side-channel cache of `clipFromPose` functions keyed by node id.
    * Because `clipFromPose` is a function it cannot travel through the
@@ -637,13 +651,17 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     notify();
   }
 
-  // ── Test-only internal access ──────────────────────────────────────────
-  // Attach a cache-size accessor directly on the returned object so unit tests
-  // can assert prune behaviour without heap inspection. Hidden behind `as unknown`
-  // because Scene<> is the public interface; `__clipCacheSize` is not on it.
-  // Do NOT use this outside of test files.
+  // ── Internal / test-only access ───────────────────────────────────────
+  // Attach private state accessors directly on the returned object, hidden
+  // behind `as unknown` because Scene<> is the public interface.
+  // __clipCacheSize: used only by test files to assert prune behaviour.
+  // __registry / __reverseClipFromPose: consumed by toJSON (Task 2) and
+  //   accessible for testing. Do NOT use these outside of kit-internal code.
   (scene as unknown as { __clipCacheSize: () => number }).__clipCacheSize =
     () => pendingClipPatches.size;
+  (scene as unknown as { __registry: typeof registry }).__registry = registry;
+  (scene as unknown as { __reverseClipFromPose: typeof reverseClipFromPose }).__reverseClipFromPose =
+    reverseClipFromPose;
 
   return scene;
 }

@@ -131,12 +131,50 @@ export interface SystemLayerSpec<TLayer extends string> {
   locked?: boolean;
 }
 
+/** JSON-serializable shape of a Scene's current state. Produced by
+ *  `scene.toJSON()`; consumed by `sceneFromJSON()`. Function fields
+ *  (e.g., `clipFromPose`) appear as string keys (`clipFromPoseKey`) and
+ *  are resolved through `SceneRegistry` at load time. */
+export interface SerializedScene<TData, TLayer extends string, TPose> {
+  version: 1;
+  systemLayers: readonly SystemLayerSpec<TLayer>[];
+  nodes: readonly SerializedNode<TData, TLayer, TPose>[];
+}
+
+/** JSON-serializable shape of a single node. Mirrors `AddNodeSpec` but
+ *  with function fields replaced by registry keys. */
+export interface SerializedNode<TData, TLayer extends string, TPose> {
+  id: string;
+  kind: 'leaf' | 'container';
+  layer: TLayer;
+  pose: TPose;
+  data: TData;
+  /** Parent id; omitted for roots. */
+  parent?: string;
+  /** Registry key for the container's clip-path factory.
+   *  Containers only; omitted when the container has no clip. */
+  clipFromPoseKey?: string;
+  // Future function-field keys (drawOneKey, layoutStrategyKey, etc.) will live here.
+}
+
+/** Per-scene registry mapping string keys to live function references.
+ *  Passed to `createScene({ ..., registry })` and `sceneFromJSON(json, { registry })`.
+ *  Each function-field type has its own keyed map. */
+export interface SceneRegistry<TPose> {
+  /** Maps registry keys to `clipFromPose` factory functions for container nodes. */
+  clipFromPose?: Readonly<Record<string, (pose: TPose) => Path | null>>;
+  // Reserved for future function fields.
+}
+
 export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose> {
   systemLayers: readonly SystemLayerSpec<TLayer>[];
   initial?: readonly AddNodeSpec<TData, TLayer, TPose>[];
   ops?: Readonly<Record<string, RegisteredOp<unknown>>>;
   historyLimit?: number;
   generateId?: () => NodeId;
+  /** Per-scene registry for non-serializable function fields (clipFromPose, etc.).
+   *  Required only when serializing/deserializing scenes that use function fields. */
+  registry?: SceneRegistry<TPose>;
 }
 
 export interface Scene<TData, TLayer extends string, TPose = RectPose> {

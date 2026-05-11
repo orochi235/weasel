@@ -18,6 +18,20 @@ function makeScene() {
 }
 
 describe('createScene — construction', () => {
+  it('createScene accepts an optional registry option', () => {
+    const scene = createScene<{ label: string }, 'structures', typeof POSE>({
+      systemLayers: [{ id: 'structures' }],
+      registry: {
+        clipFromPose: {
+          'ellipse': (_pose) => ({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 }),
+        },
+      },
+    });
+    // No public getter for the registry; we'll test it indirectly via toJSON
+    // in Task 2. For now, just confirm the option doesn't break construction.
+    expect(scene).toBeDefined();
+  });
+
   it('rejects empty systemLayers', () => {
     expect(() =>
       createScene<Data, 'a'>({ systemLayers: [] }),
