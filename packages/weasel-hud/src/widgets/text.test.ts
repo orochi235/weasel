@@ -40,4 +40,26 @@ describe('text widget', () => {
     const t = createText({ id: 't', x: 0, y: 0, text: 'x', fontSize: 13, color: '#000' });
     expect(t.hitTest(0, 0)).toBe(false);
   });
+
+  it('uses ctx.tokens.text when opts.color is omitted', () => {
+    const t = createText({ id: 't', x: 0, y: 10, text: 'hi', fontSize: 14 });
+    const customCtx = {
+      ...ctx,
+      tokens: { ...ctx.tokens, text: '#facade' },
+    };
+    const cmds = t.draw(customCtx);
+    const fill = (cmds[0] as { style: { fill: { color: string } } }).style.fill;
+    expect(fill.color).toBe('#facade');
+  });
+
+  it('respects explicit opts.color over theme', () => {
+    const t = createText({ id: 't', x: 0, y: 10, text: 'hi', fontSize: 14, color: '#ff0000' });
+    const customCtx = {
+      ...ctx,
+      tokens: { ...ctx.tokens, text: '#facade' },
+    };
+    const cmds = t.draw(customCtx);
+    const fill = (cmds[0] as { style: { fill: { color: string } } }).style.fill;
+    expect(fill.color).toBe('#ff0000');
+  });
 });

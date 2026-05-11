@@ -22,7 +22,7 @@ export function createLabel(opts: LabelOptions): LabelWidget {
     y: opts.y,
     text: opts.text,
     fontSize: opts.fontSize ?? 13,
-    color: opts.color ?? '#1a1a1a',
+    color: opts.color,
     onChange: opts.onChange,
     removeFromHud: opts.removeFromHud,
     // fontFamily intentionally undefined → falls back to ctx.defaultFont

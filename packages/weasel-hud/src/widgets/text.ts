@@ -6,7 +6,7 @@ export interface TextOptions {
   x: number; y: number;
   text: string;
   fontSize: number;
-  color: string;
+  color?: string;
   /** Optional; falls back to the HUD default font from HudDrawCtx. */
   fontFamily?: string;
   /** Injected by Hud factories to trigger redraw on mutation. */
@@ -41,6 +41,7 @@ export function createText(opts: TextOptions): TextWidget {
     setHidden(h) { assertNotDisposed(); hidden = h; opts.onChange?.(); },
     setText(t) { assertNotDisposed(); text = t; opts.onChange?.(); },
     draw(ctx: HudDrawCtx): DrawCommand[] {
+      const color = opts.color ?? ctx.tokens.text;
       const cmd: TextDrawCommand = {
         kind: 'text',
         x: bounds.x,
@@ -49,7 +50,7 @@ export function createText(opts: TextOptions): TextWidget {
         style: {
           fontFamily: opts.fontFamily ?? ctx.defaultFont,
           fontSize: opts.fontSize,
-          fill: { fill: 'solid', color: opts.color },
+          fill: { fill: 'solid', color },
         },
       };
       return [cmd];
