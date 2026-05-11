@@ -58,7 +58,10 @@ export function applyBooleanOp(
   op: BooleanOp,
 ): BooleanOpResult {
   const sel = adapter.getSelection();
-  // Resolve path nodes only, in back-to-front z-order (ascending).
+  // Resolve path nodes only, sorted ascending by `compareZ` so paths[0] is
+  // the bottommost (back) member. `subtract` relies on this: it computes
+  // `back − union(rest)`, which is Illustrator's "Minus Front." Keep this
+  // convention in sync if compareZ semantics ever flip.
   const entries = sel
     .map((id) => ({ id, path: adapter.getWorldPath(id) }))
     .filter((e): e is { id: NodeId; path: Path } => e.path != null)
