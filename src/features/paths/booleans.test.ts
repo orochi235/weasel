@@ -48,3 +48,32 @@ describe('pathIntersect', () => {
     expect(i.coords.length).toBe(0);
   });
 });
+
+import { pathSubtract } from './booleans';
+
+describe('pathSubtract', () => {
+  it('returns `a` with `b` punched out where they overlap', () => {
+    const a = r(0, 0, 10, 10);
+    const b = r(5, 5, 10, 10);
+    const s = pathSubtract(a, b);
+    expect(pointInPath(s, 2, 2)).toBe(true);
+    expect(pointInPath(s, 7, 7)).toBe(false);
+    expect(pointInPath(s, 12, 12)).toBe(false);
+  });
+
+  it('inner-contained subtract produces an annulus (multi-contour)', () => {
+    const outer = r(0, 0, 20, 20);
+    const inner = r(5, 5, 10, 10);
+    const ann = pathSubtract(outer, inner);
+    expect(pointInPath(ann, 2, 2)).toBe(true);
+    expect(pointInPath(ann, 10, 10)).toBe(false);
+    expect(pointInPath(ann, 25, 25)).toBe(false);
+  });
+
+  it('full subtraction produces an empty path', () => {
+    const a = r(2, 2, 5, 5);
+    const b = r(0, 0, 10, 10);
+    const s = pathSubtract(a, b);
+    expect(s.commands.length).toBe(0);
+  });
+});

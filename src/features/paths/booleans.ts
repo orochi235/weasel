@@ -30,3 +30,12 @@ export function pathIntersect(...paths: Path[]): PolygonPath {
   const result = polygonClipping.intersection(head, ...rest);
   return multiPolygonToPath(result);
 }
+
+/** Asymmetric difference: returns `a − b`. */
+export function pathSubtract(a: Path, b: Path): PolygonPath {
+  const result = polygonClipping.difference(
+    pathToMultiPolygon(a),
+    pathToMultiPolygon(b),
+  );
+  return multiPolygonToPath(result);
+}
