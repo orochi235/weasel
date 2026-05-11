@@ -24,7 +24,7 @@ import type { NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import { clampView } from 'core/viewport/clampView';
 import { drawLayers, type RenderLayer } from 'core/layers/render';
-import { WeaselRenderer, viewToMat3, type DrawCommand, type ShaderProgramHandle } from '../renderer';
+import { WeaselRenderer, type DrawCommand, type ShaderProgramHandle } from '../renderer';
 import {
   useSelection,
   type SelectionApi,
@@ -58,6 +58,7 @@ import { parseDebugFlags } from '../debug/parseDebugFlags';
 import { createDebugSink } from '../debug/createDebugSink';
 import { createDebugOverlayLayer } from '../debug/createDebugOverlayLayer';
 import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/useSelectTool';
+import { buildSceneTree } from './buildSceneTree';
 
 interface Bounds {
   x: number;
@@ -375,7 +376,7 @@ function registerShadersOnRenderer(
  * poses here, and `hideIds()` lets us skip the committed paint of ids the
  * active tool is currently ghosting so the source doesn't show through.
  */
-function buildSceneLayer<TNode extends { id: string }, TPose>(
+export function buildSceneLayer<TNode extends { id: string }, TPose>(
   cfg: SceneSlotConfig<TNode, TPose>,
   adapter:
     | (MoveAdapter<TNode, TPose> & ResizeAdapter<TNode, TPose> & RotateAdapter<TNode, TPose>)
@@ -392,8 +393,40 @@ function buildSceneLayer<TNode extends { id: string }, TPose>(
     id: 'scene',
     label: 'Scene',
     draw: (_data, view) => {
-      const objects = cfg.objects ?? adapter?.getNodes() ?? [];
       const hidden = hideIds();
+      const a = adapter as unknown as {
+        getLayers?: () => readonly { id: string; visible: boolean }[];
+        getNode?: (id: string) => unknown;
+        getChildren?: (parentId: string | null) => readonly string[];
+        getPose?: (id: string) => TPose;
+      };
+      if (
+        cfg.objects === undefined &&
+        typeof a.getLayers === 'function' &&
+        typeof a.getNode === 'function' &&
+        typeof a.getChildren === 'function' &&
+        drawOne
+      ) {
+        const filteredDrawOne = (obj: TNode, pose: TPose, v: View): DrawCommand[] => {
+          if (hidden && hidden.has(obj.id)) return [];
+          const cmds = drawOne(obj, pose, v);
+          if (debugSink) {
+            const b = boundsOfFn ? boundsOfFn(obj.id) : null;
+            if (b) debugSink.recordBounds(obj.id, b);
+            const ox = (pose as { x?: number }).x ?? (b ? b.x : 0);
+            const oy = (pose as { y?: number }).y ?? (b ? b.y : 0);
+            debugSink.recordOrigin(obj.id, { x: ox, y: oy });
+          }
+          return cmds;
+        };
+        return buildSceneTree(
+          a as Parameters<typeof buildSceneTree>[0],
+          filteredDrawOne as unknown as Parameters<typeof buildSceneTree>[1],
+          view,
+        );
+      }
+      // Flat fallback — keep existing body verbatim.
+      const objects = cfg.objects ?? adapter?.getNodes() ?? [];
       const children: DrawCommand[] = [];
       for (const obj of objects) {
         if (hidden && hidden.has(obj.id)) continue;
@@ -409,8 +442,7 @@ function buildSceneLayer<TNode extends { id: string }, TPose>(
           debugSink.recordOrigin(obj.id, { x: ox, y: oy });
         }
       }
-      if (children.length === 0) return [];
-      return [{ kind: 'group', transform: viewToMat3(view), children }];
+      return children;
     },
   };
 }

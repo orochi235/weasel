@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, fireEvent, createEvent, act } from '@testing-library/react';
 import React, { createRef, useRef, useState } from 'react';
-import { Canvas } from './Canvas';
+import { Canvas, buildSceneLayer } from './Canvas';
 import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { useSelection } from 'core/selection/useSelection';
@@ -11,8 +11,11 @@ import { useSelectTool } from 'tools/builtin/useSelectTool';
 import { useTools } from 'tools/useTools';
 import type { RenderLayer } from 'core/layers/render';
 import { registerProgram } from '../renderer';
+import type { DrawCommand } from '../renderer';
 import type { DebugSink, DebugSnapshot } from '../debug/types';
 import type { CanvasExtensionApi } from './canvasExtension';
+import { createScene } from 'core/scene/scene';
+import { sceneToAdapter } from './sceneAdapter';
 
 const waitForFrame = () => new Promise<void>(r => requestAnimationFrame(() => r()));
 
@@ -1142,5 +1145,57 @@ describe('Canvas baseBoundsOf synthesis', () => {
     expect(beginFrameSpy).toHaveBeenCalled();
     const snapshot = sinkRef.current!.snapshot();
     expect(snapshot.layers.some(l => l.id === 'extra')).toBe(false);
+  });
+});
+
+const VIEW = { x: 0, y: 0, scale: 1 };
+const DIMS = { width: 100, height: 100 };
+const POSE = { x: 0, y: 0, width: 10, height: 10 };
+
+describe('buildSceneLayer hierarchical path', () => {
+  it('emits nested GroupDrawCommand tree for scene-backed adapter', () => {
+    const scene = createScene<{ label: string }, 'bg', typeof POSE>({
+      systemLayers: [{ id: 'bg' }],
+    });
+    const bed = scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'bed' } });
+    scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'plant' }, parent: bed });
+    const adapter = sceneToAdapter(scene);
+    const layer = buildSceneLayer(
+      { drawOne: (_node, _p) => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { color: 'red' } }] },
+      adapter as never,
+      null,
+      () => null,
+      () => null,
+    );
+    const out = layer.draw(null, VIEW, DIMS) as DrawCommand[];
+    expect(out).toHaveLength(1);
+    const bgGroup = out[0] as { kind: string; children: DrawCommand[] };
+    expect(bgGroup.kind).toBe('group');
+    expect(bgGroup.children).toHaveLength(1);
+    const bedGroup = bgGroup.children[0] as { kind: string; children: DrawCommand[] };
+    expect(bedGroup.kind).toBe('group');
+    expect(bedGroup.children).toHaveLength(2); // bed paint + plant wrapper
+  });
+
+  it('falls back to flat output for non-scene adapter (no getLayers)', () => {
+    interface Rect { id: string; x: number; y: number; width: number; height: number }
+    type Pose = { x: number; y: number; width: number; height: number };
+    const rects: Rect[] = [{ id: 'a', x: 0, y: 0, width: 10, height: 10 }];
+    const rectsRef = { current: rects };
+    const adapter = arrayAdapter<Rect, Pose>({
+      ref: rectsRef,
+      setItems: () => {},
+      toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
+    });
+    const layer = buildSceneLayer(
+      { drawOne: (_obj, _p) => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { color: 'red' } }] },
+      adapter as never,
+      null,
+      () => null,
+      () => null,
+    );
+    const out = layer.draw(null, VIEW, DIMS) as DrawCommand[];
+    expect(out.every((c) => c.kind === 'path')).toBe(true);
+    expect(out).toHaveLength(1);
   });
 });
