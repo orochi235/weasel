@@ -1,6 +1,65 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
-import { resolve } from 'node:path';
+import { existsSync, statSync, createReadStream } from 'node:fs';
+import { extname, join, resolve } from 'node:path';
+
+/**
+ * Dev-only middleware: serve `dist-demo/api/*` at `/api/*`. The deployed
+ * site (GitHub Pages) gets the typedoc output bundled into `dist-demo/`
+ * via `npm run build:demo`, so the sidebar's "API reference →" link
+ * (`./api/`) resolves correctly there. Vite's dev server doesn't serve
+ * `dist-demo`, so without this plugin the same link 404s locally.
+ *
+ * Run `npm run build:api` once to generate `dist-demo/api/`. The
+ * middleware reports a helpful message when the directory is missing
+ * instead of falling through to vite's generic 404.
+ */
+function serveApiDocsInDev(): PluginOption {
+  const apiRoot = resolve(__dirname, 'dist-demo/api');
+  const MIME: Record<string, string> = {
+    '.html': 'text/html; charset=utf-8',
+    '.js': 'application/javascript; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
+    '.json': 'application/json; charset=utf-8',
+    '.svg': 'image/svg+xml',
+    '.png': 'image/png',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+  };
+  return {
+    name: 'serve-api-docs-in-dev',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use('/api', (req, res, next) => {
+        if (!existsSync(apiRoot)) {
+          res.statusCode = 404;
+          res.setHeader('content-type', 'text/html; charset=utf-8');
+          res.end(
+            '<!doctype html><title>API docs not built</title>'
+            + '<body style="font-family:system-ui;padding:2rem;max-width:32rem">'
+            + '<h1>API docs not built</h1>'
+            + '<p>Run <code>npm run build:api</code> once to generate the typedoc '
+            + 'output into <code>dist-demo/api/</code>. The dev server will pick '
+            + 'it up on the next request — no restart needed.</p>'
+            + '</body>',
+          );
+          return;
+        }
+        const cleanPath = decodeURIComponent((req.url ?? '/').split('?')[0]);
+        let filePath = join(apiRoot, cleanPath === '/' ? 'index.html' : cleanPath);
+        try {
+          if (statSync(filePath).isDirectory()) filePath = join(filePath, 'index.html');
+        } catch {
+          next();
+          return;
+        }
+        if (!existsSync(filePath)) { next(); return; }
+        res.setHeader('content-type', MIME[extname(filePath).toLowerCase()] ?? 'application/octet-stream');
+        createReadStream(filePath).pipe(res);
+      });
+    },
+  };
+}
 
 export default defineConfig({
   root: 'demo',
@@ -37,7 +96,7 @@ export default defineConfig({
       { find: /^canvas\/(.*)$/, replacement: resolve(__dirname, 'src/canvas/$1') },
     ],
   },
-  plugins: [react()],
+  plugins: [react(), serveApiDocsInDev()],
   build: {
     outDir: '../dist-demo',
     emptyOutDir: true,
