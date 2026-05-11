@@ -301,7 +301,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
     global.createImageBitmap = vi.fn().mockResolvedValue({
       width: 512, height: 512, close: vi.fn(),
     } as unknown as ImageBitmap);
-    await registerFont('inter', '/fonts/inter.json', '/fonts/inter.png');
+    await registerFont('inter', {}, '/fonts/inter.json', '/fonts/inter.png');
 
     recorder = makeGLRecorder();
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });

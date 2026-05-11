@@ -20,7 +20,7 @@ import { mat3 } from './math/mat3';
 import { getMesh } from './cache/cache';
 import { parseColor } from './math/color';
 import { tessellateStroke } from 'features/paths/tessellate/stroke';
-import { getFont, ensureFontTexture } from 'features/text/atlas/registerFont';
+import { resolveFontVariant, ensureFontTexture, textureCacheKey } from 'features/text/atlas/registerFont';
 import { layoutGlyphs, quadsToVertexBuffer, buildQuadIndexBuffer } from 'features/text/atlas/GlyphLayout';
 
 export interface DrawContext {
@@ -691,17 +691,44 @@ function drawPathStrokeStenciled(
   gl.bindVertexArray(null);
 }
 
+function normalizeFontWeight(w: number | string | undefined): number {
+  if (w === undefined) return 400;
+  if (typeof w === 'number') return w;
+  if (w === 'bold') return 700;
+  if (w === 'normal') return 400;
+  const parsed = Number(w);
+  return Number.isFinite(parsed) ? parsed : 400;
+}
+
+function lowerBucketWeight(w: number): number {
+  return w >= 600 ? 400 : w;
+}
+
 function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   const style = resolveTextStyle(cmd.style);
   const family = style.fontFamily;
+  const weight = normalizeFontWeight(style.fontWeight);
+  const fontStyle = style.fontStyle;
 
-  if (!ensureFontTexture(family, ctx.textureCache)) {
-    console.warn(`weasel drawText: font "${family}" not registered; call registerFont() first.`);
+  const resolved = resolveFontVariant(family, weight, fontStyle);
+  if (!resolved.entry) {
+    console.warn(
+      `weasel drawText: no atlas registered for "${family}" ${weight}/${fontStyle}; call registerFont() first.`,
+    );
     return;
   }
 
-  const entry = getFont(family);
-  if (!entry) return;
+  // The cache key targets the *resolved* variant, which may differ from the
+  // requested (family, weight, style) when fallback kicked in. Synthetic
+  // flags would let us request a different atlas (e.g. drop bold → 400);
+  // for slice 1 we conservatively translate the fallback into an exact
+  // resolved-variant cache key. Slice 2 wires the synthetic uniforms into
+  // the shader for visible bold/italic fallback rendering.
+  const cacheW = resolved.synthetic.bold ? lowerBucketWeight(weight) : weight;
+  const cacheS = resolved.synthetic.italic ? 'normal' : fontStyle;
+  if (!ensureFontTexture(family, cacheW, cacheS, ctx.textureCache)) return;
+
+  const entry = resolved.entry;
 
   const quads = layoutGlyphs(
     cmd.text,
@@ -754,7 +781,7 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   gl.uniform1f(ctx.textSdf.uniform('u_alpha')!, ctx.state.alpha);
   gl.uniform1f(ctx.textSdf.uniform('u_aaWidth')!, 0.05);
 
-  ctx.textureCache.bind(family, 0);
+  ctx.textureCache.bind(textureCacheKey(family, cacheW, cacheS), 0);
   gl.uniform1i(ctx.textSdf.uniform('u_atlas')!, 0);
 
   applyClipTest(ctx);
