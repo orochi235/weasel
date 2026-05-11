@@ -48,11 +48,18 @@ beforeAll(() => {
 
 describe('useSelectTool default pickEvery — clip-aware', () => {
   it('does not pick a leaf whose AABB is outside an ancestor container clip', () => {
-    // bed: container at (0,0,100,100) with clip at (25,25,50,50).
-    // corner: leaf at (5,5,10,10) — inside bed's AABB but outside its clip.
-    // Effective world click is (0,0) in jsdom — outside the clip (25..75).
-    // Neither bed (clip excludes origin) nor corner (ancestor clip excludes origin)
-    // should be selected.
+    // Distinguishing geometry: world (0,0) is INSIDE the leaf's AABB but
+    // OUTSIDE the container's clip. Without clip filtering the leaf would be
+    // selected; with clip filtering it is rejected.
+    //
+    // bed: container at (-10,-10,100,100) → AABB covers (0,0).
+    //   clip at (50,50,50,50) → does NOT cover (0,0).
+    // corner: leaf at (-5,-5,20,20) → AABB covers (0,0).
+    //
+    // Flat-scan (no clip): corner.AABB contains (0,0) → would select corner.
+    // Clip-aware walk: ancestor clip (50,50,50,50) excludes (0,0) → corner skipped.
+    //
+    // jsdom: clientToWorld is not invoked; worldX/worldY default to 0.
     let lastSel: readonly string[] = [];
 
     function Harness() {
@@ -63,16 +70,16 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
             id: asNodeId('bed'),
             kind: 'container',
             layer: 'default',
-            pose: { x: 0, y: 0, width: 100, height: 100 },
+            pose: { x: -10, y: -10, width: 100, height: 100 },
             data: { label: 'bed' },
-            clipFromPose: () => rectPath(25, 25, 50, 50),
+            clipFromPose: () => rectPath(50, 50, 50, 50),
           },
           {
             id: asNodeId('corner'),
             parent: asNodeId('bed'),
             kind: 'leaf',
             layer: 'default',
-            pose: { x: 5, y: 5, width: 10, height: 10 },
+            pose: { x: -5, y: -5, width: 20, height: 20 },
             data: { label: 'corner' },
           },
         ],
@@ -100,7 +107,8 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
     canvas.setPointerCapture = () => {};
     canvas.releasePointerCapture = () => {};
 
-    // Any clientX/Y maps to world (0,0) in jsdom — outside the clip.
+    // clientX/Y ignored by jsdom → effective world click is (0,0).
+    // (0,0) is inside corner's AABB but outside bed's clip (50,50,50,50).
     fireEvent.pointerDown(canvas, { clientX: 10, clientY: 10, pointerId: 1 });
     fireEvent.pointerUp(canvas, { clientX: 10, clientY: 10, pointerId: 1 });
 
@@ -109,10 +117,19 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
   });
 
   it('picks a leaf whose AABB is inside an ancestor container clip', () => {
-    // bed: container at (0,0,100,100) with clip = full container AABB so that
-    // the jsdom effective click at (0,0) is inside the clip.
-    // inner: leaf at (0,0,10,10) — inside both the container and its clip.
-    // pickTopMostHit drops ancestor bed → inner is selected.
+    // Paired with Test 1: world (0,0) is inside both the leaf's AABB and the
+    // container's clip. The clip is intentionally smaller than the container
+    // AABB so the test documents clip-pass rather than pure-AABB-pass.
+    //
+    // bed: container at (-50,-50,100,100) → AABB covers (0,0).
+    //   clip at (-20,-20,40,40) → covers (0,0) (−20..20 on each axis).
+    // inner: leaf at (-5,-5,10,10) → AABB covers (0,0).
+    //
+    // Clip-aware walk: ancestor clip (-20,-20,40,40) includes (0,0) → leaf
+    // passes, AABB check passes → inner selected.
+    // pickTopMostHit drops ancestor bed → only inner in result.
+    //
+    // jsdom: clientToWorld is not invoked; worldX/worldY default to 0.
     let lastSel: readonly string[] = [];
 
     function Harness() {
@@ -123,17 +140,17 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
             id: asNodeId('bed'),
             kind: 'container',
             layer: 'default',
-            pose: { x: 0, y: 0, width: 100, height: 100 },
+            pose: { x: -50, y: -50, width: 100, height: 100 },
             data: { label: 'bed' },
-            // Clip = full container AABB; the jsdom effective click at (0,0) is inside.
-            clipFromPose: (pose) => rectPath(pose.x, pose.y, pose.width, pose.height),
+            // Clip is smaller than the container AABB but still covers (0,0).
+            clipFromPose: () => rectPath(-20, -20, 40, 40),
           },
           {
             id: asNodeId('inner'),
             parent: asNodeId('bed'),
             kind: 'leaf',
             layer: 'default',
-            pose: { x: 0, y: 0, width: 10, height: 10 },
+            pose: { x: -5, y: -5, width: 10, height: 10 },
             data: { label: 'inner' },
           },
         ],
@@ -161,7 +178,8 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
     canvas.setPointerCapture = () => {};
     canvas.releasePointerCapture = () => {};
 
-    // World click (0,0): inside inner's AABB and inside bed's clip.
+    // clientX/Y ignored by jsdom → effective world click is (0,0).
+    // (0,0) is inside inner's AABB and inside bed's clip (-20,-20,40,40).
     fireEvent.pointerDown(canvas, { clientX: 5, clientY: 5, pointerId: 1 });
     fireEvent.pointerUp(canvas, { clientX: 5, clientY: 5, pointerId: 1 });
 

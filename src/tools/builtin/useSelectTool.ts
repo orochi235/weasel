@@ -265,7 +265,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     const out: string[] = [];
 
     function walk(parentId: string | null, ancestorClips: readonly Path[]): void {
-      for (const childId of hier.getChildren!(parentId)) {
+      nextChild: for (const childId of hier.getChildren!(parentId)) {
         const node = hier.getNode!(childId) as {
           kind?: string;
           clipFromPose?: (pose: TPose) => Path | null;
@@ -302,9 +302,11 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
 
           walk(childId, childClips);
         } else {
-          // Leaf node: excluded if point lies outside any ancestor clip.
+          // Leaf node: skip this leaf (continue to next sibling) if the point
+          // lies outside any ancestor clip. Using a labeled continue so we
+          // advance the outer childId loop, not the inner clip loop.
           for (const clip of ancestorClips) {
-            if (!pathContainsPoint(clip, worldX, worldY)) return;
+            if (!pathContainsPoint(clip, worldX, worldY)) continue nextChild;
           }
           const b = poseBoundsFn(pose);
           if (worldX >= b.x && worldX <= b.x + b.width
