@@ -116,4 +116,46 @@ describe('button widget', () => {
     b.onPointer({ type: 'hoverleave', native: null });
     expect(leave).toHaveBeenCalledTimes(1);
   });
+
+  it('uses ctx.tokens.buttonFill when opts.fill is omitted', () => {
+    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    const customCtx = { ...ctx, tokens: { ...ctx.tokens, buttonFill: '#abcdef' } };
+    const cmds = b.draw(customCtx);
+    const body = cmds.find(c => c.kind === 'path') as { fill: { color: string } };
+    expect(body.fill.color).toBe('#abcdef');
+  });
+
+  it('respects opts.fill when supplied (theme overridden)', () => {
+    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x', fill: '#ff0000' });
+    const customCtx = { ...ctx, tokens: { ...ctx.tokens, buttonFill: '#abcdef' } };
+    const cmds = b.draw(customCtx);
+    const body = cmds.find(c => c.kind === 'path') as { fill: { color: string } };
+    expect(body.fill.color).toBe('#ff0000');
+  });
+
+  it('uses ctx.tokens.buttonFillHover when hovering and opts.hoverFill is omitted', () => {
+    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    b.onPointer({ type: 'hovermove', x: 5, y: 5, native: {} as PointerEvent });
+    const customCtx = { ...ctx, tokens: { ...ctx.tokens, buttonFillHover: '#cafe00' } };
+    const cmds = b.draw(customCtx);
+    const body = cmds.find(c => c.kind === 'path') as { fill: { color: string } };
+    expect(body.fill.color).toBe('#cafe00');
+  });
+
+  it('uses ctx.tokens.buttonFillPressed when pressed and opts.pressedFill is omitted', () => {
+    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    b.onPointer({ type: 'down', x: 5, y: 5, native: {} as PointerEvent });
+    const customCtx = { ...ctx, tokens: { ...ctx.tokens, buttonFillPressed: '#beadc0' } };
+    const cmds = b.draw(customCtx);
+    const body = cmds.find(c => c.kind === 'path') as { fill: { color: string } };
+    expect(body.fill.color).toBe('#beadc0');
+  });
+
+  it('uses ctx.tokens.buttonText when opts.textColor is omitted', () => {
+    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    const customCtx = { ...ctx, tokens: { ...ctx.tokens, buttonText: '#decade' } };
+    const cmds = b.draw(customCtx);
+    const text = cmds.find(c => c.kind === 'text') as { style: { fill: { color: string } } };
+    expect(text.style.fill.color).toBe('#decade');
+  });
 });

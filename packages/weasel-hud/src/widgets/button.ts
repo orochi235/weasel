@@ -40,10 +40,6 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
   let label = opts.label;
   let pressed = false;
   let hovering = false;
-  const fill = opts.fill ?? '#ffffff';
-  const pressedFill = opts.pressedFill ?? '#e0e0e0';
-  const hoverFill = opts.hoverFill ?? '#f5f5f5';
-  const textColor = opts.textColor ?? '#1a1a1a';
   const fontSize = opts.fontSize ?? 13;
 
   const handlers: Record<ButtonEvent, Set<ButtonHandler>> = {
@@ -70,6 +66,10 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
     on(event, handler) { assertNotDisposed(); handlers[event].add(handler); },
     off(event, handler) { assertNotDisposed(); handlers[event].delete(handler); },
     draw(ctx: HudDrawCtx): DrawCommand[] {
+      const fill        = opts.fill        ?? ctx.tokens.buttonFill;
+      const hoverFill   = opts.hoverFill   ?? ctx.tokens.buttonFillHover;
+      const pressedFill = opts.pressedFill ?? ctx.tokens.buttonFillPressed;
+      const textColor   = opts.textColor   ?? ctx.tokens.buttonText;
       const { x, y, w, h } = bounds;
       const bodyColor = pressed ? pressedFill : hovering ? hoverFill : fill;
       const body: PathDrawCommand = {
