@@ -1,18 +1,19 @@
-import { useMemo } from 'react';
+import { useState, useMemo, useSyncExternalStore } from 'react';
 import {
   asNodeId,
   nestedGroupHitTester,
   SceneCanvas,
+  sceneFromJSON,
   sceneToAdapter,
   useNestedGroup,
   useNestedUngroup,
-  useScene,
   useSelectTool,
   useSelection,
   useTools,
 } from '@orochi235/weasel';
-import type { SceneNode } from '@orochi235/weasel';
+import type { SceneNode, SerializedScene } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
+import sceneJson from './data/nested-groups.scene.json';
 
 interface NodeData { color: string }
 type LayerId = 'default';
@@ -27,31 +28,15 @@ const W = 480, H = 320;
 const composeAbs = <P,>(_parent: P, child: P): P => child;
 const decomposeAbs = <P,>(_parent: P, world: P): P => world;
 
-// g1 contains g2 (a sub-group) + a free leaf `a`; g2 in turn contains b1, b2.
-// Free leaves c, d sit alongside for ad-hoc grouping with Cmd+G. The data
-// path supports arbitrary depth.
-const INITIAL = [
-  { id: asNodeId('g1'), kind: 'container' as const, layer: 'default' as const,
-    pose: { x: 40, y: 40, width: 230, height: 150 }, data: { color: '#3a2e22' } },
-  { id: asNodeId('a'), parent: asNodeId('g1'), kind: 'leaf' as const, layer: 'default' as const,
-    pose: { x: 50, y: 50, width: 60, height: 50 }, data: { color: '#7fb069' } },
-  { id: asNodeId('g2'), parent: asNodeId('g1'), kind: 'container' as const, layer: 'default' as const,
-    pose: { x: 125, y: 85, width: 130, height: 90 }, data: { color: '#2e3a22' } },
-  { id: asNodeId('b1'), parent: asNodeId('g2'), kind: 'leaf' as const, layer: 'default' as const,
-    pose: { x: 133, y: 93, width: 50, height: 35 }, data: { color: '#a8d469' } },
-  { id: asNodeId('b2'), parent: asNodeId('g2'), kind: 'leaf' as const, layer: 'default' as const,
-    pose: { x: 193, y: 130, width: 50, height: 35 }, data: { color: '#a8d469' } },
-  { id: asNodeId('c'), kind: 'leaf' as const, layer: 'default' as const,
-    pose: { x: 320, y: 110, width: 90, height: 60 }, data: { color: '#d4a574' } },
-  { id: asNodeId('d'), kind: 'leaf' as const, layer: 'default' as const,
-    pose: { x: 220, y: 230, width: 70, height: 50 }, data: { color: '#a48bd4' } },
-];
-
 export function NestedGroupsDemo() {
-  const scene = useScene<NodeData, LayerId, Pose>({
-    systemLayers: [{ id: 'default' }],
-    initial: INITIAL,
-  });
+  const [scene] = useState(() =>
+    sceneFromJSON(
+      sceneJson as unknown as SerializedScene<NodeData, LayerId, Pose>,
+      {},
+    ),
+  );
+  useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
+
   const selection = useSelection();
 
   // `cascadeContainerPose: 'rect'` opts into the scene v1 "containers translate
