@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { pathUnion } from './booleans';
 import { pointInPath } from './hitTest';
-import type { RectPath } from './types';
+import type { RectPath, PolygonPath } from './types';
+import { PATH_M, PATH_L, PATH_C, PATH_Z } from './types';
 
 const r = (x: number, y: number, w: number, h: number): RectPath => ({
   kind: 'rect', x, y, width: w, height: h,
@@ -92,7 +93,6 @@ describe('pathExclude', () => {
 });
 
 import { pathDivide } from './booleans';
-import type { PolygonPath } from './types';
 
 describe('pathDivide', () => {
   it('two overlapping rects → three non-empty regions (A-only, B-only, A∩B)', () => {
@@ -115,5 +115,53 @@ describe('pathDivide', () => {
     const b = r(10, 10, 5, 5);
     const parts = pathDivide(a, b);
     expect(parts).toHaveLength(2);
+  });
+});
+
+describe('boolean ops — edge cases', () => {
+  it('handles two rects touching at an edge (no spurious sliver)', () => {
+    const a = r(0, 0, 10, 10);
+    const b = r(10, 0, 10, 10);
+    const u = pathUnion(a, b);
+    expect(pointInPath(u, 15, 5)).toBe(true);
+    expect(pointInPath(u, 25, 5)).toBe(false);
+    expect(pointInPath(u, 5, 5)).toBe(true);
+  });
+
+  it('handles two rects touching at a single vertex', () => {
+    const a = r(0, 0, 10, 10);
+    const b = r(10, 10, 10, 10);
+    const u = pathUnion(a, b);
+    expect(pointInPath(u, 5, 5)).toBe(true);
+    expect(pointInPath(u, 15, 15)).toBe(true);
+  });
+
+  it('mixes RectPath and PolygonPath inputs without issue', () => {
+    const rect = r(0, 0, 10, 10);
+    const tri: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_Z]),
+      coords: new Float32Array([5, 5, 15, 5, 10, 15]),
+      fillRule: 'nonzero',
+    };
+    const u = pathUnion(rect, tri);
+    expect(pointInPath(u, 2, 2)).toBe(true);
+    expect(pointInPath(u, 12, 8)).toBe(true);
+  });
+
+  it('flattens cubic beziers in inputs', () => {
+    const bezier: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_C, PATH_L, PATH_Z]),
+      coords: new Float32Array([
+        0, 0,
+        0, 10, 10, 10, 10, 0,
+        0, 0,
+      ]),
+      fillRule: 'nonzero',
+    };
+    const u = pathUnion(bezier);
+    expect(u.commands.length).toBeGreaterThan(0);
+    expect(pointInPath(u, 5, 5)).toBe(true);
   });
 });
