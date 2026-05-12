@@ -38,6 +38,7 @@ import {
   createTextLayer,
   createPenPreviewLayer,
   createPathLayer,
+  translatePath,
   createDeleteOp,
   createSetTextOp,
   useTextEdit,
@@ -295,7 +296,18 @@ export function App() {
       setPose: (id: string, pose: Pose) => {
         const i = itemsRef.current.findIndex((o) => o.id === id);
         if (i < 0) return;
-        itemsRef.current[i] = { ...itemsRef.current[i], ...pose };
+        const prev = itemsRef.current[i];
+        // For text nodes, scale fontSize proportionally to height so the
+        // glyphs fill the resized box. 0.7 ≈ cap-height ratio, matching
+        // the rule the text-tool's `commitInsert` uses to seed fontSize.
+        // Floor at 8px so tiny boxes stay readable.
+        if (prev.kind === 'text' && pose.height !== prev.height) {
+          const fontSize = Math.max(8, Math.round(pose.height * 0.7));
+          const style = { ...(prev.style ?? {}), fontSize };
+          itemsRef.current[i] = { ...prev, ...pose, style };
+        } else {
+          itemsRef.current[i] = { ...prev, ...pose };
+        }
       },
       // Used by createSetTextOp; called from useTextEdit's commit through applyBatch.
       setText: (id: string, text: string) => {
@@ -758,16 +770,43 @@ export function App() {
   // ---- Render layers ---------------------------------------------------
   const textLayer: RenderLayer<unknown> = createTextLayer<TextObj>({
     getTexts: () => itemsRef.current.filter((o): o is TextObj => o.kind === 'text'),
-    getPose: (n) => ({ x: n.x, y: n.y, width: n.width, height: n.height, text: n.text, style: n.style }),
+    getPose: (n) => {
+      // Consult the active tool's previewPose so move/resize gestures
+      // show the text rendered at its in-flight pose (not the committed
+      // one) while a drag is in progress.
+      const tool = tools.registry[tools.hotkeyEngaged ?? tools.active];
+      const preview = tool?.previewPose?.(n.id) as Pose | undefined;
+      const pose = preview ?? { x: n.x, y: n.y, width: n.width, height: n.height };
+      // For text, mid-drag we also need to scale fontSize from preview height
+      // so the glyphs visibly resize with the box (mirrors the setPose rule).
+      const style = pose.height !== n.height
+        ? { ...(n.style ?? {}), fontSize: Math.max(8, Math.round(pose.height * 0.7)) }
+        : n.style;
+      return { ...pose, text: n.text, style };
+    },
     // Hide the currently-editing node — the contenteditable overlay draws it.
     isHidden: (n) => textEdit.isEditing(n.id),
+    // Clip glyphs to the declared bounds so an oversized string doesn't
+    // bleed past its box.
+    clipToBounds: true,
   });
 
   const pathLayer: RenderLayer<unknown> = createPathLayer<PathObj>({
     id: 'paths',
     label: 'Paths',
     getNodes: () => itemsRef.current.filter((o): o is PathObj => o.kind === 'path'),
-    getPath: (n) => n.path,
+    getPath: (n) => {
+      // Consult the active tool's previewPose so a drag/move shows the
+      // path at its in-flight position. Path geometry is in world coords
+      // anchored at (n.x, n.y); we translate by the preview delta. v1
+      // ignores width/height changes (no live resize for paths yet).
+      const tool = tools.registry[tools.hotkeyEngaged ?? tools.active];
+      const preview = tool?.previewPose?.(n.id) as Pose | undefined;
+      if (!preview) return n.path;
+      const dx = preview.x - n.x;
+      const dy = preview.y - n.y;
+      return dx === 0 && dy === 0 ? n.path : translatePath(n.path, dx, dy);
+    },
     getFill: (n) => n.closed ? { fill: 'solid', color: n.fill, alpha: 0.6 } : null,
     getStroke: (n) => ({ paint: { fill: 'solid', color: n.stroke }, width: n.strokeWidth }),
   });
