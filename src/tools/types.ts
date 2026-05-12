@@ -5,6 +5,7 @@ import type { View } from 'core/viewport/view';
 import type { RenderLayer } from 'core/layers/render';
 import type { DebugSink } from '../debug/types';
 import type { KeyBinding } from 'interactions/actions/useKeybinding';
+import type { HitResult } from './routing/hitResult';
 
 /** Outcome of a channel handler. `'claim'` stops dispatch for this event;
  *  `'pass'` lets the next slot try. Handlers that return nothing are
@@ -30,6 +31,11 @@ export interface ToolCtx<TScratch = unknown> {
   worldX: number;
   worldY: number;
   modifiers: ToolModifiers;
+  /** Hit-test result for the current event. Populated by the dispatcher
+   *  before each handler call. Tools that don't use declarative routing
+   *  can ignore this. Optional in Phase 1 for migration; will become
+   *  required once the routing migration is complete. */
+  target?: HitResult;
   selection: SelectionApi;
   /** Adapter/scene access — opaque at this layer; tools that need it
    *  cast to a known shape. Phase 1 doesn't constrain this. */

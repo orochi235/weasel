@@ -4,6 +4,34 @@ import type { RenderLayer } from 'core/layers/render';
 import type { ChromeState } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
 import type { AffordanceBinding } from 'affordances/types';
+import type { HitResult } from './routing/hitResult';
+import type { NodeId } from 'core/scene/types';
+
+/** Build a HitResult for the dispatcher's context. Phase 1 classifier:
+ *  - Affordance hits → 'affordance:unknown' kind (placeholder until the
+ *    affordance layer carries kind metadata).
+ *  - No node hit-test in Phase 1 dispatcher — regular pointer paths yield
+ *    'empty' since the dispatcher doesn't run a scene hit-test.
+ *  Subsequent phases will add a scene hit-test and propagate real node ids. */
+function buildAffordanceTarget(
+  affordanceHit: AffordanceBinding,
+  adapter: unknown,
+): HitResult {
+  // AffordanceBinding doesn't carry a standard targetId in Phase 1.
+  // Cast defensively to pick up any consumer-supplied targetId.
+  const targetId = (affordanceHit as { targetId?: NodeId }).targetId;
+  const kind =
+    targetId != null
+      ? ((adapter as { kindOf?: (id: NodeId) => string }).kindOf?.(targetId) ?? 'affordance:unknown')
+      : 'affordance:unknown';
+  return {
+    category: 'affordance',
+    kind,
+    id: targetId ?? ('' as NodeId),
+    pose: {},
+    data: {},
+  };
+}
 
 interface SlotsState {
   hotkey: AnyTool | null;
@@ -181,11 +209,16 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     } as AnyTool;
     // Build a minimal ctx for onStart. Use the same baseCtx the slot walk
     // would have used.
-    const baseCtx = opts.getCtx({
+    const rawBaseCtx = opts.getCtx({
       clientX: e.clientX,
       clientY: e.clientY,
       modifiers: { alt: !!e.altKey, shift: !!e.shiftKey, meta: !!e.metaKey, ctrl: !!e.ctrlKey },
     });
+    // Populate ctx.target for affordance gestures — Phase 1 placeholder kind.
+    const baseCtx = {
+      ...rawBaseCtx,
+      target: buildAffordanceTarget(result, rawBaseCtx.adapter),
+    };
     const startCtx = ctxFor(result.initialScratch, baseCtx);
     // Affordance hits skip threshold gating — the layer already decided
     // this is a gesture, not a click. Jump straight to 'drag' phase and
