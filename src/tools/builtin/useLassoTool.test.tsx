@@ -29,11 +29,11 @@ const baseCtx = (worldX: number, worldY: number) => ({
 }) as never;
 
 describe('useLassoTool', () => {
-  it("declares id 'lasso' and keybinding 'L' by default", () => {
+  it("declares id 'lasso' and keybinding { key: 'L' } by default", () => {
     const adapter = makeAdapter();
     const { result } = renderHook(() => useLassoTool(adapter));
     expect(result.current.id).toBe('lasso');
-    expect(result.current.keybinding).toBe('L');
+    expect(result.current.keybinding).toEqual({ key: 'L' });
   });
 
   it("keybinding override: passing keybinding: null omits it", () => {
@@ -44,8 +44,8 @@ describe('useLassoTool', () => {
 
   it("custom keybinding passes through", () => {
     const adapter = makeAdapter();
-    const { result } = renderHook(() => useLassoTool(adapter, { keybinding: 'Shift+L' }));
-    expect(result.current.keybinding).toBe('Shift+L');
+    const { result } = renderHook(() => useLassoTool(adapter, { keybinding: { key: 'L', shift: true } }));
+    expect(result.current.keybinding).toEqual({ key: 'L', shift: true });
   });
 
   it('drag.onStart claims the gesture', () => {

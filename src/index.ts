@@ -64,7 +64,7 @@ export { clampView } from './core/viewport/clampView';
 export type { ClampBounds, CanvasSize } from './core/viewport/clampView';
 export * from './core/viewport/useZoom';
 export * from './core/viewport/useAutoCenter';
-export { useKeybinding, isEditableTarget } from './interactions/actions/useKeybinding';
+export { useKeybinding, isEditableTarget, matchesKeyBinding } from './interactions/actions/useKeybinding';
 export type { KeyBinding } from './interactions/actions/useKeybinding';
 
 // --- @experimental Actions Registry (2026-05-09) ----------------------------

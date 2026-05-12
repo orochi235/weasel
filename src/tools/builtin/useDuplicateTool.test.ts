@@ -24,11 +24,11 @@ function keyEvent(key: string, opts: { metaKey?: boolean; ctrlKey?: boolean; pre
 }
 
 describe('useDuplicateTool', () => {
-  it('declares id "duplicate" and meta+d keybinding', () => {
+  it('declares id "duplicate" and no switch keybinding (handles meta+d via the keyboard channel)', () => {
     const adapter = { getSelection: () => ['a'], getNode: () => ({ id: 'a' }), cloneNode: (o: any) => ({ ...o, id: 'a2' }), applyOps: vi.fn() } as any;
     const { result } = renderHook(() => useDuplicateTool(adapter, {}));
     expect(result.current.id).toBe('duplicate');
-    expect(result.current.keybinding).toBe('meta+d');
+    expect(result.current.keybinding).toBeUndefined();
   });
 
   it('claims meta+d / ctrl+d; passes plain d', () => {

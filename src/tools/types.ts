@@ -4,6 +4,7 @@ import type { Op } from 'core/ops/types';
 import type { View } from 'core/viewport/view';
 import type { RenderLayer } from 'core/layers/render';
 import type { DebugSink } from '../debug/types';
+import type { KeyBinding } from 'interactions/actions/useKeybinding';
 
 /** Outcome of a channel handler. `'claim'` stops dispatch for this event;
  *  `'pass'` lets the next slot try. Handlers that return nothing are
@@ -102,7 +103,9 @@ export interface ToolBounds {
 /** Full Tool record. */
 export interface Tool<TScratch = unknown> {
   id: string;
-  keybinding?: string;
+  /** Structured keybinding for switching to this tool. Matched via the
+   *  shared `matchesKeyBinding` (key + modifier policy). */
+  keybinding?: KeyBinding;
   hotkey?: HotkeyTrigger;
   initScratch?: () => TScratch;
   onActivate?: (ctx: ToolCtx<TScratch>) => void;

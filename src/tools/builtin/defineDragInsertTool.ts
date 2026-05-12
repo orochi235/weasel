@@ -7,13 +7,14 @@ import type { Op } from 'core/ops/types';
 import { applyHitExistingGate } from './hitExistingGate';
 import { marqueeDrawCommands, type InsertOverlayStyle } from './marquee';
 import type { InsertController } from 'interactions/gestures/insert/insert';
+import type { KeyBinding } from 'interactions/actions/useKeybinding';
 
 type ApplyBatch = (ops: Op[], label: string) => void;
 
 export interface DragInsertToolConfig<TNode extends { id: string }, TPose> {
   id: string;
   cursor: string;
-  keybinding?: string;
+  keybinding?: KeyBinding;
   controller: InsertController<TNode, TPose>;
   overlayId: string;
   overlayLabel: string;

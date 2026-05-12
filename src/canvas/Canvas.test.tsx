@@ -641,7 +641,7 @@ describe('Canvas tools mode', () => {
       function Test() {
         const delTool = defineTool({
           id: 'delete',
-          keybinding: 'Backspace',
+          keybinding: { key: 'Backspace' },
           keyboard: {
             onDown: (_e) => 'claim',
           },

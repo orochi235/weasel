@@ -233,7 +233,7 @@ export function App() {
     registry: { select, insert, hand, text, pen },
     ambient: [wheelZoom, wheelPan, keyZoom],
   });
-  useKeybindings(tools, { overrides: { v: 'select', V: 'select', r: 'insert', R: 'insert' } });
+  useKeybindings(tools, { overrides: { select: { key: 'V' }, insert: { key: 'R' } } });
   useSelectAll({
     getSelection: () => [...selection.current],
     listAll: () => itemsRef.current.map((o) => asNodeId(o.id)),

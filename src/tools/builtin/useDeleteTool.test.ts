@@ -25,11 +25,11 @@ function keyEvent(key: string): KeyboardEvent {
 }
 
 describe('useDeleteTool', () => {
-  it('returns a Tool with id "delete" and keybinding "Backspace"', () => {
+  it('returns a Tool with id "delete" and no switch keybinding (handles Backspace/Delete via the keyboard channel)', () => {
     const adapter = { getSelection: () => ['a'], getNode: () => ({ id: 'a' }), applyBatch: vi.fn() } as any;
     const { result } = renderHook(() => useDeleteTool(adapter));
     expect(result.current.id).toBe('delete');
-    expect(result.current.keybinding).toBe('Backspace');
+    expect(result.current.keybinding).toBeUndefined();
     expect(result.current.keyboard?.onDown).toBeDefined();
   });
 

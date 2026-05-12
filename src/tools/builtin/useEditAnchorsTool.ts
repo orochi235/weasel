@@ -7,6 +7,7 @@ import {
   createAnchorEditOverlayLayer,
   type AnchorEditOverlayOpts,
 } from 'interactions/gestures/edit-anchors';
+import type { KeyBinding } from 'interactions/actions/useKeybinding';
 
 export interface EditAnchorsScratch {
   /** Captured on pointer.onDown when the down landed on an anchor or
@@ -17,8 +18,8 @@ export interface EditAnchorsScratch {
 export interface UseEditAnchorsToolOptions {
   /** Tool id. Default `'edit-anchors'`. */
   id?: string;
-  /** Keybinding. Default `'A'` (matches Illustrator's Direct Selection). */
-  keybinding?: string;
+  /** Keybinding. Default `{ key: 'A' }` (matches Illustrator's Direct Selection). */
+  keybinding?: KeyBinding;
   /** Cursor. Default `'default'`. */
   cursor?: string;
   /** Visual style overrides for the anchor-edit overlay. The `getOverlay`
@@ -64,7 +65,7 @@ export function useEditAnchorsTool<TNode extends { id: string }>(
 
     return defineTool<EditAnchorsScratch>({
       id: optsRef.current.id ?? 'edit-anchors',
-      keybinding: optsRef.current.keybinding ?? 'A',
+      keybinding: optsRef.current.keybinding ?? { key: 'A' },
       cursor: optsRef.current.cursor ?? 'default',
       overlay,
       initScratch: () => ({ pendingStart: null }),

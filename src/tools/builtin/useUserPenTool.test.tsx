@@ -69,7 +69,7 @@ describe('useUserPenTool', () => {
   it('declares id "pen", keybinding P, and a cursor function', () => {
     const { tool } = setup();
     expect(tool.id).toBe('pen');
-    expect(tool.keybinding).toBe('P');
+    expect(tool.keybinding).toEqual({ key: 'P' });
     expect(typeof tool.cursor).toBe('function');
   });
 

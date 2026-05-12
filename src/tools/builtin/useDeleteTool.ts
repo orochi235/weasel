@@ -5,22 +5,20 @@ import type { Tool } from '../types';
 
 export interface UseDeleteToolOptions extends UseDeleteOptions {}
 
-/** Always-on Tool wrapping `useDelete`. Declares its own keybinding
- *  (`Backspace`); also handles `Delete` inside the handler since `Tool.keybinding`
- *  is single-valued. The legacy hook's document-level keybinding is suppressed
- *  by passing `enableKeyboard: false` — the dispatcher fires this tool instead. */
+/** Always-on Tool wrapping `useDelete`. Handles Backspace and Delete via
+ *  the keyboard channel (fired on every ambient-slot tool by the dispatcher).
+ *  The legacy hook's document-level keybinding is suppressed by passing
+ *  `enableKeyboard: false`. */
 export function useDeleteTool(
   adapter: DeleteAdapter,
   options: UseDeleteToolOptions = {},
 ): Tool<undefined> {
-  // enableKeyboard: false — the Tool owns its keybinding via the dispatcher.
   const ctl = useDelete(adapter, { ...options, enableKeyboard: false });
 
   return useMemo(
     () =>
       defineTool({
         id: 'delete',
-        keybinding: 'Backspace',
         keyboard: {
           onDown: (e) => {
             if (e.key !== 'Backspace' && e.key !== 'Delete') return 'pass';

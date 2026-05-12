@@ -30,7 +30,7 @@ describe('useHandTool', () => {
   it('declares H keybinding and space hotkey trigger', () => {
     const { result } = renderHook(() => useHandTool());
     expect(result.current.id).toBe('hand');
-    expect(result.current.keybinding).toBe('H');
+    expect(result.current.keybinding).toEqual({ key: 'H' });
     expect(result.current.hotkey).toBe('space');
   });
 

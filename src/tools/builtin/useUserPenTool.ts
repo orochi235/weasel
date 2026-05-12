@@ -223,7 +223,7 @@ export function useUserPenTool<TPose>(
 
     return defineTool<PenScratch>({
       id: 'pen',
-      keybinding: 'P',
+      keybinding: { key: 'P' },
       cursor: (ctx) => (ctx.scratch?.closeHintActive ? 'pointer' : 'crosshair'),
       initScratch: () => scratchRef.current!,
 

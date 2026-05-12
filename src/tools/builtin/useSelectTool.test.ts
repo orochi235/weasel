@@ -50,7 +50,7 @@ describe('useSelectTool', () => {
       }),
     );
     expect(result.current.id).toBe('select');
-    expect(result.current.keybinding).toBe('V');
+    expect(result.current.keybinding).toEqual({ key: 'V' });
     expect(result.current.cursor).toBe('default');
   });
 

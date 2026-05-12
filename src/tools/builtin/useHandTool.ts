@@ -48,7 +48,7 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | n
     () =>
       defineTool<HandScratch | null>({
         id: 'hand',
-        keybinding: 'H',
+        keybinding: { key: 'H' },
         hotkey: 'space',
         initScratch: () => null,
         cursor: (ctx) => (ctx.scratch ? 'grabbing' : 'grab'),

@@ -9,7 +9,7 @@ describe('useTextTool — declarations', () => {
       useTextTool({ pointInsert: () => ({ id: 't', x: 0, y: 0, width: 0, height: 0, text: '' }) }),
     );
     expect(result.current.id).toBe('text');
-    expect(result.current.keybinding).toBe('T');
+    expect(result.current.keybinding).toEqual({ key: 'T' });
     expect(result.current.cursor).toBe('text');
   });
 

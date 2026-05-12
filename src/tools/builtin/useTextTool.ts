@@ -51,7 +51,7 @@ export function useTextTool<TNode extends { id: string }>(
 
   const { tool } = defineDragInsertTool({
     id: 'text',
-    keybinding: 'T',
+    keybinding: { key: 'T' },
     cursor: 'text',
     controller,
     overlayId: 'text-overlay',

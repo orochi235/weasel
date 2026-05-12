@@ -1,13 +1,18 @@
 // src/tools/useKeybindings.ts
 import { useEffect, useRef } from 'react';
-import { isEditableTarget } from 'interactions/actions/useKeybinding';
+import {
+  isEditableTarget,
+  matchesKeyBinding,
+  type KeyBinding,
+} from 'interactions/actions/useKeybinding';
 import type { ToolsApi } from './useTools';
 import type { HotkeyTrigger } from './types';
 
 export interface UseKeybindingsOptions {
-  /** Override map: physical key → tool id. Wins over the tool's declared
-   *  keybinding. Pass `null` as the value to unbind a key entirely. */
-  overrides?: Record<string, string | null>;
+  /** Per-tool keybinding override, keyed by tool id. Wins over the tool's
+   *  declared `keybinding`. Pass `null` as the value to unbind the tool
+   *  entirely. Tools not present in this map keep their declared binding. */
+  overrides?: Record<string, KeyBinding | null>;
   /** Skip all wiring. Useful for touch apps or test isolation. */
   disable?: boolean;
   /** Tool id Escape switches to. When omitted, defaults to whatever
@@ -40,14 +45,31 @@ export function useKeybindings(
   useEffect(() => {
     if (optionsRef.current.disable) return;
 
-    function resolveSwitch(key: string): string | null {
-      const o = optionsRef.current.overrides;
-      if (o && key in o) return o[key]; // explicit override (may be null = unbind)
+    /** Resolve a keydown event to a tool id. Overrides take priority: an
+     *  overridden tool's `KeyBinding` is checked first, and an overridden
+     *  tool's *declared* binding is suppressed entirely (so remapping pen
+     *  to V silences select's declared V). Pass `null` as an override value
+     *  to unbind a tool without rebinding it. */
+    function resolveSwitch(e: KeyboardEvent): string | null {
+      const overrides = optionsRef.current.overrides;
       const reg = toolsRef.current.registry;
-      for (const id in reg) {
-        if (reg[id].keybinding && reg[id].keybinding!.toLowerCase() === key.toLowerCase()) {
-          return id;
+
+      // Phase 1: overrides take priority.
+      if (overrides) {
+        for (const id in overrides) {
+          if (!(id in reg)) continue;
+          const ov = overrides[id];
+          if (ov && matchesKeyBinding(e, ov)) return id;
         }
+      }
+
+      // Phase 2: declared bindings, skipping any tool with an override entry
+      // (whether re-binding or null-unbinding).
+      for (const id in reg) {
+        if (overrides && id in overrides) continue;
+        const binding = reg[id].keybinding;
+        if (!binding) continue;
+        if (matchesKeyBinding(e, binding)) return id;
       }
       return null;
     }
@@ -65,14 +87,10 @@ export function useKeybindings(
     function onKeyDown(e: KeyboardEvent) {
       if (isEditableTarget(e.target)) return;
 
-      // Let system/browser shortcuts through (Cmd-R reload, Cmd-S save,
-      // Cmd-+/- zoom, Ctrl-Shift-anything, etc.) — these never map to
-      // tool switches. Modifier engagement still uses bare modifier keys
-      // (handled below) which arrive without a meta/ctrl combo.
-      if (e.metaKey || e.ctrlKey) return;
-
       // Modifier engagement first — modifier keys (space, alt, etc.)
-      // never double as switch keybindings.
+      // never double as switch keybindings. Bare modifier keys arrive
+      // without a meta/ctrl combo, so this also bypasses the system-
+      // shortcut concern below.
       const hotkeyTool = resolveHotkeyEngage(e.key);
       if (hotkeyTool) {
         toolsRef.current.engageHotkey(hotkeyTool);
@@ -92,7 +110,7 @@ export function useKeybindings(
         }
       }
 
-      const switchTo = resolveSwitch(e.key);
+      const switchTo = resolveSwitch(e);
       if (switchTo) {
         e.preventDefault();
         toolsRef.current.setActive(switchTo);

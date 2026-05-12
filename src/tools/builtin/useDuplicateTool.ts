@@ -18,7 +18,6 @@ export function useDuplicateTool<TPose>(
     () =>
       defineTool({
         id: 'duplicate',
-        keybinding: 'meta+d',
         keyboard: {
           onDown: (e) => {
             const mod = e.metaKey || e.ctrlKey;

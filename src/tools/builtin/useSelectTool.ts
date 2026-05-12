@@ -777,7 +777,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     () =>
       defineTool<SelectScratch>({
         id: 'select',
-        keybinding: 'V',
+        keybinding: { key: 'V' },
         cursor: 'default',
         overlay,
         previewPose,

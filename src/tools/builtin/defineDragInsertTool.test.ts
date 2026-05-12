@@ -28,7 +28,7 @@ describe('defineDragInsertTool', () => {
       defineDragInsertTool({
         id: 'x',
         cursor: 'crosshair',
-        keybinding: 'X',
+        keybinding: { key: 'X' },
         controller,
         overlayId: 'x-overlay',
         overlayLabel: 'X overlay',
@@ -37,7 +37,7 @@ describe('defineDragInsertTool', () => {
     );
     expect(result.current.tool.id).toBe('x');
     expect(result.current.tool.cursor).toBe('crosshair');
-    expect(result.current.tool.keybinding).toBe('X');
+    expect(result.current.tool.keybinding).toEqual({ key: 'X' });
     expect(result.current.tool.overlay?.id).toBe('x-overlay');
   });
 

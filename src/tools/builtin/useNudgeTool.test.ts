@@ -34,12 +34,12 @@ const noopAdapter = {
 } as any;
 
 describe('useNudgeTool', () => {
-  it('declares id "nudge" and an arrow keybinding', () => {
+  it('declares id "nudge" and no switch keybinding (handles arrow keys via the keyboard channel)', () => {
     const { result } = renderHook(() =>
       useNudgeTool<XYPose>(noopAdapter, { translatePose: translateXY }),
     );
     expect(result.current.id).toBe('nudge');
-    expect(result.current.keybinding).toBe('ArrowUp');
+    expect(result.current.keybinding).toBeUndefined();
   });
 
   it('claims arrow keys; passes others', () => {

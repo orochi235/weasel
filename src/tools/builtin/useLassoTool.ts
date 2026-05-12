@@ -12,6 +12,7 @@ import {
 } from 'interactions/gestures/lasso-select/lassoSelect';
 import { selectFromLasso } from 'interactions/gestures/lasso-select/behaviors/selectFromLasso';
 import type { LassoHitMode, LassoSelectAdapter } from 'core/adapters/types';
+import type { KeyBinding } from 'interactions/actions/useKeybinding';
 
 export interface UseLassoToolOptions extends Pick<UseLassoSelectOptions,
   'behaviors' | 'transient' | 'label' | 'onGestureStart' | 'onGestureEnd' |
@@ -19,8 +20,8 @@ export interface UseLassoToolOptions extends Pick<UseLassoSelectOptions,
   /** Hit mode forwarded to the default `selectFromLasso` behavior when no
    *  explicit `behaviors` array is passed. Default 'intersect'. */
   mode?: LassoHitMode;
-  /** Override the default keybinding ('L'). Pass `null` to omit. */
-  keybinding?: string | null;
+  /** Override the default keybinding (`{ key: 'L' }`). Pass `null` to omit. */
+  keybinding?: KeyBinding | null;
 }
 
 const STROKE = '#a48bd4';
@@ -94,7 +95,7 @@ export function useLassoTool(
 
     return defineTool<undefined>({
       id: 'lasso',
-      ...(options.keybinding === null ? {} : { keybinding: options.keybinding ?? 'L' }),
+      ...(options.keybinding === null ? {} : { keybinding: options.keybinding ?? { key: 'L' } }),
       cursor: 'crosshair',
       initScratch: () => undefined,
       overlay,

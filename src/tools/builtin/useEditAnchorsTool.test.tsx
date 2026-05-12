@@ -76,7 +76,7 @@ describe('useEditAnchorsTool', () => {
   it('declares id, keybinding A, default cursor, and an overlay layer', () => {
     const { tool } = setup();
     expect(tool.id).toBe('edit-anchors');
-    expect(tool.keybinding).toBe('A');
+    expect(tool.keybinding).toEqual({ key: 'A' });
     expect(tool.cursor).toBe('default');
     expect(tool.overlay).toBeDefined();
     expect(tool.overlay!.id).toBe('anchor-edit-overlay');
@@ -86,10 +86,10 @@ describe('useEditAnchorsTool', () => {
     const adapter = makeAdapter(makePath()).adapter;
     const { result } = renderHook(() => {
       const c = useEditAnchors(adapter, { editingId: 'p' });
-      return useEditAnchorsTool(c, { id: 'pe', keybinding: 'E', cursor: 'crosshair' });
+      return useEditAnchorsTool(c, { id: 'pe', keybinding: { key: 'E' }, cursor: 'crosshair' });
     });
     expect(result.current.id).toBe('pe');
-    expect(result.current.keybinding).toBe('E');
+    expect(result.current.keybinding).toEqual({ key: 'E' });
     expect(result.current.cursor).toBe('crosshair');
   });
 

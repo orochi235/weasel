@@ -56,6 +56,31 @@ function keyMatches(eventKey: string, spec: string | readonly string[]): boolean
 }
 
 /**
+ * Pure matcher for `KeyBinding` against a `KeyboardEvent`. Only checks
+ * key + modifier policy — does NOT apply the editable-target skip or
+ * `preventDefault`. Shared by `useKeybinding` (action layer) and
+ * `useKeybindings` (tool dispatcher) so the rules can't drift.
+ */
+export function matchesKeyBinding(e: KeyboardEvent, b: KeyBinding): boolean {
+  if (!keyMatches(e.key, b.key)) return false;
+
+  const wantsMod = b.mod === true;
+  const hasMod = e.metaKey || e.ctrlKey;
+  if (wantsMod !== hasMod) return false;
+
+  const wantsAlt = b.alt === true;
+  if (wantsAlt !== e.altKey) return false;
+
+  const shift = b.shift;
+  if (shift === undefined || shift === false) {
+    if (e.shiftKey) return false;
+  } else if (shift === true) {
+    if (!e.shiftKey) return false;
+  }
+  return true;
+}
+
+/**
  * Bind a keyboard handler on `document`, with the conventional skip-rules
  * applied. Re-attaches when `binding.enabled` flips; the handler ref is
  * always read fresh so callers can use closures without re-binding.
@@ -75,22 +100,7 @@ export function useKeybinding(
     if (!enabled) return;
     const onKey = (e: KeyboardEvent) => {
       const b = bindingRef.current;
-      if (!keyMatches(e.key, b.key)) return;
-
-      const wantsMod = b.mod === true;
-      const hasMod = e.metaKey || e.ctrlKey;
-      if (wantsMod !== hasMod) return;
-
-      const wantsAlt = b.alt === true;
-      if (wantsAlt !== e.altKey) return;
-
-      const shift = b.shift;
-      if (shift === undefined || shift === false) {
-        if (e.shiftKey) return;
-      } else if (shift === true) {
-        if (!e.shiftKey) return;
-      }
-      // 'optional' — no check.
+      if (!matchesKeyBinding(e, b)) return;
 
       const skipEditable = b.skipInEditable ?? true;
       if (skipEditable && isEditableTarget(e.target)) return;

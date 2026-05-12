@@ -15,8 +15,8 @@ describe('Phase 1 integration: define → use → key → canvas', () => {
       const tools = useTools({
         active: 'select',
         registry: {
-          select: defineTool({ id: 'select', keybinding: 'v', drag: { onStart: selectDrag } }),
-          pen:    defineTool({ id: 'pen',    keybinding: 'p', drag: { onStart: penDrag } }),
+          select: defineTool({ id: 'select', keybinding: { key: 'v' }, drag: { onStart: selectDrag } }),
+          pen:    defineTool({ id: 'pen',    keybinding: { key: 'p' }, drag: { onStart: penDrag } }),
         },
       });
       useKeybindings(tools);

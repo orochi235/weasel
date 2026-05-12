@@ -19,7 +19,6 @@ export function useUndoRedoTool(
     () =>
       defineTool({
         id: 'undoRedo',
-        keybinding: 'meta+z',
         keyboard: {
           onDown: (e) => {
             const mod = e.metaKey || e.ctrlKey;

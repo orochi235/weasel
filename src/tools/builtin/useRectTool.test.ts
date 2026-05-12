@@ -41,7 +41,7 @@ describe('useRectTool', () => {
   it('has id rect and keybinding R', () => {
     const { result } = renderHook(() => useRectTool({ create: () => null }));
     expect(result.current.id).toBe('rect');
-    expect(result.current.keybinding).toBe('R');
+    expect(result.current.keybinding).toEqual({ key: 'R' });
     expect(result.current.cursor).toBe('crosshair');
   });
 

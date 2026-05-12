@@ -29,7 +29,7 @@ export interface SelectWithAnchorEditAnchorsOptions {
   editLabel?: UseEditAnchorsOptions['editLabel'];
   /** Tool id for the edit-anchors slot. Default `'edit-anchors'`. */
   toolId?: UseEditAnchorsToolOptions['id'];
-  /** Tool keybinding. Default `'A'`. */
+  /** Tool keybinding. Default `{ key: 'A' }`. */
   keybinding?: UseEditAnchorsToolOptions['keybinding'];
   /** Tool cursor. Default `'default'`. */
   cursor?: UseEditAnchorsToolOptions['cursor'];
