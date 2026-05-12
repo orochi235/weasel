@@ -44,10 +44,54 @@ export function schneiderFit(
     return b.build();
   }
 
-  const fitted = fitOneCubic(samples);
-  b.curveTo(fitted.cp1.x, fitted.cp1.y, fitted.cp2.x, fitted.cp2.y, fitted.end.x, fitted.end.y);
-  void errorTolerance;
+  fitRecursive(samples, errorTolerance, b);
   return b.build();
+}
+
+function fitRecursive(
+  samples: ReadonlyArray<SchneiderPoint>,
+  errorTolerance: number,
+  b: PathBuilder,
+): void {
+  if (samples.length === 2) {
+    const fit = fitOneCubic(samples);
+    b.curveTo(fit.cp1.x, fit.cp1.y, fit.cp2.x, fit.cp2.y, fit.end.x, fit.end.y);
+    return;
+  }
+  const fit = fitOneCubic(samples);
+  const { worstIndex, worstError } = measureError(samples, fit);
+  if (worstError <= errorTolerance * errorTolerance) {
+    b.curveTo(fit.cp1.x, fit.cp1.y, fit.cp2.x, fit.cp2.y, fit.end.x, fit.end.y);
+    return;
+  }
+  // Split. Both halves include the split sample so endpoints meet.
+  const left = samples.slice(0, worstIndex + 1);
+  const right = samples.slice(worstIndex);
+  fitRecursive(left, errorTolerance, b);
+  fitRecursive(right, errorTolerance, b);
+}
+
+function measureError(
+  samples: ReadonlyArray<SchneiderPoint>,
+  fit: CubicFit,
+): { worstIndex: number; worstError: number } {
+  let worstIndex = 1;
+  let worstError = 0;
+  const a = samples[0];
+  for (let i = 1; i < samples.length - 1; i++) {
+    const t = i / (samples.length - 1);
+    const u = 1 - t;
+    const qx = u*u*u*a.x + 3*u*u*t*fit.cp1.x + 3*u*t*t*fit.cp2.x + t*t*t*fit.end.x;
+    const qy = u*u*u*a.y + 3*u*u*t*fit.cp1.y + 3*u*t*t*fit.cp2.y + t*t*t*fit.end.y;
+    const dx = samples[i].x - qx;
+    const dy = samples[i].y - qy;
+    const sq = dx * dx + dy * dy;
+    if (sq > worstError) {
+      worstError = sq;
+      worstIndex = i;
+    }
+  }
+  return { worstIndex, worstError };
 }
 
 interface CubicFit {

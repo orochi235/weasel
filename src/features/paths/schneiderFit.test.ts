@@ -131,3 +131,46 @@ describe('schneiderFit — iterative reparameterization', () => {
     expect(maxErrorAgainstCubic(samples, out as PolygonPath)).toBeLessThanOrEqual(7.0);
   });
 });
+
+describe('schneiderFit — recursive split', () => {
+  it('fits an S-curve within tolerance using multiple cubics', () => {
+    // Sine S-curve with two inflection points; a single cubic can't
+    // represent it within 1.0 worldunit tolerance.
+    const samples: { x: number; y: number }[] = [];
+    for (let i = 0; i <= 40; i++) {
+      const t = i / 40;
+      samples.push({ x: t * 200, y: 40 * Math.sin(t * 2 * Math.PI) });
+    }
+    const out = schneiderFit(samples, 1.0) as PolygonPath;
+    // Expect at least 2 cubic segments (split fired).
+    const cubicCount = Array.from(out.commands).filter((c) => c === 2 /* PATH_C */).length;
+    expect(cubicCount).toBeGreaterThanOrEqual(2);
+    expect(maxErrorAgainstCubic(samples, out)).toBeLessThanOrEqual(1.0);
+  });
+
+  it('endpoint anchors of the multi-segment fit still match first/last sample', () => {
+    const samples: { x: number; y: number }[] = [];
+    for (let i = 0; i <= 40; i++) {
+      const t = i / 40;
+      samples.push({ x: t * 200, y: 40 * Math.sin(t * 2 * Math.PI) });
+    }
+    const out = schneiderFit(samples, 1.0) as PolygonPath;
+    expect(out.coords[0]).toBeCloseTo(0);
+    expect(out.coords[1]).toBeCloseTo(0);
+    const lastTwo = Array.from(out.coords.slice(-2));
+    expect(lastTwo[0]).toBeCloseTo(samples[samples.length - 1].x);
+    expect(lastTwo[1]).toBeCloseTo(samples[samples.length - 1].y);
+  });
+
+  it('fits a 270° arc within the original 2.0 tolerance using multiple cubics', () => {
+    // Re-test the Task 6 reparam input — now with split available, should
+    // hit the original spec tolerance of 2.0.
+    const samples: { x: number; y: number }[] = [];
+    for (let i = 0; i <= 24; i++) {
+      const t = (i / 24) * (3 * Math.PI / 2);
+      samples.push({ x: 50 * Math.cos(t), y: 50 * Math.sin(t) });
+    }
+    const out = schneiderFit(samples, 2.0) as PolygonPath;
+    expect(maxErrorAgainstCubic(samples, out)).toBeLessThanOrEqual(2.0);
+  });
+});
