@@ -19,6 +19,10 @@ export default defineConfig({
         replacement: resolve(__dirname, 'packages/weasel-ui/src/index.ts'),
       },
       {
+        find: '@orochi235/weasel-svg',
+        replacement: resolve(__dirname, 'packages/weasel-svg/src/index.ts'),
+      },
+      {
         find: /^@orochi235\/weasel\/(.*)$/,
         replacement: resolve(__dirname, 'src/subpaths/$1.ts'),
       },

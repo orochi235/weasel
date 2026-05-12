@@ -26,6 +26,7 @@
       "@orochi235/weasel": ["./src/index.ts"],
       "@orochi235/weasel/*": ["./src/*"],
       "@orochi235/weasel-ui": ["./packages/weasel-ui/src/index.ts"],
+      "@orochi235/weasel-svg": ["./packages/weasel-svg/src/index.ts"],
       "@orochi235/weasel-theme": ["./packages/weasel-theme/src/index.ts"],
       "@orochi235/weasel-theme/tokens.css": ["./packages/weasel-theme/src/tokens.css"],
       "core/*": ["./src/core/*"],
@@ -36,6 +37,6 @@
       "canvas/*": ["./src/canvas/*"]
     }
   },
-  "include": ["src", "demo", "apps", "packages/weasel-ui/src", "packages/weasel-hud/src", "packages/weasel-theme/src"],
+  "include": ["src", "demo", "apps", "packages/weasel-ui/src", "packages/weasel-hud/src", "packages/weasel-theme/src", "packages/weasel-svg/src"],
   "exclude": ["node_modules", "dist"]
 }
