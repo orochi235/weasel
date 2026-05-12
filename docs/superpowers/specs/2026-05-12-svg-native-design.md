@@ -45,6 +45,7 @@ The complete mapping from Swillustrator's data model to SVG encoding. Each row n
 | Text style — fill (solid) | `fill="#rrggbb"` on `<text>` | partial | ✓ | T4 |
 | Parametric origin (regular polygon, star) | `<swill:parametric kind sides cx cy r/>` adjacent to its `<path>`, OR `swill:kind="regular-polygon" swill:sides="6"` attr on the path | ✗ (Swillustrator doesn't track this internally either) | lost | deferred — additive feature |
 | Multi-page documents | `<swill:page id label transform clip-rect>` at top; each shape carries `swill:page-id` | ✗ (no UI) | first page only renders | deferred — additive feature |
+| Virtual groups (many-to-many membership) | `<swill:vgroup id name members="id1 id2 id3"/>` at top, alongside `<swill:layers>`. Real `<g>` groups stay tree-structured (single-membership); vgroups are a metadata-only overlay | ✗ (no model yet) | lost | deferred — additive feature; encoding reserved |
 | Warnings on parse | `parseSvg`'s `warnings[]` surfaced to a toast UI in Swillustrator | ✗ | n/a | T5 |
 | Doc title | `<title>` element at root | ✗ | ✓ | trivial — fold into T1 |
 
@@ -146,6 +147,7 @@ The plan that follows this spec will break these into bite-sized steps.
 
 - **Multi-page documents.** Encoding is reserved (`<swill:page>`) but no UI in Swillustrator. Defer until a real driver appears.
 - **Parametric origin tracking.** Swillustrator doesn't preserve "this was a 5-pointed star" once the tool finishes. Adding that requires modeling parametric kinds in `Obj`, which is a separate Swillustrator feature, not a format question. Reserve `<swill:parametric>` element for the future encoding.
+- **Virtual groups (many-to-many membership).** Real `<g>` groups remain tree-structured with single-membership (decided in design discussion). When Swillustrator adds a virtual-groups feature for many-to-many selection sets, the encoding is reserved as `<swill:vgroup id name members="id1 id2 id3"/>` elements at the top of the document, alongside `<swill:layers>`. Virtual groups are metadata-only — they don't appear in the SVG tree, so third-party renderers see exactly the same flat shape order.
 - **Gradients / alpha / patterns.** Standard SVG features; will fold in when Swillustrator adds the UI. No format design needed — they're standard.
 - **Filters / masks / clip-paths.** Beyond Swillustrator's roadmap. weasel-svg will continue to emit `warnings[]` on import of files containing these; we don't preserve them.
 - **Blend modes.** `<g style="mix-blend-mode:multiply">` is partial SVG. Swillustrator doesn't use these; defer to a later spec if a feature drives it.
