@@ -76,6 +76,9 @@ import { PointSnapDemo } from './demos/PointSnapDemo';
 import PointSnapDemoFull from './demos/PointSnapDemo.tsx?raw';
 import { ShapeToolsDemo } from './demos/ShapeToolsDemo';
 import ShapeToolsDemoFull from './demos/ShapeToolsDemo.tsx?raw';
+import { ToolReflectionDemo } from './demos/ToolReflectionDemo';
+import ToolReflectionDemoFull from './demos/ToolReflectionDemo.tsx?raw';
+import ToolReflectionDemoCss from './demos/ToolReflectionDemo.module.css?raw';
 
 // Scene-data JSON for demos that load via `sceneFromJSON`. Surfaced alongside
 // the TSX in the source pane so consumers can see the format.
@@ -494,6 +497,17 @@ export const DEMOS: DemoEntry[] = [
     Component: DebugOverlayDemo,
     full: DebugOverlayDemoFull,
     path: 'demo/demos/DebugOverlayDemo.tsx',
+  },
+  {
+    id: 'tool-reflection',
+    title: 'Tool reflection',
+    category: 'Diagnostics',
+    description: 'The three routing-reflection consumers operating on stub ToolDefs that mirror the gesture surface of useSelectTool + useHandTool. Action registry (left) flattens every routed slot — phase × gesture × target × modifier — into a single table. Conflict detector (middle) walks the same set looking for exact-tuple overlaps across tools; the stubs here register cleanly so it reports none. Canvas (right) runs the real tools so you can interact with the scene. Live ToolDebugOverlay coverage is gated on a SceneCanvas dispatcher hook — see Phase 4 follow-ups.',
+    hint: 'Read the registry and conflict columns; click / drag rects to exercise the underlying tools.',
+    Component: ToolReflectionDemo,
+    full: ToolReflectionDemoFull,
+    path: 'demo/demos/ToolReflectionDemo.tsx',
+    extras: [{ path: 'demo/demos/ToolReflectionDemo.module.css', code: ToolReflectionDemoCss, language: 'css' }],
   },
 
   // ─── weasel-ui ────────────────────────────────────────────────────────────
