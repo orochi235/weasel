@@ -43,6 +43,7 @@ import {
   createTextLayer,
   createPenPreviewLayer,
   createPathLayer,
+  scalePathToBounds,
   translatePath,
   createDeleteOp,
   createSetTextOp,
@@ -389,6 +390,20 @@ export function App() {
           const fontSize = Math.max(8, Math.round(pose.height * 0.7));
           const style = { ...(prev.style ?? {}), fontSize };
           itemsRef.current[i] = { ...prev, ...pose, style };
+        } else if (prev.kind === 'path') {
+          // Rescale the polygon geometry to fit the new pose so resize
+          // handles actually deform the curve, not just the bounding box.
+          // Translation-only changes skip the scale (faster path + avoids
+          // sub-pixel drift through repeated multiplies).
+          const moved = pose.width !== prev.width || pose.height !== prev.height;
+          const path = moved
+            ? scalePathToBounds(prev.path, {
+                kind: 'rect',
+                x: pose.x, y: pose.y,
+                width: pose.width, height: pose.height,
+              }) as PolygonPath
+            : translatePath(prev.path, pose.x - prev.x, pose.y - prev.y) as PolygonPath;
+          itemsRef.current[i] = { ...prev, ...pose, path };
         } else {
           itemsRef.current[i] = { ...prev, ...pose };
         }
@@ -934,13 +949,21 @@ export function App() {
     label: 'Paths',
     getNodes: () => itemsRef.current.filter((o): o is PathObj => o.kind === 'path'),
     getPath: (n) => {
-      // Consult the active tool's previewPose so a drag/move shows the
-      // path at its in-flight position. Path geometry is in world coords
-      // anchored at (n.x, n.y); we translate by the preview delta. v1
-      // ignores width/height changes (no live resize for paths yet).
+      // Consult the active tool's previewPose so a drag/move/resize shows
+      // the path at its in-flight pose. Pure translation takes the fast
+      // path; any dimension change goes through scalePathToBounds so the
+      // curve deforms with the handles in real time.
       const tool = tools.registry[tools.hotkeyEngaged ?? tools.active];
       const preview = tool?.previewPose?.(n.id) as Pose | undefined;
       if (!preview) return n.path;
+      const scaled = preview.width !== n.width || preview.height !== n.height;
+      if (scaled) {
+        return scalePathToBounds(n.path, {
+          kind: 'rect',
+          x: preview.x, y: preview.y,
+          width: preview.width, height: preview.height,
+        });
+      }
       const dx = preview.x - n.x;
       const dy = preview.y - n.y;
       return dx === 0 && dy === 0 ? n.path : translatePath(n.path, dx, dy);
