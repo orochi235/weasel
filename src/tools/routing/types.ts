@@ -1,4 +1,4 @@
-import type { ToolCtx, ToolPresentation } from '../types';
+import type { ToolCtx, ToolPresentation, HotkeyTrigger } from '../types';
 import type { KeyBinding } from '../../interactions/actions/useKeybinding';
 import type { RenderLayer } from '../../core/layers/render';
 import type { Result } from './result';
@@ -28,6 +28,10 @@ export interface ToolDef<TScratch = void> {
   id: string;
   presentation?: ToolPresentation<TScratch>;
   keybinding?: KeyBinding;
+  /** Hotkey-slot trigger key. While this key is held, the tool engages
+   *  in the hotkey slot regardless of the active tool. Mirrors the
+   *  imperative `Tool.hotkey` field — see `HotkeyTrigger` in `tools/types`. */
+  hotkey?: HotkeyTrigger;
   onActivate?:   (ctx: ToolCtx<TScratch>) => void;
   onDeactivate?: (ctx: ToolCtx<TScratch>) => void;
   cursor?: string | ((ctx: ToolCtx<TScratch>) => string);
