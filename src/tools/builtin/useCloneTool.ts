@@ -1,5 +1,6 @@
 import { useMemo, useReducer, useRef } from 'react';
-import { defineTool } from '../defineTool';
+import { defineTool, begin, claim, none } from '../routing';
+import type { ActionFn } from '../routing';
 import type { Tool } from '../types';
 import type { RenderLayer } from 'core/layers/render';
 import type { InsertAdapter } from 'core/adapters/types';
@@ -18,7 +19,7 @@ export interface CloneOverlayItem {
 }
 
 export interface CloneScratch {
-  /** Id captured by pickBest on pointer.onDown; passed to clone.start at
+  /** Id captured by pickBest on pointerDown; passed to clone.start at
    *  threshold-cross. `null` when the down didn't land on a body. */
   pendingId: string | null;
   /** Modifier snapshot at down — replayed into clone.start so the
@@ -114,10 +115,6 @@ export function useCloneTool<T extends { id: string }, TPose = unknown>(
   });
   const cloneRef = useRef(clone);
   cloneRef.current = clone;
-  // Synchronous mirror of clone.isCloning. The hook's `isCloning` is React
-  // state and won't reflect a same-tick start() call until re-render, but
-  // the tool dispatcher fires onStart→onMove→onEnd within a single tick.
-  const activeRef = useRef(false);
 
   return useMemo(() => {
     // Default hitBody: walk the adapter's objects back-to-front and return
@@ -201,64 +198,90 @@ export function useCloneTool<T extends { id: string }, TPose = unknown>(
       },
     };
 
+    // pointerDown classifier — runs the tool's own pickBest regardless
+    // of ctx.target.kind. The dispatcher-side `target` is derived from
+    // Canvas's optional pickEvery prop, which may be unset or wired to
+    // a different predicate than the tool's. The pre-routing imperative
+    // shim always consulted its own pickBest; we preserve that here by
+    // routing every key through one handler that does its own hit test.
+    //
+    // Returns `none()` (passes through) when:
+    //   - no behavior activates for the current modifiers (plain drag
+    //     should fall through to the active-slot tool, e.g. select-move).
+    //   - pickBest finds no cloneable body under the pointer.
+    //
+    // Otherwise returns `begin({scratch})` to open engaged phase with the
+    // pendingId/pendingMods captured at down time. No continuations on
+    // this BeginSpec — `drag.onStart` (below) returns its own `begin()`
+    // with onMove/onRelease/onCancel; the factory's activeSpec slot is
+    // overwritten by the second begin().
+    const onPointerDown: ActionFn<CloneScratch> = (ctx) => {
+      const mods = ctx.modifiers;
+      const activates = optsRef.current.behaviors.some((b) => b.activates(mods));
+      if (!activates) return none<CloneScratch>();
+      const pick = optsRef.current.pickBest ?? defaultPickBest;
+      const id = pick(ctx.worldX, ctx.worldY);
+      if (id === null) return none<CloneScratch>();
+      return begin<CloneScratch>({
+        scratch: { pendingId: id, pendingMods: { ...mods } },
+      });
+    };
+
     return defineTool<CloneScratch>({
       id: optsRef.current.id ?? 'clone',
       cursor: optsRef.current.cursor ?? 'copy',
-      overlay,
-      initScratch: () => ({ pendingId: null, pendingMods: null }),
+      initial: {
+        overlay: () => overlay,
 
-      pointer: {
-        onDown: (_e, ctx) => {
-          const mods = ctx.modifiers;
-          const activates = optsRef.current.behaviors.some((b) => b.activates(mods));
-          if (!activates) return 'pass';
-          const pick = optsRef.current.pickBest ?? defaultPickBest;
-          const id = pick(ctx.worldX, ctx.worldY);
-          if (id === null) return 'pass';
-          ctx.scratch.pendingId = id;
-          ctx.scratch.pendingMods = { ...mods };
-          return 'claim';
+        // Route every key through the classifier — the tool runs its own
+        // pickBest regardless of `ctx.target.kind`. Same pattern useSelectTool
+        // adopted in Phase 4.5: classifier-style tools that own their hit
+        // test register at all node kinds plus 'empty', then dispatch
+        // internally.
+        pointerDown: {
+          rect:  onPointerDown,
+          text:  onPointerDown,
+          path:  onPointerDown,
+          '*':   onPointerDown,
+          empty: onPointerDown,
         },
-      },
 
-      drag: {
-        onStart: (_e, ctx) => {
-          const { pendingId, pendingMods } = ctx.scratch;
-          if (pendingId === null || pendingMods === null) return 'pass';
-          let ids: string[] = [pendingId];
+        // Drag onStart: replays the pendingId/pendingMods captured at
+        // pointerDown into clone.start, then opens a fresh engaged spec
+        // with onMove/onRelease/onCancel continuations. The previous
+        // pointerDown begin() had no continuations; this second begin()
+        // replaces it in the factory's activeSpec slot.
+        drag: (ctx) => {
+          const s = ctx.scratch;
+          if (!s || s.pendingId === null || s.pendingMods === null) {
+            return none<CloneScratch>();
+          }
+          let ids: string[] = [s.pendingId];
           if (optsRef.current.cloneSelection) {
             const sel = adapterRef.current.getSelection?.() ?? [];
-            if (sel.includes(pendingId)) ids = [...sel];
+            if (sel.includes(s.pendingId)) ids = [...sel];
           }
           cloneRef.current.start(
             ctx.worldX,
             ctx.worldY,
             ids,
             optsRef.current.layer ?? 'structures',
-            pendingMods,
+            s.pendingMods,
           );
-          activeRef.current = true;
-          return 'claim';
-        },
-
-        onMove: (_e, ctx) => {
-          if (!activeRef.current) return 'pass';
-          cloneRef.current.move(ctx.worldX, ctx.worldY, ctx.modifiers);
-          return 'claim';
-        },
-
-        onEnd: (_e, _ctx) => {
-          if (!activeRef.current) return 'pass';
-          cloneRef.current.end();
-          activeRef.current = false;
-          return 'claim';
-        },
-
-        onCancel: () => {
-          if (activeRef.current) {
-            cloneRef.current.cancel();
-            activeRef.current = false;
-          }
+          return begin<CloneScratch>({
+            scratch: s,
+            onMove: (c) => {
+              cloneRef.current.move(c.worldX, c.worldY, c.modifiers);
+              return claim<CloneScratch>();
+            },
+            onRelease: (_c) => {
+              cloneRef.current.end();
+              return claim<CloneScratch>();
+            },
+            onCancel: () => {
+              cloneRef.current.cancel();
+            },
+          });
         },
       },
     });
