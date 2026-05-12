@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react';
 import type { MutableRefObject } from 'react';
-import { defineTool } from '../defineTool';
+import { defineTool, claim, begin } from '../routing';
 import type { Tool, ToolPresentation } from '../types';
 import type { RenderLayer } from 'core/layers/render';
 import type { Op } from 'core/ops/types';
@@ -62,51 +62,57 @@ export function defineDragInsertTool<TNode extends { id: string }, TPose>(
     const { id, cursor, keybinding, presentation, controller, hitExisting } = config;
     const supportsClick = controller.supportsPointInsert;
     const supportsDrag = controller.supportsCommitInsert;
-    return defineTool({
+    return defineTool<undefined>({
       id,
       cursor,
       ...(keybinding ? { keybinding } : {}),
       ...(presentation ? { presentation } : {}),
-      overlay,
-      ...(supportsClick
-        ? {
-            pointer: {
-              onClick: (_e, ctx) => {
-                if (applyHitExistingGate(ctx, hitExisting)) return 'claim';
+      initial: {
+        overlay: () => overlay,
+        ...(supportsClick
+          ? {
+              click: {
+                // Universal route — fires for every target (empty, node,
+                // affordance). The hit-existing gate runs as part of the
+                // action, matching the imperative tool's "always claim,
+                // gate inside" semantics.
+                '*': (ctx) => {
+                  if (applyHitExistingGate(ctx, hitExisting)) return claim();
+                  applyOpsRef.current = ctx.applyOps;
+                  controller.start(ctx.worldX, ctx.worldY, ctx.modifiers);
+                  controller.end();
+                  applyOpsRef.current = null;
+                  return claim();
+                },
+              },
+            }
+          : {}),
+        ...(supportsDrag
+          ? {
+              drag: (ctx) => {
+                if (applyHitExistingGate(ctx, hitExisting)) return claim();
                 applyOpsRef.current = ctx.applyOps;
                 controller.start(ctx.worldX, ctx.worldY, ctx.modifiers);
-                controller.end();
-                applyOpsRef.current = null;
-                return 'claim';
+                return begin({
+                  scratch: undefined,
+                  onMove: (c) => {
+                    controller.move(c.worldX, c.worldY, c.modifiers);
+                    return claim();
+                  },
+                  onRelease: () => {
+                    controller.end();
+                    applyOpsRef.current = null;
+                    return claim();
+                  },
+                  onCancel: () => {
+                    controller.cancel();
+                    applyOpsRef.current = null;
+                  },
+                });
               },
-            },
-          }
-        : {}),
-      ...(supportsDrag
-        ? {
-            drag: {
-              onStart: (_e, ctx) => {
-                if (applyHitExistingGate(ctx, hitExisting)) return 'claim';
-                applyOpsRef.current = ctx.applyOps;
-                controller.start(ctx.worldX, ctx.worldY, ctx.modifiers);
-                return 'claim';
-              },
-              onMove: (_e, ctx) => {
-                controller.move(ctx.worldX, ctx.worldY, ctx.modifiers);
-                return 'claim';
-              },
-              onEnd: () => {
-                controller.end();
-                applyOpsRef.current = null;
-                return 'claim';
-              },
-              onCancel: () => {
-                controller.cancel();
-                applyOpsRef.current = null;
-              },
-            },
-          }
-        : {}),
+            }
+          : {}),
+      },
     });
   }, [
     config.id,

@@ -21,7 +21,11 @@ describe('useInsertTool', () => {
   it('declares id "insert" and crosshair cursor', () => {
     const { result } = renderHook(() => useInsertTool(baseAdapter, opts));
     expect(result.current.id).toBe('insert');
-    expect(result.current.cursor).toBe('crosshair');
+    // Declarative routing factory always emits cursor as a function.
+    const cursor = typeof result.current.cursor === 'function'
+      ? (result.current.cursor as (c: any) => string)(makeCtx())
+      : result.current.cursor;
+    expect(cursor).toBe('crosshair');
   });
 
   it('has no keybinding declared', () => {

@@ -3,6 +3,11 @@ import { renderHook, act } from '@testing-library/react';
 import { useTextTool } from './useTextTool';
 import { makeCtx, pe } from './testUtils';
 
+// Empty-canvas hit-target — required by the declarative-routing factory's
+// pointer.onClick path, which gates on ctx.target. The dispatcher
+// synthesizes this in production; unit tests pass it explicitly.
+const EMPTY_TARGET = { category: 'empty', kind: 'empty' } as const;
+
 describe('useTextTool — declarations', () => {
   it('declares id "text", T keybinding, text cursor', () => {
     const { result } = renderHook(() =>
@@ -10,7 +15,11 @@ describe('useTextTool — declarations', () => {
     );
     expect(result.current.id).toBe('text');
     expect(result.current.keybinding).toEqual({ key: 'T' });
-    expect(result.current.cursor).toBe('text');
+    // Declarative routing factory always emits cursor as a function.
+    const cursor = typeof result.current.cursor === 'function'
+      ? (result.current.cursor as (c: any) => string)(makeCtx())
+      : result.current.cursor;
+    expect(cursor).toBe('text');
   });
 
   it('has no drag handlers when commitInsert is omitted (click-only)', () => {
@@ -42,7 +51,7 @@ describe('useTextTool — click path', () => {
     const { result } = renderHook(() => useTextTool({ pointInsert }));
     let decision: unknown;
     act(() => {
-      decision = result.current.pointer!.onClick!(pe(), makeCtx({ worldX: 50, worldY: 75, applyOps }));
+      decision = result.current.pointer!.onClick!(pe(), makeCtx({ worldX: 50, worldY: 75, applyOps, target: EMPTY_TARGET }));
     });
     expect(decision).toBe('claim');
     expect(pointInsert).toHaveBeenCalledWith({ x: 50, y: 75 });
@@ -58,7 +67,7 @@ describe('useTextTool — click path', () => {
     const { result } = renderHook(() => useTextTool({ pointInsert }));
     let decision: unknown;
     act(() => {
-      decision = result.current.pointer!.onClick!(pe(), makeCtx({ applyOps }));
+      decision = result.current.pointer!.onClick!(pe(), makeCtx({ applyOps, target: EMPTY_TARGET }));
     });
     expect(decision).toBe('claim');
     expect(applyOps).not.toHaveBeenCalled();
@@ -74,7 +83,7 @@ describe('useTextTool — click path', () => {
     act(() => {
       decision = result.current.pointer!.onClick!(
         pe(),
-        makeCtx({ applyOps, selection: { current: [], set } as any }),
+        makeCtx({ applyOps, selection: { current: [], set } as any, target: EMPTY_TARGET }),
       );
     });
     expect(decision).toBe('claim');
@@ -90,7 +99,7 @@ describe('useTextTool — dispatch routing', () => {
     const ctxApplyBatch = vi.fn();
     const { result } = renderHook(() => useTextTool({ pointInsert }));
     act(() => {
-      result.current.pointer!.onClick!(pe(), makeCtx({ applyOps: ctxApplyBatch, worldX: 5, worldY: 6 }));
+      result.current.pointer!.onClick!(pe(), makeCtx({ applyOps: ctxApplyBatch, worldX: 5, worldY: 6, target: EMPTY_TARGET }));
     });
     expect(ctxApplyBatch).toHaveBeenCalledTimes(1);
     const [ops, label] = ctxApplyBatch.mock.calls[0] as [unknown[], string];
@@ -104,8 +113,8 @@ describe('useTextTool — dispatch routing', () => {
     const second = vi.fn();
     const { result } = renderHook(() => useTextTool({ pointInsert }));
     act(() => {
-      result.current.pointer!.onClick!(pe(), makeCtx({ applyOps: first }));
-      result.current.pointer!.onClick!(pe(), makeCtx({ applyOps: second }));
+      result.current.pointer!.onClick!(pe(), makeCtx({ applyOps: first, target: EMPTY_TARGET }));
+      result.current.pointer!.onClick!(pe(), makeCtx({ applyOps: second, target: EMPTY_TARGET }));
     });
     expect(first).toHaveBeenCalledTimes(1);
     expect(second).toHaveBeenCalledTimes(1);

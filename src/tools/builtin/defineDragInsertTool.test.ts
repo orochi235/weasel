@@ -36,7 +36,11 @@ describe('defineDragInsertTool', () => {
       }),
     );
     expect(result.current.tool.id).toBe('x');
-    expect(result.current.tool.cursor).toBe('crosshair');
+    // Declarative routing factory always emits cursor as a function.
+    const cursor = typeof result.current.tool.cursor === 'function'
+      ? (result.current.tool.cursor as (c: any) => string)({} as any)
+      : result.current.tool.cursor;
+    expect(cursor).toBe('crosshair');
     expect(result.current.tool.keybinding).toEqual({ key: 'X' });
     expect(result.current.tool.overlay?.id).toBe('x-overlay');
   });
@@ -101,6 +105,7 @@ describe('defineDragInsertTool', () => {
       selection: { set: setSel } as any,
       applyOps: vi.fn(),
       scratch: undefined,
+      target: { category: 'empty', kind: 'empty' },
     } as any;
     const verdict = result.current.tool.pointer!.onClick!({} as any, ctx);
     expect(hitExisting).toHaveBeenCalledWith({ x: 5, y: 6 });
