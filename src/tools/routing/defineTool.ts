@@ -1,8 +1,14 @@
 // src/tools/routing/defineTool.ts
-import type { Tool, ToolCtx } from '../types';
+import type { Tool, ToolCtx, ToolModifiers } from '../types';
 import type { ToolDef, PhaseDef, ActionFn } from './types';
 import type { Result, BeginSpec } from './result';
 import { resolveRoute } from './lookup';
+import { mods, type ModifierKey } from './modifiers';
+import type {
+  RouteResolvedInfo,
+  RoutePhase,
+  RouteGesture,
+} from './reflection/route-resolved';
 
 /** Translate a declarative `ToolDef<TScratch>` into the existing imperative
  *  `Tool<TScratch>` shape. The dispatcher consumes the resulting Tool as
@@ -23,6 +29,46 @@ export function defineTool<TScratch = void>(
   // set, def.initial otherwise.
   const phaseOf = (ctx: ToolCtx<TScratch>): PhaseDef<TScratch> => {
     return ctx.scratch != null && def.engaged ? def.engaged : def.initial;
+  };
+
+  // Which phase the resolution belongs to — `initial` vs `engaged` —
+  // mirrors phaseOf but yields the spec's vocabulary string for the
+  // reflection callback rather than the PhaseDef object.
+  const phaseNameOf = (ctx: ToolCtx<TScratch>): RoutePhase => {
+    return ctx.scratch != null && def.engaged ? 'engaged' : 'initial';
+  };
+
+  // Translate a ToolModifiers runtime snapshot to the canonical
+  // ModifierKey string used in route sub-tables. Kept local because the
+  // helper in lookup.ts is module-private and the reflection callback is
+  // the only consumer outside it.
+  const modifiersToCanonicalKey = (m: ToolModifiers): ModifierKey => {
+    const active: Array<'mod' | 'shift' | 'alt'> = [];
+    if (m.meta || m.ctrl) active.push('mod');
+    if (m.shift) active.push('shift');
+    if (m.alt) active.push('alt');
+    return mods(...active);
+  };
+
+  // Emit a RouteResolvedInfo snapshot through the dispatcher-supplied
+  // reporter. No-op when the dispatcher hasn't wired __reportRoute (e.g.
+  // bare-bones test harnesses).
+  const report = (
+    ctx: ToolCtx<TScratch>,
+    phase: RoutePhase,
+    gesture: RouteGesture,
+    matchedKey: string,
+  ): void => {
+    const info: RouteResolvedInfo = {
+      toolId: def.id,
+      phase,
+      gesture,
+      matchedKey,
+      modifiers: modifiersToCanonicalKey(ctx.modifiers),
+      target: ctx.target ?? { category: 'empty', kind: 'empty' },
+      timestamp: performance.now(),
+    };
+    ctx.__reportRoute?.(info);
   };
 
   // Apply a Result by mutating ctx and/or dispatching ops. Returns the
@@ -71,18 +117,19 @@ export function defineTool<TScratch = void>(
         if (!phase.click) return 'pass';
         if (!ctx.target) return 'pass';
         // Primary lookup: four-level target precedence via resolveRoute.
-        let action = resolveRoute(phase.click, ctx.target, ctx.modifiers);
+        let match = resolveRoute(phase.click, ctx.target, ctx.modifiers);
         // Universal fallback: '*' matches any hit type (including empty) when
         // no more-specific route was found. The lookup engine excludes empty
         // hits from '*' to prevent accidental catch-alls; here the factory
         // re-checks explicitly so engaged-phase catch-alls like { '*': addAnchor }
         // respond to background clicks as intended by the tool author.
-        if (!action && ctx.target.category === 'empty') {
+        if (!match && ctx.target.category === 'empty') {
           const star = phase.click['*'];
-          if (typeof star === 'function') action = star;
+          if (typeof star === 'function') match = { action: star, matchedKey: '*' };
         }
-        if (!action) return 'pass';
-        return applyResult(ctx, action(ctx, _e));
+        if (!match) return 'pass';
+        report(ctx, phaseNameOf(ctx), 'click', match.matchedKey);
+        return applyResult(ctx, match.action(ctx, _e));
       }
     : undefined;
 
@@ -96,16 +143,20 @@ export function defineTool<TScratch = void>(
         const phase = phaseOf(ctx);
         if (!phase.pointerDown) return 'pass';
         if (!ctx.target) return 'pass';
-        let action = resolveRoute(phase.pointerDown, ctx.target, ctx.modifiers);
+        let match = resolveRoute(phase.pointerDown, ctx.target, ctx.modifiers);
         // Universal fallback for empty hits — mirrors onClick semantics
         // so engaged-phase '*' routes (e.g. pen's empty-canvas anchor
         // add) respond to pointerdown on background.
-        if (!action && ctx.target.category === 'empty') {
+        if (!match && ctx.target.category === 'empty') {
           const star = phase.pointerDown['*'];
-          if (typeof star === 'function') action = star;
+          if (typeof star === 'function') match = { action: star, matchedKey: '*' };
         }
-        if (!action) return 'pass';
-        return applyResult(ctx, action(ctx, _e));
+        if (!match) return 'pass';
+        // pointerDown shares the 'click' gesture channel for reflection
+        // purposes — it's a pre-threshold classifier on the same pointer
+        // surface, and overlay consumers don't need to distinguish.
+        report(ctx, phaseNameOf(ctx), 'click', match.matchedKey);
+        return applyResult(ctx, match.action(ctx, _e));
       }
     : undefined;
 
@@ -113,13 +164,17 @@ export function defineTool<TScratch = void>(
   const dragRoute = def.initial.drag;
   const onDragStart = dragRoute
     ? (_e: PointerEvent, ctx: ToolCtx<TScratch>): 'claim' | 'pass' => {
-        const action = typeof dragRoute === 'function'
-          ? dragRoute
-          : ctx.target
-            ? resolveRoute(dragRoute, ctx.target, ctx.modifiers)
-            : undefined;
-        if (!action) return 'pass';
-        return applyResult(ctx, action(ctx, _e));
+        // Function-form drag has an implicit matched key of '*' — there's
+        // no route table to discriminate against.
+        if (typeof dragRoute === 'function') {
+          report(ctx, phaseNameOf(ctx), 'drag', '*');
+          return applyResult(ctx, dragRoute(ctx, _e));
+        }
+        if (!ctx.target) return 'pass';
+        const match = resolveRoute(dragRoute, ctx.target, ctx.modifiers);
+        if (!match) return 'pass';
+        report(ctx, phaseNameOf(ctx), 'drag', match.matchedKey);
+        return applyResult(ctx, match.action(ctx, _e));
       }
     : undefined;
 
@@ -149,12 +204,16 @@ export function defineTool<TScratch = void>(
 
   // Keyboard / wheel handlers — straightforward route lookups.
   const buildKeyHandler = (
+    gesture: 'keyDown' | 'keyUp',
     pick: (phase: PhaseDef<TScratch>) => Record<string, ActionFn<TScratch>> | undefined,
   ) => (e: KeyboardEvent, ctx: ToolCtx<TScratch>): 'claim' | 'pass' => {
     const table = pick(phaseOf(ctx));
     if (!table) return 'pass';
     const action = table[e.key];
     if (!action) return 'pass';
+    // Keyboard routes are flat string→ActionFn maps — matched key is the
+    // pressed key itself ('Escape', 'Enter', ...).
+    report(ctx, phaseNameOf(ctx), gesture, e.key);
     return applyResult(ctx, action(ctx, e));
   };
 
@@ -201,16 +260,17 @@ export function defineTool<TScratch = void>(
             const table = phaseOf(ctx).dblTap;
             if (!table) return 'pass';
             if (!ctx.target) return 'pass';
-            const action = resolveRoute(table, ctx.target, ctx.modifiers);
-            if (!action) return 'pass';
-            return applyResult(ctx, action(ctx, _e));
+            const match = resolveRoute(table, ctx.target, ctx.modifiers);
+            if (!match) return 'pass';
+            report(ctx, phaseNameOf(ctx), 'dblTap', match.matchedKey);
+            return applyResult(ctx, match.action(ctx, _e));
           },
         }
       : undefined,
     keyboard: (def.initial.keyDown || def.engaged?.keyDown || def.initial.keyUp || def.engaged?.keyUp)
       ? {
-          onDown: buildKeyHandler((p) => p.keyDown),
-          onUp:   buildKeyHandler((p) => p.keyUp),
+          onDown: buildKeyHandler('keyDown', (p) => p.keyDown),
+          onUp:   buildKeyHandler('keyUp',   (p) => p.keyUp),
         }
       : undefined,
     wheel: def.initial.wheel || def.engaged?.wheel
@@ -218,6 +278,8 @@ export function defineTool<TScratch = void>(
           onWheel: (_e: WheelEvent, ctx: ToolCtx<TScratch>) => {
             const action = phaseOf(ctx).wheel;
             if (!action) return 'pass';
+            // Wheel routes are a single ActionFn, no table — matched key '*'.
+            report(ctx, phaseNameOf(ctx), 'wheel', '*');
             return applyResult(ctx, action(ctx, _e));
           },
         }

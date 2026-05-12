@@ -20,7 +20,7 @@ describe('resolveRoute target precedence', () => {
       'rect':          base  as ActionFn<void>,
       '*':             star  as ActionFn<void>,
     };
-    expect(resolveRoute(table, nodeHit('rect:selected'), noMods)).toBe(exact);
+    expect(resolveRoute(table, nodeHit('rect:selected'), noMods)?.action).toBe(exact);
   });
 
   it('subkind wildcard beats base-kind', () => {
@@ -30,19 +30,19 @@ describe('resolveRoute target precedence', () => {
       '*:selected': subWild as ActionFn<void>,
       'rect':       base    as ActionFn<void>,
     };
-    expect(resolveRoute(table, nodeHit('rect:selected'), noMods)).toBe(subWild);
+    expect(resolveRoute(table, nodeHit('rect:selected'), noMods)?.action).toBe(subWild);
   });
 
   it('base-kind falls back when no subkind wildcard', () => {
     const base = vi.fn();
     const table: RouteTable<void> = { 'rect': base as ActionFn<void> };
-    expect(resolveRoute(table, nodeHit('rect:selected'), noMods)).toBe(base);
+    expect(resolveRoute(table, nodeHit('rect:selected'), noMods)?.action).toBe(base);
   });
 
   it('universal * falls back last', () => {
     const star = vi.fn();
     const table: RouteTable<void> = { '*': star as ActionFn<void> };
-    expect(resolveRoute(table, nodeHit('rect:selected'), noMods)).toBe(star);
+    expect(resolveRoute(table, nodeHit('rect:selected'), noMods)?.action).toBe(star);
   });
 
   it('empty kind does not fall through to *', () => {
@@ -68,7 +68,7 @@ describe('resolveRoute modifier sub-tables', () => {
         'shift+alt': shiftAlt as ActionFn<void>,
       },
     };
-    expect(resolveRoute(table, nodeHit('rect'), { ...noMods, shift: true, alt: true })).toBe(shiftAlt);
+    expect(resolveRoute(table, nodeHit('rect'), { ...noMods, shift: true, alt: true })?.action).toBe(shiftAlt);
   });
 
   it('falls back to default when no modifier match', () => {
@@ -76,13 +76,13 @@ describe('resolveRoute modifier sub-tables', () => {
     const table: RouteTable<void> = {
       'rect': { default: def as ActionFn<void>, shift: vi.fn() as ActionFn<void> },
     };
-    expect(resolveRoute(table, nodeHit('rect'), { ...noMods, alt: true })).toBe(def);
+    expect(resolveRoute(table, nodeHit('rect'), { ...noMods, alt: true })?.action).toBe(def);
   });
 
   it('function-form route entry ignores modifiers', () => {
     const fn = vi.fn();
     const table: RouteTable<void> = { 'rect': fn as ActionFn<void> };
-    expect(resolveRoute(table, nodeHit('rect'), { ...noMods, shift: true })).toBe(fn);
+    expect(resolveRoute(table, nodeHit('rect'), { ...noMods, shift: true })?.action).toBe(fn);
   });
 });
 
@@ -98,7 +98,7 @@ describe('resolveRoute against a pointerDown-shaped table', () => {
       'rect': onRect as ActionFn<void>,
       '*':    onAny  as ActionFn<void>,
     };
-    expect(resolveRoute(table, nodeHit('rect'), noMods)).toBe(onRect);
-    expect(resolveRoute(table, nodeHit('text'), noMods)).toBe(onAny);
+    expect(resolveRoute(table, nodeHit('rect'), noMods)?.action).toBe(onRect);
+    expect(resolveRoute(table, nodeHit('text'), noMods)?.action).toBe(onAny);
   });
 });

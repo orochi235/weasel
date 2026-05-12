@@ -3,21 +3,33 @@ import type { HitResult } from './hitResult';
 import type { ToolModifiers } from '../types';
 import { mods, type ModifierKey } from './modifiers';
 
-/** Resolve a route entry to an ActionFn (or undefined) given the current
+/** Result of a successful `resolveRoute` lookup: the resolved `ActionFn`
+ *  plus the route-table key that matched after precedence resolution.
+ *  Consumers (currently only `defineTool`) use `matchedKey` for debug
+ *  reflection — answering "why did this route fire?" by surfacing the
+ *  exact post-precedence key. */
+export interface RouteMatch<TScratch> {
+  action: ActionFn<TScratch>;
+  matchedKey: string;
+}
+
+/** Resolve a route entry to an `ActionFn` (or undefined) given the current
  *  hit-test result and modifier snapshot. Implements the four-level
  *  target precedence (exact → subkind-wildcard → base-kind → universal)
- *  and the modifier sub-table exact-match + 'default' fallback. */
+ *  and the modifier sub-table exact-match + 'default' fallback. Returns
+ *  the matched route-table key alongside the action so callers can attach
+ *  it to debug-overlay reflection. */
 export function resolveRoute<TScratch>(
   table: RouteTable<TScratch>,
   hit: HitResult,
   modifiers: ToolModifiers,
-): ActionFn<TScratch> | undefined {
+): RouteMatch<TScratch> | undefined {
   const candidateKeys = buildCandidateKeys(hit);
   for (const key of candidateKeys) {
     const entry = table[key];
     if (entry == null) continue;
     const resolved = resolveEntry(entry, modifiers);
-    if (resolved) return resolved;
+    if (resolved) return { action: resolved, matchedKey: key };
   }
   return undefined;
 }

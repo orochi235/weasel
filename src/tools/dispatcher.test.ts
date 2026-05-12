@@ -2,6 +2,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createToolsDispatcher, type ToolsDispatcher } from './dispatcher';
 import { defineTool } from './defineTool';
+import { defineTool as defineDeclarativeTool } from './routing/defineTool';
+import { apply } from './routing/result';
 import type { AnyTool, ToolCtx } from './types';
 
 function makeCtx(over: Partial<ToolCtx> = {}): ToolCtx {
@@ -687,5 +689,53 @@ describe('dispatcher: ctx.target population on pointer events', () => {
     });
     dispatcher.onPointerDown(pointerEvent('pointerdown', { clientX: 5, clientY: 5 }));
     expect((observedTarget as { category: string }).category).toBe('affordance');
+  });
+});
+
+describe('dispatcher: getLastRoute', () => {
+  it('starts null', () => {
+    const tool = defineDeclarativeTool({
+      id: 'test',
+      initial: { click: { '*': () => apply([]) } },
+    });
+    const d = createToolsDispatcher({
+      getSlots: () => ({ hotkey: null, active: tool, ambient: [] }),
+      getCtx: makeCtx as unknown as (overrides?: { clientX?: number; clientY?: number }) => Omit<ToolCtx, 'scratch'>,
+    });
+    expect(d.getLastRoute()).toBeNull();
+  });
+
+  it('records the most recent route after a click dispatch', () => {
+    const tool = defineDeclarativeTool({
+      id: 'test',
+      initial: { click: { '*': () => apply([]) } },
+    });
+    const d = createToolsDispatcher({
+      getSlots: () => ({ hotkey: null, active: tool, ambient: [] }),
+      getCtx: makeCtx as unknown as (overrides?: { clientX?: number; clientY?: number }) => Omit<ToolCtx, 'scratch'>,
+    });
+    d.onPointerDown(pointerEvent('pointerdown', { clientX: 10, clientY: 10 }));
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 10, clientY: 10 }));
+    const last = d.getLastRoute();
+    expect(last?.toolId).toBe('test');
+    expect(last?.gesture).toBe('click');
+    expect(last?.matchedKey).toBe('*');
+  });
+
+  it('fires onRouteResolved callback when provided', () => {
+    const cb = vi.fn();
+    const tool = defineDeclarativeTool({
+      id: 'test',
+      initial: { click: { '*': () => apply([]) } },
+    });
+    const d = createToolsDispatcher({
+      getSlots: () => ({ hotkey: null, active: tool, ambient: [] }),
+      getCtx: makeCtx as unknown as (overrides?: { clientX?: number; clientY?: number }) => Omit<ToolCtx, 'scratch'>,
+      onRouteResolved: cb,
+    });
+    d.onPointerDown(pointerEvent('pointerdown', { clientX: 10, clientY: 10 }));
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 10, clientY: 10 }));
+    expect(cb).toHaveBeenCalledTimes(1);
+    expect(cb.mock.calls[0][0].toolId).toBe('test');
   });
 });

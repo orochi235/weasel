@@ -6,6 +6,7 @@ import type { RenderLayer } from 'core/layers/render';
 import type { DebugSink } from '../debug/types';
 import type { KeyBinding } from 'interactions/actions/useKeybinding';
 import type { HitResult } from './routing/hitResult';
+import type { RouteResolvedInfo } from './routing/reflection/route-resolved';
 
 /** Outcome of a channel handler. `'claim'` stops dispatch for this event;
  *  `'pass'` lets the next slot try. Handlers that return nothing are
@@ -62,6 +63,12 @@ export interface ToolCtx<TScratch = unknown> {
    *  rotation handle, etc.) lands in the same overlay as Canvas's own
    *  bounds/origin records. Tools should call this conditionally with `?.`. */
   debug?: DebugSink;
+  /** Kit-internal: route-resolution reporter. The dispatcher populates
+   *  this; the declarative routing factory calls it after each successful
+   *  resolveRoute() hit so the dispatcher can publish the last-resolved
+   *  snapshot to debug-overlay consumers. Underscore prefix signals
+   *  "do not consume in tool code." */
+  __reportRoute?: (info: RouteResolvedInfo) => void;
   scratch: TScratch;
 }
 

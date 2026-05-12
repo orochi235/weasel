@@ -5,6 +5,7 @@ import type { ChromeState } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
 import type { AffordanceBinding } from 'affordances/types';
 import type { HitResult } from './routing/hitResult';
+import type { RouteResolvedInfo } from './routing/reflection/route-resolved';
 import type { NodeId } from 'core/scene/types';
 
 /** Build a HitResult for the dispatcher's context. Phase 1 classifier:
@@ -83,6 +84,10 @@ export interface ToolsDispatcherOptions {
    *  `dispatcher.getActiveScratch()` (e.g. function-form `cursor`) re-resolve
    *  on real DOM events. */
   onGestureChange?: () => void;
+  /** Called whenever a declarative route resolves to an ActionFn. The
+   *  dispatcher caches the most recent invocation; consumers read it via
+   *  `getLastRoute()`. Useful for the kit's ToolDebugOverlay. */
+  onRouteResolved?: (info: RouteResolvedInfo) => void;
   /** Time source for double-tap detection. Defaults to `Date.now`. Override
    *  in tests to drive the clock deterministically. */
   now?: () => number;
@@ -155,13 +160,17 @@ export interface ToolsDispatcher {
    *  consumers (cursor resolution, debug overlays) can read what the active
    *  tool is currently tracking. Read-only — do NOT mutate via this getter. */
   getActiveScratch: () => unknown;
+  /** Most recent route resolution emitted by a declarative tool, or null
+   *  if none has fired yet. Snapshot — safe to read on every render. */
+  getLastRoute: () => RouteResolvedInfo | null;
 }
 
 function ctxFor(
   scratch: unknown,
   base: Omit<ToolCtx, 'scratch'>,
+  reportRoute: (info: RouteResolvedInfo) => void,
 ): ToolCtx {
-  return { ...base, scratch };
+  return { ...base, scratch, __reportRoute: reportRoute };
 }
 
 function screenPointFor(
@@ -178,6 +187,7 @@ function dispatchOnce<E>(
   event: E,
   baseCtx: Omit<ToolCtx, 'scratch'>,
   scratchFor: (tool: AnyTool) => unknown,
+  reportRoute: (info: RouteResolvedInfo) => void,
 ): AnyTool | null {
   const order: { slot: ToolSlot; tool: AnyTool }[] = [];
   if (slots.hotkey) order.push({ slot: 'hotkey', tool: slots.hotkey });
@@ -187,7 +197,7 @@ function dispatchOnce<E>(
   for (const { tool } of order) {
     const handler = pick(tool);
     if (!handler) continue;
-    const ctx = ctxFor(scratchFor(tool), baseCtx);
+    const ctx = ctxFor(scratchFor(tool), baseCtx, reportRoute);
     const decision = handler(event, ctx);
     if (decision === 'claim') return tool;
   }
@@ -205,6 +215,15 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
    *  `dblTap.onTap` on the active slot order. Cleared on fire (so three taps
    *  don't stack into two dblTaps) and on any drag promotion. */
   let lastTap: { x: number; y: number; time: number } | null = null;
+  /** Most recent RouteResolvedInfo emitted via ctx.__reportRoute. Updated
+   *  on every successful declarative route hit; left set across gesture
+   *  end / cancel so debug overlays can show "what just fired" even after
+   *  the gesture closes. */
+  let lastRoute: RouteResolvedInfo | null = null;
+  const reportRoute = (info: RouteResolvedInfo): void => {
+    lastRoute = info;
+    opts.onRouteResolved?.(info);
+  };
 
   function getInitialScratch(tool: AnyTool): unknown {
     return tool.initScratch ? tool.initScratch() : undefined;
@@ -212,7 +231,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
 
   function tryClaimsAll(tool: AnyTool, baseCtx: Omit<ToolCtx, 'scratch'>): boolean {
     if (!tool.claimsAll) return false;
-    const ctx = ctxFor(getInitialScratch(tool), baseCtx);
+    const ctx = ctxFor(getInitialScratch(tool), baseCtx, reportRoute);
     return tool.claimsAll(ctx);
   }
 
@@ -228,7 +247,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     // branch, the gesture shape is identical.
     const handler = tool.pointer?.onDown;
     const initScratch = getInitialScratch(tool);
-    const ctx = ctxFor(initScratch, baseCtx);
+    const ctx = ctxFor(initScratch, baseCtx, reportRoute);
     let claimedScratch: unknown = initScratch;
     if (handler) {
       const decision = handler(e, ctx);
@@ -268,7 +287,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       target: buildAffordanceTarget(result, rawBaseCtx.adapter),
       screenPoint: screenPointFor(e, rawBaseCtx.canvasRect),
     };
-    const startCtx = ctxFor(result.initialScratch, baseCtx);
+    const startCtx = ctxFor(result.initialScratch, baseCtx, reportRoute);
     // Affordance hits skip threshold gating — the layer already decided
     // this is a gesture, not a click. Jump straight to 'drag' phase and
     // fire onStart immediately so subsequent moves route to onMove.
@@ -350,7 +369,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       const handler = tool.pointer?.onDown;
       if (!handler) continue;
       const initScratch = getInitialScratch(tool);
-      const ctx = ctxFor(initScratch, baseCtx);
+      const ctx = ctxFor(initScratch, baseCtx, reportRoute);
       const decision = handler(e, ctx);
       if (decision === 'claim') {
         // ctx.scratch may have been mutated by the handler — capture it.
@@ -414,7 +433,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
         const startBaseCtx = inFlight.startTarget
           ? { ...baseCtx, target: inFlight.startTarget }
           : baseCtx;
-        const startCtx = ctxFor(inFlight.scratch, startBaseCtx);
+        const startCtx = ctxFor(inFlight.scratch, startBaseCtx, reportRoute);
         onStart(e, startCtx);
         inFlight.scratch = startCtx.scratch;
       }
@@ -425,7 +444,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
 
     if (inFlight.phase === 'drag') {
       const onMove = inFlight.tool.drag?.onMove;
-      if (onMove) onMove(e, ctxFor(inFlight.scratch, baseCtx));
+      if (onMove) onMove(e, ctxFor(inFlight.scratch, baseCtx, reportRoute));
     }
   }
 
@@ -464,7 +483,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
           for (const tool of order) {
             const handler = tool.dblTap?.onTap;
             if (!handler) continue;
-            const ctx = ctxFor(getInitialScratch(tool), baseCtx);
+            const ctx = ctxFor(getInitialScratch(tool), baseCtx, reportRoute);
             const decision = handler(e, ctx);
             if (decision === 'claim') {
               dblTapClaimed = true;
@@ -478,7 +497,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       }
       if (!dblTapClaimed) {
         const onClick = inFlight.tool.pointer?.onClick;
-        if (onClick) onClick(e, ctxFor(inFlight.scratch, baseCtx));
+        if (onClick) onClick(e, ctxFor(inFlight.scratch, baseCtx, reportRoute));
         // Record this tap as a candidate first-of-pair for the next tap.
         // (If dblTap claimed above we already cleared lastTap; recording here
         // would let three taps fire two dblTaps.)
@@ -488,7 +507,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       }
     } else if (inFlight.phase === 'drag') {
       const onEnd = inFlight.tool.drag?.onEnd;
-      if (onEnd) onEnd(e, ctxFor(inFlight.scratch, baseCtx));
+      if (onEnd) onEnd(e, ctxFor(inFlight.scratch, baseCtx, reportRoute));
     }
     endGesture();
   }
@@ -506,6 +525,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       e,
       base,
       (t) => (inFlight && inFlight.tool === t ? inFlight.scratch : getInitialScratch(t)),
+      reportRoute,
     );
   }
 
@@ -518,6 +538,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       e,
       base,
       (t) => (inFlight && inFlight.tool === t ? inFlight.scratch : getInitialScratch(t)),
+      reportRoute,
     );
   }
 
@@ -534,6 +555,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       e,
       base,
       (t) => (inFlight && inFlight.tool === t ? inFlight.scratch : getInitialScratch(t)),
+      reportRoute,
     );
   }
 
@@ -541,7 +563,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     if (!inFlight) return;
     if (inFlight.phase === 'drag') {
       const base = opts.getCtx();
-      inFlight.tool.drag?.onCancel?.(ctxFor(inFlight.scratch, base));
+      inFlight.tool.drag?.onCancel?.(ctxFor(inFlight.scratch, base, reportRoute));
     }
     endGesture();
   }
@@ -560,6 +582,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     cancelGesture,
     hasActiveGesture: () => inFlight !== null,
     getActiveScratch: () => inFlight?.scratch ?? null,
+    getLastRoute: () => lastRoute,
   };
   api.__setGetCtx = (fn) => { opts.getCtx = fn; };
   api.__setHitTestContext = (fn) => { opts.getHitTestContext = fn; };
