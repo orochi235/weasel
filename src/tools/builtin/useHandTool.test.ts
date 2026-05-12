@@ -11,6 +11,16 @@ function fakeEvent(clientX: number, clientY: number): PointerEvent {
   return e;
 }
 
+/** Sync ctx.screenPoint to match the event being passed, in place.
+ *  Tests reuse one ctx across multiple handler calls; the factory
+ *  writes scratch on that same ctx, so we must mutate rather than
+ *  spread (a spread would drop scratch mutations on subsequent calls). */
+function syncEvent<S>(ctx: ToolCtx<S>, e: PointerEvent): ToolCtx<S> {
+  (ctx as { screenPoint?: { x: number; y: number } }).screenPoint =
+    { x: e.clientX, y: e.clientY };
+  return ctx;
+}
+
 function makeCtx<S = unknown>(view: Omit<View, 'scale'> & { scale?: number }, setView: (v: View) => void): ToolCtx<S> {
   return {
     worldX: 0,
@@ -39,11 +49,13 @@ describe('useHandTool', () => {
     const tool = result.current;
     const setView = vi.fn();
     const ctx = makeCtx<any>({ x: 30, y: 40 }, setView);
-    const decision = tool.drag!.onStart!(fakeEvent(100, 200), ctx);
+    const startE = fakeEvent(100, 200);
+    const decision = tool.drag!.onStart!(startE, syncEvent(ctx, startE));
     expect(decision).toBe('claim');
     // scratch is held in ctx (caller may have replaced it); we verify next move
     // uses the captured startView + startClient.
-    const moveDecision = tool.drag!.onMove!(fakeEvent(110, 215), ctx);
+    const moveE = fakeEvent(110, 215);
+    const moveDecision = tool.drag!.onMove!(moveE, syncEvent(ctx, moveE));
     expect(moveDecision).toBe('claim');
     // dx = 10, dy = 15 → new view = startView - delta = (30-10, 40-15)
     expect(setView).toHaveBeenCalledWith({ x: 20, y: 25, scale: 1 });
@@ -112,13 +124,16 @@ describe('useHandTool with inertia', () => {
     const ctx = makeCtx<any>({ x: 0, y: 0 }, setView);
 
     // Simulate a fast drag
-    tool.drag!.onStart!(fakeEvent(0, 0), ctx);
-    tool.drag!.onMove!(fakeEvent(0, 0), { ...ctx, worldX: 0, worldY: 0 });
+    const startE = fakeEvent(0, 0);
+    tool.drag!.onStart!(startE, syncEvent(ctx, startE));
+    tool.drag!.onMove!(startE, syncEvent(ctx,startE));
     for (let i = 1; i <= 5; i++) {
-      tool.drag!.onMove!(fakeEvent(i * 10, 0), { ...ctx, worldX: 0, worldY: 0 });
+      const me = fakeEvent(i * 10, 0);
+      tool.drag!.onMove!(me, syncEvent(ctx,me));
     }
     setView.mockClear();
-    tool.drag!.onEnd!(fakeEvent(50, 0), ctx);
+    const endE = fakeEvent(50, 0);
+    tool.drag!.onEnd!(endE, syncEvent(ctx, endE));
     // Step past useDecayLoop's first-frame skip, then one actual tick
     act(() => { stepRAF(16); });
     act(() => { stepRAF(16); });
@@ -133,11 +148,14 @@ describe('useHandTool with inertia', () => {
     const ctx = makeCtx<any>({ x: 0, y: 0 }, setView);
 
     // Start a drag with real velocity
-    tool.drag!.onStart!(fakeEvent(0, 0), ctx);
+    const startE = fakeEvent(0, 0);
+    tool.drag!.onStart!(startE, syncEvent(ctx, startE));
     for (let i = 1; i <= 5; i++) {
-      tool.drag!.onMove!(fakeEvent(i * 10, 0), { ...ctx, worldX: 0, worldY: 0 });
+      const me = fakeEvent(i * 10, 0);
+      tool.drag!.onMove!(me, syncEvent(ctx,me));
     }
-    tool.drag!.onEnd!(fakeEvent(50, 0), ctx);
+    const endE = fakeEvent(50, 0);
+    tool.drag!.onEnd!(endE, syncEvent(ctx, endE));
     // First-frame skip then one real tick
     act(() => { stepRAF(16); });
     act(() => { stepRAF(16); });
@@ -145,7 +163,8 @@ describe('useHandTool with inertia', () => {
     expect(setView).toHaveBeenCalled();
 
     // New drag starts — should cancel inertia
-    tool.drag!.onStart!(fakeEvent(0, 0), ctx);
+    const restartE = fakeEvent(0, 0);
+    tool.drag!.onStart!(restartE, syncEvent(ctx, restartE));
     setView.mockClear();
 
     // Run several more frames — inertia should NOT continue
