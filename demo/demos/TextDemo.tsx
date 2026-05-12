@@ -1,18 +1,14 @@
-import { useCallback, useRef } from 'react';
+import { useRef } from 'react';
 import {
   SceneCanvas,
-  asNodeId,
   createTextLayer,
   gridSnapStrategy,
-  caretIndexAt,
-  pointInTextPose,
   useScene,
-  useTextEdit,
+  useSceneTextEdit,
   type CanvasHelpers,
   type RenderLayer,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
-import { clientToCanvas } from '../canvasCoords';
 import { INITIAL_TEXT_NODES, type TextNode, type Pose } from './textDemoScene';
 
 const W = 600, H = 360;
@@ -22,7 +18,7 @@ export function TextDemo() {
   const scene = useScene({ items: INITIAL_TEXT_NODES });
 
   // Live snapshot of every node's data + current pose, in render order. Used
-  // by the custom text/outline layers and the dblclick caret resolver.
+  // by the custom text/outline layers.
   const liveNodes = (): TextNode[] =>
     [...scene.renderOrder()].map((id) => {
       const n = scene.get(id)!;
@@ -36,41 +32,10 @@ export function TextDemo() {
   // the overlay fold-in.
   const helpersRef = useRef<CanvasHelpers<TextNode> | null>(null);
 
-  const setText = useCallback(
-    (id: string, text: string) => {
-      const nid = asNodeId(id);
-      const n = scene.get(nid);
-      if (!n) return;
-      scene.update(nid, { data: { ...n.data, text } });
-    },
-    [scene],
-  );
-
-  const edit = useTextEdit({
-    container: containerRef.current,
-    getText: (id) => scene.get(asNodeId(id))?.data.text ?? '',
-    getStyle: (id) => scene.get(asNodeId(id))?.data.style,
-    getScreenPose: (id) => {
-      const n = scene.get(asNodeId(id));
-      if (!n) return null;
-      const p = n.pose as Pose;
-      return {
-        x: p.x,
-        y: p.y,
-        width: p.width,
-        height: p.height,
-        fontSize: n.data.style?.fontSize ?? 16,
-      };
-    },
-    setText,
-    getRuns: (id) => scene.get(asNodeId(id))?.data.runs,
-    setRuns: (id, runs) => {
-      const nid = asNodeId(id);
-      const n = scene.get(nid);
-      if (!n) return;
-      scene.update(nid, { data: { ...n.data, runs } });
-    },
-  });
+  // Scene-aware text edit + double-click-to-edit binding. Wires getText /
+  // getStyle / getScreenPose / setText / getRuns / setRuns + the dblclick
+  // caret-resolver against `scene` automatically.
+  const edit = useSceneTextEdit(scene, containerRef.current);
 
   const resolvePose = (n: TextNode): Pose => {
     const overlayPose = helpersRef.current?.getEffectivePose(n.id);
@@ -118,36 +83,11 @@ export function TextDemo() {
     },
   };
 
-  // Suppress text-edit triggering on the same gesture that just selected a
-  // node — only an actual dblclick on the selected node enters edit mode.
-  const onDoubleClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      const canvas = e.target instanceof HTMLCanvasElement ? e.target : null;
-      if (!canvas) return;
-      const [cx, cy] = clientToCanvas(canvas, e.clientX, e.clientY);
-      const nodes = liveNodes();
-      let target: TextNode | null = null;
-      for (let i = nodes.length - 1; i >= 0; i--) {
-        if (pointInTextPose(cx, cy, nodes[i])) { target = nodes[i]; break; }
-      }
-      if (!target) return;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) { edit.startEdit(target.id); return; }
-      const caret = caretIndexAt(ctx, cx, cy, {
-        x: target.x, y: target.y, width: target.width, height: target.height,
-        text: target.text, style: target.style,
-      });
-      edit.startEdit(target.id, { caret });
-    },
-    // liveNodes reads through `scene` (stable) on every call.
-    [edit],
-  );
-
   return (
     <div
       ref={containerRef}
       style={{ position: 'relative', width: W, height: H }}
-      onDoubleClick={onDoubleClick}
+      onDoubleClick={edit.onDoubleClick}
     >
       <SceneCanvas
         width={W}

@@ -29,6 +29,8 @@ export type {
   UseTextEditOptions,
   UseTextEditReturn,
 } from './useTextEdit';
+export { useSceneTextEdit } from './useSceneTextEdit';
+export type { UseSceneTextEditOptions } from './useSceneTextEdit';
 export { resolveRuns } from './runs/resolveRuns';
 export type { ResolvedRun } from './runs/resolveRuns';
 export { textCommand } from './textCommand';
