@@ -105,7 +105,7 @@ Five constructors. The dispatcher consumes the tagged results.
 |---|---|
 | `apply(ops, label?)` | Dispatch ops through the adapter's `applyBatch`. No phase change. Used in phase-free routes. |
 | `begin(spec)` | Open active phase. `spec` carries the initial scratch and optional continuation closures (`onMove`, `onUp`, `onCancel`). |
-| `stay(newScratch)` | Update scratch within active. No commit. |
+| `hold(newScratch)` | Update scratch within active. No commit, no phase change — the tool *holds* the new state for subsequent events. |
 | `commit(ops, label?)` | Apply ops AND close active phase. |
 | `cancel()` | Close active phase without applying ops. |
 
@@ -116,7 +116,7 @@ type ActionFn<TScratch> = (ctx: ToolCtx<TScratch>) => Result<TScratch>;
 type Result<TScratch> =
   | { kind: 'apply';  ops: Op[]; label?: string }
   | { kind: 'begin';  spec: BeginSpec<TScratch> }
-  | { kind: 'stay';   scratch: TScratch }
+  | { kind: 'hold';   scratch: TScratch }
   | { kind: 'commit'; ops: Op[]; label?: string }
   | { kind: 'cancel' }
   | { kind: 'claim' }   // suppress fall-through; no other effect
@@ -213,7 +213,7 @@ Drag-shaped gestures attach continuation handlers at `begin` time:
 ```ts
 const beginMove: ActionFn = (ctx) => begin({
   scratch: { kind: 'move', startPoses: snapshotSelected(ctx) },
-  onMove:  (ctx) => stay(previewMove(ctx.scratch, ctx.point)),
+  onMove:  (ctx) => hold(previewMove(ctx.scratch, ctx.point)),
   onUp:    (ctx) => commit([moveOp(ctx.scratch)], 'Move'),
   onCancel: () => undefined,
 });
@@ -229,12 +229,12 @@ subsequent click routes through `active.click` instead:
 active: {
   click: {
     'anchor:first': (ctx) => commit([closePathOp(ctx.scratch.anchors)]),
-    '*':            (ctx) => stay({ anchors: [...ctx.scratch.anchors, ctx.point] }),
+    '*':            (ctx) => hold({ anchors: [...ctx.scratch.anchors, ctx.point] }),
   },
 }
 ```
 
-Same `begin/stay/commit/cancel` primitives, different usage shape:
+Same `begin/hold/commit/cancel` primitives, different usage shape:
 "begin + auto-continuation" vs. "begin + dispatch-into-active." The
 dispatcher unifies them.
 
@@ -282,7 +282,7 @@ const RectInsertTool = defineTool<{ start: Point; current: Point }>({
     drag: {
       'empty': (ctx) => begin({
         scratch: { start: ctx.point, current: ctx.point },
-        onMove:  (ctx) => stay({ ...ctx.scratch, current: ctx.point }),
+        onMove:  (ctx) => hold({ ...ctx.scratch, current: ctx.point }),
         onUp:    (ctx) => commit([createInsertOp(rectFromBounds(ctx.scratch))], 'Insert Rect'),
       }),
     },
@@ -311,7 +311,7 @@ const HandTool = defineViewportTool<{ startView: View; startPoint: Point }>({
           x: ctx.scratch.startView.x + (ctx.point.x - ctx.scratch.startPoint.x),
           y: ctx.scratch.startView.y + (ctx.point.y - ctx.scratch.startPoint.y),
         });
-        return stay(ctx.scratch);
+        return hold(ctx.scratch);
       },
       onUp: cancel,  // view changes aren't undoable
     }),
@@ -343,7 +343,7 @@ const PenTool = defineTool<{ anchors: Point[] }>({
   active: {
     click: {
       'anchor:first': (ctx) => commit([closePathOp(ctx.scratch.anchors)], 'Close path'),
-      '*':            (ctx) => stay({ anchors: [...ctx.scratch.anchors, ctx.point] }),
+      '*':            (ctx) => hold({ anchors: [...ctx.scratch.anchors, ctx.point] }),
     },
     keyDown: {
       'Escape': cancel,
@@ -370,7 +370,7 @@ const TextTool = defineTool({
     drag: {
       'empty': (ctx) => begin({                                        // drag empty → draw box
         scratch: { start: ctx.point, current: ctx.point },
-        onMove: (ctx) => stay({ ...ctx.scratch, current: ctx.point }),
+        onMove: (ctx) => hold({ ...ctx.scratch, current: ctx.point }),
         onUp:   (ctx) => commit([createTextBoxOp(rectFromBounds(ctx.scratch))], 'Insert text box'),
       }),
     },
