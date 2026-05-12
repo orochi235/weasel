@@ -100,6 +100,27 @@ export interface ToolBounds {
   height: number;
 }
 
+/** Presentation metadata for tool palettes / menus. Optional on every
+ *  tool — consumers that render a palette (`<ToolPalette>`) read these
+ *  fields to display the tool; consumers that don't can ignore them.
+ *
+ *  Note: cursor is NOT here. The top-level `Tool.cursor` field below is
+ *  already plumbed through `<Canvas>` to `style.cursor` on the host. */
+export interface ToolPresentation<TScratch = unknown> {
+  /** Human-readable label, distinct from the `id`. Falls back to `id`. */
+  label?: string;
+  /** Inline-SVG icon component output. May be a static `ReactNode` or a
+   *  function of scratch state (rare; useful for shape-aware affordances). */
+  icon?: import('react').ReactNode | ((scratch?: TScratch) => import('react').ReactNode);
+  /** Palette grouping key. Tools sharing a group render contiguously
+   *  with separators between groups. Free-form string; the kit
+   *  recommends 'select' | 'shape' | 'draw' | 'type' | 'view'. */
+  group?: string;
+  /** Display override for the keyboard shortcut. When omitted the palette
+   *  derives one from `Tool.keybinding` via its own formatter. */
+  shortcut?: string;
+}
+
 /** Full Tool record. */
 export interface Tool<TScratch = unknown> {
   id: string;
@@ -130,6 +151,8 @@ export interface Tool<TScratch = unknown> {
    */
   claimsAll?: (ctx: ToolCtx<TScratch>) => boolean;
   cursor?: string | ((ctx: ToolCtx<TScratch>) => string);
+  /** Presentation metadata for tool palettes. See `ToolPresentation`. */
+  presentation?: ToolPresentation<TScratch>;
   /** Returns the in-flight preview pose for `id` if this tool is mid-gesture
    *  on it; otherwise `null`. Lets `Canvas.helpersRef.getEffectivePose`
    *  reflect live gesture state without reaching into hook internals. The
