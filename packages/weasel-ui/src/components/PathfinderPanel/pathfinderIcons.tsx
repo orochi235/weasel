@@ -5,7 +5,6 @@ const SVG_BASE = {
   fill: 'none',
   stroke: 'currentColor',
   strokeWidth: 1.5,
-  role: 'img' as const,
   'aria-hidden': true,
 };
 
