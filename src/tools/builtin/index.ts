@@ -53,3 +53,4 @@ export {
   type CloneScratch,
   type CloneOverlayItem,
 } from './useCloneTool';
+export { usePolygonTool, type UsePolygonToolOptions } from './usePolygonTool';
