@@ -64,3 +64,52 @@ describe('ToolPalette', () => {
     expect(root?.getAttribute('aria-label')).toBeTruthy();
   });
 });
+
+describe('ToolPalette — grouping', () => {
+  it('renders groups in default order (select, shape, draw, type, view)', () => {
+    const tools = fakeTools([
+      fakeTool('text', 'type'),
+      fakeTool('select', 'select'),
+      fakeTool('hand', 'view'),
+      fakeTool('rect', 'shape'),
+      fakeTool('pen', 'draw'),
+    ]);
+    render(<ToolPalette tools={tools} />);
+    const buttons = screen.getAllByRole('button');
+    // select first, hand last
+    expect(buttons[0].textContent).toContain('select');
+    expect(buttons[buttons.length - 1].textContent).toContain('hand');
+  });
+
+  it('puts tools with unknown groups after known ones but before misc', () => {
+    const tools = fakeTools([
+      fakeTool('select', 'select'),
+      fakeTool('weird', 'experimental'),
+      fakeTool('hand', 'view'),
+    ]);
+    render(<ToolPalette tools={tools} />);
+    const buttons = screen.getAllByRole('button');
+    // weird (unknown group) is last because there's no misc bucket here
+    expect(buttons[buttons.length - 1].textContent).toContain('weird');
+  });
+
+  it('tools without presentation.group go into the implicit misc bucket (last)', () => {
+    const tools = fakeTools([
+      fakeTool('select', 'select'),
+      { id: 'orphan', presentation: { label: 'Orphan' } } as AnyTool,
+    ]);
+    render(<ToolPalette tools={tools} />);
+    const buttons = screen.getAllByRole('button');
+    expect(buttons[buttons.length - 1].textContent).toContain('Orphan');
+  });
+
+  it('separates groups with a visible divider', () => {
+    const tools = fakeTools([
+      fakeTool('select', 'select'),
+      fakeTool('rect', 'shape'),
+    ]);
+    const { container } = render(<ToolPalette tools={tools} />);
+    const separators = container.querySelectorAll('[role="separator"]');
+    expect(separators.length).toBeGreaterThanOrEqual(1);
+  });
+});
