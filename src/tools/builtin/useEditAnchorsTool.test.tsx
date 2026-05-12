@@ -6,6 +6,7 @@ import { PathBuilder } from 'features/paths/builder';
 import type { Path, PolygonPath } from 'features/paths/types';
 import type { Op } from 'core/ops/types';
 import type { ToolCtx } from '../types';
+import type { HitResult } from '../routing/hitResult';
 
 function makePath(): PolygonPath {
   return new PathBuilder()
@@ -44,18 +45,27 @@ function setup(editingId: string | null = 'p') {
   return { adapter, batches, getPose, onExit, ...result.current };
 }
 
-function makeCtx<S>(scratch: S, over: Partial<ToolCtx<S>> = {}): ToolCtx<S> {
+const nodeTarget = (id = 'p', kind = 'path'): HitResult => ({
+  category: 'node', kind, id: id as never, pose: {}, data: {},
+});
+const emptyTarget = (): HitResult => ({ category: 'empty', kind: 'empty' });
+
+function makeCtx(
+  target: HitResult,
+  over: Partial<ToolCtx<null>> = {},
+): ToolCtx<null> {
   return {
     worldX: 0,
     worldY: 0,
     modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
+    target,
     selection: { current: [], applyClick: vi.fn() } as unknown as ToolCtx['selection'],
     adapter: {},
     applyOps: vi.fn(),
     view: { x: 0, y: 0, scale: 1 },
     setView: () => {},
     canvasRect: new DOMRect(),
-    scratch,
+    scratch: null,
     ...over,
   };
 }
@@ -77,7 +87,11 @@ describe('useEditAnchorsTool', () => {
     const { tool } = setup();
     expect(tool.id).toBe('edit-anchors');
     expect(tool.keybinding).toEqual({ key: 'A' });
-    expect(tool.cursor).toBe('default');
+    // cursor is a resolver function from the declarative defineTool.
+    const cursor = typeof tool.cursor === 'function'
+      ? tool.cursor(makeCtx(emptyTarget()))
+      : tool.cursor;
+    expect(cursor).toBe('default');
     expect(tool.overlay).toBeDefined();
     expect(tool.overlay!.id).toBe('anchor-edit-overlay');
   });
@@ -90,47 +104,61 @@ describe('useEditAnchorsTool', () => {
     });
     expect(result.current.id).toBe('pe');
     expect(result.current.keybinding).toEqual({ key: 'E' });
-    expect(result.current.cursor).toBe('crosshair');
+    const cursor = typeof result.current.cursor === 'function'
+      ? result.current.cursor(makeCtx(emptyTarget()))
+      : result.current.cursor;
+    expect(cursor).toBe('crosshair');
   });
 
-  it('pointer.onDown on an anchor stashes pendingStart with the hit', () => {
-    const { tool } = setup();
-    const scratch = tool.initScratch!();
-    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-    expect(scratch.pendingStart).toMatchObject({
-      id: 'p',
-      hit: { anchorIndex: 0, kind: 'anchor', coordIndex: 0 },
-      worldX: 0,
-      worldY: 0,
-    });
+  it('pointerDown on an anchor claims and primes the drag', () => {
+    const { tool, batches, getPose } = setup();
+    // Down on the anchor at (0,0) — pointerDown should claim.
+    const decision = tool.pointer!.onDown!(pe(), makeCtx(nodeTarget(), { worldX: 0, worldY: 0 }));
+    expect(decision).toBe('claim');
+    // Threshold-cross: drag.onStart consumes the stashed hit and starts
+    // the controller. A full drag-and-release then commits one batch.
+    tool.drag!.onStart!(pe(), makeCtx(nodeTarget(), { worldX: 0, worldY: 0 }));
+    tool.drag!.onMove!(pe(), makeCtx(nodeTarget(), { worldX: 12, worldY: 34 }));
+    tool.drag!.onEnd!(pe(), makeCtx(nodeTarget()));
+    expect(batches).toHaveLength(1);
+    const path = getPose() as PolygonPath;
+    expect(path.coords[0]).toBe(12);
+    expect(path.coords[1]).toBe(34);
   });
 
-  it('pointer.onDown on empty space clears pendingStart and calls clearSelection', () => {
+  it('pointerDown on empty space clears selection and claims', () => {
     const { tool, controller } = setup();
     const clearSpy = vi.spyOn(controller, 'clearSelection');
-    const scratch = tool.initScratch!();
-    // Stash a hit first so we can verify it gets cleared.
-    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-    expect(scratch.pendingStart).not.toBeNull();
-    // Click empty.
-    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 999, worldY: 999 }));
-    expect(scratch.pendingStart).toBeNull();
+    // Click empty (far from any anchor).
+    const decision = tool.pointer!.onDown!(
+      pe(),
+      makeCtx(emptyTarget(), { worldX: 999, worldY: 999 }),
+    );
+    expect(decision).toBe('claim');
     expect(clearSpy).toHaveBeenCalledOnce();
   });
 
-  it('drag.onStart with no pendingStart passes through (sub-threshold non-anchor)', () => {
-    const { tool } = setup();
-    const scratch = tool.initScratch!();
-    expect(tool.drag!.onStart!(pe(), makeCtx(scratch))).toBe('pass');
+  it('pointerDown on a non-anchor body hit also clears selection', () => {
+    // Route uses '*' for node hits — same handler as 'empty' since the
+    // controller hand-rolls hit math. A body hit that doesn't land on an
+    // anchor still clears highlight.
+    const { tool, controller } = setup();
+    const clearSpy = vi.spyOn(controller, 'clearSelection');
+    tool.pointer!.onDown!(pe(), makeCtx(nodeTarget(), { worldX: 999, worldY: 999 }));
+    expect(clearSpy).toHaveBeenCalledOnce();
   });
 
-  it('full drag mutates the anchor and dispatches one op via applyOps', () => {
+  it('drag.onStart with no pending hit passes through (sub-threshold non-anchor)', () => {
+    const { tool } = setup();
+    expect(tool.drag!.onStart!(pe(), makeCtx(emptyTarget()))).toBe('pass');
+  });
+
+  it('drag commit applies the edit and labels the batch', () => {
     const { tool, batches, getPose } = setup();
-    const scratch = tool.initScratch!();
-    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-    tool.drag!.onStart!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-    tool.drag!.onMove!(pe(), makeCtx(scratch, { worldX: 12, worldY: 34 }));
-    tool.drag!.onEnd!(pe(), makeCtx(scratch));
+    tool.pointer!.onDown!(pe(), makeCtx(nodeTarget(), { worldX: 0, worldY: 0 }));
+    tool.drag!.onStart!(pe(), makeCtx(nodeTarget(), { worldX: 0, worldY: 0 }));
+    tool.drag!.onMove!(pe(), makeCtx(nodeTarget(), { worldX: 12, worldY: 34 }));
+    tool.drag!.onEnd!(pe(), makeCtx(nodeTarget()));
     expect(batches).toHaveLength(1);
     expect(batches[0].label).toBe('Edit anchors');
     const path = getPose() as PolygonPath;
@@ -140,11 +168,10 @@ describe('useEditAnchorsTool', () => {
 
   it('drag.onCancel cancels the in-flight edit without dispatching', () => {
     const { tool, batches, getPose } = setup();
-    const scratch = tool.initScratch!();
-    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-    tool.drag!.onStart!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-    tool.drag!.onMove!(pe(), makeCtx(scratch, { worldX: 12, worldY: 34 }));
-    tool.drag!.onCancel!(makeCtx(scratch));
+    tool.pointer!.onDown!(pe(), makeCtx(nodeTarget(), { worldX: 0, worldY: 0 }));
+    tool.drag!.onStart!(pe(), makeCtx(nodeTarget(), { worldX: 0, worldY: 0 }));
+    tool.drag!.onMove!(pe(), makeCtx(nodeTarget(), { worldX: 12, worldY: 34 }));
+    tool.drag!.onCancel!(makeCtx(nodeTarget()));
     expect(batches).toHaveLength(0);
     const path = getPose() as PolygonPath;
     expect(path.coords[0]).toBe(0);
@@ -153,25 +180,25 @@ describe('useEditAnchorsTool', () => {
 
   it('keyboard Escape calls onExit and cancels any in-flight drag', () => {
     const { tool, onExit, batches } = setup();
-    const scratch = tool.initScratch!();
-    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-    tool.drag!.onStart!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-    tool.drag!.onMove!(pe(), makeCtx(scratch, { worldX: 12, worldY: 34 }));
-    expect(tool.keyboard!.onDown!(ke('Escape'), makeCtx(scratch))).toBe('claim');
+    tool.pointer!.onDown!(pe(), makeCtx(nodeTarget(), { worldX: 0, worldY: 0 }));
+    tool.drag!.onStart!(pe(), makeCtx(nodeTarget(), { worldX: 0, worldY: 0 }));
+    tool.drag!.onMove!(pe(), makeCtx(nodeTarget(), { worldX: 12, worldY: 34 }));
+    expect(tool.keyboard!.onDown!(ke('Escape'), makeCtx(emptyTarget()))).toBe('claim');
     expect(onExit).toHaveBeenCalledOnce();
     expect(batches).toHaveLength(0);
   });
 
   it('keyboard non-Escape keys pass through', () => {
     const { tool } = setup();
-    const scratch = tool.initScratch!();
-    expect(tool.keyboard!.onDown!(ke('a'), makeCtx(scratch))).toBe('pass');
+    expect(tool.keyboard!.onDown!(ke('a'), makeCtx(emptyTarget()))).toBe('pass');
   });
 
-  it('with no editingId, pointer.onDown finds nothing and stashes no pendingStart', () => {
-    const { tool } = setup(null);
-    const scratch = tool.initScratch!();
-    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-    expect(scratch.pendingStart).toBeNull();
+  it('with no editingId, pointerDown finds nothing and falls back to clear', () => {
+    const { tool, controller } = setup(null);
+    const clearSpy = vi.spyOn(controller, 'clearSelection');
+    tool.pointer!.onDown!(pe(), makeCtx(emptyTarget(), { worldX: 0, worldY: 0 }));
+    // Subsequent drag.onStart must pass since no hit was stashed.
+    expect(tool.drag!.onStart!(pe(), makeCtx(emptyTarget()))).toBe('pass');
+    expect(clearSpy).toHaveBeenCalled();
   });
 });
