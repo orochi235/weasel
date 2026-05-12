@@ -18,8 +18,5 @@
   },
   "scripts": {
     "test": "vitest run"
-  },
-  "peerDependencies": {
-    "@orochi235/weasel": "*"
   }
 }

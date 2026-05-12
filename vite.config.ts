@@ -2,6 +2,7 @@ import { defineConfig, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
 import { existsSync, statSync, createReadStream } from 'node:fs';
 import { extname, join, resolve } from 'node:path';
+import { weaselAliases } from './scripts/vite-aliases';
 
 /**
  * Dev-only middleware: serve `dist-demo/api/*` at `/api/*`. The deployed
@@ -66,35 +67,12 @@ export default defineConfig({
   base: '/weasel/',
   publicDir: resolve(__dirname, 'assets/fonts'),
   resolve: {
-    alias: [
+    alias: weaselAliases(__dirname, [
       {
         find: '@orochi235/weasel-theme/tokens.css',
         replacement: resolve(__dirname, 'packages/weasel-theme/src/tokens.css'),
       },
-      {
-        find: '@orochi235/weasel-theme',
-        replacement: resolve(__dirname, 'packages/weasel-theme/src/index.ts'),
-      },
-{
-        find: '@orochi235/weasel-ui',
-        replacement: resolve(__dirname, 'packages/weasel-ui/src/index.ts'),
-      },
-      {
-        find: /^@orochi235\/weasel\/(.*)$/,
-        replacement: resolve(__dirname, 'src/subpaths/$1.ts'),
-      },
-      {
-        find: '@orochi235/weasel',
-        replacement: resolve(__dirname, 'src/index.ts'),
-      },
-      // Bare top-level kit paths — must match tsconfig + vitest.config.
-      { find: /^core\/(.*)$/, replacement: resolve(__dirname, 'src/core/$1') },
-      { find: /^features\/(.*)$/, replacement: resolve(__dirname, 'src/features/$1') },
-      { find: /^affordances\/(.*)$/, replacement: resolve(__dirname, 'src/affordances/$1') },
-      { find: /^interactions\/(.*)$/, replacement: resolve(__dirname, 'src/interactions/$1') },
-      { find: /^tools\/(.*)$/, replacement: resolve(__dirname, 'src/tools/$1') },
-      { find: /^canvas\/(.*)$/, replacement: resolve(__dirname, 'src/canvas/$1') },
-    ],
+    ]),
   },
   plugins: [react(), serveApiDocsInDev()],
   build: {
