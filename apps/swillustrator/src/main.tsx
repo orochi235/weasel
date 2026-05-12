@@ -1,6 +1,9 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { registerFont } from '@orochi235/weasel/renderer';
+// `registerFont` lives in the kit's renderer subdir, which doesn't have a
+// `@orochi235/weasel/<subpath>` entry. App.tsx imports `DrawCommand` from this
+// same relative path — keep the two consistent.
+import { registerFont } from '../../../src/renderer';
 import { App } from './App';
 
 const container = document.getElementById('root');
