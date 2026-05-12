@@ -501,6 +501,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     selection: selectionOverride,
     selectionOptions,
     boundsOf,
+    pickEvery,
     clientToWorld,
     geometry = AUTO_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>,
     onPointerDown: onPointerDownOverride,
@@ -727,6 +728,44 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     };
     d.__setGetCtx?.(toolsCtxBase);
   }, [tools, toolsCtxBase]);
+
+  // Wire the dispatcher's scene hit-test (ctx.target population on pointer
+  // events). Builds a NodeHit/EmptyHit from the effective pickEvery + adapter
+  // so declarative routing factories can match on `target.kind`
+  // ('rect'/'text'/'path'/'empty') from any pointer event. The closure reads
+  // refs so it always sees the latest pickEvery / adapter without re-installing
+  // the setter on every prop change.
+  const pickEveryRef = useRef(pickEvery);
+  pickEveryRef.current = pickEvery;
+  useEffect(() => {
+    if (!tools) return;
+    const d = tools.dispatcher as ToolsDispatcher & {
+      __setGetNodeAtPoint?: (
+        fn: ((worldX: number, worldY: number) =>
+          | { id: NodeId; kind: string; pose: unknown; data: unknown; meta?: Record<string, unknown> }
+          | null) | undefined,
+      ) => void;
+    };
+    d.__setGetNodeAtPoint?.((wx, wy) => {
+      const pe = pickEveryRef.current;
+      if (!pe) return null;
+      const raw = pe(wx, wy);
+      // Normalize `string | string[] | null` to topmost id (first entry).
+      const id = Array.isArray(raw) ? raw[0] ?? null : raw;
+      if (id == null) return null;
+      const a = effectiveAdapterRefForCtx.current as typeof effectiveAdapterRefForCtx.current & {
+        kindOf?: (id: string) => string;
+        getNode?: (id: string) => unknown;
+      };
+      const kind = a.kindOf?.(id) ?? 'unknown';
+      const pose = a.getPose(id);
+      const data = a.getNode?.(id) ?? { id };
+      return { id: id as NodeId, kind, pose, data };
+    });
+    return () => {
+      d.__setGetNodeAtPoint?.(undefined);
+    };
+  }, [tools]);
 
   // selRef tracks the live effective selection for the action-gesture hooks
   // (delete / nudge / duplicate) which read it through getSelection callbacks.
