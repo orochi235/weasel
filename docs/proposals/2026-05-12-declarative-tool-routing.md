@@ -51,15 +51,25 @@ Most targeted tools are either:
 
 - **Phase-free** — a click or dblTap fires an action and returns to
   rest. No "in-progress" state. (Select tool when not in a drag.)
-- **Two-phase** — `idle ↔ active`. Some gestures start the active
-  phase, some end it. Within active, scratch state holds the
+- **Two-phase** — `idle ↔ engaged`. Some gestures start the engaged
+  phase, some end it. Within engaged, scratch state holds the
   accumulator and continuation handlers drive the mid-gesture
   rendering.
 
 Two-phase covers drag-gestures (resize, move, insert), modal flows
 (pen mid-creation, text mid-edit), and any "begin → progress → commit"
-shape. The kit ships exactly one phase distinction: the `active` slot
+shape. The kit ships exactly one phase distinction: the `engaged` slot
 exists when `scratch !== null`. Authors don't name states.
+
+**Active slot vs. engaged phase.** Two distinct concepts that sound
+similar — call out explicitly. "Active slot" is the dispatcher's
+notion of "the currently-selected tool" (one tool occupies the
+active slot at a time). "Engaged phase" is the tool's own notion of
+"I'm mid-gesture right now" (scratch is non-null). A tool can be in
+the active slot but in the idle phase (just selected, no gesture yet)
+or in the active slot AND engaged (selected and mid-drag). The
+lifecycle hooks `onActivate` / `onDeactivate` fire on slot transitions,
+not phase transitions.
 
 Sub-phase nuance — e.g., pen tool's "hovering the first anchor about
 to close" — lives in scratch fields, not as a distinct state.
@@ -86,7 +96,7 @@ underlying `Tool<TScratch>` for the dispatcher; the split exists at
 authoring time so the call site declares intent.
 
 `TScratch` defaults to `void` so phase-free tools can't accidentally
-call `begin(...)` — it'd be a type error. Authors opt into the active
+call `begin(...)` — it'd be a type error. Authors opt into the engaged
 phase by parameterizing.
 
 No `TTargetKind` generic. The kit can't own a closed set of target
@@ -104,10 +114,10 @@ Five constructors. The dispatcher consumes the tagged results.
 | Constructor | Effect |
 |---|---|
 | `apply(ops, label?)` | Dispatch ops through the adapter's `applyBatch`. No phase change. Used in phase-free routes. |
-| `begin(spec)` | Open active phase. `spec` carries the initial scratch, optional `thresholdPx` for drag gating, and optional continuation closures (`onMove`, `onRelease`, `onCancel`). Drag-shaped gestures attach continuations here; click-sequence gestures (pen) omit them and dispatch subsequent events through `active`. |
-| `hold(newScratch)` | Update scratch within active. No commit, no phase change — the tool *holds* the new state for subsequent events. |
-| `commit(ops, label?)` | Apply ops AND close active phase. |
-| `cancel()` | Close active phase without applying ops. |
+| `begin(spec)` | Open engaged phase. `spec` carries the initial scratch, optional `thresholdPx` for drag gating, and optional continuation closures (`onMove`, `onRelease`, `onCancel`). Drag-shaped gestures attach continuations here; click-sequence gestures (pen) omit them and dispatch subsequent events through `engaged`. |
+| `hold(newScratch)` | Update scratch within engaged. No commit, no phase change — the tool *holds* the new state for subsequent events. |
+| `commit(ops, label?)` | Apply ops AND close engaged phase. |
+| `cancel()` | Close engaged phase without applying ops. |
 
 The route table value type:
 
@@ -131,7 +141,7 @@ interface ToolDef<TScratch = void> {
   presentation?: ToolPresentation<TScratch>;
   keybinding?: KeyBinding;
   initial: PhaseDef<TScratch>;
-  active?: PhaseDef<TScratch>;  // omit for phase-free tools
+  engaged?: PhaseDef<TScratch>;  // omit for phase-free tools
 }
 
 interface PhaseDef<TScratch> {
@@ -183,10 +193,10 @@ type ViewportPhaseDef<TScratch = void> = Pick<
 };
 
 type ViewportToolDef<TScratch = void> = Omit<
-  ToolDef<TScratch>, 'initial' | 'active'
+  ToolDef<TScratch>, 'initial' | 'engaged'
 > & {
   initial: ViewportPhaseDef<TScratch>;
-  active?: ViewportPhaseDef<TScratch>;
+  engaged?: ViewportPhaseDef<TScratch>;
 };
 ```
 
@@ -309,13 +319,13 @@ const beginMove: ActionFn = (ctx) => begin({
 ```
 
 The dispatcher routes `pointerMove` / `pointerUp` / `pointerCancel`
-into these closures automatically when the tool is in active phase.
+into these closures automatically when the tool is in engaged phase.
 
 Click-sequence gestures (pen) don't attach continuations — each
-subsequent click routes through `active.click` instead:
+subsequent click routes through `engaged.click` instead:
 
 ```ts
-active: {
+engaged: {
   click: {
     'anchor:first': (ctx) => commit([closePathOp(ctx.scratch.anchors)]),
     '*':            (ctx) => hold({ anchors: [...ctx.scratch.anchors, ctx.point] }),
@@ -324,7 +334,7 @@ active: {
 ```
 
 Same `begin/hold/commit/cancel` primitives, different usage shape:
-"begin + auto-continuation" vs. "begin + dispatch-into-active." The
+"begin + auto-continuation" vs. "begin + dispatch-into-engaged." The
 dispatcher unifies them.
 
 ## Sample tools
@@ -354,7 +364,7 @@ const SelectTool = defineTool({
       'empty': beginMarquee,
     },
   },
-  active: {
+  engaged: {
     keyDown: { 'Escape': cancel },
   },
 });
@@ -376,7 +386,7 @@ const RectInsertTool = defineTool<{ start: Point; current: Point }>({
       }),
     },
   },
-  active: {
+  engaged: {
     keyDown: { 'Escape': cancel },
     claimsAll: true,
   },
@@ -429,7 +439,7 @@ const PenTool = defineTool<{ anchors: Point[] }>({
       'path': enterAnchorEdit,
     },
   },
-  active: {
+  engaged: {
     click: {
       'anchor:first': (ctx) => commit([closePathOp(ctx.scratch.anchors)], 'Close path'),
       '*':            (ctx) => hold({ anchors: [...ctx.scratch.anchors, ctx.point] }),
@@ -464,7 +474,7 @@ const TextTool = defineTool({
       }),
     },
   },
-  active: {
+  engaged: {
     keyDown: { 'Escape': cancel },
   },
 });
@@ -484,7 +494,7 @@ to be built or the data-shape is just ceremony:
 - **Conflict detection at boot.** Two tools claiming the same
   `(slot × gesture × target × modifier)` is a static error the
   dispatcher can surface.
-- **Tool-introspection debug overlay.** "You're in `active` phase of
+- **Tool-introspection debug overlay.** "You're in `engaged` phase of
   PenTool; valid gestures here: click→{anchor:first, *}, keyDown→{Escape, Enter}."
 - **Documentation rendering.** Each tool's behavior is renderable
   as a table without inspecting source.
