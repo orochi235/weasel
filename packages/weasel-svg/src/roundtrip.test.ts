@@ -36,7 +36,19 @@ interface NormalizedGroup {
   opacity?: number;
 }
 
-type NormalizedNode = NormalizedPath | NormalizedGroup;
+interface NormalizedText {
+  kind: 'text';
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  text: string;
+  runs?: unknown;
+  style?: unknown;
+  opacity?: number;
+}
+
+type NormalizedNode = NormalizedPath | NormalizedGroup | NormalizedText;
 
 function round(n: number): number {
   return Math.round(n * 1000) / 1000;
@@ -49,6 +61,20 @@ function normalize(node: SvgNode): NormalizedNode {
       children: node.children.map(normalize),
     };
     if (node.transform) out.transform = Array.from(node.transform).map(round);
+    if (node.opacity != null) out.opacity = round(node.opacity);
+    return out;
+  }
+  if (node.kind === 'text') {
+    const out: NormalizedText = {
+      kind: 'text',
+      x: round(node.x),
+      y: round(node.y),
+      width: round(node.width),
+      height: round(node.height),
+      text: node.text,
+    };
+    if (node.runs) out.runs = node.runs;
+    if (node.style) out.style = node.style;
     if (node.opacity != null) out.opacity = round(node.opacity);
     return out;
   }
@@ -67,8 +93,8 @@ function normalize(node: SvgNode): NormalizedNode {
     ].map(round);
     fillRule = 'nonzero';
   } else {
-    commands = Array.from(path.commands);
-    coords = Array.from(path.coords).map(round);
+    commands = Array.from(path.commands as Uint8Array);
+    coords = Array.from(path.coords as Float32Array).map(round);
     fillRule = path.fillRule;
   }
   const norm: NormalizedPath = {
@@ -142,6 +168,18 @@ describe('round-trip', () => {
 
   it('stroke styling (linecap, linejoin, dasharray)', () => {
     const { a, b, warnings } = roundTrip(F.STROKE_STYLE_SVG);
+    expect(warnings).toEqual([]);
+    expect(b).toEqual(a);
+  });
+
+  it('plain text', () => {
+    const { a, b, warnings } = roundTrip(F.TEXT_PLAIN_SVG);
+    expect(warnings).toEqual([]);
+    expect(b).toEqual(a);
+  });
+
+  it('text with styled runs (tspan)', () => {
+    const { a, b, warnings } = roundTrip(F.TEXT_RUNS_SVG);
     expect(warnings).toEqual([]);
     expect(b).toEqual(a);
   });

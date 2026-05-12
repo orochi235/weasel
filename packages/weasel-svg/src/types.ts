@@ -11,7 +11,7 @@
  * single `matrix(a b c d e f)` on the `<g>`.
  */
 
-import type { Path, Paint } from '@orochi235/weasel';
+import type { Path, Paint, StyledRun, TextStyle } from '@orochi235/weasel';
 
 /**
  * 2x3 affine matrix in column-major form (SVG's `matrix(a b c d e f)`
@@ -80,8 +80,38 @@ export interface SvgGroupNode {
   opacity?: number;
 }
 
+/**
+ * Text leaf node. Mirrors the kit's `TextPose` shape — a bounding box plus
+ * text content, optional rich-text `runs` (per-range styling), and an
+ * optional `TextStyle` for the node-wide defaults.
+ *
+ * Note on SVG text geometry: native `<text>` flows from a baseline; it
+ * doesn't have width/height attributes. The serializer emits
+ * `dominant-baseline="text-before-edge"` so `y` is the top of the text
+ * box, plus `data-weasel-width` / `data-weasel-height` so weasel's
+ * explicit box dimensions round-trip losslessly. External SVG text
+ * (lacking the data-* attrs) imports with estimated dimensions —
+ * `width = 99999` (effectively unbounded so wrap doesn't fire) and
+ * `height = fontSize * lineHeight * (lineCount || 1)`.
+ */
+export interface SvgTextNode {
+  kind: 'text';
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  /** Plain text. When `runs` is set, `runsToPlainText(runs)` must equal `text`. */
+  text: string;
+  /** Optional per-range styling — same shape as `TextPose.runs`. */
+  runs?: StyledRun[];
+  /** Node-wide style. Defaults applied at render time via `resolveTextStyle`. */
+  style?: TextStyle;
+  /** Element-level opacity (`opacity="..."`), 0..1. */
+  opacity?: number;
+}
+
 /** Discriminated-union node — the leaf of the public tree. */
-export type SvgNode = SvgPathNode | SvgGroupNode;
+export type SvgNode = SvgPathNode | SvgGroupNode | SvgTextNode;
 
 /** Output of {@link parseSvg}. */
 export interface ParseResult {

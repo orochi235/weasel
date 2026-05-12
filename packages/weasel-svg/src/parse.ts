@@ -16,8 +16,9 @@ import {
 import { parsePathD } from './path-parser';
 import { transformPath } from './shapes';
 import type {
-  Matrix, ParseResult, SvgNode, SvgPaint, SvgPathNode, SvgStroke,
+  Matrix, ParseResult, SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode,
 } from './types';
+import type { StyledRun, TextStyle, Paint } from '@orochi235/weasel';
 import { multiply, parseTransform } from './transform';
 import { IDENTITY_MATRIX } from './types';
 import { parsePaintAttr } from './color';
@@ -99,6 +100,9 @@ function parseElement(
   if (SUPPORTED_GROUP_TAGS.has(tag)) {
     // Nested <svg> — treat as a transparent group.
     return parseChildren(el, ctm, gradients, onWarn);
+  }
+  if (tag === 'text') {
+    return parseTextElement(el, ctm, gradients, onWarn);
   }
   if (!SUPPORTED_LEAF_TAGS.has(tag)) {
     onWarn(`unsupported element: <${el.tagName}>`);
@@ -273,4 +277,177 @@ function readOpacityAttr(el: Element, name: string): number | undefined {
 
 function clamp01(n: number): number {
   return n < 0 ? 0 : n > 1 ? 1 : n;
+}
+
+/**
+ * Parse an SVG `<text>` element into an `SvgTextNode`. Reads geometry
+ * from x/y plus optional `data-weasel-width` / `data-weasel-height`
+ * (preserved across weasel→SVG round-trips); falls back to font-metric
+ * estimates when those attrs are absent (external SVG sources).
+ *
+ * Child `<tspan>` elements with their own font/fill attrs become
+ * `StyledRun`s on the node. Plain text without `<tspan>` produces no
+ * `runs` and the node's `text` is the raw text content.
+ */
+function parseTextElement(
+  el: Element,
+  ctm: Matrix,
+  gradients: GradientTable,
+  onWarn: (m: string) => void,
+): SvgNode | null {
+  const num = (raw: string | null, fallback: number): number => {
+    if (raw == null) return fallback;
+    const n = parseFloat(raw);
+    return Number.isFinite(n) ? n : fallback;
+  };
+  const localTransform = parseTransform(el.getAttribute('transform'), onWarn);
+  const m = multiply(ctm, localTransform);
+
+  const rawX = num(el.getAttribute('x'), 0);
+  const rawY = num(el.getAttribute('y'), 0);
+  // Translate the anchor point through the accumulated transform. Skew /
+  // non-uniform scale on the text node lower the round-trip honestly but
+  // skew the box dimensions — the rare cases warn and lose styling.
+  const ax = m[0] * rawX + m[2] * rawY + m[4];
+  const ay = m[1] * rawX + m[3] * rawY + m[5];
+
+  const style = readTextStyle(el, gradients, onWarn);
+  const fontSize = style.fontSize ?? 16;
+  const lineHeight = style.lineHeight ?? 1.2;
+
+  const dominantBaseline = el.getAttribute('dominant-baseline');
+  const explicitTopAnchor = dominantBaseline === 'text-before-edge'
+    || dominantBaseline === 'hanging';
+  // If serialized by us, `y` is already the top edge. Otherwise SVG's
+  // default is `y` = baseline of the first line — shift up by one
+  // line of cap-height so weasel's box top approximates the cap-line.
+  const topY = explicitTopAnchor ? ay : ay - fontSize;
+
+  // Walk children: text nodes become plain run text; <tspan> elements
+  // become StyledRuns with their attribute overrides applied.
+  const runs: StyledRun[] = [];
+  let plain = '';
+  for (let i = 0; i < el.childNodes.length; i++) {
+    const child = el.childNodes[i];
+    if (child.nodeType === 3 /* TEXT_NODE */) {
+      const t = child.textContent ?? '';
+      if (!t) continue;
+      runs.push({ text: t });
+      plain += t;
+    } else if (child.nodeType === 1 /* ELEMENT_NODE */) {
+      const sp = child as Element;
+      if (sp.tagName.toLowerCase() !== 'tspan') {
+        onWarn(`<text> child <${sp.tagName}> not supported; flattening text content`);
+        const t = sp.textContent ?? '';
+        if (t) { runs.push({ text: t }); plain += t; }
+        continue;
+      }
+      const run = readTspanRun(sp, gradients);
+      runs.push(run);
+      plain += run.text;
+    }
+  }
+
+  // Estimate dimensions: data-weasel-* attrs win, else heuristic.
+  const dataW = num(el.getAttribute('data-weasel-width'), NaN);
+  const dataH = num(el.getAttribute('data-weasel-height'), NaN);
+  const width = Number.isFinite(dataW) ? dataW : 99999;
+  // Newlines in the text drive line count for height estimation.
+  const lines = (plain.match(/\n/g)?.length ?? 0) + 1;
+  const height = Number.isFinite(dataH) ? dataH : fontSize * lineHeight * lines;
+
+  const opacity = readOpacityAttr(el, 'opacity');
+  const node: SvgTextNode = {
+    kind: 'text',
+    x: topY === ay ? ax : ax,  // x is unchanged by the baseline shift
+    y: topY,
+    width,
+    height,
+    text: plain,
+  };
+  // Only attach `runs` when at least one run carries non-default styling —
+  // single-run plain text is cleaner without it. `runsToPlainText(runs)`
+  // must equal `text` per kit invariants, so the array must match exactly.
+  const hasStyling = runs.some(
+    (r) => r.bold || r.italic || r.fontFamily || r.fontSize != null
+      || (r.fill && (('color' in r.fill) || ('fill' in r.fill))),
+  );
+  if (hasStyling) node.runs = runs;
+  if (Object.keys(style).length > 0) node.style = style;
+  if (opacity != null) node.opacity = opacity;
+  return node;
+}
+
+function readTspanRun(el: Element, gradients: GradientTable): StyledRun {
+  const text = el.textContent ?? '';
+  const run: StyledRun = { text };
+  const fw = el.getAttribute('font-weight');
+  if (fw === 'bold' || fw === '700' || fw === 'bolder') run.bold = true;
+  const fs = el.getAttribute('font-style');
+  if (fs === 'italic' || fs === 'oblique') run.italic = true;
+  const ff = el.getAttribute('font-family');
+  if (ff) run.fontFamily = ff;
+  const sz = el.getAttribute('font-size');
+  if (sz != null) {
+    const n = parseFloat(sz);
+    if (Number.isFinite(n)) run.fontSize = n;
+  }
+  const fillAttr = el.getAttribute('fill');
+  if (fillAttr) {
+    const parsed = parsePaintAttr(fillAttr);
+    if (parsed?.kind === 'solid') {
+      run.fill = { fill: 'solid', color: parsed.color };
+    } else if (parsed?.kind === 'ref') {
+      const paint = gradients.get(parsed.id);
+      if (paint) run.fill = paint;
+    }
+  }
+  return run;
+}
+
+function readTextStyle(
+  el: Element,
+  gradients: GradientTable,
+  onWarn: (m: string) => void,
+): TextStyle {
+  const style: TextStyle = {};
+  const sz = el.getAttribute('font-size');
+  if (sz != null) {
+    const n = parseFloat(sz);
+    if (Number.isFinite(n)) style.fontSize = n;
+  }
+  const ff = el.getAttribute('font-family');
+  if (ff) style.fontFamily = ff;
+  const fw = el.getAttribute('font-weight');
+  if (fw != null) {
+    const n = parseFloat(fw);
+    style.fontWeight = Number.isFinite(n) ? n : fw;
+  }
+  const fs = el.getAttribute('font-style');
+  if (fs === 'italic' || fs === 'normal') style.fontStyle = fs;
+  const anchor = el.getAttribute('text-anchor');
+  if (anchor === 'start') style.align = 'left';
+  else if (anchor === 'middle') style.align = 'center';
+  else if (anchor === 'end') style.align = 'right';
+  const lh = el.getAttribute('data-weasel-line-height');
+  if (lh != null) {
+    const n = parseFloat(lh);
+    if (Number.isFinite(n)) style.lineHeight = n;
+  }
+  const fillAttr = el.getAttribute('fill');
+  if (fillAttr) {
+    const parsed = parsePaintAttr(fillAttr);
+    if (parsed?.kind === 'solid') {
+      style.fill = { fill: 'solid', color: parsed.color } as Paint;
+    } else if (parsed?.kind === 'ref') {
+      const paint = gradients.get(parsed.id);
+      if (paint) style.fill = paint;
+    } else if (parsed?.kind === 'none') {
+      // Leave fill undefined; defaults to black per resolveTextStyle.
+    }
+  }
+  if (el.hasAttribute('stroke')) {
+    onWarn('<text stroke="..."> not supported on text; ignoring');
+  }
+  return style;
 }

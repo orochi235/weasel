@@ -8,14 +8,15 @@ import { describe, it, expect } from 'vitest';
 import { parseSvg } from './index';
 
 describe('warnings', () => {
-  it('warns on <text>', () => {
+  it('parses <text> into a text node', () => {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg">
       <rect x="0" y="0" width="10" height="10"/>
       <text x="0" y="20">hello</text>
     </svg>`;
     const { nodes, warnings } = parseSvg(svg);
-    expect(nodes).toHaveLength(1);
-    expect(warnings.some((w) => /text/i.test(w))).toBe(true);
+    expect(nodes).toHaveLength(2);
+    expect(nodes[1].kind).toBe('text');
+    expect(warnings).toEqual([]);
   });
 
   it('warns on <clipPath>', () => {
@@ -39,7 +40,7 @@ describe('warnings', () => {
   it('does not throw on multiple unsupported siblings', () => {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg">
       <use href="#x"/>
-      <text>a</text>
+      <mask id="m"/>
       <foreignObject/>
     </svg>`;
     expect(() => parseSvg(svg)).not.toThrow();

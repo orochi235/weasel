@@ -36,6 +36,7 @@ const svg = serializeSvg(nodes);
 | `<polyline>`       |  yes  |     —     | Lowered to open polygon path.                      |
 | `<polygon>`        |  yes  |     —     | Lowered to closed polygon path.                    |
 | `<path>`           |  yes  |    yes    | All commands: M/m L/l H/h V/v C/c S/s Q/q T/t A/a Z/z. |
+| `<text>` + `<tspan>` |  yes  |  yes  | Maps to `SvgTextNode` with weasel's `TextStyle` + `StyledRun[]`. Stashes box dims in `data-weasel-width` / `data-weasel-height` for lossless round-trip; external text without those attrs imports with estimated dimensions. Stroked text not supported. |
 | `<linearGradient>` |  yes  |    yes    | Inside `<defs>`. `userSpaceOnUse` coords.          |
 | `<radialGradient>` |  yes  |    yes    | Inside `<defs>`. `userSpaceOnUse` coords.          |
 
@@ -69,7 +70,7 @@ Arc commands (`A`/`a`) are converted to cubic Bezier approximations using the st
 
 ## Out of scope (v1)
 
-`clipPath`, `mask`, `filter`, `<pattern>`, `<use>`/`<symbol>`/non-gradient `<defs>` entries, `<text>` and any text element, `<marker>`, `<foreignObject>`, CSS `<style>` cascade, presentation attributes via CSS selectors. Anything unsupported emits a `warnings[]` entry naming the element / attribute.
+`clipPath`, `mask`, `filter`, `<pattern>`, `<use>`/`<symbol>`/non-gradient `<defs>` entries, `<marker>`, `<foreignObject>`, CSS `<style>` cascade, presentation attributes via CSS selectors. Anything unsupported emits a `warnings[]` entry naming the element / attribute.
 
 ## Tests
 

@@ -60,3 +60,11 @@ export const STROKE_STYLE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox
   <line x1="10" y1="90" x2="90" y2="90" stroke="#000" stroke-width="2" stroke-dasharray="6 3"/>
   <polyline points="10,5 15,15 20,5" fill="none" stroke="#000" stroke-width="3" stroke-linejoin="miter" stroke-miterlimit="2"/>
 </svg>`;
+
+export const TEXT_PLAIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+  <text x="10" y="20" dominant-baseline="text-before-edge" data-weasel-width="180" data-weasel-height="40" font-size="16" font-family="sans-serif" fill="#1a130d">Hello, world!</text>
+</svg>`;
+
+export const TEXT_RUNS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60">
+  <text x="10" y="15" dominant-baseline="text-before-edge" data-weasel-width="220" data-weasel-height="30" font-size="18" font-family="sans-serif" fill="#1a130d"><tspan>Hello, </tspan><tspan font-weight="700">bold</tspan><tspan> and </tspan><tspan font-style="italic" fill="#b03030">red italic</tspan><tspan>.</tspan></text>
+</svg>`;
