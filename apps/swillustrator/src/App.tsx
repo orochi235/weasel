@@ -76,6 +76,7 @@ import {
 } from '@orochi235/weasel-ui';
 import '@orochi235/weasel-theme/tokens.css';
 import { ActionBar } from './ActionBar';
+import { KindIcon } from './kindIcons';
 
 interface View { x: number; y: number; scale: number }
 
@@ -769,7 +770,12 @@ export function App() {
   const layerItems: LayerListItem[] = useMemo(
     () => [...items].reverse().map((o): LayerListItem => ({
       id: o.id,
-      label: `${o.kind} · ${o.id}`,
+      label: (
+        <span className="swill-layer-label">
+          <KindIcon kind={o.kind} />
+          <span>{o.id}</span>
+        </span>
+      ),
     })),
     [items],
   );

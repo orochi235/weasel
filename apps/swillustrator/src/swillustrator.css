@@ -81,6 +81,18 @@ html, body, #root {
   cursor: not-allowed;
 }
 
+/* --- LayerList row label (icon + id) --------------------------------- */
+.swill-layer-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.swill-layer-label > svg {
+  display: block;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
 .swill-sidebar {
   display: flex;
   flex-direction: column;
