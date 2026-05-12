@@ -947,3 +947,81 @@ Spec is done when:
 Remaining built-ins and the five shape tools migrate in subsequent
 phases; they're not part of the acceptance criteria for the
 foundation work.
+
+## Phase 4.5 follow-up: factory completeness (shipped 2026-05-12)
+
+Phase 3 Task 3's migration report surfaced two structural gaps in the
+factory surface. Phase 4.5 closed both before the Phase 5 tool
+migrations started.
+
+### `PhaseDef.pointerDown`
+
+`PhaseDef` now has a `pointerDown?: RouteTable<TScratch>` field
+alongside `click` / `dblTap` / `drag`:
+
+```ts
+interface PhaseDef<TScratch> {
+  click?:        RouteTable<TScratch>;
+  dblTap?:       RouteTable<TScratch>;
+  drag?:         RouteTable<TScratch> | ActionFn<TScratch>;
+  pointerDown?:  RouteTable<TScratch>;   // NEW in 4.5
+  // ...
+}
+```
+
+Semantics: a `pointerDown` route runs synchronously on pointerdown,
+before the dispatcher's threshold-gated click vs. drag classification.
+Returning `begin(spec)` primes scratch for subsequent handlers in the
+same gesture (the typical use). Returning `apply` / `commit` finishes
+the gesture immediately (rare). Returning `none()` (or omitting the
+route) passes through to the threshold-gated pipeline.
+
+Used by `useSelectTool` to classify the body-hit gesture: "this rect
+belongs to the existing selection so the drag will move the whole
+set" vs. "this rect is a fresh hit so the drag will move just this
+one." Replaces the imperative `legacyOnDown` shim.
+
+`ViewportPhaseDef` intentionally does NOT include `pointerDown` — the
+`Pick` derivation in `types.ts` lists only `wheel | keyDown | keyUp |
+cursor | overlay | claimsAll`. Viewport tools have no body-hit
+classifier need.
+
+### Raw event parameter on `ActionFn` and continuations
+
+`ActionFn<TScratch>` now accepts an optional second parameter — the
+raw DOM event that triggered the route. Same for `BeginSpec`'s
+`onMove` / `onRelease` / `onCancel`:
+
+```ts
+type ActionFn<TScratch> = (
+  ctx: ToolCtx<TScratch>,
+  event?: PointerEvent | KeyboardEvent | WheelEvent,
+) => Result<TScratch>;
+
+interface BeginSpec<TScratch> {
+  scratch: TScratch;
+  thresholdPx?: number;
+  onMove?:    (ctx: ToolCtx<TScratch>, event?: PointerEvent) => Result<TScratch>;
+  onRelease?: (ctx: ToolCtx<TScratch>, event?: PointerEvent) => Result<TScratch>;
+  onCancel?:  (ctx: ToolCtx<TScratch>, event?: PointerEvent) => void | Result<TScratch>;
+}
+```
+
+The parameter is optional so existing route tables that take only
+`ctx` continue to compile and behave identically. Authors opt in by
+adding the second parameter when they need the raw event — typically
+to forward to a consumer callback (e.g. `useSelectTool.onDoubleTap`'s
+contract includes the `PointerEvent` for downstream coordinate work)
+or to read `clientX`/`clientY` directly when `ctx.point` (world coords)
+isn't the right space.
+
+Continuation parameters narrow the type to `PointerEvent` — `onMove` /
+`onRelease` / `onCancel` only ever fire on pointer events.
+
+### Out of scope for Phase 4.5
+
+- The legacy `drag` shim in `useSelectTool` around
+  `useMove`/`useResize`/`useRotate` — Phase 5 Task 1 migrates it via
+  the `beginAt` adapter pattern.
+- Phase 3b resize/rotate affordance integration through the factory —
+  unchanged from the original Phase 3 scope.
