@@ -922,7 +922,19 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
       const base = defineTool<SelectScratch>({
         id: 'select',
         keybinding: { key: 'V' },
-        cursor: 'default',
+        // Cursor resolver reads scratch.kind directly rather than going
+        // through engaged-phase override. defineTool's `phaseOf` switches
+        // to engaged whenever `scratch != null`, but useSelectTool's
+        // resting scratch is `{ kind: 'idle' }` (not null) so an
+        // engaged-phase route table would shadow the initial routes on
+        // every fresh gesture. A top-level function-form cursor sidesteps
+        // that — it's the same effect (move → 'move', area → 'crosshair',
+        // anything else → 'default') without the phase machinery.
+        cursor: (ctx) => {
+          if (ctx.scratch?.kind === 'move') return 'move';
+          if (ctx.scratch?.kind === 'area') return 'crosshair';
+          return 'default';
+        },
         presentation: {
           label: 'Select',
           icon: createElement(SelectIcon),
@@ -1019,12 +1031,11 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
       // channel (pointer.onDown / onClick / drag / dblTap.onTap) via the
       // route tables above. We only need to layer kit-only fields that
       // aren't part of ToolDef — overlay, previewPose, previewBounds,
-      // previewIds, initScratch — plus restore `cursor` to a plain
-      // string identity (the factory converts string cursors into
-      // resolver functions).
+      // previewIds, initScratch. `base.cursor` is the factory-supplied
+      // resolver that honors the engaged-phase override above; don't
+      // override it here.
       return {
         ...base,
-        cursor: 'default',
         initScratch: () => ({ kind: 'idle' as const }),
         overlay,
         previewPose,

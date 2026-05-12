@@ -63,7 +63,13 @@ describe('useSelectTool', () => {
     );
     expect(result.current.id).toBe('select');
     expect(result.current.keybinding).toEqual({ key: 'V' });
-    expect(result.current.cursor).toBe('default');
+    // cursor is a resolver function (Phase 3 T6 added scratch-aware override).
+    // Idle scratch → 'default'.
+    const cursor = result.current.cursor;
+    const resolved = typeof cursor === 'function'
+      ? cursor(ctxOver({ scratch: { kind: 'idle' } }))
+      : cursor;
+    expect(resolved).toBe('default');
   });
 
   it('pointer.onDown over body stashes kind:move and selects', () => {
@@ -764,5 +770,173 @@ describe('useSelectTool — declarative dblTap forwards raw event', () => {
     const ctxB = ctxOver({ target: emptyTarget() });
     expect(withCb.current.dblTap!.onTap!(pe(), ctxA)).toBe('claim');
     expect(withoutCb.current.dblTap!.onTap!(pe(), ctxB)).toBe('pass');
+  });
+});
+
+describe('useSelectTool — declarative routing', () => {
+  // After Phase 3 T4/T5 + Phase 4.5 T4, useSelectTool's gesture surface is
+  // fully declarative — pointerDown / click / drag / dblTap all route through
+  // tables. These tests pin the routing-table semantics so a regression in
+  // the modifier sub-tables, drag-target dispatch, or cursor phase override
+  // gets caught before it ships.
+
+  it('shift-click on a selected rect forwards the shift modifier to applyClick (lets it remove from selection)', () => {
+    // Modifier-aware applyClick is the single source of selection mutation
+    // in the body branch — the click route hands the modifier through and
+    // applyClick decides whether to add, remove, or replace. We pin the
+    // hand-through here; the actual remove-from-set logic is exercised by
+    // the selection helper's own tests.
+    const applyClick = vi.fn();
+    const ctx = ctxOver({
+      target: nodeTarget('hit-id'),
+      modifiers: { alt: false, shift: true, meta: false, ctrl: false, space: false },
+      selection: { current: ['hit-id'], applyClick, set: vi.fn(), clear: vi.fn() } as any,
+    });
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        pickEvery: () => ['hit-id'],
+        boundsOf: () => null,
+      }),
+    );
+    result.current.pointer!.onDown!(pe(), ctx);
+    // Shift = extend modifier, so the deferred-collapse branch doesn't
+    // engage (isExtend short-circuits the defer). applyClick runs
+    // immediately on down with the shift modifier.
+    expect(applyClick).toHaveBeenCalledWith('hit-id', ctx.modifiers);
+    expect(applyClick.mock.calls[0][1].shift).toBe(true);
+  });
+
+  it('shift-click on empty preserves selection (does not clear)', () => {
+    // The click route's empty branch has a mods('shift') sub-table that
+    // returns none(), so the default clearOnEmpty doesn't run.
+    const clear = vi.fn();
+    const ctx = ctxOver({
+      target: emptyTarget(),
+      modifiers: { alt: false, shift: true, meta: false, ctrl: false, space: false },
+      selection: { current: ['a', 'b'], applyClick: vi.fn(), set: vi.fn(), clear } as any,
+    });
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        pickEvery: () => [],
+        boundsOf: () => null,
+      }),
+    );
+    result.current.pointer!.onDown!(pe(), ctx);
+    result.current.pointer!.onClick!(pe(), ctx);
+    expect(clear).not.toHaveBeenCalled();
+  });
+
+  it('alt-click on a rect falls through to plain selection (no clone — clone is alt-drag, owned by useCloneTool)', () => {
+    // useSelectTool deliberately does NOT special-case alt in its click
+    // table — there's no `[mods('alt')]` sub-table on the node-kind
+    // routes. The default route runs: applyClick is called with the alt
+    // modifier and applyClick's own rules decide what to do. Cloning is
+    // owned by useCloneTool via alt-drag, NOT by alt-click. This test
+    // pins the absence of a clone-on-alt-click route so a future
+    // accidental addition gets flagged.
+    const applyClick = vi.fn();
+    const ctx = ctxOver({
+      target: nodeTarget('hit-id'),
+      modifiers: { alt: true, shift: false, meta: false, ctrl: false, space: false },
+      selection: { current: [], applyClick, set: vi.fn(), clear: vi.fn() } as any,
+    });
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        pickEvery: () => ['hit-id'],
+        boundsOf: () => null,
+      }),
+    );
+    result.current.pointer!.onDown!(pe(), ctx);
+    expect(applyClick).toHaveBeenCalledWith('hit-id', ctx.modifiers);
+    expect(applyClick.mock.calls[0][1].alt).toBe(true);
+    // Scratch is move (not a clone-specific kind) — the drag route would
+    // dispatch to move.beginAt.
+    expect(ctx.scratch).toEqual(expect.objectContaining({ kind: 'move' }));
+  });
+
+  it('drag on a rect target opens engaged scratch with kind:move', () => {
+    // drag route: target.kind 'rect' → beginMove → move.beginAt → begin
+    // Result whose scratch is { kind: 'move', ids }. After drag.onStart
+    // claims, ctx.scratch is the engaged move scratch.
+    const ctx = ctxOver({
+      target: nodeTarget('hit-id', 'rect'),
+      selection: { current: ['hit-id'], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
+      scratch: { kind: 'idle' },
+      screenPoint: { x: 0, y: 0 },
+    });
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        pickEvery: () => ['hit-id'],
+        boundsOf: () => null,
+      }),
+    );
+    const decision = result.current.drag!.onStart!(pe(), ctx);
+    expect(decision).toBe('claim');
+    expect((ctx.scratch as SelectScratch).kind).toBe('move');
+  });
+
+  it('drag on empty target opens engaged scratch with kind:area', () => {
+    // drag route: target.kind 'empty' → beginArea → areaSelect.beginAt →
+    // begin Result whose scratch is { kind: 'area' }.
+    const ctx = ctxOver({
+      target: emptyTarget(),
+      scratch: { kind: 'idle' },
+      screenPoint: { x: 0, y: 0 },
+    });
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        pickEvery: () => [],
+        boundsOf: () => null,
+      }),
+    );
+    const decision = result.current.drag!.onStart!(pe(), ctx);
+    expect(decision).toBe('claim');
+    expect((ctx.scratch as SelectScratch).kind).toBe('area');
+  });
+
+  it('cursor resolver returns "move" when scratch.kind === "move"', () => {
+    // Phase 3 T6 added a scratch-aware cursor. Once a move gesture engages
+    // (scratch.kind === 'move'), the host should show the move cursor.
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        pickEvery: () => [],
+        boundsOf: () => null,
+      }),
+    );
+    const cursor = result.current.cursor;
+    expect(typeof cursor).toBe('function');
+    const resolved = (cursor as (ctx: any) => string)(
+      ctxOver({ scratch: { kind: 'move', ids: ['a'], deferredClickId: null } }),
+    );
+    expect(resolved).toBe('move');
+  });
+
+  it('cursor resolver returns "crosshair" when scratch.kind === "area"', () => {
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        pickEvery: () => [],
+        boundsOf: () => null,
+      }),
+    );
+    const cursor = result.current.cursor;
+    expect(typeof cursor).toBe('function');
+    const resolved = (cursor as (ctx: any) => string)(
+      ctxOver({ scratch: { kind: 'area' } }),
+    );
+    expect(resolved).toBe('crosshair');
+  });
+
+  it('cursor resolver returns "default" for unknown / idle scratch', () => {
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        pickEvery: () => [],
+        boundsOf: () => null,
+      }),
+    );
+    const cursor = result.current.cursor;
+    const resolved = (cursor as (ctx: any) => string)(
+      ctxOver({ scratch: { kind: 'idle' } }),
+    );
+    expect(resolved).toBe('default');
   });
 });
