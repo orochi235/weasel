@@ -102,7 +102,10 @@ import { KindIcon } from './kindIcons';
 
 interface View { x: number; y: number; scale: number }
 
-// US Letter at 96dpi.
+// Document size in world units. Maps directly to the SVG `viewBox`
+// dimensions on export (see `onSaveSvg` below) — `<svg viewBox="0 0 W H">`.
+// Concrete value here is US Letter at 96 dpi; eventually this becomes a
+// per-doc property a user can change.
 const PAGE_W = 816;
 const PAGE_H = 1056;
 
@@ -1174,8 +1177,14 @@ export function App() {
             }}
           >
             <Canvas
-              width={PAGE_W}
-              height={PAGE_H}
+              // Canvas DOM size grows with `view.scale` so zoom is a real
+              // visual size change (the page-shadow grows, the stage's
+              // overflow:auto picks up scrollbars). The kit's internal
+              // world→screen transform still applies view.scale, so geometry
+              // remains correct — geometry at world (x, y) renders at canvas
+              // pixel (x*scale - view.x*scale, y*scale - view.y*scale).
+              width={PAGE_W * view.scale}
+              height={PAGE_H * view.scale}
               adapter={adapter as never}
               items={items}
               setItems={setItems}
