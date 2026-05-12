@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { RangePicker, type Thumb } from './RangePicker';
-import { paintGradientTrack } from './paintGradientTrack';
-import { oklchToHex } from './color/oklch';
+import { paintGradientTrack } from '../../paintGradientTrack';
+import { oklchToHex } from '../../color/oklch';
 
 const meta: Meta<typeof RangePicker> = {
   title: 'weasel-ui/RangePicker',

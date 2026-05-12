@@ -1,6 +1,6 @@
 import type { ReactNode, PointerEvent as ReactPointerEvent, CSSProperties } from 'react';
 import { useRef } from 'react';
-import { useReorderDragList, type LayerListItem } from './useReorderDragList';
+import { useReorderDragList, type LayerListItem } from '../../useReorderDragList';
 import s from './LayerList.module.css';
 
 export type { LayerListItem };

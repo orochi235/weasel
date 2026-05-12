@@ -55,7 +55,8 @@ export const MixedInputs: Story = {
   render: () => {
     const [name, setName] = useState('rectangle');
     const [width, setWidth] = useState(120);
-    const [position, setPosition] = useState<[number, number]>([20, 40]);
+    const [posX, setPosX] = useState(20);
+    const [posY, setPosY] = useState(40);
     const [fill, setFill] = useState('#4a8fd4');
     const [shape, setShape] = useState('rect');
     return (
@@ -67,10 +68,11 @@ export const MixedInputs: Story = {
           <PropertyNumberInput value={width} onChange={setWidth} min={0} max={500} step={1} span={4} />
         </PropertyRow>
         <PropertyRow label="Position">
-          <PropertyAxisInput value={position} onChange={setPosition} step={1} />
+          <PropertyAxisInput axis="X" value={posX} onChange={setPosX} step={1} />
+          <PropertyAxisInput axis="Y" value={posY} onChange={setPosY} step={1} />
         </PropertyRow>
         <PropertyRow label="Fill">
-          <PropertyColorInput value={fill} onChange={setFill} span={4} />
+          <PropertyColorInput value={fill} onChange={setFill} />
         </PropertyRow>
         <PropertyRow label="Shape">
           <PropertySelect

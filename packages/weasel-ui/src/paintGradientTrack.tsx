@@ -1,5 +1,5 @@
 import type { ReactNode, CSSProperties } from 'react';
-import type { TrackCtx } from './RangePicker';
+import type { TrackCtx } from './components/RangePicker';
 
 export type GradientTrackOpts = {
   gradient: (t: number) => string;
