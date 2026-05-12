@@ -91,6 +91,13 @@ export interface ToolDef<TScratch = void> {
   onActivate?:   (ctx: ToolCtx<TScratch>) => void;
   onDeactivate?: (ctx: ToolCtx<TScratch>) => void;
   cursor?: string | ((ctx: ToolCtx<TScratch>) => string);
+  /** Override the default scratch initializer. Default is `() => null`
+   *  cast to `TScratch`, which works for tools whose scratch is fresh
+   *  every gesture. Tools that need scratch identity to survive across
+   *  gesture boundaries (e.g. the pen tool's multi-click subpath state)
+   *  pass a stable-ref-returning thunk here. The factory forwards this
+   *  onto the returned `Tool.initScratch`. */
+  initScratch?: () => TScratch;
   initial: PhaseDef<TScratch>;
   engaged?: PhaseDef<TScratch>;
 }

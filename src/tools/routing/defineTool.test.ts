@@ -205,6 +205,17 @@ describe('defineTool — basic translation', () => {
     const tool = defineTool({ id: 'fixture-no-claim', initial: {} });
     expect(tool.claimsAll!({ scratch: null } as never)).toBe(false);
   });
+
+  it('forwards def.initScratch onto Tool.initScratch', () => {
+    const shared = { count: 0 };
+    const tool = defineTool({
+      id: 'fixture-scratch',
+      initScratch: () => shared,
+      initial: {},
+    });
+    expect(tool.initScratch!()).toBe(shared);
+    expect(tool.initScratch!()).toBe(shared); // same identity each call
+  });
 });
 
 describe('defineTool — pointerDown route', () => {

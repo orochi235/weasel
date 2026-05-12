@@ -247,7 +247,7 @@ export function defineTool<TScratch = void>(
     hotkey: def.hotkey,
     onActivate: def.onActivate,
     onDeactivate: def.onDeactivate,
-    initScratch: () => null as unknown as TScratch,
+    initScratch: def.initScratch ?? (() => null as unknown as TScratch),
     cursor: resolveCursor,
     claimsAll,
     pointer: (onClick || onDown)
