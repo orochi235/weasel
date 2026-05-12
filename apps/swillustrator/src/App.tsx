@@ -36,6 +36,10 @@ import {
   createTextLayer,
   createPenPreviewLayer,
   createPathLayer,
+  createSetTextOp,
+  useTextEdit,
+  pointInTextPose,
+  caretIndexAt,
   boundsOfPath,
   type ClipboardSnapshot,
   type Group,
@@ -162,6 +166,11 @@ export function App() {
   // paste lands under the cursor (matching Figma/Illustrator).
   const cursorWorldRef = useRef<{ worldX: number; worldY: number } | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
+  // Page-shadow div hosts the canvas + the useTextEdit contenteditable overlay.
+  const pageShadowRef = useRef<HTMLDivElement | null>(null);
+  // After the text tool inserts a node, queue an immediate startEdit on it so
+  // single-click-to-place lands directly in edit mode (Illustrator-style).
+  const pendingTextEditRef = useRef<string | null>(null);
 
   // ---- Mutable backing helpers -----------------------------------------
   // Publish the backing arrays to React. We re-create the array references
@@ -216,6 +225,14 @@ export function App() {
         const i = itemsRef.current.findIndex((o) => o.id === id);
         if (i < 0) return;
         itemsRef.current[i] = { ...itemsRef.current[i], ...pose };
+      },
+      // Used by createSetTextOp; called from useTextEdit's commit through applyBatch.
+      setText: (id: string, text: string) => {
+        const i = itemsRef.current.findIndex((o) => o.id === id);
+        if (i < 0) return;
+        const o = itemsRef.current[i];
+        if (o.kind !== 'text') return;
+        itemsRef.current[i] = { ...o, text };
       },
       // --- structural mutators (ops use these directly) ---
       insertNode: (n: Obj) => {
@@ -471,15 +488,17 @@ export function App() {
     },
     pointInsert: ({ x: worldX, y: worldY }) => {
       const id = `t${nextId.current++}`;
+      pendingTextEditRef.current = id;
       return {
         id, kind: 'text',
         x: worldX, y: worldY, width: 180, height: 28,
-        text: 'New text',
+        text: '',
         style: { fontSize: 16, fill: { fill: 'solid', color: fillRef.current } },
       };
     },
     commitInsert: ({ x, y, width, height }) => {
       const id = `t${nextId.current++}`;
+      pendingTextEditRef.current = id;
       // Match font size to box height so the text actually fills the marquee.
       // 0.7 ≈ glyph cap-height ratio for most sans-serifs; rounds to a sane
       // px size and floors at 8 so wee boxes stay readable.
@@ -487,11 +506,51 @@ export function App() {
       return {
         id, kind: 'text',
         x, y, width, height,
-        text: 'New text',
+        text: '',
         style: { fontSize, fill: { fill: 'solid', color: fillRef.current } },
       };
     },
   });
+
+  // ---- In-place text editing (contenteditable overlay) -------------------
+  // Mounts a contenteditable above the canvas while a text node is being
+  // edited. `setText` flows through history so undo restores prior content.
+  const textEdit = useTextEdit({
+    container: pageShadowRef.current,
+    getText: (id) => {
+      const o = itemsRef.current.find((x) => x.id === id);
+      return o?.kind === 'text' ? o.text : '';
+    },
+    getStyle: (id) => {
+      const o = itemsRef.current.find((x) => x.id === id);
+      return o?.kind === 'text' ? o.style : undefined;
+    },
+    getScreenPose: (id) => {
+      const o = itemsRef.current.find((x) => x.id === id);
+      if (!o || o.kind !== 'text') return null;
+      return {
+        x: o.x, y: o.y, width: o.width, height: o.height,
+        fontSize: o.style?.fontSize ?? 16,
+      };
+    },
+    setText: (id, text) => {
+      const o = itemsRef.current.find((x) => x.id === id);
+      const from = o?.kind === 'text' ? o.text : '';
+      applyBatch([createSetTextOp({ id, from, to: text, label: 'Edit text' })], 'Edit text');
+    },
+  });
+
+  // Detect a freshly-inserted text node (queued in `pendingTextEditRef` by the
+  // text tool's pointInsert/commitInsert) and immediately enter edit mode so
+  // a single click places + types — matching Illustrator's behavior.
+  useEffect(() => {
+    const pid = pendingTextEditRef.current;
+    if (!pid) return;
+    if (!items.some((o) => o.id === pid)) return;
+    pendingTextEditRef.current = null;
+    textEdit.startEdit(pid);
+  }, [items, textEdit]);
+
   const wheelZoom = useWheelZoomTool();
   const wheelPan = useWheelPanTool();
   const keyZoom = useKeyboardZoomTool();
@@ -620,6 +679,8 @@ export function App() {
   const textLayer: RenderLayer<unknown> = createTextLayer<TextObj>({
     getTexts: () => itemsRef.current.filter((o): o is TextObj => o.kind === 'text'),
     getPose: (n) => ({ x: n.x, y: n.y, width: n.width, height: n.height, text: n.text, style: n.style }),
+    // Hide the currently-editing node — the contenteditable overlay draws it.
+    isHidden: (n) => textEdit.isEditing(n.id),
   });
 
   const pathLayer: RenderLayer<unknown> = createPathLayer<PathObj>({
@@ -788,7 +849,30 @@ export function App() {
           onPointerMove={onStagePointerMove}
           onPointerLeave={onStagePointerLeave}
         >
-          <div className="swill-page-shadow">
+          <div
+            ref={pageShadowRef}
+            className="swill-page-shadow"
+            onDoubleClick={(e) => {
+              const canvas = e.target instanceof HTMLCanvasElement ? e.target : null;
+              if (!canvas) return;
+              const rect = canvas.getBoundingClientRect();
+              const cx = e.clientX - rect.left;
+              const cy = e.clientY - rect.top;
+              const texts = itemsRef.current.filter((o): o is TextObj => o.kind === 'text');
+              let target: TextObj | null = null;
+              for (let i = texts.length - 1; i >= 0; i--) {
+                if (pointInTextPose(cx, cy, texts[i])) { target = texts[i]; break; }
+              }
+              if (!target) return;
+              const ctx = canvas.getContext('2d');
+              if (!ctx) { textEdit.startEdit(target.id); return; }
+              const caret = caretIndexAt(ctx, cx, cy, {
+                x: target.x, y: target.y, width: target.width, height: target.height,
+                text: target.text, style: target.style,
+              });
+              textEdit.startEdit(target.id, { caret });
+            }}
+          >
             <Canvas
               width={PAGE_W}
               height={PAGE_H}

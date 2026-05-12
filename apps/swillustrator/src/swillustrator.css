@@ -165,6 +165,9 @@ html, body, #root {
   border-radius: 2px;
   overflow: hidden;
   margin: auto;
+  /* Positioning context for the useTextEdit contenteditable overlay,
+     which positions absolutely within its container. */
+  position: relative;
 }
 
 .swill-section-label {
