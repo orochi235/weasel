@@ -14,6 +14,24 @@ import type {
   UseBooleansReturn,
 } from '@orochi235/weasel';
 import { PathfinderPanel } from '@orochi235/weasel-ui';
+import {
+  AlignLeftIcon,
+  AlignCenterXIcon,
+  AlignRightIcon,
+  AlignTopIcon,
+  AlignCenterYIcon,
+  AlignBottomIcon,
+  DistributeXIcon,
+  DistributeYIcon,
+  FlipXIcon,
+  FlipYIcon,
+  GroupIcon,
+  UngroupIcon,
+  SendToBackIcon,
+  SendBackwardIcon,
+  BringForwardIcon,
+  BringToFrontIcon,
+} from './actionIcons';
 
 export interface ActionBarProps {
   // History
@@ -96,34 +114,34 @@ export function ActionBar(p: ActionBarProps) {
       </div>
       <Sep />
       <div className="swill-actionbar-group">
-        <Button onClick={p.onSendToBack} disabled={none} title="Send to back (Cmd-Shift-[)">⤓⤓</Button>
-        <Button onClick={p.onSendBackward} disabled={none} title="Send backward (Cmd-[)">⤓</Button>
-        <Button onClick={p.onBringForward} disabled={none} title="Bring forward (Cmd-])">⤒</Button>
-        <Button onClick={p.onBringToFront} disabled={none} title="Bring to front (Cmd-Shift-])">⤒⤒</Button>
+        <Button onClick={p.onSendToBack} disabled={none} title="Send to back (Cmd-Shift-[)"><SendToBackIcon /></Button>
+        <Button onClick={p.onSendBackward} disabled={none} title="Send backward (Cmd-[)"><SendBackwardIcon /></Button>
+        <Button onClick={p.onBringForward} disabled={none} title="Bring forward (Cmd-])"><BringForwardIcon /></Button>
+        <Button onClick={p.onBringToFront} disabled={none} title="Bring to front (Cmd-Shift-])"><BringToFrontIcon /></Button>
       </div>
       <Sep />
       <div className="swill-actionbar-group">
-        <Button onClick={p.onGroup} disabled={lt2} title="Group (Cmd-G)">Group</Button>
-        <Button onClick={p.onUngroup} disabled={none} title="Ungroup (Cmd-Shift-G)">Ungroup</Button>
+        <Button onClick={p.onGroup} disabled={lt2} title="Group (Cmd-G)"><GroupIcon /></Button>
+        <Button onClick={p.onUngroup} disabled={none} title="Ungroup (Cmd-Shift-G)"><UngroupIcon /></Button>
       </div>
       <Sep />
       <div className="swill-actionbar-group">
-        <Button onClick={() => p.onAlign('left')} disabled={lt2} title="Align left">AL</Button>
-        <Button onClick={() => p.onAlign('center-x')} disabled={lt2} title="Align center X">ACx</Button>
-        <Button onClick={() => p.onAlign('right')} disabled={lt2} title="Align right">AR</Button>
-        <Button onClick={() => p.onAlign('top')} disabled={lt2} title="Align top">AT</Button>
-        <Button onClick={() => p.onAlign('center-y')} disabled={lt2} title="Align center Y">ACy</Button>
-        <Button onClick={() => p.onAlign('bottom')} disabled={lt2} title="Align bottom">AB</Button>
+        <Button onClick={() => p.onAlign('left')} disabled={lt2} title="Align left"><AlignLeftIcon /></Button>
+        <Button onClick={() => p.onAlign('center-x')} disabled={lt2} title="Align center X"><AlignCenterXIcon /></Button>
+        <Button onClick={() => p.onAlign('right')} disabled={lt2} title="Align right"><AlignRightIcon /></Button>
+        <Button onClick={() => p.onAlign('top')} disabled={lt2} title="Align top"><AlignTopIcon /></Button>
+        <Button onClick={() => p.onAlign('center-y')} disabled={lt2} title="Align center Y"><AlignCenterYIcon /></Button>
+        <Button onClick={() => p.onAlign('bottom')} disabled={lt2} title="Align bottom"><AlignBottomIcon /></Button>
       </div>
       <Sep />
       <div className="swill-actionbar-group">
-        <Button onClick={() => p.onDistribute('x')} disabled={lt3} title="Distribute X">DX</Button>
-        <Button onClick={() => p.onDistribute('y')} disabled={lt3} title="Distribute Y">DY</Button>
+        <Button onClick={() => p.onDistribute('x')} disabled={lt3} title="Distribute X"><DistributeXIcon /></Button>
+        <Button onClick={() => p.onDistribute('y')} disabled={lt3} title="Distribute Y"><DistributeYIcon /></Button>
       </div>
       <Sep />
       <div className="swill-actionbar-group">
-        <Button onClick={() => p.onFlip('x')} disabled={none} title="Flip H (Shift-H)">FH</Button>
-        <Button onClick={() => p.onFlip('y')} disabled={none} title="Flip V (Shift-V)">FV</Button>
+        <Button onClick={() => p.onFlip('x')} disabled={none} title="Flip H (Shift-H)"><FlipXIcon /></Button>
+        <Button onClick={() => p.onFlip('y')} disabled={none} title="Flip V (Shift-V)"><FlipYIcon /></Button>
       </div>
       <Sep />
       <PathfinderPanel adapter={p.booleansAdapter} actions={p.booleansActions} />

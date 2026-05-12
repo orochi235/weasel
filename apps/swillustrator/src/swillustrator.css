@@ -55,8 +55,11 @@ html, body, #root {
 }
 
 .swill-actionbar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 26px;
-  padding: 4px 8px;
+  padding: 4px 6px;
   background: #1a130d;
   color: #d4c4a8;
   border: 1px solid #3a2e22;
@@ -65,6 +68,9 @@ html, body, #root {
   font-family: inherit;
   font-size: 11px;
   line-height: 1.2;
+}
+.swill-actionbar-button > svg {
+  display: block;
 }
 .swill-actionbar-button:hover:not(:disabled) {
   background: #2a2418;
