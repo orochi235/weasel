@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useDuplicate, type DuplicateAdapter, type UseDuplicateOptions } from 'interactions/actions/duplicate/duplicate';
-import { defineTool } from '../defineTool';
+import { defineTool, claim, none } from '../routing';
 import type { Tool } from '../types';
 
 export interface UseDuplicateToolOptions extends UseDuplicateOptions {}
@@ -18,12 +18,14 @@ export function useDuplicateTool<TPose>(
     () =>
       defineTool({
         id: 'duplicate',
-        keyboard: {
-          onDown: (e) => {
-            const mod = e.metaKey || e.ctrlKey;
-            if (!mod || e.key.toLowerCase() !== 'd') return 'pass';
-            ctl.duplicate();
-            return 'claim';
+        initial: {
+          keyDown: {
+            d: (_ctx, event) => {
+              const e = event as KeyboardEvent;
+              if (!(e.metaKey || e.ctrlKey)) return none();
+              ctl.duplicate();
+              return claim();
+            },
           },
         },
       }),
