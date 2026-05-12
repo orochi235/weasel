@@ -9,29 +9,18 @@ import {
   useScene,
   useTextEdit,
   type CanvasHelpers,
+  type RectPose,
   type RenderLayer,
-  type StyledRun,
-  type TextStyle,
+  type TextPose,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
 import { clientToCanvas } from '../canvasCoords';
 
-interface TextNode {
-  id: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  text: string;
-  runs?: StyledRun[];
-  style?: TextStyle;
-}
-interface Pose {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+/** Demo node = the kit's `TextPose` (rect + text + runs + style) plus an
+ *  `id` so each instance is addressable. */
+type TextNode = TextPose & { id: string };
+/** Plain rect pose — the kit's `RectPose` re-exported. */
+type Pose = RectPose;
 
 const W = 600, H = 360;
 const CELL = 10;
