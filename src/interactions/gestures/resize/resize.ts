@@ -6,6 +6,9 @@ import type { ResizeAdapter } from 'core/adapters/types';
 import type {
   GestureContext,
   ModifierState,
+  PointSnapBehavior,
+  PointSnapContext,
+  PointSnapResult,
   ResizeAnchor,
   ResizeBehavior,
   ResizeOverlay,
@@ -51,6 +54,12 @@ export interface UseResizeOptions<TPose> {
    *  when `TPose extends ResizePose`. Required for non-rect TPose (Path,
    *  polygon, etc.). */
   geometry?: PoseDescriptor<TPose>;
+  /** Behaviors that operate on world-space anchor points. Fire after
+   *  `behaviors[]` (bounds-frame). Each behavior receives a `PointSnapContext`
+   *  with world-space frame points and returns at most one `PointSnapResult`;
+   *  the hook back-solves the local pose so the chosen frame's world point
+   *  lands on the snap target. First non-null result wins. */
+  pointSnapBehaviors?: TPose extends ResizePose ? PointSnapBehavior<TPose>[] : never;
   /** Optional debug sink. When supplied, records corner-handle positions +
    *  circular hitboxes when the gesture starts (covers the on-screen
    *  handles for the resized target). Tree-shakes via optional-chain
@@ -115,6 +124,89 @@ function computeUnionBounds(bounds: ResizePose[]): ResizePose {
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
+// ----- point-snap back-solve helpers -----
+
+function buildPointSnapContext<TPose extends ResizePose>(
+  pose: TPose,
+  rotation: number,
+  anchor: ResizeAnchor,
+  modifiers: ModifierState,
+): PointSnapContext<TPose> {
+  const cx = pose.x + pose.width / 2;
+  const cy = pose.y + pose.height / 2;
+
+  const tl = rotatePoint(pose.x, pose.y, cx, cy, rotation);
+  const tr = rotatePoint(pose.x + pose.width, pose.y, cx, cy, rotation);
+  const br = rotatePoint(pose.x + pose.width, pose.y + pose.height, cx, cy, rotation);
+  const bl = rotatePoint(pose.x, pose.y + pose.height, cx, cy, rotation);
+
+  let draggedCorner: { worldX: number; worldY: number } | null = null;
+  let fixedCorner: { worldX: number; worldY: number } | null = null;
+
+  if (anchor.x !== 'free' && anchor.y !== 'free') {
+    // anchor marks the FIXED corner; dragged is diagonally opposite.
+    const fixedPt =
+      anchor.x === 'min' && anchor.y === 'min' ? tl :
+      anchor.x === 'max' && anchor.y === 'min' ? tr :
+      anchor.x === 'max' && anchor.y === 'max' ? br : bl;
+    const draggedPt =
+      anchor.x === 'min' && anchor.y === 'min' ? br :
+      anchor.x === 'max' && anchor.y === 'min' ? bl :
+      anchor.x === 'max' && anchor.y === 'max' ? tl : tr;
+    fixedCorner = { worldX: fixedPt.x, worldY: fixedPt.y };
+    draggedCorner = { worldX: draggedPt.x, worldY: draggedPt.y };
+  }
+
+  return {
+    draggedCorner,
+    fixedCorner,
+    center: { worldX: cx, worldY: cy },
+    origin: { worldX: tl.x, worldY: tl.y },
+    rotation,
+    anchor,
+    proposed: pose,
+    modifiers,
+  };
+}
+
+function applyPointSnap<TPose extends ResizePose>(
+  pose: TPose,
+  rotation: number,
+  result: PointSnapResult,
+  ctx: PointSnapContext<TPose>,
+): TPose {
+  if (result.frame === 'center') {
+    const dx = result.worldX - ctx.center.worldX;
+    const dy = result.worldY - ctx.center.worldY;
+    return { ...pose, x: pose.x + dx, y: pose.y + dy };
+  }
+
+  if (result.frame === 'origin') {
+    const dx = result.worldX - ctx.origin.worldX;
+    const dy = result.worldY - ctx.origin.worldY;
+    return { ...pose, x: pose.x + dx, y: pose.y + dy };
+  }
+
+  // dragged-corner: pin = fixedCorner, target = snapped dragged corner.
+  // fixed-corner:  pin = draggedCorner, target = snapped fixed corner.
+  const pin = result.frame === 'dragged-corner' ? ctx.fixedCorner : ctx.draggedCorner;
+  if (!pin) return pose; // edge drag — no-op
+
+  const Dx = result.worldX - pin.worldX;
+  const Dy = result.worldY - pin.worldY;
+  const cos = Math.cos(rotation);
+  const sin = Math.sin(rotation);
+  // Project diagonal onto local x-axis (cos, sin) and y-axis (-sin, cos).
+  const localW = Dx * cos + Dy * sin;
+  const localH = -Dx * sin + Dy * cos;
+  const newWidth = Math.abs(localW);
+  const newHeight = Math.abs(localH);
+  // New center is the midpoint of the two diagonal corners in world space.
+  const newCx = (pin.worldX + result.worldX) / 2;
+  const newCy = (pin.worldY + result.worldY) / 2;
+  return { ...pose, x: newCx - newWidth / 2, y: newCy - newHeight / 2, width: newWidth, height: newHeight };
+}
+
 /** Pointer-driven resize interaction with anchor-relative dragging, optional group expansion, and behavior pipeline. */
 export function useResize<TNode extends { id: string }, TPose>(
   adapter: ResizeAdapter<TNode, TPose>,
@@ -122,6 +214,7 @@ export function useResize<TNode extends { id: string }, TPose>(
 ): ResizeController<TNode, TPose> {
   const {
     behaviors = [] as ResizeBehavior<ResizePose>[],
+    pointSnapBehaviors = [] as PointSnapBehavior<ResizePose>[],
     resizeLabel = 'Resize',
     onGestureStart,
     onGestureEnd,
@@ -131,10 +224,13 @@ export function useResize<TNode extends { id: string }, TPose>(
     handleHitRadius = 8,
   } = options as UseResizeOptions<TPose> & {
     behaviors?: ResizeBehavior<ResizePose>[];
+    pointSnapBehaviors?: PointSnapBehavior<ResizePose>[];
   };
 
   const behaviorsRef = useRef(behaviors);
   behaviorsRef.current = behaviors;
+  const pointSnapBehaviorsRef = useRef(pointSnapBehaviors);
+  pointSnapBehaviorsRef.current = pointSnapBehaviors;
   const geometryRef = useRef(geometry);
   geometryRef.current = geometry;
   // Latest-value refs so controller methods stay referentially stable.
@@ -384,6 +480,24 @@ export function useResize<TNode extends { id: string }, TPose>(
       const correctionY = s.fixedWorld.y - newFixedWorld.y;
       const translate = geom.translate ?? defaultTranslate<TPose>;
       proposedPose = translate(proposedPose, correctionX, correctionY);
+    }
+
+    // Point-snap behaviors run after the full bounds→pose pipeline (including
+    // rotation correction). They receive world-space frame points derived from
+    // the fully-corrected proposed pose, and back-solve a new pose directly.
+    const psbs = pointSnapBehaviorsRef.current;
+    if (psbs.length > 0) {
+      const rotation = s.originRotation;
+      const poseAsRect = proposedPose as unknown as ResizePose;
+      const psCtx = buildPointSnapContext(poseAsRect, rotation, s.anchor, modifiers);
+      for (const beh of psbs) {
+        const result = (beh as PointSnapBehavior<ResizePose>).onMove(psCtx);
+        if (result) {
+          const snapped = applyPointSnap(poseAsRect, rotation, result, psCtx);
+          proposedPose = snapped as unknown as TPose;
+          break;
+        }
+      }
     }
 
     s.ctx.current = new Map([[s.id, proposedPose]]);
