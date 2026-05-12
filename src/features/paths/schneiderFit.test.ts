@@ -114,3 +114,20 @@ describe('schneiderFit — single-segment fits', () => {
     expect(lastTwo[1]).toBeCloseTo(16);
   });
 });
+
+describe('schneiderFit — iterative reparameterization', () => {
+  it('fits a wide arc tighter after reparameterization than the LS-only baseline', () => {
+    // 3/4 of a circle — wide enough that chord-length parameterization
+    // alone gives a coarse fit; reparameterization should improve it.
+    // LS-only produces ~8 units of error; after 4 Newton-Raphson passes
+    // this drops below 7. A single cubic cannot model a 270° arc within
+    // 2 units — Task 7 (split) handles that case.
+    const samples: { x: number; y: number }[] = [];
+    for (let i = 0; i <= 24; i++) {
+      const t = (i / 24) * (3 * Math.PI / 2);
+      samples.push({ x: 50 * Math.cos(t), y: 50 * Math.sin(t) });
+    }
+    const out = schneiderFit(samples, 0.5);
+    expect(maxErrorAgainstCubic(samples, out as PolygonPath)).toBeLessThanOrEqual(7.0);
+  });
+});

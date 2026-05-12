@@ -60,32 +60,44 @@ function fitOneCubic(samples: ReadonlyArray<SchneiderPoint>): CubicFit {
   const n = samples.length;
   const a = samples[0];
   const e = samples[n - 1];
-
-  // Tangents at endpoints — unit vectors along (samples[1] - samples[0])
-  // and (samples[n-2] - samples[n-1]). The end-tangent points "inward"
-  // toward the start, matching the sign convention of the basis-Bezier
-  // derivation (control-point distance is positive along tangent).
   const tStart = unit(sub(samples[1], a));
   const tEnd = unit(sub(samples[n - 2], e));
 
-  // Chord-length parameterization
+  const ts = chordLengthParam(samples);
+  if (ts === null) return { cp1: { ...a }, cp2: { ...e }, end: e };
+
+  let fit = solveLS(samples, ts, a, e, tStart, tEnd);
+  for (let pass = 0; pass < 4; pass++) {
+    reparameterize(samples, ts, a, e, fit);
+    fit = solveLS(samples, ts, a, e, tStart, tEnd);
+  }
+  return fit;
+}
+
+function chordLengthParam(samples: ReadonlyArray<SchneiderPoint>): number[] | null {
+  const n = samples.length;
   const ts = new Array<number>(n);
   ts[0] = 0;
-  let totalChord = 0;
+  let total = 0;
   for (let i = 1; i < n; i++) {
-    totalChord += dist(samples[i - 1], samples[i]);
-    ts[i] = totalChord;
+    total += dist(samples[i - 1], samples[i]);
+    ts[i] = total;
   }
-  if (totalChord === 0) {
-    return { cp1: { ...a }, cp2: { ...e }, end: e };
-  }
-  for (let i = 0; i < n; i++) ts[i] /= totalChord;
+  if (total === 0) return null;
+  for (let i = 0; i < n; i++) ts[i] /= total;
+  return ts;
+}
 
-  // Closed-form 2×2 LS solve for the two scalar distances α1, α2 along
-  // the tangents that minimize sum_i |C(t_i) - P_i|^2, with endpoints
-  // fixed at samples[0] and samples[n-1].
-  let c11 = 0, c12 = 0, c22 = 0;
-  let x1 = 0, x2 = 0;
+function solveLS(
+  samples: ReadonlyArray<SchneiderPoint>,
+  ts: ReadonlyArray<number>,
+  a: SchneiderPoint,
+  e: SchneiderPoint,
+  tStart: SchneiderPoint,
+  tEnd: SchneiderPoint,
+): CubicFit {
+  const n = samples.length;
+  let c11 = 0, c12 = 0, c22 = 0, x1 = 0, x2 = 0;
   for (let i = 0; i < n; i++) {
     const t = ts[i];
     const u = 1 - t;
@@ -109,20 +121,62 @@ function fitOneCubic(samples: ReadonlyArray<SchneiderPoint>): CubicFit {
   let alpha1: number;
   let alpha2: number;
   if (Math.abs(det) < 1e-12) {
-    alpha1 = alpha2 = totalChord / 3;
+    const chord = dist(a, e);
+    alpha1 = alpha2 = chord / 3;
   } else {
     alpha1 = (c22 * x1 - c12 * x2) / det;
     alpha2 = (c11 * x2 - c12 * x1) / det;
     if (alpha1 < 1e-6 || alpha2 < 1e-6) {
-      alpha1 = alpha2 = totalChord / 3;
+      const chord = dist(a, e);
+      alpha1 = alpha2 = chord / 3;
     }
   }
-
   return {
     cp1: { x: a.x + tStart.x * alpha1, y: a.y + tStart.y * alpha1 },
     cp2: { x: e.x + tEnd.x * alpha2, y: e.y + tEnd.y * alpha2 },
     end: e,
   };
+}
+
+function reparameterize(
+  samples: ReadonlyArray<SchneiderPoint>,
+  ts: number[],
+  a: SchneiderPoint,
+  e: SchneiderPoint,
+  fit: CubicFit,
+): void {
+  void a; void e;
+  for (let i = 1; i < samples.length - 1; i++) {
+    ts[i] = newtonRefineT(samples[i], ts[i], samples[0], fit.cp1, fit.cp2, samples[samples.length - 1]);
+  }
+}
+
+function newtonRefineT(
+  p: SchneiderPoint,
+  t: number,
+  p0: SchneiderPoint,
+  p1: SchneiderPoint,
+  p2: SchneiderPoint,
+  p3: SchneiderPoint,
+): number {
+  // Q(t) - p, where Q is the cubic. Newton step uses Q'(t)·(Q(t)-p) and
+  // a second-derivative correction.
+  const u = 1 - t;
+  const qx = u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + t*t*t*p3.x;
+  const qy = u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y;
+  const qpx = 3*u*u*(p1.x - p0.x) + 6*u*t*(p2.x - p1.x) + 3*t*t*(p3.x - p2.x);
+  const qpy = 3*u*u*(p1.y - p0.y) + 6*u*t*(p2.y - p1.y) + 3*t*t*(p3.y - p2.y);
+  const qppx = 6*u*(p2.x - 2*p1.x + p0.x) + 6*t*(p3.x - 2*p2.x + p1.x);
+  const qppy = 6*u*(p2.y - 2*p1.y + p0.y) + 6*t*(p3.y - 2*p2.y + p1.y);
+  const dx = qx - p.x;
+  const dy = qy - p.y;
+  const numerator = dx * qpx + dy * qpy;
+  const denominator = qpx * qpx + qpy * qpy + dx * qppx + dy * qppy;
+  if (Math.abs(denominator) < 1e-12) return t;
+  const next = t - numerator / denominator;
+  if (next < 0) return 0;
+  if (next > 1) return 1;
+  return next;
 }
 
 function sub(a: SchneiderPoint, b: SchneiderPoint): SchneiderPoint {
