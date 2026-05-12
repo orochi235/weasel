@@ -85,3 +85,20 @@ describe('resolveRoute modifier sub-tables', () => {
     expect(resolveRoute(table, nodeHit('rect'), { ...noMods, shift: true })).toBe(fn);
   });
 });
+
+describe('resolveRoute against a pointerDown-shaped table', () => {
+  it('same precedence rules apply (exact > subkind > base > universal)', () => {
+    const onRect = vi.fn();
+    const onAny  = vi.fn();
+    // pointerDown tables are RouteTable<TScratch> just like click/drag,
+    // so resolveRoute treats them identically. This test pins that
+    // contract: changing PhaseDef.pointerDown's value type would have
+    // to update this expectation.
+    const table: RouteTable<void> = {
+      'rect': onRect as ActionFn<void>,
+      '*':    onAny  as ActionFn<void>,
+    };
+    expect(resolveRoute(table, nodeHit('rect'), noMods)).toBe(onRect);
+    expect(resolveRoute(table, nodeHit('text'), noMods)).toBe(onAny);
+  });
+});

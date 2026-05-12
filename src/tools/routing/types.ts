@@ -14,6 +14,26 @@ export type RouteTable<TScratch> = Partial<Record<string, RouteEntry<TScratch>>>
 
 export interface PhaseDef<TScratch> {
   click?:   RouteTable<TScratch>;
+  /** Pre-threshold classifier route. Runs synchronously on pointerdown,
+   *  before the dispatcher distinguishes click vs. drag. Use this for
+   *  classification gestures that need to mutate scratch *before* the
+   *  drag pipeline starts — e.g. select tool determining whether a hit
+   *  belongs to the existing selection ("drag will move all") or not
+   *  ("drag will move just this one").
+   *
+   *  Semantics:
+   *  - Return `begin(spec)` to open engaged phase with scratch. The
+   *    spec's `onMove`/`onRelease` will fire if the dispatcher escalates
+   *    to drag; otherwise the next click handler runs normally with the
+   *    prepared scratch visible.
+   *  - Return `apply(ops)` or `commit(ops)` to finish the gesture
+   *    immediately (rare).
+   *  - Return `none()` or omit to pass through to threshold-gated
+   *    click/drag classification.
+   *
+   *  Phase 4.5 (factory completeness). Predates the imperative
+   *  `pointer.onDown` channel that useSelectTool used through Phase 3. */
+  pointerDown?: RouteTable<TScratch>;
   dblTap?:  RouteTable<TScratch>;
   drag?:    RouteTable<TScratch> | ActionFn<TScratch>;
   wheel?:   ActionFn<TScratch>;
