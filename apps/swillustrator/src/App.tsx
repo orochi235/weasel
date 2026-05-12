@@ -66,6 +66,7 @@ import {
   LayerList,
   type LayerListItem,
   PropertiesPanel,
+  ToolPalette,
   PropertyRow,
   PropertyAxisInput,
   PropertyColorInput,
@@ -82,15 +83,6 @@ import { ActionBar } from './ActionBar';
 import { objToSvgNode, svgNodesToObjs, downloadSvg, pickSvgFile } from './svgInterop';
 import { parseSvg, serializeSvg } from '@orochi235/weasel-svg';
 import { KindIcon } from './kindIcons';
-import type { ComponentType } from 'react';
-import {
-  SelectIcon,
-  LassoIcon,
-  RectIcon as ToolRectIcon,
-  TextIcon as ToolTextIcon,
-  PenIcon,
-  HandIcon,
-} from '@orochi235/weasel';
 
 interface View { x: number; y: number; scale: number }
 
@@ -122,20 +114,6 @@ interface PathObj extends BaseObj { kind: 'path'; path: PolygonPath; closed: boo
 type Obj = RectObj | TextObj | PathObj;
 interface Pose { x: number; y: number; width: number; height: number }
 
-interface ToolEntry {
-  id: string;
-  label: string;
-  key: string;
-  Icon: ComponentType<{ size?: number }>;
-}
-const TOOL_ORDER: ToolEntry[] = [
-  { id: 'select', label: 'Select', key: 'V', Icon: SelectIcon },
-  { id: 'lasso',  label: 'Lasso',  key: 'L', Icon: LassoIcon },
-  { id: 'insert', label: 'Rect',   key: 'R', Icon: ToolRectIcon },
-  { id: 'text',   label: 'Text',   key: 'T', Icon: ToolTextIcon },
-  { id: 'pen',    label: 'Pen',    key: 'P', Icon: PenIcon },
-  { id: 'hand',   label: 'Hand',   key: 'H', Icon: HandIcon },
-];
 
 /** Translate a single rect-pose-shaped object by (dx, dy). Used for clipboard
  *  paste offset, group bound shifts, and the generic Obj patcher. */
@@ -880,22 +858,7 @@ export function App() {
       <div className="swill-body">
         <aside className="swill-sidebar">
           <div className="swill-section-label">Tools</div>
-          {TOOL_ORDER.map((t) => {
-            const isActive = activeOrEngaged === t.id;
-            const Icon = t.Icon;
-            return (
-              <button
-                key={t.id}
-                className={`swill-tool-button${isActive ? ' active' : ''}`}
-                onClick={() => tools.setActive(t.id)}
-                type="button"
-              >
-                <Icon size={22} />
-                <span>{t.label}</span>
-                <span className="key">{t.key}</span>
-              </button>
-            );
-          })}
+          <ToolPalette tools={tools} />
           <div className="swill-sidebar-spacer" />
           <button
             className="swill-tool-button"
