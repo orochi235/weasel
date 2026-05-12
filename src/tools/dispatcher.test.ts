@@ -575,3 +575,117 @@ describe('dispatcher: affordance hit-test pipeline', () => {
     expect(onDown).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('dispatcher: ctx.target population on pointer events', () => {
+  function makeChromeState() {
+    return {
+      selection: [],
+      multiActive: false,
+      boundsOf: () => null,
+      unionBounds: null,
+      modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
+    } as never;
+  }
+
+  it('getNodeAtPoint returning null → ctx.target on click handler is empty hit', () => {
+    let observedTarget: unknown = undefined;
+    const tool = defineTool({
+      id: 't',
+      pointer: {
+        onClick: (_e, ctx) => { observedTarget = ctx.target; return 'claim'; },
+      },
+    });
+    const dispatcher = createToolsDispatcher({
+      getSlots: () => ({ hotkey: null, active: tool, ambient: [] }),
+      getCtx: makeCtx as unknown as (overrides?: { clientX?: number; clientY?: number }) => Omit<ToolCtx, 'scratch'>,
+      getNodeAtPoint: () => null,
+    });
+    dispatcher.onPointerDown(pointerEvent('pointerdown', { clientX: 50, clientY: 50 }));
+    dispatcher.onPointerUp(pointerEvent('pointerup', { clientX: 51, clientY: 50 }));
+    expect(observedTarget).toEqual({ category: 'empty', kind: 'empty' });
+  });
+
+  it('getNodeAtPoint returning a node ref → ctx.target is NodeHit matching the ref', () => {
+    const ref = {
+      id: 'n1' as never,
+      kind: 'rect',
+      pose: { x: 1, y: 2, width: 3, height: 4 },
+      data: { id: 'n1', kind: 'rect' },
+      meta: { z: 7 },
+    };
+    let observedTarget: unknown = undefined;
+    const tool = defineTool({
+      id: 't',
+      pointer: {
+        onDown: (_e, ctx) => { observedTarget = ctx.target; return 'pass'; },
+      },
+    });
+    const dispatcher = createToolsDispatcher({
+      getSlots: () => ({ hotkey: null, active: tool, ambient: [] }),
+      getCtx: makeCtx as unknown as (overrides?: { clientX?: number; clientY?: number }) => Omit<ToolCtx, 'scratch'>,
+      getNodeAtPoint: () => ref,
+    });
+    dispatcher.onPointerDown(pointerEvent('pointerdown', { clientX: 50, clientY: 50 }));
+    expect(observedTarget).toEqual({
+      category: 'node',
+      kind: 'rect',
+      id: 'n1',
+      pose: ref.pose,
+      data: ref.data,
+      meta: { z: 7 },
+    });
+  });
+
+  it('no getNodeAtPoint supplied → ctx.target falls back to empty hit (always-populated default)', () => {
+    // Decision: even without a callback, populate ctx.target with the empty
+    // sentinel so declarative routing factories can match 'empty' rather than
+    // guarding for undefined. Documented in dispatcher.ts:nodeHitFor.
+    let observedTarget: unknown = undefined;
+    const tool = defineTool({
+      id: 't',
+      pointer: {
+        onDown: (_e, ctx) => { observedTarget = ctx.target; return 'pass'; },
+      },
+    });
+    const dispatcher = createToolsDispatcher({
+      getSlots: () => ({ hotkey: null, active: tool, ambient: [] }),
+      getCtx: makeCtx as unknown as (overrides?: { clientX?: number; clientY?: number }) => Omit<ToolCtx, 'scratch'>,
+    });
+    dispatcher.onPointerDown(pointerEvent('pointerdown', { clientX: 50, clientY: 50 }));
+    expect(observedTarget).toEqual({ category: 'empty', kind: 'empty' });
+  });
+
+  it('affordance pipeline still produces a category:affordance target', () => {
+    let observedTarget: unknown = undefined;
+    const drag = {
+      onStart: (_e: PointerEvent, ctx: ToolCtx) => { observedTarget = ctx.target; return undefined; },
+    };
+    const layer = {
+      id: 'aff',
+      label: 'A',
+      draw: () => [],
+      // Layer hit yields an affordance binding; dispatcher should populate
+      // ctx.target with category 'affordance', NOT 'empty', even when
+      // getNodeAtPoint is wired.
+      hitTest: () => ({ drag }),
+    };
+    const dispatcher = createToolsDispatcher({
+      getSlots: () => ({ hotkey: null, active: null, ambient: [] }),
+      getCtx: makeCtx as unknown as (overrides?: { clientX?: number; clientY?: number }) => Omit<ToolCtx, 'scratch'>,
+      getHitTestContext: () => ({
+        layers: [layer as never],
+        chromeState: makeChromeState(),
+        view: { x: 0, y: 0, scale: 1 },
+        dims: { width: 100, height: 100 },
+      }),
+      getNodeAtPoint: () => ({
+        id: 'n1' as never,
+        kind: 'rect',
+        pose: {},
+        data: { id: 'n1' },
+      }),
+    });
+    dispatcher.onPointerDown(pointerEvent('pointerdown', { clientX: 5, clientY: 5 }));
+    expect((observedTarget as { category: string }).category).toBe('affordance');
+  });
+});

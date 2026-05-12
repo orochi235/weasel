@@ -1,6 +1,6 @@
 // src/tools/useTools.ts
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { createToolsDispatcher, type ToolsDispatcher } from './dispatcher';
+import { createToolsDispatcher, type ToolsDispatcher, type ToolsDispatcherOptions } from './dispatcher';
 import type { AnyTool, ToolCtx } from './types';
 import type { RenderLayer } from 'core/layers/render';
 
@@ -22,6 +22,10 @@ export interface UseToolsOptions {
     clientY?: number;
     modifiers?: { alt: boolean; shift: boolean; meta: boolean; ctrl: boolean };
   }) => Omit<ToolCtx, 'scratch'>;
+  /** Optional scene hit-test for populating `ctx.target` on pointer events.
+   *  `<Canvas>` wires this from the effective `pickEvery` + adapter. Tests
+   *  may supply a stub; omit for the always-empty fallback. */
+  getNodeAtPoint?: ToolsDispatcherOptions['getNodeAtPoint'];
 }
 
 export interface ToolsApi {
@@ -92,6 +96,8 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
   hotkeyRef.current = hotkeyEngaged;
   const getCtxRef = useRef(opts.getCtx);
   getCtxRef.current = opts.getCtx;
+  const getNodeAtPointRef = useRef(opts.getNodeAtPoint);
+  getNodeAtPointRef.current = opts.getNodeAtPoint;
 
   const dispatcher = useMemo(
     () =>
@@ -105,6 +111,7 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
           if (getCtxRef.current) return getCtxRef.current(overrides);
           return DEFAULT_CTX;
         },
+        getNodeAtPoint: (wx, wy) => getNodeAtPointRef.current?.(wx, wy) ?? null,
         onGestureChange: () => setGestureTick((t) => t + 1),
       }),
     [],

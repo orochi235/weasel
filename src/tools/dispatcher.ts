@@ -33,6 +33,28 @@ function buildAffordanceTarget(
   };
 }
 
+/** Build a HitResult for a regular (non-affordance) pointer event. Decision:
+ *  populate `ctx.target` unconditionally — when no `getNodeAtPoint` is supplied
+ *  or it returns null, fall back to an EmptyHit. Always-populated targets keep
+ *  declarative route tables predictable; routing factories can match
+ *  `'empty'` rather than guarding for `undefined`. */
+function nodeHitFor(
+  worldX: number,
+  worldY: number,
+  getNodeAtPoint: ToolsDispatcherOptions['getNodeAtPoint'],
+): HitResult {
+  const result = getNodeAtPoint?.(worldX, worldY);
+  if (!result) return { category: 'empty', kind: 'empty' };
+  return {
+    category: 'node',
+    kind: result.kind,
+    id: result.id,
+    pose: result.pose,
+    data: result.data,
+    meta: result.meta,
+  };
+}
+
 interface SlotsState {
   hotkey: AnyTool | null;
   active: AnyTool | null;
@@ -88,6 +110,15 @@ export interface ToolsDispatcherOptions {
     view: View;
     dims: { width: number; height: number };
   } | null;
+  /** Optional. Returns the scene node at the given world coords, or null
+   *  for empty. The dispatcher uses this to populate `ctx.target` on
+   *  pointer events (down/move/up/click/dblTap), so declarative routing
+   *  factories can dispatch on target.kind ('rect'/'text'/'path'/'empty').
+   *  Omit to leave the dispatcher with the always-empty fallback — see
+   *  `nodeHitFor` for the rationale. */
+  getNodeAtPoint?: (worldX: number, worldY: number) =>
+    | { id: NodeId; kind: string; pose: unknown; data: unknown; meta?: Record<string, unknown> }
+    | null;
 }
 
 interface InFlight {
@@ -251,7 +282,11 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       clientY: e.clientY,
       modifiers: { alt: !!e.altKey, shift: !!e.shiftKey, meta: !!e.metaKey, ctrl: !!e.ctrlKey },
     });
-    const baseCtx = { ...rawCtx, screenPoint: screenPointFor(e, rawCtx.canvasRect) };
+    const baseCtx = {
+      ...rawCtx,
+      screenPoint: screenPointFor(e, rawCtx.canvasRect),
+      target: nodeHitFor(rawCtx.worldX, rawCtx.worldY, opts.getNodeAtPoint),
+    };
 
     // 1. Modal claim check (hotkey > active). A tool whose state-aware
     //    `claimsAll` returns true bypasses the affordance layer pipeline
@@ -344,7 +379,11 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       clientY: e.clientY,
       modifiers: { alt: !!e.altKey, shift: !!e.shiftKey, meta: !!e.metaKey, ctrl: !!e.ctrlKey },
     });
-    const baseCtx = { ...rawCtx, screenPoint: screenPointFor(e, rawCtx.canvasRect) };
+    const baseCtx = {
+      ...rawCtx,
+      screenPoint: screenPointFor(e, rawCtx.canvasRect),
+      target: nodeHitFor(rawCtx.worldX, rawCtx.worldY, opts.getNodeAtPoint),
+    };
 
     if (inFlight.phase === 'pending') {
       const dx = e.clientX - inFlight.startClient.x;
@@ -379,7 +418,11 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       clientY: e.clientY,
       modifiers: { alt: !!e.altKey, shift: !!e.shiftKey, meta: !!e.metaKey, ctrl: !!e.ctrlKey },
     });
-    const baseCtx = { ...rawCtx, screenPoint: screenPointFor(e, rawCtx.canvasRect) };
+    const baseCtx = {
+      ...rawCtx,
+      screenPoint: screenPointFor(e, rawCtx.canvasRect),
+      target: nodeHitFor(rawCtx.worldX, rawCtx.worldY, opts.getNodeAtPoint),
+    };
 
     if (inFlight.phase === 'pending') {
       // Sub-threshold release. First check whether this is the *second* tap
@@ -488,6 +531,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
   const api: ToolsDispatcher & {
     __setGetCtx?: (fn: typeof opts.getCtx) => void;
     __setHitTestContext?: (fn: typeof opts.getHitTestContext) => void;
+    __setGetNodeAtPoint?: (fn: typeof opts.getNodeAtPoint) => void;
   } = {
     onPointerDown,
     onPointerMove,
@@ -501,5 +545,6 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
   };
   api.__setGetCtx = (fn) => { opts.getCtx = fn; };
   api.__setHitTestContext = (fn) => { opts.getHitTestContext = fn; };
+  api.__setGetNodeAtPoint = (fn) => { opts.getNodeAtPoint = fn; };
   return api;
 }
