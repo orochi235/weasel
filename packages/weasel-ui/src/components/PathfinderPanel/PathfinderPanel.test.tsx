@@ -104,3 +104,56 @@ describe('PathfinderPanel — click dispatch', () => {
     expect(actions.union).not.toHaveBeenCalled();
   });
 });
+
+describe('PathfinderPanel — overrides', () => {
+  it('icons prop overrides the default icon for that op only', () => {
+    const Custom = () => <span data-testid="custom-union-icon">★</span>;
+    render(
+      <PathfinderPanel
+        adapter={adapterWith(2)}
+        actions={noopActions}
+        icons={{ union: <Custom /> }}
+      />,
+    );
+    expect(screen.getByTestId('custom-union-icon')).toBeTruthy();
+    // intersect still renders its default svg
+    expect(screen.getByTestId('pathfinder-op-intersect').querySelector('svg')).toBeTruthy();
+  });
+
+  it('labels prop overrides aria-label and title for that op only', () => {
+    render(
+      <PathfinderPanel
+        adapter={adapterWith(2)}
+        actions={noopActions}
+        labels={{ union: 'Combine', subtract: 'Minus Front' }}
+      />,
+    );
+    const u = screen.getByTestId('pathfinder-op-union');
+    expect(u.getAttribute('aria-label')).toBe('Combine');
+    expect(u.getAttribute('title')).toBe('Combine');
+    const sub = screen.getByTestId('pathfinder-op-subtract');
+    expect(sub.getAttribute('aria-label')).toBe('Minus Front');
+    expect(screen.getByTestId('pathfinder-op-intersect').getAttribute('aria-label'))
+      .toBe('Intersect');
+  });
+
+  it('orientation="vertical" applies the vertical class', () => {
+    const { container } = render(
+      <PathfinderPanel
+        adapter={adapterWith(2)}
+        actions={noopActions}
+        orientation="vertical"
+      />,
+    );
+    const root = container.querySelector('[role="toolbar"]') as HTMLElement;
+    expect(Array.from(root.classList).some((c) => c.includes('vertical'))).toBe(true);
+  });
+
+  it('orientation defaults to horizontal (no vertical class)', () => {
+    const { container } = render(
+      <PathfinderPanel adapter={adapterWith(2)} actions={noopActions} />,
+    );
+    const root = container.querySelector('[role="toolbar"]') as HTMLElement;
+    expect(Array.from(root.classList).some((c) => c.includes('vertical'))).toBe(false);
+  });
+});
