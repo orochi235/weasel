@@ -26,3 +26,11 @@ export { paintGradientTrack } from './paintGradientTrack';
 export type { GradientTrackOpts } from './paintGradientTrack';
 export { oklchToHex, chromaAt } from './color/oklch';
 export type { ChromaCurve, ChromaCurvePoint } from './color/oklch';
+export { LayerList } from './LayerList';
+export type { LayerListProps, LayerListItem } from './LayerList';
+export { useReorderDragList } from './useReorderDragList';
+export type {
+  UseReorderDragListOptions,
+  ReorderDragState,
+  ReorderDragHandlers,
+} from './useReorderDragList';

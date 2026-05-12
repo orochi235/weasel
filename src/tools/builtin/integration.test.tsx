@@ -115,11 +115,12 @@ describe('Phase 2a integration', () => {
 
     // Pointer-down in the center of rect 'a' (50, 50).
     fireEvent.pointerDown(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
-    // Move far enough to cross the drag threshold (default: 4px).
+    // Move far enough to cross the dispatcher's drag threshold (default: 4px).
+    // onStart fires here; useMove records this position as its start.
     fireEvent.pointerMove(canvas, { clientX: 125, clientY: 125, pointerId: 1 });
-    // Additional move to trigger onMove (useMove internal threshold also needs crossing).
-    fireEvent.pointerMove(canvas, { clientX: 125, clientY: 125, pointerId: 1 });
-    fireEvent.pointerUp(canvas,   { clientX: 125, clientY: 125, pointerId: 1 });
+    // Move again from (125,125) to cross useMove's internal sub-gesture threshold.
+    fireEvent.pointerMove(canvas, { clientX: 130, clientY: 130, pointerId: 1 });
+    fireEvent.pointerUp(canvas,   { clientX: 130, clientY: 130, pointerId: 1 });
 
     // useMove.end() → dispatchApplyBatch → adapter.applyBatch(ops, label).
     // Exactly one call — proves the tools path (not legacy) fired.
