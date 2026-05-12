@@ -260,10 +260,6 @@ html, body, #root {
 }
 
 /* --- Active fill/stroke swatches (Illustrator-style overlap) --------- */
-.swill-section-label--swatch {
-  margin-top: 8px;
-}
-
 .swill-active-swatches {
   position: relative;
   width: 56px;

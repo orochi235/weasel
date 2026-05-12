@@ -115,8 +115,19 @@ interface Document {
   size: { width: number; height: number };
 }
 
+/** Paper-size presets in world units (px @ 96 dpi). Driven by the
+ *  Properties-panel selector — the user picks a preset, doc.size
+ *  follows. A4 is rounded to whole px from 210mm × 297mm. */
+const PAPER_PRESETS = {
+  letter: { width: 816,  height: 1056 },  // 8.5" × 11"
+  a4:     { width: 794,  height: 1123 },  // 210 mm × 297 mm
+  legal:  { width: 816,  height: 1344 },  // 8.5" × 14"
+} as const;
+
+type PaperSize = keyof typeof PAPER_PRESETS;
+
 /** US Letter at 96 dpi. */
-const DEFAULT_DOC_SIZE = { width: 816, height: 1056 } as const;
+const DEFAULT_DOC_SIZE = PAPER_PRESETS.letter;
 
 // Garden-ish palette borrowed from eric. Used by the Colors swatch grid.
 const PALETTE: { value: string; label: string }[] = [
@@ -250,7 +261,7 @@ export function App() {
   // The Document is the conceptual root of the scene. All items live inside
   // it. `size` is the only field today; it drives the rendered page area,
   // the SVG viewBox on export, and (eventually) the printable surface.
-  const [doc] = useState<Document>(() => ({ size: { ...DEFAULT_DOC_SIZE } }));
+  const [doc, setDoc] = useState<Document>(() => ({ size: { ...DEFAULT_DOC_SIZE } }));
   // Active fill/stroke — what new shapes use. Independent of selection;
   // changing these doesn't affect existing objects, and selecting an object
   // doesn't update these. The swatch widget in the left sidebar surfaces them.
@@ -313,7 +324,20 @@ export function App() {
   const setStrokeColor = (c: string) => setActiveStroke({ kind: 'solid', color: c });
   const setStrokeWidth = setActiveStrokeWidth;
   const [docTitle, setDocTitle] = useState('Untitled');
-  const [paperSize, setPaperSize] = useState<'letter' | 'a4' | 'legal'>('letter');
+  // PaperSize is derived from doc.size by reverse-lookup. Choosing a
+  // preset writes doc.size through to the new dimensions; the selector
+  // highlights whichever preset currently matches (defaults to 'letter'
+  // when doc.size is custom or doesn't match any preset).
+  const paperSize: PaperSize = useMemo(() => {
+    for (const k of Object.keys(PAPER_PRESETS) as PaperSize[]) {
+      const p = PAPER_PRESETS[k];
+      if (p.width === doc.size.width && p.height === doc.size.height) return k;
+    }
+    return 'letter';
+  }, [doc.size.width, doc.size.height]);
+  const setPaperSize = useCallback((next: PaperSize) => {
+    setDoc((d) => ({ ...d, size: { ...PAPER_PRESETS[next] } }));
+  }, []);
   const [gridDensity, setGridDensity] = useState(8);
   const [sidebarWidth, setSidebarWidth] = useState(260);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -1400,8 +1424,8 @@ interface RightSidebarProps {
   setStrokeWidth: (n: number) => void;
   docTitle: string;
   setDocTitle: (s: string) => void;
-  paperSize: 'letter' | 'a4' | 'legal';
-  setPaperSize: (s: 'letter' | 'a4' | 'legal') => void;
+  paperSize: PaperSize;
+  setPaperSize: (s: PaperSize) => void;
   gridDensity: number;
   setGridDensity: (n: number) => void;
   view: View;
