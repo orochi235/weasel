@@ -47,6 +47,7 @@ export function tessellateStroke(
   const join: Join = stroke.join ?? 'miter';
   const cap: Cap = stroke.cap ?? 'butt';
   const align = stroke.align ?? 'center';
+  const miterLimit = stroke.miterLimit ?? DEFAULT_MITER_LIMIT;
 
   // RectPath fast path for inner/outer alignment: shift the rect by half-width
   // so the ribbon's center alignment lands the stroke on the desired side of
@@ -75,7 +76,7 @@ export function tessellateStroke(
   for (const pl of polylines) {
     const subs = dash.length > 0 ? splitForDash(pl, dash) : [pl];
     for (const sub of subs) {
-      expandPolyline(sub, width, join, cap, verts, idx, anchorA, anchorB, anchorT);
+      expandPolyline(sub, width, join, cap, miterLimit, verts, idx, anchorA, anchorB, anchorT);
     }
   }
 
@@ -93,6 +94,7 @@ function expandPolyline(
   width: number,
   join: Join,
   cap: Cap,
+  miterLimit: number,
   verts: number[],
   idx: number[],
   anchorA: number[],
@@ -158,7 +160,7 @@ function expandPolyline(
   // Joins between consecutive segments. (Task 6b will thread anchor params here.)
   const joinCount = pl.closed ? segs.length : segs.length - 1;
   for (let j = 0; j < joinCount; j++) {
-    emitJoin(segs, segBaseIdx, j, half, join, verts, idx, anchorA, anchorB, anchorT, segSrcIdx, plA, plB, plT);
+    emitJoin(segs, segBaseIdx, j, half, join, miterLimit, verts, idx, anchorA, anchorB, anchorT, segSrcIdx, plA, plB, plT);
   }
 
   // Caps. (Task 6c will thread anchor params here.)
@@ -370,11 +372,12 @@ function makeSeg(ax: number, ay: number, bx: number, by: number, half: number): 
   return { ax, ay, bx, by, nx: (-dy / len) * half, ny: (dx / len) * half, len };
 }
 
-/** Canvas2D's default miter limit. `Stroke` doesn't currently have a `miterLimit` field; document deferred. */
-const MITER_LIMIT = 10;
+/** Canvas2D's default miter limit; used when `Stroke.miterLimit` is unset. */
+const DEFAULT_MITER_LIMIT = 10;
 
 function emitJoin(
   segs: Seg[], segBaseIdx: number[], j: number, half: number, join: Join,
+  miterLimit: number,
   verts: number[], idx: number[],
   anchorA: number[], anchorB: number[], anchorT: number[],
   segSrcIdx: number[],
@@ -424,7 +427,7 @@ function emitJoin(
       return;
     }
     const miterLen = Math.hypot(apex[0] - a.bx, apex[1] - a.by);
-    if (miterLen > MITER_LIMIT * half) {
+    if (miterLen > miterLimit * half) {
       emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT);
       return;
     }
