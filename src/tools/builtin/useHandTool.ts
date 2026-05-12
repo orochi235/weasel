@@ -1,6 +1,7 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, createElement } from 'react';
 import { defineTool } from '../defineTool';
 import type { Tool } from '../types';
+import { HandIcon } from '../../icons';
 import type { View } from 'core/viewport/view';
 import { useVelocityTracker } from 'core/viewport/useVelocityTracker';
 import { useDecayLoop, type PanBounds } from 'core/viewport/useDecayLoop';
@@ -52,6 +53,11 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | n
         hotkey: 'space',
         initScratch: () => null,
         cursor: (ctx) => (ctx.scratch ? 'grabbing' : 'grab'),
+        presentation: {
+          label: 'Hand',
+          icon: createElement(HandIcon),
+          group: 'view',
+        },
         drag: {
           onStart: (e, ctx) => {
             decay.cancel();

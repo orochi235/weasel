@@ -1,7 +1,7 @@
 import { useMemo, useRef } from 'react';
 import type { MutableRefObject } from 'react';
 import { defineTool } from '../defineTool';
-import type { Tool } from '../types';
+import type { Tool, ToolPresentation } from '../types';
 import type { RenderLayer } from 'core/layers/render';
 import type { Op } from 'core/ops/types';
 import { applyHitExistingGate } from './hitExistingGate';
@@ -15,6 +15,7 @@ export interface DragInsertToolConfig<TNode extends { id: string }, TPose> {
   id: string;
   cursor: string;
   keybinding?: KeyBinding;
+  presentation?: ToolPresentation<undefined>;
   controller: InsertController<TNode, TPose>;
   overlayId: string;
   overlayLabel: string;
@@ -58,13 +59,14 @@ export function defineDragInsertTool<TNode extends { id: string }, TPose>(
   );
 
   const tool = useMemo<Tool<undefined>>(() => {
-    const { id, cursor, keybinding, controller, hitExisting } = config;
+    const { id, cursor, keybinding, presentation, controller, hitExisting } = config;
     const supportsClick = controller.supportsPointInsert;
     const supportsDrag = controller.supportsCommitInsert;
     return defineTool({
       id,
       cursor,
       ...(keybinding ? { keybinding } : {}),
+      ...(presentation ? { presentation } : {}),
       overlay,
       ...(supportsClick
         ? {
@@ -110,6 +112,7 @@ export function defineDragInsertTool<TNode extends { id: string }, TPose>(
     config.id,
     config.cursor,
     config.keybinding,
+    config.presentation,
     config.controller,
     config.hitExisting,
     overlay,

@@ -1,10 +1,11 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, createElement } from 'react';
 import type { Op } from 'core/ops/types';
 import type { Tool } from '../types';
 import { useInsert } from 'interactions/gestures/insert/insert';
 import type { InsertAdapter } from 'core/adapters/types';
 import { defineDragInsertTool } from './defineDragInsertTool';
 import { type InsertOverlayStyle } from './marquee';
+import { TextIcon } from '../../icons';
 
 type ApplyBatch = (ops: Op[], label: string) => void;
 
@@ -53,6 +54,11 @@ export function useTextTool<TNode extends { id: string }>(
     id: 'text',
     keybinding: { key: 'T' },
     cursor: 'text',
+    presentation: {
+      label: 'Text',
+      icon: createElement(TextIcon),
+      group: 'type',
+    },
     controller,
     overlayId: 'text-overlay',
     overlayLabel: 'Text overlay',

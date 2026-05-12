@@ -1,6 +1,7 @@
-import { useMemo, useReducer, useRef } from 'react';
+import { useMemo, useReducer, useRef, createElement } from 'react';
 import { defineTool } from '../defineTool';
 import type { Tool, ToolCtx } from '../types';
+import { PenIcon } from '../../icons';
 import { PathBuilder } from 'features/paths/builder';
 import type { PolygonPath } from 'features/paths/types';
 import { constrainTo45 } from '../../util/constrainTo45';
@@ -225,6 +226,11 @@ export function useUserPenTool<TPose>(
       id: 'pen',
       keybinding: { key: 'P' },
       cursor: (ctx) => (ctx.scratch?.closeHintActive ? 'pointer' : 'crosshair'),
+      presentation: {
+        label: 'Pen',
+        icon: createElement(PenIcon),
+        group: 'draw',
+      },
       initScratch: () => scratchRef.current!,
 
       onDeactivate: (ctx) => {

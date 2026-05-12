@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, createElement } from 'react';
 import { defineTool } from '../defineTool';
+import { LassoIcon } from '../../icons';
 import type { Tool } from '../types';
 import type { RenderLayer } from 'core/layers/render';
 import type { DrawCommand } from '../../renderer';
@@ -98,6 +99,11 @@ export function useLassoTool(
       ...(options.keybinding === null ? {} : { keybinding: options.keybinding ?? { key: 'L' } }),
       cursor: 'crosshair',
       initScratch: () => undefined,
+      presentation: {
+        label: 'Lasso',
+        icon: createElement(LassoIcon),
+        group: 'select',
+      },
       overlay,
 
       drag: {

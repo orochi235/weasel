@@ -1,4 +1,5 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, createElement } from 'react';
+import { SelectIcon } from '../../icons';
 import { pathContainsPoint } from 'features/paths/pathHitTest';
 import type { Path } from 'features/paths/types';
 import { useMove, type UseMoveOptions } from 'interactions/gestures/move/move';
@@ -779,6 +780,11 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         id: 'select',
         keybinding: { key: 'V' },
         cursor: 'default',
+        presentation: {
+          label: 'Select',
+          icon: createElement(SelectIcon),
+          group: 'select',
+        },
         overlay,
         previewPose,
         previewBounds,
