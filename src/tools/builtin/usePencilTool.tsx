@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { defineTool } from '../defineTool';
+import { useMemo, useReducer, useRef } from 'react';
+import { defineTool, begin, claim } from '../routing';
 import { createInsertOp } from 'core/ops/create';
 import { schneiderFit } from 'features/paths/schneiderFit';
 import { PencilIcon } from '../../icons';
@@ -8,7 +8,7 @@ import { viewToTransform, type View } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import type { RenderLayer } from 'core/layers/render';
 import type { DrawCommand } from '../../renderer';
-import type { Tool, ToolCtx } from '../types';
+import type { Tool } from '../types';
 import type { PolygonPath } from 'features/paths/types';
 
 const GHOST_STROKE = '#7fb069';
@@ -45,15 +45,15 @@ export function usePencilTool<TNode extends { id: string }>(
   } = options;
   const createRef = useRef(create);
   createRef.current = create;
-  const applyOpsRef = useRef<ToolCtx['applyOps'] | null>(null);
 
   // Live samples for the ghost overlay. The ref is the synchronous read
-  // surface; the React state bump forces a re-render so the layer redraws
-  // each move. Reference identity changes on each bump so memo'd consumers
-  // observe the update.
-  const [, setSampleTick] = useState(0);
+  // surface the overlay's draw closure consults; the forceRender bump
+  // triggers a re-render so the layer redraws each move. Scratch carries
+  // the same array by reference so both views agree.
   const samplesRef = useRef<PencilPoint[] | null>(null);
-  const bumpSamples = useCallback(() => setSampleTick((n) => n + 1), []);
+  const [, forceRender] = useReducer((n: number) => n + 1, 0);
+  const forceRenderRef = useRef(forceRender);
+  forceRenderRef.current = forceRender;
 
   const overlay = useMemo<RenderLayer<unknown>>(
     () => ({
@@ -83,62 +83,54 @@ export function usePencilTool<TNode extends { id: string }>(
 
   return useMemo(
     () =>
-      defineTool<PencilScratch | null>({
+      defineTool<PencilScratch>({
         id: 'pencil',
         keybinding: { key: 'N' },
         cursor: 'crosshair',
-        initScratch: () => null,
         presentation: {
           label: 'Pencil',
           group: 'draw',
           icon: <PencilIcon />,
         },
-        drag: {
-          onStart: (_e, ctx) => {
-            const samples = [{ x: ctx.worldX, y: ctx.worldY }];
-            ctx.scratch = { samples };
+        initial: {
+          overlay: () => overlay,
+          drag: (ctx) => {
+            const samples: PencilPoint[] = [{ x: ctx.worldX, y: ctx.worldY }];
             samplesRef.current = samples;
-            bumpSamples();
-            return 'claim';
-          },
-          onMove: (_e, ctx) => {
-            if (!ctx.scratch) return 'pass';
-            ctx.scratch.samples.push({ x: ctx.worldX, y: ctx.worldY });
-            // samplesRef already points at ctx.scratch.samples (same array
-            // identity); bumping the tick forces React to redraw the overlay.
-            bumpSamples();
-            return 'claim';
-          },
-          onEnd: (_e, ctx) => {
-            applyOpsRef.current = ctx.applyOps;
-            const s = ctx.scratch;
-            if (!s || s.samples.length < 2) {
-              ctx.scratch = null;
-              samplesRef.current = null;
-              bumpSamples();
-              return 'claim';
-            }
-            const first = s.samples[0];
-            const last = s.samples[s.samples.length - 1];
-            const closed = Math.hypot(first.x - last.x, first.y - last.y) < closeThreshold;
-            const path = schneiderFit(s.samples, tolerance);
-            const node = createRef.current(path, { closed });
-            if (node && applyOpsRef.current) {
-              applyOpsRef.current([createInsertOp({ node, label })], label);
-            }
-            ctx.scratch = null;
-            samplesRef.current = null;
-            bumpSamples();
-            return 'claim';
-          },
-          onCancel: (ctx) => {
-            ctx.scratch = null;
-            samplesRef.current = null;
-            bumpSamples();
+            forceRenderRef.current();
+            return begin({
+              scratch: { samples },
+              onMove: (c) => {
+                samples.push({ x: c.worldX, y: c.worldY });
+                forceRenderRef.current();
+                return claim();
+              },
+              onRelease: (c) => {
+                if (samples.length < 2) {
+                  samplesRef.current = null;
+                  forceRenderRef.current();
+                  return claim();
+                }
+                const first = samples[0];
+                const last = samples[samples.length - 1];
+                const closed = Math.hypot(last.x - first.x, last.y - first.y) <= closeThreshold;
+                const path = schneiderFit(samples, tolerance);
+                const node = createRef.current(path, { closed });
+                if (node) {
+                  c.applyOps([createInsertOp({ node, label })], label);
+                }
+                samplesRef.current = null;
+                forceRenderRef.current();
+                return claim();
+              },
+              onCancel: () => {
+                samplesRef.current = null;
+                forceRenderRef.current();
+              },
+            });
           },
         },
-        overlay,
-      }),
-    [label, tolerance, closeThreshold, overlay, bumpSamples],
+      }) as Tool<PencilScratch | null>,
+    [label, tolerance, closeThreshold, overlay],
   );
 }
