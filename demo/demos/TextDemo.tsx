@@ -9,87 +9,17 @@ import {
   useScene,
   useTextEdit,
   type CanvasHelpers,
-  type RectPose,
   type RenderLayer,
-  type TextPose,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
 import { clientToCanvas } from '../canvasCoords';
-
-/** Demo node = the kit's `TextPose` (rect + text + runs + style) plus an
- *  `id` so each instance is addressable. */
-type TextNode = TextPose & { id: string };
-/** Plain rect pose — the kit's `RectPose` re-exported. */
-type Pose = RectPose;
+import { INITIAL_TEXT_NODES, type TextNode, type Pose } from './textDemoScene';
 
 const W = 600, H = 360;
 const CELL = 10;
-const INITIAL: TextNode[] = [
-  {
-    id: 't1',
-    x: 30,
-    y: 30,
-    width: 240,
-    height: 80,
-    text: 'Click to select. Double-click to edit.\nDrag a selected node to move it.',
-    style: { fontSize: 16, fill: { fill: 'solid', color: '#1c1c1c' } },
-  },
-  {
-    id: 't2',
-    x: 320,
-    y: 60,
-    width: 240,
-    height: 60,
-    text: 'Center-aligned.',
-    style: { fontSize: 20, align: 'center', fill: { fill: 'solid', color: '#3a4a8a' }, fontWeight: 600 },
-  },
-  {
-    id: 't3',
-    x: 60,
-    y: 200,
-    width: 480,
-    height: 40,
-    text: 'Enter commits, Shift+Enter newline, Escape cancels.',
-    style: { fontSize: 14, fontStyle: 'italic', fill: { fill: 'solid', color: '#6a6a6a' } },
-  },
-  {
-    id: 't4',
-    x: 60,
-    y: 250,
-    width: 480,
-    height: 50,
-    text: 'Themed editing — magenta caret, yellow ::selection.',
-    style: {
-      fontSize: 16,
-      fontWeight: 600,
-      fill: { color: '#7a1f5a' },
-      caretColor: '#ff00ff',
-      selectionBackground: '#ffeb3b',
-      selectionColor: '#000',
-    },
-  },
-  {
-    id: 't5',
-    x: 30,
-    y: 310,
-    width: 540,
-    height: 40,
-    text: 'Inline runs: bold word, italic word, bold-italic word.',
-    runs: [
-      { text: 'Inline runs: ' },
-      { text: 'bold', bold: true },
-      { text: ' word, ' },
-      { text: 'italic', italic: true },
-      { text: ' word, ' },
-      { text: 'bold-italic', bold: true, italic: true },
-      { text: ' word.' },
-    ],
-    style: { fontSize: 16, fill: { fill: 'solid', color: '#1c1c1c' } },
-  },
-];
 
 export function TextDemo() {
-  const scene = useScene({ items: INITIAL });
+  const scene = useScene({ items: INITIAL_TEXT_NODES });
 
   // Live snapshot of every node's data + current pose, in render order. Used
   // by the custom text/outline layers and the dblclick caret resolver.
