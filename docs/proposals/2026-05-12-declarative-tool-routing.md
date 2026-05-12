@@ -104,7 +104,7 @@ Five constructors. The dispatcher consumes the tagged results.
 | Constructor | Effect |
 |---|---|
 | `apply(ops, label?)` | Dispatch ops through the adapter's `applyBatch`. No phase change. Used in phase-free routes. |
-| `begin(spec)` | Open active phase. `spec` carries the initial scratch, optional `thresholdPx` for drag gating, and optional continuation closures (`onMove`, `onUp`, `onCancel`). Drag-shaped gestures attach continuations here; click-sequence gestures (pen) omit them and dispatch subsequent events through `active`. |
+| `begin(spec)` | Open active phase. `spec` carries the initial scratch, optional `thresholdPx` for drag gating, and optional continuation closures (`onMove`, `onRelease`, `onCancel`). Drag-shaped gestures attach continuations here; click-sequence gestures (pen) omit them and dispatch subsequent events through `active`. |
 | `hold(newScratch)` | Update scratch within active. No commit, no phase change — the tool *holds* the new state for subsequent events. |
 | `commit(ops, label?)` | Apply ops AND close active phase. |
 | `cancel()` | Close active phase without applying ops. |
@@ -154,10 +154,10 @@ interface BeginSpec<TScratch> {
   scratch: TScratch;
   /** Distance in CSS pixels the pointer must travel before the gesture
    *  is "real." Sub-threshold pointerups call `onCancel` instead of
-   *  `onUp`. Default `0` (no threshold — every pointerdown counts). */
+   *  `onRelease`. Default `0` (no threshold — every pointerdown counts). */
   thresholdPx?: number;
   onMove?:   (ctx: ToolCtx<TScratch>) => Result<TScratch>;
-  onUp?:     (ctx: ToolCtx<TScratch>) => Result<TScratch>;
+  onRelease?:     (ctx: ToolCtx<TScratch>) => Result<TScratch>;
   onCancel?: (ctx: ToolCtx<TScratch>) => void;
 }
 
@@ -230,7 +230,7 @@ Drag-shaped gestures attach continuation handlers at `begin` time:
 const beginMove: ActionFn = (ctx) => begin({
   scratch: { kind: 'move', startPoses: snapshotSelected(ctx) },
   onMove:  (ctx) => hold(previewMove(ctx.scratch, ctx.point)),
-  onUp:    (ctx) => commit([moveOp(ctx.scratch)], 'Move'),
+  onRelease:    (ctx) => commit([moveOp(ctx.scratch)], 'Move'),
   onCancel: () => undefined,
 });
 ```
@@ -299,7 +299,7 @@ const RectInsertTool = defineTool<{ start: Point; current: Point }>({
       'empty': (ctx) => begin({
         scratch: { start: ctx.point, current: ctx.point },
         onMove:  (ctx) => hold({ ...ctx.scratch, current: ctx.point }),
-        onUp:    (ctx) => commit([createInsertOp(rectFromBounds(ctx.scratch))], 'Insert Rect'),
+        onRelease:    (ctx) => commit([createInsertOp(rectFromBounds(ctx.scratch))], 'Insert Rect'),
       }),
     },
   },
@@ -329,7 +329,7 @@ const HandTool = defineViewportTool<{ startView: View; startPoint: Point }>({
         });
         return hold(ctx.scratch);
       },
-      onUp: cancel,  // view changes aren't undoable
+      onRelease: cancel,  // view changes aren't undoable
     }),
   },
 });
@@ -387,7 +387,7 @@ const TextTool = defineTool({
       'empty': (ctx) => begin({                                        // drag empty → draw box
         scratch: { start: ctx.point, current: ctx.point },
         onMove: (ctx) => hold({ ...ctx.scratch, current: ctx.point }),
-        onUp:   (ctx) => commit([createTextBoxOp(rectFromBounds(ctx.scratch))], 'Insert text box'),
+        onRelease:   (ctx) => commit([createTextBoxOp(rectFromBounds(ctx.scratch))], 'Insert text box'),
       }),
     },
   },
@@ -447,12 +447,22 @@ returning value. Commit to (a) the registry, (b) the conflict checker,
      requires `hold({ ...scratch, foo: bar })` — explicit replacement
      via the action constructor. Mechanical conversion per tool.
 
-  2. **React-hook drag controllers → pure helpers.** Three of the
+  2. **Imperative `drag.onEnd` → `drag.onRelease`.** The kit's existing
+     `Tool.drag` channel uses `onEnd` for the pointerup handler. Once
+     the new schema settles on `onRelease`, the imperative escape-hatch
+     channel renames its handler to match (`onMove` / `onRelease` /
+     `onCancel`). `onStart` stays as-is — drag-onset is threshold-gated
+     and doesn't map to a single user verb the way `onRelease` does;
+     the grammatical asymmetry between `onStart` (gesture-lifecycle)
+     and `onRelease` (user-action) reflects an inherent asymmetry in
+     the underlying events.
+
+  3. **React-hook drag controllers → pure helpers.** Three of the
      five new tools (Ellipse, Polygon, Star) compose with
      `useDragRect` / `useDragRadial` React hooks that hold their own
      state outside the tool. The new model wants scratch on the tool,
      so these hooks dissolve into **pure helper modules** that the
-     tool's `onMove` / `onUp` closures call:
+     tool's `onMove` / `onRelease` closures call:
 
      ```ts
      // Before: useDragRect hook holds state, tool delegates events to it.
@@ -460,7 +470,7 @@ returning value. Commit to (a) the registry, (b) the conflict checker,
      drag: (ctx) => begin({
        scratch: { start: ctx.point, current: ctx.point },
        onMove: (ctx) => hold({ ...ctx.scratch, current: ctx.point }),
-       onUp:   (ctx) => commit([insertOp(makeEllipse(
+       onRelease:   (ctx) => commit([insertOp(makeEllipse(
          dragRectBounds(ctx.scratch.start, ctx.scratch.current, ctx.modifiers)
        ))], 'Insert ellipse'),
      }),
