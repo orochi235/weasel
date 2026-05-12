@@ -552,13 +552,14 @@ describe('Canvas onUncapturedMove / onUncapturedLeave', () => {
   });
 });
 
-import { defineTool } from 'tools/defineTool';
+import { defineTool } from 'tools/routing/defineTool';
+import { begin, claim } from 'tools/routing/result';
 import { ROTATED_POSE_DESCRIPTOR } from 'interactions/gestures/resize/geometry';
 
 describe('Canvas tools mode', () => {
   it('routes pointer events through tools.dispatcher when tools prop is passed', () => {
-    const onDragStart = vi.fn(() => 'claim' as const);
-    const onDragEnd = vi.fn(() => 'claim' as const);
+    const onDragStart = vi.fn();
+    const onDragEnd = vi.fn();
 
     function Test() {
       const tools = useTools({
@@ -566,7 +567,15 @@ describe('Canvas tools mode', () => {
         registry: {
           t: defineTool({
             id: 't',
-            drag: { onStart: onDragStart, onEnd: onDragEnd },
+            initial: {
+              drag: () => {
+                onDragStart();
+                return begin({
+                  scratch: null,
+                  onRelease: () => { onDragEnd(); return claim(); },
+                });
+              },
+            },
           }),
         },
       });
@@ -593,7 +602,7 @@ describe('Canvas tools mode', () => {
     function Test() {
       const tools = useTools({
         active: 't',
-        registry: { t: defineTool({ id: 't' }) }, // no handlers — every event passes
+        registry: { t: defineTool({ id: 't', initial: {} }) }, // no handlers — every event passes
       });
       return (
         <Canvas
@@ -623,7 +632,7 @@ describe('Canvas tools mode', () => {
     function Test() {
       const tools = useTools({
         active: 't',
-        registry: { t: defineTool({ id: 't', cursor: 'crosshair' }) },
+        registry: { t: defineTool({ id: 't', cursor: 'crosshair', initial: {} }) },
       });
       return <Canvas width={100} height={100} adapter={{} as never} layers={{}} tools={tools} />;
     }
@@ -644,11 +653,11 @@ describe('Canvas tools mode', () => {
         const delTool = defineTool({
           id: 'delete',
           keybinding: { key: 'Backspace' },
-          keyboard: {
-            onDown: (_e) => 'claim',
+          initial: {
+            keyDown: { Backspace: () => claim() },
           },
         });
-        const activeTool = defineTool({ id: 'active' });
+        const activeTool = defineTool({ id: 'active', initial: {} });
         const tools = useTools({
           active: 'active',
           registry: { active: activeTool },
@@ -705,7 +714,7 @@ describe('Canvas tools mode', () => {
       };
 
       function Test() {
-        const tool = defineTool({ id: 't', overlay: toolOverlay });
+        const tool = defineTool({ id: 't', initial: { overlay: () => toolOverlay } });
         const tools = useTools({
           active: 't',
           registry: { t: tool },
@@ -739,8 +748,8 @@ describe('Canvas tools mode', () => {
       let capturedHas: ((id: string) => boolean) | undefined;
 
       function Test() {
-        const always = defineTool({ id: 'delete', keyboard: { onDown: () => 'pass' } });
-        const active = defineTool({ id: 'select' });
+        const always = defineTool({ id: 'delete', initial: {} });
+        const active = defineTool({ id: 'select', initial: {} });
         const tools = useTools({
           active: 'select',
           registry: { select: active },

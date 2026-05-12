@@ -1,9 +1,8 @@
 // src/tools/dispatcher.test.ts
 import { describe, it, expect, vi } from 'vitest';
 import { createToolsDispatcher, type ToolsDispatcher } from './dispatcher';
-import { defineTool } from './defineTool';
-import { defineTool as defineDeclarativeTool } from './routing/defineTool';
-import { apply } from './routing/result';
+import { defineTool } from './routing/defineTool';
+import { apply, begin, claim, none } from './routing/result';
 import type { AnyTool, ToolCtx } from './types';
 
 function makeCtx(over: Partial<ToolCtx> = {}): ToolCtx {
@@ -49,7 +48,9 @@ describe('dispatcher: slot order', () => {
     const make = (id: string, decision: 'claim' | 'pass') =>
       defineTool({
         id,
-        keyboard: { onDown: () => { order.push(id); return decision; } },
+        initial: {
+          keyDown: { x: () => { order.push(id); return decision === 'claim' ? claim() : none(); } },
+        },
       });
 
     const d = makeDispatcher({
@@ -67,7 +68,9 @@ describe('dispatcher: slot order', () => {
     const make = (id: string, decision: 'claim' | 'pass') =>
       defineTool({
         id,
-        keyboard: { onDown: () => { order.push(id); return decision; } },
+        initial: {
+          keyDown: { x: () => { order.push(id); return decision === 'claim' ? claim() : none(); } },
+        },
       });
 
     const d = makeDispatcher({
@@ -83,12 +86,14 @@ describe('dispatcher: slot order', () => {
 
 describe('dispatcher: threshold-gated drag', () => {
   it('routes sub-threshold release to pointer.onClick', () => {
-    const onClick = vi.fn(() => 'claim' as const);
-    const onDragStart = vi.fn(() => 'claim' as const);
-    const tool = defineTool({
+    const onClick = vi.fn();
+    const onDragStart = vi.fn();
+    const tool = defineTool<null>({
       id: 't',
-      pointer: { onClick },
-      drag: { onStart: onDragStart },
+      initial: {
+        click: { '*': () => { onClick(); return claim(); } },
+        drag: () => { onDragStart(); return begin({ scratch: null }); },
+      },
     });
     const d = makeDispatcher({ hotkey: null, active: tool, ambient: [] });
 
@@ -100,14 +105,23 @@ describe('dispatcher: threshold-gated drag', () => {
   });
 
   it('routes post-threshold movement to drag.onStart/onMove/onEnd', () => {
-    const onClick = vi.fn(() => 'claim' as const);
-    const onStart = vi.fn(() => 'claim' as const);
-    const onMove = vi.fn(() => 'claim' as const);
-    const onEnd = vi.fn(() => 'claim' as const);
+    const onClick = vi.fn();
+    const onStart = vi.fn();
+    const onMove = vi.fn();
+    const onEnd = vi.fn();
     const tool = defineTool({
       id: 't',
-      pointer: { onClick },
-      drag: { onStart, onMove, onEnd },
+      initial: {
+        click: { '*': () => { onClick(); return claim(); } },
+        drag: () => {
+          onStart();
+          return begin({
+            scratch: null,
+            onMove: () => { onMove(); return claim(); },
+            onRelease: () => { onEnd(); return claim(); },
+          });
+        },
+      },
     });
     const d = makeDispatcher({ hotkey: null, active: tool, ambient: [] });
 
@@ -126,13 +140,16 @@ describe('dispatcher: threshold-gated drag', () => {
     // pointer.onDown claiming captures scratch (for sub-gesture routing like useSelectTool)
     // but does NOT suppress drag.onStart. The gesture enters pending phase and
     // promotes to drag normally when the threshold is crossed.
-    const onDown = vi.fn(() => 'claim' as const);
-    const onClick = vi.fn(() => 'claim' as const);
-    const onStart = vi.fn(() => 'claim' as const);
-    const tool = defineTool({
+    const onDown = vi.fn();
+    const onClick = vi.fn();
+    const onStart = vi.fn();
+    const tool = defineTool<null>({
       id: 't',
-      pointer: { onDown, onClick },
-      drag: { onStart },
+      initial: {
+        pointerDown: { '*': () => { onDown(); return claim(); } },
+        click: { '*': () => { onClick(); return claim(); } },
+        drag: () => { onStart(); return begin({ scratch: null }); },
+      },
     });
     const d = makeDispatcher({ hotkey: null, active: tool, ambient: [] });
 
@@ -151,13 +168,18 @@ describe('dispatcher: threshold-gated drag', () => {
 describe('dispatcher: scratch lifecycle', () => {
   it('initializes scratch on gesture start and persists across moves', () => {
     const scratchSeen: unknown[] = [];
-    const tool = defineTool({
+    const tool = defineTool<{ count: number }>({
       id: 't',
-      initScratch: () => ({ count: 0 }),
-      drag: {
-        onStart: (_e, ctx) => { ctx.scratch.count = 1; scratchSeen.push({ ...ctx.scratch }); return 'claim'; },
-        onMove:  (_e, ctx) => { ctx.scratch.count++; scratchSeen.push({ ...ctx.scratch }); return 'claim'; },
-        onEnd:   (_e, ctx) => { scratchSeen.push({ ...ctx.scratch }); return 'claim'; },
+      initial: {
+        drag: () => {
+          const scratch = { count: 1 };
+          scratchSeen.push({ ...scratch });
+          return begin({
+            scratch,
+            onMove: (ctx) => { ctx.scratch.count++; scratchSeen.push({ ...ctx.scratch }); return claim(); },
+            onRelease: (ctx) => { scratchSeen.push({ ...ctx.scratch }); return claim(); },
+          });
+        },
       },
     });
     const d = makeDispatcher({ hotkey: null, active: tool, ambient: [] });
@@ -173,11 +195,14 @@ describe('dispatcher: scratch lifecycle', () => {
   it('replaces scratch on the next gesture', () => {
     const scratches: number[] = [];
     let i = 0;
-    const tool = defineTool({
+    const tool = defineTool<{ id: number }>({
       id: 't',
-      initScratch: () => ({ id: ++i }),
-      drag: {
-        onStart: (_e, ctx) => { scratches.push(ctx.scratch.id); return 'claim'; },
+      initial: {
+        drag: () => {
+          const scratch = { id: ++i };
+          scratches.push(scratch.id);
+          return begin({ scratch });
+        },
       },
     });
     const d = makeDispatcher({ hotkey: null, active: tool, ambient: [] });
@@ -199,10 +224,11 @@ describe('dispatcher: cancelGesture', () => {
     const onCancel = vi.fn();
     const tool = defineTool({
       id: 't',
-      initScratch: () => ({}),
-      drag: {
-        onStart: () => 'claim',
-        onCancel,
+      initial: {
+        drag: () => begin({
+          scratch: {},
+          onCancel: () => { onCancel(); },
+        }),
       },
     });
     const d = makeDispatcher({ hotkey: null, active: tool, ambient: [] });
@@ -220,7 +246,13 @@ describe('dispatcher: ctx overrides', () => {
     const calls: Array<{ clientX?: number; clientY?: number; modifiers?: Record<string, boolean> }> = [];
     const tool = defineTool({
       id: 't',
-      drag: { onStart: () => 'pass', onMove: () => 'pass', onEnd: () => 'pass' },
+      initial: {
+        drag: () => begin({
+          scratch: null,
+          onMove: () => none(),
+          onRelease: () => none(),
+        }),
+      },
     });
     const d = createToolsDispatcher({
       getSlots: () => ({ hotkey: null, active: tool, ambient: [] }),
@@ -245,7 +277,9 @@ describe('dispatcher: ctx overrides', () => {
     const calls: Array<{ modifiers?: Record<string, boolean> }> = [];
     const tool = defineTool({
       id: 't',
-      keyboard: { onDown: () => 'pass' },
+      initial: {
+        keyDown: { x: () => none() },
+      },
     });
     const d = createToolsDispatcher({
       getSlots: () => ({ hotkey: null, active: tool, ambient: [] }),
@@ -284,12 +318,14 @@ describe('dispatcher: dblTap', () => {
   }
 
   it('fires dblTap.onTap on the second sub-threshold release within the window', () => {
-    const onTap = vi.fn(() => 'claim' as const);
-    const onClick = vi.fn(() => 'claim' as const);
+    const onTap = vi.fn();
+    const onClick = vi.fn();
     const tool = defineTool({
       id: 't',
-      pointer: { onClick },
-      dblTap: { onTap },
+      initial: {
+        click: { '*': () => { onClick(); return claim(); } },
+        dblTap: { empty: () => { onTap(); return claim(); } },
+      },
     });
     const clock = nowSource();
     const d = makeDblDispatcher({ hotkey: null, active: tool, ambient: [] }, clock);
@@ -312,8 +348,14 @@ describe('dispatcher: dblTap', () => {
   });
 
   it('does not fire dblTap when the gap exceeds windowMs', () => {
-    const onTap = vi.fn(() => 'claim' as const);
-    const tool = defineTool({ id: 't', pointer: { onClick: () => 'claim' }, dblTap: { onTap } });
+    const onTap = vi.fn();
+    const tool = defineTool({
+      id: 't',
+      initial: {
+        click: { '*': () => claim() },
+        dblTap: { empty: () => { onTap(); return claim(); } },
+      },
+    });
     const clock = nowSource();
     const d = makeDblDispatcher({ hotkey: null, active: tool, ambient: [] }, clock, { windowMs: 300 });
 
@@ -329,8 +371,14 @@ describe('dispatcher: dblTap', () => {
   });
 
   it('does not fire dblTap when the second tap is too far from the first', () => {
-    const onTap = vi.fn(() => 'claim' as const);
-    const tool = defineTool({ id: 't', pointer: { onClick: () => 'claim' }, dblTap: { onTap } });
+    const onTap = vi.fn();
+    const tool = defineTool({
+      id: 't',
+      initial: {
+        click: { '*': () => claim() },
+        dblTap: { empty: () => { onTap(); return claim(); } },
+      },
+    });
     const clock = nowSource();
     const d = makeDblDispatcher({ hotkey: null, active: tool, ambient: [] }, clock, { maxDistance: 8 });
 
@@ -346,13 +394,22 @@ describe('dispatcher: dblTap', () => {
   });
 
   it('does not fire dblTap if the second gesture promotes to a drag', () => {
-    const onTap = vi.fn(() => 'claim' as const);
-    const onStart = vi.fn(() => 'claim' as const);
+    const onTap = vi.fn();
+    const onStart = vi.fn();
     const tool = defineTool({
       id: 't',
-      pointer: { onClick: () => 'claim' },
-      drag: { onStart, onMove: () => 'claim', onEnd: () => 'claim' },
-      dblTap: { onTap },
+      initial: {
+        click: { '*': () => claim() },
+        drag: () => {
+          onStart();
+          return begin({
+            scratch: null,
+            onMove: () => claim(),
+            onRelease: () => claim(),
+          });
+        },
+        dblTap: { empty: () => { onTap(); return claim(); } },
+      },
     });
     const clock = nowSource();
     const d = makeDblDispatcher({ hotkey: null, active: tool, ambient: [] }, clock);
@@ -375,8 +432,10 @@ describe('dispatcher: dblTap', () => {
     const make = (id: string, decision: 'claim' | 'pass') =>
       defineTool({
         id,
-        pointer: { onClick: () => 'claim' },
-        dblTap: { onTap: () => { order.push(id); return decision; } },
+        initial: {
+          click: { '*': () => claim() },
+          dblTap: { empty: () => { order.push(id); return decision === 'claim' ? claim() : none(); } },
+        },
       });
 
     const clock = nowSource();
@@ -395,12 +454,14 @@ describe('dispatcher: dblTap', () => {
   });
 
   it('still calls pointer.onClick when no tool claims dblTap', () => {
-    const onTap = vi.fn(() => 'pass' as const);
-    const onClick = vi.fn(() => 'claim' as const);
+    const onTap = vi.fn();
+    const onClick = vi.fn();
     const tool = defineTool({
       id: 't',
-      pointer: { onClick },
-      dblTap: { onTap },
+      initial: {
+        click: { '*': () => { onClick(); return claim(); } },
+        dblTap: { empty: () => { onTap(); return none(); } },
+      },
     });
     const clock = nowSource();
     const d = makeDblDispatcher({ hotkey: null, active: tool, ambient: [] }, clock);
@@ -416,8 +477,14 @@ describe('dispatcher: dblTap', () => {
   });
 
   it('does not chain a third tap into another dblTap (resets after firing)', () => {
-    const onTap = vi.fn(() => 'claim' as const);
-    const tool = defineTool({ id: 't', pointer: { onClick: () => 'claim' }, dblTap: { onTap } });
+    const onTap = vi.fn();
+    const tool = defineTool({
+      id: 't',
+      initial: {
+        click: { '*': () => claim() },
+        dblTap: { empty: () => { onTap(); return claim(); } },
+      },
+    });
     const clock = nowSource();
     const d = makeDblDispatcher({ hotkey: null, active: tool, ambient: [] }, clock);
 
@@ -438,7 +505,13 @@ describe('dispatcher: onGestureChange', () => {
     const onGestureChange = vi.fn();
     const tool = defineTool({
       id: 't',
-      drag: { onStart: () => 'pass', onMove: () => 'pass', onEnd: () => 'pass' },
+      initial: {
+        drag: () => begin({
+          scratch: null,
+          onMove: () => none(),
+          onRelease: () => none(),
+        }),
+      },
     });
     const d = createToolsDispatcher({
       getSlots: () => ({ hotkey: null, active: tool, ambient: [] }),
@@ -460,7 +533,9 @@ describe('dispatcher: onGestureChange', () => {
     const onGestureChange = vi.fn();
     const tool = defineTool({
       id: 't',
-      drag: { onStart: () => 'pass', onCancel: () => {} },
+      initial: {
+        drag: () => begin({ scratch: null, onCancel: () => {} }),
+      },
     });
     const d = createToolsDispatcher({
       getSlots: () => ({ hotkey: null, active: tool, ambient: [] }),
@@ -593,8 +668,10 @@ describe('dispatcher: ctx.target population on pointer events', () => {
     let observedTarget: unknown = undefined;
     const tool = defineTool({
       id: 't',
-      pointer: {
-        onClick: (_e, ctx) => { observedTarget = ctx.target; return 'claim'; },
+      initial: {
+        click: {
+          '*': (ctx) => { observedTarget = ctx.target; return claim(); },
+        },
       },
     });
     const dispatcher = createToolsDispatcher({
@@ -618,8 +695,10 @@ describe('dispatcher: ctx.target population on pointer events', () => {
     let observedTarget: unknown = undefined;
     const tool = defineTool({
       id: 't',
-      pointer: {
-        onDown: (_e, ctx) => { observedTarget = ctx.target; return 'pass'; },
+      initial: {
+        pointerDown: {
+          '*': (ctx) => { observedTarget = ctx.target; return none(); },
+        },
       },
     });
     const dispatcher = createToolsDispatcher({
@@ -645,8 +724,10 @@ describe('dispatcher: ctx.target population on pointer events', () => {
     let observedTarget: unknown = undefined;
     const tool = defineTool({
       id: 't',
-      pointer: {
-        onDown: (_e, ctx) => { observedTarget = ctx.target; return 'pass'; },
+      initial: {
+        pointerDown: {
+          '*': (ctx) => { observedTarget = ctx.target; return none(); },
+        },
       },
     });
     const dispatcher = createToolsDispatcher({
@@ -694,7 +775,7 @@ describe('dispatcher: ctx.target population on pointer events', () => {
 
 describe('dispatcher: getLastRoute', () => {
   it('starts null', () => {
-    const tool = defineDeclarativeTool({
+    const tool = defineTool({
       id: 'test',
       initial: { click: { '*': () => apply([]) } },
     });
@@ -706,7 +787,7 @@ describe('dispatcher: getLastRoute', () => {
   });
 
   it('records the most recent route after a click dispatch', () => {
-    const tool = defineDeclarativeTool({
+    const tool = defineTool({
       id: 'test',
       initial: { click: { '*': () => apply([]) } },
     });
@@ -724,7 +805,7 @@ describe('dispatcher: getLastRoute', () => {
 
   it('fires onRouteResolved callback when provided', () => {
     const cb = vi.fn();
-    const tool = defineDeclarativeTool({
+    const tool = defineTool({
       id: 'test',
       initial: { click: { '*': () => apply([]) } },
     });

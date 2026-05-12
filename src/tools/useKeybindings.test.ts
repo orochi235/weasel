@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useTools } from './useTools';
 import { useKeybindings } from './useKeybindings';
-import { defineTool } from './defineTool';
+import { defineTool } from './routing/defineTool';
 
 function press(key: string, type: 'keydown' | 'keyup' = 'keydown'): void {
   document.dispatchEvent(new KeyboardEvent(type, { key, bubbles: true }));
@@ -11,8 +11,8 @@ function press(key: string, type: 'keydown' | 'keyup' = 'keydown'): void {
 
 describe('useKeybindings', () => {
   it('switches active tool on keybinding press', () => {
-    const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
-    const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' } });
+    const select = defineTool({ id: 'select', keybinding: { key: 'v' }, initial: {} });
+    const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' }, initial: {} });
     const { result } = renderHook(() => {
       const tools = useTools({ active: 'select', registry: { select, pen } });
       useKeybindings(tools);
@@ -27,8 +27,8 @@ describe('useKeybindings', () => {
   });
 
   it('engages modifier-slot tool on modifier-key down, disengages on key-up', () => {
-    const select = defineTool({ id: 'select' });
-    const hand   = defineTool({ id: 'hand', hotkey: 'space' });
+    const select = defineTool({ id: 'select', initial: {} });
+    const hand   = defineTool({ id: 'hand', hotkey: 'space', initial: {} });
     const { result } = renderHook(() => {
       const tools = useTools({ active: 'select', registry: { select, hand } });
       useKeybindings(tools);
@@ -43,8 +43,8 @@ describe('useKeybindings', () => {
   });
 
   it('lets meta/ctrl combos through (system shortcuts like Cmd-R reload)', () => {
-    const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
-    const insert = defineTool({ id: 'insert', keybinding: { key: 'r' } });
+    const select = defineTool({ id: 'select', keybinding: { key: 'v' }, initial: {} });
+    const insert = defineTool({ id: 'insert', keybinding: { key: 'r' }, initial: {} });
     const { result } = renderHook(() => {
       const tools = useTools({ active: 'select', registry: { select, insert } });
       useKeybindings(tools);
@@ -69,8 +69,8 @@ describe('useKeybindings', () => {
   });
 
   it('overrides remap a tool to a different binding', () => {
-    const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
-    const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' } });
+    const select = defineTool({ id: 'select', keybinding: { key: 'v' }, initial: {} });
+    const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' }, initial: {} });
     const { result } = renderHook(() => {
       const tools = useTools({ active: 'select', registry: { select, pen } });
       // Remap `pen` to the `v` key — `select`'s `v` binding still loses out
@@ -84,8 +84,8 @@ describe('useKeybindings', () => {
   });
 
   it('overrides: null unbinds the tool entirely', () => {
-    const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
-    const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' } });
+    const select = defineTool({ id: 'select', keybinding: { key: 'v' }, initial: {} });
+    const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' }, initial: {} });
     const { result } = renderHook(() => {
       const tools = useTools({ active: 'select', registry: { select, pen } });
       useKeybindings(tools, { overrides: { pen: null } });
@@ -96,8 +96,8 @@ describe('useKeybindings', () => {
   });
 
   it('supports mod-aware bindings (Cmd+D)', () => {
-    const select  = defineTool({ id: 'select', keybinding: { key: 'v' } });
-    const stylize = defineTool({ id: 'stylize', keybinding: { key: 'd', mod: true } });
+    const select  = defineTool({ id: 'select', keybinding: { key: 'v' }, initial: {} });
+    const stylize = defineTool({ id: 'stylize', keybinding: { key: 'd', mod: true }, initial: {} });
     const { result } = renderHook(() => {
       const tools = useTools({ active: 'select', registry: { select, stylize } });
       useKeybindings(tools);
@@ -111,8 +111,8 @@ describe('useKeybindings', () => {
   });
 
   it('disable: true skips all wiring', () => {
-    const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
-    const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' } });
+    const select = defineTool({ id: 'select', keybinding: { key: 'v' }, initial: {} });
+    const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' }, initial: {} });
     const { result } = renderHook(() => {
       const tools = useTools({ active: 'select', registry: { select, pen } });
       useKeybindings(tools, { disable: true });
@@ -124,8 +124,8 @@ describe('useKeybindings', () => {
   });
 
   it('skips when focus is in an editable element', () => {
-    const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
-    const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' } });
+    const select = defineTool({ id: 'select', keybinding: { key: 'v' }, initial: {} });
+    const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' }, initial: {} });
     const input = document.createElement('input');
     document.body.appendChild(input);
     input.focus();
@@ -146,8 +146,8 @@ describe('useKeybindings', () => {
 
   describe('Escape returns to default tool', () => {
     it('Escape switches active tool back to the initial active by default', () => {
-      const select = defineTool({ id: 'select' });
-      const pen    = defineTool({ id: 'pen', keybinding: { key: 'p' } });
+      const select = defineTool({ id: 'select', initial: {} });
+      const pen    = defineTool({ id: 'pen', keybinding: { key: 'p' }, initial: {} });
       const { result } = renderHook(() => {
         const tools = useTools({ active: 'select', registry: { select, pen } });
         useKeybindings(tools);
@@ -161,9 +161,9 @@ describe('useKeybindings', () => {
     });
 
     it('explicit defaultTool wins over the snapshotted initial', () => {
-      const select = defineTool({ id: 'select' });
-      const pen    = defineTool({ id: 'pen', keybinding: { key: 'p' } });
-      const hand   = defineTool({ id: 'hand', keybinding: { key: 'h' } });
+      const select = defineTool({ id: 'select', initial: {} });
+      const pen    = defineTool({ id: 'pen', keybinding: { key: 'p' }, initial: {} });
+      const hand   = defineTool({ id: 'hand', keybinding: { key: 'h' }, initial: {} });
       const { result } = renderHook(() => {
         const tools = useTools({ active: 'select', registry: { select, pen, hand } });
         useKeybindings(tools, { defaultTool: 'hand' });
@@ -177,8 +177,8 @@ describe('useKeybindings', () => {
     });
 
     it('defaultTool: null disables the Escape behavior', () => {
-      const select = defineTool({ id: 'select' });
-      const pen    = defineTool({ id: 'pen', keybinding: { key: 'p' } });
+      const select = defineTool({ id: 'select', initial: {} });
+      const pen    = defineTool({ id: 'pen', keybinding: { key: 'p' }, initial: {} });
       const { result } = renderHook(() => {
         const tools = useTools({ active: 'select', registry: { select, pen } });
         useKeybindings(tools, { defaultTool: null });

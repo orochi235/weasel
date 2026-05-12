@@ -4,19 +4,38 @@ import { render, fireEvent, act } from '@testing-library/react';
 import { Canvas } from 'canvas/Canvas';
 import { useTools } from './useTools';
 import { useKeybindings } from './useKeybindings';
-import { defineTool } from './defineTool';
+import { defineTool } from './routing/defineTool';
+import { begin, claim } from './routing/result';
 
 describe('Phase 1 integration: define → use → key → canvas', () => {
   it('keybinding switches active tool, drag routes through new tool', () => {
-    const selectDrag = vi.fn(() => 'claim' as const);
-    const penDrag    = vi.fn(() => 'claim' as const);
+    const selectDrag = vi.fn();
+    const penDrag    = vi.fn();
 
     function App() {
       const tools = useTools({
         active: 'select',
         registry: {
-          select: defineTool({ id: 'select', keybinding: { key: 'v' }, drag: { onStart: selectDrag } }),
-          pen:    defineTool({ id: 'pen',    keybinding: { key: 'p' }, drag: { onStart: penDrag } }),
+          select: defineTool({
+            id: 'select',
+            keybinding: { key: 'v' },
+            initial: {
+              drag: () => {
+                selectDrag();
+                return begin({ scratch: null, onRelease: () => claim() });
+              },
+            },
+          }),
+          pen: defineTool({
+            id: 'pen',
+            keybinding: { key: 'p' },
+            initial: {
+              drag: () => {
+                penDrag();
+                return begin({ scratch: null, onRelease: () => claim() });
+              },
+            },
+          }),
         },
       });
       useKeybindings(tools);
@@ -50,15 +69,32 @@ describe('Phase 1 integration: define → use → key → canvas', () => {
   });
 
   it('modifier-slot tool engages while space is held', () => {
-    const handDrag = vi.fn(() => 'claim' as const);
-    const selectDrag = vi.fn(() => 'claim' as const);
+    const handDrag = vi.fn();
+    const selectDrag = vi.fn();
 
     function App() {
       const tools = useTools({
         active: 'select',
         registry: {
-          select: defineTool({ id: 'select', drag: { onStart: selectDrag } }),
-          hand:   defineTool({ id: 'hand', hotkey: 'space', drag: { onStart: handDrag } }),
+          select: defineTool({
+            id: 'select',
+            initial: {
+              drag: () => {
+                selectDrag();
+                return begin({ scratch: null, onRelease: () => claim() });
+              },
+            },
+          }),
+          hand: defineTool({
+            id: 'hand',
+            hotkey: 'space',
+            initial: {
+              drag: () => {
+                handDrag();
+                return begin({ scratch: null, onRelease: () => claim() });
+              },
+            },
+          }),
         },
       });
       useKeybindings(tools);

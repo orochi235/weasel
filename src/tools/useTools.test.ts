@@ -2,7 +2,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useTools } from './useTools';
-import { defineTool } from './defineTool';
+import { defineTool } from './routing/defineTool';
+import { begin, claim } from './routing/result';
 import type { RenderLayer } from 'core/layers/render';
 
 const mkLayer = (id: string): RenderLayer<unknown> => ({
@@ -18,8 +19,8 @@ function pointerEvent(type: string, init: Partial<PointerEventInit> = {}): Point
 
 describe('useTools', () => {
   it('exposes active id and setActive', () => {
-    const select = defineTool({ id: 'select' });
-    const pen    = defineTool({ id: 'pen' });
+    const select = defineTool({ id: 'select', initial: {} });
+    const pen    = defineTool({ id: 'pen', initial: {} });
     const { result } = renderHook(() =>
       useTools({ active: 'select', registry: { select, pen } }),
     );
@@ -30,9 +31,9 @@ describe('useTools', () => {
   });
 
   it('tracks modifier-slot engagement', () => {
-    const hand = defineTool({ id: 'hand', hotkey: 'space' });
+    const hand = defineTool({ id: 'hand', hotkey: 'space', initial: {} });
     const { result } = renderHook(() =>
-      useTools({ active: 'select', registry: { select: defineTool({ id: 'select' }), hand } }),
+      useTools({ active: 'select', registry: { select: defineTool({ id: 'select', initial: {} }), hand } }),
     );
 
     expect(result.current.hotkeyEngaged).toBe(null);
@@ -45,18 +46,18 @@ describe('useTools', () => {
   it('throws when active id is not in registry', () => {
     expect(() =>
       renderHook(() =>
-        useTools({ active: 'nope', registry: { select: defineTool({ id: 'select' }) } }),
+        useTools({ active: 'nope', registry: { select: defineTool({ id: 'select', initial: {} }) } }),
       ),
     ).toThrow(/registry/i);
   });
 
   it('exposes always-on tool list', () => {
-    const del = defineTool({ id: 'delete' });
-    const nudge = defineTool({ id: 'nudge' });
+    const del = defineTool({ id: 'delete', initial: {} });
+    const nudge = defineTool({ id: 'nudge', initial: {} });
     const { result } = renderHook(() =>
       useTools({
         active: 'select',
-        registry: { select: defineTool({ id: 'select' }) },
+        registry: { select: defineTool({ id: 'select', initial: {} }) },
         ambient: [del, nudge],
       }),
     );
@@ -68,9 +69,11 @@ describe('useTools', () => {
     const onCancel = vi.fn();
     const select = defineTool({
       id: 'select',
-      drag: { onStart: () => 'claim', onCancel },
+      initial: {
+        drag: () => begin({ scratch: null, onCancel: () => { onCancel(); } }),
+      },
     });
-    const pen = defineTool({ id: 'pen' });
+    const pen = defineTool({ id: 'pen', initial: {} });
     const { result } = renderHook(() =>
       useTools({ active: 'select', registry: { select, pen } }),
     );
@@ -88,9 +91,11 @@ describe('useTools', () => {
   it('engageHotkey is a no-op while a gesture is in flight', () => {
     const select = defineTool({
       id: 'select',
-      drag: { onStart: () => 'claim' },
+      initial: {
+        drag: () => begin({ scratch: null, onRelease: () => claim() }),
+      },
     });
-    const hand = defineTool({ id: 'hand', hotkey: 'space' });
+    const hand = defineTool({ id: 'hand', hotkey: 'space', initial: {} });
     const { result } = renderHook(() =>
       useTools({ active: 'select', registry: { select, hand } }),
     );
@@ -106,23 +111,28 @@ describe('useTools', () => {
 
 describe('ToolsApi.getActiveOverlays', () => {
   it('returns overlay from active tool', () => {
-    const a = defineTool({ id: 'a', overlay: mkLayer('a-ov') });
+    const aOverlay = mkLayer('a-ov');
+    const a = defineTool({ id: 'a', initial: { overlay: () => aOverlay } });
     const { result } = renderHook(() => useTools({ active: 'a', registry: { a } }));
     const out = result.current.getActiveOverlays();
     expect(out.map((l) => l.id)).toEqual(['a-ov']);
   });
 
   it('filters out tools with no overlay', () => {
-    const a = defineTool({ id: 'a' });
+    const a = defineTool({ id: 'a', initial: {} });
     const { result } = renderHook(() => useTools({ active: 'a', registry: { a } }));
     expect(result.current.getActiveOverlays()).toEqual([]);
   });
 
   it('orders active, modifier, ambient (in registration order)', () => {
-    const a = defineTool({ id: 'a', overlay: mkLayer('a-ov') });
-    const m = defineTool({ id: 'm', hotkey: 'space', overlay: mkLayer('m-ov') });
-    const w1 = defineTool({ id: 'w1', overlay: mkLayer('w1-ov') });
-    const w2 = defineTool({ id: 'w2', overlay: mkLayer('w2-ov') });
+    const aOverlay = mkLayer('a-ov');
+    const mOverlay = mkLayer('m-ov');
+    const w1Overlay = mkLayer('w1-ov');
+    const w2Overlay = mkLayer('w2-ov');
+    const a = defineTool({ id: 'a', initial: { overlay: () => aOverlay } });
+    const m = defineTool({ id: 'm', hotkey: 'space', initial: { overlay: () => mOverlay } });
+    const w1 = defineTool({ id: 'w1', initial: { overlay: () => w1Overlay } });
+    const w2 = defineTool({ id: 'w2', initial: { overlay: () => w2Overlay } });
     const { result, rerender } = renderHook(() =>
       useTools({ active: 'a', registry: { a, m }, ambient: [w1, w2] }),
     );
@@ -133,8 +143,10 @@ describe('ToolsApi.getActiveOverlays', () => {
   });
 
   it('omits modifier overlay when not engaged', () => {
-    const a = defineTool({ id: 'a', overlay: mkLayer('a-ov') });
-    const m = defineTool({ id: 'm', hotkey: 'space', overlay: mkLayer('m-ov') });
+    const aOverlay = mkLayer('a-ov');
+    const mOverlay = mkLayer('m-ov');
+    const a = defineTool({ id: 'a', initial: { overlay: () => aOverlay } });
+    const m = defineTool({ id: 'm', hotkey: 'space', initial: { overlay: () => mOverlay } });
     const { result } = renderHook(() => useTools({ active: 'a', registry: { a, m } }));
     expect(result.current.getActiveOverlays().map((l) => l.id)).toEqual(['a-ov']);
   });
