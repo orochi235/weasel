@@ -117,6 +117,10 @@ interface ToolDef<TScratch = void> {
   keybinding?: KeyBinding;
   onActivate?:   (ctx: ToolCtx<TScratch>) => void;
   onDeactivate?: (ctx: ToolCtx<TScratch>) => void;
+  /** Default cursor while this tool is in the active slot. Can be a
+   *  static string or a function of context (including scratch for
+   *  finer-grained variations). Overridden per-phase via `PhaseDef.cursor`. */
+  cursor?: string | ((ctx: ToolCtx<TScratch>) => string);
   initial: PhaseDef<TScratch>;
   engaged?: PhaseDef<TScratch>;   // omit for phase-free tools
 }
@@ -128,6 +132,9 @@ interface PhaseDef<TScratch> {
   wheel?:   ActionFn<TScratch>;
   keyDown?: Record<string, ActionFn<TScratch>>;
   keyUp?:   Record<string, ActionFn<TScratch>>;
+  /** Cursor override while in this phase. Falls back to `Tool.cursor`
+   *  when omitted. Same signature — static string or function. */
+  cursor?: string | ((ctx: ToolCtx<TScratch>) => string);
   /** Optional overlay layer rendered while the tool is in this phase. */
   overlay?: (ctx: ToolCtx<TScratch>) => RenderLayer<unknown>;
   claimsAll?: boolean;
@@ -578,8 +585,9 @@ keyed entry on `'empty'`. Reads as "any drag fires this":
 ```ts
 const RectInsertTool = defineTool<{ start: Point; current: Point }>({
   id: 'insert-rect',
-  presentation: { label: 'Rectangle', icon: <RectIcon />, group: 'shape', cursor: 'crosshair' },
+  presentation: { label: 'Rectangle', icon: <RectIcon />, group: 'shape' },
   keybinding: { key: 'r' },
+  cursor: 'crosshair',
   initial: {
     drag: (ctx) => begin({   // function form — any pointerdown fires
       scratch: { start: ctx.point, current: ctx.point },
@@ -610,8 +618,9 @@ behavior, so function form is the default shape for them.
 ```ts
 const HandTool = defineViewportTool<{ startView: View; startPoint: Point }>({
   id: 'hand',
-  presentation: { label: 'Hand', icon: <HandIcon />, group: 'view', cursor: 'grab' },
+  presentation: { label: 'Hand', icon: <HandIcon />, group: 'view' },
   keybinding: { key: 'h' },
+  cursor: 'grab',                    // default — hovering, ready to grab
   initial: {
     drag: (ctx) => begin({
       scratch: { startView: ctx.view, startPoint: ctx.point },
@@ -626,6 +635,9 @@ const HandTool = defineViewportTool<{ startView: View; startPoint: Point }>({
       onRelease: cancel,   // view changes aren't undoable
     }),
   },
+  engaged: {
+    cursor: 'grabbing',              // overrides during the drag
+  },
 });
 ```
 
@@ -634,8 +646,9 @@ const HandTool = defineViewportTool<{ startView: View; startPoint: Point }>({
 ```ts
 const PenTool = defineTool<{ anchors: Point[] }>({
   id: 'pen',
-  presentation: { label: 'Pen', icon: <PenIcon />, group: 'draw', cursor: 'crosshair' },
+  presentation: { label: 'Pen', icon: <PenIcon />, group: 'draw' },
   keybinding: { key: 'p' },
+  cursor: 'crosshair',
   initial: {
     click: {
       'empty': (ctx) => begin({ scratch: { anchors: [ctx.point] } }),
@@ -663,8 +676,9 @@ const PenTool = defineTool<{ anchors: Point[] }>({
 ```ts
 const TextTool = defineTool({
   id: 'text',
-  presentation: { label: 'Text', icon: <TextIcon />, group: 'type', cursor: 'text' },
+  presentation: { label: 'Text', icon: <TextIcon />, group: 'type' },
   keybinding: { key: 't' },
+  cursor: 'text',                  // I-beam while idle
   initial: {
     click: {
       'text':  enterTextEdit,
@@ -680,6 +694,7 @@ const TextTool = defineTool({
     },
   },
   engaged: {
+    cursor: 'crosshair',            // overrides while drag-creating a box
     keyDown: { 'Escape': cancel },
   },
 });
@@ -848,10 +863,11 @@ way release does.
 - **Modifier matrix coverage.** 8 keys × N route entries × M tools
   could grow into a large search at dispatch time. Hash-based lookup
   is O(1) per entry; should benchmark with realistic tool counts.
-- **Cursor publication.** Today `Tool.cursor` is published per-
-  active-slot-tool. With phase-aware behavior (cursor changes during
-  engaged phase), the dispatcher needs to re-resolve cursor on phase
-  transitions, not just on slot transitions.
+- **Cursor publication on phase transitions.** Resolved: the dispatcher
+  re-reads the cursor (phase override → tool default) on slot enter,
+  phase enter, and phase exit. Function-form cursors (depending on
+  scratch) are re-read on every scratch update — cheap, since cursor
+  resolution is a single string lookup; no React re-render involved.
 
 ## Acceptance
 
