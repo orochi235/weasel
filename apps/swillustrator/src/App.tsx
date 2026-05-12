@@ -76,6 +76,8 @@ import {
 } from '@orochi235/weasel-ui';
 import '@orochi235/weasel-theme/tokens.css';
 import { ActionBar } from './ActionBar';
+import { objToSvgNode, svgNodesToObjs, downloadSvg, pickSvgFile } from './svgInterop';
+import { parseSvg, serializeSvg } from '@orochi235/weasel-svg';
 import { KindIcon } from './kindIcons';
 import type { ComponentType } from 'react';
 import {
@@ -843,6 +845,28 @@ export function App() {
         onFlip={(axis) => flip(axis)}
         booleansAdapter={adapter}
         booleansActions={booleans}
+        onSaveSvg={() => {
+          const svgNodes = itemsRef.current.map(objToSvgNode);
+          const svg = serializeSvg(svgNodes, {
+            viewBox: { x: 0, y: 0, width: PAGE_W, height: PAGE_H },
+          });
+          downloadSvg(svg, `${docTitle || 'untitled'}.svg`);
+        }}
+        onOpenSvg={async () => {
+          const text = await pickSvgFile();
+          if (text == null) return;
+          const { nodes, warnings } = parseSvg(text);
+          if (warnings.length > 0) {
+            // eslint-disable-next-line no-console
+            console.warn('Open SVG warnings:', warnings);
+          }
+          const next = svgNodesToObjs(nodes, () => `i${nextId.current++}`);
+          itemsRef.current = next;
+          groupsRef.current = [];
+          historyRef.current?.clear();
+          selection.set([]);
+          publish();
+        }}
       />
 
       <div className="swill-body">

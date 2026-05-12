@@ -67,6 +67,9 @@ export interface ActionBarProps {
   // disabled state (uniform <2 valid paths), actions fire the ops.
   booleansAdapter: Pick<BooleansAdapter, 'getSelection' | 'getWorldPath'>;
   booleansActions: UseBooleansReturn;
+  // File I/O — SVG round-trip via @orochi235/weasel-svg.
+  onSaveSvg(): void;
+  onOpenSvg(): void;
 }
 
 interface ButtonProps {
@@ -100,6 +103,11 @@ export function ActionBar(p: ActionBarProps) {
   const lt3 = p.selectionSize < 3;
   return (
     <div className="swill-actionbar" role="toolbar" aria-label="Actions">
+      <div className="swill-actionbar-group">
+        <Button onClick={p.onOpenSvg} title="Open SVG…">Open</Button>
+        <Button onClick={p.onSaveSvg} title="Save as SVG">Save</Button>
+      </div>
+      <Sep />
       <div className="swill-actionbar-group">
         <Button onClick={p.onUndo} disabled={!p.canUndo} title="Undo (Cmd-Z)">Undo</Button>
         <Button onClick={p.onRedo} disabled={!p.canRedo} title="Redo (Cmd-Shift-Z)">Redo</Button>
