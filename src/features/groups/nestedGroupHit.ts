@@ -1,4 +1,4 @@
-import { worldPoseLookup } from 'features/groups/composePose';
+import { worldPoseLookup } from './composePose';
 
 interface RectBounds { x: number; y: number; width: number; height: number }
 

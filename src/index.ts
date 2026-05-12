@@ -200,11 +200,11 @@ export {
   worldPoseLookup,
 } from './features/groups/composePose';
 export type { PoseAdapter } from './features/groups/composePose';
-export { nestedGroupHitTester } from './interactions/hit/nestedGroupHit';
+export { nestedGroupHitTester } from './features/groups/nestedGroupHit';
 export type {
   NestedGroupHitOpts,
   NestedGroupHitTester,
-} from './interactions/hit/nestedGroupHit';
+} from './features/groups/nestedGroupHit';
 export {
   PATH_M,
   PATH_L,
