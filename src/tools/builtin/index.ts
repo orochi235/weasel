@@ -55,3 +55,4 @@ export {
 } from './useCloneTool';
 export { usePolygonTool, type UsePolygonToolOptions } from './usePolygonTool';
 export { useStarTool, type UseStarToolOptions } from './useStarTool';
+export { usePencilTool, type UsePencilToolOptions } from './usePencilTool';
