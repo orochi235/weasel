@@ -16,7 +16,7 @@ export interface Affordance {
    *  view. Returns [] when the affordance shouldn't render (no selection,
    *  multiActive false, etc. — affordance decides). */
   render(state: ChromeState, view: View): DrawCommand[];
-  /** Optional. Returns a HitResult if `(worldX, worldY)` lands on this
+  /** Optional. Returns a AffordanceBinding if `(worldX, worldY)` lands on this
    *  affordance, null otherwise. Affordances that are non-interactive
    *  (purely decorative) omit this. */
   hitTest?(
@@ -24,7 +24,7 @@ export interface Affordance {
     worldY: number,
     state: ChromeState,
     view: View,
-  ): HitResult | null;
+  ): AffordanceBinding | null;
 }
 
 /**
@@ -32,7 +32,7 @@ export interface Affordance {
  * Result of a layer's (or affordance's) hit-test. Nominates the gesture's
  * drag channel and (optionally) initial scratch state.
  */
-export interface HitResult<TScratch = unknown> {
+export interface AffordanceBinding<TScratch = unknown> {
   drag: DragChannel<TScratch>;
   /** Initial scratch passed to drag.onStart. Lets the affordance pre-fill
    *  state from what its hit-test already computed (anchor: 'br',

@@ -3,7 +3,7 @@ import type { AnyTool, ToolCtx, ToolSlot, Decision } from './types';
 import type { RenderLayer } from 'core/layers/render';
 import type { ChromeState } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
-import type { HitResult } from 'affordances/types';
+import type { AffordanceBinding } from 'affordances/types';
 
 interface SlotsState {
   hotkey: AnyTool | null;
@@ -170,7 +170,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     opts.onGestureChange?.();
   }
 
-  function startAffordanceGesture(result: HitResult, e: PointerEvent): void {
+  function startAffordanceGesture(result: AffordanceBinding, e: PointerEvent): void {
     // Synthesize a virtual tool whose drag channel comes from the layer's
     // hit result. The dispatcher only references inFlight.tool.drag for
     // subsequent pointermove / pointerup; other Tool fields aren't
@@ -224,7 +224,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     }
 
     // 2. Layer hit-test pipeline. Walk visible layers top-down; first
-    //    non-null HitResult routes the gesture to the layer-supplied
+    //    non-null AffordanceBinding routes the gesture to the layer-supplied
     //    drag channel (with optional initial scratch).
     const hitCtx = opts.getHitTestContext?.();
     if (hitCtx) {

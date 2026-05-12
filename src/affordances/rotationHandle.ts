@@ -1,4 +1,4 @@
-import type { Affordance, HitResult } from './types';
+import type { Affordance, AffordanceBinding } from './types';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { DrawCommand } from '../renderer';
 import type { View } from 'core/viewport/view';
@@ -104,17 +104,17 @@ export function createRotationAffordance(
         },
       ];
     },
-    hitTest(worldX, worldY, state, view): HitResult | null {
+    hitTest(worldX, worldY, state, view): AffordanceBinding | null {
       const target = pickTarget(state);
       if (!target) return null;
       const handle = rotationHandle(target.bounds, distance);
       const radiusWorld = handleHitRadius / view.scale;
       if (hitRotationHandle(handle, worldX, worldY, radiusWorld)) {
-        const result: HitResult<RotationScratch> = {
+        const result: AffordanceBinding<RotationScratch> = {
           drag: stubDrag,
           initialScratch: { targetId: target.id },
         };
-        return result as HitResult;
+        return result as AffordanceBinding;
       }
       return null;
     },

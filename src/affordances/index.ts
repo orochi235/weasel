@@ -1,4 +1,4 @@
-export type { Affordance, HitResult } from './types';
+export type { Affordance, AffordanceBinding } from './types';
 export { composeAffordanceLayer } from './composeAffordanceLayer';
 export {
   createCornerResizeAffordance,

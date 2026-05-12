@@ -2,7 +2,7 @@ import type { Hud } from './hud';
 import type { CanvasExtensionApi } from '../../../src/canvas/canvasExtension';
 import type { RenderLayer } from '../../../src/core/layers/render';
 import type { DrawCommand } from '../../../src/renderer';
-import type { HitResult } from '../../../src/affordances/types';
+import type { AffordanceBinding } from '../../../src/affordances/types';
 import type { DragChannel } from '../../../src/tools/types';
 import type { View } from '../../../src/core/viewport/view';
 import { viewToTransform } from '../../../src/core/viewport/view';
@@ -53,7 +53,7 @@ export function attachHud(api: CanvasExtensionApi, hud: Hud): () => void {
       }
       return out;
     },
-    hitTest: (worldX, worldY, _data, view, _dims): HitResult | null => {
+    hitTest: (worldX, worldY, _data, view, _dims): AffordanceBinding | null => {
       // Convert world to screen so we can hit-test widget bounds.
       const t = viewToTransform(view);
       const [sx, sy] = worldToScreen(worldX, worldY, t);
@@ -86,11 +86,11 @@ export function attachHud(api: CanvasExtensionApi, hud: Hud): () => void {
         },
       };
 
-      const result: HitResult<HudDragScratch> = {
+      const result: AffordanceBinding<HudDragScratch> = {
         drag,
         initialScratch: { widget: hit },
       };
-      return result as HitResult;
+      return result as AffordanceBinding;
     },
     onUncapturedMove: (worldX, worldY, evt, view: View) => {
       const t = viewToTransform(view);

@@ -67,7 +67,7 @@ export interface RenderLayer<TData> {
     data: TData,
     view: View,
     dims: Dims,
-  ) => import('../../affordances/types').HitResult | null;
+  ) => import('../../affordances/types').AffordanceBinding | null;
   /**
    * Called on every pointermove when no gesture is currently captured.
    * Lets layers (e.g. HUD widgets) track hover state without participating

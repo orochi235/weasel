@@ -245,7 +245,7 @@ describe('useSelectTool', () => {
     expect(result.current.initScratch!()).toEqual({ kind: 'idle' });
   });
 
-  it('overlay.hitTest over resize handle returns a HitResult that drives useResize', () => {
+  it('overlay.hitTest over resize handle returns a AffordanceBinding that drives useResize', () => {
     // Corner-handle hits now flow through the tool's overlay.hitTest (the
     // affordance pipeline), not pointer.onDown. The dispatcher walks the
     // active tool's overlay layers and routes the resulting drag channel

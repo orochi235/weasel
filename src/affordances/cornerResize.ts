@@ -1,4 +1,4 @@
-import type { Affordance, HitResult } from './types';
+import type { Affordance, AffordanceBinding } from './types';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { DrawCommand } from '../renderer';
 import type { View } from 'core/viewport/view';
@@ -39,7 +39,7 @@ const DEFAULT_STROKE = '#1a130d';
  * Corner-handle affordance for resizing the active selection (single
  * member in single-mode; the union AABB in multi-mode). Reads
  * ChromeState; emits screen-space DrawCommands for the four corners;
- * returns a HitResult whose drag channel routes to useResize against the
+ * returns a AffordanceBinding whose drag channel routes to useResize against the
  * picked target.
  *
  * The drag channel returned here is a no-op stub that claims — it gets
@@ -84,18 +84,18 @@ export function createCornerResizeAffordance(
       }
       return cmds;
     },
-    hitTest(worldX, worldY, state, view): HitResult | null {
+    hitTest(worldX, worldY, state, view): AffordanceBinding | null {
       const target = pickRenderTarget(state);
       if (!target) return null;
       const radiusWorld = handleHitRadius / view.scale;
       const corners = cornerResizeHandles(target.bounds);
       for (const c of corners) {
         if (hitCornerHandle(c, worldX, worldY, radiusWorld)) {
-          const result: HitResult<CornerResizeScratch> = {
+          const result: AffordanceBinding<CornerResizeScratch> = {
             drag: stubDrag,
             initialScratch: { anchor: c.anchor, targetId: target.id },
           };
-          return result as HitResult;
+          return result as AffordanceBinding;
         }
       }
       return null;

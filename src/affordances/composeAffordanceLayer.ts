@@ -1,7 +1,7 @@
 import type { RenderLayer } from 'core/layers/render';
 import type { DrawCommand } from '../renderer';
 import type { ChromeState } from 'core/selection/chromeState';
-import type { Affordance, HitResult } from './types';
+import type { Affordance, AffordanceBinding } from './types';
 
 /**
  * @experimental
@@ -19,7 +19,7 @@ export function composeAffordanceLayer(
   label: string,
   affordances: readonly Affordance[],
 ): RenderLayer<ChromeState> & {
-  hitTest(wx: number, wy: number, state: ChromeState, view: { x: number; y: number; scale: number }, dims: { width: number; height: number }): HitResult | null;
+  hitTest(wx: number, wy: number, state: ChromeState, view: { x: number; y: number; scale: number }, dims: { width: number; height: number }): AffordanceBinding | null;
 } {
   return {
     id,
@@ -32,7 +32,7 @@ export function composeAffordanceLayer(
       }
       return out;
     },
-    hitTest: (wx, wy, state, view, _dims): HitResult | null => {
+    hitTest: (wx, wy, state, view, _dims): AffordanceBinding | null => {
       for (let i = affordances.length - 1; i >= 0; i--) {
         const a = affordances[i];
         if (!a.hitTest) continue;

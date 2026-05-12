@@ -161,7 +161,7 @@ export {
   createCornerResizeAffordance,
   createRotationAffordance,
   type Affordance,
-  type HitResult,
+  type AffordanceBinding,
   type CornerResizeAffordanceOptions,
   type CornerResizeScratch,
   type RotationAffordanceOptions,

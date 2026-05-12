@@ -15,7 +15,7 @@ import {
   createRotationAffordance,
   type RotationScratch,
 } from 'affordances/rotationHandle';
-import type { Affordance, HitResult } from 'affordances/types';
+import type { Affordance, AffordanceBinding } from 'affordances/types';
 import type { MoveAdapter } from 'core/adapters/types';
 import type { ResizeAdapter } from 'core/adapters/types';
 import type { RotateAdapter } from 'core/adapters/types';
@@ -452,7 +452,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     () => ({
       id: cornerAff.id,
       render: () => [],
-      hitTest: (wx, wy, state, view): HitResult | null => {
+      hitTest: (wx, wy, state, view): AffordanceBinding | null => {
         const inner = cornerAff.hitTest?.(wx, wy, state, view);
         if (!inner) return null;
         const scratch = inner.initialScratch as CornerResizeScratch;
@@ -532,7 +532,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           };
 
           let lastPointer = { x: 0, y: 0 };
-          const result: HitResult<CornerResizeScratch> = {
+          const result: AffordanceBinding<CornerResizeScratch> = {
             drag: {
               onStart: (_e, dctx) => {
                 lastPointer = { x: dctx.worldX, y: dctx.worldY };
@@ -566,11 +566,11 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
             },
             initialScratch: scratch,
           };
-          return result as HitResult;
+          return result as AffordanceBinding;
         }
 
         // Single-selection path (existing): delegate to useResize.
-        const result: HitResult<CornerResizeScratch> = {
+        const result: AffordanceBinding<CornerResizeScratch> = {
           drag: {
             onStart: (_e, dctx) => {
               resizeRef.current.start(scratch.targetId, scratch.anchor, dctx.worldX, dctx.worldY);
@@ -590,7 +590,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           },
           initialScratch: scratch,
         };
-        return result as HitResult;
+        return result as AffordanceBinding;
       },
     }),
     [cornerAff],
@@ -618,7 +618,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     () => ({
       id: rotationAff.id,
       render: () => [],
-      hitTest: (wx, wy, state, view): HitResult | null => {
+      hitTest: (wx, wy, state, view): AffordanceBinding | null => {
         const inner = rotationAff.hitTest?.(wx, wy, state, view);
         if (!inner) return null;
         const scratch = inner.initialScratch as RotationScratch;
@@ -626,7 +626,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         // useRotate today — pass through so the click falls through to the
         // slot walk. Real scene ids drive useRotate normally.
         if (scratch.targetId === MULTI_RESIZE_TARGET_ID) return null;
-        const result: HitResult<RotationScratch> = {
+        const result: AffordanceBinding<RotationScratch> = {
           drag: {
             onStart: (_e, dctx) => {
               rotateRef.current.start({ id: scratch.targetId, worldX: dctx.worldX, worldY: dctx.worldY });
@@ -646,7 +646,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           },
           initialScratch: scratch,
         };
-        return result as HitResult;
+        return result as AffordanceBinding;
       },
     }),
     [rotationAff],

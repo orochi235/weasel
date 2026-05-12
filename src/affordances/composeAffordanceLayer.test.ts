@@ -82,7 +82,7 @@ describe('composeAffordanceLayer', () => {
     expect(result).not.toBeNull();
   });
 
-  it('initialScratch from the hit propagates through the HitResult', () => {
+  it('initialScratch from the hit propagates through the AffordanceBinding', () => {
     const aff: Affordance = {
       id: 'a',
       render: () => [],
