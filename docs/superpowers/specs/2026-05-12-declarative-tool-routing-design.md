@@ -465,6 +465,63 @@ a no-op in production. To re-init the engaged phase with fresh
 scratch, an author should `cancel()` then dispatch a fresh route —
 not call `begin` from within engaged.
 
+### Cross-tool fall-through via ambient handlers
+
+A useful idiom that falls out of the slot pipeline naturally: a tool
+registered in the `ambient` slot can provide cross-tool fall-through
+behavior for events the active-slot tool doesn't claim.
+
+Example: regardless of which tool is active (Pen, Rect, Lasso, etc.),
+the user should always be able to double-tap a text node to enter
+text edit. Rather than copy the dblTap route into every tool's table,
+register a single ambient tool that owns the cross-tool behavior:
+
+```ts
+const UniversalEditEntry = defineTool({
+  id: 'universal-edit-entry',
+  initial: {
+    dblTap: {
+      'text': enterTextEdit,
+      'path': enterAnchorEdit,
+    },
+  },
+});
+
+useTools({
+  active: penTool,
+  ambient: [
+    useWheelZoomTool(),
+    useWheelPanTool(),
+    UniversalEditEntry,
+  ],
+});
+```
+
+Now while Pen is active:
+- User dbltaps a path → Pen claims (its `dblTap.'path'` route).
+- User dbltaps text → Pen has no route → falls through → ambient
+  `UniversalEditEntry` claims via `dblTap.'text'`.
+- User dbltaps a rect → Pen has no route → ambient has no route →
+  silently unhandled.
+
+The active tool gets first dibs (so it can shadow ambient if it
+wants to); the ambient handler fires only when the active doesn't
+claim. Modal tools that don't want fall-through (e.g., Pen
+mid-creation in engaged phase) suppress it with `claimsAll: true`.
+
+**Caveats:**
+
+- *Behavior lives away from its tool.* A maintainer reading Pen's
+  source won't see why dbltap-text enters edit mode. Name the ambient
+  tool descriptively and document the fall-throughs it provides.
+- *The kit doesn't ship this.* `UniversalEditEntry` is a recipe, not
+  a default. Different consumers want different fall-through policies
+  (Illustrator-style stays tool-bound, Figma-style snaps back to
+  select). Shipping one as default would be opinionated wrongly.
+- *Multiple ambient fall-through tools.* If you register two ambient
+  tools that both have `dblTap.'text'` routes, the first one to claim
+  wins. Don't double up.
+
 ## Lifecycle hooks
 
 `onActivate(ctx)` and `onDeactivate(ctx)` are top-level `ToolDef`
