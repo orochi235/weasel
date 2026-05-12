@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react';
-import { defineTool } from '../defineTool';
-import type { Tool } from '../types';
+import { defineViewportTool, claim, none } from '../routing';
+import type { Tool, ToolCtx } from '../types';
 import { zoomAt } from 'core/viewport/zoomAt';
 import { useViewTween } from 'core/viewport/useViewTween';
 import type { View } from 'core/viewport/view';
@@ -39,39 +39,49 @@ export function useKeyboardZoomTool(opts: KeyboardZoomToolOpts = {}): Tool<null>
 
   return useMemo(
     () =>
-      defineTool<null>({
+      defineViewportTool<null>({
         id: 'keyboard-zoom',
-        initScratch: () => null,
-        keyboard: {
-          onDown: (e, ctx) => {
-            if (!(e.metaKey || e.ctrlKey)) return 'pass';
-            setViewRef.current = ctx.setView;
-            const rect = ctx.canvasRect;
-            const center = { x: rect.width / 2, y: rect.height / 2 };
-
-            let target: View | null = null;
-            if (e.key === '=' || e.key === '+') {
-              e.preventDefault();
-              target = zoomAt(ctx.view, center, keyStep, { min, max });
-            } else if (e.key === '-' || e.key === '_') {
-              e.preventDefault();
-              target = zoomAt(ctx.view, center, 1 / keyStep, { min, max });
-            } else if (e.key === '0') {
-              e.preventDefault();
-              target = { x: 0, y: 0, scale: 1 };
-            }
-
-            if (!target) return 'pass';
-            if (animate) {
-              const d = e.key === '0' ? resetDuration : duration;
-              animateTo(ctx.view, target, { duration: d, easing });
-            } else {
-              ctx.setView(target);
-            }
-            return 'claim';
+        initial: {
+          keyDown: {
+            '=': (ctx, event) => stepZoom(ctx, event, keyStep),
+            '+': (ctx, event) => stepZoom(ctx, event, keyStep),
+            '-': (ctx, event) => stepZoom(ctx, event, 1 / keyStep),
+            '_': (ctx, event) => stepZoom(ctx, event, 1 / keyStep),
+            '0': (ctx, event) => resetZoom(ctx, event),
           },
         },
-      }),
+      }) as Tool<null>,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [min, max, keyStep, animate, duration, resetDuration, easing, animateTo],
   );
+
+  function stepZoom(ctx: ToolCtx<null>, event: unknown, factor: number) {
+    const e = event as KeyboardEvent;
+    if (!(e.metaKey || e.ctrlKey)) return none();
+    e.preventDefault();
+    setViewRef.current = ctx.setView;
+    const rect = ctx.canvasRect;
+    const center = { x: rect.width / 2, y: rect.height / 2 };
+    const target = zoomAt(ctx.view, center, factor, { min, max });
+    if (animate) {
+      animateTo(ctx.view, target, { duration, easing });
+    } else {
+      ctx.setView(target);
+    }
+    return claim();
+  }
+
+  function resetZoom(ctx: ToolCtx<null>, event: unknown) {
+    const e = event as KeyboardEvent;
+    if (!(e.metaKey || e.ctrlKey)) return none();
+    e.preventDefault();
+    setViewRef.current = ctx.setView;
+    const target: View = { x: 0, y: 0, scale: 1 };
+    if (animate) {
+      animateTo(ctx.view, target, { duration: resetDuration, easing });
+    } else {
+      ctx.setView(target);
+    }
+    return claim();
+  }
 }
