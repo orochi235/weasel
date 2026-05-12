@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { defineTool } from '../defineTool';
+import { defineViewportTool, claim, none } from '../routing';
 import type { Tool } from '../types';
 import { zoomAt } from 'core/viewport/zoomAt';
 
@@ -31,21 +31,21 @@ export function useWheelZoomTool(opts: WheelZoomToolOpts = {}): Tool<null> {
   const wheelStep = opts.wheelStep ?? 1.1;
   return useMemo(
     () =>
-      defineTool<null>({
+      defineViewportTool<null>({
         id: 'wheel-zoom',
-        initScratch: () => null,
-        wheel: {
-          onWheel: (e, ctx) => {
-            if (requireCtrl && !e.ctrlKey) return 'pass';
+        initial: {
+          wheel: (ctx, event) => {
+            const e = event as WheelEvent;
+            if (requireCtrl && !e.ctrlKey) return none();
             e.preventDefault();
             const rect = ctx.canvasRect;
             const anchor = { x: e.clientX - rect.left, y: e.clientY - rect.top };
             const factor = Math.pow(wheelStep, -e.deltaY / 100);
             ctx.setView(zoomAt(ctx.view, anchor, factor, { min, max }));
-            return 'claim';
+            return claim();
           },
         },
-      }),
+      }) as Tool<null>,
     [min, max, wheelStep, requireCtrl],
   );
 }
