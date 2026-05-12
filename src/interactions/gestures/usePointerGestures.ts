@@ -2,22 +2,22 @@ import { useCallback, useRef } from 'react';
 import type React from 'react';
 import { clientToCanvas } from 'core/viewport/clientToCanvas';
 import type { NodeId } from 'core/scene/types';
-import { cornerResizeHandles, hitCornerHandle } from './gestures/resize/cornerHandles';
-import type { MoveController } from './gestures/move/move';
-import type { ResizeController } from './gestures/resize/resize';
-import type { RotateController } from './gestures/rotate/rotate';
-import type { InsertController } from './gestures/insert/insert';
-import type { AreaSelectController } from './gestures/area-select/areaSelect';
+import { cornerResizeHandles, hitCornerHandle } from './resize/cornerHandles';
+import type { MoveController } from './move/move';
+import type { ResizeController } from './resize/resize';
+import type { RotateController } from './rotate/rotate';
+import type { InsertController } from './insert/insert';
+import type { AreaSelectController } from './area-select/areaSelect';
 import {
   rotationHandle,
   hitRotationHandle,
   DEFAULT_ROTATION_HANDLE_DISTANCE,
-} from './gestures/rotate/handle';
-import { rotatePoint } from './gestures/rotate/geometry';
-import type { ModifierState } from './gestures/types';
+} from './rotate/handle';
+import { rotatePoint } from './rotate/geometry';
+import type { ModifierState } from './types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
-import type { DebugSink, HitShape } from '../debug/types';
+import type { DebugSink, HitShape } from '../../debug/types';
 import { pickTopMostHit } from 'tools/builtin/pickTopMostHit';
 
 interface Bounds {

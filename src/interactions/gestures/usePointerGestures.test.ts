@@ -4,8 +4,8 @@ import type React from 'react';
 import { useSelection } from 'core/selection/useSelection';
 import { asNodeId } from 'core/scene/types';
 import { usePointerGestures } from './usePointerGestures';
-import type { MoveController } from './gestures/move/move';
-import type { ResizeController } from './gestures/resize/resize';
+import type { MoveController } from './move/move';
+import type { ResizeController } from './resize/resize';
 
 interface Pose { x: number; y: number; width: number; height: number }
 
@@ -340,7 +340,7 @@ describe('usePointerGestures — resizeTarget derivation', () => {
   });
 });
 
-import { rotatePoint } from './gestures/rotate/geometry';
+import { rotatePoint } from './rotate/geometry';
 
 describe('usePointerGestures — rotated resize handle hit-test', () => {
   it('hits the rotated-corner position, not the unrotated AABB corner', () => {
@@ -378,7 +378,7 @@ describe('usePointerGestures — rotated resize handle hit-test', () => {
   });
 });
 
-import { createDebugSink } from '../debug/createDebugSink';
+import { createDebugSink } from '../../debug/createDebugSink';
 
 describe('usePointerGestures — debug recording', () => {
   it('records a body hitbox for each id returned by pickEvery', () => {

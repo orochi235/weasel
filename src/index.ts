@@ -100,14 +100,14 @@ export type { DecayLoopConfig, PanBounds } from './core/viewport/useDecayLoop';
 export { useViewTween } from './core/viewport/useViewTween';
 export { usePinchGesture } from './core/viewport/usePinchGesture';
 export { useViewAnimation } from './core/viewport/useViewAnimation';
-export { usePointerGestures } from './interactions/usePointerGestures';
+export { usePointerGestures } from './interactions/gestures/usePointerGestures';
 export * from './tools';
 export { usePinchZoomTool, type PinchZoomToolOpts } from './tools/builtin/usePinchZoomTool';
 export type {
   PointerGestureBindings,
   UsePointerGesturesOptions,
   PointerGestureCallbackCtx,
-} from './interactions/usePointerGestures';
+} from './interactions/gestures/usePointerGestures';
 export { Canvas } from './canvas/Canvas';
 export { SceneCanvas, DEFAULT_HANDLE_SIZE } from './canvas/SceneCanvas';
 export type { SceneCanvasProps } from './canvas/SceneCanvas';
