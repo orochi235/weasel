@@ -59,15 +59,15 @@ export function LayerListDemo() {
   const tools = useTools({ active: 'select', registry: { select } });
 
   // Derive items from scene render order — top of stack first.
-  const items: LayerListItem[] = useMemo(() => {
-    // renderOrder is bottom→top; reverse so index 0 is top.
-    const order = [...scene.renderOrder()].reverse();
-    return order.map((id) => {
-      const n = scene.get(id);
-      const data = n?.data as Rect | undefined;
-      return { id, label: data?.color ?? id };
-    });
-  }, [scene]);
+  // renderOrder is bottom→top; reverse so index 0 is top. Computed each
+  // render — scene's object identity is stable across reorders, so a
+  // useMemo keyed on [scene] would serve stale items.
+  const order = [...scene.renderOrder()].reverse();
+  const items: LayerListItem[] = order.map((id) => {
+    const n = scene.get(id);
+    const data = n?.data as Rect | undefined;
+    return { id, label: data?.color ?? id };
+  });
 
   const onReorder = (ids: string[], targetIndex: number) => {
     // LayerList index is top-down (0 = front). Scene order is bottom-up.
