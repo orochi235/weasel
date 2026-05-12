@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useUndoRedo, type UndoRedoAdapter, type UseUndoRedoOptions } from 'interactions/actions/undo-redo/undoRedo';
-import { defineTool } from '../defineTool';
+import { defineTool, claim, none } from '../routing';
 import type { Tool } from '../types';
 
 export interface UseUndoRedoToolOptions extends UseUndoRedoOptions {}
@@ -19,13 +19,25 @@ export function useUndoRedoTool(
     () =>
       defineTool({
         id: 'undoRedo',
-        keyboard: {
-          onDown: (e) => {
-            const mod = e.metaKey || e.ctrlKey;
-            if (!mod || e.key.toLowerCase() !== 'z') return 'pass';
-            if (e.shiftKey) ctl.redo();
-            else ctl.undo();
-            return 'claim';
+        initial: {
+          keyDown: {
+            z: (_ctx, event) => {
+              const e = event as KeyboardEvent;
+              if (!(e.metaKey || e.ctrlKey)) return none();
+              if (e.shiftKey) ctl.redo();
+              else ctl.undo();
+              return claim();
+            },
+            Z: (_ctx, event) => {
+              const e = event as KeyboardEvent;
+              if (!(e.metaKey || e.ctrlKey)) return none();
+              // Shift is implicit (the key is uppercase Z), but check
+              // anyway so a stray IME event with Z and no Shift doesn't
+              // misfire redo.
+              if (!e.shiftKey) return none();
+              ctl.redo();
+              return claim();
+            },
           },
         },
       }),
