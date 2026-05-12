@@ -209,28 +209,91 @@ tool at compile time.
 
 ## Modifier handling
 
-Two equally-clean encodings. Pick one and commit:
+A route entry is either an `ActionFn` (no modifier discrimination) or
+a sub-table keyed by modifier combination.
 
 ```ts
-// Function-form (flexible, less inspectable)
-click: {
-  'rect': (ctx) => ctx.modifiers.shift ? addToSelection(ctx) : select(ctx),
-}
+type ModifierKey =
+  | 'default'
+  | 'mod' | 'shift' | 'alt'
+  | 'mod+shift' | 'mod+alt' | 'shift+alt'
+  | 'mod+shift+alt';
 
-// Sub-table (declarative, inspectable)
-click: {
-  'rect': {
-    default: select,
-    shift:   addToSelection,
-    alt:     cloneAndSelect,
-  },
+type ModifierRoute<TScratch> = Partial<Record<ModifierKey, ActionFn<TScratch>>>;
+
+type RouteEntry<TScratch> = ActionFn<TScratch> | ModifierRoute<TScratch>;
+
+type RouteTable<TScratch> = Partial<Record<string, RouteEntry<TScratch>>>;
+```
+
+Eight valid keys: `'default'` (no modifiers), three singles
+(`'mod'`, `'shift'`, `'alt'`), three pairs (`'mod+shift'`, `'mod+alt'`,
+`'shift+alt'`), one triple (`'mod+shift+alt'`).
+
+**Canonical order: `mod → shift → alt`.** Matches the existing
+`formatShortcut` ordering. `'shift+alt'` is the canonical key; `'alt+shift'`
+is not a valid key. The strict `ModifierKey` union gives autocomplete
+and catches typos at compile time.
+
+**Exact match, no fuzzy fallback.** If the user holds shift+alt and
+the table only has `'shift'`, the lookup falls through to `'default'`,
+not to `'shift'`. Implicit partial matches make precedence opaque;
+forcing exact match keeps the table inspectable. To make shift+alt
+behave like shift, spell it out explicitly:
+
+```ts
+'rect': {
+  default:     selectOnly,
+  shift:       addToSelection,
+  'shift+alt': addToSelection,   // same action, explicit
 }
 ```
 
-Sub-table form is preferred for declarative parity — but adds a layer
-of nesting. Function form is the escape hatch. Spec should commit to
-sub-table as the default with function form available; consumers can
-pick per-route.
+(Or extract the action and reference it twice — same effect.)
+
+**`space` is intentionally absent.** Hold-engage modes route through
+the dispatcher's `hotkey` field on `Tool`, not as a route modifier.
+
+**Function form is the escape hatch** when modifier logic exceeds the
+canonical 8 combos (e.g., a predicate that depends on scratch state):
+
+```ts
+'rect': (ctx) => ctx.modifiers.shift && ctx.scratch?.kind === 'special'
+  ? specialAction(ctx)
+  : selectOnly(ctx),
+```
+
+### `mods()` convenience helper
+
+For authors who don't want to memorize the canonical order:
+
+```ts
+function mods(...keys: ReadonlyArray<'mod' | 'shift' | 'alt'>): ModifierKey {
+  if (keys.length === 0) return 'default';
+  const set = new Set(keys);
+  return [
+    set.has('mod')   && 'mod',
+    set.has('shift') && 'shift',
+    set.has('alt')   && 'alt',
+  ].filter(Boolean).join('+') as ModifierKey;
+}
+
+// Usage — pass modifiers in any order, get the canonical key:
+'rect': {
+  [mods()]:               selectOnly,         // 'default'
+  [mods('shift')]:        addToSelection,     // 'shift'
+  [mods('alt', 'shift')]: cloneAndAdd,        // 'shift+alt' (canonicalized)
+  [mods('shift', 'mod')]: addToRange,         // 'mod+shift' (canonicalized)
+}
+```
+
+Computed-key syntax is a little visually noisier than string literals;
+both forms work and the string literal is fine when the author already
+knows the canonical order. The helper exists for the case where they
+don't.
+
+Sub-table form is preferred for declarative parity. Function form is
+available per-route as needed.
 
 ## Continuations
 
