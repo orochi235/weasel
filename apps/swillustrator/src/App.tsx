@@ -24,6 +24,7 @@ import {
   useReorder,
   useSelectAll,
   useSelection,
+  usePublishSelection,
   useSelectTool,
   useTextTool,
   useTools,
@@ -60,6 +61,8 @@ import {
 import { lockAspectWithModifier } from '../../../src/interactions/gestures/resize/behaviors/lockAspect';
 import type { DrawCommand } from '@orochi235/weasel/renderer';
 import {
+  CommandPalette,
+  useCommandPaletteShortcut,
   LayerList,
   type LayerListItem,
   PropertiesPanel,
@@ -166,6 +169,10 @@ export function App() {
   const [paperSize, setPaperSize] = useState<'letter' | 'a4' | 'legal'>('letter');
   const [gridDensity, setGridDensity] = useState(8);
   const [sidebarWidth, setSidebarWidth] = useState(260);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  useCommandPaletteShortcut(paletteOpen, setPaletteOpen);
+  // Publish our selection to the surrounding <SelectionContextProvider> so the
+  // command palette can show a "N selected" header alongside its commands.
 
   const itemsRef = useRef(items);
   itemsRef.current = items;
@@ -173,6 +180,7 @@ export function App() {
   groupsRef.current = groups;
 
   const selection = useSelection({ mode: 'multi' });
+  usePublishSelection(selection.current);
   const fillRef = useRef(fillColor);
   fillRef.current = fillColor;
   const strokeRef = useRef(strokeColor);
@@ -1034,7 +1042,10 @@ export function App() {
         <span>fill: {fillColor}</span>
         <span>stroke: {strokeColor}</span>
         <span>zoom: {(view.scale * 100).toFixed(0)}%</span>
+        <span className="swill-statusbar-spacer">⌘K for commands</span>
       </div>
+
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
   );
 }

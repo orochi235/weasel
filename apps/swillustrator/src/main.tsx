@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerFont } from '@orochi235/weasel/renderer';
+import { ActionsProvider, SelectionContextProvider } from '@orochi235/weasel';
 import { App } from './App';
 
 const container = document.getElementById('root');
@@ -21,6 +22,10 @@ await registerFont(
 
 createRoot(container).render(
   <StrictMode>
-    <App />
+    <ActionsProvider>
+      <SelectionContextProvider>
+        <App />
+      </SelectionContextProvider>
+    </ActionsProvider>
   </StrictMode>,
 );

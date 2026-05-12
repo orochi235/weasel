@@ -248,6 +248,10 @@ html, body, #root {
   flex-shrink: 0;
 }
 
+.swill-statusbar-spacer {
+  margin-left: auto;
+}
+
 /* --- Layer list host inside PropertiesPanel -------------------------- */
 .swill-layerlist-host {
   padding: 0 8px 8px 8px;
