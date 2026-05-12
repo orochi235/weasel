@@ -1212,9 +1212,7 @@ export function App() {
 
       <div className="swill-body">
         <aside className="swill-sidebar">
-          <div className="swill-section-label">Tools</div>
           <ToolPalette tools={tools} />
-          <div className="swill-section-label swill-section-label--swatch">Paint</div>
           <ActiveSwatches
             fill={activeFill}
             stroke={activeStroke}
