@@ -21,7 +21,7 @@ function makeAdapter(seedSelection: string[] = []): InsertAdapter<Obj> & {
     snapshotSelection: (ids: string[]) => ({ items: ids.map((id) => ({ id })) }),
     insertNode: (_o: Obj) => {},
     setSelection: (ids: string[]) => { a.selection = [...ids]; },
-    applyBatch: (ops: Op[], _label: string) => { a.applied.push(...ops); },
+    applyOps: (ops: Op[], _label: string) => { a.applied.push(...ops); },
     getSelection: () => a.selection,
   };
   return a as never;

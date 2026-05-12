@@ -27,7 +27,7 @@ function makeAdapter(opts?: { commitReturnsNull?: boolean }) {
     },
     setSelection(_ids) {},
     getSelection: () => [],
-    applyBatch(ops, label) {
+    applyOps(ops, label) {
       batches.push({ ops, label });
       // Simulate insertNode side-effect by recording.
       for (const op of ops) {

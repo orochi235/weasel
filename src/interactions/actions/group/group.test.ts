@@ -25,7 +25,7 @@ function makeHarness(initialSelection: string[] = [], initialGroups: Group[] = [
     // SetSelection ops cast adapter to { setSelection } — extend the adapter
     // so the harness round-trips selection through the same op path.
     setSelection: (ids: string[]) => { h.selection = [...ids]; },
-    applyBatch: (ops: Op[], label: string) => {
+    applyOps: (ops: Op[], label: string) => {
       h.batches.push({ ops, label });
       for (const op of ops) op.apply(h.adapter);
     },

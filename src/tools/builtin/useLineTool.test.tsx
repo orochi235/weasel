@@ -4,7 +4,7 @@ import { useLineTool } from './useLineTool';
 import type { Tool, ToolCtx } from '../types';
 
 function noopCtx(
-  overrides: Partial<ToolCtx<null>> & { applyBatch?: ToolCtx['applyBatch'] } = {},
+  overrides: Partial<ToolCtx<null>> & { applyOps?: ToolCtx['applyOps'] } = {},
 ): ToolCtx<null> {
   return {
     worldX: 0,
@@ -18,7 +18,7 @@ function noopCtx(
     view: { x: 0, y: 0, scale: 1 },
     setView: () => {},
     canvasRect: new DOMRect(),
-    applyBatch: vi.fn(),
+    applyOps: vi.fn(),
     scratch: null,
     ...overrides,
   };
@@ -47,7 +47,7 @@ describe('useLineTool', () => {
     tool.drag!.onMove!(new PointerEvent('pointermove'), ctx);
     tool.drag!.onEnd!(new PointerEvent('pointerup'), ctx);
     expect(create).toHaveBeenCalledWith({ x: 1, y: 2 }, { x: 10, y: 20 });
-    expect(ctx.applyBatch).toHaveBeenCalledTimes(1);
+    expect(ctx.applyOps).toHaveBeenCalledTimes(1);
   });
 
   it('with shift, snaps end angle to 15° increments', () => {

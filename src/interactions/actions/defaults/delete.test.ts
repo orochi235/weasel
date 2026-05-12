@@ -13,7 +13,7 @@ describe('defaultDeleteAction', () => {
   it('emits id=delete with Delete and Backspace bindings', () => {
     const a = defaultDeleteAction({
       getSelection: () => [],
-      applyBatch: vi.fn(),
+      applyOps: vi.fn(),
     });
     expect(a.id).toBe('delete');
     expect(a.label).toBe('Delete');
@@ -21,14 +21,14 @@ describe('defaultDeleteAction', () => {
   });
 
   it('run() emits one DeleteOp per id + SetSelectionOp([])', () => {
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     const a = defaultDeleteAction({
       getSelection: () => ['a' as NodeId, 'b' as NodeId],
-      applyBatch,
+      applyOps,
     });
     a.run();
-    expect(applyBatch).toHaveBeenCalledOnce();
-    const [ops, label] = applyBatch.mock.calls[0];
+    expect(applyOps).toHaveBeenCalledOnce();
+    const [ops, label] = applyOps.mock.calls[0];
     expect(label).toBe('Delete');
     // 2 DeleteOps + 1 SetSelectionOp = 3 ops total.
     expect(ops).toHaveLength(3);
@@ -39,15 +39,15 @@ describe('defaultDeleteAction', () => {
   });
 
   it('uses getNode() for the captured payload, enabling full restore on undo', () => {
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     const fatNode = { id: 'a', extra: 'payload' };
     const a = defaultDeleteAction({
       getSelection: () => ['a' as NodeId],
       getNode: () => fatNode,
-      applyBatch,
+      applyOps,
     });
     a.run();
-    const [ops] = applyBatch.mock.calls[0];
+    const [ops] = applyOps.mock.calls[0];
     // Invert the first DeleteOp; the inverse InsertOp should carry the fat node.
     const inverse = ops[0].invert();
     const insertAdapter = { insertNode: vi.fn() };
@@ -56,13 +56,13 @@ describe('defaultDeleteAction', () => {
   });
 
   it('falls back to a {id} stub when getNode is omitted', () => {
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     const a = defaultDeleteAction({
       getSelection: () => ['a' as NodeId],
-      applyBatch,
+      applyOps,
     });
     a.run();
-    const [ops] = applyBatch.mock.calls[0];
+    const [ops] = applyOps.mock.calls[0];
     const inverse = ops[0].invert();
     const insertAdapter = { insertNode: vi.fn() };
     inverse.apply(insertAdapter);
@@ -70,49 +70,49 @@ describe('defaultDeleteAction', () => {
   });
 
   it('filter narrows the deleted set', () => {
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     const a = defaultDeleteAction({
       getSelection: () => ['a' as NodeId, 'b' as NodeId, 'c' as NodeId],
       filter: (ids) => ids.filter((id) => id !== 'b'),
-      applyBatch,
+      applyOps,
     });
     a.run();
-    const [ops] = applyBatch.mock.calls[0];
+    const [ops] = applyOps.mock.calls[0];
     // 2 DeleteOps (a, c) + 1 SetSelectionOp.
     expect(ops).toHaveLength(3);
   });
 
   it('no-op when selection is empty', () => {
-    const applyBatch = vi.fn();
-    defaultDeleteAction({ getSelection: () => [], applyBatch }).run();
-    expect(applyBatch).not.toHaveBeenCalled();
+    const applyOps = vi.fn();
+    defaultDeleteAction({ getSelection: () => [], applyOps }).run();
+    expect(applyOps).not.toHaveBeenCalled();
   });
 
   it('no-op when filter reduces selection to []', () => {
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     defaultDeleteAction({
       getSelection: () => ['a' as NodeId, 'b' as NodeId],
       filter: () => [],
-      applyBatch,
+      applyOps,
     }).run();
-    expect(applyBatch).not.toHaveBeenCalled();
+    expect(applyOps).not.toHaveBeenCalled();
   });
 
   it('enabled reflects post-filter selection emptiness', () => {
     const empty = defaultDeleteAction({
       getSelection: () => [],
-      applyBatch: vi.fn(),
+      applyOps: vi.fn(),
     });
     expect(empty.enabled?.()).toBe(ActionDisabledReason.SelectionRequired);
     const withSel = defaultDeleteAction({
       getSelection: () => ['a' as NodeId],
-      applyBatch: vi.fn(),
+      applyOps: vi.fn(),
     });
     expect(withSel.enabled?.()).toBe(true);
     const filteredOut = defaultDeleteAction({
       getSelection: () => ['a' as NodeId],
       filter: () => [],
-      applyBatch: vi.fn(),
+      applyOps: vi.fn(),
     });
     expect(filteredOut.enabled?.()).toBe(ActionDisabledReason.SelectionRequired);
   });

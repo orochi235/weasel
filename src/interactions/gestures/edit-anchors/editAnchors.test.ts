@@ -22,7 +22,7 @@ function makeAdapter(initial: Path) {
     getNode: (id: string) => (id === 'p' ? { id } : undefined),
     getPose: (_id: string) => pose,
     setPose: (_id: string, p: Path) => { pose = p; },
-    applyBatch: (ops: Op[], label?: string) => {
+    applyOps: (ops: Op[], label?: string) => {
       batches.push({ ops, label });
       for (const op of ops) op.apply({ setPose: (_id: string, p: Path) => { pose = p; } });
     },

@@ -18,7 +18,7 @@ export interface UseAreaSelectOptions {
   behaviors?: AreaSelectBehavior[];
   /** When set, overrides any behavior's `defaultTransient`. Default: behaviors decide. */
   transient?: boolean;
-  /** Label used when transient is false and the hook falls back to applyBatch. Default 'Area select'. */
+  /** Label used when transient is false and the hook falls back to applyOps. Default 'Area select'. */
   label?: string;
   onGestureStart?: () => void;
   onGestureEnd?: (committed: boolean) => void;
@@ -142,9 +142,9 @@ export function useAreaSelect(
         (adapter as AreaSelectAdapter).applyOps?.(collected);
       } else {
         const adapterWithBatch = adapter as AreaSelectAdapter & {
-          applyBatch?: (ops: Op[], label: string) => void;
+          applyOps?: (ops: Op[], label: string) => void;
         };
-        adapterWithBatch.applyBatch?.(collected, label);
+        adapterWithBatch.applyOps?.(collected, label);
       }
       return true;
     },

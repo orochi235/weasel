@@ -34,7 +34,7 @@ export function usePolygonTool<TNode extends { id: string }>(
   const { create, label = 'Insert polygon', sides: initialSides = 6, minRadius } = options;
   const createRef = useRef(create);
   createRef.current = create;
-  const applyBatchRef = useRef<ToolCtx['applyBatch'] | null>(null);
+  const applyOpsRef = useRef<ToolCtx['applyOps'] | null>(null);
   // Side count in a ref so keydown mutations are visible synchronously in
   // subsequent dr.onEnd reads. No React re-render needed.
   const sidesRef = useRef(initialSides);
@@ -42,8 +42,8 @@ export function usePolygonTool<TNode extends { id: string }>(
   const dr = useDragRadial({
     minRadius,
     onEnd: (ctx) => {
-      const applyBatch = applyBatchRef.current;
-      if (!applyBatch) return false;
+      const applyOps = applyOpsRef.current;
+      if (!applyOps) return false;
       if (ctx.isSubThreshold) return false;
       const node = createRef.current(
         ctx.center,
@@ -52,7 +52,7 @@ export function usePolygonTool<TNode extends { id: string }>(
         sidesRef.current,
       );
       if (!node) return false;
-      applyBatch([createInsertOp({ node, label })], label);
+      applyOps([createInsertOp({ node, label })], label);
       return true;
     },
   });
@@ -79,7 +79,7 @@ export function usePolygonTool<TNode extends { id: string }>(
             return 'claim';
           },
           onEnd: (_e, ctx) => {
-            applyBatchRef.current = ctx.applyBatch;
+            applyOpsRef.current = ctx.applyOps;
             dr.end();
             return 'claim';
           },

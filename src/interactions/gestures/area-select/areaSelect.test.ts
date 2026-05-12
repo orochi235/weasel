@@ -12,16 +12,18 @@ function makeAdapter(initial: string[] = []) {
     hitTestArea: () => [],
     getSelection: () => selection,
     setSelection: (ids) => { selection = [...ids]; },
-    applyOps: (oo) => {
-      ops.push({ kind: 'applyOps', ops: oo });
+    // Unified applyOps: no label = transient (records in ops), label present =
+    // history-aware (records in batches). Matches the post-rename contract where
+    // applyOps replaces both the old applyOps (transient) and applyBatch (labeled).
+    applyOps: (oo, label) => {
+      if (label !== undefined) {
+        batches.push({ ops: oo, label });
+      } else {
+        ops.push({ kind: 'applyOps', ops: oo });
+      }
       for (const op of oo) op.apply(adapter as never);
     },
   };
-  (adapter as { applyBatch?: (ops: Op[], label: string) => void }).applyBatch =
-    (oo: Op[], label: string) => {
-      batches.push({ ops: oo, label });
-      for (const op of oo) op.apply(adapter as never);
-    };
   return { adapter, ops, batches, getSelection: () => selection };
 }
 
@@ -78,7 +80,7 @@ describe('useAreaSelect — move', () => {
 });
 
 describe('useAreaSelect — end', () => {
-  it('default (selectFromMarquee → defaultTransient: true): commits via applyOps, not applyBatch', () => {
+  it('default (selectFromMarquee → defaultTransient: true): commits via applyOps, not applyOps', () => {
     const { adapter, ops, batches, getSelection } = makeAdapter(['existing']);
     (adapter as { hitTestArea: (r: unknown) => string[] }).hitTestArea = () => ['x', 'y'];
     const { result } = renderHook(() =>
@@ -104,7 +106,7 @@ describe('useAreaSelect — end', () => {
     expect(ops).toEqual([]);
   });
 
-  it('options.transient = false overrides defaultTransient: routes through applyBatch', () => {
+  it('options.transient = false overrides defaultTransient: routes through applyOps', () => {
     const { adapter, ops, batches } = makeAdapter();
     (adapter as { hitTestArea: (r: unknown) => string[] }).hitTestArea = () => ['x'];
     const { result } = renderHook(() =>

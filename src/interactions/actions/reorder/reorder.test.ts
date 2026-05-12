@@ -13,7 +13,7 @@ interface FakeAdapter {
   getParent(id: string): string | null;
   getChildren(parentId: string | null): string[];
   setChildOrder(parentId: string | null, ids: string[]): void;
-  applyBatch(ops: Op[], label: string): void;
+  applyOps(ops: Op[], label: string): void;
 }
 
 function makeAdapter(opts: { selection?: string[]; parents?: Record<string, string | null>; children?: Record<string, string[]> } = {}): FakeAdapter {
@@ -26,7 +26,7 @@ function makeAdapter(opts: { selection?: string[]; parents?: Record<string, stri
     getParent(id) { return this.parents[id] ?? null; },
     getChildren(parentId) { return (this.children[parentId ?? 'ROOT'] ?? []).slice(); },
     setChildOrder(parentId, ids) { this.children[parentId ?? 'ROOT'] = ids.slice(); },
-    applyBatch(ops, label) {
+    applyOps(ops, label) {
       // In tests, apply each op so ordering is observable.
       this.applied.push({ ops, label });
       for (const op of ops) op.apply(this);
@@ -222,7 +222,7 @@ describe('useReorder', () => {
       selection: ['a'],
       getSelection() { return this.selection; },
       getParent: () => null,
-      applyBatch: (_ops: Op[]) => {},
+      applyOps: (_ops: Op[]) => {},
       // no getChildren / setChildOrder
     };
     const { result } = renderHook(() => useReorder(stub as never, { enableKeyboard: false }));

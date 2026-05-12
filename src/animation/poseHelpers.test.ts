@@ -23,7 +23,7 @@ function makeAdapter(initial: Map<string, RectPose>) {
     insertNode: () => {},
     removeNode: () => {},
     setSelection: () => {},
-    applyBatch: vi.fn((batch: Op[], label: string) => {
+    applyOps: vi.fn((batch: Op[], label: string) => {
       ops.push({ ops: batch, label });
     }),
   };

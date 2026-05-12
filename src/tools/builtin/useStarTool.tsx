@@ -42,7 +42,7 @@ export function useStarTool<TNode extends { id: string }>(
   } = options;
   const createRef = useRef(create);
   createRef.current = create;
-  const applyBatchRef = useRef<ToolCtx['applyBatch'] | null>(null);
+  const applyOpsRef = useRef<ToolCtx['applyOps'] | null>(null);
   // Refs (not React state) so keydown mutations are visible synchronously
   // in subsequent dr.onEnd reads.
   const pointsRef = useRef(initialPoints);
@@ -51,8 +51,8 @@ export function useStarTool<TNode extends { id: string }>(
   const dr = useDragRadial({
     minRadius,
     onEnd: (ctx) => {
-      const applyBatch = applyBatchRef.current;
-      if (!applyBatch) return false;
+      const applyOps = applyOpsRef.current;
+      if (!applyOps) return false;
       if (ctx.isSubThreshold) return false;
       const node = createRef.current(
         ctx.center,
@@ -62,7 +62,7 @@ export function useStarTool<TNode extends { id: string }>(
         pointsRef.current,
       );
       if (!node) return false;
-      applyBatch([createInsertOp({ node, label })], label);
+      applyOps([createInsertOp({ node, label })], label);
       return true;
     },
   });
@@ -88,7 +88,7 @@ export function useStarTool<TNode extends { id: string }>(
             return 'claim';
           },
           onEnd: (_e, ctx) => {
-            applyBatchRef.current = ctx.applyBatch;
+            applyOpsRef.current = ctx.applyOps;
             dr.end();
             return 'claim';
           },

@@ -27,36 +27,36 @@ function makeAdapter(): FakeAdapter {
 
 describe('defaultReorderActions', () => {
   it('returns 2 actions: reorder.forward, reorder.backward', () => {
-    const acts = defaultReorderActions({ getSelection: () => [asNodeId('a')], applyBatch: vi.fn() });
+    const acts = defaultReorderActions({ getSelection: () => [asNodeId('a')], applyOps: vi.fn() });
     expect(acts.map(a => a.id).sort()).toEqual(['reorder.backward', 'reorder.forward']);
   });
   it('forward binding = Mod+]', () => {
-    const a = defaultReorderActions({ getSelection: () => [asNodeId('a')], applyBatch: vi.fn() }).find(x => x.id === 'reorder.forward')!;
+    const a = defaultReorderActions({ getSelection: () => [asNodeId('a')], applyOps: vi.fn() }).find(x => x.id === 'reorder.forward')!;
     expect(a.defaultBinding).toEqual({ key: [']', '}'], mod: true });
   });
   it('backward binding = Mod+[', () => {
-    const a = defaultReorderActions({ getSelection: () => [asNodeId('a')], applyBatch: vi.fn() }).find(x => x.id === 'reorder.backward')!;
+    const a = defaultReorderActions({ getSelection: () => [asNodeId('a')], applyOps: vi.fn() }).find(x => x.id === 'reorder.backward')!;
     expect(a.defaultBinding).toEqual({ key: ['[', '{'], mod: true });
   });
   it('forward run() emits a reorder op that brings selected ids forward', () => {
     const adapter = makeAdapter();
-    const applyBatch = vi.fn((ops: Op[]) => { for (const op of ops) op.apply(adapter); });
-    defaultReorderActions({ getSelection: () => adapter.selection, applyBatch })
+    const applyOps = vi.fn((ops: Op[]) => { for (const op of ops) op.apply(adapter); });
+    defaultReorderActions({ getSelection: () => adapter.selection, applyOps })
       .find(a => a.id === 'reorder.forward')!.run();
-    expect(applyBatch).toHaveBeenCalledOnce();
+    expect(applyOps).toHaveBeenCalledOnce();
     expect(adapter.children.ROOT).toEqual(['a', 'c', 'b']);
   });
   it('backward run() emits a reorder op that sends selected ids backward', () => {
     const adapter = makeAdapter();
-    const applyBatch = vi.fn((ops: Op[]) => { for (const op of ops) op.apply(adapter); });
-    defaultReorderActions({ getSelection: () => adapter.selection, applyBatch })
+    const applyOps = vi.fn((ops: Op[]) => { for (const op of ops) op.apply(adapter); });
+    defaultReorderActions({ getSelection: () => adapter.selection, applyOps })
       .find(a => a.id === 'reorder.backward')!.run();
     expect(adapter.children.ROOT).toEqual(['b', 'a', 'c']);
   });
   it('run() is a no-op on empty selection', () => {
-    const applyBatch = vi.fn();
-    defaultReorderActions({ getSelection: () => [], applyBatch })
+    const applyOps = vi.fn();
+    defaultReorderActions({ getSelection: () => [], applyOps })
       .find(a => a.id === 'reorder.forward')!.run();
-    expect(applyBatch).not.toHaveBeenCalled();
+    expect(applyOps).not.toHaveBeenCalled();
   });
 });

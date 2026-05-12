@@ -17,7 +17,7 @@ function makeDeps(poses: Record<string, Pose>, mode?: 'centers' | 'gaps') {
     getSelection: () => Object.keys(poses).map((k) => asNodeId(k)),
     getPose: (id: string): Pose => poses[id],
     geometry: RECT_POSE_DESCRIPTOR as unknown as import('../../gestures/resize/geometry').PoseDescriptor<Pose>,
-    applyBatch: vi.fn(),
+    applyOps: vi.fn(),
     mode,
   };
 }
@@ -48,8 +48,8 @@ describe('defaultDistributeActions', () => {
       c: { x: 100, y: 0, width: 10, height: 10 },
     });
     defaultDistributeActions(deps).find((a) => a.id === 'distribute.horizontal')!.run();
-    expect(deps.applyBatch).toHaveBeenCalledOnce();
-    const [ops, label] = deps.applyBatch.mock.calls[0];
+    expect(deps.applyOps).toHaveBeenCalledOnce();
+    const [ops, label] = deps.applyOps.mock.calls[0];
     expect(label).toBe('Distribute');
     expect(ops).toHaveLength(1); // only b moves
     // centers: a center=5, c center=105 → b center should land at 55, so x=50
@@ -63,7 +63,7 @@ describe('defaultDistributeActions', () => {
       c: { x: 100, y: 0, width: 10, height: 10 },
     }, 'gaps');
     defaultDistributeActions(deps).find((a) => a.id === 'distribute.horizontal')!.run();
-    const [ops] = deps.applyBatch.mock.calls[0];
+    const [ops] = deps.applyOps.mock.calls[0];
     // span = 110-0 = 110, sumSizes = 10+30+10 = 50, gap = (110-50)/2 = 30
     // a stays at 0; b should land at 0 + 10 + 30 = 40
     expect(applyOp(ops[0]).pose).toMatchObject({ x: 40, y: 0 });
@@ -75,7 +75,7 @@ describe('defaultDistributeActions', () => {
       b: { x: 20, y: 0, width: 10, height: 10 },
     });
     defaultDistributeActions(deps).find((a) => a.id === 'distribute.horizontal')!.run();
-    expect(deps.applyBatch).not.toHaveBeenCalled();
+    expect(deps.applyOps).not.toHaveBeenCalled();
   });
 
   it('enabled: SelectionRequired when <3, true when ≥3', () => {

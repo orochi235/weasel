@@ -18,7 +18,7 @@ export interface UseLassoSelectOptions {
   behaviors?: LassoSelectBehavior[];
   /** When set, overrides any behavior's `defaultTransient`. */
   transient?: boolean;
-  /** Label used when transient is false and the hook falls back to applyBatch. Default 'Lasso select'. */
+  /** Label used when transient is false and the hook falls back to applyOps. Default 'Lasso select'. */
   label?: string;
   onGestureStart?: () => void;
   onGestureEnd?: (committed: boolean) => void;
@@ -132,8 +132,8 @@ export function useLassoSelect(
       if (transient) {
         adapterRef.current.applyOps?.(collected);
       } else {
-        const a = adapterRef.current as LassoSelectAdapter & { applyBatch?: (ops: Op[], label: string) => void };
-        a.applyBatch?.(collected, optsRef.current.label ?? 'Lasso select');
+        const a = adapterRef.current as LassoSelectAdapter & { applyOps?: (ops: Op[], label: string) => void };
+        a.applyOps?.(collected, optsRef.current.label ?? 'Lasso select');
       }
       committed = true;
     }

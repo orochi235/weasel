@@ -30,7 +30,7 @@ function makeDeps(): StandardActionsDeps<TestPose> {
     setSelection: () => {},
     listAll: () => ['a' as NodeId, 'b' as NodeId],
     getPose: () => ({ x: 0, y: 0 }),
-    applyBatch: () => {},
+    applyOps: () => {},
     translatePose: (p, dx, dy) => ({ x: p.x + dx, y: p.y + dy }),
   };
 }
@@ -133,11 +133,11 @@ describe('resolveActions — overrides', () => {
 describe('resolveActions — defaults options', () => {
   it('forwards duplicateOffset to the duplicate action factory', () => {
     const cloneNode = vi.fn((id: NodeId) => ({ id: `${id}-copy` as NodeId }));
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     const deps: StandardActionsDeps<TestPose> = {
       ...makeDeps(),
       getSelection: () => ['a' as NodeId],
-      applyBatch,
+      applyOps,
     };
     const defaults: StandardActionDefaults<TestPose> = {
       cloneNode,
@@ -152,12 +152,12 @@ describe('resolveActions — defaults options', () => {
   });
 
   it('forwards nudgeStep / nudgeShiftStep to nudge actions', () => {
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     const translatePose = vi.fn((p: TestPose, dx: number, dy: number) => ({ x: p.x + dx, y: p.y + dy }));
     const deps: StandardActionsDeps<TestPose> = {
       ...makeDeps(),
       getSelection: () => ['a' as NodeId],
-      applyBatch,
+      applyOps,
       translatePose,
     };
     const out = resolveActions(deps, {

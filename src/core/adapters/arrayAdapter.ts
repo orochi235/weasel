@@ -78,6 +78,9 @@ export interface ArrayAdapter<TNode extends { id: string }, TPose>
   // required on InsertAdapter so TS sees a single non-conflicting signature.
   getSelection(): string[];
   setSelection(ids: string[]): void;
+  // Redeclare applyOps with an optional label so it's compatible with both
+  // MoveAdapter (label required) and AreaSelectAdapter (label absent = transient).
+  applyOps?(ops: Op[], label?: string): void;
 }
 
 function defaultFromPose<TNode extends { id: string }, TPose>(
@@ -97,7 +100,7 @@ function defaultPoseBounds<TPose>(pose: TPose): Bounds {
  * `AreaSelectAdapter` via structural typing. Override individual methods by
  * spreading the result.
  *
- * `applyBatch` is intentionally omitted — hooks fall back to the built-in
+ * `applyOps` is intentionally omitted — hooks fall back to the built-in
  * dispatcher (see `dispatchApplyBatch`). Apps with custom history
  * integration supply their own via spread.
  */

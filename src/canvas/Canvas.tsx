@@ -697,7 +697,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
           : { alt: false, shift: false, meta: false, ctrl: false, space: false },
         selection: effectiveSelectionRefForCtx.current,
         adapter: effectiveAdapterRefForCtx.current,
-        applyBatch: (ops: Op[], label: string) => {
+        applyOps: (ops: Op[], label: string) => {
           dispatchApplyBatch(effectiveAdapterRefForCtx.current, ops, label);
         },
         view,
@@ -710,7 +710,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   );
 
   // If a tools prop was passed, mutate its dispatcher's ctx supplier so
-  // handlers see the live selection/adapter/applyBatch — useTools's own
+  // handlers see the live selection/adapter/applyOps — useTools's own
   // default ctx is the empty test stub.
   useEffect(() => {
     if (!tools) return;
@@ -748,7 +748,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       getNode: (id) => effectiveAdapter.getNode?.(id) ?? { id },
       setSelection: (ids) => selRef.current.set(ids),
       removeNode: adapterWithRemove.removeNode,
-      applyBatch: effectiveAdapter.applyBatch?.bind(effectiveAdapter),
+      applyOps: effectiveAdapter.applyOps?.bind(effectiveAdapter),
     },
     { enableKeyboard: deleteEnabled && !tools?.has('delete'), label: deleteOpts.label, filter: deleteOpts.filter },
   );
@@ -760,7 +760,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     {
       getSelection: () => selRef.current.get(),
       getPose: (id) => effectiveAdapter.getPose(id),
-      applyBatch: effectiveAdapter.applyBatch?.bind(effectiveAdapter),
+      applyOps: effectiveAdapter.applyOps?.bind(effectiveAdapter),
     },
     {
       enableKeyboard: nudgeEnabled && !tools?.has('nudge'),
@@ -784,7 +784,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       getSelection: () => selRef.current.get(),
       getPose: (id) => effectiveAdapter.getPose(id),
       cloneNode: dupeCfg?.cloneNode ?? ((id) => ({ id })),
-      applyBatch: effectiveAdapter.applyBatch?.bind(effectiveAdapter),
+      applyOps: effectiveAdapter.applyOps?.bind(effectiveAdapter),
     },
     {
       enableKeyboard: !!dupeCfg && !tools?.has('duplicate'),

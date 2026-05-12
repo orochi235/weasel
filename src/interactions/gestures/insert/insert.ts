@@ -36,11 +36,11 @@ export interface UseInsertOptions<TPose, TNode extends { id: string } = { id: st
   clickOnly?: boolean;
   /** Override for op dispatch on commit. When set, this is called instead of
    *  `dispatchApplyBatch(adapter, ...)`. Tool hooks that synthesize an adapter
-   *  but want commits to route through the active tool ctx's `applyBatch`
+   *  but want commits to route through the active tool ctx's `applyOps`
    *  (for history integration) supply a function that reads from a ref
    *  captured on handler entry. Read fresh on every commit, so a ref-reader
    *  works without retriggering memos. */
-  applyBatch?: (ops: Op[], label: string) => void;
+  applyOps?: (ops: Op[], label: string) => void;
   onGestureStart?: () => void;
   onGestureEnd?: (committed: boolean) => void;
 }
@@ -76,7 +76,7 @@ export function useInsert<TNode extends { id: string }, TPose>(
     posefromBounds = (b) => b as unknown as TPose,
     pointInsert,
     clickOnly = false,
-    applyBatch,
+    applyOps,
     onGestureStart,
     onGestureEnd,
   } = options;
@@ -93,8 +93,8 @@ export function useInsert<TNode extends { id: string }, TPose>(
   pointInsertRef.current = pointInsert;
   const clickOnlyRef = useRef(clickOnly);
   clickOnlyRef.current = clickOnly;
-  const applyBatchOptionRef = useRef(applyBatch);
-  applyBatchOptionRef.current = applyBatch;
+  const applyOpsOptionRef = useRef(applyOps);
+  applyOpsOptionRef.current = applyOps;
 
   // Bridge: build a behavior-style GestureContext on demand from the dragRect ctx.
   const buildGestureCtx = (drCtx: DragRectCtx<unknown>): GestureContext<TPose> => {
@@ -143,10 +143,10 @@ export function useInsert<TNode extends { id: string }, TPose>(
       const insertLabel = insertLabelRef.current;
       const pointInsert = pointInsertRef.current;
       const clickOnly = clickOnlyRef.current;
-      const applyBatchOverride = applyBatchOptionRef.current;
+      const applyOpsOverride = applyOpsOptionRef.current;
       const adapter = adapterRef.current;
       const dispatch = (ops: Op[]) => {
-        if (applyBatchOverride) applyBatchOverride(ops, insertLabel);
+        if (applyOpsOverride) applyOpsOverride(ops, insertLabel);
         else dispatchApplyBatch(adapter, ops, insertLabel);
       };
       if (clickOnly || ctx.isSubThreshold) {

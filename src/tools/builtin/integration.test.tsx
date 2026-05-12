@@ -54,9 +54,9 @@ const C2W = (_c: HTMLCanvasElement, cx: number, cy: number): [number, number] =>
 
 describe('Phase 2a integration', () => {
   it('select tool: pointerdown→move→up over a body produces a Transform op', () => {
-    // applyBatch is the interception point: dispatchApplyBatch in useMove.end()
-    // calls adapter.applyBatch(ops, label) when the method is present.
-    const applyBatch = vi.fn();
+    // applyOps is the interception point: dispatchApplyBatch in useMove.end()
+    // calls adapter.applyOps(ops, label) when the method is present.
+    const applyOps = vi.fn();
 
     function Harness() {
       const [rects, setRects] = useState<Rect[]>([
@@ -72,8 +72,8 @@ describe('Phase 2a integration', () => {
         toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
       });
 
-      // Intercept at applyBatch so we capture exactly the ops the gesture commits.
-      const adapter = { ...base, applyBatch };
+      // Intercept at applyOps so we capture exactly the ops the gesture commits.
+      const adapter = { ...base, applyOps };
 
       const selectTool = useSelectTool(adapter, {
         pickEvery: (wx, wy) => {
@@ -122,10 +122,10 @@ describe('Phase 2a integration', () => {
     fireEvent.pointerMove(canvas, { clientX: 130, clientY: 130, pointerId: 1 });
     fireEvent.pointerUp(canvas,   { clientX: 130, clientY: 130, pointerId: 1 });
 
-    // useMove.end() → dispatchApplyBatch → adapter.applyBatch(ops, label).
+    // useMove.end() → dispatchApplyBatch → adapter.applyOps(ops, label).
     // Exactly one call — proves the tools path (not legacy) fired.
-    expect(applyBatch).toHaveBeenCalledTimes(1);
-    const [ops, label] = applyBatch.mock.calls[0] as [Array<{ apply: unknown; invert: unknown }>, string];
+    expect(applyOps).toHaveBeenCalledTimes(1);
+    const [ops, label] = applyOps.mock.calls[0] as [Array<{ apply: unknown; invert: unknown }>, string];
     expect(ops.length).toBeGreaterThan(0);
     // The move label is 'Move'; the ops are Transform ops (they carry no type
     // field — identified by label on the batch call).
@@ -137,7 +137,7 @@ describe('Phase 2a integration', () => {
   });
 
   it('delete tool: Backspace with selection fires a Delete op exactly once (dedupe)', () => {
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
 
     function Harness() {
       const [rects, setRects] = useState<Rect[]>([
@@ -154,9 +154,9 @@ describe('Phase 2a integration', () => {
         selectionRef: selRef,
       });
 
-      // Intercept applyBatch — useDelete.deleteSelection() calls dispatchApplyBatch
-      // which calls applyBatch when present.
-      const adapter = { ...base, applyBatch };
+      // Intercept applyOps — useDelete.deleteSelection() calls dispatchApplyBatch
+      // which calls applyOps when present.
+      const adapter = { ...base, applyOps };
 
       const sel = useSelection({ initial: [asNodeId('a')], mode: 'single' });
       selRef.current = [...sel.current];
@@ -198,9 +198,9 @@ describe('Phase 2a integration', () => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
     });
 
-    // Exactly one applyBatch call — from the tool path only (not doubled by a legacy hook).
-    expect(applyBatch).toHaveBeenCalledTimes(1);
-    const [ops, label] = applyBatch.mock.calls[0] as [Array<{ apply: unknown; invert: unknown }>, string];
+    // Exactly one applyOps call — from the tool path only (not doubled by a legacy hook).
+    expect(applyOps).toHaveBeenCalledTimes(1);
+    const [ops, label] = applyOps.mock.calls[0] as [Array<{ apply: unknown; invert: unknown }>, string];
     // useDelete produces one DeleteOp per selected id plus one SetSelectionOp.
     expect(ops.length).toBeGreaterThan(0);
     expect(label).toBe('Delete');
@@ -460,7 +460,7 @@ describe('Phase 2a: off-canvas pointer release backstop', () => {
   // overlay leaks, the pose is never committed, and on re-entry the ghost is
   // still drawn.
   it('select tool: pointerup dispatched on document commits the move and ends the gesture', () => {
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
 
     function Harness() {
       const [rects, setRects] = useState<Rect[]>([
@@ -475,7 +475,7 @@ describe('Phase 2a: off-canvas pointer release backstop', () => {
         setItems: setRects,
         toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
       });
-      const adapter = { ...base, applyBatch };
+      const adapter = { ...base, applyOps };
 
       const selectTool = useSelectTool(adapter, {
         pickEvery: (wx, wy) => {
@@ -536,17 +536,17 @@ describe('Phase 2a: off-canvas pointer release backstop', () => {
       );
     });
 
-    // The gesture must have committed: applyBatch fires exactly once with a
+    // The gesture must have committed: applyOps fires exactly once with a
     // 'Move' label.
-    expect(applyBatch).toHaveBeenCalledTimes(1);
-    const [, label] = applyBatch.mock.calls[0] as [Array<unknown>, string];
+    expect(applyOps).toHaveBeenCalledTimes(1);
+    const [, label] = applyOps.mock.calls[0] as [Array<unknown>, string];
     expect(label).toBe('Move');
   });
 });
 
 describe('Phase 2a integration', () => {
   it('cross-tool: corner-resize affordance fires while a non-select tool is active', () => {
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     function Harness() {
       const [rects, setRects] = useState<Rect[]>([
         { id: 'a', x: 0, y: 0, width: 100, height: 100 },
@@ -559,7 +559,7 @@ describe('Phase 2a integration', () => {
         ref: rectsRef, setItems: setRects,
         toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
       });
-      const adapter = { ...base, ...sel.adapterMethods, applyBatch };
+      const adapter = { ...base, ...sel.adapterMethods, applyOps };
       const select = useSelectTool(adapter, {});
       // The noop tool is the active slot; select is in ambient so its overlay
       // is always walked by the hit-test pipeline regardless of which tool
@@ -597,16 +597,16 @@ describe('Phase 2a integration', () => {
     canvas.dispatchEvent(mkPtr('pointerdown', 100, 100));
     canvas.dispatchEvent(mkPtr('pointermove', 110, 110));
     canvas.dispatchEvent(mkPtr('pointerup', 110, 110));
-    // useResize → applyBatch with a Transform op labeled 'Resize'. If the
+    // useResize → applyOps with a Transform op labeled 'Resize'. If the
     // affordance pipeline is broken, the click would route to noop's
-    // drag.onStart instead, and applyBatch wouldn't fire.
-    expect(applyBatch).toHaveBeenCalledTimes(1);
-    const [, batchLabel] = applyBatch.mock.calls[0] as [unknown, string];
+    // drag.onStart instead, and applyOps wouldn't fire.
+    expect(applyOps).toHaveBeenCalledTimes(1);
+    const [, batchLabel] = applyOps.mock.calls[0] as [unknown, string];
     expect(batchLabel).toBe('Resize');
   });
 
   it('cross-tool: rotation affordance fires while a non-select tool is active', () => {
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     function Harness() {
       const [rects, setRects] = useState<Rect[]>([
         { id: 'a', x: 0, y: 0, width: 100, height: 100 },
@@ -618,7 +618,7 @@ describe('Phase 2a integration', () => {
         ref: rectsRef, setItems: setRects,
         toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
       });
-      const adapter = { ...base, ...sel.adapterMethods, applyBatch };
+      const adapter = { ...base, ...sel.adapterMethods, applyOps };
       const select = useSelectTool(adapter, {});
       const noop = defineTool({ id: 'noop', drag: { onStart: () => 'claim' } });
       // select must be in ambient so its affordance overlay is surfaced
@@ -654,14 +654,13 @@ describe('Phase 2a integration', () => {
     canvas.dispatchEvent(new MouseEvent('pointerup', {
       clientX: 60, clientY: -20, bubbles: true, cancelable: true,
     }));
-    // useRotate → applyBatch with a Transform op labeled 'Rotate'.
-    expect(applyBatch).toHaveBeenCalledTimes(1);
-    const [, label] = applyBatch.mock.calls[0] as [unknown, string];
+    // useRotate → applyOps with a Transform op labeled 'Rotate'.
+    expect(applyOps).toHaveBeenCalledTimes(1);
+    const [, label] = applyOps.mock.calls[0] as [unknown, string];
     expect(label).toBe('Rotate');
   });
 
-  it('multi-mode corner-resize ends cleanly on pointerup (one applyBatch with Resize)', () => {
-    const applyBatch = vi.fn();
+  it('multi-mode corner-resize ends cleanly on pointerup (one applyOps with Resize)', () => {
     const applyOps = vi.fn();
     function Harness() {
       const [rects, setRects] = useState<Rect[]>([
@@ -676,7 +675,7 @@ describe('Phase 2a integration', () => {
         ref: rectsRef, setItems: setRects,
         toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
       });
-      const adapter = { ...base, ...sel.adapterMethods, applyBatch, applyOps };
+      const adapter = { ...base, ...sel.adapterMethods, applyOps };
       const select = useSelectTool(adapter, {});
       const tools = useTools({ active: 'select', registry: { select } });
       return (
@@ -703,21 +702,24 @@ describe('Phase 2a integration', () => {
     canvas.dispatchEvent(new MouseEvent('pointerup', {
       clientX: 120, clientY: 120, bubbles: true, cancelable: true,
     }));
-    // The gesture must commit exactly one Resize batch on pointerup. If the
-    // drag couldn't be "dropped," applyBatch wouldn't fire at all.
-    expect(applyBatch).toHaveBeenCalledTimes(1);
-    const [, label] = applyBatch.mock.calls[0] as [unknown, string];
-    expect(label).toBe('Resize');
+    // The gesture must commit exactly one labeled 'Resize' call on pointerup.
+    // (Transient moves may also fire applyOps without a label, so we filter for
+    // the labeled commit rather than asserting total call count.)
+    const labeledCalls = applyOps.mock.calls.filter(
+      ([, lbl]: [unknown, unknown]) => lbl !== undefined,
+    ) as [unknown, string][];
+    expect(labeledCalls).toHaveLength(1);
+    expect(labeledCalls[0][1]).toBe('Resize');
   });
 
-  it('multi-mode corner-resize via sceneToAdapter (real applyBatch, not stubbed)', () => {
-    // Regression: sceneToAdapter.applyBatch uses `this.setPose` inside its
+  it('multi-mode corner-resize via sceneToAdapter (real applyOps, not stubbed)', () => {
+    // Regression: sceneToAdapter.applyOps uses `this.setPose` inside its
     // scene.batch callback. The multi-resize handler previously destructured
-    // `applyBatch` off the adapter and called it as a detached function,
+    // `applyOps` off the adapter and called it as a detached function,
     // losing `this` and throwing "Cannot read properties of undefined
     // (reading 'setPose')" inside onEnd. That left the dispatcher's inFlight
     // stuck — the gesture "couldn't be dropped." This test exercises the
-    // real applyBatch (no vi.fn() override) to lock that in.
+    // real applyOps (no vi.fn() override) to lock that in.
     let sceneRef: ReturnType<typeof useScene<Rect>> | null = null;
     function Harness() {
       const scene = useScene<Rect>({ items: [
@@ -748,7 +750,7 @@ describe('Phase 2a integration', () => {
     canvas.dispatchEvent(new MouseEvent('pointerdown', { clientX: 100, clientY: 100, bubbles: true, cancelable: true }));
     canvas.dispatchEvent(new MouseEvent('pointermove', { clientX: 120, clientY: 120, bubbles: true, cancelable: true }));
     canvas.dispatchEvent(new MouseEvent('pointerup', { clientX: 120, clientY: 120, bubbles: true, cancelable: true }));
-    // The leaves must have resized proportionally — proves onEnd's applyBatch
+    // The leaves must have resized proportionally — proves onEnd's applyOps
     // didn't throw, and the gesture committed.
     const a = sceneRef!.get(asNodeId('a'))!.pose as Pose;
     const b = sceneRef!.get(asNodeId('b'))!.pose as Pose;

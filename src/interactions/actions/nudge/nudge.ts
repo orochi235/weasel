@@ -19,7 +19,7 @@ export interface NudgeAdapter<TPose> {
   getPose(id: NodeId): TPose;
   /** Optional: op-batch entry point. When omitted, the hook applies each op
    *  against the adapter directly. */
-  applyBatch?(ops: Op[], label?: string): void;
+  applyOps?(ops: Op[], label?: string): void;
 }
 
 /** Options for `useNudge`. */
@@ -30,7 +30,7 @@ export interface UseNudgeOptions<TPose> {
   translatePose?: (pose: TPose, dx: number, dy: number) => TPose;
   /** Auto-bind arrow keys on document. Default true. */
   enableKeyboard?: boolean;
-  /** Label passed to applyBatch. Default 'Nudge'. */
+  /** Label passed to applyOps. Default 'Nudge'. */
   label?: string;
   /** Base step in world units. Default 1. */
   step?: number;
@@ -101,7 +101,7 @@ export function useNudge<TPose>(
       translatePose:
         o.translatePose ??
         (translateRectPose as unknown as (pose: TPose, dx: number, dy: number) => TPose),
-      applyBatch: (ops, label) => dispatchApplyBatch(a, ops, label ?? 'Nudge'),
+      applyOps: (ops, label) => dispatchApplyBatch(a, ops, label ?? 'Nudge'),
       ...(o.step !== undefined ? { step: o.step } : {}),
       ...(o.shiftStep !== undefined ? { shiftStep: o.shiftStep } : {}),
     });

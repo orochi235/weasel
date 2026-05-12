@@ -15,7 +15,7 @@ import { ActionDisabledReason } from '../registry';
 describe('defaultGroupAction', () => {
   const baseDeps = () => ({
     getSelection: () => ['a' as NodeId, 'b' as NodeId],
-    applyBatch: vi.fn(),
+    applyOps: vi.fn(),
   });
 
   it('emits id=group with Mod+G default binding', () => {
@@ -29,8 +29,8 @@ describe('defaultGroupAction', () => {
     const deps = baseDeps();
     const action = defaultGroupAction({ ...deps, newGroupId: () => 'g1' });
     action.run();
-    expect(deps.applyBatch).toHaveBeenCalledOnce();
-    const [ops, label] = deps.applyBatch.mock.calls[0];
+    expect(deps.applyOps).toHaveBeenCalledOnce();
+    const [ops, label] = deps.applyOps.mock.calls[0];
     expect(label).toBe('Group');
     expect(ops).toHaveLength(2);
   });
@@ -42,30 +42,30 @@ describe('defaultGroupAction', () => {
     // Inspect the first op's batch — it's a create-group op carrying the id.
     // We can't introspect easily without applying; instead verify the
     // selection-set op references custom-id.
-    const [ops] = deps.applyBatch.mock.calls[0];
+    const [ops] = deps.applyOps.mock.calls[0];
     const mockAdapter = { setSelection: vi.fn() };
     ops[1].apply(mockAdapter);
     expect(mockAdapter.setSelection).toHaveBeenCalledWith(['custom-id']);
   });
 
   it('no-op below minMembers (default 2)', () => {
-    const deps = { getSelection: () => ['only' as NodeId], applyBatch: vi.fn() };
+    const deps = { getSelection: () => ['only' as NodeId], applyOps: vi.fn() };
     defaultGroupAction(deps).run();
-    expect(deps.applyBatch).not.toHaveBeenCalled();
+    expect(deps.applyOps).not.toHaveBeenCalled();
   });
 
   it('respects custom minMembers', () => {
     const deps = {
       getSelection: () => ['a' as NodeId, 'b' as NodeId, 'c' as NodeId],
-      applyBatch: vi.fn(),
+      applyOps: vi.fn(),
     };
     // minMembers=4 → 3 selected → no-op.
     defaultGroupAction({ ...deps, minMembers: 4, newGroupId: () => 'g1' }).run();
-    expect(deps.applyBatch).not.toHaveBeenCalled();
+    expect(deps.applyOps).not.toHaveBeenCalled();
   });
 
   it('enabled returns true ≥ minMembers, SelectionRequired below', () => {
-    const a = defaultGroupAction({ getSelection: () => ['only' as NodeId], applyBatch: vi.fn() });
+    const a = defaultGroupAction({ getSelection: () => ['only' as NodeId], applyOps: vi.fn() });
     expect(a.enabled?.()).toBe(ActionDisabledReason.SelectionRequired);
     const b = defaultGroupAction(baseDeps());
     expect(b.enabled?.()).toBe(true);
@@ -75,7 +75,7 @@ describe('defaultGroupAction', () => {
     const deps = baseDeps();
     const action = defaultGroupAction(deps);
     action.run();
-    const [ops] = deps.applyBatch.mock.calls[0];
+    const [ops] = deps.applyOps.mock.calls[0];
     const mockAdapter = { setSelection: vi.fn() };
     ops[1].apply(mockAdapter);
     const [[id]] = mockAdapter.setSelection.mock.calls[0];
@@ -90,22 +90,22 @@ describe('defaultUngroupAction', () => {
     const a = defaultUngroupAction({
       getSelection: () => [],
       getGroup: () => undefined,
-      applyBatch: vi.fn(),
+      applyOps: vi.fn(),
     });
     expect(a.id).toBe('ungroup');
     expect(a.defaultBinding).toEqual({ key: 'g', mod: true, shift: true });
   });
 
   it('dissolves selected groups; selection becomes members + non-group ids', () => {
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     const a = defaultUngroupAction({
       getSelection: () => ['x' as NodeId, 'g1' as NodeId],
       getGroup: (id) => (id === 'g1' ? g1 : undefined),
-      applyBatch,
+      applyOps,
     });
     a.run();
-    expect(applyBatch).toHaveBeenCalledOnce();
-    const [ops, label] = applyBatch.mock.calls[0];
+    expect(applyOps).toHaveBeenCalledOnce();
+    const [ops, label] = applyOps.mock.calls[0];
     expect(label).toBe('Ungroup');
     // One DissolveGroupOp + one SetSelectionOp.
     expect(ops).toHaveLength(2);
@@ -116,50 +116,50 @@ describe('defaultUngroupAction', () => {
 
   it('dedupes members shared across multiple dissolved groups', () => {
     const g2: Group = { id: 'g2', members: ['b', 'c', 'd'] };
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     const a = defaultUngroupAction({
       getSelection: () => ['g1' as NodeId, 'g2' as NodeId],
       getGroup: (id) => (id === 'g1' ? g1 : id === 'g2' ? g2 : undefined),
-      applyBatch,
+      applyOps,
     });
     a.run();
-    const [ops] = applyBatch.mock.calls[0];
+    const [ops] = applyOps.mock.calls[0];
     const mockAdapter = { setSelection: vi.fn() };
     ops[2].apply(mockAdapter);
     expect(mockAdapter.setSelection).toHaveBeenCalledWith(['a', 'b', 'c', 'd']);
   });
 
   it('no-op when nothing in selection is a group', () => {
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     defaultUngroupAction({
       getSelection: () => ['a' as NodeId, 'b' as NodeId],
       getGroup: () => undefined,
-      applyBatch,
+      applyOps,
     }).run();
-    expect(applyBatch).not.toHaveBeenCalled();
+    expect(applyOps).not.toHaveBeenCalled();
   });
 
   it('no-op on empty selection', () => {
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     defaultUngroupAction({
       getSelection: () => [],
       getGroup: () => undefined,
-      applyBatch,
+      applyOps,
     }).run();
-    expect(applyBatch).not.toHaveBeenCalled();
+    expect(applyOps).not.toHaveBeenCalled();
   });
 
   it('enabled returns true iff any selected id is a group', () => {
     const groupInSel = defaultUngroupAction({
       getSelection: () => ['g1' as NodeId],
       getGroup: (id) => (id === 'g1' ? g1 : undefined),
-      applyBatch: vi.fn(),
+      applyOps: vi.fn(),
     });
     expect(groupInSel.enabled?.()).toBe(true);
     const noGroup = defaultUngroupAction({
       getSelection: () => ['a' as NodeId],
       getGroup: () => undefined,
-      applyBatch: vi.fn(),
+      applyOps: vi.fn(),
     });
     expect(noGroup.enabled?.()).toBe(ActionDisabledReason.SelectionRequired);
   });

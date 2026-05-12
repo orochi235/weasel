@@ -16,7 +16,7 @@ function makeRectAdapter(initial: string[] = [], poses: Record<string, RectPose>
   const adapter: DistributeAdapter<RectPose> = {
     getSelection: () => selection,
     getPose: (id) => poses[id] ?? { x: 0, y: 0, width: 0, height: 0 },
-    applyBatch: (ops, label) => { batches.push({ ops, label: label ?? '' }); },
+    applyOps: (ops, label) => { batches.push({ ops, label: label ?? '' }); },
   };
   return { adapter, batches };
 }
@@ -195,7 +195,7 @@ describe('useDistribute', () => {
     const adapter: DistributeAdapter<Path> = {
       getSelection: () => selection,
       getPose: (id) => (id === 'a' ? a : id === 'b' ? b : c),
-      applyBatch: (ops, label) => batches.push({ ops, label: label ?? '' }),
+      applyOps: (ops, label) => batches.push({ ops, label: label ?? '' }),
     };
     const { result } = renderHook(() => useDistribute<Path>(adapter, { geometry: pathPoseDescriptor }));
     act(() => { result.current.distribute('x', 'centers'); });

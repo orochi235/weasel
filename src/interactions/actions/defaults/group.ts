@@ -10,7 +10,7 @@ import { ActionDisabledReason } from '../registry';
 /** @experimental */
 export interface GroupDeps {
   getSelection: () => NodeId[];
-  applyBatch: (ops: Op[], label?: string) => void;
+  applyOps: (ops: Op[], label?: string) => void;
   /** Mint the id for the new group. Default `g_${time}_${random}`. */
   newGroupId?: () => string;
   /** Minimum selection size that produces a group. Default 2. */
@@ -23,7 +23,7 @@ export interface UngroupDeps {
   /** Look up an existing virtual group by id. Returns `undefined` for
    *  non-group ids. */
   getGroup: (id: string) => Group | undefined;
-  applyBatch: (ops: Op[], label?: string) => void;
+  applyOps: (ops: Op[], label?: string) => void;
 }
 
 function defaultMintId(): string {
@@ -51,7 +51,7 @@ export function defaultGroupAction(deps: GroupDeps): Action {
         createCreateGroupOp({ group: g }),
         createSetSelectionOp({ from: sel, to: [id as NodeId] }),
       ];
-      deps.applyBatch(ops, 'Group');
+      deps.applyOps(ops, 'Group');
     },
     enabled: () =>
       deps.getSelection().length >= minMembers
@@ -97,7 +97,7 @@ export function defaultUngroupAction(deps: UngroupDeps): Action {
       if (dissolved.length === 0) return;
       const ops: Op[] = dissolved.map(({ group }) => createDissolveGroupOp({ group }));
       ops.push(createSetSelectionOp({ from: sel, to: next as NodeId[] }));
-      deps.applyBatch(ops, 'Ungroup');
+      deps.applyOps(ops, 'Ungroup');
     },
     enabled: () =>
       hasGroup() ? true : ActionDisabledReason.SelectionRequired,

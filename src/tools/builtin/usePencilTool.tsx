@@ -37,7 +37,7 @@ export function usePencilTool<TNode extends { id: string }>(
   } = options;
   const createRef = useRef(create);
   createRef.current = create;
-  const applyBatchRef = useRef<ToolCtx['applyBatch'] | null>(null);
+  const applyOpsRef = useRef<ToolCtx['applyOps'] | null>(null);
 
   return useMemo(
     () =>
@@ -62,7 +62,7 @@ export function usePencilTool<TNode extends { id: string }>(
             return 'claim';
           },
           onEnd: (_e, ctx) => {
-            applyBatchRef.current = ctx.applyBatch;
+            applyOpsRef.current = ctx.applyOps;
             const s = ctx.scratch;
             if (!s || s.samples.length < 2) {
               ctx.scratch = null;
@@ -73,8 +73,8 @@ export function usePencilTool<TNode extends { id: string }>(
             const closed = Math.hypot(first.x - last.x, first.y - last.y) < closeThreshold;
             const path = schneiderFit(s.samples, tolerance);
             const node = createRef.current(path, { closed });
-            if (node && applyBatchRef.current) {
-              applyBatchRef.current([createInsertOp({ node, label })], label);
+            if (node && applyOpsRef.current) {
+              applyOpsRef.current([createInsertOp({ node, label })], label);
             }
             ctx.scratch = null;
             return 'claim';

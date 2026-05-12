@@ -57,7 +57,7 @@ export interface NestedGroupActionAdapter<TNode extends { id: string }, TPose>
    *  matter for the hook itself; the hook does not reorder children. */
   getChildren(id: string | null): string[];
   /** Optional: op-batch entry point. When omitted, ops apply directly. */
-  applyBatch?(ops: Op[], label: string): void;
+  applyOps?(ops: Op[], label: string): void;
 }
 
 /** Options for `useNestedGroup`. */
@@ -85,7 +85,7 @@ export interface UseNestedGroupOptions<TNode extends { id: string }, TPose> {
   enableKeyboard?: boolean;
   /** Mint the id for the new group. Default: `g_${time}_${random}`. */
   newGroupId?: () => string;
-  /** Label passed to applyBatch. Default 'Group'. */
+  /** Label passed to applyOps. Default 'Group'. */
   label?: string;
   /** Minimum selection size that produces a group. Default 2 — wrapping a
    *  single object adds no structure. */
@@ -219,7 +219,7 @@ export interface UseNestedUngroupOptions<TNode extends { id: string }, TPose> {
   /** Auto-bind Mod+Shift+G on document and register a `nestedUngroup` action
    *  into any surrounding `<ActionsProvider>`. Default true. */
   enableKeyboard?: boolean;
-  /** Label passed to applyBatch. Default 'Ungroup'. */
+  /** Label passed to applyOps. Default 'Ungroup'. */
   label?: string;
   /** Predicate: should this id be treated as a nested group (i.e.
    *  dissolved on ungroup)? Default: any id with at least one child. Override

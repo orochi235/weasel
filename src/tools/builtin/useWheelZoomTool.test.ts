@@ -12,7 +12,7 @@ function makeCtx(view: View, setView: (v: View) => void, rect: Partial<DOMRect> 
     modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
     selection: {} as never,
     adapter: null,
-    applyBatch: () => {},
+    applyOps: () => {},
     view,
     setView,
     canvasRect: r,

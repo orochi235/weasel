@@ -13,8 +13,8 @@ export interface SelectAllAdapter {
   /** Return all selectable ids. */
   listAll(): NodeId[];
   /** Optional: op-batch entry point. When omitted, ops apply directly. */
-  applyBatch?(ops: Op[], label?: string): void;
-  /** Mutator wired by `setSelection` op when `applyBatch` is omitted. */
+  applyOps?(ops: Op[], label?: string): void;
+  /** Mutator wired by `setSelection` op when `applyOps` is omitted. */
   setSelection?(ids: NodeId[]): void;
 }
 
@@ -22,7 +22,7 @@ export interface SelectAllAdapter {
 export interface UseSelectAllOptions {
   /** Auto-bind Ctrl/Cmd+A on document. Default true. */
   enableKeyboard?: boolean;
-  /** Label passed to applyBatch. Default 'Select all'. */
+  /** Label passed to applyOps. Default 'Select all'. */
   label?: string;
 }
 

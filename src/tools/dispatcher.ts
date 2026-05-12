@@ -18,7 +18,7 @@ export interface ToolsDispatcherOptions {
   getSlots: () => SlotsState;
   /** Called once per channel-handler invocation to construct the ctx
    *  the handler receives. `<Canvas>` supplies world coords, modifiers,
-   *  selection, adapter, and applyBatch; the dispatcher injects scratch. */
+   *  selection, adapter, and applyOps; the dispatcher injects scratch. */
   getCtx: (overrides?: {
     clientX?: number;
     clientY?: number;

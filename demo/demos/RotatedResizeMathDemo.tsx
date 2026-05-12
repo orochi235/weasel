@@ -137,7 +137,7 @@ const adapterForScene = (scene: RectScene): ResizeAdapter<{ id: string }, Rect> 
   setPose: (id, pose) => {
     scene.setPose(asNodeId(id), pose);
   },
-  applyBatch: (ops, label) => {
+  applyOps: (ops, label) => {
     scene.batch(label, () => {
       // The adapter fed to op.apply only needs setPose for transform ops.
       const opAdapter = {

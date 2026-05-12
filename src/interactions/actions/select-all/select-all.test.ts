@@ -11,7 +11,7 @@ function makeAdapter(all: string[] = [], selection: string[] = []) {
   const adapter: SelectAllAdapter = {
     getSelection: () => sel,
     listAll: () => all as NodeId[],
-    applyBatch: (ops, label) => { batches.push({ ops, label: label ?? '' }); },
+    applyOps: (ops, label) => { batches.push({ ops, label: label ?? '' }); },
   };
   return { adapter, batches };
 }
@@ -26,7 +26,7 @@ describe('useSelectAll', () => {
     expect(helpers.batches[0].ops).toHaveLength(1);
   });
 
-  it('empty universe: no applyBatch', () => {
+  it('empty universe: no applyOps', () => {
     const helpers = makeAdapter([]);
     const { result } = renderHook(() => useSelectAll(helpers.adapter));
     act(() => { result.current.selectAll(); });

@@ -16,7 +16,7 @@ function makeAdapter(initial: string[] = []) {
   const adapter: NudgeAdapter<Pose> = {
     getSelection: () => selection,
     getPose: (id) => poses[id] ?? { x: 0, y: 0 },
-    applyBatch: (ops, label) => { batches.push({ ops, label: label ?? '' }); },
+    applyOps: (ops, label) => { batches.push({ ops, label: label ?? '' }); },
   };
   return { adapter, batches, setSel: (ids: string[]) => { selection = [...ids] as NodeId[]; }, poses };
 }
@@ -29,7 +29,7 @@ function applyOp(op: Op): { id: string; pose: Pose } {
 }
 
 describe('useNudge', () => {
-  it('empty selection: no applyBatch', () => {
+  it('empty selection: no applyOps', () => {
     const helpers = makeAdapter([]);
     const { result } = renderHook(() => useNudge(helpers.adapter, { translatePose }));
     act(() => { result.current.nudge('right'); });

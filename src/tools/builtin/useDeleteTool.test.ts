@@ -10,7 +10,7 @@ function makeCtx(): ToolCtx<undefined> {
     modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
     selection: { current: ['a'], applyClick: () => {}, set: () => {}, clear: () => {} } as any,
     adapter: {},
-    applyBatch: vi.fn(),
+    applyOps: vi.fn(),
     view: { x: 0, y: 0, scale: 1 },
     setView: () => {},
     canvasRect: new DOMRect(),
@@ -26,7 +26,7 @@ function keyEvent(key: string): KeyboardEvent {
 
 describe('useDeleteTool', () => {
   it('returns a Tool with id "delete" and no switch keybinding (handles Backspace/Delete via the keyboard channel)', () => {
-    const adapter = { getSelection: () => ['a'], getNode: () => ({ id: 'a' }), applyBatch: vi.fn() } as any;
+    const adapter = { getSelection: () => ['a'], getNode: () => ({ id: 'a' }), applyOps: vi.fn() } as any;
     const { result } = renderHook(() => useDeleteTool(adapter));
     expect(result.current.id).toBe('delete');
     expect(result.current.keybinding).toBeUndefined();
@@ -37,7 +37,7 @@ describe('useDeleteTool', () => {
     const adapter = {
       getSelection: () => ['a'],
       getNode: () => ({ id: 'a' }),
-      applyBatch: vi.fn(), // intercept ops so we don't need full adapter surface
+      applyOps: vi.fn(), // intercept ops so we don't need full adapter surface
     } as any;
     const { result } = renderHook(() => useDeleteTool(adapter));
     expect(result.current.keyboard!.onDown!(keyEvent('Backspace'), makeCtx())).toBe('claim');
@@ -46,31 +46,31 @@ describe('useDeleteTool', () => {
   });
 
   it('invokes adapter delete when Backspace is pressed with selection', () => {
-    // useDelete dispatches through adapter.applyBatch when present
-    const applyBatch = vi.fn();
+    // useDelete dispatches through adapter.applyOps when present
+    const applyOps = vi.fn();
     const adapter = {
       getSelection: () => ['a', 'b'],
       getNode: (id: string) => ({ id }),
-      applyBatch,
+      applyOps,
     } as any;
     const { result } = renderHook(() => useDeleteTool(adapter));
     act(() => {
       result.current.keyboard!.onDown!(keyEvent('Backspace'), makeCtx());
     });
-    expect(applyBatch).toHaveBeenCalledTimes(1);
-    const ops = applyBatch.mock.calls[0][0];
+    expect(applyOps).toHaveBeenCalledTimes(1);
+    const ops = applyOps.mock.calls[0][0];
     expect(ops.length).toBeGreaterThan(0);
   });
 
   it('does nothing on empty selection', () => {
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     const adapter = {
       getSelection: () => [],
       getNode: () => null,
-      applyBatch,
+      applyOps,
     } as any;
     const { result } = renderHook(() => useDeleteTool(adapter));
     result.current.keyboard!.onDown!(keyEvent('Backspace'), makeCtx());
-    expect(applyBatch).not.toHaveBeenCalled();
+    expect(applyOps).not.toHaveBeenCalled();
   });
 });

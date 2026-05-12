@@ -13,7 +13,7 @@ function makeAdapter() {
   return {
     getSelection: () => [asNodeId('a')],
     getPose: (_id: NodeId): Pose => ({ x: 0, y: 0, width: 1, height: 1 }),
-    applyBatch: (ops: Op[], label?: string) => batches.push({ ops, label: label ?? '' }),
+    applyOps: (ops: Op[], label?: string) => batches.push({ ops, label: label ?? '' }),
     batches,
   };
 }

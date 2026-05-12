@@ -18,7 +18,7 @@ export interface FlipDeps<TPose> {
   geometry: PoseDescriptor<TPose>;
   /** Static value or live thunk. Default `'each'`. */
   pivot?: FlipPivot | (() => FlipPivot);
-  applyBatch: (ops: Op[], label?: string) => void;
+  applyOps: (ops: Op[], label?: string) => void;
 }
 
 const AXES: readonly FlipAxis[] = ['x', 'y'];
@@ -66,7 +66,7 @@ export function defaultFlipActions<TPose>(deps: FlipDeps<TPose>): Action[] {
           : flipPoseViaDescriptor(from, axis, deps.geometry);
         return createTransformOp<TPose>({ id, from, to });
       });
-      deps.applyBatch(ops, 'Flip');
+      deps.applyOps(ops, 'Flip');
     },
     enabled: () => (deps.getSelection().length > 0 ? true : ActionDisabledReason.SelectionRequired),
   }));

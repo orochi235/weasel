@@ -12,7 +12,7 @@ export function makeCtx<S = undefined>(
     modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
     selection: { current: [], set: vi.fn() } as unknown as ToolCtx<S>['selection'],
     adapter: {},
-    applyBatch: vi.fn(),
+    applyOps: vi.fn(),
     view: { x: 0, y: 0, scale: 1 },
     setView: () => {},
     canvasRect: new DOMRect(),

@@ -114,14 +114,14 @@ describe('sceneToAdapter', () => {
     expect(after.find((l) => l.id === 'fg')?.visible).toBe(true);
   });
 
-  it('applyBatch wraps ops in scene.batch (single undo entry)', () => {
+  it('applyOps wraps ops in scene.batch (single undo entry)', () => {
     const scene = makeScene();
     const id = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'x' } });
     const adapter = sceneToAdapter(scene);
     const before = scene.canUndo();
     expect(before).toBe(true); // from add
     // Two-op batch via inline Op shims
-    adapter.applyBatch!(
+    adapter.applyOps!(
       [
         { apply: (a) => (a as typeof adapter).setPose(id, { x: 1, y: 1, width: 1, height: 1 }), invert: () => ({ apply: () => {}, invert: () => ({} as never) }) },
         { apply: (a) => (a as typeof adapter).setPose(id, { x: 2, y: 2, width: 1, height: 1 }), invert: () => ({ apply: () => {}, invert: () => ({} as never) }) },

@@ -41,9 +41,9 @@ function recordTransformOp<TPose>(
   to: TPose,
   label: string,
 ): void {
-  if (!adapter.applyBatch) return;
+  if (!adapter.applyOps) return;
   const op = createTransformOp<TPose>({ id, from, to, label });
-  adapter.applyBatch([op], label);
+  adapter.applyOps([op], label);
 }
 
 export function tweenPose<TNode extends { id: string }, TPose>(

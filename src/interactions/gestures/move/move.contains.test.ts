@@ -25,7 +25,7 @@ function makeAdapter(opts: {
     setPose: setPoseSpy,
     setParent: () => {},
     getChildren: (id) => opts.children[id] ?? [],
-    applyBatch: vi.fn(),
+    applyOps: vi.fn(),
     getLayout: opts.getLayout,
   };
 }

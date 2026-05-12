@@ -36,11 +36,11 @@ export function AlignDistributeFlipDemo() {
     [scene, selection],
   );
 
-  // Adapter for the action hooks: getSelection + getPose + applyBatch.
-  // The hooks dispatch ops via `dispatchApplyBatch`, which calls applyBatch
+  // Adapter for the action hooks: getSelection + getPose + applyOps.
+  // The hooks dispatch ops via `dispatchApplyBatch`, which calls applyOps
   // when present (otherwise falls back to op.apply(adapter) against this
   // bare object — and TransformOp wants setPose, which we don't have here).
-  // Route through baseAdapter.applyBatch so each op lands on the scene-backed
+  // Route through baseAdapter.applyOps so each op lands on the scene-backed
   // setPose and the whole gesture collapses to one undo step.
   const actionAdapter = useMemo(
     () => ({
@@ -49,8 +49,8 @@ export function AlignDistributeFlipDemo() {
         const n = scene.get(id);
         return (n?.pose ?? { x: 0, y: 0, width: 0, height: 0 }) as Rect;
       },
-      applyBatch: (ops: Parameters<typeof baseAdapter.applyBatch>[0], label?: string) =>
-        baseAdapter.applyBatch(ops, label ?? 'action'),
+      applyOps: (ops: Parameters<typeof baseAdapter.applyOps>[0], label?: string) =>
+        baseAdapter.applyOps(ops, label ?? 'action'),
     }),
     [scene, selection, baseAdapter],
   );

@@ -57,7 +57,7 @@ export function useStandardActions<TPose>(
     setSelection: (ids) => depsRef.current.setSelection(ids),
     listAll: () => depsRef.current.listAll(),
     getPose: (id) => depsRef.current.getPose(id),
-    applyBatch: (ops, label) => depsRef.current.applyBatch(ops, label),
+    applyOps: (ops, label) => depsRef.current.applyOps(ops, label),
     translatePose: (pose, dx, dy) => depsRef.current.translatePose(pose, dx, dy),
   }), []);
 

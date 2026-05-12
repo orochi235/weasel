@@ -14,7 +14,7 @@ export interface EditAnchorsAdapter<TNode extends { id: string }> {
   /** Must return a `Path`; only `kind === 'polygon'` is editable. */
   getPose(id: string): Path;
   setPose(id: string, pose: Path): void;
-  applyBatch?: (ops: Op[], label?: string) => void;
+  applyOps?: (ops: Op[], label?: string) => void;
 }
 
 /** Live overlay state for the anchor-edit pass. */

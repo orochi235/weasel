@@ -16,7 +16,7 @@ export interface ReorderAdapter {
   /** Optional — when absent, every reorder method is a silent no-op. */
   setChildOrder?(parentId: string | null, ids: string[]): void;
   /** Optional: op-batch entry point. When omitted, ops apply directly. */
-  applyBatch?(ops: Op[], label: string): void;
+  applyOps?(ops: Op[], label: string): void;
 }
 
 /** Options for `useReorder`. */
@@ -85,14 +85,14 @@ export function useReorder(
     if (!reg || !enable) return;
     const actions = defaultReorderActions({
       getSelection: () => adapterRef.current.getSelection(),
-      applyBatch: (ops, label) => {
+      applyOps: (ops, label) => {
         const a = adapterRef.current;
         const ids = optsRef.current.filter
           ? optsRef.current.filter(a.getSelection())
           : a.getSelection();
         if (ids.length === 0) return;
         // The factory already builds ops from getSelection(); apply via the
-        // adapter so its applyBatch (or fallback) handles it identically.
+        // adapter so its applyOps (or fallback) handles it identically.
         if (!a.getChildren || !a.setChildOrder) return;
         dispatchApplyBatch(a, ops, label ?? '');
       },

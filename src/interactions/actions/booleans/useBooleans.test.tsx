@@ -27,7 +27,7 @@ function makeAdapter() {
     insertNode: (n) => state.inserted.push(n),
     removeNode: (id) => state.removed.push(id),
     setSelection: () => {},
-    applyBatch: (ops, label) => {
+    applyOps: (ops, label) => {
       state.batches.push({ ops, label: label ?? '' });
       for (const op of ops) op.apply(adapter);
     },

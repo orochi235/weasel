@@ -13,7 +13,7 @@ function makeAdapter(initial: Path) {
     getNode: (id) => (state.has(id) ? { id } : undefined),
     getPose: (id) => state.get(id)!,
     setPose: (id, pose) => state.set(id, pose),
-    applyBatch: (ops, label) => {
+    applyOps: (ops, label) => {
       batches.push({ ops, label });
       for (const op of ops) op.apply(adapter);
     },

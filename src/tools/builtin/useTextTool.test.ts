@@ -34,63 +34,63 @@ describe('useTextTool — declarations', () => {
 });
 
 describe('useTextTool — click path', () => {
-  it('pointer.onClick on empty space dispatches an InsertOp via applyBatch', () => {
+  it('pointer.onClick on empty space dispatches an InsertOp via applyOps', () => {
     const pointInsert = vi.fn((p: { x: number; y: number }) => ({
       id: 't1', x: p.x, y: p.y, width: 120, height: 32, text: '',
     }));
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     const { result } = renderHook(() => useTextTool({ pointInsert }));
     let decision: unknown;
     act(() => {
-      decision = result.current.pointer!.onClick!(pe(), makeCtx({ worldX: 50, worldY: 75, applyBatch }));
+      decision = result.current.pointer!.onClick!(pe(), makeCtx({ worldX: 50, worldY: 75, applyOps }));
     });
     expect(decision).toBe('claim');
     expect(pointInsert).toHaveBeenCalledWith({ x: 50, y: 75 });
-    expect(applyBatch).toHaveBeenCalledTimes(1);
-    const [ops, label] = applyBatch.mock.calls[0] as [Array<{ apply: unknown; invert: unknown }>, string];
+    expect(applyOps).toHaveBeenCalledTimes(1);
+    const [ops, label] = applyOps.mock.calls[0] as [Array<{ apply: unknown; invert: unknown }>, string];
     expect(label).toBe('Insert text');
     expect(ops.length).toBe(1);
   });
 
   it('pointer.onClick with pointInsert returning null is a claim with no batch', () => {
     const pointInsert = vi.fn(() => null);
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     const { result } = renderHook(() => useTextTool({ pointInsert }));
     let decision: unknown;
     act(() => {
-      decision = result.current.pointer!.onClick!(pe(), makeCtx({ applyBatch }));
+      decision = result.current.pointer!.onClick!(pe(), makeCtx({ applyOps }));
     });
     expect(decision).toBe('claim');
-    expect(applyBatch).not.toHaveBeenCalled();
+    expect(applyOps).not.toHaveBeenCalled();
   });
 
   it('pointer.onClick with hitExisting hit selects and skips insertion', () => {
     const pointInsert = vi.fn();
     const set = vi.fn();
     const hitExisting = vi.fn(() => 'existing-1');
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     const { result } = renderHook(() => useTextTool({ pointInsert, hitExisting }));
     let decision: unknown;
     act(() => {
       decision = result.current.pointer!.onClick!(
         pe(),
-        makeCtx({ applyBatch, selection: { current: [], set } as any }),
+        makeCtx({ applyOps, selection: { current: [], set } as any }),
       );
     });
     expect(decision).toBe('claim');
     expect(set).toHaveBeenCalledWith(['existing-1']);
     expect(pointInsert).not.toHaveBeenCalled();
-    expect(applyBatch).not.toHaveBeenCalled();
+    expect(applyOps).not.toHaveBeenCalled();
   });
 });
 
 describe('useTextTool — dispatch routing', () => {
-  it('routes commit dispatch through ctx.applyBatch (not adapter/applyOpsTo)', () => {
+  it('routes commit dispatch through ctx.applyOps (not adapter/applyOpsTo)', () => {
     const pointInsert = vi.fn(() => ({ id: 't1', x: 5, y: 6, width: 10, height: 10, text: '' }));
     const ctxApplyBatch = vi.fn();
     const { result } = renderHook(() => useTextTool({ pointInsert }));
     act(() => {
-      result.current.pointer!.onClick!(pe(), makeCtx({ applyBatch: ctxApplyBatch, worldX: 5, worldY: 6 }));
+      result.current.pointer!.onClick!(pe(), makeCtx({ applyOps: ctxApplyBatch, worldX: 5, worldY: 6 }));
     });
     expect(ctxApplyBatch).toHaveBeenCalledTimes(1);
     const [ops, label] = ctxApplyBatch.mock.calls[0] as [unknown[], string];
@@ -98,14 +98,14 @@ describe('useTextTool — dispatch routing', () => {
     expect(ops.length).toBe(1);
   });
 
-  it('captures ctx.applyBatch fresh per handler entry (no stale ref across invocations)', () => {
+  it('captures ctx.applyOps fresh per handler entry (no stale ref across invocations)', () => {
     const pointInsert = vi.fn(() => ({ id: 't1', x: 0, y: 0, width: 10, height: 10, text: '' }));
     const first = vi.fn();
     const second = vi.fn();
     const { result } = renderHook(() => useTextTool({ pointInsert }));
     act(() => {
-      result.current.pointer!.onClick!(pe(), makeCtx({ applyBatch: first }));
-      result.current.pointer!.onClick!(pe(), makeCtx({ applyBatch: second }));
+      result.current.pointer!.onClick!(pe(), makeCtx({ applyOps: first }));
+      result.current.pointer!.onClick!(pe(), makeCtx({ applyOps: second }));
     });
     expect(first).toHaveBeenCalledTimes(1);
     expect(second).toHaveBeenCalledTimes(1);
@@ -118,9 +118,9 @@ describe('useTextTool — drag path', () => {
     const commitInsert = vi.fn((b: { x: number; y: number; width: number; height: number }) => ({
       id: 't1', x: b.x, y: b.y, width: b.width, height: b.height, text: '',
     }));
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     const { result } = renderHook(() => useTextTool({ pointInsert, commitInsert }));
-    const ctx = makeCtx({ applyBatch, worldX: 10, worldY: 20 });
+    const ctx = makeCtx({ applyOps, worldX: 10, worldY: 20 });
     act(() => {
       result.current.drag!.onStart!(pe(), ctx);
       ctx.worldX = 110;
@@ -130,17 +130,17 @@ describe('useTextTool — drag path', () => {
     });
     expect(commitInsert).toHaveBeenCalledWith({ x: 10, y: 20, width: 100, height: 60 });
     expect(pointInsert).not.toHaveBeenCalled();
-    expect(applyBatch).toHaveBeenCalledTimes(1);
+    expect(applyOps).toHaveBeenCalledTimes(1);
   });
 
   it('drag below threshold falls back to pointInsert at the start point', () => {
     const pointInsert = vi.fn(() => ({ id: 't1', x: 10, y: 20, width: 0, height: 0, text: '' }));
     const commitInsert = vi.fn();
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     const { result } = renderHook(() =>
       useTextTool({ pointInsert, commitInsert, minBounds: { width: 10, height: 10 } }),
     );
-    const ctx = makeCtx({ applyBatch, worldX: 10, worldY: 20 });
+    const ctx = makeCtx({ applyOps, worldX: 10, worldY: 20 });
     act(() => {
       result.current.drag!.onStart!(pe(), ctx);
       ctx.worldX = 12;
@@ -150,7 +150,7 @@ describe('useTextTool — drag path', () => {
     });
     expect(commitInsert).not.toHaveBeenCalled();
     expect(pointInsert).toHaveBeenCalledWith({ x: 10, y: 20 });
-    expect(applyBatch).toHaveBeenCalledTimes(1);
+    expect(applyOps).toHaveBeenCalledTimes(1);
   });
 
   it('drag.onStart with hitExisting hit selects and does not start the controller', () => {
@@ -158,9 +158,9 @@ describe('useTextTool — drag path', () => {
     const commitInsert = vi.fn();
     const set = vi.fn();
     const hitExisting = vi.fn(() => 'hit-1');
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     const { result } = renderHook(() => useTextTool({ pointInsert, commitInsert, hitExisting }));
-    const ctx = makeCtx({ applyBatch, worldX: 10, worldY: 20, selection: { current: [], set } as any });
+    const ctx = makeCtx({ applyOps, worldX: 10, worldY: 20, selection: { current: [], set } as any });
     let decision: unknown;
     act(() => {
       decision = result.current.drag!.onStart!(pe(), ctx);
@@ -171,6 +171,6 @@ describe('useTextTool — drag path', () => {
     expect(set).toHaveBeenCalledWith(['hit-1']);
     expect(commitInsert).not.toHaveBeenCalled();
     expect(pointInsert).not.toHaveBeenCalled();
-    expect(applyBatch).not.toHaveBeenCalled();
+    expect(applyOps).not.toHaveBeenCalled();
   });
 });

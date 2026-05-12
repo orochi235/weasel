@@ -4,7 +4,7 @@
  * Returns five imperative callables (`union` / `intersect` / `subtract` /
  * `exclude` / `divide`). Each reads the current selection, performs the op
  * in world space, and dispatches a single batch through the adapter's
- * `applyBatch` (one undo step).
+ * `applyOps` (one undo step).
  *
  * Adapter shape: see `BooleansAdapter` in `./booleans.ts`. Consumers
  * supply how to read selection, fetch the world-space `Path` for an id,

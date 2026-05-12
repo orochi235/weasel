@@ -25,7 +25,7 @@ export type FlipPivot = 'each' | 'union';
 export interface FlipAdapter<TPose> {
   getSelection(): NodeId[];
   getPose(id: NodeId): TPose;
-  applyBatch?(ops: Op[], label?: string): void;
+  applyOps?(ops: Op[], label?: string): void;
 }
 
 /** Options for `useFlip`. */
@@ -38,7 +38,7 @@ export interface UseFlipOptions<TPose> {
   pivot?: FlipPivot;
   /** Auto-bind Shift+H / Shift+V on document. Default true. */
   enableKeyboard?: boolean;
-  /** Label passed to applyBatch. Default 'Flip'. */
+  /** Label passed to applyOps. Default 'Flip'. */
   label?: string;
 }
 
@@ -171,7 +171,7 @@ export function useFlip<TPose>(
         o.geometry ??
         (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>),
       pivot: () => optsRef.current.pivot ?? 'each',
-      applyBatch: (ops, label) =>
+      applyOps: (ops, label) =>
         dispatchApplyBatch(adapterRef.current, ops, label ?? 'Flip'),
     });
     const unregs = actions.map((act) => reg.register(act));

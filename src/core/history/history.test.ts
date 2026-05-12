@@ -41,10 +41,10 @@ describe('createHistory', () => {
     expect(adapter.state.get('a')).toEqual({ x: 1, y: 1 });
   });
 
-  it('applyBatch is atomic for undo', () => {
+  it('applyOps is atomic for undo', () => {
     const adapter = makeAdapter();
     const history = createHistory(adapter as any);
-    history.applyBatch(
+    history.applyOps(
       [
         createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }),
         createTransformOp<Pose>({ id: 'b', from: { x: 0, y: 0 }, to: { x: 2, y: 2 } }),
@@ -197,12 +197,12 @@ describe('createHistory coalescing', () => {
     let t = 0;
     const adapter = makeAdapter();
     const history = createHistory(adapter as any, { coalesceWindowMs: 500, now: () => t });
-    history.applyBatch([
+    history.applyOps([
       createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, coalesceKey: 'transform:a' }),
       createTransformOp<Pose>({ id: 'b', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, coalesceKey: 'transform:b' }),
     ], 'Nudge');
     t = 100;
-    history.applyBatch([
+    history.applyOps([
       // Order swapped — multiset still matches.
       createTransformOp<Pose>({ id: 'b', from: { x: 1, y: 0 }, to: { x: 5, y: 0 }, coalesceKey: 'transform:b' }),
       createTransformOp<Pose>({ id: 'a', from: { x: 1, y: 0 }, to: { x: 5, y: 0 }, coalesceKey: 'transform:a' }),
@@ -219,12 +219,12 @@ describe('createHistory coalescing', () => {
     let t = 0;
     const adapter = makeAdapter();
     const history = createHistory(adapter as any, { coalesceWindowMs: 500, now: () => t });
-    history.applyBatch([
+    history.applyOps([
       createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, coalesceKey: 'transform:a' }),
       createTransformOp<Pose>({ id: 'b', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, coalesceKey: 'transform:b' }),
     ], 'Move ab');
     t = 100;
-    history.applyBatch([
+    history.applyOps([
       // Only id=a this time.
       createTransformOp<Pose>({ id: 'a', from: { x: 1, y: 0 }, to: { x: 5, y: 0 }, coalesceKey: 'transform:a' }),
     ], 'Move a');

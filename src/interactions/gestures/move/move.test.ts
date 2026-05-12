@@ -28,7 +28,7 @@ function makeAdapter(initial: Obj[]): MoveAdapter<Obj, Pose> & {
     setParent: (id, parent) => {
       store.get(id)!.parent = parent;
     },
-    applyBatch: (ops, label) => {
+    applyOps: (ops, label) => {
       for (const op of ops) op.apply({
         setPose: (id: string, pose: Pose) => { store.get(id)!.pose = { ...pose }; },
         setParent: (id: string, p: string | null) => { store.get(id)!.parent = p; },

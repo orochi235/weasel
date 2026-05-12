@@ -32,7 +32,7 @@ const DEFAULT_STYLE = {
  * factory is called with the final bounds and the returned object is inserted
  * into the scene via an undoable op.
  *
- * Role model for tools that create scene objects: uses `ctx.applyBatch` +
+ * Role model for tools that create scene objects: uses `ctx.applyOps` +
  * `createInsertOp` directly rather than routing through adapter.commitInsert.
  */
 export function useRectTool<TNode extends { id: string }>(
@@ -42,18 +42,18 @@ export function useRectTool<TNode extends { id: string }>(
 
   const createRef = useRef(create);
   createRef.current = create;
-  const applyBatchRef = useRef<ToolCtx['applyBatch'] | null>(null);
+  const applyOpsRef = useRef<ToolCtx['applyOps'] | null>(null);
   const overlayStyleRef = useRef(overlayStyle);
   overlayStyleRef.current = overlayStyle;
 
   const dr = useDragRect({
     minBounds,
     onEnd: (ctx) => {
-      const applyBatch = applyBatchRef.current;
-      if (!applyBatch) return false;
+      const applyOps = applyOpsRef.current;
+      if (!applyOps) return false;
       const node = createRef.current(ctx.bounds);
       if (!node) return false;
-      applyBatch([createInsertOp({ node, label })], label);
+      applyOps([createInsertOp({ node, label })], label);
       return true;
     },
   });
@@ -92,7 +92,7 @@ export function useRectTool<TNode extends { id: string }>(
             return 'claim';
           },
           onEnd: (_e, ctx) => {
-            applyBatchRef.current = ctx.applyBatch;
+            applyOpsRef.current = ctx.applyOps;
             dr.end();
             return 'claim';
           },

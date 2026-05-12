@@ -43,7 +43,7 @@ export function useLineTool<TNode extends { id: string }>(
   const { create, label = 'Insert line', minLength = 0 } = options;
   const createRef = useRef(create);
   createRef.current = create;
-  const applyBatchRef = useRef<ToolCtx['applyBatch'] | null>(null);
+  const applyOpsRef = useRef<ToolCtx['applyOps'] | null>(null);
 
   return useMemo(
     () =>
@@ -72,7 +72,7 @@ export function useLineTool<TNode extends { id: string }>(
             return 'claim';
           },
           onEnd: (_e, ctx) => {
-            applyBatchRef.current = ctx.applyBatch;
+            applyOpsRef.current = ctx.applyOps;
             const s = ctx.scratch as LineScratch | null;
             if (!s) return 'claim';
             let a = s.start;
@@ -88,7 +88,7 @@ export function useLineTool<TNode extends { id: string }>(
             }
             const node = createRef.current(a, b);
             if (node) {
-              applyBatchRef.current([createInsertOp({ node, label })], label);
+              applyOpsRef.current([createInsertOp({ node, label })], label);
             }
             ctx.scratch = null;
             return 'claim';

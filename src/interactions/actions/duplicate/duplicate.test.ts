@@ -23,7 +23,7 @@ function makeAdapter(initial: string[] = []) {
       poses[newId] = { x: newObj.x, y: newObj.y };
       return newObj;
     },
-    applyBatch: (ops, label) => { batches.push({ ops, label: label ?? '' }); },
+    applyOps: (ops, label) => { batches.push({ ops, label: label ?? '' }); },
   };
   return {
     adapter, batches,
@@ -33,7 +33,7 @@ function makeAdapter(initial: string[] = []) {
 }
 
 describe('useDuplicate', () => {
-  it('empty selection: no applyBatch', () => {
+  it('empty selection: no applyOps', () => {
     const helpers = makeAdapter([]);
     const { result } = renderHook(() => useDuplicate(helpers.adapter));
     act(() => { result.current.duplicate(); });

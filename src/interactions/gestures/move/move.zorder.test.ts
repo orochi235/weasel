@@ -34,7 +34,7 @@ function makeAdapter(opts: AdapterOpts): MoveAdapter<Obj, P> {
     getParent: (id) => opts.parents[id] ?? null,
     setPose: setPoseSpy,
     setParent: () => {},
-    applyBatch: vi.fn(),
+    applyOps: vi.fn(),
     getLayout: opts.getLayout,
   };
   if (!opts.omitGetChildren) {

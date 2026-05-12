@@ -414,10 +414,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       const n = sceneRef.current.get(id);
       return n?.pose as TPose;
     },
-    applyBatch: (ops: Op[], label?: string) => {
+    applyOps: (ops: Op[], label?: string) => {
       const a = adapterRef.current;
-      if (typeof (a as { applyBatch?: unknown }).applyBatch === 'function') {
-        (a as { applyBatch: (ops: Op[], label: string) => void }).applyBatch(ops, label ?? '');
+      if (typeof (a as { applyOps?: unknown }).applyOps === 'function') {
+        (a as { applyOps: (ops: Op[], label: string) => void }).applyOps(ops, label ?? '');
       } else {
         for (const op of ops) op.apply(a);
       }

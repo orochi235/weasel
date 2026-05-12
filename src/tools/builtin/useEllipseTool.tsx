@@ -40,19 +40,19 @@ export function useEllipseTool<TNode extends { id: string }>(
 
   const createRef = useRef(create);
   createRef.current = create;
-  const applyBatchRef = useRef<ToolCtx['applyBatch'] | null>(null);
+  const applyOpsRef = useRef<ToolCtx['applyOps'] | null>(null);
   const overlayStyleRef = useRef(overlayStyle);
   overlayStyleRef.current = overlayStyle;
 
   const dr = useDragRect({
     minBounds,
     onEnd: (ctx) => {
-      const applyBatch = applyBatchRef.current;
-      if (!applyBatch) return false;
+      const applyOps = applyOpsRef.current;
+      if (!applyOps) return false;
       if (ctx.isSubThreshold) return false;
       const node = createRef.current(ctx.bounds);
       if (!node) return false;
-      applyBatch([createInsertOp({ node, label })], label);
+      applyOps([createInsertOp({ node, label })], label);
       return true;
     },
   });
@@ -96,7 +96,7 @@ export function useEllipseTool<TNode extends { id: string }>(
             return 'claim';
           },
           onEnd: (_e, ctx) => {
-            applyBatchRef.current = ctx.applyBatch;
+            applyOpsRef.current = ctx.applyOps;
             dr.end();
             return 'claim';
           },

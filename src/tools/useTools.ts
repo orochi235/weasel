@@ -14,7 +14,7 @@ export interface UseToolsOptions {
   /** Always-on tools — listen continuously regardless of active slot. */
   ambient?: AnyTool[];
   /** Per-event base ctx supplier. `<Canvas>` wires this to inject world
-   *  coords, modifiers, selection, adapter, applyBatch. Tests can supply
+   *  coords, modifiers, selection, adapter, applyOps. Tests can supply
    *  a stub. Optional — the dispatcher works with a default empty ctx
    *  for tests that don't need the wiring. */
   getCtx?: (overrides?: {
@@ -67,7 +67,7 @@ const DEFAULT_CTX: Omit<ToolCtx, 'scratch'> = {
   view: { x: 0, y: 0, scale: 1 },
   setView: () => {},
   canvasRect: typeof DOMRect !== 'undefined' ? new DOMRect() : ({ x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 } as DOMRect),
-  applyBatch: () => {},
+  applyOps: () => {},
   debug: undefined,
 };
 

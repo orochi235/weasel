@@ -15,7 +15,7 @@ export type AlignEdge = 'left' | 'right' | 'top' | 'bottom' | 'center-x' | 'cent
 export interface AlignAdapter<TPose> {
   getSelection(): NodeId[];
   getPose(id: NodeId): TPose;
-  applyBatch?(ops: Op[], label?: string): void;
+  applyOps?(ops: Op[], label?: string): void;
 }
 
 /** Options for `useAlign`. */
@@ -24,7 +24,7 @@ export interface UseAlignOptions<TPose> {
    *  for `{x,y,width,height}` poses. Pass `pathPoseDescriptor` for `Path`
    *  poses so polygon coords translate correctly. */
   geometry?: PoseDescriptor<TPose>;
-  /** Label passed to applyBatch. Default 'Align'. */
+  /** Label passed to applyOps. Default 'Align'. */
   label?: string;
 }
 
@@ -118,7 +118,7 @@ export function useAlign<TPose>(
       geometry:
         optsRef.current.geometry ??
         (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>),
-      applyBatch: (ops, label) =>
+      applyOps: (ops, label) =>
         dispatchApplyBatch(adapterRef.current, ops, label ?? optsRef.current.label ?? 'Align'),
     });
     const unregs = actions.map((act) => reg.register(act));

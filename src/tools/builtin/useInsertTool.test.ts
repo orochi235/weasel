@@ -11,7 +11,7 @@ describe('useInsertTool', () => {
     snapshotSelection: vi.fn(),
     insertNode: vi.fn(),
     setSelection: vi.fn(),
-    applyBatch: vi.fn(),
+    applyOps: vi.fn(),
   } as any;
 
   const opts = {
@@ -43,7 +43,7 @@ describe('useInsertTool', () => {
   });
 
   it('drag.onEnd commits via the wrapped controller', () => {
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     const commitInsert = vi.fn(() => ({ id: 'new', x: 0, y: 0, width: 50, height: 50 }));
     const adapter = {
       getSelection: () => [],
@@ -52,17 +52,17 @@ describe('useInsertTool', () => {
       snapshotSelection: vi.fn(),
       insertNode: vi.fn(),
       setSelection: vi.fn(),
-      applyBatch,
+      applyOps,
     } as any;
     const { result } = renderHook(() => useInsertTool(adapter, {}));
     result.current.drag!.onStart!(pe(), makeCtx({ worldX: 0, worldY: 0 }));
     result.current.drag!.onMove!(pe(), makeCtx({ worldX: 50, worldY: 50 }));
     result.current.drag!.onEnd!(pe(), makeCtx({ worldX: 50, worldY: 50 }));
     expect(commitInsert).toHaveBeenCalledTimes(1);
-    expect(applyBatch).toHaveBeenCalledTimes(1);
+    expect(applyOps).toHaveBeenCalledTimes(1);
   });
 
-  it('routes commit dispatch through adapter.applyBatch (not ctx.applyBatch)', () => {
+  it('routes commit dispatch through adapter.applyOps (not ctx.applyOps)', () => {
     const adapterApplyBatch = vi.fn();
     const ctxApplyBatch = vi.fn();
     const adapter = {
@@ -72,12 +72,12 @@ describe('useInsertTool', () => {
       snapshotSelection: vi.fn(),
       insertNode: vi.fn(),
       setSelection: vi.fn(),
-      applyBatch: adapterApplyBatch,
+      applyOps: adapterApplyBatch,
     } as any;
     const { result } = renderHook(() => useInsertTool(adapter, {}));
-    result.current.drag!.onStart!(pe(), makeCtx({ worldX: 0, worldY: 0, applyBatch: ctxApplyBatch }));
-    result.current.drag!.onMove!(pe(), makeCtx({ worldX: 50, worldY: 50, applyBatch: ctxApplyBatch }));
-    result.current.drag!.onEnd!(pe(), makeCtx({ worldX: 50, worldY: 50, applyBatch: ctxApplyBatch }));
+    result.current.drag!.onStart!(pe(), makeCtx({ worldX: 0, worldY: 0, applyOps: ctxApplyBatch }));
+    result.current.drag!.onMove!(pe(), makeCtx({ worldX: 50, worldY: 50, applyOps: ctxApplyBatch }));
+    result.current.drag!.onEnd!(pe(), makeCtx({ worldX: 50, worldY: 50, applyOps: ctxApplyBatch }));
     expect(adapterApplyBatch).toHaveBeenCalledTimes(1);
     expect(ctxApplyBatch).not.toHaveBeenCalled();
   });
@@ -100,7 +100,7 @@ describe('useInsertTool — opt-in click + hitExisting', () => {
       snapshotSelection: vi.fn(),
       insertNode: vi.fn(),
       setSelection: vi.fn(),
-      applyBatch: vi.fn(),
+      applyOps: vi.fn(),
     } as any;
     const { result } = renderHook(() =>
       useInsertTool(adapter, {
@@ -118,7 +118,7 @@ describe('useInsertTool — opt-in click + hitExisting', () => {
       snapshotSelection: vi.fn(),
       insertNode: vi.fn(),
       setSelection: vi.fn(),
-      applyBatch: vi.fn(),
+      applyOps: vi.fn(),
     } as any;
     const { result } = renderHook(() => useInsertTool(adapter, {}));
     expect(result.current.pointer?.onClick).toBeUndefined();
@@ -133,7 +133,7 @@ describe('useInsertTool — opt-in click + hitExisting', () => {
       snapshotSelection: vi.fn(),
       insertNode: vi.fn(),
       setSelection: vi.fn(),
-      applyBatch: vi.fn(),
+      applyOps: vi.fn(),
     } as any;
     const set = vi.fn();
     const { result } = renderHook(() =>
@@ -160,7 +160,7 @@ describe('useInsertTool overlay', () => {
     snapshotSelection: vi.fn(),
     insertNode: vi.fn(),
     setSelection: vi.fn(),
-    applyBatch: vi.fn(),
+    applyOps: vi.fn(),
   } as any;
 
   const VIEW = { x: 0, y: 0, scale: 1 };

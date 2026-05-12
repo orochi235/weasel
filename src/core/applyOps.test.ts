@@ -1,7 +1,7 @@
 /**
  * Tests for `applyOpsTo` + `dispatchApplyBatch` — the fallback batch
  * applier used by every action hook when the consumer's adapter omits
- * an explicit `applyBatch`. The dispatch logic is short but appears in
+ * an explicit `applyOps`. The dispatch logic is short but appears in
  * every action surface; a regression here corrupts every undoable action.
  */
 import { describe, it, expect, vi } from 'vitest';
@@ -46,18 +46,18 @@ describe('applyOpsTo', () => {
 });
 
 describe('dispatchApplyBatch', () => {
-  it('forwards to adapter.applyBatch when present, with ops and label', () => {
-    const applyBatch = vi.fn();
-    const adapter = { applyBatch };
+  it('forwards to adapter.applyOps when present, with ops and label', () => {
+    const applyOps = vi.fn();
+    const adapter = { applyOps };
     const ops = [noOp(), noOp()];
     dispatchApplyBatch(adapter, ops, 'Move');
-    expect(applyBatch).toHaveBeenCalledOnce();
-    expect(applyBatch).toHaveBeenCalledWith(ops, 'Move');
+    expect(applyOps).toHaveBeenCalledOnce();
+    expect(applyOps).toHaveBeenCalledWith(ops, 'Move');
     // No direct op.apply should fire — the adapter is responsible.
     expect(ops[0].apply).not.toHaveBeenCalled();
   });
 
-  it('falls back to direct application when adapter.applyBatch is absent', () => {
+  it('falls back to direct application when adapter.applyOps is absent', () => {
     const adapter = {};
     const ops = [noOp(), noOp()];
     dispatchApplyBatch(adapter, ops);
@@ -68,8 +68,8 @@ describe('dispatchApplyBatch', () => {
   });
 
   it('label is optional', () => {
-    const applyBatch = vi.fn();
-    dispatchApplyBatch({ applyBatch }, [noOp()]);
-    expect(applyBatch).toHaveBeenCalledWith(expect.any(Array), undefined);
+    const applyOps = vi.fn();
+    dispatchApplyBatch({ applyOps }, [noOp()]);
+    expect(applyOps).toHaveBeenCalledWith(expect.any(Array), undefined);
   });
 });

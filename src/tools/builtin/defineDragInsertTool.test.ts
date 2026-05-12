@@ -99,7 +99,7 @@ describe('defineDragInsertTool', () => {
       worldY: 6,
       modifiers: { shift: false, alt: false, meta: false, ctrl: false },
       selection: { set: setSel } as any,
-      applyBatch: vi.fn(),
+      applyOps: vi.fn(),
       scratch: undefined,
     } as any;
     const verdict = result.current.tool.pointer!.onClick!({} as any, ctx);
@@ -109,7 +109,7 @@ describe('defineDragInsertTool', () => {
     expect(verdict).toBe('claim');
   });
 
-  it('captures ctx.applyBatch on drag.onStart and clears on onEnd', () => {
+  it('captures ctx.applyOps on drag.onStart and clears on onEnd', () => {
     const controller = makeController();
     const { result } = renderHook(() =>
       defineDragInsertTool({
@@ -121,18 +121,18 @@ describe('defineDragInsertTool', () => {
         defaultStyle: DEFAULT_STYLE,
       }),
     );
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     const ctx = {
       worldX: 0,
       worldY: 0,
       modifiers: { shift: false, alt: false, meta: false, ctrl: false },
       selection: { set: vi.fn() } as any,
-      applyBatch,
+      applyOps,
       scratch: undefined,
     } as any;
     result.current.tool.drag!.onStart!({} as any, ctx);
-    expect(result.current.applyBatchRef.current).toBe(applyBatch);
+    expect(result.current.applyOpsRef.current).toBe(applyOps);
     result.current.tool.drag!.onEnd!({} as any, ctx);
-    expect(result.current.applyBatchRef.current).toBeNull();
+    expect(result.current.applyOpsRef.current).toBeNull();
   });
 });

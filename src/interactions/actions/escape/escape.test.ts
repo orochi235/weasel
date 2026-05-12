@@ -10,7 +10,7 @@ function makeAdapter(initial: string[] = []) {
   const batches: { ops: Op[]; label: string }[] = [];
   const adapter: EscapeAdapter = {
     getSelection: () => selection,
-    applyBatch: (ops, label) => { batches.push({ ops, label: label ?? '' }); },
+    applyOps: (ops, label) => { batches.push({ ops, label: label ?? '' }); },
   };
   return { adapter, batches, setSel: (ids: string[]) => { selection = [...ids] as NodeId[]; } };
 }
@@ -25,7 +25,7 @@ describe('useEscape', () => {
     expect(helpers.batches[0].ops).toHaveLength(1);
   });
 
-  it('empty selection: no applyBatch', () => {
+  it('empty selection: no applyOps', () => {
     const helpers = makeAdapter([]);
     const { result } = renderHook(() => useEscape(helpers.adapter));
     act(() => { result.current.clearSelection(); });

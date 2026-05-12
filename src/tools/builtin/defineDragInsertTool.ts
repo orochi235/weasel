@@ -22,17 +22,17 @@ export interface DragInsertToolConfig<TNode extends { id: string }, TPose> {
   defaultStyle: { fill: string; stroke: string; dash: number[]; lineWidth: number };
   overlayStyle?: InsertOverlayStyle;
   hitExisting?: (point: { x: number; y: number }) => string | string[] | null;
-  /** Optional ref to receive the active tool ctx's `applyBatch` while a
+  /** Optional ref to receive the active tool ctx's `applyOps` while a
    *  pointer.onClick or drag.onStart→onEnd is in flight. Cleared on
    *  end/cancel. Wrappers that synthesize an adapter (e.g. `useTextTool`)
-   *  pass a ref they also read from in their `useInsert.applyBatch` option;
+   *  pass a ref they also read from in their `useInsert.applyOps` option;
    *  wrappers whose adapter owns dispatch (e.g. `useInsertTool`) omit. */
-  applyBatchRef?: MutableRefObject<ApplyBatch | null>;
+  applyOpsRef?: MutableRefObject<ApplyBatch | null>;
 }
 
 export interface DragInsertToolResult {
   tool: Tool<undefined>;
-  applyBatchRef: MutableRefObject<ApplyBatch | null>;
+  applyOpsRef: MutableRefObject<ApplyBatch | null>;
 }
 
 export function defineDragInsertTool<TNode extends { id: string }, TPose>(
@@ -41,7 +41,7 @@ export function defineDragInsertTool<TNode extends { id: string }, TPose>(
   const cfgRef = useRef(config);
   cfgRef.current = config;
   const internalRef = useRef<ApplyBatch | null>(null);
-  const applyBatchRef = config.applyBatchRef ?? internalRef;
+  const applyOpsRef = config.applyOpsRef ?? internalRef;
 
   const overlay = useMemo<RenderLayer<unknown>>(
     () => ({
@@ -73,10 +73,10 @@ export function defineDragInsertTool<TNode extends { id: string }, TPose>(
             pointer: {
               onClick: (_e, ctx) => {
                 if (applyHitExistingGate(ctx, hitExisting)) return 'claim';
-                applyBatchRef.current = ctx.applyBatch;
+                applyOpsRef.current = ctx.applyOps;
                 controller.start(ctx.worldX, ctx.worldY, ctx.modifiers);
                 controller.end();
-                applyBatchRef.current = null;
+                applyOpsRef.current = null;
                 return 'claim';
               },
             },
@@ -87,7 +87,7 @@ export function defineDragInsertTool<TNode extends { id: string }, TPose>(
             drag: {
               onStart: (_e, ctx) => {
                 if (applyHitExistingGate(ctx, hitExisting)) return 'claim';
-                applyBatchRef.current = ctx.applyBatch;
+                applyOpsRef.current = ctx.applyOps;
                 controller.start(ctx.worldX, ctx.worldY, ctx.modifiers);
                 return 'claim';
               },
@@ -97,12 +97,12 @@ export function defineDragInsertTool<TNode extends { id: string }, TPose>(
               },
               onEnd: () => {
                 controller.end();
-                applyBatchRef.current = null;
+                applyOpsRef.current = null;
                 return 'claim';
               },
               onCancel: () => {
                 controller.cancel();
-                applyBatchRef.current = null;
+                applyOpsRef.current = null;
               },
             },
           }
@@ -116,8 +116,8 @@ export function defineDragInsertTool<TNode extends { id: string }, TPose>(
     config.controller,
     config.hitExisting,
     overlay,
-    applyBatchRef,
+    applyOpsRef,
   ]);
 
-  return { tool, applyBatchRef };
+  return { tool, applyOpsRef };
 }

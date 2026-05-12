@@ -10,7 +10,7 @@ function makeCtx(): ToolCtx<undefined> {
     modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
     selection: { current: ['a'] } as any,
     adapter: {},
-    applyBatch: vi.fn(),
+    applyOps: vi.fn(),
     view: { x: 0, y: 0, scale: 1 },
     setView: () => {},
     canvasRect: new DOMRect(),
@@ -30,7 +30,7 @@ const translateXY = (p: XYPose, dx: number, dy: number): XYPose => ({ x: p.x + d
 const noopAdapter = {
   getSelection: () => ['a'],
   getPose: (): XYPose => ({ x: 0, y: 0 }),
-  applyBatch: vi.fn(),
+  applyOps: vi.fn(),
 } as any;
 
 describe('useNudgeTool', () => {
@@ -53,11 +53,11 @@ describe('useNudgeTool', () => {
   });
 
   it('translates by step on plain arrow; by shiftStep on shift+arrow', () => {
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     const adapter = {
       getSelection: () => ['a'],
       getPose: (): XYPose => ({ x: 10, y: 10 }),
-      applyBatch,
+      applyOps,
     } as any;
     const { result } = renderHook(() =>
       useNudgeTool<XYPose>(adapter, {
@@ -68,12 +68,12 @@ describe('useNudgeTool', () => {
     );
     result.current.keyboard!.onDown!(keyEvent('ArrowRight'), makeCtx());
     result.current.keyboard!.onDown!(keyEvent('ArrowRight', true), makeCtx());
-    expect(applyBatch).toHaveBeenCalledTimes(2);
+    expect(applyOps).toHaveBeenCalledTimes(2);
     // Both calls should produce one op for the single selected item
-    expect(applyBatch.mock.calls[0][0]).toHaveLength(1);
-    expect(applyBatch.mock.calls[1][0]).toHaveLength(1);
+    expect(applyOps.mock.calls[0][0]).toHaveLength(1);
+    expect(applyOps.mock.calls[1][0]).toHaveLength(1);
     // Labels default to 'Nudge'
-    expect(applyBatch.mock.calls[0][1]).toBe('Nudge');
-    expect(applyBatch.mock.calls[1][1]).toBe('Nudge');
+    expect(applyOps.mock.calls[0][1]).toBe('Nudge');
+    expect(applyOps.mock.calls[1][1]).toBe('Nudge');
   });
 });

@@ -7,7 +7,7 @@ import type { Op } from 'core/ops/types';
 interface RectPose { x: number; y: number; width: number; height: number }
 function makeAdapter(initial: Map<string, RectPose>) {
   const setPose = vi.fn((id: string, pose: RectPose) => initial.set(id, pose));
-  const applyBatch = vi.fn((_ops: Op[], _label: string) => {});
+  const applyOps = vi.fn((_ops: Op[], _label: string) => {});
   return {
     base: {
       getNodes: () => [],
@@ -21,10 +21,10 @@ function makeAdapter(initial: Map<string, RectPose>) {
       insertNode: () => {},
       removeNode: () => {},
       setSelection: () => {},
-      applyBatch,
+      applyOps,
     },
     setPose,
-    applyBatch,
+    applyOps,
   };
 }
 
@@ -62,7 +62,7 @@ describe('animateOnSetPose', () => {
   it('records exactly one transform op for the animation', () => {
     const clock = makeClock();
     const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 10, height: 10 }]]);
-    const { base, applyBatch } = makeAdapter(initial);
+    const { base, applyOps } = makeAdapter(initial);
     const { result } = renderHook(() => useAnimator(clock));
     const wrapped = animateOnSetPose(base as never, result.current, { ms: 50 });
     act(() => {
@@ -70,7 +70,7 @@ describe('animateOnSetPose', () => {
     });
     act(() => clock.advance(0));
     act(() => clock.advance(50));
-    expect(applyBatch).toHaveBeenCalledTimes(1);
+    expect(applyOps).toHaveBeenCalledTimes(1);
   });
 
   it('writes through directly when a tween is already in flight for the same id', () => {
@@ -84,17 +84,17 @@ describe('animateOnSetPose', () => {
     // the in-flight tween to finish naturally.
     const clock = makeClock();
     const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 10, height: 10 }]]);
-    const { base, setPose, applyBatch } = makeAdapter(initial);
+    const { base, setPose, applyOps } = makeAdapter(initial);
     const { result } = renderHook(() => useAnimator(clock));
     const wrapped = animateOnSetPose(base as never, result.current, { ms: 100 });
-    // First call: starts a tween. applyBatch records exactly one op for it.
+    // First call: starts a tween. applyOps records exactly one op for it.
     act(() => {
       wrapped.setPose('a', { x: 100, y: 0, width: 10, height: 10 });
     });
-    expect(applyBatch).toHaveBeenCalledTimes(1);
+    expect(applyOps).toHaveBeenCalledTimes(1);
     expect(result.current.isActive('pose:a')).toBe(true);
     setPose.mockClear();
-    applyBatch.mockClear();
+    applyOps.mockClear();
 
     // Second call (mid-tween): writes through. No new tween, no new op.
     act(() => {
@@ -102,7 +102,7 @@ describe('animateOnSetPose', () => {
     });
     expect(setPose).toHaveBeenCalledTimes(1);
     expect(setPose).toHaveBeenCalledWith('a', { x: 110, y: 0, width: 10, height: 10 });
-    expect(applyBatch).not.toHaveBeenCalled();
+    expect(applyOps).not.toHaveBeenCalled();
   });
 
   it('writes through when called from inside another animation tick (no wrap-tween storm)', () => {
@@ -116,7 +116,7 @@ describe('animateOnSetPose', () => {
     // regardless of whether a wrap-tween is currently in flight.
     const clock = makeClock();
     const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 10, height: 10 }]]);
-    const { base, setPose, applyBatch } = makeAdapter(initial);
+    const { base, setPose, applyOps } = makeAdapter(initial);
     const { result } = renderHook(() => useAnimator(clock));
     const wrapped = animateOnSetPose(base as never, result.current, { ms: 100 });
 
@@ -134,7 +134,7 @@ describe('animateOnSetPose', () => {
         onTick: (x) => {
           writes.push(x);
           // This is the re-entrant call. Without the isTicking() guard,
-          // each call would spawn a fresh tween → 1 + N applyBatch calls.
+          // each call would spawn a fresh tween → 1 + N applyOps calls.
           wrapped.setPose('a', { x, y: 0, width: 10, height: 10 });
         },
       });
@@ -143,9 +143,9 @@ describe('animateOnSetPose', () => {
     for (let i = 0; i < 5; i++) act(() => clock.advance(16));
     // Decay should have ticked at least a few times.
     expect(writes.length).toBeGreaterThan(0);
-    // CRITICAL: zero applyBatch calls — every wrapped.setPose during the
+    // CRITICAL: zero applyOps calls — every wrapped.setPose during the
     // decay's onTick wrote through to base directly.
-    expect(applyBatch).not.toHaveBeenCalled();
+    expect(applyOps).not.toHaveBeenCalled();
     // setPose on the base adapter should equal the number of decay ticks.
     expect(setPose.mock.calls.length).toBe(writes.length);
   });
@@ -153,7 +153,7 @@ describe('animateOnSetPose', () => {
   it('shouldAnimate returning false writes through immediately and emits no op', () => {
     const clock = makeClock();
     const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 10, height: 10 }]]);
-    const { base, setPose, applyBatch } = makeAdapter(initial);
+    const { base, setPose, applyOps } = makeAdapter(initial);
     const { result } = renderHook(() => useAnimator(clock));
     const wrapped = animateOnSetPose(base as never, result.current, {
       ms: 100,
@@ -163,6 +163,6 @@ describe('animateOnSetPose', () => {
       wrapped.setPose('a', { x: 7, y: 0, width: 10, height: 10 });
     });
     expect(setPose).toHaveBeenCalledWith('a', { x: 7, y: 0, width: 10, height: 10 });
-    expect(applyBatch).not.toHaveBeenCalled();
+    expect(applyOps).not.toHaveBeenCalled();
   });
 });

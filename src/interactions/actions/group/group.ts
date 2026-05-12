@@ -14,7 +14,7 @@ export interface GroupActionAdapter extends GroupAdapter {
   /** Read current selection. */
   getSelection(): NodeId[];
   /** Optional: op-batch entry point. When omitted, ops apply directly. */
-  applyBatch?(ops: Op[], label: string): void;
+  applyOps?(ops: Op[], label: string): void;
 }
 
 /** Options for `useGroup`. */
@@ -24,7 +24,7 @@ export interface UseGroupOptions {
   enableKeyboard?: boolean;
   /** Mint the id for the new group. Default: `g_${Date.now()}_${random}`. */
   newGroupId?: () => string;
-  /** Label passed to applyBatch. Default 'Group'. */
+  /** Label passed to applyOps. Default 'Group'. */
   label?: string;
   /** Minimum selection size that produces a group. Default 2 — single-id
    *  selections are a no-op since wrapping one object adds no structure. */
@@ -97,7 +97,7 @@ export interface UseUngroupOptions {
   /** Auto-bind Mod+Shift+G on document and register an `ungroup` action into
    *  any surrounding `<ActionsProvider>`. Default true. */
   enableKeyboard?: boolean;
-  /** Label passed to applyBatch. Default 'Ungroup'. */
+  /** Label passed to applyOps. Default 'Ungroup'. */
   label?: string;
 }
 

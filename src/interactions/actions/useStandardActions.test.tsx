@@ -25,7 +25,7 @@ function makeDeps(overrides: Partial<StandardActionsDeps<Pose>> = {}): StandardA
     setSelection: () => {},
     listAll: () => [],
     getPose: () => ({ x: 0, y: 0, width: 0, height: 0 }),
-    applyBatch: () => {},
+    applyOps: () => {},
     translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
     ...overrides,
   };
@@ -231,14 +231,14 @@ describe('useStandardActions', () => {
     expect(setSelection).toHaveBeenCalledWith(['a', 'b', 'c']);
   });
 
-  it('keydown applyBatch reaches the consumer for nudge', () => {
-    const applyBatch = vi.fn();
+  it('keydown applyOps reaches the consumer for nudge', () => {
+    const applyOps = vi.fn();
     const getSelection = vi.fn(() => [asNodeId('n1')]);
     render(
       <ActionsProvider>
         <Host
           deps={makeDeps({
-            applyBatch,
+            applyOps,
             getSelection,
             getPose: () => ({ x: 5, y: 5, width: 10, height: 10 }),
           })}
@@ -246,8 +246,8 @@ describe('useStandardActions', () => {
       </ActionsProvider>,
     );
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
-    expect(applyBatch).toHaveBeenCalled();
-    expect(applyBatch.mock.calls[0][1]).toBe('Nudge');
+    expect(applyOps).toHaveBeenCalled();
+    expect(applyOps.mock.calls[0][1]).toBe('Nudge');
   });
 
   it('unmount unregisters all actions', () => {

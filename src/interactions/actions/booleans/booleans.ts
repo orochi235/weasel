@@ -51,7 +51,7 @@ export interface BooleansAdapter {
    * lands wherever the adapter's plain `insertNode` defaults to.
    */
   getZOrder?(id: NodeId): BooleanZOrder | undefined;
-  applyBatch?(ops: Op[], label?: string): void;
+  applyOps?(ops: Op[], label?: string): void;
   setSelection?(ids: NodeId[]): void;
   insertNode?(node: { id: string }): void;
   removeNode?(id: string): void;

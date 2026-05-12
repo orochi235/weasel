@@ -9,7 +9,7 @@ import { ActionDisabledReason } from '../registry';
 export interface DuplicateDeps {
   getSelection: () => NodeId[];
   cloneNode: (id: NodeId, offset: { dx: number; dy: number }) => { id: NodeId };
-  applyBatch: (ops: Op[], label?: string) => void;
+  applyOps: (ops: Op[], label?: string) => void;
   /** Per-clone translation. Default {dx:8, dy:8}. */
   offset?: { dx: number; dy: number };
 }
@@ -34,7 +34,7 @@ export function defaultDuplicateAction(deps: DuplicateDeps): Action {
         ...created.map((obj) => createInsertOp({ node: obj })),
         createSetSelectionOp({ from: sel, to: created.map((c) => c.id) }),
       ];
-      deps.applyBatch(ops, 'Duplicate');
+      deps.applyOps(ops, 'Duplicate');
     },
     enabled: () => (deps.getSelection().length > 0 ? true : ActionDisabledReason.SelectionRequired),
   };

@@ -150,7 +150,7 @@ function InteractivePanel() {
       setSelection: (ids: NodeId[]) => {
         selectionRef.current.set(ids);
       },
-      applyBatch: (ops: Op[]) => {
+      applyOps: (ops: Op[]) => {
         for (const op of ops) op.apply(adapterRef.current!);
       },
     };

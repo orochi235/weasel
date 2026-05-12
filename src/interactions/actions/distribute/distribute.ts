@@ -19,7 +19,7 @@ export type DistributeMode = 'centers' | 'gaps';
 export interface DistributeAdapter<TPose> {
   getSelection(): NodeId[];
   getPose(id: NodeId): TPose;
-  applyBatch?(ops: Op[], label?: string): void;
+  applyOps?(ops: Op[], label?: string): void;
 }
 
 /** Options for `useDistribute`. */
@@ -29,7 +29,7 @@ export interface UseDistributeOptions<TPose> {
   geometry?: PoseDescriptor<TPose>;
   /** Default mode when `distribute(axis)` is called without one. Default 'centers'. */
   defaultMode?: DistributeMode;
-  /** Label passed to applyBatch. Default 'Distribute'. */
+  /** Label passed to applyOps. Default 'Distribute'. */
   label?: string;
 }
 
@@ -133,7 +133,7 @@ export function useDistribute<TPose>(
         optsRef.current.geometry ??
         (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>),
       mode: optsRef.current.defaultMode ?? 'centers',
-      applyBatch: (ops, label) =>
+      applyOps: (ops, label) =>
         dispatchApplyBatch(adapterRef.current, ops, label ?? optsRef.current.label ?? 'Distribute'),
     });
     const unregs = actions.map((act) => reg.register(act));

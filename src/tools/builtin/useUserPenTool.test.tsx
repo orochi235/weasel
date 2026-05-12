@@ -44,7 +44,7 @@ function makeCtx<S>(scratch: S, over: Partial<ToolCtx<S>> = {}): ToolCtx<S> {
     modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
     selection: { current: [], applyClick: vi.fn() } as unknown as ToolCtx['selection'],
     adapter: {},
-    applyBatch: vi.fn(),
+    applyOps: vi.fn(),
     view: { x: 0, y: 0, scale: 1 },
     setView: () => {},
     canvasRect: new DOMRect(),

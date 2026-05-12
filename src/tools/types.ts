@@ -34,7 +34,7 @@ export interface ToolCtx<TScratch = unknown> {
   /** Adapter/scene access — opaque at this layer; tools that need it
    *  cast to a known shape. Phase 1 doesn't constrain this. */
   adapter: unknown;
-  applyBatch: (ops: Op[], label: string) => void;
+  applyOps: (ops: Op[], label: string) => void;
   /** Current viewport. Reflects camera-position semantics — see
    *  `View` JSDoc. Phase 2b is pan-only. */
   view: View;

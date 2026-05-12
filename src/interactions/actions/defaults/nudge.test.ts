@@ -16,7 +16,7 @@ function makeDeps() {
     getSelection: () => [asNodeId('a')],
     getPose: (_id: string): Pose => ({ x: 10, y: 10, width: 1, height: 1 }),
     translatePose: (p: Pose, dx: number, dy: number) => ({ ...p, x: p.x + dx, y: p.y + dy }),
-    applyBatch: vi.fn(),
+    applyOps: vi.fn(),
     step: 1,
     shiftStep: 10,
   };
@@ -58,7 +58,7 @@ describe('defaultNudgeActions', () => {
     const deps = makeDeps();
     const a = defaultNudgeActions(deps).find(x => x.id === 'nudge.up')!;
     a.run();
-    const ops = deps.applyBatch.mock.calls[0][0];
+    const ops = deps.applyOps.mock.calls[0][0];
     expect(applyOp(ops[0]).pose).toMatchObject({ x: 10, y: 9 });
   });
 
@@ -66,7 +66,7 @@ describe('defaultNudgeActions', () => {
     const deps = makeDeps();
     const a = defaultNudgeActions(deps).find(x => x.id === 'nudge.up.big')!;
     a.run();
-    const ops = deps.applyBatch.mock.calls[0][0];
+    const ops = deps.applyOps.mock.calls[0][0];
     expect(applyOp(ops[0]).pose).toMatchObject({ x: 10, y: 0 });
   });
 
@@ -74,7 +74,7 @@ describe('defaultNudgeActions', () => {
     const deps = makeDeps();
     const a = defaultNudgeActions(deps).find(x => x.id === 'nudge.right')!;
     a.run();
-    const ops = deps.applyBatch.mock.calls[0][0];
+    const ops = deps.applyOps.mock.calls[0][0];
     expect(applyOp(ops[0]).pose).toMatchObject({ x: 11, y: 10 });
   });
 
@@ -82,7 +82,7 @@ describe('defaultNudgeActions', () => {
     const deps = { ...makeDeps(), getSelection: () => [] };
     const a = defaultNudgeActions(deps).find(x => x.id === 'nudge.up')!;
     a.run();
-    expect(deps.applyBatch).not.toHaveBeenCalled();
+    expect(deps.applyOps).not.toHaveBeenCalled();
   });
 
   it('default step=1, shiftStep=10 when not provided', () => {
@@ -90,13 +90,13 @@ describe('defaultNudgeActions', () => {
       getSelection: () => [asNodeId('a')],
       getPose: () => ({ x: 0, y: 0, width: 1, height: 1 }),
       translatePose: (p: Pose, dx: number, dy: number) => ({ ...p, x: p.x + dx, y: p.y + dy }),
-      applyBatch: vi.fn(),
+      applyOps: vi.fn(),
     };
     const acts = defaultNudgeActions<Pose>(deps);
     acts.find(a => a.id === 'nudge.right')!.run();
-    expect(applyOp(deps.applyBatch.mock.calls[0][0][0]).pose).toMatchObject({ x: 1 });
-    deps.applyBatch.mockClear();
+    expect(applyOp(deps.applyOps.mock.calls[0][0][0]).pose).toMatchObject({ x: 1 });
+    deps.applyOps.mockClear();
     acts.find(a => a.id === 'nudge.right.big')!.run();
-    expect(applyOp(deps.applyBatch.mock.calls[0][0][0]).pose).toMatchObject({ x: 10 });
+    expect(applyOp(deps.applyOps.mock.calls[0][0][0]).pose).toMatchObject({ x: 10 });
   });
 });

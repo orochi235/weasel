@@ -18,7 +18,7 @@ function makeCtx<S = unknown>(view: Omit<View, 'scale'> & { scale?: number }, se
     modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
     selection: {} as never,
     adapter: null,
-    applyBatch: () => {},
+    applyOps: () => {},
     view: { ...view, scale: view.scale ?? 1 },
     setView,
     canvasRect: new DOMRect(),

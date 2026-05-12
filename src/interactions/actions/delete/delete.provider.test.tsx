@@ -13,7 +13,7 @@ function makeAdapter() {
     getSelection: () => [asNodeId('a')],
     getNode: (id) => ({ id }),
     setSelection: () => {},
-    applyBatch: (ops, label) => { batches.push({ ops, label }); },
+    applyOps: (ops, label) => { batches.push({ ops, label }); },
   };
   return { adapter, batches };
 }

@@ -15,7 +15,7 @@ interface FakeAdapter {
   getParent(id: string): string | null;
   getChildren(parentId: string | null): string[];
   setChildOrder(parentId: string | null, ids: string[]): void;
-  applyBatch(ops: Op[], label: string): void;
+  applyOps(ops: Op[], label: string): void;
 }
 
 function makeAdapter(): FakeAdapter {
@@ -28,7 +28,7 @@ function makeAdapter(): FakeAdapter {
     getParent(id) { return this.parents[id] ?? null; },
     getChildren(parentId) { return (this.children[parentId ?? 'ROOT'] ?? []).slice(); },
     setChildOrder(parentId, ids) { this.children[parentId ?? 'ROOT'] = ids.slice(); },
-    applyBatch(ops, label) {
+    applyOps(ops, label) {
       this.applied.push({ ops, label });
       for (const op of ops) op.apply(this);
     },

@@ -12,7 +12,7 @@ export interface AlignDeps<TPose> {
   getSelection: () => NodeId[];
   getPose: (id: NodeId) => TPose;
   geometry: PoseDescriptor<TPose>;
-  applyBatch: (ops: Op[], label?: string) => void;
+  applyOps: (ops: Op[], label?: string) => void;
 }
 
 const EDGES: readonly AlignEdge[] = ['left', 'right', 'top', 'bottom', 'center-x', 'center-y'];
@@ -67,7 +67,7 @@ export function defaultAlignActions<TPose>(deps: AlignDeps<TPose>): Action[] {
         const to = translatePoseViaDescriptor(from, dx, dy, deps.geometry);
         ops.push(createTransformOp<TPose>({ id: sel[i], from, to }));
       }
-      if (ops.length > 0) deps.applyBatch(ops, 'Align');
+      if (ops.length > 0) deps.applyOps(ops, 'Align');
     },
     enabled: () => (deps.getSelection().length >= 2 ? true : ActionDisabledReason.SelectionRequired),
   }));

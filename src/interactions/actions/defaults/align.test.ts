@@ -17,7 +17,7 @@ function makeDeps(poses: Record<string, Pose>) {
     getSelection: () => Object.keys(poses).map((k) => asNodeId(k)),
     getPose: (id: string): Pose => poses[id],
     geometry: RECT_POSE_DESCRIPTOR as unknown as import('../../gestures/resize/geometry').PoseDescriptor<Pose>,
-    applyBatch: vi.fn(),
+    applyOps: vi.fn(),
   };
 }
 
@@ -40,8 +40,8 @@ describe('defaultAlignActions', () => {
       b: { x: 20, y: 50, width: 10, height: 10 },
     });
     defaultAlignActions(deps).find((a) => a.id === 'align.left')!.run();
-    expect(deps.applyBatch).toHaveBeenCalledOnce();
-    const [ops, label] = deps.applyBatch.mock.calls[0];
+    expect(deps.applyOps).toHaveBeenCalledOnce();
+    const [ops, label] = deps.applyOps.mock.calls[0];
     expect(label).toBe('Align');
     expect(ops).toHaveLength(1); // only `b` moves; `a` already at union.left
     expect(applyOp(ops[0]).pose).toMatchObject({ x: 5, y: 50 });
@@ -50,7 +50,7 @@ describe('defaultAlignActions', () => {
   it('run() is a no-op on <2 selection', () => {
     const deps = makeDeps({ a: { x: 0, y: 0, width: 10, height: 10 } });
     defaultAlignActions(deps).find((a) => a.id === 'align.left')!.run();
-    expect(deps.applyBatch).not.toHaveBeenCalled();
+    expect(deps.applyOps).not.toHaveBeenCalled();
   });
 
   it('enabled: SelectionRequired when <2, true when ≥2', () => {

@@ -17,7 +17,7 @@ function makeRectAdapter(initial: string[] = [], poses: Record<string, RectPose>
   const adapter: FlipAdapter<RectPose> = {
     getSelection: () => selection,
     getPose: (id) => poses[id] ?? { x: 0, y: 0, width: 0, height: 0 },
-    applyBatch: (ops, label) => { batches.push({ ops, label: label ?? '' }); },
+    applyOps: (ops, label) => { batches.push({ ops, label: label ?? '' }); },
   };
   return { adapter, batches, setSel: (ids: string[]) => { selection = [...ids] as NodeId[]; } };
 }
@@ -208,7 +208,7 @@ describe('flipPoseViaDescriptor (composePath multi-contour)', () => {
 });
 
 describe('useFlip', () => {
-  it('empty selection: no applyBatch', () => {
+  it('empty selection: no applyOps', () => {
     const helpers = makeRectAdapter([]);
     const { result } = renderHook(() => useFlip(helpers.adapter));
     act(() => { result.current.flip('x'); });
@@ -260,7 +260,7 @@ describe('useFlip', () => {
     const adapter: FlipAdapter<Path> = {
       getSelection: () => selection,
       getPose: (id) => (id === 'a' ? triA : triB),
-      applyBatch: (ops, label) => batches.push({ ops, label: label ?? '' }),
+      applyOps: (ops, label) => batches.push({ ops, label: label ?? '' }),
     };
     const { result } = renderHook(() => useFlip<Path>(adapter, { geometry: pathPoseDescriptor }));
     act(() => { result.current.flipHorizontal(); });
@@ -355,7 +355,7 @@ describe('useFlip', () => {
       const adapter: FlipAdapter<Path> = {
         getSelection: () => selection,
         getPose: (id) => (id === 'a' ? triA : triB),
-        applyBatch: (ops, label) => batches.push({ ops, label: label ?? '' }),
+        applyOps: (ops, label) => batches.push({ ops, label: label ?? '' }),
       };
       const { result } = renderHook(() =>
         useFlip<Path>(adapter, { geometry: pathPoseDescriptor, pivot: 'union' }),

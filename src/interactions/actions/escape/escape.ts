@@ -11,8 +11,8 @@ export interface EscapeAdapter {
   /** Read current selection. */
   getSelection(): NodeId[];
   /** Optional: op-batch entry point. When omitted, ops apply directly. */
-  applyBatch?(ops: Op[], label?: string): void;
-  /** Mutator wired by `setSelection` op when `applyBatch` is omitted. */
+  applyOps?(ops: Op[], label?: string): void;
+  /** Mutator wired by `setSelection` op when `applyOps` is omitted. */
   setSelection?(ids: NodeId[]): void;
 }
 
@@ -20,7 +20,7 @@ export interface EscapeAdapter {
 export interface UseEscapeOptions {
   /** Auto-bind Escape on document. Default true. */
   enableKeyboard?: boolean;
-  /** Label passed to applyBatch. Default 'Clear selection'. */
+  /** Label passed to applyOps. Default 'Clear selection'. */
   label?: string;
 }
 

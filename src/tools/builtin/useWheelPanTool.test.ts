@@ -10,7 +10,7 @@ function makeCtx(view: View, setView: (v: View) => void): ToolCtx<null> {
     modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
     selection: {} as never,
     adapter: null,
-    applyBatch: () => {},
+    applyOps: () => {},
     view, setView,
     canvasRect: new DOMRect(),
     scratch: null,

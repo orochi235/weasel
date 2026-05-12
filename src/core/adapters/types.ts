@@ -55,7 +55,7 @@ export interface SceneAdapter<TNode extends { id: string }, TPose> {
   // Op submission (gesture commit point). Optional — when omitted, hooks
   // fall back to a built-in dispatcher that applies each op against the
   // adapter directly. Apps with custom history integration override this.
-  applyBatch?(ops: Op[], label: string): void;
+  applyOps?(ops: Op[], label?: string): void;
 }
 
 /**
@@ -76,8 +76,8 @@ export interface MoveAdapter<TNode extends { id: string }, TPose> {
   /** Optional. Used only by reparent ops (e.g. drag-into-container drops via
    *  layout strategies). Flat scenes that never reparent may omit. */
   setParent?(id: string, parentId: string | null): void;
-  /** Optional: see SceneAdapter.applyBatch. */
-  applyBatch?(ops: Op[], label: string): void;
+  /** Optional: see SceneAdapter.applyOps. */
+  applyOps?(ops: Op[], label: string): void;
   findSnapTarget?(
     draggedId: string,
     worldX: number,
@@ -110,8 +110,8 @@ export interface ResizeAdapter<
   getNode(id: string): TNode | undefined;
   getPose(id: string): TPose;
   setPose(id: string, pose: TPose): void;
-  /** Optional: see SceneAdapter.applyBatch. */
-  applyBatch?(ops: Op[], label: string): void;
+  /** Optional: see SceneAdapter.applyOps. */
+  applyOps?(ops: Op[], label: string): void;
 }
 
 /**
@@ -126,17 +126,17 @@ export interface RotateAdapter<
   getNode(id: string): TNode | undefined;
   getPose(id: string): TPose;
   setPose(id: string, pose: TPose): void;
-  /** Optional: see SceneAdapter.applyBatch. */
-  applyBatch?(ops: Op[], label: string): void;
+  /** Optional: see SceneAdapter.applyOps. */
+  applyOps?(ops: Op[], label: string): void;
 }
 
 /**
  * Narrow adapter for `useAreaSelect`. Transient: no checkpoint, no
- * history. The hook calls `applyOps(ops)` instead of `applyBatch(ops, label)`.
+ * history. The hook calls `applyOps(ops)` instead of `applyOps(ops, label)`.
  */
 /**
  * Narrow adapter for `useAreaSelect`. Transient: no checkpoint, no
- * history. The hook calls `applyOps(ops)` instead of `applyBatch(ops, label)`.
+ * history. The hook calls `applyOps(ops)` instead of `applyOps(ops, label)`.
  *
  * All fields are **optional** — area-select is opt-in. `useSelectTool` only
  * wires the default marquee behavior when `hitTestArea`, `getSelection`,
@@ -152,8 +152,10 @@ export interface AreaSelectAdapter {
   getSelection?(): string[];
   /** Mutator wired by `setSelection` op. */
   setSelection?(ids: string[]): void;
-  /** Apply ops without checkpointing or pushing a history entry. */
-  applyOps?(ops: Op[]): void;
+  /** Apply ops without checkpointing or pushing a history entry. The optional
+   *  `label` parameter is accepted (and ignored by transient implementations)
+   *  so that this signature is compatible with `MoveAdapter.applyOps`. */
+  applyOps?(ops: Op[], label?: string): void;
 }
 
 /**
@@ -207,8 +209,8 @@ export interface InsertAdapter<TNode extends { id: string }> {
   insertNode(node: TNode): void;
   /** Mutator wired by `setSelection` ops batched alongside paste. */
   setSelection(ids: string[]): void;
-  /** Optional: see SceneAdapter.applyBatch. */
-  applyBatch?(ops: Op[], label: string): void;
+  /** Optional: see SceneAdapter.applyOps. */
+  applyOps?(ops: Op[], label: string): void;
   /** Returns the current selection. Used by clone behaviors. */
   getSelection(): string[];
 }

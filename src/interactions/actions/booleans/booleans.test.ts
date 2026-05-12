@@ -42,7 +42,7 @@ function makeAdapter(nodes: { id: NodeId; path: Path }[]): {
     insertNode: (node) => state.inserted.push(node as any),
     removeNode: (id) => state.removed.push(id),
     setSelection: (ids) => { state.selection = ids; },
-    applyBatch: (ops, label) => {
+    applyOps: (ops, label) => {
       state.batches.push({ ops, label: label ?? '' });
       for (const op of ops) op.apply(adapter);
     },
@@ -173,7 +173,7 @@ function makeZOrderedAdapter(initialOrder: { id: string; path: Path }[]) {
     setChildOrder: (_parentId, ids) => { order.length = 0; order.push(...ids); },
     getParent: (_id) => null,
     setSelection: () => {},
-    applyBatch: (ops) => {
+    applyOps: (ops) => {
       for (const op of ops) op.apply(adapter);
     },
   };

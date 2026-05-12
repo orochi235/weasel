@@ -20,7 +20,7 @@ function makeAdapter(initialGroups: Group[] = []) {
     removeGroup: (id) => { groups.delete(id); },
     addToGroup: () => {},
     removeFromGroup: () => {},
-    applyBatch: (ops, label) => { batches.push({ ops, label }); },
+    applyOps: (ops, label) => { batches.push({ ops, label }); },
   };
   return {
     adapter,

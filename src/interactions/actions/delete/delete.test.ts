@@ -12,7 +12,7 @@ function makeAdapter(initial: string[] = []) {
     getSelection: () => selection,
     getNode: (id) => ({ id }),
     setSelection: (ids) => { selection = [...ids]; },
-    applyBatch: (ops, label) => { batches.push({ ops, label }); },
+    applyOps: (ops, label) => { batches.push({ ops, label }); },
   };
   return {
     adapter,
@@ -42,7 +42,7 @@ describe('useDelete', () => {
     expect(returned).toEqual(['x', 'y', 'z']);
   });
 
-  it('empty selection: no applyBatch, returns []', () => {
+  it('empty selection: no applyOps, returns []', () => {
     const helpers = makeAdapter([]);
     const { result } = renderHook(() => useDelete(helpers.adapter));
     let returned: string[] = ['sentinel'];

@@ -22,7 +22,7 @@ const baseCtx = (worldX: number, worldY: number) => ({
   view: VIEW,
   selection: { current: [], get: () => [], set: () => {}, add: () => {}, remove: () => {}, toggle: () => {}, contains: () => false, applyClick: () => {}, adapterMethods: {} },
   adapter: undefined,
-  applyBatch: () => {},
+  applyOps: () => {},
   setView: () => {},
   canvasRect: { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0 } as DOMRect,
   scratch: undefined,

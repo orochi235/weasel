@@ -9,7 +9,7 @@ export interface NudgeDeps<TPose> {
   getSelection: () => NodeId[];
   getPose: (id: NodeId) => TPose;
   translatePose: (pose: TPose, dx: number, dy: number) => TPose;
-  applyBatch: (ops: Op[], label?: string) => void;
+  applyOps: (ops: Op[], label?: string) => void;
   step?: number;
   shiftStep?: number;
 }
@@ -57,7 +57,7 @@ export function defaultNudgeActions<TPose>(deps: NudgeDeps<TPose>): Action[] {
           const to = deps.translatePose(from, dx, dy);
           return createTransformOp<TPose>({ id: nid, from, to });
         });
-        deps.applyBatch(ops, 'Nudge');
+        deps.applyOps(ops, 'Nudge');
       },
       enabled: () => (deps.getSelection().length > 0 ? true : ActionDisabledReason.SelectionRequired),
     };

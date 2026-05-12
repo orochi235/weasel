@@ -12,7 +12,7 @@ export interface DistributeDeps<TPose> {
   getSelection: () => NodeId[];
   getPose: (id: NodeId) => TPose;
   geometry: PoseDescriptor<TPose>;
-  applyBatch: (ops: Op[], label?: string) => void;
+  applyOps: (ops: Op[], label?: string) => void;
   /** Mode used by the registered actions. Default `'centers'`. Override per-call
    *  via direct `useDistribute(...).distribute(axis, mode)` if needed. */
   mode?: DistributeMode;
@@ -89,7 +89,7 @@ export function defaultDistributeActions<TPose>(deps: DistributeDeps<TPose>): Ac
     label: LABEL_FOR[axis],
     run: () => {
       const ops = buildOps(axis, deps.mode ?? 'centers', deps);
-      if (ops.length > 0) deps.applyBatch(ops, 'Distribute');
+      if (ops.length > 0) deps.applyOps(ops, 'Distribute');
     },
     enabled: () => (deps.getSelection().length >= 3 ? true : ActionDisabledReason.SelectionRequired),
   }));

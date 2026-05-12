@@ -24,7 +24,7 @@
  *     `useNudge`, `useReorder`, `useClipboard`,
  *     `useGroup`, `useUngroup`, `useUndoRedo`.
  *   - Op model & history: `Op`, `createInsertOp` / `createDeleteOp` /
- *     `createTransformOp` / etc., `createHistory`, `applyBatch`-style entry
+ *     `createTransformOp` / etc., `createHistory`, `applyOps`-style entry
  *     wired by every hook.
  *   - Units: `UnitSystem`, `UnitValue`, `IMPERIAL_INCHES`, `METRIC_MM`,
  *     `PIXELS`, `resolveUnit`, `formatUnit`.

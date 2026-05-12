@@ -11,7 +11,7 @@ function makeCtx(over: Partial<ToolCtx> = {}): ToolCtx {
     modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
     selection: { get: () => [], set: () => {}, add: () => {}, remove: () => {}, toggle: () => {}, clear: () => {}, applyClick: () => {} } as never,
     adapter: null,
-    applyBatch: () => {},
+    applyOps: () => {},
     view: { x: 0, y: 0, scale: 1 },
     setView: () => {},
     canvasRect: new DOMRect(),

@@ -9,7 +9,7 @@ function makeCtx(): ToolCtx<undefined> {
     modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
     selection: { current: ['a'] } as any,
     adapter: {},
-    applyBatch: vi.fn(),
+    applyOps: vi.fn(),
     view: { x: 0, y: 0, scale: 1 },
     setView: () => {},
     canvasRect: new DOMRect(),
@@ -32,7 +32,7 @@ describe('useDuplicateTool', () => {
   });
 
   it('claims meta+d / ctrl+d; passes plain d', () => {
-    const adapter = { getSelection: () => ['a'], getPose: () => ({}), cloneNode: (_id: string) => ({ id: 'a2' }), applyBatch: vi.fn() } as any;
+    const adapter = { getSelection: () => ['a'], getPose: () => ({}), cloneNode: (_id: string) => ({ id: 'a2' }), applyOps: vi.fn() } as any;
     const { result } = renderHook(() => useDuplicateTool(adapter, {}));
     expect(result.current.keyboard!.onDown!(keyEvent('d', { metaKey: true }), makeCtx())).toBe('claim');
     expect(result.current.keyboard!.onDown!(keyEvent('d', { ctrlKey: true }), makeCtx())).toBe('claim');

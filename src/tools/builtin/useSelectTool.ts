@@ -165,7 +165,7 @@ export interface UseSelectToolOptions<TNode extends { id: string }, TPose> {
 }
 
 /** Intersection of all four sub-controller adapter interfaces.
- *  The narrow adapters share compatible `getNode`/`getPose`/`setPose`/`applyBatch`
+ *  The narrow adapters share compatible `getNode`/`getPose`/`setPose`/`applyOps`
  *  shapes; `AreaSelectAdapter` adds `hitTestArea`/`applyOps`/`setSelection`/`getSelection`.
  *  No conflicting overloads — intersection is safe. */
 type SelectAdapter<TNode extends { id: string }, TPose> =
@@ -516,21 +516,18 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
             }
             if (ops.length === 0) return;
             // IMPORTANT: invoke as method calls so `this` binds to the
-            // adapter — `sceneToAdapter`'s `applyBatch` reads `this.setPose`
+            // adapter — `sceneToAdapter`'s `applyOps` reads `this.setPose`
             // inside its `scene.batch` callback. Extracting the function and
             // calling it detached throws "Cannot read properties of undefined
             // (reading 'setPose')" mid-onEnd, which the dispatcher can't
             // recover from (inFlight stays set, blocking subsequent gestures).
             const aa = a as {
-              applyOps?: (ops: ReturnType<typeof createTransformOp>[]) => void;
-              applyBatch?: (ops: ReturnType<typeof createTransformOp>[], label: string) => void;
+              applyOps?: (ops: ReturnType<typeof createTransformOp>[], label?: string) => void;
             };
             if (transient) {
               aa.applyOps?.(ops);
-            } else if (aa.applyBatch) {
-              aa.applyBatch(ops, 'Resize');
             } else {
-              aa.applyOps?.(ops);
+              aa.applyOps?.(ops, 'Resize');
             }
           };
 
@@ -549,7 +546,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
                 return 'claim';
               },
               onEnd: (_e, _dctx) => {
-                // Commit the final pose via applyBatch for a single
+                // Commit the final pose via applyOps for a single
                 // undo entry. Transient writes during move have already
                 // landed; this re-applies the same final transform
                 // through the history path.

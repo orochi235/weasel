@@ -22,10 +22,10 @@ export function useTextTool<TNode extends { id: string }>(
 ): Tool<undefined> {
   const { pointInsert, commitInsert, hitExisting, minBounds, marqueeStyle } = options;
 
-  // Single ref shared between useInsert.applyBatch and defineDragInsertTool's
-  // capture/clear. The primitive writes ctx.applyBatch into this ref on entry
-  // and clears it on end/cancel; useInsert.applyBatch reads through it.
-  const applyBatchRef = useRef<ApplyBatch | null>(null);
+  // Single ref shared between useInsert.applyOps and defineDragInsertTool's
+  // capture/clear. The primitive writes ctx.applyOps into this ref on entry
+  // and clears it on end/cancel; useInsert.applyOps reads through it.
+  const applyOpsRef = useRef<ApplyBatch | null>(null);
 
   const adapter = useMemo<InsertAdapter<TNode>>(
     () => ({
@@ -46,7 +46,7 @@ export function useTextTool<TNode extends { id: string }>(
       clickOnly: !commitInsert,
       minBounds: minBounds ?? { width: 4, height: 4 },
       insertLabel: 'Insert text',
-      applyBatch: (ops, label) => applyBatchRef.current?.(ops, label),
+      applyOps: (ops, label) => applyOpsRef.current?.(ops, label),
     },
   );
 
@@ -65,7 +65,7 @@ export function useTextTool<TNode extends { id: string }>(
     defaultStyle: { fill: 'rgba(164, 139, 212, 0.10)', stroke: '#a48bd4', dash: [3, 3], lineWidth: 1 },
     overlayStyle: marqueeStyle,
     hitExisting,
-    applyBatchRef,
+    applyOpsRef,
   });
 
   return tool;

@@ -7,7 +7,7 @@ import { ActionDisabledReason } from '../registry';
 /** @experimental */
 export interface ReorderDeps {
   getSelection: () => NodeId[];
-  applyBatch: (ops: Op[], label?: string) => void;
+  applyOps: (ops: Op[], label?: string) => void;
 }
 
 /**
@@ -27,7 +27,7 @@ export function defaultReorderActions(deps: ReorderDeps): Action[] {
       run: () => {
         const ids = deps.getSelection();
         if (ids.length === 0) return;
-        deps.applyBatch([createReorderOp({ ids, direction: 'forward' })], 'Bring forward');
+        deps.applyOps([createReorderOp({ ids, direction: 'forward' })], 'Bring forward');
       },
       enabled: () => (deps.getSelection().length > 0 ? true : ActionDisabledReason.SelectionRequired),
     },
@@ -38,7 +38,7 @@ export function defaultReorderActions(deps: ReorderDeps): Action[] {
       run: () => {
         const ids = deps.getSelection();
         if (ids.length === 0) return;
-        deps.applyBatch([createReorderOp({ ids, direction: 'backward' })], 'Send backward');
+        deps.applyOps([createReorderOp({ ids, direction: 'backward' })], 'Send backward');
       },
       enabled: () => (deps.getSelection().length > 0 ? true : ActionDisabledReason.SelectionRequired),
     },

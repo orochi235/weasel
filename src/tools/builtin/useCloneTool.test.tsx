@@ -16,7 +16,7 @@ function makeAdapter(opts: { selection?: string[] } = {}) {
     snapshotSelection: (ids) => { idsLog.push([...ids]); return { items: ids.map((id) => ({ id })) }; },
     insertNode: () => {},
     setSelection: () => {},
-    applyBatch: (ops, label) => { applied.push({ ops, label: label ?? '' }); },
+    applyOps: (ops, label) => { applied.push({ ops, label: label ?? '' }); },
     getSelection: () => opts.selection ?? [],
   };
   return { adapter, applied, idsLog };
@@ -47,7 +47,7 @@ function makeCtx<S>(scratch: S, over: Partial<ToolCtx<S>> = {}): ToolCtx<S> {
     modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
     selection: { current: [], applyClick: vi.fn() } as unknown as ToolCtx['selection'],
     adapter: {},
-    applyBatch: vi.fn(),
+    applyOps: vi.fn(),
     view: { x: 0, y: 0, scale: 1 },
     setView: () => {},
     canvasRect: new DOMRect(),
@@ -121,7 +121,7 @@ describe('useCloneTool', () => {
     expect(tool.drag!.onStart!(pe(), makeCtx(scratch))).toBe('pass');
   });
 
-  it('full drag lifecycle commits one applyBatch', () => {
+  it('full drag lifecycle commits one applyOps', () => {
     const { tool, applied } = setup('a');
     const scratch = tool.initScratch!();
     tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0, modifiers: altMods }));

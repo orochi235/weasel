@@ -30,7 +30,7 @@ export interface StandardActionsDeps<TPose> {
   setSelection: (ids: NodeId[]) => void;
   listAll: () => NodeId[];
   getPose: (id: NodeId) => TPose;
-  applyBatch: (ops: Op[], label?: string) => void;
+  applyOps: (ops: Op[], label?: string) => void;
   translatePose: (pose: TPose, dx: number, dy: number) => TPose;
 }
 
@@ -74,7 +74,7 @@ export function resolveActions<TPose>(
       ? {
           duplicate: defaultDuplicateAction({
             getSelection: deps.getSelection,
-            applyBatch: deps.applyBatch,
+            applyOps: deps.applyOps,
             cloneNode: actionDefaults.cloneNode,
             ...(actionDefaults.duplicateOffset !== undefined
               ? { offset: actionDefaults.duplicateOffset }
@@ -87,7 +87,7 @@ export function resolveActions<TPose>(
   const nudgeDeps: NudgeDeps<TPose> = {
     getSelection: deps.getSelection,
     getPose: deps.getPose,
-    applyBatch: deps.applyBatch,
+    applyOps: deps.applyOps,
     translatePose: deps.translatePose,
     ...(actionDefaults?.nudgeStep !== undefined ? { step: actionDefaults.nudgeStep } : {}),
     ...(actionDefaults?.nudgeShiftStep !== undefined
@@ -98,7 +98,7 @@ export function resolveActions<TPose>(
 
   for (const a of defaultReorderActions({
     getSelection: deps.getSelection,
-    applyBatch: deps.applyBatch,
+    applyOps: deps.applyOps,
   })) {
     defaults[a.id] = a;
   }

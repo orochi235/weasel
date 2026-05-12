@@ -108,7 +108,7 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
       // by the per-frame delta and commit one transform op per id when done.
       const startPoses = new Map<string, TPose>(ctx.current);
       let lastValue = { x: 0, y: 0 };
-      const adapter = ctx.adapter as { setPose(id: string, p: TPose): void; applyBatch?(ops: Op[], label: string): void };
+      const adapter = ctx.adapter as { setPose(id: string, p: TPose): void; applyOps?(ops: Op[], label: string): void };
       // Track per-id final positions when bounds clamping is active — used
       // by onDone to compute the correct final transform op (not just
       // start + decay's last delta, which may overshoot the boundary).
@@ -147,7 +147,7 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
       });
 
       function commitFlick(): void {
-        if (!adapter.applyBatch) return;
+        if (!adapter.applyOps) return;
         const ops: Op[] = [];
         for (const id of ctx.draggedIds) {
           const start = startPoses.get(id) as unknown as RectLike & TPose;
@@ -156,7 +156,7 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
           const finalPose = { ...start, x: fp.x, y: fp.y } as TPose;
           ops.push(createTransformOp<TPose>({ id, from: start, to: finalPose, label: 'flick' }));
         }
-        if (ops.length > 0) adapter.applyBatch(ops, 'flick');
+        if (ops.length > 0) adapter.applyOps(ops, 'flick');
       }
 
       return null;

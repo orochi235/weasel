@@ -16,13 +16,13 @@ function makeAdapter(opts: {
   getLayout: (id: string) => LayoutStrategy<P> | null;
 }): MoveAdapter<Obj, P> & {
   setPoseSpy: ReturnType<typeof vi.fn>;
-  applyBatchSpy: ReturnType<typeof vi.fn>;
+  applyOpsSpy: ReturnType<typeof vi.fn>;
 } {
   const poses = { ...opts.poses };
   const setPoseSpy = vi.fn((id: string, p: P) => {
     poses[id] = p;
   });
-  const applyBatchSpy = vi.fn();
+  const applyOpsSpy = vi.fn();
   return {
     getNode: (id) => ({ id }),
     getNodes: () => Object.keys(poses).map((id) => ({ id })),
@@ -31,10 +31,10 @@ function makeAdapter(opts: {
     setPose: setPoseSpy,
     setParent: () => {},
     getChildren: (id) => opts.children[id] ?? [],
-    applyBatch: applyBatchSpy,
+    applyOps: applyOpsSpy,
     getLayout: opts.getLayout,
     setPoseSpy,
-    applyBatchSpy,
+    applyOpsSpy,
   };
 }
 
@@ -206,8 +206,8 @@ describe('useMove commit with layout', () => {
       result.current.end();
     });
 
-    expect(adapter.applyBatchSpy).toHaveBeenCalledTimes(1);
-    const [ops] = adapter.applyBatchSpy.mock.calls[0];
+    expect(adapter.applyOpsSpy).toHaveBeenCalledTimes(1);
+    const [ops] = adapter.applyOpsSpy.mock.calls[0];
     // Two ops: dragged 'a' moving to cell (1,0) + swap 'b' moving to cell (0,0).
     expect(ops).toHaveLength(2);
     expect(ops.every((o: Op) => typeof o.apply === 'function' && typeof o.invert === 'function')).toBe(true);
@@ -239,8 +239,8 @@ describe('useMove commit with layout', () => {
       result.current.end();
     });
 
-    expect(adapter.applyBatchSpy).toHaveBeenCalledTimes(1);
-    const [ops] = adapter.applyBatchSpy.mock.calls[0];
+    expect(adapter.applyOpsSpy).toHaveBeenCalledTimes(1);
+    const [ops] = adapter.applyOpsSpy.mock.calls[0];
     expect(ops).toHaveLength(1); // Single free-space transform for 'a'.
   });
 
@@ -273,8 +273,8 @@ describe('useMove commit with layout', () => {
       result.current.end();
     });
 
-    expect(adapter.applyBatchSpy).toHaveBeenCalledTimes(1);
-    const [ops] = adapter.applyBatchSpy.mock.calls[0];
+    expect(adapter.applyOpsSpy).toHaveBeenCalledTimes(1);
+    const [ops] = adapter.applyOpsSpy.mock.calls[0];
     // Dest commit: a1 → cell (0,0) of B. Source reflow: a2 → cell (0,0) of A.
     // No swap occupant in B (B is empty). So ops = [a1 drop] + [a2 reflow] = 2.
     expect(ops).toHaveLength(2);

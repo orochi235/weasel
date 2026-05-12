@@ -34,7 +34,7 @@ function makeAdapter(initial: { selection?: string[]; offset?: { dx: number; dy:
     },
     setSelection: (ids) => { selection = [...ids]; },
     getSelection: () => selection,
-    applyBatch: (ops, label) => {
+    applyOps: (ops, label) => {
       batches.push({ ops, label });
       for (const op of ops) op.apply(adapter as never);
     },

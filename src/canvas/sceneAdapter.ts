@@ -75,7 +75,7 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
       setSelection(ids: string[]): void;
       insertNode(node: Node<TData, TLayer, TPose>): void;
       removeNode(id: string): void;
-      applyBatch(ops: Op[], label: string): void;
+      applyOps(ops: Op[], label?: string): void;
     };
 
 /** Optional extras for the synthesized adapter. Pass `commitInsert` to wire
@@ -323,10 +323,18 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
                 (options.layouts as Record<string, LayoutStrategy<TPose>>)[id] ?? null,
         }
       : {}),
-    applyBatch(ops: Op[], label: string) {
-      scene.batch(label, () => {
-        for (const op of ops) op.apply(this);
-      });
+    // Unified applyOps: when a label is supplied the ops are wrapped in a
+    // scene.batch checkpoint (history-aware path used by Move/Resize/Rotate/
+    // Insert/Delete tools); without a label the ops are applied transiently
+    // via applyOpsTo (AreaSelectAdapter contract — no checkpoint).
+    applyOps(ops: Op[], label?: string) {
+      if (label !== undefined) {
+        scene.batch(label, () => {
+          for (const op of ops) op.apply(this);
+        });
+      } else {
+        applyOpsTo(this, ops);
+      }
     },
     // Node-mutation surface used by kit InsertOps / DeleteOps (e.g.
     // useNestedGroup wrapping the selection in a new container node, or its
@@ -350,15 +358,12 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     },
     // AreaSelectAdapter surface — included unconditionally so plain
     // `useSelectTool(sceneToAdapter(scene, { selection }))` Just Works for the
-    // marquee gesture. `applyOps` uses the shared `applyOpsTo` dispatcher
-    // (no checkpoint, matches the transient AreaSelectAdapter contract);
-    // `hitTestArea` does an AABB-vs-AABB scan over `scene.renderOrder()` via
-    // `poseBounds` (default identity for `{x,y,width,height}` poses).
+    // marquee gesture. `applyOps` (above) dispatches transiently when called
+    // without a label, matching the AreaSelectAdapter contract; `hitTestArea`
+    // does an AABB-vs-AABB scan over `scene.renderOrder()` via `poseBounds`
+    // (default identity for `{x,y,width,height}` poses).
     getSelection,
     setSelection,
-    applyOps(ops: Op[]) {
-      applyOpsTo(this, ops);
-    },
     hitTestArea(rect: Bounds) {
       return walkClipAware(scene, poseBounds, (n) => {
         const b = poseBounds(n.pose);

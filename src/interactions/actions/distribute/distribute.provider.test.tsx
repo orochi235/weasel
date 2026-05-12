@@ -18,7 +18,7 @@ function makeAdapter(initialIds: string[] = ['a', 'b', 'c']) {
   return {
     getSelection: () => initialIds.map(asNodeId),
     getPose: (id: NodeId): Pose => poses[id as unknown as string] ?? { x: 0, y: 0, width: 0, height: 0 },
-    applyBatch: (ops: Op[], label?: string) => batches.push({ ops, label: label ?? '' }),
+    applyOps: (ops: Op[], label?: string) => batches.push({ ops, label: label ?? '' }),
     batches,
   };
 }

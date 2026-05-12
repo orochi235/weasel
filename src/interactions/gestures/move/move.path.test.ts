@@ -15,7 +15,7 @@ function makeAdapter(initial: Path) {
     getParent: () => null,
     setPose: (id, pose) => store.set(id, pose),
     setParent: () => {},
-    applyBatch: (ops, label) => {
+    applyOps: (ops, label) => {
       batches.push({ ops, label });
       for (const op of ops) op.apply({ setPose: (id: string, p: Path) => store.set(id, p) });
     },

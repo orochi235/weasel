@@ -23,7 +23,7 @@ function makeAdapter(initial: Path) {
       getNode: (id: string) => (id === 'p' ? { id } : undefined),
       getPose: (_id: string) => pose,
       setPose: (_id: string, p: Path) => { pose = p; },
-      applyBatch: (ops: Op[], label?: string) => {
+      applyOps: (ops: Op[], label?: string) => {
         batches.push({ ops, label });
         for (const op of ops) op.apply({ setPose: (_id: string, p: Path) => { pose = p; } });
       },
@@ -51,7 +51,7 @@ function makeCtx<S>(scratch: S, over: Partial<ToolCtx<S>> = {}): ToolCtx<S> {
     modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
     selection: { current: [], applyClick: vi.fn() } as unknown as ToolCtx['selection'],
     adapter: {},
-    applyBatch: vi.fn(),
+    applyOps: vi.fn(),
     view: { x: 0, y: 0, scale: 1 },
     setView: () => {},
     canvasRect: new DOMRect(),
@@ -124,7 +124,7 @@ describe('useEditAnchorsTool', () => {
     expect(tool.drag!.onStart!(pe(), makeCtx(scratch))).toBe('pass');
   });
 
-  it('full drag mutates the anchor and dispatches one op via applyBatch', () => {
+  it('full drag mutates the anchor and dispatches one op via applyOps', () => {
     const { tool, batches, getPose } = setup();
     const scratch = tool.initScratch!();
     tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));

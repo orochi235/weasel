@@ -16,7 +16,7 @@ function noopCtx(): ToolCtx<null> {
     view: { x: 0, y: 0, scale: 1 },
     setView: () => {},
     canvasRect: new DOMRect(),
-    applyBatch: vi.fn(),
+    applyOps: vi.fn(),
     scratch: null,
   };
 }
@@ -30,7 +30,7 @@ describe('useEllipseTool', () => {
     expect(tool.cursor).toBe('crosshair');
   });
 
-  it('commits via applyBatch with an insert op when create returns a node', () => {
+  it('commits via applyOps with an insert op when create returns a node', () => {
     const create = vi.fn(({ x, y, width, height }) => ({
       id: 'el-1',
       pose: { x, y, width, height },
@@ -44,7 +44,7 @@ describe('useEllipseTool', () => {
     tool.drag!.onEnd!(new PointerEvent('pointerup'), { ...ctx, worldX: 50, worldY: 30 });
 
     expect(create).toHaveBeenCalledWith({ x: 10, y: 10, width: 40, height: 20 });
-    expect(ctx.applyBatch).toHaveBeenCalledTimes(1);
+    expect(ctx.applyOps).toHaveBeenCalledTimes(1);
   });
 
   it('exposes a presentation with label, icon, group=shape, and shortcut', () => {

@@ -17,7 +17,7 @@ function ctxOver(over: Partial<ToolCtx<SelectScratch>> = {}): ToolCtx<SelectScra
     modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
     selection: { current: [], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
     adapter: {},
-    applyBatch: vi.fn(),
+    applyOps: vi.fn(),
     view: { x: 0, y: 0, scale: 1 },
     setView: () => {},
     canvasRect: new DOMRect(),
@@ -420,7 +420,6 @@ describe('useSelectTool overlay', () => {
       getSelection: () => [],
       setSelection: vi.fn(),
       applyOps: vi.fn(),
-      applyBatch: vi.fn(),
       ...over,
     }) as any;
 

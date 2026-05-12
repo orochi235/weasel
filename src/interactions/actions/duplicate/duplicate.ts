@@ -23,14 +23,14 @@ export interface DuplicateAdapter<TPose> {
   /** Optional: op-batch entry point. When omitted, the hook applies each op
    *  against the adapter directly. Apps with custom history integration
    *  override this. */
-  applyBatch?(ops: Op[], label?: string): void;
+  applyOps?(ops: Op[], label?: string): void;
 }
 
 /** Options for `useDuplicate`. */
 export interface UseDuplicateOptions {
   /** Auto-bind Ctrl/Cmd+D on document. Default true. */
   enableKeyboard?: boolean;
-  /** Label passed to applyBatch. Default 'Duplicate'. */
+  /** Label passed to applyOps. Default 'Duplicate'. */
   label?: string;
   /** Translation applied to each clone. Default `{ dx: 8, dy: 8 }`. */
   offset?: { dx: number; dy: number };

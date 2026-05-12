@@ -16,11 +16,11 @@ export interface DeleteAdapter {
    *  `{ id }` is used — undo will only restore the id, not the full object. */
   getNode?(id: NodeId): { id: string } | undefined | null;
   /** Optional: op-batch entry point. When omitted, ops apply directly. */
-  applyBatch?(ops: Op[], label: string): void;
+  applyOps?(ops: Op[], label: string): void;
   /** Optional: clear selection after delete. If omitted, the hook still
    *  emits a SetSelectionOp([]) alongside DeleteOps. */
   setSelection?(ids: NodeId[]): void;
-  /** Optional: removeNode mutator wired by DeleteOp when applyBatch is omitted. */
+  /** Optional: removeNode mutator wired by DeleteOp when applyOps is omitted. */
   removeNode?(id: string): void;
 }
 
@@ -29,7 +29,7 @@ export interface UseDeleteOptions {
   /** Auto-bind Delete and Backspace on document and register a `delete`
    *  action into any surrounding `<ActionsProvider>`. Default true. */
   enableKeyboard?: boolean;
-  /** Label passed to applyBatch. Default 'Delete'. */
+  /** Label passed to applyOps. Default 'Delete'. */
   label?: string;
   /** Optional filter: given selected ids, return the subset to actually delete.
    *  Used by consumers to protect locked or undeletable objects. */

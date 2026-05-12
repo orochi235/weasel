@@ -27,17 +27,17 @@ const C2W = (_c: HTMLCanvasElement, cx: number, cy: number): [number, number] =>
 
 describe('useSelectTool — bringToFrontOnSelect', () => {
   it('default (true): clicking a body-hit emits a Bring to front batch on a reorder-capable adapter', () => {
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     function Harness() {
       const scene = useScene<Rect>({ items: [
         { id: 'A', x: 0, y: 0, width: 100, height: 100 },
         { id: 'B', x: 0, y: 0, width: 100, height: 100 },
       ]});
       const sel = useSelection({ mode: 'single' });
-      // Spread the scene-derived adapter, then override applyBatch so the
+      // Spread the scene-derived adapter, then override applyOps so the
       // test can inspect labels without losing the underlying implementation.
       const base = sceneToAdapter(scene, { selection: sel });
-      const adapter = { ...base, applyBatch };
+      const adapter = { ...base, applyOps };
       const tool = useSelectTool(adapter as never, {});
       const tools = useTools({ active: 'select', registry: { select: tool } });
       return (
@@ -50,12 +50,12 @@ describe('useSelectTool — bringToFrontOnSelect', () => {
     canvas.setPointerCapture = () => {};
     fireEvent.pointerDown(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
     fireEvent.pointerUp(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
-    const labels = applyBatch.mock.calls.map((c) => c[1]);
+    const labels = applyOps.mock.calls.map((c) => c[1]);
     expect(labels).toContain('Bring to front');
   });
 
   it('explicit { bringToFrontOnSelect: false } suppresses the reorder', () => {
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     function Harness() {
       const scene = useScene<Rect>({ items: [
         { id: 'A', x: 0, y: 0, width: 100, height: 100 },
@@ -63,7 +63,7 @@ describe('useSelectTool — bringToFrontOnSelect', () => {
       ]});
       const sel = useSelection({ mode: 'single' });
       const base = sceneToAdapter(scene, { selection: sel });
-      const adapter = { ...base, applyBatch };
+      const adapter = { ...base, applyOps };
       const tool = useSelectTool(adapter as never, { bringToFrontOnSelect: false });
       const tools = useTools({ active: 'select', registry: { select: tool } });
       return (
@@ -76,12 +76,12 @@ describe('useSelectTool — bringToFrontOnSelect', () => {
     canvas.setPointerCapture = () => {};
     fireEvent.pointerDown(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
     fireEvent.pointerUp(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
-    const labels = applyBatch.mock.calls.map((c) => c[1]);
+    const labels = applyOps.mock.calls.map((c) => c[1]);
     expect(labels).not.toContain('Bring to front');
   });
 
   it('graceful no-op when the adapter omits getChildren/setChildOrder (e.g. plain arrayAdapter)', () => {
-    const applyBatch = vi.fn();
+    const applyOps = vi.fn();
     function Harness() {
       const [rects, setRects] = useState<Rect[]>([
         { id: 'A', x: 0, y: 0, width: 100, height: 100 },
@@ -94,7 +94,7 @@ describe('useSelectTool — bringToFrontOnSelect', () => {
         ref: rectsRef, setItems: setRects,
         toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
       });
-      const adapter = { ...base, ...sel.adapterMethods, applyBatch };
+      const adapter = { ...base, ...sel.adapterMethods, applyOps };
       const tool = useSelectTool(adapter, {});
       const tools = useTools({ active: 'select', registry: { select: tool } });
       return (
@@ -108,8 +108,8 @@ describe('useSelectTool — bringToFrontOnSelect', () => {
     fireEvent.pointerDown(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
     fireEvent.pointerUp(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
     // Adapter doesn't expose getChildren/setChildOrder so the bring-to-front
-    // dispatch is skipped — no extra applyBatch call.
-    const labels = applyBatch.mock.calls.map((c) => c[1]);
+    // dispatch is skipped — no extra applyOps call.
+    const labels = applyOps.mock.calls.map((c) => c[1]);
     expect(labels).not.toContain('Bring to front');
   });
 

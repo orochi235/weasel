@@ -17,7 +17,7 @@ function noopCtx(): ToolCtx<unknown> {
     view: { x: 0, y: 0, scale: 1 },
     setView: () => {},
     canvasRect: new DOMRect(),
-    applyBatch: vi.fn(),
+    applyOps: vi.fn(),
     scratch: null,
   };
 }

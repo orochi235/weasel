@@ -436,7 +436,7 @@ const PenTool = defineTool<{ anchors: Point[] }>({
       'empty': (ctx) => begin({ scratch: { anchors: [ctx.point] } }),
     },
     dblTap: {
-      'path': enterAnchorEdit,
+      'path': enterAnchorEdit, // won't trigger on anything but a path
     },
   },
   engaged: {

@@ -9,7 +9,7 @@ function makeCtx(): ToolCtx<undefined> {
     modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
     selection: { current: [] } as any,
     adapter: {},
-    applyBatch: vi.fn(),
+    applyOps: vi.fn(),
     view: { x: 0, y: 0, scale: 1 },
     setView: () => {},
     canvasRect: new DOMRect(),

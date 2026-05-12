@@ -25,7 +25,7 @@ function makeAdapter(initial: [string, P][] = [['a', { x: 0, y: 0, width: 100, h
     getNode: (id) => (state.has(id) ? { id } : undefined),
     getPose: (id) => ({ ...(state.get(id)!) }),
     setPose: (id, pose) => state.set(id, { ...pose }),
-    applyBatch: (ops, label) => {
+    applyOps: (ops, label) => {
       batches.push({ ops, label });
       for (const op of ops) op.apply(adapter);
     },
@@ -43,7 +43,7 @@ function makeRotatedAdapter(
     getNode: (id) => (state.has(id) ? { id } : undefined),
     getPose: (id) => ({ ...(state.get(id)!) }),
     setPose: (id, pose) => state.set(id, { ...pose }),
-    applyBatch: (ops, label) => {
+    applyOps: (ops, label) => {
       batches.push({ ops, label });
       for (const op of ops) op.apply(adapter);
     },

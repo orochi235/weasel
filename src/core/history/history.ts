@@ -16,7 +16,7 @@ interface Entry {
 /** Op-batched undo/redo controller returned by `createHistory`. */
 export interface History {
   apply(op: Op, label?: string): void;
-  applyBatch(ops: Op[], label: string): void;
+  applyOps(ops: Op[], label: string): void;
   undo(): void;
   redo(): void;
   canUndo(): boolean;
@@ -28,7 +28,7 @@ export interface History {
 export interface CreateHistoryOptions {
   /** Window (ms) within which a new entry may merge into the previous one
    *  via matching `Op.coalesceKey`. Defaults to `0` (no coalescing — every
-   *  `applyBatch` pushes a discrete entry). Recommended: ~500ms for typical
+   *  `applyOps` pushes a discrete entry). Recommended: ~500ms for typical
    *  rapid-input UX (nudge, per-keystroke text edits). The window resets on
    *  each successful coalesce, so a sustained burst keeps merging. */
   coalesceWindowMs?: number;
@@ -96,7 +96,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     apply(op, label) {
       pushOrCoalesce([op], label ?? op.label ?? '');
     },
-    applyBatch(ops, label) {
+    applyOps(ops, label) {
       pushOrCoalesce(ops, label);
     },
     undo() {

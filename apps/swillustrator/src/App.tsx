@@ -341,7 +341,7 @@ export function App() {
   // ---- Adapter (shared by every kit hook below) ------------------------
   // Designed for synchronous op application: writers mutate `itemsRef.current`
   // in place, then `publish()` syncs to React. Each individual op call is
-  // wrapped through `applyBatch` (below) which publishes once per batch.
+  // wrapped through `applyOps` (below) which publishes once per batch.
   const adapterRef = useRef<unknown>(null);
 
   // History is created once, bound to the live adapter through a Proxy so
@@ -358,11 +358,11 @@ export function App() {
     historyRef.current = createHistory(proxy, { coalesceWindowMs: 500 });
   }
 
-  // Wrap applyBatch through history. The hooks call `dispatchApplyBatch`,
-  // which calls our `applyBatch`. We delegate to history.applyBatch (which
+  // Wrap applyOps through history. The hooks call `dispatchApplyBatch`,
+  // which calls our `applyOps`. We delegate to history.applyOps (which
   // applies the ops AND pushes onto the undo stack).
-  const applyBatch = useCallback((ops: { apply: (a: unknown) => void; invert: () => { apply: (a: unknown) => void; invert: () => unknown } }[], label?: string) => {
-    historyRef.current?.applyBatch(ops as never, label ?? 'Edit');
+  const applyOps = useCallback((ops: { apply: (a: unknown) => void; invert: () => { apply: (a: unknown) => void; invert: () => unknown } }[], label?: string) => {
+    historyRef.current?.applyOps(ops as never, label ?? 'Edit');
     publish();
   }, [publish]);
 
@@ -408,7 +408,7 @@ export function App() {
           itemsRef.current[i] = { ...prev, ...pose };
         }
       },
-      // Used by createSetTextOp; called from useTextEdit's commit through applyBatch.
+      // Used by createSetTextOp; called from useTextEdit's commit through applyOps.
       setText: (id: string, text: string) => {
         const i = itemsRef.current.findIndex((o) => o.id === id);
         if (i < 0) return;
@@ -468,11 +468,8 @@ export function App() {
           .filter((o) => o.x < rect.x + rect.width && o.x + o.width > rect.x && o.y < rect.y + rect.height && o.y + o.height > rect.y)
           .map((o) => o.id);
       },
-      // --- batch dispatch ---
-      applyBatch,
-      applyOps: (ops: { apply: (a: unknown) => void; invert: () => { apply: (a: unknown) => void; invert: () => unknown } }[]) => {
-        applyBatch(ops);
-      },
+      // --- batch dispatch (labeled → history, no label → transient) ---
+      applyOps,
       // --- z-order (sibling order = items array order) ---
       getParent: (_id: string): string | null => null,
       getChildren: (parentId: string | null): string[] => {
@@ -612,7 +609,7 @@ export function App() {
       },
     };
     return a;
-  }, [applyBatch, selection]);
+  }, [applyOps, selection]);
   adapterRef.current = adapter;
 
   // ---- Tools -----------------------------------------------------------
@@ -722,12 +719,12 @@ export function App() {
       // behavior and prevents invisible orphan text boxes from being left
       // behind by stray clicks or all-content-deleted edits.
       if (text === '') {
-        applyBatch([createDeleteOp({ node: o, label: 'Delete empty text' })], 'Delete empty text');
+        applyOps([createDeleteOp({ node: o, label: 'Delete empty text' })], 'Delete empty text');
         return;
       }
       const from = o.text;
       if (from === text) return;
-      applyBatch([createSetTextOp({ id, from, to: text, label: 'Edit text' })], 'Edit text');
+      applyOps([createSetTextOp({ id, from, to: text, label: 'Edit text' })], 'Edit text');
     },
   });
 
@@ -981,7 +978,7 @@ export function App() {
 
   // --- Selection-aware mutation helpers ---
   // Re-read items each call so back-to-back changes within a render coalesce.
-  // Routed through applyBatch so each property change is an undo step.
+  // Routed through applyOps so each property change is an undo step.
   const updateSelected = (patch: (o: Obj) => Obj): void => {
     const ids = new Set<string>(selection.current);
     if (ids.size === 0) return;

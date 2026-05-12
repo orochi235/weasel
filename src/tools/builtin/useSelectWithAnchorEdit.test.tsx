@@ -136,7 +136,7 @@ describe('useSelectWithAnchorEdit', () => {
         modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
         selection: { current: [], applyClick: () => {} } as never,
         adapter: {},
-        applyBatch: () => {},
+        applyOps: () => {},
         view: { x: 0, y: 0, scale: 1 },
         setView: () => {},
         canvasRect: new DOMRect(),

@@ -35,7 +35,7 @@ function makeAdapter(initial: { selection?: string[]; offsetOverride?: { dx: num
     insertNode: (o) => { inserts.push(o); },
     setSelection: (ids) => { selection = [...ids]; },
     getSelection: () => selection,
-    applyBatch: (ops, label) => {
+    applyOps: (ops, label) => {
       batches.push({ ops, label });
       for (const op of ops) op.apply(adapter as never);
     },
@@ -71,7 +71,7 @@ describe('useClipboardOps', () => {
     expect(batches).toEqual([]);
   });
 
-  it('copy then paste emits one applyBatch with N InsertOps + one SetSelectionOp', () => {
+  it('copy then paste emits one applyOps with N InsertOps + one SetSelectionOp', () => {
     const helpers = makeAdapter();
     helpers.seed({ id: 'a', x: 0, y: 0 });
     const { result } = renderHook(() =>

@@ -39,7 +39,7 @@ function makeHarness(initial: Obj[], selection: string[] = []): Harness {
     removeNode: (id: string) => { h.scene.delete(id); },
     getChildren: (id: string | null) =>
       [...h.scene.values()].filter((o) => o.parent === id).map((o) => o.id),
-    applyBatch: (ops: Op[], label: string) => {
+    applyOps: (ops: Op[], label: string) => {
       h.batches.push({ ops, label });
       for (const op of ops) op.apply(h.adapter);
     },

@@ -16,7 +16,7 @@ function makeAdapter() {
     snapshotSelection: (ids) => ({ items: ids.map((id) => ({ id })) }),
     insertNode: () => {},
     setSelection: () => {},
-    applyBatch: (ops, label) => { applied.push({ ops, label }); },
+    applyOps: (ops, label) => { applied.push({ ops, label }); },
     getSelection: () => [],
   };
   const setOverlay = (layer: string, objects: unknown[]) => {
@@ -72,7 +72,7 @@ describe('useClone', () => {
     expect(h.overlays.length).toBeGreaterThan(1);
   });
 
-  it('end commits a single applyBatch with label "Clone"', () => {
+  it('end commits a single applyOps with label "Clone"', () => {
     const h = makeAdapter();
     const { result } = renderHook(() =>
       useClone(h.adapter, {
@@ -105,7 +105,7 @@ describe('useClone', () => {
       },
       insertNode: () => {},
       setSelection: () => {},
-      applyBatch: (ops, label) => { applied.push({ ops, label }); },
+      applyOps: (ops, label) => { applied.push({ ops, label }); },
       getSelection: () => [],
     };
     const setOverlay = (layer: string, objects: unknown[]) => { overlays.push({ layer, objects }); };
