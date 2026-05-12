@@ -313,6 +313,10 @@ export type {
   LassoSelectMoveResult,
   LassoSelectBehavior,
   LassoSelectOverlay,
+  PointSnapFrame,
+  PointSnapContext,
+  PointSnapResult,
+  PointSnapBehavior,
 } from './interactions/gestures/types';
 export type { ClipboardSnapshot } from './interactions/actions/clipboard/types';
 export {
@@ -342,6 +346,7 @@ export {
   ROTATED_POSE_DESCRIPTOR,
   cornerResizeHandles,
   hitCornerHandle,
+  pointSnapToGrid,
 } from './interactions/gestures/resize';
 export type {
   UseResizeOptions,
