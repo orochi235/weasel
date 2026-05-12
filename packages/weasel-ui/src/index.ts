@@ -2,6 +2,7 @@ export * from './components/PropertiesPanel';
 export * from './components/CommandPalette';
 export * from './components/RangePicker';
 export * from './components/LayerList';
+export * from './components/PathfinderPanel';
 export { paintGradientTrack } from './paintGradientTrack';
 export type { GradientTrackOpts } from './paintGradientTrack';
 export { oklchToHex, chromaAt } from './color/oklch';
