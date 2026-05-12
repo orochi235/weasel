@@ -125,6 +125,14 @@ interface InFlight {
   tool: AnyTool;
   scratch: unknown;
   startClient: { x: number; y: number };
+  /** Hit result captured at pointerdown. Used to override the
+   *  threshold-crossing pointermove's `target` for `drag.onStart` so that
+   *  declarative route tables key on "where the gesture began", not "where
+   *  the threshold was crossed" (which can drift off the original hit if the
+   *  user moves diagonally before crossing 4px). Subsequent pointermove
+   *  events use the live target so engaged-phase handlers can react to the
+   *  current hit. */
+  startTarget: HitResult | undefined;
   /** 'pending' = pointer down, sub-threshold (or pointer.onDown claimed for
    *  classification); 'drag' = drag.onStart fired. */
   phase: 'pending' | 'drag';
@@ -232,6 +240,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       tool,
       scratch: claimedScratch,
       startClient: { x: e.clientX, y: e.clientY },
+      startTarget: baseCtx.target,
       phase: 'pending',
     };
     opts.onGestureChange?.();
@@ -269,6 +278,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       // Capture any scratch mutation from onStart.
       scratch: startCtx.scratch,
       startClient: { x: e.clientX, y: e.clientY },
+      startTarget: baseCtx.target,
       phase: 'drag',
     };
     opts.onGestureChange?.();
@@ -348,6 +358,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
           tool,
           scratch: ctx.scratch,
           startClient: { x: e.clientX, y: e.clientY },
+          startTarget: baseCtx.target,
           phase: 'pending',
         };
         opts.onGestureChange?.();
@@ -367,6 +378,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       tool: owner,
       scratch: getInitialScratch(owner),
       startClient: { x: e.clientX, y: e.clientY },
+      startTarget: baseCtx.target,
       phase: 'pending',
     };
     opts.onGestureChange?.();
@@ -396,7 +408,13 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       lastTap = null;
       const onStart = inFlight.tool.drag?.onStart;
       if (onStart) {
-        const startCtx = ctxFor(inFlight.scratch, baseCtx);
+        // Override the threshold-crossing target with the pointerdown target
+        // captured into inFlight. Declarative routing tables key on
+        // "where the gesture began" — see InFlight.startTarget JSDoc.
+        const startBaseCtx = inFlight.startTarget
+          ? { ...baseCtx, target: inFlight.startTarget }
+          : baseCtx;
+        const startCtx = ctxFor(inFlight.scratch, startBaseCtx);
         onStart(e, startCtx);
         inFlight.scratch = startCtx.scratch;
       }
