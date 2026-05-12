@@ -103,6 +103,9 @@ export { useViewAnimation } from './core/viewport/useViewAnimation';
 export { usePointerGestures } from './interactions/gestures/usePointerGestures';
 export * from './tools';
 export { usePinchZoomTool, type PinchZoomToolOpts } from './tools/builtin/usePinchZoomTool';
+// New declarative routing surface — experimental.
+// import { defineTool } from '@orochi235/weasel/routing';
+export * as routing from './tools/routing';
 export type {
   PointerGestureBindings,
   UsePointerGesturesOptions,

@@ -10,6 +10,7 @@ export default defineConfig({
     clone: 'src/subpaths/clone.ts',
     'patterns-builtin': 'src/subpaths/patterns-builtin.ts',
     renderer: 'src/subpaths/renderer.ts',
+    routing: 'src/tools/routing/index.ts',
   },
   format: ['esm'],
   dts: true,
