@@ -1179,6 +1179,7 @@ export function App() {
             <Canvas
               width={PAGE_W}
               height={PAGE_H}
+              adapter={adapter as never}
               items={items}
               setItems={setItems}
               view={view}
