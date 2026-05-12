@@ -9,6 +9,11 @@
 export { default as SelectIcon } from './SelectIcon';
 export { default as LassoIcon } from './LassoIcon';
 export { default as RectIcon } from './RectIcon';
+export { default as EllipseIcon } from './EllipseIcon';
+export { default as LineIcon } from './LineIcon';
+export { default as PolygonIcon } from './PolygonIcon';
+export { default as StarIcon } from './StarIcon';
+export { default as PencilIcon } from './PencilIcon';
 export { default as TextIcon } from './TextIcon';
 export { default as PenIcon } from './PenIcon';
 export { default as HandIcon } from './HandIcon';

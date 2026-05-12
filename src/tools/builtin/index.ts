@@ -44,6 +44,8 @@ export {
   type SelectWithAnchorEditAnchorsOptions,
 } from './useSelectWithAnchorEdit';
 export { useRectTool, type UseRectToolOptions, type RectBounds } from './useRectTool';
+export { useEllipseTool, type UseEllipseToolOptions, type EllipseBounds } from './useEllipseTool';
+export { useLineTool, type UseLineToolOptions, type LinePoint } from './useLineTool';
 export { useLassoTool, type UseLassoToolOptions } from './useLassoTool';
 export {
   useCloneTool,
@@ -51,3 +53,6 @@ export {
   type CloneScratch,
   type CloneOverlayItem,
 } from './useCloneTool';
+export { usePolygonTool, type UsePolygonToolOptions } from './usePolygonTool';
+export { useStarTool, type UseStarToolOptions } from './useStarTool';
+export { usePencilTool, type UsePencilToolOptions } from './usePencilTool';

@@ -74,6 +74,8 @@ import HudDemoFull from './demos/HudDemo.tsx?raw';
 import LayerListDemoFull from './demos/LayerListDemo.tsx?raw';
 import { PointSnapDemo } from './demos/PointSnapDemo';
 import PointSnapDemoFull from './demos/PointSnapDemo.tsx?raw';
+import { ShapeToolsDemo } from './demos/ShapeToolsDemo';
+import ShapeToolsDemoFull from './demos/ShapeToolsDemo.tsx?raw';
 
 // Scene-data JSON for demos that load via `sceneFromJSON`. Surfaced alongside
 // the TSX in the source pane so consumers can see the format.
@@ -331,6 +333,16 @@ export const DEMOS: DemoEntry[] = [
     Component: BooleanOpsDemo,
     full: BooleanOpsDemoFull,
     path: 'demo/demos/BooleanOpsDemo.tsx',
+  },
+  {
+    id: 'shape-tools',
+    title: 'Shape tools',
+    category: 'Geometry',
+    description: 'Five new shape tools — ellipse, line, polygon, star, pencil — wired into a `<ToolPalette>`. Each tool produces a node via its `create` factory and commits through `ctx.applyBatch + createInsertOp`. Switch tools via the palette on the left.',
+    hint: 'Click a tool button. Drag in the canvas to create shapes. Pencil: freehand stroke; close-near-start to mark closed.',
+    Component: ShapeToolsDemo,
+    full: ShapeToolsDemoFull,
+    path: 'demo/demos/ShapeToolsDemo.tsx',
   },
 
   // ─── Composition ──────────────────────────────────────────────────────────
