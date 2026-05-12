@@ -293,6 +293,17 @@ a:hover { text-decoration: underline; }
   font-weight: 500;
 }
 
+.ckd-boolops-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.ckd-boolops-reset {
+  margin-left: auto;
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 880px) {
   .ckd-app {

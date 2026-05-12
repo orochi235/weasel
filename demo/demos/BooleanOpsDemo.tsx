@@ -1,17 +1,22 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import {
   pathUnion,
   pathIntersect,
   pathSubtract,
   pathExclude,
   pathDivide,
+  useBooleans,
+  useSelection,
+  SelectionContextProvider,
   PATH_M,
   PATH_L,
   PATH_Z,
   SceneCanvas,
   useScene,
+  asNodeId,
 } from '@orochi235/weasel';
-import type { PolygonPath } from '@orochi235/weasel';
+import type { BooleansAdapter, NodeId, Op, PolygonPath } from '@orochi235/weasel';
+import { PathfinderPanel } from '@orochi235/weasel-ui';
 import type { DrawCommand } from '../../src/renderer';
 
 const W = 240;
@@ -51,6 +56,25 @@ interface PanelItem {
   color: string;
 }
 
+// Nodes use the path itself as their pose so SceneCanvas's built-in
+// path-pose hit-tester picks them up without a custom pickEvery.
+const INITIAL_NODES = [
+  {
+    kind: 'leaf' as const,
+    layer: 'default' as const,
+    id: asNodeId('rect'),
+    pose: RECT_INPUT,
+    data: { id: 'rect', path: RECT_INPUT, color: RECT_COLOR },
+  },
+  {
+    kind: 'leaf' as const,
+    layer: 'default' as const,
+    id: asNodeId('circle'),
+    pose: CIRCLE_INPUT,
+    data: { id: 'circle', path: CIRCLE_INPUT, color: CIRCLE_COLOR },
+  },
+];
+
 function Panel({ id, paths }: { id: string; paths: PanelItem[] }) {
   const scene = useScene<PanelItem>({ items: paths });
   return (
@@ -74,6 +98,127 @@ function Panel({ id, paths }: { id: string; paths: PanelItem[] }) {
   );
 }
 
+function InteractivePanel() {
+  const scene = useScene<PanelItem, 'default', PolygonPath>({
+    systemLayers: [{ id: 'default' }],
+    initial: INITIAL_NODES,
+  });
+
+  const selection = useSelection({
+    mode: 'multi',
+    initial: [asNodeId('rect'), asNodeId('circle')],
+  });
+
+  const nextIdRef = useRef(0);
+  const pendingPathsRef = useRef<Map<string, PolygonPath>>(new Map());
+
+  // All mutable state accessed through refs so adapter is constructed once.
+  const sceneRef = useRef(scene);
+  sceneRef.current = scene;
+  const selectionRef = useRef(selection);
+  selectionRef.current = selection;
+
+  const adapterRef = useRef<BooleansAdapter | null>(null);
+  if (adapterRef.current === null) {
+    adapterRef.current = {
+      getSelection: () => selectionRef.current.get(),
+      getWorldPath: (id: NodeId) => sceneRef.current.get(id)?.data.path,
+      compareZ: (a: NodeId, b: NodeId) => {
+        const order = [...sceneRef.current.renderOrder()];
+        return order.indexOf(a) - order.indexOf(b);
+      },
+      createPathNode: (path) => {
+        const id = `result-${nextIdRef.current++}`;
+        pendingPathsRef.current.set(id, path as PolygonPath);
+        return { id };
+      },
+      insertNode: (node: { id: string }) => {
+        const path = pendingPathsRef.current.get(node.id);
+        if (!path) return;
+        pendingPathsRef.current.delete(node.id);
+        sceneRef.current.add({
+          kind: 'leaf',
+          layer: 'default',
+          id: asNodeId(node.id),
+          pose: path,
+          data: { id: node.id, path, color: RESULT_COLOR },
+        });
+      },
+      removeNode: (id: string) => {
+        sceneRef.current.remove(asNodeId(id));
+      },
+      setSelection: (ids: NodeId[]) => {
+        selectionRef.current.set(ids);
+      },
+      applyBatch: (ops: Op[]) => {
+        for (const op of ops) op.apply(adapterRef.current!);
+      },
+    };
+  }
+  const adapter = adapterRef.current;
+
+  const actions = useBooleans(adapter);
+
+  const reset = useCallback(() => {
+    // Remove all current nodes
+    for (const id of [...scene.renderOrder()]) {
+      scene.remove(id);
+    }
+    // Re-add initial nodes
+    scene.add({
+      kind: 'leaf',
+      layer: 'default',
+      id: asNodeId('rect'),
+      pose: RECT_INPUT,
+      data: { id: 'rect', path: RECT_INPUT, color: RECT_COLOR },
+    });
+    scene.add({
+      kind: 'leaf',
+      layer: 'default',
+      id: asNodeId('circle'),
+      pose: CIRCLE_INPUT,
+      data: { id: 'circle', path: CIRCLE_INPUT, color: CIRCLE_COLOR },
+    });
+    nextIdRef.current = 0;
+    pendingPathsRef.current.clear();
+    selection.set([asNodeId('rect'), asNodeId('circle')]);
+  }, [scene, selection]);
+
+  return (
+    // Wrap in its own SelectionContextProvider so this canvas's non-empty
+    // initial selection doesn't fight with the 6 static panels (which all
+    // publish an empty selection) over the shared outer context.
+    <SelectionContextProvider>
+      <div className="ckd-boolops-panel">
+        <h3 className="ckd-boolops-label">Interactive</h3>
+        <div className="ckd-boolops-toolbar">
+          <PathfinderPanel adapter={adapter} actions={actions} />
+          <button type="button" className="ckd-boolops-reset" onClick={reset}>
+            Reset
+          </button>
+        </div>
+        <SceneCanvas
+          width={W}
+          height={H}
+          className="ckd-canvas"
+          scene={scene}
+          selection={selection}
+          layers={{
+            scene: {
+              drawOne: (node): DrawCommand[] => [{
+                kind: 'path',
+                path: node.data.path,
+                fill: { color: node.data.color },
+              }],
+            },
+          }}
+          data-panel="interactive"
+        />
+      </div>
+    </SelectionContextProvider>
+  );
+}
+
 export function BooleanOpsDemo() {
   const unionResult = useMemo(() => pathUnion(RECT_INPUT, CIRCLE_INPUT), []);
   const intersectResult = useMemo(() => pathIntersect(RECT_INPUT, CIRCLE_INPUT), []);
@@ -92,6 +237,8 @@ export function BooleanOpsDemo() {
 
   return (
     <div className="ckd-boolops-grid">
+      <InteractivePanel />
+
       <div className="ckd-boolops-panel">
         <h3 className="ckd-boolops-label">Inputs</h3>
         <Panel id="inputs" paths={[
