@@ -31,6 +31,13 @@ import {
   SendBackwardIcon,
   BringForwardIcon,
   BringToFrontIcon,
+  UndoIcon,
+  RedoIcon,
+  CutIcon,
+  CopyIcon,
+  PasteIcon,
+  DuplicateIcon,
+  DeleteIcon,
 } from './actionIcons';
 
 export interface ActionBarProps {
@@ -109,16 +116,16 @@ export function ActionBar(p: ActionBarProps) {
       </div>
       <Sep />
       <div className="swill-actionbar-group">
-        <Button onClick={p.onUndo} disabled={!p.canUndo} title="Undo (Cmd-Z)">Undo</Button>
-        <Button onClick={p.onRedo} disabled={!p.canRedo} title="Redo (Cmd-Shift-Z)">Redo</Button>
+        <Button onClick={p.onUndo} disabled={!p.canUndo} title="Undo (Cmd-Z)"><UndoIcon /></Button>
+        <Button onClick={p.onRedo} disabled={!p.canRedo} title="Redo (Cmd-Shift-Z)"><RedoIcon /></Button>
       </div>
       <Sep />
       <div className="swill-actionbar-group">
-        <Button onClick={p.onCut} disabled={none} title="Cut (Cmd-X)">Cut</Button>
-        <Button onClick={p.onCopy} disabled={none} title="Copy (Cmd-C)">Copy</Button>
-        <Button onClick={p.onPaste} disabled={p.clipboardEmpty} title="Paste (Cmd-V)">Paste</Button>
-        <Button onClick={p.onDuplicate} disabled={none} title="Duplicate (Cmd-D)">Dup</Button>
-        <Button onClick={p.onDelete} disabled={none} title="Delete (Del)">Del</Button>
+        <Button onClick={p.onCut} disabled={none} title="Cut (Cmd-X)"><CutIcon /></Button>
+        <Button onClick={p.onCopy} disabled={none} title="Copy (Cmd-C)"><CopyIcon /></Button>
+        <Button onClick={p.onPaste} disabled={p.clipboardEmpty} title="Paste (Cmd-V)"><PasteIcon /></Button>
+        <Button onClick={p.onDuplicate} disabled={none} title="Duplicate (Cmd-D)"><DuplicateIcon /></Button>
+        <Button onClick={p.onDelete} disabled={none} title="Delete (Del)"><DeleteIcon /></Button>
       </div>
       <Sep />
       <div className="swill-actionbar-group">

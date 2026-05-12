@@ -209,3 +209,82 @@ export function BringToFrontIcon() {
     </svg>
   );
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// History — looped arrow; undo curls left, redo mirrors right.
+// ──────────────────────────────────────────────────────────────────────────
+
+export function UndoIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M4 8 H12 A4 4 0 0 1 16 12 V15" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M7 5 L4 8 L7 11" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function RedoIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M16 8 H8 A4 4 0 0 0 4 12 V15" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M13 5 L16 8 L13 11" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Clipboard ops — Cut (scissors), Copy (back doc peek + front doc),
+// Paste (clipboard w/ filled clip), Duplicate (source outline +
+// filled duplicate result), Delete (trash can w/ ridges).
+// ──────────────────────────────────────────────────────────────────────────
+
+export function CutIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <circle cx="6" cy="14" r="2.5" />
+      <circle cx="14" cy="14" r="2.5" />
+      <path d="M8 12 L16 4" strokeLinecap="round" />
+      <path d="M12 12 L4 4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function CopyIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M6 14 H3 V3 H14 V6" strokeLinejoin="round" />
+      <rect x="6" y="6" width="11" height="11" />
+    </svg>
+  );
+}
+
+export function PasteIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <rect x="4" y="5" width="12" height="13" rx="1" />
+      <rect x="7.5" y="2.5" width="5" height="4" rx="0.5" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function DuplicateIcon() {
+  // Source outlined, duplicate result filled — matches z-order convention
+  // (filled = the shape just produced by the op).
+  return (
+    <svg {...SVG_BASE}>
+      <rect x="3" y="3" width="10" height="10" />
+      <rect x="7" y="7" width="10" height="10" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function DeleteIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M3 5 H17" strokeLinecap="round" />
+      <path d="M7 5 V3 H13 V5" />
+      <path d="M5 5 L5.5 17 H14.5 L15 5" strokeLinejoin="round" />
+      <path d="M8.5 8 V14 M11.5 8 V14" strokeLinecap="round" />
+    </svg>
+  );
+}
