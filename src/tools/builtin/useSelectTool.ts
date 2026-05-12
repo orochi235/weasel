@@ -23,7 +23,8 @@ import type { AreaSelectAdapter } from 'core/adapters/types';
 import type { ResizeAnchor } from 'interactions/gestures/types';
 import type { NodeId } from 'core/scene/types';
 import { defineTool } from '../routing';
-import type { Tool, ToolBounds } from '../types';
+import type { ActionFn } from '../routing';
+import type { Tool, ToolBounds, ToolCtx } from '../types';
 import type { DebugSink } from '../../debug/types';
 import type { RenderLayer } from 'core/layers/render';
 import { viewToTransform } from 'core/viewport/view';
@@ -771,28 +772,26 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     return out.size > 0 ? out : null;
   };
 
-  // Imperative shims — preserved verbatim from the pre-routing implementation.
-  // The routing factory (defineTool from '../routing') expects a ToolDef with
-  // initial/engaged phase tables, but useSelectTool has three structural gaps
-  // that prevent a clean routing-table migration right now:
+  // Imperative shims — partial pre-routing carry-over. Task 3 introduced the
+  // routing-factory base; Task 4 migrated `drag` to a declarative route table
+  // (see `dragRoutes` below). `pointer.onDown`, `pointer.onClick`, and `dblTap`
+  // remain imperative because:
   //
   //   1. pointer.onDown has no routing-factory analogue (factory only emits
-  //      pointer.onClick). The onDown logic sets ctx.scratch for subsequent drag
-  //      routing and cannot be deferred to onClick.
-  //   2. drag.onStart / onMove receive a PointerEvent (for clientX/clientY used
-  //      by useMove.start/move); ActionFn<TScratch> only receives ctx.
+  //      pointer.onClick). The onDown logic sets selection / scratch ahead of
+  //      drag routing and cannot be deferred to onClick.
+  //   2. pointer.onClick handles the deferred-clear / deferred-collapse cases
+  //      whose modifier sub-tables need Task 5 work to express declaratively.
   //   3. dblTap.onTap receives a PointerEvent forwarded to the consumer's
   //      onDoubleTap callback; ActionFn<TScratch> only receives ctx.
   //
-  // Task 4 will replace the drag shim with real route tables calling
-  // move.beginAt / areaSelect.beginAt (which will carry clientX/clientY
-  // in ctx). A Phase 1 follow-up will populate ctx.target for non-affordance
-  // pointer events so click/dblTap can move to target-keyed routes.
-  //
-  // For now: call the declarative factory with an empty initial phase to claim
-  // the routing factory's structural identity (id, presentation, keybinding,
-  // cursor, phase machinery), then spread the imperative handlers back on top.
-  // Behavior is 100% preserved; the factory import is swapped.
+  // The declarative `initial.drag` route table dispatches by `ctx.target.kind`:
+  // rect/text/path → move.beginAt(ids); empty → areaSelect.beginAt. Each
+  // gesture primitive owns its own continuation closures (begin/hold/cancel),
+  // so the routing factory's engaged phase doesn't need a scratch switch.
+  // Behavior preserved end-to-end (multi-select-aware move, deferred click
+  // semantics) — the onDown shim sets up the "deferred click" hint on scratch
+  // before the dispatcher's threshold gating runs drag.onStart.
   const legacyOnDown = (_e: PointerEvent, ctx: import('../types').ToolCtx<SelectScratch>): 'claim' | 'pass' => {
     const sel = ctx.selection.current;
 
@@ -869,14 +868,41 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     return 'claim';
   };
 
+  // Compute the ids the move gesture should drag, given the current hit and
+  // live selection. Mirrors the rule the imperative `onDown` shim follows when
+  // it stashes `scratch.ids`: if the body-hit is part of the existing
+  // selection, drag the whole set; otherwise drag just the hit id.
+  //
+  // `ctx.selection.current` is the React snapshot at dispatch time — it
+  // doesn't reflect the `applyClick` the onDown shim has just enqueued, which
+  // is what preserves the "drag an unselected rect moves only that rect"
+  // semantic. The freshly-clicked id won't yet appear in `selection.current`.
+  const computeMoveIds = (ctx: ToolCtx<SelectScratch>): NodeId[] => {
+    const hit = ctx.target;
+    const hitId = hit?.category === 'node' ? (hit.id as NodeId) : null;
+    if (!hitId) return [];
+    const selected = ctx.selection.current;
+    if (selected.includes(hitId)) return [...selected] as NodeId[];
+    return [hitId];
+  };
+
+  // Drag route table. Keyed by `ctx.target.kind`:
+  //   rect/text/path → move.beginAt(ids); empty → areaSelect.beginAt.
+  //
+  // beginAt returns a `Result<'begin'>` whose `spec` carries the gesture's
+  // continuation closures (onMove/onRelease/onCancel). The routing factory
+  // installs those closures into its `activeSpec` slot, so engaged-phase
+  // pointer events route through the same gesture primitive without any
+  // scratch-kind switch in this file.
+  const beginMove: ActionFn<SelectScratch> = (ctx) =>
+    move.beginAt(ctx, computeMoveIds(ctx)) as ReturnType<ActionFn<SelectScratch>>;
+  const beginArea: ActionFn<SelectScratch> = (ctx) =>
+    areaSelect.beginAt(ctx) as ReturnType<ActionFn<SelectScratch>>;
+
   return useMemo(
     () => {
-      // Declarative factory — empty initial phase; all routing is
-      // handled by the imperative shims patched in below. The factory
-      // call establishes the routing ToolDef identity (id, keybinding,
-      // cursor, presentation, phase machinery) so subsequent tasks can
-      // incrementally populate the phase tables without re-touching this
-      // call site.
+      // Declarative factory — `initial.drag` is a real route table now.
+      // Click and dblTap remain imperative shims (see comment block above).
       const base = defineTool<SelectScratch>({
         id: 'select',
         keybinding: { key: 'V' },
@@ -886,17 +912,26 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           icon: createElement(SelectIcon),
           group: 'select',
         },
-        initial: {},
+        initial: {
+          drag: {
+            // Per the Phase 3 plan, dispatch by known node kinds so consumers
+            // can later override per-kind (e.g. text → enter-edit instead of
+            // move). The '*' wildcard catches nodes from adapters that haven't
+            // wired `kindOf` yet — kindOf is an optional adapter hook and
+            // `Canvas` falls back to `'unknown'` when it's absent. Drag on any
+            // node = move is the universal fallback.
+            rect: beginMove,
+            text: beginMove,
+            path: beginMove,
+            '*': beginMove,
+            empty: beginArea,
+          },
+        },
       });
 
-      // Patch imperative handlers back on top of the routing skeleton.
-      // Each patch fills a gap that the routing factory cannot yet cover:
-      //   - onDown: no routing analogue (factory only has onClick).
-      //   - onClick: ctx.target not yet populated for non-affordance events.
-      //   - dblTap: PointerEvent forwarded to consumer; ActionFn lacks it.
-      //   - drag: PointerEvent clientX/clientY needed by useMove.
-      //   - previewPose / previewBounds / previewIds / overlay / initScratch:
-      //     not part of ToolDef; must live on Tool directly.
+      // Patch the remaining imperative handlers on top of the routing
+      // skeleton. Each patch fills a gap the routing factory doesn't yet
+      // cover (see comment block above the `legacyOnDown` declaration).
       return {
         ...base,
         // The routing factory converts the string cursor to a function;
@@ -910,7 +945,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
 
         pointer: {
           onDown: legacyOnDown,
-          onClick: (_e: PointerEvent, ctx: import('../types').ToolCtx<SelectScratch>): 'claim' | 'pass' => {
+          onClick: (_e: PointerEvent, ctx: ToolCtx<SelectScratch>): 'claim' | 'pass' => {
             // Sub-threshold release: empty-hit clears, and a body hit on an
             // already-selected member of a multi-selection collapses to that
             // single id (deferred from onDown so a drag could move the set).
@@ -925,9 +960,9 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
 
         dblTap: {
           // Shim: PointerEvent forwarded to consumer callback; cannot
-          // use ActionFn<TScratch> (only receives ctx). Task 4 / Phase 1
+          // use ActionFn<TScratch> (only receives ctx). Task 5 / Phase 1
           // follow-up will migrate once ctx carries the event reference.
-          onTap: (e: PointerEvent, ctx: import('../types').ToolCtx<SelectScratch>) => {
+          onTap: (e: PointerEvent, ctx: ToolCtx<SelectScratch>) => {
             const cb = onDoubleTapRef.current;
             if (!cb) return 'pass' as const;
             const ids = pickEveryRef.current(ctx.worldX, ctx.worldY);
@@ -936,71 +971,11 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           },
         },
 
-        drag: {
-          // Shim: PointerEvent (clientX/clientY) needed by useMove;
-          // cannot use ActionFn<TScratch>. Task 4 replaces this with
-          // real route tables calling move.beginAt / areaSelect.beginAt.
-          onStart: (e: PointerEvent, ctx: import('../types').ToolCtx<SelectScratch>) => {
-            const s = ctx.scratch;
-            switch (s.kind) {
-              case 'move':
-                move.start({ ids: s.ids, worldX: ctx.worldX, worldY: ctx.worldY, clientX: e.clientX, clientY: e.clientY });
-                return 'claim' as const;
-              case 'resize':
-                resize.start(s.targetId, s.anchor, ctx.worldX, ctx.worldY);
-                return 'claim' as const;
-              case 'rotate':
-                rotate.start({ id: s.targetId, worldX: ctx.worldX, worldY: ctx.worldY });
-                return 'claim' as const;
-              case 'area':
-                areaSelect.start(ctx.worldX, ctx.worldY, ctx.modifiers);
-                return 'claim' as const;
-              default:
-                return 'pass' as const;
-            }
-          },
-
-          onMove: (e: PointerEvent, ctx: import('../types').ToolCtx<SelectScratch>) => {
-            const s = ctx.scratch;
-            switch (s.kind) {
-              case 'move':
-                move.move({ worldX: ctx.worldX, worldY: ctx.worldY, clientX: e.clientX, clientY: e.clientY, modifiers: ctx.modifiers });
-                return 'claim' as const;
-              case 'resize':
-                resize.move(ctx.worldX, ctx.worldY, ctx.modifiers);
-                return 'claim' as const;
-              case 'rotate':
-                rotate.move({ worldX: ctx.worldX, worldY: ctx.worldY, modifiers: ctx.modifiers });
-                return 'claim' as const;
-              case 'area':
-                areaSelect.move(ctx.worldX, ctx.worldY, ctx.modifiers);
-                return 'claim' as const;
-              default:
-                return 'pass' as const;
-            }
-          },
-
-          onEnd: (_e: PointerEvent, ctx: import('../types').ToolCtx<SelectScratch>) => {
-            const s = ctx.scratch;
-            switch (s.kind) {
-              case 'move': move.end(); return 'claim' as const;
-              case 'resize': resize.end(); return 'claim' as const;
-              case 'rotate': rotate.end(); return 'claim' as const;
-              case 'area': areaSelect.end(); return 'claim' as const;
-              default: return 'pass' as const;
-            }
-          },
-
-          onCancel: (ctx: import('../types').ToolCtx<SelectScratch>) => {
-            const s = ctx.scratch;
-            switch (s.kind) {
-              case 'move': move.cancel(); break;
-              case 'resize': resize.cancel(); break;
-              case 'rotate': rotate.cancel(); break;
-              case 'area': areaSelect.cancel(); break;
-            }
-          },
-        },
+        // drag: handled by the declarative routing factory above. The
+        // affordance pipeline (corner-resize / rotation) still routes
+        // through `cornerAffWrapped` / `rotationAffWrapped` via a
+        // synthetic virtual tool — those paths bypass useSelectTool's
+        // drag entirely (see dispatcher's `startAffordanceGesture`).
       };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
