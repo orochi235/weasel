@@ -44,7 +44,7 @@ const DEFAULT_ICONS: Record<PathfinderOp, ReactNode> = {
 };
 
 export function PathfinderPanel(props: PathfinderPanelProps) {
-  const { adapter, actions, icons, orientation = 'horizontal', labels, className } = props;
+  const { actions, icons, orientation = 'horizontal', labels, className } = props;
   const cls = [s.panel, orientation === 'vertical' && s.vertical, className]
     .filter(Boolean)
     .join(' ');
