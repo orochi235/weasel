@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { defineTool } from '../defineTool';
+import { defineTool, begin, claim } from '../routing';
 import { createInsertOp } from 'core/ops/create';
 import { LineIcon } from '../../icons';
 import { PathBuilder } from 'features/paths/builder';
@@ -7,7 +7,7 @@ import { viewToTransform, type View } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import type { RenderLayer } from 'core/layers/render';
 import type { DrawCommand } from '../../renderer';
-import type { Tool, ToolCtx } from '../types';
+import type { Tool } from '../types';
 
 const GHOST_STROKE = '#7fb069';
 const GHOST_LINE_WIDTH = 1;
@@ -56,11 +56,13 @@ export function useLineTool<TNode extends { id: string }>(
   const { create, label = 'Insert line', minLength = 0 } = options;
   const createRef = useRef(create);
   createRef.current = create;
-  const applyOpsRef = useRef<ToolCtx['applyOps'] | null>(null);
 
   // Live overlay state: setLineState fires React re-renders on every move
   // so the ghost layer redraws as the user drags. Ref tracks the same
-  // value for synchronous reads inside the overlay closure.
+  // value for synchronous reads inside the overlay closure. Kept for
+  // parity with the imperative tool — the routing factory's begin() writes
+  // scratch into the dispatcher's ctx but doesn't trigger a re-render on
+  // its own.
   const [, setLineState] = useState<LineScratch | null>(null);
   const lineStateRef = useRef<LineScratch | null>(null);
   const writeState = useCallback((next: LineScratch | null) => {
@@ -101,68 +103,63 @@ export function useLineTool<TNode extends { id: string }>(
 
   return useMemo(
     () =>
-      defineTool<LineScratch | null>({
+      defineTool<LineScratch>({
         id: 'line',
         keybinding: { key: '\\' },
         cursor: 'crosshair',
-        initScratch: () => null,
         presentation: {
           label: 'Line',
           group: 'shape',
           icon: <LineIcon />,
         },
-        drag: {
-          onStart: (_e, ctx) => {
-            const init: LineScratch = {
+        initial: {
+          overlay: () => overlay,
+          drag: (ctx) => {
+            // `scratch` is captured by reference and mutated in place across
+            // onMove/onRelease. Each mutation is followed by writeState so
+            // the overlay redraws — same trick the imperative tool used.
+            const scratch: LineScratch = {
               start: { x: ctx.worldX, y: ctx.worldY },
               current: { x: ctx.worldX, y: ctx.worldY },
               shift: ctx.modifiers.shift,
               alt: ctx.modifiers.alt,
             };
-            ctx.scratch = init;
-            writeState(init);
-            return 'claim';
-          },
-          onMove: (_e, ctx) => {
-            const s = ctx.scratch as LineScratch | null;
-            if (!s) return 'pass';
-            s.current = { x: ctx.worldX, y: ctx.worldY };
-            s.shift = ctx.modifiers.shift;
-            s.alt = ctx.modifiers.alt;
-            writeState({ ...s });
-            return 'claim';
-          },
-          onEnd: (_e, ctx) => {
-            applyOpsRef.current = ctx.applyOps;
-            const s = ctx.scratch as LineScratch | null;
-            if (!s) return 'claim';
-            let a = s.start;
-            let b = s.current;
-            if (ctx.modifiers.shift) b = snapTo15Degrees(a, b);
-            if (ctx.modifiers.alt) {
-              a = { x: a.x - (b.x - a.x), y: a.y - (b.y - a.y) };
-            }
-            const len = Math.hypot(b.x - a.x, b.y - a.y);
-            if (len < minLength) {
-              ctx.scratch = null;
-              writeState(null);
-              return 'claim';
-            }
-            const node = createRef.current(a, b);
-            if (node) {
-              applyOpsRef.current([createInsertOp({ node, label })], label);
-            }
-            ctx.scratch = null;
-            writeState(null);
-            return 'claim';
-          },
-          onCancel: (ctx) => {
-            ctx.scratch = null;
-            writeState(null);
+            writeState(scratch);
+            return begin({
+              scratch,
+              onMove: (c) => {
+                scratch.current = { x: c.worldX, y: c.worldY };
+                scratch.shift = c.modifiers.shift;
+                scratch.alt = c.modifiers.alt;
+                writeState({ ...scratch });
+                return claim();
+              },
+              onRelease: (c) => {
+                let a = scratch.start;
+                let b = scratch.current;
+                if (c.modifiers.shift) b = snapTo15Degrees(a, b);
+                if (c.modifiers.alt) {
+                  a = { x: a.x - (b.x - a.x), y: a.y - (b.y - a.y) };
+                }
+                const len = Math.hypot(b.x - a.x, b.y - a.y);
+                if (len < minLength) {
+                  writeState(null);
+                  return claim();
+                }
+                const node = createRef.current(a, b);
+                if (node) {
+                  c.applyOps([createInsertOp({ node, label })], label);
+                }
+                writeState(null);
+                return claim();
+              },
+              onCancel: () => {
+                writeState(null);
+              },
+            });
           },
         },
-        overlay,
-      }),
+      }) as Tool<LineScratch | null>,
     [label, minLength, overlay, writeState],
   );
 }
