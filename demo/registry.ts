@@ -70,6 +70,8 @@ import LassoDemoFull from './demos/LassoDemo.tsx?raw';
 import ClipboardDemoFull from './demos/ClipboardDemo.tsx?raw';
 import ClippingDemoFull from './demos/ClippingDemo.tsx?raw';
 import HudDemoFull from './demos/HudDemo.tsx?raw';
+import { PointSnapDemo } from './demos/PointSnapDemo';
+import PointSnapDemoFull from './demos/PointSnapDemo.tsx?raw';
 
 // Scene-data JSON for demos that load via `sceneFromJSON`. Surfaced alongside
 // the TSX in the source pane so consumers can see the format.
@@ -188,6 +190,17 @@ export const DEMOS: DemoEntry[] = [
     Component: TextDemo,
     full: TextDemoFull,
     path: 'demo/demos/TextDemo.tsx',
+  },
+
+  {
+    id: 'point-snap',
+    title: 'Point-snap resize',
+    category: 'Tools',
+    description: 'useResize with pointSnapBehaviors — drag the bottom-right corner of the rotated rectangle and watch the world-space dragged corner snap to a 20-unit grid intersection. The local-frame pose back-solves automatically.',
+    hint: 'Drag the bottom-right corner.',
+    Component: PointSnapDemo,
+    full: PointSnapDemoFull,
+    path: 'demo/demos/PointSnapDemo.tsx',
   },
 
   // ─── Selection & actions ──────────────────────────────────────────────────
