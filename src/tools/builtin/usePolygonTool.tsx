@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { defineTool } from '../defineTool';
+import { defineTool, begin, claim, none } from '../routing';
 import { useDragRadial } from 'interactions/gestures/dragRadial';
 import { createInsertOp } from 'core/ops/create';
 import { PolygonIcon } from '../../icons';
@@ -108,62 +108,61 @@ export function usePolygonTool<TNode extends { id: string }>(
         id: 'polygon',
         keybinding: { key: 'G' },
         cursor: 'crosshair',
-        initScratch: () => null,
         presentation: {
           label: 'Polygon',
           group: 'shape',
           icon: <PolygonIcon />,
         },
-        drag: {
-          onStart: (_e, ctx) => {
+        initial: {
+          overlay: () => overlay,
+          drag: (ctx) => {
             dr.start(ctx.worldX, ctx.worldY, ctx.modifiers);
-            return 'claim';
+            return begin({
+              scratch: null,
+              onMove: (c) => {
+                dr.move(c.worldX, c.worldY, c.modifiers);
+                return claim();
+              },
+              onRelease: (c) => {
+                applyOpsRef.current = c.applyOps;
+                dr.end();
+                return claim();
+              },
+              onCancel: () => {
+                dr.cancel();
+              },
+            });
           },
-          onMove: (_e, ctx) => {
-            dr.move(ctx.worldX, ctx.worldY, ctx.modifiers);
-            return 'claim';
-          },
-          onEnd: (_e, ctx) => {
-            applyOpsRef.current = ctx.applyOps;
-            dr.end();
-            return 'claim';
-          },
-          onCancel: () => dr.cancel(),
-        },
-        keyboard: {
-          onDown: (e) => {
-            if (e.key === 'ArrowUp') {
+          keyDown: {
+            ArrowUp: () => {
               sidesRef.current = Math.min(MAX_SIDES, sidesRef.current + 1);
               bumpSides();
-              return 'claim';
-            }
-            if (e.key === 'ArrowDown') {
+              return claim();
+            },
+            ArrowDown: () => {
               sidesRef.current = Math.max(MIN_SIDES, sidesRef.current - 1);
               bumpSides();
-              return 'claim';
-            }
-            return 'pass';
+              return claim();
+            },
           },
-        },
-        wheel: {
           // Adjust side count via mousewheel only while a gesture is in
           // flight; otherwise pass so view-zoom / pan tools can claim.
           // Convention: wheel up (deltaY < 0) adds a side, wheel down
           // removes one. Each wheel tick is one increment regardless of
           // delta magnitude — feels Illustrator-y.
-          onWheel: (e) => {
-            if (!drRef.current.isActive) return 'pass';
-            if (e.deltaY === 0) return 'pass';
+          wheel: (_ctx, event) => {
+            if (!drRef.current.isActive) return none();
+            const e = event as WheelEvent | undefined;
+            if (!e || e.deltaY === 0) return none();
             if (e.deltaY < 0) {
               sidesRef.current = Math.min(MAX_SIDES, sidesRef.current + 1);
             } else {
               sidesRef.current = Math.max(MIN_SIDES, sidesRef.current - 1);
             }
             bumpSides();
-            return 'claim';
+            return claim();
           },
         },
-        overlay,
       }),
     [dr.start, dr.move, dr.end, dr.cancel, overlay, bumpSides],
   );
