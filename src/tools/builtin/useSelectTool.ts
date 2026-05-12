@@ -22,7 +22,7 @@ import type { RotateAdapter } from 'core/adapters/types';
 import type { AreaSelectAdapter } from 'core/adapters/types';
 import type { ResizeAnchor } from 'interactions/gestures/types';
 import type { NodeId } from 'core/scene/types';
-import { defineTool } from '../defineTool';
+import { defineTool } from '../routing';
 import type { Tool, ToolBounds } from '../types';
 import type { DebugSink } from '../../debug/types';
 import type { RenderLayer } from 'core/layers/render';
@@ -771,9 +771,113 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     return out.size > 0 ? out : null;
   };
 
+  // Imperative shims — preserved verbatim from the pre-routing implementation.
+  // The routing factory (defineTool from '../routing') expects a ToolDef with
+  // initial/engaged phase tables, but useSelectTool has three structural gaps
+  // that prevent a clean routing-table migration right now:
+  //
+  //   1. pointer.onDown has no routing-factory analogue (factory only emits
+  //      pointer.onClick). The onDown logic sets ctx.scratch for subsequent drag
+  //      routing and cannot be deferred to onClick.
+  //   2. drag.onStart / onMove receive a PointerEvent (for clientX/clientY used
+  //      by useMove.start/move); ActionFn<TScratch> only receives ctx.
+  //   3. dblTap.onTap receives a PointerEvent forwarded to the consumer's
+  //      onDoubleTap callback; ActionFn<TScratch> only receives ctx.
+  //
+  // Task 4 will replace the drag shim with real route tables calling
+  // move.beginAt / areaSelect.beginAt (which will carry clientX/clientY
+  // in ctx). A Phase 1 follow-up will populate ctx.target for non-affordance
+  // pointer events so click/dblTap can move to target-keyed routes.
+  //
+  // For now: call the declarative factory with an empty initial phase to claim
+  // the routing factory's structural identity (id, presentation, keybinding,
+  // cursor, phase machinery), then spread the imperative handlers back on top.
+  // Behavior is 100% preserved; the factory import is swapped.
+  const legacyOnDown = (_e: PointerEvent, ctx: import('../types').ToolCtx<SelectScratch>): 'claim' | 'pass' => {
+    const sel = ctx.selection.current;
+
+    // Handles (rotation + corner-resize) are handled by their
+    // respective affordances (see `cornerAffWrapped` and
+    // `rotationAffWrapped` above). The dispatcher's affordance-layer
+    // hit-test pipeline routes those hits directly to `useResize` /
+    // `useRotate` via the wrapped drag channels, bypassing
+    // pointer.onDown entirely for the handle case.
+
+    // 1. Body hit → move (+ select)
+    const top = options.pickBest
+      ? options.pickBest(ctx.worldX, ctx.worldY, ctx.modifiers.alt, sel)
+      : (() => {
+          const ids = pickEveryFn(ctx.worldX, ctx.worldY);
+          if (ids.length === 0) return null;
+          // pickTopMostHit collapses parent/child overlap (container's
+          // bounds also cover the child) and falls back to "last id" for
+          // pure sibling hits — matches the bottom-first iteration order
+          // most demos produce. Demos that already z-sort with topmost
+          // first should return a single-id array; this helper is a
+          // no-op in that case.
+          return pickTopMostHit(ids, adapter) ?? ids[0];
+        })();
+    if (top !== null) {
+      // Capture pre-click selection so we can decide whether the drag
+      // moves the existing set or just the freshly-clicked object.
+      // `ctx.selection.current` is the React snapshot from the
+      // dispatcher's render — it does not reflect mutations made by
+      // applyClick during this same callback.
+      const preClick = sel;
+      const hitAlreadySelected = preClick.includes(top as NodeId);
+      const isExtend = ctx.modifiers.shift || ctx.modifiers.meta;
+      // When the hit is already part of a multi-selection and no
+      // extend modifier is held, defer the collapse-to-single to
+      // onClick. Otherwise applying it on down would wipe the
+      // multi-selection before a drag can move the whole set.
+      const deferClick = hitAlreadySelected && preClick.length > 1 && !isExtend;
+      if (!deferClick) ctx.selection.applyClick(top as NodeId, ctx.modifiers);
+      // Auto-bring-to-front on body-hit. Matches Figma / Sketch /
+      // Illustrator conventions: the most recently clicked object
+      // becomes the topmost in z-order. Skipped on extend-clicks
+      // (shift/meta) so multi-selecting doesn't keep reshuffling the
+      // stack. Skipped when the adapter doesn't expose the reorder
+      // surface — keeps simple flat-list adapters that don't
+      // implement getChildren/setChildOrder from accumulating
+      // empty "Bring to front" entries on every click.
+      if ((options.bringToFrontOnSelect ?? true) && !isExtend) {
+        const reorderable = adapter as unknown as {
+          getChildren?: (parentId: string | null) => string[];
+          setChildOrder?: (parentId: string | null, ids: string[]) => void;
+        };
+        if (reorderable.getChildren && reorderable.setChildOrder) {
+          dispatchApplyBatch(adapter, [createReorderOp({ ids: [top], direction: 'front' })], 'Bring to front');
+        }
+      }
+      // If the user clicked something already selected, drag the whole
+      // selection. Otherwise the click switches selection and the drag
+      // moves only the clicked object — matches Figma/Sketch behavior
+      // ("dragging an unselected object shouldn't move the old one").
+      const moveIds: string[] = hitAlreadySelected && preClick.length > 0 ? [...preClick] : [top];
+      ctx.scratch = { kind: 'move', ids: moveIds, deferredClickId: deferClick ? top : null };
+      return 'claim';
+    }
+
+    // 2. Empty → defer clear to onClick (sub-threshold release).
+    //    Clearing on down feels twitchy: an accidental tap on empty
+    //    space wipes selection mid-thought. The marquee path
+    //    (drag.onStart → areaSelect) overwrites selection on its
+    //    own end; the click path (no drag) handles clear in
+    //    pointer.onClick below. Shift/meta are extend modifiers and
+    //    never clear.
+    ctx.scratch = { kind: 'area' };
+    return 'claim';
+  };
+
   return useMemo(
-    () =>
-      defineTool<SelectScratch>({
+    () => {
+      // Declarative factory — empty initial phase; all routing is
+      // handled by the imperative shims patched in below. The factory
+      // call establishes the routing ToolDef identity (id, keybinding,
+      // cursor, presentation, phase machinery) so subsequent tasks can
+      // incrementally populate the phase tables without re-touching this
+      // call site.
+      const base = defineTool<SelectScratch>({
         id: 'select',
         keybinding: { key: 'V' },
         cursor: 'default',
@@ -782,90 +886,31 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           icon: createElement(SelectIcon),
           group: 'select',
         },
+        initial: {},
+      });
+
+      // Patch imperative handlers back on top of the routing skeleton.
+      // Each patch fills a gap that the routing factory cannot yet cover:
+      //   - onDown: no routing analogue (factory only has onClick).
+      //   - onClick: ctx.target not yet populated for non-affordance events.
+      //   - dblTap: PointerEvent forwarded to consumer; ActionFn lacks it.
+      //   - drag: PointerEvent clientX/clientY needed by useMove.
+      //   - previewPose / previewBounds / previewIds / overlay / initScratch:
+      //     not part of ToolDef; must live on Tool directly.
+      return {
+        ...base,
+        // The routing factory converts the string cursor to a function;
+        // restore the plain string so callers that compare identity work.
+        cursor: 'default',
+        initScratch: () => ({ kind: 'idle' as const }),
         overlay,
         previewPose,
         previewBounds,
         previewIds,
-        initScratch: () => ({ kind: 'idle' }),
 
         pointer: {
-          onDown: (_e, ctx) => {
-            const sel = ctx.selection.current;
-
-            // Handles (rotation + corner-resize) are handled by their
-            // respective affordances (see `cornerAffWrapped` and
-            // `rotationAffWrapped` above). The dispatcher's affordance-layer
-            // hit-test pipeline routes those hits directly to `useResize` /
-            // `useRotate` via the wrapped drag channels, bypassing
-            // pointer.onDown entirely for the handle case.
-
-            // 1. Body hit → move (+ select)
-            const top = options.pickBest
-              ? options.pickBest(ctx.worldX, ctx.worldY, ctx.modifiers.alt, sel)
-              : (() => {
-                  const ids = pickEveryFn(ctx.worldX, ctx.worldY);
-                  if (ids.length === 0) return null;
-                  // pickTopMostHit collapses parent/child overlap (container's
-                  // bounds also cover the child) and falls back to "last id" for
-                  // pure sibling hits — matches the bottom-first iteration order
-                  // most demos produce. Demos that already z-sort with topmost
-                  // first should return a single-id array; this helper is a
-                  // no-op in that case.
-                  return pickTopMostHit(ids, adapter) ?? ids[0];
-                })();
-            if (top !== null) {
-              // Capture pre-click selection so we can decide whether the drag
-              // moves the existing set or just the freshly-clicked object.
-              // `ctx.selection.current` is the React snapshot from the
-              // dispatcher's render — it does not reflect mutations made by
-              // applyClick during this same callback.
-              const preClick = sel;
-              const hitAlreadySelected = preClick.includes(top as NodeId);
-              const isExtend = ctx.modifiers.shift || ctx.modifiers.meta;
-              // When the hit is already part of a multi-selection and no
-              // extend modifier is held, defer the collapse-to-single to
-              // onClick. Otherwise applying it on down would wipe the
-              // multi-selection before a drag can move the whole set.
-              const deferClick = hitAlreadySelected && preClick.length > 1 && !isExtend;
-              if (!deferClick) ctx.selection.applyClick(top as NodeId, ctx.modifiers);
-              // Auto-bring-to-front on body-hit. Matches Figma / Sketch /
-              // Illustrator conventions: the most recently clicked object
-              // becomes the topmost in z-order. Skipped on extend-clicks
-              // (shift/meta) so multi-selecting doesn't keep reshuffling the
-              // stack. Skipped when the adapter doesn't expose the reorder
-              // surface — keeps simple flat-list adapters that don't
-              // implement getChildren/setChildOrder from accumulating
-              // empty "Bring to front" entries on every click.
-              if ((options.bringToFrontOnSelect ?? true) && !isExtend) {
-                const reorderable = adapter as unknown as {
-                  getChildren?: (parentId: string | null) => string[];
-                  setChildOrder?: (parentId: string | null, ids: string[]) => void;
-                };
-                if (reorderable.getChildren && reorderable.setChildOrder) {
-                  dispatchApplyBatch(adapter, [createReorderOp({ ids: [top], direction: 'front' })], 'Bring to front');
-                }
-              }
-              // If the user clicked something already selected, drag the whole
-              // selection. Otherwise the click switches selection and the drag
-              // moves only the clicked object — matches Figma/Sketch behavior
-              // ("dragging an unselected object shouldn't move the old one").
-              const moveIds: string[] = hitAlreadySelected && preClick.length > 0 ? [...preClick] : [top];
-              ctx.scratch = { kind: 'move', ids: moveIds, deferredClickId: deferClick ? top : null };
-              return 'claim';
-            }
-
-            // 2. Empty → defer clear to onClick (sub-threshold release).
-            //    Clearing on down feels twitchy: an accidental tap on empty
-            //    space wipes selection mid-thought. The marquee path
-            //    (drag.onStart → areaSelect) overwrites selection on its
-            //    own end; the click path (no drag) handles clear in
-            //    pointer.onClick below. Shift/meta are extend modifiers and
-            //    never clear.
-            ctx.scratch = { kind: 'area' };
-            return 'claim';
-          },
-
-          onClick: (_e, ctx) => {
+          onDown: legacyOnDown,
+          onClick: (_e: PointerEvent, ctx: import('../types').ToolCtx<SelectScratch>): 'claim' | 'pass' => {
             // Sub-threshold release: empty-hit clears, and a body hit on an
             // already-selected member of a multi-selection collapses to that
             // single id (deferred from onDown so a drag could move the set).
@@ -879,68 +924,74 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         },
 
         dblTap: {
-          onTap: (e, ctx) => {
+          // Shim: PointerEvent forwarded to consumer callback; cannot
+          // use ActionFn<TScratch> (only receives ctx). Task 4 / Phase 1
+          // follow-up will migrate once ctx carries the event reference.
+          onTap: (e: PointerEvent, ctx: import('../types').ToolCtx<SelectScratch>) => {
             const cb = onDoubleTapRef.current;
-            if (!cb) return 'pass';
+            if (!cb) return 'pass' as const;
             const ids = pickEveryRef.current(ctx.worldX, ctx.worldY);
             cb({ worldX: ctx.worldX, worldY: ctx.worldY, ids, event: e });
-            return 'claim';
+            return 'claim' as const;
           },
         },
 
         drag: {
-          onStart: (e, ctx) => {
+          // Shim: PointerEvent (clientX/clientY) needed by useMove;
+          // cannot use ActionFn<TScratch>. Task 4 replaces this with
+          // real route tables calling move.beginAt / areaSelect.beginAt.
+          onStart: (e: PointerEvent, ctx: import('../types').ToolCtx<SelectScratch>) => {
             const s = ctx.scratch;
             switch (s.kind) {
               case 'move':
                 move.start({ ids: s.ids, worldX: ctx.worldX, worldY: ctx.worldY, clientX: e.clientX, clientY: e.clientY });
-                return 'claim';
+                return 'claim' as const;
               case 'resize':
                 resize.start(s.targetId, s.anchor, ctx.worldX, ctx.worldY);
-                return 'claim';
+                return 'claim' as const;
               case 'rotate':
                 rotate.start({ id: s.targetId, worldX: ctx.worldX, worldY: ctx.worldY });
-                return 'claim';
+                return 'claim' as const;
               case 'area':
                 areaSelect.start(ctx.worldX, ctx.worldY, ctx.modifiers);
-                return 'claim';
+                return 'claim' as const;
               default:
-                return 'pass';
+                return 'pass' as const;
             }
           },
 
-          onMove: (e, ctx) => {
+          onMove: (e: PointerEvent, ctx: import('../types').ToolCtx<SelectScratch>) => {
             const s = ctx.scratch;
             switch (s.kind) {
               case 'move':
                 move.move({ worldX: ctx.worldX, worldY: ctx.worldY, clientX: e.clientX, clientY: e.clientY, modifiers: ctx.modifiers });
-                return 'claim';
+                return 'claim' as const;
               case 'resize':
                 resize.move(ctx.worldX, ctx.worldY, ctx.modifiers);
-                return 'claim';
+                return 'claim' as const;
               case 'rotate':
                 rotate.move({ worldX: ctx.worldX, worldY: ctx.worldY, modifiers: ctx.modifiers });
-                return 'claim';
+                return 'claim' as const;
               case 'area':
                 areaSelect.move(ctx.worldX, ctx.worldY, ctx.modifiers);
-                return 'claim';
+                return 'claim' as const;
               default:
-                return 'pass';
+                return 'pass' as const;
             }
           },
 
-          onEnd: (_e, ctx) => {
+          onEnd: (_e: PointerEvent, ctx: import('../types').ToolCtx<SelectScratch>) => {
             const s = ctx.scratch;
             switch (s.kind) {
-              case 'move': move.end(); return 'claim';
-              case 'resize': resize.end(); return 'claim';
-              case 'rotate': rotate.end(); return 'claim';
-              case 'area': areaSelect.end(); return 'claim';
-              default: return 'pass';
+              case 'move': move.end(); return 'claim' as const;
+              case 'resize': resize.end(); return 'claim' as const;
+              case 'rotate': rotate.end(); return 'claim' as const;
+              case 'area': areaSelect.end(); return 'claim' as const;
+              default: return 'pass' as const;
             }
           },
 
-          onCancel: (ctx) => {
+          onCancel: (ctx: import('../types').ToolCtx<SelectScratch>) => {
             const s = ctx.scratch;
             switch (s.kind) {
               case 'move': move.cancel(); break;
@@ -950,7 +1001,8 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
             }
           },
         },
-      }),
+      };
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [move, resize, rotate, areaSelect, overlay, pickEveryFn, options.pickBest, boundsOfFn, handleHitRadius, rotationHandleDistance, options.debug],
   );
