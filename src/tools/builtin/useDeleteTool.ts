@@ -1,14 +1,14 @@
 import { useMemo } from 'react';
 import { useDelete, type DeleteAdapter, type UseDeleteOptions } from 'interactions/actions/delete/delete';
-import { defineTool } from '../defineTool';
+import { defineTool, claim } from '../routing';
 import type { Tool } from '../types';
 
 export interface UseDeleteToolOptions extends UseDeleteOptions {}
 
 /** Always-on Tool wrapping `useDelete`. Handles Backspace and Delete via
- *  the keyboard channel (fired on every ambient-slot tool by the dispatcher).
- *  The legacy hook's document-level keybinding is suppressed by passing
- *  `enableKeyboard: false`. */
+ *  the declarative keyDown route (fired on every ambient-slot tool by
+ *  the dispatcher). The legacy hook's document-level keybinding is
+ *  suppressed by passing `enableKeyboard: false`. */
 export function useDeleteTool(
   adapter: DeleteAdapter,
   options: UseDeleteToolOptions = {},
@@ -19,11 +19,16 @@ export function useDeleteTool(
     () =>
       defineTool({
         id: 'delete',
-        keyboard: {
-          onDown: (e) => {
-            if (e.key !== 'Backspace' && e.key !== 'Delete') return 'pass';
-            ctl.deleteSelection();
-            return 'claim';
+        initial: {
+          keyDown: {
+            Backspace: () => {
+              ctl.deleteSelection();
+              return claim();
+            },
+            Delete: () => {
+              ctl.deleteSelection();
+              return claim();
+            },
           },
         },
       }),
