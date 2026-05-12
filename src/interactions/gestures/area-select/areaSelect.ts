@@ -10,6 +10,8 @@ import type {
 } from '../types';
 import type { DebugSink } from '../../../debug/types';
 import { useDragRect, type DragRectCtx } from '../dragRect';
+import { begin, hold, cancel as cancelResult, type Result } from '../../../tools/routing';
+import type { ToolCtx } from '../../../tools/types';
 
 const GID = 'gesture';
 
@@ -28,6 +30,11 @@ export interface UseAreaSelectOptions {
   debug?: DebugSink;
 }
 
+/** Scratch shape produced by `beginAt` — identifies this as an area-select gesture. */
+export interface AreaScratch {
+  kind: 'area';
+}
+
 /** Return shape of `useAreaSelect`: lifecycle methods and live marquee overlay. */
 export interface AreaSelectController {
   start(worldX: number, worldY: number, modifiers: ModifierState): void;
@@ -38,9 +45,13 @@ export interface AreaSelectController {
   overlay: AreaSelectOverlay | null;
   /** The adapter passed in. Exposed so `<Canvas>` can derive defaults. */
   adapter: AreaSelectAdapter;
+  /** Declarative-routing entry point. Wraps `start/move/end/cancel` in a
+   *  `begin(spec)` Result so a `useSelectTool` route table can hand off a
+   *  drag-on-empty gesture without imperative bookkeeping. */
+  beginAt(ctx: ToolCtx<unknown>): Result<AreaScratch>;
 }
 
-interface AreaScratch {
+interface DragScratch {
   startPose: AreaSelectPose;
 }
 
@@ -75,7 +86,7 @@ export function useAreaSelect(
   const dragShiftHeldRef = useRef<boolean>(false);
 
   const buildGestureCtx = (
-    drCtx: DragRectCtx<AreaScratch>,
+    drCtx: DragRectCtx<DragScratch>,
     startPose: AreaSelectPose,
   ): GestureContext<AreaSelectPose> => ({
     draggedIds: [GID],
@@ -95,7 +106,7 @@ export function useAreaSelect(
     scratch: {},
   });
 
-  const dr = useDragRect<AreaScratch>({
+  const dr = useDragRect<DragScratch>({
     initScratch: () => ({ startPose: { worldX: 0, worldY: 0, shiftHeld: false } }),
     onStart: (ctx) => {
       const startPose: AreaSelectPose = {
@@ -178,6 +189,23 @@ export function useAreaSelect(
       },
       get adapter() {
         return adapterRef.current;
+      },
+      beginAt(ctx: ToolCtx<unknown>): Result<AreaScratch> {
+        dr.start(ctx.worldX, ctx.worldY, ctx.modifiers);
+        return begin<AreaScratch>({
+          scratch: { kind: 'area' },
+          onMove: (moveCtx) => {
+            dr.move(moveCtx.worldX, moveCtx.worldY, moveCtx.modifiers);
+            return hold(moveCtx.scratch);
+          },
+          onRelease: () => {
+            dr.end();
+            return cancelResult();
+          },
+          onCancel: () => {
+            dr.cancel();
+          },
+        });
       },
     }),
     [dr.start, dr.move, dr.end, dr.cancel],

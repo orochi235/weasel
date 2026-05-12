@@ -6,6 +6,8 @@ import { translateRectPose } from 'features/groups/composePose';
 import { dispatchApplyBatch } from 'core/applyOps';
 import { useDragGesture } from '../dragGesture';
 import type { GestureContext, MoveBehavior, MoveOverlay, ModifierState } from '../types';
+import { begin, hold, cancel as cancelResult, type Result } from '../../../tools/routing';
+import type { ToolCtx } from '../../../tools/types';
 
 /** Options for `useMove`. */
 export interface UseMoveOptions<TPose> {
@@ -62,6 +64,12 @@ export interface MoveMoveArgs {
   modifiers: ModifierState;
 }
 
+/** Scratch type for `beginAt` continuations. */
+export interface MoveScratchTag {
+  kind: 'move';
+  ids: readonly string[];
+}
+
 /** Return shape of `useMove`: lifecycle methods and a live overlay snapshot. */
 export interface MoveController<TNode extends { id: string }, TPose> {
   start(args: MoveStartArgs): void;
@@ -74,6 +82,12 @@ export interface MoveController<TNode extends { id: string }, TPose> {
    *  `<Canvas>`) can derive default `pickEvery`/`boundsOf` without taking
    *  the adapter as a separate prop. */
   adapter: MoveAdapter<TNode, TPose>;
+  /** Declarative-routing adapter. Calls `start()` immediately and returns a
+   *  `begin` Result whose continuations delegate to `move`/`end`/`cancel`.
+   *  Lets a route-table drag handler open this gesture without imperative
+   *  dispatch. The scratch tag `{ kind: 'move', ids }` is passed through so
+   *  the engaged phase can identify the gesture origin. */
+  beginAt(ctx: ToolCtx<unknown>, ids: readonly string[]): Result<MoveScratchTag>;
 }
 
 /** Pointer-driven move interaction with composable behaviors (snap, container reparent, snap-back) and op-batched commit. */
@@ -561,13 +575,55 @@ export function useMove<TNode extends { id: string }, TPose>(
 
   const isActive = useCallback(() => gesture.phase === 'active', [gesture]);
 
+  const beginAt = useCallback((
+    ctx: ToolCtx<unknown>,
+    ids: readonly string[],
+  ): Result<MoveScratchTag> => {
+    start({
+      ids: [...ids],
+      worldX: ctx.worldX,
+      worldY: ctx.worldY,
+      clientX: ctx.screenPoint?.x ?? 0,
+      clientY: ctx.screenPoint?.y ?? 0,
+    });
+    const tag: MoveScratchTag = { kind: 'move', ids };
+    return begin<MoveScratchTag>({
+      scratch: tag,
+      onMove: (mCtx) => {
+        move({
+          worldX: mCtx.worldX,
+          worldY: mCtx.worldY,
+          clientX: mCtx.screenPoint?.x ?? 0,
+          clientY: mCtx.screenPoint?.y ?? 0,
+          modifiers: {
+            alt:   mCtx.modifiers.alt,
+            shift: mCtx.modifiers.shift,
+            meta:  mCtx.modifiers.meta,
+            ctrl:  mCtx.modifiers.ctrl,
+          },
+        });
+        return hold(mCtx.scratch);
+      },
+      onRelease: () => {
+        // useMove commits its own ops on end(); the routing engine exits
+        // the engaged phase when we return cancel.
+        gesture.end();
+        return cancelResult();
+      },
+      onCancel: () => {
+        gesture.cancel();
+      },
+    });
+  }, [start, move, gesture]);
+
   return useMemo<MoveController<TNode, TPose>>(() => ({
     start,
     move,
     end: gesture.end,
     cancel: gesture.cancel,
     isActive,
+    beginAt,
     get overlay() { return overlayRef.current; },
     get adapter() { return adapterRef.current; },
-  }), [start, move, gesture.end, gesture.cancel, isActive]);
+  }), [start, move, gesture.end, gesture.cancel, isActive, beginAt]);
 }

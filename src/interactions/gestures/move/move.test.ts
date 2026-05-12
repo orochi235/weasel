@@ -5,6 +5,8 @@ import { snapToGrid } from './behaviors/snapToGrid';
 import { snapBackOrDelete } from './behaviors/snapBackOrDelete';
 import type { MoveAdapter } from 'core/adapters/types';
 import type { Op } from 'core/ops/types';
+import type { BeginSpec } from '../../../tools/routing';
+import type { MoveScratchTag } from './move';
 
 interface Pose { x: number; y: number }
 interface Obj { id: string; pose: Pose; parent: string | null }
@@ -213,5 +215,94 @@ describe('useMove', () => {
     expect(result.current.overlay!.poses.get('a')).toEqual({ x: 5, y: 5 });
     act(() => result.current.end());
     expect(result.current.overlay).toBeNull();
+  });
+});
+
+describe('useMove.beginAt', () => {
+  it('returns a begin Result with continuation closures', () => {
+    const adapter = makeAdapter([
+      { id: 'a', pose: { x: 0, y: 0 }, parent: null },
+      { id: 'b', pose: { x: 10, y: 10 }, parent: null },
+    ]);
+    const { result } = renderHook(() => useMove(adapter, { translatePose }));
+
+    const fakeCtx = {
+      worldX: 10,
+      worldY: 20,
+      screenPoint: { x: 100, y: 200 },
+      modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
+    } as never;
+
+    let r: ReturnType<typeof result.current.beginAt>;
+    act(() => { r = result.current.beginAt(fakeCtx, ['a', 'b']); });
+
+    expect(r!.kind).toBe('begin');
+    const spec = (r! as { kind: 'begin'; spec: BeginSpec<MoveScratchTag> }).spec;
+    expect(spec.scratch).toEqual({ kind: 'move', ids: ['a', 'b'] });
+    expect(spec.onMove).toBeDefined();
+    expect(spec.onRelease).toBeDefined();
+    expect(spec.onCancel).toBeDefined();
+  });
+
+  it('onMove continuation drives the gesture and returns hold', () => {
+    const adapter = makeAdapter([{ id: 'a', pose: { x: 0, y: 0 }, parent: null }]);
+    const { result } = renderHook(() => useMove(adapter, { translatePose, dragThresholdPx: 4 }));
+
+    const startCtx = {
+      worldX: 0,
+      worldY: 0,
+      screenPoint: { x: 0, y: 0 },
+      modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
+    } as never;
+
+    let r: ReturnType<typeof result.current.beginAt>;
+    act(() => { r = result.current.beginAt(startCtx, ['a']); });
+
+    if (r!.kind !== 'begin') throw new Error('expected begin');
+    const beginSpec = (r! as { kind: 'begin'; spec: BeginSpec<MoveScratchTag> }).spec;
+
+    const moveCtx = {
+      worldX: 5,
+      worldY: 5,
+      screenPoint: { x: 100, y: 100 },
+      modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
+      scratch: { kind: 'move' as const, ids: ['a'] as readonly string[] },
+    } as never;
+
+    let moveResult: ReturnType<NonNullable<BeginSpec<MoveScratchTag>['onMove']>>;
+    act(() => { moveResult = beginSpec.onMove!(moveCtx); });
+
+    expect(moveResult!.kind).toBe('hold');
+  });
+
+  it('onRelease continuation ends the gesture and returns cancel', () => {
+    const adapter = makeAdapter([{ id: 'a', pose: { x: 0, y: 0 }, parent: null }]);
+    const { result } = renderHook(() => useMove(adapter, { translatePose, dragThresholdPx: 4 }));
+
+    const startCtx = {
+      worldX: 0,
+      worldY: 0,
+      screenPoint: { x: 0, y: 0 },
+      modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
+    } as never;
+
+    let r: ReturnType<typeof result.current.beginAt>;
+    act(() => { r = result.current.beginAt(startCtx, ['a']); });
+
+    if (r!.kind !== 'begin') throw new Error('expected begin');
+    const beginSpec = (r! as { kind: 'begin'; spec: BeginSpec<MoveScratchTag> }).spec;
+
+    const releaseCtx = {
+      worldX: 5,
+      worldY: 5,
+      screenPoint: { x: 100, y: 100 },
+      modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
+      scratch: { kind: 'move' as const, ids: ['a'] as readonly string[] },
+    } as never;
+
+    let releaseResult: ReturnType<NonNullable<BeginSpec<MoveScratchTag>['onRelease']>>;
+    act(() => { releaseResult = beginSpec.onRelease!(releaseCtx); });
+
+    expect(releaseResult!.kind).toBe('cancel');
   });
 });

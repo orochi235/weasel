@@ -137,6 +137,93 @@ describe('useAreaSelect — end', () => {
   });
 });
 
+import type { Result } from '../../../tools/routing';
+
+describe('useAreaSelect.beginAt', () => {
+  it('returns a begin Result with continuation closures', () => {
+    const { adapter } = makeAdapter();
+    const { result } = renderHook(() =>
+      useAreaSelect(adapter, { behaviors: [selectFromMarquee()] }),
+    );
+    const ctx = {
+      worldX: 10,
+      worldY: 20,
+      modifiers: { mod: false, shift: false, alt: false, ctrl: false, meta: false, space: false },
+      scratch: null,
+    } as never;
+
+    let r: Result<{ kind: 'area' }>;
+    act(() => { r = result.current.beginAt(ctx); });
+
+    expect(r!.kind).toBe('begin');
+    if (r!.kind === 'begin') {
+      expect(r!.spec.scratch).toEqual({ kind: 'area' });
+      expect(r!.spec.onMove).toBeDefined();
+      expect(r!.spec.onRelease).toBeDefined();
+    }
+  });
+
+  it('onMove delegates to internal move and returns hold', () => {
+    const { adapter } = makeAdapter();
+    const { result } = renderHook(() =>
+      useAreaSelect(adapter, { behaviors: [selectFromMarquee()] }),
+    );
+    const ctx = {
+      worldX: 0,
+      worldY: 0,
+      modifiers: { shift: false, alt: false, ctrl: false, meta: false, space: false },
+      scratch: { kind: 'area' as const },
+    } as never;
+    const moveCtx = {
+      worldX: 5,
+      worldY: 8,
+      modifiers: { shift: false, alt: false, ctrl: false, meta: false, space: false },
+      scratch: { kind: 'area' as const },
+    } as never;
+
+    let r: Result<{ kind: 'area' }>;
+    act(() => { r = result.current.beginAt(ctx); });
+
+    let moveResult: Result<{ kind: 'area' }>;
+    act(() => {
+      if (r!.kind === 'begin') {
+        moveResult = r!.spec.onMove!(moveCtx);
+      }
+    });
+
+    expect(moveResult!.kind).toBe('hold');
+    // overlay should reflect the moved position
+    expect(result.current.overlay?.current).toEqual({ worldX: 5, worldY: 8 });
+  });
+
+  it('onRelease ends the gesture and returns cancel', () => {
+    const { adapter } = makeAdapter();
+    (adapter as { hitTestArea: (r: unknown) => string[] }).hitTestArea = () => ['a', 'b'];
+    const { result } = renderHook(() =>
+      useAreaSelect(adapter, { behaviors: [selectFromMarquee()] }),
+    );
+    const ctx = {
+      worldX: 0,
+      worldY: 0,
+      modifiers: { shift: false, alt: false, ctrl: false, meta: false, space: false },
+      scratch: { kind: 'area' as const },
+    } as never;
+
+    let r: Result<{ kind: 'area' }>;
+    act(() => { r = result.current.beginAt(ctx); });
+
+    let releaseResult: Result<{ kind: 'area' }>;
+    act(() => {
+      if (r!.kind === 'begin') {
+        releaseResult = r!.spec.onRelease!(ctx);
+      }
+    });
+
+    expect(releaseResult!.kind).toBe('cancel');
+    expect(result.current.isAreaSelecting).toBe(false);
+  });
+});
+
 import { createDebugSink } from '../../../debug/createDebugSink';
 
 describe('useAreaSelect — debug recording', () => {
