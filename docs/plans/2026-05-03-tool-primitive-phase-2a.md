@@ -1397,7 +1397,7 @@ git commit -m "test(tools): Phase 2a end-to-end — select drag + delete via too
 ## Self-review notes
 
 1. **Spec coverage:** Spec lists `select`, `hand`, `insert`, plus action tools (`deleteSelection`, `nudge`, `undoRedo`, `duplicate`). This plan ships everything except `hand` (Phase 2b — explicitly out of scope).
-2. **Spec mentions `eyedropper-stub` in catalogue:** Skipping — that's a "minimal sample for modifier-slot pattern", which only matters once we have a viewport to attach it to (Phase 2b deps). Re-add if user asks.
+2. **Spec mentions `eyedropper-stub` in catalogue:** Shipped — see [eyedropper plan](../superpowers/plans/2026-05-12-eyedropper-tool.md).
 3. **`useEditAnchors` not in this plan:** The spec's "select" wraps move/resize/rotate/areaSelect; editAnchors is a path-editing mode entered via double-click, conceptually a separate tool. Defer to Phase 2c (cookbook) or a later phase — flag if user wants it folded into select.
 4. **Selection-on-pointerdown** is preserved per locked decision #3; memory-noted for revisit later.
 5. **Dedupe scope:** Only suppresses behaviors covered by registered Tool ids. If userland leaves `useUndoRedoTool` out of `alwaysOn`, the legacy `useUndoRedo` keybinding stays active. This is intentional — it's a smooth-migration affordance, not a hard cutover.
