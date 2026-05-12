@@ -568,7 +568,12 @@ const SelectTool = defineTool<MoveScratch | MarqueeScratch>({
 });
 ```
 
-### Rect insert (pure drag-gesture)
+### Rect insert (pure drag-gesture, uniform behavior)
+
+The rect-insert tool's drag behavior is uniform — every drag inserts
+a rect, regardless of what (if anything) is under the cursor at
+pointerdown. So `drag` uses the function form (no route table), not a
+keyed entry on `'empty'`. Reads as "any drag fires this":
 
 ```ts
 const RectInsertTool = defineTool<{ start: Point; current: Point }>({
@@ -576,14 +581,12 @@ const RectInsertTool = defineTool<{ start: Point; current: Point }>({
   presentation: { label: 'Rectangle', icon: <RectIcon />, group: 'shape', cursor: 'crosshair' },
   keybinding: { key: 'r' },
   initial: {
-    drag: {
-      'empty': (ctx) => begin({
-        scratch: { start: ctx.point, current: ctx.point },
-        thresholdPx: 5,
-        onMove:    (ctx) => hold({ ...ctx.scratch, current: ctx.point }),
-        onRelease: (ctx) => commit([createInsertOp(rectFromBounds(ctx.scratch))], 'Insert Rect'),
-      }),
-    },
+    drag: (ctx) => begin({   // function form — any pointerdown fires
+      scratch: { start: ctx.point, current: ctx.point },
+      thresholdPx: 5,
+      onMove:    (ctx) => hold({ ...ctx.scratch, current: ctx.point }),
+      onRelease: (ctx) => commit([createInsertOp(rectFromBounds(ctx.scratch))], 'Insert Rect'),
+    }),
   },
   engaged: {
     keyDown: { 'Escape': cancel },
@@ -591,6 +594,16 @@ const RectInsertTool = defineTool<{ start: Point; current: Point }>({
   },
 });
 ```
+
+**Function-form drag vs. target-keyed drag.** Use function form when
+drag behavior is uniform (insert tools, shape tools — every drag does
+the same thing regardless of target). Use target-keyed routing when
+drag behavior is target-dependent (select tool: drag-on-rect → move,
+drag-on-empty → marquee). If a tool wants to *only* fire on empty
+canvas — say, an Illustrator-style insert that suppresses itself over
+existing objects — use a single-entry routing table:
+`drag: { 'empty': ... }`. Most insert/shape tools want uniform
+behavior, so function form is the default shape for them.
 
 ### Hand (viewport tool — untargeted drag)
 
