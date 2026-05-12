@@ -69,6 +69,7 @@ describe('useSelectTool', () => {
   it('pointer.onDown over body stashes kind:move and selects', () => {
     const applyClick = vi.fn();
     const ctx = ctxOver({
+      target: nodeTarget('hit-id'),
       selection: { current: ['hit-id'], applyClick, set: vi.fn(), clear: vi.fn() } as any,
     });
     const { result } = renderHook(() =>
@@ -94,6 +95,7 @@ describe('useSelectTool', () => {
     } as any;
     const applyClick = vi.fn();
     const ctx = ctxOver({
+      target: nodeTarget('f1'),
       selection: { current: ['f1'], applyClick, set: vi.fn(), clear: vi.fn() } as any,
     });
     const { result } = renderHook(() =>
@@ -107,7 +109,7 @@ describe('useSelectTool', () => {
   });
 
   it('pointer.onDown over empty stashes kind:area', () => {
-    const ctx = ctxOver();
+    const ctx = ctxOver({ target: emptyTarget() });
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => [],
@@ -121,6 +123,7 @@ describe('useSelectTool', () => {
   it('pointer.onDown over empty does NOT clear selection on the down (clear deferred to onClick)', () => {
     const clear = vi.fn();
     const ctx = ctxOver({
+      target: emptyTarget(),
       selection: { current: ['a', 'b'], applyClick: vi.fn(), set: vi.fn(), clear } as any,
     });
     const { result } = renderHook(() =>
@@ -171,6 +174,7 @@ describe('useSelectTool', () => {
   it('clicking a member of a multi-selection without modifier defers the collapse to onClick (so a drag moves the whole set)', () => {
     const applyClick = vi.fn();
     const ctx = ctxOver({
+      target: nodeTarget('a'),
       selection: { current: ['a', 'b', 'c'], applyClick, set: vi.fn(), clear: vi.fn() } as any,
     });
     const { result } = renderHook(() =>
@@ -205,6 +209,7 @@ describe('useSelectTool', () => {
     const pickBest = vi.fn(() => 'group-1');
     const applyClick = vi.fn();
     const ctx = ctxOver({
+      target: nodeTarget('leaf'),
       selection: { current: [], applyClick, set: vi.fn(), clear: vi.fn() } as any,
     });
     const { result } = renderHook(() =>
@@ -221,7 +226,11 @@ describe('useSelectTool', () => {
   });
 
   it('pickBest returning null falls through to area-select', () => {
-    const ctx = ctxOver();
+    // pickBest returning null means "no body hit" — pointerDown should
+    // classify the gesture as area-select even though the dispatcher
+    // forwarded a node target. The pointerDown route's body handler
+    // owns the pickBest fallthrough.
+    const ctx = ctxOver({ target: nodeTarget('anything') });
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => ['anything'],
@@ -236,6 +245,7 @@ describe('useSelectTool', () => {
   it('pickBest receives alt modifier and current selection', () => {
     const pickBest = vi.fn(() => 'sub');
     const ctx = ctxOver({
+      target: nodeTarget('outer'),
       modifiers: { alt: true, shift: false, meta: false, ctrl: false, space: false },
       selection: { current: ['outer'], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
     });
@@ -420,6 +430,7 @@ describe('useSelectTool — debug recording', () => {
       }),
     );
     const ctx = ctxOver({
+      target: emptyTarget(),
       selection: { current: ['a'], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
     });
     result.current.pointer!.onDown!(pe(), ctx);
@@ -701,5 +712,57 @@ describe('useSelectTool overlay', () => {
     const group = cmds[0] as { kind: string; alpha?: number };
     expect(group.kind).toBe('group');
     expect(group.alpha).toBe(0.5);
+  });
+});
+
+describe('useSelectTool — declarative dblTap forwards raw event', () => {
+  it('passes the raw PointerEvent to onDoubleTap', () => {
+    // Phase 4.5 Task 4 migrated dblTap to a declarative route that
+    // reads the event via the new optional ActionFn parameter. Pin the
+    // raw-event-forwarding contract so a regression in the routing
+    // factory (or the ActionFn signature) gets caught.
+    const onDoubleTap = vi.fn();
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        pickEvery: () => ['hit-id'],
+        boundsOf: () => null,
+        onDoubleTap,
+      }),
+    );
+    const ctx = ctxOver({ target: nodeTarget('hit-id') });
+    const event = pe();
+    result.current.dblTap!.onTap!(event, ctx);
+    expect(onDoubleTap).toHaveBeenCalledTimes(1);
+    const call = onDoubleTap.mock.calls[0]?.[0] as
+      | { worldX: number; worldY: number; ids: string[]; event: PointerEvent }
+      | undefined;
+    expect(call?.event).toBe(event);
+    expect(call?.ids).toEqual(['hit-id']);
+    expect(call?.worldX).toBe(50);
+    expect(call?.worldY).toBe(50);
+  });
+
+  it('claims when onDoubleTap is supplied and passes otherwise', () => {
+    // The route returns claim() so the dispatcher suppresses the
+    // regular onClick on the second tap. Without onDoubleTap there's
+    // nothing to forward, so the route returns none() and the
+    // dispatcher falls through to onClick.
+    const { result: withCb } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        pickEvery: () => [],
+        boundsOf: () => null,
+        onDoubleTap: vi.fn(),
+      }),
+    );
+    const { result: withoutCb } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        pickEvery: () => [],
+        boundsOf: () => null,
+      }),
+    );
+    const ctxA = ctxOver({ target: emptyTarget() });
+    const ctxB = ctxOver({ target: emptyTarget() });
+    expect(withCb.current.dblTap!.onTap!(pe(), ctxA)).toBe('claim');
+    expect(withoutCb.current.dblTap!.onTap!(pe(), ctxB)).toBe('pass');
   });
 });

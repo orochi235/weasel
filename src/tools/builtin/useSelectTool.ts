@@ -22,7 +22,7 @@ import type { RotateAdapter } from 'core/adapters/types';
 import type { AreaSelectAdapter } from 'core/adapters/types';
 import type { ResizeAnchor } from 'interactions/gestures/types';
 import type { NodeId } from 'core/scene/types';
-import { defineTool, mods, claim, none } from '../routing';
+import { defineTool, mods, begin, claim, none } from '../routing';
 import type { ActionFn } from '../routing';
 import type { Tool, ToolBounds, ToolCtx } from '../types';
 import type { DebugSink } from '../../debug/types';
@@ -772,53 +772,24 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     return out.size > 0 ? out : null;
   };
 
-  // Imperative shims — partial pre-routing carry-over. Task 3 introduced the
-  // routing-factory base; Task 4 migrated `drag` to a declarative route table
-  // (see `dragRoutes` below); Task 5 migrated `click` to a modifier-sub-table
-  // route. `pointer.onDown` and `dblTap` remain imperative because:
-  //
-  //   1. pointer.onDown has no routing-factory analogue (factory only emits
-  //      pointer.onClick — the new `pointerDown` route table is wired but
-  //      doesn't yet replace this shim). The onDown logic sets selection
-  //      via `selection.applyClick` and stashes scratch ahead of drag routing.
-  //      Moving it into a declarative pointerDown route is Phase 4.5 work —
-  //      it depends on factoring `applyClick` into emit-an-op form so the
-  //      route can return `apply([setSelectionOp(...)])` without
-  //      double-mutating against the imperative path.
-  //   2. dblTap.onTap receives a PointerEvent forwarded to the consumer's
-  //      onDoubleTap callback; ActionFn<TScratch> only receives ctx.
-  //
-  // The declarative `initial.drag` route table dispatches by `ctx.target.kind`:
-  // rect/text/path → move.beginAt(ids); empty → areaSelect.beginAt. Each
-  // gesture primitive owns its own continuation closures (begin/hold/cancel),
-  // so the routing factory's engaged phase doesn't need a scratch switch.
-  // Behavior preserved end-to-end (multi-select-aware move, deferred click
-  // semantics) — the onDown shim sets up the "deferred click" hint on scratch
-  // before the dispatcher's threshold gating runs drag.onStart.
-  //
-  // The declarative `initial.click` route table (Task 5) replaces the
-  // imperative onClick shim. It only handles the cases where `onDown`
-  // deferred work to the sub-threshold release:
-  //   - empty target + no shift/meta → selection.clear() (deferred clear).
-  //   - empty target + shift/meta → none() (extend modifier preserves set).
-  //   - rect/text/path target → collapse to deferredClickId when set
-  //     (multi-selection member clicked without extend); otherwise no-op
-  //     because onDown's applyClick already mutated selection.
-  // Routes call `ctx.selection.applyClick` / `ctx.selection.clear` directly
-  // and return claim/none rather than emitting setSelectionOp via apply(),
-  // because onDown's applyClick is the single source of selection mutation
-  // today — issuing a setSelectionOp here would double-mutate.
-  const legacyOnDown = (_e: PointerEvent, ctx: import('../types').ToolCtx<SelectScratch>): 'claim' | 'pass' => {
+  // Imperative drag shim — Phase 3 Task 4 left this in place to keep
+  // useMove/useResize/useRotate behavior unchanged. Phase 5 Task 1
+  // migrates it to declarative routes via the beginAt adapter pattern
+  // (each gesture primitive grows a thin wrapper that returns a
+  // begin(spec) Result wrapping its internal state machine). The other
+  // shims (pointer.onDown, pointer.onClick, dblTap.onTap) were closed in
+  // Phase 4.5 — see the route tables in the defineTool call below.
+
+  // pointerDown classifier — declarative route table that subsumes the
+  // body-hit / empty branches of the original legacyOnDown shim. Decides
+  // whether the upcoming gesture will move the existing selection (hit
+  // is part of it) or a freshly-clicked id, and primes scratch via
+  // begin(spec) so drag.onStart sees the classified state. No
+  // onMove/onRelease in the spec: pointerDown stays out of engaged
+  // phase — the dispatcher's drag pipeline (declarative drag route)
+  // owns the engaged spec.
+  const pointerDownBody: ActionFn<SelectScratch> = (ctx) => {
     const sel = ctx.selection.current;
-
-    // Handles (rotation + corner-resize) are handled by their
-    // respective affordances (see `cornerAffWrapped` and
-    // `rotationAffWrapped` above). The dispatcher's affordance-layer
-    // hit-test pipeline routes those hits directly to `useResize` /
-    // `useRotate` via the wrapped drag channels, bypassing
-    // pointer.onDown entirely for the handle case.
-
-    // 1. Body hit → move (+ select)
     const top = options.pickBest
       ? options.pickBest(ctx.worldX, ctx.worldY, ctx.modifiers.alt, sel)
       : (() => {
@@ -827,9 +798,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           // pickTopMostHit collapses parent/child overlap (container's
           // bounds also cover the child) and falls back to "last id" for
           // pure sibling hits — matches the bottom-first iteration order
-          // most demos produce. Demos that already z-sort with topmost
-          // first should return a single-id array; this helper is a
-          // no-op in that case.
+          // most demos produce.
           return pickTopMostHit(ids, adapter) ?? ids[0];
         })();
     if (top !== null) {
@@ -852,9 +821,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
       // becomes the topmost in z-order. Skipped on extend-clicks
       // (shift/meta) so multi-selecting doesn't keep reshuffling the
       // stack. Skipped when the adapter doesn't expose the reorder
-      // surface — keeps simple flat-list adapters that don't
-      // implement getChildren/setChildOrder from accumulating
-      // empty "Bring to front" entries on every click.
+      // surface.
       if ((options.bringToFrontOnSelect ?? true) && !isExtend) {
         const reorderable = adapter as unknown as {
           getChildren?: (parentId: string | null) => string[];
@@ -869,19 +836,17 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
       // moves only the clicked object — matches Figma/Sketch behavior
       // ("dragging an unselected object shouldn't move the old one").
       const moveIds: string[] = hitAlreadySelected && preClick.length > 0 ? [...preClick] : [top];
-      ctx.scratch = { kind: 'move', ids: moveIds, deferredClickId: deferClick ? top : null };
-      return 'claim';
+      const moveScratch: SelectScratch = {
+        kind: 'move',
+        ids: moveIds,
+        deferredClickId: deferClick ? top : null,
+      };
+      return begin<SelectScratch>({ scratch: moveScratch });
     }
-
-    // 2. Empty → defer clear to onClick (sub-threshold release).
-    //    Clearing on down feels twitchy: an accidental tap on empty
-    //    space wipes selection mid-thought. The marquee path
-    //    (drag.onStart → areaSelect) overwrites selection on its
-    //    own end; the click path (no drag) handles clear in
-    //    pointer.onClick below. Shift/meta are extend modifiers and
-    //    never clear.
-    ctx.scratch = { kind: 'area' };
-    return 'claim';
+    // No body hit (pickBest returned null, or pickEvery was empty):
+    // fall through to empty/marquee branch.
+    const areaScratch: SelectScratch = { kind: 'area' };
+    return begin<SelectScratch>({ scratch: areaScratch });
   };
 
   // Compute the ids the move gesture should drag, given the current hit and
@@ -949,8 +914,11 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
 
   return useMemo(
     () => {
-      // Declarative factory — `initial.drag` and `initial.click` are real
-      // route tables. dblTap stays as an imperative shim (see comment block).
+      // Declarative factory — every gesture surface is a route table:
+      // pointerDown classifies the upcoming gesture into scratch (move
+      // vs. area); drag dispatches to move.beginAt / areaSelect.beginAt;
+      // click handles deferred-clear / deferred-collapse; dblTap forwards
+      // to the consumer callback with the raw PointerEvent.
       const base = defineTool<SelectScratch>({
         id: 'select',
         keybinding: { key: 'V' },
@@ -961,6 +929,27 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           group: 'select',
         },
         initial: {
+          // pointerDown: body-hit / empty classifier. The handler runs
+          // the tool's own `pickBest` / `pickEveryFn` regardless of
+          // `ctx.target.kind` because the dispatcher's `target` is
+          // derived from Canvas's optional `pickEvery` prop (which may
+          // be unset or wired to a different pick predicate than the
+          // tool's). Pre-migration, `legacyOnDown` ignored target and
+          // always consulted its own pickEvery — we preserve that. The
+          // handler decides body vs. empty internally and primes scratch
+          // via begin(spec). Wired for every key (rect/text/path/'*'/
+          // empty) since the routing engine's `empty` doesn't fall
+          // through to `'*'`. Handles applyClick + bring-to-front
+          // imperatively because selection mutation is shared with the
+          // imperative onClick path; emitting an op here would
+          // double-mutate against the selection API.
+          pointerDown: {
+            rect: pointerDownBody,
+            text: pointerDownBody,
+            path: pointerDownBody,
+            '*': pointerDownBody,
+            empty: pointerDownBody,
+          },
           drag: {
             // Per the Phase 3 plan, dispatch by known node kinds so consumers
             // can later override per-kind (e.g. text → enter-edit instead of
@@ -1000,52 +989,47 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
               [mods('mod', 'shift')]: () => none(),
             },
           },
+          // dblTap: forward to the consumer's onDoubleTap callback. The
+          // raw PointerEvent now arrives as the second ActionFn parameter
+          // (Phase 4.5 Task 3), so this route no longer needs an
+          // imperative shim. Returns claim() so the dispatcher suppresses
+          // the regular onClick on this gesture.
+          dblTap: {
+            '*': (ctx, e) => {
+              const cb = onDoubleTapRef.current;
+              if (!cb) return none();
+              const evt = e as PointerEvent;
+              const ids = pickEveryRef.current(ctx.worldX, ctx.worldY);
+              cb({ worldX: ctx.worldX, worldY: ctx.worldY, ids, event: evt });
+              return claim();
+            },
+            empty: (ctx, e) => {
+              const cb = onDoubleTapRef.current;
+              if (!cb) return none();
+              const evt = e as PointerEvent;
+              const ids = pickEveryRef.current(ctx.worldX, ctx.worldY);
+              cb({ worldX: ctx.worldX, worldY: ctx.worldY, ids, event: evt });
+              return claim();
+            },
+          },
         },
       });
 
-      // Patch the remaining imperative handlers on top of the routing
-      // skeleton. Each patch fills a gap the routing factory doesn't yet
-      // cover (see comment block above the `legacyOnDown` declaration).
+      // The routing factory's translated Tool covers every gesture
+      // channel (pointer.onDown / onClick / drag / dblTap.onTap) via the
+      // route tables above. We only need to layer kit-only fields that
+      // aren't part of ToolDef — overlay, previewPose, previewBounds,
+      // previewIds, initScratch — plus restore `cursor` to a plain
+      // string identity (the factory converts string cursors into
+      // resolver functions).
       return {
         ...base,
-        // The routing factory converts the string cursor to a function;
-        // restore the plain string so callers that compare identity work.
         cursor: 'default',
         initScratch: () => ({ kind: 'idle' as const }),
         overlay,
         previewPose,
         previewBounds,
         previewIds,
-
-        pointer: {
-          // pointer.onDown stays imperative (Phase 4.5). The routing
-          // factory's pointerDown route table is wired but onDown still
-          // owns selection.applyClick + bringToFront + scratch-stash.
-          onDown: legacyOnDown,
-          // pointer.onClick comes from `defineTool`'s declarative click
-          // route table above — pull it off the base record so the spread
-          // below picks it up via `base.pointer.onClick`.
-          ...(base.pointer?.onClick ? { onClick: base.pointer.onClick } : {}),
-        },
-
-        dblTap: {
-          // Shim: PointerEvent forwarded to consumer callback; cannot
-          // use ActionFn<TScratch> (only receives ctx). Task 5 / Phase 1
-          // follow-up will migrate once ctx carries the event reference.
-          onTap: (e: PointerEvent, ctx: ToolCtx<SelectScratch>) => {
-            const cb = onDoubleTapRef.current;
-            if (!cb) return 'pass' as const;
-            const ids = pickEveryRef.current(ctx.worldX, ctx.worldY);
-            cb({ worldX: ctx.worldX, worldY: ctx.worldY, ids, event: e });
-            return 'claim' as const;
-          },
-        },
-
-        // drag: handled by the declarative routing factory above. The
-        // affordance pipeline (corner-resize / rotation) still routes
-        // through `cornerAffWrapped` / `rotationAffWrapped` via a
-        // synthetic virtual tool — those paths bypass useSelectTool's
-        // drag entirely (see dispatcher's `startAffordanceGesture`).
       };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
