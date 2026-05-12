@@ -104,7 +104,7 @@ Five constructors. The dispatcher consumes the tagged results.
 | Constructor | Effect |
 |---|---|
 | `apply(ops, label?)` | Dispatch ops through the adapter's `applyBatch`. No phase change. Used in phase-free routes. |
-| `begin(spec)` | Open active phase. `spec` carries the initial scratch and optional continuation closures (`onMove`, `onUp`, `onCancel`). |
+| `begin(spec)` | Open active phase. `spec` carries the initial scratch, optional `thresholdPx` for drag gating, and optional continuation closures (`onMove`, `onUp`, `onCancel`). Drag-shaped gestures attach continuations here; click-sequence gestures (pen) omit them and dispatch subsequent events through `active`. |
 | `hold(newScratch)` | Update scratch within active. No commit, no phase change — the tool *holds* the new state for subsequent events. |
 | `commit(ops, label?)` | Apply ops AND close active phase. |
 | `cancel()` | Close active phase without applying ops. |
@@ -140,10 +140,26 @@ interface PhaseDef<TScratch> {
   drag?:    RouteTable<TScratch>;
   wheel?:   ActionFn<TScratch>;
   keyDown?: Record<string, ActionFn<TScratch>>;
+  /** Optional overlay layer rendered while the tool is in this phase.
+   *  Reads scratch via `ctx.scratch`; redraws each frame the dispatcher
+   *  publishes a state change. Lets drag-preview rendering live inline
+   *  with the tool definition instead of via a sibling RenderLayer. */
+  overlay?: (ctx: ToolCtx<TScratch>) => RenderLayer<unknown>;
   claimsAll?: boolean;
 }
 
 type RouteTable<TScratch> = Partial<Record<string, ActionFn<TScratch>>>;
+
+interface BeginSpec<TScratch> {
+  scratch: TScratch;
+  /** Distance in CSS pixels the pointer must travel before the gesture
+   *  is "real." Sub-threshold pointerups call `onCancel` instead of
+   *  `onUp`. Default `0` (no threshold — every pointerdown counts). */
+  thresholdPx?: number;
+  onMove?:   (ctx: ToolCtx<TScratch>) => Result<TScratch>;
+  onUp?:     (ctx: ToolCtx<TScratch>) => Result<TScratch>;
+  onCancel?: (ctx: ToolCtx<TScratch>) => void;
+}
 
 // Viewport tools — restricted variant. Mechanically derived from
 // ToolDef via Pick/Omit so any change to ToolDef ripples through and
@@ -419,16 +435,41 @@ returning value. Commit to (a) the registry, (b) the conflict checker,
 - **`'*'` wildcard semantics.** Match any target including `'empty'`?
   Or any *non-empty* target? Spec needs to pick.
 
-- **Drag-threshold semantics.** Today `useDragGesture` triggers a drag
-  after N pixels of movement. The new model — does `drag` mean "any
-  pointerdown that initiates a drag (after threshold)" or "any
-  pointerdown, threshold-or-not"? Same primitive, different defaults.
-
 - **Migration path.** Existing tools use the imperative channels.
   Approach: ship `defineTool` alongside the existing `Tool` shape;
   migrate built-ins one at a time; deprecate the imperative channels
   only when the migration is complete (or never — they're fine as an
-  escape hatch).
+  escape hatch). Two known migration concerns from the 2026-05-12
+  audit of the five new shape tools:
+
+  1. **Scratch mutation → functional update.** Current tools mutate
+     `ctx.scratch.foo = bar` directly inside handlers. The new model
+     requires `hold({ ...scratch, foo: bar })` — explicit replacement
+     via the action constructor. Mechanical conversion per tool.
+
+  2. **React-hook drag controllers → pure helpers.** Three of the
+     five new tools (Ellipse, Polygon, Star) compose with
+     `useDragRect` / `useDragRadial` React hooks that hold their own
+     state outside the tool. The new model wants scratch on the tool,
+     so these hooks dissolve into **pure helper modules** that the
+     tool's `onMove` / `onUp` closures call:
+
+     ```ts
+     // Before: useDragRect hook holds state, tool delegates events to it.
+     // After: tool holds scratch; pure helpers compute bounds from it.
+     drag: (ctx) => begin({
+       scratch: { start: ctx.point, current: ctx.point },
+       onMove: (ctx) => hold({ ...ctx.scratch, current: ctx.point }),
+       onUp:   (ctx) => commit([insertOp(makeEllipse(
+         dragRectBounds(ctx.scratch.start, ctx.scratch.current, ctx.modifiers)
+       ))], 'Insert ellipse'),
+     }),
+     ```
+
+     The bounds math (`dragRectBounds`) stays shared as a pure function;
+     a bug fix in it still propagates everywhere. The React hook
+     wrapper goes away — its purpose was holding state via `useRef`,
+     which scratch now does.
 
 - **3+ phase tools.** Not in scope. If a wizard-style tool needs
   `idle → drawing → previewing → committed → idle`, the design needs a
