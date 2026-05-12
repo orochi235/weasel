@@ -1210,6 +1210,24 @@ export function App() {
         onFlip={(axis) => flip(axis)}
         booleansAdapter={adapter}
         booleansActions={booleans}
+        onNew={(size) => {
+          // Reset the scene, history, selection, and document size. The
+          // initial-center effect won't re-fire on its own (it's gated by
+          // `didInitialCenter`), so we apply the centered view inline using
+          // the new dimensions and current host size.
+          itemsRef.current = [];
+          groupsRef.current = [];
+          historyRef.current?.clear();
+          selection.set([]);
+          const preset = PAPER_PRESETS[size];
+          setDoc({ size: { ...preset } });
+          setView((v) => ({
+            x: preset.width / 2 - hostSize.width / (2 * v.scale),
+            y: preset.height / 2 - hostSize.height / (2 * v.scale),
+            scale: v.scale,
+          }));
+          publish();
+        }}
         onSaveSvg={() => {
           const svgNodes = itemsRef.current.map(objToSvgNode);
           const svg = serializeSvg(svgNodes, {

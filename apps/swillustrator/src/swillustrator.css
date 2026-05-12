@@ -81,6 +81,44 @@ html, body, #root {
   cursor: not-allowed;
 }
 
+/* --- "New ▾" paper-size dropdown ------------------------------------- */
+.swill-actionbar-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.swill-actionbar-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 120px;
+  padding: 2px;
+  background: #221a13;
+  border: 1px solid #3a2e22;
+  border-radius: 4px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.swill-actionbar-menuitem {
+  padding: 6px 10px;
+  background: transparent;
+  color: #d4c4a8;
+  border: 0;
+  border-radius: 2px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  text-align: left;
+}
+
+.swill-actionbar-menuitem:hover {
+  background: #2a2418;
+  color: #fff5d8;
+}
+
 /* --- LayerList row label (icon + id) --------------------------------- */
 .swill-layer-label {
   display: inline-flex;

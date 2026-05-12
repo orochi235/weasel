@@ -5,7 +5,7 @@
  *  imperative trigger supplied by the parent (see App.tsx wiring). Visual
  *  grouping is done via `.swill-actionbar-group` separators, not inline
  *  styles. */
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type {
   AlignEdge,
   DistributeAxis,
@@ -14,6 +14,11 @@ import type {
   UseBooleansReturn,
 } from '@orochi235/weasel';
 import { PathfinderPanel } from '@orochi235/weasel-ui';
+
+/** Paper-size keys mirrored from App.tsx's `PAPER_PRESETS` map. Kept as a
+ *  bare string union here so this component stays decoupled from the
+ *  preset table (the parent picks the dimensions per key). */
+export type PaperSizeKey = 'letter' | 'a4' | 'legal';
 import {
   AlignLeftIcon,
   AlignCenterXIcon,
@@ -77,6 +82,9 @@ export interface ActionBarProps {
   // File I/O — SVG round-trip via @orochi235/weasel-svg.
   onSaveSvg(): void;
   onOpenSvg(): void;
+  /** Start a fresh document at the picked paper size. Clears the scene,
+   *  resets undo history, and re-centers the view. */
+  onNew(size: PaperSizeKey): void;
 }
 
 interface ButtonProps {
@@ -104,6 +112,61 @@ function Sep() {
   return <span className="swill-actionbar-sep" aria-hidden="true" />;
 }
 
+const PAPER_LABELS: Record<PaperSizeKey, string> = {
+  letter: 'US Letter',
+  a4: 'A4',
+  legal: 'Legal',
+};
+
+/** "New ▾" button with a paper-size submenu. Closes on outside click,
+ *  on selection, or on Escape. */
+function NewMenu({ onNew }: { onNew: (size: PaperSizeKey) => void }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDocDown = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDocDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+  return (
+    <div ref={wrapRef} className="swill-actionbar-menu">
+      <button
+        className="swill-actionbar-button"
+        type="button"
+        title="New document"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        New <span aria-hidden>▾</span>
+      </button>
+      {open && (
+        <div className="swill-actionbar-popover" role="menu">
+          {(Object.keys(PAPER_LABELS) as PaperSizeKey[]).map((key) => (
+            <button
+              key={key}
+              role="menuitem"
+              className="swill-actionbar-menuitem"
+              type="button"
+              onClick={() => { onNew(key); setOpen(false); }}
+            >
+              {PAPER_LABELS[key]}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ActionBar(p: ActionBarProps) {
   const none = !p.hasSelection;
   const lt2 = p.selectionSize < 2;
@@ -111,6 +174,7 @@ export function ActionBar(p: ActionBarProps) {
   return (
     <div className="swill-actionbar" role="toolbar" aria-label="Actions">
       <div className="swill-actionbar-group">
+        <NewMenu onNew={p.onNew} />
         <Button onClick={p.onOpenSvg} title="Open SVG…">Open</Button>
         <Button onClick={p.onSaveSvg} title="Save as SVG">Save</Button>
       </div>
