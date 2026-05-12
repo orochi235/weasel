@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { defineTool } from '../defineTool';
+import { defineViewportTool, claim, none } from '../routing';
 import type { Tool } from '../types';
 
 /**
@@ -13,12 +13,12 @@ import type { Tool } from '../types';
 export function useWheelPanTool(): Tool<null> {
   return useMemo(
     () =>
-      defineTool<null>({
+      defineViewportTool<null>({
         id: 'wheel-pan',
-        initScratch: () => null,
-        wheel: {
-          onWheel: (e, ctx) => {
-            if (e.ctrlKey) return 'pass';
+        initial: {
+          wheel: (ctx, event) => {
+            const e = event as WheelEvent;
+            if (e.ctrlKey) return none();
             e.preventDefault();
             const v = ctx.view;
             ctx.setView({
@@ -26,10 +26,10 @@ export function useWheelPanTool(): Tool<null> {
               y: v.y + e.deltaY / v.scale,
               scale: v.scale,
             });
-            return 'claim';
+            return claim();
           },
         },
-      }),
+      }) as Tool<null>,
     [],
   );
 }
