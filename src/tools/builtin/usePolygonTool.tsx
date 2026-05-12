@@ -3,7 +3,16 @@ import { defineTool } from '../defineTool';
 import { useDragRadial } from 'interactions/gestures/dragRadial';
 import { createInsertOp } from 'core/ops/create';
 import { PolygonIcon } from '../../icons';
+import { PathBuilder } from 'features/paths/builder';
+import { viewToTransform, type View } from 'core/viewport/view';
+import { worldToScreen } from 'core/viewport/viewTransform';
+import type { RenderLayer } from 'core/layers/render';
+import type { DrawCommand } from '../../renderer';
 import type { Tool, ToolCtx } from '../types';
+
+const GHOST_STROKE = '#7fb069';
+const GHOST_LINE_WIDTH = 1;
+const GHOST_DASH: number[] = [4, 4];
 
 export interface PolygonPoint { x: number; y: number }
 
@@ -57,6 +66,38 @@ export function usePolygonTool<TNode extends { id: string }>(
     },
   });
 
+  const drRef = useRef(dr);
+  drRef.current = dr;
+
+  const overlay = useMemo<RenderLayer<unknown>>(
+    () => ({
+      id: 'polygon-tool-overlay',
+      label: 'Polygon preview',
+      space: 'screen' as const,
+      draw: (_data: unknown, view: View): DrawCommand[] => {
+        const ov = drRef.current.overlay;
+        if (!ov || ov.radius === 0) return [];
+        const t = viewToTransform(view);
+        const sides = sidesRef.current;
+        const b = new PathBuilder();
+        for (let i = 0; i < sides; i++) {
+          const angle = ov.rotation + (i / sides) * Math.PI * 2;
+          const wx = ov.center.x + ov.radius * Math.cos(angle);
+          const wy = ov.center.y + ov.radius * Math.sin(angle);
+          const [sx, sy] = worldToScreen(wx, wy, t);
+          if (i === 0) b.moveTo(sx, sy); else b.lineTo(sx, sy);
+        }
+        b.close();
+        return [{
+          kind: 'path',
+          path: b.build(),
+          stroke: { paint: { color: GHOST_STROKE }, width: GHOST_LINE_WIDTH, dash: GHOST_DASH },
+        }];
+      },
+    }),
+    [],
+  );
+
   return useMemo(
     () =>
       defineTool<null>({
@@ -98,7 +139,8 @@ export function usePolygonTool<TNode extends { id: string }>(
             return 'pass';
           },
         },
+        overlay,
       }),
-    [dr.start, dr.move, dr.end, dr.cancel],
+    [dr.start, dr.move, dr.end, dr.cancel, overlay],
   );
 }

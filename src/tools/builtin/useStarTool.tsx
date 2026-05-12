@@ -3,7 +3,17 @@ import { defineTool } from '../defineTool';
 import { useDragRadial } from 'interactions/gestures/dragRadial';
 import { createInsertOp } from 'core/ops/create';
 import { StarIcon } from '../../icons';
+import { PathBuilder } from 'features/paths/builder';
+import { viewToTransform, type View } from 'core/viewport/view';
+import { worldToScreen } from 'core/viewport/viewTransform';
+import type { RenderLayer } from 'core/layers/render';
+import type { DrawCommand } from '../../renderer';
 import type { Tool, ToolCtx } from '../types';
+
+/** Default screen-space chrome for the drag-ghost overlay. */
+const GHOST_STROKE = '#7fb069';
+const GHOST_LINE_WIDTH = 1;
+const GHOST_DASH: number[] = [4, 4];
 
 export interface StarPoint { x: number; y: number }
 
@@ -67,6 +77,44 @@ export function useStarTool<TNode extends { id: string }>(
     },
   });
 
+  // drRef keeps the overlay closure on a stable reference; React re-renders
+  // (triggered by useDragRadial's internal setOverlay) make `dr` itself
+  // change identity but the ref always points at the latest controller.
+  const drRef = useRef(dr);
+  drRef.current = dr;
+
+  const overlay = useMemo<RenderLayer<unknown>>(
+    () => ({
+      id: 'star-tool-overlay',
+      label: 'Star preview',
+      space: 'screen' as const,
+      draw: (_data: unknown, view: View): DrawCommand[] => {
+        const ov = drRef.current.overlay;
+        if (!ov || ov.radius === 0) return [];
+        const t = viewToTransform(view);
+        const points = pointsRef.current;
+        const innerRatio = innerRatioRef.current;
+        const n = points * 2;
+        const b = new PathBuilder();
+        for (let i = 0; i < n; i++) {
+          const r = i % 2 === 0 ? ov.radius : ov.radius * innerRatio;
+          const angle = ov.rotation + (i / n) * Math.PI * 2;
+          const wx = ov.center.x + r * Math.cos(angle);
+          const wy = ov.center.y + r * Math.sin(angle);
+          const [sx, sy] = worldToScreen(wx, wy, t);
+          if (i === 0) b.moveTo(sx, sy); else b.lineTo(sx, sy);
+        }
+        b.close();
+        return [{
+          kind: 'path',
+          path: b.build(),
+          stroke: { paint: { color: GHOST_STROKE }, width: GHOST_LINE_WIDTH, dash: GHOST_DASH },
+        }];
+      },
+    }),
+    [],
+  );
+
   return useMemo(
     () =>
       defineTool<null>({
@@ -107,7 +155,8 @@ export function useStarTool<TNode extends { id: string }>(
             return 'pass';
           },
         },
+        overlay,
       }),
-    [dr.start, dr.move, dr.end, dr.cancel],
+    [dr.start, dr.move, dr.end, dr.cancel, overlay],
   );
 }
