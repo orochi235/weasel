@@ -141,6 +141,7 @@ html, body, #root {
   line-height: 1.2;
 }
 
+.swill-tool-button > svg { display: block; }
 .swill-tool-button:hover { border-color: #5a4a38; }
 
 .swill-tool-button.active {

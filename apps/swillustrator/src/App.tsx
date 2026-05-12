@@ -77,6 +77,15 @@ import {
 import '@orochi235/weasel-theme/tokens.css';
 import { ActionBar } from './ActionBar';
 import { KindIcon } from './kindIcons';
+import type { ComponentType } from 'react';
+import {
+  SelectIcon,
+  LassoIcon,
+  RectIcon as ToolRectIcon,
+  TextIcon as ToolTextIcon,
+  PenIcon,
+  HandIcon,
+} from '@orochi235/weasel';
 
 interface View { x: number; y: number; scale: number }
 
@@ -108,13 +117,19 @@ interface PathObj extends BaseObj { kind: 'path'; path: PolygonPath; closed: boo
 type Obj = RectObj | TextObj | PathObj;
 interface Pose { x: number; y: number; width: number; height: number }
 
-const TOOL_ORDER: { id: string; label: string; key: string }[] = [
-  { id: 'select', label: 'Select', key: 'V' },
-  { id: 'lasso',  label: 'Lasso',  key: 'L' },
-  { id: 'insert', label: 'Rect',   key: 'R' },
-  { id: 'text',   label: 'Text',   key: 'T' },
-  { id: 'pen',    label: 'Pen',    key: 'P' },
-  { id: 'hand',   label: 'Hand',   key: 'H' },
+interface ToolEntry {
+  id: string;
+  label: string;
+  key: string;
+  Icon: ComponentType<{ size?: number }>;
+}
+const TOOL_ORDER: ToolEntry[] = [
+  { id: 'select', label: 'Select', key: 'V', Icon: SelectIcon },
+  { id: 'lasso',  label: 'Lasso',  key: 'L', Icon: LassoIcon },
+  { id: 'insert', label: 'Rect',   key: 'R', Icon: ToolRectIcon },
+  { id: 'text',   label: 'Text',   key: 'T', Icon: ToolTextIcon },
+  { id: 'pen',    label: 'Pen',    key: 'P', Icon: PenIcon },
+  { id: 'hand',   label: 'Hand',   key: 'H', Icon: HandIcon },
 ];
 
 /** Translate a single rect-pose-shaped object by (dx, dy). Used for clipboard
@@ -688,10 +703,20 @@ export function App() {
 
   // ---- Render layers ---------------------------------------------------
   const textLayer: RenderLayer<unknown> = createTextLayer<TextObj>({
-    getTexts: () => itemsRef.current.filter((o): o is TextObj => o.kind === 'text'),
+    getTexts: () => {
+      const texts = itemsRef.current.filter((o): o is TextObj => o.kind === 'text');
+      // eslint-disable-next-line no-console
+      console.log('[textLayer.getTexts]', { count: texts.length, editingId: textEdit.editingId, ids: texts.map((t) => t.id), contents: texts.map((t) => t.text) });
+      return texts;
+    },
     getPose: (n) => ({ x: n.x, y: n.y, width: n.width, height: n.height, text: n.text, style: n.style }),
     // Hide the currently-editing node — the contenteditable overlay draws it.
-    isHidden: (n) => textEdit.isEditing(n.id),
+    isHidden: (n) => {
+      const hidden = textEdit.isEditing(n.id);
+      // eslint-disable-next-line no-console
+      console.log('[textLayer.isHidden]', { id: n.id, text: n.text, hidden, editingId: textEdit.editingId });
+      return hidden;
+    },
   });
 
   const pathLayer: RenderLayer<unknown> = createPathLayer<PathObj>({
@@ -835,6 +860,7 @@ export function App() {
           <div className="swill-section-label">Tools</div>
           {TOOL_ORDER.map((t) => {
             const isActive = activeOrEngaged === t.id;
+            const Icon = t.Icon;
             return (
               <button
                 key={t.id}
@@ -842,6 +868,7 @@ export function App() {
                 onClick={() => tools.setActive(t.id)}
                 type="button"
               >
+                <Icon size={22} />
                 <span>{t.label}</span>
                 <span className="key">{t.key}</span>
               </button>

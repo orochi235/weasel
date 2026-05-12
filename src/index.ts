@@ -559,3 +559,17 @@ export {
   hexToRgba,
   rgbaToHex,
 } from './renderer/math/color';
+
+// Built-in tool icons — match the convention used by the Pathfinder
+// panel and Swillustrator action-bar icons. Available to any consumer
+// rendering a tool palette today; will back `Tool.presentation.icon`
+// defaults once the tool-palette spec ships.
+export {
+  SelectIcon,
+  LassoIcon,
+  RectIcon,
+  TextIcon,
+  PenIcon,
+  HandIcon,
+} from './icons';
+export type { IconProps } from './icons';
