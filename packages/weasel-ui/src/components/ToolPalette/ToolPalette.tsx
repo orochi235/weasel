@@ -2,6 +2,7 @@ import { Fragment, type ReactNode } from 'react';
 import { UnknownIcon } from '@orochi235/weasel';
 import type { AnyTool, ToolsApi } from '@orochi235/weasel';
 import s from './ToolPalette.module.css';
+import { formatShortcut } from './formatShortcut';
 
 const DEFAULT_GROUP_ORDER = ['select', 'shape', 'draw', 'type', 'view'] as const;
 const MISC = 'misc';
@@ -73,17 +74,21 @@ export function ToolPalette(props: ToolPaletteProps) {
             {groups.get(key)!.map((tool) => {
               const label = tool.presentation?.label ?? tool.id;
               const icon = resolveIcon(tool);
+              const shortcut = tool.presentation?.shortcut ?? formatShortcut(tool.keybinding);
+              const title = shortcut ? `${label} (${shortcut})` : label;
               const isActive = tools.active === tool.id;
               return (
                 <button
                   key={tool.id}
                   type="button"
+                  title={title}
                   className={[s.button, isActive && s.active].filter(Boolean).join(' ')}
                   aria-current={isActive ? 'true' : undefined}
                   onClick={() => tools.setActive(tool.id)}
                 >
                   <span className={s.icon} aria-hidden="true">{icon}</span>
                   <span className={s.label}>{label}</span>
+                  {shortcut && <span className={s.shortcut}>{shortcut}</span>}
                 </button>
               );
             })}

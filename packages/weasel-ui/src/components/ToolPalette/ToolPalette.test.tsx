@@ -113,3 +113,44 @@ describe('ToolPalette — grouping', () => {
     expect(separators.length).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe('ToolPalette — shortcuts', () => {
+  function withKeybinding(id: string, keybinding: { key: string; mod?: boolean; shift?: boolean; alt?: boolean }): AnyTool {
+    return { id, keybinding, presentation: { label: id, group: 'select' } } as AnyTool;
+  }
+
+  it('shows shortcut derived from keybinding', () => {
+    const tools = fakeTools([withKeybinding('select', { key: 'v' })]);
+    render(<ToolPalette tools={tools} />);
+    expect(screen.getByText('V')).toBeTruthy();
+  });
+
+  it('shows the override from presentation.shortcut when set', () => {
+    const tool = {
+      id: 'select',
+      keybinding: { key: 'v' },
+      presentation: { label: 'Select', group: 'select', shortcut: 'Sel' },
+    } as AnyTool;
+    const tools = fakeTools([tool]);
+    render(<ToolPalette tools={tools} />);
+    expect(screen.getByText('Sel')).toBeTruthy();
+    expect(screen.queryByText('V')).toBeNull();
+  });
+
+  it('button title combines label and shortcut', () => {
+    const tools = fakeTools([withKeybinding('select', { key: 'v' })]);
+    render(<ToolPalette tools={tools} />);
+    const btn = screen.getByRole('button', { name: /select/i });
+    const title = btn.getAttribute('title') ?? '';
+    expect(title).toMatch(/select/i);
+    expect(title).toMatch(/V/);
+  });
+
+  it('button title is just the label when no shortcut is available', () => {
+    const tool = { id: 'select', presentation: { label: 'Select', group: 'select' } } as AnyTool;
+    const tools = fakeTools([tool]);
+    render(<ToolPalette tools={tools} />);
+    const btn = screen.getByRole('button', { name: /select/i });
+    expect(btn.getAttribute('title')).toBe('Select');
+  });
+});
