@@ -7,6 +7,9 @@ const repoRoot = resolve(__dirname, '../..');
 export default defineConfig({
   root: __dirname,
   base: '/weasel/swillustrator/',
+  // Serve the bundled Inter MSDF atlas so registerFont() in main.tsx can fetch
+  // it. Atlas files live under repoRoot/assets/fonts/inter/.
+  publicDir: resolve(repoRoot, 'assets/fonts'),
   resolve: {
     alias: [
       {
