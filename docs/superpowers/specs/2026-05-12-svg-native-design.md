@@ -102,28 +102,43 @@ Three layers, each independently testable:
 │  @orochi235/weasel-svg                                │
 │    parseSvg / serializeSvg                            │
 │    Generic SVG ↔ SvgNode tree                         │
-│    Knows about the swill namespace                   │
+│    Knows about namespaces *generically*               │
+│    (any xmlns:prefix passes through as a meta bag)    │
 └───────────────────────────────────────────────────────┘
 ```
 
-### Where the swill namespace lives
+### Where namespace semantics live
 
-The `xmlns:swill="..."` declaration is centralized in `@orochi235/weasel-svg`. weasel-svg already emits standard SVG; this spec extends it to also serialize known swill-namespaced attributes/elements when present in the `SvgNode` tree. Specifically:
+weasel-svg stays domain-neutral. It does NOT know that `swill:paperSize="us-letter"` means "this is a US Letter document" — it only knows that `swill:paperSize` is a namespaced attribute on an `<svg>` element and preserves it round-trip.
 
-- New optional fields on `SvgNode` types (or a new `meta?: Record<string, unknown>` bag) carry the per-node swill attrs.
-- A new top-level option in `SerializeOptions` carries document-level extras (`paperSize`, `layers`, `pages`).
-- `parseSvg` reads the swill namespace symmetrically into the same shape.
+**Generic namespace handling in weasel-svg:**
 
-This keeps weasel-svg as the single source of truth for the namespace's contract; svgInterop never assembles raw XML.
+- `parseSvg(svg, opts?)` accepts an optional `namespaces?: Record<prefix, uri>` config. If a parsed element has attributes/children in any declared namespace, weasel-svg surfaces them as opaque structured data attached to the `SvgNode` or `ParseResult`. Unknown namespaces are preserved (round-tripped) but exposed only through a permissive `meta` bag.
+- `SvgNode` types gain a `meta?: { [prefix:string]: { attrs?, elements? } }` field carrying the namespaced extras.
+- `ParseResult` gains a document-level `documentMeta?: { [prefix:string]: { attrs?, elements? } }` for namespaced attrs/elements that lived on the root `<svg>`.
+- `serializeSvg(nodes, opts)` accepts the same `namespaces` config + reads the `meta` bags off `SvgNode`s and the `documentMeta` from `SerializeOptions`. It writes the declarations, attributes, and elements back out.
+
+**App-specific semantics in svgInterop.ts:**
+
+- svgInterop declares the `swill` namespace once: `{ swill: 'https://swillustrator.app/svg-ext' }`.
+- On save: builds `SvgNode.meta.swill.attrs = { 'layer-id': 'bg' }` etc. for each shape; builds `documentMeta.swill = { attrs: { paperSize: 'us-letter', units: 'px' }, elements: { layers: [...] } }`.
+- On open: reads the same shape back out.
+- The string `swill:paperSize`, the enum `'us-letter'`, the meaning of `<swill:layers>` — all of that lives only in svgInterop. weasel-svg sees structured opaque metadata it doesn't interpret.
+
+Benefits of this split:
+- weasel-svg stays usable by any future consumer that wants its own namespace.
+- All "what does the swill: namespace mean?" lives in one file (svgInterop), not scattered.
+- weasel-svg's surface stays small: parse/serialize + generic namespace pass-through, no app-specific feature creep.
 
 ## Implementation tasks (high-level)
 
 The plan that follows this spec will break these into bite-sized steps.
 
-- **T1: Paper-size round-trip.** Extend weasel-svg's parse to surface `viewBox`/`width`/`height`/`swill:paperSize`/`swill:units`. Extend serialize to write them. svgInterop calls `setDoc` on open and reads `doc` on save. Add round-trip tests with fixtures for `us-letter`, `a4`, and a custom size.
-- **T2: Groups round-trip.** Extend `SvgGroupNode` (already exists) with optional `meta?: { groupId?: string }`. Bridge stops flattening on import; instead surfaces nested structure to `groupsRef`. Save walks `groupsRef`. Add round-trip tests.
-- **T3: Layers round-trip.** New encoding: `<swill:layers>` element at top + `swill:layer-id` per shape. Requires Swillustrator to actually have a layer model first (it has a `LayerList` UI but no persisted layer data per the audit — check this and either reuse the existing kit-level layer concept or design Swillustrator's flavor). Likely needs its own brainstorm before plan.
-- **T4: Text style round-trip.** Map `TextStyle` fields to SVG `<text>` attributes (font-family, font-size, font-weight, font-style, fill). Line-height encodes as `swill:line-height` since SVG has no clean attr for it. Round-trip tests for each field.
+- **T0: Generic namespace pass-through in weasel-svg.** Extend `parseSvg`/`serializeSvg` with a `namespaces?: { prefix → uri }` config. Surface namespaced attributes as a `meta` bag on each `SvgNode`, and namespaced root-level attributes/elements as `documentMeta` on the parse/serialize result. weasel-svg gains zero domain knowledge — purely opaque pass-through. Tests cover round-tripping arbitrary namespaced content.
+- **T1: Paper-size round-trip.** Also extend weasel-svg's parse to surface the standard SVG `viewBox`/`width`/`height` attributes (gap from the audit). In svgInterop, declare the `swill` namespace, encode `paperSize`/`units` into `documentMeta.swill.attrs` on save, read them back on open, and call `setDoc`. Add round-trip tests with fixtures for `us-letter`, `a4`, and a custom size.
+- **T2: Groups round-trip.** Use the existing `SvgGroupNode` plus the new `meta` bag from T0 for the optional `swill:group-id` attribute. Bridge stops flattening on import; instead surfaces nested structure to `groupsRef`. Save walks `groupsRef`. Add round-trip tests.
+- **T3: Layers round-trip.** New encoding: `<swill:layers>` element at top (in `documentMeta.swill.elements`) + `swill:layer-id` per shape (in `meta.swill.attrs`). Requires Swillustrator to actually have a layer model first (it has a `LayerList` UI but no persisted layer data per the audit — check this and either reuse the existing kit-level layer concept or design Swillustrator's flavor). Likely needs its own brainstorm before plan.
+- **T4: Text style round-trip.** Map `TextStyle` fields to SVG `<text>` attributes (font-family, font-size, font-weight, font-style, fill). Line-height encodes as `swill:line-height` (per-shape `meta.swill.attrs`). Round-trip tests for each field.
 - **T5: Warning surfacing.** weasel-svg already returns `warnings[]` from `parseSvg`. Swillustrator's Open handler should display them — likely a transient toast or modal listing each warning. Lives in the UI layer, doesn't touch the bridge.
 - **T6: Bridge tests.** Direct unit tests on `svgInterop.ts` — currently zero. Cover every `Obj` kind × every SvgNode kind cell, plus edge cases (empty paths, gradients dropping to solid, missing stroke).
 
