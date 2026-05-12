@@ -23,18 +23,27 @@ proposal is about.
 
 Borrowing the linguistic frame: tools are verbs.
 
-- **Targeted** tools act on an object — sometimes mandatory, sometimes
-  optional. `useSelectTool` ("select the rect"), `useTextTool` ("insert
-  here" / "edit that"), `useLassoTool` ("select these"),
-  `useEditAnchorsTool` ("edit that anchor"). The target is part of the
-  action's meaning.
-- **Untargeted** tools never take an object. They operate on the
+- **Tools** (the unmarked default) act on an object — sometimes
+  mandatory, sometimes optional. `useSelectTool` ("select the rect"),
+  `useTextTool` ("insert here" / "edit that"), `useLassoTool` ("select
+  these"), `useEditAnchorsTool` ("edit that anchor"). The target is
+  part of the action's meaning. ~95% of the kit's tools fit here.
+- **Viewport tools** never take an object. They operate on the
   viewport itself: `useHandTool`, `useWheelZoomTool`,
   `usePinchZoomTool`, `useKeyboardZoomTool`.
 
-Targeted tools fit a declarative `(gesture × target) → action` routing
-model. Untargeted tools don't — there's no target dimension to route
-against, so they stay imperative.
+Conceptually the second class is "intransitive" verbs to the first
+class's "transitive" — the term *viewport tool* is preferred at the
+API surface because it's concrete and aligned with the kit's existing
+vocabulary (`viewport` props, `View` transform). The kit's existing
+`ambient` slot in the dispatcher is unrelated — it describes *when* a
+tool fires (always-on vs. active-only), not what the tool acts on.
+Many viewport tools happen to be registered in the ambient slot, but
+the two concepts stay independent.
+
+Tools (the default) fit a declarative `(gesture × target) → action`
+routing model. Viewport tools don't — there's no target dimension to
+route against, so they use handler-form channels instead.
 
 ## Phase shape
 
@@ -55,15 +64,26 @@ exists when `scratch !== null`. Authors don't name states.
 Sub-phase nuance — e.g., pen tool's "hovering the first anchor about
 to close" — lives in scratch fields, not as a distinct state.
 
-## The factory
+## The factories
 
-One function, one type parameter:
+Two functions, both with one type parameter:
 
 ```ts
 function defineTool<TScratch = void>(
   spec: ToolDef<TScratch>,
 ): Tool<TScratch>;
+
+function defineViewportTool<TScratch = void>(
+  spec: ViewportToolDef<TScratch>,
+): Tool<TScratch>;
 ```
+
+`defineViewportTool` is the restricted variant — its spec type omits
+the routing-table fields that have no meaning without a target
+(`click`, `dblTap` route tables) and accepts only handler-form
+channels (`drag`, `wheel`, `keyDown`). Both produce the same
+underlying `Tool<TScratch>` for the dispatcher; the split exists at
+authoring time so the call site declares intent.
 
 `TScratch` defaults to `void` so phase-free tools can't accidentally
 call `begin(...)` — it'd be a type error. Authors opt into the active
@@ -115,20 +135,51 @@ interface ToolDef<TScratch = void> {
 }
 
 interface PhaseDef<TScratch> {
-  click?:   RouteTable<TScratch> | ActionFn<TScratch>;
-  dblTap?:  RouteTable<TScratch> | ActionFn<TScratch>;
-  drag?:    RouteTable<TScratch> | ActionFn<TScratch>;
+  click?:   RouteTable<TScratch>;
+  dblTap?:  RouteTable<TScratch>;
+  drag?:    RouteTable<TScratch>;
   wheel?:   ActionFn<TScratch>;
   keyDown?: Record<string, ActionFn<TScratch>>;
   claimsAll?: boolean;
 }
 
 type RouteTable<TScratch> = Partial<Record<string, ActionFn<TScratch>>>;
+
+// Viewport tools — restricted variant. Mechanically derived from
+// ToolDef via Pick/Omit so any change to ToolDef ripples through and
+// the subset relationship is compiler-enforced.
+type ViewportPhaseDef<TScratch = void> = Pick<
+  PhaseDef<TScratch>, 'wheel' | 'keyDown' | 'claimsAll'
+> & {
+  // Narrows from `RouteTable<TScratch>` to just `ActionFn<TScratch>` —
+  // valid because ActionFn is assignable to RouteTable | ActionFn.
+  drag?: ActionFn<TScratch>;
+};
+
+type ViewportToolDef<TScratch = void> = Omit<
+  ToolDef<TScratch>, 'initial' | 'active'
+> & {
+  initial: ViewportPhaseDef<TScratch>;
+  active?: ViewportPhaseDef<TScratch>;
+};
 ```
 
-`click | dblTap | drag` accept either a route table (targeted) or a
-plain `ActionFn` (untargeted — fires for any pointerdown). Hand tool
-uses the function form; everything else uses the table.
+`ViewportToolDef` is a **strict structural subset** of `ToolDef`:
+- No `click` or `dblTap` (those `PhaseDef` fields are dropped via `Pick`).
+- `drag` is narrowed from `RouteTable | ActionFn` to just `ActionFn`.
+- Everything else (id, presentation, keybinding, wheel, keyDown,
+  claimsAll) is shared identically.
+
+The relationship is enforced at the type level — `ViewportToolDef`
+literally cannot diverge from `ToolDef` because it's derived from it.
+Adding a new optional field to `PhaseDef` (e.g., a future `hover`
+slot) automatically becomes available to viewport tools too if it's
+included in the `Pick`; if it's omitted, viewport tools never see it.
+
+The two factories share the same underlying `Tool<TScratch>` output —
+the spec types only diverge at authoring time, giving each call site
+the right autocomplete and catching typos like `click` on a viewport
+tool at compile time.
 
 ## Modifier handling
 
@@ -243,15 +294,15 @@ const RectInsertTool = defineTool<{ start: Point; current: Point }>({
 });
 ```
 
-### Hand (untargeted drag)
+### Hand (viewport tool — drag pans the view)
 
 ```ts
-const HandTool = defineTool<{ startView: View; startPoint: Point }>({
+const HandTool = defineViewportTool<{ startView: View; startPoint: Point }>({
   id: 'hand',
   presentation: { label: 'Hand', icon: <HandIcon />, group: 'view', cursor: 'grab' },
   keybinding: { key: 'h' },
   initial: {
-    // Function form, no target table — drag fires for any pointerdown
+    // No routing tables — viewport tools handle drags directly with a handler.
     drag: (ctx) => begin({
       scratch: { startView: ctx.view, startPoint: ctx.point },
       onMove: (ctx) => {
@@ -268,8 +319,11 @@ const HandTool = defineTool<{ startView: View; startPoint: Point }>({
 });
 ```
 
-The function-form `drag: (ctx) => ...` (vs. the table form `drag: { 'kind': ... }`)
-reads as untargeted without needing a magic `'any'` key.
+Reading `defineViewportTool` at the call site immediately signals the
+intent: no targets, no routing — the tool acts on the viewport. The
+`ViewportToolDef` spec type omits the routing-table fields entirely,
+so a typo like `click: { 'rect': ... }` is a compile error rather than
+a silently-dead route.
 
 ### Pen (multi-click path drawing)
 
