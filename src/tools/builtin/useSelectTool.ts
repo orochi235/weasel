@@ -22,7 +22,7 @@ import type { RotateAdapter } from 'core/adapters/types';
 import type { AreaSelectAdapter } from 'core/adapters/types';
 import type { ResizeAnchor } from 'interactions/gestures/types';
 import type { NodeId } from 'core/scene/types';
-import { defineTool } from '../routing';
+import { defineTool, mods, claim, none } from '../routing';
 import type { ActionFn } from '../routing';
 import type { Tool, ToolBounds, ToolCtx } from '../types';
 import type { DebugSink } from '../../debug/types';
@@ -774,15 +774,18 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
 
   // Imperative shims — partial pre-routing carry-over. Task 3 introduced the
   // routing-factory base; Task 4 migrated `drag` to a declarative route table
-  // (see `dragRoutes` below). `pointer.onDown`, `pointer.onClick`, and `dblTap`
-  // remain imperative because:
+  // (see `dragRoutes` below); Task 5 migrated `click` to a modifier-sub-table
+  // route. `pointer.onDown` and `dblTap` remain imperative because:
   //
   //   1. pointer.onDown has no routing-factory analogue (factory only emits
-  //      pointer.onClick). The onDown logic sets selection / scratch ahead of
-  //      drag routing and cannot be deferred to onClick.
-  //   2. pointer.onClick handles the deferred-clear / deferred-collapse cases
-  //      whose modifier sub-tables need Task 5 work to express declaratively.
-  //   3. dblTap.onTap receives a PointerEvent forwarded to the consumer's
+  //      pointer.onClick — the new `pointerDown` route table is wired but
+  //      doesn't yet replace this shim). The onDown logic sets selection
+  //      via `selection.applyClick` and stashes scratch ahead of drag routing.
+  //      Moving it into a declarative pointerDown route is Phase 4.5 work —
+  //      it depends on factoring `applyClick` into emit-an-op form so the
+  //      route can return `apply([setSelectionOp(...)])` without
+  //      double-mutating against the imperative path.
+  //   2. dblTap.onTap receives a PointerEvent forwarded to the consumer's
   //      onDoubleTap callback; ActionFn<TScratch> only receives ctx.
   //
   // The declarative `initial.drag` route table dispatches by `ctx.target.kind`:
@@ -792,6 +795,19 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   // Behavior preserved end-to-end (multi-select-aware move, deferred click
   // semantics) — the onDown shim sets up the "deferred click" hint on scratch
   // before the dispatcher's threshold gating runs drag.onStart.
+  //
+  // The declarative `initial.click` route table (Task 5) replaces the
+  // imperative onClick shim. It only handles the cases where `onDown`
+  // deferred work to the sub-threshold release:
+  //   - empty target + no shift/meta → selection.clear() (deferred clear).
+  //   - empty target + shift/meta → none() (extend modifier preserves set).
+  //   - rect/text/path target → collapse to deferredClickId when set
+  //     (multi-selection member clicked without extend); otherwise no-op
+  //     because onDown's applyClick already mutated selection.
+  // Routes call `ctx.selection.applyClick` / `ctx.selection.clear` directly
+  // and return claim/none rather than emitting setSelectionOp via apply(),
+  // because onDown's applyClick is the single source of selection mutation
+  // today — issuing a setSelectionOp here would double-mutate.
   const legacyOnDown = (_e: PointerEvent, ctx: import('../types').ToolCtx<SelectScratch>): 'claim' | 'pass' => {
     const sel = ctx.selection.current;
 
@@ -899,10 +915,42 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   const beginArea: ActionFn<SelectScratch> = (ctx) =>
     areaSelect.beginAt(ctx) as ReturnType<ActionFn<SelectScratch>>;
 
+  // Click action handlers. Run on sub-threshold release after the imperative
+  // `onDown` shim has already populated scratch + selection:
+  //   - scratch.kind === 'move' with deferredClickId → collapse the
+  //     multi-selection to the deferred id. onDown deferred this so a
+  //     pre-threshold drag could move the whole set instead.
+  //   - scratch.kind === 'area' (empty pointerdown) → clear the selection.
+  //     onDown deferred to release so an accidental tap on empty doesn't
+  //     wipe the set mid-thought.
+  //   - any other scratch → onDown's applyClick already mutated selection.
+  //
+  // These handlers call `ctx.selection.applyClick` / `ctx.selection.clear`
+  // imperatively rather than emitting setSelectionOp via `apply()`, because
+  // `selection.applyClick` is the single source of selection mutation in
+  // useSelectTool today (it's how onDown writes selection). Emitting a
+  // setSelectionOp here would double-mutate against onDown's applyClick.
+  // Migrating both onDown and onClick to ops-only selection is Phase 4.5
+  // (pointerDown route table) work.
+  const collapseDeferredClick: ActionFn<SelectScratch> = (ctx) => {
+    if (ctx.scratch.kind === 'move' && ctx.scratch.deferredClickId !== null) {
+      ctx.selection.applyClick(ctx.scratch.deferredClickId as NodeId, ctx.modifiers);
+      return claim();
+    }
+    return none();
+  };
+  const clearOnEmpty: ActionFn<SelectScratch> = (ctx) => {
+    if (ctx.scratch.kind === 'area') {
+      ctx.selection.clear();
+      return claim();
+    }
+    return none();
+  };
+
   return useMemo(
     () => {
-      // Declarative factory — `initial.drag` is a real route table now.
-      // Click and dblTap remain imperative shims (see comment block above).
+      // Declarative factory — `initial.drag` and `initial.click` are real
+      // route tables. dblTap stays as an imperative shim (see comment block).
       const base = defineTool<SelectScratch>({
         id: 'select',
         keybinding: { key: 'V' },
@@ -926,6 +974,32 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
             '*': beginMove,
             empty: beginArea,
           },
+          // Click route table with modifier sub-tables (Task 5). Each
+          // node-kind route only runs the deferred-collapse path —
+          // selection-replace was already done in onDown's applyClick.
+          // Empty target routes split on modifier: plain release clears,
+          // shift/mod release preserves the set.
+          //
+          // Alt-click does not clone today: useSelectTool's existing
+          // alt-click behavior is to ignore alt (it falls through to
+          // applyClick which doesn't treat alt as an extend modifier),
+          // which in single-mode replaces selection and in multi-mode
+          // also replaces selection. Cloning is owned by useCloneTool
+          // via alt-drag, not click. We don't add an [mods('alt')] route
+          // because there's no distinct alt-click behavior to express —
+          // the default route (no sub-table) already covers it.
+          click: {
+            rect: collapseDeferredClick,
+            text: collapseDeferredClick,
+            path: collapseDeferredClick,
+            '*':  collapseDeferredClick,
+            empty: {
+              [mods()]:          clearOnEmpty,
+              [mods('shift')]:   () => none(),
+              [mods('mod')]:     () => none(),
+              [mods('mod', 'shift')]: () => none(),
+            },
+          },
         },
       });
 
@@ -944,18 +1018,14 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         previewIds,
 
         pointer: {
+          // pointer.onDown stays imperative (Phase 4.5). The routing
+          // factory's pointerDown route table is wired but onDown still
+          // owns selection.applyClick + bringToFront + scratch-stash.
           onDown: legacyOnDown,
-          onClick: (_e: PointerEvent, ctx: ToolCtx<SelectScratch>): 'claim' | 'pass' => {
-            // Sub-threshold release: empty-hit clears, and a body hit on an
-            // already-selected member of a multi-selection collapses to that
-            // single id (deferred from onDown so a drag could move the set).
-            if (ctx.scratch.kind === 'area' && !ctx.modifiers.shift && !ctx.modifiers.meta) {
-              ctx.selection.clear();
-            } else if (ctx.scratch.kind === 'move' && ctx.scratch.deferredClickId) {
-              ctx.selection.applyClick(ctx.scratch.deferredClickId as NodeId, ctx.modifiers);
-            }
-            return 'claim';
-          },
+          // pointer.onClick comes from `defineTool`'s declarative click
+          // route table above — pull it off the base record so the spread
+          // below picks it up via `base.pointer.onClick`.
+          ...(base.pointer?.onClick ? { onClick: base.pointer.onClick } : {}),
         },
 
         dblTap: {

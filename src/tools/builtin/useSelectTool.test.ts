@@ -136,6 +136,7 @@ describe('useSelectTool', () => {
   it('pointer.onClick after empty pointerdown clears selection (sub-threshold release)', () => {
     const clear = vi.fn();
     const ctx = ctxOver({
+      target: emptyTarget(),
       selection: { current: ['a', 'b'], applyClick: vi.fn(), set: vi.fn(), clear } as any,
     });
     const { result } = renderHook(() =>
@@ -152,6 +153,7 @@ describe('useSelectTool', () => {
   it('pointer.onClick after empty pointerdown with shift held does NOT clear (extend modifier)', () => {
     const clear = vi.fn();
     const ctx = ctxOver({
+      target: emptyTarget(),
       modifiers: { alt: false, shift: true, meta: false, ctrl: false, space: false },
       selection: { current: ['a', 'b'], applyClick: vi.fn(), set: vi.fn(), clear } as any,
     });
@@ -185,6 +187,7 @@ describe('useSelectTool', () => {
   it('sub-threshold release on a deferred multi-click collapses to the clicked id', () => {
     const applyClick = vi.fn();
     const ctx = ctxOver({
+      target: nodeTarget('a'),
       selection: { current: ['a', 'b', 'c'], applyClick, set: vi.fn(), clear: vi.fn() } as any,
     });
     const { result } = renderHook(() =>
@@ -372,6 +375,7 @@ describe('useSelectTool', () => {
     // Empty-click clear path still works (uses ctx.selection, not adapter).
     const clear = vi.fn();
     const ctx = ctxOver({
+      target: emptyTarget(),
       selection: { current: ['a'], applyClick: vi.fn(), set: vi.fn(), clear } as any,
     });
     result.current.pointer!.onDown!(pe(), ctx);
