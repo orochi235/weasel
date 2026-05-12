@@ -749,7 +749,8 @@ export function App() {
         onAlign={(edge) => align(edge)}
         onDistribute={(axis) => distribute(axis)}
         onFlip={(axis) => flip(axis)}
-        onBoolean={(op) => booleans[op]()}
+        booleansAdapter={adapter}
+        booleansActions={booleans}
       />
 
       <div className="swill-body">

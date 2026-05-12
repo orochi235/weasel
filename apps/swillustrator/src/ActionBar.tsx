@@ -6,7 +6,14 @@
  *  grouping is done via `.swill-actionbar-group` separators, not inline
  *  styles. */
 import type { ReactNode } from 'react';
-import type { AlignEdge, DistributeAxis, FlipAxis } from '@orochi235/weasel';
+import type {
+  AlignEdge,
+  DistributeAxis,
+  FlipAxis,
+  BooleansAdapter,
+  UseBooleansReturn,
+} from '@orochi235/weasel';
+import { PathfinderPanel } from '@orochi235/weasel-ui';
 
 export interface ActionBarProps {
   // History
@@ -38,8 +45,10 @@ export interface ActionBarProps {
   onDistribute(axis: DistributeAxis): void;
   // Flip
   onFlip(axis: FlipAxis): void;
-  // Booleans
-  onBoolean(op: 'union' | 'intersect' | 'subtract' | 'exclude' | 'divide'): void;
+  // Booleans — wired directly to PathfinderPanel; adapter drives its
+  // disabled state (uniform <2 valid paths), actions fire the ops.
+  booleansAdapter: Pick<BooleansAdapter, 'getSelection' | 'getWorldPath'>;
+  booleansActions: UseBooleansReturn;
 }
 
 interface ButtonProps {
@@ -117,13 +126,7 @@ export function ActionBar(p: ActionBarProps) {
         <Button onClick={() => p.onFlip('y')} disabled={none} title="Flip V (Shift-V)">FV</Button>
       </div>
       <Sep />
-      <div className="swill-actionbar-group">
-        <Button onClick={() => p.onBoolean('union')} disabled={!p.hasMultiSelection} title="Union">∪</Button>
-        <Button onClick={() => p.onBoolean('intersect')} disabled={!p.hasMultiSelection} title="Intersect">∩</Button>
-        <Button onClick={() => p.onBoolean('subtract')} disabled={!p.hasMultiSelection} title="Subtract (Minus Front)">−</Button>
-        <Button onClick={() => p.onBoolean('exclude')} disabled={!p.hasMultiSelection} title="Exclude (XOR)">⊕</Button>
-        <Button onClick={() => p.onBoolean('divide')} disabled={!p.hasMultiSelection} title="Divide">÷</Button>
-      </div>
+      <PathfinderPanel adapter={p.booleansAdapter} actions={p.booleansActions} />
     </div>
   );
 }
