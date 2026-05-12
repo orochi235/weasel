@@ -203,7 +203,7 @@ type Result<TScratch> =
 
 | Constructor | Effect | Phase |
 |---|---|---|
-| `apply(ops, label?)` | Dispatch ops through adapter's `applyBatch`. | no change |
+| `apply(ops, label?)` | Dispatch ops through adapter's `applyOps`. | no change |
 | `begin(spec)` | Open engaged phase with this scratch + continuation closures. | idle → engaged |
 | `hold(scratch)` | Update scratch; tool *holds* the new state. | stays engaged |
 | `commit(ops, label?)` | Apply ops AND close engaged phase. | engaged → idle |
@@ -318,7 +318,7 @@ interface ToolCtx<TScratch = void> {
   scratch: TScratch;                  // typed; void when not engaged
   view: View;
   setView: (next: View) => void;
-  applyBatch: (ops: Op[], label?: string) => void;
+  applyOps: (ops: Op[], label?: string) => void;
   selection: SelectionApi;
   adapter: unknown;                   // cast at use site
   canvasRect: DOMRect;
@@ -539,7 +539,7 @@ defineTool({
 
 Return type is `void`. These are side-effect hooks, not action
 handlers — they can't dispatch ops via the Result vocabulary. If they
-need to dispatch ops imperatively, they call `ctx.applyBatch(...)`
+need to dispatch ops imperatively, they call `ctx.applyOps(...)`
 directly (rare; likely anti-pattern).
 
 **Edge case: tool is engaged when its slot is taken away.** The
@@ -786,9 +786,10 @@ The implementation is split into bite-sized phases:
 
 1. **Foundation.** `defineTool` factory, `defineViewportTool` factory,
    action constructors, `Result` types, `ToolCtx` extensions, `HitResult`
-   shape, `AffordanceBinding` rename of the existing `HitResult`.
-   Ship under an experimental import path; existing imperative
-   channels keep working unchanged.
+   shape, `AffordanceBinding` rename of the existing `HitResult`, and
+   the kit-wide `applyBatch` → `applyOps` rename. Ship under an
+   experimental import path; existing imperative channels keep working
+   unchanged.
 
 2. **First migration: useHandTool.** Smallest tool (untargeted, single
    gesture, simple scratch). Validates the basic shape without
