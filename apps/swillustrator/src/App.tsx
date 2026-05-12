@@ -14,19 +14,24 @@ import {
   useDelete,
   useDistribute,
   useDuplicate,
+  useEllipseTool,
   useFlip,
   useGroup,
   useHandTool,
   useInsertTool,
   useKeybindings,
   useLassoTool,
+  useLineTool,
   useNudge,
+  usePencilTool,
+  usePolygonTool,
   useReorder,
   useSelectAll,
   useAction,
   useSelection,
   usePublishSelection,
   useSelectTool,
+  useStarTool,
   useTextTool,
   useTools,
   useUndoRedo,
@@ -45,6 +50,7 @@ import {
   pointInTextPose,
   caretIndexAt,
   boundsOfPath,
+  PathBuilder,
   type ClipboardSnapshot,
   type Group,
   type History,
@@ -128,6 +134,84 @@ interface Pose { x: number; y: number; width: number; height: number }
  *  paste offset, group bound shifts, and the generic Obj patcher. */
 function translateObj(o: Obj, dx: number, dy: number): Obj {
   return { ...o, x: o.x + dx, y: o.y + dy };
+}
+
+// ─── Shape-tool geometry builders ───────────────────────────────────────
+// Each builder produces a `PolygonPath` from the tool's commit-time inputs.
+// Lives at module scope so it's testable in isolation and doesn't capture
+// component state.
+
+/** Magic-number for the cubic-Bezier approximation of a circular quadrant.
+ *  Gives <1% max error vs. a true circle — the canonical "kappa". */
+const ELLIPSE_KAPPA = 0.5522847498307936;
+
+/** Closed ellipse path approximated by 4 cubic-Bezier segments, inscribed
+ *  in the given bounding rect. */
+function ellipsePath(bounds: { x: number; y: number; width: number; height: number }): PolygonPath {
+  const cx = bounds.x + bounds.width / 2;
+  const cy = bounds.y + bounds.height / 2;
+  const rx = bounds.width / 2;
+  const ry = bounds.height / 2;
+  const ox = rx * ELLIPSE_KAPPA;
+  const oy = ry * ELLIPSE_KAPPA;
+  const b = new PathBuilder();
+  b.moveTo(cx + rx, cy);
+  b.curveTo(cx + rx, cy + oy, cx + ox, cy + ry, cx, cy + ry);
+  b.curveTo(cx - ox, cy + ry, cx - rx, cy + oy, cx - rx, cy);
+  b.curveTo(cx - rx, cy - oy, cx - ox, cy - ry, cx, cy - ry);
+  b.curveTo(cx + ox, cy - ry, cx + rx, cy - oy, cx + rx, cy);
+  b.close();
+  return b.build();
+}
+
+/** Open polyline of two anchors — the line tool's geometry. */
+function linePath(a: { x: number; y: number }, b: { x: number; y: number }): PolygonPath {
+  const pb = new PathBuilder();
+  pb.moveTo(a.x, a.y);
+  pb.lineTo(b.x, b.y);
+  return pb.build();
+}
+
+/** Closed regular polygon: N vertices evenly spaced on a circle of `radius`
+ *  centered at `center`, rotated so the first vertex lies at `rotation`. */
+function regularPolygonPath(
+  center: { x: number; y: number },
+  radius: number,
+  rotation: number,
+  sides: number,
+): PolygonPath {
+  const b = new PathBuilder();
+  for (let i = 0; i < sides; i++) {
+    const t = rotation + (i / sides) * Math.PI * 2;
+    const x = center.x + radius * Math.cos(t);
+    const y = center.y + radius * Math.sin(t);
+    if (i === 0) b.moveTo(x, y); else b.lineTo(x, y);
+  }
+  b.close();
+  return b.build();
+}
+
+/** Closed star: `2 * points` vertices alternating between `outerRadius` and
+ *  `innerRadius`, centered at `center`, rotated so the first outer vertex
+ *  lies at `rotation`. */
+function starPath(
+  center: { x: number; y: number },
+  outerRadius: number,
+  innerRadius: number,
+  rotation: number,
+  points: number,
+): PolygonPath {
+  const b = new PathBuilder();
+  const n = points * 2;
+  for (let i = 0; i < n; i++) {
+    const r = i % 2 === 0 ? outerRadius : innerRadius;
+    const t = rotation + (i / n) * Math.PI * 2;
+    const x = center.x + r * Math.cos(t);
+    const y = center.y + r * Math.sin(t);
+    if (i === 0) b.moveTo(x, y); else b.lineTo(x, y);
+  }
+  b.close();
+  return b.build();
 }
 
 /** Synthesize a kit-flavored `Path` for any Obj — used by useBooleans to read
@@ -670,6 +754,56 @@ export function App() {
     },
   });
 
+  // ---- Shape tools (ellipse / line / polygon / star / pencil) ----------
+  // Each tool produces a `PathObj` from a kit-built `PolygonPath`. Fill /
+  // stroke / strokeWidth are pulled from the current refs so palette
+  // selections apply immediately.
+
+  /** Wrap a freshly-built path as a `PathObj` with the current style. */
+  const pathToObj = useCallback((path: PolygonPath, closed: boolean): PathObj => {
+    const b = boundsOfPath(path);
+    return {
+      id: `p${nextId.current++}`,
+      kind: 'path',
+      x: b.x, y: b.y, width: b.width, height: b.height,
+      path, closed,
+      fill: fillRef.current,
+      stroke: strokeRef.current,
+      strokeWidth: strokeWidthRef.current,
+    };
+  }, []);
+
+  const ellipse = useEllipseTool<PathObj>({
+    minBounds: { width: 2, height: 2 },
+    create: (bounds) => pathToObj(ellipsePath(bounds), true),
+  });
+
+  const line = useLineTool<PathObj>({
+    minLength: 2,
+    create: (a, b) => pathToObj(linePath(a, b), false),
+  });
+
+  const polygon = usePolygonTool<PathObj>({
+    minRadius: 2,
+    sides: 6,
+    create: (center, radius, rotation, sides) =>
+      pathToObj(regularPolygonPath(center, radius, rotation, sides), true),
+  });
+
+  const star = useStarTool<PathObj>({
+    minRadius: 2,
+    points: 5,
+    innerRatio: 0.5,
+    create: (center, outer, inner, rotation, points) =>
+      pathToObj(starPath(center, outer, inner, rotation, points), true),
+  });
+
+  const pencil = usePencilTool<PathObj>({
+    tolerance: 1.5,
+    closeThreshold: 8,
+    create: (path, { closed }) => pathToObj(path, closed),
+  });
+
   // Lasso selects shapes whose AABB intersects the lasso polygon (via
   // hitTestArea on the lasso's bounding box — Swillustrator's shapes are
   // simple enough that this lines up with user expectations).
@@ -702,7 +836,7 @@ export function App() {
   // user to switch tools to enable alt-drag clone.
   const tools = useTools({
     active: 'select',
-    registry: { select, lasso, insert, hand, text, pen },
+    registry: { select, lasso, insert, ellipse, line, polygon, star, pen, pencil, hand, text },
     ambient: [wheelZoom, wheelPan, keyZoom, clone],
   });
   useKeybindings(tools, {
@@ -710,6 +844,10 @@ export function App() {
       select: { key: 'V' },
       insert: { key: 'R' },
       lasso: { key: 'L' },
+      ellipse: { key: 'E' },
+      line: { key: '\\' },
+      polygon: { key: 'G' },
+      pencil: { key: 'N' },
     },
   });
 
