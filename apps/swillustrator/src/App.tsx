@@ -36,6 +36,7 @@ import {
   createTextLayer,
   createPenPreviewLayer,
   createPathLayer,
+  createDeleteOp,
   createSetTextOp,
   useTextEdit,
   pointInTextPose,
@@ -535,7 +536,16 @@ export function App() {
     },
     setText: (id, text) => {
       const o = itemsRef.current.find((x) => x.id === id);
-      const from = o?.kind === 'text' ? o.text : '';
+      if (!o || o.kind !== 'text') return;
+      // Commit with empty text deletes the node — matches Illustrator's
+      // behavior and prevents invisible orphan text boxes from being left
+      // behind by stray clicks or all-content-deleted edits.
+      if (text === '') {
+        applyBatch([createDeleteOp({ node: o, label: 'Delete empty text' })], 'Delete empty text');
+        return;
+      }
+      const from = o.text;
+      if (from === text) return;
       applyBatch([createSetTextOp({ id, from, to: text, label: 'Edit text' })], 'Edit text');
     },
   });
