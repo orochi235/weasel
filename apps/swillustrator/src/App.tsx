@@ -703,20 +703,10 @@ export function App() {
 
   // ---- Render layers ---------------------------------------------------
   const textLayer: RenderLayer<unknown> = createTextLayer<TextObj>({
-    getTexts: () => {
-      const texts = itemsRef.current.filter((o): o is TextObj => o.kind === 'text');
-      // eslint-disable-next-line no-console
-      console.log('[textLayer.getTexts]', { count: texts.length, editingId: textEdit.editingId, ids: texts.map((t) => t.id), contents: texts.map((t) => t.text) });
-      return texts;
-    },
+    getTexts: () => itemsRef.current.filter((o): o is TextObj => o.kind === 'text'),
     getPose: (n) => ({ x: n.x, y: n.y, width: n.width, height: n.height, text: n.text, style: n.style }),
     // Hide the currently-editing node — the contenteditable overlay draws it.
-    isHidden: (n) => {
-      const hidden = textEdit.isEditing(n.id);
-      // eslint-disable-next-line no-console
-      console.log('[textLayer.isHidden]', { id: n.id, text: n.text, hidden, editingId: textEdit.editingId });
-      return hidden;
-    },
+    isHidden: (n) => textEdit.isEditing(n.id),
   });
 
   const pathLayer: RenderLayer<unknown> = createPathLayer<PathObj>({
