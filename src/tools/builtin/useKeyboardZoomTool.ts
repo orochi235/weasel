@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react';
-import { defineViewportTool, claim, none } from '../routing';
+import { defineViewportTool, claim, none, type Result } from '../routing';
 import type { Tool, ToolCtx } from '../types';
 import { zoomAt } from 'core/viewport/zoomAt';
 import { useViewTween } from 'core/viewport/useViewTween';
@@ -55,7 +55,7 @@ export function useKeyboardZoomTool(opts: KeyboardZoomToolOpts = {}): Tool<null>
     [min, max, keyStep, animate, duration, resetDuration, easing, animateTo],
   );
 
-  function stepZoom(ctx: ToolCtx<null>, event: unknown, factor: number) {
+  function stepZoom(ctx: ToolCtx<null>, event: unknown, factor: number): Result<null> {
     const e = event as KeyboardEvent;
     if (!(e.metaKey || e.ctrlKey)) return none();
     e.preventDefault();
@@ -71,7 +71,7 @@ export function useKeyboardZoomTool(opts: KeyboardZoomToolOpts = {}): Tool<null>
     return claim();
   }
 
-  function resetZoom(ctx: ToolCtx<null>, event: unknown) {
+  function resetZoom(ctx: ToolCtx<null>, event: unknown): Result<null> {
     const e = event as KeyboardEvent;
     if (!(e.metaKey || e.ctrlKey)) return none();
     e.preventDefault();
