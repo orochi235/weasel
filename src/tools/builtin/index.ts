@@ -45,6 +45,10 @@ export {
 } from './useSelectWithAnchorEdit';
 export { useRectTool, type UseRectToolOptions, type RectBounds } from './useRectTool';
 export { useEllipseTool, type UseEllipseToolOptions, type EllipseBounds } from './useEllipseTool';
+export {
+  useEyedropperTool,
+  type UseEyedropperToolOptions,
+} from './useEyedropperTool';
 export { useLineTool, type UseLineToolOptions, type LinePoint } from './useLineTool';
 export { useLassoTool, type UseLassoToolOptions } from './useLassoTool';
 export {
