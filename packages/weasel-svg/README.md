@@ -47,6 +47,8 @@ Serialization always emits leaves as `<path>` — there is no `<rect>` / `<circl
 | -------------------------------------------------------------- | ---------------------------------------------------------- |
 | `fill`, `fill-opacity`                                         | Solid (hex, `rgb()`/`rgba()`, named, `none`) + `url(#id)`. |
 | `stroke`, `stroke-width`, `stroke-opacity`                     | Same paint surface as `fill`.                              |
+| `stroke-linecap`, `stroke-linejoin`, `stroke-dasharray`        | Enum/array fields on `SvgStroke`. `arcs`/`miter-clip` → miter with warning. |
+| `stroke-miterlimit`                                            | Number ≥ 1. Weasel's renderer defaults to 10 (Canvas2D); SVG's default is 4 — parser only sets the field when the attribute is present, so untagged sources render with weasel's default. |
 | `opacity`                                                      | Element-level, 0..1.                                       |
 | `transform`                                                    | `matrix`, `translate`, `scale`, `rotate`, `skewX`/`skewY`. |
 | Path `d=`                                                      | Every command in the SVG 1.1 path grammar.                 |
@@ -62,7 +64,6 @@ Arc commands (`A`/`a`) are converted to cubic Bezier approximations using the st
 - **Element kind.** Rects, circles, ellipses, lines, polylines, and polygons all serialize as `<path>`. The original element label isn't preserved.
 - **Rounded rects.** `rx`/`ry` lower to cubic-Bezier corner approximations. They round-trip as geometry, but not as `rx`/`ry` attribute values.
 - **Arc commands.** Round-tripping a `<path d="... A ...">` produces a path full of cubics, not the original arc command.
-- **Stroke-only attributes.** `stroke-linecap`, `stroke-linejoin`, `stroke-dasharray`, and `stroke-miterlimit` are not yet read or emitted. (Weasel's `Stroke` type carries `cap`/`join`/`dash`; those mappings are a follow-up.)
 - **Named colors** outside the small inlined table are not recognized — they appear as warnings.
 - **Gradient transforms** (`gradientTransform`) are not read. Gradient coordinates are interpreted as `userSpaceOnUse`.
 

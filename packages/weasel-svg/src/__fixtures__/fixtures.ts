@@ -51,3 +51,12 @@ export const ROUNDED_RECT_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox
 export const ARC_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <path d="M20 50 A 30 20 0 0 1 80 50" fill="none" stroke="#003355" stroke-width="2"/>
 </svg>`;
+
+export const STROKE_STYLE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <line x1="10" y1="20" x2="90" y2="20" stroke="#000" stroke-width="4" stroke-linecap="round"/>
+  <line x1="10" y1="40" x2="90" y2="40" stroke="#000" stroke-width="4" stroke-linecap="square"/>
+  <polyline points="10,60 50,80 90,60" fill="none" stroke="#000" stroke-width="6" stroke-linejoin="round"/>
+  <polyline points="10,75 50,95 90,75" fill="none" stroke="#000" stroke-width="6" stroke-linejoin="bevel"/>
+  <line x1="10" y1="90" x2="90" y2="90" stroke="#000" stroke-width="2" stroke-dasharray="6 3"/>
+  <polyline points="10,5 15,15 20,5" fill="none" stroke="#000" stroke-width="3" stroke-linejoin="miter" stroke-miterlimit="2"/>
+</svg>`;

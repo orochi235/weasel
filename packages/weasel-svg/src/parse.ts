@@ -217,7 +217,51 @@ function readStroke(
     const a = clamp01(parseFloat(opacityAttr));
     if (Number.isFinite(a)) stroke.opacity = a;
   }
+  const cap = el.getAttribute('stroke-linecap');
+  if (cap === 'butt' || cap === 'round' || cap === 'square') {
+    stroke.cap = cap;
+  } else if (cap != null && cap !== 'inherit') {
+    onWarn(`unsupported stroke-linecap: ${cap}`);
+  }
+  const join = el.getAttribute('stroke-linejoin');
+  if (join === 'miter' || join === 'round' || join === 'bevel') {
+    stroke.join = join;
+  } else if (join === 'arcs' || join === 'miter-clip') {
+    onWarn(`stroke-linejoin "${join}" not supported; falling back to miter`);
+    stroke.join = 'miter';
+  } else if (join != null && join !== 'inherit') {
+    onWarn(`unsupported stroke-linejoin: ${join}`);
+  }
+  const dashAttr = el.getAttribute('stroke-dasharray');
+  if (dashAttr != null && dashAttr.trim() !== '' && dashAttr.trim() !== 'none') {
+    const parsed = parseDashArray(dashAttr);
+    if (parsed) stroke.dash = parsed;
+    else onWarn(`unrecognized stroke-dasharray: ${dashAttr}`);
+  }
+  const miterAttr = el.getAttribute('stroke-miterlimit');
+  if (miterAttr != null) {
+    const m = parseFloat(miterAttr);
+    if (Number.isFinite(m) && m >= 1) stroke.miterLimit = m;
+    else onWarn(`unrecognized stroke-miterlimit: ${miterAttr}`);
+  }
   return stroke;
+}
+
+/**
+ * Parse an SVG `stroke-dasharray` value into a non-negative number array.
+ * Per spec, odd-length lists are duplicated to make the dash pattern even.
+ * Returns null if any token fails to parse as a non-negative finite number.
+ */
+function parseDashArray(s: string): number[] | null {
+  const tokens = s.trim().split(/[\s,]+/).filter(Boolean);
+  if (tokens.length === 0) return null;
+  const nums: number[] = [];
+  for (const t of tokens) {
+    const n = parseFloat(t);
+    if (!Number.isFinite(n) || n < 0) return null;
+    nums.push(n);
+  }
+  return nums.length % 2 === 1 ? [...nums, ...nums] : nums;
 }
 
 function readOpacityAttr(el: Element, name: string): number | undefined {

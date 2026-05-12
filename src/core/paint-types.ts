@@ -68,6 +68,14 @@ export interface Stroke {
   dash?: number[];
   cap?: 'butt' | 'round' | 'square';
   join?: 'miter' | 'round' | 'bevel';
+  /**
+   * Miter join fallback threshold. When the miter length exceeds
+   * `miterLimit * width / 2`, the join falls back to a bevel. Default 10
+   * (matching Canvas2D). SVG's default is 4; consumers that want SVG
+   * fidelity should set this explicitly when constructing strokes from
+   * SVG sources where the attribute was omitted.
+   */
+  miterLimit?: number;
   /** Where the stroke sits relative to the geometric edge. Default `'center'`. */
   align?: StrokeAlign;
   /**

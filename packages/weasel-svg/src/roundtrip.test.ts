@@ -139,4 +139,10 @@ describe('round-trip', () => {
     const { a, b } = roundTrip(F.ARC_SVG);
     expect(b).toEqual(a);
   });
+
+  it('stroke styling (linecap, linejoin, dasharray)', () => {
+    const { a, b, warnings } = roundTrip(F.STROKE_STYLE_SVG);
+    expect(warnings).toEqual([]);
+    expect(b).toEqual(a);
+  });
 });

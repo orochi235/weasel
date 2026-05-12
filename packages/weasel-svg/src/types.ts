@@ -38,6 +38,18 @@ export interface SvgStroke {
   paint: SvgPaint;
   width: number;
   opacity?: number;
+  /** `stroke-linecap`. Default per SVG spec is `'butt'`. */
+  cap?: 'butt' | 'round' | 'square';
+  /** `stroke-linejoin`. Default per SVG spec is `'miter'`. SVG's `arcs` / `miter-clip` map to `'miter'` with a warning. */
+  join?: 'miter' | 'round' | 'bevel';
+  /** `stroke-dasharray` as a flat number array. Odd-length inputs are doubled per SVG spec. */
+  dash?: number[];
+  /**
+   * `stroke-miterlimit`. SVG's default is 4. Weasel's renderer defaults to
+   * 10 (Canvas2D) when unset, so parsed strokes without an explicit
+   * attribute may render with longer miters than the source SVG intended.
+   */
+  miterLimit?: number;
 }
 
 /**

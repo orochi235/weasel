@@ -102,6 +102,18 @@ function strokeAttrsFor(stroke: SvgStroke, registry: GradientRegistry): string[]
   if (stroke.opacity != null && stroke.opacity !== 1) {
     attrs.push(`stroke-opacity="${trimNumber(stroke.opacity)}"`);
   }
+  if (stroke.cap) {
+    attrs.push(`stroke-linecap="${stroke.cap}"`);
+  }
+  if (stroke.join) {
+    attrs.push(`stroke-linejoin="${stroke.join}"`);
+  }
+  if (stroke.dash && stroke.dash.length > 0) {
+    attrs.push(`stroke-dasharray="${stroke.dash.map(trimNumber).join(' ')}"`);
+  }
+  if (stroke.miterLimit != null) {
+    attrs.push(`stroke-miterlimit="${trimNumber(stroke.miterLimit)}"`);
+  }
   return attrs;
 }
 
