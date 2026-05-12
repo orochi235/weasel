@@ -53,16 +53,23 @@ consumer-facing chrome only.
 
 ## Component location & file layout
 
+`packages/weasel-ui/src/` is being reorganized so each component lives
+in its own `components/<Name>/` subdirectory with a per-component
+`index.ts` barrel (in-flight as of 2026-05-11; CommandPalette,
+LayerList, PropertiesPanel, RangePicker have already moved). The
+Pathfinder panel follows the new convention:
+
 ```
-packages/weasel-ui/src/
+packages/weasel-ui/src/components/PathfinderPanel/
   PathfinderPanel.tsx
   PathfinderPanel.module.css
   PathfinderPanel.test.tsx
   PathfinderPanel.stories.tsx
   pathfinderIcons.tsx         // five inline SVGs, not exported
+  index.ts                    // re-exports the public surface
 ```
 
-Public exports added to `packages/weasel-ui/src/index.ts`:
+`index.ts` contents:
 
 ```ts
 export { PathfinderPanel } from './PathfinderPanel';
@@ -71,6 +78,13 @@ export type {
   PathfinderIcons,
   PathfinderOp,
 } from './PathfinderPanel';
+```
+
+The main `packages/weasel-ui/src/index.ts` re-exports through the
+component barrel:
+
+```ts
+export * from './components/PathfinderPanel';
 ```
 
 The `pathfinderIcons.tsx` module stays internal — overrides flow through
@@ -243,15 +257,12 @@ home without a parallel demo card.
 
 ## Public exports
 
-From `@orochi235/weasel-ui` (`packages/weasel-ui/src/index.ts`):
+The per-component `index.ts` lists the public surface (see "Component
+location & file layout" above). The main
+`packages/weasel-ui/src/index.ts` reaches through it:
 
 ```ts
-export { PathfinderPanel } from './PathfinderPanel';
-export type {
-  PathfinderPanelProps,
-  PathfinderIcons,
-  PathfinderOp,
-} from './PathfinderPanel';
+export * from './components/PathfinderPanel';
 ```
 
 No changes to `@orochi235/weasel`'s main barrel. The panel is chrome;
