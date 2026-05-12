@@ -18,5 +18,10 @@ playwright-report/
 test-results/
 storybook-static/
 debug-storybook.log
+# Ad-hoc screenshots dropped at repo root during debugging.
+# Doesn't affect tracked PNGs (weasel-transparent.png etc.) or anything in subdirs.
+/*.png
+!/weasel.png
+!/weasel-transparent*.png
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
