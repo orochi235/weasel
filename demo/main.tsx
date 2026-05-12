@@ -12,11 +12,16 @@ if (!container) throw new Error('Missing #root element');
 // every demo's text DrawCommands render. The GL backend's drawText silently
 // drops glyphs when no atlas is registered for the requested family/variant.
 // Atlases live under `assets/fonts/` (vite publicDir).
+// Atlas paths are base-prefixed: vite config sets `base: '/weasel/'` so
+// publicDir-served URLs live under that prefix. Using bare `/inter/...`
+// produces a silent 404 → atlas never loads → text DrawCommands drop
+// every glyph and the canvas stays blank until edit mode (which uses a
+// contenteditable overlay, not the GL pipeline).
 await registerFont(
   'sans-serif',
   { weight: 400, style: 'normal' },
-  '/inter/inter.json',
-  '/inter/inter.png',
+  `${import.meta.env.BASE_URL}inter/inter.json`,
+  `${import.meta.env.BASE_URL}inter/inter.png`,
 ).catch((err) => {
   console.warn('weasel demo: failed to register default font', err);
 });
