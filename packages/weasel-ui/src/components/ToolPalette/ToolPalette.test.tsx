@@ -154,3 +154,73 @@ describe('ToolPalette — shortcuts', () => {
     expect(btn.getAttribute('title')).toBe('Select');
   });
 });
+
+describe('ToolPalette — keyboard nav', () => {
+  function fiveTools() {
+    return fakeTools(['a', 'b', 'c', 'd', 'e'].map((id) => fakeTool(id, 'select', id.toUpperCase())));
+  }
+
+  it('only the active tool has tabIndex=0 initially; others tabIndex=-1', () => {
+    const tools = fakeTools([fakeTool('a', 'select'), fakeTool('b', 'select')], 'b');
+    render(<ToolPalette tools={tools} />);
+    const a = screen.getByRole('button', { name: /^a/i }) as HTMLButtonElement;
+    const b = screen.getByRole('button', { name: /^b/i }) as HTMLButtonElement;
+    expect(a.tabIndex).toBe(-1);
+    expect(b.tabIndex).toBe(0);
+  });
+
+  it('falls back to the first tool when no active tool', () => {
+    const tools = fakeTools([fakeTool('a', 'select'), fakeTool('b', 'select')], null);
+    render(<ToolPalette tools={tools} />);
+    const a = screen.getByRole('button', { name: /^a/i }) as HTMLButtonElement;
+    const b = screen.getByRole('button', { name: /^b/i }) as HTMLButtonElement;
+    expect(a.tabIndex).toBe(0);
+    expect(b.tabIndex).toBe(-1);
+  });
+
+  it('ArrowDown / ArrowRight moves focus to the next tool', () => {
+    const tools = fiveTools();
+    render(<ToolPalette tools={tools} />);
+    const a = screen.getByRole('button', { name: /^A/ });
+    const b = screen.getByRole('button', { name: /^B/ });
+    a.focus();
+    fireEvent.keyDown(a, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(b);
+  });
+
+  it('ArrowUp / ArrowLeft moves focus to the previous tool', () => {
+    const tools = fiveTools();
+    render(<ToolPalette tools={tools} />);
+    const a = screen.getByRole('button', { name: /^A/ });
+    const b = screen.getByRole('button', { name: /^B/ });
+    b.focus();
+    fireEvent.keyDown(b, { key: 'ArrowUp' });
+    expect(document.activeElement).toBe(a);
+  });
+
+  it('Home focuses the first tool, End focuses the last', () => {
+    const tools = fiveTools();
+    render(<ToolPalette tools={tools} />);
+    const a = screen.getByRole('button', { name: /^A/ });
+    const c = screen.getByRole('button', { name: /^C/ });
+    const e = screen.getByRole('button', { name: /^E/ });
+    c.focus();
+    fireEvent.keyDown(c, { key: 'End' });
+    expect(document.activeElement).toBe(e);
+    fireEvent.keyDown(e, { key: 'Home' });
+    expect(document.activeElement).toBe(a);
+  });
+
+  it('focus wraps from last to first on ArrowDown, first to last on ArrowUp', () => {
+    const tools = fiveTools();
+    render(<ToolPalette tools={tools} />);
+    const a = screen.getByRole('button', { name: /^A/ });
+    const e = screen.getByRole('button', { name: /^E/ });
+    e.focus();
+    fireEvent.keyDown(e, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(a);
+    a.focus();
+    fireEvent.keyDown(a, { key: 'ArrowUp' });
+    expect(document.activeElement).toBe(e);
+  });
+});

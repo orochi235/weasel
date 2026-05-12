@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from 'react';
+import { Fragment, useRef, type ReactNode } from 'react';
 import { UnknownIcon } from '@orochi235/weasel';
 import type { AnyTool, ToolsApi } from '@orochi235/weasel';
 import s from './ToolPalette.module.css';
@@ -45,6 +45,29 @@ function resolveIcon(tool: AnyTool): ReactNode {
   return rawIcon;
 }
 
+function renderToolButton(tool: AnyTool, tools: ToolsApi, isTabbable: boolean) {
+  const label = tool.presentation?.label ?? tool.id;
+  const icon = resolveIcon(tool);
+  const shortcut = tool.presentation?.shortcut ?? formatShortcut(tool.keybinding);
+  const title = shortcut ? `${label} (${shortcut})` : label;
+  const isActive = tools.active === tool.id;
+  return (
+    <button
+      key={tool.id}
+      type="button"
+      tabIndex={isTabbable ? 0 : -1}
+      title={title}
+      className={[s.button, isActive && s.active].filter(Boolean).join(' ')}
+      aria-current={isActive ? 'true' : undefined}
+      onClick={() => tools.setActive(tool.id)}
+    >
+      <span className={s.icon} aria-hidden="true">{icon}</span>
+      <span className={s.label}>{label}</span>
+      {shortcut && <span className={s.shortcut}>{shortcut}</span>}
+    </button>
+  );
+}
+
 export interface ToolPaletteProps {
   tools: ToolsApi;
   orientation?: 'vertical' | 'horizontal';
@@ -59,8 +82,52 @@ export function ToolPalette(props: ToolPaletteProps) {
   const cls = [s.palette, orientation === 'horizontal' && s.horizontal, className]
     .filter(Boolean).join(' ');
 
+  const orderedIds = groupKeys.flatMap((k) => groups.get(k)!.map((t) => t.id));
+  const tabbableId = tools.active && orderedIds.includes(tools.active)
+    ? tools.active
+    : orderedIds[0];
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  function onKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    const target = e.target as HTMLElement;
+    if (target.tagName !== 'BUTTON') return;
+    const root = rootRef.current;
+    if (!root) return;
+    const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('button'));
+    const i = buttons.indexOf(target as HTMLButtonElement);
+    if (i < 0) return;
+
+    let next = -1;
+    switch (e.key) {
+      case 'ArrowDown':
+      case 'ArrowRight':
+        next = (i + 1) % buttons.length;
+        break;
+      case 'ArrowUp':
+      case 'ArrowLeft':
+        next = (i - 1 + buttons.length) % buttons.length;
+        break;
+      case 'Home':
+        next = 0;
+        break;
+      case 'End':
+        next = buttons.length - 1;
+        break;
+    }
+    if (next >= 0) {
+      e.preventDefault();
+      buttons[next].focus();
+    }
+  }
+
   return (
-    <div className={cls} role="toolbar" aria-label="Tools">
+    <div
+      ref={rootRef}
+      className={cls}
+      role="toolbar"
+      aria-label="Tools"
+      onKeyDown={onKeyDown}
+    >
       {groupKeys.map((key, i) => (
         <Fragment key={key}>
           {i > 0 && (
@@ -71,27 +138,7 @@ export function ToolPalette(props: ToolPaletteProps) {
             />
           )}
           <div className={s.group} role="group" data-group={key}>
-            {groups.get(key)!.map((tool) => {
-              const label = tool.presentation?.label ?? tool.id;
-              const icon = resolveIcon(tool);
-              const shortcut = tool.presentation?.shortcut ?? formatShortcut(tool.keybinding);
-              const title = shortcut ? `${label} (${shortcut})` : label;
-              const isActive = tools.active === tool.id;
-              return (
-                <button
-                  key={tool.id}
-                  type="button"
-                  title={title}
-                  className={[s.button, isActive && s.active].filter(Boolean).join(' ')}
-                  aria-current={isActive ? 'true' : undefined}
-                  onClick={() => tools.setActive(tool.id)}
-                >
-                  <span className={s.icon} aria-hidden="true">{icon}</span>
-                  <span className={s.label}>{label}</span>
-                  {shortcut && <span className={s.shortcut}>{shortcut}</span>}
-                </button>
-              );
-            })}
+            {groups.get(key)!.map((tool) => renderToolButton(tool, tools, tool.id === tabbableId))}
           </div>
         </Fragment>
       ))}
