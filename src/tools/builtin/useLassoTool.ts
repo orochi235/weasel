@@ -1,5 +1,5 @@
 import { useMemo, createElement } from 'react';
-import { defineTool } from '../defineTool';
+import { defineTool, claim, begin, none } from '../routing';
 import { LassoIcon } from '../../icons';
 import type { Tool } from '../types';
 import type { RenderLayer } from 'core/layers/render';
@@ -50,6 +50,9 @@ export function useLassoTool(
       label: 'Lasso overlay',
       space: 'screen',
       draw: (_data, view): DrawCommand[] => {
+        // Closure-read controller.overlay each draw — same pattern as the
+        // imperative tool. No ctx is needed here; `view` arrives from the
+        // overlay layer's draw call.
         const ov = ctl.overlay;
         if (!ov || ov.vertices.length === 0) return [];
         const t = viewToTransform(view);
@@ -98,39 +101,36 @@ export function useLassoTool(
       id: 'lasso',
       ...(options.keybinding === null ? {} : { keybinding: options.keybinding ?? { key: 'L' } }),
       cursor: 'crosshair',
-      initScratch: () => undefined,
       presentation: {
         label: 'Lasso',
         icon: createElement(LassoIcon),
         group: 'select',
       },
-      overlay,
-
-      drag: {
-        onStart: (_e, c) => {
-          ctl.start(c.worldX, c.worldY, c.modifiers);
-          return 'claim';
+      initial: {
+        overlay: () => overlay,
+        drag: (ctx, _e) => {
+          ctl.start(ctx.worldX, ctx.worldY, ctx.modifiers);
+          return begin({
+            scratch: undefined,
+            onMove: (c) => {
+              ctl.move(c.worldX, c.worldY, c.modifiers);
+              return claim();
+            },
+            onRelease: () => {
+              ctl.end();
+              return claim();
+            },
+            onCancel: () => {
+              ctl.cancel();
+            },
+          });
         },
-        onMove: (_e, c) => {
-          ctl.move(c.worldX, c.worldY, c.modifiers);
-          return 'claim';
-        },
-        onEnd: (_e, _c) => {
-          ctl.end();
-          return 'claim';
-        },
-        onCancel: () => {
-          ctl.cancel();
-        },
-      },
-
-      keyboard: {
-        onDown: (e) => {
-          if (e.key === 'Escape' && ctl.isLassoSelecting) {
+        keyDown: {
+          Escape: () => {
+            if (!ctl.isLassoSelecting) return none();
             ctl.cancel();
-            return 'claim';
-          }
-          return 'pass';
+            return claim();
+          },
         },
       },
     });
