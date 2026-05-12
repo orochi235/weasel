@@ -59,6 +59,8 @@ export { viewToTransform } from './core/viewport/view';
 export * from './features/drag-events';
 export * from './core/viewport/useCanvasSize';
 export * from './core/viewport/fitToBounds';
+export { fitViewToBounds } from './core/viewport/fitViewToBounds';
+export type { Bounds, ViewportDims, FitViewToBoundsOptions } from './core/viewport/fitViewToBounds';
 export { zoomAt } from './core/viewport/zoomAt';
 export type { ZoomClampOpts } from './core/viewport/zoomAt';
 export { clampView } from './core/viewport/clampView';
