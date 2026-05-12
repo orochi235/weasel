@@ -10,12 +10,13 @@ import { resolveRoute } from './lookup';
 export function defineTool<TScratch = void>(
   def: ToolDef<TScratch>,
 ): Tool<TScratch> {
-  // Stores the active BeginSpec between gesture events. Keyed on the ctx
-  // object so each tool instance has its own spec reference without
-  // polluting the scratch shape. Using a WeakMap means no cleanup needed
-  // when ctx is discarded.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const specMap = new WeakMap<object, BeginSpec<TScratch>>();
+  // Stores the active BeginSpec between gesture events. The factory
+  // closure is per-tool-instance, and a tool can have at most one active
+  // gesture at a time, so a single mutable slot is sufficient. We can't
+  // key off ctx identity because the dispatcher spreads a fresh ctx
+  // object (`{ ...base, scratch }`) on every pointer event — a
+  // WeakMap<ctx, …> would always miss on onMove/onEnd.
+  let activeSpec: BeginSpec<TScratch> | null = null;
 
   // Phase state derives from ctx.scratch presence: scratch !== null means
   // engaged. The translated handlers consult def.engaged when scratch is
@@ -38,23 +39,23 @@ export function defineTool<TScratch = void>(
         return 'claim';
       case 'begin': {
         // Open engaged: install scratch and stash continuation closures
-        // in the specMap (keyed on ctx) so they survive across pointer events.
+        // in activeSpec so they survive across pointer events.
         (ctx as { scratch: unknown }).scratch = result.spec.scratch;
-        specMap.set(ctx as object, result.spec);
+        activeSpec = result.spec;
         return 'claim';
       }
       case 'hold':
-        // Update scratch; spec stays in specMap so continuations remain wired.
+        // Update scratch; activeSpec stays so continuations remain wired.
         (ctx as { scratch: unknown }).scratch = result.scratch;
         return 'claim';
       case 'commit':
         ctx.applyOps(result.ops, result.label as string);
         (ctx as { scratch: unknown }).scratch = null;
-        specMap.delete(ctx as object);
+        activeSpec = null;
         return 'claim';
       case 'cancel':
         (ctx as { scratch: unknown }).scratch = null;
-        specMap.delete(ctx as object);
+        activeSpec = null;
         return 'claim';
       case 'claim':
         return 'claim';
@@ -100,30 +101,27 @@ export function defineTool<TScratch = void>(
     : undefined;
 
   const onDragMove = (_e: PointerEvent, ctx: ToolCtx<TScratch>): 'claim' | 'pass' => {
-    const spec = specMap.get(ctx as object);
-    if (!spec?.onMove) return 'pass';
-    return applyResult(ctx, spec.onMove(ctx));
+    if (!activeSpec?.onMove) return 'pass';
+    return applyResult(ctx, activeSpec.onMove(ctx));
   };
 
   const onDragEnd = (_e: PointerEvent, ctx: ToolCtx<TScratch>): 'claim' | 'pass' => {
-    const spec = specMap.get(ctx as object);
-    if (!spec?.onRelease) {
+    if (!activeSpec?.onRelease) {
       // No explicit onRelease — close engaged without applying.
       (ctx as { scratch: unknown }).scratch = null;
-      specMap.delete(ctx as object);
+      activeSpec = null;
       return 'claim';
     }
-    return applyResult(ctx, spec.onRelease(ctx));
+    return applyResult(ctx, activeSpec.onRelease(ctx));
   };
 
   const onDragCancel = (ctx: ToolCtx<TScratch>): void => {
-    const spec = specMap.get(ctx as object);
-    if (spec?.onCancel) {
-      const r = spec.onCancel(ctx);
+    if (activeSpec?.onCancel) {
+      const r = activeSpec.onCancel(ctx);
       if (r) applyResult(ctx, r);
     }
     (ctx as { scratch: unknown }).scratch = null;
-    specMap.delete(ctx as object);
+    activeSpec = null;
   };
 
   // Keyboard / wheel handlers — straightforward route lookups.
