@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { defineTool } from '../defineTool';
 import { useDragRadial } from 'interactions/gestures/dragRadial';
 import { createInsertOp } from 'core/ops/create';
@@ -44,9 +44,13 @@ export function usePolygonTool<TNode extends { id: string }>(
   const createRef = useRef(create);
   createRef.current = create;
   const applyOpsRef = useRef<ToolCtx['applyOps'] | null>(null);
-  // Side count in a ref so keydown mutations are visible synchronously in
-  // subsequent dr.onEnd reads. No React re-render needed.
+  // Side count in a ref so keydown / wheel mutations are visible
+  // synchronously in subsequent dr.onEnd reads. A useState tick alongside
+  // forces the overlay layer to redraw when the count changes between
+  // pointer events (e.g. user wheels without moving the cursor).
   const sidesRef = useRef(initialSides);
+  const [, setSidesTick] = useState(0);
+  const bumpSides = useCallback(() => setSidesTick((n) => n + 1), []);
 
   const dr = useDragRadial({
     minRadius,
@@ -130,17 +134,37 @@ export function usePolygonTool<TNode extends { id: string }>(
           onDown: (e) => {
             if (e.key === 'ArrowUp') {
               sidesRef.current = Math.min(MAX_SIDES, sidesRef.current + 1);
+              bumpSides();
               return 'claim';
             }
             if (e.key === 'ArrowDown') {
               sidesRef.current = Math.max(MIN_SIDES, sidesRef.current - 1);
+              bumpSides();
               return 'claim';
             }
             return 'pass';
           },
         },
+        wheel: {
+          // Adjust side count via mousewheel only while a gesture is in
+          // flight; otherwise pass so view-zoom / pan tools can claim.
+          // Convention: wheel up (deltaY < 0) adds a side, wheel down
+          // removes one. Each wheel tick is one increment regardless of
+          // delta magnitude — feels Illustrator-y.
+          onWheel: (e) => {
+            if (!drRef.current.isActive) return 'pass';
+            if (e.deltaY === 0) return 'pass';
+            if (e.deltaY < 0) {
+              sidesRef.current = Math.min(MAX_SIDES, sidesRef.current + 1);
+            } else {
+              sidesRef.current = Math.max(MIN_SIDES, sidesRef.current - 1);
+            }
+            bumpSides();
+            return 'claim';
+          },
+        },
         overlay,
       }),
-    [dr.start, dr.move, dr.end, dr.cancel, overlay],
+    [dr.start, dr.move, dr.end, dr.cancel, overlay, bumpSides],
   );
 }

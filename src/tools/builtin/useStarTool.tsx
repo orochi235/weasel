@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { defineTool } from '../defineTool';
 import { useDragRadial } from 'interactions/gestures/dragRadial';
 import { createInsertOp } from 'core/ops/create';
@@ -53,10 +53,14 @@ export function useStarTool<TNode extends { id: string }>(
   const createRef = useRef(create);
   createRef.current = create;
   const applyOpsRef = useRef<ToolCtx['applyOps'] | null>(null);
-  // Refs (not React state) so keydown mutations are visible synchronously
-  // in subsequent dr.onEnd reads.
+  // Refs (not React state) so keydown / wheel mutations are visible
+  // synchronously in subsequent dr.onEnd reads. A useState tick alongside
+  // forces the overlay layer to redraw when the count changes between
+  // pointer events (e.g. user wheels without moving the cursor).
   const pointsRef = useRef(initialPoints);
   const innerRatioRef = useRef(initialInnerRatio);
+  const [, setPointsTick] = useState(0);
+  const bumpPoints = useCallback(() => setPointsTick((n) => n + 1), []);
 
   const dr = useDragRadial({
     minRadius,
@@ -146,17 +150,34 @@ export function useStarTool<TNode extends { id: string }>(
           onDown: (e) => {
             if (e.key === 'ArrowUp') {
               pointsRef.current = Math.min(MAX_POINTS, pointsRef.current + 1);
+              bumpPoints();
               return 'claim';
             }
             if (e.key === 'ArrowDown') {
               pointsRef.current = Math.max(MIN_POINTS, pointsRef.current - 1);
+              bumpPoints();
               return 'claim';
             }
             return 'pass';
           },
         },
+        wheel: {
+          // Mousewheel mid-drag adjusts the point count. Idle wheels pass
+          // through to view zoom / other ambient tools.
+          onWheel: (e) => {
+            if (!drRef.current.isActive) return 'pass';
+            if (e.deltaY === 0) return 'pass';
+            if (e.deltaY < 0) {
+              pointsRef.current = Math.min(MAX_POINTS, pointsRef.current + 1);
+            } else {
+              pointsRef.current = Math.max(MIN_POINTS, pointsRef.current - 1);
+            }
+            bumpPoints();
+            return 'claim';
+          },
+        },
         overlay,
       }),
-    [dr.start, dr.move, dr.end, dr.cancel, overlay],
+    [dr.start, dr.move, dr.end, dr.cancel, overlay, bumpPoints],
   );
 }
