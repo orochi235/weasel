@@ -139,7 +139,17 @@ interface PhaseDef<TScratch> {
   dblTap?:  RouteTable<TScratch>;
   drag?:    RouteTable<TScratch>;
   wheel?:   ActionFn<TScratch>;
+  /** Keyed by `KeyboardEvent.key` (e.g., `'Escape'`, `'Enter'`,
+   *  `'ArrowUp'`, `'a'`). The dominant keyboard slot — discrete actions
+   *  fire on press, and the browser's native auto-repeat handles
+   *  press-and-hold cases like nudging or counter adjustment. */
   keyDown?: Record<string, ActionFn<TScratch>>;
+  /** Rare. Use when the action must fire specifically on key release —
+   *  hand-rolled hold semantics, chord-builders, "release to commit"
+   *  patterns. Most hold-engage tools should use the dispatcher's
+   *  `hotkey` field on Tool instead, which handles keydown+keyup
+   *  pairing outside handler bodies. */
+  keyUp?: Record<string, ActionFn<TScratch>>;
   /** Optional overlay layer rendered while the tool is in this phase.
    *  Reads scratch via `ctx.scratch`; redraws each frame the dispatcher
    *  publishes a state change. Lets drag-preview rendering live inline
@@ -165,7 +175,7 @@ interface BeginSpec<TScratch> {
 // ToolDef via Pick/Omit so any change to ToolDef ripples through and
 // the subset relationship is compiler-enforced.
 type ViewportPhaseDef<TScratch = void> = Pick<
-  PhaseDef<TScratch>, 'wheel' | 'keyDown' | 'claimsAll'
+  PhaseDef<TScratch>, 'wheel' | 'keyDown' | 'keyUp' | 'claimsAll'
 > & {
   // Narrows from `RouteTable<TScratch>` to just `ActionFn<TScratch>` —
   // valid because ActionFn is assignable to RouteTable | ActionFn.
