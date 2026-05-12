@@ -55,6 +55,10 @@
       "import": "./dist/patterns-builtin.js",
       "types": "./dist/patterns-builtin.d.ts"
     },
+    "./renderer": {
+      "import": "./dist/renderer.js",
+      "types": "./dist/renderer.d.ts"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {

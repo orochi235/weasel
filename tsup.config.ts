@@ -9,6 +9,7 @@ export default defineConfig({
     clipboard: 'src/subpaths/clipboard.ts',
     clone: 'src/subpaths/clone.ts',
     'patterns-builtin': 'src/subpaths/patterns-builtin.ts',
+    renderer: 'src/subpaths/renderer.ts',
   },
   format: ['esm'],
   dts: true,

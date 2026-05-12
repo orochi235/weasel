@@ -58,7 +58,7 @@ import {
 // resolves to `src/subpaths/*` at runtime; the explicit path keeps tsc happy
 // without adding a new path mapping.
 import { lockAspectWithModifier } from '../../../src/interactions/gestures/resize/behaviors/lockAspect';
-import type { DrawCommand } from '../../../src/renderer';
+import type { DrawCommand } from '@orochi235/weasel/renderer';
 import {
   LayerList,
   type LayerListItem,
