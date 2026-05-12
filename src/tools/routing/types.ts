@@ -4,7 +4,10 @@ import type { RenderLayer } from '../../core/layers/render';
 import type { Result } from './result';
 import type { ModifierKey } from './modifiers';
 
-export type ActionFn<TScratch> = (ctx: ToolCtx<TScratch>) => Result<TScratch>;
+export type ActionFn<TScratch> = (
+  ctx: ToolCtx<TScratch>,
+  event?: PointerEvent | KeyboardEvent | WheelEvent,
+) => Result<TScratch>;
 
 export type ModifierRoute<TScratch> = Partial<Record<ModifierKey, ActionFn<TScratch>>>;
 

@@ -15,8 +15,8 @@ export type Result<TScratch> =
 export interface BeginSpec<TScratch> {
   scratch: TScratch;
   thresholdPx?: number;
-  onMove?:    (ctx: ToolCtx<TScratch>) => Result<TScratch>;
-  onRelease?: (ctx: ToolCtx<TScratch>) => Result<TScratch>;
+  onMove?:    (ctx: ToolCtx<TScratch>, event?: PointerEvent) => Result<TScratch>;
+  onRelease?: (ctx: ToolCtx<TScratch>, event?: PointerEvent) => Result<TScratch>;
   onCancel?:  (ctx: ToolCtx<TScratch>) => void | Result<TScratch>;
 }
 

@@ -82,7 +82,7 @@ export function defineTool<TScratch = void>(
           if (typeof star === 'function') action = star;
         }
         if (!action) return 'pass';
-        return applyResult(ctx, action(ctx));
+        return applyResult(ctx, action(ctx, _e));
       }
     : undefined;
 
@@ -105,7 +105,7 @@ export function defineTool<TScratch = void>(
           if (typeof star === 'function') action = star;
         }
         if (!action) return 'pass';
-        return applyResult(ctx, action(ctx));
+        return applyResult(ctx, action(ctx, _e));
       }
     : undefined;
 
@@ -119,13 +119,13 @@ export function defineTool<TScratch = void>(
             ? resolveRoute(dragRoute, ctx.target, ctx.modifiers)
             : undefined;
         if (!action) return 'pass';
-        return applyResult(ctx, action(ctx));
+        return applyResult(ctx, action(ctx, _e));
       }
     : undefined;
 
   const onDragMove = (_e: PointerEvent, ctx: ToolCtx<TScratch>): 'claim' | 'pass' => {
     if (!activeSpec?.onMove) return 'pass';
-    return applyResult(ctx, activeSpec.onMove(ctx));
+    return applyResult(ctx, activeSpec.onMove(ctx, _e));
   };
 
   const onDragEnd = (_e: PointerEvent, ctx: ToolCtx<TScratch>): 'claim' | 'pass' => {
@@ -135,7 +135,7 @@ export function defineTool<TScratch = void>(
       activeSpec = null;
       return 'claim';
     }
-    return applyResult(ctx, activeSpec.onRelease(ctx));
+    return applyResult(ctx, activeSpec.onRelease(ctx, _e));
   };
 
   const onDragCancel = (ctx: ToolCtx<TScratch>): void => {
@@ -155,7 +155,7 @@ export function defineTool<TScratch = void>(
     if (!table) return 'pass';
     const action = table[e.key];
     if (!action) return 'pass';
-    return applyResult(ctx, action(ctx));
+    return applyResult(ctx, action(ctx, e));
   };
 
   // cursor: phase override beats top-level. Returns '' (not undefined) so
@@ -203,7 +203,7 @@ export function defineTool<TScratch = void>(
             if (!ctx.target) return 'pass';
             const action = resolveRoute(table, ctx.target, ctx.modifiers);
             if (!action) return 'pass';
-            return applyResult(ctx, action(ctx));
+            return applyResult(ctx, action(ctx, _e));
           },
         }
       : undefined,
@@ -218,7 +218,7 @@ export function defineTool<TScratch = void>(
           onWheel: (_e: WheelEvent, ctx: ToolCtx<TScratch>) => {
             const action = phaseOf(ctx).wheel;
             if (!action) return 'pass';
-            return applyResult(ctx, action(ctx));
+            return applyResult(ctx, action(ctx, _e));
           },
         }
       : undefined,

@@ -223,3 +223,85 @@ describe('defineTool — pointerDown route', () => {
     expect(onAnchorDown).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('defineTool — raw event in ActionFn', () => {
+  it('passes the raw PointerEvent to a click ActionFn', () => {
+    const seen: Array<PointerEvent | KeyboardEvent | WheelEvent | undefined> = [];
+    const tool = defineTool({
+      id: 'test',
+      initial: {
+        click: {
+          'rect': (_ctx, e) => {
+            seen.push(e);
+            return claim();
+          },
+        },
+      },
+    });
+    const ctx = buildCtx({ target: { category: 'node', kind: 'rect', id: asNodeId('a'), pose: {}, data: {} } });
+    const evt = new MouseEvent('click') as unknown as PointerEvent;
+    tool.pointer?.onClick?.(evt, ctx as never);
+    expect(seen[0]).toBe(evt);
+  });
+
+  it('passes the raw PointerEvent to a dblTap ActionFn', () => {
+    const seen: Array<PointerEvent | KeyboardEvent | WheelEvent | undefined> = [];
+    const tool = defineTool({
+      id: 'test',
+      initial: {
+        dblTap: {
+          'rect': (_ctx, e) => {
+            seen.push(e);
+            return claim();
+          },
+        },
+      },
+    });
+    const ctx = buildCtx({ target: { category: 'node', kind: 'rect', id: asNodeId('a'), pose: {}, data: {} } });
+    const evt = new MouseEvent('click') as unknown as PointerEvent;
+    tool.dblTap?.onTap?.(evt, ctx as never);
+    expect(seen[0]).toBe(evt);
+  });
+
+  it('passes the raw PointerEvent to BeginSpec.onMove and onRelease', () => {
+    const moveEvents: Array<PointerEvent | undefined> = [];
+    const releaseEvents: Array<PointerEvent | undefined> = [];
+    const tool = defineTool<{ x: number }>({
+      id: 'test',
+      initial: {
+        drag: () => begin({
+          scratch: { x: 0 },
+          onMove: (_ctx, e) => {
+            moveEvents.push(e);
+            return hold({ x: 1 });
+          },
+          onRelease: (_ctx, e) => {
+            releaseEvents.push(e);
+            return commit([stubOp]);
+          },
+        }),
+      },
+    });
+    const ctx = buildCtx();
+    tool.drag?.onStart?.(new MouseEvent('mousedown') as unknown as PointerEvent, ctx as never);
+    const moveEvt = new MouseEvent('mousemove') as unknown as PointerEvent;
+    tool.drag?.onMove?.(moveEvt, ctx as never);
+    expect(moveEvents[0]).toBe(moveEvt);
+    const upEvt = new MouseEvent('mouseup') as unknown as PointerEvent;
+    tool.drag?.onEnd?.(upEvt, ctx as never);
+    expect(releaseEvents[0]).toBe(upEvt);
+  });
+
+  it('existing ActionFns that ignore the event parameter still work', () => {
+    // The whole point of making `event` optional: ActionFns written
+    // before Phase 4.5 (taking only `ctx`) must continue to compile and
+    // behave identically.
+    const tool = defineTool({
+      id: 'test',
+      initial: { click: { '*': (_ctx) => apply([stubOp], 'Test') } },
+    });
+    const ctx = buildCtx({ target: { category: 'node', kind: 'rect', id: asNodeId('a'), pose: {}, data: {} } });
+    tool.pointer?.onClick?.(new MouseEvent('click') as unknown as PointerEvent, ctx as never);
+    expect(ctx.applyOps).toHaveBeenCalledWith([stubOp], 'Test');
+  });
+});
