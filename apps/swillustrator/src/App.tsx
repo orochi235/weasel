@@ -23,6 +23,7 @@ import {
   useNudge,
   useReorder,
   useSelectAll,
+  useAction,
   useSelection,
   usePublishSelection,
   useSelectTool,
@@ -80,6 +81,13 @@ import {
 } from '@orochi235/weasel-ui';
 import '@orochi235/weasel-theme/tokens.css';
 import { ActionBar } from './ActionBar';
+import {
+  ActiveSwatches,
+  DEFAULT_FILL,
+  DEFAULT_STROKE,
+  paintToString,
+  type ActivePaint,
+} from './ActiveSwatches';
 import { objToSvgNode, svgNodesToObjs, downloadSvg, pickSvgFile } from './svgInterop';
 import { parseSvg, serializeSvg } from '@orochi235/weasel-svg';
 import { KindIcon } from './kindIcons';
@@ -140,9 +148,67 @@ export function App() {
   const [, forcePaint] = useState(0);
 
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
-  const [fillColor, setFillColor] = useState('#7fb069');
-  const [strokeColor, setStrokeColor] = useState('#1a130d');
-  const [strokeWidth, setStrokeWidth] = useState(1);
+  // Active fill/stroke — what new shapes use. Independent of selection;
+  // changing these doesn't affect existing objects, and selecting an object
+  // doesn't update these. The swatch widget in the left sidebar surfaces them.
+  const [activeFill, setActiveFill] = useState<ActivePaint>({ kind: 'solid', color: '#7fb069' });
+  const [activeStroke, setActiveStroke] = useState<ActivePaint>({ kind: 'solid', color: '#1a130d' });
+  const [activeStrokeWidth, setActiveStrokeWidth] = useState(1);
+  // Last-focused swatch — `/` toggles its kind between 'solid' and 'none'.
+  const [focusedSwatch, setFocusedSwatch] = useState<'fill' | 'stroke'>('fill');
+  // Refs so the action `run` callbacks read the latest values without
+  // having to re-register on every state change.
+  const activeFillRef = useRef(activeFill);
+  activeFillRef.current = activeFill;
+  const activeStrokeRef = useRef(activeStroke);
+  activeStrokeRef.current = activeStroke;
+  const focusedSwatchRef = useRef(focusedSwatch);
+  focusedSwatchRef.current = focusedSwatch;
+  // D — reset both swatches to defaults (white fill / black stroke).
+  useAction(useMemo(() => ({
+    id: 'swill.swatches.defaults',
+    label: 'Reset fill/stroke to defaults',
+    defaultBinding: { key: 'd' },
+    run: () => { setActiveFill(DEFAULT_FILL); setActiveStroke(DEFAULT_STROKE); },
+  }), []));
+  // X — swap fill and stroke paints.
+  useAction(useMemo(() => ({
+    id: 'swill.swatches.swap',
+    label: 'Swap fill and stroke',
+    defaultBinding: { key: 'x' },
+    run: () => {
+      const f = activeFillRef.current;
+      const s = activeStrokeRef.current;
+      setActiveFill(s);
+      setActiveStroke(f);
+    },
+  }), []));
+  // / — toggle the last-focused swatch between solid and 'none'.
+  useAction(useMemo(() => ({
+    id: 'swill.swatches.none',
+    label: 'Toggle focused swatch / none',
+    defaultBinding: { key: '/' },
+    run: () => {
+      const which = focusedSwatchRef.current;
+      if (which === 'fill') {
+        const cur = activeFillRef.current;
+        setActiveFill(cur.kind === 'none' ? DEFAULT_FILL : { kind: 'none' });
+      } else {
+        const cur = activeStrokeRef.current;
+        setActiveStroke(cur.kind === 'none' ? DEFAULT_STROKE : { kind: 'none' });
+      }
+    },
+  }), []));
+  // String-shaped aliases used by the Properties panel (which takes plain
+  // hex strings via PropertyColorInput) and the per-object scene fill /
+  // stroke fields. `paintToString` returns '' for the 'none' kind, which
+  // the renderers treat as "skip this paint".
+  const fillColor = paintToString(activeFill);
+  const strokeColor = paintToString(activeStroke);
+  const strokeWidth = activeStrokeWidth;
+  const setFillColor = (c: string) => setActiveFill({ kind: 'solid', color: c });
+  const setStrokeColor = (c: string) => setActiveStroke({ kind: 'solid', color: c });
+  const setStrokeWidth = setActiveStrokeWidth;
   const [docTitle, setDocTitle] = useState('Untitled');
   const [paperSize, setPaperSize] = useState<'letter' | 'a4' | 'legal'>('letter');
   const [gridDensity, setGridDensity] = useState(8);
@@ -859,6 +925,15 @@ export function App() {
         <aside className="swill-sidebar">
           <div className="swill-section-label">Tools</div>
           <ToolPalette tools={tools} />
+          <div className="swill-section-label swill-section-label--swatch">Paint</div>
+          <ActiveSwatches
+            fill={activeFill}
+            stroke={activeStroke}
+            focused={focusedSwatch}
+            onChangeFill={setActiveFill}
+            onChangeStroke={setActiveStroke}
+            onFocus={setFocusedSwatch}
+          />
           <div className="swill-sidebar-spacer" />
           <button
             className="swill-tool-button"

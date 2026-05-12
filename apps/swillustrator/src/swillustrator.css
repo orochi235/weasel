@@ -252,6 +252,101 @@ html, body, #root {
   margin-left: auto;
 }
 
+/* --- Active fill/stroke swatches (Illustrator-style overlap) --------- */
+.swill-section-label--swatch {
+  margin-top: 8px;
+}
+
+.swill-active-swatches {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  margin: 4px auto 0;
+  /* The stroke and fill swatches are absolutely positioned inside this
+     container with a small offset to produce the iconic overlap. */
+}
+
+.swill-swatch {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid #3a2e22;
+  border-radius: 2px;
+  cursor: pointer;
+  /* The dynamic color flows through --swill-swatch-color, set inline on
+     the button. Box-shadow inset gives a 1px contrast border around the
+     paint area so light swatches read against the panel. */
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+}
+
+/* The fill / stroke styling differs: fill is a solid filled square,
+   stroke is a frame (interior hollow) so the user can tell at a glance
+   which swatch represents which paint role. */
+.swill-swatch--fill {
+  top: 4px;
+  left: 4px;
+  z-index: 2;
+  background: var(--swill-swatch-color, #ffffff);
+}
+
+.swill-swatch--stroke {
+  bottom: 4px;
+  right: 4px;
+  z-index: 1;
+  /* Inner cutout creates the "ring" look — 6px-thick frame in the
+     swatch color. */
+  background: var(--swill-swatch-color, #000000);
+  /* The inner hole — render via an inset box-shadow that fills the
+     middle with the panel bg color. */
+}
+
+.swill-swatch--stroke::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  background: #221a13;
+  border-radius: 1px;
+}
+
+.swill-swatch.is-focused {
+  border-color: #d4c4a8;
+  box-shadow: 0 0 0 2px #d4c4a8, inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+}
+
+/* `'none'` state — diagonal red stripe through a white square. The fill
+   and stroke variants render slightly differently because they have
+   different "background" semantics. */
+.swill-swatch.is-none {
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(45deg, transparent calc(50% - 1px), #d4453a calc(50% - 1px), #d4453a calc(50% + 1px), transparent calc(50% + 1px));
+}
+
+.swill-swatch.is-none.swill-swatch--stroke::before {
+  /* When stroke is none, hide the interior cutout so the diagonal stripe
+     spans the whole swatch. */
+  display: none;
+}
+
+/* Native color input lives offscreen — the swatch itself is the visible
+   trigger, but we still need a real <input type=color> so the OS color
+   picker pops on click. */
+.swill-swatch-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  /* Click goes through to the button; we open the picker imperatively
+     via `inputRef.current?.click()`. Keeping pointer-events: none here
+     prevents the input from stealing clicks from the swatch button's
+     own click handler. */
+  pointer-events: none;
+}
+
 /* --- Layer list host inside PropertiesPanel -------------------------- */
 .swill-layerlist-host {
   padding: 0 8px 8px 8px;
