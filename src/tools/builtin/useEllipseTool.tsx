@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react';
-import { defineTool } from '../defineTool';
+import { defineTool, begin, claim } from '../routing';
 import { useDragRect } from 'interactions/gestures/dragRect';
 import { createInsertOp } from 'core/ops/create';
 import { type InsertOverlayStyle } from './marquee';
@@ -122,31 +122,32 @@ export function useEllipseTool<TNode extends { id: string }>(
         id: 'ellipse',
         keybinding: { key: 'E' },
         cursor: 'crosshair',
-        initScratch: () => null,
         presentation: {
           label: 'Ellipse',
           group: 'shape',
           icon: <EllipseIcon />,
         },
-        drag: {
-          onStart: (_e, ctx) => {
+        initial: {
+          overlay: () => overlay,
+          drag: (ctx) => {
             dr.start(ctx.worldX, ctx.worldY, ctx.modifiers);
-            return 'claim';
-          },
-          onMove: (_e, ctx) => {
-            dr.move(ctx.worldX, ctx.worldY, ctx.modifiers);
-            return 'claim';
-          },
-          onEnd: (_e, ctx) => {
-            applyOpsRef.current = ctx.applyOps;
-            dr.end();
-            return 'claim';
-          },
-          onCancel: () => {
-            dr.cancel();
+            return begin({
+              scratch: null,
+              onMove: (c) => {
+                dr.move(c.worldX, c.worldY, c.modifiers);
+                return claim();
+              },
+              onRelease: (c) => {
+                applyOpsRef.current = c.applyOps;
+                dr.end();
+                return claim();
+              },
+              onCancel: () => {
+                dr.cancel();
+              },
+            });
           },
         },
-        overlay,
       }),
     [dr.start, dr.move, dr.end, dr.cancel, overlay],
   );

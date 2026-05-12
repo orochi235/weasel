@@ -27,7 +27,8 @@ describe('useEllipseTool', () => {
     const tool: Tool<unknown> = result.current as Tool<unknown>;
     expect(tool.id).toBe('ellipse');
     expect(tool.keybinding).toEqual({ key: 'E' });
-    expect(tool.cursor).toBe('crosshair');
+    expect(typeof tool.cursor).toBe('function');
+    expect((tool.cursor as (ctx: ToolCtx) => string)(noopCtx())).toBe('crosshair');
   });
 
   it('commits via applyOps with an insert op when create returns a node', () => {
