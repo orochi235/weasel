@@ -34,6 +34,7 @@ import { LassoDemo } from './demos/LassoDemo';
 import { ClipboardDemo } from './demos/ClipboardDemo';
 import { ClippingDemo } from './demos/ClippingDemo';
 import { HudDemo } from './demos/HudDemo';
+import { LayerListDemo } from './demos/LayerListDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
@@ -70,6 +71,7 @@ import LassoDemoFull from './demos/LassoDemo.tsx?raw';
 import ClipboardDemoFull from './demos/ClipboardDemo.tsx?raw';
 import ClippingDemoFull from './demos/ClippingDemo.tsx?raw';
 import HudDemoFull from './demos/HudDemo.tsx?raw';
+import LayerListDemoFull from './demos/LayerListDemo.tsx?raw';
 import { PointSnapDemo } from './demos/PointSnapDemo';
 import PointSnapDemoFull from './demos/PointSnapDemo.tsx?raw';
 
@@ -180,6 +182,16 @@ export const DEMOS: DemoEntry[] = [
     Component: ClipboardDemo,
     full: ClipboardDemoFull,
     path: 'demo/demos/ClipboardDemo.tsx',
+  },
+  {
+    id: 'layer-list',
+    title: 'Layer list',
+    category: 'Tools',
+    description: 'LayerList from @orochi235/weasel-ui wired to a scene. Click rows or rects to select. Drag rows to reorder. Drag a selected row to move the whole selection.',
+    hint: 'Drag the rows up and down.',
+    Component: LayerListDemo,
+    full: LayerListDemoFull,
+    path: 'demo/demos/LayerListDemo.tsx',
   },
   {
     id: 'text',
