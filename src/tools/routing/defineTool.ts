@@ -265,7 +265,15 @@ export function defineTool<TScratch = void>(
             const table = phaseOf(ctx).dblTap;
             if (!table) return 'pass';
             if (!ctx.target) return 'pass';
-            const match = resolveRoute(table, ctx.target, ctx.modifiers);
+            let match = resolveRoute(table, ctx.target, ctx.modifiers);
+            // Universal fallback for empty hits — mirrors onClick / onDown
+            // semantics so consumers writing `dblTap: { '*': fn }` to
+            // handle "double-tap anywhere" get the callback on
+            // empty-canvas double-taps.
+            if (!match && ctx.target.category === 'empty') {
+              const star = table['*'];
+              if (typeof star === 'function') match = { action: star, matchedKey: '*' };
+            }
             if (!match) return 'pass';
             report(ctx, phaseNameOf(ctx), 'dblTap', match.matchedKey);
             return applyResult(ctx, match.action(ctx, _e));

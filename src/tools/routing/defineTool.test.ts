@@ -324,6 +324,22 @@ describe('defineTool — raw event in ActionFn', () => {
     expect(seen[0]).toBe(evt);
   });
 
+  it('dblTap routes to "*" on empty target (universal fallback)', () => {
+    // Mirrors click / pointerDown semantics: a consumer writing
+    // `dblTap: { '*': fn }` to handle "double-tap anywhere" should get
+    // the callback on empty-canvas double-taps, not just on hits.
+    const onAnywhere = vi.fn(() => claim());
+    const tool = defineTool({
+      id: 'test',
+      initial: {
+        dblTap: { '*': onAnywhere },
+      },
+    });
+    const ctx = buildCtx(); // default target.category === 'empty'
+    tool.dblTap?.onTap?.(new MouseEvent('click') as unknown as PointerEvent, ctx as never);
+    expect(onAnywhere).toHaveBeenCalledTimes(1);
+  });
+
   it('passes the raw PointerEvent to BeginSpec.onMove and onRelease', () => {
     const moveEvents: Array<PointerEvent | undefined> = [];
     const releaseEvents: Array<PointerEvent | undefined> = [];
