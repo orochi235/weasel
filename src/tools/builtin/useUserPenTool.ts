@@ -1,5 +1,5 @@
 import { useMemo, useReducer, useRef, createElement } from 'react';
-import { defineTool } from '../defineTool';
+import { defineTool, begin, claim, none } from '../routing';
 import type { Tool, ToolCtx } from '../types';
 import { PenIcon } from '../../icons';
 import { PathBuilder } from 'features/paths/builder';
@@ -231,6 +231,10 @@ export function useUserPenTool<TPose>(
         icon: createElement(PenIcon),
         group: 'draw',
       },
+      // Persistent-ref scratch — every gesture sees the same PenScratch so
+      // multi-click subpath state survives the dispatcher's per-gesture
+      // initScratch contract. The Phase 5b `def.initScratch` substrate
+      // forwards this onto Tool.initScratch.
       initScratch: () => scratchRef.current!,
 
       onDeactivate: (ctx) => {
@@ -243,97 +247,114 @@ export function useUserPenTool<TPose>(
         else resetScratch(s);
       },
 
-      pointer: {
-        onDown: (_e, ctx) => {
-          const s = ctx.scratch;
-          const snap = optsRef.current.snapPoint;
-          const p = snap ? snap({ x: ctx.worldX, y: ctx.worldY }) : { x: ctx.worldX, y: ctx.worldY };
-          s._pendingDown = {
-            worldX: p.x,
-            worldY: p.y,
-            alt: ctx.modifiers.alt,
-            shift: ctx.modifiers.shift,
-          };
-          forceRenderRef.current();
-          return 'claim';
+      // NOTE: a future enhancement could set `claimsAll: (ctx) =>
+      // (ctx.scratch?.current?.anchors.length ?? 0) > 0` to guarantee
+      // affordance hits never interrupt a mid-path pen. The imperative
+      // pen did not have this; leaving it off preserves behavior.
+      initial: {
+        pointerDown: {
+          '*': (ctx) => {
+            const s = ctx.scratch;
+            const snap = optsRef.current.snapPoint;
+            const p = snap
+              ? snap({ x: ctx.worldX, y: ctx.worldY })
+              : { x: ctx.worldX, y: ctx.worldY };
+            s._pendingDown = {
+              worldX: p.x,
+              worldY: p.y,
+              alt: ctx.modifiers.alt,
+              shift: ctx.modifiers.shift,
+            };
+            forceRenderRef.current();
+            // Return none() — scratch mutation persists via the
+            // scratchRef, but we don't engage. The next gesture stage
+            // (click or drag) reads `_pendingDown` from scratch on its
+            // own.
+            return none();
+          },
         },
 
-        onClick: (_e, ctx) => {
-          const s = ctx.scratch;
-          const down = s._pendingDown;
-          s._pendingDown = null;
-          const snap = optsRef.current.snapPoint;
-          const raw = down
-            ? { x: down.worldX, y: down.worldY }
-            : { x: ctx.worldX, y: ctx.worldY };
-          // _pendingDown is already snapped on capture; only snap the fallback path.
-          const p = down ? raw : snap ? snap(raw) : raw;
-          const wx = p.x;
-          const wy = p.y;
-          const radius = optsRef.current.closeHitRadius / ctx.view.scale;
-          const totalAnchors =
-            (s.current ? s.current.anchors.length : 0) +
-            s.finishedSubpaths.reduce((n, sp) => n + sp.anchors.length, 0);
+        click: {
+          '*': (ctx) => {
+            const s = ctx.scratch;
+            const down = s._pendingDown;
+            s._pendingDown = null;
+            const snap = optsRef.current.snapPoint;
+            const raw = down
+              ? { x: down.worldX, y: down.worldY }
+              : { x: ctx.worldX, y: ctx.worldY };
+            // _pendingDown is already snapped on capture; only snap the fallback path.
+            const p = down ? raw : snap ? snap(raw) : raw;
+            const wx = p.x;
+            const wy = p.y;
+            const radius = optsRef.current.closeHitRadius / ctx.view.scale;
+            const totalAnchors =
+              (s.current ? s.current.anchors.length : 0) +
+              s.finishedSubpaths.reduce((n, sp) => n + sp.anchors.length, 0);
 
-          // Cmd/Ctrl + click → open-finish (Illustrator convention). Wins
-          // over close-on-first-anchor: holding the modifier signals "stop
-          // editing" rather than "close to first." Needs ≥2 anchors so
-          // there's an actual path to commit.
-          if ((ctx.modifiers.meta || ctx.modifiers.ctrl) && totalAnchors >= 2) {
-            commit(s);
-            s._lastClick = null;
-            forceRenderRef.current();
-            return 'claim';
-          }
-
-          // Double-click on the last placed anchor → open-finish (Illustrator
-          // convention). We detect via prior-click timestamp + position; the
-          // dispatcher doesn't expose synthetic dblclick. Match within the
-          // close-hit radius so the second click can land slightly off.
-          const last = s._lastClick;
-          if (last && totalAnchors >= 2 && performance.now() - last.t <= DOUBLE_CLICK_MS) {
-            const cur = s.current;
-            const lastAnchor = cur && cur.anchors.length > 0
-              ? cur.anchors[cur.anchors.length - 1]
-              : null;
-            if (lastAnchor && dist(lastAnchor.x, lastAnchor.y, wx, wy) <= radius) {
+            // Cmd/Ctrl + click → open-finish (Illustrator convention). Wins
+            // over close-on-first-anchor: holding the modifier signals "stop
+            // editing" rather than "close to first." Needs ≥2 anchors so
+            // there's an actual path to commit.
+            if ((ctx.modifiers.meta || ctx.modifiers.ctrl) && totalAnchors >= 2) {
               commit(s);
               s._lastClick = null;
               forceRenderRef.current();
-              return 'claim';
+              return claim();
             }
-          }
 
-          // Close-on-first-anchor (≥3 anchors).
-          if (s.current && s.current.anchors.length >= 3) {
-            const first = s.current.anchors[0];
-            if (dist(first.x, first.y, wx, wy) <= radius) {
-              s.current.closed = true;
-              s.finishedSubpaths.push(s.current);
-              s.current = null;
-              s.closeHintActive = false;
-              s._lastClick = null;
-              forceRenderRef.current();
-              return 'claim';
+            // Double-click on the last placed anchor → open-finish (Illustrator
+            // convention). We detect via prior-click timestamp + position; the
+            // dispatcher doesn't expose synthetic dblclick. Match within the
+            // close-hit radius so the second click can land slightly off.
+            const last = s._lastClick;
+            if (last && totalAnchors >= 2 && performance.now() - last.t <= DOUBLE_CLICK_MS) {
+              const cur = s.current;
+              const lastAnchor = cur && cur.anchors.length > 0
+                ? cur.anchors[cur.anchors.length - 1]
+                : null;
+              if (lastAnchor && dist(lastAnchor.x, lastAnchor.y, wx, wy) <= radius) {
+                commit(s);
+                s._lastClick = null;
+                forceRenderRef.current();
+                return claim();
+              }
             }
-          }
 
-          // Otherwise: append a corner anchor (start a new subpath if needed).
-          if (!s.current) s.current = { anchors: [], closed: false };
-          s.current.anchors.push({ x: wx, y: wy });
-          s._lastClick = { t: performance.now(), x: wx, y: wy };
-          forceRenderRef.current();
-          return 'claim';
+            // Close-on-first-anchor (≥3 anchors).
+            if (s.current && s.current.anchors.length >= 3) {
+              const first = s.current.anchors[0];
+              if (dist(first.x, first.y, wx, wy) <= radius) {
+                s.current.closed = true;
+                s.finishedSubpaths.push(s.current);
+                s.current = null;
+                s.closeHintActive = false;
+                s._lastClick = null;
+                forceRenderRef.current();
+                return claim();
+              }
+            }
+
+            // Otherwise: append a corner anchor (start a new subpath if needed).
+            if (!s.current) s.current = { anchors: [], closed: false };
+            s.current.anchors.push({ x: wx, y: wy });
+            s._lastClick = { t: performance.now(), x: wx, y: wy };
+            forceRenderRef.current();
+            return claim();
+          },
         },
-      },
 
-      drag: {
-        onStart: (_e, ctx) => {
+        // Function-form drag: every drag start pushes an anchor with an
+        // outgoing handle, then begin() installs onMove/onRelease/onCancel
+        // continuations that update the handle as the gesture proceeds.
+        drag: (ctx) => {
           const s = ctx.scratch;
           const down = s._pendingDown;
           const snap = optsRef.current.snapPoint;
           // _pendingDown is already snapped on capture; only snap the fallback path.
-          const fallback = snap ? snap({ x: ctx.worldX, y: ctx.worldY }) : { x: ctx.worldX, y: ctx.worldY };
+          const fallback = snap
+            ? snap({ x: ctx.worldX, y: ctx.worldY })
+            : { x: ctx.worldX, y: ctx.worldY };
           const ax = down ? down.worldX : fallback.x;
           const ay = down ? down.worldY : fallback.y;
           if (!s.current) s.current = { anchors: [], closed: false };
@@ -345,71 +366,67 @@ export function useUserPenTool<TPose>(
             s.current.anchors[s.draggingHandleAt].altBroken = true;
           }
           forceRenderRef.current();
-          return 'claim';
+          return begin<PenScratch>({
+            scratch: s,
+            onMove: (c) => {
+              const sm = c.scratch;
+              if (sm.draggingHandleAt !== null) {
+                applyOutHandle(sm, c, optsRef.current.snapPoint);
+                if (c.modifiers.alt && sm.current) {
+                  sm.current.anchors[sm.draggingHandleAt].altBroken = true;
+                }
+              }
+              forceRenderRef.current();
+              return claim();
+            },
+            onRelease: (c) => {
+              const sr = c.scratch;
+              if (sr.draggingHandleAt !== null) {
+                applyOutHandle(sr, c, optsRef.current.snapPoint);
+                if (c.modifiers.alt && sr.current) {
+                  sr.current.anchors[sr.draggingHandleAt].altBroken = true;
+                }
+                // Track the drag-placed anchor so a quick follow-up click on
+                // it triggers double-click open-finish, same as click-placed.
+                if (sr.current) {
+                  const a = sr.current.anchors[sr.draggingHandleAt];
+                  sr._lastClick = { t: performance.now(), x: a.x, y: a.y };
+                }
+                sr.draggingHandleAt = null;
+                sr._pendingDown = null;
+              }
+              forceRenderRef.current();
+              // claim() (not commit()) so the factory does not null out
+              // ctx.scratch — the persistent scratchRef must keep its
+              // mutated state visible to the next gesture.
+              return claim();
+            },
+            onCancel: (c) => {
+              c.scratch.draggingHandleAt = null;
+              c.scratch._pendingDown = null;
+              forceRenderRef.current();
+            },
+          });
         },
 
-        onMove: (_e, ctx) => {
-          const s = ctx.scratch;
-          if (s.draggingHandleAt !== null) {
-            applyOutHandle(s, ctx, optsRef.current.snapPoint);
-            if (ctx.modifiers.alt && s.current) {
-              s.current.anchors[s.draggingHandleAt].altBroken = true;
-            }
-          } else {
-            const snap = optsRef.current.snapPoint;
-            s.cursor = snap ? snap({ x: ctx.worldX, y: ctx.worldY }) : { x: ctx.worldX, y: ctx.worldY };
-            updateCloseHint(s, ctx.view);
-          }
-          forceRenderRef.current();
-          return 'claim';
-        },
-
-        onEnd: (_e, ctx) => {
-          const s = ctx.scratch;
-          if (s.draggingHandleAt !== null) {
-            applyOutHandle(s, ctx, optsRef.current.snapPoint);
-            if (ctx.modifiers.alt && s.current) {
-              s.current.anchors[s.draggingHandleAt].altBroken = true;
-            }
-            // Track the drag-placed anchor so a quick follow-up click on
-            // it triggers double-click open-finish, same as click-placed.
-            if (s.current) {
-              const a = s.current.anchors[s.draggingHandleAt];
-              s._lastClick = { t: performance.now(), x: a.x, y: a.y };
-            }
-            s.draggingHandleAt = null;
-            s._pendingDown = null;
-          }
-          forceRenderRef.current();
-          return 'claim';
-        },
-
-        onCancel: (ctx) => {
-          ctx.scratch.draggingHandleAt = null;
-          ctx.scratch._pendingDown = null;
-          forceRenderRef.current();
-        },
-      },
-
-      keyboard: {
-        onDown: (e, ctx) => {
-          const s = ctx.scratch;
-          if (e.key === 'Enter') {
+        keyDown: {
+          Enter: (ctx) => {
+            const s = ctx.scratch;
             const totalAnchors =
               (s.current ? s.current.anchors.length : 0) +
               s.finishedSubpaths.reduce((n, sp) => n + sp.anchors.length, 0);
-            if (totalAnchors === 0) return 'pass';
+            if (totalAnchors === 0) return none();
             commit(s);
             forceRenderRef.current();
-            return 'claim';
-          }
-          if (e.key === 'Escape') {
-            if (s.current === null && s.finishedSubpaths.length === 0) return 'pass';
+            return claim();
+          },
+          Escape: (ctx) => {
+            const s = ctx.scratch;
+            if (s.current === null && s.finishedSubpaths.length === 0) return none();
             resetScratch(s);
             forceRenderRef.current();
-            return 'claim';
-          }
-          return 'pass';
+            return claim();
+          },
         },
       },
     });

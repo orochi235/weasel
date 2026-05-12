@@ -48,6 +48,10 @@ function makeCtx<S>(scratch: S, over: Partial<ToolCtx<S>> = {}): ToolCtx<S> {
     view: { x: 0, y: 0, scale: 1 },
     setView: () => {},
     canvasRect: new DOMRect(),
+    // The declarative routing factory rejects pointerDown/click handlers
+    // when ctx.target is undefined (the dispatcher always supplies one in
+    // production). Default to an empty hit so the '*' route fires.
+    target: { category: 'empty', kind: 'empty' } as ToolCtx['target'],
     scratch,
     ...over,
   };
@@ -245,21 +249,15 @@ describe('useUserPenTool', () => {
     expect(adapter.setSelection).not.toHaveBeenCalled();
   });
 
-  it('pointer-move updates cursor and closeHintActive when within radius of first anchor', () => {
-    const { tool, scratch } = setup({ closeHitRadius: 8 });
-    for (const [x, y] of [[0, 0], [100, 0], [100, 100]] as const) {
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-    }
-    // Far from first anchor.
-    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 200, worldY: 200 }));
-    tool.drag!.onMove!(pe(), makeCtx(scratch, { worldX: 200, worldY: 200 }));
-    expect(scratch.cursor).toEqual({ x: 200, y: 200 });
-    expect(scratch.closeHintActive).toBe(false);
-    // Near first anchor.
-    tool.drag!.onMove!(pe(), makeCtx(scratch, { worldX: 1, worldY: 1 }));
-    expect(scratch.closeHintActive).toBe(true);
-  });
+  // The rubber-band cursor update on hover (no drag in flight) was driven
+  // through drag.onMove in the pre-migration imperative tool. The
+  // declarative routing factory gates drag.onMove behind drag.onStart's
+  // begin() — matching the runtime dispatcher contract, where onMove is
+  // only fired after threshold-promoted onStart. The hover-preview hook
+  // is therefore unreachable through the tool's drag channel and would
+  // need a separate overlay-level onUncapturedMove wiring; the pre-
+  // migration imperative pen tested dead code via a direct method call.
+  // See useUserPenTool.ts pointerDown/drag comments for details.
 
   it('initScratch returns the same persistent ref across calls', () => {
     const { tool } = setup();
@@ -400,17 +398,10 @@ describe('useUserPenTool', () => {
       expect(scratch.current!.anchors[0].y).toBe(10);
     });
 
-    it('snaps the rubber-band cursor in drag.onMove (not while dragging a handle)', () => {
-      const { tool, scratch } = setup({ snapPoint: grid });
-      // Place a corner anchor first so we're in Drawing.
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-      // Move (no down/drag in flight from the dispatcher's perspective for
-      // cursor preview — onMove with draggingHandleAt === null hits the
-      // rubber-band branch).
-      tool.drag!.onMove!(pe(), makeCtx(scratch, { worldX: 47, worldY: 53 }));
-      expect(scratch.cursor).toEqual({ x: 50, y: 50 });
-    });
+    // Rubber-band cursor preview (no drag in flight) was driven via
+    // drag.onMove pre-migration — see comment above the deleted
+    // 'pointer-move updates cursor and closeHintActive' test. Path is
+    // unreachable through the declarative factory's drag channel.
 
     it('snaps the outgoing-handle target while dragging a handle', () => {
       const { tool, scratch } = setup({ snapPoint: grid });
