@@ -75,16 +75,17 @@ describe('Phase 2a integration', () => {
       // Intercept at applyOps so we capture exactly the ops the gesture commits.
       const adapter = { ...base, applyOps };
 
-      const selectTool = useSelectTool(adapter, {
-        pickEvery: (wx, wy) => {
-          for (let i = rectsRef.current.length - 1; i >= 0; i--) {
-            const r = rectsRef.current[i];
-            if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) {
-              return [r.id];
-            }
+      const pickEvery = (wx: number, wy: number) => {
+        for (let i = rectsRef.current.length - 1; i >= 0; i--) {
+          const r = rectsRef.current[i];
+          if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) {
+            return [r.id];
           }
-          return [];
-        },
+        }
+        return [];
+      };
+      const selectTool = useSelectTool(adapter, {
+        pickEvery,
         boundsOf: (id) => {
           const r = rectsRef.current.find((o) => o.id === id);
           return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
@@ -105,6 +106,7 @@ describe('Phase 2a integration', () => {
           selection={sel}
           tools={tools}
           clientToWorld={C2W}
+          pickEvery={pickEvery}
         />
       );
     }
@@ -477,16 +479,17 @@ describe('Phase 2a: off-canvas pointer release backstop', () => {
       });
       const adapter = { ...base, applyOps };
 
-      const selectTool = useSelectTool(adapter, {
-        pickEvery: (wx, wy) => {
-          for (let i = rectsRef.current.length - 1; i >= 0; i--) {
-            const r = rectsRef.current[i];
-            if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) {
-              return [r.id];
-            }
+      const pickEvery = (wx: number, wy: number) => {
+        for (let i = rectsRef.current.length - 1; i >= 0; i--) {
+          const r = rectsRef.current[i];
+          if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) {
+            return [r.id];
           }
-          return [];
-        },
+        }
+        return [];
+      };
+      const selectTool = useSelectTool(adapter, {
+        pickEvery,
         boundsOf: (id) => {
           const r = rectsRef.current.find((o) => o.id === id);
           return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
@@ -507,6 +510,7 @@ describe('Phase 2a: off-canvas pointer release backstop', () => {
           selection={sel}
           tools={tools}
           clientToWorld={C2W}
+          pickEvery={pickEvery}
         />
       );
     }

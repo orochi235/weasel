@@ -371,11 +371,12 @@ describe('<Canvas>', () => {
         }),
         ...sel.adapterMethods,
       };
+      const pickEvery = (wx: number, wy: number) =>
+        rectsRef.current
+          .filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height)
+          .map((r) => r.id);
       const select = useSelectTool<Rect, Pose>(adapter, {
-        pickEvery: (wx, wy) =>
-          rectsRef.current
-            .filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height)
-            .map((r) => r.id),
+        pickEvery,
         boundsOf: (id) => {
           const r = rectsRef.current.find((x) => x.id === id);
           return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
@@ -393,6 +394,7 @@ describe('<Canvas>', () => {
           adapter={adapter}
           selection={sel}
           tools={tools}
+          pickEvery={pickEvery}
         />
       );
     }

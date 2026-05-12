@@ -26,6 +26,18 @@ function ctxOver(over: Partial<ToolCtx<SelectScratch>> = {}): ToolCtx<SelectScra
   };
 }
 
+/** Build a NodeHit target for declarative drag routing. The drag route table
+ *  in useSelectTool keys on `target.kind` (rect/text/path) and matches
+ *  category=='node'. Defaults to kind='rect' which routes to move.beginAt. */
+function nodeTarget(id: string, kind: string = 'rect') {
+  return { category: 'node' as const, kind, id: id as any, pose: {}, data: { id } };
+}
+
+/** Build an EmptyHit target. Drags with this target route to areaSelect.beginAt. */
+function emptyTarget() {
+  return { category: 'empty' as const, kind: 'empty' as const };
+}
+
 const minimalAdapter = {
   // MoveAdapter
   getNode: (id: string) => ({ id }),
@@ -297,10 +309,15 @@ describe('useSelectTool', () => {
     expect(result.current.overlay!.hitTest!(4, 0, chromeState, view, dims)).not.toBeNull();
   });
 
-  it('drag.onStart after body-hit routes to move controller (claims)', () => {
+  it('drag.onStart over a rect-kind target routes to move.beginAt (claims)', () => {
+    // The declarative drag route table maps target.kind 'rect' → move.beginAt.
+    // ctx.scratch starts idle (as the dispatcher would have it pre-onStart);
+    // beginAt returns a begin Result that the routing factory applies to
+    // engaged scratch and claims.
     const ctx = ctxOver({
       selection: { current: ['hit-id'], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
-      scratch: { kind: 'move', ids: ['hit-id'], deferredClickId: null },
+      target: nodeTarget('hit-id', 'rect'),
+      scratch: { kind: 'idle' },
     });
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
@@ -312,9 +329,10 @@ describe('useSelectTool', () => {
     expect(decision).toBe('claim');
   });
 
-  it('drag.onStart after area-hit routes to areaSelect controller (claims)', () => {
+  it('drag.onStart over empty target routes to areaSelect.beginAt (claims)', () => {
     const ctx = ctxOver({
-      scratch: { kind: 'area' },
+      target: emptyTarget(),
+      scratch: { kind: 'idle' },
     });
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
@@ -344,7 +362,7 @@ describe('useSelectTool', () => {
     );
     // Empty-space drag start → move → end should all be safe.
     act(() => {
-      const c1 = ctxOver({ scratch: { kind: 'area' }, worldX: 0, worldY: 0 });
+      const c1 = ctxOver({ target: emptyTarget(), scratch: { kind: 'idle' }, worldX: 0, worldY: 0 });
       result.current.drag!.onStart!(pe(), c1);
       const c2 = ctxOver({ scratch: { kind: 'area' }, worldX: 50, worldY: 30 });
       result.current.drag!.onMove!(pe(), c2);
@@ -458,7 +476,7 @@ describe('useSelectTool overlay', () => {
       }),
     );
     act(() => {
-      const ctx = ctxOver({ scratch: { kind: 'area' }, worldX: 0, worldY: 0 });
+      const ctx = ctxOver({ target: emptyTarget(), scratch: { kind: 'idle' }, worldX: 0, worldY: 0 });
       result.current.drag!.onStart!(pe(), ctx);
       result.current.drag!.onMove!(pe(), ctxOver({ scratch: { kind: 'area' }, worldX: 50, worldY: 30 }));
     });
@@ -476,7 +494,7 @@ describe('useSelectTool overlay', () => {
       }),
     );
     act(() => {
-      result.current.drag!.onStart!(pe(), ctxOver({ scratch: { kind: 'area' }, worldX: 0, worldY: 0 }));
+      result.current.drag!.onStart!(pe(), ctxOver({ target: emptyTarget(), scratch: { kind: 'idle' }, worldX: 0, worldY: 0 }));
       result.current.drag!.onMove!(pe(), ctxOver({ scratch: { kind: 'area' }, worldX: 5, worldY: 5 }));
     });
     const cmds = result.current.overlay!.draw(undefined, VIEW, DIMS);
@@ -498,9 +516,24 @@ describe('useSelectTool overlay', () => {
       }),
     );
     act(() => {
-      const c1 = ctxOver({ scratch: { kind: 'move', ids: ['a', 'b'], deferredClickId: null }, worldX: 0, worldY: 0 });
+      // selection covers both ids → computeMoveIds returns ['a','b'].
+      // Move-gesture threshold is in clientX/Y, which beginAt sources from
+      // ctx.screenPoint — set it on both start and move ctx.
+      const c1 = ctxOver({
+        target: nodeTarget('a', 'rect'),
+        selection: { current: ['a', 'b'], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
+        scratch: { kind: 'idle' },
+        worldX: 0,
+        worldY: 0,
+        screenPoint: { x: 0, y: 0 },
+      });
       result.current.drag!.onStart!(pe({ clientX: 0, clientY: 0 }), c1);
-      const c2 = ctxOver({ scratch: { kind: 'move', ids: ['a', 'b'], deferredClickId: null }, worldX: 20, worldY: 20 });
+      const c2 = ctxOver({
+        scratch: { kind: 'move', ids: ['a', 'b'] } as any,
+        worldX: 20,
+        worldY: 20,
+        screenPoint: { x: 50, y: 50 },
+      });
       result.current.drag!.onMove!(pe({ clientX: 50, clientY: 50 }), c2);
     });
     result.current.overlay!.draw(undefined, VIEW, DIMS);
@@ -517,35 +550,61 @@ describe('useSelectTool overlay', () => {
     act(() => {
       result.current.drag!.onStart!(
         pe({ clientX: 0, clientY: 0 }),
-        ctxOver({ scratch: { kind: 'move', ids: ['a'], deferredClickId: null }, worldX: 0, worldY: 0 }),
+        ctxOver({
+          target: nodeTarget('a', 'rect'),
+          selection: { current: ['a'], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
+          scratch: { kind: 'idle' },
+          worldX: 0,
+          worldY: 0,
+          screenPoint: { x: 0, y: 0 },
+        }),
       );
       result.current.drag!.onMove!(
         pe({ clientX: 50, clientY: 50 }),
-        ctxOver({ scratch: { kind: 'move', ids: ['a'], deferredClickId: null }, worldX: 20, worldY: 20 }),
+        ctxOver({
+          scratch: { kind: 'move', ids: ['a'] } as any,
+          worldX: 20,
+          worldY: 20,
+          screenPoint: { x: 50, y: 50 },
+        }),
       );
     });
     expect(() => result.current.overlay!.draw(undefined, VIEW, DIMS)).not.toThrow();
   });
 
   it('resize ghost calls drawGhost once with resize.overlay.currentPose', () => {
+    // Resize gestures go through the affordance pipeline (corner-handle hit
+    // returns an AffordanceBinding whose drag.onStart calls into useResize).
+    // The drag.onStart shim no longer handles 'resize' scratch — the route
+    // table only covers move/area. Drive the gesture via overlay.hitTest.
     const drawGhost = vi.fn((..._args: unknown[]) => [] as any[]);
     const { result } = renderHook(() =>
       useSelectTool(adapterFor(), {
         pickEvery: () => [],
         boundsOf: () => ({ x: 0, y: 0, width: 100, height: 100 }),
+        handleHitRadius: 10,
         drawGhost,
         getNode: (id) => ({ id, x: 0, y: 0, width: 100, height: 100 }) as any,
       }),
     );
+    const chromeState = {
+      selection: ['obj1'],
+      multiActive: false,
+      unionBounds: null,
+      boundsOf: (id: string) => (id === 'obj1' ? { x: 0, y: 0, width: 100, height: 100 } : null),
+      modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+    } as any;
+    const binding = result.current.overlay!.hitTest!(0, 0, chromeState, VIEW, DIMS);
+    expect(binding).not.toBeNull();
     act(() => {
-      result.current.drag!.onStart!(
-        pe(),
-        ctxOver({
-          scratch: { kind: 'resize', targetId: 'obj1', anchor: { x: 'min', y: 'min' } },
-          worldX: 100,
-          worldY: 100,
-        }),
-      );
+      binding!.drag.onStart!(pe(), {
+        start: { x: 0, y: 0 },
+        current: { x: 0, y: 0 },
+        worldX: 0,
+        worldY: 0,
+        bounds: { x: 0, y: 0, width: 0, height: 0 },
+        modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+      } as any);
     });
     result.current.overlay!.draw(undefined, VIEW, DIMS);
     expect(drawGhost).toHaveBeenCalledTimes(1);
@@ -553,6 +612,8 @@ describe('useSelectTool overlay', () => {
   });
 
   it('rotate ghost calls drawGhost once with rotate.overlay.currentPose', () => {
+    // Rotation gestures go through the rotation-handle affordance, same
+    // pipeline as the corner-resize case above.
     const drawGhost = vi.fn((..._args: unknown[]) => [] as any[]);
     const { result } = renderHook(() =>
       useSelectTool(adapterFor({
@@ -561,19 +622,32 @@ describe('useSelectTool overlay', () => {
       }), {
         pickEvery: () => [],
         boundsOf: () => ({ x: 0, y: 0, width: 100, height: 100 }),
+        rotationHandleDistance: 24,
+        handleHitRadius: 10,
         drawGhost,
         getNode: (id) => ({ id, x: 0, y: 0, width: 10, height: 10, rotation: 0 }) as any,
       }),
     );
+    const chromeState = {
+      selection: ['obj1'],
+      multiActive: false,
+      unionBounds: null,
+      boundsOf: (id: string) => (id === 'obj1' ? { x: 0, y: 0, width: 100, height: 100 } : null),
+      modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+    } as any;
+    // Rotation handle sits 24 screen-px above the top edge center of the bounds.
+    // Bounds top edge center is (50, 0); handle center is (50, -24).
+    const binding = result.current.overlay!.hitTest!(50, -24, chromeState, VIEW, DIMS);
+    expect(binding).not.toBeNull();
     act(() => {
-      result.current.drag!.onStart!(
-        pe(),
-        ctxOver({
-          scratch: { kind: 'rotate', targetId: 'obj1' },
-          worldX: 50,
-          worldY: 0,
-        }),
-      );
+      binding!.drag.onStart!(pe(), {
+        start: { x: 50, y: -24 },
+        current: { x: 50, y: -24 },
+        worldX: 50,
+        worldY: -24,
+        bounds: { x: 0, y: 0, width: 0, height: 0 },
+        modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+      } as any);
     });
     result.current.overlay!.draw(undefined, VIEW, DIMS);
     expect(drawGhost).toHaveBeenCalledTimes(1);
@@ -598,11 +672,23 @@ describe('useSelectTool overlay', () => {
     act(() => {
       result.current.drag!.onStart!(
         pe({ clientX: 0, clientY: 0 }),
-        ctxOver({ scratch: { kind: 'move', ids: ['a'], deferredClickId: null }, worldX: 0, worldY: 0 }),
+        ctxOver({
+          target: nodeTarget('a', 'rect'),
+          selection: { current: ['a'], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
+          scratch: { kind: 'idle' },
+          worldX: 0,
+          worldY: 0,
+          screenPoint: { x: 0, y: 0 },
+        }),
       );
       result.current.drag!.onMove!(
         pe({ clientX: 50, clientY: 50 }),
-        ctxOver({ scratch: { kind: 'move', ids: ['a'], deferredClickId: null }, worldX: 20, worldY: 20 }),
+        ctxOver({
+          scratch: { kind: 'move', ids: ['a'] } as any,
+          worldX: 20,
+          worldY: 20,
+          screenPoint: { x: 50, y: 50 },
+        }),
       );
     });
     const cmds = result.current.overlay!.draw(undefined, VIEW, DIMS);
