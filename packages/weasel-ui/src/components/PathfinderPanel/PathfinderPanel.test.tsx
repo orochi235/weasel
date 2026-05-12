@@ -157,3 +157,33 @@ describe('PathfinderPanel — overrides', () => {
     expect(Array.from(root.classList).some((c) => c.includes('vertical'))).toBe(false);
   });
 });
+
+describe('PathfinderPanel — mixed selection', () => {
+  it('non-path selection members are filtered out of the disabled predicate', () => {
+    const ids = [asNodeId('p0'), asNodeId('p1'), asNodeId('text-1')];
+    const adapter: Pick<BooleansAdapter, 'getSelection' | 'getWorldPath'> = {
+      getSelection: () => ids,
+      getWorldPath: (id) => (
+        id === 'text-1'
+          ? undefined  // not a path
+          : { kind: 'polygon', commands: new Uint8Array(), coords: new Float32Array(), fillRule: 'nonzero' }
+      ),
+    };
+    render(<PathfinderPanel adapter={adapter} actions={noopActions} />);
+    expect((screen.getByTestId('pathfinder-op-union') as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('one valid path among non-paths → disabled', () => {
+    const ids = [asNodeId('p0'), asNodeId('text-1'), asNodeId('image-1')];
+    const adapter: Pick<BooleansAdapter, 'getSelection' | 'getWorldPath'> = {
+      getSelection: () => ids,
+      getWorldPath: (id) => (
+        id === 'p0'
+          ? { kind: 'polygon', commands: new Uint8Array(), coords: new Float32Array(), fillRule: 'nonzero' }
+          : undefined
+      ),
+    };
+    render(<PathfinderPanel adapter={adapter} actions={noopActions} />);
+    expect((screen.getByTestId('pathfinder-op-union') as HTMLButtonElement).disabled).toBe(true);
+  });
+});
