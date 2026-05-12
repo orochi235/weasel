@@ -21,6 +21,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - run: npm --workspace @orochi235/weasel-ui run build-storybook
       # Bundle-size visibility for the WebGL transition. Hard delta-vs-baseline
       # gate landed in step 9 (per docs/superpowers/specs/2026-05-08-webgl-transition-plan-design.md).
       # Update packages/weasel-gl/.bundle-size-baseline alongside any large

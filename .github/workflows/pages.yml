@@ -26,7 +26,7 @@ jobs:
       - run: npm run build:demo
       - run: npm run build:swill
       - run: mkdir -p dist-demo/swillustrator && cp -R dist-swillustrator/. dist-demo/swillustrator/
-      - run: cd packages/weasel-ui && npx storybook build -o ../../dist-demo/docs/ui/storybook
+      - run: npm --workspace @orochi235/weasel-ui run build-storybook -- -o ../../dist-demo/docs/ui/storybook
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
