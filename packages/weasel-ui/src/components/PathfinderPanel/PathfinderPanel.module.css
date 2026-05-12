@@ -1,3 +1,46 @@
-.panel {}
-.vertical {}
-.button {}
+.panel {
+  display: flex;
+  flex-direction: row;
+  gap: 1px;
+  background: #1a1612;
+  border: 1px solid #2a2418;
+  border-radius: 4px;
+  padding: 2px;
+  user-select: none;
+}
+
+.panel.vertical {
+  flex-direction: column;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 2px;
+  color: #d8c8a8;
+  cursor: default;
+}
+
+.button:hover:not([disabled]) {
+  background: #221c12;
+  color: #fff5d8;
+}
+
+.button:active:not([disabled]) {
+  background: #2a2218;
+}
+
+.button[disabled] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.button > svg {
+  display: block;
+}
