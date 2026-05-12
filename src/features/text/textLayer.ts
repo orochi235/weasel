@@ -36,11 +36,16 @@ export interface CreateTextLayerOpts<T> {
   getPose: (node: T) => TextPose;
   /** Optional per-node hide hook (e.g., suppress while editing). */
   isHidden?: (node: T) => boolean;
+  /** When `true`, each text command is wrapped in a clipped group so any
+   *  overflow beyond the pose's `(width × height)` is hidden. Default
+   *  `false` (legacy: text can spill outside the declared bounds). Opt-in
+   *  so existing consumers who rely on overflow keep working. */
+  clipToBounds?: boolean;
 }
 
 /** Build a `RenderLayer` that emits one `TextDrawCommand` per text node. */
 export function createTextLayer<T>(opts: CreateTextLayerOpts<T>): RenderLayer<unknown> {
-  const { id = 'text', label = 'Text', getTexts, getPose, isHidden } = opts;
+  const { id = 'text', label = 'Text', getTexts, getPose, isHidden, clipToBounds = false } = opts;
   return {
     id,
     label,
@@ -59,7 +64,7 @@ export function createTextLayer<T>(opts: CreateTextLayerOpts<T>): RenderLayer<un
         const style = resolveTextStyle(pose.style);
         const styledRuns = toRuns(pose.runs ?? pose.text);
         const runs = resolveRuns(styledRuns, style);
-        children.push({
+        const textCmd: DrawCommand = {
           kind: 'text',
           x: pose.x,
           y: pose.y,
@@ -67,7 +72,16 @@ export function createTextLayer<T>(opts: CreateTextLayerOpts<T>): RenderLayer<un
           maxWidth: pose.width,
           align: style.align,
           style: pose.style ?? {},
-        });
+        };
+        if (clipToBounds) {
+          children.push({
+            kind: 'group',
+            clip: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
+            children: [textCmd],
+          });
+        } else {
+          children.push(textCmd);
+        }
       }
       return [{ kind: 'group', transform: viewToMat3(view), children }];
     },
