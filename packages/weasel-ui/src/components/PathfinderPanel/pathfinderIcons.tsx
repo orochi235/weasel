@@ -1,0 +1,74 @@
+const SVG_BASE = {
+  viewBox: '0 0 20 20',
+  width: 20,
+  height: 20,
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.5,
+  role: 'img' as const,
+  'aria-hidden': true,
+};
+
+export function UnionIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <circle cx="7" cy="10" r="5" fill="currentColor" stroke="none" />
+      <circle cx="13" cy="10" r="5" fill="currentColor" stroke="none" />
+      <circle cx="7" cy="10" r="5" />
+      <circle cx="13" cy="10" r="5" />
+    </svg>
+  );
+}
+
+export function IntersectIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <circle cx="7" cy="10" r="5" />
+      <circle cx="13" cy="10" r="5" />
+      <path
+        d="M 10 6 A 5 5 0 0 1 10 14 A 5 5 0 0 1 10 6 Z"
+        fill="currentColor"
+        stroke="none"
+      />
+    </svg>
+  );
+}
+
+export function SubtractIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <circle cx="7" cy="10" r="5" />
+      <circle cx="13" cy="10" r="5" />
+      <path
+        d="M 10 6 A 5 5 0 1 0 10 14 A 5 5 0 0 0 10 6 Z"
+        fill="currentColor"
+        stroke="none"
+      />
+    </svg>
+  );
+}
+
+export function ExcludeIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <circle cx="7" cy="10" r="5" />
+      <circle cx="13" cy="10" r="5" />
+      <path
+        d="M 10 6 A 5 5 0 1 0 10 14 A 5 5 0 0 0 10 6 Z M 10 6 A 5 5 0 1 1 10 14 A 5 5 0 0 1 10 6 Z"
+        fill="currentColor"
+        stroke="none"
+        fillRule="evenodd"
+      />
+    </svg>
+  );
+}
+
+export function DivideIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <circle cx="7" cy="10" r="5" />
+      <circle cx="13" cy="10" r="5" />
+      <line x1="10" y1="6" x2="10" y2="14" />
+    </svg>
+  );
+}
