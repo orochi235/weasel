@@ -20,7 +20,7 @@ import type { AnyTool } from 'tools/types';
 export interface ViewportConfig {
   inertia?:
     | boolean
-    | { friction?: number; minSpeed?: number; boundary?: 'stop' | 'bounce'; bounds?: PanBounds };
+    | { friction?: number; minSpeed?: number; boundary?: 'stop' | 'bounce' | 'spring'; bounds?: PanBounds };
   pinchZoom?: boolean | { min?: number; max?: number };
   animatedZoom?:
     | boolean
@@ -56,7 +56,7 @@ export function useViewportTools(args: UseViewportToolsArgs): UseViewportToolsRe
   const inertiaBoundary = inertiaObj?.boundary;
   const inertiaBounds = inertiaObj?.bounds;
   const inertiaConfig = useMemo<
-    false | { friction?: number; minSpeed?: number; boundary?: 'stop' | 'bounce'; bounds?: PanBounds }
+    false | { friction?: number; minSpeed?: number; boundary?: 'stop' | 'bounce' | 'spring'; bounds?: PanBounds }
   >(
     () =>
       inertiaEnabled

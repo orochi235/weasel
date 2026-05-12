@@ -139,4 +139,72 @@ describe('useDecayLoop', () => {
     // After bounce, velocity is positive — next tick moves right
     expect(ticks[1]).toBeGreaterThan(0);
   });
+
+  it('boundary:spring reflects with damping (smaller magnitude on rebound)', () => {
+    const ticks: number[] = [];
+    const { result } = renderHook(() => useDecayLoop());
+    act(() => {
+      result.current.start({
+        velocity: { vx: -10, vy: 0 },
+        friction: 1,                     // no friction — isolate spring damping
+        minSpeed: 0.001,
+        viewBounds: { minX: -5 },
+        boundary: 'spring',
+        initialPosition: { x: 0, y: 0 },
+        onTick: (dx) => { ticks.push(dx); },
+      });
+    });
+    act(() => { stepRAF(1); });  // first frame: skip (records lastTime)
+    act(() => { stepRAF(1); });  // hits minX, velocity reflects with damping
+    act(() => { stepRAF(1); });  // rebound tick — should be smaller magnitude
+    // First tick clamped at -5 (full pre-bounce travel)
+    expect(ticks[0]).toBeCloseTo(-5);
+    // Rebound is positive (reflected) but magnitude is less than incoming
+    expect(ticks[1]).toBeGreaterThan(0);
+    expect(Math.abs(ticks[1])).toBeLessThan(Math.abs(ticks[0]));
+  });
+
+  it('boundary:spring eventually settles below minSpeed', () => {
+    const ticks: number[] = [];
+    const onEnd = vi.fn();
+    const { result } = renderHook(() => useDecayLoop());
+    act(() => {
+      result.current.start({
+        velocity: { vx: -2, vy: 0 },
+        friction: 1,                     // no friction — only spring damping shrinks velocity
+        minSpeed: 0.5,                   // high threshold so settle is reached quickly
+        viewBounds: { minX: -1, maxX: 1 },
+        boundary: 'spring',
+        initialPosition: { x: 0, y: 0 },
+        onTick: (dx) => { ticks.push(dx); },
+        onEnd,
+      });
+    });
+    // Step plenty of frames; with damping 0.5 the speed halves each wall hit
+    // (|v| = 2 -> 1 -> 0.5; next would be 0.25 which is below minSpeed 0.5).
+    for (let i = 0; i < 50; i++) act(() => { stepRAF(1); });
+    expect(onEnd).toHaveBeenCalled();
+  });
+
+  it('boundary:spring with two-sided bounds reflects on both walls', () => {
+    const ticks: number[] = [];
+    const { result } = renderHook(() => useDecayLoop());
+    act(() => {
+      result.current.start({
+        velocity: { vx: 10, vy: 0 },     // moving right
+        friction: 1,
+        minSpeed: 0.001,
+        viewBounds: { minX: -100, maxX: 5 },
+        boundary: 'spring',
+        initialPosition: { x: 0, y: 0 },
+        onTick: (dx) => { ticks.push(dx); },
+      });
+    });
+    act(() => { stepRAF(1); });  // first frame: skip
+    act(() => { stepRAF(1); });  // hits maxX, reflects left with damping
+    act(() => { stepRAF(1); });  // moving left now
+    expect(ticks[0]).toBeCloseTo(5);   // clamped at maxX
+    expect(ticks[1]).toBeLessThan(0);  // reflected leftward
+    expect(Math.abs(ticks[1])).toBeLessThan(Math.abs(ticks[0]));
+  });
 });

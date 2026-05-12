@@ -187,7 +187,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  for defaults or an object to tune. When omitted, no viewport tools
      *  (hand, keyboard zoom, pinch) are registered by SceneCanvas. */
     viewport?: {
-      inertia?: boolean | { friction?: number; minSpeed?: number; boundary?: 'stop' | 'bounce'; bounds?: PanBounds };
+      inertia?: boolean | { friction?: number; minSpeed?: number; boundary?: 'stop' | 'bounce' | 'spring'; bounds?: PanBounds };
       pinchZoom?: boolean | { min?: number; max?: number };
       animatedZoom?: boolean | { duration?: number; resetDuration?: number; easing?: (t: number) => number };
     };

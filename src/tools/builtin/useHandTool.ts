@@ -10,7 +10,7 @@ export interface InertiaConfig {
   friction?: number;
   minSpeed?: number;
   /** What to do when inertial pan reaches `bounds`. Default: no clamping. */
-  boundary?: 'stop' | 'bounce';
+  boundary?: 'stop' | 'bounce' | 'spring';
   /** View-coordinate limits for boundary clamping. Requires `boundary` to take effect. */
   bounds?: PanBounds;
 }

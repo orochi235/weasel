@@ -13,13 +13,27 @@ export interface DecayLoopConfig {
   minSpeed?: number;
   /** Bounds for boundary clamping. Requires `boundary` to take effect. */
   viewBounds?: PanBounds;
-  /** What to do when the accumulated position hits `viewBounds`. Default: no clamping. */
-  boundary?: 'stop' | 'bounce';
+  /**
+   * What to do when the accumulated position hits `viewBounds`. Default: no clamping.
+   * - `'stop'`: clamp at boundary, kill velocity component.
+   * - `'bounce'`: linear reflection — flip velocity sign, magnitude preserved.
+   * - `'spring'`: damped reflection — flip velocity sign and shrink magnitude
+   *   by `SPRING_DAMPING` per bounce so the motion settles naturally.
+   */
+  boundary?: 'stop' | 'bounce' | 'spring';
   /** Starting position for internal boundary tracking. Required when `viewBounds` is set. */
   initialPosition?: { x: number; y: number };
   onTick: (dx: number, dy: number) => void;
   onEnd?: () => void;
 }
+
+/**
+ * Fraction of velocity preserved per `'spring'` bounce. 0.5 means each bounce
+ * loses half its energy, giving a quick visible settle (typically 2–4 bounces
+ * before `minSpeed` cuts the loop). Fixed for v1; a future `bounceDamping`
+ * config option could expose this if a consumer needs control.
+ */
+const SPRING_DAMPING = 0.5;
 
 export function useDecayLoop() {
   const rafRef = useRef<number | null>(null);
@@ -29,7 +43,7 @@ export function useDecayLoop() {
     lastTime: number | null;
     posX: number; posY: number;
     viewBounds: PanBounds | undefined;
-    boundary: 'stop' | 'bounce' | undefined;
+    boundary: 'stop' | 'bounce' | 'spring' | undefined;
     onTick: (dx: number, dy: number) => void;
     onEnd?: () => void;
   } | null>(null);
@@ -74,6 +88,13 @@ export function useDecayLoop() {
         else if (maxX !== undefined && newX > maxX) { dx = maxX - s.posX; s.vx = 0; }
         if (minY !== undefined && newY < minY) { dy = minY - s.posY; s.vy = 0; }
         else if (maxY !== undefined && newY > maxY) { dy = maxY - s.posY; s.vy = 0; }
+      } else if (s.boundary === 'spring') {
+        // Damped reflection: flip sign AND scale magnitude by SPRING_DAMPING so
+        // each bounce loses energy. Once |v| < minSpeed the outer loop ends.
+        if (minX !== undefined && newX < minX) { dx = minX - s.posX; s.vx = Math.abs(s.vx) * SPRING_DAMPING; }
+        else if (maxX !== undefined && newX > maxX) { dx = maxX - s.posX; s.vx = -Math.abs(s.vx) * SPRING_DAMPING; }
+        if (minY !== undefined && newY < minY) { dy = minY - s.posY; s.vy = Math.abs(s.vy) * SPRING_DAMPING; }
+        else if (maxY !== undefined && newY > maxY) { dy = maxY - s.posY; s.vy = -Math.abs(s.vy) * SPRING_DAMPING; }
       } else {
         if (minX !== undefined && newX < minX) { dx = minX - s.posX; s.vx = Math.abs(s.vx); }
         else if (maxX !== undefined && newX > maxX) { dx = maxX - s.posX; s.vx = -Math.abs(s.vx); }
