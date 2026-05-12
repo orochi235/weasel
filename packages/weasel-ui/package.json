@@ -18,7 +18,15 @@
     },
     "./package.json": "./package.json"
   },
+  "scripts": {
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
   "peerDependencies": {
     "react": ">=18"
+  },
+  "devDependencies": {
+    "@storybook/react-vite": "^10.3.6",
+    "storybook": "^10.3.6"
   }
 }

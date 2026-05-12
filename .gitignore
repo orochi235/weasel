@@ -16,5 +16,7 @@ coverage
 .playwright-mcp/
 playwright-report/
 test-results/
+storybook-static/
+debug-storybook.log
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
