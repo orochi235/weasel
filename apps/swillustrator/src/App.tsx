@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   asNodeId,
   Canvas,
@@ -52,6 +52,8 @@ import {
   caretIndexAt,
   boundsOfPath,
   PathBuilder,
+  viewToTransform,
+  worldToScreen,
   type ClipboardSnapshot,
   type Group,
   type History,
@@ -102,12 +104,19 @@ import { KindIcon } from './kindIcons';
 
 interface View { x: number; y: number; scale: number }
 
-// Document size in world units. Maps directly to the SVG `viewBox`
-// dimensions on export (see `onSaveSvg` below) — `<svg viewBox="0 0 W H">`.
-// Concrete value here is US Letter at 96 dpi; eventually this becomes a
-// per-doc property a user can change.
-const PAGE_W = 816;
-const PAGE_H = 1056;
+/**
+ * Per-document metadata. Sits at the root of Swillustrator's scene: every
+ * item lives logically inside a Document, the way SVG elements live
+ * inside an `<svg viewBox=...>` root. `size` maps directly to the viewBox
+ * dimensions on save/load. v1 holds size only; future fields (title,
+ * units, dpi, color profile, …) accumulate here.
+ */
+interface Document {
+  size: { width: number; height: number };
+}
+
+/** US Letter at 96 dpi. */
+const DEFAULT_DOC_SIZE = { width: 816, height: 1056 } as const;
 
 // Garden-ish palette borrowed from eric. Used by the Colors swatch grid.
 const PALETTE: { value: string; label: string }[] = [
@@ -237,6 +246,11 @@ export function App() {
   const [, forcePaint] = useState(0);
 
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
+
+  // The Document is the conceptual root of the scene. All items live inside
+  // it. `size` is the only field today; it drives the rendered page area,
+  // the SVG viewBox on export, and (eventually) the printable surface.
+  const [doc] = useState<Document>(() => ({ size: { ...DEFAULT_DOC_SIZE } }));
   // Active fill/stroke — what new shapes use. Independent of selection;
   // changing these doesn't affect existing objects, and selecting an object
   // doesn't update these. The swatch widget in the left sidebar surfaces them.
@@ -328,6 +342,13 @@ export function App() {
   const stageRef = useRef<HTMLDivElement | null>(null);
   // Page-shadow div hosts the canvas + the useTextEdit contenteditable overlay.
   const pageShadowRef = useRef<HTMLDivElement | null>(null);
+  // Canvas-host size. The canvas DOM element fills its container fully;
+  // a ResizeObserver tracks the container so the canvas re-sizes on window
+  // resize / sidebar toggles. Starts at zero so the initial-center effect
+  // below knows to wait until the first real measurement arrives — using
+  // a positive default would race the layout effect and center the doc
+  // against the wrong dimensions on first paint.
+  const [hostSize, setHostSize] = useState({ width: 0, height: 0 });
   // After the text tool inserts a node, queue an immediate startEdit on it so
   // single-click-to-place lands directly in edit mode (Illustrator-style).
   const pendingTextEditRef = useRef<string | null>(null);
@@ -614,6 +635,43 @@ export function App() {
     return a;
   }, [applyOps, selection]);
   adapterRef.current = adapter;
+
+  // ---- Host-size observation ------------------------------------------
+  // The canvas fills its host div; we track the host's CSS size so the
+  // canvas's pixel buffer matches and the scene layer knows how much area
+  // to fill. Initial layout uses an effect to read clientWidth on mount.
+  // useLayoutEffect (not useEffect) so the first measurement lands and
+  // commits BEFORE the browser paints — the user sees the canvas at its
+  // real size from frame one, and the initial-center effect below sees
+  // real dimensions on its first run.
+  useLayoutEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    setHostSize({ width: el.clientWidth, height: el.clientHeight });
+    const ro = new ResizeObserver((entries) => {
+      const cr = entries[0]?.contentRect;
+      if (cr) setHostSize({ width: cr.width, height: cr.height });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Center the doc in the viewport on first layout. useLayoutEffect so
+  // the centered view commits before paint — no flash of an off-center
+  // doc on initial load. Runs once when the host size is first known;
+  // after that, the user drives panning via wheelPan / hand tool, so we
+  // don't auto-re-center on resize.
+  const didInitialCenter = useRef(false);
+  useLayoutEffect(() => {
+    if (didInitialCenter.current) return;
+    if (hostSize.width <= 0 || hostSize.height <= 0) return;
+    didInitialCenter.current = true;
+    setView((v) => ({
+      x: doc.size.width / 2 - hostSize.width / (2 * v.scale),
+      y: doc.size.height / 2 - hostSize.height / (2 * v.scale),
+      scale: v.scale,
+    }));
+  }, [hostSize.width, hostSize.height, doc.size.width, doc.size.height]);
 
   // ---- Tools -----------------------------------------------------------
   const select = useSelectTool<Obj, Pose>(adapter, {
@@ -921,6 +979,37 @@ export function App() {
   const onStagePointerLeave = () => { cursorWorldRef.current = null; };
 
   // ---- Render layers ---------------------------------------------------
+
+  // Page layer: draws the document's printable surface as a white rect
+  // with a soft drop-shadow at world (0, 0). Rendered below the scene so
+  // user content paints inside it.
+  const pageLayer: RenderLayer<unknown> = useMemo(
+    () => ({
+      id: 'doc-page',
+      label: 'Document page',
+      space: 'screen' as const,
+      draw: (_data, view) => {
+        const t = viewToTransform(view);
+        const w = doc.size.width * view.scale;
+        const h = doc.size.height * view.scale;
+        const [x0, y0] = worldToScreen(0, 0, t);
+        // Multi-step soft shadow approximation — DrawCommands have no
+        // blur primitive today, so we stack three offset rects with
+        // falling alpha to fake the falloff.
+        const shadowSteps: DrawCommand[] = [
+          { kind: 'path', path: { kind: 'rect', x: x0 + 6, y: y0 + 10, width: w, height: h }, fill: { fill: 'solid', color: 'rgba(0, 0, 0, 0.12)' } },
+          { kind: 'path', path: { kind: 'rect', x: x0 + 3, y: y0 + 6,  width: w, height: h }, fill: { fill: 'solid', color: 'rgba(0, 0, 0, 0.16)' } },
+          { kind: 'path', path: { kind: 'rect', x: x0 + 1, y: y0 + 3,  width: w, height: h }, fill: { fill: 'solid', color: 'rgba(0, 0, 0, 0.20)' } },
+        ];
+        return [
+          ...shadowSteps,
+          { kind: 'path', path: { kind: 'rect', x: x0, y: y0, width: w, height: h }, fill: { fill: 'solid', color: '#fafafa' } },
+        ];
+      },
+    }),
+    [doc.size],
+  );
+
   const textLayer: RenderLayer<unknown> = createTextLayer<TextObj>({
     getTexts: () => itemsRef.current.filter((o): o is TextObj => o.kind === 'text'),
     getPose: (n) => {
@@ -1100,7 +1189,7 @@ export function App() {
         onSaveSvg={() => {
           const svgNodes = itemsRef.current.map(objToSvgNode);
           const svg = serializeSvg(svgNodes, {
-            viewBox: { x: 0, y: 0, width: PAGE_W, height: PAGE_H },
+            viewBox: { x: 0, y: 0, width: doc.size.width, height: doc.size.height },
           });
           downloadSvg(svg, `${docTitle || 'untitled'}.svg`);
         }}
@@ -1154,13 +1243,14 @@ export function App() {
         >
           <div
             ref={pageShadowRef}
-            className="swill-page-shadow"
+            className="swill-canvas-host"
             onDoubleClick={(e) => {
               const canvas = e.target instanceof HTMLCanvasElement ? e.target : null;
               if (!canvas) return;
               const rect = canvas.getBoundingClientRect();
-              const cx = e.clientX - rect.left;
-              const cy = e.clientY - rect.top;
+              // Canvas pixel coords → world coords via the active view.
+              const cx = (e.clientX - rect.left) / view.scale + view.x;
+              const cy = (e.clientY - rect.top) / view.scale + view.y;
               const texts = itemsRef.current.filter((o): o is TextObj => o.kind === 'text');
               let target: TextObj | null = null;
               for (let i = texts.length - 1; i >= 0; i--) {
@@ -1177,14 +1267,12 @@ export function App() {
             }}
           >
             <Canvas
-              // Canvas DOM size grows with `view.scale` so zoom is a real
-              // visual size change (the page-shadow grows, the stage's
-              // overflow:auto picks up scrollbars). The kit's internal
-              // world→screen transform still applies view.scale, so geometry
-              // remains correct — geometry at world (x, y) renders at canvas
-              // pixel (x*scale - view.x*scale, y*scale - view.y*scale).
-              width={PAGE_W * view.scale}
-              height={PAGE_H * view.scale}
+              // The canvas fills its host area fully. View pan/zoom
+              // navigate within the canvas; the document page itself is
+              // drawn as `pageLayer` (a white rect at world origin) so
+              // the canvas is no longer page-shaped.
+              width={hostSize.width}
+              height={hostSize.height}
               adapter={adapter as never}
               items={items}
               setItems={setItems}
@@ -1192,8 +1280,8 @@ export function App() {
               onViewChange={setView}
               tools={tools}
               selection={selection}
-              background="#fafafa"
               layers={{
+                doc: { layer: pageLayer, before: 'scene' },
                 scene: {
                   drawOne: (_obj, pose): DrawCommand[] => {
                     const o = pose as unknown as Obj;
