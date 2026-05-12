@@ -42,7 +42,12 @@ describe('useRectTool', () => {
     const { result } = renderHook(() => useRectTool({ create: () => null }));
     expect(result.current.id).toBe('rect');
     expect(result.current.keybinding).toEqual({ key: 'R' });
-    expect(result.current.cursor).toBe('crosshair');
+    // Declarative routing factory always emits cursor as a function
+    // (resolveCursor closure). Invoke it to compare the resolved value.
+    const cursor = typeof result.current.cursor === 'function'
+      ? (result.current.cursor as (c: ToolCtx<null>) => string)(makeCtx())
+      : result.current.cursor;
+    expect(cursor).toBe('crosshair');
   });
 
   it('calls applyOps with createInsertOp on commit', () => {
