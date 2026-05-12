@@ -4,6 +4,7 @@ import { defineTool } from './defineTool';
 import { apply, begin, hold, commit, cancel, claim } from './result';
 import { asNodeId } from '../../core/scene/types';
 import type { Op } from '../../core/ops/types';
+import type { RenderLayer } from '../../core/layers/render';
 
 const noMods = { mod: false, shift: false, alt: false, ctrl: false, meta: false, space: false };
 const stubOp: Op = { apply: () => {}, invert: () => stubOp };
@@ -154,6 +155,55 @@ describe('defineTool — basic translation', () => {
     const ctx = buildCtx({ target: { category: 'node', kind: 'rect', id: asNodeId('a'), pose: {}, data: {} } });
     const result = tool.pointer?.onClick?.(new MouseEvent('click') as unknown as PointerEvent, ctx as never);
     expect(result).toBe('claim');
+  });
+
+  it('forwards initial.overlay onto Tool.overlay', () => {
+    const layer: RenderLayer<unknown> = {
+      id: 'fixture-overlay',
+      label: 'Fixture',
+      space: 'screen',
+      draw: () => [],
+    };
+    const tool = defineTool({
+      id: 'fixture',
+      initial: { overlay: () => layer },
+    });
+    expect(tool.overlay).toBe(layer);
+  });
+
+  it('omits Tool.overlay when no phase.overlay is defined', () => {
+    const tool = defineTool({ id: 'fixture-no-overlay', initial: {} });
+    expect(tool.overlay).toBeUndefined();
+  });
+
+  it('claimsAll as a function is evaluated per call', () => {
+    let scratchVal: { engaged: boolean } = { engaged: false };
+    const tool = defineTool<{ engaged: boolean }>({
+      id: 'fixture-modal',
+      initial: { claimsAll: (ctx) => ctx.scratch?.engaged === true },
+    });
+    const baseCtx = {
+      worldX: 0, worldY: 0,
+      modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
+      selection: {} as never, adapter: {}, applyOps: () => {},
+      view: {} as never, canvasRect: {} as never, scratch: scratchVal,
+    };
+    expect(tool.claimsAll!(baseCtx as never)).toBe(false);
+    scratchVal = { engaged: true };
+    expect(tool.claimsAll!({ ...baseCtx, scratch: scratchVal } as never)).toBe(true);
+  });
+
+  it('claimsAll as boolean still works', () => {
+    const tool = defineTool({
+      id: 'fixture-static-claim',
+      initial: { claimsAll: true },
+    });
+    expect(tool.claimsAll!({ scratch: null } as never)).toBe(true);
+  });
+
+  it('claimsAll absent returns false', () => {
+    const tool = defineTool({ id: 'fixture-no-claim', initial: {} });
+    expect(tool.claimsAll!({ scratch: null } as never)).toBe(false);
   });
 });
 

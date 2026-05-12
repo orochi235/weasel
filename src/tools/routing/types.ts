@@ -43,8 +43,41 @@ export interface PhaseDef<TScratch> {
   keyDown?: Record<string, ActionFn<TScratch>>;
   keyUp?:   Record<string, ActionFn<TScratch>>;
   cursor?:  string | ((ctx: ToolCtx<TScratch>) => string);
-  overlay?: (ctx: ToolCtx<TScratch>) => RenderLayer<unknown>;
-  claimsAll?: boolean;
+  /** Optional overlay layer rendered while the tool is in any active slot
+   *  (active, hotkey, or ambient). The factory evaluates the thunk once
+   *  at translation time and emits the resulting RenderLayer on
+   *  Tool.overlay. The layer's `draw` closure should read dynamic state
+   *  (scratch, controller overlay snapshots) via refs/closures captured
+   *  in the enclosing render scope — same pattern Phase 2/3 hand-rolled
+   *  tools use today.
+   *
+   *  Function form rather than a direct RenderLayer so consumers can
+   *  defer construction until inside a `useMemo` factory body, where
+   *  `useRef`-backed values are stable. Symmetric with `cursor`'s
+   *  function form.
+   *
+   *  Phase 5b note: only `initial.overlay` is read. If `engaged.overlay`
+   *  is set, it is ignored — phase-specific overlay routing is a future
+   *  enhancement. Tools that need engagement-aware previews should gate
+   *  inside the single overlay's `draw` body via `if (!scratch.somefield)
+   *  return []`, which is how every Phase 2/3 hand-rolled tool already
+   *  does it. */
+  overlay?: () => RenderLayer<unknown>;
+  /** Modal-claim predicate. When this resolves to `true`, the dispatcher
+   *  routes every pointerdown to this tool and bypasses the affordance-layer
+   *  hit-test pipeline — used by tools in modal states (pen mid-path, text
+   *  mid-edit) where affordance hits would otherwise interrupt the
+   *  in-progress gesture.
+   *
+   *  Function form receives the live ToolCtx (scratch, view, modifiers,
+   *  target). Boolean form is sugar for `() => true` / `() => false` —
+   *  use the function form when the decision depends on scratch state
+   *  (e.g. `(ctx) => ctx.scratch?.midPath === true`).
+   *
+   *  Resolved per-call by the factory — the function fires on every
+   *  pointerdown the dispatcher considers handing to this tool. Keep it
+   *  cheap (no allocations, just a scratch read). */
+  claimsAll?: boolean | ((ctx: ToolCtx<TScratch>) => boolean);
 }
 
 export interface ToolDef<TScratch = void> {

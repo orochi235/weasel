@@ -230,9 +230,14 @@ export function defineTool<TScratch = void>(
     return '';
   };
 
-  // claimsAll lives on the engaged phase, optionally.
+  // claimsAll lives on the active phase, optionally. Boolean and
+  // function forms both supported; the function form receives the
+  // live ctx (scratch, view, target, modifiers) and is re-evaluated
+  // on every pointerdown the dispatcher considers.
   const claimsAll = (ctx: ToolCtx<TScratch>): boolean => {
-    return phaseOf(ctx).claimsAll === true;
+    const v = phaseOf(ctx).claimsAll;
+    if (v === undefined) return false;
+    return typeof v === 'function' ? v(ctx) : v;
   };
 
   return {
@@ -284,5 +289,6 @@ export function defineTool<TScratch = void>(
           },
         }
       : undefined,
+    overlay: def.initial.overlay ? def.initial.overlay() : undefined,
   };
 }
