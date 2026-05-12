@@ -375,6 +375,12 @@ export function useUserPenTool<TPose>(
                 if (c.modifiers.alt && sm.current) {
                   sm.current.anchors[sm.draggingHandleAt].altBroken = true;
                 }
+              } else {
+                const snap = optsRef.current.snapPoint;
+                sm.cursor = snap
+                  ? snap({ x: c.worldX, y: c.worldY })
+                  : { x: c.worldX, y: c.worldY };
+                updateCloseHint(sm, c.view);
               }
               forceRenderRef.current();
               return claim();
