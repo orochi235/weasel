@@ -125,6 +125,14 @@ function ctxFor(
   return { ...base, scratch };
 }
 
+function screenPointFor(
+  e: { clientX: number; clientY: number },
+  canvasRect: DOMRect | undefined,
+): { x: number; y: number } | undefined {
+  if (!canvasRect) return undefined;
+  return { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
+}
+
 function dispatchOnce<E>(
   slots: SlotsState,
   pick: (tool: AnyTool) => ((e: E, ctx: ToolCtx) => Decision) | undefined,
@@ -218,6 +226,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     const baseCtx = {
       ...rawBaseCtx,
       target: buildAffordanceTarget(result, rawBaseCtx.adapter),
+      screenPoint: screenPointFor(e, rawBaseCtx.canvasRect),
     };
     const startCtx = ctxFor(result.initialScratch, baseCtx);
     // Affordance hits skip threshold gating — the layer already decided
@@ -237,11 +246,12 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
   function onPointerDown(e: PointerEvent): void {
     if (inFlight) return; // ignore overlapping pointers; one gesture at a time
     const slots = opts.getSlots();
-    const baseCtx = opts.getCtx({
+    const rawCtx = opts.getCtx({
       clientX: e.clientX,
       clientY: e.clientY,
       modifiers: { alt: !!e.altKey, shift: !!e.shiftKey, meta: !!e.metaKey, ctrl: !!e.ctrlKey },
     });
+    const baseCtx = { ...rawCtx, screenPoint: screenPointFor(e, rawCtx.canvasRect) };
 
     // 1. Modal claim check (hotkey > active). A tool whose state-aware
     //    `claimsAll` returns true bypasses the affordance layer pipeline
@@ -329,11 +339,12 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
 
   function onPointerMove(e: PointerEvent): void {
     if (!inFlight) return;
-    const baseCtx = opts.getCtx({
+    const rawCtx = opts.getCtx({
       clientX: e.clientX,
       clientY: e.clientY,
       modifiers: { alt: !!e.altKey, shift: !!e.shiftKey, meta: !!e.metaKey, ctrl: !!e.ctrlKey },
     });
+    const baseCtx = { ...rawCtx, screenPoint: screenPointFor(e, rawCtx.canvasRect) };
 
     if (inFlight.phase === 'pending') {
       const dx = e.clientX - inFlight.startClient.x;
@@ -363,11 +374,12 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
 
   function onPointerUp(e: PointerEvent): void {
     if (!inFlight) return;
-    const baseCtx = opts.getCtx({
+    const rawCtx = opts.getCtx({
       clientX: e.clientX,
       clientY: e.clientY,
       modifiers: { alt: !!e.altKey, shift: !!e.shiftKey, meta: !!e.metaKey, ctrl: !!e.ctrlKey },
     });
+    const baseCtx = { ...rawCtx, screenPoint: screenPointFor(e, rawCtx.canvasRect) };
 
     if (inFlight.phase === 'pending') {
       // Sub-threshold release. First check whether this is the *second* tap

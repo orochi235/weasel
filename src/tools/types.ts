@@ -52,6 +52,11 @@ export interface ToolCtx<TScratch = unknown> {
    *  zoom/pan tools to convert event clientX/clientY to canvas-relative
    *  anchors. */
   canvasRect: DOMRect;
+  /** Screen-space pointer coords relative to `canvasRect`. Useful for
+   *  viewport tools that pan/zoom in screen space (e.g. hand-pan
+   *  computes deltas in pixels, not world units). Optional — populated
+   *  by the dispatcher on pointer events; absent on keyboard events. */
+  screenPoint?: { x: number; y: number };
   /** Optional debug sink. When `<Canvas debug={...}>` is enabled, Canvas
    *  threads its sink here so tool-internal hit math (handle hitboxes,
    *  rotation handle, etc.) lands in the same overlay as Canvas's own
