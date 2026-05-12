@@ -156,3 +156,70 @@ describe('defineTool — basic translation', () => {
     expect(result).toBe('claim');
   });
 });
+
+describe('defineTool — pointerDown route', () => {
+  it('emits a pointer.onDown handler when initial.pointerDown is defined', () => {
+    const tool = defineTool({
+      id: 'test',
+      initial: {
+        pointerDown: { 'rect': () => claim() },
+      },
+    });
+    expect(tool.pointer?.onDown).toBeDefined();
+  });
+
+  it('omits pointer.onDown when no pointerDown route table is defined', () => {
+    const tool = defineTool({
+      id: 'test',
+      initial: { click: { '*': () => apply([stubOp]) } },
+    });
+    expect(tool.pointer?.onDown).toBeUndefined();
+  });
+
+  it('pointerDown action fires before any threshold gate (sets scratch via begin)', () => {
+    const tool = defineTool<{ classification: string }>({
+      id: 'test',
+      initial: {
+        pointerDown: {
+          'rect': () => begin({
+            scratch: { classification: 'in-selection' },
+          }),
+        },
+      },
+    });
+    const ctx = buildCtx({ target: { category: 'node', kind: 'rect', id: asNodeId('a'), pose: {}, data: {} } });
+    tool.pointer?.onDown?.(new MouseEvent('mousedown') as unknown as PointerEvent, ctx as never);
+    expect((ctx as { scratch: unknown }).scratch).toEqual({ classification: 'in-selection' });
+  });
+
+  it('pointerDown returning none falls through (pass)', () => {
+    const tool = defineTool({
+      id: 'test',
+      initial: {
+        pointerDown: { 'rect': () => ({ kind: 'none' as const }) },
+      },
+    });
+    const ctx = buildCtx({ target: { category: 'node', kind: 'rect', id: asNodeId('a'), pose: {}, data: {} } });
+    const result = tool.pointer?.onDown?.(new MouseEvent('mousedown') as unknown as PointerEvent, ctx as never);
+    expect(result).toBe('pass');
+  });
+
+  it('engaged.pointerDown routes when scratch is set', () => {
+    const onAnchorDown = vi.fn(() => claim());
+    const tool = defineTool<{ anchors: number[] }>({
+      id: 'pen',
+      initial: {
+        pointerDown: { 'empty': () => begin({ scratch: { anchors: [] } }) },
+      },
+      engaged: {
+        pointerDown: { '*': onAnchorDown },
+      },
+    });
+    const ctx = buildCtx();
+    // First down opens engaged phase
+    tool.pointer?.onDown?.(new MouseEvent('mousedown') as unknown as PointerEvent, ctx as never);
+    // Second down — now engaged
+    tool.pointer?.onDown?.(new MouseEvent('mousedown') as unknown as PointerEvent, ctx as never);
+    expect(onAnchorDown).toHaveBeenCalledTimes(1);
+  });
+});

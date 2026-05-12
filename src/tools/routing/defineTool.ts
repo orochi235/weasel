@@ -86,6 +86,29 @@ export function defineTool<TScratch = void>(
       }
     : undefined;
 
+  // Build pointer.onDown handler from pointerDown route table. Mirrors
+  // onClick but runs at pointerdown (pre-threshold). Returns 'pass' for
+  // unrouted targets and for routes that return none(), so the
+  // dispatcher can continue to its threshold-gated click vs. drag
+  // classification.
+  const onDown = def.initial.pointerDown || def.engaged?.pointerDown
+    ? (_e: PointerEvent, ctx: ToolCtx<TScratch>): 'claim' | 'pass' => {
+        const phase = phaseOf(ctx);
+        if (!phase.pointerDown) return 'pass';
+        if (!ctx.target) return 'pass';
+        let action = resolveRoute(phase.pointerDown, ctx.target, ctx.modifiers);
+        // Universal fallback for empty hits — mirrors onClick semantics
+        // so engaged-phase '*' routes (e.g. pen's empty-canvas anchor
+        // add) respond to pointerdown on background.
+        if (!action && ctx.target.category === 'empty') {
+          const star = phase.pointerDown['*'];
+          if (typeof star === 'function') action = star;
+        }
+        if (!action) return 'pass';
+        return applyResult(ctx, action(ctx));
+      }
+    : undefined;
+
   // Build drag handlers. drag can be either a route table or a function.
   const dragRoute = def.initial.drag;
   const onDragStart = dragRoute
@@ -163,7 +186,9 @@ export function defineTool<TScratch = void>(
     initScratch: () => null as unknown as TScratch,
     cursor: resolveCursor,
     claimsAll,
-    pointer: onClick ? { onClick } : undefined,
+    pointer: (onClick || onDown)
+      ? { ...(onClick ? { onClick } : {}), ...(onDown ? { onDown } : {}) }
+      : undefined,
     drag: onDragStart ? {
       onStart: onDragStart,
       onMove: onDragMove,
