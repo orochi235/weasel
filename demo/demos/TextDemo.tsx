@@ -176,6 +176,9 @@ export function TextDemo() {
       };
     },
     isHidden: (n) => edit.isEditing(n.id),
+    // Glyphs that overflow the declared bounds are clipped — matching the
+    // visible-box affordance the dashed outline implies.
+    clipToBounds: true,
   });
 
   // Faint background outline per node so empty text boxes stay visible.
