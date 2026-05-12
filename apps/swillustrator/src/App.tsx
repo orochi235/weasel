@@ -15,6 +15,7 @@ import {
   useDistribute,
   useDuplicate,
   useEllipseTool,
+  useEyedropperTool,
   useFlip,
   useGroup,
   useHandTool,
@@ -741,6 +742,33 @@ export function App() {
 
   const insert = useInsertTool<Obj, Pose>(adapter, { minBounds: { width: 4, height: 4 } });
   const hand = useHandTool();
+  // Eyedropper — clicks any shape, writes the sampled color into whichever
+  // swatch is currently focused. Alt-hold engages it momentarily on top
+  // of any active tool; pressing `I` makes it the active tool until
+  // switched away. Alt-drag still routes to clone (clone claims at
+  // drag.onStart, eyedropper at pointer.click — they don't collide).
+  const eyedropper = useEyedropperTool({
+    colorOf: (id) => {
+      const obj = itemsRef.current.find((o) => o.id === id);
+      if (!obj) return null;
+      if (obj.kind === 'rect' || obj.kind === 'path') {
+        return obj.fill || obj.stroke || null;
+      }
+      if (obj.kind === 'text') {
+        const f = obj.style?.fill;
+        return f && f.fill === 'solid' ? f.color : null;
+      }
+      return null;
+    },
+    onPick: (color) => {
+      if (color == null) return;
+      if (focusedSwatchRef.current === 'fill') {
+        setActiveFill({ kind: 'solid', color });
+      } else {
+        setActiveStroke({ kind: 'solid', color });
+      }
+    },
+  });
   const text = useTextTool<TextObj>({
     hitExisting: ({ x: worldX, y: worldY }) => {
       const hit = [...itemsRef.current].reverse().find(
@@ -933,7 +961,7 @@ export function App() {
   // user to switch tools to enable alt-drag clone.
   const tools = useTools({
     active: 'select',
-    registry: { select, lasso, insert, ellipse, line, polygon, star, pen, pencil, hand, text },
+    registry: { select, lasso, insert, ellipse, line, polygon, star, pen, pencil, hand, text, eyedropper },
     ambient: [wheelZoom, wheelPan, keyZoom, clone],
   });
   useKeybindings(tools, {
