@@ -44,10 +44,16 @@ const DEFAULT_ICONS: Record<PathfinderOp, ReactNode> = {
 };
 
 export function PathfinderPanel(props: PathfinderPanelProps) {
-  const { actions, icons, orientation = 'horizontal', labels, className } = props;
+  const { adapter, actions, icons, orientation = 'horizontal', labels, className } = props;
   const cls = [s.panel, orientation === 'vertical' && s.vertical, className]
     .filter(Boolean)
     .join(' ');
+
+  const validCount = adapter
+    .getSelection()
+    .filter((id) => adapter.getWorldPath(id) != null)
+    .length;
+  const disabled = validCount < 2;
 
   return (
     <div className={cls} role="toolbar" aria-label="Pathfinder operations">
@@ -60,6 +66,8 @@ export function PathfinderPanel(props: PathfinderPanelProps) {
             type="button"
             data-testid={`pathfinder-op-${op}`}
             aria-label={label}
+            aria-disabled={disabled || undefined}
+            disabled={disabled}
             title={label}
             className={s.button}
             onClick={() => actions[op]()}
