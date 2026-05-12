@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { defineTool } from '../defineTool';
+import { defineTool, begin, claim, none } from '../routing';
 import { useDragRadial } from 'interactions/gestures/dragRadial';
 import { createInsertOp } from 'core/ops/create';
 import { StarIcon } from '../../icons';
@@ -124,59 +124,58 @@ export function useStarTool<TNode extends { id: string }>(
       defineTool<null>({
         id: 'star',
         cursor: 'crosshair',
-        initScratch: () => null,
         presentation: {
           label: 'Star',
           group: 'shape',
           icon: <StarIcon />,
         },
-        drag: {
-          onStart: (_e, ctx) => {
+        initial: {
+          overlay: () => overlay,
+          drag: (ctx) => {
             dr.start(ctx.worldX, ctx.worldY, ctx.modifiers);
-            return 'claim';
+            return begin<null>({
+              scratch: null,
+              onMove: (c) => {
+                dr.move(c.worldX, c.worldY, c.modifiers);
+                return claim();
+              },
+              onRelease: (c) => {
+                applyOpsRef.current = c.applyOps;
+                dr.end();
+                return claim();
+              },
+              onCancel: () => {
+                dr.cancel();
+              },
+            });
           },
-          onMove: (_e, ctx) => {
-            dr.move(ctx.worldX, ctx.worldY, ctx.modifiers);
-            return 'claim';
-          },
-          onEnd: (_e, ctx) => {
-            applyOpsRef.current = ctx.applyOps;
-            dr.end();
-            return 'claim';
-          },
-          onCancel: () => dr.cancel(),
-        },
-        keyboard: {
-          onDown: (e) => {
-            if (e.key === 'ArrowUp') {
+          keyDown: {
+            ArrowUp: () => {
               pointsRef.current = Math.min(MAX_POINTS, pointsRef.current + 1);
               bumpPoints();
-              return 'claim';
-            }
-            if (e.key === 'ArrowDown') {
+              return claim();
+            },
+            ArrowDown: () => {
               pointsRef.current = Math.max(MIN_POINTS, pointsRef.current - 1);
               bumpPoints();
-              return 'claim';
-            }
-            return 'pass';
+              return claim();
+            },
           },
-        },
-        wheel: {
           // Mousewheel mid-drag adjusts the point count. Idle wheels pass
           // through to view zoom / other ambient tools.
-          onWheel: (e) => {
-            if (!drRef.current.isActive) return 'pass';
-            if (e.deltaY === 0) return 'pass';
+          wheel: (_ctx, event) => {
+            if (!drRef.current.isActive) return none();
+            const e = event as WheelEvent | undefined;
+            if (!e || e.deltaY === 0) return none();
             if (e.deltaY < 0) {
               pointsRef.current = Math.min(MAX_POINTS, pointsRef.current + 1);
             } else {
               pointsRef.current = Math.max(MIN_POINTS, pointsRef.current - 1);
             }
             bumpPoints();
-            return 'claim';
+            return claim();
           },
         },
-        overlay,
       }),
     [dr.start, dr.move, dr.end, dr.cancel, overlay, bumpPoints],
   );
