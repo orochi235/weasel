@@ -571,5 +571,6 @@ export {
   TextIcon,
   PenIcon,
   HandIcon,
+  UnknownIcon,
 } from './icons';
 export type { IconProps } from './icons';
