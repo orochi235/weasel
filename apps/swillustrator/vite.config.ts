@@ -33,6 +33,13 @@ export default defineConfig({
         find: '@orochi235/weasel-ui',
         replacement: resolve(repoRoot, 'packages/weasel-ui/src/index.ts'),
       },
+      // Bare top-level kit paths — must match tsconfig + vitest.config + root vite.config.
+      { find: /^core\/(.*)$/, replacement: resolve(repoRoot, 'src/core/$1') },
+      { find: /^features\/(.*)$/, replacement: resolve(repoRoot, 'src/features/$1') },
+      { find: /^affordances\/(.*)$/, replacement: resolve(repoRoot, 'src/affordances/$1') },
+      { find: /^interactions\/(.*)$/, replacement: resolve(repoRoot, 'src/interactions/$1') },
+      { find: /^tools\/(.*)$/, replacement: resolve(repoRoot, 'src/tools/$1') },
+      { find: /^canvas\/(.*)$/, replacement: resolve(repoRoot, 'src/canvas/$1') },
     ],
   },
   plugins: [react()],
