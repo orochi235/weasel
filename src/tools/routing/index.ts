@@ -12,3 +12,6 @@ export type {
 export { resolveRoute } from './lookup';
 export { defineTool } from './defineTool';
 export { defineViewportTool } from './defineViewportTool';
+
+// Reflection consumers — registry / conflict checker / debug overlay.
+export * from './reflection';
