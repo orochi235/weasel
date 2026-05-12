@@ -97,6 +97,34 @@ describe('useHandTool', () => {
   });
 });
 
+describe('useHandTool — cursor phase override', () => {
+  it('idle cursor is grab when scratch is null', () => {
+    const { result } = renderHook(() => useHandTool());
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ctx = makeCtx<any>({ x: 0, y: 0 }, () => {});
+    // scratch is undefined on freshly-made ctx; coerce null shape.
+    (ctx as { scratch: unknown }).scratch = null;
+    const cursor = typeof result.current.cursor === 'function'
+      ? (result.current.cursor as (c: ToolCtx) => string)(ctx)
+      : result.current.cursor;
+    expect(cursor).toBe('grab');
+  });
+
+  it('engaged cursor is grabbing when scratch is set', () => {
+    const { result } = renderHook(() => useHandTool());
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ctx = makeCtx<any>({ x: 0, y: 0 }, () => {});
+    (ctx as { scratch: unknown }).scratch = {
+      startView: { x: 0, y: 0, scale: 1 },
+      startScreenPoint: { x: 0, y: 0 },
+    };
+    const cursor = typeof result.current.cursor === 'function'
+      ? (result.current.cursor as (c: ToolCtx) => string)(ctx)
+      : result.current.cursor;
+    expect(cursor).toBe('grabbing');
+  });
+});
+
 // RAF fake (same pattern as useDecayLoop tests)
 let rafCallbacks: Array<(t: number) => void> = [];
 let rafTime = 0;
