@@ -45,11 +45,24 @@ describe('resolveRoute target precedence', () => {
     expect(resolveRoute(table, nodeHit('rect:selected'), noMods)?.action).toBe(star);
   });
 
-  it('empty kind does not fall through to *', () => {
+  it('empty hit falls through to *', () => {
     const star = vi.fn();
     const table: RouteTable<void> = { '*': star as ActionFn<void> };
     const empty: HitResult = { category: 'empty', kind: 'empty' };
-    expect(resolveRoute(table, empty, noMods)).toBeUndefined();
+    expect(resolveRoute(table, empty, noMods)?.action).toBe(star);
+    expect(resolveRoute(table, empty, noMods)?.matchedKey).toBe('*');
+  });
+
+  it('explicit empty beats * for empty hits', () => {
+    const star = vi.fn();
+    const onEmpty = vi.fn();
+    const table: RouteTable<void> = {
+      '*':   star    as ActionFn<void>,
+      empty: onEmpty as ActionFn<void>,
+    };
+    const empty: HitResult = { category: 'empty', kind: 'empty' };
+    expect(resolveRoute(table, empty, noMods)?.action).toBe(onEmpty);
+    expect(resolveRoute(table, empty, noMods)?.matchedKey).toBe('empty');
   });
 
   it('returns undefined when no match', () => {

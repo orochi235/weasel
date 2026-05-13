@@ -36,7 +36,7 @@ export function resolveRoute<TScratch>(
 
 /** Produce the ordered list of route-table keys to try for `hit`. */
 function buildCandidateKeys(hit: HitResult): string[] {
-  if (hit.category === 'empty') return ['empty'];
+  if (hit.category === 'empty') return ['empty', '*'];
   const kind = hit.kind;
   const colon = kind.indexOf(':');
   if (colon < 0) {
