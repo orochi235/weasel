@@ -1,6 +1,57 @@
 import { describe, expect, it } from 'vitest';
-import { countPathAnchors } from './anchors';
+import { countPathAnchors, pathToAnchors } from './anchors';
 import { PathBuilder, polygonFromPoints, rectPath } from './builder';
+
+describe('pathToAnchors', () => {
+  it('extracts a single open subpath of corner anchors from M+L+L', () => {
+    const path = new PathBuilder()
+      .moveTo(0, 0).lineTo(10, 0).lineTo(10, 10)
+      .build();
+    const { anchors, closed } = pathToAnchors(path);
+    expect(anchors).toEqual([[
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+      { x: 10, y: 10 },
+    ]]);
+    expect(closed).toEqual([false]);
+  });
+
+  it('marks the subpath closed when it ends with Z', () => {
+    const path = new PathBuilder()
+      .moveTo(0, 0).lineTo(10, 0).lineTo(10, 10).close()
+      .build();
+    const { closed } = pathToAnchors(path);
+    expect(closed).toEqual([true]);
+  });
+
+  it('extracts handles from a cubic segment as outHandle/inHandle on adjacent anchors', () => {
+    const path = new PathBuilder()
+      .moveTo(0, 0)
+      .curveTo(20, 0, 80, 100, 100, 100)
+      .build();
+    const { anchors } = pathToAnchors(path);
+    expect(anchors[0]).toHaveLength(2);
+    expect(anchors[0][0]).toEqual({ x: 0, y: 0, outHandle: { x: 20, y: 0 } });
+    expect(anchors[0][1]).toEqual({ x: 100, y: 100, inHandle: { x: 80, y: 100 } });
+  });
+
+  it('produces multiple subpaths from multiple M commands', () => {
+    const path = new PathBuilder()
+      .moveTo(0, 0).lineTo(10, 0)
+      .moveTo(50, 50).lineTo(60, 50)
+      .build();
+    const { anchors, closed } = pathToAnchors(path);
+    expect(anchors).toHaveLength(2);
+    expect(anchors[0]).toEqual([{ x: 0, y: 0 }, { x: 10, y: 0 }]);
+    expect(anchors[1]).toEqual([{ x: 50, y: 50 }, { x: 60, y: 50 }]);
+    expect(closed).toEqual([false, false]);
+  });
+
+  it('returns empty arrays for an empty path', () => {
+    const path = new PathBuilder().build();
+    expect(pathToAnchors(path)).toEqual({ anchors: [], closed: [] });
+  });
+});
 
 describe('countPathAnchors', () => {
   it('returns 4 for a RectPath (one anchor per corner)', () => {

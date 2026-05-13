@@ -9,7 +9,81 @@
  * uses it to validate the array length in dev builds.
  */
 
-import { PATH_C, PATH_L, PATH_M, PATH_Q, type Path } from './types';
+import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, type Path, type PolygonPath } from './types';
+
+export interface PenAnchor {
+  x: number;
+  y: number;
+  inHandle?: { x: number; y: number };
+  outHandle?: { x: number; y: number };
+}
+
+/**
+ * Derive a per-subpath anchor model from a PolygonPath. Subpaths split on
+ * every `M` command; a subpath is closed iff it ends with `Z`.
+ *
+ * Cubic-segment control points become the outHandle of the previous anchor
+ * and the inHandle of the next anchor. Quadratic segments are upgraded to
+ * cubics (each control reused for both adjacent handles) — this loses no
+ * geometry. Linear segments produce anchors with no handles.
+ */
+export function pathToAnchors(
+  path: PolygonPath,
+): { anchors: PenAnchor[][]; closed: boolean[] } {
+  const { commands, coords } = path;
+  const anchors: PenAnchor[][] = [];
+  const closed: boolean[] = [];
+  let current: PenAnchor[] | null = null;
+  let ci = 0;
+
+  for (let i = 0; i < commands.length; i++) {
+    const cmd = commands[i];
+    switch (cmd) {
+      case PATH_M: {
+        if (current) { anchors.push(current); closed.push(false); }
+        current = [{ x: coords[ci], y: coords[ci + 1] }];
+        ci += 2;
+        break;
+      }
+      case PATH_L: {
+        if (!current) throw new Error('pathToAnchors: L without prior M');
+        current.push({ x: coords[ci], y: coords[ci + 1] });
+        ci += 2;
+        break;
+      }
+      case PATH_C: {
+        if (!current) throw new Error('pathToAnchors: C without prior M');
+        const x1 = coords[ci],     y1 = coords[ci + 1];
+        const x2 = coords[ci + 2], y2 = coords[ci + 3];
+        const x3 = coords[ci + 4], y3 = coords[ci + 5];
+        const prev = current[current.length - 1];
+        prev.outHandle = { x: x1, y: y1 };
+        current.push({ x: x3, y: y3, inHandle: { x: x2, y: y2 } });
+        ci += 6;
+        break;
+      }
+      case PATH_Q: {
+        if (!current) throw new Error('pathToAnchors: Q without prior M');
+        const x1 = coords[ci],     y1 = coords[ci + 1];
+        const x2 = coords[ci + 2], y2 = coords[ci + 3];
+        // Quadratic → cubic: handle is the same control point on both sides.
+        const prev = current[current.length - 1];
+        prev.outHandle = { x: x1, y: y1 };
+        current.push({ x: x2, y: y2, inHandle: { x: x1, y: y1 } });
+        ci += 4;
+        break;
+      }
+      case PATH_Z: {
+        if (current) { anchors.push(current); closed.push(true); current = null; }
+        break;
+      }
+      default:
+        throw new Error(`pathToAnchors: unknown command ${cmd}`);
+    }
+  }
+  if (current) { anchors.push(current); closed.push(false); }
+  return { anchors, closed };
+}
 
 export function countPathAnchors(path: Path): number {
   if (path.kind === 'rect') return 4;
