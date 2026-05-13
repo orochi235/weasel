@@ -1,6 +1,5 @@
 .panel {
   padding: 8px;
-  min-height: 200px;
   background: var(--wzl-panel-bg);
   color: var(--wzl-text);
 }
