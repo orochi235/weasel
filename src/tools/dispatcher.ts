@@ -1,5 +1,6 @@
 // src/tools/dispatcher.ts
 import type { AnyTool, ToolCtx, ToolSlot, Decision } from './types';
+import { dlog } from '../debug/flag';
 import type { RenderLayer } from 'core/layers/render';
 import type { ChromeState } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
@@ -561,6 +562,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
 
   function cancelGesture(): void {
     if (!inFlight) return;
+    dlog('[dispatch] cancel gesture; tool=', inFlight.tool.id, 'phase=', inFlight.phase);
     if (inFlight.phase === 'drag') {
       const base = opts.getCtx();
       inFlight.tool.drag?.onCancel?.(ctxFor(inFlight.scratch, base, reportRoute));

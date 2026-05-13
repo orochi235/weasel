@@ -1,3 +1,4 @@
+export { isDebugEnabled, dlog, dwarn } from './flag';
 export { parseDebugFlags } from './parseDebugFlags';
 export { createDebugSink } from './createDebugSink';
 export { createDebugOverlayLayer } from './createDebugOverlayLayer';

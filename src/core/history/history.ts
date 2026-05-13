@@ -1,4 +1,5 @@
 import type { Op } from '../ops/types';
+import { dwarn } from '../../debug/flag';
 
 interface Entry {
   /** Forward ops — applied on redo, reflect the latest to-state after any
@@ -96,15 +97,14 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     const anyMutated = applyOpsAndDetectMutation(ops);
     if (!anyMutated) {
       // Every op reported `false`/`'noop'`. Skip the push so undo stays
-      // tied to real state changes. In dev, surface a warning so the
-      // upstream caller can consider avoiding the dispatch entirely.
-      // eslint-disable-next-line no-console
-      if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
-        console.warn(
-          `[history] '${label}' batch was a no-op — every op reported false/'noop'. ` +
-          `Skipping the undo entry; consider gating the dispatch upstream to avoid the wasted work.`,
-        );
-      }
+      // tied to real state changes. Surfaced through the kit's debug
+      // flag so the upstream caller can consider avoiding the dispatch
+      // entirely. Hidden by default; enable via
+      // `localStorage.setItem('weasel.debug', '1')`.
+      dwarn(
+        `[history] '${label}' batch was a no-op — every op reported false/'noop'. ` +
+        `Skipping the undo entry; consider gating the dispatch upstream to avoid the wasted work.`,
+      );
       return;
     }
     const top = undoStack[undoStack.length - 1];

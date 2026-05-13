@@ -1,6 +1,7 @@
 // src/tools/useTools.ts
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { createToolsDispatcher, type ToolsDispatcher, type ToolsDispatcherOptions } from './dispatcher';
+import { dlog } from '../debug/flag';
 import type { AnyTool, ToolCtx } from './types';
 import type { RenderLayer } from 'core/layers/render';
 
@@ -122,6 +123,7 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
       if (!(id in registryRef.current)) {
         throw new Error(`setActive: "${id}" not in registry`);
       }
+      dlog('[tools] active:', activeRef.current, '→', id);
       dispatcher.cancelGesture();
       setActiveState(id);
     },
@@ -134,12 +136,14 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
       if (!(id in registryRef.current)) {
         throw new Error(`engageHotkey: "${id}" not in registry`);
       }
+      dlog('[tools] hotkey engaged:', id);
       setHotkeyEngaged(id);
     },
     [dispatcher],
   );
 
   const disengageHotkey = useCallback(() => {
+    if (hotkeyRef.current) dlog('[tools] hotkey disengaged:', hotkeyRef.current);
     setHotkeyEngaged(null);
   }, []);
 

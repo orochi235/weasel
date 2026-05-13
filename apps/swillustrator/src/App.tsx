@@ -72,7 +72,7 @@ import {
 import { lockAspectWithModifier } from '../../../src/interactions/gestures/resize/behaviors/lockAspect';
 import type { DrawCommand } from '@orochi235/weasel/renderer';
 import { viewToMat3 } from '@orochi235/weasel/renderer';
-import { resolveTextStyle, toRuns, resolveRuns } from '@orochi235/weasel';
+import { resolveTextStyle, toRuns, resolveRuns, dlog } from '@orochi235/weasel';
 import { wrapWithRotation } from './rotationRender';
 import { pointInRotatedAabb } from './rotationHitTest';
 import {
@@ -441,12 +441,11 @@ export function App() {
   // which calls our `applyOps`. We delegate to history.applyOps (which
   // applies the ops AND pushes onto the undo stack).
   const applyOps = useCallback((ops: { apply: (a: unknown) => void; invert: () => { apply: (a: unknown) => void; invert: () => unknown } }[], label?: string) => {
-    // Debug-level trace of every history push. Enable in DevTools by setting
-    // the console's verbosity to include "Verbose" (Chrome) or "Debug"
-    // (Safari). Useful when an op shows up unexpectedly (e.g. extra entries
-    // pushed by a single gesture).
-    // eslint-disable-next-line no-console
-    console.debug('[history.applyOps]', label ?? 'Edit', 'opCount:', ops.length, 'opLabels:', ops.map((o) => (o as { label?: string }).label));
+    // Debug-level trace of every history push. Enable via
+    // `localStorage.setItem('weasel.debug', '1')` (or 'swillustrator.debug').
+    // Useful when an op shows up unexpectedly (e.g. extra entries pushed
+    // by a single gesture).
+    dlog('[history.applyOps]', label ?? 'Edit', 'opCount:', ops.length, 'opLabels:', ops.map((o) => (o as { label?: string }).label));
     historyRef.current?.applyOps(ops as never, label ?? 'Edit');
     publish();
   }, [publish]);

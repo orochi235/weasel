@@ -15,10 +15,22 @@ export function createSetSelectionOp(args: {
   return {
     label,
     apply(adapter) {
+      // Self-report no-op when from and to are set-equal (compared as
+      // ordered sequences here, since the kit treats selection order as
+      // meaningful — first-selected stays primary). Same rationale as
+      // the reorder/transform self-report: history skips no-op entries.
+      if (sequenceEqual(from, to)) return false;
       (adapter as SelectionAdapter).setSelection([...to]);
+      return undefined;
     },
     invert() {
       return createSetSelectionOp({ from: to, to: from, label });
     },
   };
+}
+
+function sequenceEqual(a: readonly NodeId[], b: readonly NodeId[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
 }
