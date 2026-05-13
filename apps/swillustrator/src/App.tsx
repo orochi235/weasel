@@ -72,6 +72,7 @@ import type { DrawCommand } from '@orochi235/weasel/renderer';
 import { viewToMat3 } from '@orochi235/weasel/renderer';
 import { resolveTextStyle, toRuns, resolveRuns } from '@orochi235/weasel';
 import { wrapWithRotation } from './rotationRender';
+import { pointInRotatedAabb } from './rotationHitTest';
 import {
   CommandPalette,
   useCommandPaletteShortcut,
@@ -687,7 +688,7 @@ export function App() {
   const select = useSelectTool<Obj, Pose>(adapter, {
     pickEvery: (wx, wy) =>
       itemsRef.current
-        .filter((o) => wx >= o.x && wx <= o.x + o.width && wy >= o.y && wy <= o.y + o.height)
+        .filter((o) => pointInRotatedAabb(wx, wy, o))
         .map((o) => o.id),
     boundsOf: (id) => {
       const o = itemsRef.current.find((x) => x.id === id);
@@ -970,9 +971,7 @@ export function App() {
     // is categorized as `empty` and `pickFromNode`-style handlers no-op.
     // Returns topmost (last in z-order) hit; items are bottom-first.
     getNodeAtPoint: (wx, wy) => {
-      const hits = itemsRef.current.filter(
-        (o) => wx >= o.x && wx <= o.x + o.width && wy >= o.y && wy <= o.y + o.height,
-      );
+      const hits = itemsRef.current.filter((o) => pointInRotatedAabb(wx, wy, o));
       if (hits.length === 0) return null;
       const top = hits[hits.length - 1];
       return {
