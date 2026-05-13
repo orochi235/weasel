@@ -1206,7 +1206,7 @@ export function App() {
           ? { x: preview.x, y: preview.y, width: preview.width, height: preview.height, rotation: liveRotation }
           : { x: n.x, y: n.y, width: n.width, height: n.height, rotation: n.rotation };
         const cmds: DrawCommand[] = [];
-        if (n.closed) cmds.push({ kind: 'path', path, fill: { fill: 'solid', color: n.fill, opacity: 0.6 } });
+        if (n.closed) cmds.push({ kind: 'path', path, fill: { fill: 'solid', color: n.fill } });
         if (n.strokeWidth > 0) cmds.push({ kind: 'path', path, stroke: { paint: { fill: 'solid', color: n.stroke }, width: n.strokeWidth } });
         for (const c of wrapWithRotation(cmds, pose)) children.push(c);
       }
