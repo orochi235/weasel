@@ -250,6 +250,14 @@ html, body, #root {
   height: 100%;
 }
 
+/* The kit's <Canvas> sets tabIndex={0} so keyboard events work. Suppress
+   the browser's default focus ring — the canvas is always the focused
+   surface during interaction, so the ring is visual noise. */
+.swill-canvas-host canvas:focus,
+.swill-canvas-host canvas:focus-visible {
+  outline: none;
+}
+
 .swill-section-label {
   font-size: 10px;
   letter-spacing: 0.08em;
