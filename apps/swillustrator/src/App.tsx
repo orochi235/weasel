@@ -99,7 +99,15 @@ import {
   paintToString,
   type ActivePaint,
 } from './ActiveSwatches';
-import { objToSvgNode, svgNodesToObjs, downloadSvg, pickSvgFile } from './svgInterop';
+import {
+  objToSvgNode,
+  svgNodesToObjs,
+  downloadSvg,
+  pickSvgFile,
+  docToSerializeOptions,
+  parsedToDoc,
+  SWILL_NAMESPACES,
+} from './svgInterop';
 import { parseSvg, serializeSvg } from '@orochi235/weasel-svg';
 import { KindIcon } from './kindIcons';
 
@@ -963,6 +971,23 @@ export function App() {
     active: 'select',
     registry: { select, lasso, insert, ellipse, line, polygon, star, pen, pencil, hand, text, eyedropper },
     ambient: [wheelZoom, wheelPan, keyZoom, clone],
+    // Declarative-routing tools (eyedropper) route on `ctx.target.category`,
+    // which the dispatcher derives from this lookup. Without it every click
+    // is categorized as `empty` and `pickFromNode`-style handlers no-op.
+    // Returns topmost (last in z-order) hit; items are bottom-first.
+    getNodeAtPoint: (wx, wy) => {
+      const hits = itemsRef.current.filter(
+        (o) => wx >= o.x && wx <= o.x + o.width && wy >= o.y && wy <= o.y + o.height,
+      );
+      if (hits.length === 0) return null;
+      const top = hits[hits.length - 1];
+      return {
+        id: asNodeId(top.id),
+        kind: top.kind,
+        pose: { x: top.x, y: top.y, width: top.width, height: top.height },
+        data: {},
+      };
+    },
   });
   useKeybindings(tools, {
     overrides: {
@@ -1258,24 +1283,36 @@ export function App() {
         }}
         onSaveSvg={() => {
           const svgNodes = itemsRef.current.map(objToSvgNode);
-          const svg = serializeSvg(svgNodes, {
-            viewBox: { x: 0, y: 0, width: doc.size.width, height: doc.size.height },
-          });
+          const svg = serializeSvg(svgNodes, docToSerializeOptions({
+            title: docTitle,
+            size: doc.size,
+            paperSize,
+          }));
           downloadSvg(svg, `${docTitle || 'untitled'}.svg`);
         }}
         onOpenSvg={async () => {
           const text = await pickSvgFile();
           if (text == null) return;
-          const { nodes, warnings } = parseSvg(text);
-          if (warnings.length > 0) {
+          const parsed = parseSvg(text, { namespaces: SWILL_NAMESPACES });
+          if (parsed.warnings.length > 0) {
             // eslint-disable-next-line no-console
-            console.warn('Open SVG warnings:', warnings);
+            console.warn('Open SVG warnings:', parsed.warnings);
           }
-          const next = svgNodesToObjs(nodes, () => `i${nextId.current++}`);
+          const next = svgNodesToObjs(parsed.nodes, () => `i${nextId.current++}`);
           itemsRef.current = next;
           groupsRef.current = [];
           historyRef.current?.clear();
           selection.set([]);
+          const patch = parsedToDoc(parsed);
+          if (patch.size) setDoc({ size: patch.size });
+          if (patch.title != null) setDocTitle(patch.title);
+          // Paper-size preset: if the file declared one we recognize, snap
+          // the doc size to the canonical preset so the named preset wins
+          // over a viewBox that drifted by rounding.
+          if (patch.paperSize) {
+            const ps = patch.paperSize;
+            setDoc((d) => ({ ...d, size: { ...PAPER_PRESETS[ps] } }));
+          }
           publish();
         }}
       />

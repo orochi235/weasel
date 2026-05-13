@@ -237,6 +237,42 @@ describe('round-trip', () => {
     expect(g2.children[0].meta).toEqual(leaf.meta);
   });
 
+  it('document-level metadata: viewBox, swill:paperSize, swill:units, title', () => {
+    const namespaces = { swill: 'https://swillustrator.app/svg-ext' };
+    const first = parseSvg(F.SWILLUSTRATOR_MINIMAL_SVG, { namespaces });
+    expect(first.viewBox).toEqual({ x: 0, y: 0, width: 816, height: 1056 });
+    expect(first.documentMeta?.swill?.attrs?.paperSize).toBe('letter');
+    expect(first.documentMeta?.swill?.attrs?.units).toBe('px');
+    expect(first.title).toBe('My Doc');
+
+    const out = serializeSvg(first.nodes, {
+      viewBox: first.viewBox,
+      width: first.viewBox!.width,
+      height: first.viewBox!.height,
+      title: first.title,
+      namespaces,
+      documentMeta: first.documentMeta,
+    });
+    expect(out).toContain('xmlns:swill="https://swillustrator.app/svg-ext"');
+    expect(out).toContain('width="816"');
+    expect(out).toContain('height="1056"');
+    expect(out).toContain('swill:paperSize="letter"');
+    expect(out).toContain('swill:units="px"');
+    expect(out).toContain('<title>My Doc</title>');
+
+    const second = parseSvg(out, { namespaces });
+    expect(second.viewBox).toEqual(first.viewBox);
+    expect(second.documentMeta?.swill?.attrs?.paperSize).toBe('letter');
+    expect(second.title).toBe('My Doc');
+  });
+
+  it('paper-size preset: A4', () => {
+    const namespaces = { swill: 'https://swillustrator.app/svg-ext' };
+    const r = parseSvg(F.SWILLUSTRATOR_PAPERS_SVG, { namespaces });
+    expect(r.documentMeta?.swill?.attrs?.paperSize).toBe('a4');
+    expect(r.viewBox).toEqual({ x: 0, y: 0, width: 794, height: 1123 });
+  });
+
   it('generic namespace pass-through: undeclared namespaces are dropped on serialize', () => {
     // Parse declaring only `foo`. The `bar:*` content lives in the source
     // XML DOM but is not promoted into `meta`. When we re-serialize, the

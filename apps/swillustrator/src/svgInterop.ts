@@ -8,10 +8,86 @@
 
 import type { Path, PolygonPath, TextStyle } from '@orochi235/weasel';
 import type {
+  ParseResult,
+  SerializeOptions,
   SvgNode,
   SvgPathNode,
   SvgTextNode,
 } from '@orochi235/weasel-svg';
+
+/**
+ * The `swill:` XML namespace, used to ride Swillustrator-specific metadata
+ * (paper-size, group-id, line-height, future: layers, parametric origin)
+ * on top of standard SVG. weasel-svg has no knowledge of this URI — it
+ * only knows the prefix → URI mapping we pass it via parse / serialize
+ * options. All semantics live in this file.
+ *
+ * The URI does not need to resolve; it's a stable identifier only.
+ */
+export const SWILL_NS = 'https://swillustrator.app/svg-ext';
+export const SWILL_NAMESPACES = { swill: SWILL_NS } as const;
+
+/** Paper-size enum keys we round-trip via `swill:paperSize`. Must match the
+ *  keys of Swillustrator's `PAPER_PRESETS`. */
+export type SwillPaperSize = 'letter' | 'a4' | 'legal';
+
+/** Swillustrator's notion of the on-disk document, distilled to the bits
+ *  svgInterop needs to write the root `<svg>` correctly. */
+export interface SwillDoc {
+  title: string;
+  size: { width: number; height: number };
+  paperSize: SwillPaperSize;
+}
+
+/** Output of {@link parsedToDoc}: a partial doc patch the caller layers on
+ *  top of state. Fields are undefined when the source SVG didn't declare
+ *  them so callers can fall back to their own defaults. */
+export interface ParsedDocPatch {
+  title?: string;
+  size?: { width: number; height: number };
+  paperSize?: SwillPaperSize;
+}
+
+/**
+ * Build {@link SerializeOptions} from a Swillustrator doc. Encodes the
+ * Swillustrator-specific paper-size enum + `units` under the `swill:`
+ * namespace; standard `viewBox` / `width` / `height` / `<title>` come
+ * through as plain SVG fields.
+ */
+export function docToSerializeOptions(doc: SwillDoc): SerializeOptions {
+  return {
+    viewBox: { x: 0, y: 0, width: doc.size.width, height: doc.size.height },
+    width: doc.size.width,
+    height: doc.size.height,
+    title: doc.title || undefined,
+    namespaces: SWILL_NAMESPACES,
+    documentMeta: {
+      swill: {
+        attrs: {
+          paperSize: doc.paperSize,
+          units: 'px',
+        },
+      },
+    },
+  };
+}
+
+/**
+ * Interpret a {@link ParseResult} as a partial Swillustrator doc patch.
+ * The paper-size enum is only set when the source declares a value we
+ * recognize (`letter` | `a4` | `legal`); other values are dropped so the
+ * caller keeps whatever default it had.
+ */
+export function parsedToDoc(parsed: ParseResult): ParsedDocPatch {
+  const out: ParsedDocPatch = {};
+  if (parsed.title != null) out.title = parsed.title;
+  if (parsed.viewBox) {
+    out.size = { width: parsed.viewBox.width, height: parsed.viewBox.height };
+  }
+  const ps = parsed.documentMeta?.swill?.attrs?.paperSize;
+  if (ps === 'letter' || ps === 'a4' || ps === 'legal') out.paperSize = ps;
+  return out;
+}
 
 interface BaseObj { id: string; kind: 'rect' | 'text' | 'path'; x: number; y: number; width: number; height: number }
 interface RectObj extends BaseObj { kind: 'rect'; fill: string; stroke: string; strokeWidth: number }

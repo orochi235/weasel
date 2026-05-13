@@ -34,6 +34,8 @@ export function serializeSvg(nodes: SvgNode[], opts: SerializeOptions = {}): str
     rootAttrs.push(`xmlns:${prefix}="${escapeAttr(uri)}"`);
   }
   rootAttrs.push(`viewBox="${vb}"`);
+  if (opts.width != null) rootAttrs.push(`width="${trimNumber(opts.width)}"`);
+  if (opts.height != null) rootAttrs.push(`height="${trimNumber(opts.height)}"`);
   // documentMeta attrs onto the root, in declared-namespace order.
   if (opts.documentMeta) {
     for (const prefix of Object.keys(namespaces)) {
@@ -60,7 +62,14 @@ export function serializeSvg(nodes: SvgNode[], opts: SerializeOptions = {}): str
   const defsXml = registry.toDefsXml();
   const bodyXml = nodes.map((n) => nodeXml(n, registry, namespaces)).join('');
 
-  return `<svg ${rootAttrs.join(' ')}>${defsXml}${docMetaXml}${bodyXml}</svg>`;
+  // `<title>` goes immediately inside `<svg>` per SVG-spec convention; it's
+  // an accessibility hook and (for our purposes) a stable place to round-trip
+  // the user-visible document title.
+  const titleXml = opts.title && opts.title.length > 0
+    ? `<title>${escapeText(opts.title)}</title>`
+    : '';
+
+  return `<svg ${rootAttrs.join(' ')}>${titleXml}${defsXml}${docMetaXml}${bodyXml}</svg>`;
 }
 
 function namespacedElementXml(prefix: string, localName: string, el: NamespacedElement): string {

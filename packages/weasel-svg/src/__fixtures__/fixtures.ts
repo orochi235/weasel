@@ -81,3 +81,17 @@ export const TWO_NAMESPACES_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns
     <path d="M 0 0 L 10 0 L 10 10 L 0 10 Z" fill="#000" foo:annotation="leaf"/>
   </g>
 </svg>`;
+
+/** Swillustrator-authored fixture: declares the `swill:` namespace, carries
+ *  document title + paper-size metadata, and a couple of geometry leaves. */
+export const SWILLUSTRATOR_MINIMAL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:swill="https://swillustrator.app/svg-ext" viewBox="0 0 816 1056" width="816" height="1056" swill:paperSize="letter" swill:units="px">
+  <title>My Doc</title>
+  <path d="M 100 100 L 200 100 L 200 200 L 100 200 Z" fill="#3366ff" stroke="none"/>
+  <text x="120" y="160" dominant-baseline="text-before-edge" data-weasel-width="60" data-weasel-height="20" font-size="16" font-family="sans-serif" fill="#000000">Hello</text>
+</svg>`;
+
+/** Same shape as SWILLUSTRATOR_MINIMAL_SVG but with the A4 preset, to prove
+ *  the paper-size enum round-trips for non-default values. */
+export const SWILLUSTRATOR_PAPERS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:swill="https://swillustrator.app/svg-ext" viewBox="0 0 794 1123" width="794" height="1123" swill:paperSize="a4" swill:units="px">
+  <path d="M 10 10 L 50 10 L 50 50 L 10 50 Z" fill="#000000" stroke="none"/>
+</svg>`;

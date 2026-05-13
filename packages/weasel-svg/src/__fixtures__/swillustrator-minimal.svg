@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:swill="https://swillustrator.app/svg-ext" viewBox="0 0 816 1056" width="816" height="1056" swill:paperSize="letter" swill:units="px">
+  <title>My Doc</title>
+  <path d="M 100 100 L 200 100 L 200 200 L 100 200 Z" fill="#3366ff" stroke="none"/>
+  <text x="120" y="160" dominant-baseline="text-before-edge" data-weasel-width="60" data-weasel-height="20" font-size="16" font-family="sans-serif" fill="#000000">Hello</text>
+</svg>

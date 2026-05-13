@@ -177,6 +177,14 @@ export interface ParseResult {
    * root children (`documentMeta.<prefix>.elements`).
    */
   documentMeta?: NamespaceMeta;
+  /** Root `viewBox` attribute, parsed from `"x y width height"`. */
+  viewBox?: { x: number; y: number; width: number; height: number };
+  /** Root `width` attribute, parsed as a unitless number when present. */
+  width?: number;
+  /** Root `height` attribute, parsed as a unitless number when present. */
+  height?: number;
+  /** Text content of the first `<title>` child of `<svg>`, when present. */
+  title?: string;
 }
 
 /** Options for {@link serializeSvg}. */
@@ -186,6 +194,15 @@ export interface SerializeOptions {
    * a tight bounding box from the supplied nodes.
    */
   viewBox?: { x: number; y: number; width: number; height: number };
+  /** Emit `width="..."` on the root `<svg>`. */
+  width?: number;
+  /** Emit `height="..."` on the root `<svg>`. */
+  height?: number;
+  /**
+   * Emit `<title>...</title>` as the first child of the root `<svg>`. The
+   * value is XML-escaped on output. Empty strings are skipped.
+   */
+  title?: string;
   /**
    * Map of prefix → URI for XML namespaces to declare on the root
    * `<svg>`. The serializer reads `documentMeta[prefix]` and

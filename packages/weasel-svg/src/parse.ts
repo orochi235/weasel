@@ -72,7 +72,43 @@ export function parseSvg(svg: string, opts: ParseOptions = {}): ParseResult {
 
   const result: ParseResult = { nodes, warnings };
   if (documentMeta) result.documentMeta = documentMeta;
+  const viewBox = parseViewBoxAttr(root.getAttribute('viewBox'));
+  if (viewBox) result.viewBox = viewBox;
+  const widthAttr = root.getAttribute('width');
+  if (widthAttr != null) {
+    const n = parseFloat(widthAttr);
+    if (Number.isFinite(n)) result.width = n;
+  }
+  const heightAttr = root.getAttribute('height');
+  if (heightAttr != null) {
+    const n = parseFloat(heightAttr);
+    if (Number.isFinite(n)) result.height = n;
+  }
+  // First direct-child <title> wins. Per SVG spec only one is meaningful.
+  for (let i = 0; i < root.children.length; i++) {
+    const c = root.children[i];
+    if (c.tagName.toLowerCase() === 'title') {
+      result.title = c.textContent ?? '';
+      break;
+    }
+  }
   return result;
+}
+
+/**
+ * Parse an SVG `viewBox="x y width height"` attribute. Returns undefined
+ * on null/empty/malformed input. Numbers may be separated by whitespace
+ * and/or commas (SVG spec).
+ */
+function parseViewBoxAttr(
+  raw: string | null,
+): { x: number; y: number; width: number; height: number } | undefined {
+  if (raw == null) return undefined;
+  const parts = raw.trim().split(/[\s,]+/).filter(Boolean);
+  if (parts.length !== 4) return undefined;
+  const nums = parts.map(parseFloat);
+  if (nums.some((n) => !Number.isFinite(n))) return undefined;
+  return { x: nums[0], y: nums[1], width: nums[2], height: nums[3] };
 }
 
 function collectDocumentMeta(
