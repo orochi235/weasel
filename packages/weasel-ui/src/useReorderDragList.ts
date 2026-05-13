@@ -4,6 +4,9 @@ import type { ReactNode, PointerEvent as ReactPointerEvent, RefCallback } from '
 export interface LayerListItem {
   id: string;
   label: ReactNode;
+  /** Locked rows cannot be dragged, cannot be crossed by drops, and
+   *  never combine with other rows in a multi-selection. */
+  locked?: boolean;
 }
 
 export interface UseReorderDragListOptions {
