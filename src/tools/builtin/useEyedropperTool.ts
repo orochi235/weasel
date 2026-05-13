@@ -48,6 +48,14 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool<null> {
 
     const onEmptyClick: ActionFn<null> = () => none();
 
+    // Claim at pointerdown so a higher-priority slot pre-empts any
+    // active-slot tool whose own `pointer.onDown` always claims (notably
+    // useSelectTool). Without this, holding Alt to hotkey-engage the
+    // eyedropper still routes the gesture to the active tool, and the
+    // eyedropper's `pointer.onClick` never fires. The sampling itself
+    // still happens in the `click` route — pointerdown is just a gate.
+    const claimAtDown: ActionFn<null> = () => claim();
+
     // Resolve overrides. The spec says `null` => omit; defineTool reads
     // these directly into the returned Tool, and the registry treats
     // `undefined` as "no trigger." Convert null → undefined here.
@@ -67,10 +75,15 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool<null> {
         group: 'view',
       },
       initial: {
+        // Claim on every pointerdown so a higher-priority slot
+        // pre-empts the active tool. Empty is listed alongside '*'
+        // because the routing engine's '*' doesn't fall through to
+        // 'empty'.
+        pointerDown: {
+          '*':   claimAtDown,
+          empty: claimAtDown,
+        },
         click: {
-          rect:  pickFromNode,
-          text:  pickFromNode,
-          path:  pickFromNode,
           '*':   pickFromNode,
           empty: onEmptyClick,
         },
