@@ -958,12 +958,11 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           // double-mutate against the selection API.
           // pointerDownBody decides body vs. empty internally (via its own
           // pickEveryFn), so the kit's route key doesn't matter — we just
-          // need to be invoked on every pointerdown. The empty key is
-          // listed explicitly because the routing engine's '*' doesn't
-          // fall through to 'empty'.
+          // need to be invoked on every pointerdown. '*' now catches empty
+          // hits via the wildcard fall-through (T1 of the wildcard semantic
+          // flip), so a single entry covers every target kind.
           pointerDown: {
             '*': pointerDownBody,
-            empty: pointerDownBody,
           },
           drag: {
             // Any node click → move. Empty space → marquee. Consumers
@@ -999,12 +998,11 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           // raw PointerEvent now arrives as the second ActionFn parameter
           // (Phase 4.5 Task 3), so this route no longer needs an
           // imperative shim. Returns claim() so the dispatcher suppresses
-          // the regular onClick on this gesture. The empty key is listed
-          // alongside '*' because the routing engine's '*' doesn't fall
-          // through to 'empty'.
+          // the regular onClick on this gesture. '*' now catches empty
+          // hits via the wildcard fall-through, so a single entry covers
+          // every target kind.
           dblTap: {
             '*': forwardDblTap,
-            empty: forwardDblTap,
           },
         },
       });

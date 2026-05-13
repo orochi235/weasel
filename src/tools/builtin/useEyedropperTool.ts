@@ -76,12 +76,10 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool<null> {
       },
       initial: {
         // Claim on every pointerdown so a higher-priority slot
-        // pre-empts the active tool. Empty is listed alongside '*'
-        // because the routing engine's '*' doesn't fall through to
-        // 'empty'.
+        // pre-empts the active tool. '*' now catches empty hits via
+        // the wildcard fall-through, so a single entry suffices.
         pointerDown: {
-          '*':   claimAtDown,
-          empty: claimAtDown,
+          '*': claimAtDown,
         },
         click: {
           '*':   pickFromNode,

@@ -234,16 +234,13 @@ export function useCloneTool<T extends { id: string }, TPose = unknown>(
         overlay: () => overlay,
 
         // Route every key through the classifier — the tool runs its own
-        // pickBest regardless of `ctx.target.kind`. Same pattern useSelectTool
-        // adopted in Phase 4.5: classifier-style tools that own their hit
-        // test register at all node kinds plus 'empty', then dispatch
-        // internally.
+        // pickBest regardless of `ctx.target.kind`. '*' now catches every
+        // target kind including empty hits (the wildcard fall-through
+        // landed in T1 of the wildcard semantic flip), so a single entry
+        // covers what previously required per-kind enumeration plus an
+        // explicit 'empty'.
         pointerDown: {
-          rect:  onPointerDown,
-          text:  onPointerDown,
-          path:  onPointerDown,
-          '*':   onPointerDown,
-          empty: onPointerDown,
+          '*': onPointerDown,
         },
 
         // Drag onStart: replays the pendingId/pendingMods captured at

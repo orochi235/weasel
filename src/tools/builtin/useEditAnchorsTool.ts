@@ -88,29 +88,14 @@ export function useEditAnchorsTool<TNode extends { id: string }>(
         overlay: () => overlay,
 
         // pointerDown classifier — hand-rolled hit test via the
-        // controller. Routes for `'*'` (every non-empty target kind) and
-        // `'empty'` both run the same handler since the controller's
-        // hit-test is independent of `ctx.target`: a body click that
-        // doesn't land on an anchor should still clear the highlight,
-        // matching the pre-migration `pointer.onDown` semantics.
+        // controller. Routes for `'*'` cover every target kind including
+        // empty hits (via the wildcard fall-through introduced in T1 of
+        // the wildcard semantic flip). The controller's hit-test is
+        // independent of `ctx.target`: a body click that doesn't land on
+        // an anchor should still clear the highlight, matching the
+        // pre-migration `pointer.onDown` semantics.
         pointerDown: {
           '*': (ctx) => {
-            const c = ctrlRef.current;
-            const result = c.tryHit(ctx.worldX, ctx.worldY);
-            if (!result) {
-              c.clearSelection();
-              pendingStart = null;
-              return claim();
-            }
-            pendingStart = {
-              id: result.id,
-              hit: result.hit,
-              worldX: ctx.worldX,
-              worldY: ctx.worldY,
-            };
-            return claim();
-          },
-          empty: (ctx) => {
             const c = ctrlRef.current;
             const result = c.tryHit(ctx.worldX, ctx.worldY);
             if (!result) {
