@@ -441,6 +441,12 @@ export function App() {
   // which calls our `applyOps`. We delegate to history.applyOps (which
   // applies the ops AND pushes onto the undo stack).
   const applyOps = useCallback((ops: { apply: (a: unknown) => void; invert: () => { apply: (a: unknown) => void; invert: () => unknown } }[], label?: string) => {
+    // Debug-level trace of every history push. Enable in DevTools by setting
+    // the console's verbosity to include "Verbose" (Chrome) or "Debug"
+    // (Safari). Useful when an op shows up unexpectedly (e.g. extra entries
+    // pushed by a single gesture).
+    // eslint-disable-next-line no-console
+    console.debug('[history.applyOps]', label ?? 'Edit', 'opCount:', ops.length, 'opLabels:', ops.map((o) => (o as { label?: string }).label));
     historyRef.current?.applyOps(ops as never, label ?? 'Edit');
     publish();
   }, [publish]);
