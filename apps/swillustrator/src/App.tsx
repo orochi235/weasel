@@ -698,11 +698,19 @@ export function App() {
   }, [hostSize.width, hostSize.height, doc.size.width, doc.size.height]);
 
   // ---- Tools -----------------------------------------------------------
-  const select = useSelectTool<Obj, Pose>(adapter, {
-    pickEvery: (wx, wy) =>
+  // pickEvery is also wired into <Canvas> below so the dispatcher's
+  // getNodeAtPoint resolves to the same hit set. Without it, every
+  // pointer event's ctx.target is empty and the select tool's drag
+  // route fires the empty/marquee branch instead of move.
+  const pickEvery = useCallback(
+    (wx: number, wy: number): string[] =>
       itemsRef.current
         .filter((o) => pointInRotatedAabb(wx, wy, o))
         .map((o) => o.id),
+    [],
+  );
+  const select = useSelectTool<Obj, Pose>(adapter, {
+    pickEvery,
     boundsOf: (id) => {
       const o = itemsRef.current.find((x) => x.id === id);
       return o ? { x: o.x, y: o.y, width: o.width, height: o.height } : null;
@@ -1492,6 +1500,12 @@ export function App() {
               onViewChange={setView}
               tools={tools}
               selection={selection}
+              // Wired so the dispatcher's getNodeAtPoint resolves a node
+              // (and a real ctx.target.kind) on body clicks. Without
+              // this, the select tool's drag route table always picks
+              // the 'empty' branch (marquee) instead of the per-kind
+              // 'rect'/'text'/'path' branches that call move.beginAt.
+              pickEvery={pickEvery}
               layers={{
                 doc: { layer: pageLayer, before: 'scene' },
                 // Rects formerly rendered inline through `scene.drawOne` here;
