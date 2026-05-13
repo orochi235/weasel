@@ -27,6 +27,7 @@ function editingScratch(
       dirty: false,
       preConvert: null,
       original: { path: null as never, closed: false },
+      marquee: null,
     },
   };
 }
@@ -66,5 +67,13 @@ describe('renderPenEditOverlay', () => {
       view,
     );
     expect(withSelected.length).toBeGreaterThan(withoutSelected.length);
+  });
+
+  it('emits a rubber-band rect command when marquee is active', () => {
+    const scratch = editingScratch([[{ x: 0, y: 0 }]]);
+    scratch.edit!.marquee = { x0: 0, y0: 0, x1: 10, y1: 10, additive: false };
+    const cmds = renderPenEditOverlay(scratch, view);
+    const cmds2 = renderPenEditOverlay(editingScratch([[{ x: 0, y: 0 }]]), view);
+    expect(cmds.length).toBeGreaterThan(cmds2.length);
   });
 });

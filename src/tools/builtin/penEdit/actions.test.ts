@@ -18,6 +18,7 @@ function editingScratch(anchors: { x: number; y: number; inHandle?: { x: number;
       dirty: false,
       preConvert: null,
       original: { path: null as never, closed: false },
+      marquee: null,
     },
   };
 }

@@ -34,6 +34,7 @@ export function enterEditMode(scratch: PenScratch, args: EnterEditArgs): void {
       path: anchorsToPath(derived.anchors, closedArr),
       closed: closedArr[0] ?? false,
     },
+    marquee: null,
   };
 }
 

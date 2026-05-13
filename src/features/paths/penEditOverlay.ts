@@ -128,5 +128,23 @@ export function renderPenEditOverlay(scratch: PenScratch, view: View): DrawComma
     }
   }
 
+  // Marquee rubber-band (drag on empty in edit mode).
+  if (scratch.edit.marquee) {
+    const m = scratch.edit.marquee;
+    const [x0s, y0s] = w2s(Math.min(m.x0, m.x1), Math.min(m.y0, m.y1), view);
+    const [x1s, y1s] = w2s(Math.max(m.x0, m.x1), Math.max(m.y0, m.y1), view);
+    out.push({
+      kind: 'path',
+      path: {
+        kind: 'polygon',
+        commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
+        coords: new Float32Array([x0s, y0s, x1s, y0s, x1s, y1s, x0s, y1s]),
+        fillRule: 'nonzero',
+      },
+      fill: { fill: 'solid', color: 'rgba(52, 120, 246, 0.08)' },
+      stroke: { paint: { fill: 'solid', color: '#3478f6' }, width: 1 },
+    });
+  }
+
   return out;
 }

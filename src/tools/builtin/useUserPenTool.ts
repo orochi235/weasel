@@ -12,7 +12,7 @@ import { penEditHitOverride } from './penEdit/hitOverride';
 import { commitEditAsOp, exitEditMode, enterEditMode } from './penEdit/scratch';
 import {
   dragAnchor, dragHandle, selectAnchor, addAnchorOnSegment,
-  deleteAnchors, scissorsAtAnchor, nudgeSelectedAnchors,
+  deleteAnchors, scissorsAtAnchor, nudgeSelectedAnchors, marqueeSelect,
 } from './penEdit/actions';
 
 /**
@@ -50,6 +50,8 @@ export interface PenEditState {
    *  if the obj was parametric, this is the converted form). Used as the
    *  op's `from` for plain-path edits so undo restores the entry state. */
   original: { path: unknown; closed: boolean };
+  /** In-flight marquee rect (world-space). Null when not dragging. */
+  marquee: { x0: number; y0: number; x1: number; y1: number; additive: boolean } | null;
 }
 
 /** Mutable scratch shared across pen-tool gestures. The hook keeps a stable
@@ -587,6 +589,43 @@ export function useUserPenTool<TPose>(
               },
               onRelease: () => claim(),
               onCancel: () => {},
+            });
+          },
+          empty: (ctx) => {
+            // Create mode: delegate to the standard create-mode drag path.
+            if (ctx.scratch.mode !== 'edit' || !ctx.scratch.edit) return createModeDrag(ctx);
+            // Edit mode: Begin marquee. Record start in world coords.
+            ctx.scratch.edit.marquee = {
+              x0: ctx.worldX, y0: ctx.worldY,
+              x1: ctx.worldX, y1: ctx.worldY,
+              additive: ctx.modifiers.shift,
+            };
+            forceRenderRef.current();
+            return begin<PenScratch>({
+              scratch: ctx.scratch,
+              onMove: (c) => {
+                if (!c.scratch.edit?.marquee) return none();
+                c.scratch.edit.marquee.x1 = c.worldX;
+                c.scratch.edit.marquee.y1 = c.worldY;
+                forceRenderRef.current();
+                return claim();
+              },
+              onRelease: (c) => {
+                const m = c.scratch.edit?.marquee;
+                if (!m || !c.scratch.edit) return claim();
+                const x = Math.min(m.x0, m.x1);
+                const y = Math.min(m.y0, m.y1);
+                const width = Math.abs(m.x1 - m.x0);
+                const height = Math.abs(m.y1 - m.y0);
+                marqueeSelect(c.scratch, { x, y, width, height, additive: m.additive });
+                c.scratch.edit.marquee = null;
+                forceRenderRef.current();
+                return claim();
+              },
+              onCancel: (c) => {
+                if (c.scratch.edit) c.scratch.edit.marquee = null;
+                forceRenderRef.current();
+              },
             });
           },
           handle: (ctx) => {
