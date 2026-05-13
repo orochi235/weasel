@@ -834,11 +834,23 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
       // surface.
       if ((options.bringToFrontOnSelect ?? true) && !isExtend) {
         const reorderable = adapter as unknown as {
+          getParent?: (id: string) => string | null;
           getChildren?: (parentId: string | null) => string[];
           setChildOrder?: (parentId: string | null, ids: string[]) => void;
         };
         if (reorderable.getChildren && reorderable.setChildOrder) {
-          dispatchApplyBatch(adapter, [createReorderOp({ ids: [top], direction: 'front' })], 'Bring to front');
+          // Skip the op when the hit is already at the top of its parent's
+          // child order. Otherwise every selection click pushes a no-op
+          // entry onto the undo stack, which clutters history and confuses
+          // users ("undo did nothing visible"). The reorder op itself is
+          // unconditional by design — the no-op check belongs here at the
+          // dispatch site.
+          const parentId = reorderable.getParent ? reorderable.getParent(top) : null;
+          const children = reorderable.getChildren(parentId);
+          const alreadyAtFront = children.length > 0 && children[children.length - 1] === top;
+          if (!alreadyAtFront) {
+            dispatchApplyBatch(adapter, [createReorderOp({ ids: [top], direction: 'front' })], 'Bring to front');
+          }
         }
       }
       // If the user clicked something already selected, drag the whole
