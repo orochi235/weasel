@@ -46,6 +46,7 @@ import {
   translatePath,
   createDeleteOp,
   createSetTextOp,
+  createTransformOp,
   useTextEdit,
   pointInTextPose,
   caretIndexAt,
@@ -57,6 +58,7 @@ import {
   type Group,
   type History,
   type NodeId,
+  type Op,
   type Path,
   type PolygonPath,
   type RenderLayer,
@@ -1244,6 +1246,33 @@ export function App() {
     updateSelected((o) => (o.kind === 'rect' || o.kind === 'path') ? { ...o, strokeWidth: w } : o);
   };
 
+  // Summary of rotation across the current selection (in degrees) for the
+  // properties panel. Returns null when nothing is selected so the panel
+  // can hide the row entirely.
+  const rotationDegSummary: { value: number; mixed: boolean } | null = useMemo(() => {
+    if (selectedItems.length === 0) return null;
+    const first = selectedItems[0].rotation ?? 0;
+    const mixed = selectedItems.some((o) => (o.rotation ?? 0) !== first);
+    return { value: Math.round((first * 180) / Math.PI), mixed };
+  }, [selectedItems]);
+
+  // Apply an absolute rotation (in degrees) to every selected object as a
+  // single undoable batch of transform ops.
+  const applyRotationToSelection = (degrees: number): void => {
+    const radians = (degrees * Math.PI) / 180;
+    const ids = [...selection.current];
+    if (ids.length === 0) return;
+    const ops: Op[] = [];
+    for (const id of ids) {
+      const o = itemsRef.current.find((x) => x.id === id);
+      if (!o) continue;
+      const from: Pose = { x: o.x, y: o.y, width: o.width, height: o.height, rotation: o.rotation };
+      const to: Pose = { ...from, rotation: radians };
+      ops.push(createTransformOp<Pose>({ id, from, to, label: 'Set rotation' }));
+    }
+    if (ops.length > 0) applyOps(ops, 'Set rotation');
+  };
+
   // Read primary's current values for the panel inputs.
   const primaryFill = primary
     ? (primary.kind === 'text'
@@ -1517,6 +1546,8 @@ export function App() {
           applyFillToSelection={applyFillToSelection}
           applyStrokeToSelection={applyStrokeToSelection}
           applyStrokeWidthToSelection={applyStrokeWidthToSelection}
+          rotationDeg={rotationDegSummary}
+          applyRotationToSelection={applyRotationToSelection}
           deselect={() => selection.clear()}
           deleteSelection={deleteSelection}
           layerItems={layerItems}
@@ -1584,6 +1615,8 @@ interface RightSidebarProps {
   applyFillToSelection: (color: string) => void;
   applyStrokeToSelection: (color: string) => void;
   applyStrokeWidthToSelection: (w: number) => void;
+  rotationDeg: { value: number; mixed: boolean } | null;
+  applyRotationToSelection: (degrees: number) => void;
   deselect: () => void;
   deleteSelection: () => NodeId[];
   layerItems: LayerListItem[];
@@ -1633,6 +1666,17 @@ function RightSidebar(p: RightSidebarProps) {
           <PropertyRow label="Size">
             <PropertyAxisInput axis="W" value={Math.round(primary.width)} onChange={(v) => p.updateSelected((o) => ({ ...o, width: Math.max(1, v) }))} min={1} />
             <PropertyAxisInput axis="H" value={Math.round(primary.height)} onChange={(v) => p.updateSelected((o) => ({ ...o, height: Math.max(1, v) }))} min={1} />
+          </PropertyRow>
+          <PropertyRow label="Rotation">
+            <PropertyAxisInput
+              axis="°"
+              value={p.rotationDeg?.value ?? 0}
+              onChange={(v) => p.applyRotationToSelection(v)}
+              step={1}
+            />
+            {p.rotationDeg?.mixed && (
+              <PropertyReadOnly span={6}>Multiple</PropertyReadOnly>
+            )}
           </PropertyRow>
           <PropertyRow label="Fill">
             <PropertyColorInput value={p.primaryFill} onChange={p.applyFillToSelection} />

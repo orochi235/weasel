@@ -25,3 +25,29 @@ describe('rotation round-trip via setPose', () => {
     expect(next.rotation).toBeCloseTo(1);
   });
 });
+
+describe('rotation summary for selection', () => {
+  // Replicate the summary logic in a pure helper to keep the test focused.
+  function summarize(items: Array<{ rotation?: number }>): { value: number; mixed: boolean } | null {
+    if (items.length === 0) return null;
+    const first = items[0].rotation ?? 0;
+    const mixed = items.some((o) => (o.rotation ?? 0) !== first);
+    return { value: Math.round((first * 180) / Math.PI), mixed };
+  }
+
+  it('returns null for empty selection', () => {
+    expect(summarize([])).toBeNull();
+  });
+
+  it('reports uniform rotation without mixed flag', () => {
+    expect(summarize([{ rotation: Math.PI / 4 }, { rotation: Math.PI / 4 }])).toEqual({ value: 45, mixed: false });
+  });
+
+  it('reports mixed when any rotation differs', () => {
+    expect(summarize([{ rotation: Math.PI / 4 }, { rotation: Math.PI / 2 }])).toEqual({ value: 45, mixed: true });
+  });
+
+  it('treats undefined rotation as 0', () => {
+    expect(summarize([{}, { rotation: 0 }])).toEqual({ value: 0, mixed: false });
+  });
+});
