@@ -115,7 +115,7 @@ import { createGroupAdapter } from './groupMembership';
 import { parseSvg, serializeSvg } from '@orochi235/weasel-svg';
 import { KindIcon, PageIcon } from './kindIcons';
 import { Toasts, type Toast } from './Toasts';
-import { applyPoseToObj, type Obj, type Pose, type TextObj, type PathObj } from './poseUpdate';
+import { applyPoseToObj, type Obj, type Pose, type TextObj, type PathObj, type ToolKind, type PathParams } from './poseUpdate';
 
 interface View { x: number; y: number; scale: number }
 
@@ -887,7 +887,7 @@ export function App() {
       const b = boundsOfPath(path);
       const id = `p${nextId.current++}`;
       return {
-        id, kind: 'path',
+        id, tool: 'pen',
         x: b.x, y: b.y, width: b.width, height: b.height,
         path, closed,
         fill: fillRef.current, stroke: strokeRef.current, strokeWidth: strokeWidthRef.current,
@@ -911,48 +911,66 @@ export function App() {
   // selections apply immediately.
 
   /** Wrap a freshly-built path as a `PathObj` with the current style. */
-  const pathToObj = useCallback((path: PolygonPath, closed: boolean): PathObj => {
+  const pathToObj = useCallback((
+    path: PolygonPath,
+    closed: boolean,
+    tool: Exclude<ToolKind, 'text'>,
+    params?: PathParams,
+  ): PathObj => {
     const b = boundsOfPath(path);
     return {
       id: `p${nextId.current++}`,
-      kind: 'path',
+      tool,
       x: b.x, y: b.y, width: b.width, height: b.height,
       path, closed,
       fill: fillRef.current,
       stroke: strokeRef.current,
       strokeWidth: strokeWidthRef.current,
+      ...(params ? { params } : {}),
     };
   }, []);
 
   const ellipse = useEllipseTool<PathObj>({
     minBounds: { width: 2, height: 2 },
-    create: (bounds) => pathToObj(ellipsePath(bounds), true),
+    create: (bounds) => pathToObj(ellipsePath(bounds), true, 'ellipse'),
   });
 
   const line = useLineTool<PathObj>({
     minLength: 2,
-    create: (a, b) => pathToObj(linePath(a, b), false),
+    create: (a, b) => pathToObj(linePath(a, b), false, 'line'),
   });
 
   const polygon = usePolygonTool<PathObj>({
     minRadius: 2,
     sides: 6,
     create: (center, radius, rotation, sides) =>
-      pathToObj(regularPolygonPath(center, radius, rotation, sides), true),
+      pathToObj(
+        regularPolygonPath(center, radius, rotation, sides),
+        true,
+        'polygon',
+        { sides },
+      ),
   });
 
   const star = useStarTool<PathObj>({
     minRadius: 2,
     points: 5,
     innerRatio: 0.5,
-    create: (center, outer, inner, rotation, points) =>
-      pathToObj(starPath(center, outer, inner, rotation, points), true),
+    create: (center, outer, inner, rotation, points) => {
+      const ratio = outer > 0 ? inner / outer : 0.5;
+      return pathToObj(
+        starPath(center, outer, inner, rotation, points),
+        true,
+        'star',
+        { points, ratio },
+      );
+    },
   });
 
   const pencil = usePencilTool<PathObj>({
     tolerance: 1.5,
     closeThreshold: 8,
-    create: (path, { closed }) => pathToObj(path, closed),
+    create: (path, { closed }) => pathToObj(path, closed, 'pencil'),
   });
 
   // Lasso selects shapes whose AABB intersects the lasso polygon (via
