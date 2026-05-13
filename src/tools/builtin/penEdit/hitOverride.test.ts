@@ -81,3 +81,34 @@ describe('penEditHitOverride', () => {
     expect(r).toBeNull();
   });
 });
+
+describe('penEditHitOverride: segments', () => {
+  it('returns segment hit when pointer is near a straight segment', () => {
+    // Two anchors, no handles → straight line.
+    const scratch = editingScratch([[{ x: 0, y: 0 }, { x: 100, y: 0 }]]);
+    const r = penEditHitOverride({
+      worldX: 50, worldY: 1, scratch, view, modifiers: {} as never,
+    });
+    expect(r).toEqual({ target: 'segment', extra: { sub: 0, segIdx: 0, t: expect.any(Number) } });
+  });
+
+  it('returns segment hit when pointer is near a cubic segment', () => {
+    const scratch = editingScratch([[
+      { x: 0, y: 0, outHandle: { x: 33, y: 100 } },
+      { x: 100, y: 0, inHandle: { x: 66, y: 100 } },
+    ]]);
+    // Midpoint of this curve is at (50, 75). Pointer just above midpoint.
+    const r = penEditHitOverride({
+      worldX: 50, worldY: 73, scratch, view, modifiers: {} as never,
+    });
+    expect(r?.target).toBe('segment');
+  });
+
+  it('does not hit when pointer is far from the segment', () => {
+    const scratch = editingScratch([[{ x: 0, y: 0 }, { x: 100, y: 0 }]]);
+    const r = penEditHitOverride({
+      worldX: 50, worldY: 50, scratch, view, modifiers: {} as never,
+    });
+    expect(r).toBeNull();
+  });
+});
