@@ -41,9 +41,7 @@ import {
   useWheelPanTool,
   useWheelZoomTool,
   useKeyboardZoomTool,
-  createTextLayer,
   createPenPreviewLayer,
-  createPathLayer,
   scalePathToBounds,
   translatePath,
   createDeleteOp,
@@ -71,6 +69,9 @@ import {
 // without adding a new path mapping.
 import { lockAspectWithModifier } from '../../../src/interactions/gestures/resize/behaviors/lockAspect';
 import type { DrawCommand } from '@orochi235/weasel/renderer';
+import { viewToMat3 } from '@orochi235/weasel/renderer';
+import { resolveTextStyle, toRuns, resolveRuns } from '@orochi235/weasel';
+import { wrapWithRotation } from './rotationRender';
 import {
   CommandPalette,
   useCommandPaletteShortcut,
@@ -694,6 +695,11 @@ export function App() {
     },
     drawGhost: (obj, pose): DrawCommand[] => {
       if (!obj) return [];
+      // Preserve rotation through the ghost path. The select tool's pose
+      // type isn't required to surface `rotation`; if it's missing, fall
+      // back to the committed object's rotation so a rotated shape's
+      // ghost rotates too.
+      const fullPose: Pose = { ...pose, rotation: (pose as Pose).rotation ?? (obj as Obj).rotation };
       if (obj.kind === 'rect') {
         const cmds: DrawCommand[] = [{
           kind: 'path',
@@ -707,13 +713,13 @@ export function App() {
             stroke: { paint: { color: obj.stroke }, width: obj.strokeWidth },
           });
         }
-        return cmds;
+        return wrapWithRotation(cmds, fullPose);
       }
-      return [{
+      return wrapWithRotation([{
         kind: 'path',
         path: { kind: 'rect', x: pose.x + 0.5, y: pose.y + 0.5, width: pose.width, height: pose.height },
         stroke: { paint: { color: '#888' }, width: 1, dash: [3, 3] },
-      }];
+      }], fullPose);
     },
     getNode: (id) => itemsRef.current.find((o) => o.id === id) ?? null,
     // Shift-drag a resize handle for aspect-locked scale; matches the
@@ -934,18 +940,19 @@ export function App() {
   const clone = useCloneTool<Obj, Pose>(adapter, {
     behaviors: [cloneByAltDrag()],
     drawOne: (obj, pose): DrawCommand[] => {
+      const fullPose: Pose = { ...pose, rotation: (pose as Pose).rotation ?? (obj as Obj).rotation };
       if (obj.kind === 'rect') {
-        return [{
+        return wrapWithRotation([{
           kind: 'path',
           path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
           fill: { color: obj.fill },
-        }];
+        }], fullPose);
       }
-      return [{
+      return wrapWithRotation([{
         kind: 'path',
         path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
         stroke: { paint: { color: '#888' }, width: 1, dash: [3, 3] },
-      }];
+      }], fullPose);
     },
     cloneSelection: true,
   });
@@ -1074,56 +1081,118 @@ export function App() {
     [doc.size],
   );
 
-  const textLayer: RenderLayer<unknown> = createTextLayer<TextObj>({
-    getTexts: () => itemsRef.current.filter((o): o is TextObj => o.kind === 'text'),
-    getPose: (n) => {
-      // Consult the active tool's previewPose so move/resize gestures
-      // show the text rendered at its in-flight pose (not the committed
-      // one) while a drag is in progress.
-      const tool = tools.registry[tools.hotkeyEngaged ?? tools.active];
-      const preview = tool?.previewPose?.(n.id) as Pose | undefined;
-      const pose = preview ?? { x: n.x, y: n.y, width: n.width, height: n.height };
-      // For text, mid-drag we also need to scale fontSize from preview height
-      // so the glyphs visibly resize with the box (mirrors the setPose rule).
-      const style = pose.height !== n.height
-        ? { ...(n.style ?? {}), fontSize: Math.max(8, Math.round(pose.height * 0.7)) }
-        : n.style;
-      return { ...pose, text: n.text, style };
+  // Hand-rolled text layer so we can wrap each TextObj's text command in a
+  // rotation transform group when `rotation !== 0`. The kit's createTextLayer
+  // wraps the entire layer in one transform — we need per-node rotation
+  // around each text box's own AABB center.
+  const textLayer: RenderLayer<unknown> = useMemo(() => ({
+    id: 'text',
+    label: 'Text',
+    draw: (_data, view) => {
+      const children: DrawCommand[] = [];
+      for (const n of itemsRef.current.filter((o): o is TextObj => o.kind === 'text')) {
+        // Hide the currently-editing node — the contenteditable overlay draws it.
+        if (textEdit.isEditing(n.id)) continue;
+        const tool = tools.registry[tools.hotkeyEngaged ?? tools.active];
+        const preview = tool?.previewPose?.(n.id) as Pose | undefined;
+        const pose: Pose = preview
+          ? { x: preview.x, y: preview.y, width: preview.width, height: preview.height, rotation: preview.rotation ?? n.rotation }
+          : { x: n.x, y: n.y, width: n.width, height: n.height, rotation: n.rotation };
+        // For text, mid-drag we also need to scale fontSize from preview height
+        // so the glyphs visibly resize with the box (mirrors the setPose rule).
+        const style = pose.height !== n.height
+          ? { ...(n.style ?? {}), fontSize: Math.max(8, Math.round(pose.height * 0.7)) }
+          : n.style;
+        const resolved = resolveTextStyle(style);
+        const styledRuns = toRuns(n.text);
+        const runs = resolveRuns(styledRuns, resolved);
+        const textCmd: DrawCommand = {
+          kind: 'text',
+          x: pose.x, y: pose.y,
+          runs,
+          maxWidth: pose.width,
+          align: resolved.align,
+          style: style ?? {},
+        };
+        // Clip glyphs to the declared bounds so an oversized string doesn't
+        // bleed past its box.
+        const clipped: DrawCommand = {
+          kind: 'group',
+          clip: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
+          children: [textCmd],
+        };
+        for (const c of wrapWithRotation([clipped], pose)) children.push(c);
+      }
+      return [{ kind: 'group', transform: viewToMat3(view), children }];
     },
-    // Hide the currently-editing node — the contenteditable overlay draws it.
-    isHidden: (n) => textEdit.isEditing(n.id),
-    // Clip glyphs to the declared bounds so an oversized string doesn't
-    // bleed past its box.
-    clipToBounds: true,
-  });
+  }), [tools, textEdit]);
 
-  const pathLayer: RenderLayer<unknown> = createPathLayer<PathObj>({
+  // Hand-rolled path layer so we can wrap each PathObj's draw commands in a
+  // rotation transform group when `rotation !== 0`. The kit's createPathLayer
+  // wraps the entire layer in one transform — we need per-node rotation
+  // around each shape's own AABB center, so we build the layer manually.
+  // Hand-rolled rect layer. Swillustrator previously rendered committed
+  // rectangles inline via the `scene.drawOne` integration in the Canvas
+  // layers prop. That call site can't insert a rotation transform around
+  // individual shapes, so we move rect rendering up into its own layer and
+  // wrap each rect's commands in a rotation group per its pose.
+  const rectLayer: RenderLayer<unknown> = useMemo(() => ({
+    id: 'rects',
+    label: 'Rects',
+    draw: (_data, view) => {
+      const children: DrawCommand[] = [];
+      for (const o of itemsRef.current.filter((x): x is RectObj => x.kind === 'rect')) {
+        const tool = tools.registry[tools.hotkeyEngaged ?? tools.active];
+        const preview = tool?.previewPose?.(o.id) as Pose | undefined;
+        const pose: Pose = preview
+          ? { x: preview.x, y: preview.y, width: preview.width, height: preview.height, rotation: preview.rotation ?? o.rotation }
+          : { x: o.x, y: o.y, width: o.width, height: o.height, rotation: o.rotation };
+        const cmds: DrawCommand[] = [{
+          kind: 'path',
+          path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
+          fill: { fill: 'solid', color: o.fill },
+        }];
+        if (o.strokeWidth > 0) {
+          cmds.push({
+            kind: 'path',
+            path: { kind: 'rect', x: pose.x + 0.5, y: pose.y + 0.5, width: pose.width, height: pose.height },
+            stroke: { paint: { fill: 'solid', color: o.stroke }, width: o.strokeWidth },
+          });
+        }
+        for (const c of wrapWithRotation(cmds, pose)) children.push(c);
+      }
+      return [{ kind: 'group', transform: viewToMat3(view), children }];
+    },
+  }), [tools]);
+
+  const pathLayer: RenderLayer<unknown> = useMemo(() => ({
     id: 'paths',
     label: 'Paths',
-    getNodes: () => itemsRef.current.filter((o): o is PathObj => o.kind === 'path'),
-    getPath: (n) => {
-      // Consult the active tool's previewPose so a drag/move/resize shows
-      // the path at its in-flight pose. Pure translation takes the fast
-      // path; any dimension change goes through scalePathToBounds so the
-      // curve deforms with the handles in real time.
-      const tool = tools.registry[tools.hotkeyEngaged ?? tools.active];
-      const preview = tool?.previewPose?.(n.id) as Pose | undefined;
-      if (!preview) return n.path;
-      const scaled = preview.width !== n.width || preview.height !== n.height;
-      if (scaled) {
-        return scalePathToBounds(n.path, {
-          kind: 'rect',
-          x: preview.x, y: preview.y,
-          width: preview.width, height: preview.height,
-        });
+    draw: (_data, view) => {
+      const children: DrawCommand[] = [];
+      for (const n of itemsRef.current.filter((o): o is PathObj => o.kind === 'path')) {
+        const tool = tools.registry[tools.hotkeyEngaged ?? tools.active];
+        const preview = tool?.previewPose?.(n.id) as Pose | undefined;
+        const liveRotation = preview?.rotation ?? n.rotation;
+        const scaled = preview && (preview.width !== n.width || preview.height !== n.height);
+        const path = !preview
+          ? n.path
+          : scaled
+            ? scalePathToBounds(n.path, { kind: 'rect', x: preview.x, y: preview.y, width: preview.width, height: preview.height }) as PolygonPath
+            : (preview.x === n.x && preview.y === n.y)
+              ? n.path
+              : translatePath(n.path, preview.x - n.x, preview.y - n.y) as PolygonPath;
+        const pose: Pose = preview
+          ? { x: preview.x, y: preview.y, width: preview.width, height: preview.height, rotation: liveRotation }
+          : { x: n.x, y: n.y, width: n.width, height: n.height, rotation: n.rotation };
+        const cmds: DrawCommand[] = [];
+        if (n.closed) cmds.push({ kind: 'path', path, fill: { fill: 'solid', color: n.fill, opacity: 0.6 } });
+        if (n.strokeWidth > 0) cmds.push({ kind: 'path', path, stroke: { paint: { fill: 'solid', color: n.stroke }, width: n.strokeWidth } });
+        for (const c of wrapWithRotation(cmds, pose)) children.push(c);
       }
-      const dx = preview.x - n.x;
-      const dy = preview.y - n.y;
-      return dx === 0 && dy === 0 ? n.path : translatePath(n.path, dx, dy);
+      return [{ kind: 'group', transform: viewToMat3(view), children }];
     },
-    getFill: (n) => n.closed ? { fill: 'solid', color: n.fill, alpha: 0.6 } : null,
-    getStroke: (n) => ({ paint: { fill: 'solid', color: n.stroke }, width: n.strokeWidth }),
-  });
+  }), [tools]);
 
   const penPreview: RenderLayer<unknown> = useMemo(
     () => createPenPreviewLayer({ penTool: pen }),
@@ -1386,25 +1455,14 @@ export function App() {
               selection={selection}
               layers={{
                 doc: { layer: pageLayer, before: 'scene' },
-                scene: {
-                  drawOne: (_obj, pose): DrawCommand[] => {
-                    const o = pose as unknown as Obj;
-                    if (o.kind !== 'rect') return [];
-                    const cmds: DrawCommand[] = [{
-                      kind: 'path',
-                      path: { kind: 'rect', x: o.x, y: o.y, width: o.width, height: o.height },
-                      fill: { color: o.fill },
-                    }];
-                    if (o.strokeWidth > 0) {
-                      cmds.push({
-                        kind: 'path',
-                        path: { kind: 'rect', x: o.x + 0.5, y: o.y + 0.5, width: o.width, height: o.height },
-                        stroke: { paint: { color: o.stroke }, width: o.strokeWidth },
-                      });
-                    }
-                    return cmds;
-                  },
-                },
+                // Rects formerly rendered inline through `scene.drawOne` here;
+                // they now have their own `rects` layer (above `paths`) so each
+                // rect can be wrapped in a per-shape rotation transform group.
+                // The `scene` slot still exists in the kit to host generic
+                // ghost rendering hooks — we don't need any rect-specific
+                // drawOne here, since rectLayer covers committed rects and
+                // select-tool ghosts wrap via `drawGhost`.
+                rects: { layer: rectLayer, before: 'selectionOverlay' },
                 text: { layer: textLayer, before: 'selectionOverlay' },
                 paths: { layer: pathLayer, before: 'selectionOverlay' },
                 penPreview: { layer: penPreview, before: 'selectionOverlay' },
