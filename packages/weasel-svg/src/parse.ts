@@ -590,11 +590,14 @@ function readTextStyle(
   if (anchor === 'start') style.align = 'left';
   else if (anchor === 'middle') style.align = 'center';
   else if (anchor === 'end') style.align = 'right';
-  const lh = el.getAttribute('data-weasel-line-height');
-  if (lh != null) {
-    const n = parseFloat(lh);
-    if (Number.isFinite(n)) style.lineHeight = n;
-  }
+  // Note: `lineHeight` is no longer read from a `data-weasel-line-height`
+  // attribute. Swillustrator carries it through the generic namespace bag
+  // as `meta.swill.attrs['line-height']`; svgInterop lifts it into / out of
+  // `TextStyle.lineHeight` at the bridge layer. From weasel-svg's POV the
+  // value is just an opaque string in `meta`.
+  // Edit-overlay-only chrome (`caretColor`, `selectionBackground`,
+  // `selectionColor`) is intentionally not persisted — those are UI state,
+  // not document content.
   const fillAttr = el.getAttribute('fill');
   if (fillAttr) {
     const parsed = parsePaintAttr(fillAttr);

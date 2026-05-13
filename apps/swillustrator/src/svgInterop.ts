@@ -109,7 +109,17 @@ export function objToSvgNode(o: Obj): SvgNode {
       height: o.height,
       text: o.text,
     };
-    if (o.style) node.style = o.style;
+    if (o.style) {
+      // weasel-svg does not model `lineHeight` (it has no clean SVG-native
+      // attribute). Lift it into the namespaced meta bag as
+      // `swill:line-height="<n>"` so it round-trips losslessly; pass the
+      // remaining style fields through verbatim.
+      const { lineHeight, ...rest } = o.style;
+      if (Object.keys(rest).length > 0) node.style = rest as TextStyle;
+      if (lineHeight != null) {
+        node.meta = { swill: { attrs: { 'line-height': String(lineHeight) } } };
+      }
+    }
     return node;
   }
   if (o.kind === 'rect') {
@@ -229,7 +239,15 @@ export function svgNodesToObjsWithGroups(
         x: n.x, y: n.y, width: n.width, height: n.height,
         text: n.text,
       };
-      if (n.style) o.style = n.style;
+      // Reconstitute the full TextStyle from weasel-svg's style + the
+      // namespaced lineHeight from the meta bag. weasel-svg doesn't model
+      // `lineHeight` so it rides on `meta.swill.attrs['line-height']`.
+      const lhStr = n.meta?.swill?.attrs?.['line-height'];
+      const lh = lhStr != null ? parseFloat(lhStr) : undefined;
+      if (n.style || (lh != null && Number.isFinite(lh))) {
+        o.style = { ...(n.style ?? {}) };
+        if (lh != null && Number.isFinite(lh)) o.style.lineHeight = lh;
+      }
       items.push(o);
       return o.id;
     }

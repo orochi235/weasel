@@ -264,9 +264,11 @@ function textXml(node: SvgTextNode, registry: GradientRegistry, namespaces: Reco
     const anchor = style.align === 'center' ? 'middle' : 'end';
     attrs.push(`text-anchor="${anchor}"`);
   }
-  if (style?.lineHeight != null) {
-    attrs.push(`data-weasel-line-height="${trimNumber(style.lineHeight)}"`);
-  }
+  // Note: `lineHeight` is NOT emitted here. The bridge layer (svgInterop)
+  // lifts it into `meta.swill.attrs['line-height']`, which `metaAttrsXml`
+  // below emits as `swill:line-height="..."`. There is no compat write of
+  // `data-weasel-line-height` — per the SVG-native plan's Migration section,
+  // no installed base exists to compat against.
   if (style?.fill) {
     if ('color' in style.fill) {
       attrs.push(`fill="${style.fill.color}"`);

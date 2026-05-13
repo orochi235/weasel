@@ -184,6 +184,45 @@ describe('round-trip', () => {
     expect(b).toEqual(a);
   });
 
+  it('text style: font-size/family/weight/italic/align + fill round-trip', () => {
+    const namespaces = { swill: 'https://swillustrator.app/svg-ext' };
+    const first = parseSvg(F.TEXT_STYLE_FULL_SVG, { namespaces });
+    expect(first.warnings).toEqual([]);
+    expect(first.nodes).toHaveLength(1);
+    const t = first.nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.style?.fontSize).toBe(18);
+    expect(t.style?.fontFamily).toBe('Inter, sans-serif');
+    expect(t.style?.fontWeight).toBe(700);
+    expect(t.style?.fontStyle).toBe('italic');
+    expect(t.style?.align).toBe('center');
+    expect(t.style?.fill).toEqual({ fill: 'solid', color: '#b03030' });
+    // lineHeight rides on meta.swill.attrs['line-height'] — interpreted by
+    // svgInterop, not by weasel-svg. From weasel-svg's perspective the
+    // value is just a string in the meta bag.
+    expect(t.meta?.swill?.attrs?.['line-height']).toBe('1.4');
+
+    const out = serializeSvg(first.nodes, {
+      viewBox: { x: 0, y: 0, width: 200, height: 100 },
+      namespaces,
+    });
+    expect(out).toContain('font-size="18"');
+    expect(out).toContain('font-family="Inter, sans-serif"');
+    expect(out).toContain('font-weight="700"');
+    expect(out).toContain('font-style="italic"');
+    expect(out).toContain('text-anchor="middle"');
+    expect(out).toContain('swill:line-height="1.4"');
+    expect(out).toContain('fill="#b03030"');
+    // Legacy attribute is gone — no compat-write either.
+    expect(out).not.toContain('data-weasel-line-height');
+
+    const second = parseSvg(out, { namespaces });
+    const t2 = second.nodes[0];
+    if (t2.kind !== 'text') throw new Error('expected text');
+    expect(t2.style).toEqual(t.style);
+    expect(t2.meta?.swill?.attrs?.['line-height']).toBe('1.4');
+  });
+
   it('generic namespace pass-through: two declared namespaces stay isolated', () => {
     const namespaces = {
       foo: 'https://example.com/foo',

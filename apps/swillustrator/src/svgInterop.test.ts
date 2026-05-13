@@ -240,6 +240,39 @@ describe('objsToSvgNodes — groups emitted', () => {
     expect(inner.meta?.swill?.attrs?.['group-id']).toBe('inner');
   });
 
+});
+
+describe('text style round-trip via the bridge', () => {
+  it('emits and reads back every persisted TextStyle field including lineHeight', () => {
+    const text = {
+      id: 't1', kind: 'text' as const,
+      x: 0, y: 0, width: 100, height: 20, text: 'Hi',
+      style: {
+        fontSize: 18,
+        fontFamily: 'Inter, sans-serif',
+        fontWeight: 700,
+        fontStyle: 'italic' as const,
+        align: 'center' as const,
+        lineHeight: 1.4,
+        fill: { fill: 'solid' as const, color: '#b03030' },
+      },
+    };
+    const node = objToSvgNode(text as never);
+    expect(node.kind).toBe('text');
+    if (node.kind !== 'text') throw new Error('expected text');
+    // lineHeight rides in meta, not style.
+    expect(node.style?.lineHeight).toBeUndefined();
+    expect(node.meta?.swill?.attrs?.['line-height']).toBe('1.4');
+
+    const back = svgNodesToObjs([node], ids());
+    expect(back).toHaveLength(1);
+    const t = back[0] as { kind: 'text'; style?: { lineHeight?: number } };
+    expect(t.style?.lineHeight).toBe(1.4);
+    expect(t.style).toEqual(text.style);
+  });
+});
+
+describe('objsToSvgNodes — multi-group rejection', () => {
   it('rejects multi-group membership at the persistence boundary', () => {
     const items = [
       { id: 'a', kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10, fill: '#fff', stroke: '#000', strokeWidth: 0 },

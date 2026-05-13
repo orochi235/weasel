@@ -96,6 +96,10 @@ export const SWILLUSTRATOR_PAPERS_SVG = `<svg xmlns="http://www.w3.org/2000/svg"
   <path d="M 10 10 L 50 10 L 50 50 L 10 50 Z" fill="#000000" stroke="none"/>
 </svg>`;
 
+export const TEXT_STYLE_FULL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:swill="https://swillustrator.app/svg-ext" viewBox="0 0 200 100">
+  <text x="10" y="20" dominant-baseline="text-before-edge" data-weasel-width="180" data-weasel-height="60" font-size="18" font-family="Inter, sans-serif" font-weight="700" font-style="italic" text-anchor="middle" fill="#b03030" swill:line-height="1.4">Styled</text>
+</svg>`;
+
 export const SWILLUSTRATOR_GROUPS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:swill="https://swillustrator.app/svg-ext" viewBox="0 0 400 400">
   <g swill:group-id="g1">
     <path d="M 10 10 L 60 10 L 60 60 L 10 60 Z" fill="#ff0000" stroke="none"/>
