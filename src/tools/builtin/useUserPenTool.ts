@@ -1,13 +1,19 @@
 import { useMemo, useReducer, useRef, createElement } from 'react';
 import { defineTool, begin, claim, none } from '../routing';
+import type { Result } from '../routing';
 import type { Tool, ToolCtx } from '../types';
+import type { Op } from 'core/ops/types';
 import { PenIcon } from '../../icons';
 import { PathBuilder } from 'features/paths/builder';
 import type { PolygonPath } from 'features/paths/types';
 import type { PenAnchor as KitPenAnchor } from 'features/paths/anchors';
 import { constrainTo45 } from '../../util/constrainTo45';
 import { penEditHitOverride } from './penEdit/hitOverride';
-import { enterEditMode } from './penEdit/scratch';
+import { commitEditAsOp, exitEditMode, enterEditMode } from './penEdit/scratch';
+import {
+  dragAnchor, dragHandle, selectAnchor, addAnchorOnSegment,
+  deleteAnchors, scissorsAtAnchor, nudgeSelectedAnchors,
+} from './penEdit/actions';
 
 /**
  * In-progress pen anchor. `outHandle` is set when the anchor was placed via
@@ -78,6 +84,9 @@ export interface UseUserPenToolOptions<TPose> {
   adapter: {
     addNode: (pose: TPose) => string;
     setSelection: (ids: string[]) => void;
+    /** Apply an op batch (with optional history label). Required for pen-edit;
+     *  safe to omit if the consumer only uses create mode. */
+    applyOps?: (ops: Op[], label: string) => void;
   };
   /** Auto-select the new object after commit. Default `true`. */
   autoSelect?: boolean;
@@ -220,8 +229,8 @@ export function useUserPenTool<TPose>(
 
   // Latest options stashed so handlers see fresh values without rebuilding
   // the Tool record (which would lose scratch identity in the dispatcher).
-  const optsRef = useRef({ wrapPath, adapter, autoSelect, closeHitRadius, snapPoint, getPathObj });
-  optsRef.current = { wrapPath, adapter, autoSelect, closeHitRadius, snapPoint, getPathObj };
+  const optsRef = useRef({ wrapPath, adapter, autoSelect, closeHitRadius, snapPoint, getPathObj, applyOps: adapter.applyOps });
+  optsRef.current = { wrapPath, adapter, autoSelect, closeHitRadius, snapPoint, getPathObj, applyOps: adapter.applyOps };
 
   // Scratch is a mutable ref (so click-by-click state survives the
   // dispatcher's per-gesture initScratch contract). Mutations alone don't
@@ -249,6 +258,27 @@ export function useUserPenTool<TPose>(
       resetScratch(s);
     }
 
+    function commitEditAndExit(s: PenScratch): void {
+      const op = commitEditAsOp(s);
+      if (op && optsRef.current.applyOps) {
+        optsRef.current.applyOps([op], 'Edit path');
+      }
+      exitEditMode(s);
+      forceRenderRef.current();
+    }
+
+    function nudgeRouteFor(dx: number, dy: number): (ctx: ToolCtx<PenScratch>) => Result<PenScratch> {
+      return (ctx: ToolCtx<PenScratch>): Result<PenScratch> => {
+        if (ctx.scratch.mode !== 'edit') return none();
+        const step = ctx.modifiers.shift ? 10 : 1;
+        nudgeSelectedAnchors(ctx.scratch, { dx: dx * step, dy: dy * step });
+        const op = commitEditAsOp(ctx.scratch);
+        if (op && optsRef.current.applyOps) optsRef.current.applyOps([op], 'Nudge anchor');
+        forceRenderRef.current();
+        return claim();
+      };
+    }
+
     function updateCloseHint(s: PenScratch, view: { scale: number }): void {
       const cur = s.current;
       if (!cur || cur.anchors.length < 3 || !s.cursor) {
@@ -258,6 +288,174 @@ export function useUserPenTool<TPose>(
       const first = cur.anchors[0];
       const radius = optsRef.current.closeHitRadius / view.scale;
       s.closeHintActive = dist(first.x, first.y, s.cursor.x, s.cursor.y) <= radius;
+    }
+
+    // Create-mode click handler, extracted so the route-table '*' entry
+    // can call it after the edit-mode early-outs.
+    function createModeClick(ctx: ToolCtx<PenScratch>): Result<PenScratch> {
+      const s = ctx.scratch;
+      const down = s._pendingDown;
+      s._pendingDown = null;
+      const snap = optsRef.current.snapPoint;
+      const raw = down
+        ? { x: down.worldX, y: down.worldY }
+        : { x: ctx.worldX, y: ctx.worldY };
+      // _pendingDown is already snapped on capture; only snap the fallback path.
+      const p = down ? raw : snap ? snap(raw) : raw;
+      const wx = p.x;
+      const wy = p.y;
+      const radius = optsRef.current.closeHitRadius / ctx.view.scale;
+      const totalAnchors =
+        (s.current ? s.current.anchors.length : 0) +
+        s.finishedSubpaths.reduce((n, sp) => n + sp.anchors.length, 0);
+
+      // Cmd/Ctrl + click → open-finish (Illustrator convention). Wins
+      // over close-on-first-anchor: holding the modifier signals "stop
+      // editing" rather than "close to first." Needs ≥2 anchors so
+      // there's an actual path to commit.
+      if ((ctx.modifiers.meta || ctx.modifiers.ctrl) && totalAnchors >= 2) {
+        commit(s);
+        s._lastClick = null;
+        forceRenderRef.current();
+        return claim();
+      }
+
+      // Pen-edit entry: dblclick on an existing path obj enters edit mode.
+      // Only triggers when no path is in progress (no anchors yet).
+      const last = s._lastClick;
+      if (
+        s.mode === 'create' &&
+        totalAnchors === 0 &&
+        ctx.target?.category === 'node' &&
+        last &&
+        performance.now() - last.t <= DOUBLE_CLICK_MS &&
+        dist(last.x, last.y, wx, wy) <= radius
+      ) {
+        // ctx.target is narrowed to NodeHit by the category === 'node' guard above.
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const objId = ctx.target!.id as string;
+        const obj = optsRef.current.getPathObj?.(objId);
+        if (obj) {
+          enterEditMode(s, {
+            objId,
+            path: obj.path,
+            closed: obj.closed,
+            params: obj.params,
+            isParametric: obj.tool !== 'pen' && obj.tool !== 'pencil' && obj.tool !== 'imported',
+          });
+          s._lastClick = null;
+          forceRenderRef.current();
+          return claim();
+        }
+      }
+
+      // Double-click on the last placed anchor → open-finish (Illustrator
+      // convention). We detect via prior-click timestamp + position; the
+      // dispatcher doesn't expose synthetic dblclick. Match within the
+      // close-hit radius so the second click can land slightly off.
+      if (last && totalAnchors >= 2 && performance.now() - last.t <= DOUBLE_CLICK_MS) {
+        const cur = s.current;
+        const lastAnchor = cur && cur.anchors.length > 0
+          ? cur.anchors[cur.anchors.length - 1]
+          : null;
+        if (lastAnchor && dist(lastAnchor.x, lastAnchor.y, wx, wy) <= radius) {
+          commit(s);
+          s._lastClick = null;
+          forceRenderRef.current();
+          return claim();
+        }
+      }
+
+      // Close-on-first-anchor (≥3 anchors).
+      if (s.current && s.current.anchors.length >= 3) {
+        const first = s.current.anchors[0];
+        if (dist(first.x, first.y, wx, wy) <= radius) {
+          s.current.closed = true;
+          s.finishedSubpaths.push(s.current);
+          s.current = null;
+          s.closeHintActive = false;
+          s._lastClick = null;
+          forceRenderRef.current();
+          return claim();
+        }
+      }
+
+      // Otherwise: append a corner anchor (start a new subpath if needed).
+      if (!s.current) s.current = { anchors: [], closed: false };
+      s.current.anchors.push({ x: wx, y: wy });
+      s._lastClick = { t: performance.now(), x: wx, y: wy };
+      forceRenderRef.current();
+      return claim();
+    }
+
+    // Create-mode drag handler, extracted so the route-table '*' entry
+    // can call it after the edit-mode early-out.
+    function createModeDrag(ctx: ToolCtx<PenScratch>) {
+      const s = ctx.scratch;
+      const down = s._pendingDown;
+      const snap = optsRef.current.snapPoint;
+      // _pendingDown is already snapped on capture; only snap the fallback path.
+      const fallback = snap
+        ? snap({ x: ctx.worldX, y: ctx.worldY })
+        : { x: ctx.worldX, y: ctx.worldY };
+      const ax = down ? down.worldX : fallback.x;
+      const ay = down ? down.worldY : fallback.y;
+      if (!s.current) s.current = { anchors: [], closed: false };
+      s.current.anchors.push({ x: ax, y: ay });
+      s.draggingHandleAt = s.current.anchors.length - 1;
+      // Apply initial outHandle from current cursor.
+      applyOutHandle(s, ctx, optsRef.current.snapPoint);
+      if (down?.alt) {
+        s.current.anchors[s.draggingHandleAt].altBroken = true;
+      }
+      forceRenderRef.current();
+      return begin<PenScratch>({
+        scratch: s,
+        onMove: (c) => {
+          const sm = c.scratch;
+          if (sm.draggingHandleAt !== null) {
+            applyOutHandle(sm, c, optsRef.current.snapPoint);
+            if (c.modifiers.alt && sm.current) {
+              sm.current.anchors[sm.draggingHandleAt].altBroken = true;
+            }
+          } else {
+            const sp = optsRef.current.snapPoint;
+            sm.cursor = sp
+              ? sp({ x: c.worldX, y: c.worldY })
+              : { x: c.worldX, y: c.worldY };
+            updateCloseHint(sm, c.view);
+          }
+          forceRenderRef.current();
+          return claim();
+        },
+        onRelease: (c) => {
+          const sr = c.scratch;
+          if (sr.draggingHandleAt !== null) {
+            applyOutHandle(sr, c, optsRef.current.snapPoint);
+            if (c.modifiers.alt && sr.current) {
+              sr.current.anchors[sr.draggingHandleAt].altBroken = true;
+            }
+            // Track the drag-placed anchor so a quick follow-up click on
+            // it triggers double-click open-finish, same as click-placed.
+            if (sr.current) {
+              const a = sr.current.anchors[sr.draggingHandleAt];
+              sr._lastClick = { t: performance.now(), x: a.x, y: a.y };
+            }
+            sr.draggingHandleAt = null;
+            sr._pendingDown = null;
+          }
+          forceRenderRef.current();
+          // claim() (not commit()) so the factory does not null out
+          // ctx.scratch — the persistent scratchRef must keep its
+          // mutated state visible to the next gesture.
+          return claim();
+        },
+        onCancel: (c) => {
+          c.scratch.draggingHandleAt = null;
+          c.scratch._pendingDown = null;
+          forceRenderRef.current();
+        },
+      });
     }
 
     return defineTool<PenScratch>({
@@ -284,6 +482,11 @@ export function useUserPenTool<TPose>(
 
       onDeactivate: (ctx) => {
         const s = ctx.scratch;
+        if (s.mode === 'edit') {
+          commitEditAndExit(s);
+          return;
+        }
+        // Existing create-mode deactivate logic (preserved):
         const cur = s.current;
         const totalAnchors =
           (cur ? cur.anchors.length : 0) +
@@ -321,176 +524,109 @@ export function useUserPenTool<TPose>(
 
         click: {
           '*': (ctx) => {
-            const s = ctx.scratch;
-            const down = s._pendingDown;
-            s._pendingDown = null;
-            const snap = optsRef.current.snapPoint;
-            const raw = down
-              ? { x: down.worldX, y: down.worldY }
-              : { x: ctx.worldX, y: ctx.worldY };
-            // _pendingDown is already snapped on capture; only snap the fallback path.
-            const p = down ? raw : snap ? snap(raw) : raw;
-            const wx = p.x;
-            const wy = p.y;
-            const radius = optsRef.current.closeHitRadius / ctx.view.scale;
-            const totalAnchors =
-              (s.current ? s.current.anchors.length : 0) +
-              s.finishedSubpaths.reduce((n, sp) => n + sp.anchors.length, 0);
-
-            // Cmd/Ctrl + click → open-finish (Illustrator convention). Wins
-            // over close-on-first-anchor: holding the modifier signals "stop
-            // editing" rather than "close to first." Needs ≥2 anchors so
-            // there's an actual path to commit.
-            if ((ctx.modifiers.meta || ctx.modifiers.ctrl) && totalAnchors >= 2) {
-              commit(s);
-              s._lastClick = null;
-              forceRenderRef.current();
+            // Edit mode: empty-click exits edit mode (with commit if dirty).
+            if (ctx.scratch.mode === 'edit' && ctx.target?.category === 'empty') {
+              commitEditAndExit(ctx.scratch);
               return claim();
             }
-
-            // Pen-edit entry: dblclick on an existing path obj enters edit mode.
-            // Only triggers when no path is in progress (no anchors yet).
-            const last = s._lastClick;
-            if (
-              s.mode === 'create' &&
-              totalAnchors === 0 &&
-              ctx.target?.category === 'node' &&
-              last &&
-              performance.now() - last.t <= DOUBLE_CLICK_MS &&
-              dist(last.x, last.y, wx, wy) <= radius
-            ) {
-              // ctx.target is narrowed to NodeHit by the category === 'node' guard above.
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              const objId = ctx.target!.id as string;
-              const obj = optsRef.current.getPathObj?.(objId);
-              if (obj) {
-                enterEditMode(s, {
-                  objId,
-                  path: obj.path,
-                  closed: obj.closed,
-                  params: obj.params,
-                  isParametric: obj.tool !== 'pen' && obj.tool !== 'pencil' && obj.tool !== 'imported',
-                });
-                s._lastClick = null;
-                forceRenderRef.current();
-                return claim();
-              }
+            // Edit mode: clicks on nodes are otherwise ignored (the dblclick-to-enter
+            // path was already handled; further node clicks while editing
+            // should not start a new path). Just no-op.
+            if (ctx.scratch.mode === 'edit') return none();
+            // Create-mode click logic (preserved):
+            return createModeClick(ctx);
+          },
+          anchor: (ctx) => {
+            if (ctx.scratch.mode !== 'edit') return none();
+            const extra = (ctx.target as { extra: { sub: number; idx: number } }).extra;
+            if (ctx.modifiers.alt) {
+              // Scissors — only meaningful on a closed subpath; the action no-ops otherwise.
+              scissorsAtAnchor(ctx.scratch, extra);
+              const op = commitEditAsOp(ctx.scratch);
+              if (op && optsRef.current.applyOps) optsRef.current.applyOps([op], 'Scissors');
+            } else {
+              selectAnchor(ctx.scratch, { sub: extra.sub, idx: extra.idx, additive: ctx.modifiers.shift });
             }
-
-            // Double-click on the last placed anchor → open-finish (Illustrator
-            // convention). We detect via prior-click timestamp + position; the
-            // dispatcher doesn't expose synthetic dblclick. Match within the
-            // close-hit radius so the second click can land slightly off.
-            if (last && totalAnchors >= 2 && performance.now() - last.t <= DOUBLE_CLICK_MS) {
-              const cur = s.current;
-              const lastAnchor = cur && cur.anchors.length > 0
-                ? cur.anchors[cur.anchors.length - 1]
-                : null;
-              if (lastAnchor && dist(lastAnchor.x, lastAnchor.y, wx, wy) <= radius) {
-                commit(s);
-                s._lastClick = null;
-                forceRenderRef.current();
-                return claim();
-              }
-            }
-
-            // Close-on-first-anchor (≥3 anchors).
-            if (s.current && s.current.anchors.length >= 3) {
-              const first = s.current.anchors[0];
-              if (dist(first.x, first.y, wx, wy) <= radius) {
-                s.current.closed = true;
-                s.finishedSubpaths.push(s.current);
-                s.current = null;
-                s.closeHintActive = false;
-                s._lastClick = null;
-                forceRenderRef.current();
-                return claim();
-              }
-            }
-
-            // Otherwise: append a corner anchor (start a new subpath if needed).
-            if (!s.current) s.current = { anchors: [], closed: false };
-            s.current.anchors.push({ x: wx, y: wy });
-            s._lastClick = { t: performance.now(), x: wx, y: wy };
+            forceRenderRef.current();
+            return claim();
+          },
+          segment: (ctx) => {
+            if (ctx.scratch.mode !== 'edit') return none();
+            const extra = (ctx.target as { extra: { sub: number; segIdx: number; t: number } }).extra;
+            addAnchorOnSegment(ctx.scratch, extra);
+            const op = commitEditAsOp(ctx.scratch);
+            if (op && optsRef.current.applyOps) optsRef.current.applyOps([op], 'Add anchor');
             forceRenderRef.current();
             return claim();
           },
         },
 
-        // Function-form drag: every drag start pushes an anchor with an
-        // outgoing handle, then begin() installs onMove/onRelease/onCancel
-        // continuations that update the handle as the gesture proceeds.
-        drag: (ctx) => {
-          const s = ctx.scratch;
-          const down = s._pendingDown;
-          const snap = optsRef.current.snapPoint;
-          // _pendingDown is already snapped on capture; only snap the fallback path.
-          const fallback = snap
-            ? snap({ x: ctx.worldX, y: ctx.worldY })
-            : { x: ctx.worldX, y: ctx.worldY };
-          const ax = down ? down.worldX : fallback.x;
-          const ay = down ? down.worldY : fallback.y;
-          if (!s.current) s.current = { anchors: [], closed: false };
-          s.current.anchors.push({ x: ax, y: ay });
-          s.draggingHandleAt = s.current.anchors.length - 1;
-          // Apply initial outHandle from current cursor.
-          applyOutHandle(s, ctx, optsRef.current.snapPoint);
-          if (down?.alt) {
-            s.current.anchors[s.draggingHandleAt].altBroken = true;
-          }
-          forceRenderRef.current();
-          return begin<PenScratch>({
-            scratch: s,
-            onMove: (c) => {
-              const sm = c.scratch;
-              if (sm.draggingHandleAt !== null) {
-                applyOutHandle(sm, c, optsRef.current.snapPoint);
-                if (c.modifiers.alt && sm.current) {
-                  sm.current.anchors[sm.draggingHandleAt].altBroken = true;
-                }
-              } else {
-                const snap = optsRef.current.snapPoint;
-                sm.cursor = snap
-                  ? snap({ x: c.worldX, y: c.worldY })
-                  : { x: c.worldX, y: c.worldY };
-                updateCloseHint(sm, c.view);
-              }
-              forceRenderRef.current();
-              return claim();
-            },
-            onRelease: (c) => {
-              const sr = c.scratch;
-              if (sr.draggingHandleAt !== null) {
-                applyOutHandle(sr, c, optsRef.current.snapPoint);
-                if (c.modifiers.alt && sr.current) {
-                  sr.current.anchors[sr.draggingHandleAt].altBroken = true;
-                }
-                // Track the drag-placed anchor so a quick follow-up click on
-                // it triggers double-click open-finish, same as click-placed.
-                if (sr.current) {
-                  const a = sr.current.anchors[sr.draggingHandleAt];
-                  sr._lastClick = { t: performance.now(), x: a.x, y: a.y };
-                }
-                sr.draggingHandleAt = null;
-                sr._pendingDown = null;
-              }
-              forceRenderRef.current();
-              // claim() (not commit()) so the factory does not null out
-              // ctx.scratch — the persistent scratchRef must keep its
-              // mutated state visible to the next gesture.
-              return claim();
-            },
-            onCancel: (c) => {
-              c.scratch.draggingHandleAt = null;
-              c.scratch._pendingDown = null;
-              forceRenderRef.current();
-            },
-          });
+        // Route-table drag: '*' covers create mode (and any edit-mode
+        // target that isn't anchor/handle); anchor/handle get their own
+        // edit-mode branches.
+        drag: {
+          '*': (ctx) => {
+            if (ctx.scratch.mode === 'edit') return none();
+            return createModeDrag(ctx);
+          },
+          anchor: (ctx) => {
+            if (ctx.scratch.mode !== 'edit') return none();
+            const extra = (ctx.target as { extra: { sub: number; idx: number } }).extra;
+            let lastX = ctx.worldX, lastY = ctx.worldY;
+            return begin<PenScratch>({
+              scratch: ctx.scratch,
+              onMove: (c) => {
+                const dx = c.worldX - lastX;
+                const dy = c.worldY - lastY;
+                lastX = c.worldX; lastY = c.worldY;
+                dragAnchor(c.scratch, { sub: extra.sub, idx: extra.idx, dx, dy });
+                const op = commitEditAsOp(c.scratch);
+                if (op && optsRef.current.applyOps) optsRef.current.applyOps([op], 'Move anchor');
+                forceRenderRef.current();
+                return claim();
+              },
+              onRelease: () => claim(),
+              onCancel: () => {},
+            });
+          },
+          handle: (ctx) => {
+            if (ctx.scratch.mode !== 'edit' || !ctx.scratch.edit) return none();
+            const extra = (ctx.target as { extra: { sub: number; idx: number; side: 'in' | 'out' } }).extra;
+            ctx.scratch.edit.activeHandle = { sub: extra.sub, anchor: extra.idx, side: extra.side };
+            return begin<PenScratch>({
+              scratch: ctx.scratch,
+              onMove: (c) => {
+                if (!c.scratch.edit?.activeHandle) return none();
+                const h = c.scratch.edit.activeHandle;
+                dragHandle(c.scratch, {
+                  sub: h.sub, idx: h.anchor, side: h.side,
+                  toX: c.worldX, toY: c.worldY,
+                  breakSmoothness: c.modifiers.alt,
+                });
+                const op = commitEditAsOp(c.scratch);
+                if (op && optsRef.current.applyOps) optsRef.current.applyOps([op], 'Move handle');
+                forceRenderRef.current();
+                return claim();
+              },
+              onRelease: (c) => {
+                if (c.scratch.edit) c.scratch.edit.activeHandle = null;
+                return claim();
+              },
+              onCancel: (c) => {
+                if (c.scratch.edit) c.scratch.edit.activeHandle = null;
+              },
+            });
+          },
         },
 
         keyDown: {
           Enter: (ctx) => {
             const s = ctx.scratch;
+            if (s.mode === 'edit') {
+              commitEditAndExit(s);
+              return claim();
+            }
+            // Existing create-mode logic preserved:
             const totalAnchors =
               (s.current ? s.current.anchors.length : 0) +
               s.finishedSubpaths.reduce((n, sp) => n + sp.anchors.length, 0);
@@ -501,11 +637,29 @@ export function useUserPenTool<TPose>(
           },
           Escape: (ctx) => {
             const s = ctx.scratch;
+            if (s.mode === 'edit') {
+              commitEditAndExit(s);
+              return claim();
+            }
             if (s.current === null && s.finishedSubpaths.length === 0) return none();
             resetScratch(s);
             forceRenderRef.current();
             return claim();
           },
+          Backspace: (ctx) => {
+            const s = ctx.scratch;
+            if (s.mode !== 'edit' || !s.edit) return none();
+            if (s.edit.selectedAnchors.size === 0) return none();
+            deleteAnchors(s, [...s.edit.selectedAnchors]);
+            const op = commitEditAsOp(s);
+            if (op && optsRef.current.applyOps) optsRef.current.applyOps([op], 'Delete anchor');
+            forceRenderRef.current();
+            return claim();
+          },
+          ArrowUp:    nudgeRouteFor(0, -1),
+          ArrowDown:  nudgeRouteFor(0, 1),
+          ArrowLeft:  nudgeRouteFor(-1, 0),
+          ArrowRight: nudgeRouteFor(1, 0),
         },
       },
     });
