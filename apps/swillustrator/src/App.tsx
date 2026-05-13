@@ -175,6 +175,9 @@ const PALETTE: { value: string; label: string }[] = [
 /** Translate a single rect-pose-shaped object by (dx, dy). Used for clipboard
  *  paste offset, group bound shifts, and the generic Obj patcher. */
 function translateObj(o: Obj, dx: number, dy: number): Obj {
+  if (o.tool !== 'text') {
+    return { ...o, x: o.x + dx, y: o.y + dy, path: translatePath(o.path, dx, dy) };
+  }
   return { ...o, x: o.x + dx, y: o.y + dy };
 }
 
