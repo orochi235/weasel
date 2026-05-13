@@ -38,6 +38,10 @@ export interface PenEditState {
   activeHandle: { sub: number; anchor: number; side: 'in' | 'out' } | null;
   dirty: boolean;
   preConvert: { path: unknown; closed: boolean; params: unknown } | null;
+  /** Snapshot of the path-as-it-was on edit-mode entry (already a polygon —
+   *  if the obj was parametric, this is the converted form). Used as the
+   *  op's `from` for plain-path edits so undo restores the entry state. */
+  original: { path: unknown; closed: boolean };
 }
 
 /** Mutable scratch shared across pen-tool gestures. The hook keeps a stable
