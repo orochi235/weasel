@@ -56,14 +56,20 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
   const [state, setState] = useState<ReorderDragState>({ draggedIds: null, targetIndex: null });
 
   const computeTargetIndex = useCallback((clientY: number): number => {
+    const items = optsRef.current.items;
+    // Locked rows act as walls — drops cannot cross them. Cap at the
+    // first locked row's index (or items.length if none are locked).
+    const firstLocked = items.findIndex((it) => it.locked);
+    const cap = firstLocked === -1 ? items.length : firstLocked;
     const c = containerRef.current;
     if (!c) return 0;
     const rows = Array.from(c.children) as HTMLElement[];
+    let raw = rows.length;
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i].getBoundingClientRect();
-      if (clientY < r.bottom) return i;
+      if (clientY < r.bottom) { raw = i; break; }
     }
-    return rows.length;
+    return Math.min(raw, cap);
   }, []);
 
   const refCb = useCallback<RefCallback<HTMLElement>>((el) => {
