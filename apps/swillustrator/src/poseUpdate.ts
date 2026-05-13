@@ -1,12 +1,41 @@
-import type { PolygonPath, TextStyle } from '@orochi235/weasel';
+import type { Path, TextStyle } from '@orochi235/weasel';
 import { scalePathToBounds, translatePath } from '@orochi235/weasel';
 
-export type Kind = 'rect' | 'text' | 'path';
-export interface BaseObj { id: string; kind: Kind; x: number; y: number; width: number; height: number; rotation?: number }
-export interface RectObj extends BaseObj { kind: 'rect'; fill: string; stroke: string; strokeWidth: number }
-export interface TextObj extends BaseObj { kind: 'text'; text: string; style?: TextStyle }
-export interface PathObj extends BaseObj { kind: 'path'; path: PolygonPath; closed: boolean; fill: string; stroke: string; strokeWidth: number }
-export type Obj = RectObj | TextObj | PathObj;
+export type ToolKind =
+  | 'rect' | 'ellipse' | 'polygon' | 'star' | 'line'
+  | 'pen' | 'pencil' | 'text' | 'imported';
+
+/** Non-bounds-derivable shape parameters. Bounds-derived params
+ *  (ellipse rx/ry, polygon outer radius, line endpoints) are NOT
+ *  stored — they're derived from x/y/width/height. */
+export type PathParams =
+  | { sides: number }                  // tool === 'polygon'
+  | { points: number; ratio: number }; // tool === 'star'
+
+export interface BaseObj {
+  id: string;
+  tool: ToolKind;
+  x: number; y: number; width: number; height: number;
+  rotation?: number;
+}
+
+export interface PathObj extends BaseObj {
+  tool: Exclude<ToolKind, 'text'>;
+  path: Path;
+  closed: boolean;
+  fill: string;
+  stroke: string;
+  strokeWidth: number;
+  params?: PathParams;
+}
+
+export interface TextObj extends BaseObj {
+  tool: 'text';
+  text: string;
+  style?: TextStyle;
+}
+
+export type Obj = PathObj | TextObj;
 
 /** Pose, including optional rotation in radians (pivot = unrotated AABB
  *  center). `rotation` left undefined means "do not change"; explicit 0
@@ -21,20 +50,23 @@ export function applyPoseToObj(prev: Obj, pose: Pose): Obj {
   // "preserve". `rotation: 0` clears.
   const nextRotation = pose.rotation === undefined ? prev.rotation : pose.rotation;
   const rectFields = { x: pose.x, y: pose.y, width: pose.width, height: pose.height, rotation: nextRotation };
-  if (prev.kind === 'text' && pose.height !== prev.height) {
+  if (prev.tool === 'text' && pose.height !== prev.height) {
     const fontSize = Math.max(8, Math.round(pose.height * 0.7));
     const style = { ...(prev.style ?? {}), fontSize };
     return { ...prev, ...rectFields, style };
   }
-  if (prev.kind === 'path') {
+  if (prev.tool !== 'text') {
+    // PathObj — narrow via tool discriminator.
     const moved = pose.width !== prev.width || pose.height !== prev.height;
     const path = moved
       ? scalePathToBounds(prev.path, {
           kind: 'rect',
           x: pose.x, y: pose.y,
           width: pose.width, height: pose.height,
-        }) as PolygonPath
-      : translatePath(prev.path, pose.x - prev.x, pose.y - prev.y) as PolygonPath;
+        })
+      : translatePath(prev.path, pose.x - prev.x, pose.y - prev.y);
+    // `tool` and `params` carry through via spread — resize is intentionally
+    // tool/params-blind (drift is acceptable per the spec).
     return { ...prev, ...rectFields, path };
   }
   return { ...prev, ...rectFields };
