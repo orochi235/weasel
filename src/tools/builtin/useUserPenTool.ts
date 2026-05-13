@@ -6,6 +6,8 @@ import { PathBuilder } from 'features/paths/builder';
 import type { PolygonPath } from 'features/paths/types';
 import type { PenAnchor as KitPenAnchor } from 'features/paths/anchors';
 import { constrainTo45 } from '../../util/constrainTo45';
+import { penEditHitOverride } from './penEdit/hitOverride';
+import { enterEditMode } from './penEdit/scratch';
 
 /**
  * In-progress pen anchor. `outHandle` is set when the anchor was placed via
@@ -97,6 +99,16 @@ export interface UseUserPenToolOptions<TPose> {
    *  Pen state (anchor handles, etc.) is computed AFTER snapping so the
    *  visible geometry stays grid-aligned. */
   snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
+  /** Resolve a path obj from id. Returns the obj's path, closed flag, params,
+   *  and the tool that created it (used to decide whether the trapdoor applies).
+   *  Required when pen-edit is wanted; safe to omit if the consumer only uses
+   *  create mode (dblclick-to-edit will be a no-op). */
+  getPathObj?: (id: string) => {
+    path: PolygonPath | { kind: 'rect'; x: number; y: number; width: number; height: number };
+    closed: boolean;
+    params: unknown;
+    tool: string;
+  } | null;
 }
 
 function freshScratch(): PenScratch {
@@ -199,7 +211,7 @@ function dist(ax: number, ay: number, bx: number, by: number): number {
 export function useUserPenTool<TPose>(
   options: UseUserPenToolOptions<TPose>,
 ): Tool<PenScratch> {
-  const { wrapPath, adapter, autoSelect = true, closeHitRadius = 8, snapPoint } = options;
+  const { wrapPath, adapter, autoSelect = true, closeHitRadius = 8, snapPoint, getPathObj } = options;
 
   // Persistent scratch: single ref reused across gestures so multi-click
   // state survives the dispatcher's per-gesture initScratch contract.
@@ -208,8 +220,8 @@ export function useUserPenTool<TPose>(
 
   // Latest options stashed so handlers see fresh values without rebuilding
   // the Tool record (which would lose scratch identity in the dispatcher).
-  const optsRef = useRef({ wrapPath, adapter, autoSelect, closeHitRadius, snapPoint });
-  optsRef.current = { wrapPath, adapter, autoSelect, closeHitRadius, snapPoint };
+  const optsRef = useRef({ wrapPath, adapter, autoSelect, closeHitRadius, snapPoint, getPathObj });
+  optsRef.current = { wrapPath, adapter, autoSelect, closeHitRadius, snapPoint, getPathObj };
 
   // Scratch is a mutable ref (so click-by-click state survives the
   // dispatcher's per-gesture initScratch contract). Mutations alone don't
@@ -252,6 +264,13 @@ export function useUserPenTool<TPose>(
       id: 'pen',
       keybinding: { key: 'P' },
       cursor: (ctx) => (ctx.scratch?.closeHintActive ? 'pointer' : 'crosshair'),
+      hitOverride: (ctx) => penEditHitOverride({
+        worldX: ctx.worldX,
+        worldY: ctx.worldY,
+        scratch: ctx.scratch,
+        view: ctx.view,
+        modifiers: ctx.modifiers,
+      }),
       presentation: {
         label: 'Pen',
         icon: createElement(PenIcon),
@@ -329,11 +348,39 @@ export function useUserPenTool<TPose>(
               return claim();
             }
 
+            // Pen-edit entry: dblclick on an existing path obj enters edit mode.
+            // Only triggers when no path is in progress (no anchors yet).
+            const last = s._lastClick;
+            if (
+              s.mode === 'create' &&
+              totalAnchors === 0 &&
+              ctx.target?.category === 'node' &&
+              last &&
+              performance.now() - last.t <= DOUBLE_CLICK_MS &&
+              dist(last.x, last.y, wx, wy) <= radius
+            ) {
+              // ctx.target is narrowed to NodeHit by the category === 'node' guard above.
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              const objId = ctx.target!.id as string;
+              const obj = optsRef.current.getPathObj?.(objId);
+              if (obj) {
+                enterEditMode(s, {
+                  objId,
+                  path: obj.path,
+                  closed: obj.closed,
+                  params: obj.params,
+                  isParametric: obj.tool !== 'pen' && obj.tool !== 'pencil' && obj.tool !== 'imported',
+                });
+                s._lastClick = null;
+                forceRenderRef.current();
+                return claim();
+              }
+            }
+
             // Double-click on the last placed anchor → open-finish (Illustrator
             // convention). We detect via prior-click timestamp + position; the
             // dispatcher doesn't expose synthetic dblclick. Match within the
             // close-hit radius so the second click can land slightly off.
-            const last = s._lastClick;
             if (last && totalAnchors >= 2 && performance.now() - last.t <= DOUBLE_CLICK_MS) {
               const cur = s.current;
               const lastAnchor = cur && cur.anchors.length > 0

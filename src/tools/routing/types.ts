@@ -1,6 +1,7 @@
-import type { ToolCtx, ToolPresentation, HotkeyTrigger } from '../types';
+import type { ToolCtx, ToolPresentation, HotkeyTrigger, ToolModifiers } from '../types';
 import type { KeyBinding } from '../../interactions/actions/useKeybinding';
 import type { RenderLayer } from '../../core/layers/render';
+import type { View } from '../../core/viewport/view';
 import type { Result } from './result';
 import type { ModifierKey } from './modifiers';
 
@@ -98,6 +99,16 @@ export interface ToolDef<TScratch = void> {
    *  pass a stable-ref-returning thunk here. The factory forwards this
    *  onto the returned `Tool.initScratch`. */
   initScratch?: () => TScratch;
+  /** Optional hit-test override. Mirrors `Tool.hitOverride` — see that
+   *  field for full semantics. The factory forwards this directly onto the
+   *  returned Tool. */
+  hitOverride?: (ctx: {
+    worldX: number;
+    worldY: number;
+    scratch: TScratch;
+    view: View;
+    modifiers: ToolModifiers;
+  }) => { target: string; extra?: unknown } | null;
   initial: PhaseDef<TScratch>;
   engaged?: PhaseDef<TScratch>;
 }

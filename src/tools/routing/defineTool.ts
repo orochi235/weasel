@@ -250,6 +250,7 @@ export function defineTool<TScratch = void>(
     initScratch: def.initScratch ?? (() => null as unknown as TScratch),
     cursor: resolveCursor,
     claimsAll,
+    hitOverride: def.hitOverride,
     pointer: (onClick || onDown)
       ? { ...(onClick ? { onClick } : {}), ...(onDown ? { onDown } : {}) }
       : undefined,
