@@ -27,7 +27,7 @@ describe('applyOpsTo', () => {
   it('preserves apply order across calls', () => {
     const order: number[] = [];
     const ops: Op[] = [0, 1, 2].map((i) => ({
-      apply: () => order.push(i),
+      apply: () => { order.push(i); },
       invert() { return this; },
     }));
     applyOpsTo({}, ops);

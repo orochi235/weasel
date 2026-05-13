@@ -47,6 +47,21 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     for (const op of ops) op.apply(adapter);
   }
 
+  /** Apply each op and collect whether any reported a real mutation.
+   *  Returns true iff at least one op did NOT explicitly return `false` /
+   *  `'noop'`. Used by `pushOrCoalesce` to skip pushing entries when every
+   *  op in the batch was a silent no-op (e.g. reorder where the order
+   *  already matched). Existing ops that return `undefined`/`void` count
+   *  as "mutated" — the default — so this is backwards-compatible. */
+  function applyOpsAndDetectMutation(ops: Op[]): boolean {
+    let anyMutated = false;
+    for (const op of ops) {
+      const r = op.apply(adapter);
+      if (r !== false && r !== 'noop') anyMutated = true;
+    }
+    return anyMutated;
+  }
+
   function invertEntry(entry: Entry): Op[] {
     return [...entry.baseOps].reverse().map((op) => op.invert());
   }
@@ -78,7 +93,20 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
 
   function pushOrCoalesce(ops: Op[], label: string): void {
     if (ops.length === 0) return;
-    applyOps(ops);
+    const anyMutated = applyOpsAndDetectMutation(ops);
+    if (!anyMutated) {
+      // Every op reported `false`/`'noop'`. Skip the push so undo stays
+      // tied to real state changes. In dev, surface a warning so the
+      // upstream caller can consider avoiding the dispatch entirely.
+      // eslint-disable-next-line no-console
+      if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
+        console.warn(
+          `[history] '${label}' batch was a no-op — every op reported false/'noop'. ` +
+          `Skipping the undo entry; consider gating the dispatch upstream to avoid the wasted work.`,
+        );
+      }
+      return;
+    }
     const top = undoStack[undoStack.length - 1];
     if (top && canCoalesce(top, ops)) {
       top.forwardOps = ops;

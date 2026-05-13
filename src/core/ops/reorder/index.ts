@@ -15,6 +15,12 @@ interface ReorderAdapter {
 
 type ReorderFn = (list: string[], ids: string[]) => string[];
 
+function arraysEqual(a: readonly string[], b: readonly string[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+
 interface RestoreEntry {
   parentId: string | null;
   before: string[];
@@ -38,7 +44,7 @@ function createPartitionedReorderOp(args: {
     label,
     apply(adapter) {
       const a = adapter as ReorderAdapter;
-      if (!a.getChildren || !a.setChildOrder) return; // graceful no-op
+      if (!a.getChildren || !a.setChildOrder) return false; // graceful no-op
       // Partition ids by current parent.
       const byParent = new Map<string | null, string[]>();
       for (const id of ids) {
@@ -48,13 +54,17 @@ function createPartitionedReorderOp(args: {
         byParent.set(parent, list);
       }
       const snapshots: RestoreEntry[] = [];
+      let mutated = false;
       for (const [parentId, parentIds] of byParent) {
         const before = a.getChildren(parentId);
-        snapshots.push({ parentId, before: before.slice() });
         const after = fn(before, parentIds);
+        if (arraysEqual(before, after)) continue; // already at the desired order
+        snapshots.push({ parentId, before: before.slice() });
         a.setChildOrder(parentId, after);
+        mutated = true;
       }
       restore = snapshots;
+      return mutated;
     },
     invert() {
       const captured = restore;
