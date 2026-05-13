@@ -16,7 +16,8 @@ import {
 import { parsePathD } from './path-parser';
 import { transformPath } from './shapes';
 import type {
-  Matrix, ParseResult, SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode,
+  Matrix, NamespaceMeta, NamespacedElement, ParseOptions, ParseResult,
+  SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode,
 } from './types';
 import type { StyledRun, TextStyle, Paint } from '@orochi235/weasel';
 import { multiply, parseTransform } from './transform';
@@ -38,7 +39,7 @@ const IGNORED_TAGS = new Set(['defs', 'linearGradient', 'radialGradient', 'title
  * parsing produce a `ParseResult` with an empty `nodes` array and a
  * warning describing the issue, rather than throwing.
  */
-export function parseSvg(svg: string): ParseResult {
+export function parseSvg(svg: string, opts: ParseOptions = {}): ParseResult {
   const warnings: string[] = [];
   const onWarn = (m: string): void => { warnings.push(m); };
 
@@ -57,9 +58,118 @@ export function parseSvg(svg: string): ParseResult {
     return { nodes: [], warnings: ['root element is not <svg>'] };
   }
 
+  const namespaces = opts.namespaces ?? {};
+  // Build a URI → prefix index for fast lookup during traversal.
+  const uriToPrefix = new Map<string, string>();
+  for (const [prefix, uri] of Object.entries(namespaces)) {
+    uriToPrefix.set(uri, prefix);
+  }
+
+  const documentMeta = collectDocumentMeta(root, uriToPrefix);
+
   const gradients = collectGradients(root, onWarn);
-  const nodes = parseChildren(root, IDENTITY_MATRIX, gradients, onWarn);
-  return { nodes, warnings };
+  const nodes = parseChildren(root, IDENTITY_MATRIX, gradients, onWarn, uriToPrefix);
+
+  const result: ParseResult = { nodes, warnings };
+  if (documentMeta) result.documentMeta = documentMeta;
+  return result;
+}
+
+function collectDocumentMeta(
+  root: Element,
+  uriToPrefix: Map<string, string>,
+): NamespaceMeta | undefined {
+  if (uriToPrefix.size === 0) return undefined;
+  const meta: NamespaceMeta = {};
+
+  // Root-level namespaced attributes.
+  for (let i = 0; i < root.attributes.length; i++) {
+    const a = root.attributes[i];
+    if (!a.namespaceURI) continue;
+    const prefix = uriToPrefix.get(a.namespaceURI);
+    if (!prefix) continue;
+    const bucket = (meta[prefix] ??= {});
+    (bucket.attrs ??= {})[a.localName] = a.value;
+  }
+
+  // Root-level namespaced child elements. The body of these is collected
+  // recursively as a generic XML-element tree; geometry inside them is NOT
+  // promoted to SvgNodes (that's the consumer's job if they want it).
+  for (let i = 0; i < root.children.length; i++) {
+    const c = root.children[i];
+    if (!c.namespaceURI) continue;
+    const prefix = uriToPrefix.get(c.namespaceURI);
+    if (!prefix) continue;
+    const bucket = (meta[prefix] ??= {});
+    const elements = (bucket.elements ??= {});
+    const list = (elements[c.localName] ??= []);
+    list.push(collectNamespacedElement(c, uriToPrefix));
+  }
+
+  return Object.keys(meta).length > 0 ? meta : undefined;
+}
+
+function collectNamespacedElement(
+  el: Element,
+  uriToPrefix: Map<string, string>,
+): NamespacedElement {
+  const result: NamespacedElement = { attrs: {} };
+  for (let i = 0; i < el.attributes.length; i++) {
+    const a = el.attributes[i];
+    // For namespaced *elements* we collect every attribute (namespaced or
+    // not) under the element — unlike root attrs where we filter by NS.
+    // Treat `xmlns:*` as structural and skip.
+    if (a.name.startsWith('xmlns')) continue;
+    result.attrs[a.localName] = a.value;
+  }
+
+  let hasChildElements = false;
+  for (let i = 0; i < el.children.length; i++) {
+    const c = el.children[i];
+    if (!c.namespaceURI) continue;
+    const prefix = uriToPrefix.get(c.namespaceURI);
+    if (!prefix) continue;  // child in undeclared NS: drop
+    hasChildElements = true;
+    const children = (result.children ??= {});
+    const list = (children[c.localName] ??= []);
+    list.push(collectNamespacedElement(c, uriToPrefix));
+  }
+
+  if (!hasChildElements && el.textContent != null && el.textContent.trim() !== '') {
+    result.text = el.textContent;
+  }
+
+  return result;
+}
+
+/** Per-element namespace meta: walked at every parsed SVG element. */
+function collectElementMeta(
+  el: Element,
+  uriToPrefix: Map<string, string>,
+): NamespaceMeta | undefined {
+  if (uriToPrefix.size === 0) return undefined;
+  const meta: NamespaceMeta = {};
+  for (let i = 0; i < el.attributes.length; i++) {
+    const a = el.attributes[i];
+    if (!a.namespaceURI) continue;
+    const prefix = uriToPrefix.get(a.namespaceURI);
+    if (!prefix) continue;
+    const bucket = (meta[prefix] ??= {});
+    (bucket.attrs ??= {})[a.localName] = a.value;
+  }
+  // Namespaced child elements on a *standard* SVG element (e.g. a <g>) are
+  // also surfaced under elements[] in the same shape used at the root.
+  for (let i = 0; i < el.children.length; i++) {
+    const c = el.children[i];
+    if (!c.namespaceURI) continue;
+    const prefix = uriToPrefix.get(c.namespaceURI);
+    if (!prefix) continue;
+    const bucket = (meta[prefix] ??= {});
+    const elements = (bucket.elements ??= {});
+    const list = (elements[c.localName] ??= []);
+    list.push(collectNamespacedElement(c, uriToPrefix));
+  }
+  return Object.keys(meta).length > 0 ? meta : undefined;
 }
 
 function parseChildren(
@@ -67,11 +177,16 @@ function parseChildren(
   ctm: Matrix,
   gradients: GradientTable,
   onWarn: (m: string) => void,
+  uriToPrefix: Map<string, string>,
 ): SvgNode[] {
   const out: SvgNode[] = [];
   for (let i = 0; i < parent.children.length; i++) {
     const el = parent.children[i];
-    const node = parseElement(el, ctm, gradients, onWarn);
+    // Skip namespaced children — they belong to `meta.elements`, not nodes.
+    // (DOM gives SVG-native elements `http://www.w3.org/2000/svg`.)
+    const ns = el.namespaceURI;
+    if (ns && ns !== 'http://www.w3.org/2000/svg') continue;
+    const node = parseElement(el, ctm, gradients, onWarn, uriToPrefix);
     if (node) {
       if (Array.isArray(node)) out.push(...node);
       else out.push(node);
@@ -85,24 +200,32 @@ function parseElement(
   ctm: Matrix,
   gradients: GradientTable,
   onWarn: (m: string) => void,
+  uriToPrefix: Map<string, string>,
 ): SvgNode | SvgNode[] | null {
   const tag = el.tagName.toLowerCase();
   if (IGNORED_TAGS.has(tag)) return null;
   if (tag === 'g') {
     const local = parseTransform(el.getAttribute('transform'), onWarn);
     const childCtm = multiply(ctm, local);
-    const children = parseChildren(el, childCtm, gradients, onWarn);
+    const children = parseChildren(el, childCtm, gradients, onWarn, uriToPrefix);
     const opacity = readOpacityAttr(el, 'opacity');
     const group: SvgNode = { kind: 'group', children };
     if (opacity != null) group.opacity = opacity;
+    const meta = collectElementMeta(el, uriToPrefix);
+    if (meta) group.meta = meta;
     return group;
   }
   if (SUPPORTED_GROUP_TAGS.has(tag)) {
     // Nested <svg> — treat as a transparent group.
-    return parseChildren(el, ctm, gradients, onWarn);
+    return parseChildren(el, ctm, gradients, onWarn, uriToPrefix);
   }
   if (tag === 'text') {
-    return parseTextElement(el, ctm, gradients, onWarn);
+    const textNode = parseTextElement(el, ctm, gradients, onWarn);
+    if (textNode && !Array.isArray(textNode) && textNode.kind === 'text') {
+      const meta = collectElementMeta(el, uriToPrefix);
+      if (meta) textNode.meta = meta;
+    }
+    return textNode;
   }
   if (!SUPPORTED_LEAF_TAGS.has(tag)) {
     onWarn(`unsupported element: <${el.tagName}>`);
@@ -128,6 +251,8 @@ function parseElement(
     // intent is stroke-only. Match the spec default to preserve
     // round-trip honesty; callers can override.
   }
+  const meta = collectElementMeta(el, uriToPrefix);
+  if (meta) node.meta = meta;
   return node;
 }
 

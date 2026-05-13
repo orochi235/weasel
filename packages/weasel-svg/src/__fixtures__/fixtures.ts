@@ -68,3 +68,16 @@ export const TEXT_PLAIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="
 export const TEXT_RUNS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60">
   <text x="10" y="15" dominant-baseline="text-before-edge" data-weasel-width="220" data-weasel-height="30" font-size="18" font-family="sans-serif" fill="#1a130d"><tspan>Hello, </tspan><tspan font-weight="700">bold</tspan><tspan> and </tspan><tspan font-style="italic" fill="#b03030">red italic</tspan><tspan>.</tspan></text>
 </svg>`;
+
+/** Generic two-namespace fixture: proves weasel-svg passes through arbitrary
+ *  namespaces without knowing what they mean. Uses two unrelated prefixes
+ *  (`foo` and `bar`) so we exercise multi-namespace isolation. */
+export const TWO_NAMESPACES_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:foo="https://example.com/foo" xmlns:bar="https://example.com/bar" viewBox="0 0 100 100" foo:rootAttr="alpha" bar:rootAttr="beta">
+  <foo:registry>
+    <foo:item id="a" name="Alpha"/>
+    <foo:item id="b" name="Beta"/>
+  </foo:registry>
+  <g foo:group="g1" bar:tag="left">
+    <path d="M 0 0 L 10 0 L 10 10 L 0 10 Z" fill="#000" foo:annotation="leaf"/>
+  </g>
+</svg>`;

@@ -16,6 +16,9 @@
 export { parseSvg } from './parse';
 export { serializeSvg } from './serialize';
 export type {
+  NamespaceMeta,
+  NamespacedElement,
+  ParseOptions,
   ParseResult,
   SerializeOptions,
   SvgNode,

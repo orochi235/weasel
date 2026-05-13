@@ -7,7 +7,10 @@
 
 import type { Path } from '@orochi235/weasel';
 import { boundsOfPath } from '@orochi235/weasel';
-import type { SerializeOptions, SvgGroupNode, SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode } from './types';
+import type {
+  NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode, SvgNode,
+  SvgPaint, SvgPathNode, SvgStroke, SvgTextNode,
+} from './types';
 import { runsToPlainText } from '@orochi235/weasel';
 import { serializePathD } from './path-serializer';
 import { formatMatrix, trimNumber } from './transform';
@@ -24,13 +27,83 @@ export function serializeSvg(nodes: SvgNode[], opts: SerializeOptions = {}): str
 
   const bounds = opts.viewBox ?? computeBounds(nodes);
   const vb = `${trimNumber(bounds.x)} ${trimNumber(bounds.y)} ${trimNumber(bounds.width)} ${trimNumber(bounds.height)}`;
+  const namespaces = opts.namespaces ?? {};
+
+  const rootAttrs: string[] = [`xmlns="http://www.w3.org/2000/svg"`];
+  for (const [prefix, uri] of Object.entries(namespaces)) {
+    rootAttrs.push(`xmlns:${prefix}="${escapeAttr(uri)}"`);
+  }
+  rootAttrs.push(`viewBox="${vb}"`);
+  // documentMeta attrs onto the root, in declared-namespace order.
+  if (opts.documentMeta) {
+    for (const prefix of Object.keys(namespaces)) {
+      const bucket = opts.documentMeta[prefix];
+      if (!bucket?.attrs) continue;
+      for (const [name, value] of Object.entries(bucket.attrs)) {
+        rootAttrs.push(`${prefix}:${name}="${escapeAttr(value)}"`);
+      }
+    }
+  }
+
+  // documentMeta elements after <defs>, before geometry body.
+  let docMetaXml = '';
+  if (opts.documentMeta) {
+    for (const prefix of Object.keys(namespaces)) {
+      const bucket = opts.documentMeta[prefix];
+      if (!bucket?.elements) continue;
+      for (const [localName, list] of Object.entries(bucket.elements)) {
+        for (const el of list) docMetaXml += namespacedElementXml(prefix, localName, el);
+      }
+    }
+  }
 
   const defsXml = registry.toDefsXml();
-  const bodyXml = nodes.map((n) => nodeXml(n, registry)).join('');
+  const bodyXml = nodes.map((n) => nodeXml(n, registry, namespaces)).join('');
 
-  return (
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}">${defsXml}${bodyXml}</svg>`
-  );
+  return `<svg ${rootAttrs.join(' ')}>${defsXml}${docMetaXml}${bodyXml}</svg>`;
+}
+
+function namespacedElementXml(prefix: string, localName: string, el: NamespacedElement): string {
+  const attrs: string[] = [];
+  for (const [name, value] of Object.entries(el.attrs)) {
+    attrs.push(`${name}="${escapeAttr(value)}"`);
+  }
+  const head = attrs.length > 0 ? `<${prefix}:${localName} ${attrs.join(' ')}>` : `<${prefix}:${localName}>`;
+  let body = '';
+  if (el.children) {
+    for (const [childName, list] of Object.entries(el.children)) {
+      for (const child of list) body += namespacedElementXml(prefix, childName, child);
+    }
+  } else if (el.text != null) {
+    body = escapeText(el.text);
+  }
+  return `${head}${body}</${prefix}:${localName}>`;
+}
+
+function metaAttrsXml(meta: NamespaceMeta | undefined, namespaces: Record<string, string>): string {
+  if (!meta) return '';
+  const parts: string[] = [];
+  for (const prefix of Object.keys(namespaces)) {
+    const bucket = meta[prefix];
+    if (!bucket?.attrs) continue;
+    for (const [name, value] of Object.entries(bucket.attrs)) {
+      parts.push(`${prefix}:${name}="${escapeAttr(value)}"`);
+    }
+  }
+  return parts.length > 0 ? ` ${parts.join(' ')}` : '';
+}
+
+function metaElementsXml(meta: NamespaceMeta | undefined, namespaces: Record<string, string>): string {
+  if (!meta) return '';
+  let out = '';
+  for (const prefix of Object.keys(namespaces)) {
+    const bucket = meta[prefix];
+    if (!bucket?.elements) continue;
+    for (const [localName, list] of Object.entries(bucket.elements)) {
+      for (const el of list) out += namespacedElementXml(prefix, localName, el);
+    }
+  }
+  return out;
 }
 
 function registerGradients(nodes: SvgNode[], registry: GradientRegistry): void {
@@ -51,13 +124,13 @@ function registerGradients(nodes: SvgNode[], registry: GradientRegistry): void {
   }
 }
 
-function nodeXml(node: SvgNode, registry: GradientRegistry): string {
-  if (node.kind === 'group') return groupXml(node, registry);
-  if (node.kind === 'text') return textXml(node, registry);
-  return pathXml(node, registry);
+function nodeXml(node: SvgNode, registry: GradientRegistry, namespaces: Record<string, string>): string {
+  if (node.kind === 'group') return groupXml(node, registry, namespaces);
+  if (node.kind === 'text') return textXml(node, registry, namespaces);
+  return pathXml(node, registry, namespaces);
 }
 
-function groupXml(node: SvgGroupNode, registry: GradientRegistry): string {
+function groupXml(node: SvgGroupNode, registry: GradientRegistry, namespaces: Record<string, string>): string {
   const attrs: string[] = [];
   if (node.transform) {
     const m = formatMatrix(node.transform);
@@ -66,12 +139,17 @@ function groupXml(node: SvgGroupNode, registry: GradientRegistry): string {
   if (node.opacity != null && node.opacity !== 1) {
     attrs.push(`opacity="${trimNumber(node.opacity)}"`);
   }
-  const head = attrs.length > 0 ? `<g ${attrs.join(' ')}>` : '<g>';
-  const body = node.children.map((c) => nodeXml(c, registry)).join('');
-  return `${head}${body}</g>`;
+  const metaAttrs = metaAttrsXml(node.meta, namespaces);
+  // `metaAttrs` already starts with a leading space (or is empty), so we
+  // can splice it after the existing attr list without extra logic.
+  const head = attrs.length > 0
+    ? `<g ${attrs.join(' ')}${metaAttrs}>`
+    : `<g${metaAttrs}>`;
+  const body = node.children.map((c) => nodeXml(c, registry, namespaces)).join('');
+  return `${head}${body}${metaElementsXml(node.meta, namespaces)}</g>`;
 }
 
-function pathXml(node: SvgPathNode, registry: GradientRegistry): string {
+function pathXml(node: SvgPathNode, registry: GradientRegistry, namespaces: Record<string, string>): string {
   const attrs: string[] = [`d="${serializePathD(node.path)}"`];
   const fillAttrs = paintAttrs(node.fill, 'fill', registry);
   for (const a of fillAttrs) attrs.push(a);
@@ -84,7 +162,12 @@ function pathXml(node: SvgPathNode, registry: GradientRegistry): string {
   if (node.opacity != null && node.opacity !== 1) {
     attrs.push(`opacity="${trimNumber(node.opacity)}"`);
   }
-  return `<path ${attrs.join(' ')}/>`;
+  const metaAttrs = metaAttrsXml(node.meta, namespaces);
+  const metaEls = metaElementsXml(node.meta, namespaces);
+  if (metaEls) {
+    return `<path ${attrs.join(' ')}${metaAttrs}>${metaEls}</path>`;
+  }
+  return `<path ${attrs.join(' ')}${metaAttrs}/>`;
 }
 
 function paintAttrs(
@@ -154,7 +237,7 @@ function computeBounds(nodes: SvgNode[]): { x: number; y: number; width: number;
  * width/height (which native SVG text doesn't model) in `data-weasel-*`
  * attributes so they round-trip through the parser losslessly.
  */
-function textXml(node: SvgTextNode, registry: GradientRegistry): string {
+function textXml(node: SvgTextNode, registry: GradientRegistry, namespaces: Record<string, string>): string {
   const attrs: string[] = [
     `x="${trimNumber(node.x)}"`,
     `y="${trimNumber(node.y)}"`,
@@ -193,7 +276,9 @@ function textXml(node: SvgTextNode, registry: GradientRegistry): string {
   const body = node.runs && node.runs.length > 0
     ? node.runs.map((r) => runXml(r, registry)).join('')
     : escapeText(node.text);
-  return `<text ${attrs.join(' ')}>${body}</text>`;
+  const metaAttrs = metaAttrsXml(node.meta, namespaces);
+  const metaEls = metaElementsXml(node.meta, namespaces);
+  return `<text ${attrs.join(' ')}${metaAttrs}>${body}${metaEls}</text>`;
 }
 
 function runXml(run: import('@orochi235/weasel').StyledRun, registry: GradientRegistry): string {

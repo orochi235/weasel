@@ -14,6 +14,41 @@
 import type { Path, Paint, StyledRun, TextStyle } from '@orochi235/weasel';
 
 /**
+ * Opaque pass-through bag for namespaced XML content.
+ *
+ * weasel-svg does not interpret the contents — it only ensures that any
+ * attributes or child elements in a *declared* XML namespace round-trip
+ * losslessly through parse → serialize. Consumers (e.g. an app-specific
+ * bridge layer) hang their domain semantics off this structure.
+ *
+ * Keyed by namespace prefix (the prefix is a write-time choice; the URI
+ * is the canonical identifier and is supplied via `ParseOptions.namespaces`
+ * / `SerializeOptions.namespaces`).
+ */
+export interface NamespaceMeta {
+  [prefix: string]: {
+    /** Local-name → string-value map for attributes in this namespace. */
+    attrs?: Record<string, string>;
+    /**
+     * Child elements in this namespace, keyed by local name. Each entry
+     * is an array because a namespace can host multiple sibling elements
+     * with the same tag (e.g. `<swill:layer/><swill:layer/>`).
+     */
+    elements?: Record<string, NamespacedElement[]>;
+  };
+}
+
+/** Opaque structured representation of a namespaced element. */
+export interface NamespacedElement {
+  /** Attribute local-name → string-value. */
+  attrs: Record<string, string>;
+  /** Text content, when the element contains only text (no child elements). */
+  text?: string;
+  /** Nested namespaced children, keyed by local name (recursive). */
+  children?: Record<string, NamespacedElement[]>;
+}
+
+/**
  * 2x3 affine matrix in column-major form (SVG's `matrix(a b c d e f)`
  * order). Maps `[x', y'] = [a*x + c*y + e, b*x + d*y + f]`.
  */
@@ -65,6 +100,8 @@ export interface SvgPathNode {
   stroke?: SvgStroke;
   /** Element-level opacity (`opacity="..."`), 0..1. */
   opacity?: number;
+  /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
+  meta?: NamespaceMeta;
 }
 
 /**
@@ -78,6 +115,8 @@ export interface SvgGroupNode {
   children: SvgNode[];
   transform?: Matrix;
   opacity?: number;
+  /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
+  meta?: NamespaceMeta;
 }
 
 /**
@@ -108,16 +147,36 @@ export interface SvgTextNode {
   style?: TextStyle;
   /** Element-level opacity (`opacity="..."`), 0..1. */
   opacity?: number;
+  /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
+  meta?: NamespaceMeta;
 }
 
 /** Discriminated-union node — the leaf of the public tree. */
 export type SvgNode = SvgPathNode | SvgGroupNode | SvgTextNode;
+
+/** Options for {@link parseSvg}. */
+export interface ParseOptions {
+  /**
+   * Map of prefix → URI for XML namespaces the caller wants surfaced.
+   * Attributes / child elements in any declared namespace are collected
+   * into `SvgNode.meta` (per element) or `ParseResult.documentMeta` (root).
+   * Undeclared namespaces are preserved in the DOM but not promoted into
+   * the structured `meta` bag; they are silently dropped at serialize time.
+   */
+  namespaces?: Record<string, string>;
+}
 
 /** Output of {@link parseSvg}. */
 export interface ParseResult {
   nodes: SvgNode[];
   /** Non-fatal notices (unsupported elements, unrecognized attributes). */
   warnings: string[];
+  /**
+   * Opaque per-document bag for declared namespaces. Holds root-level
+   * namespaced attributes (`documentMeta.<prefix>.attrs`) and namespaced
+   * root children (`documentMeta.<prefix>.elements`).
+   */
+  documentMeta?: NamespaceMeta;
 }
 
 /** Options for {@link serializeSvg}. */
@@ -127,6 +186,19 @@ export interface SerializeOptions {
    * a tight bounding box from the supplied nodes.
    */
   viewBox?: { x: number; y: number; width: number; height: number };
+  /**
+   * Map of prefix → URI for XML namespaces to declare on the root
+   * `<svg>`. The serializer reads `documentMeta[prefix]` and
+   * `node.meta[prefix]` to write the actual attributes and elements.
+   */
+  namespaces?: Record<string, string>;
+  /**
+   * Opaque per-document namespaced extras. Each `<prefix>.attrs` becomes
+   * `<prefix>:<name>="..."` attributes on the root `<svg>`. Each
+   * `<prefix>.elements[localName]` becomes `<prefix>:<localName>...>`
+   * children placed immediately before any geometry.
+   */
+  documentMeta?: NamespaceMeta;
   /** Pretty-print with newlines + indentation. Default `false`. */
   pretty?: boolean;
 }
