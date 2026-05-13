@@ -133,15 +133,19 @@ describe('flipPoseViaDescriptor (PathBuilder Bezier curves)', () => {
     expect(b.width).toBeCloseTo(10, 6);
   });
 
-  it('vertical flip mirrors quadratic Bezier control point', () => {
+  it('vertical flip mirrors quadratic Bezier control point about the tight AABB', () => {
     const path = new PathBuilder()
       .moveTo(0, 0)
       .quadTo(5, 10, 10, 0)
       .build();
     const flipped = flipPoseViaDescriptor(path, 'y', pathPoseDescriptor);
     if (flipped.kind !== 'polygon') throw new Error('expected polygon');
-    // AABB y:0..10, cy=5. Original y coords [0, 10, 0] → [10, 0, 10].
-    expect(Array.from(flipped.coords)).toEqual([0, 10, 5, 0, 10, 10]);
+    // Tight AABB y:0..5 (quadratic peak is at t=0.5 → y=5, not at the
+    // control point's y=10). cy=2.5. Original y coords [0, 10, 0] reflect
+    // about cy=2.5 to [5, -5, 5] — the control point lands below the AABB
+    // on the flipped side, which is exactly the mirror semantics callers
+    // want.
+    expect(Array.from(flipped.coords)).toEqual([0, 5, 5, -5, 10, 5]);
   });
 
   it('mixed M/L/C/Q/Z command stream: every coord flipped, commands preserved', () => {
@@ -154,15 +158,17 @@ describe('flipPoseViaDescriptor (PathBuilder Bezier curves)', () => {
       .build();
     const flipped = flipPoseViaDescriptor(path, 'x', pathPoseDescriptor);
     if (flipped.kind !== 'polygon') throw new Error('expected polygon');
-    // AABB x:0..12 (control point at 12), cx=6.
-    // Reflect: (0,0)→(12,0); (10,0)→(2,0); (12,4)→(0,4); (8,8)→(4,8); (10,10)→(2,10);
-    //         (5,12)→(7,12); (0,10)→(12,10).
-    expect(Array.from(flipped.coords)).toEqual([
-      12, 0,
-      2, 0,
-      0, 4,  4, 8,  2, 10,
-      7, 12, 12, 10,
-    ]);
+    // Tight AABB width depends on the cubic's x-extremum (cx = b.x +
+    // b.width / 2). Derive expected coords by reflecting each original
+    // x about that cx — value-based hard-coding would tie this test to
+    // the internal Bezier-root solver's float precision.
+    const b = pathPoseDescriptor.getBounds(path);
+    const cx = b.x + b.width / 2;
+    const origCoords = [0, 0, 10, 0, 12, 4, 8, 8, 10, 10, 5, 12, 0, 10];
+    flipped.coords.forEach((c, i) => {
+      const expected = i % 2 === 0 ? 2 * cx - origCoords[i] : origCoords[i];
+      expect(c).toBeCloseTo(expected, 6);
+    });
     // Command stream preserved verbatim — same shape, just reflected.
     expect(Array.from(flipped.commands)).toEqual(Array.from(path.commands));
   });

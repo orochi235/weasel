@@ -148,7 +148,7 @@ describe('useDecayLoop', () => {
         velocity: { vx: -10, vy: 0 },
         friction: 1,                     // no friction — isolate spring damping
         minSpeed: 0.001,
-        viewBounds: { minX: -5 },
+        viewBounds: { minX: -8 },        // wall farther than damped rebound (5)
         boundary: 'spring',
         initialPosition: { x: 0, y: 0 },
         onTick: (dx) => { ticks.push(dx); },
@@ -157,9 +157,10 @@ describe('useDecayLoop', () => {
     act(() => { stepRAF(1); });  // first frame: skip (records lastTime)
     act(() => { stepRAF(1); });  // hits minX, velocity reflects with damping
     act(() => { stepRAF(1); });  // rebound tick — should be smaller magnitude
-    // First tick clamped at -5 (full pre-bounce travel)
-    expect(ticks[0]).toBeCloseTo(-5);
-    // Rebound is positive (reflected) but magnitude is less than incoming
+    // First tick clamped at -8 (the wall, since raw 10*1ms would overshoot)
+    expect(ticks[0]).toBeCloseTo(-8);
+    // Rebound is positive (reflected) but magnitude is less than the
+    // clamped incoming step — damped vx (|vx|*0.5 = 5) over dt=1ms.
     expect(ticks[1]).toBeGreaterThan(0);
     expect(Math.abs(ticks[1])).toBeLessThan(Math.abs(ticks[0]));
   });
@@ -194,7 +195,7 @@ describe('useDecayLoop', () => {
         velocity: { vx: 10, vy: 0 },     // moving right
         friction: 1,
         minSpeed: 0.001,
-        viewBounds: { minX: -100, maxX: 5 },
+        viewBounds: { minX: -100, maxX: 8 }, // wall farther than damped rebound (5)
         boundary: 'spring',
         initialPosition: { x: 0, y: 0 },
         onTick: (dx) => { ticks.push(dx); },
@@ -203,7 +204,7 @@ describe('useDecayLoop', () => {
     act(() => { stepRAF(1); });  // first frame: skip
     act(() => { stepRAF(1); });  // hits maxX, reflects left with damping
     act(() => { stepRAF(1); });  // moving left now
-    expect(ticks[0]).toBeCloseTo(5);   // clamped at maxX
+    expect(ticks[0]).toBeCloseTo(8);   // clamped at maxX
     expect(ticks[1]).toBeLessThan(0);  // reflected leftward
     expect(Math.abs(ticks[1])).toBeLessThan(Math.abs(ticks[0]));
   });

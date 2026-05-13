@@ -27,11 +27,13 @@ describe('createSetPathOp', () => {
     expect(setPath).toHaveBeenCalledWith('a', from);
   });
 
-  it('reports no-op when from and to are structurally identical', () => {
+  it('reports no-op return when from and to are structurally identical (still calls setPath idempotently)', () => {
     const same = { path: { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 }, closed: true, params: undefined };
     const op = createSetPathOp({ id: 'a', from: same, to: same });
     const setPath = vi.fn();
+    // apply still invokes setPath so downstream observers see consistent
+    // op behavior; only the return value signals "no mutation" to history.
     expect(op.apply({ setPath })).toBe(false);
-    expect(setPath).not.toHaveBeenCalled();
+    expect(setPath).toHaveBeenCalledWith('a', same);
   });
 });
