@@ -1441,6 +1441,7 @@ export function App() {
           // Force a re-publish whenever the clipboard tick advances —
           // ensures the paste-button's clipboardEmpty flag stays current.
           clipboardTick={clipboardTick}
+          pageSelected={pageSelected}
         />
       </div>
 
@@ -1496,6 +1497,7 @@ interface RightSidebarProps {
   onSelectLayers: (ids: string[]) => void;
   onLayerReorder: (ids: string[], targetIndex: number) => void;
   clipboardTick: number;
+  pageSelected: boolean;
 }
 
 function RightSidebar(p: RightSidebarProps) {
@@ -1510,7 +1512,24 @@ function RightSidebar(p: RightSidebarProps) {
       // equivalent; the variable lets CSS handle min/max clamping.
       style={{ ['--swill-right-width' as string]: `${p.width}px` } as React.CSSProperties}
     >
-      {primary ? (
+      {p.pageSelected ? (
+        <PropertiesPanel title="Page">
+          <PropertyRow label="Title">
+            <PropertyTextInput value={p.docTitle} onChange={p.setDocTitle} />
+          </PropertyRow>
+          <PropertyRow label="Paper">
+            <PropertySelect
+              value={p.paperSize}
+              onChange={p.setPaperSize}
+              options={[
+                { value: 'letter', label: 'US Letter' },
+                { value: 'a4', label: 'A4' },
+                { value: 'legal', label: 'Legal' },
+              ]}
+            />
+          </PropertyRow>
+        </PropertiesPanel>
+      ) : primary ? (
         <PropertiesPanel title={`Selection (${selectedItems.length})`}>
           <PropertyRow label="Kind">
             <PropertyReadOnly>
