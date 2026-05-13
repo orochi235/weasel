@@ -4,6 +4,7 @@ import type { Tool, ToolCtx } from '../types';
 import { PenIcon } from '../../icons';
 import { PathBuilder } from 'features/paths/builder';
 import type { PolygonPath } from 'features/paths/types';
+import type { PenAnchor as KitPenAnchor } from 'features/paths/anchors';
 import { constrainTo45 } from '../../util/constrainTo45';
 
 /**
@@ -23,8 +24,20 @@ export interface PenAnchor {
 }
 
 export interface PenSubpath {
-  anchors: PenAnchor[];
+  anchors: PenAnchor[]; // LOCAL PenAnchor — create-mode in-progress
   closed: boolean;
+}
+
+/** Edit-mode state. `anchors` uses the kit's PenAnchor (committed/derived
+ *  geometry); `altBroken` has no post-commit meaning and is correctly absent. */
+export interface PenEditState {
+  objId: string;
+  anchors: KitPenAnchor[][];
+  closed: boolean[];
+  selectedAnchors: Set<string>;
+  activeHandle: { sub: number; anchor: number; side: 'in' | 'out' } | null;
+  dirty: boolean;
+  preConvert: { path: unknown; closed: boolean; params: unknown } | null;
 }
 
 /** Mutable scratch shared across pen-tool gestures. The hook keeps a stable
@@ -32,6 +45,11 @@ export interface PenSubpath {
  *  so click-by-click state survives gesture boundaries and the preview layer
  *  can read the same object. */
 export interface PenScratch {
+  /** Whether the pen is in create (draw new path) or edit (reshape existing
+   *  path) mode. Defaults to 'create'. */
+  mode: 'create' | 'edit';
+  /** Edit-mode state, populated when `mode === 'edit'`. Null in create mode. */
+  edit: PenEditState | null;
   finishedSubpaths: PenSubpath[];
   current: PenSubpath | null;
   cursor: { x: number; y: number } | null;
@@ -79,6 +97,8 @@ export interface UseUserPenToolOptions<TPose> {
 
 function freshScratch(): PenScratch {
   return {
+    mode: 'create',
+    edit: null,
     finishedSubpaths: [],
     current: null,
     cursor: null,
@@ -90,6 +110,8 @@ function freshScratch(): PenScratch {
 }
 
 function resetScratch(s: PenScratch): void {
+  s.mode = 'create';
+  s.edit = null;
   s.finishedSubpaths = [];
   s.current = null;
   s.cursor = null;
