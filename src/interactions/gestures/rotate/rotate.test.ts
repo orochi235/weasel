@@ -157,6 +157,82 @@ describe('rotationHandle / hitRotationHandle', () => {
 
 import { createDebugSink } from '../../../debug/createDebugSink';
 
+describe('useRotate — pivot: "each"', () => {
+  it('rotates each item around its own center; x/y unchanged', () => {
+    const { adapter, state } = makeAdapter([
+      ['a', { x: 0, y: 0, width: 10, height: 10, rotation: 0 }],
+      ['b', { x: 100, y: 0, width: 20, height: 20, rotation: 0 }],
+    ]);
+    const { result } = renderHook(() =>
+      useRotate<{ id: string }, RotatedPose>(adapter, { pivot: 'each' }),
+    );
+    // Union AABB: x [0,120], y [0,20]; union center (60, 10).
+    // Start with pointer at (60, -90) — angle from union center = -π/2.
+    act(() => result.current.start({ ids: ['a', 'b'], worldX: 60, worldY: -90 }));
+    // Move to (160, 10) — angle from union center = 0, delta = +π/2.
+    act(() => result.current.move({ worldX: 160, worldY: 10, modifiers: NO_MOD }));
+    act(() => result.current.end());
+    expect(state.get('a')!.rotation).toBeCloseTo(Math.PI / 2, 5);
+    expect(state.get('b')!.rotation).toBeCloseTo(Math.PI / 2, 5);
+    // x/y unchanged in 'each' mode.
+    expect(state.get('a')!.x).toBe(0);
+    expect(state.get('a')!.y).toBe(0);
+    expect(state.get('b')!.x).toBe(100);
+    expect(state.get('b')!.y).toBe(0);
+  });
+});
+
+describe('useRotate — pivot: "union"', () => {
+  it('orbits each item around the union center', () => {
+    const { adapter, state } = makeAdapter([
+      ['a', { x: 0, y: 0, width: 10, height: 10, rotation: 0 }],     // center (5, 5)
+      ['b', { x: 100, y: 0, width: 10, height: 10, rotation: 0 }],   // center (105, 5)
+    ]);
+    // Union AABB: x [0,110], y [0,10]; union center (55, 5).
+    const { result } = renderHook(() =>
+      useRotate<{ id: string }, RotatedPose>(adapter, { pivot: 'union' }),
+    );
+    // Start with pointer at (55, -50) — angle = -π/2 from union center.
+    act(() => result.current.start({ ids: ['a', 'b'], worldX: 55, worldY: -50 }));
+    // Move to (105, 5) — angle = 0 from union center, so delta = +π/2.
+    act(() => result.current.move({ worldX: 105, worldY: 5, modifiers: NO_MOD }));
+    act(() => result.current.end());
+
+    // a's center orbits from (5, 5): offset (-50, 0) rotated +π/2 → (0, -50).
+    // New center (55, -45). a's new x = 55 - 5 = 50; new y = -45 - 5 = -50.
+    expect(state.get('a')!.x).toBeCloseTo(50, 4);
+    expect(state.get('a')!.y).toBeCloseTo(-50, 4);
+    expect(state.get('a')!.rotation).toBeCloseTo(Math.PI / 2, 5);
+
+    // b's center orbits from (105, 5): offset (50, 0) rotated +π/2 → (0, 50).
+    // New center (55, 55). b's new x = 55 - 5 = 50; new y = 55 - 5 = 50.
+    expect(state.get('b')!.x).toBeCloseTo(50, 4);
+    expect(state.get('b')!.y).toBeCloseTo(50, 4);
+    expect(state.get('b')!.rotation).toBeCloseTo(Math.PI / 2, 5);
+  });
+
+  it('single-id selection produces the same result in either pivot mode', () => {
+    const init: [string, RotatedPose] = [
+      'a',
+      { x: 0, y: 0, width: 10, height: 10, rotation: 0 },
+    ];
+    const eachRig = makeAdapter([init]);
+    const unionRig = makeAdapter([init]);
+    const each = renderHook(() =>
+      useRotate<{ id: string }, RotatedPose>(eachRig.adapter, { pivot: 'each' }),
+    ).result;
+    const uni = renderHook(() =>
+      useRotate<{ id: string }, RotatedPose>(unionRig.adapter, { pivot: 'union' }),
+    ).result;
+    for (const r of [each, uni]) {
+      act(() => r.current.start({ ids: ['a'], worldX: 5, worldY: -10 }));
+      act(() => r.current.move({ worldX: 15, worldY: 5, modifiers: NO_MOD }));
+      act(() => r.current.end());
+    }
+    expect(eachRig.state.get('a')).toEqual(unionRig.state.get('a'));
+  });
+});
+
 describe('useRotate — debug recording', () => {
   it('records a rotation handle position on gesture start', () => {
     const sink = createDebugSink({ handles: true });

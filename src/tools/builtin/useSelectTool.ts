@@ -606,6 +606,11 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   // `rotationAff.render` once the slot is reshaped.
   const rotateRef = useRef(rotate);
   rotateRef.current = rotate;
+  // Latest-callback ref to `options.getSelection` so rotation onStart can read
+  // the live selection (for multi-id pivot) without re-creating the affordance.
+  // The same ref is reused for previewBounds below.
+  const getSelectionRef = useRef(options.getSelection);
+  getSelectionRef.current = options.getSelection;
 
   const rotationAff = useMemo(
     () => createRotationAffordance({
@@ -630,7 +635,13 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         const result: AffordanceBinding<RotationScratch> = {
           drag: {
             onStart: (_e, dctx) => {
-              rotateRef.current.start({ id: scratch.targetId, worldX: dctx.worldX, worldY: dctx.worldY });
+              // Pass the current selection so multi-id rotation gestures hit
+              // the configured pivot mode (default 'union'). Single-id stays
+              // intact via the same call. If selection isn't reachable, fall
+              // back to the handle's owning id.
+              const sel = getSelectionRef.current?.();
+              const ids = sel && sel.length > 0 ? [...sel] : [scratch.targetId];
+              rotateRef.current.start({ ids, worldX: dctx.worldX, worldY: dctx.worldY });
               return 'claim';
             },
             onMove: (_e, dctx) => {
@@ -716,8 +727,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   // having to special-case the synthetic id inline. Returns null for any other
   // id (consumers fall through to `previewPose` → committed adapter pose →
   // geometry.getBounds, same as before).
-  const getSelectionRef = useRef(options.getSelection);
-  getSelectionRef.current = options.getSelection;
+  // `getSelectionRef` is declared earlier (also used by the rotation affordance).
   const boundsOfRef = useRef(boundsOfFn);
   boundsOfRef.current = boundsOfFn;
   const previewBounds = (id: string): ToolBounds | null => {

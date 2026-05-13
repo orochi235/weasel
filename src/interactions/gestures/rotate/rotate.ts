@@ -32,7 +32,10 @@ const ROTATED_POSE_GEOMETRY: RotateGeometry<RotatedPose> = {
 
 /** Arguments passed to `start()` when initiating a rotate gesture. */
 export interface RotateStartArgs {
-  id: string;
+  /** Single-id form (kept for back-compat). */
+  id?: string;
+  /** Multi-id form. When set, takes precedence over `id`. */
+  ids?: string[];
   worldX: number;
   worldY: number;
 }
@@ -69,6 +72,13 @@ export interface UseRotateOptions<TPose> {
   /** Hit-test radius for the rotation handle, in screen pixels. Used for
    *  the recorded debug hitbox circle. Default `8`. */
   handleHitRadius?: number;
+  /** Multi-selection pivot mode. Default `'union'`.
+   *  - `'each'`: each item rotates around its own center.
+   *  - `'union'`: each item rotates around the selection's union center;
+   *    item centers orbit the union center while also gaining the same
+   *    rotation delta.
+   *  Has no effect on single-id gestures. */
+  pivot?: 'each' | 'union';
 }
 
 /** Return shape of `useRotate`: lifecycle methods and a live overlay snapshot. */
@@ -85,16 +95,23 @@ export interface RotateController<TNode extends { id: string }, TPose> {
 
 interface State<TPose> {
   active: boolean;
-  id: string | null;
-  originPose: TPose | null;
-  /** Center of the unrotated AABB at gesture start (rotation pivot). */
-  pivot: { x: number; y: number };
-  /** Rotation at gesture start. */
-  originRotation: number;
-  /** Pointer angle around `pivot` at gesture start. */
+  ids: string[];
+  /** Map id → origin pose at gesture start. */
+  originPoses: Map<string, TPose>;
+  /** Map id → origin AABB center. */
+  originCenters: Map<string, { x: number; y: number }>;
+  /** Map id → origin rotation. */
+  originRotations: Map<string, number>;
+  /** Pivot used to convert pointer angle to rotation delta. For
+   *  `pivot: 'union'` this is the union center; for `'each'` it's the same
+   *  union center — the pointer-angle math should be stable regardless of
+   *  mode. */
+  rotationPivot: { x: number; y: number };
+  /** Pointer angle around `rotationPivot` at gesture start. */
   startPointerAngle: number;
   ctx: GestureContext<TPose> | null;
-  lastRotation: number;
+  /** Last applied delta (for lerping the overlay). */
+  lastDelta: number;
 }
 
 // NOTE (v1 limitation): when a rotated object is resized, the resize math
@@ -117,6 +134,7 @@ export function useRotate<TNode extends { id: string }, TPose>(
     debug,
     rotationHandleDistance = DEFAULT_ROTATION_HANDLE_DISTANCE,
     handleHitRadius = 8,
+    pivot = 'union',
   } = options as UseRotateOptions<TPose> & {
     behaviors?: RotateBehavior<RotatedPose>[];
   };
@@ -140,40 +158,67 @@ export function useRotate<TNode extends { id: string }, TPose>(
   rotationHandleDistanceRef.current = rotationHandleDistance;
   const handleHitRadiusRef = useRef(handleHitRadius);
   handleHitRadiusRef.current = handleHitRadius;
+  const pivotRef = useRef(pivot);
+  pivotRef.current = pivot;
 
   const stateRef = useRef<State<TPose>>({
     active: false,
-    id: null,
-    originPose: null,
-    pivot: { x: 0, y: 0 },
-    originRotation: 0,
+    ids: [],
+    originPoses: new Map(),
+    originCenters: new Map(),
+    originRotations: new Map(),
+    rotationPivot: { x: 0, y: 0 },
     startPointerAngle: 0,
     ctx: null,
-    lastRotation: 0,
+    lastDelta: 0,
   });
 
   const [overlay, setOverlay] = useState<RotateOverlay<TPose> | null>(null);
 
   const cleanup = useCallback(() => {
-    stateRef.current.active = false;
-    stateRef.current.id = null;
-    stateRef.current.originPose = null;
-    stateRef.current.ctx = null;
+    stateRef.current = {
+      active: false,
+      ids: [],
+      originPoses: new Map(),
+      originCenters: new Map(),
+      originRotations: new Map(),
+      rotationPivot: { x: 0, y: 0 },
+      startPointerAngle: 0,
+      ctx: null,
+      lastDelta: 0,
+    };
     setOverlay(null);
   }, []);
 
   const start = useCallback((args: RotateStartArgs) => {
     const adapter = adapterRef.current;
     const geom = geometryRef.current;
-    const originPose = adapter.getPose(args.id);
-    const rb = geom.getRotatedBounds(originPose);
-    const pivot = aabbCenter(rb);
-    const startPointerAngle = Math.atan2(args.worldY - pivot.y, args.worldX - pivot.x);
+    const ids = args.ids ?? (args.id != null ? [args.id] : []);
+    if (ids.length === 0) return;
+
+    const originPoses = new Map<string, TPose>();
+    const originCenters = new Map<string, { x: number; y: number }>();
+    const originRotations = new Map<string, number>();
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const id of ids) {
+      const p = adapter.getPose(id);
+      originPoses.set(id, p);
+      const rb = geom.getRotatedBounds(p);
+      const c = aabbCenter(rb);
+      originCenters.set(id, c);
+      originRotations.set(id, rb.rotation);
+      if (rb.x < minX) minX = rb.x;
+      if (rb.y < minY) minY = rb.y;
+      if (rb.x + rb.width > maxX) maxX = rb.x + rb.width;
+      if (rb.y + rb.height > maxY) maxY = rb.y + rb.height;
+    }
+    const unionCenter = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+    const startPointerAngle = Math.atan2(args.worldY - unionCenter.y, args.worldX - unionCenter.x);
 
     const ctx: GestureContext<TPose> = {
-      draggedIds: [args.id],
-      origin: new Map([[args.id, originPose]]),
-      current: new Map([[args.id, originPose]]),
+      draggedIds: ids,
+      origin: new Map(originPoses),
+      current: new Map(originPoses),
       snap: null,
       modifiers: { alt: false, shift: false, meta: false, ctrl: false },
       pointer: { worldX: args.worldX, worldY: args.worldY, clientX: 0, clientY: 0 },
@@ -182,68 +227,134 @@ export function useRotate<TNode extends { id: string }, TPose>(
     };
     stateRef.current = {
       active: true,
-      id: args.id,
-      originPose,
-      pivot,
-      originRotation: rb.rotation,
+      ids,
+      originPoses,
+      originCenters,
+      originRotations,
+      rotationPivot: unionCenter,
       startPointerAngle,
       ctx,
-      lastRotation: rb.rotation,
+      lastDelta: 0,
     };
     for (const b of behaviorsRef.current)
       (b as RotateBehavior<RotatedPose>).onStart?.(ctx as unknown as GestureContext<RotatedPose>);
-    onGestureStartRef.current?.(args.id);
-    // Debug: record rotation handle position + hitbox.
+    onGestureStartRef.current?.(ids[0]);
+    // Debug rec only for single-id starts (the handle is a single-bounds concept).
     const dbg = debugRef.current;
-    if (dbg) {
+    if (dbg && ids.length === 1) {
+      const rb = geom.getRotatedBounds(originPoses.get(ids[0])!);
       const h = rotationHandle(rb, rotationHandleDistanceRef.current);
       const r = handleHitRadiusRef.current;
-      dbg.recordHandle(args.id, { x: h.cx, y: h.cy }, 'rotation');
-      dbg.recordHitbox(args.id, 'rotation', { kind: 'circle', cx: h.cx, cy: h.cy, r });
+      dbg.recordHandle(ids[0], { x: h.cx, y: h.cy }, 'rotation');
+      dbg.recordHitbox(ids[0], 'rotation', { kind: 'circle', cx: h.cx, cy: h.cy, r });
     }
-    setOverlay({ id: args.id, currentPose: originPose, targetPose: originPose, originPose });
+    // Overlay tracks single-id for now; multi overlay is out of scope here.
+    const firstId = ids[0];
+    const firstPose = originPoses.get(firstId)!;
+    setOverlay({
+      id: firstId,
+      currentPose: firstPose,
+      targetPose: firstPose,
+      originPose: firstPose,
+    });
   }, []);
 
   const move = useCallback((args: RotateMoveArgs): boolean => {
     const s = stateRef.current;
-    if (!s.active || !s.ctx || s.originPose === null || s.id === null) return false;
+    if (!s.active || !s.ctx || s.ids.length === 0) return false;
 
     const geom = geometryRef.current;
     s.ctx.modifiers = args.modifiers;
     s.ctx.pointer = { worldX: args.worldX, worldY: args.worldY, clientX: 0, clientY: 0 };
 
-    const pointerAngle = Math.atan2(args.worldY - s.pivot.y, args.worldX - s.pivot.x);
+    const pointerAngle = Math.atan2(
+      args.worldY - s.rotationPivot.y,
+      args.worldX - s.rotationPivot.x,
+    );
     const delta = pointerAngle - s.startPointerAngle;
-    let proposedRotation = s.originRotation + delta;
-    let proposedPose = geom.withRotation(s.originPose, proposedRotation);
 
-    const ctxAsRot = s.ctx as unknown as GestureContext<RotatedPose>;
-    for (const b of behaviorsRef.current) {
-      const r = (b as RotateBehavior<RotatedPose>).onMove?.(ctxAsRot, {
-        pose: proposedPose as unknown as RotatedPose,
-        rotation: proposedRotation,
-      });
-      if (!r) continue;
-      if (r.pose !== undefined) {
-        proposedPose = r.pose as unknown as TPose;
-        proposedRotation = (r.pose as RotatedPose).rotation;
+    const cos = Math.cos(delta);
+    const sin = Math.sin(delta);
+    const useUnion = pivotRef.current === 'union' && s.ids.length > 1;
+    const newCurrent = new Map<string, TPose>();
+
+    for (const id of s.ids) {
+      const originPose = s.originPoses.get(id)!;
+      const originRotation = s.originRotations.get(id)!;
+      let proposedRotation = originRotation + delta;
+
+      let proposedPose: TPose;
+      if (useUnion) {
+        // Orbit the item's center around the union center. The bounds
+        // (width/height) don't change; only the AABB position shifts so the
+        // new center sits at (newCx, newCy). Assumes TPose surfaces x/y/
+        // width/height — true for RotatedPose-shaped poses; exotic TPose
+        // would need a richer geometry adapter.
+        const originCenter = s.originCenters.get(id)!;
+        const ox = originCenter.x - s.rotationPivot.x;
+        const oy = originCenter.y - s.rotationPivot.y;
+        const newCx = s.rotationPivot.x + ox * cos - oy * sin;
+        const newCy = s.rotationPivot.y + ox * sin + oy * cos;
+        const rb = geom.getRotatedBounds(originPose);
+        const newX = newCx - rb.width / 2;
+        const newY = newCy - rb.height / 2;
+        const rotated = geom.withRotation(originPose, proposedRotation);
+        proposedPose = { ...(rotated as object), x: newX, y: newY } as TPose;
+      } else {
+        proposedPose = geom.withRotation(originPose, proposedRotation);
       }
+
+      // Run behaviors per-id (most behaviors target single items).
+      const ctxAsRot = s.ctx as unknown as GestureContext<RotatedPose>;
+      for (const b of behaviorsRef.current) {
+        const r = (b as RotateBehavior<RotatedPose>).onMove?.(ctxAsRot, {
+          pose: proposedPose as unknown as RotatedPose,
+          rotation: proposedRotation,
+        });
+        if (!r) continue;
+        if (r.pose !== undefined) {
+          proposedPose = r.pose as unknown as TPose;
+          proposedRotation = (r.pose as RotatedPose).rotation;
+        }
+      }
+
+      newCurrent.set(id, proposedPose);
+    }
+    s.ctx.current = newCurrent;
+
+    // Lerp the overlay (first-id only) toward the target rotation, in angle
+    // space (so going past ±π wraps cleanly). Multi overlay is out of scope.
+    const firstId = s.ids[0];
+    const firstOrigin = s.originPoses.get(firstId)!;
+    const firstTarget = newCurrent.get(firstId)!;
+    const firstTargetRotation = geom.getRotatedBounds(firstTarget).rotation;
+    const firstOriginRotation = s.originRotations.get(firstId)!;
+    const lastApplied = firstOriginRotation + s.lastDelta;
+    const lerped = lastApplied + shortestAngleDelta(lastApplied, firstTargetRotation) * LERP;
+    s.lastDelta = lerped - firstOriginRotation;
+    // currentPose: in union mode, also reflect orbit on the first item.
+    let currentPose: TPose;
+    if (useUnion) {
+      const originCenter = s.originCenters.get(firstId)!;
+      const lerpedDelta = lerped - firstOriginRotation;
+      const lc = Math.cos(lerpedDelta);
+      const ls = Math.sin(lerpedDelta);
+      const ox = originCenter.x - s.rotationPivot.x;
+      const oy = originCenter.y - s.rotationPivot.y;
+      const newCx = s.rotationPivot.x + ox * lc - oy * ls;
+      const newCy = s.rotationPivot.y + ox * ls + oy * lc;
+      const rb = geom.getRotatedBounds(firstOrigin);
+      const rotated = geom.withRotation(firstOrigin, lerped);
+      currentPose = { ...(rotated as object), x: newCx - rb.width / 2, y: newCy - rb.height / 2 } as TPose;
+    } else {
+      currentPose = geom.withRotation(firstOrigin, lerped);
     }
 
-    s.ctx.current = new Map([[s.id, proposedPose]]);
-
-    // Lerp the visible pose toward the target, in angle space (so going past
-    // ±π wraps cleanly).
-    const last = s.lastRotation;
-    const lerped = last + shortestAngleDelta(last, proposedRotation) * LERP;
-    s.lastRotation = lerped;
-    const currentPose = geom.withRotation(s.originPose, lerped);
-
     setOverlay({
-      id: s.id,
+      id: firstId,
       currentPose,
-      targetPose: proposedPose,
-      originPose: s.originPose,
+      targetPose: firstTarget,
+      originPose: firstOrigin,
     });
     return true;
   }, []);
@@ -253,51 +364,51 @@ export function useRotate<TNode extends { id: string }, TPose>(
     const adapter = adapterRef.current;
     const rotateLabel = rotateLabelRef.current;
     const onGestureEnd = onGestureEndRef.current;
-    if (!s.active || !s.ctx || s.originPose === null || s.id === null) {
+    if (!s.active || !s.ctx || s.ids.length === 0) {
       cleanup();
       onGestureEnd?.(false);
       return;
     }
     const geom = geometryRef.current;
     const ctx = s.ctx;
-    const targetPose = ctx.current.get(s.id) ?? s.originPose;
-    const targetRotation = geom.getRotatedBounds(targetPose).rotation;
-    const moved = targetRotation !== s.originRotation;
+    let moved = false;
+    const defaultOps: Op[] = [];
+    for (const id of s.ids) {
+      const originPose = s.originPoses.get(id)!;
+      const targetPose = ctx.current.get(id) ?? originPose;
+      const originRotation = s.originRotations.get(id)!;
+      const targetRotation = geom.getRotatedBounds(targetPose).rotation;
+      if (targetRotation !== originRotation) moved = true;
+      defaultOps.push(
+        createTransformOp<TPose>({
+          id,
+          from: originPose,
+          to: targetPose,
+          label: rotateLabel,
+        }),
+      );
+    }
 
-    let ops: Op[] | null | undefined;
+    let finalOps: Op[] | null | undefined;
     for (const b of behaviorsRef.current) {
       const r = (b as RotateBehavior<RotatedPose>).onEnd?.(
         ctx as unknown as GestureContext<RotatedPose>,
       );
       if (r === undefined) continue;
-      ops = r;
+      finalOps = r;
       break;
     }
-    if (ops === null) {
+    if (finalOps === null) {
       cleanup();
       onGestureEnd?.(false);
       return;
     }
-    if (ops === undefined) {
-      if (!moved) {
-        cleanup();
-        onGestureEnd?.(false);
-        return;
-      }
-      ops = [
-        createTransformOp<TPose>({
-          id: s.id,
-          from: s.originPose,
-          to: targetPose,
-          label: rotateLabel,
-        }),
-      ];
-    }
-    if (ops.length > 0) {
-      dispatchApplyBatch(adapter, ops, ops[0].label ?? rotateLabel);
+    const useOps = finalOps ?? (moved ? defaultOps : []);
+    if (useOps.length > 0) {
+      dispatchApplyBatch(adapter, useOps, useOps[0].label ?? rotateLabel);
     }
     cleanup();
-    onGestureEnd?.(true);
+    onGestureEnd?.(useOps.length > 0);
   }, [cleanup]);
 
   const cancel = useCallback(() => {
