@@ -418,6 +418,10 @@ html, body, #root {
      column 1 and auto-sizes to the LayerList's min-width, leaving the
      panel mostly empty. Span all columns so the list fills the panel. */
   grid-column: 1 / -1;
+  /* Scroll long layer stacks within the panel rather than pushing the
+     document/page row off the bottom of the sidebar. */
+  max-height: 320px;
+  overflow-y: auto;
 }
 
 .swill-sidebar-spacer {
