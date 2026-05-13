@@ -109,4 +109,33 @@ describe('LayerList', () => {
     fireEvent.pointerUp(pageRow, { clientX: 0, clientY: 0, pointerId: 1, isPrimary: true });
     expect(onReorder).not.toHaveBeenCalled();
   });
+
+  it('shift-click on a locked row is exclusive (no combine)', () => {
+    const onSelect = vi.fn();
+    const items = [
+      { id: 'a', label: 'Alpha' },
+      { id: 'page', label: 'Page', locked: true },
+    ];
+    render(
+      <LayerList items={items} selectedIds={['a']} onSelect={onSelect} onReorder={() => {}} />
+    );
+    fireEvent.pointerDown(screen.getByText('Page'), { clientX: 0, clientY: 0, shiftKey: true, pointerId: 1, isPrimary: true });
+    fireEvent.pointerUp(screen.getByText('Page'), { clientX: 0, clientY: 0, shiftKey: true, pointerId: 1, isPrimary: true });
+    expect(onSelect).toHaveBeenLastCalledWith(['page']);
+  });
+
+  it('shift-click on a regular row strips locked ids from selection', () => {
+    const onSelect = vi.fn();
+    const items = [
+      { id: 'a', label: 'Alpha' },
+      { id: 'b', label: 'Beta' },
+      { id: 'page', label: 'Page', locked: true },
+    ];
+    render(
+      <LayerList items={items} selectedIds={['page']} onSelect={onSelect} onReorder={() => {}} />
+    );
+    fireEvent.pointerDown(screen.getByText('Beta'), { clientX: 0, clientY: 0, shiftKey: true, pointerId: 1, isPrimary: true });
+    fireEvent.pointerUp(screen.getByText('Beta'), { clientX: 0, clientY: 0, shiftKey: true, pointerId: 1, isPrimary: true });
+    expect(onSelect).toHaveBeenLastCalledWith(['b']);
+  });
 });
