@@ -1,12 +1,18 @@
 /**
- * Bridge between Swillustrator's `Obj` discriminated union and
- * `@orochi235/weasel-svg`'s `SvgNode` discriminated union. Each direction
- * is intentionally lossy at the edges (RectObj's stroke/strokeWidth
- * compresses to an SvgStroke; SvgGroupNode flattens on import) — see
- * comments inline for the specifics.
+ * Bridge between Swillustrator's `Obj` discriminated union (`PathObj |
+ * TextObj`, discriminated by `tool`) and `@orochi235/weasel-svg`'s
+ * `SvgNode` discriminated union. Each direction is intentionally lossy
+ * at the edges (PathObj's stroke/strokeWidth compresses to an SvgStroke;
+ * SvgGroupNode flattens on import) — see comments inline for the
+ * specifics.
+ *
+ * `tool` and `params` ride on `meta.swill.attrs` under the local names
+ * `tool`, `params-sides`, `params-points`, `params-ratio`. On import, a
+ * missing or unknown `swill:tool` falls back to `tool: 'rect'` when the
+ * path-then-rect detector fired, else `tool: 'imported'`.
  */
 
-import type { Path, PolygonPath, TextStyle } from '@orochi235/weasel';
+import type { PolygonPath, TextStyle } from '@orochi235/weasel';
 import type {
   ParseResult,
   SerializeOptions,
@@ -15,6 +21,7 @@ import type {
   SvgPathNode,
   SvgTextNode,
 } from '@orochi235/weasel-svg';
+import type { Obj, PathObj, PathParams, TextObj, ToolKind } from './poseUpdate';
 
 interface Group { id: string; members: string[] }
 
@@ -92,15 +99,59 @@ export function parsedToDoc(parsed: ParseResult): ParsedDocPatch {
   return out;
 }
 
-interface BaseObj { id: string; kind: 'rect' | 'text' | 'path'; x: number; y: number; width: number; height: number; rotation?: number }
-interface RectObj extends BaseObj { kind: 'rect'; fill: string; stroke: string; strokeWidth: number }
-interface TextObj extends BaseObj { kind: 'text'; text: string; style?: TextStyle }
-interface PathObj extends BaseObj { kind: 'path'; path: PolygonPath; closed: boolean; fill: string; stroke: string; strokeWidth: number }
-type Obj = RectObj | TextObj | PathObj;
+/**
+ * Build the `swill:` attribute bag for an Obj: always emits `tool`, and
+ * — for polygon/star PathObjs with `params` set — also `params-sides` /
+ * `params-points` / `params-ratio`. Returns an empty-keyed object when
+ * there is nothing to write; the caller decides whether to attach it.
+ */
+function encodeSwillAttrs(o: Obj): Record<string, string> {
+  const attrs: Record<string, string> = { tool: o.tool };
+  if (o.tool !== 'text' && o.params) {
+    if ('sides' in o.params) attrs['params-sides'] = String(o.params.sides);
+    if ('points' in o.params) attrs['params-points'] = String(o.params.points);
+    if ('ratio' in o.params) attrs['params-ratio'] = String(o.params.ratio);
+  }
+  return attrs;
+}
+
+/** Recognized values of `swill:tool` for PathObjs (everything except `'text'`). */
+const PATH_TOOL_VALUES = new Set<string>([
+  'rect', 'ellipse', 'polygon', 'star', 'line', 'pen', 'pencil', 'imported',
+]);
+
+/**
+ * Resolve the import-side `tool` (and optional `params`) for a `<path>`
+ * being lifted back into an Obj. Falls back per the migration rule: if
+ * no recognized `swill:tool` is present, infer `tool: 'rect'` when the
+ * rect-detector fired (`pathKind === 'rect'`), else `tool: 'imported'`.
+ */
+function decodePathToolAndParams(
+  attrs: Record<string, string> | undefined,
+  pathKind: 'rect' | 'polygon',
+): { tool: Exclude<ToolKind, 'text'>; params?: PathParams } {
+  const raw = attrs?.['tool'];
+  const tool: Exclude<ToolKind, 'text'> =
+    raw && PATH_TOOL_VALUES.has(raw)
+      ? (raw as Exclude<ToolKind, 'text'>)
+      : (pathKind === 'rect' ? 'rect' : 'imported');
+  let params: PathParams | undefined;
+  if (tool === 'polygon' && attrs) {
+    const sides = parseFloat(attrs['params-sides']);
+    if (Number.isFinite(sides) && sides >= 3) params = { sides };
+  } else if (tool === 'star' && attrs) {
+    const points = parseFloat(attrs['params-points']);
+    const ratio = parseFloat(attrs['params-ratio']);
+    if (Number.isFinite(points) && points >= 3 && Number.isFinite(ratio)) {
+      params = { points, ratio };
+    }
+  }
+  return { tool, params };
+}
 
 /** Lower one Swillustrator object to an SvgNode for serialization. */
 export function objToSvgNode(o: Obj): SvgNode {
-  if (o.kind === 'text') {
+  if (o.tool === 'text') {
     const node: SvgTextNode = {
       kind: 'text',
       x: o.x,
@@ -109,6 +160,9 @@ export function objToSvgNode(o: Obj): SvgNode {
       height: o.height,
       text: o.text,
     };
+    // Start the swill attr bag with `tool: 'text'`; lineHeight (if any)
+    // joins the same bag.
+    const swillAttrs: Record<string, string> = encodeSwillAttrs(o);
     if (o.style) {
       // weasel-svg does not model `lineHeight` (it has no clean SVG-native
       // attribute). Lift it into the namespaced meta bag as
@@ -116,27 +170,14 @@ export function objToSvgNode(o: Obj): SvgNode {
       // remaining style fields through verbatim.
       const { lineHeight, ...rest } = o.style;
       if (Object.keys(rest).length > 0) node.style = rest as TextStyle;
-      if (lineHeight != null) {
-        node.meta = { swill: { attrs: { 'line-height': String(lineHeight) } } };
-      }
+      if (lineHeight != null) swillAttrs['line-height'] = String(lineHeight);
     }
+    node.meta = { swill: { attrs: swillAttrs } };
     if (o.rotation) node.rotation = o.rotation;
     return node;
   }
-  if (o.kind === 'rect') {
-    const path: Path = { kind: 'rect', x: o.x, y: o.y, width: o.width, height: o.height };
-    const node: SvgPathNode = {
-      kind: 'path',
-      path,
-      fill: { kind: 'solid', color: o.fill },
-    };
-    if (o.strokeWidth > 0) {
-      node.stroke = { paint: { kind: 'solid', color: o.stroke }, width: o.strokeWidth };
-    }
-    if (o.rotation) node.rotation = o.rotation;
-    return node;
-  }
-  // path
+  // Every non-text Obj is a PathObj — its `path` field is either a RectPath
+  // (rect tool) or a PolygonPath (every other tool, including imported).
   const node: SvgPathNode = {
     kind: 'path',
     path: o.path,
@@ -145,6 +186,7 @@ export function objToSvgNode(o: Obj): SvgNode {
   if (o.strokeWidth > 0) {
     node.stroke = { paint: { kind: 'solid', color: o.stroke }, width: o.strokeWidth };
   }
+  node.meta = { swill: { attrs: encodeSwillAttrs(o) } };
   if (o.rotation) node.rotation = o.rotation;
   return node;
 }
@@ -238,7 +280,7 @@ export function svgNodesToObjsWithGroups(
     if (n.kind === 'text') {
       const o: TextObj = {
         id: nextId(),
-        kind: 'text',
+        tool: 'text',
         x: n.x, y: n.y, width: n.width, height: n.height,
         text: n.text,
       };
@@ -258,25 +300,22 @@ export function svgNodesToObjsWithGroups(
     const fill = colorFromPaint(n.fill, '#000000');
     const stroke = n.stroke ? colorFromPaint(n.stroke.paint, '#000000') : '#000000';
     const strokeWidth = n.stroke?.width ?? 0;
+    const { tool, params } = decodePathToolAndParams(n.meta?.swill?.attrs, n.path.kind);
+    let bounds: { x: number; y: number; width: number; height: number };
+    let closed: boolean;
     if (n.path.kind === 'rect') {
-      const o: RectObj = {
-        id: nextId(),
-        kind: 'rect',
-        x: n.path.x, y: n.path.y, width: n.path.width, height: n.path.height,
-        fill, stroke, strokeWidth,
-      };
-      if (n.rotation) o.rotation = n.rotation;
-      items.push(o);
-      return o.id;
+      bounds = { x: n.path.x, y: n.path.y, width: n.path.width, height: n.path.height };
+      closed = true;
+    } else {
+      bounds = pathBounds(n.path);
+      closed = isClosedPolygon(n.path);
     }
-    const path = n.path as PolygonPath;
-    const bounds = pathBounds(path);
-    const closed = isClosedPolygon(path);
     const o: PathObj = {
       id: nextId(),
-      kind: 'path',
+      tool,
       x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height,
-      path, closed, fill, stroke, strokeWidth,
+      path: n.path, closed, fill, stroke, strokeWidth,
+      ...(params ? { params } : {}),
     };
     if (n.rotation) o.rotation = n.rotation;
     items.push(o);
