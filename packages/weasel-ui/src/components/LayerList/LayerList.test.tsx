@@ -56,4 +56,17 @@ describe('LayerList', () => {
     const rows = container.querySelectorAll('[data-row-index]');
     expect(rows[1].className).toMatch(/selected/);
   });
+
+  it('locked rows emit data-locked="true"', () => {
+    const items = [
+      { id: 'a', label: 'Alpha' },
+      { id: 'page', label: 'Page', locked: true },
+    ];
+    const { container } = render(
+      <LayerList items={items} selectedIds={[]} onSelect={() => {}} onReorder={() => {}} />
+    );
+    const rows = container.querySelectorAll('[data-row-index]');
+    expect(rows[0].getAttribute('data-locked')).toBeNull();
+    expect(rows[1].getAttribute('data-locked')).toBe('true');
+  });
 });
