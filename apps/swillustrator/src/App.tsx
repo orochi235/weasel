@@ -132,6 +132,12 @@ const PAPER_PRESETS = {
 
 type PaperSize = keyof typeof PAPER_PRESETS;
 
+const PAPER_SIZE_OPTIONS: Array<{ value: PaperSize; label: string }> = [
+  { value: 'letter', label: 'US Letter' },
+  { value: 'a4', label: 'A4' },
+  { value: 'legal', label: 'Legal' },
+];
+
 /** US Letter at 96 dpi. */
 const DEFAULT_DOC_SIZE = PAPER_PRESETS.letter;
 
@@ -1521,11 +1527,7 @@ function RightSidebar(p: RightSidebarProps) {
             <PropertySelect
               value={p.paperSize}
               onChange={p.setPaperSize}
-              options={[
-                { value: 'letter', label: 'US Letter' },
-                { value: 'a4', label: 'A4' },
-                { value: 'legal', label: 'Legal' },
-              ]}
+              options={PAPER_SIZE_OPTIONS}
             />
           </PropertyRow>
         </PropertiesPanel>
@@ -1608,11 +1610,7 @@ function RightSidebar(p: RightSidebarProps) {
           <PropertySelect
             value={p.paperSize}
             onChange={p.setPaperSize}
-            options={[
-              { value: 'letter', label: 'US Letter' },
-              { value: 'a4', label: 'A4' },
-              { value: 'legal', label: 'Legal' },
-            ]}
+            options={PAPER_SIZE_OPTIONS}
           />
         </PropertyRow>
       </PropertiesPanel>
