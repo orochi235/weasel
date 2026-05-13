@@ -181,6 +181,27 @@ function translateObj(o: Obj, dx: number, dy: number): Obj {
   return { ...o, x: o.x + dx, y: o.y + dy };
 }
 
+/** Op: apply a partial-Obj patch to a node, with a snapshot of the inverse
+ *  for undo. Used by `updateSelected` to make property-panel + color-picker
+ *  edits undoable. */
+function createUpdateNodeOp(args: {
+  id: string;
+  from: Partial<Obj>;
+  to: Partial<Obj>;
+  label?: string;
+}): Op {
+  const { id, from, to, label } = args;
+  return {
+    label,
+    apply(adapter) {
+      (adapter as { updateNode: (id: string, patch: Partial<Obj>) => void }).updateNode(id, to);
+    },
+    invert() {
+      return createUpdateNodeOp({ id, from: to, to: from, label });
+    },
+  };
+}
+
 // ─── Shape-tool geometry builders ───────────────────────────────────────
 // Each builder produces a `PolygonPath` from the tool's commit-time inputs.
 // Lives at module scope so it's testable in isolation and doesn't capture
@@ -486,6 +507,14 @@ export function App() {
         const o = itemsRef.current[i];
         if (o.tool !== 'text') return;
         itemsRef.current[i] = { ...o, text };
+      },
+      // Used by createUpdateNodeOp — partial obj field update (fill, stroke,
+      // strokeWidth, style.fill.color, etc.). Caller is responsible for
+      // capturing before/after snapshots so undo restores the prior state.
+      updateNode: (id: string, patch: Partial<Obj>) => {
+        const i = itemsRef.current.findIndex((o) => o.id === id);
+        if (i < 0) return;
+        itemsRef.current[i] = { ...itemsRef.current[i], ...patch } as Obj;
       },
       // --- structural mutators (ops use these directly) ---
       insertNode: (n: Obj) => {
@@ -1216,19 +1245,36 @@ export function App() {
   // --- Selection-aware mutation helpers ---
   // Re-read items each call so back-to-back changes within a render coalesce.
   // Routed through applyOps so each property change is an undo step.
-  const updateSelected = (patch: (o: Obj) => Obj): void => {
+  const updateSelected = (patch: (o: Obj) => Obj, label = 'Edit'): void => {
     const ids = new Set<string>(selection.current);
     if (ids.size === 0) return;
-    setItems((cur) => cur.map((o) => (ids.has(o.id) ? patch(o) : o)));
-    // Mirror to backing store immediately (so the next action sees the
-    // mutation). Inputs that emit per-keystroke skip history for now —
-    // wiring transform ops per keystroke would coalesce into history but
-    // requires capturing from/to per id. Keep it simple: direct mutation,
-    // future work can wrap these in transform ops.
-    for (let i = 0; i < itemsRef.current.length; i++) {
-      const o = itemsRef.current[i];
-      if (ids.has(o.id)) itemsRef.current[i] = patch(o);
+    const ops: Op[] = [];
+    for (const o of itemsRef.current) {
+      if (!ids.has(o.id)) continue;
+      const next = patch(o);
+      // Diff only the fields the patch actually changed, so undo of e.g.
+      // a fill change doesn't blow away an unrelated rotation that happened
+      // later.
+      const from: Record<string, unknown> = {};
+      const to: Record<string, unknown> = {};
+      const keys = new Set([...Object.keys(o), ...Object.keys(next)]);
+      for (const k of keys) {
+        const oVal = (o as unknown as Record<string, unknown>)[k];
+        const nVal = (next as unknown as Record<string, unknown>)[k];
+        if (!Object.is(oVal, nVal)) {
+          from[k] = oVal;
+          to[k] = nVal;
+        }
+      }
+      if (Object.keys(to).length === 0) continue;
+      ops.push(createUpdateNodeOp({
+        id: o.id,
+        from: from as Partial<Obj>,
+        to: to as Partial<Obj>,
+        label,
+      }));
     }
+    if (ops.length > 0) applyOps(ops, label);
   };
 
   const selectedItems = items.filter((o) => (selection.current as readonly string[]).includes(o.id));
@@ -1245,13 +1291,13 @@ export function App() {
         ? { ...prevFill, color }
         : { fill: 'solid' as const, color };
       return { ...o, style: { ...(o.style ?? {}), fill: nextFill } };
-    });
+    }, 'Set fill');
   };
   const applyStrokeToSelection = (color: string): void => {
-    updateSelected((o) => o.tool !== 'text' ? { ...o, stroke: color } : o);
+    updateSelected((o) => o.tool !== 'text' ? { ...o, stroke: color } : o, 'Set stroke');
   };
   const applyStrokeWidthToSelection = (w: number): void => {
-    updateSelected((o) => o.tool !== 'text' ? { ...o, strokeWidth: w } : o);
+    updateSelected((o) => o.tool !== 'text' ? { ...o, strokeWidth: w } : o, 'Set stroke width');
   };
 
   // Summary of rotation across the current selection (in degrees) for the
