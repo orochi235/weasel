@@ -15,6 +15,7 @@ import type { RenderLayer } from 'core/layers/render';
 import type { Tool } from 'tools/types';
 import type { PenScratch, PenAnchor, PenSubpath } from 'tools/builtin/useUserPenTool';
 import { PATH_C, PATH_L, PATH_M, PATH_Z, type PolygonPath } from './types';
+import { circlePath } from './markers';
 import { renderPenEditOverlay } from './penEditOverlay';
 
 export interface PenPreviewStyle {
@@ -55,28 +56,10 @@ function mirror(anchor: PenAnchor, out: { x: number; y: number } | undefined): {
   return { x: 2 * anchor.x - out.x, y: 2 * anchor.y - out.y };
 }
 
-/** N-segment polygon approximation of a circle. N=24 → ≤0.5px deviation at r≤8. */
-function approximateCircle(cx: number, cy: number, r: number, segments = 24): PolygonPath {
-  // Commands: M + (segments-1) L + Z. Coords: (segments) × 2 — one pair
-  // each for M and the (segments-1) lineTos. PATH_Z consumes no coords.
-  const cmds = new Uint8Array(segments + 1);
-  const coords = new Float32Array(segments * 2);
-  cmds[0] = PATH_M;
-  coords[0] = cx + r;
-  coords[1] = cy;
-  for (let i = 1; i < segments; i++) {
-    cmds[i] = PATH_L;
-    const theta = (i / segments) * Math.PI * 2;
-    coords[i * 2] = cx + r * Math.cos(theta);
-    coords[i * 2 + 1] = cy + r * Math.sin(theta);
-  }
-  cmds[segments] = PATH_Z;
-  return {
-    kind: 'polygon',
-    commands: cmds,
-    coords,
-    fillRule: 'nonzero',
-  };
+// approximateCircle has moved to `./markers.ts` as `circlePath`. Re-exported
+// locally so we don't rename callers in this file.
+function approximateCircle(cx: number, cy: number, r: number): PolygonPath {
+  return circlePath(cx, cy, r);
 }
 
 /**
