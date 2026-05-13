@@ -26,13 +26,29 @@ function makeDispatcher(initial: RouteResolvedInfo | null = null): {
 describe('useToolDebugInfo', () => {
   beforeEach(() => {
     let raf = 0;
+    const handlers = new Map<number, FrameRequestCallback>();
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback): number => {
-      raf++;
-      // Synchronous schedule via microtask so act() can flush deterministically.
-      queueMicrotask(() => cb(performance.now()));
-      return raf;
+      const id = ++raf;
+      handlers.set(id, cb);
+      // Macrotask scheduling (setTimeout) is REQUIRED here, not microtask:
+      // the hook's rAF callback re-schedules itself every frame. A microtask
+      // queue can't drain in that case because each tick enqueues another
+      // microtask before yielding — vitest's own event loop is starved and
+      // the runner hangs forever. setTimeout lets the loop drain between
+      // ticks. The accompanying cancelAnimationFrame stub then breaks the
+      // chain when the hook's useEffect cleanup runs at unmount.
+      setTimeout(() => {
+        const fn = handlers.get(id);
+        if (fn) {
+          handlers.delete(id);
+          fn(performance.now());
+        }
+      }, 0);
+      return id;
     });
-    vi.stubGlobal('cancelAnimationFrame', () => {});
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+      handlers.delete(id);
+    });
   });
   afterEach(() => { vi.unstubAllGlobals(); });
 
@@ -54,8 +70,9 @@ describe('useToolDebugInfo', () => {
     };
     await act(async () => {
       setRoute(info);
-      // Let one rAF tick fire.
-      await new Promise((r) => queueMicrotask(() => r(null)));
+      // Let one rAF tick fire. rAF is stubbed via setTimeout (macrotask)
+      // so the wait here must also yield to macrotasks, not just microtasks.
+      await new Promise((r) => setTimeout(r, 0));
     });
     expect(result.current).toEqual(info);
   });
