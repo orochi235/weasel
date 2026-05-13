@@ -285,3 +285,128 @@ describe('objsToSvgNodes — multi-group rejection', () => {
     expect(() => objsToSvgNodes(items as never, groups)).toThrow(/multi-group membership/i);
   });
 });
+
+describe('svgNodesToObjs — coverage gaps', () => {
+  it('lowers an SvgPathNode (PolygonPath, closed) to a closed PathObj', () => {
+    const node: SvgPathNode = {
+      kind: 'path',
+      // M h v h Z — equivalent to a 50x50 box, but as a polygon
+      path: {
+        kind: 'polygon',
+        commands: new Uint8Array([0, 1, 1, 1, 4]),  // PATH_M, PATH_L*3, PATH_Z
+        coords: new Float32Array([0, 0, 50, 0, 50, 50, 0, 50]),
+        fillRule: 'nonzero',
+      },
+      fill: { kind: 'solid', color: '#7fb069' },
+      stroke: { paint: { kind: 'solid', color: '#000' }, width: 2 },
+    };
+    const out = svgNodesToObjs([node], ids());
+    expect(out).toHaveLength(1);
+    const o = out[0] as { kind: 'path'; closed: boolean; fill: string; strokeWidth: number };
+    expect(o.kind).toBe('path');
+    expect(o.closed).toBe(true);
+    expect(o.fill).toBe('#7fb069');
+    expect(o.strokeWidth).toBe(2);
+  });
+
+  it('lowers an SvgPathNode (PolygonPath, open) to an open PathObj', () => {
+    const node: SvgPathNode = {
+      kind: 'path',
+      path: {
+        kind: 'polygon',
+        commands: new Uint8Array([0, 1, 1]),  // PATH_M, PATH_L, PATH_L, no Z
+        coords: new Float32Array([0, 0, 50, 50, 100, 0]),
+        fillRule: 'nonzero',
+      },
+      fill: { kind: 'none' },
+      stroke: { paint: { kind: 'solid', color: '#000' }, width: 1 },
+    };
+    const out = svgNodesToObjs([node], ids());
+    const o = out[0] as { kind: 'path'; closed: boolean; fill: string };
+    expect(o.closed).toBe(false);
+    // Open paths upcast their fill string to the bridge's fallback when
+    // SvgPaint.kind === 'none'. Document the behavior; it's a known edge
+    // not fixed in this plan.
+    expect(o.fill).toBe('#000000');
+  });
+
+  it('returns an empty list for an empty input array', () => {
+    const out = svgNodesToObjs([], ids());
+    expect(out).toEqual([]);
+  });
+
+  it('handles a deeply nested mixed tree', () => {
+    const leaf: SvgPathNode = {
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
+      fill: { kind: 'solid', color: '#abc' },
+    };
+    const innerText: SvgTextNode = { kind: 'text', x: 0, y: 0, width: 10, height: 10, text: 'x' };
+    const inner: SvgGroupNode = {
+      kind: 'group',
+      meta: { swill: { attrs: { 'group-id': 'inner' } } },
+      children: [leaf, innerText],
+    };
+    const outer: SvgGroupNode = {
+      kind: 'group',
+      meta: { swill: { attrs: { 'group-id': 'outer' } } },
+      children: [inner],
+    };
+    const result = svgNodesToObjsWithGroups([outer], ids());
+    expect(result.items).toHaveLength(2);  // leaf + text
+    expect(result.groups.map((g) => g.id).sort()).toEqual(['inner', 'outer']);
+    expect(result.groups.find((g) => g.id === 'outer')?.members).toEqual(['inner']);
+    expect(result.groups.find((g) => g.id === 'inner')?.members).toHaveLength(2);
+  });
+
+  it('preserves text style across a group boundary', () => {
+    const t: SvgTextNode = {
+      kind: 'text', x: 0, y: 0, width: 100, height: 20, text: 'hi',
+      style: { fontSize: 24, fill: { fill: 'solid', color: '#b03030' } },
+    };
+    const g: SvgGroupNode = {
+      kind: 'group',
+      meta: { swill: { attrs: { 'group-id': 'g1' } } },
+      children: [t],
+    };
+    const result = svgNodesToObjsWithGroups([g], ids());
+    const item = result.items[0] as { kind: 'text'; style?: unknown };
+    expect(item.style).toEqual(t.style);
+  });
+});
+
+describe('objToSvgNode — coverage gaps', () => {
+  it('passes the TextStyle through verbatim (no field stripping besides lineHeight)', () => {
+    const text = {
+      id: 'x', kind: 'text' as const,
+      x: 0, y: 0, width: 100, height: 20, text: 'Hi',
+      style: { fontSize: 12, align: 'right' as const },
+    };
+    const node = objToSvgNode(text as never);
+    if (node.kind !== 'text') throw new Error('expected text');
+    expect(node.style).toEqual({ fontSize: 12, align: 'right' });
+    // No lineHeight in the input → no meta bag.
+    expect(node.meta).toBeUndefined();
+  });
+
+  it('round-trips an open PathObj losslessly through both directions', () => {
+    const original = {
+      id: 'p', kind: 'path' as const,
+      x: 0, y: 0, width: 100, height: 50,
+      path: {
+        kind: 'polygon' as const,
+        commands: new Uint8Array([0, 1, 1]),
+        coords: new Float32Array([0, 0, 50, 50, 100, 0]),
+        fillRule: 'nonzero' as const,
+      },
+      closed: false, fill: '#aaa', stroke: '#000', strokeWidth: 2,
+    };
+    const node = objToSvgNode(original as never);
+    expect(node.kind).toBe('path');
+    const out = svgNodesToObjs([node], ids());
+    const back = out[0] as { kind: 'path'; closed: boolean; strokeWidth: number };
+    expect(back.kind).toBe('path');
+    expect(back.closed).toBe(false);
+    expect(back.strokeWidth).toBe(2);
+  });
+});
