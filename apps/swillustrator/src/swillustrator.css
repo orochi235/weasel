@@ -406,6 +406,10 @@ html, body, #root {
 
 /* --- Layer list host inside PropertiesPanel -------------------------- */
 .swill-layerlist-host {
+  /* PropertiesPanel uses a 12-column grid; without this the host sits in
+     column 1 and auto-sizes to the LayerList's min-width, leaving the
+     panel mostly empty. Span all columns so the list fills the panel. */
+  grid-column: 1 / -1;
   padding: 0 8px 8px 8px;
 }
 
