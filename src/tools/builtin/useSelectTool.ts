@@ -22,7 +22,7 @@ import type { RotateAdapter } from 'core/adapters/types';
 import type { AreaSelectAdapter } from 'core/adapters/types';
 import type { ResizeAnchor } from 'interactions/gestures/types';
 import type { NodeId } from 'core/scene/types';
-import { defineTool, mods, begin, claim, none } from '../routing';
+import { defineTool, mods, begin, claim, none, forwardActionTo } from '../routing';
 import type { ActionFn } from '../routing';
 import type { Tool, ToolBounds, ToolCtx } from '../types';
 import type { DebugSink } from '../../debug/types';
@@ -892,19 +892,20 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   const beginMove: ActionFn<SelectScratch> = (ctx) =>
     move.beginAt(ctx, computeMoveIds(ctx)) as ReturnType<ActionFn<SelectScratch>>;
 
-  // Forward a gesture's ctx + raw event to a consumer callback and
-  // claim the gesture. Nothing about the body is gesture-specific —
-  // dblTap, click, longpress, anything else that wants to expose a
-  // consumer-callback escape hatch can reuse this. Today the only
-  // wiring is `dblTap → onDoubleTap`.
-  const forwardAction: ActionFn<SelectScratch> = (ctx, e) => {
-    const cb = onDoubleTapRef.current;
-    if (!cb) return none();
-    const evt = e as PointerEvent;
-    const ids = pickEveryRef.current(ctx.worldX, ctx.worldY);
-    cb({ worldX: ctx.worldX, worldY: ctx.worldY, ids, event: evt });
-    return claim();
-  };
+  // dblTap forwards to the consumer's onDoubleTap escape-hatch via the
+  // shared `forwardActionTo` routing util — same shape any tool with a
+  // consumer-callback hook can use.
+  const forwardDblTap = forwardActionTo<SelectScratch, {
+    worldX: number; worldY: number; ids: string[]; event: PointerEvent;
+  }>(
+    onDoubleTapRef,
+    (ctx, e) => ({
+      worldX: ctx.worldX,
+      worldY: ctx.worldY,
+      ids: pickEveryRef.current(ctx.worldX, ctx.worldY),
+      event: e as PointerEvent,
+    }),
+  );
   const beginArea: ActionFn<SelectScratch> = (ctx) =>
     areaSelect.beginAt(ctx) as ReturnType<ActionFn<SelectScratch>>;
 
@@ -1030,8 +1031,8 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           // alongside '*' because the routing engine's '*' doesn't fall
           // through to 'empty'.
           dblTap: {
-            '*': forwardAction,
-            empty: forwardAction,
+            '*': forwardDblTap,
+            empty: forwardDblTap,
           },
         },
       });
