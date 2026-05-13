@@ -13,7 +13,7 @@ function setup() {
   const wrapPath = (path: PolygonPath, opts: { closed: boolean }): Pose =>
     ({ kind: 'path', path, closed: opts.closed });
   const { result } = renderHook(() => useUserPenTool<Pose>({ wrapPath, adapter }));
-  const tool = result.current;
+  const { tool } = result.current;
   const scratch = tool.initScratch!() as PenScratch;
   const layer = createPenPreviewLayer({ penTool: tool });
   return { tool, scratch, layer };

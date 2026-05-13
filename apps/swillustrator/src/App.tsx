@@ -911,7 +911,7 @@ export function App() {
   const wheelPan = useWheelPanTool();
   const keyZoom = useKeyboardZoomTool();
 
-  const pen = useUserPenTool<PathObj>({
+  const { tool: pen } = useUserPenTool<PathObj>({
     wrapPath: (path, { closed }): PathObj => {
       const b = boundsOfPath(path);
       const id = `p${nextId.current++}`;

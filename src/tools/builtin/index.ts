@@ -27,6 +27,7 @@ export { usePinchZoomTool, type PinchZoomToolOpts } from './usePinchZoomTool';
 export {
   useUserPenTool,
   type UseUserPenToolOptions,
+  type UseUserPenToolReturn,
   type PenScratch,
   type PenAnchor,
   type PenSubpath,

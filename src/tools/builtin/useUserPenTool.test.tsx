@@ -33,8 +33,9 @@ function setup(over: {
     wrapPath, adapter, ...over,
   }));
   // Pen state is persistent — initScratch returns the same ref.
-  const scratch = result.current.initScratch!();
-  return { tool: result.current, adapter, wrapPath, scratch };
+  const { tool } = result.current;
+  const scratch = tool.initScratch!();
+  return { tool, adapter, wrapPath, scratch };
 }
 
 function makeCtx<S>(scratch: S, over: Partial<ToolCtx<S>> = {}): ToolCtx<S> {

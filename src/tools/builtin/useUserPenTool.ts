@@ -1,4 +1,4 @@
-import { useMemo, useReducer, useRef, createElement } from 'react';
+import { useMemo, useReducer, useRef, useState, createElement } from 'react';
 import { defineTool, begin, claim, none } from '../routing';
 import type { Result } from '../routing';
 import type { Tool, ToolCtx } from '../types';
@@ -211,17 +211,36 @@ function dist(ax: number, ay: number, bx: number, by: number): number {
   return Math.hypot(dx, dy);
 }
 
-/** Active-slot Tool: click + drag to build a `PolygonPath` Illustrator-style.
+export interface UseUserPenToolReturn {
+  tool: Tool<PenScratch>;
+  /**
+   * True when the pen is in edit mode (reshaping an existing path). Consumers
+   * should apply a CSS class like `pen-edit-active` to their canvas container
+   * when `isEditing` is true, to give users a visual cue that they're in edit
+   * mode (e.g. a subtle background tint). The kit does not own the DOM and
+   * ships no default stylesheet for this.
+   */
+  isEditing: boolean;
+}
+
+/**
+ * Active-slot Tool: click + drag to build a `PolygonPath` Illustrator-style.
  *
- *  State machine: Idle / Drawing / BetweenSubpaths (see design doc).
- *  Click places a corner anchor; click-drag places an anchor with an
- *  outgoing bezier handle; click-the-first-anchor closes the subpath; Enter
- *  open-finishes; Esc discards; tool-switch commits if ≥2 anchors else
- *  discards. Shift constrains the placement-drag handle to 0/45/90/135°;
- *  Alt during drag breaks the handle mirror for the next segment. */
+ * State machine: Idle / Drawing / BetweenSubpaths (see design doc).
+ * Click places a corner anchor; click-drag places an anchor with an
+ * outgoing bezier handle; click-the-first-anchor closes the subpath; Enter
+ * open-finishes; Esc discards; tool-switch commits if ≥2 anchors else
+ * discards. Shift constrains the placement-drag handle to 0/45/90/135°;
+ * Alt during drag breaks the handle mirror for the next segment.
+ *
+ * @returns `{ tool, isEditing }` — the pen tool definition plus a reactive
+ * `isEditing` boolean. Apply a CSS class like `pen-edit-active` to your canvas
+ * container when `isEditing` is true for a visual cue. The kit owns no DOM and
+ * ships no default stylesheet for this.
+ */
 export function useUserPenTool<TPose>(
   options: UseUserPenToolOptions<TPose>,
-): Tool<PenScratch> {
+): UseUserPenToolReturn {
   const { wrapPath, adapter, autoSelect = true, closeHitRadius = 8, snapPoint, getPathObj } = options;
 
   // Persistent scratch: single ref reused across gestures so multi-click
@@ -242,11 +261,31 @@ export function useUserPenTool<TPose>(
   // <Canvas layers={{...}}> literal gets a new identity and the paint
   // useEffect fires. Pull the trigger via ref so the memoized Tool record
   // doesn't need to rebuild.
-  const [, forceRender] = useReducer((x: number) => x + 1, 0);
-  const forceRenderRef = useRef(forceRender);
-  forceRenderRef.current = forceRender;
+  const [, forceRenderInternal] = useReducer((x: number) => x + 1, 0);
+  const [isEditing, setIsEditing] = useState(false);
+  // Track isEditing in a ref so the forceRender closure can compare without
+  // capturing stale state (avoids an extra re-render when mode hasn't changed).
+  const isEditingRef = useRef(false);
+  const forceRenderRef = useRef(() => {
+    const cur = scratchRef.current?.mode === 'edit';
+    if (cur !== isEditingRef.current) {
+      isEditingRef.current = cur;
+      setIsEditing(cur);
+    }
+    forceRenderInternal();
+  });
+  // Keep the closure fresh on every render (isEditingRef is stable, but
+  // setIsEditing and forceRenderInternal are stable by React contract anyway).
+  forceRenderRef.current = () => {
+    const cur = scratchRef.current?.mode === 'edit';
+    if (cur !== isEditingRef.current) {
+      isEditingRef.current = cur;
+      setIsEditing(cur);
+    }
+    forceRenderInternal();
+  };
 
-  return useMemo(() => {
+  const tool = useMemo(() => {
     function commit(s: PenScratch): void {
       const trailing = s.current && s.current.anchors.length > 0 ? s.current : null;
       if (s.finishedSubpaths.length === 0 && !trailing) return;
@@ -704,6 +743,8 @@ export function useUserPenTool<TPose>(
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  return { tool, isEditing };
 }
 
 function applyOutHandle<S extends PenScratch>(
