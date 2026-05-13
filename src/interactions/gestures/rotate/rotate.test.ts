@@ -260,3 +260,72 @@ describe('useRotate — debug recording', () => {
     expect(hits.length).toBe(1);
   });
 });
+
+describe('useRotate — Shift-snap', () => {
+  it('snaps the proposed rotation to the nearest 15° when shift is held', () => {
+    const { adapter, state } = makeAdapter([
+      ['a', { x: 0, y: 0, width: 10, height: 10, rotation: 0 }],
+    ]);
+    const { result } = renderHook(() =>
+      useRotate<{ id: string }, RotatedPose>(adapter),
+    );
+    act(() => result.current.start({ ids: ['a'], worldX: 5, worldY: -10 }));
+    // Pivot (5, 5). Raw delta of ~+47° (between 45° and 60°) snaps to 45°.
+    const startAngle = Math.atan2(-10 - 5, 5 - 5); // -π/2
+    const targetDelta = (47 * Math.PI) / 180;
+    const targetAngle = startAngle + targetDelta;
+    const worldX = 5 + 30 * Math.cos(targetAngle);
+    const worldY = 5 + 30 * Math.sin(targetAngle);
+    act(() =>
+      result.current.move({
+        worldX,
+        worldY,
+        modifiers: { alt: false, shift: true, meta: false, ctrl: false },
+      }),
+    );
+    act(() => result.current.end());
+    expect(state.get('a')!.rotation).toBeCloseTo((45 * Math.PI) / 180, 6);
+  });
+
+  it('does NOT snap when shift is not held', () => {
+    const { adapter, state } = makeAdapter([
+      ['a', { x: 0, y: 0, width: 10, height: 10, rotation: 0 }],
+    ]);
+    const { result } = renderHook(() =>
+      useRotate<{ id: string }, RotatedPose>(adapter),
+    );
+    act(() => result.current.start({ ids: ['a'], worldX: 5, worldY: -10 }));
+    const startAngle = -Math.PI / 2;
+    const targetDelta = (47 * Math.PI) / 180;
+    const targetAngle = startAngle + targetDelta;
+    const worldX = 5 + 30 * Math.cos(targetAngle);
+    const worldY = 5 + 30 * Math.sin(targetAngle);
+    act(() => result.current.move({ worldX, worldY, modifiers: NO_MOD }));
+    act(() => result.current.end());
+    expect(state.get('a')!.rotation).toBeCloseTo((47 * Math.PI) / 180, 3);
+  });
+
+  it('snaps small deltas to 0° (within ±7.5° of an increment)', () => {
+    const { adapter, state } = makeAdapter([
+      ['a', { x: 0, y: 0, width: 10, height: 10, rotation: 0 }],
+    ]);
+    const { result } = renderHook(() =>
+      useRotate<{ id: string }, RotatedPose>(adapter),
+    );
+    act(() => result.current.start({ ids: ['a'], worldX: 5, worldY: -10 }));
+    const startAngle = -Math.PI / 2;
+    const targetDelta = (7 * Math.PI) / 180;
+    const targetAngle = startAngle + targetDelta;
+    const worldX = 5 + 30 * Math.cos(targetAngle);
+    const worldY = 5 + 30 * Math.sin(targetAngle);
+    act(() =>
+      result.current.move({
+        worldX,
+        worldY,
+        modifiers: { alt: false, shift: true, meta: false, ctrl: false },
+      }),
+    );
+    act(() => result.current.end());
+    expect(state.get('a')!.rotation).toBeCloseTo(0, 6);
+  });
+});

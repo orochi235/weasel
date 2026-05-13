@@ -17,6 +17,9 @@ import type { DebugSink } from '../../../debug/types';
 
 const LERP = 0.35;
 
+/** Shift-snap quantum: 15° in radians. Standard Illustrator/Figma convention. */
+const SNAP_STEP = Math.PI / 12;
+
 /** Project a TPose to its `{x, y, width, height, rotation}` view. Defaults to
  *  the identity for `RotatedPose`. Override for non-rect rotated poses. */
 export interface RotateGeometry<TPose> {
@@ -273,15 +276,24 @@ export function useRotate<TNode extends { id: string }, TPose>(
     );
     const delta = pointerAngle - s.startPointerAngle;
 
+    const useUnion = pivotRef.current === 'union' && s.ids.length > 1;
+    // No-snap fast path uses a single cos/sin for the whole batch. When
+    // shift is held, each item's snapped delta may differ, so cos/sin are
+    // recomputed per-id below.
+    const shiftHeld = args.modifiers.shift;
     const cos = Math.cos(delta);
     const sin = Math.sin(delta);
-    const useUnion = pivotRef.current === 'union' && s.ids.length > 1;
     const newCurrent = new Map<string, TPose>();
 
     for (const id of s.ids) {
       const originPose = s.originPoses.get(id)!;
       const originRotation = s.originRotations.get(id)!;
       let proposedRotation = originRotation + delta;
+      if (shiftHeld) {
+        // Snap the **final rotation** (not the delta) to the nearest 15°.
+        // Each item's origin rotation differs, so this happens per-id.
+        proposedRotation = Math.round(proposedRotation / SNAP_STEP) * SNAP_STEP;
+      }
 
       let proposedPose: TPose;
       if (useUnion) {
@@ -290,11 +302,22 @@ export function useRotate<TNode extends { id: string }, TPose>(
         // new center sits at (newCx, newCy). Assumes TPose surfaces x/y/
         // width/height — true for RotatedPose-shaped poses; exotic TPose
         // would need a richer geometry adapter.
+        //
+        // When shift is held, the orbit must use the **same delta** that
+        // produced the snapped rotation — otherwise an item would rotate
+        // by, say, 47° while orbiting by 45°, which looks broken.
         const originCenter = s.originCenters.get(id)!;
+        let cosI = cos;
+        let sinI = sin;
+        if (shiftHeld) {
+          const itemDelta = proposedRotation - originRotation;
+          cosI = Math.cos(itemDelta);
+          sinI = Math.sin(itemDelta);
+        }
         const ox = originCenter.x - s.rotationPivot.x;
         const oy = originCenter.y - s.rotationPivot.y;
-        const newCx = s.rotationPivot.x + ox * cos - oy * sin;
-        const newCy = s.rotationPivot.y + ox * sin + oy * cos;
+        const newCx = s.rotationPivot.x + ox * cosI - oy * sinI;
+        const newCy = s.rotationPivot.y + ox * sinI + oy * cosI;
         const rb = geom.getRotatedBounds(originPose);
         const newX = newCx - rb.width / 2;
         const newY = newCy - rb.height / 2;
