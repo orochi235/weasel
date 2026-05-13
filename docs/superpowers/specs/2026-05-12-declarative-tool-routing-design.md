@@ -238,8 +238,14 @@ The dispatcher walks four levels of specificity, first match wins:
    bare `'rect'`).
 4. **Universal** — `'*'` matches any non-empty target.
 
-`'empty'` is its own kind; it doesn't fall through to `'*'`. To match
-both, list them separately.
+~~`'empty'` is its own kind; it doesn't fall through to `'*'`. To match
+both, list them separately.~~
+
+> **Update 2026-05-13:** this was reversed. `'*'` now matches
+> empty hits too — empty falls through to `'*'` when no explicit
+> `'empty'` entry is present. Explicit `'empty'` still wins
+> because it's checked first. See
+> `docs/superpowers/specs/2026-05-13-wildcard-empty-design.md`.
 
 Subkind wildcard ranks above base-kind because the typical reason to
 write `'*:selected'` is "I want state-aware behavior across all base
