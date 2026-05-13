@@ -39,11 +39,21 @@ export function LayerList(props: LayerListProps) {
     drag.containerProps.onPointerUp(e);
     if (pending && !wasDragging) {
       const { selectedIds: sel, onSelect: sel_cb } = propsRef.current;
-      if (pending.shift) {
-        if (sel.includes(pending.id)) {
-          sel_cb(sel.filter((x) => x !== pending.id));
+      const targetItem = items.find((it) => it.id === pending.id);
+      if (targetItem?.locked) {
+        // Locked rows are always exclusive — ignore shift modifier so they
+        // never combine with other rows in a multi-selection.
+        sel_cb([pending.id]);
+      } else if (pending.shift) {
+        // Strip any currently-selected locked ids before applying the toggle
+        // so a leftover locked selection (e.g., Page) doesn't carry through
+        // when the user starts building a multi-selection of regular rows.
+        const lockedIds = new Set(items.filter((it) => it.locked).map((it) => it.id));
+        const filtered = sel.filter((id) => !lockedIds.has(id));
+        if (filtered.includes(pending.id)) {
+          sel_cb(filtered.filter((x) => x !== pending.id));
         } else {
-          sel_cb([...sel, pending.id]);
+          sel_cb([...filtered, pending.id]);
         }
       } else {
         sel_cb([pending.id]);
@@ -99,10 +109,9 @@ export function LayerList(props: LayerListProps) {
 }
 
 function dropIndicatorStyle(targetIndex: number): CSSProperties {
-  // 28px row + 1px gap = 29px per row; container has 2px top padding.
+  // 28px row + 1px gap = 29px per row; container has no top padding.
   const ROW_H = 28;
   const GAP = 1;
-  const PAD = 2;
-  const y = PAD + targetIndex * (ROW_H + GAP) - GAP / 2;
+  const y = targetIndex * (ROW_H + GAP) - GAP / 2;
   return { top: `${y}px` };
 }

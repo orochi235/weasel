@@ -4,6 +4,9 @@ import type { ReactNode, PointerEvent as ReactPointerEvent, RefCallback } from '
 export interface LayerListItem {
   id: string;
   label: ReactNode;
+  /** Locked rows cannot be dragged, cannot be crossed by drops, and
+   *  never combine with other rows in a multi-selection. */
+  locked?: boolean;
 }
 
 export interface UseReorderDragListOptions {
@@ -53,14 +56,20 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
   const [state, setState] = useState<ReorderDragState>({ draggedIds: null, targetIndex: null });
 
   const computeTargetIndex = useCallback((clientY: number): number => {
+    const items = optsRef.current.items;
+    // Locked rows act as walls — drops cannot cross them. Cap at the
+    // first locked row's index (or items.length if none are locked).
+    const firstLocked = items.findIndex((it) => it.locked);
+    const cap = firstLocked === -1 ? items.length : firstLocked;
     const c = containerRef.current;
     if (!c) return 0;
     const rows = Array.from(c.children) as HTMLElement[];
+    let raw = rows.length;
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i].getBoundingClientRect();
-      if (clientY < r.bottom) return i;
+      if (clientY < r.bottom) { raw = i; break; }
     }
-    return rows.length;
+    return Math.min(raw, cap);
   }, []);
 
   const refCb = useCallback<RefCallback<HTMLElement>>((el) => {
@@ -68,6 +77,17 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
   }, []);
 
   const onPointerDownRow = useCallback((id: string, index: number, e: ReactPointerEvent) => {
+    // Locked items cannot be dragged — skip recording the pending state so
+    // pointer-move cannot engage. Plain click still works because LayerList
+    // tracks click intent in its own ref, separate from drag candidacy.
+    const item = optsRef.current.items[index];
+    if (item?.locked) return;
+    // Capture the pointer to the row so subsequent move/up events keep firing
+    // (on the row, bubbling to the container) even when the user drags
+    // outside the list's bounding box. Without capture, releasing outside
+    // the container leaves the drag state stuck because pointerup fires on
+    // the document, not the list.
+    try { (e.currentTarget as Element).setPointerCapture?.(e.pointerId); } catch { /* unsupported / already captured */ }
     pendingRef.current = {
       id,
       sourceIndex: index,

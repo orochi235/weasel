@@ -47,6 +47,16 @@ export function PathIcon() {
   );
 }
 
+export function PageIcon() {
+  // A document page — rectangle with a folded top-right corner.
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M 4 2.5 L 10.5 2.5 L 13 5 L 13 13.5 L 4 13.5 Z" strokeLinejoin="round" />
+      <path d="M 10.5 2.5 L 10.5 5 L 13 5" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 /** Dispatch by kind — convenient one-liner for consumers. */
 export function KindIcon({ kind }: { kind: 'rect' | 'text' | 'path' }): ReactNode {
   switch (kind) {
