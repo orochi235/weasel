@@ -389,3 +389,69 @@ describe('rotation round-trip', () => {
     expect(svg).toMatch(/transform="rotate\(45 200 70\)"/);
   });
 });
+
+describe('rotation round-trip — parse', () => {
+  it('round-trips a rotated rect lossless: parse(serialize(node)) == node', () => {
+    const node: SvgNode = {
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: 100, height: 50 },
+      fill: { kind: 'solid', color: '#3366ff' },
+      rotation: Math.PI / 6,
+    };
+    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 200, height: 200 } });
+    const parsed = parseSvg(svg);
+    expect(parsed.nodes).toHaveLength(1);
+    const out = parsed.nodes[0];
+    expect(out.kind).toBe('path');
+    if (out.kind !== 'path') throw new Error('unreachable');
+    expect(out.path.kind).toBe('rect');
+    const rect = out.path as { kind: 'rect'; x: number; y: number; width: number; height: number };
+    expect(rect.x).toBeCloseTo(0, 5);
+    expect(rect.y).toBeCloseTo(0, 5);
+    expect(rect.width).toBeCloseTo(100, 5);
+    expect(rect.height).toBeCloseTo(50, 5);
+    expect(out.rotation).toBeCloseTo(Math.PI / 6, 5);
+  });
+
+  it('round-trips a rotated text node lossless: parse(serialize(node)) == node', () => {
+    const node: SvgNode = {
+      kind: 'text',
+      x: 100, y: 50, width: 200, height: 40,
+      text: 'Hi',
+      rotation: Math.PI / 4,
+    };
+    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 400, height: 200 } });
+    const parsed = parseSvg(svg);
+    expect(parsed.nodes).toHaveLength(1);
+    const out = parsed.nodes[0];
+    expect(out.kind).toBe('text');
+    if (out.kind !== 'text') throw new Error('unreachable');
+    expect(out.x).toBeCloseTo(100, 5);
+    expect(out.y).toBeCloseTo(50, 5);
+    expect(out.width).toBeCloseTo(200, 5);
+    expect(out.height).toBeCloseTo(40, 5);
+    expect(out.rotation).toBeCloseTo(Math.PI / 4, 5);
+  });
+
+  it('emits a warning when a leaf transform mixes scale+rotate (un-decomposable to pure rotation)', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+      <path d="M 0 0 L 100 0 L 100 50 L 0 50 Z" fill="#3366ff"
+            transform="translate(10 20) rotate(30) scale(0.5)"/>
+    </svg>`;
+    const parsed = parseSvg(svg);
+    expect(parsed.warnings.some((w) => /rotation/i.test(w))).toBe(true);
+  });
+
+  it('save → load → save is byte-identical for a Swillustrator-authored rotated rect', () => {
+    const node: SvgNode = {
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: 100, height: 50 },
+      fill: { kind: 'solid', color: '#3366ff' },
+      rotation: Math.PI / 6,
+    };
+    const svg1 = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 200, height: 200 } });
+    const parsed = parseSvg(svg1);
+    const svg2 = serializeSvg(parsed.nodes, { viewBox: parsed.viewBox });
+    expect(svg2).toBe(svg1);
+  });
+});

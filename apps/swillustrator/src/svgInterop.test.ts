@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import type { SvgNode, SvgPathNode, SvgTextNode, SvgGroupNode } from '@orochi235/weasel-svg';
-import { serializeSvg } from '@orochi235/weasel-svg';
+import { parseSvg, serializeSvg } from '@orochi235/weasel-svg';
 import { objToSvgNode, svgNodesToObjs, svgNodesToObjsWithGroups, objsToSvgNodes } from './svgInterop';
 
 // Minimal local mirror of svgInterop's internal Obj union. Keep in sync
@@ -441,5 +441,41 @@ describe('rotation emit', () => {
     const nodes = objsToSvgNodes(items as never, []);
     const svg = serializeSvg(nodes, { viewBox: { x: 0, y: 0, width: 200, height: 200 } });
     expect(svg).not.toContain('transform=');
+  });
+});
+
+describe('rotation parse', () => {
+  it('round-trips a rotated rect through serialize → parse → svgNodesToObjsWithGroups', () => {
+    const items = [{
+      id: 'r', kind: 'rect' as const, x: 0, y: 0, width: 100, height: 50,
+      fill: '#3366ff', stroke: '#000000', strokeWidth: 0, rotation: Math.PI / 6,
+    }];
+    const nodes = objsToSvgNodes(items as never, []);
+    const svg = serializeSvg(nodes, { viewBox: { x: 0, y: 0, width: 200, height: 200 } });
+    const parsed = parseSvg(svg);
+    let next = 0;
+    const out = svgNodesToObjsWithGroups(parsed.nodes, () => `id${next++}`);
+    expect(out.items).toHaveLength(1);
+    const r = out.items[0];
+    expect(r.kind).toBe('rect');
+    expect(r.x).toBeCloseTo(0, 5);
+    expect(r.width).toBeCloseTo(100, 5);
+    expect(r.rotation).toBeCloseTo(Math.PI / 6, 5);
+  });
+
+  it('round-trips a rotated text object through serialize → parse → svgNodesToObjsWithGroups', () => {
+    const items = [{
+      id: 't', kind: 'text' as const, x: 100, y: 50, width: 200, height: 40,
+      text: 'Hi', rotation: Math.PI / 4,
+    }];
+    const nodes = objsToSvgNodes(items as never, []);
+    const svg = serializeSvg(nodes, { viewBox: { x: 0, y: 0, width: 400, height: 200 } });
+    const parsed = parseSvg(svg);
+    let next = 0;
+    const out = svgNodesToObjsWithGroups(parsed.nodes, () => `id${next++}`);
+    expect(out.items).toHaveLength(1);
+    const t = out.items[0];
+    expect(t.kind).toBe('text');
+    expect(t.rotation).toBeCloseTo(Math.PI / 4, 5);
   });
 });

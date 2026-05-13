@@ -242,6 +242,7 @@ export function svgNodesToObjsWithGroups(
         x: n.x, y: n.y, width: n.width, height: n.height,
         text: n.text,
       };
+      if (n.rotation) o.rotation = n.rotation;
       // Reconstitute the full TextStyle from weasel-svg's style + the
       // namespaced lineHeight from the meta bag. weasel-svg doesn't model
       // `lineHeight` so it rides on `meta.swill.attrs['line-height']`.
@@ -264,6 +265,7 @@ export function svgNodesToObjsWithGroups(
         x: n.path.x, y: n.path.y, width: n.path.width, height: n.path.height,
         fill, stroke, strokeWidth,
       };
+      if (n.rotation) o.rotation = n.rotation;
       items.push(o);
       return o.id;
     }
@@ -276,6 +278,7 @@ export function svgNodesToObjsWithGroups(
       x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height,
       path, closed, fill, stroke, strokeWidth,
     };
+    if (n.rotation) o.rotation = n.rotation;
     items.push(o);
     return o.id;
   };

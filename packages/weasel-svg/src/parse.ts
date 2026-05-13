@@ -8,7 +8,8 @@
  * carries `transform` data — even on `<g>` nodes.
  */
 
-import type { Path } from '@orochi235/weasel';
+import type { Path, PolygonPath } from '@orochi235/weasel';
+import { PATH_L, PATH_M, PATH_Z } from '@orochi235/weasel';
 import {
   rectElementToPath, circleToPath, ellipseToPath, lineToPath,
   parsePoints, polylineToPath, polygonToPath,
@@ -20,7 +21,8 @@ import type {
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode,
 } from './types';
 import type { StyledRun, TextStyle, Paint } from '@orochi235/weasel';
-import { multiply, parseTransform } from './transform';
+import { multiply, parseTransform, decomposeRotation, rotationComponent, isIdentity } from './transform';
+import { boundsOfPath } from '@orochi235/weasel';
 import { IDENTITY_MATRIX } from './types';
 import { parsePaintAttr } from './color';
 import { collectGradients, type GradientTable } from './gradients';
@@ -268,15 +270,38 @@ function parseElement(
     return null;
   }
   const localTransform = parseTransform(el.getAttribute('transform'), onWarn);
-  const m = multiply(ctm, localTransform);
-  const path = lowerLeaf(el, tag, m, onWarn);
+  // First, lower the leaf into its UNROTATED form (using just the inherited
+  // CTM). Then try to extract the LEAF's local transform as a pure rotation
+  // about the leaf's AABB center. When that succeeds, store the angle on
+  // node.rotation. When it fails AND the leaf transform is non-identity,
+  // fall back to baking the full composed matrix into geometry (legacy
+  // behavior) and warn if a rotation is present that we are about to lose.
+  let path = lowerLeaf(el, tag, ctm, onWarn);
   if (!path) return null;
+  let rotation: number | undefined;
+  if (!isIdentity(localTransform)) {
+    const bounds = pathAabb(path);
+    const cx = bounds.x + bounds.width / 2;
+    const cy = bounds.y + bounds.height / 2;
+    const angle = decomposeRotation(localTransform, cx, cy);
+    if (angle != null) {
+      rotation = angle;
+    } else {
+      // Bake the matrix in — match legacy behavior.
+      path = transformPath(path, localTransform);
+      const rotComp = rotationComponent(localTransform);
+      if (Math.abs(rotComp) > 1e-4) {
+        onWarn(`leaf transform has a rotational component that can't be cleanly stored as rotation; baked into geometry (may not round-trip identically)`);
+      }
+    }
+  }
   const fill = readPaint(el, 'fill', '#000000', gradients, onWarn);
   const stroke = readStroke(el, gradients, onWarn);
   const opacity = readOpacityAttr(el, 'opacity');
   const node: SvgPathNode = { kind: 'path', path, fill };
   if (stroke) node.stroke = stroke;
   if (opacity != null) node.opacity = opacity;
+  if (rotation != null) node.rotation = rotation;
   // Lines are stroke-only by SVG convention; force fill=none if the
   // user didn't specify one.
   if (tag === 'line' && !el.hasAttribute('fill')) {
@@ -325,9 +350,56 @@ function lowerLeaf(
       return null;
     }
     const raw = parsePathD(d, onWarn);
-    return transformPath(raw, m);
+    const transformed = transformPath(raw, m);
+    // Reconstitute axis-aligned rectangles so a `{ kind: 'rect' }` source
+    // node round-trips back into a `{ kind: 'rect' }` parsed node.
+    if (transformed.kind === 'polygon') {
+      const rect = polygonToRectIfAxisAligned(transformed);
+      if (rect) return rect;
+    }
+    return transformed;
   }
   return null;
+}
+
+/**
+ * Detect a polygon whose 4 vertices form an axis-aligned rectangle (in
+ * the canonical `M L L L Z` order produced by our serializer), and
+ * reconstitute it as a `RectPath`. Returns null on any deviation.
+ */
+function polygonToRectIfAxisAligned(p: PolygonPath): Path | null {
+  const cmds = p.commands;
+  if (cmds.length !== 5) return null;
+  if (cmds[0] !== PATH_M) return null;
+  if (cmds[1] !== PATH_L || cmds[2] !== PATH_L || cmds[3] !== PATH_L) return null;
+  if (cmds[4] !== PATH_Z) return null;
+  const c = p.coords;
+  if (c.length !== 8) return null;
+  const x0 = c[0], y0 = c[1];
+  const x1 = c[2], y1 = c[3];
+  const x2 = c[4], y2 = c[5];
+  const x3 = c[6], y3 = c[7];
+  // Axis-aligned rectangle: top edge horizontal, right edge vertical, etc.
+  if (y0 !== y1 || x1 !== x2 || y2 !== y3 || x3 !== x0) return null;
+  const x = Math.min(x0, x1);
+  const y = Math.min(y0, y2);
+  const width = Math.abs(x1 - x0);
+  const height = Math.abs(y2 - y1);
+  if (width === 0 || height === 0) return null;
+  return { kind: 'rect', x, y, width, height };
+}
+
+/**
+ * Compute a `Path`'s axis-aligned bounding box. Mirrors the helper used by
+ * the serializer for rotation pivot resolution; keep the duplication local
+ * to parse.ts for now — lift to a shared module if a third call site
+ * appears.
+ */
+function pathAabb(path: Path): { x: number; y: number; width: number; height: number } {
+  if (path.kind === 'rect') {
+    return { x: path.x, y: path.y, width: path.width, height: path.height };
+  }
+  return boundsOfPath(path);
 }
 
 function readPaint(
@@ -462,7 +534,11 @@ function parseTextElement(
     return Number.isFinite(n) ? n : fallback;
   };
   const localTransform = parseTransform(el.getAttribute('transform'), onWarn);
-  const m = multiply(ctm, localTransform);
+  // Use only the inherited CTM to position the text's anchor; the
+  // element-local transform is decomposed below so a pure rotation about
+  // the text box's center is surfaced as `node.rotation` rather than
+  // baked into the anchor (and lost).
+  const m = ctm;
 
   const rawX = num(el.getAttribute('x'), 0);
   const rawY = num(el.getAttribute('y'), 0);
@@ -536,6 +612,23 @@ function parseTextElement(
   if (hasStyling) node.runs = runs;
   if (Object.keys(style).length > 0) node.style = style;
   if (opacity != null) node.opacity = opacity;
+  // Try to extract the element-local transform as a pure rotation about
+  // the text box's center. When it doesn't decompose cleanly but contains
+  // a rotational component, warn — the legacy code path baked the matrix
+  // into the anchor; here we drop it so the warning is mandatory.
+  if (!isIdentity(localTransform)) {
+    const cx = node.x + node.width / 2;
+    const cy = node.y + node.height / 2;
+    const angle = decomposeRotation(localTransform, cx, cy);
+    if (angle != null) {
+      node.rotation = angle;
+    } else {
+      const rotComp = rotationComponent(localTransform);
+      if (Math.abs(rotComp) > 1e-4) {
+        onWarn(`<text> transform has a rotational component that can't be cleanly stored as rotation; dropped (may not round-trip identically)`);
+      }
+    }
+  }
   return node;
 }
 

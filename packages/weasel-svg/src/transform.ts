@@ -110,6 +110,50 @@ export function parseTransform(
   return result;
 }
 
+/** Try to factor `m` as "rotation by theta about (cx, cy)". Returns the
+ *  angle in radians when `m` is (within `eps`) a pure rotation about the
+ *  given pivot. Returns `null` otherwise.
+ *
+ *  Pure rotation about (cx, cy) has the matrix form:
+ *    [ cos  -sin   cx - cx*cos + cy*sin ]
+ *    [ sin   cos   cy - cx*sin - cy*cos ]
+ *  i.e. m[0] = m[3] = cos, m[1] = -m[2] = sin, with a translation that
+ *  equals the pivot's "rotate-then-translate-back" residue. We reconstruct
+ *  theta from atan2(m[1], m[0]) and verify the rest.
+ */
+export function decomposeRotation(
+  m: Matrix,
+  cx: number,
+  cy: number,
+  eps = 1e-4,
+): number | null {
+  const [a, b, c, d, e, f] = m;
+  // Pure rotation requires a == d and b == -c.
+  if (Math.abs(a - d) > eps) return null;
+  if (Math.abs(b + c) > eps) return null;
+  // Determinant must be 1 (no scale, no flip).
+  const det = a * d - b * c;
+  if (Math.abs(det - 1) > eps) return null;
+  const theta = Math.atan2(b, a);
+  // Verify translation = (cx - cx*cos + cy*sin, cy - cx*sin - cy*cos).
+  const expectedE = cx - cx * a + cy * b;
+  const expectedF = cy - cx * b - cy * a;
+  if (Math.abs(e - expectedE) > eps) return null;
+  if (Math.abs(f - expectedF) > eps) return null;
+  return theta;
+}
+
+/** Best-effort rotational-component extraction for a general matrix (any
+ *  scale + rotation, ignoring translation). Used for parse-time warnings
+ *  on un-decomposable matrices: we can detect "there is a rotation here"
+ *  even if we won't preserve it as `node.rotation`. For a non-uniform
+ *  matrix the "rotation" is ambiguous; we report atan2(b, a) which
+ *  corresponds to where the +x basis vector points.
+ */
+export function rotationComponent(m: Matrix): number {
+  return Math.atan2(m[1], m[0]);
+}
+
 /**
  * Format a matrix as an SVG `matrix(a b c d e f)` value. Returns `null`
  * when `m` is (effectively) the identity, so the caller can omit the
