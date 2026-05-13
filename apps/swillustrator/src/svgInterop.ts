@@ -92,7 +92,7 @@ export function parsedToDoc(parsed: ParseResult): ParsedDocPatch {
   return out;
 }
 
-interface BaseObj { id: string; kind: 'rect' | 'text' | 'path'; x: number; y: number; width: number; height: number }
+interface BaseObj { id: string; kind: 'rect' | 'text' | 'path'; x: number; y: number; width: number; height: number; rotation?: number }
 interface RectObj extends BaseObj { kind: 'rect'; fill: string; stroke: string; strokeWidth: number }
 interface TextObj extends BaseObj { kind: 'text'; text: string; style?: TextStyle }
 interface PathObj extends BaseObj { kind: 'path'; path: PolygonPath; closed: boolean; fill: string; stroke: string; strokeWidth: number }
@@ -120,6 +120,7 @@ export function objToSvgNode(o: Obj): SvgNode {
         node.meta = { swill: { attrs: { 'line-height': String(lineHeight) } } };
       }
     }
+    if (o.rotation) node.rotation = o.rotation;
     return node;
   }
   if (o.kind === 'rect') {
@@ -132,6 +133,7 @@ export function objToSvgNode(o: Obj): SvgNode {
     if (o.strokeWidth > 0) {
       node.stroke = { paint: { kind: 'solid', color: o.stroke }, width: o.strokeWidth };
     }
+    if (o.rotation) node.rotation = o.rotation;
     return node;
   }
   // path
@@ -143,6 +145,7 @@ export function objToSvgNode(o: Obj): SvgNode {
   if (o.strokeWidth > 0) {
     node.stroke = { paint: { kind: 'solid', color: o.stroke }, width: o.strokeWidth };
   }
+  if (o.rotation) node.rotation = o.rotation;
   return node;
 }
 

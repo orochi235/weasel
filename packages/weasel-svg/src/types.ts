@@ -100,6 +100,10 @@ export interface SvgPathNode {
   stroke?: SvgStroke;
   /** Element-level opacity (`opacity="..."`), 0..1. */
   opacity?: number;
+  /** Element-level rotation in **radians**, pivoting around the AABB
+   *  center of the underlying `path` geometry. Emitted as SVG
+   *  `transform="rotate(angleDegrees cx cy)"`. */
+  rotation?: number;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }
@@ -147,6 +151,10 @@ export interface SvgTextNode {
   style?: TextStyle;
   /** Element-level opacity (`opacity="..."`), 0..1. */
   opacity?: number;
+  /** Element-level rotation in **radians**, pivoting around the unrotated
+   *  AABB center `(x + width/2, y + height/2)`. Emitted as SVG
+   *  `transform="rotate(angleDegrees cx cy)"`. */
+  rotation?: number;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }

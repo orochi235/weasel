@@ -355,3 +355,37 @@ describe('round-trip', () => {
     expect(out).not.toContain('xmlns:bar');
   });
 });
+
+describe('rotation round-trip', () => {
+  it('emits transform=rotate(angle cx cy) when SvgPathNode has rotation', () => {
+    const node: SvgNode = {
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: 100, height: 50 },
+      fill: { kind: 'solid', color: '#3366ff' },
+      rotation: Math.PI / 6,
+    };
+    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 200, height: 200 } });
+    expect(svg).toContain('transform="rotate(30 50 25)"');
+  });
+
+  it('omits transform when rotation is 0 or undefined', () => {
+    const node: SvgNode = {
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: 100, height: 50 },
+      fill: { kind: 'solid', color: '#3366ff' },
+    };
+    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 200, height: 200 } });
+    expect(svg).not.toContain('transform=');
+  });
+
+  it('emits transform=rotate for rotated SvgTextNode using its declared box center', () => {
+    const node: SvgNode = {
+      kind: 'text',
+      x: 100, y: 50, width: 200, height: 40,
+      text: 'Hi',
+      rotation: Math.PI / 4,
+    };
+    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 400, height: 200 } });
+    expect(svg).toMatch(/transform="rotate\(45 200 70\)"/);
+  });
+});

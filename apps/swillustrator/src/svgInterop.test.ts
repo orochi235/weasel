@@ -6,6 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import type { SvgNode, SvgPathNode, SvgTextNode, SvgGroupNode } from '@orochi235/weasel-svg';
+import { serializeSvg } from '@orochi235/weasel-svg';
 import { objToSvgNode, svgNodesToObjs, svgNodesToObjsWithGroups, objsToSvgNodes } from './svgInterop';
 
 // Minimal local mirror of svgInterop's internal Obj union. Keep in sync
@@ -408,5 +409,37 @@ describe('objToSvgNode — coverage gaps', () => {
     expect(back.kind).toBe('path');
     expect(back.closed).toBe(false);
     expect(back.strokeWidth).toBe(2);
+  });
+});
+
+describe('rotation emit', () => {
+  it('writes transform="rotate(...)" for a rotated rect', () => {
+    const items = [{
+      id: 'r', kind: 'rect' as const, x: 0, y: 0, width: 100, height: 50,
+      fill: '#3366ff', stroke: '#000', strokeWidth: 0, rotation: Math.PI / 6,
+    }];
+    const nodes = objsToSvgNodes(items as never, []);
+    const svg = serializeSvg(nodes, { viewBox: { x: 0, y: 0, width: 200, height: 200 } });
+    expect(svg).toContain('transform="rotate(30 50 25)"');
+  });
+
+  it('writes transform="rotate(...)" for a rotated text', () => {
+    const items = [{
+      id: 't', kind: 'text' as const, x: 100, y: 50, width: 200, height: 40,
+      text: 'Hi', rotation: Math.PI / 4,
+    }];
+    const nodes = objsToSvgNodes(items as never, []);
+    const svg = serializeSvg(nodes, { viewBox: { x: 0, y: 0, width: 400, height: 200 } });
+    expect(svg).toMatch(/transform="rotate\(45 200 70\)"/);
+  });
+
+  it('omits transform when rotation is 0 or undefined', () => {
+    const items = [{
+      id: 'r', kind: 'rect' as const, x: 0, y: 0, width: 100, height: 50,
+      fill: '#3366ff', stroke: '#000', strokeWidth: 0,
+    }];
+    const nodes = objsToSvgNodes(items as never, []);
+    const svg = serializeSvg(nodes, { viewBox: { x: 0, y: 0, width: 200, height: 200 } });
+    expect(svg).not.toContain('transform=');
   });
 });

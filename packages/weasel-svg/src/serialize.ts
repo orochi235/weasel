@@ -171,6 +171,13 @@ function pathXml(node: SvgPathNode, registry: GradientRegistry, namespaces: Reco
   if (node.opacity != null && node.opacity !== 1) {
     attrs.push(`opacity="${trimNumber(node.opacity)}"`);
   }
+  if (node.rotation != null && node.rotation !== 0) {
+    const b = pathBounds(node.path);
+    const cx = b.minX + (b.maxX - b.minX) / 2;
+    const cy = b.minY + (b.maxY - b.minY) / 2;
+    const deg = (node.rotation * 180) / Math.PI;
+    attrs.push(`transform="rotate(${trimNumber(deg)} ${trimNumber(cx)} ${trimNumber(cy)})"`);
+  }
   const metaAttrs = metaAttrsXml(node.meta, namespaces);
   const metaEls = metaElementsXml(node.meta, namespaces);
   if (metaEls) {
@@ -282,6 +289,12 @@ function textXml(node: SvgTextNode, registry: GradientRegistry, namespaces: Reco
   }
   if (node.opacity != null && node.opacity !== 1) {
     attrs.push(`opacity="${trimNumber(node.opacity)}"`);
+  }
+  if (node.rotation != null && node.rotation !== 0) {
+    const cx = node.x + node.width / 2;
+    const cy = node.y + node.height / 2;
+    const deg = (node.rotation * 180) / Math.PI;
+    attrs.push(`transform="rotate(${trimNumber(deg)} ${trimNumber(cx)} ${trimNumber(cy)})"`);
   }
 
   const body = node.runs && node.runs.length > 0
