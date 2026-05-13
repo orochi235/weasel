@@ -508,6 +508,19 @@ export function App() {
         if (o.tool !== 'text') return;
         itemsRef.current[i] = { ...o, text };
       },
+      // Used by createSetPathOp (pen-edit); updates path geometry in place.
+      setPath: (id: string, fields: { path: unknown; closed: boolean; params: unknown }) => {
+        const i = itemsRef.current.findIndex((o) => o.id === id);
+        if (i < 0) return;
+        const o = itemsRef.current[i];
+        if (o.tool === 'text') return; // text objs aren't path-shaped
+        itemsRef.current[i] = {
+          ...o,
+          path: fields.path as never,
+          closed: fields.closed,
+          params: fields.params as never,
+        };
+      },
       // Used by createUpdateNodeOp — partial obj field update (fill, stroke,
       // strokeWidth, style.fill.color, etc.). Caller is responsible for
       // capturing before/after snapshots so undo restores the prior state.
@@ -911,7 +924,7 @@ export function App() {
   const wheelPan = useWheelPanTool();
   const keyZoom = useKeyboardZoomTool();
 
-  const { tool: pen } = useUserPenTool<PathObj>({
+  const { tool: pen, isEditing: penIsEditing } = useUserPenTool<PathObj>({
     wrapPath: (path, { closed }): PathObj => {
       const b = boundsOfPath(path);
       const id = `p${nextId.current++}`;
@@ -922,6 +935,11 @@ export function App() {
         fill: fillRef.current, stroke: strokeRef.current, strokeWidth: strokeWidthRef.current,
       };
     },
+    getPathObj: (id: string) => {
+      const o = itemsRef.current.find((x) => x.id === id);
+      if (!o || o.tool === 'text') return null;
+      return { path: o.path, closed: o.closed, params: o.params, tool: o.tool };
+    },
     adapter: {
       addNode: (pose) => {
         // Skip history for in-flight pen previews — they're not user-visible
@@ -931,6 +949,7 @@ export function App() {
         return pose.id;
       },
       setSelection: () => {},
+      applyOps: (ops, label) => applyOps(ops, label),
     },
   });
 
@@ -1498,7 +1517,7 @@ export function App() {
         >
           <div
             ref={pageShadowRef}
-            className="swill-canvas-host"
+            className={`swill-canvas-host${penIsEditing ? ' pen-edit-active' : ''}`}
             onDoubleClick={(e) => {
               const canvas = e.target instanceof HTMLCanvasElement ? e.target : null;
               if (!canvas) return;

@@ -250,6 +250,13 @@ html, body, #root {
   height: 100%;
 }
 
+/* Background tint applied when the pen tool is in edit mode (dblclick on a
+   path obj). Gives a clear visual cue that pointer gestures will edit
+   anchors/handles rather than start a new path. */
+.pen-edit-active {
+  background-color: #2a2218;
+}
+
 /* The kit's <Canvas> sets tabIndex={0} so keyboard events work. Suppress
    the browser's default focus ring — the canvas is always the focused
    surface during interaction, so the ring is visual noise. */
