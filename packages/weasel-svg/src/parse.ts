@@ -302,9 +302,9 @@ function parseElement(
   if (stroke) node.stroke = stroke;
   if (opacity != null) node.opacity = opacity;
   if (rotation != null) node.rotation = rotation;
-  // Lines are stroke-only by SVG convention; force fill=none if the
-  // user didn't specify one.
-  if (tag === 'line' && !el.hasAttribute('fill')) {
+  // Lines are stroke-only by SVG convention; force fill=none if neither
+  // the line nor an ancestor group specifies a fill.
+  if (tag === 'line' && readInheritedAttr(el, 'fill') == null) {
     node.fill = { kind: 'none' };
   }
   if (tag === 'polyline' && !el.hasAttribute('fill')) {
@@ -402,6 +402,53 @@ function pathAabb(path: Path): { x: number; y: number; width: number; height: nu
   return boundsOfPath(path);
 }
 
+/**
+ * Extract a single CSS-style declaration's value from a `style="..."`
+ * attribute. Returns the trimmed value (e.g. `"#ff0000"`) or null when
+ * the property is absent. Case-sensitive on property names per CSS
+ * (SVG presentation properties are lower-case anyway).
+ */
+function readStyleProp(el: Element, prop: string): string | null {
+  const style = el.getAttribute('style');
+  if (!style) return null;
+  // (?:^|;)\s*PROP\s*:\s*([^;]+) — anchors at start or after a `;`
+  // separator, allows whitespace around the colon, captures up to the
+  // next `;` or end of string.
+  const re = new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([^;]+)`, 'i');
+  const m = re.exec(style);
+  if (!m) return null;
+  return m[1].trim();
+}
+
+/**
+ * Read a paint-related attribute (fill / stroke / fill-opacity / etc.)
+ * honoring SVG2 cascade rules:
+ *
+ *   1. `style="prop:value"` beats presentation attribute on the same
+ *      element (style is a CSS rule; presentation attrs have specificity
+ *      zero — see https://www.w3.org/TR/SVG2/styling.html#PresentationAttributes).
+ *   2. `inherit` keyword (or absence of a value) walks up the parent
+ *      chain looking for an ancestor with the same property set.
+ *   3. Stops at the SVG root; returns null when nothing is found.
+ *
+ * Returns the raw string value as it appeared in the SVG; the caller is
+ * responsible for parsing it (color, gradient ref, number, etc.).
+ */
+function readInheritedAttr(el: Element | null, name: string): string | null {
+  let cur: Element | null = el;
+  while (cur) {
+    const styleVal = readStyleProp(cur, name);
+    const attrVal = cur.getAttribute(name);
+    // style beats presentation attr on the SAME element.
+    const own = styleVal ?? attrVal;
+    if (own != null && own !== 'inherit') return own;
+    // `inherit` (or nothing): walk up. Stop after we leave <svg>.
+    if (cur.tagName.toLowerCase() === 'svg') return null;
+    cur = cur.parentElement;
+  }
+  return null;
+}
+
 function readPaint(
   el: Element,
   attr: 'fill' | 'stroke',
@@ -409,9 +456,11 @@ function readPaint(
   gradients: GradientTable,
   onWarn: (msg: string) => void,
 ): SvgPaint {
-  const raw = el.getAttribute(attr);
-  const opacityAttr = el.getAttribute(`${attr}-opacity`);
-  const opacity = opacityAttr != null ? clamp01(parseFloat(opacityAttr)) : undefined;
+  // Per SVG2 cascade: style="fill:..." beats fill="..." on the same
+  // element; absent/inherit values cascade from ancestor groups.
+  const raw = readInheritedAttr(el, attr);
+  const opacityRaw = readInheritedAttr(el, `${attr}-opacity`);
+  const opacity = opacityRaw != null ? clamp01(parseFloat(opacityRaw)) : undefined;
   if (raw == null) {
     if (attr === 'stroke') return { kind: 'none' };
     const out: SvgPaint = { kind: 'solid', color: defaultColor };
@@ -443,39 +492,42 @@ function readStroke(
   gradients: GradientTable,
   onWarn: (msg: string) => void,
 ): SvgStroke | undefined {
-  if (!el.hasAttribute('stroke') && !el.hasAttribute('stroke-width')) return undefined;
+  // Inherited gate: if no ancestor (incl. self) sets stroke or
+  // stroke-width via attr or style, there's no stroke to read.
+  const inheritedStroke = readInheritedAttr(el, 'stroke');
+  const inheritedWidth = readInheritedAttr(el, 'stroke-width');
+  if (inheritedStroke == null && inheritedWidth == null) return undefined;
   const paint = readPaint(el, 'stroke', '#000000', gradients, onWarn);
   if (paint.kind === 'none') return undefined;
-  const widthAttr = el.getAttribute('stroke-width');
-  const width = widthAttr != null ? parseFloat(widthAttr) : 1;
-  const opacityAttr = el.getAttribute('stroke-opacity');
+  const width = inheritedWidth != null ? parseFloat(inheritedWidth) : 1;
   const stroke: SvgStroke = { paint, width };
-  if (opacityAttr != null) {
-    const a = clamp01(parseFloat(opacityAttr));
+  const opacityRaw = readInheritedAttr(el, 'stroke-opacity');
+  if (opacityRaw != null) {
+    const a = clamp01(parseFloat(opacityRaw));
     if (Number.isFinite(a)) stroke.opacity = a;
   }
-  const cap = el.getAttribute('stroke-linecap');
+  const cap = readInheritedAttr(el, 'stroke-linecap');
   if (cap === 'butt' || cap === 'round' || cap === 'square') {
     stroke.cap = cap;
-  } else if (cap != null && cap !== 'inherit') {
+  } else if (cap != null) {
     onWarn(`unsupported stroke-linecap: ${cap}`);
   }
-  const join = el.getAttribute('stroke-linejoin');
+  const join = readInheritedAttr(el, 'stroke-linejoin');
   if (join === 'miter' || join === 'round' || join === 'bevel') {
     stroke.join = join;
   } else if (join === 'arcs' || join === 'miter-clip') {
     onWarn(`stroke-linejoin "${join}" not supported; falling back to miter`);
     stroke.join = 'miter';
-  } else if (join != null && join !== 'inherit') {
+  } else if (join != null) {
     onWarn(`unsupported stroke-linejoin: ${join}`);
   }
-  const dashAttr = el.getAttribute('stroke-dasharray');
+  const dashAttr = readInheritedAttr(el, 'stroke-dasharray');
   if (dashAttr != null && dashAttr.trim() !== '' && dashAttr.trim() !== 'none') {
     const parsed = parseDashArray(dashAttr);
     if (parsed) stroke.dash = parsed;
     else onWarn(`unrecognized stroke-dasharray: ${dashAttr}`);
   }
-  const miterAttr = el.getAttribute('stroke-miterlimit');
+  const miterAttr = readInheritedAttr(el, 'stroke-miterlimit');
   if (miterAttr != null) {
     const m = parseFloat(miterAttr);
     if (Number.isFinite(m) && m >= 1) stroke.miterLimit = m;
