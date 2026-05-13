@@ -12,6 +12,7 @@
  * path-then-rect detector fired, else `tool: 'imported'`.
  */
 
+import { boundsOfPath } from '@orochi235/weasel';
 import type { PolygonPath, TextStyle } from '@orochi235/weasel';
 import type {
   ParseResult,
@@ -307,7 +308,8 @@ export function svgNodesToObjsWithGroups(
       bounds = { x: n.path.x, y: n.path.y, width: n.path.width, height: n.path.height };
       closed = true;
     } else {
-      bounds = pathBounds(n.path);
+      const b = boundsOfPath(n.path);
+      bounds = { x: b.x, y: b.y, width: b.width, height: b.height };
       closed = isClosedPolygon(n.path);
     }
     const o: PathObj = {
@@ -346,21 +348,6 @@ function colorFromPaint(
   // Gradients can't be represented as Swillustrator's flat fill string yet —
   // drop to fallback. Caller's UI shows a solid color; the gradient is lost.
   return fallback;
-}
-
-function pathBounds(path: PolygonPath): { x: number; y: number; width: number; height: number } {
-  const coords = path.coords;
-  if (coords.length === 0) return { x: 0, y: 0, width: 0, height: 0 };
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (let i = 0; i < coords.length; i += 2) {
-    const x = coords[i];
-    const y = coords[i + 1];
-    if (x < minX) minX = x;
-    if (y < minY) minY = y;
-    if (x > maxX) maxX = x;
-    if (y > maxY) maxY = y;
-  }
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
 function isClosedPolygon(path: PolygonPath): boolean {

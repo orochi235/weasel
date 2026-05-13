@@ -15,14 +15,33 @@ describe('boundsOfPath', () => {
     expect(boundsOfPath(p)).toEqual({ kind: 'rect', x: 10, y: 10, width: 20, height: 30 });
   });
 
-  it('includes bezier control points (loose bound, conservative)', () => {
+  it('computes tight bounds for cubic Bezier — control points outside the curve do not expand the AABB', () => {
+    // Control point 1 is at y=-20, but the curve itself only dips to about y=-2.27.
+    // Loose bounds would report y=-20; tight bounds report the actual extremum.
     const p = new PathBuilder()
       .moveTo(0, 0)
-      .curveTo(50, -20, 100, 100, 0, 50) // control 1 dips above
+      .curveTo(50, -20, 100, 100, 0, 50)
       .build();
     const b = boundsOfPath(p);
-    expect(b.y).toBe(-20); // conservative: includes the high control point
+    expect(b.y).toBeGreaterThan(-3);
+    expect(b.y).toBeLessThan(-2);
     expect(b.x).toBe(0);
+    // Verify the curve fits within the reported bounds (sanity).
+    expect(b.y + b.height).toBeGreaterThanOrEqual(50);
+  });
+
+  it('computes tight bounds for quadratic Bezier', () => {
+    // Quadratic with control point above the endpoints: peak is at the midpoint
+    // of control/endpoint average, not at the control point itself.
+    const p = new PathBuilder()
+      .moveTo(0, 0)
+      .quadTo(50, -100, 100, 0)
+      .build();
+    const b = boundsOfPath(p);
+    // Peak of (1-t)²·0 + 2(1-t)t·(-100) + t²·0 at t=0.5 → y = -50.
+    expect(b.y).toBeCloseTo(-50, 5);
+    expect(b.x).toBe(0);
+    expect(b.width).toBe(100);
   });
 
   it('returns a zero rect for an empty polygon', () => {
