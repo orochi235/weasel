@@ -4,7 +4,7 @@ import { useRotate } from '@orochi235/weasel';
 import { createHistory } from '@orochi235/weasel';
 import type { Op } from '@orochi235/weasel';
 import type { RotateAdapter } from '@orochi235/weasel';
-import { applyPoseToObj, type Obj, type Pose, type RectObj } from './poseUpdate';
+import { applyPoseToObj, type Obj, type Pose, type PathObj } from './poseUpdate';
 
 const NO_MOD = { alt: false, shift: false, meta: false, ctrl: false };
 
@@ -38,13 +38,15 @@ function buildRig(initial: Obj[]) {
 
 describe('Swillustrator: rotate then undo', () => {
   it('undo reverts rotation on a rect that was never rotated before', () => {
-    const initial: RectObj = {
+    const initial: PathObj = {
       id: 'r1',
-      kind: 'rect',
+      tool: 'rect',
       x: 100,
       y: 100,
       width: 50,
       height: 50,
+      path: { kind: 'rect', x: 100, y: 100, width: 50, height: 50 },
+      closed: true,
       fill: '#ff0000',
       stroke: '#000000',
       strokeWidth: 1,
