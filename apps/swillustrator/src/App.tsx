@@ -189,15 +189,20 @@ function createUpdateNodeOp(args: {
   from: Partial<Obj>;
   to: Partial<Obj>;
   label?: string;
+  coalesceKey?: string;
 }): Op {
   const { id, from, to, label } = args;
+  // Default coalesceKey collapses a slider drag's burst of per-keystroke ops
+  // into a single undo entry within the history's coalesce window.
+  const coalesceKey = args.coalesceKey ?? `update:${id}`;
   return {
     label,
+    coalesceKey,
     apply(adapter) {
       (adapter as { updateNode: (id: string, patch: Partial<Obj>) => void }).updateNode(id, to);
     },
     invert() {
-      return createUpdateNodeOp({ id, from: to, to: from, label });
+      return createUpdateNodeOp({ id, from: to, to: from, label, coalesceKey });
     },
   };
 }
