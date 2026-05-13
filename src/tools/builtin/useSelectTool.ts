@@ -891,6 +891,20 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   // scratch-kind switch in this file.
   const beginMove: ActionFn<SelectScratch> = (ctx) =>
     move.beginAt(ctx, computeMoveIds(ctx)) as ReturnType<ActionFn<SelectScratch>>;
+
+  // Forward a gesture's ctx + raw event to a consumer callback and
+  // claim the gesture. Nothing about the body is gesture-specific —
+  // dblTap, click, longpress, anything else that wants to expose a
+  // consumer-callback escape hatch can reuse this. Today the only
+  // wiring is `dblTap → onDoubleTap`.
+  const forwardAction: ActionFn<SelectScratch> = (ctx, e) => {
+    const cb = onDoubleTapRef.current;
+    if (!cb) return none();
+    const evt = e as PointerEvent;
+    const ids = pickEveryRef.current(ctx.worldX, ctx.worldY);
+    cb({ worldX: ctx.worldX, worldY: ctx.worldY, ids, event: evt });
+    return claim();
+  };
   const beginArea: ActionFn<SelectScratch> = (ctx) =>
     areaSelect.beginAt(ctx) as ReturnType<ActionFn<SelectScratch>>;
 
@@ -969,23 +983,19 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           // imperatively because selection mutation is shared with the
           // imperative onClick path; emitting an op here would
           // double-mutate against the selection API.
+          // pointerDownBody decides body vs. empty internally (via its own
+          // pickEveryFn), so the kit's route key doesn't matter — we just
+          // need to be invoked on every pointerdown. The empty key is
+          // listed explicitly because the routing engine's '*' doesn't
+          // fall through to 'empty'.
           pointerDown: {
-            rect: pointerDownBody,
-            text: pointerDownBody,
-            path: pointerDownBody,
             '*': pointerDownBody,
             empty: pointerDownBody,
           },
           drag: {
-            // Per the Phase 3 plan, dispatch by known node kinds so consumers
-            // can later override per-kind (e.g. text → enter-edit instead of
-            // move). The '*' wildcard catches nodes from adapters that haven't
-            // wired `kindOf` yet — kindOf is an optional adapter hook and
-            // `Canvas` falls back to `'unknown'` when it's absent. Drag on any
-            // node = move is the universal fallback.
-            rect: beginMove,
-            text: beginMove,
-            path: beginMove,
+            // Any node click → move. Empty space → marquee. Consumers
+            // that want per-kind drag behavior (e.g. text → enter-edit)
+            // can override by passing a custom drag route table.
             '*': beginMove,
             empty: beginArea,
           },
@@ -1004,10 +1014,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           // because there's no distinct alt-click behavior to express —
           // the default route (no sub-table) already covers it.
           click: {
-            rect: collapseDeferredClick,
-            text: collapseDeferredClick,
-            path: collapseDeferredClick,
-            '*':  collapseDeferredClick,
+            '*': collapseDeferredClick,
             empty: {
               [mods()]:          clearOnEmpty,
               [mods('shift')]:   () => none(),
@@ -1019,24 +1026,12 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           // raw PointerEvent now arrives as the second ActionFn parameter
           // (Phase 4.5 Task 3), so this route no longer needs an
           // imperative shim. Returns claim() so the dispatcher suppresses
-          // the regular onClick on this gesture.
+          // the regular onClick on this gesture. The empty key is listed
+          // alongside '*' because the routing engine's '*' doesn't fall
+          // through to 'empty'.
           dblTap: {
-            '*': (ctx, e) => {
-              const cb = onDoubleTapRef.current;
-              if (!cb) return none();
-              const evt = e as PointerEvent;
-              const ids = pickEveryRef.current(ctx.worldX, ctx.worldY);
-              cb({ worldX: ctx.worldX, worldY: ctx.worldY, ids, event: evt });
-              return claim();
-            },
-            empty: (ctx, e) => {
-              const cb = onDoubleTapRef.current;
-              if (!cb) return none();
-              const evt = e as PointerEvent;
-              const ids = pickEveryRef.current(ctx.worldX, ctx.worldY);
-              cb({ worldX: ctx.worldX, worldY: ctx.worldY, ids, event: evt });
-              return claim();
-            },
+            '*': forwardAction,
+            empty: forwardAction,
           },
         },
       });
