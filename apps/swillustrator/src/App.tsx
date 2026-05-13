@@ -411,6 +411,48 @@ export function App() {
   const groupsRef = useRef(groups);
   groupsRef.current = groups;
 
+  // Group-aware geometry helpers. Used by both useSelectTool (selection chrome
+  // bounds, pickBest) and <Canvas> (selection-overlay bounds resolution) so a
+  // group id resolves to the union AABB of its member rects and gestures
+  // started on a group expand to its leaves.
+  const boundsOfId = useCallback((id: string): { x: number; y: number; width: number; height: number } | null => {
+    const o = itemsRef.current.find((x) => x.id === id);
+    if (o) return { x: o.x, y: o.y, width: o.width, height: o.height };
+    const g = groupsRef.current.find((x) => x.id === id);
+    if (!g) return null;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    let any = false;
+    for (const mid of g.members) {
+      const m = itemsRef.current.find((x) => x.id === mid);
+      if (!m) continue;
+      any = true;
+      if (m.x < minX) minX = m.x;
+      if (m.y < minY) minY = m.y;
+      if (m.x + m.width > maxX) maxX = m.x + m.width;
+      if (m.y + m.height > maxY) maxY = m.y + m.height;
+    }
+    return any ? { x: minX, y: minY, width: maxX - minX, height: maxY - minY } : null;
+  }, []);
+
+  const expandGroupIds = useCallback((ids: string[]): string[] => {
+    const out: string[] = [];
+    const seen = new Set<string>();
+    for (const id of ids) {
+      const g = groupsRef.current.find((x) => x.id === id);
+      if (g) {
+        for (const m of g.members) {
+          if (seen.has(m)) continue;
+          seen.add(m);
+          out.push(m);
+        }
+      } else if (!seen.has(id)) {
+        seen.add(id);
+        out.push(id);
+      }
+    }
+    return out;
+  }, []);
+
   const selection = useSelection({ mode: 'multi' });
   usePublishSelection(selection.current);
   const fillRef = useRef(fillColor);
@@ -762,9 +804,26 @@ export function App() {
   );
   const select = useSelectTool<Obj, Pose>(adapter, {
     pickEvery,
-    boundsOf: (id) => {
-      const o = itemsRef.current.find((x) => x.id === id);
-      return o ? { x: o.x, y: o.y, width: o.width, height: o.height } : null;
+    // Group-aware click resolution: a click on a member of a group selects
+    // the group; alt-click drills past the group to the bare member. Groups
+    // in swillustrator are flat (no nesting), so "topmost ancestor" is the
+    // single group that contains the hit member. Falls back to pickEvery so
+    // rotated AABB hit-testing is shared.
+    pickBest: (wx, wy, alt) => {
+      const ids = pickEvery(wx, wy);
+      if (ids.length === 0) return null;
+      const top = ids[ids.length - 1];
+      if (alt) return top;
+      const g = groupsRef.current.find((x) => x.members.includes(top));
+      return g ? g.id : top;
+    },
+    boundsOf: boundsOfId,
+    // Double-tap drills into a group: select the bare member that was hit
+    // even when its group would otherwise be the click target.
+    onDoubleTap: ({ ids }) => {
+      if (ids.length === 0) return;
+      const top = ids[ids.length - 1];
+      selection.set([asNodeId(top)]);
     },
     drawGhost: (obj, pose): DrawCommand[] => {
       if (!obj) return [];
@@ -798,8 +857,13 @@ export function App() {
     },
     getNode: (id) => itemsRef.current.find((o) => o.id === id) ?? null,
     // Shift-drag a resize handle for aspect-locked scale; matches the
-    // Illustrator / Figma convention.
-    resize: { behaviors: [lockAspectWithModifier()] },
+    // Illustrator / Figma convention. `expandIds` lets a resize started on
+    // a selected group id route to per-leaf transform ops (useResize takes
+    // the union AABB as the origin and remaps each leaf proportionally).
+    resize: { behaviors: [lockAspectWithModifier()], expandIds: expandGroupIds },
+    // Move likewise expands a group id to its members so dragging a group
+    // translates every leaf as one.
+    move: { expandIds: expandGroupIds },
     // Marquee is opt-in at the kit level — illustration apps want
     // rubber-band selection across drawn objects.
     areaSelect: { behaviors: [selectFromMarquee()] },
@@ -1565,6 +1629,10 @@ export function App() {
               // the 'empty' branch (marquee) instead of the per-kind
               // 'rect'/'text'/'path' branches that call move.beginAt.
               pickEvery={pickEvery}
+              // Same shape-aware bounds resolver as the select tool, so the
+              // selection chrome can draw around a group id (which isn't in
+              // items) by computing the union AABB of its members.
+              boundsOf={boundsOfId}
               layers={{
                 doc: { layer: pageLayer, before: 'scene' },
                 // Non-text shapes (rect/ellipse/polygon/star/line/pen/pencil/
