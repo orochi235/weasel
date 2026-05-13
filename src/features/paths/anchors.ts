@@ -10,6 +10,7 @@
  */
 
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, type Path, type PolygonPath } from './types';
+import { PathBuilder } from './builder';
 
 export interface PenAnchor {
   x: number;
@@ -83,6 +84,50 @@ export function pathToAnchors(
   }
   if (current) { anchors.push(current); closed.push(false); }
   return { anchors, closed };
+}
+
+/**
+ * Serialize the per-subpath anchor model back to a PolygonPath. Inverse of
+ * `pathToAnchors`. Curve-vs-line decision per segment:
+ *   - Both adjacent handles absent → straight L segment.
+ *   - Either handle present → C segment, with missing handles defaulting to
+ *     the anchor point itself (degenerate but valid; renders as a near-line).
+ */
+export function anchorsToPath(
+  anchors: PenAnchor[][],
+  closed: boolean[],
+): PolygonPath {
+  const b = new PathBuilder();
+  for (let s = 0; s < anchors.length; s++) {
+    const sub = anchors[s];
+    if (sub.length === 0) continue;
+    b.moveTo(sub[0].x, sub[0].y);
+    for (let i = 1; i < sub.length; i++) {
+      const prev = sub[i - 1];
+      const cur = sub[i];
+      const hasHandle = prev.outHandle != null || cur.inHandle != null;
+      if (!hasHandle) {
+        b.lineTo(cur.x, cur.y);
+      } else {
+        const c1 = prev.outHandle ?? { x: prev.x, y: prev.y };
+        const c2 = cur.inHandle ?? { x: cur.x, y: cur.y };
+        b.curveTo(c1.x, c1.y, c2.x, c2.y, cur.x, cur.y);
+      }
+    }
+    if (closed[s]) {
+      // Bridge last → first if they have curve handles; either way emit Z.
+      const last = sub[sub.length - 1];
+      const first = sub[0];
+      const hasHandle = last.outHandle != null || first.inHandle != null;
+      if (hasHandle) {
+        const c1 = last.outHandle ?? { x: last.x, y: last.y };
+        const c2 = first.inHandle ?? { x: first.x, y: first.y };
+        b.curveTo(c1.x, c1.y, c2.x, c2.y, first.x, first.y);
+      }
+      b.close();
+    }
+  }
+  return b.build();
 }
 
 export function countPathAnchors(path: Path): number {

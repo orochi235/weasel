@@ -53,6 +53,55 @@ describe('pathToAnchors', () => {
   });
 });
 
+import { anchorsToPath } from './anchors';
+
+describe('anchorsToPath', () => {
+  it('serializes a single open subpath of corner anchors to M+L', () => {
+    const path = anchorsToPath(
+      [[{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }]],
+      [false],
+    );
+    expect(path.kind).toBe('polygon');
+    // M 0 0 L 10 0 L 10 10
+    expect(Array.from(path.commands)).toEqual([0, 1, 1]); // PATH_M=0, PATH_L=1
+    expect(Array.from(path.coords)).toEqual([0, 0, 10, 0, 10, 10]);
+  });
+
+  it('serializes a closed subpath with trailing Z', () => {
+    const path = anchorsToPath(
+      [[{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }]],
+      [true],
+    );
+    // M 0 0 L 10 0 L 10 10 Z
+    expect(Array.from(path.commands)).toEqual([0, 1, 1, 4]); // PATH_Z=4
+  });
+
+  it('serializes anchors with handles to C commands', () => {
+    const path = anchorsToPath(
+      [[
+        { x: 0, y: 0, outHandle: { x: 20, y: 0 } },
+        { x: 100, y: 100, inHandle: { x: 80, y: 100 } },
+      ]],
+      [false],
+    );
+    // M 0 0 C 20 0 80 100 100 100
+    expect(Array.from(path.commands)).toEqual([0, 2]); // PATH_M=0, PATH_C=2
+    expect(Array.from(path.coords)).toEqual([0, 0, 20, 0, 80, 100, 100, 100]);
+  });
+
+  it('round-trips: anchorsToPath(pathToAnchors(p)) yields equivalent geometry', () => {
+    const original = new PathBuilder()
+      .moveTo(0, 0)
+      .curveTo(20, 0, 80, 100, 100, 100)
+      .lineTo(150, 50)
+      .build();
+    const { anchors, closed } = pathToAnchors(original);
+    const rebuilt = anchorsToPath(anchors, closed);
+    expect(Array.from(rebuilt.commands)).toEqual(Array.from(original.commands));
+    expect(Array.from(rebuilt.coords)).toEqual(Array.from(original.coords));
+  });
+});
+
 describe('countPathAnchors', () => {
   it('returns 4 for a RectPath (one anchor per corner)', () => {
     expect(countPathAnchors(rectPath(0, 0, 10, 10))).toBe(4);
