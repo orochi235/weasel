@@ -71,6 +71,11 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
   }, []);
 
   const onPointerDownRow = useCallback((id: string, index: number, e: ReactPointerEvent) => {
+    // Locked items cannot be dragged — skip recording the pending state so
+    // pointer-move cannot engage. Plain click still works because LayerList
+    // tracks click intent in its own ref, separate from drag candidacy.
+    const item = optsRef.current.items[index];
+    if (item?.locked) return;
     pendingRef.current = {
       id,
       sourceIndex: index,

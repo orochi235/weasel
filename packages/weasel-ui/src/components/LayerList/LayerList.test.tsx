@@ -56,4 +56,24 @@ describe('LayerList', () => {
     const rows = container.querySelectorAll('[data-row-index]');
     expect(rows[1].className).toMatch(/selected/);
   });
+
+  it('locked row cannot initiate a drag', () => {
+    const onReorder = vi.fn();
+    const items = [
+      { id: 'a', label: 'Alpha' },
+      { id: 'b', label: 'Beta' },
+      { id: 'page', label: 'Page', locked: true },
+    ];
+    const { container } = render(
+      <LayerList items={items} selectedIds={[]} onSelect={() => {}} onReorder={onReorder} />
+    );
+    const pageRow = screen.getByText('Page');
+    fireEvent.pointerDown(pageRow, { clientX: 0, clientY: 60, pointerId: 1, isPrimary: true });
+    fireEvent.pointerMove(pageRow, { clientX: 0, clientY: 0, pointerId: 1, isPrimary: true });
+    // No drop indicator should appear because no drag engaged.
+    const indicator = container.querySelector('[class*="dropIndicator"]');
+    expect(indicator).toBeNull();
+    fireEvent.pointerUp(pageRow, { clientX: 0, clientY: 0, pointerId: 1, isPrimary: true });
+    expect(onReorder).not.toHaveBeenCalled();
+  });
 });
