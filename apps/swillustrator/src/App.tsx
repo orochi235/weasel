@@ -115,7 +115,7 @@ import { createGroupAdapter } from './groupMembership';
 import { parseSvg, serializeSvg } from '@orochi235/weasel-svg';
 import { KindIcon, PageIcon } from './kindIcons';
 import { Toasts, type Toast } from './Toasts';
-import { applyPoseToObj, type Obj, type Pose, type RectObj, type TextObj, type PathObj } from './poseUpdate';
+import { applyPoseToObj, type Obj, type Pose, type TextObj, type PathObj } from './poseUpdate';
 
 interface View { x: number; y: number; scale: number }
 
@@ -260,10 +260,11 @@ function starPath(
 }
 
 /** Synthesize a kit-flavored `Path` for any Obj — used by useBooleans to read
- *  a world-space path per selected id. RectObj and TextObj get RectPath;
- *  PathObj returns its embedded polygon. */
+ *  a world-space path per selected id. TextObj gets a synthetic RectPath;
+ *  PathObj returns its embedded path (which may itself be a RectPath, so the
+ *  rect fast-path holds through boolean inputs). */
 function pathForObj(o: Obj): Path {
-  if (o.kind === 'path') return o.path;
+  if (o.tool !== 'text') return o.path;
   return { kind: 'rect', x: o.x, y: o.y, width: o.width, height: o.height };
 }
 
@@ -483,7 +484,7 @@ export function App() {
         const i = itemsRef.current.findIndex((o) => o.id === id);
         if (i < 0) return;
         const o = itemsRef.current[i];
-        if (o.kind !== 'text') return;
+        if (o.tool !== 'text') return;
         itemsRef.current[i] = { ...o, text };
       },
       // --- structural mutators (ops use these directly) ---
@@ -569,11 +570,14 @@ export function App() {
       // --- clipboard / insert ---
       commitInsert: (b: Pose): Obj => {
         const id = `r${nextId.current++}`;
-        return {
-          id, kind: 'rect',
+        const obj: PathObj = {
+          id, tool: 'rect',
           x: b.x, y: b.y, width: b.width, height: b.height,
+          path: { kind: 'rect', x: b.x, y: b.y, width: b.width, height: b.height },
+          closed: true,
           fill: fillRef.current, stroke: strokeRef.current, strokeWidth: strokeWidthRef.current,
         };
+        return obj;
       },
       commitPaste: (
         clip: ClipboardSnapshot,
@@ -595,7 +599,7 @@ export function App() {
           dx = ctx.dropPoint.worldX - (minX + maxX) / 2;
           dy = ctx.dropPoint.worldY - (minY + maxY) / 2;
         }
-        return src.map((o) => ({ ...translateObj(o, dx, dy), id: `${o.kind[0]}${nextId.current++}` } as Obj));
+        return src.map((o) => ({ ...translateObj(o, dx, dy), id: `${o.tool[0]}${nextId.current++}` } as Obj));
       },
       getPasteOffset: (): { dx: number; dy: number } => ({ dx: 16, dy: 16 }),
       snapshotSelection: (ids: string[]): ClipboardSnapshot => ({
@@ -615,20 +619,15 @@ export function App() {
         return ai - bi;
       },
       createPathNode: (path: Path): { id: string } => {
-        // Wrap a Path as a PathObj. useBooleans always returns PolygonPath
-        // from its kernels, so the rect branch is just an escape hatch.
+        // Wrap a Path as a PathObj. Boolean outputs are freshly synthesized
+        // geometry with no authoring tool of their own, so `tool: 'imported'`
+        // is the correct origin (see spec § "Out of Scope").
         const id = `b${nextId.current++}`;
-        if (path.kind === 'rect') {
-          const rectNode: RectObj = {
-            id, kind: 'rect',
-            x: path.x, y: path.y, width: path.width, height: path.height,
-            fill: fillRef.current, stroke: strokeRef.current, strokeWidth: strokeWidthRef.current,
-          };
-          return rectNode;
-        }
-        const b = boundsOfPath(path);
+        const b = path.kind === 'rect'
+          ? { x: path.x, y: path.y, width: path.width, height: path.height }
+          : boundsOfPath(path);
         const pathNode: PathObj = {
-          id, kind: 'path',
+          id, tool: 'imported',
           x: b.x, y: b.y, width: b.width, height: b.height,
           path, closed: true,
           fill: fillRef.current, stroke: strokeRef.current, strokeWidth: strokeWidthRef.current,
@@ -647,10 +646,12 @@ export function App() {
       // (a tagged string) so we cast on the way out.
       cloneNode: (id: NodeId, offset: { dx: number; dy: number }): { id: NodeId } & Obj => {
         const src = itemsRef.current.find((o) => o.id === id);
-        const newId = `${(src?.kind ?? 'r')[0]}${nextId.current++}`;
+        const newId = `${(src?.tool ?? 'p')[0]}${nextId.current++}`;
         if (!src) {
-          const stub: RectObj = {
-            id: newId, kind: 'rect', x: 0, y: 0, width: 0, height: 0,
+          const stub: PathObj = {
+            id: newId, tool: 'imported',
+            x: 0, y: 0, width: 0, height: 0,
+            path: { kind: 'rect', x: 0, y: 0, width: 0, height: 0 }, closed: true,
             fill: fillRef.current, stroke: strokeRef.current, strokeWidth: strokeWidthRef.current,
           };
           return stub as { id: NodeId } & Obj;
@@ -725,18 +726,20 @@ export function App() {
       // back to the committed object's rotation so a rotated shape's
       // ghost rotates too.
       const fullPose: Pose = { ...pose, rotation: (pose as Pose).rotation ?? (obj as Obj).rotation };
-      if (obj.kind === 'rect') {
-        const cmds: DrawCommand[] = [{
-          kind: 'path',
-          path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-          fill: { color: obj.fill },
-        }];
-        if (obj.strokeWidth > 0) {
-          cmds.push({
-            kind: 'path',
-            path: { kind: 'rect', x: pose.x + 0.5, y: pose.y + 0.5, width: pose.width, height: pose.height },
-            stroke: { paint: { color: obj.stroke }, width: obj.strokeWidth },
-          });
+      const o = obj as Obj;
+      if (o.tool !== 'text') {
+        // Rect-fast-path: a rect-origin shape with a current RectPath stays
+        // a RectPath at the previewed bounds (no polygon promotion). Anything
+        // else (polygon-shaped path) scales geometrically.
+        const livePath: Path = o.path.kind === 'rect'
+          ? { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height }
+          : scalePathToBounds(o.path, { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height });
+        const cmds: DrawCommand[] = [];
+        if (o.closed) {
+          cmds.push({ kind: 'path', path: livePath, fill: { color: o.fill } });
+        }
+        if (o.strokeWidth > 0) {
+          cmds.push({ kind: 'path', path: livePath, stroke: { paint: { color: o.stroke }, width: o.strokeWidth } });
         }
         return wrapWithRotation(cmds, fullPose);
       }
@@ -766,14 +769,11 @@ export function App() {
     colorOf: (id) => {
       const obj = itemsRef.current.find((o) => o.id === id);
       if (!obj) return null;
-      if (obj.kind === 'rect' || obj.kind === 'path') {
+      if (obj.tool !== 'text') {
         return obj.fill || obj.stroke || null;
       }
-      if (obj.kind === 'text') {
-        const f = obj.style?.fill;
-        return f && f.fill === 'solid' ? f.color : null;
-      }
-      return null;
+      const f = obj.style?.fill;
+      return f && f.fill === 'solid' ? f.color : null;
     },
     onPick: (color) => {
       if (color == null) return;
@@ -787,7 +787,7 @@ export function App() {
   const text = useTextTool<TextObj>({
     hitExisting: ({ x: worldX, y: worldY }) => {
       const hit = [...itemsRef.current].reverse().find(
-        (o): o is TextObj => o.kind === 'text'
+        (o): o is TextObj => o.tool === 'text'
           && worldX >= o.x && worldX <= o.x + o.width
           && worldY >= o.y && worldY <= o.y + o.height,
       );
@@ -797,7 +797,7 @@ export function App() {
       const id = `t${nextId.current++}`;
       pendingTextEditRef.current = id;
       return {
-        id, kind: 'text',
+        id, tool: 'text',
         x: worldX, y: worldY, width: 180, height: 28,
         text: '',
         style: { fontSize: 16, fill: { fill: 'solid', color: fillRef.current } },
@@ -811,7 +811,7 @@ export function App() {
       // px size and floors at 8 so wee boxes stay readable.
       const fontSize = Math.max(8, Math.round(height * 0.7));
       return {
-        id, kind: 'text',
+        id, tool: 'text',
         x, y, width, height,
         text: '',
         style: { fontSize, fill: { fill: 'solid', color: fillRef.current } },
@@ -826,15 +826,15 @@ export function App() {
     container: pageShadowRef.current,
     getText: (id) => {
       const o = itemsRef.current.find((x) => x.id === id);
-      return o?.kind === 'text' ? o.text : '';
+      return o?.tool === 'text' ? o.text : '';
     },
     getStyle: (id) => {
       const o = itemsRef.current.find((x) => x.id === id);
-      return o?.kind === 'text' ? o.style : undefined;
+      return o?.tool === 'text' ? o.style : undefined;
     },
     getScreenPose: (id) => {
       const o = itemsRef.current.find((x) => x.id === id);
-      if (!o || o.kind !== 'text') return null;
+      if (!o || o.tool !== 'text') return null;
       return {
         x: o.x, y: o.y, width: o.width, height: o.height,
         fontSize: o.style?.fontSize ?? 16,
@@ -842,7 +842,7 @@ export function App() {
     },
     setText: (id, text) => {
       const o = itemsRef.current.find((x) => x.id === id);
-      if (!o || o.kind !== 'text') return;
+      if (!o || o.tool !== 'text') return;
       // Commit with empty text deletes the node — matches Illustrator's
       // behavior and prevents invisible orphan text boxes from being left
       // behind by stray clicks or all-content-deleted edits.
@@ -966,11 +966,12 @@ export function App() {
     behaviors: [cloneByAltDrag()],
     drawOne: (obj, pose): DrawCommand[] => {
       const fullPose: Pose = { ...pose, rotation: (pose as Pose).rotation ?? (obj as Obj).rotation };
-      if (obj.kind === 'rect') {
+      const o = obj as Obj;
+      if (o.tool !== 'text') {
         return wrapWithRotation([{
           kind: 'path',
           path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-          fill: { color: obj.fill },
+          fill: { color: o.fill },
         }], fullPose);
       }
       return wrapWithRotation([{
@@ -1000,7 +1001,9 @@ export function App() {
       const top = hits[hits.length - 1];
       return {
         id: asNodeId(top.id),
-        kind: top.kind,
+        // The kit's dispatcher routes on target.kind (string). We map our
+        // `tool` field there so per-kind routing keys still work.
+        kind: top.tool,
         pose: { x: top.x, y: top.y, width: top.width, height: top.height },
         data: {},
       };
@@ -1113,7 +1116,7 @@ export function App() {
     label: 'Text',
     draw: (_data, view) => {
       const children: DrawCommand[] = [];
-      for (const n of itemsRef.current.filter((o): o is TextObj => o.kind === 'text')) {
+      for (const n of itemsRef.current.filter((o): o is TextObj => o.tool === 'text')) {
         // Hide the currently-editing node — the contenteditable overlay draws it.
         if (textEdit.isEditing(n.id)) continue;
         const tool = tools.registry[tools.hotkeyEngaged ?? tools.active];
@@ -1164,7 +1167,7 @@ export function App() {
     label: 'Rects',
     draw: (_data, view) => {
       const children: DrawCommand[] = [];
-      for (const o of itemsRef.current.filter((x): x is RectObj => x.kind === 'rect')) {
+      for (const o of itemsRef.current.filter((x): x is PathObj => x.tool === 'rect')) {
         const tool = tools.registry[tools.hotkeyEngaged ?? tools.active];
         const preview = tool?.previewPose?.(o.id) as Pose | undefined;
         const pose: Pose = preview
@@ -1193,7 +1196,7 @@ export function App() {
     label: 'Paths',
     draw: (_data, view) => {
       const children: DrawCommand[] = [];
-      for (const n of itemsRef.current.filter((o): o is PathObj => o.kind === 'path')) {
+      for (const n of itemsRef.current.filter((o): o is PathObj => o.tool !== 'text' && o.tool !== 'rect')) {
         const tool = tools.registry[tools.hotkeyEngaged ?? tools.active];
         const preview = tool?.previewPose?.(n.id) as Pose | undefined;
         const liveRotation = preview?.rotation ?? n.rotation;
@@ -1244,28 +1247,25 @@ export function App() {
 
   const selectedItems = items.filter((o) => (selection.current as readonly string[]).includes(o.id));
   const primary = selectedItems[0];
-  const hasStrokeProps = primary && primary.kind !== 'text';
+  const hasStrokeProps = primary && primary.tool !== 'text';
 
   // Apply property changes to all selected items that support the property,
   // including kind-specific paths (text fill lives in style.fill.color).
   const applyFillToSelection = (color: string): void => {
     updateSelected((o) => {
-      if (o.kind === 'rect' || o.kind === 'path') return { ...o, fill: color };
-      if (o.kind === 'text') {
-        const prevFill = o.style?.fill;
-        const nextFill = prevFill && prevFill.fill === 'solid'
-          ? { ...prevFill, color }
-          : { fill: 'solid' as const, color };
-        return { ...o, style: { ...(o.style ?? {}), fill: nextFill } };
-      }
-      return o;
+      if (o.tool !== 'text') return { ...o, fill: color };
+      const prevFill = o.style?.fill;
+      const nextFill = prevFill && prevFill.fill === 'solid'
+        ? { ...prevFill, color }
+        : { fill: 'solid' as const, color };
+      return { ...o, style: { ...(o.style ?? {}), fill: nextFill } };
     });
   };
   const applyStrokeToSelection = (color: string): void => {
-    updateSelected((o) => (o.kind === 'rect' || o.kind === 'path') ? { ...o, stroke: color } : o);
+    updateSelected((o) => o.tool !== 'text' ? { ...o, stroke: color } : o);
   };
   const applyStrokeWidthToSelection = (w: number): void => {
-    updateSelected((o) => (o.kind === 'rect' || o.kind === 'path') ? { ...o, strokeWidth: w } : o);
+    updateSelected((o) => o.tool !== 'text' ? { ...o, strokeWidth: w } : o);
   };
 
   // Summary of rotation across the current selection (in degrees) for the
@@ -1297,12 +1297,12 @@ export function App() {
 
   // Read primary's current values for the panel inputs.
   const primaryFill = primary
-    ? (primary.kind === 'text'
+    ? (primary.tool === 'text'
         ? (primary.style?.fill?.fill === 'solid' ? primary.style.fill.color : '#000000')
         : primary.fill)
     : fillColor;
-  const primaryStroke = primary && primary.kind !== 'text' ? primary.stroke : strokeColor;
-  const primaryStrokeWidth = primary && primary.kind !== 'text' ? primary.strokeWidth : strokeWidth;
+  const primaryStroke = primary && primary.tool !== 'text' ? primary.stroke : strokeColor;
+  const primaryStrokeWidth = primary && primary.tool !== 'text' ? primary.strokeWidth : strokeWidth;
 
   // ---- LayerList items (top of stack first) ----------------------------
   // Items array is bottom-up (index 0 = back). LayerList shows top first
@@ -1313,7 +1313,7 @@ export function App() {
       id: o.id,
       label: (
         <span className="swill-layer-label">
-          <KindIcon kind={o.kind} />
+          <KindIcon kind={o.tool} />
           <span>{o.id}</span>
         </span>
       ),
@@ -1474,7 +1474,7 @@ export function App() {
               // Canvas pixel coords → world coords via the active view.
               const cx = (e.clientX - rect.left) / view.scale + view.x;
               const cy = (e.clientY - rect.top) / view.scale + view.y;
-              const texts = itemsRef.current.filter((o): o is TextObj => o.kind === 'text');
+              const texts = itemsRef.current.filter((o): o is TextObj => o.tool === 'text');
               let target: TextObj | null = null;
               for (let i = texts.length - 1; i >= 0; i--) {
                 if (pointInTextPose(cx, cy, texts[i])) { target = texts[i]; break; }
@@ -1576,8 +1576,6 @@ export function App() {
           applyStrokeWidthToSelection={applyStrokeWidthToSelection}
           rotationDeg={rotationDegSummary}
           applyRotationToSelection={applyRotationToSelection}
-          deselect={() => selection.clear()}
-          deleteSelection={deleteSelection}
           layerItems={layerItems}
           selectedIds={pageSelected ? [PAGE_ROW_ID] : selection.current.map((id) => String(id))}
           onSelectLayers={(ids) => {
@@ -1645,8 +1643,6 @@ interface RightSidebarProps {
   applyStrokeWidthToSelection: (w: number) => void;
   rotationDeg: { value: number; mixed: boolean } | null;
   applyRotationToSelection: (degrees: number) => void;
-  deselect: () => void;
-  deleteSelection: () => NodeId[];
   layerItems: LayerListItem[];
   selectedIds: string[];
   onSelectLayers: (ids: string[]) => void;
@@ -1684,7 +1680,7 @@ function RightSidebar(p: RightSidebarProps) {
         <PropertiesPanel title={`Selection (${selectedItems.length})`}>
           <PropertyRow label="Kind">
             <PropertyReadOnly>
-              {primary.kind}{selectedItems.length > 1 ? ` +${selectedItems.length - 1}` : ''}
+              {primary.tool}{selectedItems.length > 1 ? ` +${selectedItems.length - 1}` : ''}
             </PropertyReadOnly>
           </PropertyRow>
           <PropertyRow label="Position">
@@ -1719,12 +1715,6 @@ function RightSidebar(p: RightSidebarProps) {
               </PropertyRow>
             </>
           )}
-          <PropertyRow>
-            <PropertyButton onClick={p.deselect} span={6}>Deselect</PropertyButton>
-            <PropertyButton variant="danger" span={6} onClick={() => p.deleteSelection()}>
-              Delete
-            </PropertyButton>
-          </PropertyRow>
         </PropertiesPanel>
       ) : (
         <PropertiesPanel title="Defaults">
