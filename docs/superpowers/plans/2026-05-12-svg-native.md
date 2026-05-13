@@ -35,7 +35,7 @@ Audit gaps **explicitly deferred**:
 
 - **Namespace prefix: `swill:`.** XML namespace URI: `https://swillustrator.app/svg-ext`. The npm package name `@orochi235/weasel-svg` is **unchanged** — only the XML prefix and URI use `swill`.
 - **weasel-svg is domain-neutral.** It surfaces declared namespaces as opaque `meta` bags. It never knows what `swill:paperSize` means. All `swill:` semantics live in `svgInterop.ts`.
-- **Multi-group membership is forbidden.** Each Swillustrator object belongs to at most one group. Enforced in `svgInterop.ts` (Task 3 Step 0). This means `objsToSvgNodes` doesn't need a "first-group-wins" disambiguator — the model guarantees no multi-membership.
+- **Multi-group membership is forbidden — enforced at the model level.** Each Swillustrator object belongs to at most one group. The Swillustrator group adapter (`insertGroup` / `addToGroup` in `App.tsx`) strips any prior memberships when a member is added to a new group (Task 3 Step 7a–7c). A defense-in-depth assertion at the persistence boundary in `objsToSvgNodes` (Task 3 Step 6) catches any direct-mutation bug that bypasses the adapter; it should never fire in practice with the model-level fix in place. `objsToSvgNodes` does not need a "first-group-wins" disambiguator.
 - **Paper-size enum on disk = `letter`, not `us-letter`.** Matches Swillustrator's internal `PAPER_PRESETS` keys (`letter`, `a4`, `legal`). No transform on the way to/from SVG.
 - **No legacy `data-weasel-line-height` reader.** Spec's Migration section confirms zero installed base. Both read and write use `swill:line-height`.
 
@@ -48,6 +48,8 @@ Files this plan creates:
 - `packages/weasel-svg/src/__fixtures__/swillustrator-groups.svg` — two groups with three shapes each (Task 3).
 - `packages/weasel-svg/src/__fixtures__/swillustrator-papers.svg` — one of each paper-size enum (Task 2).
 - `apps/swillustrator/src/svgInterop.test.ts` — direct bridge tests (Task 1 baseline; extended in Tasks 3, 4).
+- `apps/swillustrator/src/groupMembership.ts` — pure helper that strips members from prior groups; enforces single-group-membership at the model level (Task 3).
+- `apps/swillustrator/src/groupMembership.test.ts` — unit tests for `stripPriorMemberships` and the Swillustrator group-adapter wiring (Task 3).
 - `apps/swillustrator/src/Toasts.tsx` — toast component for surfacing parse warnings (Task 5).
 - `apps/swillustrator/src/Toasts.module.css` *or* additions to `swillustrator.css` — CSS for the toast (Task 5).
 
@@ -58,7 +60,7 @@ Files this plan modifies:
 - `packages/weasel-svg/src/index.ts` — re-export `NamespaceMeta` type (Task 0).
 - `packages/weasel-svg/src/roundtrip.test.ts` — add T0 generic-namespace round-trip cases; add T2 paper-size/title/groups/text-style cases.
 - `apps/swillustrator/src/svgInterop.ts` — declare the `swill` namespace; encode/decode paper-size + units + line-height + group-id via `meta` and `documentMeta`; stop flattening groups; surface `Group[]` alongside `Obj[]` from open; enforce single-group-membership invariant.
-- `apps/swillustrator/src/App.tsx` — `onSaveSvg` passes `namespaces: { swill: SWILL_NS }` and `documentMeta` containing paper-size; `onOpenSvg` reads `documentMeta.swill.attrs.paperSize`, calls `setDoc`, populates `groupsRef`, surfaces warnings via the new toast.
+- `apps/swillustrator/src/App.tsx` — `onSaveSvg` passes `namespaces: { swill: SWILL_NS }` and `documentMeta` containing paper-size; `onOpenSvg` reads `documentMeta.swill.attrs.paperSize`, calls `setDoc`, populates `groupsRef`, surfaces warnings via the new toast. Group adapter's `insertGroup` / `addToGroup` strip prior memberships (single-group-membership invariant) via `stripPriorMemberships`.
 
 ---
 
@@ -1098,6 +1100,8 @@ The `swill:group-id` attribute rides on T0's generic plumbing — no new kit-lev
 
 This task also includes a small but important step: enforce **single-group-membership at the model level**. Each object belongs to at most one group. The kit's `Group` interface (`src/features/groups/types.ts`) currently permits multi-membership in principle, but Swillustrator's encoding requires a tree — and the spec's design decision is to forbid multi-membership outright (virtual groups will be a separate later concept tracked elsewhere). Without this invariant, two groups could each claim the same object id and the writer would need a tiebreaker. The invariant removes the ambiguity.
 
+Enforcement strategy (option C from the design discussion): the Swillustrator group adapter in `App.tsx` is the single source of truth for the group model. Its `insertGroup` and `addToGroup` methods strip prior memberships before adding members to a new group. A throw-on-violation check in `objsToSvgNodes` is retained as belt-and-braces — it documents the invariant and catches any code path that mutates `Group.members` directly, bypassing the adapter. With the adapter fix in place, that check should never fire in practice.
+
 **Files:**
 - Create: `packages/weasel-svg/src/__fixtures__/swillustrator-groups.svg`
 - Modify: `packages/weasel-svg/src/__fixtures__/fixtures.ts`
@@ -1109,15 +1113,15 @@ This task also includes a small but important step: enforce **single-group-membe
 - [ ] **Step 0: Confirm the single-group-membership invariant in Swillustrator and decide on enforcement point**
 
 Run: `grep -n "addToGroup\|insertGroup\|createGroup\|getGroupsForMember" /Users/mike/src/weasel/apps/swillustrator/src/App.tsx`
-Expected: locate the call sites where Swillustrator adds members to groups (typically a Cmd-G handler that calls `createGroup` or `addToGroup`). The kit-level adapter (in `src/features/groups/`) deliberately permits multi-membership for general consumers; Swillustrator's policy is stricter.
+Expected: the Swillustrator group adapter (around lines 547–566) implements `insertGroup`, `addToGroup`, `removeFromGroup`, `removeGroup`, `getGroup`, `getGroupsForMember`. The `useGroup` hook in `src/interactions/actions/group/group.ts` builds a new group from the current selection and dispatches `createCreateGroupOp`, which calls back into Swillustrator's `insertGroup`. The kit-level `Group` model (in `src/features/groups/`) permits multi-membership for general consumers; Swillustrator's policy is stricter.
 
-The enforcement decision: the bridge (`svgInterop.ts`) and the load path are the right boundary. We enforce two ways:
-1. **On import** (svgNodesToObjsWithGroups): the SVG is a tree, so each object id appears in at most one group's children. No work needed.
-2. **On in-memory mutation** (the place where Swillustrator's app code calls into the groups model — e.g. on group-create): if the caller tries to add an id that's already in another group, the action errors. This is a tiny assertion, not a refactor.
+The enforcement decision (option C from the design discussion): forbid multi-membership **at the model level**, in Swillustrator's group adapter. `insertGroup` and `addToGroup` strip any prior memberships from other groups before binding members to the new group. Three enforcement points work together:
 
-If the App.tsx Cmd-G handler already pulls each selected id out of any pre-existing group before grouping them (a reasonable existing behavior), the assertion is belt-and-braces. If it doesn't, the assertion catches a real bug.
+1. **On import** (`svgNodesToObjsWithGroups`): the SVG is a tree, so each object id appears in at most one group's children. No work needed.
+2. **On in-memory mutation** (`insertGroup` / `addToGroup` in `App.tsx`): when a member is added to a group, it is removed from every other group it currently belongs to. This is the model-level fix and the primary enforcement point. Steps 7a–7c implement and test it.
+3. **At the persistence boundary** (`objsToSvgNodes` in `svgInterop.ts`): a defense-in-depth assertion that throws if any object id is claimed by more than one group. With the adapter fix in place this should never fire in practice; it stays as belt-and-braces in case some other code path mutates `Group.members` directly (e.g. an op that splices the array without going through the adapter). Step 6 includes this assertion.
 
-For the scope of this plan, add a runtime check in `svgInterop.ts`'s `objsToSvgNodes` (one source of truth at the persistence boundary). If the check ever fires, it surfaces as a thrown error during Save and forces fixing the model. That's the strongest signal short of a full refactor.
+For the scope of this plan, both Step 6's persistence-boundary assertion and Steps 7a–7c's adapter fix land together.
 
 - [ ] **Step 1: Add the groups fixture string**
 
@@ -1476,6 +1480,183 @@ export function svgNodesToObjs(
 Run: `cd /Users/mike/src/weasel && npx vitest run apps/swillustrator/src/svgInterop.test.ts`
 Expected: all tests in the file pass, including the new `svgNodesToObjsWithGroups` and `objsToSvgNodes` tests, plus the multi-group-rejection test.
 
+- [ ] **Step 7a: Extract a `createGroupAdapter` factory in groupMembership.ts (no strip yet)**
+
+Create `/Users/mike/src/weasel/apps/swillustrator/src/groupMembership.ts`. This is a verbatim extraction of the groups portion of the App.tsx adapter (lines ~547–566) — same behavior, no strip yet. The strip lands in Step 7c, after Step 7b's test fails.
+
+```ts
+import type { Group } from '@orochi235/weasel';
+
+/** Mutable reference shape — matches how App.tsx stores its `groupsRef`. */
+export interface GroupsRef {
+  current: Group[];
+}
+
+/** The subset of the App.tsx adapter that owns the group model. Exported as
+ *  a factory so tests can exercise the same logic the app uses. */
+export interface GroupModelAdapter {
+  getGroup(id: string): Group | undefined;
+  getGroupsForMember(id: string): string[];
+  insertGroup(g: Group): void;
+  removeGroup(id: string): void;
+  addToGroup(gid: string, ids: string[]): void;
+  removeFromGroup(gid: string, ids: string[]): void;
+}
+
+export function createGroupAdapter(groupsRef: GroupsRef): GroupModelAdapter {
+  return {
+    getGroup: (id) => groupsRef.current.find((g) => g.id === id),
+    getGroupsForMember: (id) =>
+      groupsRef.current.filter((g) => g.members.includes(id)).map((g) => g.id),
+    insertGroup: (g) => {
+      if (groupsRef.current.find((x) => x.id === g.id)) return;
+      groupsRef.current.push({ ...g, members: [...g.members] });
+    },
+    removeGroup: (id) => {
+      const i = groupsRef.current.findIndex((g) => g.id === id);
+      if (i >= 0) groupsRef.current.splice(i, 1);
+    },
+    addToGroup: (gid, ids) => {
+      const g = groupsRef.current.find((x) => x.id === gid);
+      if (!g) return;
+      for (const id of ids) if (!g.members.includes(id)) g.members.push(id);
+    },
+    removeFromGroup: (gid, ids) => {
+      const g = groupsRef.current.find((x) => x.id === gid);
+      if (!g) return;
+      g.members = g.members.filter((m) => !ids.includes(m));
+    },
+  };
+}
+```
+
+- [ ] **Step 7b: Write a failing test that proves create-handler strips prior memberships**
+
+Create `/Users/mike/src/weasel/apps/swillustrator/src/groupMembership.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest';
+import type { Group } from '@orochi235/weasel';
+import { createGroupAdapter, type GroupsRef } from './groupMembership';
+
+describe('group adapter — single-membership enforcement on create', () => {
+  it('insertGroup strips ids that were in a prior group', () => {
+    const groupsRef: GroupsRef = { current: [{ id: 'old', members: ['a', 'b', 'c'] }] };
+    const adapter = createGroupAdapter(groupsRef);
+    adapter.insertGroup({ id: 'new', members: ['a', 'b'] });
+    expect(groupsRef.current.find((g) => g.id === 'old')!.members).toEqual(['c']);
+    expect(groupsRef.current.find((g) => g.id === 'new')!.members).toEqual(['a', 'b']);
+  });
+
+  it('insertGroup strips members from multiple prior groups', () => {
+    const groupsRef: GroupsRef = {
+      current: [
+        { id: 'g1', members: ['a', 'b'] },
+        { id: 'g2', members: ['c', 'd'] },
+      ],
+    };
+    const adapter = createGroupAdapter(groupsRef);
+    adapter.insertGroup({ id: 'g3', members: ['b', 'c'] });
+    expect(groupsRef.current.find((g) => g.id === 'g1')!.members).toEqual(['a']);
+    expect(groupsRef.current.find((g) => g.id === 'g2')!.members).toEqual(['d']);
+    expect(groupsRef.current.find((g) => g.id === 'g3')!.members).toEqual(['b', 'c']);
+  });
+
+  it('addToGroup strips ids that were in a prior group', () => {
+    const groupsRef: GroupsRef = {
+      current: [
+        { id: 'old', members: ['a', 'b'] },
+        { id: 'target', members: ['c'] },
+      ],
+    };
+    const adapter = createGroupAdapter(groupsRef);
+    adapter.addToGroup('target', ['a']);
+    expect(groupsRef.current.find((g) => g.id === 'old')!.members).toEqual(['b']);
+    expect(groupsRef.current.find((g) => g.id === 'target')!.members).toEqual(['c', 'a']);
+  });
+
+  it('insertGroup leaves untouched groups alone', () => {
+    const groupsRef: GroupsRef = {
+      current: [
+        { id: 'g1', members: ['x', 'y'] },
+        { id: 'g2', members: ['z'] },
+      ],
+    };
+    const adapter = createGroupAdapter(groupsRef);
+    adapter.insertGroup({ id: 'g3', members: ['x'] });
+    expect(groupsRef.current.find((g) => g.id === 'g2')!.members).toEqual(['z']);
+  });
+});
+```
+
+Run: `cd /Users/mike/src/weasel && npx vitest run apps/swillustrator/src/groupMembership.test.ts`
+Expected: FAIL — `createGroupAdapter` from Step 7a does not strip prior memberships, so the `old` group still claims `a` and `b` after the new group is inserted. The failure message should look like `expected ['a', 'b', 'c'] to equal ['c']`.
+
+- [ ] **Step 7c: Add `stripPriorMemberships`, wire it through `createGroupAdapter` and App.tsx**
+
+In `/Users/mike/src/weasel/apps/swillustrator/src/groupMembership.ts`, add the helper above `createGroupAdapter`:
+
+```ts
+/**
+ * Strip the given member ids from every group except `targetGroupId`.
+ * Mutates each affected group's `members` array. No-op for empty input.
+ *
+ * Swillustrator forbids multi-group membership at the model level. When a
+ * group claims members, this helper yanks those members out of any group
+ * that previously held them. The persistence-boundary check in
+ * `objsToSvgNodes` (svgInterop.ts) is defense-in-depth on top of this; with
+ * the strip in place it should never fire in practice.
+ */
+export function stripPriorMemberships(
+  groups: Group[],
+  memberIds: readonly string[],
+  targetGroupId: string,
+): void {
+  if (memberIds.length === 0) return;
+  const toStrip = new Set(memberIds);
+  for (const g of groups) {
+    if (g.id === targetGroupId) continue;
+    if (g.members.some((m) => toStrip.has(m))) {
+      g.members = g.members.filter((m) => !toStrip.has(m));
+    }
+  }
+}
+```
+
+Then update `createGroupAdapter`'s `insertGroup` and `addToGroup` to call it:
+
+```ts
+    insertGroup: (g) => {
+      if (groupsRef.current.find((x) => x.id === g.id)) return;
+      stripPriorMemberships(groupsRef.current, g.members, g.id);
+      groupsRef.current.push({ ...g, members: [...g.members] });
+    },
+    // ...
+    addToGroup: (gid, ids) => {
+      const g = groupsRef.current.find((x) => x.id === gid);
+      if (!g) return;
+      stripPriorMemberships(groupsRef.current, ids, gid);
+      for (const id of ids) if (!g.members.includes(id)) g.members.push(id);
+    },
+```
+
+In `/Users/mike/src/weasel/apps/swillustrator/src/App.tsx`, add the import near the other local imports:
+
+```tsx
+import { createGroupAdapter } from './groupMembership';
+```
+
+Then replace the inline groups portion of the adapter (around lines 547–566, the methods `getGroup` / `getGroupsForMember` / `insertGroup` / `removeGroup` / `addToGroup` / `removeFromGroup`) with a spread of the factory's result. The surrounding adapter object stays unchanged; only those six methods move:
+
+```tsx
+      // --- groups (virtual) ---
+      ...createGroupAdapter(groupsRef),
+      // --- clipboard / insert ---
+```
+
+Run: `cd /Users/mike/src/weasel && npx vitest run apps/swillustrator/src/groupMembership.test.ts && npx tsc --noEmit`
+Expected: all four tests in `groupMembership.test.ts` pass; typecheck is clean. The `objsToSvgNodes` multi-membership assertion from Step 6 is still in place as belt-and-braces — it should never fire in practice with the model-level fix here, but it documents the invariant and catches direct mutations to `Group.members` that bypass `createGroupAdapter`.
+
 - [ ] **Step 8: Wire groupsRef on Save and Open in App.tsx**
 
 In `/Users/mike/src/weasel/apps/swillustrator/src/App.tsx`:
@@ -1553,7 +1734,7 @@ Expected: clean typecheck; all bridge + round-trip tests pass.
 - [ ] **Step 10: Commit**
 
 ```bash
-git add packages/weasel-svg/src/__fixtures__/fixtures.ts packages/weasel-svg/src/roundtrip.test.ts apps/swillustrator/src/svgInterop.ts apps/swillustrator/src/svgInterop.test.ts apps/swillustrator/src/App.tsx
+git add packages/weasel-svg/src/__fixtures__/fixtures.ts packages/weasel-svg/src/roundtrip.test.ts apps/swillustrator/src/svgInterop.ts apps/swillustrator/src/svgInterop.test.ts apps/swillustrator/src/groupMembership.ts apps/swillustrator/src/groupMembership.test.ts apps/swillustrator/src/App.tsx
 git commit -m "feat(svg-native): preserve groups end-to-end via swill:group-id; forbid multi-group membership"
 ```
 
@@ -2312,6 +2493,6 @@ Otherwise this task ends without a commit.
 
 - **Spec coverage:** T0 (Task 0 — generic namespace pass-through), T1 paper-size (Task 2), T2 groups + single-membership enforcement (Task 3), T4 text style (Task 4), T5 warnings (Task 5), T6 bridge tests (Tasks 1, 6). Layers (the spec's deferred "T3") explicitly deferred with rationale in the preamble. Acceptance criteria — paper-size, groups, text style round-trip; warnings surfaced; `swill` namespace declared on root; standard-SVG content stays standard; weasel-svg API stays domain-neutral — addressed by Tasks 0–5. Fixtures (`swillustrator-minimal.svg`, `swillustrator-groups.svg`, `swillustrator-papers.svg`) created in Tasks 2 and 3.
 - **Placeholders:** none of "TBD", "implement later", "similar to Task N without code", or generic error-handling stubs. Every step has either a concrete code change, a shell command with expected output, or a manual verification step.
-- **Type consistency:** `NamespaceMeta`, `NamespacedElement`, `ParseOptions`, and `meta?: NamespaceMeta` on every `SvgNode` are introduced in Task 0 Step 1–2 and consumed in every subsequent task. `ParseResult.viewBox`/`title`/`documentMeta` and the matching `SerializeOptions` fields likewise land in Task 0 and are consumed in Tasks 2–4. `svgNodesToObjsWithGroups` / `objsToSvgNodes` declared in Task 3 Step 6 and consumed in Task 3 Step 8, Task 4 Step 6, Task 6 Step 2. `SWILL_NS` / `SWILL_NAMESPACES` declared in Task 2 Step 1 and used in Tasks 2, 3, 4. Multi-group rejection assertion declared in Task 3 Step 6 and tested in Task 3 Step 4.
+- **Type consistency:** `NamespaceMeta`, `NamespacedElement`, `ParseOptions`, and `meta?: NamespaceMeta` on every `SvgNode` are introduced in Task 0 Step 1–2 and consumed in every subsequent task. `ParseResult.viewBox`/`title`/`documentMeta` and the matching `SerializeOptions` fields likewise land in Task 0 and are consumed in Tasks 2–4. `svgNodesToObjsWithGroups` / `objsToSvgNodes` declared in Task 3 Step 6 and consumed in Task 3 Step 8, Task 4 Step 6, Task 6 Step 2. `SWILL_NS` / `SWILL_NAMESPACES` declared in Task 2 Step 1 and used in Tasks 2, 3, 4. Multi-group rejection assertion declared in Task 3 Step 6 and tested in Task 3 Step 4. Model-level single-membership enforcement (`stripPriorMemberships`) declared in Task 3 Step 7a, tested in Step 7b, wired into the App.tsx adapter in Step 7c.
 - **Step content:** every step gives the engineer the actual code, the actual file path, and the actual command + expected output. Manual steps (Task 5 Step 4, Task 7 Steps 4–5) are explicit walkthroughs.
 - **Namespace discipline:** weasel-svg's surface contains no string `swill` or `swillustrator`. All app-specific knowledge lives in `apps/swillustrator/src/svgInterop.ts` and `apps/swillustrator/src/App.tsx`.
