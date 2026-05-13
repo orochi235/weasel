@@ -22,6 +22,7 @@ function editingScratch(anchors: { x: number; y: number; outHandle?: { x: number
       activeHandle: null,
       dirty: false,
       preConvert: null,
+      original: { path: null as never, closed: false },
     },
   };
 }
