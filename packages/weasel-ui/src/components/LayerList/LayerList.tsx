@@ -109,10 +109,9 @@ export function LayerList(props: LayerListProps) {
 }
 
 function dropIndicatorStyle(targetIndex: number): CSSProperties {
-  // 28px row + 1px gap = 29px per row; container has 2px top padding.
+  // 28px row + 1px gap = 29px per row; container has no top padding.
   const ROW_H = 28;
   const GAP = 1;
-  const PAD = 2;
-  const y = PAD + targetIndex * (ROW_H + GAP) - GAP / 2;
+  const y = targetIndex * (ROW_H + GAP) - GAP / 2;
   return { top: `${y}px` };
 }
