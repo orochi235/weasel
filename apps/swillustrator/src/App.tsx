@@ -455,9 +455,15 @@ export function App() {
       getNodes: (): Obj[] => itemsRef.current,
       getPose: (id: string): Pose => {
         const o = itemsRef.current.find((x) => x.id === id);
+        // Always return an explicit `rotation` field — even 0 when the obj
+        // has never been rotated. Otherwise a gesture's originPose snapshot
+        // carries `rotation: undefined`, and undo's setPose(originPose) hits
+        // applyPoseToObj's "preserve on undefined" rule (designed for
+        // move/resize that omit rotation) and silently keeps the current
+        // rotation. Symptom: rotate → undo leaves the shape rotated.
         return o
-          ? { x: o.x, y: o.y, width: o.width, height: o.height, rotation: o.rotation }
-          : { x: 0, y: 0, width: 0, height: 0 };
+          ? { x: o.x, y: o.y, width: o.width, height: o.height, rotation: o.rotation ?? 0 }
+          : { x: 0, y: 0, width: 0, height: 0, rotation: 0 };
       },
       setPose: (id: string, pose: Pose) => {
         const i = itemsRef.current.findIndex((o) => o.id === id);
