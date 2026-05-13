@@ -62,7 +62,6 @@ import {
   type Path,
   type PolygonPath,
   type RenderLayer,
-  type TextStyle,
 } from '@orochi235/weasel';
 // `lockAspectWithModifier` is exported only from the `/resize` subpath; the
 // top-level kit index omits it (snapToGrid/clampMinSize sit alongside, and
@@ -112,6 +111,7 @@ import { createGroupAdapter } from './groupMembership';
 import { parseSvg, serializeSvg } from '@orochi235/weasel-svg';
 import { KindIcon, PageIcon } from './kindIcons';
 import { Toasts, type Toast } from './Toasts';
+import { applyPoseToObj, type Obj, type Pose, type RectObj, type TextObj, type PathObj } from './poseUpdate';
 
 interface View { x: number; y: number; scale: number }
 
@@ -167,15 +167,6 @@ const PALETTE: { value: string; label: string }[] = [
   { value: '#3a2e22', label: 'Bark' },
   { value: '#1a130d', label: 'Soil' },
 ];
-
-type Kind = 'rect' | 'text' | 'path';
-interface BaseObj { id: string; kind: Kind; x: number; y: number; width: number; height: number }
-interface RectObj extends BaseObj { kind: 'rect'; fill: string; stroke: string; strokeWidth: number }
-interface TextObj extends BaseObj { kind: 'text'; text: string; style?: TextStyle }
-interface PathObj extends BaseObj { kind: 'path'; path: PolygonPath; closed: boolean; fill: string; stroke: string; strokeWidth: number }
-type Obj = RectObj | TextObj | PathObj;
-interface Pose { x: number; y: number; width: number; height: number }
-
 
 /** Translate a single rect-pose-shaped object by (dx, dy). Used for clipboard
  *  paste offset, group bound shifts, and the generic Obj patcher. */
@@ -460,37 +451,14 @@ export function App() {
       getNodes: (): Obj[] => itemsRef.current,
       getPose: (id: string): Pose => {
         const o = itemsRef.current.find((x) => x.id === id);
-        return o ? { x: o.x, y: o.y, width: o.width, height: o.height } : { x: 0, y: 0, width: 0, height: 0 };
+        return o
+          ? { x: o.x, y: o.y, width: o.width, height: o.height, rotation: o.rotation }
+          : { x: 0, y: 0, width: 0, height: 0 };
       },
       setPose: (id: string, pose: Pose) => {
         const i = itemsRef.current.findIndex((o) => o.id === id);
         if (i < 0) return;
-        const prev = itemsRef.current[i];
-        // For text nodes, scale fontSize proportionally to height so the
-        // glyphs fill the resized box. 0.7 ≈ cap-height ratio, matching
-        // the rule the text-tool's `commitInsert` uses to seed fontSize.
-        // Floor at 8px so tiny boxes stay readable.
-        if (prev.kind === 'text' && pose.height !== prev.height) {
-          const fontSize = Math.max(8, Math.round(pose.height * 0.7));
-          const style = { ...(prev.style ?? {}), fontSize };
-          itemsRef.current[i] = { ...prev, ...pose, style };
-        } else if (prev.kind === 'path') {
-          // Rescale the polygon geometry to fit the new pose so resize
-          // handles actually deform the curve, not just the bounding box.
-          // Translation-only changes skip the scale (faster path + avoids
-          // sub-pixel drift through repeated multiplies).
-          const moved = pose.width !== prev.width || pose.height !== prev.height;
-          const path = moved
-            ? scalePathToBounds(prev.path, {
-                kind: 'rect',
-                x: pose.x, y: pose.y,
-                width: pose.width, height: pose.height,
-              }) as PolygonPath
-            : translatePath(prev.path, pose.x - prev.x, pose.y - prev.y) as PolygonPath;
-          itemsRef.current[i] = { ...prev, ...pose, path };
-        } else {
-          itemsRef.current[i] = { ...prev, ...pose };
-        }
+        itemsRef.current[i] = applyPoseToObj(itemsRef.current[i], pose);
       },
       // Used by createSetTextOp; called from useTextEdit's commit through applyOps.
       setText: (id: string, text: string) => {
