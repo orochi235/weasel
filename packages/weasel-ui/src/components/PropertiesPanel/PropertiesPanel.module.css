@@ -99,12 +99,12 @@
 
 .swatchGrid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(auto-fill, var(--wzl-swatch-size, 28px));
   gap: 4px;
 }
 .swatch {
-  width: 100%;
-  aspect-ratio: 1;
+  width: var(--wzl-swatch-size, 28px);
+  height: var(--wzl-swatch-size, 28px);
   border: 2px solid var(--wzl-panel-border);
   border-radius: 4px;
   cursor: pointer;
