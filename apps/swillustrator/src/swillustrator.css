@@ -410,7 +410,6 @@ html, body, #root {
      column 1 and auto-sizes to the LayerList's min-width, leaving the
      panel mostly empty. Span all columns so the list fills the panel. */
   grid-column: 1 / -1;
-  padding: 0 8px 8px 8px;
 }
 
 .swill-sidebar-spacer {
