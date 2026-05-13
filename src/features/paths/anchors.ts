@@ -130,6 +130,32 @@ export function anchorsToPath(
   return b.build();
 }
 
+const SMOOTH_THRESHOLD = 0.001;
+
+/**
+ * Returns true if the anchor's in-handle and out-handle are collinear with
+ * the anchor point, indicating "smooth" (mirror-drag) behavior. Detected via
+ * the magnitude of the normalized cross product of the two handle vectors.
+ *
+ * Edge cases:
+ *   - Missing in or out handle → false (corner by definition).
+ *   - Either handle at zero distance from anchor → false.
+ */
+export function isAnchorSmooth(a: PenAnchor): boolean {
+  if (!a.inHandle || !a.outHandle) return false;
+  const inDX = a.inHandle.x - a.x;
+  const inDY = a.inHandle.y - a.y;
+  const outDX = a.outHandle.x - a.x;
+  const outDY = a.outHandle.y - a.y;
+  const inLen = Math.hypot(inDX, inDY);
+  const outLen = Math.hypot(outDX, outDY);
+  if (inLen === 0 || outLen === 0) return false;
+  // For collinear handles on opposite sides of the anchor, the cross product
+  // of the two handle vectors should be zero. Normalize by both magnitudes.
+  const cross = (inDX * outDY - inDY * outDX) / (inLen * outLen);
+  return Math.abs(cross) < SMOOTH_THRESHOLD;
+}
+
 export function countPathAnchors(path: Path): number {
   if (path.kind === 'rect') return 4;
   const cmds = path.commands;

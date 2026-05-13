@@ -133,3 +133,39 @@ describe('countPathAnchors', () => {
     expect(countPathAnchors(p)).toBe(5);
   });
 });
+
+import { isAnchorSmooth } from './anchors';
+
+describe('isAnchorSmooth', () => {
+  it('returns true when in-handle, anchor, and out-handle are collinear', () => {
+    // Anchor at (50, 50), in-handle at (40, 40), out-handle at (60, 60).
+    // Line is y = x. Cross product magnitude near zero.
+    expect(isAnchorSmooth({
+      x: 50, y: 50,
+      inHandle: { x: 40, y: 40 },
+      outHandle: { x: 60, y: 60 },
+    })).toBe(true);
+  });
+
+  it('returns false when handles deviate from collinear', () => {
+    expect(isAnchorSmooth({
+      x: 50, y: 50,
+      inHandle: { x: 40, y: 50 },  // pointing left
+      outHandle: { x: 50, y: 60 }, // pointing down — perpendicular
+    })).toBe(false);
+  });
+
+  it('returns false when either handle is missing', () => {
+    expect(isAnchorSmooth({ x: 50, y: 50, outHandle: { x: 60, y: 50 } })).toBe(false);
+    expect(isAnchorSmooth({ x: 50, y: 50, inHandle: { x: 40, y: 50 } })).toBe(false);
+    expect(isAnchorSmooth({ x: 50, y: 50 })).toBe(false);
+  });
+
+  it('returns false when a handle is at zero distance from the anchor', () => {
+    expect(isAnchorSmooth({
+      x: 50, y: 50,
+      inHandle: { x: 50, y: 50 },        // zero-length
+      outHandle: { x: 60, y: 50 },
+    })).toBe(false);
+  });
+});
