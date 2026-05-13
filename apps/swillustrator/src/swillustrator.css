@@ -131,6 +131,22 @@ html, body, #root {
   opacity: 0.85;
 }
 
+/* --- Page row (locked, system-owned) --------------------------------- */
+.swill-layer-label-page {
+  color: #8a7a5a;
+  font-style: italic;
+}
+
+/* Thin divider above any locked row in the layer list — separates
+   user layers from system rows (currently just the Page row). */
+.swill-layerlist-host [data-locked="true"] {
+  border-top: 1px solid #3a2e22;
+  /* Visually offset the row so the divider sits in its own gutter rather
+     than hugging the previous row. */
+  margin-top: 4px;
+  padding-top: 1px;
+}
+
 .swill-sidebar {
   display: flex;
   flex-direction: column;
