@@ -31,10 +31,8 @@ import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { viewToMat3, type DrawCommand } from '../../renderer';
 import { pickTopMostHit } from './pickTopMostHit';
-import { createReorderOp } from 'core/ops/reorder';
 import { createTransformOp } from 'core/ops/transform';
 import { RECT_POSE_DESCRIPTOR } from 'interactions/gestures/resize/geometry';
-import { dispatchApplyBatch } from 'core/applyOps';
 
 /** World-space bounding rect for hit-testing handles. Uses `width`/`height` to
  *  match `cornerResizeHandles` and `rotationHandle` expectations. */
@@ -156,13 +154,6 @@ export interface UseSelectToolOptions<TNode extends { id: string }, TPose> {
     ids: string[];
     event: PointerEvent;
   }) => void;
-  /** Auto-bring-to-front on body-hit click. Default `true` — matches
-   *  Figma/Sketch/Illustrator conventions where the most recently clicked
-   *  object becomes the topmost in z-order. Disable for apps that want
-   *  stable z-order (illustration, CAD-ish tools where ordering carries
-   *  semantic meaning). Requires the adapter to expose `getChildren` +
-   *  `setChildOrder` — graceful no-op when either is missing. */
-  bringToFrontOnSelect?: boolean;
 }
 
 /** Intersection of all four sub-controller adapter interfaces.
@@ -826,25 +817,6 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
       // multi-selection before a drag can move the whole set.
       const deferClick = hitAlreadySelected && preClick.length > 1 && !isExtend;
       if (!deferClick) ctx.selection.applyClick(top as NodeId, ctx.modifiers);
-      // Auto-bring-to-front on body-hit. Matches Figma / Sketch /
-      // Illustrator conventions: the most recently clicked object
-      // becomes the topmost in z-order. Skipped on extend-clicks
-      // (shift/meta) so multi-selecting doesn't keep reshuffling the
-      // stack. Skipped when the adapter doesn't expose the reorder
-      // surface.
-      if ((options.bringToFrontOnSelect ?? true) && !isExtend) {
-        const reorderable = adapter as unknown as {
-          getChildren?: (parentId: string | null) => string[];
-          setChildOrder?: (parentId: string | null, ids: string[]) => void;
-        };
-        if (reorderable.getChildren && reorderable.setChildOrder) {
-          // Reorder ops self-report no-op when the order doesn't change
-          // (see core/ops/reorder), so the history layer skips pushing
-          // an entry when the hit is already at the front. Safe to
-          // dispatch unconditionally here.
-          dispatchApplyBatch(adapter, [createReorderOp({ ids: [top], direction: 'front' })], 'Bring to front');
-        }
-      }
       // If the user clicked something already selected, drag the whole
       // selection. Otherwise the click switches selection and the drag
       // moves only the clicked object — matches Figma/Sketch behavior
