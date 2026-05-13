@@ -833,6 +833,9 @@ export function App() {
 
   // Clear Page selection whenever a scene selection appears through any
   // other path (marquee, viewport click, keyboard select-all, etc.).
+  // Length-only dep is intentional: we only react to the empty → non-empty
+  // transition. Content swaps within a non-empty selection don't matter
+  // because `pageSelected` is already false in that case.
   useEffect(() => {
     if (pageSelected && selection.current.length > 0) {
       setPageSelected(false);
