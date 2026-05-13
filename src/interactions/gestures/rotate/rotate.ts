@@ -209,7 +209,12 @@ export function useRotate<TNode extends { id: string }, TPose>(
       const rb = geom.getRotatedBounds(p);
       const c = aabbCenter(rb);
       originCenters.set(id, c);
-      originRotations.set(id, rb.rotation);
+      // `rb.rotation` may be undefined when the pose was never rotated
+      // (consumer Pose with optional `rotation?: number`). Default to 0 so
+      // `originRotation + delta` stays a real number — otherwise the NaN
+      // propagates through the new rotation and breaks both rendering and
+      // hit-test downstream.
+      originRotations.set(id, rb.rotation ?? 0);
       if (rb.x < minX) minX = rb.x;
       if (rb.y < minY) minY = rb.y;
       if (rb.x + rb.width > maxX) maxX = rb.x + rb.width;

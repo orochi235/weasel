@@ -329,3 +329,29 @@ describe('useRotate — Shift-snap', () => {
     expect(state.get('a')!.rotation).toBeCloseTo(0, 6);
   });
 });
+
+describe('useRotate — origin rotation undefined defaults to 0', () => {
+  it('item with no prior rotation field rotates without NaN', () => {
+    // Consumer Pose with `rotation?: number` may surface undefined on
+    // never-rotated items. Default-to-0 prevents NaN propagation through
+    // the new rotation, which previously broke both rendering and
+    // hit-test (NaN propagates through Math.cos / wrapWithRotation guards).
+    const initial: RotatedPose = { x: 0, y: 0, width: 100, height: 50 } as RotatedPose;
+    // Cast away the explicit rotation field so the test rig stores undefined.
+    delete (initial as { rotation?: number }).rotation;
+    const { adapter, state } = makeAdapter([['a', initial]]);
+    const { result } = renderHook(() =>
+      useRotate<{ id: string }, RotatedPose>(adapter),
+    );
+    // Start at angle 0 relative to AABB center (50, 25): worldX=150, worldY=25.
+    act(() => result.current.start({ ids: ['a'], worldX: 150, worldY: 25 }));
+    // Move to angle 90° → worldX=50, worldY=125.
+    act(() =>
+      result.current.move({ worldX: 50, worldY: 125, modifiers: NO_MOD }),
+    );
+    act(() => result.current.end());
+    const r = state.get('a')!.rotation;
+    expect(Number.isNaN(r)).toBe(false);
+    expect(r).toBeCloseTo(Math.PI / 2, 6);
+  });
+});
