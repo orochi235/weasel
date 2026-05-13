@@ -82,6 +82,12 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     // tracks click intent in its own ref, separate from drag candidacy.
     const item = optsRef.current.items[index];
     if (item?.locked) return;
+    // Capture the pointer to the row so subsequent move/up events keep firing
+    // (on the row, bubbling to the container) even when the user drags
+    // outside the list's bounding box. Without capture, releasing outside
+    // the container leaves the drag state stuck because pointerup fires on
+    // the document, not the list.
+    try { (e.currentTarget as Element).setPointerCapture?.(e.pointerId); } catch { /* unsupported / already captured */ }
     pendingRef.current = {
       id,
       sourceIndex: index,
