@@ -95,3 +95,16 @@ export const SWILLUSTRATOR_MINIMAL_SVG = `<svg xmlns="http://www.w3.org/2000/svg
 export const SWILLUSTRATOR_PAPERS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:swill="https://swillustrator.app/svg-ext" viewBox="0 0 794 1123" width="794" height="1123" swill:paperSize="a4" swill:units="px">
   <path d="M 10 10 L 50 10 L 50 50 L 10 50 Z" fill="#000000" stroke="none"/>
 </svg>`;
+
+export const SWILLUSTRATOR_GROUPS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:swill="https://swillustrator.app/svg-ext" viewBox="0 0 400 400">
+  <g swill:group-id="g1">
+    <path d="M 10 10 L 60 10 L 60 60 L 10 60 Z" fill="#ff0000" stroke="none"/>
+    <path d="M 70 10 L 120 10 L 120 60 L 70 60 Z" fill="#00ff00" stroke="none"/>
+    <path d="M 130 10 L 180 10 L 180 60 L 130 60 Z" fill="#0000ff" stroke="none"/>
+  </g>
+  <g swill:group-id="g2">
+    <path d="M 10 100 L 60 100 L 60 150 L 10 150 Z" fill="#ffff00" stroke="none"/>
+    <path d="M 70 100 L 120 100 L 120 150 L 70 150 Z" fill="#ff00ff" stroke="none"/>
+    <path d="M 130 100 L 180 100 L 180 150 L 130 150 Z" fill="#00ffff" stroke="none"/>
+  </g>
+</svg>`;

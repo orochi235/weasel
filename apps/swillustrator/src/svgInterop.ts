@@ -11,9 +11,12 @@ import type {
   ParseResult,
   SerializeOptions,
   SvgNode,
+  SvgGroupNode,
   SvgPathNode,
   SvgTextNode,
 } from '@orochi235/weasel-svg';
+
+interface Group { id: string; members: string[] }
 
 /**
  * The `swill:` XML namespace, used to ride Swillustrator-specific metadata
@@ -134,21 +137,90 @@ export function objToSvgNode(o: Obj): SvgNode {
 }
 
 /**
- * Walk an SvgNode tree and emit a flat list of Swillustrator objects.
- * Groups flatten on import (children inlined; group-level transform was
- * already collapsed onto leaves by `parseSvg`). Unsupported leaf shapes
- * (gradient fills, paint-not-solid) drop down to a black solid color so
- * the document at least opens.
+ * Lower a Swillustrator scene (items + groups) to an SvgNode[] tree.
+ * Items that belong to a group are emitted inside that group's
+ * SvgGroupNode; items not in any group sit at the root.
+ *
+ * Nested groups are supported via Group.members containing group ids.
+ * A group id appears in the output tree exactly once (under its parent,
+ * or at root if it has no parent group).
+ *
+ * Single-group-membership invariant: each item / group id appears in at
+ * most one parent group's `members[]`. The function throws if the input
+ * violates this; the model layer is expected to maintain it.
  */
-export function svgNodesToObjs(
+export function objsToSvgNodes(items: readonly Obj[], groups: readonly Group[]): SvgNode[] {
+  const itemsById = new Map<string, Obj>();
+  for (const o of items) itemsById.set(o.id, o);
+  const groupsById = new Map<string, Group>();
+  for (const g of groups) groupsById.set(g.id, g);
+
+  // Enforce single-group-membership: each child id appears in at most one
+  // parent. If two groups claim the same id, fail loudly — Swillustrator's
+  // model layer must guarantee this invariant, and a violation here means
+  // a bug in group ops, not an encoding ambiguity to silently disambiguate.
+  const parentOf = new Map<string, string>();
+  for (const g of groups) {
+    for (const m of g.members) {
+      const existing = parentOf.get(m);
+      if (existing) {
+        throw new Error(
+          `multi-group membership detected: '${m}' belongs to both '${existing}' and '${g.id}'. ` +
+          `Swillustrator's group model forbids multi-membership.`,
+        );
+      }
+      parentOf.set(m, g.id);
+    }
+  }
+
+  const buildGroup = (g: Group): SvgGroupNode => {
+    const children: SvgNode[] = [];
+    for (const m of g.members) {
+      const childGroup = groupsById.get(m);
+      if (childGroup) {
+        children.push(buildGroup(childGroup));
+        continue;
+      }
+      const childItem = itemsById.get(m);
+      if (childItem) children.push(objToSvgNode(childItem));
+    }
+    const node: SvgGroupNode = { kind: 'group', children };
+    node.meta = { swill: { attrs: { 'group-id': g.id } } };
+    return node;
+  };
+
+  const out: SvgNode[] = [];
+  // Root-level groups: groups that aren't a member of any other group.
+  for (const g of groups) {
+    if (!parentOf.has(g.id)) out.push(buildGroup(g));
+  }
+  // Root-level items: items not claimed by any group.
+  for (const o of items) {
+    if (!parentOf.has(o.id)) out.push(objToSvgNode(o));
+  }
+  return out;
+}
+
+/**
+ * Walk an SvgNode tree and emit a Swillustrator scene (items + groups).
+ * Each SvgGroupNode becomes a Group record. The group id is taken from
+ * `n.meta?.swill?.attrs?.['group-id']` when set, else synthesized via
+ * `nextId()`. Nested groups produce nested Group.members lists.
+ */
+export function svgNodesToObjsWithGroups(
   nodes: readonly SvgNode[],
   nextId: () => string,
-): Obj[] {
-  const out: Obj[] = [];
-  const visit = (n: SvgNode): void => {
+): { items: Obj[]; groups: Group[] } {
+  const items: Obj[] = [];
+  const groups: Group[] = [];
+
+  const visit = (n: SvgNode): string => {
     if (n.kind === 'group') {
-      n.children.forEach(visit);
-      return;
+      const gid = n.meta?.swill?.attrs?.['group-id'] ?? nextId();
+      const memberIds: string[] = [];
+      for (const c of n.children) memberIds.push(visit(c));
+      groups.push({ id: gid, members: memberIds });
+      return gid;
     }
     if (n.kind === 'text') {
       const o: TextObj = {
@@ -158,39 +230,48 @@ export function svgNodesToObjs(
         text: n.text,
       };
       if (n.style) o.style = n.style;
-      out.push(o);
-      return;
+      items.push(o);
+      return o.id;
     }
-    // path
     const fill = colorFromPaint(n.fill, '#000000');
     const stroke = n.stroke ? colorFromPaint(n.stroke.paint, '#000000') : '#000000';
     const strokeWidth = n.stroke?.width ?? 0;
     if (n.path.kind === 'rect') {
-      out.push({
+      const o: RectObj = {
         id: nextId(),
         kind: 'rect',
         x: n.path.x, y: n.path.y, width: n.path.width, height: n.path.height,
         fill, stroke, strokeWidth,
-      });
-      return;
+      };
+      items.push(o);
+      return o.id;
     }
-    // PolygonPath. Use the path's own bounding box (the SVG didn't carry
-    // one). `closed` is best-effort: if the underlying command stream ends
-    // with PATH_Z (4), treat it as closed.
     const path = n.path as PolygonPath;
     const bounds = pathBounds(path);
     const closed = isClosedPolygon(path);
-    out.push({
+    const o: PathObj = {
       id: nextId(),
       kind: 'path',
       x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height,
-      path,
-      closed,
-      fill, stroke, strokeWidth,
-    });
+      path, closed, fill, stroke, strokeWidth,
+    };
+    items.push(o);
+    return o.id;
   };
   nodes.forEach(visit);
-  return out;
+  return { items, groups };
+}
+
+/**
+ * Walk an SvgNode tree and emit a flat list of Swillustrator objects.
+ * Thin wrapper around {@link svgNodesToObjsWithGroups} that discards the
+ * group output — retained for call sites that don't yet consume groups.
+ */
+export function svgNodesToObjs(
+  nodes: readonly SvgNode[],
+  nextId: () => string,
+): Obj[] {
+  return svgNodesToObjsWithGroups(nodes, nextId).items;
 }
 
 function colorFromPaint(

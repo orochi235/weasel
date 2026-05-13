@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import type { SvgNode, SvgPathNode, SvgTextNode, SvgGroupNode } from '@orochi235/weasel-svg';
-import { objToSvgNode, svgNodesToObjs } from './svgInterop';
+import { objToSvgNode, svgNodesToObjs, svgNodesToObjsWithGroups, objsToSvgNodes } from './svgInterop';
 
 // Minimal local mirror of svgInterop's internal Obj union. Keep in sync
 // with the file under test; baseline tests don't need every field, just
@@ -110,21 +110,6 @@ describe('svgNodesToObjs (baseline — pre-namespace, pre-groups-preservation)',
     expect(out[0]).toMatchObject({ kind: 'text', x: 10, y: 11, text: 'hi' });
   });
 
-  it('baseline: flattens groups inlining their children', () => {
-    // NOTE: This expectation will be flipped in Task 3 — groups will be
-    // preserved structurally. The baseline test exists so Task 3 shows
-    // up as a deliberate change.
-    const inner: SvgPathNode = {
-      kind: 'path',
-      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
-      fill: { kind: 'solid', color: '#000000' },
-    };
-    const group: SvgGroupNode = { kind: 'group', children: [inner] };
-    const out = svgNodesToObjs([group], ids());
-    expect(out).toHaveLength(1);
-    expect(out[0].kind).toBe('rect');
-  });
-
   it('downgrades a gradient fill to black solid (lossy edge)', () => {
     const node: SvgPathNode = {
       kind: 'path',
@@ -145,5 +130,125 @@ describe('svgNodesToObjs (baseline — pre-namespace, pre-groups-preservation)',
     const out = svgNodesToObjs([node], ids());
     expect((out[0] as RectObjT).strokeWidth).toBe(0);
     expect((out[0] as RectObjT).stroke).toBe('#000000');
+  });
+});
+
+describe('svgNodesToObjsWithGroups — groups preserved', () => {
+  it('returns a Group record for each SvgGroupNode and inlines members', () => {
+    const child: SvgPathNode = {
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+      fill: { kind: 'solid', color: '#000000' },
+    };
+    const g: SvgGroupNode = {
+      kind: 'group',
+      meta: { swill: { attrs: { 'group-id': 'g1' } } },
+      children: [child],
+    };
+    const result = svgNodesToObjsWithGroups([g], ids());
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].kind).toBe('rect');
+    expect(result.groups).toHaveLength(1);
+    expect(result.groups[0].id).toBe('g1');
+    expect(result.groups[0].members).toEqual([result.items[0].id]);
+  });
+
+  it('handles nested groups by including child group ids in the parent member list', () => {
+    const leaf: SvgPathNode = {
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+      fill: { kind: 'solid', color: '#abc' },
+    };
+    const inner: SvgGroupNode = {
+      kind: 'group',
+      meta: { swill: { attrs: { 'group-id': 'inner' } } },
+      children: [leaf],
+    };
+    const outer: SvgGroupNode = {
+      kind: 'group',
+      meta: { swill: { attrs: { 'group-id': 'outer' } } },
+      children: [inner],
+    };
+    const result = svgNodesToObjsWithGroups([outer], ids());
+    expect(result.items).toHaveLength(1);
+    expect(result.groups.map((g) => g.id).sort()).toEqual(['inner', 'outer']);
+    const innerGroup = result.groups.find((g) => g.id === 'inner');
+    const outerGroup = result.groups.find((g) => g.id === 'outer');
+    expect(innerGroup!.members).toEqual([result.items[0].id]);
+    expect(outerGroup!.members).toEqual(['inner']);
+  });
+
+  it('groups without swill:group-id synthesize an id from the nextId fn', () => {
+    const leaf: SvgPathNode = {
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+      fill: { kind: 'solid', color: '#fff' },
+    };
+    const g: SvgGroupNode = { kind: 'group', children: [leaf] };
+    const result = svgNodesToObjsWithGroups([g], ids());
+    expect(result.groups).toHaveLength(1);
+    expect(result.groups[0].id).toMatch(/^i\d+$/);
+    expect(result.groups[0].members).toEqual([result.items[0].id]);
+  });
+});
+
+describe('objsToSvgNodes — groups emitted', () => {
+  it('builds an SvgGroupNode wrapping the members of a Group', () => {
+    const items = [
+      { id: 'a', kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10, fill: '#fff', stroke: '#000', strokeWidth: 0 },
+      { id: 'b', kind: 'rect' as const, x: 20, y: 0, width: 10, height: 10, fill: '#fff', stroke: '#000', strokeWidth: 0 },
+    ];
+    const groups = [{ id: 'g1', members: ['a', 'b'] }];
+    const nodes = objsToSvgNodes(items as never, groups);
+    expect(nodes).toHaveLength(1);
+    const n0 = nodes[0];
+    expect(n0.kind).toBe('group');
+    if (n0.kind !== 'group') throw new Error('expected group');
+    expect(n0.meta?.swill?.attrs?.['group-id']).toBe('g1');
+    expect(n0.children).toHaveLength(2);
+  });
+
+  it('emits items not in any group at the document root', () => {
+    const items = [
+      { id: 'a', kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10, fill: '#fff', stroke: '#000', strokeWidth: 0 },
+      { id: 'b', kind: 'rect' as const, x: 20, y: 0, width: 10, height: 10, fill: '#fff', stroke: '#000', strokeWidth: 0 },
+    ];
+    const groups = [{ id: 'g1', members: ['a'] }];
+    const nodes = objsToSvgNodes(items as never, groups);
+    // One group (wrapping 'a') + one root-level path ('b').
+    expect(nodes).toHaveLength(2);
+    expect(nodes[0].kind).toBe('group');
+    expect(nodes[1].kind).toBe('path');
+  });
+
+  it('nests SvgGroupNodes for nested Groups', () => {
+    const items = [
+      { id: 'a', kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10, fill: '#fff', stroke: '#000', strokeWidth: 0 },
+    ];
+    const groups = [
+      { id: 'inner', members: ['a'] },
+      { id: 'outer', members: ['inner'] },
+    ];
+    const nodes = objsToSvgNodes(items as never, groups);
+    expect(nodes).toHaveLength(1);
+    const outer = nodes[0];
+    if (outer.kind !== 'group') throw new Error('expected outer group');
+    expect(outer.meta?.swill?.attrs?.['group-id']).toBe('outer');
+    expect(outer.children).toHaveLength(1);
+    const inner = outer.children[0];
+    if (inner.kind !== 'group') throw new Error('expected inner group');
+    expect(inner.meta?.swill?.attrs?.['group-id']).toBe('inner');
+  });
+
+  it('rejects multi-group membership at the persistence boundary', () => {
+    const items = [
+      { id: 'a', kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10, fill: '#fff', stroke: '#000', strokeWidth: 0 },
+    ];
+    // 'a' is claimed by two groups — this violates the single-membership invariant.
+    const groups = [
+      { id: 'g1', members: ['a'] },
+      { id: 'g2', members: ['a'] },
+    ];
+    expect(() => objsToSvgNodes(items as never, groups)).toThrow(/multi-group membership/i);
   });
 });

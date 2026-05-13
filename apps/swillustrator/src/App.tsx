@@ -100,14 +100,15 @@ import {
   type ActivePaint,
 } from './ActiveSwatches';
 import {
-  objToSvgNode,
-  svgNodesToObjs,
+  objsToSvgNodes,
+  svgNodesToObjsWithGroups,
   downloadSvg,
   pickSvgFile,
   docToSerializeOptions,
   parsedToDoc,
   SWILL_NAMESPACES,
 } from './svgInterop';
+import { createGroupAdapter } from './groupMembership';
 import { parseSvg, serializeSvg } from '@orochi235/weasel-svg';
 import { KindIcon } from './kindIcons';
 
@@ -552,26 +553,7 @@ export function App() {
         itemsRef.current.push(...next);
       },
       // --- groups (virtual) ---
-      getGroup: (id: string): Group | undefined => groupsRef.current.find((g) => g.id === id),
-      getGroupsForMember: (id: string): string[] =>
-        groupsRef.current.filter((g) => g.members.includes(id)).map((g) => g.id),
-      insertGroup: (g: Group) => {
-        if (!groupsRef.current.find((x) => x.id === g.id)) groupsRef.current.push({ ...g, members: [...g.members] });
-      },
-      removeGroup: (id: string) => {
-        const i = groupsRef.current.findIndex((g) => g.id === id);
-        if (i >= 0) groupsRef.current.splice(i, 1);
-      },
-      addToGroup: (gid: string, ids: string[]) => {
-        const g = groupsRef.current.find((x) => x.id === gid);
-        if (!g) return;
-        for (const id of ids) if (!g.members.includes(id)) g.members.push(id);
-      },
-      removeFromGroup: (gid: string, ids: string[]) => {
-        const g = groupsRef.current.find((x) => x.id === gid);
-        if (!g) return;
-        g.members = g.members.filter((m) => !ids.includes(m));
-      },
+      ...createGroupAdapter(groupsRef),
       // --- clipboard / insert ---
       commitInsert: (b: Pose): Obj => {
         const id = `r${nextId.current++}`;
@@ -1282,7 +1264,7 @@ export function App() {
           publish();
         }}
         onSaveSvg={() => {
-          const svgNodes = itemsRef.current.map(objToSvgNode);
+          const svgNodes = objsToSvgNodes(itemsRef.current, groupsRef.current);
           const svg = serializeSvg(svgNodes, docToSerializeOptions({
             title: docTitle,
             size: doc.size,
@@ -1298,9 +1280,12 @@ export function App() {
             // eslint-disable-next-line no-console
             console.warn('Open SVG warnings:', parsed.warnings);
           }
-          const next = svgNodesToObjs(parsed.nodes, () => `i${nextId.current++}`);
-          itemsRef.current = next;
-          groupsRef.current = [];
+          const { items: nextItems, groups: nextGroups } = svgNodesToObjsWithGroups(
+            parsed.nodes,
+            () => `i${nextId.current++}`,
+          );
+          itemsRef.current = nextItems;
+          groupsRef.current = nextGroups;
           historyRef.current?.clear();
           selection.set([]);
           const patch = parsedToDoc(parsed);
