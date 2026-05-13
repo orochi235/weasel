@@ -1,11 +1,26 @@
-/** Object-kind icons for the LayerList rows — one per Swillustrator kind
- *  (`rect`, `text`, `path`). 16×16 (slightly smaller than ActionBar icons
- *  so they sit comfortably in the 28px-tall list rows), same currentColor
- *  + 1.5px stroke convention as `actionIcons.tsx` and the kit's Pathfinder
- *  icons. Parent row supplies the accessible name via existing list-row
- *  semantics; the icons are `aria-hidden`.
+/** Per-tool icons for the LayerList rows — keyed on `obj.tool` so every
+ *  object kind that ships with Swillustrator (rect, ellipse, polygon, star,
+ *  line, pen, pencil, text, imported) gets a recognizable glyph. We reuse
+ *  the kit's built-in tool icons rather than authoring inline SVGs so the
+ *  LayerList stays visually consistent with the ActionBar / tool palette.
+ *  `PageIcon` stays local — no kit equivalent.
+ *
+ *  Parent row supplies the accessible name via existing list-row semantics;
+ *  the icons are `aria-hidden`.
  */
 import type { ReactNode } from 'react';
+import {
+  RectIcon,
+  EllipseIcon,
+  PolygonIcon,
+  StarIcon,
+  LineIcon,
+  PenIcon,
+  PencilIcon,
+  TextIcon,
+  UnknownIcon,
+} from '@orochi235/weasel';
+import type { ToolKind } from './poseUpdate';
 
 const SVG_BASE = {
   viewBox: '0 0 16 16',
@@ -17,36 +32,6 @@ const SVG_BASE = {
   'aria-hidden': true,
 };
 
-export function RectIcon() {
-  return (
-    <svg {...SVG_BASE}>
-      <rect x="3" y="4.5" width="10" height="7" />
-    </svg>
-  );
-}
-
-export function TextIcon() {
-  // Serif "T" — top bar + stem + small bottom serif.
-  return (
-    <svg {...SVG_BASE}>
-      <path d="M 3 4 L 13 4 M 8 4 L 8 12 M 6 12 L 10 12" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-export function PathIcon() {
-  // Smooth curve sketching out a path, with three anchor dots so it reads
-  // as "freeform path with control points" rather than a primitive.
-  return (
-    <svg {...SVG_BASE}>
-      <path d="M 2.5 12 Q 5.5 3.5 8 8 T 13.5 5" strokeLinecap="round" />
-      <circle cx="2.5" cy="12" r="1.3" fill="currentColor" stroke="none" />
-      <circle cx="8" cy="8" r="1.3" fill="currentColor" stroke="none" />
-      <circle cx="13.5" cy="5" r="1.3" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
 export function PageIcon() {
   // A document page — rectangle with a folded top-right corner.
   return (
@@ -57,11 +42,17 @@ export function PageIcon() {
   );
 }
 
-/** Dispatch by kind — convenient one-liner for consumers. */
-export function KindIcon({ kind }: { kind: 'rect' | 'text' | 'path' }): ReactNode {
-  switch (kind) {
+/** Dispatch by tool — convenient one-liner for consumers. */
+export function ToolIcon({ tool }: { tool: ToolKind }): ReactNode {
+  switch (tool) {
     case 'rect': return <RectIcon />;
+    case 'ellipse': return <EllipseIcon />;
+    case 'polygon': return <PolygonIcon />;
+    case 'star': return <StarIcon />;
+    case 'line': return <LineIcon />;
+    case 'pen': return <PenIcon />;
+    case 'pencil': return <PencilIcon />;
     case 'text': return <TextIcon />;
-    case 'path': return <PathIcon />;
+    case 'imported': return <UnknownIcon />;
   }
 }

@@ -113,7 +113,7 @@ import {
 } from './svgInterop';
 import { createGroupAdapter } from './groupMembership';
 import { parseSvg, serializeSvg } from '@orochi235/weasel-svg';
-import { KindIcon, PageIcon } from './kindIcons';
+import { ToolIcon, PageIcon } from './kindIcons';
 import { Toasts, type Toast } from './Toasts';
 import { applyPoseToObj, type Obj, type Pose, type TextObj, type PathObj, type ToolKind, type PathParams } from './poseUpdate';
 
@@ -1299,7 +1299,7 @@ export function App() {
       id: o.id,
       label: (
         <span className="swill-layer-label">
-          <KindIcon kind={o.tool} />
+          <ToolIcon tool={o.tool} />
           <span>{o.id}</span>
         </span>
       ),
