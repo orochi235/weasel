@@ -100,7 +100,7 @@ import {
 } from './ActiveSwatches';
 import { objToSvgNode, svgNodesToObjs, downloadSvg, pickSvgFile } from './svgInterop';
 import { parseSvg, serializeSvg } from '@orochi235/weasel-svg';
-import { KindIcon } from './kindIcons';
+import { KindIcon, PageIcon } from './kindIcons';
 
 interface View { x: number; y: number; scale: number }
 
@@ -114,6 +114,12 @@ interface View { x: number; y: number; scale: number }
 interface Document {
   size: { width: number; height: number };
 }
+
+/** Synthetic LayerList id representing the document/page row. Never appears
+ *  in the scene's selection — swillustrator tracks Page selection in its
+ *  own `pageSelected` state so existing selection-aware logic (delete,
+ *  duplicate, property updates) no-ops while the Page row is active. */
+const PAGE_ROW_ID = '__swill_page__';
 
 /** Paper-size presets in world units (px @ 96 dpi). Driven by the
  *  Properties-panel selector — the user picks a preset, doc.size
@@ -270,6 +276,7 @@ export function App() {
   const [activeStrokeWidth, setActiveStrokeWidth] = useState(1);
   // Last-focused swatch — `/` toggles its kind between 'solid' and 'none'.
   const [focusedSwatch, setFocusedSwatch] = useState<'fill' | 'stroke'>('fill');
+  const [pageSelected, setPageSelected] = useState(false);
   // Refs so the action `run` callbacks read the latest values without
   // having to re-register on every state change.
   const activeFillRef = useRef(activeFill);
@@ -824,6 +831,14 @@ export function App() {
     textEdit.startEdit(pid);
   }, [items, textEdit]);
 
+  // Clear Page selection whenever a scene selection appears through any
+  // other path (marquee, viewport click, keyboard select-all, etc.).
+  useEffect(() => {
+    if (pageSelected && selection.current.length > 0) {
+      setPageSelected(false);
+    }
+  }, [pageSelected, selection.current.length]);
+
   const wheelZoom = useWheelZoomTool();
   const wheelPan = useWheelPanTool();
   const keyZoom = useKeyboardZoomTool();
@@ -1149,8 +1164,8 @@ export function App() {
   // Items array is bottom-up (index 0 = back). LayerList shows top first
   // so we reverse for display and translate the targetIndex back to a
   // bottom-up scene index in onReorder.
-  const layerItems: LayerListItem[] = useMemo(
-    () => [...items].reverse().map((o): LayerListItem => ({
+  const layerItems: LayerListItem[] = useMemo(() => {
+    const objectRows: LayerListItem[] = [...items].reverse().map((o) => ({
       id: o.id,
       label: (
         <span className="swill-layer-label">
@@ -1158,9 +1173,19 @@ export function App() {
           <span>{o.id}</span>
         </span>
       ),
-    })),
-    [items],
-  );
+    }));
+    const pageRow: LayerListItem = {
+      id: PAGE_ROW_ID,
+      locked: true,
+      label: (
+        <span className="swill-layer-label swill-layer-label-page">
+          <PageIcon />
+          <span>Page</span>
+        </span>
+      ),
+    };
+    return [...objectRows, pageRow];
+  }, [items]);
   const onLayerReorder = (ids: string[], targetIndex: number) => {
     // LayerList index is top-down. Scene index is bottom-up.
     const total = itemsRef.current.length;
@@ -1399,8 +1424,16 @@ export function App() {
           deselect={() => selection.clear()}
           deleteSelection={deleteSelection}
           layerItems={layerItems}
-          selectedIds={selection.current.map((id) => String(id))}
-          onSelectLayers={(ids) => selection.set(ids.map((id) => asNodeId(id)))}
+          selectedIds={pageSelected ? [PAGE_ROW_ID] : selection.current.map((id) => String(id))}
+          onSelectLayers={(ids) => {
+            if (ids.length === 1 && ids[0] === PAGE_ROW_ID) {
+              setPageSelected(true);
+              selection.set([]);
+            } else {
+              setPageSelected(false);
+              selection.set(ids.map((id) => asNodeId(id)));
+            }
+          }}
           onLayerReorder={onLayerReorder}
           // Force a re-publish whenever the clipboard tick advances —
           // ensures the paste-button's clipboardEmpty flag stays current.
