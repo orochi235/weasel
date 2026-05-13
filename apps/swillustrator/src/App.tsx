@@ -111,6 +111,7 @@ import {
 import { createGroupAdapter } from './groupMembership';
 import { parseSvg, serializeSvg } from '@orochi235/weasel-svg';
 import { KindIcon } from './kindIcons';
+import { Toasts, type Toast } from './Toasts';
 
 interface View { x: number; y: number; scale: number }
 
@@ -352,6 +353,18 @@ export function App() {
   const [sidebarWidth, setSidebarWidth] = useState(260);
   const [paletteOpen, setPaletteOpen] = useState(false);
   useCommandPaletteShortcut(paletteOpen, setPaletteOpen);
+
+  // Transient toast notifications (e.g. SVG parse warnings). Auto-dismiss
+  // after a timeout; users can also close them manually.
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const toastIdRef = useRef(0);
+  const pushToast = useCallback((title: string, messages: string[]) => {
+    const id = ++toastIdRef.current;
+    setToasts((prev) => [...prev, { id, title, messages }]);
+  }, []);
+  const dismissToast = useCallback((id: number) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
   // Publish our selection to the surrounding <SelectionContextProvider> so the
   // command palette can show a "N selected" header alongside its commands.
 
@@ -1277,8 +1290,7 @@ export function App() {
           if (text == null) return;
           const parsed = parseSvg(text, { namespaces: SWILL_NAMESPACES });
           if (parsed.warnings.length > 0) {
-            // eslint-disable-next-line no-console
-            console.warn('Open SVG warnings:', parsed.warnings);
+            pushToast('SVG opened with warnings', parsed.warnings);
           }
           const { items: nextItems, groups: nextGroups } = svgNodesToObjsWithGroups(
             parsed.nodes,
@@ -1469,6 +1481,7 @@ export function App() {
       </div>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      <Toasts toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }
