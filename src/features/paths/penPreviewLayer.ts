@@ -15,6 +15,7 @@ import type { RenderLayer } from 'core/layers/render';
 import type { Tool } from 'tools/types';
 import type { PenScratch, PenAnchor, PenSubpath } from 'tools/builtin/useUserPenTool';
 import { PATH_C, PATH_L, PATH_M, PATH_Z, type PolygonPath } from './types';
+import { renderPenEditOverlay } from './penEditOverlay';
 
 export interface PenPreviewStyle {
   anchorFill?: string;
@@ -250,6 +251,11 @@ export function createPenPreviewLayer(
             stroke: { paint: { fill: 'solid', color: style.closeHintFill }, width: 1.5 },
           });
         }
+      }
+
+      // (6) Edit-mode overlay — anchor squares + handles for selected anchors.
+      if (s.mode === 'edit') {
+        out.push(...renderPenEditOverlay(s, view));
       }
 
       return out;
