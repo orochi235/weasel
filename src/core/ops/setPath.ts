@@ -28,8 +28,13 @@ export function createSetPathOp(args: {
     label,
     coalesceKey,
     apply(adapter) {
-      if (fieldsEqual(from, to)) return false;
+      // Always call setPath so consumers that inspect op behavior see a
+      // consistent "this op writes (id, to)" signal. When from and to
+      // are field-equal, additionally report a no-op to history so the
+      // entry can be skipped from the undo stack. setPath with the same
+      // value is idempotent.
       (adapter as SetPathAdapter).setPath(id, to);
+      if (fieldsEqual(from, to)) return false;
       return undefined;
     },
     invert() {

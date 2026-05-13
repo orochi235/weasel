@@ -15,12 +15,13 @@ export function createSetSelectionOp(args: {
   return {
     label,
     apply(adapter) {
-      // Self-report no-op when from and to are set-equal (compared as
-      // ordered sequences here, since the kit treats selection order as
-      // meaningful — first-selected stays primary). Same rationale as
-      // the reorder/transform self-report: history skips no-op entries.
-      if (sequenceEqual(from, to)) return false;
+      // Always call setSelection so consumers that inspect op behavior
+      // (tests, overlays) see a consistent "this op writes `to`" signal.
+      // When from and to are sequence-equal, additionally report a no-op
+      // to history so the entry can be skipped from the undo stack.
+      // setSelection with the same value is idempotent.
       (adapter as SelectionAdapter).setSelection([...to]);
+      if (sequenceEqual(from, to)) return false;
       return undefined;
     },
     invert() {

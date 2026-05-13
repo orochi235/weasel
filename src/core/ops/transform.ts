@@ -17,13 +17,14 @@ export function createTransformOp<TPose>(args: {
     label,
     coalesceKey,
     apply(adapter) {
-      // Self-report no-op when from and to are structurally identical so
-      // the history layer can skip pushing the entry. The shallow-equal
-      // covers the common case (Pose / RotatedPose record); for richer
-      // TPose shapes the worst case is a redundant push (correctness is
-      // preserved either way).
-      if (poseShallowEqual(from, to)) return false;
+      // Always call setPose so consumers that inspect op behavior (tests,
+      // overlays) see a consistent "this op writes (id, to)" signal. When
+      // from and to are structurally identical, additionally report a
+      // no-op to history so the entry can be skipped from the undo stack.
+      // setPose(id, to) is idempotent in this branch — adapters write the
+      // same pose they already had.
       (adapter as TransformAdapter<TPose>).setPose(id, to);
+      if (poseShallowEqual(from, to)) return false;
       return undefined;
     },
     invert() {
