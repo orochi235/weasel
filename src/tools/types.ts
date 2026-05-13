@@ -195,6 +195,22 @@ export interface Tool<TScratch = unknown> {
    *  nothing — typically gated on a scratch field like
    *  `if (!scratch.overlay) return`. */
   overlay?: RenderLayer<unknown>;
+  /**
+   * Optional. When set, the dispatcher consults this before its built-in
+   * node/empty hit-test. If it returns a value, that target replaces the
+   * default `target` on the routed action's ctx. The string `target` is
+   * the tool's own vocabulary — the dispatcher does not interpret it.
+   *
+   * Used for tools that need richer sub-object hit categories (e.g., pen
+   * edit-mode's anchor/handle/segment vs the default node/empty).
+   */
+  hitOverride?(ctx: {
+    worldX: number;
+    worldY: number;
+    scratch: TScratch;
+    view: View;
+    modifiers: ToolModifiers;
+  }): { target: string; extra?: unknown } | null;
 }
 
 /** Internal — which slot a tool occupies in the dispatch order. */

@@ -26,8 +26,17 @@ export interface AffordanceHit extends NodeRef {
   kind: string;
 }
 
+/** Hit on a tool-defined target (anchor, handle, segment, etc.) supplied
+ *  via the tool's `hitOverride`. The `kind` string is the tool's own
+ *  vocabulary; the dispatcher does not interpret it. */
+export interface ToolHit {
+  category: 'tool';
+  kind: string;
+  extra?: unknown;
+}
+
 /** Full discriminated union — every routed action's `ctx.target`. */
-export type HitResult = EmptyHit | NodeHit | AffordanceHit;
+export type HitResult = EmptyHit | NodeHit | AffordanceHit | ToolHit;
 
 /** Convenience: any hit that references a node (i.e., not EmptyHit). */
 export type NodeRefHit = NodeHit | AffordanceHit;

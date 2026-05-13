@@ -1,5 +1,5 @@
 // src/tools/dispatcher.ts
-import type { AnyTool, ToolCtx, ToolSlot, Decision } from './types';
+import type { AnyTool, ToolCtx, ToolSlot, Decision, ToolModifiers } from './types';
 import { dlog } from '../debug/flag';
 import type { RenderLayer } from 'core/layers/render';
 import type { ChromeState } from 'core/selection/chromeState';
@@ -55,6 +55,32 @@ function nodeHitFor(
     data: result.data,
     meta: result.meta,
   };
+}
+
+/** Resolve a HitResult for a pointer event, consulting the active tool's
+ *  `hitOverride` before the built-in node/empty test. If `tool.hitOverride`
+ *  returns a value, that becomes the target (category `'tool'`); otherwise
+ *  falls back to `nodeHitFor`. The `scratch` parameter is the tool's current
+ *  scratch (initial scratch on pointer-down, in-flight scratch on move/up). */
+function targetFor(
+  rawCtx: { worldX: number; worldY: number; view: View; modifiers: ToolModifiers },
+  tool: AnyTool | undefined,
+  scratch: unknown,
+  getNodeAtPoint: ToolsDispatcherOptions['getNodeAtPoint'],
+): HitResult {
+  if (tool?.hitOverride) {
+    const override = tool.hitOverride({
+      worldX: rawCtx.worldX,
+      worldY: rawCtx.worldY,
+      scratch: scratch as never,
+      view: rawCtx.view,
+      modifiers: rawCtx.modifiers,
+    });
+    if (override) {
+      return { category: 'tool', kind: override.target, extra: override.extra };
+    }
+  }
+  return nodeHitFor(rawCtx.worldX, rawCtx.worldY, getNodeAtPoint);
 }
 
 interface SlotsState {
@@ -312,10 +338,15 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       clientY: e.clientY,
       modifiers: { alt: !!e.altKey, shift: !!e.shiftKey, meta: !!e.metaKey, ctrl: !!e.ctrlKey },
     });
+    // Pick the highest-priority slot tool for hitOverride consultation. Uses
+    // slot order (hotkey > active > first ambient) — the same priority the
+    // slot walk below follows. On pointer-down no gesture is in flight yet,
+    // so the tool's initial scratch is passed to hitOverride.
+    const slotToolForHit: AnyTool | undefined = slots.hotkey ?? slots.active ?? slots.ambient[0] ?? undefined;
     const baseCtx = {
       ...rawCtx,
       screenPoint: screenPointFor(e, rawCtx.canvasRect),
-      target: nodeHitFor(rawCtx.worldX, rawCtx.worldY, opts.getNodeAtPoint),
+      target: targetFor(rawCtx, slotToolForHit, slotToolForHit ? getInitialScratch(slotToolForHit) : undefined, opts.getNodeAtPoint),
     };
 
     // 1. Modal claim check (hotkey > active). A tool whose state-aware
@@ -414,7 +445,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     const baseCtx = {
       ...rawCtx,
       screenPoint: screenPointFor(e, rawCtx.canvasRect),
-      target: nodeHitFor(rawCtx.worldX, rawCtx.worldY, opts.getNodeAtPoint),
+      target: targetFor(rawCtx, inFlight.tool, inFlight.scratch, opts.getNodeAtPoint),
     };
 
     if (inFlight.phase === 'pending') {
@@ -459,7 +490,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     const baseCtx = {
       ...rawCtx,
       screenPoint: screenPointFor(e, rawCtx.canvasRect),
-      target: nodeHitFor(rawCtx.worldX, rawCtx.worldY, opts.getNodeAtPoint),
+      target: targetFor(rawCtx, inFlight.tool, inFlight.scratch, opts.getNodeAtPoint),
     };
 
     if (inFlight.phase === 'pending') {
