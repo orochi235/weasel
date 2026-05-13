@@ -1171,50 +1171,18 @@ export function App() {
     },
   }), [tools, textEdit]);
 
-  // Hand-rolled path layer so we can wrap each PathObj's draw commands in a
-  // rotation transform group when `rotation !== 0`. The kit's createPathLayer
-  // wraps the entire layer in one transform — we need per-node rotation
-  // around each shape's own AABB center, so we build the layer manually.
-  // Hand-rolled rect layer. Swillustrator previously rendered committed
-  // rectangles inline via the `scene.drawOne` integration in the Canvas
-  // layers prop. That call site can't insert a rotation transform around
-  // individual shapes, so we move rect rendering up into its own layer and
-  // wrap each rect's commands in a rotation group per its pose.
-  const rectLayer: RenderLayer<unknown> = useMemo(() => ({
-    id: 'rects',
-    label: 'Rects',
+  // Hand-rolled shape layer. Every non-text Obj is a PathObj — rects ride the
+  // RectPath fast-path through `scalePathToBounds`/`translatePath`, polygons
+  // and friends ride the PolygonPath branch. We wrap each shape's draw
+  // commands in a per-node rotation transform group so rotation pivots around
+  // the shape's own AABB center (the kit's createPathLayer wraps the entire
+  // layer in one transform, which is the wrong pivot for multi-shape scenes).
+  const shapeLayer: RenderLayer<unknown> = useMemo(() => ({
+    id: 'shapes',
+    label: 'Shapes',
     draw: (_data, view) => {
       const children: DrawCommand[] = [];
-      for (const o of itemsRef.current.filter((x): x is PathObj => x.tool === 'rect')) {
-        const tool = tools.registry[tools.hotkeyEngaged ?? tools.active];
-        const preview = tool?.previewPose?.(o.id) as Pose | undefined;
-        const pose: Pose = preview
-          ? { x: preview.x, y: preview.y, width: preview.width, height: preview.height, rotation: preview.rotation ?? o.rotation }
-          : { x: o.x, y: o.y, width: o.width, height: o.height, rotation: o.rotation };
-        const cmds: DrawCommand[] = [{
-          kind: 'path',
-          path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-          fill: { fill: 'solid', color: o.fill },
-        }];
-        if (o.strokeWidth > 0) {
-          cmds.push({
-            kind: 'path',
-            path: { kind: 'rect', x: pose.x + 0.5, y: pose.y + 0.5, width: pose.width, height: pose.height },
-            stroke: { paint: { fill: 'solid', color: o.stroke }, width: o.strokeWidth },
-          });
-        }
-        for (const c of wrapWithRotation(cmds, pose)) children.push(c);
-      }
-      return [{ kind: 'group', transform: viewToMat3(view), children }];
-    },
-  }), [tools]);
-
-  const pathLayer: RenderLayer<unknown> = useMemo(() => ({
-    id: 'paths',
-    label: 'Paths',
-    draw: (_data, view) => {
-      const children: DrawCommand[] = [];
-      for (const n of itemsRef.current.filter((o): o is PathObj => o.tool !== 'text' && o.tool !== 'rect')) {
+      for (const n of itemsRef.current.filter((o): o is PathObj => o.tool !== 'text')) {
         const tool = tools.registry[tools.hotkeyEngaged ?? tools.active];
         const preview = tool?.previewPose?.(n.id) as Pose | undefined;
         const liveRotation = preview?.rotation ?? n.rotation;
@@ -1222,10 +1190,10 @@ export function App() {
         const path = !preview
           ? n.path
           : scaled
-            ? scalePathToBounds(n.path, { kind: 'rect', x: preview.x, y: preview.y, width: preview.width, height: preview.height }) as PolygonPath
+            ? scalePathToBounds(n.path, { kind: 'rect', x: preview.x, y: preview.y, width: preview.width, height: preview.height })
             : (preview.x === n.x && preview.y === n.y)
               ? n.path
-              : translatePath(n.path, preview.x - n.x, preview.y - n.y) as PolygonPath;
+              : translatePath(n.path, preview.x - n.x, preview.y - n.y);
         const pose: Pose = preview
           ? { x: preview.x, y: preview.y, width: preview.width, height: preview.height, rotation: liveRotation }
           : { x: n.x, y: n.y, width: n.width, height: n.height, rotation: n.rotation };
@@ -1529,16 +1497,13 @@ export function App() {
               pickEvery={pickEvery}
               layers={{
                 doc: { layer: pageLayer, before: 'scene' },
-                // Rects formerly rendered inline through `scene.drawOne` here;
-                // they now have their own `rects` layer (above `paths`) so each
-                // rect can be wrapped in a per-shape rotation transform group.
-                // The `scene` slot still exists in the kit to host generic
-                // ghost rendering hooks — we don't need any rect-specific
-                // drawOne here, since rectLayer covers committed rects and
-                // select-tool ghosts wrap via `drawGhost`.
-                rects: { layer: rectLayer, before: 'selectionOverlay' },
+                // Non-text shapes (rect/ellipse/polygon/star/line/pen/pencil/
+                // imported) all render through `shapeLayer`. The kit's generic
+                // `scene.drawOne` slot can't wrap individual shapes in their
+                // own rotation transform, so we host shape rendering up here
+                // and `wrapWithRotation` each shape's commands per its pose.
+                shapes: { layer: shapeLayer, before: 'selectionOverlay' },
                 text: { layer: textLayer, before: 'selectionOverlay' },
-                paths: { layer: pathLayer, before: 'selectionOverlay' },
                 penPreview: { layer: penPreview, before: 'selectionOverlay' },
                 selectionOverlay: { rotationHandle: true },
               }}
