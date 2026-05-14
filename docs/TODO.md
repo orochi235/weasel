@@ -309,3 +309,21 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
 - **Demo coverage gaps for submodules** (from the 2026-05-10/11 demo audit). `@orochi235/weasel-ui` exports `CommandPalette` and `PropertiesPanel` but has no demo card for either (CommandPalette is used in the harness chrome itself — surfacing it as a demo would expose it). `@orochi235/weasel-hud` ships five widgets (`button`, `rect`, `text`, `image`, `label`) but only `button` is demo'd — a single "HUD widget gallery" demo card would cover the other four. Brainstorm scope per demo before writing them; this is net-new surface, not a port.
 
 - **`gen:font` script.** Was at `packages/weasel-gl/scripts/gen-font.ts`; deleted in Step 10. If we ever regenerate the Inter MSDF atlas, restore the script under `scripts/gen-font.ts` at repo root using `msdf-bmfont-xml`. The current atlas (`assets/fonts/inter/inter.{json,png}`) was regenerated cleanly so the script is not on the critical path.
+
+## Release-gate hygiene
+
+- **Demo build not in `prepublishOnly`.** `prepublishOnly` runs `tsc --noEmit && vitest run && tsup build` but skips `build:demo`. The demo build uses vite (different resolution path: `@orochi235/weasel/<x>` aliases to `src/subpaths/<x>.ts`), and silent drift surfaced 2026-05-14 when `src/subpaths/routing.ts` was missing — tsup happily produced `dist/routing.js` via its own entry config, but vite couldn't resolve the import for the demo. Either chain `build:demo` into `prepublishOnly`, or add a separate CI gate that runs it. Cheap to wire; catches a class of breakage that's invisible to today's gates.
+
+- **`src/subpaths/` ↔ `tsup.config.ts` parity.** Every subpath listed in `tsup.config.ts` `entry` (and every key in `package.json` `exports`) needs a matching `src/subpaths/<name>.ts` shim so vite's wildcard alias resolves. Drift is easy: adding a new subpath to tsup without the shim breaks the demo build silently. A 5-line parity test (read tsup entries, read package.json exports, list `src/subpaths/`, assert sets match) would prevent this.
+
+## Taxonomy alignment
+
+- **`interactions/gestures/` directory layout doesn't match the taxonomy's mental model.** Two specific drifts surfaced 2026-05-14:
+
+  1. **"Gesture" is overloaded.** The current dir conflates two distinct concepts: pointer-input *primitives* (`dragRect`, `dragRadial`, `dragGesture`, `lasso`-polygon) and *features built on those primitives* (`move/`, `resize/`, `rotate/`, `clone/`, `area-select/`, `lasso-select/`, `edit-anchors/`, `insert/`). Mental model split: a "gesture" is the input shape (rectangular drag, lasso); a "move" or "resize" is a higher-level feature that *uses* a gesture. Proposed cut: `interactions/primitives/` (per-primitive dirs with barrels, mirroring the `tools/builtin/` shape) for actual gestures, with the higher-level features promoted up to `interactions/<name>/`. ~30 files move; bigger than the `tools/builtin/` reorg done this session because of the import-ripple.
+
+  2. **`interactions/gestures/` has flat files at the root** (`dragRect.ts`, `dragRadial.ts`, `dragGesture.ts`, `types.ts`, `usePointerGestures.ts`) alongside per-feature subdirectories. Half-migrated — the rest of the kit (notably `tools/builtin/` post-2026-05-13) uses per-primitive directories with `index.ts` barrels.
+
+- **Action vs gesture taxonomy is implementation-coupled.** The taxonomy doc draws the line between "Action" (one-shot, keybinding-driven) and "gesture" (drag phase). But user-intent-wise, move/resize/rotate/clone are actions too — they happen to be drag-driven. The doc already hedges this ("Distinct from action-gesture hooks (useDelete, useSelectAll) which predate the registry"). A cleaner cut: **Action** = any user-intent operation (regardless of input shape); **Gesture** = the pointer-input primitive that drag-based actions compose with. Worth a real conversation before refactoring — flagged for taxonomy revision.
+
+- **Drag concept split across two kingdoms.** `src/features/drag-events/` and `src/interactions/gestures/dragX.ts` / `dragRect.ts` / `dragRadial.ts` both deal with pointer-drag but live in separate parent directories. Either consolidate under one, or document why they're separate.
