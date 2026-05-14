@@ -1,7 +1,7 @@
 // src/tools/routing/defineTool.test.ts
 import { describe, it, expect, vi } from 'vitest';
 import { defineTool } from './defineTool';
-import { apply, begin, hold, commit, cancel, claim } from './result';
+import { apply, begin, hold, commit, claim } from './result';
 import { asNodeId } from '../../core/scene/types';
 import type { Op } from '../../core/ops/types';
 import type { RenderLayer } from '../../core/layers/render';
@@ -74,7 +74,7 @@ describe('defineTool — basic translation', () => {
     const ctx = buildCtx();
     tool.drag?.onStart?.(new MouseEvent('mousedown') as unknown as PointerEvent, ctx as never);
     tool.drag?.onMove?.(new MouseEvent('mousemove') as unknown as PointerEvent, ctx as never);
-    expect((ctx as { scratch: { x: number } }).scratch).toEqual({ x: 2 });
+    expect((ctx as unknown as { scratch: { x: number } }).scratch).toEqual({ x: 2 });
   });
 
   it('commit applies ops and closes engaged', () => {
@@ -119,7 +119,7 @@ describe('defineTool — basic translation', () => {
         click: { 'empty': () => begin({ scratch: { anchors: [0] } }) },
       },
       engaged: {
-        click: { '*': onAnchorClick },
+        click: { '*': onAnchorClick as never },
       },
     });
     const ctx = buildCtx();
@@ -270,10 +270,10 @@ describe('defineTool — pointerDown route', () => {
     const tool = defineTool<{ anchors: number[] }>({
       id: 'pen',
       initial: {
-        pointerDown: { 'empty': () => begin({ scratch: { anchors: [] } }) },
+        pointerDown: { 'empty': () => begin({ scratch: { anchors: [] as number[] } }) },
       },
       engaged: {
-        pointerDown: { '*': onAnchorDown },
+        pointerDown: { '*': onAnchorDown as never },
       },
     });
     const ctx = buildCtx();

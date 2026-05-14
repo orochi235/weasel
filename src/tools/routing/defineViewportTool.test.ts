@@ -35,8 +35,8 @@ describe('defineViewportTool', () => {
       id: 'hand',
       initial: {
         drag: (ctx) => begin({
-          scratch: { x: ctx.point.x },
-          onMove: (ctx) => hold({ x: ctx.point.x + 1 }),
+          scratch: { x: (ctx as unknown as { point: { x: number } }).point.x },
+          onMove: (ctx) => hold({ x: (ctx as unknown as { point: { x: number } }).point.x + 1 }),
           onRelease: cancel,
         }),
       },

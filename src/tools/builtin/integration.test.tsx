@@ -710,7 +710,7 @@ describe('Phase 2a integration', () => {
     // (Transient moves may also fire applyOps without a label, so we filter for
     // the labeled commit rather than asserting total call count.)
     const labeledCalls = applyOps.mock.calls.filter(
-      ([, lbl]: [unknown, unknown]) => lbl !== undefined,
+      (args) => args[1] !== undefined,
     ) as [unknown, string][];
     expect(labeledCalls).toHaveLength(1);
     expect(labeledCalls[0][1]).toBe('Resize');
