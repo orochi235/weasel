@@ -324,6 +324,28 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
 
   2. **`interactions/gestures/` has flat files at the root** (`dragRect.ts`, `dragRadial.ts`, `dragGesture.ts`, `types.ts`, `usePointerGestures.ts`) alongside per-feature subdirectories. Half-migrated — the rest of the kit (notably `tools/builtin/` post-2026-05-13) uses per-primitive directories with `index.ts` barrels.
 
-- **Action vs gesture taxonomy is implementation-coupled.** The taxonomy doc draws the line between "Action" (one-shot, keybinding-driven) and "gesture" (drag phase). But user-intent-wise, move/resize/rotate/clone are actions too — they happen to be drag-driven. The doc already hedges this ("Distinct from action-gesture hooks (useDelete, useSelectAll) which predate the registry"). A cleaner cut: **Action** = any user-intent operation (regardless of input shape); **Gesture** = the pointer-input primitive that drag-based actions compose with. Worth a real conversation before refactoring — flagged for taxonomy revision.
+- **Action vs gesture taxonomy is implementation-coupled.** The taxonomy doc *used* to draw the line between "Action" (one-shot, keybinding-driven) and "gesture" (drag phase) — an implementation distinction. The doc itself (`docs/taxonomy.md`, 2026-05-14) now declares the revision target: **Gesture** = the *form* of user input (drag-rect, click, keystroke, lasso); **Action** = a user-intent operation that modifies app state. The composition of the two is an **Interaction**. Actions produce [Op](#op) batches when they're undoable, no ops when they aren't (zoom, escape, toggle grid). The pre-1.0 work to land the revision in code:
+
+  1. **Move `move/`, `resize/`, `rotate/`, `clone/`, `area-select/`, `lasso-select/`, `edit-anchors/`, `insert/` out of `src/interactions/gestures/` and up into `src/interactions/<name>/`** (or `src/interactions/actions/<name>/` if the directory-level "actions" grouping is kept). Each of those is a drag-based *action*, not a gesture.
+
+  2. **Reserve `src/interactions/gestures/` for actual input primitives** — `dragRect`, `dragRadial`, `dragGesture`, `lasso`, `usePointerGestures`. Promote each from a root-level flat file to its own directory + `index.ts` barrel, mirroring `tools/builtin/` post-2026-05-13.
+
+  3. **Rename `GestureBehavior` → `ActionBehavior`** (and the per-action aliases: `MoveBehavior` stays the same, but the underlying interface name shifts). Behaviors plug into the *action* (the operation), not the input form.
+
+  4. **Unify the registry**: every state-changing user operation should be a registered Action, regardless of input shape. Drag-based ops (move, resize) become actions invokable via a gesture binding; one-shot ops (delete, align) become actions invokable via keystroke or button. Same registry, same enabled-state machinery, same command palette discoverability. This removes the "action-gesture hooks predate the registry" hedge entirely.
+
+  Ops stay where they are — they're infrastructure, decoupled from this revision.
 
 - **Drag concept split across two kingdoms.** `src/features/drag-events/` and `src/interactions/gestures/dragX.ts` / `dragRect.ts` / `dragRadial.ts` both deal with pointer-drag but live in separate parent directories. Either consolidate under one, or document why they're separate.
+
+## UX recordings
+
+- **Tune the amount of data captured.** Today `recorder.ts` (apps/swillustrator) captures every pointermove + pointerdown/up + keydown/up + wheel event with full client-coords, modifier states, button bits, and pointer ids — no throttling. For a long session that's many KB / second, and the JSON balloons fast. Tuning levers worth considering:
+  - **Throttle pointermove**: only record one move per N ms (or one per frame). The intermediate frames usually don't matter for replay; the gesture's commit phase reads the final position.
+  - **Drop redundant fields**: `pointerType` rarely changes; `pointerId` only matters for multi-touch; `isPrimary` is almost always true. Default-them-out and only record on change.
+  - **Compress modifier state**: store as a single byte bitmask rather than four booleans.
+  - **Event-type filters**: record only the events that matter for the recorded interaction (e.g. skip pointermove when the recorder isn't mid-gesture).
+  - **Compression of the final blob**: gzip the JSON before saving; the file picker handles decompression on replay.
+  - **Sampling profile**: a record-mode dropdown — `full` (everything, for debugging), `gesture-only` (pointermove only during a captured down→up), `keys+commits` (no pointermove at all, useful for action-level replays).
+
+  Right scope is unclear until we have a few recordings of real bug reports — wait until the integration-test harness lands (Layer 2 from the original record/replay plan) so we know what the consumer actually needs.

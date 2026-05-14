@@ -75,35 +75,100 @@ untyped at the tool layer; tools cast it when they need a specific facet. See
 ### Op
 
 An invertible, adapter-agnostic mutation: `{ apply(adapter), invert(): Op, label?, coalesceKey? }`.
-Every gesture and action hook produces ops on commit; `dispatchApplyBatch(adapter, ops, label)`
-applies them in order (or hands them to `adapter.applyBatch` for history integration).
 Op constructors live in `src/core/ops/`: `createTransformOp`, `createInsertOp`,
-`createDeleteOp`, `createSetSelectionOp`, `createSetTextOp`, `createReorderOp`, etc.
-The `coalesceKey` field is declared for future op-coalescing but not yet enforced by
-`History.append` (see [Op coalescing](#op-coalescing)). See `src/core/ops/types.ts`.
+`createDeleteOp`, `createSetSelectionOp`, `createSetTextOp`, `createReorderOp`,
+`createSetPathOp`, etc. `dispatchApplyBatch(adapter, ops, label)` applies them in
+order (or hands them to `adapter.applyBatch` for history integration).
 
-### Behavior
+Ops are the *infrastructure layer* of state mutation — atoms of history-bearing
+change. [Actions](#action) at the application layer produce op batches to express
+user-intent operations; the action↔op mapping is many-to-many:
 
-A pluggable extension to a gesture's per-frame pose-shaping and commit logic.
-Implements `GestureBehavior<TPose, TProposed, TMoveResult>` with optional `onStart`,
-`onMove`, and `onEnd` hooks. Behaviors run in array order; each `onMove` may refine
-the proposed pose; the first `onEnd` returning a non-`undefined` value wins (ops to
-commit, or `null` to abort). Type aliases pin the shapes per gesture: `MoveBehavior`,
-`ResizeBehavior`, `RotateBehavior`, `InsertBehavior`, `AreaSelectBehavior`,
-`CloneBehavior`. Distinct from [component-level behaviors](#mixin--lifecycle-behavior-deferred)
-which do not exist yet. See `src/interactions/gestures/types.ts:58`.
+- **1 action → 1 op**: `delete` → `createDeleteOp`.
+- **1 action → N ops**: `align left` → N `createTransformOp`s (one per selected item).
+- **0 ops for an action**: `zoom in`, `escape`, `toggle grid` — non-undoable state
+  changes bypass the op pipeline.
+- **Ops without an action**: a gesture commit can emit ops directly (e.g. a drag
+  resize) without dispatching through the action registry. (The longer-term shape
+  routes all drag-based mutation through actions; this is acknowledged drift.)
+
+The `coalesceKey` field lets `createHistory({ coalesceWindowMs })` merge consecutive
+entries within a window when their op multiset (keyed by `coalesceKey`) matches —
+so scrubs of a property slider land as one undo step. See `src/core/ops/types.ts`.
+
+### Gesture
+
+The *form* of user input. A primitive that consumes pointer / keyboard events and
+emits world-space data. Examples: `dragRect` (rectangular drag → bounds),
+`dragRadial` (radial drag → center + radius), `lasso` (free-form polygon),
+`usePointerGestures` (the underlying pointer-event normalizer). Plain clicks and
+keystrokes are gestures too, just trivial ones.
+
+Gestures are orthogonal to [Actions](#action) in this taxonomy. A gesture is *how*
+input arrives; an action is *what to do* with it. The same gesture (a rectangular
+drag) can power different actions (insert a rect, marquee-select, area-erase); the
+same action (`delete`) can be invoked by different gestures (a keystroke, a button
+click, a swipe). See [Interaction](#interaction) for the composition.
+
+Note on the kit's current state: the directory `src/interactions/gestures/` mixes
+primitive gestures (`dragRect.ts`, `dragRadial.ts`) with feature-shaped directories
+like `move/`, `resize/`, `rotate/` that are really *drag-based actions*, not
+gestures by this definition. A planned reorg (see `docs/TODO.md` "Taxonomy
+alignment") promotes the per-action directories up and reserves `gestures/` for
+the actual input primitives.
 
 ### Action
 
-A named, keybinding-driven command that produces ops in one shot without a
-drag phase. Declared as `@experimental` via the Actions Registry:
-`{ id, label, defaultBinding?, run(), enabled?() }`. The `enabled` predicate
-uses a closed-enum `ActionDisabledReason` and is consulted by the command palette
-for display; keystroke dispatch is unaffected. Kit defaults (`selectAll`, `escape`,
-`duplicate`, `nudge`, `reorder`) are registered automatically by `<SceneCanvas>`.
-Distinct from action-gesture hooks (`useDelete`, `useSelectAll`, etc.) which
-predate the registry and remain the lower-level wiring path. See
-`src/interactions/actions/registry.tsx`.
+A user-intent operation that modifies app state. Identified by `{ id, label,
+defaultBinding?, run(), enabled?() }`. Discoverable via the Actions Registry +
+command palette; bindable to a key, mouse gesture, button click, or any other
+[Gesture](#gesture).
+
+Actions are the *application layer* of state change — the verbs the user can
+invoke. Each one either produces an [Op](#op) batch (for undoable mutations like
+`delete`, `align`, `move`) or emits no ops (for transient/UI state like
+`zoom in`, `escape`, `toggle grid`).
+
+Today's kit uses a narrower historical definition — "Action = one-shot,
+keybinding-driven command" — and treats drag-based operations (move, resize,
+rotate) as *gestures*. That distinction is implementation-coupled (drag-phase
+present? vs. not) rather than user-intent-coupled, and is acknowledged drift; see
+`docs/TODO.md` "Action vs gesture taxonomy is implementation-coupled" for the
+revision target. The cleaner future shape: every state-changing user operation is
+an action; gestures are how it's invoked.
+
+Examples: `selectAll`, `escape`, `duplicate`, `nudge`, `reorder`, `delete`,
+`align.{left,...}`, `distribute.{horizontal,vertical}`, `flip.{x,y}`. Kit defaults
+register automatically via `<SceneCanvas>`; consumer-level actions register
+explicitly. See `src/interactions/actions/registry.tsx`.
+
+### Interaction
+
+A [Gesture](#gesture) composed with an [Action](#action). The composition is the
+unit at the seam between input and effect: "drag-rect gesture + insert action"
+makes a rectangle; "click gesture + delete action" deletes an object; "keystroke
+gesture + toggle-grid action" hides the grid.
+
+Interactions don't have their own type or runtime today — they emerge from the
+gesture system invoking actions. The term is most useful for *describing* what a
+feature does (e.g. "alt-click invokes the eyedropper action") and for keeping the
+gesture and action sides of a feature factored separately when designing.
+
+### Behavior
+
+A pluggable extension to a drag-based [Action](#action)'s per-frame proposed-pose
+shaping and commit logic. Implements `GestureBehavior<TPose, TProposed, TMoveResult>`
+with optional `onStart`, `onMove`, and `onEnd` hooks. Behaviors run in array order;
+each `onMove` may refine the proposed pose; the first `onEnd` returning a
+non-`undefined` value wins (ops to commit, or `null` to abort). Type aliases pin
+the shapes per action: `MoveBehavior`, `ResizeBehavior`, `RotateBehavior`,
+`InsertBehavior`, `AreaSelectBehavior`, `CloneBehavior`.
+
+The name `GestureBehavior` predates the gesture/action split this doc is realigning
+toward — behaviors actually plug into *actions* (the operation being performed),
+not into the input form. A future rename (e.g. `ActionBehavior`) is on the
+follow-up list. Distinct from [component-level behaviors](#mixin--lifecycle-behavior-deferred)
+which do not exist yet. See `src/interactions/gestures/types.ts:58`.
 
 ### Snap strategy
 
