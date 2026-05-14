@@ -350,6 +350,37 @@ html, body, #root {
 }
 
 /* --- Active fill/stroke swatches (Illustrator-style overlap) --------- */
+/* Wraps the paired swatches + the "None" toggle below them. */
+.swill-active-swatches-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/* The "None" toggle — small text button sitting below the offset swatches.
+   When the focused swatch is `none`, the button shows depressed (active)
+   styling so users can read state at a glance. */
+.swill-swatch-none-toggle {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  background: transparent;
+  border: 1px solid #3a2e22;
+  border-radius: 3px;
+  color: #d4c4a8;
+  cursor: pointer;
+}
+.swill-swatch-none-toggle:hover {
+  background: #2a2418;
+}
+.swill-swatch-none-toggle.is-active {
+  background: #2a2418;
+  border-color: #d4c4a8;
+  color: #fff5d8;
+}
+
 .swill-active-swatches {
   position: relative;
   width: 56px;

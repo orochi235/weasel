@@ -9,7 +9,7 @@
  *   X     swap fill/stroke colors
  *   /     set the last-focused swatch to none
  */
-import type { CSSProperties } from 'react';
+import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react';
 import { useRef } from 'react';
 
 export type ActivePaint =
@@ -49,39 +49,81 @@ export function ActiveSwatches(p: ActiveSwatchesProps) {
   const fillColor = p.fill.kind === 'solid' ? p.fill.color : '#ffffff';
   const strokeColor = p.stroke.kind === 'solid' ? p.stroke.color : '#000000';
   const containerClass = `swill-active-swatches${p.compact ? ' swill-active-swatches--compact' : ''}`;
+  // Shift-click toggles between solid/none. Plain click opens the color
+  // picker. Right-click opens a small menu (none / pick color) — accessible
+  // via context-menu key for keyboard users too.
+  const onSwatchClick = (which: 'fill' | 'stroke', e: ReactMouseEvent<HTMLButtonElement>): void => {
+    e.preventDefault();
+    p.onFocus(which);
+    if (e.shiftKey) {
+      const cur = which === 'fill' ? p.fill : p.stroke;
+      const next: ActivePaint = cur.kind === 'none'
+        ? { kind: 'solid', color: which === 'fill' ? '#ffffff' : '#000000' }
+        : { kind: 'none' };
+      if (which === 'fill') p.onChangeFill(next);
+      else p.onChangeStroke(next);
+      return;
+    }
+    (which === 'fill' ? fillInputRef : strokeInputRef).current?.click();
+  };
+  // A small "None" affordance below the pair. Toggles the focused swatch
+  // between its current paint and `none`. The icon is the same diagonal-stripe
+  // pattern that the swatches use for the `none` state, keeping the visual
+  // language consistent.
+  const focusedIsNone = (p.focused === 'fill' ? p.fill : p.stroke).kind === 'none';
+  const toggleNone = (): void => {
+    const cur = p.focused === 'fill' ? p.fill : p.stroke;
+    const next: ActivePaint = cur.kind === 'none'
+      ? { kind: 'solid', color: p.focused === 'fill' ? '#ffffff' : '#000000' }
+      : { kind: 'none' };
+    if (p.focused === 'fill') p.onChangeFill(next);
+    else p.onChangeStroke(next);
+  };
   return (
-    <div className={containerClass} role="group" aria-label="Active fill and stroke">
+    <div className="swill-active-swatches-group">
+      <div className={containerClass} role="group" aria-label="Active fill and stroke">
+        <button
+          type="button"
+          className={`swill-swatch swill-swatch--stroke${p.focused === 'stroke' ? ' is-focused' : ''}${p.stroke.kind === 'none' ? ' is-none' : ''}`}
+          style={swatchStyle(p.stroke)}
+          title="Stroke — click to pick · shift-click for none"
+          onClick={(e) => onSwatchClick('stroke', e)}
+        >
+          <input
+            ref={strokeInputRef}
+            type="color"
+            value={strokeColor}
+            onChange={(e) => p.onChangeStroke({ kind: 'solid', color: e.target.value })}
+            className="swill-swatch-input"
+            aria-label="Stroke color"
+          />
+        </button>
+        <button
+          type="button"
+          className={`swill-swatch swill-swatch--fill${p.focused === 'fill' ? ' is-focused' : ''}${p.fill.kind === 'none' ? ' is-none' : ''}`}
+          style={swatchStyle(p.fill)}
+          title="Fill — click to pick · shift-click for none"
+          onClick={(e) => onSwatchClick('fill', e)}
+        >
+          <input
+            ref={fillInputRef}
+            type="color"
+            value={fillColor}
+            onChange={(e) => p.onChangeFill({ kind: 'solid', color: e.target.value })}
+            className="swill-swatch-input"
+            aria-label="Fill color"
+          />
+        </button>
+      </div>
       <button
         type="button"
-        className={`swill-swatch swill-swatch--stroke${p.focused === 'stroke' ? ' is-focused' : ''}${p.stroke.kind === 'none' ? ' is-none' : ''}`}
-        style={swatchStyle(p.stroke)}
-        title="Stroke (click to pick)"
-        onClick={() => { p.onFocus('stroke'); strokeInputRef.current?.click(); }}
+        className={`swill-swatch-none-toggle${focusedIsNone ? ' is-active' : ''}`}
+        onClick={toggleNone}
+        title={`Toggle none for the focused swatch (${p.focused}) · /`}
+        aria-label={`Toggle no paint for ${p.focused}`}
+        aria-pressed={focusedIsNone}
       >
-        <input
-          ref={strokeInputRef}
-          type="color"
-          value={strokeColor}
-          onChange={(e) => p.onChangeStroke({ kind: 'solid', color: e.target.value })}
-          className="swill-swatch-input"
-          aria-label="Stroke color"
-        />
-      </button>
-      <button
-        type="button"
-        className={`swill-swatch swill-swatch--fill${p.focused === 'fill' ? ' is-focused' : ''}${p.fill.kind === 'none' ? ' is-none' : ''}`}
-        style={swatchStyle(p.fill)}
-        title="Fill (click to pick)"
-        onClick={() => { p.onFocus('fill'); fillInputRef.current?.click(); }}
-      >
-        <input
-          ref={fillInputRef}
-          type="color"
-          value={fillColor}
-          onChange={(e) => p.onChangeFill({ kind: 'solid', color: e.target.value })}
-          className="swill-swatch-input"
-          aria-label="Fill color"
-        />
+        None
       </button>
     </div>
   );
