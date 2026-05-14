@@ -5,6 +5,8 @@ import {
   bringToFront,
   sendToBack,
   moveToIndex,
+  canBringForward,
+  canSendBackward,
 } from './algorithms';
 
 describe('bringForward', () => {
@@ -66,6 +68,66 @@ describe('sendToBack', () => {
 
   it('multi-id lands contiguously at the start, preserves relative order', () => {
     expect(sendToBack(['a', 'b', 'c', 'd', 'e'], ['b', 'd'])).toEqual(['b', 'd', 'a', 'c', 'e']);
+  });
+});
+
+describe('canBringForward', () => {
+  it('false on an empty selection', () => {
+    expect(canBringForward(['a', 'b', 'c'], [])).toBe(false);
+  });
+
+  it('false when the single id is at the top', () => {
+    expect(canBringForward(['a', 'b', 'c'], ['c'])).toBe(false);
+  });
+
+  it('true when the single id has room to move up', () => {
+    expect(canBringForward(['a', 'b', 'c'], ['a'])).toBe(true);
+    expect(canBringForward(['a', 'b', 'c'], ['b'])).toBe(true);
+  });
+
+  it('false when the multi-id selection is a contiguous block at the top', () => {
+    expect(canBringForward(['a', 'b', 'c'], ['b', 'c'])).toBe(false);
+    expect(canBringForward(['a', 'b', 'c', 'd'], ['c', 'd'])).toBe(false);
+  });
+
+  it('true when at least one selected id has a non-moving id above it', () => {
+    expect(canBringForward(['a', 'b', 'c', 'd'], ['b', 'd'])).toBe(true);
+  });
+
+  it('false on a single-element list', () => {
+    expect(canBringForward(['a'], ['a'])).toBe(false);
+  });
+
+  it('ignores ids not present in list', () => {
+    expect(canBringForward(['a', 'b'], ['x'])).toBe(false);
+  });
+});
+
+describe('canSendBackward', () => {
+  it('false on an empty selection', () => {
+    expect(canSendBackward(['a', 'b', 'c'], [])).toBe(false);
+  });
+
+  it('false when the single id is at the bottom', () => {
+    expect(canSendBackward(['a', 'b', 'c'], ['a'])).toBe(false);
+  });
+
+  it('true when the single id has room to move down', () => {
+    expect(canSendBackward(['a', 'b', 'c'], ['c'])).toBe(true);
+    expect(canSendBackward(['a', 'b', 'c'], ['b'])).toBe(true);
+  });
+
+  it('false when the multi-id selection is a contiguous block at the bottom', () => {
+    expect(canSendBackward(['a', 'b', 'c'], ['a', 'b'])).toBe(false);
+    expect(canSendBackward(['a', 'b', 'c', 'd'], ['a', 'b'])).toBe(false);
+  });
+
+  it('true when at least one selected id has a non-moving id below it', () => {
+    expect(canSendBackward(['a', 'b', 'c', 'd'], ['a', 'c'])).toBe(true);
+  });
+
+  it('false on a single-element list', () => {
+    expect(canSendBackward(['a'], ['a'])).toBe(false);
   });
 });
 
