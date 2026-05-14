@@ -1,5 +1,5 @@
 /**
- * Screen-space preview layer for `useUserPenTool`. Reads the tool's
+ * Screen-space preview layer for `usePenTool`. Reads the tool's
  * persistent scratch each frame and renders the in-progress path: finished
  * subpaths (faded), the current subpath (bright + anchor dots + handles),
  * a rubber-band segment from the latest anchor to the cursor, and a
@@ -13,7 +13,7 @@
 import type { DrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import type { Tool } from 'tools/types';
-import type { PenScratch, PenAnchor, PenSubpath } from 'tools/builtin/useUserPenTool';
+import type { PenScratch, PenAnchor, PenSubpath } from 'tools/builtin/usePenTool';
 import { PATH_C, PATH_L, PATH_M, PATH_Z, type PolygonPath } from './types';
 import { circlePath } from './markers';
 import { renderPenEditOverlay } from './penEditOverlay';
@@ -28,7 +28,7 @@ export interface PenPreviewStyle {
 }
 
 export interface CreatePenPreviewLayerOptions {
-  /** The Tool returned by useUserPenTool. The layer reads its scratch via
+  /** The Tool returned by usePenTool. The layer reads its scratch via
    *  `tool.initScratch()` (the hook is contracted to return a stable ref). */
   penTool: Tool<PenScratch>;
   style?: PenPreviewStyle;
@@ -221,6 +221,29 @@ export function createPenPreviewLayer(
               path: approximateCircle(hx, hy, HANDLE_DOT_RADIUS_PX),
               fill: { fill: 'solid', color: style.handleStroke },
             });
+            // Mirrored in-side handle preview — gives the user a full
+            // through-anchor tangent so they can see the curve's incoming
+            // shape as they drag. Suppressed when Alt-broken.
+            const inSide = mirror(a, a.outHandle);
+            if (inSide) {
+              const [mx, my] = w2s(inSide.x, inSide.y, view);
+              const mirrorLine: PolygonPath = {
+                kind: 'polygon',
+                commands: new Uint8Array([PATH_M, PATH_L]),
+                coords: new Float32Array([ax, ay, mx, my]),
+                fillRule: 'nonzero',
+              };
+              out.push({
+                kind: 'path',
+                path: mirrorLine,
+                stroke: { paint: { fill: 'solid', color: style.handleStroke }, width: 1 },
+              });
+              out.push({
+                kind: 'path',
+                path: approximateCircle(mx, my, HANDLE_DOT_RADIUS_PX),
+                fill: { fill: 'solid', color: style.handleStroke },
+              });
+            }
           }
         }
 

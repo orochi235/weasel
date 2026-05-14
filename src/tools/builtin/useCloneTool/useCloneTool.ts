@@ -1,0 +1,287 @@
+import { useMemo, useReducer, useRef } from 'react';
+import { defineTool, begin, claim, none } from '../../routing';
+import type { ActionFn } from '../../routing';
+import type { Tool } from '../../types';
+import type { RenderLayer } from 'core/layers/render';
+import type { InsertAdapter } from 'core/adapters/types';
+import type { View } from 'core/viewport/view';
+import { useClone, type UseCloneOptions } from 'interactions/gestures/clone';
+import type { CloneBehavior, CloneLayer, ModifierState } from 'interactions/gestures/types';
+import { AUTO_POSE_DESCRIPTOR } from 'interactions/gestures/resize/autoPoseDescriptor';
+import { viewToMat3, type DrawCommand } from '../../../renderer';
+
+/** Live preview item published by useClone — `{id, x, y}` (snapshot pose
+ *  translated by the in-flight drag offset). */
+export interface CloneOverlayItem {
+  id: string;
+  x: number;
+  y: number;
+}
+
+export interface CloneScratch {
+  /** Id captured by pickBest on pointerDown; passed to clone.start at
+   *  threshold-cross. `null` when the down didn't land on a body. */
+  pendingId: string | null;
+  /** Modifier snapshot at down — replayed into clone.start so the
+   *  behavior's `activates()` decision uses the down-time state, not
+   *  whatever modifiers happen to be held at threshold-cross. */
+  pendingMods: ModifierState | null;
+}
+
+/** Optional adapter shape consulted for the auto-`pickBest` and auto-`drawGhost`
+ *  defaults. Most consumers' adapters (e.g. `arrayAdapter`) already implement
+ *  these — when present and `pickBest`/`drawGhost` are omitted, the tool
+ *  derives sensible defaults. */
+interface IntrospectableAdapter<T> {
+  getNodes?(): T[];
+  getPose?(id: string): unknown;
+}
+
+export interface UseCloneToolOptions<T extends { id: string } = { id: string }, TPose = unknown> {
+  /** Clone behaviors (e.g. `cloneByAltDrag()`) — the tool only claims
+   *  pointerdown when one of these `activates()` for the current modifiers,
+   *  so plain (no-modifier) drags fall through to whatever active-slot
+   *  tool is running. */
+  behaviors: CloneBehavior[];
+  /** Hit-test the world point and return the topmost cloneable id, or
+   *  null if the pointer didn't land on anything cloneable. Optional —
+   *  when omitted, the tool walks `adapter.getNodes()` back-to-front and
+   *  tests pointer containment against `adapter.getPose(id)` via the same
+   *  AUTO_POSE_DESCRIPTOR Canvas uses for its own pickEvery fallback. */
+  pickBest?: (worldX: number, worldY: number) => string | null;
+  /** Render the in-flight clone ghost. Receives the live overlay items
+   *  (snapshot pose translated by the drag offset) and returns world-space
+   *  DrawCommand[]. The tool owns the overlay state internally so the
+   *  consumer doesn't have to thread `setOverlay`/`clearOverlay` callbacks
+   *  through React state. Optional — when omitted, the tool synthesizes a
+   *  ghost from `drawOne` (mirroring the SceneCanvas pattern), or falls
+   *  back to a translucent rect outline if neither is supplied. */
+  drawGhost?: (items: CloneOverlayItem[], view: View) => DrawCommand[];
+  /** Scene `drawOne` (the same render fn passed to
+   *  `<Canvas layers={{ scene: { drawOne } }}>`). When `drawGhost` is
+   *  omitted, the tool synthesizes a ghost by translating each cloned
+   *  item's source pose and calling `drawOne(obj, pose, view)`. */
+  drawOne?: (obj: T, pose: TPose, view: View) => DrawCommand[];
+  /** CloneLayer category passed to `clone.start`. Default `'structures'`. */
+  layer?: CloneLayer;
+  /** Optional id-list expansion (e.g. virtual-group expansion). Forwarded
+   *  to `useClone`. */
+  expandIds?: UseCloneOptions['expandIds'];
+  /** Tool id. Default `'clone'`. */
+  id?: string;
+  /** Cursor while the activating modifier is held. Default `'copy'`. */
+  cursor?: string;
+  /** When true, alt-drag clones the entire selection if the hit id is in
+   *  the selection; otherwise clones just the hit (the default behavior).
+   *  Matches the Figma/Illustrator alt-drag UX. Requires
+   *  `adapter.getSelection()` to be implemented. Default false. */
+  cloneSelection?: boolean;
+}
+
+/** Wraps `useClone` as a Tool record. The tool sits in the ambient slot
+ *  (or wherever the consumer puts it) and only claims pointerdowns when
+ *  (a) one of the `behaviors` activates for the current modifiers and
+ *  (b) `pickBest` finds a target. Encapsulates the overlay-state plumbing
+ *  that previously lived in every consumer (setOverlay/clearOverlay
+ *  callbacks bridging React state). */
+export function useCloneTool<T extends { id: string }, TPose = unknown>(
+  adapter: InsertAdapter<T>,
+  options: UseCloneToolOptions<T, TPose>,
+): Tool<CloneScratch> {
+  const optsRef = useRef(options);
+  optsRef.current = options;
+  const adapterRef = useRef(adapter);
+  adapterRef.current = adapter;
+
+  // Overlay state lives in a ref so setOverlay/clearOverlay can write
+  // synchronously from useClone's lifecycle. Bump a tick to force the
+  // overlay layer's `draw` callback to re-fire on the next frame.
+  const overlayRef = useRef<CloneOverlayItem[] | null>(null);
+  const [, forceRender] = useReducer((x: number) => x + 1, 0);
+  const forceRenderRef = useRef(forceRender);
+  forceRenderRef.current = forceRender;
+
+  const clone = useClone(adapter, {
+    behaviors: options.behaviors,
+    expandIds: options.expandIds,
+    setOverlay: (_layer, objects) => {
+      overlayRef.current = objects as CloneOverlayItem[];
+      forceRenderRef.current();
+    },
+    clearOverlay: () => {
+      overlayRef.current = null;
+      forceRenderRef.current();
+    },
+  });
+  const cloneRef = useRef(clone);
+  cloneRef.current = clone;
+
+  return useMemo(() => {
+    // Default hitBody: walk the adapter's objects back-to-front and return
+    // the first whose pose contains the world point. Mirrors the same
+    // fallback Canvas builds at the layer level.
+    const defaultPickBest = (worldX: number, worldY: number): string | null => {
+      const a = adapterRef.current as IntrospectableAdapter<T> & InsertAdapter<T>;
+      if (!a.getNodes || !a.getPose) return null;
+      const objs = a.getNodes();
+      const point = { x: worldX, y: worldY, width: 0, height: 0 };
+      for (let i = objs.length - 1; i >= 0; i--) {
+        const o = objs[i];
+        let pose: unknown;
+        try {
+          pose = a.getPose(o.id);
+        } catch {
+          continue;
+        }
+        if (AUTO_POSE_DESCRIPTOR.intersectsRect!(pose, point)) return o.id;
+      }
+      return null;
+    };
+
+    // Default drawGhost: emits DrawCommand[]. Uses drawOne when supplied;
+    // falls back to translucent outline rects.
+    const defaultDrawGhost = (items: CloneOverlayItem[], view: View): DrawCommand[] => {
+      const drawOne = optsRef.current.drawOne;
+      const a = adapterRef.current as IntrospectableAdapter<T> & InsertAdapter<T>;
+      if (drawOne && a.getNodes && a.getPose) {
+        const byId = new Map<string, T>();
+        for (const o of a.getNodes()) byId.set(o.id, o);
+        const out: DrawCommand[] = [];
+        for (const item of items) {
+          const obj = byId.get(item.id);
+          if (!obj) continue;
+          let srcPose: unknown;
+          try {
+            srcPose = a.getPose(item.id);
+          } catch {
+            continue;
+          }
+          const bounds = AUTO_POSE_DESCRIPTOR.getBounds(srcPose);
+          const dx = item.x - bounds.x;
+          const dy = item.y - bounds.y;
+          const ghostPose = AUTO_POSE_DESCRIPTOR.translate!(srcPose, dx, dy);
+          for (const c of drawOne(obj, ghostPose as TPose, view)) out.push(c);
+        }
+        return out;
+      }
+      // Fallback: translucent outline rects at each item's bounds.
+      const out: DrawCommand[] = [];
+      for (const item of items) {
+        let pose: unknown = null;
+        if (a.getPose) {
+          try { pose = a.getPose(item.id); } catch { /* ignore */ }
+        }
+        const b = pose !== null
+          ? AUTO_POSE_DESCRIPTOR.getBounds(pose)
+          : { x: item.x, y: item.y, width: 0, height: 0 };
+        if (b.width > 0 && b.height > 0) {
+          out.push({
+            kind: 'path',
+            path: { kind: 'rect', x: item.x, y: item.y, width: b.width, height: b.height },
+            stroke: { paint: { color: '#888' }, width: 1 },
+          });
+        }
+      }
+      return out;
+    };
+
+    const overlay: RenderLayer<unknown> = {
+      id: 'clone-ghost',
+      label: 'Clone ghost',
+      draw: (_data, view) => {
+        const items = overlayRef.current;
+        if (!items || items.length === 0) return [];
+        const fn = optsRef.current.drawGhost ?? defaultDrawGhost;
+        const cmds = fn(items, view);
+        if (cmds.length === 0) return [];
+        return [{ kind: 'group', transform: viewToMat3(view), alpha: 0.5, children: cmds }];
+      },
+    };
+
+    // pointerDown classifier — runs the tool's own pickBest regardless
+    // of ctx.target.kind. The dispatcher-side `target` is derived from
+    // Canvas's optional pickEvery prop, which may be unset or wired to
+    // a different predicate than the tool's. The pre-routing imperative
+    // shim always consulted its own pickBest; we preserve that here by
+    // routing every key through one handler that does its own hit test.
+    //
+    // Returns `none()` (passes through) when:
+    //   - no behavior activates for the current modifiers (plain drag
+    //     should fall through to the active-slot tool, e.g. select-move).
+    //   - pickBest finds no cloneable body under the pointer.
+    //
+    // Otherwise returns `begin({scratch})` to open engaged phase with the
+    // pendingId/pendingMods captured at down time. No continuations on
+    // this BeginSpec — `drag.onStart` (below) returns its own `begin()`
+    // with onMove/onRelease/onCancel; the factory's activeSpec slot is
+    // overwritten by the second begin().
+    const onPointerDown: ActionFn<CloneScratch> = (ctx) => {
+      const mods = ctx.modifiers;
+      const activates = optsRef.current.behaviors.some((b) => b.activates(mods));
+      if (!activates) return none<CloneScratch>();
+      const pick = optsRef.current.pickBest ?? defaultPickBest;
+      const id = pick(ctx.worldX, ctx.worldY);
+      if (id === null) return none<CloneScratch>();
+      return begin<CloneScratch>({
+        scratch: { pendingId: id, pendingMods: { ...mods } },
+      });
+    };
+
+    return defineTool<CloneScratch>({
+      id: optsRef.current.id ?? 'clone',
+      cursor: optsRef.current.cursor ?? 'copy',
+      initial: {
+        overlay: () => overlay,
+
+        // Route every key through the classifier — the tool runs its own
+        // pickBest regardless of `ctx.target.kind`. '*' now catches every
+        // target kind including empty hits (the wildcard fall-through
+        // landed in T1 of the wildcard semantic flip), so a single entry
+        // covers what previously required per-kind enumeration plus an
+        // explicit 'empty'.
+        pointerDown: {
+          '*': onPointerDown,
+        },
+
+        // Drag onStart: replays the pendingId/pendingMods captured at
+        // pointerDown into clone.start, then opens a fresh engaged spec
+        // with onMove/onRelease/onCancel continuations. The previous
+        // pointerDown begin() had no continuations; this second begin()
+        // replaces it in the factory's activeSpec slot.
+        drag: (ctx) => {
+          const s = ctx.scratch;
+          if (!s || s.pendingId === null || s.pendingMods === null) {
+            return none<CloneScratch>();
+          }
+          let ids: string[] = [s.pendingId];
+          if (optsRef.current.cloneSelection) {
+            const sel = adapterRef.current.getSelection?.() ?? [];
+            if (sel.includes(s.pendingId)) ids = [...sel];
+          }
+          cloneRef.current.start(
+            ctx.worldX,
+            ctx.worldY,
+            ids,
+            optsRef.current.layer ?? 'structures',
+            s.pendingMods,
+          );
+          return begin<CloneScratch>({
+            scratch: s,
+            onMove: (c) => {
+              cloneRef.current.move(c.worldX, c.worldY, c.modifiers);
+              return claim<CloneScratch>();
+            },
+            onRelease: (_c) => {
+              cloneRef.current.end();
+              return claim<CloneScratch>();
+            },
+            onCancel: () => {
+              cloneRef.current.cancel();
+            },
+          });
+        },
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+}

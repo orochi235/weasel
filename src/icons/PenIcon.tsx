@@ -3,7 +3,7 @@ import type { IconProps } from './types';
 
 /** Pen nib — angled filled body with a pointed tip and a small ink dot
  *  at the very tip, plus a short "control" handle extending out the
- *  back. Used for `useUserPenTool`. */
+ *  back. Used for `usePenTool`. */
 export default function PenIcon({ className, size = 20 }: IconProps) {
   return (
     <svg

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createPenPreviewLayer } from './penPreviewLayer';
-import { useUserPenTool, type PenScratch } from 'tools/builtin/useUserPenTool';
+import { usePenTool, type PenScratch } from 'tools/builtin/usePenTool';
 import { renderHook } from '@testing-library/react';
 import type { PolygonPath } from './types';
 
@@ -12,7 +12,7 @@ function setup() {
   const adapter = { addNode: vi.fn(() => 'id'), setSelection: vi.fn() };
   const wrapPath = (path: PolygonPath, opts: { closed: boolean }): Pose =>
     ({ kind: 'path', path, closed: opts.closed });
-  const { result } = renderHook(() => useUserPenTool<Pose>({ wrapPath, adapter }));
+  const { result } = renderHook(() => usePenTool<Pose>({ wrapPath, adapter }));
   const { tool } = result.current;
   const scratch = tool.initScratch!() as PenScratch;
   const layer = createPenPreviewLayer({ penTool: tool });
@@ -56,6 +56,30 @@ describe('createPenPreviewLayer', () => {
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
     // current subpath + rubber-band + 3 anchor dots + close-hint = 6 paths.
     expect(tree.length).toBeGreaterThanOrEqual(6);
+  });
+
+  it('emits a mirrored in-handle line + dot for the latest anchor while dragging an outHandle', () => {
+    const linked = setup();
+    linked.scratch.current = {
+      anchors: [{ x: 50, y: 50, outHandle: { x: 80, y: 50 } }],
+      closed: false,
+    };
+    linked.scratch.cursor = { x: 80, y: 50 };
+    linked.scratch.draggingHandleAt = 0;
+    const linkedTree = linked.layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+
+    const broken = setup();
+    broken.scratch.current = {
+      anchors: [{ x: 50, y: 50, outHandle: { x: 80, y: 50 }, altBroken: true }],
+      closed: false,
+    };
+    broken.scratch.cursor = { x: 80, y: 50 };
+    broken.scratch.draggingHandleAt = 0;
+    const brokenTree = broken.layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+
+    // Mirror contributes exactly 2 extra commands (line + dot) over the
+    // alt-broken case.
+    expect(linkedTree.length - brokenTree.length).toBe(2);
   });
 
   it('emits one path for each finished subpath', () => {

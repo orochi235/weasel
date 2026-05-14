@@ -25,13 +25,13 @@ export { useWheelPanTool } from './useWheelPanTool';
 export { useKeyboardZoomTool, type KeyboardZoomToolOpts } from './useKeyboardZoomTool';
 export { usePinchZoomTool, type PinchZoomToolOpts } from './usePinchZoomTool';
 export {
-  useUserPenTool,
-  type UseUserPenToolOptions,
-  type UseUserPenToolReturn,
+  usePenTool,
+  type UsePenToolOptions,
+  type UsePenToolReturn,
   type PenScratch,
   type PenAnchor,
   type PenSubpath,
-} from './useUserPenTool';
+} from './usePenTool';
 export {
   useEditAnchorsTool,
   type UseEditAnchorsToolOptions,
