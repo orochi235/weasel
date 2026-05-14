@@ -17,6 +17,9 @@ on:
 jobs:
   capture:
     runs-on: ubuntu-22.04
+    # Hide `npm warn Unknown ... config` noise from `.npmrc`'s pnpm-only keys.
+    env:
+      NPM_CONFIG_LOGLEVEL: error
 
     steps:
       - uses: actions/checkout@v4

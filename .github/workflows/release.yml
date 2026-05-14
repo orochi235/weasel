@@ -15,6 +15,9 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    # Hide `npm warn Unknown ... config` noise from `.npmrc`'s pnpm-only keys.
+    env:
+      NPM_CONFIG_LOGLEVEL: error
     steps:
       - uses: actions/checkout@v4
         with:

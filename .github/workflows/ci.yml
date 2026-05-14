@@ -8,6 +8,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Hide `npm warn Unknown ... config` noise from `.npmrc`'s pnpm-only keys
+    # (link-workspace-packages). See CLAUDE.md "Package manager".
+    env:
+      NPM_CONFIG_LOGLEVEL: error
     strategy:
       matrix:
         node: [20, 22]
