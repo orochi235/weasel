@@ -8,6 +8,8 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, fireEvent, act } from '@testing-library/react';
 import { useRef, useState } from 'react';
 import { useTools, useSelectTool, useDeleteTool, useKeybindings, defineTool } from '../';
+import { useResizeTool } from './useResizeTool';
+import { useRotateTool } from './useRotateTool';
 import { sceneToAdapter } from 'canvas/sceneAdapter';
 import { useScene } from 'core/scene/useScene';
 import { useHandTool } from './useHandTool';
@@ -565,14 +567,16 @@ describe('Phase 2a integration', () => {
       });
       const adapter = { ...base, ...sel.adapterMethods, applyOps };
       const select = useSelectTool(adapter, {});
-      // The noop tool is the active slot; select is in ambient so its overlay
-      // is always walked by the hit-test pipeline regardless of which tool
-      // occupies the active slot — its corner-resize affordance should fire.
+      const resize = useResizeTool(adapter, {});
+      // The noop tool is the active slot; select+resize are in ambient so
+      // their overlays are walked by the hit-test pipeline regardless of which
+      // tool occupies the active slot — useResizeTool's corner-resize
+      // affordance should fire.
       const noop = defineTool({ id: 'noop', drag: { onStart: () => 'claim' } });
       const tools = useTools({
         active: 'noop',
         registry: { noop },
-        ambient: [select],
+        ambient: [select, resize],
       });
       return (
         <Canvas
@@ -624,13 +628,14 @@ describe('Phase 2a integration', () => {
       });
       const adapter = { ...base, ...sel.adapterMethods, applyOps };
       const select = useSelectTool(adapter, {});
+      const rotate = useRotateTool(adapter, {});
       const noop = defineTool({ id: 'noop', drag: { onStart: () => 'claim' } });
-      // select must be in ambient so its affordance overlay is surfaced
-      // while noop is active (per Task 12's findings).
+      // select+rotate must be in ambient so the rotation affordance overlay
+      // (owned by useRotateTool) is surfaced while noop is active.
       const tools = useTools({
         active: 'noop',
         registry: { noop },
-        ambient: [select],
+        ambient: [select, rotate],
       });
       return (
         <Canvas
@@ -681,7 +686,10 @@ describe('Phase 2a integration', () => {
       });
       const adapter = { ...base, ...sel.adapterMethods, applyOps };
       const select = useSelectTool(adapter, {});
-      const tools = useTools({ active: 'select', registry: { select } });
+      const resize = useResizeTool(adapter, {
+        getSelection: () => [...sel.current],
+      });
+      const tools = useTools({ active: 'select', registry: { select }, ambient: [resize] });
       return (
         <Canvas
           width={200} height={200} layers={{}}
@@ -734,7 +742,10 @@ describe('Phase 2a integration', () => {
       const sel = useSelection({ initial: [asNodeId('a'), asNodeId('b')], mode: 'multi' });
       const adapter = sceneToAdapter(scene, { selection: sel });
       const tool = useSelectTool(adapter as never, {});
-      const tools = useTools({ active: 'select', registry: { select: tool } });
+      const resize = useResizeTool(adapter as never, {
+        getSelection: () => [...sel.current],
+      });
+      const tools = useTools({ active: 'select', registry: { select: tool }, ambient: [resize] });
       return (
         <Canvas width={200} height={200} layers={{}}
           adapter={adapter as never} selection={sel} selectionMode="multi" tools={tools} clientToWorld={C2W}

@@ -8,6 +8,7 @@ import { useSelection } from 'core/selection/useSelection';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { arrayAdapter } from 'core/adapters/arrayAdapter';
 import { useSelectTool } from 'tools/builtin/useSelectTool';
+import { useResizeTool } from 'tools/builtin/useResizeTool';
 import { useTools } from 'tools/useTools';
 import type { RenderLayer } from 'core/layers/render';
 import { registerProgram } from '../renderer';
@@ -307,10 +308,13 @@ describe('<Canvas>', () => {
         const select = useSelectTool<Rect, Pose>(adapter, {
           pickEvery: () => [],
           boundsOf: explicit,
-          handleHitRadius: 8,
-          resize: { behaviors: [{ onStart: (ctx) => startSpy(ctx.draggedIds[0]) }] },
         });
-        const tools = useTools({ active: 'select', registry: { select } });
+        const resize = useResizeTool<Rect, Pose>(adapter, {
+          boundsOf: explicit,
+          handleHitRadius: 8,
+          resize: { behaviors: [{ onStart: (ctx: { draggedIds: string[] }) => startSpy(ctx.draggedIds[0]) }] },
+        });
+        const tools = useTools({ active: 'select', registry: { select }, ambient: [resize] });
         return (
           <Canvas
             width={1000}
@@ -375,17 +379,21 @@ describe('<Canvas>', () => {
         rectsRef.current
           .filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height)
           .map((r) => r.id);
+      const boundsOf = (id: string) => {
+        const r = rectsRef.current.find((x) => x.id === id);
+        return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
+      };
       const select = useSelectTool<Rect, Pose>(adapter, {
         pickEvery,
-        boundsOf: (id) => {
-          const r = rectsRef.current.find((x) => x.id === id);
-          return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
-        },
-        handleHitRadius: 6,
-        move: { behaviors: [{ onStart: (ctx) => props.moveStart?.(ctx.draggedIds) }] },
-        resize: { behaviors: [{ onStart: (ctx) => props.resizeStart?.(ctx.draggedIds[0]) }] },
+        boundsOf,
+        move: { behaviors: [{ onStart: (ctx: { draggedIds: string[] }) => props.moveStart?.(ctx.draggedIds) }] },
       });
-      const tools = useTools({ active: 'select', registry: { select } });
+      const resize = useResizeTool<Rect, Pose>(adapter, {
+        boundsOf,
+        handleHitRadius: 6,
+        resize: { behaviors: [{ onStart: (ctx: { draggedIds: string[] }) => props.resizeStart?.(ctx.draggedIds[0]) }] },
+      });
+      const tools = useTools({ active: 'select', registry: { select }, ambient: [resize] });
       return (
         <Canvas
           width={300}

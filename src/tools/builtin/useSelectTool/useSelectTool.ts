@@ -3,36 +3,19 @@ import { SelectIcon } from '../../../icons';
 import { pathContainsPoint } from 'features/paths/pathHitTest';
 import type { Path } from 'features/paths/types';
 import { useMove, type UseMoveOptions } from 'interactions/gestures/move/move';
-import { useResize, type UseResizeOptions } from 'interactions/gestures/resize/resize';
-import { useRotate, type UseRotateOptions } from 'interactions/gestures/rotate/rotate';
 import { useAreaSelect, type UseAreaSelectOptions } from 'interactions/gestures/area-select/areaSelect';
-import { composeAffordanceLayer } from 'affordances/composeAffordanceLayer';
-import {
-  createCornerResizeAffordance,
-  type CornerResizeScratch,
-} from 'affordances/cornerResize';
-import {
-  createRotationAffordance,
-  type RotationScratch,
-} from 'affordances/rotationHandle';
-import type { Affordance, AffordanceBinding } from 'affordances/types';
 import type { MoveAdapter } from 'core/adapters/types';
-import type { ResizeAdapter } from 'core/adapters/types';
-import type { RotateAdapter } from 'core/adapters/types';
 import type { AreaSelectAdapter } from 'core/adapters/types';
-import type { ResizeAnchor } from 'interactions/gestures/types';
 import type { NodeId } from 'core/scene/types';
 import { defineTool, mods, begin, claim, none, forwardActionTo } from '../../routing';
 import type { ActionFn } from '../../routing';
-import type { Tool, ToolBounds, ToolCtx } from '../../types';
+import type { Tool, ToolCtx } from '../../types';
 import type { DebugSink } from '../../../debug/types';
 import type { RenderLayer } from 'core/layers/render';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { viewToMat3, type DrawCommand } from '../../../renderer';
 import { pickTopMostHit } from '../pickTopMostHit';
-import { createTransformOp } from 'core/ops/transform';
-import { RECT_POSE_DESCRIPTOR } from 'interactions/gestures/resize/geometry';
 import { MULTI_RESIZE_TARGET_ID, type Bounds } from '../shared/selectionTarget';
 export type { Bounds };
 export { MULTI_RESIZE_TARGET_ID };
@@ -45,14 +28,6 @@ export interface AreaSelectOverlayStyle {
 }
 
 export interface MoveOverlayStyle {
-  ghostAlpha?: number;
-}
-
-export interface ResizeOverlayStyle {
-  ghostAlpha?: number;
-}
-
-export interface RotateOverlayStyle {
   ghostAlpha?: number;
 }
 
@@ -86,31 +61,21 @@ export interface UseSelectToolOptions<TNode extends { id: string }, TPose> {
    *  carry top-level `x`/`y`/`width`/`height`). Used as the fallback
    *  projection for the auto-derived `pickEvery` and `boundsOf`. */
   poseBounds?: (pose: TPose) => Bounds;
-  /** Square hit-radius for corner resize handles. Default: 8. */
-  handleHitRadius?: number;
-  /** Distance from top edge of bounds to rotation handle center. Default: 24. */
-  rotationHandleDistance?: number;
   move?: UseMoveOptions<TPose>;
-  resize?: UseResizeOptions<TPose>;
-  rotate?: UseRotateOptions<TPose>;
   areaSelect?: UseAreaSelectOptions;
-  /** Optional debug sink. When supplied, records corner-handle and
-   *  rotation-handle hitboxes at the same sites as the hit checks (so the
-   *  overlay shows what the select tool actually evaluates). Tree-shakes
-   *  via optional-chain when omitted. */
+  /** Optional debug sink. Reserved for future overlay/affordance hitbox
+   *  recording — useSelectTool no longer routes through affordances itself
+   *  (resize + rotate moved to `useResizeTool` / `useRotateTool`). Kept on
+   *  the public surface so consumers don't have to thread it differently
+   *  when the affordance recording lands. */
   debug?: DebugSink;
   /** Style for the area-select marquee. */
   areaSelectOverlayStyle?: AreaSelectOverlayStyle;
   /** Style for the move ghost (currently just `ghostAlpha`). */
   moveOverlayStyle?: MoveOverlayStyle;
-  /** Style for the resize ghost. Falls back to `moveOverlayStyle.ghostAlpha`
-   *  if unset, then to a default of 0.85. */
-  resizeOverlayStyle?: ResizeOverlayStyle;
-  /** Style for the rotate ghost. Same fallback chain as `resizeOverlayStyle`. */
-  rotateOverlayStyle?: RotateOverlayStyle;
-  /** Consumer's draw function for ghost objects (move/resize/rotate in-flight).
-   *  Returns world-space DrawCommand[] for one ghost. If omitted, ghosts are
-   *  not rendered (only the marquee draws). Optional only because some demos
+  /** Consumer's draw function for ghost objects (move in-flight). Returns
+   *  world-space DrawCommand[] for one ghost. If omitted, ghosts are not
+   *  rendered (only the marquee draws). Optional only because some demos
    *  (e.g. NestedGroupsDemo) compose ghosts via custom layers. */
   drawGhost?: (
     obj: TNode | null,
@@ -119,12 +84,11 @@ export interface UseSelectToolOptions<TNode extends { id: string }, TPose> {
   ) => DrawCommand[];
   /** Object lookup for the ghost render, paired with `drawGhost`. Optional. */
   getNode?: (id: string) => TNode | null;
-  /** Returns the live selection ids. When supplied, `previewBounds` synthesizes
-   *  the multi-union AABB for `MULTI_RESIZE_TARGET_ID` from `boundsOf` of each
-   *  selected id — used by `<Canvas selectionMode="multi">`'s selection-overlay
-   *  layer when 2+ ids are selected. Without it, the synthetic id resolves to
-   *  `null` and consumers wiring multi-mode must compute the union themselves.
-   *  `<SceneCanvas>` wires this automatically from its `selection` prop. */
+  /** Returns the live selection ids. Currently unused inside useSelectTool —
+   *  retained on the option surface for compatibility with consumers (and so
+   *  `useSelectWithAnchorEdit` etc. can forward it without conditional
+   *  spreading). The synthetic `MULTI_RESIZE_TARGET_ID` previewBounds is
+   *  owned by `useResizeTool` now. */
   getSelection?: () => readonly string[];
   /** Optional double-tap hook. When the dispatcher detects a double-tap (two
    *  sub-threshold clicks within `dblTap.windowMs` / `dblTap.maxDistance`),
@@ -141,40 +105,32 @@ export interface UseSelectToolOptions<TNode extends { id: string }, TPose> {
   }) => void;
 }
 
-/** Intersection of all four sub-controller adapter interfaces.
- *  The narrow adapters share compatible `getNode`/`getPose`/`setPose`/`applyOps`
- *  shapes; `AreaSelectAdapter` adds `hitTestArea`/`applyOps`/`setSelection`/`getSelection`.
- *  No conflicting overloads — intersection is safe. */
+/** Intersection of the move + area-select adapter interfaces.
+ *  Resize / rotate adapters moved to `useResizeTool` / `useRotateTool`. */
 type SelectAdapter<TNode extends { id: string }, TPose> =
   MoveAdapter<TNode, TPose>
-  & ResizeAdapter<TNode, TPose>
-  & RotateAdapter<TNode, TPose>
   & AreaSelectAdapter;
 
 export type SelectScratch =
   | { kind: 'idle' }
   | { kind: 'move'; ids: string[]; deferredClickId: string | null }
-  | { kind: 'resize'; targetId: string; anchor: ResizeAnchor }
-  | { kind: 'rotate'; targetId: string }
   | { kind: 'area' };
 
-/** Active-slot Tool wrapping `useMove`/`useResize`/`useRotate`/`useAreaSelect`.
+/** Active-slot Tool wrapping `useMove` + `useAreaSelect`.
  *
  *  Hit-test priority:
- *  1. Affordance layer (rotation handle, corner resize handles) — routed by
- *     the dispatcher's affordance-layer pipeline directly into useRotate /
- *     useResize, bypassing pointer.onDown.
- *  2. pointer.onDown body hit → move + immediate selection.
- *  3. pointer.onDown empty → area-select marquee (or click-to-clear).
+ *  1. pointer.onDown body hit → move + immediate selection.
+ *  2. pointer.onDown empty → area-select marquee (or click-to-clear).
  *
- *  `scratch` routes `drag.*` to the matching controller. */
+ *  Resize + rotate live in `useResizeTool` / `useRotateTool` — their
+ *  affordances participate in dispatch via the same ambient/overlay pipeline,
+ *  not through this hook. `scratch` routes `drag.*` to the matching
+ *  controller. */
 export function useSelectTool<TNode extends { id: string }, TPose>(
   adapter: SelectAdapter<TNode, TPose>,
   options: UseSelectToolOptions<TNode, TPose>,
 ): Tool<SelectScratch> {
   const move = useMove<TNode, TPose>(adapter, options.move ?? {});
-  const resize = useResize<TNode, TPose>(adapter, options.resize ?? {});
-  const rotate = useRotate<TNode, TPose>(adapter, options.rotate ?? {});
   // Default to no marquee behaviors. start/move/end still run (so empty-click
   // clear via onClick keeps working) but a drag from empty space doesn't
   // mutate the selection unless the consumer opts in with
@@ -188,20 +144,6 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     return { ...(provided ?? {}), behaviors: [] };
   }, [options.areaSelect]);
   const areaSelect = useAreaSelect(adapter, areaSelectOptions);
-
-  const handleHitRadius = options.handleHitRadius ?? 8;
-  const rotationHandleDistance = options.rotationHandleDistance ?? 24;
-  // `options.debug` is still part of the public API (for future affordance
-  // hitbox recording), but the inline pointer.onDown hit-tests that used it
-  // are gone — both rotation and corner-resize live in affordances now.
-  // Reference `options.debug` from the deps array directly to keep linting
-  // honest without resurrecting the local alias.
-
-  // Latest-callback ref for the resize controller — the affordance's
-  // wrapped drag channel closes over this so we don't have to rebuild the
-  // wrapper every render. Mirrors the styleRefs / pickEveryRef pattern.
-  const resizeRef = useRef(resize);
-  resizeRef.current = resize;
 
   // Latest-callback ref for `onDoubleTap` so the memoized tool body picks up
   // re-renders without rebuilding the Tool record. Same pattern as `styleRefs`.
@@ -298,13 +240,6 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     walk(null, []);
     return out;
   });
-  const boundsOfFn = options.boundsOf ?? ((id: string): Bounds | null => {
-    try {
-      return poseBoundsFn(adapter.getPose(id));
-    } catch {
-      return null;
-    }
-  });
   const pickEveryRef = useRef(pickEveryFn);
   pickEveryRef.current = pickEveryFn;
 
@@ -313,23 +248,20 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   const styleRefs = useRef({
     areaSelectOverlayStyle: options.areaSelectOverlayStyle,
     moveOverlayStyle: options.moveOverlayStyle,
-    resizeOverlayStyle: options.resizeOverlayStyle,
-    rotateOverlayStyle: options.rotateOverlayStyle,
     drawGhost: options.drawGhost,
     getNode: options.getNode,
   });
   styleRefs.current = {
     areaSelectOverlayStyle: options.areaSelectOverlayStyle,
     moveOverlayStyle: options.moveOverlayStyle,
-    resizeOverlayStyle: options.resizeOverlayStyle,
-    rotateOverlayStyle: options.rotateOverlayStyle,
     drawGhost: options.drawGhost,
     getNode: options.getNode,
   };
 
-  // Ghost / marquee overlay. Owned by the gesture controllers — these are
-  // decorative chrome (move/resize/rotate ghosts + area-select marquee),
-  // NOT affordances, so they live outside the affordance layer.
+  // Ghost / marquee overlay. Move-ghosts + area-select marquee only —
+  // resize/rotate ghosts moved to their respective tools' overlays. These
+  // are decorative chrome, NOT affordances, so they live outside the
+  // affordance layer pipeline.
   //
   // The layer is `space: 'screen'`. The marquee branch already lives in
   // screen coords (via `worldToScreen`); ghosts go through `drawGhost`,
@@ -338,8 +270,8 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   // SceneCanvas's preview-ghost layer driven by scene-slot `drawOne`.
   const ghostOverlay = useMemo<RenderLayer<unknown>>(
     () => ({
-      id: 'select-overlay-ghosts',
-      label: 'Select overlay ghosts',
+      id: 'select-overlay',
+      label: 'Select overlay',
       space: 'screen',
       draw: (_data, view) => {
         const refs = styleRefs.current;
@@ -370,8 +302,6 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         const getNode = refs.getNode;
         if (!drawGhost || !getNode) return [];
         const moveAlpha = refs.moveOverlayStyle?.ghostAlpha ?? 0.85;
-        const resizeAlpha = refs.resizeOverlayStyle?.ghostAlpha ?? moveAlpha;
-        const rotateAlpha = refs.rotateOverlayStyle?.ghostAlpha ?? moveAlpha;
         const wrap = (alpha: number, cmds: DrawCommand[]): DrawCommand[] =>
           cmds.length === 0 ? [] : [{ kind: 'group', alpha, transform: viewToMat3(view), children: cmds }];
 
@@ -383,388 +313,39 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           }
           return wrap(moveAlpha, cmds);
         }
-        const rOv = resize.overlay;
-        if (rOv) {
-          return wrap(resizeAlpha, drawGhost(getNode(rOv.id), rOv.currentPose, view));
-        }
-        const rotOv = rotate.overlay;
-        if (rotOv) {
-          return wrap(rotateAlpha, drawGhost(getNode(rotOv.id), rotOv.currentPose, view));
-        }
         return [];
       },
     }),
-    [move, resize, rotate, areaSelect],
+    [move, areaSelect],
   );
 
-  // Corner-resize affordance. Defaults to the same `handleHitRadius` the
-  // tool exposes so the affordance's hit math matches what users
-  // configure (mirroring what the old inline corner-handle test did).
-  const cornerAff = useMemo(
-    () => createCornerResizeAffordance({ handleHitRadius }),
-    [handleHitRadius],
-  );
+  // The Tool's overlay is just the ghost/marquee layer. Resize + rotate
+  // affordances live in their own tools' overlays, which the dispatcher
+  // composes via the active+ambient walk.
+  const overlay = ghostOverlay;
 
-  // Wrap the affordance's hitTest to substitute its stub drag channel
-  // with one that delegates to `useResize`. Render returns [] for now —
-  // Canvas's existing `selectionOverlay` slot still draws the corner
-  // handles via the legacy path; flipping that on (so the affordance
-  // becomes the only handle painter) is a Phase 5 task. The hitTest
-  // path is the load-bearing piece: it's what lets cross-tool hits
-  // (e.g. lasso → corner resize) route to useResize without a slot
-  // hand-off.
-  //
-  // Multi-mode synthetic target (`MULTI_RESIZE_TARGET_ID`) is NOT
-  // routed through useResize — the controller doesn't natively handle
-  // a synthetic union id. We return null so the affordance pipeline
-  // doesn't claim, and the dispatcher falls through to the existing
-  // slot-walk pointer.onDown path. Multi-mode corner resize remains a
-  // separate concern.
-  // Latest-callback ref so the multi-resize drag handlers see the current
-  // adapter without rebuilding the wrapper.
-  const adapterRef = useRef(adapter);
-  adapterRef.current = adapter;
-
-  const cornerAffWrapped: Affordance = useMemo(
-    () => ({
-      id: cornerAff.id,
-      render: () => [],
-      hitTest: (wx, wy, state, view): AffordanceBinding | null => {
-        const inner = cornerAff.hitTest?.(wx, wy, state, view);
-        if (!inner) return null;
-        const scratch = inner.initialScratch as CornerResizeScratch;
-
-        // Multi-mode: synthesize the resize gesture here in the wrapper.
-        // useResize doesn't natively handle MULTI_RESIZE_TARGET_ID; we
-        // snapshot the union AABB + per-leaf poses at hit-time, then on
-        // each move compute a `dst` union from the anchor + pointer
-        // delta and apply remapBounds per leaf via transient applyOps.
-        // On end, commit one batched Transform op per leaf so undo
-        // collapses the gesture into a single history entry.
-        if (scratch.targetId === MULTI_RESIZE_TARGET_ID) {
-          if (!state.unionBounds || state.selection.length < 2) return null;
-          const startUnion = { ...state.unionBounds };
-          const a = adapterRef.current;
-          // Snapshot every leaf's pose at gesture start.
-          const startPoses = new Map<string, TPose>();
-          for (const id of state.selection) {
-            try {
-              startPoses.set(id, a.getPose(id));
-            } catch {
-              // Skip ids whose pose isn't readable.
-            }
-          }
-          if (startPoses.size === 0) return null;
-
-          // Compute the dst union given the anchor + new pointer position.
-          // The anchor pins the corner OPPOSITE the dragged handle:
-          //   anchor.x='min' → left edge fixed, right edge moves with pointer.
-          //   anchor.x='max' → right edge fixed, left edge moves.
-          // Same for y.
-          const dstFor = (pointerX: number, pointerY: number): {
-            x: number; y: number; width: number; height: number;
-          } => {
-            const left = scratch.anchor.x === 'min' ? startUnion.x : pointerX;
-            const right = scratch.anchor.x === 'min' ? pointerX : startUnion.x + startUnion.width;
-            const top = scratch.anchor.y === 'min' ? startUnion.y : pointerY;
-            const bottom = scratch.anchor.y === 'min' ? pointerY : startUnion.y + startUnion.height;
-            return {
-              x: Math.min(left, right),
-              y: Math.min(top, bottom),
-              width: Math.abs(right - left),
-              height: Math.abs(bottom - top),
-            };
-          };
-
-          // Apply the per-leaf remap from startUnion → dst via the kit's
-          // pose descriptor. RECT_POSE_DESCRIPTOR works for any pose
-          // shape that's structurally Bounds-like — the demos we ship
-          // all use rect poses, so this is fine for v1.
-          const applyAt = (pointerX: number, pointerY: number, transient: boolean) => {
-            const dst = dstFor(pointerX, pointerY);
-            const ops = [];
-            for (const [id, from] of startPoses) {
-              const to = RECT_POSE_DESCRIPTOR.remapBounds(
-                from as unknown as { x: number; y: number; width: number; height: number },
-                startUnion,
-                dst,
-              ) as unknown as TPose;
-              ops.push(createTransformOp<TPose>({ id, from, to }));
-            }
-            if (ops.length === 0) return;
-            // IMPORTANT: invoke as method calls so `this` binds to the
-            // adapter — `sceneToAdapter`'s `applyOps` reads `this.setPose`
-            // inside its `scene.batch` callback. Extracting the function and
-            // calling it detached throws "Cannot read properties of undefined
-            // (reading 'setPose')" mid-onEnd, which the dispatcher can't
-            // recover from (inFlight stays set, blocking subsequent gestures).
-            const aa = a as {
-              applyOps?: (ops: ReturnType<typeof createTransformOp>[], label?: string) => void;
-            };
-            if (transient) {
-              aa.applyOps?.(ops);
-            } else {
-              aa.applyOps?.(ops, 'Resize');
-            }
-          };
-
-          let lastPointer = { x: 0, y: 0 };
-          const result: AffordanceBinding<CornerResizeScratch> = {
-            drag: {
-              onStart: (_e, dctx) => {
-                lastPointer = { x: dctx.worldX, y: dctx.worldY };
-                // Don't apply on start — the pointer is at the handle
-                // corner, so dst === startUnion (no-op).
-                return 'claim';
-              },
-              onMove: (_e, dctx) => {
-                lastPointer = { x: dctx.worldX, y: dctx.worldY };
-                applyAt(dctx.worldX, dctx.worldY, /* transient */ true);
-                return 'claim';
-              },
-              onEnd: (_e, _dctx) => {
-                // Commit the final pose via applyOps for a single
-                // undo entry. Transient writes during move have already
-                // landed; this re-applies the same final transform
-                // through the history path.
-                applyAt(lastPointer.x, lastPointer.y, /* transient */ false);
-                return 'claim';
-              },
-              onCancel: () => {
-                // Roll back to the start poses via a transient apply.
-                const ops = [];
-                for (const [id, from] of startPoses) {
-                  ops.push(createTransformOp<TPose>({ id, from, to: from }));
-                }
-                if (ops.length > 0) {
-                  (a as { applyOps?: (ops: ReturnType<typeof createTransformOp>[]) => void }).applyOps?.(ops);
-                }
-              },
-            },
-            initialScratch: scratch,
-          };
-          return result as AffordanceBinding;
-        }
-
-        // Single-selection path (existing): delegate to useResize.
-        const result: AffordanceBinding<CornerResizeScratch> = {
-          drag: {
-            onStart: (_e, dctx) => {
-              resizeRef.current.start(scratch.targetId, scratch.anchor, dctx.worldX, dctx.worldY);
-              return 'claim';
-            },
-            onMove: (_e, dctx) => {
-              resizeRef.current.move(dctx.worldX, dctx.worldY, dctx.modifiers);
-              return 'claim';
-            },
-            onEnd: (_e, _dctx) => {
-              resizeRef.current.end();
-              return 'claim';
-            },
-            onCancel: () => {
-              resizeRef.current.cancel();
-            },
-          },
-          initialScratch: scratch,
-        };
-        return result as AffordanceBinding;
-      },
-    }),
-    [cornerAff],
-  );
-
-  // Rotation affordance. Same wiring pattern as `cornerAffWrapped`: the
-  // affordance owns hit-test geometry, but the drag channel delegates to
-  // `useRotate` via a latest-callback ref so we don't rebuild the wrapper
-  // every render. Render returns [] to avoid double-painting with the
-  // legacy selectionOverlay slot's rotation handle (Canvas still draws it
-  // via createSelectionOverlayLayer). Phase 5 flips this back to
-  // `rotationAff.render` once the slot is reshaped.
-  const rotateRef = useRef(rotate);
-  rotateRef.current = rotate;
-  // Latest-callback ref to `options.getSelection` so rotation onStart can read
-  // the live selection (for multi-id pivot) without re-creating the affordance.
-  // The same ref is reused for previewBounds below.
-  const getSelectionRef = useRef(options.getSelection);
-  getSelectionRef.current = options.getSelection;
-
-  const rotationAff = useMemo(
-    () => createRotationAffordance({
-      distance: rotationHandleDistance,
-      handleHitRadius,
-    }),
-    [rotationHandleDistance, handleHitRadius],
-  );
-
-  const rotationAffWrapped: Affordance = useMemo(
-    () => ({
-      id: rotationAff.id,
-      render: () => [],
-      hitTest: (wx, wy, state, view): AffordanceBinding | null => {
-        const inner = rotationAff.hitTest?.(wx, wy, state, view);
-        if (!inner) return null;
-        const scratch = inner.initialScratch as RotationScratch;
-        // Multi-mode rotation against the synthetic union isn't supported by
-        // useRotate today — pass through so the click falls through to the
-        // slot walk. Real scene ids drive useRotate normally.
-        if (scratch.targetId === MULTI_RESIZE_TARGET_ID) return null;
-        const result: AffordanceBinding<RotationScratch> = {
-          drag: {
-            onStart: (_e, dctx) => {
-              // Pass the current selection so multi-id rotation gestures hit
-              // the configured pivot mode (default 'union'). Single-id stays
-              // intact via the same call. If selection isn't reachable, fall
-              // back to the handle's owning id.
-              const sel = getSelectionRef.current?.();
-              const ids = sel && sel.length > 0 ? [...sel] : [scratch.targetId];
-              rotateRef.current.start({ ids, worldX: dctx.worldX, worldY: dctx.worldY });
-              return 'claim';
-            },
-            onMove: (_e, dctx) => {
-              rotateRef.current.move({ worldX: dctx.worldX, worldY: dctx.worldY, modifiers: dctx.modifiers });
-              return 'claim';
-            },
-            onEnd: (_e, _dctx) => {
-              rotateRef.current.end();
-              return 'claim';
-            },
-            onCancel: () => {
-              rotateRef.current.cancel();
-            },
-          },
-          initialScratch: scratch,
-        };
-        return result as AffordanceBinding;
-      },
-    }),
-    [rotationAff],
-  );
-
-  // Composite order: corner-resize first, rotation second.
-  // `composeAffordanceLayer` walks hitTest in REVERSE (last → first), so
-  // rotation is tested before corner-resize. That's the right priority —
-  // the rotation handle floats above the bounds top, so a hit on it wins
-  // over a corner-handle hit on the same point (which shouldn't happen
-  // geometrically anyway, but the ordering is defensible).
-  const affordanceOverlay = useMemo(
-    () => composeAffordanceLayer('select-affordances', 'Select affordances', [
-      cornerAffWrapped,
-      rotationAffWrapped,
-    ]),
-    [cornerAffWrapped, rotationAffWrapped],
-  );
-
-  // Combined Tool overlay: ghost layer (bottom) + affordance layer (top).
-  // hitTest comes from the affordance layer so dispatcher-side hit-test
-  // pipelines can route corner-handle hits through it. Ghosts have no
-  // hitTest of their own.
-  const overlay = useMemo<RenderLayer<unknown>>(
-    () => ({
-      id: 'select-overlay',
-      label: 'Select overlay',
-      space: 'screen',
-      draw: (data, view, dims) => {
-        const ghosts = ghostOverlay.draw(data, view, dims);
-        const aff = affordanceOverlay.draw(data as never, view, dims);
-        return [...ghosts, ...aff];
-      },
-      hitTest: (wx, wy, data, view, dims) =>
-        affordanceOverlay.hitTest(wx, wy, data as never, view, dims),
-    }),
-    [ghostOverlay, affordanceOverlay],
-  );
-
-  // previewPose: aggregate in-flight overlay poses across move/resize/rotate so
-  // Canvas.helpersRef.getEffectivePose can stay overlay-aware without reaching
-  // into hook internals. Mirrors the fall-through order in Canvas.tsx's
-  // effectivePoseOf — move first (covers multi-id drags), then resize
-  // (incl. leaf poses), then rotate.
+  // previewPose: surface the move controller's in-flight pose for the
+  // dragged id. Lets Canvas.helpersRef.getEffectivePose stay overlay-aware
+  // without reaching into hook internals. Resize/rotate slices moved to
+  // their respective tools' previewPose.
   const previewPose = (id: string): TPose | null => {
     const mOv = move.overlay;
     if (mOv) {
       const p = mOv.poses.get(id);
       if (p !== undefined) return p as TPose;
     }
-    const rOv = resize.overlay;
-    if (rOv) {
-      if (rOv.id === id) return rOv.currentPose as TPose;
-      const leaf = rOv.leafPoses?.get(id);
-      if (leaf !== undefined) return leaf as TPose;
-    }
-    const rotOv = rotate.overlay;
-    if (rotOv && rotOv.id === id) return rotOv.currentPose as TPose;
     return null;
   };
 
-  // previewBounds: synthesize the multi-union AABB for the synthetic
-  // `MULTI_RESIZE_TARGET_ID` from `boundsOf` over the live selection. Lets
-  // `<Canvas selectionMode="multi">`'s selection-overlay layer ask for the
-  // union via the standard `tool.previewBounds(id)` channel instead of Canvas
-  // having to special-case the synthetic id inline. Returns null for any other
-  // id (consumers fall through to `previewPose` → committed adapter pose →
-  // geometry.getBounds, same as before).
-  // `getSelectionRef` is declared earlier (also used by the rotation affordance).
-  const boundsOfRef = useRef(boundsOfFn);
-  boundsOfRef.current = boundsOfFn;
-  const previewBounds = (id: string): ToolBounds | null => {
-    if (id !== MULTI_RESIZE_TARGET_ID) return null;
-    const getSelection = getSelectionRef.current;
-    if (!getSelection) return null;
-    const ids = getSelection();
-    if (ids.length < 2) return null;
-    const bof = boundsOfRef.current;
-    // Prefer per-leaf preview pose during a drag (so the union AABB tracks
-    // the in-flight move overlay); fall back to committed bounds otherwise.
-    // `poseBoundsFn` has an identity default that works when TPose extends
-    // Bounds (the common case), so we always have a pose→bounds projection.
-    const leafBounds = (sid: string): Bounds | null => {
-      const p = previewPose(sid);
-      if (p != null) return poseBoundsFn(p);
-      return bof(sid);
-    };
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    let any = false;
-    for (const sid of ids) {
-      const b = leafBounds(sid);
-      if (!b) continue;
-      any = true;
-      if (b.x < minX) minX = b.x;
-      if (b.y < minY) minY = b.y;
-      if (b.x + b.width > maxX) maxX = b.x + b.width;
-      if (b.y + b.height > maxY) maxY = b.y + b.height;
-    }
-    if (!any) return null;
-    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-  };
-
   // previewIds: every id whose committed paint should be suppressed while a
-  // gesture is in flight, so the source doesn't bleed through the ghost. Move
-  // contributes its `hideIds` (dragged + cascade descendants); resize/rotate
-  // contribute their target id (and any leaf poses they republish via
-  // `previewPose`). The standard scene layer skips these ids; SceneCanvas's
-  // preview-ghost layer redraws them through the same `drawOne` for visual
-  // consistency.
+  // move gesture is in flight, so the source doesn't bleed through the ghost.
+  // Resize/rotate suppression moved to those tools' previewIds.
   const previewIds = (): Iterable<string> | null => {
     const out = new Set<string>();
     const mOv = move.overlay;
     if (mOv) for (const id of mOv.hideIds) out.add(id);
-    const rOv = resize.overlay;
-    if (rOv) {
-      out.add(rOv.id);
-      if (rOv.leafPoses) for (const id of rOv.leafPoses.keys()) out.add(id);
-    }
-    const rotOv = rotate.overlay;
-    if (rotOv) out.add(rotOv.id);
     return out.size > 0 ? out : null;
   };
-
-  // Imperative drag shim — Phase 3 Task 4 left this in place to keep
-  // useMove/useResize/useRotate behavior unchanged. Phase 5 Task 1
-  // migrates it to declarative routes via the beginAt adapter pattern
-  // (each gesture primitive grows a thin wrapper that returns a
-  // begin(spec) Result wrapping its internal state machine). The other
-  // shims (pointer.onDown, pointer.onClick, dblTap.onTap) were closed in
-  // Phase 4.5 — see the route tables in the defineTool call below.
 
   // pointerDown classifier — declarative route table that subsumes the
   // body-hit / empty branches of the original legacyOnDown shim. Decides
@@ -995,20 +576,18 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
       // The routing factory's translated Tool covers every gesture
       // channel (pointer.onDown / onClick / drag / dblTap.onTap) via the
       // route tables above. We only need to layer kit-only fields that
-      // aren't part of ToolDef — overlay, previewPose, previewBounds,
-      // previewIds, initScratch. `base.cursor` is the factory-supplied
-      // resolver that honors the engaged-phase override above; don't
-      // override it here.
+      // aren't part of ToolDef — overlay, previewPose, previewIds,
+      // initScratch. `base.cursor` is the factory-supplied resolver that
+      // honors the engaged-phase override above; don't override it here.
       return {
         ...base,
         initScratch: () => ({ kind: 'idle' as const }),
         overlay,
         previewPose,
-        previewBounds,
         previewIds,
       };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [move, resize, rotate, areaSelect, overlay, pickEveryFn, options.pickBest, boundsOfFn, handleHitRadius, rotationHandleDistance, options.debug],
+    [move, areaSelect, overlay, pickEveryFn, options.pickBest, options.debug],
   );
 }

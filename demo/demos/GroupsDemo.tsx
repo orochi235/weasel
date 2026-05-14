@@ -9,6 +9,8 @@ import {
   useGroup,
   useUngroup,
   useSelectTool,
+  useResizeTool,
+  useRotateTool,
   useTools,
 } from '@orochi235/weasel';
 import type { Group } from '@orochi235/weasel';
@@ -94,12 +96,6 @@ export function GroupsDemo() {
     },
     boundsOf,
     move: { expandIds: (ids) => expandToLeaves(ids, adapter) },
-    resize: {
-      expandIds: (ids) => {
-        if (ids.length === 1 && adapter.getGroup(ids[0]) === undefined) return ids;
-        return expandToLeaves(ids, adapter);
-      },
-    },
     drawGhost: (rect, pose): DrawCommand[] => rect == null ? [] : [{
       kind: 'path',
       path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
@@ -107,7 +103,28 @@ export function GroupsDemo() {
     }],
     getNode: (id) => rectsRef.current.find((r) => r.id === id) ?? null,
   });
-  const tools = useTools({ active: 'select', registry: { select } });
+  const resizeTool = useResizeTool<Rect, Pose>(adapter, {
+    resize: {
+      expandIds: (ids: string[]) => {
+        if (ids.length === 1 && adapter.getGroup(ids[0]) === undefined) return ids;
+        return expandToLeaves(ids, adapter);
+      },
+    },
+    boundsOf,
+    getSelection: () => selection.current,
+    poseBounds: (p) => p,
+    getNode: (id) => rectsRef.current.find((r) => r.id === id) ?? null,
+  });
+  const rotateTool = useRotateTool<Rect, Pose>(adapter, {
+    boundsOf,
+    getSelection: () => [...selection.current],
+    getNode: (id) => rectsRef.current.find((r) => r.id === id) ?? null,
+  });
+  const tools = useTools({
+    active: 'select',
+    registry: { select },
+    ambient: [resizeTool, rotateTool],
+  });
 
   return (
     <Canvas

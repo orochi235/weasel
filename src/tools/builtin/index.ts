@@ -13,9 +13,9 @@ export {
   type UseSelectToolOptions,
   type AreaSelectOverlayStyle,
   type MoveOverlayStyle,
-  type ResizeOverlayStyle,
-  type RotateOverlayStyle,
 } from './useSelectTool';
+export { useResizeTool, type UseResizeToolOptions } from './useResizeTool';
+export { useRotateTool, type UseRotateToolOptions } from './useRotateTool';
 export { pickTopMostHit, type PickTopMostHitAdapter } from './pickTopMostHit';
 export { applyHitExistingGate } from './hitExistingGate';
 export { useHandTool } from './useHandTool';

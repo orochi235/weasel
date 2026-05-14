@@ -38,6 +38,7 @@ export function SceneDemo() {
         scene={scene}
         selection={selection}
         backgroundFill={{ color: '#f4e9d8' }}
+        defaultTools={['select']}
         layers={{ selectionOverlay: { handles: false } }}
       />
     </div>
