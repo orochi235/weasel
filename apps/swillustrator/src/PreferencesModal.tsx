@@ -8,7 +8,7 @@
  *  recursion — we cast to `SwillPrefPath` at the leaf only. That's the
  *  one type pragmatism the recursive walk requires.
  */
-import { useEffect } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
   PREFS,
   usePref,
@@ -18,16 +18,72 @@ import {
   type SwillPrefNumber,
   type SwillPrefString,
   type SwillPrefEnum,
+  type SwillPrefRegistryEnum,
   type SwillPrefObject,
   type SwillPrefPath,
+  type RegistryEnumFilter,
 } from './prefs';
+
+/** Option list for one registry-enum source. The modal looks each prefs
+ *  source up by string id (`SwillPrefRegistryEnum.source`) and invokes
+ *  the resolver with the pref's `filter` (criteria map or predicate).
+ *  Consumers build the list from their live registries (tools, history,
+ *  scene objects, …). */
+export type RegistryEnumOption = { value: string; label: string };
+export type RegistryEnumResolver =
+  (filter?: RegistryEnumFilter) => readonly RegistryEnumOption[];
+export type RegistryEnumSources = Record<string, RegistryEnumResolver>;
+
+const RegistryEnumSourcesContext = createContext<RegistryEnumSources>({});
+
+/** Dev mode: the Vite dev server sets `import.meta.env.DEV`. In a
+ *  production bundle this is false, so the toggle and any hidden prefs
+ *  disappear entirely. */
+const isDevMode = (): boolean => {
+  try {
+    return Boolean((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV);
+  } catch {
+    return false;
+  }
+};
+
+/** Recursively walk a group, omitting hidden leaves unless `showHidden`.
+ *  Returns null when the entire subtree is hidden so empty columns and
+ *  empty inner panels disappear too. */
+function visibleSubtree(
+  node: SwillPref | SwillPrefGroup,
+  showHidden: boolean,
+): SwillPref | SwillPrefGroup | null {
+  if ('kind' in node) {
+    if (node.hidden && !showHidden) return null;
+    return node;
+  }
+  const children: Record<string, SwillPref | SwillPrefGroup> = {};
+  for (const [k, child] of Object.entries(node.children)) {
+    const v = visibleSubtree(child as SwillPref | SwillPrefGroup, showHidden);
+    if (v) children[k] = v;
+  }
+  if (Object.keys(children).length === 0) return null;
+  return { ...node, children };
+}
 
 export interface PreferencesModalProps {
   open: boolean;
   onClose: () => void;
+  /** Per-source option lists for `kind: 'registry-enum'` prefs. Keys
+   *  match the `source` field on the pref descriptor. Omitted sources
+   *  fall back to a plain text input so a missing wiring is recoverable. */
+  registryEnumSources?: RegistryEnumSources;
 }
 
-export function PreferencesModal({ open, onClose }: PreferencesModalProps) {
+export function PreferencesModal({ open, onClose, registryEnumSources }: PreferencesModalProps) {
+  const sources = useMemo(() => registryEnumSources ?? {}, [registryEnumSources]);
+  const dev = useMemo(isDevMode, []);
+  const [showHidden, setShowHidden] = useState(false);
+  const filteredRoot = useMemo(
+    () => visibleSubtree(PREFS, showHidden) as SwillPrefGroup | null,
+    [showHidden],
+  );
   // Esc closes. Bound on the document while open so the modal works even
   // when focus is inside one of its inputs (where the app-level Cmd-,
   // keybinding's `skipInEditable` would suppress it).
@@ -46,6 +102,7 @@ export function PreferencesModal({ open, onClose }: PreferencesModalProps) {
   if (!open) return null;
 
   return (
+    <RegistryEnumSourcesContext.Provider value={sources}>
     <div
       className="swill-prefs-backdrop"
       role="dialog"
@@ -59,6 +116,16 @@ export function PreferencesModal({ open, onClose }: PreferencesModalProps) {
       <div className="swill-prefs-modal">
         <div className="swill-prefs-header">
           <h2 className="swill-prefs-title">{PREFS.name}</h2>
+          {dev && (
+            <label className="swill-prefs-show-hidden" title="Dev only — reveal hidden prefs">
+              <input
+                type="checkbox"
+                checked={showHidden}
+                onChange={(e) => setShowHidden(e.target.checked)}
+              />
+              <span>Show hidden</span>
+            </label>
+          )}
           <button
             type="button"
             className="swill-prefs-close"
@@ -70,7 +137,7 @@ export function PreferencesModal({ open, onClose }: PreferencesModalProps) {
           </button>
         </div>
         <div className="swill-prefs-columns">
-          {Object.entries(PREFS.children).map(([key, rawChild]) => {
+          {Object.entries(filteredRoot?.children ?? {}).map(([key, rawChild]) => {
             // Widen here: `PREFS.children` has narrow inferred entries (each
             // top-level child is a distinct group shape from `satisfies`), so
             // TS won't accept the structural narrowing inside the loop.
@@ -93,6 +160,7 @@ export function PreferencesModal({ open, onClose }: PreferencesModalProps) {
         </div>
       </div>
     </div>
+    </RegistryEnumSourcesContext.Provider>
   );
 }
 
@@ -155,6 +223,8 @@ function PrefInput({ path, pref }: { path: string; pref: SwillPref }) {
       return <StringInput path={path} pref={pref} />;
     case 'enum':
       return <EnumInput path={path} pref={pref} />;
+    case 'registry-enum':
+      return <RegistryEnumInput path={path} pref={pref} />;
     case 'object':
       return <ObjectInput path={path} pref={pref} />;
   }
@@ -223,6 +293,48 @@ function EnumInput({ path, pref }: { path: string; pref: SwillPrefEnum }) {
       onChange={(e) => setValue(e.target.value)}
     >
       {pref.options.map((o) => (
+        <option key={o.value} value={o.value}>{o.label}</option>
+      ))}
+    </select>
+  );
+}
+
+function RegistryEnumInput({ path, pref }: { path: string; pref: SwillPrefRegistryEnum }) {
+  const [value, setValue] = usePref(path as SwillPrefPath) as unknown as [
+    string,
+    (v: string) => void,
+  ];
+  const sources = useContext(RegistryEnumSourcesContext);
+  const resolver = sources[pref.source];
+  // No resolver wired for this source: degrade to a text input so the
+  // user can still see and edit the stored value rather than face a
+  // mysteriously inert dropdown. The wiring gap is recoverable later
+  // without breaking the persisted pref.
+  if (!resolver) {
+    return (
+      <input
+        type="text"
+        className="swill-prefs-input"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+      />
+    );
+  }
+  const options = resolver(pref.filter);
+  // If the stored value isn't in the option list (e.g. a renamed tool),
+  // surface it as an extra disabled option so the user can see what was
+  // there and pick a real one without silently rewriting state.
+  const hasCurrent = options.some((o) => o.value === value);
+  return (
+    <select
+      className="swill-prefs-select"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+    >
+      {!hasCurrent && (
+        <option value={value} disabled>{value} (not in registry)</option>
+      )}
+      {options.map((o) => (
         <option key={o.value} value={o.value}>{o.label}</option>
       ))}
     </select>

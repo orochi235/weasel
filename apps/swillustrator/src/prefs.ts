@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 // Types
 // ──────────────────────────────────────────────────────────────────────────
 
-export type SwillPrefKind = 'number' | 'boolean' | 'string' | 'enum' | 'object';
+export type SwillPrefKind = 'number' | 'boolean' | 'string' | 'enum' | 'registry-enum' | 'object';
 
 interface SwillPrefBase<K extends SwillPrefKind, Value> {
   kind: K;
@@ -21,6 +21,11 @@ interface SwillPrefBase<K extends SwillPrefKind, Value> {
   description: string;
   /** Fallback when nothing is persisted. */
   default: Value;
+  /** Hidden from the Preferences modal in production. Used for prefs the
+   *  user shouldn't toggle directly — set by other code paths (e.g.
+   *  `ui.disclaimerDismissed` via the banner's "I understand" link). In
+   *  dev mode, an "Show hidden prefs" toggle reveals them. */
+  hidden?: boolean;
 }
 
 export interface SwillPrefNumber extends SwillPrefBase<'number', number> {
@@ -34,6 +39,46 @@ export interface SwillPrefEnum<T extends string = string>
   extends SwillPrefBase<'enum', T> {
   options: readonly { value: T; label: string }[];
 }
+/** Enum whose options come from a runtime registry instead of a static
+ *  list — e.g. `tools.lastTool` picks from whichever tools the app has
+ *  registered. The Preferences modal resolves `source` against an
+ *  injected `registryEnumSources` map (source id → resolver function).
+ *  The value remains a string at rest; the source's ids are the legal
+ *  values. */
+export interface SwillPrefRegistryEnum
+  extends SwillPrefBase<'registry-enum', string> {
+  /** Key into the modal's `registryEnumSources` prop. */
+  source: string;
+  /** Optional narrowing applied by the source's resolver. Two forms:
+   *   • a key/value criteria map (e.g. `{ kind: 'rect', layer: 'fg' }`)
+   *     — declarative; the resolver matches each candidate against it.
+   *   • a predicate callback `(item) => boolean` — imperative; the
+   *     resolver invokes it per candidate.
+   *  The item shape is source-defined; the resolver knows what `item`
+   *  looks like for its own universe. Omit `filter` to get everything. */
+  filter?: RegistryEnumFilter;
+}
+
+/** Either a key/value criteria map or a predicate callback. See
+ *  `SwillPrefRegistryEnum.filter` for usage. */
+export type RegistryEnumFilter =
+  | Record<string, unknown>
+  | ((item: unknown) => boolean);
+
+/** Apply a `RegistryEnumFilter` to a candidate. Map form does a shallow
+ *  strict-equality match on every declared key (`item[k] === filter[k]`).
+ *  Callback form invokes the predicate. No filter → keep everything.
+ *  Source resolvers can use this so the matching semantics stay uniform
+ *  across registries. */
+export function matchesRegistryFilter<T>(item: T, filter?: RegistryEnumFilter): boolean {
+  if (filter == null) return true;
+  if (typeof filter === 'function') return filter(item as unknown);
+  const obj = item as unknown as Record<string, unknown>;
+  for (const k of Object.keys(filter)) {
+    if (obj?.[k] !== filter[k]) return false;
+  }
+  return true;
+}
 /** Catch-all for non-primitive shapes (panels map, future color records). */
 export interface SwillPrefObject<T = unknown> extends SwillPrefBase<'object', T> {}
 
@@ -42,6 +87,7 @@ export type SwillPref =
   | SwillPrefBoolean
   | SwillPrefString
   | SwillPrefEnum
+  | SwillPrefRegistryEnum
   | SwillPrefObject;
 
 /** Nestable group: branch nodes in the registry tree. */
@@ -88,6 +134,13 @@ export const PREFS = {
           description: 'Hidden/collapsed state per properties-panel section.',
           default: {} as Record<string, { hidden?: boolean; collapsed?: boolean }>,
         },
+        disclaimerDismissed: {
+          kind: 'boolean',
+          name: 'Dismiss Adobe/Illustrator disclaimer',
+          description: 'Hide the bottom-right "dumpster fire" disclaimer banner. Set by clicking "I understand" on the banner itself.',
+          default: false,
+          hidden: true,
+        },
       },
     },
     view: {
@@ -122,7 +175,8 @@ export const PREFS = {
       description: 'Tool memory.',
       children: {
         lastTool: {
-          kind: 'string',
+          kind: 'registry-enum',
+          source: 'tools',
           name: 'Last used tool',
           description: 'Restored on app start.',
           default: 'select',
@@ -149,6 +203,7 @@ type PrefValue<P> =
   P extends SwillPrefNumber  ? number  :
   P extends SwillPrefString  ? string  :
   P extends SwillPrefEnum<infer T>   ? T :
+  P extends SwillPrefRegistryEnum    ? string :
   P extends SwillPrefObject<infer T> ? T :
   never;
 
