@@ -30,6 +30,9 @@ export interface SceneSnapshot {
   groups: Group[];
   doc: Document;
   view: View;
+  /** Optional — older snapshots predate selection persistence and load with
+   *  an empty selection. New snapshots always include it. */
+  selection?: string[];
 }
 
 export const DB_NAME = 'swill';

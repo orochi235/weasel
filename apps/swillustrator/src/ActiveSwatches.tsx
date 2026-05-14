@@ -27,6 +27,9 @@ export interface ActiveSwatchesProps {
   onChangeFill: (next: ActivePaint) => void;
   onChangeStroke: (next: ActivePaint) => void;
   onFocus: (which: 'fill' | 'stroke') => void;
+  /** Render a smaller variant for use inside a properties panel row.
+   *  Default false (full-size, suitable for the tool palette). */
+  compact?: boolean;
 }
 
 /**
@@ -45,8 +48,9 @@ export function ActiveSwatches(p: ActiveSwatchesProps) {
   const strokeInputRef = useRef<HTMLInputElement>(null);
   const fillColor = p.fill.kind === 'solid' ? p.fill.color : '#ffffff';
   const strokeColor = p.stroke.kind === 'solid' ? p.stroke.color : '#000000';
+  const containerClass = `swill-active-swatches${p.compact ? ' swill-active-swatches--compact' : ''}`;
   return (
-    <div className="swill-active-swatches" role="group" aria-label="Active fill and stroke">
+    <div className={containerClass} role="group" aria-label="Active fill and stroke">
       <button
         type="button"
         className={`swill-swatch swill-swatch--stroke${p.focused === 'stroke' ? ' is-focused' : ''}${p.stroke.kind === 'none' ? ' is-none' : ''}`}

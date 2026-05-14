@@ -657,6 +657,8 @@ export function App() {
     setView,
     publish,
     resetHistory: () => { historyRef.current?.clear(); },
+    getSelection: () => [...selection.current],
+    setSelection: (ids) => { selection.set(ids.map((id) => asNodeId(id))); },
   });
 
   // After a restore the highest existing id may overlap with `nextId`'s
@@ -2158,6 +2160,12 @@ export function App() {
           setStrokeColor={setStrokeColor}
           strokeWidth={strokeWidth}
           setStrokeWidth={setStrokeWidth}
+          activeFill={activeFill}
+          activeStroke={activeStroke}
+          setActiveFill={setActiveFill}
+          setActiveStroke={setActiveStroke}
+          focusedSwatch={focusedSwatch}
+          setFocusedSwatch={setFocusedSwatch}
           docTitle={docTitle}
           setDocTitle={setDocTitle}
           paperSize={paperSize}
@@ -2229,6 +2237,14 @@ interface RightSidebarProps {
   setStrokeColor: (s: string) => void;
   strokeWidth: number;
   setStrokeWidth: (n: number) => void;
+  // Active-paint primitives. Threaded so the Defaults panel can render the
+  // same paired-swatch widget the tool palette uses (compact variant).
+  activeFill: ActivePaint;
+  activeStroke: ActivePaint;
+  setActiveFill: (p: ActivePaint) => void;
+  setActiveStroke: (p: ActivePaint) => void;
+  focusedSwatch: 'fill' | 'stroke';
+  setFocusedSwatch: (which: 'fill' | 'stroke') => void;
   docTitle: string;
   setDocTitle: (s: string) => void;
   paperSize: PaperSize;
@@ -2322,11 +2338,16 @@ function RightSidebar(p: RightSidebarProps) {
         </PropertiesPanel>
       ) : (
         <PropertiesPanel title="Defaults">
-          <PropertyRow label="Fill">
-            <PropertyColorInput value={p.fillColor} onChange={p.setFillColor} />
-          </PropertyRow>
-          <PropertyRow label="Stroke">
-            <PropertyColorInput value={p.strokeColor} onChange={p.setStrokeColor} />
+          <PropertyRow label="Paint">
+            <ActiveSwatches
+              compact
+              fill={p.activeFill}
+              stroke={p.activeStroke}
+              focused={p.focusedSwatch}
+              onChangeFill={p.setActiveFill}
+              onChangeStroke={p.setActiveStroke}
+              onFocus={p.setFocusedSwatch}
+            />
           </PropertyRow>
           <PropertyRow label="Width">
             <PropertyNumberInput value={p.strokeWidth} onChange={p.setStrokeWidth} min={0} max={20} step={1} span={4} />

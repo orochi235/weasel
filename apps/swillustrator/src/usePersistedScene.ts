@@ -34,6 +34,12 @@ export interface UsePersistedSceneArgs {
   /** Resets the history stack after restore — old history wouldn't match
    *  the restored items anyway. */
   resetHistory: () => void;
+  /** Read the current selection at save time. Returns plain ids (the
+   *  NodeId brand is structural, so a string[] is fine over the wire). */
+  getSelection: () => string[];
+  /** Apply a restored selection. Called once after the snapshot's items
+   *  have been published so the ids it references actually exist. */
+  setSelection: (ids: string[]) => void;
 }
 
 export function usePersistedScene(args: UsePersistedSceneArgs): { restored: boolean } {
@@ -41,7 +47,14 @@ export function usePersistedScene(args: UsePersistedSceneArgs): { restored: bool
     itemsRef, groupsRef,
     doc, setDoc, view, setView,
     publish, resetHistory,
+    getSelection, setSelection,
   } = args;
+
+  // Selection is read at write-time via a ref so the persist effect doesn't
+  // re-bind on every selection change. `setSelection` is only called once at
+  // restore, so it stays in closure.
+  const getSelectionRef = useRef(getSelection);
+  getSelectionRef.current = getSelection;
 
   const [restored, setRestored] = useState(false);
 
@@ -70,11 +83,19 @@ export function usePersistedScene(args: UsePersistedSceneArgs): { restored: bool
         groupsRef.current = snap.groups;
         // publish() resyncs React state from the refs; setDoc/setView push
         // the non-ref fields; resetHistory wipes any history captured against
-        // the (empty) pre-restore state.
+        // the (empty) pre-restore state. Selection lands last — it references
+        // ids that must already be in itemsRef.current.
         publish();
         setDoc(snap.doc);
         setView(snap.view);
         resetHistory();
+        if (snap.selection && snap.selection.length > 0) {
+          // Filter to ids still present — defensive against snapshots that
+          // somehow drift, though that shouldn't happen in practice.
+          const valid = new Set(snap.items.map((o) => o.id));
+          const restored = snap.selection.filter((id) => valid.has(id));
+          if (restored.length > 0) setSelection(restored);
+        }
         setRestored(true);
       }
       readyRef.current = true;
@@ -103,6 +124,7 @@ export function usePersistedScene(args: UsePersistedSceneArgs): { restored: bool
       groups: groupsRef.current.slice(),
       doc: docRef.current,
       view: viewRef.current,
+      selection: getSelectionRef.current(),
     };
     void saveScene(snap);
   };

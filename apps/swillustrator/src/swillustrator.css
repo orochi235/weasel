@@ -359,6 +359,34 @@ html, body, #root {
      container with a small offset to produce the iconic overlap. */
 }
 
+/* Compact variant for inline use inside a properties-panel row. Same
+   visual idiom (overlapping fill + stroke), scaled to ~40px so it tucks
+   into a single row without crowding adjacent inputs. */
+.swill-active-swatches--compact {
+  width: 40px;
+  height: 40px;
+  margin: 0;
+}
+
+.swill-active-swatches--compact .swill-swatch {
+  width: 22px;
+  height: 22px;
+}
+
+.swill-active-swatches--compact .swill-swatch--fill {
+  top: 2px;
+  left: 2px;
+}
+
+.swill-active-swatches--compact .swill-swatch--stroke {
+  bottom: 2px;
+  right: 2px;
+}
+
+.swill-active-swatches--compact .swill-swatch--stroke::before {
+  inset: 4px;
+}
+
 .swill-swatch {
   position: absolute;
   width: 32px;
