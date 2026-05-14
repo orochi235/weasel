@@ -13,7 +13,7 @@ import type {
   BooleansAdapter,
   UseBooleansReturn,
 } from '@orochi235/weasel';
-import { PathfinderPanel } from '@orochi235/weasel-ui';
+import { PathfinderPanel } from './ui';
 
 /** Paper-size keys mirrored from App.tsx's `PAPER_PRESETS` map. Kept as a
  *  bare string union here so this component stays decoupled from the

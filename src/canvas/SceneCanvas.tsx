@@ -25,6 +25,8 @@ import { type ActionsProp } from 'interactions/actions/registry';
 import { useStandardActions } from 'interactions/actions/useStandardActions';
 import { translateRectPose } from 'features/groups/composePose';
 import type { DrawCommand, ShaderProgramHandle } from '../renderer';
+import { textCommand } from 'features/text/textCommand';
+import { findShapePainter } from './shapePainters';
 import type { Paint } from 'core/paint-types';
 import type { RenderLayer } from 'core/layers/render';
 import { Canvas } from './Canvas';
@@ -58,21 +60,42 @@ import type { StandardActionsDeps, StandardActionDefaults } from 'interactions/a
  *  via `selectTool.handleHitRadius` or `layers.selectionOverlay.handles.size`. */
 export const DEFAULT_HANDLE_SIZE = 8;
 
-/** Default scene-slot `drawOne`. Paints each node as a filled rect using
- *  `node.data.color` if present, falling back to neutral gray. Assumes
- *  TPose carries `{ x, y, width, height }` — consumers with non-rect
- *  poses (paths, polygons) must supply their own `drawOne`. */
+/** Default scene-slot `drawOne` — dispatches through the shape-painter
+ *  registry (`./shapePainters`). The kit registers built-in painters for
+ *  text (`kit:text`), paths (`kit:path`), and a rect-from-pose fallback
+ *  (`kit:rect-fallback`) at module load, so every shape it ships out of
+ *  the box (rect, ellipse, polygon, star, line, pen, pencil, text) paints
+ *  without consumer intervention.
+ *
+ *  To teach the kit about a new kind of shape, register a painter — do
+ *  not override `drawOne`. See `registerShapePainter` for the API and
+ *  priority semantics. Override `drawOne` only for cross-cutting
+ *  decoration (post-process every node, mix in overlays from outside
+ *  the per-node data, etc.).
+ *
+ *  This function also emits an optional `data.label` overlay (sans-serif
+ *  11px, top-left) on every non-text painter's output — a convenience
+ *  for naming zones in demos. Nodes whose painter is `kit:text` skip the
+ *  overlay since their content already shows. */
 export function defaultDrawOne<TData, TLayer extends string, TPose>(
   node: Node<TData, TLayer, TPose>,
   pose: TPose,
 ): DrawCommand[] {
-  const p = pose as unknown as { x: number; y: number; width: number; height: number };
-  const color = (node.data as { color?: string } | null)?.color ?? '#888';
-  return [{
-    kind: 'path',
-    path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-    fill: { color },
-  }];
+  const painter = findShapePainter(node);
+  const primary = painter ? painter.paint(node, pose) : [];
+
+  // Label overlay — skipped for text nodes (their content is the label).
+  const data = node.data as { label?: string; text?: string } | null;
+  if (data?.label && data.text == null) {
+    const p = pose as unknown as { x: number; y: number };
+    primary.push(textCommand(
+      p.x + 6,
+      p.y + 14,
+      data.label,
+      { fontFamily: 'sans-serif', fontSize: 11, fill: { fill: 'solid', color: 'rgba(0,0,0,0.7)' } },
+    ));
+  }
+  return primary;
 }
 
 /** Deep-merge user-supplied `layers` with kit defaults. Slots the user

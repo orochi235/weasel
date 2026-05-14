@@ -1,0 +1,25 @@
+.palette {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--wzl-panel-bg);
+  border: 1px solid var(--wzl-panel-border);
+  border-radius: 4px;
+  padding: 4px;
+  user-select: none;
+}
+.palette.horizontal {
+  flex-direction: row;
+}
+
+.separator {
+  background: var(--wzl-panel-border);
+}
+.palette:not(.horizontal) .separator {
+  height: 1px;
+  margin: 2px 0;
+}
+.palette.horizontal .separator {
+  width: 1px;
+  margin: 0 2px;
+}

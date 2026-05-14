@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Highlight, themes } from 'prism-react-renderer';
 import { CATEGORIES, DEMOS, DEMOS_BY_ID, type DemoEntry } from './registry';
-import { CommandPalette, useCommandPaletteShortcut } from '@orochi235/weasel-ui';
+// CommandPalette / useCommandPaletteShortcut live in
+// apps/swillustrator/src/ui/ after the kit/app split. The demo harness uses
+// them for its own command-palette chrome via this relative import.
+import {
+  CommandPalette,
+  useCommandPaletteShortcut,
+} from '../apps/swillustrator/src/ui/CommandPalette';
 // We deliberately don't import @orochi235/weasel-ui/tokens.css here — the
 // demo's own canvas-kit-demo.css supplies dark-theme --wui-* values mapped
 // from --ckd-* tokens. Pulling tokens.css would clobber those with the
@@ -37,7 +43,7 @@ export function WeaselDemos() {
       <aside className="ckd-sidebar">
         <header className="ckd-sidebar-header">
           <img src={logoUrl} alt="weasel logo" className="ckd-sidebar-logo" />
-          <h1>weasel</h1>
+          <h1>w<span className="ckd-sidebar-rainbow">easel</span></h1>
           <p>Domain-agnostic 2D scene-graph hooks for React + canvas.</p>
           <p><a href="./api/">API reference →</a></p>
           <p><a href="./docs/ui/storybook/">UI storybook →</a></p>

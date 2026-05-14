@@ -1,6 +1,7 @@
 import { Fragment, useRef, type ReactNode } from 'react';
 import { UnknownIcon } from '@orochi235/weasel';
 import type { AnyTool, ToolsApi } from '@orochi235/weasel';
+import { ToolButton, ToolGroup } from '@orochi235/weasel-ui';
 import s from './ToolPalette.module.css';
 import { formatShortcut } from './formatShortcut';
 
@@ -43,29 +44,6 @@ function resolveIcon(tool: AnyTool): ReactNode {
   if (rawIcon == null) return <UnknownIcon />;
   if (typeof rawIcon === 'function') return rawIcon(undefined);
   return rawIcon;
-}
-
-function renderToolButton(tool: AnyTool, tools: ToolsApi, isTabbable: boolean) {
-  const label = tool.presentation?.label ?? tool.id;
-  const icon = resolveIcon(tool);
-  const shortcut = tool.presentation?.shortcut ?? formatShortcut(tool.keybinding);
-  const title = shortcut ? `${label} (${shortcut})` : label;
-  const isActive = tools.active === tool.id;
-  return (
-    <button
-      key={tool.id}
-      type="button"
-      tabIndex={isTabbable ? 0 : -1}
-      title={title}
-      className={[s.button, isActive && s.active].filter(Boolean).join(' ')}
-      aria-current={isActive ? 'true' : undefined}
-      onClick={() => tools.setActive(tool.id)}
-    >
-      <span className={s.icon} aria-hidden="true">{icon}</span>
-      <span className={s.label}>{label}</span>
-      {shortcut && <span className={s.shortcut}>{shortcut}</span>}
-    </button>
-  );
 }
 
 export interface ToolPaletteProps {
@@ -137,9 +115,23 @@ export function ToolPalette(props: ToolPaletteProps) {
               aria-orientation={orientation === 'horizontal' ? 'vertical' : 'horizontal'}
             />
           )}
-          <div className={s.group} role="group" data-group={key}>
-            {groups.get(key)!.map((tool) => renderToolButton(tool, tools, tool.id === tabbableId))}
-          </div>
+          <ToolGroup orientation={orientation} groupKey={key}>
+            {groups.get(key)!.map((tool) => {
+              const label = tool.presentation?.label ?? tool.id;
+              const shortcut = tool.presentation?.shortcut ?? formatShortcut(tool.keybinding);
+              return (
+                <ToolButton
+                  key={tool.id}
+                  icon={resolveIcon(tool)}
+                  label={label}
+                  shortcut={shortcut}
+                  active={tools.active === tool.id}
+                  tabbable={tool.id === tabbableId}
+                  onClick={() => tools.setActive(tool.id)}
+                />
+              );
+            })}
+          </ToolGroup>
         </Fragment>
       ))}
     </div>

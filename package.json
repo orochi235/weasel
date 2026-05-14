@@ -74,6 +74,9 @@
     "build:api": "typedoc",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:kit": "vitest run --project=kit",
+    "test:ui": "vitest run --project=weasel-ui",
+    "test:swill": "vitest run --project=swillustrator",
     "test:watch": "vitest",
     "test:changed": "vitest run --changed",
     "test:related": "vitest related --run",
@@ -83,7 +86,9 @@
     "changeset": "changeset",
     "release": "changeset publish",
     "prepublishOnly": "npm run typecheck && npm run test && npm run build",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "peerDependencies": {
     "react": ">=18"
@@ -111,6 +116,8 @@
     "prism-react-renderer": "^2.4.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "storybook": "^10.3.6",
+    "@storybook/react-vite": "^10.3.6",
     "tsup": "^8.3.0",
     "typedoc": "^0.28.19",
     "typescript": "~6.0.2",

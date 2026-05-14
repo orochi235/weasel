@@ -1,0 +1,8 @@
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.group.horizontal {
+  flex-direction: row;
+}
