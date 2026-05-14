@@ -69,7 +69,6 @@ export function PreferencesModal({ open, onClose }: PreferencesModalProps) {
             ×
           </button>
         </div>
-        {PREFS.description && <p className="swill-prefs-subtitle">{PREFS.description}</p>}
         <div className="swill-prefs-columns">
           {Object.entries(PREFS.children).map(([key, rawChild]) => {
             // Widen here: `PREFS.children` has narrow inferred entries (each
