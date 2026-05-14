@@ -22,6 +22,7 @@ function makeAdapter() {
 
 function setup(over: {
   autoSelect?: boolean;
+  autoCommitOnClose?: boolean;
   closeHitRadius?: number;
   snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
 } = {}) {
@@ -142,8 +143,8 @@ describe('usePenTool', () => {
     expect(out.x).toBeGreaterThan(0);
   });
 
-  it('clicking first anchor (≥3 anchors) closes the subpath → BetweenSubpaths', () => {
-    const { tool, scratch } = setup({ closeHitRadius: 8 });
+  it('clicking first anchor (≥3 anchors) closes the subpath and auto-commits (default)', () => {
+    const { tool, scratch, adapter, wrapPath } = setup({ closeHitRadius: 8 });
     // Three anchors at (0,0), (100,0), (100,100).
     for (const [x, y] of [[0, 0], [100, 0], [100, 100]] as const) {
       tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
@@ -152,10 +153,26 @@ describe('usePenTool', () => {
     // Click within close hit radius of first anchor.
     tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 1, worldY: 1 }));
     tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 1, worldY: 1 }));
+    expect(wrapPath).toHaveBeenCalledTimes(1);
+    expect(wrapPath.mock.calls[0][1]).toEqual({ closed: true });
+    expect(adapter.addNode).toHaveBeenCalledTimes(1);
+    expect(scratch.current).toBeNull();
+    expect(scratch.finishedSubpaths).toEqual([]);
+  });
+
+  it('autoCommitOnClose: false → close-on-first-anchor parks the subpath in scratch (BetweenSubpaths)', () => {
+    const { tool, scratch, adapter } = setup({ closeHitRadius: 8, autoCommitOnClose: false });
+    for (const [x, y] of [[0, 0], [100, 0], [100, 100]] as const) {
+      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
+      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
+    }
+    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 1, worldY: 1 }));
+    tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 1, worldY: 1 }));
     expect(scratch.current).toBeNull();
     expect(scratch.finishedSubpaths.length).toBe(1);
     expect(scratch.finishedSubpaths[0].closed).toBe(true);
     expect(scratch.finishedSubpaths[0].anchors.length).toBe(3);
+    expect(adapter.addNode).not.toHaveBeenCalled();
   });
 
   it('clicking first anchor with <3 anchors → no-op (degenerate)', () => {
@@ -190,7 +207,7 @@ describe('usePenTool', () => {
   });
 
   it('Enter in BetweenSubpaths → commits, returns to Idle', () => {
-    const { tool, scratch, adapter, wrapPath } = setup();
+    const { tool, scratch, adapter, wrapPath } = setup({ autoCommitOnClose: false });
     // Build + close a subpath.
     for (const [x, y] of [[0, 0], [100, 0], [100, 100]] as const) {
       tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));

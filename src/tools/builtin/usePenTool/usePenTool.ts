@@ -94,6 +94,12 @@ export interface UsePenToolOptions<TPose> {
   };
   /** Auto-select the new object after commit. Default `true`. */
   autoSelect?: boolean;
+  /** When true (default), clicking the first anchor to close a subpath
+   *  commits immediately — the closed region renders with its fill right
+   *  away. When false, the closed subpath stays in scratch so the user can
+   *  start another subpath; commit then fires on Enter / tool-switch /
+   *  ⌘-click / double-click, producing a compound path. */
+  autoCommitOnClose?: boolean;
   /** Screen-px hit radius for "click first anchor to close". Default `8`.
    *  Note: implemented in world space here (divided by view.scale at the
    *  call site); aligns with `useSelectTool.handleHitRadius`. */
@@ -274,7 +280,7 @@ export interface UsePenToolReturn {
 export function usePenTool<TPose>(
   options: UsePenToolOptions<TPose>,
 ): UsePenToolReturn {
-  const { wrapPath, adapter, autoSelect = true, closeHitRadius = 8, snapPoint, getPathObj } = options;
+  const { wrapPath, adapter, autoSelect = true, autoCommitOnClose = true, closeHitRadius = 8, snapPoint, getPathObj } = options;
 
   // Persistent scratch: single ref reused across gestures so multi-click
   // state survives the dispatcher's per-gesture initScratch contract.
@@ -283,8 +289,8 @@ export function usePenTool<TPose>(
 
   // Latest options stashed so handlers see fresh values without rebuilding
   // the Tool record (which would lose scratch identity in the dispatcher).
-  const optsRef = useRef({ wrapPath, adapter, autoSelect, closeHitRadius, snapPoint, getPathObj, applyOps: adapter.applyOps });
-  optsRef.current = { wrapPath, adapter, autoSelect, closeHitRadius, snapPoint, getPathObj, applyOps: adapter.applyOps };
+  const optsRef = useRef({ wrapPath, adapter, autoSelect, autoCommitOnClose, closeHitRadius, snapPoint, getPathObj, applyOps: adapter.applyOps });
+  optsRef.current = { wrapPath, adapter, autoSelect, autoCommitOnClose, closeHitRadius, snapPoint, getPathObj, applyOps: adapter.applyOps };
 
   // Scratch is a mutable ref (so click-by-click state survives the
   // dispatcher's per-gesture initScratch contract). Mutations alone don't
@@ -521,7 +527,10 @@ export function usePenTool<TPose>(
         }
       }
 
-      // Close-on-first-anchor (≥3 anchors).
+      // Close-on-first-anchor (≥3 anchors). When `autoCommitOnClose` is
+      // on (default), commit right away so the closed region renders with
+      // its fill — Illustrator-style. When off, the closed subpath stays
+      // in scratch for compound-path builds and commits on Enter / switch.
       if (s.current && s.current.anchors.length >= 3) {
         const first = s.current.anchors[0];
         if (dist(first.x, first.y, wx, wy) <= radius) {
@@ -530,6 +539,7 @@ export function usePenTool<TPose>(
           s.current = null;
           s.closeHintActive = false;
           s._lastClick = null;
+          if (optsRef.current.autoCommitOnClose) commit(s);
           forceRenderRef.current();
           return claim();
         }
