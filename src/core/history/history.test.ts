@@ -323,3 +323,103 @@ describe('createHistory entries / goto / version / subscribe', () => {
     expect(calls).toBe(4); // unsubscribed
   });
 });
+
+describe('createHistory — serialize / restore', () => {
+  it('round-trips an undo stack across save / restore', () => {
+    const a1 = makeAdapter();
+    const h1 = createHistory(a1 as any);
+    h1.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
+    h1.apply(createTransformOp<Pose>({ id: 'a', from: { x: 1, y: 1 }, to: { x: 2, y: 2 } }));
+    const snap = h1.serialize();
+    expect(snap.undoStack).toHaveLength(2);
+    expect(snap.redoStack).toHaveLength(0);
+
+    // Fresh adapter and history; pre-seed the adapter to the post-edit state
+    // (this is the post-reload world: the scene has already been restored,
+    // and history.restore is just rehydrating the stack on top of it).
+    const a2 = makeAdapter();
+    a2.state.set('a', { x: 2, y: 2 });
+    const h2 = createHistory(a2 as any);
+    h2.restore(snap);
+    expect(h2.canUndo()).toBe(true);
+    expect(h2.canRedo()).toBe(false);
+    // First undo lands on the intermediate state ({1,1}); second on origin.
+    h2.undo();
+    expect(a2.state.get('a')).toEqual({ x: 1, y: 1 });
+    h2.undo();
+    expect(a2.state.get('a')).toEqual({ x: 0, y: 0 });
+    expect(h2.canUndo()).toBe(false);
+    expect(h2.canRedo()).toBe(true);
+    h2.redo();
+    expect(a2.state.get('a')).toEqual({ x: 1, y: 1 });
+  });
+
+  it('preserves redo stack across restore', () => {
+    const a1 = makeAdapter();
+    const h1 = createHistory(a1 as any);
+    h1.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
+    h1.apply(createTransformOp<Pose>({ id: 'a', from: { x: 1, y: 1 }, to: { x: 2, y: 2 } }));
+    h1.undo(); // one entry on redo
+    const snap = h1.serialize();
+    expect(snap.undoStack).toHaveLength(1);
+    expect(snap.redoStack).toHaveLength(1);
+
+    const a2 = makeAdapter();
+    a2.state.set('a', { x: 1, y: 1 });
+    const h2 = createHistory(a2 as any);
+    h2.restore(snap);
+    expect(h2.canUndo()).toBe(true);
+    expect(h2.canRedo()).toBe(true);
+    h2.redo();
+    expect(a2.state.get('a')).toEqual({ x: 2, y: 2 });
+  });
+
+  it('drops entries whose ops lack a name (with debug log)', () => {
+    const a1 = makeAdapter();
+    const h1 = createHistory(a1 as any);
+    // A consumer-style op that doesn't go through any registered factory.
+    h1.applyOps([{
+      apply: (_ad: unknown) => { /* no-op */ },
+      invert: () => ({ apply: () => {}, invert(): any { return this; } }),
+    }], 'Custom');
+    // And one normal op so something survives.
+    h1.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
+    const snap = h1.serialize();
+    expect(snap.undoStack).toHaveLength(1);
+    expect(snap.undoStack[0].label).toBe(''); // transform op's default label
+  });
+
+  it('substitutes placeholder for unknown op names on restore', () => {
+    const a = makeAdapter();
+    const h = createHistory(a as any);
+    const fake: any = {
+      version: 1,
+      undoStack: [{
+        id: 1,
+        label: 'Future feature',
+        forwardOps: [{ name: 'futureOp', args: {} }],
+        baseOps: [{ name: 'futureOp', args: {} }],
+      }],
+      redoStack: [],
+      nextEntryId: 2,
+    };
+    h.restore(fake);
+    expect(h.canUndo()).toBe(true);
+    expect(() => h.undo()).not.toThrow();
+    // Undo turns it into a redo entry; redo apply is also a no-op.
+    expect(() => h.redo()).not.toThrow();
+  });
+
+  it('restore bumps nextEntryId past the highest restored id', () => {
+    const a = makeAdapter();
+    const h = createHistory(a as any);
+    h.restore({
+      version: 1,
+      undoStack: [],
+      redoStack: [],
+      nextEntryId: 5,
+    });
+    h.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
+    expect(h.entries().undo[0].id).toBe(5);
+  });
+});

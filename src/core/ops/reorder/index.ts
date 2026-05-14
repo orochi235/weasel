@@ -1,4 +1,5 @@
 import type { Op } from '../types';
+import { registerOpFactory } from '../registry';
 import {
   bringForward,
   sendBackward,
@@ -116,17 +117,36 @@ export function createReorderOp(args: {
   return createPartitionedReorderOp({ ids, fn, label: label ?? defaultLabel });
 }
 
-/** Op: move all `ids` to a contiguous block starting at `index` within `parentId`'s child order. */
-export function createMoveToIndexOp(args: {
+interface MoveToIndexArgs {
   ids: string[];
   parentId: string | null;
   index: number;
   label?: string;
-}): Op {
+  /** Optional pre-mutation child order for the parent. When present, the op
+   *  uses it as the invert target instead of capturing at apply time — this
+   *  is how a deserialized op (whose original `apply` already ran in a prior
+   *  session) restores its invert behavior across an IDB round-trip. */
+  prevPositions?: string[];
+}
+
+/** Op: move all `ids` to a contiguous block starting at `index` within `parentId`'s child order. */
+export function createMoveToIndexOp(args: MoveToIndexArgs): Op {
   const { ids, parentId, index, label } = args;
-  let before: string[] | null = null;
+  // Outer args record we'll mutate so the captured `before` lands in the
+  // serialized form. `prevPositions` arrives populated when reconstructed
+  // from a snapshot; otherwise it's filled in on first apply.
+  const argsForSerial: MoveToIndexArgs = {
+    ids,
+    parentId,
+    index,
+    label,
+    prevPositions: args.prevPositions ? args.prevPositions.slice() : undefined,
+  };
+  let before: string[] | null = args.prevPositions ? args.prevPositions.slice() : null;
 
   return {
+    name: 'moveToIndex',
+    args: argsForSerial,
     label: label ?? 'Move to index',
     apply(adapter) {
       const a = adapter as ReorderAdapter;
@@ -137,7 +157,13 @@ export function createMoveToIndexOp(args: {
         return p === parentId;
       });
       const current = a.getChildren(parentId);
-      before = current.slice();
+      // Only overwrite `before` the first time we apply; redo (a second
+      // apply) must not clobber the originally-captured order, otherwise
+      // invert would replay the post-move state and undo nothing.
+      if (before === null) {
+        before = current.slice();
+        argsForSerial.prevPositions = before.slice();
+      }
       const after = moveToIndex(current, eligible, index);
       a.setChildOrder(parentId, after);
     },
@@ -155,3 +181,5 @@ export function createMoveToIndexOp(args: {
     },
   };
 }
+
+registerOpFactory<MoveToIndexArgs>('moveToIndex', (args) => createMoveToIndexOp(args));

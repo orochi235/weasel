@@ -9,7 +9,7 @@
 // On unmount: fire-and-forget any pending write so the last edit survives.
 
 import { useEffect, useRef, useState, type MutableRefObject } from 'react';
-import type { Group } from '@orochi235/weasel';
+import type { Group, SerializedHistory } from '@orochi235/weasel';
 import type { Obj } from './poseUpdate';
 import {
   loadScene,
@@ -31,8 +31,9 @@ export interface UsePersistedSceneArgs {
   view: View;
   setView: (next: View) => void;
   publish: () => void;
-  /** Resets the history stack after restore — old history wouldn't match
-   *  the restored items anyway. */
+  /** Resets the history stack — called only when the snapshot has no
+   *  persisted history (older snapshots, or fresh DBs). When history is
+   *  present we restore it instead, so the undo stack survives reload. */
   resetHistory: () => void;
   /** Read the current selection at save time. Returns plain ids (the
    *  NodeId brand is structural, so a string[] is fine over the wire). */
@@ -40,6 +41,12 @@ export interface UsePersistedSceneArgs {
   /** Apply a restored selection. Called once after the snapshot's items
    *  have been published so the ids it references actually exist. */
   setSelection: (ids: string[]) => void;
+  /** Read the current history in serialized form at save time. */
+  getHistory: () => SerializedHistory;
+  /** Replace the live history with a restored snapshot. Called after
+   *  scene state is in place so the first undo's invert lands on the
+   *  correctly-restored adapter state. */
+  setHistory: (snapshot: SerializedHistory) => void;
 }
 
 export function usePersistedScene(args: UsePersistedSceneArgs): { restored: boolean } {
@@ -48,6 +55,7 @@ export function usePersistedScene(args: UsePersistedSceneArgs): { restored: bool
     doc, setDoc, view, setView,
     publish, resetHistory,
     getSelection, setSelection,
+    getHistory, setHistory,
   } = args;
 
   // Selection is read at write-time via a ref so the persist effect doesn't
@@ -55,6 +63,9 @@ export function usePersistedScene(args: UsePersistedSceneArgs): { restored: bool
   // restore, so it stays in closure.
   const getSelectionRef = useRef(getSelection);
   getSelectionRef.current = getSelection;
+  // Same pattern for history — read latest at save time, no effect re-bind.
+  const getHistoryRef = useRef(getHistory);
+  getHistoryRef.current = getHistory;
 
   const [restored, setRestored] = useState(false);
 
@@ -88,13 +99,21 @@ export function usePersistedScene(args: UsePersistedSceneArgs): { restored: bool
         publish();
         setDoc(snap.doc);
         setView(snap.view);
-        resetHistory();
         if (snap.selection && snap.selection.length > 0) {
           // Filter to ids still present — defensive against snapshots that
           // somehow drift, though that shouldn't happen in practice.
           const valid = new Set(snap.items.map((o) => o.id));
           const restored = snap.selection.filter((id) => valid.has(id));
           if (restored.length > 0) setSelection(restored);
+        }
+        // Restore history LAST: scene + selection are in place, so the
+        // first undo's invert lands on the correct restored state. Older
+        // snapshots that predate history persistence fall through to the
+        // legacy clear-on-restore path.
+        if (snap.history && snap.history.version === 1) {
+          setHistory(snap.history);
+        } else {
+          resetHistory();
         }
         setRestored(true);
       }
@@ -125,6 +144,7 @@ export function usePersistedScene(args: UsePersistedSceneArgs): { restored: bool
       doc: docRef.current,
       view: viewRef.current,
       selection: getSelectionRef.current(),
+      history: getHistoryRef.current(),
     };
     void saveScene(snap);
   };

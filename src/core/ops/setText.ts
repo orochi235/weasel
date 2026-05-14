@@ -1,19 +1,24 @@
 import type { Op } from './types';
+import { registerOpFactory } from './registry';
 
 interface SetTextAdapter {
   setText(id: string, text: string): void;
 }
 
-/** Op: set a text node's text content, inverting back to `from`. */
-export function createSetTextOp(args: {
+interface SetTextArgs {
   id: string;
   from: string;
   to: string;
   label?: string;
   coalesceKey?: string;
-}): Op {
+}
+
+/** Op: set a text node's text content, inverting back to `from`. */
+export function createSetTextOp(args: SetTextArgs): Op {
   const { id, from, to, label, coalesceKey } = args;
   return {
+    name: 'setText',
+    args: { id, from, to, label, coalesceKey },
     label,
     coalesceKey,
     apply(adapter) {
@@ -24,3 +29,5 @@ export function createSetTextOp(args: {
     },
   };
 }
+
+registerOpFactory<SetTextArgs>('setText', (args) => createSetTextOp(args));

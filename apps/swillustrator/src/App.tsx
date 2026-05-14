@@ -659,6 +659,8 @@ export function App() {
     resetHistory: () => { historyRef.current?.clear(); },
     getSelection: () => [...selection.current],
     setSelection: (ids) => { selection.set(ids.map((id) => asNodeId(id))); },
+    getHistory: () => historyRef.current!.serialize(),
+    setHistory: (snap) => { historyRef.current?.restore(snap); },
   });
 
   // After a restore the highest existing id may overlap with `nextId`'s

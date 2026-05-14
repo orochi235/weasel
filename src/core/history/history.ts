@@ -1,5 +1,6 @@
 import type { Op } from '../ops/types';
-import { dwarn } from '../../debug/flag';
+import { rebuildOp } from '../ops/registry';
+import { dwarn, dlog } from '../../debug/flag';
 
 interface Entry {
   /** Monotonic id assigned at first push. Stable across coalesce merges
@@ -16,6 +17,35 @@ interface Entry {
   label: string;
   /** ms timestamp at last push or coalesce; used to gate the coalesce window. */
   timestamp: number;
+}
+
+/** Wire form of a single op inside a serialized history. The pair
+ *  `(name, args)` reconstructs a live `Op` via the op-factory registry. */
+export interface SerializedOp {
+  name: string;
+  args: unknown;
+}
+
+/** Wire form of one history entry. `forwardOps` / `baseOps` mirror the
+ *  in-memory entry's fields (see `Entry` above) but only carry the
+ *  serializable `(name, args)` projection of each op. */
+export interface SerializedHistoryEntry {
+  id: number;
+  label: string;
+  forwardOps: SerializedOp[];
+  baseOps: SerializedOp[];
+}
+
+/** Snapshot of an entire `History` instance. Designed to live alongside the
+ *  scene snapshot in IDB so a reload restores the undo / redo stacks to
+ *  exactly where they were. */
+export interface SerializedHistory {
+  version: 1;
+  undoStack: SerializedHistoryEntry[];
+  /** Stored newest-first, mirroring the in-memory stack so a deserialized
+   *  history matches the original's `entries().redo` ordering. */
+  redoStack: SerializedHistoryEntry[];
+  nextEntryId: number;
 }
 
 /** Read-only view of a history entry exposed via `History.entries()`. */
@@ -54,6 +84,17 @@ export interface History {
   /** Subscribe to history changes. Fires after every push/undo/redo/
    *  clear/coalesce. Returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
+  /** Snapshot the undo + redo stacks in a structured-clone-safe form.
+   *  Entries whose ops aren't all kit-registered (i.e. any op missing a
+   *  `name`) are dropped from the snapshot with a debug-level log — they
+   *  can't round-trip, so we omit them rather than emit a half-restorable
+   *  entry. The in-memory stacks aren't modified. */
+  serialize(): SerializedHistory;
+  /** Replace the current undo + redo stacks with the deserialized contents
+   *  of `snapshot`. Ops are rebuilt via `rebuildOp`; unknown names become
+   *  no-op placeholders so stack ordering survives across kit-version
+   *  skew. Bumps `version` and notifies subscribers exactly once. */
+  restore(snapshot: SerializedHistory): void;
 }
 
 /** Options for `createHistory`. */
@@ -224,5 +265,107 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       listeners.add(listener);
       return () => { listeners.delete(listener); };
     },
+    serialize(): SerializedHistory {
+      return {
+        version: 1,
+        undoStack: undoStack
+          .map((e) => entryToSerial(e))
+          .filter((e): e is SerializedHistoryEntry => e !== null),
+        redoStack: redoStack
+          .map((e) => entryToSerial(e))
+          .filter((e): e is SerializedHistoryEntry => e !== null),
+        nextEntryId,
+      };
+    },
+    restore(snapshot: SerializedHistory): void {
+      undoStack.length = 0;
+      redoStack.length = 0;
+      for (const se of snapshot.undoStack) {
+        undoStack.push(serialToEntry(se));
+      }
+      for (const se of snapshot.redoStack) {
+        redoStack.push(serialToEntry(se));
+      }
+      // Seed nextEntryId from the snapshot, then defensively bump past any
+      // restored id — a malformed snapshot with duplicate or out-of-range
+      // ids should never produce a collision with future entries.
+      nextEntryId = snapshot.nextEntryId;
+      for (const e of undoStack) if (e.id >= nextEntryId) nextEntryId = e.id + 1;
+      for (const e of redoStack) if (e.id >= nextEntryId) nextEntryId = e.id + 1;
+      bump();
+    },
+  };
+}
+
+/** Project an `Op` to its `(name, args)` wire form. Returns `null` for ops
+ *  missing `name` — the caller drops the containing entry. */
+function opToSerial(op: Op): SerializedOp | null {
+  if (typeof op.name !== 'string') return null;
+  return { name: op.name, args: op.args };
+}
+
+/** Project a runtime entry to its serialized form, or `null` if any op in
+ *  the entry can't be serialized (we drop the whole entry then — a partially
+ *  serializable entry would invert against the wrong baseline on undo). */
+function entryToSerial(e: Entry): SerializedHistoryEntry | null {
+  const forwardOps: SerializedOp[] = [];
+  for (const op of e.forwardOps) {
+    const s = opToSerial(op);
+    if (s === null) {
+      dlog(`[history.serialize] dropping entry id=${e.id} "${e.label}" — forwardOp without name`);
+      return null;
+    }
+    forwardOps.push(s);
+  }
+  const baseOps: SerializedOp[] = [];
+  for (const op of e.baseOps) {
+    const s = opToSerial(op);
+    if (s === null) {
+      dlog(`[history.serialize] dropping entry id=${e.id} "${e.label}" — baseOp without name`);
+      return null;
+    }
+    baseOps.push(s);
+  }
+  return { id: e.id, label: e.label, forwardOps, baseOps };
+}
+
+/** Placeholder op used when the registry lacks the requested name. Stable
+ *  identity (each placeholder is its own invert) keeps undo/redo plumbing
+ *  happy without performing any adapter mutation. */
+function placeholderOp(name: string, args: unknown, label?: string): Op {
+  const op: Op = {
+    name,
+    args,
+    label,
+    apply: () => 'noop' as const,
+    invert: () => op,
+  };
+  return op;
+}
+
+/** Rebuild a runtime entry from its serialized form. Unknown op names become
+ *  no-op placeholders so the entry still occupies its slot in the stack. */
+function serialToEntry(se: SerializedHistoryEntry): Entry {
+  const forwardOps = se.forwardOps.map((so) => {
+    const built = rebuildOp(so.name, so.args);
+    if (built !== null) return built;
+    dlog(`[history.restore] unknown op name "${so.name}" — substituting no-op placeholder`);
+    return placeholderOp(so.name, so.args, se.label);
+  });
+  const baseOps = se.baseOps.map((so) => {
+    const built = rebuildOp(so.name, so.args);
+    if (built !== null) return built;
+    dlog(`[history.restore] unknown op name "${so.name}" — substituting no-op placeholder`);
+    return placeholderOp(so.name, so.args, se.label);
+  });
+  return {
+    id: se.id,
+    label: se.label,
+    forwardOps,
+    baseOps,
+    // Restored entries inherit a "now" timestamp — coalesce eligibility is
+    // a within-session concept and a restored entry shouldn't merge with a
+    // freshly-typed one regardless of when it was originally pushed.
+    timestamp: 0,
   };
 }

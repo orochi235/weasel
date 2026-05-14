@@ -1,4 +1,5 @@
 import type { Op } from './types';
+import { registerOpFactory } from './registry';
 
 export interface SetPathFields {
   path: unknown;     // Path | RectPath; left unknown so kit doesn't depend on features/paths/types here
@@ -16,15 +17,19 @@ interface SetPathAdapter {
  * Reports no-op when `from` and `to` are structurally equal (same path bytes,
  * closed, params), letting history skip the entry.
  */
-export function createSetPathOp(args: {
+interface SetPathArgs {
   id: string;
   from: SetPathFields;
   to: SetPathFields;
   label?: string;
   coalesceKey?: string;
-}): Op {
+}
+
+export function createSetPathOp(args: SetPathArgs): Op {
   const { id, from, to, label, coalesceKey } = args;
   return {
+    name: 'setPath',
+    args: { id, from, to, label, coalesceKey },
     label,
     coalesceKey,
     apply(adapter) {
@@ -42,6 +47,8 @@ export function createSetPathOp(args: {
     },
   };
 }
+
+registerOpFactory<SetPathArgs>('setPath', (args) => createSetPathOp(args));
 
 function fieldsEqual(a: SetPathFields, b: SetPathFields): boolean {
   if (a === b) return true;

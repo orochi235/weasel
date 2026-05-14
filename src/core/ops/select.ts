@@ -1,18 +1,23 @@
 import type { NodeId } from '../scene/types';
 import type { Op } from './types';
+import { registerOpFactory } from './registry';
 
 interface SelectionAdapter {
   setSelection(ids: NodeId[]): void;
 }
 
-/** Op: replace the current selection with `to`; inverts back to `from`. */
-export function createSetSelectionOp(args: {
+interface SetSelectionArgs {
   from: readonly NodeId[];
   to: readonly NodeId[];
   label?: string;
-}): Op {
+}
+
+/** Op: replace the current selection with `to`; inverts back to `from`. */
+export function createSetSelectionOp(args: SetSelectionArgs): Op {
   const { from, to, label } = args;
   return {
+    name: 'setSelection',
+    args: { from, to, label },
     label,
     apply(adapter) {
       // Always call setSelection so consumers that inspect op behavior
@@ -29,6 +34,8 @@ export function createSetSelectionOp(args: {
     },
   };
 }
+
+registerOpFactory<SetSelectionArgs>('setSelection', (args) => createSetSelectionOp(args));
 
 function sequenceEqual(a: readonly NodeId[], b: readonly NodeId[]): boolean {
   if (a.length !== b.length) return false;

@@ -8,7 +8,7 @@
 // The store holds a single record under the well-known key `'current'`. We
 // never grow the keyspace today; future "recent files" would justify a v2.
 
-import type { Group } from '@orochi235/weasel';
+import type { Group, SerializedHistory } from '@orochi235/weasel';
 import type { Obj } from './poseUpdate';
 
 /** Per-document metadata. Mirrors the local interface in App.tsx; kept here
@@ -33,6 +33,9 @@ export interface SceneSnapshot {
   /** Optional — older snapshots predate selection persistence and load with
    *  an empty selection. New snapshots always include it. */
   selection?: string[];
+  /** Optional — older snapshots predate history persistence. When absent the
+   *  reload starts with an empty undo stack (the pre-feature behavior). */
+  history?: SerializedHistory;
 }
 
 export const DB_NAME = 'swill';

@@ -1,5 +1,6 @@
 import type { Op } from './types';
 import { createDeleteOp } from './delete';
+import { registerOpFactory } from './registry';
 
 interface InsertAdapter<TNode> {
   insertNode(node: TNode): void;
@@ -9,13 +10,17 @@ interface InsertAdapter<TNode> {
  *  exists so consumers can name the op type when needed. */
 export type InsertOp = Op;
 
-/** Op: insert `node` into the scene; inverts to a delete of the same id. */
-export function createInsertOp<TNode extends { id: string }>(args: {
+interface InsertArgs<TNode extends { id: string }> {
   node: TNode;
   label?: string;
-}): InsertOp {
+}
+
+/** Op: insert `node` into the scene; inverts to a delete of the same id. */
+export function createInsertOp<TNode extends { id: string }>(args: InsertArgs<TNode>): InsertOp {
   const { node, label } = args;
   return {
+    name: 'insert',
+    args: { node, label },
     label,
     apply(adapter) {
       (adapter as InsertAdapter<TNode>).insertNode(node);
@@ -25,3 +30,5 @@ export function createInsertOp<TNode extends { id: string }>(args: {
     },
   };
 }
+
+registerOpFactory<InsertArgs<{ id: string }>>('insert', (args) => createInsertOp(args));

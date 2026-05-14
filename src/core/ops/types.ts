@@ -16,4 +16,11 @@ export interface Op {
   invert(): Op;
   label?: string;
   coalesceKey?: string;
+  /** Stable factory name for op-registry lookup. Kit-emitted ops always
+   *  set this; consumer ops without a name can't round-trip through
+   *  `History.serialize()` and are dropped from persisted snapshots. */
+  name?: string;
+  /** Serializable args (JSON / structured-clone-safe) that, paired with
+   *  `name`, reconstruct the op via the registry's `rebuildOp`. */
+  args?: unknown;
 }

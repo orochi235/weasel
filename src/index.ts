@@ -293,6 +293,8 @@ export type {
   SnapStrategy,
   GestureBehavior,
   BehaviorMoveResult,
+  BehaviorResult,
+  GroupTransform,
   MoveBehavior,
   MoveOverlay,
   ResizeAnchor,

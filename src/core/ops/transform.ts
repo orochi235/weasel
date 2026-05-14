@@ -1,19 +1,24 @@
 import type { Op } from './types';
+import { registerOpFactory } from './registry';
 
 interface TransformAdapter<TPose> {
   setPose(id: string, pose: TPose): void;
 }
 
-/** Op: set an object's pose, inverting back to `from`. Optionally tag with `coalesceKey` for batch merging. */
-export function createTransformOp<TPose>(args: {
+interface TransformArgs<TPose> {
   id: string;
   from: TPose;
   to: TPose;
   label?: string;
   coalesceKey?: string;
-}): Op {
+}
+
+/** Op: set an object's pose, inverting back to `from`. Optionally tag with `coalesceKey` for batch merging. */
+export function createTransformOp<TPose>(args: TransformArgs<TPose>): Op {
   const { id, from, to, label, coalesceKey } = args;
   return {
+    name: 'transform',
+    args: { id, from, to, label, coalesceKey },
     label,
     coalesceKey,
     apply(adapter) {
@@ -32,6 +37,8 @@ export function createTransformOp<TPose>(args: {
     },
   };
 }
+
+registerOpFactory<TransformArgs<unknown>>('transform', (args) => createTransformOp(args));
 
 function poseShallowEqual<TPose>(a: TPose, b: TPose): boolean {
   if (a === b) return true;
