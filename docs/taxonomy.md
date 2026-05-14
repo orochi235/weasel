@@ -8,6 +8,94 @@ This doc is **meta-structure**: what the abstractions *are* and how they relate.
 Per-symbol details (function signatures, options, examples) live in JSDoc and the
 API reference.
 
+## Conceptual map
+
+Each box is a *domain* — a subsystem with its own vocabulary. Each entry is a
+concept in that domain. Arrows show cross-domain relationships.
+
+```mermaid
+flowchart TB
+  subgraph IN["Input"]
+    direction TB
+    G["Gesture<br/><i>form of user input</i>"]
+    IX["Interaction<br/><i>gesture composed with action</i>"]
+  end
+
+  subgraph SC["State change"]
+    direction TB
+    A["Action<br/><i>user-intent operation</i>"]
+    O["Op<br/><i>invertible mutation</i>"]
+    B["Behavior<br/><i>per-frame plug-in</i>"]
+  end
+
+  subgraph SN["Scene"]
+    direction TB
+    Scn["Scene"]
+    Nd["Node"]
+    Ad["Adapter"]
+    Po["Pose"]
+    PD["PoseDescriptor"]
+    Pa["Path"]
+    Bd["Bounds"]
+  end
+
+  subgraph RD["Rendering"]
+    direction TB
+    L["Layer"]
+    Sl["Slot"]
+    CS["Chrome state"]
+    V["View / ViewTransform"]
+  end
+
+  subgraph SL["Selection"]
+    direction TB
+    Se["Selection"]
+    Sx["SelectionContext"]
+  end
+
+  subgraph TL["Tools"]
+    direction TB
+    To["Tool"]
+    Tr["Tool registry"]
+    Af["Affordance"]
+  end
+
+  subgraph ST["Strategies"]
+    direction TB
+    Sn["Snap strategy"]
+    La["Layout strategy"]
+  end
+
+  subgraph DV["Dev organization"]
+    direction TB
+    Ft["Feature"]
+    Pr["Primitive"]
+    Hk["Hook"]
+    Rt["Role taxonomy"]
+  end
+
+  G -. composes .-> IX
+  A -. composes .-> IX
+  A -. produces .-> O
+  B -. plugs into .-> A
+  O -. writes through .-> Ad
+  To -. invokes .-> A
+  To -. defines .-> Af
+  L -. fills .-> Sl
+  A -. consults .-> Se
+  Sn -. refines pose via .-> B
+  La -. arranges children in .-> Ad
+  V -. projects coords for .-> L
+  CS -. derived from .-> Se
+  Pa -. lives on .-> Po
+  Po -. attached to .-> Nd
+  Nd -. lives in .-> Scn
+  Ad -. abstracts .-> Scn
+```
+
+The diagram is the at-a-glance answer to "where does X live?" Detailed prose
+follows below in the per-concept sections.
+
 ---
 
 ## 1. Consumer-side abstractions
