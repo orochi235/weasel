@@ -329,7 +329,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ...selectToolOpts,
   }), [selectToolOpts]);
 
-  const { adapter, selectTool: internalSelect } = useSceneSelectTool({
+  const { adapter, selectTool: internalSelect, pickEvery: internalPickEvery } = useSceneSelectTool({
     scene,
     selection,
     geometry,
@@ -448,6 +448,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       selection={selection}
       tools={tools}
       layers={wiredLayers}
+      pickEvery={internalPickEvery}
       {...(viewProp !== undefined ? { view: viewProp } : {})}
       {...(defaultView !== undefined ? { defaultView } : {})}
       onViewChange={handleViewChange}

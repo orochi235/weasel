@@ -58,6 +58,12 @@ export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
     getSelection: () => string[];
   };
   selectTool: ReturnType<typeof useSelectTool<Node<TData, TLayer, TPose>, TPose>>;
+  /** Hit-test resolved with the caller's `geometry.pickEvery` (or the
+   *  pose-walk default). Forward this to `<Canvas pickEvery={...}>` so the
+   *  dispatcher's `getNodeAtPoint` returns the same node the select tool
+   *  picked — drag routes keyed on `target.kind` then resolve to `'*'`
+   *  (move) instead of `'empty'` (marquee). */
+  pickEvery: (worldX: number, worldY: number) => string[];
 }
 
 export function useSceneSelectTool<TData, TLayer extends string, TPose>(
@@ -138,11 +144,6 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
         }
         return hits;
       },
-      // applyOps for marquee-driven SetSelection ops; actual pose mutation
-      // ops aren't expected from the default area-select behaviors.
-      applyOps: (ops: Op[]) => {
-        for (const op of ops) op.apply(selection.adapterMethods);
-      },
     };
   }, [scene, commitInsert, insertLayer, layouts, selection]);
 
@@ -214,5 +215,9 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     getSelection: () => selection.current,
   });
 
-  return { adapter: adapter as UseSceneSelectToolReturn<TData, TLayer, TPose>['adapter'], selectTool };
+  return {
+    adapter: adapter as UseSceneSelectToolReturn<TData, TLayer, TPose>['adapter'],
+    selectTool,
+    pickEvery: wiredHitBody,
+  };
 }
