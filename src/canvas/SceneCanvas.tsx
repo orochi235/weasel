@@ -25,6 +25,8 @@ import { type ActionsProp } from 'interactions/actions/registry';
 import { useStandardActions } from 'interactions/actions/useStandardActions';
 import { translateRectPose } from 'features/groups/composePose';
 import type { DrawCommand, ShaderProgramHandle } from '../renderer';
+import type { Paint } from 'core/paint-types';
+import type { RenderLayer } from 'core/layers/render';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap } from './Canvas';
 import type { CanvasExtensionApi } from './canvasExtension';
@@ -241,6 +243,15 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * to `<Canvas shaders={...} />`. See `CanvasProps.shaders` for details.
      */
     shaders?: ShaderProgramHandle[];
+
+    /**
+     * Paint applied to the full canvas behind the scene. Accepts the kit's
+     * `Paint` union (solid / pattern / linear-gradient / radial-gradient /
+     * conic-gradient) so consumers don't have to author a background node
+     * just to colorize the canvas. Rendered as a screen-space layer slotted
+     * before `'scene'` — independent of pan / zoom.
+     */
+    backgroundFill?: Paint;
   };
 
 function SceneCanvasInner<TData, TLayer extends string, TPose>(
@@ -265,6 +276,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     describeKind,
     children,
     shaders,
+    backgroundFill,
     ...rest
   } = props;
 
@@ -386,10 +398,30 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     sceneSlot: mergedLayers.scene,
   });
 
+  // Background-fill layer: screen-space, emits a single full-canvas rect
+  // with the configured `Paint`. Slotted before `'scene'` so the scene
+  // draws on top. Independent of pan / zoom because backgrounds in this
+  // kit are canvas chrome, not world content — consumers that want a
+  // world-space backdrop add their own scene node.
+  const backgroundLayer = useMemo<RenderLayer<unknown> | null>(() => {
+    if (!backgroundFill) return null;
+    return {
+      id: 'scene-background-fill',
+      label: 'Background fill',
+      space: 'screen',
+      draw: (_data, _view, dims) => [{
+        kind: 'path',
+        path: { kind: 'rect', x: 0, y: 0, width: dims.width, height: dims.height },
+        fill: backgroundFill,
+      }],
+    };
+  }, [backgroundFill]);
+
   const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({
     ...mergedLayers,
     previewGhost: { layer: previewLayer, after: 'scene' },
-  }), [mergedLayers, previewLayer]);
+    ...(backgroundLayer ? { backgroundFill: { layer: backgroundLayer, before: 'scene' } } : {}),
+  }), [mergedLayers, previewLayer, backgroundLayer]);
 
   // Standard-action deps: closures over the live scene / selection / adapter
   // so the resolved actions always read current state. `useStandardActions`

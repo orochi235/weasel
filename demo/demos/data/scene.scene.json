@@ -9,13 +9,6 @@
   ],
   "nodes": [
     {
-      "id": "garden-bg",
-      "kind": "leaf",
-      "layer": "garden",
-      "pose": { "x": 0, "y": 0, "width": 480, "height": 320 },
-      "data": { "color": "#f4e9d8" }
-    },
-    {
       "id": "zone-a",
       "kind": "leaf",
       "layer": "zones",
