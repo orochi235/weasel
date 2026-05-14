@@ -2,6 +2,10 @@
 
 Generic 2D scene-graph canvas library. Published as `@orochi235/weasel`.
 
+## Todo list
+
+Active todos live in `docs/TODO.md`. Consult it when planning new work or picking up a task.
+
 ## Reference implementations
 
 When building new tools, read these first:
