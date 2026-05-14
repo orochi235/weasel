@@ -2,6 +2,7 @@ export * from './components/PropertiesPanel';
 export * from './components/CommandPalette';
 export * from './components/RangePicker';
 export * from './components/LayerList';
+export * from './components/HistoryList';
 export * from './components/PathfinderPanel';
 export * from './components/ToolPalette';
 export { paintGradientTrack } from './paintGradientTrack';
