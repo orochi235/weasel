@@ -127,6 +127,12 @@ export const PREFS = {
           description: 'Restored on app start.',
           default: 'select',
         },
+        penAutoCommitOnClose: {
+          kind: 'boolean',
+          name: 'Auto-commit pen on close',
+          description: 'When you click the pen tool\'s first anchor to close a region, commit immediately so it renders with its fill. Off: keep the path in preview until you press Enter (lets you build a compound path from multiple closed subpaths).',
+          default: true,
+        },
       },
     },
   },

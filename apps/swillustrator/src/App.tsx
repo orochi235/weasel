@@ -891,6 +891,13 @@ export function App() {
         // Wrap a Path as a PathObj. Boolean outputs are freshly synthesized
         // geometry with no authoring tool of their own, so `tool: 'imported'`
         // is the correct origin (see spec § "Out of Scope").
+        //
+        // TODO(layer-icon): expose the originating boolean op (union /
+        // intersect / subtract / exclude / divide) so the Layers panel can
+        // render the op's icon instead of UnknownIcon. Likely shape: add a
+        // `producedBy?: BooleanOpKind` field on PathObj, surface it via
+        // `useBooleans`' createPathNode args, then dispatch in
+        // kindIcons.ToolIcon.
         const id = `b${nextId.current++}`;
         const b = path.kind === 'rect'
           ? { x: path.x, y: path.y, width: path.width, height: path.height }
@@ -1193,7 +1200,9 @@ export function App() {
   const wheelPan = useWheelPanTool();
   const keyZoom = useKeyboardZoomTool();
 
+  const [penAutoCommitOnClose] = usePref('tools.penAutoCommitOnClose');
   const { tool: pen, isEditing: penIsEditing } = usePenTool<PathObj>({
+    autoCommitOnClose: penAutoCommitOnClose,
     // Honor the global snap-to-grid toggle for every anchor placement.
     // Reads via ref so the pen tool doesn't re-mount when the toggle flips.
     snapPoint: (p) => snapPointToGridRef.current(p),
@@ -1492,6 +1501,44 @@ export function App() {
   // imperative callables).
   const canUndo = historyRef.current.canUndo();
   const canRedo = historyRef.current.canRedo();
+
+  // Context-aware ActionBar predicates. Computed from React state (items,
+  // groups, selection.current) so the toolbar re-renders when the user
+  // moves selection or mutates the scene. Front/back use the same predicate
+  // as forward/backward — once a shape is rightmost (frontmost) it can be
+  // neither bumped one step forward nor sent to front.
+  const selIds = selection.current;
+  // Groups have no position in items[]; their effective z-position is the
+  // position of their members. Expand group ids to member ids before
+  // checking sibling boundaries (mirrors what useReorder operates on).
+  const reorderTargets = (() => {
+    const out: string[] = [];
+    const seen = new Set<string>();
+    for (const id of selIds) {
+      const g = groups.find((x) => x.id === id);
+      const targets = g ? g.members : [id];
+      for (const t of targets) {
+        if (!seen.has(t)) { seen.add(t); out.push(t); }
+      }
+    }
+    return out;
+  })();
+  const siblingsOf = (id: string): readonly string[] => {
+    const g = groups.find((x) => x.members.includes(id));
+    if (g) return g.members;
+    return items.map((o) => o.id);
+  };
+  const canMoveForward = reorderTargets.some((id) => {
+    const sibs = siblingsOf(id);
+    const i = sibs.indexOf(id);
+    return i >= 0 && i < sibs.length - 1;
+  });
+  const canMoveBackward = reorderTargets.some((id) => {
+    const sibs = siblingsOf(id);
+    const i = sibs.indexOf(id);
+    return i > 0;
+  });
+  const canUngroupSelection = selIds.some((id) => groups.some((g) => g.id === id));
 
   // ---- Cursor tracking for paste & drop point -------------------------
   // Pulled by useClipboard's getDropPoint. We track in screen space and
@@ -1952,8 +1999,11 @@ export function App() {
         onSendBackward={() => sendBackward()}
         onBringToFront={() => bringToFront()}
         onSendToBack={() => sendToBack()}
+        canMoveForward={canMoveForward}
+        canMoveBackward={canMoveBackward}
         onGroup={() => group()}
         onUngroup={() => ungroup()}
+        canUngroup={canUngroupSelection}
         onAlign={(edge) => align(edge)}
         onDistribute={(axis) => distribute(axis)}
         onFlip={(axis) => flip(axis)}

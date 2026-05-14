@@ -43,6 +43,11 @@ export function PageIcon() {
 }
 
 /** Dispatch by tool — convenient one-liner for consumers. */
+// TODO(layer-icon): objects produced by a boolean op land here as
+// `imported` and render UnknownIcon. Take an optional `producedBy?:
+// BooleanOpKind` (union / intersect / subtract / exclude / divide) and
+// pick a corresponding icon — would need PathObj to carry that field
+// and the boolean adapter's createPathNode to set it (see App.tsx).
 export function ToolIcon({ tool }: { tool: ToolKind }): ReactNode {
   switch (tool) {
     case 'rect': return <RectIcon />;

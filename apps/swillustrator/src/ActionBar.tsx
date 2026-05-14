@@ -73,9 +73,17 @@ export interface ActionBarProps {
   onSendBackward(): void;
   onBringToFront(): void;
   onSendToBack(): void;
+  /** True when at least one selected item isn't already at the front of its
+   *  siblings — drives both Bring forward and Bring to front. */
+  canMoveForward: boolean;
+  /** True when at least one selected item isn't already at the back of its
+   *  siblings — drives both Send backward and Send to back. */
+  canMoveBackward: boolean;
   // Group
   onGroup(): void;
   onUngroup(): void;
+  /** True when at least one selected id is itself a group. */
+  canUngroup: boolean;
   // Align
   onAlign(edge: AlignEdge): void;
   // Distribute
@@ -210,14 +218,14 @@ export function ActionBar(p: ActionBarProps) {
         <Button onClick={p.onDelete} disabled={none} title="Delete (Del)"><DeleteIcon /></Button>
       </div>
       <div className="swill-actionbar-group">
-        <Button onClick={p.onSendToBack} disabled={none} title="Send to back (Cmd-Shift-[)"><SendToBackIcon /></Button>
-        <Button onClick={p.onSendBackward} disabled={none} title="Send backward (Cmd-[)"><SendBackwardIcon /></Button>
-        <Button onClick={p.onBringForward} disabled={none} title="Bring forward (Cmd-])"><BringForwardIcon /></Button>
-        <Button onClick={p.onBringToFront} disabled={none} title="Bring to front (Cmd-Shift-])"><BringToFrontIcon /></Button>
+        <Button onClick={p.onSendToBack} disabled={!p.canMoveBackward} title="Send to back (Cmd-Shift-[)"><SendToBackIcon /></Button>
+        <Button onClick={p.onSendBackward} disabled={!p.canMoveBackward} title="Send backward (Cmd-[)"><SendBackwardIcon /></Button>
+        <Button onClick={p.onBringForward} disabled={!p.canMoveForward} title="Bring forward (Cmd-])"><BringForwardIcon /></Button>
+        <Button onClick={p.onBringToFront} disabled={!p.canMoveForward} title="Bring to front (Cmd-Shift-])"><BringToFrontIcon /></Button>
       </div>
       <div className="swill-actionbar-group">
         <Button onClick={p.onGroup} disabled={lt2} title="Group (Cmd-G)"><GroupIcon /></Button>
-        <Button onClick={p.onUngroup} disabled={none} title="Ungroup (Cmd-Shift-G)"><UngroupIcon /></Button>
+        <Button onClick={p.onUngroup} disabled={!p.canUngroup} title="Ungroup (Cmd-Shift-G)"><UngroupIcon /></Button>
       </div>
       <div className="swill-actionbar-group">
         <Button onClick={() => p.onAlign('left')} disabled={lt2} title="Align left"><AlignLeftIcon /></Button>
