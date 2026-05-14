@@ -500,22 +500,22 @@ export function App() {
   // the banner unmounts only after the visual finishes (the next reload
   // shows nothing because the pref is persisted).
   const [disclaimerDismissing, setDisclaimerDismissing] = useState(false);
-  // Lightweight helpers for follow-up panel-toggle UI. They mutate the
-  // persisted `panels` map; existing panel rendering is untouched.
-  const isPanelHidden = useCallback(
-    (k: string) => !!panels[k]?.hidden,
-    [panels],
-  );
+  // Panel-state setters bound to the persisted `panels` map. Both the
+  // in-sidebar header chevron + close button (PropertiesPanel) and the
+  // Preferences modal's panels editor flip the same shape, so wiring
+  // either surface keeps the other in sync.
   const setPanelHidden = useCallback(
     (k: string, hidden: boolean) => {
       setPanels((prev) => ({ ...prev, [k]: { ...prev[k], hidden } }));
     },
     [setPanels],
   );
-  // Touch the panel-helpers so eslint doesn't flag them as unused until the
-  // follow-up UI lands. They're part of the documented prefs API.
-  void isPanelHidden;
-  void setPanelHidden;
+  const setPanelCollapsed = useCallback(
+    (k: string, collapsed: boolean) => {
+      setPanels((prev) => ({ ...prev, [k]: { ...prev[k], collapsed } }));
+    },
+    [setPanels],
+  );
   const [paletteOpen, setPaletteOpen] = useState(false);
   useCommandPaletteShortcut(paletteOpen, setPaletteOpen);
 
@@ -2276,6 +2276,9 @@ export function App() {
           // ensures the paste-button's clipboardEmpty flag stays current.
           clipboardTick={clipboardTick}
           pageSelected={pageSelected}
+          panels={panels}
+          setPanelCollapsed={setPanelCollapsed}
+          setPanelHidden={setPanelHidden}
         />
       </div>
 
@@ -2364,6 +2367,12 @@ interface RightSidebarProps {
   onHistoryJump: (index: number) => void;
   clipboardTick: number;
   pageSelected: boolean;
+  /** Panel visibility / collapse state, keyed by panel id. Sourced from
+   *  `usePref('ui.panels')` so the Preferences modal's panels editor
+   *  toggles the same map. */
+  panels: Record<string, { hidden?: boolean; collapsed?: boolean }>;
+  setPanelCollapsed: (id: string, collapsed: boolean) => void;
+  setPanelHidden: (id: string, hidden: boolean) => void;
 }
 
 function RightSidebar(p: RightSidebarProps) {
@@ -2371,6 +2380,19 @@ function RightSidebar(p: RightSidebarProps) {
   // the clipboard mutates; the value itself is unused.
   useEffect(() => { /* re-render on clipboardTick change */ }, [p.clipboardTick]);
   const { primary, selectedItems } = p;
+  // Build the collapse/hide/title-handlers props for a panel id. Returns
+  // `null` when the panel is hidden — callers conditional-render on it so
+  // hidden panels disappear entirely from the sidebar (the Prefs modal's
+  // panels editor is the way to bring them back).
+  const panelProps = (id: string) => {
+    const state = p.panels[id];
+    if (state?.hidden) return null;
+    return {
+      collapsed: !!state?.collapsed,
+      onToggleCollapse: () => p.setPanelCollapsed(id, !state?.collapsed),
+      onHide: () => p.setPanelHidden(id, true),
+    };
+  };
   return (
     <aside
       className="swill-sidebar right"
@@ -2379,7 +2401,8 @@ function RightSidebar(p: RightSidebarProps) {
       style={{ ['--swill-right-width' as string]: `${p.width}px` } as React.CSSProperties}
     >
       {p.pageSelected ? (
-        <PropertiesPanel title="Page">
+        (() => { const pp = panelProps('page'); return pp && (
+        <PropertiesPanel title="Page" {...pp}>
           <PropertyRow label="Title">
             <PropertyTextInput value={p.docTitle} onChange={p.setDocTitle} />
           </PropertyRow>
@@ -2391,8 +2414,10 @@ function RightSidebar(p: RightSidebarProps) {
             />
           </PropertyRow>
         </PropertiesPanel>
+        ); })()
       ) : primary ? (
-        <PropertiesPanel title={`Selection (${selectedItems.length})`}>
+        (() => { const pp = panelProps('selection'); return pp && (
+        <PropertiesPanel title={`Selection (${selectedItems.length})`} {...pp}>
           <PropertyRow label="Kind">
             <PropertyReadOnly>
               {primary.tool}{selectedItems.length > 1 ? ` +${selectedItems.length - 1}` : ''}
@@ -2431,8 +2456,10 @@ function RightSidebar(p: RightSidebarProps) {
             </>
           )}
         </PropertiesPanel>
+        ); })()
       ) : (
-        <PropertiesPanel title="Defaults">
+        (() => { const pp = panelProps('defaults'); return pp && (
+        <PropertiesPanel title="Defaults" {...pp}>
           <PropertyRow label="Paint">
             <ActiveSwatches
               compact
@@ -2448,9 +2475,11 @@ function RightSidebar(p: RightSidebarProps) {
             <PropertyNumberInput value={p.strokeWidth} onChange={p.setStrokeWidth} min={0} max={20} step={1} span={4} />
           </PropertyRow>
         </PropertiesPanel>
+        ); })()
       )}
 
-      <PropertiesPanel title="Colors">
+      {(() => { const pp = panelProps('colors'); return pp && (
+      <PropertiesPanel title="Colors" {...pp}>
         <PropertyRow>
           <PropertySwatchGrid
             value={primary ? p.primaryFill : p.fillColor}
@@ -2459,8 +2488,10 @@ function RightSidebar(p: RightSidebarProps) {
           />
         </PropertyRow>
       </PropertiesPanel>
+      ); })()}
 
-      <PropertiesPanel title="Layers">
+      {(() => { const pp = panelProps('layers'); return pp && (
+      <PropertiesPanel title="Layers" {...pp}>
         <div className="swill-layerlist-host">
           <LayerList
             items={p.layerItems}
@@ -2471,8 +2502,10 @@ function RightSidebar(p: RightSidebarProps) {
           />
         </div>
       </PropertiesPanel>
+      ); })()}
 
-      <PropertiesPanel title="History">
+      {(() => { const pp = panelProps('history'); return pp && (
+      <PropertiesPanel title="History" {...pp}>
         <div className="swill-historylist-host">
           <HistoryList
             items={p.historyItems}
@@ -2482,8 +2515,10 @@ function RightSidebar(p: RightSidebarProps) {
           />
         </div>
       </PropertiesPanel>
+      ); })()}
 
-      <PropertiesPanel title="Document">
+      {(() => { const pp = panelProps('document'); return pp && (
+      <PropertiesPanel title="Document" {...pp}>
         <PropertyRow label="Title">
           <PropertyTextInput value={p.docTitle} onChange={p.setDocTitle} />
         </PropertyRow>
@@ -2495,8 +2530,10 @@ function RightSidebar(p: RightSidebarProps) {
           />
         </PropertyRow>
       </PropertiesPanel>
+      ); })()}
 
-      <PropertiesPanel title="View">
+      {(() => { const pp = panelProps('view'); return pp && (
+      <PropertiesPanel title="View" {...pp}>
         <PropertyRow label="Zoom">
           <PropertyMiniLabel span={2}>%</PropertyMiniLabel>
           <PropertyNumberInput
@@ -2517,6 +2554,7 @@ function RightSidebar(p: RightSidebarProps) {
           </PropertyButton>
         </PropertyRow>
       </PropertiesPanel>
+      ); })()}
 
       <div className="swill-section-label swill-scene-label">Scene</div>
       <div className="swill-scene-count">
