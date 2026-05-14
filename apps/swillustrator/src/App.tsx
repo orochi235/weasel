@@ -70,6 +70,7 @@ import {
   type NodeId,
   type Op,
   type Path,
+  type PathFillRule,
   type PolygonPath,
   type RenderLayer,
 } from '@orochi235/weasel';
@@ -1207,18 +1208,26 @@ export function App() {
   const keyZoom = useKeyboardZoomTool();
 
   const [penAutoCommitOnClose] = usePref('tools.penAutoCommitOnClose');
+  const [pathFillRule] = usePref('tools.pathFillRule');
   const { tool: pen, isEditing: penIsEditing } = usePenTool<PathObj>({
     autoCommitOnClose: penAutoCommitOnClose,
     // Honor the global snap-to-grid toggle for every anchor placement.
     // Reads via ref so the pen tool doesn't re-mount when the toggle flips.
     snapPoint: (p) => snapPointToGridRef.current(p),
     wrapPath: (path, { closed }): PathObj => {
-      const b = boundsOfPath(path);
+      // Override the kit's default 'nonzero' fill rule with the user pref.
+      // Self-intersecting outlines (lasso-style) only fill correctly under
+      // 'evenodd'; the default 'nonzero' leaves holes where windings cancel.
+      const rule = pathFillRule as PathFillRule;
+      const ruled = path.kind === 'polygon' && path.fillRule !== rule
+        ? { ...path, fillRule: rule }
+        : path;
+      const b = boundsOfPath(ruled);
       const id = `p${nextId.current++}`;
       return {
         id, tool: 'pen',
         x: b.x, y: b.y, width: b.width, height: b.height,
-        path, closed,
+        path: ruled, closed,
         fill: fillRef.current, stroke: strokeRef.current, strokeWidth: strokeWidthRef.current,
       };
     },
@@ -1245,6 +1254,11 @@ export function App() {
   // stroke / strokeWidth are pulled from the current refs so palette
   // selections apply immediately.
 
+  // Ref-mirror the pref so `pathToObj` (a stable useCallback) reads the
+  // latest rule without rebuilding every shape tool when the user toggles.
+  const pathFillRuleRef = useRef(pathFillRule);
+  pathFillRuleRef.current = pathFillRule;
+
   /** Wrap a freshly-built path as a `PathObj` with the current style. */
   const pathToObj = useCallback((
     path: PolygonPath,
@@ -1252,12 +1266,14 @@ export function App() {
     tool: Exclude<ToolKind, 'text'>,
     params?: PathParams,
   ): PathObj => {
-    const b = boundsOfPath(path);
+    const rule = pathFillRuleRef.current as PathFillRule;
+    const ruled = path.fillRule !== rule ? { ...path, fillRule: rule } : path;
+    const b = boundsOfPath(ruled);
     return {
       id: `p${nextId.current++}`,
       tool,
       x: b.x, y: b.y, width: b.width, height: b.height,
-      path, closed,
+      path: ruled, closed,
       fill: fillRef.current,
       stroke: strokeRef.current,
       strokeWidth: strokeWidthRef.current,

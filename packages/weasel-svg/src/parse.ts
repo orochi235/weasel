@@ -298,6 +298,13 @@ function parseElement(
   const fill = readPaint(el, 'fill', '#000000', gradients, onWarn);
   const stroke = readStroke(el, gradients, onWarn);
   const opacity = readOpacityAttr(el, 'opacity');
+  // `fill-rule` defaults to `nonzero` per SVG spec; only stamp the field when
+  // the source explicitly says `evenodd` and the lowered geometry is a
+  // PolygonPath (RectPath has no fillRule slot).
+  const fillRuleRaw = readInheritedAttr(el, 'fill-rule');
+  if (fillRuleRaw === 'evenodd' && path.kind === 'polygon') {
+    path = { ...path, fillRule: 'evenodd' };
+  }
   const node: SvgPathNode = { kind: 'path', path, fill };
   if (stroke) node.stroke = stroke;
   if (opacity != null) node.opacity = opacity;

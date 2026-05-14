@@ -167,6 +167,16 @@ export const PREFS = {
           description: 'When you click the pen tool\'s first anchor to close a region, commit immediately so it renders with its fill. Off: keep the path in preview until you press Enter (lets you build a compound path from multiple closed subpaths).',
           default: true,
         },
+        pathFillRule: {
+          kind: 'enum',
+          name: 'Path fill rule',
+          description: 'How self-intersecting paths fill. Nonzero (SVG default) leaves a hole anywhere two opposite-winding loops overlap; evenodd fills any region enclosed by an odd number of edges. Switch to evenodd if you draw lasso-style outlines that cross themselves.',
+          default: 'nonzero',
+          options: [
+            { value: 'nonzero', label: 'Nonzero (SVG default)' },
+            { value: 'evenodd', label: 'Even-odd' },
+          ],
+        },
       },
     },
   },

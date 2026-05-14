@@ -162,6 +162,11 @@ function pathXml(node: SvgPathNode, registry: GradientRegistry, namespaces: Reco
   const attrs: string[] = [`d="${serializePathD(node.path)}"`];
   const fillAttrs = paintAttrs(node.fill, 'fill', registry);
   for (const a of fillAttrs) attrs.push(a);
+  // Emit fill-rule only when it diverges from SVG's default ('nonzero').
+  // RectPath has no fillRule field — only PolygonPath carries one.
+  if (node.path.kind === 'polygon' && node.path.fillRule === 'evenodd') {
+    attrs.push(`fill-rule="evenodd"`);
+  }
   if (node.stroke) {
     const strokeAttrs = strokeAttrsFor(node.stroke, registry);
     for (const a of strokeAttrs) attrs.push(a);
