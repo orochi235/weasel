@@ -164,7 +164,6 @@ function PrefGroupBody({ group, path, depth }: PrefGroupBodyProps) {
     <div className={depth === 0 ? 'swill-prefs-panel' : 'swill-prefs-subpanel'}>
       <div className="swill-prefs-group-header">
         <h3 className="swill-prefs-group-title">{group.name}</h3>
-        {group.description && <p className="swill-prefs-group-desc">{group.description}</p>}
       </div>
       <div className="swill-prefs-rows">
         {Object.entries(group.children).map(([key, child]) => {
@@ -239,6 +238,25 @@ function NumberInput({ path, pref }: { path: string; pref: SwillPrefNumber }) {
     number,
     (v: number) => void,
   ];
+  if (pref.expression === 'slider') {
+    return (
+      <span className="swill-prefs-slider">
+        <input
+          type="range"
+          className="swill-prefs-range"
+          value={Number.isFinite(value) ? value : 0}
+          min={pref.min}
+          max={pref.max}
+          step={pref.step ?? 1}
+          onChange={(e) => {
+            const n = parseFloat(e.target.value);
+            setValue(Number.isFinite(n) ? n : 0);
+          }}
+        />
+        <span className="swill-prefs-slider-value">{value}</span>
+      </span>
+    );
+  }
   return (
     <input
       type="number"
@@ -343,7 +361,6 @@ function PanelsEditor({ pref }: { pref: SwillPrefObject }) {
     <div className="swill-prefs-subpanel swill-prefs-subpanel-inline">
       <div className="swill-prefs-group-header">
         <h3 className="swill-prefs-group-title">{pref.name}</h3>
-        <p className="swill-prefs-group-desc">{pref.description}</p>
       </div>
       <div className="swill-prefs-rows">
         <div className="swill-prefs-panels-head">

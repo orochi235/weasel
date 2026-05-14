@@ -38,6 +38,12 @@ export interface RegistrySelectProps {
   selectClassName?: string;
   /** Class for the text-input fallback when no resolver is registered. */
   inputClassName?: string;
+  /** Ordering of the rendered options. Defaults to `'label'` —
+   *  case-insensitive alphabetical by label — which makes long lists
+   *  scannable. Use `'value'` to sort by id, or `'source'` to preserve
+   *  whatever order the resolver returned (e.g. for inherently-ordered
+   *  registries like history entries). */
+  sortBy?: 'label' | 'value' | 'source';
 }
 
 export function RegistrySelect({
@@ -47,6 +53,7 @@ export function RegistrySelect({
   filter,
   selectClassName,
   inputClassName,
+  sortBy = 'label',
 }: RegistrySelectProps) {
   const sources = useContext(RegistryEnumSourcesContext);
   const resolver = sources[source];
@@ -60,7 +67,14 @@ export function RegistrySelect({
       />
     );
   }
-  const options = resolver(filter);
+  const raw = resolver(filter);
+  const options = sortBy === 'source'
+    ? raw
+    : [...raw].sort((a, b) => {
+        const av = sortBy === 'value' ? a.value : a.label;
+        const bv = sortBy === 'value' ? b.value : b.label;
+        return av.localeCompare(bv, undefined, { sensitivity: 'base' });
+      });
   const hasCurrent = options.some((o) => o.value === value);
   return (
     <select

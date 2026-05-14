@@ -820,6 +820,34 @@ html, body, #root {
   font-size: 12px;
 }
 
+/* Numeric fields read better with right-aligned digits — the decimal /
+ * units column lines up across a stack of inputs (paper size, view
+ * zoom, grid density, etc.). Applies to every native number input in
+ * the app; non-numeric inputs are unaffected. */
+input[type="number"] {
+  text-align: right;
+}
+
+/* Slider-expression number prefs: range track + live value readout
+ * occupy the same row-control slot as the plain <input type=number>. */
+.swill-prefs-slider {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.swill-prefs-range {
+  width: 96px;
+  margin: 0;
+  accent-color: #d4c4a8;
+}
+.swill-prefs-slider-value {
+  min-width: 28px;
+  text-align: right;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: #d4c4a8;
+}
+
 .swill-prefs-input:focus,
 .swill-prefs-select:focus {
   outline: none;

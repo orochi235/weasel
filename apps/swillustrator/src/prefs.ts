@@ -29,16 +29,39 @@ interface SwillPrefBase<K extends SwillPrefKind, Value> {
   hidden?: boolean;
 }
 
+/**
+ * Optional rendering hint per kind. The renderer reads this to pick
+ * between visually-equivalent presentations of the same value type —
+ * e.g. a `'number'` with `expression: 'slider'` becomes a range input,
+ * while the same field without `expression` stays a number input.
+ *
+ * Each kind exposes its own union so the type system can keep callers
+ * honest: you can't set `expression: 'slider'` on a boolean pref. Add
+ * new variants here as the renderer learns to draw them — the
+ * persisted value is unchanged either way, so legacy data keeps
+ * working.
+ */
+export type SwillPrefNumberExpression = 'input' | 'slider';
+export type SwillPrefBooleanExpression = 'checkbox' | 'switch';
+export type SwillPrefStringExpression = 'input' | 'textarea';
+export type SwillPrefEnumExpression = 'select' | 'radio';
+
 export interface SwillPrefNumber extends SwillPrefBase<'number', number> {
   min?: number;
   max?: number;
   step?: number;
+  expression?: SwillPrefNumberExpression;
 }
-export interface SwillPrefBoolean extends SwillPrefBase<'boolean', boolean> {}
-export interface SwillPrefString extends SwillPrefBase<'string', string> {}
+export interface SwillPrefBoolean extends SwillPrefBase<'boolean', boolean> {
+  expression?: SwillPrefBooleanExpression;
+}
+export interface SwillPrefString extends SwillPrefBase<'string', string> {
+  expression?: SwillPrefStringExpression;
+}
 export interface SwillPrefEnum<T extends string = string>
   extends SwillPrefBase<'enum', T> {
   options: readonly { value: T; label: string }[];
+  expression?: SwillPrefEnumExpression;
 }
 /** Enum whose options come from a runtime registry instead of a static
  *  list — e.g. `tools.lastTool` picks from whichever tools the app has
@@ -50,6 +73,8 @@ export interface SwillPrefRegistryEnum
   extends SwillPrefBase<'registry-enum', string> {
   /** Key into the modal's `registryEnumSources` prop. */
   source: string;
+  /** Same hints as a plain enum — `'select'` (default) or `'radio'`. */
+  expression?: SwillPrefEnumExpression;
   /** Optional narrowing applied by the source's resolver. Two forms:
    *   • a key/value criteria map (e.g. `{ kind: 'rect', layer: 'fg' }`)
    *     — declarative; the resolver matches each candidate against it.
@@ -141,6 +166,7 @@ export const PREFS = {
           min: 4,
           max: 288,
           step: 4,
+          expression: 'slider',
         },
         snapToGrid: {
           kind: 'boolean',

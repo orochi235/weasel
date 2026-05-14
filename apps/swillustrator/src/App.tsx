@@ -56,6 +56,8 @@ import {
   pointInTextPose,
   caretIndexAt,
   boundsOfPath,
+  pathContainsPoint,
+  pathDistanceToPoint,
   PathBuilder,
   PATH_M,
   PATH_L,
@@ -64,6 +66,7 @@ import {
   splitSubpaths,
   viewToTransform,
   worldToScreen,
+  type AnyTool,
   type ClipboardSnapshot,
   type Group,
   type History,
@@ -313,6 +316,20 @@ function starPath(
  *  a world-space path per selected id. TextObj gets a synthetic RectPath;
  *  PathObj returns its embedded path (which may itself be a RectPath, so the
  *  rect fast-path holds through boolean inputs). */
+/** Distance from (px, py) to an axis-aligned rect's perimeter. Returns 0
+ *  if the point is inside the rect (treated as a filled region, like the
+ *  closed-path case in the weighted pick). Used by the picker for non-path
+ *  objects (text). */
+function pointToRectDistanceXYWH(
+  px: number, py: number,
+  rx: number, ry: number, rw: number, rh: number,
+): number {
+  if (px >= rx && px <= rx + rw && py >= ry && py <= ry + rh) return 0;
+  const dx = Math.max(rx - px, px - (rx + rw), 0);
+  const dy = Math.max(ry - py, py - (ry + rh), 0);
+  return Math.hypot(dx, dy);
+}
+
 function pathForObj(o: Obj): Path {
   if (o.tool !== 'text') return o.path;
   return { kind: 'rect', x: o.x, y: o.y, width: o.width, height: o.height };
@@ -1207,6 +1224,24 @@ export function App() {
   const wheelPan = useWheelPanTool();
   const keyZoom = useKeyboardZoomTool();
 
+  // Last-resort Esc handler: if no other tool claims Escape (e.g. pen
+  // discarding an in-progress path), and there's a non-empty selection,
+  // clear it. Lives in ambient slot order so the dispatcher tries it
+  // after the active tool's `keyboard.onDown`, claiming only when there's
+  // actually a selection to clear.
+  const escClearSelection = useMemo<AnyTool>(() => ({
+    id: 'esc-clear-selection',
+    initScratch: () => undefined,
+    keyboard: {
+      onDown: (e) => {
+        if (e.key !== 'Escape') return 'pass';
+        if (selection.current.length === 0) return 'pass';
+        selection.set([]);
+        return 'claim';
+      },
+    },
+  }), [selection]);
+
   const [penAutoCommitOnClose] = usePref('tools.penAutoCommitOnClose');
   const [pathFillRule] = usePref('tools.pathFillRule');
   const { tool: pen, isEditing: penIsEditing } = usePenTool<PathObj>({
@@ -1378,15 +1413,60 @@ export function App() {
   const tools = useTools({
     active: initialActiveTool,
     registry: { select, lasso, insert, ellipse, line, polygon, star, pen, pencil, hand, text, eyedropper },
-    ambient: [wheelZoom, wheelPan, keyZoom, clone],
+    ambient: [wheelZoom, wheelPan, keyZoom, clone, escClearSelection],
     // Declarative-routing tools (eyedropper) route on `ctx.target.category`,
     // which the dispatcher derives from this lookup. Without it every click
     // is categorized as `empty` and `pickFromNode`-style handlers no-op.
-    // Returns topmost (last in z-order) hit; items are bottom-first.
+    //
+    // Weighted-distance pick: for each obj, compute a single "click-to-obj
+    // distance" — 0 if the click is inside a filled region, else the
+    // stroke distance to the visible edge. Open paths get a bias
+    // multiplier (<1) so their thin strokes attract clicks better than a
+    // tied-distance closed shape. Within `PICK_RADIUS` (screen px),
+    // smallest weighted distance wins; z-order breaks exact ties.
+    // Rotated objs are tested in their unrotated frame.
     getNodeAtPoint: (wx, wy) => {
-      const hits = itemsRef.current.filter((o) => pointInRotatedAabb(wx, wy, o));
-      if (hits.length === 0) return null;
-      const top = hits[hits.length - 1];
+      const PICK_RADIUS_PX = 8;
+      const OPEN_PATH_BIAS = 0.4;
+      const radius = PICK_RADIUS_PX / view.scale;
+      let best: { idx: number; d: number } | null = null;
+      const items = itemsRef.current;
+      for (let i = 0; i < items.length; i++) {
+        const o = items[i];
+        // Inverse-rotate the click into the obj's local frame so we can
+        // run the AABB / path math in its unrotated coordinates.
+        const cx = o.x + o.width / 2;
+        const cy = o.y + o.height / 2;
+        const r = o.rotation ?? 0;
+        let lx = wx, ly = wy;
+        if (r !== 0) {
+          const dx = wx - cx, dy = wy - cy;
+          const cos = Math.cos(-r), sin = Math.sin(-r);
+          lx = cx + dx * cos - dy * sin;
+          ly = cy + dx * sin + dy * cos;
+        }
+        let d: number;
+        if (o.tool === 'text') {
+          // Text has no path: pick by its rect AABB (0 inside, else
+          // distance to the rect's perimeter).
+          d = pointToRectDistanceXYWH(lx, ly, o.x, o.y, o.width, o.height);
+        } else {
+          // PathObj. Filled regions: 0 inside. Else stroke distance,
+          // with the open-path bias applied so open strokes feel hotter.
+          const p = o.path;
+          const inside = o.closed && pathContainsPoint(p, lx, ly);
+          d = inside ? 0 : pathDistanceToPoint(p, lx, ly);
+          if (!inside && !o.closed) d *= OPEN_PATH_BIAS;
+        }
+        if (d > radius) continue;
+        // Smaller weighted-distance wins; on exact tie, later index (top
+        // of z-order) wins.
+        if (best === null || d < best.d || (d === best.d && i > best.idx)) {
+          best = { idx: i, d };
+        }
+      }
+      if (best === null) return null;
+      const top = items[best.idx];
       return {
         id: asNodeId(top.id),
         // The kit's dispatcher routes on target.kind (string). We map our
