@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { snapToContainer } from './snapToContainer';
-import type { GestureContext } from '../../types';
+import type { GestureContext, GroupTransform } from '../../types';
+
+const tt = (dx: number, dy: number): GroupTransform => ({ kind: 'translate', dx, dy });
 import type { SnapTarget } from 'core/adapters/types';
 
 interface Pose { x: number; y: number }
@@ -27,7 +29,7 @@ describe('snapToContainer', () => {
     const findTarget = vi.fn().mockReturnValue(target);
     const b = snapToContainer<Pose>({ dwellMs: 500, findTarget, isInstant: (t) => (t.metadata as any)?.instant });
     const ctx = makeCtx();
-    const result = b.onMove!(ctx, { x: 1, y: 1 });
+    const result = b.onMove!(ctx, tt(1, 1));
     expect(result).toEqual({ pose: { x: 2, y: 3 }, snap: target });
   });
 
@@ -36,10 +38,10 @@ describe('snapToContainer', () => {
     const findTarget = vi.fn().mockReturnValue(target);
     const b = snapToContainer<Pose>({ dwellMs: 500, findTarget });
     const ctx = makeCtx();
-    const r1 = b.onMove!(ctx, { x: 1, y: 1 });
+    const r1 = b.onMove!(ctx, tt(1, 1));
     expect(r1).toBeUndefined();
     vi.advanceTimersByTime(499);
-    const r2 = b.onMove!(ctx, { x: 1, y: 1 });
+    const r2 = b.onMove!(ctx, tt(1, 1));
     expect(r2).toBeUndefined();
   });
 
@@ -48,9 +50,9 @@ describe('snapToContainer', () => {
     const findTarget = vi.fn().mockReturnValue(target);
     const b = snapToContainer<Pose>({ dwellMs: 500, findTarget });
     const ctx = makeCtx();
-    b.onMove!(ctx, { x: 1, y: 1 });
+    b.onMove!(ctx, tt(1, 1));
     vi.advanceTimersByTime(500);
-    const r = b.onMove!(ctx, { x: 1, y: 1 });
+    const r = b.onMove!(ctx, tt(1, 1));
     expect(r).toEqual({ pose: { x: 2, y: 3 }, snap: target });
   });
 
@@ -59,11 +61,11 @@ describe('snapToContainer', () => {
     const findTarget = vi.fn().mockReturnValueOnce(target1).mockReturnValue(null);
     const b = snapToContainer<Pose>({ dwellMs: 500, findTarget });
     const ctx = makeCtx();
-    b.onMove!(ctx, { x: 1, y: 1 });
+    b.onMove!(ctx, tt(1, 1));
     vi.advanceTimersByTime(200);
-    b.onMove!(ctx, { x: 10, y: 10 });
+    b.onMove!(ctx, tt(10, 10));
     vi.advanceTimersByTime(500);
-    const r = b.onMove!(ctx, { x: 10, y: 10 });
+    const r = b.onMove!(ctx, tt(10, 10));
     expect(r?.snap ?? null).toBeNull();
   });
 
@@ -71,7 +73,7 @@ describe('snapToContainer', () => {
     const target: SnapTarget<Pose> = { parentId: 'box', slotPose: { x: 2, y: 3 } };
     const b = snapToContainer<Pose>({ dwellMs: 0, findTarget: () => target });
     const ctx = makeCtx();
-    b.onMove!(ctx, { x: 1, y: 1 });
+    b.onMove!(ctx, tt(1, 1));
     ctx.snap = target;
     const ops = b.onEnd!(ctx);
     expect(Array.isArray(ops)).toBe(true);
@@ -83,7 +85,7 @@ describe('snapToContainer', () => {
     const target: SnapTarget<Pose> = { parentId: 'oldParent', slotPose: { x: 2, y: 3 } };
     const b = snapToContainer<Pose>({ dwellMs: 0, findTarget: () => target });
     const ctx = makeCtx();
-    b.onMove!(ctx, { x: 1, y: 1 });
+    b.onMove!(ctx, tt(1, 1));
     ctx.snap = target;
     const ops = b.onEnd!(ctx);
     expect(ops!.length).toBe(1);

@@ -5,7 +5,7 @@ import type { MoveAdapter, SnapTarget } from 'core/adapters/types';
 import { translateRectPose } from 'features/groups/composePose';
 import { dispatchApplyBatch } from 'core/applyOps';
 import { useDragGesture } from '../dragGesture';
-import type { GestureContext, MoveBehavior, MoveOverlay, ModifierState } from '../types';
+import type { BehaviorResult, GestureContext, GroupTransform, MoveBehavior, MoveOverlay, ModifierState } from '../types';
 import { begin, hold, cancel as cancelResult, type Result } from '../../../tools/routing';
 import type { ToolCtx } from '../../../tools/types';
 
@@ -170,49 +170,48 @@ export function useMove<TNode extends { id: string }, TPose>(
     const rawDx = moveArgs.worldX - scratch.startWorld.x;
     const rawDy = moveArgs.worldY - scratch.startWorld.y;
 
-    const newPoses = new Map<string, TPose>();
     let snap: SnapTarget<TPose> | null = ctx.snap;
 
-    // Behaviors run only against the primary id (first in `draggedIds`).
-    // The behavior may mutate the primary's pose (e.g. snap-to-grid moves
-    // it to the nearest cell). For multi-select, we must propagate the
-    // resulting *delta change* to every secondary — otherwise the primary
-    // snaps while the others continue at the raw drag delta and they drift
-    // apart over successive drags.
+    // The gesture proposes a uniform `GroupTransform` and behaviors shape it.
+    // Applying the same transform to every dragged id eliminates the
+    // multi-select drift the old "primary-pose + delta back-derivation"
+    // path suffered: a snap-to-grid behavior used to move the primary onto
+    // a grid line while secondaries kept the raw cursor delta, so the
+    // selection slowly came apart over successive drags.
+    let transform: GroupTransform = { kind: 'translate', dx: rawDx, dy: rawDy };
     const primaryId = ctx.draggedIds[0];
-    let effectiveDx = rawDx;
-    let effectiveDy = rawDy;
-    if (primaryId !== undefined) {
-      const primaryOrigin = ctx.origin.get(primaryId)!;
-      let primaryProposed = translatePose(primaryOrigin, rawDx, rawDy);
-      for (const b of behaviorsRef.current) {
-        const r = b.onMove?.(ctx, primaryProposed);
-        if (!r) continue;
-        if (r.pose !== undefined) primaryProposed = r.pose;
-        if (r.snap !== undefined) snap = r.snap;
+    const primaryOrigin = primaryId !== undefined ? ctx.origin.get(primaryId) : undefined;
+
+    for (const b of behaviorsRef.current) {
+      const r: BehaviorResult<TPose> | void = b.onMove?.(ctx, transform);
+      if (!r) continue;
+      if (r.transform !== undefined) {
+        transform = r.transform;
+      } else if (r.pose !== undefined && primaryId !== undefined && primaryOrigin !== undefined) {
+        // Back-compat shim for legacy behaviors that still return a primary
+        // `pose`. Derive a `translate` transform from the pose's `{x, y}`
+        // diff against the primary's origin. Behaviors targeting non-rect
+        // poses via the legacy channel and lacking `{x, y}` fall through
+        // to the prior transform (raw delta) — matches pre-migration
+        // behavior. New behaviors should return `transform` directly.
+        if (transform.kind === 'translate') {
+          const pp = r.pose as { x?: number; y?: number };
+          const po = primaryOrigin as { x?: number; y?: number };
+          let dx: number = transform.dx;
+          let dy: number = transform.dy;
+          if (typeof pp.x === 'number' && typeof po.x === 'number') dx = pp.x - po.x;
+          if (typeof pp.y === 'number' && typeof po.y === 'number') dy = pp.y - po.y;
+          transform = { kind: 'translate', dx, dy };
+        }
       }
-      newPoses.set(primaryId, primaryProposed);
-      // Derive the effective delta from the primary's post-behavior pose.
-      // The default `translatePose` is `translateRectPose`, which writes
-      // through `{ x, y }`; consumers who pass a custom `translatePose`
-      // for a non-rect pose shape should also pose `{ x, y }`-bearing
-      // origins (true for both the rect and path adapters today). If
-      // either field is missing we fall back to the raw delta so behavior
-      // is identical to the pre-fix path.
-      const pp = primaryProposed as { x?: number; y?: number };
-      const po = primaryOrigin as { x?: number; y?: number };
-      if (typeof pp.x === 'number' && typeof po.x === 'number') {
-        effectiveDx = pp.x - po.x;
-      }
-      if (typeof pp.y === 'number' && typeof po.y === 'number') {
-        effectiveDy = pp.y - po.y;
-      }
+      if (r.snap !== undefined) snap = r.snap;
     }
 
-    // Apply the effective delta to every secondary id so the whole
-    // selection translates by the same amount the primary actually moved.
+    // Apply the (possibly shaped) transform uniformly to every dragged id.
+    const newPoses = new Map<string, TPose>();
+    const effectiveDx = transform.kind === 'translate' ? transform.dx : rawDx;
+    const effectiveDy = transform.kind === 'translate' ? transform.dy : rawDy;
     for (const id of ctx.draggedIds) {
-      if (id === primaryId) continue;
       const originPose = ctx.origin.get(id)!;
       newPoses.set(id, translatePose(originPose, effectiveDx, effectiveDy));
     }

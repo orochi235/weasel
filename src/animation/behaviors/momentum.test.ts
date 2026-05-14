@@ -47,9 +47,9 @@ describe('momentum', () => {
     const ctx = makeCtx({ x: 0, y: 0, width: 10, height: 10 }, setPose);
     beh.onStart?.(ctx);
     ctx.pointer = { worldX: 10, worldY: 0, clientX: 10, clientY: 0 };
-    beh.onMove?.(ctx, ctx.current.get('a')!);
+    beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
     ctx.pointer = { worldX: 20, worldY: 0, clientX: 20, clientY: 0 };
-    beh.onMove?.(ctx, ctx.current.get('a')!);
+    beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
     expect(ctx.scratch['momentum.samples']).toBeDefined();
   });
 
@@ -63,13 +63,13 @@ describe('momentum', () => {
     beh.onStart?.(ctx);
     // Two samples 16ms apart at +10px each → ~625 px/sec
     ctx.pointer = { worldX: 0, worldY: 0, clientX: 0, clientY: 0 };
-    beh.onMove?.(ctx, ctx.current.get('a')!);
+    beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
     clock.advance(16);
     ctx.pointer = { worldX: 10, worldY: 0, clientX: 10, clientY: 0 };
-    beh.onMove?.(ctx, ctx.current.get('a')!);
+    beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
     clock.advance(16);
     ctx.pointer = { worldX: 20, worldY: 0, clientX: 20, clientY: 0 };
-    beh.onMove?.(ctx, ctx.current.get('a')!);
+    beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
     const ops = beh.onEnd?.(ctx);
     expect(ops).toBeNull(); // suppress default commit
     expect(decaySpy).toHaveBeenCalledTimes(1);
@@ -83,7 +83,7 @@ describe('momentum', () => {
     const setPose = vi.fn();
     const ctx = makeCtx({ x: 0, y: 0, width: 10, height: 10 }, setPose);
     beh.onStart?.(ctx);
-    beh.onMove?.(ctx, ctx.current.get('a')!);
+    beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
     const ops = beh.onEnd?.(ctx);
     expect(ops).toBeUndefined();
     expect(decaySpy).not.toHaveBeenCalled();
@@ -109,10 +109,10 @@ describe('momentum', () => {
     // velocity calculation to compute a non-zero dt.
     clock.advance(50);
     ctx.pointer = { worldX: 50, worldY: 0, clientX: 50, clientY: 0 };
-    beh.onMove?.(ctx, ctx.current.get('a')!);
+    beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
     clock.advance(50);
     ctx.pointer = { worldX: 100, worldY: 0, clientX: 100, clientY: 0 };
-    beh.onMove?.(ctx, ctx.current.get('a')!);
+    beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
     const ops = beh.onEnd?.(ctx);
     // onEnd should have suppressed the default commit (returned null) and
     // queued a decay that calls setPose ≥ once on its first tick.

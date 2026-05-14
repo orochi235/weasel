@@ -1,8 +1,11 @@
 import { renderHook, act } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { useMove } from './move';
 import { snapToGrid } from './behaviors/snapToGrid';
 import { snapBackOrDelete } from './behaviors/snapBackOrDelete';
+import { snap } from '../shared/snap';
+import { gridSnapStrategy } from '../shared/strategies/grid';
+import type { MoveBehavior } from '../types';
 import type { MoveAdapter } from 'core/adapters/types';
 import type { Op } from 'core/ops/types';
 import type { BeginSpec } from '../../../tools/routing';
@@ -73,6 +76,90 @@ describe('useMove', () => {
     act(() => result.current.move({ worldX: 5.4, worldY: 5.6, clientX: 100, clientY: 100, modifiers: { alt: false, shift: false, meta: false, ctrl: false } }));
     act(() => result.current.end());
     expect(adapter.store.get('a')!.pose).toEqual({ x: 5, y: 6 });
+  });
+
+  it('multi-select translate with snap(gridSnap) keeps relative offsets constant across drags (group-transform contract)', () => {
+    // Regression for the "divide → drag → sliver detaches" bug. Before the
+    // group-transform migration, behaviors returned a primary-only `pose`;
+    // the gesture moved the primary onto the grid and let secondaries follow
+    // the raw cursor delta, so the selection drifted apart over successive
+    // drags. The contract now applies a single `translate` transform to
+    // every dragged id, so the relative offset is invariant.
+    const adapter = makeAdapter([
+      { id: 'a', pose: { x: 0,  y: 0  }, parent: null },
+      { id: 'b', pose: { x: 7,  y: 13 }, parent: null }, // off-grid sibling
+      { id: 'c', pose: { x: 23, y: 41 }, parent: null }, // another off-grid sibling
+    ]);
+    const { result } = renderHook(() =>
+      useMove(adapter, {
+        translatePose,
+        behaviors: [snap(gridSnapStrategy<Pose>(20))],
+      }),
+    );
+
+    // Drag 1: cursor lands at (24, 27). Grid spacing 20 → primary 'a' snaps
+    // to (20, 20). Expected delta = (20, 20). Secondaries shift by same.
+    act(() => result.current.start({ ids: ['a', 'b', 'c'], worldX: 0, worldY: 0, clientX: 0, clientY: 0 }));
+    act(() => result.current.move({ worldX: 24, worldY: 27, clientX: 100, clientY: 100, modifiers: { alt: false, shift: false, meta: false, ctrl: false } }));
+    act(() => result.current.end());
+
+    expect(adapter.store.get('a')!.pose).toEqual({ x: 20, y: 20 });
+    expect(adapter.store.get('b')!.pose).toEqual({ x: 27, y: 33 });
+    expect(adapter.store.get('c')!.pose).toEqual({ x: 43, y: 61 });
+    // Relative offsets b→a, c→a preserved.
+    expect(adapter.store.get('b')!.pose.x - adapter.store.get('a')!.pose.x).toBe(7);
+    expect(adapter.store.get('b')!.pose.y - adapter.store.get('a')!.pose.y).toBe(13);
+    expect(adapter.store.get('c')!.pose.x - adapter.store.get('a')!.pose.x).toBe(23);
+    expect(adapter.store.get('c')!.pose.y - adapter.store.get('a')!.pose.y).toBe(41);
+
+    // Drag 2: from new positions, another off-grid cursor delta.
+    const aBefore = { ...adapter.store.get('a')!.pose };
+    act(() => result.current.start({ ids: ['a', 'b', 'c'], worldX: 0, worldY: 0, clientX: 0, clientY: 0 }));
+    act(() => result.current.move({ worldX: 18, worldY: 11, clientX: 100, clientY: 100, modifiers: { alt: false, shift: false, meta: false, ctrl: false } }));
+    act(() => result.current.end());
+
+    // Primary 'a' at (20,20); cursor delta (18, 11) → proposed (38, 31) →
+    // grid-snapped to (40, 40), so absolute delta on this drag = (20, 20).
+    expect(adapter.store.get('a')!.pose).toEqual({ x: aBefore.x + 20, y: aBefore.y + 20 });
+    // Offsets STILL preserved — this is the load-bearing assertion.
+    expect(adapter.store.get('b')!.pose.x - adapter.store.get('a')!.pose.x).toBe(7);
+    expect(adapter.store.get('b')!.pose.y - adapter.store.get('a')!.pose.y).toBe(13);
+    expect(adapter.store.get('c')!.pose.x - adapter.store.get('a')!.pose.x).toBe(23);
+    expect(adapter.store.get('c')!.pose.y - adapter.store.get('a')!.pose.y).toBe(41);
+  });
+
+  it('legacy behaviors returning { pose } still work via the back-compat shim', () => {
+    // A pre-migration MoveBehavior shape — returns the legacy `pose` field
+    // instead of `transform`. The gesture's shim derives a `translate`
+    // transform from `pose.{x,y} - originPose.{x,y}` and applies it to
+    // every dragged id (so a legacy snap behavior in multi-select doesn't
+    // reintroduce the drift bug).
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const legacy: MoveBehavior<Pose> = {
+      onMove(_ctx, transform) {
+        // Pretend to do something pose-shaped: snap proposed pose to (10, 10).
+        // The shim should derive delta = (10 - origin.x, 10 - origin.y).
+        if (transform.kind !== 'translate') return;
+        return { pose: { x: 10, y: 10 } };
+      },
+    };
+    const adapter = makeAdapter([
+      { id: 'a', pose: { x: 0, y: 0  }, parent: null },
+      { id: 'b', pose: { x: 3, y: 4  }, parent: null },
+    ]);
+    const { result } = renderHook(() =>
+      useMove(adapter, { translatePose, behaviors: [legacy] }),
+    );
+    act(() => result.current.start({ ids: ['a', 'b'], worldX: 0, worldY: 0, clientX: 0, clientY: 0 }));
+    act(() => result.current.move({ worldX: 5, worldY: 5, clientX: 100, clientY: 100, modifiers: { alt: false, shift: false, meta: false, ctrl: false } }));
+    act(() => result.current.end());
+    // Primary 'a' moved to (10, 10) → delta (10, 10). Secondary 'b' must
+    // shift by the SAME delta.
+    expect(adapter.store.get('a')!.pose).toEqual({ x: 10, y: 10 });
+    expect(adapter.store.get('b')!.pose).toEqual({ x: 13, y: 14 });
+    // Shim must not surface any warnings at the test level.
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
   });
 
   it('snapBackOrDelete with delete policy emits DeleteOp when far from origin', () => {

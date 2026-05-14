@@ -1,14 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { snapToGuides } from './snapToGuides';
 import type { Guide } from 'features/guides/types';
-import type { GestureContext, ModifierState } from '../../types';
+import type { GestureContext, GroupTransform, ModifierState } from '../../types';
 
 interface Pose { x: number; y: number }
 
-function ctx(modifiers: Partial<ModifierState> = {}): GestureContext<Pose> {
+function ctx(
+  modifiers: Partial<ModifierState> = {},
+  origin: Pose = { x: 0, y: 0 },
+): GestureContext<Pose> {
+  const o = new Map<string, Pose>();
+  o.set('a', origin);
   return {
     draggedIds: ['a'],
-    origin: new Map(),
+    origin: o,
     current: new Map(),
     snap: null,
     modifiers: { alt: false, shift: false, meta: false, ctrl: false, ...modifiers },
@@ -18,19 +23,22 @@ function ctx(modifiers: Partial<ModifierState> = {}): GestureContext<Pose> {
   };
 }
 
+const tt = (dx: number, dy: number): GroupTransform => ({ kind: 'translate', dx, dy });
+
 describe('move/snapToGuides', () => {
   it('snaps within tolerance', () => {
     const guides: Guide[] = [{ id: 'g', axis: 'x', offset: 100 }];
     const b = snapToGuides<Pose>({ getGuides: () => guides, tolerance: 5 });
-    expect(b.onMove!(ctx(), { x: 102, y: 50 })).toEqual({
-      pose: { x: 100, y: 50 },
+    // origin (0,0); proposed (102, 50); snaps x → 100. transform → (100, 50).
+    expect(b.onMove!(ctx(), tt(102, 50))).toEqual({
+      transform: { kind: 'translate', dx: 100, dy: 50 },
     });
   });
 
   it('no result when outside tolerance', () => {
     const guides: Guide[] = [{ id: 'g', axis: 'x', offset: 100 }];
     const b = snapToGuides<Pose>({ getGuides: () => guides, tolerance: 5 });
-    expect(b.onMove!(ctx(), { x: 110, y: 50 })).toBeUndefined();
+    expect(b.onMove!(ctx(), tt(110, 50))).toBeUndefined();
   });
 
   it('bypassKey suppresses snapping when held', () => {
@@ -40,7 +48,7 @@ describe('move/snapToGuides', () => {
       tolerance: 5,
       bypassKey: 'alt',
     });
-    expect(b.onMove!(ctx({ alt: true }), { x: 102, y: 50 })).toBeUndefined();
+    expect(b.onMove!(ctx({ alt: true }), tt(102, 50))).toBeUndefined();
   });
 
   it('uses live guide list each call', () => {
@@ -49,10 +57,10 @@ describe('move/snapToGuides', () => {
       getGuides: () => guides,
       tolerance: 5,
     });
-    expect(b.onMove!(ctx(), { x: 102, y: 50 })).toBeUndefined();
+    expect(b.onMove!(ctx(), tt(102, 50))).toBeUndefined();
     guides = [{ id: 'g', axis: 'x', offset: 100 }];
-    expect(b.onMove!(ctx(), { x: 102, y: 50 })).toEqual({
-      pose: { x: 100, y: 50 },
+    expect(b.onMove!(ctx(), tt(102, 50))).toEqual({
+      transform: { kind: 'translate', dx: 100, dy: 50 },
     });
   });
 });

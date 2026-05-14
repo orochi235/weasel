@@ -64,14 +64,52 @@ export interface GestureBehavior<TPose, TProposed, TMoveResult> {
 
 // ----- move -----
 
-/** Per-frame result a `MoveBehavior.onMove` can return to override pose / snap target. */
-export interface BehaviorMoveResult<TPose> {
+/**
+ * Uniform group transform proposed by a gesture and shaped by behaviors.
+ * Applied identically to every dragged id so a multi-select gesture cannot
+ * drift apart (the historical bug: snap shifted only the primary, secondaries
+ * kept the raw cursor delta).
+ *
+ * v1 of the migration: only `'translate'` is wired end-to-end. `'scale'` and
+ * `'rotate'` exist for forward compatibility — `useResize` already remaps
+ * each leaf via `geom.remapBounds`, and `useRotate` is single-id-pivot-bound,
+ * so neither suffers the multi-select drift `'translate'` did. Migrate those
+ * gestures to emit `GroupTransform` in a follow-up.
+ */
+export type GroupTransform =
+  | { kind: 'translate'; dx: number; dy: number }
+  | { kind: 'scale';     pivot: { x: number; y: number }; sx: number; sy: number }
+  | { kind: 'rotate';    pivot: { x: number; y: number }; angle: number };
+
+/**
+ * Per-frame result a `MoveBehavior.onMove` can return.
+ *
+ * `transform` is the new uniform-group-transform channel: the gesture applies
+ * it to every dragged id, eliminating multi-select drift.
+ *
+ * `pose` is the legacy channel: a primary-id-only override. The hook routes
+ * it through a back-compat shim that derives a `translate` transform from
+ * the pose diff against `origin.get(primaryId)`. Prefer `transform` in new
+ * behaviors; `pose` will be removed after one release cycle.
+ *
+ * `snap` announces a visual snap target; unchanged from the legacy contract.
+ */
+export interface BehaviorResult<TPose> {
+  /** Replace the proposed transform. Applied uniformly to every id. */
+  transform?: GroupTransform;
+  /** @deprecated Return `transform` instead. Legacy primary-only pose override; supported via internal shim. */
   pose?: TPose;
   snap?: SnapTarget<TPose> | null;
 }
 
-/** A behavior plugged into `useMove` — shapes the proposed pose during a drag. */
-export type MoveBehavior<TPose> = GestureBehavior<TPose, TPose, BehaviorMoveResult<TPose>>;
+/** @deprecated Renamed to `BehaviorResult`. Kept as an alias for one release cycle. */
+export type BehaviorMoveResult<TPose> = BehaviorResult<TPose>;
+
+/** A behavior plugged into `useMove` — shapes the proposed transform during a drag.
+ *  Behaviors receive a `GroupTransform` (currently always `'translate'` for
+ *  `useMove`) and return a `BehaviorResult` shaping it (or, legacy, an
+ *  override pose run through the back-compat shim). */
+export type MoveBehavior<TPose> = GestureBehavior<TPose, GroupTransform, BehaviorResult<TPose>>;
 
 /** Live overlay state exposed by `useMove` for rendering ghosts and snap previews. */
 export interface MoveOverlay<TPose> {
