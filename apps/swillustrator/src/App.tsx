@@ -4,6 +4,9 @@ import {
   Canvas,
   cloneByAltDrag,
   createHistory,
+  gridSnapStrategy,
+  pointSnapToGrid,
+  snap as snapBehavior,
   createMoveToIndexOp,
   dispatchApplyBatch,
   selectFromMarquee,
@@ -20,6 +23,7 @@ import {
   useGroup,
   useHandTool,
   useInsertTool,
+  useKeybinding,
   useKeybindings,
   useLassoTool,
   useLineTool,
@@ -37,7 +41,7 @@ import {
   useTools,
   useUndoRedo,
   useUngroup,
-  useUserPenTool,
+  usePenTool,
   useWheelPanTool,
   useWheelZoomTool,
   useKeyboardZoomTool,
@@ -45,6 +49,7 @@ import {
   scalePathToBounds,
   translatePath,
   createDeleteOp,
+  createInsertOp,
   createSetTextOp,
   createTransformOp,
   useTextEdit,
@@ -52,6 +57,11 @@ import {
   caretIndexAt,
   boundsOfPath,
   PathBuilder,
+  PATH_M,
+  PATH_L,
+  PATH_Z,
+  rotatePoint,
+  splitSubpaths,
   viewToTransform,
   worldToScreen,
   type ClipboardSnapshot,
@@ -70,6 +80,10 @@ import {
 // resolves to `src/subpaths/*` at runtime; the explicit path keeps tsc happy
 // without adding a new path mapping.
 import { lockAspectWithModifier } from '../../../src/interactions/gestures/resize/behaviors/lockAspect';
+// `useGridFeature` isn't on the kit's top-level barrel (only the low-level
+// primitives are). Mirrors the lockAspect import above — relative path into
+// `src/`, no new subpath needed.
+import { useGridFeature } from '../../../src/features/grid/useGridFeature';
 import type { DrawCommand } from '@orochi235/weasel/renderer';
 import { viewToMat3 } from '@orochi235/weasel/renderer';
 import { resolveTextStyle, toRuns, resolveRuns, dlog } from '@orochi235/weasel';
@@ -80,6 +94,8 @@ import {
   useCommandPaletteShortcut,
   LayerList,
   type LayerListItem,
+  HistoryList,
+  type HistoryListItem,
   PropertiesPanel,
   ToolPalette,
   PropertyRow,
@@ -95,6 +111,7 @@ import {
 } from '@orochi235/weasel-ui';
 import '@orochi235/weasel-theme/tokens.css';
 import { ActionBar } from './ActionBar';
+import { PreferencesModal } from './PreferencesModal';
 import {
   ActiveSwatches,
   DEFAULT_FILL,
@@ -116,6 +133,11 @@ import { parseSvg, serializeSvg } from '@orochi235/weasel-svg';
 import { ToolIcon, PageIcon } from './kindIcons';
 import { Toasts, type Toast } from './Toasts';
 import { applyPoseToObj, type Obj, type Pose, type TextObj, type PathObj, type ToolKind, type PathParams } from './poseUpdate';
+import { readPref, usePref } from './prefs';
+import { usePersistedScene } from './usePersistedScene';
+import { createRecorder, type Recorder, type Recording } from './recorder';
+import { replayRecording } from './replay';
+import type { SceneSnapshot } from './sceneStore';
 
 interface View { x: number; y: number; scale: number }
 
@@ -294,6 +316,45 @@ function pathForObj(o: Obj): Path {
   return { kind: 'rect', x: o.x, y: o.y, width: o.width, height: o.height };
 }
 
+/** Apply an Obj's `rotation` (radians) to its raw path, returning a polygon
+ *  path whose coords reflect the rotated geometry. Boolean ops read this so
+ *  the result honors the visible (rotated) shape instead of the underlying
+ *  unrotated path. A RectPath rotates to a 4-anchor closed polygon; a
+ *  PolygonPath rotates each coord in place. Identity passthrough when the
+ *  obj has no rotation. */
+function bakeRotation(o: Obj): Path {
+  const raw = pathForObj(o);
+  const rot = o.rotation ?? 0;
+  if (!rot) return raw;
+  const cx = o.x + o.width / 2;
+  const cy = o.y + o.height / 2;
+  if (raw.kind === 'rect') {
+    const corners = [
+      { x: raw.x, y: raw.y },
+      { x: raw.x + raw.width, y: raw.y },
+      { x: raw.x + raw.width, y: raw.y + raw.height },
+      { x: raw.x, y: raw.y + raw.height },
+    ].map((p) => rotatePoint(p.x, p.y, cx, cy, rot));
+    const coords = new Float32Array(8);
+    corners.forEach((p, i) => { coords[i * 2] = p.x; coords[i * 2 + 1] = p.y; });
+    return {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
+      coords,
+      fillRule: 'nonzero',
+    };
+  }
+  // PolygonPath: rotate every (x, y) pair in coords. Command stream is
+  // unchanged — anchors stay in the same order, just at new positions.
+  const next = new Float32Array(raw.coords.length);
+  for (let i = 0; i < raw.coords.length; i += 2) {
+    const p = rotatePoint(raw.coords[i], raw.coords[i + 1], cx, cy, rot);
+    next[i] = p.x;
+    next[i + 1] = p.y;
+  }
+  return { ...raw, coords: next };
+}
+
 export function App() {
   // ---- Backing state ----------------------------------------------------
   // `itemsRef.current` is the canonical mutable source of truth. React's
@@ -387,8 +448,69 @@ export function App() {
   const setPaperSize = useCallback((next: PaperSize) => {
     setDoc((d) => ({ ...d, size: { ...PAPER_PRESETS[next] } }));
   }, []);
-  const [gridDensity, setGridDensity] = useState(8);
-  const [sidebarWidth, setSidebarWidth] = useState(260);
+  const [gridDensity, setGridDensity] = usePref('view.gridDensity');
+  const [gridVisible, setGridVisible] = usePref('view.gridVisible');
+  const toggleGrid = useCallback(() => setGridVisible((v) => !v), [setGridVisible]);
+  useKeybinding({ key: ['3', '#'], shift: true }, toggleGrid);
+  const [snapToGrid, setSnapToGrid] = usePref('view.snapToGrid');
+  const toggleSnap = useCallback(() => setSnapToGrid((v) => !v), [setSnapToGrid]);
+  // Preferences modal — Cmd-, opens (and toggles) it. Browsers reserve
+  // this chord for tab/site settings, so the keybinding must preventDefault
+  // (which `useKeybinding` does by default).
+  const [prefsOpen, setPrefsOpen] = useState(false);
+  useKeybinding({ key: ',', mod: true }, () => setPrefsOpen((o) => !o));
+
+  // Record/replay — captures pointer + keyboard input for later replay
+  // against the canvas. The recorder is created lazily and reads the
+  // current canvas element each time it needs to classify an event target.
+  // `canvasElRef` is set via a one-shot effect after first paint that
+  // queries the DOM (the kit's <Canvas> exposes an extension API ref, not
+  // the element itself).
+  const canvasElRef = useRef<HTMLCanvasElement | null>(null);
+  const recorderRef = useRef<Recorder | null>(null);
+  const [recording, setRecording] = useState(false);
+  // Snap helpers exposed as refs so callbacks declared later (the adapter,
+  // each shape tool's `create`) read the latest snap state without recreating
+  // the adapter or tools when the toggle flips. `.current` is rebound on
+  // every render below.
+  const snapPointToGridRef = useRef<(p: { x: number; y: number }) => { x: number; y: number }>((p) => p);
+  const snapBoundsToGridRef = useRef<<B extends { x: number; y: number; width: number; height: number }>(b: B) => B>(
+    (b) => b,
+  );
+  {
+    const enabled = snapToGrid;
+    const spacing = gridDensity;
+    const r = (v: number) => Math.round(v / spacing) * spacing;
+    snapPointToGridRef.current = (p) => (enabled ? { x: r(p.x), y: r(p.y) } : p);
+    snapBoundsToGridRef.current = <B extends { x: number; y: number; width: number; height: number }>(b: B): B => {
+      if (!enabled) return b;
+      const x0 = r(b.x);
+      const y0 = r(b.y);
+      const x1 = r(b.x + b.width);
+      const y1 = r(b.y + b.height);
+      return { ...b, x: x0, y: y0, width: Math.max(1, x1 - x0), height: Math.max(1, y1 - y0) };
+    };
+  }
+  // Renamed from `sidebarWidth` when the prefs layer landed — the right
+  // sidebar's width is persisted alongside (future) `leftSidebarWidth`.
+  const [rightSidebarWidth, setRightSidebarWidth] = usePref('ui.rightSidebarWidth');
+  const [panels, setPanels] = usePref('ui.panels');
+  // Lightweight helpers for follow-up panel-toggle UI. They mutate the
+  // persisted `panels` map; existing panel rendering is untouched.
+  const isPanelHidden = useCallback(
+    (k: string) => !!panels[k]?.hidden,
+    [panels],
+  );
+  const setPanelHidden = useCallback(
+    (k: string, hidden: boolean) => {
+      setPanels((prev) => ({ ...prev, [k]: { ...prev[k], hidden } }));
+    },
+    [setPanels],
+  );
+  // Touch the panel-helpers so eslint doesn't flag them as unused until the
+  // follow-up UI lands. They're part of the documented prefs API.
+  void isPanelHidden;
+  void setPanelHidden;
   const [paletteOpen, setPaletteOpen] = useState(false);
   useCommandPaletteShortcut(paletteOpen, setPaletteOpen);
 
@@ -508,6 +630,56 @@ export function App() {
     });
     historyRef.current = createHistory(proxy, { coalesceWindowMs: 500 });
   }
+
+  // Subscribe to history changes so the History panel re-renders on every
+  // push/undo/redo/clear/coalesce. The kit's History bumps an internal
+  // version and notifies listeners; we mirror it into React state so any
+  // history-derived UI (the panel) updates on the next render.
+  const [historyVersion, setHistoryVersion] = useState(0);
+  useEffect(() => {
+    const h = historyRef.current;
+    if (!h) return;
+    return h.subscribe(() => setHistoryVersion((v) => v + 1));
+  }, []);
+
+  // Persist the scene to IndexedDB. On mount we load any saved snapshot,
+  // replace the backing refs in place, publish to React, and bump nextId
+  // past the loaded ids so newly-created shapes don't collide. After
+  // restore, the hook debounces writes (300ms idle) on subsequent renders.
+  usePersistedScene({
+    itemsRef,
+    groupsRef,
+    setItems,
+    setGroups,
+    doc,
+    setDoc,
+    view,
+    setView,
+    publish,
+    resetHistory: () => { historyRef.current?.clear(); },
+  });
+
+  // After a restore the highest existing id may overlap with `nextId`'s
+  // start value. Walk every restored id once and bump nextId past the max
+  // numeric suffix. The id pattern across tools is `<letter><n>` (e.g. r12,
+  // b3, t7) so we capture the trailing-digits group.
+  const seededNextIdRef = useRef(false);
+  useEffect(() => {
+    if (seededNextIdRef.current) return;
+    if (itemsRef.current.length === 0 && groupsRef.current.length === 0) return;
+    let max = 0;
+    const scan = (id: string) => {
+      const m = /(\d+)$/.exec(id);
+      if (m) {
+        const n = Number(m[1]);
+        if (Number.isFinite(n) && n > max) max = n;
+      }
+    };
+    for (const o of itemsRef.current) scan(o.id);
+    for (const g of groupsRef.current) scan(g.id);
+    if (max >= nextId.current) nextId.current = max + 1;
+    seededNextIdRef.current = true;
+  }, [items, groups]);
 
   // Wrap applyOps through history. The hooks call `dispatchApplyBatch`,
   // which calls our `applyOps`. We delegate to history.applyOps (which
@@ -657,7 +829,8 @@ export function App() {
       // --- groups (virtual) ---
       ...createGroupAdapter(groupsRef),
       // --- clipboard / insert ---
-      commitInsert: (b: Pose): Obj => {
+      commitInsert: (raw: Pose): Obj => {
+        const b = snapBoundsToGridRef.current(raw);
         const id = `r${nextId.current++}`;
         const obj: PathObj = {
           id, tool: 'rect',
@@ -700,7 +873,10 @@ export function App() {
       // --- booleans helpers ---
       getWorldPath: (id: string): Path | undefined => {
         const o = itemsRef.current.find((x) => x.id === id);
-        return o ? pathForObj(o) : undefined;
+        // Bake rotation into the geometry so booleans operate on the visible
+        // (rotated) shape rather than the underlying unrotated path. The
+        // output `createPathNode` writes a fresh path with rotation: 0.
+        return o ? bakeRotation(o) : undefined;
       },
       compareZ: (aId: string, bId: string): number => {
         const ai = itemsRef.current.findIndex((o) => o.id === aId);
@@ -860,16 +1036,36 @@ export function App() {
     // Illustrator / Figma convention. `expandIds` lets a resize started on
     // a selected group id route to per-leaf transform ops (useResize takes
     // the union AABB as the origin and remaps each leaf proportionally).
-    resize: { behaviors: [lockAspectWithModifier()], expandIds: expandGroupIds },
+    // Snap behaviors are conditioned on the persisted `snapToGrid` pref.
+    // Both gestures honor `Cmd` as a temporary bypass so users can place
+    // off-grid without disabling the toggle.
+    resize: {
+      behaviors: [lockAspectWithModifier()],
+      pointSnapBehaviors: snapToGrid
+        ? [pointSnapToGrid({ spacing: gridDensity, bypassKey: 'meta' })]
+        : [],
+      expandIds: expandGroupIds,
+    },
     // Move likewise expands a group id to its members so dragging a group
     // translates every leaf as one.
-    move: { expandIds: expandGroupIds },
+    move: {
+      expandIds: expandGroupIds,
+      behaviors: snapToGrid
+        ? [snapBehavior(gridSnapStrategy<Pose>(gridDensity), { bypassKey: 'meta' })]
+        : [],
+    },
     // Marquee is opt-in at the kit level — illustration apps want
     // rubber-band selection across drawn objects.
     areaSelect: { behaviors: [selectFromMarquee()] },
   });
 
-  const insert = useInsertTool<Obj, Pose>(adapter, { minBounds: { width: 4, height: 4 } });
+  const insert = useInsertTool<Obj, Pose>(adapter, {
+    minBounds: { width: 4, height: 4 },
+    // Gesture-level snap: the live marquee tracks the grid. The adapter's
+    // commitInsert still snaps bounds as belt-and-suspenders since the
+    // adapter is exposed independently of this tool.
+    snapPoint: (p) => snapPointToGridRef.current(p),
+  });
   const hand = useHandTool();
   // Eyedropper — clicks any shape, writes the sampled color into whichever
   // swatch is currently focused. Alt-hold engages it momentarily on top
@@ -993,7 +1189,10 @@ export function App() {
   const wheelPan = useWheelPanTool();
   const keyZoom = useKeyboardZoomTool();
 
-  const { tool: pen, isEditing: penIsEditing } = useUserPenTool<PathObj>({
+  const { tool: pen, isEditing: penIsEditing } = usePenTool<PathObj>({
+    // Honor the global snap-to-grid toggle for every anchor placement.
+    // Reads via ref so the pen tool doesn't re-mount when the toggle flips.
+    snapPoint: (p) => snapPointToGridRef.current(p),
     wrapPath: (path, { closed }): PathObj => {
       const b = boundsOfPath(path);
       const id = `p${nextId.current++}`;
@@ -1047,19 +1246,27 @@ export function App() {
     };
   }, []);
 
+  // Each shape tool ingests snap via the kit's gesture-level `snapPoint`
+  // option, so the live overlay AND the committed geometry track the grid.
+  // (Previously each `create` callback snapped after the fact, which made
+  // the preview drift off-grid until release.) Reads via ref so toggling
+  // snap-to-grid doesn't re-mount the tool.
   const ellipse = useEllipseTool<PathObj>({
     minBounds: { width: 2, height: 2 },
+    snapPoint: (p) => snapPointToGridRef.current(p),
     create: (bounds) => pathToObj(ellipsePath(bounds), true, 'ellipse'),
   });
 
   const line = useLineTool<PathObj>({
     minLength: 2,
+    snapPoint: (p) => snapPointToGridRef.current(p),
     create: (a, b) => pathToObj(linePath(a, b), false, 'line'),
   });
 
   const polygon = usePolygonTool<PathObj>({
     minRadius: 2,
     sides: 6,
+    snapPoint: (p) => snapPointToGridRef.current(p),
     create: (center, radius, rotation, sides) =>
       pathToObj(
         regularPolygonPath(center, radius, rotation, sides),
@@ -1073,6 +1280,7 @@ export function App() {
     minRadius: 2,
     points: 5,
     innerRatio: 0.5,
+    snapPoint: (p) => snapPointToGridRef.current(p),
     create: (center, outer, inner, rotation, points) => {
       const ratio = outer > 0 ? inner / outer : 0.5;
       return pathToObj(
@@ -1122,8 +1330,18 @@ export function App() {
   // pointerdown over a body, so plain drags fall through to whichever
   // registered tool is active. Putting it in `registry` would require the
   // user to switch tools to enable alt-drag clone.
+  //
+  // Initial active tool: prefer the user's persisted `lastTool` from
+  // `swill.prefs.v1`, but only if it's still a registered tool (a renamed
+  // or removed tool would otherwise crash useTools' "active not in registry"
+  // assertion). Falls back to 'select'.
+  const initialActiveTool = useMemo(() => {
+    const stored = readPref('tools.lastTool');
+    const registryKeys = ['select', 'lasso', 'insert', 'ellipse', 'line', 'polygon', 'star', 'pen', 'pencil', 'hand', 'text', 'eyedropper'];
+    return registryKeys.includes(stored) ? stored : 'select';
+  }, []);
   const tools = useTools({
-    active: 'select',
+    active: initialActiveTool,
     registry: { select, lasso, insert, ellipse, line, polygon, star, pen, pencil, hand, text, eyedropper },
     ambient: [wheelZoom, wheelPan, keyZoom, clone],
     // Declarative-routing tools (eyedropper) route on `ctx.target.category`,
@@ -1156,6 +1374,17 @@ export function App() {
     },
   });
 
+  // Persist the active tool across reloads. We use `usePersistedPref` here
+  // (rather than a raw effect on `tools.active`) so the write-coalescing in
+  // the prefs layer batches with concurrent slider/sidebar writes. The
+  // initial value is `tools.active` itself (already seeded from the stored
+  // lastTool via `initialActiveTool`) — but the hook's mount-skip means we
+  // only emit a write when the user actually switches tools.
+  const [, setLastTool] = usePref('tools.lastTool');
+  useEffect(() => {
+    setLastTool(tools.active);
+  }, [tools.active, setLastTool]);
+
   // ---- Selection-aware actions (each binds keys + exposes a callable) --
   useSelectAll({
     getSelection: () => [...selection.current],
@@ -1171,8 +1400,78 @@ export function App() {
   const { align } = useAlign<Pose>(adapter);
   const { distribute } = useDistribute<Pose>(adapter);
   const { flip } = useFlip<Pose>(adapter, { pivot: 'union' });
+
+  // "Release compound path" — for each selected obj whose path has ≥2
+  // subpaths (typically a multi-region boolean result), delete it and emit
+  // one new PathObj per subpath as a single undoable batch. The new
+  // selection becomes the freshly-inserted ids.
+  const releaseCompoundEnabled = useMemo(() => {
+    return selection.current.some((id) => {
+      const o = itemsRef.current.find((x) => x.id === id);
+      if (!o || o.tool === 'text') return false;
+      const path = pathForObj(o);
+      // Defensive: a non-text Obj should always carry a path per the type
+      // contract, but undo/redo + boolean op round-trips have shown this
+      // invariant can be violated in practice. Treat missing path as "not
+      // a compound" rather than crashing the whole render.
+      if (!path || path.kind !== 'polygon') return false;
+      let m = 0;
+      for (let i = 0; i < path.commands.length; i++) {
+        if (path.commands[i] === PATH_M && ++m >= 2) return true;
+      }
+      return false;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selection.current, items]);
+
+  const releaseCompoundPath = useCallback((): void => {
+    const ops: Op[] = [];
+    const newIds: string[] = [];
+    for (const id of selection.current) {
+      const o = itemsRef.current.find((x) => x.id === id);
+      if (!o || o.tool === 'text') continue;
+      const path = pathForObj(o);
+      if (!path || path.kind !== 'polygon') continue;
+      let m = 0;
+      for (let i = 0; i < path.commands.length; i++) {
+        if (path.commands[i] === PATH_M) m++;
+      }
+      if (m < 2) continue;
+      const subs = splitSubpaths(path);
+      ops.push(createDeleteOp({ node: o, label: 'Release compound path' }));
+      for (const sub of subs) {
+        const b = boundsOfPath(sub);
+        const newId = `s${nextId.current++}`;
+        const node: PathObj = {
+          id: newId,
+          tool: 'imported',
+          x: b.x, y: b.y, width: b.width, height: b.height,
+          path: sub,
+          closed: o.closed,
+          fill: o.fill,
+          stroke: o.stroke,
+          strokeWidth: o.strokeWidth,
+          rotation: o.rotation,
+        };
+        ops.push(createInsertOp({ node, label: 'Release compound path' }));
+        newIds.push(newId);
+      }
+    }
+    if (ops.length === 0) return;
+    applyOps(ops, 'Release compound path');
+    selection.set(newIds.map((id) => asNodeId(id)));
+  }, [applyOps, selection]);
+
+  useKeybinding({ key: '|', shift: true }, releaseCompoundPath);
   const booleans = useBooleans(adapter);
-  const { undo, redo } = useUndoRedo(historyRef.current, { bindKeyboard: true });
+  // The adapter mutates `itemsRef` in place; React only re-renders when we
+  // call `publish()`. `onUndo`/`onRedo` fire after every successful action
+  // (button or keyboard), so both paths see a fresh render.
+  const { undo, redo } = useUndoRedo(historyRef.current, {
+    bindKeyboard: true,
+    onUndo: publish,
+    onRedo: publish,
+  });
 
   // Track clipboard emptiness for the ActionBar enable/disable. Bumped via
   // a state tick after every copy/cut.
@@ -1215,6 +1514,30 @@ export function App() {
   // Page layer: draws the document's printable surface as a white rect
   // with a soft drop-shadow at world (0, 0). Rendered below the scene so
   // user content paints inside it.
+  // Grid overlay. `gridDensity` is the user-facing knob (Properties panel);
+  // the hook turns it into a renderable layer that paints in world space.
+  // Bounds match the document page so the grid clips to the sheet rather
+  // than tiling across the whole viewport. View getter projects swillustrator's
+  // `{ x, y, scale }` into the kit's `ViewTransform` shape on demand.
+  const gridFeature = useGridFeature({
+    spacing: gridDensity,
+    bounds: () => ({ x: 0, y: 0, width: doc.size.width, height: doc.size.height }),
+    view: () => viewToTransform(view),
+    // Major-line every 4th cell, with 2 finer subdivisions per cell —
+    // gives a three-tier hierarchy (sub < minor < major) so users can read
+    // distance at a glance without the grid dominating the page.
+    accentEvery: 4,
+    subdivisions: 2,
+    // Light gridlines on the white paper — kit defaults are tuned for a
+    // dark canvas and read too dark here. Opacity ramps from finest to
+    // most prominent so the hierarchy is visible without being heavy.
+    style: {
+      sub:    { paint: { fill: 'solid', color: 'rgba(0,0,0,0.03)' } },
+      line:   { paint: { fill: 'solid', color: 'rgba(0,0,0,0.08)' } },
+      accent: { paint: { fill: 'solid', color: 'rgba(0,0,0,0.18)' } },
+    },
+  });
+
   const pageLayer: RenderLayer<unknown> = useMemo(
     () => ({
       id: 'doc-page',
@@ -1416,13 +1739,20 @@ export function App() {
   };
 
   // Read primary's current values for the panel inputs.
+  // Fall back to the active swatches when the primary doesn't have its own
+  // paint set (paths created from SVG import or older docs may lack fill /
+  // stroke). PropertyColorInput requires a string.
   const primaryFill = primary
     ? (primary.tool === 'text'
         ? (primary.style?.fill?.fill === 'solid' ? primary.style.fill.color : '#000000')
-        : primary.fill)
+        : (primary.fill ?? fillColor))
     : fillColor;
-  const primaryStroke = primary && primary.tool !== 'text' ? primary.stroke : strokeColor;
-  const primaryStrokeWidth = primary && primary.tool !== 'text' ? primary.strokeWidth : strokeWidth;
+  const primaryStroke = primary && primary.tool !== 'text'
+    ? (primary.stroke ?? strokeColor)
+    : strokeColor;
+  const primaryStrokeWidth = primary && primary.tool !== 'text'
+    ? (primary.strokeWidth ?? strokeWidth)
+    : strokeWidth;
 
   // ---- LayerList items (top of stack first) ----------------------------
   // Items array is bottom-up (index 0 = back). LayerList shows top first
@@ -1450,6 +1780,53 @@ export function App() {
     };
     return [...objectRows, pageRow];
   }, [items]);
+  // ---- HistoryList items + current marker ------------------------------
+  // The kit's history exposes `entries()` (undo oldest→newest, redo
+  // oldest→newest from the user's perspective). We prepend a synthetic
+  // "Initial" row at index 0 so users can fully unwind, then map history
+  // entries to row index = 1 + position-in-stack. `currentIndex` is the
+  // number of applied entries on the undo stack (entries.undo.length),
+  // which also equals the position of the most-recently-applied row in
+  // the prepended display list.
+  const historyItems: HistoryListItem[] = useMemo(() => {
+    const h = historyRef.current;
+    if (!h) return [];
+    const { undo, redo } = h.entries();
+    const rows: HistoryListItem[] = [{
+      id: '__initial__',
+      label: <span className="swill-history-label swill-history-initial">Initial</span>,
+    }];
+    for (const e of undo) {
+      rows.push({
+        id: `h${e.id}`,
+        label: <span className="swill-history-label">{e.label || 'Edit'}</span>,
+      });
+    }
+    for (const e of redo) {
+      rows.push({
+        id: `h${e.id}`,
+        label: <span className="swill-history-label">{e.label || 'Edit'}</span>,
+      });
+    }
+    return rows;
+    // historyVersion ticks on every push/undo/redo/clear/coalesce —
+    // recompute whenever it changes.
+  }, [historyVersion]);
+  const historyCurrentIndex = useMemo(() => {
+    const h = historyRef.current;
+    if (!h) return 0;
+    return h.entries().undo.length;
+    // Same dep as historyItems — derived from the same snapshot.
+  }, [historyVersion]);
+  const onHistoryJump = useCallback((index: number) => {
+    const h = historyRef.current;
+    if (!h) return;
+    // Display index 0 = Initial (no history applied); index N = N entries
+    // on the undo stack. `goto(N)` walks the kit's stacks to match.
+    h.goto(Math.max(0, index));
+    publish();
+  }, [publish]);
+
   const onLayerReorder = (ids: string[], targetIndex: number) => {
     // LayerList index is top-down. Scene index is bottom-up.
     const total = itemsRef.current.length;
@@ -1467,6 +1844,76 @@ export function App() {
   // forcePaint isn't currently triggered anywhere but kept for future
   // direct-mutation paths that bypass setItems.
   void forcePaint;
+
+  // Snapshot the current scene into the same `SceneSnapshot` shape the IDB
+  // store uses — so a recording's bundled scene is round-trippable through
+  // either persistence layer. Captured copies are shallow `.slice()`s; the
+  // contained Objs are treated as immutable downstream.
+  const snapshotCurrentScene = useCallback((): SceneSnapshot => {
+    return {
+      version: 1,
+      items: itemsRef.current.slice(),
+      groups: groupsRef.current.slice(),
+      doc,
+      view,
+    };
+  }, [doc, view]);
+
+  // Capture the canvas DOM element once after first paint. The kit's
+  // `<Canvas>` doesn't expose its underlying <canvas>; we grab the only
+  // one inside the canvas host.
+  useEffect(() => {
+    const c = document.querySelector('canvas');
+    canvasElRef.current = c instanceof HTMLCanvasElement ? c : null;
+  }, []);
+
+  const onToggleRecord = useCallback(() => {
+    let rec = recorderRef.current;
+    if (!rec) {
+      rec = createRecorder({ canvas: () => canvasElRef.current });
+      recorderRef.current = rec;
+    }
+    if (rec.isRecording()) {
+      const recording = rec.stop();
+      // Trigger a JSON download via a transient anchor — same pattern as
+      // `downloadSvg`. The file is self-contained: scene snapshot + events.
+      const blob = new Blob([JSON.stringify(recording)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `swill-recording-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setRecording(false);
+    } else {
+      rec.start({ snapshotScene: snapshotCurrentScene });
+      setRecording(true);
+    }
+  }, [snapshotCurrentScene]);
+
+  const onPlay = useCallback(async (rec: Recording) => {
+    const canvas = canvasElRef.current;
+    if (!canvas) return;
+    await replayRecording(rec, {
+      canvas,
+      mode: 'flush',
+      beforeFirstEvent: () => {
+        // Restore the bundled scene so replay starts from the exact state
+        // the recording was made against. No-op when the recording didn't
+        // bundle one.
+        const snap = rec.scene;
+        if (!snap) return;
+        itemsRef.current = snap.items.slice();
+        groupsRef.current = snap.groups.slice();
+        historyRef.current?.clear();
+        setDoc(snap.doc);
+        setView(snap.view);
+        publish();
+      },
+    });
+  }, [publish]);
 
   return (
     <div className="swill-app">
@@ -1499,6 +1946,16 @@ export function App() {
         onFlip={(axis) => flip(axis)}
         booleansAdapter={adapter}
         booleansActions={booleans}
+        gridVisible={gridVisible}
+        onToggleGrid={toggleGrid}
+        snapToGrid={snapToGrid}
+        onToggleSnap={toggleSnap}
+        canReleaseCompound={releaseCompoundEnabled}
+        onReleaseCompound={releaseCompoundPath}
+        onOpenPrefs={() => setPrefsOpen(true)}
+        recording={recording}
+        onToggleRecord={onToggleRecord}
+        onPlay={onPlay}
         onNew={(size) => {
           // Reset the scene, history, selection, and document size. The
           // initial-center effect won't re-fire on its own (it's gated by
@@ -1635,6 +2092,16 @@ export function App() {
               boundsOf={boundsOfId}
               layers={{
                 doc: { layer: pageLayer, before: 'scene' },
+                // Grid sits between the page background and the shapes. The
+                // standard `grid` slot key is reserved for `GridSlotConfig`
+                // (raw layer opts) — to route the hook's RenderLayer through,
+                // we use a custom slot key and anchor it with `before: 'scene'`.
+                // LayersMap iteration is insertion-ordered, so `doc` then
+                // `gridOverlay` both anchored before `scene` produce the
+                // sequence doc → grid → scene-anchored standard layers.
+                ...(gridVisible
+                  ? { gridOverlay: { layer: gridFeature.layers.grid(null), before: 'scene' as const } }
+                  : {}),
                 // Non-text shapes (rect/ellipse/polygon/star/line/pen/pencil/
                 // imported) all render through `shapeLayer`. The kit's generic
                 // `scene.drawOne` slot can't wrap individual shapes in their
@@ -1655,10 +2122,10 @@ export function App() {
             e.preventDefault();
             (e.target as HTMLElement).setPointerCapture(e.pointerId);
             const startX = e.clientX;
-            const startW = sidebarWidth;
+            const startW = rightSidebarWidth;
             const move = (ev: PointerEvent) => {
               const next = Math.max(220, Math.min(420, startW + (startX - ev.clientX)));
-              setSidebarWidth(next);
+              setRightSidebarWidth(next);
             };
             const up = () => {
               window.removeEventListener('pointermove', move);
@@ -1669,7 +2136,7 @@ export function App() {
           }}
         />
         <RightSidebar
-          width={sidebarWidth}
+          width={rightSidebarWidth}
           primary={primary}
           selectedItems={selectedItems}
           primaryFill={primaryFill}
@@ -1709,6 +2176,9 @@ export function App() {
             }
           }}
           onLayerReorder={onLayerReorder}
+          historyItems={historyItems}
+          historyCurrentIndex={historyCurrentIndex}
+          onHistoryJump={onHistoryJump}
           // Force a re-publish whenever the clipboard tick advances —
           // ensures the paste-button's clipboardEmpty flag stays current.
           clipboardTick={clipboardTick}
@@ -1727,6 +2197,7 @@ export function App() {
       </div>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} />
       <Toasts toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
@@ -1768,6 +2239,9 @@ interface RightSidebarProps {
   selectedIds: string[];
   onSelectLayers: (ids: string[]) => void;
   onLayerReorder: (ids: string[], targetIndex: number) => void;
+  historyItems: HistoryListItem[];
+  historyCurrentIndex: number;
+  onHistoryJump: (index: number) => void;
   clipboardTick: number;
   pageSelected: boolean;
 }
@@ -1873,6 +2347,17 @@ function RightSidebar(p: RightSidebarProps) {
         </div>
       </PropertiesPanel>
 
+      <PropertiesPanel title="History">
+        <div className="swill-historylist-host">
+          <HistoryList
+            items={p.historyItems}
+            currentIndex={p.historyCurrentIndex}
+            onJump={p.onHistoryJump}
+            empty="No history yet"
+          />
+        </div>
+      </PropertiesPanel>
+
       <PropertiesPanel title="Document">
         <PropertyRow label="Title">
           <PropertyTextInput value={p.docTitle} onChange={p.setDocTitle} />
@@ -1899,7 +2384,7 @@ function RightSidebar(p: RightSidebarProps) {
           />
         </PropertyRow>
         <PropertyRow label="Grid">
-          <PropertyNumberInput value={p.gridDensity} onChange={p.setGridDensity} span={4} min={2} max={64} step={1} />
+          <PropertyNumberInput value={p.gridDensity} onChange={p.setGridDensity} span={4} min={4} max={288} step={4} />
         </PropertyRow>
         <PropertyRow>
           <PropertyButton onClick={() => p.setView(() => ({ x: 0, y: 0, scale: 1 }))} span={12}>

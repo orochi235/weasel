@@ -32,7 +32,7 @@ html, body, #root {
 .swill-actionbar {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   padding: 4px 8px;
   background: #221a13;
   border-bottom: 1px solid #3a2e22;
@@ -41,17 +41,30 @@ html, body, #root {
   flex-shrink: 0;
 }
 
+/* Each group renders as a single segmented widget — buttons inside share
+   the container's chrome and are visually merged (1px background bleed
+   between them acts as the divider, à la PathfinderPanel). */
 .swill-actionbar-group {
-  display: flex;
-  gap: 2px;
+  display: inline-flex;
+  flex-direction: row;
+  gap: 1px;
+  background: #1a1612;
+  border: 1px solid #2a2418;
+  border-radius: 4px;
+  padding: 2px;
+  user-select: none;
 }
 
+/* Sep is no longer needed — groups self-separate via their borders + the
+   parent toolbar's 6px gap. Kept as a no-op for any stragglers. */
 .swill-actionbar-sep {
-  display: inline-block;
-  width: 1px;
-  height: 18px;
-  background: #3a2e22;
-  margin: 0 4px;
+  display: none;
+}
+
+/* Visually-hidden input used to host file pickers (Play recording, etc.).
+   The button next to it is the actual trigger. */
+.swill-hidden-input {
+  display: none;
 }
 
 .swill-actionbar-button {
@@ -59,11 +72,12 @@ html, body, #root {
   align-items: center;
   justify-content: center;
   min-width: 26px;
-  padding: 4px 6px;
-  background: #1a130d;
+  height: 26px;
+  padding: 0 6px;
+  background: transparent;
   color: #d4c4a8;
-  border: 1px solid #3a2e22;
-  border-radius: 3px;
+  border: 0;
+  border-radius: 2px;
   cursor: pointer;
   font-family: inherit;
   font-size: 11px;
@@ -74,7 +88,14 @@ html, body, #root {
 }
 .swill-actionbar-button:hover:not(:disabled) {
   background: #2a2418;
-  border-color: #5a4a38;
+  color: #fff5d8;
+}
+.swill-actionbar-button:active:not(:disabled) {
+  background: #322618;
+}
+.swill-actionbar-button-active:not(:disabled) {
+  background: #2a2418;
+  color: #fff5d8;
 }
 .swill-actionbar-button:disabled {
   opacity: 0.4;
@@ -431,6 +452,27 @@ html, body, #root {
   overflow-y: auto;
 }
 
+/* --- History list host inside PropertiesPanel ------------------------ */
+.swill-historylist-host {
+  /* Mirror the layer-list host: span the full 12-col grid and cap the
+     height so a long edit session doesn't push later panels off-screen.
+     Slightly taller than Layers since users typically scrub through
+     many history entries to find a target state. */
+  grid-column: 1 / -1;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.swill-history-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swill-history-initial {
+  font-style: italic;
+}
+
 .swill-sidebar-spacer {
   flex: 1;
 }
@@ -444,4 +486,260 @@ html, body, #root {
   font-size: 11px;
   color: var(--wui-text-muted, #8a7a5a);
   font-family: ui-monospace, monospace;
+}
+
+/* --- Action bar far-right spacer ------------------------------------- */
+/* Pushes the trailing group(s) (settings cog) to the right edge of the
+   toolbar. Lives outside any `.swill-actionbar-group` so it doesn't
+   pick up the segmented widget chrome. */
+.swill-actionbar-spacer {
+  margin-left: auto;
+}
+
+/* --- Preferences modal ----------------------------------------------- */
+.swill-prefs-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.swill-prefs-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: min(90vw, 1100px);
+  max-height: 85vh;
+  padding: 16px;
+  background: #221a13;
+  color: #d4c4a8;
+  border: 1px solid #3a2e22;
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.swill-prefs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.swill-prefs-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff5d8;
+}
+
+.swill-prefs-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: #8a7a5a;
+  flex-shrink: 0;
+}
+
+.swill-prefs-close {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  color: #d4c4a8;
+  border: 1px solid #3a2e22;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.swill-prefs-close:hover {
+  background: #2a2418;
+  color: #fff5d8;
+}
+
+.swill-prefs-columns {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.swill-prefs-column {
+  flex: 0 0 260px;
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.swill-prefs-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: #1a130d;
+  border: 1px solid #3a2e22;
+  border-radius: 4px;
+}
+
+.swill-prefs-subpanel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 8px 8px 8px 10px;
+  background: #1f1610;
+  border-left: 2px solid #3a2e22;
+  border-radius: 2px;
+}
+
+.swill-prefs-group-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #2a2418;
+}
+
+.swill-prefs-subpanel .swill-prefs-group-header {
+  border-bottom: none;
+  padding-bottom: 2px;
+}
+
+.swill-prefs-group-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff5d8;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.swill-prefs-subpanel .swill-prefs-group-title {
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #d4c4a8;
+}
+
+.swill-prefs-group-desc {
+  margin: 0;
+  font-size: 11px;
+  color: #8a7a5a;
+  line-height: 1.35;
+}
+
+.swill-prefs-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.swill-prefs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: #d4c4a8;
+  cursor: default;
+}
+
+.swill-prefs-row-label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.swill-prefs-row-control {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+}
+
+.swill-prefs-input,
+.swill-prefs-select {
+  width: 96px;
+  padding: 3px 6px;
+  background: #1a130d;
+  color: #d4c4a8;
+  border: 1px solid #3a2e22;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.swill-prefs-input:focus,
+.swill-prefs-select:focus {
+  outline: none;
+  border-color: #5a4a38;
+}
+
+.swill-prefs-checkbox {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: #d4c4a8;
+}
+
+.swill-prefs-readonly {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: #8a7a5a;
+}
+
+/* Inline variant of `.swill-prefs-subpanel` — used when an object-kind pref
+   renders its bespoke editor directly inside the column (no parent row to
+   sit alongside). Stretches full width so the editor's own header reads as
+   the section title. */
+.swill-prefs-subpanel-inline {
+  margin-top: 0;
+  width: 100%;
+}
+
+/* Panels-visibility editor: three-column table (name, hidden, collapsed). */
+.swill-prefs-panels-head,
+.swill-prefs-panels-row {
+  display: grid;
+  grid-template-columns: 1fr 48px 64px;
+  align-items: center;
+  gap: 4px;
+}
+
+.swill-prefs-panels-head {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8a7a5a;
+  padding-bottom: 2px;
+  border-bottom: 1px solid #2a2418;
+}
+
+.swill-prefs-panels-head-flag {
+  justify-self: center;
+}
+
+.swill-prefs-panels-row {
+  font-size: 12px;
+  color: #d4c4a8;
+}
+
+.swill-prefs-panels-row-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.swill-prefs-panels-row .swill-prefs-checkbox {
+  justify-self: center;
 }

@@ -288,3 +288,81 @@ export function DeleteIcon() {
     </svg>
   );
 }
+
+export function GridIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <rect x="3" y="3" width="14" height="14" />
+      <path d="M3 8 H17 M3 12 H17 M8 3 V17 M12 3 V17" />
+    </svg>
+  );
+}
+
+export function SnapToGridIcon() {
+  // Faint grid with a filled dot snapped to an intersection — reads as
+  // "snap to this point."
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M3 8 H17 M3 12 H17 M8 3 V17 M12 3 V17" opacity="0.45" />
+      <circle cx="12" cy="8" r="2" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function ReleaseCompoundIcon() {
+  // Two formerly-conjoined regions pulling apart — left filled, right
+  // outlined, with a dashed break between them.
+  return (
+    <svg {...SVG_BASE}>
+      <rect x="2" y="5" width="6" height="10" fill="currentColor" stroke="none" />
+      <rect x="12" y="5" width="6" height="10" />
+      <line x1="10" y1="3" x2="10" y2="17" strokeDasharray="1.5 1.5" />
+    </svg>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Settings — classic gear/cog: outer toothed ring + inner hub circle.
+// Stroked teeth (8 of them) match the outlined style of the other icons.
+// ──────────────────────────────────────────────────────────────────────────
+
+export function SettingsIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <path
+        d="M10 1.5 L11.2 3.6 L13.6 3 L13.7 5.4 L15.8 6.6 L14.5 8.6 L15.8 10.6 L13.7 11.8 L13.6 14.2 L11.2 13.6 L10 15.7 L8.8 13.6 L6.4 14.2 L6.3 11.8 L4.2 10.6 L5.5 8.6 L4.2 6.6 L6.3 5.4 L6.4 3 L8.8 3.6 Z"
+        strokeLinejoin="round"
+      />
+      <circle cx="10" cy="8.6" r="2.4" />
+    </svg>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Record / Play — input-tooling controls. RecordIcon swaps to a filled red
+// disc when active; PlayIcon is a right-pointing triangle.
+// ──────────────────────────────────────────────────────────────────────────
+
+export function RecordIcon({ active = false }: { active?: boolean }) {
+  // Active state uses an explicit red fill so it reads as "armed/recording"
+  // regardless of the button's currentColor.
+  return (
+    <svg {...SVG_BASE}>
+      <circle
+        cx="10"
+        cy="10"
+        r="5"
+        fill={active ? '#d23a2a' : 'none'}
+        stroke={active ? '#d23a2a' : 'currentColor'}
+      />
+    </svg>
+  );
+}
+
+export function PlayIcon() {
+  return (
+    <svg {...SVG_BASE}>
+      <path d="M6 4 L16 10 L6 16 Z" fill="currentColor" strokeLinejoin="round" />
+    </svg>
+  );
+}

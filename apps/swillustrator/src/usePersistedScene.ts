@@ -1,0 +1,139 @@
+// React hook that bridges the swillustrator scene to the IDB store.
+//
+// On mount: pull the snapshot, replace itemsRef/groupsRef, publish to React,
+//   then mark `restored: true` so the caller can bump nextId past the loaded
+//   ids.
+// While mounted: any render after restore schedules a debounced write
+//   (300ms idle). The debounce absorbs publish bursts during a drag so we
+//   don't hit IDB once per frame.
+// On unmount: fire-and-forget any pending write so the last edit survives.
+
+import { useEffect, useRef, useState, type MutableRefObject } from 'react';
+import type { Group } from '@orochi235/weasel';
+import type { Obj } from './poseUpdate';
+import {
+  loadScene,
+  saveScene,
+  type Document,
+  type SceneSnapshot,
+  type View,
+} from './sceneStore';
+
+const DEBOUNCE_MS = 300;
+
+export interface UsePersistedSceneArgs {
+  itemsRef: MutableRefObject<Obj[]>;
+  groupsRef: MutableRefObject<Group[]>;
+  setItems: (next: Obj[]) => void;
+  setGroups: (next: Group[]) => void;
+  doc: Document;
+  setDoc: (next: Document) => void;
+  view: View;
+  setView: (next: View) => void;
+  publish: () => void;
+  /** Resets the history stack after restore — old history wouldn't match
+   *  the restored items anyway. */
+  resetHistory: () => void;
+}
+
+export function usePersistedScene(args: UsePersistedSceneArgs): { restored: boolean } {
+  const {
+    itemsRef, groupsRef,
+    doc, setDoc, view, setView,
+    publish, resetHistory,
+  } = args;
+
+  const [restored, setRestored] = useState(false);
+
+  // Stable mirror refs so the write path (which fires after every render)
+  // always reads the latest values without re-binding the effect.
+  const docRef = useRef(doc);
+  docRef.current = doc;
+  const viewRef = useRef(view);
+  viewRef.current = view;
+
+  // True after the load attempt completes — gates the write effect so we
+  // don't persist the empty initial state on top of a real snapshot.
+  const readyRef = useRef(false);
+  const restoreStartedRef = useRef(false);
+
+  // Restore once on mount.
+  useEffect(() => {
+    if (restoreStartedRef.current) return;
+    restoreStartedRef.current = true;
+    let cancelled = false;
+    void (async () => {
+      const snap: SceneSnapshot | null = await loadScene();
+      if (cancelled) return;
+      if (snap && snap.version === 1) {
+        itemsRef.current = snap.items;
+        groupsRef.current = snap.groups;
+        // publish() resyncs React state from the refs; setDoc/setView push
+        // the non-ref fields; resetHistory wipes any history captured against
+        // the (empty) pre-restore state.
+        publish();
+        setDoc(snap.doc);
+        setView(snap.view);
+        resetHistory();
+        setRestored(true);
+      }
+      readyRef.current = true;
+    })();
+    return () => { cancelled = true; };
+    // Runs once; refs and callbacks from App are stable for the app lifetime.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Debounced write. Coalesces a burst of renders (drag at 60fps) into one
+  // IDB transaction. saveScene is fire-and-forget — it awaits its tx
+  // internally and swallows errors.
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const writePendingRef = useRef(false);
+
+  const flush = (): void => {
+    if (!writePendingRef.current) return;
+    writePendingRef.current = false;
+    if (timerRef.current != null) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    const snap: SceneSnapshot = {
+      version: 1,
+      items: itemsRef.current.slice(),
+      groups: groupsRef.current.slice(),
+      doc: docRef.current,
+      view: viewRef.current,
+    };
+    void saveScene(snap);
+  };
+
+  const scheduleWrite = (): void => {
+    writePendingRef.current = true;
+    if (timerRef.current != null) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      flush();
+    }, DEBOUNCE_MS);
+  };
+
+  // Schedule on every render after restore completes. The debounce keeps
+  // IDB traffic bounded; renders that don't actually change scene data are
+  // cheap (timer reset + ref reads). We deliberately don't try to detect
+  // which fields changed — items mutate in place through refs, so length
+  // and identity checks miss the common case.
+  useEffect(() => {
+    if (!readyRef.current) return;
+    scheduleWrite();
+  });
+
+  // Flush on unmount. IDB tx is async but we let it run to completion in
+  // the background — the page is unloading either way.
+  useEffect(() => {
+    return () => {
+      if (writePendingRef.current) flush();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return { restored };
+}

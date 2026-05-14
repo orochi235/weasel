@@ -43,7 +43,14 @@ import {
   PasteIcon,
   DuplicateIcon,
   DeleteIcon,
+  GridIcon,
+  SnapToGridIcon,
+  ReleaseCompoundIcon,
+  SettingsIcon,
+  RecordIcon,
+  PlayIcon,
 } from './actionIcons';
+import type { Recording } from './recorder';
 
 export interface ActionBarProps {
   // History
@@ -85,31 +92,44 @@ export interface ActionBarProps {
   /** Start a fresh document at the picked paper size. Clears the scene,
    *  resets undo history, and re-centers the view. */
   onNew(size: PaperSizeKey): void;
+  // View toggles
+  gridVisible: boolean;
+  onToggleGrid(): void;
+  snapToGrid: boolean;
+  onToggleSnap(): void;
+  // Release compound path — split a multi-region polygon into its subpaths.
+  canReleaseCompound: boolean;
+  onReleaseCompound(): void;
+  // Preferences modal
+  onOpenPrefs(): void;
+  // Record / Replay — toggles capture of pointer/keyboard input, and
+  // loads a previously-recorded JSON file for replay.
+  recording: boolean;
+  onToggleRecord(): void;
+  onPlay(rec: Recording): void;
 }
 
 interface ButtonProps {
   onClick: () => void;
   disabled?: boolean;
   title: string;
+  active?: boolean;
   children: ReactNode;
 }
 
-function Button({ onClick, disabled, title, children }: ButtonProps) {
+function Button({ onClick, disabled, title, active, children }: ButtonProps) {
   return (
     <button
-      className="swill-actionbar-button"
+      className={active ? 'swill-actionbar-button swill-actionbar-button-active' : 'swill-actionbar-button'}
       onClick={onClick}
       disabled={disabled}
       title={title}
       type="button"
+      aria-pressed={active}
     >
       {children}
     </button>
   );
-}
-
-function Sep() {
-  return <span className="swill-actionbar-sep" aria-hidden="true" />;
 }
 
 const PAPER_LABELS: Record<PaperSizeKey, string> = {
@@ -178,12 +198,10 @@ export function ActionBar(p: ActionBarProps) {
         <Button onClick={p.onOpenSvg} title="Open SVG…">Open</Button>
         <Button onClick={p.onSaveSvg} title="Save as SVG">Save</Button>
       </div>
-      <Sep />
       <div className="swill-actionbar-group">
         <Button onClick={p.onUndo} disabled={!p.canUndo} title="Undo (Cmd-Z)"><UndoIcon /></Button>
         <Button onClick={p.onRedo} disabled={!p.canRedo} title="Redo (Cmd-Shift-Z)"><RedoIcon /></Button>
       </div>
-      <Sep />
       <div className="swill-actionbar-group">
         <Button onClick={p.onCut} disabled={none} title="Cut (Cmd-X)"><CutIcon /></Button>
         <Button onClick={p.onCopy} disabled={none} title="Copy (Cmd-C)"><CopyIcon /></Button>
@@ -191,19 +209,16 @@ export function ActionBar(p: ActionBarProps) {
         <Button onClick={p.onDuplicate} disabled={none} title="Duplicate (Cmd-D)"><DuplicateIcon /></Button>
         <Button onClick={p.onDelete} disabled={none} title="Delete (Del)"><DeleteIcon /></Button>
       </div>
-      <Sep />
       <div className="swill-actionbar-group">
         <Button onClick={p.onSendToBack} disabled={none} title="Send to back (Cmd-Shift-[)"><SendToBackIcon /></Button>
         <Button onClick={p.onSendBackward} disabled={none} title="Send backward (Cmd-[)"><SendBackwardIcon /></Button>
         <Button onClick={p.onBringForward} disabled={none} title="Bring forward (Cmd-])"><BringForwardIcon /></Button>
         <Button onClick={p.onBringToFront} disabled={none} title="Bring to front (Cmd-Shift-])"><BringToFrontIcon /></Button>
       </div>
-      <Sep />
       <div className="swill-actionbar-group">
         <Button onClick={p.onGroup} disabled={lt2} title="Group (Cmd-G)"><GroupIcon /></Button>
         <Button onClick={p.onUngroup} disabled={none} title="Ungroup (Cmd-Shift-G)"><UngroupIcon /></Button>
       </div>
-      <Sep />
       <div className="swill-actionbar-group">
         <Button onClick={() => p.onAlign('left')} disabled={lt2} title="Align left"><AlignLeftIcon /></Button>
         <Button onClick={() => p.onAlign('center-x')} disabled={lt2} title="Align center X"><AlignCenterXIcon /></Button>
@@ -212,18 +227,91 @@ export function ActionBar(p: ActionBarProps) {
         <Button onClick={() => p.onAlign('center-y')} disabled={lt2} title="Align center Y"><AlignCenterYIcon /></Button>
         <Button onClick={() => p.onAlign('bottom')} disabled={lt2} title="Align bottom"><AlignBottomIcon /></Button>
       </div>
-      <Sep />
       <div className="swill-actionbar-group">
         <Button onClick={() => p.onDistribute('x')} disabled={lt3} title="Distribute X"><DistributeXIcon /></Button>
         <Button onClick={() => p.onDistribute('y')} disabled={lt3} title="Distribute Y"><DistributeYIcon /></Button>
       </div>
-      <Sep />
       <div className="swill-actionbar-group">
         <Button onClick={() => p.onFlip('x')} disabled={none} title="Flip H (Shift-H)"><FlipXIcon /></Button>
         <Button onClick={() => p.onFlip('y')} disabled={none} title="Flip V (Shift-V)"><FlipYIcon /></Button>
       </div>
-      <Sep />
+      <div className="swill-actionbar-group">
+        <Button
+          onClick={p.onToggleGrid}
+          title={p.gridVisible ? 'Hide grid (Shift-3)' : 'Show grid (Shift-3)'}
+          active={p.gridVisible}
+        >
+          <GridIcon />
+        </Button>
+        <Button
+          onClick={p.onToggleSnap}
+          title={p.snapToGrid ? 'Disable snap to grid' : 'Snap to grid'}
+          active={p.snapToGrid}
+        >
+          <SnapToGridIcon />
+        </Button>
+      </div>
       <PathfinderPanel adapter={p.booleansAdapter} actions={p.booleansActions} />
+      <div className="swill-actionbar-group">
+        <Button
+          onClick={p.onReleaseCompound}
+          disabled={!p.canReleaseCompound}
+          title="Release compound path (Shift-|)"
+        >
+          <ReleaseCompoundIcon />
+        </Button>
+      </div>
+      <div className="swill-actionbar-spacer" />
+      <div className="swill-actionbar-group">
+        <Button
+          onClick={p.onToggleRecord}
+          title={p.recording ? 'Stop recording' : 'Record input'}
+          active={p.recording}
+        >
+          <RecordIcon active={p.recording} />
+        </Button>
+        <PlayButton onPlay={p.onPlay} />
+      </div>
+      <div className="swill-actionbar-group">
+        <Button onClick={p.onOpenPrefs} title="Preferences (Cmd-,)"><SettingsIcon /></Button>
+      </div>
     </div>
+  );
+}
+
+/** Wraps a hidden `<input type=file>` so clicking the play button opens a
+ *  picker and parses the selected JSON into a `Recording`. The input is
+ *  re-created per click via React so the same file can be replayed twice
+ *  in a row (otherwise the `change` event wouldn't refire). */
+function PlayButton({ onPlay }: { onPlay: (rec: Recording) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  return (
+    <>
+      <Button
+        onClick={() => inputRef.current?.click()}
+        title="Play recording…"
+      >
+        <PlayIcon />
+      </Button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".json,application/json"
+        className="swill-hidden-input"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          // Always clear so selecting the same file twice retriggers change.
+          e.target.value = '';
+          if (!file) return;
+          try {
+            const text = await file.text();
+            const rec = JSON.parse(text) as Recording;
+            onPlay(rec);
+          } catch {
+            // Silent — bad JSON / file read error. The user can re-pick.
+          }
+        }}
+      />
+    </>
   );
 }
