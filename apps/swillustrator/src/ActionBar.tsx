@@ -265,7 +265,7 @@ export function ActionBar(p: ActionBarProps) {
       <div className="swill-actionbar-group">
         <Button
           onClick={p.onToggleRecord}
-          title={p.recording ? 'Stop recording' : 'Record input'}
+          title={p.recording ? 'Stop recording (F9)' : 'Record input (F9)'}
           active={p.recording}
         >
           <RecordIcon active={p.recording} />

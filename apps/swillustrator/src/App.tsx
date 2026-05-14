@@ -1893,6 +1893,12 @@ export function App() {
     }
   }, [snapshotCurrentScene]);
 
+  // F9 toggles recording. F-keys are app-neutral across browsers (no
+  // built-in conflict on F8/F9). On Mac with default keyboard settings,
+  // users hit Fn+F9 to bypass the media-key remapping — flag for docs
+  // if anyone gets confused.
+  useKeybinding({ key: 'F9' }, onToggleRecord);
+
   const onPlay = useCallback(async (rec: Recording) => {
     const canvas = canvasElRef.current;
     if (!canvas) return;
