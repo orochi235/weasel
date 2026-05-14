@@ -67,6 +67,7 @@ import {
   viewToTransform,
   worldToScreen,
   type AnyTool,
+  type BooleanOp,
   type ClipboardSnapshot,
   type Group,
   type History,
@@ -93,11 +94,11 @@ import { viewToMat3 } from '@orochi235/weasel/renderer';
 import { resolveTextStyle, toRuns, resolveRuns, dlog } from '@orochi235/weasel';
 import { wrapWithRotation } from './rotationRender';
 import { pointInRotatedAabb } from './rotationHitTest';
+import { Sidebar, SidebarPanel, type LayerListItem } from '@orochi235/weasel-ui';
 import {
   CommandPalette,
   useCommandPaletteShortcut,
   LayerList,
-  type LayerListItem,
   HistoryList,
   type HistoryListItem,
   PropertiesPanel,
@@ -112,7 +113,7 @@ import {
   PropertySelect,
   PropertyMiniLabel,
   PropertySwatchGrid,
-} from '@orochi235/weasel-ui';
+} from './ui';
 import '@orochi235/weasel-theme/tokens.css';
 import { ActionBar } from './ActionBar';
 import { PreferencesModal } from './PreferencesModal';
@@ -911,17 +912,12 @@ export function App() {
         const bi = itemsRef.current.findIndex((o) => o.id === bId);
         return ai - bi;
       },
-      createPathNode: (path: Path): { id: string } => {
+      createPathNode: (path: Path, producedBy: BooleanOp): { id: string } => {
         // Wrap a Path as a PathObj. Boolean outputs are freshly synthesized
         // geometry with no authoring tool of their own, so `tool: 'imported'`
-        // is the correct origin (see spec § "Out of Scope").
-        //
-        // TODO(layer-icon): expose the originating boolean op (union /
-        // intersect / subtract / exclude / divide) so the Layers panel can
-        // render the op's icon instead of UnknownIcon. Likely shape: add a
-        // `producedBy?: BooleanOpKind` field on PathObj, surface it via
-        // `useBooleans`' createPathNode args, then dispatch in
-        // kindIcons.ToolIcon.
+        // is the correct origin (see spec § "Out of Scope"). `producedBy`
+        // preserves the originating op so the Layers panel can render the
+        // op's icon instead of the unknown-tool glyph.
         const id = `b${nextId.current++}`;
         const b = path.kind === 'rect'
           ? { x: path.x, y: path.y, width: path.width, height: path.height }
@@ -931,6 +927,7 @@ export function App() {
           x: b.x, y: b.y, width: b.width, height: b.height,
           path, closed: true,
           fill: fillRef.current, stroke: strokeRef.current, strokeWidth: strokeWidthRef.current,
+          producedBy,
         };
         return pathNode;
       },
@@ -1923,7 +1920,7 @@ export function App() {
       id: o.id,
       label: (
         <span className="swill-layer-label">
-          <ToolIcon tool={o.tool} />
+          <ToolIcon tool={o.tool} producedBy={'producedBy' in o ? o.producedBy : undefined} />
           <span>{o.id}</span>
         </span>
       ),
@@ -2201,7 +2198,7 @@ export function App() {
       />
 
       <div className="swill-body">
-        <aside className="swill-sidebar">
+        <Sidebar side="left" className="swill-sidebar" ariaLabel="Tools">
           <ToolPalette tools={tools} />
           <ActiveSwatches
             fill={activeFill}
@@ -2221,7 +2218,7 @@ export function App() {
             <span>Reset</span>
             <span className="key">view</span>
           </button>
-        </aside>
+        </Sidebar>
 
         <main
           ref={stageRef}
@@ -2495,8 +2492,10 @@ function RightSidebar(p: RightSidebarProps) {
     };
   };
   return (
-    <aside
+    <Sidebar
+      side="right"
       className="swill-sidebar right"
+      ariaLabel="Inspector"
       // CSS custom property — a width drag handle has no class-based
       // equivalent; the variable lets CSS handle min/max clamping.
       style={{ ['--swill-right-width' as string]: `${p.width}px` } as React.CSSProperties}
@@ -2592,7 +2591,7 @@ function RightSidebar(p: RightSidebarProps) {
       ); })()}
 
       {(() => { const pp = panelProps('layers'); return pp && (
-      <PropertiesPanel title="Layers" {...pp}>
+      <SidebarPanel title="Layers" {...pp}>
         <div className="swill-layerlist-host">
           <LayerList
             items={p.layerItems}
@@ -2602,11 +2601,11 @@ function RightSidebar(p: RightSidebarProps) {
             empty="No objects yet"
           />
         </div>
-      </PropertiesPanel>
+      </SidebarPanel>
       ); })()}
 
       {(() => { const pp = panelProps('history'); return pp && (
-      <PropertiesPanel title="History" {...pp}>
+      <SidebarPanel title="History" {...pp}>
         <div className="swill-historylist-host">
           <HistoryList
             items={p.historyItems}
@@ -2615,7 +2614,7 @@ function RightSidebar(p: RightSidebarProps) {
             empty="No history yet"
           />
         </div>
-      </PropertiesPanel>
+      </SidebarPanel>
       ); })()}
 
       {(() => { const pp = panelProps('document'); return pp && (
@@ -2661,6 +2660,6 @@ function RightSidebar(p: RightSidebarProps) {
       <div className="swill-scene-count">
         {p.itemsLen} object{p.itemsLen === 1 ? '' : 's'}
       </div>
-    </aside>
+    </Sidebar>
   );
 }

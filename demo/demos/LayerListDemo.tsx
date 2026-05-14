@@ -10,7 +10,11 @@ import {
   useSelectTool,
   useTools,
 } from '@orochi235/weasel';
-import { LayerList, type LayerListItem } from '@orochi235/weasel-ui';
+import type { LayerListItem } from '@orochi235/weasel-ui';
+// `LayerList` is a Swillustrator-side specialization (kit/app split):
+// it lives under `apps/swillustrator/src/ui/`. Imported via relative path
+// because both directories are part of this monorepo.
+import { LayerList } from '../../apps/swillustrator/src/ui/LayerList';
 import type { DrawCommand } from '../../src/renderer';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }

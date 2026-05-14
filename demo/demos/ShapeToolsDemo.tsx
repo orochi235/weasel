@@ -16,7 +16,9 @@ import {
   useTools,
 } from '@orochi235/weasel';
 import type { AnyTool, PolygonPath } from '@orochi235/weasel';
-import { ToolPalette } from '@orochi235/weasel-ui';
+// ToolPalette is a Swillustrator-side specialization
+// (apps/swillustrator/src/ui/) — see the kit/app split.
+import { ToolPalette } from '../../apps/swillustrator/src/ui/ToolPalette';
 import type { DrawCommand } from '../../src/renderer';
 
 interface ShapeData { fill: string }

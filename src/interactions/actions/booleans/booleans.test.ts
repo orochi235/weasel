@@ -33,10 +33,11 @@ function makeAdapter(nodes: { id: NodeId; path: Path }[]): {
     getSelection: () => nodes.map((n) => n.id),
     getWorldPath: (id) => paths.get(id),
     compareZ: (a, b) => (idx.get(a) ?? 0) - (idx.get(b) ?? 0),
-    createPathNode: (path) => {
+    createPathNode: (path, producedBy) => {
       const node = { id: `result_${nextId++}`, path };
       // Carry the path through for assertions.
       (node as any).path = path;
+      (node as any).producedBy = producedBy;
       return node;
     },
     insertNode: (node) => state.inserted.push(node as any),
@@ -157,6 +158,26 @@ describe('applyBooleanOp — operation-specific behavior', () => {
     expect(result.kind).toBe('applied');
     expect(h.state.inserted).toHaveLength(3);
     expect(h.state.selection).toHaveLength(3);
+  });
+
+  it('passes the op kind to createPathNode as producedBy', () => {
+    // Adapters that want layer-icon provenance (e.g. swillustrator) read
+    // the second arg of createPathNode to tag the minted node.
+    const h = makeAdapter([
+      rect('a', 0, 0, 10, 10),
+      rect('b', 5, 5, 10, 10),
+    ]);
+    applyBooleanOp(h.adapter, 'intersect');
+    expect(h.state.inserted).toHaveLength(1);
+    expect((h.state.inserted[0] as any).producedBy).toBe('intersect');
+    const h2 = makeAdapter([
+      rect('a', 0, 0, 10, 10),
+      rect('b', 5, 5, 10, 10),
+    ]);
+    applyBooleanOp(h2.adapter, 'divide');
+    for (const n of h2.state.inserted) {
+      expect((n as any).producedBy).toBe('divide');
+    }
   });
 
   it('one batch is dispatched per applied op (single undo step)', () => {

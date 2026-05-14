@@ -1,4 +1,4 @@
-import type { Path, TextStyle } from '@orochi235/weasel';
+import type { BooleanOp, Path, TextStyle } from '@orochi235/weasel';
 import { scalePathToBounds, translatePath } from '@orochi235/weasel';
 
 export type ToolKind =
@@ -27,6 +27,10 @@ export interface PathObj extends BaseObj {
   stroke: string;
   strokeWidth: number;
   params?: PathParams;
+  /** Provenance for nodes minted by a boolean op. `tool` for these is
+   *  always `'imported'`; the Layers panel uses `producedBy` to render
+   *  the op's icon instead of the unknown-tool glyph. */
+  producedBy?: BooleanOp;
 }
 
 export interface TextObj extends BaseObj {

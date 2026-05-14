@@ -1,0 +1,14 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--wzl-panel-bg);
+  color: var(--wzl-text);
+}
+
+.sidebar.left {
+  border-right: 1px solid var(--wzl-panel-border);
+}
+.sidebar.right {
+  border-left: 1px solid var(--wzl-panel-border);
+}

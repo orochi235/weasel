@@ -4,3 +4,10 @@ export type {
   PathfinderIcons,
   PathfinderOp,
 } from './PathfinderPanel';
+export {
+  UnionIcon,
+  IntersectIcon,
+  SubtractIcon,
+  ExcludeIcon,
+  DivideIcon,
+} from './pathfinderIcons';

@@ -1,5 +1,6 @@
 export {
   PropertiesPanel,
+  PropertiesGrid,
   PropertyRow,
   PropertyMiniLabel,
   PropertyReadOnly,

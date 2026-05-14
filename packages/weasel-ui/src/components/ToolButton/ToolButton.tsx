@@ -1,0 +1,56 @@
+import type { ReactNode } from 'react';
+import s from './ToolButton.module.css';
+
+export interface ToolButtonProps {
+  /** Icon node (typically an SVG component). */
+  icon: ReactNode;
+  /** Human-readable label shown under the icon. */
+  label: string;
+  /** Optional shortcut hint (e.g. "V" or "⌘Z"). */
+  shortcut?: string;
+  /** Selected/active state — toggles the active visual treatment. */
+  active?: boolean;
+  /** Disabled state — passes through to the underlying button. */
+  disabled?: boolean;
+  /**
+   * Whether this button is the currently tabbable member of its toolbar.
+   * Toolbars use roving tabindex: exactly one button has `tabIndex=0` at
+   * a time; the rest are `-1`. Caller manages which.
+   */
+  tabbable?: boolean;
+  /** Click handler. */
+  onClick(): void;
+  /**
+   * Tooltip / accessible name. Defaults to `label` (plus `shortcut` if
+   * provided). Pass an explicit string to override.
+   */
+  title?: string;
+  /** Additional class for the root button. */
+  className?: string;
+}
+
+/**
+ * Generic icon-+-label toolbar button — building block for `ToolPalette`
+ * and similar surfaces. Headless about layout direction (parent group
+ * supplies flex direction via `ToolGroup`). Theme via `--wzl-*` tokens.
+ */
+export function ToolButton(props: ToolButtonProps) {
+  const { icon, label, shortcut, active, disabled, tabbable, onClick, title, className } = props;
+  const resolvedTitle = title ?? (shortcut ? `${label} (${shortcut})` : label);
+  const cls = [s.button, active && s.active, className].filter(Boolean).join(' ');
+  return (
+    <button
+      type="button"
+      tabIndex={tabbable ? 0 : -1}
+      title={resolvedTitle}
+      className={cls}
+      aria-current={active ? 'true' : undefined}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      <span className={s.icon} aria-hidden="true">{icon}</span>
+      <span className={s.label}>{label}</span>
+      {shortcut && <span className={s.shortcut}>{shortcut}</span>}
+    </button>
+  );
+}

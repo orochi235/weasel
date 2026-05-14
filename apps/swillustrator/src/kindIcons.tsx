@@ -5,10 +5,15 @@
  *  LayerList stays visually consistent with the ActionBar / tool palette.
  *  `PageIcon` stays local — no kit equivalent.
  *
+ *  Objects minted by a boolean op carry `tool: 'imported'` (no authoring
+ *  tool) plus a `producedBy` provenance tag; when present we dispatch to
+ *  the matching Pathfinder icon instead of the unknown-tool glyph.
+ *
  *  Parent row supplies the accessible name via existing list-row semantics;
  *  the icons are `aria-hidden`.
  */
 import type { ReactNode } from 'react';
+import type { BooleanOp } from '@orochi235/weasel';
 import {
   RectIcon,
   EllipseIcon,
@@ -20,6 +25,13 @@ import {
   TextIcon,
   UnknownIcon,
 } from '@orochi235/weasel';
+import {
+  UnionIcon,
+  IntersectIcon,
+  SubtractIcon,
+  ExcludeIcon,
+  DivideIcon,
+} from './ui/PathfinderPanel';
 import type { ToolKind } from './poseUpdate';
 
 const SVG_BASE = {
@@ -42,13 +54,16 @@ export function PageIcon() {
   );
 }
 
-/** Dispatch by tool — convenient one-liner for consumers. */
-// TODO(layer-icon): objects produced by a boolean op land here as
-// `imported` and render UnknownIcon. Take an optional `producedBy?:
-// BooleanOpKind` (union / intersect / subtract / exclude / divide) and
-// pick a corresponding icon — would need PathObj to carry that field
-// and the boolean adapter's createPathNode to set it (see App.tsx).
-export function ToolIcon({ tool }: { tool: ToolKind }): ReactNode {
+/** Dispatch by tool — convenient one-liner for consumers. When `tool`
+ *  is `'imported'` and `producedBy` names a boolean op, the Pathfinder
+ *  icon for that op wins over the unknown-tool glyph. */
+export function ToolIcon({
+  tool,
+  producedBy,
+}: {
+  tool: ToolKind;
+  producedBy?: BooleanOp;
+}): ReactNode {
   switch (tool) {
     case 'rect': return <RectIcon />;
     case 'ellipse': return <EllipseIcon />;
@@ -58,6 +73,14 @@ export function ToolIcon({ tool }: { tool: ToolKind }): ReactNode {
     case 'pen': return <PenIcon />;
     case 'pencil': return <PencilIcon />;
     case 'text': return <TextIcon />;
-    case 'imported': return <UnknownIcon />;
+    case 'imported':
+      switch (producedBy) {
+        case 'union': return <UnionIcon />;
+        case 'intersect': return <IntersectIcon />;
+        case 'subtract': return <SubtractIcon />;
+        case 'exclude': return <ExcludeIcon />;
+        case 'divide': return <DivideIcon />;
+        default: return <UnknownIcon />;
+      }
   }
 }

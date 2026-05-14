@@ -1,0 +1,42 @@
+.button {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 44px;
+  padding: 6px 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: var(--wzl-text);
+  cursor: default;
+  font-family: inherit;
+  font-size: 10px;
+  line-height: 1.1;
+}
+.button:hover:not([disabled]) {
+  background: var(--wzl-button-fill-hover);
+  color: var(--wzl-button-text);
+}
+.button:focus-visible {
+  outline: 2px solid var(--wzl-accent);
+  outline-offset: -2px;
+}
+.button.active {
+  background: var(--wzl-button-fill-pressed);
+  border-color: var(--wzl-accent);
+  color: var(--wzl-button-text);
+}
+.button[disabled] {
+  opacity: 0.4;
+}
+
+.icon { display: block; }
+.icon > svg { display: block; }
+.label { font-size: 10px; }
+.shortcut {
+  color: var(--wzl-text-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9px;
+}

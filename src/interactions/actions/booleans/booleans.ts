@@ -41,7 +41,12 @@ export interface BooleansAdapter {
   getSelection(): NodeId[];
   getWorldPath(id: NodeId): Path | undefined;
   compareZ(a: NodeId, b: NodeId): number;
-  createPathNode(path: Path): { id: string };
+  /**
+   * Mint a new node from a boolean-op result `Path`. `producedBy` names the
+   * op that synthesized it — adapters that store provenance (e.g. for a
+   * layer-panel icon) record it; others ignore the arg.
+   */
+  createPathNode(path: Path, producedBy: BooleanOp): { id: string };
   /**
    * Optional: return the full object for an id, used by the delete ops so
    * their `invert` (an insert) can restore the complete object on undo.
@@ -147,7 +152,7 @@ export function applyBooleanOp(
     targetIndex = topAnchor.index - shift;
   }
 
-  const newNodes = results.map((p) => adapter.createPathNode(p));
+  const newNodes = results.map((p) => adapter.createPathNode(p, op));
   const ops: Op[] = [];
   for (const e of entries) {
     // Capture the full node so the delete's `invert()` (an insert) restores
