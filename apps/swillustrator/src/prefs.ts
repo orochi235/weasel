@@ -6,6 +6,7 @@
 // the tree's *value* shape under a single localStorage key.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { RegistryEnumFilter } from './registry/types';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Types
@@ -57,27 +58,6 @@ export interface SwillPrefRegistryEnum
    *  The item shape is source-defined; the resolver knows what `item`
    *  looks like for its own universe. Omit `filter` to get everything. */
   filter?: RegistryEnumFilter;
-}
-
-/** Either a key/value criteria map or a predicate callback. See
- *  `SwillPrefRegistryEnum.filter` for usage. */
-export type RegistryEnumFilter =
-  | Record<string, unknown>
-  | ((item: unknown) => boolean);
-
-/** Apply a `RegistryEnumFilter` to a candidate. Map form does a shallow
- *  strict-equality match on every declared key (`item[k] === filter[k]`).
- *  Callback form invokes the predicate. No filter → keep everything.
- *  Source resolvers can use this so the matching semantics stay uniform
- *  across registries. */
-export function matchesRegistryFilter<T>(item: T, filter?: RegistryEnumFilter): boolean {
-  if (filter == null) return true;
-  if (typeof filter === 'function') return filter(item as unknown);
-  const obj = item as unknown as Record<string, unknown>;
-  for (const k of Object.keys(filter)) {
-    if (obj?.[k] !== filter[k]) return false;
-  }
-  return true;
 }
 /** Catch-all for non-primitive shapes (panels map, future color records). */
 export interface SwillPrefObject<T = unknown> extends SwillPrefBase<'object', T> {}

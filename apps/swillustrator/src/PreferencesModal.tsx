@@ -21,18 +21,8 @@ import {
   type SwillPrefRegistryEnum,
   type SwillPrefObject,
   type SwillPrefPath,
-  type RegistryEnumFilter,
 } from './prefs';
-
-/** Option list for one registry-enum source. The modal looks each prefs
- *  source up by string id (`SwillPrefRegistryEnum.source`) and invokes
- *  the resolver with the pref's `filter` (criteria map or predicate).
- *  Consumers build the list from their live registries (tools, history,
- *  scene objects, …). */
-export type RegistryEnumOption = { value: string; label: string };
-export type RegistryEnumResolver =
-  (filter?: RegistryEnumFilter) => readonly RegistryEnumOption[];
-export type RegistryEnumSources = Record<string, RegistryEnumResolver>;
+import type { RegistryEnumSources } from './registry/types';
 
 const RegistryEnumSourcesContext = createContext<RegistryEnumSources>({});
 
