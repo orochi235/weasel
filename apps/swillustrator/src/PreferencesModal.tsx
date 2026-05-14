@@ -8,7 +8,7 @@
  *  recursion — we cast to `SwillPrefPath` at the leaf only. That's the
  *  one type pragmatism the recursive walk requires.
  */
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   PREFS,
   usePref,
@@ -23,8 +23,7 @@ import {
   type SwillPrefPath,
 } from './prefs';
 import type { RegistryEnumSources } from './registry/types';
-
-const RegistryEnumSourcesContext = createContext<RegistryEnumSources>({});
+import { RegistryEnumSourcesContext, RegistrySelect } from './registry/RegistrySelect';
 
 /** Dev mode: the Vite dev server sets `import.meta.env.DEV`. In a
  *  production bundle this is false, so the toggle and any hidden prefs
@@ -294,40 +293,15 @@ function RegistryEnumInput({ path, pref }: { path: string; pref: SwillPrefRegist
     string,
     (v: string) => void,
   ];
-  const sources = useContext(RegistryEnumSourcesContext);
-  const resolver = sources[pref.source];
-  // No resolver wired for this source: degrade to a text input so the
-  // user can still see and edit the stored value rather than face a
-  // mysteriously inert dropdown. The wiring gap is recoverable later
-  // without breaking the persisted pref.
-  if (!resolver) {
-    return (
-      <input
-        type="text"
-        className="swill-prefs-input"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-      />
-    );
-  }
-  const options = resolver(pref.filter);
-  // If the stored value isn't in the option list (e.g. a renamed tool),
-  // surface it as an extra disabled option so the user can see what was
-  // there and pick a real one without silently rewriting state.
-  const hasCurrent = options.some((o) => o.value === value);
   return (
-    <select
-      className="swill-prefs-select"
+    <RegistrySelect
       value={value}
-      onChange={(e) => setValue(e.target.value)}
-    >
-      {!hasCurrent && (
-        <option value={value} disabled>{value} (not in registry)</option>
-      )}
-      {options.map((o) => (
-        <option key={o.value} value={o.value}>{o.label}</option>
-      ))}
-    </select>
+      onChange={setValue}
+      source={pref.source}
+      filter={pref.filter}
+      selectClassName="swill-prefs-select"
+      inputClassName="swill-prefs-input"
+    />
   );
 }
 
