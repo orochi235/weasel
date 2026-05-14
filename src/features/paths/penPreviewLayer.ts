@@ -147,7 +147,10 @@ export function createPenPreviewLayer(
       }
 
       const cur = s.current;
-      if (!cur && s.cursor === null) return out;
+      // Bail early only when there's nothing at all to draw. Edit mode has
+      // a populated `s.edit` even when `s.current` and `s.cursor` are null,
+      // so we must NOT short-circuit before section (6) below.
+      if (!cur && s.cursor === null && s.mode !== 'edit') return out;
 
       // (2) Current subpath — bright outline.
       if (cur) {
