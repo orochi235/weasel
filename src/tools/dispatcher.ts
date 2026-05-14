@@ -87,6 +87,12 @@ interface SlotsState {
   hotkey: AnyTool | null;
   active: AnyTool | null;
   ambient: AnyTool[];
+  /** Optional fallback tool consulted ONLY for `pointer.onClick` when neither
+   *  the active slot nor any ambient tool claimed the click. Lets a non-select
+   *  tool (pen, ellipse, etc.) stay active while letting unhandled clicks fall
+   *  through to the select tool for click-to-select. Not consulted for
+   *  pointerdown, drag, keyboard, wheel, or dblTap. */
+  fallback?: AnyTool | null;
 }
 
 export interface ToolsDispatcherOptions {
@@ -529,7 +535,21 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       }
       if (!dblTapClaimed) {
         const onClick = inFlight.tool.pointer?.onClick;
-        if (onClick) onClick(e, ctxFor(inFlight.scratch, baseCtx, reportRoute));
+        let claimed = false;
+        if (onClick) {
+          const decision = onClick(e, ctxFor(inFlight.scratch, baseCtx, reportRoute));
+          claimed = decision === 'claim';
+        }
+        // Fallback slot: ONLY for clicks, ONLY when the active in-flight
+        // tool didn't claim (no handler or returned 'pass'). Lets a non-select
+        // tool stay active while unhandled clicks fall through to select for
+        // click-to-select. Fallback gets a fresh scratch (no gesture context).
+        if (!claimed && slots.fallback && slots.fallback !== inFlight.tool) {
+          const fbHandler = slots.fallback.pointer?.onClick;
+          if (fbHandler) {
+            fbHandler(e, ctxFor(getInitialScratch(slots.fallback), baseCtx, reportRoute));
+          }
+        }
         // Record this tap as a candidate first-of-pair for the next tap.
         // (If dblTap claimed above we already cleared lastTap; recording here
         // would let three taps fire two dblTaps.)

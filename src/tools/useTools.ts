@@ -14,6 +14,12 @@ export interface UseToolsOptions {
   registry: Record<string, AnyTool>;
   /** Always-on tools — listen continuously regardless of active slot. */
   ambient?: AnyTool[];
+  /** Optional fallback tool consulted ONLY for `pointer.onClick` when the
+   *  active tool's click handler returns `'pass'` (or has no handler).
+   *  Lets a non-select tool stay active while unhandled clicks fall through
+   *  to the select tool for click-to-select. Not consulted for pointerdown,
+   *  drag, keyboard, wheel, or dblTap. */
+  fallback?: AnyTool;
   /** Per-event base ctx supplier. `<Canvas>` wires this to inject world
    *  coords, modifiers, selection, adapter, applyOps. Tests can supply
    *  a stub. Optional — the dispatcher works with a default empty ctx
@@ -91,6 +97,8 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
   registryRef.current = opts.registry;
   const ambientRef = useRef(opts.ambient ?? []);
   ambientRef.current = opts.ambient ?? [];
+  const fallbackRef = useRef(opts.fallback);
+  fallbackRef.current = opts.fallback;
   const activeRef = useRef(active);
   activeRef.current = active;
   const hotkeyRef = useRef(hotkeyEngaged);
@@ -107,6 +115,7 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
           hotkey: hotkeyRef.current ? registryRef.current[hotkeyRef.current] ?? null : null,
           active: registryRef.current[activeRef.current] ?? null,
           ambient: ambientRef.current,
+          fallback: fallbackRef.current ?? null,
         }),
         getCtx: (overrides) => {
           if (getCtxRef.current) return getCtxRef.current(overrides);

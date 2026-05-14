@@ -820,3 +820,134 @@ describe('dispatcher: getLastRoute', () => {
     expect(cb.mock.calls[0][0].toolId).toBe('test');
   });
 });
+
+describe('dispatcher: fallback slot (click fall-through)', () => {
+  it('does NOT call fallback when active claims the click', () => {
+    const onActiveClick = vi.fn(() => claim());
+    const onFallbackClick = vi.fn(() => claim());
+    const active = defineTool({ id: 'active', initial: { click: { '*': onActiveClick } } });
+    const fallback = defineTool({ id: 'fallback', initial: { click: { '*': onFallbackClick } } });
+    const d = createToolsDispatcher({
+      getSlots: () => ({ hotkey: null, active, ambient: [], fallback }),
+      getCtx: makeCtx as unknown as (overrides?: { clientX?: number; clientY?: number }) => Omit<ToolCtx, 'scratch'>,
+      threshold: 4,
+    });
+
+    d.onPointerDown(pointerEvent('pointerdown', { clientX: 50, clientY: 50 }));
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 50, clientY: 50 }));
+
+    expect(onActiveClick).toHaveBeenCalledOnce();
+    expect(onFallbackClick).not.toHaveBeenCalled();
+  });
+
+  it('calls fallback when active passes the click', () => {
+    const onActiveClick = vi.fn(() => none());
+    const onFallbackClick = vi.fn(() => claim());
+    const active = defineTool({ id: 'active', initial: { click: { '*': onActiveClick } } });
+    const fallback = defineTool({ id: 'fallback', initial: { click: { '*': onFallbackClick } } });
+    const d = createToolsDispatcher({
+      getSlots: () => ({ hotkey: null, active, ambient: [], fallback }),
+      getCtx: makeCtx as unknown as (overrides?: { clientX?: number; clientY?: number }) => Omit<ToolCtx, 'scratch'>,
+      threshold: 4,
+    });
+
+    d.onPointerDown(pointerEvent('pointerdown', { clientX: 50, clientY: 50 }));
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 50, clientY: 50 }));
+
+    expect(onActiveClick).toHaveBeenCalledOnce();
+    expect(onFallbackClick).toHaveBeenCalledOnce();
+  });
+
+  it('calls fallback when the active tool has no pointer.onClick handler', () => {
+    const onFallbackClick = vi.fn(() => claim());
+    // Active tool has only a drag handler — no click handler at all.
+    const active = defineTool<null>({
+      id: 'active',
+      initial: { drag: () => begin({ scratch: null }) },
+    });
+    const fallback = defineTool({ id: 'fallback', initial: { click: { '*': onFallbackClick } } });
+    const d = createToolsDispatcher({
+      getSlots: () => ({ hotkey: null, active, ambient: [], fallback }),
+      getCtx: makeCtx as unknown as (overrides?: { clientX?: number; clientY?: number }) => Omit<ToolCtx, 'scratch'>,
+      threshold: 4,
+    });
+
+    d.onPointerDown(pointerEvent('pointerdown', { clientX: 50, clientY: 50 }));
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 50, clientY: 50 })); // sub-threshold release
+
+    expect(onFallbackClick).toHaveBeenCalledOnce();
+  });
+
+  it('does NOT call fallback on pointerdown, drag, or keydown', () => {
+    const fallbackDown = vi.fn(() => claim());
+    const fallbackDrag = vi.fn();
+    const fallbackKey = vi.fn(() => claim());
+    const fallbackClick = vi.fn(() => claim());
+    // Active tool that claims drag (so the gesture promotes and no click fires)
+    // and has no other handlers.
+    const active = defineTool<null>({
+      id: 'active',
+      initial: {
+        drag: () => begin({
+          scratch: null,
+          onMove: () => claim(),
+          onRelease: () => claim(),
+        }),
+      },
+    });
+    const fallback: AnyTool = {
+      id: 'fallback',
+      pointer: {
+        onDown: (_e, _ctx) => { fallbackDown(); return 'claim'; },
+        onClick: (_e, _ctx) => { fallbackClick(); return 'claim'; },
+      },
+      drag: {
+        onStart: (_e, _ctx) => { fallbackDrag(); },
+        onMove: () => {},
+        onEnd: () => {},
+      },
+      keyboard: {
+        onDown: (_e, _ctx) => { fallbackKey(); return 'claim'; },
+      },
+    };
+    const d = createToolsDispatcher({
+      getSlots: () => ({ hotkey: null, active, ambient: [], fallback }),
+      getCtx: makeCtx as unknown as (overrides?: { clientX?: number; clientY?: number }) => Omit<ToolCtx, 'scratch'>,
+      threshold: 4,
+    });
+
+    // pointerdown alone — fallback's onDown must NOT fire (it's only consulted
+    // for clicks, never for pointerdown).
+    d.onPointerDown(pointerEvent('pointerdown', { clientX: 0, clientY: 0 }));
+    expect(fallbackDown).not.toHaveBeenCalled();
+
+    // Promote to drag — fallback.drag.onStart must NOT fire.
+    d.onPointerMove(pointerEvent('pointermove', { clientX: 50, clientY: 0 }));
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 50, clientY: 0 }));
+    expect(fallbackDrag).not.toHaveBeenCalled();
+    // And since the gesture became a drag, fallback.onClick must NOT fire.
+    expect(fallbackClick).not.toHaveBeenCalled();
+
+    // keydown — fallback.keyboard.onDown must NOT fire.
+    d.onKeyDown(new KeyboardEvent('keydown', { key: 'a' }));
+    expect(fallbackKey).not.toHaveBeenCalled();
+  });
+
+  it('falls back when the active tool is the same as the fallback (no double-fire)', () => {
+    // Edge case: if a user wires the same tool into both active and fallback
+    // (e.g. select active + fallback: select), the fallback walk must not
+    // call onClick again on the same tool.
+    const onClick = vi.fn(() => none());
+    const tool = defineTool({ id: 'sel', initial: { click: { '*': onClick } } });
+    const d = createToolsDispatcher({
+      getSlots: () => ({ hotkey: null, active: tool, ambient: [], fallback: tool }),
+      getCtx: makeCtx as unknown as (overrides?: { clientX?: number; clientY?: number }) => Omit<ToolCtx, 'scratch'>,
+      threshold: 4,
+    });
+
+    d.onPointerDown(pointerEvent('pointerdown', { clientX: 0, clientY: 0 }));
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 0, clientY: 0 }));
+
+    expect(onClick).toHaveBeenCalledOnce();
+  });
+});

@@ -1414,6 +1414,10 @@ export function App() {
     active: initialActiveTool,
     registry: { select, lasso, insert, ellipse, line, polygon, star, pen, pencil, hand, text, eyedropper },
     ambient: [wheelZoom, wheelPan, keyZoom, clone, escClearSelection],
+    // Unhandled clicks fall through to select so click-to-select works while
+    // a non-select tool (pen, ellipse, etc.) is active. Click-only — drag,
+    // keyboard, wheel, and pointerdown stay tool-specific.
+    fallback: select,
     // Declarative-routing tools (eyedropper) route on `ctx.target.category`,
     // which the dispatcher derives from this lookup. Without it every click
     // is categorized as `empty` and `pickFromNode`-style handlers no-op.
