@@ -390,11 +390,11 @@ html, body, #root {
    * outbound segment uses an ease-out (decelerating against gravity);
    * each inbound segment uses an ease-in (gravity pulling it back to
    * the wall). The alternation reads as inertial. */
-  38%  { rotate: 96deg;  translate: 0 0;
+  38%  { rotate: 80deg;  translate: 0 0;
          animation-timing-function: cubic-bezier(0.55, 0, 0.85, 0.4); }
   48%  { rotate: 110deg; translate: 0 0;
          animation-timing-function: cubic-bezier(0.2, 0.7, 0.5, 1); }
-  58%  { rotate: 103deg; translate: 0 0;
+  58%  { rotate: 96deg;  translate: 0 0;
          animation-timing-function: cubic-bezier(0.55, 0, 0.85, 0.4); }
   67%  { rotate: 110deg; translate: 0 0;
          animation-timing-function: linear; }

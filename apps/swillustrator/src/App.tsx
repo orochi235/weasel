@@ -495,9 +495,7 @@ export function App() {
   // sidebar's width is persisted alongside (future) `leftSidebarWidth`.
   const [rightSidebarWidth, setRightSidebarWidth] = usePref('ui.rightSidebarWidth');
   const [panels, setPanels] = usePref('ui.panels');
-  // `_disclaimerDismissed` is intentionally unread for now — the JSX
-  // gate is disabled (always-show); see the TODO at the banner.
-  const [, setDisclaimerDismissed] = usePref('ui.disclaimerDismissed');
+  const [disclaimerDismissed, setDisclaimerDismissed] = usePref('ui.disclaimerDismissed');
   // Plays the fall animation; the pref flips to true on animation end so
   // the banner unmounts only after the visual finishes (the next reload
   // shows nothing because the pref is persisted).
@@ -1984,29 +1982,28 @@ export function App() {
 
   return (
     <div className="swill-app">
-      {/* TODO: re-enable the `!disclaimerDismissed && (...)` gate when
-          the disclaimer should hide on subsequent sessions. Temporarily
-          always-show so every reload re-presents it during this phase. */}
-      <div
-        className={`swill-disclaimer${disclaimerDismissing ? ' swill-disclaimer-falling' : ''}`}
-        onAnimationEnd={() => {
-          // Fall animation finished — persist the dismiss for whenever
-          // the gate above is re-enabled. The class stays on so
-          // animation-fill-mode keeps the banner off-screen visually.
-          if (disclaimerDismissing) setDisclaimerDismissed(true);
-        }}
-      >
-        <p className="swill-disclaimer-text">
-          This dumpster fire is not associated with Adobe or Illustrator. Obviously.
-        </p>
-        <button
-          type="button"
-          className="swill-disclaimer-dismiss"
-          onClick={() => setDisclaimerDismissing(true)}
+      {!disclaimerDismissed && (
+        <div
+          className={`swill-disclaimer${disclaimerDismissing ? ' swill-disclaimer-falling' : ''}`}
+          onAnimationEnd={() => {
+            // Fall animation finished — persist the dismiss so the
+            // banner stays gone next session. The element unmounts on
+            // the same render via `disclaimerDismissed`.
+            if (disclaimerDismissing) setDisclaimerDismissed(true);
+          }}
         >
-          I understand
-        </button>
-      </div>
+          <p className="swill-disclaimer-text">
+            This dumpster fire is not associated with Adobe or Illustrator. Obviously.
+          </p>
+          <button
+            type="button"
+            className="swill-disclaimer-dismiss"
+            onClick={() => setDisclaimerDismissing(true)}
+          >
+            I understand
+          </button>
+        </div>
+      )}
 
       <ActionBar
         canUndo={canUndo}
