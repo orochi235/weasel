@@ -25,4 +25,4 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
-      - run: npm --workspace @orochi235/weasel-ui run build-storybook
+      - run: npm run build-storybook
