@@ -115,8 +115,17 @@ export type {
   PointerGestureCallbackCtx,
 } from './interactions/gestures/usePointerGestures';
 export { Canvas } from './canvas/Canvas';
-export { SceneCanvas, DEFAULT_HANDLE_SIZE } from './canvas/SceneCanvas';
+export { SceneCanvas, DEFAULT_HANDLE_SIZE, defaultDrawOne } from './canvas/SceneCanvas';
 export type { SceneCanvasProps } from './canvas/SceneCanvas';
+export {
+  registerShapePainter,
+  findShapePainter,
+  getShapePainters,
+} from './canvas/shapePainters';
+export type {
+  ShapePainter,
+  RegisterShapePainterOptions,
+} from './canvas/shapePainters';
 export { sceneToAdapter } from './canvas/sceneAdapter';
 export type { SceneCanvasAdapter } from './canvas/sceneAdapter';
 export type {
