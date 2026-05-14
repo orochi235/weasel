@@ -245,6 +245,12 @@ export {
   pathSubtract,
   pathExclude,
   pathDivide,
+  pathContainsPoint,
+  pathContainsRect,
+  pathIntersectsRect,
+  pathContainsPolygon,
+  pathIntersectsPolygon,
+  pathDistanceToPoint,
 } from './features/paths';
 export type {
   Path,

@@ -21,6 +21,14 @@ export { countPathAnchors, pathToAnchors, anchorsToPath, isAnchorSmooth, type Pe
 export { splitCubicAtT, fitCubicThroughDeletion, type Point } from './cubicMath';
 export { pointInPath, type PointInPathOptions } from './hitTest';
 export {
+  pathContainsPoint,
+  pathContainsRect,
+  pathIntersectsRect,
+  pathContainsPolygon,
+  pathIntersectsPolygon,
+} from './pathHitTest';
+export { pathDistanceToPoint } from './pathDistance';
+export {
   polygonContainsRectCenter,
   polygonContainsRect,
   polygonIntersectsRect,
