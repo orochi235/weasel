@@ -1,5 +1,11 @@
 :root {
   color-scheme: dark;
+  /* Accent for active toggle states (grid, snap, etc.). Aqua/cyan reads
+     clearly against the warm brown palette without competing with the
+     sage default fill. Exposed as a custom property so consumers can
+     theme it. */
+  --swill-accent: #3ec9d0;
+  --swill-accent-bg: rgba(62, 201, 208, 0.18);
 }
 
 * { box-sizing: border-box; }
@@ -94,8 +100,12 @@ html, body, #root {
   background: #322618;
 }
 .swill-actionbar-button-active:not(:disabled) {
-  background: #2a2418;
-  color: #fff5d8;
+  background: var(--swill-accent-bg);
+  color: var(--swill-accent);
+}
+.swill-actionbar-button-active:not(:disabled):hover {
+  background: var(--swill-accent-bg);
+  color: var(--swill-accent);
 }
 .swill-actionbar-button:disabled {
   opacity: 0.4;
@@ -376,9 +386,9 @@ html, body, #root {
   background: #2a2418;
 }
 .swill-swatch-none-toggle.is-active {
-  background: #2a2418;
-  border-color: #d4c4a8;
-  color: #fff5d8;
+  background: var(--swill-accent-bg);
+  border-color: var(--swill-accent);
+  color: var(--swill-accent);
 }
 
 .swill-active-swatches {
