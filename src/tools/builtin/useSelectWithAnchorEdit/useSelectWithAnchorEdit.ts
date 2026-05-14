@@ -8,6 +8,7 @@ import {
   type UseEditAnchorsOptions,
 } from 'interactions/gestures/edit-anchors';
 import { useTools, type ToolsApi } from '../../useTools';
+import type { AnyTool } from '../../types';
 import type { MoveAdapter, ResizeAdapter, RotateAdapter, AreaSelectAdapter } from 'core/adapters/types';
 
 /** Adapter intersection required for the inner select tool plus the
@@ -51,6 +52,12 @@ export interface UseSelectWithAnchorEditOptions<TNode extends { id: string }, TP
    *  canvas is rendered under a CSS transform / zoom — without this the
    *  helper falls back to `getBoundingClientRect`-relative coords. */
   clientToWorld?: (canvas: HTMLCanvasElement, cx: number, cy: number) => [number, number];
+  /** Extra ambient tools to register alongside the inner `select` +
+   *  `edit-anchors` slots. Forwarded to the internal `useTools` call's
+   *  `ambient` argument. Use this to inject `useResizeTool` / `useRotateTool`
+   *  (or any other ambient-style tool) so corner-resize + rotation handles
+   *  participate in dispatch while the helper owns the active-slot flip. */
+  ambient?: AnyTool[];
 }
 
 /** Return shape: a tools API for `<Canvas tools={...}>` plus a double-click
@@ -140,6 +147,7 @@ export function useSelectWithAnchorEdit<TNode extends { id: string }, TPose>(
   const tools = useTools({
     active: editingId ? editAnchorsToolId : 'select',
     registry,
+    ...(options.ambient ? { ambient: options.ambient } : {}),
   });
 
   // `useTools` only reads `active` on the initial render; later flips have to

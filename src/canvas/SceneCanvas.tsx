@@ -115,6 +115,10 @@ export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
   return result;
 }
 
+/** Built-in tool ids SceneCanvas knows how to mount when no `tools` prop
+ *  is supplied. Pass a subset via `defaultTools` to slim the registered set. */
+export type BuiltinToolId = 'select' | 'resize' | 'rotate' | 'hand';
+
 export type SceneCanvasProps<TData, TLayer extends string, TPose> =
   Omit<
     CanvasProps<Node<TData, TLayer, TPose>, TPose>,
@@ -178,6 +182,15 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  Canvas as-is. Consumers needing extra tools (insert, etc.) take this
      *  path. */
     tools?: ToolsApi;
+
+    /**
+     * Which built-in tools SceneCanvas registers in its internal `useTools`.
+     * Default: `['select', 'resize', 'rotate']` (plus `'hand'` when the
+     * `viewport` feature is on). Pass a smaller array to slim — e.g.
+     * `['select']` for move-only. Ignored when the consumer supplies their
+     * own `tools` prop (the escape hatch path).
+     */
+    defaultTools?: readonly BuiltinToolId[];
 
     /** Always-on tools to register alongside the internal default select.
      *  Use this for wheel/keyboard zoom + pan tools that should run alongside
@@ -268,6 +281,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selection: selectionProp,
     selectionOptions,
     tools: toolsProp,
+    defaultTools,
     ambient,
     viewport,
     layers,
@@ -341,7 +355,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ...selectToolOpts,
   }), [selectToolOpts]);
 
-  const { adapter, selectTool: internalSelect, pickEvery: internalPickEvery } = useSceneSelectTool({
+  const { adapter, selectTool: internalSelect, resizeTool, rotateTool, pickEvery: internalPickEvery } = useSceneSelectTool({
     scene,
     selection,
     geometry,
@@ -364,11 +378,36 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const viewportAmbient: AnyTool[] = viewportRegistered
     ? [keyZoomTool, wheelZoomTool]
     : [];
-  const mergedAmbient = [...viewportAmbient, ...(ambient ?? [])];
 
-  const internalRegistry: Record<string, AnyTool> = viewportRegistered
-    ? { select: internalSelect, hand: handTool }
-    : { select: internalSelect };
+  // Resolve which built-ins to mount. When the consumer omits `defaultTools`,
+  // preserve previous behavior: all three pointer tools (select/resize/rotate)
+  // plus `hand` when the viewport feature is engaged.
+  const requestedTools: readonly BuiltinToolId[] = defaultTools ?? (
+    viewportRegistered
+      ? ['select', 'resize', 'rotate', 'hand']
+      : ['select', 'resize', 'rotate']
+  );
+  const wants = (id: BuiltinToolId): boolean => requestedTools.includes(id);
+
+  // WHY ambient (not registry) for resize+rotate: `useTools.getActiveOverlays()`
+  // returns only active + hotkey + ambient overlays. The Canvas affordance
+  // pipeline (`__setHitTestContext`) walks those exclusively, so a registry
+  // entry that is neither active nor ambient would never have its hitTest
+  // routed. Resize and rotate are affordance-driven (no foreground activation,
+  // no hotkey), so ambient is the correct slot.
+  const builtinAmbient: AnyTool[] = [];
+  if (wants('resize')) builtinAmbient.push(resizeTool);
+  if (wants('rotate')) builtinAmbient.push(rotateTool);
+
+  const mergedAmbient = [...viewportAmbient, ...builtinAmbient, ...(ambient ?? [])];
+
+  const internalRegistry: Record<string, AnyTool> = {};
+  if (wants('select')) internalRegistry.select = internalSelect;
+  // `hand` stays in the registry (not ambient) so its H keybinding + space
+  // hotkey route through `useKeybindings`. The `viewportRegistered` guard
+  // ensures a consumer who passes `defaultTools: ['select','hand']` without
+  // enabling the viewport feature still gets a clean registry (no hand entry).
+  if (wants('hand') && viewportRegistered) internalRegistry.hand = handTool;
 
   const internalTools = useTools({
     active: 'select',

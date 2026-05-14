@@ -36,6 +36,8 @@ import {
   useSelection,
   usePublishSelection,
   useSelectTool,
+  useResizeTool,
+  useRotateTool,
   useStarTool,
   useTextTool,
   useTools,
@@ -1067,22 +1069,8 @@ export function App() {
       }], fullPose);
     },
     getNode: (id) => itemsRef.current.find((o) => o.id === id) ?? null,
-    // Shift-drag a resize handle for aspect-locked scale; matches the
-    // Illustrator / Figma convention. `expandIds` lets a resize started on
-    // a selected group id route to per-leaf transform ops (useResize takes
-    // the union AABB as the origin and remaps each leaf proportionally).
-    // Snap behaviors are conditioned on the persisted `snapToGrid` pref.
-    // Both gestures honor `Cmd` as a temporary bypass so users can place
-    // off-grid without disabling the toggle.
-    resize: {
-      behaviors: [lockAspectWithModifier()],
-      pointSnapBehaviors: snapToGrid
-        ? [pointSnapToGrid({ spacing: gridDensity, bypassKey: 'meta' })]
-        : [],
-      expandIds: expandGroupIds,
-    },
-    // Move likewise expands a group id to its members so dragging a group
-    // translates every leaf as one.
+    // Move expands a group id to its members so dragging a group translates
+    // every leaf as one.
     move: {
       expandIds: expandGroupIds,
       behaviors: snapToGrid
@@ -1092,6 +1080,30 @@ export function App() {
     // Marquee is opt-in at the kit level — illustration apps want
     // rubber-band selection across drawn objects.
     areaSelect: { behaviors: [selectFromMarquee()] },
+  });
+  // Resize is its own tool now. Shift-drag a corner for aspect-locked scale
+  // (Illustrator/Figma convention). `expandIds` routes a resize started on a
+  // selected group id to per-leaf transform ops (useResize takes the union
+  // AABB as origin and remaps each leaf proportionally). Snap behaviors are
+  // conditioned on the persisted `snapToGrid` pref; `Cmd` is a temporary
+  // bypass so users can place off-grid without disabling the toggle.
+  const resizeTool = useResizeTool<Obj, Pose>(adapter, {
+    resize: {
+      behaviors: [lockAspectWithModifier()],
+      pointSnapBehaviors: snapToGrid
+        ? [pointSnapToGrid({ spacing: gridDensity, bypassKey: 'meta' })]
+        : [],
+      expandIds: expandGroupIds,
+    },
+    boundsOf: boundsOfId,
+    getSelection: () => selection.current,
+    poseBounds: (p) => p,
+    getNode: (id) => itemsRef.current.find((o) => o.id === id) ?? null,
+  });
+  const rotateTool = useRotateTool<Obj, Pose>(adapter, {
+    boundsOf: boundsOfId,
+    getSelection: () => [...selection.current],
+    getNode: (id) => itemsRef.current.find((o) => o.id === id) ?? null,
   });
 
   const insert = useInsertTool<Obj, Pose>(adapter, {
@@ -1413,7 +1425,7 @@ export function App() {
   const tools = useTools({
     active: initialActiveTool,
     registry: { select, lasso, insert, ellipse, line, polygon, star, pen, pencil, hand, text, eyedropper },
-    ambient: [wheelZoom, wheelPan, keyZoom, clone, escClearSelection],
+    ambient: [resizeTool, rotateTool, wheelZoom, wheelPan, keyZoom, clone, escClearSelection],
     // Unhandled clicks fall through to select so click-to-select works while
     // a non-select tool (pen, ellipse, etc.) is active. Click-only — drag,
     // keyboard, wheel, and pointerdown stay tool-specific.

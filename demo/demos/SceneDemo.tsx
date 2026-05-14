@@ -39,6 +39,7 @@ export function SceneDemo() {
         scene={scene}
         selection={selection}
         backgroundFill={{ color: '#f4e9d8' }}
+        defaultTools={['select']}
         layers={{
           scene: {
             drawOne: (node, p): DrawCommand[] => {

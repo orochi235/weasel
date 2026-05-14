@@ -16,6 +16,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRe
 import type React from 'react';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { ToolsApi } from 'tools/useTools';
+import type { AnyTool } from 'tools/types';
 import type { ToolsDispatcher } from 'tools/dispatcher';
 import type { ToolCtx } from 'tools/types';
 import type { Op } from 'core/ops/types';
@@ -353,6 +354,52 @@ const IDENTITY_TO_POSE = (obj: unknown) => obj as unknown;
 
 function isCustomEntry(v: unknown): v is CustomLayerEntry {
   return !!v && typeof v === 'object' && 'layer' in (v as Record<string, unknown>);
+}
+
+// Walks every registered + ambient tool: resize/rotate will register as
+// siblings of select, each publishing its own preview slice.
+function* toolsInPriorityOrder(tools: ToolsApi): IterableIterator<AnyTool> {
+  const seen = new Set<AnyTool>();
+  const hotkey = tools.hotkeyEngaged ? tools.registry[tools.hotkeyEngaged] : undefined;
+  const active = tools.registry[tools.active];
+  for (const t of [hotkey, active]) {
+    if (t && !seen.has(t)) { seen.add(t); yield t; }
+  }
+  for (const t of Object.values(tools.registry)) {
+    if (t && !seen.has(t)) { seen.add(t); yield t; }
+  }
+  for (const t of tools.ambient) {
+    if (t && !seen.has(t)) { seen.add(t); yield t; }
+  }
+}
+
+function firstPreviewPose(tools: ToolsApi | undefined, id: string): unknown {
+  if (!tools) return null;
+  for (const t of toolsInPriorityOrder(tools)) {
+    const p = t.previewPose?.(id);
+    if (p != null) return p;
+  }
+  return null;
+}
+
+function firstPreviewBounds(tools: ToolsApi | undefined, id: string): Bounds | null {
+  if (!tools) return null;
+  for (const t of toolsInPriorityOrder(tools)) {
+    const b = t.previewBounds?.(id);
+    if (b) return b as Bounds;
+  }
+  return null;
+}
+
+function aggregatePreviewIds(tools: ToolsApi | undefined): Set<string> {
+  const out = new Set<string>();
+  if (!tools) return out;
+  for (const t of toolsInPriorityOrder(tools)) {
+    const ids = t.previewIds?.();
+    if (!ids) continue;
+    for (const id of ids) out.add(id);
+  }
+  return out;
 }
 
 function registerShadersOnRenderer(
@@ -881,10 +928,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       // committed bounds when no gesture is in flight.
       effectiveBoundsOf: (id) => {
         if (tools) {
-          const tool = tools.registry[tools.hotkeyEngaged ?? tools.active];
-          const b = tool?.previewBounds?.(id);
-          if (b) return b as Bounds;
-          const p = tool?.previewPose?.(id);
+          const b = firstPreviewBounds(tools, id);
+          if (b) return b;
+          const p = firstPreviewPose(tools, id);
           if (p != null) return geometry.getBounds(p as TPose);
         }
         return effectiveBoundsOf ? effectiveBoundsOf(id) : null;
@@ -943,16 +989,13 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // the committed adapter pose / bounds when no tool is mid-gesture.
   const previewToolPose = (id: string): TPose | null => {
     if (!tools) return null;
-    const tool = tools.registry[tools.hotkeyEngaged ?? tools.active];
-    const p = tool?.previewPose?.(id);
-    return (p ?? null) as TPose | null;
+    return (firstPreviewPose(tools, id) ?? null) as TPose | null;
   };
   const previewToolBounds = (id: string): Bounds | null => {
     if (!tools) return null;
-    const tool = tools.registry[tools.hotkeyEngaged ?? tools.active];
-    const b = tool?.previewBounds?.(id);
+    const b = firstPreviewBounds(tools, id);
     if (b) return b;
-    const p = tool?.previewPose?.(id);
+    const p = firstPreviewPose(tools, id);
     return p == null ? null : geometry.getBounds(p as TPose);
   };
 
@@ -1131,11 +1174,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         debugSink,
         effectiveBoundsOf,
         () => {
-          if (!tools) return null;
-          const t = tools.registry[tools.hotkeyEngaged ?? tools.active];
-          const ids = t?.previewIds?.();
-          if (!ids) return null;
-          return ids instanceof Set ? ids : new Set(ids);
+          const ids = aggregatePreviewIds(tools);
+          return ids.size > 0 ? ids : null;
         },
       );
     }

@@ -6,6 +6,8 @@ import {
   useScene,
   useSelection,
   useSelectTool,
+  useResizeTool,
+  useRotateTool,
   useTools,
   pointSnapToGrid,
   ROTATED_POSE_DESCRIPTOR,
@@ -67,12 +69,27 @@ export function PointSnapDemo() {
     pickEvery,
     boundsOf,
     getSelection: () => selection.current,
+  });
+  const resizeTool = useResizeTool(adapter, {
     resize: {
       geometry: ROTATED_POSE_DESCRIPTOR as PoseDescriptor<Rect>,
       pointSnapBehaviors: [pointSnapToGrid({ spacing: SNAP_GRID })],
     },
+    boundsOf,
+    getSelection: () => selection.current,
+    poseBounds: (p) => p as unknown as { x: number; y: number; width: number; height: number },
+    getNode: (id) => scene.get(asNodeId(id)) ?? null,
   });
-  const tools = useTools({ active: 'select', registry: { select } });
+  const rotateTool = useRotateTool(adapter, {
+    boundsOf,
+    getSelection: () => [...selection.current],
+    getNode: (id) => scene.get(asNodeId(id)) ?? null,
+  });
+  const tools = useTools({
+    active: 'select',
+    registry: { select },
+    ambient: [resizeTool, rotateTool],
+  });
 
   const canvasRef = useRef<CanvasExtensionApi | null>(null);
   useEffect(() => { canvasRef.current?.element?.focus(); }, []);

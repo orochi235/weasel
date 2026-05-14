@@ -8,6 +8,8 @@ import {
   selectFromMarquee,
   useSelection,
   useSelectWithAnchorEdit,
+  useResizeTool,
+  useRotateTool,
 } from '@orochi235/weasel';
 import type {
   Path,
@@ -91,6 +93,24 @@ export function BezierEditDemo() {
     ...selection.adapterMethods,
   };
 
+  const boundsOf = (id: string) =>
+    id === ID ? pathPoseDescriptor.getBounds(pathRef.current) : null;
+
+  const resizeTool = useResizeTool<PathObj, Pose>(adapter, {
+    resize: { geometry: pathPoseDescriptor },
+    handleHitRadius: HANDLE / zoom,
+    boundsOf,
+    getSelection: () => selection.current,
+    poseBounds: (p) => pathPoseDescriptor.getBounds(p),
+    getNode: (id) => (id === ID ? { id } : null),
+  });
+  const rotateTool = useRotateTool<PathObj, Pose>(adapter, {
+    handleHitRadius: HANDLE / zoom,
+    boundsOf,
+    getSelection: () => [...selection.current],
+    getNode: (id) => (id === ID ? { id } : null),
+  });
+
   const { tools, onDoubleClick } = useSelectWithAnchorEdit<PathObj, Pose>(adapter, {
     // pointInPath only fills closed regions, so an S-curve has no body to
     // hit. Approximate stroke-hit: AABB containment with an 8-px slop.
@@ -102,9 +122,7 @@ export function BezierEditDemo() {
         && wy >= b.y - slop && wy <= b.y + b.height + slop;
       return inside ? [ID] : [];
     },
-    boundsOf: (id) => (id === ID ? pathPoseDescriptor.getBounds(pathRef.current) : null),
-    handleHitRadius: HANDLE / zoom,
-    resize: { geometry: pathPoseDescriptor },
+    boundsOf,
     // Marquee is opt-in at the kit level — restored here because pointInPath
     // hit-testing fails on the open polyline, so drag-marquee is the only
     // working selection path.
@@ -128,6 +146,8 @@ export function BezierEditDemo() {
       const z = zoomRef.current;
       return [(cx - r.left) / z, (cy - r.top) / z];
     },
+    // Resize + rotate are ambient — affordance-driven, no active-slot flip.
+    ambient: [resizeTool, rotateTool],
   });
 
 
