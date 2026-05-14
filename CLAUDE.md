@@ -6,6 +6,10 @@ Generic 2D scene-graph canvas library. Published as `@orochi235/weasel`.
 
 Active todos live in `docs/TODO.md`. Consult it when planning new work or picking up a task.
 
+## Package manager
+
+npm is canonical: `package-lock.json` is the committed lockfile and `workspaces` lives in `package.json`. `pnpm install` is fine locally for speed (`.npmrc` has `link-workspace-packages=true` so it resolves the `*` workspace deps), but **never commit `pnpm-lock.yaml`** — it's gitignored on purpose. Don't introduce `pnpm-workspace.yaml`, `preinstall` hooks blocking npm, or `workspace:*` deps without an explicit decision to migrate.
+
 ## Reference implementations
 
 When building new tools, read these first:
