@@ -3,12 +3,53 @@ import s from './PropertiesPanel.module.css';
 
 /** Outer panel shell — provides the title row and the 12-column grid.
  *  Children are rendered into the grid; lay them out with PropertyRow
- *  or by composing PropertyLabel + PropertyField directly. */
-export function PropertiesPanel(props: { title?: ReactNode; children?: ReactNode }) {
+ *  or by composing PropertyLabel + PropertyField directly.
+ *
+ *  When `collapsed` is true, only the title row paints. Click the title (or
+ *  the chevron) to toggle via `onToggleCollapse`. An optional `onHide`
+ *  exposes a close button that removes the panel from the parent UI
+ *  entirely (the consumer's prefs map is the source of truth for both
+ *  states — this component is pure presentation). */
+export function PropertiesPanel(props: {
+  title?: ReactNode;
+  children?: ReactNode;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+  onHide?: () => void;
+}) {
+  const { title, children, collapsed, onToggleCollapse, onHide } = props;
+  const headerInteractive = onToggleCollapse !== undefined;
   return (
-    <div className={s.panel}>
-      {props.title !== undefined && <div className={s.title}>{props.title}</div>}
-      <div className={s.grid}>{props.children}</div>
+    <div className={`${s.panel}${collapsed ? ` ${s.collapsed}` : ''}`}>
+      {title !== undefined && (
+        <div className={s.titleRow}>
+          {headerInteractive ? (
+            <button
+              type="button"
+              className={s.titleButton}
+              onClick={onToggleCollapse}
+              aria-expanded={!collapsed}
+            >
+              <span className={`${s.chevron}${collapsed ? ` ${s.chevronCollapsed}` : ''}`} aria-hidden="true">▾</span>
+              <span className={s.title}>{title}</span>
+            </button>
+          ) : (
+            <span className={s.title}>{title}</span>
+          )}
+          {onHide !== undefined && (
+            <button
+              type="button"
+              className={s.hideButton}
+              onClick={onHide}
+              title="Hide panel"
+              aria-label="Hide panel"
+            >
+              ×
+            </button>
+          )}
+        </div>
+      )}
+      {!collapsed && <div className={s.grid}>{children}</div>}
     </div>
   );
 }
