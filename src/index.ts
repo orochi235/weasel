@@ -235,6 +235,7 @@ export {
   DEFAULT_FLATTEN_TOLERANCE,
   composePath,
   decomposePath,
+  splitSubpaths,
   unionBoundsPath,
   pathPoseDescriptor,
   pathOriginProjection,

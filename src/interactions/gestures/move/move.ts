@@ -167,26 +167,54 @@ export function useMove<TNode extends { id: string }, TPose>(
     ctx.modifiers = moveArgs.modifiers;
     ctx.pointer = { worldX: moveArgs.worldX, worldY: moveArgs.worldY, clientX: moveArgs.clientX, clientY: moveArgs.clientY };
 
-    const dx = moveArgs.worldX - scratch.startWorld.x;
-    const dy = moveArgs.worldY - scratch.startWorld.y;
+    const rawDx = moveArgs.worldX - scratch.startWorld.x;
+    const rawDy = moveArgs.worldY - scratch.startWorld.y;
 
     const newPoses = new Map<string, TPose>();
     let snap: SnapTarget<TPose> | null = ctx.snap;
 
-    for (const id of ctx.draggedIds) {
-      const originPose = ctx.origin.get(id)!;
-      let proposed = translatePose(originPose, dx, dy);
-      // Behaviors run only against the primary id (first in the array).
-      // For multi-select group drag, secondary ids share the same delta.
-      if (id === ctx.draggedIds[0]) {
-        for (const b of behaviorsRef.current) {
-          const r = b.onMove?.(ctx, proposed);
-          if (!r) continue;
-          if (r.pose !== undefined) proposed = r.pose;
-          if (r.snap !== undefined) snap = r.snap;
-        }
+    // Behaviors run only against the primary id (first in `draggedIds`).
+    // The behavior may mutate the primary's pose (e.g. snap-to-grid moves
+    // it to the nearest cell). For multi-select, we must propagate the
+    // resulting *delta change* to every secondary — otherwise the primary
+    // snaps while the others continue at the raw drag delta and they drift
+    // apart over successive drags.
+    const primaryId = ctx.draggedIds[0];
+    let effectiveDx = rawDx;
+    let effectiveDy = rawDy;
+    if (primaryId !== undefined) {
+      const primaryOrigin = ctx.origin.get(primaryId)!;
+      let primaryProposed = translatePose(primaryOrigin, rawDx, rawDy);
+      for (const b of behaviorsRef.current) {
+        const r = b.onMove?.(ctx, primaryProposed);
+        if (!r) continue;
+        if (r.pose !== undefined) primaryProposed = r.pose;
+        if (r.snap !== undefined) snap = r.snap;
       }
-      newPoses.set(id, proposed);
+      newPoses.set(primaryId, primaryProposed);
+      // Derive the effective delta from the primary's post-behavior pose.
+      // The default `translatePose` is `translateRectPose`, which writes
+      // through `{ x, y }`; consumers who pass a custom `translatePose`
+      // for a non-rect pose shape should also pose `{ x, y }`-bearing
+      // origins (true for both the rect and path adapters today). If
+      // either field is missing we fall back to the raw delta so behavior
+      // is identical to the pre-fix path.
+      const pp = primaryProposed as { x?: number; y?: number };
+      const po = primaryOrigin as { x?: number; y?: number };
+      if (typeof pp.x === 'number' && typeof po.x === 'number') {
+        effectiveDx = pp.x - po.x;
+      }
+      if (typeof pp.y === 'number' && typeof po.y === 'number') {
+        effectiveDy = pp.y - po.y;
+      }
+    }
+
+    // Apply the effective delta to every secondary id so the whole
+    // selection translates by the same amount the primary actually moved.
+    for (const id of ctx.draggedIds) {
+      if (id === primaryId) continue;
+      const originPose = ctx.origin.get(id)!;
+      newPoses.set(id, translatePose(originPose, effectiveDx, effectiveDy));
     }
 
     ctx.current = newPoses;
@@ -198,7 +226,7 @@ export function useMove<TNode extends { id: string }, TPose>(
       overlayPoses = new Map(newPoses);
       for (const id of scratch.cascadeIds) {
         const origin = scratch.cascadeOriginWorld.get(id)!;
-        overlayPoses.set(id, translatePose(origin, dx, dy));
+        overlayPoses.set(id, translatePose(origin, effectiveDx, effectiveDy));
       }
       hideIds = [...ctx.draggedIds, ...scratch.cascadeIds];
     }

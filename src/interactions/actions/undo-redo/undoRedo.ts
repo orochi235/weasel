@@ -15,6 +15,13 @@ export interface UndoRedoAdapter {
 export interface UseUndoRedoOptions {
   /** Auto-bind Mod+Z (undo) and Mod+Shift+Z (redo) on document. Default false. */
   bindKeyboard?: boolean;
+  /** Called after a successful undo (both keyboard- and imperatively-triggered).
+   *  Use this when your adapter mutates external state in place and needs a
+   *  follow-up sync step (e.g. `publish()` to refresh a React mirror of a
+   *  mutable ref). Not called when the adapter has nothing to undo. */
+  onUndo?: () => void;
+  /** Symmetric counterpart to `onUndo`, fires after a successful redo. */
+  onRedo?: () => void;
 }
 
 /** Return shape of `useUndoRedo`. */
@@ -33,11 +40,16 @@ export function useUndoRedo(
 ): UseUndoRedoReturn {
   const adapterRef = useRef(adapter);
   adapterRef.current = adapter;
+  const onUndoRef = useRef(options.onUndo);
+  onUndoRef.current = options.onUndo;
+  const onRedoRef = useRef(options.onRedo);
+  onRedoRef.current = options.onRedo;
 
   const undo = useCallback((): boolean => {
     const a = adapterRef.current;
     if (a.canUndo && !a.canUndo()) return false;
     a.undo();
+    onUndoRef.current?.();
     return true;
   }, []);
 
@@ -45,6 +57,7 @@ export function useUndoRedo(
     const a = adapterRef.current;
     if (a.canRedo && !a.canRedo()) return false;
     a.redo();
+    onRedoRef.current?.();
     return true;
   }, []);
 

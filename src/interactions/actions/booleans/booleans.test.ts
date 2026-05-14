@@ -64,6 +64,38 @@ describe('applyBooleanOp', () => {
     expect(h.state.selection).toEqual([h.state.inserted[0].id]);
   });
 
+  it('captures full nodes via adapter.getNode so undo restores fields (regression)', () => {
+    // Adapters that expose `getNode` should have the full obj round-trip
+    // through the delete op's invert path. Without it, undo restores only
+    // `{ id }` stubs and consumers reading `path`/`fill`/etc. crash.
+    const fullA = { id: 'a' as NodeId, path: rect('a', 0, 0, 10, 10).path, fill: '#f00', custom: 'A' };
+    const fullB = { id: 'b' as NodeId, path: rect('b', 5, 5, 10, 10).path, fill: '#0f0', custom: 'B' };
+    const h = makeAdapter([
+      { id: fullA.id, path: fullA.path },
+      { id: fullB.id, path: fullB.path },
+    ]);
+    h.adapter.getNode = (id) => (id === fullA.id ? fullA : id === fullB.id ? fullB : undefined);
+    applyBooleanOp(h.adapter, 'union');
+    const deleteOps = h.state.batches[0].ops.filter((o) => o.label === undefined || !('insert' in o));
+    // Invert each delete op and apply — should restore the full object.
+    const restored: { id: string }[] = [];
+    const restoringAdapter = {
+      insertNode: (n: { id: string }) => restored.push(n),
+      removeNode: () => { /* ignore — we're only asserting inserts here */ },
+      setSelection: () => { /* select-op inverts also fire on undo */ },
+    };
+    for (const op of h.state.batches[0].ops) {
+      const inv = op.invert();
+      inv.apply(restoringAdapter);
+    }
+    const inserted = restored.find((n) => n.id === 'a');
+    expect(inserted).toBeDefined();
+    expect((inserted as typeof fullA).fill).toBe('#f00');
+    expect((inserted as typeof fullA).custom).toBe('A');
+    expect((inserted as typeof fullA).path).toBeDefined();
+    void deleteOps;
+  });
+
   it('no-op when selection has 0 paths', () => {
     const h = makeAdapter([]);
     const result = applyBooleanOp(h.adapter, 'union');

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useResize } from './resize';
+import { pointSnapToGrid } from './behaviors/pointSnapToGrid';
 import { ROTATED_POSE_DESCRIPTOR } from './geometry';
 import type {
   ModifierState,
@@ -305,5 +306,85 @@ describe('useResize point-snap behaviors', () => {
     // x and y should be the smaller corner.
     expect(tp.x).toBeCloseTo(-30, 5);
     expect(tp.y).toBeCloseTo(-20, 5);
+  });
+
+  it('live overlay (currentPose) tracks the snapped bounds during drag, not the pre-snap bounds', () => {
+    // Bug repro: with pointSnapToGrid active, the live overlay used to render
+    // the un-snapped lerped bounds and only jumped to the snapped position on
+    // pointer release. After the fix the overlay's `currentPose` lerps toward
+    // the SNAPPED proposedBounds — repeated identical moves converge to the
+    // snapped position, not the raw drag position.
+    const { adapter } = makeAdapter([['a', { x: 0, y: 0, width: 100, height: 60 }]]);
+
+    const behavior = pointSnapToGrid<P>({ spacing: 20 });
+
+    const { result } = renderHook(() =>
+      useResize<{ id: string }, P>(adapter, { pointSnapBehaviors: [behavior] }),
+    );
+
+    // anchor=(min,min) → fixed=TL=(0,0), dragged=BR=(100,60).
+    // Start drag at BR; move to (97,57) — raw bounds would be 97x57, snapped
+    // (round to nearest 20) target = (100, 60) i.e. dragged corner snaps to
+    // (100, 60), giving width=100, height=60 (unchanged from origin).
+    act(() => { result.current.start('a', { x: 'min', y: 'min' }, 100, 60); });
+
+    // First move: assert targetPose is snapped to (100, 60).
+    act(() => { result.current.move(97, 57, MODS); });
+    const tp1 = result.current.overlay!.targetPose;
+    expect(tp1.width).toBeCloseTo(100, 5);
+    expect(tp1.height).toBeCloseTo(60, 5);
+
+    // Drive the lerp to convergence by feeding the same input repeatedly.
+    for (let i = 0; i < 30; i++) {
+      act(() => { result.current.move(97, 57, MODS); });
+    }
+
+    const ov = result.current.overlay!;
+    // currentPose drives live rendering. It must converge to the SNAPPED
+    // geometry (100×60), NOT the un-snapped raw bounds (97×57).
+    expect(ov.currentPose.x).toBeCloseTo(0, 3);
+    expect(ov.currentPose.y).toBeCloseTo(0, 3);
+    expect(ov.currentPose.width).toBeCloseTo(100, 3);
+    expect(ov.currentPose.height).toBeCloseTo(60, 3);
+    // Negative assertion: make sure we are NOT rendering the un-snapped bounds.
+    expect(ov.currentPose.width).not.toBeCloseTo(97, 1);
+    expect(ov.currentPose.height).not.toBeCloseTo(57, 1);
+  });
+
+  it('live overlay tracks snap when bounds would be (97,0,11,50) but snap to (100,0,...)', () => {
+    // From the bug report: pre-snap bounds at (97, 0, 11, 50), snap target at
+    // x=100. Use the dragged-corner anchor with a pose whose unsnapped drag
+    // would yield BR=(108, 50) but snap-to-grid(20) rounds to (100, 60).
+    // We construct a thin pose so the raw bounds differ from snap clearly.
+    const { adapter } = makeAdapter([['a', { x: 97, y: 0, width: 11, height: 50 }]]);
+    const behavior = pointSnapToGrid<P>({ spacing: 20 });
+
+    const { result } = renderHook(() =>
+      useResize<{ id: string }, P>(adapter, { pointSnapBehaviors: [behavior] }),
+    );
+
+    // anchor=(min,min): fixed=TL=(97,0), dragged=BR=(108, 50).
+    // Start at BR. Tiny move to (109, 51) — raw BR=(109,51); snap-to-20 → (100,60).
+    // Back-solve from pin=(97,0) and target=(100,60): width=3, height=60, center=(98.5,30), x=97, y=0.
+    act(() => { result.current.start('a', { x: 'min', y: 'min' }, 108, 50); });
+    act(() => { result.current.move(109, 51, MODS); });
+
+    // First-frame targetPose IS the snapped pose.
+    const tp = result.current.overlay!.targetPose;
+    expect(tp.x).toBeCloseTo(97, 5);
+    expect(tp.width).toBeCloseTo(3, 5);
+    expect(tp.height).toBeCloseTo(60, 5);
+
+    // Converge the lerp.
+    for (let i = 0; i < 30; i++) {
+      act(() => { result.current.move(109, 51, MODS); });
+    }
+
+    const ov = result.current.overlay!;
+    // currentPose (live render) reflects the snap, not the raw 11×50.
+    expect(ov.currentPose.width).toBeCloseTo(3, 3);
+    expect(ov.currentPose.height).toBeCloseTo(60, 3);
+    expect(ov.currentPose.width).not.toBeCloseTo(11, 1);
+    expect(ov.currentPose.height).not.toBeCloseTo(50, 1);
   });
 });

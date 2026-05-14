@@ -80,4 +80,56 @@ describe('useUndoRedo', () => {
       expect(a.undo).not.toHaveBeenCalled();
     });
   });
+
+  describe('onUndo / onRedo callbacks', () => {
+    it('fires onUndo after a successful undo (imperative)', () => {
+      const a = makeAdapter();
+      const onUndo = vi.fn();
+      const { result } = renderHook(() => useUndoRedo(a, { onUndo }));
+      act(() => { result.current.undo(); });
+      expect(a.undo).toHaveBeenCalledTimes(1);
+      expect(onUndo).toHaveBeenCalledTimes(1);
+    });
+
+    it('fires onRedo after a successful redo (imperative)', () => {
+      const a = makeAdapter();
+      const onRedo = vi.fn();
+      const { result } = renderHook(() => useUndoRedo(a, { onRedo }));
+      act(() => { result.current.redo(); });
+      expect(a.redo).toHaveBeenCalledTimes(1);
+      expect(onRedo).toHaveBeenCalledTimes(1);
+    });
+
+    it('fires onUndo/onRedo via the keyboard bindings', () => {
+      const a = makeAdapter();
+      const onUndo = vi.fn();
+      const onRedo = vi.fn();
+      renderHook(() => useUndoRedo(a, { bindKeyboard: true, onUndo, onRedo }));
+      act(() => {
+        document.dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'z', metaKey: true, bubbles: true, cancelable: true }),
+        );
+      });
+      expect(onUndo).toHaveBeenCalledTimes(1);
+      act(() => {
+        document.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            key: 'z', metaKey: true, shiftKey: true, bubbles: true, cancelable: true,
+          }),
+        );
+      });
+      expect(onRedo).toHaveBeenCalledTimes(1);
+    });
+
+    it('does NOT fire the callback when the can* gate blocks the action', () => {
+      const a = makeAdapter({ canUndo: false, canRedo: false });
+      const onUndo = vi.fn();
+      const onRedo = vi.fn();
+      const { result } = renderHook(() => useUndoRedo(a, { onUndo, onRedo }));
+      act(() => { result.current.undo(); });
+      act(() => { result.current.redo(); });
+      expect(onUndo).not.toHaveBeenCalled();
+      expect(onRedo).not.toHaveBeenCalled();
+    });
+  });
 });

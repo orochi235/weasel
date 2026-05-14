@@ -43,6 +43,15 @@ export interface BooleansAdapter {
   compareZ(a: NodeId, b: NodeId): number;
   createPathNode(path: Path): { id: string };
   /**
+   * Optional: return the full object for an id, used by the delete ops so
+   * their `invert` (an insert) can restore the complete object on undo.
+   * If omitted, a `{ id }` stub is captured — undo will reinstate the id
+   * but consumers reading other fields (path, fill, etc.) will see them as
+   * undefined. Mirrors `DeleteAdapter.getNode`; should be provided whenever
+   * undo over boolean ops is expected to be lossless.
+   */
+  getNode?(id: NodeId): { id: string } | undefined | null;
+  /**
    * Optional: return the parent + child-index of `id` so the result of a
    * boolean op can be placed in the topmost source's z-slot. Adapters that
    * also expose `getChildren`/`setChildOrder` (the `ReorderAdapter`
@@ -140,7 +149,13 @@ export function applyBooleanOp(
 
   const newNodes = results.map((p) => adapter.createPathNode(p));
   const ops: Op[] = [];
-  for (const e of entries) ops.push(createDeleteOp({ node: { id: e.id } }));
+  for (const e of entries) {
+    // Capture the full node so the delete's `invert()` (an insert) restores
+    // every field on undo. Fallback to a `{ id }` stub matches the legacy
+    // behavior for adapters that haven't opted in yet.
+    const node = adapter.getNode?.(e.id) ?? { id: e.id };
+    ops.push(createDeleteOp({ node }));
+  }
   for (const n of newNodes) ops.push(createInsertOp({ node: n }));
   if (topAnchor && targetIndex !== undefined) {
     // After the deletes, the topmost source's index is no longer occupied;

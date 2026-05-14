@@ -39,6 +39,7 @@ export {
   DEFAULT_FLATTEN_TOLERANCE,
 } from './flatten';
 export { composePath, decomposePath } from './compose';
+export { splitSubpaths } from './splitSubpaths';
 export { unionBoundsPath } from './unionBoundsPath';
 export { pathPoseDescriptor } from './poseDescriptor';
 export { pathOriginProjection } from './originProjection';

@@ -29,6 +29,12 @@ export interface UseDragRadialOptions<TScratch = unknown> {
   onCancel?: (ctx: DragRadialCtx<TScratch>) => void;
   onGestureStart?: () => void;
   onGestureEnd?: (committed: boolean) => void;
+  /** Optional: snap world-space points to the active grid (or any other
+   *  snap target). Applied to both the center (on `onStart`) and the
+   *  current cursor (on `onMove`), so the live overlay's radius/rotation
+   *  is computed from snapped points instead of raw cursor positions.
+   *  When omitted, behavior is identical to today (identity passthrough). */
+  snapPoint?: (p: DragRadialPoint) => DragRadialPoint;
 }
 
 export interface DragRadialController {
@@ -104,7 +110,8 @@ export function useDragRadial<TScratch = unknown>(
     },
     onStart: (ctx) => {
       const opts = optsRef.current;
-      const p: DragRadialPoint = { x: ctx.start.worldX, y: ctx.start.worldY };
+      const raw: DragRadialPoint = { x: ctx.start.worldX, y: ctx.start.worldY };
+      const p: DragRadialPoint = opts.snapPoint ? opts.snapPoint(raw) : raw;
       ctx.scratch.center = p;
       ctx.scratch.current = p;
       ctx.scratch.modifiers = ctx.modifiers;
@@ -114,7 +121,8 @@ export function useDragRadial<TScratch = unknown>(
     },
     onMove: (ctx) => {
       const opts = optsRef.current;
-      ctx.scratch.current = { x: ctx.current.worldX, y: ctx.current.worldY };
+      const raw: DragRadialPoint = { x: ctx.current.worldX, y: ctx.current.worldY };
+      ctx.scratch.current = opts.snapPoint ? opts.snapPoint(raw) : raw;
       ctx.scratch.modifiers = ctx.modifiers;
       writeOverlay();
       opts.onMove?.(buildCtx());

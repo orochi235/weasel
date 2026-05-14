@@ -495,6 +495,12 @@ export function useResize<TNode extends { id: string }, TPose>(
         if (result) {
           const snapped = applyPointSnap(poseAsRect, rotation, result, psCtx);
           proposedPose = snapped as unknown as TPose;
+          // Re-derive proposedBounds from the snapped pose so the lerp +
+          // overlay pipeline below tracks the snapped geometry instead of
+          // the un-snapped local-frame bounds. Without this, the live
+          // overlay would render the pre-snap rectangle and only jump to
+          // the snapped position after pointer release.
+          proposedBounds = geom.getBounds(proposedPose);
           break;
         }
       }

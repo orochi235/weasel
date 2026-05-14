@@ -43,6 +43,12 @@ export interface UseInsertOptions<TPose, TNode extends { id: string } = { id: st
   applyOps?: (ops: Op[], label: string) => void;
   onGestureStart?: () => void;
   onGestureEnd?: (committed: boolean) => void;
+  /** Optional: snap world-space points to the active grid (or any other
+   *  snap target). Applied to every coord the gesture ingests, so both the
+   *  live marquee overlay and the committed bounds track the snapped
+   *  values. When omitted, behavior is identical to today (identity
+   *  passthrough). */
+  snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
 }
 
 /** Return shape of `useInsert`: lifecycle methods plus the live drag-rectangle overlay. */
@@ -79,6 +85,7 @@ export function useInsert<TNode extends { id: string }, TPose>(
     applyOps,
     onGestureStart,
     onGestureEnd,
+    snapPoint,
   } = options;
 
   const behaviorsRef = useRef(behaviors);
@@ -95,6 +102,8 @@ export function useInsert<TNode extends { id: string }, TPose>(
   clickOnlyRef.current = clickOnly;
   const applyOpsOptionRef = useRef(applyOps);
   applyOpsOptionRef.current = applyOps;
+  const snapPointRef = useRef(snapPoint);
+  snapPointRef.current = snapPoint;
 
   // Bridge: build a behavior-style GestureContext on demand from the dragRect ctx.
   const buildGestureCtx = (drCtx: DragRectCtx<unknown>): GestureContext<TPose> => {
@@ -113,6 +122,7 @@ export function useInsert<TNode extends { id: string }, TPose>(
 
   const dr = useDragRect({
     minBounds,
+    snapPoint: (p) => snapPointRef.current?.(p) ?? p,
     onStart: (ctx) => {
       const gctx = buildGestureCtx(ctx);
       for (const b of behaviorsRef.current) b.onStart?.(gctx);

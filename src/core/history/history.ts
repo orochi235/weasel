@@ -2,6 +2,10 @@ import type { Op } from '../ops/types';
 import { dwarn } from '../../debug/flag';
 
 interface Entry {
+  /** Monotonic id assigned at first push. Stable across coalesce merges
+   *  (a merged entry keeps the original id) so UI lists keyed on `id` don't
+   *  flicker when the underlying entry mutates. */
+  id: number;
   /** Forward ops — applied on redo, reflect the latest to-state after any
    *  coalescing. Diverges from `baseOps` only after a coalesce. */
   forwardOps: Op[];
@@ -14,6 +18,16 @@ interface Entry {
   timestamp: number;
 }
 
+/** Read-only view of a history entry exposed via `History.entries()`. */
+export interface HistoryEntry {
+  /** Stable monotonic id (preserved across coalesce merges). */
+  id: number;
+  /** Human-readable label (the `label` arg passed to `applyOps`). */
+  label: string;
+  /** Push/last-coalesce timestamp (ms). */
+  timestamp: number;
+}
+
 /** Op-batched undo/redo controller returned by `createHistory`. */
 export interface History {
   apply(op: Op, label?: string): void;
@@ -23,6 +37,23 @@ export interface History {
   canUndo(): boolean;
   canRedo(): boolean;
   clear(): void;
+  /** Snapshot of the current undo + redo stacks. `undo` is oldest→newest
+   *  (i.e. the last element is what `undo()` would pop next); `redo` is
+   *  also oldest→newest from the user's perspective (i.e. the *first*
+   *  element is what `redo()` would pop next — see implementation note).
+   *  Callers should treat the arrays as immutable. */
+  entries(): { undo: HistoryEntry[]; redo: HistoryEntry[] };
+  /** Walk the history forward/back until exactly `n` entries are on the
+   *  undo stack (0 ≤ n ≤ entries().undo.length + entries().redo.length).
+   *  Equivalent to repeated `undo()`/`redo()` calls but doesn't bother
+   *  rebuilding entry snapshots between steps. No-op if already at `n`. */
+  goto(n: number): void;
+  /** Monotonic counter bumped on every push/undo/redo/clear/coalesce.
+   *  Cheap to read; callers use it as a React dep to detect changes. */
+  getVersion(): number;
+  /** Subscribe to history changes. Fires after every push/undo/redo/
+   *  clear/coalesce. Returns an unsubscribe fn. */
+  subscribe(listener: () => void): () => void;
 }
 
 /** Options for `createHistory`. */
@@ -43,6 +74,13 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   const redoStack: Entry[] = [];
   const coalesceWindowMs = options.coalesceWindowMs ?? 0;
   const now = options.now ?? (() => Date.now());
+  let nextEntryId = 1;
+  let version = 0;
+  const listeners = new Set<() => void>();
+  function bump(): void {
+    version++;
+    for (const l of listeners) l();
+  }
 
   function applyOps(ops: Op[]): void {
     for (const op of ops) op.apply(adapter);
@@ -111,13 +149,16 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     if (top && canCoalesce(top, ops)) {
       top.forwardOps = ops;
       top.timestamp = now();
-      // baseOps + label intentionally preserved — undo returns to the
-      // pre-edit state and the original label sticks.
+      // baseOps + label + id intentionally preserved — undo returns to the
+      // pre-edit state, the original label sticks, and the entry id stays
+      // stable so React lists keyed on id don't flicker.
       redoStack.length = 0;
+      bump();
       return;
     }
-    undoStack.push({ forwardOps: ops, baseOps: ops, label, timestamp: now() });
+    undoStack.push({ id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now() });
     redoStack.length = 0;
+    bump();
   }
 
   return {
@@ -132,18 +173,56 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       if (!entry) return;
       applyOps(invertEntry(entry));
       redoStack.push(entry);
+      bump();
     },
     redo() {
       const entry = redoStack.pop();
       if (!entry) return;
       applyOps(entry.forwardOps);
       undoStack.push(entry);
+      bump();
     },
     canUndo: () => undoStack.length > 0,
     canRedo: () => redoStack.length > 0,
     clear: () => {
+      const had = undoStack.length > 0 || redoStack.length > 0;
       undoStack.length = 0;
       redoStack.length = 0;
+      if (had) bump();
+    },
+    entries() {
+      const toView = (e: Entry): HistoryEntry => ({ id: e.id, label: e.label, timestamp: e.timestamp });
+      // redoStack is internally stored newest-on-top (so `pop()` redoes the
+      // next-most-recent undo). Reverse on the way out so callers see the
+      // entries in chronological order — the user's next redo is the first
+      // element, matching `entries().redo[0]` semantics.
+      return {
+        undo: undoStack.map(toView),
+        redo: [...redoStack].reverse().map(toView),
+      };
+    },
+    goto(n) {
+      // Total length stays constant during this walk (we only shuffle
+      // entries between undo and redo stacks).
+      const total = undoStack.length + redoStack.length;
+      if (n < 0 || n > total) return;
+      while (undoStack.length > n) {
+        const entry = undoStack.pop()!;
+        applyOps(invertEntry(entry));
+        redoStack.push(entry);
+      }
+      while (undoStack.length < n) {
+        const entry = redoStack.pop();
+        if (!entry) break; // defensive — shouldn't fire given the bounds check above
+        applyOps(entry.forwardOps);
+        undoStack.push(entry);
+      }
+      bump();
+    },
+    getVersion: () => version,
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => { listeners.delete(listener); };
     },
   };
 }
