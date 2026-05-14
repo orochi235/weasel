@@ -526,6 +526,8 @@ export type { ClonePose, CloneLayer, CloneBehavior } from './interactions/gestur
 export {
   createReorderOp,
   createMoveToIndexOp,
+  canBringForward,
+  canSendBackward,
 } from './core/ops/reorder';
 export type { ReorderDirection } from './core/ops/reorder';
 export {

@@ -31,6 +31,8 @@ import {
   usePencilTool,
   usePolygonTool,
   useReorder,
+  canBringForward,
+  canSendBackward,
   useSelectAll,
   useAction,
   useSelection,
@@ -1638,20 +1640,38 @@ export function App() {
     }
     return out;
   })();
-  const siblingsOf = (id: string): readonly string[] => {
+  const rootSiblings = items.map((o) => o.id);
+  const parentOf = (id: string): string => {
     const g = groups.find((x) => x.members.includes(id));
-    if (g) return g.members;
-    return items.map((o) => o.id);
+    return g ? g.id : '__root__';
   };
-  const canMoveForward = reorderTargets.some((id) => {
-    const sibs = siblingsOf(id);
-    const i = sibs.indexOf(id);
-    return i >= 0 && i < sibs.length - 1;
+  const siblingsByParent = (() => {
+    const m = new Map<string, readonly string[]>();
+    m.set('__root__', rootSiblings);
+    for (const g of groups) m.set(g.id, g.members);
+    return m;
+  })();
+  // Partition targets by their parent, then ask the kit's predicate whether
+  // any move within that parent would actually change the order. Matches
+  // createReorderOp's algorithm exactly — a contiguous block already at the
+  // top correctly disables Bring Forward / Bring to Front.
+  const targetsByParent = (() => {
+    const out = new Map<string, string[]>();
+    for (const id of reorderTargets) {
+      const p = parentOf(id);
+      const list = out.get(p) ?? [];
+      list.push(id);
+      out.set(p, list);
+    }
+    return out;
+  })();
+  const canMoveForward = Array.from(targetsByParent).some(([p, ids]) => {
+    const sibs = siblingsByParent.get(p);
+    return sibs != null && canBringForward(sibs as string[], ids);
   });
-  const canMoveBackward = reorderTargets.some((id) => {
-    const sibs = siblingsOf(id);
-    const i = sibs.indexOf(id);
-    return i > 0;
+  const canMoveBackward = Array.from(targetsByParent).some(([p, ids]) => {
+    const sibs = siblingsByParent.get(p);
+    return sibs != null && canSendBackward(sibs as string[], ids);
   });
   const canUngroupSelection = selIds.some((id) => groups.some((g) => g.id === id));
 

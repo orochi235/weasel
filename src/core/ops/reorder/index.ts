@@ -8,6 +8,8 @@ import {
   moveToIndex,
 } from './algorithms';
 
+export { canBringForward, canSendBackward } from './algorithms';
+
 interface ReorderAdapter {
   getParent?(id: string): string | null;
   getChildren?(parentId: string | null): string[];
