@@ -18,7 +18,7 @@
  * from `scene` knowledge (children-of-id + absolute pose lookup); consumers
  * can override either by passing their own `moveOptions.cascadeWorldPose`.
  */
-import { forwardRef, useCallback, useMemo, useRef } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef } from 'react';
 import type React from 'react';
 import type { ReactNode } from 'react';
 import { type ActionsProp } from 'interactions/actions/registry';
@@ -224,6 +224,15 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     tools?: ToolsApi;
 
     /**
+     * Called once after SceneCanvas constructs (or receives) its
+     * `ToolsApi`. Useful for introspection — e.g. the toolkit-builder
+     * dev surface walks `tools.registry` to render the live route table.
+     * Fires with the consumer-supplied `tools` prop when present, or with
+     * the internally-synthesized one otherwise.
+     */
+    onToolsCreated?: (tools: ToolsApi) => void;
+
+    /**
      * Named preset for the built-in tool set: `'minimal'` (select + hand),
      * `'standard'` (select + resize + rotate + hand + rect + ellipse +
      * line + pencil), or `'everything'` (every built-in including polygon,
@@ -331,6 +340,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selection: selectionProp,
     selectionOptions,
     tools: toolsProp,
+    onToolsCreated,
     toolBundle,
     defaultTools,
     ambient,
@@ -485,6 +495,14 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   useKeybindings(internalTools, { disable: !!toolsProp });
 
   const tools = toolsProp ?? internalTools;
+
+  // Surface the resolved ToolsApi to the introspection callback (the
+  // toolkit-builder dev surface uses this to walk `tools.registry` for
+  // its live route table). Fires whenever the `tools` identity changes,
+  // which is stable across most renders thanks to useTools' useMemo.
+  const onToolsCreatedRef = useRef(onToolsCreated);
+  onToolsCreatedRef.current = onToolsCreated;
+  useEffect(() => { onToolsCreatedRef.current?.(tools); }, [tools]);
 
   // Auto-wire undo/redo against the scene's history when an
    // `ActionsProvider` is in scope and the consumer hasn't explicitly

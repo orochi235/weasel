@@ -1,63 +1,45 @@
 /**
- * Toolkit Builder — assemble a custom canvas from kit primitives and inspect
- * the resulting action registry, route table, and conflicts. Independent of
- * the main Swillustrator app; mounted under `#/dev/toolkits`.
+ * Toolkit Builder — assemble a canvas from kit primitives and inspect the
+ * resulting action registry, route table, and conflicts. Independent of the
+ * main Swillustrator app; mounted under `#/dev/toolkits`.
  *
- * v1 catalog covers the shape tools, the lasso tool, and most of the
- * selection-driven action hooks. Tools whose adapters require additional
- * state (text, pen, clone, useGroup/useUngroup) are deferred — they need
- * surfaces the synthesized scene adapter doesn't provide.
+ * Dogfoods `<SceneCanvas toolBundle / defaultTools />` for tool synthesis;
+ * the tool hooks themselves (rect / ellipse / line / polygon / star / pencil
+ * / lasso / text / clone) are owned by SceneCanvas. Action hooks (delete /
+ * undoRedo / clipboard / group / nest / etc.) are still wired here because
+ * each one's adapter contract differs and the kit doesn't bundle them yet.
  *
- * URL state is canonical: `?tools=...&actions=...` survives reload.
+ * URL state is canonical: `?bundle=<id>` for named presets, or
+ * `?tools=...&actions=...` for custom selections.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   asNodeId,
-  cloneByAltDrag,
-  ellipsePath,
-  linePath,
-  rectPath,
-  regularPolygonPath,
-  starPath,
   SceneCanvas,
   useActionsRegistry,
   useAlign,
   useClipboard,
-  useCloneTool,
   useDelete,
   useDistribute,
   useDuplicate,
-  useEllipseTool,
   useEscape,
   useFlip,
   useGroup,
-  useHandTool,
-  useLineTool,
-  useLassoTool,
   useNest,
   useNudge,
-  usePencilTool,
-  usePolygonTool,
-  useRectTool,
   useReorder,
   useScene,
   useSceneAdapter,
   useSelectAll,
   useSelection,
-  useSelectTool,
-  useStarTool,
-  useTextTool,
-  useTools,
   useUndoRedo,
   useUngroup,
   useUnnest,
-  type AnyTool,
+  type BuiltinToolId,
   type ClipboardSnapshot,
   type Group,
-  type NodeId,
-  type Path,
-  type PolygonPath,
   type SceneNode,
+  type ToolsApi,
 } from '@orochi235/weasel';
 import {
   buildActionRegistry,
@@ -94,8 +76,6 @@ import {
 } from '../actionIcons';
 import s from './ToolkitBuilder.module.css';
 
-/** Action ID → icon component. Actions without an icon (escape, selectAll,
- *  nudge.*, nest/unnest) render '—'. */
 const ACTION_ICON: Record<string, React.ComponentType> = {
   delete: DeleteIcon,
   duplicate: DuplicateIcon,
@@ -122,24 +102,12 @@ const ACTION_ICON: Record<string, React.ComponentType> = {
   'clipboard.paste': PasteIcon,
 };
 
-interface ShapeData { path?: Path; text?: string; fill: string; stroke?: string; strokeWidth?: number }
+interface ShapeData { fill: string }
 interface ShapePose { x: number; y: number; width: number; height: number }
 type DemoNode = SceneNode<ShapeData, 'default', ShapePose>;
 
-const FILLS = ['#7fb069', '#d4a574', '#a48bd4', '#7ab8d4', '#d47a7a'];
-let _seq = 0;
-const nextFill = () => FILLS[_seq++ % FILLS.length];
-const freshId = (prefix: string) => asNodeId(`${prefix}-${++_seq}`);
-
-function makeNode(id: NodeId, pose: ShapePose, data: ShapeData): DemoNode {
-  return { id, kind: 'leaf', layer: 'default', pose, data, parent: null };
-}
-
 interface CatalogEntry { id: string; label: string; group: 'tool' | 'action' }
 
-/** Named preset tool/action collections. Picking one resets the catalog
- *  selection en masse; tweaking individual checkboxes drops into the
- *  synthetic 'custom' bundle automatically. */
 interface Bundle { id: string; label: string; tools: readonly string[]; actions: readonly string[] }
 
 const BUNDLES: readonly Bundle[] = [
@@ -175,7 +143,6 @@ function bundleMatching(tools: Set<string>, actions: Set<string>): string {
 }
 
 const CATALOG: readonly CatalogEntry[] = [
-  // Tools
   { id: 'select', label: 'useSelectTool', group: 'tool' },
   { id: 'hand', label: 'useHandTool', group: 'tool' },
   { id: 'rect', label: 'useRectTool', group: 'tool' },
@@ -187,7 +154,6 @@ const CATALOG: readonly CatalogEntry[] = [
   { id: 'lasso', label: 'useLassoTool', group: 'tool' },
   { id: 'text', label: 'useTextTool', group: 'tool' },
   { id: 'clone', label: 'useCloneTool', group: 'tool' },
-  // Actions
   { id: 'delete', label: 'useDelete', group: 'action' },
   { id: 'undoRedo', label: 'useUndoRedo', group: 'action' },
   { id: 'duplicate', label: 'useDuplicate', group: 'action' },
@@ -206,14 +172,11 @@ const CATALOG: readonly CatalogEntry[] = [
 function parseHash(hash: string): { tools: Set<string>; actions: Set<string> } {
   const q = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
   const params = new URLSearchParams(q);
-  // `?bundle=<id>` takes precedence over explicit tools/actions when present
-  // — selecting a bundle resets the catalog to its preset members.
   const bundleId = params.get('bundle');
   if (bundleId && bundleId !== 'custom') {
     const b = BUNDLES.find((x) => x.id === bundleId);
     if (b) return { tools: new Set(b.tools), actions: new Set(b.actions) };
   }
-  // Fallback: explicit tools/actions, or default to the 'standard' bundle.
   const fallback = BUNDLES.find((b) => b.id === 'standard')!;
   return {
     tools: new Set((params.get('tools') ?? fallback.tools.join(',')).split(',').filter(Boolean)),
@@ -225,7 +188,6 @@ function writeHash(tools: Set<string>, actions: Set<string>) {
   const params = new URLSearchParams();
   const bundleId = bundleMatching(tools, actions);
   if (bundleId !== 'custom') {
-    // Compact form: just the bundle id.
     params.set('bundle', bundleId);
   } else {
     if (tools.size) params.set('tools', [...tools].join(','));
@@ -234,6 +196,9 @@ function writeHash(tools: Set<string>, actions: Set<string>) {
   const next = `#/dev/toolkits${params.toString() ? `?${params.toString()}` : ''}`;
   if (window.location.hash !== next) window.history.replaceState(null, '', next);
 }
+
+let _seq = 0;
+const freshId = (prefix: string) => asNodeId(`${prefix}-${++_seq}`);
 
 export function ToolkitBuilder() {
   const [enabled, setEnabled] = useState(() => parseHash(window.location.hash));
@@ -264,13 +229,12 @@ export function ToolkitBuilder() {
 
   const activeBundle = bundleMatching(enabled.tools, enabled.actions);
   const applyBundle = (bundleId: string) => {
-    if (bundleId === 'custom') return; // 'custom' is read-only — derived state
+    if (bundleId === 'custom') return;
     const b = BUNDLES.find((x) => x.id === bundleId);
     if (!b) return;
     setEnabled({ tools: new Set(b.tools), actions: new Set(b.actions) });
   };
 
-  // Playground scene + selection.
   const scene = useScene<ShapeData, 'default', ShapePose>({
     systemLayers: [{ id: 'default' }],
     initial: [],
@@ -278,8 +242,8 @@ export function ToolkitBuilder() {
   const selection = useSelection({ mode: 'multi' });
   const adapter = useSceneAdapter(scene, { selection });
 
-  // Separate Group registry — useGroup / useUngroup need a parallel
-  // structure that tracks lasso-style groups distinct from scene parenting.
+  // Group state — useGroup / useUngroup need a parallel structure that
+  // tracks lasso-style groups distinct from scene parenting.
   const [groups, setGroups] = useState<Group[]>([]);
   const groupsRef = useRef(groups);
   groupsRef.current = groups;
@@ -295,86 +259,7 @@ export function ToolkitBuilder() {
       setGroups((gs) => gs.map((g) => (g.id === gid ? { ...g, members: g.members.filter((m) => !ids.includes(m)) } : g))),
   }), []);
 
-  // ── Tool hooks (always called; conditionally registered) ────────────────────
-  const select = useSelectTool(adapter, { getSelection: () => selection.current });
-  const hand = useHandTool();
-  const rect = useRectTool<DemoNode>({
-    create: (b) => makeNode(freshId('rc'),
-      { x: b.x, y: b.y, width: b.width, height: b.height },
-      { path: rectPath(b.x, b.y, b.width, b.height), fill: nextFill() }),
-  });
-  const ellipse = useEllipseTool<DemoNode>({
-    create: (b) => makeNode(freshId('el'),
-      { x: b.x, y: b.y, width: b.width, height: b.height },
-      { path: ellipsePath(b), fill: nextFill() }),
-  });
-  const line = useLineTool<DemoNode>({
-    create: (a, b) => makeNode(freshId('ln'),
-      { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y),
-        width: Math.abs(b.x - a.x) || 1, height: Math.abs(b.y - a.y) || 1 },
-      { path: linePath(a, b), fill: nextFill(), stroke: nextFill(), strokeWidth: 2 }),
-  });
-  const polygon = usePolygonTool<DemoNode>({
-    create: (center, radius, rotation, sides) => makeNode(freshId('pg'),
-      { x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2 },
-      { path: regularPolygonPath(center, radius, sides, rotation), fill: nextFill() }),
-  });
-  const star = useStarTool<DemoNode>({
-    create: (center, outerRadius, rotation, points) => makeNode(freshId('st'),
-      { x: center.x - outerRadius, y: center.y - outerRadius,
-        width: outerRadius * 2, height: outerRadius * 2 },
-      { path: starPath(center, outerRadius, points, undefined, rotation), fill: nextFill() }),
-  });
-  const pencil = usePencilTool<DemoNode>({
-    create: (path: PolygonPath) => {
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      for (let i = 0; i < path.coords.length; i += 2) {
-        const px = path.coords[i], py = path.coords[i + 1];
-        if (px < minX) minX = px; if (px > maxX) maxX = px;
-        if (py < minY) minY = py; if (py > maxY) maxY = py;
-      }
-      return makeNode(freshId('pe'),
-        { x: isFinite(minX) ? minX : 0, y: isFinite(minY) ? minY : 0,
-          width: isFinite(maxX - minX) ? (maxX - minX) || 1 : 1,
-          height: isFinite(maxY - minY) ? (maxY - minY) || 1 : 1 },
-        { path, fill: nextFill(), stroke: nextFill(), strokeWidth: 2 });
-    },
-  });
-  const lasso = useLassoTool(adapter);
-  const text = useTextTool<DemoNode>({
-    pointInsert: (point) => makeNode(freshId('tx'),
-      { x: point.x, y: point.y, width: 80, height: 20 },
-      { fill: nextFill(), text: 'Text' }),
-  });
-  const cloneInsertAdapter = useMemo(() => ({
-    ...adapter,
-    commitInsert: () => null,
-    commitPaste: () => [],
-    snapshotSelection: () => ({ items: [] }),
-  }), [adapter]);
-  const clone = useCloneTool<DemoNode, ShapePose>(cloneInsertAdapter, {
-    behaviors: [cloneByAltDrag()],
-  });
-
-  const allTools: Record<string, AnyTool> = useMemo(() => ({
-    select, hand, rect, ellipse, line, polygon, star, pencil, lasso, text, clone,
-  }), [select, hand, rect, ellipse, line, polygon, star, pencil, lasso, text, clone]);
-
-  const registry = useMemo(() => {
-    const out: Record<string, AnyTool> = {};
-    for (const id of enabled.tools) {
-      const t = allTools[id];
-      if (t) out[id] = t;
-    }
-    return out;
-  }, [enabled.tools, allTools]);
-
-  const fallbackRegistry = Object.keys(registry).length ? registry : { select };
-  const active = (registry.select && 'select')
-    || (Object.keys(registry)[0] ?? 'select');
-  const tools = useTools({ active, registry: fallbackRegistry });
-
-  // ── Action hooks (always called; gated via enableKeyboard / bindKeyboard) ───
+  // ── Action hooks (always called; gated via enableKeyboard) ──────────────────
   const getSelection = () => [...selection.current];
   const applyOps = adapter.applyOps?.bind(adapter);
 
@@ -399,9 +284,7 @@ export function ToolkitBuilder() {
       const n = scene.get(id);
       if (!n) return { id: freshId('clone') };
       const p = n.pose;
-      return makeNode(freshId('clone'),
-        { x: p.x + offset.dx, y: p.y + offset.dy, width: p.width, height: p.height },
-        { ...n.data });
+      return { id: freshId('clone'), pose: { ...p, x: p.x + offset.dx, y: p.y + offset.dy } } as DemoNode;
     },
     applyOps,
   }, { enableKeyboard: enabled.actions.has('duplicate') });
@@ -459,9 +342,11 @@ export function ToolkitBuilder() {
     }),
     commitPaste: (clip, offset) => {
       const items = clip.items as DemoNode[];
-      return items.map((src) => makeNode(freshId('paste'),
-        { ...src.pose, x: src.pose.x + offset.dx, y: src.pose.y + offset.dy },
-        { ...src.data }));
+      return items.map((src) => ({
+        ...src,
+        id: freshId('paste'),
+        pose: { ...src.pose, x: src.pose.x + offset.dx, y: src.pose.y + offset.dy },
+      }));
     },
     getNode: (id: string) => scene.get(asNodeId(id)) ?? undefined,
     removeNode: (id: string) => scene.remove(asNodeId(id)),
@@ -470,7 +355,6 @@ export function ToolkitBuilder() {
     enableKeyboard: enabled.actions.has('clipboard'),
   });
 
-  // Group / Ungroup wired against the parallel Group registry.
   useGroup({
     ...groupAdapter,
     getSelection,
@@ -482,8 +366,6 @@ export function ToolkitBuilder() {
     applyOps,
   }, { enableKeyboard: enabled.actions.has('group') });
 
-  // Nest / Unnest — scene v1 stores world poses, so compose/decompose are
-  // identity (matches NestingDemo).
   const composeAbs = <P,>(_p: P, c: P): P => c;
   const decomposeAbs = <P,>(_p: P, w: P): P => w;
   useNest(adapter, {
@@ -507,34 +389,34 @@ export function ToolkitBuilder() {
     enableKeyboard: enabled.actions.has('nest'),
   });
 
-  // ── Reflection panels ───────────────────────────────────────────────────────
+  // Capture the ToolsApi SceneCanvas synthesizes from `defaultTools` so the
+  // reflection panels can walk it. Updated via `onToolsCreated` whenever
+  // the bundle changes.
+  const [tools, setTools] = useState<ToolsApi | null>(null);
   const toolDefs: readonly ToolDef<unknown>[] = useMemo(
-    () => Object.values(registry)
-      .map((t) => t.def as ToolDef<unknown> | undefined)
-      .filter((d): d is ToolDef<unknown> => d != null),
-    [registry],
+    () => tools
+      ? Object.values(tools.registry)
+        .map((t) => t.def as ToolDef<unknown> | undefined)
+        .filter((d): d is ToolDef<unknown> => d != null)
+      : [],
+    [tools],
   );
   const routeRegistry: RegistryEntry[] = useMemo(() => buildActionRegistry(toolDefs), [toolDefs]);
   const conflicts: Conflict[] = useMemo(() => findConflicts(toolDefs), [toolDefs]);
 
-  // Slot map: which dispatcher slot each registered tool occupies right
-  // now. Slot determines runtime precedence (hotkey > active > ambient)
-  // and is what makes most "static overlaps" non-conflicts. Computed
-  // from the live `tools` API rather than the ToolDef so it reflects
-  // current state.
   const slotFor = (toolId: string): 'active' | 'hotkey' | 'ambient' | 'inactive' => {
+    if (!tools) return 'inactive';
     if (tools.active === toolId) return 'active';
     if (tools.ambient.some((t) => t.id === toolId)) return 'ambient';
-    const t = registry[toolId];
+    const t = tools.registry[toolId];
     if (t?.hotkey) return 'hotkey';
-    // Tool is in the registry but not in any dispatcher slot — its routes
-    // can't fire until it's switched active (or moved to ambient/hotkey).
-    // Treat as a dead entry for visualization purposes.
     return 'inactive';
   };
 
   const actionsReg = useActionsRegistry();
   const actions = actionsReg ? actionsReg.list() : [];
+
+  const defaultTools = useMemo(() => [...enabled.tools] as BuiltinToolId[], [enabled.tools]);
 
   return (
     <div className={s.root}>
@@ -543,10 +425,7 @@ export function ToolkitBuilder() {
           <h1 className={s.title}>Toolkit Builder</h1>
           <label className={s.bundlePicker}>
             <span>Bundle</span>
-            <select
-              value={activeBundle}
-              onChange={(e) => applyBundle(e.target.value)}
-            >
+            <select value={activeBundle} onChange={(e) => applyBundle(e.target.value)}>
               {BUNDLES.map((b) => (
                 <option key={b.id} value={b.id}>{b.label}</option>
               ))}
@@ -592,7 +471,8 @@ export function ToolkitBuilder() {
             scene={scene}
             selection={selection}
             selectionMode="multi"
-            tools={tools}
+            defaultTools={defaultTools}
+            onToolsCreated={setTools}
           />
           <p className={s.hint}>
             Click & drag with the configured tools. Action keybindings live
@@ -674,9 +554,6 @@ export function ToolkitBuilder() {
   );
 }
 
-/** Convert routing's canonical modifier key ('mod' | 'shift' | 'alt' |
- *  'mod+shift' | 'default' | ...) to per-key chip parts that match the
- *  vocabulary `formatShortcutParts` uses for keybindings. */
 function routingModsToParts(mods: string): readonly string[] | undefined {
   if (!mods || mods === 'default') return undefined;
   return mods
@@ -684,7 +561,6 @@ function routingModsToParts(mods: string): readonly string[] | undefined {
     .map((m) => (m === 'mod' ? '⌘' : m === 'shift' ? '⇪' : m === 'alt' ? '⌥' : m));
 }
 
-/** Render an array of keystroke chips with key-cap styling. */
 function Keys({ parts }: { parts: readonly string[] | undefined }) {
   if (!parts || parts.length === 0) return <span className={s.keysEmpty}>—</span>;
   return (
