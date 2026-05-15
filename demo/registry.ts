@@ -535,6 +535,86 @@ export const DEMOS: DemoEntry[] = [
   },
 ];
 
+// Auto-derive `extras` from each demo's relative imports. Any demo file that
+// imports from a `./xxx` or `../xxx` path picks up tabs for the matched
+// files in the source pane — no manual extras entry required. Manual
+// extras still take precedence (entry order + curated language).
+const RAW_BY_GLOB_KEY = import.meta.glob([
+  './demos/**/*.{tsx,ts,json,css}',
+  '../apps/swillustrator/src/**/*.{tsx,ts,css}',
+  '../packages/**/src/**/*.{tsx,ts,css}',
+], { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+
+function extToLang(ext: string): DemoExtra['language'] {
+  if (ext === 'json') return 'json';
+  if (ext === 'ts') return 'ts';
+  if (ext === 'css') return 'css';
+  if (ext === 'md') return 'md';
+  return 'tsx';
+}
+
+function resolvePath(fromPath: string, importPath: string): string {
+  // fromPath: 'demo/demos/RotateDemo.tsx'; importPath: './data/rotate.scene.json'
+  // → 'demo/demos/data/rotate.scene.json'
+  const dir = fromPath.substring(0, fromPath.lastIndexOf('/'));
+  const parts = (dir + '/' + importPath).split('/');
+  const stack: string[] = [];
+  for (const p of parts) {
+    if (p === '..') stack.pop();
+    else if (p && p !== '.') stack.push(p);
+  }
+  return stack.join('/');
+}
+
+/** Map a repo-relative path back to the import.meta.glob key. The glob
+ *  is rooted at this file (`demo/registry.ts`), so the key for
+ *  `demo/demos/X.tsx` is `./demos/X.tsx` and for `apps/...` it's
+ *  `../apps/...`. */
+function toGlobKey(repoPath: string): string {
+  if (repoPath.startsWith('demo/')) return './' + repoPath.substring(5);
+  return '../' + repoPath;
+}
+
+function findRawFor(resolved: string): { path: string; code: string; ext: string } | null {
+  const candidates = resolved.match(/\.[a-z]+$/)
+    ? [resolved]
+    : [`${resolved}.tsx`, `${resolved}.ts`, `${resolved}.json`, `${resolved}.css`,
+       `${resolved}/index.tsx`, `${resolved}/index.ts`];
+  for (const c of candidates) {
+    const code = RAW_BY_GLOB_KEY[toGlobKey(c)];
+    if (code != null) {
+      const ext = c.match(/\.([a-z]+)$/)?.[1] ?? 'tsx';
+      return { path: c, code, ext };
+    }
+  }
+  return null;
+}
+
+const RELATIVE_IMPORT_RE = /from\s+['"]([./][^'"]+)['"]/g;
+
+function autoExtras(demoFull: string, demoPath: string, manual: DemoExtra[] = []): DemoExtra[] {
+  const out = [...manual];
+  const seen = new Set(manual.map((e) => e.path));
+  // Avoid re-tabbing the demo itself if it self-imports somehow.
+  seen.add(demoPath);
+  let m;
+  while ((m = RELATIVE_IMPORT_RE.exec(demoFull))) {
+    const resolved = resolvePath(demoPath, m[1]);
+    if (seen.has(resolved)) continue;
+    const found = findRawFor(resolved);
+    if (!found) continue;
+    if (seen.has(found.path)) continue;
+    seen.add(found.path);
+    out.push({ path: found.path, code: found.code, language: extToLang(found.ext) });
+  }
+  RELATIVE_IMPORT_RE.lastIndex = 0;
+  return out;
+}
+
+for (const entry of DEMOS) {
+  entry.extras = autoExtras(entry.full, entry.path, entry.extras);
+}
+
 export const CATEGORIES = Array.from(new Set(DEMOS.map((d) => d.category)));
 
 export const DEMOS_BY_ID = new Map(DEMOS.map((d) => [d.id, d]));

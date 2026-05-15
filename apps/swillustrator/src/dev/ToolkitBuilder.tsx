@@ -440,6 +440,27 @@ export function ToolkitBuilder() {
       </header>
       <div className={s.layout}>
         <aside className={s.catalog}>
+          <h2 className={s.sectionTitle}>Bundle membership</h2>
+          <table className={s.matrix}>
+            <thead>
+              <tr>
+                <th></th>
+                {BUNDLES.map((b) => <th key={b.id} title={b.label}>{b.label}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {CATALOG.filter((c) => c.group === 'tool').map((c) => (
+                <tr key={c.id}>
+                  <td><code>{c.id}</code></td>
+                  {BUNDLES.map((b) => (
+                    <td key={b.id} className={s.matrixCell}>
+                      {b.tools.includes(c.id) ? '✓' : ''}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
           <h2 className={s.sectionTitle}>Tools</h2>
           {CATALOG.filter((c) => c.group === 'tool').map((c) => (
             <label key={c.id} className={s.row}>

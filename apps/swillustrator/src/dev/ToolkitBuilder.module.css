@@ -87,6 +87,22 @@
 .iconCell { width: 18px; }
 .iconCell svg { width: 14px; height: 14px; vertical-align: middle; }
 
+/* Bundle ↔ tool membership matrix in the catalog sidebar. */
+.matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+.matrix th, .matrix td {
+  text-align: left;
+  padding: 2px 4px;
+  border-bottom: 1px solid var(--wzl-panel-border, #4a3c2e);
+}
+.matrix th { font-weight: 500; color: var(--wzl-muted, #a59685); font-size: 10px; }
+.matrix code { font-size: 10px; }
+.matrixCell { text-align: center; color: var(--wzl-accent, #7fb069); font-weight: 700; }
+
 /* Slot pill — colors hint at runtime precedence (active is highlighted,
    ambient sits behind, registry is latent). */
 .slot {
