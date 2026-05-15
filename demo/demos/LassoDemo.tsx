@@ -41,7 +41,7 @@ const MODE_LABELS: Record<LassoHitMode, string> = {
 };
 
 export function LassoDemo() {
-  // SceneCanvas's `toolBundle="everything"` includes useLassoTool. The
+  // SceneCanvas's `toolBundle="exhaustive"` includes useLassoTool. The
   // `toolOptions.lasso.mode` knob drives the live hit-mode comparison —
   // press L to switch to lasso, drag a closed polygon, watch which rects
   // get selected based on the chosen mode.
@@ -74,7 +74,7 @@ export function LassoDemo() {
         scene={scene}
         selection={selection}
         selectionMode="multi"
-        toolBundle="everything"
+        toolBundle="exhaustive"
         toolOptions={{ lasso: { mode } }}
       />
     </div>

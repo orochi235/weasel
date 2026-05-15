@@ -2,7 +2,7 @@ import { SceneCanvas } from '@orochi235/weasel';
 import sceneJson from './data/clone.scene.json';
 
 export function CloneDemo() {
-  // SceneCanvas's `toolBundle="everything"` includes useCloneTool with the
+  // SceneCanvas's `toolBundle="exhaustive"` includes useCloneTool with the
   // built-in `cloneByAltDrag` behavior — Alt+drag a rect to spawn a copy.
   return (
     <SceneCanvas
@@ -11,7 +11,7 @@ export function CloneDemo() {
       className="ckd-canvas"
       scene={sceneJson}
       selectionMode="multi"
-      toolBundle="everything"
+      toolBundle="exhaustive"
     />
   );
 }

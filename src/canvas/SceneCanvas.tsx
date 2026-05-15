@@ -179,12 +179,12 @@ export type BuiltinToolId =
 
 /** Named preset tool collections for the `toolBundle` prop. Maps to a
  *  `BuiltinToolId[]` consumed by SceneCanvas's internal `useTools`. */
-export type ToolBundle = 'minimal' | 'standard' | 'everything';
+export type ToolBundle = 'minimal' | 'standard' | 'exhaustive';
 
 const BUNDLE_TOOLS: Record<ToolBundle, readonly BuiltinToolId[]> = {
   minimal: ['select', 'hand'],
   standard: ['select', 'resize', 'rotate', 'hand', 'rect', 'ellipse', 'line', 'pencil'],
-  everything: [
+  exhaustive: [
     'select', 'resize', 'rotate', 'hand',
     'rect', 'ellipse', 'line', 'polygon', 'star', 'pencil',
     'lasso', 'text', 'clone',
@@ -281,7 +281,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     /**
      * Named preset for the built-in tool set: `'minimal'` (select + hand),
      * `'standard'` (select + resize + rotate + hand + rect + ellipse +
-     * line + pencil), or `'everything'` (every built-in including polygon,
+     * line + pencil), or `'exhaustive'` (every built-in including polygon,
      * star, lasso, text, clone). When set, defines the starting set;
      * `defaultTools` (if also passed) overrides it. Ignored when the
      * consumer supplies their own `tools` prop.

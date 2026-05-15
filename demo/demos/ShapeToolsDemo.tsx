@@ -14,7 +14,7 @@ import { ToolPalette } from '../../apps/swillustrator/src/ui/ToolPalette';
 const W = 600, H = 400;
 
 export function ShapeToolsDemo() {
-  // Empty scene; SceneCanvas's `toolBundle="everything"` materializes the
+  // Empty scene; SceneCanvas's `toolBundle="exhaustive"` materializes the
   // full shape toolset (rect / ellipse / line / polygon / star / pencil +
   // lasso / text / clone) with default `create` callbacks that produce
   // leaf nodes shaped for the kit's PATH_PAINTER.
@@ -35,7 +35,7 @@ export function ShapeToolsDemo() {
         scene={scene}
         selection={selection}
         selectionMode="multi"
-        toolBundle="everything"
+        toolBundle="exhaustive"
         onToolsCreated={setTools}
       />
     </div>

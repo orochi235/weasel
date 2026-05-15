@@ -124,8 +124,8 @@ const BUNDLES: readonly Bundle[] = [
     actions: ['delete', 'undoRedo', 'duplicate', 'nudge', 'escape', 'selectAll', 'clipboard'],
   },
   {
-    id: 'everything',
-    label: 'Everything',
+    id: 'exhaustive',
+    label: 'Exhaustive',
     tools: ['select', 'hand', 'rect', 'ellipse', 'line', 'polygon', 'star', 'pencil', 'lasso', 'text', 'clone'],
     actions: ['delete', 'undoRedo', 'duplicate', 'nudge', 'escape', 'selectAll', 'reorder', 'align', 'distribute', 'flip', 'clipboard', 'group', 'nest'],
   },
@@ -440,27 +440,6 @@ export function ToolkitBuilder() {
       </header>
       <div className={s.layout}>
         <aside className={s.catalog}>
-          <h2 className={s.sectionTitle}>Bundle membership</h2>
-          <table className={s.matrix}>
-            <thead>
-              <tr>
-                <th></th>
-                {BUNDLES.map((b) => <th key={b.id} title={b.label}>{b.label}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {CATALOG.filter((c) => c.group === 'tool').map((c) => (
-                <tr key={c.id}>
-                  <td><code>{c.id}</code></td>
-                  {BUNDLES.map((b) => (
-                    <td key={b.id} className={s.matrixCell}>
-                      {b.tools.includes(c.id) ? '✓' : ''}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
           <h2 className={s.sectionTitle}>Tools</h2>
           {CATALOG.filter((c) => c.group === 'tool').map((c) => (
             <label key={c.id} className={s.row}>
@@ -501,73 +480,104 @@ export function ToolkitBuilder() {
           </p>
         </main>
         <aside className={s.reflect}>
-          <section>
-            <h3 className={s.sectionTitle}>Action registry ({actions.length})</h3>
-            <table className={s.table}>
-              <thead><tr><th></th><th>id</th><th>label</th><th>binding</th></tr></thead>
-              <tbody>
-                {actions.map((a) => {
-                  const Icon = ACTION_ICON[a.id];
-                  return (
-                    <tr key={a.id}>
-                      <td className={s.iconCell}>{Icon ? <Icon /> : <span className={s.keysEmpty}>—</span>}</td>
-                      <td><code>{a.id}</code></td>
-                      <td>{a.label}</td>
-                      <td><Keys parts={formatShortcutParts(a.defaultBinding)} /></td>
+          <section className={s.widget}>
+            <h3 className={s.widgetTitle}>Action registry ({actions.length})</h3>
+            <div className={s.widgetBodyScrollY}>
+              <table className={s.table}>
+                <thead><tr><th></th><th>Action</th><th>id</th><th>binding</th></tr></thead>
+                <tbody>
+                  {actions.map((a) => {
+                    const Icon = ACTION_ICON[a.id];
+                    return (
+                      <tr key={a.id}>
+                        <td className={s.iconCell}>{Icon ? <Icon /> : <span className={s.keysEmpty}>—</span>}</td>
+                        <td>{a.label}</td>
+                        <td><code>{a.id}</code></td>
+                        <td><Keys parts={formatShortcutParts(a.defaultBinding)} /></td>
+                      </tr>
+                    );
+                  })}
+                  {actions.length === 0 && (
+                    <tr><td colSpan={4} className={s.empty}>No actions registered.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+          <section className={s.widget}>
+            <h3 className={s.widgetTitle}>Tool routes ({routeRegistry.length})</h3>
+            <div className={s.widgetBodyScrollY}>
+              <table className={s.table}>
+                <thead><tr><th>tool</th><th>slot</th><th>phase</th><th>gesture</th><th>target</th><th>mods</th></tr></thead>
+                <tbody>
+                  {routeRegistry.map((r, i) => (
+                    <tr key={i}>
+                      <td>{r.toolId}</td>
+                      <td><span className={s.slot} data-slot={slotFor(r.toolId)}>{slotFor(r.toolId)}</span></td>
+                      <td>{r.phase}</td>
+                      <td>{r.gesture}</td>
+                      <td>{r.target}</td>
+                      <td><Keys parts={routingModsToParts(r.modifiers)} /></td>
                     </tr>
-                  );
-                })}
-                {actions.length === 0 && (
-                  <tr><td colSpan={4} className={s.empty}>No actions registered.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </section>
-          <section>
-            <h3 className={s.sectionTitle}>Tool routes ({routeRegistry.length})</h3>
-            <table className={s.table}>
-              <thead><tr><th>tool</th><th>slot</th><th>phase</th><th>gesture</th><th>target</th><th>mods</th></tr></thead>
-              <tbody>
-                {routeRegistry.map((r, i) => (
-                  <tr key={i}>
-                    <td>{r.toolId}</td>
-                    <td><span className={s.slot} data-slot={slotFor(r.toolId)}>{slotFor(r.toolId)}</span></td>
-                    <td>{r.phase}</td>
-                    <td>{r.gesture}</td>
-                    <td>{r.target}</td>
-                    <td><Keys parts={routingModsToParts(r.modifiers)} /></td>
-                  </tr>
-                ))}
-                {routeRegistry.length === 0 && (
-                  <tr><td colSpan={6} className={s.empty}>No tools selected.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </section>
-          <section>
-            <h3 className={s.sectionTitle}>Static route overlaps ({conflicts.length})</h3>
-            <p className={s.note}>
-              Tuples claimed by 2+ tools. Most are <em>not</em> runtime
-              conflicts — the dispatcher's slot precedence (hotkey →
-              active → ambient) picks one tool per pointer event, and
-              only one tool occupies the active slot at a time.
-            </p>
-            {conflicts.length === 0
-              ? <p className={s.empty}>No overlaps.</p>
-              : (
-                <ul className={s.conflicts}>
-                  {conflicts.map((c, i) => (
-                    <li key={i}>
-                      <code>{c.phase}.{c.gesture}[{c.target}]</code>
-                      {c.modifiers !== 'default' && (
-                        <> <Keys parts={routingModsToParts(c.modifiers)} /></>
-                      )}
-                      {' '}claimed by {c.toolIds.join(', ')}
-                    </li>
                   ))}
-                </ul>
-              )
-            }
+                  {routeRegistry.length === 0 && (
+                    <tr><td colSpan={6} className={s.empty}>No tools selected.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+          <section className={s.widget}>
+            <h3 className={s.widgetTitle}>Bundle membership</h3>
+            <div className={s.widgetBodyScrollXY}>
+              <table className={s.matrix}>
+                <thead>
+                  <tr>
+                    <th></th>
+                    {BUNDLES.map((b) => <th key={b.id} title={b.label}>{b.label}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {CATALOG.filter((c) => c.group === 'tool').map((c) => (
+                    <tr key={c.id}>
+                      <td><code>{c.id}</code></td>
+                      {BUNDLES.map((b) => (
+                        <td key={b.id} className={s.matrixCell}>
+                          {b.tools.includes(c.id) ? '✓' : ''}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+          <section className={s.widget}>
+            <h3 className={s.widgetTitle}>Static route overlaps ({conflicts.length})</h3>
+            <div className={s.widgetBody}>
+              <p className={s.note}>
+                Tuples claimed by 2+ tools. Most are <em>not</em> runtime
+                conflicts — the dispatcher's slot precedence (hotkey →
+                active → ambient) picks one tool per pointer event, and
+                only one tool occupies the active slot at a time.
+              </p>
+              {conflicts.length === 0
+                ? <p className={s.empty}>No overlaps.</p>
+                : (
+                  <ul className={s.conflicts}>
+                    {conflicts.map((c, i) => (
+                      <li key={i}>
+                        <code>{c.phase}.{c.gesture}[{c.target}]</code>
+                        {c.modifiers !== 'default' && (
+                          <> <Keys parts={routingModsToParts(c.modifiers)} /></>
+                        )}
+                        {' '}claimed by {c.toolIds.join(', ')}
+                      </li>
+                    ))}
+                  </ul>
+                )
+              }
+            </div>
           </section>
         </aside>
       </div>
