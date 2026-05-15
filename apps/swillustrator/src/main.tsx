@@ -1,8 +1,9 @@
-import { StrictMode } from 'react';
+import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerFont } from '@orochi235/weasel/renderer';
 import { ActionsProvider, SelectionContextProvider } from '@orochi235/weasel';
 import { App } from './App';
+import { ToolkitBuilder } from './dev/ToolkitBuilder';
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing #root element');
@@ -22,11 +23,25 @@ await registerFont(
   console.warn('swillustrator: failed to register default font', err);
 });
 
+/** Hash-based router: `#/dev/toolkits` mounts ToolkitBuilder, anything else
+ *  mounts the main App. Independent surfaces — they don't share providers
+ *  beyond the outer ActionsProvider / SelectionContextProvider scope. */
+function Root() {
+  const [hash, setHash] = useState(() => window.location.hash);
+  useEffect(() => {
+    const onHash = () => setHash(window.location.hash);
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+  if (hash.startsWith('#/dev/toolkits')) return <ToolkitBuilder />;
+  return <App />;
+}
+
 createRoot(container).render(
   <StrictMode>
     <ActionsProvider>
       <SelectionContextProvider>
-        <App />
+        <Root />
       </SelectionContextProvider>
     </ActionsProvider>
   </StrictMode>,
