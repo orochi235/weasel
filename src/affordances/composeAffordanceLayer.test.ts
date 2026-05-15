@@ -1,23 +1,40 @@
 import { describe, expect, it } from 'vitest';
 import { composeAffordanceLayer } from './composeAffordanceLayer';
-import type { Affordance } from './types';
-import type { ChromeState } from 'core/selection/chromeState';
+import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
+import type { ChromeState, Bounds } from 'core/selection/chromeState';
+import type { DragChannel } from 'tools/types';
 
 const NO_MOD = { alt: false, shift: false, meta: false, ctrl: false };
 const VIEW = { x: 0, y: 0, scale: 1 };
 const DIMS = { width: 200, height: 200 };
 
-function makeState(): ChromeState {
+function makeState(boundsById: Record<string, Bounds> = {}): ChromeState {
   return {
     selection: [],
     multiActive: false,
-    boundsOf: () => null,
+    boundsOf: (id) => boundsById[id] ?? null,
     unionBounds: null,
     modifiers: NO_MOD,
   };
 }
 
-const STUB_DRAG = { onStart: () => 'claim' as const };
+const STUB_DRAG: DragChannel<unknown> = {
+  onStart: () => 'claim' as const,
+  onMove: () => 'claim' as const,
+  onEnd: () => 'claim' as const,
+  onCancel: () => {},
+};
+
+function pointRegion(
+  overrides: Partial<AffordanceRegion> & { id: string },
+): AffordanceRegion {
+  return {
+    targetId: null,
+    shape: { kind: 'point', x: 0, y: 0, hitRadiusPx: 4 },
+    bind: () => ({ drag: STUB_DRAG }),
+    ...overrides,
+  };
+}
 
 describe('composeAffordanceLayer', () => {
   it('exposes the supplied id, label, and screen space', () => {
@@ -27,14 +44,21 @@ describe('composeAffordanceLayer', () => {
     expect(layer.space).toBe('screen');
   });
 
-  it('draw concatenates each affordance render output in array order', () => {
+  it('draw emits a square paint command per region in array order', () => {
     const a: Affordance = {
       id: 'a',
-      render: () => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { color: 'red' } }],
+      regions: () => [pointRegion({
+        id: 'r-a',
+        paint: { kind: 'square', sizePx: 4, fill: { color: 'red' } },
+      })],
     };
     const b: Affordance = {
       id: 'b',
-      render: () => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { color: 'blue' } }],
+      regions: () => [pointRegion({
+        id: 'r-b',
+        shape: { kind: 'point', x: 10, y: 10, hitRadiusPx: 4 },
+        paint: { kind: 'square', sizePx: 4, fill: { color: 'blue' } },
+      })],
     };
     const layer = composeAffordanceLayer('x', 'X', [a, b]);
     const out = layer.draw(makeState(), VIEW, DIMS);
@@ -43,59 +67,159 @@ describe('composeAffordanceLayer', () => {
     expect((out[1] as { fill: { color: string } }).fill.color).toBe('blue');
   });
 
-  it('hitTest walks affordances top-down (last → first); first non-null wins', () => {
+  it('hitTest walks affordances top-down; first hit wins', () => {
     const calls: string[] = [];
     const a: Affordance = {
       id: 'a',
-      render: () => [],
-      hitTest: () => { calls.push('a'); return null; },
+      regions: () => {
+        calls.push('a');
+        return [pointRegion({
+          id: 'r-a',
+          shape: { kind: 'point', x: 100, y: 100, hitRadiusPx: 4 },
+        })];
+      },
     };
+    const aBinding: AffordanceBinding = { drag: STUB_DRAG, initialScratch: { which: 'b' } };
     const b: Affordance = {
       id: 'b',
-      render: () => [],
-      hitTest: () => { calls.push('b'); return { drag: STUB_DRAG }; },
+      regions: () => {
+        calls.push('b');
+        return [pointRegion({
+          id: 'r-b',
+          shape: { kind: 'point', x: 0, y: 0, hitRadiusPx: 4 },
+          bind: () => aBinding,
+        })];
+      },
     };
     const layer = composeAffordanceLayer('x', 'X', [a, b]);
-    const result = layer.hitTest!(0, 0, makeState(), VIEW, DIMS);
+    const result = layer.hitTest(0, 0, makeState(), VIEW, DIMS);
     expect(result).not.toBeNull();
-    // 'b' is later in the array → tested first → returns the hit.
-    // 'a' is never consulted because 'b' already claimed.
-    expect(calls).toEqual(['b']);
+    expect(result?.initialScratch).toEqual({ which: 'b' });
+    // 'b' is later in the array → walked first.
+    expect(calls[0]).toBe('b');
   });
 
-  it('hitTest returns null when every affordance returns null', () => {
-    const a: Affordance = { id: 'a', render: () => [], hitTest: () => null };
-    const b: Affordance = { id: 'b', render: () => [], hitTest: () => null };
-    const layer = composeAffordanceLayer('x', 'X', [a, b]);
-    expect(layer.hitTest!(0, 0, makeState(), VIEW, DIMS)).toBeNull();
-  });
-
-  it('hitTest skips affordances that omit the hitTest method', () => {
-    const decorative: Affordance = { id: 'a', render: () => [] }; // no hitTest
-    const interactive: Affordance = {
-      id: 'b',
-      render: () => [],
-      hitTest: () => ({ drag: STUB_DRAG }),
+  it('hitTest returns null when no region contains the point', () => {
+    const a: Affordance = {
+      id: 'a',
+      regions: () => [pointRegion({
+        id: 'r-a',
+        shape: { kind: 'point', x: 100, y: 100, hitRadiusPx: 2 },
+      })],
     };
-    const layer = composeAffordanceLayer('x', 'X', [decorative, interactive]);
-    const result = layer.hitTest!(0, 0, makeState(), VIEW, DIMS);
-    expect(result).not.toBeNull();
+    const layer = composeAffordanceLayer('x', 'X', [a]);
+    expect(layer.hitTest(0, 0, makeState(), VIEW, DIMS)).toBeNull();
   });
 
-  it('initialScratch from the hit propagates through the AffordanceBinding', () => {
+  it('decorate output is appended to draw, after the affordance’s regions', () => {
     const aff: Affordance = {
       id: 'a',
-      render: () => [],
-      hitTest: () => ({ drag: STUB_DRAG, initialScratch: { anchor: 'br', targetId: 'g1' } }),
+      regions: () => [pointRegion({
+        id: 'r-a',
+        paint: { kind: 'square', sizePx: 4, fill: { color: 'red' } },
+      })],
+      decorate: () => [{
+        kind: 'path',
+        path: { kind: 'rect', x: 50, y: 50, width: 10, height: 10 },
+        fill: { color: 'green' },
+      }],
     };
     const layer = composeAffordanceLayer('x', 'X', [aff]);
-    const result = layer.hitTest!(0, 0, makeState(), VIEW, DIMS);
-    expect(result?.initialScratch).toEqual({ anchor: 'br', targetId: 'g1' });
+    const out = layer.draw(makeState(), VIEW, DIMS);
+    expect(out).toHaveLength(2);
+    expect((out[0] as { fill: { color: string } }).fill.color).toBe('red');
+    expect((out[1] as { fill: { color: string } }).fill.color).toBe('green');
+  });
+
+  it('applies target bounds rotation to paint position', () => {
+    const bounds: Bounds = { x: 0, y: 0, width: 100, height: 100, rotation: Math.PI / 2 };
+    const aff: Affordance = {
+      id: 'a',
+      regions: () => [pointRegion({
+        id: 'r-a',
+        targetId: 't',
+        // Local top-right corner.
+        shape: { kind: 'point', x: 100, y: 0, hitRadiusPx: 4 },
+        paint: { kind: 'square', sizePx: 4 },
+      })],
+    };
+    const layer = composeAffordanceLayer('x', 'X', [aff]);
+    const out = layer.draw(makeState({ t: bounds }), VIEW, DIMS);
+    expect(out).toHaveLength(1);
+    // After 90° rotation around center (50,50), local (100,0) → world (100,100).
+    // Square is sizePx=4, so screen rect origin is (100-2, 100-2) = (98, 98).
+    const cmd = out[0] as { path: { x: number; y: number } };
+    expect(cmd.path.x).toBeCloseTo(98);
+    expect(cmd.path.y).toBeCloseTo(98);
+  });
+
+  it('applies target bounds rotation to hit-test (rotated handle hits)', () => {
+    const bounds: Bounds = { x: 0, y: 0, width: 100, height: 100, rotation: Math.PI / 2 };
+    const aff: Affordance = {
+      id: 'a',
+      regions: () => [pointRegion({
+        id: 'r-a',
+        targetId: 't',
+        // Local top-right corner — should hit at world (100, 100) under rotation.
+        shape: { kind: 'point', x: 100, y: 0, hitRadiusPx: 4 },
+      })],
+    };
+    const layer = composeAffordanceLayer('x', 'X', [aff]);
+    // Click at the rotated position → hit.
+    expect(layer.hitTest(100, 100, makeState({ t: bounds }), VIEW, DIMS)).not.toBeNull();
+    // Click at the un-rotated position → miss.
+    expect(layer.hitTest(100, 0, makeState({ t: bounds }), VIEW, DIMS)).toBeNull();
+  });
+
+  it('targetId=null means identity transform (world frame)', () => {
+    const aff: Affordance = {
+      id: 'a',
+      regions: () => [pointRegion({
+        id: 'r-a',
+        targetId: null,
+        shape: { kind: 'point', x: 42, y: 17, hitRadiusPx: 4 },
+      })],
+    };
+    const layer = composeAffordanceLayer('x', 'X', [aff]);
+    expect(layer.hitTest(42, 17, makeState(), VIEW, DIMS)).not.toBeNull();
+  });
+
+  it('rect-shape regions hit-test against axis-aligned local bounds', () => {
+    const aff: Affordance = {
+      id: 'a',
+      regions: () => [{
+        id: 'r-a',
+        targetId: null,
+        shape: { kind: 'rect', x: 10, y: 10, width: 20, height: 20 },
+        bind: () => ({ drag: STUB_DRAG }),
+      }],
+    };
+    const layer = composeAffordanceLayer('x', 'X', [aff]);
+    expect(layer.hitTest(15, 15, makeState(), VIEW, DIMS)).not.toBeNull();
+    expect(layer.hitTest(5, 5, makeState(), VIEW, DIMS)).toBeNull();
+    expect(layer.hitTest(31, 15, makeState(), VIEW, DIMS)).toBeNull();
+  });
+
+  it('hit-radius scales with view.scale (screen-pixel semantics)', () => {
+    const aff: Affordance = {
+      id: 'a',
+      regions: () => [pointRegion({
+        id: 'r-a',
+        shape: { kind: 'point', x: 0, y: 0, hitRadiusPx: 8 },
+      })],
+    };
+    const layer = composeAffordanceLayer('x', 'X', [aff]);
+    // At scale=1, world radius is 8.
+    expect(layer.hitTest(7, 0, makeState(), { x: 0, y: 0, scale: 1 }, DIMS)).not.toBeNull();
+    expect(layer.hitTest(9, 0, makeState(), { x: 0, y: 0, scale: 1 }, DIMS)).toBeNull();
+    // At scale=2 (zoomed in), world radius is 4.
+    expect(layer.hitTest(3, 0, makeState(), { x: 0, y: 0, scale: 2 }, DIMS)).not.toBeNull();
+    expect(layer.hitTest(5, 0, makeState(), { x: 0, y: 0, scale: 2 }, DIMS)).toBeNull();
   });
 
   it('empty affordance list: draw returns [], hitTest returns null', () => {
     const layer = composeAffordanceLayer('x', 'X', []);
     expect(layer.draw(makeState(), VIEW, DIMS)).toEqual([]);
-    expect(layer.hitTest!(0, 0, makeState(), VIEW, DIMS)).toBeNull();
+    expect(layer.hitTest(0, 0, makeState(), VIEW, DIMS)).toBeNull();
   });
 });

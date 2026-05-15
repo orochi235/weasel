@@ -92,7 +92,14 @@ export function LayerList(props: LayerListProps) {
             className={cls}
             onPointerDown={(e) => handleRowPointerDown(item.id, i, e)}
           >
-            {item.label}
+            {item.swatch !== undefined && (
+              <span
+                className={s.swatch}
+                style={{ background: item.swatch }}
+                aria-hidden="true"
+              />
+            )}
+            <span className={s.label}>{item.label}</span>
           </div>
         );
       })}

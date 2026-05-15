@@ -5,6 +5,7 @@ import {
   SceneCanvas,
   sceneToAdapter,
   useCloneTool,
+  useKeybindings,
   useScene,
   useSelection,
   useSelectTool,
@@ -94,11 +95,18 @@ export function CloneDemo() {
     getSelection: () => selection.current,
   });
 
+  // Active tool is `select`; clone sits in ambient and engages when Alt
+  // is held (via the tool's built-in `hotkey: 'alt'`). Plain drags fall
+  // through to select-move; Alt+drag claims via cloneByAltDrag.
   const tools = useTools({
-    active: 'clone',
+    active: 'select',
     registry: { select, clone },
-    ambient: [select],
+    ambient: [clone],
   });
+  // SceneCanvas disables its internal keybindings when a custom `tools`
+  // prop is supplied — wire them here so clone's `hotkey: 'alt'` engages
+  // the cursor while Alt is held.
+  useKeybindings(tools);
 
   return (
     <SceneCanvas

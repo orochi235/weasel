@@ -188,6 +188,43 @@ describe('useClipboardOps', () => {
     expect(calls).toBe(1);
   });
 
+  it('multiple pastes work when adapter state lags inserts (React-state adapter)', () => {
+    // Regression: a React-backed adapter doesn't flush `setItems` synchronously
+    // inside dispatchApplyBatch, so `snapshotSelection(newIds)` right after
+    // commit would return empty. The hook must use `created` directly for the
+    // next cascade source, not re-snapshot through the adapter.
+    let nextId = 0;
+    const inserts: { id: string; x: number; y: number }[] = [];
+    // `snapshotSelection` reads `pool`, which is intentionally NOT updated by
+    // `insertNode` (mimics React state that hasn't flushed yet).
+    const pool: { id: string; x: number; y: number }[] = [{ id: 'a', x: 0, y: 0 }];
+    const adapter: InsertAdapter<{ id: string; x: number; y: number }> = {
+      commitInsert: () => null,
+      commitPaste(clipboard, offset) {
+        return (clipboard.items as { id: string; x: number; y: number }[]).map((src) => ({
+          id: `n${nextId++}`, x: src.x + offset.dx, y: src.y + offset.dy,
+        }));
+      },
+      snapshotSelection: (ids) => ({ items: pool.filter((p) => ids.includes(p.id)) }),
+      getPasteOffset: () => ({ dx: 1, dy: 1 }),
+      insertNode: (o) => { inserts.push(o); /* note: NOT pushed into pool */ },
+      setSelection: () => {},
+      getSelection: () => [asNodeId('a')],
+    };
+    const { result } = renderHook(() =>
+      useClipboardOps(adapter, { getSelection: () => [asNodeId('a')] }),
+    );
+    act(() => { result.current.copy(); });
+    act(() => { result.current.paste(); });
+    act(() => { result.current.paste(); });
+    act(() => { result.current.paste(); });
+    expect(inserts.map((o) => ({ x: o.x, y: o.y }))).toEqual([
+      { x: 1, y: 1 },
+      { x: 2, y: 2 },
+      { x: 3, y: 3 },
+    ]);
+  });
+
   it('still cascades: second paste reads the just-pasted ids as source', () => {
     const helpers = makeAdapter();
     helpers.seed({ id: 'a', x: 0, y: 0 });

@@ -6,6 +6,8 @@ import {
   selectFromMarquee,
   useKeybindings,
   useLassoTool,
+  useResizeTool,
+  useRotateTool,
   useScene,
   useSelection,
   useSelectTool,
@@ -64,6 +66,17 @@ export function LassoDemo() {
     areaSelect: { behaviors: [selectFromMarquee()] },
   });
 
+  // Resize + rotate as ambient affordances so corner / rotation handles
+  // remain interactive when the foreground tool is `select` or `lasso`.
+  // Passing a custom `tools` prop bypasses SceneCanvas's built-in mount,
+  // so these have to be wired explicitly.
+  const resizeTool = useResizeTool(adapter, {
+    getSelection: () => selection.current,
+  });
+  const rotateTool = useRotateTool(adapter, {
+    getSelection: () => [...selection.current],
+  });
+
   // toolsRef lets the lasso's onGestureEnd flip back to 'select' after
   // commit without rebuilding the lasso Tool record (which would lose
   // gesture state mid-flight). Forward declaration via ref since `tools`
@@ -85,6 +98,7 @@ export function LassoDemo() {
   const tools = useTools({
     active: 'select',
     registry: { select, lasso },
+    ambient: [resizeTool, rotateTool],
   });
   toolsRef.current = tools;
   // Wire V (select) and L (lasso) so the consumer can swap active tools by

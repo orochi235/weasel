@@ -40,13 +40,37 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
       const drawOne = slot?.drawOne;
       if (!slot || !drawOne) return [];
       const t = toolsRef.current;
-      const tool = t.registry[t.hotkeyEngaged ?? t.active];
-      const ids = tool?.previewIds?.();
-      if (!ids) return [];
+      // Walk every relevant tool: a drag may run through `select` while
+      // the active tool is `clone` (or vice versa), so the active tool
+      // alone is the wrong source. Mirror Canvas's `toolsInPriorityOrder`
+      // — hotkey → active → registry → ambient — taking the first
+      // non-null previewPose per id.
+      const seen = new Set<unknown>();
+      const tools: { previewIds?: () => Iterable<string> | null; previewPose?: (id: string) => unknown }[] = [];
+      const push = (tool: typeof tools[number] | undefined) => {
+        if (!tool || seen.has(tool)) return;
+        seen.add(tool);
+        tools.push(tool);
+      };
+      if (t.hotkeyEngaged) push(t.registry[t.hotkeyEngaged]);
+      push(t.registry[t.active]);
+      for (const tool of Object.values(t.registry)) push(tool);
+      for (const tool of t.ambient) push(tool);
+      const idSet = new Set<string>();
+      for (const tool of tools) {
+        const ids = tool.previewIds?.();
+        if (!ids) continue;
+        for (const id of ids) idSet.add(id);
+      }
+      if (idSet.size === 0) return [];
       const sc = sceneRef.current;
       const children: DrawCommand[] = [];
-      for (const id of ids) {
-        const pose = tool?.previewPose?.(id) as TPose | null | undefined;
+      for (const id of idSet) {
+        let pose: TPose | null | undefined;
+        for (const tool of tools) {
+          const p = tool.previewPose?.(id) as TPose | null | undefined;
+          if (p != null) { pose = p; break; }
+        }
         if (pose == null) continue;
         const node = sc.get(asNodeId(id));
         if (!node) continue;

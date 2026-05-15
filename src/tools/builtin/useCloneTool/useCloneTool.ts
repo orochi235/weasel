@@ -7,6 +7,7 @@ import type { InsertAdapter } from 'core/adapters/types';
 import type { View } from 'core/viewport/view';
 import { useClone, type UseCloneOptions } from 'interactions/gestures/clone';
 import type { CloneBehavior, CloneLayer, ModifierState } from 'interactions/gestures/types';
+import type { HotkeyTrigger } from '../../types';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/gestures/resize/autoPoseDescriptor';
 import { viewToMat3, type DrawCommand } from '../../../renderer';
 
@@ -64,7 +65,7 @@ export interface UseCloneToolOptions<T extends { id: string } = { id: string }, 
   drawOne?: (obj: T, pose: TPose, view: View) => DrawCommand[];
   /** CloneLayer category passed to `clone.start`. Default `'structures'`. */
   layer?: CloneLayer;
-  /** Optional id-list expansion (e.g. virtual-group expansion). Forwarded
+  /** Optional id-list expansion (e.g. group expansion). Forwarded
    *  to `useClone`. */
   expandIds?: UseCloneOptions['expandIds'];
   /** Tool id. Default `'clone'`. */
@@ -76,6 +77,11 @@ export interface UseCloneToolOptions<T extends { id: string } = { id: string }, 
    *  Matches the Figma/Illustrator alt-drag UX. Requires
    *  `adapter.getSelection()` to be implemented. Default false. */
   cloneSelection?: boolean;
+  /** Hotkey trigger that engages the tool (so its cursor takes over while
+   *  the key is held, without making it the active foreground tool). Pass
+   *  `null` to disable engagement. Default `'alt'`, matching the only
+   *  built-in behavior (`cloneByAltDrag`). */
+  hotkey?: HotkeyTrigger | null;
 }
 
 /** Wraps `useClone` as a Tool record. The tool sits in the ambient slot
@@ -227,9 +233,13 @@ export function useCloneTool<T extends { id: string }, TPose = unknown>(
       });
     };
 
+    const hotkey = optsRef.current.hotkey === null
+      ? undefined
+      : (optsRef.current.hotkey ?? 'alt');
     return defineTool<CloneScratch>({
       id: optsRef.current.id ?? 'clone',
       cursor: optsRef.current.cursor ?? 'copy',
+      ...(hotkey ? { hotkey } : {}),
       initial: {
         overlay: () => overlay,
 

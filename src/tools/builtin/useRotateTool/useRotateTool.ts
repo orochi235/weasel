@@ -5,7 +5,7 @@ import {
   createRotationAffordance,
   type RotationScratch,
 } from 'affordances/rotationHandle';
-import type { Affordance, AffordanceBinding } from 'affordances/types';
+import type { Affordance, AffordanceBinding, AffordanceRegion } from 'affordances/types';
 import type { RotateAdapter } from 'core/adapters/types';
 import { defineTool } from '../../routing';
 import type { Tool } from '../../types';
@@ -87,52 +87,55 @@ export function useRotateTool<TNode extends { id: string }, TPose>(
     [rotationHandleDistance, handleHitRadius],
   );
 
-  // Wrap the affordance's hitTest to substitute its stub drag channel with
-  // one that delegates to `useRotate` via the latest-callback ref. Render
-  // returns [] — the affordance layer composer paints the rotation handle
-  // glyph via `rotationAff.render` (`composeAffordanceLayer` walks the
-  // original affordance's render, not the wrapper's). We override hitTest
-  // here, not render, so this wrapper is hit-only.
+  // Wrap each region's `bind()` to substitute the affordance's stub drag
+  // channel with one that delegates to `useRotate` via the latest-callback
+  // ref. Multi-mode rotation against the synthetic union isn't supported by
+  // useRotate today — we filter those regions out so the click falls
+  // through to the slot walk. Paint is stripped; the selection-overlay layer
+  // paints the rotation handle separately, and the affordance's `decorate`
+  // pass continues to paint the leader line.
   const rotationAffWrapped: Affordance = useMemo(
     () => ({
       id: rotationAff.id,
-      render: () => [],
-      hitTest: (wx, wy, state, view): AffordanceBinding | null => {
-        const inner = rotationAff.hitTest?.(wx, wy, state, view);
-        if (!inner) return null;
-        const scratch = inner.initialScratch as RotationScratch;
-        // Multi-mode rotation against the synthetic union isn't supported by
-        // useRotate today — pass through so the click falls through to the
-        // slot walk. Real scene ids drive useRotate normally.
-        if (scratch.targetId === MULTI_RESIZE_TARGET_ID) return null;
-        const result: AffordanceBinding<RotationScratch> = {
-          drag: {
-            onStart: (_e, dctx) => {
-              // Pass the current selection so multi-id rotation gestures hit
-              // the configured pivot mode (default 'union'). Single-id stays
-              // intact via the same call. If selection isn't reachable, fall
-              // back to the handle's owning id.
-              const sel = getSelectionRef.current?.();
-              const ids = sel && sel.length > 0 ? [...sel] : [scratch.targetId];
-              rotateRef.current.start({ ids, worldX: dctx.worldX, worldY: dctx.worldY });
-              return 'claim';
+      regions(state) {
+        const out: AffordanceRegion[] = [];
+        for (const region of rotationAff.regions(state)) {
+          if (region.targetId === MULTI_RESIZE_TARGET_ID) continue;
+          out.push({
+            ...region,
+            paint: undefined,
+            bind: (): AffordanceBinding => {
+              const inner = region.bind() as AffordanceBinding<RotationScratch>;
+              const scratch = inner.initialScratch!;
+              const binding: AffordanceBinding<RotationScratch> = {
+                drag: {
+                  onStart: (_e, dctx) => {
+                    const sel = getSelectionRef.current?.();
+                    const ids = sel && sel.length > 0 ? [...sel] : [scratch.targetId];
+                    rotateRef.current.start({ ids, worldX: dctx.worldX, worldY: dctx.worldY });
+                    return 'claim';
+                  },
+                  onMove: (_e, dctx) => {
+                    rotateRef.current.move({ worldX: dctx.worldX, worldY: dctx.worldY, modifiers: dctx.modifiers });
+                    return 'claim';
+                  },
+                  onEnd: () => {
+                    rotateRef.current.end();
+                    return 'claim';
+                  },
+                  onCancel: () => {
+                    rotateRef.current.cancel();
+                  },
+                },
+                initialScratch: scratch,
+              };
+              return binding as AffordanceBinding;
             },
-            onMove: (_e, dctx) => {
-              rotateRef.current.move({ worldX: dctx.worldX, worldY: dctx.worldY, modifiers: dctx.modifiers });
-              return 'claim';
-            },
-            onEnd: (_e, _dctx) => {
-              rotateRef.current.end();
-              return 'claim';
-            },
-            onCancel: () => {
-              rotateRef.current.cancel();
-            },
-          },
-          initialScratch: scratch,
-        };
-        return result as AffordanceBinding;
+          });
+        }
+        return out;
       },
+      decorate: rotationAff.decorate ? (state, view) => rotationAff.decorate!(state, view) : undefined,
     }),
     [rotationAff],
   );

@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { createCornerResizeAffordance } from './cornerResize';
+import { createCornerResizeAffordance, type CornerResizeScratch } from './cornerResize';
+import { composeAffordanceLayer } from './composeAffordanceLayer';
 import type { ChromeState } from 'core/selection/chromeState';
 import { asNodeId } from 'core/scene/types';
 import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/useSelectTool';
 
 const NO_MOD = { alt: false, shift: false, meta: false, ctrl: false };
 const VIEW = { x: 0, y: 0, scale: 1 };
+const DIMS = { width: 400, height: 400 };
 
 function stateWithSingle(): ChromeState {
   return {
@@ -35,7 +37,7 @@ describe('createCornerResizeAffordance', () => {
     expect(aff.id).toBe('corner-resize');
   });
 
-  it('renders nothing when no selection', () => {
+  it('produces no regions when no selection', () => {
     const aff = createCornerResizeAffordance();
     const state: ChromeState = {
       selection: [],
@@ -44,55 +46,82 @@ describe('createCornerResizeAffordance', () => {
       unionBounds: null,
       modifiers: NO_MOD,
     };
-    expect(aff.render(state, VIEW)).toEqual([]);
+    expect(aff.regions(state)).toEqual([]);
   });
 
-  it('renders 4 corner handles for a single selection in single-mode', () => {
+  it('produces 4 point regions for a single selection in single-mode', () => {
     const aff = createCornerResizeAffordance();
-    const cmds = aff.render(stateWithSingle(), VIEW);
-    // Each handle is at least one path command (rect for the handle itself).
-    expect(cmds.length).toBeGreaterThanOrEqual(4);
+    const regions = aff.regions(stateWithSingle());
+    expect(regions).toHaveLength(4);
+    for (const r of regions) {
+      expect(r.shape.kind).toBe('point');
+      expect(r.targetId).toBe('a');
+    }
   });
 
-  it('renders 4 corner handles for the union AABB in multi-mode', () => {
+  it('produces 4 point regions for the union AABB in multi-mode', () => {
     const aff = createCornerResizeAffordance();
-    const cmds = aff.render(stateWithMulti(), VIEW);
-    expect(cmds.length).toBeGreaterThanOrEqual(4);
+    const regions = aff.regions(stateWithMulti());
+    expect(regions).toHaveLength(4);
+    for (const r of regions) {
+      expect(r.targetId).toBe(MULTI_RESIZE_TARGET_ID);
+    }
   });
 
-  it('hitTest returns null when cursor is far from any handle', () => {
+  it('layer hitTest returns null when cursor is far from any handle', () => {
     const aff = createCornerResizeAffordance();
-    const result = aff.hitTest!(50, 50, stateWithSingle(), VIEW);
-    expect(result).toBeNull();
+    const layer = composeAffordanceLayer('x', 'X', [aff]);
+    expect(layer.hitTest(50, 50, stateWithSingle(), VIEW, DIMS)).toBeNull();
   });
 
-  it('hitTest claims when cursor is on a corner handle', () => {
+  it('layer hitTest claims when cursor is on a corner handle', () => {
     const aff = createCornerResizeAffordance({ handleHitRadius: 8 });
-    // Selection at (100, 100, 50, 40). Top-left corner is (100, 100); within
-    // 8 world-px hit radius.
-    const result = aff.hitTest!(100, 100, stateWithSingle(), VIEW);
+    const layer = composeAffordanceLayer('x', 'X', [aff]);
+    // Selection at (100, 100, 50, 40). Top-left corner is (100, 100).
+    const result = layer.hitTest(100, 100, stateWithSingle(), VIEW, DIMS);
     expect(result).not.toBeNull();
     expect(result?.drag).toBeDefined();
   });
 
-  it('hitTest initialScratch identifies the picked anchor + target', () => {
+  it('layer hitTest initialScratch identifies the picked anchor + target', () => {
     const aff = createCornerResizeAffordance({ handleHitRadius: 8 });
+    const layer = composeAffordanceLayer('x', 'X', [aff]);
     // Bottom-right corner of (100, 100, 50, 40) is (150, 140). Anchor pins
     // the opposite corner: { x: 'min', y: 'min' }.
-    const result = aff.hitTest!(150, 140, stateWithSingle(), VIEW);
-    expect(result?.initialScratch).toEqual({
+    const result = layer.hitTest(150, 140, stateWithSingle(), VIEW, DIMS);
+    expect(result?.initialScratch as CornerResizeScratch).toEqual({
       anchor: { x: 'min', y: 'min' },
       targetId: 'a',
     });
   });
 
-  it('hitTest in multi-mode targets the synthetic union (not individual members)', () => {
+  it('layer hitTest in multi-mode targets the synthetic union', () => {
     const aff = createCornerResizeAffordance({ handleHitRadius: 8 });
+    const layer = composeAffordanceLayer('x', 'X', [aff]);
     // Union bounds are (0, 0, 150, 150). Top-left is (0, 0). Anchor pins BR.
-    const result = aff.hitTest!(0, 0, stateWithMulti(), VIEW);
-    expect(result?.initialScratch).toEqual({
+    const result = layer.hitTest(0, 0, stateWithMulti(), VIEW, DIMS);
+    expect(result?.initialScratch as CornerResizeScratch).toEqual({
       anchor: { x: 'max', y: 'max' },
       targetId: MULTI_RESIZE_TARGET_ID,
     });
+  });
+
+  it('hits a rotated rect at its rotated visual corner', () => {
+    // Bounds (100, 100, 50, 40), rotated 90° around its center (125, 120).
+    // Local top-left (100, 100) under +90° rotation lands at world (145, 95).
+    const state: ChromeState = {
+      selection: [asNodeId('a')],
+      multiActive: false,
+      boundsOf: () => ({ x: 100, y: 100, width: 50, height: 40, rotation: Math.PI / 2 }),
+      unionBounds: null,
+      modifiers: NO_MOD,
+    };
+    const aff = createCornerResizeAffordance({ handleHitRadius: 8 });
+    const layer = composeAffordanceLayer('x', 'X', [aff]);
+    expect(layer.hitTest(145, 95, state, VIEW, DIMS)).not.toBeNull();
+    // A point well outside the rotated handle positions should miss.
+    // Rotated handles are at ~(145,95), (145,145), (105,95), (105,145);
+    // (75, 75) is at least 22 world-px from all of them.
+    expect(layer.hitTest(75, 75, state, VIEW, DIMS)).toBeNull();
   });
 });

@@ -1,11 +1,9 @@
-import type { Affordance, AffordanceBinding } from './types';
+import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { DrawCommand } from '../renderer';
 import type { View } from 'core/viewport/view';
 import type { DragChannel } from 'tools/types';
 import {
-  rotationHandle,
-  hitRotationHandle,
   DEFAULT_ROTATION_HANDLE_DISTANCE,
 } from 'interactions/gestures/rotate/handle';
 import { viewToTransform } from 'core/viewport/view';
@@ -16,10 +14,9 @@ export interface RotationAffordanceOptions {
   /** World-pixel distance from the bounds top edge to the handle center.
    *  Default DEFAULT_ROTATION_HANDLE_DISTANCE (=24). */
   distance?: number;
-  /** Handle hit radius (world-px). Divided by view.scale at hit-test
-   *  time so the radius matches the rendered size under zoom. Default 8. */
+  /** Handle hit radius (screen-px). Default 8. */
   handleHitRadius?: number;
-  /** Visual handle size (screen-px, half-width). Default 5. */
+  /** Visual handle size (screen-px, full width). Default 10. */
   handleSize?: number;
   fill?: string;
   stroke?: string;
@@ -33,15 +30,24 @@ export interface RotationScratch {
 const DEFAULT_FILL = '#d4c4a8';
 const DEFAULT_STROKE = '#1a130d';
 
+const stubDrag: DragChannel<RotationScratch> = {
+  onStart: () => 'claim',
+  onMove: () => 'claim',
+  onEnd: () => 'claim',
+  onCancel: () => {},
+};
+
 /**
  * @experimental
- * Rotation-handle affordance for rotating the active selection. Reads
- * ChromeState; draws a leader line from the bounds top-center to a small
- * circular handle DEFAULT_ROTATION_HANDLE_DISTANCE world-px above; hit-tests
- * cursor against the handle.
+ * Rotation-handle affordance for rotating the active selection. Declares
+ * a single point region at the rect's (rotated) top-center, offset
+ * outward along the local up-vector by `distance` world pixels. A
+ * `decorate` pass adds the leader line from the bounds top edge to the
+ * handle (purely visual; not draggable).
  *
  * The drag channel returned here is a stub that claims — consuming tools
- * wrap the affordance and substitute a drag channel that drives useRotate.
+ * wrap the region's `bind()` to substitute a drag channel that drives
+ * `useRotate`.
  */
 export function createRotationAffordance(
   opts: RotationAffordanceOptions = {},
@@ -49,76 +55,81 @@ export function createRotationAffordance(
   const {
     distance = DEFAULT_ROTATION_HANDLE_DISTANCE,
     handleHitRadius = 8,
-    handleSize = 5,
+    handleSize = 10,
     fill = DEFAULT_FILL,
     stroke = DEFAULT_STROKE,
   } = opts;
 
-  const stubDrag: DragChannel<RotationScratch> = {
-    onStart: () => 'claim',
-    onMove: () => 'claim',
-    onEnd: () => 'claim',
-    onCancel: () => {},
+  const paint = {
+    kind: 'square' as const,
+    sizePx: handleSize,
+    fill: { color: fill },
+    stroke: { paint: { color: stroke }, width: 1 },
   };
 
   return {
     id: 'rotation-handle',
-    render(state: ChromeState, view: View): DrawCommand[] {
+    regions(state: ChromeState): readonly AffordanceRegion[] {
       const target = pickTarget(state);
       if (!target) return [];
-      const handle = rotationHandle(target.bounds, distance);
-      const t = viewToTransform(view);
-      const [sx, sy] = worldToScreen(handle.cx, handle.cy, t);
-      const [bx, by] = worldToScreen(
-        target.bounds.x + target.bounds.width / 2,
-        target.bounds.y,
-        t,
-      );
-      // Leader line from bounds-top-center to handle center, then the
-      // handle drawn as a small filled square. (Existing rotation overlay
-      // uses an arc; we render a square here for parity with the corner
-      // handles' style. The visual port can match the arc in a follow-up.)
-      return [
-        {
-          kind: 'path',
-          path: {
-            kind: 'rect',
-            x: Math.min(bx, sx),
-            y: Math.min(by, sy) - 0.5,
-            width: Math.abs(sx - bx) + 1,
-            height: Math.abs(sy - by) + 1,
-          },
-          stroke: { paint: { color: stroke }, width: 1 },
-        },
-        {
-          kind: 'path',
-          path: {
-            kind: 'rect',
-            x: sx - handleSize,
-            y: sy - handleSize,
-            width: handleSize * 2,
-            height: handleSize * 2,
-          },
-          fill: { color: fill },
-          stroke: { paint: { color: stroke }, width: 1 },
-        },
-      ];
+      const b = target.bounds;
+      const lx = b.x + b.width / 2;
+      const ly = b.y - distance;
+      const region: AffordanceRegion = {
+        id: 'rotation-handle',
+        targetId: target.id,
+        shape: { kind: 'point', x: lx, y: ly, hitRadiusPx: handleHitRadius },
+        paint,
+        bind: (): AffordanceBinding => ({
+          drag: stubDrag as unknown as AffordanceBinding['drag'],
+          initialScratch: { targetId: target.id } satisfies RotationScratch,
+        }),
+      };
+      return [region];
     },
-    hitTest(worldX, worldY, state, view): AffordanceBinding | null {
+    decorate(state: ChromeState, view: View): DrawCommand[] {
+      // Leader line: bounds-top-center → handle center. Lives in the
+      // target's local frame; we rotate both endpoints around the AABB
+      // center to get world coords, then project to screen pixels.
       const target = pickTarget(state);
-      if (!target) return null;
-      const handle = rotationHandle(target.bounds, distance);
-      const radiusWorld = handleHitRadius / view.scale;
-      if (hitRotationHandle(handle, worldX, worldY, radiusWorld)) {
-        const result: AffordanceBinding<RotationScratch> = {
-          drag: stubDrag,
-          initialScratch: { targetId: target.id },
-        };
-        return result as AffordanceBinding;
-      }
-      return null;
+      if (!target) return [];
+      const b = target.bounds;
+      const rotation = b.rotation ?? 0;
+      const cx = b.x + b.width / 2;
+      const cy = b.y + b.height / 2;
+      const startL = { x: b.x + b.width / 2, y: b.y };
+      const endL = { x: b.x + b.width / 2, y: b.y - distance };
+      const startW = rotateAround(startL.x, startL.y, cx, cy, rotation);
+      const endW = rotateAround(endL.x, endL.y, cx, cy, rotation);
+      const t = viewToTransform(view);
+      const [sx0, sy0] = worldToScreen(startW.x, startW.y, t);
+      const [sx1, sy1] = worldToScreen(endW.x, endW.y, t);
+      // Emit as a 1-px-wide rect along the leader so existing renderers
+      // (which don't have a `line` primitive on this path) can paint it.
+      const minX = Math.min(sx0, sx1);
+      const minY = Math.min(sy0, sy1);
+      const w = Math.abs(sx1 - sx0) + 1;
+      const h = Math.abs(sy1 - sy0) + 1;
+      return [{
+        kind: 'path',
+        path: { kind: 'rect', x: minX, y: minY - 0.5, width: w, height: h },
+        stroke: { paint: { color: stroke }, width: 1 },
+      }];
     },
   };
+}
+
+function rotateAround(
+  px: number, py: number,
+  cx: number, cy: number,
+  rotation: number,
+): { x: number; y: number } {
+  if (rotation === 0) return { x: px, y: py };
+  const cos = Math.cos(rotation);
+  const sin = Math.sin(rotation);
+  const dx = px - cx;
+  const dy = py - cy;
+  return { x: cx + cos * dx - sin * dy, y: cy + sin * dx + cos * dy };
 }
 
 function pickTarget(state: ChromeState): { id: string; bounds: Bounds } | null {

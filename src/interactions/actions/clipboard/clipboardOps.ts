@@ -67,7 +67,12 @@ export function useClipboardOps<TNode extends { id: string }>(
       createSetSelectionOp({ from: beforeSel, to: newIds }),
     ];
     dispatchApplyBatch(a, ops, optsRef.current.pasteLabel);
-    clipboardRef.current = a.snapshotSelection(newIds);
+    // Use the just-created objects as the next cascade source. Re-snapshotting
+    // via `adapter.snapshotSelection(newIds)` would read adapter state, but
+    // React-state adapters haven't flushed yet — `itemsRef.current` still
+    // points at the pre-insert array, so the snapshot would come back empty
+    // and the next paste would no-op.
+    clipboardRef.current = { items: created };
     optsRef.current.onPaste?.(newIds);
   }, []);
 

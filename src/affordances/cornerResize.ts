@@ -1,21 +1,11 @@
-import type { Affordance, AffordanceBinding } from './types';
+import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
-import type { DrawCommand } from '../renderer';
-import type { View } from 'core/viewport/view';
 import type { DragChannel } from 'tools/types';
 import type { ResizeAnchor } from 'interactions/gestures/types';
-import {
-  cornerResizeHandles,
-  hitCornerHandle,
-} from 'interactions/gestures/resize/cornerHandles';
-import { viewToTransform } from 'core/viewport/view';
-import { worldToScreen } from 'core/viewport/viewTransform';
 import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/useSelectTool';
 
 export interface CornerResizeAffordanceOptions {
-  /** Hit radius (world-px) for the corner handles. Default 8. Divided by
-   *  view.scale at hit-test time so the radius matches the rendered size
-   *  under zoom. */
+  /** Hit radius (screen-px) for the corner handles. Default 8. */
   handleHitRadius?: number;
   /** Visual handle size (screen-px). Default 8. */
   handleSize?: number;
@@ -34,18 +24,23 @@ export interface CornerResizeScratch {
 const DEFAULT_FILL = '#d4c4a8';
 const DEFAULT_STROKE = '#1a130d';
 
+const stubDrag: DragChannel<CornerResizeScratch> = {
+  onStart: () => 'claim',
+  onMove: () => 'claim',
+  onEnd: () => 'claim',
+  onCancel: () => {},
+};
+
 /**
  * @experimental
  * Corner-handle affordance for resizing the active selection (single
- * member in single-mode; the union AABB in multi-mode). Reads
- * ChromeState; emits screen-space DrawCommands for the four corners;
- * returns a AffordanceBinding whose drag channel routes to useResize against the
- * picked target.
+ * member in single-mode; the union AABB in multi-mode).
  *
- * The drag channel returned here is a no-op stub that claims — it gets
- * replaced by the consuming tool (e.g. useSelectTool wraps the
- * affordance and rebuilds the drag channel to delegate to its useResize
- * controller). This keeps the affordance file dependency-light.
+ * Declares four point regions in the target's local frame; the framework
+ * applies the target's bounds rotation for both paint and hit-test. The
+ * drag channel returned here is a no-op stub that claims — consuming
+ * tools (`useResizeTool`) wrap each region's `bind()` to substitute a
+ * drag channel that drives `useResize`.
  */
 export function createCornerResizeAffordance(
   opts: CornerResizeAffordanceOptions = {},
@@ -57,48 +52,35 @@ export function createCornerResizeAffordance(
     stroke = DEFAULT_STROKE,
   } = opts;
 
-  const stubDrag: DragChannel<CornerResizeScratch> = {
-    onStart: () => 'claim',
-    onMove: () => 'claim',
-    onEnd: () => 'claim',
-    onCancel: () => {},
+  const paint = {
+    kind: 'square' as const,
+    sizePx: handleSize,
+    fill: { color: fill },
+    stroke: { paint: { color: stroke }, width: 1 },
   };
 
   return {
     id: 'corner-resize',
-    render(state: ChromeState, view: View): DrawCommand[] {
+    regions(state: ChromeState): readonly AffordanceRegion[] {
       const target = pickRenderTarget(state);
       if (!target) return [];
-      const t = viewToTransform(view);
-      const corners = cornerResizeHandles(target.bounds);
-      const cmds: DrawCommand[] = [];
-      const half = handleSize / 2;
-      for (const c of corners) {
-        const [sx, sy] = worldToScreen(c.cx, c.cy, t);
-        cmds.push({
-          kind: 'path',
-          path: { kind: 'rect', x: sx - half, y: sy - half, width: handleSize, height: handleSize },
-          fill: { color: fill },
-          stroke: { paint: { color: stroke }, width: 1 },
-        });
-      }
-      return cmds;
-    },
-    hitTest(worldX, worldY, state, view): AffordanceBinding | null {
-      const target = pickRenderTarget(state);
-      if (!target) return null;
-      const radiusWorld = handleHitRadius / view.scale;
-      const corners = cornerResizeHandles(target.bounds);
-      for (const c of corners) {
-        if (hitCornerHandle(c, worldX, worldY, radiusWorld)) {
-          const result: AffordanceBinding<CornerResizeScratch> = {
-            drag: stubDrag,
-            initialScratch: { anchor: c.anchor, targetId: target.id },
-          };
-          return result as AffordanceBinding;
-        }
-      }
-      return null;
+      const b = target.bounds;
+      const corners: { lx: number; ly: number; anchor: ResizeAnchor; tag: string }[] = [
+        { lx: b.x,           ly: b.y,            anchor: { x: 'max', y: 'max' }, tag: 'min-min' },
+        { lx: b.x + b.width, ly: b.y,            anchor: { x: 'min', y: 'max' }, tag: 'max-min' },
+        { lx: b.x,           ly: b.y + b.height, anchor: { x: 'max', y: 'min' }, tag: 'min-max' },
+        { lx: b.x + b.width, ly: b.y + b.height, anchor: { x: 'min', y: 'min' }, tag: 'max-max' },
+      ];
+      return corners.map(({ lx, ly, anchor, tag }) => ({
+        id: `corner-${tag}`,
+        targetId: target.id,
+        shape: { kind: 'point' as const, x: lx, y: ly, hitRadiusPx: handleHitRadius },
+        paint,
+        bind: (): AffordanceBinding => ({
+          drag: stubDrag as unknown as AffordanceBinding['drag'],
+          initialScratch: { anchor, targetId: target.id } satisfies CornerResizeScratch,
+        }),
+      } satisfies AffordanceRegion));
     },
   };
 }

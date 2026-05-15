@@ -70,7 +70,7 @@ export function LayerListDemo() {
   const items: LayerListItem[] = order.map((id) => {
     const n = scene.get(id);
     const data = n?.data as Rect | undefined;
-    return { id, label: data?.color ?? id };
+    return { id, label: data?.color ?? id, swatch: data?.color };
   });
 
   const onReorder = (ids: string[], targetIndex: number) => {

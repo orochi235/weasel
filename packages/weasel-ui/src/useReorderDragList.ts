@@ -7,6 +7,8 @@ export interface LayerListItem {
   /** Locked rows cannot be dragged, cannot be crossed by drops, and
    *  never combine with other rows in a multi-selection. */
   locked?: boolean;
+  /** Optional color swatch rendered before the label. Any CSS color string. */
+  swatch?: string;
 }
 
 export interface UseReorderDragListOptions {

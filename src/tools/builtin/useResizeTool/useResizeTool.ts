@@ -5,7 +5,7 @@ import {
   createCornerResizeAffordance,
   type CornerResizeScratch,
 } from 'affordances/cornerResize';
-import type { Affordance, AffordanceBinding } from 'affordances/types';
+import type { Affordance, AffordanceBinding, AffordanceRegion } from 'affordances/types';
 import type { ResizeAdapter } from 'core/adapters/types';
 import { defineTool } from '../../routing';
 import type { Tool, ToolBounds } from '../../types';
@@ -101,156 +101,142 @@ export function useResizeTool<TNode extends { id: string }, TPose>(
     [handleHitRadius],
   );
 
-  // Wrap the affordance's hitTest to substitute its stub drag channel with
-  // one that delegates to `useResize`. Single-mode delegates directly; the
-  // synthetic `MULTI_RESIZE_TARGET_ID` target snapshots union + per-leaf
-  // poses at hit-time and applies `RECT_POSE_DESCRIPTOR.remapBounds` per
-  // leaf via `adapter.applyOps`. Render returns [] — the affordance layer
-  // composer paints corner glyphs via `cornerAff.render` (`composeAffordanceLayer`
-  // walks the original affordance's render, not the wrapper's). We override
-  // hitTest here, not render, so this wrapper is hit-only.
+  // Wrap each region's `bind()` to substitute the affordance's stub drag
+  // channel with one that delegates to `useResize`. Single-mode delegates
+  // directly; the synthetic `MULTI_RESIZE_TARGET_ID` target snapshots union
+  // + per-leaf poses at hit-time and applies `RECT_POSE_DESCRIPTOR.remapBounds`
+  // per leaf via `adapter.applyOps`. Paint is stripped on each region — the
+  // selection-overlay layer paints corner glyphs; the wrapper is hit-only.
   const cornerAffWrapped: Affordance = useMemo(
     () => ({
       id: cornerAff.id,
-      render: () => [],
-      hitTest: (wx, wy, state, view): AffordanceBinding | null => {
-        const inner = cornerAff.hitTest?.(wx, wy, state, view);
-        if (!inner) return null;
-        const scratch = inner.initialScratch as CornerResizeScratch;
-
-        // Multi-mode: synthesize the resize gesture here in the wrapper.
-        // useResize doesn't natively handle MULTI_RESIZE_TARGET_ID; we
-        // snapshot the union AABB + per-leaf poses at hit-time, then on
-        // each move compute a `dst` union from the anchor + pointer
-        // delta and apply remapBounds per leaf via transient applyOps.
-        // On end, commit one batched Transform op per leaf so undo
-        // collapses the gesture into a single history entry.
-        if (scratch.targetId === MULTI_RESIZE_TARGET_ID) {
-          if (!state.unionBounds || state.selection.length < 2) return null;
-          const startUnion = { ...state.unionBounds };
-          const a = adapterRef.current;
-          // Snapshot every leaf's pose at gesture start.
-          const startPoses = new Map<string, TPose>();
-          for (const id of state.selection) {
-            try {
-              startPoses.set(id, a.getPose(id));
-            } catch {
-              // Skip ids whose pose isn't readable.
-            }
+      regions(state) {
+        const out: AffordanceRegion[] = [];
+        for (const region of cornerAff.regions(state)) {
+          // Single-mode: delegate to useResize via a wrapped bind().
+          if (region.targetId !== MULTI_RESIZE_TARGET_ID) {
+            out.push({
+              ...region,
+              paint: undefined,
+              bind: (): AffordanceBinding => {
+                const inner = region.bind() as AffordanceBinding<CornerResizeScratch>;
+                const scratch = inner.initialScratch!;
+                const binding: AffordanceBinding<CornerResizeScratch> = {
+                  drag: {
+                    onStart: (_e, dctx) => {
+                      resizeRef.current.start(scratch.targetId, scratch.anchor, dctx.worldX, dctx.worldY);
+                      return 'claim';
+                    },
+                    onMove: (_e, dctx) => {
+                      resizeRef.current.move(dctx.worldX, dctx.worldY, dctx.modifiers);
+                      return 'claim';
+                    },
+                    onEnd: () => {
+                      resizeRef.current.end();
+                      return 'claim';
+                    },
+                    onCancel: () => {
+                      resizeRef.current.cancel();
+                    },
+                  },
+                  initialScratch: scratch,
+                };
+                return binding as AffordanceBinding;
+              },
+            });
+            continue;
           }
-          if (startPoses.size === 0) return null;
-
-          // Compute the dst union given the anchor + new pointer position.
-          // The anchor pins the corner OPPOSITE the dragged handle:
-          //   anchor.x='min' → left edge fixed, right edge moves with pointer.
-          //   anchor.x='max' → right edge fixed, left edge moves.
-          // Same for y.
-          const dstFor = (pointerX: number, pointerY: number): {
-            x: number; y: number; width: number; height: number;
-          } => {
-            const left = scratch.anchor.x === 'min' ? startUnion.x : pointerX;
-            const right = scratch.anchor.x === 'min' ? pointerX : startUnion.x + startUnion.width;
-            const top = scratch.anchor.y === 'min' ? startUnion.y : pointerY;
-            const bottom = scratch.anchor.y === 'min' ? pointerY : startUnion.y + startUnion.height;
-            return {
-              x: Math.min(left, right),
-              y: Math.min(top, bottom),
-              width: Math.abs(right - left),
-              height: Math.abs(bottom - top),
-            };
-          };
-
-          // Apply the per-leaf remap from startUnion → dst via the kit's
-          // pose descriptor. RECT_POSE_DESCRIPTOR works for any pose
-          // shape that's structurally Bounds-like — the demos we ship
-          // all use rect poses, so this is fine for v1.
-          const applyAt = (pointerX: number, pointerY: number, transient: boolean) => {
-            const dst = dstFor(pointerX, pointerY);
-            const ops = [];
-            for (const [id, from] of startPoses) {
-              const to = RECT_POSE_DESCRIPTOR.remapBounds(
-                from as unknown as { x: number; y: number; width: number; height: number },
-                startUnion,
-                dst,
-              ) as unknown as TPose;
-              ops.push(createTransformOp<TPose>({ id, from, to }));
-            }
-            if (ops.length === 0) return;
-            // IMPORTANT: invoke as method calls so `this` binds to the
-            // adapter — `sceneToAdapter`'s `applyOps` reads `this.setPose`
-            // inside its `scene.batch` callback. Extracting the function
-            // and calling it detached throws "Cannot read properties of
-            // undefined (reading 'setPose')" mid-onEnd.
-            const aa = a as {
-              applyOps?: (ops: ReturnType<typeof createTransformOp>[], label?: string) => void;
-            };
-            if (transient) {
-              aa.applyOps?.(ops);
-            } else {
-              aa.applyOps?.(ops, 'Resize');
-            }
-          };
-
-          let lastPointer = { x: 0, y: 0 };
-          const result: AffordanceBinding<CornerResizeScratch> = {
-            drag: {
-              onStart: (_e, dctx) => {
-                lastPointer = { x: dctx.worldX, y: dctx.worldY };
-                // Don't apply on start — the pointer is at the handle
-                // corner, so dst === startUnion (no-op).
-                return 'claim';
-              },
-              onMove: (_e, dctx) => {
-                lastPointer = { x: dctx.worldX, y: dctx.worldY };
-                applyAt(dctx.worldX, dctx.worldY, /* transient */ true);
-                return 'claim';
-              },
-              onEnd: (_e, _dctx) => {
-                // Commit the final pose via applyOps for a single undo
-                // entry. Transient writes during move have already landed;
-                // this re-applies the same final transform through the
-                // history path.
-                applyAt(lastPointer.x, lastPointer.y, /* transient */ false);
-                return 'claim';
-              },
-              onCancel: () => {
-                // Roll back to the start poses via a transient apply.
+          // Multi-mode: synthesize the resize gesture here. useResize doesn't
+          // natively handle MULTI_RESIZE_TARGET_ID; we snapshot the union
+          // AABB + per-leaf poses at bind-time, then on each move compute a
+          // `dst` union from the anchor + pointer delta and apply remapBounds
+          // per leaf via transient applyOps. On end, commit one batched
+          // Transform op per leaf so undo collapses the gesture into a single
+          // history entry. The whole snapshot + closure construction lives
+          // inside `bind()` so paint frames don't pay for it.
+          if (!state.unionBounds || state.selection.length < 2) continue;
+          const stateAtRegions = state;
+          out.push({
+            ...region,
+            paint: undefined,
+            bind: (): AffordanceBinding => {
+              const inner = region.bind() as AffordanceBinding<CornerResizeScratch>;
+              const scratch = inner.initialScratch!;
+              const startUnion = { ...stateAtRegions.unionBounds! };
+              const a = adapterRef.current;
+              const startPoses = new Map<string, TPose>();
+              for (const id of stateAtRegions.selection) {
+                try {
+                  startPoses.set(id, a.getPose(id));
+                } catch {
+                  // Skip ids whose pose isn't readable.
+                }
+              }
+              const dstFor = (pointerX: number, pointerY: number): {
+                x: number; y: number; width: number; height: number;
+              } => {
+                const left = scratch.anchor.x === 'min' ? startUnion.x : pointerX;
+                const right = scratch.anchor.x === 'min' ? pointerX : startUnion.x + startUnion.width;
+                const top = scratch.anchor.y === 'min' ? startUnion.y : pointerY;
+                const bottom = scratch.anchor.y === 'min' ? pointerY : startUnion.y + startUnion.height;
+                return {
+                  x: Math.min(left, right),
+                  y: Math.min(top, bottom),
+                  width: Math.abs(right - left),
+                  height: Math.abs(bottom - top),
+                };
+              };
+              const applyAt = (pointerX: number, pointerY: number, transient: boolean) => {
+                const dst = dstFor(pointerX, pointerY);
                 const ops = [];
                 for (const [id, from] of startPoses) {
-                  ops.push(createTransformOp<TPose>({ id, from, to: from }));
+                  const to = RECT_POSE_DESCRIPTOR.remapBounds(
+                    from as unknown as { x: number; y: number; width: number; height: number },
+                    startUnion,
+                    dst,
+                  ) as unknown as TPose;
+                  ops.push(createTransformOp<TPose>({ id, from, to }));
                 }
-                if (ops.length > 0) {
-                  (a as { applyOps?: (ops: ReturnType<typeof createTransformOp>[]) => void }).applyOps?.(ops);
-                }
-              },
+                if (ops.length === 0) return;
+                const aa = a as {
+                  applyOps?: (ops: ReturnType<typeof createTransformOp>[], label?: string) => void;
+                };
+                if (transient) aa.applyOps?.(ops);
+                else aa.applyOps?.(ops, 'Resize');
+              };
+              let lastPointer = { x: 0, y: 0 };
+              const binding: AffordanceBinding<CornerResizeScratch> = {
+                drag: {
+                  onStart: (_e, dctx) => {
+                    lastPointer = { x: dctx.worldX, y: dctx.worldY };
+                    return 'claim';
+                  },
+                  onMove: (_e, dctx) => {
+                    lastPointer = { x: dctx.worldX, y: dctx.worldY };
+                    applyAt(dctx.worldX, dctx.worldY, /* transient */ true);
+                    return 'claim';
+                  },
+                  onEnd: () => {
+                    applyAt(lastPointer.x, lastPointer.y, /* transient */ false);
+                    return 'claim';
+                  },
+                  onCancel: () => {
+                    const ops = [];
+                    for (const [id, from] of startPoses) {
+                      ops.push(createTransformOp<TPose>({ id, from, to: from }));
+                    }
+                    if (ops.length > 0) {
+                      (a as { applyOps?: (ops: ReturnType<typeof createTransformOp>[]) => void }).applyOps?.(ops);
+                    }
+                  },
+                },
+                initialScratch: scratch,
+              };
+              return binding as AffordanceBinding;
             },
-            initialScratch: scratch,
-          };
-          return result as AffordanceBinding;
+          });
         }
-
-        // Single-selection path: delegate to useResize.
-        const result: AffordanceBinding<CornerResizeScratch> = {
-          drag: {
-            onStart: (_e, dctx) => {
-              resizeRef.current.start(scratch.targetId, scratch.anchor, dctx.worldX, dctx.worldY);
-              return 'claim';
-            },
-            onMove: (_e, dctx) => {
-              resizeRef.current.move(dctx.worldX, dctx.worldY, dctx.modifiers);
-              return 'claim';
-            },
-            onEnd: (_e, _dctx) => {
-              resizeRef.current.end();
-              return 'claim';
-            },
-            onCancel: () => {
-              resizeRef.current.cancel();
-            },
-          },
-          initialScratch: scratch,
-        };
-        return result as AffordanceBinding;
+        return out;
       },
     }),
     [cornerAff],

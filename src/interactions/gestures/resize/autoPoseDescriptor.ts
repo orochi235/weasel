@@ -13,7 +13,11 @@ export function isPathLike(p: unknown): p is Path {
 
 /** Per-call dispatch: if the pose looks like a Path, route to
  *  `pathPoseDescriptor`; otherwise treat as a plain rect pose. Avoids forcing
- *  demos with Path TPose to wire `geometry={pathPoseDescriptor}` explicitly. */
+ *  demos with Path TPose to wire `geometry={pathPoseDescriptor}` explicitly.
+ *  `getRotation` surfaces a `pose.rotation` field on non-Path poses so demos
+ *  using rect-with-rotation shapes (e.g. `RotatedPose`) don't have to wire
+ *  `geometry={ROTATED_POSE_DESCRIPTOR}` just to get rotated selection chrome
+ *  and rotation-aware corner hit-tests. */
 export const AUTO_POSE_DESCRIPTOR: PoseDescriptor<unknown> = {
   getBounds: (p) => isPathLike(p)
     ? pathPoseDescriptor.getBounds(p)
@@ -27,4 +31,9 @@ export const AUTO_POSE_DESCRIPTOR: PoseDescriptor<unknown> = {
   intersectsRect: (p, rect) => isPathLike(p)
     ? pathPoseDescriptor.intersectsRect!(p, rect)
     : RECT_POSE_DESCRIPTOR.intersectsRect!(p as { x: number; y: number; width: number; height: number }, rect),
+  getRotation: (p) => {
+    if (isPathLike(p)) return 0;
+    const r = (p as { rotation?: unknown }).rotation;
+    return typeof r === 'number' ? r : 0;
+  },
 };
