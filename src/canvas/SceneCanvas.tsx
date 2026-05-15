@@ -53,6 +53,7 @@ import { ActionsProviderIfRoot } from './SceneCanvas/ActionsProviderIfRoot';
 import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
 import { useViewportTools } from './SceneCanvas/useViewportTools';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
+import { useBuiltinShapeTools, type BuiltinShapeToolId } from './SceneCanvas/useBuiltinShapeTools';
 import type { StandardActionsDeps, StandardActionDefaults } from 'interactions/actions/resolveActions';
 
 /** Default size in CSS pixels for selection corner-handles AND their
@@ -140,7 +141,23 @@ export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
 
 /** Built-in tool ids SceneCanvas knows how to mount when no `tools` prop
  *  is supplied. Pass a subset via `defaultTools` to slim the registered set. */
-export type BuiltinToolId = 'select' | 'resize' | 'rotate' | 'hand';
+export type BuiltinToolId =
+  | 'select' | 'resize' | 'rotate' | 'hand'
+  | BuiltinShapeToolId;
+
+/** Named preset tool collections for the `toolBundle` prop. Maps to a
+ *  `BuiltinToolId[]` consumed by SceneCanvas's internal `useTools`. */
+export type ToolBundle = 'minimal' | 'standard' | 'everything';
+
+const BUNDLE_TOOLS: Record<ToolBundle, readonly BuiltinToolId[]> = {
+  minimal: ['select', 'hand'],
+  standard: ['select', 'resize', 'rotate', 'hand', 'rect', 'ellipse', 'line', 'pencil'],
+  everything: [
+    'select', 'resize', 'rotate', 'hand',
+    'rect', 'ellipse', 'line', 'polygon', 'star', 'pencil',
+    'lasso', 'text', 'clone',
+  ],
+};
 
 export type SceneCanvasProps<TData, TLayer extends string, TPose> =
   Omit<
@@ -207,11 +224,21 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     tools?: ToolsApi;
 
     /**
+     * Named preset for the built-in tool set: `'minimal'` (select + hand),
+     * `'standard'` (select + resize + rotate + hand + rect + ellipse +
+     * line + pencil), or `'everything'` (every built-in including polygon,
+     * star, lasso, text, clone). When set, defines the starting set;
+     * `defaultTools` (if also passed) overrides it. Ignored when the
+     * consumer supplies their own `tools` prop.
+     */
+    toolBundle?: ToolBundle;
+
+    /**
      * Which built-in tools SceneCanvas registers in its internal `useTools`.
      * Default: `['select', 'resize', 'rotate']` (plus `'hand'` when the
      * `viewport` feature is on). Pass a smaller array to slim — e.g.
-     * `['select']` for move-only. Ignored when the consumer supplies their
-     * own `tools` prop (the escape hatch path).
+     * `['select']` for move-only. Wins over `toolBundle` when both are
+     * passed. Ignored when the consumer supplies their own `tools` prop.
      */
     defaultTools?: readonly BuiltinToolId[];
 
@@ -304,6 +331,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selection: selectionProp,
     selectionOptions,
     tools: toolsProp,
+    toolBundle,
     defaultTools,
     ambient,
     viewport,
@@ -402,15 +430,20 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ? [keyZoomTool, wheelZoomTool]
     : [];
 
-  // Resolve which built-ins to mount. When the consumer omits `defaultTools`,
-  // preserve previous behavior: all three pointer tools (select/resize/rotate)
-  // plus `hand` when the viewport feature is engaged.
-  const requestedTools: readonly BuiltinToolId[] = defaultTools ?? (
-    viewportRegistered
+  // Resolve which built-ins to mount. Precedence: explicit `defaultTools` >
+  // `toolBundle` preset > legacy default (select/resize/rotate, plus hand
+  // when viewport is engaged).
+  const requestedTools: readonly BuiltinToolId[] =
+    defaultTools
+    ?? (toolBundle ? BUNDLE_TOOLS[toolBundle] : null)
+    ?? (viewportRegistered
       ? ['select', 'resize', 'rotate', 'hand']
-      : ['select', 'resize', 'rotate']
-  );
+      : ['select', 'resize', 'rotate']);
   const wants = (id: BuiltinToolId): boolean => requestedTools.includes(id);
+
+  // Synthesize the shape/lasso/text/clone tools — always called per React
+  // rules-of-hooks; only registered below when requested.
+  const shapeTools = useBuiltinShapeTools({ scene, adapter });
 
   // WHY ambient (not registry) for resize+rotate: `useTools.getActiveOverlays()`
   // returns only active + hotkey + ambient overlays. The Canvas affordance
@@ -431,6 +464,17 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // ensures a consumer who passes `defaultTools: ['select','hand']` without
   // enabling the viewport feature still gets a clean registry (no hand entry).
   if (wants('hand') && viewportRegistered) internalRegistry.hand = handTool;
+  // Shape / lasso / text / clone tools — registry entries with built-in
+  // keybindings (R/E/G/N/L/T) routed via `useKeybindings`.
+  if (wants('rect'))    internalRegistry.rect    = shapeTools.rect;
+  if (wants('ellipse')) internalRegistry.ellipse = shapeTools.ellipse;
+  if (wants('line'))    internalRegistry.line    = shapeTools.line;
+  if (wants('polygon')) internalRegistry.polygon = shapeTools.polygon;
+  if (wants('star'))    internalRegistry.star    = shapeTools.star;
+  if (wants('pencil'))  internalRegistry.pencil  = shapeTools.pencil;
+  if (wants('lasso'))   internalRegistry.lasso   = shapeTools.lasso;
+  if (wants('text'))    internalRegistry.text    = shapeTools.text;
+  if (wants('clone'))   internalRegistry.clone   = shapeTools.clone;
 
   const internalTools = useTools({
     active: 'select',

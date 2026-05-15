@@ -642,7 +642,7 @@ export type {
   LayerSlotValue,
   StandardSlotConfig,
 } from './canvas/Canvas';
-export type { BuiltinToolId } from './canvas/SceneCanvas';
+export type { BuiltinToolId, ToolBundle } from './canvas/SceneCanvas';
 export type {
   SceneToAdapterOptions,
   SceneAdapterSelection,
