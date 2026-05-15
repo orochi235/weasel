@@ -17,6 +17,10 @@ When building new tools, read these first:
 - **`src/tools/builtin/useHandTool.ts`** — simplest possible tool structure: scratch, drag channel, view mutation via `ctx.setView`. No ops, no adapter. Start here.
 - **`src/tools/builtin/useRectTool.ts`** — canonical pattern for tools that create scene objects: drag gesture via `useDragRect`, undoable commit via `ctx.applyBatch([createInsertOp(...)])`. The `create` factory lives on the tool, not on the adapter.
 
+## Demo conventions
+
+Demos under `demo/demos/` are **terse and single-purpose** — each one exists to show a specific kit feature in the smallest plausible form. If a demo accumulates code that isn't directly pertinent to the feature it's demonstrating (custom hit-testers when defaults exist, hand-rolled adapter wiring, per-consumer index inversions), treat that as a signal that the kit's defaults / helpers should absorb the boilerplate. Being able to trim a demo or a simple consumer use-case is a legitimate driver for kit changes — there's limited value in showing consumers how to reimplement parts of the kit they could just find in source.
+
 ## Key concepts
 
 - **Tools** handle gestures. They read `ToolCtx` (world coords, modifiers, selection, view) and either mutate the viewport (`ctx.setView`) or write to the scene (`ctx.applyBatch` + ops).

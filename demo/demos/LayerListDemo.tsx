@@ -1,8 +1,5 @@
 import { useMemo } from 'react';
 import {
-  asNodeId,
-  createMoveToIndexOp,
-  dispatchApplyBatch,
   SceneCanvas,
   sceneToAdapter,
   useScene,
@@ -10,11 +7,10 @@ import {
   useSelectTool,
   useTools,
 } from '@orochi235/weasel';
-import type { LayerListItem } from '@orochi235/weasel-ui';
-// `LayerList` is a Swillustrator-side specialization (kit/app split):
-// it lives under `apps/swillustrator/src/ui/`. Imported via relative path
-// because both directories are part of this monorepo.
-import { LayerList } from '../../apps/swillustrator/src/ui/LayerList';
+// `LayerList` + `useLayerList` are Swillustrator-side specializations
+// (kit/app split): they live under `apps/swillustrator/src/ui/`. Imported
+// via relative path because both directories are part of this monorepo.
+import { LayerList, useLayerList } from '../../apps/swillustrator/src/ui/LayerList';
 import type { DrawCommand } from '../../src/renderer';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
@@ -31,59 +27,18 @@ const INITIAL: Rect[] = [
 export function LayerListDemo() {
   const scene = useScene<Rect>({ items: INITIAL });
   const selection = useSelection({ mode: 'multi' });
-
   const adapter = useMemo(
     () => sceneToAdapter(scene, { selection }),
     [scene, selection],
   );
 
-  const pickEvery = (worldX: number, worldY: number): string[] => {
-    const hits: string[] = [];
-    for (const id of scene.renderOrder()) {
-      const n = scene.get(id);
-      if (!n) continue;
-      const p = n.pose as Rect;
-      if (worldX >= p.x && worldX <= p.x + p.width
-          && worldY >= p.y && worldY <= p.y + p.height) hits.push(id);
-    }
-    return hits;
-  };
-
-  const boundsOf = (id: string) => {
-    const n = scene.get(asNodeId(id));
-    if (!n) return null;
-    const p = n.pose as Rect;
-    return { x: p.x, y: p.y, width: p.width, height: p.height };
-  };
-
-  const select = useSelectTool(adapter, {
-    pickEvery, boundsOf,
-    getSelection: () => selection.current,
-  });
+  const select = useSelectTool(adapter, { getSelection: () => selection.current });
   const tools = useTools({ active: 'select', registry: { select } });
 
-  // Derive items from scene render order — top of stack first.
-  // renderOrder is bottom→top; reverse so index 0 is top. Computed each
-  // render — scene's object identity is stable across reorders, so a
-  // useMemo keyed on [scene] would serve stale items.
-  const order = [...scene.renderOrder()].reverse();
-  const items: LayerListItem[] = order.map((id) => {
-    const n = scene.get(id);
-    const data = n?.data as Rect | undefined;
-    return { id, label: data?.color ?? id, swatch: data?.color };
+  const layerList = useLayerList({
+    scene, selection, adapter,
+    itemFor: (n) => ({ label: (n.data as Rect).color, swatch: (n.data as Rect).color }),
   });
-
-  const onReorder = (ids: string[], targetIndex: number) => {
-    // LayerList index is top-down (0 = front). Scene order is bottom-up.
-    // Convert: scene-index = total - targetIndex.
-    const total = [...scene.renderOrder()].length;
-    const sceneIndex = total - targetIndex;
-    dispatchApplyBatch(
-      adapter,
-      [createMoveToIndexOp({ ids, parentId: null, index: Math.max(0, sceneIndex - ids.length) })],
-      'Reorder',
-    );
-  };
 
   return (
     <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
@@ -104,12 +59,7 @@ export function LayerListDemo() {
           },
         }}
       />
-      <LayerList
-        items={items}
-        selectedIds={selection.current.map((id) => String(id))}
-        onSelect={(ids) => selection.set(ids.map(asNodeId))}
-        onReorder={onReorder}
-      />
+      <LayerList {...layerList} />
     </div>
   );
 }

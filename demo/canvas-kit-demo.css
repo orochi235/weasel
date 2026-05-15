@@ -60,18 +60,15 @@ a:hover { text-decoration: underline; }
   text-align: center;
 }
 
-/* Rainbow gradient on the "easel" half of the wordmark — starts at the
-   current accent green and walks the spectrum through the divide-colors
-   palette already used elsewhere (see BooleanOpsDemo). */
+/* Warm gradient on the "easel" half of the wordmark — green → yellow → red,
+   drawn from the divide-colors palette already used elsewhere
+   (see BooleanOpsDemo). */
 .ckd-sidebar-rainbow {
   background-image: linear-gradient(
     90deg,
     #7fb069 0%,
-    #d4c469 18%,
-    #d4a574 38%,
-    #d47a7a 58%,
-    #a48bd4 78%,
-    #7ab8d4 100%
+    #d4c469 50%,
+    #d47a7a 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
