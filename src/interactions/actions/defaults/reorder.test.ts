@@ -26,9 +26,9 @@ function makeAdapter(): FakeAdapter {
 }
 
 describe('defaultReorderActions', () => {
-  it('returns 2 actions: reorder.forward, reorder.backward', () => {
+  it('returns 4 actions: reorder.forward / backward / front / back', () => {
     const acts = defaultReorderActions({ getSelection: () => [asNodeId('a')], applyOps: vi.fn() });
-    expect(acts.map(a => a.id).sort()).toEqual(['reorder.backward', 'reorder.forward']);
+    expect(acts.map(a => a.id).sort()).toEqual(['reorder.back', 'reorder.backward', 'reorder.forward', 'reorder.front']);
   });
   it('forward binding = Mod+]', () => {
     const a = defaultReorderActions({ getSelection: () => [asNodeId('a')], applyOps: vi.fn() }).find(x => x.id === 'reorder.forward')!;

@@ -78,9 +78,9 @@ export function useReorder(
   const reg = useActionsRegistry();
   const enable = options.enableKeyboard ?? true;
 
-  // Provider path: register forward/backward through the registry. Front/back
-  // variants stay on the always-on useKeybinding fallback below — the v1
-  // single-binding-per-Action limit doesn't model the Shift-modified pair.
+  // Provider path: register all four reorder actions through the registry
+  // (forward / backward / front / back). The standalone-keybinding fallback
+  // below only fires when no provider is in scope.
   useEffect(() => {
     if (!reg || !enable) return;
     const actions = defaultReorderActions({
@@ -102,13 +102,12 @@ export function useReorder(
   }, [reg, enable]);
 
   // Browsers sometimes report Shift+] as '}' / Shift+[ as '{'; accept both.
-  // forward/backward route through the registry when in a provider scope.
+  // All four routes go through the registry when in a provider scope; the
+  // fallback useKeybindings only fire when no provider is mounted.
   useKeybinding({ key: [']', '}'], mod: true, enabled: enable && reg == null }, () => bringForward());
   useKeybinding({ key: ['[', '{'], mod: true, enabled: enable && reg == null }, () => sendBackward());
-  // front/back: registry doesn't model these in v1; keep them always-on so
-  // Shift+Mod+] / Shift+Mod+[ still work whether or not a provider is mounted.
-  useKeybinding({ key: [']', '}'], mod: true, shift: true, enabled: enable }, () => bringToFront());
-  useKeybinding({ key: ['[', '{'], mod: true, shift: true, enabled: enable }, () => sendToBack());
+  useKeybinding({ key: [']', '}'], mod: true, shift: true, enabled: enable && reg == null }, () => bringToFront());
+  useKeybinding({ key: ['[', '{'], mod: true, shift: true, enabled: enable && reg == null }, () => sendToBack());
 
   return { bringForward, sendBackward, bringToFront, sendToBack };
 }

@@ -37,7 +37,7 @@ function makeAdapter(): FakeAdapter {
 }
 
 describe('useReorder back-compat with ActionsProvider', () => {
-  it('registers reorder.forward and reorder.backward in provider; unregisters on unmount', () => {
+  it('registers reorder.forward / backward / front / back in provider; unregisters on unmount', () => {
     let regSnap: ActionsRegistry | null = null;
     function Probe() { const r = useActionsRegistry(); useEffect(() => { regSnap = r; }); return null; }
     const adapter = makeAdapter();
@@ -49,7 +49,7 @@ describe('useReorder back-compat with ActionsProvider', () => {
       </ActionsProvider>,
     );
     const ids = regSnap!.list().filter(a => a.id.startsWith('reorder.')).map(a => a.id).sort();
-    expect(ids).toEqual(['reorder.backward', 'reorder.forward']);
+    expect(ids).toEqual(['reorder.back', 'reorder.backward', 'reorder.forward', 'reorder.front']);
     rerender(<ActionsProvider><Probe /></ActionsProvider>);
     expect(regSnap!.list().filter(a => a.id.startsWith('reorder.'))).toHaveLength(0);
     unmount();

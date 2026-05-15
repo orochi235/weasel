@@ -12,13 +12,15 @@ export interface ReorderDeps {
 
 /**
  * @experimental
- * Factory for the two default reorder Actions: `reorder.forward` (Mod+])
- * and `reorder.backward` (Mod+[). Front/back variants are deferred — they
- * collide with v1's single-binding-per-Action limit. Use `useReorder` for
- * those (it keeps the standalone-keybinding fallback always-on for
- * Shift+Mod+] / Shift+Mod+[).
+ * Factory for the four default reorder Actions:
+ *   - `reorder.forward`  (⌘+])      — bring one step forward
+ *   - `reorder.backward` (⌘+[)      — send one step backward
+ *   - `reorder.front`    (⇪+⌘+])   — bring all the way to the front
+ *   - `reorder.back`     (⇪+⌘+[)   — send all the way to the back
  */
 export function defaultReorderActions(deps: ReorderDeps): Action[] {
+  const requireSelection = () =>
+    (deps.getSelection().length > 0 ? true : ActionDisabledReason.SelectionRequired);
   return [
     {
       id: 'reorder.forward',
@@ -29,7 +31,7 @@ export function defaultReorderActions(deps: ReorderDeps): Action[] {
         if (ids.length === 0) return;
         deps.applyOps([createReorderOp({ ids, direction: 'forward' })], 'Bring forward');
       },
-      enabled: () => (deps.getSelection().length > 0 ? true : ActionDisabledReason.SelectionRequired),
+      enabled: requireSelection,
     },
     {
       id: 'reorder.backward',
@@ -40,7 +42,29 @@ export function defaultReorderActions(deps: ReorderDeps): Action[] {
         if (ids.length === 0) return;
         deps.applyOps([createReorderOp({ ids, direction: 'backward' })], 'Send backward');
       },
-      enabled: () => (deps.getSelection().length > 0 ? true : ActionDisabledReason.SelectionRequired),
+      enabled: requireSelection,
+    },
+    {
+      id: 'reorder.front',
+      label: 'Bring to Front',
+      defaultBinding: { key: [']', '}'], mod: true, shift: true },
+      run: () => {
+        const ids = deps.getSelection();
+        if (ids.length === 0) return;
+        deps.applyOps([createReorderOp({ ids, direction: 'front' })], 'Bring to front');
+      },
+      enabled: requireSelection,
+    },
+    {
+      id: 'reorder.back',
+      label: 'Send to Back',
+      defaultBinding: { key: ['[', '{'], mod: true, shift: true },
+      run: () => {
+        const ids = deps.getSelection();
+        if (ids.length === 0) return;
+        deps.applyOps([createReorderOp({ ids, direction: 'back' })], 'Send to back');
+      },
+      enabled: requireSelection,
     },
   ];
 }

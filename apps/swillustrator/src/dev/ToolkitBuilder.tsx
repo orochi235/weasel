@@ -54,7 +54,6 @@ import {
   type AnyTool,
   type ClipboardSnapshot,
   type Group,
-  type KeyBinding,
   type NodeId,
   type Path,
   type PolygonPath,
@@ -67,6 +66,7 @@ import {
   type RegistryEntry,
   type ToolDef,
 } from '@orochi235/weasel/routing';
+import { formatShortcutParts } from '../ui/ToolPalette/formatShortcut';
 import s from './ToolkitBuilder.module.css';
 
 interface ShapeData { path?: Path; text?: string; fill: string; stroke?: string; strokeWidth?: number }
@@ -133,6 +133,21 @@ function writeHash(tools: Set<string>, actions: Set<string>) {
 export function ToolkitBuilder() {
   const [enabled, setEnabled] = useState(() => parseHash(window.location.hash));
   useEffect(() => { writeHash(enabled.tools, enabled.actions); }, [enabled]);
+
+  // Measure the canvas container so SceneCanvas's fixed-size prop can flex.
+  const canvasContainerRef = useRef<HTMLDivElement | null>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 520, height: 480 });
+  useEffect(() => {
+    const el = canvasContainerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const cr = entries[0]?.contentRect;
+      if (!cr) return;
+      setCanvasSize({ width: Math.floor(cr.width), height: Math.max(360, Math.floor(cr.width * 0.66)) });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const toggle = (group: 'tool' | 'action', id: string) => {
     setEnabled((cur) => {
@@ -430,10 +445,10 @@ export function ToolkitBuilder() {
             </label>
           ))}
         </aside>
-        <main className={s.canvas}>
+        <main className={s.canvas} ref={canvasContainerRef}>
           <SceneCanvas
-            width={520}
-            height={360}
+            width={canvasSize.width}
+            height={canvasSize.height}
             className={s.scene}
             scene={scene}
             selection={selection}
@@ -455,7 +470,7 @@ export function ToolkitBuilder() {
                   <tr key={a.id}>
                     <td><code>{a.id}</code></td>
                     <td>{a.label}</td>
-                    <td><code>{formatBinding(a.defaultBinding)}</code></td>
+                    <td><Keys parts={formatShortcutParts(a.defaultBinding)} /></td>
                   </tr>
                 ))}
                 {actions.length === 0 && (
@@ -475,7 +490,7 @@ export function ToolkitBuilder() {
                     <td>{r.phase}</td>
                     <td>{r.gesture}</td>
                     <td>{r.target}</td>
-                    <td>{r.modifiers}</td>
+                    <td><Keys parts={routingModsToParts(r.modifiers)} /></td>
                   </tr>
                 ))}
                 {routeRegistry.length === 0 && (
@@ -492,7 +507,10 @@ export function ToolkitBuilder() {
                 <ul className={s.conflicts}>
                   {conflicts.map((c, i) => (
                     <li key={i}>
-                      <code>{c.phase}.{c.gesture}[{c.target}]{c.modifiers !== 'default' && `:${c.modifiers}`}</code>
+                      <code>{c.phase}.{c.gesture}[{c.target}]</code>
+                      {c.modifiers !== 'default' && (
+                        <> <Keys parts={routingModsToParts(c.modifiers)} /></>
+                      )}
                       {' '}claimed by {c.toolIds.join(', ')}
                     </li>
                   ))}
@@ -506,13 +524,22 @@ export function ToolkitBuilder() {
   );
 }
 
-function formatBinding(b: KeyBinding | undefined): string {
-  if (!b) return '—';
-  const parts: string[] = [];
-  if (b.mod) parts.push('Mod');
-  if (b.shift === true) parts.push('Shift');
-  if (b.alt) parts.push('Alt');
-  const keyStr = Array.isArray(b.key) ? b.key.join('/') : (b.key as string);
-  parts.push(keyStr);
-  return parts.join('+');
+/** Convert routing's canonical modifier key ('mod' | 'shift' | 'alt' |
+ *  'mod+shift' | 'default' | ...) to per-key chip parts that match the
+ *  vocabulary `formatShortcutParts` uses for keybindings. */
+function routingModsToParts(mods: string): readonly string[] | undefined {
+  if (!mods || mods === 'default') return undefined;
+  return mods
+    .split('+')
+    .map((m) => (m === 'mod' ? '⌘' : m === 'shift' ? '⇪' : m === 'alt' ? '⌥' : m));
+}
+
+/** Render an array of keystroke chips with key-cap styling. */
+function Keys({ parts }: { parts: readonly string[] | undefined }) {
+  if (!parts || parts.length === 0) return <span className={s.keysEmpty}>—</span>;
+  return (
+    <span className={s.keys}>
+      {parts.map((p, i) => <kbd key={i} className={s.key}>{p}</kbd>)}
+    </span>
+  );
 }

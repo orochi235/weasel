@@ -13,7 +13,7 @@
 
 .layout {
   display: grid;
-  grid-template-columns: 220px 1fr 380px;
+  grid-template-columns: 220px minmax(0, 1fr) minmax(420px, 32%);
   gap: 16px;
   align-items: start;
 }
@@ -27,8 +27,8 @@
   padding: 12px;
 }
 
-.canvas { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
-.scene { background: #6a6a6a; border-radius: 4px; }
+.canvas { display: flex; flex-direction: column; align-items: stretch; gap: 8px; min-width: 0; }
+.scene { background: #6a6a6a; border-radius: 4px; width: 100%; height: auto; max-width: 100%; }
 .hint { margin: 0; font-size: 12px; color: var(--wzl-muted, #a59685); }
 
 .sectionTitle {
@@ -66,6 +66,24 @@
 .table code { font-size: 11px; }
 
 .empty { color: var(--wzl-muted, #a59685); font-style: italic; padding: 8px 0; text-align: center; }
+
+/* Keystroke "key cap" styling — each modifier and key in its own bordered chip. */
+.keys { display: inline-flex; gap: 3px; align-items: center; flex-wrap: wrap; }
+.keysEmpty { color: var(--wzl-muted, #a59685); }
+.key {
+  display: inline-block;
+  min-width: 16px;
+  padding: 1px 5px;
+  border: 1px solid var(--wzl-panel-border, #4a3c2e);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  background: var(--wzl-bg, #1e1610);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--wzl-fg, #d4c4a8);
+}
 
 .conflicts { margin: 0; padding-left: 16px; font-size: 12px; }
 .conflicts li { margin: 4px 0; }

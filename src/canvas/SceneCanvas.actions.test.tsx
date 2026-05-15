@@ -59,7 +59,7 @@ describe('SceneCanvas actions integration', () => {
     expect(last).toContain('escape');
     expect(last).toContain('duplicate');
     expect(last.filter(i => i.startsWith('nudge.'))).toHaveLength(8);
-    expect(last.filter(i => i.startsWith('reorder.'))).toHaveLength(2);
+    expect(last.filter(i => i.startsWith('reorder.'))).toHaveLength(4);
   });
 
   it('actions={null} → registry empty', () => {

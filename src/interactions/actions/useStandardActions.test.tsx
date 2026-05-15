@@ -77,9 +77,9 @@ describe('useStandardActions', () => {
     expect(last).toContain('escape');
     expect(last).toContain('duplicate');
     expect(last.filter((i) => i.startsWith('nudge.'))).toHaveLength(8);
-    expect(last.filter((i) => i.startsWith('reorder.'))).toHaveLength(2);
-    // 1 (selectAll) + 1 (escape) + 1 (duplicate) + 8 (nudge×8) + 2 (reorder×2) = 13
-    expect(last).toHaveLength(13);
+    expect(last.filter((i) => i.startsWith('reorder.'))).toHaveLength(4);
+    // 1 (selectAll) + 1 (escape) + 1 (duplicate) + 8 (nudge×8) + 4 (reorder×4) = 15
+    expect(last).toHaveLength(15);
   });
 
   it('actions={null} → registers nothing', () => {
