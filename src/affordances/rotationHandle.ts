@@ -9,7 +9,6 @@ import {
 } from 'interactions/gestures/rotate/handle';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
-import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/useSelectTool';
 import { PATH_L, PATH_M } from 'features/paths/types';
 
 export interface RotationAffordanceOptions {
@@ -32,7 +31,7 @@ export interface RotationAffordanceOptions {
 }
 
 export interface RotationScratch {
-  /** Id of the rotation target. In multi-mode this is `MULTI_RESIZE_TARGET_ID`. */
+  /** Id of the rotation target — always a single selection id today. */
   targetId: string;
 }
 
@@ -149,9 +148,10 @@ function rotateAround(
 }
 
 function pickTarget(state: ChromeState): { id: string; bounds: Bounds } | null {
-  if (state.multiActive && state.unionBounds) {
-    return { id: MULTI_RESIZE_TARGET_ID, bounds: state.unionBounds };
-  }
+  // Rotation handle only renders for a single primary selection — rotating
+  // a multi-selection would need a defined pivot and per-object pose math
+  // that the affordance contract doesn't carry today. Multi-selection
+  // resize still fires (see corner-resize affordance), just not rotate.
   if (state.selection.length === 1) {
     const id = state.selection[0];
     const b = state.boundsOf(id);

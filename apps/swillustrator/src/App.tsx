@@ -991,15 +991,20 @@ export function App() {
   // after that, the user drives panning via wheelPan / hand tool, so we
   // don't auto-re-center on resize.
   const didInitialCenter = useRef(false);
+  const centerOnDoc = useCallback((scale = 1) => {
+    if (hostSize.width <= 0 || hostSize.height <= 0) return;
+    setView({
+      x: doc.size.width / 2 - hostSize.width / (2 * scale),
+      y: doc.size.height / 2 - hostSize.height / (2 * scale),
+      scale,
+    });
+  }, [hostSize.width, hostSize.height, doc.size.width, doc.size.height]);
   useLayoutEffect(() => {
     if (didInitialCenter.current) return;
     if (hostSize.width <= 0 || hostSize.height <= 0) return;
     didInitialCenter.current = true;
-    setView((v) => ({
-      x: doc.size.width / 2 - hostSize.width / (2 * v.scale),
-      y: doc.size.height / 2 - hostSize.height / (2 * v.scale),
-      scale: v.scale,
-    }));
+    centerOnDoc(view.scale);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hostSize.width, hostSize.height, doc.size.width, doc.size.height]);
 
   // ---- Tools -----------------------------------------------------------
@@ -2243,7 +2248,7 @@ export function App() {
           <div className="swill-sidebar-spacer" />
           <button
             className="swill-tool-button"
-            onClick={() => setView({ x: 0, y: 0, scale: 1 })}
+            onClick={() => centerOnDoc(1)}
             title="Reset view"
             type="button"
           >
