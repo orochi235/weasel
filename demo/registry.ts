@@ -10,7 +10,7 @@ import { ComposeDemo } from './demos/ComposeDemo';
 import { ActionsDemo } from './demos/ActionsDemo';
 import { AlignDistributeFlipDemo } from './demos/AlignDistributeFlipDemo';
 import { GroupsDemo } from './demos/GroupsDemo';
-import { NestedGroupsDemo } from './demos/NestedGroupsDemo';
+import { NestingDemo } from './demos/NestingDemo';
 import { TextDemo } from './demos/TextDemo';
 import { QuadtreeDemo } from './demos/QuadtreeDemo';
 import { PathPoseDemo } from './demos/PathPoseDemo';
@@ -47,7 +47,7 @@ import ComposeDemoFull from './demos/ComposeDemo.tsx?raw';
 import ActionsDemoFull from './demos/ActionsDemo.tsx?raw';
 import AlignDistributeFlipDemoFull from './demos/AlignDistributeFlipDemo.tsx?raw';
 import GroupsDemoFull from './demos/GroupsDemo.tsx?raw';
-import NestedGroupsDemoFull from './demos/NestedGroupsDemo.tsx?raw';
+import NestingDemoFull from './demos/NestingDemo.tsx?raw';
 import TextDemoFull from './demos/TextDemo.tsx?raw';
 import QuadtreeDemoFull from './demos/QuadtreeDemo.tsx?raw';
 import PathPoseDemoFull from './demos/PathPoseDemo.tsx?raw';
@@ -84,7 +84,7 @@ import ToolReflectionDemoCss from './demos/ToolReflectionDemo.module.css?raw';
 // the TSX in the source pane so consumers can see the format.
 import ClippingSceneJson from './demos/data/clipping.scene.json?raw';
 import SceneSceneJson from './demos/data/scene.scene.json?raw';
-import NestedGroupsSceneJson from './demos/data/nested-groups.scene.json?raw';
+import NestingSceneJson from './demos/data/nesting.scene.json?raw';
 import LayoutSceneJson from './demos/data/layout.scene.json?raw';
 
 /** Extra source pane entry: typically a companion file (scene JSON, fixture)
@@ -264,25 +264,25 @@ export const DEMOS: DemoEntry[] = [
 
   // ─── Hierarchy ────────────────────────────────────────────────────────────
   {
-    id: 'virtual-groups',
-    title: 'Virtual groups',
+    id: 'groups',
+    title: 'Groups',
     category: 'Hierarchy',
-    description: 'A virtual group around three rectangles — a side-record { id, members[] } with no scene-graph hierarchy. Clicking any member selects the whole group; dragging moves all members together; corner handles resize the group\'s union AABB and scale each member proportionally. Selection overlay uses the optional groupAdapter to draw a single rectangle around the group.',
+    description: 'A group around three rectangles — a side-record { id, members[] } that pairs N peer objects without putting them in a parent/child relationship (that\'s nesting, in the next demo). Clicking any member selects the whole group; dragging moves all members together; corner handles resize the group\'s union AABB and scale each member proportionally. Selection overlay uses the optional groupAdapter to draw a single rectangle around the group.',
     hint: 'Click a green rect to select the group, then drag or grab a corner.',
     Component: GroupsDemo,
     full: GroupsDemoFull,
     path: 'demo/demos/GroupsDemo.tsx',
   },
   {
-    id: 'nested-groups',
-    title: 'Nested groups',
+    id: 'nesting',
+    title: 'Nesting',
     category: 'Hierarchy',
-    description: 'Real parent/child hierarchy via setParent — supports arbitrary nesting depth. The opening scene already shows three levels: g1 contains a free leaf and a sub-group g2; g2 in turn contains its own leaves. Poses are local to the direct parent; the kit composes world poses via worldPoseLookup for hit-testing and selection overlays. useNestedGroup (Mod+G) wraps the selection in a new parent node and rebases children\'s locals so their visual world position is preserved; useNestedUngroup (Mod+Shift+G) reparents children back to the grandparent. Default click resolves to the outermost ancestor; Alt-click drills one level deeper than the deepest currently-selected ancestor (so repeated Alt-clicks step group → subgroup → leaf), letting you select any node in the tree to group/ungroup at any depth. Dragging a parent auto-cascades its descendants in the live overlay so children visually follow during the drag (no extra ops — under local-pose semantics the post-commit scene is already correct). Mod+Z / Mod+Shift+Z undo and redo.',
-    hint: 'Click a leaf to grab its outermost group. Alt-click to drill in (each Alt-click steps one level deeper). Cmd+G groups the selection at any depth; Cmd+Shift+G ungroups.',
-    Component: NestedGroupsDemo,
-    full: NestedGroupsDemoFull,
-    path: 'demo/demos/NestedGroupsDemo.tsx',
-    extras: [{ path: 'demo/demos/data/nested-groups.scene.json', code: NestedGroupsSceneJson, language: 'json' }],
+    description: 'Real parent/child containment via setParent — supports arbitrary depth. The opening scene already shows three levels: p1 contains a free leaf and a sub-parent p2; p2 in turn contains its own leaves. Poses are local to the direct parent; the kit composes world poses via worldPoseLookup for hit-testing and selection overlays. useNest (Mod+G) wraps the selection in a new parent node and rebases children\'s locals so their visual world position is preserved; useUnnest (Mod+Shift+G) reparents children back to the grandparent. Default click resolves to the outermost ancestor; Alt-click drills one level deeper than the deepest currently-selected ancestor (so repeated Alt-clicks step ancestor → descendant → leaf), letting you select any node in the tree to nest/unnest at any depth. Dragging a parent auto-cascades its descendants in the live overlay so children visually follow during the drag (no extra ops — under local-pose semantics the post-commit scene is already correct). Mod+Z / Mod+Shift+Z undo and redo.',
+    hint: 'Click a leaf to grab its outermost ancestor. Alt-click to drill in (each Alt-click steps one level deeper). Cmd+G nests the selection at any depth; Cmd+Shift+G unnests.',
+    Component: NestingDemo,
+    full: NestingDemoFull,
+    path: 'demo/demos/NestingDemo.tsx',
+    extras: [{ path: 'demo/demos/data/nesting.scene.json', code: NestingSceneJson, language: 'json' }],
   },
   {
     id: 'clipping',

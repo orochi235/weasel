@@ -37,7 +37,7 @@ Drag selected objects. Adapter: `MoveAdapter<TNode, TPose>` (`getNode`,
 
 Options of note: `translatePose` (defaults to `translateRectPose` for poses
 with top-level x/y), `behaviors` (`MoveBehavior<TPose>[]`),
-`dragThresholdPx` (default 4), `expandIds` (virtual-group expansion),
+`dragThresholdPx` (default 4), `expandIds` (group expansion),
 `cascadeWorldPose` (children visually follow parent in overlay).
 
 ```ts
@@ -137,8 +137,8 @@ and returns imperative trigger methods.
 | `useDelete` | (see above) | | Pairs with the action via `bindKeyboard`. |
 | `useGroup` | Mod+G (off by default) | `group(): string \| null` | Adapter: `GroupActionAdapter`. Min selection size 2. |
 | `useUngroup` | Mod+Shift+G (off by default) | `ungroup(): string[]` | |
-| `useNestedGroup` | Mod+G (off by default) | `group()` | Composes `useGroup` against a nested-group adapter. |
-| `useNestedUngroup` | Mod+Shift+G (off by default) | `ungroup()` | |
+| `useNest` | Mod+G (off by default) | `nest()` | Wraps the selection in a real parent node (nesting hierarchy, distinct from `useGroup`). |
+| `useUnnest` | Mod+Shift+G (off by default) | `unnest()` | |
 | `useUndoRedo` | Mod+Z / Mod+Shift+Z (off by default) | `undo()` / `redo()` | Adapter just needs `undo`/`redo` (+ optional `canUndo`/`canRedo`). |
 | `useClipboard` | Mod+C / Mod+X / Mod+V (off by default) | `copy()` / `cut() / paste()` | Adapter: `ClipboardAdapter` extends `InsertAdapter`. |
 | `useClipboardOps` | (none) | Logic-only variant of `useClipboard` without the keybinding wiring. |

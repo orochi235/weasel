@@ -128,7 +128,7 @@ you use require. Compose narrow types via intersection.
 | `useNudge` | `NudgeAdapter<TPose>` (`getSelection`, `getPose`) |
 | `useReorder` | `ReorderAdapter` (with optional `getChildren`/`setChildOrder` — no-op when absent) |
 | `useGroup` / `useUngroup` | `GroupActionAdapter` (extends `GroupAdapter`) |
-| `useNestedGroup` / `useNestedUngroup` | `NestedGroupActionAdapter` |
+| `useNest` / `useUnnest` | `NestActionAdapter` |
 | `useUndoRedo` | `UndoRedoAdapter` (`undo`, `redo`, optional `canUndo`/`canRedo`) |
 | `useClipboard` | `ClipboardAdapter<TNode>` (extends `InsertAdapter`) |
 | `useSelectAll` | `SelectAllAdapter` (`getSelection`, `listAll`) |
@@ -140,7 +140,7 @@ you use require. Compose narrow types via intersection.
   `setChildOrder?(parentId, ids)`. Convention: array order **is** z-order
   (index 0 = bottom). Hit-tests iterate in reverse; render layers iterate
   forward. Reorder ops and `useReorder` no-op if either method is missing.
-- **`GroupAdapter`** — virtual groups with first-class ids and
+- **`GroupAdapter`** — groups (lasso side-records) with first-class ids and
   multi-membership. See `src/features/groups/types.ts`.
 
 ## Snap targets

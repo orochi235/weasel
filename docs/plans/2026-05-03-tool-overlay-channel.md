@@ -46,7 +46,7 @@ Each task below dispatches a fresh subagent. The subagent should be told:
 - `demo/demos/SwillustratorDemo.tsx` — remove `insertOverlay: {}` slot.
 - `demo/demos/InsertDemo.tsx` — migrate from `tool="insert"` to `useInsertTool` + `useTools`.
 - `demo/demos/ComposeDemo.tsx` — migrate from `tool={tool}` switch to `useSelectTool` + `useInsertTool` + `useTools`.
-- `demo/demos/NestedGroupsDemo.tsx` — migrate from `move={move}` prop to a wrapping Tool (custom `useMoveTool` defined inline, or migrate to `useSelectTool`'s move sub-controller).
+- `demo/demos/NestingDemo.tsx` — migrate from `move={move}` prop to a wrapping Tool (custom `useMoveTool` defined inline, or migrate to `useSelectTool`'s move sub-controller).
 
 **Tests (add or modify):**
 - `src/tools/defineTool.test.ts` — `overlay` round-trips.
@@ -591,13 +591,13 @@ git commit -m "demo(swillustrator): drop now-redundant insertOverlay slot config
 
 ---
 
-## Task 7: Migrate `NestedGroupsDemo` to the Tool primitive
+## Task 7: Migrate `NestingDemo` to the Tool primitive
 
-Currently passes a custom `move={move}` controller via the legacy prop and reads `move.overlay?.poses.get(id)` in `selectionOverlay.poseById`. Needs migration to a `useTools` setup with a `useSelectTool` (or a custom `useMoveTool` if NestedGroups has bespoke move semantics).
+Currently passes a custom `move={move}` controller via the legacy prop and reads `move.overlay?.poses.get(id)` in `selectionOverlay.poseById`. Needs migration to a `useTools` setup with a `useSelectTool` (or a custom `useMoveTool` if Nesting has bespoke move semantics).
 
 **Files:**
-- Modify: `demo/demos/NestedGroupsDemo.tsx`
-- Modify: `demo/demos/NestedGroupsDemo.test.tsx` if present.
+- Modify: `demo/demos/NestingDemo.tsx`
+- Modify: `demo/demos/NestingDemo.test.tsx` if present.
 
 - [ ] **Step 1: Read the current demo carefully** — note what's special about the move adapter (likely group-aware translate).
 
@@ -641,7 +641,7 @@ The selection overlay's `poseById` no longer reads `move.overlay?.poses.get(id)`
 - [ ] **Step 5: Commit**
 
 ```bash
-git commit -m "demo(nested-groups): migrate to Tool primitive (drop move= prop)"
+git commit -m "demo(nesting): migrate to Tool primitive (drop move= prop)"
 ```
 
 ---

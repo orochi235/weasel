@@ -25,7 +25,7 @@ export interface UseMoveOptions<TPose> {
   onGestureStart?(ids: string[]): void;
   onGestureEnd?(committed: boolean): void;
   /** Optional: expand the incoming id list before pose lookups. Used for
-   *  virtual-group expansion (groups have no pose; their leaves do).
+   *  group expansion (groups have no pose; their leaves do).
    *  Called once at `start()`. The returned list flows through ctx,
    *  overlay (`overlay.draggedIds` is the **expanded** leaves), and op
    *  generation. Returning `[]` aborts the gesture cleanly.

@@ -101,7 +101,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 - [src/features/viewport/viewTransform.ts](#src-features-viewport-viewtransform-ts) — `ViewTransform`, `worldToScreen`, `screenToWorld`
 - [src/features/viewport/wheelHandler.ts](#src-features-viewport-wheelhandler-ts) — `WheelState`, `WheelInput`, `ZoomBounds`, `computeWheelAction`
 - [src/features/viewport/zoomAt.ts](#src-features-viewport-zoomat-ts) — `ZoomClampOpts`, `zoomAt`
-- [src/index.ts](#src-index-ts) — `setupCanvasDpr`, `useFixedPixelRatio`, `SetupCanvasDprOptions`, `zoomAt`, `ZoomClampOpts`, `clampView`, `ClampBounds`, `CanvasSize`, `useGridCellHover`, `UseGridCellHoverOptions`, `UseGridCellHoverReturn`, `useKeybinding`, `isEditableTarget`, `KeyBinding`, `clientToCanvas`, `usePointerGestures`, `PointerGestureBindings`, `UsePointerGesturesOptions`, `PointerGestureCallbackCtx`, `Canvas`, `SceneCanvas`, `SceneCanvasProps`, `sceneToAdapter`, `SceneCanvasAdapter`, `CanvasProps`, `CanvasHelpers`, `CanvasSelectionMode`, `StandardSlotName`, `CustomLayerEntry`, `GridSlotConfig`, `useSelection`, `SelectionApi`, `SelectionMode`, `SelectionExtendKey`, `UseSelectionOptions`, `createGridLayer`, `GridLayerOpts`, `createCellHighlightLayer`, `CellHighlightLayerOpts`, `createChildrenLayer`, `CreateChildrenLayerOpts`, `resolveUnit`, `formatUnit`, `IMPERIAL_INCHES`, `METRIC_MM`, `PIXELS`, `Unit`, `UnitSystem`, `UnitValue`, `composeSelectionPose`, `createSelectionOutlineLayer`, `createSelectionHandlesLayer`, `createSelectionOverlayLayer`, `ComposeSelectionPoseOpts`, `SelectionOutlineLayerOpts`, `SelectionHandlesLayerOpts`, `SelectionOverlayLayerOpts`, `DEFAULT_TEXT_STYLE`, `resolveTextStyle`, `fontString`, `TextStyle`, `ResolvedTextStyle`, `measureText`, `MeasuredText`, `createTextLayer`, `TextPose`, `CreateTextLayerOpts`, `pointInTextPose`, `caretIndexAt`, `fitTextPose`, `FitTextPoseOptions`, `PointInTextPoseOpts`, `useTextEdit`, `TextEditScreenPose`, `StartEditOptions`, `UseTextEditOptions`, `UseTextEditReturn`, `createTilePattern`, `TilePatternOpts`, `applyPaint`, `applyStroke`, `renderFilledRegion`, `Paint`, `Stroke`, `Region`, `RenderFilledRegionOptions`, `composeWorldPose`, `composeRectPose`, `decomposeRectPose`, `rebaseLocalPose`, `translateRectPose`, `worldPoseLookup`, `PoseAdapter`, `nestedGroupHitTester`, `NestedGroupHitOpts`, `NestedGroupHitTester`, `PATH_M`, `PATH_L`, `PATH_C`, `PATH_Q`, `PATH_Z`, `PATH_CMD_LENGTHS`, `PathBuilder`, `polygonFromPoints`, `rectPath`, `boundsOfPath`, `pointInPath`, `translatePath`, `translatePolygonInPlace`, `scalePathToBounds`, `traceToContext`, `createPathLayer`, `flattenCubic`, `flattenQuadratic`, `DEFAULT_FLATTEN_TOLERANCE`, `composePath`, `decomposePath`, `unionBoundsPath`, `pathPoseDescriptor`, `pathOriginProjection`, `createPenPreviewLayer`, `Path`, `PolygonPath`, `RectPath`, `PathFillRule`, `PointInPathOptions`, `CreatePathLayerOpts`, `CreatePenPreviewLayerOptions`, `PenPreviewStyle`, `constrainTo45`, `Group`, `GroupAdapter`, `resolveToOutermostGroup`, `expandToLeaves`, `unionBounds`, `RectPose`, `withGroupOrdering`, `arrayAdapter`, `ArrayAdapter`, `ArrayAdapterConfig`, `useArrayAdapter`, `UseArrayAdapterOptions`, `createScene`, `useScene`, `asNodeId`, `AddNodeSpec`, `ContainerNode`, `LayerRecord`, `LeafNode`, `SceneNode`, `NodeId`, `RegisteredOp`, `Scene`, `SystemLayerRecord`, `SystemLayerSpec`, `UserLayerRecord`, `UseSceneOptions`, `ModifierState`, `PointerState`, `GestureContext`, `SnapStrategy`, `GestureBehavior`, `BehaviorMoveResult`, `MoveBehavior`, `MoveOverlay`, `ResizeAnchor`, `ResizePose`, `ResizeProposed`, `ResizeMoveResult`, `ResizeBehavior`, `ResizeOverlay`, `RotatedPose`, `RotateProposed`, `RotateMoveResult`, `RotateBehavior`, `RotateOverlay`, `InsertProposed`, `InsertMoveResult`, `InsertBehavior`, `InsertOverlay`, `AreaSelectPose`, `AreaSelectProposed`, `AreaSelectMoveResult`, `AreaSelectBehavior`, `AreaSelectOverlay`, `ClipboardSnapshot`, `snap`, `gridSnapStrategy`, `pointToGridCell`, `RECT_ORIGIN_PROJECTION`, `OriginProjection`, `useMove`, `UseMoveOptions`, `MoveController`, `MoveStartArgs`, `MoveMoveArgs`, `useResize`, `RECT_POSE_DESCRIPTOR`, `cornerResizeHandles`, `hitCornerHandle`, `UseResizeOptions`, `ResizeController`, `PoseDescriptor`, `CornerHandle`, `useRotate`, `pointInRotatedRect`, `rotatedRectCorners`, `rectCorners`, `rotatePoint`, `aabbCenter`, `rotationHandle`, `hitRotationHandle`, `DEFAULT_ROTATION_HANDLE_DISTANCE`, `UseRotateOptions`, `RotateController`, `RotateStartArgs`, `RotateMoveArgs`, `RotateGeometry`, `RotationHandle`, `useInsert`, `UseInsertOptions`, `InsertController`, `useAreaSelect`, `useEditAnchors`, `hitAnchor`, `enumerateAnchors`, `withCoord`, `createAnchorEditOverlayLayer`, `UseEditAnchorsOptions`, `EditAnchorsController`, `EditAnchorsAdapter`, `EditAnchorsOverlay`, `EditAnchorsStartArgs`, `EditAnchorsMoveArgs`, `AnchorHit`, `PathAnchor`, `AnchorEditOverlayOpts`, `UseAreaSelectOptions`, `AreaSelectController`, `selectFromMarquee`, `useClipboardOps`, `useClipboard`, `UseClipboardOpsOptions`, `UseClipboardOpsReturn`, `ClipboardAdapter`, `UseClipboardOptions`, `UseClipboardReturn`, `useDelete`, `DeleteAdapter`, `UseDeleteOptions`, `UseDeleteReturn`, `useEscape`, `EscapeAdapter`, `UseEscapeOptions`, `UseEscapeReturn`, `useSelectAll`, `SelectAllAdapter`, `UseSelectAllOptions`, `UseSelectAllReturn`, `useDuplicate`, `DuplicateAdapter`, `UseDuplicateOptions`, `UseDuplicateReturn`, `useNudge`, `NudgeAdapter`, `NudgeDirection`, `UseNudgeOptions`, `UseNudgeReturn`, `useClone`, `cloneByAltDrag`, `UseCloneOptions`, `UseCloneReturn`, `ClonePose`, `CloneLayer`, `CloneBehavior`, `createBringForwardOp`, `createSendBackwardOp`, `createBringToFrontOp`, `createSendToBackOp`, `createMoveToIndexOp`, `useReorder`, `ReorderAdapter`, `UseReorderOptions`, `UseReorderReturn`, `useGroup`, `useUngroup`, `useNestedGroup`, `useNestedUngroup`, `GroupActionAdapter`, `UseGroupOptions`, `UseGroupReturn`, `UseUngroupOptions`, `UseUngroupReturn`, `NestedGroupActionAdapter`, `UseNestedGroupOptions`, `UseNestedGroupReturn`, `UseNestedUngroupOptions`, `UseNestedUngroupReturn`, `useUndoRedo`, `UndoRedoAdapter`, `UseUndoRedoOptions`, `UseUndoRedoReturn`
+- [src/index.ts](#src-index-ts) — `setupCanvasDpr`, `useFixedPixelRatio`, `SetupCanvasDprOptions`, `zoomAt`, `ZoomClampOpts`, `clampView`, `ClampBounds`, `CanvasSize`, `useGridCellHover`, `UseGridCellHoverOptions`, `UseGridCellHoverReturn`, `useKeybinding`, `isEditableTarget`, `KeyBinding`, `clientToCanvas`, `usePointerGestures`, `PointerGestureBindings`, `UsePointerGesturesOptions`, `PointerGestureCallbackCtx`, `Canvas`, `SceneCanvas`, `SceneCanvasProps`, `sceneToAdapter`, `SceneCanvasAdapter`, `CanvasProps`, `CanvasHelpers`, `CanvasSelectionMode`, `StandardSlotName`, `CustomLayerEntry`, `GridSlotConfig`, `useSelection`, `SelectionApi`, `SelectionMode`, `SelectionExtendKey`, `UseSelectionOptions`, `createGridLayer`, `GridLayerOpts`, `createCellHighlightLayer`, `CellHighlightLayerOpts`, `createChildrenLayer`, `CreateChildrenLayerOpts`, `resolveUnit`, `formatUnit`, `IMPERIAL_INCHES`, `METRIC_MM`, `PIXELS`, `Unit`, `UnitSystem`, `UnitValue`, `composeSelectionPose`, `createSelectionOutlineLayer`, `createSelectionHandlesLayer`, `createSelectionOverlayLayer`, `ComposeSelectionPoseOpts`, `SelectionOutlineLayerOpts`, `SelectionHandlesLayerOpts`, `SelectionOverlayLayerOpts`, `DEFAULT_TEXT_STYLE`, `resolveTextStyle`, `fontString`, `TextStyle`, `ResolvedTextStyle`, `measureText`, `MeasuredText`, `createTextLayer`, `TextPose`, `CreateTextLayerOpts`, `pointInTextPose`, `caretIndexAt`, `fitTextPose`, `FitTextPoseOptions`, `PointInTextPoseOpts`, `useTextEdit`, `TextEditScreenPose`, `StartEditOptions`, `UseTextEditOptions`, `UseTextEditReturn`, `createTilePattern`, `TilePatternOpts`, `applyPaint`, `applyStroke`, `renderFilledRegion`, `Paint`, `Stroke`, `Region`, `RenderFilledRegionOptions`, `composeWorldPose`, `composeRectPose`, `decomposeRectPose`, `rebaseLocalPose`, `translateRectPose`, `worldPoseLookup`, `PoseAdapter`, `nestedHitTester`, `NestedHitOpts`, `NestedHitTester`, `PATH_M`, `PATH_L`, `PATH_C`, `PATH_Q`, `PATH_Z`, `PATH_CMD_LENGTHS`, `PathBuilder`, `polygonFromPoints`, `rectPath`, `boundsOfPath`, `pointInPath`, `translatePath`, `translatePolygonInPlace`, `scalePathToBounds`, `traceToContext`, `createPathLayer`, `flattenCubic`, `flattenQuadratic`, `DEFAULT_FLATTEN_TOLERANCE`, `composePath`, `decomposePath`, `unionBoundsPath`, `pathPoseDescriptor`, `pathOriginProjection`, `createPenPreviewLayer`, `Path`, `PolygonPath`, `RectPath`, `PathFillRule`, `PointInPathOptions`, `CreatePathLayerOpts`, `CreatePenPreviewLayerOptions`, `PenPreviewStyle`, `constrainTo45`, `Group`, `GroupAdapter`, `resolveToOutermostGroup`, `expandToLeaves`, `unionBounds`, `RectPose`, `withGroupOrdering`, `arrayAdapter`, `ArrayAdapter`, `ArrayAdapterConfig`, `useArrayAdapter`, `UseArrayAdapterOptions`, `createScene`, `useScene`, `asNodeId`, `AddNodeSpec`, `ContainerNode`, `LayerRecord`, `LeafNode`, `SceneNode`, `NodeId`, `RegisteredOp`, `Scene`, `SystemLayerRecord`, `SystemLayerSpec`, `UserLayerRecord`, `UseSceneOptions`, `ModifierState`, `PointerState`, `GestureContext`, `SnapStrategy`, `GestureBehavior`, `BehaviorMoveResult`, `MoveBehavior`, `MoveOverlay`, `ResizeAnchor`, `ResizePose`, `ResizeProposed`, `ResizeMoveResult`, `ResizeBehavior`, `ResizeOverlay`, `RotatedPose`, `RotateProposed`, `RotateMoveResult`, `RotateBehavior`, `RotateOverlay`, `InsertProposed`, `InsertMoveResult`, `InsertBehavior`, `InsertOverlay`, `AreaSelectPose`, `AreaSelectProposed`, `AreaSelectMoveResult`, `AreaSelectBehavior`, `AreaSelectOverlay`, `ClipboardSnapshot`, `snap`, `gridSnapStrategy`, `pointToGridCell`, `RECT_ORIGIN_PROJECTION`, `OriginProjection`, `useMove`, `UseMoveOptions`, `MoveController`, `MoveStartArgs`, `MoveMoveArgs`, `useResize`, `RECT_POSE_DESCRIPTOR`, `cornerResizeHandles`, `hitCornerHandle`, `UseResizeOptions`, `ResizeController`, `PoseDescriptor`, `CornerHandle`, `useRotate`, `pointInRotatedRect`, `rotatedRectCorners`, `rectCorners`, `rotatePoint`, `aabbCenter`, `rotationHandle`, `hitRotationHandle`, `DEFAULT_ROTATION_HANDLE_DISTANCE`, `UseRotateOptions`, `RotateController`, `RotateStartArgs`, `RotateMoveArgs`, `RotateGeometry`, `RotationHandle`, `useInsert`, `UseInsertOptions`, `InsertController`, `useAreaSelect`, `useEditAnchors`, `hitAnchor`, `enumerateAnchors`, `withCoord`, `createAnchorEditOverlayLayer`, `UseEditAnchorsOptions`, `EditAnchorsController`, `EditAnchorsAdapter`, `EditAnchorsOverlay`, `EditAnchorsStartArgs`, `EditAnchorsMoveArgs`, `AnchorHit`, `PathAnchor`, `AnchorEditOverlayOpts`, `UseAreaSelectOptions`, `AreaSelectController`, `selectFromMarquee`, `useClipboardOps`, `useClipboard`, `UseClipboardOpsOptions`, `UseClipboardOpsReturn`, `ClipboardAdapter`, `UseClipboardOptions`, `UseClipboardReturn`, `useDelete`, `DeleteAdapter`, `UseDeleteOptions`, `UseDeleteReturn`, `useEscape`, `EscapeAdapter`, `UseEscapeOptions`, `UseEscapeReturn`, `useSelectAll`, `SelectAllAdapter`, `UseSelectAllOptions`, `UseSelectAllReturn`, `useDuplicate`, `DuplicateAdapter`, `UseDuplicateOptions`, `UseDuplicateReturn`, `useNudge`, `NudgeAdapter`, `NudgeDirection`, `UseNudgeOptions`, `UseNudgeReturn`, `useClone`, `cloneByAltDrag`, `UseCloneOptions`, `UseCloneReturn`, `ClonePose`, `CloneLayer`, `CloneBehavior`, `createBringForwardOp`, `createSendBackwardOp`, `createBringToFrontOp`, `createSendToBackOp`, `createMoveToIndexOp`, `useReorder`, `ReorderAdapter`, `UseReorderOptions`, `UseReorderReturn`, `useGroup`, `useUngroup`, `useNest`, `useUnnest`, `GroupActionAdapter`, `UseGroupOptions`, `UseGroupReturn`, `UseUngroupOptions`, `UseUngroupReturn`, `NestActionAdapter`, `UseNestOptions`, `UseNestReturn`, `UseUnnestOptions`, `UseUnnestReturn`, `useUndoRedo`, `UndoRedoAdapter`, `UseUndoRedoOptions`, `UseUndoRedoReturn`
 - [src/interactions/actions/clipboard/clipboard.ts](#src-interactions-actions-clipboard-clipboard-ts) — `ClipboardAdapter`, `UseClipboardOptions`, `UseClipboardReturn`, `useClipboard`
 - [src/interactions/actions/clipboard/clipboardOps.ts](#src-interactions-actions-clipboard-clipboardops-ts) — `UseClipboardOpsOptions`, `UseClipboardOpsReturn`, `useClipboardOps`
 - [src/interactions/actions/clipboard/index.ts](#src-interactions-actions-clipboard-index-ts) — `useClipboardOps`, `UseClipboardOpsOptions`, `UseClipboardOpsReturn`, `useClipboard`, `ClipboardAdapter`, `UseClipboardOptions`, `UseClipboardReturn`
@@ -113,8 +113,8 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 - [src/interactions/actions/escape/escape.ts](#src-interactions-actions-escape-escape-ts) — `EscapeAdapter`, `UseEscapeOptions`, `UseEscapeReturn`, `useEscape`
 - [src/interactions/actions/escape/index.ts](#src-interactions-actions-escape-index-ts) — `useEscape`, `EscapeAdapter`, `UseEscapeOptions`, `UseEscapeReturn`
 - [src/interactions/actions/group/group.ts](#src-interactions-actions-group-group-ts) — `GroupActionAdapter`, `UseGroupOptions`, `UseGroupReturn`, `useGroup`, `UseUngroupOptions`, `UseUngroupReturn`, `useUngroup`
-- [src/interactions/actions/group/index.ts](#src-interactions-actions-group-index-ts) — `useGroup`, `useUngroup`, `GroupActionAdapter`, `UseGroupOptions`, `UseGroupReturn`, `UseUngroupOptions`, `UseUngroupReturn`, `useNestedGroup`, `useNestedUngroup`, `NestedGroupActionAdapter`, `UseNestedGroupOptions`, `UseNestedGroupReturn`, `UseNestedUngroupOptions`, `UseNestedUngroupReturn`
-- [src/interactions/actions/group/nestedGroup.ts](#src-interactions-actions-group-nestedgroup-ts) — `NestedGroupActionAdapter`, `UseNestedGroupOptions`, `UseNestedGroupReturn`, `useNestedGroup`, `UseNestedUngroupOptions`, `UseNestedUngroupReturn`, `useNestedUngroup`
+- [src/interactions/actions/group/index.ts](#src-interactions-actions-group-index-ts) — `useGroup`, `useUngroup`, `GroupActionAdapter`, `UseGroupOptions`, `UseGroupReturn`, `UseUngroupOptions`, `UseUngroupReturn`, `useNest`, `useUnnest`, `NestActionAdapter`, `UseNestOptions`, `UseNestReturn`, `UseUnnestOptions`, `UseUnnestReturn`
+- [src/interactions/actions/group/nest.ts](#src-interactions-actions-group-nest-ts) — `NestActionAdapter`, `UseNestOptions`, `UseNestReturn`, `useNest`, `UseUnnestOptions`, `UseUnnestReturn`, `useUnnest`
 - [src/interactions/actions/nudge/index.ts](#src-interactions-actions-nudge-index-ts) — `useNudge`, `NudgeAdapter`, `NudgeDirection`, `UseNudgeOptions`, `UseNudgeReturn`
 - [src/interactions/actions/nudge/nudge.ts](#src-interactions-actions-nudge-nudge-ts) — `NudgeDirection`, `NudgeAdapter`, `UseNudgeOptions`, `UseNudgeReturn`, `useNudge`
 - [src/interactions/actions/reorder/index.ts](#src-interactions-actions-reorder-index-ts) — `useReorder`, `ReorderAdapter`, `UseReorderOptions`, `UseReorderReturn`
@@ -164,7 +164,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 - [src/interactions/gestures/shared/strategies/grid.ts](#src-interactions-gestures-shared-strategies-grid-ts) — `OriginProjection`, `RECT_ORIGIN_PROJECTION`, `gridSnapStrategy`, `pointToGridCell`
 - [src/interactions/gestures/shared/strategies/index.ts](#src-interactions-gestures-shared-strategies-index-ts) — `gridSnapStrategy`, `pointToGridCell`, `RECT_ORIGIN_PROJECTION`, `OriginProjection`
 - [src/interactions/gestures/types.ts](#src-interactions-gestures-types-ts) — `ModifierState`, `PointerState`, `GestureContext`, `SnapStrategy`, `GestureBehavior`, `BehaviorMoveResult`, `MoveBehavior`, `MoveOverlay`, `ResizeAnchor`, `ResizePose`, `ResizeProposed`, `ResizeMoveResult`, `ResizeBehavior`, `ResizeOverlay`, `RotatedPose`, `RotateProposed`, `RotateMoveResult`, `RotateBehavior`, `RotateOverlay`, `InsertPoint`, `InsertProposed`, `InsertMoveResult`, `InsertBehavior`, `InsertOverlay`, `AreaSelectPose`, `AreaSelectProposed`, `AreaSelectMoveResult`, `AreaSelectBehavior`, `AreaSelectOverlay`, `ClonePose`, `CloneLayer`, `CloneBehavior`
-- [src/interactions/hit/nestedGroupHit.ts](#src-interactions-hit-nestedgrouphit-ts) — `NestedGroupHitOpts`, `NestedGroupHitTester`, `nestedGroupHitTester`
+- [src/features/groups/nestedHit.ts](#src-features-groups-nestedhit-ts) — `NestedHitOpts`, `NestedHitTester`, `nestedHitTester`
 - [src/interactions/usePointerGestures.ts](#src-interactions-usepointergestures-ts) — `PointerGestureBindings`, `PointerGestureCallbackCtx`, `UsePointerGesturesOptions`, `usePointerGestures`
 - [src/layout/snaps.ts](#src-layout-snaps-ts) — `none`, `nearest`, `nearestWithin`, `containedThenNearest`, `cellAt`
 - [src/layout/strategies/freeform.ts](#src-layout-strategies-freeform-ts) — `FreeformOptions`, `freeform`
@@ -1346,14 +1346,14 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
-| `createCreateGroupOp` | function | `(args: { group: Group; label?: string }) => Op` | Insert a new virtual group. |
+| `createCreateGroupOp` | function | `(args: { group: Group; label?: string }) => Op` | Insert a new group. |
 | `createCreateGroupOp.args` | param | `args: { group: Group; label?: string }` |  |
 
 ## src/features/groups/ops/dissolveGroup.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
-| `createDissolveGroupOp` | function | `(args: { group: Group; label?: string }) => Op` | Remove a virtual group. |
+| `createDissolveGroupOp` | function | `(args: { group: Group; label?: string }) => Op` | Remove a group. |
 | `createDissolveGroupOp.args` | param | `args: { group: Group; label?: string }` |  |
 
 ## src/features/groups/ops/removeFromGroup.ts
@@ -1386,7 +1386,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
-| `Group` | interface | `{ id, members }` | A virtual group is identified by string id, same shape as scene objects. |
+| `Group` | interface | `{ id, members }` | A group is identified by string id, same shape as scene objects. |
 | `Group.id` | field | `string` |  |
 | `Group.members` | field | `string[]` | Ordered member ids; can include other group ids (nesting). |
 | `GroupAdapter` | interface | `{ getGroup, getGroupsForMember, insertGroup, removeGroup, addToGroup, removeFromGroup }` | Adapter additions for groups. |
@@ -2216,9 +2216,9 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `translateRectPose` | reexport | `re-export from './features/groups/composePose'` |  |
 | `worldPoseLookup` | reexport | `re-export from './features/groups/composePose'` |  |
 | `PoseAdapter` | reexport | `re-export from './features/groups/composePose'` |  |
-| `nestedGroupHitTester` | reexport | `re-export from './interactions/hit/nestedGroupHit'` |  |
-| `NestedGroupHitOpts` | reexport | `re-export from './interactions/hit/nestedGroupHit'` |  |
-| `NestedGroupHitTester` | reexport | `re-export from './interactions/hit/nestedGroupHit'` |  |
+| `nestedHitTester` | reexport | `re-export from './features/groups/nestedHit'` |  |
+| `NestedHitOpts` | reexport | `re-export from './features/groups/nestedHit'` |  |
+| `NestedHitTester` | reexport | `re-export from './features/groups/nestedHit'` |  |
 | `PATH_M` | reexport | `re-export from './features/paths'` |  |
 | `PATH_L` | reexport | `re-export from './features/paths'` |  |
 | `PATH_C` | reexport | `re-export from './features/paths'` |  |
@@ -2411,18 +2411,18 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `UseReorderReturn` | reexport | `re-export from './interactions/actions/reorder'` |  |
 | `useGroup` | reexport | `re-export from './interactions/actions/group'` |  |
 | `useUngroup` | reexport | `re-export from './interactions/actions/group'` |  |
-| `useNestedGroup` | reexport | `re-export from './interactions/actions/group'` |  |
-| `useNestedUngroup` | reexport | `re-export from './interactions/actions/group'` |  |
+| `useNest` | reexport | `re-export from './interactions/actions/group'` |  |
+| `useUnnest` | reexport | `re-export from './interactions/actions/group'` |  |
 | `GroupActionAdapter` | reexport | `re-export from './interactions/actions/group'` |  |
 | `UseGroupOptions` | reexport | `re-export from './interactions/actions/group'` |  |
 | `UseGroupReturn` | reexport | `re-export from './interactions/actions/group'` |  |
 | `UseUngroupOptions` | reexport | `re-export from './interactions/actions/group'` |  |
 | `UseUngroupReturn` | reexport | `re-export from './interactions/actions/group'` |  |
-| `NestedGroupActionAdapter` | reexport | `re-export from './interactions/actions/group'` |  |
-| `UseNestedGroupOptions` | reexport | `re-export from './interactions/actions/group'` |  |
-| `UseNestedGroupReturn` | reexport | `re-export from './interactions/actions/group'` |  |
-| `UseNestedUngroupOptions` | reexport | `re-export from './interactions/actions/group'` |  |
-| `UseNestedUngroupReturn` | reexport | `re-export from './interactions/actions/group'` |  |
+| `NestActionAdapter` | reexport | `re-export from './interactions/actions/group'` |  |
+| `UseNestOptions` | reexport | `re-export from './interactions/actions/group'` |  |
+| `UseNestReturn` | reexport | `re-export from './interactions/actions/group'` |  |
+| `UseUnnestOptions` | reexport | `re-export from './interactions/actions/group'` |  |
+| `UseUnnestReturn` | reexport | `re-export from './interactions/actions/group'` |  |
 | `useUndoRedo` | reexport | `re-export from './interactions/actions/undo-redo'` |  |
 | `UndoRedoAdapter` | reexport | `re-export from './interactions/actions/undo-redo'` |  |
 | `UseUndoRedoOptions` | reexport | `re-export from './interactions/actions/undo-redo'` |  |
@@ -2604,48 +2604,48 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `UseGroupReturn` | reexport | `re-export from './group'` |  |
 | `UseUngroupOptions` | reexport | `re-export from './group'` |  |
 | `UseUngroupReturn` | reexport | `re-export from './group'` |  |
-| `useNestedGroup` | reexport | `re-export from './nestedGroup'` |  |
-| `useNestedUngroup` | reexport | `re-export from './nestedGroup'` |  |
-| `NestedGroupActionAdapter` | reexport | `re-export from './nestedGroup'` |  |
-| `UseNestedGroupOptions` | reexport | `re-export from './nestedGroup'` |  |
-| `UseNestedGroupReturn` | reexport | `re-export from './nestedGroup'` |  |
-| `UseNestedUngroupOptions` | reexport | `re-export from './nestedGroup'` |  |
-| `UseNestedUngroupReturn` | reexport | `re-export from './nestedGroup'` |  |
+| `useNest` | reexport | `re-export from './nest'` |  |
+| `useUnnest` | reexport | `re-export from './nest'` |  |
+| `NestActionAdapter` | reexport | `re-export from './nest'` |  |
+| `UseNestOptions` | reexport | `re-export from './nest'` |  |
+| `UseNestReturn` | reexport | `re-export from './nest'` |  |
+| `UseUnnestOptions` | reexport | `re-export from './nest'` |  |
+| `UseUnnestReturn` | reexport | `re-export from './nest'` |  |
 
-## src/interactions/actions/group/nestedGroup.ts
+## src/interactions/actions/group/nest.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
-| `NestedGroupActionAdapter` | interface | `{ getSelection, getNode, getChildren, applyBatch }` | Adapter for `useNestedGroup` / `useNestedUngroup`. |
-| `NestedGroupActionAdapter.getSelection` | field | `string[]` | Read current selection. |
-| `NestedGroupActionAdapter.getNode` | field | `TNode \| undefined` | Look up an existing scene object — used by ungroup to recover the group object so the dissolve op can invert into a re-insert. |
-| `NestedGroupActionAdapter.getChildren` | field | `string[]` | Enumerate direct children of `id` (`null` = root siblings). |
-| `NestedGroupActionAdapter.applyBatch?` | field | `void` | Optional: op-batch entry point. |
-| `UseNestedGroupOptions` | interface | `{ groupFactory, composePose, decomposePose, groupPoseFromChildren, bindKeyboard, newGroupId, label, minMembers }` | Options for `useNestedGroup`. |
-| `UseNestedGroupOptions.groupFactory` | field | `(args: { id: string; localPose: TPose; childIds: string[] }) => TNode` | Mint the new group scene object. |
-| `UseNestedGroupOptions.composePose` | field | `(parent: TPose, child: TPose) => TPose` | Compose a parent local + child local into the equivalent pose one frame up. |
-| `UseNestedGroupOptions.decomposePose` | field | `(parent: TPose, world: TPose) => TPose` | Inverse of `composePose`: recover a child's local from its world pose given the parent's world pose. |
-| `UseNestedGroupOptions.groupPoseFromChildren?` | field | `(childWorldPoses: TPose[]) => TPose` | Compute the group's local pose given the world poses of its children. |
-| `UseNestedGroupOptions.bindKeyboard?` | field | `boolean` | Auto-bind Mod+G on document. |
-| `UseNestedGroupOptions.newGroupId?` | field | `() => string` | Mint the id for the new group. |
-| `UseNestedGroupOptions.label?` | field | `string` | Label passed to applyBatch. |
-| `UseNestedGroupOptions.minMembers?` | field | `number` | Minimum selection size that produces a group. |
-| `UseNestedGroupReturn` | interface | `{ group }` | Return shape of `useNestedGroup`. |
-| `UseNestedGroupReturn.group` | field | `string \| null` | Imperative trigger — reparents the current selection under a newly inserted group object, rebasing each child's local pose so its visual world position is prese |
-| `useNestedGroup` | hook | `(adapter: NestedGroupActionAdapter<TNode, TPose>, options: UseNestedGroupOptions<TNode, TPose>) => UseNestedGroupReturn` | Selection-grouping action that inserts a real scene-graph parent and reparents the selection under it. |
-| `useNestedGroup.adapter` | param | `adapter: NestedGroupActionAdapter<TNode, TPose>` |  |
-| `useNestedGroup.options` | param | `options: UseNestedGroupOptions<TNode, TPose>` |  |
-| `UseNestedUngroupOptions` | interface | `{ composePose, decomposePose, bindKeyboard, label, isGroup }` | Options for `useNestedUngroup`. |
-| `UseNestedUngroupOptions.composePose` | field | `(parent: TPose, child: TPose) => TPose` | Compose a parent local + child local into the next-frame-up pose. |
-| `UseNestedUngroupOptions.decomposePose` | field | `(parent: TPose, world: TPose) => TPose` | Inverse of `composePose`. |
-| `UseNestedUngroupOptions.bindKeyboard?` | field | `boolean` | Auto-bind Mod+Shift+G on document. |
-| `UseNestedUngroupOptions.label?` | field | `string` | Label passed to applyBatch. |
-| `UseNestedUngroupOptions.isGroup?` | field | `(id: string, object: TNode \| undefined) => boolean` | Predicate: should this id be treated as a nested group (i.e. |
-| `UseNestedUngroupReturn` | interface | `{ ungroup }` | Return shape of `useNestedUngroup`. |
-| `UseNestedUngroupReturn.ungroup` | field | `string[]` | Imperative trigger — for every group in the current selection, reparents its children to the grandparent (rebasing each local pose so visual world positions are |
-| `useNestedUngroup` | hook | `(adapter: NestedGroupActionAdapter<TNode, TPose>, options: UseNestedUngroupOptions<TNode, TPose>) => UseNestedUngroupReturn` | Selection-ungrouping action; optionally binds Mod+Shift+G. |
-| `useNestedUngroup.adapter` | param | `adapter: NestedGroupActionAdapter<TNode, TPose>` |  |
-| `useNestedUngroup.options` | param | `options: UseNestedUngroupOptions<TNode, TPose>` |  |
+| `NestActionAdapter` | interface | `{ getSelection, getNode, getChildren, applyBatch }` | Adapter for `useNest` / `useUnnest`. |
+| `NestActionAdapter.getSelection` | field | `string[]` | Read current selection. |
+| `NestActionAdapter.getNode` | field | `TNode \| undefined` | Look up an existing scene object — used by ungroup to recover the group object so the dissolve op can invert into a re-insert. |
+| `NestActionAdapter.getChildren` | field | `string[]` | Enumerate direct children of `id` (`null` = root siblings). |
+| `NestActionAdapter.applyBatch?` | field | `void` | Optional: op-batch entry point. |
+| `UseNestOptions` | interface | `{ groupFactory, composePose, decomposePose, groupPoseFromChildren, bindKeyboard, newGroupId, label, minMembers }` | Options for `useNest`. |
+| `UseNestOptions.groupFactory` | field | `(args: { id: string; localPose: TPose; childIds: string[] }) => TNode` | Mint the new group scene object. |
+| `UseNestOptions.composePose` | field | `(parent: TPose, child: TPose) => TPose` | Compose a parent local + child local into the equivalent pose one frame up. |
+| `UseNestOptions.decomposePose` | field | `(parent: TPose, world: TPose) => TPose` | Inverse of `composePose`: recover a child's local from its world pose given the parent's world pose. |
+| `UseNestOptions.groupPoseFromChildren?` | field | `(childWorldPoses: TPose[]) => TPose` | Compute the group's local pose given the world poses of its children. |
+| `UseNestOptions.bindKeyboard?` | field | `boolean` | Auto-bind Mod+G on document. |
+| `UseNestOptions.newGroupId?` | field | `() => string` | Mint the id for the new group. |
+| `UseNestOptions.label?` | field | `string` | Label passed to applyBatch. |
+| `UseNestOptions.minMembers?` | field | `number` | Minimum selection size that produces a group. |
+| `UseNestReturn` | interface | `{ group }` | Return shape of `useNest`. |
+| `UseNestReturn.group` | field | `string \| null` | Imperative trigger — reparents the current selection under a newly inserted group object, rebasing each child's local pose so its visual world position is prese |
+| `useNest` | hook | `(adapter: NestActionAdapter<TNode, TPose>, options: UseNestOptions<TNode, TPose>) => UseNestReturn` | Selection-grouping action that inserts a real scene-graph parent and reparents the selection under it. |
+| `useNest.adapter` | param | `adapter: NestActionAdapter<TNode, TPose>` |  |
+| `useNest.options` | param | `options: UseNestOptions<TNode, TPose>` |  |
+| `UseUnnestOptions` | interface | `{ composePose, decomposePose, bindKeyboard, label, isGroup }` | Options for `useUnnest`. |
+| `UseUnnestOptions.composePose` | field | `(parent: TPose, child: TPose) => TPose` | Compose a parent local + child local into the next-frame-up pose. |
+| `UseUnnestOptions.decomposePose` | field | `(parent: TPose, world: TPose) => TPose` | Inverse of `composePose`. |
+| `UseUnnestOptions.bindKeyboard?` | field | `boolean` | Auto-bind Mod+Shift+G on document. |
+| `UseUnnestOptions.label?` | field | `string` | Label passed to applyBatch. |
+| `UseUnnestOptions.isGroup?` | field | `(id: string, object: TNode \| undefined) => boolean` | Predicate: should this id be treated as a nesting parent (i.e. |
+| `UseUnnestReturn` | interface | `{ ungroup }` | Return shape of `useUnnest`. |
+| `UseUnnestReturn.ungroup` | field | `string[]` | Imperative trigger — for every group in the current selection, reparents its children to the grandparent (rebasing each local pose so visual world positions are |
+| `useUnnest` | hook | `(adapter: NestActionAdapter<TNode, TPose>, options: UseUnnestOptions<TNode, TPose>) => UseUnnestReturn` | Selection-ungrouping action; optionally binds Mod+Shift+G. |
+| `useUnnest.adapter` | param | `adapter: NestActionAdapter<TNode, TPose>` |  |
+| `useUnnest.options` | param | `options: UseUnnestOptions<TNode, TPose>` |  |
 
 ## src/interactions/actions/nudge/index.ts
 
@@ -3418,7 +3418,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `ResizeOverlay.currentPose` | field | `TPose` |  |
 | `ResizeOverlay.targetPose` | field | `TPose` |  |
 | `ResizeOverlay.anchor` | field | `ResizeAnchor` |  |
-| `ResizeOverlay.leafPoses?` | field | `Map<string, TPose>` | Per-leaf scaled poses when the gesture is resizing a virtual group. |
+| `ResizeOverlay.leafPoses?` | field | `Map<string, TPose>` | Per-leaf scaled poses when the gesture is resizing a group. |
 | `RotatedPose` | interface | `{ rotation }` | ResizePose extended with a rotation angle (radians). |
 | `RotatedPose.rotation` | field | `number` |  |
 | `RotateProposed` | interface | `{ pose, rotation }` | Per-frame proposed rotation: pose plus the candidate angle in radians. |
@@ -3475,20 +3475,20 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `CloneBehavior.activates` | field | `(modifiers: ModifierState) => boolean` | Decides whether this gesture should activate at start. |
 | `CloneBehavior.onEnd` | field | `( pose: ClonePose, ctx: { adapter: InsertAdapter<{ id: string }> }, ) => Op[]` | On end, returns ops to commit (or [] for no-op). |
 
-## src/interactions/hit/nestedGroupHit.ts
+## src/features/groups/nestedHit.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
-| `NestedGroupHitOpts` | interface | `{ composePose, poseBounds, isGroup }` |  |
-| `NestedGroupHitOpts.composePose` | field | `(parent: TPose, child: TPose) => TPose` | Compose a child's local pose into world coords given its parent's world pose. |
-| `NestedGroupHitOpts.poseBounds?` | field | `(pose: TPose) => RectBounds` | Derive an axis-aligned bounding rect from a (world-space) pose. |
-| `NestedGroupHitOpts.isGroup?` | field | `(id: string, obj: TNode \| undefined) => boolean` | Predicate for "this object is a group body". |
-| `NestedGroupHitTester` | interface | `{ pickOutermost, pickBest }` |  |
-| `NestedGroupHitTester.pickOutermost` | field | `(worldX: number, worldY: number) => string \| null` | Outermost-ancestor pick. |
-| `NestedGroupHitTester.pickBest` | field | `( worldX: number, worldY: number, alt: boolean, selection: readonly string[], ) => string \| null` | Alt-aware selection-update pick. |
-| `nestedGroupHitTester` | function | `(adapter: HitAdapter<TNode, TPose>, opts: NestedGroupHitOpts<TNode, TPose>) => NestedGroupHitTester` |  |
-| `nestedGroupHitTester.adapter` | param | `adapter: HitAdapter<TNode, TPose>` |  |
-| `nestedGroupHitTester.opts` | param | `opts: NestedGroupHitOpts<TNode, TPose>` |  |
+| `NestedHitOpts` | interface | `{ composePose, poseBounds, isGroup }` |  |
+| `NestedHitOpts.composePose` | field | `(parent: TPose, child: TPose) => TPose` | Compose a child's local pose into world coords given its parent's world pose. |
+| `NestedHitOpts.poseBounds?` | field | `(pose: TPose) => RectBounds` | Derive an axis-aligned bounding rect from a (world-space) pose. |
+| `NestedHitOpts.isGroup?` | field | `(id: string, obj: TNode \| undefined) => boolean` | Predicate for "this object is a group body". |
+| `NestedHitTester` | interface | `{ pickOutermost, pickBest }` |  |
+| `NestedHitTester.pickOutermost` | field | `(worldX: number, worldY: number) => string \| null` | Outermost-ancestor pick. |
+| `NestedHitTester.pickBest` | field | `( worldX: number, worldY: number, alt: boolean, selection: readonly string[], ) => string \| null` | Alt-aware selection-update pick. |
+| `nestedHitTester` | function | `(adapter: HitAdapter<TNode, TPose>, opts: NestedHitOpts<TNode, TPose>) => NestedHitTester` |  |
+| `nestedHitTester.adapter` | param | `adapter: HitAdapter<TNode, TPose>` |  |
+| `nestedHitTester.opts` | param | `opts: NestedHitOpts<TNode, TPose>` |  |
 
 ## src/interactions/usePointerGestures.ts
 

@@ -112,7 +112,7 @@ describe('composeSelectionPose with groups', () => {
     expect(resolve('g1')).toEqual({ x: 0, y: 0, width: 70, height: 70 });
   });
 
-  it('nested group: union expands across all transitive leaves', () => {
+  it('composed group: union expands across all transitive leaves', () => {
     const adapter = makeGroupAdapter([
       { id: 'inner', members: ['a', 'b'] },
       { id: 'outer', members: ['inner', 'c'] },

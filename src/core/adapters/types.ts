@@ -69,7 +69,7 @@ export interface MoveAdapter<TNode extends { id: string }, TPose> {
   getNodes(): TNode[];
   getPose(id: string): TPose;
   /** Optional. Required only by hierarchy-aware paths: layout-pass drop
-   *  targeting (`getLayout` present), nested-group hit collapse
+   *  targeting (`getLayout` present), nested-hit collapse
    *  (`pickTopMostHit`), and group-pose composition. Flat scenes may omit. */
   getParent?(id: string): string | null;
   setPose(id: string, pose: TPose): void;

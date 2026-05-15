@@ -3,7 +3,7 @@ import type { Group, GroupAdapter } from '../types';
 import { createCreateGroupOp } from './createGroup';
 
 /**
- * Remove a virtual group. Stores the full group snapshot for revert so
+ * Remove a group. Stores the full group snapshot for revert so
  * undo can restore the exact member list.
  */
 export function createDissolveGroupOp(args: { group: Group; label?: string }): Op {

@@ -10,7 +10,7 @@ export interface UseCloneOptions {
   setOverlay: (layer: CloneLayer, objects: unknown[]) => void;
   clearOverlay: () => void;
   /** Optional: expand the incoming id list before snapshot. Used for
-   *  virtual-group expansion (groups have no pose; their leaves do).
+   *  group expansion (groups have no pose; their leaves do).
    *  Called once at `start()`. Returning `[]` aborts the gesture cleanly.
    *  Default: identity. */
   expandIds?: (ids: string[]) => string[];

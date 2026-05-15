@@ -58,7 +58,7 @@ describe('WeaselRenderer.render — kind: group', () => {
     expect(() => r.render([cmd])).not.toThrow();
   });
 
-  it('walks nested groups recursively', () => {
+  it('walks nested draw-groups recursively', () => {
     const cmd: DrawCommand = {
       kind: 'group',
       transform: mat3.translate(mat3.identity(), 10, 0),

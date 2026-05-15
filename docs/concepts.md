@@ -195,7 +195,7 @@ useNudge(adapter);                     // arrow keys
 useReorder(adapter);                   // Cmd+[ / Cmd+]
 useDelete(adapter, { bindKeyboard: true });
 useGroup(adapter); useUngroup(adapter);
-useNestedGroup(adapter); useNestedUngroup(adapter);
+useNest(adapter); useUnnest(adapter);
 useUndoRedo({ history });
 useClipboard(adapter);
 ```

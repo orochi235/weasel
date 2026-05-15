@@ -47,7 +47,7 @@ function makeHarness(initialSelection: string[] = [], initialGroups: Group[] = [
 }
 
 describe('useGroup', () => {
-  it('wraps the current selection in a new virtual group and selects it', () => {
+  it('wraps the current selection in a new group and selects it', () => {
     const h = makeHarness(['a', 'b']);
     const { result } = renderHook(() =>
       useGroup(h.adapter, { newGroupId: () => 'g1' }),

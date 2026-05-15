@@ -8,11 +8,11 @@ export {
   type UseUngroupReturn,
 } from './group';
 export {
-  useNestedGroup,
-  useNestedUngroup,
-  type NestedGroupActionAdapter,
-  type UseNestedGroupOptions,
-  type UseNestedGroupReturn,
-  type UseNestedUngroupOptions,
-  type UseNestedUngroupReturn,
-} from './nestedGroup';
+  useNest,
+  useUnnest,
+  type NestActionAdapter,
+  type UseNestOptions,
+  type UseNestReturn,
+  type UseUnnestOptions,
+  type UseUnnestReturn,
+} from './nest';

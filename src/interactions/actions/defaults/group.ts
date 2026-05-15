@@ -20,7 +20,7 @@ export interface GroupDeps {
 /** @experimental */
 export interface UngroupDeps {
   getSelection: () => NodeId[];
-  /** Look up an existing virtual group by id. Returns `undefined` for
+  /** Look up an existing group by id. Returns `undefined` for
    *  non-group ids. */
   getGroup: (id: string) => Group | undefined;
   applyOps: (ops: Op[], label?: string) => void;

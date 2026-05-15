@@ -1,19 +1,19 @@
 import { useState, useMemo, useSyncExternalStore } from 'react';
 import {
   asNodeId,
-  nestedGroupHitTester,
+  nestedHitTester,
   SceneCanvas,
   sceneFromJSON,
   sceneToAdapter,
-  useNestedGroup,
-  useNestedUngroup,
+  useNest,
+  useUnnest,
   useSelectTool,
   useSelection,
   useTools,
 } from '@orochi235/weasel';
 import type { SceneNode, SerializedScene } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
-import sceneJson from './data/nested-groups.scene.json';
+import sceneJson from './data/nesting.scene.json';
 
 interface NodeData { color: string }
 type LayerId = 'default';
@@ -23,12 +23,12 @@ type DemoNode = SceneNode<NodeData, LayerId, Pose>;
 const W = 480, H = 320;
 
 // Scene v1 stores absolute world poses, so the kit's compose/decompose
-// reduces to identity here. Group/ungroup math becomes a no-op: children's
+// reduces to identity here. Nest/unnest math becomes a no-op: children's
 // world poses are already correct; reparenting only changes the tree.
 const composeAbs = <P,>(_parent: P, child: P): P => child;
 const decomposeAbs = <P,>(_parent: P, world: P): P => world;
 
-export function NestedGroupsDemo() {
+export function NestingDemo() {
   const [scene] = useState(() =>
     sceneFromJSON(
       sceneJson as unknown as SerializedScene<NodeData, LayerId, Pose>,
@@ -40,15 +40,15 @@ export function NestedGroupsDemo() {
   const selection = useSelection();
 
   // `cascadeContainerPose: 'rect'` opts into the scene v1 "containers translate
-  // descendants on setPose" semantic so dragging a group moves its children.
+  // descendants on setPose" semantic so dragging a parent moves its children.
   // Everything else — insertNode/removeNode, getParent, getSelection — comes
-  // out of sceneToAdapter at the right shape for the nested-group hooks.
+  // out of sceneToAdapter at the right shape for the nesting hooks.
   const adapter = useMemo(
     () => sceneToAdapter(scene, { selection, cascadeContainerPose: 'rect' }),
     [scene, selection],
   );
 
-  useNestedGroup(adapter, {
+  useNest(adapter, {
     composePose: composeAbs,
     decomposePose: decomposeAbs,
     groupFactory: ({ id, localPose }): DemoNode => ({
@@ -61,18 +61,18 @@ export function NestedGroupsDemo() {
       children: [],
     }),
   });
-  useNestedUngroup(adapter, {
+  useUnnest(adapter, {
     composePose: composeAbs,
     decomposePose: decomposeAbs,
     isGroup: (_id, obj) => obj?.kind === 'container',
   });
 
-  // Nested-group hit resolution: `pickOutermost` is the chrome-level body
-  // hit (casual click → whole top-level group). `pickBest` is the alt-aware
+  // Nesting hit resolution: `pickOutermost` is the chrome-level body hit
+  // (casual click → whole top-level ancestor). `pickBest` is the alt-aware
   // variant the select tool consults: without Alt → outermost ancestor;
-  // with Alt → one level deeper per click, drilling group → subgroup → leaf.
+  // with Alt → one level deeper per click, drilling ancestor → descendant → leaf.
   const hitter = useMemo(
-    () => nestedGroupHitTester(adapter, {
+    () => nestedHitTester(adapter, {
       composePose: composeAbs,
       isGroup: (_id, obj) => obj?.kind === 'container',
     }),

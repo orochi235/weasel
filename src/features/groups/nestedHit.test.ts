@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { nestedGroupHitTester } from './nestedGroupHit';
+import { nestedHitTester } from './nestedHit';
 import { composeRectPose } from 'features/groups/composePose';
 
 interface Node {
@@ -27,12 +27,12 @@ const adapter = {
   getParent: (id: string) => NODES.find((n) => n.id === id)?.parent ?? null,
 };
 
-const tester = nestedGroupHitTester(adapter, {
+const tester = nestedHitTester(adapter, {
   composePose: composeRectPose,
   isGroup: (_id, obj) => obj?.isGroup === true,
 });
 
-describe('nestedGroupHitTester', () => {
+describe('nestedHitTester', () => {
   it('pickOutermost returns outermost ancestor for a leaf hit', () => {
     expect(tester.pickOutermost(60, 60)).toBe('g1'); // hits leaf 'a', resolves to g1
     expect(tester.pickOutermost(140, 100)).toBe('g1'); // hits b1 → g1 (outermost)
@@ -77,7 +77,7 @@ describe('nestedGroupHitTester', () => {
     const cnodes = [
       { id: 'c', parent: null, pose: { cx: 100, cy: 100, r: 20 } },
     ];
-    const t = nestedGroupHitTester(
+    const t = nestedHitTester(
       {
         getNode: (id) => cnodes.find((n) => n.id === id),
         getNodes: () => cnodes,

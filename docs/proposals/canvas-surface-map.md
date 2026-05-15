@@ -383,9 +383,9 @@ one uniform surface.
 - `selectAll` — Mod+A. (`useSelectAll`)
 - `clipboard` — Mod+X / Mod+C / Mod+V. (`useClipboard`)
 - `reorder` — Mod+] / Mod+\[ / Mod+Shift+] / Mod+Shift+\[. (`useReorder`)
-- `group` — Mod+G groups selection. (`useGroup` / `useNestedGroup`)
+- `group` — Mod+G groups selection. (`useGroup` / `useNest`)
 - `ungroup` — Mod+Shift+G ungroups selection. (`useUngroup` /
-  `useNestedUngroup`)
+  `useUnnest`)
 
 **Pointer/drag behaviors** (today: a mix of `tool=` defaults, controller
 props, and gesture hooks):

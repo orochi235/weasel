@@ -186,7 +186,7 @@ behavior is unchanged.
 
 1. Land the shorthand and the test suite (phase 2).
 2. Port every demo currently on the inline-items path to the shorthand
-   (phase 3). Skip `SceneDemo` (already on Scene) and `NestedGroupsDemo`
+   (phase 3). Skip `SceneDemo` (already on Scene) and `NestingDemo`
    (custom adapter; comment in the file flags it as an escape hatch).
 3. Mark `items`, `setItems`, `toPose`, `fromPose`, `createDefault`,
    `poseBounds`, `intersectsRect` as deprecated on `<Canvas>` —
@@ -196,7 +196,7 @@ behavior is unchanged.
 4. In a follow-up commit, delete those props and the
    `useArrayAdapter`-on-Canvas wiring path in `Canvas.tsx`. `<Canvas>`
    keeps the explicit `adapter` path for non-Scene consumers (e.g. the
-   `NestedGroupsDemo` custom adapter pattern).
+   `NestingDemo` custom adapter pattern).
 5. `useArrayAdapter` itself can stay — it's still useful for non-Canvas
    contexts and for the SceneCanvas-doesn't-fit cases. Or delete it; the
    call doesn't have to be made in this proposal.

@@ -174,7 +174,7 @@ export interface ResizeOverlay<TPose> {
   currentPose: TPose;
   targetPose: TPose;
   anchor: ResizeAnchor;
-  /** Per-leaf scaled poses when the gesture is resizing a virtual group.
+  /** Per-leaf scaled poses when the gesture is resizing a group.
    *  Keys are the expanded leaf ids (from `expandIds`); values are the
    *  per-leaf poses produced by scaling each leaf's origin pose against
    *  the group's origin/proposed union rects. Absent for single-leaf

@@ -1,5 +1,5 @@
 /**
- * Visual regression spec: virtual-groups demo.
+ * Visual regression spec: groups demo.
  *
  * Captures the canvas and asserts pixel diff ≤ 2% vs the committed baseline.
  *
@@ -12,7 +12,7 @@ import { test } from '@playwright/test';
 import { resolve } from 'node:path';
 import { captureCanvas, assertMatchesBaseline } from './diff.js';
 
-const DEMO_ID = 'virtual-groups';
+const DEMO_ID = 'groups';
 const BASELINE_DIR = resolve(import.meta.dirname, 'baselines');
 
 // No per-demo tolerance override; default (2%) applies.

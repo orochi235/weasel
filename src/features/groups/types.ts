@@ -1,6 +1,7 @@
 /**
- * Virtual groups — organizational lassos around N peer objects, distinct
- * from the structural parent/child hierarchy (`getParent`/`setParent`).
+ * Groups — organizational lassos around N peer objects, distinct from the
+ * structural parent/child hierarchy provided by nesting
+ * (`getParent`/`setParent`).
  *
  * A group has no transform, no pose, no parent — its bounds are computed
  * from its members on the fly. A group's id flows through ops and selection
@@ -9,13 +10,13 @@
  * Properties:
  *   - First-class ids: groups appear in selection just like leaf objects.
  *   - Multi-membership: an object can belong to multiple groups.
- *   - Nestable: a group's id can appear as a member of another group.
+ *   - Composable: a group's id can appear as a member of another group.
  */
 
-/** A virtual group is identified by string id, same shape as scene objects. */
+/** A group is identified by string id, same shape as scene objects. */
 export interface Group {
   id: string;
-  /** Ordered member ids; can include other group ids (nesting). */
+  /** Ordered member ids; can include other group ids. */
   members: string[];
 }
 

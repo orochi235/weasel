@@ -136,7 +136,7 @@ describe('round-trip', () => {
     expect(b).toEqual(a);
   });
 
-  it('nested groups with transforms', () => {
+  it('nested SVG <g> with transforms', () => {
     const { a, b } = roundTrip(F.NESTED_GROUPS_SVG);
     expect(b).toEqual(a);
   });

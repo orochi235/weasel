@@ -1,11 +1,11 @@
 /**
- * Structural-group action hooks: real scene-graph hierarchy, distinct from
- * the virtual-lasso `useGroup` / `useUngroup`.
+ * Nesting action hooks: real scene-graph hierarchy, distinct from the
+ * lasso-style `useGroup` / `useUngroup`.
  *
- * Where the virtual variant inserts a `Group` *record* alongside the scene
- * (members listed in a separate Map), the structural variant inserts a real
- * scene object the consumer constructs, then reparents the would-be members
- * under it via the existing `setParent` adapter method.
+ * Where the (virtual) group variant inserts a `Group` *record* alongside the
+ * scene (members listed in a separate Map), the nesting variant inserts a
+ * real scene object the consumer constructs, then reparents the would-be
+ * children under it via the existing `setParent` adapter method.
  *
  * Pose semantics: poses are local — relative to the direct parent. The hook
  * uses `composeWorldPose` to compute world positions and `rebaseLocalPose`
@@ -13,15 +13,15 @@
  * visual world position is preserved across the reparent.
  *
  * Consumer responsibilities:
- *   - Provide a `groupFactory` that mints the new group scene object given
+ *   - Provide a `groupFactory` that mints the new parent scene object given
  *     its id, local pose, and child id list.
  *   - Provide `composePose` / `decomposePose` for the kit's pose shape (use
  *     `composeRectPose` / `decomposeRectPose` for axis-aligned rects).
- *   - Implement `getChildren(id)` so ungroup can find the group's members.
+ *   - Implement `getChildren(id)` so unnest can find the parent's children.
  *
  * Multi-parent selections: if the selection spans multiple distinct parents,
- * the hook resolves the new group's parent to the first selected child's
- * parent (the others get reparented to the new group regardless). Visually
+ * the hook resolves the new parent's parent to the first selected child's
+ * parent (the others get reparented to the new parent regardless). Visually
  * this is transparent because every child's local pose is rebased.
  */
 
@@ -42,28 +42,28 @@ import {
 import { useKeybinding } from '../useKeybinding';
 import { useActionsRegistry, type Action } from '../registry';
 
-/** Adapter for `useNestedGroup` / `useNestedUngroup`. */
-export interface NestedGroupActionAdapter<TNode extends { id: string }, TPose>
+/** Adapter for `useNest` / `useUnnest`. */
+export interface NestActionAdapter<TNode extends { id: string }, TPose>
   extends PoseAdapter<TPose> {
   /** Read current selection. String-typed so a scene-backed adapter (whose
    *  selection surface speaks `string[]`) plugs in directly; the hook brands
    *  ids back to `NodeId` internally where the scene API requires it. */
   getSelection(): string[];
-  /** Look up an existing scene object — used by ungroup to recover the group
+  /** Look up an existing scene object — used by unnest to recover the parent
    *  object so the dissolve op can invert into a re-insert. */
   getNode(id: string): TNode | undefined;
   /** Enumerate direct children of `id` (`null` = root siblings). Required
-   *  for ungroup to find the members of a nested group. Order doesn't
+   *  for unnest to find the children of a nested parent. Order doesn't
    *  matter for the hook itself; the hook does not reorder children. */
   getChildren(id: string | null): string[];
   /** Optional: op-batch entry point. When omitted, ops apply directly. */
   applyOps?(ops: Op[], label: string): void;
 }
 
-/** Options for `useNestedGroup`. */
-export interface UseNestedGroupOptions<TNode extends { id: string }, TPose> {
-  /** Mint the new group scene object. Receives the chosen group id, the
-   *  group's local pose (in the common parent's frame), and the child ids.
+/** Options for `useNest`. */
+export interface UseNestOptions<TNode extends { id: string }, TPose> {
+  /** Mint the new parent scene object. Receives the chosen parent id, the
+   *  parent's local pose (in the common parent's frame), and the child ids.
    *  The returned object is inserted into the scene before children are
    *  reparented under it. */
   groupFactory: (args: { id: string; localPose: TPose; childIds: string[] }) => TNode;
@@ -74,31 +74,31 @@ export interface UseNestedGroupOptions<TNode extends { id: string }, TPose> {
    *  given the parent's world pose. For axis-aligned rects, pass
    *  `decomposeRectPose`. */
   decomposePose: (parent: TPose, world: TPose) => TPose;
-  /** Compute the group's local pose given the world poses of its children.
-   *  Default: a `{x, y, width, height}` union AABB cast through the pose
-   *  shape (works when TPose extends `{x, y, width, height}`). Override to
-   *  anchor the group elsewhere — e.g., at the first child's origin, or to
-   *  carry extra non-rect fields. */
+  /** Compute the new parent's local pose given the world poses of its
+   *  children. Default: a `{x, y, width, height}` union AABB cast through the
+   *  pose shape (works when TPose extends `{x, y, width, height}`). Override
+   *  to anchor the parent elsewhere — e.g., at the first child's origin, or
+   *  to carry extra non-rect fields. */
   groupPoseFromChildren?: (childWorldPoses: TPose[]) => TPose;
-  /** Auto-bind Mod+G on document and register a `nestedGroup` action into
+  /** Auto-bind Mod+G on document and register a `nest` action into
    *  any surrounding `<ActionsProvider>`. Default true. */
   enableKeyboard?: boolean;
-  /** Mint the id for the new group. Default: `g_${time}_${random}`. */
+  /** Mint the id for the new parent. Default: `g_${time}_${random}`. */
   newGroupId?: () => string;
-  /** Label passed to applyOps. Default 'Group'. */
+  /** Label passed to applyOps. Default 'Nest'. */
   label?: string;
-  /** Minimum selection size that produces a group. Default 2 — wrapping a
+  /** Minimum selection size that produces a nest. Default 2 — wrapping a
    *  single object adds no structure. */
   minMembers?: number;
 }
 
-/** Return shape of `useNestedGroup`. */
-export interface UseNestedGroupReturn {
+/** Return shape of `useNest`. */
+export interface UseNestReturn {
   /** Imperative trigger — reparents the current selection under a newly
-   *  inserted group object, rebasing each child's local pose so its visual
-   *  world position is preserved. Returns the new group id, or `null` if no
-   *  group was created (selection too small). */
-  group(): string | null;
+   *  inserted parent object, rebasing each child's local pose so its visual
+   *  world position is preserved. Returns the new parent id, or `null` if no
+   *  nest was created (selection too small). */
+  nest(): string | null;
 }
 
 function defaultMintId(): string {
@@ -121,18 +121,18 @@ function defaultGroupPoseFromChildren<TPose>(world: TPose[]): TPose {
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY } as unknown as TPose;
 }
 
-/** Selection-grouping action that inserts a real scene-graph parent and
+/** Selection-nesting action that inserts a real scene-graph parent and
  *  reparents the selection under it. Optionally binds Mod+G. */
-export function useNestedGroup<TNode extends { id: string }, TPose>(
-  adapter: NestedGroupActionAdapter<TNode, TPose>,
-  options: UseNestedGroupOptions<TNode, TPose>,
-): UseNestedGroupReturn {
+export function useNest<TNode extends { id: string }, TPose>(
+  adapter: NestActionAdapter<TNode, TPose>,
+  options: UseNestOptions<TNode, TPose>,
+): UseNestReturn {
   const adapterRef = useRef(adapter);
   adapterRef.current = adapter;
   const optsRef = useRef(options);
   optsRef.current = options;
 
-  const group = useCallback((): string | null => {
+  const nest = useCallback((): string | null => {
     const a = adapterRef.current;
     const o = optsRef.current;
     const sel = a.getSelection();
@@ -141,17 +141,17 @@ export function useNestedGroup<TNode extends { id: string }, TPose>(
 
     // Common-parent resolution: take the first selected child's parent.
     // Children with different parents still get reparented under the new
-    // group — visually preserved by the rebase below.
+    // parent — visually preserved by the rebase below.
     const newGroupParent = a.getParent(sel[0]);
 
-    // Snapshot world poses *before* any mutation, so the group pose and the
-    // child rebase use the pre-group geometry.
+    // Snapshot world poses *before* any mutation, so the parent pose and the
+    // child rebase use the pre-nest geometry.
     const childWorldPoses = sel.map((id) => composeWorldPose(a, id, o.composePose));
 
     const groupPoseFromChildren = o.groupPoseFromChildren ?? defaultGroupPoseFromChildren;
     const groupLocalInRoot = groupPoseFromChildren(childWorldPoses);
     // The pose we just computed treats children's world poses as if the
-    // group lived at world origin. Shift it into the common-parent frame.
+    // new parent lived at world origin. Shift it into the common-parent frame.
     const groupLocal = newGroupParent === null
       ? groupLocalInRoot
       : o.decomposePose(composeWorldPose(a, newGroupParent, o.composePose), groupLocalInRoot);
@@ -159,9 +159,9 @@ export function useNestedGroup<TNode extends { id: string }, TPose>(
     const groupId = (o.newGroupId ?? defaultMintId)();
     const groupObject = o.groupFactory({ id: groupId, localPose: groupLocal, childIds: [...sel] });
 
-    // Synthesize a temporary adapter view that knows the group's eventual
-    // world pose, so we can rebase children into the group's frame without
-    // having actually inserted the group yet.
+    // Synthesize a temporary adapter view that knows the new parent's eventual
+    // world pose, so we can rebase children into the parent's frame without
+    // having actually inserted the parent yet.
     const groupWorld = newGroupParent === null
       ? groupLocal
       : o.composePose(composeWorldPose(a, newGroupParent, o.composePose), groupLocal);
@@ -184,7 +184,7 @@ export function useNestedGroup<TNode extends { id: string }, TPose>(
     }
     ops.push(createSetSelectionOp({ from: sel as NodeId[], to: [groupId as NodeId] }));
 
-    dispatchApplyBatch(a, ops, o.label ?? 'Group');
+    dispatchApplyBatch(a, ops, o.label ?? 'Nest');
     return groupId;
   }, []);
 
@@ -194,62 +194,62 @@ export function useNestedGroup<TNode extends { id: string }, TPose>(
   useEffect(() => {
     if (!reg || !enableKeyboard) return;
     const action: Action = {
-      id: 'nestedGroup',
-      label: 'Group',
+      id: 'nest',
+      label: 'Nest',
       defaultBinding: { key: 'g', mod: true },
-      run: () => { group(); },
+      run: () => { nest(); },
     };
     return reg.register(action);
-  }, [reg, enableKeyboard, group]);
+  }, [reg, enableKeyboard, nest]);
 
   useKeybinding(
     { key: 'g', mod: true, enabled: enableKeyboard && reg == null },
-    () => { group(); },
+    () => { nest(); },
   );
 
-  return { group };
+  return { nest };
 }
 
-/** Options for `useNestedUngroup`. */
-export interface UseNestedUngroupOptions<TNode extends { id: string }, TPose> {
+/** Options for `useUnnest`. */
+export interface UseUnnestOptions<TNode extends { id: string }, TPose> {
   /** Compose a parent local + child local into the next-frame-up pose. */
   composePose: (parent: TPose, child: TPose) => TPose;
   /** Inverse of `composePose`. */
   decomposePose: (parent: TPose, world: TPose) => TPose;
-  /** Auto-bind Mod+Shift+G on document and register a `nestedUngroup` action
+  /** Auto-bind Mod+Shift+G on document and register an `unnest` action
    *  into any surrounding `<ActionsProvider>`. Default true. */
   enableKeyboard?: boolean;
-  /** Label passed to applyOps. Default 'Ungroup'. */
+  /** Label passed to applyOps. Default 'Unnest'. */
   label?: string;
-  /** Predicate: should this id be treated as a nested group (i.e.
-   *  dissolved on ungroup)? Default: any id with at least one child. Override
+  /** Predicate: should this id be treated as a nesting parent (i.e.
+   *  dissolved on unnest)? Default: any id with at least one child. Override
    *  if your scene model distinguishes "container" from "ordinary parent"
    *  via a domain field on the object. */
   isGroup?: (id: string, object: TNode | undefined) => boolean;
 }
 
-/** Return shape of `useNestedUngroup`. */
-export interface UseNestedUngroupReturn {
-  /** Imperative trigger — for every group in the current selection,
+/** Return shape of `useUnnest`. */
+export interface UseUnnestReturn {
+  /** Imperative trigger — for every nesting parent in the current selection,
    *  reparents its children to the grandparent (rebasing each local pose so
-   *  visual world positions are preserved) and deletes the group object.
-   *  New selection: the surfaced children plus any non-group ids that were
-   *  already selected. Returns the ids of dissolved groups, or `[]` if none
+   *  visual world positions are preserved) and deletes the parent object.
+   *  New selection: the surfaced children plus any non-parent ids that were
+   *  already selected. Returns the ids of dissolved parents, or `[]` if none
    *  were found. */
-  ungroup(): string[];
+  unnest(): string[];
 }
 
-/** Selection-ungrouping action; optionally binds Mod+Shift+G. */
-export function useNestedUngroup<TNode extends { id: string }, TPose>(
-  adapter: NestedGroupActionAdapter<TNode, TPose>,
-  options: UseNestedUngroupOptions<TNode, TPose>,
-): UseNestedUngroupReturn {
+/** Selection-unnesting action; optionally binds Mod+Shift+G. */
+export function useUnnest<TNode extends { id: string }, TPose>(
+  adapter: NestActionAdapter<TNode, TPose>,
+  options: UseUnnestOptions<TNode, TPose>,
+): UseUnnestReturn {
   const adapterRef = useRef(adapter);
   adapterRef.current = adapter;
   const optsRef = useRef(options);
   optsRef.current = options;
 
-  const ungroup = useCallback((): string[] => {
+  const unnest = useCallback((): string[] => {
     const a = adapterRef.current;
     const o = optsRef.current;
     const sel = a.getSelection();
@@ -285,7 +285,7 @@ export function useNestedUngroup<TNode extends { id: string }, TPose>(
         ops.push(createTransformOp({ id: cid, from: localBefore, to: localAfter }));
         push(cid);
       }
-      // Reparent the group to root before delete so the inverse insert puts
+      // Reparent the parent to root before delete so the inverse insert puts
       // it back without needing to re-establish its old parent state — the
       // followup reparent inverse re-attaches it.
       if (grandparent !== null) {
@@ -298,7 +298,7 @@ export function useNestedUngroup<TNode extends { id: string }, TPose>(
     }
     if (dissolved.length === 0) return [];
     ops.push(createSetSelectionOp({ from: sel as NodeId[], to: nextSelection as NodeId[] }));
-    dispatchApplyBatch(a, ops, o.label ?? 'Ungroup');
+    dispatchApplyBatch(a, ops, o.label ?? 'Unnest');
     return dissolved;
   }, []);
 
@@ -308,18 +308,18 @@ export function useNestedUngroup<TNode extends { id: string }, TPose>(
   useEffect(() => {
     if (!reg || !enableKeyboard) return;
     const action: Action = {
-      id: 'nestedUngroup',
-      label: 'Ungroup',
+      id: 'unnest',
+      label: 'Unnest',
       defaultBinding: { key: 'g', mod: true, shift: true },
-      run: () => { ungroup(); },
+      run: () => { unnest(); },
     };
     return reg.register(action);
-  }, [reg, enableKeyboard, ungroup]);
+  }, [reg, enableKeyboard, unnest]);
 
   useKeybinding(
     { key: 'g', mod: true, shift: true, enabled: enableKeyboard && reg == null },
-    () => { ungroup(); },
+    () => { unnest(); },
   );
 
-  return { ungroup };
+  return { unnest };
 }

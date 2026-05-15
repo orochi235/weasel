@@ -32,7 +32,7 @@ describe('resolveToOutermostGroup', () => {
     expect(resolveToOutermostGroup('a', adapter)).toBe('g1');
   });
 
-  it('returns outermost when in nested groups', () => {
+  it('returns outermost when in composed groups', () => {
     const adapter = makeAdapter([
       { id: 'g1', members: ['a'] },
       { id: 'g2', members: ['g1'] },
@@ -68,7 +68,7 @@ describe('expandToLeaves', () => {
     expect(expandToLeaves(['g1'], adapter)).toEqual(['a', 'b', 'c']);
   });
 
-  it('flattens nested groups', () => {
+  it('flattens composed groups', () => {
     const adapter = makeAdapter([
       { id: 'g1', members: ['a', 'b'] },
       { id: 'g2', members: ['g1', 'c'] },

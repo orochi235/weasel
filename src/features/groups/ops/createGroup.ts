@@ -3,7 +3,7 @@ import type { Group, GroupAdapter } from '../types';
 import { createDissolveGroupOp } from './dissolveGroup';
 
 /**
- * Insert a new virtual group. Inverts to a dissolve op holding the same
+ * Insert a new group. Inverts to a dissolve op holding the same
  * snapshot, so undo restores nothing about members beyond removing the
  * group record.
  */

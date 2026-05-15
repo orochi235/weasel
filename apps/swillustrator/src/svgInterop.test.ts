@@ -161,7 +161,7 @@ describe('svgNodesToObjsWithGroups — groups preserved', () => {
     expect(result.groups[0].members).toEqual([result.items[0].id]);
   });
 
-  it('handles nested groups by including child group ids in the parent member list', () => {
+  it('handles nested SVG <g> elements by including child group ids in the parent member list', () => {
     const leaf: SvgPathNode = {
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },

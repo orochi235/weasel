@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import {
-  useNestedGroup,
-  useNestedUngroup,
-  type NestedGroupActionAdapter,
-} from './nestedGroup';
+  useNest,
+  useUnnest,
+  type NestActionAdapter,
+} from './nest';
 import { composeRectPose, decomposeRectPose } from 'features/groups/composePose';
 import type { Op } from 'core/ops/types';
 
@@ -12,7 +12,7 @@ interface Rect { x: number; y: number; width: number; height: number }
 interface Obj { id: string; pose: Rect; parent: string | null }
 
 interface Harness {
-  adapter: NestedGroupActionAdapter<Obj, Rect>;
+  adapter: NestActionAdapter<Obj, Rect>;
   selection: string[];
   scene: Map<string, Obj>;
   batches: { ops: Op[]; label: string }[];
@@ -25,7 +25,7 @@ function makeHarness(initial: Obj[], selection: string[] = []): Harness {
     selection: [...selection],
     scene,
     batches: [],
-    adapter: {} as NestedGroupActionAdapter<Obj, Rect>,
+    adapter: {} as NestActionAdapter<Obj, Rect>,
   };
   h.adapter = ({
     getSelection: () => h.selection,
@@ -43,7 +43,7 @@ function makeHarness(initial: Obj[], selection: string[] = []): Harness {
       h.batches.push({ ops, label });
       for (const op of ops) op.apply(h.adapter);
     },
-  } as unknown) as NestedGroupActionAdapter<Obj, Rect>;
+  } as unknown) as NestActionAdapter<Obj, Rect>;
   return h;
 }
 
@@ -60,7 +60,7 @@ function worldOf(h: Harness, id: string): Rect {
   return pose;
 }
 
-describe('useNestedGroup', () => {
+describe('useNest', () => {
   it('inserts a new group object, reparents children, and rebases their locals so visual world position is preserved', () => {
     const h = makeHarness(
       [
@@ -72,7 +72,7 @@ describe('useNestedGroup', () => {
     const aBefore = worldOf(h, 'a');
     const bBefore = worldOf(h, 'b');
     const { result } = renderHook(() =>
-      useNestedGroup(h.adapter, {
+      useNest(h.adapter, {
         ...composeOpts,
         newGroupId: () => 'g1',
         groupFactory: ({ id, localPose, childIds }) => ({
@@ -83,7 +83,7 @@ describe('useNestedGroup', () => {
       }),
     );
     let groupId: string | null = null;
-    act(() => { groupId = result.current.group(); });
+    act(() => { groupId = result.current.nest(); });
     expect(groupId).toBe('g1');
 
     // Group inserted with bounds = AABB of children: x[10..35], y[10..55]
@@ -117,13 +117,13 @@ describe('useNestedGroup', () => {
     const aBefore = worldOf(h, 'a');
     const bBefore = worldOf(h, 'b');
     const { result } = renderHook(() =>
-      useNestedGroup(h.adapter, {
+      useNest(h.adapter, {
         ...composeOpts,
         newGroupId: () => 'g1',
         groupFactory: ({ id, localPose }) => ({ id, pose: localPose, parent: null } as Obj),
       }),
     );
-    act(() => { result.current.group(); });
+    act(() => { result.current.nest(); });
 
     // Group lands under P with local pose = AABB origin in world (105, 205)
     // minus P's world (100, 200) = local (5, 5).
@@ -145,19 +145,19 @@ describe('useNestedGroup', () => {
       ['a'],
     );
     const { result } = renderHook(() =>
-      useNestedGroup(h.adapter, {
+      useNest(h.adapter, {
         ...composeOpts,
         groupFactory: ({ id, localPose }) => ({ id, pose: localPose, parent: null } as Obj),
       }),
     );
     let id: string | null = 'sentinel';
-    act(() => { id = result.current.group(); });
+    act(() => { id = result.current.nest(); });
     expect(id).toBeNull();
     expect(h.batches).toHaveLength(0);
   });
 });
 
-describe('useNestedUngroup', () => {
+describe('useUnnest', () => {
   it('reparents children to grandparent and rebases their locals; deletes the group object', () => {
     // Build a state equivalent to what group() above produces.
     const h = makeHarness(
@@ -171,10 +171,10 @@ describe('useNestedUngroup', () => {
     const aBefore = worldOf(h, 'a');
     const bBefore = worldOf(h, 'b');
     const { result } = renderHook(() =>
-      useNestedUngroup(h.adapter, composeOpts),
+      useUnnest(h.adapter, composeOpts),
     );
     let dissolved: string[] = [];
-    act(() => { dissolved = result.current.ungroup(); });
+    act(() => { dissolved = result.current.unnest(); });
     expect(dissolved).toEqual(['g1']);
 
     // Group object is gone.
@@ -207,9 +207,9 @@ describe('useNestedUngroup', () => {
     const aBefore = worldOf(h, 'a');
     const bBefore = worldOf(h, 'b');
     const { result } = renderHook(() =>
-      useNestedUngroup(h.adapter, composeOpts),
+      useUnnest(h.adapter, composeOpts),
     );
-    act(() => { result.current.ungroup(); });
+    act(() => { result.current.unnest(); });
 
     // Children now under P. Locals expressed in P's frame.
     expect(h.scene.get('a')!.parent).toBe('P');
@@ -228,17 +228,17 @@ describe('useNestedUngroup', () => {
       ['leaf'],
     );
     const { result } = renderHook(() =>
-      useNestedUngroup(h.adapter, composeOpts),
+      useUnnest(h.adapter, composeOpts),
     );
     let dissolved: string[] = [];
-    act(() => { dissolved = result.current.ungroup(); });
+    act(() => { dissolved = result.current.unnest(); });
     expect(dissolved).toEqual([]);
     expect(h.batches).toHaveLength(0);
   });
 });
 
-describe('round-trip: group then ungroup restores world positions', () => {
-  it('after group + ungroup, every former child sits at its original world pose', () => {
+describe('round-trip: nest then unnest restores world positions', () => {
+  it('after nest + unnest, every former child sits at its original world pose', () => {
     const h = makeHarness(
       [
         { id: 'a', pose: { x: 13, y: 17, width: 5, height: 5 }, parent: null },
@@ -250,18 +250,18 @@ describe('round-trip: group then ungroup restores world positions', () => {
     const before = ['a', 'b', 'c'].map((id) => worldOf(h, id));
 
     const { result: gRes } = renderHook(() =>
-      useNestedGroup(h.adapter, {
+      useNest(h.adapter, {
         ...composeOpts,
         newGroupId: () => 'g1',
         groupFactory: ({ id, localPose }) => ({ id, pose: localPose, parent: null } as Obj),
       }),
     );
-    act(() => { gRes.current.group(); });
+    act(() => { gRes.current.nest(); });
 
     const { result: uRes } = renderHook(() =>
-      useNestedUngroup(h.adapter, composeOpts),
+      useUnnest(h.adapter, composeOpts),
     );
-    act(() => { uRes.current.ungroup(); });
+    act(() => { uRes.current.unnest(); });
 
     const after = ['a', 'b', 'c'].map((id) => worldOf(h, id));
     expect(after).toEqual(before);

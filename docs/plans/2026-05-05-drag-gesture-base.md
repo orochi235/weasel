@@ -1290,7 +1290,7 @@ Expected: clean build.
 Start the dev server (`pnpm dev`) and exercise these gestures across the demos that touch dragRect or move:
 - **Insert tool (any insert demo):** click+drag insert, sub-threshold click (no insert).
 - **Area select (any selection demo):** marquee, shift-extend, sub-threshold (clears selection).
-- **Move (LayoutDemo, MultiSelectDemo, GroupsDemo, NestedGroupsDemo):** body drag, multi-drag, group drag, cascade-children follow, layout snap, snap-back-or-delete.
+- **Move (LayoutDemo, MultiSelectDemo, GroupsDemo, NestingDemo):** body drag, multi-drag, group drag, cascade-children follow, layout snap, snap-back-or-delete.
 
 If any regression: file a TODO entry and fix in this same task before commit. Do not paper over.
 

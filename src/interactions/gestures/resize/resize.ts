@@ -37,8 +37,8 @@ export interface UseResizeOptions<TPose> {
   onGestureStart?: (id: string) => void;
   onGestureEnd?: (committed: boolean) => void;
   /** Optional: expand the incoming id into leaf ids before pose lookups.
-   *  Mirrors `useMove`'s `expandIds`. Used for virtual-group
-   *  expansion: when the gesture is started against a group id, the kit
+   *  Mirrors `useMove`'s `expandIds`. Used for group expansion: when the
+   *  gesture is started against a group id, the kit
    *  resizes by computing the union AABB of the leaves' origin bounds,
    *  running the compute pipeline on that union rect (group bounds), and
    *  remapping each leaf via `geometry.remapBounds(leaf, originGroupBounds,

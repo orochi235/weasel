@@ -9,7 +9,7 @@ interface HitAdapter<TNode extends { id: string }, TPose> {
   getParent: (id: string) => string | null;
 }
 
-export interface NestedGroupHitOpts<TNode extends { id: string }, TPose> {
+export interface NestedHitOpts<TNode extends { id: string }, TPose> {
   /** Compose a child's local pose into world coords given its parent's world
    *  pose. Same shape as `composeRectPose` (the default expectation). */
   composePose: (parent: TPose, child: TPose) => TPose;
@@ -17,23 +17,23 @@ export interface NestedGroupHitOpts<TNode extends { id: string }, TPose> {
    *  reads `x` / `y` / `width` / `height` straight off the pose (matches
    *  `RectPose`). Override for non-rect poses (e.g. paths). */
   poseBounds?: (pose: TPose) => RectBounds;
-  /** Predicate for "this object is a group body". The leaf scan skips objects
-   *  for which this returns true so a click on a group's painted body resolves
-   *  to a child leaf, not the group itself. Default: never (treat every object
-   *  as hittable). */
+  /** Predicate for "this object is a nesting parent body". The leaf scan
+   *  skips objects for which this returns true so a click on a parent's
+   *  painted body resolves to a child leaf, not the parent itself. Default:
+   *  never (treat every object as hittable). */
   isGroup?: (id: string, obj: TNode | undefined) => boolean;
 }
 
-export interface NestedGroupHitTester {
+export interface NestedHitTester {
   /** Outermost-ancestor pick. Suitable as the chrome-level `pickEvery`: a
-   *  casual click selects the whole top-level group. Returns `null` on
+   *  casual click selects the whole top-level ancestor. Returns `null` on
    *  empty space. */
   pickOutermost: (worldX: number, worldY: number) => string | null;
   /** Alt-aware selection-update pick. Without `alt`, returns the outermost
    *  ancestor (same as `pickOutermost`). With `alt`, returns one level
    *  deeper than the deepest currently-selected ancestor in the leaf's
-   *  chain — repeated alt-clicks step group → subgroup → leaf. With `alt`
-   *  and nothing in the chain selected, jumps straight to the leaf.
+   *  chain — repeated alt-clicks step ancestor → descendant → leaf. With
+   *  `alt` and nothing in the chain selected, jumps straight to the leaf.
    *  Plug into `useSelectTool({ pickBest })`. */
   pickBest: (
     worldX: number,
@@ -48,10 +48,10 @@ const defaultPoseBounds = <TPose>(pose: TPose): RectBounds => {
   return { x: p.x, y: p.y, width: p.width, height: p.height };
 };
 
-export function nestedGroupHitTester<TNode extends { id: string }, TPose>(
+export function nestedHitTester<TNode extends { id: string }, TPose>(
   adapter: HitAdapter<TNode, TPose>,
-  opts: NestedGroupHitOpts<TNode, TPose>,
-): NestedGroupHitTester {
+  opts: NestedHitOpts<TNode, TPose>,
+): NestedHitTester {
   const poseBounds = opts.poseBounds ?? defaultPoseBounds<TPose>;
   const isGroup = opts.isGroup ?? (() => false);
   const worldOf = worldPoseLookup(adapter, opts.composePose);
