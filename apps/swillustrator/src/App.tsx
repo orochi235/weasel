@@ -34,7 +34,6 @@ import {
   canBringForward,
   canSendBackward,
   useSelectAll,
-  useAction,
   useSelection,
   usePublishSelection,
   useSelectTool,
@@ -124,11 +123,10 @@ import { ActionBar } from './ActionBar';
 import { PreferencesModal } from './PreferencesModal';
 import {
   ActiveSwatches,
-  DEFAULT_FILL,
-  DEFAULT_STROKE,
   paintToString,
   type ActivePaint,
 } from './ActiveSwatches';
+import { useActiveColors } from './useActiveColors';
 import {
   objsToSvgNodes,
   svgNodesToObjsWithGroups,
@@ -396,78 +394,42 @@ export function App() {
   // it. `size` is the only field today; it drives the rendered page area,
   // the SVG viewBox on export, and (eventually) the printable surface.
   const [doc, setDoc] = useState<Document>(() => ({ size: { ...DEFAULT_DOC_SIZE } }));
-  // Active fill/stroke — what new shapes use. Independent of selection;
-  // changing these doesn't affect existing objects, and selecting an object
-  // doesn't update these. The swatch widget in the left sidebar surfaces them.
-  const [activeFill, setActiveFill] = useState<ActivePaint>({ kind: 'solid', color: '#7fb069' });
-  const [activeStroke, setActiveStroke] = useState<ActivePaint>({ kind: 'solid', color: '#1a130d' });
+  // Active fill/stroke/focus + the D / X / Shift+X / / keybindings live
+  // in `useActiveColors`. Color sources (swatch grids, palettes, eyedropper)
+  // dispatch through `colors.setFocused(paint)` rather than poking
+  // setActiveFill / setActiveStroke directly.
+  const colors = useActiveColors({
+    initialFill: { kind: 'solid', color: '#7fb069' },
+    initialStroke: { kind: 'solid', color: '#1a130d' },
+  });
   const [activeStrokeWidth, setActiveStrokeWidth] = useState(1);
-  // Last-focused swatch — `/` toggles its kind between 'solid' and 'none'.
-  const [focusedSwatch, setFocusedSwatch] = useState<'fill' | 'stroke'>('fill');
   const [pageSelected, setPageSelected] = useState(false);
-  // Refs so the action `run` callbacks read the latest values without
-  // having to re-register on every state change.
-  const activeFillRef = useRef(activeFill);
-  activeFillRef.current = activeFill;
-  const activeStrokeRef = useRef(activeStroke);
-  activeStrokeRef.current = activeStroke;
-  const focusedSwatchRef = useRef(focusedSwatch);
-  focusedSwatchRef.current = focusedSwatch;
-  // D — reset both swatches to defaults (white fill / black stroke).
-  useAction(useMemo(() => ({
-    id: 'swill.swatches.defaults',
-    label: 'Reset fill/stroke to defaults',
-    defaultBinding: { key: 'd' },
-    run: () => { setActiveFill(DEFAULT_FILL); setActiveStroke(DEFAULT_STROKE); },
-  }), []));
-  // X — swap fill and stroke paints.
-  useAction(useMemo(() => ({
-    id: 'swill.swatches.swap',
-    label: 'Swap fill and stroke',
-    defaultBinding: { key: 'x' },
-    run: () => {
-      const f = activeFillRef.current;
-      const s = activeStrokeRef.current;
-      setActiveFill(s);
-      setActiveStroke(f);
-    },
-  }), []));
-  // Shift+X — swap which swatch is focused (the focus highlight moves
-  // between the two stacked swatches; the colors themselves stay put).
-  useAction(useMemo(() => ({
-    id: 'swill.swatches.swapFocus',
-    label: 'Swap focused swatch',
-    defaultBinding: { key: 'x', shift: true },
-    run: () => {
-      setFocusedSwatch((cur) => (cur === 'fill' ? 'stroke' : 'fill'));
-    },
-  }), []));
-  // / — toggle the last-focused swatch between solid and 'none'.
-  useAction(useMemo(() => ({
-    id: 'swill.swatches.none',
-    label: 'Toggle focused swatch / none',
-    defaultBinding: { key: '/' },
-    run: () => {
-      const which = focusedSwatchRef.current;
-      if (which === 'fill') {
-        const cur = activeFillRef.current;
-        setActiveFill(cur.kind === 'none' ? DEFAULT_FILL : { kind: 'none' });
-      } else {
-        const cur = activeStrokeRef.current;
-        setActiveStroke(cur.kind === 'none' ? DEFAULT_STROKE : { kind: 'none' });
-      }
-    },
-  }), []));
+  // Refs so non-React callbacks (gesture handlers, ops, history) can
+  // read the latest active paint without re-registering.
+  const activeFillRef = useRef(colors.fill);
+  activeFillRef.current = colors.fill;
+  const activeStrokeRef = useRef(colors.stroke);
+  activeStrokeRef.current = colors.stroke;
+  const focusedSwatchRef = useRef(colors.focused);
+  focusedSwatchRef.current = colors.focused;
   // String-shaped aliases used by the Properties panel (which takes plain
   // hex strings via PropertyColorInput) and the per-object scene fill /
   // stroke fields. `paintToString` returns '' for the 'none' kind, which
   // the renderers treat as "skip this paint".
-  const fillColor = paintToString(activeFill);
-  const strokeColor = paintToString(activeStroke);
+  const fillColor = paintToString(colors.fill);
+  const strokeColor = paintToString(colors.stroke);
   const strokeWidth = activeStrokeWidth;
-  const setFillColor = (c: string) => setActiveFill({ kind: 'solid', color: c });
-  const setStrokeColor = (c: string) => setActiveStroke({ kind: 'solid', color: c });
+  const { setFillColor, setStrokeColor } = colors;
   const setStrokeWidth = setActiveStrokeWidth;
+  // Back-compat aliases for the in-flight gesture / op code below that
+  // still reaches for setActiveFill / setActiveStroke / setFocusedSwatch
+  // by name.
+  const setActiveFill = colors.setFill;
+  const setActiveStroke = colors.setStroke;
+  const setFocusedSwatch = colors.setFocus;
+  const activeFill = colors.fill;
+  const activeStroke = colors.stroke;
+  const focusedSwatch = colors.focused;
   const [docTitle, setDocTitle] = useState('Untitled');
   // PaperSize is derived from doc.size by reverse-lookup. Choosing a
   // preset writes doc.size through to the new dimensions; the selector

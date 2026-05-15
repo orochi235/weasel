@@ -558,6 +558,22 @@ html, body, #root {
   display: none;
 }
 
+/* `'transparent'` state — gray/white checkerboard with the same red-stripe
+   NO marker. Distinct from `'none'` (no paint at all) — `transparent`
+   means "draw with alpha 0," still occupies the path, still hit-tests. */
+.swill-swatch.is-transparent {
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(45deg, transparent calc(50% - 1px), #d4453a calc(50% - 1px), #d4453a calc(50% + 1px), transparent calc(50% + 1px)),
+    linear-gradient(45deg, #c5c5c5 25%, transparent 25%, transparent 75%, #c5c5c5 75%, #c5c5c5),
+    linear-gradient(45deg, #c5c5c5 25%, transparent 25%, transparent 75%, #c5c5c5 75%, #c5c5c5);
+  background-size: 100% 100%, 8px 8px, 8px 8px;
+  background-position: 0 0, 0 0, 4px 4px;
+}
+.swill-swatch.is-transparent.swill-swatch--stroke::before {
+  display: none;
+}
+
 /* Native color input lives offscreen — the swatch itself is the visible
    trigger, but we still need a real <input type=color> so the OS color
    picker pops on click. */

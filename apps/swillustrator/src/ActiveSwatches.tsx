@@ -14,7 +14,8 @@ import { useRef } from 'react';
 
 export type ActivePaint =
   | { kind: 'solid'; color: string }
-  | { kind: 'none' };
+  | { kind: 'none' }
+  | { kind: 'transparent' };
 
 export const DEFAULT_FILL: ActivePaint = { kind: 'solid', color: '#ffffff' };
 export const DEFAULT_STROKE: ActivePaint = { kind: 'solid', color: '#000000' };
@@ -41,6 +42,12 @@ export interface ActiveSwatchesProps {
 function swatchStyle(p: ActivePaint): CSSProperties {
   const color = p.kind === 'solid' ? p.color : '#ffffff';
   return { ['--swill-swatch-color' as string]: color } as CSSProperties;
+}
+
+function paintClassSuffix(p: ActivePaint): string {
+  if (p.kind === 'none') return ' is-none';
+  if (p.kind === 'transparent') return ' is-transparent';
+  return '';
 }
 
 export function ActiveSwatches(p: ActiveSwatchesProps) {
@@ -84,7 +91,7 @@ export function ActiveSwatches(p: ActiveSwatchesProps) {
       <div className={containerClass} role="group" aria-label="Active fill and stroke">
         <button
           type="button"
-          className={`swill-swatch swill-swatch--stroke${p.focused === 'stroke' ? ' is-focused' : ''}${p.stroke.kind === 'none' ? ' is-none' : ''}`}
+          className={`swill-swatch swill-swatch--stroke${p.focused === 'stroke' ? ' is-focused' : ''}${paintClassSuffix(p.stroke)}`}
           style={swatchStyle(p.stroke)}
           title="Stroke — click to pick · shift-click for none"
           onClick={(e) => onSwatchClick('stroke', e)}
@@ -100,7 +107,7 @@ export function ActiveSwatches(p: ActiveSwatchesProps) {
         </button>
         <button
           type="button"
-          className={`swill-swatch swill-swatch--fill${p.focused === 'fill' ? ' is-focused' : ''}${p.fill.kind === 'none' ? ' is-none' : ''}`}
+          className={`swill-swatch swill-swatch--fill${p.focused === 'fill' ? ' is-focused' : ''}${paintClassSuffix(p.fill)}`}
           style={swatchStyle(p.fill)}
           title="Fill — click to pick · shift-click for none"
           onClick={(e) => onSwatchClick('fill', e)}
@@ -129,7 +136,12 @@ export function ActiveSwatches(p: ActiveSwatchesProps) {
   );
 }
 
-/** Resolve an `ActivePaint` to the hex/string form used in scene objects. Empty string = no paint. */
+/** Resolve an `ActivePaint` to the hex/string form used in scene objects.
+ *  `none` returns the empty string (caller treats as "skip drawing");
+ *  `transparent` returns `'rgba(0,0,0,0)'` (a real paint with zero alpha
+ *  — still draws and still hit-tests). */
 export function paintToString(p: ActivePaint): string {
-  return p.kind === 'solid' ? p.color : '';
+  if (p.kind === 'solid') return p.color;
+  if (p.kind === 'transparent') return 'rgba(0,0,0,0)';
+  return '';
 }
