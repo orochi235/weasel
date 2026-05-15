@@ -48,13 +48,16 @@ export function useClipboardOps<TNode extends { id: string }>(
   const copy = useCallback(() => {
     const ids = optsRef.current.getSelection();
     if (ids.length === 0) return;
-    clipboardRef.current = adapterRef.current.snapshotSelection(ids);
+    const snap = adapterRef.current.snapshotSelection;
+    if (!snap) return;
+    clipboardRef.current = snap(ids);
   }, []);
 
   const paste = useCallback(() => {
     const cb = clipboardRef.current;
     if (cb.items.length === 0) return;
     const a = adapterRef.current;
+    if (!a.commitPaste) return;
     const offset = a.getPasteOffset?.(cb) ?? { dx: 0, dy: 0 };
     const dropPoint = optsRef.current.getDropPoint?.();
     const ctx = dropPoint != null ? { dropPoint } : undefined;

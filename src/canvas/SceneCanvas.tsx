@@ -442,7 +442,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   const tools = toolsProp ?? internalTools;
 
-  const wiredGestures = { undoRedo: { adapter: scene }, ...gestures };
+  // Auto-wire undo/redo against the scene's history when an
+   // `ActionsProvider` is in scope and the consumer hasn't explicitly
+   // suppressed actions via `actions={null}`. The wiring drives both the
+   // Mod+Z keybind and the registered `undo` / `redo` Action entries —
+   // suppressing on `actions={null}` keeps that prop's "no actions, no
+   // bindings" contract intact (covered by SceneCanvas.actions.test.tsx).
+  const wiredGestures = actions === null
+    ? gestures
+    : { undoRedo: { adapter: scene }, ...gestures };
 
   // Merge caller-supplied layers with kit defaults. When `layers` is omitted
   // the result is the full default set (scene + selectionOverlay). Partial

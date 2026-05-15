@@ -9,6 +9,7 @@ export function cloneByAltDrag(): CloneBehavior {
     id: 'cloneByAltDrag',
     activates: (mods) => mods.alt === true,
     onEnd(pose, ctx) {
+      if (!ctx.adapter.snapshotSelection || !ctx.adapter.commitPaste) return [];
       const snap = ctx.adapter.snapshotSelection(pose.ids);
       const created = ctx.adapter.commitPaste(snap, pose.offset, {
         dropPoint: { worldX: pose.worldX, worldY: pose.worldY },

@@ -66,6 +66,7 @@
 .table code { font-size: 11px; }
 
 .empty { color: var(--wzl-muted, #a59685); font-style: italic; padding: 8px 0; text-align: center; }
+.note { margin: 0 0 8px; font-size: 11px; color: var(--wzl-muted, #a59685); line-height: 1.4; }
 
 /* Keystroke "key cap" styling — each modifier and key in its own bordered chip. */
 .keys { display: inline-flex; gap: 3px; align-items: center; flex-wrap: wrap; }

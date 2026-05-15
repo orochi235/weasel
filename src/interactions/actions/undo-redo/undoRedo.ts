@@ -1,5 +1,7 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useKeybinding } from '../useKeybinding';
+import { useActionsRegistry } from '../registry';
+import { defaultUndoRedoActions } from '../defaults/undoRedo';
 
 /** Adapter for `useUndoRedo`. Shape is the subset of `History` the hook
  *  actually needs, so consumers can wire any equivalent stack — or wrap a
@@ -62,8 +64,27 @@ export function useUndoRedo(
   }, []);
 
   const bind = !!options.bindKeyboard;
-  useKeybinding({ key: 'z', mod: true, enabled: bind }, () => { undo(); });
-  useKeybinding({ key: 'z', mod: true, shift: true, enabled: bind }, () => { redo(); });
+
+  // Provider path: register undo/redo through the registry so they appear in
+  // command palettes / menus alongside other actions. Mirrors the pattern
+  // useDelete / useReorder / etc. follow.
+  const reg = useActionsRegistry();
+  useEffect(() => {
+    if (!reg || !bind) return;
+    const actions = defaultUndoRedoActions({
+      undo: () => undo(),
+      redo: () => redo(),
+      ...(adapterRef.current.canUndo ? { canUndo: () => adapterRef.current.canUndo!() } : {}),
+      ...(adapterRef.current.canRedo ? { canRedo: () => adapterRef.current.canRedo!() } : {}),
+    });
+    const unregs = actions.map((a) => reg.register(a));
+    return () => { for (const u of unregs) u(); };
+  }, [reg, bind, undo, redo]);
+
+  // Fallback path: when no provider is mounted, the registered actions
+  // never fire, so attach document-level listeners instead.
+  useKeybinding({ key: 'z', mod: true, enabled: bind && reg == null }, () => { undo(); });
+  useKeybinding({ key: 'z', mod: true, shift: true, enabled: bind && reg == null }, () => { redo(); });
 
   return { undo, redo };
 }

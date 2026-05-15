@@ -322,25 +322,21 @@ export function ToolkitBuilder() {
     applyOps,
   }, { enableKeyboard: enabled.actions.has('reorder') });
 
-  // useAlign/useDistribute/useFlip auto-register their actions
-  // unconditionally when an ActionsProvider is in scope — no opt-out
-  // surface today. Listed in the catalog for visibility; the checkboxes
-  // are inert (call sites below always run).
   useAlign<ShapePose>({
     getSelection,
     getPose: (id) => adapter.getPose(id),
     applyOps,
-  });
+  }, { enableKeyboard: enabled.actions.has('align') });
   useDistribute<ShapePose>({
     getSelection,
     getPose: (id) => adapter.getPose(id),
     applyOps,
-  });
+  }, { enableKeyboard: enabled.actions.has('distribute') });
   useFlip<ShapePose>({
     getSelection,
     getPose: (id) => adapter.getPose(id),
     applyOps,
-  });
+  }, { enableKeyboard: enabled.actions.has('flip') });
 
   useClipboard<DemoNode>({
     ...adapter,
@@ -500,9 +496,15 @@ export function ToolkitBuilder() {
             </table>
           </section>
           <section>
-            <h3 className={s.sectionTitle}>Conflicts ({conflicts.length})</h3>
+            <h3 className={s.sectionTitle}>Static route overlaps ({conflicts.length})</h3>
+            <p className={s.note}>
+              Tuples claimed by 2+ tools. Most are <em>not</em> runtime
+              conflicts — the dispatcher's slot precedence (hotkey →
+              active → ambient) picks one tool per pointer event, and
+              only one tool occupies the active slot at a time.
+            </p>
             {conflicts.length === 0
-              ? <p className={s.empty}>No conflicts.</p>
+              ? <p className={s.empty}>No overlaps.</p>
               : (
                 <ul className={s.conflicts}>
                   {conflicts.map((c, i) => (

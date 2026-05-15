@@ -31,6 +31,9 @@ export interface UseDistributeOptions<TPose> {
   defaultMode?: DistributeMode;
   /** Label passed to applyOps. Default 'Distribute'. */
   label?: string;
+  /** Auto-register the two default distribute actions into a surrounding
+   *  `<ActionsProvider>`. Default `true`. Pass `false` to skip registration. */
+  enableKeyboard?: boolean;
 }
 
 /** Return shape of `useDistribute`. */
@@ -121,11 +124,13 @@ export function useDistribute<TPose>(
   }, []);
 
   // Auto-register the two default distribute actions when an ActionsProvider
-  // is in scope. The registered actions use `defaultMode` (default 'centers');
-  // consumers needing the other mode call `distribute(axis, mode)` imperatively.
+  // is in scope and `enableKeyboard` is true (default). The registered
+  // actions use `defaultMode` (default 'centers'); consumers needing the
+  // other mode call `distribute(axis, mode)` imperatively.
   const reg = useActionsRegistry();
+  const enableKeyboard = options.enableKeyboard ?? true;
   useEffect(() => {
-    if (!reg) return;
+    if (!reg || !enableKeyboard) return;
     const actions = defaultDistributeActions<TPose>({
       getSelection: () => adapterRef.current.getSelection(),
       getPose: (id) => adapterRef.current.getPose(id),
@@ -138,7 +143,7 @@ export function useDistribute<TPose>(
     });
     const unregs = actions.map((act) => reg.register(act));
     return () => { for (const u of unregs) u(); };
-  }, [reg]);
+  }, [reg, enableKeyboard]);
 
   return { distribute };
 }

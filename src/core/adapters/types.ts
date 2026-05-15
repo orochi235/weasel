@@ -197,13 +197,23 @@ export interface LassoSelectAdapter extends AreaSelectAdapter {
  * the hook for resolution order).
  */
 export interface InsertAdapter<TNode extends { id: string }> {
-  commitInsert(bounds: { x: number; y: number; width: number; height: number }): TNode | null;
-  commitPaste(
+  /** Materialize a new node from drag-rect bounds (drag-to-insert tools).
+   *  Optional — hooks that don't drive insertion (e.g. `useClone`,
+   *  read-only clipboard) won't call it, and `sceneToAdapter` only fills
+   *  it in when `options.commitInsert` is supplied. Hooks that *do* call
+   *  it (insert tools) document the requirement at their own surface. */
+  commitInsert?(bounds: { x: number; y: number; width: number; height: number }): TNode | null;
+  /** Materialize one or more new nodes from a clipboard snapshot. Optional
+   *  — required by `useClipboard.paste`, ignored by other consumers. */
+  commitPaste?(
     clipboard: ClipboardSnapshot,
     offset: { dx: number; dy: number },
     ctx?: { dropPoint?: { worldX: number; worldY: number } },
   ): TNode[];
-  snapshotSelection(ids: string[]): ClipboardSnapshot;
+  /** Snapshot the current selection into the clipboard payload shape.
+   *  Optional — required by `useClipboard.copy` / `cut` and `useClone`'s
+   *  ghost capture, ignored by other consumers. */
+  snapshotSelection?(ids: string[]): ClipboardSnapshot;
   getPasteOffset?(clipboard: ClipboardSnapshot): { dx: number; dy: number };
   /** Mutator wired by `insertNode`-using ops (kit-side InsertOp). */
   insertNode(node: TNode): void;

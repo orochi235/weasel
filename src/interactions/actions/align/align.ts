@@ -26,6 +26,10 @@ export interface UseAlignOptions<TPose> {
   geometry?: PoseDescriptor<TPose>;
   /** Label passed to applyOps. Default 'Align'. */
   label?: string;
+  /** Auto-register the six default align actions into a surrounding
+   *  `<ActionsProvider>`. Default `true`. Pass `false` to skip registration
+   *  (e.g. you're calling `align()` imperatively from your own UI). */
+  enableKeyboard?: boolean;
 }
 
 /** Return shape of `useAlign`. */
@@ -108,10 +112,12 @@ export function useAlign<TPose>(
   }, []);
 
   // Auto-register the six default align actions when an ActionsProvider is in
-  // scope. Deps read from refs so prop changes flow through without churn.
+  // scope and `enableKeyboard` is true (default). Deps read from refs so
+  // prop changes flow through without churn.
   const reg = useActionsRegistry();
+  const enableKeyboard = options.enableKeyboard ?? true;
   useEffect(() => {
-    if (!reg) return;
+    if (!reg || !enableKeyboard) return;
     const actions = defaultAlignActions<TPose>({
       getSelection: () => adapterRef.current.getSelection(),
       getPose: (id) => adapterRef.current.getPose(id),
@@ -123,7 +129,7 @@ export function useAlign<TPose>(
     });
     const unregs = actions.map((act) => reg.register(act));
     return () => { for (const u of unregs) u(); };
-  }, [reg]);
+  }, [reg, enableKeyboard]);
 
   return { align };
 }

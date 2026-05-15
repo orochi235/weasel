@@ -81,7 +81,9 @@ export function useClone<T extends { id: string }>(
       const expand = optsRef.current.expandIds;
       const expandedIds = expand ? expand(ids) : ids;
       if (expandedIds.length === 0) return;
-      const snap = adapterRef.current.snapshotSelection(expandedIds);
+      const adapterSnap = adapterRef.current.snapshotSelection;
+      if (!adapterSnap) return;
+      const snap = adapterSnap(expandedIds);
       const snapshotItems = snap.items.map(normalizeItem);
       const s: ActiveState = {
         ids: expandedIds,

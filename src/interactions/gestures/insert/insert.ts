@@ -169,6 +169,7 @@ export function useInsert<TNode extends { id: string }, TPose>(
         }
         return false;
       }
+      if (!adapter.commitInsert) return false;
       const created = adapter.commitInsert(ctx.bounds);
       if (!created) return false;
       dispatch([createInsertOp({ node: created, label: insertLabel })]);
