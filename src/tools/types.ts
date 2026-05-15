@@ -207,6 +207,14 @@ export interface Tool<TScratch = unknown> {
     view: View;
     modifiers: ToolModifiers;
   }): { target: string; extra?: unknown } | null;
+  /** Reflection escape hatch: when this `Tool` was produced by `defineTool`,
+   *  the source `ToolDef` is attached here so introspection consumers
+   *  (`buildActionRegistry`, `findConflicts`, the toolkit-builder UI, the
+   *  reflection demo) can walk the declarative source rather than the
+   *  translated runtime channels. Tools constructed without `defineTool`
+   *  may leave this undefined. Typed as `unknown` to keep this file from
+   *  importing the routing types — consumers cast at the use site. */
+  def?: unknown;
 }
 
 /** Internal — which slot a tool occupies in the dispatch order. */

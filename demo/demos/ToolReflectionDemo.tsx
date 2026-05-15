@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import {
-  asNodeId,
   SceneCanvas,
   useSceneAdapter,
   useScene,
@@ -12,8 +11,6 @@ import {
 import {
   buildActionRegistry,
   findConflicts,
-  apply,
-  mods,
   type RegistryEntry,
   type Conflict,
   type ToolDef,
@@ -30,108 +27,33 @@ const INITIAL: Rect[] = [
   { id: 'c', x:  90, y: 170, width: 90, height: 70, color: '#7ab8d4' },
 ];
 
-// Stub ActionFn — registry/conflict walkers don't invoke it, they only
-// enumerate route-table keys and modifier-table keys. Using a single
-// shared no-op keeps the demo focused on the introspection surface.
-const noOp = () => apply<unknown>([]);
-
-/** Demo ToolDef stubs that mirror the gesture surface of useSelectTool +
- *  useHandTool. Real kit consumers introspect their own ToolDefs; the
- *  builtins return the translated `Tool<TScratch>` so we re-declare the
- *  shape here to feed buildActionRegistry / findConflicts. Mirrors the
- *  routes in src/tools/builtin/useSelectTool.ts and useHandTool.ts. */
-function buildDemoToolDefs(): readonly ToolDef<unknown>[] {
-  const selectTool: ToolDef<unknown> = {
-    id: 'select',
-    initial: {
-      pointerDown: {
-        rect: noOp, text: noOp, path: noOp, '*': noOp, empty: noOp,
-      },
-      drag: {
-        empty: noOp,
-      },
-      click: {
-        rect: noOp,
-        text: noOp,
-        path: noOp,
-        '*':  noOp,
-        empty: {
-          [mods()]:                noOp,
-          [mods('shift')]:         noOp,
-          [mods('mod')]:           noOp,
-          [mods('mod', 'shift')]:  noOp,
-        },
-      },
-      dblTap: {
-        '*':   noOp,
-        empty: noOp,
-      },
-    },
-  };
-  const handTool: ToolDef<unknown> = {
-    id: 'hand',
-    initial: {
-      // useHandTool exposes function-form drag — registers as one row
-      // with gesture=drag, target='*'.
-      drag: noOp,
-    },
-  };
-  return [selectTool, handTool];
-}
-
 export function ToolReflectionDemo() {
   const scene = useScene<Rect>({ items: INITIAL });
   const selection = useSelection({ mode: 'multi' });
-
   const adapter = useSceneAdapter(scene, { selection });
 
-  const pickEvery = (worldX: number, worldY: number): string[] => {
-    const hits: string[] = [];
-    for (const id of scene.renderOrder()) {
-      const n = scene.get(id);
-      if (!n) continue;
-      const p = n.pose as Rect;
-      if (worldX >= p.x && worldX <= p.x + p.width
-          && worldY >= p.y && worldY <= p.y + p.height) hits.push(id);
-    }
-    return hits;
-  };
-
-  const boundsOf = (id: string) => {
-    const n = scene.get(asNodeId(id));
-    if (!n) return null;
-    const p = n.pose as Rect;
-    return { x: p.x, y: p.y, width: p.width, height: p.height };
-  };
-
-  const select = useSelectTool(adapter, {
-    pickEvery, boundsOf,
-    getSelection: () => selection.current,
-  });
+  const select = useSelectTool(adapter, { getSelection: () => selection.current });
   const hand = useHandTool();
-  const tools = useTools({
-    active: 'select',
-    registry: { select, hand },
-  });
+  const tools = useTools({ active: 'select', registry: { select, hand } });
 
-  const toolDefs = useMemo(() => buildDemoToolDefs(), []);
-  const registry: RegistryEntry[] = useMemo(
-    () => buildActionRegistry(toolDefs),
-    [toolDefs],
+  // Walk the live tools' attached `def` (set by `defineTool`) to feed the
+  // reflection consumers — no synthetic stubs.
+  const toolDefs = useMemo<readonly ToolDef<unknown>[]>(
+    () => Object.values(tools.registry)
+      .map((t) => t.def as ToolDef<unknown> | undefined)
+      .filter((d): d is ToolDef<unknown> => d != null),
+    [tools.registry],
   );
-  const conflicts: Conflict[] = useMemo(
-    () => findConflicts(toolDefs),
-    [toolDefs],
-  );
+  const registry: RegistryEntry[] = useMemo(() => buildActionRegistry(toolDefs), [toolDefs]);
+  const conflicts: Conflict[] = useMemo(() => findConflicts(toolDefs), [toolDefs]);
 
   return (
     <div className={styles.demo}>
       <p className={styles.note}>
-        Three reflection consumers operating on stub ToolDefs that mirror the
-        gesture surface of <code>useSelectTool</code> + <code>useHandTool</code>.
-        Registry on the left, conflict report in the middle, live canvas on the
-        right. Live debug overlay coverage requires a SceneCanvas API extension
-        — see follow-ups in the Phase 4 plan.
+        Live introspection of the registered <code>useSelectTool</code> +{' '}
+        <code>useHandTool</code> via their attached <code>tool.def</code>.
+        Registry on the left, conflict report in the middle, the canvas
+        they're driving on the right.
       </p>
       <div className={styles.grid}>
         <div className={styles.panel}>
