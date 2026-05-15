@@ -28,6 +28,7 @@ import type { DrawCommand } from '../renderer';
 import { textCommand } from 'features/text/textCommand';
 import type { TextStyle } from 'features/text/textStyle';
 import type { Path } from 'features/paths/types';
+import { ellipsePath, regularPolygonPath, starPath } from 'features/paths/builder';
 
 export interface ShapePainter<TData = unknown, TPose = unknown> {
   /** Stable identifier — used for unregistration and debugging. Pick
@@ -164,6 +165,61 @@ const PATH_PAINTER: ShapePainter = {
   },
 };
 
+/** Built-in shape dispatcher — matches when `data.shape` names a kit-known
+ *  shape kind. Computes both paint and silhouette from the pose so consumer
+ *  scenes can declare clipping/rendering directly in JSON without
+ *  registering a custom painter. */
+const SHAPE_PAINTER: ShapePainter = {
+  id: 'kit:shape',
+  matches: (node) => {
+    const s = (node.data as { shape?: string } | null)?.shape;
+    return s != null && SHAPE_KINDS.has(s);
+  },
+  paint: (node, pose) => {
+    const d = node.data as { shape: string; color?: string; fill?: string; stroke?: string; strokeWidth?: number; sides?: number; points?: number };
+    const path = pathForShape(d, pose as RectPose);
+    return [{
+      kind: 'path',
+      path,
+      fill: { color: d.fill ?? d.color ?? '#888' },
+      ...(d.stroke && (d.strokeWidth ?? 0) > 0
+        ? { stroke: { paint: { color: d.stroke }, width: d.strokeWidth ?? 1 } }
+        : {}),
+    }];
+  },
+  silhouette: (node, pose) => {
+    const d = node.data as { shape: string; sides?: number; points?: number };
+    return pathForShape(d, pose as RectPose);
+  },
+};
+
+const SHAPE_KINDS = new Set(['rect', 'ellipse', 'polygon', 'star']);
+
+function pathForShape(
+  d: { shape: string; sides?: number; points?: number },
+  p: RectPose,
+): Path {
+  switch (d.shape) {
+    case 'ellipse':
+      return ellipsePath(p);
+    case 'polygon': {
+      const cx = p.x + p.width / 2;
+      const cy = p.y + p.height / 2;
+      const r = Math.min(p.width, p.height) / 2;
+      return regularPolygonPath({ x: cx, y: cy }, r, d.sides ?? 6);
+    }
+    case 'star': {
+      const cx = p.x + p.width / 2;
+      const cy = p.y + p.height / 2;
+      const r = Math.min(p.width, p.height) / 2;
+      return starPath({ x: cx, y: cy }, r, d.points ?? 5);
+    }
+    case 'rect':
+    default:
+      return { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height };
+  }
+}
+
 const RECT_FALLBACK_PAINTER: ShapePainter = {
   // Last-resort painter — always matches, so it must be registered last
   // within `'normal'`. Consumers who want a different fallback should
@@ -189,6 +245,7 @@ const RECT_FALLBACK_PAINTER: ShapePainter = {
 function registerBuiltInShapePainters(): void {
   registerShapePainter(TEXT_PAINTER);
   registerShapePainter(PATH_PAINTER);
+  registerShapePainter(SHAPE_PAINTER);
   registerShapePainter(RECT_FALLBACK_PAINTER);
 }
 

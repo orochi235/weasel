@@ -1,32 +1,11 @@
-import {
-  ellipsePath,
-  registerShapePainter,
-  SceneCanvas,
-} from '@orochi235/weasel';
+import { SceneCanvas } from '@orochi235/weasel';
 import sceneJson from './data/clipping.scene.json';
 
-// Register at module load so the painter is in the registry BEFORE
-// SceneCanvas's first paint — useEffect would fire after the initial
-// render and the ellipse would briefly appear as a rect. The painter
-// teaches the kit both the visual (paint) and the clip silhouette for
-// any node whose data carries `shape: 'ellipse'`.
-registerShapePainter(
-  {
-    id: 'demo:ellipse',
-    matches: (n) => (n.data as { shape?: string } | null)?.shape === 'ellipse',
-    paint: (n, pose) => {
-      const d = n.data as { color?: string } | null;
-      return [{
-        kind: 'path',
-        path: ellipsePath(pose as { x: number; y: number; width: number; height: number }),
-        fill: { color: d?.color ?? '#888' },
-      }];
-    },
-    silhouette: (_n, pose) => ellipsePath(pose as { x: number; y: number; width: number; height: number }),
-  },
-  { priority: 'high' },
-);
-
+// The kit's built-in `kit:shape` painter dispatches on `data.shape` —
+// `'rect' | 'ellipse' | 'polygon' | 'star'` — and supplies both the paint
+// AND silhouette from the pose. Container nodes with shape: 'ellipse'
+// (like the bed in this scene) clip their descendants to the ellipse
+// without any consumer-side painter registration.
 export function ClippingDemo() {
   return (
     <SceneCanvas

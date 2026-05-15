@@ -28,9 +28,9 @@ beforeEach(() => {
 });
 
 describe('shape painter registry', () => {
-  it('ships three built-ins in evaluation order: text → path → rect-fallback', () => {
+  it('ships four built-ins in evaluation order: text → path → shape → rect-fallback', () => {
     const ids = getShapePainters().map((p) => p.id);
-    expect(ids).toEqual(['kit:text', 'kit:path', 'kit:rect-fallback']);
+    expect(ids).toEqual(['kit:text', 'kit:path', 'kit:shape', 'kit:rect-fallback']);
   });
 
   it('findShapePainter returns the first matching painter', () => {
@@ -47,7 +47,7 @@ describe('shape painter registry', () => {
     };
     registerShapePainter(custom);
     const ids = getShapePainters().map((p) => p.id);
-    expect(ids).toEqual(['kit:text', 'kit:path', 'kit:rect-fallback', 'app:image']);
+    expect(ids).toEqual(['kit:text', 'kit:path', 'kit:shape', 'kit:rect-fallback', 'app:image']);
     // Because rect-fallback always matches, app:image never wins from
     // normal priority. That's a feature of the built-in order.
     expect(findShapePainter(node({ image: 'x' }))?.id).toBe('kit:rect-fallback');
