@@ -27,9 +27,17 @@ import {
   useStarTool,
   useTextTool,
 } from '@orochi235/weasel';
-import type { AnyTool, NodeId, Path, PolygonPath, Scene, SceneNode } from '@orochi235/weasel';
+import type { AnyTool, LassoHitMode, NodeId, Path, PolygonPath, Scene, SceneNode } from '@orochi235/weasel';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
 import type { InsertAdapter } from 'core/adapters/types';
+
+/** Per-tool option overrides for the built-in shape/lasso/clone tools.
+ *  Each entry is a narrow subset of the underlying hook's options surface
+ *  — just the knobs that need consumer control under the bundle pattern. */
+export interface BuiltinToolOptions {
+  lasso?: { mode?: LassoHitMode };
+  clone?: { cloneSelection?: boolean };
+}
 
 /** Default fill palette cycled through for auto-generated shape nodes. */
 const DEFAULT_FILLS = ['#7fb069', '#d4a574', '#a48bd4', '#7ab8d4', '#d47a7a'];
@@ -46,6 +54,8 @@ export type BuiltinShapeToolId =
 export interface UseBuiltinShapeToolsArgs<TData, TLayer extends string, TPose> {
   scene: Scene<TData, TLayer, TPose>;
   adapter: SceneCanvasAdapter<TData, TLayer, TPose>;
+  /** Per-tool option overrides (lasso mode, clone-selection, etc.). */
+  options?: BuiltinToolOptions;
 }
 
 export type BuiltinShapeTools = Record<BuiltinShapeToolId, AnyTool>;
@@ -55,7 +65,7 @@ export type BuiltinShapeTools = Record<BuiltinShapeToolId, AnyTool>;
 export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
   args: UseBuiltinShapeToolsArgs<TData, TLayer, TPose>,
 ): BuiltinShapeTools {
-  const { scene, adapter } = args;
+  const { scene, adapter, options } = args;
 
   // Per-canvas counter + fill cycler. Refs survive renders and stay
   // private to the SceneCanvas instance.
@@ -150,7 +160,7 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
       }) as LeafNode;
     },
   });
-  const lasso = useLassoTool(adapter);
+  const lasso = useLassoTool(adapter, options?.lasso ?? {});
   const text = useTextTool<LeafNode>({
     pointInsert: (point) => makeLeaf(freshId('tx'),
       { x: point.x, y: point.y, width: 80, height: 20 },
@@ -172,6 +182,9 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
   };
   const clone = useCloneTool<LeafNode>(cloneAdapter, {
     behaviors: [cloneByAltDrag()],
+    ...(options?.clone?.cloneSelection !== undefined
+      ? { cloneSelection: options.clone.cloneSelection }
+      : {}),
   });
 
   return { rect, ellipse, line, polygon, star, pencil, lasso, text, clone };

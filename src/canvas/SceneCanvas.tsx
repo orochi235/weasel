@@ -53,7 +53,8 @@ import { ActionsProviderIfRoot } from './SceneCanvas/ActionsProviderIfRoot';
 import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
 import { useViewportTools } from './SceneCanvas/useViewportTools';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
-import { useBuiltinShapeTools, type BuiltinShapeToolId } from './SceneCanvas/useBuiltinShapeTools';
+import { useBuiltinShapeTools, type BuiltinShapeToolId, type BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
+export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 import type { StandardActionsDeps, StandardActionDefaults } from 'interactions/actions/resolveActions';
 
 /** Default size in CSS pixels for selection corner-handles AND their
@@ -251,6 +252,11 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      */
     defaultTools?: readonly BuiltinToolId[];
 
+    /** Per-tool option overrides for the built-in shape/lasso/clone tools.
+     *  Each entry is a narrow subset of the underlying hook's options
+     *  surface — `lasso.mode`, `clone.cloneSelection`, etc. */
+    toolOptions?: BuiltinToolOptions;
+
     /** Always-on tools to register alongside the internal default select.
      *  Use this for wheel/keyboard zoom + pan tools that should run alongside
      *  the default select. If you supply your own `tools` prop, this is
@@ -343,6 +349,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     onToolsCreated,
     toolBundle,
     defaultTools,
+    toolOptions,
     ambient,
     viewport,
     layers,
@@ -452,8 +459,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const wants = (id: BuiltinToolId): boolean => requestedTools.includes(id);
 
   // Synthesize the shape/lasso/text/clone tools — always called per React
-  // rules-of-hooks; only registered below when requested.
-  const shapeTools = useBuiltinShapeTools({ scene, adapter });
+  // rules-of-hooks; only registered below when requested. Per-tool options
+  // (lasso mode, clone-selection) thread through `toolOptions`.
+  const shapeTools = useBuiltinShapeTools({ scene, adapter, options: toolOptions });
 
   // WHY ambient (not registry) for resize+rotate: `useTools.getActiveOverlays()`
   // returns only active + hotkey + ambient overlays. The Canvas affordance

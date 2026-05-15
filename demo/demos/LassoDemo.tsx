@@ -1,40 +1,32 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import {
+  asNodeId,
+  rectPath,
   SceneCanvas,
-  useSceneAdapter,
-  selectFromLasso,
-  selectFromMarquee,
-  useKeybindings,
-  useLassoTool,
-  useResizeTool,
-  useRotateTool,
   useScene,
   useSelection,
-  useSelectTool,
-  useTools,
+  type LassoHitMode,
 } from '@orochi235/weasel';
-import type { CanvasExtensionApi, LassoHitMode } from '@orochi235/weasel';
-
-interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
 const W = 480, H = 320;
 
-// A scattering of small shapes — enough variety that each hit mode produces
-// visibly different selection outcomes for the same lasso path.
 const PALETTE = ['#7fb069', '#d4a574', '#a48bd4', '#7ab8d4', '#d47a7a', '#e8c547', '#5fad9a'];
-const INITIAL: Rect[] = (() => {
-  const out: Rect[] = [];
+const INITIAL = (() => {
+  const out = [];
   let i = 0;
   for (let row = 0; row < 5; row++) {
     for (let col = 0; col < 8; col++) {
       const x = 20 + col * 55 + (row % 2) * 18;
       const y = 20 + row * 55;
+      const width = 30 + ((i * 7) % 25);
+      const height = 28 + ((i * 11) % 22);
       out.push({
-        id: `r${i}`,
-        x, y,
-        width: 30 + ((i * 7) % 25),
-        height: 28 + ((i * 11) % 22),
-        color: PALETTE[i % PALETTE.length],
+        id: asNodeId(`r${i}`),
+        kind: 'leaf' as const,
+        layer: 'default' as const,
+        parent: null,
+        pose: { x, y, width, height },
+        data: { path: rectPath(x, y, width, height), fill: PALETTE[i % PALETTE.length] },
       });
       i++;
     }
@@ -49,62 +41,13 @@ const MODE_LABELS: Record<LassoHitMode, string> = {
 };
 
 export function LassoDemo() {
-  const scene = useScene({ items: INITIAL });
+  // SceneCanvas's `toolBundle="everything"` includes useLassoTool. The
+  // `toolOptions.lasso.mode` knob drives the live hit-mode comparison —
+  // press L to switch to lasso, drag a closed polygon, watch which rects
+  // get selected based on the chosen mode.
+  const scene = useScene({ systemLayers: [{ id: 'default' }], initial: INITIAL });
   const selection = useSelection({ mode: 'multi' });
   const [mode, setMode] = useState<LassoHitMode>('intersect');
-
-  const adapter = useSceneAdapter(scene, { selection });
-
-  // pickEvery / boundsOf are auto-derived from the adapter (rect-pose AABB
-  // scan) — no boilerplate needed for the common case. Override either if
-  // your TPose isn't `{x,y,width,height}`-shaped.
-  const select = useSelectTool(adapter, {
-    getSelection: () => selection.current,
-    areaSelect: { behaviors: [selectFromMarquee()] },
-  });
-
-  // Resize + rotate as ambient affordances so corner / rotation handles
-  // remain interactive when the foreground tool is `select` or `lasso`.
-  // Passing a custom `tools` prop bypasses SceneCanvas's built-in mount,
-  // so these have to be wired explicitly.
-  const resizeTool = useResizeTool(adapter, {
-    getSelection: () => selection.current,
-  });
-  const rotateTool = useRotateTool(adapter, {
-    getSelection: () => [...selection.current],
-  });
-
-  // toolsRef lets the lasso's onGestureEnd flip back to 'select' after
-  // commit without rebuilding the lasso Tool record (which would lose
-  // gesture state mid-flight). Forward declaration via ref since `tools`
-  // isn't constructed until below.
-  const toolsRef = useRef<ReturnType<typeof useTools> | null>(null);
-
-  // Lasso tool reads `mode` through a behavior that captures the latest value
-  // each render — recreating the behavior with a fresh closure is the simplest
-  // way to make the on-screen mode toggle live. After a lasso gesture commits,
-  // flip the active tool back to 'select' so corner handles on the multi-union
-  // chrome become draggable (Photoshop / Illustrator convention).
-  const lasso = useLassoTool(adapter, {
-    behaviors: [selectFromLasso({ mode })],
-    onGestureEnd: (committed) => {
-      if (committed) toolsRef.current?.setActive('select');
-    },
-  });
-
-  const tools = useTools({
-    active: 'select',
-    registry: { select, lasso },
-    ambient: [resizeTool, rotateTool],
-  });
-  toolsRef.current = tools;
-  // Wire V (select) and L (lasso) so the consumer can swap active tools by
-  // keystroke. SceneCanvas disables its internal keybindings whenever a
-  // `tools=` prop is supplied; the consumer owns the wiring.
-  useKeybindings(tools);
-
-  const canvasRef = useRef<CanvasExtensionApi | null>(null);
-  useEffect(() => { canvasRef.current?.element?.focus(); }, []);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -122,19 +65,17 @@ export function LassoDemo() {
             {' '}{MODE_LABELS[m]}
           </label>
         ))}
-        <span style={{ marginLeft: 'auto', opacity: 0.7 }}>
-          Press <kbd>L</kbd> for lasso · Active: <code>{tools.active}</code>
-        </span>
+        <span style={{ marginLeft: 'auto', opacity: 0.7 }}>Press <kbd>L</kbd> for lasso</span>
       </div>
       <SceneCanvas
-        ref={canvasRef}
         width={W}
         height={H}
         className="ckd-canvas"
         scene={scene}
         selection={selection}
         selectionMode="multi"
-        tools={tools}
+        toolBundle="everything"
+        toolOptions={{ lasso: { mode } }}
       />
     </div>
   );
