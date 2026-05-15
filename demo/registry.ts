@@ -32,7 +32,6 @@ import { ColorMatrixDemo } from './demos/ColorMatrixDemo';
 import { CustomShaderDemo } from './demos/CustomShaderDemo';
 import { LassoDemo } from './demos/LassoDemo';
 import { ClipboardDemo } from './demos/ClipboardDemo';
-import { ClippingDemo } from './demos/ClippingDemo';
 import { HudDemo } from './demos/HudDemo';
 import { LayerListDemo } from './demos/LayerListDemo';
 
@@ -69,7 +68,6 @@ import ColorMatrixDemoFull from './demos/ColorMatrixDemo.tsx?raw';
 import CustomShaderDemoFull from './demos/CustomShaderDemo.tsx?raw';
 import LassoDemoFull from './demos/LassoDemo.tsx?raw';
 import ClipboardDemoFull from './demos/ClipboardDemo.tsx?raw';
-import ClippingDemoFull from './demos/ClippingDemo.tsx?raw';
 import HudDemoFull from './demos/HudDemo.tsx?raw';
 import LayerListDemoFull from './demos/LayerListDemo.tsx?raw';
 import { PointSnapDemo } from './demos/PointSnapDemo';
@@ -82,9 +80,7 @@ import ToolReflectionDemoCss from './demos/ToolReflectionDemo.module.css?raw';
 
 // Scene-data JSON for demos that load via `sceneFromJSON`. Surfaced alongside
 // the TSX in the source pane so consumers can see the format.
-import ClippingSceneJson from './demos/data/clipping.scene.json?raw';
 import SceneSceneJson from './demos/data/scene.scene.json?raw';
-import NestingSceneJson from './demos/data/nesting.scene.json?raw';
 import LayoutSceneJson from './demos/data/layout.scene.json?raw';
 
 /** Extra source pane entry: typically a companion file (scene JSON, fixture)
@@ -275,25 +271,13 @@ export const DEMOS: DemoEntry[] = [
   },
   {
     id: 'nesting',
-    title: 'Nesting',
+    title: 'Nesting & clipping',
     category: 'Hierarchy',
-    description: 'Real parent/child containment via setParent — supports arbitrary depth. The opening scene already shows three levels: p1 contains a free leaf and a sub-parent p2; p2 in turn contains its own leaves. Poses are local to the direct parent; the kit composes world poses via worldPoseLookup for hit-testing and selection overlays. useNest (Mod+G) wraps the selection in a new parent node and rebases children\'s locals so their visual world position is preserved; useUnnest (Mod+Shift+G) reparents children back to the grandparent. Default click resolves to the outermost ancestor; Alt-click drills one level deeper than the deepest currently-selected ancestor (so repeated Alt-clicks step ancestor → descendant → leaf), letting you select any node in the tree to nest/unnest at any depth. Dragging a parent auto-cascades its descendants in the live overlay so children visually follow during the drag (no extra ops — under local-pose semantics the post-commit scene is already correct). Mod+Z / Mod+Shift+Z undo and redo.',
-    hint: 'Click a leaf to grab its outermost ancestor. Alt-click to drill in (each Alt-click steps one level deeper). Cmd+G nests the selection at any depth; Cmd+Shift+G unnests.',
+    description: 'Two surfaces in one scene. Left: rect containers showing real parent/child containment via setParent — useNest (Mod+G) wraps the selection in a new container and rebases children\'s locals so their visual world position is preserved; useUnnest (Mod+Shift+G) reparents children back to the grandparent. Default click resolves to the outermost ancestor; Alt-click drills one level deeper. Right: an elliptical container (brown "bed") whose `data: { shape: \'ellipse\' }` triggers the kit:shape painter — the same painter supplies both the visual AND the clip silhouette, so the child rects are clipped to the ellipse during render and during drag-preview alike. Dragging a container auto-cascades its descendants in the live overlay (no extra ops — under local-pose semantics the post-commit scene is already correct). Mod+Z / Mod+Shift+Z undo and redo.',
+    hint: 'Click a leaf to grab its outermost ancestor. Alt-click to drill in. Cmd+G nests the selection at any depth; Cmd+Shift+G unnests. Drag the ellipse — the child rects stay clipped throughout the preview.',
     Component: NestingDemo,
     full: NestingDemoFull,
     path: 'demo/demos/NestingDemo.tsx',
-    extras: [{ path: 'demo/demos/data/nesting.scene.json', code: NestingSceneJson, language: 'json' }],
-  },
-  {
-    id: 'clipping',
-    title: 'Clipping',
-    category: 'Hierarchy',
-    description: 'Elliptical container clip with two overhanging children. The brown "bed" container carries a clipFromPose that returns an ellipse path; the green and orange child rects extend beyond the ellipse boundary and are clipped to it. Canonical visual regression baseline for Phase 2 nested clipping.',
-    hint: 'The green and orange rects overhang the ellipse — only the portions inside are visible.',
-    Component: ClippingDemo,
-    full: ClippingDemoFull,
-    path: 'demo/demos/ClippingDemo.tsx',
-    extras: [{ path: 'demo/demos/data/clipping.scene.json', code: ClippingSceneJson, language: 'json' }],
   },
 
   // ─── Geometry ─────────────────────────────────────────────────────────────

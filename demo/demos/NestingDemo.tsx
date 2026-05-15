@@ -11,15 +11,14 @@ import {
   useTools,
 } from '@orochi235/weasel';
 import type { SceneNode, SerializedScene } from '@orochi235/weasel';
-import type { DrawCommand } from '../../src/renderer';
 import sceneJson from './data/nesting.scene.json';
 
-interface NodeData { color: string }
+interface NodeData { color: string; shape?: 'ellipse' }
 type LayerId = 'default';
 interface Pose { x: number; y: number; width: number; height: number }
 type DemoNode = SceneNode<NodeData, LayerId, Pose>;
 
-const W = 480, H = 320;
+const W = 540, H = 320;
 
 // Scene v1 stores absolute world poses, so the kit's compose/decompose
 // reduces to identity here. Nest/unnest math becomes a no-op: children's
@@ -28,20 +27,22 @@ const composeAbs = <P,>(_parent: P, child: P): P => child;
 const decomposeAbs = <P,>(_parent: P, world: P): P => world;
 
 export function NestingDemo() {
+  // Scene mixes two container shapes:
+  //   - Two rect containers (g1 / g2) showing nested-group selection
+  //   - One ellipse container (bed) — `data: { shape: 'ellipse' }`
+  //     triggers the kit:shape painter, which supplies BOTH the visual
+  //     and the clip silhouette; child rects are clipped to the ellipse.
   const [scene] = useState(() =>
-    sceneFromJSON(
-      sceneJson as unknown as SerializedScene<NodeData, LayerId, Pose>,
-      {},
-    ),
+    sceneFromJSON(sceneJson as unknown as SerializedScene<NodeData, LayerId, Pose>, {}),
   );
   useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
 
   const selection = useSelection();
 
-  // `cascadeContainerPose: 'rect'` opts into the scene v1 "containers translate
-  // descendants on setPose" semantic so dragging a parent moves its children.
-  // Everything else — insertNode/removeNode, getParent, getSelection — comes
-  // out of sceneToAdapter at the right shape for the nesting hooks.
+  // `cascadeContainerPose: 'rect'` opts into the scene v1 "containers
+  // translate descendants on setPose" semantic so dragging a container
+  // moves its children — and the preview ghost clips them to the
+  // previewed silhouette during the drag.
   const adapter = useSceneAdapter(scene, { selection, cascadeContainerPose: 'rect' });
 
   useNest(adapter, {
@@ -79,34 +80,6 @@ export function NestingDemo() {
       scene={scene}
       selection={selection}
       tools={tools}
-      layers={{
-        scene: {
-          drawOne: (node, p): DrawCommand[] => {
-            if (node.kind === 'container') {
-              return [
-                // Translucent fill via paint opacity (group-level alpha would
-                // tint the dashed stroke too).
-                {
-                  kind: 'path',
-                  path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                  fill: { color: node.data.color, opacity: 0.35 },
-                },
-                {
-                  kind: 'path',
-                  path: { kind: 'rect', x: p.x + 0.5, y: p.y + 0.5, width: p.width - 1, height: p.height - 1 },
-                  stroke: { paint: { color: '#5a4a38' }, width: 1, dash: [4, 3] },
-                },
-              ];
-            }
-            return [{
-              kind: 'path',
-              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { color: node.data.color },
-            }];
-          },
-        },
-        selectionOverlay: { handles: { size: 0 } },
-      }}
     />
   );
 }

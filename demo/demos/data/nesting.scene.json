@@ -42,11 +42,27 @@
       "data": { "color": "#a8d469" }
     },
     {
-      "id": "c",
+      "id": "bed",
+      "kind": "container",
+      "layer": "default",
+      "pose": { "x": 290, "y": 40, "width": 200, "height": 160 },
+      "data": { "shape": "ellipse", "color": "#5a4a3a" }
+    },
+    {
+      "id": "p1",
+      "parent": "bed",
       "kind": "leaf",
       "layer": "default",
-      "pose": { "x": 320, "y": 110, "width": 90, "height": 60 },
+      "pose": { "x": 300, "y": 90, "width": 110, "height": 70 },
       "data": { "color": "#d4a574" }
+    },
+    {
+      "id": "p2",
+      "parent": "bed",
+      "kind": "leaf",
+      "layer": "default",
+      "pose": { "x": 380, "y": 110, "width": 100, "height": 80 },
+      "data": { "color": "#7ab8d4" }
     },
     {
       "id": "d",
