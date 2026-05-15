@@ -10,9 +10,10 @@
  *
  * URL state is canonical: `?tools=...&actions=...` survives reload.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   asNodeId,
+  cloneByAltDrag,
   ellipsePath,
   linePath,
   rectPath,
@@ -21,15 +22,19 @@ import {
   SceneCanvas,
   useActionsRegistry,
   useAlign,
+  useClipboard,
+  useCloneTool,
   useDelete,
   useDistribute,
   useDuplicate,
   useEllipseTool,
   useEscape,
   useFlip,
+  useGroup,
   useHandTool,
   useLineTool,
   useLassoTool,
+  useNest,
   useNudge,
   usePencilTool,
   usePolygonTool,
@@ -41,9 +46,14 @@ import {
   useSelection,
   useSelectTool,
   useStarTool,
+  useTextTool,
   useTools,
   useUndoRedo,
+  useUngroup,
+  useUnnest,
   type AnyTool,
+  type ClipboardSnapshot,
+  type Group,
   type KeyBinding,
   type NodeId,
   type Path,
@@ -59,7 +69,7 @@ import {
 } from '@orochi235/weasel/routing';
 import s from './ToolkitBuilder.module.css';
 
-interface ShapeData { path: Path; fill: string; stroke?: string; strokeWidth?: number }
+interface ShapeData { path?: Path; text?: string; fill: string; stroke?: string; strokeWidth?: number }
 interface ShapePose { x: number; y: number; width: number; height: number }
 type DemoNode = SceneNode<ShapeData, 'default', ShapePose>;
 
@@ -85,6 +95,8 @@ const CATALOG: readonly CatalogEntry[] = [
   { id: 'star', label: 'useStarTool', group: 'tool' },
   { id: 'pencil', label: 'usePencilTool', group: 'tool' },
   { id: 'lasso', label: 'useLassoTool', group: 'tool' },
+  { id: 'text', label: 'useTextTool', group: 'tool' },
+  { id: 'clone', label: 'useCloneTool', group: 'tool' },
   // Actions
   { id: 'delete', label: 'useDelete', group: 'action' },
   { id: 'undoRedo', label: 'useUndoRedo', group: 'action' },
@@ -96,6 +108,9 @@ const CATALOG: readonly CatalogEntry[] = [
   { id: 'align', label: 'useAlign', group: 'action' },
   { id: 'distribute', label: 'useDistribute', group: 'action' },
   { id: 'flip', label: 'useFlip', group: 'action' },
+  { id: 'clipboard', label: 'useClipboard', group: 'action' },
+  { id: 'group', label: 'useGroup / useUngroup', group: 'action' },
+  { id: 'nest', label: 'useNest / useUnnest', group: 'action' },
 ];
 
 function parseHash(hash: string): { tools: Set<string>; actions: Set<string> } {
@@ -134,6 +149,23 @@ export function ToolkitBuilder() {
   });
   const selection = useSelection({ mode: 'multi' });
   const adapter = useSceneAdapter(scene, { selection });
+
+  // Separate Group registry — useGroup / useUngroup need a parallel
+  // structure that tracks lasso-style groups distinct from scene parenting.
+  const [groups, setGroups] = useState<Group[]>([]);
+  const groupsRef = useRef(groups);
+  groupsRef.current = groups;
+  const groupAdapter = useMemo(() => ({
+    getGroup: (id: string) => groupsRef.current.find((g) => g.id === id),
+    getGroupsForMember: (id: string) =>
+      groupsRef.current.filter((g) => g.members.includes(id)).map((g) => g.id),
+    insertGroup: (g: Group) => setGroups((gs) => [...gs, g]),
+    removeGroup: (id: string) => setGroups((gs) => gs.filter((g) => g.id !== id)),
+    addToGroup: (gid: string, ids: string[]) =>
+      setGroups((gs) => gs.map((g) => (g.id === gid ? { ...g, members: [...g.members, ...ids] } : g))),
+    removeFromGroup: (gid: string, ids: string[]) =>
+      setGroups((gs) => gs.map((g) => (g.id === gid ? { ...g, members: g.members.filter((m) => !ids.includes(m)) } : g))),
+  }), []);
 
   // ── Tool hooks (always called; conditionally registered) ────────────────────
   const select = useSelectTool(adapter, { getSelection: () => selection.current });
@@ -181,10 +213,24 @@ export function ToolkitBuilder() {
     },
   });
   const lasso = useLassoTool(adapter);
+  const text = useTextTool<DemoNode>({
+    pointInsert: (point) => makeNode(freshId('tx'),
+      { x: point.x, y: point.y, width: 80, height: 20 },
+      { fill: nextFill(), text: 'Text' }),
+  });
+  const cloneInsertAdapter = useMemo(() => ({
+    ...adapter,
+    commitInsert: () => null,
+    commitPaste: () => [],
+    snapshotSelection: () => ({ items: [] }),
+  }), [adapter]);
+  const clone = useCloneTool<DemoNode, ShapePose>(cloneInsertAdapter, {
+    behaviors: [cloneByAltDrag()],
+  });
 
   const allTools: Record<string, AnyTool> = useMemo(() => ({
-    select, hand, rect, ellipse, line, polygon, star, pencil, lasso,
-  }), [select, hand, rect, ellipse, line, polygon, star, pencil, lasso]);
+    select, hand, rect, ellipse, line, polygon, star, pencil, lasso, text, clone,
+  }), [select, hand, rect, ellipse, line, polygon, star, pencil, lasso, text, clone]);
 
   const registry = useMemo(() => {
     const out: Record<string, AnyTool> = {};
@@ -279,6 +325,62 @@ export function ToolkitBuilder() {
     getSelection,
     getPose: (id) => adapter.getPose(id),
     applyOps,
+  });
+
+  useClipboard<DemoNode>({
+    ...adapter,
+    commitInsert: () => null,
+    snapshotSelection: (ids: string[]): ClipboardSnapshot => ({
+      items: ids.map((id) => scene.get(asNodeId(id))).filter((n): n is DemoNode => n != null),
+    }),
+    commitPaste: (clip, offset) => {
+      const items = clip.items as DemoNode[];
+      return items.map((src) => makeNode(freshId('paste'),
+        { ...src.pose, x: src.pose.x + offset.dx, y: src.pose.y + offset.dy },
+        { ...src.data }));
+    },
+    getNode: (id: string) => scene.get(asNodeId(id)) ?? undefined,
+    removeNode: (id: string) => scene.remove(asNodeId(id)),
+  }, {
+    getSelection: () => [...selection.current],
+    enableKeyboard: enabled.actions.has('clipboard'),
+  });
+
+  // Group / Ungroup wired against the parallel Group registry.
+  useGroup({
+    ...groupAdapter,
+    getSelection,
+    applyOps,
+  }, { enableKeyboard: enabled.actions.has('group') });
+  useUngroup({
+    ...groupAdapter,
+    getSelection,
+    applyOps,
+  }, { enableKeyboard: enabled.actions.has('group') });
+
+  // Nest / Unnest — scene v1 stores world poses, so compose/decompose are
+  // identity (matches NestingDemo).
+  const composeAbs = <P,>(_p: P, c: P): P => c;
+  const decomposeAbs = <P,>(_p: P, w: P): P => w;
+  useNest(adapter, {
+    composePose: composeAbs,
+    decomposePose: decomposeAbs,
+    groupFactory: ({ id, localPose }): DemoNode => ({
+      id: asNodeId(id),
+      kind: 'container' as const,
+      layer: 'default' as const,
+      pose: localPose,
+      data: { fill: '#3a2e22' },
+      parent: null,
+      children: [],
+    }),
+    enableKeyboard: enabled.actions.has('nest'),
+  });
+  useUnnest(adapter, {
+    composePose: composeAbs,
+    decomposePose: decomposeAbs,
+    isGroup: (_id, obj) => obj?.kind === 'container',
+    enableKeyboard: enabled.actions.has('nest'),
   });
 
   // ── Reflection panels ───────────────────────────────────────────────────────
