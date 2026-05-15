@@ -65,6 +65,7 @@ export interface MoveMoveArgs {
 }
 
 /** Scratch type for `beginAt` continuations. */
+/** @internal */
 export interface MoveScratchTag {
   kind: 'move';
   ids: readonly string[];

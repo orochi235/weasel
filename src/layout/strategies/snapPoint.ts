@@ -2,7 +2,7 @@ import { createTransformOp } from 'core/ops/transform';
 import type { LayoutSnap, LayoutStrategy } from '../types';
 import { nearestWithin } from '../snaps';
 
-type SnapPattern = 'corners' | 'edges' | 'center' | 'grid';
+export type SnapPattern = 'corners' | 'edges' | 'center' | 'grid';
 
 export interface SnapPointOptions<TPose> {
   pattern: SnapPattern;
@@ -13,7 +13,7 @@ export interface SnapPointOptions<TPose> {
   snap?: LayoutSnap<TPose>;
 }
 
-type Pt = { x: number; y: number };
+export type Pt = { x: number; y: number };
 
 function buildPoints(
   bounds: { x: number; y: number; width: number; height: number },

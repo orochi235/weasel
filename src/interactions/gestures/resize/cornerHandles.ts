@@ -1,17 +1,11 @@
 import type { ResizeAnchor } from '../types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 /** Corner resize-handle: world-space center plus the anchor that pins the opposite corner during resize. */
 export interface CornerHandle {
   cx: number;
   cy: number;
   anchor: ResizeAnchor;
-}
-
-interface Bounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
 }
 
 /** Standard 4-corner resize-handle layout: each corner pins the opposite

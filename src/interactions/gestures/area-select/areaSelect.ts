@@ -31,6 +31,7 @@ export interface UseAreaSelectOptions {
 }
 
 /** Scratch shape produced by `beginAt` — identifies this as an area-select gesture. */
+/** @internal */
 export interface AreaScratch {
   kind: 'area';
 }

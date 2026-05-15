@@ -13,6 +13,7 @@ import type {
 } from './types';
 import { DEFAULT_DEBUG_THEME } from './defaultTheme';
 
+/** @internal */
 interface CreateDebugOverlayLayerOpts {
   sink: DebugSink & { snapshot(): DebugSnapshot };
   config: DebugConfig;

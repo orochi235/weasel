@@ -17,6 +17,7 @@ interface SetPathAdapter {
  * Reports no-op when `from` and `to` are structurally equal (same path bytes,
  * closed, params), letting history skip the entry.
  */
+/** @internal */
 interface SetPathArgs {
   id: string;
   from: SetPathFields;

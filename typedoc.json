@@ -10,5 +10,30 @@
   "excludeExternals": true,
   "exclude": ["**/*.test.ts", "**/*.test.tsx"],
   "readme": "README.md",
-  "skipErrorChecking": true
+  "skipErrorChecking": true,
+  "intentionallyNotExported": [
+    "DeleteArgs",
+    "InsertArgs",
+    "MoveToIndexArgs",
+    "ReparentArgs",
+    "SetPathArgs",
+    "SetSelectionArgs",
+    "SetTextArgs",
+    "TransformArgs",
+    "HandScratch",
+    "LineScratch",
+    "PencilScratch",
+    "SelectScratch",
+    "PenEditState",
+    "AreaScratch",
+    "MoveScratchTag",
+    "HitAdapter",
+    "ApplyBatch",
+    "BooleanZOrder",
+    "OrderedSceneShape",
+    "ReorderAdapter",
+    "ToolsDispatcherOptions",
+    "CreateDebugOverlayLayerOpts",
+    "STANDARD_SLOTS"
+  ]
 }

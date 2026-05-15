@@ -23,6 +23,7 @@ export interface UsePencilToolOptions<TNode extends { id: string }> {
   closeThreshold?: number;
 }
 
+/** @internal */
 interface PencilScratch {
   samples: PencilPoint[];
 }

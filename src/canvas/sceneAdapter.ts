@@ -36,8 +36,7 @@ import type { Path } from 'features/paths/types';
 import { findShapeSilhouette } from './shapePainters';
 import { pathIntersectsRect } from 'features/paths/pathHitTest';
 import { translateRectPose } from 'features/groups/composePose';
-
-interface Bounds { x: number; y: number; width: number; height: number; }
+import type { Bounds } from '../core/viewport/fitViewToBounds';
 
 /** Minimal selection contract `sceneToAdapter` needs to wire `getSelection` /
  *  `setSelection`. Matches `useSelection().adapterMethods` plus an imperative
@@ -52,6 +51,7 @@ export interface SceneAdapterSelection {
 /** Sibling z-order surface used by reorder ops. Inlined here (rather than
  *  pulled from `core/ops/reorder` to avoid import cycles); the `null` parent
  *  channel addresses the root sibling list. */
+/** @internal */
 interface ReorderAdapter {
   getChildren(parentId: string | null): string[];
   setChildOrder(parentId: string | null, ids: string[]): void;

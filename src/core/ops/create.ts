@@ -10,6 +10,7 @@ interface InsertAdapter<TNode> {
  *  exists so consumers can name the op type when needed. */
 export type InsertOp = Op;
 
+/** @internal */
 interface InsertArgs<TNode extends { id: string }> {
   node: TNode;
   label?: string;

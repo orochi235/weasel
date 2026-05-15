@@ -9,6 +9,7 @@ import { marqueeDrawCommands, type InsertOverlayStyle } from './marquee';
 import type { InsertController } from 'interactions/gestures/insert/insert';
 import type { KeyBinding } from 'interactions/actions/useKeybinding';
 
+/** @internal */
 type ApplyBatch = (ops: Op[], label: string) => void;
 
 export interface DragInsertToolConfig<TNode extends { id: string }, TPose> {

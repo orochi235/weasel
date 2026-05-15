@@ -1,7 +1,7 @@
 import { worldPoseLookup } from './composePose';
+import type { Bounds as RectBounds } from '../../core/viewport/fitViewToBounds';
 
-interface RectBounds { x: number; y: number; width: number; height: number }
-
+/** @internal */
 interface HitAdapter<TNode extends { id: string }, TPose> {
   getNode: (id: string) => TNode | undefined;
   getNodes: () => TNode[];

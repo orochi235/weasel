@@ -6,6 +6,7 @@ interface SelectionAdapter {
   setSelection(ids: NodeId[]): void;
 }
 
+/** @internal */
 interface SetSelectionArgs {
   from: readonly NodeId[];
   to: readonly NodeId[];

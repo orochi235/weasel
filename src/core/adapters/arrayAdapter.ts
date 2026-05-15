@@ -14,13 +14,7 @@ import {
 } from 'features/paths/polygonHitTestRect';
 import type { Op } from '../ops/types';
 import { applyOpsTo } from '../applyOps';
-
-interface Bounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+import type { Bounds } from '../viewport/fitViewToBounds';
 
 /** Configuration for `arrayAdapter`. */
 export interface ArrayAdapterConfig<TNode extends { id: string }, TPose> {

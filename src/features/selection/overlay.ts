@@ -36,6 +36,7 @@ import {
   DEFAULT_ROTATION_HANDLE_DISTANCE,
 } from 'interactions/gestures/rotate/handle';
 import { rotatePoint } from 'interactions/gestures/rotate/geometry';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
@@ -48,21 +49,10 @@ function projectBounds<B extends Bounds>(b: B, view: View): B {
   return { ...b, x: sx, y: sy, width: b.width * view.scale, height: b.height * view.scale };
 }
 
-interface Bounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-interface RotatedBounds extends Bounds {
-  rotation: number;
-}
-
 /** Pose with an optional rotation field — surfaced from `getBounds`'s
  *  return value so the overlay can branch into the rotated render path. */
-function rotationOf(b: Bounds | RotatedBounds): number {
-  return (b as RotatedBounds).rotation ?? 0;
+function rotationOf(b: Bounds): number {
+  return b.rotation ?? 0;
 }
 
 /** Options for `composeSelectionPose`. */
@@ -446,7 +436,7 @@ function handleCommandsFor(
  *  the rect. Two arrowheads at the arc endpoints point along the tangent,
  *  signaling that rotation goes either direction. */
 function rotationHandleCommands(
-  worldB: Bounds | RotatedBounds,
+  worldB: Bounds,
   handles: ResolvedHandles,
   distance: number,
   view: View,

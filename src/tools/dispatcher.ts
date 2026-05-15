@@ -95,6 +95,7 @@ interface SlotsState {
   fallback?: AnyTool | null;
 }
 
+/** @internal */
 export interface ToolsDispatcherOptions {
   /** Called on every event to read the current slot occupants. The
    *  dispatcher keeps no copy — `useTools` owns slot state and updates

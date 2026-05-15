@@ -7,6 +7,7 @@ import type { DebugSink } from '../debug/types';
 import type { KeyBinding } from 'interactions/actions/useKeybinding';
 import type { HitResult } from './routing/hitResult';
 import type { RouteResolvedInfo } from './routing/reflection/route-resolved';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 /** Outcome of a channel handler. `'claim'` stops dispatch for this event;
  *  `'pass'` lets the next slot try. Handlers that return nothing are
@@ -108,15 +109,10 @@ export interface DblTapChannel<TScratch> {
  *  means the tool is not eligible for the hotkey slot. */
 export type HotkeyTrigger = 'space' | 'alt' | 'ctrl' | 'meta' | 'shift';
 
-/** World-space AABB shape used by `previewBounds`. Matches the `{x, y, width,
- *  height}` shape used throughout the canvas/tools layers. Inlined here to
- *  avoid an import cycle from `tools/types` into `tools/builtin`. */
-export interface ToolBounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+/** World-space AABB shape used by `previewBounds`. Alias of the kit-wide
+ *  `Bounds` type — the optional `rotation` field carries through so a tool
+ *  can report an oriented preview rect (e.g. mid-rotate). */
+export type ToolBounds = Bounds;
 
 /** Presentation metadata for tool palettes / menus. Optional on every
  *  tool — consumers that render a palette (`<ToolPalette>`) read these

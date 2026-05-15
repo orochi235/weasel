@@ -5,6 +5,7 @@ interface ReparentAdapter {
   setParent(id: string, parentId: string | null): void;
 }
 
+/** @internal */
 interface ReparentArgs {
   id: string;
   fromParentId: string | null;

@@ -1,6 +1,6 @@
 import { type RefObject, useCallback, useEffect, useState } from 'react';
 
-interface CanvasSize {
+export interface CanvasSize {
   width: number;
   height: number;
   dpr: number;

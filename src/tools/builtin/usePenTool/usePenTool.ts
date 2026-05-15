@@ -40,6 +40,7 @@ export interface PenSubpath {
 
 /** Edit-mode state. `anchors` uses the kit's PenAnchor (committed/derived
  *  geometry); `altBroken` has no post-commit meaning and is correctly absent. */
+/** @internal */
 export interface PenEditState {
   objId: string;
   anchors: KitPenAnchor[][];

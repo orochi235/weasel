@@ -5,6 +5,7 @@ interface SetTextAdapter {
   setText(id: string, text: string): void;
 }
 
+/** @internal */
 interface SetTextArgs {
   id: string;
   from: string;

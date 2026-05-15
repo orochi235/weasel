@@ -1,12 +1,7 @@
-/** World-space bounding rect for hit-testing handles. Uses `width`/`height` to
- *  match `cornerResizeHandles` and `rotationHandle` expectations. */
-export interface Bounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  rotation?: number;
-}
+// Re-export the canonical kit-wide Bounds; the chrome/handle code uses the
+// same `{x, y, width, height, rotation?}` shape that lives in viewport
+// helpers, with rotation indicating an oriented selection box.
+export type { Bounds } from '../../../core/viewport/fitViewToBounds';
 
 /** Synthetic id used by `<Canvas selectionMode="multi">` to address the
  *  union-AABB target when 2+ real ids are selected. The selection-overlay

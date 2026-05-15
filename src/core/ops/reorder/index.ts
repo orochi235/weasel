@@ -119,6 +119,7 @@ export function createReorderOp(args: {
   return createPartitionedReorderOp({ ids, fn, label: label ?? defaultLabel });
 }
 
+/** @internal */
 interface MoveToIndexArgs {
   ids: string[];
   parentId: string | null;

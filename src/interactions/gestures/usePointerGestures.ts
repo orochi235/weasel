@@ -19,14 +19,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
 import type { DebugSink, HitShape } from '../../debug/types';
 import { pickTopMostHit } from 'tools/builtin/pickTopMostHit';
-
-interface Bounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  rotation?: number;
-}
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 /** Pointer event handlers ready to spread onto a `<canvas>`. */
 export interface PointerGestureBindings {

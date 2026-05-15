@@ -31,6 +31,7 @@ export type BooleanOp = 'union' | 'intersect' | 'subtract' | 'exclude' | 'divide
  * parent's child order. Used by the optional `getZOrder` hook below to
  * reposition the result of a boolean op at the topmost source's slot.
  */
+/** @internal */
 export interface BooleanZOrder {
   parentId: string | null;
   index: number;

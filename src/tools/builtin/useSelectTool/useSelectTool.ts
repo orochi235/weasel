@@ -109,10 +109,11 @@ export interface UseSelectToolOptions<TNode extends { id: string }, TPose> {
 
 /** Intersection of the move + area-select adapter interfaces.
  *  Resize / rotate adapters moved to `useResizeTool` / `useRotateTool`. */
-type SelectAdapter<TNode extends { id: string }, TPose> =
+export type SelectAdapter<TNode extends { id: string }, TPose> =
   MoveAdapter<TNode, TPose>
   & AreaSelectAdapter;
 
+/** @internal */
 export type SelectScratch =
   | { kind: 'idle' }
   | { kind: 'move'; ids: string[]; deferredClickId: string | null }

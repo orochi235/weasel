@@ -6,6 +6,7 @@ interface DeleteAdapter {
   removeNode(id: string): void;
 }
 
+/** @internal */
 interface DeleteArgs<TNode extends { id: string }> {
   node: TNode;
   label?: string;

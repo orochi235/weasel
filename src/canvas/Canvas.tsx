@@ -60,18 +60,13 @@ import { createDebugSink } from '../debug/createDebugSink';
 import { createDebugOverlayLayer } from '../debug/createDebugOverlayLayer';
 import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/useSelectTool';
 import { buildSceneTree } from './buildSceneTree';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 
-interface Bounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  rotation?: number;
-}
 
 /** Standard slot names — render in this canonical order.
  *  `cellHighlight` is internal: emitted from the `grid` slot's nested
  *  `highlight` config, not a top-level layer key. */
+/** @internal */
 export const STANDARD_SLOTS = [
   'grid',
   'cellHighlight',

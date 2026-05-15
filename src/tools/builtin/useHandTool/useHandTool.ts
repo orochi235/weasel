@@ -19,6 +19,7 @@ export interface UseHandToolOptions {
   inertia?: false | InertiaConfig;
 }
 
+/** @internal */
 interface HandScratch {
   startView: View;
   startScreenPoint: { x: number; y: number };

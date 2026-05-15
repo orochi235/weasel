@@ -610,3 +610,49 @@ export {
   UnknownIcon,
 } from './icons';
 export type { IconProps } from './icons';
+
+// ─── Trailing type re-exports ────────────────────────────────────────────────
+// Types reachable through the public API but previously only importable via
+// deep paths. Consolidated here so consumers can name them from the barrel.
+export type {
+  DrawCommand,
+  ShaderProgramHandle,
+} from './renderer';
+export type { TextureHandle } from './renderer/textures/registerTexture';
+export type {
+  GesturesConfig,
+  LayersMap,
+  SceneSlotConfig,
+  SelectionOverlaySlotConfig,
+  LayerSlotValue,
+  StandardSlotConfig,
+} from './canvas/Canvas';
+export type { BuiltinToolId } from './canvas/SceneCanvas';
+export type { SceneToAdapterOptions } from './canvas/sceneAdapter';
+export type {
+  ToolPresentation,
+  DblTapChannel,
+} from './tools/types';
+export type { ToolHit } from './tools/routing/hitResult';
+export type { RouteMatch } from './tools/routing/lookup';
+export type { InsertOverlayStyle } from './tools/builtin/marquee';
+export type { InsertPoint } from './interactions/gestures/types';
+export type { AnimateToBoundsOptions } from './core/viewport/useViewAnimation';
+export type { UseHandToolOptions } from './tools/builtin/useHandTool/useHandTool';
+export type { UseWheelPanToolOptions } from './tools/builtin/useWheelPanTool/useWheelPanTool';
+export type { SelectAdapter } from './tools/builtin/useSelectTool/useSelectTool';
+export type { PolygonPoint } from './tools/builtin/usePolygonTool/usePolygonTool';
+export type { StarPoint } from './tools/builtin/useStarTool/useStarTool';
+export type { UseSceneTrivialOptions } from './core/scene/useScene';
+export type {
+  DefaultTextData,
+  UseSceneTextEditReturn,
+} from './features/text/useSceneTextEdit';
+export type { SnapPattern } from './layout/strategies/snapPoint';
+export type {
+  Vec2,
+  Rect,
+} from './features/paths/polygonHitTestRect';
+// `Pt` is the local-only point-shape alias used by `snapPoint`; surface it so
+// custom snap behaviors can name the same shape rather than redeclaring it.
+export type { Pt } from './layout/strategies/snapPoint';

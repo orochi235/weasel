@@ -32,7 +32,7 @@ import { useTextEdit, type UseTextEditReturn } from './useTextEdit';
 /** Shape the default projections expect `data` to satisfy. All fields
  *  optional so any object satisfies the constraint — projections fill in
  *  the gaps for non-default shapes. */
-interface DefaultTextData {
+export interface DefaultTextData {
   text?: string;
   style?: TextStyle;
   runs?: readonly StyledRun[];

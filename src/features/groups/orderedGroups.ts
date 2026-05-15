@@ -1,5 +1,6 @@
 import type { GroupAdapter } from './types';
 
+/** @internal */
 interface OrderedSceneShape {
   getChildren(parentId: string | null): string[];
   setChildOrder(parentId: string | null, ids: string[]): void;

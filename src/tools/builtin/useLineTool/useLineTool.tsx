@@ -29,6 +29,7 @@ export interface UseLineToolOptions<TNode extends { id: string }> {
   snapPoint?: (p: LinePoint) => LinePoint;
 }
 
+/** @internal */
 interface LineScratch {
   start: LinePoint;
   current: LinePoint;
