@@ -1,15 +1,8 @@
 import type { NodeId } from '../scene/types';
 import type { ModifierState } from 'interactions/gestures/types';
+import type { Bounds } from '../viewport/fitViewToBounds';
 
-/** AABB used for selection chrome bounds. Mirrors `Bounds` in
- *  `src/core/adapters/types` but inlined here to avoid an import cycle. */
-export interface Bounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  rotation?: number;
-}
+export type { Bounds };
 
 /**
  * Read-only state that affordances consult on every render and hit-test

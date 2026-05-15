@@ -2,13 +2,17 @@ import type { View } from './view';
 
 /**
  * Axis-aligned rectangle in world space. Kit-wide `Bounds` shape used by
- * selection, group, and viewport helpers.
+ * selection, group, and viewport helpers. The optional `rotation` field
+ * (radians, around the AABB center) lets selection chrome attach a rotated
+ * orientation to an otherwise axis-aligned rect without needing a parallel
+ * type.
  */
 export interface Bounds {
   x: number;
   y: number;
   width: number;
   height: number;
+  rotation?: number;
 }
 
 /** Pixel dimensions of the canvas viewport. */

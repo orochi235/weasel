@@ -178,11 +178,14 @@ export {
   createRotationAffordance,
   type Affordance,
   type AffordanceBinding,
+  type AffordanceRegion,
   type CornerResizeAffordanceOptions,
   type CornerResizeScratch,
+  type CustomPaintContext,
   type RotationAffordanceOptions,
   type RotationScratch,
 } from './affordances';
+export type { ChromeState } from './core/selection/chromeState';
 export {
   composeSelectionPose,
   createSelectionOutlineLayer,

@@ -1,4 +1,9 @@
-export type { Affordance, AffordanceBinding } from './types';
+export type {
+  Affordance,
+  AffordanceBinding,
+  AffordanceRegion,
+  CustomPaintContext,
+} from './types';
 export { composeAffordanceLayer } from './composeAffordanceLayer';
 export {
   createCornerResizeAffordance,

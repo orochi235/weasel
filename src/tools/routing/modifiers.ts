@@ -9,10 +9,12 @@ export type ModifierKey =
 /** Convenience: produce the canonical ModifierKey from modifiers passed
  *  in any order. Useful in computed property syntax:
  *
- *      'rect': {
- *        [mods('shift')]:        addToSelection,
- *        [mods('alt', 'shift')]: cloneAndAdd,    // → 'shift+alt'
- *      }
+ *  ```ts
+ *  'rect': {
+ *    [mods('shift')]:        addToSelection,
+ *    [mods('alt', 'shift')]: cloneAndAdd,    // → 'shift+alt'
+ *  }
+ *  ```
  */
 export function mods(
   ...keys: ReadonlyArray<'mod' | 'shift' | 'alt'>
