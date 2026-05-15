@@ -18,7 +18,7 @@
  * from `scene` knowledge (children-of-id + absolute pose lookup); consumers
  * can override either by passing their own `moveOptions.cascadeWorldPose`.
  */
-import { forwardRef, useCallback, useEffect, useMemo, useRef } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type React from 'react';
 import type { ReactNode } from 'react';
 import { type ActionsProp } from 'interactions/actions/registry';
@@ -35,8 +35,9 @@ import type { CanvasExtensionApi } from './canvasExtension';
 import type { SceneToAdapterOptions } from './sceneAdapter';
 import type { PanBounds } from 'core/viewport/useDecayLoop';
 import type { View } from 'core/viewport/view';
-import type { Node, Scene } from 'core/scene/types';
+import type { Node, Scene, SerializedScene } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
+import { sceneFromJSON } from 'core/scene/scene';
 import type { Op } from 'core/ops/types';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
 import { usePublishSelection } from 'features/selection/SelectionContext';
@@ -201,7 +202,12 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     | 'layers'   // stripped so we can re-add as optional below
   >
   & {
-    scene: Scene<TData, TLayer, TPose>;
+    /** A `Scene` (typically from `useScene`) — or a `SerializedScene`
+     *  JSON object, which SceneCanvas bakes into a Scene internally on
+     *  first render. The serialized form is read once; subsequent
+     *  changes to the prop are ignored. Pass a `key` prop on
+     *  `<SceneCanvas>` to force a fresh canvas from updated JSON. */
+    scene: Scene<TData, TLayer, TPose> | SerializedScene<TData, TLayer, TPose>;
 
     /** Layer configuration. When omitted, SceneCanvas applies kit defaults
      *  (a scene slot that paints `node.data.color` rects + a default
@@ -367,7 +373,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   ref: React.ForwardedRef<CanvasExtensionApi>,
 ) {
   const {
-    scene,
+    scene: sceneInput,
     gestures,
     geometry,
     selectTool: selectToolOpts,
@@ -391,6 +397,20 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     backgroundFill,
     ...rest
   } = props;
+
+  // `scene` accepts either a live `Scene` or a `SerializedScene` JSON
+  // object. JSON is baked once via useState init; subsequent renders
+  // ignore prop changes (use a `key` prop on `<SceneCanvas>` to force a
+  // fresh canvas). Subscription is uniform — useSyncExternalStore on the
+  // resolved Scene's version stream.
+  const isSerialized = (s: unknown): s is SerializedScene<TData, TLayer, TPose> =>
+    typeof s === 'object' && s != null && (s as { version?: unknown }).version === 1
+      && Array.isArray((s as { nodes?: unknown }).nodes);
+  const [bakedScene] = useState<Scene<TData, TLayer, TPose> | null>(
+    () => isSerialized(sceneInput) ? sceneFromJSON(sceneInput, {}) : null,
+  );
+  const scene = bakedScene ?? (sceneInput as Scene<TData, TLayer, TPose>);
+  useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
 
   // Extract view-related props from rest so we can intercept them for the
   // pinch-zoom hook (which needs the current view) without breaking the
