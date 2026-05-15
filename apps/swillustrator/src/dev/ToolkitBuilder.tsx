@@ -137,6 +137,43 @@ function makeNode(id: NodeId, pose: ShapePose, data: ShapeData): DemoNode {
 
 interface CatalogEntry { id: string; label: string; group: 'tool' | 'action' }
 
+/** Named preset tool/action collections. Picking one resets the catalog
+ *  selection en masse; tweaking individual checkboxes drops into the
+ *  synthetic 'custom' bundle automatically. */
+interface Bundle { id: string; label: string; tools: readonly string[]; actions: readonly string[] }
+
+const BUNDLES: readonly Bundle[] = [
+  {
+    id: 'minimal',
+    label: 'Minimal',
+    tools: ['select', 'hand'],
+    actions: ['undoRedo', 'escape'],
+  },
+  {
+    id: 'standard',
+    label: 'Standard',
+    tools: ['select', 'hand', 'rect', 'ellipse', 'line', 'pencil'],
+    actions: ['delete', 'undoRedo', 'duplicate', 'nudge', 'escape', 'selectAll', 'clipboard'],
+  },
+  {
+    id: 'everything',
+    label: 'Everything',
+    tools: ['select', 'hand', 'rect', 'ellipse', 'line', 'polygon', 'star', 'pencil', 'lasso', 'text', 'clone'],
+    actions: ['delete', 'undoRedo', 'duplicate', 'nudge', 'escape', 'selectAll', 'reorder', 'align', 'distribute', 'flip', 'clipboard', 'group', 'nest'],
+  },
+];
+
+function bundleMatching(tools: Set<string>, actions: Set<string>): string {
+  for (const b of BUNDLES) {
+    if (b.tools.length === tools.size
+      && b.actions.length === actions.size
+      && b.tools.every((t) => tools.has(t))
+      && b.actions.every((a) => actions.has(a))
+    ) return b.id;
+  }
+  return 'custom';
+}
+
 const CATALOG: readonly CatalogEntry[] = [
   // Tools
   { id: 'select', label: 'useSelectTool', group: 'tool' },
@@ -169,16 +206,31 @@ const CATALOG: readonly CatalogEntry[] = [
 function parseHash(hash: string): { tools: Set<string>; actions: Set<string> } {
   const q = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
   const params = new URLSearchParams(q);
+  // `?bundle=<id>` takes precedence over explicit tools/actions when present
+  // — selecting a bundle resets the catalog to its preset members.
+  const bundleId = params.get('bundle');
+  if (bundleId && bundleId !== 'custom') {
+    const b = BUNDLES.find((x) => x.id === bundleId);
+    if (b) return { tools: new Set(b.tools), actions: new Set(b.actions) };
+  }
+  // Fallback: explicit tools/actions, or default to the 'standard' bundle.
+  const fallback = BUNDLES.find((b) => b.id === 'standard')!;
   return {
-    tools: new Set((params.get('tools') ?? 'select,hand,rect').split(',').filter(Boolean)),
-    actions: new Set((params.get('actions') ?? 'delete,undoRedo').split(',').filter(Boolean)),
+    tools: new Set((params.get('tools') ?? fallback.tools.join(',')).split(',').filter(Boolean)),
+    actions: new Set((params.get('actions') ?? fallback.actions.join(',')).split(',').filter(Boolean)),
   };
 }
 
 function writeHash(tools: Set<string>, actions: Set<string>) {
   const params = new URLSearchParams();
-  if (tools.size) params.set('tools', [...tools].join(','));
-  if (actions.size) params.set('actions', [...actions].join(','));
+  const bundleId = bundleMatching(tools, actions);
+  if (bundleId !== 'custom') {
+    // Compact form: just the bundle id.
+    params.set('bundle', bundleId);
+  } else {
+    if (tools.size) params.set('tools', [...tools].join(','));
+    if (actions.size) params.set('actions', [...actions].join(','));
+  }
   const next = `#/dev/toolkits${params.toString() ? `?${params.toString()}` : ''}`;
   if (window.location.hash !== next) window.history.replaceState(null, '', next);
 }
@@ -208,6 +260,14 @@ export function ToolkitBuilder() {
       if (next.has(id)) next.delete(id); else next.add(id);
       return group === 'tool' ? { ...cur, tools: next } : { ...cur, actions: next };
     });
+  };
+
+  const activeBundle = bundleMatching(enabled.tools, enabled.actions);
+  const applyBundle = (bundleId: string) => {
+    if (bundleId === 'custom') return; // 'custom' is read-only — derived state
+    const b = BUNDLES.find((x) => x.id === bundleId);
+    if (!b) return;
+    setEnabled({ tools: new Set(b.tools), actions: new Set(b.actions) });
   };
 
   // Playground scene + selection.
@@ -479,7 +539,21 @@ export function ToolkitBuilder() {
   return (
     <div className={s.root}>
       <header className={s.header}>
-        <h1 className={s.title}>Toolkit Builder</h1>
+        <div className={s.headerRow}>
+          <h1 className={s.title}>Toolkit Builder</h1>
+          <label className={s.bundlePicker}>
+            <span>Bundle</span>
+            <select
+              value={activeBundle}
+              onChange={(e) => applyBundle(e.target.value)}
+            >
+              {BUNDLES.map((b) => (
+                <option key={b.id} value={b.id}>{b.label}</option>
+              ))}
+              <option value="custom" disabled={activeBundle !== 'custom'}>Custom</option>
+            </select>
+          </label>
+        </div>
         <p className={s.subtitle}>
           Assemble a canvas from kit primitives. URL state is canonical —
           copy the address to share a config.

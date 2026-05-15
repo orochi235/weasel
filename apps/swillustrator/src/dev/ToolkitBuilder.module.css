@@ -8,7 +8,24 @@
 }
 
 .header { margin-bottom: 16px; }
-.title { margin: 0; font-size: 20px; font-weight: 600; }
+.headerRow { display: flex; align-items: baseline; gap: 16px; }
+.title { margin: 0; font-size: 20px; font-weight: 600; flex: 1; }
+.bundlePicker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--wzl-muted, #a59685);
+}
+.bundlePicker select {
+  background: var(--wzl-bg, #1e1610);
+  color: var(--wzl-fg, #d4c4a8);
+  border: 1px solid var(--wzl-panel-border, #4a3c2e);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 12px;
+  font-family: inherit;
+}
 .subtitle { margin: 4px 0 0; font-size: 13px; color: var(--wzl-muted, #a59685); }
 
 .layout {
