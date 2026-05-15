@@ -98,3 +98,79 @@ export function polygonFromPoints(
   b.close();
   return b.build();
 }
+
+/** Cubic-Bezier kappa for circular-quadrant approximation (<1% max error). */
+const ELLIPSE_KAPPA = 0.5522847498307936;
+
+/** Closed ellipse inscribed in `bounds`, as a 4-cubic-Bezier `PolygonPath`.
+ *  Matches the geometry `useEllipseTool`'s overlay paints. */
+export function ellipsePath(
+  bounds: { x: number; y: number; width: number; height: number },
+): PolygonPath {
+  const cx = bounds.x + bounds.width / 2;
+  const cy = bounds.y + bounds.height / 2;
+  const rx = bounds.width / 2;
+  const ry = bounds.height / 2;
+  const ox = rx * ELLIPSE_KAPPA;
+  const oy = ry * ELLIPSE_KAPPA;
+  const b = new PathBuilder();
+  b.moveTo(cx + rx, cy);
+  b.curveTo(cx + rx, cy + oy, cx + ox, cy + ry, cx, cy + ry);
+  b.curveTo(cx - ox, cy + ry, cx - rx, cy + oy, cx - rx, cy);
+  b.curveTo(cx - rx, cy - oy, cx - ox, cy - ry, cx, cy - ry);
+  b.curveTo(cx + ox, cy - ry, cx + rx, cy - oy, cx + rx, cy);
+  b.close();
+  return b.build();
+}
+
+/** Closed regular n-gon centered at `center`, circumscribed by `radius`.
+ *  `rotation` is in radians; default 0 puts the first vertex on the +x axis. */
+export function regularPolygonPath(
+  center: { x: number; y: number },
+  radius: number,
+  sides: number,
+  rotation = 0,
+): PolygonPath {
+  const b = new PathBuilder();
+  for (let i = 0; i < sides; i++) {
+    const a = rotation + (i / sides) * Math.PI * 2;
+    const x = center.x + radius * Math.cos(a);
+    const y = center.y + radius * Math.sin(a);
+    if (i === 0) b.moveTo(x, y); else b.lineTo(x, y);
+  }
+  b.close();
+  return b.build();
+}
+
+/** Closed n-pointed star centered at `center`, alternating `outerRadius` and
+ *  `innerRadius` (default `outerRadius / 2`). `rotation` is in radians. */
+export function starPath(
+  center: { x: number; y: number },
+  outerRadius: number,
+  points = 5,
+  innerRadius: number = outerRadius / 2,
+  rotation = 0,
+): PolygonPath {
+  const b = new PathBuilder();
+  const n = points * 2;
+  for (let i = 0; i < n; i++) {
+    const a = rotation + (i / n) * Math.PI * 2;
+    const r = i % 2 === 0 ? outerRadius : innerRadius;
+    const x = center.x + r * Math.cos(a);
+    const y = center.y + r * Math.sin(a);
+    if (i === 0) b.moveTo(x, y); else b.lineTo(x, y);
+  }
+  b.close();
+  return b.build();
+}
+
+/** Open 2-vertex polyline from `a` to `b` — strokeable, not fillable. */
+export function linePath(
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+): PolygonPath {
+  const pb = new PathBuilder();
+  pb.moveTo(a.x, a.y);
+  pb.lineTo(b.x, b.y);
+  return pb.build();
+}

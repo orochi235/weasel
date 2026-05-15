@@ -48,7 +48,7 @@ function buildDemoToolDefs(): readonly ToolDef<unknown>[] {
         rect: noOp, text: noOp, path: noOp, '*': noOp, empty: noOp,
       },
       drag: {
-        rect: noOp, text: noOp, path: noOp, '*': noOp, empty: noOp,
+        empty: noOp,
       },
       click: {
         rect: noOp,

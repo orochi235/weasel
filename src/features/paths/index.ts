@@ -15,7 +15,15 @@ export {
   type RectPath,
   type PathFillRule,
 } from './types';
-export { PathBuilder, polygonFromPoints, rectPath } from './builder';
+export {
+  PathBuilder,
+  polygonFromPoints,
+  rectPath,
+  ellipsePath,
+  regularPolygonPath,
+  starPath,
+  linePath,
+} from './builder';
 export { boundsOfPath } from './bounds';
 export { countPathAnchors, pathToAnchors, anchorsToPath, isAnchorSmooth, type PenAnchor } from './anchors';
 export { splitCubicAtT, fitCubicThroughDeletion, type Point } from './cubicMath';

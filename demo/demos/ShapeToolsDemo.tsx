@@ -2,7 +2,12 @@
 // after the dev server is up to capture the initial snapshot.
 import { useMemo } from 'react';
 import {
+  ellipsePath,
+  linePath,
+  rectPath,
+  regularPolygonPath,
   SceneCanvas,
+  starPath,
   useSceneAdapter,
   useEllipseTool,
   useLineTool,
@@ -15,13 +20,12 @@ import {
   useStarTool,
   useTools,
 } from '@orochi235/weasel';
-import type { AnyTool, PolygonPath } from '@orochi235/weasel';
+import type { AnyTool, Path, PolygonPath } from '@orochi235/weasel';
 // ToolPalette is a Swillustrator-side specialization
 // (apps/swillustrator/src/ui/) — see the kit/app split.
 import { ToolPalette } from '../../apps/swillustrator/src/ui/ToolPalette';
-import type { DrawCommand } from '../../src/renderer';
 
-interface ShapeData { fill: string }
+interface ShapeData { path: Path; fill: string; stroke?: string; strokeWidth?: number }
 type ShapeLayer = 'default';
 interface ShapePose { x: number; y: number; width: number; height: number }
 interface ShapeNode {
@@ -44,8 +48,12 @@ function freshId(prefix: string): string {
 function pickFill(): string {
   return FILLS[_nextId % FILLS.length];
 }
-function makeNode(id: string, pose: ShapePose, fill: string): ShapeNode {
-  return { id, kind: 'leaf', layer: 'default', pose, data: { fill }, parent: null };
+function makeNode(id: string, pose: ShapePose, data: ShapeData): ShapeNode {
+  return { id, kind: 'leaf', layer: 'default', pose, data, parent: null };
+}
+
+function poseFromBounds(b: { x: number; y: number; width: number; height: number }): ShapePose {
+  return { x: b.x, y: b.y, width: b.width, height: b.height };
 }
 
 export function ShapeToolsDemo() {
@@ -64,51 +72,55 @@ export function ShapeToolsDemo() {
 
   // ── rect ────────────────────────────────────────────────────────────────────
   const rect = useRectTool<ShapeNode>({
-    create: (bounds) => makeNode(freshId('rc'), bounds, pickFill()),
+    create: (b) => makeNode(freshId('rc'), poseFromBounds(b), {
+      path: rectPath(b.x, b.y, b.width, b.height),
+      fill: pickFill(),
+    }),
   });
 
   // ── ellipse ─────────────────────────────────────────────────────────────────
   const ellipse = useEllipseTool<ShapeNode>({
-    create: (bounds) => makeNode(freshId('el'), bounds, pickFill()),
+    create: (b) => makeNode(freshId('el'), poseFromBounds(b), {
+      path: ellipsePath(b),
+      fill: pickFill(),
+    }),
   });
 
   // ── line ─────────────────────────────────────────────────────────────────────
   const line = useLineTool<ShapeNode>({
-    create: (a, b) => {
-      const pose: ShapePose = {
-        x: Math.min(a.x, b.x),
-        y: Math.min(a.y, b.y),
-        width: Math.abs(b.x - a.x) || 1,
-        height: Math.abs(b.y - a.y) || 1,
-      };
-      return makeNode(freshId('ln'), pose, pickFill());
-    },
+    create: (a, b) => makeNode(freshId('ln'), {
+      x: Math.min(a.x, b.x),
+      y: Math.min(a.y, b.y),
+      width: Math.abs(b.x - a.x) || 1,
+      height: Math.abs(b.y - a.y) || 1,
+    }, {
+      path: linePath(a, b),
+      fill: pickFill(),
+      stroke: pickFill(),
+      strokeWidth: 2,
+    }),
   });
 
   // ── polygon ──────────────────────────────────────────────────────────────────
   const polygon = usePolygonTool<ShapeNode>({
-    create: (center, radius) => {
-      const pose: ShapePose = {
-        x: center.x - radius,
-        y: center.y - radius,
-        width: radius * 2,
-        height: radius * 2,
-      };
-      return makeNode(freshId('pg'), pose, pickFill());
-    },
+    create: (center, radius, rotation, sides) => makeNode(freshId('pg'), {
+      x: center.x - radius, y: center.y - radius,
+      width: radius * 2, height: radius * 2,
+    }, {
+      path: regularPolygonPath(center, radius, sides, rotation),
+      fill: pickFill(),
+    }),
   });
 
   // ── star ─────────────────────────────────────────────────────────────────────
   const star = useStarTool<ShapeNode>({
-    create: (center, outerRadius) => {
-      const pose: ShapePose = {
-        x: center.x - outerRadius,
-        y: center.y - outerRadius,
-        width: outerRadius * 2,
-        height: outerRadius * 2,
-      };
-      return makeNode(freshId('st'), pose, pickFill());
-    },
+    create: (center, outerRadius, rotation, points) => makeNode(freshId('st'), {
+      x: center.x - outerRadius, y: center.y - outerRadius,
+      width: outerRadius * 2, height: outerRadius * 2,
+    }, {
+      path: starPath(center, outerRadius, points, undefined, rotation),
+      fill: pickFill(),
+    }),
   });
 
   // ── pencil ───────────────────────────────────────────────────────────────────
@@ -123,13 +135,17 @@ export function ShapeToolsDemo() {
         if (py < minY) minY = py;
         if (py > maxY) maxY = py;
       }
-      const pose: ShapePose = {
+      return makeNode(freshId('pe'), {
         x: isFinite(minX) ? minX : 0,
         y: isFinite(minY) ? minY : 0,
         width: isFinite(maxX - minX) ? (maxX - minX) || 1 : 1,
         height: isFinite(maxY - minY) ? (maxY - minY) || 1 : 1,
-      };
-      return makeNode(freshId('pe'), pose, pickFill());
+      }, {
+        path,
+        fill: pickFill(),
+        stroke: pickFill(),
+        strokeWidth: 2,
+      });
     },
   });
 
@@ -142,7 +158,7 @@ export function ShapeToolsDemo() {
 
   return (
     <div className="ckd-shape-tools-demo">
-      <ToolPalette tools={tools} />
+      <ToolPalette tools={tools} orientation="horizontal" />
       <SceneCanvas
         width={W}
         height={H}
@@ -151,15 +167,6 @@ export function ShapeToolsDemo() {
         selection={selection}
         selectionMode="multi"
         tools={tools}
-        layers={{
-          scene: {
-            drawOne: (node, p): DrawCommand[] => [{
-              kind: 'path',
-              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { color: node.data.fill },
-            }],
-          },
-        }}
       />
     </div>
   );
