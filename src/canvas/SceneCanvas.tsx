@@ -206,8 +206,17 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  JSON object, which SceneCanvas bakes into a Scene internally on
      *  first render. The serialized form is read once; subsequent
      *  changes to the prop are ignored. Pass a `key` prop on
-     *  `<SceneCanvas>` to force a fresh canvas from updated JSON. */
-    scene: Scene<TData, TLayer, TPose> | SerializedScene<TData, TLayer, TPose>;
+     *  `<SceneCanvas>` to force a fresh canvas from updated JSON.
+     *
+     *  The accepted JSON shape is intentionally relaxed (`version:
+     *  number` rather than `1` literal) so a `import json from './x.json'`
+     *  result satisfies the type without an `as` cast — Vite infers
+     *  number-literal types as `number` from JSON, which the strict
+     *  `SerializedScene<…>` would reject. */
+    scene:
+      | Scene<TData, TLayer, TPose>
+      | SerializedScene<TData, TLayer, TPose>
+      | { version: number; systemLayers?: ReadonlyArray<{ id: string }>; nodes: ReadonlyArray<unknown> };
 
     /** Layer configuration. When omitted, SceneCanvas applies kit defaults
      *  (a scene slot that paints `node.data.color` rects + a default
@@ -403,11 +412,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // ignore prop changes (use a `key` prop on `<SceneCanvas>` to force a
   // fresh canvas). Subscription is uniform — useSyncExternalStore on the
   // resolved Scene's version stream.
-  const isSerialized = (s: unknown): s is SerializedScene<TData, TLayer, TPose> =>
+  const isSerialized = (s: unknown): boolean =>
     typeof s === 'object' && s != null && (s as { version?: unknown }).version === 1
       && Array.isArray((s as { nodes?: unknown }).nodes);
   const [bakedScene] = useState<Scene<TData, TLayer, TPose> | null>(
-    () => isSerialized(sceneInput) ? sceneFromJSON(sceneInput, {}) : null,
+    () => isSerialized(sceneInput)
+      ? sceneFromJSON(sceneInput as SerializedScene<TData, TLayer, TPose>, {})
+      : null,
   );
   const scene = bakedScene ?? (sceneInput as Scene<TData, TLayer, TPose>);
   useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
