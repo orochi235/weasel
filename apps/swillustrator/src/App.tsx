@@ -2620,9 +2620,24 @@ function RightSidebar(p: RightSidebarProps) {
       <PropertiesPanel title="Colors" {...pp}>
         <PropertyRow>
           <PropertySwatchGrid
-            value={primary ? p.primaryFill : p.fillColor}
+            value={
+              primary
+                ? (p.focusedSwatch === 'stroke' ? p.primaryStroke : p.primaryFill)
+                : (p.focusedSwatch === 'stroke' ? p.strokeColor   : p.fillColor)
+            }
             options={PALETTE}
-            onChange={(v) => (primary ? p.applyFillToSelection(v) : p.setFillColor(v))}
+            onChange={(v) => {
+              // Route to whichever swatch is focused — fill OR stroke. Was
+              // unconditionally fill before, which made the swatch grid
+              // useless for setting stroke colors.
+              if (primary) {
+                if (p.focusedSwatch === 'stroke') p.applyStrokeToSelection(v);
+                else p.applyFillToSelection(v);
+              } else {
+                if (p.focusedSwatch === 'stroke') p.setStrokeColor(v);
+                else p.setFillColor(v);
+              }
+            }}
           />
         </PropertyRow>
       </PropertiesPanel>
