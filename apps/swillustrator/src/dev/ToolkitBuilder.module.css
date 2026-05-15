@@ -136,14 +136,16 @@
   box-sizing: border-box;
   height: 18px;
   padding: 0 4px;
-  border: 1px solid var(--wzl-panel-border, #4a3c2e);
+  /* Light face, slightly-darker-than-face border, dark glyph — reads as
+     a real keycap rather than a recessed slot in the panel. */
+  background: var(--wzl-fg, #d4c4a8);
+  border: 1px solid #b0a085;
   border-bottom-width: 2px;
   border-radius: 3px;
-  background: var(--wzl-bg, #1e1610);
+  color: var(--wzl-bg, #1e1610);
   font-family: ui-sans-serif, system-ui, sans-serif;
   font-size: 11px;
   line-height: 1;
-  color: var(--wzl-fg, #d4c4a8);
 }
 /* Default chip is square — letters, digits, and single glyphs (⎋ ⌫ ↑ etc.)
    sit in a uniform key-cap box. */
