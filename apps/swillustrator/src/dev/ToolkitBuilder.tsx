@@ -67,7 +67,60 @@ import {
   type ToolDef,
 } from '@orochi235/weasel/routing';
 import { formatShortcutParts } from '../ui/ToolPalette/formatShortcut';
+import {
+  AlignBottomIcon,
+  AlignCenterXIcon,
+  AlignCenterYIcon,
+  AlignLeftIcon,
+  AlignRightIcon,
+  AlignTopIcon,
+  BringForwardIcon,
+  BringToFrontIcon,
+  CopyIcon,
+  CutIcon,
+  DeleteIcon,
+  DistributeXIcon,
+  DistributeYIcon,
+  DuplicateIcon,
+  FlipXIcon,
+  FlipYIcon,
+  GroupIcon,
+  PasteIcon,
+  RedoIcon,
+  SendBackwardIcon,
+  SendToBackIcon,
+  UndoIcon,
+  UngroupIcon,
+} from '../actionIcons';
 import s from './ToolkitBuilder.module.css';
+
+/** Action ID → icon component. Actions without an icon (escape, selectAll,
+ *  nudge.*, nest/unnest) render '—'. */
+const ACTION_ICON: Record<string, React.ComponentType> = {
+  delete: DeleteIcon,
+  duplicate: DuplicateIcon,
+  undo: UndoIcon,
+  redo: RedoIcon,
+  group: GroupIcon,
+  ungroup: UngroupIcon,
+  'reorder.forward': BringForwardIcon,
+  'reorder.backward': SendBackwardIcon,
+  'reorder.front': BringToFrontIcon,
+  'reorder.back': SendToBackIcon,
+  'align.left': AlignLeftIcon,
+  'align.right': AlignRightIcon,
+  'align.top': AlignTopIcon,
+  'align.bottom': AlignBottomIcon,
+  'align.centerX': AlignCenterXIcon,
+  'align.centerY': AlignCenterYIcon,
+  'distribute.horizontal': DistributeXIcon,
+  'distribute.vertical': DistributeYIcon,
+  'flip.horizontal': FlipXIcon,
+  'flip.vertical': FlipYIcon,
+  'clipboard.copy': CopyIcon,
+  'clipboard.cut': CutIcon,
+  'clipboard.paste': PasteIcon,
+};
 
 interface ShapeData { path?: Path; text?: string; fill: string; stroke?: string; strokeWidth?: number }
 interface ShapePose { x: number; y: number; width: number; height: number }
@@ -404,6 +457,19 @@ export function ToolkitBuilder() {
   const routeRegistry: RegistryEntry[] = useMemo(() => buildActionRegistry(toolDefs), [toolDefs]);
   const conflicts: Conflict[] = useMemo(() => findConflicts(toolDefs), [toolDefs]);
 
+  // Slot map: which dispatcher slot each registered tool occupies right
+  // now. Slot determines runtime precedence (hotkey > active > ambient)
+  // and is what makes most "static overlaps" non-conflicts. Computed
+  // from the live `tools` API rather than the ToolDef so it reflects
+  // current state.
+  const slotFor = (toolId: string): 'active' | 'hotkey' | 'ambient' | 'registry' => {
+    if (tools.active === toolId) return 'active';
+    if (tools.ambient.some((t) => t.id === toolId)) return 'ambient';
+    const t = registry[toolId];
+    if (t?.hotkey) return 'hotkey';
+    return 'registry';
+  };
+
   const actionsReg = useActionsRegistry();
   const actions = actionsReg ? actionsReg.list() : [];
 
@@ -460,17 +526,21 @@ export function ToolkitBuilder() {
           <section>
             <h3 className={s.sectionTitle}>Action registry ({actions.length})</h3>
             <table className={s.table}>
-              <thead><tr><th>id</th><th>label</th><th>binding</th></tr></thead>
+              <thead><tr><th></th><th>id</th><th>label</th><th>binding</th></tr></thead>
               <tbody>
-                {actions.map((a) => (
-                  <tr key={a.id}>
-                    <td><code>{a.id}</code></td>
-                    <td>{a.label}</td>
-                    <td><Keys parts={formatShortcutParts(a.defaultBinding)} /></td>
-                  </tr>
-                ))}
+                {actions.map((a) => {
+                  const Icon = ACTION_ICON[a.id];
+                  return (
+                    <tr key={a.id}>
+                      <td className={s.iconCell}>{Icon ? <Icon /> : <span className={s.keysEmpty}>—</span>}</td>
+                      <td><code>{a.id}</code></td>
+                      <td>{a.label}</td>
+                      <td><Keys parts={formatShortcutParts(a.defaultBinding)} /></td>
+                    </tr>
+                  );
+                })}
                 {actions.length === 0 && (
-                  <tr><td colSpan={3} className={s.empty}>No actions registered.</td></tr>
+                  <tr><td colSpan={4} className={s.empty}>No actions registered.</td></tr>
                 )}
               </tbody>
             </table>
@@ -478,11 +548,12 @@ export function ToolkitBuilder() {
           <section>
             <h3 className={s.sectionTitle}>Tool routes ({routeRegistry.length})</h3>
             <table className={s.table}>
-              <thead><tr><th>tool</th><th>phase</th><th>gesture</th><th>target</th><th>mods</th></tr></thead>
+              <thead><tr><th>tool</th><th>slot</th><th>phase</th><th>gesture</th><th>target</th><th>mods</th></tr></thead>
               <tbody>
                 {routeRegistry.map((r, i) => (
                   <tr key={i}>
                     <td>{r.toolId}</td>
+                    <td><span className={s.slot} data-slot={slotFor(r.toolId)}>{slotFor(r.toolId)}</span></td>
                     <td>{r.phase}</td>
                     <td>{r.gesture}</td>
                     <td>{r.target}</td>
@@ -490,7 +561,7 @@ export function ToolkitBuilder() {
                   </tr>
                 ))}
                 {routeRegistry.length === 0 && (
-                  <tr><td colSpan={5} className={s.empty}>No tools selected.</td></tr>
+                  <tr><td colSpan={6} className={s.empty}>No tools selected.</td></tr>
                 )}
               </tbody>
             </table>

@@ -67,6 +67,25 @@
 
 .empty { color: var(--wzl-muted, #a59685); font-style: italic; padding: 8px 0; text-align: center; }
 .note { margin: 0 0 8px; font-size: 11px; color: var(--wzl-muted, #a59685); line-height: 1.4; }
+.iconCell { width: 18px; }
+.iconCell svg { width: 14px; height: 14px; vertical-align: middle; }
+
+/* Slot pill — colors hint at runtime precedence (active is highlighted,
+   ambient sits behind, registry is latent). */
+.slot {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--wzl-bg, #1e1610);
+  border: 1px solid var(--wzl-panel-border, #4a3c2e);
+  color: var(--wzl-muted, #a59685);
+}
+.slot[data-slot='active'] { color: var(--wzl-accent, #7fb069); border-color: var(--wzl-accent, #7fb069); }
+.slot[data-slot='ambient'] { color: #d4a574; border-color: #5a4a38; }
+.slot[data-slot='hotkey']  { color: #7ab8d4; border-color: #5a4a38; }
 
 /* Keystroke "key cap" styling — each modifier and key in its own bordered chip. */
 .keys { display: inline-flex; gap: 3px; align-items: center; flex-wrap: wrap; }
