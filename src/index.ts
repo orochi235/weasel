@@ -120,6 +120,7 @@ export type { SceneCanvasProps } from './canvas/SceneCanvas';
 export {
   registerShapePainter,
   findShapePainter,
+  findShapeSilhouette,
   getShapePainters,
 } from './canvas/shapePainters';
 export type {
@@ -215,11 +216,11 @@ export {
   worldPoseLookup,
 } from './features/groups/composePose';
 export type { PoseAdapter } from './features/groups/composePose';
-export { nestedGroupHitTester } from './features/groups/nestedGroupHit';
+export { nestedHitTester } from './features/groups/nestedHit';
 export type {
-  NestedGroupHitOpts,
-  NestedGroupHitTester,
-} from './features/groups/nestedGroupHit';
+  NestedHitOpts,
+  NestedHitTester,
+} from './features/groups/nestedHit';
 export {
   PATH_M,
   PATH_L,
@@ -539,8 +540,8 @@ export {
 export {
   useGroup,
   useUngroup,
-  useNestedGroup,
-  useNestedUngroup,
+  useNest,
+  useUnnest,
 } from './interactions/actions/group';
 export type {
   GroupActionAdapter,
@@ -548,11 +549,11 @@ export type {
   UseGroupReturn,
   UseUngroupOptions,
   UseUngroupReturn,
-  NestedGroupActionAdapter,
-  UseNestedGroupOptions,
-  UseNestedGroupReturn,
-  UseNestedUngroupOptions,
-  UseNestedUngroupReturn,
+  NestActionAdapter,
+  UseNestOptions,
+  UseNestReturn,
+  UseUnnestOptions,
+  UseUnnestReturn,
 } from './interactions/actions/group';
 export { useUndoRedo } from './interactions/actions/undo-redo';
 export type {

@@ -1,5 +1,7 @@
 import type { DrawCommand, GroupDrawCommand } from '../renderer';
 import type { View } from 'core/viewport/view';
+import { findShapeSilhouette } from './shapePainters';
+import type { Node } from 'core/scene/types';
 
 interface HierarchicalAdapter<TNode, TPose> {
   getLayers(): readonly { id: string; visible: boolean }[];
@@ -45,8 +47,21 @@ export function buildSceneTree<
 
     const group: GroupDrawCommand = { kind: 'group', children };
     const maybeContainer = node as { kind?: string; clipFromPose?: (pose: TPose) => unknown };
-    if (maybeContainer.kind === 'container' && typeof maybeContainer.clipFromPose === 'function') {
-      const clip = maybeContainer.clipFromPose(pose);
+    if (maybeContainer.kind === 'container') {
+      let clip: unknown;
+      if (typeof maybeContainer.clipFromPose === 'function') {
+        // Explicit per-node clip wins — no fallback to the painter silhouette.
+        clip = maybeContainer.clipFromPose(pose);
+      } else {
+        // No explicit clip → fall back to the painter silhouette for the
+        // container's shape kind. Built-ins give rect-fallback containers
+        // their own AABB as a clip; consumer painters can provide arbitrary
+        // closed shapes (ellipse, polygon, …) without per-node wiring.
+        clip = findShapeSilhouette(
+          node as unknown as Node<unknown, string, TPose>,
+          pose,
+        );
+      }
       if (clip) group.clip = clip as GroupDrawCommand['clip'];
     }
     return group;

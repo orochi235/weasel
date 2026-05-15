@@ -2,6 +2,8 @@ import { useMemo, useRef, createElement } from 'react';
 import { SelectIcon } from '../../../icons';
 import { pathContainsPoint } from 'features/paths/pathHitTest';
 import type { Path } from 'features/paths/types';
+import { findShapeSilhouette } from 'canvas/shapePainters';
+import type { Node } from 'core/scene/types';
 import { useMove, type UseMoveOptions } from 'interactions/gestures/move/move';
 import { useAreaSelect, type UseAreaSelectOptions } from 'interactions/gestures/area-select/areaSelect';
 import type { MoveAdapter } from 'core/adapters/types';
@@ -42,7 +44,7 @@ export interface UseSelectToolOptions<TNode extends { id: string }, TPose> {
   /** Optional alt-aware selection-update hit returning the single id the
    *  click should act on. When set, `pointer.onDown` routes the body-hit
    *  branch through this instead of `pickTopMostHit(pickEvery(...))` — used by
-   *  nested-group consumers to resolve clicks to the outermost ancestor by
+   *  nesting consumers to resolve clicks to the outermost ancestor by
    *  default and drill one level deeper per alt-click. Receives the live
    *  selection so the drill step knows where to start. Returning `null`
    *  means "no body hit". When omitted, the tool uses
@@ -76,7 +78,7 @@ export interface UseSelectToolOptions<TNode extends { id: string }, TPose> {
   /** Consumer's draw function for ghost objects (move in-flight). Returns
    *  world-space DrawCommand[] for one ghost. If omitted, ghosts are not
    *  rendered (only the marquee draws). Optional only because some demos
-   *  (e.g. NestedGroupsDemo) compose ghosts via custom layers. */
+   *  (e.g. NestingDemo) compose ghosts via custom layers. */
   drawGhost?: (
     obj: TNode | null,
     pose: TPose,
@@ -193,10 +195,18 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         const pose = adapter.getPose(childId);
 
         if (node.kind === 'container') {
-          // Compute this container's own clip, if any.
+          // Compute this container's own clip, if any. Explicit
+          // `clipFromPose` wins; otherwise fall back to the painter
+          // silhouette so non-rect shape kinds clip correctly without
+          // per-node wiring (mirrors the renderer's container-clip path).
           let ownClip: Path | null = null;
           if (typeof node.clipFromPose === 'function') {
             ownClip = node.clipFromPose(pose);
+          } else {
+            ownClip = findShapeSilhouette(
+              node as unknown as Node<unknown, string, TPose>,
+              pose,
+            );
           }
 
           // Containers are hit-tested against their AABB, but if the container

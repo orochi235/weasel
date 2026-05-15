@@ -52,7 +52,7 @@ describe('buildSceneTree', () => {
     expect((bedGroup.children[2] as { kind: string }).kind).toBe('group');
   });
 
-  it('nested containers (3 levels) produce matching nested groups', () => {
+  it('nested containers (3 levels) produce matching draw-group nesting', () => {
     const scene = makeScene();
     const a = scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'a' } });
     const b = scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'b' }, parent: a });
@@ -135,13 +135,15 @@ describe('buildSceneTree', () => {
     expect(bedGroup.clip).toBeUndefined();
   });
 
-  it('container without clipFromPose → group has no clip field', () => {
+  it('container without clipFromPose → clip falls back to the painter silhouette (rect-fallback = AABB)', () => {
     const scene = makeScene();
     scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'bed' } });
     const adapter = sceneToAdapter(scene);
     const out = buildSceneTree(adapter as never, labelDraw as never, VIEW);
     const bedGroup = (out[0] as { children: DrawCommand[] }).children[0] as { clip?: unknown };
-    expect(bedGroup.clip).toBeUndefined();
+    // No `data.text` / `data.path` → kit:rect-fallback painter matches, and
+    // its `silhouette` returns the pose's rect. That becomes the clip.
+    expect(bedGroup.clip).toEqual({ kind: 'rect', x: POSE.x, y: POSE.y, width: POSE.width, height: POSE.height });
   });
 
   it('clipFromPose is called with the live pose, not a stale value', () => {

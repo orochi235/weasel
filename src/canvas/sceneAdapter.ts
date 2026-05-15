@@ -33,6 +33,7 @@ import {
   polygonIntersectsRect,
 } from 'features/paths/polygonHitTestRect';
 import type { Path } from 'features/paths/types';
+import { findShapeSilhouette } from './shapePainters';
 import { pathIntersectsRect } from 'features/paths/pathHitTest';
 import { translateRectPose } from 'features/groups/composePose';
 
@@ -68,7 +69,7 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
   // Tighten the parts that are optional on the underlying adapter contracts
   // but unconditionally provided by a scene-backed adapter. Anything that
   // routes scene mutations through this adapter (kit InsertOps, hierarchical
-  // hooks like useNestedGroup, etc.) can rely on these being present.
+  // hooks like useNest, etc.) can rely on these being present.
   & {
       getParent(id: string): string | null;
       getSelection(): string[];
@@ -173,13 +174,18 @@ function walkClipAware<TData, TLayer extends string, TPose>(
       if (nodeTest(node)) results.push(nodeId);
 
       // Compute this container's clip exactly once per query visit.
-      const childClips: readonly Path[] =
+      // Explicit `clipFromPose` wins; otherwise fall back to the painter
+      // silhouette so non-rect shape kinds clip area-select correctly
+      // without per-node wiring.
+      const ownClip: Path | null =
         typeof node.clipFromPose === 'function'
-          ? (() => {
-              const clip = node.clipFromPose(node.pose);
-              return clip !== null ? [...ancestorClips, clip] : ancestorClips;
-            })()
-          : ancestorClips;
+          ? node.clipFromPose(node.pose)
+          : findShapeSilhouette(
+              node as unknown as Node<unknown, string, TPose>,
+              node.pose,
+            );
+      const childClips: readonly Path[] =
+        ownClip !== null ? [...ancestorClips, ownClip] : ancestorClips;
 
       // Recurse into children, propagating the accumulated clip chain.
       for (const childId of scene.childrenOf(asNodeId(nodeId))) {
@@ -337,7 +343,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       }
     },
     // Node-mutation surface used by kit InsertOps / DeleteOps (e.g.
-    // useNestedGroup wrapping the selection in a new container node, or its
+    // useNest wrapping the selection in a new container node, or its
     // inverse). Re-adds via the full structural spec so the round-trip
     // survives undo/redo; removes by id.
     insertNode(node: Node<TData, TLayer, TPose>) {

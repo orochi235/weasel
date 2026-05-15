@@ -38,6 +38,12 @@ export interface ShapePainter<TData = unknown, TPose = unknown> {
   matches(node: Node<TData, string, TPose>): boolean;
   /** Emits the draw commands for the node's primary visual. */
   paint(node: Node<TData, string, TPose>, pose: TPose): DrawCommand[];
+  /** Optional: derive the node's silhouette path from its pose.
+   *  Used by clipping (when the container has no explicit
+   *  `clipFromPose`), by non-rect hit-testing, by lasso/area-select,
+   *  and by SVG export. Painters whose visual has no meaningful closed
+   *  silhouette (e.g. text) leave this undefined. */
+  silhouette?(node: Node<TData, string, TPose>, pose: TPose): Path | null;
 }
 
 export interface RegisterShapePainterOptions {
@@ -81,6 +87,19 @@ export function findShapePainter<TData, TPose>(
     }
   }
   return undefined;
+}
+
+/** Find the painter for `node` and ask it for the node's silhouette path.
+ *  Returns null if no painter matches, or the matching painter has no
+ *  `silhouette` method, or the method returns null. Used by clipping,
+ *  generic non-rect hit-testing, lasso, and SVG export — anywhere the
+ *  kit needs the "closed boundary" of whatever this kind of node draws as. */
+export function findShapeSilhouette<TData, TPose>(
+  node: Node<TData, string, TPose>,
+  pose: TPose,
+): Path | null {
+  const painter = findShapePainter(node);
+  return painter?.silhouette?.(node, pose) ?? null;
 }
 
 /** Snapshot of the current painters in evaluation order — `'high'` tier
@@ -139,6 +158,10 @@ const PATH_PAINTER: ShapePainter = {
     };
     return [cmd];
   },
+  silhouette: (node) => {
+    const d = node.data as { path: Path };
+    return d.path;
+  },
 };
 
 const RECT_FALLBACK_PAINTER: ShapePainter = {
@@ -156,6 +179,10 @@ const RECT_FALLBACK_PAINTER: ShapePainter = {
       path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
       fill: { color: d?.color ?? '#888' },
     }];
+  },
+  silhouette: (_node, pose) => {
+    const p = pose as RectPose;
+    return { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height };
   },
 };
 

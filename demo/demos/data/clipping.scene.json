@@ -7,8 +7,7 @@
       "kind": "container",
       "layer": "default",
       "pose": { "x": 80, "y": 50, "width": 240, "height": 200 },
-      "data": { "id": "bed", "label": "bed", "color": "#5a4a3a" },
-      "clipFromPoseKey": "ellipse"
+      "data": { "id": "bed", "label": "bed", "color": "#5a4a3a", "shape": "ellipse" }
     },
     {
       "id": "p1",
