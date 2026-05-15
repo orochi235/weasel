@@ -97,7 +97,37 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
       { fontFamily: 'sans-serif', fontSize: 11, fill: { fill: 'solid', color: 'rgba(0,0,0,0.7)' } },
     ));
   }
+
+  // Auto-rotate when the pose carries a non-zero `rotation` field. Wraps
+  // every emitted command in a single group transform around the AABB
+  // center — covers RotatedPose-shaped scenes without per-demo drawOne
+  // boilerplate. Painters and consumers that need different rotation
+  // semantics (e.g. pivot at origin) can override `drawOne`.
+  const p = pose as unknown as Partial<{ x: number; y: number; width: number; height: number; rotation: number }>;
+  if (p.rotation && p.x != null && p.y != null && p.width != null && p.height != null) {
+    return [{
+      kind: 'group',
+      transform: rotateAroundAABBCenter(p.x, p.y, p.width, p.height, p.rotation),
+      children: primary,
+    }];
+  }
   return primary;
+}
+
+/** Compose `T(cx,cy) · R(θ) · T(-cx,-cy)` for the AABB center of `(x, y,
+ *  width, height)` into a column-major 3×3 affine. Matches the
+ *  `[a, b, 0, c, d, 0, tx, ty, 1]` layout `kind: 'group'` consumes. */
+export function rotateAroundAABBCenter(
+  x: number, y: number, width: number, height: number, rotation: number,
+): Float32Array {
+  const cx = x + width / 2;
+  const cy = y + height / 2;
+  const cs = Math.cos(rotation);
+  const sn = Math.sin(rotation);
+  const a = cs, b = sn, c = -sn, d = cs;
+  const tx = cx - a * cx - c * cy;
+  const ty = cy - b * cx - d * cy;
+  return new Float32Array([a, b, 0, c, d, 0, tx, ty, 1]);
 }
 
 /** Deep-merge user-supplied `layers` with kit defaults. Slots the user

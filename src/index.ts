@@ -643,6 +643,7 @@ export type {
   StandardSlotConfig,
 } from './canvas/Canvas';
 export type { BuiltinToolId, ToolBundle } from './canvas/SceneCanvas';
+export { rotateAroundAABBCenter } from './canvas/SceneCanvas';
 export type {
   SceneToAdapterOptions,
   SceneAdapterSelection,

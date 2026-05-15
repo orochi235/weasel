@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "systemLayers": [{ "id": "default" }],
+  "nodes": [
+    {
+      "id": "a",
+      "kind": "leaf",
+      "layer": "default",
+      "pose": { "x": 50, "y": 80, "width": 90, "height": 60, "rotation": 0 },
+      "data": { "color": "#7fb069" }
+    },
+    {
+      "id": "b",
+      "kind": "leaf",
+      "layer": "default",
+      "pose": { "x": 180, "y": 60, "width": 80, "height": 80, "rotation": 0.5235987755982988 },
+      "data": { "color": "#d4a574" }
+    },
+    {
+      "id": "c",
+      "kind": "leaf",
+      "layer": "default",
+      "pose": { "x": 270, "y": 170, "width": 100, "height": 50, "rotation": -0.7853981633974483 },
+      "data": { "color": "#a48bd4" }
+    }
+  ]
+}
