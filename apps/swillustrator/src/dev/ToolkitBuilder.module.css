@@ -35,15 +35,24 @@
   align-items: start;
 }
 
-.catalog,
 .canvas {
   background: var(--wzl-surface, #2a2018);
-  border: 1px solid var(--wzl-panel-border, #4a3c2e);
   border-radius: 6px;
   padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
 }
 
-.canvas { display: flex; flex-direction: column; align-items: stretch; gap: 8px; min-width: 0; }
+/* Catalog column: stack of widgets, like the right reflect column. */
+.catalog {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
 
 /* Right column: vertical stack of widget panels, each independently
    bounded so long lists scroll inside their own card instead of
@@ -56,22 +65,26 @@
 }
 .widget {
   background: var(--wzl-surface, #2a2018);
-  border: 1px solid var(--wzl-panel-border, #4a3c2e);
   border-radius: 6px;
   display: flex;
   flex-direction: column;
   min-height: 0;
   max-height: 320px;
+  margin-bottom: 16px;
+  overflow: hidden;
 }
 .widgetTitle {
   margin: 0;
-  padding: 10px 12px 6px;
+  padding: 8px 12px;
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--wzl-muted, #a59685);
-  border-bottom: 1px solid var(--wzl-panel-border, #4a3c2e);
+  /* Inverted header: light face, dark text — matches the keycap face
+     palette. The widget body keeps its dark surface so contents read
+     against the same backdrop as the rest of the panel. */
+  background: var(--wzl-fg, #d4c4a8);
+  color: var(--wzl-bg, #1e1610);
 }
 .widgetBody { padding: 8px 12px; }
 .widgetBodyScrollY { padding: 0 12px 8px; overflow-y: auto; min-height: 0; }

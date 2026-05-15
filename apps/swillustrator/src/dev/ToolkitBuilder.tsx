@@ -48,6 +48,7 @@ import {
   type RegistryEntry,
   type ToolDef,
 } from '@orochi235/weasel/routing';
+import { DataGrid, type DataGridColumn } from '@orochi235/weasel-ui';
 import { formatShortcutParts } from '../ui/ToolPalette/formatShortcut';
 import {
   AlignBottomIcon,
@@ -418,6 +419,63 @@ export function ToolkitBuilder() {
 
   const defaultTools = useMemo(() => [...enabled.tools] as BuiltinToolId[], [enabled.tools]);
 
+  // Column defs for the DataGrid-rendered action registry / tool routes.
+  // Inline so they capture the latest `slotFor` closure for the slot pill.
+  const actionColumns: DataGridColumn<typeof actions[number]>[] = [
+    {
+      id: '_icon',
+      header: '',
+      sortable: false,
+      className: s.iconCell,
+      render: (a) => {
+        const Icon = ACTION_ICON[a.id];
+        return Icon ? <Icon /> : <span className={s.keysEmpty}>—</span>;
+      },
+    },
+    {
+      id: 'label',
+      header: 'Action',
+      accessor: (a) => a.label,
+      render: (a) => a.label,
+    },
+    {
+      id: 'id',
+      header: 'id',
+      accessor: (a) => a.id,
+      render: (a) => <code>{a.id}</code>,
+    },
+    {
+      id: 'binding',
+      header: 'binding',
+      sortable: false,
+      render: (a) => <Keys parts={formatShortcutParts(a.defaultBinding)} />,
+    },
+  ];
+
+  type RouteRow = RegistryEntry & { id: string };
+  const routeRows: RouteRow[] = useMemo(
+    () => routeRegistry.map((r, i) => ({ ...r, id: `${r.toolId}.${r.phase}.${r.gesture}.${r.target}.${r.modifiers}.${i}` })),
+    [routeRegistry],
+  );
+  const routeColumns: DataGridColumn<RouteRow>[] = [
+    { id: 'toolId',    header: 'tool',    accessor: (r) => r.toolId },
+    {
+      id: '_slot',
+      header: 'slot',
+      accessor: (r) => slotFor(r.toolId),
+      render: (r) => <span className={s.slot} data-slot={slotFor(r.toolId)}>{slotFor(r.toolId)}</span>,
+    },
+    { id: 'phase',     header: 'phase',   accessor: (r) => r.phase },
+    { id: 'gesture',   header: 'gesture', accessor: (r) => r.gesture },
+    { id: 'target',    header: 'target',  accessor: (r) => r.target },
+    {
+      id: 'modifiers',
+      header: 'mods',
+      accessor: (r) => r.modifiers,
+      render: (r) => <Keys parts={routingModsToParts(r.modifiers)} />,
+    },
+  ];
+
   return (
     <div className={s.root}>
       <header className={s.header}>
@@ -440,28 +498,36 @@ export function ToolkitBuilder() {
       </header>
       <div className={s.layout}>
         <aside className={s.catalog}>
-          <h2 className={s.sectionTitle}>Tools</h2>
-          {CATALOG.filter((c) => c.group === 'tool').map((c) => (
-            <label key={c.id} className={s.row}>
-              <input
-                type="checkbox"
-                checked={enabled.tools.has(c.id)}
-                onChange={() => toggle('tool', c.id)}
-              />
-              <code>{c.label}</code>
-            </label>
-          ))}
-          <h2 className={s.sectionTitle}>Actions</h2>
-          {CATALOG.filter((c) => c.group === 'action').map((c) => (
-            <label key={c.id} className={s.row}>
-              <input
-                type="checkbox"
-                checked={enabled.actions.has(c.id)}
-                onChange={() => toggle('action', c.id)}
-              />
-              <code>{c.label}</code>
-            </label>
-          ))}
+          <section className={s.widget}>
+            <h3 className={s.widgetTitle}>Tools</h3>
+            <div className={s.widgetBodyScrollY}>
+              {CATALOG.filter((c) => c.group === 'tool').map((c) => (
+                <label key={c.id} className={s.row}>
+                  <input
+                    type="checkbox"
+                    checked={enabled.tools.has(c.id)}
+                    onChange={() => toggle('tool', c.id)}
+                  />
+                  <code>{c.label}</code>
+                </label>
+              ))}
+            </div>
+          </section>
+          <section className={s.widget}>
+            <h3 className={s.widgetTitle}>Actions</h3>
+            <div className={s.widgetBodyScrollY}>
+              {CATALOG.filter((c) => c.group === 'action').map((c) => (
+                <label key={c.id} className={s.row}>
+                  <input
+                    type="checkbox"
+                    checked={enabled.actions.has(c.id)}
+                    onChange={() => toggle('action', c.id)}
+                  />
+                  <code>{c.label}</code>
+                </label>
+              ))}
+            </div>
+          </section>
         </aside>
         <main className={s.canvas} ref={canvasContainerRef}>
           <SceneCanvas
@@ -483,48 +549,21 @@ export function ToolkitBuilder() {
           <section className={s.widget}>
             <h3 className={s.widgetTitle}>Action registry ({actions.length})</h3>
             <div className={s.widgetBodyScrollY}>
-              <table className={s.table}>
-                <thead><tr><th></th><th>Action</th><th>id</th><th>binding</th></tr></thead>
-                <tbody>
-                  {actions.map((a) => {
-                    const Icon = ACTION_ICON[a.id];
-                    return (
-                      <tr key={a.id}>
-                        <td className={s.iconCell}>{Icon ? <Icon /> : <span className={s.keysEmpty}>—</span>}</td>
-                        <td>{a.label}</td>
-                        <td><code>{a.id}</code></td>
-                        <td><Keys parts={formatShortcutParts(a.defaultBinding)} /></td>
-                      </tr>
-                    );
-                  })}
-                  {actions.length === 0 && (
-                    <tr><td colSpan={4} className={s.empty}>No actions registered.</td></tr>
-                  )}
-                </tbody>
-              </table>
+              <DataGrid
+                rows={actions}
+                columns={actionColumns}
+                empty="No actions registered."
+              />
             </div>
           </section>
           <section className={s.widget}>
             <h3 className={s.widgetTitle}>Tool routes ({routeRegistry.length})</h3>
             <div className={s.widgetBodyScrollY}>
-              <table className={s.table}>
-                <thead><tr><th>tool</th><th>slot</th><th>phase</th><th>gesture</th><th>target</th><th>mods</th></tr></thead>
-                <tbody>
-                  {routeRegistry.map((r, i) => (
-                    <tr key={i}>
-                      <td>{r.toolId}</td>
-                      <td><span className={s.slot} data-slot={slotFor(r.toolId)}>{slotFor(r.toolId)}</span></td>
-                      <td>{r.phase}</td>
-                      <td>{r.gesture}</td>
-                      <td>{r.target}</td>
-                      <td><Keys parts={routingModsToParts(r.modifiers)} /></td>
-                    </tr>
-                  ))}
-                  {routeRegistry.length === 0 && (
-                    <tr><td colSpan={6} className={s.empty}>No tools selected.</td></tr>
-                  )}
-                </tbody>
-              </table>
+              <DataGrid
+                rows={routeRows}
+                columns={routeColumns}
+                empty="No tools selected."
+              />
             </div>
           </section>
           <section className={s.widget}>
