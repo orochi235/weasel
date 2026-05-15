@@ -1,13 +1,12 @@
-import { useState, useMemo, useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import {
   asNodeId,
-  nestedHitTester,
   SceneCanvas,
   sceneFromJSON,
   useSceneAdapter,
   useNest,
   useUnnest,
-  useSelectTool,
+  useNestedSelectTool,
   useSelection,
   useTools,
 } from '@orochi235/weasel';
@@ -64,20 +63,11 @@ export function NestingDemo() {
     isGroup: (_id, obj) => obj?.kind === 'container',
   });
 
-  // Nesting hit resolution: `pickOutermost` is the chrome-level body hit
-  // (casual click → whole top-level ancestor). `pickBest` is the alt-aware
-  // variant the select tool consults: without Alt → outermost ancestor;
-  // with Alt → one level deeper per click, drilling ancestor → descendant → leaf.
-  const hitter = useMemo(
-    () => nestedHitTester(adapter, {
-      composePose: composeAbs,
-      isGroup: (_id, obj) => obj?.kind === 'container',
-    }),
-    [adapter],
-  );
-
-  const select = useSelectTool<DemoNode, Pose>(adapter, {
-    pickBest: (wx, wy, alt, sel) => hitter.pickBest(wx, wy, alt, sel),
+  // useNestedSelectTool turns on alt-aware nested selection: casual click
+  // selects the outermost ancestor; alt-click drills ancestor → child → leaf.
+  const select = useNestedSelectTool<DemoNode, Pose>(adapter, {
+    composePose: composeAbs,
+    isGroup: (_id, obj) => obj?.kind === 'container',
   });
   const tools = useTools({ active: 'select', registry: { select } });
 

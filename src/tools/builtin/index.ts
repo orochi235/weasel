@@ -14,6 +14,11 @@ export {
   type AreaSelectOverlayStyle,
   type MoveOverlayStyle,
 } from './useSelectTool';
+export {
+  useNestedSelectTool,
+  type UseNestedSelectToolOptions,
+  type NestedSelectAdapter,
+} from './useNestedSelectTool';
 export { useResizeTool, type UseResizeToolOptions } from './useResizeTool';
 export { useRotateTool, type UseRotateToolOptions } from './useRotateTool';
 export { pickTopMostHit, type PickTopMostHitAdapter } from './pickTopMostHit';
