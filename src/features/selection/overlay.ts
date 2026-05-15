@@ -30,7 +30,7 @@ import type { RenderLayer } from 'core/layers/render';
 import type { GroupAdapter } from '../groups/types';
 import { expandToLeaves } from '../groups/resolve';
 import { unionBounds } from '../groups/unionBounds';
-import { alignedStrokeRect, type Paint, type Stroke } from 'core/paint-types';
+import { alignedStrokeRect, type FillStyle, type Stroke } from 'core/paint-types';
 import {
   rotationHandle,
   DEFAULT_ROTATION_HANDLE_DISTANCE,
@@ -209,7 +209,7 @@ export interface SelectionHandlesLayerOpts<TPose> extends SelectionLayerCommon<T
   /** Handle visuals. Omit for defaults. */
   handles?: {
     size?: number;
-    fill?: Paint;
+    fill?: FillStyle;
     outline?: Stroke;
   };
   /** Override handle placement. Default: 4 corners of the AABB. */
@@ -233,7 +233,7 @@ export interface SelectionOverlayLayerOpts<TPose> extends SelectionLayerCommon<T
   handles?:
     | {
         size?: number;
-        fill?: Paint;
+        fill?: FillStyle;
         outline?: Stroke;
       }
     | false;
@@ -257,7 +257,7 @@ const DEFAULT_OUTLINE: Required<Pick<Stroke, 'paint' | 'width'>> & { pad: number
   width: 2,
   pad: 1,
 };
-const DEFAULT_HANDLE_FILL: Paint = { fill: 'solid', color: '#d4c4a8' };
+const DEFAULT_HANDLE_FILL: FillStyle = { fill: 'solid', color: '#d4c4a8' };
 const DEFAULT_HANDLE_OUTLINE: Stroke = {
   paint: { fill: 'solid', color: '#1a130d' },
   width: 1,
@@ -298,7 +298,7 @@ function resolveOutlineStroke(opts?: Stroke & { pad?: number }): {
 
 interface ResolvedHandles {
   size: number;
-  fill: Paint;
+  fill: FillStyle;
   outline: Stroke;
 }
 
@@ -528,7 +528,7 @@ function rotationHandleCommands(
   const tangentBY = -Math.sin(angleB);
   const headA = arrowHead(endAX, endAY, tangentAX, tangentAY);
   const headB = arrowHead(endBX, endBY, tangentBX, tangentBY);
-  const headFill: Paint = handles.fill;
+  const headFill: FillStyle = handles.fill;
   // Build transform: translate(scx, scy) [* rotate(rotation)].
   let transform = mat3.translate(mat3.identity(), scx, scy);
   if (rotation !== 0) {

@@ -2592,7 +2592,7 @@ function RightSidebar(p: RightSidebarProps) {
       ) : (
         (() => { const pp = panelProps('defaults'); return pp && (
         <PropertiesPanel title="Defaults" {...pp}>
-          <PropertyRow label="Paint">
+          <PropertyRow label="FillStyle">
             <ActiveSwatches
               compact
               fill={p.activeFill}

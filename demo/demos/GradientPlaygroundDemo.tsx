@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { SceneCanvas, hexToRgba, rgbaToHex, useHandleDrag, useScene } from '@orochi235/weasel';
-import type { Paint, RenderLayer } from '@orochi235/weasel';
+import type { FillStyle, RenderLayer } from '@orochi235/weasel';
 import { viewToMat3, type DrawCommand } from '../../src/renderer';
 import { RangePicker, paintGradientTrack, type Thumb } from '@orochi235/weasel-ui';
 
@@ -41,7 +41,7 @@ export function GradientPlaygroundDemo() {
     stops: DEFAULT_STOPS,
   });
 
-  const paint: Paint = useMemo(() => {
+  const paint: FillStyle = useMemo(() => {
     if (variant === 'linear-gradient') {
       return {
         fill: 'linear-gradient',

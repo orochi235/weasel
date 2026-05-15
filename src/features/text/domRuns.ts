@@ -6,10 +6,10 @@
  * has `white-space: pre-wrap` so they render as line breaks.
  */
 
-import type { Paint } from 'core/paint-types';
+import type { FillStyle } from 'core/paint-types';
 import type { StyledRun } from './runs';
 
-function solidColor(p: Paint | undefined): string | null {
+function solidColor(p: FillStyle | undefined): string | null {
   if (!p) return null;
   if ('color' in p) return p.color;
   return null;

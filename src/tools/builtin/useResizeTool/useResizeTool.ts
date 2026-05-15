@@ -118,7 +118,7 @@ export function useResizeTool<TNode extends { id: string }, TPose>(
   // channel with one that delegates to `useResize`. Single-mode delegates
   // directly; the synthetic `MULTI_RESIZE_TARGET_ID` target snapshots union
   // + per-leaf poses at hit-time and applies `RECT_POSE_DESCRIPTOR.remapBounds`
-  // per leaf via `adapter.applyOps`. Paint is stripped on each region — the
+  // per leaf via `adapter.applyOps`. FillStyle is stripped on each region — the
   // selection-overlay layer paints corner glyphs; the wrapper is hit-only.
   const cornerAffWrapped: Affordance = useMemo(
     () => ({

@@ -12,7 +12,7 @@
  * baseline; line height is `max(fontSize * lineHeight)` across the line.
  */
 
-import type { Paint } from 'core/paint-types';
+import type { FillStyle } from 'core/paint-types';
 import type { BmFontChar, BmFont } from './FontAtlas';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { resolveFontVariant, type ResolveResult } from './registerFont';
@@ -32,7 +32,7 @@ export interface LaidOutGroup {
   style: 'normal' | 'italic';
   /** Gap between the request and the resolved match. Drives shader uniforms. */
   synthetic: { bold: boolean; italic: boolean };
-  fill: Paint;
+  fill: FillStyle;
   quads: LaidOutQuad[];
 }
 
@@ -58,7 +58,7 @@ interface LayoutContext {
   groups: Map<string, LaidOutGroup>;
 }
 
-function fillKey(p: Paint): string {
+function fillKey(p: FillStyle): string {
   if ('color' in p) return `s:${p.color}:${p.opacity ?? 1}`;
   // Non-solid paints (gradients/patterns) defeat grouping in this slice —
   // every occurrence gets its own group. Acceptable in v1 since per-run
@@ -71,7 +71,7 @@ function groupKey(
   weight: number,
   style: 'normal' | 'italic',
   synthetic: { bold: boolean; italic: boolean },
-  fill: Paint,
+  fill: FillStyle,
 ): string {
   return `${family}|${weight}|${style}|${synthetic.bold ? 1 : 0}${synthetic.italic ? 1 : 0}|${fillKey(fill)}`;
 }

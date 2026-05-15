@@ -27,7 +27,7 @@ import { translateRectPose } from 'features/groups/composePose';
 import type { DrawCommand, ShaderProgramHandle } from '../renderer';
 import { textCommand } from 'features/text/textCommand';
 import { findShapePainter } from './shapePainters';
-import type { Paint } from 'core/paint-types';
+import type { FillStyle } from 'core/paint-types';
 import type { RenderLayer } from 'core/layers/render';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap } from './Canvas';
@@ -281,13 +281,13 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     shaders?: ShaderProgramHandle[];
 
     /**
-     * Paint applied to the full canvas behind the scene. Accepts the kit's
-     * `Paint` union (solid / pattern / linear-gradient / radial-gradient /
+     * FillStyle applied to the full canvas behind the scene. Accepts the kit's
+     * `FillStyle` union (solid / pattern / linear-gradient / radial-gradient /
      * conic-gradient) so consumers don't have to author a background node
      * just to colorize the canvas. Rendered as a screen-space layer slotted
      * before `'scene'` — independent of pan / zoom.
      */
-    backgroundFill?: Paint;
+    backgroundFill?: FillStyle;
   };
 
 function SceneCanvasInner<TData, TLayer extends string, TPose>(
@@ -461,7 +461,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   });
 
   // Background-fill layer: screen-space, emits a single full-canvas rect
-  // with the configured `Paint`. Slotted before `'scene'` so the scene
+  // with the configured `FillStyle`. Slotted before `'scene'` so the scene
   // draws on top. Independent of pan / zoom because backgrounds in this
   // kit are canvas chrome, not world content — consumers that want a
   // world-space backdrop add their own scene node.

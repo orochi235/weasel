@@ -1,18 +1,18 @@
 /**
  * `RenderLayer` that fills/strokes `Path` instances. Mirrors the shape of
  * `createTextLayer`: caller hands over a `getNodes()` enumerator and a
- * `getPath(node)` lookup; the layer iterates and renders. Paint and
+ * `getPath(node)` lookup; the layer iterates and renders. FillStyle and
  * stroke are looked up per node so consumers can keep the path geometry
  * separate from the visual style record (the typical scene-graph layout).
  */
 
 import { type DrawCommand, viewToMat3 } from '../../renderer';
-import { type Paint, type Stroke } from 'core/paint-types';
+import { type FillStyle, type Stroke } from 'core/paint-types';
 import type { RenderLayer } from 'core/layers/render';
 import type { Path } from './types';
 import { countPathAnchors } from './anchors';
 
-const PLACEHOLDER_FILL: Paint = { color: '#ffffff' };
+const PLACEHOLDER_FILL: FillStyle = { color: '#ffffff' };
 const PLACEHOLDER_STROKE: Stroke = { paint: { color: '#ffffff' }, width: 1 };
 
 /** Options for `createPathLayer`. */
@@ -22,7 +22,7 @@ export interface CreatePathLayerOpts<T> {
   getNodes: () => readonly T[];
   getPath: (node: T) => Path;
   /** Per-node fill paint. Return `null`/`undefined` to skip filling. */
-  getFill?: (node: T) => Paint | null | undefined;
+  getFill?: (node: T) => FillStyle | null | undefined;
   /** Per-node stroke. Return `null`/`undefined` to skip stroking. */
   getStroke?: (node: T) => Stroke | null | undefined;
   /** Optional per-node hide hook (e.g., suppress while editing). */
@@ -108,7 +108,7 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
         // Synthesize placeholder only when colors validate (useVColors != null),
         // not on any raw hook return. Mismatched-length arrays drop both the
         // colors and placeholder so the dev signal (console warning) isn't duplicated.
-        const fill: Paint | undefined =
+        const fill: FillStyle | undefined =
           fillFromHook != null ? fillFromHook
           : (useVColors != null ? PLACEHOLDER_FILL : undefined);
 

@@ -4,12 +4,12 @@
  * `DEFAULT_TEXT_STYLE` and are applied at render/measure time, never written
  * back to the pose.
  *
- * `fill` follows the kit-wide `Paint` model — solid color or pattern. The
+ * `fill` follows the kit-wide `FillStyle` model — solid color or pattern. The
  * contenteditable edit overlay flattens non-solid fills to `'#000'` for CSS
  * since the browser can't paint with a texture handle.
  */
 
-import type { Paint } from 'core/paint-types';
+import type { FillStyle } from 'core/paint-types';
 
 /** User-facing text style. All fields optional; defaults applied at render time via `resolveTextStyle`. */
 export interface TextStyle {
@@ -26,7 +26,7 @@ export interface TextStyle {
   /** Multiplier applied to `fontSize`. Default 1.2. */
   lineHeight?: number;
   /** Default `{ fill: 'solid', color: '#000' }`. */
-  fill?: Paint;
+  fill?: FillStyle;
   /**
    * Caret color used by the edit overlay. Defaults to the text color when
    * `fill` is solid; falls back to `#000` for non-solid paints.
@@ -50,15 +50,15 @@ export interface ResolvedTextStyle {
   fontStyle: 'normal' | 'italic';
   align: 'left' | 'center' | 'right';
   lineHeight: number;
-  fill: Paint;
+  fill: FillStyle;
   caretColor: string;
   selectionBackground: string | null;
   selectionColor: string | null;
 }
 
-const DEFAULT_FILL: Paint = { fill: 'solid', color: '#000' };
+const DEFAULT_FILL: FillStyle = { fill: 'solid', color: '#000' };
 
-function paintColor(p: Paint): string {
+function paintColor(p: FillStyle): string {
   return 'color' in p ? p.color : '#000';
 }
 

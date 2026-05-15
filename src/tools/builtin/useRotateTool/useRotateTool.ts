@@ -102,7 +102,7 @@ export function useRotateTool<TNode extends { id: string }, TPose>(
   // channel with one that delegates to `useRotate` via the latest-callback
   // ref. Multi-mode rotation against the synthetic union isn't supported by
   // useRotate today — we filter those regions out so the click falls
-  // through to the slot walk. Paint is stripped; the selection-overlay layer
+  // through to the slot walk. FillStyle is stripped; the selection-overlay layer
   // paints the rotation handle separately, and the affordance's `decorate`
   // pass continues to paint the leader line.
   const rotationAffWrapped: Affordance = useMemo(

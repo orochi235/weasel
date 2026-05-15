@@ -1,4 +1,4 @@
-import type { Stroke, Paint, Path } from '@orochi235/weasel';
+import type { Stroke, FillStyle, Path } from '@orochi235/weasel';
 import { resolveTextStyle } from '@orochi235/weasel';
 import type {
   DrawCommand,
@@ -383,15 +383,15 @@ function setSolidPaintUniforms(
   gl.uniform1f(prog.uniform('u_alpha')!, ctx.state.alpha);
 }
 
-function drawPathFillByKind(ctx: DrawContext, fill: Paint, handle: GLMeshHandle): void {
+function drawPathFillByKind(ctx: DrawContext, fill: FillStyle, handle: GLMeshHandle): void {
   const kind = fill.fill ?? 'solid';
   if (kind === 'solid') {
     const solid = fill as { color: string; opacity?: number };
     drawPathFillSolid(ctx, solid, handle);
   } else if (kind === 'pattern') {
-    drawPathFillPattern(ctx, fill as Extract<Paint, { fill: 'pattern' }>, handle);
+    drawPathFillPattern(ctx, fill as Extract<FillStyle, { fill: 'pattern' }>, handle);
   } else {
-    drawPathFillGradient(ctx, fill as Extract<Paint, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>, handle);
+    drawPathFillGradient(ctx, fill as Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>, handle);
   }
 }
 
@@ -413,7 +413,7 @@ function drawPathFillSolid(
 
 function drawPathFillPattern(
   ctx: DrawContext,
-  fill: Extract<Paint, { fill: 'pattern' }>,
+  fill: Extract<FillStyle, { fill: 'pattern' }>,
   handle: GLMeshHandle,
 ): void {
   const tex = fill.pattern as TextureHandle;
@@ -445,7 +445,7 @@ function drawPathFillPattern(
 
 function drawPathFillGradient(
   ctx: DrawContext,
-  fill: Extract<Paint, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
+  fill: Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
   handle: GLMeshHandle,
 ): void {
   const gl = ctx.gl;
@@ -611,7 +611,7 @@ export function popClip(ctx: DrawContext, path: Path, oldDepth: number): void {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-function drawPathFillStencil(ctx: DrawContext, fill: Paint, handle: GLMeshHandle): void {
+function drawPathFillStencil(ctx: DrawContext, fill: FillStyle, handle: GLMeshHandle): void {
   // Step-4 evenodd stencil only supports solid fills cleanly. For non-solid,
   // fall back to a single-pass solid-equivalent (deferred refinement).
   if (fill.fill !== undefined && fill.fill !== 'solid') {

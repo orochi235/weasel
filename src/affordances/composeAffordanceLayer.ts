@@ -19,7 +19,7 @@ import type {
  * this layer composes each target's bounds transform (rotation around the
  * AABB center, when present) once per region for both paint and hit-test.
  *
- * Paint order matches array order (first → last = bottom → top). Hit-test
+ * FillStyle order matches array order (first → last = bottom → top). Hit-test
  * walks regions in reverse (top → bottom) and returns the first non-null
  * binding.
  *
@@ -130,7 +130,7 @@ function worldToLocal(xf: TargetTransform, wx: number, wy: number): { x: number;
   };
 }
 
-// ─── Paint ──────────────────────────────────────────────────────────────────
+// ─── FillStyle ──────────────────────────────────────────────────────────────────
 
 function paintRegion(
   region: AffordanceRegion,

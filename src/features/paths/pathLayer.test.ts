@@ -3,12 +3,12 @@ import type { GroupDrawCommand } from '../../renderer';
 import { createPathLayer } from './pathLayer';
 import { polygonFromPoints, rectPath } from './builder';
 import type { Path } from './types';
-import type { Paint, Stroke } from 'core/paint-types';
+import type { FillStyle, Stroke } from 'core/paint-types';
 
 describe('createPathLayer', () => {
   it('emits one path command per visible node, wrapped in a world-transform group', () => {
     const path: Path = rectPath(0, 0, 10, 10);
-    const fill: Paint = { fill: 'solid', color: '#fff' };
+    const fill: FillStyle = { fill: 'solid', color: '#fff' };
     const layer = createPathLayer({
       getNodes: () => [{ id: 'a' }, { id: 'b' }],
       getPath: () => path,

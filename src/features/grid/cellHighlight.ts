@@ -6,7 +6,7 @@
 
 import { type DrawCommand, viewToMat3 } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
-import { type Paint } from 'core/paint-types';
+import { type FillStyle } from 'core/paint-types';
 import { resolveUnit, type UnitSystem, type UnitValue } from 'core/units';
 
 /** Options for `createCellHighlightLayer`. */
@@ -19,11 +19,11 @@ export interface CellHighlightLayerOpts {
   origin?: () => { x: number; y: number };
   /** Cell to highlight, or `null` to skip drawing. */
   getCell: () => { col: number; row: number } | null;
-  /** Paint strategy for the filled cell. Defaults to a soft green. */
-  fill?: Paint;
+  /** FillStyle strategy for the filled cell. Defaults to a soft green. */
+  fill?: FillStyle;
 }
 
-const DEFAULT_FILL: Paint = { fill: 'solid', color: 'rgba(127,176,105,0.15)' };
+const DEFAULT_FILL: FillStyle = { fill: 'solid', color: 'rgba(127,176,105,0.15)' };
 
 /** Build a `RenderLayer` that fills a single grid cell — typically a snap-target preview. */
 export function createCellHighlightLayer(opts: CellHighlightLayerOpts): RenderLayer<unknown> {

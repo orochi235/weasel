@@ -30,7 +30,7 @@ export interface GridLayerOpts {
   accentEvery?: number;
   /** Optional finer subdivisions per cell. e.g. 4 -> 4 sub-lines per cell. */
   subdivisions?: number;
-  /** Per-band stroke styles. Each is a Paint+width (etc.) — see `Stroke`. */
+  /** Per-band stroke styles. Each is a FillStyle+width (etc.) — see `Stroke`. */
   style?: {
     line?: Stroke;
     accent?: Stroke;

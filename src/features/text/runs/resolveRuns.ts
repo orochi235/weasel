@@ -10,7 +10,7 @@
  * node-level value.
  */
 
-import type { Paint } from 'core/paint-types';
+import type { FillStyle } from 'core/paint-types';
 import type { StyledRun } from '../runs';
 import type { ResolvedTextStyle } from '../textStyle';
 
@@ -20,7 +20,7 @@ export interface ResolvedRun {
   fontSize: number;
   fontWeight: number;
   fontStyle: 'normal' | 'italic';
-  fill: Paint;
+  fill: FillStyle;
 }
 
 function numericWeight(w: number | string): number {

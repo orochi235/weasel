@@ -1,7 +1,7 @@
 /**
  * Public types for `@orochi235/weasel-svg`. The package exposes a flat,
  * discriminated-union node model (`SvgNode`) that mirrors the SVG element
- * tree but uses weasel-native leaf data (`Path`, `Paint`) for geometry and
+ * tree but uses weasel-native leaf data (`Path`, `FillStyle`) for geometry and
  * paint.
  *
  * Parsing collapses every `transform="..."` onto its descendants' geometry,
@@ -11,7 +11,7 @@
  * single `matrix(a b c d e f)` on the `<g>`.
  */
 
-import type { Path, Paint, StyledRun, TextStyle } from '@orochi235/weasel';
+import type { Path, FillStyle, StyledRun, TextStyle } from '@orochi235/weasel';
 
 /**
  * Opaque pass-through bag for namespaced XML content.
@@ -58,15 +58,15 @@ export type Matrix = readonly [number, number, number, number, number, number];
 export const IDENTITY_MATRIX: Matrix = [1, 0, 0, 1, 0, 0];
 
 /**
- * Paint description in the SVG sense — either explicit `none`, a solid
- * color, or a reference to a weasel-native gradient `Paint`. Solid colors
+ * FillStyle description in the SVG sense — either explicit `none`, a solid
+ * color, or a reference to a weasel-native gradient `FillStyle`. Solid colors
  * are normalized to `#rrggbb` strings; opacity is carried separately so
  * `fill-opacity` and `stroke-opacity` round-trip cleanly.
  */
 export type SvgPaint =
   | { kind: 'none' }
   | { kind: 'solid'; color: string; opacity?: number }
-  | { kind: 'gradient'; paint: Paint };
+  | { kind: 'gradient'; paint: FillStyle };
 
 /** Stroke description: a paint plus structural line parameters. */
 export interface SvgStroke {

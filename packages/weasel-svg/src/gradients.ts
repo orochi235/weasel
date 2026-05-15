@@ -1,17 +1,17 @@
 /**
  * Map between SVG `<linearGradient>` / `<radialGradient>` elements and
- * weasel's `Paint` gradient variants. We collect gradients from
+ * weasel's `FillStyle` gradient variants. We collect gradients from
  * `<defs>` during parse and look them up by id when a `fill` /
  * `stroke` attribute references one as `url(#id)`. On serialize, we
  * emit a fresh `<defs>` block with stable generated ids.
  */
 
-import type { Paint, GradStop } from '@orochi235/weasel';
+import type { FillStyle, GradStop } from '@orochi235/weasel';
 import { parsePaintAttr } from './color';
 import { trimNumber } from './transform';
 
 /** Collected gradient definitions, keyed by element id. */
-export type GradientTable = Map<string, Paint>;
+export type GradientTable = Map<string, FillStyle>;
 
 /** Read the children of `<defs>` and extract supported gradient nodes. */
 export function collectGradients(svg: Element, onWarn?: (m: string) => void): GradientTable {
@@ -69,7 +69,7 @@ function applyAlpha(hex: string, alpha: number): string {
   return `${hex}${a.toString(16).padStart(2, '0')}`;
 }
 
-function readLinearGradient(el: Element, onWarn?: (m: string) => void): Paint | null {
+function readLinearGradient(el: Element, onWarn?: (m: string) => void): FillStyle | null {
   const x1 = parseFloat(el.getAttribute('x1') ?? '0');
   const y1 = parseFloat(el.getAttribute('y1') ?? '0');
   const x2 = parseFloat(el.getAttribute('x2') ?? '1');
@@ -83,7 +83,7 @@ function readLinearGradient(el: Element, onWarn?: (m: string) => void): Paint | 
   };
 }
 
-function readRadialGradient(el: Element, onWarn?: (m: string) => void): Paint | null {
+function readRadialGradient(el: Element, onWarn?: (m: string) => void): FillStyle | null {
   const cx = parseFloat(el.getAttribute('cx') ?? '0.5');
   const cy = parseFloat(el.getAttribute('cy') ?? '0.5');
   const r = parseFloat(el.getAttribute('r') ?? '0.5');
@@ -99,15 +99,15 @@ function readRadialGradient(el: Element, onWarn?: (m: string) => void): Paint | 
 /**
  * Pre-pass that assigns stable serialization ids to gradients used by
  * any leaf in the tree. We key on object identity so two leaves sharing
- * the exact same `Paint` reference reuse one `<defs>` entry; structurally
+ * the exact same `FillStyle` reference reuse one `<defs>` entry; structurally
  * equal but distinct objects get separate ids.
  */
 export class GradientRegistry {
-  private byPaint = new Map<Paint, string>();
-  private order: Paint[] = [];
+  private byPaint = new Map<FillStyle, string>();
+  private order: FillStyle[] = [];
   private counter = 0;
 
-  register(paint: Paint): string {
+  register(paint: FillStyle): string {
     const existing = this.byPaint.get(paint);
     if (existing) return existing;
     const id = `grad${this.counter++}`;
@@ -129,7 +129,7 @@ export class GradientRegistry {
   }
 }
 
-function gradientXml(id: string, paint: Paint): string {
+function gradientXml(id: string, paint: FillStyle): string {
   if (paint.fill === 'linear-gradient') {
     const stops = paint.stops.map(stopXml).join('');
     return (

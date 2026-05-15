@@ -203,7 +203,7 @@ export { createTilePattern } from './features/patterns';
 export type { TilePatternOpts } from './features/patterns';
 export { alignedStrokeRect } from './core/paint-types';
 export type {
-  Paint,
+  FillStyle,
   GradStop,
   Stroke,
   StrokeAlign,

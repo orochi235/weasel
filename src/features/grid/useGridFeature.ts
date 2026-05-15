@@ -16,7 +16,7 @@ import { screenToWorld, type ViewTransform } from 'core/viewport/viewTransform';
 import { pointToGridCell } from 'interactions/gestures/shared/strategies/grid';
 import type { UnitSystem, UnitValue } from 'core/units';
 import type { RenderLayer } from 'core/layers/render';
-import type { Paint, Stroke } from 'core/paint-types';
+import type { FillStyle, Stroke } from 'core/paint-types';
 import { createGridLayer } from './layer';
 import { createCellHighlightLayer } from './cellHighlight';
 
@@ -62,7 +62,7 @@ export interface UseGridFeatureOptions {
   /** Per-band stroke styles forwarded to `createGridLayer`. */
   style?: { line?: Stroke; accent?: Stroke; sub?: Stroke };
   /** Highlight fill paint forwarded to `createCellHighlightLayer`. */
-  highlightFill?: Paint;
+  highlightFill?: FillStyle;
   /** Fires when the hovered cell changes. */
   onChange?: (cell: { col: number; row: number } | null) => void;
 }

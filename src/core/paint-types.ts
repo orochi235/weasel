@@ -1,10 +1,10 @@
 /**
- * Paint and Stroke types — the unified shape for "what color or texture
+ * FillStyle and Stroke types — the unified shape for "what color or texture
  * paints these pixels," modeled on SVG's paint-server concept.
  *
- * - `Paint` is a tagged union: solid color, pattern, or gradient. Used
+ * - `FillStyle` is a tagged union: solid color, pattern, or gradient. Used
  *   wherever a kit option previously took `fillStyle: string`.
- * - `Stroke` pairs a `Paint` with structural stroke parameters (width, dash,
+ * - `Stroke` pairs a `FillStyle` with structural stroke parameters (width, dash,
  *   line cap/join, alignment).
  * - These types are consumed by the GL renderer's DrawCommand path fills
  *   and strokes.
@@ -30,7 +30,7 @@ import type { TextureHandle } from '../renderer/textures/registerTexture';
  * produces these handles by rendering a tile to an `OffscreenCanvas` and
  * registering the resulting `ImageBitmap` as a GL texture.
  */
-export type Paint =
+export type FillStyle =
   | { fill?: 'solid'; color: string; opacity?: number }
   | { fill: 'pattern'; pattern: TextureHandle; opacity?: number }
   | { fill: 'linear-gradient'; from: { x: number; y: number }; to: { x: number; y: number }; stops: GradStop[]; opacity?: number }
@@ -60,9 +60,9 @@ export interface GradStop {
  */
 export type StrokeAlign = 'center' | 'inner' | 'outer';
 
-/** Stroke style: a Paint plus structural line parameters. */
+/** Stroke style: a FillStyle plus structural line parameters. */
 export interface Stroke {
-  paint: Paint;
+  paint: FillStyle;
   width?: number;
   /** Per `CanvasRenderingContext2D.setLineDash` — empty/omitted = solid. */
   dash?: number[];

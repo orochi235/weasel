@@ -20,7 +20,7 @@ import type {
   Matrix, NamespaceMeta, NamespacedElement, ParseOptions, ParseResult,
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode,
 } from './types';
-import type { StyledRun, TextStyle, Paint } from '@orochi235/weasel';
+import type { StyledRun, TextStyle, FillStyle } from '@orochi235/weasel';
 import { multiply, parseTransform, decomposeRotation, rotationComponent, isIdentity } from './transform';
 import { boundsOfPath } from '@orochi235/weasel';
 import { IDENTITY_MATRIX } from './types';
@@ -754,7 +754,7 @@ function readTextStyle(
   if (fillAttr) {
     const parsed = parsePaintAttr(fillAttr);
     if (parsed?.kind === 'solid') {
-      style.fill = { fill: 'solid', color: parsed.color } as Paint;
+      style.fill = { fill: 'solid', color: parsed.color } as FillStyle;
     } else if (parsed?.kind === 'ref') {
       const paint = gradients.get(parsed.id);
       if (paint) style.fill = paint;

@@ -9,7 +9,7 @@
  * (300/500/900) are out of scope for slice 1.
  */
 
-import type { Paint } from 'core/paint-types';
+import type { FillStyle } from 'core/paint-types';
 
 export interface StyledRun {
   text: string;
@@ -17,7 +17,7 @@ export interface StyledRun {
   italic?: boolean;
   fontFamily?: string;
   fontSize?: number;
-  fill?: Paint;
+  fill?: FillStyle;
 }
 
 export function toRuns(input: string | StyledRun[]): StyledRun[] {

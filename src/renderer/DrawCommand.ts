@@ -1,12 +1,12 @@
-import type { Path, Paint, Stroke, TextStyle, ResolvedRun } from '@orochi235/weasel';
+import type { Path, FillStyle, Stroke, TextStyle, ResolvedRun } from '@orochi235/weasel';
 import type { Mat3 } from './math/mat3';
 import type { ShaderProgramHandle, ShaderUniform } from './shaders/registerProgram';
 
 /**
- * Solid-fill paint variant (subset of the full `Paint` union from
+ * Solid-fill paint variant (subset of the full `FillStyle` union from
  * `@orochi235/weasel`). Kept for back-compat with step-1/2 consumers and
  * because some code reads `fill.color` directly. Through step 4, fills can
- * be any `Paint` variant — solid, pattern, or gradient.
+ * be any `FillStyle` variant — solid, pattern, or gradient.
  */
 export interface SolidPaint {
   fill?: 'solid';
@@ -26,8 +26,8 @@ export type DrawCommand =
 export interface PathDrawCommand {
   kind: 'path';
   path: Path;
-  /** Any `Paint` variant: solid, pattern, or gradient (linear/radial/conic). */
-  fill?: Paint;
+  /** Any `FillStyle` variant: solid, pattern, or gradient (linear/radial/conic). */
+  fill?: FillStyle;
   /** Stroke spec. Only solid `paint` supported through step 4. */
   stroke?: Stroke;
   /**
@@ -85,7 +85,7 @@ export interface TextDrawCommand {
 
 /**
  * Image draw command — renders `image` at screen-space rect (x, y, w, h).
- * The image is stretched to fit; no tiling. Use a pattern Paint on a path
+ * The image is stretched to fit; no tiling. Use a pattern FillStyle on a path
  * for tiling.
  */
 export interface ImageDrawCommand {

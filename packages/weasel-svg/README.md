@@ -1,6 +1,6 @@
 # @orochi235/weasel-svg
 
-SVG import / export for [`@orochi235/weasel`](../../). Parse an SVG string into a tree of weasel-native shapes (`Path`, `Paint`, `Stroke`); serialize the same tree back to an SVG document.
+SVG import / export for [`@orochi235/weasel`](../../). Parse an SVG string into a tree of weasel-native shapes (`Path`, `FillStyle`, `Stroke`); serialize the same tree back to an SVG document.
 
 The package has zero runtime dependencies outside `@orochi235/weasel` — the path-`d` parser, transform parser, and color parser are all hand-rolled and live in this package.
 

@@ -124,7 +124,7 @@ function registerGradients(nodes: SvgNode[], registry: GradientRegistry): void {
       if (n.stroke && n.stroke.paint.kind === 'gradient') registry.register(n.stroke.paint.paint);
     } else if (n.kind === 'text') {
       // Text gradient fills flow through style.fill rather than a top-level
-      // SvgPaint, so register direct Paint references when present.
+      // SvgPaint, so register direct FillStyle references when present.
       const styleFill = n.style?.fill;
       if (styleFill && !('color' in styleFill)) {
         registry.register(styleFill);

@@ -2,7 +2,7 @@ import type { DragChannel } from 'tools/types';
 import type { ChromeState } from 'core/selection/chromeState';
 import type { DrawCommand } from '../renderer';
 import type { View } from 'core/viewport/view';
-import type { Paint, Stroke } from 'core/paint-types';
+import type { FillStyle, Stroke } from 'core/paint-types';
 
 /**
  * @experimental
@@ -60,7 +60,7 @@ export interface AffordanceRegion<TScratch = unknown> {
    *  transform; visual size stays in screen pixels (so handles don't
    *  warp under zoom or non-uniform scale). Omit for hit-only regions. */
   paint?:
-    | { kind: 'square';  sizePx: number;  fill?: Paint; stroke?: Stroke }
+    | { kind: 'square';  sizePx: number;  fill?: FillStyle; stroke?: Stroke }
     | { kind: 'custom';  draw: (ctx: CustomPaintContext) => DrawCommand[] };
 
   /** Drag binding produced when this region is hit. Lazily called so
