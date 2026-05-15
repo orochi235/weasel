@@ -6,11 +6,15 @@ export interface DebugConfig {
   origins?: boolean;
   snap?: boolean;
   layers?: boolean;
+  /** Render each tracked node's id as a label at the top-left of its
+   *  bounds. Pulls from the same `recordBounds` stream `bounds` uses, so
+   *  no extra sink calls are required to enable. */
+  ids?: boolean;
   /** Optional per-feature color overrides; falls back to the default theme. */
   theme?: Partial<DebugTheme>;
 }
 
-export type DebugFeature = 'hitboxes' | 'handles' | 'bounds' | 'origins' | 'snap' | 'layers';
+export type DebugFeature = 'hitboxes' | 'handles' | 'bounds' | 'origins' | 'snap' | 'layers' | 'ids';
 
 export interface DebugTheme {
   hitboxFill: string;
@@ -21,6 +25,8 @@ export interface DebugTheme {
   snap: string;
   layerText: string;
   layerTextBg: string;
+  /** Color for the per-node id label rendered when `config.ids` is on. */
+  idText: string;
 }
 
 export type HandleKind = 'corner' | 'rotation' | 'anchor';

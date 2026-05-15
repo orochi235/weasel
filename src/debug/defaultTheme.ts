@@ -14,4 +14,5 @@ export const DEFAULT_DEBUG_THEME: DebugTheme = {
   snap: '#ffa726',
   layerText: '#e0e0e0',
   layerTextBg: 'rgba(0, 0, 0, 0.6)',
+  idText: '#ffeb3b',
 };

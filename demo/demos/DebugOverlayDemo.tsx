@@ -27,6 +27,7 @@ const FEATURES: { key: DebugFeature; label: string; help: string }[] = [
   { key: 'handles',  label: 'handles',  help: 'Resize / rotate handle positions exactly where the gesture-side computes them.' },
   { key: 'snap',     label: 'snap',     help: 'Snap candidates considered during the most recent gesture — green ring = accepted, dim ring = considered.' },
   { key: 'layers',   label: 'layers',   help: 'Layer-id + space + draw-order labels in the corner. Use to debug layer ordering.' },
+  { key: 'ids',      label: 'ids',      help: 'Per-node id label rendered at the top-left of each tracked bounds — useful for tying scene ids to what you see on the canvas.' },
 ];
 
 const btn: React.CSSProperties = {
@@ -46,19 +47,19 @@ export function DebugOverlayDemo() {
 
   const [enabled, setEnabled] = useState<Record<DebugFeature, boolean>>({
     bounds: true, origins: true, hitboxes: false,
-    handles: false, snap: false, layers: false,
+    handles: false, snap: false, layers: false, ids: false,
   });
 
   const toggle = (k: DebugFeature) =>
     setEnabled((e) => ({ ...e, [k]: !e[k] }));
   const allOn = () =>
-    setEnabled({ bounds: true, origins: true, hitboxes: true, handles: true, snap: true, layers: true });
+    setEnabled({ bounds: true, origins: true, hitboxes: true, handles: true, snap: true, layers: true, ids: true });
   const allOff = () =>
-    setEnabled({ bounds: false, origins: false, hitboxes: false, handles: false, snap: false, layers: false });
+    setEnabled({ bounds: false, origins: false, hitboxes: false, handles: false, snap: false, layers: false, ids: false });
 
   const debug: DebugConfig | false = (
     enabled.bounds || enabled.origins || enabled.hitboxes ||
-    enabled.handles || enabled.snap || enabled.layers
+    enabled.handles || enabled.snap || enabled.layers || enabled.ids
   ) ? enabled : false;
 
   return (

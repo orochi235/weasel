@@ -45,6 +45,7 @@ export function createDebugOverlayLayer({
       if (config.handles) emitHandles(out, s, t, theme);
       if (config.origins) emitOrigins(out, s, t, theme);
       if (config.snap) emitSnap(out, s, t, theme);
+      if (config.ids) emitIds(out, s, t, theme);
       if (config.layers) emitLayersPanel(out, s, dims, theme);
 
       return out;
@@ -172,6 +173,25 @@ function emitSnap(
         : { stroke: { paint: { fill: 'solid' as const, color }, width: 1 } }),
     };
     out.push(cmd);
+  }
+}
+
+function emitIds(
+  out: DrawCommand[],
+  s: DebugSnapshot,
+  t: ReturnType<typeof viewToTransform>,
+  theme: DebugTheme,
+): void {
+  // Pulls from the bounds stream — every consumer that records bounds
+  // (selection overlay's handle math, the kit's per-node debug shim) gets
+  // an id label for free.
+  for (const b of s.bounds) {
+    const [sx, sy] = worldToScreen(b.bounds.x, b.bounds.y, t);
+    out.push(textCommand(sx + 2, sy + 11, b.id, {
+      fill: { fill: 'solid', color: theme.idText },
+      fontFamily: 'ui-monospace, Menlo, monospace',
+      fontSize: 10,
+    }));
   }
 }
 
