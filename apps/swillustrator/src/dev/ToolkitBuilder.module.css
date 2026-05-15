@@ -86,6 +86,12 @@
 .slot[data-slot='active'] { color: var(--wzl-accent, #7fb069); border-color: var(--wzl-accent, #7fb069); }
 .slot[data-slot='ambient'] { color: #d4a574; border-color: #5a4a38; }
 .slot[data-slot='hotkey']  { color: #7ab8d4; border-color: #5a4a38; }
+.slot[data-slot='inactive'] {
+  color: #fff;
+  background: #c43c3c;
+  border-color: #c43c3c;
+  font-weight: 600;
+}
 
 /* Keystroke "key cap" styling — each modifier and key in its own bordered chip. */
 .keys { display: inline-flex; gap: 3px; align-items: center; flex-wrap: wrap; }

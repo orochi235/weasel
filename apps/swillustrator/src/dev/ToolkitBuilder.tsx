@@ -462,12 +462,15 @@ export function ToolkitBuilder() {
   // and is what makes most "static overlaps" non-conflicts. Computed
   // from the live `tools` API rather than the ToolDef so it reflects
   // current state.
-  const slotFor = (toolId: string): 'active' | 'hotkey' | 'ambient' | 'registry' => {
+  const slotFor = (toolId: string): 'active' | 'hotkey' | 'ambient' | 'inactive' => {
     if (tools.active === toolId) return 'active';
     if (tools.ambient.some((t) => t.id === toolId)) return 'ambient';
     const t = registry[toolId];
     if (t?.hotkey) return 'hotkey';
-    return 'registry';
+    // Tool is in the registry but not in any dispatcher slot — its routes
+    // can't fire until it's switched active (or moved to ambient/hotkey).
+    // Treat as a dead entry for visualization purposes.
+    return 'inactive';
   };
 
   const actionsReg = useActionsRegistry();
