@@ -13,6 +13,11 @@
   width: 44px;
   flex: 0 0 auto;
 }
+.sliderLabel {
+  color: var(--wzl-text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
 
 /* Grid body for the panel — 12-column layout used by PropertyRow and
    friends. Chrome (title row, collapse, hide) lives in SidebarPanel. */

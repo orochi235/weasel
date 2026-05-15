@@ -13,8 +13,12 @@
 .table td {
   text-align: left;
   padding: 3px 6px;
-  border-bottom: 1px solid var(--wzl-panel-border, #4a3c2e);
   vertical-align: top;
+}
+.table tbody tr {
+  /* Subtle row separator — was a full-weight border on every cell.
+     Drastically toned down per visual-weight feedback. */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .table th {
@@ -24,6 +28,7 @@
   top: 0;
   background: var(--wzl-surface, #2a2018);
   z-index: 1;
+  border-bottom: 1px solid var(--wzl-panel-border, #4a3c2e);
 }
 
 .sortable {

@@ -49,6 +49,15 @@ All 10 steps shipped between 2026-05-08 and 2026-05-09. Kit is GL-only at 0.2.0.
 ## Known bugs
 
 - **Insert demo: every other drag-to-insert is ignored.** In `demo/demos/InsertDemo.tsx`, dragging to insert a rect works, the next drag is silently dropped, the one after that works again. Reading through the dispatcher → `defineDragInsertTool` → `useInsert` → `useDragRect` → `useDragGesture` lifecycle on paper looks correct (controller is stable across renders, `activeSpec` is re-`begin`'d on each new gesture, ctx.scratch resets via fresh `inFlight`). Not yet reproduced under instrumentation. Likely a state-leak somewhere in the routing's `activeSpec` slot or `useDragGesture`'s `stateRef` after a successful commit. (Logged 2026-05-15.)
+- **Tiger SVG: select-all → delete → undo redraws only one path with the top half filled.** Other paths' affordances still render (selection chrome, hit-areas), but the geometry doesn't come back. Suggests the `DeleteOp` capture is losing per-path data (maybe the polygon coords / fillRule / vertexColors), and on redo the kit synthesizes a partial path. Repro path: load Ghostscript tiger SVG → `Cmd+A` → `Delete` → `Cmd+Z`.
+
+## Surfaced 2026-05-15 (mid-session, deferred)
+
+- **Add `transparent` paint state to color swatches.** Distinct from `none`: paint is present but alpha=0. Visualize as gray/white checkerboard with the same red diagonal-stripe NO marker.
+- **Active colors as a userland tool.** Lift the active-paint state out of the App and into a registered tool that exposes color-change events; swatch grids, palettes, and other color sources dispatch into the tool rather than calling setActiveFill / setActiveStroke directly. Centralizes focus routing and history capture.
+- **Dispatch-resolutions widget: live mode.** Add a toggle that, instead of resolving each (target, mods) cell statically via `resolveRoute`, actually injects synthetic pointer events through the dispatcher and records what fires. Cell content becomes "what ran" rather than "what would run by static analysis."
+- **Swap all swillustrator UI (other than canvas + bg) to the light keycap theme.** Currently the panels, sidebar, and chrome all use the dark `--wzl-surface` / `--wzl-bg` palette; the keycap chips and (recently) widget headers introduced a light variant. Promote that to the default for non-canvas UI so the whole app reads consistently.
+- **Tool / Action label coverage audit.** Verify every built-in tool and registered Action has a `label` (palette / menu / command-palette consume it). If `Tool.label` doesn't exist, add it to the hook return shape so each tool can self-declare.
 
 ## weasel-den deferrals
 

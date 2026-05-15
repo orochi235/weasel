@@ -108,7 +108,10 @@ export function PropertyNumberInput(props: {
 }
 
 /** Slider + small numeric field. Slider takes most of the row; the
- *  numeric input shows the precise value and accepts direct edits. */
+ *  numeric input shows the precise value and accepts direct edits.
+ *  Optional `label` renders inline at the start of the row — use this
+ *  in place of `PropertyRow`'s separate label column when you want the
+ *  label visually flush with the slider rather than in its own column. */
 export function PropertySliderInput(props: {
   value: number;
   onChange: (v: number) => void;
@@ -116,12 +119,16 @@ export function PropertySliderInput(props: {
   step?: number;
   min?: number;
   max?: number;
+  label?: ReactNode;
 }) {
   const min = props.min ?? 0;
   const max = props.max ?? 100;
   const step = props.step ?? 1;
   return (
     <div className={`${s.sliderRow} ${spanClass(props.span ?? 12)}`}>
+      {props.label !== undefined && (
+        <span className={s.sliderLabel}>{props.label}</span>
+      )}
       <input
         type="range"
         className={s.slider}

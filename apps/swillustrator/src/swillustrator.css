@@ -512,30 +512,28 @@ html, body, #root {
 /* The fill / stroke styling differs: fill is a solid filled square,
    stroke is a frame (interior hollow) so the user can tell at a glance
    which swatch represents which paint role. */
+/* Stacked swatches — Illustrator convention: fill is the solid square
+   underneath, stroke is the framed square in front. The stroke's inner
+   cutout is transparent so the fill (or panel bg, when fill is `none`)
+   shows through, making the square hole visibly perceptible. */
 .swill-swatch--fill {
   top: 4px;
   left: 4px;
-  z-index: 2;
+  z-index: 1;
   background: var(--swill-swatch-color, #ffffff);
 }
 
 .swill-swatch--stroke {
   bottom: 4px;
   right: 4px;
-  z-index: 1;
-  /* Inner cutout creates the "ring" look — 6px-thick frame in the
-     swatch color. */
+  z-index: 2;
   background: var(--swill-swatch-color, #000000);
-  /* The inner hole — render via an inset box-shadow that fills the
-     middle with the panel bg color. */
 }
 
 .swill-swatch--stroke::before {
   content: '';
   position: absolute;
   inset: 6px;
-  /* Transparent so the actual canvas / panel background shows through —
-     reads as "outline" rather than "filled rectangle in panel-bg color." */
   background: transparent;
   border-radius: 1px;
 }

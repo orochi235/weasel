@@ -444,7 +444,7 @@ export function ToolkitBuilder() {
       className: s.iconCell,
       render: (a) => {
         const Icon = ACTION_ICON[a.id];
-        return Icon ? <Icon /> : <span className={s.keysEmpty}>—</span>;
+        return Icon ? <Icon /> : null;
       },
     },
     {

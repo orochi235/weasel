@@ -432,6 +432,16 @@ export function App() {
       setActiveStroke(f);
     },
   }), []));
+  // Shift+X — swap which swatch is focused (the focus highlight moves
+  // between the two stacked swatches; the colors themselves stay put).
+  useAction(useMemo(() => ({
+    id: 'swill.swatches.swapFocus',
+    label: 'Swap focused swatch',
+    defaultBinding: { key: 'x', shift: true },
+    run: () => {
+      setFocusedSwatch((cur) => (cur === 'fill' ? 'stroke' : 'fill'));
+    },
+  }), []));
   // / — toggle the last-focused swatch between solid and 'none'.
   useAction(useMemo(() => ({
     id: 'swill.swatches.none',
@@ -2588,8 +2598,8 @@ function RightSidebar(p: RightSidebarProps) {
               <PropertyRow label="Stroke">
                 <PropertyColorInput value={p.primaryStroke} onChange={p.applyStrokeToSelection} />
               </PropertyRow>
-              <PropertyRow label="Width">
-                <PropertySliderInput value={p.primaryStrokeWidth} onChange={p.applyStrokeWidthToSelection} min={0} max={20} step={1} span={12} />
+              <PropertyRow>
+                <PropertySliderInput label="Width" value={p.primaryStrokeWidth} onChange={p.applyStrokeWidthToSelection} min={0} max={20} step={1} span={12} />
               </PropertyRow>
             </>
           )}
@@ -2609,8 +2619,8 @@ function RightSidebar(p: RightSidebarProps) {
               onFocus={p.setFocusedSwatch}
             />
           </PropertyRow>
-          <PropertyRow label="Width">
-            <PropertySliderInput value={p.strokeWidth} onChange={p.setStrokeWidth} min={0} max={20} step={1} span={12} />
+          <PropertyRow>
+            <PropertySliderInput label="Width" value={p.strokeWidth} onChange={p.setStrokeWidth} min={0} max={20} step={1} span={12} />
           </PropertyRow>
         </PropertiesPanel>
         ); })()
