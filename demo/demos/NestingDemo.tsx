@@ -77,11 +77,7 @@ export function NestingDemo() {
   );
 
   const select = useSelectTool<DemoNode, Pose>(adapter, {
-    pickEvery: () => [],
     pickBest: (wx, wy, alt, sel) => hitter.pickBest(wx, wy, alt, sel),
-    boundsOf: (id) => scene.get(asNodeId(id))?.pose ?? null,
-    getNode: (id) => adapter.getNode(id) ?? null,
-    getSelection: () => selection.current,
   });
   const tools = useTools({ active: 'select', registry: { select } });
 
