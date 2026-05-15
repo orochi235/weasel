@@ -130,18 +130,38 @@
 .keys { display: inline-flex; gap: 3px; align-items: center; flex-wrap: wrap; }
 .keysEmpty { color: var(--wzl-muted, #a59685); }
 .key {
-  display: inline-block;
-  min-width: 16px;
-  padding: 1px 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 18px;
+  padding: 0 4px;
   border: 1px solid var(--wzl-panel-border, #4a3c2e);
   border-bottom-width: 2px;
   border-radius: 3px;
   background: var(--wzl-bg, #1e1610);
   font-family: ui-sans-serif, system-ui, sans-serif;
   font-size: 11px;
-  line-height: 1.2;
-  text-align: center;
+  line-height: 1;
   color: var(--wzl-fg, #d4c4a8);
+}
+/* Default chip is square — letters, digits, and single glyphs (⎋ ⌫ ↑ etc.)
+   sit in a uniform key-cap box. */
+.key[data-kind='square'] {
+  width: 18px;
+  padding: 0;
+}
+/* Modifiers (⌘ ⇪ ⌥ ⌃) are wider to match the visual weight of how they
+   appear on a real keyboard — and to differentiate them from the keys
+   they modify in a stack. */
+.key[data-kind='modifier'] {
+  min-width: 26px;
+  padding: 0 6px;
+}
+/* Tab / Enter / Space — actual wide keys on a real keyboard. */
+.key[data-kind='wide'] {
+  min-width: 32px;
+  padding: 0 8px;
 }
 
 .conflicts { margin: 0; padding-left: 16px; font-size: 12px; }

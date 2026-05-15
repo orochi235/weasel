@@ -582,11 +582,22 @@ function routingModsToParts(mods: string): readonly string[] | undefined {
     .map((m) => (m === 'mod' ? '⌘' : m === 'shift' ? '⇪' : m === 'alt' ? '⌥' : m));
 }
 
+/** Classify a chip glyph for sizing: modifier keys render wider, "wide"
+ *  keys (Tab/Enter/Space) wider still, everything else stays square so
+ *  letters / digits / arrow glyphs sit in a uniform key-cap box. */
+function keyKind(p: string): 'modifier' | 'wide' | 'square' {
+  if (p === '⌘' || p === '⇪' || p === '⌥' || p === '⌃') return 'modifier';
+  if (p === '⇥' || p === '↵' || p === '␣') return 'wide';
+  return 'square';
+}
+
 function Keys({ parts }: { parts: readonly string[] | undefined }) {
   if (!parts || parts.length === 0) return <span className={s.keysEmpty}>—</span>;
   return (
     <span className={s.keys}>
-      {parts.map((p, i) => <kbd key={i} className={s.key}>{p}</kbd>)}
+      {parts.map((p, i) => (
+        <kbd key={i} className={s.key} data-kind={keyKind(p)}>{p}</kbd>
+      ))}
     </span>
   );
 }
