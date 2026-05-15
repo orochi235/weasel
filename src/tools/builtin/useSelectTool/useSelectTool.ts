@@ -431,15 +431,27 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   };
 
   // Drag route table. Keyed by `ctx.target.kind`:
-  //   rect/text/path → move.beginAt(ids); empty → areaSelect.beginAt.
+  //   rect/text/path → move.beginAt(ids); empty → areaSelect.beginAt
+  //   (with a scratch-driven fall-through to move when pointerDownBody
+  //   already classified the gesture as 'move' against the tool's own
+  //   pickEvery — see `dragEmpty` below).
   //
   // beginAt returns a `Result<'begin'>` whose `spec` carries the gesture's
   // continuation closures (onMove/onRelease/onCancel). The routing factory
   // installs those closures into its `activeSpec` slot, so engaged-phase
   // pointer events route through the same gesture primitive without any
   // scratch-kind switch in this file.
-  const beginMove: ActionFn<SelectScratch> = (ctx) =>
-    move.beginAt(ctx, computeMoveIds(ctx)) as ReturnType<ActionFn<SelectScratch>>;
+  //
+  // `beginMove` prefers ids stashed by pointerDownBody (which uses the
+  // tool's own pickEvery / pickBest) over `computeMoveIds(ctx)`, which
+  // re-derives from `ctx.target.id` (Canvas's pickEvery prop). Those two
+  // can disagree when consumers wire a tool-side pickEvery without also
+  // forwarding it to <Canvas pickEvery=>; preferring scratch lets the
+  // tool work without that double-wiring trap.
+  const beginMove: ActionFn<SelectScratch> = (ctx) => {
+    const ids = ctx.scratch?.kind === 'move' ? (ctx.scratch.ids as NodeId[]) : computeMoveIds(ctx);
+    return move.beginAt(ctx, ids) as ReturnType<ActionFn<SelectScratch>>;
+  };
 
   // dblTap forwards to the consumer's onDoubleTap escape-hatch via the
   // shared `forwardActionTo` routing util — same shape any tool with a
@@ -542,11 +554,16 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
             '*': pointerDownBody,
           },
           drag: {
-            // Any node click → move. Empty space → marquee. Consumers
-            // that want per-kind drag behavior (e.g. text → enter-edit)
-            // can override by passing a custom drag route table.
+            // Any node click → move. Empty space → marquee — unless
+            // pointerDownBody already classified the gesture as 'move'
+            // against the tool's own pickEvery / pickBest, in which case
+            // honor scratch over `ctx.target` (which can disagree when
+            // <Canvas pickEvery=> isn't separately wired). Consumers that
+            // want per-kind drag behavior (e.g. text → enter-edit) can
+            // override by passing a custom drag route table.
             '*': beginMove,
-            empty: beginArea,
+            empty: (ctx) =>
+              (ctx.scratch?.kind === 'move' ? beginMove(ctx) : beginArea(ctx)) as ReturnType<ActionFn<SelectScratch>>,
           },
           // Click route table with modifier sub-tables (Task 5). Each
           // node-kind route only runs the deferred-collapse path —

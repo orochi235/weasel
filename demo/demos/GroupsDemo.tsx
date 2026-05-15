@@ -134,7 +134,6 @@ export function GroupsDemo() {
       adapter={adapter}
       selection={selection}
       tools={tools}
-      pickEvery={pickEvery}
       layers={{
         scene: {
           drawOne: (r, p): DrawCommand[] => [{

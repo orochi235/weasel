@@ -89,7 +89,6 @@ export function NestingDemo() {
       scene={scene}
       selection={selection}
       tools={tools}
-      geometry={{ pickEvery: hitter.pickOutermost }}
       layers={{
         scene: {
           drawOne: (node, p): DrawCommand[] => {
