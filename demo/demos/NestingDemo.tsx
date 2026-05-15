@@ -4,7 +4,7 @@ import {
   nestedHitTester,
   SceneCanvas,
   sceneFromJSON,
-  sceneToAdapter,
+  useSceneAdapter,
   useNest,
   useUnnest,
   useSelectTool,
@@ -43,10 +43,7 @@ export function NestingDemo() {
   // descendants on setPose" semantic so dragging a parent moves its children.
   // Everything else — insertNode/removeNode, getParent, getSelection — comes
   // out of sceneToAdapter at the right shape for the nesting hooks.
-  const adapter = useMemo(
-    () => sceneToAdapter(scene, { selection, cascadeContainerPose: 'rect' }),
-    [scene, selection],
-  );
+  const adapter = useSceneAdapter(scene, { selection, cascadeContainerPose: 'rect' });
 
   useNest(adapter, {
     composePose: composeAbs,

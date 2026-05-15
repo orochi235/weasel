@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   SceneCanvas,
-  sceneToAdapter,
+  useSceneAdapter,
   selectFromMarquee,
   useScene,
   useSelection,
@@ -29,10 +29,7 @@ export function MultiSelectDemo() {
   // sceneToAdapter covers Move/Resize/Rotate AND AreaSelect — the marquee
   // hitTestArea/applyOps and selection get/set are kit-defaulted from the
   // scene + the selection passed in.
-  const selectAdapter = useMemo(
-    () => sceneToAdapter(scene, { selection }),
-    [scene, selection],
-  );
+  const selectAdapter = useSceneAdapter(scene, { selection });
 
   // pickEvery / boundsOf default to a rect AABB scan over the adapter —
   // no boilerplate needed for the common rect-pose case.

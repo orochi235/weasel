@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   SceneCanvas,
-  sceneToAdapter,
+  useSceneAdapter,
   selectFromLasso,
   selectFromMarquee,
   useKeybindings,
@@ -53,10 +53,7 @@ export function LassoDemo() {
   const selection = useSelection({ mode: 'multi' });
   const [mode, setMode] = useState<LassoHitMode>('intersect');
 
-  const adapter = useMemo(
-    () => sceneToAdapter(scene, { selection }),
-    [scene, selection],
-  );
+  const adapter = useSceneAdapter(scene, { selection });
 
   // pickEvery / boundsOf are auto-derived from the adapter (rect-pose AABB
   // scan) — no boilerplate needed for the common case. Override either if

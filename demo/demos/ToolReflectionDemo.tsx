@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import {
   asNodeId,
   SceneCanvas,
-  sceneToAdapter,
+  useSceneAdapter,
   useScene,
   useSelection,
   useSelectTool,
@@ -83,10 +83,7 @@ export function ToolReflectionDemo() {
   const scene = useScene<Rect>({ items: INITIAL });
   const selection = useSelection({ mode: 'multi' });
 
-  const adapter = useMemo(
-    () => sceneToAdapter(scene, { selection }),
-    [scene, selection],
-  );
+  const adapter = useSceneAdapter(scene, { selection });
 
   const pickEvery = (worldX: number, worldY: number): string[] => {
     const hits: string[] = [];

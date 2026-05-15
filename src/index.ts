@@ -127,7 +127,7 @@ export type {
   ShapePainter,
   RegisterShapePainterOptions,
 } from './canvas/shapePainters';
-export { sceneToAdapter } from './canvas/sceneAdapter';
+export { sceneToAdapter, useSceneAdapter } from './canvas/sceneAdapter';
 export type { SceneCanvasAdapter } from './canvas/sceneAdapter';
 export type {
   CanvasProps,

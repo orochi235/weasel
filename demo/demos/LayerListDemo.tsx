@@ -1,7 +1,6 @@
-import { useMemo } from 'react';
 import {
   SceneCanvas,
-  sceneToAdapter,
+  useSceneAdapter,
   useScene,
   useSelection,
   useSelectTool,
@@ -27,10 +26,7 @@ const INITIAL: Rect[] = [
 export function LayerListDemo() {
   const scene = useScene<Rect>({ items: INITIAL });
   const selection = useSelection({ mode: 'multi' });
-  const adapter = useMemo(
-    () => sceneToAdapter(scene, { selection }),
-    [scene, selection],
-  );
+  const adapter = useSceneAdapter(scene, { selection });
 
   const select = useSelectTool(adapter, { getSelection: () => selection.current });
   const tools = useTools({ active: 'select', registry: { select } });

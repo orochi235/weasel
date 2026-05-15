@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   asNodeId,
   SceneCanvas,
-  sceneToAdapter,
+  useSceneAdapter,
   useScene,
   useSelection,
   useSelectTool,
@@ -31,10 +31,7 @@ export function PointSnapDemo() {
   const scene = useScene({ items: INITIAL });
   const selection = useSelection({ mode: 'multi' });
 
-  const adapter = useMemo(
-    () => sceneToAdapter(scene, { selection }),
-    [scene, selection],
-  );
+  const adapter = useSceneAdapter(scene, { selection });
 
   const pickEvery = (worldX: number, worldY: number): string[] => {
     const hits: string[] = [];

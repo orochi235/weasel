@@ -12,6 +12,7 @@
  * each node directly; world composition (when needed) is the renderer's job
  * via `composeWorldPose`, not the adapter's.
  */
+import { useMemo } from 'react';
 import type {
   AreaSelectAdapter,
   InsertAdapter,
@@ -416,4 +417,25 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
   };
 
   return adapter;
+}
+
+/**
+ * React-hook wrapper around `sceneToAdapter`. Memoizes on `scene`,
+ * `options.selection`, `options.commitInsert`, `options.insertLayer`, and
+ * `options.layouts` so the adapter identity is stable across renders unless
+ * one of those changes.
+ *
+ * Saves the per-demo `useMemo(() => sceneToAdapter(scene, { selection }),
+ * [scene, selection])` boilerplate every consumer that wires custom tools
+ * would otherwise repeat.
+ */
+export function useSceneAdapter<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  options: SceneToAdapterOptions<TData, TLayer, TPose> = {},
+): SceneCanvasAdapter<TData, TLayer, TPose> {
+  const { selection, commitInsert, insertLayer, layouts, poseBounds, cascadeContainerPose } = options;
+  return useMemo(
+    () => sceneToAdapter(scene, { selection, commitInsert, insertLayer, layouts, poseBounds, cascadeContainerPose }),
+    [scene, selection, commitInsert, insertLayer, layouts, poseBounds, cascadeContainerPose],
+  );
 }

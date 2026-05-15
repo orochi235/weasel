@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react';
 import {
   asNodeId,
   SceneCanvas,
-  sceneToAdapter,
+  useSceneAdapter,
   selectFromMarquee,
   useInsertTool,
   useScene,
@@ -32,10 +32,7 @@ export function ComposeDemo() {
   // sceneToAdapter covers Move/Resize/Rotate AND AreaSelect — the marquee
   // hitTestArea/applyOps and selection get/set are kit-defaulted from the
   // scene + the selection passed in.
-  const selectAdapter = useMemo(
-    () => sceneToAdapter(scene, { selection }),
-    [scene, selection],
-  );
+  const selectAdapter = useSceneAdapter(scene, { selection });
 
   const pickEvery = (worldX: number, worldY: number): string[] => {
     const hits: string[] = [];

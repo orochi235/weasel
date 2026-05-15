@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import {
   asNodeId,
   SceneCanvas,
-  sceneToAdapter,
+  useSceneAdapter,
   useAlign,
   useDistribute,
   useFlip,
@@ -31,10 +31,7 @@ export function AlignDistributeFlipDemo() {
   const scene = useScene({ items: INITIAL });
   const selection = useSelection({ mode: 'multi' });
 
-  const baseAdapter = useMemo(
-    () => sceneToAdapter(scene, { selection }),
-    [scene, selection],
-  );
+  const baseAdapter = useSceneAdapter(scene, { selection });
 
   // Adapter for the action hooks: getSelection + getPose + applyOps.
   // The hooks dispatch ops via `dispatchApplyBatch`, which calls applyOps

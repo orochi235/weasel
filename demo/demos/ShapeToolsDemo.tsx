@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import {
   SceneCanvas,
-  sceneToAdapter,
+  useSceneAdapter,
   useEllipseTool,
   useLineTool,
   usePencilTool,
@@ -55,10 +55,7 @@ export function ShapeToolsDemo() {
   });
   const selection = useSelection({ mode: 'multi' });
 
-  const adapter = useMemo(
-    () => sceneToAdapter(scene, { selection }),
-    [scene, selection],
-  );
+  const adapter = useSceneAdapter(scene, { selection });
 
   // ── select ──────────────────────────────────────────────────────────────────
   const select = useSelectTool(adapter, {
