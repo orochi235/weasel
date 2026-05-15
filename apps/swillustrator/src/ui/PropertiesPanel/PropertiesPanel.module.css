@@ -1,3 +1,19 @@
+/* Slider + numeric pair: range input takes the bulk of the row,
+   number field on the right gives precise edit. */
+.sliderRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.slider {
+  flex: 1;
+  min-width: 0;
+}
+.sliderNumber {
+  width: 44px;
+  flex: 0 0 auto;
+}
+
 /* Grid body for the panel — 12-column layout used by PropertyRow and
    friends. Chrome (title row, collapse, hide) lives in SidebarPanel. */
 .grid {

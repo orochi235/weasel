@@ -206,6 +206,14 @@ export function ToolkitBuilder() {
   const [enabled, setEnabled] = useState(() => parseHash(window.location.hash));
   useEffect(() => { writeHash(enabled.tools, enabled.actions); }, [enabled]);
 
+  // Override the document title while this surface is mounted; the index.html
+  // ships with "Swillustrator" since the same entry serves both routes.
+  useEffect(() => {
+    const previous = document.title;
+    document.title = 'Toolkit Builder';
+    return () => { document.title = previous; };
+  }, []);
+
   // Measure the canvas container so SceneCanvas's fixed-size prop can flex.
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 520, height: 480 });

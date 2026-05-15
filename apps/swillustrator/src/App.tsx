@@ -111,6 +111,7 @@ import {
   PropertyAxisInput,
   PropertyColorInput,
   PropertyNumberInput,
+  PropertySliderInput,
   PropertyButton,
   PropertyReadOnly,
   PropertyTextInput,
@@ -2588,7 +2589,7 @@ function RightSidebar(p: RightSidebarProps) {
                 <PropertyColorInput value={p.primaryStroke} onChange={p.applyStrokeToSelection} />
               </PropertyRow>
               <PropertyRow label="Width">
-                <PropertyNumberInput value={p.primaryStrokeWidth} onChange={p.applyStrokeWidthToSelection} min={0} max={20} step={1} span={4} />
+                <PropertySliderInput value={p.primaryStrokeWidth} onChange={p.applyStrokeWidthToSelection} min={0} max={20} step={1} span={12} />
               </PropertyRow>
             </>
           )}
@@ -2609,7 +2610,7 @@ function RightSidebar(p: RightSidebarProps) {
             />
           </PropertyRow>
           <PropertyRow label="Width">
-            <PropertyNumberInput value={p.strokeWidth} onChange={p.setStrokeWidth} min={0} max={20} step={1} span={4} />
+            <PropertySliderInput value={p.strokeWidth} onChange={p.setStrokeWidth} min={0} max={20} step={1} span={12} />
           </PropertyRow>
         </PropertiesPanel>
         ); })()

@@ -107,6 +107,49 @@ export function PropertyNumberInput(props: {
   );
 }
 
+/** Slider + small numeric field. Slider takes most of the row; the
+ *  numeric input shows the precise value and accepts direct edits. */
+export function PropertySliderInput(props: {
+  value: number;
+  onChange: (v: number) => void;
+  span?: 1 | 2 | 3 | 4 | 5 | 6 | 8 | 10 | 12;
+  step?: number;
+  min?: number;
+  max?: number;
+}) {
+  const min = props.min ?? 0;
+  const max = props.max ?? 100;
+  const step = props.step ?? 1;
+  return (
+    <div className={`${s.sliderRow} ${spanClass(props.span ?? 12)}`}>
+      <input
+        type="range"
+        className={s.slider}
+        min={min}
+        max={max}
+        step={step}
+        value={Number.isFinite(props.value) ? props.value : 0}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => {
+          const n = parseFloat(e.target.value);
+          props.onChange(Number.isFinite(n) ? n : 0);
+        }}
+      />
+      <input
+        type="number"
+        className={`${s.input} ${s.sliderNumber}`}
+        min={min}
+        max={max}
+        step={step}
+        value={Number.isFinite(props.value) ? props.value : 0}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => {
+          const n = parseFloat(e.target.value);
+          props.onChange(Number.isFinite(n) ? n : 0);
+        }}
+      />
+    </div>
+  );
+}
+
 /** A single mini-label + number input pair, taking 6 of 12 columns
  *  (2 + 4). Compose two of these in a PropertyRow for X/Y or W/H. */
 export function PropertyAxisInput(props: {

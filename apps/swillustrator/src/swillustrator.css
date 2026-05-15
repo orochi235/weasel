@@ -534,7 +534,9 @@ html, body, #root {
   content: '';
   position: absolute;
   inset: 6px;
-  background: #221a13;
+  /* Transparent so the actual canvas / panel background shows through —
+     reads as "outline" rather than "filled rectangle in panel-bg color." */
+  background: transparent;
   border-radius: 1px;
 }
 

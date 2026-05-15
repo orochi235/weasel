@@ -6,6 +6,7 @@ export {
   PropertyReadOnly,
   PropertyTextInput,
   PropertyNumberInput,
+  PropertySliderInput,
   PropertyAxisInput,
   PropertyColorInput,
   PropertySelect,
