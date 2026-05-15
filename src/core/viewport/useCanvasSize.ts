@@ -1,14 +1,15 @@
 import { type RefObject, useCallback, useEffect, useState } from 'react';
+import type { CanvasSize } from './clampView';
 
-export interface CanvasSize {
-  width: number;
-  height: number;
+/** Size snapshot returned by `useCanvasSize` — the kit-wide `CanvasSize`
+ *  (width × height in CSS pixels) plus the current `devicePixelRatio`. */
+export interface CanvasSizeSnapshot extends CanvasSize {
   dpr: number;
 }
 
 /** Track a container's content-rect size and the current devicePixelRatio via `ResizeObserver`. */
-export function useCanvasSize(containerRef: RefObject<HTMLDivElement | null>): CanvasSize {
-  const [size, setSize] = useState<CanvasSize>({ width: 0, height: 0, dpr: 1 });
+export function useCanvasSize(containerRef: RefObject<HTMLDivElement | null>): CanvasSizeSnapshot {
+  const [size, setSize] = useState<CanvasSizeSnapshot>({ width: 0, height: 0, dpr: 1 });
 
   const measure = useCallback(() => {
     if (!containerRef.current) return;

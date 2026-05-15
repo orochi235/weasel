@@ -616,11 +616,22 @@ export type { IconProps } from './icons';
 // deep paths. Consolidated here so consumers can name them from the barrel.
 export type {
   DrawCommand,
+  PathDrawCommand,
+  GroupDrawCommand,
+  TextDrawCommand,
+  ImageDrawCommand,
+  ShaderDrawCommand,
   ShaderProgramHandle,
+  ShaderUniform,
+  Mat3,
 } from './renderer';
 export type { TextureHandle } from './renderer/textures/registerTexture';
 export type {
   GesturesConfig,
+  DeleteGestureConfig,
+  DuplicateGestureConfig,
+  NudgeGestureConfig,
+  UndoRedoGestureConfig,
   LayersMap,
   SceneSlotConfig,
   SelectionOverlaySlotConfig,
@@ -628,7 +639,10 @@ export type {
   StandardSlotConfig,
 } from './canvas/Canvas';
 export type { BuiltinToolId } from './canvas/SceneCanvas';
-export type { SceneToAdapterOptions } from './canvas/sceneAdapter';
+export type {
+  SceneToAdapterOptions,
+  SceneAdapterSelection,
+} from './canvas/sceneAdapter';
 export type {
   ToolPresentation,
   DblTapChannel,
@@ -638,8 +652,14 @@ export type { RouteMatch } from './tools/routing/lookup';
 export type { InsertOverlayStyle } from './tools/builtin/marquee';
 export type { InsertPoint } from './interactions/gestures/types';
 export type { AnimateToBoundsOptions } from './core/viewport/useViewAnimation';
-export type { UseHandToolOptions } from './tools/builtin/useHandTool/useHandTool';
-export type { UseWheelPanToolOptions } from './tools/builtin/useWheelPanTool/useWheelPanTool';
+export type {
+  UseHandToolOptions,
+  InertiaConfig as HandToolInertiaConfig,
+} from './tools/builtin/useHandTool/useHandTool';
+export type {
+  UseWheelPanToolOptions,
+  InertiaConfig as WheelPanInertiaConfig,
+} from './tools/builtin/useWheelPanTool/useWheelPanTool';
 export type { SelectAdapter } from './tools/builtin/useSelectTool/useSelectTool';
 export type { PolygonPoint } from './tools/builtin/usePolygonTool/usePolygonTool';
 export type { StarPoint } from './tools/builtin/useStarTool/useStarTool';
