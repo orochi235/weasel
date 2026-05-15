@@ -38,16 +38,20 @@ export interface GridLayerOpts {
   };
 }
 
+// Defaults express weight via opacity rather than a fixed dark color so the
+// grid reads correctly against any background fill (kit demos use a neutral
+// gray; consumer apps may use cream / dark / themed surfaces). Override
+// per-canvas via `style.{line,accent,sub}.paint` if a hard color is needed.
 const DEFAULT_LINE: Stroke = {
-  paint: { fill: 'solid', color: '#2a2018' },
+  paint: { fill: 'solid', color: 'rgba(255, 255, 255, 0.08)' },
   width: 1,
 };
 const DEFAULT_ACCENT: Stroke = {
-  paint: { fill: 'solid', color: '#3a2e22' },
+  paint: { fill: 'solid', color: 'rgba(255, 255, 255, 0.16)' },
   width: 1,
 };
 const DEFAULT_SUB: Stroke = {
-  paint: { fill: 'solid', color: 'rgba(255,255,255,0.04)' },
+  paint: { fill: 'solid', color: 'rgba(255, 255, 255, 0.04)' },
   width: 1,
 };
 

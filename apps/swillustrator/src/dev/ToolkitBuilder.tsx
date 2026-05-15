@@ -44,6 +44,7 @@ import {
 import {
   buildActionRegistry,
   findConflicts,
+  resolveRoute,
   type Conflict,
   type RegistryEntry,
   type ToolDef,
@@ -419,6 +420,12 @@ export function ToolkitBuilder() {
 
   const defaultTools = useMemo(() => [...enabled.tools] as BuiltinToolId[], [enabled.tools]);
 
+  // Dispatch resolutions input state — gesture + phase. The table walks
+  // all tool defs in slot order and resolves which one's route would
+  // fire for each (target, modifiers) combo at the chosen phase+gesture.
+  const [resGesture, setResGesture] = useState<'click' | 'drag' | 'pointerDown' | 'dblTap'>('click');
+  const [resPhase, setResPhase] = useState<'initial' | 'engaged'>('initial');
+
   // Column defs for the DataGrid-rendered action registry / tool routes.
   // Inline so they capture the latest `slotFor` closure for the slot pill.
   const actionColumns: DataGridColumn<typeof actions[number]>[] = [
@@ -544,6 +551,14 @@ export function ToolkitBuilder() {
             Click & drag with the configured tools. Action keybindings live
             when wired (see right panel for the full keybind map).
           </p>
+          <ResolutionsWidget
+            toolDefs={toolDefs}
+            tools={tools}
+            gesture={resGesture}
+            setGesture={setResGesture}
+            phase={resPhase}
+            setPhase={setResPhase}
+          />
         </main>
         <aside className={s.reflect}>
           <section className={s.widget}>
@@ -638,6 +653,151 @@ function keyKind(p: string): 'modifier' | 'wide' | 'square' {
   if (p === '⌘' || p === '⇪' || p === '⌥' || p === '⌃') return 'modifier';
   if (p === '⇥' || p === '↵' || p === '␣') return 'wide';
   return 'square';
+}
+
+// ── Dispatch resolutions table ─────────────────────────────────────────────
+
+const RES_TARGETS = ['rect', 'text', 'path', 'empty', '*'] as const;
+const RES_MOD_KEYS = [
+  'default', 'mod', 'shift', 'alt',
+  'mod+shift', 'mod+alt', 'shift+alt', 'mod+shift+alt',
+] as const;
+type ResModKey = typeof RES_MOD_KEYS[number];
+type ResTarget = typeof RES_TARGETS[number];
+type ResGesture = 'click' | 'drag' | 'pointerDown' | 'dblTap';
+type ResPhase = 'initial' | 'engaged';
+
+function modKeyToToolModifiers(key: ResModKey) {
+  const parts = new Set(key.split('+'));
+  return {
+    meta: parts.has('mod'),
+    ctrl: false,
+    shift: parts.has('shift'),
+    alt: parts.has('alt'),
+    space: false,
+  };
+}
+
+interface ResolutionCell { toolId: string; matchedKey: string }
+
+function resolveAt(
+  toolDefs: readonly ToolDef<unknown>[],
+  phase: ResPhase,
+  gesture: ResGesture,
+  target: ResTarget,
+  modKey: ResModKey,
+): ResolutionCell | null {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const hit: any = target === 'empty'
+    ? { category: 'empty', kind: 'empty' }
+    : { category: 'node', kind: target, id: 'preview', pose: null, data: null };
+  const modifiers = modKeyToToolModifiers(modKey);
+  for (const def of toolDefs) {
+    const phaseDef = phase === 'engaged' ? def.engaged : def.initial;
+    if (!phaseDef) continue;
+    const table = phaseDef[gesture];
+    if (table == null) continue;
+    if (typeof table === 'function') {
+      // Function-form drag: matches anything as '*'.
+      return { toolId: def.id, matchedKey: '*' };
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const match = resolveRoute(table as any, hit, modifiers);
+    if (match) return { toolId: def.id, matchedKey: match.matchedKey };
+  }
+  return null;
+}
+
+function ResolutionsWidget(props: {
+  toolDefs: readonly ToolDef<unknown>[];
+  tools: ToolsApi | null;
+  gesture: ResGesture;
+  setGesture: (g: ResGesture) => void;
+  phase: ResPhase;
+  setPhase: (p: ResPhase) => void;
+}) {
+  const { toolDefs, tools, gesture, setGesture, phase, setPhase } = props;
+  // Walk slot-precedence order so resolveAt picks what the dispatcher
+  // would actually fire: hotkey → active → ambient → registry.
+  const orderedDefs: readonly ToolDef<unknown>[] = useMemo(() => {
+    if (!tools) return toolDefs;
+    const out: ToolDef<unknown>[] = [];
+    const seen = new Set<string>();
+    const push = (id: string | null | undefined) => {
+      if (!id || seen.has(id)) return;
+      const def = toolDefs.find((d) => d.id === id);
+      if (def) { out.push(def); seen.add(id); }
+    };
+    if (tools.hotkeyEngaged) push(tools.hotkeyEngaged);
+    push(tools.active);
+    for (const t of tools.ambient) push(t.id);
+    for (const id of Object.keys(tools.registry)) push(id);
+    return out;
+  }, [toolDefs, tools]);
+
+  return (
+    <section className={s.widget}>
+      <h3 className={s.widgetTitle}>Dispatch resolutions</h3>
+      <div className={s.widgetBody}>
+        <div className={s.resolutionsControls}>
+          <label>
+            <span>Gesture</span>
+            <select value={gesture} onChange={(e) => setGesture(e.target.value as ResGesture)}>
+              <option value="click">click</option>
+              <option value="drag">drag</option>
+              <option value="pointerDown">pointerDown</option>
+              <option value="dblTap">dblTap</option>
+            </select>
+          </label>
+          <label>
+            <span>Phase</span>
+            <select value={phase} onChange={(e) => setPhase(e.target.value as ResPhase)}>
+              <option value="initial">initial</option>
+              <option value="engaged">engaged</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div className={s.widgetBodyScrollXY}>
+        <table className={s.resolutionsTable}>
+          <thead>
+            <tr>
+              <th></th>
+              {RES_MOD_KEYS.map((m) => (
+                <th key={m}>
+                  <Keys parts={routingModsToParts(m)} />
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {RES_TARGETS.map((target) => (
+              <tr key={target}>
+                <td><code>{target}</code></td>
+                {RES_MOD_KEYS.map((m) => {
+                  const r = resolveAt(orderedDefs, phase, gesture, target, m);
+                  return (
+                    <td key={m} className={s.resolutionsCell}>
+                      {r ? (
+                        <span className={s.resolutionsHit}>
+                          <code>{r.toolId}</code>
+                          {r.matchedKey !== target && r.matchedKey !== '*' && (
+                            <span className={s.resolutionsMatchedKey}>:{r.matchedKey}</span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className={s.keysEmpty}>—</span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
 }
 
 function Keys({ parts }: { parts: readonly string[] | undefined }) {

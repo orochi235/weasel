@@ -214,3 +214,40 @@
 .conflicts li { margin: 4px 0; }
 .conflicts code { font-size: 11px; }
 
+/* Resolutions widget — gesture/phase pickers + per-mod resolution table. */
+.resolutionsControls {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--wzl-muted, #a59685);
+}
+.resolutionsControls label { display: inline-flex; align-items: center; gap: 4px; }
+.resolutionsControls select {
+  background: var(--wzl-bg, #1e1610);
+  color: var(--wzl-fg, #d4c4a8);
+  border: 1px solid var(--wzl-panel-border, #4a3c2e);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 12px;
+  font-family: inherit;
+}
+.resolutionsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.resolutionsTable th, .resolutionsTable td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--wzl-panel-border, #4a3c2e);
+  text-align: left;
+  vertical-align: middle;
+}
+.resolutionsTable th { font-weight: 600; color: var(--wzl-muted, #a59685); }
+.resolutionsCell { white-space: nowrap; }
+.resolutionsHit code { font-size: 11px; color: var(--wzl-accent, #7fb069); }
+.resolutionsMatchedKey {
+  font-size: 10px;
+  color: var(--wzl-muted, #a59685);
+  margin-left: 2px;
+}
+
