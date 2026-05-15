@@ -47,6 +47,7 @@ export function WeaselDemos() {
           <p>Domain-agnostic 2D scene-graph hooks for React + canvas.</p>
           <p><a href="./api/">API reference →</a></p>
           <p><a href="./docs/ui/storybook/">UI storybook →</a></p>
+          <p><a href="./swillustrator/#/dev/toolkits">Toolkit builder →</a></p>
           <p className="ckd-sidebar-hint">
             Press <kbd>/</kbd> for the command palette.
           </p>
