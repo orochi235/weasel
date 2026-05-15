@@ -39,8 +39,20 @@ describe('createRotationAffordance', () => {
     expect(regions[0]!.targetId).toBe('a');
   });
 
-  it('decorate emits the leader line when a selection has bounds', () => {
+  it('decorate emits no tether by default', () => {
     const aff = createRotationAffordance();
+    const cmds = aff.decorate!(stateWithSingle(), VIEW);
+    expect(cmds).toEqual([]);
+  });
+
+  it('decorate emits the tether line when tether is true', () => {
+    const aff = createRotationAffordance({ tether: true });
+    const cmds = aff.decorate!(stateWithSingle(), VIEW);
+    expect(cmds.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('decorate emits the tether line when a custom stroke is provided', () => {
+    const aff = createRotationAffordance({ tether: { paint: { color: '#fff' }, width: 2 } });
     const cmds = aff.decorate!(stateWithSingle(), VIEW);
     expect(cmds.length).toBeGreaterThanOrEqual(1);
   });

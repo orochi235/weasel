@@ -1,6 +1,7 @@
 import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { DrawCommand } from '../renderer';
+import type { Stroke } from 'core/paint-types';
 import type { View } from 'core/viewport/view';
 import type { DragChannel } from 'tools/types';
 import {
@@ -9,6 +10,7 @@ import {
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/useSelectTool';
+import { PATH_L, PATH_M } from 'features/paths/types';
 
 export interface RotationAffordanceOptions {
   /** World-pixel distance from the bounds top edge to the handle center.
@@ -20,6 +22,13 @@ export interface RotationAffordanceOptions {
   handleSize?: number;
   fill?: string;
   stroke?: string;
+  /** Draw a tether line from the bounds top edge to the handle center.
+   *  `true` enables it with a kit-default stroke derived from the handle
+   *  fill; pass a `Stroke` to override. `undefined`, `null`, or `false`
+   *  all mean off (kit convention for opt-in cosmetic decorations). Opt
+   *  in when the visual relationship between the handle and the bounds
+   *  isn't already obvious. */
+  tether?: Stroke | true | null | false;
 }
 
 export interface RotationScratch {
@@ -41,9 +50,9 @@ const stubDrag: DragChannel<RotationScratch> = {
  * @experimental
  * Rotation-handle affordance for rotating the active selection. Declares
  * a single point region at the rect's (rotated) top-center, offset
- * outward along the local up-vector by `distance` world pixels. A
- * `decorate` pass adds the leader line from the bounds top edge to the
- * handle (purely visual; not draggable).
+ * outward along the local up-vector by `distance` world pixels. When
+ * `tether: true` is passed, a `decorate` pass adds a tether line from the
+ * bounds top edge to the handle (purely visual; not draggable).
  *
  * The drag channel returned here is a stub that claims — consuming tools
  * wrap the region's `bind()` to substitute a drag channel that drives
@@ -58,6 +67,7 @@ export function createRotationAffordance(
     handleSize = 10,
     fill = DEFAULT_FILL,
     stroke = DEFAULT_STROKE,
+    tether,
   } = opts;
 
   const paint = {
@@ -88,7 +98,11 @@ export function createRotationAffordance(
       return [region];
     },
     decorate(state: ChromeState, view: View): DrawCommand[] {
-      // Leader line: bounds-top-center → handle center. Lives in the
+      if (!tether) return [];
+      const tetherStroke: Stroke = tether === true
+        ? { paint: { color: fill }, width: 1 }
+        : tether;
+      // Tether line: bounds-top-center → handle center. Lives in the
       // target's local frame; we rotate both endpoints around the AABB
       // center to get world coords, then project to screen pixels.
       const target = pickTarget(state);
@@ -104,16 +118,18 @@ export function createRotationAffordance(
       const t = viewToTransform(view);
       const [sx0, sy0] = worldToScreen(startW.x, startW.y, t);
       const [sx1, sy1] = worldToScreen(endW.x, endW.y, t);
-      // Emit as a 1-px-wide rect along the leader so existing renderers
-      // (which don't have a `line` primitive on this path) can paint it.
-      const minX = Math.min(sx0, sx1);
-      const minY = Math.min(sy0, sy1);
-      const w = Math.abs(sx1 - sx0) + 1;
-      const h = Math.abs(sy1 - sy0) + 1;
+      // Emit as a 2-vertex open polyline so the tether follows the rotated
+      // axis. The previous rect-based fallback degenerated into a visible
+      // outlined box whenever the bounds were rotated.
       return [{
         kind: 'path',
-        path: { kind: 'rect', x: minX, y: minY - 0.5, width: w, height: h },
-        stroke: { paint: { color: stroke }, width: 1 },
+        path: {
+          kind: 'polygon',
+          commands: new Uint8Array([PATH_M, PATH_L]),
+          coords: new Float32Array([sx0, sy0, sx1, sy1]),
+          fillRule: 'nonzero',
+        },
+        stroke: tetherStroke,
       }];
     },
   };
