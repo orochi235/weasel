@@ -10,7 +10,18 @@ import type { RotateAdapter } from 'core/adapters/types';
 import { defineTool } from '../../routing';
 import type { Tool } from '../../types';
 import type { RenderLayer } from 'core/layers/render';
+import type { ChromeState } from 'core/selection/chromeState';
 import { MULTI_RESIZE_TARGET_ID, type Bounds } from '../shared/selectionTarget';
+
+/** Accept either `CanvasHelpers` (Canvas's runtime call shape) or a bare
+ *  `ChromeState` (unit-test call shape) — see useResizeTool for the same helper. */
+function toChromeState(data: unknown): ChromeState {
+  const maybeHelpers = data as { getChromeState?: () => ChromeState };
+  if (typeof maybeHelpers?.getChromeState === 'function') {
+    return maybeHelpers.getChromeState();
+  }
+  return data as ChromeState;
+}
 
 export interface UseRotateToolOptions<TNode extends { id: string }, TPose> {
   /** Rotate gesture options forwarded to `useRotate`. */
@@ -181,11 +192,11 @@ export function useRotateTool<TNode extends { id: string }, TPose>(
       space: 'screen',
       draw: (data, view, dims) => {
         const ghosts = ghostOverlay.draw(data, view, dims);
-        const aff = affordanceOverlay.draw(data as never, view, dims);
+        const aff = affordanceOverlay.draw(toChromeState(data), view, dims);
         return [...ghosts, ...aff];
       },
       hitTest: (wx, wy, data, view, dims) =>
-        affordanceOverlay.hitTest(wx, wy, data as never, view, dims),
+        affordanceOverlay.hitTest(wx, wy, toChromeState(data), view, dims),
     }),
     [ghostOverlay, affordanceOverlay],
   );

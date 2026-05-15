@@ -10,6 +10,19 @@ import type { ResizeAdapter } from 'core/adapters/types';
 import { defineTool } from '../../routing';
 import type { Tool, ToolBounds } from '../../types';
 import type { RenderLayer } from 'core/layers/render';
+import type { ChromeState } from 'core/selection/chromeState';
+
+/** The overlay's `data` arg is whatever Canvas passes to every RenderLayer.draw —
+ *  in production that's `CanvasHelpers`; some unit tests construct the layer
+ *  directly and pass a bare `ChromeState`. Accept both shapes so the overlay
+ *  works under both call paths. */
+function toChromeState(data: unknown): ChromeState {
+  const maybeHelpers = data as { getChromeState?: () => ChromeState };
+  if (typeof maybeHelpers?.getChromeState === 'function') {
+    return maybeHelpers.getChromeState();
+  }
+  return data as ChromeState;
+}
 import { createTransformOp } from 'core/ops/transform';
 import { RECT_POSE_DESCRIPTOR } from 'interactions/gestures/resize/geometry';
 import { MULTI_RESIZE_TARGET_ID, type Bounds } from '../shared/selectionTarget';
@@ -285,11 +298,11 @@ export function useResizeTool<TNode extends { id: string }, TPose>(
       space: 'screen',
       draw: (data, view, dims) => {
         const ghosts = ghostOverlay.draw(data, view, dims);
-        const aff = affordanceOverlay.draw(data as never, view, dims);
+        const aff = affordanceOverlay.draw(toChromeState(data), view, dims);
         return [...ghosts, ...aff];
       },
       hitTest: (wx, wy, data, view, dims) =>
-        affordanceOverlay.hitTest(wx, wy, data as never, view, dims),
+        affordanceOverlay.hitTest(wx, wy, toChromeState(data), view, dims),
     }),
     [ghostOverlay, affordanceOverlay],
   );
