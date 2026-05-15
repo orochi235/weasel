@@ -9,12 +9,13 @@
  * concern instead of every consumer wiring it.
  */
 import { useMemo, useRef } from 'react';
-import { viewToMat3, type DrawCommand } from '../../renderer';
+import { viewToMat3, type DrawCommand, type GroupDrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import type { LayersMap } from '../Canvas';
 import type { Node, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { ToolsApi } from 'tools/useTools';
+import { findShapeSilhouette } from '../shapePainters';
 
 export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: {
   scene: Scene<TData, TLayer, TPose>;
@@ -64,17 +65,51 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
       }
       if (idSet.size === 0) return [];
       const sc = sceneRef.current;
-      const children: DrawCommand[] = [];
-      for (const id of idSet) {
-        let pose: TPose | null | undefined;
+
+      // Look up a preview pose for `id` across all consulted tools, taking
+      // the first non-null match (priority: hotkey > active > registry > ambient).
+      const previewPoseFor = (id: string): TPose | null => {
         for (const tool of tools) {
           const p = tool.previewPose?.(id) as TPose | null | undefined;
-          if (p != null) { pose = p; break; }
+          if (p != null) return p;
         }
-        if (pose == null) continue;
+        return null;
+      };
+
+      // Build the preview subtree rooted at `id` — mirrors buildSceneTree's
+      // structure (container groups carry a clip from their painter's
+      // silhouette) but uses preview poses instead of committed ones, so
+      // children are clipped to the previewed container shape during drag.
+      const buildSubtree = (id: string): DrawCommand[] => {
         const node = sc.get(asNodeId(id));
-        if (!node) continue;
-        for (const cmd of drawOne(node, pose, view)) children.push(cmd);
+        if (!node) return [];
+        const pose = previewPoseFor(id);
+        if (pose == null) return [];
+        const self = drawOne(node, pose, view);
+        const childCommands: DrawCommand[] = [...self];
+        for (const cid of sc.childrenOf(asNodeId(id))) {
+          if (!idSet.has(cid)) continue;
+          for (const cmd of buildSubtree(cid)) childCommands.push(cmd);
+        }
+        const group: GroupDrawCommand = { kind: 'group', children: childCommands };
+        if (node.kind === 'container') {
+          const clip = findShapeSilhouette(
+            node as unknown as Node<unknown, string, TPose>,
+            pose,
+          );
+          if (clip) group.clip = clip;
+        }
+        return [group];
+      };
+
+      // Roots: previewing nodes whose parent isn't previewing — buildSubtree
+      // recurses down from each.
+      const children: DrawCommand[] = [];
+      for (const id of idSet) {
+        const node = sc.get(asNodeId(id));
+        const parent = node?.parent;
+        if (parent != null && idSet.has(parent)) continue;
+        for (const cmd of buildSubtree(id)) children.push(cmd);
       }
       if (children.length === 0) return [];
       return [{ kind: 'group', transform: viewToMat3(view), alpha: 0.85, children }];
