@@ -131,4 +131,14 @@ describe('usePref', () => {
     const parsed = JSON.parse(window.localStorage.getItem(PREFS_KEY)!);
     expect(parsed.ui.panels).toEqual({ colors: { hidden: true } });
   });
+
+  it('round-trips a tool-contributed pref at its composed path', async () => {
+    const { result } = renderHook(() => usePref('tools.pen.autoCommitOnClose'));
+    // Default from usePenTool.prefs is `true`.
+    expect(result.current[0]).toBe(true);
+    act(() => { result.current[1](false); });
+    await flushMicrotasks();
+    const parsed = JSON.parse(window.localStorage.getItem(PREFS_KEY)!);
+    expect(parsed.tools.pen.autoCommitOnClose).toBe(false);
+  });
 });
