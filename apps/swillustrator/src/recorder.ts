@@ -16,6 +16,19 @@
 
 import type { SceneSnapshot } from './sceneStore';
 
+/** Controls how aggressively the recorder samples pointermove. Other event
+ *  types (down/up/cancel/wheel/key) are always captured regardless.
+ *
+ *  - `gesture-only` (default) — pointermove only between pointerdown and
+ *    the matching pointerup/pointercancel. Idle drift between gestures is
+ *    dropped, which typically removes 70–90% of all recorded events with
+ *    no replay-quality impact (idle moves don't influence app state).
+ *  - `full` — every pointermove, including idle drift. Use for replaying
+ *    hover behaviors or debugging an out-of-gesture surface.
+ *  - `events-only` — no pointermove at all. Use for action-level replay
+ *    where only down/up/key/wheel matter; loses gesture trajectory. */
+export type RecordingProfile = 'gesture-only' | 'full' | 'events-only';
+
 export interface RecordedEvent {
   type: 'pointerdown' | 'pointermove' | 'pointerup' | 'pointercancel' | 'wheel' | 'keydown' | 'keyup';
   /** Milliseconds since `start()`. Monotonic; first event is near 0. */
@@ -44,6 +57,11 @@ export interface Recording {
   version: 1;
   /** ISO timestamp; useful when looking at a saved file. Not used by replay. */
   startedAt: string;
+  /** Profile this recording was captured with. Replay treats them all
+   *  identically — the field is metadata for debugging file size /
+   *  faithfulness questions later. Optional for forward-compat with
+   *  recordings saved before profiles existed. */
+  profile?: RecordingProfile;
   /** Viewport size at record time. Replay can sanity-check that coordinates
    *  are within plausible range against the current viewport. */
   viewport: { w: number; h: number };
@@ -55,7 +73,11 @@ export interface Recording {
 }
 
 export interface Recorder {
-  start(opts?: { snapshotScene?: () => SceneSnapshot | null }): void;
+  start(opts?: {
+    snapshotScene?: () => SceneSnapshot | null;
+    /** Sampling strategy; default `'gesture-only'`. See `RecordingProfile`. */
+    profile?: RecordingProfile;
+  }): void;
   stop(): Recording;
   isRecording(): boolean;
 }
@@ -69,7 +91,11 @@ export function createRecorder(opts: { canvas: () => HTMLCanvasElement | null })
   let events: RecordedEvent[] = [];
   let scene: SceneSnapshot | null = null;
   let startedAt = '';
+  let profile: RecordingProfile = 'gesture-only';
   let viewport = { w: 0, h: 0 };
+  /** Pointer IDs with an active pointerdown that hasn't seen its matching
+   *  up/cancel yet. Used to gate pointermove capture in `gesture-only`. */
+  const activeDowns = new Set<number>();
 
   // Per-listener function references so removal pairs precisely with addition.
   // Each handler is bound once at `start()` and torn down at `stop()`.
@@ -87,9 +113,41 @@ export function createRecorder(opts: { canvas: () => HTMLCanvasElement | null })
 
   const now = (): number => performance.now() - startTime;
 
+  /** Build the modifier subset of a `RecordedEvent`, omitting any falsy
+   *  keys so the JSON payload doesn't carry the 80%+ of `:false` noise. */
+  const modifiers = (
+    e: { altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean },
+  ): Partial<Pick<RecordedEvent, 'altKey' | 'ctrlKey' | 'metaKey' | 'shiftKey'>> => {
+    const out: Partial<Pick<RecordedEvent, 'altKey' | 'ctrlKey' | 'metaKey' | 'shiftKey'>> = {};
+    if (e.altKey) out.altKey = true;
+    if (e.ctrlKey) out.ctrlKey = true;
+    if (e.metaKey) out.metaKey = true;
+    if (e.shiftKey) out.shiftKey = true;
+    return out;
+  };
+
   const handlePointer = (type: RecordedEvent['type']) => (e: Event): void => {
     if (!active) return;
     const pe = e as PointerEvent;
+    if (type === 'pointermove') {
+      if (profile === 'events-only') return;
+      if (profile === 'gesture-only' && activeDowns.size === 0) return;
+      // Pointermove inside a gesture: `button`/`buttons`/`pointerType`/
+      // `pointerId` don't change from the matching pointerdown, so we omit
+      // them. Replay reconstitutes via the down event (`?? defaults` in
+      // `buildPointerEvent`).
+      events.push({
+        type,
+        t: now(),
+        clientX: pe.clientX,
+        clientY: pe.clientY,
+        ...modifiers(pe),
+        target: classifyTarget(pe.target),
+      });
+      return;
+    }
+    if (type === 'pointerdown') activeDowns.add(pe.pointerId);
+    if (type === 'pointerup' || type === 'pointercancel') activeDowns.delete(pe.pointerId);
     events.push({
       type,
       t: now(),
@@ -97,10 +155,7 @@ export function createRecorder(opts: { canvas: () => HTMLCanvasElement | null })
       clientY: pe.clientY,
       button: pe.button,
       buttons: pe.buttons,
-      altKey: pe.altKey,
-      ctrlKey: pe.ctrlKey,
-      metaKey: pe.metaKey,
-      shiftKey: pe.shiftKey,
+      ...modifiers(pe),
       pointerType: pe.pointerType,
       pointerId: pe.pointerId,
       target: classifyTarget(pe.target),
@@ -117,10 +172,7 @@ export function createRecorder(opts: { canvas: () => HTMLCanvasElement | null })
       clientY: we.clientY,
       deltaX: we.deltaX,
       deltaY: we.deltaY,
-      altKey: we.altKey,
-      ctrlKey: we.ctrlKey,
-      metaKey: we.metaKey,
-      shiftKey: we.shiftKey,
+      ...modifiers(we),
       target: classifyTarget(we.target),
     });
   };
@@ -132,10 +184,7 @@ export function createRecorder(opts: { canvas: () => HTMLCanvasElement | null })
       type,
       t: now(),
       key: ke.key,
-      altKey: ke.altKey,
-      ctrlKey: ke.ctrlKey,
-      metaKey: ke.metaKey,
-      shiftKey: ke.shiftKey,
+      ...modifiers(ke),
       target: classifyTarget(ke.target),
     });
   };
@@ -149,6 +198,8 @@ export function createRecorder(opts: { canvas: () => HTMLCanvasElement | null })
       active = true;
       startTime = performance.now();
       events = [];
+      activeDowns.clear();
+      profile = startOpts?.profile ?? 'gesture-only';
       startedAt = new Date().toISOString();
       viewport = {
         w: typeof window !== 'undefined' ? window.innerWidth : 0,
@@ -171,6 +222,7 @@ export function createRecorder(opts: { canvas: () => HTMLCanvasElement | null })
         return {
           version: 1,
           startedAt: startedAt || new Date().toISOString(),
+          profile,
           viewport,
           scene,
           events: [],
@@ -181,9 +233,11 @@ export function createRecorder(opts: { canvas: () => HTMLCanvasElement | null })
       }
       listeners = [];
       active = false;
+      activeDowns.clear();
       return {
         version: 1,
         startedAt,
+        profile,
         viewport,
         scene,
         events: events.slice(),

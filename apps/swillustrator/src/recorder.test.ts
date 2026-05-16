@@ -101,6 +101,94 @@ describe('createRecorder', () => {
     expect(out.events[1].t).toBeLessThanOrEqual(out.events[2].t);
   });
 
+  it('default gesture-only profile drops pointermove outside an active gesture', () => {
+    const rec = createRecorder({ canvas: () => canvas });
+    rec.start();
+    // Idle pointermove before any down — must be dropped.
+    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 1, clientY: 1 }));
+    canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 10, clientY: 10, pointerId: 1 }));
+    // Inside gesture — captured.
+    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 12, clientY: 12 }));
+    canvas.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 14, clientY: 14, pointerId: 1 }));
+    // After pointerup — dropped again.
+    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 20, clientY: 20 }));
+    const out = rec.stop();
+    expect(out.events.map((e) => e.type)).toEqual(['pointerdown', 'pointermove', 'pointerup']);
+    expect(out.profile).toBe('gesture-only');
+  });
+
+  it("profile='full' captures every pointermove regardless of gesture state", () => {
+    const rec = createRecorder({ canvas: () => canvas });
+    rec.start({ profile: 'full' });
+    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 1, clientY: 1 }));
+    canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1 }));
+    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 2, clientY: 2 }));
+    canvas.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 }));
+    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 3, clientY: 3 }));
+    const out = rec.stop();
+    expect(out.profile).toBe('full');
+    expect(out.events.map((e) => e.type)).toEqual([
+      'pointermove', 'pointerdown', 'pointermove', 'pointerup', 'pointermove',
+    ]);
+  });
+
+  it("profile='events-only' drops all pointermove including in-gesture", () => {
+    const rec = createRecorder({ canvas: () => canvas });
+    rec.start({ profile: 'events-only' });
+    canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1 }));
+    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 5, clientY: 5 }));
+    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 6, clientY: 6 }));
+    canvas.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 }));
+    document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'z' }));
+    const out = rec.stop();
+    expect(out.profile).toBe('events-only');
+    expect(out.events.map((e) => e.type)).toEqual(['pointerdown', 'pointerup', 'keydown']);
+  });
+
+  it('pointercancel ends a gesture for the purpose of pointermove gating', () => {
+    const rec = createRecorder({ canvas: () => canvas });
+    rec.start();
+    canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 7 }));
+    canvas.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, pointerId: 7 }));
+    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 99, clientY: 99 }));
+    const out = rec.stop();
+    expect(out.events.map((e) => e.type)).toEqual(['pointerdown', 'pointercancel']);
+  });
+
+  it('pointermove records omit button/buttons/pointerType/pointerId, and all-false modifiers', () => {
+    const rec = createRecorder({ canvas: () => canvas });
+    rec.start({ profile: 'full' });
+    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 5, clientY: 6 }));
+    const out = rec.stop();
+    const e = out.events[0];
+    expect(e.type).toBe('pointermove');
+    expect(e.clientX).toBe(5);
+    expect(e.clientY).toBe(6);
+    // Stripped fields:
+    expect(Object.prototype.hasOwnProperty.call(e, 'button')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(e, 'buttons')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(e, 'pointerType')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(e, 'pointerId')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(e, 'altKey')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(e, 'ctrlKey')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(e, 'metaKey')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(e, 'shiftKey')).toBe(false);
+  });
+
+  it('modifier fields are included only when truthy', () => {
+    const rec = createRecorder({ canvas: () => canvas });
+    rec.start({ profile: 'full' });
+    canvas.dispatchEvent(new PointerEvent('pointermove', {
+      bubbles: true, clientX: 0, clientY: 0, shiftKey: true,
+    }));
+    const out = rec.stop();
+    const e = out.events[0];
+    expect(e.shiftKey).toBe(true);
+    expect(Object.prototype.hasOwnProperty.call(e, 'altKey')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(e, 'ctrlKey')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(e, 'metaKey')).toBe(false);
+  });
+
   it('attaches no listeners outside of start()/stop()', () => {
     const rec = createRecorder({ canvas: () => canvas });
     // Dispatch before start — must not be captured.

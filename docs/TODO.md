@@ -348,12 +348,10 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
 
 ## UX recordings
 
-- **Tune the amount of data captured.** Today `recorder.ts` (apps/swillustrator) captures every pointermove + pointerdown/up + keydown/up + wheel event with full client-coords, modifier states, button bits, and pointer ids — no throttling. For a long session that's many KB / second, and the JSON balloons fast. Tuning levers worth considering:
-  - **Throttle pointermove**: only record one move per N ms (or one per frame). The intermediate frames usually don't matter for replay; the gesture's commit phase reads the final position.
-  - **Drop redundant fields**: `pointerType` rarely changes; `pointerId` only matters for multi-touch; `isPrimary` is almost always true. Default-them-out and only record on change.
-  - **Compress modifier state**: store as a single byte bitmask rather than four booleans.
-  - **Event-type filters**: record only the events that matter for the recorded interaction (e.g. skip pointermove when the recorder isn't mid-gesture).
-  - **Compression of the final blob**: gzip the JSON before saving; the file picker handles decompression on replay.
-  - **Sampling profile**: a record-mode dropdown — `full` (everything, for debugging), `gesture-only` (pointermove only during a captured down→up), `keys+commits` (no pointermove at all, useful for action-level replays).
+- **Tune the amount of data captured.** *Partial — 2026-05-16.* `recorder.ts` now defaults to a `gesture-only` profile that drops idle pointermove between gestures (the dominant fraction in typical sessions); pointermove records strip `button`/`buttons`/`pointerType`/`pointerId` (don't change mid-gesture, replay reconstitutes from the matching down) and modifier booleans are omitted when all-false. `Recorder.start({ profile })` accepts `'gesture-only' | 'full' | 'events-only'`. Replay path unchanged (`?? defaults` already tolerated missing fields). Remaining levers, all deferred:
+  - **Throttle pointermove**: cap per-frame rate (60Hz or 30Hz) for fixed bound on high-refresh trackpads. Lossy but visually invisible on replay.
+  - **Modifier bitmask**: collapse `{altKey, ctrlKey, metaKey, shiftKey}` into a single 0–15 number. Tiny per-event saving; mostly a cleanliness win.
+  - **Compression of the final blob**: gzip the JSON before download/upload; replay handles decompression. 5–10× on typical recordings.
+  - **UI surface for profile selection**: the F9 toggle defaults to `gesture-only`; expose a small dropdown in the recorder chrome so debugging-quality recordings can opt into `'full'`.
 
   Right scope is unclear until we have a few recordings of real bug reports — wait until the integration-test harness lands (Layer 2 from the original record/replay plan) so we know what the consumer actually needs.
