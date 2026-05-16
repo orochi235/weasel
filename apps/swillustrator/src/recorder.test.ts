@@ -155,7 +155,7 @@ describe('createRecorder', () => {
     expect(out.events.map((e) => e.type)).toEqual(['pointerdown', 'pointercancel']);
   });
 
-  it('pointermove records omit button/buttons/pointerType/pointerId, and all-false modifiers', () => {
+  it('pointermove records omit button/buttons/pointerType/pointerId and the modifier bitmask when no modifiers held', () => {
     const rec = createRecorder({ canvas: () => canvas });
     rec.start({ profile: 'full' });
     canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 5, clientY: 6 }));
@@ -169,10 +169,7 @@ describe('createRecorder', () => {
     expect(Object.prototype.hasOwnProperty.call(e, 'buttons')).toBe(false);
     expect(Object.prototype.hasOwnProperty.call(e, 'pointerType')).toBe(false);
     expect(Object.prototype.hasOwnProperty.call(e, 'pointerId')).toBe(false);
-    expect(Object.prototype.hasOwnProperty.call(e, 'altKey')).toBe(false);
-    expect(Object.prototype.hasOwnProperty.call(e, 'ctrlKey')).toBe(false);
-    expect(Object.prototype.hasOwnProperty.call(e, 'metaKey')).toBe(false);
-    expect(Object.prototype.hasOwnProperty.call(e, 'shiftKey')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(e, 'm')).toBe(false);
   });
 
   it('throttles pointermove at the default ~60Hz rate', async () => {
@@ -223,18 +220,35 @@ describe('createRecorder', () => {
     expect(moves.map((m) => m.clientX)).toEqual([10, 20]);
   });
 
-  it('modifier fields are included only when truthy', () => {
+  it('encodes held modifiers into the m bitmask', () => {
     const rec = createRecorder({ canvas: () => canvas });
-    rec.start({ profile: 'full' });
+    rec.start({ profile: 'full', throttleMs: 0 });
     canvas.dispatchEvent(new PointerEvent('pointermove', {
       bubbles: true, clientX: 0, clientY: 0, shiftKey: true,
     }));
+    canvas.dispatchEvent(new PointerEvent('pointermove', {
+      bubbles: true, clientX: 1, clientY: 1, altKey: true, metaKey: true,
+    }));
     const out = rec.stop();
-    const e = out.events[0];
-    expect(e.shiftKey).toBe(true);
-    expect(Object.prototype.hasOwnProperty.call(e, 'altKey')).toBe(false);
-    expect(Object.prototype.hasOwnProperty.call(e, 'ctrlKey')).toBe(false);
-    expect(Object.prototype.hasOwnProperty.call(e, 'metaKey')).toBe(false);
+    // MOD_SHIFT === 8
+    expect(out.events[0].m).toBe(8);
+    // MOD_ALT | MOD_META === 1 | 4 === 5
+    expect(out.events[1].m).toBe(5);
+    // Boolean fields are no longer emitted (bitmask supersedes them).
+    expect(Object.prototype.hasOwnProperty.call(out.events[0], 'shiftKey')).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(out.events[1], 'altKey')).toBe(false);
+  });
+
+  it('decodeModifiers reads bitmask or legacy boolean fields', async () => {
+    const { decodeModifiers, MOD_ALT, MOD_SHIFT } = await import('./recorder');
+    expect(decodeModifiers({ m: MOD_ALT | MOD_SHIFT }))
+      .toEqual({ altKey: true, ctrlKey: false, metaKey: false, shiftKey: true });
+    // Legacy recording with boolean fields only — backward compat.
+    expect(decodeModifiers({ ctrlKey: true, shiftKey: true }))
+      .toEqual({ altKey: false, ctrlKey: true, metaKey: false, shiftKey: true });
+    // Neither — all false.
+    expect(decodeModifiers({}))
+      .toEqual({ altKey: false, ctrlKey: false, metaKey: false, shiftKey: false });
   });
 
   it('attaches no listeners outside of start()/stop()', () => {

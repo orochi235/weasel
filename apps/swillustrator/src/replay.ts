@@ -10,7 +10,7 @@
  *     paints get a chance to run before the next input lands.
  */
 
-import type { Recording, RecordedEvent } from './recorder';
+import { decodeModifiers, type Recording, type RecordedEvent } from './recorder';
 
 export interface ReplayOptions {
   /** Where to dispatch canvas-targeted events. Events recorded with
@@ -57,10 +57,7 @@ function buildPointerEvent(rec: RecordedEvent): PointerEvent {
     clientY: rec.clientY,
     button: rec.button ?? 0,
     buttons: rec.buttons ?? 0,
-    altKey: rec.altKey,
-    ctrlKey: rec.ctrlKey,
-    metaKey: rec.metaKey,
-    shiftKey: rec.shiftKey,
+    ...decodeModifiers(rec),
     pointerType: rec.pointerType ?? 'mouse',
     pointerId: rec.pointerId ?? 1,
     isPrimary: true,
@@ -76,10 +73,7 @@ function buildWheelEvent(rec: RecordedEvent): WheelEvent {
     clientY: rec.clientY,
     deltaX: rec.deltaX ?? 0,
     deltaY: rec.deltaY ?? 0,
-    altKey: rec.altKey,
-    ctrlKey: rec.ctrlKey,
-    metaKey: rec.metaKey,
-    shiftKey: rec.shiftKey,
+    ...decodeModifiers(rec),
   });
 }
 
@@ -89,10 +83,7 @@ function buildKeyboardEvent(rec: RecordedEvent): KeyboardEvent {
     cancelable: true,
     composed: true,
     key: rec.key ?? '',
-    altKey: rec.altKey,
-    ctrlKey: rec.ctrlKey,
-    metaKey: rec.metaKey,
-    shiftKey: rec.shiftKey,
+    ...decodeModifiers(rec),
   });
 }
 

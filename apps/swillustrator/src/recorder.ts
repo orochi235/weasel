@@ -29,6 +29,13 @@ import type { SceneSnapshot } from './sceneStore';
  *    where only down/up/key/wheel matter; loses gesture trajectory. */
 export type RecordingProfile = 'gesture-only' | 'full' | 'events-only';
 
+/** Bitmask values used in `RecordedEvent.m`. OR together; absent / zero
+ *  means no modifiers were held when the event fired. */
+export const MOD_ALT = 1;
+export const MOD_CTRL = 2;
+export const MOD_META = 4;
+export const MOD_SHIFT = 8;
+
 export interface RecordedEvent {
   type: 'pointerdown' | 'pointermove' | 'pointerup' | 'pointercancel' | 'wheel' | 'keydown' | 'keyup';
   /** Milliseconds since `start()`. Monotonic; first event is near 0. */
@@ -40,9 +47,19 @@ export interface RecordedEvent {
   key?: string;
   deltaX?: number;
   deltaY?: number;
+  /** Modifier bitmask: `MOD_ALT | MOD_CTRL | MOD_META | MOD_SHIFT`. Omitted
+   *  when no modifiers were held. Replaces the four separate booleans for
+   *  byte-size; the booleans remain readable on legacy recordings for
+   *  backward-compat. */
+  m?: number;
+  /** @deprecated Use `m` (bitmask). Retained for forward-compat with
+   *  pre-bitmask recordings. */
   altKey?: boolean;
+  /** @deprecated Use `m` (bitmask). */
   ctrlKey?: boolean;
+  /** @deprecated Use `m` (bitmask). */
   metaKey?: boolean;
+  /** @deprecated Use `m` (bitmask). */
   shiftKey?: boolean;
   pointerType?: string;
   pointerId?: number;
@@ -51,6 +68,32 @@ export interface RecordedEvent {
    *  the canvas element, the document, or "other" (unknown — replay
    *  falls back to the canvas). */
   target: 'canvas' | 'document' | 'other';
+}
+
+/** Decode a `RecordedEvent`'s modifier state into the four flags the DOM
+ *  event constructors expect. Reads from `m` (bitmask) when present, else
+ *  falls back to the deprecated boolean fields so legacy recordings still
+ *  replay correctly. */
+export function decodeModifiers(rec: Pick<RecordedEvent, 'm' | 'altKey' | 'ctrlKey' | 'metaKey' | 'shiftKey'>): {
+  altKey: boolean;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  shiftKey: boolean;
+} {
+  if (typeof rec.m === 'number') {
+    return {
+      altKey: (rec.m & MOD_ALT) !== 0,
+      ctrlKey: (rec.m & MOD_CTRL) !== 0,
+      metaKey: (rec.m & MOD_META) !== 0,
+      shiftKey: (rec.m & MOD_SHIFT) !== 0,
+    };
+  }
+  return {
+    altKey: !!rec.altKey,
+    ctrlKey: !!rec.ctrlKey,
+    metaKey: !!rec.metaKey,
+    shiftKey: !!rec.shiftKey,
+  };
 }
 
 export interface Recording {
@@ -123,17 +166,18 @@ export function createRecorder(opts: { canvas: () => HTMLCanvasElement | null })
 
   const now = (): number => performance.now() - startTime;
 
-  /** Build the modifier subset of a `RecordedEvent`, omitting any falsy
-   *  keys so the JSON payload doesn't carry the 80%+ of `:false` noise. */
+  /** Build the modifier subset of a `RecordedEvent` as a single bitmask.
+   *  Returns `{ m }` when any modifier is held, an empty object otherwise so
+   *  the spread omits the field entirely (no `:0` in the JSON). */
   const modifiers = (
     e: { altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean },
-  ): Partial<Pick<RecordedEvent, 'altKey' | 'ctrlKey' | 'metaKey' | 'shiftKey'>> => {
-    const out: Partial<Pick<RecordedEvent, 'altKey' | 'ctrlKey' | 'metaKey' | 'shiftKey'>> = {};
-    if (e.altKey) out.altKey = true;
-    if (e.ctrlKey) out.ctrlKey = true;
-    if (e.metaKey) out.metaKey = true;
-    if (e.shiftKey) out.shiftKey = true;
-    return out;
+  ): { m?: number } => {
+    const m =
+      (e.altKey ? MOD_ALT : 0) |
+      (e.ctrlKey ? MOD_CTRL : 0) |
+      (e.metaKey ? MOD_META : 0) |
+      (e.shiftKey ? MOD_SHIFT : 0);
+    return m === 0 ? {} : { m };
   };
 
   const handlePointer = (type: RecordedEvent['type']) => (e: Event): void => {
