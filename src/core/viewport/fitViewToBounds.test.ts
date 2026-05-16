@@ -146,3 +146,53 @@ describe('fitViewToBounds', () => {
     expect(warn).toHaveBeenCalled();
   });
 });
+
+describe('fitViewToBounds — mode', () => {
+  it("'fill' picks the larger axis ratio (uniform, overflows one axis)", () => {
+    // bounds 10x100 in viewport 200x200 with padding 0:
+    //   sx = 200/10 = 20 (would clamp to maxScale 10)
+    //   sy = 200/100 = 2
+    //   'fill' = max → 10 (clamped); bounds overflow on x axis
+    const v = fitViewToBounds(
+      { x: 0, y: 0, width: 10, height: 100 },
+      { width: 200, height: 200 },
+      CURRENT,
+      { padding: 0, mode: 'fill' },
+    );
+    expect(v.scale.x).toBe(10);
+    expect(v.scale.y).toBe(10);
+  });
+
+  it("'stretch' uses per-axis fit (non-uniform, bounds match viewport exactly)", () => {
+    const v = fitViewToBounds(
+      { x: 0, y: 0, width: 10, height: 100 },
+      { width: 200, height: 200 },
+      CURRENT,
+      { padding: 0, mode: 'stretch' },
+    );
+    expect(v.scale.x).toBe(10); // clamped by maxScale
+    expect(v.scale.y).toBe(2);
+  });
+
+  it("'contain' is the default and matches today's behavior", () => {
+    const v = fitViewToBounds(
+      { x: 0, y: 0, width: 10, height: 100 },
+      { width: 200, height: 200 },
+      CURRENT,
+      { padding: 0 }, // no mode -> default 'contain'
+    );
+    expect(v.scale.x).toBe(2);
+    expect(v.scale.y).toBe(2);
+  });
+
+  it("'stretch' clamps each axis to minScale/maxScale independently", () => {
+    const v = fitViewToBounds(
+      { x: 0, y: 0, width: 1000, height: 0.01 },
+      { width: 100, height: 100 },
+      CURRENT,
+      { padding: 0, mode: 'stretch', minScale: 0.5, maxScale: 5 },
+    );
+    expect(v.scale.x).toBe(0.5);  // sx = 0.1, clamped up
+    expect(v.scale.y).toBe(5);    // sy = 10000, clamped down
+  });
+});

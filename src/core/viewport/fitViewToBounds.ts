@@ -35,6 +35,13 @@ export interface FitViewToBoundsOptions {
    * used by `computeWheelAction` / `useZoom` (currently `0.1`).
    */
   minScale?: number;
+  /**
+   * Fit mode:
+   * - `'contain'` (default): uniform scale = `min(availW/w, availH/h)`. Bounds fit entirely; one axis has letterboxing.
+   * - `'fill'`: uniform scale = `max(...)`. Bounds overflow viewport on one axis.
+   * - `'stretch'`: per-axis scale. Bounds match viewport exactly; scale is non-uniform.
+   */
+  mode?: 'contain' | 'fill' | 'stretch';
 }
 
 /**
@@ -85,11 +92,30 @@ export function fitViewToBounds(
   const availH = Math.max(1, viewportDims.height - padding * 2);
   const sx = availW / bounds.width;
   const sy = availH / bounds.height;
-  // 'contain' (today's behavior): uniform min of axes. The `mode` option
-  // for 'fill' / 'stretch' lands in a follow-up.
-  const uniform = Math.min(sx, sy);
-  const scaleX = Math.min(maxScale, Math.max(minScale, uniform));
-  const scaleY = scaleX;
+
+  let rawX: number;
+  let rawY: number;
+  switch (opts.mode ?? 'contain') {
+    case 'fill': {
+      const u = Math.max(sx, sy);
+      rawX = u;
+      rawY = u;
+      break;
+    }
+    case 'stretch':
+      rawX = sx;
+      rawY = sy;
+      break;
+    case 'contain':
+    default: {
+      const u = Math.min(sx, sy);
+      rawX = u;
+      rawY = u;
+      break;
+    }
+  }
+  const scaleX = Math.min(maxScale, Math.max(minScale, rawX));
+  const scaleY = Math.min(maxScale, Math.max(minScale, rawY));
 
   // Center bounds in the viewport. With view-as-camera semantics:
   //   screenCenter = (worldCenter - view.x) * scale
