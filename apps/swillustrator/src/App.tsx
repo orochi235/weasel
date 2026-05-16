@@ -143,6 +143,7 @@ import {
   type ActivePaint,
 } from './ActiveSwatches';
 import { useActiveColors } from './useActiveColors';
+import { useColorContextTool, ColorContextProvider } from './tools/colorContext';
 import {
   objsToSvgNodes,
   svgNodesToObjsWithGroups,
@@ -1520,6 +1521,20 @@ export function App() {
   // `swill.prefs.v1`, but only if it's still a registered tool (a renamed
   // or removed tool would otherwise crash useTools' "active not in registry"
   // assertion). Falls back to 'select'.
+  // Tool-flavored owner of active-paint state + scene-write routing.
+  // Co-mounted alongside the legacy `useActiveColors` (line ~511) during
+  // the migration — Tasks 7-10 migrate consumers off `colors` onto the
+  // context surface and then delete the legacy hook.
+  //
+  // `updateSelected` is declared later in this function (after applyOps is
+  // fully wired) so we thread it in via a stable ref rather than as a direct
+  // dep — the callbacks only invoke it at event time, never during init.
+  const updateSelectedRef = useRef<((patch: (o: Obj) => Obj, label?: string) => void) | null>(null);
+  const colorContext = useColorContextTool({
+    updateSelected: (patch, label) => updateSelectedRef.current?.(patch, label),
+  });
+  const colorContextTool = colorContext.tool;
+
   const initialActiveTool = useMemo(() => {
     const stored = readPref('tools.lastTool');
     const registryKeys = ['select', 'lasso', 'insert', 'ellipse', 'line', 'polygon', 'star', 'pen', 'pencil', 'hand', 'text', 'eyedropper'];
@@ -1528,7 +1543,7 @@ export function App() {
   const tools = useTools({
     active: initialActiveTool,
     registry: { select, lasso, insert, ellipse, line, polygon, star, pen, pencil, hand, text, eyedropper },
-    ambient: [resizeTool, rotateTool, wheelZoom, wheelPan, keyZoom, clone, escClearSelection],
+    ambient: [resizeTool, rotateTool, wheelZoom, wheelPan, keyZoom, clone, escClearSelection, colorContextTool],
     // Unhandled clicks fall through to select so click-to-select works while
     // a non-select tool (pen, ellipse, etc.) is active. Click-only — drag,
     // keyboard, wheel, and pointerdown stay tool-specific.
@@ -1981,6 +1996,9 @@ export function App() {
     }
     if (ops.length > 0) applyOps(ops, label);
   };
+  // Wire the ref so colorContext's applyFillToSelection / applyStrokeToSelection
+  // route through the real updateSelected on every call (refs update each render).
+  updateSelectedRef.current = updateSelected;
 
   const selectedItems = items.filter((o) => (selection.current as readonly string[]).includes(o.id));
   const primary = selectedItems[0];
@@ -2225,7 +2243,8 @@ export function App() {
   }, [publish]);
 
   return (
-    <div className="swill-app">
+    <ColorContextProvider value={colorContext.api}>
+      <div className="swill-app">
       {!disclaimerDismissed && (
         <div
           className={`swill-disclaimer${disclaimerDismissing ? ' swill-disclaimer-falling' : ''}`}
@@ -2565,7 +2584,8 @@ export function App() {
         }}
       />
       <Toasts toasts={toasts} onDismiss={dismissToast} />
-    </div>
+      </div>
+    </ColorContextProvider>
   );
 }
 
