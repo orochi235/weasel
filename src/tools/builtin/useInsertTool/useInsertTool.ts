@@ -16,6 +16,13 @@ export interface UseInsertToolOptions<TPose, TNode extends { id: string } = { id
   hitExisting?: (point: { x: number; y: number }) => string | string[] | null;
 }
 
+const PRESENTATION = {
+  label: 'Rectangle',
+  icon: createElement(RectIcon),
+  group: 'shape',
+};
+const DEFAULT_STYLE = { fill: 'rgba(127, 176, 105, 0.25)', stroke: '#7fb069', dash: [4, 4], lineWidth: 1 };
+
 export function useInsertTool<TNode extends { id: string }, TPose>(
   adapter: InsertAdapter<TNode>,
   options: UseInsertToolOptions<TPose, TNode> = {},
@@ -25,15 +32,11 @@ export function useInsertTool<TNode extends { id: string }, TPose>(
   const { tool } = defineDragInsertTool({
     id: 'insert',
     cursor: 'crosshair',
-    presentation: {
-      label: 'Rectangle',
-      icon: createElement(RectIcon),
-      group: 'shape',
-    },
+    presentation: PRESENTATION,
     controller,
     overlayId: 'insert-overlay',
     overlayLabel: 'Insert overlay',
-    defaultStyle: { fill: 'rgba(127, 176, 105, 0.25)', stroke: '#7fb069', dash: [4, 4], lineWidth: 1 },
+    defaultStyle: DEFAULT_STYLE,
     overlayStyle,
     hitExisting,
   });

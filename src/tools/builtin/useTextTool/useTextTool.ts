@@ -17,6 +17,14 @@ export interface UseTextToolOptions<TNode extends { id: string }> {
   marqueeStyle?: InsertOverlayStyle;
 }
 
+const PRESENTATION = {
+  label: 'Text',
+  icon: createElement(TextIcon),
+  group: 'type',
+};
+const KEYBINDING = { key: 'T' };
+const DEFAULT_STYLE = { fill: 'rgba(164, 139, 212, 0.10)', stroke: '#a48bd4', dash: [3, 3], lineWidth: 1 };
+
 export function useTextTool<TNode extends { id: string }>(
   options: UseTextToolOptions<TNode>,
 ): Tool<undefined> {
@@ -52,17 +60,13 @@ export function useTextTool<TNode extends { id: string }>(
 
   const { tool } = defineDragInsertTool({
     id: 'text',
-    keybinding: { key: 'T' },
+    keybinding: KEYBINDING,
     cursor: 'text',
-    presentation: {
-      label: 'Text',
-      icon: createElement(TextIcon),
-      group: 'type',
-    },
+    presentation: PRESENTATION,
     controller,
     overlayId: 'text-overlay',
     overlayLabel: 'Text overlay',
-    defaultStyle: { fill: 'rgba(164, 139, 212, 0.10)', stroke: '#a48bd4', dash: [3, 3], lineWidth: 1 },
+    defaultStyle: DEFAULT_STYLE,
     overlayStyle: marqueeStyle,
     hitExisting,
     applyOpsRef,
