@@ -3,7 +3,7 @@ import { DataGrid, type DataGridColumn } from '@orochi235/weasel-ui';
 import s from './RegistryInspector.module.css';
 import type {
   TreeEntry, ToolEntry, ActionEntry, BundleEntry, IconEntry, OpFactoryEntry,
-  PublicExportEntry, ShapeKindEntry, PhaseSummary, PhaseEntry, GestureEntry,
+  PublicExportEntry, ShapeKindEntry, PhaseSummary, PhaseEntry, GestureEntry, PhaseOutputEntry,
   OpKindEntry, HotkeyTriggerEntry, SlotEntry, RouteTargetEntry, ModifierSetEntry, GroupEntry,
 } from './registryData';
 import { collectBundles, collectIcons, parseRoute, TOOL_HOOK_NAMES } from './registryData';
@@ -64,6 +64,7 @@ export function RegistryDetail({ entry, tools, actions, onNavigate }: Props) {
     case 'publicExport':  return <PublicExportDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'phase':         return <PhaseDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'gesture':       return <GestureDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
+    case 'phaseOutput':   return <PhaseOutputDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'opKind':        return <OpKindDetail entry={entry} onNavigate={onNavigate} />;
     case 'hotkeyTrigger': return <HotkeyTriggerDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'slot':          return <SlotDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
@@ -101,10 +102,12 @@ function HotkeyTriggerDetail({
     <div>
       <h2 className={s.detailHeading}>{entry.id}</h2>
       <p className={s.empty}>Press-and-hold trigger key for the hotkey tool slot.</p>
-      <h3>Tools bound to this trigger</h3>
-      {using.length === 0
-        ? <p className={s.empty}>No tools currently bind this trigger.</p>
-        : <MemberLinks tools={using} onNavigate={onNavigate} />}
+      <h3 className={s.subHeading}>Tools bound to this trigger</h3>
+      <DataGrid
+        rows={using.map((t) => ({ id: t.id, tool: t }))}
+        columns={[toolNameColumn(onNavigate)]}
+        empty="No tools currently bind this trigger."
+      />
     </div>
   );
 }
@@ -121,8 +124,12 @@ function SlotDetail({
           ? 'Active / hotkey routing slot.'
           : 'Always-on slot (resize / rotate / wheel-zoom).'}
       </p>
-      <h3>Tools mounted in this slot</h3>
-      <MemberLinks tools={here} onNavigate={onNavigate} />
+      <h3 className={s.subHeading}>Tools mounted in this slot</h3>
+      <DataGrid
+        rows={here.map((t) => ({ id: t.id, tool: t }))}
+        columns={[toolNameColumn(onNavigate)]}
+        empty="No tools mounted in this slot."
+      />
     </div>
   );
 }
@@ -132,7 +139,7 @@ function RouteTargetDetail({
 }: { entry: RouteTargetEntry; tools: readonly ToolEntry[]; onNavigate: Props['onNavigate'] }) {
   const rows = tools.flatMap((t) => {
     const matching = t.routes.filter((r) => parseRoute(r).target === entry.id);
-    return matching.length === 0 ? [] : [{ tool: t, routes: matching }];
+    return matching.length === 0 ? [] : [{ id: t.id, tool: t, routes: matching }];
   });
   return (
     <div>
@@ -141,19 +148,20 @@ function RouteTargetDetail({
         Route-table key — target kind for click/dblTap/drag, key name for
         keyDown/keyUp, or <code>*</code> for wheel / function-form drag.
       </p>
-      <h3>Tools routing to this target</h3>
-      {rows.length === 0
-        ? <p className={s.empty}>No tools route to this target.</p>
-        : (
-          <ul className={s.memberList}>
-            {rows.map(({ tool, routes }) => (
-              <li key={tool.id}>
-                <button type="button" className={s.memberLink} onClick={() => onNavigate({ kind: 'tool', id: tool.id })}>{tool.id}</button>
-                {routes.map((r) => <code key={r} className={s.tag}>{r}</code>)}
-              </li>
-            ))}
-          </ul>
-        )}
+      <h3 className={s.subHeading}>Tools routing to this target</h3>
+      <DataGrid
+        rows={rows}
+        columns={[
+          toolNameColumn(onNavigate),
+          {
+            id: 'routes',
+            header: 'routes',
+            sortable: false,
+            render: (r) => <TagList items={r.routes} />,
+          },
+        ]}
+        empty="No tools route to this target."
+      />
     </div>
   );
 }
@@ -163,7 +171,7 @@ function ModifierSetDetail({
 }: { entry: ModifierSetEntry; tools: readonly ToolEntry[]; onNavigate: Props['onNavigate'] }) {
   const rows = tools.flatMap((t) => {
     const matching = t.routes.filter((r) => parseRoute(r).modifiers === entry.id);
-    return matching.length === 0 ? [] : [{ tool: t, routes: matching }];
+    return matching.length === 0 ? [] : [{ id: t.id, tool: t, routes: matching }];
   });
   return (
     <div>
@@ -172,19 +180,20 @@ function ModifierSetDetail({
         Canonical modifier-key combination keying a route sub-table.
         {' '}<code>default</code> means no modifier sub-table.
       </p>
-      <h3>Tools with routes under this modifier set</h3>
-      {rows.length === 0
-        ? <p className={s.empty}>No tools declare routes under this modifier set.</p>
-        : (
-          <ul className={s.memberList}>
-            {rows.map(({ tool, routes }) => (
-              <li key={tool.id}>
-                <button type="button" className={s.memberLink} onClick={() => onNavigate({ kind: 'tool', id: tool.id })}>{tool.id}</button>
-                {routes.map((r) => <code key={r} className={s.tag}>{r}</code>)}
-              </li>
-            ))}
-          </ul>
-        )}
+      <h3 className={s.subHeading}>Tools with routes under this modifier set</h3>
+      <DataGrid
+        rows={rows}
+        columns={[
+          toolNameColumn(onNavigate),
+          {
+            id: 'routes',
+            header: 'routes',
+            sortable: false,
+            render: (r) => <TagList items={r.routes} />,
+          },
+        ]}
+        empty="No tools declare routes under this modifier set."
+      />
     </div>
   );
 }
@@ -206,35 +215,38 @@ function GroupDetail({
       </dl>
       {entry.source === 'tool' && (
         <>
-          <h3>Tools in this presentation group</h3>
-          <MemberLinks tools={memberTools} onNavigate={onNavigate} />
+          <h3 className={s.subHeading}>Tools in this presentation group</h3>
+          <DataGrid
+            rows={memberTools.map((t) => ({ id: t.id, tool: t }))}
+            columns={[toolNameColumn(onNavigate)]}
+            empty="No tools in this presentation group."
+          />
         </>
       )}
       {entry.source === 'action' && (
         <>
-          <h3>Actions in this group</h3>
-          <ul className={s.memberList}>
-            {memberActions.map((a) => (
-              <li key={a.id}><code className={s.tag}>{a.id}</code></li>
-            ))}
-          </ul>
+          <h3 className={s.subHeading}>Actions in this group</h3>
+          <DataGrid
+            rows={memberActions.map((a) => ({ id: a.id, action: a }))}
+            columns={[
+              {
+                id: 'action',
+                header: 'Action',
+                accessor: (r) => r.action.label ?? r.id,
+                render: (r) => <code>{r.id}</code>,
+              },
+              {
+                id: 'label',
+                header: 'label',
+                accessor: (r) => r.action.label ?? '',
+                render: (r) => r.action.label ?? <span className={s.empty}>—</span>,
+              },
+            ]}
+            empty="No actions in this group."
+          />
         </>
       )}
     </div>
-  );
-}
-
-function MemberLinks({
-  tools, onNavigate,
-}: { tools: readonly ToolEntry[]; onNavigate: Props['onNavigate'] }) {
-  return (
-    <ul className={s.memberList}>
-      {tools.map((t) => (
-        <li key={t.id}>
-          <button type="button" className={s.memberLink} onClick={() => onNavigate({ kind: 'tool', id: t.id })}>{t.id}</button>
-        </li>
-      ))}
-    </ul>
   );
 }
 
@@ -244,6 +256,13 @@ function PhaseDetail({
   const declaring = tools.filter((t) =>
     entry.id === 'initial' ? true : t.phases.engaged !== undefined,
   );
+  const rows = declaring.map((t) => ({
+    id: t.id,
+    tool: t,
+    channels: activeChannels(
+      (entry.id === 'initial' ? t.phases.initial : t.phases.engaged) ?? EMPTY_PHASE,
+    ),
+  }));
   return (
     <div>
       <h2 className={s.detailHeading}>{entry.label}</h2>
@@ -252,20 +271,22 @@ function PhaseDetail({
           ? 'Resting phase — every tool declares an initial phase.'
           : 'Engaged phase — entered after a gesture transition (e.g. drag start).'}
       </p>
-      <h3>Tools declaring this phase</h3>
-      <ul className={s.memberList}>
-        {declaring.map((t) => {
-          const channels = activeChannels(
-            (entry.id === 'initial' ? t.phases.initial : t.phases.engaged) ?? EMPTY_PHASE,
-          );
-          return (
-            <li key={t.id}>
-              <button type="button" className={s.memberLink} onClick={() => onNavigate({ kind: 'tool', id: t.id })}>{t.id}</button>
-              {channels.map((c) => <code key={c} className={s.tag}>{c}</code>)}
-            </li>
-          );
-        })}
-      </ul>
+      <h3 className={s.subHeading}>Tools declaring this phase</h3>
+      <DataGrid
+        rows={rows}
+        columns={[
+          toolNameColumn(onNavigate),
+          {
+            id: 'channels',
+            header: 'channels',
+            sortable: false,
+            render: (r) => r.channels.length === 0
+              ? <span className={s.empty}>—</span>
+              : <TagList items={r.channels} />,
+          },
+        ]}
+        empty="No tools declare this phase."
+      />
     </div>
   );
 }
@@ -277,26 +298,113 @@ function GestureDetail({
     const phases: ('initial' | 'engaged')[] = [];
     if (t.phases.initial[entry.id]) phases.push('initial');
     if (t.phases.engaged?.[entry.id]) phases.push('engaged');
-    return phases.length === 0 ? [] : [{ tool: t, phases }];
+    return phases.length === 0 ? [] : [{ id: t.id, tool: t, phases }];
   });
   return (
     <div>
       <h2 className={s.detailHeading}>{entry.label}</h2>
       <p className={s.empty}>Input channel. Tools below subscribe to it in the listed phase(s).</p>
-      <h3>Tools</h3>
-      {rows.length === 0
-        ? <p className={s.empty}>No tools declare this channel.</p>
-        : (
-          <ul className={s.memberList}>
-            {rows.map(({ tool, phases }) => (
-              <li key={tool.id}>
-                <button type="button" className={s.memberLink} onClick={() => onNavigate({ kind: 'tool', id: tool.id })}>{tool.id}</button>
-                {phases.map((p) => <code key={p} className={s.tag}>{p}</code>)}
-              </li>
-            ))}
-          </ul>
-        )}
+      <h3 className={s.subHeading}>Tools</h3>
+      <DataGrid
+        rows={rows}
+        columns={[
+          toolNameColumn(onNavigate),
+          {
+            id: 'phases',
+            header: 'phases',
+            sortable: false,
+            render: (r) => <TagList items={r.phases} />,
+          },
+        ]}
+        empty="No tools declare this channel."
+      />
     </div>
+  );
+}
+
+function PhaseOutputDetail({
+  entry, tools, onNavigate,
+}: { entry: PhaseOutputEntry; tools: readonly ToolEntry[]; onNavigate: Props['onNavigate'] }) {
+  const rows = tools.flatMap((t) => {
+    const phases: ('initial' | 'engaged')[] = [];
+    if (t.phases.initial[entry.id]) phases.push('initial');
+    if (t.phases.engaged?.[entry.id]) phases.push('engaged');
+    return phases.length === 0 ? [] : [{ id: t.id, tool: t, phases }];
+  });
+  // PhaseDef docs: only `initial.overlay` is read by the runtime; the
+  // engaged-phase form is currently a declarative no-op. Same caveat doesn't
+  // apply to `cursor` / `claimsAll`, which both phases honor.
+  const engagedNoop = entry.id === 'overlay';
+  const blurb = entry.id === 'overlay'
+    ? 'Render layer emitted while the tool is active. Only initial.overlay is read by the runtime today.'
+    : entry.id === 'cursor'
+      ? 'CSS cursor the tool declares (string or scratch-aware thunk).'
+      : 'Modal-claim predicate. When true, the dispatcher routes every pointerdown to this tool and bypasses affordance hit-tests.';
+  return (
+    <div>
+      <h2 className={s.detailHeading}>{entry.label}</h2>
+      <p className={s.empty}>
+        Phase output — the tool <em>declares or emits</em> this, rather than reacting to an input event. {blurb}
+      </p>
+      <h3 className={s.subHeading}>Tools declaring this output</h3>
+      <DataGrid
+        rows={rows}
+        columns={[
+          toolNameColumn(onNavigate),
+          {
+            id: 'phases',
+            header: 'phases',
+            sortable: false,
+            render: (r) => (
+              <span>
+                {r.phases.map((p) => (
+                  <code
+                    key={p}
+                    className={`${s.tag} ${engagedNoop && p === 'engaged' ? s.empty : ''}`}
+                    title={engagedNoop && p === 'engaged' ? 'Declared but not read by the runtime' : undefined}
+                  >
+                    {p}
+                  </code>
+                ))}
+              </span>
+            ),
+          },
+        ]}
+        empty="No tools declare this output."
+      />
+    </div>
+  );
+}
+
+/** Shared "Tool" column for inspector DataGrids — renders the tool id as a
+ *  clickable EntryLink that navigates to the matching tool entry. Row shape
+ *  must carry `id` (DataGrid contract) and a `tool` ref for label lookup. */
+function toolNameColumn(
+  onNavigate: Props['onNavigate'],
+): DataGridColumn<{ id: string; tool: ToolEntry }> {
+  return {
+    id: 'tool',
+    header: 'Tool',
+    accessor: (r) => r.tool.label ?? r.id,
+    render: (r) => (
+      <button
+        type="button"
+        className={s.memberLink}
+        onClick={() => onNavigate({ kind: 'tool', id: r.id })}
+      >
+        {r.tool.label ?? r.id}
+      </button>
+    ),
+  };
+}
+
+/** Compact wrap of `<code>` tags — used inside DataGrid cells where the
+ *  value is a small unordered set (routes, channels, phases). */
+function TagList({ items }: { items: readonly string[] }) {
+  return (
+    <span>
+      {items.map((it) => <code key={it} className={s.tag}>{it}</code>)}
+    </span>
   );
 }
 
