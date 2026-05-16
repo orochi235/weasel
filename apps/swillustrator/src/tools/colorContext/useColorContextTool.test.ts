@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useColorContextTool } from './useColorContextTool';
+import { dispatchKeyDown } from '../../testUtils/dispatchKeyDown';
 import type { Obj } from '../../poseUpdate';
 
 const noopUpdateSelected = () => {};
@@ -92,5 +93,39 @@ describe('useColorContextTool — scene-write cluster', () => {
     const { result } = renderHook(() => useColorContextTool({ updateSelected }));
     act(() => result.current.api.applyStrokeWidthToSelection(5));
     expect((calls[0] as { strokeWidth?: number }).strokeWidth).toBe(5);
+  });
+});
+
+describe('useColorContextTool — Tool keybindings', () => {
+  it("'d' resets fill and stroke", () => {
+    const { result } = renderHook(() => useColorContextTool({ updateSelected: noopUpdateSelected }));
+    act(() => {
+      result.current.api.setFillColor('#123456ff');
+    });
+    act(() => dispatchKeyDown(result.current.tool, { key: 'd' }));
+    expect(result.current.api.fill).toEqual({ kind: 'solid', color: '#ffffffff' });
+  });
+
+  it("'x' swaps fill and stroke", () => {
+    const { result } = renderHook(() => useColorContextTool({ updateSelected: noopUpdateSelected }));
+    act(() => {
+      result.current.api.setFillColor('#aaaaaaff');
+      result.current.api.setStrokeColor('#bbbbbbff');
+    });
+    act(() => dispatchKeyDown(result.current.tool, { key: 'x' }));
+    expect(result.current.api.fill).toEqual({ kind: 'solid', color: '#bbbbbbff' });
+  });
+
+  it("'shift+x' swaps focused side", () => {
+    const { result } = renderHook(() => useColorContextTool({ updateSelected: noopUpdateSelected }));
+    expect(result.current.api.focused).toBe('fill');
+    act(() => dispatchKeyDown(result.current.tool, { key: 'x', shift: true }));
+    expect(result.current.api.focused).toBe('stroke');
+  });
+
+  it("'/' toggles focused-none", () => {
+    const { result } = renderHook(() => useColorContextTool({ updateSelected: noopUpdateSelected }));
+    act(() => dispatchKeyDown(result.current.tool, { key: '/' }));
+    expect(result.current.api.fill).toEqual({ kind: 'none' });
   });
 });

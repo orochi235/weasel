@@ -12,6 +12,8 @@
  * a method here is the supported way to extend the color-change API.
  */
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { defineTool, claim } from '@orochi235/weasel/routing';
+import type { Tool } from '@orochi235/weasel';
 import type { ActivePaint } from '../../ActiveSwatches';
 import {
   DEFAULT_FILL,
@@ -64,6 +66,7 @@ interface Paints {
 }
 
 export function useColorContextTool(opts: UseColorContextToolOptions): {
+  tool: Tool<null>;
   api: ColorContextApi;
 } {
   // Combine fill+stroke into one state so `swap` can atomically exchange
@@ -193,6 +196,29 @@ export function useColorContextTool(opts: UseColorContextToolOptions): {
     );
   }, [opts]);
 
+  // Refs so the keyDown closures see the latest api setters without
+  // re-creating the tool on every render.
+  const apiRef = useRef<ColorContextApi | null>(null);
+
+  const tool = useMemo<Tool<null>>(() => defineTool<null>({
+    id: 'color-context',
+    presentation: {
+      label: 'Color context',
+      group: 'view',
+    },
+    initial: {
+      keyDown: {
+        d: () => { apiRef.current?.reset(); return claim(); },
+        x: (ctx: { modifiers: { shift: boolean } }) => {
+          if (ctx.modifiers.shift) apiRef.current?.swapFocus();
+          else apiRef.current?.swap();
+          return claim();
+        },
+        '/': () => { apiRef.current?.toggleFocusedNone(); return claim(); },
+      },
+    },
+  }), []);
+
   const api = useMemo<ColorContextApi>(() => ({
     fill, stroke, focused,
     setFill, setStroke, setFocused, setFocus,
@@ -208,5 +234,6 @@ export function useColorContextTool(opts: UseColorContextToolOptions): {
     applyFillToSelection, applyStrokeToSelection, applyStrokeWidthToSelection,
   ]);
 
-  return { api };
+  apiRef.current = api;
+  return { tool, api };
 }
