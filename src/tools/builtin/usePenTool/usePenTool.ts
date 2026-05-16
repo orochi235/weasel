@@ -2,6 +2,7 @@ import { useMemo, useReducer, useRef, useState, createElement } from 'react';
 import { defineTool, begin, claim, none } from '../../routing';
 import type { Result } from '../../routing';
 import type { Tool, ToolCtx } from '../../types';
+import type { ToolPrefGroup } from '../../prefs';
 import type { Op } from 'core/ops/types';
 import { PenIcon } from '../../../icons';
 import { PathBuilder } from 'features/paths/builder';
@@ -871,6 +872,19 @@ export function usePenTool<TPose>(
 
   return { tool, isEditing };
 }
+
+usePenTool.prefs = {
+  name: 'Pen',
+  description: 'Pen-tool behavior.',
+  children: {
+    autoCommitOnClose: {
+      kind: 'boolean',
+      name: 'Auto-commit pen on close',
+      description: "When you click the pen tool's first anchor to close a region, commit immediately so it renders with its fill. Off: keep the path in preview until you press Enter (lets you build a compound path from multiple closed subpaths).",
+      default: true,
+    },
+  },
+} satisfies ToolPrefGroup;
 
 function applyOutHandle<S extends PenScratch>(
   s: S,
