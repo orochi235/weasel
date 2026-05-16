@@ -14,6 +14,12 @@ import type { ToolKind } from '../poseUpdate';
 import { findSourceMatch } from './sourceLookup';
 import { KeyCap } from './KeyCap';
 
+/** Navigate to any entry in the inspector. The resolver in `RegistryInspector`
+ *  walks every category node to find a `kind+id` match — so a `<Tool>` can
+ *  link to a `<PublicExport>`, a `<Bundle>` can link back to `<Tool>` rows,
+ *  etc. */
+export type NavTarget = { kind: TreeEntry['kind']; id: string };
+
 interface Props {
   entry: TreeEntry;
   /** Live tool snapshot — used by `BundleDetail` so member rows can show
@@ -22,21 +28,43 @@ interface Props {
   /** Live action snapshot — used by `GroupDetail` to enumerate the members
    *  of an action-group bucket. */
   actions: readonly ActionEntry[];
-  onNavigate(target: { kind: 'tool'; id: string }): void;
+  onNavigate(target: NavTarget): void;
+}
+
+/** Renders an entry id as a button that navigates to that entry on click.
+ *  When `label` differs from `id`, the button label uses `label` — leaves
+ *  the visual the same as inline text but with cursor / underline styling. */
+function EntryLink({
+  kind, id, label, onNavigate,
+}: {
+  kind: TreeEntry['kind'];
+  id: string;
+  label?: string;
+  onNavigate: (t: NavTarget) => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={s.memberLink}
+      onClick={() => onNavigate({ kind, id })}
+    >
+      {label ?? id}
+    </button>
+  );
 }
 
 export function RegistryDetail({ entry, tools, actions, onNavigate }: Props) {
   switch (entry.kind) {
-    case 'tool':          return <ToolDetail entry={entry} />;
-    case 'action':        return <ActionDetail entry={entry} />;
+    case 'tool':          return <ToolDetail entry={entry} onNavigate={onNavigate} />;
+    case 'action':        return <ActionDetail entry={entry} onNavigate={onNavigate} />;
     case 'bundle':        return <BundleDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'shapeKind':     return <ShapeKindDetail entry={entry} onNavigate={onNavigate} />;
     case 'icon':          return <IconDetail entry={entry} />;
     case 'opFactory':     return <OpFactoryDetail entry={entry} />;
-    case 'publicExport':  return <PublicExportDetail entry={entry} />;
+    case 'publicExport':  return <PublicExportDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'phase':         return <PhaseDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'gesture':       return <GestureDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
-    case 'opKind':        return <OpKindDetail entry={entry} />;
+    case 'opKind':        return <OpKindDetail entry={entry} onNavigate={onNavigate} />;
     case 'hotkeyTrigger': return <HotkeyTriggerDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'slot':          return <SlotDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'routeTarget':   return <RouteTargetDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
@@ -45,7 +73,7 @@ export function RegistryDetail({ entry, tools, actions, onNavigate }: Props) {
   }
 }
 
-function OpKindDetail({ entry }: { entry: OpKindEntry }) {
+function OpKindDetail({ entry, onNavigate }: { entry: OpKindEntry; onNavigate: Props['onNavigate'] }) {
   const factoryId = `create${entry.id.charAt(0).toUpperCase()}${entry.id.slice(1)}Op`;
   const match = findSourceMatch(factoryId);
   return (
@@ -57,7 +85,8 @@ function OpKindDetail({ entry }: { entry: OpKindEntry }) {
         ops across reloads.
       </p>
       <dl className={s.detailList}>
-        <dt>factory</dt><dd><code className={s.tag}>{factoryId}</code></dd>
+        <dt>factory</dt>
+        <dd><EntryLink kind="opFactory" id={factoryId} onNavigate={onNavigate} /></dd>
         {match?.path && (<><dt>source</dt><dd><code>{match.path}</code></dd></>)}
       </dl>
     </div>
@@ -305,7 +334,7 @@ function activeChannels(p: PhaseSummary): readonly string[] {
   return PHASE_CHANNEL_KEYS.filter((k) => p[k]);
 }
 
-function ToolDetail({ entry }: { entry: ToolEntry }) {
+function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props['onNavigate'] }) {
   const bundles = collectBundles().filter((b) => b.tools.includes(entry.id));
   const match = findSourceMatch(entry.hookName ?? entry.id);
   const caps = (Object.entries(entry.capabilities) as [string, boolean][])
@@ -320,19 +349,40 @@ function ToolDetail({ entry }: { entry: ToolEntry }) {
         <h2 className={s.detailHeading}>{entry.id}</h2>
       </div>
       <dl className={s.detailList}>
-        {entry.hookName && (<><dt>hook</dt><dd><code>{entry.hookName}</code></dd></>)}
-        <dt>slot</dt><dd><code className={s.tag}>{entry.slot}</code></dd>
+        {entry.hookName && (
+          <>
+            <dt>hook</dt>
+            <dd><EntryLink kind="publicExport" id={entry.hookName} onNavigate={onNavigate} /></dd>
+          </>
+        )}
+        <dt>slot</dt>
+        <dd><EntryLink kind="slot" id={entry.slot} onNavigate={onNavigate} /></dd>
         {entry.switchShortcutParts && (
           <><dt>shortcut</dt><dd><KeyCap parts={entry.switchShortcutParts} /></dd></>
         )}
-        {entry.hotkey && (<><dt>hotkey</dt><dd><KeyCap parts={[entry.hotkey.toUpperCase()]} /></dd></>)}
+        {entry.hotkey && (
+          <>
+            <dt>hotkey</dt>
+            <dd>
+              <KeyCap parts={[entry.hotkey.toUpperCase()]} />
+              <EntryLink kind="hotkeyTrigger" id={entry.hotkey} label={entry.hotkey} onNavigate={onNavigate} />
+            </dd>
+          </>
+        )}
         {entry.cursor && (<><dt>cursor</dt><dd><code>{entry.cursor}</code></dd></>)}
         {entry.presentation && (
           <>
             <dt>presentation</dt>
             <dd>
               {entry.presentation.label && <span className={s.tag}>{entry.presentation.label}</span>}
-              {entry.presentation.group && <span className={s.tag}>group: {entry.presentation.group}</span>}
+              {entry.presentation.group && (
+                <EntryLink
+                  kind="group"
+                  id={`tool:${entry.presentation.group}`}
+                  label={`group: ${entry.presentation.group}`}
+                  onNavigate={onNavigate}
+                />
+              )}
               {entry.presentation.shortcut && <span className={s.tag}>shortcut: {entry.presentation.shortcut}</span>}
             </dd>
           </>
@@ -357,7 +407,11 @@ function ToolDetail({ entry }: { entry: ToolEntry }) {
         {bundles.length > 0 && (
           <>
             <dt>in bundles</dt>
-            <dd>{bundles.map((b) => <code key={b.id} className={s.tag}>{b.label}</code>)}</dd>
+            <dd>
+              {bundles.map((b) => (
+                <EntryLink key={b.id} kind="bundle" id={b.id} label={b.label} onNavigate={onNavigate} />
+              ))}
+            </dd>
           </>
         )}
         {match?.path && (<><dt>source</dt><dd><code>{match.path}</code></dd></>)}
@@ -379,7 +433,7 @@ function PhaseRow({ label, phase }: { label: string; phase: PhaseSummary }) {
   );
 }
 
-function ActionDetail({ entry }: { entry: ActionEntry }) {
+function ActionDetail({ entry, onNavigate }: { entry: ActionEntry; onNavigate: Props['onNavigate'] }) {
   const match = findSourceMatch(entry.id);
   return (
     <div>
@@ -389,7 +443,12 @@ function ActionDetail({ entry }: { entry: ActionEntry }) {
       </div>
       <dl className={s.detailList}>
         <dt>label</dt><dd>{entry.label}</dd>
-        {entry.group && (<><dt>group</dt><dd><code className={s.tag}>{entry.group}</code></dd></>)}
+        {entry.group && (
+          <>
+            <dt>group</dt>
+            <dd><EntryLink kind="group" id={`action:${entry.group}`} label={entry.group} onNavigate={onNavigate} /></dd>
+          </>
+        )}
         {entry.shortcutParts && (
           <><dt>binding</dt><dd><KeyCap parts={entry.shortcutParts} /></dd></>
         )}
@@ -513,8 +572,22 @@ function BundleDetail({
                 {added.length === 0 && removed.length === 0
                   ? <span className={s.empty}>(identical)</span>
                   : <>
-                      {added.map((t) => <code key={`+${t}`} className={`${s.tag} ${s.tagAdded}`}>+{t}</code>)}
-                      {removed.map((t) => <code key={`-${t}`} className={`${s.tag} ${s.tagRemoved}`}>−{t}</code>)}
+                      {added.map((t) => (
+                        <button
+                          key={`+${t}`}
+                          type="button"
+                          className={`${s.memberLink} ${s.tagAdded}`}
+                          onClick={() => onNavigate({ kind: 'tool', id: t })}
+                        >+{t}</button>
+                      ))}
+                      {removed.map((t) => (
+                        <button
+                          key={`-${t}`}
+                          type="button"
+                          className={`${s.memberLink} ${s.tagRemoved}`}
+                          onClick={() => onNavigate({ kind: 'tool', id: t })}
+                        >−{t}</button>
+                      ))}
                     </>}
               </dd>
             </Fragment>
@@ -557,7 +630,11 @@ function ShapeKindDetail({
         {opTargets.length > 0 && (
           <>
             <dt>op factories</dt>
-            <dd>{opTargets.map((f) => <code key={f} className={s.tag}>{f}</code>)}</dd>
+            <dd>
+              {opTargets.map((f) => (
+                <EntryLink key={f} kind="opFactory" id={f} onNavigate={onNavigate} />
+              ))}
+            </dd>
           </>
         )}
         {match?.path && (<><dt>source</dt><dd><code>{match.path}</code></dd></>)}
@@ -595,13 +672,22 @@ function OpFactoryDetail({ entry }: { entry: OpFactoryEntry }) {
   );
 }
 
-function PublicExportDetail({ entry }: { entry: PublicExportEntry }) {
+function PublicExportDetail({
+  entry, tools, onNavigate,
+}: {
+  entry: PublicExportEntry;
+  tools: readonly ToolEntry[];
+  onNavigate: Props['onNavigate'];
+}) {
   const value = (Weasel as Record<string, unknown>)[entry.id];
   const classification = classifyExport(entry.id, value);
   const match = findSourceMatch(entry.id);
   // Back-link: if a bundled icon shares this name (e.g. `RectIcon`), surface
   // it so consumers can find the visual asset behind a public re-export.
   const iconHit = collectIcons().find((i) => i.id === entry.id);
+  // Tool-hook back-link: `useRectTool` → tool id `rect`. Resolved via the
+  // live tools snapshot — match by `hookName` so renamed hooks still link.
+  const toolHit = tools.find((t) => t.hookName === entry.id);
   return (
     <div>
       <h2 className={s.detailHeading}>{entry.id}</h2>
@@ -609,10 +695,19 @@ function PublicExportDetail({ entry }: { entry: PublicExportEntry }) {
         <dt>classification</dt>
         <dd>{classification.map((c) => <code key={c} className={s.tag}>{c}</code>)}</dd>
         <dt>runtime</dt><dd><code className={s.tag}>{typeof value}</code></dd>
+        {toolHit && (
+          <>
+            <dt>tool</dt>
+            <dd><EntryLink kind="tool" id={toolHit.id} label={toolHit.label} onNavigate={onNavigate} /></dd>
+          </>
+        )}
         {iconHit && (
           <>
             <dt>icon</dt>
-            <dd><span className={s.toolIcon} aria-hidden><iconHit.Component /></span></dd>
+            <dd>
+              <span className={s.toolIcon} aria-hidden><iconHit.Component /></span>
+              <EntryLink kind="icon" id={iconHit.id} onNavigate={onNavigate} />
+            </dd>
           </>
         )}
         {match?.path && (<><dt>source</dt><dd><code>{match.path}</code></dd></>)}
