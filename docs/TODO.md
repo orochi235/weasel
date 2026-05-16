@@ -118,15 +118,12 @@ From `docs/specs/2026-05-03-tool-overlay-channel-design.md` (v1 explicit out-of-
 
 From `docs/specs/2026-05-04-animation-primitive-design.md`. The `src/animation/` module ships `useAnimator` (`tween`/`spring`/`decay`), `tweenPose`/`springPose`, `animateOnSetPose`, `animateLifecycle`, and the `momentum` MoveBehavior. Out of scope:
 
-- Ambient / looping animations — `loop({...})` convenience helper. Primitive supports it via self-retriggering tween; ship sugar when a real consumer wants it.
-- Spring "no destination" mode — unify `spring`/`decay` if the seam pinches.
+- [x] **Animator ergonomics: virtual clock, unified physics, loop, stagger.** *Shipped 2026-05-16.* Spec: `docs/superpowers/specs/2026-05-16-animator-ergonomics-design.md`. Plan: `docs/superpowers/plans/2026-05-16-animator-ergonomics.md`. Adds `animator.pause/resume/setTimeScale` (animator-global + per-handle + by cancelKey), unifies `spring`/`decay` into `physics({ from, to?, velocity? })` with `setTarget`/`setVelocity` for mid-flight retargeting, `animator.loop` + `tweenLoop({ direction })`, `animator.stagger` with fluent builder. `spring` and `decay` keep working as sugar.
 - Animation events / observability — global subscribe API for debug overlays / analytics.
-- Synchronized animations / staggers — "animate N objects with 50ms stagger" one-liner.
 - Animation-aware undo — "rewind the animation" instead of cancel + jump.
 - GPU / Web Animations API bridge — offload to compositor for very large concurrent counts.
 - Scroll-driven / pointer-driven progress — animation progress as a function of an external value, not time.
 - Easing function library — *Shipped.* Full Penner family: linear + quad/cubic/quart/quint + sine/expo/circ + back/elastic/bounce, with `In`/`Out`/`InOut` variants for each. Re-exported from `src/animation/index.ts` and bundled into a `EASINGS` lookup with an `EasingName` type for demo pickers. Pre-existing `easeIn`/`easeOut`/`easeInOut` aliases preserved (resolve to the quadratic curves).
-- Animator pause / resume / time-scale — useful for debugging.
 - Layout-strategy reflow integration — explicit hookup; today consumers compose `animateOnSetPose` over a layout-driven adapter.
 
 ## Deferred from container layout strategies (2026-05-04)
