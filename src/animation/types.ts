@@ -157,6 +157,10 @@ export interface Animator {
    * on cancel).
    */
   loop(factory: LoopFactory, opts?: LoopOptions): AnimationHandle;
+  /** Sugar over `loop` for the common case of looping a tween between two
+   *  values with optional direction handling (`restart` | `reverse` |
+   *  `alternate`). */
+  tweenLoop<T>(opts: TweenLoopOptions<T>): AnimationHandle;
 }
 
 export interface LoopOptions {
@@ -168,3 +172,19 @@ export interface LoopOptions {
 }
 
 export type LoopFactory = (iteration: number, next: () => void) => AnimationHandle;
+
+export interface TweenLoopOptions<T> {
+  from: T;
+  to: T;
+  ms: number;
+  easing?: EasingFn;
+  /** `restart` (default): from→to every iteration.
+   *  `reverse`: to→from every iteration.
+   *  `alternate`: even iterations from→to, odd iterations to→from. */
+  direction?: 'restart' | 'reverse' | 'alternate';
+  count?: number;
+  interpolate?: Interpolate<T>;
+  onTick: (value: T) => void;
+  onDone?: () => void;
+  cancelKey?: string;
+}

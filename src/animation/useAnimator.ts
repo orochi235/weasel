@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { easeOut, SPRING_PRESETS } from './easings';
-import { createLoop } from './loop';
+import { createLoop, createTweenLoop } from './loop';
 import type {
   AnimationHandle,
   Animator,
@@ -354,6 +354,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         for (const a of animations.current.values()) if (a.cancelKey === key) a.timeScale = s;
       },
       loop: (factory, loopOpts) => createLoop(animatorRef.current!, factory, loopOpts),
+      tweenLoop: (tweenLoopOpts) => createTweenLoop(animatorRef.current!, tweenLoopOpts),
     };
     animatorRef.current = api;
     return api;

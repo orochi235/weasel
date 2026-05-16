@@ -3,6 +3,7 @@ import type {
   Animator,
   LoopFactory,
   LoopOptions,
+  TweenLoopOptions,
 } from './types';
 
 /**
@@ -62,4 +63,42 @@ export function createLoop(
     },
     isPaused: () => current?.isPaused() ?? false,
   } as AnimationHandle;
+}
+
+/**
+ * Sugar over `createLoop` for the common case of looping a tween between two
+ * values. `direction` controls per-iteration from/to:
+ *   - `restart` (default): from→to every iteration
+ *   - `reverse`: to→from every iteration
+ *   - `alternate`: even iterations from→to, odd iterations to→from
+ */
+export function createTweenLoop<T>(
+  animator: Animator,
+  opts: TweenLoopOptions<T>,
+): AnimationHandle {
+  const direction = opts.direction ?? 'restart';
+  return createLoop(
+    animator,
+    (i, next) => {
+      let from = opts.from;
+      let to = opts.to;
+      if (direction === 'reverse') {
+        from = opts.to;
+        to = opts.from;
+      } else if (direction === 'alternate' && i % 2 === 1) {
+        from = opts.to;
+        to = opts.from;
+      }
+      return animator.tween({
+        from,
+        to,
+        ms: opts.ms,
+        easing: opts.easing,
+        interpolate: opts.interpolate,
+        onTick: opts.onTick,
+        onDone: next,
+      });
+    },
+    { count: opts.count, cancelKey: opts.cancelKey, onDone: opts.onDone },
+  );
 }

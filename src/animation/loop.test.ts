@@ -135,3 +135,71 @@ describe('animator.loop', () => {
     expect(done).toBe(1);
   });
 });
+
+describe('animator.tweenLoop', () => {
+  it('direction=restart plays from→to each iteration', () => {
+    const { animator, advance } = mountAnimator();
+    const values: number[] = [];
+    animator.tweenLoop({
+      from: 0,
+      to: 10,
+      ms: 100,
+      easing: (t) => t,
+      direction: 'restart',
+      count: 2,
+      onTick: (v) => values.push(v),
+    });
+    for (let i = 0; i < 30; i++) advance(16);
+    // The tween should hit (or near) 10 then restart back near 0.
+    const peak = Math.max(...values);
+    expect(peak).toBeCloseTo(10, 0);
+    // Somewhere in the sequence the value should drop back near 0 between iterations.
+    let sawDrop = false;
+    for (let i = 1; i < values.length; i++) {
+      if (values[i - 1] > 8 && values[i] < 2) {
+        sawDrop = true;
+        break;
+      }
+    }
+    expect(sawDrop).toBe(true);
+  });
+
+  it('direction=alternate flips from/to each iteration', () => {
+    const { animator, advance } = mountAnimator();
+    const values: number[] = [];
+    animator.tweenLoop({
+      from: 0,
+      to: 10,
+      ms: 100,
+      easing: (t) => t,
+      direction: 'alternate',
+      count: 2,
+      onTick: (v) => values.push(v),
+    });
+    for (let i = 0; i < 30; i++) advance(16);
+    const max = Math.max(...values);
+    const last = values[values.length - 1];
+    expect(max).toBeCloseTo(10, 0);
+    // After 2 iterations (0→10, 10→0), final value should be near 0.
+    expect(last).toBeLessThan(2);
+  });
+
+  it('direction=reverse plays to→from each iteration', () => {
+    const { animator, advance } = mountAnimator();
+    const values: number[] = [];
+    animator.tweenLoop({
+      from: 0,
+      to: 10,
+      ms: 100,
+      easing: (t) => t,
+      direction: 'reverse',
+      count: 2,
+      onTick: (v) => values.push(v),
+    });
+    for (let i = 0; i < 30; i++) advance(16);
+    // First emitted value should be near 10 (the reversed `from`).
+    expect(values[0]).toBeGreaterThan(8);
+    // Final value after two reverse iterations should be near 0.
+    expect(values[values.length - 1]).toBeLessThan(2);
+  });
+});
