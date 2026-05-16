@@ -85,6 +85,27 @@ export interface Stroke {
    * its `opacity` (and color, as a placeholder) flow through the shader.
    */
   vertexColors?: number[];
+  /**
+   * Per-anchor stroke width (length = `countPathAnchors(path)`). When set,
+   * the tessellator interpolates half-widths along each segment to produce
+   * a tapered ribbon. `width` is used as the fallback for any anchor whose
+   * entry is missing or non-finite. Pressure-driven pencil strokes use
+   * this; pair with `pressureToWidth` to derive widths from stylus input.
+   *
+   * Joins between adjacent segments whose widths differ by more than
+   * `varyingWidthJoinThreshold` (default 1.5×) are forced to bevel
+   * regardless of the `join` setting — miter math is unstable when widths
+   * vary across the corner; smooth round joins with mismatched widths
+   * are a future enhancement.
+   */
+  vertexWidths?: number[];
+  /**
+   * Max width ratio (greater / lesser) at which a non-bevel join is
+   * preserved when `vertexWidths` causes adjacent segments to differ.
+   * Beyond this ratio the join falls back to bevel. Default 1.5. Ignored
+   * when `vertexWidths` is absent.
+   */
+  varyingWidthJoinThreshold?: number;
 }
 
 /**

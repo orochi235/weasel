@@ -41,6 +41,14 @@ export interface CreatePathLayerOpts<T> {
    * is synthesized.
    */
   getStrokeVertexColors?: (node: T) => number[] | null | undefined;
+  /**
+   * Per-node stroke vertex-width array (one width per anchor).
+   * Length must be `countPathAnchors(getPath(node))`. The tessellator
+   * interpolates half-widths along each segment for tapered strokes.
+   * When set and `getStroke` returns null/undefined, a 1px placeholder
+   * stroke is synthesized so the per-anchor widths take effect.
+   */
+  getStrokeVertexWidths?: (node: T) => number[] | null | undefined;
 }
 
 /** Build a `RenderLayer` that fills/strokes `Path` instances enumerated from a node list. */
@@ -48,7 +56,7 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
   const {
     id = 'paths', label = 'Paths',
     getNodes, getPath, getFill, getStroke, isHidden,
-    getVertexColors, getStrokeVertexColors,
+    getVertexColors, getStrokeVertexColors, getStrokeVertexWidths,
   } = opts;
   const warned = new Set<string>();
   const isDev = typeof import.meta !== 'undefined'
@@ -69,9 +77,11 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
         const strokeFromHook = getStroke?.(node);
         const vColors = getVertexColors?.(node);
         const strokeVColors = getStrokeVertexColors?.(node);
+        const strokeVWidths = getStrokeVertexWidths?.(node);
 
         const nodeKey = (node as { id?: string }).id ?? String(idx);
-        const expectedLen = 4 * countPathAnchors(path);
+        const anchorCount = countPathAnchors(path);
+        const expectedLen = 4 * anchorCount;
 
         let useVColors: number[] | null = null;
         if (vColors != null) {
@@ -112,13 +122,33 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
           fillFromHook != null ? fillFromHook
           : (useVColors != null ? PLACEHOLDER_FILL : undefined);
 
+        let useStrokeVWidths: number[] | null = null;
+        if (strokeVWidths != null) {
+          if (strokeVWidths.length === anchorCount) {
+            useStrokeVWidths = strokeVWidths;
+          } else if (isDev) {
+            const key = `${id}:${nodeKey}:strokeWidths`;
+            if (!warned.has(key)) {
+              warned.add(key);
+              // eslint-disable-next-line no-console
+              console.warn(
+                `[createPathLayer ${id}] node ${nodeKey}: stroke vertexWidths length ${strokeVWidths.length}, expected ${anchorCount}; dropping`,
+              );
+            }
+          }
+        }
+
         const baseStroke: Stroke | undefined =
           strokeFromHook != null ? strokeFromHook
-          : (useStrokeVColors != null ? PLACEHOLDER_STROKE : undefined);
+          : (useStrokeVColors != null || useStrokeVWidths != null ? PLACEHOLDER_STROKE : undefined);
 
         const stroke: Stroke | undefined =
-          baseStroke != null && useStrokeVColors != null
-            ? { ...baseStroke, vertexColors: useStrokeVColors }
+          baseStroke != null
+            ? {
+                ...baseStroke,
+                ...(useStrokeVColors != null ? { vertexColors: useStrokeVColors } : {}),
+                ...(useStrokeVWidths != null ? { vertexWidths: useStrokeVWidths } : {}),
+              }
             : baseStroke;
 
         if (fill == null && stroke == null) continue;

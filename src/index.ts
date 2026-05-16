@@ -57,11 +57,13 @@ export * from './features/viewports';
 export {
   getStylusData,
   forEachCoalesced,
+  pressureToWidth,
 } from './core/pointer/stylus';
 export type {
   StylusData,
   PointerSample,
   CoalescedCtx,
+  PressureToWidthOptions,
 } from './core/pointer/stylus';
 export { usePointerStylus } from './core/pointer/usePointerStylus';
 export type {

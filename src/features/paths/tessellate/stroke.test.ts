@@ -338,3 +338,112 @@ describe('tessellateStroke — anchor params: dashed segments', () => {
     expect(foundAnchor1).toBe(true);
   });
 });
+
+describe('tessellateStroke — vertexWidths (per-anchor)', () => {
+  it('tapers from start to end (start half-width applied at first vertex, end at last)', () => {
+    // 100-unit horizontal segment, anchors {0, 1} with widths {2, 20}.
+    const p = new PathBuilder().moveTo(0, 0).lineTo(100, 0).build();
+    const stroke: Stroke = {
+      paint: { color: '#fff' },
+      width: 4, // fallback, ignored when both anchors have valid vertex widths
+      vertexWidths: [2, 20],
+      join: 'bevel',
+      cap: 'butt',
+    };
+    const mesh = tessellateStroke(p, stroke);
+    // First quad: L0/R0 at x=0 with y=±1 (half of width 2); L1/R1 at x=100 with y=±10.
+    // Vertex layout is [L0, R0, L1, R1] starting at index 0.
+    expect(mesh.vertices.length).toBeGreaterThanOrEqual(8);
+    const ys = [
+      mesh.vertices[1],  // L0
+      mesh.vertices[3],  // R0
+      mesh.vertices[5],  // L1
+      mesh.vertices[7],  // R1
+    ];
+    // Perpendicular unit vector for +x direction is (0, +1); L = +n side,
+    // R = −n side. So L is on +y, R on −y.
+    expect(ys[0]).toBeCloseTo(1);   // L0
+    expect(ys[1]).toBeCloseTo(-1);  // R0
+    expect(ys[2]).toBeCloseTo(10);  // L1
+    expect(ys[3]).toBeCloseTo(-10); // R1
+  });
+
+  it('forces bevel when adjacent anchors differ beyond varyingWidthJoinThreshold (default 1.5×)', () => {
+    // Two segments forming an L. Width at the corner jumps 2 → 10 (5×).
+    // join: 'miter' should be overridden to bevel by the varying-width threshold.
+    const p = new PathBuilder().moveTo(0, 0).lineTo(50, 0).lineTo(50, 50).build();
+    const baseStroke: Stroke = {
+      paint: { color: '#fff' },
+      width: 4,
+      join: 'miter',
+      cap: 'butt',
+    };
+    const uniform = tessellateStroke(p, { ...baseStroke, vertexWidths: [4, 4, 4] });
+    const varying = tessellateStroke(p, { ...baseStroke, vertexWidths: [2, 10, 2] });
+    // A miter join emits 2 extra triangles per corner; bevel emits 1. The
+    // varying-width case should match the bevel-equivalent index count,
+    // which is < the uniform-miter count.
+    expect(varying.indices.length).toBeLessThan(uniform.indices.length);
+  });
+
+  it('preserves miter when widths differ within the threshold ratio', () => {
+    const p = new PathBuilder().moveTo(0, 0).lineTo(50, 0).lineTo(50, 50).build();
+    const baseStroke: Stroke = {
+      paint: { color: '#fff' },
+      width: 4,
+      join: 'miter',
+      cap: 'butt',
+    };
+    // 4 → 5 (1.25× ratio) — under default threshold 1.5×.
+    const closeWidths = tessellateStroke(p, { ...baseStroke, vertexWidths: [4, 5, 4] });
+    const uniformMiter = tessellateStroke(p, { ...baseStroke, vertexWidths: [4, 4, 4] });
+    // Both should retain the miter join shape (same triangle count).
+    expect(closeWidths.indices.length).toBe(uniformMiter.indices.length);
+  });
+
+  it('falls back to `width` when a vertexWidths entry is missing or non-finite', () => {
+    const p = new PathBuilder().moveTo(0, 0).lineTo(100, 0).build();
+    // vertexWidths has NaN at anchor 1 → falls back to width=8.
+    const stroke: Stroke = {
+      paint: { color: '#fff' },
+      width: 8,
+      vertexWidths: [2, NaN],
+      join: 'bevel',
+      cap: 'butt',
+    };
+    const mesh = tessellateStroke(p, stroke);
+    // R1 (vertex index 3) y-coord = −half(8) = −4 (R is on the −n side).
+    expect(mesh.vertices[7]).toBeCloseTo(-4);
+  });
+
+  it('rect outlines (no anchor data on interior points) keep uniform width', () => {
+    // A RectPath has 4 anchors (corners). Provide 4 widths but the rect
+    // fast-path uses width-as-uniform — vertexWidths is interpolated
+    // per-corner. Sanity: tessellation still produces a valid mesh.
+    const p: RectPath = { kind: 'rect', x: 0, y: 0, width: 50, height: 30 };
+    const mesh = tessellateStroke(p, {
+      paint: { color: '#fff' },
+      width: 4,
+      vertexWidths: [2, 6, 2, 6],
+      join: 'bevel',
+      cap: 'butt',
+    });
+    expect(mesh.indices.length).toBeGreaterThan(0);
+    expect(mesh.indices.length % 3).toBe(0);
+  });
+
+  it('threshold = Infinity suppresses the bevel fallback (miter stays even with width discontinuity)', () => {
+    const p = new PathBuilder().moveTo(0, 0).lineTo(50, 0).lineTo(50, 50).build();
+    const baseStroke: Stroke = {
+      paint: { color: '#fff' },
+      width: 4,
+      join: 'miter',
+      cap: 'butt',
+      varyingWidthJoinThreshold: Infinity,
+    };
+    const a = tessellateStroke(p, { ...baseStroke, vertexWidths: [4, 4, 4] });
+    const b = tessellateStroke(p, { ...baseStroke, vertexWidths: [2, 10, 2] });
+    // Both keep the miter shape (same index count).
+    expect(b.indices.length).toBe(a.indices.length);
+  });
+});

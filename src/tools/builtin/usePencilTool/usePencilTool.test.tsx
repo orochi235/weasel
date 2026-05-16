@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { usePencilTool } from './usePencilTool';
+import { usePencilTool, type PencilPoint } from './usePencilTool';
 import type { Tool, ToolCtx } from '../../types';
 import type { PolygonPath } from 'features/paths/types';
 
@@ -99,6 +99,43 @@ describe('usePencilTool', () => {
     tool.drag!.onMove!(stylusEvent(30, 0, 0.7, -8, 2), ctx);
     expect(samples).toHaveLength(3);
     expect(samples[2]).toMatchObject({ x: 30, y: 0, pressure: 0.7, tiltX: -8, tiltY: 2 });
+  });
+
+  it('pressureToWidth: stamps width on each sample and forwards a widths array to create', () => {
+    let received: { closed: boolean; widths?: number[] } | null = null;
+    const create = (_path: PolygonPath, opts: { closed: boolean; widths?: number[] }) => {
+      received = opts;
+      return { id: 'pe1' };
+    };
+    const { result } = renderHook(() =>
+      usePencilTool({
+        create,
+        tolerance: 1,
+        // Width = pressure × 10 — linear and predictable for assertions.
+        pressureToWidth: (s) => (s.pressure ?? 0) * 10,
+      }),
+    );
+    const tool = result.current as Tool<unknown>;
+    const ctx = noopCtx() as ToolCtx<unknown> & { scratch: { samples: PencilPoint[] } | null };
+    const stylusEvent = (clientX: number, clientY: number, pressure: number): PointerEvent => ({
+      clientX, clientY, pressure, tiltX: 0, tiltY: 0, pointerType: 'pen', twist: 0,
+    } as unknown as PointerEvent);
+    ctx.worldX = 0; ctx.worldY = 0;
+    tool.drag!.onStart!(stylusEvent(0, 0, 0), ctx);
+    for (let i = 1; i <= 8; i++) {
+      ctx.worldX = i * 10;
+      ctx.worldY = 0;
+      tool.drag!.onMove!(stylusEvent(i * 10, 0, i / 10), ctx);
+    }
+    tool.drag!.onEnd!(stylusEvent(80, 0, 0.8), ctx);
+
+    expect(received).not.toBeNull();
+    expect(received!.widths).toBeDefined();
+    expect(received!.widths!.length).toBeGreaterThan(0);
+    // First anchor sits at the first sample (pressure 0 → width 0).
+    expect(received!.widths![0]).toBeCloseTo(0);
+    // Last anchor sits at the last sample (pressure 0.8 → width 8).
+    expect(received!.widths![received!.widths!.length - 1]).toBeCloseTo(8);
   });
 
   it('cancel discards captured samples without invoking create', () => {
