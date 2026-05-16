@@ -141,7 +141,7 @@ import {
   withAlpha01,
 } from './ActiveSwatches';
 import { useActiveColors } from './useActiveColors';
-import { useColorContextTool, ColorContextProvider, useColorContext } from './tools/colorContext';
+import { useColorContextTool, ColorContextProvider, useColorContext, type ColorContextApi } from './tools/colorContext';
 import {
   objsToSvgNodes,
   svgNodesToObjsWithGroups,
@@ -528,7 +528,6 @@ export function App() {
   const fillColor = paintToString(colors.fill);
   const strokeColor = paintToString(colors.stroke);
   const strokeWidth = activeStrokeWidth;
-  const { setFillColor, setStrokeColor } = colors;
   const setStrokeWidth = setActiveStrokeWidth;
   const [docTitle, setDocTitle] = useState('Untitled');
   // PaperSize is derived from doc.size by reverse-lookup. Choosing a
@@ -1208,6 +1207,10 @@ export function App() {
   // of any active tool; pressing `I` makes it the active tool until
   // switched away. Alt-drag still routes to clone (clone claims at
   // drag.onStart, eyedropper at pointer.click — they don't collide).
+  // Held by the eyedropper's onPick closure so it can dispatch into the
+  // color-context tool that's declared further down. Wired at line ~1533
+  // after the tool initializes.
+  const colorContextApiRef = useRef<ColorContextApi | null>(null);
   const eyedropper = useEyedropperTool({
     colorOf: (id) => {
       const obj = itemsRef.current.find((o) => o.id === id);
@@ -1220,14 +1223,9 @@ export function App() {
     },
     onPick: (color) => {
       if (color == null) return;
-      // Route through the alpha-aware setters so eyedropper picks normalize
-      // to `#rrggbbaa` (and a 6-char pick inherits the previous swatch's
-      // alpha, matching the native-picker round-trip).
-      if (focusedSwatchRef.current === 'fill') {
-        setFillColor(color);
-      } else {
-        setStrokeColor(color);
-      }
+      // setFocusedColor encapsulates the focused-swatch routing AND the
+      // alpha round-trip (6-char picks inherit the previous swatch's alpha).
+      colorContextApiRef.current?.setFocusedColor(color);
     },
   });
   const text = useTextTool<TextObj>({
@@ -1523,6 +1521,7 @@ export function App() {
     updateSelected: (patch, label) => updateSelectedRef.current?.(patch, label),
   });
   const colorContextTool = colorContext.tool;
+  colorContextApiRef.current = colorContext.api;
 
   const initialActiveTool = useMemo(() => {
     const stored = readPref('tools.lastTool');
