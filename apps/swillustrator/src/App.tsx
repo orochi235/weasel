@@ -140,7 +140,6 @@ import {
   getAlpha01,
   withAlpha01,
 } from './ActiveSwatches';
-import { useActiveColors } from './useActiveColors';
 import { useColorContextTool, ColorContextProvider, useColorContext, type ColorContextApi } from './tools/colorContext';
 import {
   objsToSvgNodes,
@@ -503,24 +502,22 @@ export function App() {
   // it. `size` is the only field today; it drives the rendered page area,
   // the SVG viewBox on export, and (eventually) the printable surface.
   const [doc, setDoc] = useState<Document>(() => ({ size: { ...DEFAULT_DOC_SIZE } }));
+  // Declared early so the colorContext hook's updateSelected closure can
+  // reference it. The ref is wired (below) after updateSelected is defined.
+  const updateSelectedRef = useRef<((patch: (o: Obj) => Obj, label?: string) => void) | null>(null);
   // Active fill/stroke/focus + the D / X / Shift+X / / keybindings live
-  // in `useActiveColors`. Color sources (swatch grids, palettes, eyedropper)
-  // dispatch through `colors.setFocused(paint)` rather than poking
-  // setActiveFill / setActiveStroke directly.
-  const colors = useActiveColors({
+  // on the color-context tool. Color sources (swatch grids, palettes,
+  // eyedropper) dispatch through `colors.setFocused(paint)` / `setFocusedColor`
+  // rather than poking individual setters.
+  const colorContext = useColorContextTool({
     initialFill: { kind: 'solid', color: '#7fb069ff' },
     initialStroke: { kind: 'solid', color: '#1a130dff' },
+    updateSelected: (patch, label) => updateSelectedRef.current?.(patch, label),
   });
+  const colors = colorContext.api;
+  const colorContextTool = colorContext.tool;
   const [activeStrokeWidth, setActiveStrokeWidth] = useState(1);
   const [pageSelected, setPageSelected] = useState(false);
-  // Refs so non-React callbacks (gesture handlers, ops, history) can
-  // read the latest active paint without re-registering.
-  const activeFillRef = useRef(colors.fill);
-  activeFillRef.current = colors.fill;
-  const activeStrokeRef = useRef(colors.stroke);
-  activeStrokeRef.current = colors.stroke;
-  const focusedSwatchRef = useRef(colors.focused);
-  focusedSwatchRef.current = colors.focused;
   // String-shaped aliases used by the Properties panel (which takes plain
   // hex strings via PropertyColorInput) and the per-object scene fill /
   // stroke fields. `paintToString` returns '' for the 'none' kind, which
@@ -1508,19 +1505,6 @@ export function App() {
   // `swill.prefs.v1`, but only if it's still a registered tool (a renamed
   // or removed tool would otherwise crash useTools' "active not in registry"
   // assertion). Falls back to 'select'.
-  // Tool-flavored owner of active-paint state + scene-write routing.
-  // Co-mounted alongside the legacy `useActiveColors` (line ~511) during
-  // the migration — Tasks 7-10 migrate consumers off `colors` onto the
-  // context surface and then delete the legacy hook.
-  //
-  // `updateSelected` is declared later in this function (after applyOps is
-  // fully wired) so we thread it in via a stable ref rather than as a direct
-  // dep — the callbacks only invoke it at event time, never during init.
-  const updateSelectedRef = useRef<((patch: (o: Obj) => Obj, label?: string) => void) | null>(null);
-  const colorContext = useColorContextTool({
-    updateSelected: (patch, label) => updateSelectedRef.current?.(patch, label),
-  });
-  const colorContextTool = colorContext.tool;
   colorContextApiRef.current = colorContext.api;
 
   const initialActiveTool = useMemo(() => {
