@@ -109,6 +109,11 @@ export interface UseAnimatorOptions {
   /** Optional rAF / cAF injection for tests. Defaults to window.requestAnimationFrame. */
   requestFrame?: (cb: (t: number) => void) => number;
   cancelFrame?: (handle: number) => void;
+  /** Optional `setTimeout` injection used by `stagger` for per-item delays.
+   *  Defaults to the global `setTimeout`. Tests inject a virtual scheduler. */
+  setTimer?: (cb: () => void, ms: number) => unknown;
+  /** Companion to `setTimer`. Defaults to global `clearTimeout`. */
+  clearTimer?: (handle: unknown) => void;
 }
 
 export interface Animator {
