@@ -23,3 +23,4 @@ export {
 } from './poseHelpers';
 export * from './wrappers';
 export { momentum, type MomentumOptions } from './behaviors/momentum';
+export { createLoop } from './loop';

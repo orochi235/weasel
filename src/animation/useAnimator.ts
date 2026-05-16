@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { easeOut, SPRING_PRESETS } from './easings';
+import { createLoop } from './loop';
 import type {
   AnimationHandle,
   Animator,
@@ -313,7 +314,12 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       }
     };
     cleanupRef.current = cancelAll;
-    return {
+    // Self-reference: loop/tweenLoop need to invoke methods on this same
+    // animator object (specifically, factory closures call animator.tween).
+    // We can't reference `api` while constructing it, so route via a ref
+    // that we fill in just before returning.
+    const animatorRef: { current: Animator | null } = { current: null };
+    const api: Animator = {
       tween,
       spring,
       decay,
@@ -347,6 +353,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       setTimeScaleByKey: (key, s) => {
         for (const a of animations.current.values()) if (a.cancelKey === key) a.timeScale = s;
       },
+      loop: (factory, loopOpts) => createLoop(animatorRef.current!, factory, loopOpts),
     };
+    animatorRef.current = api;
+    return api;
   }, []);
 }

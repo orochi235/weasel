@@ -149,4 +149,22 @@ export interface Animator {
   resumeKey(key: string): void;
   /** Set per-animation timeScale for every animation whose `cancelKey` matches. */
   setTimeScaleByKey(key: string, scale: number): void;
+  /**
+   * Loop primitive: repeatedly invoke `factory` to produce a child animation.
+   * The factory must wire its returned handle's `onDone` to call `next` so
+   * the loop advances. Returns a handle whose pause/resume/setTimeScale/cancel
+   * delegate to the current in-flight child (and prevent future iterations
+   * on cancel).
+   */
+  loop(factory: LoopFactory, opts?: LoopOptions): AnimationHandle;
 }
+
+export interface LoopOptions {
+  /** Maximum number of iterations. Default Infinity. */
+  count?: number;
+  cancelKey?: string;
+  /** Invoked when the loop reaches `count` iterations naturally (not on cancel). */
+  onDone?: () => void;
+}
+
+export type LoopFactory = (iteration: number, next: () => void) => AnimationHandle;
