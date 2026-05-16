@@ -8,12 +8,10 @@ import Dot from './Dot';
 import Hexagon from './Hexagon';
 import Chevron from './Chevron';
 import Banner from './Banner';
-
-const stub: ShapeModule = {
-  Component: () => null,
-  insets: { top: 0, right: 0, bottom: 0, left: 0 },
-  stretches: true,
-};
+import Starburst from './Starburst';
+import Scalloped from './Scalloped';
+import Shield from './Shield';
+import Ribbon from './Ribbon';
 
 export const SHAPES: Record<BadgeShape, ShapeModule> = {
   pill: Pill,
@@ -25,10 +23,10 @@ export const SHAPES: Record<BadgeShape, ShapeModule> = {
   hexagon: Hexagon,
   chevron: Chevron,
   banner: Banner,
-  starburst: stub,
-  scalloped: stub,
-  shield: stub,
-  ribbon: stub,
+  starburst: Starburst,
+  scalloped: Scalloped,
+  shield: Shield,
+  ribbon: Ribbon,
 };
 
 export const ALL_SHAPES: BadgeShape[] = [
