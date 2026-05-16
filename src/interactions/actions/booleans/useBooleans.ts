@@ -1,10 +1,10 @@
 /**
  * `useBooleans` — selection-driven Boolean ops on path layers.
  *
- * Returns five imperative callables (`union` / `intersect` / `subtract` /
- * `exclude` / `divide`). Each reads the current selection, performs the op
- * in world space, and dispatches a single batch through the adapter's
- * `applyOps` (one undo step).
+ * Returns six imperative callables (`union` / `intersect` / `subtract` /
+ * `exclude` / `divide` / `crop`). Each reads the current selection,
+ * performs the op in world space, and dispatches a single batch through
+ * the adapter's `applyOps` (one undo step).
  *
  * Adapter shape: see `BooleansAdapter` in `./booleans.ts`. Consumers
  * supply how to read selection, fetch the world-space `Path` for an id,
@@ -24,11 +24,12 @@ export interface UseBooleansReturn {
   subtract(): void;
   exclude(): void;
   divide(): void;
+  crop(): void;
 }
 
 export interface UseBooleansOptions {
-  /** When true (default), auto-register the five Pathfinder actions
-   *  (`pathfinder.{union,intersect,subtract,exclude,divide}`) with the
+  /** When true (default), auto-register the six Pathfinder actions
+   *  (`pathfinder.{union,intersect,subtract,exclude,divide,crop}`) with the
    *  ambient `ActionsProvider`. No-op when no provider is in scope. */
   enableActions?: boolean;
 }
@@ -77,5 +78,6 @@ export function useBooleans(
     subtract: useCallback(() => run('subtract'), [run]),
     exclude: useCallback(() => run('exclude'), [run]),
     divide: useCallback(() => run('divide'), [run]),
+    crop: useCallback(() => run('crop'), [run]),
   };
 }

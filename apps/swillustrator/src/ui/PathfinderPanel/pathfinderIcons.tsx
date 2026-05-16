@@ -71,3 +71,27 @@ export function DivideIcon() {
     </svg>
   );
 }
+
+export function CropIcon() {
+  // Back circle clipped to a topmost rect mask — only the portion of the
+  // circle inside the rect is filled; the rect is outlined on top.
+  return (
+    <svg {...SVG_BASE}>
+      <defs>
+        <clipPath id="weasel-crop-mask">
+          <rect x="9" y="5" width="8" height="10" />
+        </clipPath>
+      </defs>
+      <circle cx="9" cy="10" r="5" />
+      <circle
+        cx="9"
+        cy="10"
+        r="5"
+        fill="currentColor"
+        stroke="none"
+        clipPath="url(#weasel-crop-mask)"
+      />
+      <rect x="9" y="5" width="8" height="10" />
+    </svg>
+  );
+}

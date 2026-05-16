@@ -47,6 +47,7 @@ describe('useBooleans + ActionsProvider', () => {
     );
     const ids = regSnap!.list().filter(a => a.id.startsWith('pathfinder.')).map(a => a.id).sort();
     expect(ids).toEqual([
+      'pathfinder.crop',
       'pathfinder.divide',
       'pathfinder.exclude',
       'pathfinder.intersect',

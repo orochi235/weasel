@@ -12,6 +12,7 @@ import {
   pathSubtract,
   pathExclude,
   pathDivide,
+  pathCrop,
 } from 'features/paths/booleans';
 import type { Path, PolygonPath } from 'features/paths/types';
 import { createInsertOp } from 'core/ops/create';
@@ -22,8 +23,8 @@ import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
 import { dispatchApplyBatch } from 'core/applyOps';
 
-/** The five v1 operations. */
-export type BooleanOp = 'union' | 'intersect' | 'subtract' | 'exclude' | 'divide';
+/** Boolean op identifiers — five Pathfinder primaries plus Crop. */
+export type BooleanOp = 'union' | 'intersect' | 'subtract' | 'exclude' | 'divide' | 'crop';
 
 /**
  * z-position descriptor for a path node. `parentId` is the direct parent
@@ -83,6 +84,7 @@ const LABEL: Record<BooleanOp, string> = {
   subtract: 'Subtract',
   exclude: 'Exclude',
   divide: 'Divide',
+  crop: 'Crop',
 };
 
 function isEmpty(p: PolygonPath): boolean {
@@ -125,6 +127,13 @@ export function applyBooleanOp(
     }
     case 'divide': {
       results = pathDivide(...paths);
+      break;
+    }
+    case 'crop': {
+      // Illustrator "Crop": clip every source-below-top to the topmost
+      // path; topmost is consumed as the mask. `paths` is back-to-front
+      // ascending, so the topmost source is `paths[paths.length-1]`.
+      results = pathCrop(...paths);
       break;
     }
   }

@@ -6,11 +6,12 @@ import {
   SubtractIcon,
   ExcludeIcon,
   DivideIcon,
+  CropIcon,
 } from './pathfinderIcons';
 import s from './PathfinderPanel.module.css';
 
 export type PathfinderOp =
-  | 'union' | 'intersect' | 'subtract' | 'exclude' | 'divide';
+  | 'union' | 'intersect' | 'subtract' | 'exclude' | 'divide' | 'crop';
 
 export type PathfinderIcons = Partial<Record<PathfinderOp, ReactNode>>;
 
@@ -24,7 +25,7 @@ export interface PathfinderPanelProps {
 }
 
 const OPS: readonly PathfinderOp[] = [
-  'union', 'intersect', 'subtract', 'exclude', 'divide',
+  'union', 'intersect', 'subtract', 'exclude', 'divide', 'crop',
 ] as const;
 
 const DEFAULT_LABELS: Record<PathfinderOp, string> = {
@@ -33,6 +34,7 @@ const DEFAULT_LABELS: Record<PathfinderOp, string> = {
   subtract: 'Subtract',
   exclude: 'Exclude',
   divide: 'Divide',
+  crop: 'Crop',
 };
 
 const DEFAULT_ICONS: Record<PathfinderOp, ReactNode> = {
@@ -41,6 +43,7 @@ const DEFAULT_ICONS: Record<PathfinderOp, ReactNode> = {
   subtract: <SubtractIcon />,
   exclude: <ExcludeIcon />,
   divide: <DivideIcon />,
+  crop: <CropIcon />,
 };
 
 export function PathfinderPanel(props: PathfinderPanelProps) {

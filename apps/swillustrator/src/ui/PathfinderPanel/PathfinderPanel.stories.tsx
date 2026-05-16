@@ -17,6 +17,7 @@ const noopActions: UseBooleansReturn = {
   subtract: () => console.log('subtract'),
   exclude: () => console.log('exclude'),
   divide: () => console.log('divide'),
+  crop: () => console.log('crop'),
 };
 
 function adapterWith(paths: number): Pick<BooleansAdapter, 'getSelection' | 'getWorldPath'> {

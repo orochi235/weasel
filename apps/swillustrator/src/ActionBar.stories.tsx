@@ -16,7 +16,7 @@ const booleansAdapter: ActionBarProps['booleansAdapter'] = {
 };
 
 const booleansActions: ActionBarProps['booleansActions'] = {
-  union: noop, intersect: noop, subtract: noop, exclude: noop, divide: noop,
+  union: noop, intersect: noop, subtract: noop, exclude: noop, divide: noop, crop: noop,
 };
 
 const baseArgs: ActionBarProps = {
