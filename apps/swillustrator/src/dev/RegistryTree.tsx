@@ -6,10 +6,18 @@ interface Props {
   nodes: readonly TreeCategoryNode[];
   selected: TreeEntry | null;
   onSelect(entry: TreeEntry): void;
+  /** Optional controlled-filter pair. When omitted, the tree manages
+   *  filter state internally (the prior behavior). When provided, the
+   *  parent owns the state so it can react to filter changes — e.g.
+   *  clearing the detail pane when the selection falls out of view. */
+  filter?: string;
+  onFilterChange?(next: string): void;
 }
 
-export function RegistryTree({ nodes, selected, onSelect }: Props) {
-  const [filter, setFilter] = useState('');
+export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, onFilterChange }: Props) {
+  const [filterInternal, setFilterInternal] = useState('');
+  const filter = filterProp ?? filterInternal;
+  const setFilter = onFilterChange ?? setFilterInternal;
   const [openIds, setOpenIds] = useState<ReadonlySet<string>>(() => new Set());
 
   const lower = filter.trim().toLowerCase();

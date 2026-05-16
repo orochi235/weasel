@@ -5,6 +5,8 @@ import {
   useScene,
   type ToolsApi,
 } from '@orochi235/weasel';
+import { buildActionRegistry, type RegistryEntry } from '@orochi235/weasel/routing';
+import type { ToolDef } from '@orochi235/weasel/routing';
 import type { ToolEntry, ActionEntry } from './registryData';
 import s from './RegistryInspector.module.css';
 
@@ -56,31 +58,27 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
   const toolEntries: readonly ToolEntry[] = useMemo(() => {
     if (!tools) return [];
     void toolsRegistrySig;
-    return Object.values(tools.registry).map((t) => {
-      const def = t.def;
-      const contributesActionIds: string[] = [];
-      if (def && typeof def === 'object' && 'phases' in def) {
-        const phases = (def as { phases?: Record<string, unknown> }).phases ?? {};
-        for (const p of Object.values(phases)) {
-          if (p && typeof p === 'object' && 'routes' in p) {
-            const routes = (p as { routes?: Record<string, unknown> }).routes ?? {};
-            for (const r of Object.values(routes)) {
-              if (r && typeof r === 'object' && 'actionId' in r) {
-                const a = (r as { actionId?: string }).actionId;
-                if (a) contributesActionIds.push(a);
-              }
-            }
-          }
-        }
-      }
-      return {
-        kind: 'tool' as const,
-        id: t.id,
-        label: t.id,
-        cursor: typeof t.cursor === 'string' ? t.cursor : undefined,
-        contributesActionIds: Array.from(new Set(contributesActionIds)),
-      };
-    });
+    // Union of registry (active/hotkey) + ambient slots — both groups are
+    // built-in tools the canvas mounted. Ambient holds resize / rotate /
+    // wheel-zoom etc., so omitting them misses ~3 tools per bundle.
+    const slots: Array<{ id: string; def?: unknown; cursor?: unknown }> = [
+      ...Object.values(tools.registry),
+      ...tools.ambient,
+    ];
+    const seen = new Set<string>();
+    return slots
+      .filter((t) => (seen.has(t.id) ? false : (seen.add(t.id), true)))
+      .map((t) => {
+        const def = t.def as ToolDef<unknown> | undefined;
+        const routes = def ? formatRoutes(buildActionRegistry([def])) : [];
+        return {
+          kind: 'tool' as const,
+          id: t.id,
+          label: t.id,
+          cursor: typeof t.cursor === 'string' ? t.cursor : undefined,
+          routes,
+        };
+      });
   }, [tools, toolsRegistrySig]);
 
   const actionEntries: readonly ActionEntry[] = actionsList.map((a) => ({
@@ -112,6 +110,13 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
       />
     </div>
   );
+}
+
+function formatRoutes(entries: readonly RegistryEntry[]): readonly string[] {
+  return entries.map((e) => {
+    const base = `${e.phase}.${e.gesture}.${e.target}`;
+    return e.modifiers === 'default' ? base : `${base}:${e.modifiers}`;
+  });
 }
 
 function formatBinding(b: {

@@ -19,7 +19,11 @@ export interface ToolEntry {
   label: string;
   hookName?: string;
   cursor?: string;
-  contributesActionIds: readonly string[];
+  /** Route signatures the tool exposes, derived from `buildActionRegistry`
+   *  on the live `ToolDef`. Each entry is a compact `phase.gesture.target`
+   *  string (with a trailing `:modifiers` segment when non-default), e.g.
+   *  `initial.click.empty` or `initial.drag.node:shift`. */
+  routes: readonly string[];
 }
 
 export interface ActionEntry {
@@ -40,8 +44,10 @@ export interface BundleEntry {
   kind: 'bundle';
   id: 'minimal' | 'standard' | 'exhaustive';
   label: string;
+  /** Tool ids the bundle enables when passed as SceneCanvas's `toolBundle`
+   *  prop. The kit does not group actions into bundles — actions are
+   *  wired separately by consumers. */
   tools: readonly string[];
-  actions: readonly string[];
 }
 
 export interface IconEntry {
@@ -99,16 +105,12 @@ export function collectIcons(): readonly IconEntry[] {
  *  docs/TODO.md. */
 const BUNDLE_DEFINITIONS = [
   { id: 'minimal' as const,    label: 'Minimal',
-    tools: ['select', 'hand'] as const,
-    actions: ['undoRedo', 'escape'] as const },
+    tools: ['select', 'hand'] as const },
   { id: 'standard' as const,   label: 'Standard',
-    tools: ['select', 'resize', 'rotate', 'hand', 'rect', 'ellipse', 'line', 'pencil'] as const,
-    actions: ['delete', 'undoRedo', 'duplicate', 'nudge', 'escape', 'selectAll', 'clipboard'] as const },
+    tools: ['select', 'resize', 'rotate', 'hand', 'rect', 'ellipse', 'line', 'pencil'] as const },
   { id: 'exhaustive' as const, label: 'Exhaustive',
     tools: ['select', 'resize', 'rotate', 'hand', 'rect', 'ellipse', 'line',
-            'polygon', 'star', 'pencil', 'lasso', 'text', 'clone'] as const,
-    actions: ['delete', 'undoRedo', 'duplicate', 'nudge', 'escape', 'selectAll',
-              'reorder', 'align', 'distribute', 'flip', 'clipboard', 'group', 'nest'] as const },
+            'polygon', 'star', 'pencil', 'lasso', 'text', 'clone'] as const },
 ];
 
 export function collectBundles(): readonly BundleEntry[] {

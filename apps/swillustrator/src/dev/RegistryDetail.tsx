@@ -4,7 +4,7 @@ import { findSourceMatch } from './sourceLookup';
 
 interface Props {
   entry: TreeEntry;
-  onNavigate(target: { kind: 'tool'; id: string } | { kind: 'action'; id: string }): void;
+  onNavigate(target: { kind: 'tool'; id: string }): void;
 }
 
 export function RegistryDetail({ entry, onNavigate }: Props) {
@@ -54,10 +54,10 @@ function ToolDetail({ entry }: { entry: ToolEntry }) {
       <dl className={s.detailList}>
         <dt>label</dt><dd>{entry.label}</dd>
         {entry.cursor && (<><dt>cursor</dt><dd>{entry.cursor}</dd></>)}
-        {entry.contributesActionIds.length > 0 && (
+        {entry.routes.length > 0 && (
           <>
-            <dt>actions</dt>
-            <dd>{entry.contributesActionIds.map((a) => <code key={a} className={s.tag}>{a}</code>)}</dd>
+            <dt>routes</dt>
+            <dd>{entry.routes.map((r) => <code key={r} className={s.tag}>{r}</code>)}</dd>
           </>
         )}
       </dl>
@@ -86,14 +86,6 @@ function BundleDetail({ entry, onNavigate }: { entry: BundleEntry; onNavigate: P
         {entry.tools.map((t) => (
           <li key={t}>
             <button type="button" className={s.memberLink} onClick={() => onNavigate({ kind: 'tool', id: t })}>{t}</button>
-          </li>
-        ))}
-      </ul>
-      <h3>Actions</h3>
-      <ul className={s.memberList}>
-        {entry.actions.map((a) => (
-          <li key={a}>
-            <button type="button" className={s.memberLink} onClick={() => onNavigate({ kind: 'action', id: a })}>{a}</button>
           </li>
         ))}
       </ul>

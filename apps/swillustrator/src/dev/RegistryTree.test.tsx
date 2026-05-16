@@ -8,8 +8,8 @@ const NODES: readonly TreeCategoryNode[] = [
     id: 'tools',
     label: 'Tools',
     entries: [
-      { kind: 'tool', id: 'rect', label: 'useRectTool', contributesActionIds: [] },
-      { kind: 'tool', id: 'ellipse', label: 'useEllipseTool', contributesActionIds: [] },
+      { kind: 'tool', id: 'rect', label: 'useRectTool', routes: [] },
+      { kind: 'tool', id: 'ellipse', label: 'useEllipseTool', routes: [] },
     ],
   },
   {

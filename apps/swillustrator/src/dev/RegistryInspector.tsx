@@ -32,6 +32,7 @@ export function RegistryInspector() {
 
   const [runtime, setRuntime] = useState<RegistrySnapshot>({ tools: [], actions: [] });
   const [bundleFilter, setBundleFilter] = useState<string>('all');
+  const [textFilter, setTextFilter] = useState<string>('');
   const [selected, setSelected] = useState<TreeEntry | null>(null);
 
   const onSnapshot = useCallback((snap: RegistrySnapshot) => setRuntime(snap), []);
@@ -54,17 +55,14 @@ export function RegistryInspector() {
       return entries.filter((e) => allow.has(e.id));
     };
 
+    // Bundles describe tool presets only; actions stay unfiltered.
     return [
       {
         id: 'tools',
         label: 'Tools',
         entries: filterByBundle(runtime.tools, activeBundle ? activeBundle.tools : null),
       },
-      {
-        id: 'actions',
-        label: 'Actions',
-        entries: filterByBundle(runtime.actions, activeBundle ? activeBundle.actions : null),
-      },
+      { id: 'actions', label: 'Actions', entries: runtime.actions },
       { id: 'shapeKinds', label: 'Shape kinds', entries: shapeKinds },
       { id: 'bundles', label: 'Bundles', entries: bundles },
       { id: 'icons', label: 'Icons', entries: icons },
@@ -72,6 +70,19 @@ export function RegistryInspector() {
       { id: 'publicExports', label: 'Public exports', entries: publicExports },
     ];
   }, [runtime, activeBundle, bundles, icons, opFactories, publicExports, shapeKinds]);
+
+  // Clear selection when the active filters narrow past the selected entry.
+  const lower = textFilter.trim().toLowerCase();
+  useEffect(() => {
+    if (!selected) return;
+    const category = nodes.find((n) => n.entries.some((e) => e.kind === selected.kind && e.id === selected.id));
+    if (!category) { setSelected(null); return; }
+    if (lower) {
+      const matches = selected.id.toLowerCase().includes(lower)
+        || selected.label.toLowerCase().includes(lower);
+      if (!matches) setSelected(null);
+    }
+  }, [nodes, lower, selected]);
 
   return (
     <div className={s.root}>
@@ -93,13 +104,18 @@ export function RegistryInspector() {
       </header>
       <div className={s.layout}>
         <aside className={s.tree}>
-          <RegistryTree nodes={nodes} selected={selected} onSelect={setSelected} />
+          <RegistryTree
+            nodes={nodes}
+            selected={selected}
+            onSelect={setSelected}
+            filter={textFilter}
+            onFilterChange={setTextFilter}
+          />
         </aside>
         <section className={s.detail}>
           {selected
             ? <RegistryDetail entry={selected} onNavigate={(t) => {
-                const list = t.kind === 'tool' ? runtime.tools : runtime.actions;
-                const next = list.find((e) => e.id === t.id);
+                const next = runtime.tools.find((e) => e.id === t.id);
                 if (next) setSelected(next);
               }} />
             : <p className={s.empty}>Select an entry to see details.</p>}

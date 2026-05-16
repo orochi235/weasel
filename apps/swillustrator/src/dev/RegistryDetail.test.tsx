@@ -4,16 +4,17 @@ import { RegistryDetail } from './RegistryDetail';
 import type { TreeEntry } from './registryData';
 
 describe('RegistryDetail', () => {
-  it('renders a Tool entry with id and contributed actions', () => {
+  it('renders a Tool entry with id and route signatures', () => {
     const entry: TreeEntry = {
       kind: 'tool',
       id: 'rect',
       label: 'useRectTool',
-      contributesActionIds: ['insert.rect', 'commit.rect'],
+      routes: ['initial.click.empty', 'initial.drag.empty:shift'],
     };
     render(<RegistryDetail entry={entry} onNavigate={() => {}} />);
     expect(screen.getAllByText(/rect/).length).toBeGreaterThan(0);
-    expect(screen.getByText('insert.rect')).toBeTruthy();
+    expect(screen.getByText('initial.click.empty')).toBeTruthy();
+    expect(screen.getByText('initial.drag.empty:shift')).toBeTruthy();
   });
 
   it('renders an Action entry with shortcut', () => {
@@ -25,7 +26,7 @@ describe('RegistryDetail', () => {
   it('renders a Bundle with clickable members that fire onNavigate', () => {
     const entry: TreeEntry = {
       kind: 'bundle', id: 'minimal', label: 'Minimal',
-      tools: ['select', 'hand'], actions: ['escape'],
+      tools: ['select', 'hand'],
     };
     const onNavigate = vi.fn();
     render(<RegistryDetail entry={entry} onNavigate={onNavigate} />);
