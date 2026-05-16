@@ -1,5 +1,6 @@
 import s from './RegistryInspector.module.css';
 import type { TreeEntry, ToolEntry, ActionEntry, BundleEntry, IconEntry } from './registryData';
+import { findSourceMatch } from './sourceLookup';
 
 interface Props {
   entry: TreeEntry;
@@ -19,10 +20,13 @@ export function RegistryDetail({ entry, onNavigate }: Props) {
 }
 
 function SimpleDetail({ label }: { label: string }) {
+  const match = findSourceMatch(label);
   return (
     <div>
       <h2 className={s.detailHeading}>{label}</h2>
-      <p className={s.empty}>Source path and JSDoc snippet will be loaded lazily in Task 8.</p>
+      {match?.path && <p className={s.sourcePath}><code>{match.path}</code></p>}
+      {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
+      {!match && <p className={s.empty}>No source match found.</p>}
     </div>
   );
 }

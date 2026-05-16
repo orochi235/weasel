@@ -112,3 +112,13 @@
 .iconPreviewCellSmall { width: 32px; height: 32px; }
 .iconPreviewCellLarge { width: 64px; height: 64px; }
 .iconPreviewCell > svg { width: 100%; height: 100%; }
+.sourcePath { font-size: 11px; color: var(--wzl-muted, #a59685); margin: 4px 0; }
+.jsdoc {
+  background: var(--wzl-bg, #1e1610);
+  border: 1px solid var(--wzl-panel-border, #4a3c2e);
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 12px;
+  white-space: pre-wrap;
+  margin: 8px 0 0;
+}
