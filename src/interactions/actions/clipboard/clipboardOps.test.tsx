@@ -3,6 +3,8 @@ import { renderHook, act } from '@testing-library/react';
 import { useClipboardOps } from './clipboardOps';
 import type { InsertAdapter, Op } from '../../..';
 import { asNodeId } from 'core/scene/types';
+import { PointerContextProvider, usePointerContext } from 'features/pointer/PointerContext';
+import type { ReactNode } from 'react';
 
 interface Obj { id: string; x: number; y: number }
 
@@ -239,5 +241,56 @@ describe('useClipboardOps', () => {
     act(() => { result.current.paste(); });
     expect(helpers.pasteCtxLog).toHaveLength(2);
     expect(helpers.inserts.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('falls back to the surrounding PointerContext when no explicit getDropPoint is supplied', () => {
+    const helpers = makeAdapter();
+    helpers.seed({ id: 'a', x: 0, y: 0 });
+    // Capture the context value so we can publish a synthetic pointer position
+    // and observe it flowing through to commitPaste's ctx arg.
+    let ctxHandle: ReturnType<typeof usePointerContext> = null;
+    function ProbeAndPaste() {
+      ctxHandle = usePointerContext();
+      return null;
+    }
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <PointerContextProvider>
+        <ProbeAndPaste />
+        {children}
+      </PointerContextProvider>
+    );
+    const { result } = renderHook(
+      () => useClipboardOps(helpers.adapter, { getSelection: () => [asNodeId('a')] }),
+      { wrapper },
+    );
+    // Publish a synthetic pointer position via the context's pointerRef.
+    ctxHandle!.pointerRef.current = { worldX: 77, worldY: 88 };
+    act(() => { result.current.copy(); });
+    act(() => { result.current.paste(); });
+    expect(helpers.pasteCtxLog).toEqual([{ dropPoint: { worldX: 77, worldY: 88 } }]);
+  });
+
+  it('explicit getDropPoint wins over the surrounding PointerContext', () => {
+    const helpers = makeAdapter();
+    helpers.seed({ id: 'a', x: 0, y: 0 });
+    let ctxHandle: ReturnType<typeof usePointerContext> = null;
+    function Probe() { ctxHandle = usePointerContext(); return null; }
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <PointerContextProvider>
+        <Probe />
+        {children}
+      </PointerContextProvider>
+    );
+    const { result } = renderHook(
+      () => useClipboardOps(helpers.adapter, {
+        getSelection: () => [asNodeId('a')],
+        getDropPoint: () => ({ worldX: 1, worldY: 2 }),
+      }),
+      { wrapper },
+    );
+    ctxHandle!.pointerRef.current = { worldX: 999, worldY: 999 };
+    act(() => { result.current.copy(); });
+    act(() => { result.current.paste(); });
+    expect(helpers.pasteCtxLog).toEqual([{ dropPoint: { worldX: 1, worldY: 2 } }]);
   });
 });

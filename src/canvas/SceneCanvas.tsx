@@ -51,6 +51,7 @@ import type { UseRotateOptions } from 'interactions/gestures/rotate/rotate';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import type { UseAreaSelectOptions } from 'interactions/gestures/area-select/areaSelect';
 import { ActionsProviderIfRoot } from './SceneCanvas/ActionsProviderIfRoot';
+import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
 import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
 import { useViewportTools } from './SceneCanvas/useViewportTools';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
@@ -691,15 +692,18 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   );
 
   return (
-    <ActionsProviderIfRoot>
-      {canvas}
-      <StandardActionsRegistrar
-        deps={standardActionsDeps}
-        actions={actions}
-        defaults={actionDefaults}
-      />
-      {children}
-    </ActionsProviderIfRoot>
+    <PointerProviderIfRoot>
+      <ActionsProviderIfRoot>
+        {canvas}
+        <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />
+        <StandardActionsRegistrar
+          deps={standardActionsDeps}
+          actions={actions}
+          defaults={actionDefaults}
+        />
+        {children}
+      </ActionsProviderIfRoot>
+    </PointerProviderIfRoot>
   );
 }
 
