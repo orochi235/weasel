@@ -19,6 +19,7 @@ export function useUndoRedoTool(
     () =>
       defineTool({
         id: 'undoRedo',
+        presentation: { label: 'Undo / Redo' },
         initial: {
           keyDown: {
             z: (_ctx, event) => {

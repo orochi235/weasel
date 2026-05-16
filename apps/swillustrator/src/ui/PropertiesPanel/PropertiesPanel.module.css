@@ -108,11 +108,12 @@
 .swatchGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, var(--wzl-swatch-size, 28px));
-  gap: 4px;
+  gap: 1px;
 }
 .swatch {
-  width: var(--wzl-swatch-size, 28px);
-  height: var(--wzl-swatch-size, 28px);
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  min-width: 0;
   border: 2px solid var(--wzl-panel-border);
   border-radius: 4px;
   cursor: pointer;
@@ -125,6 +126,18 @@
 .swatchActive {
   border-color: var(--wzl-accent);
   box-shadow: 0 0 0 1px var(--wzl-accent);
+}
+
+/* Transparent paint swatch — gray/white checkerboard with the same red
+   diagonal "no" stripe used on the active-swatch transparent state. */
+.swatchTransparent {
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(45deg, transparent calc(50% - 1px), #d4453a calc(50% - 1px), #d4453a calc(50% + 1px), transparent calc(50% + 1px)),
+    linear-gradient(45deg, #c5c5c5 25%, transparent 25%, transparent 75%, #c5c5c5 75%, #c5c5c5),
+    linear-gradient(45deg, #c5c5c5 25%, transparent 25%, transparent 75%, #c5c5c5 75%, #c5c5c5);
+  background-size: 100% 100%, 8px 8px, 8px 8px;
+  background-position: 0 0, 0 0, 4px 4px;
 }
 
 .button {

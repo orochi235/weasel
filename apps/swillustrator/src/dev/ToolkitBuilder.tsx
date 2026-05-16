@@ -276,6 +276,7 @@ export function ToolkitBuilder() {
   useDelete({
     getSelection,
     getNode: (id) => scene.get(id) ?? { id },
+    getNodeIndex: (id) => [...scene.renderOrder()].indexOf(asNodeId(id)),
     removeNode: (id) => scene.remove(asNodeId(id)),
     applyOps,
   }, { enableKeyboard: enabled.actions.has('delete') });
@@ -359,6 +360,7 @@ export function ToolkitBuilder() {
       }));
     },
     getNode: (id: string) => scene.get(asNodeId(id)) ?? undefined,
+    getNodeIndex: (id: string) => [...scene.renderOrder()].indexOf(asNodeId(id)),
     removeNode: (id: string) => scene.remove(asNodeId(id)),
   }, {
     getSelection: () => [...selection.current],

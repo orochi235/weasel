@@ -1,5 +1,7 @@
 import { useMemo, useRef } from 'react';
+import { createElement } from 'react';
 import { defineTool, begin, claim } from '../../routing';
+import { RectIcon } from '../../../icons';
 import { useDragRect } from 'interactions/gestures/dragRect';
 import { createInsertOp } from 'core/ops/create';
 import { marqueeDrawCommands, type InsertOverlayStyle } from '../marquee';
@@ -88,6 +90,11 @@ export function useRectTool<TNode extends { id: string }>(
         id: 'rect',
         keybinding: { key: 'R' },
         cursor: 'crosshair',
+        presentation: {
+          label: 'Rectangle',
+          icon: createElement(RectIcon),
+          group: 'shape',
+        },
         initial: {
           overlay: () => overlay,
           drag: (ctx) => {

@@ -19,6 +19,7 @@ export function useDeleteTool(
     () =>
       defineTool({
         id: 'delete',
+        presentation: { label: 'Delete' },
         initial: {
           keyDown: {
             Backspace: () => {

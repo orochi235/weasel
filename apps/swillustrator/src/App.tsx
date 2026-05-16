@@ -124,6 +124,10 @@ import { PreferencesModal } from './PreferencesModal';
 import {
   ActiveSwatches,
   paintToString,
+  mergeAlphaFromPrev,
+  toHex8,
+  getAlpha01,
+  withAlpha01,
   type ActivePaint,
 } from './ActiveSwatches';
 import { useActiveColors } from './useActiveColors';
@@ -187,20 +191,109 @@ const PAPER_SIZE_OPTIONS: Array<{ value: PaperSize; label: string }> = [
 /** US Letter at 96 dpi. */
 const DEFAULT_DOC_SIZE = PAPER_PRESETS.letter;
 
-// Garden-ish palette borrowed from eric. Used by the Colors swatch grid.
+// 99-color palette laid out as 9 neutrals in row 1 (alongside the leading
+// transparent swatch) + 9 hue ramps × 10 shades. Renders 10 per row in the
+// Colors panel; total 100 cells including transparent.
 const PALETTE: { value: string; label: string }[] = [
-  { value: '#7fb069', label: 'Leaf' },
-  { value: '#4a7c59', label: 'Forest' },
-  { value: '#d4a574', label: 'Sand' },
-  { value: '#c97c5d', label: 'Terracotta' },
-  { value: '#b03030', label: 'Tomato' },
-  { value: '#e8c547', label: 'Sunflower' },
-  { value: '#6b8cae', label: 'Sky' },
-  { value: '#3a5a7c', label: 'Indigo' },
-  { value: '#8e6c8a', label: 'Plum' },
-  { value: '#d4c4a8', label: 'Cream' },
-  { value: '#3a2e22', label: 'Bark' },
-  { value: '#1a130d', label: 'Soil' },
+  { value: '#ffffffff', label: 'White' },
+  { value: '#e5e5e5ff', label: 'Gray 200' },
+  { value: '#d4d4d4ff', label: 'Gray 300' },
+  { value: '#a3a3a3ff', label: 'Gray 400' },
+  { value: '#737373ff', label: 'Gray 500' },
+  { value: '#525252ff', label: 'Gray 600' },
+  { value: '#404040ff', label: 'Gray 700' },
+  { value: '#262626ff', label: 'Gray 800' },
+  { value: '#000000ff', label: 'Black' },
+  { value: '#fef2f2ff', label: 'Red 50' },
+  { value: '#fee2e2ff', label: 'Red 100' },
+  { value: '#fecacaff', label: 'Red 200' },
+  { value: '#fca5a5ff', label: 'Red 300' },
+  { value: '#f87171ff', label: 'Red 400' },
+  { value: '#ef4444ff', label: 'Red 500' },
+  { value: '#dc2626ff', label: 'Red 600' },
+  { value: '#b91c1cff', label: 'Red 700' },
+  { value: '#991b1bff', label: 'Red 800' },
+  { value: '#7f1d1dff', label: 'Red 900' },
+  { value: '#fff7edff', label: 'Orange 50' },
+  { value: '#ffedd5ff', label: 'Orange 100' },
+  { value: '#fed7aaff', label: 'Orange 200' },
+  { value: '#fdba74ff', label: 'Orange 300' },
+  { value: '#fb923cff', label: 'Orange 400' },
+  { value: '#f97316ff', label: 'Orange 500' },
+  { value: '#ea580cff', label: 'Orange 600' },
+  { value: '#c2410cff', label: 'Orange 700' },
+  { value: '#9a3412ff', label: 'Orange 800' },
+  { value: '#7c2d12ff', label: 'Orange 900' },
+  { value: '#fefce8ff', label: 'Yellow 50' },
+  { value: '#fef9c3ff', label: 'Yellow 100' },
+  { value: '#fef08aff', label: 'Yellow 200' },
+  { value: '#fde047ff', label: 'Yellow 300' },
+  { value: '#facc15ff', label: 'Yellow 400' },
+  { value: '#eab308ff', label: 'Yellow 500' },
+  { value: '#ca8a04ff', label: 'Yellow 600' },
+  { value: '#a16207ff', label: 'Yellow 700' },
+  { value: '#854d0eff', label: 'Yellow 800' },
+  { value: '#713f12ff', label: 'Yellow 900' },
+  { value: '#f0fdf4ff', label: 'Green 50' },
+  { value: '#dcfce7ff', label: 'Green 100' },
+  { value: '#bbf7d0ff', label: 'Green 200' },
+  { value: '#86efacff', label: 'Green 300' },
+  { value: '#4ade80ff', label: 'Green 400' },
+  { value: '#22c55eff', label: 'Green 500' },
+  { value: '#16a34aff', label: 'Green 600' },
+  { value: '#15803dff', label: 'Green 700' },
+  { value: '#166534ff', label: 'Green 800' },
+  { value: '#14532dff', label: 'Green 900' },
+  { value: '#f0fdfaff', label: 'Teal 50' },
+  { value: '#ccfbf1ff', label: 'Teal 100' },
+  { value: '#99f6e4ff', label: 'Teal 200' },
+  { value: '#5eead4ff', label: 'Teal 300' },
+  { value: '#2dd4bfff', label: 'Teal 400' },
+  { value: '#14b8a6ff', label: 'Teal 500' },
+  { value: '#0d9488ff', label: 'Teal 600' },
+  { value: '#0f766eff', label: 'Teal 700' },
+  { value: '#115e59ff', label: 'Teal 800' },
+  { value: '#134e4aff', label: 'Teal 900' },
+  { value: '#ecfeffff', label: 'Cyan 50' },
+  { value: '#cffafeff', label: 'Cyan 100' },
+  { value: '#a5f3fcff', label: 'Cyan 200' },
+  { value: '#67e8f9ff', label: 'Cyan 300' },
+  { value: '#22d3eeff', label: 'Cyan 400' },
+  { value: '#06b6d4ff', label: 'Cyan 500' },
+  { value: '#0891b2ff', label: 'Cyan 600' },
+  { value: '#0e7490ff', label: 'Cyan 700' },
+  { value: '#155e75ff', label: 'Cyan 800' },
+  { value: '#164e63ff', label: 'Cyan 900' },
+  { value: '#eff6ffff', label: 'Blue 50' },
+  { value: '#dbeafeff', label: 'Blue 100' },
+  { value: '#bfdbfeff', label: 'Blue 200' },
+  { value: '#93c5fdff', label: 'Blue 300' },
+  { value: '#60a5faff', label: 'Blue 400' },
+  { value: '#3b82f6ff', label: 'Blue 500' },
+  { value: '#2563ebff', label: 'Blue 600' },
+  { value: '#1d4ed8ff', label: 'Blue 700' },
+  { value: '#1e40afff', label: 'Blue 800' },
+  { value: '#1e3a8aff', label: 'Blue 900' },
+  { value: '#faf5ffff', label: 'Purple 50' },
+  { value: '#f3e8ffff', label: 'Purple 100' },
+  { value: '#e9d5ffff', label: 'Purple 200' },
+  { value: '#d8b4feff', label: 'Purple 300' },
+  { value: '#c084fcff', label: 'Purple 400' },
+  { value: '#a855f7ff', label: 'Purple 500' },
+  { value: '#9333eaff', label: 'Purple 600' },
+  { value: '#7e22ceff', label: 'Purple 700' },
+  { value: '#6b21a8ff', label: 'Purple 800' },
+  { value: '#581c87ff', label: 'Purple 900' },
+  { value: '#fdf2f8ff', label: 'Pink 50' },
+  { value: '#fce7f3ff', label: 'Pink 100' },
+  { value: '#fbcfe8ff', label: 'Pink 200' },
+  { value: '#f9a8d4ff', label: 'Pink 300' },
+  { value: '#f472b6ff', label: 'Pink 400' },
+  { value: '#ec4899ff', label: 'Pink 500' },
+  { value: '#db2777ff', label: 'Pink 600' },
+  { value: '#be185dff', label: 'Pink 700' },
+  { value: '#9d174dff', label: 'Pink 800' },
+  { value: '#831843ff', label: 'Pink 900' },
 ];
 
 /** Translate a single rect-pose-shaped object by (dx, dy). Used for clipboard
@@ -399,8 +492,8 @@ export function App() {
   // dispatch through `colors.setFocused(paint)` rather than poking
   // setActiveFill / setActiveStroke directly.
   const colors = useActiveColors({
-    initialFill: { kind: 'solid', color: '#7fb069' },
-    initialStroke: { kind: 'solid', color: '#1a130d' },
+    initialFill: { kind: 'solid', color: '#7fb069ff' },
+    initialStroke: { kind: 'solid', color: '#1a130dff' },
   });
   const [activeStrokeWidth, setActiveStrokeWidth] = useState(1);
   const [pageSelected, setPageSelected] = useState(false);
@@ -755,10 +848,16 @@ export function App() {
         itemsRef.current[i] = { ...itemsRef.current[i], ...patch } as Obj;
       },
       // --- structural mutators (ops use these directly) ---
-      insertNode: (n: Obj) => {
-        // Re-add at original index if we have one (helps undo of mid-stack
-        // deletes restore the right z-order). Otherwise push to top.
-        if (!itemsRef.current.find((o) => o.id === n.id)) {
+      // Returns the original z-index of `id` so DeleteOp can capture it
+      // and forward it to the inverted Insert. Without this, undo of a
+      // multi-delete batch fully reverses paint order (Cmd+A → Delete →
+      // Cmd+Z on the tiger SVG was the canonical repro).
+      getNodeIndex: (id: string): number => itemsRef.current.findIndex((o) => o.id === id),
+      insertNode: (n: Obj, index?: number) => {
+        if (itemsRef.current.find((o) => o.id === n.id)) return;
+        if (index != null && index >= 0 && index <= itemsRef.current.length) {
+          itemsRef.current.splice(index, 0, n);
+        } else {
           itemsRef.current.push(n);
         }
       },
@@ -1108,10 +1207,13 @@ export function App() {
     },
     onPick: (color) => {
       if (color == null) return;
+      // Route through the alpha-aware setters so eyedropper picks normalize
+      // to `#rrggbbaa` (and a 6-char pick inherits the previous swatch's
+      // alpha, matching the native-picker round-trip).
       if (focusedSwatchRef.current === 'fill') {
-        setActiveFill({ kind: 'solid', color });
+        setFillColor(color);
       } else {
-        setActiveStroke({ kind: 'solid', color });
+        setStrokeColor(color);
       }
     },
   });
@@ -1178,7 +1280,8 @@ export function App() {
       // behavior and prevents invisible orphan text boxes from being left
       // behind by stray clicks or all-content-deleted edits.
       if (text === '') {
-        applyOps([createDeleteOp({ node: o, label: 'Delete empty text' })], 'Delete empty text');
+        const index = itemsRef.current.findIndex((x) => x.id === id);
+        applyOps([createDeleteOp({ node: o, label: 'Delete empty text', index })], 'Delete empty text');
         return;
       }
       const from = o.text;
@@ -1546,7 +1649,8 @@ export function App() {
       }
       if (m < 2) continue;
       const subs = splitSubpaths(path);
-      ops.push(createDeleteOp({ node: o, label: 'Release compound path' }));
+      const index = itemsRef.current.findIndex((x) => x.id === id);
+      ops.push(createDeleteOp({ node: o, label: 'Release compound path', index }));
       for (const sub of subs) {
         const b = boundsOfPath(sub);
         const newId = `s${nextId.current++}`;
@@ -1862,17 +1966,26 @@ export function App() {
   // Apply property changes to all selected items that support the property,
   // including kind-specific paths (text fill lives in style.fill.color).
   const applyFillToSelection = (color: string): void => {
+    // 6-char hex from the native color picker — pad the previous object's
+    // alpha back on so opacity survives the round-trip. 8-char inputs
+    // (palette, opacity slider) win outright.
+    const merge = (prev: string | undefined): string =>
+      color.length === 9 ? color : mergeAlphaFromPrev(color, prev ?? '#ffffffff');
     updateSelected((o) => {
-      if (o.tool !== 'text') return { ...o, fill: color };
+      if (o.tool !== 'text') return { ...o, fill: merge(o.fill) };
       const prevFill = o.style?.fill;
+      const prevColor = prevFill && prevFill.fill === 'solid' ? prevFill.color : undefined;
+      const next = merge(prevColor);
       const nextFill = prevFill && prevFill.fill === 'solid'
-        ? { ...prevFill, color }
-        : { fill: 'solid' as const, color };
+        ? { ...prevFill, color: next }
+        : { fill: 'solid' as const, color: next };
       return { ...o, style: { ...(o.style ?? {}), fill: nextFill } };
     }, 'Set fill');
   };
   const applyStrokeToSelection = (color: string): void => {
-    updateSelected((o) => o.tool !== 'text' ? { ...o, stroke: color } : o, 'Set stroke');
+    const merge = (prev: string | undefined): string =>
+      color.length === 9 ? color : mergeAlphaFromPrev(color, prev ?? '#000000ff');
+    updateSelected((o) => o.tool !== 'text' ? { ...o, stroke: merge(o.stroke) } : o, 'Set stroke');
   };
   const applyStrokeWidthToSelection = (w: number): void => {
     updateSelected((o) => o.tool !== 'text' ? { ...o, strokeWidth: w } : o, 'Set stroke width');
@@ -1909,14 +2022,14 @@ export function App() {
   // Fall back to the active swatches when the primary doesn't have its own
   // paint set (paths created from SVG import or older docs may lack fill /
   // stroke). PropertyColorInput requires a string.
-  const primaryFill = primary
+  const primaryFill = toHex8(primary
     ? (primary.tool === 'text'
-        ? (primary.style?.fill?.fill === 'solid' ? primary.style.fill.color : '#000000')
+        ? (primary.style?.fill?.fill === 'solid' ? primary.style.fill.color : '#000000ff')
         : (primary.fill ?? fillColor))
-    : fillColor;
-  const primaryStroke = primary && primary.tool !== 'text'
+    : fillColor);
+  const primaryStroke = toHex8(primary && primary.tool !== 'text'
     ? (primary.stroke ?? strokeColor)
-    : strokeColor;
+    : strokeColor);
   const primaryStrokeWidth = primary && primary.tool !== 'text'
     ? (primary.strokeWidth ?? strokeWidth)
     : strokeWidth;
@@ -1941,7 +2054,7 @@ export function App() {
       label: (
         <span className="swill-layer-label swill-layer-label-page">
           <PageIcon />
-          <span>Page</span>
+          <span>Background</span>
         </span>
       ),
     };
@@ -2363,6 +2476,8 @@ export function App() {
           applyFillToSelection={applyFillToSelection}
           applyStrokeToSelection={applyStrokeToSelection}
           applyStrokeWidthToSelection={applyStrokeWidthToSelection}
+          focusedAlpha={colors.focusedAlpha}
+          setFocusedAlpha={colors.setFocusedAlpha}
           rotationDeg={rotationDegSummary}
           applyRotationToSelection={applyRotationToSelection}
           layerItems={layerItems}
@@ -2464,6 +2579,9 @@ interface RightSidebarProps {
   applyFillToSelection: (color: string) => void;
   applyStrokeToSelection: (color: string) => void;
   applyStrokeWidthToSelection: (w: number) => void;
+  /** Alpha (0..1) of the active fill/stroke swatch — defaults panel. */
+  focusedAlpha: number;
+  setFocusedAlpha: (alpha01: number) => void;
   rotationDeg: { value: number; mixed: boolean } | null;
   applyRotationToSelection: (degrees: number) => void;
   layerItems: LayerListItem[];
@@ -2512,7 +2630,7 @@ function RightSidebar(p: RightSidebarProps) {
     >
       {p.pageSelected ? (
         (() => { const pp = panelProps('page'); return pp && (
-        <PropertiesPanel title="Page" {...pp}>
+        <PropertiesPanel title="Background" {...pp}>
           <PropertyRow label="Title">
             <PropertyTextInput value={p.docTitle} onChange={p.setDocTitle} />
           </PropertyRow>
@@ -2565,6 +2683,28 @@ function RightSidebar(p: RightSidebarProps) {
               </PropertyRow>
             </>
           )}
+          {/* Opacity slider edits the alpha of whichever swatch (fill / stroke)
+              is currently focused — same focus signal that drives stroke-width
+              editing. Routes through the same apply* functions as the color
+              picker so a single undo entry covers the edit. */}
+          <PropertyRow>
+            <PropertySliderInput
+              label="Opacity"
+              value={Math.round(getAlpha01(p.focusedSwatch === 'stroke' && p.hasStrokeProps ? p.primaryStroke : p.primaryFill) * 100)}
+              onChange={(pct) => {
+                const a = pct / 100;
+                if (p.focusedSwatch === 'stroke' && p.hasStrokeProps) {
+                  p.applyStrokeToSelection(withAlpha01(p.primaryStroke, a));
+                } else {
+                  p.applyFillToSelection(withAlpha01(p.primaryFill, a));
+                }
+              }}
+              min={0}
+              max={100}
+              step={1}
+              span={12}
+            />
+          </PropertyRow>
         </PropertiesPanel>
         ); })()
       ) : (
@@ -2584,20 +2724,46 @@ function RightSidebar(p: RightSidebarProps) {
           <PropertyRow>
             <PropertySliderInput label="Width" value={p.strokeWidth} onChange={p.setStrokeWidth} min={0} max={20} step={1} span={12} />
           </PropertyRow>
+          <PropertyRow>
+            <PropertySliderInput
+              label="Opacity"
+              value={Math.round(p.focusedAlpha * 100)}
+              onChange={(pct) => p.setFocusedAlpha(pct / 100)}
+              min={0}
+              max={100}
+              step={1}
+              span={12}
+            />
+          </PropertyRow>
         </PropertiesPanel>
         ); })()
       )}
 
       {(() => { const pp = panelProps('colors'); return pp && (
-      <PropertiesPanel title="Colors" {...pp}>
-        <PropertyRow>
-          <PropertySwatchGrid
+      <SidebarPanel title="Colors" {...pp} className="swill-colors-panel">
+        <PropertySwatchGrid
             value={
               primary
                 ? (p.focusedSwatch === 'stroke' ? p.primaryStroke : p.primaryFill)
                 : (p.focusedSwatch === 'stroke' ? p.strokeColor   : p.fillColor)
             }
             options={PALETTE}
+            columns={10}
+            leading={{
+              active: primary
+                ? (p.focusedSwatch === 'stroke' ? p.primaryStroke : p.primaryFill) === 'rgba(0,0,0,0)'
+                : (p.focusedSwatch === 'stroke' ? p.activeStroke.kind : p.activeFill.kind) === 'transparent',
+              title: 'Transparent',
+              onClick: () => {
+                if (primary) {
+                  if (p.focusedSwatch === 'stroke') p.applyStrokeToSelection('rgba(0,0,0,0)');
+                  else p.applyFillToSelection('rgba(0,0,0,0)');
+                } else {
+                  if (p.focusedSwatch === 'stroke') p.setActiveStroke({ kind: 'transparent' });
+                  else p.setActiveFill({ kind: 'transparent' });
+                }
+              },
+            }}
             onChange={(v) => {
               // Route to whichever swatch is focused — fill OR stroke. Was
               // unconditionally fill before, which made the swatch grid
@@ -2611,8 +2777,7 @@ function RightSidebar(p: RightSidebarProps) {
               }
             }}
           />
-        </PropertyRow>
-      </PropertiesPanel>
+      </SidebarPanel>
       ); })()}
 
       {(() => { const pp = panelProps('layers'); return pp && (

@@ -19,6 +19,7 @@ export function useNudgeTool<TPose>(
     () =>
       defineTool({
         id: 'nudge',
+        presentation: { label: 'Nudge' },
         initial: {
           keyDown: {
             ArrowUp: (_ctx, event) => {

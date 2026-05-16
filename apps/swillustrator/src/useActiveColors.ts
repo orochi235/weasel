@@ -18,7 +18,14 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useAction } from '@orochi235/weasel';
 import type { ActivePaint } from './ActiveSwatches';
-import { DEFAULT_FILL, DEFAULT_STROKE } from './ActiveSwatches';
+import {
+  DEFAULT_FILL,
+  DEFAULT_STROKE,
+  getAlpha01,
+  mergeAlphaFromPrev,
+  toHex8,
+  withAlpha01,
+} from './ActiveSwatches';
 
 export interface ActiveColorsApi {
   fill: ActivePaint;
@@ -32,10 +39,19 @@ export interface ActiveColorsApi {
   /** Move focus between the two swatches without touching colors. */
   setFocus: (which: 'fill' | 'stroke') => void;
   /** Convenience setters for the common solid-color path — wrap the
-   *  string in `{ kind: 'solid', color }` so call-sites don't have to. */
+   *  string in `{ kind: 'solid', color }` so call-sites don't have to.
+   *  6-char hex inputs are padded with the swatch's previous alpha so
+   *  that the native `<input type="color">` round-trip (which only emits
+   *  `#rrggbb`) preserves opacity. */
   setFillColor: (color: string) => void;
   setStrokeColor: (color: string) => void;
   setFocusedColor: (color: string) => void;
+  /** Alpha (0..1) of the focused swatch. Reads as 1 when the focused
+   *  swatch is not a solid color. */
+  focusedAlpha: number;
+  /** Set the alpha (0..1) of the focused swatch. No-op when the focused
+   *  swatch isn't a solid color. */
+  setFocusedAlpha: (alpha01: number) => void;
   /** Swap fill ↔ stroke colors (the X action). */
   swap: () => void;
   /** Swap which swatch is focused (Shift+X). Colors stay put. */
@@ -73,15 +89,38 @@ export function useActiveColors(opts: UseActiveColorsOptions = {}): ActiveColors
     else setStroke(p);
   }, []);
 
+  // Normalize incoming color strings to `#rrggbbaa`. 6-char inputs
+  // inherit the previous swatch's alpha (the native picker round-trip)
+  // — 8-char inputs win outright. Non-hex strings (palette names,
+  // `rgba(...)`) flow through unchanged.
   const setFillColor = useCallback((color: string) => {
-    setFill({ kind: 'solid', color });
+    const prev = fillRef.current.kind === 'solid' ? fillRef.current.color : '#ffffffff';
+    setFill({ kind: 'solid', color: color.length === 9 ? color : mergeAlphaFromPrev(color, prev) });
   }, []);
   const setStrokeColor = useCallback((color: string) => {
-    setStroke({ kind: 'solid', color });
+    const prev = strokeRef.current.kind === 'solid' ? strokeRef.current.color : '#000000ff';
+    setStroke({ kind: 'solid', color: color.length === 9 ? color : mergeAlphaFromPrev(color, prev) });
   }, []);
   const setFocusedColor = useCallback((color: string) => {
-    setFocused({ kind: 'solid', color });
-  }, [setFocused]);
+    const which = focusedRef.current;
+    if (which === 'fill') {
+      const prev = fillRef.current.kind === 'solid' ? fillRef.current.color : '#ffffffff';
+      setFill({ kind: 'solid', color: color.length === 9 ? color : mergeAlphaFromPrev(color, prev) });
+    } else {
+      const prev = strokeRef.current.kind === 'solid' ? strokeRef.current.color : '#000000ff';
+      setStroke({ kind: 'solid', color: color.length === 9 ? color : mergeAlphaFromPrev(color, prev) });
+    }
+  }, []);
+
+  const focusedPaint = focused === 'fill' ? fill : stroke;
+  const focusedAlpha = focusedPaint.kind === 'solid' ? getAlpha01(focusedPaint.color) : 1;
+  const setFocusedAlpha = useCallback((alpha01: number) => {
+    const which = focusedRef.current;
+    const cur = which === 'fill' ? fillRef.current : strokeRef.current;
+    if (cur.kind !== 'solid') return;
+    const next: ActivePaint = { kind: 'solid', color: withAlpha01(toHex8(cur.color), alpha01) };
+    if (which === 'fill') setFill(next); else setStroke(next);
+  }, []);
 
   const swap = useCallback(() => {
     const f = fillRef.current;
@@ -152,10 +191,12 @@ export function useActiveColors(opts: UseActiveColorsOptions = {}): ActiveColors
     setFill, setStroke, setFocused,
     setFocus,
     setFillColor, setStrokeColor, setFocusedColor,
+    focusedAlpha, setFocusedAlpha,
     swap, swapFocus, toggleFocusedNone, toggleFocusedTransparent, reset,
   }), [
     fill, stroke, focused,
     setFocused, setFillColor, setStrokeColor, setFocusedColor,
+    focusedAlpha, setFocusedAlpha,
     swap, swapFocus, toggleFocusedNone, toggleFocusedTransparent, reset,
   ]);
 }

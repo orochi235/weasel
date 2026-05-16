@@ -292,7 +292,12 @@ export function useUnnest<TNode extends { id: string }, TPose>(
         ops.push(createReparentOp({ id, fromParentId: grandparent, toParentId: null }));
       }
       if (obj) {
-        ops.push(createDeleteOp({ node: obj }));
+        // Index = -1 ("don't care"). Unnest's op sequence is reparent-
+        // then-delete; the inverse is insert-then-reparent, and the
+        // followup reparent restores the group to its original sibling
+        // slot. Threading a precise index here would conflict with the
+        // reparent and isn't needed for round-trip correctness.
+        ops.push(createDeleteOp({ node: obj, index: -1 }));
       }
       dissolved.push(id);
     }

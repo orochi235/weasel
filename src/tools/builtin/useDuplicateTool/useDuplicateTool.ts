@@ -18,6 +18,7 @@ export function useDuplicateTool<TPose>(
     () =>
       defineTool({
         id: 'duplicate',
+        presentation: { label: 'Duplicate' },
         initial: {
           keyDown: {
             d: (_ctx, event) => {

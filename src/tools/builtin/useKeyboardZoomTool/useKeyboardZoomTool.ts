@@ -41,6 +41,7 @@ export function useKeyboardZoomTool(opts: KeyboardZoomToolOpts = {}): Tool<null>
     () =>
       defineViewportTool<null>({
         id: 'keyboard-zoom',
+        presentation: { label: 'Zoom (keyboard)', group: 'view' },
         initial: {
           keyDown: {
             '=': (ctx, event) => stepZoom(ctx, event, keyStep),

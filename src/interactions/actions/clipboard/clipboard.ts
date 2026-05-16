@@ -19,6 +19,10 @@ export interface ClipboardAdapter<TNode extends { id: string }>
    *  omitted, `cut` falls back to a stub `{ id }` — undo will only restore the
    *  id, not the original object payload. */
   getNode?(id: string): TNode | undefined;
+  /** Original z-index of `id` in the host array. Required by `cut` so the
+   *  inverted re-insert restores paint order. Return `-1` if `id` isn't
+   *  found. */
+  getNodeIndex(id: string): number;
   /** Mutator wired by `DeleteOp.apply`. Required for `cut` to actually remove
    *  the originals. */
   removeNode(id: string): void;
@@ -80,10 +84,14 @@ export function useClipboard<TNode extends { id: string }>(
     // state, so it must run before the originals are removed.
     cb.copy();
     const a = adapterRef.current;
-    const ops: Op[] = ids.map((id) => {
+    const ops: Op[] = [];
+    for (const id of ids) {
+      const index = a.getNodeIndex(id);
+      if (index < 0) continue;
       const obj = a.getNode?.(id) ?? ({ id } as unknown as TNode);
-      return createDeleteOp({ node: obj });
-    });
+      ops.push(createDeleteOp({ node: obj, index }));
+    }
+    if (ops.length === 0) return [];
     ops.push(createSetSelectionOp({ from: ids, to: [] }));
     dispatchApplyBatch(a, ops, optsRef.current.cutLabel ?? 'Cut');
     return ids;

@@ -168,6 +168,7 @@ describe('Phase 2a integration', () => {
       const deleteTool = useDeleteTool({
         ...adapter,
         getSelection: () => [...sel.current],
+        getNodeIndex: (id) => rectsRef.current.findIndex((r) => r.id === id),
       });
 
       const selectTool = useSelectTool(adapter, {

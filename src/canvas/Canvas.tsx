@@ -332,6 +332,11 @@ export interface CanvasHelpers<TPose> {
    *  custom layers that need overlay-aware selection state (selection ids,
    *  bounds, multi-union AABB, modifier flags) read from this. */
   getChromeState(): ChromeState;
+  /** Active debug sink, when `<Canvas debug=...>` is enabled. Layers that
+   *  want to participate in `hitboxes`/`bounds`/etc. visualization can
+   *  call into this from their `draw` callback. Returns `null` when
+   *  debug is off — no-op for production renders. */
+  getDebug(): DebugSink | null;
 }
 
 const STANDARD_SLOT_SET = new Set<string>(STANDARD_SLOTS);
@@ -827,6 +832,16 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     {
       getSelection: () => selRef.current.get(),
       getNode: (id) => effectiveAdapter.getNode?.(id) ?? { id },
+      // Derive index from the adapter's node list. The Canvas-wired
+      // adapter may not expose a typed `getNodeIndex`; the linear scan
+      // matches what the rest of this file does for similar lookups.
+      getNodeIndex: (id) => {
+        const nodes = effectiveAdapter.getNodes?.() ?? [];
+        for (let i = 0; i < nodes.length; i++) {
+          if (nodes[i].id === id) return i;
+        }
+        return -1;
+      },
       setSelection: (ids) => selRef.current.set(ids),
       removeNode: adapterWithRemove.removeNode,
       applyOps: effectiveAdapter.applyOps?.bind(effectiveAdapter),
@@ -1008,6 +1023,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       return p == null ? null : geometry.getBounds(p);
     },
     getChromeState: () => chromeState,
+    getDebug: () => debugSink,
   };
   if (helpersRef) helpersRef.current = helpersForLayers;
 

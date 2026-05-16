@@ -12,6 +12,7 @@ function makeAdapter() {
   const adapter: DeleteAdapter = {
     getSelection: () => [asNodeId('a')],
     getNode: (id) => ({ id }),
+    getNodeIndex: () => 0,
     setSelection: () => {},
     applyOps: (ops, label) => { batches.push({ ops, label }); },
   };

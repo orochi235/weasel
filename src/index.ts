@@ -53,6 +53,7 @@
  */
 
 export * from './features/grid';
+export * from './features/viewports';
 export * from './core/viewport/viewTransform';
 export type { View } from './core/viewport/view';
 export { viewToTransform } from './core/viewport/view';

@@ -223,6 +223,10 @@ export function PropertySwatchGrid(props: {
   /** Number of columns in the swatch grid (default 6). Visual only —
    *  the grid itself always spans all 12 value columns of the panel. */
   columns?: number;
+  /** Optional leading swatch rendered before the color grid. Used for
+   *  the transparent paint entry, which can't be represented as a color
+   *  string and needs its own onClick. */
+  leading?: { active: boolean; onClick: () => void; title?: string };
 }) {
   const cols = props.columns ?? 6;
   return (
@@ -230,6 +234,14 @@ export function PropertySwatchGrid(props: {
       className={`${s.swatchGrid} ${s.span12}`}
       style={cols === 6 ? undefined : { gridTemplateColumns: `repeat(${cols}, 1fr)` }}
     >
+      {props.leading && (
+        <button
+          type="button"
+          className={`${s.swatch} ${s.swatchTransparent}${props.leading.active ? ` ${s.swatchActive}` : ''}`}
+          title={props.leading.title ?? 'Transparent'}
+          onClick={props.leading.onClick}
+        />
+      )}
       {props.options.map((o) => (
         <button
           key={o.value}

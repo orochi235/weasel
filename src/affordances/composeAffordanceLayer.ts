@@ -4,6 +4,7 @@ import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
+import type { DebugSink } from '../debug/types';
 import type {
   Affordance,
   AffordanceBinding,
@@ -44,14 +45,16 @@ export function composeAffordanceLayer(
     id,
     label,
     space: 'screen',
-    draw: (state, view, _dims): DrawCommand[] => {
+    draw: (data, view, _dims): DrawCommand[] => {
+      const state = asChromeState(data);
+      const debug = asDebugSink(data);
       const out: DrawCommand[] = [];
       const t = viewToTransform(view);
       for (const a of affordances) {
         for (const region of a.regions(state)) {
-          if (!region.paint) continue;
           const xf = transformOf(state, region.targetId);
-          paintRegion(region, xf, view, state, t, out);
+          if (region.paint) paintRegion(region, xf, view, state, t, out);
+          if (debug) recordRegionHitbox(debug, a.id, region, xf, view);
         }
         if (a.decorate) {
           for (const cmd of a.decorate(state, view)) out.push(cmd);
@@ -75,6 +78,62 @@ export function composeAffordanceLayer(
       return null;
     },
   };
+}
+
+// ─── Data unwrappers ────────────────────────────────────────────────────────
+
+// `draw` is called by Canvas with `CanvasHelpers` and by tests with a bare
+// `ChromeState`. Tests stay terse this way, and production gets the live
+// debug sink via the same channel.
+function asChromeState(data: unknown): ChromeState {
+  const maybe = data as { getChromeState?: () => ChromeState };
+  if (typeof maybe?.getChromeState === 'function') return maybe.getChromeState();
+  return data as ChromeState;
+}
+
+function asDebugSink(data: unknown): DebugSink | null {
+  const maybe = data as { getDebug?: () => DebugSink | null };
+  if (typeof maybe?.getDebug === 'function') return maybe.getDebug();
+  return null;
+}
+
+function recordRegionHitbox(
+  debug: DebugSink,
+  affordanceId: string,
+  region: AffordanceRegion,
+  xf: TargetTransform,
+  view: View,
+): void {
+  if (region.shape.kind === 'point') {
+    const w = localToWorld(xf, region.shape.x, region.shape.y);
+    const r = region.shape.hitRadiusPx / view.scale;
+    // Square hit (composeAffordanceLayer uses Manhattan-style abs<=r) but
+    // the kit's only HitShape primitive for a square hit centered on a
+    // point is rect, so emit a rotation-aware rect of side 2r centered on
+    // the world anchor. Keeps the visualization faithful to the actual
+    // hit-test region.
+    debug.recordHitbox(affordanceId, 'handle', {
+      kind: 'rect',
+      x: w.x - r,
+      y: w.y - r,
+      width: r * 2,
+      height: r * 2,
+      ...(xf.identity ? {} : { rotation: Math.atan2(xf.sin, xf.cos) }),
+    });
+    return;
+  }
+  // rect: axis-aligned in local frame; apply target rotation around the
+  // AABB pivot when present.
+  const r = region.shape;
+  const w = localToWorld(xf, r.x + r.width / 2, r.y + r.height / 2);
+  debug.recordHitbox(affordanceId, 'handle', {
+    kind: 'rect',
+    x: w.x - r.width / 2,
+    y: w.y - r.height / 2,
+    width: r.width,
+    height: r.height,
+    ...(xf.identity ? {} : { rotation: Math.atan2(xf.sin, xf.cos) }),
+  });
 }
 
 // ─── Transform helpers ──────────────────────────────────────────────────────

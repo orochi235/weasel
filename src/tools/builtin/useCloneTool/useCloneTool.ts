@@ -239,6 +239,7 @@ export function useCloneTool<T extends { id: string }, TPose = unknown>(
     return defineTool<CloneScratch>({
       id: optsRef.current.id ?? 'clone',
       cursor: optsRef.current.cursor ?? 'copy',
+      presentation: { label: 'Clone (Alt-drag)', group: 'select' },
       ...(hotkey ? { hotkey } : {}),
       initial: {
         overlay: () => overlay,

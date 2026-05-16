@@ -14,6 +14,7 @@ describe('defaultDeleteAction', () => {
     const a = defaultDeleteAction({
       getSelection: () => [],
       applyOps: vi.fn(),
+      getNodeIndex: () => 0,
     });
     expect(a.id).toBe('delete');
     expect(a.label).toBe('Delete');
@@ -25,6 +26,7 @@ describe('defaultDeleteAction', () => {
     const a = defaultDeleteAction({
       getSelection: () => ['a' as NodeId, 'b' as NodeId],
       applyOps,
+      getNodeIndex: () => 0,
     });
     a.run();
     expect(applyOps).toHaveBeenCalledOnce();
@@ -45,6 +47,7 @@ describe('defaultDeleteAction', () => {
       getSelection: () => ['a' as NodeId],
       getNode: () => fatNode,
       applyOps,
+      getNodeIndex: () => 0,
     });
     a.run();
     const [ops] = applyOps.mock.calls[0];
@@ -52,7 +55,7 @@ describe('defaultDeleteAction', () => {
     const inverse = ops[0].invert();
     const insertAdapter = { insertNode: vi.fn() };
     inverse.apply(insertAdapter);
-    expect(insertAdapter.insertNode).toHaveBeenCalledWith(fatNode);
+    expect(insertAdapter.insertNode).toHaveBeenCalledWith(fatNode, 0);
   });
 
   it('falls back to a {id} stub when getNode is omitted', () => {
@@ -60,13 +63,14 @@ describe('defaultDeleteAction', () => {
     const a = defaultDeleteAction({
       getSelection: () => ['a' as NodeId],
       applyOps,
+      getNodeIndex: () => 0,
     });
     a.run();
     const [ops] = applyOps.mock.calls[0];
     const inverse = ops[0].invert();
     const insertAdapter = { insertNode: vi.fn() };
     inverse.apply(insertAdapter);
-    expect(insertAdapter.insertNode).toHaveBeenCalledWith({ id: 'a' });
+    expect(insertAdapter.insertNode).toHaveBeenCalledWith({ id: 'a' }, 0);
   });
 
   it('filter narrows the deleted set', () => {
@@ -75,6 +79,7 @@ describe('defaultDeleteAction', () => {
       getSelection: () => ['a' as NodeId, 'b' as NodeId, 'c' as NodeId],
       filter: (ids) => ids.filter((id) => id !== 'b'),
       applyOps,
+      getNodeIndex: () => 0,
     });
     a.run();
     const [ops] = applyOps.mock.calls[0];
@@ -84,7 +89,7 @@ describe('defaultDeleteAction', () => {
 
   it('no-op when selection is empty', () => {
     const applyOps = vi.fn();
-    defaultDeleteAction({ getSelection: () => [], applyOps }).run();
+    defaultDeleteAction({ getSelection: () => [], applyOps, getNodeIndex: () => 0 }).run();
     expect(applyOps).not.toHaveBeenCalled();
   });
 
@@ -94,6 +99,7 @@ describe('defaultDeleteAction', () => {
       getSelection: () => ['a' as NodeId, 'b' as NodeId],
       filter: () => [],
       applyOps,
+      getNodeIndex: () => 0,
     }).run();
     expect(applyOps).not.toHaveBeenCalled();
   });
@@ -102,17 +108,20 @@ describe('defaultDeleteAction', () => {
     const empty = defaultDeleteAction({
       getSelection: () => [],
       applyOps: vi.fn(),
+      getNodeIndex: () => 0,
     });
     expect(empty.enabled?.()).toBe(ActionDisabledReason.SelectionRequired);
     const withSel = defaultDeleteAction({
       getSelection: () => ['a' as NodeId],
       applyOps: vi.fn(),
+      getNodeIndex: () => 0,
     });
     expect(withSel.enabled?.()).toBe(true);
     const filteredOut = defaultDeleteAction({
       getSelection: () => ['a' as NodeId],
       filter: () => [],
       applyOps: vi.fn(),
+      getNodeIndex: () => 0,
     });
     expect(filteredOut.enabled?.()).toBe(ActionDisabledReason.SelectionRequired);
   });

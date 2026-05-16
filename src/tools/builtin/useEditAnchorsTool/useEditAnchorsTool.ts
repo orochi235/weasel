@@ -84,6 +84,7 @@ export function useEditAnchorsTool<TNode extends { id: string }>(
       id: optsRef.current.id ?? 'edit-anchors',
       keybinding: optsRef.current.keybinding ?? { key: 'A' },
       cursor: optsRef.current.cursor ?? 'default',
+      presentation: { label: 'Edit anchors', group: 'edit' },
       initial: {
         overlay: () => overlay,
 

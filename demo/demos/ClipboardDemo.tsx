@@ -40,6 +40,7 @@ export function ClipboardDemo() {
     return {
       ...base,
       ...selection.adapterMethods,
+      getNodeIndex: (id: string) => itemsRef.current.findIndex((o) => o.id === id),
       snapshotSelection: (ids: string[]): ClipboardSnapshot => ({
         items: ids
           .map((id) => itemsRef.current.find((o) => o.id === id))

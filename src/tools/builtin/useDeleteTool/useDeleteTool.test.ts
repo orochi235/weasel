@@ -37,6 +37,7 @@ describe('useDeleteTool', () => {
     const adapter = {
       getSelection: () => ['a'],
       getNode: () => ({ id: 'a' }),
+      getNodeIndex: () => 0,
       applyOps: vi.fn(), // intercept ops so we don't need full adapter surface
     } as any;
     const { result } = renderHook(() => useDeleteTool(adapter));
@@ -51,6 +52,7 @@ describe('useDeleteTool', () => {
     const adapter = {
       getSelection: () => ['a', 'b'],
       getNode: (id: string) => ({ id }),
+      getNodeIndex: (id: string) => (id === 'a' ? 0 : 1),
       applyOps,
     } as any;
     const { result } = renderHook(() => useDeleteTool(adapter));

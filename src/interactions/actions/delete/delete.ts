@@ -15,6 +15,14 @@ export interface DeleteAdapter {
    *  to capture the object for invert/insert. If omitted, a minimal stub
    *  `{ id }` is used — undo will only restore the id, not the full object. */
   getNode?(id: NodeId): { id: string } | undefined | null;
+  /** Original z-index of `id` in the host array. The captured index
+   *  threads through to the inverted Insert op so undo of a multi-delete
+   *  batch restores paint order instead of reversing it. Read **before**
+   *  ops apply — once the node is removed, the index is gone.
+   *
+   *  Return `-1` if the id isn't found; the action layer treats that as
+   *  "skip" (the id can't be deleted anyway). */
+  getNodeIndex(id: NodeId): number;
   /** Optional: op-batch entry point. When omitted, ops apply directly. */
   applyOps?(ops: Op[], label: string): void;
   /** Optional: clear selection after delete. If omitted, the hook still
@@ -61,10 +69,14 @@ export function useDelete(
     const sel = a.getSelection();
     const ids = o.filter ? o.filter(sel) : sel;
     if (ids.length === 0) return [];
-    const ops: Op[] = ids.map((id) => {
+    const ops: Op[] = [];
+    for (const id of ids) {
+      const index = a.getNodeIndex(id);
+      if (index < 0) continue;
       const obj = a.getNode?.(id) ?? { id };
-      return createDeleteOp({ node: obj });
-    });
+      ops.push(createDeleteOp({ node: obj, index }));
+    }
+    if (ops.length === 0) return [];
     ops.push(createSetSelectionOp({ from: sel, to: [] }));
     dispatchApplyBatch(a, ops, o.label ?? 'Delete');
     return ids;

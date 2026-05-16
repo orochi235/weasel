@@ -89,6 +89,7 @@ export function LayerList(props: LayerListProps) {
             key={item.id}
             data-row-index={i}
             data-locked={item.locked ? 'true' : undefined}
+            data-selected={isSelected ? 'true' : undefined}
             className={cls}
             onPointerDown={(e) => handleRowPointerDown(item.id, i, e)}
           >

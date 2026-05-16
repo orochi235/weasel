@@ -29,6 +29,7 @@ function makeAdapter() {
     },
     getPasteOffset: () => ({ dx: 1, dy: 1 }),
     getNode: (id) => pool.find((p) => p.id === id),
+    getNodeIndex: (id) => pool.findIndex((p) => p.id === id),
     insertNode: (o) => { pool.push(o); },
     removeNode: (id) => {
       const i = pool.findIndex((p) => p.id === id);

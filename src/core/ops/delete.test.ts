@@ -18,14 +18,14 @@ describe('createDeleteOp', () => {
   it('applies as remove', () => {
     const obj: Obj = { id: 'a', value: 1 };
     const adapter = makeAdapter();
-    createDeleteOp<Obj>({ node: obj }).apply(adapter as any);
+    createDeleteOp<Obj>({ node: obj, index: 0 }).apply(adapter as any);
     expect(adapter.removes).toEqual(['a']);
   });
 
   it('inverts to an insert', () => {
     const obj: Obj = { id: 'a', value: 1 };
     const adapter = makeAdapter();
-    createDeleteOp<Obj>({ node: obj }).invert().apply(adapter as any);
+    createDeleteOp<Obj>({ node: obj, index: 0 }).invert().apply(adapter as any);
     expect(adapter.inserts).toEqual([obj]);
   });
 });

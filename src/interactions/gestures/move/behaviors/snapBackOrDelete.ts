@@ -30,13 +30,18 @@ export function snapBackOrDelete<TPose>(args: {
 
   return {
     onStart(ctx) {
-      // Snapshot the dragged objects at gesture start so delete can undo.
+      // Snapshot the dragged objects + their z-indexes at gesture start so
+      // delete can undo with paint order intact.
       const snapshots = new Map<string, { id: string }>();
+      const indexes = new Map<string, number>();
+      const nodes = ctx.adapter.getNodes();
       for (const id of ctx.draggedIds) {
         const obj = ctx.adapter.getNode(id) ?? { id };
         snapshots.set(id, obj);
+        indexes.set(id, nodes.findIndex((n) => n.id === id));
       }
       ctx.scratch['snapBackOrDelete.snapshots'] = snapshots;
+      ctx.scratch['snapBackOrDelete.indexes'] = indexes;
     },
 
     onEnd(ctx) {
@@ -54,8 +59,12 @@ export function snapBackOrDelete<TPose>(args: {
         const snapshots = ctx.scratch['snapBackOrDelete.snapshots'] as
           | Map<string, { id: string }>
           | undefined;
+        const indexes = ctx.scratch['snapBackOrDelete.indexes'] as
+          | Map<string, number>
+          | undefined;
         const obj = snapshots?.get(id) ?? { id };
-        const ops: Op[] = [createDeleteOp({ node: obj, label: deleteLabel })];
+        const index = indexes?.get(id) ?? -1;
+        const ops: Op[] = [createDeleteOp({ node: obj, label: deleteLabel, index })];
         return ops;
       }
       return;

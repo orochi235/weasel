@@ -17,8 +17,61 @@ export type ActivePaint =
   | { kind: 'none' }
   | { kind: 'transparent' };
 
-export const DEFAULT_FILL: ActivePaint = { kind: 'solid', color: '#ffffff' };
-export const DEFAULT_STROKE: ActivePaint = { kind: 'solid', color: '#000000' };
+export const DEFAULT_FILL: ActivePaint = { kind: 'solid', color: '#ffffffff' };
+export const DEFAULT_STROKE: ActivePaint = { kind: 'solid', color: '#000000ff' };
+
+// ----------------------------------------------------------------------
+// Alpha-aware hex helpers. All stored colors in swillustrator are
+// `#rrggbbaa`. `<input type="color">` only round-trips the 6-char form,
+// so call-sites pad the saved alpha back on when the user picks via the
+// native widget.
+// ----------------------------------------------------------------------
+
+/** Expand `#rgb` / `#rrggbb` to `#rrggbbaa`. Pads `ff` when no alpha
+ *  channel is present. Non-hex inputs (named colors, `rgba(...)`) are
+ *  returned unchanged — the kit's renderer accepts arbitrary CSS, and
+ *  we only normalize the hex shapes we actually persist. */
+export function toHex8(color: string): string {
+  if (!color.startsWith('#')) return color;
+  const hex = color.slice(1);
+  if (hex.length === 3) {
+    const r = hex[0], g = hex[1], b = hex[2];
+    return `#${r}${r}${g}${g}${b}${b}ff`;
+  }
+  if (hex.length === 6) return `#${hex}ff`;
+  if (hex.length === 8) return color.toLowerCase();
+  return color;
+}
+
+/** Slice an `#rrggbbaa` color to the 6-char form that
+ *  `<input type="color">` accepts as `value`. */
+export function toHex6(color: string): string {
+  return color.slice(0, 7);
+}
+
+/** Return the alpha channel of `color` as 0..1. Defaults to 1 when the
+ *  color is not in 8-char hex form. */
+export function getAlpha01(color: string): number {
+  if (!color.startsWith('#') || color.length !== 9) return 1;
+  const a = parseInt(color.slice(7, 9), 16);
+  return Number.isFinite(a) ? a / 255 : 1;
+}
+
+/** Replace the alpha channel of `color` with `alpha01` (clamped to 0..1).
+ *  Expands shorter hex forms first. Pass-through for non-hex inputs. */
+export function withAlpha01(color: string, alpha01: number): string {
+  const a = Math.max(0, Math.min(1, alpha01));
+  const aa = Math.round(a * 255).toString(16).padStart(2, '0');
+  const eight = toHex8(color);
+  if (!eight.startsWith('#') || eight.length !== 9) return color;
+  return `${eight.slice(0, 7)}${aa}`;
+}
+
+/** Merge a freshly-picked 6-char color (from `<input type="color">`)
+ *  with the previous color's alpha channel. */
+export function mergeAlphaFromPrev(picked: string, prev: string): string {
+  return withAlpha01(picked, getAlpha01(prev));
+}
 
 export interface ActiveSwatchesProps {
   fill: ActivePaint;
@@ -53,8 +106,10 @@ function paintClassSuffix(p: ActivePaint): string {
 export function ActiveSwatches(p: ActiveSwatchesProps) {
   const fillInputRef = useRef<HTMLInputElement>(null);
   const strokeInputRef = useRef<HTMLInputElement>(null);
-  const fillColor = p.fill.kind === 'solid' ? p.fill.color : '#ffffff';
-  const strokeColor = p.stroke.kind === 'solid' ? p.stroke.color : '#000000';
+  const fillColor = p.fill.kind === 'solid' ? toHex6(p.fill.color) : '#ffffff';
+  const strokeColor = p.stroke.kind === 'solid' ? toHex6(p.stroke.color) : '#000000';
+  const fillPrev = p.fill.kind === 'solid' ? p.fill.color : '#ffffffff';
+  const strokePrev = p.stroke.kind === 'solid' ? p.stroke.color : '#000000ff';
   const containerClass = `swill-active-swatches${p.compact ? ' swill-active-swatches--compact' : ''}`;
   // Shift-click toggles between solid/none. Plain click opens the color
   // picker. Right-click opens a small menu (none / pick color) — accessible
@@ -65,7 +120,7 @@ export function ActiveSwatches(p: ActiveSwatchesProps) {
     if (e.shiftKey) {
       const cur = which === 'fill' ? p.fill : p.stroke;
       const next: ActivePaint = cur.kind === 'none'
-        ? { kind: 'solid', color: which === 'fill' ? '#ffffff' : '#000000' }
+        ? { kind: 'solid', color: which === 'fill' ? '#ffffffff' : '#000000ff' }
         : { kind: 'none' };
       if (which === 'fill') p.onChangeFill(next);
       else p.onChangeStroke(next);
@@ -81,7 +136,7 @@ export function ActiveSwatches(p: ActiveSwatchesProps) {
   const toggleNone = (): void => {
     const cur = p.focused === 'fill' ? p.fill : p.stroke;
     const next: ActivePaint = cur.kind === 'none'
-      ? { kind: 'solid', color: p.focused === 'fill' ? '#ffffff' : '#000000' }
+      ? { kind: 'solid', color: p.focused === 'fill' ? '#ffffffff' : '#000000ff' }
       : { kind: 'none' };
     if (p.focused === 'fill') p.onChangeFill(next);
     else p.onChangeStroke(next);
@@ -100,7 +155,7 @@ export function ActiveSwatches(p: ActiveSwatchesProps) {
             ref={strokeInputRef}
             type="color"
             value={strokeColor}
-            onChange={(e) => p.onChangeStroke({ kind: 'solid', color: e.target.value })}
+            onChange={(e) => p.onChangeStroke({ kind: 'solid', color: mergeAlphaFromPrev(e.target.value, strokePrev) })}
             className="swill-swatch-input"
             aria-label="Stroke color"
           />
@@ -116,7 +171,7 @@ export function ActiveSwatches(p: ActiveSwatchesProps) {
             ref={fillInputRef}
             type="color"
             value={fillColor}
-            onChange={(e) => p.onChangeFill({ kind: 'solid', color: e.target.value })}
+            onChange={(e) => p.onChangeFill({ kind: 'solid', color: mergeAlphaFromPrev(e.target.value, fillPrev) })}
             className="swill-swatch-input"
             aria-label="Fill color"
           />

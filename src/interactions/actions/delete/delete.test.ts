@@ -11,6 +11,7 @@ function makeAdapter(initial: string[] = []) {
   const adapter: DeleteAdapter = {
     getSelection: () => selection,
     getNode: (id) => ({ id }),
+    getNodeIndex: (id) => selection.indexOf(id),
     setSelection: (ids) => { selection = [...ids]; },
     applyOps: (ops, label) => { batches.push({ ops, label }); },
   };

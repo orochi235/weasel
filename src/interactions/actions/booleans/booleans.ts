@@ -158,9 +158,12 @@ export function applyBooleanOp(
   for (const e of entries) {
     // Capture the full node so the delete's `invert()` (an insert) restores
     // every field on undo. Fallback to a `{ id }` stub matches the legacy
-    // behavior for adapters that haven't opted in yet.
+    // behavior for adapters that haven't opted in yet. Index comes from
+    // the same `getZOrder` already used for slot anchoring; -1 when the
+    // adapter doesn't expose order.
     const node = adapter.getNode?.(e.id) ?? { id: e.id };
-    ops.push(createDeleteOp({ node }));
+    const index = adapter.getZOrder?.(e.id)?.index ?? -1;
+    ops.push(createDeleteOp({ node, index }));
   }
   for (const n of newNodes) ops.push(createInsertOp({ node: n }));
   if (topAnchor && targetIndex !== undefined) {

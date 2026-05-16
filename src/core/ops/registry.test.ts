@@ -86,13 +86,13 @@ describe('op-factory registry — per-factory round trip', () => {
   it('delete', () => {
     const node = { id: 'r1', value: 3 };
     applyBoth(
-      () => createDeleteOp<Node>({ node }),
+      () => createDeleteOp<Node>({ node, index: 0 }),
       (ad) => ad.removeCalls,
     );
 
     // The inverse of delete is insert, with the captured node — that, too,
     // round-trips through the registry.
-    const op = createDeleteOp<Node>({ node });
+    const op = createDeleteOp<Node>({ node, index: 0 });
     const inverted = op.invert();
     expect(inverted.name).toBe('insert');
     const rebuiltInverted = rebuildOp(inverted.name!, inverted.args)!;

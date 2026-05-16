@@ -22,16 +22,10 @@ Demo: `demo/demos/BooleanOpsDemo.tsx` (`#boolean-ops`). Spec:
 **Open follow-ups (defer to Tier 3 pointer below).**
 
 ## WebGL transition — DONE 2026-05-09
-
-All 10 steps shipped between 2026-05-08 and 2026-05-09. Kit is GL-only at 0.2.0. Spec: `docs/superpowers/specs/2026-05-08-webgl-transition-plan-design.md`. Per-step done.md plans live under `docs/superpowers/plans/2026-05-09-webgl-step-*-done.md`.
-
-- [x] Step 1 — Solid-fill paths · [Step 2](docs/superpowers/plans/2026-05-09-webgl-step-2-done.md) Strokes · [Step 3](docs/superpowers/plans/2026-05-09-webgl-step-3-done.md) Text (MSDF) · [Step 4](docs/superpowers/plans/2026-05-09-webgl-step-4-done.md) Image / pattern / gradient · [Step 5](docs/superpowers/plans/2026-05-09-webgl-step-5-done.md) Per-vertex colors + color matrix · [Step 6](docs/superpowers/plans/2026-05-09-webgl-step-6-done.md) Experimental shader API · [Step 7](docs/superpowers/plans/2026-05-09-webgl-step-7-done.md) Port built-in layers · [Step 8](docs/superpowers/plans/2026-05-09-webgl-step-8-done.md) Canvas component port · [Step 9](docs/superpowers/plans/2026-05-09-webgl-step-9-done.md) Visual regression rig · [Step 10](docs/superpowers/plans/2026-05-09-webgl-step-10-done.md) Final swap
-
 ### Open follow-ups (originally deferred from the transition spec)
 
 - **WebGPU backend.** Separate future spec.
 - **Worker-thread offload** via `OffscreenCanvas` rendering in a worker — major perf win, significant API complexity. Defer until measured pain on the single-thread GL pipeline.
-- **SVG / PDF export.** Need a separate vector-export path; the 2D `ctx → SVG` shortcut is gone.
 - **Exotic composite operations** (xor, custom Porter-Duff) via framebuffer pingpong — deferred from v1 GL.
 - **WebGL1 fallback** — out of scope; WebGL2 only.
 - **Headless server-side rendering** (Node + headless-gl) — possible but not a v1 commitment.
@@ -63,18 +57,13 @@ All 10 steps shipped between 2026-05-08 and 2026-05-09. Kit is GL-only at 0.2.0.
 
 From `docs/specs/2026-05-03-weasel-den-design.md`:
 
-- **Versioned default keybindings.** Post-1.0, support `useStandardTools({ keybindings: 'v1' })` so default-keybinding changes don't break existing consumers. v1 locks them in.
 - **Additional packs.** `useDiagramPack` (connectors, snap-to-grid), `useWhiteboardPack` (sticky notes, freeform pen, text), `usePresentationPack` (frame tools, slide nav). Add per real consumer demand.
 - **Migrate `useSelectTool` / `useInsertTool` / `useTextTool` / `useUserPenTool` to weasel-den.** Defer until each is stable post-overlay-channel work and any further Tool API iteration. They're staying in core to keep being canonical examples for primitive design.
 - **Runtime plugin discovery.** Explicit non-goal in v1 — tools register statically via `useTools({ registry })`. Add when external authors want to ship tools without app rebuild.
 - **Public third-party extension SDK.** Deliberate exports happen during the split, but no marketing or stability guarantees yet.
 - **Per-workspace pre-commit narrowing.** Pre-commit hook should run only the workspace whose files changed (lint-staged dispatcher). Dispatcher script can land after the initial split.
 
-## Eric audit (post weasel-den or at next break)
-
-Eric (`~/src/eric`) is the side app weasel was extracted from; per project memory it remains the reference for prior-art demos and interaction patterns. Audit eric for parity with current weasel — verify it still builds against the published surface, check what divergent local copies of kit code (if any) need merging back. Trigger: user wants to implement container-layout strategies in eric next, and that's a candidate exercise for weasel's container/layout primitives.
-
-## Viewport follow-ups (Phase 2c deferrals)
+## Viewport follow-ups
 
 Surfaced as explicit out-of-scope items in `docs/specs/2026-05-03-tool-primitive-phase-2c-design.md:158-165` and `docs/specs/2026-05-03-viewport-and-hand-tool-design.md:133-143`. Phase 2c shipped pan+zoom+chrome-screen-space; these are the tail.
 

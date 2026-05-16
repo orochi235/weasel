@@ -25,6 +25,7 @@ import { LayoutDemo } from './demos/LayoutDemo';
 import { DebugOverlayDemo } from './demos/DebugOverlayDemo';
 import { EasingsDemo } from './demos/EasingsDemo';
 import { ViewportDemo } from './demos/ViewportDemo';
+import { ViewportLayerDemo } from './demos/ViewportLayerDemo';
 import { PerceptualColorSlidersDemo } from './demos/PerceptualColorSlidersDemo';
 import { GradientPlaygroundDemo } from './demos/GradientPlaygroundDemo';
 import { VertexColorsDemo } from './demos/VertexColorsDemo';
@@ -61,6 +62,7 @@ import LayoutDemoFull from './demos/LayoutDemo.tsx?raw';
 import DebugOverlayDemoFull from './demos/DebugOverlayDemo.tsx?raw';
 import EasingsDemoFull from './demos/EasingsDemo.tsx?raw';
 import ViewportDemoFull from './demos/ViewportDemo.tsx?raw';
+import ViewportLayerDemoFull from './demos/ViewportLayerDemo.tsx?raw';
 import PerceptualColorSlidersDemoFull from './demos/PerceptualColorSlidersDemo.tsx?raw';
 import GradientPlaygroundDemoFull from './demos/GradientPlaygroundDemo.tsx?raw';
 import VertexColorsDemoFull from './demos/VertexColorsDemo.tsx?raw';
@@ -407,6 +409,16 @@ export const DEMOS: DemoEntry[] = [
     Component: ViewportDemo,
     full: ViewportDemoFull,
     path: 'demo/demos/ViewportDemo.tsx',
+  },
+  {
+    id: 'viewport-layer',
+    title: 'Viewport layer (PiP · minimap)',
+    category: 'Viewport',
+    description: 'Prototype: createViewportLayer renders one or more source RenderLayers through an inner View, then translates and clips the result into a screen-space rect on the outer canvas. The same source can be lensed through any number of viewports — minimap (scaled-down overview, top-right) and PiP (zoomed-in slice, bottom-left) both reuse the same source layer here. Hit-testing into viewports is not yet wired — pointer events still target the outer view.',
+    hint: 'pan/zoom the outer canvas; the minimap and PiP redraw through their own static inner views',
+    Component: ViewportLayerDemo,
+    full: ViewportLayerDemoFull,
+    path: 'demo/demos/ViewportLayerDemo.tsx',
   },
 
   // ─── Rendering & paint ────────────────────────────────────────────────────
