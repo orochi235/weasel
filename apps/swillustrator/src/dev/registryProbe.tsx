@@ -77,7 +77,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
         kind: 'tool' as const,
         id: t.id,
         label: t.id,
-        cursor: t.cursor,
+        cursor: typeof t.cursor === 'string' ? t.cursor : undefined,
         contributesActionIds: Array.from(new Set(contributesActionIds)),
       };
     });
@@ -114,11 +114,16 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
   );
 }
 
-function formatBinding(b: { key: string | readonly string[]; mod?: boolean; alt?: boolean; shift?: boolean }): string {
+function formatBinding(b: {
+  key: string | readonly string[];
+  mod?: boolean;
+  alt?: boolean;
+  shift?: boolean | 'optional';
+}): string {
   const parts: string[] = [];
   if (b.mod) parts.push('Mod');
   if (b.alt) parts.push('Alt');
-  if (b.shift) parts.push('Shift');
+  if (b.shift === true) parts.push('Shift');
   parts.push(typeof b.key === 'string' ? b.key : b.key.join('/'));
   return parts.join('+');
 }
