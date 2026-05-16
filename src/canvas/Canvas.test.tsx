@@ -435,9 +435,10 @@ describe('<Canvas>', () => {
     });
 
     it('multi: clicking already-selected drags the whole set', () => {
-      // Seed selection with both ids (skipping the shift-click extend pathway,
-      // which would require modifiers to be plumbed through the tools
-      // dispatcher — see TODO note above).
+      // Seed selection with both ids via `initial=` rather than synthesizing
+      // a shift-click extend through the dispatcher; jsdom's PointerEvent
+      // ignores modifier flags from the dict-init shorthand, so a real
+      // shift-click would need extra Object.defineProperty plumbing.
       const moveIds: string[][] = [];
       const { container } = render(
         <Harness

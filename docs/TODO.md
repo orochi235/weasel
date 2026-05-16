@@ -307,10 +307,14 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
 
 (Extraction has happened — this is the public `weasel` repo. Re-evaluate before 0.1.0.)
 
-- TODO/FIXME scan inside `src/` — *not yet done.*
+- **TODO/FIXME scan inside `src/`.** *Done 2026-05-16.* Sweep across `src/`, `apps/`, `demo/`, `scripts/` surfaced 9 markers; 7 are legitimate doc references to live TODO.md entries (left as-is). Two genuine deferred items were promoted to TODO.md entries: HarfBuzz complex-script shaping and the `ShapeToolsDemo` visual-regression baseline. One stale comment in `src/canvas/Canvas.test.tsx` (referencing a "TODO note above" that didn't exist) was rewritten to describe the actual jsdom limitation it was working around.
 - JSDoc audit on the barrel (`src/index.ts`) — *not yet done.*
 - README pitch — *initial draft landed; the `docs/` long-form sweep was completed (all hook names and import paths match the post-extraction surface).*
 - **Demo coverage gaps for submodules** (from the 2026-05-10/11 demo audit). `@orochi235/weasel-ui` exports `CommandPalette` and `PropertiesPanel` but has no demo card for either (CommandPalette is used in the harness chrome itself — surfacing it as a demo would expose it). `@orochi235/weasel-hud` ships five widgets (`button`, `rect`, `text`, `image`, `label`) but only `button` is demo'd — a single "HUD widget gallery" demo card would cover the other four. Brainstorm scope per demo before writing them; this is net-new surface, not a port.
+
+- **Complex-script text shaping (HarfBuzz).** `src/features/text/atlas/GlyphLayout.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs (no joining required), wrong for Arabic / Devanagari / Thai / any script needing contextual shaping or reordering. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs. Defer until a real consumer hits a non-Latin language requirement.
+
+- **`ShapeToolsDemo` visual-regression baseline.** `demo/demos/ShapeToolsDemo.tsx` has been live since the shape-tools landing but its baseline PNG was never captured. Run `gh workflow run visual-update.yml` + `gh run download <id>` per CONTRIBUTING.md's "Updating baselines" path; commit the resulting `tests/visual/baselines/shape-tools.png`. Cheap; closes the last gap from the 2026-05-09 visual-regression CI rollout.
 
 - **`gen:font` script.** Was at `packages/weasel-gl/scripts/gen-font.ts`; deleted in Step 10. If we ever regenerate the Inter MSDF atlas, restore the script under `scripts/gen-font.ts` at repo root using `msdf-bmfont-xml`. The current atlas (`assets/fonts/inter/inter.{json,png}`) was regenerated cleanly so the script is not on the critical path.
 

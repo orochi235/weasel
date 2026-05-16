@@ -6,7 +6,8 @@
  * one GlyphQuad per rendered glyph. Unknown codepoints fall back to '?' (63);
  * if '?' is also absent, the glyph is skipped with a console.warn.
  *
- * TODO(harfbuzz): complex script shaping deferred — requires HarfBuzz WASM.
+ * Complex script shaping (Arabic, Devanagari, Thai, …) is deferred — see
+ * `docs/TODO.md` → "Complex-script text shaping (HarfBuzz)".
  */
 
 import type { BmFont, BmFontChar } from './FontAtlas';

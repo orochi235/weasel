@@ -1,5 +1,3 @@
-// TODO(visual-regression): baseline PNG deferred — run `npm run test:visual` manually
-// after the dev server is up to capture the initial snapshot.
 import { useState } from 'react';
 import {
   SceneCanvas,
