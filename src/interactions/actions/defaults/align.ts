@@ -53,6 +53,7 @@ export function defaultAlignActions<TPose>(deps: AlignDeps<TPose>): Action[] {
   return EDGES.map((edge): Action => ({
     id: ID_FOR[edge],
     label: LABEL_FOR[edge],
+    group: 'align',
     run: () => {
       const sel = deps.getSelection();
       if (sel.length < 2) return;

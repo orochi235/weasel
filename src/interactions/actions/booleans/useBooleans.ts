@@ -13,8 +13,10 @@
  * No-ops are silent in production; in dev, `subtract` with < 2 selected
  * paths emits a `console.warn`.
  */
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { applyBooleanOp, type BooleansAdapter, type BooleanOp } from './booleans';
+import { useActionsRegistry } from '../registry';
+import { defaultBooleanActions } from '../defaults/booleans';
 
 export interface UseBooleansReturn {
   union(): void;
@@ -24,12 +26,42 @@ export interface UseBooleansReturn {
   divide(): void;
 }
 
+export interface UseBooleansOptions {
+  /** When true (default), auto-register the five Pathfinder actions
+   *  (`pathfinder.{union,intersect,subtract,exclude,divide}`) with the
+   *  ambient `ActionsProvider`. No-op when no provider is in scope. */
+  enableActions?: boolean;
+}
+
 const isDev = typeof import.meta !== 'undefined'
   && (import.meta as { env?: { DEV?: boolean } }).env?.DEV;
 
-export function useBooleans(adapter: BooleansAdapter): UseBooleansReturn {
+export function useBooleans(
+  adapter: BooleansAdapter,
+  options: UseBooleansOptions = {},
+): UseBooleansReturn {
   const adapterRef = useRef(adapter);
   adapterRef.current = adapter;
+
+  const reg = useActionsRegistry();
+  const enableActions = options.enableActions ?? true;
+  useEffect(() => {
+    if (!reg || !enableActions) return;
+    const actions = defaultBooleanActions({
+      getSelection: () => adapterRef.current.getSelection(),
+      getWorldPath: (id) => adapterRef.current.getWorldPath(id),
+      compareZ: (a, b) => adapterRef.current.compareZ(a, b),
+      createPathNode: (path, op) => adapterRef.current.createPathNode(path, op),
+      getNode: (id) => adapterRef.current.getNode?.(id),
+      getZOrder: (id) => adapterRef.current.getZOrder?.(id),
+      applyOps: (ops, label) => adapterRef.current.applyOps?.(ops, label),
+      setSelection: (ids) => adapterRef.current.setSelection?.(ids),
+      insertNode: (node) => adapterRef.current.insertNode?.(node),
+      removeNode: (id) => adapterRef.current.removeNode?.(id),
+    });
+    const unregs = actions.map((act) => reg.register(act));
+    return () => { for (const u of unregs) u(); };
+  }, [reg, enableActions]);
 
   const run = useCallback((op: BooleanOp) => {
     const result = applyBooleanOp(adapterRef.current, op);

@@ -87,6 +87,7 @@ export function defaultDistributeActions<TPose>(deps: DistributeDeps<TPose>): Ac
   return AXES.map((axis): Action => ({
     id: ID_FOR[axis],
     label: LABEL_FOR[axis],
+    group: 'distribute',
     run: () => {
       const ops = buildOps(axis, deps.mode ?? 'centers', deps);
       if (ops.length > 0) deps.applyOps(ops, 'Distribute');

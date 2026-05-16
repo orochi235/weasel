@@ -82,7 +82,7 @@ export type {
 export {
   defaultSelectAllAction, defaultEscapeAction, defaultDuplicateAction,
   defaultNudgeActions, defaultReorderActions, defaultFlipActions,
-  defaultAlignActions, defaultDistributeActions,
+  defaultAlignActions, defaultDistributeActions, defaultBooleanActions,
   defaultDeleteAction, defaultGroupAction, defaultUngroupAction,
 } from './interactions/actions/defaults';
 export type {

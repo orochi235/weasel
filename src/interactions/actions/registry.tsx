@@ -25,6 +25,20 @@ export interface Action {
   id: string;
   label: string;
   defaultBinding?: KeyBinding;
+  /** Inline-SVG icon for palette / toolbar surfaces. Mirrors
+   *  `ToolPresentation.icon` so a generic `<ActionBar>` can render from
+   *  action metadata the same way `<ToolPalette>` renders from tool
+   *  metadata. May be a static `ReactNode` or a function (rare; useful
+   *  for state-aware icons like a "lock" toggle). */
+  icon?: ReactNode | (() => ReactNode);
+  /** Grouping key for palette/menu surfaces. Free-form string; the kit
+   *  ships defaults for `'align'` (six edges/centers), `'distribute'`
+   *  (two axes), and recommends `'pathfinder'` for boolean ops. */
+  group?: string;
+  /** Display override for the keyboard shortcut. When omitted, palette
+   *  surfaces derive a label from `defaultBinding` via their own
+   *  formatter. */
+  shortcut?: string;
   run: () => void;
   /**
    * @experimental
