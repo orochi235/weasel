@@ -103,6 +103,24 @@ describe('useInsert — move + end', () => {
     expect(inserts[0]).toMatchObject({ x: 0, y: 0, width: 4, height: 3 });
   });
 
+  it('two consecutive drags both commit (regression: InsertDemo every-other-drag dropped)', () => {
+    const { adapter, batches, inserts } = makeAdapter();
+    const { result } = renderHook(() => useInsert<Obj, { x: number; y: number }>(adapter, {}));
+    const mods = { alt: false, shift: false, meta: false, ctrl: false };
+    // Drag 1.
+    act(() => { result.current.start(0, 0, mods); });
+    act(() => { result.current.move(4, 3, mods); });
+    act(() => { result.current.end(); });
+    // Drag 2.
+    act(() => { result.current.start(10, 10, mods); });
+    act(() => { result.current.move(15, 14, mods); });
+    act(() => { result.current.end(); });
+    expect(batches).toHaveLength(2);
+    expect(inserts).toHaveLength(2);
+    expect(inserts[0]).toMatchObject({ x: 0, y: 0, width: 4, height: 3 });
+    expect(inserts[1]).toMatchObject({ x: 10, y: 10, width: 5, height: 4 });
+  });
+
   it('inverted drag bounds use min(start, current) and abs(delta)', () => {
     const { adapter, inserts } = makeAdapter();
     const { result } = renderHook(() => useInsert<Obj, { x: number; y: number }>(adapter, {}));

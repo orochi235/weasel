@@ -104,6 +104,42 @@ describe('dispatcher: threshold-gated drag', () => {
     expect(onDragStart).not.toHaveBeenCalled();
   });
 
+  it('two consecutive drag cycles each fire onStart/onEnd (InsertDemo regression)', () => {
+    const onStart = vi.fn();
+    const onMove = vi.fn();
+    const onEnd = vi.fn();
+    const tool = defineTool({
+      id: 't',
+      initial: {
+        drag: () => {
+          onStart();
+          return begin({
+            scratch: null,
+            onMove: () => { onMove(); return claim(); },
+            onRelease: () => { onEnd(); return claim(); },
+          });
+        },
+      },
+    });
+    const d = makeDispatcher({ hotkey: null, active: tool, ambient: [] });
+
+    // Drag 1.
+    d.onPointerDown(pointerEvent('pointerdown', { clientX: 0, clientY: 0 }));
+    d.onPointerMove(pointerEvent('pointermove', { clientX: 10, clientY: 0 })); // threshold
+    d.onPointerMove(pointerEvent('pointermove', { clientX: 20, clientY: 0 }));
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 20, clientY: 0 }));
+
+    // Drag 2.
+    d.onPointerDown(pointerEvent('pointerdown', { clientX: 50, clientY: 50 }));
+    d.onPointerMove(pointerEvent('pointermove', { clientX: 60, clientY: 50 })); // threshold
+    d.onPointerMove(pointerEvent('pointermove', { clientX: 70, clientY: 50 }));
+    d.onPointerUp(pointerEvent('pointerup', { clientX: 70, clientY: 50 }));
+
+    expect(onStart).toHaveBeenCalledTimes(2);
+    expect(onMove).toHaveBeenCalledTimes(2);
+    expect(onEnd).toHaveBeenCalledTimes(2);
+  });
+
   it('routes post-threshold movement to drag.onStart/onMove/onEnd', () => {
     const onClick = vi.fn();
     const onStart = vi.fn();

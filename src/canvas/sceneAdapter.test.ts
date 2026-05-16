@@ -12,6 +12,31 @@ function makeScene() {
 }
 
 describe('sceneToAdapter', () => {
+  it('commitInsert returns a node spec without mutating the scene (InsertDemo regression)', () => {
+    // useInsert.onEnd calls adapter.commitInsert AND dispatches an InsertOp
+    // whose apply() calls adapter.insertNode. If commitInsert itself mutates
+    // the scene, the InsertOp's insertNode collides on id, the throw skips
+    // dispatcher.endGesture(), and the next pointerdown is dropped because
+    // inFlight is still set. The contract: commitInsert is a pure factory
+    // — only the InsertOp performs the actual scene.add.
+    const scene = makeScene();
+    const adapter = sceneToAdapter(scene, {
+      commitInsert: (b) => ({
+        pose: { x: b.x, y: b.y, width: b.width, height: b.height },
+        data: { label: 'rect-0' },
+        id: 'fixture-0',
+      }),
+      insertLayer: 'bg',
+    });
+    const node = adapter.commitInsert!({ x: 1, y: 2, width: 10, height: 20 });
+    expect(scene.nodes.has('fixture-0' as never)).toBe(false);
+    expect(node).toMatchObject({ kind: 'leaf', id: 'fixture-0', layer: 'bg' });
+    expect(node!.pose).toEqual({ x: 1, y: 2, width: 10, height: 20 });
+    // The InsertOp path is what actually adds — exercise it.
+    adapter.insertNode!(node!);
+    expect(scene.nodes.has('fixture-0' as never)).toBe(true);
+  });
+
   it('getNodes returns nodes in render order, hidden layers filtered', () => {
     const scene = makeScene();
     const a = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'a' } });

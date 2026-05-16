@@ -211,6 +211,14 @@ function walkClipAware<TData, TLayer extends string, TPose>(
   return results;
 }
 
+// Fallback id generator for `commitInsert` when the consumer factory omits
+// `created.id`. Mirrors `scene.ts`'s `defaultGenerateId` shape; module-scoped
+// counter keeps ids unique across adapters in a session.
+let adapterFallbackIdCounter = 0;
+function adapterFallbackId(): string {
+  return `n${(adapterFallbackIdCounter++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export function sceneToAdapter<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   options: SceneToAdapterOptions<TData, TLayer, TPose> = {},
@@ -397,20 +405,28 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     // `options.commitInsert` is. The full insertNode/removeNode mutators
     // above are always present so kit-side InsertOp / DeleteOp round-trip
     // through scene.add / scene.remove regardless.
+    //
+    // Contract: this is a pure factory — it constructs a Node spec but does
+    // NOT touch the scene. `useInsert`'s onEnd dispatches an `InsertOp`
+    // whose apply() calls `adapter.insertNode` → `scene.add`, which is the
+    // sole insertion path. Calling `scene.add` here too would double-insert,
+    // and the second add throws on id collision (silently dropping the
+    // gesture's pointer-up cleanup and breaking the next drag).
     ...(options.commitInsert
       ? {
           commitInsert: (bounds: { x: number; y: number; width: number; height: number }) => {
             const created = options.commitInsert!(bounds);
             if (!created) return null;
             const layer = (options.insertLayer ?? ('default' as TLayer));
-            const id = scene.add({
+            const id = asNodeId(created.id ?? adapterFallbackId());
+            return {
               kind: 'leaf',
+              id,
               layer,
               pose: created.pose,
               data: created.data,
-              ...(created.id ? { id: asNodeId(created.id) } : {}),
-            });
-            return scene.get(id) ?? null;
+              parent: null,
+            } as Node<TData, TLayer, TPose>;
           },
         }
       : {}),
