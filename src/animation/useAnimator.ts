@@ -114,6 +114,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       clearTimer: (h) =>
         (optsRef.current.clearTimer ??
           ((x) => clearTimeout(x as ReturnType<typeof setTimeout>)))(h),
+      now,
     };
 
     // Per-id one-shot completion listeners. Used by stagger to detect when

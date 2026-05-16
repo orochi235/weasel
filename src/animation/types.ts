@@ -180,7 +180,9 @@ export interface Animator {
    *
    * The composite handle's `cancel` cancels pending timers AND in-flight
    * children. `pause` / `resume` / `setTimeScale` propagate to in-flight
-   * children only (pending timers are not pausable in v1).
+   * children; `pause`/`resume` also freeze and thaw pending per-item timers
+   * (the remaining time before each pending fire is preserved across the
+   * pause).
    *
    * The stagger is registered with the animator under a supervisor entry so
    * `animator.cancel(handle)`, `animator.cancelKey(opts.cancelKey)`, and

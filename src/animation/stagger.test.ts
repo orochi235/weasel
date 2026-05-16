@@ -155,6 +155,25 @@ describe('animator.stagger', () => {
     expect(animator.isActive()).toBe(false);
   });
 
+  it('pause freezes pending stagger timers; resume continues from frozen point', () => {
+    const { animator, advance } = mountAnimator();
+    const fires: string[] = [];
+    const handle = animator.stagger(['a', 'b', 'c'], 100, (item) => {
+      fires.push(item);
+      return animator.tween({ from: 0, to: 1, ms: 10, easing: (t) => t, onTick: () => {} });
+    });
+    advance(50);
+    handle.pause();
+    advance(1000);
+    // 'a' fired at t=0 before pause; 'b' and 'c' should be frozen.
+    expect(fires).toEqual(['a']);
+    handle.resume();
+    advance(50);
+    expect(fires).toEqual(['a', 'b']);
+    advance(100);
+    expect(fires).toEqual(['a', 'b', 'c']);
+  });
+
   it('cancel cancels pending timers and in-flight children', () => {
     const { animator, advance } = mountAnimator();
     const starts: string[] = [];
