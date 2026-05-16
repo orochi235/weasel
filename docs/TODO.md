@@ -348,8 +348,7 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
 
 ## UX recordings
 
-- **Tune the amount of data captured.** *Partial — 2026-05-16.* `recorder.ts` now defaults to a `gesture-only` profile that drops idle pointermove between gestures (the dominant fraction in typical sessions); pointermove records strip `button`/`buttons`/`pointerType`/`pointerId` (don't change mid-gesture, replay reconstitutes from the matching down) and modifier booleans are omitted when all-false. `Recorder.start({ profile })` accepts `'gesture-only' | 'full' | 'events-only'`. Replay path unchanged (`?? defaults` already tolerated missing fields). Remaining levers, all deferred:
-  - **Throttle pointermove**: cap per-frame rate (60Hz or 30Hz) for fixed bound on high-refresh trackpads. Lossy but visually invisible on replay.
+- **Tune the amount of data captured.** *Partial — 2026-05-16.* `recorder.ts` now defaults to a `gesture-only` profile that drops idle pointermove between gestures (the dominant fraction in typical sessions); pointermove records strip `button`/`buttons`/`pointerType`/`pointerId` (don't change mid-gesture, replay reconstitutes from the matching down) and modifier booleans are omitted when all-false. Pointermove also throttled to ~60Hz by default (`throttleMs: 16`); `throttleMs: 0` disables. `Recorder.start({ profile, throttleMs })` accepts the two knobs. Replay path unchanged (`?? defaults` already tolerated missing fields). Remaining levers, all deferred:
   - **Modifier bitmask**: collapse `{altKey, ctrlKey, metaKey, shiftKey}` into a single 0–15 number. Tiny per-event saving; mostly a cleanliness win.
   - **Compression of the final blob**: gzip the JSON before download/upload; replay handles decompression. 5–10× on typical recordings.
   - **UI surface for profile selection**: the F9 toggle defaults to `gesture-only`; expose a small dropdown in the recorder chrome so debugging-quality recordings can opt into `'full'`.

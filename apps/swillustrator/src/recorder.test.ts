@@ -119,7 +119,7 @@ describe('createRecorder', () => {
 
   it("profile='full' captures every pointermove regardless of gesture state", () => {
     const rec = createRecorder({ canvas: () => canvas });
-    rec.start({ profile: 'full' });
+    rec.start({ profile: 'full', throttleMs: 0 });
     canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 1, clientY: 1 }));
     canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1 }));
     canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 2, clientY: 2 }));
@@ -173,6 +173,54 @@ describe('createRecorder', () => {
     expect(Object.prototype.hasOwnProperty.call(e, 'ctrlKey')).toBe(false);
     expect(Object.prototype.hasOwnProperty.call(e, 'metaKey')).toBe(false);
     expect(Object.prototype.hasOwnProperty.call(e, 'shiftKey')).toBe(false);
+  });
+
+  it('throttles pointermove at the default ~60Hz rate', async () => {
+    const rec = createRecorder({ canvas: () => canvas });
+    rec.start({ profile: 'full' });  // 'full' so idle moves aren't dropped for a different reason
+    // First move always lands (post-pointerdown bypass and otherwise).
+    canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1 }));
+    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 1, clientY: 1 }));
+    // A burst of moves with no real-time delay — only the first lands;
+    // the rest are within the 16ms window.
+    for (let i = 0; i < 10; i++) {
+      canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 2 + i, clientY: 2 }));
+    }
+    // Wait past the throttle window; the next move should land again.
+    await new Promise((r) => setTimeout(r, 25));
+    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 99, clientY: 99 }));
+    const out = rec.stop();
+    const moves = out.events.filter((e) => e.type === 'pointermove');
+    expect(moves.length).toBe(2);
+    expect(moves[0].clientX).toBe(1);
+    expect(moves[1].clientX).toBe(99);
+  });
+
+  it('throttleMs: 0 disables throttling', () => {
+    const rec = createRecorder({ canvas: () => canvas });
+    rec.start({ profile: 'full', throttleMs: 0 });
+    for (let i = 0; i < 10; i++) {
+      canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: i, clientY: 0 }));
+    }
+    const out = rec.stop();
+    expect(out.events.filter((e) => e.type === 'pointermove')).toHaveLength(10);
+  });
+
+  it('throttle resets per gesture (first move of every new down lands)', async () => {
+    const rec = createRecorder({ canvas: () => canvas });
+    rec.start();  // default gesture-only + throttle 16
+    // Gesture 1
+    canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1 }));
+    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 10, clientY: 10 }));
+    canvas.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 }));
+    // Gesture 2 — immediately following, no real-time gap. The first
+    // pointermove must still land because pointerdown resets lastMoveT.
+    canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 2 }));
+    canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 20, clientY: 20 }));
+    canvas.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 2 }));
+    const out = rec.stop();
+    const moves = out.events.filter((e) => e.type === 'pointermove');
+    expect(moves.map((m) => m.clientX)).toEqual([10, 20]);
   });
 
   it('modifier fields are included only when truthy', () => {

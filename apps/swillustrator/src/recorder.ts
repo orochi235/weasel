@@ -77,6 +77,12 @@ export interface Recorder {
     snapshotScene?: () => SceneSnapshot | null;
     /** Sampling strategy; default `'gesture-only'`. See `RecordingProfile`. */
     profile?: RecordingProfile;
+    /** Minimum spacing in ms between captured pointermove events. Default
+     *  16 (≈60Hz). Set to `0` to disable throttling and record every
+     *  move (useful for high-fidelity gesture replay or debugging). The
+     *  first pointermove inside a gesture is always captured regardless
+     *  of throttle so threshold-crossing info isn't lost. */
+    throttleMs?: number;
   }): void;
   stop(): Recording;
   isRecording(): boolean;
@@ -92,6 +98,10 @@ export function createRecorder(opts: { canvas: () => HTMLCanvasElement | null })
   let scene: SceneSnapshot | null = null;
   let startedAt = '';
   let profile: RecordingProfile = 'gesture-only';
+  let throttleMs = 16;
+  /** `t` (ms since start) of the most recently captured pointermove.
+   *  `-Infinity` lets the first move of a new gesture through unconditionally. */
+  let lastMoveT = -Infinity;
   let viewport = { w: 0, h: 0 };
   /** Pointer IDs with an active pointerdown that hasn't seen its matching
    *  up/cancel yet. Used to gate pointermove capture in `gesture-only`. */
@@ -132,13 +142,16 @@ export function createRecorder(opts: { canvas: () => HTMLCanvasElement | null })
     if (type === 'pointermove') {
       if (profile === 'events-only') return;
       if (profile === 'gesture-only' && activeDowns.size === 0) return;
+      const t = now();
+      if (throttleMs > 0 && t - lastMoveT < throttleMs) return;
+      lastMoveT = t;
       // Pointermove inside a gesture: `button`/`buttons`/`pointerType`/
       // `pointerId` don't change from the matching pointerdown, so we omit
       // them. Replay reconstitutes via the down event (`?? defaults` in
       // `buildPointerEvent`).
       events.push({
         type,
-        t: now(),
+        t,
         clientX: pe.clientX,
         clientY: pe.clientY,
         ...modifiers(pe),
@@ -146,7 +159,13 @@ export function createRecorder(opts: { canvas: () => HTMLCanvasElement | null })
       });
       return;
     }
-    if (type === 'pointerdown') activeDowns.add(pe.pointerId);
+    if (type === 'pointerdown') {
+      activeDowns.add(pe.pointerId);
+      // Let the first pointermove of every new gesture through, even if it
+      // fires immediately after this pointerdown — threshold-crossing info
+      // is the most replay-relevant move.
+      lastMoveT = -Infinity;
+    }
     if (type === 'pointerup' || type === 'pointercancel') activeDowns.delete(pe.pointerId);
     events.push({
       type,
@@ -199,7 +218,9 @@ export function createRecorder(opts: { canvas: () => HTMLCanvasElement | null })
       startTime = performance.now();
       events = [];
       activeDowns.clear();
+      lastMoveT = -Infinity;
       profile = startOpts?.profile ?? 'gesture-only';
+      throttleMs = startOpts?.throttleMs ?? 16;
       startedAt = new Date().toISOString();
       viewport = {
         w: typeof window !== 'undefined' ? window.innerWidth : 0,
