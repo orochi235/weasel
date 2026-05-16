@@ -4,6 +4,7 @@ import {
   collectBundles,
   collectOpFactories,
   collectPublicExports,
+  collectShapeKinds,
 } from './registryData';
 
 describe('registryData static collectors', () => {
@@ -38,5 +39,16 @@ describe('registryData static collectors', () => {
   it('collectPublicExports returns a non-empty list', () => {
     const exports = collectPublicExports();
     expect(exports.length).toBeGreaterThan(20);
+  });
+
+  it('collectShapeKinds returns the built-in shape kind ids', () => {
+    const kinds = collectShapeKinds();
+    const ids = kinds.map((k) => k.id);
+    expect(ids).toContain('rect');
+    expect(ids).toContain('ellipse');
+    expect(ids).toContain('polygon');
+    for (const k of kinds) {
+      expect(k.kind).toBe('shapeKind');
+    }
   });
 });

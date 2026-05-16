@@ -76,14 +76,19 @@ export interface TreeCategoryNode {
 
 // ── Static collectors ──────────────────────────────────────────────────────
 
+function isLikelyComponent(value: unknown): boolean {
+  return typeof value === 'function'
+    || (typeof value === 'object' && value !== null && '$$typeof' in value);
+}
+
 export function collectIcons(): readonly IconEntry[] {
   const out: IconEntry[] = [];
   for (const [id, Component] of Object.entries(ActionIcons)) {
-    if (typeof Component !== 'function') continue;
+    if (!isLikelyComponent(Component)) continue;
     out.push({ kind: 'icon', id, label: id, source: 'action', Component: Component as ComponentType });
   }
   for (const [id, Component] of Object.entries(KindIcons)) {
-    if (typeof Component !== 'function') continue;
+    if (!isLikelyComponent(Component)) continue;
     out.push({ kind: 'icon', id, label: id, source: 'kind', Component: Component as ComponentType });
   }
   return out;
