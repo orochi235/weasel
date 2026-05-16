@@ -282,85 +282,50 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
     };
 
     const spring = <T,>(o: SpringOptions<T>): AnimationHandle => {
-      const id = nextId.current++;
       const isNumeric = typeof o.from === 'number' && typeof o.to === 'number';
       if (!isNumeric && (!o.add || !o.subtract || !o.scale || !o.magnitude)) {
         throw new Error('spring: add/subtract/scale/magnitude are required for non-numeric T');
       }
-      const add = o.add ?? ((a: T, b: T) => ((a as unknown as number) + (b as unknown as number)) as unknown as T);
-      const subtract = o.subtract ?? ((a: T, b: T) => ((a as unknown as number) - (b as unknown as number)) as unknown as T);
-      const scale = o.scale ?? ((v: T, k: number) => ((v as unknown as number) * k) as unknown as T);
-      const magnitude = o.magnitude ?? ((v: T) => Math.abs(v as unknown as number));
-      const { stiffness, damping, mass } = resolveSpringConstants(o);
-      const restThreshold = o.restThreshold ?? 0.01;
-
-      let value = o.from;
-      let velocity: T = (o.velocity ?? scale(subtract(o.to, o.from), 0)) as T;
-      let lastTime: number | null = null;
-
-      return register({
-        id,
+      return physics<T>({
+        from: o.from,
+        to: o.to,
+        velocity: o.velocity,
+        preset: o.preset,
+        stiffness: o.stiffness,
+        damping: o.damping,
+        mass: o.mass,
+        restThreshold: o.restThreshold,
+        add: o.add,
+        subtract: o.subtract,
+        scale: o.scale,
+        magnitude: o.magnitude,
+        onTick: o.onTick,
+        onDone: o.onDone,
         cancelKey: o.cancelKey,
-        tick(nowMs) {
-          if (tripwire()) return true;
-          if (lastTime == null) {
-            lastTime = nowMs;
-            o.onTick(value);
-            return false;
-          }
-          const dt = Math.min(0.064, (nowMs - lastTime) / 1000); // clamp big jumps
-          lastTime = nowMs;
-          // Semi-implicit Euler integration of: a = (-k(x - to) - c*v) / m
-          const displacement = subtract(value, o.to);
-          const springForce = scale(displacement, -stiffness);
-          const dampingForce = scale(velocity, -damping);
-          const accel = scale(add(springForce, dampingForce), 1 / mass);
-          velocity = add(velocity, scale(accel, dt));
-          value = add(value, scale(velocity, dt));
-          o.onTick(value);
-          if (magnitude(velocity) < restThreshold && magnitude(subtract(value, o.to)) < restThreshold) {
-            o.onTick(o.to);
-            o.onDone?.();
-            return true;
-          }
-          return false;
-        },
       });
     };
-    const decay = <T,>(o: DecayOptions<T>): AnimationHandle => {
-      const id = nextId.current++;
-      const friction = o.friction ?? 0.95;
-      const threshold = o.threshold ?? 0.5;
-      let value = o.from;
-      let velocity = o.velocity;
-      let lastTime: number | null = null;
 
-      return register({
-        id,
+    const decay = <T,>(o: DecayOptions<T>): AnimationHandle => {
+      const friction = o.friction ?? 0.95;
+      // Per-second friction v(t) = v0 * friction^t corresponds to
+      // m*dv/dt = -c*v with c = -ln(friction), m = 1, k = 0.
+      const damping = -Math.log(friction);
+      return physics<T>({
+        from: o.from,
+        to: null,
+        velocity: o.velocity,
+        stiffness: 0,
+        damping,
+        mass: 1,
+        restThreshold: o.threshold ?? 0.5,
+        add: o.add,
+        // DecayOptions doesn't carry subtract; derive from add+scale.
+        subtract: (a, b) => o.add(a, o.scale(b, -1)),
+        scale: o.scale,
+        magnitude: o.magnitude,
+        onTick: o.onTick,
+        onDone: o.onDone,
         cancelKey: o.cancelKey,
-        tick(nowMs) {
-          if (tripwire()) return true;
-          if (lastTime == null) {
-            lastTime = nowMs;
-            if (o.magnitude(velocity) < threshold) {
-              o.onDone?.();
-              return true;
-            }
-            o.onTick(value);
-            return false;
-          }
-          const dt = Math.min(0.064, (nowMs - lastTime) / 1000);
-          lastTime = nowMs;
-          // Per-second friction: v *= friction^dt
-          velocity = o.scale(velocity, Math.pow(friction, dt));
-          value = o.add(value, o.scale(velocity, dt));
-          o.onTick(value);
-          if (o.magnitude(velocity) < threshold) {
-            o.onDone?.();
-            return true;
-          }
-          return false;
-        },
       });
     };
 
