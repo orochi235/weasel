@@ -20,6 +20,7 @@ import { BooleanOpsDemo } from './demos/BooleanOpsDemo';
 import { SceneDemo } from './demos/SceneDemo';
 import { PanDemo } from './demos/PanDemo';
 import { ZoomDemo } from './demos/ZoomDemo';
+import { PerAxisZoomDemo } from './demos/PerAxisZoomDemo';
 import { AnimationDemo } from './demos/AnimationDemo';
 import { LayoutDemo } from './demos/LayoutDemo';
 import { DebugOverlayDemo } from './demos/DebugOverlayDemo';
@@ -58,6 +59,7 @@ import BooleanOpsDemoFull from './demos/BooleanOpsDemo.tsx?raw';
 import SceneDemoFull from './demos/SceneDemo.tsx?raw';
 import PanDemoFull from './demos/PanDemo.tsx?raw';
 import ZoomDemoFull from './demos/ZoomDemo.tsx?raw';
+import PerAxisZoomDemoFull from './demos/PerAxisZoomDemo.tsx?raw';
 import AnimationDemoFull from './demos/AnimationDemo.tsx?raw';
 import LayoutDemoFull from './demos/LayoutDemo.tsx?raw';
 import DebugOverlayDemoFull from './demos/DebugOverlayDemo.tsx?raw';
@@ -401,6 +403,16 @@ export const DEMOS: DemoEntry[] = [
     Component: ZoomDemo,
     full: ZoomDemoFull,
     path: 'demo/demos/ZoomDemo.tsx',
+  },
+  {
+    id: 'per-axis-zoom',
+    title: 'Per-axis zoom',
+    category: 'Viewport',
+    description: 'View.scale is {x, y} — the sliders drive each axis independently. The mode dropdown toggles fitViewToBounds between contain (uniform min), fill (uniform max — bounds overflow one axis), and stretch (per-axis exact fit, non-uniform scale). Wheel still zooms uniformly via useWheelZoomTool default axis: both.',
+    hint: 'Drag the scale.x / scale.y sliders · pick a mode and click Fit · Reset returns home.',
+    Component: PerAxisZoomDemo,
+    full: PerAxisZoomDemoFull,
+    path: 'demo/demos/PerAxisZoomDemo.tsx',
   },
   {
     id: 'viewport',
