@@ -1,6 +1,15 @@
+import type { ReactNode } from 'react';
 import { applyBooleanOp, type BooleanOp, type BooleansAdapter } from '../booleans/booleans';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
+import {
+  UnionIcon,
+  IntersectIcon,
+  SubtractIcon,
+  ExcludeIcon,
+  DivideIcon,
+  CropIcon,
+} from './icons/booleanIcons';
 
 const OPS: readonly BooleanOp[] = ['union', 'intersect', 'subtract', 'exclude', 'divide', 'crop'];
 
@@ -22,6 +31,15 @@ const LABEL_FOR: Record<BooleanOp, string> = {
   crop: 'Crop',
 };
 
+const ICON_FOR: Record<BooleanOp, ReactNode> = {
+  union: <UnionIcon />,
+  intersect: <IntersectIcon />,
+  subtract: <SubtractIcon />,
+  exclude: <ExcludeIcon />,
+  divide: <DivideIcon />,
+  crop: <CropIcon />,
+};
+
 /** @experimental
  *
  * Five Pathfinder actions registered with stable ids and labels but no
@@ -37,6 +55,7 @@ export function defaultBooleanActions(adapter: BooleansAdapter): Action[] {
   return OPS.map((op): Action => ({
     id: ID_FOR[op],
     label: LABEL_FOR[op],
+    icon: ICON_FOR[op],
     group: 'pathfinder',
     run: () => {
       applyBooleanOp(adapter, op);

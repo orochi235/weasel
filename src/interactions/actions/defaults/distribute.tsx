@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
@@ -6,6 +7,7 @@ import { translatePoseViaDescriptor } from '../align/align';
 import type { DistributeAxis, DistributeMode } from '../distribute/distribute';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
+import { DistributeHorizontalIcon, DistributeVerticalIcon } from './icons/distributeIcons';
 
 /** @experimental */
 export interface DistributeDeps<TPose> {
@@ -21,6 +23,10 @@ export interface DistributeDeps<TPose> {
 const AXES: readonly DistributeAxis[] = ['x', 'y'];
 const ID_FOR: Record<DistributeAxis, string> = { x: 'distribute.horizontal', y: 'distribute.vertical' };
 const LABEL_FOR: Record<DistributeAxis, string> = { x: 'Distribute Horizontally', y: 'Distribute Vertically' };
+const ICON_FOR: Record<DistributeAxis, ReactNode> = {
+  x: <DistributeHorizontalIcon />,
+  y: <DistributeVerticalIcon />,
+};
 
 function buildOps<TPose>(
   axis: DistributeAxis,
@@ -87,6 +93,7 @@ export function defaultDistributeActions<TPose>(deps: DistributeDeps<TPose>): Ac
   return AXES.map((axis): Action => ({
     id: ID_FOR[axis],
     label: LABEL_FOR[axis],
+    icon: ICON_FOR[axis],
     group: 'distribute',
     run: () => {
       const ops = buildOps(axis, deps.mode ?? 'centers', deps);

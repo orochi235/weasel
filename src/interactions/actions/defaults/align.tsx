@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
@@ -6,6 +7,14 @@ import type { ResizePose } from '../../gestures/types';
 import { alignDeltaFor, translatePoseViaDescriptor, type AlignEdge } from '../align/align';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
+import {
+  AlignLeftIcon,
+  AlignRightIcon,
+  AlignTopIcon,
+  AlignBottomIcon,
+  AlignCenterXIcon,
+  AlignCenterYIcon,
+} from './icons/alignIcons';
 
 /** @experimental */
 export interface AlignDeps<TPose> {
@@ -32,6 +41,14 @@ const LABEL_FOR: Record<AlignEdge, string> = {
   'center-x': 'Align Centers Horizontally',
   'center-y': 'Align Centers Vertically',
 };
+const ICON_FOR: Record<AlignEdge, ReactNode> = {
+  'left': <AlignLeftIcon />,
+  'right': <AlignRightIcon />,
+  'top': <AlignTopIcon />,
+  'bottom': <AlignBottomIcon />,
+  'center-x': <AlignCenterXIcon />,
+  'center-y': <AlignCenterYIcon />,
+};
 
 function unionBounds(rs: ResizePose[]): ResizePose {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -53,6 +70,7 @@ export function defaultAlignActions<TPose>(deps: AlignDeps<TPose>): Action[] {
   return EDGES.map((edge): Action => ({
     id: ID_FOR[edge],
     label: LABEL_FOR[edge],
+    icon: ICON_FOR[edge],
     group: 'align',
     run: () => {
       const sel = deps.getSelection();
