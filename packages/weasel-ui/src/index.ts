@@ -1,6 +1,7 @@
 // `@orochi235/weasel-ui` ships generic UI primitives — building blocks the
 // kit's apps compose. Specialized panels (LayerList, ToolPalette, etc.)
 // live in their consuming app (today: `apps/swillustrator/src/ui/`).
+export * from './components/ActionBar';
 export * from './components/Badge';
 export * from './components/DataGrid';
 export * from './components/RangePicker';
