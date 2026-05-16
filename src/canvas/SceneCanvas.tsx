@@ -266,8 +266,23 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     /** Custom tool registry. When supplied, the internal default
      *  `useSelectTool` is bypassed and this `tools` value is forwarded to
      *  Canvas as-is. Consumers needing extra tools (insert, etc.) take this
-     *  path. */
+     *  path.
+     *
+     *  Keybindings for a consumer-supplied `tools` registry are auto-wired
+     *  by `<SceneCanvas>` (via an internal `useKeybindings(tools)` call) so
+     *  declared `keybinding` / `hotkey` entries on each tool work without
+     *  any extra plumbing. To opt out — e.g. to call `useKeybindings`
+     *  yourself with custom options — pass `enableKeybindings={false}`. */
     tools?: ToolsApi;
+
+    /**
+     * Auto-wire `useKeybindings` against the active tool registry. Default
+     * `true`. When `false`, SceneCanvas still mounts its tools but does not
+     * subscribe to keybinding / hotkey events for them — leaving the
+     * consumer free to call `useKeybindings(tools, { ... })` themselves
+     * (e.g. with `disable`, `overrides`, or `defaultTool`).
+     */
+    enableKeybindings?: boolean;
 
     /**
      * Called once after SceneCanvas constructs (or receives) its
@@ -391,6 +406,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selection: selectionProp,
     selectionOptions,
     tools: toolsProp,
+    enableKeybindings = true,
     onToolsCreated,
     toolBundle,
     defaultTools,
@@ -561,7 +577,24 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ...(mergedAmbient.length ? { ambient: mergedAmbient } : {}),
   });
 
-  useKeybindings(internalTools, { disable: !!toolsProp });
+  // Auto-wire keybindings against whichever registry is live.
+  //
+  // Both calls fire unconditionally (rules of hooks); the inactive one is
+  // silenced via the hook's own `disable` option:
+  //   - internal registry: disabled whenever the consumer passed `tools=`.
+  //   - consumer registry: disabled when `tools=` was omitted (nothing to
+  //     bind) or when the consumer opted out via `enableKeybindings={false}`.
+  //
+  // The `enableKeybindings` opt-out also silences the internal wiring, so
+  // a consumer relying entirely on the internal tools can take over with
+  // their own `useKeybindings(...)` call. The fallback `useTools` passed
+  // to the second call when `toolsProp` is absent is a render-stable empty
+  // stand-in just to keep the call site valid; it never actually fires
+  // because `disable` is true on that branch.
+  useKeybindings(internalTools, { disable: !!toolsProp || !enableKeybindings });
+  useKeybindings(toolsProp ?? internalTools, {
+    disable: !toolsProp || !enableKeybindings,
+  });
 
   const tools = toolsProp ?? internalTools;
 

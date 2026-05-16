@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render, fireEvent, createEvent } from '@testing-library/react';
+import { render, fireEvent, createEvent, act } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { asNodeId } from 'core/scene/types';
+import { useTools } from 'tools/useTools';
+import { defineTool } from 'tools/routing/defineTool';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
 beforeAll(() => {
@@ -114,5 +116,91 @@ describe('SceneCanvas defaultTools selector', () => {
     // affordance is absent — the click falls through to body-hit move.
     pointerDownAt(canvas, 0, 0);
     expect(resizeStart).not.toHaveBeenCalled();
+  });
+});
+
+describe('SceneCanvas consumer-tools keybindings auto-wiring', () => {
+  function pressKey(key: string): void {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+  }
+
+  it('auto-wires keybindings when a consumer-supplied `tools` prop is passed', () => {
+    const select = defineTool({ id: 'select', keybinding: { key: 'v' }, initial: {} });
+    const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' }, initial: {} });
+
+    let captured: ReturnType<typeof useTools> | null = null;
+    function Harness() {
+      const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
+      const tools = useTools({ active: 'select', registry: { select, pen } });
+      captured = tools;
+      return (
+        <SceneCanvas
+          scene={scene}
+          width={100} height={100}
+          layers={{}}
+          tools={tools}
+        />
+      );
+    }
+    render(<Harness />);
+    expect(captured!.active).toBe('select');
+    act(() => pressKey('p'));
+    expect(captured!.active).toBe('pen');
+    act(() => pressKey('v'));
+    expect(captured!.active).toBe('select');
+  });
+
+  it('`enableKeybindings={false}` suppresses the auto-wiring for consumer tools', () => {
+    const select = defineTool({ id: 'select', keybinding: { key: 'v' }, initial: {} });
+    const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' }, initial: {} });
+
+    let captured: ReturnType<typeof useTools> | null = null;
+    function Harness() {
+      const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
+      const tools = useTools({ active: 'select', registry: { select, pen } });
+      captured = tools;
+      return (
+        <SceneCanvas
+          scene={scene}
+          width={100} height={100}
+          layers={{}}
+          tools={tools}
+          enableKeybindings={false}
+        />
+      );
+    }
+    render(<Harness />);
+    expect(captured!.active).toBe('select');
+    // No `useKeybindings` is wired anywhere; the press is ignored.
+    act(() => pressKey('p'));
+    expect(captured!.active).toBe('select');
+  });
+
+  it('`enableKeybindings={false}` also suppresses the internal-tools auto-wiring', () => {
+    // With the default (internal) tools, the `select` tool's declared
+    // `v` binding would normally bring `tools.active` back to `'select'`
+    // after a hand-switch. Capturing the internal tools via
+    // `onToolsCreated` lets us assert opting out really silences both
+    // wirings, not just the consumer branch.
+    let captured: ReturnType<typeof useTools> | null = null;
+    function Harness() {
+      const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
+      return (
+        <SceneCanvas
+          scene={scene}
+          width={100} height={100}
+          layers={{}}
+          viewport={{ pinchZoom: true }}
+          enableKeybindings={false}
+          onToolsCreated={(t) => { captured = t; }}
+        />
+      );
+    }
+    render(<Harness />);
+    // `hand` is in the registry (viewport on) and declares `keybinding: H`.
+    // With auto-wire disabled, pressing H must not switch.
+    expect(captured!.active).toBe('select');
+    act(() => pressKey('h'));
+    expect(captured!.active).toBe('select');
   });
 });
