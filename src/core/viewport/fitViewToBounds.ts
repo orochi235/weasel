@@ -53,9 +53,10 @@ const SYSTEM_MIN_SCALE = 0.1;
  * configured min/max.
  *
  * View semantics: `view.x` / `view.y` is the world point currently drawn at
- * the canvas top-left, and `view.scale` is pixels per world unit (see
- * `view.ts`). So:
- *   screenX = (worldX - view.x) * view.scale
+ * the canvas top-left, and `view.scale.{x,y}` is pixels per world unit on
+ * each axis (see `view.ts`). So:
+ *   screenX = (worldX - view.x) * view.scale.x
+ *   screenY = (worldY - view.y) * view.scale.y
  *
  * Empty / zero-sized bounds or viewports cannot be fit — in that case this
  * returns `currentView` unchanged and logs a `console.warn`. Callers that

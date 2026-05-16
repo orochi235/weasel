@@ -41,9 +41,10 @@ export type ZoomBound = number | { x: number; y: number };
  * the sign and multiplies by per-axis scale.
  */
 export function viewToTransform(view: View): ViewTransform {
+  // `+ 0` coerces `-0 → 0` without swallowing NaN (matches viewToMat3).
   return {
-    panX: -view.x * view.scale.x || 0,
-    panY: -view.y * view.scale.y || 0,
+    panX: -view.x * view.scale.x + 0,
+    panY: -view.y * view.scale.y + 0,
     zoom: { x: view.scale.x, y: view.scale.y },
   };
 }
