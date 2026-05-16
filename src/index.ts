@@ -52,8 +52,11 @@
  *   import { snapToGrid } from '@orochi235/weasel/insert';
  */
 
+// ─── Features: grids, multi-viewport composition ────────────────────────────
 export * from './features/grid';
 export * from './features/viewports';
+
+// ─── Pointer input: stylus / coalesced events / pressure ────────────────────
 export {
   getStylusData,
   forEachCoalesced,
@@ -70,6 +73,8 @@ export type {
   PointerStylusState,
   UsePointerStylusOptions,
 } from './core/pointer/usePointerStylus';
+
+// ─── Viewport: ViewTransform + helpers ──────────────────────────────────────
 export * from './core/viewport/viewTransform';
 export type { View } from './core/viewport/view';
 export { viewToTransform } from './core/viewport/view';
@@ -84,6 +89,7 @@ export { clampView } from './core/viewport/clampView';
 export type { ClampBounds, CanvasSize } from './core/viewport/clampView';
 export * from './core/viewport/useZoom';
 export * from './core/viewport/useAutoCenter';
+// ─── Keybindings: low-level key → action wiring ─────────────────────────────
 export { useKeybinding, isEditableTarget, matchesKeyBinding } from './interactions/actions/useKeybinding';
 export type { KeyBinding } from './interactions/actions/useKeybinding';
 
@@ -112,6 +118,8 @@ export type {
   StandardActionDefaults,
 } from './interactions/actions/useStandardActions';
 export { resolveActions } from './interactions/actions/resolveActions';
+
+// ─── Viewport: wheel / velocity / decay / tween / pinch / animation ─────────
 export * from './core/viewport/wheelHandler';
 export { clientToCanvas } from './core/viewport/clientToCanvas';
 export { useVelocityTracker } from './core/viewport/useVelocityTracker';
@@ -120,7 +128,11 @@ export type { DecayLoopConfig, PanBounds } from './core/viewport/useDecayLoop';
 export { useViewTween } from './core/viewport/useViewTween';
 export { usePinchGesture } from './core/viewport/usePinchGesture';
 export { useViewAnimation } from './core/viewport/useViewAnimation';
+
+// ─── Pointer gestures: low-level capture wrapper ────────────────────────────
 export { usePointerGestures } from './interactions/gestures/usePointerGestures';
+
+// ─── Tools: dispatcher, registry, declarative routing, built-ins ────────────
 export * from './tools';
 export { usePinchZoomTool, type PinchZoomToolOpts } from './tools/builtin/usePinchZoomTool';
 // New declarative routing surface — experimental.
@@ -131,6 +143,8 @@ export type {
   UsePointerGesturesOptions,
   PointerGestureCallbackCtx,
 } from './interactions/gestures/usePointerGestures';
+
+// ─── Canvas + SceneCanvas: top-level renderers ──────────────────────────────
 export { Canvas } from './canvas/Canvas';
 export { SceneCanvas, DEFAULT_HANDLE_SIZE, defaultDrawOne } from './canvas/SceneCanvas';
 export type { SceneCanvasProps } from './canvas/SceneCanvas';
@@ -155,6 +169,8 @@ export type {
   GridSlotConfig,
 } from './canvas/Canvas';
 export type { CanvasExtensionApi } from './canvas/canvasExtension';
+
+// ─── Selection state hook ───────────────────────────────────────────────────
 export { useSelection } from './core/selection/useSelection';
 export type {
   SelectionApi,
@@ -176,6 +192,8 @@ export {
   usePointerContext,
 } from './features/pointer/PointerContext';
 export type { PointerContextValue, PointerWorldPos } from './features/pointer/PointerContext';
+
+// ─── Canvas focus & visibility gating ───────────────────────────────────────
 export {
   useCanvasFocus,
   gateLayer,
@@ -185,9 +203,13 @@ export type {
   CanvasFocusReturn,
   GateLayerOptions,
 } from './features/focus';
+
+// ─── Layer primitives: RenderLayer, ordered children ────────────────────────
 export * from './core/layers/render';
 export { createChildrenLayer } from './features/groups/children';
 export type { CreateChildrenLayerOpts } from './features/groups/children';
+
+// ─── Units: pluggable physical-unit system ──────────────────────────────────
 export {
   resolveUnit,
   formatUnit,
@@ -196,6 +218,8 @@ export {
   PIXELS,
 } from './core/units';
 export type { Unit, UnitSystem, UnitValue } from './core/units';
+
+// ─── Affordances: cross-tool hittable chrome (resize/rotate handles) ────────
 export {
   composeAffordanceLayer,
   createCornerResizeAffordance,
@@ -210,6 +234,8 @@ export {
   type RotationScratch,
 } from './affordances';
 export type { ChromeState } from './core/selection/chromeState';
+
+// ─── Selection overlay: outlines, handles, composer ─────────────────────────
 export {
   composeSelectionPose,
   createSelectionOutlineLayer,
@@ -222,9 +248,15 @@ export type {
   SelectionHandlesLayerOpts,
   SelectionOverlayLayerOpts,
 } from './features/selection/overlay';
+
+// ─── Text rendering / editing ───────────────────────────────────────────────
 export * from './features/text';
+
+// ─── Tile / pattern fills ───────────────────────────────────────────────────
 export { createTilePattern } from './features/patterns';
 export type { TilePatternOpts } from './features/patterns';
+
+// ─── Paint types: FillStyle, Stroke, gradients ──────────────────────────────
 export { alignedStrokeRect } from './core/paint-types';
 export type {
   FillStyle,
@@ -233,7 +265,11 @@ export type {
   StrokeAlign,
   Region,
 } from './core/paint-types';
+
+// ─── Op model: every scene mutation routes through here ─────────────────────
 export * from './core/ops';
+
+// ─── Group/parent composition: world pose, rebase, ordered groups ───────────
 export {
   composeWorldPose,
   composeRectPose,
@@ -248,6 +284,8 @@ export type {
   NestedHitOpts,
   NestedHitTester,
 } from './features/groups/nestedHit';
+
+// ─── Paths: data, builders, hit-tests, boolean ops, pen preview ─────────────
 export {
   PATH_M,
   PATH_L,
@@ -303,18 +341,27 @@ export type {
   CreatePenPreviewLayerOptions,
   PenPreviewStyle,
 } from './features/paths';
+// ─── Utility: 45° axis constraint ───────────────────────────────────────────
 export { constrainTo45 } from './util/constrainTo45';
+
+// ─── Groups: lasso-style group records, resolve / expand / unionBounds ──────
 export type { Group, GroupAdapter } from './features/groups/types';
 export { resolveToOutermostGroup, expandToLeaves } from './features/groups/resolve';
 export { unionBounds } from './features/groups/unionBounds';
 export type { RectPose } from './features/groups/unionBounds';
 export { withGroupOrdering } from './features/groups/orderedGroups';
+
+// ─── Undo history: createHistory + entry shape ──────────────────────────────
 export * from './core/history';
+
+// ─── Adapters: contract types + reference arrayAdapter ──────────────────────
 export * from './core/adapters/types';
 export { arrayAdapter } from './core/adapters/arrayAdapter';
 export type { ArrayAdapter, ArrayAdapterConfig } from './core/adapters/arrayAdapter';
 export { useArrayAdapter } from './core/adapters/useArrayAdapter';
 export type { UseArrayAdapterOptions } from './core/adapters/useArrayAdapter';
+
+// ─── Scene primitive (kit-owned tree of leaves and containers) ──────────────
 export { createScene, sceneFromJSON, useScene, asNodeId } from './core/scene';
 export type {
   AddNodeSpec,
@@ -333,6 +380,7 @@ export type {
   UserLayerRecord,
   UseSceneOptions,
 } from './core/scene';
+// ─── Gesture types (ModifierState, GestureContext, per-gesture interfaces) ──
 export type {
   ModifierState,
   PointerState,
@@ -375,6 +423,8 @@ export type {
   PointSnapBehavior,
 } from './interactions/gestures/types';
 export type { ClipboardSnapshot } from './interactions/actions/clipboard/types';
+
+// ─── Snap strategies: grid + guide-line, with pluggable origin projection ───
 export {
   snap,
   gridSnapStrategy,
@@ -389,6 +439,8 @@ export {
 export type { GuideSnapOptions } from './interactions/gestures/shared/strategies/guides';
 export { useGuides, createGuidesLayer } from './features/guides';
 export type { Guide, UseGuidesReturn, GuidesLayerOpts } from './features/guides';
+
+// ─── Gesture hooks: move / resize / rotate / insert / area-select / etc. ────
 export { useMove } from './interactions/gestures/move';
 export type {
   UseMoveOptions,
@@ -485,6 +537,7 @@ export {
   selectFromLasso,
   type SelectFromLassoOptions,
 } from './interactions/gestures/lasso-select/behaviors/selectFromLasso';
+// ─── Action hooks: selection-driven keyboard / button actions ───────────────
 export {
   useClipboardOps,
   useClipboard,
@@ -555,6 +608,8 @@ export type { UseCloneOptions, UseCloneReturn } from './interactions/gestures/cl
 export type { ClonePose, CloneLayer, CloneBehavior } from './interactions/gestures/types';
 // snapToGrid / snapToContainer / snapBackOrDelete are NOT re-exported at top level —
 // import from './move' to disambiguate from resize/insert siblings.
+
+// ─── Reorder: ops + selection-driven hook ───────────────────────────────────
 export {
   createReorderOp,
   createMoveToIndexOp,
@@ -568,6 +623,7 @@ export {
   type UseReorderOptions,
   type UseReorderReturn,
 } from './interactions/actions/reorder';
+// ─── Group / nest action hooks ──────────────────────────────────────────────
 export {
   useGroup,
   useUngroup,
@@ -586,12 +642,15 @@ export type {
   UseUnnestOptions,
   UseUnnestReturn,
 } from './interactions/actions/group';
+// ─── Undo / redo action hook ────────────────────────────────────────────────
 export { useUndoRedo } from './interactions/actions/undo-redo';
 export type {
   UndoRedoAdapter,
   UseUndoRedoOptions,
   UseUndoRedoReturn,
 } from './interactions/actions/undo-redo';
+
+// ─── Path boolean ops (Pathfinder) ──────────────────────────────────────────
 export { useBooleans, applyBooleanOp } from './interactions/actions/booleans';
 export type {
   BooleanOp,
@@ -600,16 +659,16 @@ export type {
   UseBooleansReturn,
 } from './interactions/actions/booleans';
 
-// Debug overlay subsystem
+// ─── Debug overlay subsystem (URL-flagged tree-shakeable) ───────────────────
 export * from './debug';
 
-// Animation primitives
+// ─── Animation primitives (tween, spring, easings) ──────────────────────────
 export * from './animation';
 
-// Layout strategies
+// ─── Layout strategies (snap, point-snap, grid alignment) ───────────────────
 export * from './layout';
 
-// Color helpers
+// ─── Color helpers (parse / normalize / convert) ────────────────────────────
 export {
   parseColor,
   parseColorToRgba255,
@@ -618,10 +677,11 @@ export {
   rgbaToHex,
 } from './renderer/math/color';
 
-// Built-in tool icons — match the convention used by the Pathfinder
-// panel and Swillustrator action-bar icons. Available to any consumer
-// rendering a tool palette today; will back `Tool.presentation.icon`
-// defaults once the tool-palette spec ships.
+// ─── Built-in tool icons ────────────────────────────────────────────────────
+// Match the convention used by the Pathfinder panel and Swillustrator
+// action-bar icons. Available to any consumer rendering a tool palette
+// today; will back `Tool.presentation.icon` defaults once the
+// tool-palette spec ships.
 export {
   SelectIcon,
   LassoIcon,
@@ -639,10 +699,11 @@ export {
 } from './icons';
 export type { IconProps } from './icons';
 
-// Default boolean-op (Pathfinder) icons shipped with `defaultBooleanActions`.
-// Re-exported so consumers that need to render an op-shaped glyph outside an
-// `<ActionBar>` (e.g. swillustrator's layer-row "produced by" badge) don't
-// have to author their own SVGs or reach into a deep path.
+// ─── Default boolean-op (Pathfinder) icons ──────────────────────────────────
+// Shipped with `defaultBooleanActions`; re-exported so consumers that need to
+// render an op-shaped glyph outside an `<ActionBar>` (e.g. swillustrator's
+// layer-row "produced by" badge) don't have to author their own SVGs or reach
+// into a deep path.
 export {
   UnionIcon,
   IntersectIcon,
