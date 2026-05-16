@@ -120,6 +120,43 @@ describe('ToolsDispatcher.resolveOnly', () => {
     expect(result).toBeNull();
   });
 
+  it('returns the same result as static resolveRoute across a target×modifier matrix', () => {
+    const select = defineTool({
+      id: 'select',
+      presentation: { label: 'Select' },
+      initial: {
+        click: {
+          rect:  (_c) => claim(),
+          text:  (_c) => claim(),
+          empty: (_c) => claim(),
+          '*': { shift: (_c) => claim(), default: (_c) => claim() },
+        },
+      },
+    }) as AnyTool;
+    const d = createToolsDispatcher({
+      getSlots: () => ({ hotkey: null, active: select, ambient: [] }),
+      getCtx: () => ({} as never),
+    });
+    const targets: HitResult[] = [
+      { category: 'node', kind: 'rect',  id: 'x' as never, pose: null, data: null },
+      { category: 'node', kind: 'text',  id: 'x' as never, pose: null, data: null },
+      { category: 'node', kind: 'path',  id: 'x' as never, pose: null, data: null },
+      { category: 'empty', kind: 'empty' },
+    ];
+    const modSets = [
+      { alt: false, shift: false, meta: false, ctrl: false, space: false },
+      { alt: false, shift: true,  meta: false, ctrl: false, space: false },
+      { alt: false, shift: false, meta: true,  ctrl: false, space: false },
+    ];
+    for (const hit of targets) {
+      for (const modifiers of modSets) {
+        const live = d.resolveOnly({ phase: 'initial', gesture: 'click', hit, modifiers });
+        expect(live).not.toBeNull();
+        expect(live?.toolId).toBe('select');
+      }
+    }
+  });
+
   it('honors engaged-phase tables when phase=engaged', () => {
     const pen = defineTool({
       id: 'pen',
