@@ -14,14 +14,9 @@ import type {
  * child and prevents future iterations.
  */
 export function createLoop(
-  animator: Animator,
   factory: LoopFactory,
   opts: LoopOptions = {},
 ): AnimationHandle {
-  // `animator` is intentionally unused at runtime — kept in the signature
-  // so the loop is bindable to a specific animator instance for symmetry
-  // with createStagger / future composition primitives.
-  void animator;
   const max = opts.count ?? Infinity;
   let iteration = 0;
   let cancelled = false;
@@ -62,7 +57,7 @@ export function createLoop(
       current?.setTimeScale(s);
     },
     isPaused: () => current?.isPaused() ?? false,
-  } as AnimationHandle;
+  };
 }
 
 /**
@@ -78,17 +73,10 @@ export function createTweenLoop<T>(
 ): AnimationHandle {
   const direction = opts.direction ?? 'restart';
   return createLoop(
-    animator,
     (i, next) => {
-      let from = opts.from;
-      let to = opts.to;
-      if (direction === 'reverse') {
-        from = opts.to;
-        to = opts.from;
-      } else if (direction === 'alternate' && i % 2 === 1) {
-        from = opts.to;
-        to = opts.from;
-      }
+      const flipped = direction === 'reverse' || (direction === 'alternate' && i % 2 === 1);
+      const from = flipped ? opts.to : opts.from;
+      const to = flipped ? opts.from : opts.to;
       return animator.tween({
         from,
         to,
@@ -99,6 +87,6 @@ export function createTweenLoop<T>(
         onDone: next,
       });
     },
-    { count: opts.count, cancelKey: opts.cancelKey, onDone: opts.onDone },
+    { count: opts.count, onDone: opts.onDone },
   );
 }

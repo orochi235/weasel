@@ -353,7 +353,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       setTimeScaleByKey: (key, s) => {
         for (const a of animations.current.values()) if (a.cancelKey === key) a.timeScale = s;
       },
-      loop: (factory, loopOpts) => createLoop(animatorRef.current!, factory, loopOpts),
+      loop: (factory, loopOpts) => createLoop(factory, loopOpts),
       tweenLoop: (tweenLoopOpts) => createTweenLoop(animatorRef.current!, tweenLoopOpts),
     };
     animatorRef.current = api;

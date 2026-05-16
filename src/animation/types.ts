@@ -155,18 +155,24 @@ export interface Animator {
    * the loop advances. Returns a handle whose pause/resume/setTimeScale/cancel
    * delegate to the current in-flight child (and prevent future iterations
    * on cancel).
+   *
+   * NOTE: The returned handle is NOT registered in the animator's id table.
+   * `animator.cancel(handle)` and `animator.cancelKey(...)` will not stop a
+   * loop. Cancel via `handle.cancel()` directly.
    */
   loop(factory: LoopFactory, opts?: LoopOptions): AnimationHandle;
   /** Sugar over `loop` for the common case of looping a tween between two
    *  values with optional direction handling (`restart` | `reverse` |
-   *  `alternate`). */
+   *  `alternate`).
+   *
+   *  NOTE: Same registry caveat as `loop` — the returned handle is not
+   *  registered with the animator. Cancel via `handle.cancel()` directly. */
   tweenLoop<T>(opts: TweenLoopOptions<T>): AnimationHandle;
 }
 
 export interface LoopOptions {
   /** Maximum number of iterations. Default Infinity. */
   count?: number;
-  cancelKey?: string;
   /** Invoked when the loop reaches `count` iterations naturally (not on cancel). */
   onDone?: () => void;
 }
@@ -186,5 +192,4 @@ export interface TweenLoopOptions<T> {
   interpolate?: Interpolate<T>;
   onTick: (value: T) => void;
   onDone?: () => void;
-  cancelKey?: string;
 }
