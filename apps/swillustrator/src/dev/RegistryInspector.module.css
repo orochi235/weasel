@@ -100,3 +100,15 @@
   text-align: left;
   text-decoration: underline;
 }
+
+.iconPreviewRow { display: flex; gap: 12px; margin: 8px 0 12px; align-items: flex-end; }
+.iconPreviewCell {
+  background: var(--wzl-bg, #1e1610);
+  border: 1px solid var(--wzl-panel-border, #4a3c2e);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 4px;
+}
+.iconPreviewCellSmall { width: 32px; height: 32px; }
+.iconPreviewCellLarge { width: 64px; height: 64px; }
+.iconPreviewCell > svg { width: 100%; height: 100%; }

@@ -1,5 +1,5 @@
 import s from './RegistryInspector.module.css';
-import type { TreeEntry, ToolEntry, ActionEntry, BundleEntry } from './registryData';
+import type { TreeEntry, ToolEntry, ActionEntry, BundleEntry, IconEntry } from './registryData';
 
 interface Props {
   entry: TreeEntry;
@@ -8,11 +8,39 @@ interface Props {
 
 export function RegistryDetail({ entry, onNavigate }: Props) {
   switch (entry.kind) {
-    case 'tool':       return <ToolDetail entry={entry} />;
-    case 'action':     return <ActionDetail entry={entry} />;
-    case 'bundle':     return <BundleDetail entry={entry} onNavigate={onNavigate} />;
-    default:           return <pre>{JSON.stringify(entry, null, 2)}</pre>;
+    case 'tool':         return <ToolDetail entry={entry} />;
+    case 'action':       return <ActionDetail entry={entry} />;
+    case 'bundle':       return <BundleDetail entry={entry} onNavigate={onNavigate} />;
+    case 'shapeKind':    return <SimpleDetail label={entry.id} />;
+    case 'icon':         return <IconDetail entry={entry} />;
+    case 'opFactory':    return <SimpleDetail label={entry.id} />;
+    case 'publicExport': return <SimpleDetail label={entry.id} />;
   }
+}
+
+function SimpleDetail({ label }: { label: string }) {
+  return (
+    <div>
+      <h2 className={s.detailHeading}>{label}</h2>
+      <p className={s.empty}>Source path and JSDoc snippet will be loaded lazily in Task 8.</p>
+    </div>
+  );
+}
+
+function IconDetail({ entry }: { entry: IconEntry }) {
+  const C = entry.Component;
+  return (
+    <div>
+      <h2 className={s.detailHeading}>{entry.id}</h2>
+      <div className={s.iconPreviewRow}>
+        <div className={`${s.iconPreviewCell} ${s.iconPreviewCellSmall}`}><C /></div>
+        <div className={`${s.iconPreviewCell} ${s.iconPreviewCellLarge}`}><C /></div>
+      </div>
+      <dl className={s.detailList}>
+        <dt>source</dt><dd>{entry.source}</dd>
+      </dl>
+    </div>
+  );
 }
 
 function ToolDetail({ entry }: { entry: ToolEntry }) {

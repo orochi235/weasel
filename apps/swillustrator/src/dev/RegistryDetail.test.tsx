@@ -33,4 +33,29 @@ describe('RegistryDetail', () => {
     expect(onNavigate).toHaveBeenCalledTimes(1);
     expect(onNavigate.mock.calls[0][0]).toEqual({ kind: 'tool', id: 'select' });
   });
+
+  it('renders an Icon entry with a visual preview', () => {
+    const Component = () => <svg data-testid="icon-svg" width={16} height={16} />;
+    const entry: TreeEntry = { kind: 'icon', id: 'TestIcon', label: 'TestIcon', source: 'action', Component };
+    render(<RegistryDetail entry={entry} onNavigate={() => {}} />);
+    expect(screen.getAllByTestId('icon-svg').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('renders a ShapeKind entry with id', () => {
+    const entry: TreeEntry = { kind: 'shapeKind', id: 'rect', label: 'rect' };
+    render(<RegistryDetail entry={entry} onNavigate={() => {}} />);
+    expect(screen.getByText('rect')).toBeTruthy();
+  });
+
+  it('renders an OpFactory entry with id', () => {
+    const entry: TreeEntry = { kind: 'opFactory', id: 'createInsertOp', label: 'createInsertOp' };
+    render(<RegistryDetail entry={entry} onNavigate={() => {}} />);
+    expect(screen.getByText('createInsertOp')).toBeTruthy();
+  });
+
+  it('renders a PublicExport entry with id', () => {
+    const entry: TreeEntry = { kind: 'publicExport', id: 'SceneCanvas', label: 'SceneCanvas' };
+    render(<RegistryDetail entry={entry} onNavigate={() => {}} />);
+    expect(screen.getByText('SceneCanvas')).toBeTruthy();
+  });
 });
