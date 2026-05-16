@@ -169,6 +169,13 @@ export {
   usePublishSelection,
 } from './features/selection/SelectionContext';
 export type { SelectionContextValue } from './features/selection/SelectionContext';
+
+// --- @experimental Pointer ambient context (2026-05-16) ---------------------
+export {
+  PointerContextProvider,
+  usePointerContext,
+} from './features/pointer/PointerContext';
+export type { PointerContextValue, PointerWorldPos } from './features/pointer/PointerContext';
 export {
   useCanvasFocus,
   gateLayer,

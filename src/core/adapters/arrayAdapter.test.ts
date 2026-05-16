@@ -58,3 +58,74 @@ describe('arrayAdapter — hitTestLasso', () => {
     expect(adapter.hitTestLasso!([{ x: 0, y: 0 }, { x: 1, y: 1 }], 'intersect')).toEqual([]);
   });
 });
+
+describe('arrayAdapter — commitPaste', () => {
+  type Obj = { id: string; x: number; y: number; width: number; height: number };
+
+  function makeFixture(opts: { nextId?: () => string } = {}) {
+    const items: Obj[] = [
+      { id: 'a', x: 10, y: 20, width: 10, height: 10 },
+      { id: 'b', x: 30, y: 40, width: 10, height: 10 },
+    ];
+    const ref = { current: items };
+    const setItems = (updater: (items: Obj[]) => Obj[]): void => {
+      ref.current = updater(ref.current);
+    };
+    const adapter = arrayAdapter<Obj, Obj>({
+      ref,
+      setItems,
+      toPose: (o) => o,
+      fromPose: (o, p) => ({ ...o, ...p }),
+      poseBounds: (p) => p,
+      ...(opts.nextId ? { nextId: opts.nextId } : {}),
+    });
+    return { adapter, ref };
+  }
+
+  it('returns [] for an empty snapshot', () => {
+    const { adapter } = makeFixture();
+    expect(adapter.commitPaste!({ items: [] }, { dx: 5, dy: 5 })).toEqual([]);
+  });
+
+  it('clones with fresh ids and applies the offset when no dropPoint is supplied', () => {
+    let n = 0;
+    const { adapter, ref } = makeFixture({ nextId: () => `new-${n++}` });
+    const out = adapter.commitPaste!(
+      { items: ref.current },
+      { dx: 100, dy: 200 },
+    );
+    expect(out).toHaveLength(2);
+    expect(out[0]).toEqual({ id: 'new-0', x: 110, y: 220, width: 10, height: 10 });
+    expect(out[1]).toEqual({ id: 'new-1', x: 130, y: 240, width: 10, height: 10 });
+    // Source must not be mutated.
+    expect(ref.current[0]).toEqual({ id: 'a', x: 10, y: 20, width: 10, height: 10 });
+  });
+
+  it('centers the cluster bbox at dropPoint when supplied (offset ignored)', () => {
+    let n = 0;
+    const { adapter, ref } = makeFixture({ nextId: () => `new-${n++}` });
+    // Cluster bbox: x[10..40], y[20..50]. Center = (25, 35).
+    // Drop at (200, 300) → dx = 175, dy = 265.
+    const out = adapter.commitPaste!(
+      { items: ref.current },
+      { dx: 999, dy: 999 },
+      { dropPoint: { worldX: 200, worldY: 300 } },
+    );
+    expect(out).toHaveLength(2);
+    expect(out[0]).toMatchObject({ x: 10 + 175, y: 20 + 265 });
+    expect(out[1]).toMatchObject({ x: 30 + 175, y: 40 + 265 });
+  });
+
+  it('falls back to default ids when no nextId is provided (no crash)', () => {
+    const { adapter, ref } = makeFixture();
+    const out = adapter.commitPaste!(
+      { items: ref.current },
+      { dx: 1, dy: 1 },
+    );
+    expect(out).toHaveLength(2);
+    expect(out[0].id).toBeTypeOf('string');
+    expect(out[0].id).not.toBe('a');
+    expect(out[1].id).not.toBe('b');
+    expect(out[0].id).not.toBe(out[1].id);
+  });
+});

@@ -8,7 +8,6 @@ import {
   useSelectTool,
   useTools,
 } from '@orochi235/weasel';
-import type { ClipboardSnapshot } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
@@ -32,49 +31,21 @@ export function ClipboardDemo() {
   const selection = useSelection();
 
   const adapter = useMemo(() => {
+    // arrayAdapter's default `commitPaste` deep-clones each clip entry,
+    // assigns a fresh id via `nextId`, and translates by `offset` — or
+    // centers the cluster bbox at `ctx.dropPoint` when supplied. The demo
+    // only overrides `nextId` to keep deterministic `clip-N` ids and
+    // `getPasteOffset` to bump from 1px to 16px so the cascade is visible.
     const base = arrayAdapter<Rect, Rect>({
       ref: itemsRef,
       setItems,
       toPose: (r) => r,
+      nextId: () => `clip-${nextId.current++}`,
     });
     return {
       ...base,
       ...selection.adapterMethods,
       getNodeIndex: (id: string) => itemsRef.current.findIndex((o) => o.id === id),
-      snapshotSelection: (ids: string[]): ClipboardSnapshot => ({
-        items: ids
-          .map((id) => itemsRef.current.find((o) => o.id === id))
-          .filter((o): o is Rect => !!o),
-      }),
-      commitPaste: (
-        clip: ClipboardSnapshot,
-        offset: { dx: number; dy: number },
-        ctx?: { dropPoint?: { worldX: number; worldY: number } },
-      ): Rect[] => {
-        const src = clip.items as Rect[];
-        if (src.length === 0) return [];
-        let dx = offset.dx;
-        let dy = offset.dy;
-        if (ctx?.dropPoint) {
-          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-          for (const r of src) {
-            minX = Math.min(minX, r.x);
-            minY = Math.min(minY, r.y);
-            maxX = Math.max(maxX, r.x + r.width);
-            maxY = Math.max(maxY, r.y + r.height);
-          }
-          const cx = (minX + maxX) / 2;
-          const cy = (minY + maxY) / 2;
-          dx = ctx.dropPoint.worldX - cx;
-          dy = ctx.dropPoint.worldY - cy;
-        }
-        return src.map((r) => ({
-          ...r,
-          id: `clip-${nextId.current++}`,
-          x: r.x + dx,
-          y: r.y + dy,
-        }));
-      },
       getPasteOffset: () => ({ dx: 16, dy: 16 }),
     };
   }, [selection.adapterMethods]);

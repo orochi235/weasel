@@ -6,6 +6,7 @@ import type { NodeId } from 'core/scene/types';
 import { dispatchApplyBatch } from 'core/applyOps';
 import type { InsertAdapter } from 'core/adapters/types';
 import type { ClipboardSnapshot } from './types';
+import { usePointerContext } from 'features/pointer/PointerContext';
 
 /** Options for `useClipboardOps`. */
 export interface UseClipboardOpsOptions {
@@ -38,12 +39,18 @@ export function useClipboardOps<TNode extends { id: string }>(
   options: UseClipboardOpsOptions,
 ): UseClipboardOpsReturn {
   const { getSelection, onPaste, pasteLabel = 'Paste', getDropPoint } = options;
+  // Fall back to the ambient pointer context (auto-published by SceneCanvas)
+  // when the caller didn't supply an explicit `getDropPoint`. Null context
+  // (no provider in scope) and no caller-supplied thunk together mean
+  // "no drop point" — paste uses the cascade offset instead.
+  const pointerCtx = usePointerContext();
+  const effectiveGetDropPoint = getDropPoint ?? pointerCtx?.getDropPoint;
   const clipboardRef = useRef<ClipboardSnapshot>(EMPTY);
   // Keep callbacks stable across renders.
   const adapterRef = useRef(adapter);
   adapterRef.current = adapter;
-  const optsRef = useRef({ getSelection, onPaste, pasteLabel, getDropPoint });
-  optsRef.current = { getSelection, onPaste, pasteLabel, getDropPoint };
+  const optsRef = useRef({ getSelection, onPaste, pasteLabel, getDropPoint: effectiveGetDropPoint });
+  optsRef.current = { getSelection, onPaste, pasteLabel, getDropPoint: effectiveGetDropPoint };
 
   const copy = useCallback(() => {
     const ids = optsRef.current.getSelection();
