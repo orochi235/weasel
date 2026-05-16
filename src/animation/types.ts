@@ -15,6 +15,14 @@ export interface AnimationHandle {
   id: number;
   /** Cancel this animation. Idempotent — no-op once already finished/canceled. */
   cancel(): void;
+  /** Freeze this animation's virtual clock. Idempotent. */
+  pause(): void;
+  /** Resume this animation's virtual clock. Idempotent. */
+  resume(): void;
+  /** Multiply this animation's virtual-clock rate by `scale`. 1 = normal. */
+  setTimeScale(scale: number): void;
+  /** True iff this handle is currently paused. */
+  isPaused(): boolean;
 }
 
 export interface TweenOptions<T> {

@@ -12,8 +12,12 @@ import type {
 interface ActiveAnimation {
   id: number;
   cancelKey?: string;
-  /** Returns true when finished. Called once per frame with the current ms timestamp. */
-  tick(now: number): boolean;
+  paused: boolean;
+  timeScale: number;
+  virtualNow: number;
+  lastRealNow: number | null;
+  /** Returns true when finished. Called once per frame with the current virtual-ms timestamp. */
+  tick(virtualNow: number): boolean;
   /** Called when the animation is cancelled. Skips onDone. */
   onCancel?(): void;
 }
@@ -42,6 +46,8 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
    * write through to the base adapter rather than schedule a new tween.
    */
   const tickDepth = useRef(0);
+  const globalTimeScale = useRef(1);
+  const globalPaused = useRef(false);
 
   // StrictMode-safe cleanup: when the component unmounts (including the
   // dev-mode double-mount that StrictMode performs), cancel every running
@@ -100,13 +106,19 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         rafHandle.current = null;
         const finished: number[] = [];
         for (const anim of animations.current.values()) {
+          const realDt = anim.lastRealNow == null ? 0 : t - anim.lastRealNow;
+          anim.lastRealNow = t;
+          const scale = globalPaused.current
+            ? 0
+            : globalTimeScale.current * (anim.paused ? 0 : anim.timeScale);
+          anim.virtualNow += realDt * scale;
           // Increment tick depth around each animation's tick so re-entrant
           // calls (e.g. `decay.onTick` → `adapter.setPose` →
           // `animateOnSetPose` checking `isTicking()`) see the flag and
           // skip scheduling a new wrap-tween that would fight the caller.
           tickDepth.current += 1;
           try {
-            if (anim.tick(t)) finished.push(anim.id);
+            if (anim.tick(anim.virtualNow)) finished.push(anim.id);
           } finally {
             tickDepth.current -= 1;
           }
@@ -133,6 +145,13 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
 
     const register = (anim: ActiveAnimation): AnimationHandle => {
       if (anim.cancelKey != null) cancelByKey(anim.cancelKey);
+      anim.paused = false;
+      anim.timeScale = 1;
+      anim.virtualNow = 0;
+      // Seed lastRealNow with the current wall clock so the first frame's
+      // realDt reflects time elapsed between registration and that frame
+      // (matching the old semantic where `start = now()` was captured eagerly).
+      anim.lastRealNow = now();
       animations.current.set(anim.id, anim);
       ensureLoop();
       return {
@@ -143,12 +162,20 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
           a.onCancel?.();
           animations.current.delete(anim.id);
         },
+        pause: () => { const a = animations.current.get(anim.id); if (a) a.paused = true; },
+        resume: () => { const a = animations.current.get(anim.id); if (a) a.paused = false; },
+        setTimeScale: (s) => { const a = animations.current.get(anim.id); if (a) a.timeScale = s; },
+        isPaused: () => animations.current.get(anim.id)?.paused ?? false,
       };
     };
 
     const tween = <T,>(o: TweenOptions<T>): AnimationHandle => {
       const id = nextId.current++;
-      const start = now();
+      // start is captured in *virtual* time; since virtualNow begins at 0 on
+      // registration, that's our reference. The tween's "elapsed" is just
+      // virtualNow itself — naturally freezing when paused (virtualNow stops
+      // advancing) and decoupled from wall time.
+      const start = 0;
       const easing = o.easing ?? easeOut;
       const interp =
         o.interpolate ??
@@ -162,6 +189,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       return register({
         id,
         cancelKey: o.cancelKey,
+        paused: false, timeScale: 1, virtualNow: 0, lastRealNow: null,
         tick(nowMs) {
           if (tripwire()) return true;
           const elapsed = nowMs - start;
@@ -197,6 +225,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       return register({
         id,
         cancelKey: o.cancelKey,
+        paused: false, timeScale: 1, virtualNow: 0, lastRealNow: null,
         tick(nowMs) {
           if (tripwire()) return true;
           if (lastTime == null) {
@@ -234,6 +263,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       return register({
         id,
         cancelKey: o.cancelKey,
+        paused: false, timeScale: 1, virtualNow: 0, lastRealNow: null,
         tick(nowMs) {
           if (tripwire()) return true;
           if (lastTime == null) {

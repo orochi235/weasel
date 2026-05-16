@@ -250,3 +250,27 @@ describe('useAnimator unmount cleanup (StrictMode safety)', () => {
     expect(result.current.isActive()).toBe(false);
   });
 });
+
+describe('virtual clock — per-handle pause/resume/timeScale', () => {
+  it('handle.pause() freezes the tween value at the pause moment', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const values: number[] = [];
+    let handle!: ReturnType<typeof result.current.tween>;
+    act(() => {
+      handle = result.current.tween({
+        from: 0, to: 100, ms: 1000,
+        easing: (t) => t,
+        onTick: (v) => values.push(v),
+      });
+    });
+    act(() => clock.advance(0));      // virtualNow 0 → value ~0
+    act(() => clock.advance(250));    // virtualNow 250 → value ~25
+    act(() => handle.pause());
+    act(() => clock.advance(500));    // 500ms wall time, paused → no advance
+    expect(values[values.length - 1]).toBeCloseTo(25, 0);
+    act(() => handle.resume());
+    act(() => clock.advance(250));    // virtualNow 500 → value ~50
+    expect(values[values.length - 1]).toBeCloseTo(50, 0);
+  });
+});
