@@ -321,4 +321,48 @@ describe('virtual clock — per-handle pause/resume/timeScale', () => {
     expect(a[a.length - 1]).toBeCloseTo(aFrozen, 1);
     expect(b[b.length - 1]).toBeGreaterThan(aFrozen);
   });
+
+  it('resumeKey unfreezes only the matching cancelKey', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const a: number[] = [];
+    const b: number[] = [];
+    act(() => {
+      result.current.tween({ from: 0, to: 10, ms: 1000, easing: (t) => t, cancelKey: 'foo', onTick: (v) => a.push(v) });
+      result.current.tween({ from: 0, to: 10, ms: 1000, easing: (t) => t, cancelKey: 'bar', onTick: (v) => b.push(v) });
+    });
+    act(() => clock.advance(100));
+    act(() => {
+      result.current.pauseKey('foo');
+      result.current.pauseKey('bar');
+    });
+    const aFrozen = a[a.length - 1];
+    const bFrozen = b[b.length - 1];
+    act(() => clock.advance(200));
+    // Both still frozen.
+    expect(a[a.length - 1]).toBeCloseTo(aFrozen, 1);
+    expect(b[b.length - 1]).toBeCloseTo(bFrozen, 1);
+    act(() => result.current.resumeKey('foo'));
+    act(() => clock.advance(200));
+    // foo progressed; bar still frozen.
+    expect(a[a.length - 1]).toBeGreaterThan(aFrozen);
+    expect(b[b.length - 1]).toBeCloseTo(bFrozen, 1);
+  });
+
+  it('setTimeScaleByKey scales only the matching cancelKey', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const a: number[] = [];
+    const b: number[] = [];
+    act(() => {
+      result.current.tween({ from: 0, to: 100, ms: 1000, easing: (t) => t, cancelKey: 'foo', onTick: (v) => a.push(v) });
+      result.current.tween({ from: 0, to: 100, ms: 1000, easing: (t) => t, cancelKey: 'bar', onTick: (v) => b.push(v) });
+    });
+    act(() => clock.advance(0));
+    act(() => result.current.setTimeScaleByKey('foo', 0.5));
+    act(() => clock.advance(200));
+    // foo advanced ~100ms of virtual time (0.5x), bar advanced ~200ms (1x).
+    expect(a[a.length - 1]).toBeCloseTo(10, 0);
+    expect(b[b.length - 1]).toBeCloseTo(20, 0);
+  });
 });

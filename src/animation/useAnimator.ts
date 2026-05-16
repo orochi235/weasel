@@ -143,14 +143,17 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       }
     };
 
-    const register = (anim: ActiveAnimation): AnimationHandle => {
-      if (anim.cancelKey != null) cancelByKey(anim.cancelKey);
+    type AnimationSeed = Omit<ActiveAnimation, 'paused' | 'timeScale' | 'virtualNow' | 'lastRealNow'>;
+    const register = (seed: AnimationSeed): AnimationHandle => {
+      if (seed.cancelKey != null) cancelByKey(seed.cancelKey);
+      const anim = seed as ActiveAnimation;
       anim.paused = false;
       anim.timeScale = 1;
       anim.virtualNow = 0;
-      // Seed lastRealNow with the current wall clock so the first frame's
-      // realDt reflects time elapsed between registration and that frame
-      // (matching the old semantic where `start = now()` was captured eagerly).
+      // Seed lastRealNow at registration so the first frame's realDt reflects
+      // the gap between register() and the first RAF callback. Preserves prior
+      // wall-clock-anchored start behavior for tween and gives spring/decay a
+      // non-zero first dt sample matching the pre-virtual-clock code.
       anim.lastRealNow = now();
       animations.current.set(anim.id, anim);
       ensureLoop();
@@ -189,7 +192,6 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       return register({
         id,
         cancelKey: o.cancelKey,
-        paused: false, timeScale: 1, virtualNow: 0, lastRealNow: null,
         tick(nowMs) {
           if (tripwire()) return true;
           const elapsed = nowMs - start;
@@ -225,7 +227,6 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       return register({
         id,
         cancelKey: o.cancelKey,
-        paused: false, timeScale: 1, virtualNow: 0, lastRealNow: null,
         tick(nowMs) {
           if (tripwire()) return true;
           if (lastTime == null) {
@@ -263,7 +264,6 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       return register({
         id,
         cancelKey: o.cancelKey,
-        paused: false, timeScale: 1, virtualNow: 0, lastRealNow: null,
         tick(nowMs) {
           if (tripwire()) return true;
           if (lastTime == null) {
