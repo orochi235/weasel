@@ -51,3 +51,35 @@
   height: 1px;
   overflow: hidden;
 }
+.treeList { list-style: none; margin: 0; padding: 0; }
+.treeCategory { margin-bottom: 4px; }
+.treeCategoryButton {
+  display: flex; align-items: center; gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--wzl-fg, #d4c4a8);
+  cursor: pointer;
+  padding: 4px 2px;
+  font: inherit;
+  font-weight: 600;
+  width: 100%;
+  text-align: left;
+}
+.treeChevron { font-size: 10px; width: 10px; }
+.treeCount { color: var(--wzl-muted, #a59685); font-weight: 400; }
+.treeLeaves { list-style: none; margin: 0; padding: 0 0 0 20px; }
+.treeLeaf {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--wzl-fg, #d4c4a8);
+  cursor: pointer;
+  padding: 2px 4px;
+  font: inherit;
+  font-size: 12px;
+  border-radius: 3px;
+}
+.treeLeaf:hover { background: var(--wzl-panel-border, #4a3c2e); }
+.treeLeafSelected { background: var(--wzl-accent, #c89a5e); color: #1e1610; }
