@@ -89,6 +89,57 @@ describe('useKeyboardZoomTool', () => {
   });
 });
 
+describe('useKeyboardZoomTool — axis option', () => {
+  it("axis: 'x' Cmd+= only zooms scale.x", () => {
+    const { result } = renderHook(() => useKeyboardZoomTool({ axis: 'x' }));
+    const setView = vi.fn();
+    const ctx = makeCtx({ x: 0, y: 0, scale: { x: 1, y: 1 } }, setView);
+    expect(result.current.keyboard!.onDown!(key({ key: '=', metaKey: true }), ctx)).toBe('claim');
+    const next = setView.mock.calls[0][0] as View;
+    expect(next.scale.x).toBeCloseTo(1.25);
+    expect(next.scale.y).toBe(1);
+  });
+
+  it("axis: 'y' Cmd+= only zooms scale.y", () => {
+    const { result } = renderHook(() => useKeyboardZoomTool({ axis: 'y' }));
+    const setView = vi.fn();
+    const ctx = makeCtx({ x: 0, y: 0, scale: { x: 1, y: 1 } }, setView);
+    expect(result.current.keyboard!.onDown!(key({ key: '=', metaKey: true }), ctx)).toBe('claim');
+    const next = setView.mock.calls[0][0] as View;
+    expect(next.scale.x).toBe(1);
+    expect(next.scale.y).toBeCloseTo(1.25);
+  });
+
+  it("axis: 'both' (default) Cmd+= zooms both axes uniformly", () => {
+    const { result } = renderHook(() => useKeyboardZoomTool({ axis: 'both' }));
+    const setView = vi.fn();
+    const ctx = makeCtx({ x: 0, y: 0, scale: { x: 1, y: 1 } }, setView);
+    expect(result.current.keyboard!.onDown!(key({ key: '=', metaKey: true }), ctx)).toBe('claim');
+    const next = setView.mock.calls[0][0] as View;
+    expect(next.scale.x).toBeCloseTo(1.25);
+    expect(next.scale.y).toBeCloseTo(1.25);
+    expect(next.scale.x).toBe(next.scale.y);
+  });
+
+  it("axis: 'x' Cmd+- only zooms scale.x out", () => {
+    const { result } = renderHook(() => useKeyboardZoomTool({ axis: 'x' }));
+    const setView = vi.fn();
+    const ctx = makeCtx({ x: 0, y: 0, scale: { x: 1, y: 1 } }, setView);
+    expect(result.current.keyboard!.onDown!(key({ key: '-', metaKey: true }), ctx)).toBe('claim');
+    const next = setView.mock.calls[0][0] as View;
+    expect(next.scale.x).toBeCloseTo(1 / 1.25);
+    expect(next.scale.y).toBe(1);
+  });
+
+  it("Cmd+0 reset always sets scale to { x: 1, y: 1 } regardless of axis", () => {
+    const { result } = renderHook(() => useKeyboardZoomTool({ axis: 'x' }));
+    const setView = vi.fn();
+    const ctx = makeCtx({ x: 50, y: 50, scale: { x: 4, y: 2 } }, setView);
+    expect(result.current.keyboard!.onDown!(key({ key: '0', metaKey: true }), ctx)).toBe('claim');
+    expect(setView).toHaveBeenCalledWith({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+  });
+});
+
 describe('useKeyboardZoomTool with animate:true', () => {
   it('does not call setView immediately when animate is true', () => {
     vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation(() => 0);

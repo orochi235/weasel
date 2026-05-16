@@ -3,7 +3,7 @@ import { defineViewportTool, claim, none, type Result } from '../../routing';
 import type { Tool, ToolCtx } from '../../types';
 import { zoomAt } from 'core/viewport/zoomAt';
 import { useViewTween } from 'core/viewport/useViewTween';
-import type { View } from 'core/viewport/view';
+import type { View, ZoomFactor } from 'core/viewport/view';
 
 export interface KeyboardZoomToolOpts {
   min?: number;
@@ -18,6 +18,11 @@ export interface KeyboardZoomToolOpts {
   resetDuration?: number;
   /** Easing function when `animate` is true. Default ease-out-cubic. */
   easing?: (t: number) => number;
+  /**
+   * Which axes the +/- keys zoom. See `useWheelZoomTool` for semantics.
+   * Cmd+0 reset always resets both axes to scale 1 regardless of this option.
+   */
+  axis?: 'both' | 'x' | 'y';
 }
 
 /**
@@ -32,6 +37,7 @@ export function useKeyboardZoomTool(opts: KeyboardZoomToolOpts = {}): Tool<null>
   const keyStep = opts.keyStep ?? 1.25;
   const duration = opts.duration ?? 200;
   const resetDuration = opts.resetDuration ?? 350;
+  const axis = opts.axis ?? 'both';
 
   const setViewRef = useRef<((v: View) => void) | null>(null);
   const tween = useViewTween((v) => setViewRef.current?.(v));
@@ -53,7 +59,7 @@ export function useKeyboardZoomTool(opts: KeyboardZoomToolOpts = {}): Tool<null>
         },
       }) as Tool<null>,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [min, max, keyStep, animate, duration, resetDuration, easing, animateTo],
+    [min, max, keyStep, animate, duration, resetDuration, easing, axis, animateTo],
   );
 
   function stepZoom(ctx: ToolCtx<null>, event: unknown, factor: number): Result<null> {
@@ -63,7 +69,13 @@ export function useKeyboardZoomTool(opts: KeyboardZoomToolOpts = {}): Tool<null>
     setViewRef.current = ctx.setView;
     const rect = ctx.canvasRect;
     const center = { x: rect.width / 2, y: rect.height / 2 };
-    const target = zoomAt(ctx.view, center, factor, { min, max });
+    const zf: ZoomFactor =
+      axis === 'both'
+        ? factor
+        : axis === 'x'
+          ? { x: factor, y: 1 }
+          : { x: 1, y: factor };
+    const target = zoomAt(ctx.view, center, zf, { min, max });
     if (animate) {
       animateTo(ctx.view, target, { duration, easing });
     } else {
