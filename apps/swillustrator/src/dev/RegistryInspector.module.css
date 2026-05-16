@@ -83,3 +83,20 @@
 }
 .treeLeaf:hover { background: var(--wzl-panel-border, #4a3c2e); }
 .treeLeafSelected { background: var(--wzl-accent, #c89a5e); color: #1e1610; }
+
+.detailHeading { margin: 0 0 12px; font-size: 16px; }
+.detailList { display: grid; grid-template-columns: 100px 1fr; gap: 4px 12px; font-size: 13px; margin: 0; }
+.detailList dt { color: var(--wzl-muted, #a59685); }
+.detailList dd { margin: 0; }
+.tag { background: var(--wzl-bg, #1e1610); padding: 1px 6px; border-radius: 3px; margin-right: 4px; font-size: 11px; }
+.memberList { list-style: none; padding: 0; margin: 4px 0 12px; }
+.memberLink {
+  background: transparent;
+  border: none;
+  color: var(--wzl-accent, #c89a5e);
+  cursor: pointer;
+  padding: 2px 0;
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+}

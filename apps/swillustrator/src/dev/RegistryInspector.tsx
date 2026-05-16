@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import s from './RegistryInspector.module.css';
 import { RegistryTree } from './RegistryTree';
+import { RegistryDetail } from './RegistryDetail';
 import { RegistryProbe, type RegistrySnapshot } from './registryProbe';
 import {
   collectBundles,
@@ -95,7 +96,13 @@ export function RegistryInspector() {
           <RegistryTree nodes={nodes} selected={selected} onSelect={setSelected} />
         </aside>
         <section className={s.detail}>
-          {selected ? <pre>{JSON.stringify(selected, null, 2)}</pre> : <p className={s.empty}>Select an entry to see details.</p>}
+          {selected
+            ? <RegistryDetail entry={selected} onNavigate={(t) => {
+                const list = t.kind === 'tool' ? runtime.tools : runtime.actions;
+                const next = list.find((e) => e.id === t.id);
+                if (next) setSelected(next);
+              }} />
+            : <p className={s.empty}>Select an entry to see details.</p>}
         </section>
       </div>
     </div>
