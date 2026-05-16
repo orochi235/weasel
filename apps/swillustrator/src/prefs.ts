@@ -7,6 +7,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RegistryEnumFilter } from './registry/types';
+import { usePenTool } from '@orochi235/weasel';
+import type { ToolPrefGroup } from '@orochi235/weasel';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Types
@@ -102,6 +104,20 @@ export interface SwillPrefGroup {
   children: Record<string, SwillPref | SwillPrefGroup>;
 }
 
+/**
+ * Compose tool-contributed pref groups into a `Record<string, ToolPrefGroup>`
+ * keyed by tool id. The function is the identity at runtime — its only job
+ * is to capture each contribution's literal type so `typeof PREFS` still
+ * drives `SwillPrefPath` after composition.
+ *
+ * `ToolPrefGroup` is structurally a `SwillPrefGroup` (its kinds are a
+ * subset), so the result slots into `PREFS.children.tools.children`
+ * without a cast.
+ */
+function composeToolPrefs<T extends Record<string, ToolPrefGroup>>(t: T): T {
+  return t;
+}
+
 // ──────────────────────────────────────────────────────────────────────────
 // Registry — single source of truth for available prefs + their defaults.
 // `satisfies SwillPrefGroup` keeps the inferred shape narrow (literal `kind`
@@ -176,23 +192,10 @@ export const PREFS = {
         },
       },
     },
-    tools: {
-      name: 'Tools',
-      description: 'Tool memory.',
+    drawing: {
+      name: 'Drawing',
+      description: 'Defaults applied to newly-created paths and shapes.',
       children: {
-        lastTool: {
-          kind: 'registry-enum',
-          source: 'tools',
-          name: 'Last used tool',
-          description: 'Restored on app start.',
-          default: 'select',
-        },
-        penAutoCommitOnClose: {
-          kind: 'boolean',
-          name: 'Auto-commit pen on close',
-          description: 'When you click the pen tool\'s first anchor to close a region, commit immediately so it renders with its fill. Off: keep the path in preview until you press Enter (lets you build a compound path from multiple closed subpaths).',
-          default: true,
-        },
         pathFillRule: {
           kind: 'enum',
           name: 'Path fill rule',
@@ -203,6 +206,22 @@ export const PREFS = {
             { value: 'evenodd', label: 'Even-odd' },
           ],
         },
+      },
+    },
+    tools: {
+      name: 'Tools',
+      description: 'Tool memory and per-tool settings.',
+      children: {
+        lastTool: {
+          kind: 'registry-enum',
+          source: 'tools',
+          name: 'Last used tool',
+          description: 'Restored on app start.',
+          default: 'select',
+        },
+        ...composeToolPrefs({
+          pen: usePenTool.prefs,
+        }),
       },
     },
   },
