@@ -99,3 +99,42 @@ describe('useWheelZoomTool', () => {
     expect(50 / next.scale.y + next.y).toBeCloseTo(50);
   });
 });
+
+describe('useWheelZoomTool — axis option', () => {
+  it("axis: 'x' only changes scale.x (scale.y unchanged)", () => {
+    const { result } = renderHook(() => useWheelZoomTool({ axis: 'x' }));
+    const setView = vi.fn();
+    const ctx = makeCtx({ x: 0, y: 0, scale: { x: 1, y: 1 } }, setView);
+    const e = wheel({ deltaY: -100, ctrlKey: true, clientX: 100, clientY: 50 });
+    result.current.wheel!.onWheel!(e, ctx);
+    expect(setView).toHaveBeenCalledTimes(1);
+    const next = setView.mock.calls[0][0] as View;
+    expect(next.scale.x).toBeCloseTo(1.1);
+    expect(next.scale.y).toBe(1);
+  });
+
+  it("axis: 'y' only changes scale.y (scale.x unchanged)", () => {
+    const { result } = renderHook(() => useWheelZoomTool({ axis: 'y' }));
+    const setView = vi.fn();
+    const ctx = makeCtx({ x: 0, y: 0, scale: { x: 1, y: 1 } }, setView);
+    const e = wheel({ deltaY: -100, ctrlKey: true, clientX: 100, clientY: 50 });
+    result.current.wheel!.onWheel!(e, ctx);
+    expect(setView).toHaveBeenCalledTimes(1);
+    const next = setView.mock.calls[0][0] as View;
+    expect(next.scale.x).toBe(1);
+    expect(next.scale.y).toBeCloseTo(1.1);
+  });
+
+  it("axis: 'both' (default) zooms both axes uniformly", () => {
+    const { result } = renderHook(() => useWheelZoomTool({ axis: 'both' }));
+    const setView = vi.fn();
+    const ctx = makeCtx({ x: 0, y: 0, scale: { x: 1, y: 1 } }, setView);
+    const e = wheel({ deltaY: -100, ctrlKey: true, clientX: 100, clientY: 50 });
+    result.current.wheel!.onWheel!(e, ctx);
+    expect(setView).toHaveBeenCalledTimes(1);
+    const next = setView.mock.calls[0][0] as View;
+    expect(next.scale.x).toBeCloseTo(1.1);
+    expect(next.scale.y).toBeCloseTo(1.1);
+    expect(next.scale.x).toBe(next.scale.y);
+  });
+});

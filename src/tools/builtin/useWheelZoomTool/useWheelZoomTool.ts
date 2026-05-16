@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { defineViewportTool, claim, none } from '../../routing';
 import type { Tool } from '../../types';
 import { zoomAt } from 'core/viewport/zoomAt';
+import type { ZoomFactor } from 'core/viewport/view';
 
 export interface WheelZoomToolOpts {
   min?: number;
@@ -14,6 +15,17 @@ export interface WheelZoomToolOpts {
    * canvases where drag-to-pan replaces scroll-to-pan.
    */
   requireCtrl?: boolean;
+  /**
+   * Which axes the wheel event zooms.
+   * - `'both'` (default): uniform zoom on both axes.
+   * - `'x'`: zoom only the x axis (y scale unchanged).
+   * - `'y'`: zoom only the y axis (x scale unchanged).
+   *
+   * Modifier-key bindings (e.g. shift+wheel → x-only) are intentionally not
+   * baked into the kit — register a separate tool instance with a `when`
+   * predicate, or wrap this tool, to express that policy.
+   */
+  axis?: 'both' | 'x' | 'y';
 }
 
 /**
@@ -29,6 +41,7 @@ export interface WheelZoomToolOpts {
 export function useWheelZoomTool(opts: WheelZoomToolOpts = {}): Tool<null> {
   const { min, max, requireCtrl = true } = opts;
   const wheelStep = opts.wheelStep ?? 1.1;
+  const axis = opts.axis ?? 'both';
   return useMemo(
     () =>
       defineViewportTool<null>({
@@ -42,11 +55,17 @@ export function useWheelZoomTool(opts: WheelZoomToolOpts = {}): Tool<null> {
             const rect = ctx.canvasRect;
             const anchor = { x: e.clientX - rect.left, y: e.clientY - rect.top };
             const factor = Math.pow(wheelStep, -e.deltaY / 100);
-            ctx.setView(zoomAt(ctx.view, anchor, factor, { min, max }));
+            const zf: ZoomFactor =
+              axis === 'both'
+                ? factor
+                : axis === 'x'
+                  ? { x: factor, y: 1 }
+                  : { x: 1, y: factor };
+            ctx.setView(zoomAt(ctx.view, anchor, zf, { min, max }));
             return claim();
           },
         },
       }) as Tool<null>,
-    [min, max, wheelStep, requireCtrl],
+    [min, max, wheelStep, requireCtrl, axis],
   );
 }
