@@ -342,7 +342,7 @@ export function AnimationDemo() {
               return [{
                 kind: 'path',
                 path: { kind: 'rect', x: cx - w / 2, y: cy - h / 2, width: w, height: h },
-                fill: { color: (p as Card).color, opacity: e.alpha },
+                fill: { color: (n.data as Card).color, opacity: e.alpha },
               }];
             },
           },
