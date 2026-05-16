@@ -10,4 +10,17 @@ export type {
   HotkeyTrigger,
   PointerChannel, DragChannel, KeyboardChannel, WheelChannel,
 } from './types';
+export type {
+  ToolPref,
+  ToolPrefGroup,
+  ToolPrefKind,
+  ToolPrefNumber,
+  ToolPrefBoolean,
+  ToolPrefString,
+  ToolPrefEnum,
+  ToolPrefNumberExpression,
+  ToolPrefBooleanExpression,
+  ToolPrefStringExpression,
+  ToolPrefEnumExpression,
+} from './prefs';
 export * from './builtin';
