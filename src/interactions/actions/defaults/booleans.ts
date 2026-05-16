@@ -2,7 +2,7 @@ import { applyBooleanOp, type BooleanOp, type BooleansAdapter } from '../boolean
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
 
-const OPS: readonly BooleanOp[] = ['union', 'intersect', 'subtract', 'exclude', 'divide'];
+const OPS: readonly BooleanOp[] = ['union', 'intersect', 'subtract', 'exclude', 'divide', 'crop'];
 
 const ID_FOR: Record<BooleanOp, string> = {
   union: 'pathfinder.union',
@@ -10,6 +10,7 @@ const ID_FOR: Record<BooleanOp, string> = {
   subtract: 'pathfinder.subtract',
   exclude: 'pathfinder.exclude',
   divide: 'pathfinder.divide',
+  crop: 'pathfinder.crop',
 };
 
 const LABEL_FOR: Record<BooleanOp, string> = {
@@ -18,6 +19,7 @@ const LABEL_FOR: Record<BooleanOp, string> = {
   subtract: 'Minus Front',
   exclude: 'Exclude',
   divide: 'Divide',
+  crop: 'Crop',
 };
 
 /** @experimental

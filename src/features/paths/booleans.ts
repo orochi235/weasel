@@ -53,17 +53,15 @@ export function pathExclude(...paths: Path[]): PolygonPath {
  * Fracture N paths along every intersection into the maximal set of
  * non-overlapping regions. Returns one `PolygonPath` per region.
  *
- * Behavior:
- *   - For each input Ai, the exclusive region `Ai − (union of all Aj, j≠i)`
- *     is emitted if non-empty.
- *   - For each pair (Ai, Aj) with i<j, the overlap `Ai ∩ Aj` is emitted if
- *     non-empty.
+ * Algorithm: for every non-empty subset S ⊆ {A1..AN}, emit the region
+ * `(∩ S) − (∪ complement)` — points covered by exactly the members of S
+ * and no others. By construction the emitted regions are pairwise disjoint
+ * and their union equals `pathUnion(A1..AN)`.
  *
- * For N=2 this is exactly the three Illustrator "Divide" outputs. For N>2
- * it misses higher-order overlap distinctions (e.g. a region covered by 3
- * inputs is not separated from a region covered by only 2 of them when
- * those 2 are a subset). Documented as a v1 limitation; higher-order
- * decomposition is deferred.
+ * For N=2 this collapses to the three Illustrator "Divide" outputs
+ * (A−B, B−A, A∩B). For N=3 up to 7 regions are emitted. The 2^N − 1
+ * subset count limits this to small N in practice; passing more than ~8
+ * inputs is a misuse — the polygon-clipping kernel dominates anyway.
  */
 export function pathDivide(...paths: Path[]): PolygonPath[] {
   if (paths.length === 0) return [];
@@ -71,24 +69,61 @@ export function pathDivide(...paths: Path[]): PolygonPath[] {
     return [multiPolygonToPath(pathToMultiPolygon(paths[0]))];
   }
   const mps = paths.map((p) => pathToMultiPolygon(p));
+  const n = mps.length;
   const out: PolygonPath[] = [];
 
-  // Exclusive regions: Ai − union(others).
-  for (let i = 0; i < mps.length; i++) {
-    const others = mps.filter((_, j) => j !== i);
-    const [head, ...rest] = others;
-    const othersUnion = polygonClipping.union(head, ...rest);
-    const exclusive = polygonClipping.difference(mps[i], othersUnion);
-    if (exclusive.length > 0) out.push(multiPolygonToPath(exclusive));
-  }
+  // Iterate every non-empty subset via bitmask. Emit subsets in size-
+  // ascending order so the output is stable and reads "exclusives first,
+  // then pairs, then triples, …" — matches the old N=2 ordering.
+  const subsets: number[] = [];
+  for (let mask = 1; mask < 1 << n; mask++) subsets.push(mask);
+  subsets.sort((a, b) => popcount(a) - popcount(b) || a - b);
 
-  // Pairwise intersections (each pair once).
-  for (let i = 0; i < mps.length; i++) {
-    for (let j = i + 1; j < mps.length; j++) {
-      const inter = polygonClipping.intersection(mps[i], mps[j]);
-      if (inter.length > 0) out.push(multiPolygonToPath(inter));
+  for (const mask of subsets) {
+    const inside: typeof mps = [];
+    const outside: typeof mps = [];
+    for (let i = 0; i < n; i++) {
+      (mask & (1 << i) ? inside : outside).push(mps[i]);
     }
+    const [insideHead, ...insideRest] = inside;
+    let region = insideRest.length === 0
+      ? insideHead
+      : polygonClipping.intersection(insideHead, ...insideRest);
+    if (region.length === 0) continue;
+    if (outside.length > 0) {
+      const [outHead, ...outRest] = outside;
+      const outsideUnion = polygonClipping.union(outHead, ...outRest);
+      region = polygonClipping.difference(region, outsideUnion);
+      if (region.length === 0) continue;
+    }
+    out.push(multiPolygonToPath(region));
   }
 
+  return out;
+}
+
+function popcount(n: number): number {
+  let c = 0;
+  while (n) { n &= n - 1; c++; }
+  return c;
+}
+
+/**
+ * Clip each non-topmost path to the topmost path (Illustrator "Crop").
+ * Returns `N − 1` results, one per source-below-top, in input order.
+ * Discards the topmost path itself — it acts purely as the clipping mask.
+ *
+ * Empty results (a source that lies entirely outside the mask) are
+ * filtered. With `<2` inputs the result is empty.
+ */
+export function pathCrop(...paths: Path[]): PolygonPath[] {
+  if (paths.length < 2) return [];
+  const mps = paths.map((p) => pathToMultiPolygon(p));
+  const mask = mps[mps.length - 1];
+  const out: PolygonPath[] = [];
+  for (let i = 0; i < mps.length - 1; i++) {
+    const clipped = polygonClipping.intersection(mps[i], mask);
+    if (clipped.length > 0) out.push(multiPolygonToPath(clipped));
+  }
   return out;
 }

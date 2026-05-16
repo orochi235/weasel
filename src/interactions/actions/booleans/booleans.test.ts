@@ -160,6 +160,32 @@ describe('applyBooleanOp — operation-specific behavior', () => {
     expect(h.state.selection).toHaveLength(3);
   });
 
+  it('crop: clips sources to the topmost path, emits N-1 results, deletes all sources including the mask', () => {
+    // a, b sit below; mask on top covers only the right halves of both.
+    const h = makeAdapter([
+      rect('a', 0, 0, 10, 10),
+      rect('b', 0, 10, 10, 10),
+      rect('mask', 5, 0, 20, 20),
+    ]);
+    const result = applyBooleanOp(h.adapter, 'crop');
+    expect(result.kind).toBe('applied');
+    expect(h.state.inserted).toHaveLength(2);
+    // All three sources should be removed (mask is consumed too).
+    expect(h.state.removed.sort()).toEqual(['a', 'b', 'mask']);
+    expect(h.state.selection).toHaveLength(2);
+  });
+
+  it('crop: noop when sources lie entirely outside the mask', () => {
+    const h = makeAdapter([
+      rect('a', 0, 0, 5, 5),
+      rect('b', 100, 100, 5, 5), // far from mask
+      rect('mask', 50, 50, 5, 5), // disjoint from both sources
+    ]);
+    const result = applyBooleanOp(h.adapter, 'crop');
+    expect(result.kind).toBe('noop');
+    if (result.kind === 'noop') expect(result.reason).toBe('empty-result');
+  });
+
   it('passes the op kind to createPathNode as producedBy', () => {
     // Adapters that want layer-icon provenance (e.g. swillustrator) read
     // the second arg of createPathNode to tag the minted node.

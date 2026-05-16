@@ -116,6 +116,62 @@ describe('pathDivide', () => {
     const parts = pathDivide(a, b);
     expect(parts).toHaveLength(2);
   });
+
+  it('three rects with a triple overlap → 7 regions, every test point in exactly one', () => {
+    // A: [0,20)×[0,20)  B: [10,30)×[0,20)  C: [5,25)×[10,30)
+    // Triple overlap A∩B∩C lives at [10,20)×[10,20).
+    const a = r(0, 0, 20, 20);
+    const b = r(10, 0, 20, 20);
+    const c = r(5, 10, 20, 20);
+    const parts = pathDivide(a, b, c);
+    expect(parts).toHaveLength(7);
+    // 7 representative points, one per subset region.
+    const probes: [number, number][] = [
+      [2, 2],    // A only
+      [25, 2],   // B only
+      [22, 25],  // C only
+      [15, 5],   // A∩B
+      [7, 15],   // A∩C
+      [22, 15],  // B∩C
+      [15, 15],  // A∩B∩C
+    ];
+    for (const [x, y] of probes) {
+      const hits = parts.filter((p) => pointInPath(p, x, y));
+      expect(hits, `(${x},${y}) should land in exactly one region`).toHaveLength(1);
+    }
+  });
+});
+
+import { pathCrop } from './booleans';
+
+describe('pathCrop', () => {
+  it('clips each non-topmost path to the topmost (mask)', () => {
+    // Two rects below; one mask on top covering only the right halves.
+    const a = r(0, 0, 10, 10);
+    const b = r(0, 10, 10, 10);
+    const mask = r(5, 0, 20, 20);
+    const cropped = pathCrop(a, b, mask);
+    expect(cropped).toHaveLength(2);
+    // Right halves survive; left halves are clipped away.
+    expect(pointInPath(cropped[0], 7, 5)).toBe(true);
+    expect(pointInPath(cropped[0], 2, 5)).toBe(false);
+    expect(pointInPath(cropped[1], 7, 15)).toBe(true);
+    expect(pointInPath(cropped[1], 2, 15)).toBe(false);
+  });
+
+  it('drops sources that lie entirely outside the mask', () => {
+    const inside = r(0, 0, 5, 5);
+    const outside = r(100, 100, 5, 5);
+    const mask = r(0, 0, 10, 10);
+    const cropped = pathCrop(inside, outside, mask);
+    expect(cropped).toHaveLength(1);
+    expect(pointInPath(cropped[0], 2, 2)).toBe(true);
+  });
+
+  it('returns [] when fewer than two inputs', () => {
+    expect(pathCrop()).toEqual([]);
+    expect(pathCrop(r(0, 0, 10, 10))).toEqual([]);
+  });
 });
 
 describe('boolean ops — edge cases', () => {

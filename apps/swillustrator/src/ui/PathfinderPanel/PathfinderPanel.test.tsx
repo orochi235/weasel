@@ -11,6 +11,7 @@ const noopActions: UseBooleansReturn = {
   subtract: noop,
   exclude: noop,
   divide: noop,
+  crop: noop,
 };
 
 function adapterWith(paths: number): Pick<BooleansAdapter, 'getSelection' | 'getWorldPath'> {
@@ -26,7 +27,7 @@ function adapterWith(paths: number): Pick<BooleansAdapter, 'getSelection' | 'get
 }
 
 describe('PathfinderPanel', () => {
-  it('renders five buttons in op order', () => {
+  it('renders one button per Pathfinder op in op order', () => {
     render(<PathfinderPanel adapter={adapterWith(2)} actions={noopActions} />);
     const buttons = screen.getAllByRole('button');
     expect(buttons.map((b) => b.getAttribute('data-testid'))).toEqual([
@@ -35,6 +36,7 @@ describe('PathfinderPanel', () => {
       'pathfinder-op-subtract',
       'pathfinder-op-exclude',
       'pathfinder-op-divide',
+      'pathfinder-op-crop',
     ]);
   });
 
@@ -83,9 +85,10 @@ describe('PathfinderPanel — click dispatch', () => {
       subtract: vi.fn(),
       exclude: vi.fn(),
       divide: vi.fn(),
+      crop: vi.fn(),
     };
     render(<PathfinderPanel adapter={adapterWith(2)} actions={actions} />);
-    for (const op of ['union', 'intersect', 'subtract', 'exclude', 'divide'] as const) {
+    for (const op of ['union', 'intersect', 'subtract', 'exclude', 'divide', 'crop'] as const) {
       fireEvent.click(screen.getByTestId(`pathfinder-op-${op}`));
       expect(actions[op]).toHaveBeenCalledTimes(1);
     }
@@ -98,6 +101,7 @@ describe('PathfinderPanel — click dispatch', () => {
       subtract: vi.fn(),
       exclude: vi.fn(),
       divide: vi.fn(),
+      crop: vi.fn(),
     };
     render(<PathfinderPanel adapter={adapterWith(1)} actions={actions} />);
     fireEvent.click(screen.getByTestId('pathfinder-op-union'));
