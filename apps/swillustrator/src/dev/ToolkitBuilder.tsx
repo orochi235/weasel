@@ -49,7 +49,7 @@ import {
   type RegistryEntry,
   type ToolDef,
 } from '@orochi235/weasel/routing';
-import { DataGrid, type DataGridColumn } from '@orochi235/weasel-ui';
+import { Badge, DataGrid, type DataGridColumn } from '@orochi235/weasel-ui';
 import { formatShortcutParts } from '../ui/ToolPalette/formatShortcut';
 import { KeyCap } from './KeyCap';
 import {
@@ -199,6 +199,13 @@ function writeHash(tools: Set<string>, actions: Set<string>) {
   const next = `#/dev/toolkits${params.toString() ? `?${params.toString()}` : ''}`;
   if (window.location.hash !== next) window.history.replaceState(null, '', next);
 }
+
+const SLOT_TONE = {
+  active: 'accent',
+  ambient: 'warn',
+  hotkey: 'info',
+  inactive: 'danger',
+} as const;
 
 let _seq = 0;
 const freshId = (prefix: string) => asNodeId(`${prefix}-${++_seq}`);
@@ -482,7 +489,19 @@ export function ToolkitBuilder() {
       id: '_slot',
       header: 'slot',
       accessor: (r) => slotFor(r.toolId),
-      render: (r) => <span className={s.slot} data-slot={slotFor(r.toolId)}>{slotFor(r.toolId)}</span>,
+      render: (r) => {
+        const slot = slotFor(r.toolId);
+        return (
+          <Badge
+            shape="pill"
+            size="sm"
+            tone={SLOT_TONE[slot]}
+            variant={slot === 'inactive' ? 'solid' : 'outline'}
+          >
+            {slot}
+          </Badge>
+        );
+      },
     },
     { id: 'phase',     header: 'phase',   accessor: (r) => r.phase },
     { id: 'gesture',   header: 'gesture', accessor: (r) => r.gesture },
