@@ -3,7 +3,6 @@ import {
   SceneCanvas,
   useScene,
   useSelection,
-  useHandTool,
   createViewportLayer,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
@@ -44,7 +43,6 @@ export function ViewportLayerDemo() {
   });
   const selection = useSelection();
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
-  const hand = useHandTool();
 
   // A trivial source layer that paints the same shapes the main scene
   // shows. The viewport renders this through its own `View`. In a richer
@@ -72,18 +70,48 @@ export function ViewportLayerDemo() {
     [initial],
   );
 
+  // Source layer that draws a dashed outline showing where the main
+  // canvas's visible window falls in world coordinates. The minimap
+  // composes this on top of `sceneSource`, so the indicator stays anchored
+  // to whatever world rect the main canvas is currently looking at.
+  const viewIndicator = useMemo<RenderLayer<unknown>>(
+    () => ({
+      id: 'viewport-indicator',
+      label: 'Visible area',
+      space: 'world',
+      draw: (_data, v): DrawCommand[] => {
+        // Visible world rect of the main canvas, in world coords.
+        const worldX = view.x;
+        const worldY = view.y;
+        const worldW = W / view.scale;
+        const worldH = H / view.scale;
+        // Transform into minimap-screen coords using the minimap's view.
+        const sx = (worldX - v.x) * v.scale;
+        const sy = (worldY - v.y) * v.scale;
+        const sw = worldW * v.scale;
+        const sh = worldH * v.scale;
+        return [{
+          kind: 'path',
+          path: { kind: 'rect', x: sx, y: sy, width: sw, height: sh },
+          stroke: { paint: { fill: 'solid', color: '#ffffff' }, width: 1, dash: [2, 3] },
+        }];
+      },
+    }),
+    [view],
+  );
+
   // Minimap: top-right corner, fixed scale that fits the world bounds.
   const minimap = useMemo(
     () =>
       createViewportLayer<unknown>({
         id: 'minimap',
         label: 'Minimap',
-        source: [sceneSource],
+        source: [sceneSource, viewIndicator],
         view: { x: -100, y: -100, scale: 0.18 },
         bounds: (_outer, dims) => ({ x: dims.width - 180 - 8, y: 8, w: 180, h: 120 }),
         background: 'rgba(0,0,0,0.4)',
       }),
-    [sceneSource],
+    [sceneSource, viewIndicator],
   );
 
   // Picture-in-picture: bottom-left, zoomed-in slice of the world centered
@@ -116,7 +144,7 @@ export function ViewportLayerDemo() {
         selection={selection}
         view={view}
         onViewChange={setView}
-        ambient={[hand]}
+        viewport={{}}
         layers={{
           scene: {
             drawOne: (n, p): DrawCommand[] => [{

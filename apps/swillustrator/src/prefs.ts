@@ -153,7 +153,11 @@ export const PREFS = {
           kind: 'object',
           name: 'Panel visibility',
           description: 'Hidden/collapsed state per properties-panel section.',
-          default: {} as Record<string, { hidden?: boolean; collapsed?: boolean }>,
+          // Document panel is hidden by default: its fields (title, paper
+          // size) are also reachable by selecting the document in the
+          // layers panel, so showing the dedicated panel on first run is
+          // redundant. Reveal it via Preferences → Panel visibility.
+          default: { document: { hidden: true } } as Record<string, { hidden?: boolean; collapsed?: boolean }>,
         },
         disclaimerDismissed: {
           kind: 'boolean',

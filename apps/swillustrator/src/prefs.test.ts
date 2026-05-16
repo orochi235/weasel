@@ -125,7 +125,7 @@ describe('usePref', () => {
 
   it('object pref round-trips', async () => {
     const { result } = renderHook(() => usePref('ui.panels'));
-    expect(result.current[0]).toEqual({});
+    expect(result.current[0]).toEqual({ document: { hidden: true } });
     act(() => { result.current[1]({ colors: { hidden: true } }); });
     await flushMicrotasks();
     const parsed = JSON.parse(window.localStorage.getItem(PREFS_KEY)!);
