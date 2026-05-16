@@ -145,8 +145,10 @@ export function RegistryInspector() {
         <section className={s.detail}>
           {selected
             ? <RegistryDetail entry={selected} tools={runtime.tools} actions={runtime.actions} onNavigate={(t) => {
-                const next = runtime.tools.find((e) => e.id === t.id);
-                if (next) setSelected(next);
+                for (const node of nodes) {
+                  const hit = node.entries.find((e) => e.kind === t.kind && e.id === t.id);
+                  if (hit) { setSelected(hit); return; }
+                }
               }} />
             : <p className={s.empty}>Select an entry to see details.</p>}
         </section>
