@@ -1,4 +1,4 @@
-# Active colors as a userland tool — design
+# Color context as a userland tool — design
 
 **Status:** approved
 **Owner:** swillustrator
@@ -26,27 +26,27 @@ keybindings through the kit's tool dispatcher rather than free-floating
 | Where does the state live? | Inside the new hook (React `useState` + refs), exactly as `useActiveColors` does today. | The tool primitive isn't a state container; the kit's existing pattern (`useDeleteTool` → controller + `Tool`) keeps the React state next to React. |
 | Where does the tool live in the dispatcher? | **Ambient list** (the kit's `ToolSlot = 'ambient'` bucket holds an array — see `dispatcher.test.ts:34, 59`). | The tool never claims pointer/drag; it only intercepts a few keys, alongside other always-on tools (delete, nudge, clone). |
 | History capture | Object-edit only. Active-paint state changes (D, X, Shift-X, `/`, picking a swatch with no selection, eyedropper into active paint) do **not** enter history. `applyFillToSelection` / `applyStrokeToSelection` / `applyStrokeWidthToSelection` keep their existing `coalesceKey`-driven undo grouping. | Photoshop / Figma don't undo brush-color changes; only scene mutations belong on the undo stack. |
-| Consumer surface | React context (`<ActiveColorsProvider>` + `useActiveColors()`) **plus** the same `api` object returned for non-React callers (other tools, dispatcher route closures). | The api is just an imperative object; the context layer is a convenience for the React UI tree, not a wall around the api. |
+| Consumer surface | React context (`<ColorContextProvider>` + `useColorContext()`) **plus** the same `api` object returned for non-React callers (other tools, dispatcher route closures). | The api is just an imperative object; the context layer is a convenience for the React UI tree, not a wall around the api. |
 | Tool palette visibility | Hidden from the tool palette (no `presentation.icon`); discoverable in the command palette via `buildActionRegistry`. | The tool has no pointer/drag — it would be a dead button in the palette. |
 
 ## Architecture
 
 ```
-apps/swillustrator/src/tools/activeColors/
-├── useActiveColorsTool.ts      # hook → { tool, api }
-├── ActiveColorsContext.tsx     # <ActiveColorsProvider> + useActiveColors()
+apps/swillustrator/src/tools/colorContext/
+├── useColorContextTool.ts      # hook → { tool, api }
+├── ColorContext.tsx     # <ColorContextProvider> + useColorContext()
 └── index.ts                    # barrel
 ```
 
 `useActiveColors.ts` (the existing hook at the repo root of swillustrator) is
-deleted; its body is folded into `useActiveColorsTool.ts`.
+deleted; its body is folded into `useColorContextTool.ts`.
 
-### `useActiveColorsTool(opts)` → `{ tool, api }`
+### `useColorContextTool(opts)` → `{ tool, api }`
 
 Options:
 
 ```ts
-interface UseActiveColorsToolOptions {
+interface UseColorContextToolOptions {
   initialFill?: ActivePaint;
   initialStroke?: ActivePaint;
   initialFocus?: 'fill' | 'stroke';
@@ -59,10 +59,10 @@ interface UseActiveColorsToolOptions {
 }
 ```
 
-### `ActiveColorsApi`
+### `ColorContextApi`
 
 ```ts
-interface ActiveColorsApi {
+interface ColorContextApi {
   // Active-paint state (moves verbatim from useActiveColors)
   fill: ActivePaint;
   stroke: ActivePaint;
@@ -98,9 +98,9 @@ drags into one undo entry — same behavior as today.
 
 ```ts
 defineTool<null>({
-  id: 'active-colors',
+  id: 'color-context',
   presentation: {
-    label: 'Active colors',
+    label: 'Color context',
     group: 'view',  // command-palette only; no icon
   },
   initial: {
@@ -123,25 +123,25 @@ keybinding remap still works.
 ### Context
 
 ```tsx
-export const ActiveColorsContext = createContext<ActiveColorsApi | null>(null);
+export const ColorContext = createContext<ColorContextApi | null>(null);
 
-export function ActiveColorsProvider({
+export function ColorContextProvider({
   value,
   children,
 }: {
-  value: ActiveColorsApi;
+  value: ColorContextApi;
   children: ReactNode;
 }) {
   return (
-    <ActiveColorsContext.Provider value={value}>
+    <ColorContext.Provider value={value}>
       {children}
-    </ActiveColorsContext.Provider>
+    </ColorContext.Provider>
   );
 }
 
-export function useActiveColors(): ActiveColorsApi {
-  const v = useContext(ActiveColorsContext);
-  if (!v) throw new Error('useActiveColors must be used inside <ActiveColorsProvider>');
+export function useColorContext(): ColorContextApi {
+  const v = useContext(ColorContext);
+  if (!v) throw new Error('useColorContext must be used inside <ColorContextProvider>');
   return v;
 }
 ```
@@ -151,12 +151,12 @@ export function useActiveColors(): ActiveColorsApi {
 ### App.tsx
 
 - Replace `const colors = useActiveColors({...});` with
-  `const { tool: activeColorsTool, api: colors } = useActiveColorsTool({ adapter, getSelection: () => selection.current.map(String), getNodeById });`.
-- Push `activeColorsTool` into the ambient `tools` array.
+  `const { tool: colorContextTool, api: colors } = useColorContextTool({ adapter, getSelection: () => selection.current.map(String), getNodeById });`.
+- Push `colorContextTool` into the ambient `tools` array.
 - Delete the four `useAction(...)` calls that registered D / X / Shift-X / `/`.
 - Delete the local `applyFillToSelection`, `applyStrokeToSelection`,
   `applyStrokeWidthToSelection` helper closures (moved onto `api`).
-- Wrap the JSX subtree in `<ActiveColorsProvider value={colors}>`.
+- Wrap the JSX subtree in `<ColorContextProvider value={colors}>`.
 - Strip ~17 props from `<RightSidebar>` (the active-paint state, scene-write helpers, and focused-alpha pair).
 - For tools that need to write active paint (eyedropper, etc.), pass `colors.setFocusedColor` (or the slice each tool needs) into the tool's options at construction.
 
@@ -170,13 +170,13 @@ export interface ActiveSwatchesProps {
 }
 ```
 
-Body switches from `p.fill / p.stroke / p.onChangeFill / …` to `const colors = useActiveColors();` and uses `colors.fill / colors.setFill / …`.
+Body switches from `p.fill / p.stroke / p.onChangeFill / …` to `const colors = useColorContext();` and uses `colors.fill / colors.setFill / …`.
 
 ### RightSidebar (in App.tsx)
 
 `RightSidebarProps` loses: `activeFill, activeStroke, setActiveFill, setActiveStroke, focusedSwatch, setFocusedSwatch, fillColor, setFillColor, strokeColor, setStrokeColor, strokeWidth, setStrokeWidth, applyFillToSelection, applyStrokeToSelection, applyStrokeWidthToSelection, focusedAlpha, setFocusedAlpha`.
 
-Each panel that reads them calls `useActiveColors()` directly.
+Each panel that reads them calls `useColorContext()` directly.
 
 ### useEyedropperTool wiring
 
@@ -189,7 +189,7 @@ current focus).
 
 - Existing `useActiveColors` tests (if any) migrate alongside the hook.
 - A new test covers the ambient-list keybinding path: render the dispatcher
-  with the active-colors tool plus a no-op active tool, fire `keydown` for
+  with the color-context tool plus a no-op active tool, fire `keydown` for
   `d` / `x` / `Shift+x` / `/`, assert the api method that fired.
 - A new test covers the scene-write methods: mock the adapter, call
   `api.applyFillToSelection('#ff0000ff')` with a stubbed selection, assert
@@ -197,18 +197,18 @@ current focus).
 
 ## Out of scope
 
-- Migrating the active-colors tool to the kit (`src/features/colors/`). Stays under apps/swillustrator/src/ per the TODO's "userland tool" framing.
+- Migrating the color-context tool to the kit (`src/features/colors/`). Stays under apps/swillustrator/src/ per the TODO's "userland tool" framing.
 - New coalesce-key strategies (the existing ones move verbatim).
 - Subscribe-based / `useSyncExternalStore` consumers (Q2-A: React context is the only consumer surface in v1).
-- A palette icon for the active-colors tool (intentionally hidden — no pointer/drag).
+- A palette icon for the color-context tool (intentionally hidden — no pointer/drag).
 
 ## File changes summary
 
 | Path | Change |
 |---|---|
-| `apps/swillustrator/src/tools/activeColors/useActiveColorsTool.ts` | new — folds in `useActiveColors.ts` body + scene-write methods |
-| `apps/swillustrator/src/tools/activeColors/ActiveColorsContext.tsx` | new |
-| `apps/swillustrator/src/tools/activeColors/index.ts` | new barrel |
+| `apps/swillustrator/src/tools/colorContext/useColorContextTool.ts` | new — folds in `useActiveColors.ts` body + scene-write methods |
+| `apps/swillustrator/src/tools/colorContext/ColorContext.tsx` | new |
+| `apps/swillustrator/src/tools/colorContext/index.ts` | new barrel |
 | `apps/swillustrator/src/useActiveColors.ts` | deleted |
 | `apps/swillustrator/src/App.tsx` | hook swap, provider wrap, prop drops, action-call deletions |
 | `apps/swillustrator/src/ActiveSwatches.tsx` | props collapse, consumer switches to context |
