@@ -223,9 +223,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       const restThreshold = o.restThreshold ?? 0.01;
 
       let target: T | null = o.to ?? null;
-      let stiffness = target == null ? 0 : kBase;
       let value = o.from;
-      let velocity: T = (o.velocity ?? scale(o.from, 0)) as T;
+      // Default to zero velocity: assumes scale(_, 0) returns the zero vector of T. Pass an explicit velocity for unusual T where this isn't true.
+      let velocity: T = o.velocity ?? scale(o.from, 0);
       let lastTime: number | null = null;
 
       const baseHandle = register({
@@ -251,7 +251,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
           // no spring force; only damping acts on velocity (exponential decay).
           const ref = target ?? value;
           const displacement = subtract(value, ref);
-          const springForce = scale(displacement, -stiffness);
+          const springForce = scale(displacement, target == null ? 0 : -kBase);
           const dampingForce = scale(velocity, -damping);
           const accel = scale(add(springForce, dampingForce), 1 / mass);
           velocity = add(velocity, scale(accel, dt));
@@ -272,38 +272,13 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
 
       const handle: PhysicsHandle<T> = {
         ...baseHandle,
-        setTarget: (newTo: T | null) => {
-          target = newTo;
-          stiffness = newTo == null ? 0 : kBase;
-        },
+        setTarget: (newTo: T | null) => { target = newTo; },
         setVelocity: (v: T) => { velocity = v; },
       };
       return handle;
     };
 
-    const spring = <T,>(o: SpringOptions<T>): AnimationHandle => {
-      const isNumeric = typeof o.from === 'number' && typeof o.to === 'number';
-      if (!isNumeric && (!o.add || !o.subtract || !o.scale || !o.magnitude)) {
-        throw new Error('spring: add/subtract/scale/magnitude are required for non-numeric T');
-      }
-      return physics<T>({
-        from: o.from,
-        to: o.to,
-        velocity: o.velocity,
-        preset: o.preset,
-        stiffness: o.stiffness,
-        damping: o.damping,
-        mass: o.mass,
-        restThreshold: o.restThreshold,
-        add: o.add,
-        subtract: o.subtract,
-        scale: o.scale,
-        magnitude: o.magnitude,
-        onTick: o.onTick,
-        onDone: o.onDone,
-        cancelKey: o.cancelKey,
-      });
-    };
+    const spring = <T,>(o: SpringOptions<T>): AnimationHandle => physics<T>(o);
 
     const decay = <T,>(o: DecayOptions<T>): AnimationHandle => {
       const friction = o.friction ?? 0.95;

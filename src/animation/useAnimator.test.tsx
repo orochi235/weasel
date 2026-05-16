@@ -166,7 +166,7 @@ describe('useAnimator.spring', () => {
         to: { x: 10, y: 10 },
         onTick: () => {},
       } as never),
-    ).toThrow(/spring/);
+    ).toThrow(/add\/subtract\/scale\/magnitude/);
   });
 });
 
@@ -427,6 +427,26 @@ describe('useAnimator.physics', () => {
     act(() => handle.setTarget(0));
     for (let i = 0; i < 120; i++) act(() => clock.advance(16));
     expect(samples[samples.length - 1]).toBeCloseTo(0, 0);
+  });
+
+  it('setVelocity kicks the animation mid-flight', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const samples: number[] = [];
+    let handle!: ReturnType<typeof result.current.physics<number>>;
+    act(() => {
+      handle = result.current.physics<number>({
+        from: 0, to: null, velocity: 0,
+        stiffness: 0, damping: 1, mass: 1,
+        restThreshold: 0,
+        onTick: (v) => samples.push(v),
+      });
+    });
+    act(() => clock.advance(16)); // first tick, position 0, velocity 0
+    const beforeKick = samples[samples.length - 1];
+    act(() => handle.setVelocity(100));
+    for (let i = 0; i < 30; i++) act(() => clock.advance(16));
+    expect(samples[samples.length - 1]).toBeGreaterThan(beforeKick + 10);
   });
 
   it('setTarget(null) switches to decay; velocity carries position forward', () => {
