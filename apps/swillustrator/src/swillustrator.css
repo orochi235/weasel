@@ -69,8 +69,12 @@ html, body, #root {
   display: inline-flex;
   flex-direction: row;
   gap: 1px;
-  background: #1a1612;
-  border: 1px solid #2a2418;
+  /* Use the shared chrome surface so the actionbar groups read as part
+     of the same chrome stratum as the left tool palette and the status
+     bar. Border keeps the segmented-widget grouping visible without
+     introducing a second background tone. */
+  background: var(--swill-chrome-bg);
+  border: 1px solid var(--swill-chrome-border);
   border-radius: 4px;
   padding: 2px;
   user-select: none;
@@ -108,7 +112,10 @@ html, body, #root {
   display: block;
 }
 .swill-actionbar-button:hover:not(:disabled) {
-  background: #2a2418;
+  /* Match the left tool-button hover treatment (border tint) rather than
+     introducing a darker background well — keeps the chrome stratum
+     consistent across actionbar / sidebar / statusbar. */
+  background: var(--swill-chrome-border);
   color: #fff5d8;
 }
 .swill-actionbar-button:active:not(:disabled) {
