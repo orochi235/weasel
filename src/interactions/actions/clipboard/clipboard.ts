@@ -84,14 +84,19 @@ export function useClipboard<TNode extends { id: string }>(
     // state, so it must run before the originals are removed.
     cb.copy();
     const a = adapterRef.current;
-    const ops: Op[] = [];
+    const captured: { obj: TNode; index: number }[] = [];
     for (const id of ids) {
       const index = a.getNodeIndex(id);
       if (index < 0) continue;
       const obj = a.getNode?.(id) ?? ({ id } as unknown as TNode);
-      ops.push(createDeleteOp({ node: obj, index }));
+      captured.push({ obj, index });
     }
-    if (ops.length === 0) return [];
+    if (captured.length === 0) return [];
+    // Order by index DESC so reverse-then-invert (history's undo path)
+    // re-inserts ASC — each splice lands on a correctly-sized array
+    // instead of clamping high indices to a still-growing length.
+    captured.sort((a, b) => b.index - a.index);
+    const ops: Op[] = captured.map(({ obj, index }) => createDeleteOp({ node: obj, index }));
     ops.push(createSetSelectionOp({ from: ids, to: [] }));
     dispatchApplyBatch(a, ops, optsRef.current.cutLabel ?? 'Cut');
     return ids;

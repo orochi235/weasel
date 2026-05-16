@@ -155,6 +155,7 @@ export function applyBooleanOp(
 
   const newNodes = results.map((p) => adapter.createPathNode(p, op));
   const ops: Op[] = [];
+  const captured: { node: { id: string }; index: number }[] = [];
   for (const e of entries) {
     // Capture the full node so the delete's `invert()` (an insert) restores
     // every field on undo. Fallback to a `{ id }` stub matches the legacy
@@ -163,8 +164,13 @@ export function applyBooleanOp(
     // adapter doesn't expose order.
     const node = adapter.getNode?.(e.id) ?? { id: e.id };
     const index = adapter.getZOrder?.(e.id)?.index ?? -1;
-    ops.push(createDeleteOp({ node, index }));
+    captured.push({ node, index });
   }
+  // Order by index DESC so reverse-then-invert (history's undo path)
+  // re-inserts ASC — each splice lands on a correctly-sized array
+  // instead of clamping high indices to a still-growing length.
+  captured.sort((a, b) => b.index - a.index);
+  for (const { node, index } of captured) ops.push(createDeleteOp({ node, index }));
   for (const n of newNodes) ops.push(createInsertOp({ node: n }));
   if (topAnchor && targetIndex !== undefined) {
     // After the deletes, the topmost source's index is no longer occupied;

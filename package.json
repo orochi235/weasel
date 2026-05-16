@@ -82,6 +82,7 @@
     "test:related": "vitest related --run",
     "test:visual": "playwright test --config=tests/visual/playwright.config.ts",
     "test:visual:update": "UPDATE_SNAPSHOTS=1 playwright test --config=tests/visual/playwright.config.ts",
+    "test:e2e:swill": "playwright test --config=apps/swillustrator/tests-e2e/playwright.config.ts",
     "lint": "tsc --noEmit",
     "changeset": "changeset",
     "release": "changeset publish",

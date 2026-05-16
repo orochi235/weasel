@@ -104,6 +104,39 @@ describe('defaultDeleteAction', () => {
     expect(applyOps).not.toHaveBeenCalled();
   });
 
+  it('multi-delete + undo restores original z-order', () => {
+    // Mirror real adapter semantics: insertNode splices at index, removeNode
+    // splices by id. The forward delete clears the array; the reverse-and-
+    // invert (what history.invertEntry produces on undo) re-inserts. Without
+    // ordering at capture, descending-index splices clamp against a growing
+    // empty array and high-index nodes land at the front.
+    const initial = ['a', 'b', 'c', 'd', 'e'].map((id) => ({ id }));
+    let arr = initial.map((n) => ({ ...n }));
+    const adapter = {
+      insertNode: (n: { id: string }, idx?: number) => {
+        arr.splice(idx ?? arr.length, 0, n);
+      },
+      removeNode: (id: string) => {
+        const i = arr.findIndex((n) => n.id === id);
+        if (i >= 0) arr.splice(i, 1);
+      },
+      setSelection: (_: string[]) => {},
+    };
+    const action = defaultDeleteAction({
+      getSelection: () => initial.map((n) => n.id as NodeId),
+      getNode: (id) => initial.find((n) => n.id === id) ?? null,
+      getNodeIndex: (id) => initial.findIndex((n) => n.id === id),
+      applyOps: (ops) => {
+        for (const op of ops) op.apply(adapter);
+        // Replay history.invertEntry: reverse + invert, then apply.
+        const inverses = [...ops].reverse().map((op) => op.invert());
+        for (const op of inverses) op.apply(adapter);
+      },
+    });
+    action.run();
+    expect(arr.map((n) => n.id)).toEqual(['a', 'b', 'c', 'd', 'e']);
+  });
+
   it('enabled reflects post-filter selection emptiness', () => {
     const empty = defaultDeleteAction({
       getSelection: () => [],
