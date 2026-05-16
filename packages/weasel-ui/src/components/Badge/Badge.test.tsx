@@ -29,3 +29,24 @@ describe('Badge', () => {
     expect(container.querySelector('svg')).not.toBeNull();
   });
 });
+
+describe('Badge content slots', () => {
+  it('renders a dot when dot prop set', () => {
+    const { container } = render(<Badge dot>x</Badge>);
+    expect(container.querySelector('[data-badge-dot]')).not.toBeNull();
+  });
+
+  it('renders leading icon node', () => {
+    const { getByTestId } = render(
+      <Badge leadingIcon={<span data-testid="icon">i</span>}>x</Badge>,
+    );
+    expect(getByTestId('icon')).toBeDefined();
+  });
+
+  it('applies shape insets as CSS custom properties', () => {
+    const { container } = render(<Badge shape="banner">x</Badge>);
+    const el = container.firstElementChild as HTMLElement;
+    expect(el.style.getPropertyValue('--badge-inset-left')).toBe('10px');
+    expect(el.style.getPropertyValue('--badge-inset-right')).toBe('10px');
+  });
+});
