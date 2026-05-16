@@ -156,11 +156,15 @@ function resolvePerItem<T, TItem>(
 }
 
 function itemId(item: unknown): string {
-  if (item && typeof item === 'object' && 'id' in (item as { id?: unknown })) {
-    const id = (item as { id?: unknown }).id;
+  if (item != null && typeof item === 'object' && 'id' in item) {
+    const id = (item as { id: unknown }).id;
     if (typeof id === 'string') return id;
   }
-  return String(item);
+  if (typeof item === 'string' || typeof item === 'number') return String(item);
+  throw new Error(
+    'stagger().springPose: each item must either be a primitive (string/number) ' +
+      'or have a string `id` field. Otherwise pose ids would collide.',
+  );
 }
 
 function makeBuilder<TItem>(
@@ -181,7 +185,6 @@ function makeBuilder<TItem>(
           interpolate: opts.interpolate,
           onTick: (v) => opts.onTick(v, item, i),
           onDone: opts.onDone ? () => opts.onDone!(item, i) : undefined,
-          cancelKey: opts.cancelKey,
         }),
       ),
     springPose: <TPose,>(

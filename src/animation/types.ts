@@ -226,7 +226,6 @@ export interface StaggerTweenOptions<T, TItem> {
   interpolate?: Interpolate<T>;
   onTick: (value: T, item: TItem, index: number) => void;
   onDone?: (item: TItem, index: number) => void;
-  cancelKey?: string;
 }
 
 export interface StaggerSpringPoseOptions<TPose> {
@@ -245,8 +244,10 @@ export interface StaggerBuilder<TItem> {
   /** Sugar: per-item `animator.tween` with per-item-varying options. */
   tween<T>(opts: StaggerTweenOptions<T, TItem>): AnimationHandle;
   /** Sugar: per-item `springPose` against an adapter. `poseFn` returns the
-   *  target pose for each item; the item is expected to expose an `id` field
-   *  (otherwise `String(item)` is used as the pose id). */
+   *  target pose for each item. Each item must either be a primitive
+   *  (string/number) or expose a string `id` field — otherwise pose ids
+   *  would collide on `"[object Object]"` and successive tweens would
+   *  cancel each other. Throws on items that satisfy neither. */
   springPose<TPose>(
     adapter: import('core/adapters/types').SceneAdapter<{ id: string }, TPose>,
     poseFn: (item: TItem, index: number) => TPose,
