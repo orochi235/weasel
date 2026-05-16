@@ -1,5 +1,6 @@
 import type { ReactNode, ChangeEvent } from 'react';
 import { SidebarPanel, type SidebarPanelProps } from '@orochi235/weasel-ui';
+import { toHex8, getAlpha01, withAlpha01 } from '../../ActiveSwatches';
 import s from './PropertiesPanel.module.css';
 
 /** Convenience composition: a `SidebarPanel` whose body is a
@@ -182,17 +183,39 @@ export function PropertyAxisInput(props: {
   );
 }
 
+/** Color + alpha picker. Native `<input type=color>` only round-trips
+ *  `#rrggbb`, so an adjacent range input drives the alpha channel
+ *  independently. Both controls write `#rrggbbaa` so every consumer
+ *  carries opacity through the same string. */
 export function PropertyColorInput(props: {
   value: string;
   onChange: (v: string) => void;
 }) {
+  const hex8 = toHex8(props.value);
+  const rgb6 = hex8.startsWith('#') && hex8.length >= 7 ? hex8.slice(0, 7) : '#000000';
+  const alpha01 = getAlpha01(hex8);
+  const alphaPct = Math.round(alpha01 * 100);
   return (
-    <input
-      className={`${s.colorInput} ${s.span12}`}
-      type="color"
-      value={props.value.slice(0, 7)}
-      onChange={(e: ChangeEvent<HTMLInputElement>) => props.onChange(e.target.value)}
-    />
+    <span className={`${s.colorInputRow} ${s.span12}`}>
+      <input
+        className={s.colorInput}
+        type="color"
+        value={rgb6}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => props.onChange(withAlpha01(e.target.value, alpha01))}
+      />
+      <input
+        className={s.alphaRange}
+        type="range"
+        min={0}
+        max={100}
+        step={1}
+        value={alphaPct}
+        title="Opacity"
+        aria-label="Opacity"
+        onChange={(e: ChangeEvent<HTMLInputElement>) => props.onChange(withAlpha01(hex8, Number(e.target.value) / 100))}
+      />
+      <span className={s.alphaReadout}>{alphaPct}</span>
+    </span>
   );
 }
 

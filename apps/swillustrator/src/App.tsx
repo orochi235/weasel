@@ -128,6 +128,8 @@ import {
   OpacityIcon,
   FillIcon,
   StrokeIcon,
+  GridIcon,
+  SnapToGridIcon,
 } from './actionIcons';
 import { ActionBar } from './ActionBar';
 import { PreferencesModal } from './PreferencesModal';
@@ -173,7 +175,12 @@ interface View { x: number; y: number; scale: number }
  */
 interface Document {
   size: { width: number; height: number };
+  /** Page background fill. Defaults to near-white; users can re-tint via
+   *  the Background properties panel when the page row is selected. */
+  bgColor?: string;
 }
+
+const DEFAULT_BG_COLOR = '#fafafaff';
 
 /** Synthetic LayerList id representing the document/page row. Never appears
  *  in the scene's selection — swillustrator tracks Page selection in its
@@ -550,6 +557,12 @@ export function App() {
   }, []);
   const [gridDensity, setGridDensity] = usePref('view.gridDensity');
   const [gridVisible, setGridVisible] = usePref('view.gridVisible');
+  // Snap honors the finest grid level (subdivision) rather than the major-
+  // cell spacing, so users can place objects on any rendered gridline —
+  // including the half-cell sub-lines. Mirrors the `subdivisions` arg
+  // passed into useGridFeature below; keep these in sync.
+  const GRID_SUBDIVISIONS = 2;
+  const snapSpacing = gridDensity / GRID_SUBDIVISIONS;
   const toggleGrid = useCallback(() => setGridVisible((v) => !v), [setGridVisible]);
   useKeybinding({ key: ['3', '#'], shift: true }, toggleGrid);
   const [snapToGrid, setSnapToGrid] = usePref('view.snapToGrid');
@@ -579,7 +592,7 @@ export function App() {
   );
   {
     const enabled = snapToGrid;
-    const spacing = gridDensity;
+    const spacing = snapSpacing;
     const r = (v: number) => Math.round(v / spacing) * spacing;
     snapPointToGridRef.current = (p) => (enabled ? { x: r(p.x), y: r(p.y) } : p);
     snapBoundsToGridRef.current = <B extends { x: number; y: number; width: number; height: number }>(b: B): B => {
@@ -1160,7 +1173,7 @@ export function App() {
     move: {
       expandIds: expandGroupIds,
       behaviors: snapToGrid
-        ? [snapBehavior(gridSnapStrategy<Pose>(gridDensity), { bypassKey: 'meta' })]
+        ? [snapBehavior(gridSnapStrategy<Pose>(snapSpacing), { bypassKey: 'meta' })]
         : [],
     },
     // Marquee is opt-in at the kit level — illustration apps want
@@ -1177,7 +1190,7 @@ export function App() {
     resize: {
       behaviors: [lockAspectWithModifier()],
       pointSnapBehaviors: snapToGrid
-        ? [pointSnapToGrid({ spacing: gridDensity, bypassKey: 'meta' })]
+        ? [pointSnapToGrid({ spacing: snapSpacing, bypassKey: 'meta' })]
         : [],
       expandIds: expandGroupIds,
     },
@@ -1805,7 +1818,7 @@ export function App() {
     // gives a three-tier hierarchy (sub < minor < major) so users can read
     // distance at a glance without the grid dominating the page.
     accentEvery: 4,
-    subdivisions: 2,
+    subdivisions: GRID_SUBDIVISIONS,
     // Light gridlines on the white paper — kit defaults are tuned for a
     // dark canvas and read too dark here. Opacity ramps from finest to
     // most prominent so the hierarchy is visible without being heavy.
@@ -1836,11 +1849,11 @@ export function App() {
         ];
         return [
           ...shadowSteps,
-          { kind: 'path', path: { kind: 'rect', x: x0, y: y0, width: w, height: h }, fill: { fill: 'solid', color: '#fafafa' } },
+          { kind: 'path', path: { kind: 'rect', x: x0, y: y0, width: w, height: h }, fill: { fill: 'solid', color: doc.bgColor ?? DEFAULT_BG_COLOR } },
         ];
       },
     }),
-    [doc.size],
+    [doc.size, doc.bgColor],
   );
 
   // Hand-rolled text layer so we can wrap each TextObj's text command in a
@@ -2477,6 +2490,12 @@ export function App() {
           setDocTitle={setDocTitle}
           paperSize={paperSize}
           setPaperSize={setPaperSize}
+          bgColor={doc.bgColor ?? DEFAULT_BG_COLOR}
+          setBgColor={(c) => setDoc((d) => ({ ...d, bgColor: c }))}
+          gridVisible={gridVisible}
+          onToggleGrid={toggleGrid}
+          snapToGrid={snapToGrid}
+          onToggleSnap={toggleSnap}
           gridDensity={gridDensity}
           setGridDensity={setGridDensity}
           view={view}
@@ -2579,6 +2598,12 @@ interface RightSidebarProps {
   setDocTitle: (s: string) => void;
   paperSize: PaperSize;
   setPaperSize: (s: PaperSize) => void;
+  bgColor: string;
+  setBgColor: (color: string) => void;
+  gridVisible: boolean;
+  onToggleGrid: () => void;
+  snapToGrid: boolean;
+  onToggleSnap: () => void;
   gridDensity: number;
   setGridDensity: (n: number) => void;
   view: View;
@@ -2649,6 +2674,31 @@ function RightSidebar(p: RightSidebarProps) {
               onChange={p.setPaperSize}
               options={PAPER_SIZE_OPTIONS}
             />
+          </PropertyRow>
+          <PropertyRow label={<span title="Color"><FillIcon /></span>}>
+            <PropertyColorInput value={p.bgColor} onChange={p.setBgColor} />
+          </PropertyRow>
+          <PropertyRow label="Grid">
+            <span className="swill-actionbar-group">
+              <button
+                type="button"
+                className={p.gridVisible ? 'swill-actionbar-button swill-actionbar-button-active' : 'swill-actionbar-button'}
+                onClick={p.onToggleGrid}
+                title={p.gridVisible ? 'Hide grid (Shift-3)' : 'Show grid (Shift-3)'}
+                aria-pressed={p.gridVisible}
+              >
+                <GridIcon />
+              </button>
+              <button
+                type="button"
+                className={p.snapToGrid ? 'swill-actionbar-button swill-actionbar-button-active' : 'swill-actionbar-button'}
+                onClick={p.onToggleSnap}
+                title={p.snapToGrid ? 'Disable snap to grid' : 'Snap to grid'}
+                aria-pressed={p.snapToGrid}
+              >
+                <SnapToGridIcon />
+              </button>
+            </span>
           </PropertyRow>
         </PropertiesPanel>
         ); })()

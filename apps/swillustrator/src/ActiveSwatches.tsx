@@ -10,7 +10,6 @@
  *   /     set the last-focused swatch to none
  */
 import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react';
-import { useRef } from 'react';
 
 export type ActivePaint =
   | { kind: 'solid'; color: string }
@@ -104,29 +103,26 @@ function paintClassSuffix(p: ActivePaint): string {
 }
 
 export function ActiveSwatches(p: ActiveSwatchesProps) {
-  const fillInputRef = useRef<HTMLInputElement>(null);
-  const strokeInputRef = useRef<HTMLInputElement>(null);
   const fillColor = p.fill.kind === 'solid' ? toHex6(p.fill.color) : '#ffffff';
   const strokeColor = p.stroke.kind === 'solid' ? toHex6(p.stroke.color) : '#000000';
   const fillPrev = p.fill.kind === 'solid' ? p.fill.color : '#ffffffff';
   const strokePrev = p.stroke.kind === 'solid' ? p.stroke.color : '#000000ff';
   const containerClass = `swill-active-swatches${p.compact ? ' swill-active-swatches--compact' : ''}`;
-  // Shift-click toggles between solid/none. Plain click opens the color
-  // picker. Right-click opens a small menu (none / pick color) — accessible
-  // via context-menu key for keyboard users too.
+  // Shift-click toggles between solid/none. Plain click updates focus and
+  // lets the native color input (which receives the bubbled click) open
+  // the OS picker. Calling `preventDefault` on the bubbled event would
+  // suppress the picker, so we only do that on the shift-toggle branch.
   const onSwatchClick = (which: 'fill' | 'stroke', e: ReactMouseEvent<HTMLButtonElement>): void => {
-    e.preventDefault();
     p.onFocus(which);
     if (e.shiftKey) {
+      e.preventDefault();
       const cur = which === 'fill' ? p.fill : p.stroke;
       const next: ActivePaint = cur.kind === 'none'
         ? { kind: 'solid', color: which === 'fill' ? '#ffffffff' : '#000000ff' }
         : { kind: 'none' };
       if (which === 'fill') p.onChangeFill(next);
       else p.onChangeStroke(next);
-      return;
     }
-    (which === 'fill' ? fillInputRef : strokeInputRef).current?.click();
   };
   // A small "None" affordance below the pair. Toggles the focused swatch
   // between its current paint and `none`. The icon is the same diagonal-stripe
@@ -152,7 +148,6 @@ export function ActiveSwatches(p: ActiveSwatchesProps) {
           onClick={(e) => onSwatchClick('stroke', e)}
         >
           <input
-            ref={strokeInputRef}
             type="color"
             value={strokeColor}
             onChange={(e) => p.onChangeStroke({ kind: 'solid', color: mergeAlphaFromPrev(e.target.value, strokePrev) })}
@@ -168,7 +163,6 @@ export function ActiveSwatches(p: ActiveSwatchesProps) {
           onClick={(e) => onSwatchClick('fill', e)}
         >
           <input
-            ref={fillInputRef}
             type="color"
             value={fillColor}
             onChange={(e) => p.onChangeFill({ kind: 'solid', color: mergeAlphaFromPrev(e.target.value, fillPrev) })}

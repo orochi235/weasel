@@ -628,11 +628,10 @@ html, body, #root {
   height: 100%;
   opacity: 0;
   cursor: pointer;
-  /* Click goes through to the button; we open the picker imperatively
-     via `inputRef.current?.click()`. Keeping pointer-events: none here
-     prevents the input from stealing clicks from the swatch button's
-     own click handler. */
-  pointer-events: none;
+  /* Let the native input receive clicks directly so the OS picker opens
+     reliably on every click (including when the swatch is already
+     focused). The wrapping button still gets the bubbled click for
+     focus + shift-toggle handling. */
 }
 
 /* --- Layer list host inside PropertiesPanel -------------------------- */

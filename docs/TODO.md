@@ -43,7 +43,6 @@ Demo: `demo/demos/BooleanOpsDemo.tsx` (`#boolean-ops`). Spec:
 ## Known bugs
 
 - **Insert demo: every other drag-to-insert is ignored.** In `demo/demos/InsertDemo.tsx`, dragging to insert a rect works, the next drag is silently dropped, the one after that works again. Reading through the dispatcher → `defineDragInsertTool` → `useInsert` → `useDragRect` → `useDragGesture` lifecycle on paper looks correct (controller is stable across renders, `activeSpec` is re-`begin`'d on each new gesture, ctx.scratch resets via fresh `inFlight`). Not yet reproduced under instrumentation. Likely a state-leak somewhere in the routing's `activeSpec` slot or `useDragGesture`'s `stateRef` after a successful commit. (Logged 2026-05-15.)
-- **Tiger SVG: select-all → delete → undo redraws only one path with the top half filled.** Other paths' affordances still render (selection chrome, hit-areas), but the geometry doesn't come back. Suggests the `DeleteOp` capture is losing per-path data (maybe the polygon coords / fillRule / vertexColors), and on redo the kit synthesizes a partial path. Repro path: load Ghostscript tiger SVG → `Cmd+A` → `Delete` → `Cmd+Z`.
 
 ## Surfaced 2026-05-15 (mid-session, deferred)
 
