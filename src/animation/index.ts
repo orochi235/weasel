@@ -24,3 +24,4 @@ export {
 export * from './wrappers';
 export { momentum, type MomentumOptions } from './behaviors/momentum';
 export { createLoop, createTweenLoop } from './loop';
+export { createStagger, type StaggerTimers } from './stagger';

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { easeOut, SPRING_PRESETS } from './easings';
 import { createLoop, createTweenLoop } from './loop';
+import { createStagger, type StaggerTimers } from './stagger';
 import type {
   AnimationHandle,
   Animator,
@@ -102,6 +103,17 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       (optsRef.current.requestFrame ?? requestAnimationFrame)(cb);
     const cancelFrame = (h: number): void =>
       (optsRef.current.cancelFrame ?? cancelAnimationFrame)(h);
+    // Resolved timer pair, snapshotted lazily from optsRef on each call so a
+    // test that updates the injection after mount still wins. Kept internal —
+    // not exposed on the public Animator surface; passed directly into
+    // `createStagger` at bind time below.
+    const staggerTimers: StaggerTimers = {
+      setTimer: (cb, ms) =>
+        (optsRef.current.setTimer ?? ((c, m) => setTimeout(c, m)))(cb, ms),
+      clearTimer: (h) =>
+        (optsRef.current.clearTimer ??
+          ((x) => clearTimeout(x as ReturnType<typeof setTimeout>)))(h),
+    };
 
     const ensureLoop = (): void => {
       if (rafHandle.current != null || animations.current.size === 0) return;
@@ -355,6 +367,14 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       },
       loop: (factory, loopOpts) => createLoop(factory, loopOpts),
       tweenLoop: (tweenLoopOpts) => createTweenLoop(animatorRef.current!, tweenLoopOpts),
+      stagger: ((items, delay, factory) =>
+        createStagger(
+          animatorRef.current!,
+          staggerTimers,
+          items,
+          delay,
+          factory as never,
+        )) as Animator['stagger'],
     };
     animatorRef.current = api;
     return api;

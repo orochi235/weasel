@@ -173,6 +173,29 @@ export interface Animator {
    *  NOTE: Same registry caveat as `loop` — the returned handle is not
    *  registered with the animator. Cancel via `handle.cancel()` directly. */
   tweenLoop<T>(opts: TweenLoopOptions<T>): AnimationHandle;
+  /**
+   * Stagger primitive: schedule a per-item animation, offset by `delay` ms
+   * per index (or a custom function of the index). Two forms:
+   *   - Factory form: pass `factory` directly, returns a composite
+   *     `AnimationHandle`.
+   *   - Builder form: omit `factory`, get a `StaggerBuilder` for fluent
+   *     `.each` / `.tween` / `.springPose` calls.
+   *
+   * The composite handle's `cancel` cancels pending timers AND in-flight
+   * children. `pause` / `resume` / `setTimeScale` propagate to in-flight
+   * children only (pending timers are not pausable in v1).
+   *
+   * NOTE: Same registry caveat as `loop` — the returned composite handle is
+   * NOT registered with the animator's id table. `animator.cancel(handle)`
+   * and `animator.cancelKey(...)` will not stop a stagger. Cancel via
+   * `handle.cancel()` directly.
+   */
+  stagger<TItem>(items: readonly TItem[], delay: StaggerDelay): StaggerBuilder<TItem>;
+  stagger<TItem>(
+    items: readonly TItem[],
+    delay: StaggerDelay,
+    factory: StaggerFactory<TItem>,
+  ): AnimationHandle;
 }
 
 export interface LoopOptions {
@@ -183,6 +206,17 @@ export interface LoopOptions {
 }
 
 export type LoopFactory = (iteration: number, next: () => void) => AnimationHandle;
+
+/** Per-index delay schedule. Number ⇒ `index * delay` ms. Function ⇒ caller
+ *  decides the absolute delay for each index (e.g. `i => i * i * 30`). */
+export type StaggerDelay = number | ((index: number) => number);
+
+export type StaggerFactory<TItem> = (item: TItem, index: number) => AnimationHandle;
+
+export interface StaggerBuilder<TItem> {
+  /** Run an arbitrary per-item factory. */
+  each(factory: StaggerFactory<TItem>): AnimationHandle;
+}
 
 export interface TweenLoopOptions<T> {
   from: T;
