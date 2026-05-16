@@ -16,9 +16,7 @@ import {
   asNodeId,
 } from '@orochi235/weasel';
 import type { BooleansAdapter, NodeId, Op, PolygonPath } from '@orochi235/weasel';
-// PathfinderPanel is a Swillustrator-side specialization
-// (apps/swillustrator/src/ui/) — see the kit/app split.
-import { PathfinderPanel } from '../../apps/swillustrator/src/ui/PathfinderPanel';
+import { ActionBar } from '@orochi235/weasel-ui';
 import type { DrawCommand } from '../../src/renderer';
 
 const W = 240;
@@ -159,7 +157,12 @@ function InteractivePanel() {
   }
   const adapter = adapterRef.current;
 
-  const actions = useBooleans(adapter);
+  // useBooleans auto-registers the six `pathfinder.*` actions with the
+  // ambient ActionsProvider (see demo/main.tsx) — that's what powers the
+  // <ActionBar group="pathfinder"/> below. Return value is unused; we
+  // drive the buttons through the registry rather than calling the
+  // returned imperatives directly.
+  useBooleans(adapter);
 
   const reset = useCallback(() => {
     // Remove all current nodes
@@ -194,7 +197,7 @@ function InteractivePanel() {
       <div className="ckd-boolops-panel">
         <h3 className="ckd-boolops-label">Interactive</h3>
         <div className="ckd-boolops-toolbar">
-          <PathfinderPanel adapter={adapter} actions={actions} />
+          <ActionBar group="pathfinder" />
           <button type="button" className="ckd-boolops-reset" onClick={reset}>
             Reset
           </button>

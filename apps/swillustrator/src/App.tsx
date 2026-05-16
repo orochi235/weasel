@@ -1685,7 +1685,11 @@ export function App() {
   }, [applyOps, selection]);
 
   useKeybinding({ key: '|', shift: true }, releaseCompoundPath);
-  const booleans = useBooleans(adapter);
+  // Registers the six `pathfinder.*` actions with the ambient
+  // <ActionsProvider> as a side effect — the top toolbar's
+  // <ActionBar group="pathfinder"/> reads them from there. Return value
+  // (imperative callables) is unused; no top-level keybindings here.
+  useBooleans(adapter);
   // The adapter mutates `itemsRef` in place; React only re-renders when we
   // call `publish()`. `onUndo`/`onRedo` fire after every successful action
   // (button or keyboard), so both paths see a fresh render.
@@ -2238,8 +2242,6 @@ export function App() {
         onAlign={(edge) => align(edge)}
         onDistribute={(axis) => distribute(axis)}
         onFlip={(axis) => flip(axis)}
-        booleansAdapter={adapter}
-        booleansActions={booleans}
         gridVisible={gridVisible}
         onToggleGrid={toggleGrid}
         snapToGrid={snapToGrid}

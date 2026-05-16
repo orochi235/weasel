@@ -10,10 +10,8 @@ import type {
   AlignEdge,
   DistributeAxis,
   FlipAxis,
-  BooleansAdapter,
-  UseBooleansReturn,
 } from '@orochi235/weasel';
-import { PathfinderPanel } from './ui';
+import { ActionBar as KitActionBar } from '@orochi235/weasel-ui';
 
 /** Paper-size keys mirrored from App.tsx's `PAPER_PRESETS` map. Kept as a
  *  bare string union here so this component stays decoupled from the
@@ -90,10 +88,10 @@ export interface ActionBarProps {
   onDistribute(axis: DistributeAxis): void;
   // Flip
   onFlip(axis: FlipAxis): void;
-  // Booleans — wired directly to PathfinderPanel; adapter drives its
-  // disabled state (uniform <2 valid paths), actions fire the ops.
-  booleansAdapter: Pick<BooleansAdapter, 'getSelection' | 'getWorldPath'>;
-  booleansActions: UseBooleansReturn;
+  // Booleans — rendered by the kit's <ActionBar group="pathfinder"/>, which
+  // reads the surrounding ActionsRegistry. `useBooleans(adapter)` upstream
+  // already registers the six `pathfinder.*` actions, so this component
+  // takes no booleans props.
   // File I/O — SVG round-trip via @orochi235/weasel-svg.
   onSaveSvg(): void;
   onOpenSvg(): void;
@@ -259,7 +257,7 @@ export function ActionBar(p: ActionBarProps) {
           <SnapToGridIcon />
         </Button>
       </div>
-      <PathfinderPanel adapter={p.booleansAdapter} actions={p.booleansActions} />
+      <KitActionBar group="pathfinder" />
       <div className="swill-actionbar-group">
         <Button
           onClick={p.onReleaseCompound}
