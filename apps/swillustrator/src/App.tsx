@@ -119,6 +119,16 @@ import {
   PropertySwatchGrid,
 } from './ui';
 import '@orochi235/weasel-theme/tokens.css';
+import {
+  PositionIcon,
+  WidthIcon,
+  HeightIcon,
+  RotationIcon,
+  StrokeWidthIcon,
+  OpacityIcon,
+  FillIcon,
+  StrokeIcon,
+} from './actionIcons';
 import { ActionBar } from './ActionBar';
 import { PreferencesModal } from './PreferencesModal';
 import {
@@ -2512,7 +2522,6 @@ export function App() {
         <span>fill: {fillColor}</span>
         <span>stroke: {strokeColor}</span>
         <span>zoom: {(view.scale * 100).toFixed(0)}%</span>
-        <span className="swill-statusbar-spacer">⌘K for commands</span>
       </div>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
@@ -2651,15 +2660,15 @@ function RightSidebar(p: RightSidebarProps) {
               {primary.tool}{selectedItems.length > 1 ? ` +${selectedItems.length - 1}` : ''}
             </PropertyReadOnly>
           </PropertyRow>
-          <PropertyRow label="Position">
+          <PropertyRow label={<span title="Position"><PositionIcon /></span>}>
             <PropertyAxisInput axis="X" value={Math.round(primary.x)} onChange={(v) => p.updateSelected((o) => ({ ...o, x: v }))} />
             <PropertyAxisInput axis="Y" value={Math.round(primary.y)} onChange={(v) => p.updateSelected((o) => ({ ...o, y: v }))} />
           </PropertyRow>
-          <PropertyRow label="Size">
-            <PropertyAxisInput axis="W" value={Math.round(primary.width)} onChange={(v) => p.updateSelected((o) => ({ ...o, width: Math.max(1, v) }))} min={1} />
-            <PropertyAxisInput axis="H" value={Math.round(primary.height)} onChange={(v) => p.updateSelected((o) => ({ ...o, height: Math.max(1, v) }))} min={1} />
+          <PropertyRow label={<span title="Size"><WidthIcon /></span>}>
+            <PropertyAxisInput axis={<span title="Width"><WidthIcon /></span>} value={Math.round(primary.width)} onChange={(v) => p.updateSelected((o) => ({ ...o, width: Math.max(1, v) }))} min={1} />
+            <PropertyAxisInput axis={<span title="Height"><HeightIcon /></span>} value={Math.round(primary.height)} onChange={(v) => p.updateSelected((o) => ({ ...o, height: Math.max(1, v) }))} min={1} />
           </PropertyRow>
-          <PropertyRow label="Rotation">
+          <PropertyRow label={<span title="Rotation"><RotationIcon /></span>}>
             <PropertyAxisInput
               axis="°"
               value={p.rotationDeg?.value ?? 0}
@@ -2670,16 +2679,16 @@ function RightSidebar(p: RightSidebarProps) {
               <PropertyReadOnly span={6}>Multiple</PropertyReadOnly>
             )}
           </PropertyRow>
-          <PropertyRow label="Fill">
+          <PropertyRow label={<span title="Fill"><FillIcon /></span>}>
             <PropertyColorInput value={p.primaryFill} onChange={p.applyFillToSelection} />
           </PropertyRow>
           {p.hasStrokeProps && (
             <>
-              <PropertyRow label="Stroke">
+              <PropertyRow label={<span title="Stroke"><StrokeIcon /></span>}>
                 <PropertyColorInput value={p.primaryStroke} onChange={p.applyStrokeToSelection} />
               </PropertyRow>
               <PropertyRow>
-                <PropertySliderInput label="Width" value={p.primaryStrokeWidth} onChange={p.applyStrokeWidthToSelection} min={0} max={20} step={1} span={12} />
+                <PropertySliderInput label={<span title="Stroke width"><StrokeWidthIcon /></span>} value={p.primaryStrokeWidth} onChange={p.applyStrokeWidthToSelection} min={0} max={20} step={1} span={12} />
               </PropertyRow>
             </>
           )}
@@ -2689,7 +2698,7 @@ function RightSidebar(p: RightSidebarProps) {
               picker so a single undo entry covers the edit. */}
           <PropertyRow>
             <PropertySliderInput
-              label="Opacity"
+              label={<span title="Opacity"><OpacityIcon /></span>}
               value={Math.round(getAlpha01(p.focusedSwatch === 'stroke' && p.hasStrokeProps ? p.primaryStroke : p.primaryFill) * 100)}
               onChange={(pct) => {
                 const a = pct / 100;
@@ -2722,11 +2731,11 @@ function RightSidebar(p: RightSidebarProps) {
             />
           </PropertyRow>
           <PropertyRow>
-            <PropertySliderInput label="Width" value={p.strokeWidth} onChange={p.setStrokeWidth} min={0} max={20} step={1} span={12} />
+            <PropertySliderInput label={<span title="Stroke width"><StrokeWidthIcon /></span>} value={p.strokeWidth} onChange={p.setStrokeWidth} min={0} max={20} step={1} span={12} />
           </PropertyRow>
           <PropertyRow>
             <PropertySliderInput
-              label="Opacity"
+              label={<span title="Opacity"><OpacityIcon /></span>}
               value={Math.round(p.focusedAlpha * 100)}
               onChange={(pct) => p.setFocusedAlpha(pct / 100)}
               min={0}

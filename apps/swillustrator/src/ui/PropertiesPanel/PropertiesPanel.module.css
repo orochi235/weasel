@@ -108,14 +108,14 @@
 .swatchGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, var(--wzl-swatch-size, 28px));
-  gap: 1px;
+  gap: 0;
 }
 .swatch {
   width: 100%;
   aspect-ratio: 1 / 1;
   min-width: 0;
-  border: 2px solid var(--wzl-panel-border);
-  border-radius: 4px;
+  border: 0.5px solid var(--wzl-panel-border);
+  border-radius: 0;
   cursor: pointer;
   padding: 0;
   background-clip: padding-box;

@@ -30,7 +30,7 @@ html, body, #root {
   padding: 0;
   width: 100%;
   height: 100%;
-  background: #1a130d;
+  background: #4a4a4a;
   color: #d4c4a8;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   overflow: hidden;
@@ -55,8 +55,14 @@ html, body, #root {
   align-items: center;
   gap: 6px;
   padding: 4px 8px;
-  background: var(--swill-chrome-bg);
-  border-bottom: 1px solid var(--swill-chrome-border);
+  /* Match the left tool palette, which renders via weasel-ui's Sidebar
+     (`background: var(--wzl-panel-bg)`). The theme package's tokens.css
+     loads after swillustrator.css and resolves the token to a light
+     gray, so the palette ends up gray rather than the local chrome
+     brown — pointing the bars at the same token keeps the three
+     surfaces in sync regardless of how the theme is configured. */
+  background: var(--wzl-panel-bg);
+  border-bottom: 1px solid var(--wzl-panel-border);
   font-size: 11px;
   flex-wrap: wrap;
   flex-shrink: 0;
@@ -69,12 +75,10 @@ html, body, #root {
   display: inline-flex;
   flex-direction: row;
   gap: 1px;
-  /* Use the shared chrome surface so the actionbar groups read as part
-     of the same chrome stratum as the left tool palette and the status
-     bar. Border keeps the segmented-widget grouping visible without
-     introducing a second background tone. */
-  background: var(--swill-chrome-bg);
-  border: 1px solid var(--swill-chrome-border);
+  /* Same surface as the actionbar itself — border outline alone marks
+     the segmented grouping. */
+  background: var(--wzl-panel-bg);
+  border: 1px solid var(--wzl-panel-border);
   border-radius: 4px;
   padding: 2px;
   user-select: none;
@@ -100,7 +104,7 @@ html, body, #root {
   height: 26px;
   padding: 0 6px;
   background: transparent;
-  color: #d4c4a8;
+  color: var(--wzl-text);
   border: 0;
   border-radius: 2px;
   cursor: pointer;
@@ -112,14 +116,10 @@ html, body, #root {
   display: block;
 }
 .swill-actionbar-button:hover:not(:disabled) {
-  /* Match the left tool-button hover treatment (border tint) rather than
-     introducing a darker background well — keeps the chrome stratum
-     consistent across actionbar / sidebar / statusbar. */
-  background: var(--swill-chrome-border);
-  color: #fff5d8;
+  background: var(--wzl-panel-border);
 }
 .swill-actionbar-button:active:not(:disabled) {
-  background: #322618;
+  background: color-mix(in srgb, var(--wzl-panel-border) 70%, transparent);
 }
 .swill-actionbar-button-active:not(:disabled) {
   background: var(--swill-accent-bg);
@@ -286,7 +286,7 @@ html, body, #root {
      which positions absolutely within its container. */
   position: relative;
   background:
-    repeating-linear-gradient(45deg, #1a130d 0 8px, #1f1610 8px 16px);
+    repeating-linear-gradient(45deg, #5a5a5a 0 8px, #626262 8px 16px);
 }
 
 .swill-canvas-host canvas {
@@ -427,9 +427,9 @@ html, body, #root {
   padding: 4px 12px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
-  color: #8a7a5a;
-  background: var(--swill-chrome-bg);
-  border-top: 1px solid var(--swill-chrome-border);
+  color: var(--wzl-text-muted, #8a7a5a);
+  background: var(--wzl-panel-bg);
+  border-top: 1px solid var(--wzl-panel-border);
   display: flex;
   gap: 16px;
   flex-shrink: 0;
@@ -704,7 +704,7 @@ html, body, #root {
    `.swill-sidebar` ancestor selector lifts specificity over the
    module-scoped `.panel` / `.body` rules from weasel-ui. */
 .swill-sidebar .swill-colors-panel {
-  padding: 0;
+  padding: 4px;
 }
 .swill-sidebar .swill-colors-panel > div:last-child {
   padding: 0;

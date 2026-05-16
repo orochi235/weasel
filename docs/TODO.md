@@ -47,10 +47,8 @@ Demo: `demo/demos/BooleanOpsDemo.tsx` (`#boolean-ops`). Spec:
 
 ## Surfaced 2026-05-15 (mid-session, deferred)
 
-- **Add `transparent` paint state to color swatches.** Distinct from `none`: paint is present but alpha=0. Visualize as gray/white checkerboard with the same red diagonal-stripe NO marker.
 - **Active colors as a userland tool.** Lift the active-paint state out of the App and into a registered tool that exposes color-change events; swatch grids, palettes, and other color sources dispatch into the tool rather than calling setActiveFill / setActiveStroke directly. Centralizes focus routing and history capture.
 - **Dispatch-resolutions widget: live mode.** Add a toggle that, instead of resolving each (target, mods) cell statically via `resolveRoute`, actually injects synthetic pointer events through the dispatcher and records what fires. Cell content becomes "what ran" rather than "what would run by static analysis."
-- **Swap all swillustrator UI (other than canvas + bg) to the light keycap theme.** Currently the panels, sidebar, and chrome all use the dark `--wzl-surface` / `--wzl-bg` palette; the keycap chips and (recently) widget headers introduced a light variant. Promote that to the default for non-canvas UI so the whole app reads consistently.
 - **Tool / Action label coverage audit.** Verify every built-in tool and registered Action has a `label` (palette / menu / command-palette consume it). If `Tool.label` doesn't exist, add it to the hook return shape so each tool can self-declare.
 
 ## weasel-den deferrals

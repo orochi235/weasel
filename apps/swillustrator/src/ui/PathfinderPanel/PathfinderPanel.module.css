@@ -2,8 +2,12 @@
   display: flex;
   flex-direction: row;
   gap: 1px;
-  background: #1a1612;
-  border: 1px solid #2a2418;
+  /* Same chrome as the actionbar groups (`.swill-actionbar-group`) —
+     panel reads as a segmented widget on the shared panel surface, so
+     it visually belongs to the same stratum as the top/bottom bars
+     and the left tool palette. */
+  background: var(--wzl-panel-bg);
+  border: 1px solid var(--wzl-panel-border);
   border-radius: 4px;
   padding: 2px;
   user-select: none;
@@ -23,17 +27,16 @@
   background: transparent;
   border: 0;
   border-radius: 2px;
-  color: #d8c8a8;
+  color: var(--wzl-text);
   cursor: default;
 }
 
 .button:hover:not([disabled]) {
-  background: #221c12;
-  color: #fff5d8;
+  background: var(--wzl-panel-border);
 }
 
 .button:active:not([disabled]) {
-  background: #2a2218;
+  background: color-mix(in srgb, var(--wzl-panel-border) 70%, transparent);
 }
 
 .button[disabled] {
