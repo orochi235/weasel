@@ -34,6 +34,11 @@ describe('defaultAlignActions', () => {
     for (const a of acts) expect(a.defaultBinding).toBeUndefined();
   });
 
+  it('every action ships a default icon', () => {
+    const acts = defaultAlignActions(makeDeps({ a: { x: 0, y: 0, width: 10, height: 10 } }));
+    for (const a of acts) expect(a.icon).toBeDefined();
+  });
+
   it('align.left translates each item to the union left', () => {
     const deps = makeDeps({
       a: { x: 5, y: 0, width: 10, height: 10 },

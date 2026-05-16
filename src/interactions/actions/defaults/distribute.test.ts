@@ -41,6 +41,15 @@ describe('defaultDistributeActions', () => {
     for (const a of acts) expect(a.defaultBinding).toBeUndefined();
   });
 
+  it('every action ships a default icon', () => {
+    const acts = defaultDistributeActions(makeDeps({
+      a: { x: 0, y: 0, width: 10, height: 10 },
+      b: { x: 20, y: 0, width: 10, height: 10 },
+      c: { x: 100, y: 0, width: 10, height: 10 },
+    }));
+    for (const a of acts) expect(a.icon).toBeDefined();
+  });
+
   it('distribute.horizontal centers mode evenly spaces middle items', () => {
     const deps = makeDeps({
       a: { x: 0, y: 0, width: 10, height: 10 },
