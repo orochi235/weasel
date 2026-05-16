@@ -1357,8 +1357,8 @@ export function App() {
     },
   }), [selection]);
 
-  const [penAutoCommitOnClose] = usePref('tools.penAutoCommitOnClose');
-  const [pathFillRule] = usePref('tools.pathFillRule');
+  const [penAutoCommitOnClose] = usePref('tools.pen.autoCommitOnClose');
+  const [pathFillRule] = usePref('drawing.pathFillRule');
   const { tool: pen, isEditing: penIsEditing } = usePenTool<PathObj>({
     autoCommitOnClose: penAutoCommitOnClose,
     // Honor the global snap-to-grid toggle for every anchor placement.
