@@ -197,6 +197,36 @@ export interface ToolsDispatcher {
   /** Most recent route resolution emitted by a declarative tool, or null
    *  if none has fired yet. Snapshot — safe to read on every render. */
   getLastRoute: () => RouteResolvedInfo | null;
+  /** Resolve a synthetic (phase, gesture, hit, modifiers) query against the
+   *  current slot occupants WITHOUT executing the matched action. Walks slots
+   *  in real precedence order (hotkey > active > ambient) and consults each
+   *  tool's attached `def` (the declarative `ToolDef` produced by
+   *  `defineTool`). Tools without an attached `def` (imperative-only) are
+   *  invisible to this query. Returns the first match, or null if no slot
+   *  resolves the query. Pure: no scratch mutation, no scene mutation, no
+   *  RouteResolvedInfo emission. */
+  resolveOnly: (query: ResolveQuery) => ResolveResult | null;
+}
+
+/** Synthetic resolution query — what the static widget asks "if a pointer
+ *  event landed on `hit` with these `modifiers`, which declarative route
+ *  would the dispatcher fire in this phase + gesture?" */
+export interface ResolveQuery {
+  phase: 'initial' | 'engaged';
+  gesture: 'click' | 'drag' | 'pointerDown' | 'dblTap' | 'wheel';
+  hit: HitResult;
+  modifiers: ToolModifiers;
+}
+
+/** Successful resolution: which tool, in which slot, matched which route-table
+ *  key. `matchedKey` is `'*'` for function-form drag (no table to discriminate)
+ *  and for wheel routes (single ActionFn). */
+export interface ResolveResult {
+  toolId: string;
+  slot: 'hotkey' | 'active' | 'ambient';
+  gesture: 'click' | 'drag' | 'pointerDown' | 'dblTap' | 'wheel';
+  phase: 'initial' | 'engaged';
+  matchedKey: string;
 }
 
 function ctxFor(
@@ -637,6 +667,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     hasActiveGesture: () => inFlight !== null,
     getActiveScratch: () => inFlight?.scratch ?? null,
     getLastRoute: () => lastRoute,
+    resolveOnly: () => { throw new Error('not implemented'); },
   };
   api.__setGetCtx = (fn) => { opts.getCtx = fn; };
   api.__setHitTestContext = (fn) => { opts.getHitTestContext = fn; };

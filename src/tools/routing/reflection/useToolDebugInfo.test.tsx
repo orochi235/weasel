@@ -19,6 +19,7 @@ function makeDispatcher(initial: RouteResolvedInfo | null = null): {
       cancelGesture: () => {}, hasActiveGesture: () => false,
       getActiveScratch: () => null,
       getLastRoute: () => last,
+      resolveOnly: () => null,
     },
   };
 }
