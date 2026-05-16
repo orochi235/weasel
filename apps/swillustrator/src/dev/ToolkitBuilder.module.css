@@ -250,4 +250,37 @@
   color: var(--wzl-muted, #a59685);
   margin-left: 2px;
 }
+.resolutionsMode {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--wzl-panel-border, #4a3c2e);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.segmentedButton {
+  background: transparent;
+  border: 0;
+  color: var(--wzl-muted, #a59685);
+  font: inherit;
+  font-size: 12px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+.segmentedButton[data-active='true'] {
+  background: var(--wzl-accent, #7fb069);
+  color: #000;
+}
+.segmentedButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+.resolutionsError {
+  font-size: 11px;
+  color: var(--wzl-warning, #d97757);
+  font-family: ui-monospace, monospace;
+}
 

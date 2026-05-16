@@ -693,6 +693,28 @@ function modKeyToToolModifiers(key: ResModKey) {
 
 interface ResolutionCell { toolId: string; matchedKey: string }
 
+function resolveAtLive(
+  tools: ToolsApi | null,
+  phase: ResPhase,
+  gesture: ResGesture,
+  target: ResTarget,
+  modKey: ResModKey,
+): ResolutionCell | { error: string } | null {
+  if (!tools) return null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const hit: any = target === 'empty'
+    ? { category: 'empty', kind: 'empty' }
+    : { category: 'node', kind: target, id: 'preview', pose: null, data: null };
+  const modifiers = modKeyToToolModifiers(modKey);
+  try {
+    const r = tools.dispatcher.resolveOnly({ phase, gesture, hit, modifiers });
+    if (!r) return null;
+    return { toolId: r.toolId, matchedKey: r.matchedKey };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 function resolveAt(
   toolDefs: readonly ToolDef<unknown>[],
   phase: ResPhase,
@@ -771,6 +793,29 @@ function ResolutionsWidget(props: {
               <option value="engaged">engaged</option>
             </select>
           </label>
+          <div className={s.resolutionsMode}>
+            <span>Mode</span>
+            <div className={s.segmented} role="group" aria-label="Resolution mode">
+              <button
+                type="button"
+                className={s.segmentedButton}
+                data-active={mode === 'static'}
+                onClick={() => setMode('static')}
+              >
+                Static
+              </button>
+              <button
+                type="button"
+                className={s.segmentedButton}
+                data-active={mode === 'live'}
+                onClick={() => setMode('live')}
+                disabled={!tools}
+                title={tools ? '' : 'Dispatcher not yet attached'}
+              >
+                Live
+              </button>
+            </div>
+          </div>
         </div>
       </div>
       <div className={s.widgetBodyScrollXY}>
@@ -790,10 +835,14 @@ function ResolutionsWidget(props: {
               <tr key={target}>
                 <td><code>{target}</code></td>
                 {RES_MOD_KEYS.map((m) => {
-                  const r = resolveAt(orderedDefs, phase, gesture, target, m);
+                  const r = mode === 'live'
+                    ? resolveAtLive(tools, phase, gesture, target, m)
+                    : resolveAt(orderedDefs, phase, gesture, target, m);
                   return (
                     <td key={m} className={s.resolutionsCell}>
-                      {r ? (
+                      {r && 'error' in r ? (
+                        <span className={s.resolutionsError} title={r.error}>err</span>
+                      ) : r ? (
                         <span className={s.resolutionsHit}>
                           <code>{r.toolId}</code>
                           {r.matchedKey !== target && r.matchedKey !== '*' && (
