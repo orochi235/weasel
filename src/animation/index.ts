@@ -23,5 +23,8 @@ export {
 } from './poseHelpers';
 export * from './wrappers';
 export { momentum, type MomentumOptions } from './behaviors/momentum';
-export { createLoop, createTweenLoop } from './loop';
-export { createStagger, type StaggerTimers } from './stagger';
+// `createLoop` / `createTweenLoop` / `createStagger` are intentionally NOT
+// re-exported. They take internal seams (supervisor factory, completion
+// watcher, timer pair) that only `useAnimator` can supply. Consumers access
+// these primitives via `animator.loop` / `animator.tweenLoop` /
+// `animator.stagger`.

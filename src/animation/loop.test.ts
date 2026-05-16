@@ -116,6 +116,73 @@ describe('animator.loop', () => {
     expect(samples[samples.length - 1]).toBeGreaterThan(frozen);
   });
 
+  it('registers the loop handle so animator.cancel works', () => {
+    const { animator, advance } = mountAnimator();
+    const iterations: number[] = [];
+    const handle = animator.loop((i, next) => {
+      iterations.push(i);
+      return animator.tween({
+        from: 0,
+        to: 1,
+        ms: 100,
+        easing: (t) => t,
+        onTick: () => {},
+        onDone: next,
+      });
+    });
+    advance(16);
+    expect(animator.isActive()).toBe(true);
+    animator.cancel(handle);
+    const after = iterations.length;
+    for (let i = 0; i < 20; i++) advance(50);
+    expect(iterations.length).toBe(after);
+    expect(animator.isActive()).toBe(false);
+  });
+
+  it('cancelKey on a loop cancels via animator.cancelKey and powers isActive(key)', () => {
+    const { animator, advance } = mountAnimator();
+    const iterations: number[] = [];
+    animator.loop(
+      (i, next) => {
+        iterations.push(i);
+        return animator.tween({
+          from: 0,
+          to: 1,
+          ms: 100,
+          easing: (t) => t,
+          onTick: () => {},
+          onDone: next,
+        });
+      },
+      { cancelKey: 'foo' },
+    );
+    advance(16);
+    expect(animator.isActive('foo')).toBe(true);
+    animator.cancelKey('foo');
+    const after = iterations.length;
+    for (let i = 0; i < 20; i++) advance(50);
+    expect(iterations.length).toBe(after);
+    expect(animator.isActive('foo')).toBe(false);
+  });
+
+  it('loop completes naturally and deregisters from the animator', () => {
+    const { animator, advance } = mountAnimator();
+    animator.loop(
+      (_i, next) =>
+        animator.tween({
+          from: 0,
+          to: 1,
+          ms: 100,
+          easing: (t) => t,
+          onTick: () => {},
+          onDone: next,
+        }),
+      { count: 2 },
+    );
+    for (let i = 0; i < 50; i++) advance(16);
+    expect(animator.isActive()).toBe(false);
+  });
+
   it('onDone fires when the loop reaches `count` naturally', () => {
     const { animator, advance } = mountAnimator();
     let done = 0;

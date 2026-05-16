@@ -161,17 +161,14 @@ export interface Animator {
    * delegate to the current in-flight child (and prevent future iterations
    * on cancel).
    *
-   * NOTE: The returned handle is NOT registered in the animator's id table.
-   * `animator.cancel(handle)` and `animator.cancelKey(...)` will not stop a
-   * loop. Cancel via `handle.cancel()` directly.
+   * The loop is registered with the animator under a supervisor entry so
+   * `animator.cancel(handle)`, `animator.cancelKey(opts.cancelKey)`, and
+   * `animator.isActive(opts.cancelKey)` all work for it.
    */
   loop(factory: LoopFactory, opts?: LoopOptions): AnimationHandle;
   /** Sugar over `loop` for the common case of looping a tween between two
    *  values with optional direction handling (`restart` | `reverse` |
-   *  `alternate`).
-   *
-   *  NOTE: Same registry caveat as `loop` — the returned handle is not
-   *  registered with the animator. Cancel via `handle.cancel()` directly. */
+   *  `alternate`). Registered with the animator like `loop`. */
   tweenLoop<T>(opts: TweenLoopOptions<T>): AnimationHandle;
   /**
    * Stagger primitive: schedule a per-item animation, offset by `delay` ms
@@ -185,16 +182,16 @@ export interface Animator {
    * children. `pause` / `resume` / `setTimeScale` propagate to in-flight
    * children only (pending timers are not pausable in v1).
    *
-   * NOTE: Same registry caveat as `loop` — the returned composite handle is
-   * NOT registered with the animator's id table. `animator.cancel(handle)`
-   * and `animator.cancelKey(...)` will not stop a stagger. Cancel via
-   * `handle.cancel()` directly.
+   * The stagger is registered with the animator under a supervisor entry so
+   * `animator.cancel(handle)`, `animator.cancelKey(opts.cancelKey)`, and
+   * `animator.isActive(opts.cancelKey)` all work for it.
    */
   stagger<TItem>(items: readonly TItem[], delay: StaggerDelay): StaggerBuilder<TItem>;
   stagger<TItem>(
     items: readonly TItem[],
     delay: StaggerDelay,
     factory: StaggerFactory<TItem>,
+    opts?: StaggerOptions,
   ): AnimationHandle;
 }
 
@@ -203,6 +200,17 @@ export interface LoopOptions {
   count?: number;
   /** Invoked when the loop reaches `count` iterations naturally (not on cancel). */
   onDone?: () => void;
+  /** Any new animation passed the same cancelKey cancels the prior one in flight.
+   *  Also enables `animator.cancelKey` / `animator.isActive(key)` for this loop. */
+  cancelKey?: string;
+}
+
+/** Options for the top-level `Animator.stagger` factory form (third overload). */
+export interface StaggerOptions {
+  /** Cancel-key for the supervising registration. `animator.cancelKey(key)`
+   *  cancels the whole stagger; `animator.isActive(key)` returns true while
+   *  any timer or child is alive. */
+  cancelKey?: string;
 }
 
 export type LoopFactory = (iteration: number, next: () => void) => AnimationHandle;
@@ -268,4 +276,5 @@ export interface TweenLoopOptions<T> {
   interpolate?: Interpolate<T>;
   onTick: (value: T) => void;
   onDone?: () => void;
+  cancelKey?: string;
 }

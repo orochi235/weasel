@@ -98,6 +98,63 @@ describe('animator.stagger', () => {
     expect(finals.c).toBeCloseTo(30, 0);
   });
 
+  it('registers the stagger handle so animator.cancel works', () => {
+    const { animator, advance } = mountAnimator();
+    const starts: string[] = [];
+    const handle = animator.stagger(['a', 'b', 'c'], 100, (item) => {
+      starts.push(item);
+      return animator.tween({
+        from: 0,
+        to: 1,
+        ms: 10_000,
+        easing: (t) => t,
+        onTick: () => {},
+      });
+    });
+    advance(50);
+    expect(animator.isActive()).toBe(true);
+    animator.cancel(handle);
+    advance(500);
+    expect(starts).toEqual(['a']);
+    expect(animator.isActive()).toBe(false);
+  });
+
+  it('cancelKey on a stagger cancels via animator.cancelKey + isActive(key)', () => {
+    const { animator, advance } = mountAnimator();
+    const starts: string[] = [];
+    animator.stagger(['a', 'b', 'c'], 100, (item) => {
+      starts.push(item);
+      return animator.tween({
+        from: 0,
+        to: 1,
+        ms: 10_000,
+        easing: (t) => t,
+        onTick: () => {},
+      });
+    }, { cancelKey: 'foo' });
+    advance(50);
+    expect(animator.isActive('foo')).toBe(true);
+    animator.cancelKey('foo');
+    advance(500);
+    expect(starts).toEqual(['a']);
+    expect(animator.isActive('foo')).toBe(false);
+  });
+
+  it('stagger completes naturally and deregisters from the animator', () => {
+    const { animator, advance } = mountAnimator();
+    animator.stagger(['a', 'b', 'c'], 50, () =>
+      animator.tween({
+        from: 0,
+        to: 1,
+        ms: 10,
+        easing: (t) => t,
+        onTick: () => {},
+      }),
+    );
+    for (let i = 0; i < 50; i++) advance(16);
+    expect(animator.isActive()).toBe(false);
+  });
+
   it('cancel cancels pending timers and in-flight children', () => {
     const { animator, advance } = mountAnimator();
     const starts: string[] = [];

@@ -1,10 +1,12 @@
 import { springPose } from './poseHelpers';
+import type { Supervisor, SupervisorFactory, WatchCompletion } from './supervisor';
 import type {
   AnimationHandle,
   Animator,
   StaggerBuilder,
   StaggerDelay,
   StaggerFactory,
+  StaggerOptions,
   StaggerPerItem,
   StaggerSpringPoseOptions,
   StaggerTweenOptions,
@@ -23,21 +25,54 @@ export interface StaggerTimers {
  * child handles and a list of pending timer handles; cancel cancels both.
  * Pause/resume/setTimeScale propagate to in-flight children. Pending timers
  * are not pausable on the host scheduler — calling pause does not delay
- * their firing (documented limitation, v1).
+ * their firing (documented limitation, lifted by the pause-freezing commit).
  *
- * NOTE: not registered in the animator's id table; cancel via
- * `handle.cancel()` directly. `animator.cancel(handle)` / `cancelKey` are
- * no-ops for composite handles.
+ * Registered with the animator via a supervisor so animator.cancel /
+ * cancelKey / isActive all work for it.
  */
 class CompositeHandle implements AnimationHandle {
-  id = -1;
+  readonly id: number;
   private cancelled = false;
   private paused_ = false;
   private timeScale_ = 1;
   private children: AnimationHandle[] = [];
   private pending: unknown[] = [];
+  private outstanding: number;
+  private finished = false;
 
-  constructor(private timers: StaggerTimers) {}
+  constructor(
+    private timers: StaggerTimers,
+    private supervisor: Supervisor,
+    totalItems: number,
+  ) {
+    this.id = supervisor.id;
+    this.outstanding = totalItems;
+    supervisor.setOnCancel(() => this.handleSupervisorCancel());
+  }
+
+  /** Invoked when the supervisor is cancelled externally (animator.cancel /
+   *  cancelKey) OR via this composite's own cancel/natural-completion path. */
+  private handleSupervisorCancel(): void {
+    if (this.cancelled) return;
+    this.cancelled = true;
+    for (const t of this.pending) this.timers.clearTimer(t);
+    this.pending = [];
+    // Snapshot children first: child.cancel() may synchronously invoke our
+    // own noteChildDone path via the animator's completion listener, which
+    // would mutate this.children mid-iteration.
+    const kids = this.children.slice();
+    this.children = [];
+    for (const c of kids) c.cancel();
+  }
+
+  noteChildDone(): void {
+    if (this.cancelled || this.finished) return;
+    this.outstanding -= 1;
+    if (this.outstanding <= 0) {
+      this.finished = true;
+      this.supervisor.cancel();
+    }
+  }
 
   addChild(h: AnimationHandle): void {
     if (this.cancelled) {
@@ -53,10 +88,6 @@ class CompositeHandle implements AnimationHandle {
     if (this.cancelled) return;
     const wrapped = (): void => {
       if (this.cancelled) return;
-      // Drop the timer from `pending` once it fires so `cancel` doesn't
-      // try to clear an already-elapsed handle. Search by reference; we
-      // don't know the timer handle until setTimer returns, so capture
-      // through the closure below.
       const idx = this.pending.indexOf(timerHandle);
       if (idx >= 0) this.pending.splice(idx, 1);
       fire();
@@ -66,12 +97,10 @@ class CompositeHandle implements AnimationHandle {
   }
 
   cancel(): void {
-    if (this.cancelled) return;
-    this.cancelled = true;
-    for (const t of this.pending) this.timers.clearTimer(t);
-    this.pending = [];
-    for (const c of this.children) c.cancel();
-    this.children = [];
+    // Route through the supervisor so the animator's id table is kept in
+    // sync. The supervisor's onCancel forwards back to
+    // handleSupervisorCancel which actually tears down children + timers.
+    this.supervisor.cancel();
   }
 
   pause(): void {
@@ -106,38 +135,59 @@ function delayFor(delay: StaggerDelay, i: number): number {
 export function createStagger<TItem>(
   animator: Animator,
   timers: StaggerTimers,
+  createSupervisor: SupervisorFactory,
+  watchCompletion: WatchCompletion,
   items: readonly TItem[],
   delay: StaggerDelay,
   factory: StaggerFactory<TItem>,
+  opts?: StaggerOptions,
 ): AnimationHandle;
 export function createStagger<TItem>(
   animator: Animator,
   timers: StaggerTimers,
+  createSupervisor: SupervisorFactory,
+  watchCompletion: WatchCompletion,
   items: readonly TItem[],
   delay: StaggerDelay,
 ): StaggerBuilder<TItem>;
 export function createStagger<TItem>(
   animator: Animator,
   timers: StaggerTimers,
+  createSupervisor: SupervisorFactory,
+  watchCompletion: WatchCompletion,
   items: readonly TItem[],
   delay: StaggerDelay,
   factory?: StaggerFactory<TItem>,
+  opts?: StaggerOptions,
 ): AnimationHandle | StaggerBuilder<TItem> {
-  if (factory) return runStagger(timers, items, delay, factory);
-  return makeBuilder(animator, timers, items, delay);
+  if (factory) return runStagger(timers, createSupervisor, watchCompletion, items, delay, factory, opts);
+  return makeBuilder(animator, timers, createSupervisor, watchCompletion, items, delay);
 }
 
 function runStagger<TItem>(
   timers: StaggerTimers,
+  createSupervisor: SupervisorFactory,
+  watchCompletion: WatchCompletion,
   items: readonly TItem[],
   delay: StaggerDelay,
   factory: StaggerFactory<TItem>,
+  opts?: StaggerOptions,
 ): AnimationHandle {
-  const composite = new CompositeHandle(timers);
+  const supervisor = createSupervisor(opts?.cancelKey);
+  const composite = new CompositeHandle(timers, supervisor, items.length);
+  if (items.length === 0) {
+    supervisor.cancel();
+    return composite;
+  }
   items.forEach((item, i) => {
     const ms = delayFor(delay, i);
     const fire = (): void => {
-      composite.addChild(factory(item, i));
+      const child = factory(item, i);
+      // Hook into the child's deregistration (natural OR cancel). If the
+      // composite is already cancelled, the watcher fires immediately on
+      // cancel and the noteChildDone branch is a no-op (cancelled guard).
+      watchCompletion(child.id, () => composite.noteChildDone());
+      composite.addChild(child);
     };
     if (ms <= 0) fire();
     else composite.schedule(ms, fire);
@@ -170,13 +220,16 @@ function itemId(item: unknown): string {
 function makeBuilder<TItem>(
   animator: Animator,
   timers: StaggerTimers,
+  createSupervisor: SupervisorFactory,
+  watchCompletion: WatchCompletion,
   items: readonly TItem[],
   delay: StaggerDelay,
 ): StaggerBuilder<TItem> {
   return {
-    each: (factory) => runStagger(timers, items, delay, factory),
+    each: (factory) =>
+      runStagger(timers, createSupervisor, watchCompletion, items, delay, factory),
     tween: <T,>(opts: StaggerTweenOptions<T, TItem>) =>
-      runStagger(timers, items, delay, (item, i) =>
+      runStagger(timers, createSupervisor, watchCompletion, items, delay, (item, i) =>
         animator.tween<T>({
           from: resolvePerItem(opts.from, item, i),
           to: resolvePerItem(opts.to, item, i),
@@ -192,7 +245,7 @@ function makeBuilder<TItem>(
       poseFn: (item: TItem, index: number) => TPose,
       opts: StaggerSpringPoseOptions<TPose> = {},
     ) =>
-      runStagger(timers, items, delay, (item, i) =>
+      runStagger(timers, createSupervisor, watchCompletion, items, delay, (item, i) =>
         springPose(animator, adapter, {
           id: itemId(item),
           to: poseFn(item, i),

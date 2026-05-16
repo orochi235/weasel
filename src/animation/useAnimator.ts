@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { easeOut, SPRING_PRESETS } from './easings';
 import { createLoop, createTweenLoop } from './loop';
 import { createStagger, type StaggerTimers } from './stagger';
+import type { Supervisor, WatchCompletion } from './supervisor';
 import type {
   AnimationHandle,
   Animator,
@@ -115,6 +116,29 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
           ((x) => clearTimeout(x as ReturnType<typeof setTimeout>)))(h),
     };
 
+    // Per-id one-shot completion listeners. Used by stagger to detect when
+    // each child has left the registry (natural completion OR cancel) so the
+    // supervising composite can retire itself when the last child finishes.
+    const completionListeners = new Map<number, (() => void)[]>();
+    const fireCompletion = (id: number): void => {
+      const ls = completionListeners.get(id);
+      if (!ls) return;
+      completionListeners.delete(id);
+      for (const cb of ls) cb();
+    };
+    const watchCompletion: WatchCompletion = (id, cb) => {
+      const ls = completionListeners.get(id) ?? [];
+      ls.push(cb);
+      completionListeners.set(id, ls);
+      return () => {
+        const cur = completionListeners.get(id);
+        if (!cur) return;
+        const idx = cur.indexOf(cb);
+        if (idx >= 0) cur.splice(idx, 1);
+        if (cur.length === 0) completionListeners.delete(id);
+      };
+    };
+
     const ensureLoop = (): void => {
       if (rafHandle.current != null || animations.current.size === 0) return;
       const tickAll = (t: number): void => {
@@ -138,7 +162,10 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
             tickDepth.current -= 1;
           }
         }
-        for (const id of finished) animations.current.delete(id);
+        for (const id of finished) {
+          animations.current.delete(id);
+          fireCompletion(id);
+        }
         if (animations.current.size > 0) {
           rafHandle.current = requestFrame(tickAll);
         }
@@ -155,6 +182,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         const anim = animations.current.get(id);
         anim?.onCancel?.();
         animations.current.delete(id);
+        fireCompletion(id);
       }
     };
 
@@ -179,11 +207,40 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
           if (!a) return;
           a.onCancel?.();
           animations.current.delete(anim.id);
+          fireCompletion(anim.id);
         },
         pause: () => { const a = animations.current.get(anim.id); if (a) a.paused = true; },
         resume: () => { const a = animations.current.get(anim.id); if (a) a.paused = false; },
         setTimeScale: (s) => { const a = animations.current.get(anim.id); if (a) a.timeScale = s; },
         isPaused: () => animations.current.get(anim.id)?.paused ?? false,
+      };
+    };
+
+    // Supervisor: a registered animation whose tick is a no-op (never
+    // finishes naturally) so loop/stagger can sit in the animator's id table
+    // and benefit from `cancel`/`cancelKey`/`isActive`. The owning composite
+    // (loop/stagger) installs an onCancel to actually tear down its children.
+    const createSupervisor = (cancelKey?: string): Supervisor => {
+      const id = nextId.current++;
+      let onCancelCb: (() => void) | undefined;
+      const base = register({
+        id,
+        cancelKey,
+        // tick is a no-op: the supervisor only ends when the owner calls
+        // `cancel()` (either via animator.cancel, animator.cancelKey, or the
+        // composite's natural-completion path which forwards to `cancel`).
+        tick: () => false,
+        onCancel: () => onCancelCb?.(),
+      });
+      return {
+        id: base.id,
+        cancel: base.cancel,
+        pause: base.pause,
+        resume: base.resume,
+        setTimeScale: base.setTimeScale,
+        isPaused: base.isPaused,
+        setOnCancel: (cb) => { onCancelCb = cb; },
+        cancelKey,
       };
     };
 
@@ -318,8 +375,13 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
     };
 
     const cancelAll = (): void => {
-      for (const a of animations.current.values()) a.onCancel?.();
+      const ids: number[] = [];
+      for (const a of animations.current.values()) {
+        a.onCancel?.();
+        ids.push(a.id);
+      }
       animations.current.clear();
+      for (const id of ids) fireCompletion(id);
       if (rafHandle.current != null) {
         cancelFrame(rafHandle.current);
         rafHandle.current = null;
@@ -341,6 +403,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         if (!a) return;
         a.onCancel?.();
         animations.current.delete(handle.id);
+        fireCompletion(handle.id);
       },
       cancelKey: cancelByKey,
       cancelAll,
@@ -365,15 +428,19 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       setTimeScaleByKey: (key, s) => {
         for (const a of animations.current.values()) if (a.cancelKey === key) a.timeScale = s;
       },
-      loop: (factory, loopOpts) => createLoop(factory, loopOpts),
-      tweenLoop: (tweenLoopOpts) => createTweenLoop(animatorRef.current!, tweenLoopOpts),
-      stagger: ((items, delay, factory) =>
+      loop: (factory, loopOpts) => createLoop(createSupervisor, factory, loopOpts),
+      tweenLoop: (tweenLoopOpts) =>
+        createTweenLoop(animatorRef.current!, createSupervisor, tweenLoopOpts),
+      stagger: ((items, delay, factory, staggerOpts) =>
         createStagger(
           animatorRef.current!,
           staggerTimers,
+          createSupervisor,
+          watchCompletion,
           items,
           delay,
           factory as never,
+          staggerOpts,
         )) as Animator['stagger'],
     };
     animatorRef.current = api;
