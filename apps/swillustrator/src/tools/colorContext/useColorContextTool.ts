@@ -162,11 +162,36 @@ export function useColorContextTool(opts: UseColorContextToolOptions): {
     setPaints({ fill: DEFAULT_FILL, stroke: DEFAULT_STROKE });
   }, []);
 
-  // Stubs filled in by Task 3 (kept here so the api shape is stable).
-  const applyFillToSelection = useCallback((_color: string) => {}, []);
-  const applyStrokeToSelection = useCallback((_color: string) => {}, []);
-  const applyStrokeWidthToSelection = useCallback((_w: number) => {}, []);
-  void opts.updateSelected;
+  const applyFillToSelection = useCallback((color: string) => {
+    const merge = (prev: string | undefined): string =>
+      color.length === 9 ? color : mergeAlphaFromPrev(color, prev ?? '#ffffffff');
+    opts.updateSelected((o) => {
+      if (o.tool !== 'text') return { ...o, fill: merge(o.fill) };
+      const prevFill = o.style?.fill;
+      const prevColor = prevFill && prevFill.fill === 'solid' ? prevFill.color : undefined;
+      const next = merge(prevColor);
+      const nextFill = prevFill && prevFill.fill === 'solid'
+        ? { ...prevFill, color: next }
+        : { fill: 'solid' as const, color: next };
+      return { ...o, style: { ...(o.style ?? {}), fill: nextFill } };
+    }, 'Set fill');
+  }, [opts]);
+
+  const applyStrokeToSelection = useCallback((color: string) => {
+    const merge = (prev: string | undefined): string =>
+      color.length === 9 ? color : mergeAlphaFromPrev(color, prev ?? '#000000ff');
+    opts.updateSelected(
+      (o) => (o.tool !== 'text' ? { ...o, stroke: merge(o.stroke) } : o),
+      'Set stroke',
+    );
+  }, [opts]);
+
+  const applyStrokeWidthToSelection = useCallback((w: number) => {
+    opts.updateSelected(
+      (o) => (o.tool !== 'text' ? { ...o, strokeWidth: w } : o),
+      'Set stroke width',
+    );
+  }, [opts]);
 
   const api = useMemo<ColorContextApi>(() => ({
     fill, stroke, focused,
