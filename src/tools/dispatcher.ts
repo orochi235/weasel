@@ -8,6 +8,8 @@ import type { AffordanceBinding } from 'affordances/types';
 import type { HitResult } from './routing/hitResult';
 import type { RouteResolvedInfo } from './routing/reflection/route-resolved';
 import type { NodeId } from 'core/scene/types';
+import type { ToolDef, PhaseDef, RouteTable } from './routing/types';
+import { resolveRoute } from './routing/lookup';
 
 /** Build a HitResult for the dispatcher's context. Phase 1 classifier:
  *  - Affordance hits → 'affordance:unknown' kind (placeholder until the
@@ -266,6 +268,52 @@ function dispatchOnce<E>(
     if (decision === 'claim') return tool;
   }
   return null;
+}
+
+type PickedTable =
+  | { kind: 'table'; table: RouteTable<unknown> }
+  | { kind: 'functionForm' }
+  | { kind: 'wheel' };
+
+function pickTable(
+  phaseDef: PhaseDef<unknown> | undefined,
+  gesture: ResolveQuery['gesture'],
+): PickedTable | undefined {
+  if (!phaseDef) return undefined;
+  switch (gesture) {
+    case 'click':       return phaseDef.click ? { kind: 'table', table: phaseDef.click } : undefined;
+    case 'pointerDown': return phaseDef.pointerDown ? { kind: 'table', table: phaseDef.pointerDown } : undefined;
+    case 'dblTap':      return phaseDef.dblTap ? { kind: 'table', table: phaseDef.dblTap } : undefined;
+    case 'drag': {
+      const d = phaseDef.drag;
+      if (d == null) return undefined;
+      if (typeof d === 'function') return { kind: 'functionForm' };
+      return { kind: 'table', table: d };
+    }
+    case 'wheel':
+      return phaseDef.wheel != null ? { kind: 'wheel' } : undefined;
+  }
+}
+
+function resolveOnlyForTool(
+  tool: AnyTool,
+  slot: ResolveResult['slot'],
+  query: ResolveQuery,
+): ResolveResult | null {
+  const def = tool.def as ToolDef<unknown> | undefined;
+  if (!def) return null;
+  const phaseDef = (query.phase === 'engaged' ? def.engaged : def.initial) as PhaseDef<unknown> | undefined;
+  const picked = pickTable(phaseDef, query.gesture);
+  if (!picked) return null;
+  if (picked.kind === 'functionForm' || picked.kind === 'wheel') {
+    return { toolId: def.id, slot, gesture: query.gesture, phase: query.phase, matchedKey: '*' };
+  }
+  const match = resolveRoute(picked.table, query.hit, query.modifiers);
+  if (!match) return null;
+  return {
+    toolId: def.id, slot, gesture: query.gesture, phase: query.phase,
+    matchedKey: match.matchedKey,
+  };
 }
 
 export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispatcher {
@@ -667,7 +715,22 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     hasActiveGesture: () => inFlight !== null,
     getActiveScratch: () => inFlight?.scratch ?? null,
     getLastRoute: () => lastRoute,
-    resolveOnly: () => { throw new Error('not implemented'); },
+    resolveOnly: (query) => {
+      const slots = opts.getSlots();
+      if (slots.hotkey) {
+        const r = resolveOnlyForTool(slots.hotkey, 'hotkey', query);
+        if (r) return r;
+      }
+      if (slots.active) {
+        const r = resolveOnlyForTool(slots.active, 'active', query);
+        if (r) return r;
+      }
+      for (const t of slots.ambient) {
+        const r = resolveOnlyForTool(t, 'ambient', query);
+        if (r) return r;
+      }
+      return null;
+    },
   };
   api.__setGetCtx = (fn) => { opts.getCtx = fn; };
   api.__setHitTestContext = (fn) => { opts.getHitTestContext = fn; };
