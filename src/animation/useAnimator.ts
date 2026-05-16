@@ -323,6 +323,15 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       resume: () => { globalPaused.current = false; },
       isPaused: () => globalPaused.current,
       setTimeScale: (s) => { globalTimeScale.current = s; },
+      pauseKey: (key) => {
+        for (const a of animations.current.values()) if (a.cancelKey === key) a.paused = true;
+      },
+      resumeKey: (key) => {
+        for (const a of animations.current.values()) if (a.cancelKey === key) a.paused = false;
+      },
+      setTimeScaleByKey: (key, s) => {
+        for (const a of animations.current.values()) if (a.cancelKey === key) a.timeScale = s;
+      },
     };
   }, []);
 }

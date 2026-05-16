@@ -111,4 +111,10 @@ export interface Animator {
   isPaused(): boolean;
   /** Multiply every animation's virtual-clock rate by `scale`. 1 = normal. */
   setTimeScale(scale: number): void;
+  /** Freeze every animation whose `cancelKey` matches. */
+  pauseKey(key: string): void;
+  /** Resume every animation whose `cancelKey` matches. */
+  resumeKey(key: string): void;
+  /** Set per-animation timeScale for every animation whose `cancelKey` matches. */
+  setTimeScaleByKey(key: string, scale: number): void;
 }

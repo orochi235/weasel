@@ -304,4 +304,21 @@ describe('virtual clock — per-handle pause/resume/timeScale', () => {
     act(() => clock.advance(200));
     expect(samples[samples.length - 1]).toBeCloseTo(10, 0);
   });
+
+  it('pauseKey freezes matching animations only', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const a: number[] = [];
+    const b: number[] = [];
+    act(() => {
+      result.current.tween({ from: 0, to: 10, ms: 1000, easing: (t) => t, cancelKey: 'foo', onTick: (v) => a.push(v) });
+      result.current.tween({ from: 0, to: 10, ms: 1000, easing: (t) => t, cancelKey: 'bar', onTick: (v) => b.push(v) });
+    });
+    act(() => clock.advance(100));
+    act(() => result.current.pauseKey('foo'));
+    const aFrozen = a[a.length - 1];
+    act(() => clock.advance(500));
+    expect(a[a.length - 1]).toBeCloseTo(aFrozen, 1);
+    expect(b[b.length - 1]).toBeGreaterThan(aFrozen);
+  });
 });
