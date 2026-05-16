@@ -157,7 +157,7 @@ import { applyPoseToObj, type Obj, type Pose, type TextObj, type PathObj, type T
 import { readPref, usePref } from './prefs';
 import { matchesRegistryFilter } from './registry/types';
 import { usePersistedScene } from './usePersistedScene';
-import { createRecorder, type Recorder, type Recording } from './recorder';
+import { createRecorder, type Recorder, type Recording, type RecordingProfile } from './recorder';
 import { RECORDING_EXTENSION, serializeRecording } from './recordingIO';
 import { replayRecording } from './replay';
 import type { SceneSnapshot } from './sceneStore';
@@ -568,6 +568,7 @@ export function App() {
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
   const recorderRef = useRef<Recorder | null>(null);
   const [recording, setRecording] = useState(false);
+  const [recordingProfile, setRecordingProfile] = useState<RecordingProfile>('gesture-only');
   // Snap helpers exposed as refs so callbacks declared later (the adapter,
   // each shape tool's `create`) read the latest snap state without recreating
   // the adapter or tools when the toggle flips. `.current` is rebound on
@@ -2159,10 +2160,10 @@ export function App() {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       setRecording(false);
     } else {
-      rec.start({ snapshotScene: snapshotCurrentScene });
+      rec.start({ snapshotScene: snapshotCurrentScene, profile: recordingProfile });
       setRecording(true);
     }
-  }, [snapshotCurrentScene]);
+  }, [snapshotCurrentScene, recordingProfile]);
 
   // F9 toggles recording. F-keys are app-neutral across browsers (no
   // built-in conflict on F8/F9). On Mac with default keyboard settings,
@@ -2253,6 +2254,8 @@ export function App() {
         onOpenPrefs={() => setPrefsOpen(true)}
         recording={recording}
         onToggleRecord={onToggleRecord}
+        recordingProfile={recordingProfile}
+        onChangeRecordingProfile={setRecordingProfile}
         onPlay={onPlay}
         onNew={(size) => {
           // Reset the scene, history, selection, and document size. The

@@ -52,6 +52,8 @@ const baseArgs: ActionBarProps = {
   onOpenPrefs: noop,
   recording: false,
   onToggleRecord: noop,
+  recordingProfile: 'gesture-only',
+  onChangeRecordingProfile: noop,
   onPlay: noop,
 };
 

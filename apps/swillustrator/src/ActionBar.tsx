@@ -48,7 +48,7 @@ import {
   RecordIcon,
   PlayIcon,
 } from './actionIcons';
-import type { Recording } from './recorder';
+import type { Recording, RecordingProfile } from './recorder';
 import { deserializeRecording } from './recordingIO';
 
 export interface ActionBarProps {
@@ -113,6 +113,10 @@ export interface ActionBarProps {
   // loads a previously-recorded JSON file for replay.
   recording: boolean;
   onToggleRecord(): void;
+  /** Current sampling profile for the next recording. Changes are
+   *  disabled while a recording is in flight. */
+  recordingProfile: RecordingProfile;
+  onChangeRecordingProfile(p: RecordingProfile): void;
   onPlay(rec: Recording): void;
 }
 
@@ -277,6 +281,11 @@ export function ActionBar(p: ActionBarProps) {
         >
           <RecordIcon active={p.recording} />
         </Button>
+        <RecordingProfileSelect
+          value={p.recordingProfile}
+          onChange={p.onChangeRecordingProfile}
+          disabled={p.recording}
+        />
         <PlayButton onPlay={p.onPlay} />
         <DebugMenu />
       </div>
@@ -343,6 +352,34 @@ function DebugMenu() {
         </div>
       )}
     </div>
+  );
+}
+
+/** Dropdown selector for `RecordingProfile`. Disabled while a recording
+ *  is in flight — the profile is captured at `start()` and can't be
+ *  changed mid-stream. */
+function RecordingProfileSelect({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: RecordingProfile;
+  onChange: (p: RecordingProfile) => void;
+  disabled: boolean;
+}) {
+  return (
+    <select
+      className="swill-actionbar-select"
+      value={value}
+      onChange={(e) => onChange(e.target.value as RecordingProfile)}
+      disabled={disabled}
+      title="Recording profile — how aggressively to sample pointermove"
+      aria-label="Recording profile"
+    >
+      <option value="gesture-only">Gesture-only</option>
+      <option value="full">Full fidelity</option>
+      <option value="events-only">Events-only</option>
+    </select>
   );
 }
 

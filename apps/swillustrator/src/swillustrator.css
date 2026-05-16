@@ -134,6 +134,26 @@ html, body, #root {
   cursor: not-allowed;
 }
 
+.swill-actionbar-select {
+  height: 26px;
+  padding: 0 6px;
+  background: transparent;
+  color: var(--wzl-text);
+  border: 0;
+  border-radius: 2px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1.2;
+}
+.swill-actionbar-select:hover:not(:disabled) {
+  background: var(--wzl-panel-border);
+}
+.swill-actionbar-select:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* --- "New ▾" paper-size dropdown ------------------------------------- */
 .swill-actionbar-menu {
   position: relative;
