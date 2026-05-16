@@ -158,6 +158,7 @@ import { readPref, usePref } from './prefs';
 import { matchesRegistryFilter } from './registry/types';
 import { usePersistedScene } from './usePersistedScene';
 import { createRecorder, type Recorder, type Recording } from './recorder';
+import { RECORDING_EXTENSION, serializeRecording } from './recordingIO';
 import { replayRecording } from './replay';
 import type { SceneSnapshot } from './sceneStore';
 
@@ -2135,7 +2136,7 @@ export function App() {
     canvasElRef.current = c instanceof HTMLCanvasElement ? c : null;
   }, []);
 
-  const onToggleRecord = useCallback(() => {
+  const onToggleRecord = useCallback(async () => {
     let rec = recorderRef.current;
     if (!rec) {
       rec = createRecorder({ canvas: () => canvasElRef.current });
@@ -2143,13 +2144,15 @@ export function App() {
     }
     if (rec.isRecording()) {
       const recording = rec.stop();
-      // Trigger a JSON download via a transient anchor — same pattern as
+      // Trigger a download via a transient anchor — same pattern as
       // `downloadSvg`. The file is self-contained: scene snapshot + events.
-      const blob = new Blob([JSON.stringify(recording)], { type: 'application/json' });
+      // gzipped JSON is ~5-10× smaller than the raw text; replay loader
+      // accepts both formats.
+      const blob = await serializeRecording(recording);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `swill-recording-${Date.now()}.json`;
+      a.download = `swill-recording-${Date.now()}.${RECORDING_EXTENSION}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

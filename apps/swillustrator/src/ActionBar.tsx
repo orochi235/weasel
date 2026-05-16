@@ -49,6 +49,7 @@ import {
   PlayIcon,
 } from './actionIcons';
 import type { Recording } from './recorder';
+import { deserializeRecording } from './recordingIO';
 
 export interface ActionBarProps {
   // History
@@ -362,7 +363,7 @@ function PlayButton({ onPlay }: { onPlay: (rec: Recording) => void }) {
       <input
         ref={inputRef}
         type="file"
-        accept=".json,application/json"
+        accept=".json,.gz,.json.gz,application/json,application/gzip"
         className="swill-hidden-input"
         onChange={async (e) => {
           const file = e.target.files?.[0];
@@ -370,8 +371,9 @@ function PlayButton({ onPlay }: { onPlay: (rec: Recording) => void }) {
           e.target.value = '';
           if (!file) return;
           try {
-            const text = await file.text();
-            const rec = JSON.parse(text) as Recording;
+            // Accepts both raw .json and gzipped .json.gz — magic-byte
+            // sniffing in `deserializeRecording` picks the right path.
+            const rec = await deserializeRecording(file);
             onPlay(rec);
           } catch {
             // Silent — bad JSON / file read error. The user can re-pick.
