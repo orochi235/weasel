@@ -2365,14 +2365,7 @@ export function App() {
       <div className="swill-body">
         <Sidebar side="left" className="swill-sidebar" ariaLabel="Tools">
           <ToolPalette tools={tools} />
-          <ActiveSwatches
-            fill={activeFill}
-            stroke={activeStroke}
-            focused={focusedSwatch}
-            onChangeFill={setActiveFill}
-            onChangeStroke={setActiveStroke}
-            onFocus={setFocusedSwatch}
-          />
+          <ActiveSwatches />
           <div className="swill-sidebar-spacer" />
           <button
             className="swill-tool-button"
@@ -2790,15 +2783,7 @@ function RightSidebar(p: RightSidebarProps) {
         (() => { const pp = panelProps('defaults'); return pp && (
         <PropertiesPanel title="Defaults" {...pp}>
           <PropertyRow label="FillStyle">
-            <ActiveSwatches
-              compact
-              fill={p.activeFill}
-              stroke={p.activeStroke}
-              focused={p.focusedSwatch}
-              onChangeFill={p.setActiveFill}
-              onChangeStroke={p.setActiveStroke}
-              onFocus={p.setFocusedSwatch}
-            />
+            <ActiveSwatches compact />
           </PropertyRow>
           <PropertyRow>
             <PropertySliderInput label={<span title="Stroke width"><StrokeWidthIcon /></span>} value={p.strokeWidth} onChange={p.setStrokeWidth} min={0} max={20} step={1} span={12} />
