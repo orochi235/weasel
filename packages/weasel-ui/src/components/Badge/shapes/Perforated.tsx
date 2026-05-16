@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import type { ShapeModule } from '../types';
 
 const COUNT = 14;
@@ -19,30 +20,32 @@ function notchCircles() {
 }
 
 const NOTCHES = notchCircles();
-const MASK_ID = 'badge-perforated-mask';
 
 const Perforated: ShapeModule = {
-  Component: ({ variant, focused }) => (
-    <>
-      <defs>
-        <mask id={MASK_ID} maskUnits="userSpaceOnUse" x="-5" y="-5" width="110" height="110">
-          <rect x="0" y="0" width="100" height="100" fill="white" />
-          {NOTCHES.map((n, i) => (
-            <circle key={i} cx={n.cx} cy={n.cy} r={R} fill="black" />
-          ))}
-        </mask>
-      </defs>
-      {(variant === 'solid' || variant === 'subtle') && (
-        <rect className="badge-fill" x="0" y="0" width="100" height="100" mask={`url(#${MASK_ID})`} />
-      )}
-      {(variant === 'outline' || variant === 'solid') && (
-        <rect className="badge-stroke" x="0" y="0" width="100" height="100" mask={`url(#${MASK_ID})`} />
-      )}
-      {focused && (
-        <rect className="badge-focus" x="-4" y="-4" width="108" height="108" mask={`url(#${MASK_ID})`} />
-      )}
-    </>
-  ),
+  Component: ({ variant, focused }) => {
+    const maskId = useId();
+    return (
+      <>
+        <defs>
+          <mask id={maskId} maskUnits="userSpaceOnUse" x="-5" y="-5" width="110" height="110">
+            <rect x="0" y="0" width="100" height="100" fill="white" />
+            {NOTCHES.map((n, i) => (
+              <circle key={i} cx={n.cx} cy={n.cy} r={R} fill="black" />
+            ))}
+          </mask>
+        </defs>
+        {(variant === 'solid' || variant === 'subtle') && (
+          <rect className="badge-fill" x="0" y="0" width="100" height="100" mask={`url(#${maskId})`} />
+        )}
+        {(variant === 'outline' || variant === 'solid') && (
+          <rect className="badge-stroke" x="0" y="0" width="100" height="100" mask={`url(#${maskId})`} />
+        )}
+        {focused && (
+          <rect className="badge-focus" x="-4" y="-4" width="108" height="108" mask={`url(#${maskId})`} />
+        )}
+      </>
+    );
+  },
   insets: { top: 2, right: 4, bottom: 2, left: 4 },
   stretches: true,
 };
