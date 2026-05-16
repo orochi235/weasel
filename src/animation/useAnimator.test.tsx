@@ -366,3 +366,87 @@ describe('virtual clock — per-handle pause/resume/timeScale', () => {
     expect(b[b.length - 1]).toBeCloseTo(20, 0);
   });
 });
+
+describe('useAnimator.physics', () => {
+  it('with `to` set matches spring numerically (parity)', () => {
+    const clockA = makeClock();
+    const { result: ra } = renderHook(() => useAnimator(clockA));
+    const clockB = makeClock();
+    const { result: rb } = renderHook(() => useAnimator(clockB));
+    const springValues: number[] = [];
+    const physicsValues: number[] = [];
+    act(() => {
+      ra.current.spring({
+        from: 0, to: 100, stiffness: 170, damping: 26, mass: 1,
+        onTick: (v) => springValues.push(v),
+      });
+      rb.current.physics({
+        from: 0, to: 100, stiffness: 170, damping: 26, mass: 1,
+        onTick: (v) => physicsValues.push(v),
+      });
+    });
+    for (let i = 0; i < 30; i++) {
+      act(() => clockA.advance(16));
+      act(() => clockB.advance(16));
+    }
+    expect(physicsValues.length).toBe(springValues.length);
+    for (let i = 0; i < springValues.length; i++) {
+      expect(physicsValues[i]).toBeCloseTo(springValues[i], 5);
+    }
+  });
+
+  it('with `to: null` behaves as exponential decay', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const samples: number[] = [];
+    act(() => {
+      result.current.physics({
+        from: 0, to: null, velocity: 100,
+        stiffness: 0, damping: 1, mass: 1,
+        onTick: (v) => samples.push(v),
+      });
+    });
+    for (let i = 0; i < 60; i++) act(() => clock.advance(16));
+    // With c/m = 1, position asymptotes toward v0 * m/c = 100.
+    expect(samples[samples.length - 1]).toBeGreaterThan(50);
+    expect(samples[samples.length - 1]).toBeLessThan(105);
+  });
+
+  it('setTarget retargets mid-flight, eventually converging on new target', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const samples: number[] = [];
+    let handle!: ReturnType<typeof result.current.physics<number>>;
+    act(() => {
+      handle = result.current.physics<number>({
+        from: 0, to: 100, stiffness: 170, damping: 26, mass: 1,
+        onTick: (v) => samples.push(v),
+      });
+    });
+    for (let i = 0; i < 10; i++) act(() => clock.advance(16));
+    act(() => handle.setTarget(0));
+    for (let i = 0; i < 120; i++) act(() => clock.advance(16));
+    expect(samples[samples.length - 1]).toBeCloseTo(0, 0);
+  });
+
+  it('setTarget(null) switches to decay; velocity carries position forward', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const samples: number[] = [];
+    let handle!: ReturnType<typeof result.current.physics<number>>;
+    act(() => {
+      handle = result.current.physics<number>({
+        from: 0, to: 100, stiffness: 170, damping: 26, mass: 1,
+        onTick: (v) => samples.push(v),
+      });
+    });
+    // Build some velocity toward the target.
+    for (let i = 0; i < 5; i++) act(() => clock.advance(16));
+    const atSwitch = samples[samples.length - 1];
+    act(() => handle.setTarget(null));
+    for (let i = 0; i < 200; i++) act(() => clock.advance(16));
+    // With spring force gone but residual positive velocity, position
+    // should drift further forward before damping settles it.
+    expect(samples[samples.length - 1]).toBeGreaterThan(atSwitch);
+  });
+});

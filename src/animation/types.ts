@@ -60,6 +60,34 @@ export interface SpringOptions<T> {
   cancelKey?: string;
 }
 
+export interface PhysicsOptions<T> {
+  from: T;
+  /** Target. `null` ⇒ no spring force (decay-mode). */
+  to?: T | null;
+  /** Initial velocity in T-units per second. */
+  velocity?: T;
+  preset?: SpringPresetName;
+  stiffness?: number;
+  damping?: number;
+  mass?: number;
+  restThreshold?: number;
+  /** Vector helpers — required for non-numeric T. */
+  add?: (a: T, b: T) => T;
+  subtract?: (a: T, b: T) => T;
+  scale?: (v: T, k: number) => T;
+  magnitude?: (v: T) => number;
+  onTick: (value: T) => void;
+  onDone?: () => void;
+  cancelKey?: string;
+}
+
+export interface PhysicsHandle<T = unknown> extends AnimationHandle {
+  /** Retarget mid-flight. `null` ⇒ switch to decay-mode (no spring force). */
+  setTarget(to: T | null): void;
+  /** Replace the current velocity in T-units per second. */
+  setVelocity(v: T): void;
+}
+
 export interface DecayOptions<T> {
   from: T;
   velocity: T;
@@ -87,6 +115,10 @@ export interface Animator {
   tween<T>(opts: TweenOptions<T>): AnimationHandle;
   spring<T>(opts: SpringOptions<T>): AnimationHandle;
   decay<T>(opts: DecayOptions<T>): AnimationHandle;
+  /** Unified spring/decay primitive. With `to` set, behaves as a spring;
+   *  with `to: null`, behaves as a velocity-driven decay. Supports
+   *  mid-flight retargeting via the returned handle's `setTarget`. */
+  physics<T>(opts: PhysicsOptions<T>): PhysicsHandle<T>;
   /** Cancel a specific animation by handle. Pose stays at current value (no jump). */
   cancel(handle: AnimationHandle): void;
   /** Cancel every animation currently active under `key`. */

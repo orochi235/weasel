@@ -6,6 +6,8 @@ import type {
   TweenOptions,
   SpringOptions,
   DecayOptions,
+  PhysicsOptions,
+  PhysicsHandle,
   UseAnimatorOptions,
 } from './types';
 
@@ -207,6 +209,78 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       });
     };
 
+    const physics = <T,>(o: PhysicsOptions<T>): PhysicsHandle<T> => {
+      const id = nextId.current++;
+      const isNumeric = typeof o.from === 'number';
+      if (!isNumeric && (!o.add || !o.subtract || !o.scale || !o.magnitude)) {
+        throw new Error('physics: add/subtract/scale/magnitude are required for non-numeric T');
+      }
+      const add = o.add ?? ((a: T, b: T) => ((a as unknown as number) + (b as unknown as number)) as unknown as T);
+      const subtract = o.subtract ?? ((a: T, b: T) => ((a as unknown as number) - (b as unknown as number)) as unknown as T);
+      const scale = o.scale ?? ((v: T, k: number) => ((v as unknown as number) * k) as unknown as T);
+      const magnitude = o.magnitude ?? ((v: T) => Math.abs(v as unknown as number));
+      const { stiffness: kBase, damping, mass } = resolveSpringConstants(o);
+      const restThreshold = o.restThreshold ?? 0.01;
+
+      let target: T | null = o.to ?? null;
+      let stiffness = target == null ? 0 : kBase;
+      let value = o.from;
+      let velocity: T = (o.velocity ?? scale(o.from, 0)) as T;
+      let lastTime: number | null = null;
+
+      const baseHandle = register({
+        id,
+        cancelKey: o.cancelKey,
+        tick(nowMs) {
+          if (tripwire()) return true;
+          if (lastTime == null) {
+            lastTime = nowMs;
+            // Already-at-rest short-circuit: decay-mode (target == null)
+            // with starting velocity below threshold should complete
+            // immediately rather than emit a tick and wait a frame.
+            if (target == null && magnitude(velocity) < restThreshold) {
+              o.onDone?.();
+              return true;
+            }
+            o.onTick(value);
+            return false;
+          }
+          const dt = Math.min(0.064, (nowMs - lastTime) / 1000);
+          lastTime = nowMs;
+          // Semi-implicit Euler. When target == null, stiffness == 0 ⇒
+          // no spring force; only damping acts on velocity (exponential decay).
+          const ref = target ?? value;
+          const displacement = subtract(value, ref);
+          const springForce = scale(displacement, -stiffness);
+          const dampingForce = scale(velocity, -damping);
+          const accel = scale(add(springForce, dampingForce), 1 / mass);
+          velocity = add(velocity, scale(accel, dt));
+          value = add(value, scale(velocity, dt));
+          o.onTick(value);
+          const velRested = magnitude(velocity) < restThreshold;
+          const posRested = target == null
+            ? true
+            : magnitude(subtract(value, target)) < restThreshold;
+          if (velRested && posRested) {
+            if (target != null) o.onTick(target);
+            o.onDone?.();
+            return true;
+          }
+          return false;
+        },
+      });
+
+      const handle: PhysicsHandle<T> = {
+        ...baseHandle,
+        setTarget: (newTo: T | null) => {
+          target = newTo;
+          stiffness = newTo == null ? 0 : kBase;
+        },
+        setVelocity: (v: T) => { velocity = v; },
+      };
+      return handle;
+    };
+
     const spring = <T,>(o: SpringOptions<T>): AnimationHandle => {
       const id = nextId.current++;
       const isNumeric = typeof o.from === 'number' && typeof o.to === 'number';
@@ -303,6 +377,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       tween,
       spring,
       decay,
+      physics,
       cancel: (handle) => {
         const a = animations.current.get(handle.id);
         if (!a) return;
