@@ -1,5 +1,4 @@
 import { useState, type ReactNode, type CSSProperties } from 'react';
-import { flushSync } from 'react-dom';
 import s from './Badge.module.css';
 import { SHAPES } from './shapes';
 import type { BadgeShape, BadgeTone, BadgeVariant, BadgeSize } from './types';
@@ -61,8 +60,8 @@ export function Badge(props: BadgeProps) {
     'data-variant': variant,
     'data-size': size,
     'data-focused': focused ? 'true' : undefined,
-    onFocus: () => flushSync(() => setFocused(true)),
-    onBlur: () => flushSync(() => setFocused(false)),
+    onFocus: () => setFocused(true),
+    onBlur: () => setFocused(false),
     'aria-label': ariaLabel,
   };
 

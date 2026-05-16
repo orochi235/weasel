@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, fireEvent } from '@testing-library/react';
 import { Badge } from './Badge';
 
 describe('Badge', () => {
@@ -77,7 +77,7 @@ describe('Badge interactive', () => {
   it('renders focus path when focus-visible matches', () => {
     const { container } = render(<Badge onClick={() => {}}>x</Badge>);
     const btn = container.firstElementChild as HTMLButtonElement;
-    btn.focus();
+    fireEvent.focus(btn);
     expect(btn.getAttribute('data-focused')).toBe('true');
   });
 });
