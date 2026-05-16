@@ -213,9 +213,45 @@ export type StaggerDelay = number | ((index: number) => number);
 
 export type StaggerFactory<TItem> = (item: TItem, index: number) => AnimationHandle;
 
+/** A `T` value or a function that derives one from the per-item context. Used
+ *  by the fluent builder methods (`.tween`, `.springPose`) so each item can
+ *  vary an option (e.g. `to: (_item, i) => (i + 1) * 10`). */
+export type StaggerPerItem<T, TItem> = T | ((item: TItem, index: number) => T);
+
+export interface StaggerTweenOptions<T, TItem> {
+  from: StaggerPerItem<T, TItem>;
+  to: StaggerPerItem<T, TItem>;
+  ms: StaggerPerItem<number, TItem>;
+  easing?: EasingFn;
+  interpolate?: Interpolate<T>;
+  onTick: (value: T, item: TItem, index: number) => void;
+  onDone?: (item: TItem, index: number) => void;
+  cancelKey?: string;
+}
+
+export interface StaggerSpringPoseOptions<TPose> {
+  preset?: SpringPresetName;
+  stiffness?: number;
+  damping?: number;
+  mass?: number;
+  geometry?: import('interactions/gestures/resize/geometry').PoseDescriptor<TPose>;
+  recordOp?: boolean;
+  opLabel?: string;
+}
+
 export interface StaggerBuilder<TItem> {
   /** Run an arbitrary per-item factory. */
   each(factory: StaggerFactory<TItem>): AnimationHandle;
+  /** Sugar: per-item `animator.tween` with per-item-varying options. */
+  tween<T>(opts: StaggerTweenOptions<T, TItem>): AnimationHandle;
+  /** Sugar: per-item `springPose` against an adapter. `poseFn` returns the
+   *  target pose for each item; the item is expected to expose an `id` field
+   *  (otherwise `String(item)` is used as the pose id). */
+  springPose<TPose>(
+    adapter: import('core/adapters/types').SceneAdapter<{ id: string }, TPose>,
+    poseFn: (item: TItem, index: number) => TPose,
+    opts?: StaggerSpringPoseOptions<TPose>,
+  ): AnimationHandle;
 }
 
 export interface TweenLoopOptions<T> {

@@ -76,6 +76,28 @@ describe('animator.stagger', () => {
     expect(starts.map((s) => s.item)).toEqual(['a', 'b', 'c']);
   });
 
+  it('builder .tween closes over per-item options', () => {
+    const { animator, advance } = mountAnimator();
+    const results: Array<{ item: string; v: number; i: number }> = [];
+    animator
+      .stagger(['a', 'b', 'c'], 0)
+      .tween({
+        from: 0,
+        to: (_item, i) => (i + 1) * 10,
+        ms: 100,
+        easing: (t) => t,
+        onTick: (v, item, i) => results.push({ item, v, i }),
+      });
+    // All three start immediately (delay = 0); each tween runs 100ms to its
+    // per-item `to`. Advance well past completion.
+    for (let i = 0; i < 20; i++) advance(16);
+    const finals: Record<string, number> = {};
+    for (const r of results) finals[r.item] = r.v;
+    expect(finals.a).toBeCloseTo(10, 0);
+    expect(finals.b).toBeCloseTo(20, 0);
+    expect(finals.c).toBeCloseTo(30, 0);
+  });
+
   it('cancel cancels pending timers and in-flight children', () => {
     const { animator, advance } = mountAnimator();
     const starts: string[] = [];

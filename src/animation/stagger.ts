@@ -1,10 +1,15 @@
+import { springPose } from './poseHelpers';
 import type {
   AnimationHandle,
   Animator,
   StaggerBuilder,
   StaggerDelay,
   StaggerFactory,
+  StaggerPerItem,
+  StaggerSpringPoseOptions,
+  StaggerTweenOptions,
 } from './types';
+import type { SceneAdapter } from 'core/adapters/types';
 
 /** Resolved timer-pair, supplied by `useAnimator` so stagger picks up the
  *  same test-time injection points the rAF loop uses. */
@@ -140,13 +145,62 @@ function runStagger<TItem>(
   return composite;
 }
 
+function resolvePerItem<T, TItem>(
+  v: StaggerPerItem<T, TItem>,
+  item: TItem,
+  i: number,
+): T {
+  return typeof v === 'function'
+    ? (v as (item: TItem, index: number) => T)(item, i)
+    : v;
+}
+
+function itemId(item: unknown): string {
+  if (item && typeof item === 'object' && 'id' in (item as { id?: unknown })) {
+    const id = (item as { id?: unknown }).id;
+    if (typeof id === 'string') return id;
+  }
+  return String(item);
+}
+
 function makeBuilder<TItem>(
-  _animator: Animator,
+  animator: Animator,
   timers: StaggerTimers,
   items: readonly TItem[],
   delay: StaggerDelay,
 ): StaggerBuilder<TItem> {
   return {
     each: (factory) => runStagger(timers, items, delay, factory),
+    tween: <T,>(opts: StaggerTweenOptions<T, TItem>) =>
+      runStagger(timers, items, delay, (item, i) =>
+        animator.tween<T>({
+          from: resolvePerItem(opts.from, item, i),
+          to: resolvePerItem(opts.to, item, i),
+          ms: resolvePerItem(opts.ms, item, i),
+          easing: opts.easing,
+          interpolate: opts.interpolate,
+          onTick: (v) => opts.onTick(v, item, i),
+          onDone: opts.onDone ? () => opts.onDone!(item, i) : undefined,
+          cancelKey: opts.cancelKey,
+        }),
+      ),
+    springPose: <TPose,>(
+      adapter: SceneAdapter<{ id: string }, TPose>,
+      poseFn: (item: TItem, index: number) => TPose,
+      opts: StaggerSpringPoseOptions<TPose> = {},
+    ) =>
+      runStagger(timers, items, delay, (item, i) =>
+        springPose(animator, adapter, {
+          id: itemId(item),
+          to: poseFn(item, i),
+          preset: opts.preset,
+          stiffness: opts.stiffness,
+          damping: opts.damping,
+          mass: opts.mass,
+          geometry: opts.geometry,
+          recordOp: opts.recordOp,
+          opLabel: opts.opLabel,
+        }),
+      ),
   };
 }
