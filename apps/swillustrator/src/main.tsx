@@ -4,6 +4,7 @@ import { registerFont } from '@orochi235/weasel/renderer';
 import { ActionsProvider, SelectionContextProvider } from '@orochi235/weasel';
 import { App } from './App';
 import { ToolkitBuilder } from './dev/ToolkitBuilder';
+import { RegistryInspector } from './dev/RegistryInspector';
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing #root element');
@@ -34,6 +35,7 @@ function Root() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
   if (hash.startsWith('#/dev/toolkits')) return <ToolkitBuilder />;
+  if (hash.startsWith('#/dev/registry')) return <RegistryInspector />;
   return <App />;
 }
 

@@ -49,6 +49,7 @@ Demo: `demo/demos/BooleanOpsDemo.tsx` (`#boolean-ops`). Spec:
 - **Active colors as a userland tool.** Lift the active-paint state out of the App and into a registered tool that exposes color-change events; swatch grids, palettes, and other color sources dispatch into the tool rather than calling setActiveFill / setActiveStroke directly. Centralizes focus routing and history capture.
 - **Dispatch-resolutions widget: live mode.** Add a toggle that, instead of resolving each (target, mods) cell statically via `resolveRoute`, actually injects synthetic pointer events through the dispatcher and records what fires. Cell content becomes "what ran" rather than "what would run by static analysis."
 - **Tool / Action label coverage audit.** Verify every built-in tool and registered Action has a `label` (palette / menu / command-palette consume it). If `Tool.label` doesn't exist, add it to the hook return shape so each tool can self-declare.
+- **Kit-barrel drift for Bundle Inspector.** The `#/dev/registry` Bundle Inspector reads exports from `@orochi235/weasel`'s barrel for things not surfaced via a runtime hook (op factories, public exports, shape kinds). Anything added to the kit but not re-exported through the barrel silently disappears from the inspector. Fix options: (a) generate the inspector manifest from kit source at build time, or (b) enforce barrel registration via a lint check. Spec: `docs/superpowers/specs/2026-05-16-bundle-inspector-design.md`.
 
 ## weasel-den deferrals
 
