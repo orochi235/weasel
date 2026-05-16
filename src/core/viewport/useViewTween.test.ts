@@ -17,8 +17,8 @@ beforeEach(() => {
 });
 afterEach(() => { vi.restoreAllMocks(); });
 
-const from: View = { x: 0, y: 0, scale: 1 };
-const to: View = { x: 100, y: 50, scale: 2 };
+const from: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+const to: View = { x: 100, y: 50, scale: { x: 2, y: 2 } };
 
 describe('useViewTween', () => {
   it('does not call setView before any animateTo', () => {
@@ -36,7 +36,8 @@ describe('useViewTween', () => {
     const v = setView.mock.calls[0][0] as View;
     expect(v.x).toBeCloseTo(0);
     expect(v.y).toBeCloseTo(0);
-    expect(v.scale).toBeCloseTo(1);
+    expect(v.scale.x).toBeCloseTo(1);
+    expect(v.scale.y).toBeCloseTo(1);
   });
 
   it('reaches target at end of duration', () => {
@@ -48,13 +49,14 @@ describe('useViewTween', () => {
     const last = setView.mock.calls[setView.mock.calls.length - 1][0] as View;
     expect(last.x).toBeCloseTo(100);
     expect(last.y).toBeCloseTo(50);
-    expect(last.scale).toBeCloseTo(2);
+    expect(last.scale.x).toBeCloseTo(2);
+    expect(last.scale.y).toBeCloseTo(2);
   });
 
   it('second animateTo cancels the first', () => {
     const setView = vi.fn();
     const { result } = renderHook(() => useViewTween(setView));
-    const to2: View = { x: 200, y: 0, scale: 1 };
+    const to2: View = { x: 200, y: 0, scale: { x: 1, y: 1 } };
     act(() => { result.current.animateTo(from, to, { duration: 200 }); });
     act(() => { stepRAF(50); });
     act(() => { result.current.animateTo(from, to2, { duration: 100 }); });
@@ -71,5 +73,20 @@ describe('useViewTween', () => {
     const callCount = setView.mock.calls.length;
     act(() => { result.current.cancel(); stepRAF(50); });
     expect(setView).toHaveBeenCalledTimes(callCount);
+  });
+
+  it('lerps each scale axis independently', () => {
+    const setView = vi.fn();
+    const { result } = renderHook(() => useViewTween(setView));
+    const startView: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    const endView: View = { x: 0, y: 0, scale: { x: 4, y: 2 } };
+    act(() => { result.current.animateTo(startView, endView, { duration: 200 }); });
+    // Step to midpoint (100ms into 200ms tween)
+    act(() => { stepRAF(0); stepRAF(100); });
+    const mid = setView.mock.calls[setView.mock.calls.length - 1][0] as View;
+    // Default easing is easeOutCubic(0.5) = 1 - (1 - 0.5)^3 = 0.875
+    const t = 1 - Math.pow(1 - 0.5, 3);
+    expect(mid.scale.x).toBeCloseTo(1 + (4 - 1) * t);
+    expect(mid.scale.y).toBeCloseTo(1 + (2 - 1) * t);
   });
 });

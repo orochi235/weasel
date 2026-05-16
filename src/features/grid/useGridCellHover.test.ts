@@ -26,7 +26,7 @@ function fire(el: HTMLElement, type: string, init: PointerEventInit = {}) {
   el.dispatchEvent(new ctor(type, { bubbles: true, ...init }));
 }
 
-const identityView: ViewTransform = { panX: 0, panY: 0, zoom: 1 };
+const identityView: ViewTransform = { panX: 0, panY: 0, zoom: { x: 1, y: 1 } };
 
 describe('useGridCellHover', () => {
   it('translates pointermove into the integer cell under the cursor', () => {
@@ -83,7 +83,7 @@ describe('useGridCellHover', () => {
     const ref = createRef<HTMLElement>();
     (ref as { current: HTMLElement }).current = el;
     // pan = (10,10), zoom = 2 → screen(30,30) maps to world((30-10)/2, (30-10)/2) = (10, 10)
-    const view: ViewTransform = { panX: 10, panY: 10, zoom: 2 };
+    const view: ViewTransform = { panX: 10, panY: 10, zoom: { x: 2, y: 2 } };
     const { result } = renderHook(() =>
       useGridCellHover({ ref, view: () => view, spacing: 10 }),
     );

@@ -14,7 +14,7 @@ describe('createPathLayer', () => {
       getPath: () => path,
       getFill: () => fill,
     });
-    const tree = layer.draw(null, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    const tree = layer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
     expect(tree).toHaveLength(1);
     expect(tree[0].kind).toBe('group');
     const group = tree[0] as GroupDrawCommand;
@@ -31,7 +31,7 @@ describe('createPathLayer', () => {
       getFill: () => ({ fill: 'solid', color: '#f00' }),
       isHidden: (n) => n.id === 'b',
     });
-    const tree = layer.draw(null, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    const tree = layer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
     const group = tree[0] as GroupDrawCommand;
     expect(group.children).toHaveLength(1);
   });
@@ -43,7 +43,7 @@ describe('createPathLayer', () => {
       getPath: () => path,
       // no getFill or getStroke
     });
-    const tree = layer.draw(null, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    const tree = layer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
     const group = tree[0] as GroupDrawCommand;
     expect(group.children).toHaveLength(0);
   });
@@ -56,7 +56,7 @@ describe('createPathLayer', () => {
       getPath: () => path,
       getStroke: () => stroke,
     });
-    const tree = layer.draw(null, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    const tree = layer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
     const group = tree[0] as GroupDrawCommand;
     expect(group.children[0]).toMatchObject({ kind: 'path', path, stroke });
   });
@@ -68,7 +68,7 @@ describe('createPathLayer', () => {
       getPath: () => path,
       getFill: () => ({ fill: 'solid', color: '#fff' }),
     });
-    const tree = layer.draw(null, { x: 5, y: 7, scale: 2 }, { width: 100, height: 100 });
+    const tree = layer.draw(null, { x: 5, y: 7, scale: { x: 2, y: 2 } }, { width: 100, height: 100 });
     const group = tree[0] as GroupDrawCommand;
     expect(group.transform).toBeDefined();
     expect(Array.from(group.transform!)).toEqual([2, 0, 0, 0, 2, 0, -10, -14, 1]);
@@ -84,7 +84,7 @@ describe('createPathLayer — getVertexColors', () => {
       getPath: () => path,
       getVertexColors: () => colors,
     });
-    const out = layer.draw(undefined, { x: 0, y: 0, scale: 1 } as any, { width: 100, height: 100 });
+    const out = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100 });
     const group = out[0] as any;
     const cmd = group.children[0];
     expect(cmd.vertexColors).toEqual(colors);
@@ -100,7 +100,7 @@ describe('createPathLayer — getVertexColors', () => {
       getFill: () => ({ color: '#abcdef', opacity: 0.5 }),
       getVertexColors: () => [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1],
     });
-    const out = layer.draw(undefined, { x: 0, y: 0, scale: 1 } as any, { width: 100, height: 100 });
+    const out = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100 });
     const cmd = (out[0] as any).children[0];
     expect(cmd.fill).toEqual({ color: '#abcdef', opacity: 0.5 });
   });
@@ -115,7 +115,7 @@ describe('createPathLayer — getVertexColors', () => {
       getPath: () => path,
       getVertexColors: () => [1, 0, 0, 1, 0, 1, 0, 1],
     });
-    const out = layer.draw(undefined, { x: 0, y: 0, scale: 1 } as any, { width: 100, height: 100 });
+    const out = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100 });
     const group = out[0] as any;
     expect(group.children).toHaveLength(0);
     expect(warn).toHaveBeenCalledTimes(1);
@@ -132,9 +132,9 @@ describe('createPathLayer — getVertexColors', () => {
       getFill: () => ({ color: '#f00' }), // Explicit fill so node is rendered despite bad colors
       getVertexColors: () => [1, 0, 0, 1],
     });
-    layer.draw(undefined, { x: 0, y: 0, scale: 1 } as any, { width: 100, height: 100 });
-    layer.draw(undefined, { x: 0, y: 0, scale: 1 } as any, { width: 100, height: 100 });
-    layer.draw(undefined, { x: 0, y: 0, scale: 1 } as any, { width: 100, height: 100 });
+    layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100 });
+    layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100 });
+    layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100 });
     expect(warn).toHaveBeenCalledTimes(1);
     warn.mockRestore();
   });
@@ -149,7 +149,7 @@ describe('createPathLayer — getStrokeVertexColors', () => {
       getPath: () => path,
       getStrokeVertexColors: () => colors,
     });
-    const out = layer.draw(undefined, { x: 0, y: 0, scale: 1 } as any, { width: 100, height: 100 });
+    const out = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100 });
     const cmd = (out[0] as any).children[0];
     expect(cmd.stroke.vertexColors).toEqual(colors);
     expect(cmd.stroke.paint).toEqual({ color: '#ffffff' });
@@ -165,7 +165,7 @@ describe('createPathLayer — getStrokeVertexColors', () => {
       getStroke: () => ({ paint: { color: '#000' }, width: 3 }),
       getStrokeVertexColors: () => colors,
     });
-    const out = layer.draw(undefined, { x: 0, y: 0, scale: 1 } as any, { width: 100, height: 100 });
+    const out = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as any, { width: 100, height: 100 });
     const cmd = (out[0] as any).children[0];
     expect(cmd.stroke.vertexColors).toEqual(colors);
     expect(cmd.stroke.paint).toEqual({ color: '#000' });

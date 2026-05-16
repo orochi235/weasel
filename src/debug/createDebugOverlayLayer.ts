@@ -3,6 +3,7 @@ import type { Dims, RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
+import { meanScale } from 'core/viewport/meanScale';
 import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from 'features/paths/types';
 import { textCommand } from 'features/text/textCommand';
 import type {
@@ -89,12 +90,12 @@ function emitHitboxes(
   for (const h of s.hitboxes) {
     if (h.shape.kind === 'rect') {
       const [sx, sy] = worldToScreen(h.shape.x, h.shape.y, t);
-      const sw = h.shape.width * view.scale;
-      const sh = h.shape.height * view.scale;
+      const sw = h.shape.width * view.scale.x;
+      const sh = h.shape.height * view.scale.y;
       out.push({ kind: 'path', path: rectPath(sx, sy, sw, sh), fill, stroke });
     } else if (h.shape.kind === 'circle') {
       const [cx, cy] = worldToScreen(h.shape.cx, h.shape.cy, t);
-      const r = h.shape.r * view.scale;
+      const r = h.shape.r * meanScale(view.scale);
       out.push({ kind: 'path', path: approxCircleScreen(cx, cy, r), fill, stroke });
     }
     // 'path' kind: v1 punt — matches 2D behavior.
@@ -111,8 +112,8 @@ function emitBounds(
   const stroke = { paint: { fill: 'solid' as const, color: theme.bounds }, width: 1 };
   for (const b of s.bounds) {
     const [sx, sy] = worldToScreen(b.bounds.x, b.bounds.y, t);
-    const sw = b.bounds.width * view.scale;
-    const sh = b.bounds.height * view.scale;
+    const sw = b.bounds.width * view.scale.x;
+    const sh = b.bounds.height * view.scale.y;
     out.push({ kind: 'path', path: rectPath(sx, sy, sw, sh), stroke });
   }
 }

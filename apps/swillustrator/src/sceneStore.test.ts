@@ -220,7 +220,7 @@ const sampleSnapshot = (): SceneSnapshot => ({
   ],
   groups: [],
   doc: { size: { width: 816, height: 1056 } },
-  view: { x: 0, y: 0, scale: 1 },
+  view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
 });
 
 describe('sceneStore', () => {
@@ -250,7 +250,7 @@ describe('sceneStore', () => {
     expect(loaded!.items).toHaveLength(1);
     expect(loaded!.items[0].id).toBe('r1');
     expect(loaded!.doc.size.width).toBe(816);
-    expect(loaded!.view).toEqual({ x: 0, y: 0, scale: 1 });
+    expect(loaded!.view).toEqual({ x: 0, y: 0, scale: { x: 1, y: 1 } });
     // Typed arrays come back as their original views.
     const path = (loaded!.items[0] as unknown as { path: { coords: Float32Array; flags: Uint8Array } }).path;
     expect(path.coords).toBeInstanceOf(Float32Array);

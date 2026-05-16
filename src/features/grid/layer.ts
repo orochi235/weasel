@@ -12,6 +12,7 @@ import { type DrawCommand, viewToMat3 } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { type Stroke } from 'core/paint-types';
 import { resolveUnit, type UnitSystem, type UnitValue } from 'core/units';
+import { meanScale } from 'core/viewport/meanScale';
 import { PATH_L, PATH_M, type PolygonPath } from '../paths/types';
 
 /** Options for `createGridLayer`. */
@@ -74,7 +75,7 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
       const y0 = b.y;
       const x1 = b.x + b.width;
       const y1 = b.y + b.height;
-      const px = 1 / Math.max(0.0001, view.scale);
+      const px = 1 / Math.max(0.0001, meanScale(view.scale));
 
       const children: DrawCommand[] = [];
 

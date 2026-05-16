@@ -76,8 +76,9 @@ export type {
 
 // ─── Viewport: ViewTransform + helpers ──────────────────────────────────────
 export * from './core/viewport/viewTransform';
-export type { View } from './core/viewport/view';
+export type { View, ZoomFactor, ZoomBound } from './core/viewport/view';
 export { viewToTransform } from './core/viewport/view';
+export { meanScale } from './core/viewport/meanScale';
 export * from './features/drag-events';
 export * from './core/viewport/useCanvasSize';
 export * from './core/viewport/fitToBounds';

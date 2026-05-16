@@ -15,16 +15,16 @@ export interface CanvasSize {
 /**
  * Clamp a `View` so the visible world rect stays within `bounds`.
  *
- * Visible world rect = `[view.x, view.x + canvas.width / view.scale]` ×
- * `[view.y, view.y + canvas.height / view.scale]`.
+ * Visible world rect = `[view.x, view.x + canvas.width / view.scale.x]` ×
+ * `[view.y, view.y + canvas.height / view.scale.y]`.
  *
  * If the visible rect is larger than `bounds` along an axis (zoomed out
  * past the bounds extent), the view is centered on that axis so bounds
  * sits in the middle of the canvas.
  */
 export function clampView(view: View, bounds: ClampBounds, canvas: CanvasSize): View {
-  const visW = canvas.width / view.scale;
-  const visH = canvas.height / view.scale;
+  const visW = canvas.width / view.scale.x;
+  const visH = canvas.height / view.scale.y;
 
   let x: number;
   if (visW >= bounds.width) {

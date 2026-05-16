@@ -47,8 +47,8 @@ const ANCHOR_RADIUS_PX = 4;
 const HANDLE_DOT_RADIUS_PX = 3;
 const CLOSE_HINT_RADIUS_PX = 8;
 
-function w2s(wx: number, wy: number, view: { x: number; y: number; scale: number }): [number, number] {
-  return [(wx - view.x) * view.scale, (wy - view.y) * view.scale];
+function w2s(wx: number, wy: number, view: { x: number; y: number; scale: { x: number; y: number } }): [number, number] {
+  return [(wx - view.x) * view.scale.x, (wy - view.y) * view.scale.y];
 }
 
 function mirror(anchor: PenAnchor, out: { x: number; y: number } | undefined): { x: number; y: number } | undefined {
@@ -70,7 +70,7 @@ function approximateCircle(cx: number, cy: number, r: number): PolygonPath {
  */
 function subpathToPath(
   sp: PenSubpath,
-  view: { x: number; y: number; scale: number },
+  view: { x: number; y: number; scale: { x: number; y: number } },
 ): PolygonPath | null {
   if (sp.anchors.length === 0) return null;
   const cmds: number[] = [];

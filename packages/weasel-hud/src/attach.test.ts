@@ -66,7 +66,7 @@ describe('attachHud', () => {
 
     // Simulate the canvas dispatching onUncapturedMove under identity view
     // (worldX/Y = canvas pixels).
-    api._layer!.onUncapturedMove!(20, 15, {} as PointerEvent, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    api._layer!.onUncapturedMove!(20, 15, {} as PointerEvent, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
     expect(hoverFn).toHaveBeenCalledTimes(1);
   });
 
@@ -84,7 +84,7 @@ describe('attachHud', () => {
       attachHud(api, hud);
       hud.button({ id: 'b', x: 0, y: 0, w: 50, h: 20, label: 'x' });
       const registeredLayer = (api.registerLayer as ReturnType<typeof vi.fn>).mock.calls[0][0];
-      const cmds = registeredLayer.draw(null, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+      const cmds = registeredLayer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
       const buttonBody = cmds.find((c: { kind: string }) => c.kind === 'path') as { fill: { color: string } };
       expect(buttonBody.fill.color).toBe('#abcdef');
     } finally {

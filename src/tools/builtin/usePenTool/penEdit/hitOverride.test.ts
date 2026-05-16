@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { penEditHitOverride } from './hitOverride';
 import type { PenScratch } from '../usePenTool';
 
-const view = { x: 0, y: 0, scale: 1 } as const;
+const view = { x: 0, y: 0, scale: { x: 1, y: 1 } } as const;
 
 function editingScratch(anchors: { x: number; y: number; outHandle?: { x: number; y: number }; inHandle?: { x: number; y: number } }[][]): PenScratch {
   return {

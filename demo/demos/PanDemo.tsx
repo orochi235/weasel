@@ -28,14 +28,14 @@ export function PanDemo() {
   });
   const selection = useSelection();
 
-  const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
+  const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   const hand = useHandTool();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
         <span style={{ fontFamily: 'monospace' }}>view: ({view.x.toFixed(0)}, {view.y.toFixed(0)})</span>
-        <button onClick={() => setView({ x: 0, y: 0, scale: 1 })}>Reset view</button>
+        <button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>Reset view</button>
         <span style={{ color: '#888' }}>H = hand · space (hold) = momentary hand</span>
       </div>
       <SceneCanvas

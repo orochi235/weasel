@@ -21,7 +21,7 @@ describe('createTextLayer', () => {
       getTexts: () => [{ id: 'n', pose: { x: 100, y: 200, width: 300, height: 50, text: 'hello' } }],
       getPose: (n) => n.pose,
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
     expect(tree).toHaveLength(1);
     const group = tree[0] as unknown as { kind: 'group'; children: Array<Record<string, unknown>> };
     expect(group.kind).toBe('group');
@@ -52,7 +52,7 @@ describe('createTextLayer', () => {
       }],
       getPose: (n) => n.pose,
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
     const cmd = (tree[0] as { children: Array<{ runs: Array<{ text: string; fontWeight: number }> }> }).children[0];
     expect(cmd.runs.map((r) => r.text)).toEqual(['a ', 'b']);
     expect(cmd.runs.map((r) => r.fontWeight)).toEqual([400, 700]);
@@ -67,7 +67,7 @@ describe('createTextLayer', () => {
       getPose: (n) => n.pose,
       isHidden: (n) => n.id === 'a',
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
     const group = tree[0] as { children: Array<{ runs: Array<{ text: string }> }> };
     expect(group.children).toHaveLength(1);
     expect(group.children[0].runs[0].text).toBe('B');
@@ -85,6 +85,6 @@ describe('createTextLayer', () => {
       }],
       getPose: (n) => n.pose,
     });
-    expect(() => layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS)).toThrow(/invariant/i);
+    expect(() => layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS)).toThrow(/invariant/i);
   });
 });

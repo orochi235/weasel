@@ -5,6 +5,7 @@ import type {
 } from '../../types';
 import type { Guide } from 'features/guides/types';
 import type { View } from 'core/viewport/view';
+import { meanScale } from 'core/viewport/meanScale';
 import { DEFAULT_GUIDE_TOLERANCE_PX } from '../../shared/strategies/guides';
 
 type ModKey = keyof ModifierState;
@@ -67,7 +68,7 @@ export function snapToGuides<TPose>(
   const bypassKey = args.bypassKey;
 
   const computeWorldTol = (): number =>
-    getView ? tolerance / Math.max(1e-9, getView().scale) : tolerance;
+    getView ? tolerance / Math.max(1e-9, meanScale(getView().scale)) : tolerance;
 
   return {
     onStart(ctx) {

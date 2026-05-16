@@ -195,7 +195,7 @@ describe('createSelectionOverlayLayer', () => {
       getSelection: () => [],
       getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }),
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
     expect(tree).toEqual([]);
   });
 
@@ -224,8 +224,8 @@ describe('createSelectionOverlayLayer', () => {
       getPose: (id) => poses[id] ?? null,
       handles: { size: 8 },
     });
-    const oneTree = oneOutline.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
-    const twoTree = twoOutlines.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    const oneTree = oneOutline.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
+    const twoTree = twoOutlines.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
     // Adding one more outline id should add exactly one more drawcommand.
     expect(twoTree.length - oneTree.length).toBe(1);
   });
@@ -236,7 +236,7 @@ describe('createSelectionOverlayLayer', () => {
       getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }),
       handles: false,
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
     // Outline pass only (handles disabled). One stroke for the selected id.
     expect(tree.filter((c) => c.kind === 'path').length).toBe(1);
   });
@@ -248,7 +248,7 @@ describe('createSelectionOutlineLayer', () => {
       getSelection: () => [asNodeId('a')],
       getPose: () => ({ x: 10, y: 20, width: 30, height: 40 }),
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
     expect(tree).toHaveLength(1);
     expect(tree[0].kind).toBe('path');
     expect((tree[0] as PathDrawCommand).stroke).toBeDefined();
@@ -259,7 +259,7 @@ describe('createSelectionOutlineLayer', () => {
       getSelection: () => [],
       getPose: () => ({ x: 0, y: 0, width: 1, height: 1 }),
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
     expect(tree).toEqual([]);
   });
 });
@@ -270,7 +270,7 @@ describe('createSelectionHandlesLayer', () => {
       getSelection: () => [asNodeId('a')],
       getPose: () => ({ x: 0, y: 0, width: 100, height: 100 }),
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
     expect(tree).toHaveLength(8);
     expect(tree.every((c) => c.kind === 'path')).toBe(true);
   });
@@ -282,7 +282,7 @@ describe('createSelectionOverlayLayer.draw', () => {
       getSelection: () => [asNodeId('a')],
       getPose: () => ({ x: 0, y: 0, width: 100, height: 100 }),
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
     // 1 outline + 4×2 handles = 9
     expect(tree).toHaveLength(9);
   });
@@ -293,7 +293,7 @@ describe('createSelectionOverlayLayer.draw', () => {
       getPose: () => ({ x: 0, y: 0, width: 100, height: 100 }),
       handles: false,
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
     expect(tree).toHaveLength(1);
   });
 
@@ -306,7 +306,7 @@ describe('createSelectionOverlayLayer.draw', () => {
       getPose: () => ({ x: 0, y: 0, width: 100, height: 100, rotation: Math.PI / 4 }),
       handles: false,
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
     expect(tree).toHaveLength(1);
     expect(tree[0].kind).toBe('group');
     const group = tree[0] as GroupDrawCommand;

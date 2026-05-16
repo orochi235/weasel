@@ -5,7 +5,14 @@ const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 
 function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
 function lerpView(from: View, to: View, t: number): View {
-  return { x: lerp(from.x, to.x, t), y: lerp(from.y, to.y, t), scale: lerp(from.scale, to.scale, t) };
+  return {
+    x: lerp(from.x, to.x, t),
+    y: lerp(from.y, to.y, t),
+    scale: {
+      x: lerp(from.scale.x, to.scale.x, t),
+      y: lerp(from.scale.y, to.scale.y, t),
+    },
+  };
 }
 
 export function useViewTween(setView: (v: View) => void) {

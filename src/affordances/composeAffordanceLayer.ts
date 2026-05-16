@@ -4,6 +4,7 @@ import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
+import { meanScale } from 'core/viewport/meanScale';
 import type { DebugSink } from '../debug/types';
 import type {
   Affordance,
@@ -106,7 +107,7 @@ function recordRegionHitbox(
 ): void {
   if (region.shape.kind === 'point') {
     const w = localToWorld(xf, region.shape.x, region.shape.y);
-    const r = region.shape.hitRadiusPx / view.scale;
+    const r = region.shape.hitRadiusPx / meanScale(view.scale);
     // Square hit (composeAffordanceLayer uses Manhattan-style abs<=r) but
     // the kit's only HitShape primitive for a square hit centered on a
     // point is rect, so emit a rotation-aware rect of side 2r centered on
@@ -262,7 +263,7 @@ function hitRegion(
 ): boolean {
   const local = worldToLocal(xf, wx, wy);
   if (region.shape.kind === 'point') {
-    const radiusWorld = region.shape.hitRadiusPx / view.scale;
+    const radiusWorld = region.shape.hitRadiusPx / meanScale(view.scale);
     return Math.abs(local.x - region.shape.x) <= radiusWorld
         && Math.abs(local.y - region.shape.y) <= radiusWorld;
   }

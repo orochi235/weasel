@@ -21,7 +21,7 @@ export interface Document {
 export interface View {
   x: number;
   y: number;
-  scale: number;
+  scale: { x: number; y: number };
 }
 
 export interface SceneSnapshot {
@@ -99,6 +99,11 @@ export async function loadScene(): Promise<SceneSnapshot | null> {
       if (snap.version !== 1) return null;
       if (!Array.isArray(snap.items) || !Array.isArray(snap.groups)) return null;
       if (!snap.doc || !snap.view) return null;
+      // Migrate legacy `view.scale: number` snapshots to the per-axis shape.
+      const v = snap.view as unknown as { x: number; y: number; scale: number | { x: number; y: number } };
+      if (typeof v.scale === 'number') {
+        snap.view = { x: v.x, y: v.y, scale: { x: v.scale, y: v.scale } };
+      }
       return snap as SceneSnapshot;
     } finally {
       db.close();

@@ -76,7 +76,7 @@ describe('guideSnapStrategy', () => {
     // tolerance = 6 px, scale = 2 → world tolerance = 3.
     const s = guideSnapStrategy<Pose>(() => guides, {
       tolerance: 6,
-      getView: () => ({ x: 0, y: 0, scale: 2 }),
+      getView: () => ({ x: 0, y: 0, scale: { x: 2, y: 2 } }),
     });
     expect(s.snap({ x: 103, y: 0 }, dummyCtx)).toEqual({ x: 100, y: 0 });
     expect(s.snap({ x: 104, y: 0 }, dummyCtx)).toBeNull();
@@ -87,7 +87,7 @@ describe('guideSnapStrategy', () => {
     // tolerance = 6 px, scale = 0.5 → world tolerance = 12.
     const s = guideSnapStrategy<Pose>(() => guides, {
       tolerance: 6,
-      getView: () => ({ x: 0, y: 0, scale: 0.5 }),
+      getView: () => ({ x: 0, y: 0, scale: { x: 0.5, y: 0.5 } }),
     });
     expect(s.snap({ x: 110, y: 0 }, dummyCtx)).toEqual({ x: 100, y: 0 });
     expect(s.snap({ x: 113, y: 0 }, dummyCtx)).toBeNull();

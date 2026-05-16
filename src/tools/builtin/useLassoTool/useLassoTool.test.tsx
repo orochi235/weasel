@@ -14,7 +14,7 @@ function makeAdapter(hits: string[] = []): LassoSelectAdapter & { applyOps: Retu
   };
 }
 
-const VIEW = { x: 0, y: 0, scale: 1 };
+const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const baseCtx = (worldX: number, worldY: number) => ({
   worldX,
   worldY,

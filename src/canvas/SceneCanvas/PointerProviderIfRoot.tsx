@@ -42,8 +42,8 @@ export function PointerPublisher({
       const rect = el.getBoundingClientRect();
       const view = viewRef.current;
       ctx.pointerRef.current = {
-        worldX: (e.clientX - rect.left) / view.scale + view.x,
-        worldY: (e.clientY - rect.top) / view.scale + view.y,
+        worldX: (e.clientX - rect.left) / view.scale.x + view.x,
+        worldY: (e.clientY - rect.top) / view.scale.y + view.y,
       };
     };
     const onLeave = (): void => {

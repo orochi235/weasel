@@ -58,7 +58,7 @@ describe('createRecorder', () => {
       items: [],
       groups: [],
       doc: { size: { width: 100, height: 100 } },
-      view: { x: 0, y: 0, scale: 1 },
+      view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
     };
     const rec = createRecorder({ canvas: () => canvas });
     rec.start({ snapshotScene: () => { calls++; return fakeSnap; } });

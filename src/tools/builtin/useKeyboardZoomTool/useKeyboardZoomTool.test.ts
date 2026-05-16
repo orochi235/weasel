@@ -34,37 +34,39 @@ describe('useKeyboardZoomTool', () => {
   it('Cmd+= zooms in about canvas center', () => {
     const { result } = renderHook(() => useKeyboardZoomTool());
     const setView = vi.fn();
-    const ctx = makeCtx({ x: 0, y: 0, scale: 1 }, setView);
+    const ctx = makeCtx({ x: 0, y: 0, scale: { x: 1, y: 1 } }, setView);
     const decision = result.current.keyboard!.onDown!(key({ key: '=', metaKey: true }), ctx);
     expect(decision).toBe('claim');
     const next = setView.mock.calls[0][0] as View;
     // keyStep=1.25
-    expect(next.scale).toBeCloseTo(1.25);
+    expect(next.scale.x).toBeCloseTo(1.25);
+    expect(next.scale.y).toBeCloseTo(1.25);
     // Anchor: canvas center = (100, 50). World point under it must remain (100, 50).
-    expect(100 / next.scale + next.x).toBeCloseTo(100);
-    expect(50 / next.scale + next.y).toBeCloseTo(50);
+    expect(100 / next.scale.x + next.x).toBeCloseTo(100);
+    expect(50 / next.scale.y + next.y).toBeCloseTo(50);
   });
 
   it('Cmd+- zooms out about canvas center', () => {
     const { result } = renderHook(() => useKeyboardZoomTool());
     const setView = vi.fn();
-    const ctx = makeCtx({ x: 0, y: 0, scale: 1 }, setView);
+    const ctx = makeCtx({ x: 0, y: 0, scale: { x: 1, y: 1 } }, setView);
     expect(result.current.keyboard!.onDown!(key({ key: '-', metaKey: true }), ctx)).toBe('claim');
-    expect((setView.mock.calls[0][0] as View).scale).toBeCloseTo(1 / 1.25);
+    expect((setView.mock.calls[0][0] as View).scale.x).toBeCloseTo(1 / 1.25);
+    expect((setView.mock.calls[0][0] as View).scale.y).toBeCloseTo(1 / 1.25);
   });
 
   it('Cmd+0 resets to identity', () => {
     const { result } = renderHook(() => useKeyboardZoomTool());
     const setView = vi.fn();
-    const ctx = makeCtx({ x: 50, y: 50, scale: 4 }, setView);
+    const ctx = makeCtx({ x: 50, y: 50, scale: { x: 4, y: 4 } }, setView);
     expect(result.current.keyboard!.onDown!(key({ key: '0', metaKey: true }), ctx)).toBe('claim');
-    expect(setView).toHaveBeenCalledWith({ x: 0, y: 0, scale: 1 });
+    expect(setView).toHaveBeenCalledWith({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   });
 
   it('passes plain keys without modifier', () => {
     const { result } = renderHook(() => useKeyboardZoomTool());
     const setView = vi.fn();
-    const ctx = makeCtx({ x: 0, y: 0, scale: 1 }, setView);
+    const ctx = makeCtx({ x: 0, y: 0, scale: { x: 1, y: 1 } }, setView);
     expect(result.current.keyboard!.onDown!(key({ key: '=' }), ctx)).toBe('pass');
     expect(setView).not.toHaveBeenCalled();
   });
@@ -72,7 +74,7 @@ describe('useKeyboardZoomTool', () => {
   it('passes unrelated keys with modifier', () => {
     const { result } = renderHook(() => useKeyboardZoomTool());
     const setView = vi.fn();
-    const ctx = makeCtx({ x: 0, y: 0, scale: 1 }, setView);
+    const ctx = makeCtx({ x: 0, y: 0, scale: { x: 1, y: 1 } }, setView);
     expect(result.current.keyboard!.onDown!(key({ key: 'a', metaKey: true }), ctx)).toBe('pass');
     expect(setView).not.toHaveBeenCalled();
   });
@@ -80,7 +82,7 @@ describe('useKeyboardZoomTool', () => {
   it('ctrlKey is treated like metaKey (cross-platform)', () => {
     const { result } = renderHook(() => useKeyboardZoomTool());
     const setView = vi.fn();
-    const ctx = makeCtx({ x: 0, y: 0, scale: 1 }, setView);
+    const ctx = makeCtx({ x: 0, y: 0, scale: { x: 1, y: 1 } }, setView);
     const e = key({ key: '0' });
     Object.assign(e, { ctrlKey: true });
     expect(result.current.keyboard!.onDown!(e, ctx)).toBe('claim');
@@ -95,7 +97,7 @@ describe('useKeyboardZoomTool with animate:true', () => {
     const { result } = renderHook(() => useKeyboardZoomTool({ animate: true }));
     const setView = vi.fn();
     // Use the same makeCtx helper from the describe above
-    const ctx = makeCtx({ x: 0, y: 0, scale: 1 }, setView);
+    const ctx = makeCtx({ x: 0, y: 0, scale: { x: 1, y: 1 } }, setView);
     const e = new Event('keydown') as KeyboardEvent;
     Object.assign(e, {
       key: '=',

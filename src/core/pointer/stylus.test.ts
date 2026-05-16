@@ -69,7 +69,7 @@ describe('getStylusData', () => {
 describe('forEachCoalesced', () => {
   const ctx: CoalescedCtx = {
     canvasRect: { left: 100, top: 50 },
-    view: { x: 0, y: 0, scale: 2 },
+    view: { x: 0, y: 0, scale: { x: 2, y: 2 } },
   };
 
   it('iterates getCoalescedEvents() when populated', () => {
@@ -117,7 +117,7 @@ describe('forEachCoalesced', () => {
   it('applies view offset when transforming to world coords', () => {
     const offsetCtx: CoalescedCtx = {
       canvasRect: { left: 0, top: 0 },
-      view: { x: 100, y: 50, scale: 1 },
+      view: { x: 100, y: 50, scale: { x: 1, y: 1 } },
     };
     const parent = {
       ...makeEvent({ clientX: 10, clientY: 20 }),

@@ -6,46 +6,56 @@ const CANVAS = { width: 400, height: 300 };
 
 describe('clampView', () => {
   it('returns the input identity when already inside bounds', () => {
-    const v = { x: 100, y: 100, scale: 1 };
+    const v = { x: 100, y: 100, scale: { x: 1, y: 1 } };
     expect(clampView(v, BOUNDS, CANVAS)).toBe(v);
   });
 
   it('clamps left edge to bounds.x', () => {
-    const v = { x: -50, y: 100, scale: 1 };
-    expect(clampView(v, BOUNDS, CANVAS)).toEqual({ x: 0, y: 100, scale: 1 });
+    const v = { x: -50, y: 100, scale: { x: 1, y: 1 } };
+    expect(clampView(v, BOUNDS, CANVAS)).toEqual({ x: 0, y: 100, scale: { x: 1, y: 1 } });
   });
 
   it('clamps right edge so visible rect stays inside bounds', () => {
-    const v = { x: 9999, y: 100, scale: 1 };
-    expect(clampView(v, BOUNDS, CANVAS)).toEqual({ x: 600, y: 100, scale: 1 });
+    const v = { x: 9999, y: 100, scale: { x: 1, y: 1 } };
+    expect(clampView(v, BOUNDS, CANVAS)).toEqual({ x: 600, y: 100, scale: { x: 1, y: 1 } });
   });
 
   it('clamps top edge to bounds.y', () => {
-    const v = { x: 100, y: -50, scale: 1 };
-    expect(clampView(v, BOUNDS, CANVAS)).toEqual({ x: 100, y: 0, scale: 1 });
+    const v = { x: 100, y: -50, scale: { x: 1, y: 1 } };
+    expect(clampView(v, BOUNDS, CANVAS)).toEqual({ x: 100, y: 0, scale: { x: 1, y: 1 } });
   });
 
   it('clamps bottom edge', () => {
-    const v = { x: 100, y: 9999, scale: 1 };
-    expect(clampView(v, BOUNDS, CANVAS)).toEqual({ x: 100, y: 500, scale: 1 });
+    const v = { x: 100, y: 9999, scale: { x: 1, y: 1 } };
+    expect(clampView(v, BOUNDS, CANVAS)).toEqual({ x: 100, y: 500, scale: { x: 1, y: 1 } });
   });
 
   it('respects scale (visible rect = canvas/scale)', () => {
     // scale=2 → visible = 200×150. maxX = 1000 - 200 = 800.
-    const v = { x: 9999, y: 100, scale: 2 };
-    expect(clampView(v, BOUNDS, CANVAS)).toEqual({ x: 800, y: 100, scale: 2 });
+    const v = { x: 9999, y: 100, scale: { x: 2, y: 2 } };
+    expect(clampView(v, BOUNDS, CANVAS)).toEqual({ x: 800, y: 100, scale: { x: 2, y: 2 } });
   });
 
   it('centers axis when zoomed out past bounds extent', () => {
     // scale=0.25 → visible = 1600×1200. Wider than 1000 → centered.
-    const v = { x: 9999, y: 9999, scale: 0.25 };
+    const v = { x: 9999, y: 9999, scale: { x: 0.25, y: 0.25 } };
     // x: 0 + (1000 - 1600) / 2 = -300; y: 0 + (800 - 1200) / 2 = -200
-    expect(clampView(v, BOUNDS, CANVAS)).toEqual({ x: -300, y: -200, scale: 0.25 });
+    expect(clampView(v, BOUNDS, CANVAS)).toEqual({ x: -300, y: -200, scale: { x: 0.25, y: 0.25 } });
   });
 
   it('honors non-zero bounds origin', () => {
     const bounds = { x: 100, y: 50, width: 1000, height: 800 };
-    const v = { x: 0, y: 0, scale: 1 };
-    expect(clampView(v, bounds, CANVAS)).toEqual({ x: 100, y: 50, scale: 1 });
+    const v = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    expect(clampView(v, bounds, CANVAS)).toEqual({ x: 100, y: 50, scale: { x: 1, y: 1 } });
+  });
+
+  it('uses per-axis visible rect when scale axes differ', () => {
+    // canvas 100x100, scale {x: 1, y: 2} -> visible world rect 100x50
+    const view = { x: -10, y: -10, scale: { x: 1, y: 2 } };
+    const bounds = { x: 0, y: 0, width: 200, height: 200 };
+    const canvas = { width: 100, height: 100 };
+    const clamped = clampView(view, bounds, canvas);
+    expect(clamped.x).toBe(0); // hit left edge (visW=100 < 200)
+    expect(clamped.y).toBe(0); // hit top edge (visH=50 < 200)
   });
 });

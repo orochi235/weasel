@@ -31,7 +31,7 @@ describe('useResizeTool overlay.hitTest', () => {
       boundsOf: (id: string) => (id === 'obj1' ? { x: 0, y: 0, width: 100, height: 100 } : null),
       modifiers: { alt: false, shift: false, meta: false, ctrl: false },
     } as any;
-    const view = { x: 0, y: 0, scale: 1 };
+    const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
     const dims = { width: 200, height: 200 };
     const hit = result.current.overlay!.hitTest!(0, 0, chromeState, view, dims);
     expect(hit).not.toBeNull();
@@ -56,7 +56,7 @@ describe('useResizeTool overlay.hitTest', () => {
       boundsOf: (id: string) => (id === 'obj1' ? { x: 0, y: 0, width: 100, height: 100 } : null),
       modifiers: { alt: false, shift: false, meta: false, ctrl: false },
     } as any;
-    const view = { x: 0, y: 0, scale: 2 };
+    const view = { x: 0, y: 0, scale: { x: 2, y: 2 } };
     const dims = { width: 200, height: 200 };
     expect(result.current.overlay!.hitTest!(6, 0, chromeState, view, dims)).toBeNull();
     expect(result.current.overlay!.hitTest!(4, 0, chromeState, view, dims)).not.toBeNull();

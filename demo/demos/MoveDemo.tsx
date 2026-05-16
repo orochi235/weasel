@@ -37,7 +37,7 @@ export function MoveDemo() {
   });
   const selection = useSelection();
 
-  const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
+  const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   const hand = useHandTool();
   const wheelZoom = useWheelZoomTool();
   const wheelPan = useWheelPanTool();

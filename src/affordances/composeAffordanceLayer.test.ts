@@ -5,7 +5,7 @@ import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { DragChannel } from 'tools/types';
 
 const NO_MOD = { alt: false, shift: false, meta: false, ctrl: false };
-const VIEW = { x: 0, y: 0, scale: 1 };
+const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const DIMS = { width: 200, height: 200 };
 
 function makeState(boundsById: Record<string, Bounds> = {}): ChromeState {
@@ -210,11 +210,11 @@ describe('composeAffordanceLayer', () => {
     };
     const layer = composeAffordanceLayer('x', 'X', [aff]);
     // At scale=1, world radius is 8.
-    expect(layer.hitTest(7, 0, makeState(), { x: 0, y: 0, scale: 1 }, DIMS)).not.toBeNull();
-    expect(layer.hitTest(9, 0, makeState(), { x: 0, y: 0, scale: 1 }, DIMS)).toBeNull();
+    expect(layer.hitTest(7, 0, makeState(), { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS)).not.toBeNull();
+    expect(layer.hitTest(9, 0, makeState(), { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS)).toBeNull();
     // At scale=2 (zoomed in), world radius is 4.
-    expect(layer.hitTest(3, 0, makeState(), { x: 0, y: 0, scale: 2 }, DIMS)).not.toBeNull();
-    expect(layer.hitTest(5, 0, makeState(), { x: 0, y: 0, scale: 2 }, DIMS)).toBeNull();
+    expect(layer.hitTest(3, 0, makeState(), { x: 0, y: 0, scale: { x: 2, y: 2 } }, DIMS)).not.toBeNull();
+    expect(layer.hitTest(5, 0, makeState(), { x: 0, y: 0, scale: { x: 2, y: 2 } }, DIMS)).toBeNull();
   });
 
   it('empty affordance list: draw returns [], hitTest returns null', () => {

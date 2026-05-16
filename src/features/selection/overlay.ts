@@ -40,13 +40,14 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
+import { meanScale } from 'core/viewport/meanScale';
 import { PATH_L, PATH_M, type PolygonPath } from '../paths/types';
 
 /** Project world AABB into screen-space AABB using the active view. */
 function projectBounds<B extends Bounds>(b: B, view: View): B {
   const t = viewToTransform(view);
   const [sx, sy] = worldToScreen(b.x, b.y, t);
-  return { ...b, x: sx, y: sy, width: b.width * view.scale, height: b.height * view.scale };
+  return { ...b, x: sx, y: sy, width: b.width * view.scale.x, height: b.height * view.scale.y };
 }
 
 /** Pose with an optional rotation field — surfaced from `getBounds`'s
@@ -442,7 +443,7 @@ function rotationHandleCommands(
   view: View,
 ): DrawCommand[] {
   const rotation = rotationOf(worldB);
-  const hWorld = rotationHandle({ ...worldB, rotation }, distance / view.scale);
+  const hWorld = rotationHandle({ ...worldB, rotation }, distance / meanScale(view.scale));
   const t = viewToTransform(view);
   const [scx, scy] = worldToScreen(hWorld.cx, hWorld.cy, t);
   const size = handles.size;

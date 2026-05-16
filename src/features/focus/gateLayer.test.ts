@@ -3,7 +3,7 @@ import { gateLayer } from './gateLayer';
 import type { RenderLayer } from 'core/layers/render';
 import type { DrawCommand } from '../../renderer';
 
-const stubView = { x: 0, y: 0, scale: 1 };
+const stubView = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const stubDims = { width: 100, height: 100 };
 
 function makeLayer(): RenderLayer<undefined> {

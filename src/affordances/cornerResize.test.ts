@@ -6,7 +6,7 @@ import { asNodeId } from 'core/scene/types';
 import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/useSelectTool';
 
 const NO_MOD = { alt: false, shift: false, meta: false, ctrl: false };
-const VIEW = { x: 0, y: 0, scale: 1 };
+const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const DIMS = { width: 400, height: 400 };
 
 function stateWithSingle(): ChromeState {

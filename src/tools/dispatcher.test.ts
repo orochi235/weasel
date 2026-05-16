@@ -13,7 +13,7 @@ function makeCtx(over: Partial<ToolCtx> = {}): ToolCtx {
     selection: { get: () => [], set: () => {}, add: () => {}, remove: () => {}, toggle: () => {}, clear: () => {}, applyClick: () => {} } as never,
     adapter: null,
     applyOps: () => {},
-    view: { x: 0, y: 0, scale: 1 },
+    view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
     setView: () => {},
     canvasRect: new DOMRect(),
     scratch: undefined,
@@ -618,7 +618,7 @@ describe('dispatcher: affordance hit-test pipeline', () => {
       getHitTestContext: () => ({
         layers: [layer as never],
         chromeState: makeChromeState(),
-        view: { x: 0, y: 0, scale: 1 },
+        view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
         dims: { width: 100, height: 100 },
       }),
     });
@@ -637,7 +637,7 @@ describe('dispatcher: affordance hit-test pipeline', () => {
       getHitTestContext: () => ({
         layers: [layer as never],
         chromeState: makeChromeState(),
-        view: { x: 0, y: 0, scale: 1 },
+        view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
         dims: { width: 100, height: 100 },
       }),
     });
@@ -663,7 +663,7 @@ describe('dispatcher: affordance hit-test pipeline', () => {
       getHitTestContext: () => ({
         layers: [{ id: 'aff', label: 'A', draw: () => [], hitTest: layerHitTest as never } as never],
         chromeState: makeChromeState(),
-        view: { x: 0, y: 0, scale: 1 },
+        view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
         dims: { width: 100, height: 100 },
       }),
     });
@@ -794,7 +794,7 @@ describe('dispatcher: ctx.target population on pointer events', () => {
       getHitTestContext: () => ({
         layers: [layer as never],
         chromeState: makeChromeState(),
-        view: { x: 0, y: 0, scale: 1 },
+        view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
         dims: { width: 100, height: 100 },
       }),
       getNodeAtPoint: () => ({

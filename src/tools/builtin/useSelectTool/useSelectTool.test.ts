@@ -18,7 +18,7 @@ function ctxOver(over: Partial<ToolCtx<SelectScratch>> = {}): ToolCtx<SelectScra
     selection: { current: [], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
     adapter: {},
     applyOps: vi.fn(),
-    view: { x: 0, y: 0, scale: 1 },
+    view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
     setView: () => {},
     canvasRect: new DOMRect(),
     scratch: { kind: 'idle' },
@@ -410,7 +410,7 @@ describe('useSelectTool overlay', () => {
       ...over,
     }) as any;
 
-  const VIEW = { x: 0, y: 0, scale: 1 };
+  const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
   const DIMS = { width: 100, height: 100 };
 
   it('publishes a RenderLayer on the Tool record', () => {

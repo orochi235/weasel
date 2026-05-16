@@ -33,7 +33,7 @@ describe('useWheelPanTool', () => {
   it('passes when ctrlKey is true (lets wheel-zoom claim)', () => {
     const { result } = renderHook(() => useWheelPanTool());
     const setView = vi.fn();
-    const ctx = makeCtx({ x: 0, y: 0, scale: 1 }, setView);
+    const ctx = makeCtx({ x: 0, y: 0, scale: { x: 1, y: 1 } }, setView);
     const e = wheel({ deltaX: 10, deltaY: 5, ctrlKey: true });
     expect(result.current.wheel!.onWheel!(e, ctx)).toBe('pass');
     expect(setView).not.toHaveBeenCalled();
@@ -43,28 +43,28 @@ describe('useWheelPanTool', () => {
   it('translates by (deltaX/scale, deltaY/scale) under scale=1', () => {
     const { result } = renderHook(() => useWheelPanTool());
     const setView = vi.fn();
-    const ctx = makeCtx({ x: 0, y: 0, scale: 1 }, setView);
+    const ctx = makeCtx({ x: 0, y: 0, scale: { x: 1, y: 1 } }, setView);
     const e = wheel({ deltaX: 20, deltaY: 10 });
     expect(result.current.wheel!.onWheel!(e, ctx)).toBe('claim');
-    expect(setView).toHaveBeenCalledWith({ x: 20, y: 10, scale: 1 });
+    expect(setView).toHaveBeenCalledWith({ x: 20, y: 10, scale: { x: 1, y: 1 } });
     expect(e.preventDefault).toHaveBeenCalled();
   });
 
   it('translates by (deltaX/scale, deltaY/scale) under scale=2', () => {
     const { result } = renderHook(() => useWheelPanTool());
     const setView = vi.fn();
-    const ctx = makeCtx({ x: 5, y: 5, scale: 2 }, setView);
+    const ctx = makeCtx({ x: 5, y: 5, scale: { x: 2, y: 2 } }, setView);
     const e = wheel({ deltaX: 20, deltaY: 10 });
     result.current.wheel!.onWheel!(e, ctx);
-    expect(setView).toHaveBeenCalledWith({ x: 5 + 10, y: 5 + 5, scale: 2 });
+    expect(setView).toHaveBeenCalledWith({ x: 5 + 10, y: 5 + 5, scale: { x: 2, y: 2 } });
   });
 
   it('preserves scale', () => {
     const { result } = renderHook(() => useWheelPanTool());
     const setView = vi.fn();
-    const ctx = makeCtx({ x: 0, y: 0, scale: 3 }, setView);
+    const ctx = makeCtx({ x: 0, y: 0, scale: { x: 3, y: 3 } }, setView);
     result.current.wheel!.onWheel!(wheel({ deltaX: 0, deltaY: 0 }), ctx);
-    expect((setView.mock.calls[0][0] as View).scale).toBe(3);
+    expect((setView.mock.calls[0][0] as View).scale).toEqual({ x: 3, y: 3 });
   });
 
   describe('inertia', () => {
@@ -78,7 +78,7 @@ describe('useWheelPanTool', () => {
     it('is off by default — no setView calls after wheel stops', () => {
       const { result } = renderHook(() => useWheelPanTool());
       const setView = vi.fn();
-      const ctx = makeCtx({ x: 0, y: 0, scale: 1 }, setView);
+      const ctx = makeCtx({ x: 0, y: 0, scale: { x: 1, y: 1 } }, setView);
       result.current.wheel!.onWheel!(wheel({ deltaX: 10, deltaY: 5 }), ctx);
       expect(setView).toHaveBeenCalledTimes(1);
 
@@ -103,7 +103,7 @@ describe('useWheelPanTool', () => {
         useWheelPanTool({ inertia: { friction: 0.9, minSpeed: 0.001, idleMs: 50 } }),
       );
       const setView = vi.fn();
-      let view: View = { x: 0, y: 0, scale: 1 };
+      let view: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
       const ctxSetView = (v: View) => { view = v; setView(v); };
 
       // Drive a few wheel events with timestamps so velocity tracker has signal.
@@ -152,7 +152,7 @@ describe('useWheelPanTool', () => {
         useWheelPanTool({ inertia: { friction: 0.9, minSpeed: 0.001, idleMs: 50 } }),
       );
       const setView = vi.fn();
-      let view: View = { x: 0, y: 0, scale: 1 };
+      let view: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
       const ctxSetView = (v: View) => { view = v; setView(v); };
 
       const now0 = Date.now();

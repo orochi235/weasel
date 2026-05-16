@@ -4,7 +4,7 @@ import { createDebugOverlayLayer } from './createDebugOverlayLayer';
 import { createDebugSink } from './createDebugSink';
 
 const DIMS = { width: 800, height: 600 };
-const VIEW = { x: 0, y: 0, scale: 1 };
+const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 describe('createDebugOverlayLayer', () => {
   it('is registered as a screen-space layer', () => {

@@ -82,8 +82,13 @@ export function fitViewToBounds(
 
   const availW = Math.max(1, viewportDims.width - padding * 2);
   const availH = Math.max(1, viewportDims.height - padding * 2);
-  const rawScale = Math.min(availW / bounds.width, availH / bounds.height);
-  const scale = Math.min(maxScale, Math.max(minScale, rawScale));
+  const sx = availW / bounds.width;
+  const sy = availH / bounds.height;
+  // 'contain' (today's behavior): uniform min of axes. The `mode` option
+  // for 'fill' / 'stretch' lands in a follow-up.
+  const uniform = Math.min(sx, sy);
+  const scaleX = Math.min(maxScale, Math.max(minScale, uniform));
+  const scaleY = scaleX;
 
   // Center bounds in the viewport. With view-as-camera semantics:
   //   screenCenter = (worldCenter - view.x) * scale
@@ -91,8 +96,8 @@ export function fitViewToBounds(
   const worldCx = bounds.x + bounds.width / 2;
   const worldCy = bounds.y + bounds.height / 2;
   return {
-    x: worldCx - viewportDims.width / (2 * scale),
-    y: worldCy - viewportDims.height / (2 * scale),
-    scale,
+    x: worldCx - viewportDims.width / (2 * scaleX),
+    y: worldCy - viewportDims.height / (2 * scaleY),
+    scale: { x: scaleX, y: scaleY },
   };
 }

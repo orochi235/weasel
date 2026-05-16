@@ -15,7 +15,7 @@ describe('createCellHighlightLayer', () => {
       spacing: 20,
       getCell: () => ({ col: 2, row: 3 }),
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, { width: 200, height: 200 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 200 });
     expect(tree).toHaveLength(1);
     const group = tree[0] as GroupDrawCommand;
     expect(group.children).toHaveLength(1);
@@ -27,7 +27,7 @@ describe('createCellHighlightLayer', () => {
 
   it('draw returns [] when getCell returns null', () => {
     const layer = createCellHighlightLayer({ spacing: 20, getCell: () => null });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
     expect(tree).toEqual([]);
   });
 
@@ -37,7 +37,7 @@ describe('createCellHighlightLayer', () => {
       origin: () => ({ x: 5, y: 7 }),
       getCell: () => ({ col: 1, row: 1 }),
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
     const group = tree[0] as GroupDrawCommand;
     expect(group.children[0]).toMatchObject({
       kind: 'path',
@@ -51,7 +51,7 @@ describe('createCellHighlightLayer', () => {
       getCell: () => ({ col: 0, row: 0 }),
       fill: { fill: 'solid', color: '#123456' },
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
     const group = tree[0] as GroupDrawCommand;
     expect(group.children[0]).toMatchObject({
       kind: 'path',
@@ -65,7 +65,7 @@ describe('createCellHighlightLayer', () => {
       unitSystem: IMPERIAL_INCHES,
       getCell: () => ({ col: 2, row: 1 }),
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
     const group = tree[0] as GroupDrawCommand;
     // 1ft = 12in -> rect at (24, 12, 12, 12).
     expect(group.children[0]).toMatchObject({

@@ -18,7 +18,7 @@ describe('createGridLayer', () => {
       spacing: 10,
       bounds: () => ({ x: 0, y: 0, width: 30, height: 30 }),
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
     expect(tree).toHaveLength(1);
     const group = tree[0] as GroupDrawCommand;
     // 30/10 → 4 vertical lines + 4 horizontal lines = 8 paths.
@@ -30,7 +30,7 @@ describe('createGridLayer', () => {
       spacing: 10,
       bounds: () => ({ x: 0, y: 0, width: 0, height: 0 }),
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
     expect(tree).toEqual([]);
   });
 
@@ -39,7 +39,7 @@ describe('createGridLayer', () => {
       spacing: 10,
       bounds: () => ({ x: 0, y: 0, width: 10, height: 10 }),
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 2 }, { width: 100, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 2, y: 2 } }, { width: 100, height: 100 });
     const group = tree[0] as GroupDrawCommand;
     const first = group.children[0] as PathDrawCommand;
     expect(first.stroke?.width).toBe(0.5);
@@ -51,7 +51,7 @@ describe('createGridLayer', () => {
       accentEvery: 5,
       bounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
     const group = tree[0] as GroupDrawCommand;
     // Total cell+accent lines: 11 vlines (0..100 step 10 inclusive) + 11 hlines = 22
     expect(group.children.filter((c) => c.kind === 'path')).toHaveLength(22);
@@ -63,7 +63,7 @@ describe('createGridLayer', () => {
       unitSystem: IMPERIAL_INCHES,
       bounds: () => ({ x: 0, y: 0, width: 24, height: 12 }),
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
     const group = tree[0] as GroupDrawCommand;
     // 24in wide x 12in tall, cell = 12in → 3 vertical lines (x=0,12,24) + 2 horizontal lines (y=0,12) = 5 paths.
     expect(group.children.filter((c) => c.kind === 'path')).toHaveLength(5);
@@ -74,6 +74,6 @@ describe('createGridLayer', () => {
       spacing: { value: 1, unit: 'ft' },
       bounds: () => ({ x: 0, y: 0, width: 24, height: 12 }),
     });
-    expect(() => layer.draw(undefined, { x: 0, y: 0, scale: 1 }, { width: 100, height: 100 })).toThrow(/UnitSystem/);
+    expect(() => layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 })).toThrow(/UnitSystem/);
   });
 });

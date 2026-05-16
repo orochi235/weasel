@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { DrawCommand, PathDrawCommand } from '../../renderer';
 import { createChildrenLayer } from './children';
 
-const VIEW = { x: 0, y: 0, scale: 1 };
+const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const DIMS = { width: 100, height: 100 };
 
 describe('createChildrenLayer', () => {

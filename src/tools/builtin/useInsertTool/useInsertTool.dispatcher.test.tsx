@@ -22,7 +22,7 @@ function makeBaseCtx(over: Partial<ToolCtx> = {}): Omit<ToolCtx, 'scratch'> {
     selection: { get: () => [], set: () => {}, add: () => {}, remove: () => {}, toggle: () => {}, clear: () => {}, applyClick: () => {} } as never,
     adapter: null,
     applyOps: () => {},
-    view: { x: 0, y: 0, scale: 1 },
+    view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
     setView: () => {},
     canvasRect: new DOMRect(),
     ...over,

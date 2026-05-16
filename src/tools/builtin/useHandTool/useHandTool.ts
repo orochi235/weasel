@@ -45,7 +45,7 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | n
   // Refs keep the latest setView / current view available to the decay
   // tick callback after the gesture ends.
   const setViewRef = useRef<((v: View) => void) | null>(null);
-  const viewRef = useRef<View>({ x: 0, y: 0, scale: 1 });
+  const viewRef = useRef<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
 
   return useMemo(
     () =>

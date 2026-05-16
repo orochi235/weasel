@@ -56,7 +56,7 @@ export function createGuidesLayer(opts: GuidesLayerOpts): RenderLayer<unknown> {
       for (const g of guides) {
         if (g.axis === 'x') {
           // Vertical line at world x = offset → screen x = (offset - view.x) * scale.
-          const sx = (g.offset - view.x) * view.scale;
+          const sx = (g.offset - view.x) * view.scale.x;
           if (sx < -lineWidth || sx > dims.width + lineWidth) continue;
           const path: PolygonPath = {
             kind: 'polygon',
@@ -67,7 +67,7 @@ export function createGuidesLayer(opts: GuidesLayerOpts): RenderLayer<unknown> {
           out.push({ kind: 'path', path, stroke });
         } else {
           // Horizontal line at world y = offset → screen y = (offset - view.y) * scale.
-          const sy = (g.offset - view.y) * view.scale;
+          const sy = (g.offset - view.y) * view.scale.y;
           if (sy < -lineWidth || sy > dims.height + lineWidth) continue;
           const path: PolygonPath = {
             kind: 'polygon',

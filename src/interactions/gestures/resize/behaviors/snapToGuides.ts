@@ -5,6 +5,7 @@ import type {
 } from '../../types';
 import type { Guide } from 'features/guides/types';
 import type { View } from 'core/viewport/view';
+import { meanScale } from 'core/viewport/meanScale';
 import { DEFAULT_GUIDE_TOLERANCE_PX } from '../../shared/strategies/guides';
 
 type ModKey = keyof ModifierState;
@@ -45,7 +46,7 @@ export function snapToGuides<TPose extends ResizePose>(
       if (guides.length === 0) return;
 
       const worldTolerance = getView
-        ? tolerance / Math.max(1e-9, getView().scale)
+        ? tolerance / Math.max(1e-9, meanScale(getView().scale))
         : tolerance;
 
       let { x, y, width, height } = pose;

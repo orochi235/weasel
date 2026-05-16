@@ -21,7 +21,7 @@ function syncEvent<S>(ctx: ToolCtx<S>, e: PointerEvent): ToolCtx<S> {
   return ctx;
 }
 
-function makeCtx<S = unknown>(view: Omit<View, 'scale'> & { scale?: number }, setView: (v: View) => void): ToolCtx<S> {
+function makeCtx<S = unknown>(view: Omit<View, 'scale'> & { scale?: { x: number; y: number } }, setView: (v: View) => void): ToolCtx<S> {
   return {
     worldX: 0,
     worldY: 0,
@@ -29,7 +29,7 @@ function makeCtx<S = unknown>(view: Omit<View, 'scale'> & { scale?: number }, se
     selection: {} as never,
     adapter: null,
     applyOps: () => {},
-    view: { ...view, scale: view.scale ?? 1 },
+    view: { ...view, scale: view.scale ?? { x: 1, y: 1 } },
     setView,
     canvasRect: new DOMRect(),
     scratch: undefined as unknown as S,
@@ -58,7 +58,7 @@ describe('useHandTool', () => {
     const moveDecision = tool.drag!.onMove!(moveE, syncEvent(ctx, moveE));
     expect(moveDecision).toBe('claim');
     // dx = 10, dy = 15 → new view = startView - delta = (30-10, 40-15)
-    expect(setView).toHaveBeenCalledWith({ x: 20, y: 25, scale: 1 });
+    expect(setView).toHaveBeenCalledWith({ x: 20, y: 25, scale: { x: 1, y: 1 } });
   });
 
   it('drag.onMove with no preceding onStart is a no-op pass', () => {
@@ -115,7 +115,7 @@ describe('useHandTool — cursor phase override', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ctx = makeCtx<any>({ x: 0, y: 0 }, () => {});
     (ctx as { scratch: unknown }).scratch = {
-      startView: { x: 0, y: 0, scale: 1 },
+      startView: { x: 0, y: 0, scale: { x: 1, y: 1 } },
       startScreenPoint: { x: 0, y: 0 },
     };
     const cursor = typeof result.current.cursor === 'function'

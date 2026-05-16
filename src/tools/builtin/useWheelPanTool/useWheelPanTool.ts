@@ -32,7 +32,7 @@ export interface UseWheelPanToolOptions {
 /**
  * Always-on tool: claims wheel events when `ctrlKey` is false (plain wheel
  * + horizontal trackpad scroll). Translates the view by
- * `(deltaX / view.scale, deltaY / view.scale)` so a one-screen-pixel scroll
+ * `(deltaX / view.scale.x, deltaY / view.scale.y)` so a one-screen-pixel scroll
  * pans the view by one screen pixel regardless of zoom.
  *
  * Register via `useTools({ ambient: [useWheelPanTool()] })`.
@@ -48,7 +48,7 @@ export function useWheelPanTool(opts: UseWheelPanToolOptions = {}): Tool<null> {
   // Refs keep the latest setView / current view available to the decay
   // tick callback after wheel events stop.
   const setViewRef = useRef<((v: View) => void) | null>(null);
-  const viewRef = useRef<View>({ x: 0, y: 0, scale: 1 });
+  const viewRef = useRef<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   return useMemo(
@@ -73,8 +73,8 @@ export function useWheelPanTool(opts: UseWheelPanToolOptions = {}): Tool<null> {
             }
 
             const v = ctx.view;
-            const dx = e.deltaX / v.scale;
-            const dy = e.deltaY / v.scale;
+            const dx = e.deltaX / v.scale.x;
+            const dy = e.deltaY / v.scale.y;
             const newView: View = {
               x: v.x + dx,
               y: v.y + dy,

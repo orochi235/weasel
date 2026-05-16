@@ -17,6 +17,7 @@ import { rotatePoint } from './rotate/geometry';
 import type { ModifierState } from './types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
+import { meanScale } from 'core/viewport/meanScale';
 import type { DebugSink, HitShape } from '../../debug/types';
 import { pickTopMostHit } from 'tools/builtin/pickTopMostHit';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -241,7 +242,7 @@ export function usePointerGestures<TMovePose, TResizePose>(
         ctrl: e.ctrlKey,
       };
       const ctx: PointerGestureCallbackCtx = { event: e, worldX: wx, worldY: wy, modifiers };
-      const viewScale = getView ? getView().scale : 1;
+      const viewScale = getView ? meanScale(getView().scale) : 1;
       const radiusWorld = handleHitRadius / viewScale;
 
       if (rotate) {

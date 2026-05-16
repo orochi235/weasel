@@ -82,7 +82,7 @@ export interface UseSelectToolOptions<TNode extends { id: string }, TPose> {
   drawGhost?: (
     obj: TNode | null,
     pose: TPose,
-    view: { x: number; y: number; scale: number },
+    view: { x: number; y: number; scale: { x: number; y: number } },
   ) => DrawCommand[];
   /** Object lookup for the ghost render, paired with `drawGhost`. Optional. */
   getNode?: (id: string) => TNode | null;
@@ -299,8 +299,8 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           const w = Math.abs(aOv.current.worldX - aOv.start.worldX);
           const h = Math.abs(aOv.current.worldY - aOv.start.worldY);
           const [sx, sy] = worldToScreen(x, y, t);
-          const sw = w * view.scale;
-          const sh = h * view.scale;
+          const sw = w * view.scale.x;
+          const sh = h * view.scale.y;
           return [{
             kind: 'path',
             path: { kind: 'rect', x: sx, y: sy, width: sw, height: sh },

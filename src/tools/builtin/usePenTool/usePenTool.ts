@@ -4,6 +4,7 @@ import type { Result } from '../../routing';
 import type { Tool, ToolCtx } from '../../types';
 import type { ToolPrefGroup } from '../../prefs';
 import type { Op } from 'core/ops/types';
+import { meanScale } from 'core/viewport/meanScale';
 import { PenIcon } from '../../../icons';
 import { PathBuilder } from 'features/paths/builder';
 import type { PolygonPath } from 'features/paths/types';
@@ -361,14 +362,14 @@ export function usePenTool<TPose>(
       };
     }
 
-    function updateCloseHint(s: PenScratch, view: { scale: number }): void {
+    function updateCloseHint(s: PenScratch, view: { scale: { x: number; y: number } }): void {
       const cur = s.current;
       if (!cur || cur.anchors.length < 3 || !s.cursor) {
         s.closeHintActive = false;
         return;
       }
       const first = cur.anchors[0];
-      const radius = optsRef.current.closeHitRadius / view.scale;
+      const radius = optsRef.current.closeHitRadius / meanScale(view.scale);
       s.closeHintActive = dist(first.x, first.y, s.cursor.x, s.cursor.y) <= radius;
     }
 
@@ -386,7 +387,7 @@ export function usePenTool<TPose>(
       const p = down ? raw : snap ? snap(raw) : raw;
       const wx = p.x;
       const wy = p.y;
-      const radius = optsRef.current.closeHitRadius / ctx.view.scale;
+      const radius = optsRef.current.closeHitRadius / meanScale(ctx.view.scale);
       const totalAnchors =
         (s.current ? s.current.anchors.length : 0) +
         s.finishedSubpaths.reduce((n, sp) => n + sp.anchors.length, 0);

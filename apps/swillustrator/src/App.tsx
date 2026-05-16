@@ -80,6 +80,7 @@ import {
   type PathFillRule,
   type PolygonPath,
   type RenderLayer,
+  meanScale,
 } from '@orochi235/weasel';
 // `lockAspectWithModifier` is exported only from the `/resize` subpath; the
 // top-level kit index omits it (snapToGrid/clampMinSize sit alongside, and
@@ -162,7 +163,7 @@ import { RECORDING_EXTENSION, serializeRecording } from './recordingIO';
 import { replayRecording } from './replay';
 import type { SceneSnapshot } from './sceneStore';
 
-interface View { x: number; y: number; scale: number }
+interface View { x: number; y: number; scale: { x: number; y: number } }
 
 /**
  * Per-document metadata. Sits at the root of Swillustrator's scene: every
@@ -496,7 +497,7 @@ export function App() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [, forcePaint] = useState(0);
 
-  const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
+  const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
 
   // The Document is the conceptual root of the scene. All items live inside
   // it. `size` is the only field today; it drives the rendered page area,
@@ -1078,14 +1079,14 @@ export function App() {
     setView({
       x: doc.size.width / 2 - hostSize.width / (2 * scale),
       y: doc.size.height / 2 - hostSize.height / (2 * scale),
-      scale,
+      scale: { x: scale, y: scale },
     });
   }, [hostSize.width, hostSize.height, doc.size.width, doc.size.height]);
   useLayoutEffect(() => {
     if (didInitialCenter.current) return;
     if (hostSize.width <= 0 || hostSize.height <= 0) return;
     didInitialCenter.current = true;
-    centerOnDoc(view.scale);
+    centerOnDoc(view.scale.x);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hostSize.width, hostSize.height, doc.size.width, doc.size.height]);
 
@@ -1535,7 +1536,7 @@ export function App() {
     getNodeAtPoint: (wx, wy) => {
       const PICK_RADIUS_PX = 8;
       const OPEN_PATH_BIAS = 0.4;
-      const radius = PICK_RADIUS_PX / view.scale;
+      const radius = PICK_RADIUS_PX / meanScale(view.scale);
       let best: { idx: number; d: number } | null = null;
       const items = itemsRef.current;
       for (let i = 0; i < items.length; i++) {
@@ -1786,8 +1787,8 @@ export function App() {
     const localX = e.clientX - rect.left;
     const localY = e.clientY - rect.top;
     cursorWorldRef.current = {
-      worldX: (localX - view.x) / view.scale,
-      worldY: (localY - view.y) / view.scale,
+      worldX: (localX - view.x) / view.scale.x,
+      worldY: (localY - view.y) / view.scale.y,
     };
   };
   const onStagePointerLeave = () => { cursorWorldRef.current = null; };
@@ -1828,8 +1829,8 @@ export function App() {
       space: 'screen' as const,
       draw: (_data, view) => {
         const t = viewToTransform(view);
-        const w = doc.size.width * view.scale;
-        const h = doc.size.height * view.scale;
+        const w = doc.size.width * view.scale.x;
+        const h = doc.size.height * view.scale.y;
         const [x0, y0] = worldToScreen(0, 0, t);
         // Multi-step soft shadow approximation — DrawCommands have no
         // blur primitive today, so we stack three offset rects with
@@ -2269,8 +2270,8 @@ export function App() {
           const preset = PAPER_PRESETS[size];
           setDoc({ size: { ...preset } });
           setView((v) => ({
-            x: preset.width / 2 - hostSize.width / (2 * v.scale),
-            y: preset.height / 2 - hostSize.height / (2 * v.scale),
+            x: preset.width / 2 - hostSize.width / (2 * v.scale.x),
+            y: preset.height / 2 - hostSize.height / (2 * v.scale.y),
             scale: v.scale,
           }));
           publish();
@@ -2343,8 +2344,8 @@ export function App() {
               if (!canvas) return;
               const rect = canvas.getBoundingClientRect();
               // Canvas pixel coords → world coords via the active view.
-              const cx = (e.clientX - rect.left) / view.scale + view.x;
-              const cy = (e.clientY - rect.top) / view.scale + view.y;
+              const cx = (e.clientX - rect.left) / view.scale.x + view.x;
+              const cy = (e.clientY - rect.top) / view.scale.y + view.y;
               const texts = itemsRef.current.filter((o): o is TextObj => o.tool === 'text');
               let target: TextObj | null = null;
               for (let i = texts.length - 1; i >= 0; i--) {
@@ -2488,7 +2489,7 @@ export function App() {
         <span>groups: {groups.length}</span>
         <span>fill: {fillColor}</span>
         <span>stroke: {strokeColor}</span>
-        <span>zoom: {(view.scale * 100).toFixed(0)}%</span>
+        <span>zoom: {(view.scale.x * 100).toFixed(0)}%</span>
       </div>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
@@ -2810,8 +2811,8 @@ function RightSidebar(p: RightSidebarProps) {
         <PropertyRow label="Zoom">
           <PropertyMiniLabel span={2}>%</PropertyMiniLabel>
           <PropertyNumberInput
-            value={Math.round(p.view.scale * 100)}
-            onChange={(v) => p.setView((cur) => ({ ...cur, scale: Math.max(0.1, v / 100) }))}
+            value={Math.round(p.view.scale.x * 100)}
+            onChange={(v) => p.setView((cur) => ({ ...cur, scale: { x: Math.max(0.1, v / 100), y: Math.max(0.1, v / 100) } }))}
             span={4}
             min={10}
             max={400}
@@ -2822,7 +2823,7 @@ function RightSidebar(p: RightSidebarProps) {
           <PropertyNumberInput value={p.gridDensity} onChange={p.setGridDensity} span={4} min={4} max={288} step={4} />
         </PropertyRow>
         <PropertyRow>
-          <PropertyButton onClick={() => p.setView(() => ({ x: 0, y: 0, scale: 1 }))} span={12}>
+          <PropertyButton onClick={() => p.setView(() => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }))} span={12}>
             Reset view
           </PropertyButton>
         </PropertyRow>

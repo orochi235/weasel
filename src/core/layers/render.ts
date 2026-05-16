@@ -1,7 +1,7 @@
 import type { DrawCommand } from '../../renderer';
 import type { View } from 'core/viewport/view';
 
-const IDENTITY_VIEW: View = { x: 0, y: 0, scale: 1 };
+const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 /**
  * Canvas size in CSS pixels — passed to `draw` for layers that anchor to

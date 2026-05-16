@@ -304,7 +304,7 @@ describe('usePointerGestures — resizeTarget derivation', () => {
         selection: sel.current,
         boundsOf,
         handleHitRadius: 8, // 8 screen px → 4 world px at scale=2
-        getView: () => ({ x: 0, y: 0, scale: 2 }),
+        getView: () => ({ x: 0, y: 0, scale: { x: 2, y: 2 } }),
       }),
     );
     const canvas = makeCanvas();

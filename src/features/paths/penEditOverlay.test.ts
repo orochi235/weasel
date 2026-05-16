@@ -3,7 +3,7 @@ import { renderPenEditOverlay } from './penEditOverlay';
 import type { PenScratch } from 'tools/builtin/usePenTool';
 import type { PenAnchor as KitPenAnchor } from './anchors';
 
-const view = { x: 0, y: 0, scale: 1 } as const;
+const view = { x: 0, y: 0, scale: { x: 1, y: 1 } } as const;
 
 function editingScratch(
   anchors: KitPenAnchor[][],

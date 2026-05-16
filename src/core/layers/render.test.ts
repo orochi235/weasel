@@ -78,14 +78,14 @@ describe('drawLayers', () => {
   it('passes view and dims through to draw', () => {
     const draw = vi.fn(() => [] as DrawCommand[]);
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw };
-    drawLayers([a], 'data', {}, undefined, { x: 5, y: 7, scale: 2 }, { width: 320, height: 240 });
-    expect(draw).toHaveBeenCalledWith('data', { x: 5, y: 7, scale: 2 }, { width: 320, height: 240 });
+    drawLayers([a], 'data', {}, undefined, { x: 5, y: 7, scale: { x: 2, y: 2 } }, { width: 320, height: 240 });
+    expect(draw).toHaveBeenCalledWith('data', { x: 5, y: 7, scale: { x: 2, y: 2 } }, { width: 320, height: 240 });
   });
 
   it('uses identity view when view is undefined', () => {
     const draw = vi.fn(() => [] as DrawCommand[]);
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw };
     drawLayers([a], null, {}, undefined, undefined, { width: 1, height: 1 });
-    expect(draw).toHaveBeenCalledWith(null, { x: 0, y: 0, scale: 1 }, { width: 1, height: 1 });
+    expect(draw).toHaveBeenCalledWith(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 1, height: 1 });
   });
 });

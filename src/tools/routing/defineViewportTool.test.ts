@@ -12,7 +12,7 @@ function buildCtx(overrides: Record<string, unknown> = {}) {
     selection: { current: [] },
     adapter: null,
     applyOps: vi.fn(),
-    view: { x: 0, y: 0, scale: 1 },
+    view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
     setView: vi.fn(),
     canvasRect: { left: 0, top: 0, width: 100, height: 100 } as DOMRect,
     target: { category: 'empty' as const, kind: 'empty' as const },

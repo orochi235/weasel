@@ -13,7 +13,7 @@ export function makeCtx<S = undefined>(
     selection: { current: [], set: vi.fn() } as unknown as ToolCtx<S>['selection'],
     adapter: {},
     applyOps: vi.fn(),
-    view: { x: 0, y: 0, scale: 1 },
+    view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
     setView: () => {},
     canvasRect: new DOMRect(),
     scratch: undefined as S,

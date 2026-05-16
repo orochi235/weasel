@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SceneCanvas, useScene, textCommand } from '@orochi235/weasel';
+import { SceneCanvas, useScene, textCommand, meanScale } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
 
 type Layer = 'scene';
@@ -69,7 +69,7 @@ export function ViewportDemo() {
           scene: {
             drawOne: (node, pose, view): DrawCommand[] => {
               const p = pose as Pose;
-              const fontSize = 14 / view.scale;
+              const fontSize = 14 / meanScale(view.scale);
               const label = node.data.label;
               const charW = fontSize * 0.6;
               return [
@@ -81,7 +81,7 @@ export function ViewportDemo() {
                 {
                   kind: 'path',
                   path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                  stroke: { paint: { color: 'rgba(255,255,255,0.25)' }, width: 1.5 / view.scale },
+                  stroke: { paint: { color: 'rgba(255,255,255,0.25)' }, width: 1.5 / meanScale(view.scale) },
                 },
                 // Center-aligned: x = center - (text_width / 2). Approximates
                 // ctx.textAlign='center' since TextDrawCommand uses left baseline.

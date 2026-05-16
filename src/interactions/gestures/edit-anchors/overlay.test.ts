@@ -26,7 +26,7 @@ const path = (commands: number[], coords: number[]): PolygonPath => ({
 
 function runDraw(layer: ReturnType<typeof createAnchorEditOverlayLayer>) {
   // The layer ignores its inputs — it queries getOverlay only.
-  return layer.draw(undefined, { x: 0, y: 0, scale: 1 } as never, { width: 0, height: 0 } as never);
+  return layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } } as never, { width: 0, height: 0 } as never);
 }
 
 describe('createAnchorEditOverlayLayer', () => {

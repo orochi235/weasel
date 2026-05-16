@@ -221,7 +221,7 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
     const onViewChange = vi.fn();
 
     function Harness() {
-      const [view, setView] = useState({ x: 0, y: 0, scale: 1 });
+      const [view, setView] = useState({ x: 0, y: 0, scale: { x: 1, y: 1 } });
       const select = useSelectTool(
         {
           getNode: () => undefined,
@@ -278,14 +278,14 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
     canvas.dispatchEvent(mkPointerEvent('pointerup', 160, 140));
 
     // dx=50, dy=30 → view = (0-50, 0-30) = (-50, -30)
-    expect(onViewChange).toHaveBeenCalledWith({ x: -50, y: -30, scale: 1 });
+    expect(onViewChange).toHaveBeenCalledWith({ x: -50, y: -30, scale: { x: 1, y: 1 } });
   });
 
   it('space engages momentary hand; release returns to prior tool', () => {
     const onViewChange = vi.fn();
 
     function Harness() {
-      const [view, setView] = useState({ x: 0, y: 0, scale: 1 });
+      const [view, setView] = useState({ x: 0, y: 0, scale: { x: 1, y: 1 } });
       const select = useSelectTool(
         {
           getNode: () => undefined,
@@ -340,10 +340,10 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
 describe('Phase 2c: zoom + pan composition', () => {
   function ZoomHarness({
     onViewChange,
-    initialView = { x: 0, y: 0, scale: 1 },
+    initialView = { x: 0, y: 0, scale: { x: 1, y: 1 } },
   }: {
-    onViewChange: (v: { x: number; y: number; scale: number }) => void;
-    initialView?: { x: number; y: number; scale: number };
+    onViewChange: (v: { x: number; y: number; scale: { x: number; y: number } }) => void;
+    initialView?: { x: number; y: number; scale: { x: number; y: number } };
   }) {
     const [view, setView] = useState(initialView);
     const select = useSelectTool(
@@ -401,17 +401,18 @@ describe('Phase 2c: zoom + pan composition', () => {
     expect(onViewChange).toHaveBeenCalledTimes(1);
     const v = onViewChange.mock.calls[0][0];
     // wheelStep default 1.1, deltaY=-100 → factor = 1.1^1 = 1.1
-    expect(v.scale).toBeCloseTo(1.1);
+    expect(v.scale.x).toBeCloseTo(1.1);
+    expect(v.scale.y).toBeCloseTo(1.1);
     // Anchor invariance: cursor at screen (100,50) maps to same world point
     // before and after. Pre: world = 100/1+0 = 100, 50/1+0 = 50.
-    expect(100 / v.scale + v.x).toBeCloseTo(100);
-    expect(50 / v.scale + v.y).toBeCloseTo(50);
+    expect(100 / v.scale.x + v.x).toBeCloseTo(100);
+    expect(50 / v.scale.y + v.y).toBeCloseTo(50);
   });
 
   it('plain wheel pans by deltaX/scale, deltaY/scale', () => {
     const onViewChange = vi.fn();
     const { container } = render(
-      <ZoomHarness onViewChange={onViewChange} initialView={{ x: 0, y: 0, scale: 2 }} />,
+      <ZoomHarness onViewChange={onViewChange} initialView={{ x: 0, y: 0, scale: { x: 2, y: 2 } }} />,
     );
     const canvas = container.querySelector('canvas')!;
     const wheel = new WheelEvent('wheel', {
@@ -422,7 +423,7 @@ describe('Phase 2c: zoom + pan composition', () => {
       cancelable: true,
     });
     canvas.dispatchEvent(wheel);
-    expect(onViewChange).toHaveBeenLastCalledWith({ x: 10, y: 5, scale: 2 });
+    expect(onViewChange).toHaveBeenLastCalledWith({ x: 10, y: 5, scale: { x: 2, y: 2 } });
   });
 
   it('Cmd+0 resets view to identity', () => {
@@ -430,19 +431,19 @@ describe('Phase 2c: zoom + pan composition', () => {
     render(
       <ZoomHarness
         onViewChange={onViewChange}
-        initialView={{ x: 50, y: 50, scale: 4 }}
+        initialView={{ x: 50, y: 50, scale: { x: 4, y: 4 } }}
       />,
     );
     act(() => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: '0', metaKey: true, bubbles: true }));
     });
-    expect(onViewChange).toHaveBeenLastCalledWith({ x: 0, y: 0, scale: 1 });
+    expect(onViewChange).toHaveBeenLastCalledWith({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   });
 
   it('hand drag still pans after a programmatic zoom', () => {
     const onViewChange = vi.fn();
     const { container } = render(
-      <ZoomHarness onViewChange={onViewChange} initialView={{ x: 0, y: 0, scale: 2 }} />,
+      <ZoomHarness onViewChange={onViewChange} initialView={{ x: 0, y: 0, scale: { x: 2, y: 2 } }} />,
     );
     const canvas = container.querySelector('canvas')!;
     act(() => { fireEvent.keyDown(document, { key: 'H' }); });
@@ -454,7 +455,7 @@ describe('Phase 2c: zoom + pan composition', () => {
     canvas.dispatchEvent(mk('pointermove', 160, 140)); // dx=50, dy=30
     canvas.dispatchEvent(mk('pointerup', 160, 140));
     // useHandTool subtracts dx/dy from startView (screen-px pan, ignores scale).
-    expect(onViewChange).toHaveBeenLastCalledWith({ x: -50, y: -30, scale: 2 });
+    expect(onViewChange).toHaveBeenLastCalledWith({ x: -50, y: -30, scale: { x: 2, y: 2 } });
   });
 });
 

@@ -1,5 +1,6 @@
 import type { PenScratch } from '../usePenTool';
 import type { View } from 'core/viewport/view';
+import { meanScale } from 'core/viewport/meanScale';
 
 const ANCHOR_HIT_RADIUS_PX = 10;
 const HANDLE_HIT_RADIUS_PX = 8;
@@ -24,8 +25,8 @@ export function penEditHitOverride(
   const { scratch, worldX, worldY, view } = ctx;
   if (scratch.mode !== 'edit' || !scratch.edit) return null;
 
-  const anchorR = ANCHOR_HIT_RADIUS_PX / view.scale;
-  const handleR = HANDLE_HIT_RADIUS_PX / view.scale;
+  const anchorR = ANCHOR_HIT_RADIUS_PX / meanScale(view.scale);
+  const handleR = HANDLE_HIT_RADIUS_PX / meanScale(view.scale);
   const anchorR2 = anchorR * anchorR;
   const handleR2 = handleR * handleR;
 
@@ -60,7 +61,7 @@ export function penEditHitOverride(
     }
   }
 
-  const segmentR = SEGMENT_HIT_RADIUS_PX / view.scale;
+  const segmentR = SEGMENT_HIT_RADIUS_PX / meanScale(view.scale);
 
   // Segment hits — sample each segment at 12 evenly-spaced t and pick the
   // closest. Cheap; the tessellation samples used for rendering are similar

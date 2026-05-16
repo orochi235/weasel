@@ -11,7 +11,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useGridFeature } from './useGridFeature';
 import type { ViewTransform } from 'core/viewport/viewTransform';
 
-const IDENTITY: ViewTransform = { panX: 0, panY: 0, zoom: 1 };
+const IDENTITY: ViewTransform = { panX: 0, panY: 0, zoom: { x: 1, y: 1 } };
 
 function fakePointerEvent(clientX: number, clientY: number) {
   // Mimic a PointerEvent enough to satisfy the hook's reads.

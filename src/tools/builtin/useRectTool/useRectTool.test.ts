@@ -18,7 +18,7 @@ function makeCtx(overrides: Partial<ToolCtx<any>> = {}): ToolCtx<null> {
     selection: {} as never,
     adapter: null,
     applyOps: vi.fn(),
-    view: { x: 0, y: 0, scale: 1 },
+    view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
     setView: vi.fn(),
     canvasRect: new DOMRect(),
     scratch: null,

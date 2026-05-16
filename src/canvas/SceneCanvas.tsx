@@ -457,7 +457,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Stable ref tracking the latest view for usePinchZoomTool.
   // Updated synchronously on incoming controlled-prop renders AND via
   // pinchSetView so the pinch gesture always sees the latest view.
-  const currentViewRef = useRef<View>(viewProp ?? defaultView ?? { x: 0, y: 0, scale: 1 });
+  const currentViewRef = useRef<View>(viewProp ?? defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } });
   if (viewProp !== undefined) currentViewRef.current = viewProp;
 
   // Single setView callback used both by the pinch tool and as Canvas's

@@ -11,7 +11,7 @@ function makeCtx(): ToolCtx<undefined> {
     selection: { current: ['a'], applyClick: () => {}, set: () => {}, clear: () => {} } as any,
     adapter: {},
     applyOps: vi.fn(),
-    view: { x: 0, y: 0, scale: 1 },
+    view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
     setView: () => {},
     canvasRect: new DOMRect(),
     scratch: undefined,

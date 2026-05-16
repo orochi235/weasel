@@ -1,6 +1,7 @@
 import type { SnapStrategy } from '../../types';
 import type { Guide } from 'features/guides/types';
 import type { View } from 'core/viewport/view';
+import { meanScale } from 'core/viewport/meanScale';
 import type { OriginProjection } from './grid';
 import { RECT_ORIGIN_PROJECTION } from './grid';
 
@@ -67,7 +68,7 @@ export function guideSnapStrategy<TPose>(
       // Convert tolerance to world units. With no view, treat tolerance as
       // already-world. With a view, divide by scale (px / (px/world) = world).
       const worldTolerance = getView
-        ? tolerance / Math.max(1e-9, getView().scale)
+        ? tolerance / Math.max(1e-9, meanScale(getView().scale))
         : tolerance;
 
       const o = proj.getOrigin(pose);

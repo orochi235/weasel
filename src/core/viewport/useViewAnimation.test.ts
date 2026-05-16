@@ -17,7 +17,7 @@ describe('useViewAnimation', () => {
     vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation((cb) => { if (!fired) { fired = true; cb(0); } return 1; });
     vi.spyOn(globalThis, 'cancelAnimationFrame').mockImplementation(() => {});
     const { result } = renderHook(() => useViewAnimation(setView));
-    result.current.animateTo({ x: 0, y: 0, scale: 1 }, { x: 10, y: 0, scale: 1 });
+    result.current.animateTo({ x: 0, y: 0, scale: { x: 1, y: 1 } }, { x: 10, y: 0, scale: { x: 1, y: 1 } });
     expect(setView).toHaveBeenCalled();
     vi.restoreAllMocks();
   });
@@ -41,7 +41,7 @@ describe('useViewAnimation.animateToBounds', () => {
   it('tweens current view to the fitted view for the bounds', () => {
     const setView = vi.fn();
     const { result } = renderHook(() => useViewAnimation(setView));
-    const current: View = { x: 0, y: 0, scale: 1 };
+    const current: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
     act(() => {
       result.current.animateToBounds(
         { x: 0, y: 0, width: 100, height: 100 },
@@ -54,7 +54,8 @@ describe('useViewAnimation.animateToBounds', () => {
     act(() => { stepRAF(0); stepRAF(100); });
     const last = setView.mock.calls[setView.mock.calls.length - 1][0] as View;
     // Expected: scale 2, view (0, 0)
-    expect(last.scale).toBeCloseTo(2);
+    expect(last.scale.x).toBeCloseTo(2);
+    expect(last.scale.y).toBeCloseTo(2);
     expect(last.x).toBeCloseTo(0);
     expect(last.y).toBeCloseTo(0);
   });
@@ -66,7 +67,7 @@ describe('useViewAnimation.animateToBounds', () => {
     act(() => {
       result.current.animateToBounds(
         { x: 0, y: 0, width: 0, height: 100 },
-        { x: 0, y: 0, scale: 1 },
+        { x: 0, y: 0, scale: { x: 1, y: 1 } },
         { width: 200, height: 200 },
       );
     });
@@ -82,7 +83,7 @@ describe('useViewAnimation.animateToBounds', () => {
     act(() => {
       result.current.animateToBounds(
         { x: 0, y: 0, width: 100, height: 100 },
-        { x: 0, y: 0, scale: 1 },
+        { x: 0, y: 0, scale: { x: 1, y: 1 } },
         { width: 200, height: 200 },
         { padding: 0, duration: 200, easing },
       );

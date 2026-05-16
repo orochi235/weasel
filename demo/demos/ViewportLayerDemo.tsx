@@ -42,7 +42,7 @@ export function ViewportLayerDemo() {
     initial,
   });
   const selection = useSelection();
-  const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
+  const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
 
   // A trivial source layer that paints the same shapes the main scene
   // shows. The viewport renders this through its own `View`. In a richer
@@ -56,11 +56,11 @@ export function ViewportLayerDemo() {
       draw: (_data, v): DrawCommand[] => {
         const cmds: DrawCommand[] = [];
         for (const item of initial) {
-          const sx = (item.pose.x - v.x) * v.scale;
-          const sy = (item.pose.y - v.y) * v.scale;
+          const sx = (item.pose.x - v.x) * v.scale.x;
+          const sy = (item.pose.y - v.y) * v.scale.y;
           cmds.push({
             kind: 'path',
-            path: { kind: 'rect', x: sx, y: sy, width: item.pose.width * v.scale, height: item.pose.height * v.scale },
+            path: { kind: 'rect', x: sx, y: sy, width: item.pose.width * v.scale.x, height: item.pose.height * v.scale.y },
             fill: { fill: 'solid', color: item.data.color },
           });
         }
@@ -83,13 +83,13 @@ export function ViewportLayerDemo() {
         // Visible world rect of the main canvas, in world coords.
         const worldX = view.x;
         const worldY = view.y;
-        const worldW = W / view.scale;
-        const worldH = H / view.scale;
+        const worldW = W / view.scale.x;
+        const worldH = H / view.scale.y;
         // Transform into minimap-screen coords using the minimap's view.
-        const sx = (worldX - v.x) * v.scale;
-        const sy = (worldY - v.y) * v.scale;
-        const sw = worldW * v.scale;
-        const sh = worldH * v.scale;
+        const sx = (worldX - v.x) * v.scale.x;
+        const sy = (worldY - v.y) * v.scale.y;
+        const sw = worldW * v.scale.x;
+        const sh = worldH * v.scale.y;
         return [{
           kind: 'path',
           path: { kind: 'rect', x: sx, y: sy, width: sw, height: sh },
@@ -107,7 +107,7 @@ export function ViewportLayerDemo() {
         id: 'minimap',
         label: 'Minimap',
         source: [sceneSource, viewIndicator],
-        view: { x: -100, y: -100, scale: 0.18 },
+        view: { x: -100, y: -100, scale: { x: 0.18, y: 0.18 } },
         bounds: (_outer, dims) => ({ x: dims.width - 180 - 8, y: 8, w: 180, h: 120 }),
         background: 'rgba(0,0,0,0.4)',
       }),
@@ -122,7 +122,7 @@ export function ViewportLayerDemo() {
         id: 'pip',
         label: 'PiP',
         source: [sceneSource],
-        view: { x: 250, y: 200, scale: 1.6 },
+        view: { x: 250, y: 200, scale: { x: 1.6, y: 1.6 } },
         bounds: (_outer, dims) => ({ x: 8, y: dims.height - 160 - 8, w: 240, h: 160 }),
         background: 'rgba(0,0,0,0.4)',
       }),
@@ -132,8 +132,8 @@ export function ViewportLayerDemo() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-        <span style={{ fontFamily: 'monospace' }}>view: ({view.x.toFixed(0)}, {view.y.toFixed(0)}) ×{view.scale.toFixed(2)}</span>
-        <button onClick={() => setView({ x: 0, y: 0, scale: 1 })}>Reset</button>
+        <span style={{ fontFamily: 'monospace' }}>view: ({view.x.toFixed(0)}, {view.y.toFixed(0)}) ×{view.scale.x.toFixed(2)}</span>
+        <button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>Reset</button>
         <span style={{ color: '#888' }}>H = hand · top-right is a minimap; bottom-left is a PiP</span>
       </div>
       <SceneCanvas

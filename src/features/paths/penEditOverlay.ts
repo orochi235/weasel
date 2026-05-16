@@ -12,7 +12,7 @@ import type { DrawCommand } from '../../renderer';
 import { circlePath, linePath, rectMarkerPath, squarePath } from './markers';
 import type { PenScratch } from 'tools/builtin/usePenTool';
 
-interface View { x: number; y: number; scale: number }
+interface View { x: number; y: number; scale: { x: number; y: number } }
 
 const ANCHOR_SIZE_PX = 6;
 const HANDLE_DOT_RADIUS_PX = 2;
@@ -23,7 +23,7 @@ const HANDLE_STROKE = '#7da7e8';
 
 /** World → screen (mirrors `w2s` in penPreviewLayer.ts). */
 function w2s(wx: number, wy: number, view: View): [number, number] {
-  return [(wx - view.x) * view.scale, (wy - view.y) * view.scale];
+  return [(wx - view.x) * view.scale.x, (wy - view.y) * view.scale.y];
 }
 
 function lineCmd(ax: number, ay: number, bx: number, by: number, color: string): DrawCommand {

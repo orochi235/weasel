@@ -643,7 +643,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // supplied we are controlled (consumer owns state). Otherwise we keep
   // internal state seeded from `defaultView`. `setView` always fires
   // `onViewChange` so consumers can persist regardless of mode.
-  const [internalView, setInternalView] = useState<View>(defaultView ?? { x: 0, y: 0, scale: 1 });
+  const [internalView, setInternalView] = useState<View>(defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } });
   const effectiveView: View = viewProp ?? internalView;
   const viewRef = useRef<View>(effectiveView);
   viewRef.current = effectiveView;
@@ -731,8 +731,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
           [worldX, worldY] = cw(c, cx, cy);
         } else {
           const rect = c.getBoundingClientRect();
-          worldX = (cx - rect.left) / view.scale + view.x;
-          worldY = (cy - rect.top) / view.scale + view.y;
+          worldX = (cx - rect.left) / view.scale.x + view.x;
+          worldY = (cy - rect.top) / view.scale.y + view.y;
         }
       }
       const rect = c ? c.getBoundingClientRect() : (typeof DOMRect !== 'undefined' ? new DOMRect() : ({ x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 } as DOMRect));
@@ -1131,8 +1131,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
           [worldX, worldY] = cw(c, e.clientX, e.clientY);
         } else {
           const rect = c.getBoundingClientRect();
-          worldX = (e.clientX - rect.left) / view.scale + view.x;
-          worldY = (e.clientY - rect.top) / view.scale + view.y;
+          worldX = (e.clientX - rect.left) / view.scale.x + view.x;
+          worldY = (e.clientY - rect.top) / view.scale.y + view.y;
         }
         for (const layer of layersWithDebug) {
           layer.onUncapturedMove?.(worldX, worldY, e.nativeEvent, view, { width, height });

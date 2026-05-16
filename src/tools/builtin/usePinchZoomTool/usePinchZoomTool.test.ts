@@ -23,7 +23,7 @@ describe('usePinchZoomTool', () => {
     const canvas = makeCanvas();
     const canvasRef = { current: canvas };
     const setView = vi.fn();
-    const view: View = { x: 0, y: 0, scale: 1 };
+    const view: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
     renderHook(() => usePinchZoomTool(canvasRef as any, view, setView));
 
@@ -35,6 +35,7 @@ describe('usePinchZoomTool', () => {
 
     expect(setView).toHaveBeenCalled();
     const newView = setView.mock.calls[0][0] as View;
-    expect(newView.scale).toBeCloseTo(2);
+    expect(newView.scale.x).toBeCloseTo(2);
+    expect(newView.scale.y).toBeCloseTo(2);
   });
 });

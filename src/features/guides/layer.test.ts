@@ -13,7 +13,7 @@ describe('createGuidesLayer', () => {
 
   it('returns [] when there are no guides', () => {
     const layer = createGuidesLayer({ getGuides: () => [] });
-    expect(layer.draw(undefined, { x: 0, y: 0, scale: 1 }, { width: 200, height: 100 })).toEqual([]);
+    expect(layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 100 })).toEqual([]);
   });
 
   it('draws a vertical line for an x-axis guide and a horizontal line for a y-axis guide', () => {
@@ -22,7 +22,7 @@ describe('createGuidesLayer', () => {
       { id: 'hy', axis: 'y', offset: 25 },
     ];
     const layer = createGuidesLayer({ getGuides: () => guides });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, { width: 200, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 100 });
     expect(tree).toHaveLength(2);
 
     const v = tree[0] as PathDrawCommand;
@@ -44,7 +44,7 @@ describe('createGuidesLayer', () => {
     const guides: Guide[] = [{ id: 'vx', axis: 'x', offset: 100 }];
     const layer = createGuidesLayer({ getGuides: () => guides });
     // view.x = 50, scale = 2 → screen x = (100 - 50) * 2 = 100.
-    const tree = layer.draw(undefined, { x: 50, y: 0, scale: 2 }, { width: 200, height: 100 });
+    const tree = layer.draw(undefined, { x: 50, y: 0, scale: { x: 2, y: 2 } }, { width: 200, height: 100 });
     const v = tree[0] as PathDrawCommand;
     if (v.path.kind === 'polygon') {
       expect(Array.from(v.path.coords)).toEqual([100, 0, 100, 100]);
@@ -57,7 +57,7 @@ describe('createGuidesLayer', () => {
       { id: 'out', axis: 'x', offset: 1000 },
     ];
     const layer = createGuidesLayer({ getGuides: () => guides });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, { width: 200, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 100 });
     expect(tree).toHaveLength(1);
   });
 
@@ -68,7 +68,7 @@ describe('createGuidesLayer', () => {
       lineWidth: 2,
       color: '#ff00aa',
     });
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, { width: 200, height: 100 });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 100 });
     const v = tree[0] as PathDrawCommand;
     expect(v.stroke?.width).toBe(2);
     expect((v.stroke?.paint as { color: string } | undefined)?.color).toBe('#ff00aa');

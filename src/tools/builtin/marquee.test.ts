@@ -18,7 +18,7 @@ const DEFAULTS = {
 describe('marqueeDrawCommands', () => {
   it('identity view passes world bounds through to screen-space rect', () => {
     const cmds = marqueeDrawCommands(
-      { x: 0, y: 0, scale: 1 },
+      { x: 0, y: 0, scale: { x: 1, y: 1 } },
       { x: 10, y: 20, width: 30, height: 40 },
       undefined,
       DEFAULTS,
@@ -34,7 +34,7 @@ describe('marqueeDrawCommands', () => {
     // view.x=5 means "world point 5 is at screen 0", so a world rect at
     // world.x=10 sits at screen.x = (10 - 5) * scale = 5.
     const cmds = marqueeDrawCommands(
-      { x: 5, y: 10, scale: 1 },
+      { x: 5, y: 10, scale: { x: 1, y: 1 } },
       { x: 10, y: 20, width: 4, height: 4 },
       undefined,
       DEFAULTS,
@@ -45,7 +45,7 @@ describe('marqueeDrawCommands', () => {
 
   it('scale multiplies bounds dimensions', () => {
     const cmds = marqueeDrawCommands(
-      { x: 0, y: 0, scale: 2 },
+      { x: 0, y: 0, scale: { x: 2, y: 2 } },
       { x: 10, y: 20, width: 4, height: 6 },
       undefined,
       DEFAULTS,
@@ -56,7 +56,7 @@ describe('marqueeDrawCommands', () => {
 
   it('caller style fields override matching defaults', () => {
     const cmds = marqueeDrawCommands(
-      { x: 0, y: 0, scale: 1 },
+      { x: 0, y: 0, scale: { x: 1, y: 1 } },
       { x: 0, y: 0, width: 1, height: 1 },
       { fill: '#ff0000', stroke: '#00ff00', dash: [1, 1], lineWidth: 3 },
       DEFAULTS,
@@ -71,7 +71,7 @@ describe('marqueeDrawCommands', () => {
 
   it('partial caller style merges with defaults (unspecified fields fall through)', () => {
     const cmds = marqueeDrawCommands(
-      { x: 0, y: 0, scale: 1 },
+      { x: 0, y: 0, scale: { x: 1, y: 1 } },
       { x: 0, y: 0, width: 1, height: 1 },
       { fill: '#ff0000' }, // only fill specified
       DEFAULTS,
@@ -86,7 +86,7 @@ describe('marqueeDrawCommands', () => {
 
   it('omitted style uses every default', () => {
     const cmds = marqueeDrawCommands(
-      { x: 0, y: 0, scale: 1 },
+      { x: 0, y: 0, scale: { x: 1, y: 1 } },
       { x: 0, y: 0, width: 1, height: 1 },
       undefined,
       DEFAULTS,

@@ -807,7 +807,7 @@ describe('Canvas viewport (Phase 2b)', () => {
         items={[]}
         setItems={() => {}}
         layers={{ scene: noopScene() }}
-        defaultView={{ x: 50, y: 25, scale: 1 }}
+        defaultView={{ x: 50, y: 25, scale: { x: 1, y: 1 } }}
         onViewChange={onViewChange}
       />,
     );
@@ -823,7 +823,7 @@ describe('Canvas viewport (Phase 2b)', () => {
         items={[]}
         setItems={() => {}}
         layers={{ scene: noopScene() }}
-        view={{ x: 10, y: 20, scale: 1 }}
+        view={{ x: 10, y: 20, scale: { x: 1, y: 1 } }}
         onViewChange={onViewChange}
       />,
     );
@@ -834,7 +834,7 @@ describe('Canvas viewport (Phase 2b)', () => {
         items={[]}
         setItems={() => {}}
         layers={{ scene: noopScene() }}
-        view={{ x: 30, y: 40, scale: 1 }}
+        view={{ x: 30, y: 40, scale: { x: 1, y: 1 } }}
         onViewChange={onViewChange}
       />,
     );
@@ -855,7 +855,7 @@ describe('Canvas viewport (Phase 2b)', () => {
       />,
     );
     // View change isn't fired on initial mount; this is a smoke check that the
-    // `defaultView ?? { x:0, y:0, scale:1 }` path doesn't throw on the View
+    // `defaultView ?? { x:0, y:0, scale: { x: 1, y: 1 } }` path doesn't throw on the View
     // type's required `scale` field.
     expect(onViewChange).not.toHaveBeenCalled();
   });
@@ -869,7 +869,7 @@ describe('Canvas viewport (Phase 2b)', () => {
         items={[]}
         setItems={() => {}}
         layers={{ scene: noopScene() }}
-        view={{ x: 5, y: 5, scale: 2 }}
+        view={{ x: 5, y: 5, scale: { x: 2, y: 2 } }}
         onViewChange={onViewChange}
       />,
     );
@@ -1033,7 +1033,7 @@ describe('GL renderer', () => {
         width={300}
         height={200}
         layers={{ myCustom: { layer: customLayer } }}
-        defaultView={{ x: 10, y: 20, scale: 2 }}
+        defaultView={{ x: 10, y: 20, scale: { x: 2, y: 2 } }}
       />,
     );
     expect(container.querySelector('canvas')).toBeTruthy();
@@ -1168,7 +1168,7 @@ describe('Canvas baseBoundsOf synthesis', () => {
   });
 });
 
-const VIEW = { x: 0, y: 0, scale: 1 };
+const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const DIMS = { width: 100, height: 100 };
 const POSE = { x: 0, y: 0, width: 10, height: 10 };
 

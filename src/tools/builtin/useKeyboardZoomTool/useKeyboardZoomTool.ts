@@ -77,7 +77,7 @@ export function useKeyboardZoomTool(opts: KeyboardZoomToolOpts = {}): Tool<null>
     if (!(e.metaKey || e.ctrlKey)) return none();
     e.preventDefault();
     setViewRef.current = ctx.setView;
-    const target: View = { x: 0, y: 0, scale: 1 };
+    const target: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
     if (animate) {
       animateTo(ctx.view, target, { duration: resetDuration, easing });
     } else {

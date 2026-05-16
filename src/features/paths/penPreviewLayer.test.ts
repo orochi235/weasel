@@ -28,7 +28,7 @@ describe('createPenPreviewLayer', () => {
 
   it('returns [] in idle state (no anchors, no cursor)', () => {
     const { layer } = setup();
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
     expect(tree).toEqual([]);
   });
 
@@ -39,7 +39,7 @@ describe('createPenPreviewLayer', () => {
       closed: false,
     };
     scratch.cursor = { x: 200, y: 200 };
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
     // current subpath + rubber-band + 2 anchor dots = 4 path commands minimum.
     expect(tree.length).toBeGreaterThanOrEqual(4);
     expect(tree.every((c) => c.kind === 'path')).toBe(true);
@@ -53,7 +53,7 @@ describe('createPenPreviewLayer', () => {
     };
     scratch.cursor = { x: 1, y: 1 };
     scratch.closeHintActive = true;
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
     // current subpath + rubber-band + 3 anchor dots + close-hint = 6 paths.
     expect(tree.length).toBeGreaterThanOrEqual(6);
   });
@@ -66,7 +66,7 @@ describe('createPenPreviewLayer', () => {
     };
     linked.scratch.cursor = { x: 80, y: 50 };
     linked.scratch.draggingHandleAt = 0;
-    const linkedTree = linked.layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    const linkedTree = linked.layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
 
     const broken = setup();
     broken.scratch.current = {
@@ -75,7 +75,7 @@ describe('createPenPreviewLayer', () => {
     };
     broken.scratch.cursor = { x: 80, y: 50 };
     broken.scratch.draggingHandleAt = 0;
-    const brokenTree = broken.layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    const brokenTree = broken.layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
 
     // Mirror contributes exactly 2 extra commands (line + dot) over the
     // alt-broken case.
@@ -102,7 +102,7 @@ describe('createPenPreviewLayer', () => {
       },
       marquee: null,
     };
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
     // Three anchor squares — one path command each. Anchor chrome must render
     // even though current / cursor are both null in edit mode.
     expect(tree.length).toBeGreaterThanOrEqual(3);
@@ -113,7 +113,7 @@ describe('createPenPreviewLayer', () => {
     scratch.finishedSubpaths = [
       { anchors: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 5, y: 10 }], closed: true },
     ];
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: 1 }, DIMS);
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
     expect(tree.length).toBeGreaterThanOrEqual(1);
     expect(tree[0].kind).toBe('path');
   });

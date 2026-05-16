@@ -216,7 +216,7 @@ describe('scene + history persistence', () => {
       ],
       groups: [],
       doc: { size: { width: 100, height: 100 } },
-      view: { x: 0, y: 0, scale: 1 },
+      view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
       selection: [],
       history: historyA.serialize(),
     };
@@ -257,7 +257,7 @@ describe('scene + history persistence', () => {
       items: [],
       groups: [],
       doc: { size: { width: 100, height: 100 } },
-      view: { x: 0, y: 0, scale: 1 },
+      view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
     };
     await saveScene(snap);
     const loaded = await loadScene();
@@ -282,7 +282,7 @@ describe('scene + history persistence', () => {
       items: [],
       groups: [],
       doc: { size: { width: 100, height: 100 } },
-      view: { x: 0, y: 0, scale: 1 },
+      view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
       history: historyA.serialize(),
     });
     const loaded = await loadScene();

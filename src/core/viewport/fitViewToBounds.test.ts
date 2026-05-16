@@ -2,7 +2,7 @@ import { describe, expect, it, vi, afterEach } from 'vitest';
 import { fitViewToBounds } from './fitViewToBounds';
 import type { View } from './view';
 
-const CURRENT: View = { x: 999, y: 999, scale: 7 };
+const CURRENT: View = { x: 999, y: 999, scale: { x: 7, y: 7 } };
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -18,7 +18,8 @@ describe('fitViewToBounds', () => {
       CURRENT,
       { padding: 0 },
     );
-    expect(v.scale).toBe(2);
+    expect(v.scale.x).toBe(2);
+    expect(v.scale.y).toBe(2);
     expect(v.x).toBe(0);
     expect(v.y).toBe(0);
   });
@@ -31,7 +32,8 @@ describe('fitViewToBounds', () => {
       CURRENT,
       { padding: 0 },
     );
-    expect(v.scale).toBe(2);
+    expect(v.scale.x).toBe(2);
+    expect(v.scale.y).toBe(2);
   });
 
   it('applies default 16px padding', () => {
@@ -41,7 +43,8 @@ describe('fitViewToBounds', () => {
       { width: 200, height: 200 },
       CURRENT,
     );
-    expect(v.scale).toBeCloseTo(1.68, 5);
+    expect(v.scale.x).toBeCloseTo(1.68, 5);
+    expect(v.scale.y).toBeCloseTo(1.68, 5);
   });
 
   it('caps scale at system max (10) for tiny bounds', () => {
@@ -51,7 +54,8 @@ describe('fitViewToBounds', () => {
       CURRENT,
       { padding: 0 },
     );
-    expect(v.scale).toBe(10);
+    expect(v.scale.x).toBe(10);
+    expect(v.scale.y).toBe(10);
   });
 
   it('respects an explicit maxScale override', () => {
@@ -61,7 +65,8 @@ describe('fitViewToBounds', () => {
       CURRENT,
       { padding: 0, maxScale: 4 },
     );
-    expect(v.scale).toBe(4);
+    expect(v.scale.x).toBe(4);
+    expect(v.scale.y).toBe(4);
   });
 
   it('clamps scale to system min (0.1) for huge bounds', () => {
@@ -71,7 +76,8 @@ describe('fitViewToBounds', () => {
       CURRENT,
       { padding: 0 },
     );
-    expect(v.scale).toBe(0.1);
+    expect(v.scale.x).toBe(0.1);
+    expect(v.scale.y).toBe(0.1);
   });
 
   it('respects an explicit minScale override', () => {
@@ -81,7 +87,8 @@ describe('fitViewToBounds', () => {
       CURRENT,
       { padding: 0, minScale: 0.5 },
     );
-    expect(v.scale).toBe(0.5);
+    expect(v.scale.x).toBe(0.5);
+    expect(v.scale.y).toBe(0.5);
   });
 
   it('centers off-origin bounds correctly', () => {
@@ -95,12 +102,13 @@ describe('fitViewToBounds', () => {
       CURRENT,
       { padding: 0 },
     );
-    expect(v.scale).toBe(2);
+    expect(v.scale.x).toBe(2);
+    expect(v.scale.y).toBe(2);
     expect(v.x).toBe(500);
     expect(v.y).toBe(1000);
     // Sanity-check: world center maps to screen center.
-    const screenCx = (550 - v.x) * v.scale;
-    const screenCy = (1050 - v.y) * v.scale;
+    const screenCx = (550 - v.x) * v.scale.x;
+    const screenCy = (1050 - v.y) * v.scale.y;
     expect(screenCx).toBe(100);
     expect(screenCy).toBe(100);
   });

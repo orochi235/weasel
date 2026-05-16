@@ -105,7 +105,7 @@ describe('resize/snapToGuides', () => {
     const b = snapToGuides<P>({
       getGuides: () => guides,
       tolerance: 6,
-      getView: () => ({ x: 0, y: 0, scale: 2 }),
+      getView: () => ({ x: 0, y: 0, scale: { x: 2, y: 2 } }),
     });
     // 3 world units away — snaps.
     const a = b.onMove!(

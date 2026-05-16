@@ -122,7 +122,7 @@ export interface PointerSample {
 /** Context for `forEachCoalesced` — the kit's `ToolCtx` satisfies this. */
 export interface CoalescedCtx {
   canvasRect: { left: number; top: number };
-  view: { x: number; y: number; scale: number };
+  view: { x: number; y: number; scale: { x: number; y: number } };
 }
 
 /**
@@ -157,8 +157,8 @@ export function forEachCoalesced(
       clientY: e.clientY,
       screenX,
       screenY,
-      worldX: screenX / ctx.view.scale + ctx.view.x,
-      worldY: screenY / ctx.view.scale + ctx.view.y,
+      worldX: screenX / ctx.view.scale.x + ctx.view.x,
+      worldY: screenY / ctx.view.scale.y + ctx.view.y,
       stylus: getStylusData(e),
       event: e,
     });

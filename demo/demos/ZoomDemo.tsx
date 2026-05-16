@@ -7,6 +7,7 @@ import {
   useWheelZoomTool,
   useWheelPanTool,
   useKeyboardZoomTool,
+  meanScale,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
 import type { View } from '../../src/core/viewport/view';
@@ -33,7 +34,7 @@ export function ZoomDemo() {
   });
   const selection = useSelection();
 
-  const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
+  const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   const hand = useHandTool();
   const wheelZoom = useWheelZoomTool();
   const wheelPan = useWheelPanTool();
@@ -43,15 +44,15 @@ export function ZoomDemo() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
         <span style={{ fontFamily: 'monospace' }}>
-          view: ({view.x.toFixed(0)}, {view.y.toFixed(0)}) · scale: {view.scale.toFixed(2)}
+          view: ({view.x.toFixed(0)}, {view.y.toFixed(0)}) · scale: ({view.scale.x.toFixed(2)}, {view.scale.y.toFixed(2)})
         </span>
-        <button onClick={() => setView({ x: 0, y: 0, scale: 1 })}>Reset view</button>
+        <button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>Reset view</button>
         <span style={{ color: '#888' }}>
           ctrl/⌘+wheel zoom · plain wheel pan · ⌘+= / ⌘+- / ⌘+0 · H drag · space drag
         </span>
       </div>
       <div style={{ display: 'flex', gap: 12, fontSize: 12, color: '#d4c4a8' }}>
-        <span>Left (green): stroke = 2 / view.scale (screen-pinned)</span>
+        <span>Left (green): stroke = 2 / meanScale(view.scale) (screen-pinned)</span>
         <span>Right (purple): stroke = 2 (world-scaled)</span>
       </div>
       <SceneCanvas
@@ -66,7 +67,7 @@ export function ZoomDemo() {
         layers={{
           scene: {
             drawOne: (n, p, v): DrawCommand[] => {
-              const lineWidth = n.data.pin === 'screen' ? 2 / v.scale : 2;
+              const lineWidth = n.data.pin === 'screen' ? 2 / meanScale(v.scale) : 2;
               return [{
                 kind: 'path',
                 path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },

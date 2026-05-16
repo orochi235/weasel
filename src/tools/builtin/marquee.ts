@@ -23,7 +23,7 @@ function marqueeScreenRect(
 ): { sx: number; sy: number; sw: number; sh: number } {
   const t = viewToTransform(view);
   const [sx, sy] = worldToScreen(bounds.x, bounds.y, t);
-  return { sx, sy, sw: bounds.width * view.scale, sh: bounds.height * view.scale };
+  return { sx, sy, sw: bounds.width * view.scale.x, sh: bounds.height * view.scale.y };
 }
 
 /** Screen-space marquee rectangle as DrawCommands. Used by drag-insert tool overlays. */
