@@ -182,7 +182,12 @@ export type BuiltinToolId =
  *  `BuiltinToolId[]` consumed by SceneCanvas's internal `useTools`. */
 export type ToolBundle = 'minimal' | 'standard' | 'exhaustive';
 
-const BUNDLE_TOOLS: Record<ToolBundle, readonly BuiltinToolId[]> = {
+/** Tool-id contents of each named `ToolBundle`. Public so consumers (e.g.
+ *  the Bundle Inspector) can introspect the same map SceneCanvas uses to
+ *  expand `toolBundle` without mirroring it. The `src/index.barrel.test.ts`
+ *  parity gate enforces that every `ToolBundle` id appears here with a
+ *  non-empty tool list. */
+export const BUNDLE_TOOLS: Record<ToolBundle, readonly BuiltinToolId[]> = {
   minimal: ['select', 'hand'],
   standard: ['select', 'resize', 'rotate', 'hand', 'rect', 'ellipse', 'line', 'pencil'],
   exhaustive: [
