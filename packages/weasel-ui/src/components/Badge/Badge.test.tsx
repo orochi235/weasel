@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { Badge } from './Badge';
 
@@ -48,5 +48,36 @@ describe('Badge content slots', () => {
     const el = container.firstElementChild as HTMLElement;
     expect(el.style.getPropertyValue('--badge-inset-left')).toBe('10px');
     expect(el.style.getPropertyValue('--badge-inset-right')).toBe('10px');
+  });
+});
+
+describe('Badge interactive', () => {
+  it('renders as button when onClick given', () => {
+    const { container } = render(<Badge onClick={() => {}}>x</Badge>);
+    expect(container.firstElementChild?.tagName).toBe('BUTTON');
+  });
+
+  it('renders as anchor when href given', () => {
+    const { container } = render(<Badge href="/x">x</Badge>);
+    expect(container.firstElementChild?.tagName).toBe('A');
+  });
+
+  it('honors explicit as override', () => {
+    const { container } = render(<Badge as="button">x</Badge>);
+    expect(container.firstElementChild?.tagName).toBe('BUTTON');
+  });
+
+  it('fires onClick when clicked', () => {
+    const fn = vi.fn();
+    const { container } = render(<Badge onClick={fn}>x</Badge>);
+    (container.firstElementChild as HTMLButtonElement).click();
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders focus path when focus-visible matches', () => {
+    const { container } = render(<Badge onClick={() => {}}>x</Badge>);
+    const btn = container.firstElementChild as HTMLButtonElement;
+    btn.focus();
+    expect(btn.getAttribute('data-focused')).toBe('true');
   });
 });

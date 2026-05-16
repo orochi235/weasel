@@ -89,3 +89,17 @@
   color: var(--badge-fg);
 }
 .badge[data-size='md'] { --badge-icon-size: 14px; }
+
+button.badge,
+a.badge {
+  cursor: pointer;
+  outline: 0;
+}
+button.badge:hover,
+a.badge:hover {
+  --badge-edge: color-mix(in oklab, var(--badge-edge) 88%, white);
+}
+@media (prefers-reduced-motion: reduce) {
+  button.badge:hover,
+  a.badge:hover { --badge-edge: var(--badge-edge); }
+}
