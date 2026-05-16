@@ -1,7 +1,8 @@
 import { Fragment, useRef, type ReactNode } from 'react';
 import { UnknownIcon } from '@orochi235/weasel';
 import type { AnyTool, ToolsApi } from '@orochi235/weasel';
-import { ToolButton, ToolGroup } from '@orochi235/weasel-ui';
+import { ToolButton } from '../ToolButton';
+import { ToolGroup } from '../ToolGroup';
 import s from './ToolPalette.module.css';
 import { formatShortcut } from './formatShortcut';
 

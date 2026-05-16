@@ -10,7 +10,7 @@ import type { ToolDef } from '@orochi235/weasel/routing';
 import { isValidElement, type ReactNode } from 'react';
 import type { PhaseSummary, ToolEntry, ActionEntry } from './registryData';
 import { TOOL_HOOK_NAMES } from './registryData';
-import { formatShortcutParts } from '../ui/ToolPalette/formatShortcut';
+import { formatShortcutParts } from '@orochi235/weasel-ui';
 import s from './RegistryInspector.module.css';
 
 export interface RegistrySnapshot {
