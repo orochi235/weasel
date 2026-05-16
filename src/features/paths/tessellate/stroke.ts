@@ -22,8 +22,11 @@ type Join = 'miter' | 'round' | 'bevel';
 interface Seg {
   ax: number; ay: number;
   bx: number; by: number;
-  /** Perpendicular × half-width (rotated 90° CCW from direction). */
-  nx: number; ny: number;
+  /** Unit perpendicular (rotated 90° CCW from direction). */
+  nxUnit: number; nyUnit: number;
+  /** Half-width at the start (a) and end (b) endpoints. Equal for uniform
+   *  strokes; differ when the polyline carries per-point widths. */
+  halfA: number; halfB: number;
   len: number;
 }
 
@@ -48,6 +51,7 @@ export function tessellateStroke(
   const cap: Cap = stroke.cap ?? 'butt';
   const align = stroke.align ?? 'center';
   const miterLimit = stroke.miterLimit ?? DEFAULT_MITER_LIMIT;
+  const varyingThreshold = stroke.varyingWidthJoinThreshold ?? DEFAULT_VARYING_WIDTH_JOIN_THRESHOLD;
 
   // RectPath fast path for inner/outer alignment: shift the rect by half-width
   // so the ribbon's center alignment lands the stroke on the desired side of
@@ -66,6 +70,13 @@ export function tessellateStroke(
   }
 
   const polylines = extractPolylines(workingPath, opts);
+  // Derive per-polyline-point widths by lerping vertexWidths across
+  // anchor pairs using each point's anchorT. When vertexWidths is absent
+  // or invalid (length mismatch / non-finite values), polyline.widths is
+  // left undefined and the uniform-width fast path runs.
+  if (stroke.vertexWidths && stroke.vertexWidths.length > 0) {
+    for (const pl of polylines) populatePolylineWidths(pl, stroke.vertexWidths, width);
+  }
   const dash = stroke.dash ?? [];
   const verts: number[] = [];
   const idx: number[] = [];
@@ -76,7 +87,7 @@ export function tessellateStroke(
   for (const pl of polylines) {
     const subs = dash.length > 0 ? splitForDash(pl, dash) : [pl];
     for (const sub of subs) {
-      expandPolyline(sub, width, join, cap, miterLimit, verts, idx, anchorA, anchorB, anchorT);
+      expandPolyline(sub, width, join, cap, miterLimit, varyingThreshold, verts, idx, anchorA, anchorB, anchorT);
     }
   }
 
@@ -95,6 +106,7 @@ function expandPolyline(
   join: Join,
   cap: Cap,
   miterLimit: number,
+  varyingThreshold: number,
   verts: number[],
   idx: number[],
   anchorA: number[],
@@ -103,19 +115,27 @@ function expandPolyline(
 ): void {
   const half = width / 2;
   const pts = pl.points;
-  const segCount = pts.length / 2 - 1;
+  const ptCount = pts.length / 2;
+  const segCount = ptCount - 1;
   if (segCount < 1) return;
 
   // Anchor params per polyline point (set by extractPolylines; splitForDash
-  // will re-derive these in Task 6d). Default to A=B=0,t=0 if missing.
-  const plA = pl.anchorA ?? new Uint32Array(pts.length / 2);
-  const plB = pl.anchorB ?? new Uint32Array(pts.length / 2);
-  const plT = pl.anchorT ?? new Float32Array(pts.length / 2);
+  // re-derives them on dash boundaries). Default to A=B=0,t=0 if missing.
+  const plA = pl.anchorA ?? new Uint32Array(ptCount);
+  const plB = pl.anchorB ?? new Uint32Array(ptCount);
+  const plT = pl.anchorT ?? new Float32Array(ptCount);
+  // Per-point half-widths: derived from pl.widths if present, else the
+  // uniform half. Indexing matches `pts` (one entry per polyline point).
+  const plHalf = pl.widths
+    ? pl.widths.map((w) => w / 2)
+    : null;
 
   const segs: Seg[] = [];
   const segSrcIdx: number[] = [];  // For each seg, the polyline-point index of its start.
   for (let s = 0; s < segCount; s++) {
-    const seg = makeSeg(pts[s * 2], pts[s * 2 + 1], pts[(s + 1) * 2], pts[(s + 1) * 2 + 1], half);
+    const ha = plHalf ? plHalf[s] : half;
+    const hb = plHalf ? plHalf[s + 1] : half;
+    const seg = makeSeg(pts[s * 2], pts[s * 2 + 1], pts[(s + 1) * 2], pts[(s + 1) * 2 + 1], ha, hb);
     if (seg) {
       segs.push(seg);
       segSrcIdx.push(s);
@@ -125,17 +145,22 @@ function expandPolyline(
   if (pl.closed && segs.length >= 1) {
     const last = segs[segs.length - 1];
     const first = segs[0];
-    const closer = makeSeg(last.bx, last.by, first.ax, first.ay, half);
+    // Closer: from last point back to point 0. Half-widths are the
+    // already-resolved ones at those source indices.
+    const haCloser = plHalf ? plHalf[ptCount - 1] : half;
+    const hbCloser = plHalf ? plHalf[0] : half;
+    const closer = makeSeg(last.bx, last.by, first.ax, first.ay, haCloser, hbCloser);
     if (closer) {
       segs.push(closer);
-      closerSrcIdx = pts.length / 2 - 1;  // start is the last polyline point.
+      closerSrcIdx = ptCount - 1;  // start is the last polyline point.
       segSrcIdx.push(closerSrcIdx);
     }
   }
   if (segs.length === 0) return;
 
   // Emit ribbon quads. For each emitted vertex, record the (A, B, t) of the
-  // source polyline point that the geometric vertex sits at.
+  // source polyline point that the geometric vertex sits at. Per-end
+  // half-widths produce trapezoidal segments when the stroke tapers.
   const segBaseIdx: number[] = [];
   for (let s = 0; s < segs.length; s++) {
     const seg = segs[s];
@@ -144,36 +169,70 @@ function expandPolyline(
     const endSrc = (s === segs.length - 1 && pl.closed && closerSrcIdx >= 0) ? 0 : startSrc + 1;
     const base = verts.length / 2;
     segBaseIdx.push(base);
-    // L0, R0 — at seg.ax/ay; inherit start-source anchor params.
-    verts.push(seg.ax + seg.nx, seg.ay + seg.ny);
+    const nxA = seg.nxUnit * seg.halfA, nyA = seg.nyUnit * seg.halfA;
+    const nxB = seg.nxUnit * seg.halfB, nyB = seg.nyUnit * seg.halfB;
+    // L0, R0 — at seg.ax/ay with start half-width.
+    verts.push(seg.ax + nxA, seg.ay + nyA);
     anchorA.push(plA[startSrc]); anchorB.push(plB[startSrc]); anchorT.push(plT[startSrc]);
-    verts.push(seg.ax - seg.nx, seg.ay - seg.ny);
+    verts.push(seg.ax - nxA, seg.ay - nyA);
     anchorA.push(plA[startSrc]); anchorB.push(plB[startSrc]); anchorT.push(plT[startSrc]);
-    // L1, R1 — at seg.bx/by; inherit end-source anchor params.
-    verts.push(seg.bx + seg.nx, seg.by + seg.ny);
+    // L1, R1 — at seg.bx/by with end half-width.
+    verts.push(seg.bx + nxB, seg.by + nyB);
     anchorA.push(plA[endSrc]); anchorB.push(plB[endSrc]); anchorT.push(plT[endSrc]);
-    verts.push(seg.bx - seg.nx, seg.by - seg.ny);
+    verts.push(seg.bx - nxB, seg.by - nyB);
     anchorA.push(plA[endSrc]); anchorB.push(plB[endSrc]); anchorT.push(plT[endSrc]);
     idx.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
   }
 
-  // Joins between consecutive segments. (Task 6b will thread anchor params here.)
+  // Joins between consecutive segments.
   const joinCount = pl.closed ? segs.length : segs.length - 1;
   for (let j = 0; j < joinCount; j++) {
-    emitJoin(segs, segBaseIdx, j, half, join, miterLimit, verts, idx, anchorA, anchorB, anchorT, segSrcIdx, plA, plB, plT);
+    emitJoin(segs, segBaseIdx, j, join, miterLimit, varyingThreshold, verts, idx, anchorA, anchorB, anchorT, segSrcIdx, plA, plB, plT);
   }
 
-  // Caps. (Task 6c will thread anchor params here.)
+  // Caps. Use the local half-width at the cap end (seg.halfA at start, seg.halfB at end).
   if (!pl.closed && cap !== 'butt') {
     const first = segs[0];
     const firstBase = segBaseIdx[0];
-    emitCap(first, firstBase + 0, firstBase + 1, false, half, cap, verts, idx, anchorA, anchorB, anchorT, plA[0], plB[0], plT[0]);
+    emitCap(first, firstBase + 0, firstBase + 1, false, first.halfA, cap, verts, idx, anchorA, anchorB, anchorT, plA[0], plB[0], plT[0]);
 
     const last = segs[segs.length - 1];
     const lastBase = segBaseIdx[segs.length - 1];
     const lastSrc = segSrcIdx[segs.length - 1] + 1;
-    emitCap(last, lastBase + 2, lastBase + 3, true, half, cap, verts, idx, anchorA, anchorB, anchorT, plA[lastSrc], plB[lastSrc], plT[lastSrc]);
+    emitCap(last, lastBase + 2, lastBase + 3, true, last.halfB, cap, verts, idx, anchorA, anchorB, anchorT, plA[lastSrc], plB[lastSrc], plT[lastSrc]);
   }
+}
+
+/** Fill `pl.widths` by interpolating `vertexWidths` across each point's
+ *  (anchorA, anchorB, anchorT). Anchor-aligned points (A === B) read the
+ *  anchor's value directly. Out-of-range / non-finite anchor entries fall
+ *  back to `fallbackWidth`. */
+function populatePolylineWidths(
+  pl: Polyline,
+  vertexWidths: number[],
+  fallbackWidth: number,
+): void {
+  const ptCount = pl.points.length / 2;
+  if (ptCount === 0) return;
+  const aA = pl.anchorA ?? new Uint32Array(ptCount);
+  const aB = pl.anchorB ?? new Uint32Array(ptCount);
+  const aT = pl.anchorT ?? new Float32Array(ptCount);
+  const widths = new Float32Array(ptCount);
+  const read = (i: number): number => {
+    const v = vertexWidths[i];
+    return typeof v === 'number' && isFinite(v) && v > 0 ? v : fallbackWidth;
+  };
+  for (let i = 0; i < ptCount; i++) {
+    const a = aA[i], b = aB[i], t = aT[i];
+    if (a === b) {
+      widths[i] = read(a);
+    } else {
+      const wa = read(a);
+      const wb = read(b);
+      widths[i] = wa + (wb - wa) * t;
+    }
+  }
+  pl.widths = widths;
 }
 
 const ROUND_CAP_STEP_RAD = (10 * Math.PI) / 180;
@@ -198,14 +257,19 @@ function emitCap(
   const cx = atEnd ? seg.bx : seg.ax;
   const cy = atEnd ? seg.by : seg.ay;
 
+  // Perpendicular offset at this cap end uses the local half-width
+  // (varies along the polyline when vertexWidths is set).
+  const nx = seg.nxUnit * half;
+  const ny = seg.nyUnit * half;
+
   if (cap === 'square') {
     const ox = cx + dx * half;
     const oy = cy + dy * half;
     const lOut = verts.length / 2;
-    verts.push(ox + seg.nx, oy + seg.ny);
+    verts.push(ox + nx, oy + ny);
     anchorA.push(endA); anchorB.push(endB); anchorT.push(endT);
     const rOut = verts.length / 2;
-    verts.push(ox - seg.nx, oy - seg.ny);
+    verts.push(ox - nx, oy - ny);
     anchorA.push(endA); anchorB.push(endB); anchorT.push(endT);
     // Two triangles forming the cap rectangle. Wind so triangles are CCW
     // viewed from the front; orientation symmetric for start vs. end caps.
@@ -225,7 +289,7 @@ function emitCap(
     anchorA.push(endA); anchorB.push(endB); anchorT.push(endT);
 
     // Starting angle: direction from pivot to L (= +n direction).
-    const startAngle = Math.atan2(seg.ny, seg.nx);
+    const startAngle = Math.atan2(ny, nx);
     // Sweep 180° toward the outward direction. The outward unit is (dx, dy);
     // we rotate from +n to -n the "outward" way. The dot product of (dx, dy)
     // with the perpendicular tells us which way around the arc to go.
@@ -365,19 +429,27 @@ function splitForDash(pl: Polyline, dash: number[]): Polyline[] {
   return out;
 }
 
-function makeSeg(ax: number, ay: number, bx: number, by: number, half: number): Seg | null {
+function makeSeg(ax: number, ay: number, bx: number, by: number, halfA: number, halfB: number): Seg | null {
   const dx = bx - ax, dy = by - ay;
   const len = Math.hypot(dx, dy);
   if (len === 0) return null;
-  return { ax, ay, bx, by, nx: (-dy / len) * half, ny: (dx / len) * half, len };
+  return {
+    ax, ay, bx, by,
+    nxUnit: -dy / len, nyUnit: dx / len,
+    halfA, halfB,
+    len,
+  };
 }
 
 /** Canvas2D's default miter limit; used when `Stroke.miterLimit` is unset. */
 const DEFAULT_MITER_LIMIT = 10;
+/** Default `Stroke.varyingWidthJoinThreshold`. */
+const DEFAULT_VARYING_WIDTH_JOIN_THRESHOLD = 1.5;
 
 function emitJoin(
-  segs: Seg[], segBaseIdx: number[], j: number, half: number, join: Join,
+  segs: Seg[], segBaseIdx: number[], j: number, join: Join,
   miterLimit: number,
+  varyingThreshold: number,
   verts: number[], idx: number[],
   anchorA: number[], anchorB: number[], anchorT: number[],
   segSrcIdx: number[],
@@ -409,8 +481,18 @@ function emitJoin(
   const cornerA = plA[cornerSrc];
   const cornerB = plB[cornerSrc];
   const cornerT = plT[cornerSrc];
+  // The two adjoining half-widths agree at the shared corner (a.halfB ===
+  // b.halfA for a single-contour polyline), so use either for miter-limit
+  // sizing. Force bevel when either adjacent segment itself tapers by
+  // more than `varyingThreshold` — the miter apex math computes against
+  // outer edges parallel to the segment direction, an assumption that
+  // breaks on tapered trapezoids (outer edges fan in/out).
+  const halfAtCorner = a.halfB;
+  const taperA = Math.max(a.halfA, a.halfB) / Math.max(1e-9, Math.min(a.halfA, a.halfB));
+  const taperB = Math.max(b.halfA, b.halfB) / Math.max(1e-9, Math.min(b.halfA, b.halfB));
+  const forceBevelForVarying = taperA > varyingThreshold || taperB > varyingThreshold;
 
-  if (join === 'bevel') {
+  if (join === 'bevel' || forceBevelForVarying) {
     emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT);
     return;
   }
@@ -427,7 +509,7 @@ function emitJoin(
       return;
     }
     const miterLen = Math.hypot(apex[0] - a.bx, apex[1] - a.by);
-    if (miterLen > miterLimit * half) {
+    if (miterLen > miterLimit * halfAtCorner) {
       emitBevel(a, aOuterEnd, bOuterStart, onPositive, verts, idx, anchorA, anchorB, anchorT, cornerA, cornerB, cornerT);
       return;
     }

@@ -43,6 +43,42 @@ export interface StylusData {
   isStylus: boolean;
 }
 
+/** Options for `pressureToWidth`. */
+export interface PressureToWidthOptions {
+  /** Width returned at pressure 0. Default 0.5. */
+  minWidth?: number;
+  /** Width returned at pressure 1. Default 6. */
+  maxWidth?: number;
+  /** Response curve exponent applied to pressure before lerping
+   *  (`p ** gamma`). 1 = linear; >1 emphasizes light touches (sharper
+   *  thin → thick transition); <1 emphasizes heavy touches. Default 1.6,
+   *  a small bias toward heavy strokes that matches typical pencil feel
+   *  without crushing the dynamic range. */
+  gamma?: number;
+}
+
+/**
+ * Map a 0..1 pressure value to a stroke width.
+ *
+ * `width(p) = minWidth + (maxWidth - minWidth) × p^gamma`
+ *
+ * Mouse / non-stylus inputs report `pressure === 0` (no button) or `0.5`
+ * (button held); callers that don't want uniform 0.5-pressure widths on
+ * mouse input should gate on `pointerType === 'pen'` upstream and feed a
+ * constant width on the non-stylus path.
+ */
+export function pressureToWidth(
+  pressure: number,
+  options: PressureToWidthOptions = {},
+): number {
+  const minWidth = options.minWidth ?? 0.5;
+  const maxWidth = options.maxWidth ?? 6;
+  const gamma = options.gamma ?? 1.6;
+  const p = Math.max(0, Math.min(1, pressure));
+  const shaped = p ** gamma;
+  return minWidth + (maxWidth - minWidth) * shaped;
+}
+
 /** Extract a normalized stylus snapshot from any PointerEvent. Pure. */
 export function getStylusData(e: PointerEvent): StylusData {
   // `altitudeAngle` / `azimuthAngle` are Pointer Events level 3 — only

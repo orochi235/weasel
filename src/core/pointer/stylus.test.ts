@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { getStylusData, forEachCoalesced, type CoalescedCtx } from './stylus';
+import { getStylusData, forEachCoalesced, pressureToWidth, type CoalescedCtx } from './stylus';
 
 function makeEvent(
   partial: Partial<PointerEvent> & { altitudeAngle?: number; azimuthAngle?: number },
@@ -126,5 +126,30 @@ describe('forEachCoalesced', () => {
     let world: { x: number; y: number } | null = null;
     forEachCoalesced(parent, offsetCtx, (s) => { world = { x: s.worldX, y: s.worldY }; });
     expect(world).toEqual({ x: 110, y: 70 });
+  });
+});
+
+describe('pressureToWidth', () => {
+  it('returns minWidth at pressure 0 and maxWidth at pressure 1', () => {
+    expect(pressureToWidth(0, { minWidth: 1, maxWidth: 10 })).toBeCloseTo(1);
+    expect(pressureToWidth(1, { minWidth: 1, maxWidth: 10 })).toBeCloseTo(10);
+  });
+
+  it('clamps pressure into [0, 1]', () => {
+    expect(pressureToWidth(-2, { minWidth: 1, maxWidth: 10 })).toBeCloseTo(1);
+    expect(pressureToWidth(7, { minWidth: 1, maxWidth: 10 })).toBeCloseTo(10);
+  });
+
+  it('gamma > 1 biases toward thinner widths at mid pressure', () => {
+    const linear = pressureToWidth(0.5, { minWidth: 0, maxWidth: 10, gamma: 1 });
+    const biased = pressureToWidth(0.5, { minWidth: 0, maxWidth: 10, gamma: 2 });
+    expect(biased).toBeLessThan(linear);
+    expect(biased).toBeCloseTo(2.5);  // 0.5^2 = 0.25 → 0..10 → 2.5
+    expect(linear).toBeCloseTo(5);
+  });
+
+  it('defaults: pressure 0 → 0.5, pressure 1 → 6', () => {
+    expect(pressureToWidth(0)).toBeCloseTo(0.5);
+    expect(pressureToWidth(1)).toBeCloseTo(6);
   });
 });

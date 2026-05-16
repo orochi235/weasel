@@ -23,6 +23,9 @@ export interface Polyline {
   anchorB?: Uint32Array;
   /** For each point, the arc-length fraction along (A, B). 0 at anchor A; for anchor-aligned, set to 0. */
   anchorT?: Float32Array;
+  /** Per-point stroke width, populated by the tessellator when the Stroke
+   *  carries `vertexWidths`. Undefined means uniform `Stroke.width`. */
+  widths?: Float32Array;
 }
 
 export interface ExtractOptions {

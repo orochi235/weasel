@@ -29,6 +29,7 @@ import { ViewportLayerDemo } from './demos/ViewportLayerDemo';
 import { PerceptualColorSlidersDemo } from './demos/PerceptualColorSlidersDemo';
 import { GradientPlaygroundDemo } from './demos/GradientPlaygroundDemo';
 import { VertexColorsDemo } from './demos/VertexColorsDemo';
+import { VertexWidthsDemo } from './demos/VertexWidthsDemo';
 import { ColorMatrixDemo } from './demos/ColorMatrixDemo';
 import { CustomShaderDemo } from './demos/CustomShaderDemo';
 import { LassoDemo } from './demos/LassoDemo';
@@ -66,6 +67,7 @@ import ViewportLayerDemoFull from './demos/ViewportLayerDemo.tsx?raw';
 import PerceptualColorSlidersDemoFull from './demos/PerceptualColorSlidersDemo.tsx?raw';
 import GradientPlaygroundDemoFull from './demos/GradientPlaygroundDemo.tsx?raw';
 import VertexColorsDemoFull from './demos/VertexColorsDemo.tsx?raw';
+import VertexWidthsDemoFull from './demos/VertexWidthsDemo.tsx?raw';
 import ColorMatrixDemoFull from './demos/ColorMatrixDemo.tsx?raw';
 import CustomShaderDemoFull from './demos/CustomShaderDemo.tsx?raw';
 import LassoDemoFull from './demos/LassoDemo.tsx?raw';
@@ -441,6 +443,16 @@ export const DEMOS: DemoEntry[] = [
     Component: VertexColorsDemo,
     full: VertexColorsDemoFull,
     path: 'demo/demos/VertexColorsDemo.tsx',
+  },
+  {
+    id: 'vertex-widths',
+    title: 'Per-vertex stroke widths',
+    category: 'Rendering & paint',
+    description: 'Two panels. Top: a five-anchor polyline whose center anchor\'s stroke width is driven by a slider — the tessellator emits trapezoidal segments and force-bevels the miters once the taper ratio exceeds `varyingWidthJoinThreshold` (default 1.5×). Bottom: a `usePencilTool` with `pressureToWidth` configured — Apple Pencil / Wacom strokes get real pressure-modulated tapering, mouse strokes get a flat 0.5-pressure width (per the Pointer Events spec). Demonstrates `Stroke.vertexWidths`, `createPathLayer({ getStrokeVertexWidths })`, and `pressureToWidth(p, opts)`.',
+    hint: 'top: drag slider · bottom: draw strokes (Apple Pencil for real pressure)',
+    Component: VertexWidthsDemo,
+    full: VertexWidthsDemoFull,
+    path: 'demo/demos/VertexWidthsDemo.tsx',
   },
   {
     id: 'color-matrix',
