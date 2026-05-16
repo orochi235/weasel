@@ -1,5 +1,13 @@
 import type { BadgeShape, ShapeModule } from '../types';
 import Pill from './Pill';
+import Square from './Square';
+import Notched from './Notched';
+import Perforated from './Perforated';
+import Diamond from './Diamond';
+import Dot from './Dot';
+import Hexagon from './Hexagon';
+import Chevron from './Chevron';
+import Banner from './Banner';
 
 const stub: ShapeModule = {
   Component: () => null,
@@ -9,14 +17,14 @@ const stub: ShapeModule = {
 
 export const SHAPES: Record<BadgeShape, ShapeModule> = {
   pill: Pill,
-  square: stub,
-  notched: stub,
-  perforated: stub,
-  diamond: stub,
-  dot: stub,
-  hexagon: stub,
-  chevron: stub,
-  banner: stub,
+  square: Square,
+  notched: Notched,
+  perforated: Perforated,
+  diamond: Diamond,
+  dot: Dot,
+  hexagon: Hexagon,
+  chevron: Chevron,
+  banner: Banner,
   starburst: stub,
   scalloped: stub,
   shield: stub,
