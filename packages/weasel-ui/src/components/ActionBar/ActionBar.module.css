@@ -1,0 +1,51 @@
+/* `<ActionBar>` shares the segmented widget look of the swillustrator
+ * pathfinder panel — small chrome on the panel surface so a bar of
+ * Action buttons reads as a single control. Tokens are theme-driven
+ * via `--wzl-*`. Visual parity with `PathfinderPanel.module.css` is
+ * intentional; this is the generic version. */
+
+.bar {
+  display: flex;
+  flex-direction: row;
+  gap: 1px;
+  background: var(--wzl-panel-bg);
+  border: 1px solid var(--wzl-panel-border);
+  border-radius: 4px;
+  padding: 2px;
+  user-select: none;
+}
+
+.bar.vertical {
+  flex-direction: column;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 2px;
+  color: var(--wzl-text);
+  cursor: default;
+}
+
+.button:hover:not([disabled]) {
+  background: var(--wzl-panel-border);
+}
+
+.button:active:not([disabled]) {
+  background: color-mix(in srgb, var(--wzl-panel-border) 70%, transparent);
+}
+
+.button[disabled] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.button > svg {
+  display: block;
+}

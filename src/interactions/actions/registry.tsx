@@ -163,6 +163,14 @@ export interface ActionsRegistry {
   unregister(id: string): void;
   list(): readonly Action[];
   trigger(id: string): boolean;
+  /**
+   * Subscribe to registry mutations. The callback fires after any
+   * `register`/`unregister` that changes the version. Returns an
+   * unsubscribe function. Designed for `useSyncExternalStore`-driven
+   * surfaces (e.g. `<ActionBar>` in `@orochi235/weasel-ui`) that need to
+   * re-render when the action set changes.
+   */
+  subscribe(listener: () => void): () => void;
 }
 
 const ActionsContext = createContext<ActionsRegistry | null>(null);
@@ -199,6 +207,7 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   const versionRef = useRef(0);
   const cachedRef = useRef<readonly Action[]>([]);
   const cachedVerRef = useRef(-1);
+  const listenersRef = useRef<Set<() => void>>(new Set());
 
   const registry = useMemo<ActionsRegistry>(() => {
     const snapshot = (): readonly Action[] => {
@@ -209,10 +218,20 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
       cachedVerRef.current = v;
       return out;
     };
+    const notify = (): void => {
+      for (const l of listenersRef.current) {
+        try {
+          l();
+        } catch (err) {
+          console.error('weasel ActionsRegistry: subscriber threw', err);
+        }
+      }
+    };
     return {
       register: (action: Action) => {
         actionsRef.current.set(action.id, action);
         versionRef.current++;
+        notify();
         return () => {
           const cur = actionsRef.current.get(action.id);
           // Only unregister if the current entry is still us (last-writer-wins
@@ -220,11 +239,15 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
           if (cur === action) {
             actionsRef.current.delete(action.id);
             versionRef.current++;
+            notify();
           }
         };
       },
       unregister: (id: string) => {
-        if (actionsRef.current.delete(id)) versionRef.current++;
+        if (actionsRef.current.delete(id)) {
+          versionRef.current++;
+          notify();
+        }
       },
       list: () => snapshot(),
       trigger: (id: string) => {
@@ -236,6 +259,12 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
           console.error(`weasel ActionsRegistry: action "${id}" threw`, err);
         }
         return true;
+      },
+      subscribe: (listener: () => void) => {
+        listenersRef.current.add(listener);
+        return () => {
+          listenersRef.current.delete(listener);
+        };
       },
     };
   }, []);
