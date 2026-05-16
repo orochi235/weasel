@@ -319,7 +319,7 @@ export const DEMOS: DemoEntry[] = [
     id: 'boolean-ops',
     title: 'Boolean ops',
     category: 'Geometry',
-    description: 'Five Pathfinder-style polygon-boolean operations on path geometry: union, intersect, subtract (back minus front, Illustrator "Minus Front" semantics), exclude (XOR), divide (fracture along intersections). Backed by `pathUnion` / `pathIntersect` / `pathSubtract` / `pathExclude` / `pathDivide` from the kit, which wrap a vendored `polygon-clipping` engine. The `useBooleans` hook composes these into one undoable selection action; the top "Interactive" region is wired to the `@orochi235/weasel-ui` `<PathfinderPanel>` component, while the static rows below show each op applied to the same rect + circle inputs.',
+    description: 'Five Pathfinder-style polygon-boolean operations on path geometry: union, intersect, subtract (back minus front, Illustrator "Minus Front" semantics), exclude (XOR), divide (fracture along intersections). Backed by `pathUnion` / `pathIntersect` / `pathSubtract` / `pathExclude` / `pathDivide` from the kit, which wrap a vendored `polygon-clipping` engine. The `useBooleans` hook composes these into one undoable selection action and auto-registers six `pathfinder.*` Actions with the ambient ActionsRegistry; the top "Interactive" region renders them via the kit\'s `<ActionBar group="pathfinder"/>` (from `@orochi235/weasel-ui`), while the static rows below show each op applied to the same rect + circle inputs.',
     hint: 'In the Interactive region: click empty space to deselect, click both paths to re-enable. Click a Pathfinder button to commit the op; Reset restores the two source paths.',
     Component: BooleanOpsDemo,
     full: BooleanOpsDemoFull,

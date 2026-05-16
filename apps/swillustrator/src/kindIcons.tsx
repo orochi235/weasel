@@ -24,14 +24,12 @@ import {
   PencilIcon,
   TextIcon,
   UnknownIcon,
-} from '@orochi235/weasel';
-import {
   UnionIcon,
   IntersectIcon,
   SubtractIcon,
   ExcludeIcon,
   DivideIcon,
-} from './ui/PathfinderPanel';
+} from '@orochi235/weasel';
 import type { ToolKind } from './poseUpdate';
 
 const SVG_BASE = {

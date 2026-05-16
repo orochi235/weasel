@@ -1,23 +1,18 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { ActionsProvider } from '@orochi235/weasel';
 import { ActionBar, type ActionBarProps } from './ActionBar';
 import './swillustrator.css';
 
 // The ActionBar pulls icons and button styling from `swillustrator.css`;
 // importing it at story load mirrors the live app's chrome so the
-// component looks right in isolation. Booleans adapter/actions are stubs
-// — the story is about chrome, not behavior.
+// component looks right in isolation. The pathfinder strip is rendered by
+// the kit's `<ActionBar group="pathfinder"/>` and reads the ambient
+// ActionsRegistry; in storybook we wrap in `<ActionsProvider>` so the
+// component mounts without warnings — no boolean actions are registered,
+// so that strip renders empty in stories.
 
 const noop = () => {};
-
-const booleansAdapter: ActionBarProps['booleansAdapter'] = {
-  getSelection: () => [],
-  getWorldPath: () => undefined,
-};
-
-const booleansActions: ActionBarProps['booleansActions'] = {
-  union: noop, intersect: noop, subtract: noop, exclude: noop, divide: noop, crop: noop,
-};
 
 const baseArgs: ActionBarProps = {
   canUndo: false,
@@ -45,8 +40,6 @@ const baseArgs: ActionBarProps = {
   onAlign: noop,
   onDistribute: noop,
   onFlip: noop,
-  booleansAdapter,
-  booleansActions,
   onSaveSvg: noop,
   onOpenSvg: noop,
   onNew: noop,
@@ -66,6 +59,13 @@ const meta: Meta<typeof ActionBar> = {
   title: 'swillustrator/ActionBar',
   component: ActionBar,
   parameters: { layout: 'fullscreen' },
+  decorators: [
+    (Story) => (
+      <ActionsProvider>
+        <Story />
+      </ActionsProvider>
+    ),
+  ],
 };
 export default meta;
 

@@ -6,6 +6,5 @@
 export * from './CommandPalette';
 export * from './HistoryList';
 export * from './LayerList';
-export * from './PathfinderPanel';
 export * from './PropertiesPanel';
 export * from './ToolPalette';

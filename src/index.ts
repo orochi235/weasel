@@ -639,6 +639,19 @@ export {
 } from './icons';
 export type { IconProps } from './icons';
 
+// Default boolean-op (Pathfinder) icons shipped with `defaultBooleanActions`.
+// Re-exported so consumers that need to render an op-shaped glyph outside an
+// `<ActionBar>` (e.g. swillustrator's layer-row "produced by" badge) don't
+// have to author their own SVGs or reach into a deep path.
+export {
+  UnionIcon,
+  IntersectIcon,
+  SubtractIcon,
+  ExcludeIcon,
+  DivideIcon,
+  CropIcon,
+} from './interactions/actions/defaults/icons/booleanIcons';
+
 // ─── Trailing type re-exports ────────────────────────────────────────────────
 // Types reachable through the public API but previously only importable via
 // deep paths. Consolidated here so consumers can name them from the barrel.
