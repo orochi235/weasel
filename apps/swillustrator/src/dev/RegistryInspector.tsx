@@ -8,11 +8,13 @@ import {
   collectGestures,
   collectGroups,
   collectHotkeyTriggers,
+  countForEntry,
   collectIcons,
   collectModifierSets,
   collectOpFactories,
   collectOpKinds,
   collectPhases,
+  collectPhaseOutputs,
   collectPublicExports,
   collectRouteTargets,
   collectShapeKinds,
@@ -52,6 +54,7 @@ export function RegistryInspector() {
   const shapeKinds = useMemo(() => collectShapeKinds(), []);
   const phases = useMemo(() => collectPhases(), []);
   const gestures = useMemo(() => collectGestures(), []);
+  const phaseOutputs = useMemo(() => collectPhaseOutputs(), []);
   const opKinds = useMemo(() => collectOpKinds(), []);
   const hotkeyTriggers = useMemo(() => collectHotkeyTriggers(), []);
   const slots = useMemo(() => collectSlots(), []);
@@ -86,6 +89,7 @@ export function RegistryInspector() {
       { id: 'publicExports', label: 'Public exports', entries: publicExports },
       { id: 'phases', label: 'Phases', entries: phases },
       { id: 'gestures', label: 'Gestures', entries: gestures },
+      { id: 'phaseOutputs', label: 'Phase outputs', entries: phaseOutputs },
       { id: 'opKinds', label: 'Op kinds', entries: opKinds },
       { id: 'hotkeyTriggers', label: 'Hotkey triggers', entries: hotkeyTriggers },
       { id: 'slots', label: 'Slots', entries: slots },
@@ -93,13 +97,14 @@ export function RegistryInspector() {
       { id: 'modifierSets', label: 'Modifier sets', entries: modifierSets },
       { id: 'groups', label: 'Groups', entries: groups },
     ];
+    // Bundles convey a deliberate progression (minimal → standard →
+    // exhaustive); preserve their declared order rather than alphabetizing.
     return all
-      .map((n) => ({
-        ...n,
-        entries: [...n.entries].sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' })),
-      }))
+      .map((n) => (n.id === 'bundles'
+        ? n
+        : { ...n, entries: [...n.entries].sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' })) }))
       .sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
-  }, [runtime, activeBundle, bundles, icons, opFactories, publicExports, shapeKinds, phases, gestures, opKinds, hotkeyTriggers, slots, routeTargets, modifierSets, groups]);
+  }, [runtime, activeBundle, bundles, icons, opFactories, publicExports, shapeKinds, phases, gestures, phaseOutputs, opKinds, hotkeyTriggers, slots, routeTargets, modifierSets, groups]);
 
   // Clear selection when the active filters narrow past the selected entry.
   const lower = textFilter.trim().toLowerCase();
@@ -140,6 +145,7 @@ export function RegistryInspector() {
             onSelect={setSelected}
             filter={textFilter}
             onFilterChange={setTextFilter}
+            getCount={(e) => countForEntry(e, runtime.tools, runtime.actions)}
           />
         </aside>
         <section className={s.detail}>

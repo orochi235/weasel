@@ -14,6 +14,7 @@ export type TreeEntry =
   | PublicExportEntry
   | PhaseEntry
   | GestureEntry
+  | PhaseOutputEntry
   | OpKindEntry
   | HotkeyTriggerEntry
   | SlotEntry
@@ -164,16 +165,29 @@ export interface PhaseEntry {
   label: string;
 }
 
-/** Gesture / input channel a phase can subscribe to — mirrors the keys of
- *  `PhaseSummary`. Drives the "Gestures" tree category and the per-channel
- *  detail view that lists which tools declare it. */
+/** Input-channel keys on `PhaseDef` — the gestures a tool *subscribes to*.
+ *  Distinct from phase outputs (`cursor` / `overlay` / `claimsAll`), which
+ *  the tool *declares or emits*. Drives the "Gestures" tree category. */
 export const GESTURE_CHANNEL_KEYS: readonly (keyof PhaseSummary)[] = [
   'click', 'pointerDown', 'dblTap', 'drag', 'wheel',
-  'keyDown', 'keyUp', 'cursor', 'overlay', 'claimsAll',
+  'keyDown', 'keyUp',
+];
+
+/** Non-gesture `PhaseDef` slots — the tool emits/declares these rather than
+ *  reacting to them. Surfaced separately so the inspector framing
+ *  ("subscribing tools") doesn't misrepresent them. */
+export const PHASE_OUTPUT_KEYS: readonly (keyof PhaseSummary)[] = [
+  'cursor', 'overlay', 'claimsAll',
 ];
 
 export interface GestureEntry {
   kind: 'gesture';
+  id: keyof PhaseSummary;
+  label: string;
+}
+
+export interface PhaseOutputEntry {
+  kind: 'phaseOutput';
   id: keyof PhaseSummary;
   label: string;
 }
@@ -215,7 +229,7 @@ export interface GroupEntry {
 export type TreeCategory =
   | 'tools' | 'actions' | 'shapeKinds' | 'bundles'
   | 'icons' | 'opFactories' | 'publicExports'
-  | 'phases' | 'gestures'
+  | 'phases' | 'gestures' | 'phaseOutputs'
   | 'opKinds' | 'hotkeyTriggers' | 'slots' | 'routeTargets' | 'modifierSets' | 'groups';
 
 export interface TreeCategoryNode {
@@ -313,6 +327,47 @@ const PHASE_IDS: readonly PhaseId[] = ['initial', 'engaged'];
 
 export function collectPhases(): readonly PhaseEntry[] {
   return PHASE_IDS.map((id) => ({ kind: 'phase', id, label: id }));
+}
+
+/** Tree-leaf badge count: how many other entries reference this one. Used
+ *  by `RegistryTree` to render `(n)` next to leaves where the count is
+ *  meaningful (e.g. gestures → number of tools binding the channel).
+ *  Returns `undefined` for kinds where a count would be 1:1 (icons,
+ *  op factories, public exports), noisy (tools, actions), or nonsensical. */
+export function countForEntry(
+  entry: TreeEntry,
+  tools: readonly ToolEntry[],
+  actions: readonly ActionEntry[],
+): number | undefined {
+  switch (entry.kind) {
+    case 'bundle':
+      return entry.tools.length;
+    case 'phase':
+      return entry.id === 'initial'
+        ? tools.length
+        : tools.filter((t) => t.phases.engaged !== undefined).length;
+    case 'gesture':
+    case 'phaseOutput':
+      return tools.filter((t) => t.phases.initial[entry.id] || t.phases.engaged?.[entry.id]).length;
+    case 'hotkeyTrigger':
+      return tools.filter((t) => t.hotkey === entry.id).length;
+    case 'slot':
+      return tools.filter((t) => t.slot === entry.id).length;
+    case 'routeTarget':
+      return tools.filter((t) => t.routes.some((r) => parseRoute(r).target === entry.id)).length;
+    case 'modifierSet':
+      return tools.filter((t) => t.routes.some((r) => parseRoute(r).modifiers === entry.id)).length;
+    case 'group':
+      return entry.source === 'tool'
+        ? tools.filter((t) => t.presentation?.group === entry.label).length
+        : actions.filter((a) => a.group === entry.label).length;
+    default:
+      return undefined;
+  }
+}
+
+export function collectPhaseOutputs(): readonly PhaseOutputEntry[] {
+  return PHASE_OUTPUT_KEYS.map((id) => ({ kind: 'phaseOutput', id, label: id }));
 }
 
 export function collectGestures(): readonly GestureEntry[] {

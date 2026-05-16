@@ -12,9 +12,13 @@ interface Props {
    *  clearing the detail pane when the selection falls out of view. */
   filter?: string;
   onFilterChange?(next: string): void;
+  /** Per-leaf badge count. Return `undefined` to render no badge.
+   *  Inspector uses this to show e.g. "gestures → drag (9)" — the
+   *  number of tools that bind the channel. */
+  getCount?(entry: TreeEntry): number | undefined;
 }
 
-export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, onFilterChange }: Props) {
+export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, onFilterChange, getCount }: Props) {
   const [filterInternal, setFilterInternal] = useState('');
   const filter = filterProp ?? filterInternal;
   const setFilter = onFilterChange ?? setFilterInternal;
@@ -64,6 +68,7 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
               <ul className={s.treeLeaves}>
                 {n.entries.map((e) => {
                   const isSelected = selected && selected.kind === e.kind && selected.id === e.id;
+                  const count = getCount?.(e);
                   return (
                     <li key={`${e.kind}:${e.id}`}>
                       <button
@@ -72,6 +77,7 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
                         onClick={() => onSelect(e)}
                       >
                         {e.label}
+                        {count !== undefined && <span className={s.treeCount}> ({count})</span>}
                       </button>
                     </li>
                   );
