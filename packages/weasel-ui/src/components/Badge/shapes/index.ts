@@ -1,4 +1,5 @@
 import type { BadgeShape, ShapeModule } from '../types';
+import Pill from './Pill';
 
 const stub: ShapeModule = {
   Component: () => null,
@@ -7,7 +8,7 @@ const stub: ShapeModule = {
 };
 
 export const SHAPES: Record<BadgeShape, ShapeModule> = {
-  pill: stub,
+  pill: Pill,
   square: stub,
   notched: stub,
   perforated: stub,
