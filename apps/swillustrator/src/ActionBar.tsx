@@ -279,10 +279,70 @@ export function ActionBar(p: ActionBarProps) {
           <RecordIcon active={p.recording} />
         </Button>
         <PlayButton onPlay={p.onPlay} />
+        <DebugMenu />
       </div>
       <div className="swill-actionbar-group">
         <Button onClick={p.onOpenPrefs} title="Preferences (Cmd-,)"><SettingsIcon /></Button>
       </div>
+    </div>
+  );
+}
+
+/** Debug menu — opens the in-repo dev surfaces (hash-routed in main.tsx) in
+ *  a new tab. Self-contained: no props, since each entry is just a
+ *  `window.open` to a hash route on the current origin. */
+const DEBUG_ROUTES: ReadonlyArray<{ label: string; hash: string }> = [
+  { label: 'Toolkit Builder', hash: '#/dev/toolkits' },
+  { label: 'Bundle Inspector', hash: '#/dev/registry' },
+];
+
+function DebugMenu() {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDocDown = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDocDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+  return (
+    <div ref={wrapRef} className="swill-actionbar-menu">
+      <button
+        className="swill-actionbar-button"
+        type="button"
+        title="Debug surfaces"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        Debug <span aria-hidden>▾</span>
+      </button>
+      {open && (
+        <div className="swill-actionbar-popover" role="menu">
+          {DEBUG_ROUTES.map((r) => (
+            <button
+              key={r.hash}
+              role="menuitem"
+              className="swill-actionbar-menuitem"
+              type="button"
+              onClick={() => {
+                const url = `${window.location.pathname}${window.location.search}${r.hash}`;
+                window.open(url, '_blank', 'noopener');
+                setOpen(false);
+              }}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

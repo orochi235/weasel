@@ -5,10 +5,18 @@ import { RegistryDetail } from './RegistryDetail';
 import { RegistryProbe, type RegistrySnapshot } from './registryProbe';
 import {
   collectBundles,
+  collectGestures,
+  collectGroups,
+  collectHotkeyTriggers,
   collectIcons,
+  collectModifierSets,
   collectOpFactories,
+  collectOpKinds,
+  collectPhases,
   collectPublicExports,
+  collectRouteTargets,
   collectShapeKinds,
+  collectSlots,
   type TreeCategoryNode,
   type TreeEntry,
 } from './registryData';
@@ -42,6 +50,14 @@ export function RegistryInspector() {
   const opFactories = useMemo(() => collectOpFactories(), []);
   const publicExports = useMemo(() => collectPublicExports(), []);
   const shapeKinds = useMemo(() => collectShapeKinds(), []);
+  const phases = useMemo(() => collectPhases(), []);
+  const gestures = useMemo(() => collectGestures(), []);
+  const opKinds = useMemo(() => collectOpKinds(), []);
+  const hotkeyTriggers = useMemo(() => collectHotkeyTriggers(), []);
+  const slots = useMemo(() => collectSlots(), []);
+  const routeTargets = useMemo(() => collectRouteTargets(runtime.tools), [runtime.tools]);
+  const modifierSets = useMemo(() => collectModifierSets(runtime.tools), [runtime.tools]);
+  const groups = useMemo(() => collectGroups(runtime.tools, runtime.actions), [runtime.tools, runtime.actions]);
 
   const activeBundle = bundles.find((b) => b.id === bundleFilter);
 
@@ -56,7 +72,7 @@ export function RegistryInspector() {
     };
 
     // Bundles describe tool presets only; actions stay unfiltered.
-    return [
+    const all: TreeCategoryNode[] = [
       {
         id: 'tools',
         label: 'Tools',
@@ -68,8 +84,22 @@ export function RegistryInspector() {
       { id: 'icons', label: 'Icons', entries: icons },
       { id: 'opFactories', label: 'Op factories', entries: opFactories },
       { id: 'publicExports', label: 'Public exports', entries: publicExports },
+      { id: 'phases', label: 'Phases', entries: phases },
+      { id: 'gestures', label: 'Gestures', entries: gestures },
+      { id: 'opKinds', label: 'Op kinds', entries: opKinds },
+      { id: 'hotkeyTriggers', label: 'Hotkey triggers', entries: hotkeyTriggers },
+      { id: 'slots', label: 'Slots', entries: slots },
+      { id: 'routeTargets', label: 'Route targets', entries: routeTargets },
+      { id: 'modifierSets', label: 'Modifier sets', entries: modifierSets },
+      { id: 'groups', label: 'Groups', entries: groups },
     ];
-  }, [runtime, activeBundle, bundles, icons, opFactories, publicExports, shapeKinds]);
+    return all
+      .map((n) => ({
+        ...n,
+        entries: [...n.entries].sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' })),
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
+  }, [runtime, activeBundle, bundles, icons, opFactories, publicExports, shapeKinds, phases, gestures, opKinds, hotkeyTriggers, slots, routeTargets, modifierSets, groups]);
 
   // Clear selection when the active filters narrow past the selected entry.
   const lower = textFilter.trim().toLowerCase();
@@ -114,7 +144,7 @@ export function RegistryInspector() {
         </aside>
         <section className={s.detail}>
           {selected
-            ? <RegistryDetail entry={selected} onNavigate={(t) => {
+            ? <RegistryDetail entry={selected} tools={runtime.tools} actions={runtime.actions} onNavigate={(t) => {
                 const next = runtime.tools.find((e) => e.id === t.id);
                 if (next) setSelected(next);
               }} />

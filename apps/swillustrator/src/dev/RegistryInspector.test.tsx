@@ -58,10 +58,14 @@ describe('RegistryInspector', () => {
     renderInspector();
     await waitFor(() => expect(screen.queryByText('Bundles')).toBeTruthy());
     fireEvent.click(screen.getByText('Tools'));
-    await waitFor(() => expect(screen.queryByText('rect')).toBeTruthy());
+    // Tool tree leaves render the presentation label (e.g. 'Rectangle' for
+    // rect, 'Hand' for hand), not the bare tool id.
+    await waitFor(() => expect(screen.queryByText('Rectangle')).toBeTruthy());
 
     fireEvent.change(screen.getByLabelText(/bundle/i), { target: { value: 'minimal' } });
-    expect(screen.queryByText('rect')).toBeNull();
-    expect(screen.getByText('select')).toBeTruthy();
+    await waitFor(() => expect(screen.queryByText('Rectangle')).toBeNull());
+    // 'Select' is the always-present member of the minimal bundle; the hand
+    // tool only registers when viewport is initialized, which jsdom may skip.
+    expect(screen.getAllByText('Select').length).toBeGreaterThan(0);
   });
 });

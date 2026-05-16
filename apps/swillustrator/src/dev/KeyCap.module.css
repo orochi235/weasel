@@ -1,0 +1,39 @@
+/* Keystroke "key cap" styling — each modifier and key in its own bordered chip. */
+.keys { display: inline-flex; gap: 3px; align-items: center; flex-wrap: wrap; }
+.keysEmpty { color: var(--wzl-muted, #a59685); }
+.key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 18px;
+  padding: 0 4px;
+  /* Light face, slightly-darker-than-face border, dark glyph — reads as
+     a real keycap rather than a recessed slot in the panel. */
+  background: var(--wzl-fg, #d4c4a8);
+  border: 1px solid #b0a085;
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  color: var(--wzl-bg, #1e1610);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 11px;
+  line-height: 1;
+}
+/* Default chip is square — letters, digits, and single glyphs (⎋ ⌫ ↑ etc.)
+   sit in a uniform key-cap box. */
+.key[data-kind='square'] {
+  width: 18px;
+  padding: 0;
+}
+/* Modifiers (⌘ ⇪ ⌥ ⌃) are wider to match the visual weight of how they
+   appear on a real keyboard — and to differentiate them from the keys
+   they modify in a stack. */
+.key[data-kind='modifier'] {
+  min-width: 26px;
+  padding: 0 6px;
+}
+/* Tab / Enter / Space — actual wide keys on a real keyboard. */
+.key[data-kind='wide'] {
+  min-width: 32px;
+  padding: 0 8px;
+}

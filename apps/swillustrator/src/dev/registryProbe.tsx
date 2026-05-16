@@ -7,7 +7,10 @@ import {
 } from '@orochi235/weasel';
 import { buildActionRegistry, type RegistryEntry } from '@orochi235/weasel/routing';
 import type { ToolDef } from '@orochi235/weasel/routing';
-import type { ToolEntry, ActionEntry } from './registryData';
+import { isValidElement, type ReactNode } from 'react';
+import type { PhaseSummary, ToolEntry, ActionEntry } from './registryData';
+import { TOOL_HOOK_NAMES } from './registryData';
+import { formatShortcutParts } from '../ui/ToolPalette/formatShortcut';
 import s from './RegistryInspector.module.css';
 
 export interface RegistrySnapshot {
@@ -61,31 +64,55 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
     // Union of registry (active/hotkey) + ambient slots — both groups are
     // built-in tools the canvas mounted. Ambient holds resize / rotate /
     // wheel-zoom etc., so omitting them misses ~3 tools per bundle.
-    const slots: Array<{ id: string; def?: unknown; cursor?: unknown }> = [
-      ...Object.values(tools.registry),
-      ...tools.ambient,
+    type Slot = { id: string; def?: unknown; cursor?: unknown };
+    const tagged: Array<{ slot: 'registry' | 'ambient'; t: Slot }> = [
+      ...Object.values(tools.registry).map((t) => ({ slot: 'registry' as const, t })),
+      ...tools.ambient.map((t) => ({ slot: 'ambient' as const, t })),
     ];
     const seen = new Set<string>();
-    return slots
-      .filter((t) => (seen.has(t.id) ? false : (seen.add(t.id), true)))
-      .map((t) => {
+    return tagged
+      .filter(({ t }) => (seen.has(t.id) ? false : (seen.add(t.id), true)))
+      .map(({ slot, t }): ToolEntry => {
         const def = t.def as ToolDef<unknown> | undefined;
         const routes = def ? formatRoutes(buildActionRegistry([def])) : [];
+        const initial = def ? summarizePhase(def.initial) : EMPTY_PHASE;
+        const engaged = def?.engaged ? summarizePhase(def.engaged) : undefined;
         return {
-          kind: 'tool' as const,
+          kind: 'tool',
           id: t.id,
-          label: t.id,
+          label: def?.presentation?.label ?? t.id,
+          hookName: TOOL_HOOK_NAMES[t.id],
           cursor: typeof t.cursor === 'string' ? t.cursor : undefined,
           routes,
+          slot,
+          switchShortcutParts: formatShortcutParts(def?.keybinding),
+          hotkey: def?.hotkey,
+          presentation: def?.presentation ? {
+            label: def.presentation.label,
+            group: def.presentation.group,
+            shortcut: def.presentation.shortcut,
+            icon: renderPresentationIcon(def.presentation.icon),
+          } : undefined,
+          phases: { initial, engaged },
+          capabilities: {
+            initScratch: !!def?.initScratch,
+            onActivate: !!def?.onActivate,
+            onDeactivate: !!def?.onDeactivate,
+            hitOverride: !!def?.hitOverride,
+          },
         };
       });
   }, [tools, toolsRegistrySig]);
 
-  const actionEntries: readonly ActionEntry[] = actionsList.map((a) => ({
-    kind: 'action' as const,
+  const actionEntries: readonly ActionEntry[] = actionsList.map((a): ActionEntry => ({
+    kind: 'action',
     id: a.id,
     label: a.label ?? a.id,
-    shortcut: a.defaultBinding ? formatBinding(a.defaultBinding) : undefined,
+    shortcutParts: formatShortcutParts(a.defaultBinding),
+    shortcut: a.shortcut,
+    group: a.group ?? idGroup(a.id),
+    icon: renderPresentationIcon(a.icon),
+    enabled: snapshotEnabled(a.enabled),
   }));
 
   const lastRef = useRef<string>('');
@@ -119,16 +146,66 @@ function formatRoutes(entries: readonly RegistryEntry[]): readonly string[] {
   });
 }
 
-function formatBinding(b: {
-  key: string | readonly string[];
-  mod?: boolean;
-  alt?: boolean;
-  shift?: boolean | 'optional';
-}): string {
-  const parts: string[] = [];
-  if (b.mod) parts.push('Mod');
-  if (b.alt) parts.push('Alt');
-  if (b.shift === true) parts.push('Shift');
-  parts.push(typeof b.key === 'string' ? b.key : b.key.join('/'));
-  return parts.join('+');
+const EMPTY_PHASE: PhaseSummary = {
+  click: false, pointerDown: false, dblTap: false, drag: false,
+  wheel: false, keyDown: false, keyUp: false,
+  cursor: false, overlay: false, claimsAll: false,
+};
+
+/** Boolean-only digest of a `PhaseDef`. We only care which channels the def
+ *  *declares* (not the contents) — the route signatures already cover the
+ *  per-target dispatch detail. */
+function summarizePhase(phase: NonNullable<ToolDef<unknown>['initial']>): PhaseSummary {
+  const has = (k: keyof typeof phase): boolean => phase[k] !== undefined;
+  return {
+    click: has('click'),
+    pointerDown: has('pointerDown'),
+    dblTap: has('dblTap'),
+    drag: has('drag'),
+    wheel: has('wheel'),
+    keyDown: has('keyDown'),
+    keyUp: has('keyUp'),
+    cursor: has('cursor'),
+    overlay: has('overlay'),
+    claimsAll: has('claimsAll'),
+  };
 }
+
+/** Derive a category from a dotted id when the action sets no explicit
+ *  `group` (e.g. `align.left` → `align`, `reorder.front` → `reorder`). Returns
+ *  undefined for single-segment ids — those tend to be one-offs (`delete`,
+ *  `undo`) that don't need a category. */
+function idGroup(id: string): string | undefined {
+  const dot = id.indexOf('.');
+  return dot > 0 ? id.slice(0, dot) : undefined;
+}
+
+/** Invoke an `Action.enabled` predicate and capture the result. Errors are
+ *  swallowed — the same contract the runtime uses (`PredicateThrew`). */
+function snapshotEnabled(
+  fn: (() => true | string) | undefined,
+): ActionEntry['enabled'] {
+  if (!fn) return undefined;
+  try {
+    const r = fn();
+    return r === true ? { enabled: true } : { enabled: false, reason: String(r) };
+  } catch {
+    return { enabled: false, reason: 'predicate-threw' };
+  }
+}
+
+/** `ToolPresentation.icon` is `ReactNode | (scratch?) => ReactNode`. Tools
+ *  in `src/tools/builtin/*` pass `createElement(SomeIcon)`, so the value is
+ *  already a renderable element. For the thunk form we invoke with
+ *  `undefined` scratch — the inspector has no live gesture state to feed in. */
+function renderPresentationIcon(icon: unknown): ReactNode | undefined {
+  if (icon === undefined || icon === null) return undefined;
+  if (typeof icon === 'function') {
+    try { return (icon as (s?: unknown) => ReactNode)(undefined); }
+    catch { return undefined; }
+  }
+  if (isValidElement(icon)) return icon;
+  // Strings / numbers / arrays are also valid ReactNodes.
+  return icon as ReactNode;
+}
+

@@ -2,23 +2,32 @@
   font-family: system-ui, sans-serif;
   color: var(--wzl-fg, #d4c4a8);
   background: var(--wzl-bg, #1e1610);
-  min-height: 100vh;
+  /* Lock to the viewport so the sidebar / detail can scroll independently
+     rather than letting the document grow into a single page scroll. */
+  height: 100vh;
   padding: 16px 20px;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
-.header { display: flex; align-items: baseline; gap: 16px; margin-bottom: 16px; }
-.title { margin: 0; font-size: 20px; font-weight: 600; flex: 1; }
+.header { display: flex; align-items: baseline; gap: 16px; margin-bottom: 16px; flex: 0 0 auto; }
+.title { margin: 0; font-size: 24px; font-weight: 600; flex: 1; }
 .layout {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
   gap: 16px;
-  align-items: start;
+  /* Take remaining vertical space; `min-height: 0` lets the grid children
+     shrink so their own `overflow-y: auto` actually engages. */
+  flex: 1 1 auto;
+  min-height: 0;
 }
 .tree, .detail {
   background: var(--wzl-surface, #2a2018);
   border-radius: 6px;
   padding: 12px;
   min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
 }
 .filterInput {
   width: 100%;
@@ -27,22 +36,22 @@
   border: 1px solid var(--wzl-panel-border, #4a3c2e);
   border-radius: 4px;
   padding: 4px 6px;
-  font-size: 12px;
+  font-size: 14px;
   font-family: inherit;
   box-sizing: border-box;
   margin-bottom: 8px;
 }
-.bundlePicker { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--wzl-muted, #a59685); }
+.bundlePicker { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--wzl-muted, #a59685); }
 .bundlePicker select {
   background: var(--wzl-bg, #1e1610);
   color: var(--wzl-fg, #d4c4a8);
   border: 1px solid var(--wzl-panel-border, #4a3c2e);
   border-radius: 4px;
   padding: 3px 6px;
-  font-size: 12px;
+  font-size: 14px;
   font-family: inherit;
 }
-.empty { color: var(--wzl-muted, #a59685); font-size: 13px; font-style: italic; }
+.empty { color: var(--wzl-muted, #a59685); font-size: 15px; font-style: italic; }
 .hidden {
   position: absolute;
   left: -99999px;
@@ -65,7 +74,7 @@
   width: 100%;
   text-align: left;
 }
-.treeChevron { font-size: 10px; width: 10px; }
+.treeChevron { font-size: 20px; width: 18px; display: inline-flex; justify-content: center; color: var(--wzl-muted, #a59685); }
 .treeCount { color: var(--wzl-muted, #a59685); font-weight: 400; }
 .treeLeaves { list-style: none; margin: 0; padding: 0 0 0 20px; }
 .treeLeaf {
@@ -78,17 +87,32 @@
   cursor: pointer;
   padding: 2px 4px;
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   border-radius: 3px;
 }
 .treeLeaf:hover { background: var(--wzl-panel-border, #4a3c2e); }
 .treeLeafSelected { background: var(--wzl-accent, #c89a5e); color: #1e1610; }
 
-.detailHeading { margin: 0 0 12px; font-size: 16px; }
-.detailList { display: grid; grid-template-columns: 100px 1fr; gap: 4px 12px; font-size: 13px; margin: 0; }
-.detailList dt { color: var(--wzl-muted, #a59685); }
-.detailList dd { margin: 0; }
-.tag { background: var(--wzl-bg, #1e1610); padding: 1px 6px; border-radius: 3px; margin-right: 4px; font-size: 11px; }
+.detailHeading { margin: 0 0 12px; font-size: 19px; }
+.detailList { display: grid; grid-template-columns: 120px 1fr; gap: 2px 12px; font-size: 15px; margin: 0; }
+.detailList dt {
+  color: var(--wzl-muted, #a59685);
+  text-transform: capitalize;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+}
+.detailList dd {
+  margin: 0;
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.tag { background: var(--wzl-bg, #1e1610); padding: 2px 8px; border-radius: 3px; margin-right: 4px; font-size: 13px; }
 .memberList { list-style: none; padding: 0; margin: 4px 0 12px; }
 .memberLink {
   background: transparent;
@@ -112,13 +136,50 @@
 .iconPreviewCellSmall { width: 32px; height: 32px; }
 .iconPreviewCellLarge { width: 64px; height: 64px; }
 .iconPreviewCell > svg { width: 100%; height: 100%; }
-.sourcePath { font-size: 11px; color: var(--wzl-muted, #a59685); margin: 4px 0; }
+.sourcePath { font-size: 13px; color: var(--wzl-muted, #a59685); margin: 4px 0; }
 .jsdoc {
   background: var(--wzl-bg, #1e1610);
   border: 1px solid var(--wzl-panel-border, #4a3c2e);
   border-radius: 4px;
   padding: 8px;
-  font-size: 12px;
+  font-size: 14px;
   white-space: pre-wrap;
   margin: 8px 0 0;
 }
+
+/* Tool detail: icon + heading inline. Width-capped so the heading text
+   sits next to the icon at the same baseline rather than wrapping. */
+.toolHeader { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.toolIcon { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; color: var(--wzl-fg, #d4c4a8); }
+.toolIcon > svg { width: 100%; height: 100%; }
+
+/* Per-phase channel row: label gutter + a wrapping strip of channel tags
+   so initial vs engaged read as a stacked comparison. */
+.phaseRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 4px 4px 0;
+  padding: 6px 8px;
+  flex-wrap: wrap;
+  border: 1px solid var(--wzl-border, #3a342b);
+  border-radius: 6px;
+}
+.phaseLabel {
+  font-size: 13px;
+  color: var(--wzl-muted, #a59685);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  min-width: 56px;
+}
+
+/* Bundle detail: section subheading + members table + added/removed tags. */
+.subHeading {
+  margin: 16px 0 6px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--wzl-muted, #a59685);
+}
+.tagAdded { color: #6cb96c; }
+.tagRemoved { color: #c87878; }

@@ -71,7 +71,7 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
                         className={`${s.treeLeaf} ${isSelected ? s.treeLeafSelected : ''}`}
                         onClick={() => onSelect(e)}
                       >
-                        {e.id}
+                        {e.label}
                       </button>
                     </li>
                   );
