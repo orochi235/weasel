@@ -103,4 +103,12 @@ export interface Animator {
    * scheduling a new wrap-animation that would fight the caller.
    */
   isTicking(): boolean;
+  /** Freeze every animation managed by this animator. */
+  pause(): void;
+  /** Resume every animation managed by this animator. */
+  resume(): void;
+  /** True iff the animator is currently globally paused. */
+  isPaused(): boolean;
+  /** Multiply every animation's virtual-clock rate by `scale`. 1 = normal. */
+  setTimeScale(scale: number): void;
 }

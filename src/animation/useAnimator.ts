@@ -319,6 +319,10 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         return false;
       },
       isTicking: () => tickDepth.current > 0,
+      pause: () => { globalPaused.current = true; },
+      resume: () => { globalPaused.current = false; },
+      isPaused: () => globalPaused.current,
+      setTimeScale: (s) => { globalTimeScale.current = s; },
     };
   }, []);
 }

@@ -273,4 +273,35 @@ describe('virtual clock — per-handle pause/resume/timeScale', () => {
     act(() => clock.advance(250));    // virtualNow 500 → value ~50
     expect(values[values.length - 1]).toBeCloseTo(50, 0);
   });
+
+  it('animator.pause() freezes every animation', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const a: number[] = [];
+    const b: number[] = [];
+    act(() => {
+      result.current.tween({ from: 0, to: 10, ms: 1000, easing: (t) => t, onTick: (v) => a.push(v) });
+      result.current.tween({ from: 0, to: 20, ms: 1000, easing: (t) => t, onTick: (v) => b.push(v) });
+    });
+    act(() => clock.advance(100));
+    act(() => result.current.pause());
+    expect(result.current.isPaused()).toBe(true);
+    const aBefore = a[a.length - 1];
+    const bBefore = b[b.length - 1];
+    act(() => clock.advance(500));
+    expect(a[a.length - 1]).toBeCloseTo(aBefore, 1);
+    expect(b[b.length - 1]).toBeCloseTo(bBefore, 1);
+  });
+
+  it('animator.setTimeScale(0.5) halves the animation rate', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const samples: number[] = [];
+    act(() => {
+      result.current.tween({ from: 0, to: 100, ms: 1000, easing: (t) => t, onTick: (v) => samples.push(v) });
+      result.current.setTimeScale(0.5);
+    });
+    act(() => clock.advance(200));
+    expect(samples[samples.length - 1]).toBeCloseTo(10, 0);
+  });
 });
