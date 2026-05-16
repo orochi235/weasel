@@ -136,14 +136,12 @@ import { PreferencesModal } from './PreferencesModal';
 import {
   ActiveSwatches,
   paintToString,
-  mergeAlphaFromPrev,
   toHex8,
   getAlpha01,
   withAlpha01,
-  type ActivePaint,
 } from './ActiveSwatches';
 import { useActiveColors } from './useActiveColors';
-import { useColorContextTool, ColorContextProvider } from './tools/colorContext';
+import { useColorContextTool, ColorContextProvider, useColorContext } from './tools/colorContext';
 import {
   objsToSvgNodes,
   svgNodesToObjsWithGroups,
@@ -532,15 +530,6 @@ export function App() {
   const strokeWidth = activeStrokeWidth;
   const { setFillColor, setStrokeColor } = colors;
   const setStrokeWidth = setActiveStrokeWidth;
-  // Back-compat aliases for the in-flight gesture / op code below that
-  // still reaches for setActiveFill / setActiveStroke / setFocusedSwatch
-  // by name.
-  const setActiveFill = colors.setFill;
-  const setActiveStroke = colors.setStroke;
-  const setFocusedSwatch = colors.setFocus;
-  const activeFill = colors.fill;
-  const activeStroke = colors.stroke;
-  const focusedSwatch = colors.focused;
   const [docTitle, setDocTitle] = useState('Untitled');
   // PaperSize is derived from doc.size by reverse-lookup. Choosing a
   // preset writes doc.size through to the new dimensions; the selector
@@ -2004,34 +1993,6 @@ export function App() {
   const primary = selectedItems[0];
   const hasStrokeProps = primary && primary.tool !== 'text';
 
-  // Apply property changes to all selected items that support the property,
-  // including kind-specific paths (text fill lives in style.fill.color).
-  const applyFillToSelection = (color: string): void => {
-    // 6-char hex from the native color picker — pad the previous object's
-    // alpha back on so opacity survives the round-trip. 8-char inputs
-    // (palette, opacity slider) win outright.
-    const merge = (prev: string | undefined): string =>
-      color.length === 9 ? color : mergeAlphaFromPrev(color, prev ?? '#ffffffff');
-    updateSelected((o) => {
-      if (o.tool !== 'text') return { ...o, fill: merge(o.fill) };
-      const prevFill = o.style?.fill;
-      const prevColor = prevFill && prevFill.fill === 'solid' ? prevFill.color : undefined;
-      const next = merge(prevColor);
-      const nextFill = prevFill && prevFill.fill === 'solid'
-        ? { ...prevFill, color: next }
-        : { fill: 'solid' as const, color: next };
-      return { ...o, style: { ...(o.style ?? {}), fill: nextFill } };
-    }, 'Set fill');
-  };
-  const applyStrokeToSelection = (color: string): void => {
-    const merge = (prev: string | undefined): string =>
-      color.length === 9 ? color : mergeAlphaFromPrev(color, prev ?? '#000000ff');
-    updateSelected((o) => o.tool !== 'text' ? { ...o, stroke: merge(o.stroke) } : o, 'Set stroke');
-  };
-  const applyStrokeWidthToSelection = (w: number): void => {
-    updateSelected((o) => o.tool !== 'text' ? { ...o, strokeWidth: w } : o, 'Set stroke width');
-  };
-
   // Summary of rotation across the current selection (in degrees) for the
   // properties panel. Returns null when nothing is selected so the panel
   // can hide the row entirely.
@@ -2486,18 +2447,8 @@ export function App() {
           primaryStroke={primaryStroke}
           primaryStrokeWidth={primaryStrokeWidth}
           hasStrokeProps={!!hasStrokeProps}
-          fillColor={fillColor}
-          setFillColor={setFillColor}
-          strokeColor={strokeColor}
-          setStrokeColor={setStrokeColor}
           strokeWidth={strokeWidth}
           setStrokeWidth={setStrokeWidth}
-          activeFill={activeFill}
-          activeStroke={activeStroke}
-          setActiveFill={setActiveFill}
-          setActiveStroke={setActiveStroke}
-          focusedSwatch={focusedSwatch}
-          setFocusedSwatch={setFocusedSwatch}
           docTitle={docTitle}
           setDocTitle={setDocTitle}
           paperSize={paperSize}
@@ -2514,11 +2465,6 @@ export function App() {
           setView={setView}
           itemsLen={items.length}
           updateSelected={updateSelected}
-          applyFillToSelection={applyFillToSelection}
-          applyStrokeToSelection={applyStrokeToSelection}
-          applyStrokeWidthToSelection={applyStrokeWidthToSelection}
-          focusedAlpha={colors.focusedAlpha}
-          setFocusedAlpha={colors.setFocusedAlpha}
           rotationDeg={rotationDegSummary}
           applyRotationToSelection={applyRotationToSelection}
           layerItems={layerItems}
@@ -2593,20 +2539,8 @@ interface RightSidebarProps {
   primaryStroke: string;
   primaryStrokeWidth: number;
   hasStrokeProps: boolean;
-  fillColor: string;
-  setFillColor: (s: string) => void;
-  strokeColor: string;
-  setStrokeColor: (s: string) => void;
   strokeWidth: number;
   setStrokeWidth: (n: number) => void;
-  // Active-paint primitives. Threaded so the Defaults panel can render the
-  // same paired-swatch widget the tool palette uses (compact variant).
-  activeFill: ActivePaint;
-  activeStroke: ActivePaint;
-  setActiveFill: (p: ActivePaint) => void;
-  setActiveStroke: (p: ActivePaint) => void;
-  focusedSwatch: 'fill' | 'stroke';
-  setFocusedSwatch: (which: 'fill' | 'stroke') => void;
   docTitle: string;
   setDocTitle: (s: string) => void;
   paperSize: PaperSize;
@@ -2623,12 +2557,6 @@ interface RightSidebarProps {
   setView: (updater: (cur: View) => View) => void;
   itemsLen: number;
   updateSelected: (patch: (o: Obj) => Obj) => void;
-  applyFillToSelection: (color: string) => void;
-  applyStrokeToSelection: (color: string) => void;
-  applyStrokeWidthToSelection: (w: number) => void;
-  /** Alpha (0..1) of the active fill/stroke swatch — defaults panel. */
-  focusedAlpha: number;
-  setFocusedAlpha: (alpha01: number) => void;
   rotationDeg: { value: number; mixed: boolean } | null;
   applyRotationToSelection: (degrees: number) => void;
   layerItems: LayerListItem[];
@@ -2649,6 +2577,7 @@ interface RightSidebarProps {
 }
 
 function RightSidebar(p: RightSidebarProps) {
+  const colors = useColorContext();
   // clipboardTick is only present so React re-renders this subtree when
   // the clipboard mutates; the value itself is unused.
   useEffect(() => { /* re-render on clipboardTick change */ }, [p.clipboardTick]);
@@ -2743,15 +2672,15 @@ function RightSidebar(p: RightSidebarProps) {
             )}
           </PropertyRow>
           <PropertyRow label={<span title="Fill"><FillIcon /></span>}>
-            <PropertyColorInput value={p.primaryFill} onChange={p.applyFillToSelection} />
+            <PropertyColorInput value={p.primaryFill} onChange={colors.applyFillToSelection} />
           </PropertyRow>
           {p.hasStrokeProps && (
             <>
               <PropertyRow label={<span title="Stroke"><StrokeIcon /></span>}>
-                <PropertyColorInput value={p.primaryStroke} onChange={p.applyStrokeToSelection} />
+                <PropertyColorInput value={p.primaryStroke} onChange={colors.applyStrokeToSelection} />
               </PropertyRow>
               <PropertyRow>
-                <PropertySliderInput label={<span title="Stroke width"><StrokeWidthIcon /></span>} value={p.primaryStrokeWidth} onChange={p.applyStrokeWidthToSelection} min={0} max={20} step={1} span={12} />
+                <PropertySliderInput label={<span title="Stroke width"><StrokeWidthIcon /></span>} value={p.primaryStrokeWidth} onChange={colors.applyStrokeWidthToSelection} min={0} max={20} step={1} span={12} />
               </PropertyRow>
             </>
           )}
@@ -2762,13 +2691,13 @@ function RightSidebar(p: RightSidebarProps) {
           <PropertyRow>
             <PropertySliderInput
               label={<span title="Opacity"><OpacityIcon /></span>}
-              value={Math.round(getAlpha01(p.focusedSwatch === 'stroke' && p.hasStrokeProps ? p.primaryStroke : p.primaryFill) * 100)}
+              value={Math.round(getAlpha01(colors.focused === 'stroke' && p.hasStrokeProps ? p.primaryStroke : p.primaryFill) * 100)}
               onChange={(pct) => {
                 const a = pct / 100;
-                if (p.focusedSwatch === 'stroke' && p.hasStrokeProps) {
-                  p.applyStrokeToSelection(withAlpha01(p.primaryStroke, a));
+                if (colors.focused === 'stroke' && p.hasStrokeProps) {
+                  colors.applyStrokeToSelection(withAlpha01(p.primaryStroke, a));
                 } else {
-                  p.applyFillToSelection(withAlpha01(p.primaryFill, a));
+                  colors.applyFillToSelection(withAlpha01(p.primaryFill, a));
                 }
               }}
               min={0}
@@ -2791,8 +2720,8 @@ function RightSidebar(p: RightSidebarProps) {
           <PropertyRow>
             <PropertySliderInput
               label={<span title="Opacity"><OpacityIcon /></span>}
-              value={Math.round(p.focusedAlpha * 100)}
-              onChange={(pct) => p.setFocusedAlpha(pct / 100)}
+              value={Math.round(colors.focusedAlpha * 100)}
+              onChange={(pct) => colors.setFocusedAlpha(pct / 100)}
               min={0}
               max={100}
               step={1}
@@ -2808,23 +2737,23 @@ function RightSidebar(p: RightSidebarProps) {
         <PropertySwatchGrid
             value={
               primary
-                ? (p.focusedSwatch === 'stroke' ? p.primaryStroke : p.primaryFill)
-                : (p.focusedSwatch === 'stroke' ? p.strokeColor   : p.fillColor)
+                ? (colors.focused === 'stroke' ? p.primaryStroke : p.primaryFill)
+                : (colors.focused === 'stroke' ? (colors.stroke.kind === 'solid' ? colors.stroke.color : '#000000ff') : (colors.fill.kind === 'solid' ? colors.fill.color : '#ffffffff'))
             }
             options={PALETTE}
             columns={10}
             leading={{
               active: primary
-                ? (p.focusedSwatch === 'stroke' ? p.primaryStroke : p.primaryFill) === 'rgba(0,0,0,0)'
-                : (p.focusedSwatch === 'stroke' ? p.activeStroke.kind : p.activeFill.kind) === 'transparent',
+                ? (colors.focused === 'stroke' ? p.primaryStroke : p.primaryFill) === 'rgba(0,0,0,0)'
+                : (colors.focused === 'stroke' ? colors.stroke.kind : colors.fill.kind) === 'transparent',
               title: 'Transparent',
               onClick: () => {
                 if (primary) {
-                  if (p.focusedSwatch === 'stroke') p.applyStrokeToSelection('rgba(0,0,0,0)');
-                  else p.applyFillToSelection('rgba(0,0,0,0)');
+                  if (colors.focused === 'stroke') colors.applyStrokeToSelection('rgba(0,0,0,0)');
+                  else colors.applyFillToSelection('rgba(0,0,0,0)');
                 } else {
-                  if (p.focusedSwatch === 'stroke') p.setActiveStroke({ kind: 'transparent' });
-                  else p.setActiveFill({ kind: 'transparent' });
+                  if (colors.focused === 'stroke') colors.setStroke({ kind: 'transparent' });
+                  else colors.setFill({ kind: 'transparent' });
                 }
               },
             }}
@@ -2833,11 +2762,11 @@ function RightSidebar(p: RightSidebarProps) {
               // unconditionally fill before, which made the swatch grid
               // useless for setting stroke colors.
               if (primary) {
-                if (p.focusedSwatch === 'stroke') p.applyStrokeToSelection(v);
-                else p.applyFillToSelection(v);
+                if (colors.focused === 'stroke') colors.applyStrokeToSelection(v);
+                else colors.applyFillToSelection(v);
               } else {
-                if (p.focusedSwatch === 'stroke') p.setStrokeColor(v);
-                else p.setFillColor(v);
+                if (colors.focused === 'stroke') colors.setStrokeColor(v);
+                else colors.setFillColor(v);
               }
             }}
           />
