@@ -103,3 +103,22 @@ a.badge:hover {
   button.badge:hover,
   a.badge:hover { --badge-edge: var(--badge-edge); }
 }
+
+.remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  margin-left: 2px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  color: var(--badge-fg);
+  cursor: pointer;
+  font: inherit;
+  line-height: 1;
+}
+.remove:hover { background: color-mix(in oklab, var(--badge-fg) 20%, transparent); }
+.badge[data-size='md'] .remove { width: 14px; height: 14px; }

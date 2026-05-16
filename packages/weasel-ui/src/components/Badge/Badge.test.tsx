@@ -81,3 +81,28 @@ describe('Badge interactive', () => {
     expect(btn.getAttribute('data-focused')).toBe('true');
   });
 });
+
+describe('Badge removable', () => {
+  it('renders remove button when onRemove provided', () => {
+    const { getByRole } = render(<Badge onRemove={() => {}}>x</Badge>);
+    expect(getByRole('button', { name: 'Remove' })).toBeDefined();
+  });
+
+  it('fires onRemove without firing wrapper onClick', () => {
+    const onClick = vi.fn();
+    const onRemove = vi.fn();
+    const { getByRole } = render(
+      <Badge onClick={onClick} onRemove={onRemove}>x</Badge>,
+    );
+    (getByRole('button', { name: 'Remove' }) as HTMLButtonElement).click();
+    expect(onRemove).toHaveBeenCalledTimes(1);
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it('honors removeLabel override', () => {
+    const { getByRole } = render(
+      <Badge onRemove={() => {}} removeLabel="Dismiss">x</Badge>,
+    );
+    expect(getByRole('button', { name: 'Dismiss' })).toBeDefined();
+  });
+});

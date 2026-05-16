@@ -11,6 +11,8 @@ export interface BadgeProps {
   dot?: boolean;
   leadingIcon?: ReactNode;
   onClick?: () => void;
+  onRemove?: () => void;
+  removeLabel?: string;
   href?: string;
   as?: 'span' | 'button' | 'a';
   children: ReactNode;
@@ -34,6 +36,8 @@ export function Badge(props: BadgeProps) {
     dot,
     leadingIcon,
     onClick,
+    onRemove,
+    removeLabel,
     href,
     children,
     className,
@@ -74,6 +78,19 @@ export function Badge(props: BadgeProps) {
         {dot && <span className={s.dot} data-badge-dot />}
         {leadingIcon && <span className={s.icon} aria-hidden="true">{leadingIcon}</span>}
         <span>{children}</span>
+        {onRemove && (
+          <button
+            type="button"
+            className={s.remove}
+            aria-label={removeLabel ?? 'Remove'}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+          >
+            ×
+          </button>
+        )}
       </span>
     </>
   );
