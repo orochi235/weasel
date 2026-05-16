@@ -54,6 +54,20 @@
 
 export * from './features/grid';
 export * from './features/viewports';
+export {
+  getStylusData,
+  forEachCoalesced,
+} from './core/pointer/stylus';
+export type {
+  StylusData,
+  PointerSample,
+  CoalescedCtx,
+} from './core/pointer/stylus';
+export { usePointerStylus } from './core/pointer/usePointerStylus';
+export type {
+  PointerStylusState,
+  UsePointerStylusOptions,
+} from './core/pointer/usePointerStylus';
 export * from './core/viewport/viewTransform';
 export type { View } from './core/viewport/view';
 export { viewToTransform } from './core/viewport/view';

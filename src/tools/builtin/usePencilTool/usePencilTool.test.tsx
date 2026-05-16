@@ -75,6 +75,32 @@ describe('usePencilTool', () => {
     expect(create.mock.calls[0][1].closed).toBe(true);
   });
 
+  it('captures pressure / tilt onto each PencilPoint from the PointerEvent', () => {
+    const { result } = renderHook(() => usePencilTool({ create: () => null }));
+    const tool = result.current as Tool<unknown>;
+    const ctx = noopCtx() as ToolCtx<unknown> & { scratch: { samples: Array<{ x: number; y: number; pressure?: number; tiltX?: number; tiltY?: number }> } | null };
+    const stylusEvent = (clientX: number, clientY: number, pressure: number, tiltX = 0, tiltY = 0): PointerEvent => ({
+      clientX, clientY, pressure, tiltX, tiltY, pointerType: 'pen', twist: 0,
+    } as unknown as PointerEvent);
+    ctx.worldX = 10; ctx.worldY = 0;
+    tool.drag!.onStart!(stylusEvent(10, 0, 0.0), ctx);
+    // After onStart the dispatcher installs ctx.scratch = { samples: [...] }
+    expect(ctx.scratch).not.toBeNull();
+    const samples = ctx.scratch!.samples;
+    expect(samples).toHaveLength(1);
+    expect(samples[0].pressure).toBeUndefined(); // first sample (onStart) has no event-derived pressure
+
+    ctx.worldX = 20; ctx.worldY = 0;
+    tool.drag!.onMove!(stylusEvent(20, 0, 0.42, 5, -3), ctx);
+    expect(samples).toHaveLength(2);
+    expect(samples[1]).toMatchObject({ x: 20, y: 0, pressure: 0.42, tiltX: 5, tiltY: -3 });
+
+    ctx.worldX = 30; ctx.worldY = 0;
+    tool.drag!.onMove!(stylusEvent(30, 0, 0.7, -8, 2), ctx);
+    expect(samples).toHaveLength(3);
+    expect(samples[2]).toMatchObject({ x: 30, y: 0, pressure: 0.7, tiltX: -8, tiltY: 2 });
+  });
+
   it('cancel discards captured samples without invoking create', () => {
     const create = vi.fn(() => ({ id: 'pe' }));
     const { result } = renderHook(() => usePencilTool({ create }));
