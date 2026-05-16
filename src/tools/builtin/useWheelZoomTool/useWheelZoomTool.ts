@@ -33,6 +33,7 @@ export function useWheelZoomTool(opts: WheelZoomToolOpts = {}): Tool<null> {
     () =>
       defineViewportTool<null>({
         id: 'wheel-zoom',
+        presentation: { label: 'Zoom (wheel)', group: 'view' },
         initial: {
           wheel: (ctx, event) => {
             const e = event as WheelEvent;

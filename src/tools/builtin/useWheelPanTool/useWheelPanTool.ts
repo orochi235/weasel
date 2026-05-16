@@ -55,6 +55,7 @@ export function useWheelPanTool(opts: UseWheelPanToolOptions = {}): Tool<null> {
     () =>
       defineViewportTool<null>({
         id: 'wheel-pan',
+        presentation: { label: 'Pan (wheel)', group: 'view' },
         initial: {
           wheel: (ctx, event) => {
             const e = event as WheelEvent;
