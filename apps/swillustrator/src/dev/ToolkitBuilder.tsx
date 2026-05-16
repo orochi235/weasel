@@ -435,6 +435,7 @@ export function ToolkitBuilder() {
   // fire for each (target, modifiers) combo at the chosen phase+gesture.
   const [resGesture, setResGesture] = useState<'click' | 'drag' | 'pointerDown' | 'dblTap'>('click');
   const [resPhase, setResPhase] = useState<'initial' | 'engaged'>('initial');
+  const [resMode, setResMode] = useState<'static' | 'live'>('static');
 
   // Column defs for the DataGrid-rendered action registry / tool routes.
   // Inline so they capture the latest `slotFor` closure for the slot pill.
@@ -568,6 +569,8 @@ export function ToolkitBuilder() {
             setGesture={setResGesture}
             phase={resPhase}
             setPhase={setResPhase}
+            mode={resMode}
+            setMode={setResMode}
           />
         </main>
         <aside className={s.reflect}>
@@ -725,8 +728,10 @@ function ResolutionsWidget(props: {
   setGesture: (g: ResGesture) => void;
   phase: ResPhase;
   setPhase: (p: ResPhase) => void;
+  mode: 'static' | 'live';
+  setMode: (m: 'static' | 'live') => void;
 }) {
-  const { toolDefs, tools, gesture, setGesture, phase, setPhase } = props;
+  const { toolDefs, tools, gesture, setGesture, phase, setPhase, mode, setMode } = props;
   // Walk slot-precedence order so resolveAt picks what the dispatcher
   // would actually fire: hotkey → active → ambient → registry.
   const orderedDefs: readonly ToolDef<unknown>[] = useMemo(() => {
