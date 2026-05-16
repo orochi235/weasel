@@ -49,8 +49,7 @@ import {
   type RegistryEntry,
   type ToolDef,
 } from '@orochi235/weasel/routing';
-import { Badge, DataGrid, type DataGridColumn } from '@orochi235/weasel-ui';
-import { formatShortcutParts } from '../ui/ToolPalette/formatShortcut';
+import { Badge, DataGrid, formatShortcutParts, type DataGridColumn } from '@orochi235/weasel-ui';
 import { KeyCap } from './KeyCap';
 import {
   AlignBottomIcon,

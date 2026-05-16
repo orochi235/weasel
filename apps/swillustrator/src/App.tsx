@@ -97,7 +97,7 @@ import { viewToMat3 } from '@orochi235/weasel/renderer';
 import { resolveTextStyle, toRuns, resolveRuns, dlog } from '@orochi235/weasel';
 import { wrapWithRotation } from './rotationRender';
 import { pointInRotatedAabb } from './rotationHitTest';
-import { Sidebar, SidebarPanel, type LayerListItem } from '@orochi235/weasel-ui';
+import { Sidebar, SidebarPanel, ToolPalette, type LayerListItem } from '@orochi235/weasel-ui';
 import {
   CommandPalette,
   useCommandPaletteShortcut,
@@ -105,7 +105,6 @@ import {
   HistoryList,
   type HistoryListItem,
   PropertiesPanel,
-  ToolPalette,
   PropertyRow,
   PropertyAxisInput,
   PropertyColorInput,

@@ -62,3 +62,17 @@ function MinimalDemo() {
 export const Default: Story = { render: () => <FullDemo /> };
 export const Horizontal: Story = { render: () => <FullDemo orientation="horizontal" /> };
 export const Minimal: Story = { render: () => <MinimalDemo /> };
+
+// Focus the active tool and try ArrowDown / ArrowUp / Home / End — the
+// palette manages a roving tabindex across all buttons regardless of group.
+export const KeyboardNav: Story = {
+  render: () => <FullDemo />,
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Click the active tool to give it focus, then use Arrow keys, Home, or End to move focus across the palette. Only the active tool participates in the page tab order; arrow keys move within the toolbar (roving tabindex per WAI-ARIA toolbar pattern).',
+      },
+    },
+  },
+};

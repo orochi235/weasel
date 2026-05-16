@@ -5,9 +5,7 @@ import {
   useSelection,
   type ToolsApi,
 } from '@orochi235/weasel';
-// ToolPalette is a Swillustrator-side specialization
-// (apps/swillustrator/src/ui/) — see the kit/app split.
-import { ToolPalette } from '../../apps/swillustrator/src/ui/ToolPalette';
+import { ToolPalette } from '@orochi235/weasel-ui';
 
 const W = 600, H = 400;
 
