@@ -680,7 +680,8 @@ export type {
   StandardSlotConfig,
 } from './canvas/Canvas';
 export type { BuiltinToolId, ToolBundle } from './canvas/SceneCanvas';
-export { rotateAroundAABBCenter } from './canvas/SceneCanvas';
+export { BUNDLE_TOOLS, rotateAroundAABBCenter } from './canvas/SceneCanvas';
+export { KIT_SHAPE_KINDS } from './canvas/SceneCanvas/useBuiltinShapeTools';
 export type {
   SceneToAdapterOptions,
   SceneAdapterSelection,

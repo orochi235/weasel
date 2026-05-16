@@ -258,21 +258,22 @@ export function collectIcons(): readonly IconEntry[] {
   return out;
 }
 
-/** Named ToolBundle presets — mirrored from the kit until the kit exports
- *  BUNDLE_TOOLS publicly. Tracked under the "kit-barrel drift" follow-up in
- *  docs/TODO.md. */
-const BUNDLE_DEFINITIONS = [
-  { id: 'minimal' as const,    label: 'Minimal',
-    tools: ['select', 'hand'] as const },
-  { id: 'standard' as const,   label: 'Standard',
-    tools: ['select', 'resize', 'rotate', 'hand', 'rect', 'ellipse', 'line', 'pencil'] as const },
-  { id: 'exhaustive' as const, label: 'Exhaustive',
-    tools: ['select', 'resize', 'rotate', 'hand', 'rect', 'ellipse', 'line',
-            'polygon', 'star', 'pencil', 'lasso', 'text', 'clone'] as const },
-];
+/** Display labels for each `ToolBundle` id. The kit ships `BUNDLE_TOOLS`
+ *  (tool-id contents) but not human-readable labels — those are
+ *  presentation, owned by the inspector. */
+const BUNDLE_LABELS: Record<BundleEntry['id'], string> = {
+  minimal: 'Minimal',
+  standard: 'Standard',
+  exhaustive: 'Exhaustive',
+};
 
 export function collectBundles(): readonly BundleEntry[] {
-  return BUNDLE_DEFINITIONS.map((b) => ({ kind: 'bundle', ...b }));
+  return (Object.keys(Weasel.BUNDLE_TOOLS) as BundleEntry['id'][]).map((id) => ({
+    kind: 'bundle',
+    id,
+    label: BUNDLE_LABELS[id] ?? id,
+    tools: Weasel.BUNDLE_TOOLS[id],
+  }));
 }
 
 const OP_FACTORY_NAMES: readonly string[] = [
@@ -319,9 +320,11 @@ export const TOOL_HOOK_NAMES: Readonly<Record<string, string>> = {
   'wheel-zoom': 'useWheelZoomTool',
 };
 
-const SHAPE_KIND_IDS: readonly string[] = [
-  'rect', 'ellipse', 'line', 'polygon', 'star', 'pencil', 'lasso', 'text', 'clone',
-];
+/** Shape-kind ids the inspector mirrors from the kit. Sourced from
+ *  `Weasel.KIT_SHAPE_KINDS` so adding a new builtin shape tool to the kit
+ *  surfaces here automatically (parity-checked by
+ *  `src/index.barrel.test.ts`). */
+const SHAPE_KIND_IDS: readonly string[] = Weasel.KIT_SHAPE_KINDS;
 
 const PHASE_IDS: readonly PhaseId[] = ['initial', 'engaged'];
 

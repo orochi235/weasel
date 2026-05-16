@@ -48,4 +48,59 @@ describe('kit barrel parity', () => {
     }
     expect(missing, `Op factories defined in src/core/ops/ but not re-exported from src/index.ts: ${missing.join(', ')}`).toEqual([]);
   });
+
+  // The Bundle Inspector (`apps/swillustrator/src/dev/registryData.ts`) used
+  // to hardcode `SHAPE_KIND_IDS` mirrored from `BuiltinShapeToolId`. The kit
+  // is now the source of truth — assert every shape kind the inspector
+  // expects is present on the kit-exported tuple. Adding a new builtin shape
+  // tool that isn't appended here fails this test.
+  it('exports KIT_SHAPE_KINDS covering every BuiltinShapeToolId', () => {
+    const kinds = (Barrel as Record<string, unknown>).KIT_SHAPE_KINDS;
+    expect(Array.isArray(kinds), 'KIT_SHAPE_KINDS must be exported as an array').toBe(true);
+    const arr = kinds as readonly string[];
+    expect(arr.length).toBeGreaterThan(0);
+    // Source the canonical list from the type-defining file. The string
+    // literals in the `BuiltinShapeToolId` union are the contract.
+    const shapeToolsSrc = readFileSync(
+      join(ROOT, 'canvas', 'SceneCanvas', 'useBuiltinShapeTools.tsx'),
+      'utf8',
+    );
+    const unionMatch = shapeToolsSrc.match(
+      /export\s+type\s+BuiltinShapeToolId\s*=([^;]+);/,
+    );
+    expect(unionMatch, 'could not locate BuiltinShapeToolId union').not.toBeNull();
+    const expected = [...unionMatch![1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+    expect(expected.length).toBeGreaterThan(0);
+    const missing = expected.filter((id) => !arr.includes(id));
+    expect(missing, `BuiltinShapeToolId members missing from KIT_SHAPE_KINDS: ${missing.join(', ')}`).toEqual([]);
+  });
+
+  // `apps/swillustrator/src/dev/registryData.ts` previously mirrored
+  // `BUNDLE_DEFINITIONS` from the kit's internal `BUNDLE_TOOLS` map. Now the
+  // kit ships it directly — assert the export exists, names every
+  // `ToolBundle` id, and lists tool ids for each.
+  it('exports BUNDLE_TOOLS mapping every ToolBundle id to its tool ids', () => {
+    const table = (Barrel as Record<string, unknown>).BUNDLE_TOOLS as
+      | Record<string, readonly string[]>
+      | undefined;
+    expect(table, 'BUNDLE_TOOLS must be exported').toBeDefined();
+    // The `ToolBundle` type union is the contract for the keys.
+    const sceneCanvasSrc = readFileSync(
+      join(ROOT, 'canvas', 'SceneCanvas.tsx'),
+      'utf8',
+    );
+    const unionMatch = sceneCanvasSrc.match(
+      /export\s+type\s+ToolBundle\s*=([^;]+);/,
+    );
+    expect(unionMatch, 'could not locate ToolBundle union').not.toBeNull();
+    const expectedKeys = [...unionMatch![1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+    expect(expectedKeys.length).toBeGreaterThan(0);
+    const missingKeys = expectedKeys.filter((id) => !(id in table!));
+    expect(missingKeys, `ToolBundle ids missing from BUNDLE_TOOLS: ${missingKeys.join(', ')}`).toEqual([]);
+    for (const key of expectedKeys) {
+      const tools = table![key];
+      expect(Array.isArray(tools), `BUNDLE_TOOLS.${key} must be an array`).toBe(true);
+      expect(tools.length, `BUNDLE_TOOLS.${key} must be non-empty`).toBeGreaterThan(0);
+    }
+  });
 });

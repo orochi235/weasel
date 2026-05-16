@@ -46,10 +46,22 @@ const DEFAULT_FILLS = ['#7fb069', '#d4a574', '#a48bd4', '#7ab8d4', '#d47a7a'];
  * Built-in shape tool ids handled by this synthesizer. Each maps to a kit
  * tool hook + a default `create` that produces a leaf node compatible with
  * `PATH_PAINTER`.
+ *
+ * Runtime mirror in `KIT_SHAPE_KINDS` below — keep the two in sync. The
+ * `src/index.barrel.test.ts` parity gate enforces that every member of this
+ * union is present in the exported tuple.
  */
 export type BuiltinShapeToolId =
   | 'rect' | 'ellipse' | 'line' | 'polygon' | 'star' | 'pencil'
   | 'lasso' | 'text' | 'clone';
+
+/** Runtime, iterable list of the shape-tool ids in `BuiltinShapeToolId`.
+ *  Surfaced so consumers (e.g. the Bundle Inspector) can enumerate the
+ *  builtin shape kinds without re-encoding the union. */
+export const KIT_SHAPE_KINDS = [
+  'rect', 'ellipse', 'line', 'polygon', 'star', 'pencil',
+  'lasso', 'text', 'clone',
+] as const satisfies readonly BuiltinShapeToolId[];
 
 export interface UseBuiltinShapeToolsArgs<TData, TLayer extends string, TPose> {
   scene: Scene<TData, TLayer, TPose>;
