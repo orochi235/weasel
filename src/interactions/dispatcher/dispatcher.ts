@@ -432,12 +432,9 @@ export function createDispatcher(): Dispatcher {
         return 'handled';
       }
 
-      // Fallback: legacy `run` path (no invoker).
-      try {
-        action.run?.();
-      } catch (err) {
-        console.error(`weasel dispatcher: action "${action.id}" threw`, err);
-      }
+      // No invoker — action is registered but has nothing to do for this
+      // matched binding. Treat as handled (the binding consumed the gesture
+      // and the no-op is intentional) to keep dispatch deterministic.
       return 'handled';
     }
 

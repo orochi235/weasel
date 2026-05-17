@@ -235,7 +235,6 @@ describe('Phase 13 integration: SceneCanvas + useSelectTool drag routes', () => 
             id: 'areaSelect',
             label: 'Area Select',
             gestureBinding: { kind: 'drag' },
-            run: areaSelectSpy,
             // Always enabled so the dispatcher doesn't gate it.
             enabled: () => true as true,
             invoker: { timing: 'ongoing', start: () => { areaSelectSpy(); return {}; } },

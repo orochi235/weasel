@@ -9,7 +9,7 @@ function wrap({ children }: { children: ReactNode }) {
 
 describe('useAction', () => {
   it('registers the action on mount and unregisters on unmount', () => {
-    const action: Action = { id: 'foo', label: 'Foo', run: vi.fn() };
+    const action: Action = { id: 'foo', label: 'Foo', invoker: { timing: 'immediate' as const, run: vi.fn() } };
     const { result, unmount } = renderHook(
       () => {
         useAction(action);
@@ -24,12 +24,12 @@ describe('useAction', () => {
   });
 
   it('no-ops silently when no provider is in scope', () => {
-    const action: Action = { id: 'foo', label: 'Foo', run: vi.fn() };
+    const action: Action = { id: 'foo', label: 'Foo', invoker: { timing: 'immediate' as const, run: vi.fn() } };
     expect(() => renderHook(() => useAction(action))).not.toThrow();
   });
 
   it('re-registering with a new action object replaces the old one', () => {
-    let action: Action = { id: 'foo', label: 'V1', run: vi.fn() };
+    let action: Action = { id: 'foo', label: 'V1', invoker: { timing: 'immediate' as const, run: vi.fn() } };
     const { result, rerender } = renderHook(
       () => {
         useAction(action);
@@ -38,14 +38,14 @@ describe('useAction', () => {
       { wrapper: wrap },
     );
     expect(result.current!.list()[0].label).toBe('V1');
-    action = { id: 'foo', label: 'V2', run: vi.fn() };
+    action = { id: 'foo', label: 'V2', invoker: { timing: 'immediate' as const, run: vi.fn() } };
     rerender();
     expect(result.current!.list()[0].label).toBe('V2');
   });
 
   it('cleanup of unmounted useAction does not clobber a later registrant for the same id', () => {
-    function HostA() { useAction({ id: 'foo', label: 'A', run: vi.fn() }); return null; }
-    function HostB() { useAction({ id: 'foo', label: 'B', run: vi.fn() }); return null; }
+    function HostA() { useAction({ id: 'foo', label: 'A', invoker: { timing: 'immediate' as const, run: vi.fn() } }); return null; }
+    function HostB() { useAction({ id: 'foo', label: 'B', invoker: { timing: 'immediate' as const, run: vi.fn() } }); return null; }
     let regSnap: ReturnType<typeof useActionsRegistry> = null;
     function Probe() { regSnap = useActionsRegistry(); return null; }
     const { rerender, unmount } = render(

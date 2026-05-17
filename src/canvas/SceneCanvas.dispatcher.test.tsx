@@ -62,7 +62,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
       id: 'test.dispatcher',
       label: 'Test dispatcher',
       gestureBinding: { kind: 'key', key: 'q' },
-      run: spy,
+      invoker: { timing: 'immediate' as const, run: () => { spy(); } },
     };
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
 
@@ -85,7 +85,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
       id: 'test.dispatcher.disabled',
       label: 'Test dispatcher disabled',
       gestureBinding: { kind: 'key', key: 'q' },
-      run: spy,
+      invoker: { timing: 'immediate' as const, run: () => { spy(); } },
     };
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
 
@@ -128,7 +128,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     // action even without an active selection — verifies routing, not business logic.
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
-        actions={{ delete: { run: deleteSpy, enabled: () => true } }} />,
+        actions={{ delete: { invoker: { timing: 'immediate' as const, run: () => { deleteSpy(); } }, enabled: () => true } }} />,
     );
     act(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace' }));
@@ -141,7 +141,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     const deleteSpy = vi.fn();
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
-        actions={{ delete: { run: deleteSpy, enabled: () => true } }} />,
+        actions={{ delete: { invoker: { timing: 'immediate' as const, run: () => { deleteSpy(); } }, enabled: () => true } }} />,
     );
     act(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete' }));
@@ -154,7 +154,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     const dupSpy = vi.fn();
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
-        actions={{ duplicate: { run: dupSpy, enabled: () => true } }} />,
+        actions={{ duplicate: { invoker: { timing: 'immediate' as const, run: () => { dupSpy(); } }, enabled: () => true } }} />,
     );
     act(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', ctrlKey: true }));
@@ -168,7 +168,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     // nudge descriptor id is "nudge.up" (not "nudge.up.small")
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
-        actions={{ 'nudge.up': { run: nudgeSpy, enabled: () => true } }} />,
+        actions={{ 'nudge.up': { invoker: { timing: 'immediate' as const, run: () => { nudgeSpy(); } }, enabled: () => true } }} />,
     );
     act(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
@@ -181,7 +181,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     const undoSpy = vi.fn();
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
-        actions={{ undo: { run: undoSpy } }} />,
+        actions={{ undo: { invoker: { timing: 'immediate' as const, run: () => { undoSpy(); } } } }} />,
     );
     act(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true }));
@@ -194,7 +194,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     const redoSpy = vi.fn();
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
-        actions={{ redo: { run: redoSpy } }} />,
+        actions={{ redo: { invoker: { timing: 'immediate' as const, run: () => { redoSpy(); } } } }} />,
     );
     act(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, shiftKey: true }));
@@ -209,7 +209,6 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
       id: 'test.invoker',
       label: 'Test invoker',
       gestureBinding: { kind: 'key', key: 'j' },
-      run: runSpy,
       invoker: { timing: 'immediate', run: () => invokerSpy() },
     };
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });

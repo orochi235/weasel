@@ -12,7 +12,7 @@ describe('ActionsRegistry', () => {
   it('register(action) adds the action; list() returns it', () => {
     const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
     const reg = result.current!;
-    const action: Action = { id: 'foo', label: 'Foo', run: vi.fn() };
+    const action: Action = { id: 'foo', label: 'Foo', invoker: { timing: 'immediate' as const, run: vi.fn() } };
     act(() => { reg.register(action); });
     expect(reg.list().map(a => a.id)).toEqual(['foo']);
   });
@@ -21,7 +21,7 @@ describe('ActionsRegistry', () => {
     const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
     const reg = result.current!;
     let unreg: (() => void) | undefined;
-    act(() => { unreg = reg.register({ id: 'foo', label: 'Foo', run: vi.fn() }); });
+    act(() => { unreg = reg.register({ id: 'foo', label: 'Foo', invoker: { timing: 'immediate' as const, run: vi.fn() } }); });
     act(() => { unreg!(); });
     expect(reg.list()).toEqual([]);
   });
@@ -36,8 +36,8 @@ describe('ActionsRegistry — full coverage', () => {
   it('register with same id replaces the existing entry (last-writer-wins)', () => {
     const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
     const reg = result.current!;
-    const a1: Action = { id: 'x', label: 'A1', run: vi.fn() };
-    const a2: Action = { id: 'x', label: 'A2', run: vi.fn() };
+    const a1: Action = { id: 'x', label: 'A1', invoker: { timing: 'immediate' as const, run: vi.fn() } };
+    const a2: Action = { id: 'x', label: 'A2', invoker: { timing: 'immediate' as const, run: vi.fn() } };
     act(() => { reg.register(a1); reg.register(a2); });
     const list = reg.list();
     expect(list).toHaveLength(1);
@@ -47,8 +47,8 @@ describe('ActionsRegistry — full coverage', () => {
   it('after unregister, register(default) restores the default', () => {
     const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
     const reg = result.current!;
-    const def: Action = { id: 'x', label: 'Default', run: vi.fn() };
-    const tool: Action = { id: 'x', label: 'Tool', run: vi.fn() };
+    const def: Action = { id: 'x', label: 'Default', invoker: { timing: 'immediate' as const, run: vi.fn() } };
+    const tool: Action = { id: 'x', label: 'Tool', invoker: { timing: 'immediate' as const, run: vi.fn() } };
     act(() => { reg.register(def); });
     let unregTool: (() => void) | undefined;
     act(() => { unregTool = reg.register(tool); });
@@ -67,7 +67,7 @@ describe('ActionsRegistry — full coverage', () => {
     const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
     const reg = result.current!;
     const run = vi.fn();
-    act(() => { reg.register({ id: 'go', label: 'Go', run }); });
+    act(() => { reg.register({ id: 'go', label: 'Go', invoker: { timing: 'immediate', run: () => { run(); } } }); });
     let ret = false;
     act(() => { ret = reg.trigger('go'); });
     expect(run).toHaveBeenCalledOnce();
@@ -85,9 +85,9 @@ describe('ActionsRegistry — full coverage', () => {
   it('list() snapshot mutation does not affect internal state', () => {
     const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
     const reg = result.current!;
-    act(() => { reg.register({ id: 'a', label: 'A', run: vi.fn() }); });
+    act(() => { reg.register({ id: 'a', label: 'A', invoker: { timing: 'immediate' as const, run: vi.fn() } }); });
     const snap = reg.list() as Action[];
-    try { (snap as Action[]).push({ id: 'b', label: 'B', run: vi.fn() }); } catch { /* ignore */ }
+    try { (snap as Action[]).push({ id: 'b', label: 'B', invoker: { timing: 'immediate' as const, run: vi.fn() } }); } catch { /* ignore */ }
     expect(reg.list().map(a => a.id)).toEqual(['a']);
   });
 
@@ -114,7 +114,7 @@ describe('ActionsRegistry — full coverage', () => {
       </ActionsProvider>,
     );
     expect(outer).not.toBe(inner);
-    act(() => { inner!.register({ id: 'a', label: 'A', run: vi.fn() }); });
+    act(() => { inner!.register({ id: 'a', label: 'A', invoker: { timing: 'immediate' as const, run: vi.fn() } }); });
     expect(inner!.list()).toHaveLength(1);
     expect(outer!.list()).toHaveLength(0);
     unmount();
@@ -133,7 +133,6 @@ describe('Action with new invoker / GestureSpec fields (Phase 1 additive)', () =
     const action: Action = {
       id: 'demo.immediate',
       label: 'Demo immediate',
-      run: () => {},
       invoker: {
         timing: 'immediate',
         run: (_deps) => {},
@@ -146,7 +145,6 @@ describe('Action with new invoker / GestureSpec fields (Phase 1 additive)', () =
     const action: Action = {
       id: 'demo.ongoing',
       label: 'Demo ongoing',
-      run: () => {},
       invoker: {
         timing: 'ongoing',
         start: () => ({}),
@@ -161,7 +159,7 @@ describe('Action with new invoker / GestureSpec fields (Phase 1 additive)', () =
       id: 'demo.wheel',
       label: 'Demo wheel',
       gestureBinding: gestureSpec,
-      run: () => {},
+      invoker: { timing: 'immediate', run: () => {} },
     };
     expect(action.gestureBinding).toEqual({ kind: 'wheel', mods: { ctrl: true } });
   });
@@ -178,7 +176,7 @@ describe('Action with new invoker / GestureSpec fields (Phase 1 additive)', () =
         { kind: 'key', key: 'z', mods: { mod: true } },
         { kind: 'key', key: 'z', mods: { mod: true, shift: true } },
       ],
-      run: () => {},
+      invoker: { timing: 'immediate', run: () => {} },
     };
     expect(Array.isArray(action.gestureBinding)).toBe(true);
   });

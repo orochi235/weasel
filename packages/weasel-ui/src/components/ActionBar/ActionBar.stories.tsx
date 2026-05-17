@@ -45,10 +45,13 @@ function makeAction(opts: {
     icon: opts.icon,
     shortcut: opts.shortcut,
     enabled: opts.enabled,
-    run: () => {
-      // Console-only side effect — the story shows visual state, not behavior.
-      // eslint-disable-next-line no-console
-      console.log(`[ActionBar story] ${opts.id}`);
+    invoker: {
+      timing: 'immediate',
+      run: () => {
+        // Console-only side effect — the story shows visual state, not behavior.
+        // eslint-disable-next-line no-console
+        console.log(`[ActionBar story] ${opts.id}`);
+      },
     },
   };
 }

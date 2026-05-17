@@ -201,7 +201,6 @@ describe('useSelectTool smoke', () => {
             id: 'areaSelect',
             label: 'Area Select',
             gestureBinding: { kind: 'drag' },
-            run: areaSelectSpy,
             enabled: () => true as true,
             invoker: {
               timing: 'ongoing',

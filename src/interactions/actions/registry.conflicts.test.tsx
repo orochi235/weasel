@@ -15,11 +15,11 @@ describe('Action registry conflicts', () => {
     let captured: ReturnType<typeof useActionsRegistry> = null;
     function Capture() { captured = useActionsRegistry(); return null; }
     function Default() {
-      useAction({ id: 'escape', label: 'Default', run: defaultRun });
+      useAction({ id: 'escape', label: 'Default', invoker: { timing: 'immediate' as const, run: () => { defaultRun(); } } });
       return null;
     }
     function Tool() {
-      useAction({ id: 'escape', label: 'Tool',    run: toolRun });
+      useAction({ id: 'escape', label: 'Tool',    invoker: { timing: 'immediate' as const, run: () => { toolRun(); } } });
       return null;
     }
     render(<ActionsProvider><Capture /><Default /><Tool /></ActionsProvider>);
@@ -34,11 +34,11 @@ describe('Action registry conflicts', () => {
     let captured: ReturnType<typeof useActionsRegistry> = null;
     function Capture() { captured = useActionsRegistry(); return null; }
     function Default() {
-      useAction({ id: 'escape', label: 'Default', run: defaultRun });
+      useAction({ id: 'escape', label: 'Default', invoker: { timing: 'immediate' as const, run: () => { defaultRun(); } } });
       return null;
     }
     function Tool() {
-      useAction({ id: 'escape', label: 'Tool',    run: toolRun });
+      useAction({ id: 'escape', label: 'Tool',    invoker: { timing: 'immediate' as const, run: () => { toolRun(); } } });
       return null;
     }
     const { rerender } = render(
@@ -53,8 +53,8 @@ describe('Action registry conflicts', () => {
     const a = vi.fn(), b = vi.fn();
     let captured: ReturnType<typeof useActionsRegistry> = null;
     function Capture() { captured = useActionsRegistry(); return null; }
-    function A() { useAction({ id: 'copy', label: 'A', run: a }); return null; }
-    function B() { useAction({ id: 'copy', label: 'B', run: b }); return null; }
+    function A() { useAction({ id: 'copy', label: 'A', invoker: { timing: 'immediate' as const, run: () => { a(); } } }); return null; }
+    function B() { useAction({ id: 'copy', label: 'B', invoker: { timing: 'immediate' as const, run: () => { b(); } } }); return null; }
     const { rerender } = render(<ActionsProvider><Capture /><A /><B /></ActionsProvider>);
     captured!.trigger('copy');
     expect(b).toHaveBeenCalledOnce();

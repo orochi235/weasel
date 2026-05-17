@@ -29,12 +29,13 @@ function Register({ action }: { action: Action }) {
   return null;
 }
 
-function makeAction(partial: Partial<Action> & Pick<Action, 'id'>): Action {
+function makeAction(partial: Partial<Action> & Pick<Action, 'id'> & { run?: () => void }): Action {
+  const { run, ...rest } = partial;
   return {
     label: partial.id,
     group: 'demo',
-    run: () => {},
-    ...partial,
+    invoker: { timing: 'immediate', run: () => { run?.(); } },
+    ...rest,
   };
 }
 
