@@ -31,7 +31,6 @@
  */
 
 import type { Action } from '../registry';
-import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
 
 // ---------------------------------------------------------------------------
@@ -52,7 +51,7 @@ import type { InvocationCtx, OngoingHandle } from '../invoker';
 export const pinchZoomAction: Action & { requires: string[] } = {
   id: 'viewport.pinchZoom',
   label: 'Pinch Zoom',
-  gestureBinding: { kind: 'pinch' },
+  gestureBinding: { kind: 'multiTouch', fingers: 2 },
   requires: ['view'],
   invoker: {
     timing: 'ongoing',
@@ -63,5 +62,5 @@ export const pinchZoomAction: Action & { requires: string[] } = {
       return {};
     },
   },
-  enabled: () => ActionDisabledReason.None,
+  enabled: () => true,
 };

@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { lassoSelectAction } from './lassoSelect';
-import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx } from '../invoker';
 
 // ---------------------------------------------------------------------------
@@ -43,8 +42,8 @@ describe('lassoSelectAction descriptor', () => {
     expect(lassoSelectAction.requires).toContain('scene');
   });
 
-  it('enabled returns None (always enabled)', () => {
-    expect(lassoSelectAction.enabled!()).toBe(ActionDisabledReason.None);
+  it('enabled returns true (always enabled)', () => {
+    expect(lassoSelectAction.enabled!()).toBe(true);
   });
 
   it('start returns empty handle (stub — Phase 8+ wires body)', () => {

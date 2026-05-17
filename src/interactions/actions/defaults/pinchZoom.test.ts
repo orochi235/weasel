@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { pinchZoomAction } from './pinchZoom';
-import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx } from '../invoker';
 
 // ---------------------------------------------------------------------------
@@ -30,10 +29,10 @@ function getOngoingInvoker(action: typeof pinchZoomAction) {
 // ---------------------------------------------------------------------------
 
 describe('pinchZoomAction descriptor', () => {
-  it('declares id, label, pinch gestureBinding, and ongoing timing', () => {
+  it('declares id, label, multiTouch gestureBinding, and ongoing timing', () => {
     expect(pinchZoomAction.id).toBe('viewport.pinchZoom');
     expect(pinchZoomAction.label).toBe('Pinch Zoom');
-    expect(pinchZoomAction.gestureBinding).toEqual({ kind: 'pinch' });
+    expect(pinchZoomAction.gestureBinding).toEqual({ kind: 'multiTouch', fingers: 2 });
     expect(pinchZoomAction.invoker?.timing).toBe('ongoing');
   });
 
@@ -41,8 +40,8 @@ describe('pinchZoomAction descriptor', () => {
     expect(pinchZoomAction.requires).toContain('view');
   });
 
-  it('enabled returns None (always enabled)', () => {
-    expect(pinchZoomAction.enabled!()).toBe(ActionDisabledReason.None);
+  it('enabled returns true (always enabled)', () => {
+    expect(pinchZoomAction.enabled!()).toBe(true);
   });
 
   it('start returns empty handle (stub — Phase 8+ wires body)', () => {

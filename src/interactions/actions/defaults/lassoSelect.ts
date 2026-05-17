@@ -30,7 +30,6 @@
  */
 
 import type { Action } from '../registry';
-import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
 
 // ---------------------------------------------------------------------------
@@ -62,5 +61,5 @@ export const lassoSelectAction: Action & { requires: string[] } = {
       return {};
     },
   },
-  enabled: () => ActionDisabledReason.None,
+  enabled: () => true,
 };
