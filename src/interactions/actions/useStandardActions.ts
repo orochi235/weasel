@@ -56,6 +56,7 @@ import { lassoSelectAction } from './defaults/lassoSelect';
 import { pinchZoomAction } from './defaults/pinchZoom';
 import { viewportPanAction } from './defaults/viewportPan';
 import { viewportZoomAction } from './defaults/viewportZoom';
+import { viewportDragPanAction } from './defaults/viewportDragPan';
 
 /** @experimental */
 export interface UseStandardActionsOptions {
@@ -81,7 +82,7 @@ export interface UseStandardActionsOptions {
  *        1 (ungroup) + 2 (undo/redo) + 1 (flip) + 4 (nudge) + 2 (reorder) +
  *        6 (align) + 2 (distribute) + 6 (pathfinder) + 1 (move) +
  *        5 (resize/rotate/areaSelect/insert/clone) + 3 (editAnchors/lassoSelect/pinchZoom) +
- *        2 (viewport.pan/viewport.zoom) + 1 (clearSelection) = 41
+ *        2 (viewport.pan/viewport.zoom) + 1 (viewport.dragPan) + 1 (clearSelection) = 42
  */
 const KIT_STANDARD_DESCRIPTORS: Action[] = [
   escapeAction,
@@ -124,6 +125,7 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   pinchZoomAction,
   viewportPanAction,
   viewportZoomAction,
+  viewportDragPanAction,
   clearSelectionAction,
 ];
 
