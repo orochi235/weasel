@@ -315,7 +315,7 @@ export const TOOL_HOOK_NAMES: Readonly<Record<string, string>> = {
   text: 'useTextTool',
   clone: 'useCloneTool',
   eyedropper: 'useEyedropperTool',
-  'wheel-zoom': 'useWheelZoomTool',
+  // 'wheel-zoom' dissolved in Phase 8.5; handled by viewport.zoom descriptor.
 };
 
 /** Shape-kind ids the inspector mirrors from the kit. Sourced from

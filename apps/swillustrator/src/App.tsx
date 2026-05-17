@@ -45,9 +45,6 @@ import {
   useUndoRedo,
   useUngroup,
   usePenTool,
-  useWheelPanTool,
-  useWheelZoomTool,
-  useKeyboardZoomTool,
   createPenPreviewLayer,
   scalePathToBounds,
   translatePath,
@@ -1311,9 +1308,7 @@ export function App() {
     }
   }, [pageSelected, selection.current.length]);
 
-  const wheelZoom = useWheelZoomTool();
-  const wheelPan = useWheelPanTool();
-  const keyZoom = useKeyboardZoomTool();
+  // Wheel pan/zoom and keyboard zoom handled by viewport descriptors (Phase 8.5).
 
   // Last-resort Esc handler: if no other tool claims Escape (e.g. pen
   // discarding an in-progress path), and there's a non-empty selection,
@@ -1504,7 +1499,7 @@ export function App() {
   const tools = useTools({
     active: initialActiveTool,
     registry: { select, lasso, insert, ellipse, line, polygon, star, pen, pencil, hand, text, eyedropper },
-    ambient: [resizeTool, rotateTool, wheelZoom, wheelPan, keyZoom, clone, escClearSelection],
+    ambient: [resizeTool, rotateTool, clone, escClearSelection],
     // Unhandled clicks fall through to select so click-to-select works while
     // a non-select tool (pen, ellipse, etc.) is active. Click-only — drag,
     // keyboard, wheel, and pointerdown stay tool-specific.

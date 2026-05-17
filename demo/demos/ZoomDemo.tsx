@@ -4,9 +4,6 @@ import {
   useScene,
   useSelection,
   useHandTool,
-  useWheelZoomTool,
-  useWheelPanTool,
-  useKeyboardZoomTool,
   meanScale,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
@@ -35,10 +32,9 @@ export function ZoomDemo() {
   const selection = useSelection();
 
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+  // Wheel pan/zoom and keyboard zoom are handled by the viewport.pan /
+  // viewport.zoom descriptors registered in useStandardActions (Phase 8.5).
   const hand = useHandTool();
-  const wheelZoom = useWheelZoomTool();
-  const wheelPan = useWheelPanTool();
-  const keyZoom = useKeyboardZoomTool();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -63,7 +59,7 @@ export function ZoomDemo() {
         selection={selection}
         view={view}
         onViewChange={setView}
-        ambient={[hand, wheelZoom, wheelPan, keyZoom]}
+        ambient={[hand]}
         layers={{
           scene: {
             drawOne: (n, p, v): DrawCommand[] => {
