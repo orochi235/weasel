@@ -1,9 +1,7 @@
 import { useMemo, useRef } from 'react';
-import { useRotate, type UseRotateOptions } from 'interactions/actions/rotate/rotate';
 import { composeAffordanceLayer } from 'affordances/composeAffordanceLayer';
 import {
   createRotationAffordance,
-  type RotationScratch,
 } from 'affordances/rotationHandle';
 import type { Affordance, AffordanceBinding, AffordanceRegion } from 'affordances/types';
 import type { RotateAdapter } from 'core/adapters/types';
@@ -23,9 +21,13 @@ function toChromeState(data: unknown): ChromeState {
   return data as ChromeState;
 }
 
-export interface UseRotateToolOptions<TNode extends { id: string }, TPose> {
-  /** Rotate gesture options forwarded to `useRotate`. */
-  rotate?: UseRotateOptions<TPose>;
+export interface UseRotateToolOptions<TNode extends { id: string }, _TPose> {
+  /** Legacy `useRotate` options surface. Ignored after Phase 14e Task 3 —
+   *  rotation now flows through `rotateAction`, whose option surface is
+   *  configured at the action-registration level. Kept on the type for
+   *  backwards-compat with consumers (notably `SceneCanvas`'s
+   *  `rotateOptions`) that still pass a value. */
+  rotate?: unknown;
   /** Distance from top edge of bounds to rotation handle center. Default: 24. */
   rotationHandleDistance?: number;
   /** Square hit-radius for the rotation handle. Default: 8. */
@@ -36,47 +38,35 @@ export interface UseRotateToolOptions<TNode extends { id: string }, TPose> {
    *  `useResizeTool`; the rotation affordance itself reads bounds via the
    *  dispatcher-supplied ChromeState. */
   boundsOf?: (id: string) => Bounds | null;
-  /** Live selection ids — passed through to the rotation gesture's onStart
-   *  so multi-id rotation works (the gesture uses the configured pivot
-   *  mode — default 'union' — across all ids). */
+  /** Live selection ids — retained for parity with `useResizeTool` /
+   *  `useSelectTool` option surfaces. The dispatcher-path `rotateAction`
+   *  reads selection from its own `InvocationCtx`, so this tool no longer
+   *  forwards selection into the rotation gesture itself. */
   getSelection?: () => string[];
   /** Node lookup — retained for parity with `useSelectTool` and for future
    *  ghost-render wiring. The rotation affordance does not need it directly. */
   getNode?: (id: string) => TNode | null;
 }
 
-/** Rotate-only Tool. Owns:
- *   - the `useRotate` gesture controller
- *   - the rotation-handle affordance
- *   - a placeholder ghost overlay layer (decorative; emits nothing until a
- *     consumer-supplied draw is wired in a later task)
- *   - the rotation slice of `previewPose` / `previewIds`
+/** Rotate-only Tool. Owns the rotation-handle affordance render layer; the
+ *  gesture itself flows through `rotateAction` (declarative binding in
+ *  `useSelectTool.bindings` keyed on the `rotate-handle` affordance hit
+ *  kind) → dispatcher → preview surface → scene commit.
  *
- *  No `pointerDown` / `drag` / `click` / `dblTap` routes — rotation is
- *  exclusively affordance-driven. The dispatcher routes rotation-handle
- *  hits through this tool's `overlay` (which composes the affordance layer)
- *  into the wrapped drag channel below.
- *
- *  No `previewBounds` slice: rotation doesn't synthesize multi-target bounds
- *  (only resize uses `MULTI_RESIZE_TARGET_ID`). */
-export function useRotateTool<TNode extends { id: string }, TPose>(
-  adapter: RotateAdapter<TNode, TPose>,
-  options: UseRotateToolOptions<TNode, TPose>,
+ *  Phase 14e Task 3: legacy `useRotate` hook removed — the affordance no
+ *  longer wraps each region's drag channel; the unwrapped affordance is
+ *  used purely for the paint + hit-test surface. The dispatcher's
+ *  `affordanceAt` pipeline produces `rotate-handle` hits independently
+ *  (see `src/canvas/affordanceAt.ts`), which the `useSelectTool` rotate
+ *  binding then routes to `rotateAction`. */
+export function useRotateTool<TNode extends { id: string }, _TPose>(
+  adapter: RotateAdapter<TNode, _TPose>,
+  options: UseRotateToolOptions<TNode, _TPose>,
 ): Tool<unknown> & {
   overlay: RenderLayer<unknown>;
-  previewPose: (id: string) => TPose | null;
-  previewIds: () => Iterable<string> | null;
 } {
-  const rotate = useRotate<TNode, TPose>(adapter, options.rotate ?? {});
-
   const handleHitRadius = options.handleHitRadius ?? 8;
   const rotationHandleDistance = options.rotationHandleDistance ?? 24;
-
-  // Latest-callback ref for the rotate controller — the affordance's wrapped
-  // drag channel closes over this so we don't have to rebuild the wrapper
-  // every render. Mirrors useResizeTool's pattern.
-  const rotateRef = useRef(rotate);
-  rotateRef.current = rotate;
 
   // Latest-callback refs so the overlay/affordance closures see the most
   // recent option closures without rebuilding the Tool record.
@@ -84,8 +74,6 @@ export function useRotateTool<TNode extends { id: string }, TPose>(
   adapterRef.current = adapter;
   const boundsOfRef = useRef(options.boundsOf);
   boundsOfRef.current = options.boundsOf;
-  const getSelectionRef = useRef(options.getSelection);
-  getSelectionRef.current = options.getSelection;
 
   // Rotation affordance. Defaults to the same `handleHitRadius` /
   // `rotationHandleDistance` the tool exposes so the affordance's hit math
@@ -98,14 +86,17 @@ export function useRotateTool<TNode extends { id: string }, TPose>(
     [rotationHandleDistance, handleHitRadius],
   );
 
-  // Wrap each region's `bind()` to substitute the affordance's stub drag
-  // channel with one that delegates to `useRotate` via the latest-callback
-  // ref. Multi-mode rotation against the synthetic union isn't supported by
-  // useRotate today — we filter those regions out so the click falls
-  // through to the slot walk. FillStyle is stripped; the selection-overlay layer
-  // paints the rotation handle separately, and the affordance's `decorate`
-  // pass continues to paint the leader line.
-  const rotationAffWrapped: Affordance = useMemo(
+  // Strip the affordance's per-region paint (the selection-overlay layer
+  // paints the rotation handle separately) and skip the multi-target
+  // region (rotate against the synthetic union isn't supported). Unlike
+  // the pre-14e-T3 wrapper, this no longer overrides `bind()` to swap in
+  // a `useRotate` drag channel — the dispatcher path owns the gesture
+  // now. The region's stub drag is still emitted via `bind()` so the
+  // affordance layer can serve as a hit-test surface for legacy callers,
+  // but the new dispatcher reaches the rotate gesture via the
+  // `useSelectTool` binding + `affordanceAt`-generated `rotate-handle`
+  // hits.
+  const rotationAffStripped: Affordance = useMemo(
     () => ({
       id: rotationAff.id,
       regions(state) {
@@ -115,33 +106,7 @@ export function useRotateTool<TNode extends { id: string }, TPose>(
           out.push({
             ...region,
             paint: undefined,
-            bind: (): AffordanceBinding => {
-              const inner = region.bind() as AffordanceBinding<RotationScratch>;
-              const scratch = inner.initialScratch!;
-              const binding: AffordanceBinding<RotationScratch> = {
-                drag: {
-                  onStart: (_e, dctx) => {
-                    const sel = getSelectionRef.current?.();
-                    const ids = sel && sel.length > 0 ? [...sel] : [scratch.targetId];
-                    rotateRef.current.start({ ids, worldX: dctx.worldX, worldY: dctx.worldY });
-                    return 'claim';
-                  },
-                  onMove: (_e, dctx) => {
-                    rotateRef.current.move({ worldX: dctx.worldX, worldY: dctx.worldY, modifiers: dctx.modifiers });
-                    return 'claim';
-                  },
-                  onEnd: () => {
-                    rotateRef.current.end();
-                    return 'claim';
-                  },
-                  onCancel: () => {
-                    rotateRef.current.cancel();
-                  },
-                },
-                initialScratch: scratch,
-              };
-              return binding as AffordanceBinding;
-            },
+            bind: (): AffordanceBinding => region.bind(),
           });
         }
         return out;
@@ -152,31 +117,25 @@ export function useRotateTool<TNode extends { id: string }, TPose>(
   );
 
   // Affordance overlay layer. The composer paints `rotationAff.render`
-  // glyphs and routes hit-tests through `rotationAffWrapped.hitTest`.
+  // glyphs and routes hit-tests through `rotationAffStripped.hitTest`.
   const affordanceOverlay = useMemo(
     () => composeAffordanceLayer('rotate-affordances', 'Rotate affordances', [
-      rotationAffWrapped,
+      rotationAffStripped,
     ]),
-    [rotationAffWrapped],
+    [rotationAffStripped],
   );
 
-  // Ghost overlay slice. Structural placeholder for the rotate ghost —
-  // currently emits nothing because this tool's option surface doesn't
-  // include a `drawGhost`/`getNode` ghost-render pair (`useSelectTool`
-  // still owns ghost rendering today). SceneCanvas's preview-ghost layer
-  // re-renders the affected ids via `previewIds` + `previewPose`.
+  // Ghost overlay slice. Structural placeholder retained so the tool's
+  // overlay shape is stable; emits nothing because this tool no longer
+  // owns ghost rendering — the dispatcher-path `rotateAction` publishes
+  // `previewIds` / `previewPose`, and SceneCanvas's preview-ghost layer
+  // re-renders the affected ids from those.
   const ghostOverlay = useMemo<RenderLayer<unknown>>(
     () => ({
       id: 'rotate-overlay-ghosts',
       label: 'Rotate overlay ghosts',
       space: 'screen',
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      draw: (_data, _view, _dims) => {
-        // No-op until ghost-render options are added. Reading
-        // `rotate.overlay` here without a draw target would just allocate
-        // and discard.
-        return [];
-      },
+      draw: () => [],
     }),
     [],
   );
@@ -201,26 +160,6 @@ export function useRotateTool<TNode extends { id: string }, TPose>(
     [ghostOverlay, affordanceOverlay],
   );
 
-  // previewPose: surface the rotation controller's in-flight pose for the
-  // target id. Returns null when no rotation is in flight or `id` isn't the
-  // rotating target. (Multi-id rotation overlay tracks only the first id —
-  // the gesture controller documents this; see rotate.ts line ~259.)
-  const previewPose = (id: string): TPose | null => {
-    const rOv = rotate.overlay;
-    if (!rOv) return null;
-    if (rOv.id === id) return rOv.currentPose as TPose;
-    return null;
-  };
-
-  // previewIds: the id whose committed paint should be suppressed while a
-  // rotation gesture is in flight. Mirrors the rotation slice of
-  // useSelectTool's previewIds.
-  const previewIds = (): Iterable<string> | null => {
-    const rOv = rotate.overlay;
-    if (!rOv) return null;
-    return [rOv.id];
-  };
-
   return useMemo(
     () => {
       const base = defineTool<unknown>({
@@ -231,20 +170,14 @@ export function useRotateTool<TNode extends { id: string }, TPose>(
           label: 'Rotate',
           group: 'select',
         },
-        // No pointerDown/drag/click/dblTap routes: the rotation affordance
-        // hit-test routes the gesture directly into useRotate via the
-        // dispatcher's affordance-layer pipeline. Rotate never participates
-        // in body-hit classification.
         initial: {},
       });
       return {
         ...base,
         overlay,
-        previewPose,
-        previewIds,
       };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rotate, overlay, handleHitRadius, rotationHandleDistance],
+    [overlay, handleHitRadius, rotationHandleDistance],
   );
 }
