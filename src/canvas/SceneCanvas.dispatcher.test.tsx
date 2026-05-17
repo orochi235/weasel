@@ -4,12 +4,16 @@
  * Verifies that <SceneCanvas> auto-mounts `useGestureDispatcher` so
  * registered actions with a `gestureBinding` fire on window keydown,
  * and that `enableGestureDispatcher={false}` opts out cleanly.
+ *
+ * Phase 8 safety tests: confirm delete/duplicate/nudge/undo keybindings fire
+ * through the dispatcher path BEFORE deleting the wrapper tools.
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useEffect } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
+import type { Scene } from 'core/scene/types';
 import { useActionsRegistry, type Action } from 'interactions/actions/registry';
 
 type D = { kind: 'rect' };
@@ -93,6 +97,104 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     // Dispatcher opted out — action has no `defaultBinding`, so legacy path also
     // skips it. The spy must not have been called.
     expect(spy).not.toHaveBeenCalled();
+  });
+
+  // -------------------------------------------------------------------------
+  // Phase 8 safety: verify delete/duplicate/nudge/undo fire via dispatcher
+  // BEFORE the wrapper tools are deleted.
+  // -------------------------------------------------------------------------
+
+  type D8 = { kind: 'rect' };
+  type L8 = 'main';
+  type P8 = { x: number; y: number; width: number; height: number };
+
+  function makeSceneWithNode(): Scene<D8, L8, P8> {
+    const s = createScene<D8, L8, P8>({ systemLayers: [{ id: 'main' }] });
+    s.batch('seed', () => {
+      s.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L8, pose: { x: 0, y: 0, width: 10, height: 10 } as P8 });
+    });
+    return s;
+  }
+
+  it('Phase 8: Backspace fires deleteAction bridge run via dispatcher', () => {
+    const scene = makeSceneWithNode();
+    const deleteSpy = vi.fn();
+    // enabled:()=>true bypasses the selection guard so the dispatcher runs the
+    // action even without an active selection — verifies routing, not business logic.
+    render(
+      <SceneCanvas scene={scene} layers={{}} width={64} height={64}
+        actions={{ delete: { run: deleteSpy, enabled: () => true } }} />,
+    );
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace' }));
+    });
+    expect(deleteSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('Phase 8: Delete fires deleteAction bridge run via dispatcher', () => {
+    const scene = makeSceneWithNode();
+    const deleteSpy = vi.fn();
+    render(
+      <SceneCanvas scene={scene} layers={{}} width={64} height={64}
+        actions={{ delete: { run: deleteSpy, enabled: () => true } }} />,
+    );
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete' }));
+    });
+    expect(deleteSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('Phase 8: Ctrl+D fires duplicateAction run via dispatcher (jsdom is not Mac)', () => {
+    const scene = makeSceneWithNode();
+    const dupSpy = vi.fn();
+    render(
+      <SceneCanvas scene={scene} layers={{}} width={64} height={64}
+        actions={{ duplicate: { run: dupSpy, enabled: () => true } }} />,
+    );
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', ctrlKey: true }));
+    });
+    expect(dupSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('Phase 8: ArrowUp fires nudgeUpAction run via dispatcher', () => {
+    const scene = makeSceneWithNode();
+    const nudgeSpy = vi.fn();
+    // nudge descriptor id is "nudge.up" (not "nudge.up.small")
+    render(
+      <SceneCanvas scene={scene} layers={{}} width={64} height={64}
+        actions={{ 'nudge.up': { run: nudgeSpy, enabled: () => true } }} />,
+    );
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+    });
+    expect(nudgeSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('Phase 8: Ctrl+Z fires undoAction run via dispatcher', () => {
+    const scene = makeSceneWithNode();
+    const undoSpy = vi.fn();
+    render(
+      <SceneCanvas scene={scene} layers={{}} width={64} height={64}
+        actions={{ undo: { run: undoSpy } }} />,
+    );
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true }));
+    });
+    expect(undoSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('Phase 8: Ctrl+Shift+Z fires redoAction run via dispatcher', () => {
+    const scene = makeSceneWithNode();
+    const redoSpy = vi.fn();
+    render(
+      <SceneCanvas scene={scene} layers={{}} width={64} height={64}
+        actions={{ redo: { run: redoSpy } }} />,
+    );
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, shiftKey: true }));
+    });
+    expect(redoSpy).toHaveBeenCalledTimes(1);
   });
 
   it('action with invoker.run fires invoker (not legacy run) via dispatcher', () => {

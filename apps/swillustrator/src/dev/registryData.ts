@@ -314,8 +314,6 @@ export const TOOL_HOOK_NAMES: Readonly<Record<string, string>> = {
   lasso: 'useLassoTool',
   text: 'useTextTool',
   clone: 'useCloneTool',
-  delete: 'useDeleteTool',
-  duplicate: 'useDuplicateTool',
   eyedropper: 'useEyedropperTool',
   'wheel-zoom': 'useWheelZoomTool',
 };

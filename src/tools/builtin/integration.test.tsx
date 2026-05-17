@@ -8,7 +8,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, fireEvent, act } from '@testing-library/react';
 import { useRef, useState } from 'react';
 import { ActiveToolContextProvider } from '../../interactions/actions/activeToolContext';
-import { useTools, useSelectTool, useDeleteTool, useKeybindings, defineTool } from '../';
+import { useTools, useSelectTool, useKeybindings, defineTool } from '../';
 import { useResizeTool } from './useResizeTool';
 import { useRotateTool } from './useRotateTool';
 import { sceneToAdapter } from 'canvas/sceneAdapter';
@@ -141,81 +141,10 @@ describe('Phase 2a integration', () => {
     }
   });
 
-  it('delete tool: Backspace with selection fires a Delete op exactly once (dedupe)', () => {
-    const applyOps = vi.fn();
-
-    function Harness() {
-      const [rects, setRects] = useState<Rect[]>([
-        { id: 'a', x: 0, y: 0, width: 100, height: 100 },
-      ]);
-      const rectsRef = useRef(rects);
-      rectsRef.current = rects;
-      const selRef = useRef<string[]>(['a']);
-
-      const base = arrayAdapter<Rect, Pose>({
-        ref: rectsRef,
-        setItems: setRects,
-        toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
-        selectionRef: selRef,
-      });
-
-      // Intercept applyOps — useDelete.deleteSelection() calls dispatchApplyBatch
-      // which calls applyOps when present.
-      const adapter = { ...base, applyOps };
-
-      const sel = useSelection({ initial: [asNodeId('a')], mode: 'single' });
-      selRef.current = [...sel.current];
-
-      const deleteTool = useDeleteTool({
-        ...adapter,
-        getSelection: () => [...sel.current],
-        getNodeIndex: (id) => rectsRef.current.findIndex((r) => r.id === id),
-      });
-
-      const selectTool = useSelectTool(adapter, {
-        pickEvery: () => [],
-        boundsOf: () => null,
-      });
-
-      const tools = useTools({
-        active: 'select',
-        registry: { select: selectTool },
-        ambient: [deleteTool],
-      });
-
-      return (
-        <Canvas
-          width={200}
-          height={200}
-          layers={{}}
-          adapter={adapter}
-          selection={sel}
-          tools={tools}
-          clientToWorld={C2W}
-          // No gestures.delete prop — the legacy hook is not wired at all in this test.
-          // The dedupe assertion (call count = 1) would catch double-fire if it were.
-        />
-      );
-    }
-
-    render(<ActiveToolContextProvider initialActive="select"><Harness /></ActiveToolContextProvider>);
-
-    act(() => {
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
-    });
-
-    // Exactly one applyOps call — from the tool path only (not doubled by a legacy hook).
-    expect(applyOps).toHaveBeenCalledTimes(1);
-    const [ops, label] = applyOps.mock.calls[0] as [Array<{ apply: unknown; invert: unknown }>, string];
-    // useDelete produces one DeleteOp per selected id plus one SetSelectionOp.
-    expect(ops.length).toBeGreaterThan(0);
-    expect(label).toBe('Delete');
-    // All ops are invertible (structural check).
-    for (const op of ops) {
-      expect(typeof op.invert).toBe('function');
-    }
-  });
 });
+// Note: The former 'delete tool' test exercised useDeleteTool (wrapper now
+// dissolved in Phase 8). Dispatcher coverage lives in
+// src/canvas/SceneCanvas.dispatcher.test.tsx (Phase 8 safety tests).
 
 describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
   it('H switches active to hand; drag pans; view updates', async () => {
