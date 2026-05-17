@@ -324,7 +324,11 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
       );
     }
 
-    render(<ActiveToolContextProvider initialActive="select"><Harness /></ActiveToolContextProvider>);
+    render(
+      <ActiveToolContextProvider initialActive="select">
+        <Harness />
+      </ActiveToolContextProvider>
+    );
 
     act(() => { fireEvent.keyDown(document, { key: ' ' }); });
     // Re-read from window after re-render (state update causes Harness to re-render

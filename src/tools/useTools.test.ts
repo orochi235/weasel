@@ -172,10 +172,20 @@ describe('ToolsApi.getActiveOverlays', () => {
 });
 
 describe('useTools (Phase 5: context-backed)', () => {
-  it('useTools without ActiveToolContextProvider throws', () => {
-    expect(() =>
-      renderHook(() => useTools({ active: 'rect', registry: { rect: defineTool({ id: 'rect', initial: {} }) } })),
-    ).toThrow(/ActiveToolContextProvider/);
+  it('falls back to internal state when no ActiveToolContextProvider in scope', () => {
+    const rect = defineTool({ id: 'rect', initial: {} });
+    const text = defineTool({ id: 'text', initial: {} });
+    const hand = defineTool({ id: 'hand', hotkey: 'space', initial: {} });
+    const { result } = renderHook(() =>
+      useTools({ active: 'rect', registry: { rect, text, hand } }),
+    );
+    expect(result.current.active).toBe('rect');
+    act(() => { result.current.setActive('text'); });
+    expect(result.current.active).toBe('text');
+    act(() => { result.current.engageHotkey('hand'); });
+    expect(result.current.hotkeyEngaged).toBe('hand');
+    act(() => { result.current.disengageHotkey(); });
+    expect(result.current.hotkeyEngaged).toBeNull();
   });
 
   it('opts.active populates context on first mount when context is default', async () => {
