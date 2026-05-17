@@ -91,6 +91,37 @@ For each action that produces visible drag motion, replace the "write directly t
 
 This is where the substance lives. Each action needs to be reviewed against its legacy hook counterpart to make sure the dispatcher path produces the same visible behavior during drag, not just the same final commit. Use the legacy hook's `previewPose` impl as a reference.
 
+### Task 2.5: Dispatcher-side overlays for marquee / lasso / clone
+
+(Inserted after Task 2 was attempted and Task 3 surfaced that the legacy hooks own three overlay surfaces Tasks 1/2 didn't cover.)
+
+The dispatcher-path actions `areaSelectAction`, `lassoSelectAction`, and `cloneAction` need to emit overlay state that the canvas can render, otherwise removing the legacy hook imports kills the marquee, the lasso polyline, and the clone ghost.
+
+Three overlay surfaces to add:
+
+1. **`areaSelectAction` marquee.** During the drag, expose the current selection AABB. Render via a new minimal overlay layer (or extend `usePreviewGhostLayer` with a "marquee" channel). Reference: `useAreaSelect`'s `overlay` ref shape.
+
+2. **`lassoSelectAction` polyline.** Expose the accumulated vertex list (already buffered in the action per Phase 14b's `ctx.drag.points`) and the implicit close-line back to the start vertex.
+
+3. **`cloneAction` translated positions.** Today's `usePreviewGhostLayer` reads `previewPose(id)` (a full pose). Clone's overlay is `{id, x, y}` — translated positions of the originals. Either (a) extend the preview surface to accept `{x, y}` overlays in addition to poses, or (b) have `cloneAction` synthesize pseudo-poses that overlay the originals.
+
+For each: write a focused test verifying the dispatcher action exposes the overlay state, and the canvas renders it during gesture (gone on commit/cancel).
+
+### Task 2.6: Make `bindingsOverrideDrag` unconditional
+
+Today: shape tools + clone use `bindingsOverrideDrag: true`. `useSelectTool`, `useLassoTool`, `useHandTool` use `bindingsOverrideDrag: gestureDispatcherMounted` (conditional). The gate exists because legacy `Canvas` consumers (no `SceneCanvas`) don't mount the dispatcher.
+
+After Tasks 1/2/2.5 land, the dispatcher path has full functional parity with the legacy hooks for these tools. Flip:
+
+- `useSelectTool.bindingsOverrideDrag: true`
+- `useLassoTool.bindingsOverrideDrag: true`
+- `useHandTool.bindingsOverrideDrag: true`
+- Delete `<DispatcherPresenceProvider>` from `SceneCanvas.tsx`.
+- Delete `src/interactions/dispatcher/dispatcherPresence.tsx`.
+- Delete `useIsDispatcherMounted` and any consumers.
+
+This is a **consumer-breaking change** for anyone using legacy `Canvas` without `SceneCanvas`: their drags stop working. If `apps/swillustrator` or any other in-repo consumer relies on legacy Canvas, migrate them to `SceneCanvas` in the same commit. Out-of-repo consumers will need a migration note.
+
 ### Task 3: Per-tool legacy hook removal
 
 For each tool that imports a legacy hook, delete the import. The tool's drag now flows entirely through `Tool.bindings` → dispatcher → action invoker → preview surface → scene commit:
