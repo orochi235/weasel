@@ -46,6 +46,7 @@ Demo: `demo/demos/BooleanOpsDemo.tsx` (`#boolean-ops`). Spec:
 
 ## Surfaced 2026-05-17
 
+- **🔴 HIGH PRIORITY: Remove all demo dependencies on `useTools` outside `<SceneCanvas>`.** Phase 5 of the registry-unification refactor made `useTools` context-backed (`ActiveToolContext`). To avoid breaking demos that called `useTools` outside `<SceneCanvas>` (which auto-mounts the provider), commit `a7bfdbea` ("fix(tools): useTools falls back to internal state when no ActiveToolContextProvider") added a soft fallback to internal `useState` when no provider is in scope. This soft-fallback is intentionally temporary tech debt — the long-term shape is "every `useTools` consumer is under a provider," which means every demo either uses `<SceneCanvas>` directly OR explicitly wraps with `<ActiveToolContextProvider>`. Once all demos are migrated, delete the fallback branch in `src/tools/useTools.ts` (the `usingContext ? ... : ...` branches collapse to the context path only). Also delete the `useOptionalActiveToolContext` export from `src/interactions/actions/activeToolContext.tsx` if no other consumers need it. Related: `useKeybindings` has a parallel two-path strategy (direct `engageHotkey` vs `makeToolHoldAction` registration) that should also collapse to action-registration-only once demos are migrated.
 - **`<ToggleBar>` polish.** Shipped to `@orochi235/weasel-ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
 ## Surfaced 2026-05-15 (mid-session, deferred)
