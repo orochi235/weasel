@@ -1,39 +1,25 @@
 /**
  * `editAnchorsAction` — ongoing Action descriptor for editing polygon anchors.
  *
- * ## Status: PARTIAL (Phase 14b)
+ * ## Status: REAL (Phase 14d-anchors)
  *
- * The descriptor is registered and structurally correct. The invoker implements
- * the gesture phases (pointerdown → identify anchor → drag → commit) using:
- *   - `ctx.drag.affordance` to identify which anchor was hit at pointerdown.
- *     The affordance must carry `kind: 'anchor:N'` (anchor index N) or
- *     `kind: 'controlIn:N'` / `kind: 'controlOut:N'`. This requires the
- *     consumer's `buildAffordanceAt` to classify anchor handles in addition to
- *     resize/rotation handles (Phase 13 only wired resize + rotate).
- *   - `editAnchors` dep from DepSchema for reading/writing the polygon pose.
- *   - `withCoord` from the edit-anchors geometry module to update coord pairs.
- *   - `createTransformOp` for the undo-safe commit.
+ * The descriptor is fully operational when the consumer wires:
+ *   1. `buildAffordanceAt` with a `getAnchorState` thunk so the dispatcher
+ *      classifies anchor/control-handle hits as `anchor:N`, `controlIn:N`,
+ *      or `controlOut:N` affordances on pointerdown.
+ *   2. The `editAnchors` dep in the DepSchema (Phase 14b entry).
  *
- * ## What's PARTIAL
+ * The invoker reads `ctx.drag.affordance.kind` to identify the hit anchor,
+ * derives the coord index from `enumerateAnchors`, and on every `onMove`
+ * writes the new absolute world position via `withCoord`. On `onEnd('commit')`
+ * it dispatches a `createTransformOp` through `dispatchApplyBatch` so the
+ * edit is undoable.
  *
- * The invoker **bails** (returns `{}`) when `ctx.drag.affordance` is absent or
- * is not an `anchor:*` / `controlIn:*` / `controlOut:*` affordance. This
- * means anchor editing via the action descriptor only works when the consumer
- * has wired an affordance classifier that returns anchor hits.
+ * When `ctx.drag.affordance` is absent or is not an anchor/control kind,
+ * `start` returns `{}` (no-op) so other bindings can handle the drag.
  *
- * Full wiring requires:
- * 1. Consumer extends `buildAffordanceAt` to hit-test anchor handles for
- *    the currently-editing polygon. The `editAnchors` dep carries `editingId`.
- * 2. Consumer provides the `editAnchors` dep (Phase 14b depSchema entry).
- *
- * ## Phase 14c follow-up TODO
- *
- * Wire the affordance extension in `<SceneCanvas>` / `buildAffordanceAt` to
- * classify anchor-handle hits when an `editAnchors` dep is registered.
- * Until then this descriptor is registered but inert when no affordance is
- * provided.
- *
- * @see useEditAnchors — the React hook this descriptor will fully mirror post-14c.
+ * @see useEditAnchors — the React hook this descriptor mirrors.
+ * @see buildAffordanceAt — the classifier that produces anchor affordances.
  */
 
 import type { Action } from '../registry';
@@ -89,16 +75,18 @@ interface EditAnchorsScratch {
 // ---------------------------------------------------------------------------
 
 /**
- * @experimental
  * Static descriptor for the `editAnchors` Action.
  *
  * Requires dep-schema entries: `selection`, `editAnchors`.
  *
  * The invoker reads `ctx.drag.affordance.kind` to identify the anchor hit.
- * If the affordance is absent or is not an anchor kind, `start` returns `{}`
- * (no-op). Full behavior requires the consumer to wire anchor-hit affordances.
+ * If the affordance is absent or not an anchor kind, `start` returns `{}`
+ * (no-op), allowing other bindings to handle the drag.
  *
- * @see useEditAnchors — the React hook this descriptor partially mirrors.
+ * Consumers must provide `buildAffordanceAt` with a `getAnchorState` thunk
+ * so that anchor handles are classified at pointerdown.
+ *
+ * @see useEditAnchors — the React hook this descriptor mirrors.
  */
 export const editAnchorsAction: Action & { requires: string[] } = {
   id: 'editAnchors',

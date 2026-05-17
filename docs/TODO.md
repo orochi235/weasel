@@ -375,7 +375,12 @@ Surfaced 2026-05-16 building the force-graph demo. Bare `<Canvas>` with a custom
       - **useHandTool** (DONE): new `viewportDragPanAction` descriptor (`id:'viewport.dragPan'`, ongoing, `requires:['view']`); registered (count 42→43); barrel-exported. `bindingsOverrideDrag:gestureDispatcherMounted` (conditional on dispatcher presence). Faithfully replicates the existing pan formula (raw screen delta without scale division — separate correctness item).
       - **useEyedropperTool** (DEFERRED — not needed): click-only, Swill-specific. No kit binding to migrate.
       - **useTextTool** (DEFERRED): blocked by `hitExisting` gate + text-edit overlay complexity. Route table stays until Phase 14e.
-  - Phases 14d/14e/14f: pending. (14d migrates lasso/anchors tools after 14b's affordance extension; 14e legacy deletion + insert dep wiring + text-edit migration; 14f gestureBinding rename.)
+  - Phase 14d-anchors (buildAffordanceAt anchor extension + editAnchorsAction REAL): shipped 2026-05-17.
+      - `buildAffordanceAt` extended with optional `getAnchorState?: () => AnchorState | null` fourth parameter. When provided, the classifier walks selected polygon paths for anchor hits (always) and control-handle hits (only when `editingId === nodeId`). Uses `hitAnchor` from `edit-anchors/handles` for control-priority logic, and `enumerateAnchors` for anchor-only walks outside edit mode. Kind strings: `anchor:N`, `controlIn:N`, `controlOut:N`. New `AnchorState` interface + `ANCHOR_HIT_RADIUS` constant exported from `affordanceAt.ts`.
+      - `editAnchorsAction` flipped PARTIAL → REAL. Invoker body was already correct (Phase 14b). Status comment updated. Callers that pass `getAnchorState` to `buildAffordanceAt` and register the `editAnchors` dep now get fully working drag-to-edit-anchor behavior.
+      - `SceneCanvas` wiring deferred to Phase 14e (SceneCanvas was off-limits; `getAnchorState` thunk API is ready for wiring once Phase 14e opens that file).
+      - Tests: 14 new anchor/control-handle tests in `affordanceAt.clientToWorld.test.ts`; 6 new happy-path tests in `editAnchors.test.ts`. All 390 test files pass; tsc clean.
+  - Phases 14e/14f: pending. (14e legacy deletion + insert dep wiring + text-edit migration + SceneCanvas getAnchorState wiring; 14f gestureBinding rename.)
 
 ## UX recordings
 
