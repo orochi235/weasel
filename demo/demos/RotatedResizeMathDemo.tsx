@@ -299,13 +299,17 @@ function StackedOverlayPanel({
 
   const pick = (s: RectScene, ghost: Rect | null): Rect | undefined =>
     ghost ?? (s.get(asNodeId('a'))?.pose as Rect | undefined);
-  const poses = [pick(green, ghosts.green), pick(orange, ghosts.orange), pick(purple, ghosts.purple), pick(teal, ghosts.teal)]
+  // Render counterexamples first, green last so its dashed outline sits on top
+  // — same treatment as the median panel so "the correct one" is visually
+  // identifiable in both reference panels.
+  const greenPose = pick(green, ghosts.green);
+  const counterexamples = [pick(orange, ghosts.orange), pick(purple, ghosts.purple), pick(teal, ghosts.teal)]
     .filter((p): p is Rect => !!p);
 
   return (
     <div style={{ position: 'relative' }}>
       <svg width={W} height={H} className="ckd-canvas" style={{ display: 'block', pointerEvents: 'none', overflow: 'visible' }}>
-        {poses.map((p, i) => {
+        {counterexamples.map((p, i) => {
           const cx = p.x + p.width / 2;
           const cy = p.y + p.height / 2;
           const deg = (p.rotation * 180) / Math.PI;
@@ -322,6 +326,25 @@ function StackedOverlayPanel({
             />
           );
         })}
+        {greenPose && (() => {
+          const cx = greenPose.x + greenPose.width / 2;
+          const cy = greenPose.y + greenPose.height / 2;
+          const deg = (greenPose.rotation * 180) / Math.PI;
+          return (
+            <rect
+              x={greenPose.x}
+              y={greenPose.y}
+              width={greenPose.width}
+              height={greenPose.height}
+              fill={greenPose.color}
+              fillOpacity={0.6}
+              stroke="white"
+              strokeWidth={1.5}
+              strokeDasharray="4 3"
+              transform={`rotate(${deg} ${cx} ${cy})`}
+            />
+          );
+        })()}
       </svg>
       <OverlayLabel title="Live overlay" subtitle="all four stacked at 60% opacity" />
     </div>
