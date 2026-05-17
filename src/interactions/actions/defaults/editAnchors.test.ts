@@ -260,6 +260,33 @@ describe('editAnchorsAction — REAL invoker (Phase 14d-anchors)', () => {
     expect(handle).toHaveProperty('onEnd');
   });
 
+  it('previewIds/previewPose expose in-flight edited pose; cleared after onEnd', () => {
+    const triangle = makeTriangle();
+    const dep: EditAnchorsDep = {
+      editingId: 'node-a',
+      getPose: () => triangle,
+      applyOps: () => {},
+    };
+    const affordance: AffordanceHit = { kind: 'anchor:0', targetIds: ['node-a'] };
+    const startCtx: InvocationCtx = {
+      world: { x: 0, y: 0 },
+      screen: { x: 0, y: 0 },
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      deps: { selection: ['node-a'], editAnchors: dep },
+      drag: { start: { x: 0, y: 0 }, current: { x: 0, y: 0 }, delta: { x: 0, y: 0 }, affordance },
+    };
+    const handle = invoker.start(startCtx, undefined);
+    // Before any move: not yet active.
+    expect(handle.previewIds!()).toBeNull();
+    handle.onMove!({ ...startCtx, world: { x: 7, y: 8 }, drag: { ...startCtx.drag!, current: { x: 7, y: 8 }, delta: { x: 7, y: 8 } } });
+    expect(Array.from(handle.previewIds!() ?? [])).toEqual(['node-a']);
+    const preview = handle.previewPose!('node-a') as PolygonPath;
+    expect(preview.coords[0]).toBeCloseTo(7);
+    expect(preview.coords[1]).toBeCloseTo(8);
+    handle.onEnd!(startCtx, 'commit');
+    expect(handle.previewIds!()).toBeNull();
+  });
+
   it('start returns empty handle when anchor index is out of range', () => {
     const triangle = makeTriangle(); // only 3 anchors (0,1,2)
     const dep: EditAnchorsDep = {

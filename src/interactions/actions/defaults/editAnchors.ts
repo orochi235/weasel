@@ -147,6 +147,8 @@ export const editAnchorsAction: Action & { requires: string[] } = {
         currentPose: pose,
       };
 
+      let active = false;
+
       return {
         onMove(moveCtx: InvocationCtx): void {
           scratch.currentPose = withCoord(
@@ -155,8 +157,10 @@ export const editAnchorsAction: Action & { requires: string[] } = {
             moveCtx.world.x,
             moveCtx.world.y,
           );
+          active = true;
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
+          active = false;
           if (reason === 'cancel') return;
           if (scratch.originPose === scratch.currentPose) return;
           const op = createTransformOp<Path>({
@@ -167,6 +171,9 @@ export const editAnchorsAction: Action & { requires: string[] } = {
           });
           dispatchApplyBatch(scratch.dep, [op], 'Edit anchors');
         },
+        previewIds: () => (active ? [scratch.id] : null),
+        previewPose: (id: string) =>
+          active && id === scratch.id ? scratch.currentPose : null,
       };
     },
   },
