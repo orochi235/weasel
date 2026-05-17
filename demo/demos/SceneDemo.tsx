@@ -7,13 +7,6 @@ type LayerId = 'garden' | 'blueprint' | 'structures' | 'zones' | 'plantings';
 interface NodeData { color: string; label?: string }
 interface Pose { x: number; y: number; width: number; height: number }
 
-const W = 480, H = 320;
-
-// `<SceneCanvas>`'s scene-slot `drawOne` defaults to a rect-fill keyed
-// off `node.data.color` plus a top-left label keyed off `node.data.label`
-// — exactly what this demo needs. Custom `drawOne` is only required when
-// rendering shapes the default doesn't know about (paths, polygons,
-// icons, etc.) or when you want layer-wide decorations beyond fill+label.
 export function SceneDemo() {
   const [scene] = useState(() =>
     sceneFromJSON(sceneJson as unknown as SerializedScene<NodeData, LayerId, Pose>, {}),
@@ -32,8 +25,8 @@ export function SceneDemo() {
         </span>
       </div>
       <SceneCanvas
-        width={W}
-        height={H}
+        width={480}
+        height={320}
         className="ckd-canvas"
         scene={scene}
         selection={selection}
