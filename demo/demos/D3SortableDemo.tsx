@@ -147,6 +147,7 @@ export function D3SortableDemo() {
         selection={selection}
         selectionMode="none"
         tools={tools}
+        enableGestureDispatcher={false}
         layers={{
           scene: {
             drawOne: (n, p): DrawCommand[] => [{
