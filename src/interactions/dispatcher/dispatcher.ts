@@ -230,7 +230,11 @@ export function createDispatcher(): Dispatcher {
     const deps = buildDeps(action, ctx.depRegistry);
 
     if (action.invoker?.timing === 'immediate') {
-      action.invoker.run(deps);
+      try {
+        action.invoker.run(deps);
+      } catch (err) {
+        console.error(`weasel dispatcher: action "${action.id}" invoker threw`, err);
+      }
       return 'handled';
     }
 
@@ -243,7 +247,11 @@ export function createDispatcher(): Dispatcher {
     }
 
     // Fallback: legacy `run` path (no invoker).
-    action.run();
+    try {
+      action.run();
+    } catch (err) {
+      console.error(`weasel dispatcher: action "${action.id}" threw`, err);
+    }
     return 'handled';
   }
 

@@ -58,6 +58,11 @@ import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useBuiltinShapeTools, type BuiltinShapeToolId, type BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 import type { StandardActionsDeps, StandardActionDefaults } from 'interactions/actions/resolveActions';
+import { DepRegistryProvider } from 'interactions/actions/depRegistry';
+import { ActiveToolContextProvider } from 'interactions/actions/activeToolContext';
+import { DispatcherPresenceProvider } from 'interactions/dispatcher/dispatcherPresence';
+import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
+import { useActionsRegistry } from 'interactions/actions/registry';
 
 /** Default size in CSS pixels for selection corner-handles AND their
  *  hit-test radius. Used by the SceneCanvas defaults; consumers override
@@ -291,6 +296,18 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     enableKeybindings?: boolean;
 
     /**
+     * Auto-mount the gesture dispatcher (`useGestureDispatcher`) inside
+     * `<SceneCanvas>`. Default `true`. When `false`, the dispatcher is not
+     * wired — useful in tests or demos that drive actions through alternative
+     * mechanisms, or that want to call `useGestureDispatcher` themselves.
+     *
+     * The dispatcher reads registered actions' `gestureBinding` fields and
+     * routes matching window keydown / canvas pointer / wheel events to the
+     * corresponding `invoker.run` (or `invoker.start` for ongoing gestures).
+     */
+    enableGestureDispatcher?: boolean;
+
+    /**
      * Called once after SceneCanvas constructs (or receives) its
      * `ToolsApi`. Useful for introspection — e.g. the toolkit-builder
      * dev surface walks `tools.registry` to render the live route table.
@@ -413,6 +430,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selectionOptions,
     tools: toolsProp,
     enableKeybindings = true,
+    enableGestureDispatcher = true,
     onToolsCreated,
     toolBundle,
     defaultTools,
@@ -730,19 +748,62 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   );
 
   return (
-    <PointerProviderIfRoot>
-      <ActionsProviderIfRoot>
-        {canvas}
-        <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />
-        <StandardActionsRegistrar
-          deps={standardActionsDeps}
-          actions={actions}
-          defaults={actionDefaults}
-        />
-        {children}
-      </ActionsProviderIfRoot>
-    </PointerProviderIfRoot>
+    <DepRegistryProvider>
+      <ActiveToolContextProvider>
+        <DispatcherPresenceProvider>
+          <PointerProviderIfRoot>
+            <ActionsProviderIfRoot>
+              {canvas}
+              <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />
+              <StandardActionsRegistrar
+                deps={standardActionsDeps}
+                actions={actions}
+                defaults={actionDefaults}
+              />
+              <GestureDispatcherMounter
+                canvasRef={internalCanvasRef}
+                tools={tools}
+                enabled={enableGestureDispatcher}
+              />
+              {children}
+            </ActionsProviderIfRoot>
+          </PointerProviderIfRoot>
+        </DispatcherPresenceProvider>
+      </ActiveToolContextProvider>
+    </DepRegistryProvider>
   );
+}
+
+/**
+ * Mounts the gesture dispatcher inside `<ActionsProviderIfRoot>` so it can
+ * read the live registry. `DispatcherPresenceProvider` is an ancestor (outside
+ * `<ActionsProviderIfRoot>`), so `useIsDispatcherMounted()` in the registry's
+ * keydown handler correctly returns `true` for this scope.
+ */
+function GestureDispatcherMounter({
+  canvasRef,
+  tools,
+  enabled,
+}: {
+  canvasRef: React.RefObject<HTMLCanvasElement | null>;
+  tools: ToolsApi;
+  enabled: boolean;
+}) {
+  const registry = useActionsRegistry();
+  const toolsById = useMemo<ReadonlyMap<string, AnyTool>>(() => {
+    const m = new Map<string, AnyTool>();
+    for (const [id, tool] of Object.entries(tools.registry)) {
+      m.set(id, tool);
+    }
+    return m;
+  }, [tools.registry]);
+  useGestureDispatcher({
+    canvasRef,
+    actions: registry!,
+    toolsById,
+    enabled,
+  });
+  return null;
 }
 
 /**
