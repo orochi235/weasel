@@ -28,6 +28,7 @@ import { EasingsDemo } from './demos/EasingsDemo';
 import { ViewportDemo } from './demos/ViewportDemo';
 import { ViewportLayerDemo } from './demos/ViewportLayerDemo';
 import { ParallaxDemo } from './demos/ParallaxDemo';
+import { ForceGraphDemo } from './demos/ForceGraphDemo';
 import { PerceptualColorSlidersDemo } from './demos/PerceptualColorSlidersDemo';
 import { GradientPlaygroundDemo } from './demos/GradientPlaygroundDemo';
 import { VertexColorsDemo } from './demos/VertexColorsDemo';
@@ -68,6 +69,7 @@ import EasingsDemoFull from './demos/EasingsDemo.tsx?raw';
 import ViewportDemoFull from './demos/ViewportDemo.tsx?raw';
 import ViewportLayerDemoFull from './demos/ViewportLayerDemo.tsx?raw';
 import ParallaxDemoFull from './demos/ParallaxDemo.tsx?raw';
+import ForceGraphDemoFull from './demos/ForceGraphDemo.tsx?raw';
 import PerceptualColorSlidersDemoFull from './demos/PerceptualColorSlidersDemo.tsx?raw';
 import GradientPlaygroundDemoFull from './demos/GradientPlaygroundDemo.tsx?raw';
 import VertexColorsDemoFull from './demos/VertexColorsDemo.tsx?raw';
@@ -445,6 +447,16 @@ export const DEMOS: DemoEntry[] = [
     Component: ParallaxDemo,
     full: ParallaxDemoFull,
     path: 'demo/demos/ParallaxDemo.tsx',
+  },
+  {
+    id: 'force-graph',
+    title: 'Force-directed graph',
+    category: 'Viewport',
+    description: '`useSimulation` runs a velocity-Verlet integrator with a d3-force-compatible force protocol. The kit owns the loop; the forces come from `d3-force` directly (`forceManyBody`, `forceLink`, `forceCollide`, `forceCenter`). Drag a node to pin it (sets `fx`/`fy` and reheats with `alphaTarget(0.3).restart()`); release to free it. Sim ticks call `scene.setPose` so SceneCanvas redraws on scene mutations — no React-state churn from a custom render-driver.',
+    hint: 'drag to pin · ctrl/⌘+wheel zoom · wheel pan · H drag to pan · ⌘+0 reset',
+    Component: ForceGraphDemo,
+    full: ForceGraphDemoFull,
+    path: 'demo/demos/ForceGraphDemo.tsx',
   },
 
   // ─── Rendering & paint ────────────────────────────────────────────────────

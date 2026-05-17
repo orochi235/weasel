@@ -56,6 +56,7 @@
 export * from './features/grid';
 export * from './features/viewports';
 export * from './features/parallax';
+export * from './features/simulation';
 
 // ─── Pointer input: stylus / coalesced events / pressure ────────────────────
 export {
