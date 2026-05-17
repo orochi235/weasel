@@ -66,8 +66,8 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "dev": "concurrently -n api,swill,storybook -c green,blue,magenta \"npm:dev:api\" \"npm:dev:swill\" \"npm:dev:storybook\"",
-    "dev:api": "vite",
+    "dev": "concurrently -n kit,swill,storybook -c green,blue,magenta \"npm:dev:kit\" \"npm:dev:swill\" \"npm:dev:storybook\"",
+    "dev:kit": "vite",
     "dev:swill": "vite --config apps/swillustrator/vite.config.ts",
     "dev:storybook": "storybook dev -p 6010 --no-open",
     "build": "tsup",
