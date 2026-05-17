@@ -134,6 +134,18 @@ export function useEllipseTool<TNode extends { id: string }>(
           group: 'shape',
           icon: <EllipseIcon />,
         },
+        // Phase 14c.1: declarative binding routes empty-space drags through the
+        // new dispatcher + insertAction. bindingsOverrideDrag suppresses the
+        // legacy drag channel in the dispatcher; the route-table entry below
+        // is retained as dead code until Phase 14e removes it.
+        bindings: [
+          {
+            spec: { kind: 'drag', target: 'empty' },
+            actionId: 'insert',
+            opts: { params: { kind: 'ellipse' } },
+          },
+        ],
+        bindingsOverrideDrag: true,
         initial: {
           overlay: () => overlay,
           drag: (ctx) => {
