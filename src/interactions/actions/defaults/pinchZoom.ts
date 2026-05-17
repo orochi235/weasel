@@ -1,37 +1,46 @@
 /**
- * `pinchZoomAction` — ongoing Action descriptor for two-finger pinch zoom (Phase 7.5).
+ * `pinchZoomAction` — ongoing Action descriptor for two-finger pinch zoom.
  *
- * ## Status: STUBBED — Phase 7.5 shape only
+ * ## Status: REAL (Phase 14b)
  *
- * The descriptor is registered and structurally correct. The invoker.start
- * body is a deliberate no-op stub. Full wiring is deferred to Phase 8+.
+ * Implements pinch-zoom via the multi-touch pointer stream:
+ *   - `start`: captures startSpread from `ctx.multiTouch.pinch.startSpread`
+ *     (or falls back to `ctx.multiTouch.spread`). Records the initial centroid.
+ *   - `onMove`: computes zoom factor = currentSpread / startSpread; applies
+ *     `zoomAt(view, centroid, factor)` so the gesture midpoint stays fixed
+ *     on screen.
+ *   - `onEnd`: no-op — zoom is already applied each frame.
  *
- * ## Why stubbed
+ * ## Dispatcher extensions required (Phase 14b)
  *
- * `usePinchZoomTool` drives viewport zoom through:
- *   - Multi-touch pointer tracking (two fingers simultaneously)
- *   - Per-touchmove scale-factor computation (distance ratio)
- *   - View scale clamping (min/max bounds)
- *   - Fixed-point zoom (anchor point under the gesture midpoint stays fixed on screen)
+ * - `InvocationCtx.multiTouch.pinch`: added in Phase 14b. The dispatcher
+ *   populates it on every multitouch move-pump event. `startSpread` is
+ *   captured once when the handle opens; `currentSpread` updates each frame.
+ * - `InputEvent.multitouch.centroid / spread`: added in Phase 14b.
+ *   `useGestureDispatcher` synthesizes updated geometry on `pointermove`
+ *   when a multitouch handle is in flight.
  *
- * This pipeline requires: (a) access to the raw multi-touch pointer events (not
- * just the final drag bounds); (b) per-move dispatch mechanism to compute and
- * apply scale; (c) view mutation via `ctx.setView`. The current `InvocationCtx`
- * only carries single-pointer drag bounds, not multi-touch stream state.
+ * ## Graceful degradation
  *
- * Additionally, pinch-zoom is typically triggered by a canvas-native gesture
- * (multi-touch), not a keystroke or toolbar button. The action framework
- * currently assumes actions are keystroke-triggered or toolbar-driven.
+ * If `ctx.multiTouch.pinch` is absent (e.g. old dispatcher without Phase 14b
+ * extensions), `start` returns an empty handle — no-op, no crash.
  *
- * TODO: Phase 8+ wires the invoker body — currently a no-op stub.
- * Expected additions:
- * - Full multi-touch pointer stream in `InvocationCtx` (or separate stream subscription)
- * - Per-move scale-factor computation
- * - Direct `ctx.setView` call with scaled view bounds
+ * @see zoomAt — fixed-point zoom primitive from `core/viewport/zoomAt`.
  */
 
 import type { Action } from '../registry';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
+import type { ViewApi } from '../depSchema';
+import { zoomAt } from 'core/viewport/zoomAt';
+
+// ---------------------------------------------------------------------------
+// Internal scratch
+// ---------------------------------------------------------------------------
+
+interface PinchScratch {
+  view: ViewApi;
+  startSpread: number;
+}
 
 // ---------------------------------------------------------------------------
 // Descriptor
@@ -43,10 +52,7 @@ import type { InvocationCtx, OngoingHandle } from '../invoker';
  *
  * Requires dep-schema entries: `view`.
  *
- * The invoker is `ongoing` but the body is a no-op stub pending Phase 8
- * dispatcher additions (multi-touch stream, per-move scale computation).
- *
- * @see usePinchZoomTool — the React hook this descriptor will mirror.
+ * The invoker is `ongoing`. Zoom is applied per-frame via `view.set(zoomAt(...))`.
  */
 export const pinchZoomAction: Action & { requires: string[] } = {
   id: 'viewport.pinchZoom',
@@ -55,11 +61,34 @@ export const pinchZoomAction: Action & { requires: string[] } = {
   requires: ['view'],
   invoker: {
     timing: 'ongoing',
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    start(_ctx: InvocationCtx, _opts): OngoingHandle {
-      // TODO: Phase 8+ wires the invoker body — currently a no-op stub.
-      // Requires multi-touch pointer stream and per-move scale-factor computation.
-      return {};
+    start(ctx: InvocationCtx, _opts): OngoingHandle {
+      const view = ctx.deps.view as ViewApi | undefined;
+      if (!view) return {};
+
+      const multiTouch = ctx.multiTouch;
+      if (!multiTouch) return {};
+
+      // On start, spread comes from the initial multitouch event.
+      // The pinch field may not be set yet on start (it's populated on moves).
+      const startSpread = multiTouch.spread > 0 ? multiTouch.spread : 1;
+
+      const scratch: PinchScratch = { view, startSpread };
+
+      return {
+        onMove(moveCtx: InvocationCtx): void {
+          const mt = moveCtx.multiTouch;
+          if (!mt?.pinch) return;
+          const { currentSpread, centroid } = mt.pinch;
+          if (currentSpread <= 0 || scratch.startSpread <= 0) return;
+          const factor = currentSpread / scratch.startSpread;
+          // Update startSpread each frame so the factor is incremental.
+          // This avoids drift accumulation across many frames.
+          scratch.startSpread = currentSpread;
+          const current = scratch.view.get();
+          scratch.view.set(zoomAt(current, centroid, factor));
+        },
+        // onEnd: nothing to do — zoom was applied each frame.
+      };
     },
   },
   enabled: () => true,

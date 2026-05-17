@@ -79,6 +79,37 @@ export interface UseGestureDispatcherOptions {
 }
 
 // ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Compute centroid and spread (distance between first two pointers) from
+ * the active pointer positions map. Returns a centroid of (0, 0) and spread
+ * of 0 when fewer than 2 pointers are present.
+ */
+function computeMultiTouchGeometry(
+  positions: Map<number, { x: number; y: number }>,
+): { centroid: { x: number; y: number }; spread: number } {
+  const pts = [...positions.values()];
+  if (pts.length < 2) {
+    return { centroid: { x: 0, y: 0 }, spread: 0 };
+  }
+  // Centroid across all active pointers.
+  let sumX = 0;
+  let sumY = 0;
+  for (const p of pts) {
+    sumX += p.x;
+    sumY += p.y;
+  }
+  const centroid = { x: sumX / pts.length, y: sumY / pts.length };
+  // Spread = distance between the first two pointers (primary pair).
+  const dx = pts[1].x - pts[0].x;
+  const dy = pts[1].y - pts[0].y;
+  const spread = Math.sqrt(dx * dx + dy * dy);
+  return { centroid, spread };
+}
+
+// ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
 
@@ -139,6 +170,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
     // Tracks active pointer IDs for multi-touch synthesis.
     const activePointers = new Set<number>();
+
+    // Tracks latest screen-space position per pointer ID.
+    // Used to compute centroid + spread for pinch-zoom pump events.
+    const pointerPositions = new Map<number, { x: number; y: number }>();
 
     // Tracks the last pointerdown info for click synthesis:
     // a pointerup with no in-flight drag handle is promoted to a click event.
@@ -237,6 +272,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
     const onPointerDown = (e: PointerEvent) => {
       activePointers.add(e.pointerId);
+      pointerPositions.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
       // Classify the affordance at the pointerdown world-space position.
       // The thunk is optional — when absent, affordance is undefined (no-op).
@@ -273,6 +309,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
       // Synthesize a multi-touch event when >= 2 pointers are active.
       if (activePointers.size >= 2) {
+        const { centroid, spread } = computeMultiTouchGeometry(pointerPositions);
         const mt: InputEvent = {
           kind: 'multitouch',
           fingers: activePointers.size,
@@ -280,12 +317,39 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           ctrlKey: e.ctrlKey,
           metaKey: e.metaKey,
           shiftKey: e.shiftKey,
+          centroid,
+          spread,
         };
         dispatcher.handleInput(mt, ctxRef.current);
       }
     };
 
     const onPointerMove = (e: PointerEvent) => {
+      // Update this pointer's tracked position.
+      if (activePointers.has(e.pointerId)) {
+        pointerPositions.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      }
+
+      // If a multitouch handle is in flight, synthesize a multitouch pump event
+      // with the updated centroid + spread. The dispatcher routes this to the
+      // handle's onMove (because the event carries centroid data).
+      const mtGestureId = `multitouch-${activePointers.size}`;
+      if (activePointers.size >= 2 && dispatcher.inFlight().has(mtGestureId)) {
+        const { centroid, spread } = computeMultiTouchGeometry(pointerPositions);
+        const mtEv: InputEvent = {
+          kind: 'multitouch',
+          fingers: activePointers.size,
+          altKey: e.altKey,
+          ctrlKey: e.ctrlKey,
+          metaKey: e.metaKey,
+          shiftKey: e.shiftKey,
+          centroid,
+          spread,
+        };
+        dispatcher.handleInput(mtEv, ctxRef.current);
+        // Also dispatch the raw pointermove so single-pointer handles can coexist.
+      }
+
       const ev: InputEvent = {
         kind: 'pointermove',
         x: e.clientX,
@@ -299,7 +363,24 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     };
 
     const onPointerUp = (e: PointerEvent) => {
+      const prevSize = activePointers.size;
       activePointers.delete(e.pointerId);
+      pointerPositions.delete(e.pointerId);
+
+      // When pointer count drops below 2, commit any in-flight multitouch handle.
+      // The gestureId is keyed by the PREVIOUS size (before this pointer was removed)
+      // because that was the handle's finger count when it was opened.
+      if (prevSize >= 2 && activePointers.size < 2) {
+        const mtGestureId = `multitouch-${prevSize}`;
+        if (dispatcher.inFlight().has(mtGestureId)) {
+          // Synthesize a pointerup for the multitouch gesture — dispatcher needs
+          // a pointerup to route to onEnd, but multitouch handles aren't keyed as
+          // 'pointer-mouse'. We use cancelAll to safely commit all in-flight handles
+          // of this gesture; only the multitouch handle should be active.
+          // Use 'commit' because this is a natural lift (not a cancel).
+          dispatcher.cancelAll('commit');
+        }
+      }
 
       // Check whether a drag handle is in-flight BEFORE sending pointerup.
       // If the pointer-mouse handle is in-flight, this is the end of a drag —
@@ -341,6 +422,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
     const onPointerCancel = (e: PointerEvent) => {
       activePointers.delete(e.pointerId);
+      pointerPositions.delete(e.pointerId);
       lastPointerDown.delete(e.pointerId);
       const ev: InputEvent = {
         kind: 'pointercancel',

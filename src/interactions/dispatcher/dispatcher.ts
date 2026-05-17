@@ -89,6 +89,20 @@ export function createDispatcher(): Dispatcher {
    */
   const dragOrigins = new Map<string, { x: number; y: number }>();
 
+  /**
+   * Per-gesture pointermove history (world-space points), keyed by gestureId.
+   * Accumulated on every `pointermove` pump event. Passed as
+   * `InvocationCtx.drag.points` so invokers that need the full path
+   * (e.g. `lassoSelectAction`) can consume it.
+   */
+  const dragPoints = new Map<string, Array<{ x: number; y: number }>>();
+
+  /**
+   * Pinch-zoom start spread, keyed by multitouch gestureId.
+   * Captured when the multitouch ongoing handle first opens.
+   */
+  const pinchStartSpreads = new Map<string, number>();
+
   /** Build a minimal InvocationCtx stub for the given event + deps. */
   function buildInvocationCtx(event: InputEvent, deps: ActionDeps, gestureId?: string): InvocationCtx {
     const modifiers = {
@@ -132,13 +146,26 @@ export function createDispatcher(): Dispatcher {
       const origin = gestureId ? dragOrigins.get(gestureId) : undefined;
       const ox = origin?.x ?? cx;
       const oy = origin?.y ?? cy;
+      const points = gestureId ? dragPoints.get(gestureId) : undefined;
       base.drag = {
         start: { x: ox, y: oy },
         current: { x: cx, y: cy },
         delta: { x: cx - ox, y: cy - oy },
+        ...(points !== undefined ? { points } : {}),
       };
     } else if (event.kind === 'multitouch') {
-      base.multiTouch = { centroid: { x: 0, y: 0 }, spread: 1, rotation: 0 };
+      const centroid = event.centroid ?? { x: 0, y: 0 };
+      const spread = event.spread ?? 1;
+      // Populate pinch geometry when this is a move-pump (centroid/spread present).
+      const startSpread = gestureId ? pinchStartSpreads.get(gestureId) : undefined;
+      base.multiTouch = {
+        centroid,
+        spread,
+        rotation: 0,
+        ...(startSpread !== undefined && event.spread !== undefined
+          ? { pinch: { startSpread, currentSpread: spread, centroid } }
+          : {}),
+      };
     }
 
     return base;
@@ -254,6 +281,11 @@ export function createDispatcher(): Dispatcher {
       const gestureId = gestureIdFor(event);
       const handle = inFlightHandles.get(gestureId);
       if (handle?.onMove) {
+        // Accumulate world-space point into drag history before building ctx.
+        const pts = dragPoints.get(gestureId);
+        if (pts) {
+          pts.push({ x: event.x, y: event.y });
+        }
         const moveCtx = buildInvocationCtx(event, {}, gestureId);
         handle.onMove(moveCtx);
         return 'handled';
@@ -270,6 +302,7 @@ export function createDispatcher(): Dispatcher {
         handle.onEnd?.(endCtx, 'commit');
         inFlightHandles.delete(gestureId);
         dragOrigins.delete(gestureId);
+        dragPoints.delete(gestureId);
       }
       return handle ? 'handled' : 'unhandled';
     }
@@ -283,8 +316,26 @@ export function createDispatcher(): Dispatcher {
         handle.onEnd?.(endCtx, 'cancel');
         inFlightHandles.delete(gestureId);
         dragOrigins.delete(gestureId);
+        dragPoints.delete(gestureId);
       }
       return handle ? 'handled' : 'unhandled';
+    }
+
+    // --- Pump: multitouch move → onMove on the in-flight multitouch handle ---
+    // When a multitouch event arrives with centroid/spread data AND a handle is
+    // already in flight, route it to the handle's onMove. When no handle is in
+    // flight, fall through to scope assembly so the event can start a new handle.
+    if (event.kind === 'multitouch' && event.centroid !== undefined) {
+      const gestureId = gestureIdFor(event);
+      const handle = inFlightHandles.get(gestureId);
+      if (handle?.onMove) {
+        const moveCtx = buildInvocationCtx(event, {}, gestureId);
+        handle.onMove(moveCtx);
+        return 'handled';
+      }
+      // No in-flight handle → fall through to scope assembly + match below.
+      // This allows the initial multitouch event (which carries centroid/spread)
+      // to start a new ongoing handle on first dispatch.
     }
 
     // --- Scope assembly ---
@@ -338,6 +389,12 @@ export function createDispatcher(): Dispatcher {
       // Record the drag origin so subsequent pointermove events can compute delta.
       if (event.kind === 'pointerdown') {
         dragOrigins.set(gestureId, { x: event.x ?? 0, y: event.y ?? 0 });
+        // Initialize empty drag-points history for the new gesture.
+        dragPoints.set(gestureId, [{ x: event.x ?? 0, y: event.y ?? 0 }]);
+      }
+      // Record start spread for pinch-zoom gestures.
+      if (event.kind === 'multitouch' && event.spread !== undefined) {
+        pinchStartSpreads.set(gestureId, event.spread);
       }
       const invCtx = buildInvocationCtx(event, deps, gestureId);
       const handle = action.invoker.start(invCtx, match.binding.opts);
@@ -370,6 +427,8 @@ export function createDispatcher(): Dispatcher {
     }
     inFlightHandles.clear();
     dragOrigins.clear();
+    dragPoints.clear();
+    pinchStartSpreads.clear();
   }
 
   // -------------------------------------------------------------------------
