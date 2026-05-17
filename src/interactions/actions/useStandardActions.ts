@@ -15,6 +15,11 @@ import { useEffect, useRef } from 'react';
 import type { Action } from './registry';
 import { useActionsRegistry } from './registry';
 import { useOptionalDepRegistry, type DepRegistry, type DepName, type DepSchema } from './depRegistry';
+// Side-effect import: pulls in the module augmentation that adds `selection`, `view`,
+// `scene`, `history`, `pointer`, and `activeTool` keys to `DepSchema`. Without this, tsup's
+// per-entry dts compiler doesn't see the augmentation and `DepSchema['selection']` etc.
+// fail to type-check. `tsc --noEmit` happens to pick this up via test files; tsup doesn't.
+import './depSchema';
 import { useOptionalActiveToolContext } from './activeToolContext';
 
 import { escapeAction } from './defaults/escape';
