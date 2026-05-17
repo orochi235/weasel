@@ -9,7 +9,7 @@
  * § "Types" for the full design.
  */
 
-import type { ActionBehavior, ModifierState } from '../gestures/types';
+import type { ActionBehavior, ModifierState, ResizeAnchor } from '../gestures/types';
 
 export type { ModifierState } from '../gestures/types';
 
@@ -47,6 +47,11 @@ export interface AffordanceHit {
   fixedPoint?: { x: number; y: number };
   /** Which nodes this affordance belongs to. */
   targetIds?: string[];
+  /** Set when `kind` matches `'handle:*'`. Identifies which corner stays
+   *  fixed during a resize so consumers (resizeAction) don't re-parse `kind`.
+   *  Other affordance kinds (rotate-handle, anchor:N, controlIn:N, controlOut:N)
+   *  leave this undefined. */
+  anchor?: ResizeAnchor;
 }
 
 /** Per-invocation runtime context the dispatcher hands to an Invoker.

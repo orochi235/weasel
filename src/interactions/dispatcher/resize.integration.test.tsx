@@ -86,6 +86,8 @@ function makeAffordanceAt(
         kind: 'handle:bottom-right',
         fixedPoint: { x: 0, y: 0 },
         targetIds: nodeIds,
+        // Phase 12: typed anchor. bottom-right dragged → top-left fixed.
+        anchor: { x: 'min', y: 'min' },
       };
     }
     return null;

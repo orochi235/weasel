@@ -10,12 +10,12 @@
  *
  * ## AffordanceHit contract
  *
- * The invoker expects `ctx.drag.affordance.kind` to match `'handle:*'` and
- * `ctx.drag.affordance.fixedPoint` to carry the world-space fixed corner. The
- * `useGestureDispatcher` caller is responsible for supplying a valid
- * `affordanceAt` thunk that produces these values. Without a matching
- * affordance, the invoker returns `{}` (safe no-op) so other bindings can
- * handle the drag instead (e.g. `moveAction`).
+ * The invoker expects `ctx.drag.affordance.anchor` to be populated (a
+ * `ResizeAnchor` set by `buildAffordanceAt` when the pointer lands on a
+ * corner-handle hitbox). Phase 12 added the typed `anchor` field so the
+ * invoker no longer parses the `kind` string. Without a matching affordance,
+ * the invoker returns `{}` (safe no-op) so other bindings can handle the drag
+ * instead (e.g. `moveAction`).
  *
  * ## Pose generics
  *
@@ -40,7 +40,7 @@ import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
-import type { ResizePose } from '../../gestures/types';
+import type { ResizePose, ResizeAnchor } from '../../gestures/types';
 import { RECT_POSE_DESCRIPTOR } from '../resize/geometry';
 
 // ---------------------------------------------------------------------------
@@ -48,34 +48,12 @@ import { RECT_POSE_DESCRIPTOR } from '../resize/geometry';
 // ---------------------------------------------------------------------------
 
 /**
- * Parse a handle kind string into a ResizeAnchor.
- *
- * The anchor identifies which corner stays FIXED during resize. The dragged
- * corner is the one diagonally opposite.
- *
- * Convention (matches `cornerResizeHandles`):
- *   top-left  → anchor { x: 'max', y: 'max' }  (right+bottom edge fixed)
- *   top-right → anchor { x: 'min', y: 'max' }  (left+bottom edge fixed)
- *   bot-left  → anchor { x: 'max', y: 'min' }  (right+top edge fixed)
- *   bot-right → anchor { x: 'min', y: 'min' }  (left+top edge fixed)
- */
-function anchorFromHandleKind(kind: string): { x: 'min' | 'max' | 'free'; y: 'min' | 'max' | 'free' } | null {
-  switch (kind) {
-    case 'handle:top-left':     return { x: 'max', y: 'max' };
-    case 'handle:top-right':    return { x: 'min', y: 'max' };
-    case 'handle:bottom-left':  return { x: 'max', y: 'min' };
-    case 'handle:bottom-right': return { x: 'min', y: 'min' };
-    default:                    return null;
-  }
-}
-
-/**
  * Compute proposed bounds given the origin bounds, anchor, and drag delta.
  * Matches the unrotated path in `useResize.move`.
  */
 function computeProposedBounds(
   ob: ResizePose,
-  anchor: { x: 'min' | 'max' | 'free'; y: 'min' | 'max' | 'free' },
+  anchor: ResizeAnchor,
   dx: number,
   dy: number,
 ): ResizePose {
@@ -114,7 +92,7 @@ interface ResizeScratch {
   startPoses: Map<NodeId, unknown>;
   /** Shared origin bounds (union for multi-select, own bounds for single). */
   originBounds: ResizePose;
-  anchor: { x: 'min' | 'max' | 'free'; y: 'min' | 'max' | 'free' };
+  anchor: ResizeAnchor;
   /** World-space start position from drag.start. */
   startWorld: { x: number; y: number };
 }
@@ -148,11 +126,12 @@ export const resizeAction: Action & { requires: string[] } = {
       // Guard: empty selection → bail.
       if (ids.length === 0) return {};
 
-      // Guard: must have a resize-handle affordance.
+      // Guard: must have a resize-handle affordance with a typed anchor.
+      // `buildAffordanceAt` populates `anchor` on every `handle:*` hit
+      // (Phase 12); guard on its presence so other drag bindings (move,
+      // areaSelect) can still fire when no handle is hit.
       const affordance = ctx.drag?.affordance;
-      if (!affordance || !affordance.kind.startsWith('handle:')) return {};
-
-      const anchor = anchorFromHandleKind(affordance.kind);
+      const anchor = affordance?.anchor;
       if (!anchor) return {};
 
       // Capture start poses and compute the union origin bounds.

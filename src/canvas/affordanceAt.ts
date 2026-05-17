@@ -17,6 +17,7 @@
 
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { AffordanceHit } from 'interactions/actions/invoker';
+import type { ResizeAnchor } from 'interactions/gestures/types';
 import { DEFAULT_ROTATION_HANDLE_DISTANCE } from 'interactions/actions/rotate/handle';
 import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/useSelectTool';
 import { hitAnchor } from 'interactions/actions/edit-anchors/handles';
@@ -92,6 +93,10 @@ interface CornerDesc {
   worldX: number;
   worldY: number;
   kind: string;
+  /** Which corner stays fixed during the resize. Mirrors the convention in
+   *  `cornerResizeHandles`: 'min'/'max' identifies the FIXED edge, the
+   *  dragged corner is diagonally opposite. */
+  anchor: ResizeAnchor;
   /** Fixed point (diagonally opposite corner) — world coords. */
   fixedX: number;
   fixedY: number;
@@ -102,18 +107,27 @@ function cornersFor(b: Bounds): CornerDesc[] {
   const cx = x + width / 2;
   const cy = y + height / 2;
 
-  // Raw (unrotated) corners and their fixed opposites.
-  const raw: { lx: number; ly: number; kind: string; fx: number; fy: number }[] = [
-    { lx: x,           ly: y,           kind: 'handle:top-left',     fx: x + width, fy: y + height },
-    { lx: x + width,   ly: y,           kind: 'handle:top-right',    fx: x,         fy: y + height },
-    { lx: x,           ly: y + height,  kind: 'handle:bottom-left',  fx: x + width, fy: y          },
-    { lx: x + width,   ly: y + height,  kind: 'handle:bottom-right', fx: x,         fy: y          },
+  // Raw (unrotated) corners, their fixed opposites, and the corresponding
+  // ResizeAnchor. Anchor convention (matches `anchorFromHandleKind` in
+  // resize.ts and `cornerResizeHandles`): the anchor names the FIXED corner.
+  //   top-left dragged    → bottom-right fixed → { x:'max', y:'max' }
+  //   top-right dragged   → bottom-left fixed  → { x:'min', y:'max' }
+  //   bottom-left dragged → top-right fixed    → { x:'max', y:'min' }
+  //   bottom-right dragged→ top-left fixed     → { x:'min', y:'min' }
+  const raw: {
+    lx: number; ly: number; kind: string;
+    anchor: ResizeAnchor; fx: number; fy: number;
+  }[] = [
+    { lx: x,           ly: y,           kind: 'handle:top-left',     anchor: { x: 'max', y: 'max' }, fx: x + width, fy: y + height },
+    { lx: x + width,   ly: y,           kind: 'handle:top-right',    anchor: { x: 'min', y: 'max' }, fx: x,         fy: y + height },
+    { lx: x,           ly: y + height,  kind: 'handle:bottom-left',  anchor: { x: 'max', y: 'min' }, fx: x + width, fy: y          },
+    { lx: x + width,   ly: y + height,  kind: 'handle:bottom-right', anchor: { x: 'min', y: 'min' }, fx: x,         fy: y          },
   ];
 
-  return raw.map(({ lx, ly, kind, fx, fy }) => {
+  return raw.map(({ lx, ly, kind, anchor, fx, fy }) => {
     const wp = rotateAround(lx, ly, cx, cy, rotation);
     const fp = rotateAround(fx, fy, cx, cy, rotation);
-    return { worldX: wp.x, worldY: wp.y, kind, fixedX: fp.x, fixedY: fp.y };
+    return { worldX: wp.x, worldY: wp.y, kind, anchor, fixedX: fp.x, fixedY: fp.y };
   });
 }
 
@@ -189,6 +203,7 @@ export function buildAffordanceAt(
             kind: c.kind,
             fixedPoint: { x: c.fixedX, y: c.fixedY },
             targetIds: [resizeTarget.id],
+            anchor: c.anchor,
           };
         }
       }
