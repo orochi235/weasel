@@ -42,7 +42,10 @@ Demo: `demo/demos/BooleanOpsDemo.tsx` (`#boolean-ops`). Spec:
 
 ## Known bugs
 
-(none)
+Surfaced by `src/canvas/SceneCanvas.smoke.test.tsx` (2026-05-17):
+
+- **`useCloneTool`: Alt key-held not reaching dispatcher end-to-end.** The `tool.hold.clone` action's `key-held` gesture binding (registered via `useKeybindings` + `ActionsRegistry`) is not triggered by an `Alt` `KeyboardEvent` on `window` in the jsdom test environment. Whether this is a jsdom constraint or a real wiring gap in the production code is unresolved. Test: `useCloneTool smoke > alt-drag on selected body fires cloneAction → scene.batch("Clone") [BUG: ...]` (skipped).
+- **`useHandTool`: H keybinding does not switch active tool; `viewport.dragPan` blocked by `areaSelect` enabled() gate.** (a) Dispatching `{ key: 'h' }` on `document` does not change the active tool from `select` to `hand` — confirmed by debug probe. (b) Even if it did, the select tool's active-scope binding `{ kind:'drag', target:'empty' } → areaSelect` wins in `matchBest` and — when `areaSelect.enabled()` returns non-true — the dispatcher returns `'unhandled'` without trying `viewport.dragPan` (ambient scope). The ambient-scope fallthrough gap in `dispatcher.ts` is a design issue. Test: `useHandTool smoke > drag while hand tool active pans the viewport (view changes) [BUG: ...]` (skipped).
 
 ## Surfaced 2026-05-17
 
