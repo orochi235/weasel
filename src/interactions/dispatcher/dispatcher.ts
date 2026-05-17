@@ -116,7 +116,13 @@ export function createDispatcher(): Dispatcher {
       const sy = event.kind === 'pointerdown' ? (event.y ?? 0) : 0;
       base.screen = { x: sx, y: sy };
       base.world = { x: sx, y: sy };
-      base.drag = { start: { x: sx, y: sy }, current: { x: sx, y: sy }, delta: { x: 0, y: 0 } };
+      const affordance = event.kind === 'pointerdown' ? event.affordance : undefined;
+      base.drag = {
+        start: { x: sx, y: sy },
+        current: { x: sx, y: sy },
+        delta: { x: 0, y: 0 },
+        ...(affordance !== undefined ? { affordance } : {}),
+      };
     } else if (event.kind === 'pointermove' || event.kind === 'pointerup') {
       const cx = event.x;
       const cy = event.y;

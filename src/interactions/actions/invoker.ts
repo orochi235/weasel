@@ -19,6 +19,36 @@ export interface Point2 {
   y: number;
 }
 
+/**
+ * Information about which UI affordance was hit at pointerdown.
+ *
+ * Populated by the dispatcher when the `affordanceAt` thunk is provided to
+ * `useGestureDispatcher`. Tools / action invokers that only fire on a specific
+ * affordance (e.g. a resize handle) use this field as a guard — if the
+ * affordance is absent or is the wrong kind, they return `{}` and let other
+ * bindings handle the drag.
+ *
+ * `kind` is a discriminator string:
+ *   - `'handle:top-left'` / `'handle:top-right'` / `'handle:bottom-left'` /
+ *     `'handle:bottom-right'` — corner resize handles.
+ *   - `'rotate-handle'` — the rotation affordance.
+ *   - `'anchor:N'` — a path anchor at index N.
+ *
+ * `fixedPoint` is the world-space point that should remain stationary during
+ * the gesture. For resize handles this is the opposite (diagonally fixed)
+ * corner; for rotate it is the pivot.
+ *
+ * `targetIds` are the node ids this affordance belongs to.
+ */
+export interface AffordanceHit {
+  /** Discriminator string, e.g. `'handle:bottom-right'`. */
+  kind: string;
+  /** World-space fixed/pivot point. For resize: opposite corner. For rotate: pivot. */
+  fixedPoint?: { x: number; y: number };
+  /** Which nodes this affordance belongs to. */
+  targetIds?: string[];
+}
+
 /** Per-invocation runtime context the dispatcher hands to an Invoker.
  *  Gesture-kind-specific fields (`drag`, `wheel`, `multiTouch`, `key`) are
  *  populated only for matching gesture kinds. */
@@ -27,7 +57,7 @@ export interface InvocationCtx {
   screen: Point2;
   modifiers: ModifierState;
   deps: ActionDeps;
-  drag?: { start: Point2; current: Point2; delta: Point2 };
+  drag?: { start: Point2; current: Point2; delta: Point2; affordance?: AffordanceHit };
   wheel?: { deltaX: number; deltaY: number; deltaZ: number };
   multiTouch?: { centroid: Point2; spread: number; rotation: number };
   key?: { key: string; repeat: boolean };

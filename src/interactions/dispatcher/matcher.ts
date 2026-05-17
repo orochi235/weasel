@@ -21,6 +21,7 @@
 
 import type { GestureSpec, ModSpec } from '../gestures/spec';
 import type { GestureBinding } from '../actions/binding';
+import type { AffordanceHit } from '../actions/invoker';
 
 // ---------------------------------------------------------------------------
 // InputEvent
@@ -38,7 +39,7 @@ export type InputEvent =
   | { kind: 'key'; key: string; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean; repeat?: boolean }
   | { kind: 'key-held'; key: string; phase: 'down' | 'up'; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
   | { kind: 'wheel'; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean; deltaX: number; deltaY: number; clientX: number; clientY: number }
-  | { kind: 'pointerdown'; target?: unknown; x?: number; y?: number; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
+  | { kind: 'pointerdown'; target?: unknown; x?: number; y?: number; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean; affordance?: AffordanceHit }
   | { kind: 'pointermove'; x: number; y: number; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
   | { kind: 'pointerup'; x: number; y: number; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
   | { kind: 'pointercancel'; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
