@@ -142,7 +142,11 @@ describe('useSelectTool', () => {
     expect(clear).not.toHaveBeenCalled();
   });
 
-  it('pointer.onClick after empty pointerdown clears selection (sub-threshold release)', () => {
+  it('pointer.onClick after empty pointerdown (no mods) is now a no-op in the route table (Phase 14a: clearSelectionAction binding handles this via the new gesture dispatcher)', () => {
+    // Phase 14a removed `[mods()]: clearOnEmpty` from the click route table.
+    // The new gesture dispatcher fires `clearSelectionAction` via Tool.bindings
+    // for click-on-empty with no mods. The old route table entry is gone to
+    // avoid double-fire. This test verifies the route-table no longer clears.
     const clear = vi.fn();
     const ctx = ctxOver({
       target: emptyTarget(),
@@ -156,7 +160,8 @@ describe('useSelectTool', () => {
     );
     result.current.pointer!.onDown!(pe(), ctx);
     result.current.pointer!.onClick!(pe(), ctx);
-    expect(clear).toHaveBeenCalledTimes(1);
+    // Route table no longer calls clear — the new dispatcher's clearSelection binding does.
+    expect(clear).not.toHaveBeenCalled();
   });
 
   it('pointer.onClick after empty pointerdown with shift held does NOT clear (extend modifier)', () => {
@@ -336,7 +341,9 @@ describe('useSelectTool', () => {
       const c3 = ctxOver({ scratch: { kind: 'area' }, worldX: 50, worldY: 30 });
       result.current.drag!.onEnd!(pe(), c3);
     });
-    // Empty-click clear path still works (uses ctx.selection, not adapter).
+    // Phase 14a: empty-click clear no longer fires via the route table
+    // (the [mods()]: clearOnEmpty entry was removed). The new gesture
+    // dispatcher's clearSelectionAction binding handles it instead.
     const clear = vi.fn();
     const ctx = ctxOver({
       target: emptyTarget(),
@@ -344,7 +351,8 @@ describe('useSelectTool', () => {
     });
     result.current.pointer!.onDown!(pe(), ctx);
     result.current.pointer!.onClick!(pe(), ctx);
-    expect(clear).toHaveBeenCalledTimes(1);
+    // Route table no longer clears — clearSelectionAction binding does this.
+    expect(clear).not.toHaveBeenCalled();
   });
 
   it('drag.onEnd claims for active scratch kinds', () => {

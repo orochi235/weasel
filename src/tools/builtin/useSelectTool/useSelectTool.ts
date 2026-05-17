@@ -495,13 +495,12 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     }
     return none();
   };
-  const clearOnEmpty: ActionFn<SelectScratch> = (ctx) => {
-    if (ctx.scratch.kind === 'area') {
-      ctx.selection.clear();
-      return claim();
-    }
-    return none();
-  };
+  // clearOnEmpty — REMOVED (Phase 14a): was `[mods()]: clearOnEmpty` in the
+  // click route table below. Replaced by the `clearSelection` binding in
+  // Tool.bindings (fired by the new gesture dispatcher via clearSelectionAction).
+  // The function body is kept as a comment for rollback reference:
+  //   if (ctx.scratch.kind === 'area') { ctx.selection.clear(); return claim(); }
+  //   return none();
 
   // When the new gesture dispatcher is mounted (inside a SceneCanvas or other
   // DispatcherPresenceProvider), the drag bindings take over from the old
@@ -590,7 +589,12 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           click: {
             '*': collapseDeferredClick,
             empty: {
-              [mods()]:          clearOnEmpty,
+              // [mods()]: clearOnEmpty — REMOVED (Phase 14a): replaced by the
+              // `clearSelection` binding in Tool.bindings. When the gesture
+              // dispatcher is mounted, the binding fires clearSelectionAction
+              // instead. The route-table entry is removed to avoid double-fire.
+              // Modifier-keyed entries stay here: shift/mod/mod+shift preserve
+              // the selection (no-op). These are route-table territory until 14b.
               [mods('shift')]:   () => none(),
               [mods('mod')]:     () => none(),
               [mods('mod', 'shift')]: () => none(),
@@ -669,6 +673,10 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           { spec: { kind: 'drag' as const, target: 'selected-body' as const }, actionId: 'move' },
           // 4. Empty drag — rubber-band area-select.
           { spec: { kind: 'drag' as const, target: 'empty' as const }, actionId: 'areaSelect' },
+          // 5. Click on empty (no modifiers) → clear selection (Phase 14a).
+          //    Replaces the route-table `click.empty.[mods()]` entry above.
+          //    Requires `classifyTarget` to be wired (SceneCanvas context).
+          { spec: { kind: 'click' as const, target: 'empty' as const, mods: {} }, actionId: 'clearSelection' },
         ],
         // Suppress the old dispatcher's drag-slot when the new gesture
         // dispatcher is mounted (SceneCanvas context). When absent, the flag

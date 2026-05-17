@@ -303,6 +303,83 @@ describe('Phase 13 integration: SceneCanvas + useSelectTool drag routes', () => 
   // Thread 2: bindingsOverrideDrag flag
   // --------------------------------------------------------------------------
 
+  // --------------------------------------------------------------------------
+  // Phase 14a: clearSelection via click binding
+  // --------------------------------------------------------------------------
+
+  it('click on empty (no mods) clears selection via clearSelectionAction binding', () => {
+    const scene = makeScene();
+    const id = firstId(scene);
+
+    // Start with the node selected.
+    let selectionState: NodeId[] = [id];
+    const selectionApi = {
+      get current() { return selectionState; },
+      set: (ids: NodeId[]) => { selectionState = ids; },
+      applyClick: (_id: NodeId, _mods: unknown) => {},
+      clear: () => { selectionState = []; },
+    };
+
+    const { container } = render(
+      <SceneCanvas
+        scene={scene}
+        layers={{}}
+        width={200}
+        height={200}
+        selection={selectionApi as any}
+      />,
+    );
+
+    const canvas = container.querySelector('canvas');
+    if (!canvas) throw new Error('No canvas element');
+
+    // Click on empty space (200, 200) — outside the node at {x:0,y:0,w:50,h:50}.
+    // No pointermove → no drag → dispatcher synthesizes a click event.
+    act(() => {
+      canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 150, clientY: 150, pointerId: 1 }));
+      canvas.dispatchEvent(new PointerEvent('pointerup',   { bubbles: true, clientX: 150, clientY: 150, pointerId: 1 }));
+    });
+
+    // clearSelectionAction should have fired and cleared the selection.
+    expect(selectionState).toEqual([]);
+  });
+
+  it('click on empty WITH shift does NOT clear selection (no-op route)', () => {
+    const scene = makeScene();
+    const id = firstId(scene);
+
+    let selectionState: NodeId[] = [id];
+    const selectionApi = {
+      get current() { return selectionState; },
+      set: (ids: NodeId[]) => { selectionState = ids; },
+      applyClick: (_id: NodeId, _mods: unknown) => {},
+      clear: () => { selectionState = []; },
+    };
+
+    const { container } = render(
+      <SceneCanvas
+        scene={scene}
+        layers={{}}
+        width={200}
+        height={200}
+        selection={selectionApi as any}
+      />,
+    );
+
+    const canvas = container.querySelector('canvas');
+    if (!canvas) throw new Error('No canvas element');
+
+    // Shift-click on empty — route table says no-op (not clearSelection).
+    act(() => {
+      canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 150, clientY: 150, pointerId: 1, shiftKey: true }));
+      canvas.dispatchEvent(new PointerEvent('pointerup',   { bubbles: true, clientX: 150, clientY: 150, pointerId: 1, shiftKey: true }));
+    });
+
+    // Shift-click on empty preserves selection (route table no-op).
+    // Selection should be unchanged.
+    expect(selectionState).toEqual([id]);
+  });
+
   it('bindingsOverrideDrag is true when DispatcherPresenceProvider is mounted (SceneCanvas)', () => {
     // Indirect verification: the old dispatcher's drag channel is suppressed,
     // meaning the OLD useMove-based drag does NOT fire. Instead, moveAction does.

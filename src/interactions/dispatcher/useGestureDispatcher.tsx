@@ -140,6 +140,20 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // Tracks active pointer IDs for multi-touch synthesis.
     const activePointers = new Set<number>();
 
+    // Tracks the last pointerdown info for click synthesis:
+    // a pointerup with no in-flight drag handle is promoted to a click event.
+    // `bodyTarget` from the pointerdown is carried forward so click specs that
+    // use string-form targets ('empty', 'selected-body') match correctly.
+    const lastPointerDown = new Map<number, {
+      clientX: number;
+      clientY: number;
+      bodyTarget?: 'empty' | 'selected-body' | 'unselected-body';
+      altKey: boolean;
+      ctrlKey: boolean;
+      metaKey: boolean;
+      shiftKey: boolean;
+    }>();
+
     // -----------------------------------------------------------------------
     // Window key listeners
     // -----------------------------------------------------------------------
@@ -246,6 +260,17 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       };
       dispatcher.handleInput(ev, ctxRef.current);
 
+      // Store pointerdown info for click synthesis (see onPointerUp).
+      lastPointerDown.set(e.pointerId, {
+        clientX: e.clientX,
+        clientY: e.clientY,
+        bodyTarget,
+        altKey: e.altKey,
+        ctrlKey: e.ctrlKey,
+        metaKey: e.metaKey,
+        shiftKey: e.shiftKey,
+      });
+
       // Synthesize a multi-touch event when >= 2 pointers are active.
       if (activePointers.size >= 2) {
         const mt: InputEvent = {
@@ -275,6 +300,13 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
     const onPointerUp = (e: PointerEvent) => {
       activePointers.delete(e.pointerId);
+
+      // Check whether a drag handle is in-flight BEFORE sending pointerup.
+      // If the pointer-mouse handle is in-flight, this is the end of a drag —
+      // pump it and don't synthesize a click. If no handle is in-flight, this
+      // is a sub-threshold release and we synthesize a click event afterward.
+      const hadDragInFlight = dispatcher.inFlight().has('pointer-mouse');
+
       const ev: InputEvent = {
         kind: 'pointerup',
         x: e.clientX,
@@ -285,10 +317,31 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         shiftKey: e.shiftKey,
       };
       dispatcher.handleInput(ev, ctxRef.current);
+
+      const down = lastPointerDown.get(e.pointerId);
+      lastPointerDown.delete(e.pointerId);
+
+      // Synthesize a click when there was no in-flight drag handle — i.e.
+      // the pointerdown never matched a drag binding and the user released
+      // without movement. Carry the `bodyTarget` from the pointerdown so
+      // click specs with string-form targets ('empty', 'selected-body') match.
+      if (!hadDragInFlight && down) {
+        const clickEv: InputEvent = {
+          kind: 'click',
+          target: e.target,
+          altKey: e.altKey,
+          ctrlKey: e.ctrlKey,
+          metaKey: e.metaKey,
+          shiftKey: e.shiftKey,
+          ...(down.bodyTarget !== undefined ? { bodyTarget: down.bodyTarget } : {}),
+        };
+        dispatcher.handleInput(clickEv, ctxRef.current);
+      }
     };
 
     const onPointerCancel = (e: PointerEvent) => {
       activePointers.delete(e.pointerId);
+      lastPointerDown.delete(e.pointerId);
       const ev: InputEvent = {
         kind: 'pointercancel',
         altKey: e.altKey,
