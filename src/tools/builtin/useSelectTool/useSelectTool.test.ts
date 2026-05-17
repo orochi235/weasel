@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { useSelectTool } from './useSelectTool';
 import type { ToolCtx } from '../../types';
 import type { SelectScratch } from './useSelectTool';
@@ -281,96 +281,13 @@ describe('useSelectTool', () => {
     expect(result.current.initScratch!()).toEqual({ kind: 'idle' });
   });
 
-  it('drag.onStart over a rect-kind target routes to move.beginAt (claims)', () => {
-    // The declarative drag route table maps target.kind 'rect' → move.beginAt.
-    // ctx.scratch starts idle (as the dispatcher would have it pre-onStart);
-    // beginAt returns a begin Result that the routing factory applies to
-    // engaged scratch and claims.
-    const ctx = ctxOver({
-      selection: { current: ['hit-id'], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
-      target: nodeTarget('hit-id', 'rect'),
-      scratch: { kind: 'idle' },
-    });
-    const { result } = renderHook(() =>
-      useSelectTool(minimalAdapter, {
-        pickEvery: () => ['hit-id'],
-        boundsOf: () => null,
-      }),
-    );
-    const decision = result.current.drag!.onStart!(pe(), ctx);
-    expect(decision).toBe('claim');
-  });
-
-  it('drag.onStart over empty target routes to areaSelect.beginAt (claims)', () => {
-    const ctx = ctxOver({
-      target: emptyTarget(),
-      scratch: { kind: 'idle' },
-    });
-    const { result } = renderHook(() =>
-      useSelectTool(minimalAdapter, {
-        pickEvery: () => [],
-        boundsOf: () => null,
-      }),
-    );
-    const decision = result.current.drag!.onStart!(pe(), ctx);
-    expect(decision).toBe('claim');
-  });
-
-  it('works with an adapter missing AreaSelectAdapter methods (no marquee wiring)', () => {
-    // No hitTestArea/getSelection/setSelection/applyOps — should not throw on
-    // mount, and an empty-space drag should not crash on end.
-    const flatAdapter = {
-      getNode: (id: string) => ({ id }),
-      getNodes: () => [],
-      getPose: (_id: string) => ({ x: 0, y: 0, width: 10, height: 10 }),
-      setPose: vi.fn(),
-      // no getParent, setParent, hitTestArea, getSelection, setSelection, applyOps
-    } as any;
-    const { result } = renderHook(() =>
-      useSelectTool(flatAdapter, {
-        pickEvery: () => [],
-        boundsOf: () => null,
-      }),
-    );
-    // Empty-space drag start → move → end should all be safe.
-    act(() => {
-      const c1 = ctxOver({ target: emptyTarget(), scratch: { kind: 'idle' }, worldX: 0, worldY: 0 });
-      result.current.drag!.onStart!(pe(), c1);
-      const c2 = ctxOver({ scratch: { kind: 'area' }, worldX: 50, worldY: 30 });
-      result.current.drag!.onMove!(pe(), c2);
-      const c3 = ctxOver({ scratch: { kind: 'area' }, worldX: 50, worldY: 30 });
-      result.current.drag!.onEnd!(pe(), c3);
-    });
-    // Phase 14a: empty-click clear no longer fires via the route table
-    // (the [mods()]: clearOnEmpty entry was removed). The new gesture
-    // dispatcher's clearSelectionAction binding handles it instead.
-    const clear = vi.fn();
-    const ctx = ctxOver({
-      target: emptyTarget(),
-      selection: { current: ['a'], applyClick: vi.fn(), set: vi.fn(), clear } as any,
-    });
-    result.current.pointer!.onDown!(pe(), ctx);
-    result.current.pointer!.onClick!(pe(), ctx);
-    // Route table no longer clears — clearSelectionAction binding does this.
-    expect(clear).not.toHaveBeenCalled();
-  });
-
-  it('drag.onEnd claims for active scratch kinds', () => {
-    const { result } = renderHook(() =>
-      useSelectTool(minimalAdapter, {
-        pickEvery: () => [],
-        boundsOf: () => null,
-      }),
-    );
-    for (const scratch of [
-      { kind: 'move', ids: ['a'], deferredClickId: null },
-      { kind: 'area' },
-    ] as SelectScratch[]) {
-      const ctx = ctxOver({ scratch });
-      const decision = result.current.drag!.onEnd!(pe(), ctx);
-      expect(decision).toBe('claim');
-    }
-  });
+  // Phase 14e Task 3: drag is now owned exclusively by the gesture
+  // dispatcher via Tool.bindings. The legacy route-table drag entries
+  // (drag.onStart/onMove/onEnd) are gone; tests that asserted on
+  // `result.current.drag!.onStart!(...)` are deleted — coverage for
+  // move / areaSelect lives in their action descriptors' own tests.
+  // The empty-click clear is now driven by the clearSelection binding
+  // (also covered at the dispatcher level).
 });
 
 import { createDebugSink } from '../../../debug/createDebugSink';
@@ -402,198 +319,12 @@ describe('useSelectTool — debug recording', () => {
   });
 });
 
-describe('useSelectTool overlay', () => {
-  const adapterFor = (over: Partial<any> = {}) =>
-    ({
-      getNode: (id: string) => ({ id, x: 0, y: 0, width: 10, height: 10 }),
-      getNodes: () => [{ id: 'obj1', x: 0, y: 0, width: 10, height: 10 }],
-      getPose: (_id: string) => ({ x: 0, y: 0, width: 10, height: 10 }),
-      getParent: (_id: string) => null,
-      setPose: vi.fn(),
-      setParent: vi.fn(),
-      hitTestArea: () => [],
-      getSelection: () => [],
-      setSelection: vi.fn(),
-      applyOps: vi.fn(),
-      ...over,
-    }) as any;
-
-  const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-  const DIMS = { width: 100, height: 100 };
-
-  it('publishes a RenderLayer on the Tool record', () => {
-    const { result } = renderHook(() =>
-      useSelectTool(adapterFor(), {
-        pickEvery: () => [],
-        boundsOf: () => null,
-      }),
-    );
-    expect(result.current.overlay).toBeDefined();
-    expect(result.current.overlay!.id).toBe('select-overlay');
-    expect(result.current.overlay!.space).toBe('screen');
-  });
-
-  it('emits no commands when scratch is idle (no sub-controller engaged)', () => {
-    const { result } = renderHook(() =>
-      useSelectTool(adapterFor(), {
-        pickEvery: () => [],
-        boundsOf: () => null,
-        getNode: (id) => ({ id, x: 0, y: 0, width: 10, height: 10 }) as any,
-      }),
-    );
-    const cmds = result.current.overlay!.draw(undefined, VIEW, DIMS);
-    expect(cmds).toEqual([]);
-  });
-
-  it('area-select marquee emits a path command during area-select gesture', () => {
-    const { result } = renderHook(() =>
-      useSelectTool(adapterFor(), {
-        pickEvery: () => [],
-        boundsOf: () => null,
-      }),
-    );
-    act(() => {
-      const ctx = ctxOver({ target: emptyTarget(), scratch: { kind: 'idle' }, worldX: 0, worldY: 0 });
-      result.current.drag!.onStart!(pe(), ctx);
-      result.current.drag!.onMove!(pe(), ctxOver({ scratch: { kind: 'area' }, worldX: 50, worldY: 30 }));
-    });
-    const cmds = result.current.overlay!.draw(undefined, VIEW, DIMS);
-    expect(cmds.length).toBeGreaterThan(0);
-    expect(cmds[0].kind).toBe('path');
-  });
-
-  it('area-select marquee respects style overrides', () => {
-    const { result } = renderHook(() =>
-      useSelectTool(adapterFor(), {
-        pickEvery: () => [],
-        boundsOf: () => null,
-        areaSelectOverlayStyle: { fill: '#abc', stroke: '#def', dash: [5, 5], lineWidth: 3 },
-      }),
-    );
-    act(() => {
-      result.current.drag!.onStart!(pe(), ctxOver({ target: emptyTarget(), scratch: { kind: 'idle' }, worldX: 0, worldY: 0 }));
-      result.current.drag!.onMove!(pe(), ctxOver({ scratch: { kind: 'area' }, worldX: 5, worldY: 5 }));
-    });
-    const cmds = result.current.overlay!.draw(undefined, VIEW, DIMS);
-    const first = cmds[0] as { fill?: { color?: string }; stroke?: { paint?: { color?: string }; width?: number } };
-    expect(first.fill?.color).toBe('#abc');
-    expect(first.stroke?.paint?.color).toBe('#def');
-    expect(first.stroke?.width).toBe(3);
-  });
-
-  it('move ghost calls drawGhost for each id in move.overlay.poses', () => {
-    const drawGhost = vi.fn((..._args: unknown[]) => [] as any[]);
-    const getNode = vi.fn((id: string) => ({ id, x: 0, y: 0, width: 10, height: 10 }) as any);
-    const { result } = renderHook(() =>
-      useSelectTool(adapterFor(), {
-        pickEvery: () => ['a', 'b'],
-        boundsOf: () => null,
-        drawGhost,
-        getNode,
-      }),
-    );
-    act(() => {
-      // selection covers both ids → computeMoveIds returns ['a','b'].
-      // Move-gesture threshold is in clientX/Y, which beginAt sources from
-      // ctx.screenPoint — set it on both start and move ctx.
-      const c1 = ctxOver({
-        target: nodeTarget('a', 'rect'),
-        selection: { current: ['a', 'b'], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
-        scratch: { kind: 'idle' },
-        worldX: 0,
-        worldY: 0,
-        screenPoint: { x: 0, y: 0 },
-      });
-      result.current.drag!.onStart!(pe({ clientX: 0, clientY: 0 }), c1);
-      const c2 = ctxOver({
-        scratch: { kind: 'move', ids: ['a', 'b'] } as any,
-        worldX: 20,
-        worldY: 20,
-        screenPoint: { x: 50, y: 50 },
-      });
-      result.current.drag!.onMove!(pe({ clientX: 50, clientY: 50 }), c2);
-    });
-    result.current.overlay!.draw(undefined, VIEW, DIMS);
-    expect(drawGhost).toHaveBeenCalledTimes(2);
-  });
-
-  it('move ghost skips silently when drawGhost or getNode are missing', () => {
-    const { result } = renderHook(() =>
-      useSelectTool(adapterFor(), {
-        pickEvery: () => ['a'],
-        boundsOf: () => null,
-      }),
-    );
-    act(() => {
-      result.current.drag!.onStart!(
-        pe({ clientX: 0, clientY: 0 }),
-        ctxOver({
-          target: nodeTarget('a', 'rect'),
-          selection: { current: ['a'], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
-          scratch: { kind: 'idle' },
-          worldX: 0,
-          worldY: 0,
-          screenPoint: { x: 0, y: 0 },
-        }),
-      );
-      result.current.drag!.onMove!(
-        pe({ clientX: 50, clientY: 50 }),
-        ctxOver({
-          scratch: { kind: 'move', ids: ['a'] } as any,
-          worldX: 20,
-          worldY: 20,
-          screenPoint: { x: 50, y: 50 },
-        }),
-      );
-    });
-    expect(() => result.current.overlay!.draw(undefined, VIEW, DIMS)).not.toThrow();
-  });
-
-  it('moveOverlayStyle.ghostAlpha overrides default 0.85', () => {
-    const drawGhost = vi.fn(() => [{
-      kind: 'path',
-      path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
-      fill: { color: '#000' },
-    } as const]);
-    const { result } = renderHook(() =>
-      useSelectTool(adapterFor(), {
-        pickEvery: () => ['a'],
-        boundsOf: () => null,
-        drawGhost,
-        getNode: (id) => ({ id, x: 0, y: 0, width: 10, height: 10 }) as any,
-        moveOverlayStyle: { ghostAlpha: 0.5 },
-      }),
-    );
-    act(() => {
-      result.current.drag!.onStart!(
-        pe({ clientX: 0, clientY: 0 }),
-        ctxOver({
-          target: nodeTarget('a', 'rect'),
-          selection: { current: ['a'], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
-          scratch: { kind: 'idle' },
-          worldX: 0,
-          worldY: 0,
-          screenPoint: { x: 0, y: 0 },
-        }),
-      );
-      result.current.drag!.onMove!(
-        pe({ clientX: 50, clientY: 50 }),
-        ctxOver({
-          scratch: { kind: 'move', ids: ['a'] } as any,
-          worldX: 20,
-          worldY: 20,
-          screenPoint: { x: 50, y: 50 },
-        }),
-      );
-    });
-    const cmds = result.current.overlay!.draw(undefined, VIEW, DIMS);
-    // Ghost output is wrapped in a group with the alpha override.
-    expect(cmds.length).toBe(1);
-    const group = cmds[0] as { kind: string; alpha?: number };
-    expect(group.kind).toBe('group');
-    expect(group.alpha).toBe(0.5);
-  });
-});
+// Phase 14e Task 3: useSelectTool no longer publishes its own overlay
+// layer. Marquee paint moved to the dispatcher overlay layer
+// (`useDispatcherOverlayLayer`); move ghosts moved to the preview-ghost
+// layer (`usePreviewGhostLayer`). The `useSelectTool overlay` describe
+// block has been deleted — coverage moved to those layers' tests and to
+// the dispatcher actions' own tests.
 
 describe('useSelectTool — declarative dblTap forwards raw event', () => {
   it('passes the raw PointerEvent to onDoubleTap', () => {
@@ -728,46 +459,11 @@ describe('useSelectTool — declarative routing', () => {
     expect(ctx.scratch).toEqual(expect.objectContaining({ kind: 'move' }));
   });
 
-  it('drag on a rect target opens engaged scratch with kind:move', () => {
-    // drag route: target.kind 'rect' → beginMove → move.beginAt → begin
-    // Result whose scratch is { kind: 'move', ids }. After drag.onStart
-    // claims, ctx.scratch is the engaged move scratch.
-    const ctx = ctxOver({
-      target: nodeTarget('hit-id', 'rect'),
-      selection: { current: ['hit-id'], applyClick: vi.fn(), set: vi.fn(), clear: vi.fn() } as any,
-      scratch: { kind: 'idle' },
-      screenPoint: { x: 0, y: 0 },
-    });
-    const { result } = renderHook(() =>
-      useSelectTool(minimalAdapter, {
-        pickEvery: () => ['hit-id'],
-        boundsOf: () => null,
-      }),
-    );
-    const decision = result.current.drag!.onStart!(pe(), ctx);
-    expect(decision).toBe('claim');
-    expect((ctx.scratch as SelectScratch).kind).toBe('move');
-  });
-
-  it('drag on empty target opens engaged scratch with kind:area', () => {
-    // drag route: target.kind 'empty' → beginArea → areaSelect.beginAt →
-    // begin Result whose scratch is { kind: 'area' }.
-    const ctx = ctxOver({
-      target: emptyTarget(),
-      scratch: { kind: 'idle' },
-      screenPoint: { x: 0, y: 0 },
-    });
-    const { result } = renderHook(() =>
-      useSelectTool(minimalAdapter, {
-        pickEvery: () => [],
-        boundsOf: () => null,
-      }),
-    );
-    const decision = result.current.drag!.onStart!(pe(), ctx);
-    expect(decision).toBe('claim');
-    expect((ctx.scratch as SelectScratch).kind).toBe('area');
-  });
-
+  // Phase 14e Task 3: route-table drag entries deleted; drag is owned
+  // by the gesture dispatcher via Tool.bindings. The "drag opens engaged
+  // scratch" assertions don't have a route-table surface to drive
+  // anymore — engaged scratch is now set by pointerDown's begin() and
+  // by the dispatcher's action invocation, both covered elsewhere.
   it('cursor resolver returns "move" when scratch.kind === "move"', () => {
     // Phase 3 T6 added a scratch-aware cursor. Once a move gesture engages
     // (scratch.kind === 'move'), the host should show the move cursor.

@@ -52,25 +52,170 @@ interface Pose { x: number; y: number; width: number; height: number }
 // clientX/Y == worldX/Y in our test setup).
 const C2W = (_c: HTMLCanvasElement, cx: number, cy: number): [number, number] => [cx, cy];
 
-// Removed in Phase 14e cleanup: "select tool: pointerdown→move→up over a body
-// produces a Transform op". Phase 2a assertion that bare-Canvas + useSelectTool
-// commits a Transform op via the legacy tools route table. After Task 2.6 made
-// `bindingsOverrideDrag: true` unconditional on select, the legacy route is
-// suppressed and bare <Canvas> doesn't mount the new gesture dispatcher.
-// Equivalent end-to-end select-drag→Move-op coverage now lives in
-// src/interactions/dispatcher/move.integration.test.tsx.
+// Phase 14e Task 2.6 + Task 3 note: these end-to-end tests rendered bare
+// `<Canvas>` (not `<SceneCanvas>`), so the gesture dispatcher is not
+// mounted and the legacy hooks that used to drive drag from the
+// active-tool route table have been deleted. The dispatcher path for
+// select/hand/rotate is exercised by SceneCanvas-rooted integration
+// tests + each action descriptor's own tests.
+describe.skip('Phase 2a integration (deleted: bare Canvas drag without dispatcher)', () => {
+  it('select tool: pointerdown→move→up over a body produces a Transform op', () => {
+    // applyOps is the interception point: dispatchApplyBatch in useMove.end()
+    // calls adapter.applyOps(ops, label) when the method is present.
+    const applyOps = vi.fn();
+
+    function Harness() {
+      const [rects, setRects] = useState<Rect[]>([
+        { id: 'a', x: 0, y: 0, width: 100, height: 100 },
+      ]);
+      const rectsRef = useRef(rects);
+      rectsRef.current = rects;
+      const sel = useSelection({ mode: 'single' });
+
+      const base = arrayAdapter<Rect, Pose>({
+        ref: rectsRef,
+        setItems: setRects,
+        toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
+      });
+
+      // Intercept at applyOps so we capture exactly the ops the gesture commits.
+      const adapter = { ...base, applyOps };
+
+      const pickEvery = (wx: number, wy: number) => {
+        for (let i = rectsRef.current.length - 1; i >= 0; i--) {
+          const r = rectsRef.current[i];
+          if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) {
+            return [r.id];
+          }
+        }
+        return [];
+      };
+      const selectTool = useSelectTool(adapter, {
+        pickEvery,
+        boundsOf: (id) => {
+          const r = rectsRef.current.find((o) => o.id === id);
+          return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
+        },
+      });
+
+      const tools = useTools({
+        active: 'select',
+        registry: { select: selectTool },
+      });
+
+      return (
+        <Canvas
+          width={200}
+          height={200}
+          layers={{}}
+          adapter={adapter}
+          selection={sel}
+          tools={tools}
+          clientToWorld={C2W}
+          pickEvery={pickEvery}
+        />
+      );
+    }
+
+    const { container } = render(<ActiveToolContextProvider initialActive="select"><Harness /></ActiveToolContextProvider>);
+    const canvas = container.querySelector('canvas')!;
+    canvas.setPointerCapture = vi.fn();
+
+    // Pointer-down in the center of rect 'a' (50, 50).
+    fireEvent.pointerDown(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
+    // Move far enough to cross the dispatcher's drag threshold (default: 4px).
+    // onStart fires here; useMove records this position as its start.
+    fireEvent.pointerMove(canvas, { clientX: 125, clientY: 125, pointerId: 1 });
+    // Move again from (125,125) to cross useMove's internal sub-gesture threshold.
+    fireEvent.pointerMove(canvas, { clientX: 130, clientY: 130, pointerId: 1 });
+    fireEvent.pointerUp(canvas,   { clientX: 130, clientY: 130, pointerId: 1 });
+
+    // useMove.end() → dispatchApplyBatch → adapter.applyOps(ops, label).
+    // Exactly one call — proves the tools path (not legacy) fired.
+    expect(applyOps).toHaveBeenCalledTimes(1);
+    const [ops, label] = applyOps.mock.calls[0] as [Array<{ apply: unknown; invert: unknown }>, string];
+    expect(ops.length).toBeGreaterThan(0);
+    // The move label is 'Move'; the ops are Transform ops (they carry no type
+    // field — identified by label on the batch call).
+    expect(label).toBe('Move');
+    // Each op must be invertible (structural check for a valid Op).
+    for (const op of ops) {
+      expect(typeof op.invert).toBe('function');
+    }
+  });
+
+});
 // Note: The former 'delete tool' test exercised useDeleteTool (wrapper now
 // dissolved in Phase 8). Dispatcher coverage lives in
 // src/canvas/SceneCanvas.dispatcher.test.tsx (Phase 8 safety tests).
 
 describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
-  // Removed in Phase 14e cleanup: "H switches active to hand; drag pans; view
-  // updates". The drag-pan half asserted legacy bare-Canvas useHandTool
-  // semantics, which Task 2.6 disabled by making `bindingsOverrideDrag: true`
-  // unconditional on hand. Hand-tool drag-pan via the new dispatcher is
-  // covered in src/canvas/SceneCanvas.smoke.test.tsx ("useHandTool smoke").
-  // The "H switches active" keybinding half is exercised by the surviving
-  // space-engages test below and by keybindings unit tests.
+  // Phase 14e Task 2.6: hand tool drag requires the SceneCanvas-mounted
+  // gesture dispatcher; bare `<Canvas>` no longer drives pan. The
+  // "drag pans" assertion is covered by SceneCanvas integration tests.
+  it.skip('H switches active to hand; drag pans; view updates', async () => {
+    const onViewChange = vi.fn();
+
+    function Harness() {
+      const [view, setView] = useState({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+      const select = useSelectTool(
+        {
+          getNode: () => undefined,
+          getPose: () => null,
+          getNodes: () => [],
+          getParent: () => null,
+          setParent: () => {},
+          setPose: () => {},
+          getSelection: () => [],
+          setSelection: () => {},
+          hitTestArea: () => [],
+          applyOps: () => {},
+        },
+        {
+          pickEvery: () => [],
+          boundsOf: () => null,
+        },
+      );
+      const hand = useHandTool();
+      const tools = useTools({ active: 'select', registry: { select, hand } });
+      useKeybindings(tools);
+      return (
+        <Canvas
+          width={200}
+          height={200}
+          items={[]}
+          setItems={() => {}}
+          view={view}
+          onViewChange={(v) => { setView(v); onViewChange(v); }}
+          tools={tools}
+          layers={{ scene: { drawOne: () => [] } }}
+        />
+      );
+    }
+
+    const { container } = render(<ActiveToolContextProvider initialActive="select"><Harness /></ActiveToolContextProvider>);
+    const canvas = container.querySelector('canvas')!;
+
+    // Switch to hand via the H key. Wrap in act() to flush the React state update.
+    act(() => { fireEvent.keyDown(document, { key: 'H' }); });
+
+    // jsdom doesn't support clientX in PointerEvent constructor; use MouseEvent
+    // (same event structure, React's onPointer* handlers receive it fine).
+    function mkPointerEvent(type: string, clientX: number, clientY: number) {
+      const e = new MouseEvent(type, { clientX, clientY, bubbles: true, cancelable: true });
+      return e;
+    }
+
+    // Pointer down + small move to cross threshold (onStart captures startClient at
+    // the threshold-crossing event) + larger move (onMove fires and calls setView).
+    canvas.dispatchEvent(mkPointerEvent('pointerdown', 100, 100));
+    canvas.dispatchEvent(mkPointerEvent('pointermove', 110, 110)); // crosses threshold → onStart; startClient=(110,110)
+    canvas.dispatchEvent(mkPointerEvent('pointermove', 160, 140)); // triggers onMove → dx=50, dy=30
+    canvas.dispatchEvent(mkPointerEvent('pointerup', 160, 140));
+
+    // dx=50, dy=30 → view = (0-50, 0-30) = (-50, -30)
+    expect(onViewChange).toHaveBeenCalledWith({ x: -50, y: -30, scale: { x: 1, y: 1 } });
+  });
 
   it('space engages momentary hand; release returns to prior tool', () => {
     const onViewChange = vi.fn();
@@ -136,14 +281,98 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
 // useWheelZoomTool, useWheelPanTool, useKeyboardZoomTool dissolved.
 // Equivalent behavior is tested in src/interactions/dispatcher/viewport.integration.test.tsx.
 
-// Removed in Phase 14e cleanup: "Phase 2a: off-canvas pointer release backstop
-// — select tool: pointerup dispatched on document commits the move and ends
-// the gesture". Validated the legacy <Canvas>-level document pointerup
-// backstop wired into the legacy ToolsDispatcher. After Task 2.6 made
-// `bindingsOverrideDrag: true` unconditional on select, that path no longer
-// receives the drag, and the new gesture dispatcher (mounted by <SceneCanvas>)
-// is the live owner — a separate backstop concern that would belong with
-// useGestureDispatcher if reintroduced.
+describe.skip('Phase 2a: off-canvas pointer release backstop (deleted: bare Canvas drag without dispatcher)', () => {
+  // Repro: start a drag, move pointer off-canvas, release outside the canvas.
+  // The pointerup lands on `document`, not the canvas. Without a doc-level
+  // backstop, the dispatcher's gesture stays in flight forever — the move
+  // overlay leaks, the pose is never committed, and on re-entry the ghost is
+  // still drawn.
+  it('select tool: pointerup dispatched on document commits the move and ends the gesture', () => {
+    const applyOps = vi.fn();
+
+    function Harness() {
+      const [rects, setRects] = useState<Rect[]>([
+        { id: 'a', x: 0, y: 0, width: 100, height: 100 },
+      ]);
+      const rectsRef = useRef(rects);
+      rectsRef.current = rects;
+      const sel = useSelection({ mode: 'single' });
+
+      const base = arrayAdapter<Rect, Pose>({
+        ref: rectsRef,
+        setItems: setRects,
+        toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
+      });
+      const adapter = { ...base, applyOps };
+
+      const pickEvery = (wx: number, wy: number) => {
+        for (let i = rectsRef.current.length - 1; i >= 0; i--) {
+          const r = rectsRef.current[i];
+          if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) {
+            return [r.id];
+          }
+        }
+        return [];
+      };
+      const selectTool = useSelectTool(adapter, {
+        pickEvery,
+        boundsOf: (id) => {
+          const r = rectsRef.current.find((o) => o.id === id);
+          return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
+        },
+      });
+
+      const tools = useTools({
+        active: 'select',
+        registry: { select: selectTool },
+      });
+
+      return (
+        <Canvas
+          width={200}
+          height={200}
+          layers={{}}
+          adapter={adapter}
+          selection={sel}
+          tools={tools}
+          clientToWorld={C2W}
+          pickEvery={pickEvery}
+        />
+      );
+    }
+
+    const { container } = render(<ActiveToolContextProvider initialActive="select"><Harness /></ActiveToolContextProvider>);
+    const canvas = container.querySelector('canvas')!;
+    canvas.setPointerCapture = vi.fn();
+
+    // Pointer-down on the rect → gesture starts (pending).
+    fireEvent.pointerDown(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
+    // Move past the threshold while still on the canvas → promotes to drag.
+    fireEvent.pointerMove(canvas, { clientX: 80, clientY: 80, pointerId: 1 });
+    // Pointer leaves the canvas — the next move arrives via document
+    // (browsers route pointermove during a captured drag to the canvas; absent
+    // capture they go to whatever element is under the pointer). Dispatch on
+    // document to simulate the off-canvas position.
+    act(() => {
+      document.dispatchEvent(
+        new MouseEvent('pointermove', { clientX: 500, clientY: 500, bubbles: true }),
+      );
+    });
+    // User releases outside the canvas. With no doc-level backstop the
+    // dispatcher never sees the pointerup and the gesture leaks.
+    act(() => {
+      document.dispatchEvent(
+        new MouseEvent('pointerup', { clientX: 500, clientY: 500, bubbles: true }),
+      );
+    });
+
+    // The gesture must have committed: applyOps fires exactly once with a
+    // 'Move' label.
+    expect(applyOps).toHaveBeenCalledTimes(1);
+    const [, label] = applyOps.mock.calls[0] as [Array<unknown>, string];
+    expect(label).toBe('Move');
+  });
+});
 
 describe('Phase 2a integration', () => {
   it('cross-tool: corner-resize affordance fires while a non-select tool is active', () => {
@@ -208,7 +437,12 @@ describe('Phase 2a integration', () => {
     expect(batchLabel).toBe('Resize');
   });
 
-  it('cross-tool: rotation affordance fires while a non-select tool is active', () => {
+  // Phase 14e Task 3: useRotateTool no longer wires useRotate into the
+  // affordance binding. Rotation flows through `rotateAction` via the
+  // dispatcher, which is not mounted under bare `<Canvas>`. The
+  // cross-tool rotation handoff is covered by rotateAction's own tests
+  // and by SceneCanvas integration tests.
+  it.skip('cross-tool: rotation affordance fires while a non-select tool is active', () => {
     const applyOps = vi.fn();
     function Harness() {
       const [rects, setRects] = useState<Rect[]>([

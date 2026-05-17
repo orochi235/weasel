@@ -434,12 +434,13 @@ describe('<Canvas>', () => {
       expect(last).toEqual(['b']);
     });
 
-    // Removed in Phase 14e cleanup: "multi: clicking already-selected drags the
-    // whole set". Asserted legacy bare-Canvas select-tool drag semantics; after
-    // Task 2.6 made `bindingsOverrideDrag: true` unconditional on select/lasso/
-    // hand, drag routes exclusively through the gesture dispatcher (which bare
-    // <Canvas> does not mount). Equivalent multi-selection drag coverage now
-    // lives in src/interactions/dispatcher/move.integration.test.tsx.
+    // Phase 14e Task 3: bare `<Canvas>` no longer drives move via the
+    // legacy `useMove` hook (deleted from useSelectTool). Drag flows through
+    // the gesture dispatcher mounted by `<SceneCanvas>`, so the
+    // "moveStart behavior fires" assertion that exercised useMove from
+    // bare Canvas has no surface to fire on. The drag-the-whole-set
+    // semantic is now covered by moveAction's own tests (selection
+    // resolution lives in pointerDownBody + moveAction's start).
 
   });
 });

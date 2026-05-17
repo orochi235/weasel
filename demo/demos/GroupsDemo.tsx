@@ -129,7 +129,7 @@ export function GroupsDemo() {
       return id ? [id] : [];
     },
     boundsOf,
-    move: { expandIds: (ids) => expandToLeaves(ids, adapter) },
+    move: { expandIds: (ids: string[]) => expandToLeaves(ids, adapter) },
     drawGhost: (rect, pose): DrawCommand[] => rect == null ? [] : [{
       kind: 'path',
       path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
