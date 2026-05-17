@@ -57,9 +57,36 @@ export interface InvocationCtx {
   screen: Point2;
   modifiers: ModifierState;
   deps: ActionDeps;
-  drag?: { start: Point2; current: Point2; delta: Point2; affordance?: AffordanceHit };
+  drag?: {
+    start: Point2;
+    current: Point2;
+    delta: Point2;
+    affordance?: AffordanceHit;
+    /**
+     * Full pointermove history for the current drag, in world space.
+     * Accumulated by the dispatcher on every `pointermove` pump event.
+     * Available only during `onMove` and `onEnd` calls (not on `start`).
+     * Used by `lassoSelectAction` to build its polygon vertex list.
+     */
+    points?: Point2[];
+  };
   wheel?: { deltaX: number; deltaY: number; deltaZ: number };
-  multiTouch?: { centroid: Point2; spread: number; rotation: number };
+  multiTouch?: {
+    centroid: Point2;
+    spread: number;
+    rotation: number;
+    /**
+     * Pinch-zoom geometry. Populated by the dispatcher when a multitouch
+     * handle is in flight and a pointermove-pump fires.
+     * `startSpread` is the spread at the moment the gesture began.
+     * `currentSpread` is the spread at the current frame.
+     */
+    pinch?: {
+      startSpread: number;
+      currentSpread: number;
+      centroid: Point2;
+    };
+  };
   key?: { key: string; repeat: boolean };
 }
 

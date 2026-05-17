@@ -58,6 +58,51 @@ export interface AreaSelectDep {
 }
 
 /**
+ * Adapter dep for `editAnchorsAction` (Phase 14b).
+ *
+ * Provides narrow read/write of a single polygon node's path pose.
+ * The consumer registers this dep when anchor-edit mode is active.
+ *
+ * `editingId` identifies the polygon currently being edited.
+ * `getPose(id)` returns the current path (must be a PolygonPath for editing).
+ * `applyOps(ops, label)` commits a transform op to history.
+ */
+export interface EditAnchorsDep {
+  /** Id of the node currently being edited. */
+  editingId: string;
+  /** Returns the polygon path for the given node. */
+  getPose(id: string): unknown;
+  /** Commits ops to history (erased form; dispatchApplyBatch handles narrowing). */
+  applyOps?(ops: { apply(adapter: unknown): void }[], label?: string): void;
+}
+
+/**
+ * Adapter dep for `lassoSelectAction` (Phase 14b).
+ *
+ * Provides polygon-lasso hit-testing + selection read/write.
+ * Consumers that don't implement `hitTestLasso` can omit it; the action
+ * falls back to a bounding-box AABB test via `hitTestArea`.
+ */
+export interface LassoSelectDep {
+  /**
+   * Hit-test against a closed polygon (vertex order CW or CCW; last→first
+   * closing edge is implicit). Returns matching node ids.
+   * Optional — when absent, `lassoSelectAction` falls back to AABB via
+   * `hitTestArea`.
+   */
+  hitTestLasso?(
+    polygon: ReadonlyArray<{ x: number; y: number }>,
+    mode: 'centers' | 'intersect' | 'enclosed',
+  ): string[];
+  /** Return ids of nodes whose AABB overlaps the given rect (fallback). */
+  hitTestArea(bounds: { x: number; y: number; width: number; height: number }): string[];
+  /** Return the current selection id list. */
+  getSelection(): string[];
+  /** Replace the current selection. */
+  setSelection(ids: string[]): void;
+}
+
+/**
  * Adapter dep for `insertAction` (Phase 11).
  *
  * Provided by `<SceneCanvas>` / `<StandardActionsRegistrar>`. The `kind`
@@ -114,6 +159,23 @@ declare module './depRegistry' {
      * provide a typed node factory (e.g. with custom data payloads).
      */
     insert: InsertDep;
+    /**
+     * Lasso-select dep — polygon hit-test + selection read/write.
+     *
+     * Phase 14b: sourced from `<SceneCanvas>` / `<StandardActionsRegistrar>`.
+     * Falls back to AABB hit-test when `hitTestLasso` is absent.
+     */
+    lassoSelect: LassoSelectDep;
+    /**
+     * Edit-anchors dep — narrow read/write of one polygon's path pose.
+     *
+     * Phase 14b: sourced from consumer. Wraps `getPose`/`setPose`/`applyOps`
+     * for the currently-being-edited polygon node.
+     *
+     * The `editAnchorsAction` requires this dep to be registered when anchor
+     * editing is active. If absent, `start` returns an empty handle (no-op).
+     */
+    editAnchors: EditAnchorsDep;
   }
 }
 

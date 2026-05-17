@@ -77,7 +77,26 @@ export type InputEvent =
        */
       bodyTarget?: 'empty' | 'selected-body' | 'unselected-body';
     }
-  | { kind: 'multitouch'; fingers: number; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean };
+  | {
+      kind: 'multitouch';
+      fingers: number;
+      altKey: boolean;
+      ctrlKey: boolean;
+      metaKey: boolean;
+      shiftKey: boolean;
+      /**
+       * Centroid of active pointers in screen space. Populated by
+       * `useGestureDispatcher` when the event is a pointermove-pump of a
+       * running multitouch handle (i.e. `centroid` is updated each frame).
+       * Absent on the initial pointerdown-triggered multitouch event.
+       */
+      centroid?: { x: number; y: number };
+      /**
+       * Distance between the two primary pointers (screen space). Populated
+       * on move-pump events alongside `centroid`. Absent on initial event.
+       */
+      spread?: number;
+    };
 
 // ---------------------------------------------------------------------------
 // BindingScope / ScopedBinding / MatchResult
