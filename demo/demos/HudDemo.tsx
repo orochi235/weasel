@@ -1,10 +1,12 @@
 import { useRef, useState, useEffect } from 'react';
-import { Canvas, useHandTool, useTools } from '../../src';
+import { SceneCanvas, useScene } from '../../src';
 import type { CanvasExtensionApi } from '../../src';
 import { useHud } from '../../packages/weasel-hud/src/react';
 import type { ButtonWidget } from '../../packages/weasel-hud/src';
 
 const W = 600, H = 400;
+
+interface Empty { id: string }
 
 export function HudDemo() {
   const ref = useRef<CanvasExtensionApi>(null);
@@ -12,10 +14,10 @@ export function HudDemo() {
   const [count, setCount] = useState(0);
   const btnRef = useRef<ButtonWidget | null>(null);
 
-  // A hand tool is the simplest tool structure; it wires the pointer dispatcher
-  // which is required for HUD hit-tests to fire.
-  const hand = useHandTool();
-  const tools = useTools({ active: 'hand', registry: { hand } });
+  // Empty scene — this demo's content is the HUD layer, not scene nodes.
+  // SceneCanvas auto-mounts the gesture dispatcher (which HUD hit-tests
+  // ride on top of), so we don't need to register a tool just to wire it.
+  const scene = useScene<Empty>({ items: [] });
 
   // Create the button once, after the HUD attaches.
   useEffect(() => {
@@ -43,13 +45,13 @@ export function HudDemo() {
         each click. The button is a HUD widget drawn in screen space via
         <code> @orochi235/weasel-hud</code>.
       </p>
-      <Canvas
+      <SceneCanvas
         ref={ref}
         width={W}
         height={H}
         className="ckd-canvas"
-        tools={tools}
-        layers={{}}
+        scene={scene}
+        defaultTools={['select']}
       />
       <p style={{ marginTop: 8, color: '#555' }}>
         React state counter: <strong>{count}</strong>
