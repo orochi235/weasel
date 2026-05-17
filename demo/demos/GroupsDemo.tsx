@@ -14,6 +14,7 @@ import {
   useResizeTool,
   useRotateTool,
   useTools,
+  useResizeBehaviorsDepSource,
 } from '@orochi235/weasel';
 import type { Group } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
@@ -137,18 +138,23 @@ export function GroupsDemo() {
     }],
     getNode,
   });
+  const expandResizeIds = (ids: string[]) => {
+    if (ids.length === 1 && adapter.getGroup(ids[0]) === undefined) return ids;
+    return expandToLeaves(ids, adapter);
+  };
   const resizeTool = useResizeTool<Rect, Pose>(adapter, {
-    resize: {
-      expandIds: (ids: string[]) => {
-        if (ids.length === 1 && adapter.getGroup(ids[0]) === undefined) return ids;
-        return expandToLeaves(ids, adapter);
-      },
-    },
+    resize: { expandIds: expandResizeIds },
     boundsOf,
     getSelection: () => selection.current,
     poseBounds: (p) => p,
     getNode,
   });
+  // Mirror `expandIds` through the dispatcher-path `resizeBehaviors` dep
+  // so the dispatcher's resize action group-expands identically.
+  function ResizeBehaviorsBridge() {
+    useResizeBehaviorsDepSource<Pose>({ expandIds: expandResizeIds });
+    return null;
+  }
   const rotateTool = useRotateTool<Rect, Pose>(adapter, {
     boundsOf,
     getSelection: () => [...selection.current],
@@ -190,6 +196,8 @@ export function GroupsDemo() {
           }),
         },
       }}
-    />
+    >
+      <ResizeBehaviorsBridge />
+    </SceneCanvas>
   );
 }
