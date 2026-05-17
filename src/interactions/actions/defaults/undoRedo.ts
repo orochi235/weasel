@@ -1,4 +1,5 @@
 import type { Action } from '../registry';
+import { deriveDefaultBinding } from './_keyBindingFromGesture';
 
 /** @experimental */
 export interface UndoRedoDeps {
@@ -15,7 +16,6 @@ export interface UndoRedoDeps {
 export const undoAction: Action = {
   id: 'undo',
   label: 'Undo',
-  defaultBinding: { key: 'z', mod: true },
   gestureBinding: { kind: 'key', key: 'z', mods: { mod: true } },
   invoker: {
     timing: 'immediate',
@@ -32,7 +32,6 @@ export const undoAction: Action = {
 export const redoAction: Action = {
   id: 'redo',
   label: 'Redo',
-  defaultBinding: { key: 'z', mod: true, shift: true },
   gestureBinding: { kind: 'key', key: 'z', mods: { mod: true, shift: true } },
   invoker: {
     timing: 'immediate',
@@ -60,6 +59,7 @@ export function defaultUndoRedoActions(deps: UndoRedoDeps): Action[] {
   return [
     {
       ...undoFields,
+      defaultBinding: deriveDefaultBinding(undoAction.gestureBinding),
       run: () => { deps.undo(); },
       ...(deps.canUndo
         ? { enabled: () => (deps.canUndo!() ? true : 'not-applicable' as const) }
@@ -67,6 +67,7 @@ export function defaultUndoRedoActions(deps: UndoRedoDeps): Action[] {
     },
     {
       ...redoFields,
+      defaultBinding: deriveDefaultBinding(redoAction.gestureBinding),
       run: () => { deps.redo(); },
       ...(deps.canRedo
         ? { enabled: () => (deps.canRedo!() ? true : 'not-applicable' as const) }

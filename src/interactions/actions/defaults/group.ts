@@ -6,6 +6,7 @@ import type { NodeId } from 'core/scene/types';
 import type { Group } from 'features/groups/types';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
+import { deriveDefaultBinding } from './_keyBindingFromGesture';
 
 /** @experimental */
 export interface GroupDeps {
@@ -37,7 +38,6 @@ function defaultMintId(): string {
 export const groupAction: Action = {
   id: 'group',
   label: 'Group',
-  defaultBinding: { key: 'g', mod: true },
   gestureBinding: { kind: 'key', key: 'g', mods: { mod: true } },
   invoker: {
     timing: 'immediate',
@@ -56,7 +56,6 @@ export const groupAction: Action = {
 export const ungroupAction: Action = {
   id: 'ungroup',
   label: 'Ungroup',
-  defaultBinding: { key: 'g', mod: true, shift: true },
   gestureBinding: { kind: 'key', key: 'g', mods: { mod: true, shift: true } },
   invoker: {
     timing: 'immediate',
@@ -85,6 +84,7 @@ export function defaultGroupAction(deps: GroupDeps): Action {
   void _enabled;
   return {
     ...descriptorFields,
+    defaultBinding: deriveDefaultBinding(groupAction.gestureBinding),
     run: () => {
       const sel = deps.getSelection();
       if (sel.length < minMembers) return;
@@ -122,6 +122,7 @@ export function defaultUngroupAction(deps: UngroupDeps): Action {
   void _enabled;
   return {
     ...descriptorFields,
+    defaultBinding: deriveDefaultBinding(ungroupAction.gestureBinding),
     run: () => {
       const sel = deps.getSelection();
       if (sel.length === 0) return;

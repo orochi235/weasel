@@ -14,10 +14,6 @@ describe('groupAction (descriptor)', () => {
     expect(groupAction.label).toBe('Group');
   });
 
-  it('defaultBinding = { key: "g", mod: true }', () => {
-    expect(groupAction.defaultBinding).toEqual({ key: 'g', mod: true });
-  });
-
   it('gestureBinding = { kind: "key", key: "g", mods: { mod: true } }', () => {
     expect(groupAction.gestureBinding).toEqual({ kind: 'key', key: 'g', mods: { mod: true } });
   });
@@ -31,10 +27,6 @@ describe('ungroupAction (descriptor)', () => {
   it('id="ungroup", label="Ungroup"', () => {
     expect(ungroupAction.id).toBe('ungroup');
     expect(ungroupAction.label).toBe('Ungroup');
-  });
-
-  it('defaultBinding = { key: "g", mod: true, shift: true }', () => {
-    expect(ungroupAction.defaultBinding).toEqual({ key: 'g', mod: true, shift: true });
   });
 
   it('gestureBinding = { kind: "key", key: "g", mods: { mod: true, shift: true } }', () => {

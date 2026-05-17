@@ -7,10 +7,6 @@ describe('undoAction (descriptor)', () => {
     expect(undoAction.label).toBe('Undo');
   });
 
-  it('defaultBinding = { key: "z", mod: true }', () => {
-    expect(undoAction.defaultBinding).toEqual({ key: 'z', mod: true });
-  });
-
   it('gestureBinding = { kind: "key", key: "z", mods: { mod: true } }', () => {
     expect(undoAction.gestureBinding).toEqual({ kind: 'key', key: 'z', mods: { mod: true } });
   });
@@ -24,10 +20,6 @@ describe('redoAction (descriptor)', () => {
   it('id="redo", label="Redo"', () => {
     expect(redoAction.id).toBe('redo');
     expect(redoAction.label).toBe('Redo');
-  });
-
-  it('defaultBinding = { key: "z", mod: true, shift: true }', () => {
-    expect(redoAction.defaultBinding).toEqual({ key: 'z', mod: true, shift: true });
   });
 
   it('gestureBinding = { kind: "key", key: "z", mods: { mod: true, shift: true } }', () => {
