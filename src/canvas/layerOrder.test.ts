@@ -112,6 +112,19 @@ describe('composeOrderedLayers', () => {
     warn.mockRestore();
   });
 
+  it('emits cellHighlight between grid and scene when present', () => {
+    const out = composeOrderedLayers(
+      {},
+      {
+        grid: L('grid'),
+        cellHighlight: L('cellHighlight'),
+        scene: L('scene'),
+        selectionOverlay: L('sel'),
+      },
+    );
+    expect(out.map(l => l.id)).toEqual(['grid', 'cellHighlight', 'scene', 'sel']);
+  });
+
   it('skips entries that are not custom layer entries (null, standard slot configs)', () => {
     // The Canvas's layersMap may include null entries and slot configs.
     // composeOrderedLayers should ignore anything that isn't `{ layer, ... }`.

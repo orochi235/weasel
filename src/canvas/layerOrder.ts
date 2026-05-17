@@ -1,12 +1,8 @@
 import type { RenderLayer } from '../core/layers/render';
-import type { CustomLayerEntry, LayerSlotValue, StandardSlotName } from './Canvas';
+import type { LayerSlotValue } from './Canvas';
+import { STANDARD_SLOTS, isCustomEntry } from './Canvas';
 
-const STANDARD_SLOTS: StandardSlotName[] = ['grid', 'scene', 'selectionOverlay'];
 const STANDARD_SLOT_SET = new Set<string>(STANDARD_SLOTS);
-
-function isCustomEntry(v: unknown): v is CustomLayerEntry {
-  return !!v && typeof v === 'object' && 'layer' in (v as object);
-}
 
 /**
  * Compose the final ordered layer list from a layersMap and the resolved
@@ -27,7 +23,7 @@ function isCustomEntry(v: unknown): v is CustomLayerEntry {
  */
 export function composeOrderedLayers(
   layersMap: Record<string, LayerSlotValue<any, any> | null | undefined>,
-  standardLayers: Partial<Record<StandardSlotName, RenderLayer<unknown>>>,
+  standardLayers: Partial<Record<(typeof STANDARD_SLOTS)[number], RenderLayer<unknown>>>,
 ): RenderLayer<unknown>[] {
   // Map<parent key, [{ key, layer }, ...]> — children grouped by their declared anchor.
   const afterByParent = new Map<string, Array<{ key: string; layer: RenderLayer<unknown> }>>();

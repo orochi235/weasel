@@ -351,7 +351,7 @@ const NOOP_SET_ITEMS = () => {};
 // when the pose is a sub-shape of the item or computed.
 const IDENTITY_TO_POSE = (obj: unknown) => obj as unknown;
 
-function isCustomEntry(v: unknown): v is CustomLayerEntry {
+export function isCustomEntry(v: unknown): v is CustomLayerEntry {
   return !!v && typeof v === 'object' && 'layer' in (v as Record<string, unknown>);
 }
 
