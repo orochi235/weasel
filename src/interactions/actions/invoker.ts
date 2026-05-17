@@ -9,20 +9,14 @@
  * § "Types" for the full design.
  */
 
-import type { ActionBehavior } from '../gestures/types';
+import type { ActionBehavior, ModifierState } from '../gestures/types';
+
+export type { ModifierState } from '../gestures/types';
 
 /** A 2D point in either world or screen coordinates. */
 export interface Point2 {
   x: number;
   y: number;
-}
-
-/** Modifier-key state at the time of invocation. */
-export interface ModifierState {
-  alt: boolean;
-  ctrl: boolean;
-  meta: boolean;
-  shift: boolean;
 }
 
 /** Per-invocation runtime context the dispatcher hands to an Invoker.
