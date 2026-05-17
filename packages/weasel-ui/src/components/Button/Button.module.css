@@ -1,0 +1,146 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: var(--wzl-radius-sm);
+  font-family: var(--wzl-font-ui);
+  font-weight: var(--wzl-font-weight-normal);
+  font-style: normal;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 120ms, border-color 120ms, color 120ms, box-shadow 120ms;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 1px;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------- Sizes ---------- */
+
+.size_sm {
+  height: 20px;
+  padding: 0 8px;
+  font-size: 13px;
+}
+
+.size_md {
+  height: 24px;
+  padding: 0 12px;
+  font-size: 14px;
+}
+
+.iconOnly.size_sm {
+  width: 20px;
+  padding: 0;
+}
+
+.iconOnly.size_md {
+  width: 24px;
+  padding: 0;
+}
+
+/* ---------- Variants ---------- */
+
+.variant_primary {
+  background: color-mix(in srgb, var(--wzl-glass-tint) 78%, transparent);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  color: var(--wzl-fg-on-accent);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.variant_primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--wzl-accent-hover) 82%, transparent);
+}
+
+.variant_primary:active:not(:disabled) {
+  box-shadow: none;
+  background: color-mix(in srgb, var(--wzl-accent) 90%, black);
+}
+
+.variant_secondary {
+  background: var(--wzl-surface-sunken);
+  border-color: var(--wzl-border);
+  color: var(--wzl-fg);
+}
+
+.variant_secondary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--wzl-fg) 8%, var(--wzl-surface-sunken));
+  border-color: var(--wzl-border-strong);
+}
+
+.variant_secondary:active:not(:disabled) {
+  background: color-mix(in srgb, var(--wzl-fg) 14%, var(--wzl-surface-sunken));
+}
+
+.variant_ghost {
+  background: transparent;
+  color: var(--wzl-fg);
+}
+
+.variant_ghost:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--wzl-fg) 8%, transparent);
+}
+
+.variant_ghost:active:not(:disabled) {
+  background: color-mix(in srgb, var(--wzl-fg) 14%, transparent);
+}
+
+/* ---------- Modifiers ---------- */
+
+.fullWidth {
+  width: 100%;
+}
+
+.loading .label {
+  opacity: 0.7;
+}
+
+/* ---------- Slots ---------- */
+
+.iconSlot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.size_sm .iconSlot > svg {
+  width: 12px;
+  height: 12px;
+}
+
+.size_md .iconSlot > svg {
+  width: 14px;
+  height: 14px;
+}
+
+.label {
+  display: inline-block;
+}
+
+/* ---------- Spinner ---------- */
+
+.spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  animation: wzl-btn-spin 0.7s linear infinite;
+}
+
+@keyframes wzl-btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

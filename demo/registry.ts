@@ -495,7 +495,7 @@ export const DEMOS: DemoEntry[] = [
     id: 'perceptual-color-sliders',
     title: 'Perceptual color sliders',
     category: 'weasel-ui',
-    description: 'Four representative slider variants from the perceptual-color experiment, all built on RangePicker: single-thumb hue, 2-thumb ordered L range with active-range hatching, 3-thumb chroma with per-thumb bounds, and a dynamic indices band with click-to-add, drag-off-vertical to remove, and shift-drag translate-all.',
+    description: 'Four representative slider variants from the perceptual-color experiment, all built on Slider: single-thumb hue, 2-thumb ordered L range with active-range hatching, 3-thumb chroma with per-thumb bounds, and a dynamic indices band with click-to-add, drag-off-vertical to remove, and shift-drag translate-all.',
     hint: 'Drag thumbs; on the indices band, click empty track to add, drag a thumb up/down to remove, hold Shift to translate all.',
     Component: PerceptualColorSlidersDemo,
     full: PerceptualColorSlidersDemoFull,

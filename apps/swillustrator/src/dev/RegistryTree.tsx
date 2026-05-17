@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Badge } from '@orochi235/weasel-ui';
 import s from './RegistryInspector.module.css';
 import type { TreeCategoryNode, TreeEntry } from './registryData';
 
@@ -62,7 +63,7 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
           <li key={n.id} className={s.treeCategory}>
             <button type="button" className={s.treeCategoryButton} onClick={() => toggle(n.id)}>
               <span className={s.treeChevron}>{isOpen(n.id) ? '▾' : '▸'}</span>
-              {n.label} <span className={s.treeCount}>({n.entries.length})</span>
+              {n.label} <Badge shape="pill" size="sm" tone="neutral" variant="subtle">{n.entries.length}</Badge>
             </button>
             {isOpen(n.id) && (
               <ul className={s.treeLeaves}>
@@ -77,7 +78,7 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
                         onClick={() => onSelect(e)}
                       >
                         {e.label}
-                        {count !== undefined && <span className={s.treeCount}> ({count})</span>}
+                        {count !== undefined && <> <Badge className={s.leafBadge} shape="pill" size="sm" tone="neutral" variant="subtle">{count}</Badge></>}
                       </button>
                     </li>
                   );

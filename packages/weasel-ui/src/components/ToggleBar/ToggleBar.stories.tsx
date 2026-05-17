@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ToggleBar } from './ToggleBar';
 
 const meta: Meta<typeof ToggleBar> = {
-  title: 'weasel-ui/ToggleBar',
+  title: 'weasel-ui/Foundations/ToggleBar',
   component: ToggleBar,
 };
 

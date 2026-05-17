@@ -9,7 +9,7 @@ import {
 } from '@orochi235/weasel';
 import { PATH_M, PATH_L, type EasingName, type RenderLayer } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
-import { RangePicker } from '@orochi235/weasel-ui';
+import { Slider } from '@orochi235/weasel-ui';
 
 interface Marker { id: string; x: number; y: number; width: number; height: number; easing: EasingName; color: string }
 
@@ -153,7 +153,7 @@ export function EasingsDemo() {
         <label style={{ fontSize: 12, color: '#a89878', display: 'flex', alignItems: 'center', gap: 6 }}>
           duration
           <div style={{ width: 140 }}>
-            <RangePicker
+            <Slider
               min={300} max={4000} step={100}
               thumbs={[{ value: duration }]}
               onChange={ts => setDuration(ts[0].value)}

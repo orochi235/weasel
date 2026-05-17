@@ -76,6 +76,7 @@
 }
 .treeChevron { font-size: 20px; width: 18px; display: inline-flex; justify-content: center; color: var(--wzl-muted, #a59685); }
 .treeCount { color: var(--wzl-muted, #a59685); font-weight: 400; }
+.leafBadge { --badge-font-size: 9px; }
 .treeLeaves { list-style: none; margin: 0; padding: 0 0 0 32px; }
 .treeLeaf {
   display: block;
@@ -113,6 +114,7 @@
   gap: 4px;
 }
 .tag { background: var(--wzl-bg, #1e1610); padding: 2px 8px; border-radius: 3px; margin-right: 4px; font-size: 13px; }
+.routeBadge { display: inline-flex; align-items: center; gap: 2px; margin-right: 6px; }
 .memberList { list-style: none; padding: 0; margin: 4px 0 12px; }
 .memberLink {
   background: transparent;

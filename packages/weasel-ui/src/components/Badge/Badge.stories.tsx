@@ -10,7 +10,7 @@ const TONES: BadgeTone[] = ['accent', 'info', 'warn', 'danger', 'muted', 'neutra
 const VARIANTS: BadgeVariant[] = ['outline', 'solid', 'subtle'];
 
 const meta: Meta<typeof Badge> = {
-  title: 'weasel-ui/Badge',
+  title: 'weasel-ui/Foundations/Badge',
   component: Badge,
   args: {
     children: 'LABEL',
@@ -718,6 +718,11 @@ const BASE_LAB_CONTROLS: Record<BadgeBase, LabControl[]> = {
     { key: 'rotation',        kind: 'range', min: -45, max: 45,   step: 0.5,  default: 0 },
     { key: 'samples',         kind: 'range', min: 48,  max: 360,  step: 4,    default: 192 },
   ],
+  'ribbon':         [
+    { key: 'left',       kind: 'select', options: ['flat', 'inward', 'outward'], default: 'inward' },
+    { key: 'right',      kind: 'select', options: ['flat', 'inward', 'outward'], default: 'outward' },
+    { key: 'taperWidth', kind: 'range', min: 0, max: 24, step: 0.5, default: 8 },
+  ],
 };
 
 const EFFECT_LAB_CONTROLS: Record<BadgeEffect, LabControl[]> = {
@@ -751,7 +756,7 @@ const EFFECT_LAB_CONTROLS: Record<BadgeEffect, LabControl[]> = {
   ],
   bevel2: [
     { key: 'bevelWidth',    kind: 'range',  min: 0, max: 20, step: 0.5, default: 6 },
-    { key: 'lightFrom',     kind: 'select', options: ['tl', 'tr', 'bl', 'br'], default: 'tl' },
+    { key: 'lightFrom',     kind: 'range',  min: 0, max: 360, step: 1, default: 315 },
   ],
   sheen: [
     { key: 'lightFrom',     kind: 'select', options: ['tl', 'tr', 'bl', 'br'], default: 'tl' },
@@ -951,7 +956,7 @@ const LAB_PRESETS: LabPreset[] = [
     base: 'rounded-rect',
     baseParams: { erosion: 0.4 },
     effects: [
-      { type: 'bevel2', params: { bevelWidth: 6, lightFrom: 'tl' } },
+      { type: 'bevel2', params: { bevelWidth: 6, lightFrom: 315 } },
     ],
   },
 ];
@@ -974,6 +979,17 @@ interface LabSnapshot {
   labelX: number;
   labelY: number;
   zoom: number;
+  padTop: number;
+  padRight: number;
+  padBottom: number;
+  padLeft: number;
+  fontFamily: string;
+  fontSizeDelta: number;
+  bold: boolean;
+  italic: boolean;
+  caps: 'normal' | 'small-caps' | 'all-small-caps';
+  linkPadX: boolean;
+  linkPadY: boolean;
 }
 
 function loadLabSnapshot(): Partial<LabSnapshot> {
@@ -1010,15 +1026,142 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
   const [labelX, setLabelX] = useState<number>(saved.labelX ?? 0);
   const [labelY, setLabelY] = useState<number>(saved.labelY ?? 0);
   const [zoom, setZoom] = useState<number>(saved.zoom ?? 2);
-  // Persist on every state change. Cheap: <2KB JSON, throttled implicitly by React batching.
+  const [padTop, setPadTop] = useState<number>(saved.padTop ?? 1);
+  const [padRight, setPadRight] = useState<number>(saved.padRight ?? 6);
+  const [padBottom, setPadBottom] = useState<number>(saved.padBottom ?? 1);
+  const [padLeft, setPadLeft] = useState<number>(saved.padLeft ?? 6);
+  const [fontFamily, setFontFamily] = useState<string>(saved.fontFamily ?? 'inherit');
+  const [fontSizeDelta, setFontSizeDelta] = useState<number>(saved.fontSizeDelta ?? 0);
+  const [bold, setBold] = useState<boolean>(saved.bold ?? false);
+  const [italic, setItalic] = useState<boolean>(saved.italic ?? false);
+  const [caps, setCaps] = useState<'normal' | 'small-caps' | 'all-small-caps'>(saved.caps ?? 'normal');
+  const [linkPadX, setLinkPadX] = useState<boolean>(saved.linkPadX ?? true);
+  const [linkPadY, setLinkPadY] = useState<boolean>(saved.linkPadY ?? true);
+  const onPadTop = (v: number) => { setPadTop(v); if (linkPadY) setPadBottom(v); };
+  const onPadBottom = (v: number) => { setPadBottom(v); if (linkPadY) setPadTop(v); };
+  const onPadLeft = (v: number) => { setPadLeft(v); if (linkPadX) setPadRight(v); };
+  const onPadRight = (v: number) => { setPadRight(v); if (linkPadX) setPadLeft(v); };
+  const toggleLinkPadX = (on: boolean) => { setLinkPadX(on); if (on) setPadRight(padLeft); };
+  const toggleLinkPadY = (on: boolean) => { setLinkPadY(on); if (on) setPadBottom(padTop); };
+  const currentSnapshot = (): LabSnapshot => ({
+    base, baseParams, labEffects, nextId, tone, customColor, variant, bloat,
+    label, size, crawlOn, crawlSpeed, labelX, labelY, zoom,
+    padTop, padRight, padBottom, padLeft,
+    fontFamily, fontSizeDelta, bold, italic, caps,
+    linkPadX, linkPadY,
+  });
+
+  // --- Persist on every state change. Cheap: <2KB JSON, throttled implicitly by React batching.
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const snap: LabSnapshot = {
-      base, baseParams, labEffects, nextId, tone, customColor, variant, bloat,
-      label, size, crawlOn, crawlSpeed, labelX, labelY, zoom,
-    };
+    const snap = currentSnapshot();
     try { window.localStorage.setItem(LAB_STORAGE_KEY, JSON.stringify(snap)); } catch { /* quota / private mode */ }
-  }, [base, baseParams, labEffects, nextId, tone, customColor, variant, bloat, label, size, crawlOn, crawlSpeed, labelX, labelY, zoom]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [base, baseParams, labEffects, nextId, tone, customColor, variant, bloat, label, size, crawlOn, crawlSpeed, labelX, labelY, zoom, padTop, padRight, padBottom, padLeft, fontFamily, fontSizeDelta, bold, italic, caps, linkPadX, linkPadY]);
+
+  // --- Undo / redo --------------------------------------------------------
+  // Snapshots of the full lab state. The stacks live in refs (not state) so
+  // applying a popped snapshot doesn't immediately push a new entry, and so
+  // rapid changes (slider scrubs, anchor drags) can be coalesced into one
+  // entry via a debounce timer.
+  const undoStackRef = useRef<LabSnapshot[]>([currentSnapshot()]);
+  const redoStackRef = useRef<LabSnapshot[]>([]);
+  const isRestoringRef = useRef(false);
+  const snapshotTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Schedule a coalesced snapshot 300ms after the last state change. Any
+  // additional change within the window resets the timer, so a drag through
+  // 100 mousemoves still collapses into a single undo step. Programmatic
+  // changes triggered by undo/redo flip `isRestoringRef` so they don't
+  // self-record.
+  useEffect(() => {
+    if (isRestoringRef.current) {
+      isRestoringRef.current = false;
+      return;
+    }
+    if (snapshotTimerRef.current) clearTimeout(snapshotTimerRef.current);
+    snapshotTimerRef.current = setTimeout(() => {
+      const snap = currentSnapshot();
+      const top = undoStackRef.current[undoStackRef.current.length - 1];
+      if (top && JSON.stringify(top) === JSON.stringify(snap)) return;
+      undoStackRef.current.push(snap);
+      if (undoStackRef.current.length > 200) undoStackRef.current.shift();
+      redoStackRef.current = [];
+    }, 300);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [base, baseParams, labEffects, nextId, tone, customColor, variant, bloat, label, size, crawlOn, crawlSpeed, labelX, labelY, zoom, padTop, padRight, padBottom, padLeft, fontFamily, fontSizeDelta, bold, italic, caps, linkPadX, linkPadY]);
+
+  const applySnapshot = (s: LabSnapshot) => {
+    isRestoringRef.current = true;
+    setBase(s.base);
+    setBaseParams(s.baseParams);
+    setLabEffects(s.labEffects);
+    setNextId(s.nextId);
+    setTone(s.tone);
+    setCustomColor(s.customColor);
+    setVariant(s.variant);
+    setBloat(s.bloat);
+    setLabel(s.label);
+    setSize(s.size);
+    setCrawlOn(s.crawlOn);
+    setCrawlSpeed(s.crawlSpeed);
+    setLabelX(s.labelX);
+    setLabelY(s.labelY);
+    setZoom(s.zoom);
+    setPadTop(s.padTop);
+    setPadRight(s.padRight);
+    setPadBottom(s.padBottom);
+    setPadLeft(s.padLeft);
+    setFontFamily(s.fontFamily);
+    setFontSizeDelta(s.fontSizeDelta);
+    setBold(s.bold);
+    setItalic(s.italic);
+    setCaps(s.caps);
+    setLinkPadX(s.linkPadX);
+    setLinkPadY(s.linkPadY);
+  };
+
+  const flushPendingSnapshot = () => {
+    if (!snapshotTimerRef.current) return;
+    clearTimeout(snapshotTimerRef.current);
+    snapshotTimerRef.current = null;
+    const snap = currentSnapshot();
+    const top = undoStackRef.current[undoStackRef.current.length - 1];
+    if (!top || JSON.stringify(top) !== JSON.stringify(snap)) {
+      undoStackRef.current.push(snap);
+      redoStackRef.current = [];
+    }
+  };
+
+  const onUndo = () => {
+    flushPendingSnapshot();
+    if (undoStackRef.current.length < 2) return;
+    const popped = undoStackRef.current.pop()!;
+    redoStackRef.current.push(popped);
+    const prev = undoStackRef.current[undoStackRef.current.length - 1];
+    applySnapshot(prev);
+  };
+
+  const onRedo = () => {
+    const next = redoStackRef.current.pop();
+    if (!next) return;
+    undoStackRef.current.push(next);
+    applySnapshot(next);
+  };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+      const key = e.key.toLowerCase();
+      // Cmd/Ctrl+Z = undo; Cmd/Ctrl+Shift+Z (or Cmd/Ctrl+Y) = redo.
+      if (key === 'z' && !e.shiftKey) { e.preventDefault(); onUndo(); }
+      else if ((key === 'z' && e.shiftKey) || key === 'y') { e.preventDefault(); onRedo(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const previewInnerRef = useRef<HTMLDivElement>(null);
   const [previewNatural, setPreviewNatural] = useState({ w: 0, h: 0 });
   useLayoutEffect(() => {
@@ -1117,10 +1260,20 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
   };
 
   const ctrlLabel: CSSProperties = { fontSize: 10, opacity: 0.7, fontFamily: 'Helvetica, Arial, sans-serif' };
+  const LinkIcon = () => (
+    <svg width="10" height="10" viewBox="0 0 16 16" aria-hidden="true" focusable="false" style={{ verticalAlign: 'middle', opacity: 0.85 }}>
+      <path d="M6.5 4h-1.5a3 3 0 1 0 0 6h1.5M9.5 4h1.5a3 3 0 0 1 0 6h-1.5M5.5 7h5" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 
-  const toggleBar = <T extends string>(value: T, options: readonly T[], onChange: (v: T) => void): ReactElement => (
+  const toggleBar = <T extends string>(
+    value: T,
+    options: readonly T[],
+    onChange: (v: T) => void,
+    labels?: readonly string[],
+  ): ReactElement => (
     <div style={{ display: 'inline-flex', borderRadius: 4, overflow: 'hidden', border: '1px solid rgba(127, 176, 105, 0.4)' }}>
-      {options.map((opt) => (
+      {options.map((opt, i) => (
         <button
           key={opt}
           type="button"
@@ -1138,7 +1291,7 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
             textTransform: 'capitalize',
           }}
         >
-          {opt}
+          {labels?.[i] ?? opt}
         </button>
       ))}
     </div>
@@ -1171,9 +1324,7 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
           </>
         ) : c.kind === 'select' ? (
           <>
-            <select value={value as string} onChange={(e) => onChange(e.target.value)} style={{ width: '100%', fontSize: 10 }}>
-              {c.options.map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
+            {toggleBar<string>(value as string, c.options, (v) => onChange(v))}
             <span />
           </>
         ) : c.kind === 'color' ? (
@@ -1221,10 +1372,19 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
                 variant={variant}
                 bloat={bloat}
                 size={size}
+                padding={`${padTop}px ${padRight}px ${padBottom}px ${padLeft}px`}
                 crawl={crawlOn ? crawlSpeed : undefined}
                 style={tone === 'custom' ? ({ ['--badge-edge' as never]: customColor }) : undefined}
               >
-                <span style={{ display: 'inline-block', transform: `translate(${labelX}px, ${labelY}px)` }}>{label}</span>
+                <span style={{
+                  display: 'inline-block',
+                  transform: `translate(${labelX}px, ${labelY}px)`,
+                  fontFamily: fontFamily === 'inherit' ? undefined : fontFamily,
+                  fontSize: fontSizeDelta !== 0 ? `calc(1em + ${fontSizeDelta}px)` : undefined,
+                  fontWeight: bold ? 700 : undefined,
+                  fontStyle: italic ? 'italic' : undefined,
+                  fontVariantCaps: caps !== 'normal' ? caps : undefined,
+                }}>{label}</span>
               </Badge>
             </div>
           </div>
@@ -1258,7 +1418,7 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
             </select>
           </label>
         </section>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, alignItems: 'start' }}>
         <section style={sectionStyle}>
           <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.7, margin: '0 0 4px', fontFamily: 'Helvetica, Arial, sans-serif' }}>Appearance</h3>
           <label style={{ display: 'grid', gridTemplateColumns: '110px 1fr', alignItems: 'center', gap: 8 }}>
@@ -1267,9 +1427,7 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
           </label>
           <label style={{ display: 'grid', gridTemplateColumns: '110px 1fr 24px', alignItems: 'center', gap: 8 }}>
             <span style={ctrlLabel}>tone</span>
-            <select value={tone} onChange={(e) => setTone(e.target.value as BadgeTone)} style={{ fontSize: 11 }}>
-              {(['accent', 'info', 'warn', 'danger', 'muted', 'neutral', 'custom'] as BadgeTone[]).map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
+            {toggleBar<BadgeTone>(tone, ['accent', 'info', 'warn', 'danger', 'muted', 'neutral', 'custom'] as const, setTone)}
             <input
               type="color"
               value={customColor}
@@ -1306,6 +1464,70 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
             <span style={ctrlLabel}>label Y</span>
             <input type="range" min={-30} max={30} step={0.5} value={labelY} onChange={(e) => setLabelY(Number(e.target.value))} style={{ width: '100%' }} />
             <span style={ctrlLabel}>{labelY}</span>
+          </label>
+        </section>
+        <section style={sectionStyle}>
+          <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.7, margin: '0 0 4px', fontFamily: 'Helvetica, Arial, sans-serif' }}>Type & padding</h3>
+          <label style={{ display: 'grid', gridTemplateColumns: '60px 1fr', alignItems: 'center', gap: 8 }}>
+            <span style={ctrlLabel}>font</span>
+            {toggleBar<string>(
+              fontFamily,
+              ['inherit', 'system-ui, sans-serif', 'Helvetica, Arial, sans-serif', "Georgia, 'Times New Roman', serif", 'ui-monospace, SFMono-Regular, Menlo, monospace', "'Helvetica Neue Condensed', 'Arial Narrow', sans-serif"] as const,
+              setFontFamily,
+              ['inherit', 'system', 'sans', 'serif', 'mono', 'cond'],
+            )}
+          </label>
+          <label style={{ display: 'grid', gridTemplateColumns: '60px 1fr 36px', alignItems: 'center', gap: 8 }}>
+            <span style={ctrlLabel}>size Δ</span>
+            <input type="range" min={-6} max={24} step={0.5} value={fontSizeDelta} onChange={(e) => setFontSizeDelta(Number(e.target.value))} style={{ width: '100%' }} />
+            <span style={ctrlLabel}>{fontSizeDelta > 0 ? `+${fontSizeDelta}` : fontSizeDelta}</span>
+          </label>
+          <label style={{ display: 'grid', gridTemplateColumns: '60px auto auto 1fr', alignItems: 'center', gap: 8 }}>
+            <span style={ctrlLabel}>style</span>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4, ...ctrlLabel }}>
+              <input type="checkbox" checked={bold} onChange={(e) => setBold(e.target.checked)} /> B
+            </label>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4, ...ctrlLabel, fontStyle: 'italic' }}>
+              <input type="checkbox" checked={italic} onChange={(e) => setItalic(e.target.checked)} /> I
+            </label>
+            <span />
+          </label>
+          <label style={{ display: 'grid', gridTemplateColumns: '60px 1fr', alignItems: 'center', gap: 8 }}>
+            <span style={ctrlLabel}>caps</span>
+            {toggleBar<'normal' | 'small-caps' | 'all-small-caps'>(caps, ['normal', 'small-caps', 'all-small-caps'] as const, setCaps)}
+          </label>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6, marginBottom: 2 }}>
+            <h4 style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.6, margin: 0, fontFamily: 'Helvetica, Arial, sans-serif' }}>Padding</h4>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 3, ...ctrlLabel }} title="Lock left/right padding">
+                <input type="checkbox" checked={linkPadX} onChange={(e) => toggleLinkPadX(e.target.checked)} />
+                <LinkIcon /> X
+              </label>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 3, ...ctrlLabel }} title="Lock top/bottom padding">
+                <input type="checkbox" checked={linkPadY} onChange={(e) => toggleLinkPadY(e.target.checked)} />
+                <LinkIcon /> Y
+              </label>
+            </div>
+          </div>
+          <label style={{ display: 'grid', gridTemplateColumns: '60px 1fr 36px', alignItems: 'center', gap: 8 }}>
+            <span style={ctrlLabel}>top</span>
+            <input type="range" min={0} max={40} step={0.5} value={padTop} onChange={(e) => onPadTop(Number(e.target.value))} style={{ width: '100%' }} />
+            <span style={ctrlLabel}>{padTop}</span>
+          </label>
+          <label style={{ display: 'grid', gridTemplateColumns: '60px 1fr 36px', alignItems: 'center', gap: 8 }}>
+            <span style={ctrlLabel}>right</span>
+            <input type="range" min={0} max={40} step={0.5} value={padRight} onChange={(e) => onPadRight(Number(e.target.value))} style={{ width: '100%' }} />
+            <span style={ctrlLabel}>{padRight}</span>
+          </label>
+          <label style={{ display: 'grid', gridTemplateColumns: '60px 1fr 36px', alignItems: 'center', gap: 8 }}>
+            <span style={ctrlLabel}>bottom</span>
+            <input type="range" min={0} max={40} step={0.5} value={padBottom} onChange={(e) => onPadBottom(Number(e.target.value))} style={{ width: '100%' }} />
+            <span style={ctrlLabel}>{padBottom}</span>
+          </label>
+          <label style={{ display: 'grid', gridTemplateColumns: '60px 1fr 36px', alignItems: 'center', gap: 8 }}>
+            <span style={ctrlLabel}>left</span>
+            <input type="range" min={0} max={40} step={0.5} value={padLeft} onChange={(e) => onPadLeft(Number(e.target.value))} style={{ width: '100%' }} />
+            <span style={ctrlLabel}>{padLeft}</span>
           </label>
         </section>
         <section style={sectionStyle}>

@@ -1,16 +1,15 @@
 import { useId } from 'react';
 import type { EffectModule } from '../bases/types';
 
-export type Corner2 = 'tl' | 'tr' | 'bl' | 'br';
-
 export interface Bevel2EffectParams {
   /** Bevel band width in CSS px. */
   bevelWidth?: number;
-  /** Which corner the light originates from. */
-  lightFrom?: Corner2;
+  /** Compass angle the light originates from, in degrees. 0° = top, 90° =
+   *  right, 180° = bottom, 270° = left (CSS `linear-gradient` convention). */
+  lightFrom?: number;
 }
 
-const DEFAULTS: Required<Bevel2EffectParams> = { bevelWidth: 6, lightFrom: 'tl' };
+const DEFAULTS: Required<Bevel2EffectParams> = { bevelWidth: 6, lightFrom: 315 };
 
 const SAMPLES = 240;
 
@@ -24,11 +23,11 @@ const SHADE_CLASSES = [
   'badge-bevel-dark',          // darkest (normal points away from light)
 ];
 
-function lightDirFor(corner: Corner2): { lx: number; ly: number } {
-  const lx = corner[1] === 'l' ? -1 : 1;
-  const ly = corner[0] === 't' ? -1 : 1;
-  const len = Math.SQRT2;
-  return { lx: lx / len, ly: ly / len };
+function lightDirFor(angleDeg: number): { lx: number; ly: number } {
+  // Compass convention (0° = up, clockwise). Returns the unit vector pointing
+  // outward from the badge toward the light source.
+  const rad = (angleDeg * Math.PI) / 180;
+  return { lx: Math.sin(rad), ly: -Math.cos(rad) };
 }
 
 const Bevel2: EffectModule<Bevel2EffectParams> = {

@@ -1,18 +1,49 @@
 import { Fragment } from 'react';
-import { DataGrid, type DataGridColumn } from '@orochi235/weasel-ui';
+import { Badge, DataGrid, Keycaps, type BadgeProps, type DataGridColumn } from '@orochi235/weasel-ui';
 import s from './RegistryInspector.module.css';
 import type {
   TreeEntry, ToolEntry, ActionEntry, BundleEntry, IconEntry, OpFactoryEntry,
   PublicExportEntry, ShapeKindEntry, PhaseSummary, PhaseEntry, GestureEntry, PhaseOutputEntry,
   OpKindEntry, HotkeyTriggerEntry, SlotEntry, RouteTargetEntry, ModifierSetEntry, GroupEntry,
+  MetaEntry,
 } from './registryData';
-import { collectBundles, collectIcons, parseRoute, TOOL_HOOK_NAMES } from './registryData';
+import { BOOLEAN_BADGE_PROPS, BUNDLE_BADGE_PROPS, GESTURE_BADGE_PROPS, HOTKEY_TRIGGER_GLYPHS, KIND_BADGE_PROPS, PHASE_BADGE_PROPS, TOKEN_SETS, type TokenSet } from './badgeTokens';
+import { collectBundles, collectIcons, GESTURE_CHANNEL_KEYS, parseRoute, TOOL_HOOK_NAMES } from './registryData';
+
+const GESTURE_KEY_SET = new Set<string>(GESTURE_CHANNEL_KEYS);
+function isGestureChannel(name: string): boolean { return GESTURE_KEY_SET.has(name); }
+
+/** Decomposes a `phase.gesture.target[:modifiers]` route into its constituent
+ *  tokens — phase + gesture as badges, target as a code chip, modifier set
+ *  appended when non-default. */
+function RouteBadge({ route }: { route: string }) {
+  const parsed = parseRoute(route);
+  return (
+    <span className={s.routeBadge}>
+      <Badge {...(PHASE_BADGE_PROPS as BadgeProps)}>{parsed.phase}</Badge>
+      <Badge {...(GESTURE_BADGE_PROPS as BadgeProps)}>{parsed.gesture}</Badge>
+      <code className={s.tag}>{parsed.target}</code>
+      {parsed.modifiers !== 'default' && (
+        <code className={s.tag}>:{parsed.modifiers}</code>
+      )}
+    </span>
+  );
+}
+
+function KindBadge({ label }: { label: string }) {
+  return <Badge {...(KIND_BADGE_PROPS as BadgeProps)}>{label}</Badge>;
+}
+
+function BundleBadge({ id, label }: { id: string; label?: string }) {
+  const props = (BUNDLE_BADGE_PROPS as Record<string, Omit<BadgeProps, 'children'>>)[id];
+  if (!props) return <code className={s.tag}>{label ?? id}</code>;
+  return <Badge {...(props as BadgeProps)}>{label ?? id}</Badge>;
+}
 void parseRoute;
 import * as Weasel from '@orochi235/weasel';
 import { ToolIcon } from '../kindIcons';
 import type { ToolKind } from '../poseUpdate';
 import { findSourceMatch } from './sourceLookup';
-import { KeyCap } from './KeyCap';
 
 /** Navigate to any entry in the inspector. The resolver in `RegistryInspector`
  *  walks every category node to find a `kind+id` match — so a `<Tool>` can
@@ -71,7 +102,70 @@ export function RegistryDetail({ entry, tools, actions, onNavigate }: Props) {
     case 'routeTarget':   return <RouteTargetDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'modifierSet':   return <ModifierSetDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'group':         return <GroupDetail entry={entry} tools={tools} actions={actions} onNavigate={onNavigate} />;
+    case 'meta':          return <MetaDetail entry={entry} />;
   }
+}
+
+function MetaDetail({ entry }: { entry: MetaEntry }) {
+  if (entry.id === 'tokens') return <TokensDetail />;
+  return null;
+}
+
+function TokensDetail() {
+  return (
+    <div>
+      <h2 className={s.detailHeading}>Tokens</h2>
+      <p className={s.empty}>
+        Catalog of badge / keycap styles the inspector maps onto enumerated
+        types. Each set lists every value alongside its rendered chip so the
+        family reads consistently wherever it appears.
+      </p>
+      {TOKEN_SETS.map((set) => (
+        <section key={set.id}>
+          <h3 className={s.subHeading}>{set.label}</h3>
+          <p className={s.empty}>{set.description}</p>
+          <TokenSetTable set={set} />
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function TokenSetTable({ set }: { set: TokenSet }) {
+  if (set.kind === 'badge') {
+    return (
+      <DataGrid
+        rows={set.entries.map((e) => ({ id: e.value, entry: e }))}
+        columns={[
+          { id: 'value', header: 'value', accessor: (r) => r.entry.value, render: (r) => <code className={s.tag}>{r.entry.value}</code> },
+          { id: 'preview', header: 'preview', accessor: (r) => r.entry.value, render: (r) => <Badge {...(r.entry.props as BadgeProps)}>{r.entry.value}</Badge> },
+        ]}
+        empty="No entries."
+      />
+    );
+  }
+  if (set.kind === 'keycap') {
+    return (
+      <DataGrid
+        rows={set.entries.map((e) => ({ id: e.value, entry: e }))}
+        columns={[
+          { id: 'value', header: 'value', accessor: (r) => r.entry.value, render: (r) => <code className={s.tag}>{r.entry.value}</code> },
+          { id: 'preview', header: 'preview', accessor: (r) => r.entry.value, render: (r) => <Keycaps parts={r.entry.props.parts} /> },
+        ]}
+        empty="No entries."
+      />
+    );
+  }
+  return (
+    <DataGrid
+      rows={set.entries.map((e) => ({ id: e.value, entry: e }))}
+      columns={[
+        { id: 'value', header: 'value', accessor: (r) => r.entry.value, render: (r) => <code className={s.tag}>{r.entry.value}</code> },
+        { id: 'preview', header: 'preview', accessor: (r) => r.entry.value, render: (r) => <RouteBadge route={r.entry.props.route} /> },
+      ]}
+      empty="No entries."
+    />
+  );
 }
 
 function OpKindDetail({ entry, onNavigate }: { entry: OpKindEntry; onNavigate: Props['onNavigate'] }) {
@@ -98,9 +192,12 @@ function HotkeyTriggerDetail({
   entry, tools, onNavigate,
 }: { entry: HotkeyTriggerEntry; tools: readonly ToolEntry[]; onNavigate: Props['onNavigate'] }) {
   const using = tools.filter((t) => t.hotkey === entry.id);
+  const glyphs = HOTKEY_TRIGGER_GLYPHS[entry.id];
   return (
     <div>
-      <h2 className={s.detailHeading}>{entry.id}</h2>
+      <h2 className={s.detailHeading}>
+        {glyphs && <Keycaps parts={glyphs} />} {entry.id}
+      </h2>
       <p className={s.empty}>Press-and-hold trigger key for the hotkey tool slot.</p>
       <h3 className={s.subHeading}>Tools bound to this trigger</h3>
       <DataGrid
@@ -157,7 +254,7 @@ function RouteTargetDetail({
             id: 'routes',
             header: 'routes',
             sortable: false,
-            render: (r) => <TagList items={r.routes} />,
+            render: (r) => <span>{r.routes.map((rt) => <RouteBadge key={rt} route={rt} />)}</span>,
           },
         ]}
         empty="No tools route to this target."
@@ -189,7 +286,7 @@ function ModifierSetDetail({
             id: 'routes',
             header: 'routes',
             sortable: false,
-            render: (r) => <TagList items={r.routes} />,
+            render: (r) => <span>{r.routes.map((rt) => <RouteBadge key={rt} route={rt} />)}</span>,
           },
         ]}
         empty="No tools declare routes under this modifier set."
@@ -265,7 +362,7 @@ function PhaseDetail({
   }));
   return (
     <div>
-      <h2 className={s.detailHeading}>{entry.label}</h2>
+      <h2 className={s.detailHeading}><Badge {...(PHASE_BADGE_PROPS as BadgeProps)}>{entry.label}</Badge></h2>
       <p className={s.empty}>
         {entry.id === 'initial'
           ? 'Resting phase — every tool declares an initial phase.'
@@ -282,7 +379,9 @@ function PhaseDetail({
             sortable: false,
             render: (r) => r.channels.length === 0
               ? <span className={s.empty}>—</span>
-              : <TagList items={r.channels} />,
+              : <span>{r.channels.map((c) => (isGestureChannel(c)
+                  ? <Badge key={c} {...(GESTURE_BADGE_PROPS as BadgeProps)}>{c}</Badge>
+                  : <code key={c} className={s.tag}>{c}</code>))}</span>,
           },
         ]}
         empty="No tools declare this phase."
@@ -302,7 +401,7 @@ function GestureDetail({
   });
   return (
     <div>
-      <h2 className={s.detailHeading}>{entry.label}</h2>
+      <h2 className={s.detailHeading}><Badge {...(GESTURE_BADGE_PROPS as BadgeProps)}>{entry.label}</Badge></h2>
       <p className={s.empty}>Input channel. Tools below subscribe to it in the listed phase(s).</p>
       <h3 className={s.subHeading}>Tools</h3>
       <DataGrid
@@ -313,7 +412,13 @@ function GestureDetail({
             id: 'phases',
             header: 'phases',
             sortable: false,
-            render: (r) => <TagList items={r.phases} />,
+            render: (r) => (
+              <span>
+                {r.phases.map((p) => (
+                  <Badge key={p} {...(PHASE_BADGE_PROPS as BadgeProps)}>{p}</Badge>
+                ))}
+              </span>
+            ),
           },
         ]}
         empty="No tools declare this channel."
@@ -358,13 +463,14 @@ function PhaseOutputDetail({
             render: (r) => (
               <span>
                 {r.phases.map((p) => (
-                  <code
+                  <Badge
                     key={p}
-                    className={`${s.tag} ${engagedNoop && p === 'engaged' ? s.empty : ''}`}
-                    title={engagedNoop && p === 'engaged' ? 'Declared but not read by the runtime' : undefined}
+                    {...(PHASE_BADGE_PROPS as BadgeProps)}
+                    className={engagedNoop && p === 'engaged' ? s.empty : undefined}
+                    aria-label={engagedNoop && p === 'engaged' ? 'Declared but not read by the runtime' : undefined}
                   >
                     {p}
-                  </code>
+                  </Badge>
                 ))}
               </span>
             ),
@@ -396,16 +502,6 @@ function toolNameColumn(
       </button>
     ),
   };
-}
-
-/** Compact wrap of `<code>` tags — used inside DataGrid cells where the
- *  value is a small unordered set (routes, channels, phases). */
-function TagList({ items }: { items: readonly string[] }) {
-  return (
-    <span>
-      {items.map((it) => <code key={it} className={s.tag}>{it}</code>)}
-    </span>
-  );
 }
 
 const EMPTY_PHASE: PhaseSummary = {
@@ -466,13 +562,13 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
         <dt>slot</dt>
         <dd><EntryLink kind="slot" id={entry.slot} onNavigate={onNavigate} /></dd>
         {entry.switchShortcutParts && (
-          <><dt>shortcut</dt><dd><KeyCap parts={entry.switchShortcutParts} /></dd></>
+          <><dt>shortcut</dt><dd><Keycaps parts={entry.switchShortcutParts} /></dd></>
         )}
         {entry.hotkey && (
           <>
             <dt>hotkey</dt>
             <dd>
-              <KeyCap parts={[entry.hotkey.toUpperCase()]} />
+              <Keycaps parts={HOTKEY_TRIGGER_GLYPHS[entry.hotkey] ?? [entry.hotkey.toUpperCase()]} />
               <EntryLink kind="hotkeyTrigger" id={entry.hotkey} label={entry.hotkey} onNavigate={onNavigate} />
             </dd>
           </>
@@ -509,7 +605,7 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
         {entry.routes.length > 0 && (
           <>
             <dt>routes</dt>
-            <dd>{entry.routes.map((r) => <code key={r} className={s.tag}>{r}</code>)}</dd>
+            <dd>{entry.routes.map((r) => <RouteBadge key={r} route={r} />)}</dd>
           </>
         )}
         {bundles.length > 0 && (
@@ -517,7 +613,14 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
             <dt>in bundles</dt>
             <dd>
               {bundles.map((b) => (
-                <EntryLink key={b.id} kind="bundle" id={b.id} label={b.label} onNavigate={onNavigate} />
+                <button
+                  key={b.id}
+                  type="button"
+                  className={s.memberLink}
+                  onClick={() => onNavigate({ kind: 'bundle', id: b.id })}
+                >
+                  <BundleBadge id={b.id} label={b.label} />
+                </button>
               ))}
             </dd>
           </>
@@ -533,10 +636,12 @@ function PhaseRow({ label, phase }: { label: string; phase: PhaseSummary }) {
   const channels = activeChannels(phase);
   return (
     <div className={s.phaseRow}>
-      <span className={s.phaseLabel}>{label}</span>
+      <Badge {...(PHASE_BADGE_PROPS as BadgeProps)}>{label}</Badge>
       {channels.length === 0
         ? <span className={s.empty}>—</span>
-        : channels.map((c) => <code key={c} className={s.tag}>{c}</code>)}
+        : channels.map((c) => (isGestureChannel(c)
+            ? <Badge key={c} {...(GESTURE_BADGE_PROPS as BadgeProps)}>{c}</Badge>
+            : <code key={c} className={s.tag}>{c}</code>))}
     </div>
   );
 }
@@ -558,7 +663,7 @@ function ActionDetail({ entry, onNavigate }: { entry: ActionEntry; onNavigate: P
           </>
         )}
         {entry.shortcutParts && (
-          <><dt>binding</dt><dd><KeyCap parts={entry.shortcutParts} /></dd></>
+          <><dt>binding</dt><dd><Keycaps parts={entry.shortcutParts} /></dd></>
         )}
         {entry.shortcut && (
           <><dt>shortcut</dt><dd><code>{entry.shortcut}</code></dd></>
@@ -568,9 +673,9 @@ function ActionDetail({ entry, onNavigate }: { entry: ActionEntry; onNavigate: P
             <dt>enabled</dt>
             <dd>
               {entry.enabled.enabled
-                ? <code className={s.tag}>true</code>
+                ? <Badge {...(BOOLEAN_BADGE_PROPS.true as BadgeProps)}>true</Badge>
                 : <>
-                    <code className={s.tag}>false</code>
+                    <Badge {...(BOOLEAN_BADGE_PROPS.false as BadgeProps)}>false</Badge>
                     <span className={s.empty}> ({entry.enabled.reason})</span>
                   </>}
             </dd>
@@ -627,7 +732,7 @@ function bundleMemberColumns(
       id: 'shortcut',
       header: 'shortcut',
       sortable: false,
-      render: (r) => <KeyCap parts={r.tool?.switchShortcutParts} />,
+      render: (r) => <Keycaps parts={r.tool?.switchShortcutParts} />,
     },
   ];
 }
@@ -649,14 +754,14 @@ function BundleDetail({
   }
   return (
     <div>
-      <h2 className={s.detailHeading}>{entry.label}</h2>
+      <h2 className={s.detailHeading}><BundleBadge id={entry.id} label={entry.label} /></h2>
       <dl className={s.detailList}>
         <dt>id</dt><dd><code className={s.tag}>{entry.id}</code></dd>
         <dt>tool count</dt><dd>{entry.tools.length}</dd>
         <dt>by group</dt>
         <dd>
           {[...groupCounts.entries()].map(([g, n]) => (
-            <code key={g} className={s.tag}>{g}: {n}</code>
+            <code key={g} className={s.tag}>{g} <Badge shape="pill" size="sm" tone="neutral" variant="subtle">{n}</Badge></code>
           ))}
         </dd>
       </dl>
@@ -675,7 +780,7 @@ function BundleDetail({
           const removed = o.tools.filter((t) => !mine.has(t));
           return (
             <Fragment key={o.id}>
-              <dt>vs {o.label}</dt>
+              <dt>vs <BundleBadge id={o.id} label={o.label} /></dt>
               <dd>
                 {added.length === 0 && removed.length === 0
                   ? <span className={s.empty}>(identical)</span>
@@ -723,7 +828,7 @@ function ShapeKindDetail({
         <h2 className={s.detailHeading}>{entry.id}</h2>
       </div>
       <dl className={s.detailList}>
-        <dt>kind</dt><dd><code className={s.tag}>shape</code></dd>
+        <dt>kind</dt><dd><KindBadge label="shape" /></dd>
         {entry.tool && (
           <>
             <dt>authored by</dt>
@@ -768,7 +873,7 @@ function OpFactoryDetail({ entry }: { entry: OpFactoryEntry }) {
     <div>
       <h2 className={s.detailHeading}>{entry.id}</h2>
       <dl className={s.detailList}>
-        <dt>kind</dt><dd><code className={s.tag}>op factory</code></dd>
+        <dt>kind</dt><dd><KindBadge label="op factory" /></dd>
         <dt>runtime</dt><dd><code className={s.tag}>{typeof fn}</code></dd>
         {arity !== undefined && (
           <><dt>parameters</dt><dd>{arity}</dd></>

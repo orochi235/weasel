@@ -20,7 +20,8 @@ export type TreeEntry =
   | SlotEntry
   | RouteTargetEntry
   | ModifierSetEntry
-  | GroupEntry;
+  | GroupEntry
+  | MetaEntry;
 
 /** Per-phase channel presence — `true` when the `ToolDef`'s phase declares
  *  the channel (`initial.click`, `engaged.drag`, etc.). Lets the inspector
@@ -91,7 +92,7 @@ export interface ActionEntry {
   id: string;
   label: string;
   /** Per-glyph display chips for the action's default `KeyBinding`, ready
-   *  for the shared `<KeyCap>` component. `undefined` when the action has
+   *  for the shared `<Keycaps>` component. `undefined` when the action has
    *  no default binding. */
   shortcutParts?: readonly string[];
   /** Display-override shortcut string from `Action.shortcut` — orthogonal
@@ -226,11 +227,18 @@ export interface GroupEntry {
   source: 'tool' | 'action';
 }
 
+export interface MetaEntry { kind: 'meta'; id: 'tokens'; label: string }
+
+export function collectMeta(): readonly MetaEntry[] {
+  return [{ kind: 'meta', id: 'tokens', label: 'Tokens' }];
+}
+
 export type TreeCategory =
   | 'tools' | 'actions' | 'shapeKinds' | 'bundles'
   | 'icons' | 'opFactories' | 'publicExports'
   | 'phases' | 'gestures' | 'phaseOutputs'
-  | 'opKinds' | 'hotkeyTriggers' | 'slots' | 'routeTargets' | 'modifierSets' | 'groups';
+  | 'opKinds' | 'hotkeyTriggers' | 'slots' | 'routeTargets' | 'modifierSets' | 'groups'
+  | 'meta';
 
 export interface TreeCategoryNode {
   id: TreeCategory;

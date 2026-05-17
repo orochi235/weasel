@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { RangePicker, chromaAt, oklchToHex, paintGradientTrack, type ChromaCurve, type Thumb } from '@orochi235/weasel-ui';
+import { Slider, chromaAt, oklchToHex, paintGradientTrack, type ChromaCurve, type Thumb } from '@orochi235/weasel-ui';
 import { SceneCanvas, hexToRgba, polygonFromPoints, useScene } from '@orochi235/weasel';
 import type { RenderLayer } from '@orochi235/weasel';
 import { viewToMat3, type DrawCommand } from '../../src/renderer';
@@ -285,7 +285,7 @@ export function PerceptualColorSlidersDemo() {
 
         <section>
           <h3 style={{ margin: '0 0 8px' }}>Hue (single thumb)</h3>
-          <RangePicker
+          <Slider
             min={0} max={360} step={1}
             thumbs={[{ value: hue }]}
             onChange={ts => setHue(ts[0].value)}
@@ -298,7 +298,7 @@ export function PerceptualColorSlidersDemo() {
 
         <section>
           <h3 style={{ margin: '0 0 8px' }}>L range (2-thumb, ordered)</h3>
-          <RangePicker
+          <Slider
             min={0} max={1} step={0.005}
             constraint="ordered"
             thumbs={[
@@ -317,7 +317,7 @@ export function PerceptualColorSlidersDemo() {
 
         <section>
           <h3 style={{ margin: '0 0 8px' }}>Chroma (3-thumb, free, per-thumb bounds)</h3>
-          <RangePicker<CThumb>
+          <Slider<CThumb>
             min={0} max={0.22} step={0.005}
             constraint="free"
             thumbs={[
@@ -339,7 +339,7 @@ export function PerceptualColorSlidersDemo() {
 
         <section>
           <h3 style={{ margin: '0 0 8px' }}>Indices band (dynamic, allowShiftAll)</h3>
-          <RangePicker
+          <Slider
             min={0} max={1000} step={1}
             thumbs={indices.map(value => ({ value }))}
             onChange={ts => setIndices(ts.map(t => Math.round(t.value)).sort((a, b) => a - b))}

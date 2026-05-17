@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { SceneCanvas, hexToRgba, rgbaToHex, useHandleDrag, useScene } from '@orochi235/weasel';
 import type { FillStyle, RenderLayer } from '@orochi235/weasel';
 import { viewToMat3, type DrawCommand } from '../../src/renderer';
-import { RangePicker, paintGradientTrack, type Thumb } from '@orochi235/weasel-ui';
+import { Slider, paintGradientTrack, type Thumb } from '@orochi235/weasel-ui';
 
 const W = 600;
 const H = 400;
@@ -312,7 +312,7 @@ function DragCircle({ cx, cy, onMove }: { cx: number; cy: number; onMove: (x: nu
 }
 
 // ---------------------------------------------------------------------------
-// Stop strip (RangePicker-based)
+// Stop strip (Slider-based)
 // ---------------------------------------------------------------------------
 
 type StopThumb = Thumb & { key: string; color: string };
@@ -348,7 +348,7 @@ function StopStrip({
 
   return (
     <div style={{ marginTop: 12 }}>
-      <RangePicker<StopThumb>
+      <Slider<StopThumb>
         min={0} max={1} step={0.005}
         constraint="free"
         thumbs={thumbs}

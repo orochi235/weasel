@@ -7,9 +7,9 @@
   font-size: var(--badge-font-size, 10px);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--badge-fg, var(--wzl-muted, #a59685));
-  --badge-edge: var(--wzl-panel-border, #4a3c2e);
-  --badge-fill: var(--wzl-bg, #1e1610);
+  color: var(--badge-fg, var(--wzl-muted, #9ea1a8));
+  --badge-edge: var(--wzl-panel-border, #25272c);
+  --badge-fill: var(--wzl-bg, #181a1e);
   --badge-fg: var(--badge-edge);
   background: transparent;
   border: 0;
@@ -52,11 +52,11 @@
 .badge[data-tone='info']    { --badge-edge: #7ab8d4; }
 .badge[data-tone='warn']    { --badge-edge: #d4a574; }
 .badge[data-tone='danger']  { --badge-edge: #c43c3c; }
-.badge[data-tone='muted']   { --badge-edge: var(--wzl-muted, #a59685); }
-.badge[data-tone='neutral'] { --badge-edge: var(--wzl-panel-border, #4a3c2e); --badge-fg: var(--wzl-muted, #a59685); }
+.badge[data-tone='muted']   { --badge-edge: var(--wzl-muted, #9ea1a8); }
+.badge[data-tone='neutral'] { --badge-edge: var(--wzl-panel-border, #25272c); --badge-fg: var(--wzl-muted, #9ea1a8); }
 
 .badge[data-variant='outline'] {
-  --badge-fill: var(--wzl-bg, #1e1610);
+  --badge-fill: var(--wzl-bg, #181a1e);
   --badge-fg: var(--badge-edge);
 }
 .badge[data-variant='solid'] {

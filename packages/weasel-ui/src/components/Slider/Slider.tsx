@@ -1,5 +1,5 @@
 import { useCallback, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react';
-import s from './RangePicker.module.css';
+import s from './Slider.module.css';
 
 export type ThumbRenderCtx = {
   width: number;
@@ -29,7 +29,7 @@ export type TrackCtx = {
   valueToFraction: (v: number) => number;
 };
 
-export type RangePickerProps<T extends Thumb = Thumb> = {
+export type SliderProps<T extends Thumb = Thumb> = {
   thumbs: readonly T[];
   onChange: (next: T[]) => void;
   onCommit?: (next: T[]) => void;
@@ -72,7 +72,7 @@ function defaultReadout(thumb: Thumb): string {
   return thumb.value.toFixed(3);
 }
 
-export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>): ReactElement {
+export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactElement {
   const { thumbs, onChange, onCommit, min, max, step, constraint, trackHeight, ariaLabel, className } = props;
 
   const trackRef = useRef<HTMLDivElement | null>(null);

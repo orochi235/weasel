@@ -66,7 +66,6 @@ import {
   useEditAnchorsDepSource,
   useResizePolicy,
 } from './deps';
-import { useLegacyActionBridges } from './SceneCanvas/useLegacyActionBridges';
 import { useActionsPropResolver } from './SceneCanvas/useActionsPropResolver';
 import { ActiveToolContextProvider } from 'interactions/actions/activeToolContext';
 import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
@@ -396,6 +395,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * for the `duplicate` default. When omitted, the `duplicate` default is
      * silently dropped from the registered set.
      */
+    /** @deprecated unused after legacy-bridge removal; will be deleted */
     actionDefaults?: {
       cloneNode?: (id: NodeId, offset: { dx: number; dy: number }) => { id: NodeId };
       /** Per-clone offset for the duplicate default. Default {dx:8,dy:8}. */
@@ -981,7 +981,6 @@ function StandardActionsRegistrar({
   selection,
   scene,
   adapter,
-  actionDefaults,
   actions,
   currentViewRef,
   onViewChange,
@@ -1014,10 +1013,6 @@ function StandardActionsRegistrar({
   useTextEditDepSource(scene);
   useEditAnchorsDepSource(scene, selection, adapter);
 
-  // Legacy bridge effect (delete/duplicate/group/ungroup — Phase 4 T8 TODO)
-  // and the `actions` prop resolver. Both live in SceneCanvas/ alongside the
-  // other slim-down helpers.
-  useLegacyActionBridges(selection, scene, adapter, actionDefaults);
   useActionsPropResolver(actions);
 
   // Gate the `resizePolicy` dep registration on the consumer having

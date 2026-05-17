@@ -10,6 +10,7 @@ import {
   collectHotkeyTriggers,
   countForEntry,
   collectIcons,
+  collectMeta,
   collectModifierSets,
   collectOpFactories,
   collectOpKinds,
@@ -61,6 +62,7 @@ export function RegistryInspector() {
   const routeTargets = useMemo(() => collectRouteTargets(runtime.tools), [runtime.tools]);
   const modifierSets = useMemo(() => collectModifierSets(runtime.tools), [runtime.tools]);
   const groups = useMemo(() => collectGroups(runtime.tools, runtime.actions), [runtime.tools, runtime.actions]);
+  const meta = useMemo(() => collectMeta(), []);
 
   const activeBundle = bundles.find((b) => b.id === bundleFilter);
 
@@ -96,15 +98,21 @@ export function RegistryInspector() {
       { id: 'routeTargets', label: 'Route targets', entries: routeTargets },
       { id: 'modifierSets', label: 'Modifier sets', entries: modifierSets },
       { id: 'groups', label: 'Groups', entries: groups },
+      { id: 'meta', label: 'Meta', entries: meta },
     ];
     // Bundles convey a deliberate progression (minimal → standard →
     // exhaustive); preserve their declared order rather than alphabetizing.
+    // `meta` is pinned to the bottom regardless of alphabetic order.
     return all
       .map((n) => (n.id === 'bundles'
         ? n
         : { ...n, entries: [...n.entries].sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' })) }))
-      .sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
-  }, [runtime, activeBundle, bundles, icons, opFactories, publicExports, shapeKinds, phases, gestures, phaseOutputs, opKinds, hotkeyTriggers, slots, routeTargets, modifierSets, groups]);
+      .sort((a, b) => {
+        if (a.id === 'meta') return 1;
+        if (b.id === 'meta') return -1;
+        return a.label.localeCompare(b.label, undefined, { sensitivity: 'base' });
+      });
+  }, [runtime, activeBundle, bundles, icons, opFactories, publicExports, shapeKinds, phases, gestures, phaseOutputs, opKinds, hotkeyTriggers, slots, routeTargets, modifierSets, groups, meta]);
 
   // Clear selection when the active filters narrow past the selected entry.
   const lower = textFilter.trim().toLowerCase();

@@ -24,8 +24,13 @@ describe('RegistryDetail', () => {
     };
     render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
     expect(screen.getAllByText(/rect/).length).toBeGreaterThan(0);
-    expect(screen.getByText('initial.click.empty')).toBeTruthy();
-    expect(screen.getByText('initial.drag.empty:shift')).toBeTruthy();
+    // Routes are decomposed by RouteBadge into per-segment chips; assert
+    // each segment appears at least once across both routes.
+    expect(screen.getAllByText('initial').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('click').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('drag').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('empty').length).toBeGreaterThan(0);
+    expect(screen.getByText(':shift')).toBeTruthy();
   });
 
   it('renders an Action entry with shortcut', () => {

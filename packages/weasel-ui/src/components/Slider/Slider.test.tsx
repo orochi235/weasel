@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { useState } from 'react';
-import { RangePicker } from './RangePicker';
+import { Slider } from './Slider';
 
 // jsdom omits PointerEvent. Without this shim, fireEvent.pointerDown/Move/Up dispatch
 // a plain Event with no clientX/clientY/button, which breaks every drag test below.
@@ -25,10 +25,10 @@ function stubRect(el: Element, rect: Partial<DOMRect> = {}) {
   (el as HTMLElement).getBoundingClientRect = () => full;
 }
 
-describe('RangePicker rendering', () => {
+describe('Slider rendering', () => {
   it('renders one thumb per item with left% mapped from value', () => {
     const { container } = render(
-      <RangePicker
+      <Slider
         min={0}
         max={1}
         thumbs={[{ value: 0 }, { value: 0.5 }, { value: 1 }]}
@@ -43,12 +43,12 @@ describe('RangePicker rendering', () => {
   });
 });
 
-describe('RangePicker single-thumb drag', () => {
+describe('Slider single-thumb drag', () => {
   it('drags a thumb and emits onChange continuously and onCommit on pointerup', () => {
     const onChange = vi.fn();
     const onCommit = vi.fn();
     const { container } = render(
-      <RangePicker
+      <Slider
         min={0}
         max={1}
         step={0.01}
@@ -76,7 +76,7 @@ describe('RangePicker single-thumb drag', () => {
   it('clamps drag to min/max', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <RangePicker min={0} max={1} step={0.01} thumbs={[{ value: 0.5 }]} onChange={onChange} />,
+      <Slider min={0} max={1} step={0.01} thumbs={[{ value: 0.5 }]} onChange={onChange} />,
     );
     const thumb = container.querySelector('[role="slider"]') as HTMLElement;
     stubRect(thumb.parentElement!, { left: 0, width: 200 });
@@ -93,7 +93,7 @@ describe('RangePicker single-thumb drag', () => {
   it('snaps drag to step', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <RangePicker min={0} max={10} step={1} thumbs={[{ value: 5 }]} onChange={onChange} />,
+      <Slider min={0} max={10} step={1} thumbs={[{ value: 5 }]} onChange={onChange} />,
     );
     const thumb = container.querySelector('[role="slider"]') as HTMLElement;
     stubRect(thumb.parentElement!, { left: 0, width: 200 });
@@ -105,12 +105,12 @@ describe('RangePicker single-thumb drag', () => {
   });
 });
 
-describe('RangePicker keyboard', () => {
+describe('Slider keyboard', () => {
   it('arrow right increments by step and fires onChange + onCommit', () => {
     const onChange = vi.fn();
     const onCommit = vi.fn();
     const { container } = render(
-      <RangePicker min={0} max={10} step={1} thumbs={[{ value: 5 }]} onChange={onChange} onCommit={onCommit} />,
+      <Slider min={0} max={10} step={1} thumbs={[{ value: 5 }]} onChange={onChange} onCommit={onCommit} />,
     );
     const thumb = container.querySelector('[role="slider"]') as HTMLElement;
     fireEvent.keyDown(thumb, { key: 'ArrowRight' });
@@ -119,11 +119,11 @@ describe('RangePicker keyboard', () => {
   });
 
   it('shift+arrow moves by 10 steps; PageUp/Down do the same', () => {
-    // Drive a controlled RangePicker so each keystroke sees the updated value.
+    // Drive a controlled Slider so each keystroke sees the updated value.
     function Harness() {
       const [v, setV] = useState(50);
       return (
-        <RangePicker
+        <Slider
           min={0}
           max={100}
           step={1}
@@ -145,7 +145,7 @@ describe('RangePicker keyboard', () => {
   it('Home snaps to min, End snaps to max', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <RangePicker min={0} max={10} step={1} thumbs={[{ value: 5 }]} onChange={onChange} />,
+      <Slider min={0} max={10} step={1} thumbs={[{ value: 5 }]} onChange={onChange} />,
     );
     const thumb = container.querySelector('[role="slider"]') as HTMLElement;
     fireEvent.keyDown(thumb, { key: 'Home' });
@@ -156,7 +156,7 @@ describe('RangePicker keyboard', () => {
 
   it('exposes ARIA attributes on each thumb', () => {
     const { container } = render(
-      <RangePicker min={0} max={1} thumbs={[{ value: 0.25 }]} ariaLabel="Hue" onChange={() => {}} />,
+      <Slider min={0} max={1} thumbs={[{ value: 0.25 }]} ariaLabel="Hue" onChange={() => {}} />,
     );
     const thumb = container.querySelector('[role="slider"]') as HTMLElement;
     expect(thumb.getAttribute('aria-orientation')).toBe('horizontal');
@@ -167,11 +167,11 @@ describe('RangePicker keyboard', () => {
   });
 });
 
-describe('RangePicker free constraint', () => {
+describe('Slider free constraint', () => {
   it('thumbs may pass each other; onChange preserves index order', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <RangePicker
+      <Slider
         min={0}
         max={1}
         step={0.01}
@@ -192,11 +192,11 @@ describe('RangePicker free constraint', () => {
   });
 });
 
-describe("RangePicker 'ordered' constraint", () => {
+describe("Slider 'ordered' constraint", () => {
   it('clamps lower thumb to (lower-neighbor, upper-neighbor − step)', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <RangePicker
+      <Slider
         min={0}
         max={1}
         step={0.01}
@@ -218,7 +218,7 @@ describe("RangePicker 'ordered' constraint", () => {
   it('clamps upper thumb to (lower-neighbor + step, max)', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <RangePicker
+      <Slider
         min={0}
         max={1}
         step={0.01}
@@ -237,11 +237,11 @@ describe("RangePicker 'ordered' constraint", () => {
   });
 });
 
-describe('RangePicker per-thumb bounds (tuple form)', () => {
+describe('Slider per-thumb bounds (tuple form)', () => {
   it('clamps drag to bounds', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <RangePicker
+      <Slider
         min={0}
         max={1}
         step={0.01}
@@ -262,7 +262,7 @@ describe('RangePicker per-thumb bounds (tuple form)', () => {
   it('Home snaps to bounds[0]; End snaps to bounds[1]', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <RangePicker
+      <Slider
         min={0}
         max={1}
         step={0.01}
@@ -278,7 +278,7 @@ describe('RangePicker per-thumb bounds (tuple form)', () => {
   });
 });
 
-describe('RangePicker per-thumb bounds (callback form)', () => {
+describe('Slider per-thumb bounds (callback form)', () => {
   it('callback receives the in-flight thumb buffer and clamps using neighbor values', () => {
     const onChange = vi.fn();
     // Two thumbs; thumb 0 cannot exceed thumb 1's value − 0.05.
@@ -291,7 +291,7 @@ describe('RangePicker per-thumb bounds (callback form)', () => {
       { value: 0.7 },
     ];
     const { container } = render(
-      <RangePicker min={0} max={1} step={0.01} thumbs={thumbsProp} onChange={onChange} />,
+      <Slider min={0} max={1} step={0.01} thumbs={thumbsProp} onChange={onChange} />,
     );
     const thumbs = container.querySelectorAll<HTMLElement>('[role="slider"]');
     stubRect(thumbs[0].parentElement!, { left: 0, width: 200 });
@@ -303,13 +303,13 @@ describe('RangePicker per-thumb bounds (callback form)', () => {
   });
 });
 
-describe('RangePicker click-on-track to add', () => {
+describe('Slider click-on-track to add', () => {
   it('appends thumb returned by onAddThumb on track click', () => {
     const onChange = vi.fn();
     const onCommit = vi.fn();
     const onAddThumb = vi.fn((at: number) => ({ value: Math.round(at * 100) / 100 }));
     const { container } = render(
-      <RangePicker
+      <Slider
         min={0}
         max={1}
         step={0.01}
@@ -330,7 +330,7 @@ describe('RangePicker click-on-track to add', () => {
   it('null return is a no-op', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <RangePicker
+      <Slider
         min={0}
         max={1}
         thumbs={[{ value: 0.5 }]}
@@ -345,12 +345,12 @@ describe('RangePicker click-on-track to add', () => {
   });
 });
 
-describe('RangePicker remove (drag-off and right-click)', () => {
+describe('Slider remove (drag-off and right-click)', () => {
   it('drag-off-vertical removes thumb on pointerup if onRemoveThumb returns true', () => {
     const onChange = vi.fn();
     const onRemoveThumb = vi.fn(() => true);
     const { container } = render(
-      <RangePicker
+      <Slider
         min={0}
         max={1}
         thumbs={[{ value: 0.3 }, { value: 0.7 }]}
@@ -373,7 +373,7 @@ describe('RangePicker remove (drag-off and right-click)', () => {
   it('right-click on thumb removes via onRemoveThumb', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <RangePicker
+      <Slider
         min={0}
         max={1}
         thumbs={[{ value: 0.3 }, { value: 0.7 }]}
@@ -389,7 +389,7 @@ describe('RangePicker remove (drag-off and right-click)', () => {
   it('onRemoveThumb returning false leaves thumbs intact', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <RangePicker
+      <Slider
         min={0}
         max={1}
         thumbs={[{ value: 0.5 }]}
@@ -403,11 +403,11 @@ describe('RangePicker remove (drag-off and right-click)', () => {
   });
 });
 
-describe('RangePicker allowShiftAll', () => {
+describe('Slider allowShiftAll', () => {
   it('shift-drag moves all thumbs by the same delta clamped to [min, max]', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <RangePicker
+      <Slider
         min={0}
         max={1}
         step={0.01}
@@ -432,7 +432,7 @@ describe('RangePicker allowShiftAll', () => {
   it('clamps the shift-drag delta so no thumb crosses max', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <RangePicker
+      <Slider
         min={0}
         max={1}
         step={0.01}
@@ -454,11 +454,11 @@ describe('RangePicker allowShiftAll', () => {
   });
 });
 
-describe('RangePicker renderTrack', () => {
+describe('Slider renderTrack', () => {
   it('invokes renderTrack with a TrackCtx and renders its output behind thumbs', () => {
     const renderTrack = vi.fn((_ctx: { trackWidth: number; valueToFraction: (v: number) => number }) => <div data-testid="custom-track">painted</div>);
     const { getByTestId } = render(
-      <RangePicker
+      <Slider
         min={0}
         max={1}
         thumbs={[{ value: 0.5 }]}
@@ -474,10 +474,10 @@ describe('RangePicker renderTrack', () => {
   });
 });
 
-describe('RangePicker thumb shape variants', () => {
+describe('Slider thumb shape variants', () => {
   it('shape="notched" renders the notched class', () => {
     const { container } = render(
-      <RangePicker
+      <Slider
         min={0}
         max={1}
         thumbs={[{ value: 0.5, shape: 'notched' }]}
@@ -490,7 +490,7 @@ describe('RangePicker thumb shape variants', () => {
 
   it('shape={ render } uses the custom render', () => {
     const { container } = render(
-      <RangePicker
+      <Slider
         min={0}
         max={1}
         thumbs={[{ value: 0.5, shape: { render: () => <span data-testid="x">X</span> } }]}
@@ -501,10 +501,10 @@ describe('RangePicker thumb shape variants', () => {
   });
 });
 
-describe('RangePicker readouts', () => {
+describe('Slider readouts', () => {
   it("'inline-after' renders one entry per thumb after the track", () => {
     const { container } = render(
-      <RangePicker
+      <Slider
         min={0}
         max={1}
         thumbs={[{ value: 0.123 }, { value: 0.456 }]}
@@ -519,7 +519,7 @@ describe('RangePicker readouts', () => {
 
   it("'below-thumb' renders one absolutely-positioned readout per thumb", () => {
     const { container } = render(
-      <RangePicker
+      <Slider
         min={0}
         max={1}
         thumbs={[{ value: 0.25 }, { value: 0.75 }]}
@@ -535,7 +535,7 @@ describe('RangePicker readouts', () => {
 
   it('renderReadout overrides default formatting', () => {
     const { container } = render(
-      <RangePicker
+      <Slider
         min={0}
         max={1}
         thumbs={[{ value: 0.5 }]}

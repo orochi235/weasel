@@ -2,6 +2,19 @@ import type { Preview } from '@storybook/react-vite';
 import React from 'react';
 import '@orochi235/weasel-theme/tokens.css';
 
+// Paint the preview iframe canvas with our themed surface color so stories
+// don't render on raw white. Lives outside the React tree so it applies even
+// when the story root unmounts.
+if (typeof document !== 'undefined') {
+  const id = 'storybook-canvas-bg';
+  if (!document.getElementById(id)) {
+    const style = document.createElement('style');
+    style.id = id;
+    style.textContent = 'html, body { background: var(--wzl-surface); color: var(--wzl-fg); }';
+    document.head.appendChild(style);
+  }
+}
+
 if (typeof document !== 'undefined') {
   const id = 'storybook-font-picker-link';
   if (!document.getElementById(id)) {
@@ -49,6 +62,7 @@ function snapStretch(value: React.CSSProperties['fontStretch'], supported: React
 
 const preview: Preview = {
   initialGlobals: {
+    theme: 'dark',
     fontFamily: 'oswald',
     fontWeight: '500',
     fontStretch: 'normal',
@@ -56,6 +70,8 @@ const preview: Preview = {
     fontSize: 'default',
   },
   globalTypes: {
+    // `theme` is driven by the manager-side toggle button in `manager.tsx`;
+    // no `toolbar` config here so it doesn't render as a dropdown.
     fontFamily: {
       name: 'Font',
       description: 'Preview font family',
@@ -156,6 +172,12 @@ const preview: Preview = {
     },
   },
   decorators: [
+    (Story, context) => {
+      if (typeof document !== 'undefined') {
+        document.documentElement.dataset.theme = String(context.globals.theme ?? 'dark');
+      }
+      return Story();
+    },
     (Story, context) => {
       const key = String(context.globals.fontFamily ?? 'oswald');
       const font = FONTS[key] ?? FONTS.oswald;

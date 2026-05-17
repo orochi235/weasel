@@ -3,8 +3,10 @@
 // consuming app (today: `apps/swillustrator/src/ui/`).
 export * from './components/ActionBar';
 export * from './components/Badge';
+export * from './components/Button';
 export * from './components/DataGrid';
-export * from './components/RangePicker';
+export * from './components/Keycaps';
+export * from './components/Slider';
 export * from './components/ToggleBar';
 export * from './components/Sidebar';
 export * from './components/SidebarPanel';

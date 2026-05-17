@@ -23,23 +23,23 @@
 
 .table th {
   font-weight: 600;
-  color: var(--wzl-muted, #a59685);
+  color: var(--wzl-muted, #9ea1a8);
   position: sticky;
   top: 0;
   background: var(--wzl-surface, #2a2018);
   z-index: 1;
-  border-bottom: 1px solid var(--wzl-panel-border, #4a3c2e);
+  border-bottom: 1px solid var(--wzl-panel-border, #25272c);
 }
 
 .sortable {
   cursor: pointer;
   user-select: none;
 }
-.sortable:hover { color: var(--wzl-fg, #d4c4a8); }
-.sortActive { color: var(--wzl-fg, #d4c4a8); }
+.sortable:hover { color: var(--wzl-fg, #e6e7e9); }
+.sortActive { color: var(--wzl-fg, #e6e7e9); }
 
 .empty {
-  color: var(--wzl-muted, #a59685);
+  color: var(--wzl-muted, #9ea1a8);
   font-style: italic;
   padding: 8px 0;
   text-align: center;
@@ -50,7 +50,7 @@
 .handleCell {
   width: 14px;
   cursor: grab;
-  color: var(--wzl-muted, #a59685);
+  color: var(--wzl-muted, #9ea1a8);
   user-select: none;
   text-align: center;
 }

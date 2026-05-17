@@ -75,6 +75,15 @@ export default defineConfig({
     ]),
   },
   plugins: [react(), serveApiDocsInDev()],
+  // Pre-bundle demo-only deps at server start so they don't trigger lazy
+  // re-optimization on first import — that race produces 504 "Outdated
+  // Optimize Dep" responses on slow ESM packages with many internal modules.
+  // d3-force is the main offender (forceMany/Link/Collide/Center pull in
+  // d3-quadtree, d3-dispatch, etc.); listing the root entry forces vite to
+  // walk the tree once at startup.
+  optimizeDeps: {
+    include: ['d3-force'],
+  },
   // Proxy `/weasel/swillustrator/*` to the swill dev server (`npm run dev:swill`,
   // port 5174) so a single localhost:5173 origin mirrors the production Pages
   // layout where swill is copied into `dist-demo/swillustrator/`. Both servers
