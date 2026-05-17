@@ -10,6 +10,8 @@ import {
 import type { GestureBinding } from '../actions/binding';
 
 const noMods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
+// Default wheel event data fields (matcher only reads mods; these are pass-through).
+const noWheelData = { deltaX: 0, deltaY: 0, clientX: 0, clientY: 0 };
 
 describe('matchModifiers (strict semantics)', () => {
   it('undefined spec matches only when NO modifiers held', () => {
@@ -100,7 +102,7 @@ describe('matchSpec', () => {
   });
 
   it('KeySpec rejects wrong kind', () => {
-    const wheel: InputEvent = { kind: 'wheel', ...noMods };
+    const wheel: InputEvent = { kind: 'wheel', ...noMods, ...noWheelData };
     expect(matchSpec(wheel, { kind: 'key', key: 'a' }, false)).toBe(false);
   });
 
@@ -126,7 +128,7 @@ describe('matchSpec', () => {
   });
 
   it('WheelSpec matches wheel events with matching modifiers', () => {
-    const ctrlWheel: InputEvent = { kind: 'wheel', ...noMods, ctrlKey: true };
+    const ctrlWheel: InputEvent = { kind: 'wheel', ...noMods, ...noWheelData, ctrlKey: true };
     expect(matchSpec(ctrlWheel, { kind: 'wheel', mods: { ctrl: true } }, false)).toBe(true);
     expect(matchSpec(ctrlWheel, { kind: 'wheel' }, false)).toBe(false);
   });
@@ -256,7 +258,7 @@ describe('matchBest (precedence)', () => {
   });
 
   it('wheel gesture routed correctly through matchBest', () => {
-    const e: InputEvent = { kind: 'wheel', ...noMods, ctrlKey: true };
+    const e: InputEvent = { kind: 'wheel', ...noMods, ...noWheelData, ctrlKey: true };
     const bs: ScopedBinding[] = [
       { binding: binding({ kind: 'wheel', mods: { ctrl: true } }, 'zoom'), scope: 'ambient' },
     ];

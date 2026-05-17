@@ -170,6 +170,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         ctrlKey: e.ctrlKey,
         metaKey: e.metaKey,
         shiftKey: e.shiftKey,
+        deltaX: e.deltaX,
+        deltaY: e.deltaY,
+        clientX: e.clientX,
+        clientY: e.clientY,
       };
       dispatcher.handleInput(ev, ctxRef.current);
     };
