@@ -1,6 +1,2 @@
-export { useInsert } from './insert';
-export type {
-  UseInsertOptions,
-  InsertController,
-} from './insert';
+export type { UseInsertOptions } from './options';
 export * from './behaviors';

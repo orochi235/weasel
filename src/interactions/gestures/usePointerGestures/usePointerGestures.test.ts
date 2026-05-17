@@ -4,19 +4,28 @@ import type React from 'react';
 import { useSelection } from 'core/selection/useSelection';
 import { asNodeId } from 'core/scene/types';
 import { usePointerGestures } from './usePointerGestures';
-import type { MoveController } from '../../actions/move/move';
 import type { ResizeController } from '../../actions/resize/resize';
 
 interface Pose { x: number; y: number; width: number; height: number }
 
-function makeMove(): MoveController<{ id: string }, Pose> {
+// Phase 14e Task 4: legacy `MoveController` type is gone; mirror the
+// minimal shape needed by `usePointerGestures` locally.
+type FakeMove = {
+  start: ReturnType<typeof vi.fn>;
+  move: ReturnType<typeof vi.fn>;
+  end: ReturnType<typeof vi.fn>;
+  cancel: ReturnType<typeof vi.fn>;
+  overlay: null;
+};
+
+function makeMove(): FakeMove {
   return {
     start: vi.fn(),
     move: vi.fn(),
     end: vi.fn(),
     cancel: vi.fn(),
     overlay: null,
-  } as unknown as MoveController<{ id: string }, Pose>;
+  };
 }
 
 function makeResize(): ResizeController<{ id: string }, Pose> {
@@ -96,7 +105,7 @@ describe('usePointerGestures — onBodyHit firing', () => {
         clientToWorld: IDENTITY_C2W,
         pickEvery: () => 'a',
         onBodyHit,
-        move,
+        move: move as never,
       }),
     );
     const canvas = makeCanvas();
@@ -178,7 +187,7 @@ describe('usePointerGestures — promote-then-drag', () => {
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
         pickEvery: () => 'a',
-        move,
+        move: move as never,
         selection: sel.current,
       }),
     );
@@ -200,7 +209,7 @@ describe('usePointerGestures — promote-then-drag', () => {
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
         pickEvery: () => 'a',
-        move,
+        move: move as never,
         selection: sel.current,
       }),
     );
@@ -221,7 +230,7 @@ describe('usePointerGestures — promote-then-drag', () => {
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
         pickEvery: () => 'b',
-        move,
+        move: move as never,
         selection: sel.current,
       }),
     );
@@ -238,7 +247,7 @@ describe('usePointerGestures — promote-then-drag', () => {
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
         pickEvery: () => ['x', 'y'],
-        move,
+        move: move as never,
       }),
     );
     const canvas = makeCanvas();
