@@ -473,7 +473,9 @@ export function ToolkitBuilder() {
       id: 'binding',
       header: 'binding',
       sortable: false,
-      render: (a) => <KeyCap parts={formatShortcutParts(a.defaultBinding)} />,
+      // Phase 14e Task 7: Action.defaultBinding removed; gestureBinding-
+      // aware shortcut formatter not yet implemented.
+      render: (_a) => <KeyCap parts={formatShortcutParts(undefined)} />,
     },
   ];
 

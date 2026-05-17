@@ -95,7 +95,6 @@ export function useDelete(
     const action: Action = {
       id: 'delete',
       label: 'Delete',
-      defaultBinding: { key: ['Delete', 'Backspace'] },
       run: () => { deleteSelection(); },
     };
     return reg.register(action);

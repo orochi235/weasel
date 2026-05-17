@@ -63,7 +63,6 @@ describe('legacy coexistence', () => {
     const action: Action = {
       id: 'coex.b',
       label: 'Coex B',
-      defaultBinding: { key: 'b' },
       gestureBinding: { kind: 'key', key: 'b' },
       run: () => legacyRunSpy(),
       invoker: { timing: 'immediate', run: () => invokerRunSpy() },
@@ -91,29 +90,10 @@ describe('legacy coexistence', () => {
     expect(legacyRunSpy).not.toHaveBeenCalled();
   });
 
-  it('with dispatcher mounted: action WITHOUT gestureBinding still fires via legacy', () => {
-    const legacyRunSpy = vi.fn();
-    const action: Action = {
-      id: 'coex.c',
-      label: 'Coex C',
-      defaultBinding: { key: 'c' },
-      // no gestureBinding — legacy path should remain active
-      run: () => legacyRunSpy(),
-    };
-
-    function Harness() {
-      const r = useActionsRegistry();
-      r?.register(action);
-      return <MountDispatcher />;
-    }
-
-    render(
-      <DispatcherHarness>
-        <Harness />
-      </DispatcherHarness>,
-    );
-
-    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true })); });
-    expect(legacyRunSpy).toHaveBeenCalledTimes(1);
-  });
+  // REMOVED (Phase 14e Task 7): 'with dispatcher mounted: action WITHOUT
+  // gestureBinding still fires via legacy'. The legacy keystroke loop in
+  // registry.tsx is gone — actions without a gestureBinding no longer have
+  // a keystroke path through the registry. Consumer-facing hooks
+  // (useEscape, useClipboard, ...) own their own document keydown via
+  // `useKeybinding`.
 });

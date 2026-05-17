@@ -69,7 +69,6 @@ export function useSelectAll(
     const action: Action = {
       id: 'selectAll',
       label: 'Select All',
-      defaultBinding: { key: 'a', mod: true },
       run: () => selectAll(),
     };
     return reg.register(action);

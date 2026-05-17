@@ -57,7 +57,6 @@ export function useEscape(
     const action: Action = {
       id: 'escape',
       label: 'Escape',
-      defaultBinding: { key: 'Escape' },
       run: () => clearSelection(),
     };
     return reg.register(action);

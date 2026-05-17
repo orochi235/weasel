@@ -91,17 +91,13 @@ describe('ActionsRegistry — full coverage', () => {
     expect(reg.list().map(a => a.id)).toEqual(['a']);
   });
 
-  it('Provider attaches one keydown listener on mount and removes on unmount', () => {
+  it('Provider attaches no document keydown listener (Phase 14e Task 7: dispatcher owns keystrokes)', () => {
     const addSpy = vi.spyOn(document, 'addEventListener');
-    const removeSpy = vi.spyOn(document, 'removeEventListener');
     const { unmount } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
     const adds = addSpy.mock.calls.filter(c => c[0] === 'keydown').length;
     unmount();
-    const removes = removeSpy.mock.calls.filter(c => c[0] === 'keydown').length;
-    expect(adds).toBe(1);
-    expect(removes).toBe(1);
+    expect(adds).toBe(0);
     addSpy.mockRestore();
-    removeSpy.mockRestore();
   });
 
   it('nested providers each own their own scope', () => {
@@ -124,81 +120,12 @@ describe('ActionsRegistry — full coverage', () => {
     unmount();
   });
 
-  it('keydown matches every modifier combination', () => {
-    const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
-    const reg = result.current!;
-    const run = vi.fn();
-    act(() => { reg.register({
-      id: 'sa', label: 'SA',
-      defaultBinding: { key: 'a', mod: true },
-      run,
-    }); });
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', metaKey: true, bubbles: true }));
-    expect(run).toHaveBeenCalledOnce();
-    run.mockClear();
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
-    expect(run).not.toHaveBeenCalled();
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', metaKey: true, altKey: true, bubbles: true }));
-    expect(run).not.toHaveBeenCalled();
-  });
-
-  it("shift: 'optional' accepts both shifted and unshifted; shift: false rejects shifted; shift: true requires shifted", () => {
-    const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
-    const reg = result.current!;
-    const opt = vi.fn(), no = vi.fn(), yes = vi.fn();
-    act(() => {
-      reg.register({ id: 'opt', label: 'opt', defaultBinding: { key: 'o', shift: 'optional' }, run: opt });
-      reg.register({ id: 'no',  label: 'no',  defaultBinding: { key: 'n' }, run: no });
-      reg.register({ id: 'yes', label: 'yes', defaultBinding: { key: 'y', shift: true }, run: yes });
-    });
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'o' }));
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'O', shiftKey: true }));
-    expect(opt).toHaveBeenCalledTimes(2);
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'n', shiftKey: true }));
-    expect(no).not.toHaveBeenCalled();
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'n' }));
-    expect(no).toHaveBeenCalledOnce();
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'y' }));
-    expect(yes).not.toHaveBeenCalled();
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'y', shiftKey: true }));
-    expect(yes).toHaveBeenCalledOnce();
-  });
-
-  it('skipInEditable: keydowns inside an <input> do NOT trigger', () => {
-    const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
-    const reg = result.current!;
-    const run = vi.fn();
-    act(() => { reg.register({ id: 'sa', label: 'SA', defaultBinding: { key: 'a', mod: true }, run }); });
-    const input = document.createElement('input');
-    document.body.appendChild(input);
-    input.focus();
-    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', metaKey: true, bubbles: true }));
-    expect(run).not.toHaveBeenCalled();
-    document.body.removeChild(input);
-  });
-
-  it('preventDefault is called on the matched event by default', () => {
-    const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
-    const reg = result.current!;
-    act(() => { reg.register({ id: 'sa', label: 'SA', defaultBinding: { key: 'a', mod: true }, run: vi.fn() }); });
-    const ev = new KeyboardEvent('keydown', { key: 'a', metaKey: true, bubbles: true, cancelable: true });
-    const pdSpy = vi.spyOn(ev, 'preventDefault');
-    document.dispatchEvent(ev);
-    expect(pdSpy).toHaveBeenCalledOnce();
-  });
-
-  it('overlapping bindings: first registered runs, others skipped', () => {
-    const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
-    const reg = result.current!;
-    const a = vi.fn(), b = vi.fn();
-    act(() => {
-      reg.register({ id: 'a', label: 'A', defaultBinding: { key: 'k' }, run: a });
-      reg.register({ id: 'b', label: 'B', defaultBinding: { key: 'k' }, run: b });
-    });
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k' }));
-    expect(a).toHaveBeenCalledOnce();
-    expect(b).not.toHaveBeenCalled();
-  });
+  // Phase 14e Task 7: the keystroke-matching tests (modifier combos, shift
+  // policies, skipInEditable, preventDefault, overlapping-bindings tiebreak)
+  // tested the registry's legacy keydown loop, which is gone. Equivalent
+  // coverage lives in the gesture dispatcher's tests
+  // (`src/interactions/dispatcher/`) which is now the sole keystroke path
+  // for registered actions with `gestureBinding`.
 });
 
 describe('Action with new invoker / GestureSpec fields (Phase 1 additive)', () => {
@@ -239,15 +166,9 @@ describe('Action with new invoker / GestureSpec fields (Phase 1 additive)', () =
     expect(action.gestureBinding).toEqual({ kind: 'wheel', mods: { ctrl: true } });
   });
 
-  it('legacy KeyBinding shape on defaultBinding still compiles (unchanged from v1)', () => {
-    const action: Action = {
-      id: 'demo.legacy',
-      label: 'Demo legacy',
-      defaultBinding: { key: 'a', mod: true },
-      run: () => {},
-    };
-    expect(action.defaultBinding).toBeDefined();
-  });
+  // REMOVED (Phase 14e Task 7): 'legacy KeyBinding shape on defaultBinding
+  // still compiles'. The `Action.defaultBinding` field has been deleted; all
+  // bindings live on `gestureBinding` (read by the dispatcher).
 
   it('accepts an array of GestureSpec on gestureBinding (multi-binding actions)', () => {
     const action: Action = {

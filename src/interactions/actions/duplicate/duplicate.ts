@@ -78,7 +78,6 @@ export function useDuplicate<TPose>(
     const action: Action = {
       id: 'duplicate',
       label: 'Duplicate',
-      defaultBinding: { key: 'd', mod: true },
       run: () => duplicate(),
     };
     return reg.register(action);

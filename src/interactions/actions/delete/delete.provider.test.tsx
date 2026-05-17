@@ -37,7 +37,7 @@ describe('useDelete back-compat with ActionsProvider', () => {
     unmount();
   });
 
-  it('the registered `delete` action carries its label and binding', () => {
+  it('the registered `delete` action carries its label (Phase 14e Task 7: keystrokes via kit-standard descriptor in dispatcher; legacy useKeybinding fallback when no registry)', () => {
     let regSnap: ActionsRegistry | null = null;
     function Probe() { const r = useActionsRegistry(); useEffect(() => { regSnap = r; }); return null; }
     const { adapter } = makeAdapter();
@@ -45,14 +45,15 @@ describe('useDelete back-compat with ActionsProvider', () => {
     render(<ActionsProvider><Host /><Probe /></ActionsProvider>);
     const a = regSnap!.list().find((x) => x.id === 'delete')!;
     expect(a.label).toBe('Delete');
-    expect(a.defaultBinding).toEqual({ key: ['Delete', 'Backspace'] });
   });
 
-  it('document Delete fires exactly once inside a provider (registry owns dispatch, no double-fire)', () => {
+  it('registry.trigger fires the registered delete inside a provider', () => {
     const helpers = makeAdapter();
+    let regSnap: ActionsRegistry | null = null;
+    function Probe() { const r = useActionsRegistry(); useEffect(() => { regSnap = r; }); return null; }
     function Host() { useDelete(helpers.adapter); return null; }
-    render(<ActionsProvider><Host /></ActionsProvider>);
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true, cancelable: true }));
+    render(<ActionsProvider><Host /><Probe /></ActionsProvider>);
+    regSnap!.trigger('delete');
     expect(helpers.batches).toHaveLength(1);
   });
 

@@ -196,7 +196,6 @@ export function useNest<TNode extends { id: string }, TPose>(
     const action: Action = {
       id: 'nest',
       label: 'Nest',
-      defaultBinding: { key: 'g', mod: true },
       run: () => { nest(); },
     };
     return reg.register(action);
@@ -315,7 +314,6 @@ export function useUnnest<TNode extends { id: string }, TPose>(
     const action: Action = {
       id: 'unnest',
       label: 'Unnest',
-      defaultBinding: { key: 'g', mod: true, shift: true },
       run: () => { unnest(); },
     };
     return reg.register(action);

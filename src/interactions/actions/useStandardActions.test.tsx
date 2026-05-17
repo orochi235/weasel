@@ -18,12 +18,15 @@ import './depSchema';
 // ---------------------------------------------------------------------------
 
 function Providers({ children }: { children: ReactNode }) {
+  // Phase 14e Task 7: DepRegistryProvider must wrap ActionsProvider so that
+  // ActionsProvider's `trigger` can read deps from the dep registry. This
+  // matches SceneCanvas's nesting order.
   return (
-    <ActionsProvider>
-      <DepRegistryProvider>
+    <DepRegistryProvider>
+      <ActionsProvider>
         {children}
-      </DepRegistryProvider>
-    </ActionsProvider>
+      </ActionsProvider>
+    </DepRegistryProvider>
   );
 }
 
@@ -100,7 +103,7 @@ describe('useStandardActions', () => {
     expect(last).toHaveLength(KIT_IDS.length);
   });
 
-  it('each registered action has a legacy run bridge (run is a function)', () => {
+  it('each registered action has an invoker (Phase 14e Task 7: withLegacyRunBridge deleted; trigger routes via invoker.run with deps from depRegistry)', () => {
     let actions: readonly Action[] = [];
     render(
       <Providers>
@@ -110,7 +113,7 @@ describe('useStandardActions', () => {
     );
     const escape = actions[0];
     expect(escape).toBeDefined();
-    expect(typeof escape?.run).toBe('function');
+    expect(escape?.invoker).toBeDefined();
   });
 
   it('dep source for selection is registered and returns the provided SelectionApi', () => {
@@ -126,40 +129,42 @@ describe('useStandardActions', () => {
     expect(depValue).toBe(fakeSelection);
   });
 
-  it('escape legacy bridge calls selection.set([]) when selection is non-empty', () => {
+  it('escape via registry.trigger calls selection.set([]) when selection is non-empty (Phase 14e Task 7: trigger routes through invoker.run + depRegistry)', () => {
     const mockSet = vi.fn();
     const fakeSelection = {
       get: vi.fn(() => ['a', 'b']),
       set: mockSet,
     };
-    let escapeAction: Action | undefined;
+    let reg: ReturnType<typeof useActionsRegistry> = null;
+    function CaptureReg() { reg = useActionsRegistry(); return null; }
     render(
       <Providers>
         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         <Host opts={{ selection: fakeSelection as any }} />
-        <ProbeAction id="escape" onAction={(a) => { escapeAction = a; }} />
+        <CaptureReg />
       </Providers>,
     );
-    expect(escapeAction).toBeDefined();
-    escapeAction!.run!();
+    expect(reg).not.toBeNull();
+    reg!.trigger('escape');
     expect(mockSet).toHaveBeenCalledWith([]);
   });
 
-  it('escape legacy bridge is a no-op when selection is empty', () => {
+  it('escape via registry.trigger is a no-op when selection is empty', () => {
     const mockSet = vi.fn();
     const fakeSelection = {
       get: vi.fn(() => []),
       set: mockSet,
     };
-    let escapeAction: Action | undefined;
+    let reg: ReturnType<typeof useActionsRegistry> = null;
+    function CaptureReg() { reg = useActionsRegistry(); return null; }
     render(
       <Providers>
         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         <Host opts={{ selection: fakeSelection as any }} />
-        <ProbeAction id="escape" onAction={(a) => { escapeAction = a; }} />
+        <CaptureReg />
       </Providers>,
     );
-    escapeAction!.run!();
+    reg!.trigger('escape');
     expect(mockSet).not.toHaveBeenCalled();
   });
 

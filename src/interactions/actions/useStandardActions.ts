@@ -14,7 +14,7 @@
 import { useEffect, useRef } from 'react';
 import type { Action } from './registry';
 import { useActionsRegistry } from './registry';
-import { useOptionalDepRegistry, type DepRegistry, type DepName, type DepSchema } from './depRegistry';
+import { useOptionalDepRegistry, type DepName, type DepSchema } from './depRegistry';
 // Side-effect import: pulls in the module augmentation that adds `selection`, `view`,
 // `scene`, `history`, `pointer`, and `activeTool` keys to `DepSchema`. Without this, tsup's
 // per-entry dts compiler doesn't see the augmentation and `DepSchema['selection']` etc.
@@ -133,39 +133,6 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
 ];
 
 /**
- * Attach a legacy `run` bridge to `action` so pre-Phase-10 keystroke dispatch
- * (which calls `action.run()`) still works. The bridge reads all kit-standard
- * dep sources from the dep registry at invocation time and delegates to
- * `invoker.run`. Params are `undefined` — legacy callers can't know which
- * parametric binding fired.
- *
- * Only applies to `ImmediateInvoker` actions (`timing === 'immediate'`). Other
- * timing strategies are returned unchanged.
- */
-function withLegacyRunBridge(action: Action, depReg: DepRegistry): Action {
-  if (!action.invoker || action.invoker.timing !== 'immediate') return action;
-  const inv = action.invoker;
-  return {
-    ...action,
-    run: () => {
-      // Pass the full live dep bag — invokers guard against undefined and cast
-      // as needed. Params are undefined: legacy callers can't signal which
-      // parametric binding (e.g. flip axis, nudge magnitude) was intended, so
-      // each descriptor defaults to a sensible variant (see its invoker body).
-      const liveDeps = {
-        selection: depReg.get('selection' as DepName),
-        scene: depReg.get('scene' as DepName),
-        history: depReg.get('history' as DepName),
-        view: depReg.get('view' as DepName),
-        pointer: depReg.get('pointer' as DepName),
-        activeTool: depReg.get('activeTool' as DepName),
-      };
-      inv.run(liveDeps as any, undefined);
-    },
-  };
-}
-
-/**
  * @experimental
  * Register each kit-standard dep source and action descriptor into the
  * surrounding providers.
@@ -226,8 +193,11 @@ export function useStandardActions(opts: UseStandardActionsOptions): void {
 
   useEffect(() => {
     if (!reg || !depReg) return;
-    const bridged = KIT_STANDARD_DESCRIPTORS.map((d) => withLegacyRunBridge(d, depReg));
-    const unregisters = bridged.map((a) => reg.register(a));
+    // Phase 14e Task 7: `withLegacyRunBridge` is gone. Kit-standard descriptors
+    // register their `invoker` directly. `registry.trigger(id)` reads from the
+    // dep registry to build deps when calling `invoker.run` (so ActionBar /
+    // palette callers still work without a per-action `run` thunk).
+    const unregisters = KIT_STANDARD_DESCRIPTORS.map((a) => reg.register(a));
     return () => { for (const u of unregisters) u(); };
   }, [reg, depReg]);
 }

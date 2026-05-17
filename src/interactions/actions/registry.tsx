@@ -12,10 +12,9 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react';
-import { isEditableTarget } from './useKeybinding';
-import type { KeyBinding } from './useKeybinding';
 import type { GestureSpec } from '../gestures/spec';
 import type { BindingOpts, Invoker } from './invoker';
+import { useOptionalDepRegistry, type DepRegistry, type DepName } from './depRegistry';
 
 /**
  * @experimental
@@ -28,8 +27,6 @@ import type { BindingOpts, Invoker } from './invoker';
  */
 export type BoundGesture = GestureSpec | { spec: GestureSpec; opts: BindingOpts };
 
-export type { KeyBinding } from './useKeybinding';
-
 /**
  * @experimental
  * Single registered action. v1: one binding per action.
@@ -37,19 +34,13 @@ export type { KeyBinding } from './useKeybinding';
 export interface Action {
   id: string;
   label: string;
-  defaultBinding?: KeyBinding;
-  /** Phase 1+ (registry-unification): the gesture-spec form of the binding,
-   *  read by the gesture dispatcher. May be a single `GestureSpec`, a bare
-   *  `GestureSpec[]` (any-of semantics), or a `BoundGesture[]` where each
-   *  entry is either a bare `GestureSpec` or `{ spec, opts }` — use the
-   *  object form for parametric actions where two bindings for the same
-   *  action differ only by `opts.params` (e.g. `flip` with `axis: 'x'` vs
-   *  `'y'`). The dispatcher extracts `opts.params` and passes them to
-   *  `ImmediateInvoker.run` as its second argument.
-   *  Coexists with `defaultBinding` (KeyBinding) during the transition;
-   *  Phase 9 deletes legacy `defaultBinding` and renames this field to
-   *  `defaultBinding`. See
-   *  `docs/superpowers/specs/2026-05-16-registry-unification-design.md`. */
+  /** The gesture-spec form of the binding, read by the gesture dispatcher.
+   *  May be a single `GestureSpec`, a bare `GestureSpec[]` (any-of semantics),
+   *  or a `BoundGesture[]` where each entry is either a bare `GestureSpec` or
+   *  `{ spec, opts }` — use the object form for parametric actions where two
+   *  bindings for the same action differ only by `opts.params` (e.g. `flip`
+   *  with `axis: 'x'` vs `'y'`). The dispatcher extracts `opts.params` and
+   *  passes them to `ImmediateInvoker.run` as its second argument. */
   gestureBinding?: GestureSpec | BoundGesture[];
   /** Inline-SVG icon for palette / toolbar surfaces. Mirrors
    *  `ToolPresentation.icon` so a generic `<ActionBar>` can render from
@@ -211,28 +202,6 @@ export interface ActionsRegistry {
 
 const ActionsContext = createContext<ActionsRegistry | null>(null);
 
-function keyMatches(eventKey: string, spec: string | readonly string[]): boolean {
-  const want = typeof spec === 'string' ? [spec] : spec;
-  const ek = eventKey.toLowerCase();
-  return want.some((k) => k.toLowerCase() === ek);
-}
-
-function bindingMatches(b: KeyBinding, e: KeyboardEvent): boolean {
-  if (!keyMatches(e.key, b.key)) return false;
-  const wantsMod = b.mod === true;
-  const hasMod = e.metaKey || e.ctrlKey;
-  if (wantsMod !== hasMod) return false;
-  const wantsAlt = b.alt === true;
-  if (wantsAlt !== e.altKey) return false;
-  const shift = b.shift;
-  if (shift === undefined || shift === false) {
-    if (e.shiftKey) return false;
-  } else if (shift === true) {
-    if (!e.shiftKey) return false;
-  }
-  return true;
-}
-
 /**
  * @experimental
  * Mounts an `ActionsRegistry` and one `document` keydown listener for its
@@ -245,11 +214,21 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   const cachedVerRef = useRef(-1);
   const listenersRef = useRef<Set<() => void>>(new Set());
 
-  // Phase 14e Task 2.6: the gesture dispatcher is unconditionally present
-  // inside `<SceneCanvas>` (the only context that mounts ActionsProvider's
-  // keydown loop in practice), so legacy keydown dispatch is always
-  // suppressed for actions that have a gestureBinding — the dispatcher
-  // owns them. (Tasks 4-5 will delete the legacy keydown loop entirely.)
+  // Trigger() consults the optional dep registry so kit-standard actions
+  // (which expose `invoker` but no `run`) can be fired imperatively from
+  // ActionBar / palette callers. Bare actions with only `run` keep working
+  // without a dep registry in scope.
+  const depReg = useOptionalDepRegistry();
+  const depRegRef = useRef<DepRegistry | null>(depReg);
+  depRegRef.current = depReg;
+
+  // Phase 14e Task 7: the legacy keystroke loop that walked every action's
+  // `defaultBinding: KeyBinding` and matched against keydown is gone. All
+  // kit-standard descriptors now route through the gesture dispatcher via
+  // `gestureBinding`. Consumer-facing hooks (`useEscape`, `useDelete`, ...)
+  // keep their own `useKeybinding` listener (gated by `reg == null` for
+  // kit-standard-covered ones; ungated for clipboard which has no kit
+  // counterpart).
 
   const registry = useMemo<ActionsRegistry>(() => {
     const snapshot = (): readonly Action[] => {
@@ -296,7 +275,26 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
         const a = actionsRef.current.get(id);
         if (!a) return false;
         try {
-          a.run?.();
+          if (a.run) {
+            a.run();
+          } else if (a.invoker && a.invoker.timing === 'immediate') {
+            // Kit-standard descriptors expose `invoker` instead of `run`.
+            // Build a live deps bag from the dep registry (when present);
+            // invokers tolerate undefined deps and default to a sensible
+            // variant when `params` is undefined (legacy/imperative path).
+            const r = depRegRef.current;
+            const deps = r
+              ? {
+                  selection: r.get('selection' as DepName),
+                  scene: r.get('scene' as DepName),
+                  history: r.get('history' as DepName),
+                  view: r.get('view' as DepName),
+                  pointer: r.get('pointer' as DepName),
+                  activeTool: r.get('activeTool' as DepName),
+                }
+              : {};
+            a.invoker.run(deps as never, undefined);
+          }
         } catch (err) {
           console.error(`weasel ActionsRegistry: action "${id}" threw`, err);
         }
@@ -309,32 +307,6 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
         };
       },
     };
-  }, []);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      for (const action of actionsRef.current.values()) {
-        const b = action.defaultBinding;
-        if (!b) continue;
-        if (!bindingMatches(b, e)) continue;
-        const skipEditable = b.skipInEditable ?? true;
-        if (skipEditable && isEditableTarget(e.target)) continue;
-        // Phase 14e Task 2.6: dispatcher is unconditionally present, so
-        // any action with a gestureBinding is always handled by the
-        // dispatcher — skip legacy dispatch for those.
-        if (action.gestureBinding) continue;
-        if ((b.preventDefault ?? true)) e.preventDefault();
-        try {
-          action.run?.();
-        } catch (err) {
-          console.error(`weasel ActionsRegistry: action "${action.id}" threw`, err);
-        }
-        // First match wins; remaining actions skipped (spec §risks).
-        return;
-      }
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
   }, []);
 
   return <ActionsContext.Provider value={registry}>{children}</ActionsContext.Provider>;

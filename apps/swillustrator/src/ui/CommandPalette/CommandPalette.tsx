@@ -25,7 +25,6 @@ import {
   useSelectionContext,
   type Action,
   type ActionEnabledResult,
-  type KeyBinding,
 } from '@orochi235/weasel';
 import styles from './CommandPalette.module.css';
 
@@ -39,36 +38,10 @@ const DEFAULT_REASON_LABELS: Record<string, string> = {
   [ActionDisabledReason.PredicateThrew]: '(predicate threw)',
 };
 
-const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
-
-const KEY_GLYPHS: Record<string, string> = {
-  Escape: 'Esc',
-  ArrowUp: '↑',
-  ArrowDown: '↓',
-  ArrowLeft: '←',
-  ArrowRight: '→',
-  Enter: '↵',
-  ' ': 'Space',
-  Backspace: '⌫',
-  Delete: 'Del',
-  Tab: 'Tab',
-};
-
-function formatKey(key: string): string {
-  if (KEY_GLYPHS[key]) return KEY_GLYPHS[key];
-  return key.length === 1 ? key.toUpperCase() : key;
-}
-
-function formatBinding(binding: KeyBinding | undefined): string {
-  if (!binding) return '';
-  const parts: string[] = [];
-  if (binding.mod) parts.push(IS_MAC ? '⌘' : 'Ctrl');
-  if (binding.alt) parts.push(IS_MAC ? '⌥' : 'Alt');
-  if (binding.shift === true) parts.push('⇧');
-  const keys = typeof binding.key === 'string' ? [binding.key] : [...binding.key];
-  parts.push(formatKey(keys[0]));
-  return parts.join('+');
-}
+// Phase 14e Task 7: KEY_GLYPHS / formatKey / formatBinding consumed the
+// legacy `Action.defaultBinding: KeyBinding` shape, which is now removed.
+// A gestureBinding-aware shortcut formatter is not yet implemented; the
+// palette's binding chip is temporarily suppressed.
 
 export interface CommandPaletteProps {
   open: boolean;
@@ -239,9 +212,10 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
                   {!enabled && reason && (
                     <span className={styles.reason}>{reason}</span>
                   )}
-                  {action.defaultBinding && (
-                    <kbd className={styles.kbd}>{formatBinding(action.defaultBinding)}</kbd>
-                  )}
+                  {/* Phase 14e Task 7: Action.defaultBinding removed; bindings
+                      now live on gestureBinding. A gestureBinding-aware shortcut
+                      formatter is not yet implemented — the binding chip is
+                      temporarily suppressed. */}
                 </li>
               );
             })}
