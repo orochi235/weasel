@@ -1,8 +1,2 @@
-export { useMove } from './move';
-export type {
-  UseMoveOptions,
-  MoveController,
-  MoveStartArgs,
-  MoveMoveArgs,
-} from './move';
+export type { UseMoveOptions } from './options';
 export { snapToGrid, snapToContainer, snapBackOrDelete, snapToGuides } from './behaviors';
