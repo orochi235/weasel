@@ -556,7 +556,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const selectionRef = useRef(selection);
   selectionRef.current = selection;
 
-  const { adapter, selectTool: internalSelect, resizeTool, rotateTool, pickEvery: internalPickEvery, boundsOf: internalBoundsOf } = useSceneSelectTool({
+  const { adapter, selectTool: internalSelect, rotateTool, pickEvery: internalPickEvery, boundsOf: internalBoundsOf } = useSceneSelectTool({
     scene,
     selection,
     geometry,
@@ -595,14 +595,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // (lasso mode, clone-selection) thread through `toolOptions`.
   const shapeTools = useBuiltinShapeTools({ scene, adapter, options: toolOptions });
 
-  // WHY ambient (not registry) for resize+rotate: `useTools.getActiveOverlays()`
+  // WHY ambient (not registry) for rotate: `useTools.getActiveOverlays()`
   // returns only active + hotkey + ambient overlays. The Canvas affordance
   // pipeline (`__setHitTestContext`) walks those exclusively, so a registry
   // entry that is neither active nor ambient would never have its hitTest
-  // routed. Resize and rotate are affordance-driven (no foreground activation,
-  // no hotkey), so ambient is the correct slot.
+  // routed. Rotate is affordance-driven (no foreground activation, no
+  // hotkey), so ambient is the correct slot. Resize is handled entirely
+  // through the dispatcher-side `resizeAction` + `resizePolicy` dep — no
+  // ambient tool is mounted for it.
   const builtinAmbient: AnyTool[] = [];
-  if (wants('resize')) builtinAmbient.push(resizeTool);
   if (wants('rotate')) builtinAmbient.push(rotateTool);
 
   const mergedAmbient = [...viewportAmbient, ...builtinAmbient, ...(ambient ?? [])];

@@ -3,13 +3,27 @@ import type React from 'react';
 import { clientToCanvas } from 'core/viewport/clientToCanvas';
 import type { NodeId } from 'core/scene/types';
 import { cornerResizeHandles, hitCornerHandle } from '../../actions/resize/cornerHandles';
-import type { ResizeController } from '../../actions/resize/resize';
+import type { ResizeAnchor } from '../types';
 
-// Phase 14e Task 4: legacy hook Controller types (Move/Rotate/Insert/AreaSelect)
+// Phase 14e Task 4: legacy hook Controller types (Move/Resize/Rotate/Insert/AreaSelect)
 // are deleted along with their hooks. `usePointerGestures` only consumes the
 // minimal start/move/end/cancel surface those controllers exposed, so define
 // local structural types here. `usePointerGestures` itself remains a public
 // barrel export for back-compat but has no internal consumers.
+interface ResizeController<TNode extends { id: string } = { id: string }, TPose = unknown> {
+  start(id: string, anchor: ResizeAnchor, worldX: number, worldY: number): void;
+  // Returns boolean in the real implementation (claim signal); `void` is
+  // accepted so test fakes using `vi.fn()` can satisfy the type without a
+  // cast.
+  move(worldX: number, worldY: number, modifiers: ModifierState): boolean | void;
+  end(): void;
+  cancel(): void;
+  isResizing?: boolean;
+  overlay?: unknown;
+  adapter?: unknown;
+  readonly __posePhantom?: TPose;
+  readonly __nodePhantom?: TNode;
+}
 interface MoveController<TNode extends { id: string } = { id: string }, TPose = unknown> {
   start(args: { ids: string[]; worldX: number; worldY: number; clientX?: number; clientY?: number }): void;
   move(args: { worldX: number; worldY: number; clientX?: number; clientY?: number; modifiers: ModifierState }): void;

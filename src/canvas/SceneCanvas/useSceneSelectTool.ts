@@ -14,7 +14,6 @@
 import { useMemo } from 'react';
 import { sceneToAdapter, type SceneToAdapterOptions } from '../sceneAdapter';
 import { useSelectTool, type Bounds } from 'tools/builtin/useSelectTool';
-import { useResizeTool } from 'tools/builtin/useResizeTool';
 import { useRotateTool } from 'tools/builtin/useRotateTool';
 import type { Node, Scene, NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
@@ -60,7 +59,6 @@ export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
     getSelection: () => string[];
   };
   selectTool: ReturnType<typeof useSelectTool<Node<TData, TLayer, TPose>, TPose>>;
-  resizeTool: ReturnType<typeof useResizeTool<Node<TData, TLayer, TPose>, TPose>>;
   rotateTool: ReturnType<typeof useRotateTool<Node<TData, TLayer, TPose>, TPose>>;
   /** Hit-test resolved with the caller's `geometry.pickEvery` (or the
    *  pose-walk default). Forward this to `<Canvas pickEvery={...}>` so the
@@ -220,15 +218,6 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     getSelection: () => selection.current,
   });
 
-  const resizeTool = useResizeTool<Node<TData, TLayer, TPose>, TPose>(adapter, {
-    ...(resizeOptions ? { resize: resizeOptions } : {}),
-    ...(handleHitRadius !== undefined ? { handleHitRadius } : {}),
-    boundsOf: wiredBoundsOf,
-    getSelection: () => selection.current,
-    poseBounds: (p) => p as unknown as Bounds, // identity for {x,y,width,height} poses
-    getNode: (id) => scene.get(asNodeId(id)) ?? null,
-  });
-
   const rotateTool = useRotateTool<Node<TData, TLayer, TPose>, TPose>(adapter, {
     ...(rotateOptions ? { rotate: rotateOptions } : {}),
     ...(handleHitRadius !== undefined ? { handleHitRadius } : {}),
@@ -243,7 +232,6 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   return {
     adapter: adapter as UseSceneSelectToolReturn<TData, TLayer, TPose>['adapter'],
     selectTool,
-    resizeTool,
     rotateTool,
     pickEvery: wiredHitBody,
     boundsOf: wiredBoundsOf,

@@ -267,7 +267,7 @@ export const resizeAction: Action & { requires: string[] } = {
   id: 'resize',
   label: 'Resize',
   gestureBinding: { kind: 'drag' },
-  requires: ['selection', 'scene'],
+  requires: ['selection', 'scene', 'resizePolicy'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {

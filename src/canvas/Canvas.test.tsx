@@ -5,10 +5,9 @@ import { Canvas, buildSceneLayer } from './Canvas';
 import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { useSelection } from 'core/selection/useSelection';
-import { asNodeId, type NodeId } from 'core/scene/types';
+import { type NodeId } from 'core/scene/types';
 import { arrayAdapter } from 'core/adapters/arrayAdapter';
 import { useSelectTool } from 'tools/builtin/useSelectTool';
-import { useResizeTool } from 'tools/builtin/useResizeTool';
 import { useTools } from 'tools/useTools';
 import type { RenderLayer } from 'core/layers/render';
 import { registerProgram } from '../renderer';
@@ -267,68 +266,13 @@ describe('<Canvas>', () => {
       expect(seen.some((s) => s.length === 1 && s[0] === 'b')).toBe(true);
     });
 
-    it('Canvas boundsOf drives the corner-resize affordance hit-test', () => {
-      // Bounds returned for selected id 'a' say (0,0,1000,1000) — far outside
-      // the real 5x5 pose. After Task 11, corner-handle hits flow through the
-      // affordance pipeline, which reads ChromeState.boundsOf — wired by
-      // Canvas's `boundsOf` prop. The select tool's `boundsOf` option still
-      // fuels its rotation/preview-bounds path; both paths typically share
-      // the same source (consumers pass identical callbacks). This test
-      // pins the affordance path: click at the top-left corner (worldX/Y=0)
-      // routes to useResize via the overlay-published affordance.
-      const explicit = vi.fn(() => ({ x: 0, y: 0, width: 1000, height: 1000 }));
-      const startSpy = vi.fn();
-      function Harness() {
-        const rectsRef = useRef<Rect[]>([{ id: 'a', x: 0, y: 0, width: 5, height: 5 }]);
-        const sel = useSelection({ initial: [asNodeId('a')] });
-        const adapter = {
-          ...arrayAdapter<Rect, Pose>({
-            ref: rectsRef,
-            setItems: () => {},
-            toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
-          }),
-          ...sel.adapterMethods,
-        };
-        const select = useSelectTool<Rect, Pose>(adapter, {
-          pickEvery: () => [],
-          boundsOf: explicit,
-        });
-        const resize = useResizeTool<Rect, Pose>(adapter, {
-          boundsOf: explicit,
-          handleHitRadius: 8,
-          resize: { behaviors: [{ onStart: (ctx: { draggedIds: string[] }) => startSpy(ctx.draggedIds[0]) }] },
-        });
-        const tools = useTools({ active: 'select', registry: { select }, ambient: [resize] });
-        return (
-          <Canvas
-            width={1000}
-            height={1000}
-            layers={{}}
-            adapter={adapter}
-            selection={sel}
-            tools={tools}
-            clientToWorld={C2W}
-            boundsOf={explicit}
-          />
-        );
-      }
-      // The affordance pipeline reads worldX/Y from baseCtx; baseCtx pulls
-      // them via clientToWorld (the C2W stub returns `nextWorld`). Drop the
-      // pointer at the top-left handle (0,0) so both paths hit.
-      nextWorld = [0, 0];
-      const { container } = render(<Harness />);
-      const canvas = container.querySelector('canvas')!;
-      canvas.setPointerCapture = vi.fn();
-      const down = createEvent.pointerDown(canvas);
-      Object.defineProperty(down, 'clientX', { value: 0 });
-      Object.defineProperty(down, 'clientY', { value: 0 });
-      fireEvent(canvas, down);
-      // Affordance hits skip threshold gating (drag.onStart fires
-      // immediately on pointerdown). startSpy should already be invoked.
-      expect(explicit).toHaveBeenCalled();
-      expect(startSpy).toHaveBeenCalled();
-      expect(startSpy.mock.calls[0][0]).toBe('a');
-    });
+    // Phase 14e Task 4: the "Canvas boundsOf drives the corner-resize
+    // affordance hit-test" test required `useResizeTool` to mount an
+    // ambient affordance overlay. With the legacy tool deleted, the
+    // resize affordance is now produced by the dispatcher-side
+    // `resizeAction` + `resizePolicy` dep, which has no surface inside a
+    // bare `<Canvas>` harness. The equivalent assertion now lives in the
+    // SceneCanvas / dispatcher tests.
   });
 
   describe('selectionMode', () => {
@@ -346,7 +290,6 @@ describe('<Canvas>', () => {
       initial?: string[];
       onSelChange?: (ids: string[]) => void;
       moveStart?: (ids: string[]) => void;
-      resizeStart?: (id: string) => void;
     }) {
       const rectsRef = useRef<Rect[]>(RECTS);
       const sel = useSelection({ initial: props.initial as readonly NodeId[] | undefined, mode: props.mode });
@@ -372,12 +315,7 @@ describe('<Canvas>', () => {
         boundsOf,
         move: { behaviors: [{ onStart: (ctx: { draggedIds: string[] }) => props.moveStart?.(ctx.draggedIds) }] },
       });
-      const resize = useResizeTool<Rect, Pose>(adapter, {
-        boundsOf,
-        handleHitRadius: 6,
-        resize: { behaviors: [{ onStart: (ctx: { draggedIds: string[] }) => props.resizeStart?.(ctx.draggedIds[0]) }] },
-      });
-      const tools = useTools({ active: 'select', registry: { select }, ambient: [resize] });
+      const tools = useTools({ active: 'select', registry: { select } });
       return (
         <Canvas
           width={300}

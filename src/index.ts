@@ -14,9 +14,10 @@
  *     `createGridLayer`, `createCellHighlightLayer`, `createChildrenLayer`,
  *     `createSelectionOverlayLayer` and friends, `createTextLayer`,
  *     `createTilePattern`.
- *   - Interactions (gesture hooks): `useResize`,
- *     `useTextEdit`, plus `useDragHandle` / `useDropZone` for
- *     ad-hoc pointer drags.
+ *   - Interactions (gesture hooks): `useTextEdit`, plus `useDragHandle` /
+ *     `useDropZone` for ad-hoc pointer drags. Resize and move are
+ *     dispatcher-driven via the Actions Registry (`resizeAction` /
+ *     `moveAction`) — there's no standalone hook to call.
  *   - Actions: the Actions Registry (`ActionsProvider`, `useStandardActions`,
  *     and the per-action descriptors at `interactions/actions/defaults/`).
  *     Standalone consumer hooks (`useDelete`, `useEscape`, ...) were removed
@@ -35,7 +36,8 @@
  * shape:
  *   - `PoseProjection<TPose>` — read AABB + remap on resize. Default
  *     `RECT_POSE_DESCRIPTOR` for `{x,y,width,height}`; `pathPoseDescriptor` for
- *     `Path`. Pass via `useResize(adapter, { geometry })`.
+ *     `Path`. Pass via the `resizePolicy` dep (`useResizePolicy({
+ *     projection })`).
  *   - `OriginProjection<TPose>` — read snap-origin + translate by delta. Used
  *     by `gridSnapStrategy` and `snapBackOrDelete` for non-rect poses. Default
  *     `RECT_ORIGIN_PROJECTION`; `pathOriginProjection` for `Path`. Pass via
@@ -511,7 +513,6 @@ export type { Guide, UseGuidesReturn, GuidesLayerOpts } from './features/guides'
 // ─── Drag-action hooks: move / resize / rotate / insert / area-select / etc. ─
 export type { UseMoveOptions } from './interactions/actions/move';
 export {
-  useResize,
   RECT_POSE_DESCRIPTOR,
   ROTATED_POSE_DESCRIPTOR,
   cornerResizeHandles,
@@ -520,7 +521,6 @@ export {
 } from './interactions/actions/resize';
 export type {
   UseResizeOptions,
-  ResizeController,
   PoseProjection,
   CornerHandle,
 } from './interactions/actions/resize';
