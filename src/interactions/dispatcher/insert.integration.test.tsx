@@ -45,8 +45,8 @@ beforeAll(() => {
 function makeInsertDep() {
   const calls: Array<{ bounds: { x: number; y: number; width: number; height: number }; kind: string }> = [];
   const dep: InsertDep = {
-    commit(bounds, kind): NodeId | null {
-      calls.push({ bounds: { ...bounds }, kind });
+    commit(bounds, extras): NodeId | null {
+      calls.push({ bounds: { ...bounds }, kind: extras.kind });
       return 'inserted-id' as NodeId;
     },
   };

@@ -129,7 +129,16 @@ export function usePolygonTool<TNode extends { id: string }>(
           {
             spec: { kind: 'drag', target: 'empty' },
             actionId: 'insert',
-            opts: { params: { kind: 'polygon' } },
+            // Phase 14c.3: thunked params re-evaluated at commit time so
+            // mid-gesture ArrowUp/Down side-count changes are reflected
+            // in the inserted polygon's geometry.
+            opts: {
+              params: () => ({
+                kind: 'polygon',
+                sides: sidesRef.current,
+                rotation: 0,
+              }),
+            },
           },
         ],
         bindingsOverrideDrag: true,

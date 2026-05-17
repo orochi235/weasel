@@ -77,7 +77,9 @@ import {
   regularPolygonPath,
   starPath,
   linePath,
+  polygonFromPoints,
 } from 'features/paths/builder';
+import { schneiderFit } from 'features/paths/schneiderFit';
 
 /**
  * Minimal adapter surface the legacy bridge factories need for delete /
@@ -1050,7 +1052,8 @@ function StandardActionsRegistrar({
     const sc = sceneRef3.current;
 
     return {
-      commit(bounds, kind): NodeId | null {
+      commit(bounds, extras): NodeId | null {
+        const kind = extras.kind;
         const seq = ++insertSeqRef.current;
         const fill = DEFAULT_FILLS[seq % DEFAULT_FILLS.length];
         const layer = (sc.layers[0]?.id ?? 'default') as string;
@@ -1067,45 +1070,82 @@ function StandardActionsRegistrar({
             data = { path: ellipsePath(bounds), fill };
             break;
           case 'line': {
-            // TODO(Phase 14c.3): line tool captures two endpoints; insertAction
-            // only has the AABB. Use diagonal as approximation.
-            const a = { x: bounds.x, y: bounds.y };
-            const b = { x: bounds.x + bounds.width, y: bounds.y + bounds.height };
+            // Phase 14c.3: insertAction now plumbs the true drag endpoints
+            // through extras.a/b. Fall back to bounds-diagonal only for
+            // consumer kinds that don't supply them.
+            const e = extras as Partial<{ a: { x: number; y: number }; b: { x: number; y: number } }>;
+            const a = e.a ?? { x: bounds.x, y: bounds.y };
+            const b = e.b ?? { x: bounds.x + bounds.width, y: bounds.y + bounds.height };
             data = { path: linePath(a, b), fill, stroke: fill, strokeWidth: 2 };
             break;
           }
           case 'polygon': {
-            // TODO(Phase 14c.3): polygon tool captures center+radius+rotation;
-            // insertAction only has the AABB. Approximate: inscribed hexagon.
-            const cx = bounds.x + bounds.width / 2;
-            const cy = bounds.y + bounds.height / 2;
-            const r = Math.min(bounds.width, bounds.height) / 2;
-            const center = { x: cx, y: cy };
-            data = { path: regularPolygonPath(center, r, 6, 0), fill };
+            // Phase 14c.3: read true side count + rotation from extras. Center
+            // and radius derive from drag bounds (the tool's drag origin is
+            // the AABB center) unless the tool supplied an explicit center.
+            const e = extras as Partial<{
+              sides: number; rotation: number;
+              center: { x: number; y: number }; radius: number;
+            }>;
+            const sides = Math.max(3, Math.floor(e.sides ?? 6));
+            const rotation = e.rotation ?? 0;
+            const cx = e.center?.x ?? bounds.x + bounds.width / 2;
+            const cy = e.center?.y ?? bounds.y + bounds.height / 2;
+            const r = e.radius ?? Math.min(bounds.width, bounds.height) / 2;
+            data = { path: regularPolygonPath({ x: cx, y: cy }, r, sides, rotation), fill };
             pose = { x: cx - r, y: cy - r, width: r * 2, height: r * 2 };
             break;
           }
           case 'star': {
-            // TODO(Phase 14c.3): star tool captures center+outerRadius+innerRadius+
-            // rotation+points; insertAction only has the AABB. Approximate: 5-point
-            // star inscribed in the AABB.
-            const cx = bounds.x + bounds.width / 2;
-            const cy = bounds.y + bounds.height / 2;
-            const outerR = Math.min(bounds.width, bounds.height) / 2;
-            const innerR = outerR * 0.5;
-            const center = { x: cx, y: cy };
-            data = { path: starPath(center, outerR, 5, innerR, 0), fill };
+            // Phase 14c.3: read true points / innerRadiusRatio / rotation.
+            const e = extras as Partial<{
+              points: number; innerRadiusRatio: number; rotation: number;
+              center: { x: number; y: number }; outerRadius: number;
+            }>;
+            const points = Math.max(3, Math.floor(e.points ?? 5));
+            const ratio = e.innerRadiusRatio ?? 0.5;
+            const rotation = e.rotation ?? 0;
+            const cx = e.center?.x ?? bounds.x + bounds.width / 2;
+            const cy = e.center?.y ?? bounds.y + bounds.height / 2;
+            const outerR = e.outerRadius ?? Math.min(bounds.width, bounds.height) / 2;
+            const innerR = outerR * ratio;
+            data = { path: starPath({ x: cx, y: cy }, outerR, points, innerR, rotation), fill };
             pose = { x: cx - outerR, y: cy - outerR, width: outerR * 2, height: outerR * 2 };
             break;
           }
-          case 'pencil':
-            // Pencil tool builds a PolygonPath from freehand samples — the
-            // insertAction invoker has only the drag-rect bounds. A stub rect
-            // is inserted so the gesture doesn't silently fail; Phase 14c.3
-            // can wire a proper path-from-samples pipeline.
-            // TODO(Phase 14c.3): wire pencil path from gesture samples.
-            data = { path: rectPath(bounds.x, bounds.y, bounds.width, bounds.height), fill };
+          case 'pencil': {
+            // Phase 14c.3: build a path from the pointer trail. Use
+            // schneiderFit when there are enough samples to smooth; fall
+            // back to a polyline for short trails. Fall back to a stub
+            // rect only when no samples at all (e.g. consumer kind reusing
+            // 'pencil' with no trail).
+            const e = extras as Partial<{ samples: ReadonlyArray<{ x: number; y: number }> }>;
+            const samples = e.samples ?? [];
+            if (samples.length >= 4) {
+              data = {
+                path: schneiderFit(samples as { x: number; y: number }[], 2.0),
+                fill: 'none', stroke: fill, strokeWidth: 2,
+              };
+              // Recompute pose to actual sample bounds — drag bounds can be
+              // tiny while the trail loops widely.
+              let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+              for (const s of samples) {
+                if (s.x < minX) minX = s.x;
+                if (s.y < minY) minY = s.y;
+                if (s.x > maxX) maxX = s.x;
+                if (s.y > maxY) maxY = s.y;
+              }
+              pose = { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+            } else if (samples.length >= 2) {
+              data = {
+                path: polygonFromPoints(samples as { x: number; y: number }[]),
+                fill: 'none', stroke: fill, strokeWidth: 2,
+              };
+            } else {
+              data = { path: rectPath(bounds.x, bounds.y, bounds.width, bounds.height), fill };
+            }
             break;
+          }
           default:
             console.warn(`weasel insertDep: no factory for kind="${kind}". Skipping insert.`);
             return null;

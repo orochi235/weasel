@@ -300,7 +300,7 @@ describe('Phase 14c.2 — insertDep wired in SceneCanvas', () => {
 
     // Call commit directly to simulate what insertAction.invoker.onEnd does.
     act(() => {
-      capturedCommit!({ x: 10, y: 20, width: 100, height: 50 }, 'rect');
+      capturedCommit!({ x: 10, y: 20, width: 100, height: 50 }, { kind: 'rect' });
     });
 
     const nodes = [...scene.nodes.values()];
@@ -334,7 +334,7 @@ describe('Phase 14c.2 — insertDep wired in SceneCanvas', () => {
     expect(capturedCommit).not.toBeNull();
 
     act(() => {
-      capturedCommit!({ x: 5, y: 15, width: 80, height: 40 }, 'ellipse');
+      capturedCommit!({ x: 5, y: 15, width: 80, height: 40 }, { kind: 'ellipse' });
     });
 
     const nodes = [...scene.nodes.values()];
@@ -370,7 +370,7 @@ describe('Phase 14c.2 — insertDep wired in SceneCanvas', () => {
 
     let result: string | null = 'sentinel';
     act(() => {
-      result = capturedCommit!({ x: 0, y: 0, width: 10, height: 10 }, 'unknown-kind');
+      result = capturedCommit!({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'unknown-kind' });
     });
 
     expect(result).toBeNull();

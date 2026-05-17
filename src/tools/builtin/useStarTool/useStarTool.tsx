@@ -146,7 +146,16 @@ export function useStarTool<TNode extends { id: string }>(
           {
             spec: { kind: 'drag', target: 'empty' },
             actionId: 'insert',
-            opts: { params: { kind: 'star' } },
+            // Phase 14c.3: thunked params re-evaluated at commit time so
+            // mid-gesture point-count / ratio changes flow through.
+            opts: {
+              params: () => ({
+                kind: 'star',
+                points: pointsRef.current,
+                innerRadiusRatio: innerRatioRef.current,
+                rotation: 0,
+              }),
+            },
           },
         ],
         bindingsOverrideDrag: true,
