@@ -58,14 +58,14 @@ import { useViewportTools } from './SceneCanvas/useViewportTools';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useBuiltinShapeTools, type BuiltinShapeToolId, type BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
-import { DepRegistryProvider } from 'interactions/actions/depRegistry';
+import { DepRegistryProvider, useDepSource } from 'interactions/actions/depRegistry';
 import { ActiveToolContextProvider } from 'interactions/actions/activeToolContext';
 import { DispatcherPresenceProvider } from 'interactions/dispatcher/dispatcherPresence';
 import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
 import { useActionsRegistry } from 'interactions/actions/registry';
 import { buildAffordanceAt, buildClassifyTarget } from './affordanceAt';
 import type { Op } from 'core/ops/types';
-import type { ViewApi } from 'interactions/actions/depSchema';
+import type { ViewApi, AreaSelectDep } from 'interactions/actions/depSchema';
 
 /**
  * Minimal adapter surface the legacy bridge factories need for delete /
@@ -947,6 +947,47 @@ function StandardActionsRegistrar({
     set: (v: View) => onViewChange(v),
   };
   useStandardActions({ selection, scene, view: viewApiRef.current });
+
+  // Wire the `areaSelect` dep for `areaSelectAction`. Constructed inline from
+  // the live scene (for AABB hit-testing) and the selection API. The dep is
+  // re-computed each render but `useDepSource` stabilises it via ref internally.
+  const selectionRef2 = useRef(selection);
+  selectionRef2.current = selection;
+  const sceneRef2 = useRef(scene);
+  sceneRef2.current = scene;
+
+  useDepSource('areaSelect', (): AreaSelectDep => {
+    const s = selectionRef2.current;
+    const sc = sceneRef2.current;
+    return {
+      hitTestArea(bounds) {
+        const hits: NodeId[] = [];
+        for (const id of sc.renderOrder()) {
+          const node = sc.get(id);
+          if (!node || node.kind === 'container') continue;
+          const p = node.pose as unknown as Partial<{
+            x: number; y: number; width: number; height: number;
+          }>;
+          if (
+            typeof p.x === 'number' && typeof p.y === 'number' &&
+            typeof p.width === 'number' && typeof p.height === 'number'
+          ) {
+            if (
+              p.x < bounds.x + bounds.width &&
+              p.x + p.width > bounds.x &&
+              p.y < bounds.y + bounds.height &&
+              p.y + p.height > bounds.y
+            ) {
+              hits.push(id);
+            }
+          }
+        }
+        return hits;
+      },
+      getSelection: () => s.current as NodeId[],
+      setSelection: (ids) => s.set(ids),
+    };
+  });
 
   // Legacy bridge overrides for the 4 actions whose DepSchema deps are not
   // yet wired. Registered after useStandardActions so they win on same-id
