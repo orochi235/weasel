@@ -1,41 +1,72 @@
 /**
- * `cloneAction` — ongoing Action descriptor for alt-drag clone (Phase 7).
+ * `cloneAction` — ongoing Action descriptor for alt-drag clone (Phase 11).
  *
- * ## Status: STUBBED — Phase 7 shape only
+ * ## Status: REAL (scene-direct, no overlay)
  *
- * The descriptor is registered and structurally correct. The invoker.start
- * body is a deliberate no-op stub. Full wiring is deferred to Phase 8+.
+ * Implements the core clone-by-drag logic via `scene.add` + `scene.batch`:
+ *   - `start`: validates selection + scene; captures origin poses for all
+ *     selected nodes. The alt-modifier check that activates cloning in
+ *     `useClone` (via `CloneBehavior.activates`) is intentionally NOT applied
+ *     here — the descriptor fires when the dispatcher routes to it; modifier
+ *     discrimination is a dispatcher concern (Phase 12 TODO for alt-gating).
+ *   - `onMove`: tracks current drag delta in scratch (no scene writes).
+ *   - `onEnd('commit')`: emits a single `scene.batch('Clone', ...)` that
+ *     calls `scene.add(...)` for each selected node with the translated pose.
+ *     Produces one undo entry for the whole batch.
+ *   - `onEnd('cancel')`: no-op (scene never mutated during drag).
  *
- * ## Why stubbed
+ * ## What this does NOT wire (vs `useClone`)
  *
- * `useClone` drives cloning through:
- *   - `CloneBehavior.activates(mods)` — behavior decides whether alt-drag
- *     activates cloning vs plain move (modifier-gated entry)
- *   - `adapter.snapshotSelection(ids)` — captures a serialized copy of the
- *     selected nodes at drag start (for overlay rendering + final insert)
- *   - Per-frame overlay via `setOverlay(layer, objects)` / `clearOverlay()`
- *     (a React callback in the hook; has no equivalent in descriptor model yet)
- *   - On commit: `CloneBehavior.onEnd(pose, { adapter })` → `Op[]` → dispatch
+ * - Modifier gate: `useClone` only activates when `CloneBehavior.activates(mods)`
+ *   returns true (typically alt-held). The descriptor lacks that gate — it runs
+ *   whenever the dispatcher routes `clone`. Proper alt-gating requires a modifier-
+ *   discriminant in the dispatcher (Phase 12 TODO).
+ * - Overlay: `useClone` renders a ghost via `setOverlay / clearOverlay`. The
+ *   descriptor has no overlay surface (deferred to Phase 7 overlay system).
+ * - `expandIds`: group expansion is omitted; only leaf poses are cloned.
+ * - Custom `CloneBehavior.onEnd` ops (e.g. `cloneByAltDrag`): the descriptor
+ *   uses a simpler `scene.add` path that does not delegate to behavior `onEnd`.
+ *   Behavior-pipeline cloning waits for a later phase.
  *
- * The key gaps for the descriptor model:
- * 1. `adapter.snapshotSelection` is typed to `InsertAdapter<T>` — not in
- *    `DepRegistry` surface.
- * 2. The overlay callbacks (`setOverlay`, `clearOverlay`) are wired to React
- *    state in the hook; the descriptor has no overlay surface yet.
- * 3. `CloneBehavior` selection (which behavior activates) is modifier-gated at
- *    gesture-start — the descriptor would need a dep-schema entry for the
- *    behavior list or a fixed alt-only binding.
+ * ## Pose generics
  *
- * TODO: Phase 8+ wires the invoker body — currently a no-op stub.
- * Expected additions:
- * - `DepRegistry` entry for `InsertAdapter` (or a `cloneAdapter` dep)
- * - Overlay surface for the descriptor layer (ghost rendering during drag)
- * - Modifier-gated gestureBinding (alt+drag discriminant) in dispatcher
+ * Poses are translated using the same `{x, y, ...}` generic spread as
+ * `moveAction`. Non-rect poses with custom layout (e.g. paths) should register
+ * a custom clone action with a typed geometry dep.
  */
 
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
+import type { Scene, NodeId } from 'core/scene/types';
+import type { SelectionApi } from 'core/selection/useSelection';
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+/** Translate a rect-shaped pose by (dx, dy). */
+function translatePose(pose: unknown, dx: number, dy: number): unknown {
+  const p = pose as Record<string, unknown>;
+  return {
+    ...p,
+    x: ((p['x'] as number) ?? 0) + dx,
+    y: ((p['y'] as number) ?? 0) + dy,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Internal scratch
+// ---------------------------------------------------------------------------
+
+interface CloneScratch {
+  ids: NodeId[];
+  scene: Scene<unknown, string, unknown>;
+  /** Origin poses captured at drag start. */
+  originPoses: Map<NodeId, unknown>;
+  /** Running drag delta — updated each onMove, applied once at commit. */
+  currentDelta: { dx: number; dy: number };
+}
 
 // ---------------------------------------------------------------------------
 // Descriptor
@@ -47,11 +78,10 @@ import type { InvocationCtx, OngoingHandle } from '../invoker';
  *
  * Requires dep-schema entries: `selection`, `scene`.
  *
- * The invoker is `ongoing` but the body is a no-op stub pending Phase 8
- * dispatcher additions (InsertAdapter dep, overlay surface, modifier-gated
- * gestureBinding for alt-drag discrimination).
+ * Clones selected nodes into new scene nodes translated by the drag delta.
+ * Uses `scene.batch('Clone', ...)` for a single undo entry.
  *
- * @see useClone — the React hook this descriptor will mirror.
+ * @see useClone — the React hook this descriptor partially mirrors.
  */
 export const cloneAction: Action & { requires: string[] } = {
   id: 'clone',
@@ -60,12 +90,62 @@ export const cloneAction: Action & { requires: string[] } = {
   requires: ['selection', 'scene'],
   invoker: {
     timing: 'ongoing',
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    start(_ctx: InvocationCtx, _opts): OngoingHandle {
-      // TODO: Phase 8+ wires the invoker body — currently a no-op stub.
-      // Requires InsertAdapter dep, overlay surface, and CloneBehavior
-      // list from a dep or gestureBinding opts.
-      return {};
+    start(ctx: InvocationCtx, _opts): OngoingHandle {
+      const selection = ctx.deps.selection as SelectionApi | undefined;
+      const scene = ctx.deps.scene as Scene<unknown, string, unknown> | undefined;
+
+      if (!selection || !scene) return {};
+
+      const ids = selection.get() as NodeId[];
+      if (ids.length === 0) return {};
+
+      // Capture origin poses once at drag start.
+      const originPoses = new Map<NodeId, unknown>();
+      for (const id of ids) {
+        const node = scene.get(id);
+        if (node) originPoses.set(id, node.pose);
+      }
+
+      if (originPoses.size === 0) return {};
+
+      const scratch: CloneScratch = {
+        ids,
+        scene,
+        originPoses,
+        currentDelta: { dx: 0, dy: 0 },
+      };
+
+      return {
+        onMove(moveCtx: InvocationCtx): void {
+          if (!moveCtx.drag) return;
+          scratch.currentDelta = {
+            dx: moveCtx.drag.delta.x,
+            dy: moveCtx.drag.delta.y,
+          };
+        },
+        onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
+          if (reason === 'cancel') return;
+          const { dx, dy } = scratch.currentDelta;
+          // Zero-delta drag — no clone.
+          if (dx === 0 && dy === 0) return;
+
+          scratch.scene.batch('Clone', () => {
+            for (const id of scratch.ids) {
+              const origin = scratch.originPoses.get(id);
+              const originNode = scratch.scene.get(id);
+              if (origin === undefined || !originNode) continue;
+              const newPose = translatePose(origin, dx, dy);
+              scratch.scene.add({
+                kind: originNode.kind,
+                layer: originNode.layer,
+                pose: newPose,
+                data: originNode.data,
+                parent: originNode.parent ?? undefined,
+              });
+            }
+          });
+        },
+      };
     },
   },
   enabled: () => ActionDisabledReason.SelectionRequired,

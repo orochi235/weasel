@@ -2,26 +2,81 @@ import { describe, it, expect } from 'vitest';
 import { cloneAction } from './clone';
 import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx } from '../invoker';
+import type { NodeId, AddNodeSpec } from 'core/scene/types';
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Stub scene
 // ---------------------------------------------------------------------------
 
-function makeCtx(selectionIds: string[] = ['a', 'b']): InvocationCtx {
+interface StubScene {
+  poses: Map<string, unknown>;
+  nodes: Map<string, { pose: unknown; kind: 'leaf' | 'container'; layer: string; data: unknown; parent: NodeId | null }>;
+  addLog: AddNodeSpec<unknown, string, unknown>[];
+  batchLog: Array<{ label: string }>;
+  get(id: NodeId): { pose: unknown; kind: 'leaf'; layer: string; data: unknown; parent: NodeId | null } | undefined;
+  setPose(id: NodeId, pose: unknown): void;
+  add(spec: AddNodeSpec<unknown, string, unknown>): NodeId;
+  batch<T>(label: string, fn: () => T): T;
+}
+
+function makeStubScene(
+  initial: Record<string, { pose: unknown; data?: unknown; layer?: string; kind?: 'leaf' | 'container' }> = {},
+): StubScene {
+  const poses = new Map<string, unknown>();
+  const nodes = new Map<string, { pose: unknown; kind: 'leaf' | 'container'; layer: string; data: unknown; parent: NodeId | null }>();
+  for (const [id, v] of Object.entries(initial)) {
+    poses.set(id, v.pose);
+    nodes.set(id, { pose: v.pose, kind: v.kind ?? 'leaf', layer: v.layer ?? 'main', data: v.data ?? {}, parent: null });
+  }
+  const addLog: AddNodeSpec<unknown, string, unknown>[] = [];
+  const batchLog: Array<{ label: string }> = [];
+  let nextId = 1;
+
   return {
-    world: { x: 0, y: 0 },
-    screen: { x: 0, y: 0 },
-    modifiers: { alt: true, ctrl: false, meta: false, shift: false },
-    deps: {
-      selection: { get: () => selectionIds },
-      scene: {},
+    poses,
+    nodes,
+    addLog,
+    batchLog,
+    get(id: NodeId) {
+      const n = nodes.get(id);
+      if (!n) return undefined;
+      return n as { pose: unknown; kind: 'leaf'; layer: string; data: unknown; parent: NodeId | null };
     },
-    drag: {
-      start: { x: 0, y: 0 },
-      current: { x: 20, y: 30 },
-      delta: { x: 20, y: 30 },
+    setPose(id: NodeId, pose: unknown) { poses.set(id, pose); },
+    add(spec) {
+      addLog.push(spec);
+      const id = `clone-${nextId++}` as NodeId;
+      return id;
+    },
+    batch<T>(label: string, fn: () => T): T {
+      batchLog.push({ label });
+      return fn();
     },
   };
+}
+
+function makeStubSelection(ids: string[]) {
+  return { get: () => ids as NodeId[] };
+}
+
+function makeCtx(
+  overrides: {
+    selectionIds?: string[];
+    sceneNodes?: Record<string, { pose: unknown }>;
+    world?: { x: number; y: number };
+    drag?: { start: { x: number; y: number }; current: { x: number; y: number }; delta: { x: number; y: number } };
+  } = {},
+): InvocationCtx & { scene: StubScene } {
+  const scene = makeStubScene(overrides.sceneNodes ?? {});
+  const selection = makeStubSelection(overrides.selectionIds ?? []);
+  return {
+    world: overrides.world ?? { x: 0, y: 0 },
+    screen: { x: 0, y: 0 },
+    modifiers: { alt: true, ctrl: false, meta: false, shift: false },
+    deps: { selection, scene },
+    drag: overrides.drag,
+    scene,
+  } as InvocationCtx & { scene: StubScene };
 }
 
 function getOngoingInvoker(action: typeof cloneAction) {
@@ -52,15 +107,9 @@ describe('cloneAction descriptor', () => {
     expect(cloneAction.enabled!()).toBe(ActionDisabledReason.SelectionRequired);
   });
 
-  it('start returns empty handle (stub — Phase 8+ wires body)', () => {
-    const invoker = getOngoingInvoker(cloneAction);
-    const handle = invoker.start(makeCtx(), undefined);
-    expect(handle).toEqual({});
-  });
-
   it('start returns empty handle when selection is empty', () => {
     const invoker = getOngoingInvoker(cloneAction);
-    const handle = invoker.start(makeCtx([]), undefined);
+    const handle = invoker.start(makeCtx({ selectionIds: [] }), undefined);
     expect(handle).toEqual({});
   });
 
@@ -76,10 +125,111 @@ describe('cloneAction descriptor', () => {
     expect(handle).toEqual({});
   });
 
-  it('start returns empty handle with alt modifier present (clone-activating mods)', () => {
+  it('start returns a handle with onMove and onEnd when selection+scene present', () => {
     const invoker = getOngoingInvoker(cloneAction);
-    // Alt is the conventional clone-activating modifier; stub ignores it.
-    const handle = invoker.start(makeCtx(['x', 'y', 'z']), undefined);
-    expect(handle).toEqual({});
+    const ctx = makeCtx({
+      selectionIds: ['a'],
+      sceneNodes: { a: { pose: { x: 10, y: 20, width: 50, height: 50 } } },
+    });
+    const handle = invoker.start(ctx, undefined);
+    expect(typeof handle.onMove).toBe('function');
+    expect(typeof handle.onEnd).toBe('function');
+  });
+
+  it('onMove does not write to scene', () => {
+    const invoker = getOngoingInvoker(cloneAction);
+    const { scene, ...ctx } = makeCtx({
+      selectionIds: ['a'],
+      sceneNodes: { a: { pose: { x: 10, y: 20, width: 50, height: 50 } } },
+    });
+    const handle = invoker.start(ctx as InvocationCtx, undefined);
+    handle.onMove!({
+      ...(ctx as InvocationCtx),
+      drag: { start: { x: 0, y: 0 }, current: { x: 30, y: 40 }, delta: { x: 30, y: 40 } },
+    });
+    expect(scene.addLog).toHaveLength(0);
+    expect(scene.batchLog).toHaveLength(0);
+  });
+
+  it('onEnd("commit") adds a clone of each selected node with translated pose', () => {
+    const invoker = getOngoingInvoker(cloneAction);
+    const { scene, ...ctx } = makeCtx({
+      selectionIds: ['a'],
+      sceneNodes: { a: { pose: { x: 10, y: 20, width: 50, height: 50 } } },
+    });
+    const handle = invoker.start(ctx as InvocationCtx, undefined);
+    handle.onMove!({
+      ...(ctx as InvocationCtx),
+      drag: { start: { x: 0, y: 0 }, current: { x: 15, y: 25 }, delta: { x: 15, y: 25 } },
+    });
+    handle.onEnd!(
+      { ...(ctx as InvocationCtx), drag: { start: { x: 0, y: 0 }, current: { x: 15, y: 25 }, delta: { x: 15, y: 25 } } },
+      'commit',
+    );
+
+    // One clone added.
+    expect(scene.addLog).toHaveLength(1);
+    const added = scene.addLog[0];
+    // Pose should be translated by (15, 25) from origin (10, 20).
+    expect(added.pose).toEqual(expect.objectContaining({ x: 25, y: 45 }));
+    // Kind and layer preserved.
+    expect(added.kind).toBe('leaf');
+    expect(added.layer).toBe('main');
+  });
+
+  it('onEnd("commit") produces exactly one batch entry named "Clone"', () => {
+    const invoker = getOngoingInvoker(cloneAction);
+    const { scene, ...ctx } = makeCtx({
+      selectionIds: ['a', 'b'],
+      sceneNodes: {
+        a: { pose: { x: 0, y: 0, width: 10, height: 10 } },
+        b: { pose: { x: 20, y: 20, width: 10, height: 10 } },
+      },
+    });
+    const handle = invoker.start(ctx as InvocationCtx, undefined);
+    handle.onMove!({
+      ...(ctx as InvocationCtx),
+      drag: { start: { x: 0, y: 0 }, current: { x: 5, y: 5 }, delta: { x: 5, y: 5 } },
+    });
+    handle.onEnd!(
+      { ...(ctx as InvocationCtx), drag: { start: { x: 0, y: 0 }, current: { x: 5, y: 5 }, delta: { x: 5, y: 5 } } },
+      'commit',
+    );
+
+    // Two clones (one per selection), one batch.
+    expect(scene.addLog).toHaveLength(2);
+    expect(scene.batchLog).toHaveLength(1);
+    expect(scene.batchLog[0].label).toBe('Clone');
+  });
+
+  it('onEnd("commit") is a no-op when delta is zero', () => {
+    const invoker = getOngoingInvoker(cloneAction);
+    const { scene, ...ctx } = makeCtx({
+      selectionIds: ['a'],
+      sceneNodes: { a: { pose: { x: 10, y: 10, width: 10, height: 10 } } },
+    });
+    const handle = invoker.start(ctx as InvocationCtx, undefined);
+    // No onMove → delta stays zero.
+    handle.onEnd!({ ...(ctx as InvocationCtx) }, 'commit');
+    expect(scene.addLog).toHaveLength(0);
+    expect(scene.batchLog).toHaveLength(0);
+  });
+
+  it('onEnd("cancel") does not add any nodes', () => {
+    const invoker = getOngoingInvoker(cloneAction);
+    const { scene, ...ctx } = makeCtx({
+      selectionIds: ['a'],
+      sceneNodes: { a: { pose: { x: 10, y: 20, width: 50, height: 50 } } },
+    });
+    const handle = invoker.start(ctx as InvocationCtx, undefined);
+    handle.onMove!({
+      ...(ctx as InvocationCtx),
+      drag: { start: { x: 0, y: 0 }, current: { x: 99, y: 99 }, delta: { x: 99, y: 99 } },
+    });
+    handle.onEnd!(
+      { ...(ctx as InvocationCtx), drag: { start: { x: 0, y: 0 }, current: { x: 99, y: 99 }, delta: { x: 99, y: 99 } } },
+      'cancel',
+    );
+    expect(scene.addLog).toHaveLength(0);
   });
 });

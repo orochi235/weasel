@@ -1,24 +1,35 @@
 import { describe, it, expect } from 'vitest';
 import { insertAction } from './insert';
 import { ActionDisabledReason } from '../registry';
-import type { InvocationCtx } from '../invoker';
+import type { InvocationCtx, BindingOpts } from '../invoker';
+import type { NodeId } from 'core/scene/types';
+import type { InsertDep } from '../depSchema';
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Stub insert dep
 // ---------------------------------------------------------------------------
 
-function makeCtx(): InvocationCtx {
+function makeInsertDep(): InsertDep & { calls: Array<{ bounds: unknown; kind: string }> } {
+  const calls: Array<{ bounds: unknown; kind: string }> = [];
   return {
-    world: { x: 5, y: 10 },
+    calls,
+    commit(bounds, kind) {
+      calls.push({ bounds: { ...bounds }, kind });
+      return 'new-node-id' as NodeId;
+    },
+  };
+}
+
+function makeCtx(overrides: {
+  world?: { x: number; y: number };
+  dep?: InsertDep;
+} = {}): InvocationCtx {
+  return {
+    world: overrides.world ?? { x: 5, y: 10 },
     screen: { x: 5, y: 10 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     deps: {
-      activeTool: { id: 'rect' },
-    },
-    drag: {
-      start: { x: 5, y: 10 },
-      current: { x: 55, y: 60 },
-      delta: { x: 50, y: 50 },
+      insert: overrides.dep ?? makeInsertDep(),
     },
   };
 }
@@ -42,36 +53,105 @@ describe('insertAction descriptor', () => {
     expect(insertAction.invoker?.timing).toBe('ongoing');
   });
 
-  it('requires activeTool dep', () => {
-    expect(insertAction.requires).toContain('activeTool');
+  it('requires insert dep', () => {
+    expect(insertAction.requires).toContain('insert');
   });
 
   it('enabled returns SelectionRequired (static placeholder)', () => {
     expect(insertAction.enabled!()).toBe(ActionDisabledReason.SelectionRequired);
   });
 
-  it('start returns empty handle (stub — Phase 8+ wires body)', () => {
+  it('start returns empty handle when dep is absent', () => {
     const invoker = getOngoingInvoker(insertAction);
-    const handle = invoker.start(makeCtx(), undefined);
-    expect(handle).toEqual({});
-  });
-
-  it('start returns empty handle when deps are absent', () => {
-    const invoker = getOngoingInvoker(insertAction);
-    const emptyCtx: InvocationCtx = {
+    const ctx: InvocationCtx = {
       world: { x: 0, y: 0 },
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       deps: {},
     };
-    const handle = invoker.start(emptyCtx, undefined);
+    const handle = invoker.start(ctx, undefined);
     expect(handle).toEqual({});
   });
 
-  it('start returns empty handle with drag bounds present', () => {
+  it('start returns a handle with onMove and onEnd when dep is present', () => {
     const invoker = getOngoingInvoker(insertAction);
     const handle = invoker.start(makeCtx(), undefined);
-    // Stub ignores drag/bounds; no throw on valid drag input.
-    expect(handle).toEqual({});
+    expect(typeof handle.onMove).toBe('function');
+    expect(typeof handle.onEnd).toBe('function');
+  });
+
+  it('onMove does not call dep.commit', () => {
+    const invoker = getOngoingInvoker(insertAction);
+    const dep = makeInsertDep();
+    const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
+    const handle = invoker.start(ctx, undefined);
+    handle.onMove!({ ...ctx, world: { x: 50, y: 50 } });
+    expect(dep.calls).toHaveLength(0);
+  });
+
+  it('onEnd("commit") calls dep.commit with correct bounds', () => {
+    const invoker = getOngoingInvoker(insertAction);
+    const dep = makeInsertDep();
+    const ctx = makeCtx({ world: { x: 5, y: 10 }, dep });
+    const handle = invoker.start(ctx, undefined);
+    handle.onMove!({ ...ctx, world: { x: 55, y: 60 } });
+    handle.onEnd!({ ...ctx, world: { x: 55, y: 60 } }, 'commit');
+
+    expect(dep.calls).toHaveLength(1);
+    expect(dep.calls[0].bounds).toEqual({ x: 5, y: 10, width: 50, height: 50 });
+  });
+
+  it('onEnd("commit") passes kind from opts.params', () => {
+    const invoker = getOngoingInvoker(insertAction);
+    const dep = makeInsertDep();
+    const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
+    const opts: BindingOpts = { params: { kind: 'ellipse' } };
+    const handle = invoker.start(ctx, opts);
+    handle.onMove!({ ...ctx, world: { x: 100, y: 100 } });
+    handle.onEnd!({ ...ctx, world: { x: 100, y: 100 } }, 'commit');
+
+    expect(dep.calls[0].kind).toBe('ellipse');
+  });
+
+  it('onEnd("commit") defaults kind to "rect" when opts.params absent', () => {
+    const invoker = getOngoingInvoker(insertAction);
+    const dep = makeInsertDep();
+    const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
+    const handle = invoker.start(ctx, undefined);
+    handle.onMove!({ ...ctx, world: { x: 80, y: 80 } });
+    handle.onEnd!({ ...ctx, world: { x: 80, y: 80 } }, 'commit');
+
+    expect(dep.calls[0].kind).toBe('rect');
+  });
+
+  it('onEnd("commit") is a no-op for zero-size drag (sub-threshold)', () => {
+    const invoker = getOngoingInvoker(insertAction);
+    const dep = makeInsertDep();
+    const ctx = makeCtx({ world: { x: 10, y: 10 }, dep });
+    const handle = invoker.start(ctx, undefined);
+    // No onMove → start === current → zero-size.
+    handle.onEnd!({ ...ctx }, 'commit');
+    expect(dep.calls).toHaveLength(0);
+  });
+
+  it('onEnd("cancel") does not call dep.commit', () => {
+    const invoker = getOngoingInvoker(insertAction);
+    const dep = makeInsertDep();
+    const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
+    const handle = invoker.start(ctx, undefined);
+    handle.onMove!({ ...ctx, world: { x: 100, y: 100 } });
+    handle.onEnd!({ ...ctx, world: { x: 100, y: 100 } }, 'cancel');
+    expect(dep.calls).toHaveLength(0);
+  });
+
+  it('bounds are correctly oriented when drag goes in negative direction', () => {
+    const invoker = getOngoingInvoker(insertAction);
+    const dep = makeInsertDep();
+    const ctx = makeCtx({ world: { x: 100, y: 100 }, dep });
+    const handle = invoker.start(ctx, undefined);
+    handle.onMove!({ ...ctx, world: { x: 10, y: 20 } });
+    handle.onEnd!({ ...ctx, world: { x: 10, y: 20 } }, 'commit');
+
+    expect(dep.calls[0].bounds).toEqual({ x: 10, y: 20, width: 90, height: 80 });
   });
 });
