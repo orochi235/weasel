@@ -559,19 +559,12 @@ export type {
   DragGesturePhase,
 } from './interactions/gestures/dragGesture';
 export {
-  useEditAnchors,
   hitAnchor,
   enumerateAnchors,
   withCoord,
   createAnchorEditOverlayLayer,
 } from './interactions/actions/edit-anchors';
 export type {
-  UseEditAnchorsOptions,
-  EditAnchorsController,
-  EditAnchorsAdapter,
-  EditAnchorsOverlay,
-  EditAnchorsStartArgs,
-  EditAnchorsMoveArgs,
   AnchorHit,
   PathAnchor,
   AnchorEditOverlayOpts,
