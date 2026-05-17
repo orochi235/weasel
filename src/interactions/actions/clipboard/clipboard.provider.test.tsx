@@ -71,7 +71,7 @@ describe('useClipboard back-compat with ActionsProvider', () => {
     unmount();
   });
 
-  it('registered actions carry the expected labels and bindings', () => {
+  it('registered actions carry the expected labels (Phase 14e Task 7: registry entries are palette/menu metadata only — keystrokes via useKeybinding)', () => {
     let regSnap: ActionsRegistry | null = null;
     function Probe() { const r = useActionsRegistry(); useEffect(() => { regSnap = r; }); return null; }
     const { adapter } = makeAdapter();
@@ -86,9 +86,6 @@ describe('useClipboard back-compat with ActionsProvider', () => {
     expect(copy.label).toBe('Copy');
     expect(cut.label).toBe('Cut');
     expect(paste.label).toBe('Paste');
-    expect(copy.defaultBinding).toEqual({ key: 'c', mod: true });
-    expect(cut.defaultBinding).toEqual({ key: 'x', mod: true });
-    expect(paste.defaultBinding).toEqual({ key: 'v', mod: true });
   });
 
   it('document Mod+X fires exactly once inside a provider (registry dispatches; no double-fire)', () => {

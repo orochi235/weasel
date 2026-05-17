@@ -107,34 +107,24 @@ export function useClipboard<TNode extends { id: string }>(
 
   useEffect(() => {
     if (!reg || !enableKeyboard) return;
+    // Phase 14e Task 7: `Action.run` / `Action.defaultBinding` were removed.
+    // Clipboard has no kit-standard descriptor in `useStandardActions`, so
+    // keystroke dispatch lives entirely in the `useKeybinding` calls below
+    // (ungated — fires whether or not an ActionsProvider is in scope).
+    // The registry entries here exist only as palette/menu metadata.
     const actions: Action[] = [
-      {
-        id: 'clipboard.copy',
-        label: 'Copy',
-        defaultBinding: { key: 'c', mod: true },
-        run: () => { cb.copy(); },
-      },
-      {
-        id: 'clipboard.cut',
-        label: 'Cut',
-        defaultBinding: { key: 'x', mod: true },
-        run: () => { cut(); },
-      },
-      {
-        id: 'clipboard.paste',
-        label: 'Paste',
-        defaultBinding: { key: 'v', mod: true },
-        run: () => { cb.paste(); },
-      },
+      { id: 'clipboard.copy',  label: 'Copy'  },
+      { id: 'clipboard.cut',   label: 'Cut'   },
+      { id: 'clipboard.paste', label: 'Paste' },
     ];
     const unregs = actions.map((a) => reg.register(a));
     return () => { for (const u of unregs) u(); };
   }, [reg, enableKeyboard, cb, cut]);
 
-  const fallback = enableKeyboard && reg == null;
-  useKeybinding({ key: 'c', mod: true, enabled: fallback }, () => { cb.copy(); });
-  useKeybinding({ key: 'x', mod: true, enabled: fallback }, () => { cut(); });
-  useKeybinding({ key: 'v', mod: true, enabled: fallback }, () => { cb.paste(); });
+  // Always fire on keystroke — clipboard has no dispatcher-path equivalent.
+  useKeybinding({ key: 'c', mod: true, enabled: enableKeyboard }, () => { cb.copy(); });
+  useKeybinding({ key: 'x', mod: true, enabled: enableKeyboard }, () => { cut(); });
+  useKeybinding({ key: 'v', mod: true, enabled: enableKeyboard }, () => { cb.paste(); });
 
   return { copy: cb.copy, cut, paste: cb.paste, isEmpty: cb.isEmpty };
 }

@@ -12,7 +12,6 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react';
-import { isEditableTarget } from './useKeybinding';
 import type { KeyBinding } from './useKeybinding';
 import type { GestureSpec } from '../gestures/spec';
 import type { BindingOpts, Invoker } from './invoker';
@@ -211,28 +210,6 @@ export interface ActionsRegistry {
 
 const ActionsContext = createContext<ActionsRegistry | null>(null);
 
-function keyMatches(eventKey: string, spec: string | readonly string[]): boolean {
-  const want = typeof spec === 'string' ? [spec] : spec;
-  const ek = eventKey.toLowerCase();
-  return want.some((k) => k.toLowerCase() === ek);
-}
-
-function bindingMatches(b: KeyBinding, e: KeyboardEvent): boolean {
-  if (!keyMatches(e.key, b.key)) return false;
-  const wantsMod = b.mod === true;
-  const hasMod = e.metaKey || e.ctrlKey;
-  if (wantsMod !== hasMod) return false;
-  const wantsAlt = b.alt === true;
-  if (wantsAlt !== e.altKey) return false;
-  const shift = b.shift;
-  if (shift === undefined || shift === false) {
-    if (e.shiftKey) return false;
-  } else if (shift === true) {
-    if (!e.shiftKey) return false;
-  }
-  return true;
-}
-
 /**
  * @experimental
  * Mounts an `ActionsRegistry` and one `document` keydown listener for its
@@ -245,11 +222,13 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   const cachedVerRef = useRef(-1);
   const listenersRef = useRef<Set<() => void>>(new Set());
 
-  // Phase 14e Task 2.6: the gesture dispatcher is unconditionally present
-  // inside `<SceneCanvas>` (the only context that mounts ActionsProvider's
-  // keydown loop in practice), so legacy keydown dispatch is always
-  // suppressed for actions that have a gestureBinding — the dispatcher
-  // owns them. (Tasks 4-5 will delete the legacy keydown loop entirely.)
+  // Phase 14e Task 7: the legacy keystroke loop that walked every action's
+  // `defaultBinding: KeyBinding` and matched against keydown is gone. All
+  // kit-standard descriptors now route through the gesture dispatcher via
+  // `gestureBinding`. Consumer-facing hooks (`useEscape`, `useDelete`, ...)
+  // keep their own `useKeybinding` listener (gated by `reg == null` for
+  // kit-standard-covered ones; ungated for clipboard which has no kit
+  // counterpart).
 
   const registry = useMemo<ActionsRegistry>(() => {
     const snapshot = (): readonly Action[] => {
@@ -309,32 +288,6 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
         };
       },
     };
-  }, []);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      for (const action of actionsRef.current.values()) {
-        const b = action.defaultBinding;
-        if (!b) continue;
-        if (!bindingMatches(b, e)) continue;
-        const skipEditable = b.skipInEditable ?? true;
-        if (skipEditable && isEditableTarget(e.target)) continue;
-        // Phase 14e Task 2.6: dispatcher is unconditionally present, so
-        // any action with a gestureBinding is always handled by the
-        // dispatcher — skip legacy dispatch for those.
-        if (action.gestureBinding) continue;
-        if ((b.preventDefault ?? true)) e.preventDefault();
-        try {
-          action.run?.();
-        } catch (err) {
-          console.error(`weasel ActionsRegistry: action "${action.id}" threw`, err);
-        }
-        // First match wins; remaining actions skipped (spec §risks).
-        return;
-      }
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
   }, []);
 
   return <ActionsContext.Provider value={registry}>{children}</ActionsContext.Provider>;

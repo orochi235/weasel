@@ -1,57 +1,66 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
-import { ActionsProvider, useAction } from './registry';
+import { ActionsProvider, useAction, useActionsRegistry } from './registry';
+
+// Phase 14e Task 7: the legacy keydown loop is gone; conflict resolution now
+// surfaces via the imperative `registry.trigger(id)` path (palette / ActionBar
+// callers). The semantics are unchanged — last-writer-wins for the id, and
+// unregister cleanups respect the live entry — but the dispatch surface is
+// `trigger`, not document keydown.
 
 describe('Action registry conflicts', () => {
   it('a tool registering id "escape" overrides the default while mounted', () => {
     const defaultRun = vi.fn();
     const toolRun = vi.fn();
+    let captured: ReturnType<typeof useActionsRegistry> = null;
+    function Capture() { captured = useActionsRegistry(); return null; }
     function Default() {
-      useAction({ id: 'escape', label: 'Default', defaultBinding: { key: 'Escape' }, run: defaultRun });
+      useAction({ id: 'escape', label: 'Default', run: defaultRun });
       return null;
     }
     function Tool() {
-      useAction({ id: 'escape', label: 'Tool',    defaultBinding: { key: 'Escape' }, run: toolRun });
+      useAction({ id: 'escape', label: 'Tool',    run: toolRun });
       return null;
     }
-    render(<ActionsProvider><Default /><Tool /></ActionsProvider>);
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    render(<ActionsProvider><Capture /><Default /><Tool /></ActionsProvider>);
+    captured!.trigger('escape');
     expect(toolRun).toHaveBeenCalledOnce();
     expect(defaultRun).not.toHaveBeenCalled();
   });
 
-  it('after the tool unmounts, the default fires again on next dispatch', () => {
+  it('after the tool unmounts, the default fires again on next trigger', () => {
     const defaultRun = vi.fn();
     const toolRun = vi.fn();
+    let captured: ReturnType<typeof useActionsRegistry> = null;
+    function Capture() { captured = useActionsRegistry(); return null; }
     function Default() {
-      useAction({ id: 'escape', label: 'Default', defaultBinding: { key: 'Escape' }, run: defaultRun });
+      useAction({ id: 'escape', label: 'Default', run: defaultRun });
       return null;
     }
     function Tool() {
-      useAction({ id: 'escape', label: 'Tool',    defaultBinding: { key: 'Escape' }, run: toolRun });
+      useAction({ id: 'escape', label: 'Tool',    run: toolRun });
       return null;
     }
     const { rerender } = render(
-      <ActionsProvider><Default /><Tool /></ActionsProvider>,
+      <ActionsProvider><Capture /><Default /><Tool /></ActionsProvider>,
     );
-    rerender(<ActionsProvider><Default /></ActionsProvider>);
-    // Default's useEffect re-runs only if its deps change. Since the action
-    // object is recreated each render and the cleanup ran when Tool unmounted,
-    // Default's most-recent effect already re-registered itself. Verify:
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    rerender(<ActionsProvider><Capture /><Default /></ActionsProvider>);
+    captured!.trigger('escape');
     expect(defaultRun).toHaveBeenCalled();
   });
 
   it('two components registering the same custom id "copy" — last-writer-wins, both unregister independently', () => {
     const a = vi.fn(), b = vi.fn();
-    function A() { useAction({ id: 'copy', label: 'A', defaultBinding: { key: 'c', mod: true }, run: a }); return null; }
-    function B() { useAction({ id: 'copy', label: 'B', defaultBinding: { key: 'c', mod: true }, run: b }); return null; }
-    const { rerender } = render(<ActionsProvider><A /><B /></ActionsProvider>);
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', metaKey: true, bubbles: true }));
+    let captured: ReturnType<typeof useActionsRegistry> = null;
+    function Capture() { captured = useActionsRegistry(); return null; }
+    function A() { useAction({ id: 'copy', label: 'A', run: a }); return null; }
+    function B() { useAction({ id: 'copy', label: 'B', run: b }); return null; }
+    const { rerender } = render(<ActionsProvider><Capture /><A /><B /></ActionsProvider>);
+    captured!.trigger('copy');
     expect(b).toHaveBeenCalledOnce();
     expect(a).not.toHaveBeenCalled();
-    rerender(<ActionsProvider><A /></ActionsProvider>);
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', metaKey: true, bubbles: true }));
+    rerender(<ActionsProvider><Capture /><A /></ActionsProvider>);
+    captured!.trigger('copy');
     expect(a).toHaveBeenCalledOnce();
   });
 });

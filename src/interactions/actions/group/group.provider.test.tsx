@@ -45,7 +45,7 @@ describe('useGroup / useUngroup back-compat with ActionsProvider', () => {
     unmount();
   });
 
-  it('useUngroup registers `ungroup` action with Mod+Shift+G binding', () => {
+  it('useUngroup registers `ungroup` action (Phase 14e Task 7: keystrokes via kit-standard descriptor in dispatcher)', () => {
     let regSnap: ActionsRegistry | null = null;
     function Probe() { const r = useActionsRegistry(); useEffect(() => { regSnap = r; }); return null; }
     const { adapter } = makeAdapter();
@@ -53,14 +53,15 @@ describe('useGroup / useUngroup back-compat with ActionsProvider', () => {
     render(<ActionsProvider><Host /><Probe /></ActionsProvider>);
     const a = regSnap!.list().find((x) => x.id === 'ungroup')!;
     expect(a).toBeDefined();
-    expect(a.defaultBinding).toEqual({ key: 'g', mod: true, shift: true });
   });
 
-  it('document Mod+G fires exactly once inside a provider (registry dispatches; no double-fire)', () => {
+  it('registry.trigger fires the registered group inside a provider', () => {
     const helpers = makeAdapter();
+    let regSnap: ActionsRegistry | null = null;
+    function Probe() { const r = useActionsRegistry(); useEffect(() => { regSnap = r; }); return null; }
     function Host() { useGroup(helpers.adapter); return null; }
-    render(<ActionsProvider><Host /></ActionsProvider>);
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'g', metaKey: true, bubbles: true, cancelable: true }));
+    render(<ActionsProvider><Host /><Probe /></ActionsProvider>);
+    regSnap!.trigger('group');
     expect(helpers.batches).toHaveLength(1);
   });
 
