@@ -1,5 +1,4 @@
 import type { Action } from '../registry';
-import { deriveDefaultBinding } from './_keyBindingFromGesture';
 
 /** @experimental */
 export interface UndoRedoDeps {
@@ -59,7 +58,6 @@ export function defaultUndoRedoActions(deps: UndoRedoDeps): Action[] {
   return [
     {
       ...undoFields,
-      defaultBinding: deriveDefaultBinding(undoAction.gestureBinding),
       run: () => { deps.undo(); },
       ...(deps.canUndo
         ? { enabled: () => (deps.canUndo!() ? true : 'not-applicable' as const) }
@@ -67,7 +65,6 @@ export function defaultUndoRedoActions(deps: UndoRedoDeps): Action[] {
     },
     {
       ...redoFields,
-      defaultBinding: deriveDefaultBinding(redoAction.gestureBinding),
       run: () => { deps.redo(); },
       ...(deps.canRedo
         ? { enabled: () => (deps.canRedo!() ? true : 'not-applicable' as const) }

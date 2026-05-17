@@ -30,7 +30,7 @@ describe('defaultDeleteAction (legacy bridge)', () => {
     });
     expect(a.id).toBe('delete');
     expect(a.label).toBe('Delete');
-    expect(a.defaultBinding).toEqual({ key: ['Delete', 'Backspace'] });
+    expect(a.gestureBinding).toEqual({ kind: 'key', key: ['Delete', 'Backspace'] });
   });
 
   it('run() emits one DeleteOp per id + SetSelectionOp([])', () => {
@@ -166,14 +166,8 @@ describe('defaultDeleteAction (legacy bridge)', () => {
     expect(filteredOut.enabled?.()).toBe(ActionDisabledReason.SelectionRequired);
   });
 
-  it('declares gestureBinding mirroring defaultBinding', () => {
-    const a = defaultDeleteAction({
-      getSelection: () => [],
-      applyOps: vi.fn(),
-      getNodeIndex: () => 0,
-    });
-    expect(a.gestureBinding).toEqual({ kind: 'key', key: ['Delete', 'Backspace'] });
-  });
+  // Descriptor's gestureBinding test (see escapeAction descriptor tests) covers
+  // the binding shape — the bridge just re-exports it via spread.
 
   it('bridge does not expose invoker (legacy run path stays active)', () => {
     const a = defaultDeleteAction({

@@ -207,21 +207,18 @@ describe('defaultNudgeActions', () => {
     ]);
   });
 
-  it('nudge.up binding = ArrowUp, no shift', () => {
+  it('nudge.up gestureBinding = ArrowUp, no shift', () => {
     const a = defaultNudgeActions(makeDeps()).find(x => x.id === 'nudge.up')!;
-    expect(a.defaultBinding).toEqual({ key: 'ArrowUp' });
     expect(a.gestureBinding).toEqual({ kind: 'key', key: 'ArrowUp' });
   });
 
-  it('nudge.up.big binding = ArrowUp, shift:true', () => {
+  it('nudge.up.big gestureBinding = ArrowUp, shift:true', () => {
     const a = defaultNudgeActions(makeDeps()).find(x => x.id === 'nudge.up.big')!;
-    expect(a.defaultBinding).toEqual({ key: 'ArrowUp', shift: true });
     expect(a.gestureBinding).toEqual({ kind: 'key', key: 'ArrowUp', mods: { shift: true } });
   });
 
-  it('nudge.left.big binding = ArrowLeft, shift:true', () => {
+  it('nudge.left.big gestureBinding = ArrowLeft, shift:true', () => {
     const a = defaultNudgeActions(makeDeps()).find(x => x.id === 'nudge.left.big')!;
-    expect(a.defaultBinding).toEqual({ key: 'ArrowLeft', shift: true });
     expect(a.gestureBinding).toEqual({ kind: 'key', key: 'ArrowLeft', mods: { shift: true } });
   });
 
@@ -277,10 +274,9 @@ describe('defaultNudgeActions', () => {
     expect(applyOp(deps.applyOps.mock.calls[0][0][0]).pose).toMatchObject({ x: 10 });
   });
 
-  it('all nudge actions have both defaultBinding and gestureBinding', () => {
+  it('all nudge actions have a key-spec gestureBinding', () => {
     const acts = defaultNudgeActions(makeDeps());
     for (const action of acts) {
-      expect(action.defaultBinding).toBeDefined();
       expect(action.gestureBinding).toBeDefined();
       // gestureBinding must be a KeySpec with kind='key'
       if (Array.isArray(action.gestureBinding)) {

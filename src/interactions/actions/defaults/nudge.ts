@@ -158,12 +158,11 @@ export function defaultNudgeActions<TPose>(deps: NudgeDeps<TPose>): Action[] {
   function makeOne(dir: Direction, useStep: number, big: boolean): Action {
     const id = big ? `nudge.${dir}.big` : `nudge.${dir}`;
     const label = big ? `Nudge ${LABEL_FOR[dir]} (Big)` : `Nudge ${LABEL_FOR[dir]}`;
-    const binding = big ? { key: KEY_FOR[dir], shift: true as const } : { key: KEY_FOR[dir] };
     const gestureBinding = big
       ? { kind: 'key' as const, key: KEY_FOR[dir], mods: { shift: true as const } }
       : { kind: 'key' as const, key: KEY_FOR[dir] };
     return {
-      id, label, defaultBinding: binding, gestureBinding,
+      id, label, gestureBinding,
       run: () => {
         const sel = deps.getSelection();
         if (sel.length === 0) return;

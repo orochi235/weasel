@@ -18,11 +18,11 @@ describe('escapeAction (descriptor)', () => {
 });
 
 describe('defaultEscapeAction (legacy bridge)', () => {
-  it('id="escape", label="Escape", binding={key: "Escape"}', () => {
+  it('id="escape", label="Escape", binding={kind:"key", key:"Escape"}', () => {
     const a = defaultEscapeAction({ getSelection: () => [asNodeId('a')], setSelection: vi.fn() });
     expect(a.id).toBe('escape');
     expect(a.label).toBe('Escape');
-    expect(a.defaultBinding).toEqual({ key: 'Escape' });
+    expect(a.gestureBinding).toEqual({ kind: 'key', key: 'Escape' });
   });
   it('run() clears selection when non-empty', () => {
     const setSelection = vi.fn();
@@ -36,14 +36,8 @@ describe('defaultEscapeAction (legacy bridge)', () => {
     a.run!();
     expect(setSelection).not.toHaveBeenCalled();
   });
-  it('preventDefault stays default-true (no shift required)', () => {
-    const a = defaultEscapeAction({ getSelection: () => [], setSelection: vi.fn() });
-    expect(a.defaultBinding?.preventDefault).toBeUndefined();
-  });
-  it('declares gestureBinding mirroring defaultBinding', () => {
-    const a = defaultEscapeAction({ getSelection: () => [asNodeId('a')], setSelection: vi.fn() });
-    expect(a.gestureBinding).toEqual({ kind: 'key', key: 'Escape' });
-  });
+  // gestureBinding shape is covered by the descriptor test above; the bridge
+  // re-exports it unchanged via spread.
   it('enabled returns SelectionRequired when selection is empty', () => {
     const a = defaultEscapeAction({ getSelection: () => [], setSelection: vi.fn() });
     expect(a.enabled?.()).not.toBe(true);
