@@ -304,6 +304,25 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
 
 - **`gen:font` script.** Was at `packages/weasel-gl/scripts/gen-font.ts`; deleted in Step 10. If we ever regenerate the Inter MSDF atlas, restore the script under `scripts/gen-font.ts` at repo root using `msdf-bmfont-xml`. The current atlas (`assets/fonts/inter/inter.{json,png}`) was regenerated cleanly so the script is not on the critical path.
 
+## Renderer: accept CSS color formats beyond hex
+
+Surfaced 2026-05-17 building `D3SortableDemo`. `parseColor` rejects everything outside its narrow accepted set — `hsl(0, 65%, 55%)` threw `parseColor: unrecognized color`. Workaround was a precomputed hex palette in the demo, but every consumer reaching for a color library will hit the same wall. Specifically painful for the d3 plugin's `.tween()` escape (d3-interpolate produces `rgb(r, g, b)` strings) and procedural color in general.
+
+What to support:
+- All hex variants (`#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`)
+- `rgb(r, g, b)` / `rgba(r, g, b, a)` (number + percent forms)
+- `hsl(h, s%, l%)` / `hsla(...)`
+- Named CSS colors (~140 names) — useful for quick demos
+- Stretch: `oklch()` / `color()` function syntax
+
+Implementation approaches:
+- **Hand-rolled parser** (~150 lines). Zero deps. Most kit-honest.
+- **`d3-color`** (~30 lines of wiring). Already a transitive dep of `d3-interpolate`; complete CSS coverage including modern color functions. Couples the main kit to a d3 package, which we've otherwise avoided (d3 lives in the plugin package).
+
+Either way, **cache parsed colors by string identity** (`Map<string, [r, g, b, a]>`). First draw with a given color string parses; subsequent draws hit the cache. Bounded in practice unless consumers synthesize thousands of unique strings.
+
+Estimate: half a day for hand-rolled; couple hours for d3-color. Lean toward hand-rolled for kit independence unless a strong reason emerges to depend on d3-color from kit core.
+
 ## Canvas-internal-only migration
 
 Surfaced 2026-05-16 building the force-graph demo. Bare `<Canvas>` with a custom RenderLayer reading mutating refs has no scene-mutation signal — the only way to drive 60Hz repaints is forcing React re-renders (bumpTick / requestRedraw), and at 60Hz that churns the tools machinery enough to wedge the canvas after settle. Every legitimate need for bare-Canvas has a clean `<SceneCanvas>` analog. Plan: mark `Canvas` `@internal` and migrate the three remaining bare-Canvas demos.
