@@ -1,12 +1,5 @@
 import type { NodeId } from 'core/scene/types';
 import type { Action } from '../registry';
-import { ActionDisabledReason } from '../registry';
-
-/** @experimental */
-export interface EscapeDeps {
-  getSelection: () => NodeId[];
-  setSelection: (ids: NodeId[]) => void;
-}
 
 /**
  * @experimental
@@ -25,28 +18,3 @@ export const escapeAction: Action = {
     },
   },
 };
-
-/**
- * @experimental
- * Factory for the default `escape` Action. Clears selection. No-op when
- * selection is empty.
- *
- * @deprecated Phase 4+: use `escapeAction` directly. This wrapper is a
- * Phase 4–7 transition shim and will be removed in Phase 8.
- */
-export function defaultEscapeAction(deps: EscapeDeps): Action {
-  // Spread descriptor fields but exclude `invoker` — the legacy run thunk is
-  // the dispatch path for Phase 4–7; if invoker were present the dispatcher
-  // would bypass run entirely. Task 8 wires up invoker via useStandardActions.
-  const { invoker: _invoker, ...descriptorFields } = escapeAction;
-  void _invoker;
-  return {
-    ...descriptorFields,
-    run: () => {
-      const sel = deps.getSelection();
-      if (sel.length === 0) return;
-      deps.setSelection([]);
-    },
-    enabled: () => (deps.getSelection().length > 0 ? true : ActionDisabledReason.SelectionRequired),
-  };
-}

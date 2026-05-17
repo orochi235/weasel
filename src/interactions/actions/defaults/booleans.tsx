@@ -12,8 +12,6 @@ import {
   CropIcon,
 } from './icons/booleanIcons';
 
-const OPS: readonly BooleanOp[] = ['union', 'intersect', 'subtract', 'exclude', 'divide', 'crop'];
-
 const ID_FOR: Record<BooleanOp, string> = {
   union: 'pathfinder.union',
   intersect: 'pathfinder.intersect',
@@ -78,35 +76,3 @@ export const pathfinderDivideAction    = makePathfinderAction('divide');
 /** @experimental Static descriptor for pathfinder-crop (Phase 4+). */
 export const pathfinderCropAction      = makePathfinderAction('crop');
 
-// ---------------------------------------------------------------------------
-// Legacy bridge factory (preserves adapter-based shape)
-// ---------------------------------------------------------------------------
-
-/** @experimental
- *
- * Five Pathfinder actions registered with stable ids and labels but no
- * default keybindings — there's no industry-standard chord set for
- * boolean ops. Wire bindings explicitly via the actions registry override
- * map, or surface via a `<ActionBar group="pathfinder">` / command
- * palette.
- *
- * Each action calls `applyBooleanOp(adapter, op)` directly; the adapter
- * decides whether the result is undoable (via `applyOps`) and how the
- * new node is minted. See `BooleansAdapter` JSDoc.
- *
- * @deprecated Phase 4+: use the static descriptors (`pathfinderUnionAction`
- * etc.) with `deps.booleansAdapter`. This wrapper is a Phase 4–7 transition
- * shim and will be removed in Phase 8.
- */
-export function defaultBooleanActions(adapter: BooleansAdapter): Action[] {
-  return OPS.map((op): Action => {
-    const { invoker: _invoker, ...rest } = makePathfinderAction(op);
-    return {
-      ...rest,
-      run: () => {
-        applyBooleanOp(adapter, op);
-      },
-      enabled: () => (adapter.getSelection().length >= 2 ? true : ActionDisabledReason.SelectionRequired),
-    };
-  });
-}

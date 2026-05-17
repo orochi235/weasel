@@ -1,7 +1,5 @@
 import type { ReactNode } from 'react';
-import { createTransformOp } from 'core/ops/transform';
-import type { Op } from 'core/ops/types';
-import type { NodeId, Scene } from 'core/scene/types';
+import type { Scene } from 'core/scene/types';
 import type { PoseDescriptor } from '../resize/geometry';
 import { RECT_POSE_DESCRIPTOR } from '../resize/geometry';
 import type { ResizePose } from '../../gestures/types';
@@ -18,16 +16,6 @@ import {
   AlignCenterXIcon,
   AlignCenterYIcon,
 } from './icons/alignIcons';
-
-/** @experimental */
-export interface AlignDeps<TPose> {
-  getSelection: () => NodeId[];
-  getPose: (id: NodeId) => TPose;
-  geometry: PoseDescriptor<TPose>;
-  applyOps: (ops: Op[], label?: string) => void;
-}
-
-const EDGES: readonly AlignEdge[] = ['left', 'right', 'top', 'bottom', 'center-x', 'center-y'];
 const ID_FOR: Record<AlignEdge, string> = {
   'left': 'align.left',
   'right': 'align.right',
@@ -135,42 +123,3 @@ export const alignCenterXAction = makeAlignAction('center-x');
 /** @experimental Static descriptor for align-center-y (Phase 4+). */
 export const alignCenterYAction = makeAlignAction('center-y');
 
-// ---------------------------------------------------------------------------
-// Legacy bridge factory (preserves AlignDeps-based shape + per-instance config)
-// ---------------------------------------------------------------------------
-
-/** @experimental
- *
- * Six align actions registered with stable ids and labels but no default
- * keybindings — six edges/centers don't fit a clean default chord set.
- * Wire bindings explicitly via the actions registry override map.
- *
- * @deprecated Phase 4+: use the static descriptors (`alignLeftAction` etc.)
- * with the `selection`/`scene` dep schema. This wrapper is a Phase 4–7
- * transition shim and will be removed in Phase 8.
- */
-export function defaultAlignActions<TPose>(deps: AlignDeps<TPose>): Action[] {
-  return EDGES.map((edge): Action => {
-    const { invoker: _invoker, ...rest } = makeAlignAction(edge);
-    return {
-      ...rest,
-      run: () => {
-        const sel = deps.getSelection();
-        if (sel.length < 2) return;
-        const poses = sel.map((id) => deps.getPose(id));
-        const bounds = poses.map((p) => deps.geometry.getBounds(p));
-        const union = unionBounds(bounds as ResizePose[]);
-        const ops: Op[] = [];
-        for (let i = 0; i < sel.length; i++) {
-          const { dx, dy } = alignDeltaFor(bounds[i] as ResizePose, union, edge);
-          if (dx === 0 && dy === 0) continue;
-          const from = poses[i];
-          const to = translatePoseViaDescriptor(from, dx, dy, deps.geometry);
-          ops.push(createTransformOp<TPose>({ id: sel[i], from, to }));
-        }
-        if (ops.length > 0) deps.applyOps(ops, 'Align');
-      },
-      enabled: () => (deps.getSelection().length >= 2 ? true : ActionDisabledReason.SelectionRequired),
-    };
-  });
-}

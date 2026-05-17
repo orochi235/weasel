@@ -1,5 +1,4 @@
 import { createReorderOp } from 'core/ops/reorder';
-import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Action } from '../registry';
@@ -134,73 +133,3 @@ export const reorderBackwardAction: Action = {
   enabled: () => ActionDisabledReason.SelectionRequired,
 };
 
-// ---------------------------------------------------------------------------
-// Legacy bridge (Phase 4–7 shim; removed in Phase 8)
-// ---------------------------------------------------------------------------
-
-/** @experimental */
-export interface ReorderDeps {
-  getSelection: () => NodeId[];
-  applyOps: (ops: Op[], label?: string) => void;
-}
-
-/**
- * @experimental
- * Factory for the legacy four-action reorder set. Preserves the original ids
- * (`reorder.forward`, `reorder.backward`, `reorder.front`, `reorder.back`)
- * so palette / menu UIs that look actions up by id continue to work.
- *
- * @deprecated Phase 4+: use `reorderForwardAction` / `reorderBackwardAction`.
- * Removed in Phase 8.
- */
-export function defaultReorderActions(deps: ReorderDeps): Action[] {
-  const requireSelection = () =>
-    (deps.getSelection().length > 0 ? true : ActionDisabledReason.SelectionRequired);
-
-  return [
-    {
-      id: 'reorder.forward',
-      label: 'Bring Forward',
-      gestureBinding: { kind: 'key', key: [']', '}'], mods: { mod: true } },
-      run: () => {
-        const ids = deps.getSelection();
-        if (ids.length === 0) return;
-        deps.applyOps([createReorderOp({ ids, direction: 'forward' })], 'Bring forward');
-      },
-      enabled: requireSelection,
-    },
-    {
-      id: 'reorder.backward',
-      label: 'Send Backward',
-      gestureBinding: { kind: 'key', key: ['[', '{'], mods: { mod: true } },
-      run: () => {
-        const ids = deps.getSelection();
-        if (ids.length === 0) return;
-        deps.applyOps([createReorderOp({ ids, direction: 'backward' })], 'Send backward');
-      },
-      enabled: requireSelection,
-    },
-    {
-      id: 'reorder.front',
-      label: 'Bring to Front',
-      gestureBinding: { kind: 'key', key: [']', '}'], mods: { mod: true, shift: true } },
-      run: () => {
-        const ids = deps.getSelection();
-        if (ids.length === 0) return;
-        deps.applyOps([createReorderOp({ ids, direction: 'front' })], 'Bring to front');
-      },
-      enabled: requireSelection,
-    },
-    {
-      id: 'reorder.back',
-      label: 'Send to Back',
-      gestureBinding: { kind: 'key', key: ['[', '{'], mods: { mod: true, shift: true } },
-      run: () => {
-        const ids = deps.getSelection();
-        if (ids.length === 0) return;
-        deps.applyOps([createReorderOp({ ids, direction: 'back' })], 'Send to back');
-      },
-      enabled: requireSelection,
-    },
-  ];
-}

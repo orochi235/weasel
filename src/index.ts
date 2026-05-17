@@ -104,12 +104,6 @@ export {
 export type {
   Action, ActionEntry, ActionsProp, ActionsRegistry, ActionEnabledResult,
 } from './interactions/actions/registry';
-export {
-  defaultSelectAllAction, defaultEscapeAction, defaultDuplicateAction,
-  defaultNudgeActions, defaultReorderActions, defaultFlipActions,
-  defaultAlignActions, defaultDistributeActions, defaultBooleanActions,
-  defaultDeleteAction, defaultGroupAction, defaultUngroupAction,
-} from './interactions/actions/defaults';
 export { moveAction } from './interactions/actions/defaults/move';
 export { resizeAction } from './interactions/actions/defaults/resize';
 export { rotateAction } from './interactions/actions/defaults/rotate';
@@ -125,7 +119,6 @@ export { enterTextEditAction } from './interactions/actions/defaults/enterTextEd
 export type { TextEditDep } from './interactions/actions/defaults/enterTextEdit';
 export { useStandardActions } from './interactions/actions/useStandardActions';
 export type { UseStandardActionsOptions } from './interactions/actions/useStandardActions';
-export { resolveActions } from './interactions/actions/resolveActions';
 
 // ─── Invoker / GestureBinding / ActiveToolContext (Phase 1 of registry unification) ───
 export type {

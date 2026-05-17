@@ -1,6 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { selectAllAction, defaultSelectAllAction } from './selectAll';
-import { asNodeId } from 'core/scene/types';
+import { describe, it, expect } from 'vitest';
+import { selectAllAction } from './selectAll';
 
 describe('selectAllAction (descriptor)', () => {
   it('id="selectAll", label="Select All"', () => {
@@ -14,56 +13,5 @@ describe('selectAllAction (descriptor)', () => {
 
   it('invoker.timing = "immediate"', () => {
     expect(selectAllAction.invoker?.timing).toBe('immediate');
-  });
-});
-
-describe('defaultSelectAllAction (legacy bridge)', () => {
-  const baseDeps = {
-    getSelection: () => [],
-    listAll: () => [asNodeId('a'), asNodeId('b'), asNodeId('c')],
-    setSelection: vi.fn(),
-  };
-
-  it('returns Action with id="selectAll"', () => {
-    const a = defaultSelectAllAction(baseDeps);
-    expect(a.id).toBe('selectAll');
-  });
-
-  it('returns Action with label "Select All"', () => {
-    expect(defaultSelectAllAction(baseDeps).label).toBe('Select All');
-  });
-
-  it('default binding is Cmd/Ctrl+A', () => {
-    expect(defaultSelectAllAction(baseDeps).gestureBinding).toEqual({ kind: 'key', key: 'a', mods: { mod: true } });
-  });
-
-  it('run() dispatches setSelection with all ids when listAll non-empty', () => {
-    const setSelection = vi.fn();
-    const a = defaultSelectAllAction({
-      getSelection: () => [],
-      listAll: () => [asNodeId('a'), asNodeId('b')],
-      setSelection,
-    });
-    a.run!();
-    expect(setSelection).toHaveBeenCalledWith(['a', 'b']);
-  });
-
-  it('run() is a no-op when listAll() is empty', () => {
-    const setSelection = vi.fn();
-    const a = defaultSelectAllAction({
-      getSelection: () => [],
-      listAll: () => [],
-      setSelection,
-    });
-    a.run!();
-    expect(setSelection).not.toHaveBeenCalled();
-  });
-
-  // gestureBinding shape covered by "default binding is Cmd/Ctrl+A" above
-  // (and by the descriptor's own gestureBinding test).
-
-  it('bridge does not expose invoker (legacy run path stays active)', () => {
-    const a = defaultSelectAllAction(baseDeps);
-    expect(a.invoker).toBeUndefined();
   });
 });

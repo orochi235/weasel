@@ -1,26 +1,23 @@
-export { selectAllAction, defaultSelectAllAction, type SelectAllDeps } from './selectAll';
-export { escapeAction, defaultEscapeAction, type EscapeDeps } from './escape';
-export { duplicateAction, defaultDuplicateAction, type DuplicateDeps } from './duplicate';
-export { nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction, defaultNudgeActions, type NudgeDeps } from './nudge';
-export { reorderForwardAction, reorderBackwardAction, defaultReorderActions, type ReorderDeps } from './reorder';
-export { flipAction, defaultFlipActions, type FlipDeps } from './flip';
+export { selectAllAction } from './selectAll';
+export { escapeAction } from './escape';
+export { duplicateAction } from './duplicate';
+export { nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction } from './nudge';
+export { reorderForwardAction, reorderBackwardAction } from './reorder';
+export { flipAction } from './flip';
 export {
   alignLeftAction, alignRightAction, alignTopAction, alignBottomAction,
   alignCenterXAction, alignCenterYAction,
-  defaultAlignActions, type AlignDeps,
 } from './align';
 export {
   distributeHorizontalAction, distributeVerticalAction,
-  defaultDistributeActions, type DistributeDeps,
 } from './distribute';
 export {
   pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction,
   pathfinderExcludeAction, pathfinderDivideAction, pathfinderCropAction,
-  defaultBooleanActions,
 } from './booleans';
-export { deleteAction, defaultDeleteAction, type DeleteDeps } from './delete';
-export { groupAction, ungroupAction, defaultGroupAction, defaultUngroupAction, type GroupDeps, type UngroupDeps } from './group';
-export { undoAction, redoAction, defaultUndoRedoActions, type UndoRedoDeps } from './undoRedo';
+export { deleteAction } from './delete';
+export { groupAction, ungroupAction } from './group';
+export { undoAction, redoAction } from './undoRedo';
 export { makeToolHoldAction } from './toolHold';
 export { moveAction } from './move';
 export { resizeAction } from './resize';
