@@ -27,6 +27,7 @@ import { DebugOverlayDemo } from './demos/DebugOverlayDemo';
 import { EasingsDemo } from './demos/EasingsDemo';
 import { ViewportDemo } from './demos/ViewportDemo';
 import { ViewportLayerDemo } from './demos/ViewportLayerDemo';
+import { ParallaxDemo } from './demos/ParallaxDemo';
 import { PerceptualColorSlidersDemo } from './demos/PerceptualColorSlidersDemo';
 import { GradientPlaygroundDemo } from './demos/GradientPlaygroundDemo';
 import { VertexColorsDemo } from './demos/VertexColorsDemo';
@@ -66,6 +67,7 @@ import DebugOverlayDemoFull from './demos/DebugOverlayDemo.tsx?raw';
 import EasingsDemoFull from './demos/EasingsDemo.tsx?raw';
 import ViewportDemoFull from './demos/ViewportDemo.tsx?raw';
 import ViewportLayerDemoFull from './demos/ViewportLayerDemo.tsx?raw';
+import ParallaxDemoFull from './demos/ParallaxDemo.tsx?raw';
 import PerceptualColorSlidersDemoFull from './demos/PerceptualColorSlidersDemo.tsx?raw';
 import GradientPlaygroundDemoFull from './demos/GradientPlaygroundDemo.tsx?raw';
 import VertexColorsDemoFull from './demos/VertexColorsDemo.tsx?raw';
@@ -433,6 +435,16 @@ export const DEMOS: DemoEntry[] = [
     Component: ViewportLayerDemo,
     full: ViewportLayerDemoFull,
     path: 'demo/demos/ViewportLayerDemo.tsx',
+  },
+  {
+    id: 'parallax',
+    title: 'Parallax',
+    category: 'Viewport',
+    description: 'createParallaxLayer wraps source RenderLayers so each plane translates and/or scales at its own rate under the camera view. v1 is cosmetic: pointer events still target the outer view. Drag to pan and watch the four planes (sky/hills/ground/foreground) move at different speeds.',
+    hint: 'drag to pan · sky lags at 0.1× · hills 0.4× · ground 1:1 · foreground leads at 1.3×',
+    Component: ParallaxDemo,
+    full: ParallaxDemoFull,
+    path: 'demo/demos/ParallaxDemo.tsx',
   },
 
   // ─── Rendering & paint ────────────────────────────────────────────────────

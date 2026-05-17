@@ -55,6 +55,7 @@
 // ─── Features: grids, multi-viewport composition ────────────────────────────
 export * from './features/grid';
 export * from './features/viewports';
+export * from './features/parallax';
 
 // ─── Pointer input: stylus / coalesced events / pressure ────────────────────
 export {

@@ -14,6 +14,7 @@
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import type React from 'react';
+import { composeOrderedLayers } from './layerOrder';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { ToolsApi } from 'tools/useTools';
 import type { AnyTool } from 'tools/types';
@@ -110,10 +111,10 @@ export type SelectionOverlaySlotConfig<TPose> = Omit<
  *  `.layer` discriminates this from a slot config. */
 export interface CustomLayerEntry {
   layer: RenderLayer<unknown>;
-  /** Insert immediately after the named standard slot. */
-  after?: StandardSlotName;
-  /** Insert immediately before the named standard slot. */
-  before?: StandardSlotName;
+  /** Insert immediately after the named standard slot or another custom-layer key. */
+  after?: StandardSlotName | (string & {});
+  /** Insert immediately before the named standard slot or another custom-layer key. */
+  before?: StandardSlotName | (string & {});
 }
 
 /** Per-slot config union. The key narrows it in practice. */
@@ -339,8 +340,6 @@ export interface CanvasHelpers<TPose> {
   getDebug(): DebugSink | null;
 }
 
-const STANDARD_SLOT_SET = new Set<string>(STANDARD_SLOTS);
-
 // Stable identities for the always-on useArrayAdapter call when the consumer
 // is on the explicit-`adapter` path (synthesized adapter is unused, but the
 // hook still runs).
@@ -352,7 +351,7 @@ const NOOP_SET_ITEMS = () => {};
 // when the pose is a sub-shape of the item or computed.
 const IDENTITY_TO_POSE = (obj: unknown) => obj as unknown;
 
-function isCustomEntry(v: unknown): v is CustomLayerEntry {
+export function isCustomEntry(v: unknown): v is CustomLayerEntry {
   return !!v && typeof v === 'object' && 'layer' in (v as Record<string, unknown>);
 }
 
@@ -1152,9 +1151,16 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         }
       : undefined);
   const handlePointerCancel = onPointerCancelOverride ?? undefined;
-  const handleWheel = tools
-    ? (e: React.WheelEvent<HTMLCanvasElement>) => tools.dispatcher.onWheel(e.nativeEvent)
-    : undefined;
+  // Native non-passive wheel listener so tools can call event.preventDefault()
+  // (e.g. wheel-zoom holding Ctrl). React attaches `onWheel` as passive, which
+  // would emit "Unable to preventDefault inside passive event listener" warnings.
+  useEffect(() => {
+    const c = canvasRef.current;
+    if (!c || !tools) return;
+    const onWheelNative = (event: WheelEvent) => tools.dispatcher.onWheel(event);
+    c.addEventListener('wheel', onWheelNative, { passive: false });
+    return () => c.removeEventListener('wheel', onWheelNative);
+  }, [tools]);
 
   const selectedIds = effectiveSelection.current;
 
@@ -1276,36 +1282,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       });
     }
 
-    const afterMap = new Map<string, RenderLayer<unknown>[]>();
-    const beforeMap = new Map<string, RenderLayer<unknown>[]>();
-    const tail: RenderLayer<unknown>[] = [];
-
-    for (const [key, value] of Object.entries(layersMap)) {
-      if (STANDARD_SLOT_SET.has(key)) continue;
-      if (!isCustomEntry(value)) continue;
-      if (value.after) {
-        const arr = afterMap.get(value.after) ?? [];
-        arr.push(value.layer);
-        afterMap.set(value.after, arr);
-      } else if (value.before) {
-        const arr = beforeMap.get(value.before) ?? [];
-        arr.push(value.layer);
-        beforeMap.set(value.before, arr);
-      } else {
-        tail.push(value.layer);
-      }
-    }
-
-    const out: RenderLayer<unknown>[] = [];
-    for (const slot of STANDARD_SLOTS) {
-      const before = beforeMap.get(slot);
-      if (before) out.push(...before);
-      const layer = standardLayers[slot];
-      if (layer) out.push(layer);
-      const after = afterMap.get(slot);
-      if (after) out.push(...after);
-    }
-    out.push(...tail);
+    const out: RenderLayer<unknown>[] = composeOrderedLayers(layersMap, standardLayers);
     if (tools) {
       out.push(...tools.getActiveOverlays());
     }
@@ -1420,7 +1397,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
       onPointerLeave={handlePointerLeave}
-      onWheel={handleWheel}
       // Suppress the browser's default right-click menu over the canvas.
       // Canvases are interaction surfaces; the browser's context menu
       // (Save Image / Inspect Element / etc.) is almost never what the
