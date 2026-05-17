@@ -420,6 +420,55 @@ declares `requires: ['selection']` and reads `selection.get()` /
 `selection.set([])` from the deps bag at invocation time. No more
 factory per action.
 
+## Parametric actions
+
+Several existing default-action factories emit N actions that are
+really "N variants of one verb" — the variant is a parameter, not an
+identity. Phase 4's factory→descriptor migration is the right time to
+compress these. The rule:
+
+- **One verb, N variants → one parametric action.** Bindings carry
+  the variant via `BindingOpts.params`. The action's `run(deps, opts)`
+  reads `opts.params.<key>` and dispatches.
+- **N genuinely-distinct verbs → keep N actions.** Each is its own
+  user-intent operation.
+
+Compression call per existing factory:
+
+| Factory | Today | After Phase 4 |
+|---|---|---|
+| `nudge` | 8 actions (4 dirs × 2 magnitudes) | 4 actions (one per direction); `magnitude: 'small' \| 'big'` is a binding param. Bare arrow → small; shift+arrow → big — same action, different binding. |
+| `reorder` | 4 actions (forward/backward × adjacent/extreme) | 2 actions (forward / backward); `distance: 'adjacent' \| 'extreme'` is a binding param. Cmd+] / Cmd+Shift+] both invoke `reorder.forward`. |
+| `flip` | 2 actions (x/y) | 1 action (`flip`); `axis: 'x' \| 'y'` is a binding param. |
+| `align` | 6 actions | Stay 6. Each is a discrete user intent ("align left" vs "align center-x" are different commands a user picks). |
+| `distribute` | 2 actions (horizontal/vertical) | Stay 2. Distinct intents at the palette level. |
+| `pathfinder` | 6 actions (union/subtract/...) | Stay 6. Genuinely distinct operations. |
+| `clipboard` | 3 actions (cut/copy/paste) | Stay 3. Distinct verbs. |
+
+The compression target shifts `BindingOpts` from "behaviors only" to
+"behaviors + params":
+
+```ts
+type BindingOpts = {
+  behaviors?: ActionBehavior<any, any, any>[]
+  params?: Record<string, unknown>   // action-defined params (variant selectors, magnitudes, …)
+}
+```
+
+(Typing `params` per action is achievable via `BindingOpts<A>` where
+`A extends Action<…, P>`; defer the generic gymnastics until Phase 4
+implementation surfaces concrete pain.)
+
+Identity / palette / debug implications:
+
+- Compressed actions have one id (`nudge.up` not `nudge.up.big`). The
+  palette shows one row per direction; the binding hint surfaces both
+  shortcuts (`↑ / Shift+↑`).
+- Conflict detection runs against `(actionId, binding)` pairs — still
+  works under compression because each binding stays addressable.
+- Action introspection ("what does the user mean by 'nudge'?") gains
+  a single canonical answer instead of eight near-duplicates.
+
 ## Dispatcher contract
 
 The dispatcher receives raw input events (pointer*, keydown/keyup,
@@ -567,7 +616,10 @@ kit green (`tsc --noEmit && vitest run && tsup build`).
    (`escapeAction: Action<['selection']>` with `requires` and a `run`
    that reads from the deps bag). `useStandardActions` becomes "register
    dep sources with the dep registry." Per-action `XDeps` interfaces
-   collapse into the central `DepSchema`.
+   collapse into the central `DepSchema`. Apply the parametric-action
+   compression per § "Parametric actions" — nudge collapses from 8 to
+   4, reorder from 4 to 2, flip from 2 to 1; align/distribute/pathfinder/
+   clipboard stay as-is.
 5. **Introduce `ActiveToolContext`.** Replace the existing tools-state
    machinery with the context. Tool registry stays a separate
    build-time `Map<id, Tool>`. Hotkey stack moves to context. The old
