@@ -1,5 +1,5 @@
 import type { ToolCtx, ToolPresentation, HotkeyTrigger, ToolModifiers } from '../types';
-import type { KeyBinding } from '../../interactions/actions/useKeybinding';
+import type { KeyBinding } from '../../interactions/keyHelpers';
 import type { RenderLayer } from '../../core/layers/render';
 import type { View } from '../../core/viewport/view';
 import type { Result } from './result';

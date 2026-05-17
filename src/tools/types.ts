@@ -4,7 +4,7 @@ import type { Op } from 'core/ops/types';
 import type { View } from 'core/viewport/view';
 import type { RenderLayer } from 'core/layers/render';
 import type { DebugSink } from '../debug/types';
-import type { KeyBinding } from 'interactions/actions/useKeybinding';
+import type { KeyBinding } from 'interactions/keyHelpers';
 import type { HitResult } from './routing/hitResult';
 import type { RouteResolvedInfo } from './routing/reflection/route-resolved';
 import type { Bounds } from 'core/viewport/fitViewToBounds';

@@ -93,8 +93,8 @@ export type { ClampBounds, CanvasSize } from './core/viewport/clampView';
 export * from './core/viewport/useZoom';
 export * from './core/viewport/useAutoCenter';
 // ─── Keybindings: low-level key → action wiring ─────────────────────────────
-export { useKeybinding, isEditableTarget, matchesKeyBinding } from './interactions/actions/useKeybinding';
-export type { KeyBinding } from './interactions/actions/useKeybinding';
+export { isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';
+export type { KeyBinding } from './interactions/keyHelpers';
 
 // --- @experimental Actions Registry (2026-05-09) ----------------------------
 export {

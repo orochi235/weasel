@@ -7,7 +7,7 @@ import {
   createAnchorEditOverlayLayer,
   type AnchorEditOverlayOpts,
 } from 'interactions/actions/edit-anchors';
-import type { KeyBinding } from 'interactions/actions/useKeybinding';
+import type { KeyBinding } from 'interactions/keyHelpers';
 
 /** Vestigial scratch shape — kept exported for backward compatibility
  *  with the imperative `Tool<EditAnchorsScratch>` surface. The declarative
