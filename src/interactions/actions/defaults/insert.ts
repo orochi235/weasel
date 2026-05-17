@@ -1,40 +1,58 @@
 /**
- * `insertAction` — ongoing Action descriptor for drag-to-insert (Phase 7).
+ * `insertAction` — ongoing Action descriptor for drag-to-insert (Phase 11).
  *
- * ## Status: STUBBED — Phase 7 shape only
+ * ## Status: REAL
  *
- * The descriptor is registered and structurally correct. The invoker.start
- * body is a deliberate no-op stub. Full wiring is deferred to Phase 8+.
+ * Implements the drag-rect insert logic from `useInsert`:
+ *   - `start`: validates the `insert` dep and records the drag start point.
+ *   - `onMove`: tracks the live drag bounds (no scene writes).
+ *   - `onEnd('commit')`: derives final bounds from drag.start + drag.current;
+ *     calls `deps.insert.commit(bounds, kind)` to materialise the new node.
+ *     `kind` comes from `opts.params.kind` (set by the active tool's binding).
+ *   - `onEnd('cancel')`: no-op.
  *
- * ## Why stubbed
+ * ## Dependencies
  *
- * `useInsert` drives insertion through:
- *   - `useDragRect` for the live marquee (bounds) rectangle
- *   - `InsertBehavior<TPose>` pipeline: behaviors receive `GestureContext<TPose>`
- *   - `adapter.commitInsert(bounds)` to materialize the new node on commit
- *   - `pointInsert` fallback for click / sub-threshold drags
- *   - `InsertOp` creation via `createInsertOp` → dispatch via `applyBatch`
+ * Requires `insert` dep from DepSchema (Phase 11 addition):
+ *   `{ commit(bounds, kind): NodeId | null }`
  *
- * The key gaps for the descriptor model:
- * 1. The factory for the new node type (what gets inserted) is consumer-provided
- *    via the adapter or `pointInsert` — there is no generic way to encode this
- *    in a descriptor without a typed dep.
- * 2. `adapter.commitInsert` is typed `InsertAdapter<TNode>` which is not part
- *    of the current `DepRegistry` surface.
- * 3. The active tool context governs what kind of node to insert — the
- *    descriptor would need to read `deps.activeTool` to dispatch to the right
- *    factory, but no such contract exists yet.
+ * `<SceneCanvas>` / `<StandardActionsRegistrar>` should source this dep by
+ * delegating to the scene's `add()` with a sensible default data payload for
+ * the given `kind`. Override per-consumer for custom node factories.
  *
- * TODO: Phase 8+ wires the invoker body — currently a no-op stub.
- * Expected additions:
- * - `DepRegistry` entry for an `InsertAdapter` or `nodeFactory` dep
- * - `deps.activeTool` contract for factory selection
- * - Invoker body mirrors `useInsert` drag-rect / adapter path
+ * ## What this does NOT wire (vs `useInsert`)
+ *
+ * - `InsertBehavior` pipeline (snap, etc.) — deferred to a later phase.
+ * - `pointInsert` fallback for click / sub-threshold drags — not wired; a
+ *   sub-threshold drag produces no insert.
+ * - Live insert overlay — deferred to Phase 7 overlay surface.
+ * - `clickOnly` mode — not applicable to the descriptor model.
+ *
+ * ## Relationship to `useInsert`
+ *
+ * `useInsert` calls `adapter.commitInsert(bounds)` which returns a node and
+ * dispatches a `createInsertOp`. This descriptor delegates to `deps.insert.commit`
+ * which encapsulates both factory + op dispatch in one call. This keeps the
+ * dep contract thin and avoids importing `createInsertOp` into the descriptor.
  */
 
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
-import type { InvocationCtx, OngoingHandle } from '../invoker';
+import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
+import type { InsertDep } from '../depSchema';
+
+// ---------------------------------------------------------------------------
+// Internal scratch
+// ---------------------------------------------------------------------------
+
+interface InsertScratch {
+  dep: InsertDep;
+  kind: string;
+  startX: number;
+  startY: number;
+  currentX: number;
+  currentY: number;
+}
 
 // ---------------------------------------------------------------------------
 // Descriptor
@@ -44,28 +62,56 @@ import type { InvocationCtx, OngoingHandle } from '../invoker';
  * @experimental
  * Static descriptor for the `insert` Action.
  *
- * Requires dep-schema entry: `activeTool`.
- * (`selection` and `scene` are not consumed at insert time — the new node
- *  is materialized through a factory/adapter which Phase 8 will add as a dep.)
+ * Requires dep-schema entry: `insert`.
+ * Node `kind` is read from `opts.params.kind`; defaults to `'rect'` when absent.
  *
- * The invoker is `ongoing` but the body is a no-op stub pending Phase 8
- * dispatcher additions (InsertAdapter dep, factory selection via activeTool).
- *
- * @see useInsert — the React hook this descriptor will mirror.
+ * @see useInsert — the React hook this descriptor mirrors for the simple case.
  */
 export const insertAction: Action & { requires: string[] } = {
   id: 'insert',
   label: 'Insert',
   gestureBinding: { kind: 'drag' },
-  requires: ['activeTool'],
+  requires: ['insert'],
   invoker: {
     timing: 'ongoing',
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    start(_ctx: InvocationCtx, _opts): OngoingHandle {
-      // TODO: Phase 8+ wires the invoker body — currently a no-op stub.
-      // Requires an InsertAdapter dep and an active-tool factory selection
-      // contract to know what node type to create on commit.
-      return {};
+    start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
+      const dep = ctx.deps.insert as InsertDep | undefined;
+      if (!dep) return {};
+
+      // `kind` flows from the binding's params — the active tool wires this
+      // when registering the binding. Default to 'rect' as a safe fallback.
+      const kind = (opts?.params?.['kind'] as string | undefined) ?? 'rect';
+
+      const scratch: InsertScratch = {
+        dep,
+        kind,
+        startX: ctx.world.x,
+        startY: ctx.world.y,
+        currentX: ctx.world.x,
+        currentY: ctx.world.y,
+      };
+
+      return {
+        onMove(moveCtx: InvocationCtx): void {
+          scratch.currentX = moveCtx.world.x;
+          scratch.currentY = moveCtx.world.y;
+        },
+        onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
+          if (reason === 'cancel') return;
+
+          const { dep: d, kind: k, startX, startY, currentX, currentY } = scratch;
+
+          const x = Math.min(startX, currentX);
+          const y = Math.min(startY, currentY);
+          const width = Math.abs(currentX - startX);
+          const height = Math.abs(currentY - startY);
+
+          // Sub-threshold drag — no insert.
+          if (width === 0 || height === 0) return;
+
+          d.commit({ x, y, width, height }, k);
+        },
+      };
     },
   },
   /**
