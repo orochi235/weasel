@@ -76,6 +76,14 @@ export interface UseGestureDispatcherOptions {
    * silently skipped. Phase 13 wires this via `<SceneCanvas>`.
    */
   classifyTarget?: (worldPoint: { x: number; y: number }) => 'empty' | 'selected-body' | 'unselected-body';
+
+  /**
+   * Optional pre-created `Dispatcher`. When provided, this hook pumps events
+   * into the supplied instance instead of creating its own. Lets a parent
+   * scope (e.g. `<SceneCanvas>`) share one dispatcher between the gesture
+   * mounter and other consumers (the preview-ghost layer in Phase 14e).
+   */
+  dispatcher?: Dispatcher;
 }
 
 // ---------------------------------------------------------------------------
@@ -114,14 +122,15 @@ function computeMultiTouchGeometry(
 // ---------------------------------------------------------------------------
 
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, toolsById, enabled = true, affordanceAt, classifyTarget } = opts;
+  const { canvasRef, actions, toolsById, enabled = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt } = opts;
   const activeTool = useActiveToolContext();
   const depRegistry = useDepRegistry();
 
-  // Single dispatcher instance, stable across renders.
+  // Single dispatcher instance, stable across renders. When a `dispatcher`
+  // is supplied via options, adopt it; otherwise create one lazily.
   const dispatcherRef = useRef<Dispatcher | null>(null);
   if (!dispatcherRef.current) {
-    dispatcherRef.current = createDispatcher();
+    dispatcherRef.current = dispatcherOpt ?? createDispatcher();
   }
 
   // Stable ref to the latest context values so event listeners always see

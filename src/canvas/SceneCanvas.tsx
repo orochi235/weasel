@@ -62,6 +62,7 @@ import { DepRegistryProvider, useDepSource } from 'interactions/actions/depRegis
 import { ActiveToolContextProvider } from 'interactions/actions/activeToolContext';
 import { DispatcherPresenceProvider } from 'interactions/dispatcher/dispatcherPresence';
 import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
+import { createDispatcher, type Dispatcher } from 'interactions/dispatcher/dispatcher';
 import { useActionsRegistry } from 'interactions/actions/registry';
 import { buildAffordanceAt, buildClassifyTarget } from './affordanceAt';
 import type { AnchorState } from './affordanceAt';
@@ -685,12 +686,25 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [layers],
   );
 
+  // Shared `Dispatcher` instance — created once per `<SceneCanvas>` and
+  // threaded to both the gesture-dispatcher mounter (which pumps input
+  // events into it) and the preview-ghost layer (which walks its
+  // `getInFlightHandles()` for dispatcher-side gesture previews). Lazy
+  // ref init keeps identity stable across renders without an effect.
+  const dispatcherRef = useRef<Dispatcher | null>(null);
+  if (!dispatcherRef.current) {
+    dispatcherRef.current = createDispatcher();
+  }
+  const dispatcher = dispatcherRef.current;
+
   // Preview-ghost layer: renders in-flight gesture poses on top of the
-  // committed scene using the scene slot's `drawOne`.
+  // committed scene using the scene slot's `drawOne`. Walks both the
+  // tools registry and the dispatcher's in-flight handles (Phase 14e).
   const previewLayer = usePreviewGhostLayer<TData, TLayer, TPose>({
     scene,
     tools,
     sceneSlot: mergedLayers.scene,
+    dispatcher,
   });
 
   // Background-fill layer: screen-space, emits a single full-canvas rect
@@ -774,6 +788,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
               boundsOf={internalBoundsOf}
               pickEvery={internalPickEvery}
               viewRef={currentViewRef}
+              dispatcher={dispatcher}
             />
             {children}
           </ActionsProviderIfRoot>
@@ -802,6 +817,7 @@ function GestureDispatcherMounter({
   boundsOf,
   pickEvery,
   viewRef,
+  dispatcher,
 }: {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   tools: ToolsApi;
@@ -810,6 +826,9 @@ function GestureDispatcherMounter({
   boundsOf?: (id: string) => import('core/viewport/fitViewToBounds').Bounds | null;
   pickEvery?: (worldX: number, worldY: number) => string[];
   viewRef?: React.RefObject<View>;
+  /** Pre-created dispatcher to pump events into. When omitted,
+   *  `useGestureDispatcher` creates one internally (legacy path). */
+  dispatcher?: Dispatcher;
 }) {
   const registry = useActionsRegistry();
   const depRegistry = useDepRegistry();
@@ -933,6 +952,7 @@ function GestureDispatcherMounter({
     enabled,
     affordanceAt: wrappedAffordanceAt,
     classifyTarget: wrappedClassifyTarget,
+    dispatcher,
   });
   return null;
 }

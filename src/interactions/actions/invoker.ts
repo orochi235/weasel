@@ -144,6 +144,28 @@ export interface ActionDeps {
 export interface OngoingHandle {
   onMove?(ctx: InvocationCtx): void;
   onEnd?(ctx: InvocationCtx, reason: 'commit' | 'cancel'): void;
+
+  /**
+   * Optional preview surface — Phase 14e dispatcher-side ghost overlay.
+   *
+   * An ongoing-action implementation may populate `previewIds()` +
+   * `previewPose(id)` to expose its in-flight preview state for the
+   * canvas's preview-ghost layer (`usePreviewGhostLayer`) to render on
+   * top of the committed scene during the gesture.
+   *
+   * Returning `null` (or omitting the method entirely) means "no preview
+   * this gesture" — the canvas will skip this handle as a source.
+   *
+   * Semantics mirror the tool-side `Tool.previewIds` / `Tool.previewPose`
+   * pair: `previewIds()` enumerates the displaced node ids; `previewPose(id)`
+   * returns the interim pose for one of those ids (shape opaque — the
+   * canvas casts to its `TPose` parameter). The preview-ghost layer
+   * merges all sources via first-non-null semantics, with tool-side
+   * previews taking precedence over dispatcher-side (preserves
+   * backwards-compat during the registry-unification migration).
+   */
+  previewIds?(): Iterable<string> | null;
+  previewPose?(id: string): unknown | null;
 }
 
 /** Fire-once invocation. Runs to completion synchronously (or fires off an

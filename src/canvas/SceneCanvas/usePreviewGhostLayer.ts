@@ -16,13 +16,30 @@ import type { Node, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { ToolsApi } from 'tools/useTools';
 import { findShapeSilhouette } from '../shapePainters';
+import type { Dispatcher } from 'interactions/dispatcher/dispatcher';
+
+/** A source of in-flight preview state — either a tool from the tools
+ *  registry or an `OngoingHandle` returned from the dispatcher's in-flight
+ *  map. Both expose the same optional pair of methods; the preview-ghost
+ *  layer merges sources via first-non-null semantics. */
+interface PreviewSource {
+  previewIds?: () => Iterable<string> | null;
+  previewPose?: (id: string) => unknown;
+}
 
 export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: {
   scene: Scene<TData, TLayer, TPose>;
   tools: ToolsApi;
   sceneSlot: LayersMap<Node<TData, TLayer, TPose>, TPose>['scene'];
+  /**
+   * Optional dispatcher — when present, the layer additionally walks
+   * `dispatcher.getInFlightHandles()` so dispatcher-path ongoing actions
+   * can expose their preview state. Tool-side previews take priority
+   * (preserves backwards-compat while actions are migrated). Phase 14e.
+   */
+  dispatcher?: Dispatcher | null;
 }): RenderLayer<unknown> {
-  const { scene, tools, sceneSlot } = args;
+  const { scene, tools, sceneSlot, dispatcher } = args;
 
   // Refs let the layer body read the latest scene/tools/slot without
   // re-creating the layer on every host render.
@@ -32,6 +49,8 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
   toolsRef.current = tools;
   const sceneSlotRef = useRef(sceneSlot);
   sceneSlotRef.current = sceneSlot;
+  const dispatcherRef = useRef(dispatcher);
+  dispatcherRef.current = dispatcher;
 
   return useMemo<RenderLayer<unknown>>(() => ({
     id: 'preview-ghost',
@@ -47,30 +66,44 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
       // — hotkey → active → registry → ambient — taking the first
       // non-null previewPose per id.
       const seen = new Set<unknown>();
-      const tools: { previewIds?: () => Iterable<string> | null; previewPose?: (id: string) => unknown }[] = [];
-      const push = (tool: typeof tools[number] | undefined) => {
-        if (!tool || seen.has(tool)) return;
-        seen.add(tool);
-        tools.push(tool);
+      const sources: PreviewSource[] = [];
+      const push = (source: PreviewSource | undefined) => {
+        if (!source || seen.has(source)) return;
+        seen.add(source);
+        sources.push(source);
       };
+      // Tool-side sources first — they take priority during the
+      // dispatcher-side preview migration (Phase 14e).
       if (t.hotkeyEngaged) push(t.registry[t.hotkeyEngaged]);
       push(t.registry[t.active]);
       for (const tool of Object.values(t.registry)) push(tool);
       for (const tool of t.ambient) push(tool);
+      // Dispatcher-side sources — each in-flight `OngoingHandle` may
+      // populate `previewIds()` / `previewPose(id)`; treated as additional
+      // sources after the tool registry so tool previews win on overlap.
+      const disp = dispatcherRef.current;
+      if (disp) {
+        for (const handle of disp.getInFlightHandles()) push(handle);
+      }
       const idSet = new Set<string>();
-      for (const tool of tools) {
-        const ids = tool.previewIds?.();
+      for (const source of sources) {
+        const ids = source.previewIds?.();
         if (!ids) continue;
         for (const id of ids) idSet.add(id);
       }
       if (idSet.size === 0) return [];
       const sc = sceneRef.current;
 
-      // Look up a preview pose for `id` across all consulted tools, taking
-      // the first non-null match (priority: hotkey > active > registry > ambient).
+      // Look up a preview pose for `id` across all consulted sources, taking
+      // the first non-null match. Priority order:
+      //   tool: hotkey > active > registry > ambient
+      //   then: dispatcher in-flight handles (in insertion order)
+      // This preserves tool-side wins during the Phase 14e migration; once
+      // an action has been moved off its legacy hook, its handle will be
+      // the only source emitting a pose for the gesture's ids.
       const previewPoseFor = (id: string): TPose | null => {
-        for (const tool of tools) {
-          const p = tool.previewPose?.(id) as TPose | null | undefined;
+        for (const source of sources) {
+          const p = source.previewPose?.(id) as TPose | null | undefined;
           if (p != null) return p;
         }
         return null;

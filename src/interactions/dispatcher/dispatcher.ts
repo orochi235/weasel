@@ -82,6 +82,16 @@ export interface Dispatcher {
    * For debug/testing.
    */
   inFlight(): ReadonlyMap<string, OngoingHandle>;
+
+  /**
+   * Read-only iterator over currently in-flight `OngoingHandle` instances.
+   *
+   * Surface for the canvas's preview-ghost layer (`usePreviewGhostLayer`)
+   * to walk each handle's `previewIds()` / `previewPose(id)` and render
+   * dispatcher-driven gesture previews — Phase 14e. Read-only by design:
+   * external consumers must not mutate the in-flight map.
+   */
+  getInFlightHandles(): Iterable<OngoingHandle>;
 }
 
 // ---------------------------------------------------------------------------
@@ -463,5 +473,9 @@ export function createDispatcher(): Dispatcher {
     return inFlightHandles;
   }
 
-  return { handleInput, cancelAll, inFlight };
+  function getInFlightHandles(): Iterable<OngoingHandle> {
+    return inFlightHandles.values();
+  }
+
+  return { handleInput, cancelAll, inFlight, getInFlightHandles };
 }
