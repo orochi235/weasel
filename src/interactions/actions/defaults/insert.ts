@@ -28,6 +28,17 @@
  * - Live insert overlay — deferred to Phase 7 overlay surface.
  * - `clickOnly` mode — not applicable to the descriptor model.
  *
+ * ## Phase 14e Task 2 note — no `previewIds`/`previewPose`
+ *
+ * Insert produces a brand-new node that has no scene id until commit. The
+ * dispatcher preview-ghost layer (`usePreviewGhostLayer`) looks up each
+ * previewed id via `scene.get(id)` to draw its silhouette, so it cannot
+ * render a ghost for a not-yet-inserted node. A live insert preview would
+ * need a separate "scratch node" overlay surface (Phase 7 territory) or
+ * an extension to the preview-ghost layer that accepts synthetic
+ * (node-shaped) draw entries. Left unimplemented in this phase per the
+ * plan's "preview at commit-time only" allowance for insert.
+ *
  * ## Relationship to `useInsert`
  *
  * `useInsert` calls `adapter.commitInsert(bounds)` which returns a node and
