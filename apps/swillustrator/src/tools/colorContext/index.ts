@@ -1,2 +1,13 @@
-export { useColorContextTool, type ColorContextApi, type UseColorContextToolOptions } from './useColorContextTool';
-export { ColorContextProvider, useColorContext } from './ColorContext';
+export {
+  ColorContextProvider,
+  useColorContext,
+  ColorContextContext,
+  type ColorContextValue,
+  type ColorContextProviderProps,
+} from './ColorContextProvider';
+export {
+  colorResetAction,
+  colorSwapAction,
+  colorToggleFocusedNoneAction,
+  colorActions,
+} from './actions';
