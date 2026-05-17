@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { insertAction } from './insert';
-import { ActionDisabledReason } from '../registry';
+
 import type { InvocationCtx, BindingOpts } from '../invoker';
 import type { NodeId } from 'core/scene/types';
 import type { InsertDep } from '../depSchema';
@@ -57,8 +57,8 @@ describe('insertAction descriptor', () => {
     expect(insertAction.requires).toContain('insert');
   });
 
-  it('enabled returns SelectionRequired (static placeholder)', () => {
-    expect(insertAction.enabled!()).toBe(ActionDisabledReason.SelectionRequired);
+  it('enabled returns true (insert is always available)', () => {
+    expect(insertAction.enabled!()).toBe(true);
   });
 
   it('start returns empty handle when dep is absent', () => {

@@ -65,7 +65,16 @@ import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatch
 import { useActionsRegistry } from 'interactions/actions/registry';
 import { buildAffordanceAt, buildClassifyTarget } from './affordanceAt';
 import type { Op } from 'core/ops/types';
-import type { ViewApi, AreaSelectDep } from 'interactions/actions/depSchema';
+import type { ViewApi, AreaSelectDep, InsertDep } from 'interactions/actions/depSchema';
+import { createInsertOp } from 'core/ops/create';
+import { asNodeId } from 'core/scene/types';
+import {
+  rectPath,
+  ellipsePath,
+  regularPolygonPath,
+  starPath,
+  linePath,
+} from 'features/paths/builder';
 
 /**
  * Minimal adapter surface the legacy bridge factories need for delete /
@@ -986,6 +995,107 @@ function StandardActionsRegistrar({
       },
       getSelection: () => s.current as NodeId[],
       setSelection: (ids) => s.set(ids),
+    };
+  });
+
+  // Wire the `insert` dep for `insertAction` (Phase 14c.2 fix).
+  //
+  // The 6 shape-tools (rect/ellipse/line/polygon/star/pencil) migrated in
+  // Phase 14c.1 to use `Tool.bindings + insertAction` with
+  // `bindingsOverrideDrag: true`. Their drag-on-empty gesture now flows through
+  // the dispatcher → insertAction.invoker.start → deps.insert.commit(bounds, kind).
+  // Without this dep source, every drag silently produced nothing.
+  //
+  // Approach (a): kit-side kind→data factories hardcoded for the 6 builtin
+  // shape kinds. Acceptable because these are kit-shipped tools; a future
+  // phase can expose a `nodeFactories` prop for consumer-defined kinds.
+  //
+  // Trade-off: `line`, `polygon`, and `star` receive AABB bounds from the
+  // insertAction invoker, but their tools originally captured richer geometry
+  // (two endpoints for line; center+radius+rotation for polygon/star). The
+  // bounding-rect approximation is used here — it is a known limitation
+  // documented with a TODO below for each affected kind.
+  const adapterRef2 = useRef(adapter);
+  adapterRef2.current = adapter;
+  const sceneRef3 = useRef(scene);
+  sceneRef3.current = scene;
+
+  // Counter for sequential default node ids — stable across renders via ref.
+  const insertSeqRef = useRef(0);
+  const DEFAULT_FILLS = ['#7fb069', '#d4a574', '#a48bd4', '#7ab8d4', '#d47a7a'];
+
+  useDepSource('insert', (): InsertDep => {
+    const ad = adapterRef2.current;
+    const sc = sceneRef3.current;
+
+    return {
+      commit(bounds, kind): NodeId | null {
+        const seq = ++insertSeqRef.current;
+        const fill = DEFAULT_FILLS[seq % DEFAULT_FILLS.length];
+        const layer = (sc.layers[0]?.id ?? 'default') as string;
+        const id = asNodeId(`kit-${kind}-${seq}`);
+
+        let data: unknown;
+        let pose: unknown = { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
+
+        switch (kind) {
+          case 'rect':
+            data = { path: rectPath(bounds.x, bounds.y, bounds.width, bounds.height), fill };
+            break;
+          case 'ellipse':
+            data = { path: ellipsePath(bounds), fill };
+            break;
+          case 'line': {
+            // TODO(Phase 14c.3): line tool captures two endpoints; insertAction
+            // only has the AABB. Use diagonal as approximation.
+            const a = { x: bounds.x, y: bounds.y };
+            const b = { x: bounds.x + bounds.width, y: bounds.y + bounds.height };
+            data = { path: linePath(a, b), fill, stroke: fill, strokeWidth: 2 };
+            break;
+          }
+          case 'polygon': {
+            // TODO(Phase 14c.3): polygon tool captures center+radius+rotation;
+            // insertAction only has the AABB. Approximate: inscribed hexagon.
+            const cx = bounds.x + bounds.width / 2;
+            const cy = bounds.y + bounds.height / 2;
+            const r = Math.min(bounds.width, bounds.height) / 2;
+            const center = { x: cx, y: cy };
+            data = { path: regularPolygonPath(center, r, 6, 0), fill };
+            pose = { x: cx - r, y: cy - r, width: r * 2, height: r * 2 };
+            break;
+          }
+          case 'star': {
+            // TODO(Phase 14c.3): star tool captures center+outerRadius+innerRadius+
+            // rotation+points; insertAction only has the AABB. Approximate: 5-point
+            // star inscribed in the AABB.
+            const cx = bounds.x + bounds.width / 2;
+            const cy = bounds.y + bounds.height / 2;
+            const outerR = Math.min(bounds.width, bounds.height) / 2;
+            const innerR = outerR * 0.5;
+            const center = { x: cx, y: cy };
+            data = { path: starPath(center, outerR, 5, innerR, 0), fill };
+            pose = { x: cx - outerR, y: cy - outerR, width: outerR * 2, height: outerR * 2 };
+            break;
+          }
+          case 'pencil':
+            // Pencil tool builds a PolygonPath from freehand samples — the
+            // insertAction invoker has only the drag-rect bounds. A stub rect
+            // is inserted so the gesture doesn't silently fail; Phase 14c.3
+            // can wire a proper path-from-samples pipeline.
+            // TODO(Phase 14c.3): wire pencil path from gesture samples.
+            data = { path: rectPath(bounds.x, bounds.y, bounds.width, bounds.height), fill };
+            break;
+          default:
+            console.warn(`weasel insertDep: no factory for kind="${kind}". Skipping insert.`);
+            return null;
+        }
+
+        ad.applyOps(
+          [createInsertOp({ node: { id, kind: 'leaf', layer, pose, data } as unknown as { id: string }, label: `Insert ${kind}` })],
+          `Insert ${kind}`,
+        );
+        return id;
+      },
     };
   });
 
