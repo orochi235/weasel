@@ -83,7 +83,7 @@ import {
 // top-level kit index omits it (snapToGrid/clampMinSize sit alongside, and
 // each has resize/move/insert variants that the top-level can't disambiguate).
 // Import directly from the subpath module — vite's `@orochi235/weasel/*` alias
-// resolves to `src/subpaths/*` at runtime; the explicit path keeps tsc happy
+// resolves to `src/import-shims/*` at runtime; the explicit path keeps tsc happy
 // without adding a new path mapping.
 import { lockAspectWithModifier } from '../../../src/interactions/actions/resize/behaviors/lockAspect';
 // `useGridFeature` isn't on the kit's top-level barrel (only the low-level

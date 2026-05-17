@@ -9,7 +9,7 @@
  *   2. A bare-package alias `@orochi235/<name>`     → `packages/<name>/src/index.ts`
  *
  * Plus the kit's own aliases:
- *   - `@orochi235/weasel/(.*)`  → `src/subpaths/$1.ts` (subpath convention)
+ *   - `@orochi235/weasel/(.*)`  → `src/import-shims/$1.ts` (subpath convention)
  *   - `@orochi235/weasel`       → `src/index.ts`
  *   - Bare top-level kit paths  (`core/...`, `features/...`, etc.) to match
  *     the kit's tsconfig `baseUrl: src` setup.
@@ -92,7 +92,7 @@ export function weaselAliases(repoRoot: string, overrides: ViteAlias[] = []): Vi
     // main kit source under `src/`.
     {
       find: /^@orochi235\/weasel\/(.*)$/,
-      replacement: join(repoRoot, 'src/subpaths/$1.ts'),
+      replacement: join(repoRoot, 'src/import-shims/$1.ts'),
     },
     {
       find: '@orochi235/weasel',
