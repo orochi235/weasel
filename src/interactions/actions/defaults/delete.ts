@@ -4,6 +4,7 @@ import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
+import { deriveDefaultBinding } from './_keyBindingFromGesture';
 
 /** @experimental */
 export interface DeleteDeps {
@@ -28,7 +29,6 @@ export interface DeleteDeps {
 export const deleteAction: Action = {
   id: 'delete',
   label: 'Delete',
-  defaultBinding: { key: ['Delete', 'Backspace'] },
   gestureBinding: { kind: 'key', key: ['Delete', 'Backspace'] },
   invoker: {
     timing: 'immediate',
@@ -56,6 +56,7 @@ export function defaultDeleteAction(deps: DeleteDeps): Action {
   void _enabled;
   return {
     ...descriptorFields,
+    defaultBinding: deriveDefaultBinding(deleteAction.gestureBinding),
     run: () => {
       const sel = deps.getSelection();
       const ids = deps.filter ? deps.filter(sel) : sel;

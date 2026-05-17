@@ -1,6 +1,7 @@
 import type { NodeId } from 'core/scene/types';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
+import { deriveDefaultBinding } from './_keyBindingFromGesture';
 
 /** @experimental */
 export interface EscapeDeps {
@@ -15,7 +16,6 @@ export interface EscapeDeps {
 export const escapeAction: Action = {
   id: 'escape',
   label: 'Escape',
-  defaultBinding: { key: 'Escape' },
   gestureBinding: { kind: 'key', key: 'Escape' },
   invoker: {
     timing: 'immediate',
@@ -43,6 +43,7 @@ export function defaultEscapeAction(deps: EscapeDeps): Action {
   void _invoker;
   return {
     ...descriptorFields,
+    defaultBinding: deriveDefaultBinding(escapeAction.gestureBinding),
     run: () => {
       const sel = deps.getSelection();
       if (sel.length === 0) return;

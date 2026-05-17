@@ -1,6 +1,7 @@
 import type { NodeId } from 'core/scene/types';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
+import { deriveDefaultBinding } from './_keyBindingFromGesture';
 
 /** @experimental */
 export interface SelectAllDeps {
@@ -18,7 +19,6 @@ export interface SelectAllDeps {
 export const selectAllAction: Action = {
   id: 'selectAll',
   label: 'Select All',
-  defaultBinding: { key: 'a', mod: true },
   gestureBinding: { kind: 'key', key: 'a', mods: { mod: true } },
   invoker: {
     timing: 'immediate',
@@ -44,6 +44,7 @@ export function defaultSelectAllAction(deps: SelectAllDeps): Action {
   void _invoker;
   return {
     ...descriptorFields,
+    defaultBinding: deriveDefaultBinding(selectAllAction.gestureBinding),
     run: () => {
       const all = deps.listAll();
       if (all.length === 0) return;

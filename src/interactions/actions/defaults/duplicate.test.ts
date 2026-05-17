@@ -8,10 +8,6 @@ describe('duplicateAction (descriptor)', () => {
     expect(duplicateAction.label).toBe('Duplicate');
   });
 
-  it('defaultBinding = { key: "d", mod: true }', () => {
-    expect(duplicateAction.defaultBinding).toEqual({ key: 'd', mod: true });
-  });
-
   it('gestureBinding = { kind: "key", key: "d", mods: { mod: true } }', () => {
     expect(duplicateAction.gestureBinding).toEqual({ kind: 'key', key: 'd', mods: { mod: true } });
   });

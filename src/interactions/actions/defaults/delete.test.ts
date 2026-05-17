@@ -12,10 +12,6 @@ describe('deleteAction (descriptor)', () => {
     expect(deleteAction.label).toBe('Delete');
   });
 
-  it('defaultBinding = { key: ["Delete", "Backspace"] }', () => {
-    expect(deleteAction.defaultBinding).toEqual({ key: ['Delete', 'Backspace'] });
-  });
-
   it('gestureBinding = { kind: "key", key: ["Delete", "Backspace"] }', () => {
     expect(deleteAction.gestureBinding).toEqual({ kind: 'key', key: ['Delete', 'Backspace'] });
   });

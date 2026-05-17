@@ -8,10 +8,6 @@ describe('escapeAction (descriptor)', () => {
     expect(escapeAction.label).toBe('Escape');
   });
 
-  it('defaultBinding = { key: "Escape" }', () => {
-    expect(escapeAction.defaultBinding).toEqual({ key: 'Escape' });
-  });
-
   it('gestureBinding = { kind: "key", key: "Escape" }', () => {
     expect(escapeAction.gestureBinding).toEqual({ kind: 'key', key: 'Escape' });
   });

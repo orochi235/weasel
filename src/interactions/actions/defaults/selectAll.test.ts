@@ -8,10 +8,6 @@ describe('selectAllAction (descriptor)', () => {
     expect(selectAllAction.label).toBe('Select All');
   });
 
-  it('defaultBinding = { key: "a", mod: true }', () => {
-    expect(selectAllAction.defaultBinding).toEqual({ key: 'a', mod: true });
-  });
-
   it('gestureBinding = { kind: "key", key: "a", mods: { mod: true } }', () => {
     expect(selectAllAction.gestureBinding).toEqual({ kind: 'key', key: 'a', mods: { mod: true } });
   });

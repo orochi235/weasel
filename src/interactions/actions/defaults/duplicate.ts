@@ -4,6 +4,7 @@ import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
+import { deriveDefaultBinding } from './_keyBindingFromGesture';
 
 /** @experimental */
 export interface DuplicateDeps {
@@ -23,7 +24,6 @@ const DEFAULT_OFFSET = { dx: 8, dy: 8 };
 export const duplicateAction: Action = {
   id: 'duplicate',
   label: 'Duplicate',
-  defaultBinding: { key: 'd', mod: true },
   gestureBinding: { kind: 'key', key: 'd', mods: { mod: true } },
   invoker: {
     timing: 'immediate',
@@ -53,6 +53,7 @@ export function defaultDuplicateAction(deps: DuplicateDeps): Action {
   void _enabled;
   return {
     ...descriptorFields,
+    defaultBinding: deriveDefaultBinding(duplicateAction.gestureBinding),
     run: () => {
       const sel = deps.getSelection();
       if (sel.length === 0) return;
