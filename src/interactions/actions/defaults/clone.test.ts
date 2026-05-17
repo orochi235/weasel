@@ -238,6 +238,34 @@ describe('cloneAction descriptor', () => {
     expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
   });
 
+  it('previewPose returns a translated pose shape consumable by drawOne (canvas preview path)', () => {
+    // Phase 14e.2.5 sub-deliverable 3 — verifies the dispatcher preview
+    // shape is rect-pose-like ({x, y, width, height, ...}), matching what
+    // `usePreviewGhostLayer`'s `drawOne` consumes. This is the equivalent
+    // of the legacy `useClone`/`defaultDrawGhost` `{id, x, y}` overlay
+    // shape, but driven entirely through the dispatcher.
+    const invoker = getOngoingInvoker(cloneAction);
+    const { ...ctx } = makeCtx({
+      selectionIds: ['a', 'b'],
+      sceneNodes: {
+        a: { pose: { x: 10, y: 20, width: 40, height: 30 } },
+        b: { pose: { x: 100, y: 200, width: 5, height: 5 } },
+      },
+    });
+    const handle = invoker.start(ctx as InvocationCtx, undefined);
+    handle.onMove!({
+      ...(ctx as InvocationCtx),
+      drag: { start: { x: 0, y: 0 }, current: { x: 7, y: 11 }, delta: { x: 7, y: 11 } },
+    });
+
+    // Two ids previewed at the translated positions; original pose fields
+    // (width/height) preserved so the preview ghost has full geometry.
+    const ids = Array.from(handle.previewIds!() ?? []);
+    expect(ids.sort()).toEqual(['a', 'b']);
+    expect(handle.previewPose!('a')).toEqual({ x: 17, y: 31, width: 40, height: 30 });
+    expect(handle.previewPose!('b')).toEqual({ x: 107, y: 211, width: 5, height: 5 });
+  });
+
   it('cancel discards preview state; no nodes added', () => {
     const invoker = getOngoingInvoker(cloneAction);
     const { scene, ...ctx } = makeCtx({
