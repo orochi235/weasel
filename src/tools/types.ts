@@ -8,6 +8,7 @@ import type { KeyBinding } from 'interactions/actions/useKeybinding';
 import type { HitResult } from './routing/hitResult';
 import type { RouteResolvedInfo } from './routing/reflection/route-resolved';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import type { GestureBinding } from '../interactions/actions/binding';
 
 /** Outcome of a channel handler. `'claim'` stops dispatch for this event;
  *  `'pass'` lets the next slot try. Handlers that return nothing are
@@ -191,6 +192,11 @@ export interface Tool<TScratch = unknown> {
    *  nothing — typically gated on a scratch field like
    *  `if (!scratch.overlay) return`. */
   overlay?: RenderLayer<unknown>;
+  /** Phase 1+ (registry-unification): declarative gesture-bindings the
+   *  dispatcher consults while this tool is active. Empty/undefined keeps
+   *  legacy imperative-channel behavior. See
+   *  `docs/superpowers/specs/2026-05-16-registry-unification-design.md`. */
+  bindings?: GestureBinding[];
   /**
    * Optional. When set, the dispatcher consults this before its built-in
    * node/empty hit-test. If it returns a value, that target replaces the

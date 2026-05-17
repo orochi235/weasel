@@ -1087,6 +1087,10 @@ git commit -m "docs(todo): note Phase 1 of registry unification shipped"
 - No runtime behavior changed — Phase 1 is purely additive type surface plus an unused-by-default context provider.
 - `docs/TODO.md` reflects Phase 1 shipped.
 
+## Deviation from the original plan (Task 4)
+
+Task 4 as written widened `Action.defaultBinding` to `KeyBinding | GestureSpec`. That broke 7 existing consumers that narrow `defaultBinding as KeyBinding`. The fix (commit `85d5063c`) keeps `defaultBinding?: KeyBinding` unchanged and adds a parallel new field `gestureBinding?: GestureSpec`. Phase 9 deletes legacy `defaultBinding` and renames `gestureBinding` → `defaultBinding`. The end-state Action shape is unchanged from the spec; only the interim shape during Phases 1–8 differs.
+
 ## What's next (after Phase 1)
 
-Phase 2 — populate `defaultBinding: GestureSpec` on every existing immediate action (`selectAll`, `escape`, `delete`, …). Pure structural; no behavioral change. Will be its own plan: `docs/superpowers/plans/2026-05-16-registry-unification-phase-2.md`.
+Phase 2 — populate `gestureBinding: GestureSpec` on every existing immediate action (`selectAll`, `escape`, `delete`, …). Pure structural; no behavioral change. Will be its own plan: `docs/superpowers/plans/2026-05-16-registry-unification-phase-2.md`.

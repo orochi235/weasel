@@ -20,6 +20,7 @@ export function defaultSelectAllAction(deps: SelectAllDeps): Action {
     id: 'selectAll',
     label: 'Select All',
     defaultBinding: { key: 'a', mod: true },
+    gestureBinding: { kind: 'key', key: 'a', mods: { mod: true } },
     run: () => {
       const all = deps.listAll();
       if (all.length === 0) return;

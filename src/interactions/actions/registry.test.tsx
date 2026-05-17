@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act, render } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { ActionsProvider, useActionsRegistry, type Action, type ActionsRegistry } from './registry';
+import type { GestureSpec } from '../gestures/spec';
 
 function wrap({ children }: { children: ReactNode }) {
   return <ActionsProvider>{children}</ActionsProvider>;
@@ -197,5 +198,67 @@ describe('ActionsRegistry — full coverage', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k' }));
     expect(a).toHaveBeenCalledOnce();
     expect(b).not.toHaveBeenCalled();
+  });
+});
+
+describe('Action with new invoker / GestureSpec fields (Phase 1 additive)', () => {
+  it('accepts an immediate invoker', () => {
+    const action: Action = {
+      id: 'demo.immediate',
+      label: 'Demo immediate',
+      run: () => {},
+      invoker: {
+        timing: 'immediate',
+        run: (_deps) => {},
+      },
+    };
+    expect(action.invoker?.timing).toBe('immediate');
+  });
+
+  it('accepts an ongoing invoker', () => {
+    const action: Action = {
+      id: 'demo.ongoing',
+      label: 'Demo ongoing',
+      run: () => {},
+      invoker: {
+        timing: 'ongoing',
+        start: () => ({}),
+      },
+    };
+    expect(action.invoker?.timing).toBe('ongoing');
+  });
+
+  it('accepts a GestureSpec on gestureBinding', () => {
+    const gestureSpec: GestureSpec = { kind: 'wheel', mods: { ctrl: true } };
+    const action: Action = {
+      id: 'demo.wheel',
+      label: 'Demo wheel',
+      gestureBinding: gestureSpec,
+      run: () => {},
+    };
+    expect(action.gestureBinding).toEqual({ kind: 'wheel', mods: { ctrl: true } });
+  });
+
+  it('legacy KeyBinding shape on defaultBinding still compiles (unchanged from v1)', () => {
+    const action: Action = {
+      id: 'demo.legacy',
+      label: 'Demo legacy',
+      defaultBinding: { key: 'a', mod: true },
+      run: () => {},
+    };
+    expect(action.defaultBinding).toBeDefined();
+  });
+
+  it('accepts an array of GestureSpec on gestureBinding (multi-binding actions)', () => {
+    const action: Action = {
+      id: 'demo.multi',
+      label: 'Demo multi',
+      gestureBinding: [
+        { kind: 'key', key: 'z', mods: { mod: true } },
+        { kind: 'key', key: 'z', mods: { mod: true, shift: true } },
+      ],
+      run: () => {},
+    };
+    expect(Array.isArray(action.gestureBinding)).toBe(true);
   });
 });

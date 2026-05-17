@@ -30,9 +30,17 @@ describe('defaultFlipActions', () => {
     const a = defaultFlipActions(makeDeps()).find(x => x.id === 'flip.horizontal')!;
     expect(a.defaultBinding).toEqual({ key: ['h', 'H'], shift: true });
   });
+  it('flip.horizontal gestureBinding = key(h/H, shift)', () => {
+    const a = defaultFlipActions(makeDeps()).find(x => x.id === 'flip.horizontal')!;
+    expect(a.gestureBinding).toEqual({ kind: 'key', key: ['h', 'H'], mods: { shift: true } });
+  });
   it('flip.vertical binding = Shift+V', () => {
     const a = defaultFlipActions(makeDeps()).find(x => x.id === 'flip.vertical')!;
     expect(a.defaultBinding).toEqual({ key: ['v', 'V'], shift: true });
+  });
+  it('flip.vertical gestureBinding = key(v/V, shift)', () => {
+    const a = defaultFlipActions(makeDeps()).find(x => x.id === 'flip.vertical')!;
+    expect(a.gestureBinding).toEqual({ kind: 'key', key: ['v', 'V'], mods: { shift: true } });
   });
   it('labels are "Flip Horizontal" / "Flip Vertical"', () => {
     const acts = defaultFlipActions(makeDeps());

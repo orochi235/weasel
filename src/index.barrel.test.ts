@@ -104,3 +104,10 @@ describe('kit barrel parity', () => {
     }
   });
 });
+
+describe('Phase 1 registry-unification exports', () => {
+  it('exposes Phase 1 value exports on the main barrel', () => {
+    expect(Barrel.ActiveToolContextProvider).toBeDefined();
+    expect(Barrel.useActiveToolContext).toBeDefined();
+  });
+});

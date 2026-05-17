@@ -43,4 +43,8 @@ describe('defaultSelectAllAction', () => {
     a.run();
     expect(setSelection).not.toHaveBeenCalled();
   });
+  it('declares gestureBinding mirroring defaultBinding', () => {
+    const a = defaultSelectAllAction(baseDeps);
+    expect(a.gestureBinding).toEqual({ kind: 'key', key: 'a', mods: { mod: true } });
+  });
 });

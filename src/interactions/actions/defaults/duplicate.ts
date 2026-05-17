@@ -25,6 +25,7 @@ export function defaultDuplicateAction(deps: DuplicateDeps): Action {
     id: 'duplicate',
     label: 'Duplicate',
     defaultBinding: { key: 'd', mod: true },
+    gestureBinding: { kind: 'key', key: 'd', mods: { mod: true } },
     run: () => {
       const sel = deps.getSelection();
       if (sel.length === 0) return;

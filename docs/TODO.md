@@ -312,7 +312,10 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
 
 ## Taxonomy alignment
 
-- **Unify the registry.** Every state-changing user operation should be a registered Action, regardless of input shape. Drag-based ops (move, resize, rotate, insert, area-select, lasso-select, edit-anchors, clone) now live under `src/interactions/actions/` but are still invoked through direct hooks (`useMove`, `useResize`, …) rather than the action registry. The target: drag-based ops become actions invokable via a gesture binding; one-shot ops (delete, align) become actions invokable via keystroke or button. Same registry, same enabled-state machinery, same command palette discoverability. Removes the "action-gesture hooks predate the registry" hedge entirely.
+- **Unify the registry.** Every state-changing user operation should be a registered Action, regardless of input shape. Drag-based ops (move, resize, rotate, insert, area-select, lasso-select, edit-anchors, clone) now live under `src/interactions/actions/` but are still invoked through direct hooks (`useMove`, `useResize`, …) rather than the action registry. Spec: `docs/superpowers/specs/2026-05-16-registry-unification-design.md`. Plans per phase under `docs/superpowers/plans/2026-05-16-registry-unification-phase-N.md`. Status:
+  - Phase 1 (types + skeleton): shipped 2026-05-16 — additive types only (`GestureSpec`, `Invoker`, `GestureBinding`, `ActiveToolContext`; `Action` gains optional `invoker` and `gestureBinding` fields; `Tool` gains optional `bindings`). No runtime behavior change.
+  - Phase 2 (gestureBinding population): shipped 2026-05-16 — every default immediate-action factory now declares `gestureBinding: GestureSpec` mirroring its `defaultBinding`. `GestureSpec` extended to cover multi-key, mod shorthand, and optional-shift. `Action.gestureBinding` widened to accept arrays. No runtime behavior change.
+  - Phases 3–9: pending. (Phase 3 builds the gesture dispatcher; later phases port ongoing actions, dissolve ambient tools, and delete legacy hook surfaces.)
 
 ## UX recordings
 

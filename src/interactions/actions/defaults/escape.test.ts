@@ -25,4 +25,8 @@ describe('defaultEscapeAction', () => {
     const a = defaultEscapeAction({ getSelection: () => [], setSelection: vi.fn() });
     expect(a.defaultBinding?.preventDefault).toBeUndefined();
   });
+  it('declares gestureBinding mirroring defaultBinding', () => {
+    const a = defaultEscapeAction({ getSelection: () => [asNodeId('a')], setSelection: vi.fn() });
+    expect(a.gestureBinding).toEqual({ kind: 'key', key: 'Escape' });
+  });
 });

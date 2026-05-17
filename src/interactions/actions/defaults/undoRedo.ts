@@ -20,6 +20,7 @@ export function defaultUndoRedoActions(deps: UndoRedoDeps): Action[] {
       id: 'undo',
       label: 'Undo',
       defaultBinding: { key: 'z', mod: true },
+      gestureBinding: { kind: 'key', key: 'z', mods: { mod: true } },
       run: () => { deps.undo(); },
       ...(deps.canUndo
         ? { enabled: () => (deps.canUndo!() ? true : 'not-applicable' as const) }
@@ -29,6 +30,7 @@ export function defaultUndoRedoActions(deps: UndoRedoDeps): Action[] {
       id: 'redo',
       label: 'Redo',
       defaultBinding: { key: 'z', mod: true, shift: true },
+      gestureBinding: { kind: 'key', key: 'z', mods: { mod: true, shift: true } },
       run: () => { deps.redo(); },
       ...(deps.canRedo
         ? { enabled: () => (deps.canRedo!() ? true : 'not-applicable' as const) }

@@ -18,6 +18,7 @@ export function defaultEscapeAction(deps: EscapeDeps): Action {
     id: 'escape',
     label: 'Escape',
     defaultBinding: { key: 'Escape' },
+    gestureBinding: { kind: 'key', key: 'Escape' },
     run: () => {
       const sel = deps.getSelection();
       if (sel.length === 0) return;
