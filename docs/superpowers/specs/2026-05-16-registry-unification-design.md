@@ -103,19 +103,24 @@ scoped by an active-tool context.
 **Decision: variant (d) — Action descriptor with pluggable Invoker.**
 
 ```ts
-type Action = {
+type Action<R extends readonly DepName[] = readonly DepName[]> = {
   id: string
   label: string
-  defaultBinding?: GestureSpec
-  enabled?: (deps: ActionDeps) => boolean
-  invoker: Invoker
+  defaultBinding?: GestureSpec | GestureSpec[]
+  requires?: R
+  enabled?: (deps: Pick<DepSchema, R[number]>) => boolean | ActionDisabledReason
+  invoker: Invoker<R>
   presentation?: { icon?: string; group?: string }
 }
 
-type Invoker =
-  | { timing: 'immediate'; run(deps: ActionDeps): void }
-  | { timing: 'ongoing'; start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle }
+type Invoker<R extends readonly DepName[]> =
+  | { timing: 'immediate'; run(deps: Pick<DepSchema, R[number]>): void }
+  | { timing: 'ongoing'; start(ctx: InvocationCtx<R>, opts?: BindingOpts): OngoingHandle }
 ```
+
+Deps reach the invoker via a typed `DepSchema` and a central dep
+registry; actions declare `requires: ['selection'] as const`. See § "Dep
+registry".
 
 Discriminator field is `timing`; variants are `immediate` and
 `ongoing`. New invocation kinds (long-press, modal-dialog, two-stage)
@@ -207,15 +212,15 @@ dispatcher pumps.**
 
 ```ts
 type OngoingHandle = {
-  onMove?(ctx: InvocationCtx): void
-  onEnd?(ctx: InvocationCtx, reason: 'commit' | 'cancel'): void
+  onMove?(ctx: InvocationCtx<any>): void
+  onEnd?(ctx: InvocationCtx<any>, reason: 'commit' | 'cancel'): void
 }
 
-type InvocationCtx = {
+type InvocationCtx<R extends readonly DepName[]> = {
   world: { x: number; y: number }
   screen: { x: number; y: number }
   modifiers: ModifierState
-  deps: ActionDeps
+  deps: Pick<DepSchema, R[number]>
   // gesture-specific fields filled by the dispatcher per GestureSpec kind:
   drag?: { start: Point; current: Point; delta: Point }
   wheel?: { deltaX: number; deltaY: number; deltaZ: number }
@@ -232,9 +237,11 @@ GestureSpec → calls `start(ctx, opts)` → captures the returned handle
 For `immediate` actions there's no handle — `invoker.run(deps)` is
 called once and the dispatcher moves on.
 
-`ActionDeps` is action-defined: actions declare which contexts they
-consume (selection, view, scene, custom) and the dispatcher composes
-them. This avoids one large god-Deps shape.
+Deps are typed via a central `DepSchema`. Each action declares its dep
+needs in `requires: ['selection', 'view'] as const`; the dispatcher
+looks up live values from a dep registry and builds the typed Deps bag
+at invocation time. Pure descriptors (no closure capture). See § "Dep
+registry" below.
 
 ### B — ambient restructure
 
@@ -300,39 +307,33 @@ type TargetSpec =
 
 // ──────────────────────────────────────────────────────────────
 // Actions — registered with the kit; both timings supported.
+// Actions are pure descriptors (no closures): each declares which
+// deps it needs via `requires`, and the dispatcher composes a typed
+// Deps bag at invocation time from the dep registry (see § "Dep
+// registry" below).
 // ──────────────────────────────────────────────────────────────
-type Action = {
+type Action<R extends readonly DepName[] = readonly DepName[]> = {
   id: string
   label: string
-  defaultBinding?: GestureSpec
-  enabled?: (deps: ActionDeps) => boolean
-  invoker: Invoker
+  defaultBinding?: GestureSpec | GestureSpec[]
+  requires?: R
+  enabled?: (deps: Pick<DepSchema, R[number]>) => boolean | ActionDisabledReason
+  invoker: Invoker<R>
   presentation?: { icon?: string; group?: string }
 }
 
-type Invoker =
-  | { timing: 'immediate'; run(deps: ActionDeps): void }
-  | { timing: 'ongoing'; start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle }
+type Invoker<R extends readonly DepName[]> =
+  | { timing: 'immediate'; run(deps: Pick<DepSchema, R[number]>): void }
+  | { timing: 'ongoing'; start(ctx: InvocationCtx<R>, opts?: BindingOpts): OngoingHandle }
 
 type OngoingHandle = {
-  onMove?(ctx: InvocationCtx): void
-  onEnd?(ctx: InvocationCtx, reason: 'commit' | 'cancel'): void
+  onMove?(ctx: InvocationCtx<any>): void
+  onEnd?(ctx: InvocationCtx<any>, reason: 'commit' | 'cancel'): void
 }
 
 type BindingOpts = {
   behaviors?: ActionBehavior<any, any, any>[]
   // future: snap, custom params, etc.
-}
-
-// ActionDeps is action-defined. Convention:
-type ActionDeps = {
-  selection?: SelectionApi
-  view?: ViewportApi
-  scene?: SceneApi
-  pointer?: PointerApi
-  activeTool?: ActiveToolApi
-  // consumer-side contexts (e.g. ColorContext) plug in by adapter
-  [k: string]: unknown
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -365,6 +366,50 @@ type ActiveToolContextValue = {
   popHotkey(): void
 }
 ```
+
+## Dep registry
+
+Actions are pure descriptors. Their dep needs (selection, view, scene,
+etc.) come from a central registry the dispatcher consults at
+invocation time. This avoids closure-capture and lets actions be
+serialized, introspected, and tested with mock deps.
+
+```ts
+// Central typed schema. Consumers extend via declaration merging.
+interface DepSchema {
+  selection: SelectionApi
+  view: ViewApi
+  scene: SceneApi
+  history: History
+  pointer: PointerApi
+  activeTool: ActiveToolContextValue
+  // Swill (consumer) augments:
+  //   declare module '@orochi235/weasel' {
+  //     interface DepSchema { color: ColorContextValue }
+  //   }
+}
+
+type DepName = keyof DepSchema
+
+type DepRegistry = {
+  // Each source is a thunk that returns the latest live value.
+  // Lifecycle is React-driven: providers register/unregister on mount.
+  register<K extends DepName>(name: K, source: () => DepSchema[K]): () => void
+  get<K extends DepName>(name: K): DepSchema[K] | undefined
+}
+```
+
+A React seam (e.g. `<DepSourceProvider name="selection" source={selectionApi}>`,
+or auto-wired by `<SceneCanvas>` and individual context providers)
+populates the registry. Actions declare `requires: ['selection'] as
+const`; the dispatcher reads the listed deps via the registry and
+builds the typed bag before invoking `run` or `start`.
+
+Migration of closure-style factories: today's `defaultEscapeAction({
+getSelection, setSelection })` becomes a static `escapeAction` that
+declares `requires: ['selection']` and reads `selection.get()` /
+`selection.set([])` from the deps bag at invocation time. No more
+factory per action.
 
 ## Dispatcher contract
 
@@ -484,54 +529,68 @@ Swill).
 
 ## Phased plan
 
-One branch (`registry-unification`), nine commits. Each commit keeps
-the kit green (`tsc --noEmit && vitest run && tsup build`).
+One branch (`registry-unification`), ten phases. Each phase keeps the
+kit green (`tsc --noEmit && vitest run && tsup build`).
 
-1. **Types + skeleton.** Introduce `Action`, `Invoker`, `GestureSpec`,
-   `GestureBinding`, `Tool`, `ActiveToolContext`. Wire `Action` and
-   `Invoker` into the existing registry as additions (existing
-   `Action.run` continues to work in this commit only — preserved for
-   incremental porting, removed in phase 8).
-2. **Populate `gestureBinding` on existing immediate actions.** Pure
-   structural change: every existing one-shot action gains a typed
-   `GestureSpec` for its keybinding. Existing dispatch unchanged.
-3. **Build the gesture dispatcher.** New module
-   `src/interactions/dispatcher/` reading active-tool context, ambient
-   bindings, tool bindings; matching `GestureSpec` against input
-   events; pumping `OngoingHandle`. Tests cover precedence, scope
-   collection, phase pumping, pointercancel/escape.
-4. **Introduce `ActiveToolContext`.** Replace the existing tools-state
+1. **Types + skeleton (shipped).** Introduced `Action`, `Invoker`,
+   `GestureSpec`, `GestureBinding`, `Tool`, `ActiveToolContext`. Wired
+   into the existing registry as additions. `Action.run` (legacy) and
+   `Action.defaultBinding: KeyBinding` coexist with the new fields;
+   the legacy field is renamed and deleted in Phase 10. Branch
+   `registry-unification-phase-1`.
+2. **Populate `gestureBinding` on existing immediate actions
+   (shipped).** Every existing one-shot action factory gained a
+   typed `GestureSpec` (or array) mirroring its `defaultBinding`.
+   Existing dispatch unchanged. `GestureSpec` extended to cover
+   multi-key, mod shorthand, optional-shift.
+3. **Build the dep registry + gesture dispatcher.** New modules:
+   - `src/interactions/actions/depRegistry.ts` — typed `DepSchema`,
+     register/get API, React seam for live sources.
+   - `src/interactions/dispatcher/` — reads active-tool context,
+     ambient bindings, tool bindings; matches `GestureSpec` against
+     input events; pumps `OngoingHandle`; composes deps from the
+     registry for invocation.
+   Tests cover precedence, scope collection, phase pumping,
+   pointercancel/escape, dep lifecycle.
+4. **Migrate existing immediate-action factories to descriptor form.**
+   The 9 factories in `src/interactions/actions/defaults/` switch from
+   closure-style (`defaultEscapeAction(deps)`) to pure descriptors
+   (`escapeAction: Action<['selection']>` with `requires` and a `run`
+   that reads from the deps bag). `useStandardActions` becomes "register
+   dep sources with the dep registry." Per-action `XDeps` interfaces
+   collapse into the central `DepSchema`.
+5. **Introduce `ActiveToolContext`.** Replace the existing tools-state
    machinery with the context. Tool registry stays a separate
    build-time `Map<id, Tool>`. Hotkey stack moves to context. The old
    slot mechanics (`active` / `hotkey` / `ambient` slots in the tool
    dispatcher) collapse to: `active` = `context.active`, `hotkey` =
    `context.hotkeyStack`, `ambient` = global ambient bindings.
-5. **Port `move` end-to-end.** Proof-of-shape commit. Define `move` as
-   an ongoing action; rewrite `useSelectTool`'s move binding to a
-   `GestureBinding`. `useMove` hook stays (other tools still use it)
-   but now delegates to the registered action. Use this commit to
-   validate the dispatcher contract works on a real case.
-6. **Port remaining ongoing actions.** `resize`, `rotate`, `areaSelect`,
+6. **Port `move` end-to-end.** Proof-of-shape commit. Define `move` as
+   an ongoing action descriptor; rewrite `useSelectTool`'s move binding
+   to a `GestureBinding`. `useMove` hook stays (other tools still use
+   it) but now delegates to the registered action. Use this commit to
+   validate the dispatcher + dep registry contracts on a real case.
+7. **Port remaining ongoing actions.** `resize`, `rotate`, `areaSelect`,
    `lassoSelect`, `insert`, `clone`, `editAnchors`,
    `viewport.pinchZoom`. Tools update their bindings tables.
-7. **Port ambient tools to ambient bindings.** Delete the eight
+8. **Port ambient tools to ambient bindings.** Delete the eight
    wrapper-tools (`useWheelPanTool`, `useWheelZoomTool`,
    `useKeyboardZoomTool`, `usePinchZoomTool`, `useNudgeTool`,
    `useDeleteTool`, `useDuplicateTool`, `useUndoRedoTool`). Replace
    with ambient `GestureBinding[]` registered at kit-init time. Move
    `tool.hold:hand` into this list.
-8. **Restructure Swill's color context.** `useColorContextTool` →
-   `<ColorContextProvider>` + three immediate actions (`color.reset`,
-   `color.swap`, `color.toggleFocusedNone`) with their `defaultBinding`
-   populated. Property panel and eyedropper consume the context
-   directly.
-9. **Delete legacy.** Remove `useMove`/`useResize`/`useRotate`/etc.
-   hook surfaces (now only the registered actions remain). Remove
-   `Action.run` legacy field; everything goes through `Invoker`.
-   Remove the old tool-slot dispatcher code. Update `docs/taxonomy.md`
-   (drop the "narrower historical definition" caveat), `docs/TODO.md`
-   (delete the "Taxonomy alignment" section's last item), and demos
-   that hand-wired old hooks.
+9. **Restructure Swill's color context.** `useColorContextTool` →
+   `<ColorContextProvider>` + three immediate action descriptors
+   (`color.reset`, `color.swap`, `color.toggleFocusedNone`) that declare
+   `requires: ['color']` (a Swill-side `DepSchema` extension).
+10. **Delete legacy.** Remove `useMove`/`useResize`/`useRotate`/etc.
+    hook surfaces (now only the registered actions remain). Remove
+    `Action.run` and `Action.defaultBinding` (legacy fields); rename
+    `gestureBinding` → `defaultBinding`. Remove the old tool-slot
+    dispatcher and `useKeybinding`. Update `docs/taxonomy.md` (drop the
+    "narrower historical definition" caveat), `docs/TODO.md` (delete
+    the "Taxonomy alignment" section's last item), and demos that
+    hand-wired old hooks.
 
 ## Risks / open items
 
