@@ -15,6 +15,7 @@ export interface UndoRedoDeps {
 export const undoAction: Action = {
   id: 'undo',
   label: 'Undo',
+  defaultBinding: { key: 'z', mod: true },
   gestureBinding: { kind: 'key', key: 'z', mods: { mod: true } },
   invoker: {
     timing: 'immediate',
@@ -31,6 +32,7 @@ export const undoAction: Action = {
 export const redoAction: Action = {
   id: 'redo',
   label: 'Redo',
+  defaultBinding: { key: 'z', mod: true, shift: true },
   gestureBinding: { kind: 'key', key: 'z', mods: { mod: true, shift: true } },
   invoker: {
     timing: 'immediate',
