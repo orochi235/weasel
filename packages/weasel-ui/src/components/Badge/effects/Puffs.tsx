@@ -7,7 +7,7 @@ export interface PuffsEffectParams extends RangeMaskParams {
   irregularity?: number;
 }
 
-const DEFAULTS: Required<PuffsEffectParams> = {
+const DEFAULTS: Required<Omit<PuffsEffectParams, 'range'>> = {
   bumpWidth: 18,
   puffiness: 10,
   irregularity: 0,

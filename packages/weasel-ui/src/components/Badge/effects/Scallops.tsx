@@ -7,7 +7,7 @@ export interface ScallopsEffectParams extends RangeMaskParams {
   irregularity?: number;
 }
 
-const DEFAULTS: Required<ScallopsEffectParams> = {
+const DEFAULTS: Required<Omit<ScallopsEffectParams, 'range'>> = {
   scallopRadius: 4,
   scallopSpacing: 10,
   irregularity: 0,

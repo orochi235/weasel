@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Badge } from './Badge';
 import { ALL_SHAPES, SHAPES } from './shapes';
@@ -58,7 +58,10 @@ export const Default: Story = {};
 
 type ShapeControl =
   | { key: string; kind: 'range'; min: number; max: number; step: number; default: number }
-  | { key: string; kind: 'select'; options: string[]; default: string };
+  | { key: string; kind: 'select'; options: string[]; default: string }
+  | { key: string; kind: 'color'; default: string }
+  | { key: string; kind: 'text'; default: string }
+  | { key: string; kind: 'header'; label: string };
 
 const SHAPE_CONTROLS: Partial<Record<BadgeShape, ShapeControl[]>> = {
   square: [
@@ -176,7 +179,10 @@ const SHAPE_CONTROLS: Partial<Record<BadgeShape, ShapeControl[]>> = {
 function defaultParamsFor(shape: BadgeShape): Record<string, number | string> {
   const controls = SHAPE_CONTROLS[shape] ?? [];
   const init: Record<string, number | string> = {};
-  for (const c of controls) init[c.key] = c.default;
+  for (const c of controls) {
+    if (c.kind === 'header') continue;
+    init[c.key] = c.default;
+  }
   return init;
 }
 
@@ -298,6 +304,7 @@ function buildExport(allParams: Record<BadgeShape, Record<string, number | strin
     if (!current || controls.length === 0) continue;
     const changed: Record<string, number | string> = {};
     for (const c of controls) {
+      if (c.kind === 'header') continue;
       if (current[c.key] !== c.default) changed[c.key] = current[c.key];
     }
     if (Object.keys(changed).length > 0) diff[shape] = changed;
@@ -446,7 +453,7 @@ export const ToneVariantMatrix: Story = {
 
 export const BaselineRow: Story = {
   name: 'Baseline justification',
-  render: (args) => (
+  render: (_args) => (
     <p style={{ fontSize: 14, lineHeight: 1.6 }}>
       Inline text with{' '}
       <Badge shape="pill" tone="accent" >pill</Badge>{' '}
@@ -477,7 +484,7 @@ export const Removable: Story = { args: { onRemove: () => {} } };
 export const Clickable: Story = { args: { onClick: () => {} } };
 
 export const EdgeCases: Story = {
-  render: (args) => (
+  render: (_args) => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'baseline', flexWrap: 'wrap' }}>
       <Badge tone="info" >A very long label that tests overflow</Badge>
       <Badge shape="plain" tone="warn" >
@@ -495,7 +502,7 @@ export const EdgeCases: Story = {
 
 export const InlineWrapping: Story = {
   name: 'Edge case: inline wrap mid-badge',
-  render: (args) => (
+  render: (_args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 360, lineHeight: 1.7 }}>
       <p style={{ margin: 0 }}>
         A normal paragraph that contains{' '}
@@ -643,7 +650,7 @@ export const ComposeShowcase: Story = {
 
 export const SlotPillReplica: Story = {
   name: 'Slot pill (migration parity)',
-  render: (args) => (
+  render: (_args) => (
     <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
       <Badge shape="pill" tone="accent" variant="outline" >active</Badge>
       <Badge shape="pill" tone="warn" variant="outline" >ambient</Badge>
@@ -807,7 +814,8 @@ interface LabEffect { id: number; type: BadgeEffect; params: Record<string, numb
 interface LabPreset {
   name: string;
   base: BadgeBase;
-  baseParams: Record<string, number | string>;
+  // Widened to allow array-valued params (e.g. polygon `vertices: [[x, y], …]`).
+  baseParams: Record<string, number | string | number[][]>;
   effects: { type: BadgeEffect; params: Record<string, number | string> }[];
 }
 
@@ -1017,7 +1025,6 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
     const el = previewInnerRef.current;
     if (!el) return;
     const measure = () => {
-      const r = el.getBoundingClientRect();
       // We want the natural size, but the element is scaled. Read offsetWidth/Height
       // (layout box, ignores transforms).
       setPreviewNatural({ w: el.offsetWidth, h: el.offsetHeight });
@@ -1031,7 +1038,10 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
 
   const loadPreset = (preset: LabPreset) => {
     setBase(preset.base);
-    setBaseParams({ ...defaultsFor(BASE_LAB_CONTROLS[preset.base]), ...preset.baseParams });
+    // baseParams in state is typed `Record<string, number | string>`; presets allow array-
+    // valued vertices for the polygon base. Cast at the boundary — runtime is fine because
+    // BASES[base].build() narrows per-base.
+    setBaseParams({ ...defaultsFor(BASE_LAB_CONTROLS[preset.base]), ...preset.baseParams } as Record<string, number | string>);
     let id = nextId;
     const next: LabEffect[] = [];
     for (const e of preset.effects) {
@@ -1108,7 +1118,7 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
 
   const ctrlLabel: CSSProperties = { fontSize: 10, opacity: 0.7, fontFamily: 'Helvetica, Arial, sans-serif' };
 
-  const toggleBar = <T extends string>(value: T, options: readonly T[], onChange: (v: T) => void): JSX.Element => (
+  const toggleBar = <T extends string>(value: T, options: readonly T[], onChange: (v: T) => void): ReactElement => (
     <div style={{ display: 'inline-flex', borderRadius: 4, overflow: 'hidden', border: '1px solid rgba(127, 176, 105, 0.4)' }}>
       {options.map((opt) => (
         <button
@@ -1406,7 +1416,7 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
                   {(BASE_LAB_CONTROLS[base] ?? [])
                     .filter((c) => !/^[srw]\d+$/.test(c.key) && c.key !== 'mode')
                     .map((c) => {
-                      if (c.key === 'count') {
+                      if (c.key === 'count' && c.kind !== 'header') {
                         return renderControl(c, baseParams[c.key] ?? c.default, (v) => handleCountChange(Number(v)));
                       }
                       return renderControl(c, baseParams[c.key], (v) => setBaseParams((p) => ({ ...p, [c.key]: v })));

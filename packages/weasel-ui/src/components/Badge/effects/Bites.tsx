@@ -7,7 +7,7 @@ export interface BitesEffectParams extends RangeMaskParams {
   irregularity?: number;
 }
 
-const DEFAULTS: Required<BitesEffectParams> = {
+const DEFAULTS: Required<Omit<BitesEffectParams, 'range'>> = {
   biteRadius: 3,
   biteSpacing: 8,
   irregularity: 0,

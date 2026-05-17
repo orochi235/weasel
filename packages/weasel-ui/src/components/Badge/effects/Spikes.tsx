@@ -17,7 +17,7 @@ export interface SpikesEffectParams extends RangeMaskParams {
   cornerCompensation?: number;
 }
 
-const DEFAULTS: Required<SpikesEffectParams> = {
+const DEFAULTS: Required<Omit<SpikesEffectParams, 'range'>> = {
   count: 44,
   length: 8,
   baseWidth: 3,
