@@ -9,7 +9,7 @@ describe('shape registry', () => {
       'hexagon',
       'starburst', 'scalloped', 'shield', 'ribbon', 'beavis',
       'sparkler', 'postage', 'cloud', 'house', 'plaque',
-      'bat', 'crest', 'urn', 'coffin', 'receipt', 'wood', 'leaves',
+      'crest', 'urn', 'coffin', 'receipt', 'wood',
     ]);
   });
 
@@ -31,8 +31,9 @@ describe('every shape renders at least one geometry element', () => {
     if (m.renderMode === 'css') continue;
     // Compose-mode shapes render through the base/effects pipeline, which needs the full Badge.
     if (!m.Component) continue;
+    const Component = m.Component;
+    const defaults = m.defaults;
     it(`${name} renders content for outline variant`, () => {
-      const { Component, defaults } = m;
       const { container } = render(
         <svg viewBox="0 0 100 100">
           <Component variant="outline" focused={false} params={defaults ?? {}} phase={0} />

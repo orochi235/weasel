@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type CSSP
 import s from './Badge.module.css';
 import { SHAPES, type BadgeShapeParams } from './shapes';
 import { BASES, type BadgeBase, type BadgeBaseParams } from './bases';
-import { EFFECTS, type EffectSpec } from './effects';
+import { EFFECTS, type EffectSpec, type BadgeEffect } from './effects';
 import type { BadgeShape, BadgeTone, BadgeVariant, BadgeSize } from './types';
 
 interface BadgeBaseProps {
@@ -25,8 +25,6 @@ interface BadgeBaseProps {
   baseParams?: BadgeBaseParams[BadgeBase];
   /** Compose-mode: layered effects applied around / over the base. */
   effects?: EffectSpec[];
-  dot?: boolean;
-  leadingIcon?: ReactNode;
   onClick?: () => void;
   onRemove?: () => void;
   removeLabel?: string;
@@ -56,8 +54,6 @@ export function Badge(props: BadgeProps) {
     tone = 'neutral',
     variant = 'outline',
     size = 'sm',
-    dot,
-    leadingIcon,
     onClick,
     onRemove,
     removeLabel,
@@ -149,7 +145,7 @@ export function Badge(props: BadgeProps) {
   const commonProps = {
     className: cls,
     style,
-    'data-shape': resolvedShape,
+    'data-shape': composeBase ? 'compose' : resolvedShape,
     'data-tone': tone,
     'data-variant': variant,
     'data-size': size,
@@ -159,16 +155,45 @@ export function Badge(props: BadgeProps) {
     'aria-label': ariaLabel,
   };
 
+  // Honest chaining: sample the base perimeter at COMPOSE_SAMPLES points and sum every
+  // offset-style effect's contribution at each sample. Stacked transforms therefore compose
+  // additively — `[bites, spikes]` produces a bitten outline with spikes radiating from
+  // wherever bites haven't dented inward.
+  const COMPOSE_SAMPLES = 600;
   const composedSampler = (() => {
     if (!composeBase || !sampler) return null;
-    let working = sampler;
-    for (const eff of resolvedEffects ?? []) {
-      const mod = EFFECTS[eff.type as keyof typeof EFFECTS];
-      if (!mod?.transform) continue;
-      const effParams = { ...(mod.defaults ?? {}), ...(eff.params ?? {}) };
-      working = mod.transform(working, { boxW: box.w, boxH: box.h, params: effParams, phase });
+    const offsetMods = (resolvedEffects ?? [])
+      .map((eff) => {
+        const mod = EFFECTS[eff.type as keyof typeof EFFECTS];
+        if (!mod?.offsetAt) return null;
+        const effParams = { ...(mod.defaults ?? {}), ...(eff.params ?? {}) };
+        return { offsetAt: mod.offsetAt, params: effParams };
+      })
+      .filter(Boolean) as { offsetAt: NonNullable<typeof EFFECTS[BadgeEffect]['offsetAt']>; params: Record<string, unknown> }[];
+    if (offsetMods.length === 0) return sampler;
+    const sx = 100 / box.w;
+    const sy = 100 / box.h;
+    let d = '';
+    for (let i = 0; i < COMPOSE_SAMPLES; i++) {
+      const sCss = (i / COMPOSE_SAMPLES) * sampler.totalCss;
+      const pt = sampler.perimeterAt(sCss);
+      let dx = 0, dy = 0;
+      for (const m of offsetMods) {
+        const o = m.offsetAt(sCss, {
+          params: m.params as never,
+          phase,
+          totalCss: sampler.totalCss,
+          perimeterAt: sampler.perimeterAt,
+        });
+        dx += o.dx;
+        dy += o.dy;
+      }
+      const x = pt.x + dx * sx;
+      const y = pt.y + dy * sy;
+      d += (i === 0 ? `M ${x.toFixed(3)} ${y.toFixed(3)}` : ` L ${x.toFixed(3)} ${y.toFixed(3)}`);
     }
-    return working;
+    d += ' Z';
+    return { bodyPath: d, perimeterAt: sampler.perimeterAt, totalCss: sampler.totalCss };
   })();
 
   const decoEffects = (resolvedEffects ?? []).filter((eff) => EFFECTS[eff.type as keyof typeof EFFECTS]?.Component);
@@ -205,8 +230,6 @@ export function Badge(props: BadgeProps) {
     <>
       {decoSvg}
       <span className={s.content}>
-        {dot && <span className={s.dot} data-badge-dot />}
-        {leadingIcon && <span className={s.icon} aria-hidden="true">{leadingIcon}</span>}
         <span>{children}</span>
         {onRemove && (
           <button
@@ -218,7 +241,9 @@ export function Badge(props: BadgeProps) {
               onRemove();
             }}
           >
-            ×
+            <svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true" focusable="false">
+              <path d="M 2 2 L 8 8 M 8 2 L 2 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+            </svg>
           </button>
         )}
       </span>

@@ -15,13 +15,11 @@ import Postage, { type PostageParams } from './Postage';
 import Cloud, { type CloudParams } from './Cloud';
 import House, { type HouseParams } from './House';
 import Plaque, { type PlaqueParams } from './Plaque';
-import Bat, { type BatParams } from './Bat';
 import Crest, { type CrestParams } from './Crest';
 import Urn from './Urn';
 import Coffin, { type CoffinParams } from './Coffin';
 import Receipt, { type ReceiptParams } from './Receipt';
 import Wood from './Wood';
-import Leaves from './Leaves';
 
 export interface BadgeShapeParams {
   pill: Record<string, never>;
@@ -40,13 +38,11 @@ export interface BadgeShapeParams {
   cloud: CloudParams;
   house: HouseParams;
   plaque: PlaqueParams;
-  bat: BatParams;
   crest: CrestParams;
   urn: Record<string, never>;
   coffin: CoffinParams;
   receipt: ReceiptParams;
   wood: Record<string, never>;
-  leaves: Record<string, never>;
 }
 
 export const SHAPES: Record<BadgeShape, ShapeModule<any>> = {
@@ -66,13 +62,11 @@ export const SHAPES: Record<BadgeShape, ShapeModule<any>> = {
   cloud: Cloud,
   house: House,
   plaque: Plaque,
-  bat: Bat,
   crest: Crest,
   urn: Urn,
   coffin: Coffin,
   receipt: Receipt,
   wood: Wood,
-  leaves: Leaves,
 };
 
 export const ALL_SHAPES: BadgeShape[] = [
@@ -80,5 +74,5 @@ export const ALL_SHAPES: BadgeShape[] = [
   'hexagon',
   'starburst', 'scalloped', 'shield', 'ribbon', 'beavis',
   'sparkler', 'postage', 'cloud', 'house', 'plaque',
-  'bat', 'crest', 'urn', 'coffin', 'receipt', 'wood', 'leaves',
+  'crest', 'urn', 'coffin', 'receipt', 'wood',
 ];

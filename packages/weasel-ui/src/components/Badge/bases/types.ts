@@ -35,9 +35,10 @@ export interface EffectRenderProps<P = Record<string, never>> {
   phase: number;
 }
 
-export interface EffectTransformCtx<P = Record<string, never>> {
-  boxW: number;
-  boxH: number;
+export interface EffectOffsetCtx<P = Record<string, never>> {
+  /** CSS px offset from the base perimeter point, in CSS px (caller scales to viewBox). */
+  totalCss: number;
+  perimeterAt: (s: number) => PerimeterPoint;
   params: P;
   phase: number;
 }
@@ -45,17 +46,20 @@ export interface EffectTransformCtx<P = Record<string, never>> {
 /**
  * An effect layers visual treatment on top of the base shape. Two modes:
  *
- * - **transform**: replace the badge's silhouette. Spikes/scallops/bites/puffs use this —
- *   they hand back a new sampler whose `bodyPath` is the warped outline. Multiple
- *   transforms apply in array order; each receives the previous output.
+ * - **offsetAt**: warp the perimeter. At each sample point `s` along the base perimeter,
+ *   the effect contributes an additive (dx, dy) in CSS px to displace that sample.
+ *   Spikes/puffs/bites/scallops use this. Multiple offset-style effects in the same badge
+ *   compose by summing their offsets — so `[bites, spikes]` honestly draws a bitten outline
+ *   with spikes radiating from it (the spike center samples just sit further out, but the
+ *   inner bite samples between spikes still dip in).
  * - **Component + zone**: draw decoration (bevel, sheen, woodgrain, rivets, shadow)
  *   without changing the silhouette. `zone: 'background'` draws before the body,
  *   `'foreground'` draws after. Decorations typically clip to the current sampler.
  *
- * An effect may provide one, the other, or both.
+ * An effect may provide either or both.
  */
 export interface EffectModule<P = Record<string, never>> {
-  transform?: (input: BaseSampler, ctx: EffectTransformCtx<P>) => BaseSampler;
+  offsetAt?: (s: number, ctx: EffectOffsetCtx<P>) => { dx: number; dy: number };
   Component?: (props: EffectRenderProps<P>) => ReactNode;
   /** Where decoration sits relative to the body silhouette. Default 'foreground'. */
   zone?: 'background' | 'foreground';

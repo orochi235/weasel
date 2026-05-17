@@ -5,7 +5,7 @@ export type BadgeShape =
   | 'hexagon'
   | 'starburst' | 'scalloped' | 'shield' | 'ribbon' | 'beavis'
   | 'sparkler' | 'postage' | 'cloud' | 'house' | 'plaque'
-  | 'bat' | 'crest' | 'urn' | 'coffin' | 'receipt' | 'wood' | 'leaves';
+  | 'crest' | 'urn' | 'coffin' | 'receipt' | 'wood';
 
 export type BadgeTone =
   | 'accent' | 'info' | 'warn' | 'danger' | 'muted' | 'neutral';

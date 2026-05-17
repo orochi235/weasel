@@ -3,6 +3,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Badge } from './Badge';
 import { ALL_SHAPES } from './shapes';
 import type { BadgeShape, BadgeTone, BadgeVariant } from './types';
+import { BASES, type BadgeBase } from './bases';
+import { EFFECTS, type BadgeEffect, type EffectSpec } from './effects';
 
 const TONES: BadgeTone[] = ['accent', 'info', 'warn', 'danger', 'muted', 'neutral'];
 const VARIANTS: BadgeVariant[] = ['outline', 'solid', 'subtle'];
@@ -36,14 +38,12 @@ const meta: Meta<typeof Badge> = {
       control: { type: 'range', min: 0, max: 2, step: 0.05 },
       description: 'Continuously shifts perimeter-pattern shapes (beavis, cloud). 0 = off; value = cycles per second.',
     },
-    dot: { control: 'boolean', description: 'Render the small dot indicator before the label.' },
     shapeParams: {
       control: 'object',
       description: "Shape-specific params, e.g. { erosion: 0.5 } for square/notched, { left: 'outward', right: 'inward' } for ribbon.",
     },
     onClick: { table: { disable: true } },
     onRemove: { table: { disable: true } },
-    leadingIcon: { table: { disable: true } },
     removeLabel: { table: { disable: true } },
     href: { table: { disable: true } },
     as: { table: { disable: true } },
@@ -132,10 +132,6 @@ const SHAPE_CONTROLS: Partial<Record<BadgeShape, ShapeControl[]>> = {
     { key: 'eaveY', kind: 'range', min: 5, max: 90, step: 1, default: 32 },
     { key: 'peakHeight', kind: 'range', min: 0, max: 60, step: 1, default: 32 },
     { key: 'roofOverhang', kind: 'range', min: 0, max: 12, step: 1, default: 0 },
-  ],
-  bat: [
-    { key: 'earHeight', kind: 'range', min: 8, max: 45, step: 1, default: 28 },
-    { key: 'wingDip', kind: 'range', min: 15, max: 55, step: 1, default: 32 },
   ],
   crest: [
     { key: 'topInset', kind: 'range', min: 0, max: 35, step: 1, default: 12 },
@@ -241,7 +237,7 @@ const SHAPE_CATEGORIES: { title: string; shapes: BadgeShape[] }[] = [
   },
   {
     title: 'Themed',
-    shapes: ['house', 'cloud', 'beavis', 'bat', 'crest', 'urn', 'coffin', 'receipt', 'wood', 'leaves'],
+    shapes: ['house', 'cloud', 'beavis', 'crest', 'urn', 'coffin', 'receipt', 'wood'],
   },
 ];
 
@@ -433,18 +429,6 @@ export const Sizes: Story = {
   },
 };
 
-export const WithDot: Story = { args: { dot: true } };
-
-export const WithLeadingIcon: Story = {
-  args: {
-    leadingIcon: (
-      <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
-        <circle cx="6" cy="6" r="3" />
-      </svg>
-    ),
-  },
-};
-
 export const Removable: Story = { args: { onRemove: () => {} } };
 
 export const Clickable: Story = { args: { onClick: () => {} } };
@@ -453,7 +437,10 @@ export const EdgeCases: Story = {
   render: (args) => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'baseline', flexWrap: 'wrap' }}>
       <Badge tone="info" strokeWidth={args.strokeWidth}>A very long label that tests overflow</Badge>
-      <Badge shape="plain" tone="warn" dot strokeWidth={args.strokeWidth}>live</Badge>
+      <Badge shape="plain" tone="warn" strokeWidth={args.strokeWidth}>
+        <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: 'currentColor', marginRight: 4, verticalAlign: 'middle' }} />
+        live
+      </Badge>
       <Badge shape="starburst" tone="danger" variant="solid" strokeWidth={args.strokeWidth}>NEW</Badge>
       <Badge shape="ribbon" tone="accent" shapeParams={{ left: 'outward', right: 'outward' } as never} strokeWidth={args.strokeWidth}>RIBBON</Badge>
       <Badge shape="perforated" tone="muted" strokeWidth={args.strokeWidth}>STAMP</Badge>
@@ -620,5 +607,263 @@ export const SlotPillReplica: Story = {
       <Badge shape="pill" tone="info" variant="outline" strokeWidth={args.strokeWidth}>hotkey</Badge>
       <Badge shape="pill" tone="danger" variant="solid" strokeWidth={args.strokeWidth}>inactive</Badge>
     </div>
+  ),
+};
+
+// --- Compose lab ----------------------------------------------------------
+
+type LabControl =
+  | { key: string; kind: 'range'; min: number; max: number; step: number; default: number }
+  | { key: string; kind: 'select'; options: string[]; default: string };
+
+const BASE_LAB_CONTROLS: Record<BadgeBase, LabControl[]> = {
+  'rounded-rect':   [{ key: 'erosion', kind: 'range', min: 0, max: 1, step: 0.02, default: 0.16 }],
+  'chamfered-rect': [{ key: 'chamfer', kind: 'range', min: 0, max: 25, step: 0.5, default: 6 }],
+};
+
+const EFFECT_LAB_CONTROLS: Record<BadgeEffect, LabControl[]> = {
+  spikes: [
+    { key: 'count',         kind: 'range',  min: 4,  max: 96, step: 1,    default: 44 },
+    { key: 'length',        kind: 'range',  min: 1,  max: 30, step: 0.5,  default: 8 },
+    { key: 'baseWidth',     kind: 'range',  min: 0.5, max: 12, step: 0.5, default: 3 },
+    { key: 'vertScale',     kind: 'range',  min: 0,  max: 3,  step: 0.05, default: 1.4 },
+    { key: 'horzScale',     kind: 'range',  min: 0,  max: 3,  step: 0.05, default: 1 },
+    { key: 'diagonalScale', kind: 'range',  min: 0,  max: 3,  step: 0.05, default: 0.5 },
+    { key: 'irregularity',  kind: 'range',  min: 0,  max: 1,  step: 0.05, default: 0 },
+  ],
+  puffs: [
+    { key: 'bumpWidth',     kind: 'range', min: 4, max: 50, step: 1, default: 18 },
+    { key: 'puffiness',     kind: 'range', min: 1, max: 30, step: 0.5, default: 10 },
+    { key: 'irregularity',  kind: 'range', min: 0, max: 1,  step: 0.05, default: 0 },
+  ],
+  bites: [
+    { key: 'biteRadius',    kind: 'range', min: 0.5, max: 8, step: 0.25, default: 3 },
+    { key: 'biteSpacing',   kind: 'range', min: 2, max: 24,  step: 0.5,  default: 8 },
+    { key: 'irregularity',  kind: 'range', min: 0, max: 1,   step: 0.05, default: 0 },
+  ],
+  scallops: [
+    { key: 'scallopRadius', kind: 'range', min: 1, max: 12, step: 0.5, default: 5 },
+    { key: 'scallopSpacing',kind: 'range', min: 4, max: 30, step: 1,   default: 12 },
+    { key: 'irregularity',  kind: 'range', min: 0, max: 1,  step: 0.05, default: 0 },
+  ],
+  bevel: [
+    { key: 'bevelWidth',    kind: 'range',  min: 0, max: 20, step: 0.5, default: 6 },
+    { key: 'lightFrom',     kind: 'select', options: ['tl', 'tr', 'bl', 'br'], default: 'tl' },
+  ],
+  sheen: [
+    { key: 'lightFrom',     kind: 'select', options: ['tl', 'tr', 'bl', 'br'], default: 'tl' },
+    { key: 'intensity',     kind: 'range',  min: 0, max: 0.5, step: 0.02, default: 0.22 },
+  ],
+  rivets: [
+    { key: 'radius',        kind: 'range',  min: 0, max: 6,  step: 0.2, default: 2.4 },
+    { key: 'inset',         kind: 'range',  min: 3, max: 16, step: 0.5, default: 7 },
+    { key: 'lightFrom',     kind: 'select', options: ['tl', 'tr', 'bl', 'br'], default: 'tl' },
+  ],
+  shadow: [
+    { key: 'dx',            kind: 'range', min: -6, max: 6, step: 0.25, default: 1 },
+    { key: 'dy',            kind: 'range', min: -6, max: 6, step: 0.25, default: 2 },
+    { key: 'opacity',       kind: 'range', min: 0,  max: 1, step: 0.02, default: 0.28 },
+  ],
+  woodgrain: [
+    { key: 'lines',         kind: 'range', min: 1, max: 10, step: 1, default: 4 },
+    { key: 'knots',         kind: 'range', min: 0, max: 6,  step: 1, default: 2 },
+    { key: 'intensity',     kind: 'range', min: 0, max: 1,  step: 0.05, default: 0.55 },
+  ],
+};
+
+const BASE_KEYS = Object.keys(BASES) as BadgeBase[];
+const EFFECT_KEYS = Object.keys(EFFECTS) as BadgeEffect[];
+
+function defaultsFor(controls: LabControl[]): Record<string, number | string> {
+  const obj: Record<string, number | string> = {};
+  for (const c of controls) obj[c.key] = c.default;
+  return obj;
+}
+
+interface LabEffect { id: number; type: BadgeEffect; params: Record<string, number | string> }
+
+function ComposeLabView({ tone, variant, strokeWidth, label }: {
+  tone: BadgeTone; variant: BadgeVariant; strokeWidth: number; label: string;
+}) {
+  const [base, setBase] = useState<BadgeBase>('rounded-rect');
+  const [baseParams, setBaseParams] = useState<Record<string, number | string>>(() => defaultsFor(BASE_LAB_CONTROLS['rounded-rect']));
+  const [labEffects, setLabEffects] = useState<LabEffect[]>([]);
+  const [nextId, setNextId] = useState(1);
+  const [exportText, setExportText] = useState<string | null>(null);
+
+  const onPickBase = (b: BadgeBase) => {
+    setBase(b);
+    setBaseParams(defaultsFor(BASE_LAB_CONTROLS[b]));
+  };
+  const addEffect = (type: BadgeEffect) => {
+    const params = defaultsFor(EFFECT_LAB_CONTROLS[type]);
+    setLabEffects((prev) => [...prev, { id: nextId, type, params }]);
+    setNextId((n) => n + 1);
+  };
+  const removeEffect = (id: number) => setLabEffects((prev) => prev.filter((e) => e.id !== id));
+  const updateEffect = (id: number, key: string, value: number | string) =>
+    setLabEffects((prev) => prev.map((e) => (e.id === id ? { ...e, params: { ...e.params, [key]: value } } : e)));
+  const moveEffect = (id: number, dir: -1 | 1) => setLabEffects((prev) => {
+    const idx = prev.findIndex((e) => e.id === id);
+    if (idx < 0) return prev;
+    const target = idx + dir;
+    if (target < 0 || target >= prev.length) return prev;
+    const next = [...prev];
+    [next[idx], next[target]] = [next[target], next[idx]];
+    return next;
+  });
+
+  const effectsForBadge: EffectSpec[] = labEffects.map((e) => ({ type: e.type, params: e.params as never }));
+
+  const buildExportText = () => {
+    const lines: string[] = [];
+    lines.push('<Badge');
+    lines.push(`  base="${base}"`);
+    if (Object.keys(baseParams).length > 0) {
+      const baseStr = Object.entries(baseParams).map(([k, v]) => `${k}: ${typeof v === 'string' ? JSON.stringify(v) : v}`).join(', ');
+      lines.push(`  baseParams={{ ${baseStr} }}`);
+    }
+    if (labEffects.length > 0) {
+      lines.push('  effects={[');
+      for (const eff of labEffects) {
+        const paramStr = Object.entries(eff.params).map(([k, v]) => `${k}: ${typeof v === 'string' ? JSON.stringify(v) : v}`).join(', ');
+        lines.push(`    { type: ${JSON.stringify(eff.type)}, params: { ${paramStr} } },`);
+      }
+      lines.push('  ]}');
+    }
+    lines.push(`  tone="${tone}" variant="${variant}"`);
+    lines.push(`>${label}</Badge>`);
+    return lines.join('\n');
+  };
+
+  const handleExport = () => {
+    const text = buildExportText();
+    setExportText(text);
+    if (typeof navigator !== 'undefined' && navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
+  };
+
+  const ctrlLabel: CSSProperties = { fontSize: 10, opacity: 0.7, fontFamily: 'monospace' };
+  const sectionStyle: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 6, padding: 10, borderRadius: 6, background: 'rgba(255,255,255,0.03)' };
+
+  const renderControl = (
+    c: LabControl,
+    value: number | string,
+    onChange: (v: number | string) => void,
+  ) => (
+    <label key={c.key} style={{ display: 'grid', gridTemplateColumns: '110px 1fr 48px', alignItems: 'center', gap: 8 }}>
+      <span style={ctrlLabel}>{c.key}</span>
+      {c.kind === 'range' ? (
+        <>
+          <input type="range" min={c.min} max={c.max} step={c.step}
+            value={value as number} onChange={(e) => onChange(Number(e.target.value))}
+            style={{ width: '100%' }} />
+          <span style={ctrlLabel}>{value}</span>
+        </>
+      ) : (
+        <>
+          <select value={value as string} onChange={(e) => onChange(e.target.value)} style={{ width: '100%', fontSize: 10 }}>
+            {c.options.map((o) => <option key={o} value={o}>{o}</option>)}
+          </select>
+          <span />
+        </>
+      )}
+    </label>
+  );
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 360px) 1fr', gap: 24, alignItems: 'start' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', minHeight: 80, padding: 16, background: 'rgba(255,255,255,0.02)', borderRadius: 6 }}>
+          <Badge
+            base={base}
+            baseParams={baseParams as never}
+            effects={effectsForBadge}
+            tone={tone}
+            variant={variant}
+            strokeWidth={strokeWidth}
+          >
+            {label}
+          </Badge>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={handleExport} style={{ fontSize: 11, padding: '6px 12px', cursor: 'pointer' }}>Copy snippet</button>
+          <button onClick={() => { setLabEffects([]); setBase('rounded-rect'); setBaseParams(defaultsFor(BASE_LAB_CONTROLS['rounded-rect'])); setExportText(null); }} style={{ fontSize: 11, padding: '6px 12px', cursor: 'pointer' }}>Reset</button>
+        </div>
+        {exportText && (
+          <textarea
+            readOnly
+            value={exportText}
+            rows={Math.min(20, exportText.split('\n').length + 1)}
+            style={{ fontFamily: 'monospace', fontSize: 11, padding: 8, width: '100%', boxSizing: 'border-box' }}
+          />
+        )}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <section style={sectionStyle}>
+          <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.7, margin: '0 0 4px', fontFamily: 'monospace' }}>Base</h3>
+          <label style={{ display: 'grid', gridTemplateColumns: '110px 1fr', alignItems: 'center', gap: 8 }}>
+            <span style={ctrlLabel}>type</span>
+            <select value={base} onChange={(e) => onPickBase(e.target.value as BadgeBase)} style={{ fontSize: 11 }}>
+              {BASE_KEYS.map((b) => <option key={b} value={b}>{b}</option>)}
+            </select>
+          </label>
+          {(BASE_LAB_CONTROLS[base] ?? []).map((c) =>
+            renderControl(c, baseParams[c.key], (v) => setBaseParams((p) => ({ ...p, [c.key]: v }))),
+          )}
+        </section>
+        <section style={sectionStyle}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.7, margin: 0, fontFamily: 'monospace' }}>Effects ({labEffects.length})</h3>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <select
+                onChange={(e) => { if (e.target.value) { addEffect(e.target.value as BadgeEffect); e.target.value = ''; } }}
+                value=""
+                style={{ fontSize: 10 }}
+              >
+                <option value="">+ add effect…</option>
+                {EFFECT_KEYS.map((k) => <option key={k} value={k}>{k}</option>)}
+              </select>
+            </div>
+          </div>
+          {labEffects.length === 0 && (
+            <p style={{ fontSize: 10, opacity: 0.5, fontFamily: 'monospace', margin: 0 }}>No effects. Add one from the dropdown.</p>
+          )}
+          {labEffects.map((eff, i) => (
+            <div key={eff.id} style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8, borderRadius: 4, background: 'rgba(255,255,255,0.03)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <code style={{ fontSize: 11, opacity: 0.85, flex: 1 }}>{i + 1}. {eff.type}</code>
+                <code style={{ fontSize: 9, opacity: 0.6 }}>{EFFECTS[eff.type].offsetAt ? 'offset' : (EFFECTS[eff.type].zone ?? 'foreground')}</code>
+                <button onClick={() => moveEffect(eff.id, -1)} disabled={i === 0} style={{ fontSize: 10, padding: '0 6px', cursor: 'pointer' }}>↑</button>
+                <button onClick={() => moveEffect(eff.id, +1)} disabled={i === labEffects.length - 1} style={{ fontSize: 10, padding: '0 6px', cursor: 'pointer' }}>↓</button>
+                <button onClick={() => removeEffect(eff.id)} style={{ fontSize: 10, padding: '0 6px', cursor: 'pointer' }}>×</button>
+              </div>
+              {(EFFECT_LAB_CONTROLS[eff.type] ?? []).map((c) =>
+                renderControl(c, eff.params[c.key], (v) => updateEffect(eff.id, c.key, v)),
+              )}
+            </div>
+          ))}
+        </section>
+      </div>
+    </div>
+  );
+}
+
+export const ComposeLab: Story = {
+  name: 'Compose lab',
+  args: { children: 'COMPOSE', tone: 'accent', variant: 'solid', strokeWidth: 1 },
+  argTypes: {
+    shape: { table: { disable: true } },
+    shapeParams: { table: { disable: true } },
+    base: { table: { disable: true } },
+    baseParams: { table: { disable: true } },
+    effects: { table: { disable: true } },
+  },
+  render: (args) => (
+    <ComposeLabView
+      tone={(args.tone ?? 'accent') as BadgeTone}
+      variant={(args.variant ?? 'solid') as BadgeVariant}
+      strokeWidth={args.strokeWidth ?? 1}
+      label={typeof args.children === 'string' ? args.children : 'COMPOSE'}
+    />
   ),
 };

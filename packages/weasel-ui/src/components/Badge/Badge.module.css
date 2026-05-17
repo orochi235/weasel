@@ -92,11 +92,16 @@
 .badge[data-shape='pill'][data-variant='subtle'] {
   background: var(--badge-fill);
 }
+/* Always reserve room for the border so variants that drop the visible stroke
+   (e.g. subtle, or fragments after a slice) stay the same outer width. */
+.badge[data-shape='pill'] {
+  border: var(--badge-stroke-width, 1px) solid transparent;
+}
 .badge[data-shape='pill'][data-variant='outline'],
 .badge[data-shape='pill'][data-variant='solid'] {
   /* Real border instead of inset box-shadow so `box-decoration-break: slice` cleanly removes
      the border-right of fragment 1 / border-left of fragment 2 at the line break. */
-  border: var(--badge-stroke-width, 1px) solid var(--badge-edge);
+  border-color: var(--badge-edge);
 }
 .badge[data-shape='pill'][data-focused='true'] {
   outline: 2px solid color-mix(in oklab, var(--badge-edge) 60%, transparent);
@@ -123,30 +128,14 @@
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.14), 0 -0.5px 0 rgba(0, 0, 0, 0.5);
 }
 
-.dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--badge-edge);
-  flex-shrink: 0;
-  align-self: center;
-}
-
-.icon {
-  display: inline-flex;
-  width: var(--badge-icon-size, 12px);
-  height: var(--badge-icon-size, 12px);
-  flex-shrink: 0;
-  color: var(--badge-fg);
-  align-self: center;
-}
-.badge[data-size='md'] { --badge-icon-size: 14px; }
-
 button.badge,
 a.badge {
   cursor: pointer;
   outline: 0;
+  /* `border: 0` from the base rule would otherwise zero out the reserved width for buttons.
+     Make it transparent + zero-width so the width matches the span form, but visible borders
+     from shape-specific rules still apply on top. */
+  border: 0 solid transparent;
 }
 button.badge:hover,
 a.badge:hover {
@@ -161,8 +150,8 @@ a.badge:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   margin-left: 2px;
   padding: 0;
   background: transparent;
@@ -171,7 +160,11 @@ a.badge:hover {
   color: var(--badge-fg);
   cursor: pointer;
   font: inherit;
+  font-size: 14px;
   line-height: 1;
+  vertical-align: middle;
 }
 .remove:hover { background: color-mix(in oklab, var(--badge-fg) 20%, transparent); }
-.badge[data-size='md'] .remove { width: 14px; height: 14px; }
+.remove > svg { display: block; }
+.badge[data-size='md'] .remove { width: 16px; height: 16px; font-size: 16px; }
+.badge[data-size='md'] .remove > svg { width: 12px; height: 12px; }
