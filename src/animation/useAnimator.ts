@@ -253,14 +253,20 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       // advancing) and decoupled from wall time.
       const start = 0;
       const easing = o.easing ?? easeOut;
-      const interp =
-        o.interpolate ??
-        ((a: T, b: T, t: number) => {
-          if (typeof a === 'number' && typeof b === 'number') {
-            return numericLerp(a as number, b as number, t) as unknown as T;
-          }
-          throw new Error('tween: interpolate is required for non-numeric T');
-        });
+      // Precedence: factory > per-tick > default numeric lerp. Factory is built
+      // once at tween start so expensive setup (color space conversion etc.)
+      // doesn't repeat per frame.
+      const factoryFn = o.interpolator ? o.interpolator(o.from, o.to) : null;
+      const perTickInterp =
+        factoryFn
+          ? null
+          : o.interpolate ??
+            ((a: T, b: T, t: number) => {
+              if (typeof a === 'number' && typeof b === 'number') {
+                return numericLerp(a as number, b as number, t) as unknown as T;
+              }
+              throw new Error('tween: interpolate or interpolator is required for non-numeric T');
+            });
       let lastValueEmitted = false;
       return register({
         id,
@@ -269,7 +275,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
           if (tripwire()) return true;
           const elapsed = nowMs - start;
           const t = o.ms <= 0 ? 1 : Math.min(1, Math.max(0, elapsed / o.ms));
-          o.onTick(interp(o.from, o.to, easing(t)));
+          const eased = easing(t);
+          const value = factoryFn ? factoryFn(eased) : perTickInterp!(o.from, o.to, eased);
+          o.onTick(value);
           if (t >= 1 && !lastValueEmitted) {
             lastValueEmitted = true;
             o.onDone?.();

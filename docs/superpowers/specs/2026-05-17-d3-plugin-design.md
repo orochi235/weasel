@@ -58,23 +58,26 @@ Lives under `packages/weasel-d3/` in the monorepo (next to `weasel-ui`, `weasel-
 
 ### Kit-side change (Phase 0)
 
-Single change: `useAnimator`'s `tween` gains an optional `interpolate` parameter. Today the animator uses `numericLerp` for `tween<T>` when `T` is a number, with a `tweenPose` helper for pose interpolation. After:
+`tween` already exposes a per-tick interpolator: `interpolate?: (from, to, t) => T`. That form is fine for cheap interpolations (numeric lerp, pose) but suboptimal for d3-interpolate-style interpolators that do expensive setup once (color space conversion, path-string parsing). Recreating that setup every tick is what we want to avoid.
+
+Phase 0 adds a **factory form** alongside, additive — existing `interpolate` keeps working:
 
 ```ts
-animator.tween<T>({
-  from: T,
-  to: T,
-  ms: number,
-  easing?: EasingFn,
-  interpolate?: (from: T, to: T) => (t: number) => T,  // NEW
-  onTick: (value: T) => void,
-  onDone?: () => void,
-});
+export type InterpolatorFactory<T> = (from: T, to: T) => (t: number) => T;
+
+interface TweenOptions<T> {
+  // ...existing fields...
+  /** Per-tick interpolator. Re-runs per frame. */
+  interpolate?: (from: T, to: T, t: number) => T;
+  /** Factory interpolator. Built ONCE at tween start, called with t per frame.
+   *  Use this for d3-interpolate or any interpolator with expensive setup. */
+  interpolator?: InterpolatorFactory<T>;
+}
 ```
 
-When `interpolate` is provided, the animator builds the interpolator once at `tween` start and calls it with `t ∈ [0, 1]` each tick. When absent, behavior is unchanged (numeric lerp). The kit pulls `d3-interpolate` as a peer-dep-recommended way to construct interpolators, but doesn't depend on it directly — any `(from, to) => (t) => value` function works.
+`tween` impl precedence: `interpolator` (factory) > `interpolate` (per-tick) > default numeric lerp. When `interpolator` is set, the impl calls it once at tween start to build the closure, then invokes the closure with `easing(t)` each frame.
 
-This is independently useful for non-d3 consumers wanting color tweens. ~50 lines of impl in `useAnimator.ts` + tests.
+Independently useful for non-d3 consumers wanting color tweens (pair with any `(from, to) => (t) => v` function — d3-interpolate is one option, but you can write your own).
 
 ## Public API
 

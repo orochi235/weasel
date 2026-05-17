@@ -112,6 +112,56 @@ describe('useAnimator.tween', () => {
     act(() => clock.advance(1000));
     expect(requestSpy.mock.calls.length).toBe(callsAfterSettle);
   });
+
+  it('interpolator factory is built once and invoked with easing(t) per tick', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const factory = vi.fn((from: number, to: number) => (t: number) => from + (to - from) * t);
+    const ticks: number[] = [];
+    act(() => {
+      result.current.tween<number>({
+        from: 0,
+        to: 100,
+        ms: 1000,
+        easing: linear,
+        interpolator: factory,
+        onTick: (v) => ticks.push(v),
+      });
+    });
+    act(() => clock.advance(0));
+    act(() => clock.advance(500));
+    act(() => clock.advance(500));
+    // Factory called exactly once at tween start, regardless of how many ticks fired.
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledWith(0, 100);
+    // The factory's returned closure produced expected values.
+    expect(ticks[0]).toBeCloseTo(0, 6);
+    expect(ticks[ticks.length - 1]).toBeCloseTo(100, 6);
+    expect(ticks.some((v) => Math.abs(v - 50) < 0.5)).toBe(true);
+  });
+
+  it('interpolator precedence: factory wins over per-tick interpolate', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const perTick = vi.fn((_a: number, _b: number, _t: number) => -999);
+    const factory = vi.fn((from: number, to: number) => (t: number) => from + (to - from) * t);
+    const ticks: number[] = [];
+    act(() => {
+      result.current.tween<number>({
+        from: 0,
+        to: 100,
+        ms: 1000,
+        easing: linear,
+        interpolate: perTick,
+        interpolator: factory,
+        onTick: (v) => ticks.push(v),
+      });
+    });
+    act(() => clock.advance(500));
+    expect(perTick).not.toHaveBeenCalled();
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(ticks.every((v) => v >= 0 && v <= 100)).toBe(true);
+  });
 });
 
 describe('useAnimator.spring', () => {

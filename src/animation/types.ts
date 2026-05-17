@@ -2,6 +2,13 @@ export type EasingFn = (t: number) => number;
 
 export type Interpolate<T> = (from: T, to: T, t: number) => T;
 
+/** Factory interpolator: built ONCE at tween start with (from, to), the returned
+ *  function is called with `t ∈ [0, 1]` each frame. Use for interpolators with
+ *  expensive setup (color-space conversion, path-string parsing) — d3-interpolate's
+ *  shape exactly. For cheap interpolations the per-tick `Interpolate<T>` form is
+ *  fine; this is the escape hatch when setup-per-tick is wasteful. */
+export type InterpolatorFactory<T> = (from: T, to: T) => (t: number) => T;
+
 export interface SpringPreset {
   stiffness: number;
   damping: number;
@@ -30,8 +37,14 @@ export interface TweenOptions<T> {
   to: T;
   ms: number;
   easing?: EasingFn;
-  /** Required when T is not `number`. For T = number, defaults to linear numeric lerp. */
+  /** Required when T is not `number`. For T = number, defaults to linear numeric lerp.
+   *  Called per-tick with `(from, to, t)`. For interpolators with expensive setup,
+   *  prefer `interpolator` which is built once at tween start. */
   interpolate?: Interpolate<T>;
+  /** Factory interpolator built once at tween start. Takes precedence over
+   *  `interpolate` when both are provided. Use this for d3-interpolate or any
+   *  `(from, to) => (t) => v` shape. */
+  interpolator?: InterpolatorFactory<T>;
   onTick: (value: T) => void;
   onDone?: () => void;
   /** Any new animation passed the same cancelKey cancels the prior one in flight. */
