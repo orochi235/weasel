@@ -39,6 +39,7 @@ import {
   pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction,
   pathfinderExcludeAction, pathfinderDivideAction, pathfinderCropAction,
 } from './defaults/booleans';
+import { moveAction } from './defaults/move';
 
 /** @experimental */
 export interface UseStandardActionsOptions {
@@ -62,7 +63,7 @@ export interface UseStandardActionsOptions {
  *
  * Count: 2 (escape/selectAll) + 1 (delete) + 1 (duplicate) + 1 (group) +
  *        1 (ungroup) + 2 (undo/redo) + 1 (flip) + 4 (nudge) + 2 (reorder) +
- *        6 (align) + 2 (distribute) + 6 (pathfinder) = 29
+ *        6 (align) + 2 (distribute) + 6 (pathfinder) + 1 (move) = 30
  */
 const KIT_STANDARD_DESCRIPTORS: Action[] = [
   escapeAction,
@@ -94,6 +95,7 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   pathfinderExcludeAction,
   pathfinderDivideAction,
   pathfinderCropAction,
+  moveAction,
 ];
 
 /**

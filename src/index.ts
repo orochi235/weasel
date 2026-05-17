@@ -112,6 +112,7 @@ export {
   defaultAlignActions, defaultDistributeActions, defaultBooleanActions,
   defaultDeleteAction, defaultGroupAction, defaultUngroupAction,
 } from './interactions/actions/defaults';
+export { moveAction } from './interactions/actions/defaults/move';
 export { useStandardActions } from './interactions/actions/useStandardActions';
 export type { UseStandardActionsOptions } from './interactions/actions/useStandardActions';
 export { resolveActions } from './interactions/actions/resolveActions';

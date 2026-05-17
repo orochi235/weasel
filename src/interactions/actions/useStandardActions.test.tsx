@@ -71,6 +71,7 @@ const KIT_IDS = [
   'distribute.horizontal', 'distribute.vertical',
   'pathfinder.union', 'pathfinder.subtract', 'pathfinder.intersect',
   'pathfinder.exclude', 'pathfinder.divide', 'pathfinder.crop',
+  'move',
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -78,7 +79,7 @@ const KIT_IDS = [
 // ---------------------------------------------------------------------------
 
 describe('useStandardActions', () => {
-  it('registers all 29 kit-standard action descriptors', () => {
+  it('registers all 30 kit-standard action descriptors', () => {
     const seen: string[][] = [];
     render(
       <Providers>

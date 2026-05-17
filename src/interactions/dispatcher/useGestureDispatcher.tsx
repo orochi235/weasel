@@ -79,6 +79,15 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     isMac: IS_MAC,
   };
 
+  // Cancel in-flight ongoing handles when active tool changes (not on initial mount).
+  const prevActiveRef = useRef(activeTool.active);
+  useEffect(() => {
+    if (prevActiveRef.current !== activeTool.active) {
+      dispatcherRef.current?.cancelAll('cancel');
+    }
+    prevActiveRef.current = activeTool.active;
+  });
+
   useEffect(() => {
     if (!enabled) return;
 
@@ -175,6 +184,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       const ev: InputEvent = {
         kind: 'pointerdown',
         target: e.target,
+        x: e.clientX,
+        y: e.clientY,
         altKey: e.altKey,
         ctrlKey: e.ctrlKey,
         metaKey: e.metaKey,
@@ -196,8 +207,43 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       }
     };
 
+    const onPointerMove = (e: PointerEvent) => {
+      const ev: InputEvent = {
+        kind: 'pointermove',
+        x: e.clientX,
+        y: e.clientY,
+        altKey: e.altKey,
+        ctrlKey: e.ctrlKey,
+        metaKey: e.metaKey,
+        shiftKey: e.shiftKey,
+      };
+      dispatcher.handleInput(ev, ctxRef.current);
+    };
+
     const onPointerUp = (e: PointerEvent) => {
       activePointers.delete(e.pointerId);
+      const ev: InputEvent = {
+        kind: 'pointerup',
+        x: e.clientX,
+        y: e.clientY,
+        altKey: e.altKey,
+        ctrlKey: e.ctrlKey,
+        metaKey: e.metaKey,
+        shiftKey: e.shiftKey,
+      };
+      dispatcher.handleInput(ev, ctxRef.current);
+    };
+
+    const onPointerCancel = (e: PointerEvent) => {
+      activePointers.delete(e.pointerId);
+      const ev: InputEvent = {
+        kind: 'pointercancel',
+        altKey: e.altKey,
+        ctrlKey: e.ctrlKey,
+        metaKey: e.metaKey,
+        shiftKey: e.shiftKey,
+      };
+      dispatcher.handleInput(ev, ctxRef.current);
     };
 
     // -----------------------------------------------------------------------
@@ -208,8 +254,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     window.addEventListener('keyup', onKeyUp);
     canvas?.addEventListener('wheel', onWheel);
     canvas?.addEventListener('pointerdown', onPointerDown);
+    canvas?.addEventListener('pointermove', onPointerMove);
     canvas?.addEventListener('pointerup', onPointerUp);
-    canvas?.addEventListener('pointercancel', onPointerUp);
+    canvas?.addEventListener('pointercancel', onPointerCancel);
 
     // -----------------------------------------------------------------------
     // Cleanup
@@ -220,8 +267,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       window.removeEventListener('keyup', onKeyUp);
       canvas?.removeEventListener('wheel', onWheel);
       canvas?.removeEventListener('pointerdown', onPointerDown);
+      canvas?.removeEventListener('pointermove', onPointerMove);
       canvas?.removeEventListener('pointerup', onPointerUp);
-      canvas?.removeEventListener('pointercancel', onPointerUp);
+      canvas?.removeEventListener('pointercancel', onPointerCancel);
       dispatcher.cancelAll('cancel');
     };
   }, [enabled, canvasRef]);
