@@ -345,9 +345,9 @@ Surfaced 2026-05-16 building the force-graph demo. Bare `<Canvas>` with a custom
 
 ## Release-gate hygiene
 
-- **Demo build not in `prepublishOnly`.** `prepublishOnly` runs `tsc --noEmit && vitest run && tsup build` but skips `build:demo`. The demo build uses vite (different resolution path: `@orochi235/weasel/<x>` aliases to `src/subpaths/<x>.ts`), and silent drift surfaced 2026-05-14 when `src/subpaths/routing.ts` was missing — tsup happily produced `dist/routing.js` via its own entry config, but vite couldn't resolve the import for the demo. Either chain `build:demo` into `prepublishOnly`, or add a separate CI gate that runs it. Cheap to wire; catches a class of breakage that's invisible to today's gates.
+- **Demo build not in `prepublishOnly`.** `prepublishOnly` runs `tsc --noEmit && vitest run && tsup build` but skips `build:demo`. The demo build uses vite (different resolution path: `@orochi235/weasel/<x>` aliases to `src/import-shims/<x>.ts`), and silent drift surfaced 2026-05-14 when `src/import-shims/routing.ts` was missing — tsup happily produced `dist/routing.js` via its own entry config, but vite couldn't resolve the import for the demo. Either chain `build:demo` into `prepublishOnly`, or add a separate CI gate that runs it. Cheap to wire; catches a class of breakage that's invisible to today's gates.
 
-- **`src/subpaths/` ↔ `tsup.config.ts` parity.** Every subpath listed in `tsup.config.ts` `entry` (and every key in `package.json` `exports`) needs a matching `src/subpaths/<name>.ts` shim so vite's wildcard alias resolves. Drift is easy: adding a new subpath to tsup without the shim breaks the demo build silently. A 5-line parity test (read tsup entries, read package.json exports, list `src/subpaths/`, assert sets match) would prevent this.
+- **`src/import-shims/` ↔ `tsup.config.ts` parity.** Every subpath listed in `tsup.config.ts` `entry` (and every key in `package.json` `exports`) needs a matching `src/import-shims/<name>.ts` shim so vite's wildcard alias resolves. Drift is easy: adding a new subpath to tsup without the shim breaks the demo build silently. A 5-line parity test (read tsup entries, read package.json exports, list `src/import-shims/`, assert sets match) would prevent this.
 
 ## Taxonomy alignment
 

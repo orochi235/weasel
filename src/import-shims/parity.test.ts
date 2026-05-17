@@ -3,9 +3,9 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 // Why: the publish gate (`tsup build`) and the demo build (vite via
-// `@orochi235/weasel/<x>` aliases to `src/subpaths/<x>.ts`) resolve subpaths
+// `@orochi235/weasel/<x>` aliases to `src/import-shims/<x>.ts`) resolve subpaths
 // through different mechanisms. Drift between tsup entries, package.json
-// `exports`, and the `src/subpaths/*.ts` shims has silently broken the demo
+// `exports`, and the `src/import-shims/*.ts` shims has silently broken the demo
 // build before — guard with an exact set-equality check across all three.
 
 const REPO_ROOT = resolve(__dirname, '..', '..');
@@ -21,9 +21,9 @@ const tsupEntries = new Set(
     .filter((k) => k !== 'index'),
 );
 
-// Shim files — `src/subpaths/<name>.ts`.
+// Shim files — `src/import-shims/<name>.ts`.
 const shimFiles = new Set(
-  readdirSync(resolve(REPO_ROOT, 'src', 'subpaths'))
+  readdirSync(resolve(REPO_ROOT, 'src', 'import-shims'))
     .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts') && !f.endsWith('.d.ts'))
     .map((f) => f.replace(/\.ts$/, '')),
 );
@@ -38,8 +38,8 @@ const exportKeys = new Set(
     .map((k) => k.replace(/^\.\//, '')),
 );
 
-describe('subpaths / tsup / exports parity', () => {
-  it('every tsup entry has a matching src/subpaths shim and package.json export', () => {
+describe('import-shims / tsup / exports parity', () => {
+  it('every tsup entry has a matching src/import-shims shim and package.json export', () => {
     expect([...tsupEntries].sort()).toEqual([...shimFiles].sort());
     expect([...tsupEntries].sort()).toEqual([...exportKeys].sort());
   });

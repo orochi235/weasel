@@ -3,26 +3,26 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 /**
- * Structural parity test for kit subpaths.
+ * Structural parity test for kit import shims (one shim per published subpath).
  *
  * Three sources must agree on the set of named subpaths the kit ships:
  *
  *   1. `tsup.config.ts`     `entry` keys  — drives the published `dist/<name>.js`
  *   2. `package.json`       `exports`     — declares them to consumers
- *   3. `src/subpaths/*.ts`  shim files    — what vite's wildcard alias
+ *   3. `src/import-shims/*.ts`  shim files    — what vite's wildcard alias
  *                                           (`@orochi235/weasel/<x>` →
- *                                           `src/subpaths/<x>.ts`) resolves to;
+ *                                           `src/import-shims/<x>.ts`) resolves to;
  *                                           required for the demo build and
  *                                           any consumer using vite/vitest
  *                                           with `weaselAliases`.
  *
  * The `.` / `index` / `./package.json` entries are special-cased: the kit
- * barrel lives at `src/index.ts` (not under `subpaths/`), and
+ * barrel lives at `src/index.ts` (not under `import-shims/`), and
  * `./package.json` is a JSON re-export, not a code subpath.
  *
  * If you add a new subpath to one source and forget the others, this test
  * fails with a useful diff. (We were bitten 2026-05-14 when
- * `src/subpaths/routing.ts` was missing: tsup happily built `dist/routing.js`
+ * `src/import-shims/routing.ts` was missing: tsup happily built `dist/routing.js`
  * but the demo's vite build couldn't resolve the import.)
  */
 
@@ -53,13 +53,13 @@ function readPackageExports(): string[] {
 }
 
 function readSubpathFiles(): string[] {
-  const dir = resolve(REPO_ROOT, 'src/subpaths');
+  const dir = resolve(REPO_ROOT, 'src/import-shims');
   return readdirSync(dir)
     .filter((f) => f.endsWith('.ts') && !f.endsWith('.d.ts') && !f.endsWith('.test.ts'))
     .map((f) => f.replace(/\.ts$/, ''));
 }
 
-describe('subpath parity: tsup.config.ts ↔ package.json exports ↔ src/subpaths/', () => {
+describe('subpath parity: tsup.config.ts ↔ package.json exports ↔ src/import-shims/', () => {
   const tsupKeys = readTsupEntries();
   const exportKeys = readPackageExports();
   const shimFiles = readSubpathFiles();
@@ -86,11 +86,11 @@ describe('subpath parity: tsup.config.ts ↔ package.json exports ↔ src/subpat
     expect([...tsupSubpaths].sort()).toEqual([...exportSubpaths].sort());
   });
 
-  it('tsup entries match src/subpaths/ shim files', () => {
+  it('tsup entries match src/import-shims/ shim files', () => {
     expect([...tsupSubpaths].sort()).toEqual([...shimSubpaths].sort());
   });
 
-  it('package.json exports match src/subpaths/ shim files', () => {
+  it('package.json exports match src/import-shims/ shim files', () => {
     expect([...exportSubpaths].sort()).toEqual([...shimSubpaths].sort());
   });
 });
