@@ -158,4 +158,12 @@ describe('defaultDeleteAction', () => {
     });
     expect(filteredOut.enabled?.()).toBe(ActionDisabledReason.SelectionRequired);
   });
+  it('declares gestureBinding mirroring defaultBinding', () => {
+    const a = defaultDeleteAction({
+      getSelection: () => [],
+      applyOps: vi.fn(),
+      getNodeIndex: () => 0,
+    });
+    expect(a.gestureBinding).toEqual({ kind: 'key', key: ['Delete', 'Backspace'] });
+  });
 });

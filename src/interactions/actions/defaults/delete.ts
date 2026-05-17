@@ -31,6 +31,7 @@ export function defaultDeleteAction(deps: DeleteDeps): Action {
     id: 'delete',
     label: 'Delete',
     defaultBinding: { key: ['Delete', 'Backspace'] },
+    gestureBinding: { kind: 'key', key: ['Delete', 'Backspace'] },
     run: () => {
       const sel = deps.getSelection();
       const ids = deps.filter ? deps.filter(sel) : sel;

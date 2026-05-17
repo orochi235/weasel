@@ -35,4 +35,8 @@ describe('defaultDuplicateAction', () => {
     a.run();
     expect(clone).toHaveBeenCalledWith('a', { dx: 8, dy: 8 });
   });
+  it('declares gestureBinding mirroring defaultBinding', () => {
+    const a = defaultDuplicateAction({ getSelection: () => [asNodeId('a')], cloneNode, applyOps: vi.fn() });
+    expect(a.gestureBinding).toEqual({ kind: 'key', key: 'd', mods: { mod: true } });
+  });
 });
