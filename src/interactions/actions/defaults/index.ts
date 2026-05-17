@@ -22,3 +22,4 @@ export { deleteAction, defaultDeleteAction, type DeleteDeps } from './delete';
 export { groupAction, ungroupAction, defaultGroupAction, defaultUngroupAction, type GroupDeps, type UngroupDeps } from './group';
 export { undoAction, redoAction, defaultUndoRedoActions, type UndoRedoDeps } from './undoRedo';
 export { makeToolHoldAction } from './toolHold';
+export { moveAction } from './move';
