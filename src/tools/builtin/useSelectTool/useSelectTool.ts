@@ -1,5 +1,4 @@
 import { useMemo, useRef, createElement } from 'react';
-import { useIsDispatcherMounted } from 'interactions/dispatcher/dispatcherPresence';
 import { SelectIcon } from '../../../icons';
 import { pathContainsPoint } from 'features/paths/pathHitTest';
 import type { Path } from 'features/paths/types';
@@ -502,13 +501,11 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   //   if (ctx.scratch.kind === 'area') { ctx.selection.clear(); return claim(); }
   //   return none();
 
-  // When the new gesture dispatcher is mounted (inside a SceneCanvas or other
-  // DispatcherPresenceProvider), the drag bindings take over from the old
-  // route-table drag entries. When it's absent (legacy Canvas, tests that
-  // don't use SceneCanvas), the flag stays false and the old path fires as
-  // before — no double-application risk, no silent no-ops.
-  const gestureDispatcherMounted = useIsDispatcherMounted();
-
+  // Phase 14e Task 2.6: the gesture dispatcher is now unconditionally
+  // present (SceneCanvas always mounts it). The drag bindings always take
+  // over from the old route-table drag entries. Consumers using bare
+  // `<Canvas>` (without SceneCanvas) no longer get the kit's built-in drag
+  // behavior — they must use `<SceneCanvas>` for select/lasso/hand tool drags.
   return useMemo(
     () => {
       // Declarative factory — every gesture surface is a route table:
@@ -678,13 +675,12 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           //    Requires `classifyTarget` to be wired (SceneCanvas context).
           { spec: { kind: 'click' as const, target: 'empty' as const, mods: {} }, actionId: 'clearSelection' },
         ],
-        // Suppress the old dispatcher's drag-slot when the new gesture
-        // dispatcher is mounted (SceneCanvas context). When absent, the flag
-        // is `false` so legacy Canvas / test harnesses keep using the old path.
-        bindingsOverrideDrag: gestureDispatcherMounted,
+        // Phase 14e Task 2.6: unconditionally suppress the old dispatcher's
+        // drag-slot. The new gesture dispatcher always handles drags.
+        bindingsOverrideDrag: true,
       };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [move, areaSelect, overlay, pickEveryFn, options.pickBest, options.debug, gestureDispatcherMounted],
+    [move, areaSelect, overlay, pickEveryFn, options.pickBest, options.debug],
   );
 }
