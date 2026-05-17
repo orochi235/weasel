@@ -1,4 +1,3 @@
-export { useUndoRedoTool, type UseUndoRedoToolOptions } from './useUndoRedoTool';
 export { useInsertTool, type UseInsertToolOptions } from './useInsertTool';
 export {
   defineDragInsertTool,
