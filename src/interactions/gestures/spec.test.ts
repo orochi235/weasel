@@ -4,7 +4,7 @@ import type { ModSpec, GestureSpec, KeySpec, KeyHeldSpec, WheelSpec, ClickSpec, 
 describe('ModSpec', () => {
   it('all fields optional booleans', () => {
     expectTypeOf<ModSpec>().toEqualTypeOf<
-      Partial<{ alt: boolean; ctrl: boolean; meta: boolean; shift: boolean }>
+      Partial<{ alt: boolean; ctrl: boolean; meta: boolean; mod: boolean; shift: boolean | 'optional' }>
     >();
   });
 });
@@ -53,5 +53,29 @@ describe('GestureSpec', () => {
       { kind: 'multiTouch', fingers: 2 },
     ];
     expectTypeOf(specs).toMatchTypeOf<GestureSpec[]>();
+  });
+});
+
+describe('GestureSpec Phase 2 extensions', () => {
+  it('KeySpec.key accepts string array (multi-key bindings)', () => {
+    const multi: KeySpec = { kind: 'key', key: ['Delete', 'Backspace'] };
+    expectTypeOf(multi).toMatchTypeOf<KeySpec>();
+  });
+
+  it('ModSpec accepts mod shorthand (meta-or-ctrl)', () => {
+    const mods: ModSpec = { mod: true };
+    expectTypeOf(mods).toMatchTypeOf<ModSpec>();
+  });
+
+  it('ModSpec accepts optional-shift policy', () => {
+    const mods: ModSpec = { shift: 'optional' };
+    expectTypeOf(mods).toMatchTypeOf<ModSpec>();
+  });
+
+  it('KeySpec composes the new ModSpec features', () => {
+    const optShift: KeySpec = { kind: 'key', key: 'ArrowUp', mods: { shift: 'optional' } };
+    const modKey: KeySpec = { kind: 'key', key: 'a', mods: { mod: true } };
+    expectTypeOf(optShift).toMatchTypeOf<KeySpec>();
+    expectTypeOf(modKey).toMatchTypeOf<KeySpec>();
   });
 });

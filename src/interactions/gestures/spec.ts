@@ -11,12 +11,21 @@
 
 /** Optional modifier-key requirement for a gesture spec. All fields are
  *  optional; an omitted field means "either is acceptable." A `true` means
- *  the modifier MUST be held; `false` means it MUST NOT be held. */
+ *  the modifier MUST be held; `false` means it MUST NOT be held.
+ *
+ *  `mod` is a platform-aware shorthand: matches `metaKey` on mac, `ctrlKey`
+ *  elsewhere (mirrors `KeyBinding.mod`).
+ *
+ *  `shift` additionally accepts `'optional'` meaning "shifted or unshifted
+ *  both acceptable" — used by actions like nudge whose step size depends
+ *  on shift but whose firing does not.
+ */
 export type ModSpec = Partial<{
   alt: boolean;
   ctrl: boolean;
   meta: boolean;
-  shift: boolean;
+  mod: boolean;
+  shift: boolean | 'optional';
 }>;
 
 /** Target selector for click and drag gesture specs. String forms are sugar
@@ -35,7 +44,8 @@ export type TargetSpec =
 /** Single-keystroke gesture (keydown). */
 export interface KeySpec {
   kind: 'key';
-  key: string;
+  /** A single key, or an array of acceptable keys (case-insensitive match). */
+  key: string | string[];
   mods?: ModSpec;
 }
 
@@ -43,7 +53,8 @@ export interface KeySpec {
  *  hand tool"-style interactions. */
 export interface KeyHeldSpec {
   kind: 'key-held';
-  key: string;
+  /** A single key, or an array of acceptable keys (case-insensitive match). */
+  key: string | string[];
   mods?: ModSpec;
 }
 
