@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import {
   asNodeId,
   Canvas,
@@ -140,7 +140,13 @@ import {
   getAlpha01,
   withAlpha01,
 } from './ActiveSwatches';
-import { useColorContextTool, ColorContextProvider, useColorContext, type ColorContextApi } from './tools/colorContext';
+import {
+  ColorContextProvider,
+  useColorContext,
+  type ColorContextValue,
+} from './tools/colorContext/ColorContextProvider';
+import { colorActions } from './tools/colorContext/actions';
+import { useDepSource, useActionsRegistry } from '@orochi235/weasel';
 import {
   objsToSvgNodes,
   svgNodesToObjsWithGroups,
@@ -503,28 +509,16 @@ export function App() {
   // it. `size` is the only field today; it drives the rendered page area,
   // the SVG viewBox on export, and (eventually) the printable surface.
   const [doc, setDoc] = useState<Document>(() => ({ size: { ...DEFAULT_DOC_SIZE } }));
-  // Declared early so the colorContext hook's updateSelected closure can
+  // Declared early so the ColorContextProvider's updateSelected closure can
   // reference it. The ref is wired (below) after updateSelected is defined.
   const updateSelectedRef = useRef<((patch: (o: Obj) => Obj, label?: string) => void) | null>(null);
-  // Active fill/stroke/focus + the D / X / Shift+X / / keybindings live
-  // on the color-context tool. Color sources (swatch grids, palettes,
-  // eyedropper) dispatch through `colors.setFocused(paint)` / `setFocusedColor`
-  // rather than poking individual setters.
-  const colorContext = useColorContextTool({
-    initialFill: { kind: 'solid', color: '#7fb069ff' },
-    initialStroke: { kind: 'solid', color: '#1a130dff' },
-    updateSelected: (patch, label) => updateSelectedRef.current?.(patch, label),
-  });
-  const colors = colorContext.api;
-  const colorContextTool = colorContext.tool;
+  // `fillRef` / `strokeRef` reflect the active-paint strings for tool
+  // callbacks. Synced each render by `<ColorSyncBridge>` which reads from
+  // the ColorContextProvider (mounted in the return JSX below).
+  const fillRef = useRef(paintToString({ kind: 'solid', color: '#7fb069ff' }));
+  const strokeRef = useRef(paintToString({ kind: 'solid', color: '#1a130dff' }));
   const [activeStrokeWidth, setActiveStrokeWidth] = useState(1);
   const [pageSelected, setPageSelected] = useState(false);
-  // String-shaped aliases used by the Properties panel (which takes plain
-  // hex strings via PropertyColorInput) and the per-object scene fill /
-  // stroke fields. `paintToString` returns '' for the 'none' kind, which
-  // the renderers treat as "skip this paint".
-  const fillColor = paintToString(colors.fill);
-  const strokeColor = paintToString(colors.stroke);
   const strokeWidth = activeStrokeWidth;
   const setStrokeWidth = setActiveStrokeWidth;
   const [docTitle, setDocTitle] = useState('Untitled');
@@ -683,10 +677,6 @@ export function App() {
 
   const selection = useSelection({ mode: 'multi' });
   usePublishSelection(selection.current);
-  const fillRef = useRef(fillColor);
-  fillRef.current = fillColor;
-  const strokeRef = useRef(strokeColor);
-  strokeRef.current = strokeColor;
   const strokeWidthRef = useRef(strokeWidth);
   strokeWidthRef.current = strokeWidth;
   const nextId = useRef(1);
@@ -1206,10 +1196,9 @@ export function App() {
   // of any active tool; pressing `I` makes it the active tool until
   // switched away. Alt-drag still routes to clone (clone claims at
   // drag.onStart, eyedropper at pointer.click — they don't collide).
-  // Held by the eyedropper's onPick closure so it can dispatch into the
-  // color-context tool that's declared further down. Wired at line ~1533
-  // after the tool initializes.
-  const colorContextApiRef = useRef<ColorContextApi | null>(null);
+  // Updated each render by <ColorDepBridge> which lives inside the
+  // ColorContextProvider and can call useColorContext().
+  const colorContextApiRef = useRef<ColorContextValue | null>(null);
   const eyedropper = useEyedropperTool({
     colorOf: (id) => {
       const obj = itemsRef.current.find((o) => o.id === id);
@@ -1507,8 +1496,6 @@ export function App() {
   // `swill.prefs.v1`, but only if it's still a registered tool (a renamed
   // or removed tool would otherwise crash useTools' "active not in registry"
   // assertion). Falls back to 'select'.
-  colorContextApiRef.current = colorContext.api;
-
   const initialActiveTool = useMemo(() => {
     const stored = readPref('tools.lastTool');
     const registryKeys = ['select', 'lasso', 'insert', 'ellipse', 'line', 'polygon', 'star', 'pen', 'pencil', 'hand', 'text', 'eyedropper'];
@@ -1517,7 +1504,7 @@ export function App() {
   const tools = useTools({
     active: initialActiveTool,
     registry: { select, lasso, insert, ellipse, line, polygon, star, pen, pencil, hand, text, eyedropper },
-    ambient: [resizeTool, rotateTool, wheelZoom, wheelPan, keyZoom, clone, escClearSelection, colorContextTool],
+    ambient: [resizeTool, rotateTool, wheelZoom, wheelPan, keyZoom, clone, escClearSelection],
     // Unhandled clicks fall through to select so click-to-select works while
     // a non-select tool (pen, ellipse, etc.) is active. Click-only — drag,
     // keyboard, wheel, and pointerdown stay tool-specific.
@@ -2016,11 +2003,11 @@ export function App() {
   const primaryFill = toHex8(primary
     ? (primary.tool === 'text'
         ? (primary.style?.fill?.fill === 'solid' ? primary.style.fill.color : '#000000ff')
-        : (primary.fill ?? fillColor))
-    : fillColor);
+        : (primary.fill ?? fillRef.current))
+    : fillRef.current);
   const primaryStroke = toHex8(primary && primary.tool !== 'text'
-    ? (primary.stroke ?? strokeColor)
-    : strokeColor);
+    ? (primary.stroke ?? strokeRef.current)
+    : strokeRef.current);
   const primaryStrokeWidth = primary && primary.tool !== 'text'
     ? (primary.strokeWidth ?? strokeWidth)
     : strokeWidth;
@@ -2195,7 +2182,16 @@ export function App() {
   }, [publish]);
 
   return (
-    <ColorContextProvider value={colorContext.api}>
+    <ColorContextProvider
+      initialFill={{ kind: 'solid', color: '#7fb069ff' }}
+      initialStroke={{ kind: 'solid', color: '#1a130dff' }}
+      updateSelected={(patch, label) => updateSelectedRef.current?.(patch, label)}
+    >
+      <ColorDepBridge
+        colorContextApiRef={colorContextApiRef}
+        fillRef={fillRef}
+        strokeRef={strokeRef}
+      />
       <div className="swill-app">
       {!disclaimerDismissed && (
         <div
@@ -2487,8 +2483,8 @@ export function App() {
         <span>tool: {activeOrEngaged}</span>
         <span>sel: {selection.current.length}</span>
         <span>groups: {groups.length}</span>
-        <span>fill: {fillColor}</span>
-        <span>stroke: {strokeColor}</span>
+        <span>fill: {fillRef.current}</span>
+        <span>stroke: {strokeRef.current}</span>
         <span>zoom: {(view.scale.x * 100).toFixed(0)}%</span>
       </div>
 
@@ -2517,6 +2513,42 @@ export function App() {
       </div>
     </ColorContextProvider>
   );
+}
+
+// ----------------------------------------------------------------------
+// ColorDepBridge — mounts inside <ColorContextProvider>, reads the context
+// via useColorContext(), and:
+//   1. Registers the live `color` dep source in the DepRegistry.
+//   2. Registers the three color action descriptors with the actions registry.
+//   3. Syncs fill/stroke strings into parent refs for tool callbacks.
+//   4. Syncs the context API reference for the eyedropper.
+// Renders nothing; pure side-effects.
+interface ColorDepBridgeProps {
+  colorContextApiRef: MutableRefObject<ColorContextValue | null>;
+  fillRef: MutableRefObject<string>;
+  strokeRef: MutableRefObject<string>;
+}
+
+function ColorDepBridge({ colorContextApiRef, fillRef, strokeRef }: ColorDepBridgeProps) {
+  const color = useColorContext();
+  const registry = useActionsRegistry();
+
+  // Keep parent refs current so tool callbacks see the latest fill/stroke.
+  colorContextApiRef.current = color;
+  fillRef.current = paintToString(color.fill);
+  strokeRef.current = paintToString(color.stroke);
+
+  // Publish the live color dep source.
+  useDepSource('color', () => color);
+
+  // Register (and unregister on unmount) the three color action descriptors.
+  useEffect(() => {
+    if (!registry) return;
+    const unregs = colorActions.map((a) => registry.register(a));
+    return () => unregs.forEach((u) => u());
+  }, [registry]);
+
+  return null;
 }
 
 // ----------------------------------------------------------------------

@@ -1,30 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import { ColorContextProvider, useColorContext } from './ColorContext';
-import type { ColorContextApi } from './useColorContextTool';
+import { ColorContextProvider, useColorContext } from './ColorContextProvider';
+
+const noop = () => {};
 
 function Consumer() {
   const colors = useColorContext();
   return <span data-testid="focus">{colors.focused}</span>;
 }
 
-const fakeApi: ColorContextApi = {
-  fill: { kind: 'solid', color: '#ffffffff' },
-  stroke: { kind: 'solid', color: '#000000ff' },
-  focused: 'stroke',
-  setFill: () => {}, setStroke: () => {}, setFocused: () => {}, setFocus: () => {},
-  setFillColor: () => {}, setStrokeColor: () => {}, setFocusedColor: () => {},
-  focusedAlpha: 1, setFocusedAlpha: () => {},
-  swap: () => {}, swapFocus: () => {}, toggleFocusedNone: () => {},
-  toggleFocusedTransparent: () => {}, reset: () => {},
-  applyFillToSelection: () => {}, applyStrokeToSelection: () => {},
-  applyStrokeWidthToSelection: () => {},
-};
-
-describe('ColorContext', () => {
-  it('useColorContext reads from the surrounding provider', () => {
+describe('ColorContextProvider', () => {
+  it('useColorContext reads focused from the surrounding provider', () => {
     const { getByTestId } = render(
-      <ColorContextProvider value={fakeApi}>
+      <ColorContextProvider
+        initialFocus="stroke"
+        updateSelected={noop}
+      >
         <Consumer />
       </ColorContextProvider>,
     );
@@ -36,5 +27,14 @@ describe('ColorContext', () => {
     console.error = () => {};
     expect(() => render(<Consumer />)).toThrow(/ColorContextProvider/);
     console.error = orig;
+  });
+
+  it('defaults focused to "fill" when initialFocus is omitted', () => {
+    const { getByTestId } = render(
+      <ColorContextProvider updateSelected={noop}>
+        <Consumer />
+      </ColorContextProvider>,
+    );
+    expect(getByTestId('focus').textContent).toBe('fill');
   });
 });

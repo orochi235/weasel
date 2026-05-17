@@ -1,19 +1,21 @@
 /**
- * Hook owner of swillustrator's active-paint state (fill / stroke /
- * focus) plus the scene-write methods that propagate paint to the
- * current selection. Returns `{ tool, api }` — the Tool registers
- * keybindings (D / X / Shift-X / `/`) in the kit's ambient list; the
- * api is the single imperative surface for any color-change caller
- * (UI via React context, other tools via direct closure).
+ * State-holding provider for active-paint context (fill / stroke / focus).
  *
- * Lifted from the old `useActiveColors` hook (state cluster) and from
- * `App.tsx`'s applyFillToSelection / applyStrokeToSelection /
- * applyStrokeWidthToSelection closures (scene-write cluster). Adding
- * a method here is the supported way to extend the color-change API.
+ * Extracted from `useColorContextTool` as part of Phase 9 of the registry
+ * unification refactor. The "tool" concern (keybinding registration via the
+ * old `defineTool` wrapper) is replaced by three immediate-action descriptors
+ * in `actions.ts`; the state cluster lives here.
+ *
+ * Mount once near the root:
+ *   <ColorContextProvider updateSelected={fn}>
+ *     <ColorDepBridge />
+ *     <App />
+ *   </ColorContextProvider>
+ *
+ * Consume anywhere below:
+ *   const color = useColorContext();
  */
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { defineTool, claim } from '@orochi235/weasel/routing';
-import type { Tool } from '@orochi235/weasel';
+import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { ActivePaint } from '../../ActiveSwatches';
 import {
   DEFAULT_FILL,
@@ -25,7 +27,12 @@ import {
 } from '../../ActiveSwatches';
 import type { Obj } from '../../poseUpdate';
 
-export interface ColorContextApi {
+// ---------------------------------------------------------------------------
+// Public types
+// ---------------------------------------------------------------------------
+
+/** Full API surface exposed via `useColorContext()`. */
+export interface ColorContextValue {
   // Active-paint state
   fill: ActivePaint;
   stroke: ActivePaint;
@@ -44,39 +51,55 @@ export interface ColorContextApi {
   toggleFocusedNone: () => void;
   toggleFocusedTransparent: () => void;
   reset: () => void;
-  // Scene-write routing (filled in by Task 3).
+  // Scene-write methods
   applyFillToSelection: (color: string) => void;
   applyStrokeToSelection: (color: string) => void;
   applyStrokeWidthToSelection: (w: number) => void;
 }
 
-export interface UseColorContextToolOptions {
+export interface ColorContextProviderProps {
   initialFill?: ActivePaint;
   initialStroke?: ActivePaint;
   initialFocus?: 'fill' | 'stroke';
-  /** Scene-write seam: matches App.tsx's `updateSelected(patch, label?)`.
-   *  The hook delegates each `apply*ToSelection` call through here so
-   *  the existing undo capture + label semantics carry through. */
+  /** Scene-write seam: matches App.tsx's `updateSelected(patch, label?)`. */
   updateSelected: (patch: (o: Obj) => Obj, label?: string) => void;
+  children: ReactNode;
 }
+
+// ---------------------------------------------------------------------------
+// Internal types
+// ---------------------------------------------------------------------------
 
 interface Paints {
   fill: ActivePaint;
   stroke: ActivePaint;
 }
 
-export function useColorContextTool(opts: UseColorContextToolOptions): {
-  tool: Tool<null>;
-  api: ColorContextApi;
-} {
+// ---------------------------------------------------------------------------
+// Context
+// ---------------------------------------------------------------------------
+
+export const ColorContextContext = createContext<ColorContextValue | null>(null);
+
+// ---------------------------------------------------------------------------
+// Provider
+// ---------------------------------------------------------------------------
+
+export function ColorContextProvider({
+  initialFill,
+  initialStroke,
+  initialFocus,
+  updateSelected,
+  children,
+}: ColorContextProviderProps) {
   // Combine fill+stroke into one state so `swap` can atomically exchange
   // them via a functional updater — this ensures swap composes correctly
   // when batched with setFillColor/setStrokeColor in the same act() call.
   const [paints, setPaints] = useState<Paints>({
-    fill: opts.initialFill ?? DEFAULT_FILL,
-    stroke: opts.initialStroke ?? DEFAULT_STROKE,
+    fill: initialFill ?? DEFAULT_FILL,
+    stroke: initialStroke ?? DEFAULT_STROKE,
   });
-  const [focused, setFocus] = useState<'fill' | 'stroke'>(opts.initialFocus ?? 'fill');
+  const [focused, setFocus] = useState<'fill' | 'stroke'>(initialFocus ?? 'fill');
 
   const { fill, stroke } = paints;
 
@@ -165,10 +188,15 @@ export function useColorContextTool(opts: UseColorContextToolOptions): {
     setPaints({ fill: DEFAULT_FILL, stroke: DEFAULT_STROKE });
   }, []);
 
+  // opts ref so the applyX closures don't re-create when updateSelected
+  // identity changes between renders.
+  const updateSelectedRef = useRef(updateSelected);
+  updateSelectedRef.current = updateSelected;
+
   const applyFillToSelection = useCallback((color: string) => {
     const merge = (prev: string | undefined): string =>
       color.length === 9 ? color : mergeAlphaFromPrev(color, prev ?? '#ffffffff');
-    opts.updateSelected((o) => {
+    updateSelectedRef.current((o) => {
       if (o.tool !== 'text') return { ...o, fill: merge(o.fill) };
       const prevFill = o.style?.fill;
       const prevColor = prevFill && prevFill.fill === 'solid' ? prevFill.color : undefined;
@@ -178,48 +206,25 @@ export function useColorContextTool(opts: UseColorContextToolOptions): {
         : { fill: 'solid' as const, color: next };
       return { ...o, style: { ...(o.style ?? {}), fill: nextFill } };
     }, 'Set fill');
-  }, [opts]);
+  }, []);
 
   const applyStrokeToSelection = useCallback((color: string) => {
     const merge = (prev: string | undefined): string =>
       color.length === 9 ? color : mergeAlphaFromPrev(color, prev ?? '#000000ff');
-    opts.updateSelected(
+    updateSelectedRef.current(
       (o) => (o.tool !== 'text' ? { ...o, stroke: merge(o.stroke) } : o),
       'Set stroke',
     );
-  }, [opts]);
+  }, []);
 
   const applyStrokeWidthToSelection = useCallback((w: number) => {
-    opts.updateSelected(
+    updateSelectedRef.current(
       (o) => (o.tool !== 'text' ? { ...o, strokeWidth: w } : o),
       'Set stroke width',
     );
-  }, [opts]);
+  }, []);
 
-  // Refs so the keyDown closures see the latest api setters without
-  // re-creating the tool on every render.
-  const apiRef = useRef<ColorContextApi | null>(null);
-
-  const tool = useMemo<Tool<null>>(() => defineTool<null>({
-    id: 'color-context',
-    presentation: {
-      label: 'Color context',
-      group: 'view',
-    },
-    initial: {
-      keyDown: {
-        d: () => { apiRef.current?.reset(); return claim(); },
-        x: (ctx: { modifiers: { shift: boolean } }) => {
-          if (ctx.modifiers.shift) apiRef.current?.swapFocus();
-          else apiRef.current?.swap();
-          return claim();
-        },
-        '/': () => { apiRef.current?.toggleFocusedNone(); return claim(); },
-      },
-    },
-  }), []);
-
-  const api = useMemo<ColorContextApi>(() => ({
+  const value = useMemo<ColorContextValue>(() => ({
     fill, stroke, focused,
     setFill, setStroke, setFocused, setFocus,
     setFillColor, setStrokeColor, setFocusedColor,
@@ -228,12 +233,28 @@ export function useColorContextTool(opts: UseColorContextToolOptions): {
     applyFillToSelection, applyStrokeToSelection, applyStrokeWidthToSelection,
   }), [
     fill, stroke, focused,
-    setFill, setStroke, setFocused, setFillColor, setStrokeColor, setFocusedColor,
+    setFill, setStroke, setFocused,
+    setFillColor, setStrokeColor, setFocusedColor,
     focusedAlpha, setFocusedAlpha,
     swap, swapFocus, toggleFocusedNone, toggleFocusedTransparent, reset,
     applyFillToSelection, applyStrokeToSelection, applyStrokeWidthToSelection,
   ]);
 
-  apiRef.current = api;
-  return { tool, api };
+  return (
+    <ColorContextContext.Provider value={value}>
+      {children}
+    </ColorContextContext.Provider>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Hook
+// ---------------------------------------------------------------------------
+
+export function useColorContext(): ColorContextValue {
+  const v = useContext(ColorContextContext);
+  if (!v) {
+    throw new Error('useColorContext must be used inside <ColorContextProvider>');
+  }
+  return v;
 }
