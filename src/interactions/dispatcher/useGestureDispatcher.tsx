@@ -16,6 +16,7 @@ import { isEditableTarget } from '../actions/useKeybinding';
 import { useActiveToolContext } from '../actions/activeToolContext';
 import { useDepRegistry } from '../actions/depRegistry';
 import type { ActionsRegistry } from '../actions/registry';
+import type { AffordanceHit } from '../actions/invoker';
 import type { Tool } from '../../tools/types';
 import { createDispatcher, type Dispatcher, type DispatcherContext } from './dispatcher';
 import type { InputEvent } from './matcher';
@@ -43,6 +44,22 @@ export interface UseGestureDispatcherOptions {
   toolsById: ReadonlyMap<string, Tool>;
   /** Default true. Set false to opt out of dispatcher wiring (e.g. demos that disable it). */
   enabled?: boolean;
+  /**
+   * Optional affordance classifier. Called on every pointerdown with the
+   * world-space coordinates of the pointer. Returns an `AffordanceHit` when
+   * the pointer lands on a known affordance (resize handle, rotate handle, etc.)
+   * or `null` when the pointer hit open canvas.
+   *
+   * The hit is packed into `InputEvent.pointerdown.affordance` and flows
+   * through into `InvocationCtx.drag.affordance`. Action invokers that require
+   * a specific affordance (e.g. `resizeAction` requires `handle:*`) use this
+   * field as a guard in their `start` body.
+   *
+   * When omitted, `affordance` is always `undefined` — meaning only consumers
+   * that explicitly wire a classifier get affordance-gated behavior. Phase 13
+   * will wire the full chrome→dispatcher bridge via `<SceneCanvas>`.
+   */
+  affordanceAt?: (worldPoint: { x: number; y: number }) => AffordanceHit | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -50,7 +67,7 @@ export interface UseGestureDispatcherOptions {
 // ---------------------------------------------------------------------------
 
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, toolsById, enabled = true } = opts;
+  const { canvasRef, actions, toolsById, enabled = true, affordanceAt } = opts;
   const activeTool = useActiveToolContext();
   const depRegistry = useDepRegistry();
 
@@ -78,6 +95,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     toolsById,
     isMac: IS_MAC,
   };
+
+  // Stable ref for affordanceAt so the effect closure always sees the latest version.
+  const affordanceAtRef = useRef(affordanceAt);
+  affordanceAtRef.current = affordanceAt;
 
   // Cancel in-flight ongoing handles when active tool changes (not on initial mount).
   const prevActiveRef = useRef(activeTool.active);
@@ -185,6 +206,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     const onPointerDown = (e: PointerEvent) => {
       activePointers.add(e.pointerId);
 
+      // Classify the affordance at the pointerdown world-space position.
+      // The thunk is optional — when absent, affordance is undefined (no-op).
+      const affordance = affordanceAtRef.current?.({ x: e.clientX, y: e.clientY }) ?? undefined;
+
       const ev: InputEvent = {
         kind: 'pointerdown',
         target: e.target,
@@ -194,6 +219,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         ctrlKey: e.ctrlKey,
         metaKey: e.metaKey,
         shiftKey: e.shiftKey,
+        ...(affordance !== undefined ? { affordance } : {}),
       };
       dispatcher.handleInput(ev, ctxRef.current);
 
