@@ -10,8 +10,8 @@ import { PathBuilder } from 'features/paths/builder';
 import {
   useLassoSelect,
   type UseLassoSelectOptions,
-} from 'interactions/gestures/lasso-select/lassoSelect';
-import { selectFromLasso } from 'interactions/gestures/lasso-select/behaviors/selectFromLasso';
+} from 'interactions/actions/lasso-select/lassoSelect';
+import { selectFromLasso } from 'interactions/actions/lasso-select/behaviors/selectFromLasso';
 import type { LassoHitMode, LassoSelectAdapter } from 'core/adapters/types';
 import type { KeyBinding } from 'interactions/actions/useKeybinding';
 

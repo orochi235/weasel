@@ -4,7 +4,7 @@
 
 **Goal:** Port `useResizeInteraction` and `usePlotInteraction` from `src/canvas/hooks/` into the canvas-kit framework as `useResizeInteraction` and `useInsertInteraction`, sibling hooks to Phase 1's `useMoveInteraction`.
 
-**Architecture:** Generalize `MoveBehavior<TPose>` into `GestureBehavior<TPose, TProposed>` so resize and insert can reuse the lifecycle/context plumbing with hook-specific proposed-pose shapes. Reorganize `interactions/behaviors/` into per-hook subpaths (`move/`, `resize/`, `insert/`, `shared/`) so three `snapToGrid` factories can coexist. Both new hooks emit ops via the existing adapter `applyBatch` pipeline; resize emits `[TransformOp]`, insert emits `[CreateOp]`.
+**Architecture:** Generalize `MoveBehavior<TPose>` into `ActionBehavior<TPose, TProposed>` so resize and insert can reuse the lifecycle/context plumbing with hook-specific proposed-pose shapes. Reorganize `interactions/behaviors/` into per-hook subpaths (`move/`, `resize/`, `insert/`, `shared/`) so three `snapToGrid` factories can coexist. Both new hooks emit ops via the existing adapter `applyBatch` pipeline; resize emits `[TransformOp]`, insert emits `[CreateOp]`.
 
 **Tech Stack:** TypeScript, React 19, Zustand, Vitest, vi.useFakeTimers (for any dwell-style behaviors — none in this phase).
 
@@ -232,14 +232,14 @@ git commit -m "refactor(canvas-kit): drop Ft suffix from kit-side identifiers"
 
 ---
 
-### Task 1: Generalize MoveBehavior → GestureBehavior; add Resize + Insert types
+### Task 1: Generalize MoveBehavior → ActionBehavior; add Resize + Insert types
 
-**Approach decision (documented).** Phase 1's `MoveBehavior<TPose>` already returns `{ pose?, snap? } | void`. The `snap?` field is move-specific (it represents a re-parent target). To preserve Phase 1 unchanged while letting Resize and Insert define their own onMove return shapes, we use **a base `GestureBehavior<TPose, TProposed, TMoveResult>` interface and define hook-specific aliases that pin TMoveResult**:
+**Approach decision (documented).** Phase 1's `MoveBehavior<TPose>` already returns `{ pose?, snap? } | void`. The `snap?` field is move-specific (it represents a re-parent target). To preserve Phase 1 unchanged while letting Resize and Insert define their own onMove return shapes, we use **a base `ActionBehavior<TPose, TProposed, TMoveResult>` interface and define hook-specific aliases that pin TMoveResult**:
 
 ```ts
-type MoveBehavior<TPose>   = GestureBehavior<TPose, TPose, BehaviorMoveResult<TPose>>;
-type ResizeBehavior<TPose> = GestureBehavior<TPose, ResizeProposed<TPose>, ResizeMoveResult<TPose>>;
-type InsertBehavior<TPose> = GestureBehavior<TPose, InsertProposed<TPose>, InsertMoveResult<TPose>>;
+type MoveBehavior<TPose>   = ActionBehavior<TPose, TPose, BehaviorMoveResult<TPose>>;
+type ResizeBehavior<TPose> = ActionBehavior<TPose, ResizeProposed<TPose>, ResizeMoveResult<TPose>>;
+type InsertBehavior<TPose> = ActionBehavior<TPose, InsertProposed<TPose>, InsertMoveResult<TPose>>;
 ```
 
 This keeps the existing `MoveBehavior` shape literally unchanged at the call site (the alias's resolved type matches today's interface), so all Phase 1 behaviors and tests compile without modification.
@@ -368,7 +368,7 @@ export interface SnapStrategy<TPose> {
  * onEnd is uniform: first non-undefined return wins (Op[] = commit those,
  * null = abort, undefined = defer).
  */
-export interface GestureBehavior<TPose, TProposed, TMoveResult> {
+export interface ActionBehavior<TPose, TProposed, TMoveResult> {
   onStart?(ctx: GestureContext<TPose>): void;
   onMove?(ctx: GestureContext<TPose>, proposed: TProposed): TMoveResult | void;
   onEnd?(ctx: GestureContext<TPose>): Op[] | null | void;
@@ -381,7 +381,7 @@ export interface BehaviorMoveResult<TPose> {
   snap?: SnapTarget<TPose> | null;
 }
 
-export type MoveBehavior<TPose> = GestureBehavior<TPose, TPose, BehaviorMoveResult<TPose>>;
+export type MoveBehavior<TPose> = ActionBehavior<TPose, TPose, BehaviorMoveResult<TPose>>;
 
 export interface MoveOverlay<TPose> {
   draggedIds: string[];
@@ -413,7 +413,7 @@ export interface ResizeMoveResult<TPose extends ResizePose> {
   pose?: TPose;
 }
 
-export type ResizeBehavior<TPose extends ResizePose> = GestureBehavior<
+export type ResizeBehavior<TPose extends ResizePose> = ActionBehavior<
   TPose,
   ResizeProposed<TPose>,
   ResizeMoveResult<TPose>
@@ -438,7 +438,7 @@ export interface InsertMoveResult<TPose extends { x: number; y: number }> {
   current?: TPose;
 }
 
-export type InsertBehavior<TPose extends { x: number; y: number }> = GestureBehavior<
+export type InsertBehavior<TPose extends { x: number; y: number }> = ActionBehavior<
   TPose,
   InsertProposed<TPose>,
   InsertMoveResult<TPose>
@@ -493,7 +493,7 @@ Expected: PASS for both. The `MoveBehavior` alias resolves to the same shape Pha
 
 ```
 git add src/canvas-kit/interactions/types.ts src/canvas-kit/interactions/types.test.ts src/canvas-kit/adapters/types.ts
-git commit -m "feat(canvas-kit): generalize MoveBehavior into GestureBehavior; add Resize/Insert types"
+git commit -m "feat(canvas-kit): generalize MoveBehavior into ActionBehavior; add Resize/Insert types"
 ```
 
 ---
@@ -1843,7 +1843,7 @@ git commit -m "feat(garden): add zoneResize and structureResize adapters"
 
 Snaps `start` once at gesture start (via `onStart`) and `current` each `onMove`. Bypass via modifier.
 
-The `onStart` hook can't return a result (per the `GestureBehavior` interface — onStart is `void`). To set the start pose, the behavior overwrites `ctx.origin` for the dragged id directly. The hook reads `origin` when computing the proposed pose on the next move, so overwriting at `onStart` is the right seam.
+The `onStart` hook can't return a result (per the `ActionBehavior` interface — onStart is `void`). To set the start pose, the behavior overwrites `ctx.origin` for the dragged id directly. The hook reads `origin` when computing the proposed pose on the next move, so overwriting at `onStart` is the right seam.
 
 **Files:**
 - Create: `src/canvas-kit/interactions/insert/behaviors/snapToGrid.test.ts`
@@ -3135,7 +3135,7 @@ git commit -m "docs: mark canvas-kit resize+insert phase 2 implemented"
 ### Spec coverage
 
 - ✅ Task 0: Kit unit-free rename (`cellFt` → `cell`, `radiusFt` → `radius`).
-- ✅ Task 1: `GestureBehavior<TPose, TProposed, TMoveResult>` + `MoveBehavior` / `ResizeBehavior` / `InsertBehavior` aliases + `ResizeAnchor` + `ResizePose` + overlays + `ResizeAdapter` + `InsertAdapter`.
+- ✅ Task 1: `ActionBehavior<TPose, TProposed, TMoveResult>` + `MoveBehavior` / `ResizeBehavior` / `InsertBehavior` aliases + `ResizeAnchor` + `ResizePose` + overlays + `ResizeAdapter` + `InsertAdapter`.
 - ✅ Task 2: File reorg into `move/`, `resize/`, `insert/`, `shared/`. Per-hook subpaths via top-level proxy files (`move.ts`, `resize.ts`, `insert.ts`).
 - ✅ Task 3: `resize/clampMinSize` (anchor-aware, all 8 anchor combinations covered).
 - ✅ Task 4: `resize/snapToGrid` (anchor-aware, `suspendBelowDim`, `bypassKey`).

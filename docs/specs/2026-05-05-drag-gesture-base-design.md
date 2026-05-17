@@ -266,13 +266,13 @@ A TODO entry tracks the deferred evaluation.
 
 **Modify:**
 - `src/interactions/gestures/dragRect.ts` — collapse to wrapper around `useDragGesture`.
-- `src/interactions/gestures/move/move.ts` — collapse the phase-machine portion to a wrapper around `useDragGesture`. Keep behaviors loop, layout pass, cascade, op dispatch in the wrapper.
+- `src/interactions/actions/move/move.ts` — collapse the phase-machine portion to a wrapper around `useDragGesture`. Keep behaviors loop, layout pass, cascade, op dispatch in the wrapper.
 - `src/interactions/gestures/index.ts` — export `useDragGesture` and its types.
 - `docs/TODO.md` — add deferral entry for `useResize`/`useRotate` evaluation against `useDragGesture`.
 
 **Tests stay:**
 - `src/interactions/gestures/dragRect.test.ts` — unchanged. Asserts the dragRect public surface.
-- `src/interactions/gestures/move/move.test.ts` (and behavior-specific suites) — unchanged. Asserts move's public surface.
+- `src/interactions/actions/move/move.test.ts` (and behavior-specific suites) — unchanged. Asserts move's public surface.
 
 If any test reaches into private state and breaks, rewrite it to use the public surface in the same task that introduces the migration.
 

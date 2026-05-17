@@ -17,11 +17,11 @@
 **Create:**
 - `src/features/paths/polygonHitTestRect.ts` — polygon-vs-AABB helpers (`polygonContainsRectCenter`, `polygonContainsRect`, `polygonIntersectsRect`).
 - `src/features/paths/polygonHitTestRect.test.ts`
-- `src/interactions/gestures/lasso-select/lassoSelect.ts` — `useLassoSelect` hook.
-- `src/interactions/gestures/lasso-select/lassoSelect.test.ts`
-- `src/interactions/gestures/lasso-select/index.ts` — barrel.
-- `src/interactions/gestures/lasso-select/behaviors/selectFromLasso.ts`
-- `src/interactions/gestures/lasso-select/behaviors/selectFromLasso.test.ts`
+- `src/interactions/actions/lasso-select/lassoSelect.ts` — `useLassoSelect` hook.
+- `src/interactions/actions/lasso-select/lassoSelect.test.ts`
+- `src/interactions/actions/lasso-select/index.ts` — barrel.
+- `src/interactions/actions/lasso-select/behaviors/selectFromLasso.ts`
+- `src/interactions/actions/lasso-select/behaviors/selectFromLasso.test.ts`
 - `src/tools/builtin/useLassoTool.ts`
 - `src/tools/builtin/useLassoTool.test.tsx`
 
@@ -491,7 +491,7 @@ export interface LassoSelectProposed {
 export type LassoSelectMoveResult = void;
 
 /** A behavior plugged into `useLassoSelect`. */
-export type LassoSelectBehavior = GestureBehavior<
+export type LassoSelectBehavior = ActionBehavior<
   LassoSelectPose,
   LassoSelectProposed,
   LassoSelectMoveResult
@@ -531,17 +531,17 @@ EOF
 
 ### Task 5: `useLassoSelect` hook
 
-Gesture hook built on `useDragGesture`. Distance-throttled vertex sampling, `start` / `move` / `end` / `cancel` lifecycle, behaviors plugged through the existing `GestureBehavior` shape, vertex array stashed in `ctx.scratch['lassoSelect.vertices']` for behaviors to read.
+Gesture hook built on `useDragGesture`. Distance-throttled vertex sampling, `start` / `move` / `end` / `cancel` lifecycle, behaviors plugged through the existing `ActionBehavior` shape, vertex array stashed in `ctx.scratch['lassoSelect.vertices']` for behaviors to read.
 
 **Files:**
-- Create: `src/interactions/gestures/lasso-select/lassoSelect.ts`
-- Create: `src/interactions/gestures/lasso-select/lassoSelect.test.ts`
-- Create: `src/interactions/gestures/lasso-select/index.ts`
+- Create: `src/interactions/actions/lasso-select/lassoSelect.ts`
+- Create: `src/interactions/actions/lasso-select/lassoSelect.test.ts`
+- Create: `src/interactions/actions/lasso-select/index.ts`
 
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
-// src/interactions/gestures/lasso-select/lassoSelect.test.ts
+// src/interactions/actions/lasso-select/lassoSelect.test.ts
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useLassoSelect } from './lassoSelect';
@@ -658,13 +658,13 @@ describe('useLassoSelect', () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `npx vitest run src/interactions/gestures/lasso-select/lassoSelect.test.ts`
+Run: `npx vitest run src/interactions/actions/lasso-select/lassoSelect.test.ts`
 Expected: FAIL — module does not exist.
 
 - [ ] **Step 3: Implement the hook**
 
 ```ts
-// src/interactions/gestures/lasso-select/lassoSelect.ts
+// src/interactions/actions/lasso-select/lassoSelect.ts
 import { useMemo, useRef, useState } from 'react';
 import type { Op } from '../../../core/ops/types';
 import type { LassoSelectAdapter } from '../../../core/adapters/types';
@@ -852,7 +852,7 @@ export function useLassoSelect(
 - [ ] **Step 4: Add the barrel**
 
 ```ts
-// src/interactions/gestures/lasso-select/index.ts
+// src/interactions/actions/lasso-select/index.ts
 export { useLassoSelect } from './lassoSelect';
 export type {
   LassoSelectController,
@@ -862,7 +862,7 @@ export type {
 
 - [ ] **Step 5: Run tests to verify they pass**
 
-Run: `npx vitest run src/interactions/gestures/lasso-select/lassoSelect.test.ts`
+Run: `npx vitest run src/interactions/actions/lasso-select/lassoSelect.test.ts`
 Expected: PASS — all seven tests green.
 
 - [ ] **Step 6: Typecheck**
@@ -873,15 +873,15 @@ Expected: clean.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/interactions/gestures/lasso-select/lassoSelect.ts \
-        src/interactions/gestures/lasso-select/lassoSelect.test.ts \
-        src/interactions/gestures/lasso-select/index.ts
+git add src/interactions/actions/lasso-select/lassoSelect.ts \
+        src/interactions/actions/lasso-select/lassoSelect.test.ts \
+        src/interactions/actions/lasso-select/index.ts
 git commit -m "$(cat <<'EOF'
 feat(gestures): useLassoSelect hook
 
 Free-form polygon gesture; distance-throttled vertex sampling
 (minVertexSpacing default 2 world-px); behaviors plugged through the
-standard GestureBehavior shape; vertex history stashed in
+standard ActionBehavior shape; vertex history stashed in
 ctx.scratch['lassoSelect.vertices'] for behaviors to read in onEnd.
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
@@ -896,13 +896,13 @@ EOF
 Default behavior — replace selection (or extend with shift) using `hitTestLasso`. Mirrors `selectFromMarquee`'s contract.
 
 **Files:**
-- Create: `src/interactions/gestures/lasso-select/behaviors/selectFromLasso.ts`
-- Create: `src/interactions/gestures/lasso-select/behaviors/selectFromLasso.test.ts`
+- Create: `src/interactions/actions/lasso-select/behaviors/selectFromLasso.ts`
+- Create: `src/interactions/actions/lasso-select/behaviors/selectFromLasso.test.ts`
 
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
-// src/interactions/gestures/lasso-select/behaviors/selectFromLasso.test.ts
+// src/interactions/actions/lasso-select/behaviors/selectFromLasso.test.ts
 import { describe, expect, it, vi } from 'vitest';
 import { selectFromLasso } from './selectFromLasso';
 import type {
@@ -1039,13 +1039,13 @@ describe('selectFromLasso', () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `npx vitest run src/interactions/gestures/lasso-select/behaviors/selectFromLasso.test.ts`
+Run: `npx vitest run src/interactions/actions/lasso-select/behaviors/selectFromLasso.test.ts`
 Expected: FAIL — module does not exist.
 
 - [ ] **Step 3: Implement the behavior**
 
 ```ts
-// src/interactions/gestures/lasso-select/behaviors/selectFromLasso.ts
+// src/interactions/actions/lasso-select/behaviors/selectFromLasso.ts
 import { createSetSelectionOp } from '../../../../core/ops/select';
 import type { Op } from '../../../../core/ops/types';
 import type { NodeId } from '../../../../core/scene/types';
@@ -1119,14 +1119,14 @@ function mergeUnique(a: ReadonlyArray<string>, b: ReadonlyArray<string>): string
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `npx vitest run src/interactions/gestures/lasso-select/behaviors/selectFromLasso.test.ts`
+Run: `npx vitest run src/interactions/actions/lasso-select/behaviors/selectFromLasso.test.ts`
 Expected: PASS — all nine tests green.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/interactions/gestures/lasso-select/behaviors/selectFromLasso.ts \
-        src/interactions/gestures/lasso-select/behaviors/selectFromLasso.test.ts
+git add src/interactions/actions/lasso-select/behaviors/selectFromLasso.ts \
+        src/interactions/actions/lasso-select/behaviors/selectFromLasso.test.ts
 git commit -m "$(cat <<'EOF'
 feat(gestures): selectFromLasso default behavior
 
@@ -1266,8 +1266,8 @@ import type { DrawCommand } from '@orochi235/weasel-gl';
 import { viewToTransform } from '../../core/viewport/view';
 import { worldToScreen } from '../../core/viewport/viewTransform';
 import { PathBuilder } from '../../features/paths/builder';
-import { useLassoSelect, type UseLassoSelectOptions } from '../../interactions/gestures/lasso-select/lassoSelect';
-import { selectFromLasso } from '../../interactions/gestures/lasso-select/behaviors/selectFromLasso';
+import { useLassoSelect, type UseLassoSelectOptions } from '../../interactions/actions/lasso-select/lassoSelect';
+import { selectFromLasso } from '../../interactions/actions/lasso-select/behaviors/selectFromLasso';
 import type { LassoHitMode, LassoSelectAdapter } from '../../core/adapters/types';
 
 export interface UseLassoToolOptions extends Pick<UseLassoSelectOptions,
@@ -1452,13 +1452,13 @@ export {
 Find the existing `useAreaSelect` / `selectFromMarquee` re-exports in `src/index.ts`. Add adjacent lines:
 
 ```ts
-export { useLassoSelect } from './interactions/gestures/lasso-select';
+export { useLassoSelect } from './interactions/actions/lasso-select';
 export type {
   LassoSelectController,
   UseLassoSelectOptions,
-} from './interactions/gestures/lasso-select';
-export { selectFromLasso } from './interactions/gestures/lasso-select/behaviors/selectFromLasso';
-export type { SelectFromLassoOptions } from './interactions/gestures/lasso-select/behaviors/selectFromLasso';
+} from './interactions/actions/lasso-select';
+export { selectFromLasso } from './interactions/actions/lasso-select/behaviors/selectFromLasso';
+export type { SelectFromLassoOptions } from './interactions/actions/lasso-select/behaviors/selectFromLasso';
 export { useLassoTool, type UseLassoToolOptions } from './tools/builtin/useLassoTool';
 ```
 

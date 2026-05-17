@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useEditAnchorsTool } from './useEditAnchorsTool';
-import { useEditAnchors } from 'interactions/gestures/edit-anchors';
+import { useEditAnchors } from 'interactions/actions/edit-anchors';
 import { PathBuilder } from 'features/paths/builder';
 import type { Path, PolygonPath } from 'features/paths/types';
 import type { Op } from 'core/ops/types';

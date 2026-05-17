@@ -163,7 +163,7 @@ A **behavior** is a small composable extension that refines the in-flight
 pose and/or supplies commit ops:
 
 ```ts
-interface GestureBehavior<TPose, TProposed, TMoveResult> {
+interface ActionBehavior<TPose, TProposed, TMoveResult> {
   defaultTransient?: boolean;
   onStart?(ctx): void;
   onMove?(ctx, proposed): TMoveResult | void;

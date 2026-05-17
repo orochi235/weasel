@@ -2,7 +2,7 @@ import { boundsOfPath } from './bounds';
 import { pointInPath } from './hitTest';
 import { translatePath } from './transform';
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, type Path, type PolygonPath } from './types';
-import { aabbIntersectsRect, type PoseDescriptor } from 'interactions/gestures/resize/geometry';
+import { aabbIntersectsRect, type PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { ResizePose } from 'interactions/gestures/types';
 
 /**

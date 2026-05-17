@@ -15,12 +15,12 @@
 ## File map
 
 - Modify: `src/interactions/gestures/types.ts` — new types.
-- Modify: `src/interactions/gestures/resize/resize.ts` — context build + back-solve.
-- Create: `src/interactions/gestures/resize/behaviors/pointSnapToGrid.ts`.
-- Modify: `src/interactions/gestures/resize/behaviors/index.ts` — re-export.
+- Modify: `src/interactions/actions/resize/resize.ts` — context build + back-solve.
+- Create: `src/interactions/actions/resize/behaviors/pointSnapToGrid.ts`.
+- Modify: `src/interactions/actions/resize/behaviors/index.ts` — re-export.
 - Modify: `src/index.ts` — re-export new types + factory at the kit barrel.
-- Test: `src/interactions/gestures/resize/resize.test.ts` (or `resize.points.test.ts`) — 8 tests.
-- Test: `src/interactions/gestures/resize/behaviors/pointSnapToGrid.test.ts` — unit tests.
+- Test: `src/interactions/actions/resize/resize.test.ts` (or `resize.points.test.ts`) — 8 tests.
+- Test: `src/interactions/actions/resize/behaviors/pointSnapToGrid.test.ts` — unit tests.
 - Modify or create: `demo/demos/PointSnapDemo.tsx` — rotated rect + grid + snap.
 - Modify: `demo/registry.ts` — register demo (if new).
 - Modify: `docs/TODO.md` — strike Tier 1.5 entry.
@@ -89,20 +89,20 @@ git commit -m "feat(resize): types for PointSnapBehavior" -m "" -m "Co-Authored-
 ## Task 2: Hook plumbing + back-solve + tests (TDD)
 
 **Files:**
-- Modify: `src/interactions/gestures/resize/resize.ts`
-- Test: `src/interactions/gestures/resize/resize.test.ts` (or a new `resize.pointSnap.test.ts` if the existing file is unwieldy — let the implementer judge)
+- Modify: `src/interactions/actions/resize/resize.ts`
+- Test: `src/interactions/actions/resize/resize.test.ts` (or a new `resize.pointSnap.test.ts` if the existing file is unwieldy — let the implementer judge)
 
 - [ ] **Step 2.1: Read the existing hook**
 
-Read `src/interactions/gestures/resize/resize.ts` end-to-end. Note:
+Read `src/interactions/actions/resize/resize.ts` end-to-end. Note:
 - Where `behaviors[]` is iterated and the proposed pose is mutated.
 - How `RotatedPose` is detected (presence of `rotation` field) vs plain `ResizePose`.
 - Where the anchor is resolved (it's already passed in the proposed result).
 - Where the overlay is published.
 
-Read `src/interactions/gestures/resize/geometry.ts` too — there's likely already helpers for rotating local→world. Reuse them.
+Read `src/interactions/actions/resize/geometry.ts` too — there's likely already helpers for rotating local→world. Reuse them.
 
-If no rotation helpers exist, add a small local function in `resize.ts` (or a new `src/interactions/gestures/resize/pointSnapBackSolve.ts` helper file).
+If no rotation helpers exist, add a small local function in `resize.ts` (or a new `src/interactions/actions/resize/pointSnapBackSolve.ts` helper file).
 
 - [ ] **Step 2.2: Write the failing tests**
 
@@ -164,14 +164,14 @@ it('back-solve flips anchor when dragged corner crosses fixed corner', () => {
 - [ ] **Step 2.3: Run tests — expect them to fail**
 
 ```
-npx vitest run src/interactions/gestures/resize/
+npx vitest run src/interactions/actions/resize/
 ```
 
 Expected: 8 new tests fail; existing tests pass.
 
 - [ ] **Step 2.4: Implement the back-solve**
 
-In `src/interactions/gestures/resize/resize.ts`:
+In `src/interactions/actions/resize/resize.ts`:
 
 (a) Add an option to the existing `UseResizeOptions` interface (find it — likely an `interface` or inline typed `options` arg):
 
@@ -304,7 +304,7 @@ Adjust variable names to match the surrounding code. The proposed pose at this p
 - [ ] **Step 2.5: Run tests — confirm green**
 
 ```
-npx vitest run src/interactions/gestures/resize/
+npx vitest run src/interactions/actions/resize/
 ```
 
 Expected: all green, including the new 8 tests.
@@ -320,7 +320,7 @@ Expected: no errors.
 - [ ] **Step 2.7: Commit**
 
 ```bash
-git add src/interactions/gestures/resize/resize.ts src/interactions/gestures/resize/resize.test.ts
+git add src/interactions/actions/resize/resize.ts src/interactions/actions/resize/resize.test.ts
 # (and any new helper files / split test files)
 git commit -m "feat(useResize): pointSnapBehaviors slot with four-frame back-solve" -m "" -m "Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
@@ -330,9 +330,9 @@ git commit -m "feat(useResize): pointSnapBehaviors slot with four-frame back-sol
 ## Task 3: Built-in `pointSnapToGrid` factory
 
 **Files:**
-- Create: `src/interactions/gestures/resize/behaviors/pointSnapToGrid.ts`
-- Create: `src/interactions/gestures/resize/behaviors/pointSnapToGrid.test.ts`
-- Modify: `src/interactions/gestures/resize/behaviors/index.ts`
+- Create: `src/interactions/actions/resize/behaviors/pointSnapToGrid.ts`
+- Create: `src/interactions/actions/resize/behaviors/pointSnapToGrid.test.ts`
+- Modify: `src/interactions/actions/resize/behaviors/index.ts`
 - Modify: `src/index.ts` — re-export `pointSnapToGrid` + new types.
 
 - [ ] **Step 3.1: Write failing tests for the factory**
@@ -379,14 +379,14 @@ it('bypassKey suppresses snap', () => {
 - [ ] **Step 3.2: Run tests — confirm failures**
 
 ```
-npx vitest run src/interactions/gestures/resize/behaviors/pointSnapToGrid.test.ts
+npx vitest run src/interactions/actions/resize/behaviors/pointSnapToGrid.test.ts
 ```
 
 Expected: all four fail (file does not exist).
 
 - [ ] **Step 3.3: Implement**
 
-Create `src/interactions/gestures/resize/behaviors/pointSnapToGrid.ts`:
+Create `src/interactions/actions/resize/behaviors/pointSnapToGrid.ts`:
 
 ```ts
 import type {
@@ -424,7 +424,7 @@ export function pointSnapToGrid<TPose extends ResizePose>(args: {
 
 - [ ] **Step 3.4: Update barrel**
 
-In `src/interactions/gestures/resize/behaviors/index.ts`, add:
+In `src/interactions/actions/resize/behaviors/index.ts`, add:
 
 ```ts
 export { pointSnapToGrid } from './pointSnapToGrid';
@@ -435,7 +435,7 @@ In `src/index.ts`, find the resize behaviors re-export block (search for `lockAs
 - [ ] **Step 3.5: Run tests — confirm green**
 
 ```
-npx vitest run src/interactions/gestures/resize/behaviors/pointSnapToGrid.test.ts
+npx vitest run src/interactions/actions/resize/behaviors/pointSnapToGrid.test.ts
 ```
 
 Expected: 4/4 pass.
@@ -451,9 +451,9 @@ Expected: clean.
 - [ ] **Step 3.7: Commit**
 
 ```bash
-git add src/interactions/gestures/resize/behaviors/pointSnapToGrid.ts \
-        src/interactions/gestures/resize/behaviors/pointSnapToGrid.test.ts \
-        src/interactions/gestures/resize/behaviors/index.ts \
+git add src/interactions/actions/resize/behaviors/pointSnapToGrid.ts \
+        src/interactions/actions/resize/behaviors/pointSnapToGrid.test.ts \
+        src/interactions/actions/resize/behaviors/index.ts \
         src/index.ts
 git commit -m "feat(resize): pointSnapToGrid built-in behavior" -m "" -m "Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```

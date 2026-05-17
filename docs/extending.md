@@ -113,7 +113,7 @@ If your tool is in a modal state where chrome hits would interrupt the gesture (
 A behavior plugs into a hook's `options.behaviors` array:
 
 ```ts
-interface GestureBehavior<TPose, TProposed, TMoveResult> {
+interface ActionBehavior<TPose, TProposed, TMoveResult> {
   defaultTransient?: boolean;
   onStart?(ctx: GestureContext<TPose>): void;
   onMove?(ctx: GestureContext<TPose>, proposed: TProposed): TMoveResult | void;
@@ -142,11 +142,11 @@ Each hook pins the proposed/result shape; pick the matching alias
 
 **Reference behaviors in the source:**
 
-- `src/interactions/gestures/move/behaviors/snapToGrid.ts` — pure pose refinement.
-- `src/interactions/gestures/move/behaviors/snapToContainer.ts` — scratch state, dwell timer, custom `onEnd`.
-- `src/interactions/gestures/area-select/behaviors/selectFromMarquee.ts` — `defaultTransient`, `onEnd`-only.
-- `src/interactions/gestures/resize/behaviors/clampMinSize.ts` — width/height clamp.
-- `src/interactions/gestures/clone/behaviors/cloneByAltDrag.ts` — modifier activation + paste flow.
+- `src/interactions/actions/move/behaviors/snapToGrid.ts` — pure pose refinement.
+- `src/interactions/actions/move/behaviors/snapToContainer.ts` — scratch state, dwell timer, custom `onEnd`.
+- `src/interactions/actions/area-select/behaviors/selectFromMarquee.ts` — `defaultTransient`, `onEnd`-only.
+- `src/interactions/actions/resize/behaviors/clampMinSize.ts` — width/height clamp.
+- `src/interactions/actions/clone/behaviors/cloneByAltDrag.ts` — modifier activation + paste flow.
 
 ## Non-rect poses
 

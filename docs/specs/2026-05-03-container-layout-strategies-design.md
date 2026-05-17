@@ -216,8 +216,8 @@ const layout = freeform({
 
 **Modify:**
 
-- `src/interactions/gestures/move/move.ts` — extend `MoveOverlay<TPose>` with `hypotheticalChildPositions`, `sourceReflowPositions`, `destContainerId`, `accepted`. Pointer-move calls `adapter.getLayout` on top-most container; commits batched ops including reflow.
-- `src/interactions/gestures/move/types.ts` — add the new overlay fields.
+- `src/interactions/actions/move/move.ts` — extend `MoveOverlay<TPose>` with `hypotheticalChildPositions`, `sourceReflowPositions`, `destContainerId`, `accepted`. Pointer-move calls `adapter.getLayout` on top-most container; commits batched ops including reflow.
+- `src/interactions/actions/move/types.ts` — add the new overlay fields.
 - `src/canvas/Canvas.tsx` — pass layout-aware overlay through to the active Tool's overlay (no behavior change in absence of `getLayout`).
 - `src/index.ts` — export layout module.
 - Adapter contract docs (wherever `MoveAdapter` / nested-group adapter is documented) — note `getLayout` is optional and absence preserves current behavior.
@@ -228,7 +228,7 @@ const layout = freeform({
 - `src/layout/strategies/tileGrid.test.ts` — cell math, swap-on-occupied, overflow skip behavior, default `cellAt` snap, override snap.
 - `src/layout/strategies/snapPoint.test.ts` — pattern generation per pattern type, `nearestWithin` rejection.
 - `src/layout/snaps.test.ts` — each snap policy in isolation against canned target arrays.
-- `src/interactions/gestures/move/move.layout.test.ts` — gesture integration: drag inside a layout container, drag across two layouts, drag to free space, rejection fall-through, source reflow on cross-container exit, commit ops shape (batched, source + dest).
+- `src/interactions/actions/move/move.layout.test.ts` — gesture integration: drag inside a layout container, drag across two layouts, drag to free space, rejection fall-through, source reflow on cross-container exit, commit ops shape (batched, source + dest).
 - Demo integration: `demo/demos/__tests__/layoutDemo.integration.test.tsx` — drives a cross-container drag and asserts the destination's children reflow.
 
 ## Tests required

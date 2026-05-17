@@ -75,10 +75,10 @@ useUndoRedoTool.ts          defineTool, claim, none
 Plus 3 other internal sites importing factory primitives from `'../../../tools/routing'`:
 
 ```
-src/interactions/gestures/move/move.ts        begin, hold, cancel, type Result
-src/interactions/gestures/move/move.test.ts   type BeginSpec
-src/interactions/gestures/area-select/areaSelect.ts        begin, hold, cancel, type Result
-src/interactions/gestures/area-select/areaSelect.test.ts   type Result
+src/interactions/actions/move/move.ts        begin, hold, cancel, type Result
+src/interactions/actions/move/move.test.ts   type BeginSpec
+src/interactions/actions/area-select/areaSelect.ts        begin, hold, cancel, type Result
+src/interactions/actions/area-select/areaSelect.test.ts   type Result
 ```
 
 Plus 3 sites importing the deep paths directly:
@@ -508,10 +508,10 @@ Note on `types.ts` collision: the routing folder's `types.ts` (which holds `Tool
 
 - [ ] **Update the three `interactions/gestures` sites** (deep imports of `tools/routing` from outside the tools subsystem):
 
-  - `src/interactions/gestures/move/move.ts:9` — `import { begin, hold, cancel as cancelResult, type Result } from '../../../tools/routing';` → `from '../../../tools';`
-  - `src/interactions/gestures/move/move.test.ts:8` — `import type { BeginSpec } from '../../../tools/routing';` → `from '../../../tools';` (but `BeginSpec` will need to be re-exported from `tools/index.ts` — see next step).
-  - `src/interactions/gestures/area-select/areaSelect.ts:13` — same rewrite as move.ts.
-  - `src/interactions/gestures/area-select/areaSelect.test.ts:140` — `import type { Result } from '../../../tools/routing';` → `from '../../../tools';`.
+  - `src/interactions/actions/move/move.ts:9` — `import { begin, hold, cancel as cancelResult, type Result } from '../../../tools/routing';` → `from '../../../tools';`
+  - `src/interactions/actions/move/move.test.ts:8` — `import type { BeginSpec } from '../../../tools/routing';` → `from '../../../tools';` (but `BeginSpec` will need to be re-exported from `tools/index.ts` — see next step).
+  - `src/interactions/actions/area-select/areaSelect.ts:13` — same rewrite as move.ts.
+  - `src/interactions/actions/area-select/areaSelect.test.ts:140` — `import type { Result } from '../../../tools/routing';` → `from '../../../tools';`.
 
 - [ ] **Add the substrate exports to `src/tools/index.ts`.** The barrel currently re-exports `defineTool`, `useTools`, dispatcher, types — extend with the substrate so the `interactions/gestures` consumers (and external authors) can import from `'..'`:
 

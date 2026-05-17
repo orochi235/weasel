@@ -23,7 +23,7 @@ Port `useAreaSelectInteraction` and `useClipboard` from `src/canvas/hooks/` into
 
 Two new kit hooks (`useAreaSelectInteraction`, `useClipboard`) plus a small generalization to support gestures that don't write to history:
 
-- **Transient gestures.** A new optional `transient` flag on the gesture descriptor (and a `defaultTransient` on `GestureBehavior`) marks a gesture whose ops apply through the adapter but don't push a history entry. Area-select uses this; move/resize/insert default to historied.
+- **Transient gestures.** A new optional `transient` flag on the gesture descriptor (and a `defaultTransient` on `ActionBehavior`) marks a gesture whose ops apply through the adapter but don't push a history entry. Area-select uses this; move/resize/insert default to historied.
 - **Insert/paste unification.** `InsertAdapter` gains a second commit path, `commitPaste(clipboard, offset)`, and an optional `getPasteOffset` hook. Paste emits a single batched `applyBatch` with N `createInsertOp`s plus a `createSetSelectionOp`.
 - **Op rename.** `createCreateOp` → `createInsertOp`; `CreateOp` → `InsertOp`. One verb across gesture, adapter, and op.
 
@@ -31,10 +31,10 @@ The kit stays render-agnostic. The marquee preview moves from direct selection-c
 
 ## Generalizing for transient gestures
 
-`GestureBehavior` gains an optional default:
+`ActionBehavior` gains an optional default:
 
 ```ts
-interface GestureBehavior<TPose, TProposed, TMoveResult> {
+interface ActionBehavior<TPose, TProposed, TMoveResult> {
   // ...existing fields...
   defaultTransient?: boolean;
 }
@@ -192,7 +192,7 @@ src/canvas-kit/interactions/
     index.ts
   types.ts                          # + AreaSelectAdapter, AreaSelectBehavior,
                                     #   AreaSelectOverlay, ClipboardSnapshot,
-                                    #   defaultTransient on GestureBehavior
+                                    #   defaultTransient on ActionBehavior
 ```
 
 Top-level `@/canvas-kit` re-exports `useAreaSelectInteraction` and `useClipboard`. The `selectFromMarquee` behavior is exported only via `@/canvas-kit/area-select` to match the per-hook subpath convention from Phase 2.
@@ -231,7 +231,7 @@ The `Select Area` tool routes mouse-down to `areaSelect.start(worldX, worldY, mo
 ## Migration order
 
 0. Op rename: `createCreateOp` → `createInsertOp`; `CreateOp` → `InsertOp`.
-1. Add `defaultTransient` to `GestureBehavior`; add `transient` to existing hook options as a no-op for non-transient gestures (verifies the wiring without behavior change).
+1. Add `defaultTransient` to `ActionBehavior`; add `transient` to existing hook options as a no-op for non-transient gestures (verifies the wiring without behavior change).
 2. Add `AreaSelectAdapter`, `AreaSelectBehavior`, `AreaSelectOverlay`, `ClipboardSnapshot` types.
 3. `area-select/selectFromMarquee` behavior + tests.
 4. `useAreaSelectInteraction` hook + integration tests.

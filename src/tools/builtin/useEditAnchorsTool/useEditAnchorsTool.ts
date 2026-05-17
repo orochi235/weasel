@@ -6,7 +6,7 @@ import {
   type EditAnchorsStartArgs,
   createAnchorEditOverlayLayer,
   type AnchorEditOverlayOpts,
-} from 'interactions/gestures/edit-anchors';
+} from 'interactions/actions/edit-anchors';
 import type { KeyBinding } from 'interactions/actions/useKeybinding';
 
 /** Vestigial scratch shape — kept exported for backward compatibility

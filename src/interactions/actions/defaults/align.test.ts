@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { defaultAlignActions } from './align';
-import { RECT_POSE_DESCRIPTOR } from '../../gestures/resize/geometry';
+import { RECT_POSE_DESCRIPTOR } from '../resize/geometry';
 import type { Op } from 'core/ops/types';
 import { asNodeId } from 'core/scene/types';
 
@@ -16,7 +16,7 @@ function makeDeps(poses: Record<string, Pose>) {
   return {
     getSelection: () => Object.keys(poses).map((k) => asNodeId(k)),
     getPose: (id: string): Pose => poses[id],
-    geometry: RECT_POSE_DESCRIPTOR as unknown as import('../../gestures/resize/geometry').PoseDescriptor<Pose>,
+    geometry: RECT_POSE_DESCRIPTOR as unknown as import('../resize/geometry').PoseDescriptor<Pose>,
     applyOps: vi.fn(),
   };
 }

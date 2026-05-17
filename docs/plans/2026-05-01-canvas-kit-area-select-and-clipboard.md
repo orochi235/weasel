@@ -4,7 +4,7 @@
 
 **Goal:** Port `useAreaSelectInteraction` and `useClipboard` from `src/canvas/hooks/` into canvas-kit as siblings to move/resize/insert. Generalize the gesture pipeline with a `transient` flag (gesture commits ops via `applyOps` without a history checkpoint) and unify clipboard paste with insert under a single `InsertAdapter`. Bundle a vocabulary cleanup that renames `createCreateOp` → `createInsertOp` and `CreateOp` → `InsertOp`.
 
-**Architecture:** Two new kit hooks (`useAreaSelectInteraction`, `useClipboard`) live under `src/canvas-kit/interactions/area-select/` and `.../clipboard/`. `GestureBehavior` gains an optional `defaultTransient`; per-hook options gain `transient?: boolean`. Area-select resolves transient → true and routes ops through `adapter.applyOps(ops)`; insert/move/resize keep their existing `applyBatch(ops, label)` path. Paste is a single `applyBatch` containing N `InsertOp`s plus one `SetSelectionOp`. `InsertAdapter` gains `commitPaste`, `snapshotSelection`, and an optional `getPasteOffset`.
+**Architecture:** Two new kit hooks (`useAreaSelectInteraction`, `useClipboard`) live under `src/canvas-kit/interactions/area-select/` and `.../clipboard/`. `ActionBehavior` gains an optional `defaultTransient`; per-hook options gain `transient?: boolean`. Area-select resolves transient → true and routes ops through `adapter.applyOps(ops)`; insert/move/resize keep their existing `applyBatch(ops, label)` path. Paste is a single `applyBatch` containing N `InsertOp`s plus one `SetSelectionOp`. `InsertAdapter` gains `commitPaste`, `snapshotSelection`, and an optional `getPasteOffset`.
 
 **Tech Stack:** TypeScript, React 19, Zustand, Vitest, `@testing-library/react`.
 
@@ -49,7 +49,7 @@ src/canvas/adapters/areaSelect.test.ts
 src/canvas-kit/ops/create.ts                   # rename internals → InsertOp/createInsertOp; file stays at create.ts but exports renamed
 src/canvas-kit/ops/index.ts                    # rename export
 src/canvas-kit/ops/createDelete.test.ts        # rename references
-src/canvas-kit/interactions/types.ts           # + defaultTransient on GestureBehavior; AreaSelect* and ClipboardSnapshot
+src/canvas-kit/interactions/types.ts           # + defaultTransient on ActionBehavior; AreaSelect* and ClipboardSnapshot
 src/canvas-kit/adapters/types.ts               # + AreaSelectAdapter; extend InsertAdapter (commitPaste, snapshotSelection, getPasteOffset)
 src/canvas-kit/interactions/insert/insert.ts   # call createInsertOp; accept transient option no-op
 src/canvas-kit/interactions/insert/insert.test.ts
@@ -228,7 +228,7 @@ git commit -m "refactor(canvas-kit): rename CreateOp/createCreateOp to InsertOp/
 
 ---
 
-### Task 1: Add `defaultTransient` flag to `GestureBehavior` and `transient?` to existing hook options
+### Task 1: Add `defaultTransient` flag to `ActionBehavior` and `transient?` to existing hook options
 
 This task is wiring-only: the flag is plumbed into move/resize/insert as a no-op (these hooks are never transient), so we can verify the type/option surface without behavior change. The actual transient code path lands in Task 4 (areaSelect hook).
 
@@ -238,9 +238,9 @@ This task is wiring-only: the flag is plumbed into move/resize/insert as a no-op
 - Modify: `src/canvas-kit/interactions/resize/resize.ts`
 - Modify: `src/canvas-kit/interactions/insert/insert.ts`
 
-- [ ] **Step 1.1: Extend `GestureBehavior` with optional `defaultTransient`**
+- [ ] **Step 1.1: Extend `ActionBehavior` with optional `defaultTransient`**
 
-In `src/canvas-kit/interactions/types.ts`, replace the `GestureBehavior` interface:
+In `src/canvas-kit/interactions/types.ts`, replace the `ActionBehavior` interface:
 
 ```ts
 /**
@@ -254,7 +254,7 @@ In `src/canvas-kit/interactions/types.ts`, replace the `GestureBehavior` interfa
  * commits its ops via `adapter.applyOps(ops)` (no history entry). When
  * `options.transient` is set explicitly, that value wins.
  */
-export interface GestureBehavior<TPose, TProposed, TMoveResult> {
+export interface ActionBehavior<TPose, TProposed, TMoveResult> {
   defaultTransient?: boolean;
   onStart?(ctx: GestureContext<TPose>): void;
   onMove?(ctx: GestureContext<TPose>, proposed: TProposed): TMoveResult | void;
@@ -389,7 +389,7 @@ export interface AreaSelectProposed {
  *  onEnd. We return void from onMove. */
 export type AreaSelectMoveResult = void;
 
-export type AreaSelectBehavior = GestureBehavior<
+export type AreaSelectBehavior = ActionBehavior<
   AreaSelectPose,
   AreaSelectProposed,
   AreaSelectMoveResult

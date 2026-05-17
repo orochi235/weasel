@@ -87,7 +87,7 @@ import {
 // Import directly from the subpath module — vite's `@orochi235/weasel/*` alias
 // resolves to `src/subpaths/*` at runtime; the explicit path keeps tsc happy
 // without adding a new path mapping.
-import { lockAspectWithModifier } from '../../../src/interactions/gestures/resize/behaviors/lockAspect';
+import { lockAspectWithModifier } from '../../../src/interactions/actions/resize/behaviors/lockAspect';
 // `useGridFeature` isn't on the kit's top-level barrel (only the low-level
 // primitives are). Mirrors the lockAspect import above — relative path into
 // `src/`, no new subpath needed.

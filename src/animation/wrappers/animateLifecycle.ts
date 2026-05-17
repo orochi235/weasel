@@ -1,5 +1,5 @@
 import { tweenPose } from '../poseHelpers';
-import type { PoseDescriptor } from 'interactions/gestures/resize/geometry';
+import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { SceneAdapter } from 'core/adapters/types';
 import type { Animator, EasingFn } from '../types';
 

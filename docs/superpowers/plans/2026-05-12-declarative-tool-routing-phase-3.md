@@ -21,8 +21,8 @@
 
 **Modified:**
 
-- `src/interactions/gestures/move/move.ts` — add `beginAt(ctx, ids)` method to the `useMove` return value.
-- `src/interactions/gestures/area-select/areaSelect.ts` — add `beginAt(ctx)` method to the `useAreaSelect` return value.
+- `src/interactions/actions/move/move.ts` — add `beginAt(ctx, ids)` method to the `useMove` return value.
+- `src/interactions/actions/area-select/areaSelect.ts` — add `beginAt(ctx)` method to the `useAreaSelect` return value.
 - `src/tools/builtin/useSelectTool.ts` — replace the imperative `defineTool` block with `defineTool` from `/routing` + route tables + `beginAt` calls.
 - `src/tools/builtin/useSelectTool.test.tsx` — existing tests pass against the migrated tool; add tests for modifier-sub-table behaviors and cursor states.
 
@@ -38,8 +38,8 @@
 
 **Files:**
 
-- Modify: `src/interactions/gestures/move/move.ts`
-- Modify (test): `src/interactions/gestures/move/move.test.ts`
+- Modify: `src/interactions/actions/move/move.ts`
+- Modify (test): `src/interactions/actions/move/move.test.ts`
 
 The `useMove` hook today exposes `start`/`move`/`end`/`cancel` methods. Add a `beginAt(ctx, ids)` method that returns a `begin(spec)` Result wrapping those methods as continuation closures.
 
@@ -47,7 +47,7 @@ The `useMove` hook today exposes `start`/`move`/`end`/`cancel` methods. Add a `b
 
 ```bash
 cd /Users/mike/src/weasel
-grep -n "export function useMove\|return {" src/interactions/gestures/move/move.ts | head -10
+grep -n "export function useMove\|return {" src/interactions/actions/move/move.ts | head -10
 ```
 
 Confirm the return is an object with `start`/`move`/`end`/`cancel` methods (and possibly an `overlay` RenderLayer).
@@ -55,7 +55,7 @@ Confirm the return is an object with `start`/`move`/`end`/`cancel` methods (and 
 - [ ] **Step 2: Write the failing test**
 
 ```ts
-// Append to src/interactions/gestures/move/move.test.ts:
+// Append to src/interactions/actions/move/move.test.ts:
 import { begin } from '../../../tools/routing';
 import type { Result } from '../../../tools/routing';
 
@@ -87,7 +87,7 @@ describe('useMove.beginAt', () => {
 - [ ] **Step 3: Run to verify fail**
 
 ```bash
-npm test -- src/interactions/gestures/move/move.test
+npm test -- src/interactions/actions/move/move.test
 ```
 
 Expected: new tests fail (beginAt undefined).
@@ -143,7 +143,7 @@ return { start, move, end, cancel, overlay, beginAt };
 - [ ] **Step 5: Verify tests pass**
 
 ```bash
-npm test -- src/interactions/gestures/move/move.test
+npm test -- src/interactions/actions/move/move.test
 ```
 
 All pass.
@@ -151,7 +151,7 @@ All pass.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/interactions/gestures/move/move.ts src/interactions/gestures/move/move.test.ts
+git add src/interactions/actions/move/move.ts src/interactions/actions/move/move.test.ts
 git commit -m "feat(move): beginAt adapter for declarative tool routing
 
 Returns a begin(spec) Result wrapping useMove's internal start/move/
@@ -167,7 +167,7 @@ machine is unchanged."
 
 **Files:**
 
-- Modify: `src/interactions/gestures/area-select/areaSelect.ts`
+- Modify: `src/interactions/actions/area-select/areaSelect.ts`
 - Modify (test): existing area-select test file.
 
 Same pattern as Task 1 but for marquee area-select.
@@ -175,7 +175,7 @@ Same pattern as Task 1 but for marquee area-select.
 - [ ] **Step 1: Inspect the current shape**
 
 ```bash
-grep -n "export function useAreaSelect\|return {" /Users/mike/src/weasel/src/interactions/gestures/area-select/areaSelect.ts | head -5
+grep -n "export function useAreaSelect\|return {" /Users/mike/src/weasel/src/interactions/actions/area-select/areaSelect.ts | head -5
 ```
 
 - [ ] **Step 2: Write the failing test**
@@ -218,8 +218,8 @@ return { start, move, end, cancel, overlay, beginAt };
 - [ ] **Step 4: Verify pass + commit**
 
 ```bash
-npm test -- src/interactions/gestures/area-select
-git add src/interactions/gestures/area-select/
+npm test -- src/interactions/actions/area-select
+git add src/interactions/actions/area-select/
 git commit -m "feat(area-select): beginAt adapter for declarative tool routing
 
 Same shape as Task 1's useMove.beginAt — returns a begin(spec) Result

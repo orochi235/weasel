@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
-import type { PoseDescriptor } from '../../gestures/resize/geometry';
+import type { PoseDescriptor } from '../resize/geometry';
 import type { ResizePose } from '../../gestures/types';
 import { alignDeltaFor, translatePoseViaDescriptor, type AlignEdge } from '../align/align';
 import type { Action } from '../registry';

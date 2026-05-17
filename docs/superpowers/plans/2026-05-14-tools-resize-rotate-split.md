@@ -172,7 +172,7 @@ git commit -m "refactor(tools): extract Bounds + MULTI_RESIZE_TARGET_ID to share
 
 ```ts
 import { useMemo, useRef, createElement } from 'react';
-import { useResize, type UseResizeOptions } from 'interactions/gestures/resize/resize';
+import { useResize, type UseResizeOptions } from 'interactions/actions/resize/resize';
 import {
   createCornerResizeAffordance,
   type CornerResizeScratch,
@@ -372,8 +372,8 @@ git commit -m "test(tools): move rotation tests from useSelectTool to useRotateT
 
 ```ts
 // DELETE:
-import { useResize, type UseResizeOptions } from 'interactions/gestures/resize/resize';
-import { useRotate, type UseRotateOptions } from 'interactions/gestures/rotate/rotate';
+import { useResize, type UseResizeOptions } from 'interactions/actions/resize/resize';
+import { useRotate, type UseRotateOptions } from 'interactions/actions/rotate/rotate';
 import { createCornerResizeAffordance, type CornerResizeScratch } from 'affordances/cornerResize';
 import { createRotationAffordance, type RotationScratch } from 'affordances/rotationHandle';
 ```

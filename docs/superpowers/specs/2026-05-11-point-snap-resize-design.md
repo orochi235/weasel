@@ -77,7 +77,7 @@ interface UseResizeOptions<TPose> {
 ### Built-in factory
 
 ```ts
-// src/interactions/gestures/resize/behaviors/pointSnapToGrid.ts
+// src/interactions/actions/resize/behaviors/pointSnapToGrid.ts
 export function pointSnapToGrid<TPose extends ResizePose>(args: {
   spacing: number;
   frame?: PointSnapFrame;   // default 'dragged-corner'
@@ -134,11 +134,11 @@ Given snap target `G = (Gx, Gy)` and the proposed pose's frame points:
 ## Files touched
 
 - Modify: `src/interactions/gestures/types.ts` — add `PointSnapFrame`, `PointSnapContext`, `PointSnapResult`, `PointSnapBehavior`.
-- Modify: `src/interactions/gestures/resize/resize.ts` — accept option; build context; run behaviors; back-solve.
-- Create: `src/interactions/gestures/resize/behaviors/pointSnapToGrid.ts` — built-in factory.
-- Test: `src/interactions/gestures/resize/resize.test.ts` (or its corner-cases test file) — new section.
-- Test: `src/interactions/gestures/resize/behaviors/pointSnapToGrid.test.ts` — new file.
-- Modify: `src/interactions/gestures/resize/behaviors/index.ts` — re-export `pointSnapToGrid`.
+- Modify: `src/interactions/actions/resize/resize.ts` — accept option; build context; run behaviors; back-solve.
+- Create: `src/interactions/actions/resize/behaviors/pointSnapToGrid.ts` — built-in factory.
+- Test: `src/interactions/actions/resize/resize.test.ts` (or its corner-cases test file) — new section.
+- Test: `src/interactions/actions/resize/behaviors/pointSnapToGrid.test.ts` — new file.
+- Modify: `src/interactions/actions/resize/behaviors/index.ts` — re-export `pointSnapToGrid`.
 - Modify: `src/index.ts` — re-export the new types + factory at the kit barrel.
 - Modify: `demo/demos/RotateDemo.tsx` or create `demo/demos/PointSnapDemo.tsx` — demonstrate corner-snap on a rotated rect.
 - Modify: `docs/TODO.md` — mark entry shipped.
