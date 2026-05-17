@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+import { playwright } from '@vitest/browser-playwright';
 import { weaselAliases } from './scripts/vite-aliases';
 
 const storybookDir = dirname(fileURLToPath(new URL('./.storybook/main.ts', import.meta.url)));
@@ -71,7 +72,7 @@ export default defineConfig({
           name: 'storybook',
           browser: {
             enabled: true,
-            provider: 'playwright',
+            provider: playwright(),
             headless: true,
             instances: [{ browser: 'chromium' }],
           },
