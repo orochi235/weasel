@@ -410,6 +410,13 @@ Surfaced 2026-05-16 building the force-graph demo. Bare `<Canvas>` with a custom
       - `getAnchorState` thunk wired: `GestureDispatcherMounter` now passes a `getAnchorState` thunk as the 4th arg to `buildAffordanceAt`, enabling anchor-handle affordance classification. The thunk reads the live `editAnchors` dep from the dep registry at call time.
       - tsc clean; all 342 test files pass.
   - Phases 14e/14f: pending. (14e legacy deletion + text-edit migration; 14f gestureBinding rename.)
+  - Phase 15 (per-dep wiring modules): shipped 2026-05-17.
+      - `src/canvas/deps/` directory now holds one file per kit-standard dep source: `useViewDepSource`, `useAreaSelectDepSource`, `useLassoSelectDepSource`, `useInsertDepSource`, `useTextEditDepSource`, `useEditAnchorsDepSource`, plus shared `aabbHitTest` helper and a barrel `index.ts`.
+      - `StandardActionsRegistrar` collapsed from ~485 lines of inline wiring + bridge effects to ~38 lines of hook calls. The legacy bridge effect (`delete`/`duplicate`/`group`/`ungroup`) and the `actions` prop resolver moved to `src/canvas/SceneCanvas/useLegacyActionBridges.ts` and `src/canvas/SceneCanvas/useActionsPropResolver.ts` respectively.
+      - SceneCanvas.tsx net delta: 1491 → 1038 lines (-453).
+      - Each new dep module has a focused isolation test under `src/canvas/deps/*.test.tsx` (6 new test files, 9 new tests).
+      - Consumer-side template doc: `docs/concepts/dep-sources.md` walks through DepSchema augmentation, source-bridge component, and action wiring with the Swill `color` dep as the example.
+      - Not extracted: `selection`/`view`/`scene`/`history`/`pointer`/`activeTool` are still published inside `useStandardActions` — splitting that hook into per-dep facades was out of scope (it overlaps with Phase 14e's parallel work on `useStandardActions`).
 
 ## UX recordings
 

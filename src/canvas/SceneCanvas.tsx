@@ -21,11 +21,8 @@
 import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type React from 'react';
 import type { ReactNode } from 'react';
-import { type Action, type ActionsProp } from 'interactions/actions/registry';
+import { type ActionsProp } from 'interactions/actions/registry';
 import { useStandardActions } from 'interactions/actions/useStandardActions';
-import { defaultDeleteAction } from 'interactions/actions/defaults/delete';
-import { defaultDuplicateAction } from 'interactions/actions/defaults/duplicate';
-import { defaultGroupAction, defaultUngroupAction } from 'interactions/actions/defaults/group';
 import type { DrawCommand, ShaderProgramHandle } from '../renderer';
 import { textCommand } from 'features/text/textCommand';
 import { findShapePainter } from './shapePainters';
@@ -59,7 +56,17 @@ import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
 import { useBuiltinShapeTools, type BuiltinShapeToolId, type BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
-import { DepRegistryProvider, useDepSource } from 'interactions/actions/depRegistry';
+import { DepRegistryProvider } from 'interactions/actions/depRegistry';
+import {
+  useViewDepSource,
+  useAreaSelectDepSource,
+  useInsertDepSource,
+  useLassoSelectDepSource,
+  useTextEditDepSource,
+  useEditAnchorsDepSource,
+} from './deps';
+import { useLegacyActionBridges } from './SceneCanvas/useLegacyActionBridges';
+import { useActionsPropResolver } from './SceneCanvas/useActionsPropResolver';
 import { ActiveToolContextProvider } from 'interactions/actions/activeToolContext';
 import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
 import { createDispatcher, type Dispatcher } from 'interactions/dispatcher/dispatcher';
@@ -67,20 +74,7 @@ import { useActionsRegistry } from 'interactions/actions/registry';
 import { buildAffordanceAt, buildClassifyTarget } from './affordanceAt';
 import type { AnchorState } from './affordanceAt';
 import type { Op } from 'core/ops/types';
-import type { ViewApi, AreaSelectDep, InsertDep, LassoSelectDep, EditAnchorsDep } from 'interactions/actions/depSchema';
-import type { TextEditDep } from 'interactions/actions/defaults/enterTextEdit';
 import { useDepRegistry } from 'interactions/actions/depRegistry';
-import { createInsertOp } from 'core/ops/create';
-import { asNodeId } from 'core/scene/types';
-import {
-  rectPath,
-  ellipsePath,
-  regularPolygonPath,
-  starPath,
-  linePath,
-  polygonFromPoints,
-} from 'features/paths/builder';
-import { schneiderFit } from 'features/paths/schneiderFit';
 
 /**
  * Minimal adapter surface the legacy bridge factories need for delete /
@@ -992,472 +986,25 @@ function StandardActionsRegistrar({
   currentViewRef: React.RefObject<View>;
   onViewChange: (v: View) => void;
 }) {
-  // Build a stable ViewApi that reads from currentViewRef and writes via onViewChange.
-  // The ref ensures the api object identity is stable across renders (no useMemo needed
-  // because viewApiRef.current is re-assigned each render via the closure below).
-  const viewApiRef = useRef<ViewApi>({
-    get: () => currentViewRef.current,
-    set: (v: View) => onViewChange(v),
-  });
-  // Keep the thunks pointed at the latest props (avoid stale closures in dep registry).
-  viewApiRef.current = {
-    get: () => currentViewRef.current,
-    set: (v: View) => onViewChange(v),
-  };
-  useStandardActions({ selection, scene, view: viewApiRef.current });
+  // Build the ViewApi (stable identity, refreshed closures) and hand it to
+  // useStandardActions (which publishes the `view` dep along with selection,
+  // scene, history, pointer, activeTool).
+  const view = useViewDepSource(currentViewRef, onViewChange);
+  useStandardActions({ selection, scene, view });
 
-  // Wire the `areaSelect` dep for `areaSelectAction`. Constructed inline from
-  // the live scene (for AABB hit-testing) and the selection API. The dep is
-  // re-computed each render but `useDepSource` stabilises it via ref internally.
-  const selectionRef2 = useRef(selection);
-  selectionRef2.current = selection;
-  const sceneRef2 = useRef(scene);
-  sceneRef2.current = scene;
+  // Per-dep wiring modules under `src/canvas/deps/`. See each file for the
+  // dep's contract and trade-offs.
+  useAreaSelectDepSource(scene, selection);
+  useInsertDepSource(scene, adapter);
+  useLassoSelectDepSource(scene, selection);
+  useTextEditDepSource(scene);
+  useEditAnchorsDepSource(scene, selection, adapter);
 
-  useDepSource('areaSelect', (): AreaSelectDep => {
-    const s = selectionRef2.current;
-    const sc = sceneRef2.current;
-    return {
-      hitTestArea(bounds) {
-        const hits: NodeId[] = [];
-        for (const id of sc.renderOrder()) {
-          const node = sc.get(id);
-          if (!node || node.kind === 'container') continue;
-          const p = node.pose as unknown as Partial<{
-            x: number; y: number; width: number; height: number;
-          }>;
-          if (
-            typeof p.x === 'number' && typeof p.y === 'number' &&
-            typeof p.width === 'number' && typeof p.height === 'number'
-          ) {
-            if (
-              p.x < bounds.x + bounds.width &&
-              p.x + p.width > bounds.x &&
-              p.y < bounds.y + bounds.height &&
-              p.y + p.height > bounds.y
-            ) {
-              hits.push(id);
-            }
-          }
-        }
-        return hits;
-      },
-      getSelection: () => s.current as NodeId[],
-      setSelection: (ids) => s.set(ids),
-    };
-  });
-
-  // Wire the `insert` dep for `insertAction` (Phase 14c.2 fix).
-  //
-  // The 6 shape-tools (rect/ellipse/line/polygon/star/pencil) migrated in
-  // Phase 14c.1 to use `Tool.bindings + insertAction` with
-  // `bindingsOverrideDrag: true`. Their drag-on-empty gesture now flows through
-  // the dispatcher → insertAction.invoker.start → deps.insert.commit(bounds, kind).
-  // Without this dep source, every drag silently produced nothing.
-  //
-  // Approach (a): kit-side kind→data factories hardcoded for the 6 builtin
-  // shape kinds. Acceptable because these are kit-shipped tools; a future
-  // phase can expose a `nodeFactories` prop for consumer-defined kinds.
-  //
-  // Trade-off: `line`, `polygon`, and `star` receive AABB bounds from the
-  // insertAction invoker, but their tools originally captured richer geometry
-  // (two endpoints for line; center+radius+rotation for polygon/star). The
-  // bounding-rect approximation is used here — it is a known limitation
-  // documented with a TODO below for each affected kind.
-  const adapterRef2 = useRef(adapter);
-  adapterRef2.current = adapter;
-  const sceneRef3 = useRef(scene);
-  sceneRef3.current = scene;
-
-  // Counter for sequential default node ids — stable across renders via ref.
-  const insertSeqRef = useRef(0);
-  const DEFAULT_FILLS = ['#7fb069', '#d4a574', '#a48bd4', '#7ab8d4', '#d47a7a'];
-
-  useDepSource('insert', (): InsertDep => {
-    const ad = adapterRef2.current;
-    const sc = sceneRef3.current;
-
-    return {
-      commit(bounds, extras): NodeId | null {
-        const kind = extras.kind;
-        const seq = ++insertSeqRef.current;
-        const fill = DEFAULT_FILLS[seq % DEFAULT_FILLS.length];
-        const layer = (sc.layers[0]?.id ?? 'default') as string;
-        const id = asNodeId(`kit-${kind}-${seq}`);
-
-        let data: unknown;
-        let pose: unknown = { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
-
-        switch (kind) {
-          case 'rect':
-            data = { path: rectPath(bounds.x, bounds.y, bounds.width, bounds.height), fill };
-            break;
-          case 'ellipse':
-            data = { path: ellipsePath(bounds), fill };
-            break;
-          case 'line': {
-            // Phase 14c.3: insertAction now plumbs the true drag endpoints
-            // through extras.a/b. Fall back to bounds-diagonal only for
-            // consumer kinds that don't supply them.
-            const e = extras as Partial<{ a: { x: number; y: number }; b: { x: number; y: number } }>;
-            const a = e.a ?? { x: bounds.x, y: bounds.y };
-            const b = e.b ?? { x: bounds.x + bounds.width, y: bounds.y + bounds.height };
-            data = { path: linePath(a, b), fill, stroke: fill, strokeWidth: 2 };
-            break;
-          }
-          case 'polygon': {
-            // Phase 14c.3: read true side count + rotation from extras. Center
-            // and radius derive from drag bounds (the tool's drag origin is
-            // the AABB center) unless the tool supplied an explicit center.
-            const e = extras as Partial<{
-              sides: number; rotation: number;
-              center: { x: number; y: number }; radius: number;
-            }>;
-            const sides = Math.max(3, Math.floor(e.sides ?? 6));
-            const rotation = e.rotation ?? 0;
-            const cx = e.center?.x ?? bounds.x + bounds.width / 2;
-            const cy = e.center?.y ?? bounds.y + bounds.height / 2;
-            const r = e.radius ?? Math.min(bounds.width, bounds.height) / 2;
-            data = { path: regularPolygonPath({ x: cx, y: cy }, r, sides, rotation), fill };
-            pose = { x: cx - r, y: cy - r, width: r * 2, height: r * 2 };
-            break;
-          }
-          case 'star': {
-            // Phase 14c.3: read true points / innerRadiusRatio / rotation.
-            const e = extras as Partial<{
-              points: number; innerRadiusRatio: number; rotation: number;
-              center: { x: number; y: number }; outerRadius: number;
-            }>;
-            const points = Math.max(3, Math.floor(e.points ?? 5));
-            const ratio = e.innerRadiusRatio ?? 0.5;
-            const rotation = e.rotation ?? 0;
-            const cx = e.center?.x ?? bounds.x + bounds.width / 2;
-            const cy = e.center?.y ?? bounds.y + bounds.height / 2;
-            const outerR = e.outerRadius ?? Math.min(bounds.width, bounds.height) / 2;
-            const innerR = outerR * ratio;
-            data = { path: starPath({ x: cx, y: cy }, outerR, points, innerR, rotation), fill };
-            pose = { x: cx - outerR, y: cy - outerR, width: outerR * 2, height: outerR * 2 };
-            break;
-          }
-          case 'pencil': {
-            // Phase 14c.3: build a path from the pointer trail. Use
-            // schneiderFit when there are enough samples to smooth; fall
-            // back to a polyline for short trails. Fall back to a stub
-            // rect only when no samples at all (e.g. consumer kind reusing
-            // 'pencil' with no trail).
-            const e = extras as Partial<{ samples: ReadonlyArray<{ x: number; y: number }> }>;
-            const samples = e.samples ?? [];
-            if (samples.length >= 4) {
-              data = {
-                path: schneiderFit(samples as { x: number; y: number }[], 2.0),
-                fill: 'none', stroke: fill, strokeWidth: 2,
-              };
-              // Recompute pose to actual sample bounds — drag bounds can be
-              // tiny while the trail loops widely.
-              let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-              for (const s of samples) {
-                if (s.x < minX) minX = s.x;
-                if (s.y < minY) minY = s.y;
-                if (s.x > maxX) maxX = s.x;
-                if (s.y > maxY) maxY = s.y;
-              }
-              pose = { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-            } else if (samples.length >= 2) {
-              data = {
-                path: polygonFromPoints(samples as { x: number; y: number }[]),
-                fill: 'none', stroke: fill, strokeWidth: 2,
-              };
-            } else {
-              data = { path: rectPath(bounds.x, bounds.y, bounds.width, bounds.height), fill };
-            }
-            break;
-          }
-          default:
-            console.warn(`weasel insertDep: no factory for kind="${kind}". Skipping insert.`);
-            return null;
-        }
-
-        ad.applyOps(
-          [createInsertOp({ node: { id, kind: 'leaf', layer, pose, data } as unknown as { id: string }, label: `Insert ${kind}` })],
-          `Insert ${kind}`,
-        );
-        return id;
-      },
-    };
-  });
-
-  // Wire the `lassoSelect` dep for `lassoSelectAction` (Phase 14b).
-  //
-  // Reuses the same AABB hit-test logic as `areaSelect` for the `hitTestArea`
-  // fallback. `hitTestLasso` is intentionally omitted — the action falls back
-  // to `hitTestArea` when the predicate is absent. Both deps share the same
-  // selection read/write surface.
-  useDepSource('lassoSelect', (): LassoSelectDep => {
-    const s = selectionRef2.current;
-    const sc = sceneRef2.current;
-    return {
-      hitTestArea(bounds) {
-        const hits: NodeId[] = [];
-        for (const id of sc.renderOrder()) {
-          const node = sc.get(id);
-          if (!node || node.kind === 'container') continue;
-          const p = node.pose as unknown as Partial<{
-            x: number; y: number; width: number; height: number;
-          }>;
-          if (
-            typeof p.x === 'number' && typeof p.y === 'number' &&
-            typeof p.width === 'number' && typeof p.height === 'number'
-          ) {
-            if (
-              p.x < bounds.x + bounds.width &&
-              p.x + p.width > bounds.x &&
-              p.y < bounds.y + bounds.height &&
-              p.y + p.height > bounds.y
-            ) {
-              hits.push(id);
-            }
-          }
-        }
-        return hits;
-      },
-      getSelection: () => s.current as NodeId[],
-      setSelection: (ids) => s.set(ids as NodeId[]),
-    };
-  });
-
-  // Wire the `textEdit` dep for `enterTextEditAction` (Phase 14e).
-  //
-  // `startEdit` is a no-op stub — SceneCanvas doesn't mount `useTextEdit`
-  // internally because the hook requires consumer-supplied text-specific
-  // callbacks (getRuns, getText, getScreenPose, setText). Consumers who want
-  // real text editing should override this dep via their own `useDepSource`
-  // call, sourcing from their `useTextEdit` / `useSceneTextEdit` instance.
-  //
-  // `isTextNode` uses the convention-based default: `scene.get(id)?.kind ===
-  // 'text'`. This keeps text-tool bindings from firing on non-text nodes when
-  // a consumer hasn't yet overridden the dep. Consumers with a different node
-  // schema (e.g. `data.type === 'text'`) should supply their own predicate.
-  useDepSource('textEdit', (): TextEditDep => {
-    const sc = sceneRef2.current;
-    return {
-      startEdit(_id: string, _opts?: { caret?: number | 'all' }) {
-        if (process.env.NODE_ENV !== 'production') {
-          console.warn(
-            'weasel textEditDep: startEdit called but no useTextEdit hook is mounted in SceneCanvas. ' +
-            'Override the "textEdit" dep via useDepSource("textEdit", ...) to enable in-place text editing.',
-          );
-        }
-      },
-      isTextNode(id: string) {
-        // Convention: consumers are expected to store a `kind` field on node
-        // data (e.g. `data.kind === 'text'`) to identify text nodes. This
-        // default predicate assumes that convention. Consumers with a different
-        // schema should override via their own `useDepSource('textEdit', ...)`.
-        const node = sc.get(id as NodeId);
-        return (node?.data as { kind?: string } | null | undefined)?.kind === 'text';
-      },
-    };
-  });
-
-  // Wire the `editAnchors` dep for `editAnchorsAction` (Phase 14b).
-  //
-  // `editingId` is sourced from a local state variable. When the user enters
-  // anchor-edit mode (e.g. double-clicking a polygon via `useEditAnchorsTool`),
-  // that tool drives `editingId` via the dep update — but SceneCanvas's default
-  // wiring must at minimum expose the dep so the action can read it.
-  //
-  // Default `editingId` is the first selected node with a polygon pose, or null
-  // when nothing polygon-shaped is selected. This is a heuristic — consumers
-  // that drive anchor-edit via explicit tool state should override the dep.
-  //
-  // `getPose(id)` returns the node's raw pose (actions narrow to PolygonPath).
-  // `applyOps` delegates to the adapter.
-  useDepSource('editAnchors', (): EditAnchorsDep => {
-    const s = selectionRef2.current;
-    const sc = sceneRef2.current;
-    const ad = adapterRef2.current;
-    const selection = s.current as NodeId[];
-    // Heuristic: find the first selected node with a polygon pose.
-    let editingId: string | null = null;
-    for (const id of selection) {
-      const node = sc.get(id);
-      if (node && (node.pose as { kind?: string })?.kind === 'polygon') {
-        editingId = id;
-        break;
-      }
-    }
-    return {
-      editingId: editingId ?? '',
-      getPose(id: string) {
-        return sc.get(id as NodeId)?.pose ?? null;
-      },
-      applyOps(ops, label) {
-        ad.applyOps(ops as Op[], label);
-      },
-    };
-  });
-
-  // Legacy bridge overrides for the 4 actions whose DepSchema deps are not
-  // yet wired. Registered after useStandardActions so they win on same-id
-  // (registry is last-writer-wins). Each bridge uses a live ref so captures
-  // always read current selection / scene state.
-  const reg = useActionsRegistry();
-  const selectionRef = useRef(selection);
-  selectionRef.current = selection;
-  const sceneRef = useRef(scene);
-  sceneRef.current = scene;
-  const adapterRef = useRef(adapter);
-  adapterRef.current = adapter;
-  const actionDefaultsRef = useRef(actionDefaults);
-  actionDefaultsRef.current = actionDefaults;
-
-  useEffect(() => {
-    if (!reg) return;
-
-    // Shared dep accessors that always read the latest refs.
-    const getSelection = () => selectionRef.current.current as NodeId[];
-    const applyOps = (ops: Op[], label?: string) =>
-      adapterRef.current.applyOps(ops, label);
-    const getNodeIndex = (id: NodeId) => {
-      // renderOrder() returns ids in paint order — matches the index the
-      // sceneAdapter exposes and that DeleteOp uses for undo restoration.
-      let i = 0;
-      for (const nodeId of sceneRef.current.renderOrder()) {
-        if (nodeId === id) return i;
-        i++;
-      }
-      return -1;
-    };
-    const getNode = (id: NodeId) => sceneRef.current.get(id) ?? null;
-    // getGroup reads from the adapter when it exposes GroupAdapter surface.
-    // If the adapter doesn't have getGroup, every id returns undefined
-    // (ungroup becomes a no-op — consistent with groups not being wired).
-    const getGroup = (id: string) =>
-      adapterRef.current.getGroup?.(id);
-
-    const unregisters: Array<() => void> = [];
-
-    // delete — needs getNodeIndex + getNode + applyOps.
-    unregisters.push(
-      reg.register(
-        defaultDeleteAction({ getSelection, getNodeIndex, getNode, applyOps }),
-      ),
-    );
-
-    // duplicate — only registerable when cloneNode is provided.
-    const cloneNode = actionDefaultsRef.current?.cloneNode;
-    if (cloneNode) {
-      const offset = actionDefaultsRef.current?.duplicateOffset;
-      unregisters.push(
-        reg.register(
-          defaultDuplicateAction({ getSelection, cloneNode, applyOps, ...(offset ? { offset } : {}) }),
-        ),
-      );
-    }
-
-    // group — needs applyOps (no extra consumer dep required).
-    unregisters.push(
-      reg.register(defaultGroupAction({ getSelection, applyOps })),
-    );
-
-    // ungroup — needs getGroup + applyOps.
-    unregisters.push(
-      reg.register(defaultUngroupAction({ getSelection, getGroup, applyOps })),
-    );
-
-    return () => { for (const u of unregisters) u(); };
-    // `reg` identity is stable for the lifetime of the ActionsProvider scope.
-    // Re-register when actionDefaults changes so a newly-supplied cloneNode
-    // is picked up. (The live refs handle transient value changes.)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reg, actionDefaults?.cloneNode, actionDefaults?.duplicateOffset]);
-
-  // Apply `actions` prop overrides on top of whatever was registered by
-  // `useStandardActions` and the bridge effect above. Runs after both (same
-  // component, later hook). This effect is the authority on how the `actions`
-  // prop modifies the registry:
-  //
-  //   actions === null           → unregister every currently-registered action
-  //   actions[id] === null       → unregister that id
-  //   actions[id] = partial      → merge onto the existing descriptor (slot wins
-  //                                over entry.id; warns once on mismatch)
-  //   actions[id] = full (new)   → register alongside defaults
-  const actionsRef = useRef(actions);
-  actionsRef.current = actions;
-  useEffect(() => {
-    if (!reg) return;
-    const prop = actionsRef.current;
-
-    if (prop === null) {
-      // Disable-all: snapshot current ids and unregister each.
-      const ids = reg.list().map((a) => a.id);
-      for (const id of ids) reg.unregister(id);
-      // No cleanup needed — unregisters are permanent until the next render
-      // re-registers the base actions (which this effect will then clean up again).
-      return;
-    }
-
-    if (!prop) return;
-
-    const unregisters: Array<() => void> = [];
-    const warnedIds = new Set<string>();
-
-    for (const [slotId, entry] of Object.entries(prop)) {
-      if (entry === null) {
-        reg.unregister(slotId);
-        continue;
-      }
-
-      const isFull = (e: Partial<Action>): e is Action =>
-        typeof e.id === 'string' && typeof e.label === 'string' && typeof e.run === 'function';
-      const existing = reg.list().find((a) => a.id === slotId);
-
-      if (!existing) {
-        // New slot: must be a full descriptor.
-        if (isFull(entry)) {
-          unregisters.push(reg.register(entry));
-        } else if (!warnedIds.has(slotId)) {
-          warnedIds.add(slotId);
-          console.warn(
-            `weasel actions resolver: actions["${slotId}"] is a partial Action but no default ` +
-            `with this id exists. Pass a complete {id, label, defaultBinding, run} descriptor.`,
-          );
-        }
-        continue;
-      }
-
-      // Existing slot: merge, with slotId winning over entry.id.
-      if (entry.id !== undefined && entry.id !== slotId && !warnedIds.has(`mismatch:${slotId}`)) {
-        warnedIds.add(`mismatch:${slotId}`);
-        console.warn(
-          `weasel actions resolver: actions["${slotId}"].id="${entry.id as string}" mismatches the slot key. ` +
-          `Ignoring the id field; the action remains at id="${slotId}".`,
-        );
-      }
-      const { id: _drop, ...rest } = entry;
-      void _drop;
-      let merged: Action = { ...existing, ...rest };
-      // When a consumer overrides `run` on an action that has a Phase-4 `invoker`,
-      // the dispatcher would bypass `run` and call `invoker.run` instead.
-      // Synthesize a new immediate invoker that calls the custom run so the
-      // dispatcher honours the override through its `invoker` path.
-      if (rest.run && existing.invoker?.timing === 'immediate') {
-        const customRun = rest.run;
-        merged = {
-          ...merged,
-          invoker: {
-            timing: 'immediate',
-            run: () => { customRun(); },
-          },
-        };
-      }
-      unregisters.push(reg.register(merged));
-    }
-
-    return () => { for (const u of unregisters) u(); };
-  // Re-run whenever the `actions` prop reference changes or the registry changes.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reg, actions]);
+  // Legacy bridge effect (delete/duplicate/group/ungroup — Phase 4 T8 TODO)
+  // and the `actions` prop resolver. Both live in SceneCanvas/ alongside the
+  // other slim-down helpers.
+  useLegacyActionBridges(selection, scene, adapter, actionDefaults);
+  useActionsPropResolver(actions);
 
   return null;
 }
