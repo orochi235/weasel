@@ -1,15 +1,31 @@
 /**
- * Tests for `defaultDeleteAction`. Factory packages the deletion path as
- * an `Action` descriptor: `Delete`/`Backspace` bindings, `run` dispatches
- * one DeleteOp per id + a SetSelectionOp([]), `enabled` reflects whether
- * the filtered selection is non-empty.
+ * Tests for `deleteAction` descriptor and `defaultDeleteAction` legacy bridge.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { defaultDeleteAction } from './delete';
+import { deleteAction, defaultDeleteAction } from './delete';
 import type { NodeId } from 'core/scene/types';
 import { ActionDisabledReason } from '../registry';
 
-describe('defaultDeleteAction', () => {
+describe('deleteAction (descriptor)', () => {
+  it('id="delete", label="Delete"', () => {
+    expect(deleteAction.id).toBe('delete');
+    expect(deleteAction.label).toBe('Delete');
+  });
+
+  it('defaultBinding = { key: ["Delete", "Backspace"] }', () => {
+    expect(deleteAction.defaultBinding).toEqual({ key: ['Delete', 'Backspace'] });
+  });
+
+  it('gestureBinding = { kind: "key", key: ["Delete", "Backspace"] }', () => {
+    expect(deleteAction.gestureBinding).toEqual({ kind: 'key', key: ['Delete', 'Backspace'] });
+  });
+
+  it('invoker.timing = "immediate"', () => {
+    expect(deleteAction.invoker?.timing).toBe('immediate');
+  });
+});
+
+describe('defaultDeleteAction (legacy bridge)', () => {
   it('emits id=delete with Delete and Backspace bindings', () => {
     const a = defaultDeleteAction({
       getSelection: () => [],
@@ -28,7 +44,7 @@ describe('defaultDeleteAction', () => {
       applyOps,
       getNodeIndex: () => 0,
     });
-    a.run();
+    a.run!();
     expect(applyOps).toHaveBeenCalledOnce();
     const [ops, label] = applyOps.mock.calls[0];
     expect(label).toBe('Delete');
@@ -49,7 +65,7 @@ describe('defaultDeleteAction', () => {
       applyOps,
       getNodeIndex: () => 0,
     });
-    a.run();
+    a.run!();
     const [ops] = applyOps.mock.calls[0];
     // Invert the first DeleteOp; the inverse InsertOp should carry the fat node.
     const inverse = ops[0].invert();
@@ -65,7 +81,7 @@ describe('defaultDeleteAction', () => {
       applyOps,
       getNodeIndex: () => 0,
     });
-    a.run();
+    a.run!();
     const [ops] = applyOps.mock.calls[0];
     const inverse = ops[0].invert();
     const insertAdapter = { insertNode: vi.fn() };
@@ -81,7 +97,7 @@ describe('defaultDeleteAction', () => {
       applyOps,
       getNodeIndex: () => 0,
     });
-    a.run();
+    a.run!();
     const [ops] = applyOps.mock.calls[0];
     // 2 DeleteOps (a, c) + 1 SetSelectionOp.
     expect(ops).toHaveLength(3);
@@ -89,7 +105,7 @@ describe('defaultDeleteAction', () => {
 
   it('no-op when selection is empty', () => {
     const applyOps = vi.fn();
-    defaultDeleteAction({ getSelection: () => [], applyOps, getNodeIndex: () => 0 }).run();
+    defaultDeleteAction({ getSelection: () => [], applyOps, getNodeIndex: () => 0 }).run!();
     expect(applyOps).not.toHaveBeenCalled();
   });
 
@@ -100,16 +116,11 @@ describe('defaultDeleteAction', () => {
       filter: () => [],
       applyOps,
       getNodeIndex: () => 0,
-    }).run();
+    }).run!();
     expect(applyOps).not.toHaveBeenCalled();
   });
 
   it('multi-delete + undo restores original z-order', () => {
-    // Mirror real adapter semantics: insertNode splices at index, removeNode
-    // splices by id. The forward delete clears the array; the reverse-and-
-    // invert (what history.invertEntry produces on undo) re-inserts. Without
-    // ordering at capture, descending-index splices clamp against a growing
-    // empty array and high-index nodes land at the front.
     const initial = ['a', 'b', 'c', 'd', 'e'].map((id) => ({ id }));
     let arr = initial.map((n) => ({ ...n }));
     const adapter = {
@@ -133,7 +144,7 @@ describe('defaultDeleteAction', () => {
         for (const op of inverses) op.apply(adapter);
       },
     });
-    action.run();
+    action.run!();
     expect(arr.map((n) => n.id)).toEqual(['a', 'b', 'c', 'd', 'e']);
   });
 
@@ -158,6 +169,7 @@ describe('defaultDeleteAction', () => {
     });
     expect(filteredOut.enabled?.()).toBe(ActionDisabledReason.SelectionRequired);
   });
+
   it('declares gestureBinding mirroring defaultBinding', () => {
     const a = defaultDeleteAction({
       getSelection: () => [],
@@ -165,5 +177,14 @@ describe('defaultDeleteAction', () => {
       getNodeIndex: () => 0,
     });
     expect(a.gestureBinding).toEqual({ kind: 'key', key: ['Delete', 'Backspace'] });
+  });
+
+  it('bridge does not expose invoker (legacy run path stays active)', () => {
+    const a = defaultDeleteAction({
+      getSelection: () => [],
+      applyOps: vi.fn(),
+      getNodeIndex: () => 0,
+    });
+    expect(a.invoker).toBeUndefined();
   });
 });
