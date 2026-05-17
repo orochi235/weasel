@@ -241,6 +241,17 @@ export function useCloneTool<T extends { id: string }, TPose = unknown>(
       cursor: optsRef.current.cursor ?? 'copy',
       presentation: { label: 'Clone (Alt-drag)', group: 'select' },
       ...(hotkey ? { hotkey } : {}),
+      // Phase 14c.2: declarative binding routes alt-drag on a selected body
+      // through the new dispatcher + cloneAction. bindingsOverrideDrag
+      // suppresses the legacy drag channel; the route-table drag block below
+      // is retained as dead code until Phase 14e removes it.
+      bindings: [
+        {
+          spec: { kind: 'drag', target: 'selected-body', mods: { alt: true } },
+          actionId: 'clone',
+        },
+      ],
+      bindingsOverrideDrag: true,
       initial: {
         overlay: () => overlay,
 

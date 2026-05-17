@@ -5,6 +5,7 @@ import { HandIcon } from '../../../icons';
 import type { View } from 'core/viewport/view';
 import { useVelocityTracker } from 'core/viewport/useVelocityTracker';
 import { useDecayLoop, type PanBounds } from 'core/viewport/useDecayLoop';
+import { useIsDispatcherMounted } from 'interactions/dispatcher/dispatcherPresence';
 
 export interface InertiaConfig {
   friction?: number;
@@ -54,6 +55,7 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | n
   const axis = opts.axis ?? 'both';
   const tracker = useVelocityTracker();
   const decay = useDecayLoop();
+  const gestureDispatcherMounted = useIsDispatcherMounted();
   // Refs keep the latest setView / current view available to the decay
   // tick callback after the gesture ends.
   const setViewRef = useRef<((v: View) => void) | null>(null);
@@ -61,7 +63,7 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | n
 
   return useMemo(
     () =>
-      defineViewportTool<HandScratch>({
+      Object.assign(defineViewportTool<HandScratch>({
         id: 'hand',
         keybinding: { key: 'H' },
         hotkey: 'space',
@@ -142,8 +144,15 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | n
         engaged: {
           cursor: 'grabbing',
         },
+      }), {
+        // Phase 14c.2: declarative binding routes drag through the new
+        // dispatcher + viewportDragPanAction. bindingsOverrideDrag suppresses
+        // the legacy drag channel; the route-table drag block above is retained
+        // as dead code until Phase 14e removes it.
+        bindings: [{ spec: { kind: 'drag' as const }, actionId: 'viewport.dragPan' }],
+        bindingsOverrideDrag: gestureDispatcherMounted,
       }) as Tool<HandScratch | null>,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [inertia, axis, tracker, decay],
+    [inertia, axis, tracker, decay, gestureDispatcherMounted],
   );
 }

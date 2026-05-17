@@ -119,6 +119,7 @@ export { areaSelectAction } from './interactions/actions/defaults/areaSelect';
 export { insertAction } from './interactions/actions/defaults/insert';
 export { clearSelectionAction } from './interactions/actions/defaults/clearSelection';
 export { cloneAction } from './interactions/actions/defaults/clone';
+export { viewportDragPanAction } from './interactions/actions/defaults/viewportDragPan';
 export { editAnchorsAction } from './interactions/actions/defaults/editAnchors';
 export { lassoSelectAction } from './interactions/actions/defaults/lassoSelect';
 export { pinchZoomAction } from './interactions/actions/defaults/pinchZoom';
