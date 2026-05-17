@@ -47,7 +47,6 @@ export function useTextTool<TNode extends { id: string }>(
           { spec: { kind: 'drag' }, actionId: 'insert', opts: { params: { kind: 'text' } } },
           { spec: { kind: 'click', target: 'selected-body' }, actionId: 'enterTextEdit' },
         ],
-        bindingsOverrideDrag: true,
         initial: {},
       }),
     [],

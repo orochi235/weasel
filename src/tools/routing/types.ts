@@ -113,10 +113,6 @@ export interface ToolDef<TScratch = void> {
   /** Phase 14+: declarative gesture-bindings forwarded onto `Tool.bindings`.
    *  The new dispatcher consults these while this tool is active. */
   bindings?: GestureBinding[];
-  /** Phase 14+: when `true`, forwarded onto `Tool.bindingsOverrideDrag` so
-   *  the legacy drag channel is suppressed by the dispatcher in favour of
-   *  `bindings`. */
-  bindingsOverrideDrag?: boolean;
   initial: PhaseDef<TScratch>;
   engaged?: PhaseDef<TScratch>;
 }

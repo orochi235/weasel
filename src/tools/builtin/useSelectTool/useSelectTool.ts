@@ -335,7 +335,6 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           { spec: { kind: 'drag' as const, target: 'empty' as const }, actionId: 'areaSelect' },
           { spec: { kind: 'click' as const, target: 'empty' as const, mods: {} }, actionId: 'clearSelection' },
         ],
-        bindingsOverrideDrag: true,
       };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

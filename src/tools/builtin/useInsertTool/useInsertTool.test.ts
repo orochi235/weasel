@@ -41,7 +41,6 @@ describe('useInsertTool surface', () => {
       actionId: 'insert',
       opts: { params: { kind: 'rect' } },
     });
-    expect(result.current.bindingsOverrideDrag).toBe(true);
   });
 
   it('declares no route-table drag/pointer/overlay handlers (dispatcher-only)', () => {

@@ -39,7 +39,6 @@ describe('useTextTool surface', () => {
         expect.objectContaining({ actionId: 'enterTextEdit' }),
       ]),
     );
-    expect(result.current.bindingsOverrideDrag).toBe(true);
   });
 
   it('declares no route-table drag/pointer/overlay handlers (dispatcher-only)', () => {

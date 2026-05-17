@@ -253,7 +253,6 @@ export function defineTool<TScratch = void>(
     claimsAll,
     hitOverride: def.hitOverride,
     bindings: def.bindings,
-    bindingsOverrideDrag: def.bindingsOverrideDrag,
     pointer: (onClick || onDown)
       ? { ...(onClick ? { onClick } : {}), ...(onDown ? { onDown } : {}) }
       : undefined,

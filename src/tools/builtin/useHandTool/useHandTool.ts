@@ -1,5 +1,5 @@
-import { useMemo, useRef, createElement } from 'react';
-import { defineViewportTool, begin, hold, cancel } from '../../routing';
+import { useMemo, createElement } from 'react';
+import { defineViewportTool } from '../../routing';
 import type { Tool } from '../../types';
 import { HandIcon } from '../../../icons';
 import type { View } from 'core/viewport/view';
@@ -54,10 +54,6 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | n
   const axis = opts.axis ?? 'both';
   const tracker = useVelocityTracker();
   const decay = useDecayLoop();
-  // Refs keep the latest setView / current view available to the decay
-  // tick callback after the gesture ends.
-  const setViewRef = useRef<((v: View) => void) | null>(null);
-  const viewRef = useRef<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
 
   return useMemo(
     () =>
@@ -71,85 +67,15 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | n
           group: 'view',
         },
         cursor: 'grab',
-        initial: {
-          drag: (ctx) => {
-            // Cancel any in-flight inertia from a previous gesture.
-            decay.cancel();
-            tracker.reset();
-            setViewRef.current = ctx.setView;
-            viewRef.current = ctx.view;
-            return begin<HandScratch>({
-              scratch: {
-                startView: ctx.view,
-                startScreenPoint: ctx.screenPoint ?? { x: 0, y: 0 },
-              },
-              onMove: (ctx) => {
-                const screen = ctx.screenPoint ?? { x: 0, y: 0 };
-                const rawDx = screen.x - ctx.scratch.startScreenPoint.x;
-                const rawDy = screen.y - ctx.scratch.startScreenPoint.y;
-                const dx = axis === 'y' ? 0 : rawDx;
-                const dy = axis === 'x' ? 0 : rawDy;
-                const newView: View = {
-                  x: ctx.scratch.startView.x - dx,
-                  y: ctx.scratch.startView.y - dy,
-                  scale: ctx.scratch.startView.scale,
-                };
-                if (inertia) {
-                  tracker.record(
-                    newView.x - viewRef.current.x,
-                    newView.y - viewRef.current.y,
-                    Date.now(),
-                  );
-                }
-                viewRef.current = newView;
-                setViewRef.current = ctx.setView;
-                ctx.setView(newView);
-                return hold(ctx.scratch);
-              },
-              onRelease: (ctx) => {
-                if (inertia) {
-                  setViewRef.current = ctx.setView;
-                  viewRef.current = ctx.view;
-                  const velocity = tracker.getVelocity();
-                  decay.start({
-                    velocity,
-                    friction: inertia.friction,
-                    minSpeed: inertia.minSpeed,
-                    boundary: inertia.boundary,
-                    viewBounds: inertia.bounds,
-                    initialPosition: { x: viewRef.current.x, y: viewRef.current.y },
-                    onTick: (dvx, dvy) => {
-                      const v = viewRef.current;
-                      const next: View = {
-                        x: v.x + dvx,
-                        y: v.y + dvy,
-                        scale: v.scale,
-                      };
-                      viewRef.current = next;
-                      setViewRef.current?.(next);
-                    },
-                  });
-                }
-                // View changes aren't undoable — exit engaged without applying ops.
-                return cancel();
-              },
-              onCancel: () => {
-                decay.cancel();
-              },
-            });
-          },
-        },
+        initial: {},
         engaged: {
           cursor: 'grabbing',
         },
       }), {
-        // Phase 14e Task 2.6: declarative binding routes drag through the new
-        // dispatcher + viewportDragPanAction. bindingsOverrideDrag is now
-        // unconditional — the dispatcher is always present under SceneCanvas.
-        // The route-table drag block above is retained as dead code until
-        // Phase 14e Task 3 removes it.
+        // Declarative binding routes drag through the new dispatcher +
+        // viewportDragPanAction. The legacy route-table drag block has
+        // been removed alongside `Tool.bindingsOverrideDrag`.
         bindings: [{ spec: { kind: 'drag' as const }, actionId: 'viewport.dragPan' }],
-        bindingsOverrideDrag: true,
       }) as Tool<HandScratch | null>,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [inertia, axis, tracker, decay],

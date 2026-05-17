@@ -537,28 +537,15 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       const dx = e.clientX - inFlight.startClient.x;
       const dy = e.clientY - inFlight.startClient.y;
       if (dx * dx + dy * dy < threshold * threshold) return;
-      // Crossed threshold: promote to drag, fire onStart with the
-      // threshold-crossing event. Capture any scratch mutation onStart makes.
-      // A drag also invalidates any pending dblTap anchor — a click→drag
-      // sequence shouldn't latch into a dbl-tap when the drag completes.
       lastTap = null;
-      // Phase 13: when the active tool has `bindingsOverrideDrag: true`, skip
-      // the route-table drag channel. The new gesture dispatcher (GestureDispatcherMounter
-      // via Tool.bindings) owns all drag handling for this tool.
-      const skipDrag = !!(inFlight.tool as AnyTool).bindingsOverrideDrag;
-      if (!skipDrag) {
-        const onStart = inFlight.tool.drag?.onStart;
-        if (onStart) {
-          // Override the threshold-crossing target with the pointerdown target
-          // captured into inFlight. Declarative routing tables key on
-          // "where the gesture began" — see InFlight.startTarget JSDoc.
-          const startBaseCtx = inFlight.startTarget
-            ? { ...baseCtx, target: inFlight.startTarget }
-            : baseCtx;
-          const startCtx = ctxFor(inFlight.scratch, startBaseCtx, reportRoute);
-          onStart(e, startCtx);
-          inFlight.scratch = startCtx.scratch;
-        }
+      const onStart = inFlight.tool.drag?.onStart;
+      if (onStart) {
+        const startBaseCtx = inFlight.startTarget
+          ? { ...baseCtx, target: inFlight.startTarget }
+          : baseCtx;
+        const startCtx = ctxFor(inFlight.scratch, startBaseCtx, reportRoute);
+        onStart(e, startCtx);
+        inFlight.scratch = startCtx.scratch;
       }
       inFlight.phase = 'drag';
       opts.onGestureChange?.();
@@ -566,11 +553,8 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     }
 
     if (inFlight.phase === 'drag') {
-      const skipDrag = !!(inFlight.tool as AnyTool).bindingsOverrideDrag;
-      if (!skipDrag) {
-        const onMove = inFlight.tool.drag?.onMove;
-        if (onMove) onMove(e, ctxFor(inFlight.scratch, baseCtx, reportRoute));
-      }
+      const onMove = inFlight.tool.drag?.onMove;
+      if (onMove) onMove(e, ctxFor(inFlight.scratch, baseCtx, reportRoute));
     }
   }
 
@@ -646,12 +630,8 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
         }
       }
     } else if (inFlight.phase === 'drag') {
-      // Phase 13: skip route-table onEnd when the new dispatcher owns drag.
-      const skipDrag = !!(inFlight.tool as AnyTool).bindingsOverrideDrag;
-      if (!skipDrag) {
-        const onEnd = inFlight.tool.drag?.onEnd;
-        if (onEnd) onEnd(e, ctxFor(inFlight.scratch, baseCtx, reportRoute));
-      }
+      const onEnd = inFlight.tool.drag?.onEnd;
+      if (onEnd) onEnd(e, ctxFor(inFlight.scratch, baseCtx, reportRoute));
     }
     endGesture();
   }
@@ -707,12 +687,8 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     if (!inFlight) return;
     dlog('[dispatch] cancel gesture; tool=', inFlight.tool.id, 'phase=', inFlight.phase);
     if (inFlight.phase === 'drag') {
-      // Phase 13: skip route-table onCancel when the new dispatcher owns drag.
-      const skipDrag = !!(inFlight.tool as AnyTool).bindingsOverrideDrag;
-      if (!skipDrag) {
-        const base = opts.getCtx();
-        inFlight.tool.drag?.onCancel?.(ctxFor(inFlight.scratch, base, reportRoute));
-      }
+      const base = opts.getCtx();
+      inFlight.tool.drag?.onCancel?.(ctxFor(inFlight.scratch, base, reportRoute));
     }
     endGesture();
   }
