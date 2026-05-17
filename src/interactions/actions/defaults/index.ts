@@ -4,9 +4,20 @@ export { duplicateAction, defaultDuplicateAction, type DuplicateDeps } from './d
 export { nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction, defaultNudgeActions, type NudgeDeps } from './nudge';
 export { reorderForwardAction, reorderBackwardAction, defaultReorderActions, type ReorderDeps } from './reorder';
 export { flipAction, defaultFlipActions, type FlipDeps } from './flip';
-export { defaultAlignActions, type AlignDeps } from './align';
-export { defaultDistributeActions, type DistributeDeps } from './distribute';
-export { defaultBooleanActions } from './booleans';
+export {
+  alignLeftAction, alignRightAction, alignTopAction, alignBottomAction,
+  alignCenterXAction, alignCenterYAction,
+  defaultAlignActions, type AlignDeps,
+} from './align';
+export {
+  distributeHorizontalAction, distributeVerticalAction,
+  defaultDistributeActions, type DistributeDeps,
+} from './distribute';
+export {
+  pathfinderUnionAction, pathfinderSubtractAction, pathfinderIntersectAction,
+  pathfinderExcludeAction, pathfinderDivideAction, pathfinderCropAction,
+  defaultBooleanActions,
+} from './booleans';
 export { deleteAction, defaultDeleteAction, type DeleteDeps } from './delete';
 export { groupAction, ungroupAction, defaultGroupAction, defaultUngroupAction, type GroupDeps, type UngroupDeps } from './group';
 export { undoAction, redoAction, defaultUndoRedoActions, type UndoRedoDeps } from './undoRedo';
