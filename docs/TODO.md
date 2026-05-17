@@ -330,8 +330,6 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
 
   Ops stay where they are — they're infrastructure, decoupled from this revision.
 
-- **Drag concept split across two kingdoms.** `src/features/drag-events/` and `src/interactions/gestures/dragX.ts` / `dragRect.ts` / `dragRadial.ts` both deal with pointer-drag but live in separate parent directories. Either consolidate under one, or document why they're separate.
-
 ## UX recordings
 
 - **Tune the amount of data captured.** *Shipped — 2026-05-16.* Seven levers landed: (a) `gesture-only` profile drops idle pointermove between gestures; (b) pointermove records strip `button`/`buttons`/`pointerType`/`pointerId`; (c) all-false modifier flags are omitted; (d) pointermove throttled to ~60Hz by default (`throttleMs: 16`, `throttleMs: 0` disables); (e) downloads are gzipped via `serializeRecording` (`.json.gz`), replay accepts both gzipped and plain JSON via magic-byte sniffing in `deserializeRecording`; (f) `<RecordingProfileSelect>` next to the F9 button lets the user switch between `gesture-only` / `full` / `events-only` between recordings; (g) modifier state collapsed into a single `m` bitmask (`MOD_ALT|MOD_CTRL|MOD_META|MOD_SHIFT`) — replay's `decodeModifiers` reads from `m` and falls back to legacy boolean fields for pre-bitmask recordings. `Recorder.start({ profile, throttleMs })` exposes the runtime knobs.
