@@ -5,46 +5,11 @@ import type { MoveAdapter, SnapTarget } from 'core/adapters/types';
 import { translateRectPose } from 'features/groups/composePose';
 import { dispatchApplyBatch } from 'core/applyOps';
 import { useDragGesture } from '../../gestures/dragGesture';
-import type { BehaviorResult, GestureContext, GroupTransform, MoveBehavior, MoveOverlay, ModifierState } from '../../gestures/types';
+import type { BehaviorResult, GestureContext, GroupTransform, MoveOverlay, ModifierState } from '../../gestures/types';
+import type { UseMoveOptions } from './options';
+export type { UseMoveOptions } from './options';
 import { begin, hold, cancel as cancelResult, type Result } from '../../../tools/routing';
 import type { ToolCtx } from '../../../tools/types';
-
-/** Options for `useMove`. */
-export interface UseMoveOptions<TPose> {
-  /** How to apply a `(dx, dy)` translation to a pose. Defaults to
-   *  `translateRectPose`, which assumes the pose carries top-level
-   *  `x`/`y` (the common rect-shaped case). Override for non-rect poses
-   *  (e.g. `Path` → `translatePath`). */
-  translatePose?: (pose: TPose, dx: number, dy: number) => TPose;
-  behaviors?: MoveBehavior<TPose>[];
-  dragThresholdPx?: number;
-  moveLabel?: string;
-  /** Reserved for transient gestures (no history entry). Move is never transient
-   *  in practice; accepted for API consistency but ignored. */
-  transient?: boolean;
-  onGestureStart?(ids: string[]): void;
-  onGestureEnd?(committed: boolean): void;
-  /** Optional: expand the incoming id list before pose lookups. Used for
-   *  group expansion (groups have no pose; their leaves do).
-   *  Called once at `start()`. The returned list flows through ctx,
-   *  overlay (`overlay.draggedIds` is the **expanded** leaves), and op
-   *  generation. Returning `[]` aborts the gesture cleanly.
-   *  Default: identity. */
-  expandIds?: (ids: string[]) => string[];
-  /** Optional: lookup a world-space pose by id. When supplied alongside
-   *  `adapter.getChildren`, the hook walks each dragged id's descendants and
-   *  includes them in the live overlay (translated by the same drag delta
-   *  and added to `overlay.hideIds`) so structurally-grouped children visually
-   *  follow the parent during the gesture. No transform ops are generated
-   *  for cascaded ids — under local-pose semantics, a child's local pose is
-   *  unchanged when its parent's local pose moves, so the post-commit scene
-   *  is already correct.
-   *
-   *  Pair with `worldPoseLookup(adapter, composeRectPose)` from
-   *  `@orochi235/weasel/transforms` for the standard rect case. Returning
-   *  `null` for an id (e.g., one removed mid-render) skips it. */
-  cascadeWorldPose?: (id: string) => TPose | null;
-}
 
 /** Arguments passed to `start()` when initiating a move gesture. */
 export interface MoveStartArgs {
