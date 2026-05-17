@@ -1,7 +1,7 @@
 export { selectAllAction, defaultSelectAllAction, type SelectAllDeps } from './selectAll';
 export { escapeAction, defaultEscapeAction, type EscapeDeps } from './escape';
 export { duplicateAction, defaultDuplicateAction, type DuplicateDeps } from './duplicate';
-export { defaultNudgeActions, type NudgeDeps } from './nudge';
+export { nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction, defaultNudgeActions, type NudgeDeps } from './nudge';
 export { reorderForwardAction, reorderBackwardAction, defaultReorderActions, type ReorderDeps } from './reorder';
 export { flipAction, defaultFlipActions, type FlipDeps } from './flip';
 export { defaultAlignActions, type AlignDeps } from './align';
