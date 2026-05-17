@@ -32,11 +32,11 @@ The spec deferred three decisions to the plan; this plan resolves them:
 - **Add:** `src/interactions/gestures/dragRect.test.ts` — base-hook isolation tests.
 - **Add:** `src/tools/builtin/defineDragInsertTool.ts` — Tool-veneer primitive.
 - **Add:** `src/tools/builtin/defineDragInsertTool.test.ts` — primitive isolation tests.
-- **Rewrite:** `src/interactions/gestures/insert/insert.ts` — wrap `useDragRect`. Add `supportsPointInsert`/`supportsCommitInsert` to controller.
-- **Rewrite:** `src/interactions/gestures/area-select/areaSelect.ts` — wrap `useDragRect`.
+- **Rewrite:** `src/interactions/actions/insert/insert.ts` — wrap `useDragRect`. Add `supportsPointInsert`/`supportsCommitInsert` to controller.
+- **Rewrite:** `src/interactions/actions/area-select/areaSelect.ts` — wrap `useDragRect`.
 - **Rewrite:** `src/tools/builtin/useInsertTool.ts` — collapse to ~10 lines.
 - **Rewrite:** `src/tools/builtin/useTextTool.ts` — collapse to ~25 lines.
-- **Modify:** `src/interactions/gestures/insert/insert.test.ts` — add `supports*` cases.
+- **Modify:** `src/interactions/actions/insert/insert.test.ts` — add `supports*` cases.
 - **Modify:** `src/index.ts` — re-export `defineDragInsertTool` + types.
 
 Tests `useInsertTool.test.ts` / `useTextTool.test.ts` / `areaSelect.test.ts` should pass unchanged — they verify behavior preservation.
@@ -417,12 +417,12 @@ git commit -m "feat(gestures): add useDragRect base hook"
 ## Task 2: Reshape useInsert over useDragRect
 
 **Files:**
-- Modify: `src/interactions/gestures/insert/insert.ts`
-- Test: `src/interactions/gestures/insert/insert.test.ts` (preserve existing; verify pass)
+- Modify: `src/interactions/actions/insert/insert.ts`
+- Test: `src/interactions/actions/insert/insert.test.ts` (preserve existing; verify pass)
 
 - [ ] **Step 1: Run existing insert tests as baseline**
 
-Run: `pnpm test --run src/interactions/gestures/insert/insert.test.ts`
+Run: `pnpm test --run src/interactions/actions/insert/insert.test.ts`
 Expected: all PASS (this is the existing baseline; capture green before refactoring).
 
 - [ ] **Step 2: Rewrite `useInsert` body to wrap `useDragRect`**
@@ -590,12 +590,12 @@ export interface InsertController<TNode extends { id: string }, TPose> {
 
 - [ ] **Step 3: Run existing insert tests; expect green**
 
-Run: `pnpm test --run src/interactions/gestures/insert/insert.test.ts`
+Run: `pnpm test --run src/interactions/actions/insert/insert.test.ts`
 Expected: all PASS (existing tests are the regression suite).
 
 - [ ] **Step 4: Add a test asserting `supports*` flags**
 
-Append to `src/interactions/gestures/insert/insert.test.ts`:
+Append to `src/interactions/actions/insert/insert.test.ts`:
 
 ```ts
 describe('supports* flags', () => {
@@ -630,14 +630,14 @@ const makeAdapter = (): InsertAdapter<{ id: string }> => ({
 });
 ```
 
-Run: `pnpm test --run src/interactions/gestures/insert/insert.test.ts`
+Run: `pnpm test --run src/interactions/actions/insert/insert.test.ts`
 Expected: all PASS.
 
 - [ ] **Step 5: Typecheck and commit**
 
 ```bash
 pnpm typecheck
-git add src/interactions/gestures/insert/insert.ts src/interactions/gestures/insert/insert.test.ts
+git add src/interactions/actions/insert/insert.ts src/interactions/actions/insert/insert.test.ts
 git commit -m "refactor(gestures): reshape useInsert as useDragRect wrapper"
 ```
 
@@ -646,12 +646,12 @@ git commit -m "refactor(gestures): reshape useInsert as useDragRect wrapper"
 ## Task 3: Reshape useAreaSelect over useDragRect
 
 **Files:**
-- Modify: `src/interactions/gestures/area-select/areaSelect.ts`
-- Test: `src/interactions/gestures/area-select/areaSelect.test.ts` (preserve)
+- Modify: `src/interactions/actions/area-select/areaSelect.ts`
+- Test: `src/interactions/actions/area-select/areaSelect.test.ts` (preserve)
 
 - [ ] **Step 1: Run existing area-select tests as baseline**
 
-Run: `pnpm test --run src/interactions/gestures/area-select/areaSelect.test.ts`
+Run: `pnpm test --run src/interactions/actions/area-select/areaSelect.test.ts`
 Expected: all PASS.
 
 - [ ] **Step 2: Rewrite `useAreaSelect` body to wrap `useDragRect`**
@@ -825,7 +825,7 @@ Drop the now-unused `useCallback`, `useState`, `cleanup`, internal `State` inter
 
 - [ ] **Step 3: Run existing area-select tests; expect green**
 
-Run: `pnpm test --run src/interactions/gestures/area-select/areaSelect.test.ts`
+Run: `pnpm test --run src/interactions/actions/area-select/areaSelect.test.ts`
 Expected: all PASS.
 
 - [ ] **Step 4: Run all interaction tests**
@@ -837,7 +837,7 @@ Expected: all PASS.
 
 ```bash
 pnpm typecheck
-git add src/interactions/gestures/area-select/areaSelect.ts
+git add src/interactions/actions/area-select/areaSelect.ts
 git commit -m "refactor(gestures): reshape useAreaSelect as useDragRect wrapper"
 ```
 
@@ -856,7 +856,7 @@ git commit -m "refactor(gestures): reshape useAreaSelect as useDragRect wrapper"
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { defineDragInsertTool } from './defineDragInsertTool';
-import type { InsertController } from '../../interactions/gestures/insert/insert';
+import type { InsertController } from '../../interactions/actions/insert/insert';
 
 const makeController = (overrides: Partial<InsertController<{ id: string }, unknown>> = {}) => ({
   start: vi.fn(),
@@ -936,7 +936,7 @@ import type { RenderLayer } from '../../core/layers/render';
 import type { Op } from '../../core/ops/types';
 import { applyHitExistingGate } from './hitExistingGate';
 import { drawMarquee, type InsertOverlayStyle } from './marquee';
-import type { InsertController } from '../../interactions/gestures/insert/insert';
+import type { InsertController } from '../../interactions/actions/insert/insert';
 
 type ApplyBatch = (ops: Op[], label: string) => void;
 
@@ -1133,7 +1133,7 @@ Expected: all PASS.
 Replace the entire file with:
 
 ```ts
-import { useInsert, type UseInsertOptions } from '../../interactions/gestures/insert/insert';
+import { useInsert, type UseInsertOptions } from '../../interactions/actions/insert/insert';
 import type { InsertAdapter } from '../../core/adapters/types';
 import type { Tool } from '../types';
 import { defineDragInsertTool } from './defineDragInsertTool';
@@ -1203,7 +1203,7 @@ Replace the entire file with:
 import { useMemo, useRef } from 'react';
 import type { Op } from '../../core/ops/types';
 import type { Tool } from '../types';
-import { useInsert } from '../../interactions/gestures/insert/insert';
+import { useInsert } from '../../interactions/actions/insert/insert';
 import type { InsertAdapter } from '../../core/adapters/types';
 import { defineDragInsertTool } from './defineDragInsertTool';
 import { type InsertOverlayStyle } from './marquee';

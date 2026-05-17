@@ -52,8 +52,8 @@ import {
   createSelectionOverlayLayer,
   type SelectionOverlayLayerOpts,
 } from 'features/selection/overlay';
-import { AUTO_POSE_DESCRIPTOR } from 'interactions/gestures/resize/autoPoseDescriptor';
-import type { PoseDescriptor } from 'interactions/gestures/resize/geometry';
+import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { DebugConfig, DebugSink, DebugSnapshot } from '../debug/types';
 import { parseDebugFlags } from '../debug/parseDebugFlags';
 import { createDebugSink } from '../debug/createDebugSink';

@@ -39,7 +39,7 @@ Rationale: lasso is genuinely a different gesture from the marquee (free-form po
 ### §B — Module layout
 
 ```
-src/interactions/gestures/lasso-select/
+src/interactions/actions/lasso-select/
   lassoSelect.ts            // useLassoSelect — gesture hook (parallel to useAreaSelect)
   lassoSelect.test.ts
   index.ts                  // barrel
@@ -63,9 +63,9 @@ export {
   useLassoSelect,
   type LassoSelectController,
   type UseLassoSelectOptions,
-} from './interactions/gestures/lasso-select';
+} from './interactions/actions/lasso-select';
 
-export { selectFromLasso } from './interactions/gestures/lasso-select/behaviors/selectFromLasso';
+export { selectFromLasso } from './interactions/actions/lasso-select/behaviors/selectFromLasso';
 
 export { useLassoTool, type UseLassoToolOptions } from './tools/builtin/useLassoTool';
 

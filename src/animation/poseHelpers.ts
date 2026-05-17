@@ -1,5 +1,5 @@
 import { createTransformOp } from 'core/ops/transform';
-import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from 'interactions/gestures/resize/geometry';
+import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { SceneAdapter } from 'core/adapters/types';
 import type { AnimationHandle, Animator, EasingFn, SpringPresetName } from './types';
 

@@ -6,7 +6,7 @@ import type { RenderLayer } from 'core/layers/render';
 import type { Op } from 'core/ops/types';
 import { applyHitExistingGate } from './hitExistingGate';
 import { marqueeDrawCommands, type InsertOverlayStyle } from './marquee';
-import type { InsertController } from 'interactions/gestures/insert/insert';
+import type { InsertController } from 'interactions/actions/insert/insert';
 import type { KeyBinding } from 'interactions/actions/useKeybinding';
 
 /** @internal */

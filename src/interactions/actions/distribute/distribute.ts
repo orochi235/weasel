@@ -3,7 +3,7 @@ import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import { dispatchApplyBatch } from 'core/applyOps';
 import type { NodeId } from 'core/scene/types';
-import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../../gestures/resize/geometry';
+import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../resize/geometry';
 import { translatePoseViaDescriptor } from '../align/align';
 import { useActionsRegistry } from '../registry';
 import { defaultDistributeActions } from '../defaults/distribute';

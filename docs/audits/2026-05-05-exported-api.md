@@ -101,7 +101,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 - [src/features/viewport/viewTransform.ts](#src-features-viewport-viewtransform-ts) — `ViewTransform`, `worldToScreen`, `screenToWorld`
 - [src/features/viewport/wheelHandler.ts](#src-features-viewport-wheelhandler-ts) — `WheelState`, `WheelInput`, `ZoomBounds`, `computeWheelAction`
 - [src/features/viewport/zoomAt.ts](#src-features-viewport-zoomat-ts) — `ZoomClampOpts`, `zoomAt`
-- [src/index.ts](#src-index-ts) — `setupCanvasDpr`, `useFixedPixelRatio`, `SetupCanvasDprOptions`, `zoomAt`, `ZoomClampOpts`, `clampView`, `ClampBounds`, `CanvasSize`, `useGridCellHover`, `UseGridCellHoverOptions`, `UseGridCellHoverReturn`, `useKeybinding`, `isEditableTarget`, `KeyBinding`, `clientToCanvas`, `usePointerGestures`, `PointerGestureBindings`, `UsePointerGesturesOptions`, `PointerGestureCallbackCtx`, `Canvas`, `SceneCanvas`, `SceneCanvasProps`, `sceneToAdapter`, `SceneCanvasAdapter`, `CanvasProps`, `CanvasHelpers`, `CanvasSelectionMode`, `StandardSlotName`, `CustomLayerEntry`, `GridSlotConfig`, `useSelection`, `SelectionApi`, `SelectionMode`, `SelectionExtendKey`, `UseSelectionOptions`, `createGridLayer`, `GridLayerOpts`, `createCellHighlightLayer`, `CellHighlightLayerOpts`, `createChildrenLayer`, `CreateChildrenLayerOpts`, `resolveUnit`, `formatUnit`, `IMPERIAL_INCHES`, `METRIC_MM`, `PIXELS`, `Unit`, `UnitSystem`, `UnitValue`, `composeSelectionPose`, `createSelectionOutlineLayer`, `createSelectionHandlesLayer`, `createSelectionOverlayLayer`, `ComposeSelectionPoseOpts`, `SelectionOutlineLayerOpts`, `SelectionHandlesLayerOpts`, `SelectionOverlayLayerOpts`, `DEFAULT_TEXT_STYLE`, `resolveTextStyle`, `fontString`, `TextStyle`, `ResolvedTextStyle`, `measureText`, `MeasuredText`, `createTextLayer`, `TextPose`, `CreateTextLayerOpts`, `pointInTextPose`, `caretIndexAt`, `fitTextPose`, `FitTextPoseOptions`, `PointInTextPoseOpts`, `useTextEdit`, `TextEditScreenPose`, `StartEditOptions`, `UseTextEditOptions`, `UseTextEditReturn`, `createTilePattern`, `TilePatternOpts`, `applyPaint`, `applyStroke`, `renderFilledRegion`, `Paint`, `Stroke`, `Region`, `RenderFilledRegionOptions`, `composeWorldPose`, `composeRectPose`, `decomposeRectPose`, `rebaseLocalPose`, `translateRectPose`, `worldPoseLookup`, `PoseAdapter`, `nestedHitTester`, `NestedHitOpts`, `NestedHitTester`, `PATH_M`, `PATH_L`, `PATH_C`, `PATH_Q`, `PATH_Z`, `PATH_CMD_LENGTHS`, `PathBuilder`, `polygonFromPoints`, `rectPath`, `boundsOfPath`, `pointInPath`, `translatePath`, `translatePolygonInPlace`, `scalePathToBounds`, `traceToContext`, `createPathLayer`, `flattenCubic`, `flattenQuadratic`, `DEFAULT_FLATTEN_TOLERANCE`, `composePath`, `decomposePath`, `unionBoundsPath`, `pathPoseDescriptor`, `pathOriginProjection`, `createPenPreviewLayer`, `Path`, `PolygonPath`, `RectPath`, `PathFillRule`, `PointInPathOptions`, `CreatePathLayerOpts`, `CreatePenPreviewLayerOptions`, `PenPreviewStyle`, `constrainTo45`, `Group`, `GroupAdapter`, `resolveToOutermostGroup`, `expandToLeaves`, `unionBounds`, `RectPose`, `withGroupOrdering`, `arrayAdapter`, `ArrayAdapter`, `ArrayAdapterConfig`, `useArrayAdapter`, `UseArrayAdapterOptions`, `createScene`, `useScene`, `asNodeId`, `AddNodeSpec`, `ContainerNode`, `LayerRecord`, `LeafNode`, `SceneNode`, `NodeId`, `RegisteredOp`, `Scene`, `SystemLayerRecord`, `SystemLayerSpec`, `UserLayerRecord`, `UseSceneOptions`, `ModifierState`, `PointerState`, `GestureContext`, `SnapStrategy`, `GestureBehavior`, `BehaviorMoveResult`, `MoveBehavior`, `MoveOverlay`, `ResizeAnchor`, `ResizePose`, `ResizeProposed`, `ResizeMoveResult`, `ResizeBehavior`, `ResizeOverlay`, `RotatedPose`, `RotateProposed`, `RotateMoveResult`, `RotateBehavior`, `RotateOverlay`, `InsertProposed`, `InsertMoveResult`, `InsertBehavior`, `InsertOverlay`, `AreaSelectPose`, `AreaSelectProposed`, `AreaSelectMoveResult`, `AreaSelectBehavior`, `AreaSelectOverlay`, `ClipboardSnapshot`, `snap`, `gridSnapStrategy`, `pointToGridCell`, `RECT_ORIGIN_PROJECTION`, `OriginProjection`, `useMove`, `UseMoveOptions`, `MoveController`, `MoveStartArgs`, `MoveMoveArgs`, `useResize`, `RECT_POSE_DESCRIPTOR`, `cornerResizeHandles`, `hitCornerHandle`, `UseResizeOptions`, `ResizeController`, `PoseDescriptor`, `CornerHandle`, `useRotate`, `pointInRotatedRect`, `rotatedRectCorners`, `rectCorners`, `rotatePoint`, `aabbCenter`, `rotationHandle`, `hitRotationHandle`, `DEFAULT_ROTATION_HANDLE_DISTANCE`, `UseRotateOptions`, `RotateController`, `RotateStartArgs`, `RotateMoveArgs`, `RotateGeometry`, `RotationHandle`, `useInsert`, `UseInsertOptions`, `InsertController`, `useAreaSelect`, `useEditAnchors`, `hitAnchor`, `enumerateAnchors`, `withCoord`, `createAnchorEditOverlayLayer`, `UseEditAnchorsOptions`, `EditAnchorsController`, `EditAnchorsAdapter`, `EditAnchorsOverlay`, `EditAnchorsStartArgs`, `EditAnchorsMoveArgs`, `AnchorHit`, `PathAnchor`, `AnchorEditOverlayOpts`, `UseAreaSelectOptions`, `AreaSelectController`, `selectFromMarquee`, `useClipboardOps`, `useClipboard`, `UseClipboardOpsOptions`, `UseClipboardOpsReturn`, `ClipboardAdapter`, `UseClipboardOptions`, `UseClipboardReturn`, `useDelete`, `DeleteAdapter`, `UseDeleteOptions`, `UseDeleteReturn`, `useEscape`, `EscapeAdapter`, `UseEscapeOptions`, `UseEscapeReturn`, `useSelectAll`, `SelectAllAdapter`, `UseSelectAllOptions`, `UseSelectAllReturn`, `useDuplicate`, `DuplicateAdapter`, `UseDuplicateOptions`, `UseDuplicateReturn`, `useNudge`, `NudgeAdapter`, `NudgeDirection`, `UseNudgeOptions`, `UseNudgeReturn`, `useClone`, `cloneByAltDrag`, `UseCloneOptions`, `UseCloneReturn`, `ClonePose`, `CloneLayer`, `CloneBehavior`, `createBringForwardOp`, `createSendBackwardOp`, `createBringToFrontOp`, `createSendToBackOp`, `createMoveToIndexOp`, `useReorder`, `ReorderAdapter`, `UseReorderOptions`, `UseReorderReturn`, `useGroup`, `useUngroup`, `useNest`, `useUnnest`, `GroupActionAdapter`, `UseGroupOptions`, `UseGroupReturn`, `UseUngroupOptions`, `UseUngroupReturn`, `NestActionAdapter`, `UseNestOptions`, `UseNestReturn`, `UseUnnestOptions`, `UseUnnestReturn`, `useUndoRedo`, `UndoRedoAdapter`, `UseUndoRedoOptions`, `UseUndoRedoReturn`
+- [src/index.ts](#src-index-ts) — `setupCanvasDpr`, `useFixedPixelRatio`, `SetupCanvasDprOptions`, `zoomAt`, `ZoomClampOpts`, `clampView`, `ClampBounds`, `CanvasSize`, `useGridCellHover`, `UseGridCellHoverOptions`, `UseGridCellHoverReturn`, `useKeybinding`, `isEditableTarget`, `KeyBinding`, `clientToCanvas`, `usePointerGestures`, `PointerGestureBindings`, `UsePointerGesturesOptions`, `PointerGestureCallbackCtx`, `Canvas`, `SceneCanvas`, `SceneCanvasProps`, `sceneToAdapter`, `SceneCanvasAdapter`, `CanvasProps`, `CanvasHelpers`, `CanvasSelectionMode`, `StandardSlotName`, `CustomLayerEntry`, `GridSlotConfig`, `useSelection`, `SelectionApi`, `SelectionMode`, `SelectionExtendKey`, `UseSelectionOptions`, `createGridLayer`, `GridLayerOpts`, `createCellHighlightLayer`, `CellHighlightLayerOpts`, `createChildrenLayer`, `CreateChildrenLayerOpts`, `resolveUnit`, `formatUnit`, `IMPERIAL_INCHES`, `METRIC_MM`, `PIXELS`, `Unit`, `UnitSystem`, `UnitValue`, `composeSelectionPose`, `createSelectionOutlineLayer`, `createSelectionHandlesLayer`, `createSelectionOverlayLayer`, `ComposeSelectionPoseOpts`, `SelectionOutlineLayerOpts`, `SelectionHandlesLayerOpts`, `SelectionOverlayLayerOpts`, `DEFAULT_TEXT_STYLE`, `resolveTextStyle`, `fontString`, `TextStyle`, `ResolvedTextStyle`, `measureText`, `MeasuredText`, `createTextLayer`, `TextPose`, `CreateTextLayerOpts`, `pointInTextPose`, `caretIndexAt`, `fitTextPose`, `FitTextPoseOptions`, `PointInTextPoseOpts`, `useTextEdit`, `TextEditScreenPose`, `StartEditOptions`, `UseTextEditOptions`, `UseTextEditReturn`, `createTilePattern`, `TilePatternOpts`, `applyPaint`, `applyStroke`, `renderFilledRegion`, `Paint`, `Stroke`, `Region`, `RenderFilledRegionOptions`, `composeWorldPose`, `composeRectPose`, `decomposeRectPose`, `rebaseLocalPose`, `translateRectPose`, `worldPoseLookup`, `PoseAdapter`, `nestedHitTester`, `NestedHitOpts`, `NestedHitTester`, `PATH_M`, `PATH_L`, `PATH_C`, `PATH_Q`, `PATH_Z`, `PATH_CMD_LENGTHS`, `PathBuilder`, `polygonFromPoints`, `rectPath`, `boundsOfPath`, `pointInPath`, `translatePath`, `translatePolygonInPlace`, `scalePathToBounds`, `traceToContext`, `createPathLayer`, `flattenCubic`, `flattenQuadratic`, `DEFAULT_FLATTEN_TOLERANCE`, `composePath`, `decomposePath`, `unionBoundsPath`, `pathPoseDescriptor`, `pathOriginProjection`, `createPenPreviewLayer`, `Path`, `PolygonPath`, `RectPath`, `PathFillRule`, `PointInPathOptions`, `CreatePathLayerOpts`, `CreatePenPreviewLayerOptions`, `PenPreviewStyle`, `constrainTo45`, `Group`, `GroupAdapter`, `resolveToOutermostGroup`, `expandToLeaves`, `unionBounds`, `RectPose`, `withGroupOrdering`, `arrayAdapter`, `ArrayAdapter`, `ArrayAdapterConfig`, `useArrayAdapter`, `UseArrayAdapterOptions`, `createScene`, `useScene`, `asNodeId`, `AddNodeSpec`, `ContainerNode`, `LayerRecord`, `LeafNode`, `SceneNode`, `NodeId`, `RegisteredOp`, `Scene`, `SystemLayerRecord`, `SystemLayerSpec`, `UserLayerRecord`, `UseSceneOptions`, `ModifierState`, `PointerState`, `GestureContext`, `SnapStrategy`, `ActionBehavior`, `BehaviorMoveResult`, `MoveBehavior`, `MoveOverlay`, `ResizeAnchor`, `ResizePose`, `ResizeProposed`, `ResizeMoveResult`, `ResizeBehavior`, `ResizeOverlay`, `RotatedPose`, `RotateProposed`, `RotateMoveResult`, `RotateBehavior`, `RotateOverlay`, `InsertProposed`, `InsertMoveResult`, `InsertBehavior`, `InsertOverlay`, `AreaSelectPose`, `AreaSelectProposed`, `AreaSelectMoveResult`, `AreaSelectBehavior`, `AreaSelectOverlay`, `ClipboardSnapshot`, `snap`, `gridSnapStrategy`, `pointToGridCell`, `RECT_ORIGIN_PROJECTION`, `OriginProjection`, `useMove`, `UseMoveOptions`, `MoveController`, `MoveStartArgs`, `MoveMoveArgs`, `useResize`, `RECT_POSE_DESCRIPTOR`, `cornerResizeHandles`, `hitCornerHandle`, `UseResizeOptions`, `ResizeController`, `PoseDescriptor`, `CornerHandle`, `useRotate`, `pointInRotatedRect`, `rotatedRectCorners`, `rectCorners`, `rotatePoint`, `aabbCenter`, `rotationHandle`, `hitRotationHandle`, `DEFAULT_ROTATION_HANDLE_DISTANCE`, `UseRotateOptions`, `RotateController`, `RotateStartArgs`, `RotateMoveArgs`, `RotateGeometry`, `RotationHandle`, `useInsert`, `UseInsertOptions`, `InsertController`, `useAreaSelect`, `useEditAnchors`, `hitAnchor`, `enumerateAnchors`, `withCoord`, `createAnchorEditOverlayLayer`, `UseEditAnchorsOptions`, `EditAnchorsController`, `EditAnchorsAdapter`, `EditAnchorsOverlay`, `EditAnchorsStartArgs`, `EditAnchorsMoveArgs`, `AnchorHit`, `PathAnchor`, `AnchorEditOverlayOpts`, `UseAreaSelectOptions`, `AreaSelectController`, `selectFromMarquee`, `useClipboardOps`, `useClipboard`, `UseClipboardOpsOptions`, `UseClipboardOpsReturn`, `ClipboardAdapter`, `UseClipboardOptions`, `UseClipboardReturn`, `useDelete`, `DeleteAdapter`, `UseDeleteOptions`, `UseDeleteReturn`, `useEscape`, `EscapeAdapter`, `UseEscapeOptions`, `UseEscapeReturn`, `useSelectAll`, `SelectAllAdapter`, `UseSelectAllOptions`, `UseSelectAllReturn`, `useDuplicate`, `DuplicateAdapter`, `UseDuplicateOptions`, `UseDuplicateReturn`, `useNudge`, `NudgeAdapter`, `NudgeDirection`, `UseNudgeOptions`, `UseNudgeReturn`, `useClone`, `cloneByAltDrag`, `UseCloneOptions`, `UseCloneReturn`, `ClonePose`, `CloneLayer`, `CloneBehavior`, `createBringForwardOp`, `createSendBackwardOp`, `createBringToFrontOp`, `createSendToBackOp`, `createMoveToIndexOp`, `useReorder`, `ReorderAdapter`, `UseReorderOptions`, `UseReorderReturn`, `useGroup`, `useUngroup`, `useNest`, `useUnnest`, `GroupActionAdapter`, `UseGroupOptions`, `UseGroupReturn`, `UseUngroupOptions`, `UseUngroupReturn`, `NestActionAdapter`, `UseNestOptions`, `UseNestReturn`, `UseUnnestOptions`, `UseUnnestReturn`, `useUndoRedo`, `UndoRedoAdapter`, `UseUndoRedoOptions`, `UseUndoRedoReturn`
 - [src/interactions/actions/clipboard/clipboard.ts](#src-interactions-actions-clipboard-clipboard-ts) — `ClipboardAdapter`, `UseClipboardOptions`, `UseClipboardReturn`, `useClipboard`
 - [src/interactions/actions/clipboard/clipboardOps.ts](#src-interactions-actions-clipboard-clipboardops-ts) — `UseClipboardOpsOptions`, `UseClipboardOpsReturn`, `useClipboardOps`
 - [src/interactions/actions/clipboard/index.ts](#src-interactions-actions-clipboard-index-ts) — `useClipboardOps`, `UseClipboardOpsOptions`, `UseClipboardOpsReturn`, `useClipboard`, `ClipboardAdapter`, `UseClipboardOptions`, `UseClipboardReturn`
@@ -124,46 +124,46 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 - [src/interactions/actions/undo-redo/index.ts](#src-interactions-actions-undo-redo-index-ts) — `useUndoRedo`, `UndoRedoAdapter`, `UseUndoRedoOptions`, `UseUndoRedoReturn`
 - [src/interactions/actions/undo-redo/undoRedo.ts](#src-interactions-actions-undo-redo-undoredo-ts) — `UndoRedoAdapter`, `UseUndoRedoOptions`, `UseUndoRedoReturn`, `useUndoRedo`
 - [src/interactions/actions/useKeybinding.ts](#src-interactions-actions-usekeybinding-ts) — `KeyBinding`, `isEditableTarget`, `useKeybinding`
-- [src/interactions/gestures/area-select/areaSelect.ts](#src-interactions-gestures-area-select-areaselect-ts) — `UseAreaSelectOptions`, `AreaSelectController`, `useAreaSelect`
-- [src/interactions/gestures/area-select/behaviors/index.ts](#src-interactions-gestures-area-select-behaviors-index-ts) — `selectFromMarquee`
-- [src/interactions/gestures/area-select/behaviors/selectFromMarquee.ts](#src-interactions-gestures-area-select-behaviors-selectfrommarquee-ts) — `selectFromMarquee`
-- [src/interactions/gestures/area-select/index.ts](#src-interactions-gestures-area-select-index-ts) — `useAreaSelect`, `UseAreaSelectOptions`, `AreaSelectController`
-- [src/interactions/gestures/clone/behaviors/cloneByAltDrag.ts](#src-interactions-gestures-clone-behaviors-clonebyaltdrag-ts) — `cloneByAltDrag`
-- [src/interactions/gestures/clone/behaviors/index.ts](#src-interactions-gestures-clone-behaviors-index-ts) — `cloneByAltDrag`
-- [src/interactions/gestures/clone/clone.ts](#src-interactions-gestures-clone-clone-ts) — `UseCloneOptions`, `UseCloneReturn`, `useClone`
-- [src/interactions/gestures/clone/index.ts](#src-interactions-gestures-clone-index-ts) — `useClone`, `UseCloneOptions`, `UseCloneReturn`, `cloneByAltDrag`
-- [src/interactions/gestures/edit-anchors/editAnchors.ts](#src-interactions-gestures-edit-anchors-editanchors-ts) — `EditAnchorsAdapter`, `EditAnchorsOverlay`, `EditAnchorsStartArgs`, `EditAnchorsMoveArgs`, `UseEditAnchorsOptions`, `EditAnchorsController`, `useEditAnchors`
-- [src/interactions/gestures/edit-anchors/geometry.ts](#src-interactions-gestures-edit-anchors-geometry-ts) — `PathAnchor`, `enumerateAnchors`, `withCoord`
-- [src/interactions/gestures/edit-anchors/handles.ts](#src-interactions-gestures-edit-anchors-handles-ts) — `AnchorHit`, `hitAnchor`, `PathAnchor`
-- [src/interactions/gestures/edit-anchors/index.ts](#src-interactions-gestures-edit-anchors-index-ts) — `useEditAnchors`, `UseEditAnchorsOptions`, `EditAnchorsController`, `EditAnchorsAdapter`, `EditAnchorsOverlay`, `EditAnchorsStartArgs`, `EditAnchorsMoveArgs`, `hitAnchor`, `AnchorHit`, `PathAnchor`, `enumerateAnchors`, `withCoord`, `createAnchorEditOverlayLayer`, `AnchorEditOverlayOpts`
-- [src/interactions/gestures/edit-anchors/overlay.ts](#src-interactions-gestures-edit-anchors-overlay-ts) — `AnchorEditOverlayOpts`, `createAnchorEditOverlayLayer`
-- [src/interactions/gestures/insert/behaviors/index.ts](#src-interactions-gestures-insert-behaviors-index-ts) — `snapToGrid`
-- [src/interactions/gestures/insert/behaviors/snapToGrid.ts](#src-interactions-gestures-insert-behaviors-snaptogrid-ts) — `snapToGrid`
-- [src/interactions/gestures/insert/index.ts](#src-interactions-gestures-insert-index-ts) — `useInsert`, `UseInsertOptions`, `InsertController`
-- [src/interactions/gestures/insert/insert.ts](#src-interactions-gestures-insert-insert-ts) — `UseInsertOptions`, `InsertController`, `useInsert`
-- [src/interactions/gestures/move/behaviors/index.ts](#src-interactions-gestures-move-behaviors-index-ts) — `snapToGrid`, `snapToContainer`, `snapBackOrDelete`
-- [src/interactions/gestures/move/behaviors/snapBackOrDelete.ts](#src-interactions-gestures-move-behaviors-snapbackordelete-ts) — `snapBackOrDelete`
-- [src/interactions/gestures/move/behaviors/snapToContainer.ts](#src-interactions-gestures-move-behaviors-snaptocontainer-ts) — `snapToContainer`
-- [src/interactions/gestures/move/behaviors/snapToGrid.ts](#src-interactions-gestures-move-behaviors-snaptogrid-ts) — `snapToGrid`
-- [src/interactions/gestures/move/index.ts](#src-interactions-gestures-move-index-ts) — `useMove`, `UseMoveOptions`, `MoveController`, `MoveStartArgs`, `MoveMoveArgs`, `snapToGrid`, `snapToContainer`, `snapBackOrDelete`
-- [src/interactions/gestures/move/move.ts](#src-interactions-gestures-move-move-ts) — `UseMoveOptions`, `MoveStartArgs`, `MoveMoveArgs`, `MoveController`, `useMove`
-- [src/interactions/gestures/resize/autoPoseDescriptor.ts](#src-interactions-gestures-resize-autoposedescriptor-ts) — `isPathLike`, `AUTO_POSE_DESCRIPTOR`
-- [src/interactions/gestures/resize/behaviors/clampMinSize.ts](#src-interactions-gestures-resize-behaviors-clampminsize-ts) — `clampMinSize`
-- [src/interactions/gestures/resize/behaviors/index.ts](#src-interactions-gestures-resize-behaviors-index-ts) — `clampMinSize`, `snapToGrid`
-- [src/interactions/gestures/resize/behaviors/snapToGrid.ts](#src-interactions-gestures-resize-behaviors-snaptogrid-ts) — `snapToGrid`
-- [src/interactions/gestures/resize/cornerHandles.ts](#src-interactions-gestures-resize-cornerhandles-ts) — `CornerHandle`, `cornerResizeHandles`, `hitCornerHandle`
-- [src/interactions/gestures/resize/geometry.ts](#src-interactions-gestures-resize-geometry-ts) — `PoseDescriptor`, `aabbIntersectsRect`, `RECT_POSE_DESCRIPTOR`
-- [src/interactions/gestures/resize/index.ts](#src-interactions-gestures-resize-index-ts) — `useResize`, `UseResizeOptions`, `ResizeController`, `RECT_POSE_DESCRIPTOR`, `PoseDescriptor`, `cornerResizeHandles`, `hitCornerHandle`, `CornerHandle`
-- [src/interactions/gestures/resize/resize.ts](#src-interactions-gestures-resize-resize-ts) — `UseResizeOptions`, `ResizeController`, `useResize`
-- [src/interactions/gestures/rotate/geometry.ts](#src-interactions-gestures-rotate-geometry-ts) — `aabbCenter`, `rotatePoint`, `rectCorners`, `rotatedRectCorners`, `pointInRotatedRect`
-- [src/interactions/gestures/rotate/handle.ts](#src-interactions-gestures-rotate-handle-ts) — `DEFAULT_ROTATION_HANDLE_DISTANCE`, `RotationHandle`, `rotationHandle`, `hitRotationHandle`
-- [src/interactions/gestures/rotate/index.ts](#src-interactions-gestures-rotate-index-ts) — `useRotate`, `UseRotateOptions`, `RotateController`, `RotateStartArgs`, `RotateMoveArgs`, `RotateGeometry`, `aabbCenter`, `rotatePoint`, `rectCorners`, `rotatedRectCorners`, `pointInRotatedRect`, `rotationHandle`, `hitRotationHandle`, `DEFAULT_ROTATION_HANDLE_DISTANCE`, `RotationHandle`
-- [src/interactions/gestures/rotate/rotate.ts](#src-interactions-gestures-rotate-rotate-ts) — `RotateGeometry`, `RotateStartArgs`, `RotateMoveArgs`, `UseRotateOptions`, `RotateController`, `useRotate`, `ResizePose`
+- [src/interactions/actions/area-select/areaSelect.ts](#src-interactions-gestures-area-select-areaselect-ts) — `UseAreaSelectOptions`, `AreaSelectController`, `useAreaSelect`
+- [src/interactions/actions/area-select/behaviors/index.ts](#src-interactions-gestures-area-select-behaviors-index-ts) — `selectFromMarquee`
+- [src/interactions/actions/area-select/behaviors/selectFromMarquee.ts](#src-interactions-gestures-area-select-behaviors-selectfrommarquee-ts) — `selectFromMarquee`
+- [src/interactions/actions/area-select/index.ts](#src-interactions-gestures-area-select-index-ts) — `useAreaSelect`, `UseAreaSelectOptions`, `AreaSelectController`
+- [src/interactions/actions/clone/behaviors/cloneByAltDrag.ts](#src-interactions-gestures-clone-behaviors-clonebyaltdrag-ts) — `cloneByAltDrag`
+- [src/interactions/actions/clone/behaviors/index.ts](#src-interactions-gestures-clone-behaviors-index-ts) — `cloneByAltDrag`
+- [src/interactions/actions/clone/clone.ts](#src-interactions-gestures-clone-clone-ts) — `UseCloneOptions`, `UseCloneReturn`, `useClone`
+- [src/interactions/actions/clone/index.ts](#src-interactions-gestures-clone-index-ts) — `useClone`, `UseCloneOptions`, `UseCloneReturn`, `cloneByAltDrag`
+- [src/interactions/actions/edit-anchors/editAnchors.ts](#src-interactions-gestures-edit-anchors-editanchors-ts) — `EditAnchorsAdapter`, `EditAnchorsOverlay`, `EditAnchorsStartArgs`, `EditAnchorsMoveArgs`, `UseEditAnchorsOptions`, `EditAnchorsController`, `useEditAnchors`
+- [src/interactions/actions/edit-anchors/geometry.ts](#src-interactions-gestures-edit-anchors-geometry-ts) — `PathAnchor`, `enumerateAnchors`, `withCoord`
+- [src/interactions/actions/edit-anchors/handles.ts](#src-interactions-gestures-edit-anchors-handles-ts) — `AnchorHit`, `hitAnchor`, `PathAnchor`
+- [src/interactions/actions/edit-anchors/index.ts](#src-interactions-gestures-edit-anchors-index-ts) — `useEditAnchors`, `UseEditAnchorsOptions`, `EditAnchorsController`, `EditAnchorsAdapter`, `EditAnchorsOverlay`, `EditAnchorsStartArgs`, `EditAnchorsMoveArgs`, `hitAnchor`, `AnchorHit`, `PathAnchor`, `enumerateAnchors`, `withCoord`, `createAnchorEditOverlayLayer`, `AnchorEditOverlayOpts`
+- [src/interactions/actions/edit-anchors/overlay.ts](#src-interactions-gestures-edit-anchors-overlay-ts) — `AnchorEditOverlayOpts`, `createAnchorEditOverlayLayer`
+- [src/interactions/actions/insert/behaviors/index.ts](#src-interactions-gestures-insert-behaviors-index-ts) — `snapToGrid`
+- [src/interactions/actions/insert/behaviors/snapToGrid.ts](#src-interactions-gestures-insert-behaviors-snaptogrid-ts) — `snapToGrid`
+- [src/interactions/actions/insert/index.ts](#src-interactions-gestures-insert-index-ts) — `useInsert`, `UseInsertOptions`, `InsertController`
+- [src/interactions/actions/insert/insert.ts](#src-interactions-gestures-insert-insert-ts) — `UseInsertOptions`, `InsertController`, `useInsert`
+- [src/interactions/actions/move/behaviors/index.ts](#src-interactions-gestures-move-behaviors-index-ts) — `snapToGrid`, `snapToContainer`, `snapBackOrDelete`
+- [src/interactions/actions/move/behaviors/snapBackOrDelete.ts](#src-interactions-gestures-move-behaviors-snapbackordelete-ts) — `snapBackOrDelete`
+- [src/interactions/actions/move/behaviors/snapToContainer.ts](#src-interactions-gestures-move-behaviors-snaptocontainer-ts) — `snapToContainer`
+- [src/interactions/actions/move/behaviors/snapToGrid.ts](#src-interactions-gestures-move-behaviors-snaptogrid-ts) — `snapToGrid`
+- [src/interactions/actions/move/index.ts](#src-interactions-gestures-move-index-ts) — `useMove`, `UseMoveOptions`, `MoveController`, `MoveStartArgs`, `MoveMoveArgs`, `snapToGrid`, `snapToContainer`, `snapBackOrDelete`
+- [src/interactions/actions/move/move.ts](#src-interactions-gestures-move-move-ts) — `UseMoveOptions`, `MoveStartArgs`, `MoveMoveArgs`, `MoveController`, `useMove`
+- [src/interactions/actions/resize/autoPoseDescriptor.ts](#src-interactions-gestures-resize-autoposedescriptor-ts) — `isPathLike`, `AUTO_POSE_DESCRIPTOR`
+- [src/interactions/actions/resize/behaviors/clampMinSize.ts](#src-interactions-gestures-resize-behaviors-clampminsize-ts) — `clampMinSize`
+- [src/interactions/actions/resize/behaviors/index.ts](#src-interactions-gestures-resize-behaviors-index-ts) — `clampMinSize`, `snapToGrid`
+- [src/interactions/actions/resize/behaviors/snapToGrid.ts](#src-interactions-gestures-resize-behaviors-snaptogrid-ts) — `snapToGrid`
+- [src/interactions/actions/resize/cornerHandles.ts](#src-interactions-gestures-resize-cornerhandles-ts) — `CornerHandle`, `cornerResizeHandles`, `hitCornerHandle`
+- [src/interactions/actions/resize/geometry.ts](#src-interactions-gestures-resize-geometry-ts) — `PoseDescriptor`, `aabbIntersectsRect`, `RECT_POSE_DESCRIPTOR`
+- [src/interactions/actions/resize/index.ts](#src-interactions-gestures-resize-index-ts) — `useResize`, `UseResizeOptions`, `ResizeController`, `RECT_POSE_DESCRIPTOR`, `PoseDescriptor`, `cornerResizeHandles`, `hitCornerHandle`, `CornerHandle`
+- [src/interactions/actions/resize/resize.ts](#src-interactions-gestures-resize-resize-ts) — `UseResizeOptions`, `ResizeController`, `useResize`
+- [src/interactions/actions/rotate/geometry.ts](#src-interactions-gestures-rotate-geometry-ts) — `aabbCenter`, `rotatePoint`, `rectCorners`, `rotatedRectCorners`, `pointInRotatedRect`
+- [src/interactions/actions/rotate/handle.ts](#src-interactions-gestures-rotate-handle-ts) — `DEFAULT_ROTATION_HANDLE_DISTANCE`, `RotationHandle`, `rotationHandle`, `hitRotationHandle`
+- [src/interactions/actions/rotate/index.ts](#src-interactions-gestures-rotate-index-ts) — `useRotate`, `UseRotateOptions`, `RotateController`, `RotateStartArgs`, `RotateMoveArgs`, `RotateGeometry`, `aabbCenter`, `rotatePoint`, `rectCorners`, `rotatedRectCorners`, `pointInRotatedRect`, `rotationHandle`, `hitRotationHandle`, `DEFAULT_ROTATION_HANDLE_DISTANCE`, `RotationHandle`
+- [src/interactions/actions/rotate/rotate.ts](#src-interactions-gestures-rotate-rotate-ts) — `RotateGeometry`, `RotateStartArgs`, `RotateMoveArgs`, `UseRotateOptions`, `RotateController`, `useRotate`, `ResizePose`
 - [src/interactions/gestures/shared/index.ts](#src-interactions-gestures-shared-index-ts) — `snap`
 - [src/interactions/gestures/shared/snap.ts](#src-interactions-gestures-shared-snap-ts) — `snap`
 - [src/interactions/gestures/shared/strategies/grid.ts](#src-interactions-gestures-shared-strategies-grid-ts) — `OriginProjection`, `RECT_ORIGIN_PROJECTION`, `gridSnapStrategy`, `pointToGridCell`
 - [src/interactions/gestures/shared/strategies/index.ts](#src-interactions-gestures-shared-strategies-index-ts) — `gridSnapStrategy`, `pointToGridCell`, `RECT_ORIGIN_PROJECTION`, `OriginProjection`
-- [src/interactions/gestures/types.ts](#src-interactions-gestures-types-ts) — `ModifierState`, `PointerState`, `GestureContext`, `SnapStrategy`, `GestureBehavior`, `BehaviorMoveResult`, `MoveBehavior`, `MoveOverlay`, `ResizeAnchor`, `ResizePose`, `ResizeProposed`, `ResizeMoveResult`, `ResizeBehavior`, `ResizeOverlay`, `RotatedPose`, `RotateProposed`, `RotateMoveResult`, `RotateBehavior`, `RotateOverlay`, `InsertPoint`, `InsertProposed`, `InsertMoveResult`, `InsertBehavior`, `InsertOverlay`, `AreaSelectPose`, `AreaSelectProposed`, `AreaSelectMoveResult`, `AreaSelectBehavior`, `AreaSelectOverlay`, `ClonePose`, `CloneLayer`, `CloneBehavior`
+- [src/interactions/gestures/types.ts](#src-interactions-gestures-types-ts) — `ModifierState`, `PointerState`, `GestureContext`, `SnapStrategy`, `ActionBehavior`, `BehaviorMoveResult`, `MoveBehavior`, `MoveOverlay`, `ResizeAnchor`, `ResizePose`, `ResizeProposed`, `ResizeMoveResult`, `ResizeBehavior`, `ResizeOverlay`, `RotatedPose`, `RotateProposed`, `RotateMoveResult`, `RotateBehavior`, `RotateOverlay`, `InsertPoint`, `InsertProposed`, `InsertMoveResult`, `InsertBehavior`, `InsertOverlay`, `AreaSelectPose`, `AreaSelectProposed`, `AreaSelectMoveResult`, `AreaSelectBehavior`, `AreaSelectOverlay`, `ClonePose`, `CloneLayer`, `CloneBehavior`
 - [src/features/groups/nestedHit.ts](#src-features-groups-nestedhit-ts) — `NestedHitOpts`, `NestedHitTester`, `nestedHitTester`
 - [src/interactions/usePointerGestures.ts](#src-interactions-usepointergestures-ts) — `PointerGestureBindings`, `PointerGestureCallbackCtx`, `UsePointerGesturesOptions`, `usePointerGestures`
 - [src/layout/snaps.ts](#src-layout-snaps-ts) — `none`, `nearest`, `nearestWithin`, `containedThenNearest`, `cellAt`
@@ -2286,7 +2286,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `PointerState` | reexport | `re-export from './interactions/gestures/types'` |  |
 | `GestureContext` | reexport | `re-export from './interactions/gestures/types'` |  |
 | `SnapStrategy` | reexport | `re-export from './interactions/gestures/types'` |  |
-| `GestureBehavior` | reexport | `re-export from './interactions/gestures/types'` |  |
+| `ActionBehavior` | reexport | `re-export from './interactions/gestures/types'` |  |
 | `BehaviorMoveResult` | reexport | `re-export from './interactions/gestures/types'` |  |
 | `MoveBehavior` | reexport | `re-export from './interactions/gestures/types'` |  |
 | `MoveOverlay` | reexport | `re-export from './interactions/gestures/types'` |  |
@@ -2316,55 +2316,55 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `pointToGridCell` | reexport | `re-export from './interactions/gestures/shared'` |  |
 | `RECT_ORIGIN_PROJECTION` | reexport | `re-export from './interactions/gestures/shared'` |  |
 | `OriginProjection` | reexport | `re-export from './interactions/gestures/shared'` |  |
-| `useMove` | reexport | `re-export from './interactions/gestures/move'` |  |
-| `UseMoveOptions` | reexport | `re-export from './interactions/gestures/move'` |  |
-| `MoveController` | reexport | `re-export from './interactions/gestures/move'` |  |
-| `MoveStartArgs` | reexport | `re-export from './interactions/gestures/move'` |  |
-| `MoveMoveArgs` | reexport | `re-export from './interactions/gestures/move'` |  |
-| `useResize` | reexport | `re-export from './interactions/gestures/resize'` |  |
-| `RECT_POSE_DESCRIPTOR` | reexport | `re-export from './interactions/gestures/resize'` |  |
-| `cornerResizeHandles` | reexport | `re-export from './interactions/gestures/resize'` |  |
-| `hitCornerHandle` | reexport | `re-export from './interactions/gestures/resize'` |  |
-| `UseResizeOptions` | reexport | `re-export from './interactions/gestures/resize'` |  |
-| `ResizeController` | reexport | `re-export from './interactions/gestures/resize'` |  |
-| `PoseDescriptor` | reexport | `re-export from './interactions/gestures/resize'` |  |
-| `CornerHandle` | reexport | `re-export from './interactions/gestures/resize'` |  |
-| `useRotate` | reexport | `re-export from './interactions/gestures/rotate'` |  |
-| `pointInRotatedRect` | reexport | `re-export from './interactions/gestures/rotate'` |  |
-| `rotatedRectCorners` | reexport | `re-export from './interactions/gestures/rotate'` |  |
-| `rectCorners` | reexport | `re-export from './interactions/gestures/rotate'` |  |
-| `rotatePoint` | reexport | `re-export from './interactions/gestures/rotate'` |  |
-| `aabbCenter` | reexport | `re-export from './interactions/gestures/rotate'` |  |
-| `rotationHandle` | reexport | `re-export from './interactions/gestures/rotate'` |  |
-| `hitRotationHandle` | reexport | `re-export from './interactions/gestures/rotate'` |  |
-| `DEFAULT_ROTATION_HANDLE_DISTANCE` | reexport | `re-export from './interactions/gestures/rotate'` |  |
-| `UseRotateOptions` | reexport | `re-export from './interactions/gestures/rotate'` |  |
-| `RotateController` | reexport | `re-export from './interactions/gestures/rotate'` |  |
-| `RotateStartArgs` | reexport | `re-export from './interactions/gestures/rotate'` |  |
-| `RotateMoveArgs` | reexport | `re-export from './interactions/gestures/rotate'` |  |
-| `RotateGeometry` | reexport | `re-export from './interactions/gestures/rotate'` |  |
-| `RotationHandle` | reexport | `re-export from './interactions/gestures/rotate'` |  |
-| `useInsert` | reexport | `re-export from './interactions/gestures/insert'` |  |
-| `UseInsertOptions` | reexport | `re-export from './interactions/gestures/insert'` |  |
-| `InsertController` | reexport | `re-export from './interactions/gestures/insert'` |  |
-| `useAreaSelect` | reexport | `re-export from './interactions/gestures/area-select'` |  |
-| `useEditAnchors` | reexport | `re-export from './interactions/gestures/edit-anchors'` |  |
-| `hitAnchor` | reexport | `re-export from './interactions/gestures/edit-anchors'` |  |
-| `enumerateAnchors` | reexport | `re-export from './interactions/gestures/edit-anchors'` |  |
-| `withCoord` | reexport | `re-export from './interactions/gestures/edit-anchors'` |  |
-| `createAnchorEditOverlayLayer` | reexport | `re-export from './interactions/gestures/edit-anchors'` |  |
-| `UseEditAnchorsOptions` | reexport | `re-export from './interactions/gestures/edit-anchors'` |  |
-| `EditAnchorsController` | reexport | `re-export from './interactions/gestures/edit-anchors'` |  |
-| `EditAnchorsAdapter` | reexport | `re-export from './interactions/gestures/edit-anchors'` |  |
-| `EditAnchorsOverlay` | reexport | `re-export from './interactions/gestures/edit-anchors'` |  |
-| `EditAnchorsStartArgs` | reexport | `re-export from './interactions/gestures/edit-anchors'` |  |
-| `EditAnchorsMoveArgs` | reexport | `re-export from './interactions/gestures/edit-anchors'` |  |
-| `AnchorHit` | reexport | `re-export from './interactions/gestures/edit-anchors'` |  |
-| `PathAnchor` | reexport | `re-export from './interactions/gestures/edit-anchors'` |  |
-| `AnchorEditOverlayOpts` | reexport | `re-export from './interactions/gestures/edit-anchors'` |  |
-| `UseAreaSelectOptions` | reexport | `re-export from './interactions/gestures/area-select'` |  |
-| `AreaSelectController` | reexport | `re-export from './interactions/gestures/area-select'` |  |
-| `selectFromMarquee` | reexport | `re-export from './interactions/gestures/area-select/behaviors'` |  |
+| `useMove` | reexport | `re-export from './interactions/actions/move'` |  |
+| `UseMoveOptions` | reexport | `re-export from './interactions/actions/move'` |  |
+| `MoveController` | reexport | `re-export from './interactions/actions/move'` |  |
+| `MoveStartArgs` | reexport | `re-export from './interactions/actions/move'` |  |
+| `MoveMoveArgs` | reexport | `re-export from './interactions/actions/move'` |  |
+| `useResize` | reexport | `re-export from './interactions/actions/resize'` |  |
+| `RECT_POSE_DESCRIPTOR` | reexport | `re-export from './interactions/actions/resize'` |  |
+| `cornerResizeHandles` | reexport | `re-export from './interactions/actions/resize'` |  |
+| `hitCornerHandle` | reexport | `re-export from './interactions/actions/resize'` |  |
+| `UseResizeOptions` | reexport | `re-export from './interactions/actions/resize'` |  |
+| `ResizeController` | reexport | `re-export from './interactions/actions/resize'` |  |
+| `PoseDescriptor` | reexport | `re-export from './interactions/actions/resize'` |  |
+| `CornerHandle` | reexport | `re-export from './interactions/actions/resize'` |  |
+| `useRotate` | reexport | `re-export from './interactions/actions/rotate'` |  |
+| `pointInRotatedRect` | reexport | `re-export from './interactions/actions/rotate'` |  |
+| `rotatedRectCorners` | reexport | `re-export from './interactions/actions/rotate'` |  |
+| `rectCorners` | reexport | `re-export from './interactions/actions/rotate'` |  |
+| `rotatePoint` | reexport | `re-export from './interactions/actions/rotate'` |  |
+| `aabbCenter` | reexport | `re-export from './interactions/actions/rotate'` |  |
+| `rotationHandle` | reexport | `re-export from './interactions/actions/rotate'` |  |
+| `hitRotationHandle` | reexport | `re-export from './interactions/actions/rotate'` |  |
+| `DEFAULT_ROTATION_HANDLE_DISTANCE` | reexport | `re-export from './interactions/actions/rotate'` |  |
+| `UseRotateOptions` | reexport | `re-export from './interactions/actions/rotate'` |  |
+| `RotateController` | reexport | `re-export from './interactions/actions/rotate'` |  |
+| `RotateStartArgs` | reexport | `re-export from './interactions/actions/rotate'` |  |
+| `RotateMoveArgs` | reexport | `re-export from './interactions/actions/rotate'` |  |
+| `RotateGeometry` | reexport | `re-export from './interactions/actions/rotate'` |  |
+| `RotationHandle` | reexport | `re-export from './interactions/actions/rotate'` |  |
+| `useInsert` | reexport | `re-export from './interactions/actions/insert'` |  |
+| `UseInsertOptions` | reexport | `re-export from './interactions/actions/insert'` |  |
+| `InsertController` | reexport | `re-export from './interactions/actions/insert'` |  |
+| `useAreaSelect` | reexport | `re-export from './interactions/actions/area-select'` |  |
+| `useEditAnchors` | reexport | `re-export from './interactions/actions/edit-anchors'` |  |
+| `hitAnchor` | reexport | `re-export from './interactions/actions/edit-anchors'` |  |
+| `enumerateAnchors` | reexport | `re-export from './interactions/actions/edit-anchors'` |  |
+| `withCoord` | reexport | `re-export from './interactions/actions/edit-anchors'` |  |
+| `createAnchorEditOverlayLayer` | reexport | `re-export from './interactions/actions/edit-anchors'` |  |
+| `UseEditAnchorsOptions` | reexport | `re-export from './interactions/actions/edit-anchors'` |  |
+| `EditAnchorsController` | reexport | `re-export from './interactions/actions/edit-anchors'` |  |
+| `EditAnchorsAdapter` | reexport | `re-export from './interactions/actions/edit-anchors'` |  |
+| `EditAnchorsOverlay` | reexport | `re-export from './interactions/actions/edit-anchors'` |  |
+| `EditAnchorsStartArgs` | reexport | `re-export from './interactions/actions/edit-anchors'` |  |
+| `EditAnchorsMoveArgs` | reexport | `re-export from './interactions/actions/edit-anchors'` |  |
+| `AnchorHit` | reexport | `re-export from './interactions/actions/edit-anchors'` |  |
+| `PathAnchor` | reexport | `re-export from './interactions/actions/edit-anchors'` |  |
+| `AnchorEditOverlayOpts` | reexport | `re-export from './interactions/actions/edit-anchors'` |  |
+| `UseAreaSelectOptions` | reexport | `re-export from './interactions/actions/area-select'` |  |
+| `AreaSelectController` | reexport | `re-export from './interactions/actions/area-select'` |  |
+| `selectFromMarquee` | reexport | `re-export from './interactions/actions/area-select/behaviors'` |  |
 | `useClipboardOps` | reexport | `re-export from './interactions/actions/clipboard'` |  |
 | `useClipboard` | reexport | `re-export from './interactions/actions/clipboard'` |  |
 | `UseClipboardOpsOptions` | reexport | `re-export from './interactions/actions/clipboard'` |  |
@@ -2393,10 +2393,10 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `NudgeDirection` | reexport | `re-export from './interactions/actions/nudge'` |  |
 | `UseNudgeOptions` | reexport | `re-export from './interactions/actions/nudge'` |  |
 | `UseNudgeReturn` | reexport | `re-export from './interactions/actions/nudge'` |  |
-| `useClone` | reexport | `re-export from './interactions/gestures/clone'` |  |
-| `cloneByAltDrag` | reexport | `re-export from './interactions/gestures/clone'` |  |
-| `UseCloneOptions` | reexport | `re-export from './interactions/gestures/clone'` |  |
-| `UseCloneReturn` | reexport | `re-export from './interactions/gestures/clone'` |  |
+| `useClone` | reexport | `re-export from './interactions/actions/clone'` |  |
+| `cloneByAltDrag` | reexport | `re-export from './interactions/actions/clone'` |  |
+| `UseCloneOptions` | reexport | `re-export from './interactions/actions/clone'` |  |
+| `UseCloneReturn` | reexport | `re-export from './interactions/actions/clone'` |  |
 | `ClonePose` | reexport | `re-export from './interactions/gestures/types'` |  |
 | `CloneLayer` | reexport | `re-export from './interactions/gestures/types'` |  |
 | `CloneBehavior` | reexport | `re-export from './interactions/gestures/types'` |  |
@@ -2781,7 +2781,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `useKeybinding.binding` | param | `binding: KeyBinding` |  |
 | `useKeybinding.handler` | param | `handler: (event: KeyboardEvent) => void` |  |
 
-## src/interactions/gestures/area-select/areaSelect.ts
+## src/interactions/actions/area-select/areaSelect.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -2804,19 +2804,19 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `useAreaSelect.adapter` | param | `adapter: AreaSelectAdapter` |  |
 | `useAreaSelect.options` | param | `options: UseAreaSelectOptions = {}` |  |
 
-## src/interactions/gestures/area-select/behaviors/index.ts
+## src/interactions/actions/area-select/behaviors/index.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
 | `selectFromMarquee` | reexport | `re-export from './selectFromMarquee'` |  |
 
-## src/interactions/gestures/area-select/behaviors/selectFromMarquee.ts
+## src/interactions/actions/area-select/behaviors/selectFromMarquee.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
 | `selectFromMarquee` | function | `() => AreaSelectBehavior` | Default area-select behavior: replace selection with hits inside the marquee, or extend with shift held. |
 
-## src/interactions/gestures/area-select/index.ts
+## src/interactions/actions/area-select/index.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -2825,19 +2825,19 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `AreaSelectController` | reexport | `re-export from './areaSelect'` |  |
 | `* from './behaviors'` | reexport-all | `*` |  |
 
-## src/interactions/gestures/clone/behaviors/cloneByAltDrag.ts
+## src/interactions/actions/clone/behaviors/cloneByAltDrag.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
 | `cloneByAltDrag` | function | `() => CloneBehavior` | Clone-on-alt-drag behavior for `useClone`; activates when Alt/Option is held at drag start. |
 
-## src/interactions/gestures/clone/behaviors/index.ts
+## src/interactions/actions/clone/behaviors/index.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
 | `cloneByAltDrag` | reexport | `re-export from './cloneByAltDrag'` |  |
 
-## src/interactions/gestures/clone/clone.ts
+## src/interactions/actions/clone/clone.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -2856,7 +2856,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `useClone.adapter` | param | `adapter: InsertAdapter<T>` |  |
 | `useClone.options` | param | `options: UseCloneOptions` |  |
 
-## src/interactions/gestures/clone/index.ts
+## src/interactions/actions/clone/index.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -2865,7 +2865,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `UseCloneReturn` | reexport | `re-export from './clone'` |  |
 | `cloneByAltDrag` | reexport | `re-export from './behaviors'` |  |
 
-## src/interactions/gestures/edit-anchors/editAnchors.ts
+## src/interactions/actions/edit-anchors/editAnchors.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -2907,7 +2907,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `useEditAnchors.adapter` | param | `adapter: EditAnchorsAdapter<TNode>` |  |
 | `useEditAnchors.options` | param | `options: UseEditAnchorsOptions = {}` |  |
 
-## src/interactions/gestures/edit-anchors/geometry.ts
+## src/interactions/actions/edit-anchors/geometry.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -2926,7 +2926,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `withCoord.x` | param | `x: number` |  |
 | `withCoord.y` | param | `y: number` |  |
 
-## src/interactions/gestures/edit-anchors/handles.ts
+## src/interactions/actions/edit-anchors/handles.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -2941,7 +2941,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `hitAnchor.threshold` | param | `threshold: number` |  |
 | `PathAnchor` | reexport | `re-export of PathAnchor` |  |
 
-## src/interactions/gestures/edit-anchors/index.ts
+## src/interactions/actions/edit-anchors/index.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -2960,7 +2960,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `createAnchorEditOverlayLayer` | reexport | `re-export from './overlay'` |  |
 | `AnchorEditOverlayOpts` | reexport | `re-export from './overlay'` |  |
 
-## src/interactions/gestures/edit-anchors/overlay.ts
+## src/interactions/actions/edit-anchors/overlay.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -2977,20 +2977,20 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `createAnchorEditOverlayLayer` | function | `(opts: AnchorEditOverlayOpts) => RenderLayer<unknown>` |  |
 | `createAnchorEditOverlayLayer.opts` | param | `opts: AnchorEditOverlayOpts` |  |
 
-## src/interactions/gestures/insert/behaviors/index.ts
+## src/interactions/actions/insert/behaviors/index.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
 | `snapToGrid` | reexport | `re-export from './snapToGrid'` |  |
 
-## src/interactions/gestures/insert/behaviors/snapToGrid.ts
+## src/interactions/actions/insert/behaviors/snapToGrid.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
 | `snapToGrid` | function | `(args: { spacing: number; bypassKey?: ModKey; }) => InsertBehavior<TPose>` |  |
 | `snapToGrid.args` | param | `args: { spacing: number; bypassKey?: ModKey; }` |  |
 
-## src/interactions/gestures/insert/index.ts
+## src/interactions/actions/insert/index.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -2999,7 +2999,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `InsertController` | reexport | `re-export from './insert'` |  |
 | `* from './behaviors'` | reexport-all | `*` |  |
 
-## src/interactions/gestures/insert/insert.ts
+## src/interactions/actions/insert/insert.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -3026,7 +3026,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `useInsert.adapter` | param | `adapter: InsertAdapter<TNode>` |  |
 | `useInsert.options` | param | `options: UseInsertOptions<TPose, TNode> = {}` |  |
 
-## src/interactions/gestures/move/behaviors/index.ts
+## src/interactions/actions/move/behaviors/index.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -3034,7 +3034,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `snapToContainer` | reexport | `re-export from './snapToContainer'` |  |
 | `snapBackOrDelete` | reexport | `re-export from './snapBackOrDelete'` |  |
 
-## src/interactions/gestures/move/behaviors/snapBackOrDelete.ts
+## src/interactions/actions/move/behaviors/snapBackOrDelete.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -3045,21 +3045,21 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `snapBackOrDelete` | function | `(args: { radius: number; onFreeRelease: 'snap-back' \| 'delete'; deleteLabel?: string; origin?: OriginProjection<TPose>; }) => MoveBehavior<TPose>` |  |
 | `snapBackOrDelete.args` | param | `args: { radius: number; onFreeRelease: 'snap-back' \| 'delete'; deleteLabel?: string; origin?: OriginProjection<TPose>; }` |  |
 
-## src/interactions/gestures/move/behaviors/snapToContainer.ts
+## src/interactions/actions/move/behaviors/snapToContainer.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
 | `snapToContainer` | function | `(args: { dwellMs: number; findTarget: ( draggedId: string, worldX: number, worldY: number, ) => SnapTarget<TPose> \| null; isInstant?: (target: SnapTarget<TPose>) => boolean; moveLabel?: string; reparentLabel?: string; }) => MoveBehavior<TPose>` |  |
 | `snapToContainer.args` | param | `args: { dwellMs: number; findTarget: ( draggedId: string, worldX: number, worldY: number, ) => SnapTarget<TPose> \| null; isInstant?: (target: SnapTarget<TPose>) => boolean; moveLabel?: string; reparentLabel?: string; }` |  |
 
-## src/interactions/gestures/move/behaviors/snapToGrid.ts
+## src/interactions/actions/move/behaviors/snapToGrid.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
 | `snapToGrid` | function | `(args: { spacing: number; bypassKey?: ModKey; }) => MoveBehavior<TPose>` |  |
 | `snapToGrid.args` | param | `args: { spacing: number; bypassKey?: ModKey; }` |  |
 
-## src/interactions/gestures/move/index.ts
+## src/interactions/actions/move/index.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -3072,7 +3072,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `snapToContainer` | reexport | `re-export from './behaviors'` |  |
 | `snapBackOrDelete` | reexport | `re-export from './behaviors'` |  |
 
-## src/interactions/gestures/move/move.ts
+## src/interactions/actions/move/move.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -3110,7 +3110,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `useMove.adapter` | param | `adapter: MoveAdapter<TNode, TPose>` |  |
 | `useMove.options` | param | `options: UseMoveOptions<TPose> = {}` |  |
 
-## src/interactions/gestures/resize/autoPoseDescriptor.ts
+## src/interactions/actions/resize/autoPoseDescriptor.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -3118,28 +3118,28 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `isPathLike.p` | param | `p: unknown` |  |
 | `AUTO_POSE_DESCRIPTOR` | const | `PoseDescriptor<unknown>` | Per-call dispatch: if the pose looks like a Path, route to `pathPoseDescriptor`; otherwise treat as a plain rect pose. |
 
-## src/interactions/gestures/resize/behaviors/clampMinSize.ts
+## src/interactions/actions/resize/behaviors/clampMinSize.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
 | `clampMinSize` | function | `(args: { minWidth: number; minHeight: number; }) => ResizeBehavior<TPose>` |  |
 | `clampMinSize.args` | param | `args: { minWidth: number; minHeight: number; }` |  |
 
-## src/interactions/gestures/resize/behaviors/index.ts
+## src/interactions/actions/resize/behaviors/index.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
 | `clampMinSize` | reexport | `re-export from './clampMinSize'` |  |
 | `snapToGrid` | reexport | `re-export from './snapToGrid'` |  |
 
-## src/interactions/gestures/resize/behaviors/snapToGrid.ts
+## src/interactions/actions/resize/behaviors/snapToGrid.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
 | `snapToGrid` | function | `(args: { spacing: number; bypassKey?: ModKey; suspendBelowDim?: boolean; }) => ResizeBehavior<TPose>` |  |
 | `snapToGrid.args` | param | `args: { spacing: number; bypassKey?: ModKey; suspendBelowDim?: boolean; }` |  |
 
-## src/interactions/gestures/resize/cornerHandles.ts
+## src/interactions/actions/resize/cornerHandles.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -3155,7 +3155,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `hitCornerHandle.py` | param | `py: number` |  |
 | `hitCornerHandle.radius` | param | `radius: number` |  |
 
-## src/interactions/gestures/resize/geometry.ts
+## src/interactions/actions/resize/geometry.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -3170,7 +3170,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `aabbIntersectsRect.r` | param | `r: ResizePose` |  |
 | `RECT_POSE_DESCRIPTOR` | const | `PoseDescriptor<ResizePose>` | Identity geometry for `TPose extends ResizePose`. |
 
-## src/interactions/gestures/resize/index.ts
+## src/interactions/actions/resize/index.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -3184,7 +3184,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `CornerHandle` | reexport | `re-export from './cornerHandles'` |  |
 | `* from './behaviors'` | reexport-all | `*` |  |
 
-## src/interactions/gestures/resize/resize.ts
+## src/interactions/actions/resize/resize.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -3210,7 +3210,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `useResize.adapter` | param | `adapter: ResizeAdapter<TNode, TPose>` |  |
 | `useResize.options` | param | `options: UseResizeOptions<TPose>` |  |
 
-## src/interactions/gestures/rotate/geometry.ts
+## src/interactions/actions/rotate/geometry.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -3231,7 +3231,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `pointInRotatedRect.worldX` | param | `worldX: number` |  |
 | `pointInRotatedRect.worldY` | param | `worldY: number` |  |
 
-## src/interactions/gestures/rotate/handle.ts
+## src/interactions/actions/rotate/handle.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -3248,7 +3248,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `hitRotationHandle.py` | param | `py: number` |  |
 | `hitRotationHandle.radius` | param | `radius: number` |  |
 
-## src/interactions/gestures/rotate/index.ts
+## src/interactions/actions/rotate/index.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -3268,7 +3268,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `DEFAULT_ROTATION_HANDLE_DISTANCE` | reexport | `re-export from './handle'` |  |
 | `RotationHandle` | reexport | `re-export from './handle'` |  |
 
-## src/interactions/gestures/rotate/rotate.ts
+## src/interactions/actions/rotate/rotate.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
@@ -3381,15 +3381,15 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `GestureContext.scratch` | field | `Record<string, unknown>` | Per-gesture mutable store. |
 | `SnapStrategy` | interface | `{ snap }` | Pluggable per-gesture snap rule; receives the proposed pose and returns a snapped pose or `null` to skip. |
 | `SnapStrategy.snap` | field | `TPose \| null` |  |
-| `GestureBehavior` | interface | `{ defaultTransient, onStart, onMove, onEnd }` | Generalized base behavior. |
-| `GestureBehavior.defaultTransient?` | field | `boolean` |  |
-| `GestureBehavior.onStart?` | field | `void` |  |
-| `GestureBehavior.onMove?` | field | `TMoveResult \| void` |  |
-| `GestureBehavior.onEnd?` | field | `Op[] \| null \| void` |  |
+| `ActionBehavior` | interface | `{ defaultTransient, onStart, onMove, onEnd }` | Generalized base behavior. |
+| `ActionBehavior.defaultTransient?` | field | `boolean` |  |
+| `ActionBehavior.onStart?` | field | `void` |  |
+| `ActionBehavior.onMove?` | field | `TMoveResult \| void` |  |
+| `ActionBehavior.onEnd?` | field | `Op[] \| null \| void` |  |
 | `BehaviorMoveResult` | interface | `{ pose, snap }` | Per-frame result a `MoveBehavior.onMove` can return to override pose / snap target. |
 | `BehaviorMoveResult.pose?` | field | `TPose` |  |
 | `BehaviorMoveResult.snap?` | field | `SnapTarget<TPose> \| null` |  |
-| `MoveBehavior` | type | `GestureBehavior<TPose, TPose, BehaviorMoveResult<TPose>>` | A behavior plugged into `useMove` — shapes the proposed pose during a drag. |
+| `MoveBehavior` | type | `ActionBehavior<TPose, TPose, BehaviorMoveResult<TPose>>` | A behavior plugged into `useMove` — shapes the proposed pose during a drag. |
 | `MoveOverlay` | interface | `{ draggedIds, poses, snapped, hideIds, hypotheticalChildPositions, sourceReflowPositions, destContainerId, accepted }` | Live overlay state exposed by `useMove` for rendering ghosts and snap previews. |
 | `MoveOverlay.draggedIds` | field | `string[]` |  |
 | `MoveOverlay.poses` | field | `Map<string, TPose>` |  |
@@ -3412,7 +3412,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `ResizeProposed.anchor` | field | `ResizeAnchor` |  |
 | `ResizeMoveResult` | interface | `{ pose }` | Per-frame result a `ResizeBehavior.onMove` can return to override the proposed pose. |
 | `ResizeMoveResult.pose?` | field | `TPose` |  |
-| `ResizeBehavior` | type | `GestureBehavior< TPose, ResizeProposed<TPose>, ResizeMoveResult<TPose> >` | A behavior plugged into `useResize`. |
+| `ResizeBehavior` | type | `ActionBehavior< TPose, ResizeProposed<TPose>, ResizeMoveResult<TPose> >` | A behavior plugged into `useResize`. |
 | `ResizeOverlay` | interface | `{ id, currentPose, targetPose, anchor, leafPoses }` | Live overlay state exposed by `useResize` for rendering the in-flight resize ghost. |
 | `ResizeOverlay.id` | field | `string` |  |
 | `ResizeOverlay.currentPose` | field | `TPose` |  |
@@ -3426,7 +3426,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `RotateProposed.rotation` | field | `number` | Proposed rotation angle (radians). |
 | `RotateMoveResult` | interface | `{ pose }` | Per-frame result a `RotateBehavior.onMove` can return to override the proposed pose. |
 | `RotateMoveResult.pose?` | field | `TPose` |  |
-| `RotateBehavior` | type | `GestureBehavior< TPose, RotateProposed<TPose>, RotateMoveResult<TPose> >` | A behavior plugged into `useRotate`. |
+| `RotateBehavior` | type | `ActionBehavior< TPose, RotateProposed<TPose>, RotateMoveResult<TPose> >` | A behavior plugged into `useRotate`. |
 | `RotateOverlay` | interface | `{ id, currentPose, targetPose, originPose }` | Live overlay state exposed by `useRotate` for rendering the in-flight rotation ghost. |
 | `RotateOverlay.id` | field | `string` |  |
 | `RotateOverlay.currentPose` | field | `TPose` |  |
@@ -3443,7 +3443,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `InsertMoveResult` | interface | `{ start, current }` | Per-frame result an `InsertBehavior.onMove` can return to override the start/current points. |
 | `InsertMoveResult.start?` | field | `InsertPoint` | Override the start point (e.g. |
 | `InsertMoveResult.current?` | field | `InsertPoint` | Override the current point (e.g. |
-| `InsertBehavior` | type | `GestureBehavior< TPose, InsertProposed<TPose>, InsertMoveResult >` | Behaviors operate over the two world points; bounds and pose are derived by the hook from the (possibly modified) points each frame. |
+| `InsertBehavior` | type | `ActionBehavior< TPose, InsertProposed<TPose>, InsertMoveResult >` | Behaviors operate over the two world points; bounds and pose are derived by the hook from the (possibly modified) points each frame. |
 | `InsertOverlay` | interface | `{ start, current, bounds, pose }` | Live overlay state exposed by `useInsert` for rendering the in-flight insert preview. |
 | `InsertOverlay.start` | field | `InsertPoint` |  |
 | `InsertOverlay.current` | field | `InsertPoint` |  |
@@ -3458,7 +3458,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 | `AreaSelectProposed.current` | field | `{ worldX: number; worldY: number }` |  |
 | `AreaSelectProposed.shiftHeld` | field | `boolean` |  |
 | `AreaSelectMoveResult` | type | `void` | onMove for area-select doesn't shape ops; behaviors only need to react in onEnd. |
-| `AreaSelectBehavior` | type | `GestureBehavior< AreaSelectPose, AreaSelectProposed, AreaSelectMoveResult >` | A behavior plugged into `useAreaSelect`. |
+| `AreaSelectBehavior` | type | `ActionBehavior< AreaSelectPose, AreaSelectProposed, AreaSelectMoveResult >` | A behavior plugged into `useAreaSelect`. |
 | `AreaSelectOverlay` | interface | `{ start, current, shiftHeld }` | Live overlay state exposed by `useAreaSelect` for rendering the marquee. |
 | `AreaSelectOverlay.start` | field | `{ worldX: number; worldY: number }` |  |
 | `AreaSelectOverlay.current` | field | `{ worldX: number; worldY: number }` |  |
@@ -3636,19 +3636,19 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
-| `* from '../interactions/gestures/clone'` | reexport-all | `*` |  |
+| `* from '../interactions/actions/clone'` | reexport-all | `*` |  |
 
 ## src/subpaths/insert.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
-| `* from '../interactions/gestures/insert'` | reexport-all | `*` |  |
+| `* from '../interactions/actions/insert'` | reexport-all | `*` |  |
 
 ## src/subpaths/move.ts
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
-| `* from '../interactions/gestures/move'` | reexport-all | `*` |  |
+| `* from '../interactions/actions/move'` | reexport-all | `*` |  |
 
 ## src/subpaths/patterns-builtin.ts
 
@@ -3660,7 +3660,7 @@ Generated 2026-05-05. Scanned 202 source files; 202 have exports.
 
 | Name | Kind | Signature / shape | Description |
 |------|------|-------------------|-------------|
-| `* from '../interactions/gestures/resize'` | reexport-all | `*` |  |
+| `* from '../interactions/actions/resize'` | reexport-all | `*` |  |
 
 ## src/tools/builtin/hitExistingGate.ts
 

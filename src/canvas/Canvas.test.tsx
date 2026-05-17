@@ -563,7 +563,7 @@ describe('Canvas onUncapturedMove / onUncapturedLeave', () => {
 
 import { defineTool } from 'tools/routing/defineTool';
 import { begin, claim } from 'tools/routing/result';
-import { ROTATED_POSE_DESCRIPTOR } from 'interactions/gestures/resize/geometry';
+import { ROTATED_POSE_DESCRIPTOR } from 'interactions/actions/resize/geometry';
 
 describe('Canvas tools mode', () => {
   it('routes pointer events through tools.dispatcher when tools prop is passed', () => {

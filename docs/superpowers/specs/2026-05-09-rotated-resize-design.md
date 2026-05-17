@@ -36,7 +36,7 @@ A single resize gesture that, when the leaf has non-zero rotation:
 
 ### §A — `PoseDescriptor` extension
 
-`PoseDescriptor<TPose>` (`src/interactions/gestures/resize/geometry.ts`) gains one optional method:
+`PoseDescriptor<TPose>` (`src/interactions/actions/resize/geometry.ts`) gains one optional method:
 
 ```ts
 export interface PoseDescriptor<TPose> {
@@ -72,7 +72,7 @@ Both barrel exports (`src/index.ts`) and the `/resize` subpath export `ROTATED_P
 
 ### §B — Resize math
 
-`useResize` (`src/interactions/gestures/resize/resize.ts`) reads rotation at `start()`:
+`useResize` (`src/interactions/actions/resize/resize.ts`) reads rotation at `start()`:
 
 ```ts
 const originRotation = geometry.getRotation?.(originPose) ?? 0;
@@ -135,7 +135,7 @@ The lerp path mirrors today's: lerp `lastBounds → behavedBoundsLocal` to produ
 
 ### §C — `rotatePoint` and `fixedCornerOf` helpers
 
-`rotatePoint(px, py, cx, cy, theta)` is referenced from `selection/overlay.ts` and `selection/overlay.ts:`'s rotated-handle path; it's currently a private import there. Promote it to `src/interactions/geometry/rotate.ts` (or wherever the kit's shared 2D geometry lives — verify during implementation; if no shared module exists, place next to `cornerHandles.ts` since both are interaction-geometry primitives) and re-export from the existing `src/interactions/gestures/resize/index.ts` if internal callers need it.
+`rotatePoint(px, py, cx, cy, theta)` is referenced from `selection/overlay.ts` and `selection/overlay.ts:`'s rotated-handle path; it's currently a private import there. Promote it to `src/interactions/geometry/rotate.ts` (or wherever the kit's shared 2D geometry lives — verify during implementation; if no shared module exists, place next to `cornerHandles.ts` since both are interaction-geometry primitives) and re-export from the existing `src/interactions/actions/resize/index.ts` if internal callers need it.
 
 `fixedCornerOf(bounds, anchor)`:
 ```ts
@@ -254,13 +254,13 @@ The visible `delta = (0, 0)` invariant is the spec-as-running-code: the math ste
 
 Single PR. Build order within the PR:
 
-1. **Descriptor extension** (`src/interactions/gestures/resize/geometry.ts`).
+1. **Descriptor extension** (`src/interactions/actions/resize/geometry.ts`).
    - Add `getRotation?` to `PoseDescriptor`.
    - Ship `ROTATED_POSE_DESCRIPTOR`.
    - Export both from `src/index.ts` and `src/resize/index.ts` (verify barrel / subpath layout during impl).
    - Tests: `getRotation` reads correctly; `remapBounds` preserves `rotation` field across remap.
 
-2. **`fixedCornerOf` helper** (`src/interactions/gestures/resize/cornerHandles.ts`).
+2. **`fixedCornerOf` helper** (`src/interactions/actions/resize/cornerHandles.ts`).
    - Pure-function helper next to `cornerResizeHandles`.
    - Tests: each anchor → correct fixed corner.
 
@@ -269,7 +269,7 @@ Single PR. Build order within the PR:
    - If shared, fine. If not, promote to a module shared by `selection/` and `interactions/`. (Don't manufacture a new directory; place it where the existing 2D geometry helpers live.)
    - Tests: rotation correctness against known angles (0, π/2, π, −π/2, π/4).
 
-4. **Hook math** (`src/interactions/gestures/resize/resize.ts`).
+4. **Hook math** (`src/interactions/actions/resize/resize.ts`).
    - Read `originRotation` at `start()`; capture `fixedWorld`.
    - Branch in `move()` between unrotated (existing) and rotated (new).
    - Apply `descriptor.translate` for position correction.
@@ -311,6 +311,6 @@ A secondary risk is the `rotatePoint` promotion churning imports across files. M
 
 (Surfaced during brainstorming; resolved at implementation time, not gating spec approval.)
 
-- **`rotatePoint` home.** If a shared 2D-geometry module already exists, use it. If not, the simplest landing spot is `src/interactions/gestures/rotate/geometry.ts` (already exports `rotatedRectCorners`, `aabbCenter` — same flavor of helper). Implementer decides during step 3.
+- **`rotatePoint` home.** If a shared 2D-geometry module already exists, use it. If not, the simplest landing spot is `src/interactions/actions/rotate/geometry.ts` (already exports `rotatedRectCorners`, `aabbCenter` — same flavor of helper). Implementer decides during step 3.
 - **`SceneCanvas` `geometry` prop merge.** `RotateDemo` currently passes `geometry={{ pickEvery }}`. Step 7 needs the prop to accept either a `PoseDescriptor` extension or the `pickEvery` extension or both. Verify the current `SceneCanvas` prop shape during step 7; if it's not already an intersection, this is a small SceneCanvas-internal change, not a design change.
 - **Group-with-rotated-leaf warning de-dup.** Dev `console.warn` should fire once per gesture, not per `move()` frame. Use a flag on state.

@@ -28,15 +28,15 @@
 | `src/canvas/Canvas.test.tsx` | MODIFY | Cases: URL parse on mount; `debug={false}` overrides URL; `debug={config}` overrides URL; sink recreated on config change; bounds/origins recorded per object; layer metadata recorded; overlay layer appended on top. |
 | `src/interactions/usePointerGestures.ts` | MODIFY | Accept `debug?: DebugSink` option; record body hitboxes for every object iterated by hit-test. |
 | `src/interactions/usePointerGestures.test.ts` | MODIFY | Cover hitbox recording at the body hit-test site. |
-| `src/interactions/gestures/move/move.ts` | MODIFY | Accept `debug?: DebugSink`; no recording sites required (move owns no hit math beyond what `usePointerGestures` already covers). The param is plumbed for symmetry/future use. |
-| `src/interactions/gestures/resize/resize.ts` | MODIFY | Accept `debug?: DebugSink`; record corner-handle positions and corner-handle hitboxes. |
-| `src/interactions/gestures/resize/resize.test.ts` | MODIFY | Cover handle + hitbox recording at scale=1 and scale=2. |
-| `src/interactions/gestures/rotate/rotate.ts` | MODIFY | Accept `debug?: DebugSink`; record rotation-handle position and hitbox. |
-| `src/interactions/gestures/rotate/rotate.test.ts` | MODIFY | Cover rotation-handle recording. |
-| `src/interactions/gestures/area-select/areaSelect.ts` | MODIFY | Accept `debug?: DebugSink`; record the in-progress marquee bounds during drag (under `bounds` flag). |
-| `src/interactions/gestures/area-select/areaSelect.test.ts` | MODIFY | Cover marquee bounds recording during a drag. |
-| `src/interactions/gestures/edit-anchors/editAnchors.ts` | MODIFY | Accept `debug?: DebugSink`; record per-anchor handle positions + per-anchor hitboxes. |
-| `src/interactions/gestures/edit-anchors/editAnchors.test.ts` | MODIFY | Cover anchor handle + hitbox recording. |
+| `src/interactions/actions/move/move.ts` | MODIFY | Accept `debug?: DebugSink`; no recording sites required (move owns no hit math beyond what `usePointerGestures` already covers). The param is plumbed for symmetry/future use. |
+| `src/interactions/actions/resize/resize.ts` | MODIFY | Accept `debug?: DebugSink`; record corner-handle positions and corner-handle hitboxes. |
+| `src/interactions/actions/resize/resize.test.ts` | MODIFY | Cover handle + hitbox recording at scale=1 and scale=2. |
+| `src/interactions/actions/rotate/rotate.ts` | MODIFY | Accept `debug?: DebugSink`; record rotation-handle position and hitbox. |
+| `src/interactions/actions/rotate/rotate.test.ts` | MODIFY | Cover rotation-handle recording. |
+| `src/interactions/actions/area-select/areaSelect.ts` | MODIFY | Accept `debug?: DebugSink`; record the in-progress marquee bounds during drag (under `bounds` flag). |
+| `src/interactions/actions/area-select/areaSelect.test.ts` | MODIFY | Cover marquee bounds recording during a drag. |
+| `src/interactions/actions/edit-anchors/editAnchors.ts` | MODIFY | Accept `debug?: DebugSink`; record per-anchor handle positions + per-anchor hitboxes. |
+| `src/interactions/actions/edit-anchors/editAnchors.test.ts` | MODIFY | Cover anchor handle + hitbox recording. |
 | `src/tools/builtin/useSelectTool.ts` | MODIFY | Accept `debug?: DebugSink`; record corner-handle hitboxes + rotation-handle hitbox at the same sites as the hit checks (Select tool has its own copies of these per Phase 2c). |
 | `src/tools/builtin/useSelectTool.test.ts` | MODIFY | Cover handle hitbox recording from the select tool. |
 | `src/interactions/gestures/shared/strategies/grid.ts` | MODIFY | `gridSnapStrategy` overload accepts an optional `debug?: DebugSink`; record each candidate considered (the rounded `(sx, sy)` is always the chosen one for grid snap — record it as `accepted: true`). |
@@ -1151,14 +1151,14 @@ git commit -m "feat(debug): record body hitboxes from usePointerGestures"
 ## Task 8: Thread `debug` into `useResize` (corner handles + hitboxes)
 
 **Files:**
-- Modify: `src/interactions/gestures/resize/resize.ts`
-- Modify: `src/interactions/gestures/resize/resize.test.ts`
+- Modify: `src/interactions/actions/resize/resize.ts`
+- Modify: `src/interactions/actions/resize/resize.test.ts`
 
 `useResize` owns the corner-handle hit math. Record handle positions (under `handles`) and corner-handle hitboxes (under `hitboxes`) every time the hook computes them.
 
 - [ ] **Step 1: Write the failing test**
 
-Append to `src/interactions/gestures/resize/resize.test.ts`:
+Append to `src/interactions/actions/resize/resize.test.ts`:
 
 ```ts
 import { createDebugSink } from '../../../debug/createDebugSink';
@@ -1184,7 +1184,7 @@ describe('useResize — debug recording', () => {
 - [ ] **Step 2: Verify failure**
 
 ```
-npm test -- src/interactions/gestures/resize/resize.test.ts
+npm test -- src/interactions/actions/resize/resize.test.ts
 ```
 
 - [ ] **Step 3: Add `debug?: DebugSink` to options**
@@ -1214,11 +1214,11 @@ In `Canvas.tsx`, find `useResize<...>(effectiveAdapter, derivedResizeOptionsFina
 - [ ] **Step 6: Run + commit**
 
 ```
-npm test -- src/interactions/gestures/resize/
+npm test -- src/interactions/actions/resize/
 ```
 
 ```bash
-git add src/interactions/gestures/resize/ src/canvas/Canvas.tsx
+git add src/interactions/actions/resize/ src/canvas/Canvas.tsx
 git commit -m "feat(debug): record resize handles + corner hitboxes"
 ```
 
@@ -1227,8 +1227,8 @@ git commit -m "feat(debug): record resize handles + corner hitboxes"
 ## Task 9: Thread `debug` into `useRotate` (rotation handle + hitbox)
 
 **Files:**
-- Modify: `src/interactions/gestures/rotate/rotate.ts`
-- Modify: `src/interactions/gestures/rotate/rotate.test.ts`
+- Modify: `src/interactions/actions/rotate/rotate.ts`
+- Modify: `src/interactions/actions/rotate/rotate.test.ts`
 
 Same pattern as Task 8 but for the single rotation handle.
 
@@ -1257,7 +1257,7 @@ describe('useRotate — debug recording', () => {
 - [ ] **Step 2: Verify failure**
 
 ```
-npm test -- src/interactions/gestures/rotate/rotate.test.ts
+npm test -- src/interactions/actions/rotate/rotate.test.ts
 ```
 
 - [ ] **Step 3: Add option + record**
@@ -1280,11 +1280,11 @@ In `Canvas.tsx`, locate `useRotate<...>(effectiveAdapter, rotateOptions ?? {})` 
 - [ ] **Step 5: Run + commit**
 
 ```
-npm test -- src/interactions/gestures/rotate/
+npm test -- src/interactions/actions/rotate/
 ```
 
 ```bash
-git add src/interactions/gestures/rotate/ src/canvas/Canvas.tsx
+git add src/interactions/actions/rotate/ src/canvas/Canvas.tsx
 git commit -m "feat(debug): record rotation handle + hitbox"
 ```
 
@@ -1293,8 +1293,8 @@ git commit -m "feat(debug): record rotation handle + hitbox"
 ## Task 10: Thread `debug` into `useAreaSelect` (marquee bounds)
 
 **Files:**
-- Modify: `src/interactions/gestures/area-select/areaSelect.ts`
-- Modify: `src/interactions/gestures/area-select/areaSelect.test.ts`
+- Modify: `src/interactions/actions/area-select/areaSelect.ts`
+- Modify: `src/interactions/actions/area-select/areaSelect.test.ts`
 
 `useAreaSelect` records the in-progress marquee rectangle as a `bounds` entry during drag (per the spec's `bounds` coverage: "every visible object on the scene, including overlay-folded poses").
 
@@ -1317,7 +1317,7 @@ describe('useAreaSelect — debug recording', () => {
 - [ ] **Step 2: Verify failure**
 
 ```
-npm test -- src/interactions/gestures/area-select/areaSelect.test.ts
+npm test -- src/interactions/actions/area-select/areaSelect.test.ts
 ```
 
 - [ ] **Step 3: Add option + record on every move**
@@ -1339,11 +1339,11 @@ In `Canvas.tsx`, extend `derivedAreaSelectOptions` (passed to `useAreaSelect(...
 - [ ] **Step 5: Run + commit**
 
 ```
-npm test -- src/interactions/gestures/area-select/
+npm test -- src/interactions/actions/area-select/
 ```
 
 ```bash
-git add src/interactions/gestures/area-select/ src/canvas/Canvas.tsx
+git add src/interactions/actions/area-select/ src/canvas/Canvas.tsx
 git commit -m "feat(debug): record area-select marquee bounds"
 ```
 
@@ -1352,8 +1352,8 @@ git commit -m "feat(debug): record area-select marquee bounds"
 ## Task 11: Thread `debug` into `useEditAnchors` (anchor handles + hitboxes)
 
 **Files:**
-- Modify: `src/interactions/gestures/edit-anchors/editAnchors.ts`
-- Modify: `src/interactions/gestures/edit-anchors/editAnchors.test.ts`
+- Modify: `src/interactions/actions/edit-anchors/editAnchors.ts`
+- Modify: `src/interactions/actions/edit-anchors/editAnchors.test.ts`
 
 Anchor-edit mode produces N anchor handles (per path vertex). Record positions (`handles`, kind `anchor`) and circular hitboxes (`hitboxes`, kind `anchor`).
 
@@ -1375,7 +1375,7 @@ describe('useEditAnchors — debug recording', () => {
 - [ ] **Step 2: Verify failure**
 
 ```
-npm test -- src/interactions/gestures/edit-anchors/editAnchors.test.ts
+npm test -- src/interactions/actions/edit-anchors/editAnchors.test.ts
 ```
 
 - [ ] **Step 3: Add option + record per anchor**
@@ -1398,11 +1398,11 @@ In `Canvas.tsx`, extend the `useEditAnchors<TNode>(editAnchorsAdapter, { ... })`
 - [ ] **Step 5: Run + commit**
 
 ```
-npm test -- src/interactions/gestures/edit-anchors/
+npm test -- src/interactions/actions/edit-anchors/
 ```
 
 ```bash
-git add src/interactions/gestures/edit-anchors/ src/canvas/Canvas.tsx
+git add src/interactions/actions/edit-anchors/ src/canvas/Canvas.tsx
 git commit -m "feat(debug): record anchor handles + hitboxes"
 ```
 

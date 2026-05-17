@@ -669,7 +669,7 @@ Note: `useInsert` already does its own threshold internally (its `start` enters 
 
 - [ ] **Step 1: Confirm useInsert API**
 
-Read `src/interactions/gestures/insert/insert.ts`. Signature: `useInsert<TNode, TPose>(adapter, options) → InsertController { start, move, end, cancel, isInserting, overlay }`.
+Read `src/interactions/actions/insert/insert.ts`. Signature: `useInsert<TNode, TPose>(adapter, options) → InsertController { start, move, end, cancel, isInserting, overlay }`.
 
 - [ ] **Step 2: Write failing test**
 
@@ -748,7 +748,7 @@ Expected: FAIL.
 ```ts
 // src/tools/builtin/useInsertTool.ts
 import { useMemo } from 'react';
-import { useInsert, type InsertAdapter, type UseInsertOptions } from '../../interactions/gestures/insert/insert';
+import { useInsert, type InsertAdapter, type UseInsertOptions } from '../../interactions/actions/insert/insert';
 import { defineTool } from '../defineTool';
 import type { Tool } from '../types';
 
@@ -860,10 +860,10 @@ type SelectScratch =
 - [ ] **Step 1: Read all four wrapped hooks for adapter shapes**
 
 Files to read for type imports:
-- `src/interactions/gestures/move/move.ts` — `MoveAdapter`, `UseMoveOptions`, `MoveController`
-- `src/interactions/gestures/resize/resize.ts` — `ResizeAdapter`, `UseResizeOptions`, `ResizeController`, `ResizeAnchor`
-- `src/interactions/gestures/rotate/rotate.ts` — `RotateAdapter`, `UseRotateOptions`, `RotateController`
-- `src/interactions/gestures/area-select/areaSelect.ts` — `AreaSelectAdapter`, `UseAreaSelectOptions`, `AreaSelectController`
+- `src/interactions/actions/move/move.ts` — `MoveAdapter`, `UseMoveOptions`, `MoveController`
+- `src/interactions/actions/resize/resize.ts` — `ResizeAdapter`, `UseResizeOptions`, `ResizeController`, `ResizeAnchor`
+- `src/interactions/actions/rotate/rotate.ts` — `RotateAdapter`, `UseRotateOptions`, `RotateController`
+- `src/interactions/actions/area-select/areaSelect.ts` — `AreaSelectAdapter`, `UseAreaSelectOptions`, `AreaSelectController`
 
 Also read the existing handle-hit utilities the Canvas uses today:
 - `src/interactions/handles/` (or wherever `cornerResizeHandles`, `hitCornerHandle`, `rotationHandle`, `hitRotationHandle` live — find them).
@@ -972,10 +972,10 @@ Expected: FAIL — module not found.
 ```ts
 // src/tools/builtin/useSelectTool.ts
 import { useMemo } from 'react';
-import { useMove, type MoveAdapter, type UseMoveOptions } from '../../interactions/gestures/move/move';
-import { useResize, type ResizeAdapter, type UseResizeOptions, type ResizeAnchor } from '../../interactions/gestures/resize/resize';
-import { useRotate, type RotateAdapter, type UseRotateOptions } from '../../interactions/gestures/rotate/rotate';
-import { useAreaSelect, type AreaSelectAdapter, type UseAreaSelectOptions } from '../../interactions/gestures/area-select/areaSelect';
+import { useMove, type MoveAdapter, type UseMoveOptions } from '../../interactions/actions/move/move';
+import { useResize, type ResizeAdapter, type UseResizeOptions, type ResizeAnchor } from '../../interactions/actions/resize/resize';
+import { useRotate, type RotateAdapter, type UseRotateOptions } from '../../interactions/actions/rotate/rotate';
+import { useAreaSelect, type AreaSelectAdapter, type UseAreaSelectOptions } from '../../interactions/actions/area-select/areaSelect';
 import {
   cornerResizeHandles,
   hitCornerHandle,

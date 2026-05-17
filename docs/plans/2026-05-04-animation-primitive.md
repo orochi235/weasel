@@ -36,7 +36,7 @@
 
 **Modify:**
 
-- `src/interactions/gestures/resize/geometry.ts` — extend `PoseDescriptor<TPose>` with optional `lerp?(a, b, t): TPose`. Implement on `RECT_POSE_DESCRIPTOR`.
+- `src/interactions/actions/resize/geometry.ts` — extend `PoseDescriptor<TPose>` with optional `lerp?(a, b, t): TPose`. Implement on `RECT_POSE_DESCRIPTOR`.
 - `src/features/paths/poseDescriptor.ts` — implement `lerp` on `pathPoseDescriptor` for the `kind === 'rect'` case (linear lerp of x/y/width/height); polygon variant linearly lerps `coords` arrays of equal length and otherwise throws.
 - `src/index.ts` — `export * from './animation';`.
 - `docs/TODO.md` — remove the "Animation as a primitive concept" entry from Tier 1; append the deferred items from the spec.
@@ -900,14 +900,14 @@ EOF
 Extend `PoseDescriptor<TPose>` with optional `lerp`. Implement on the rect and path descriptors.
 
 **Files:**
-- Modify: `src/interactions/gestures/resize/geometry.ts`
+- Modify: `src/interactions/actions/resize/geometry.ts`
 - Modify: `src/features/paths/poseDescriptor.ts`
-- Create: `src/interactions/gestures/resize/geometry.lerp.test.ts` (new test file to keep the existing one focused)
+- Create: `src/interactions/actions/resize/geometry.lerp.test.ts` (new test file to keep the existing one focused)
 
 - [ ] **Step 1: Write the failing test**
 
 ```ts
-// src/interactions/gestures/resize/geometry.lerp.test.ts
+// src/interactions/actions/resize/geometry.lerp.test.ts
 import { describe, expect, it } from 'vitest';
 import { RECT_POSE_DESCRIPTOR } from './geometry';
 
@@ -930,10 +930,10 @@ describe('RECT_POSE_DESCRIPTOR.lerp', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npx vitest run src/interactions/gestures/resize/geometry.lerp.test.ts`
+Run: `npx vitest run src/interactions/actions/resize/geometry.lerp.test.ts`
 Expected: FAIL — `lerp` is undefined.
 
-- [ ] **Step 3: Extend `PoseDescriptor` in `src/interactions/gestures/resize/geometry.ts`**
+- [ ] **Step 3: Extend `PoseDescriptor` in `src/interactions/actions/resize/geometry.ts`**
 
 Add to the interface (after `intersectsRect`):
 
@@ -1001,7 +1001,7 @@ describe('pathPoseDescriptor.lerp', () => {
 
 - [ ] **Step 6: Run tests**
 
-Run: `npx vitest run src/interactions/gestures/resize/geometry.lerp.test.ts src/features/paths/poseDescriptor.test.ts`
+Run: `npx vitest run src/interactions/actions/resize/geometry.lerp.test.ts src/features/paths/poseDescriptor.test.ts`
 Expected: PASS.
 
 - [ ] **Step 7: Run full suite**
@@ -1012,7 +1012,7 @@ Expected: PASS.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/interactions/gestures/resize/geometry.ts src/interactions/gestures/resize/geometry.lerp.test.ts src/features/paths/poseDescriptor.ts src/features/paths/poseDescriptor.test.ts
+git add src/interactions/actions/resize/geometry.ts src/interactions/actions/resize/geometry.lerp.test.ts src/features/paths/poseDescriptor.ts src/features/paths/poseDescriptor.test.ts
 git commit -m "$(cat <<'EOF'
 feat(geometry): add lerp to PoseDescriptor (rect + path)
 
@@ -1164,7 +1164,7 @@ Expected: FAIL — module not found.
 
 ```ts
 import { createTransformOp } from '../core/ops/transform';
-import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../interactions/gestures/resize/geometry';
+import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../interactions/actions/resize/geometry';
 import type { SceneAdapter } from '../core/adapters/types';
 import type { AnimationHandle, Animator, EasingFn, SpringPresetName } from './types';
 
@@ -1408,7 +1408,7 @@ Expected: FAIL — module not found.
 
 ```ts
 import { tweenPose, springPose } from '../poseHelpers';
-import type { PoseDescriptor } from '../../interactions/gestures/resize/geometry';
+import type { PoseDescriptor } from '../../interactions/actions/resize/geometry';
 import type { SceneAdapter } from '../../core/adapters/types';
 import type { Animator, EasingFn, SpringPresetName } from '../types';
 
@@ -1622,7 +1622,7 @@ Expected: FAIL — module not found.
 
 ```ts
 import { tweenPose } from '../poseHelpers';
-import type { PoseDescriptor } from '../../interactions/gestures/resize/geometry';
+import type { PoseDescriptor } from '../../interactions/actions/resize/geometry';
 import type { SceneAdapter } from '../../core/adapters/types';
 import type { Animator, EasingFn } from '../types';
 

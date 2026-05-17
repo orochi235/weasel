@@ -5,10 +5,10 @@ import type { Tool } from '../../types';
 import type { RenderLayer } from 'core/layers/render';
 import type { InsertAdapter } from 'core/adapters/types';
 import type { View } from 'core/viewport/view';
-import { useClone, type UseCloneOptions } from 'interactions/gestures/clone';
+import { useClone, type UseCloneOptions } from 'interactions/actions/clone';
 import type { CloneBehavior, CloneLayer, ModifierState } from 'interactions/gestures/types';
 import type { HotkeyTrigger } from '../../types';
-import { AUTO_POSE_DESCRIPTOR } from 'interactions/gestures/resize/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import { viewToMat3, type DrawCommand } from '../../../renderer';
 
 /** Live preview item published by useClone — `{id, x, y}` (snapshot pose

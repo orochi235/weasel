@@ -6,7 +6,7 @@ import type { View } from 'core/viewport/view';
 import type { DragChannel } from 'tools/types';
 import {
   DEFAULT_ROTATION_HANDLE_DISTANCE,
-} from 'interactions/gestures/rotate/handle';
+} from 'interactions/actions/rotate/handle';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { PATH_L, PATH_M } from 'features/paths/types';

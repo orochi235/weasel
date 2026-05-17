@@ -7,8 +7,8 @@
  * SceneCanvas defaults work uniformly across rect-shaped and path-shaped poses.
  */
 import type { Bounds } from 'tools/builtin/useSelectTool';
-import { RECT_POSE_DESCRIPTOR } from 'interactions/gestures/resize/geometry';
-import { pointInRotatedRect } from 'interactions/gestures/rotate/geometry';
+import { RECT_POSE_DESCRIPTOR } from 'interactions/actions/resize/geometry';
+import { pointInRotatedRect } from 'interactions/actions/rotate/geometry';
 import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
 import type { Path } from 'features/paths/types';
 

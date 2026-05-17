@@ -20,7 +20,7 @@ Port `useResizeInteraction` and `usePlotInteraction` (renamed `useInsertInteract
 
 Two new hooks (`useResizeInteraction`, `useInsertInteraction`) parallel to `useMoveInteraction`, sharing infrastructure:
 
-- **`GestureBehavior<TPose, TProposed>`** — generalized base behavior interface in `interactions/types.ts`. `MoveBehavior`, `ResizeBehavior`, `InsertBehavior` become aliases parameterized by the proposed-pose shape per hook.
+- **`ActionBehavior<TPose, TProposed>`** — generalized base behavior interface in `interactions/types.ts`. `MoveBehavior`, `ResizeBehavior`, `InsertBehavior` become aliases parameterized by the proposed-pose shape per hook.
 - **`ResizeAnchor = { x: 'min'|'max'|'free'; y: 'min'|'max'|'free' }`** — domain-agnostic descriptor. Garden translates `HandlePosition` (n/s/e/w/...) to anchor before calling the kit.
 - **Per-hook subpath barrels** (`@/canvas-kit/move`, `/resize`, `/insert`) so three `snapToGrid` behaviors with different return types coexist without name collision in the top-level barrel.
 - **Kit unit-free rename** (`cellFt`→`cell`, `radiusFt`→`radius`) bundled as Task 0. Garden-side fields keep their feet suffixes; the seam is at the kit boundary.
@@ -32,7 +32,7 @@ The kit stays render-agnostic: lerp animation moves to the renderer (overlay car
 Phase 1's `MoveBehavior<TPose>` becomes a special case of:
 
 ```ts
-interface GestureBehavior<TPose, TProposed> {
+interface ActionBehavior<TPose, TProposed> {
   onStart?(ctx: GestureContext<TNode, TPose>): void;
   onMove?(
     ctx: GestureContext<TNode, TPose>,
@@ -41,9 +41,9 @@ interface GestureBehavior<TPose, TProposed> {
   onEnd?(ctx: GestureContext<TNode, TPose>): Op[] | null | void;
 }
 
-type MoveBehavior<TPose>   = GestureBehavior<TPose, TPose>;
-type ResizeBehavior<TPose> = GestureBehavior<TPose, { pose: TPose; anchor: ResizeAnchor }>;
-type InsertBehavior<TPose> = GestureBehavior<TPose, { start: TPose; current: TPose }>;
+type MoveBehavior<TPose>   = ActionBehavior<TPose, TPose>;
+type ResizeBehavior<TPose> = ActionBehavior<TPose, { pose: TPose; anchor: ResizeAnchor }>;
+type InsertBehavior<TPose> = ActionBehavior<TPose, { start: TPose; current: TPose }>;
 ```
 
 `MoveBehavior` keeps its current shape; existing Phase 1 behaviors and tests are unchanged. The generalization is internal type plumbing.
@@ -159,7 +159,7 @@ Phase 1's flat `interactions/behaviors/` is split per hook:
 
 ```
 src/canvas-kit/interactions/
-  types.ts                         # GestureBehavior<TPose,TProposed>, GestureContext,
+  types.ts                         # ActionBehavior<TPose,TProposed>, GestureContext,
                                    # MoveBehavior, ResizeBehavior, InsertBehavior aliases,
                                    # ResizeAnchor, SnapStrategy
   shared/
@@ -231,7 +231,7 @@ const insert = useInsertInteraction(insertAdapter, {
 ## Migration order (within this phase)
 
 0. Kit unit-free rename (`cellFt`→`cell`, `radiusFt`→`radius`).
-1. Generalize `MoveBehavior` → `GestureBehavior<TPose, TProposed>`; add `ResizeBehavior` / `InsertBehavior` / `ResizeAnchor` / `ResizeOverlay` / `InsertOverlay` types.
+1. Generalize `MoveBehavior` → `ActionBehavior<TPose, TProposed>`; add `ResizeBehavior` / `InsertBehavior` / `ResizeAnchor` / `ResizeOverlay` / `InsertOverlay` types.
 2. File reorg: split `interactions/behaviors/` into `move/`, `resize/`, `insert/`, `shared/`.
 3. `resize/clampMinSize` behavior + tests.
 4. `resize/snapToGrid` behavior (anchor-aware, sub-grid suspend) + tests.
@@ -269,7 +269,7 @@ const insert = useInsertInteraction(insertAdapter, {
 - **Resize state machine coupling.** Current code is ~120 lines (vs Phase 1 move's ~470). Lower risk than Phase 1.
 - **Insert preview canvas refactor.** The selection canvas is shared with area-select preview today (Phase 3). Keep insert paint distinct so area-select layers in cleanly later.
 - **Lerp moved to renderer** means snapshot-style assertions of "object pose during gesture" no longer reflect on-screen position. Mitigation: tests assert overlay `targetPose`, not visual lerp.
-- **Generalizing `MoveBehavior` → `GestureBehavior`** is an internal-type change. The alias preserves call-site compatibility; watch for any external import of the type.
+- **Generalizing `MoveBehavior` → `ActionBehavior`** is an internal-type change. The alias preserves call-site compatibility; watch for any external import of the type.
 - **Per-hook subpath imports** are a new convention. Document in the kit's top-level `index.ts` JSDoc.
 
 ## Out of scope

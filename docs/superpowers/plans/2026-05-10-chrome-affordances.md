@@ -1319,7 +1319,7 @@ Implementation references:
 - [ ] **Step 1: Read the existing handle math primitives**
 
 ```bash
-grep -n "cornerResizeHandles\|hitCornerHandle" src/interactions/gestures/resize/cornerHandles.ts
+grep -n "cornerResizeHandles\|hitCornerHandle" src/interactions/actions/resize/cornerHandles.ts
 ```
 
 These two functions are the kit-internal primitives the new affordance reuses. Read their signatures.
@@ -1448,7 +1448,7 @@ import type { DragChannel } from '../tools/types';
 import {
   cornerResizeHandles,
   hitCornerHandle,
-} from '../interactions/gestures/resize/cornerHandles';
+} from '../interactions/actions/resize/cornerHandles';
 import { viewToTransform } from '../core/viewport/view';
 import { worldToScreen } from '../core/viewport/viewTransform';
 import { MULTI_RESIZE_TARGET_ID } from '../tools/builtin/useSelectTool';
@@ -1695,7 +1695,7 @@ const cornerAffWithDrag: Affordance = useMemo(() => ({
 }), [cornerAff]);
 ```
 
-NOTE on the resize controller surface: the `useResize` controller's exact methods (`start` vs `begin` vs `pointerDown`) will need to be verified against `src/interactions/gestures/resize/resize.ts`. Read the file and adapt the `start` / `move` / `end` calls above to whatever the controller actually exposes. The arguments — target id, anchor, world coords, modifiers — are right; method names may differ.
+NOTE on the resize controller surface: the `useResize` controller's exact methods (`start` vs `begin` vs `pointerDown`) will need to be verified against `src/interactions/actions/resize/resize.ts`. Read the file and adapt the `start` / `move` / `end` calls above to whatever the controller actually exposes. The arguments — target id, anchor, world coords, modifiers — are right; method names may differ.
 
 - [ ] **Step 3: Build the overlay layer via composeAffordanceLayer**
 
@@ -1862,7 +1862,7 @@ Same shape as corner-resize. Reads ChromeState; renders the rotation handle (a c
 - [ ] **Step 1: Read the existing rotation-handle math**
 
 ```bash
-grep -n "rotationHandle\|hitRotationHandle\|DEFAULT_ROTATION_HANDLE_DISTANCE" src/interactions/gestures/rotate/handle.ts
+grep -n "rotationHandle\|hitRotationHandle\|DEFAULT_ROTATION_HANDLE_DISTANCE" src/interactions/actions/rotate/handle.ts
 ```
 
 - [ ] **Step 2: Write tests + impl**
@@ -1880,7 +1880,7 @@ import {
   rotationHandle,
   hitRotationHandle,
   DEFAULT_ROTATION_HANDLE_DISTANCE,
-} from '../interactions/gestures/rotate/handle';
+} from '../interactions/actions/rotate/handle';
 import { viewToTransform } from '../core/viewport/view';
 import { worldToScreen } from '../core/viewport/viewTransform';
 import { MULTI_RESIZE_TARGET_ID } from '../tools/builtin/useSelectTool';
@@ -2106,7 +2106,7 @@ const rotationAffWithDrag: Affordance = useMemo(() => ({
 }), [rotationAff]);
 ```
 
-(Adapt the `rotateRef.current.start/move/end` method names to whatever `useRotate`'s controller actually exposes — read `src/interactions/gestures/rotate/rotate.ts`.)
+(Adapt the `rotateRef.current.start/move/end` method names to whatever `useRotate`'s controller actually exposes — read `src/interactions/actions/rotate/rotate.ts`.)
 
 - [ ] **Step 2: Add rotationAff to the composite overlay**
 
@@ -2427,7 +2427,7 @@ Do not push automatically.
 
 ## Notes for the executing engineer
 
-- **`useResize` / `useRotate` controller method names.** Tasks 11 and 14 wire affordance drag callbacks to these controllers. The exact method names (`start` / `move` / `end` vs `begin` / `update` / `commit`) depend on what the kit actually exports. Read `src/interactions/gestures/resize/resize.ts` and `rotate/rotate.ts` BEFORE writing the wiring; adapt the call sites accordingly. The argument shapes (target id, world coords, modifiers) are right; method names are the only variance.
+- **`useResize` / `useRotate` controller method names.** Tasks 11 and 14 wire affordance drag callbacks to these controllers. The exact method names (`start` / `move` / `end` vs `begin` / `update` / `commit`) depend on what the kit actually exports. Read `src/interactions/actions/resize/resize.ts` and `rotate/rotate.ts` BEFORE writing the wiring; adapt the call sites accordingly. The argument shapes (target id, world coords, modifiers) are right; method names are the only variance.
 
 - **Dispatcher's `inFlight` shape.** Task 8 synthesizes a virtual tool record for affordance gestures. The existing `inFlight` interface may have more fields than the spec mentioned (`startEvent`, `lastClient`, scratch capture timing). When implementing `startAffordanceGesture`, mirror the existing shape — read what `onPointerDown`'s normal slot path constructs and replicate.
 

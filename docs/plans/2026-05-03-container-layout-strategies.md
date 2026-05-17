@@ -24,7 +24,7 @@
 - `src/layout/strategies/index.ts` — barrel re-exporting the three strategies.
 - `src/layout/index.ts` — top-level barrel re-exporting types, snaps, strategies.
 - `src/layout/snaps.test.ts`, `src/layout/strategies/freeform.test.ts`, `src/layout/strategies/tileGrid.test.ts`, `src/layout/strategies/snapPoint.test.ts`.
-- `src/interactions/gestures/move/move.layout.test.ts` — gesture integration covering layout-aware drop, cross-container drag, source reflow, rejection fall-through, commit batch shape.
+- `src/interactions/actions/move/move.layout.test.ts` — gesture integration covering layout-aware drop, cross-container drag, source reflow, rejection fall-through, commit batch shape.
 - `demo/demos/LayoutDemo.tsx` — three side-by-side containers (freeform, tileGrid, snapPoint) wired through one adapter that returns the right strategy per container id.
 - `demo/demos/__tests__/layoutDemo.integration.test.tsx` — drives a cross-container drag from the freeform container into the tileGrid container and asserts the dest reflow.
 
@@ -32,7 +32,7 @@
 
 - `src/core/adapters/types.ts` — add optional `getLayout?(containerId: string): LayoutStrategy<TPose> | null` to `MoveAdapter`. (Pose generic comes through naturally since `MoveAdapter` is already `<TNode, TPose>`.)
 - `src/interactions/gestures/types.ts` — extend `MoveOverlay<TPose>` with `hypotheticalChildPositions: Map<string, TPose>`, `sourceReflowPositions: Map<string, TPose>`, `destContainerId: string | null`, `accepted: boolean`. Default-empty maps when no layout is engaged.
-- `src/interactions/gestures/move/move.ts` — in `move()`: after pose-translation, run the layout pass and update overlay fields. In `end()`: when a layout accepted the drop, prefer `strategy.commitDrop(...)` ops + cross-container source-reflow ops over the default `createTransformOp` batch.
+- `src/interactions/actions/move/move.ts` — in `move()`: after pose-translation, run the layout pass and update overlay fields. In `end()`: when a layout accepted the drop, prefer `strategy.commitDrop(...)` ops + cross-container source-reflow ops over the default `createTransformOp` batch.
 - `src/index.ts` — export the layout module: `export * from './layout';`.
 - `docs/TODO.md` — remove the "Container layout strategies" entry from Tier 1.5; add a new TODO entry for the deferred items in the spec's "Deferred / out of scope" section.
 - `demo/index.tsx` (or wherever the demo registry lives) — register `LayoutDemo`.
@@ -1368,7 +1368,7 @@ export interface MoveOverlay<TPose> {
 
 - [ ] **Step 2: Update `move.ts` to populate the new fields with empty defaults**
 
-In `src/interactions/gestures/move/move.ts`, find the `setOverlay({ ... })` call inside `move()` and update it to include defaults:
+In `src/interactions/actions/move/move.ts`, find the `setOverlay({ ... })` call inside `move()` and update it to include defaults:
 
 ```ts
 setOverlay({
@@ -1387,7 +1387,7 @@ setOverlay({
 
 Run the existing move tests first to see what breaks:
 
-Run: `npm test -- --run src/interactions/gestures/move/move.test.ts`
+Run: `npm test -- --run src/interactions/actions/move/move.test.ts`
 Expected: PASS (the new fields are additive; tests likely use `expect.objectContaining` or check specific fields. If any test asserts the entire overlay shape with `toEqual`, update it to expect the new fields — but DO NOT change behavior, only add the new defaults).
 
 If a test does `expect(controller.overlay).toEqual({...})`, change it to `expect(controller.overlay).toMatchObject({...})` or add the new fields explicitly.
@@ -1400,7 +1400,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/interactions/gestures/types.ts src/interactions/gestures/move/move.ts src/interactions/gestures/move/move.test.ts
+git add src/interactions/gestures/types.ts src/interactions/actions/move/move.ts src/interactions/actions/move/move.test.ts
 git commit -m "$(cat <<'EOF'
 feat(move): extend MoveOverlay with layout-aware fields
 
@@ -1419,14 +1419,14 @@ EOF
 ### Task 9: Layout-aware pointer-move pass in `useMove`
 
 **Files:**
-- Modify: `src/interactions/gestures/move/move.ts`
-- Create: `src/interactions/gestures/move/move.layout.test.ts`
+- Modify: `src/interactions/actions/move/move.ts`
+- Create: `src/interactions/actions/move/move.layout.test.ts`
 
 This task adds the per-pointer-move layout pass: hit-test the top-most container under the pointer (walking the parent chain from the deepest hit), call `getDropTargets` + `snap.pickTarget`, derive destination reflow + (if cross-container) source reflow, and publish the result on the overlay. Commit-time behavior change comes in Task 10.
 
 - [ ] **Step 1: Write the failing layout-pass test (overlay-only assertions)**
 
-Create `src/interactions/gestures/move/move.layout.test.ts`:
+Create `src/interactions/actions/move/move.layout.test.ts`:
 
 ```ts
 import { renderHook, act } from '@testing-library/react';
@@ -1577,12 +1577,12 @@ describe('useMove with layout-bearing container', () => {
 
 - [ ] **Step 2: Run tests — verify they fail**
 
-Run: `npm test -- --run src/interactions/gestures/move/move.layout.test.ts`
+Run: `npm test -- --run src/interactions/actions/move/move.layout.test.ts`
 Expected: FAIL — overlay does not yet have populated layout fields.
 
 - [ ] **Step 3: Implement the layout pass in `move.ts`**
 
-In `src/interactions/gestures/move/move.ts`, locate the `move()` callback's overlay-publish section. After `ctx.current = newPoses` and before `setOverlay({...})`, insert the layout pass:
+In `src/interactions/actions/move/move.ts`, locate the `move()` callback's overlay-publish section. After `ctx.current = newPoses` and before `setOverlay({...})`, insert the layout pass:
 
 ```ts
 // --- Layout pass (additive — runs only when adapter exposes getLayout) ---
@@ -1777,7 +1777,7 @@ stateRef.current.layoutPass = {
 
 - [ ] **Step 4: Run the new test — verify it passes**
 
-Run: `npm test -- --run src/interactions/gestures/move/move.layout.test.ts`
+Run: `npm test -- --run src/interactions/actions/move/move.layout.test.ts`
 Expected: PASS (3 cases).
 
 - [ ] **Step 5: Run the full suite**
@@ -1788,7 +1788,7 @@ Expected: PASS.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/interactions/gestures/move/move.ts src/interactions/gestures/move/move.layout.test.ts
+git add src/interactions/actions/move/move.ts src/interactions/actions/move/move.layout.test.ts
 git commit -m "$(cat <<'EOF'
 feat(move): layout-aware pointer-move pass
 
@@ -1809,12 +1809,12 @@ EOF
 ### Task 10: Layout-aware commit in `useMove.end()`
 
 **Files:**
-- Modify: `src/interactions/gestures/move/move.ts`
-- Modify: `src/interactions/gestures/move/move.layout.test.ts`
+- Modify: `src/interactions/actions/move/move.ts`
+- Modify: `src/interactions/actions/move/move.layout.test.ts`
 
 - [ ] **Step 1: Add the failing commit-side tests**
 
-Append to `src/interactions/gestures/move/move.layout.test.ts`:
+Append to `src/interactions/actions/move/move.layout.test.ts`:
 
 ```ts
 describe('useMove commit with layout', () => {
@@ -1923,12 +1923,12 @@ describe('useMove commit with layout', () => {
 
 - [ ] **Step 2: Run — verify they fail**
 
-Run: `npm test -- --run src/interactions/gestures/move/move.layout.test.ts`
+Run: `npm test -- --run src/interactions/actions/move/move.layout.test.ts`
 Expected: FAIL — current `end()` always uses the default `createTransformOp` batch.
 
 - [ ] **Step 3: Implement layout-aware commit in `end()`**
 
-In `src/interactions/gestures/move/move.ts`, locate the `end()` callback. After the existing behavior loop (which sets `ops`), but before the `if (ops === undefined) { ops = ctx.draggedIds.map(...) }` fallback, insert layout-aware commit:
+In `src/interactions/actions/move/move.ts`, locate the `end()` callback. After the existing behavior loop (which sets `ops`), but before the `if (ops === undefined) { ops = ctx.draggedIds.map(...) }` fallback, insert layout-aware commit:
 
 ```ts
 const layoutPass = stateRef.current.layoutPass;
@@ -1969,7 +1969,7 @@ if (ops === undefined && layoutPass.layout && layoutPass.container) {
 
 - [ ] **Step 4: Run the layout tests — verify pass**
 
-Run: `npm test -- --run src/interactions/gestures/move/move.layout.test.ts`
+Run: `npm test -- --run src/interactions/actions/move/move.layout.test.ts`
 Expected: PASS (all 6 cases).
 
 - [ ] **Step 5: Run the full suite**
@@ -1980,7 +1980,7 @@ Expected: PASS.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/interactions/gestures/move/move.ts src/interactions/gestures/move/move.layout.test.ts
+git add src/interactions/actions/move/move.ts src/interactions/actions/move/move.layout.test.ts
 git commit -m "$(cat <<'EOF'
 feat(move): layout-aware commit batch
 

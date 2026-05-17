@@ -12,7 +12,7 @@ After running `divide` on a pile of overlapping ellipses, the user gets N output
 
 ### Workaround landed
 
-`src/interactions/gestures/move/move.ts` was patched to back-derive an *effective delta* from the primary's post-behavior pose (`pp.x - po.x`, `pp.y - po.y`) and apply that delta uniformly to all dragged ids. Works for the rect-shaped pose case. Limitations:
+`src/interactions/actions/move/move.ts` was patched to back-derive an *effective delta* from the primary's post-behavior pose (`pp.x - po.x`, `pp.y - po.y`) and apply that delta uniformly to all dragged ids. Works for the rect-shaped pose case. Limitations:
 
 - Only honors `{ x, y }`-bearing poses. A custom `translatePose` that operates on a non-rect pose without `{ x, y }` falls back to the raw delta, silently reintroducing the drift.
 - Leaks knowledge of the pose shape into the gesture core.

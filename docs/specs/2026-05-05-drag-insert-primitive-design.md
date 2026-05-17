@@ -253,7 +253,7 @@ May 4 spec is dropped (it had only one call site; folded into the primitive).
 ### Public surface
 
 ```ts
-import type { InsertController } from '../../interactions/gestures/insert/insert';
+import type { InsertController } from '../../interactions/actions/insert/insert';
 
 export interface DragInsertToolConfig<TNode extends { id: string }, TPose> {
   /** Tool id, e.g. 'insert' or 'text'. */
@@ -408,13 +408,13 @@ shared at construction time).
   - `src/tools/builtin/defineDragInsertTool.ts`
   - `src/tools/builtin/defineDragInsertTool.test.ts`
 - **Rewrite:**
-  - `src/interactions/gestures/insert/insert.ts` (becomes `useDragRect` wrapper)
-  - `src/interactions/gestures/area-select/areaSelect.ts` (becomes `useDragRect` wrapper)
+  - `src/interactions/actions/insert/insert.ts` (becomes `useDragRect` wrapper)
+  - `src/interactions/actions/area-select/areaSelect.ts` (becomes `useDragRect` wrapper)
   - `src/tools/builtin/useInsertTool.ts` (collapse to ~10 lines)
   - `src/tools/builtin/useTextTool.ts` (collapse to ~25 lines)
 - **Update (for `supports*` flags + any minor surface changes):**
-  - `src/interactions/gestures/insert/insert.test.ts` (add `supports*` assertions; keep end-to-end coverage)
-  - `src/interactions/gestures/area-select/areaSelect.test.ts` (no surface change; verify behavior preservation)
+  - `src/interactions/actions/insert/insert.test.ts` (add `supports*` assertions; keep end-to-end coverage)
+  - `src/interactions/actions/area-select/areaSelect.test.ts` (no surface change; verify behavior preservation)
   - `src/tools/builtin/useInsertTool.test.ts` (no surface change; verify behavior preservation)
   - `src/tools/builtin/useTextTool.test.ts` (no surface change; verify behavior preservation)
 - **Delete:**

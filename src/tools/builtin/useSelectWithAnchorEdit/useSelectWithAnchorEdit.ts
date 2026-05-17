@@ -6,7 +6,7 @@ import {
   useEditAnchors,
   type EditAnchorsAdapter,
   type UseEditAnchorsOptions,
-} from 'interactions/gestures/edit-anchors';
+} from 'interactions/actions/edit-anchors';
 import { useTools, type ToolsApi } from '../../useTools';
 import type { AnyTool } from '../../types';
 import type { MoveAdapter, ResizeAdapter, RotateAdapter, AreaSelectAdapter } from 'core/adapters/types';

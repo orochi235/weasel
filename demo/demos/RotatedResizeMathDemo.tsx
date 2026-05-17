@@ -207,7 +207,7 @@ function FixedCornerMarkers({
 }
 
 /** World-space fixed corner of a rotated rect for the given anchor.
- *  Mirrors the kit's `fixedCornerOf` (in `interactions/gestures/resize`,
+ *  Mirrors the kit's `fixedCornerOf` (in `interactions/actions/resize`,
  *  not on the public barrel) plus a rotation around the rect center. */
 function fixedCornerWorld(pose: Rect, anchor: ResizeAnchor): { x: number; y: number } {
   const localX = anchor.x === 'max' ? pose.x + pose.width : pose.x;

@@ -86,7 +86,7 @@ interface ClonePose {
   worldY: number;
 }
 
-interface CloneBehavior extends GestureBehavior<ClonePose, ClonePose, void> {
+interface CloneBehavior extends ActionBehavior<ClonePose, ClonePose, void> {
   /** Default true: clone gestures DO produce history entries. */
   defaultTransient?: false;
   /** When this behavior is active, the matching layer overlay should not hide source ids. */

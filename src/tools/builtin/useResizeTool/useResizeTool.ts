@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react';
-import { useResize, type UseResizeOptions } from 'interactions/gestures/resize/resize';
+import { useResize, type UseResizeOptions } from 'interactions/actions/resize/resize';
 import { composeAffordanceLayer } from 'affordances/composeAffordanceLayer';
 import {
   createCornerResizeAffordance,
@@ -24,7 +24,7 @@ function toChromeState(data: unknown): ChromeState {
   return data as ChromeState;
 }
 import { createTransformOp } from 'core/ops/transform';
-import { RECT_POSE_DESCRIPTOR } from 'interactions/gestures/resize/geometry';
+import { RECT_POSE_DESCRIPTOR } from 'interactions/actions/resize/geometry';
 import { MULTI_RESIZE_TARGET_ID, type Bounds } from '../shared/selectionTarget';
 
 export interface UseResizeToolOptions<TNode extends { id: string }, TPose> {

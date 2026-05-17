@@ -198,12 +198,13 @@ drag) can power different actions (insert a rect, marquee-select, area-erase); t
 same action (`delete`) can be invoked by different gestures (a keystroke, a button
 click, a swipe). See [Interaction](#interaction) for the composition.
 
-Note on the kit's current state: the directory `src/interactions/gestures/` mixes
-primitive gestures (`dragRect.ts`, `dragRadial.ts`) with feature-shaped directories
-like `move/`, `resize/`, `rotate/` that are really *drag-based actions*, not
-gestures by this definition. A planned reorg (see `docs/TODO.md` "Taxonomy
-alignment") promotes the per-action directories up and reserves `gestures/` for
-the actual input primitives.
+Source layout: `src/interactions/gestures/` holds the input primitives — per-primitive
+subdirectories `dragGesture/`, `dragRect/`, `dragRadial/`, `usePointerGestures/`, plus
+the shared `shared/` snap helpers and `types.ts` carrying the cross-system base types
+(`ModifierState`, `GestureContext`, `ActionBehavior`, etc.). Drag-based actions
+(`move/`, `resize/`, `rotate/`, `clone/`, `area-select/`, `lasso-select/`,
+`edit-anchors/`, `insert/`) live alongside the one-shot actions under
+`src/interactions/actions/`.
 
 ### Action
 
@@ -217,13 +218,13 @@ invoke. Each one either produces an [Op](#op) batch (for undoable mutations like
 `delete`, `align`, `move`) or emits no ops (for transient/UI state like
 `zoom in`, `escape`, `toggle grid`).
 
-Today's kit uses a narrower historical definition — "Action = one-shot,
-keybinding-driven command" — and treats drag-based operations (move, resize,
-rotate) as *gestures*. That distinction is implementation-coupled (drag-phase
-present? vs. not) rather than user-intent-coupled, and is acknowledged drift; see
-`docs/TODO.md` "Action vs gesture taxonomy is implementation-coupled" for the
-revision target. The cleaner future shape: every state-changing user operation is
-an action; gestures are how it's invoked.
+Source layout reflects this: both one-shot actions (`delete`, `align`, `escape`, …)
+and drag-based actions (`move`, `resize`, `rotate`, `insert`, `area-select`, …) live
+under `src/interactions/actions/`. The remaining shape gap is registry unification —
+drag-based actions are still invoked via direct hooks (`useMove`, `useResize`) rather
+than through the action registry; see `docs/TODO.md` "Taxonomy alignment" for the
+follow-up. The cleaner future shape: every state-changing user operation is an action
+invokable through the registry, regardless of input form.
 
 Examples: `selectAll`, `escape`, `duplicate`, `nudge`, `reorder`, `delete`,
 `align.{left,...}`, `distribute.{horizontal,vertical}`, `flip.{x,y}`. Kit defaults
@@ -245,18 +246,16 @@ gesture and action sides of a feature factored separately when designing.
 ### Behavior
 
 A pluggable extension to a drag-based [Action](#action)'s per-frame proposed-pose
-shaping and commit logic. Implements `GestureBehavior<TPose, TProposed, TMoveResult>`
+shaping and commit logic. Implements `ActionBehavior<TPose, TProposed, TMoveResult>`
 with optional `onStart`, `onMove`, and `onEnd` hooks. Behaviors run in array order;
 each `onMove` may refine the proposed pose; the first `onEnd` returning a
 non-`undefined` value wins (ops to commit, or `null` to abort). Type aliases pin
 the shapes per action: `MoveBehavior`, `ResizeBehavior`, `RotateBehavior`,
 `InsertBehavior`, `AreaSelectBehavior`, `CloneBehavior`.
 
-The name `GestureBehavior` predates the gesture/action split this doc is realigning
-toward — behaviors actually plug into *actions* (the operation being performed),
-not into the input form. A future rename (e.g. `ActionBehavior`) is on the
-follow-up list. Distinct from [component-level behaviors](#mixin--lifecycle-behavior-deferred)
-which do not exist yet. See `src/interactions/gestures/types.ts:58`.
+Distinct from [component-level behaviors](#mixin--lifecycle-behavior-deferred)
+which do not exist yet. See `src/interactions/gestures/types.ts` for the
+`ActionBehavior` interface (renamed from `GestureBehavior` in 2026-05).
 
 ### Snap strategy
 
@@ -464,7 +463,7 @@ scale). Optional: `translate`, `intersectsRect`, `lerp`, `getRotation`. Used by
 `useResize`, area-select, snap, and animation helpers. Built-ins:
 `RECT_POSE_DESCRIPTOR` (identity for `ResizePose`), `ROTATED_POSE_DESCRIPTOR`,
 `pathPoseDescriptor`. Distinct from [OriginProjection](#snap-strategy) which handles
-snap-point extraction for non-rect poses. See `src/interactions/gestures/resize/geometry.ts:15`.
+snap-point extraction for non-rect poses. See `src/interactions/actions/resize/geometry.ts:15`.
 
 ### Scene
 
@@ -633,7 +632,7 @@ deps for now. Tracked in the feature-roles spec.
 ### Behaviors at the component level (deferred)
 
 The term "behavior" is used in two senses in the kit:
-1. **Gesture-level** ([`GestureBehavior`](#behavior)) — ships and is stable.
+1. **Gesture-level** ([`ActionBehavior`](#behavior)) — ships and is stable.
 2. **Component-level** — a hypothetical chain-of-responsibility mechanism that
    would let features intercept pointer events or render passes at the `<SceneCanvas>`
    boundary. This second sense does not exist yet and is explicitly out of scope

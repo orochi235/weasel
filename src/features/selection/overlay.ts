@@ -34,8 +34,8 @@ import { alignedStrokeRect, type FillStyle, type Stroke } from 'core/paint-types
 import {
   rotationHandle,
   DEFAULT_ROTATION_HANDLE_DISTANCE,
-} from 'interactions/gestures/rotate/handle';
-import { rotatePoint } from 'interactions/gestures/rotate/geometry';
+} from 'interactions/actions/rotate/handle';
+import { rotatePoint } from 'interactions/actions/rotate/geometry';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';

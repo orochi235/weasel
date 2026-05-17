@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react';
-import { useRotate, type UseRotateOptions } from 'interactions/gestures/rotate/rotate';
+import { useRotate, type UseRotateOptions } from 'interactions/actions/rotate/rotate';
 import { composeAffordanceLayer } from 'affordances/composeAffordanceLayer';
 import {
   createRotationAffordance,

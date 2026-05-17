@@ -13,10 +13,10 @@
 ## File map
 
 **Modify:**
-- `src/interactions/gestures/resize/geometry.ts` — add `getRotation?` to `PoseDescriptor`; add `ROTATED_POSE_DESCRIPTOR`.
-- `src/interactions/gestures/resize/cornerHandles.ts` — add `fixedCornerOf` helper.
-- `src/interactions/gestures/resize/resize.ts` — read rotation at start, branch math in move, position-correct via `descriptor.translate`, dev warning for group-with-rotated-leaves.
-- `src/interactions/gestures/resize/index.ts` — re-export `ROTATED_POSE_DESCRIPTOR` and `fixedCornerOf`.
+- `src/interactions/actions/resize/geometry.ts` — add `getRotation?` to `PoseDescriptor`; add `ROTATED_POSE_DESCRIPTOR`.
+- `src/interactions/actions/resize/cornerHandles.ts` — add `fixedCornerOf` helper.
+- `src/interactions/actions/resize/resize.ts` — read rotation at start, branch math in move, position-correct via `descriptor.translate`, dev warning for group-with-rotated-leaves.
+- `src/interactions/actions/resize/index.ts` — re-export `ROTATED_POSE_DESCRIPTOR` and `fixedCornerOf`.
 - `src/interactions/usePointerGestures.ts` — `resizeTarget` return shape gains `rotation?`, hit-test branches on rotation, synthesized resizeTarget reads rotation from `boundsOf`.
 - `src/canvas/Canvas.tsx` — synthesized `baseBoundsOf` folds `geometry.getRotation?.(pose)` into the result.
 - `src/index.ts` — re-export `ROTATED_POSE_DESCRIPTOR`.
@@ -27,9 +27,9 @@
 - `demo/demos/RotatedResizeMathDemo.tsx` — four-panel math explainer with three counterexamples.
 
 **Test:**
-- `src/interactions/gestures/resize/geometry.test.ts` — extend with `ROTATED_POSE_DESCRIPTOR` cases.
-- `src/interactions/gestures/resize/cornerHandles.test.ts` — extend with `fixedCornerOf` cases.
-- `src/interactions/gestures/resize/resize.test.ts` — extend with rotated-resize cases (drag projection, anchor invariance, behaviors-on-local-frame, flipped-pose, group-warning, bit-identical regression).
+- `src/interactions/actions/resize/geometry.test.ts` — extend with `ROTATED_POSE_DESCRIPTOR` cases.
+- `src/interactions/actions/resize/cornerHandles.test.ts` — extend with `fixedCornerOf` cases.
+- `src/interactions/actions/resize/resize.test.ts` — extend with rotated-resize cases (drag projection, anchor invariance, behaviors-on-local-frame, flipped-pose, group-warning, bit-identical regression).
 - `src/interactions/usePointerGestures.test.ts` — extend with rotated-handle hit-test cases.
 
 ---
@@ -37,12 +37,12 @@
 ## Task 1: `getRotation?` on `PoseDescriptor`, ship `ROTATED_POSE_DESCRIPTOR`
 
 **Files:**
-- Modify: `src/interactions/gestures/resize/geometry.ts`
-- Test: `src/interactions/gestures/resize/geometry.test.ts`
+- Modify: `src/interactions/actions/resize/geometry.ts`
+- Test: `src/interactions/actions/resize/geometry.test.ts`
 
 - [ ] **Step 1.1: Write the failing test for `ROTATED_POSE_DESCRIPTOR.getRotation`**
 
-Append to `src/interactions/gestures/resize/geometry.test.ts`:
+Append to `src/interactions/actions/resize/geometry.test.ts`:
 
 ```ts
 import { ROTATED_POSE_DESCRIPTOR } from './geometry';
@@ -81,12 +81,12 @@ describe('ROTATED_POSE_DESCRIPTOR', () => {
 
 - [ ] **Step 1.2: Run the test to verify failure**
 
-Run: `npx vitest run src/interactions/gestures/resize/geometry.test.ts`
+Run: `npx vitest run src/interactions/actions/resize/geometry.test.ts`
 Expected: FAIL — `ROTATED_POSE_DESCRIPTOR` is not exported.
 
 - [ ] **Step 1.3: Add `getRotation?` to `PoseDescriptor` and export `ROTATED_POSE_DESCRIPTOR`**
 
-Edit `src/interactions/gestures/resize/geometry.ts`. Add the optional method to the interface and the new descriptor at the bottom:
+Edit `src/interactions/actions/resize/geometry.ts`. Add the optional method to the interface and the new descriptor at the bottom:
 
 ```ts
 import type { ResizePose, RotatedPose } from '../types';
@@ -129,7 +129,7 @@ The casts are needed because `RECT_POSE_DESCRIPTOR` is typed for `PoseDescriptor
 
 - [ ] **Step 1.4: Re-export from the resize index and barrel**
 
-Edit `src/interactions/gestures/resize/index.ts`:
+Edit `src/interactions/actions/resize/index.ts`:
 
 ```ts
 export { RECT_POSE_DESCRIPTOR, ROTATED_POSE_DESCRIPTOR, type PoseDescriptor } from './geometry';
@@ -141,12 +141,12 @@ Edit `src/index.ts` near the existing `RECT_POSE_DESCRIPTOR` export (currently a
 export {
   RECT_POSE_DESCRIPTOR,
   ROTATED_POSE_DESCRIPTOR,
-} from './interactions/gestures/resize/geometry';
+} from './interactions/actions/resize/geometry';
 ```
 
 - [ ] **Step 1.5: Run the test to verify it passes**
 
-Run: `npx vitest run src/interactions/gestures/resize/geometry.test.ts`
+Run: `npx vitest run src/interactions/actions/resize/geometry.test.ts`
 Expected: PASS — all four new cases.
 
 - [ ] **Step 1.6: Run typecheck**
@@ -157,9 +157,9 @@ Expected: clean — no diagnostics.
 - [ ] **Step 1.7: Commit**
 
 ```bash
-git add src/interactions/gestures/resize/geometry.ts \
-        src/interactions/gestures/resize/geometry.test.ts \
-        src/interactions/gestures/resize/index.ts \
+git add src/interactions/actions/resize/geometry.ts \
+        src/interactions/actions/resize/geometry.test.ts \
+        src/interactions/actions/resize/index.ts \
         src/index.ts
 git commit -m "feat(resize): PoseDescriptor.getRotation + ROTATED_POSE_DESCRIPTOR"
 ```
@@ -169,12 +169,12 @@ git commit -m "feat(resize): PoseDescriptor.getRotation + ROTATED_POSE_DESCRIPTO
 ## Task 2: `fixedCornerOf` helper
 
 **Files:**
-- Modify: `src/interactions/gestures/resize/cornerHandles.ts`
-- Test: `src/interactions/gestures/resize/cornerHandles.test.ts`
+- Modify: `src/interactions/actions/resize/cornerHandles.ts`
+- Test: `src/interactions/actions/resize/cornerHandles.test.ts`
 
 - [ ] **Step 2.1: Write the failing test**
 
-Append to `src/interactions/gestures/resize/cornerHandles.test.ts`:
+Append to `src/interactions/actions/resize/cornerHandles.test.ts`:
 
 ```ts
 import { fixedCornerOf } from './cornerHandles';
@@ -208,12 +208,12 @@ Note on the convention: `cornerResizeHandles` produces handles whose `anchor` re
 
 - [ ] **Step 2.2: Run the test to verify failure**
 
-Run: `npx vitest run src/interactions/gestures/resize/cornerHandles.test.ts`
+Run: `npx vitest run src/interactions/actions/resize/cornerHandles.test.ts`
 Expected: FAIL — `fixedCornerOf` is not exported.
 
 - [ ] **Step 2.3: Implement `fixedCornerOf`**
 
-Append to `src/interactions/gestures/resize/cornerHandles.ts`:
+Append to `src/interactions/actions/resize/cornerHandles.ts`:
 
 ```ts
 import type { ResizeAnchor } from '../types';
@@ -238,9 +238,9 @@ export function fixedCornerOf(
 
 (`Bounds` is the local interface already declared at the top of the file.)
 
-- [ ] **Step 2.4: Re-export from `src/interactions/gestures/resize/index.ts`**
+- [ ] **Step 2.4: Re-export from `src/interactions/actions/resize/index.ts`**
 
-Edit `src/interactions/gestures/resize/index.ts`:
+Edit `src/interactions/actions/resize/index.ts`:
 
 ```ts
 export {
@@ -253,7 +253,7 @@ export {
 
 - [ ] **Step 2.5: Run the test to verify it passes**
 
-Run: `npx vitest run src/interactions/gestures/resize/cornerHandles.test.ts`
+Run: `npx vitest run src/interactions/actions/resize/cornerHandles.test.ts`
 Expected: PASS — five cases.
 
 - [ ] **Step 2.6: Run typecheck**
@@ -264,9 +264,9 @@ Expected: clean.
 - [ ] **Step 2.7: Commit**
 
 ```bash
-git add src/interactions/gestures/resize/cornerHandles.ts \
-        src/interactions/gestures/resize/cornerHandles.test.ts \
-        src/interactions/gestures/resize/index.ts
+git add src/interactions/actions/resize/cornerHandles.ts \
+        src/interactions/actions/resize/cornerHandles.test.ts \
+        src/interactions/actions/resize/index.ts
 git commit -m "feat(resize): fixedCornerOf helper for rotated-resize math"
 ```
 
@@ -275,14 +275,14 @@ git commit -m "feat(resize): fixedCornerOf helper for rotated-resize math"
 ## Task 3: Rotated-resize math in `useResize`
 
 **Files:**
-- Modify: `src/interactions/gestures/resize/resize.ts`
-- Test: `src/interactions/gestures/resize/resize.test.ts`
+- Modify: `src/interactions/actions/resize/resize.ts`
+- Test: `src/interactions/actions/resize/resize.test.ts`
 
 This is the big task. We TDD it in stages: regression first (existing tests still pass), then anchor invariance, then drag projection, then behaviors-on-local-frame, then flipped pose, then the group warning.
 
 - [ ] **Step 3.1: Write the failing test for anchor invariance (the load-bearing invariant)**
 
-Append a new `describe` block to `src/interactions/gestures/resize/resize.test.ts`:
+Append a new `describe` block to `src/interactions/actions/resize/resize.test.ts`:
 
 ```ts
 import { ROTATED_POSE_DESCRIPTOR } from './geometry';
@@ -356,12 +356,12 @@ describe('useResize — rotated leaf: anchor invariance', () => {
 
 - [ ] **Step 3.2: Run the test to verify failure**
 
-Run: `npx vitest run src/interactions/gestures/resize/resize.test.ts -t "anchor invariance"`
+Run: `npx vitest run src/interactions/actions/resize/resize.test.ts -t "anchor invariance"`
 Expected: FAIL — for non-zero angles, the fixed corner drifts because the hook applies world-frame anchor math without rotation projection.
 
 - [ ] **Step 3.3: Implement the rotated-resize math branch in `useResize`**
 
-Edit `src/interactions/gestures/resize/resize.ts`. Three changes:
+Edit `src/interactions/actions/resize/resize.ts`. Three changes:
 
 (a) Add imports near the top:
 
@@ -524,12 +524,12 @@ Write `setOverlay({ id: s.id, currentPose, targetPose: proposedPose, anchor: s.a
 
 - [ ] **Step 3.4: Run the anchor-invariance test**
 
-Run: `npx vitest run src/interactions/gestures/resize/resize.test.ts -t "anchor invariance"`
+Run: `npx vitest run src/interactions/actions/resize/resize.test.ts -t "anchor invariance"`
 Expected: PASS — 24 cases (6 angles × 4 anchors).
 
 - [ ] **Step 3.5: Run the existing resize tests as a regression check**
 
-Run: `npx vitest run src/interactions/gestures/resize/resize.test.ts`
+Run: `npx vitest run src/interactions/actions/resize/resize.test.ts`
 Expected: PASS — every existing case still green. The unrotated short-circuit guarantees this.
 
 - [ ] **Step 3.6: Add the drag-projection test**
@@ -566,7 +566,7 @@ describe('useResize — rotated leaf: drag projection', () => {
 
 - [ ] **Step 3.7: Run the drag-projection test**
 
-Run: `npx vitest run src/interactions/gestures/resize/resize.test.ts -t "drag projection"`
+Run: `npx vitest run src/interactions/actions/resize/resize.test.ts -t "drag projection"`
 Expected: PASS.
 
 - [ ] **Step 3.8: Add the behaviors-on-local-frame test**
@@ -602,7 +602,7 @@ describe('useResize — rotated leaf: behaviors operate on local-frame bounds', 
 
 - [ ] **Step 3.9: Run the behaviors test**
 
-Run: `npx vitest run src/interactions/gestures/resize/resize.test.ts -t "local-frame bounds"`
+Run: `npx vitest run src/interactions/actions/resize/resize.test.ts -t "local-frame bounds"`
 Expected: PASS.
 
 - [ ] **Step 3.10: Add the flipped-pose test**
@@ -637,7 +637,7 @@ describe('useResize — rotated leaf: flipped pose preserved', () => {
 
 - [ ] **Step 3.11: Run the flipped-pose test**
 
-Run: `npx vitest run src/interactions/gestures/resize/resize.test.ts -t "flipped pose"`
+Run: `npx vitest run src/interactions/actions/resize/resize.test.ts -t "flipped pose"`
 Expected: PASS.
 
 - [ ] **Step 3.12: Add the group-with-rotated-leaves warning test**
@@ -682,12 +682,12 @@ describe('useResize — group resize with rotated leaves emits a dev warning', (
 
 - [ ] **Step 3.13: Run the warning test**
 
-Run: `npx vitest run src/interactions/gestures/resize/resize.test.ts -t "group resize with rotated leaves"`
+Run: `npx vitest run src/interactions/actions/resize/resize.test.ts -t "group resize with rotated leaves"`
 Expected: PASS.
 
 - [ ] **Step 3.14: Run the full resize test suite**
 
-Run: `npx vitest run src/interactions/gestures/resize/`
+Run: `npx vitest run src/interactions/actions/resize/`
 Expected: PASS — every case green, including all the existing unrotated cases.
 
 - [ ] **Step 3.15: Run typecheck**
@@ -698,8 +698,8 @@ Expected: clean.
 - [ ] **Step 3.16: Commit**
 
 ```bash
-git add src/interactions/gestures/resize/resize.ts \
-        src/interactions/gestures/resize/resize.test.ts
+git add src/interactions/actions/resize/resize.ts \
+        src/interactions/actions/resize/resize.test.ts
 git commit -m "feat(resize): rotated-resize math (drag projection + anchor pinning)"
 ```
 
@@ -860,7 +860,7 @@ git commit -m "feat(pointer-gestures): rotated resize handle hit-test"
 Append to `src/canvas/Canvas.test.tsx` (mirror the existing `'useSelectTool boundsOf drives resize handle hit-test'` case around line 271):
 
 ```ts
-import { ROTATED_POSE_DESCRIPTOR } from '../interactions/gestures/resize/geometry';
+import { ROTATED_POSE_DESCRIPTOR } from '../interactions/actions/resize/geometry';
 
 it('synthesized boundsOf folds rotation from descriptor.getRotation', () => {
   // 100×60 rotated rect; the synthesized boundsOf should return

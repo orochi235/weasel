@@ -8,7 +8,7 @@
 
 **Tech Stack:** React 18 + TypeScript, Vitest + React Testing Library. Reference patterns:
 - `src/interactions/gestures/dragRect.ts` — current dragRect impl (drives the base's phase/scratch/resilience design).
-- `src/interactions/gestures/move/move.ts` — current useMove impl (drives the threshold-predicate and pre-threshold-onStart split).
+- `src/interactions/actions/move/move.ts` — current useMove impl (drives the threshold-predicate and pre-threshold-onStart split).
 - `src/interactions/gestures/types.ts` — `ModifierState`, `GestureContext`, `MoveBehavior`, etc.
 
 ---
@@ -22,19 +22,19 @@
 **Modify (Task 2 — dragRect migration + rename):**
 - `src/interactions/gestures/dragRect.ts` — collapse to wrapper around `useDragGesture`. Rename `wasSubThreshold` → `isSubThreshold`.
 - `src/interactions/gestures/dragRect.test.ts` — update the one assertion site for the field rename. Add a regression test for restart-while-active.
-- `src/interactions/gestures/insert/insert.ts:152` — update consumer reading `ctx.wasSubThreshold`.
+- `src/interactions/actions/insert/insert.ts:152` — update consumer reading `ctx.wasSubThreshold`.
 - `src/interactions/gestures/index.ts` — export `useDragGesture` and its types.
 
 **Modify (Task 3 — useMove migration):**
-- `src/interactions/gestures/move/move.ts` — collapse phase-machine portion to a wrapper around `useDragGesture`. Behaviors, layout pass, cascade, op dispatch stay.
-- `src/interactions/gestures/move/move.test.ts` — runs unmodified.
+- `src/interactions/actions/move/move.ts` — collapse phase-machine portion to a wrapper around `useDragGesture`. Behaviors, layout pass, cascade, op dispatch stay.
+- `src/interactions/actions/move/move.test.ts` — runs unmodified.
 
 **Tests stay (assert public surfaces — already comprehensive):**
 - `src/interactions/gestures/dragRect.test.ts` — except for the field rename (Task 2 Step 2).
-- `src/interactions/gestures/move/move.test.ts`
-- `src/interactions/gestures/insert/insert.test.ts`
-- `src/interactions/gestures/area-select/areaSelect.test.ts`
-- All behavior-specific test suites under `src/interactions/gestures/move/behaviors/` and `src/interactions/gestures/resize/behaviors/`.
+- `src/interactions/actions/move/move.test.ts`
+- `src/interactions/actions/insert/insert.test.ts`
+- `src/interactions/actions/area-select/areaSelect.test.ts`
+- All behavior-specific test suites under `src/interactions/actions/move/behaviors/` and `src/interactions/actions/resize/behaviors/`.
 
 ---
 
@@ -581,7 +581,7 @@ git commit -m "feat(gestures): add useDragGesture base primitive"
 **Files:**
 - Modify: `src/interactions/gestures/dragRect.ts`
 - Modify: `src/interactions/gestures/dragRect.test.ts`
-- Modify: `src/interactions/gestures/insert/insert.ts`
+- Modify: `src/interactions/actions/insert/insert.ts`
 
 After this task: `useDragRect`'s public surface is unchanged except for the field rename. The wrapper delegates all phase/scratch/lifecycle to `useDragGesture`.
 
@@ -850,7 +850,7 @@ Expected: PASS — all cases including the rename and restart-while-active.
 
 - [ ] **Step 5: Update `useInsert`'s consumer of `wasSubThreshold`**
 
-Edit `src/interactions/gestures/insert/insert.ts:152`. Find:
+Edit `src/interactions/actions/insert/insert.ts:152`. Find:
 
 ```ts
       if (clickOnly || ctx.wasSubThreshold) {
@@ -878,7 +878,7 @@ Expected: PASS.
 ```bash
 git add src/interactions/gestures/dragRect.ts \
         src/interactions/gestures/dragRect.test.ts \
-        src/interactions/gestures/insert/insert.ts
+        src/interactions/actions/insert/insert.ts
 git commit -m "refactor(gestures): collapse useDragRect to useDragGesture wrapper; rename wasSubThreshold→isSubThreshold"
 ```
 
@@ -887,13 +887,13 @@ git commit -m "refactor(gestures): collapse useDragRect to useDragGesture wrappe
 ## Task 3: Migrate `useMove` to wrapper
 
 **Files:**
-- Modify: `src/interactions/gestures/move/move.ts`
+- Modify: `src/interactions/actions/move/move.ts`
 
 After this task: `useMove`'s public surface is unchanged. The phase/threshold/scratch/lifecycle scaffolding moves to `useDragGesture`. Layout pass, cascade-children, behaviors loop, op dispatch all stay in the wrapper.
 
 - [ ] **Step 1: Read the current `move.ts` end-to-end**
 
-Run: Read tool on `src/interactions/gestures/move/move.ts` (lines 1–618).
+Run: Read tool on `src/interactions/actions/move/move.ts` (lines 1–618).
 
 Identify the four chunks that move to base callbacks:
 - Phase machine (`phase: 'idle' | 'pending' | 'active'` in `stateRef`).
@@ -1236,7 +1236,7 @@ The block is large but mechanical — copy from the current `move.ts:244–510`,
 
 - [ ] **Step 4: Run useMove tests**
 
-Run: `pnpm test --run src/interactions/gestures/move`
+Run: `pnpm test --run src/interactions/actions/move`
 Expected: PASS — all existing tests including `move.test.ts`, layout-pass tests, snap-back tests, container tests, behavior-specific tests under `move/behaviors/`.
 
 If any test fails, the failure is the source of truth — fix the wrapper to match. Common likely failures and their causes:
@@ -1255,7 +1255,7 @@ Run: `pnpm typecheck`
 Expected: PASS.
 
 ```bash
-git add src/interactions/gestures/move/move.ts
+git add src/interactions/actions/move/move.ts
 git commit -m "refactor(gestures): collapse useMove to useDragGesture wrapper"
 ```
 

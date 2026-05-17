@@ -1,7 +1,7 @@
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
-import type { PoseDescriptor } from '../../gestures/resize/geometry';
+import type { PoseDescriptor } from '../resize/geometry';
 import {
   flipPoseAboutBounds,
   flipPoseViaDescriptor,

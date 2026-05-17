@@ -55,7 +55,7 @@ export interface SnapStrategy<TPose> {
  * commits its ops via `adapter.applyOps(ops)` (no history entry). When
  * `options.transient` is set explicitly, that value wins.
  */
-export interface GestureBehavior<TPose, TProposed, TMoveResult> {
+export interface ActionBehavior<TPose, TProposed, TMoveResult> {
   defaultTransient?: boolean;
   onStart?(ctx: GestureContext<TPose>): void;
   onMove?(ctx: GestureContext<TPose>, proposed: TProposed): TMoveResult | void;
@@ -109,7 +109,7 @@ export type BehaviorMoveResult<TPose> = BehaviorResult<TPose>;
  *  Behaviors receive a `GroupTransform` (currently always `'translate'` for
  *  `useMove`) and return a `BehaviorResult` shaping it (or, legacy, an
  *  override pose run through the back-compat shim). */
-export type MoveBehavior<TPose> = GestureBehavior<TPose, GroupTransform, BehaviorResult<TPose>>;
+export type MoveBehavior<TPose> = ActionBehavior<TPose, GroupTransform, BehaviorResult<TPose>>;
 
 /** Live overlay state exposed by `useMove` for rendering ghosts and snap previews. */
 export interface MoveOverlay<TPose> {
@@ -162,7 +162,7 @@ export interface ResizeMoveResult<TPose extends ResizePose> {
 }
 
 /** A behavior plugged into `useResize`. */
-export type ResizeBehavior<TPose extends ResizePose> = GestureBehavior<
+export type ResizeBehavior<TPose extends ResizePose> = ActionBehavior<
   TPose,
   ResizeProposed<TPose>,
   ResizeMoveResult<TPose>
@@ -203,7 +203,7 @@ export interface RotateMoveResult<TPose> {
 }
 
 /** A behavior plugged into `useRotate`. */
-export type RotateBehavior<TPose> = GestureBehavior<
+export type RotateBehavior<TPose> = ActionBehavior<
   TPose,
   RotateProposed<TPose>,
   RotateMoveResult<TPose>
@@ -245,7 +245,7 @@ export interface InsertMoveResult {
 
 /** Behaviors operate over the two world points; bounds and pose are derived
  *  by the hook from the (possibly modified) points each frame. */
-export type InsertBehavior<TPose> = GestureBehavior<
+export type InsertBehavior<TPose> = ActionBehavior<
   TPose,
   InsertProposed<TPose>,
   InsertMoveResult
@@ -283,7 +283,7 @@ export interface AreaSelectProposed {
 export type AreaSelectMoveResult = void;
 
 /** A behavior plugged into `useAreaSelect`. */
-export type AreaSelectBehavior = GestureBehavior<
+export type AreaSelectBehavior = ActionBehavior<
   AreaSelectPose,
   AreaSelectProposed,
   AreaSelectMoveResult
@@ -317,7 +317,7 @@ export interface LassoSelectProposed {
 export type LassoSelectMoveResult = void;
 
 /** A behavior plugged into `useLassoSelect`. */
-export type LassoSelectBehavior = GestureBehavior<
+export type LassoSelectBehavior = ActionBehavior<
   LassoSelectPose,
   LassoSelectProposed,
   LassoSelectMoveResult
