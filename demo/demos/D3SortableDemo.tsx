@@ -19,16 +19,22 @@ const VALUE_SCALE = 22;
 interface Item {
   id: string;
   value: number;
-  hue: number;
+  color: string;
 }
 type LayerId = 'bars';
 interface Pose { x: number; y: number; width: number; height: number }
-interface BarData { hue: number; value: number }
+interface BarData { color: string; value: number }
+
+// 12-step rainbow palette spanning the hue wheel.
+const COLORS = [
+  '#e25c4c', '#e2904c', '#e2b34c', '#cce24c', '#7fc44c', '#4cc46e',
+  '#4cc4a7', '#4ca7e2', '#5c7fe2', '#7f5cd4', '#a84cd4', '#d44ca7',
+];
 
 const INITIAL: Item[] = Array.from({ length: 12 }, (_, i) => ({
   id: `bar-${i}`,
   value: i + 1,
-  hue: (i * 30) % 360,
+  color: COLORS[i],
 }));
 
 type SortKey = 'index' | 'asc' | 'desc' | 'shuffle';
@@ -98,7 +104,7 @@ export function D3SortableDemo() {
       // RECT_POSE_DESCRIPTOR is the default; no geometry override needed.
     })
       .pose(poseFor)
-      .data((d) => ({ hue: d.hue, value: d.value }));
+      .data((d) => ({ color: d.color, value: d.value }));
 
     const sel = binding.join();
 
@@ -147,23 +153,12 @@ export function D3SortableDemo() {
         selection={selection}
         selectionMode="none"
         tools={tools}
-        enableGestureDispatcher={false}
         layers={{
           scene: {
             drawOne: (n, p): DrawCommand[] => [{
               kind: 'path',
-              path: {
-                kind: 'polygon',
-                commands: new Uint8Array([1, 2, 2, 2, 5]),
-                coords: new Float32Array([
-                  p.x, p.y,
-                  p.x + p.width, p.y,
-                  p.x + p.width, p.y + p.height,
-                  p.x, p.y + p.height,
-                ]),
-                fillRule: 'nonzero',
-              },
-              fill: { fill: 'solid', color: `hsl(${n.data.hue}, 65%, 55%)` },
+              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+              fill: { fill: 'solid', color: n.data.color },
               stroke: { paint: { color: '#222' }, width: 1.5 },
             }],
           },
