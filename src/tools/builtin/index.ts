@@ -1,4 +1,3 @@
-export { useDeleteTool, type UseDeleteToolOptions } from './useDeleteTool';
 export { useUndoRedoTool, type UseUndoRedoToolOptions } from './useUndoRedoTool';
 export { useDuplicateTool, type UseDuplicateToolOptions } from './useDuplicateTool';
 export { useInsertTool, type UseInsertToolOptions } from './useInsertTool';
