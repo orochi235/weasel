@@ -39,7 +39,7 @@ const meta: Meta<typeof Badge> = {
     dot: { control: 'boolean', description: 'Render the small dot indicator before the label.' },
     shapeParams: {
       control: 'object',
-      description: "Shape-specific params, e.g. { cornerRadius: 18 } for notched, { left: 'outward', right: 'inward' } for ribbon.",
+      description: "Shape-specific params, e.g. { erosion: 0.5 } for square/notched, { left: 'outward', right: 'inward' } for ribbon.",
     },
     onClick: { table: { disable: true } },
     onRemove: { table: { disable: true } },
@@ -63,7 +63,7 @@ type ShapeControl =
 
 const SHAPE_CONTROLS: Partial<Record<BadgeShape, ShapeControl[]>> = {
   square: [
-    { key: 'cornerRadius', kind: 'range', min: 0, max: 50, step: 1, default: 8 },
+    { key: 'erosion', kind: 'range', min: 0, max: 1, step: 0.02, default: 0.16 },
   ],
   hexagon: [
     { key: 'tipHeight', kind: 'range', min: 0, max: 49, step: 1, default: 25 },
@@ -73,12 +73,15 @@ const SHAPE_CONTROLS: Partial<Record<BadgeShape, ShapeControl[]>> = {
     { key: 'pointDepth', kind: 'range', min: 60, max: 110, step: 1, default: 100 },
     { key: 'shoulderY', kind: 'range', min: 20, max: 80, step: 1, default: 55 },
     { key: 'curveTightness', kind: 'range', min: 0.1, max: 1, step: 0.05, default: 0.7 },
+    { key: 'erosion', kind: 'range', min: 0, max: 1, step: 0.05, default: 0.33 },
   ],
   scalloped: [
-    { key: 'bumpsPerSide', kind: 'range', min: 2, max: 16, step: 1, default: 4 },
+    { key: 'scallopRadius', kind: 'range', min: 1, max: 12, step: 0.5, default: 5 },
+    { key: 'scallopSpacing', kind: 'range', min: 4, max: 30, step: 1, default: 12 },
+    { key: 'irregularity', kind: 'range', min: 0, max: 1, step: 0.05, default: 0 },
   ],
   notched: [
-    { key: 'cornerRadius', kind: 'range', min: 0, max: 49, step: 1, default: 14 },
+    { key: 'erosion', kind: 'range', min: 0, max: 1, step: 0.02, default: 0.28 },
     { key: 'eccentricity', kind: 'range', min: 0.3, max: 3, step: 0.1, default: 1 },
   ],
   perforated: [
@@ -116,7 +119,6 @@ const SHAPE_CONTROLS: Partial<Record<BadgeShape, ShapeControl[]>> = {
   postage: [
     { key: 'biteRadius', kind: 'range', min: 1, max: 8, step: 0.5, default: 3 },
     { key: 'biteSpacing', kind: 'range', min: 4, max: 24, step: 0.5, default: 8 },
-    { key: 'cornerGuard', kind: 'range', min: 0, max: 20, step: 1, default: 4 },
     { key: 'irregularity', kind: 'range', min: 0, max: 1, step: 0.05, default: 0 },
   ],
   cloud: [
@@ -457,15 +459,36 @@ export const EdgeCases: Story = {
       <Badge shape="perforated" tone="muted" strokeWidth={args.strokeWidth}>STAMP</Badge>
       <Badge shape="house" tone="info" strokeWidth={args.strokeWidth}>HOME</Badge>
       <Badge shape="cloud" tone="warn" strokeWidth={args.strokeWidth}>CLOUDY</Badge>
-      <Badge shape="pill" tone="info" strokeWidth={args.strokeWidth}>
-        line one{'\n'}line two
-      </Badge>
-      <Badge shape="square" tone="accent" strokeWidth={args.strokeWidth}>
-        first line<br />second line
-      </Badge>
-      <Badge shape="notched" tone="warn" strokeWidth={args.strokeWidth}>
-        wrapped<br />content<br />three rows
-      </Badge>
+    </div>
+  ),
+};
+
+export const InlineWrapping: Story = {
+  name: 'Edge case: inline wrap mid-badge',
+  render: (args) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 360, lineHeight: 1.7 }}>
+      <p style={{ margin: 0 }}>
+        A normal paragraph that contains{' '}
+        <Badge shape="pill" tone="accent" strokeWidth={args.strokeWidth}>
+          a sufficiently long inline badge label
+        </Badge>{' '}
+        and continues afterward to force the badge to be broken across two visual lines.
+      </p>
+      <p style={{ margin: 0 }}>
+        With <code>display: inline-flex</code>, badges don't fragment — they stay whole and either fit the line or push to a new one.
+        Here's the same thing with a longer payload:{' '}
+        <Badge shape="square" tone="info" strokeWidth={args.strokeWidth}>
+          this badge has even more text inside that the line can't hold
+        </Badge>{' '}
+        trailing copy.
+      </p>
+      <p style={{ margin: 0 }}>
+        Constrained-width container —{' '}
+        <Badge shape="ribbon" tone="warn" strokeWidth={args.strokeWidth}>
+          a ribbon badge that wraps because of width
+        </Badge>{' '}
+        and we keep going.
+      </p>
     </div>
   ),
 };
@@ -498,7 +521,7 @@ export const ComposeShowcase: Story = {
         tone="info"
         variant="outline"
         base="rounded-rect"
-        baseParams={{ cornerRadius: 8 }}
+        baseParams={{ erosion: 0.5 }}
         effects={[{ type: 'puffs', params: { bumpWidth: 16, puffiness: 10 } }]}
       >
         CLOUD
@@ -508,7 +531,7 @@ export const ComposeShowcase: Story = {
         tone="warn"
         variant="solid"
         base="rounded-rect"
-        baseParams={{ cornerRadius: 12 }}
+        baseParams={{ erosion: 0.75 }}
         effects={[{ type: 'puffs', params: { bumpWidth: 14, puffiness: 8, irregularity: 0.6 } }]}
       >
         BUMPY
@@ -518,7 +541,7 @@ export const ComposeShowcase: Story = {
         tone="muted"
         variant="outline"
         base="rounded-rect"
-        baseParams={{ cornerRadius: 4 }}
+        baseParams={{ erosion: 0.27 }}
         effects={[{ type: 'bites', params: { biteRadius: 3, biteSpacing: 8 } }]}
       >
         STAMP
@@ -535,6 +558,54 @@ export const ComposeShowcase: Story = {
         ]}
       >
         DUAL
+      </Badge>
+      <Badge
+        {...args}
+        tone="accent"
+        variant="outline"
+        base="rounded-rect"
+        baseParams={{ erosion: 0.4 }}
+        effects={[{ type: 'scallops', params: { scallopRadius: 5, scallopSpacing: 12 } }]}
+      >
+        SCALLOPS
+      </Badge>
+      <Badge
+        {...args}
+        tone="muted"
+        variant="solid"
+        base="rounded-rect"
+        baseParams={{ erosion: 0.67 }}
+        effects={[{ type: 'scallops', params: { scallopRadius: 3, scallopSpacing: 7, irregularity: 0.5 } }]}
+      >
+        WAVY
+      </Badge>
+      <Badge
+        {...args}
+        tone="warn"
+        variant="solid"
+        base="rounded-rect"
+        baseParams={{ erosion: 0 }}
+        effects={[
+          { type: 'bevel', params: { bevelWidth: 6, lightFrom: 'tl' } },
+          { type: 'sheen', params: { lightFrom: 'tl', intensity: 0.22 } },
+          { type: 'rivets', params: { radius: 2.4, inset: 7, lightFrom: 'tl' } },
+        ]}
+      >
+        PLAQUE
+      </Badge>
+      <Badge
+        {...args}
+        tone="info"
+        variant="solid"
+        base="rounded-rect"
+        baseParams={{ erosion: 0.4 }}
+        effects={[
+          { type: 'scallops', params: { scallopRadius: 4, scallopSpacing: 9 } },
+          { type: 'bevel', params: { bevelWidth: 4, lightFrom: 'br' } },
+          { type: 'sheen', params: { lightFrom: 'br', intensity: 0.18 } },
+        ]}
+      >
+        STACKED
       </Badge>
     </div>
   ),

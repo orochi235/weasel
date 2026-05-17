@@ -1,14 +1,16 @@
 import type { ShapeModule } from '../types';
 
 export interface SquareParams {
-  cornerRadius?: number;
+  /** 0..1 fraction of the maximum corner rounding (1 = full pill). */
+  erosion?: number;
 }
 
-const DEFAULTS: Required<SquareParams> = { cornerRadius: 8 };
+const DEFAULTS: Required<SquareParams> = { erosion: 0.16 };
 
 const Square: ShapeModule<SquareParams> = {
   Component: ({ variant, focused, params }) => {
-    const r = Math.max(0, Math.min(params?.cornerRadius ?? DEFAULTS.cornerRadius, 50));
+    const e = Math.max(0, Math.min(params?.erosion ?? DEFAULTS.erosion, 1));
+    const r = e * 50;
     return (
       <>
         {(variant === 'solid' || variant === 'subtle') && (

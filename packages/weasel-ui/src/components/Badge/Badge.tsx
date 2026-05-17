@@ -11,6 +11,13 @@ interface BadgeBaseProps {
   size?: BadgeSize;
   strokeWidth?: number;
   padding?: number | string;
+  /**
+   * For CSS-rendered shapes (pill, plain) that fragment across line wraps, controls how the
+   * background/border behaves at each break.
+   * - `'slice'` (default): decoration is severed at the break (looks like one continuous badge cut by the line).
+   * - `'clone'`: each fragment paints its own complete decoration (looks like two separate badges).
+   */
+  breakStyle?: 'slice' | 'clone';
   /** When set, perimeter-pattern shapes (beavis, cloud, postage, scalloped) continuously shift their pattern. */
   crawl?: boolean | number;
   /** Compose-mode: base shape underneath the badge content. When set, overrides the `shape` prop. */
@@ -60,6 +67,7 @@ export function Badge(props: BadgeProps) {
     shapeParams,
     strokeWidth,
     padding,
+    breakStyle,
     crawl,
     base,
     baseParams,
@@ -90,9 +98,18 @@ export function Badge(props: BadgeProps) {
   }, [crawl]);
   const cls = [s.badge, className].filter(Boolean).join(' ');
 
-  // Compose-mode build: when `base` is set, we use the new base/effects pipeline.
-  const composeBase = base ? BASES[base] : null;
-  const composeBaseParams = composeBase ? { ...(composeBase.defaults ?? {}), ...(baseParams ?? {}) } : null;
+  // Compose-mode: explicit `base` prop wins; otherwise the shape may declare its own
+  // `compose()` spec to migrate legacy shapes through the new pipeline.
+  const shapeComposeSpec = !base && shapeModule.compose ? shapeModule.compose(params) : null;
+  const resolvedBaseKey = base ?? (shapeComposeSpec?.base as BadgeBase | undefined);
+  const composeBase = resolvedBaseKey ? BASES[resolvedBaseKey] : null;
+  const resolvedBaseParams = base
+    ? baseParams
+    : (shapeComposeSpec?.baseParams as BadgeBaseParams[BadgeBase] | undefined);
+  const resolvedEffects: EffectSpec[] | undefined = base
+    ? effects
+    : (shapeComposeSpec?.effects as EffectSpec[] | undefined) ?? effects;
+  const composeBaseParams = composeBase ? { ...(composeBase.defaults ?? {}), ...(resolvedBaseParams ?? {}) } : null;
   const decoRef = useRef<SVGSVGElement>(null);
   const [box, setBox] = useState({ w: 100, h: 100 });
   useLayoutEffect(() => {
@@ -123,6 +140,10 @@ export function Badge(props: BadgeProps) {
     ['--badge-inset-left' as never]: `${insets.left}px`,
     ...(strokeWidth !== undefined && { ['--badge-stroke-width' as never]: `${strokeWidth}px` }),
     ...(padding !== undefined && { padding: typeof padding === 'number' ? `${padding}px` : padding }),
+    ...(breakStyle !== undefined && {
+      boxDecorationBreak: breakStyle,
+      WebkitBoxDecorationBreak: breakStyle,
+    }),
   };
 
   const commonProps = {
@@ -138,19 +159,38 @@ export function Badge(props: BadgeProps) {
     'aria-label': ariaLabel,
   };
 
-  const decoSvg = composeBase && sampler ? (
+  const composedSampler = (() => {
+    if (!composeBase || !sampler) return null;
+    let working = sampler;
+    for (const eff of resolvedEffects ?? []) {
+      const mod = EFFECTS[eff.type as keyof typeof EFFECTS];
+      if (!mod?.transform) continue;
+      const effParams = { ...(mod.defaults ?? {}), ...(eff.params ?? {}) };
+      working = mod.transform(working, { boxW: box.w, boxH: box.h, params: effParams, phase });
+    }
+    return working;
+  })();
+
+  const decoEffects = (resolvedEffects ?? []).filter((eff) => EFFECTS[eff.type as keyof typeof EFFECTS]?.Component);
+  const backgroundDecorations = decoEffects.filter((eff) => (EFFECTS[eff.type as keyof typeof EFFECTS].zone ?? 'foreground') === 'background');
+  const foregroundDecorations = decoEffects.filter((eff) => (EFFECTS[eff.type as keyof typeof EFFECTS].zone ?? 'foreground') === 'foreground');
+
+  const renderDecoration = (eff: EffectSpec, i: number) => {
+    const mod = EFFECTS[eff.type as keyof typeof EFFECTS];
+    const EffComponent = mod?.Component;
+    if (!EffComponent || !composedSampler) return null;
+    const effParams = { ...(mod.defaults ?? {}), ...(eff.params ?? {}) };
+    return <EffComponent key={`${eff.type as string}-${i}`} sampler={composedSampler} boxW={box.w} boxH={box.h} variant={variant} params={effParams} phase={phase} />;
+  };
+
+  const decoSvg = composeBase && composedSampler ? (
     <svg ref={decoRef} className={s.deco} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-      {(variant === 'solid' || variant === 'subtle') && <path className="badge-fill" d={sampler.bodyPath} />}
-      {(variant === 'outline' || variant === 'solid') && <path className="badge-stroke" d={sampler.bodyPath} />}
-      {effects?.map((eff, i) => {
-        const mod = EFFECTS[eff.type];
-        if (!mod) return null;
-        const effParams = { ...(mod.defaults ?? {}), ...(eff.params ?? {}) };
-        const EffComponent = mod.Component;
-        return <EffComponent key={`${eff.type}-${i}`} sampler={sampler} boxW={box.w} boxH={box.h} variant={variant} params={effParams} phase={phase} />;
-      })}
+      {backgroundDecorations.map(renderDecoration)}
+      {(variant === 'solid' || variant === 'subtle') && <path className="badge-fill" d={composedSampler.bodyPath} />}
+      {(variant === 'outline' || variant === 'solid') && <path className="badge-stroke" d={composedSampler.bodyPath} />}
+      {foregroundDecorations.map(renderDecoration)}
     </svg>
-  ) : shapeModule.renderMode !== 'css' ? (
+  ) : shapeModule.renderMode !== 'css' && ShapeBody ? (
     <svg
       className={s.deco}
       viewBox="0 0 100 100"

@@ -1,31 +1,29 @@
 import type { BaseModule, BaseSampler, PerimeterPoint } from './types';
 
 export interface RoundedRectParams {
-  /** Corner radius in CSS px. 0 = sharp rectangle. */
-  cornerRadius?: number;
+  /** 0..1 fraction of the maximum corner rounding (1 = full pill / ellipse). */
+  erosion?: number;
 }
 
-const DEFAULTS: Required<RoundedRectParams> = { cornerRadius: 8 };
+const DEFAULTS: Required<RoundedRectParams> = { erosion: 0.16 };
 
 const RoundedRect: BaseModule<RoundedRectParams> = {
   build: (params, boxW, boxH) => {
     const cfg = { ...DEFAULTS, ...params };
     const sx = 100 / boxW;
     const sy = 100 / boxH;
-    const rxC = cfg.cornerRadius * sx;
-    const ryC = cfg.cornerRadius * sy;
-    const rMax = Math.min(50, Math.min(rxC, ryC * (sx / sy)));
-    void rMax;
-    const rx = Math.max(0, Math.min(rxC, 49));
-    const ry = Math.max(0, Math.min(ryC, 49));
+    const erosion = Math.max(0, Math.min(cfg.erosion, 1));
+    // Max corner radius in CSS = half of the shorter axis (so erosion=1 gives a full pill/ellipse).
+    const cornerCss = erosion * (Math.min(boxW, boxH) / 2);
+    const rxC = cornerCss * sx;
+    const ryC = cornerCss * sy;
+    const rx = Math.max(0, Math.min(rxC, 50));
+    const ry = Math.max(0, Math.min(ryC, 50));
 
-    // Straight edge lengths in CSS.
     const topCss = (100 - 2 * rx) / sx;
     const sideCss = (100 - 2 * ry) / sy;
-    // Quarter-ellipse arc length via Ramanujan, computed in CSS px (rx/sx and ry/sy).
-    const a = cfg.cornerRadius, b = cfg.cornerRadius;
-    const denom = a + b || 1;
-    const hh = ((a - b) / denom) ** 2;
+    const denom = cornerCss + cornerCss || 1;
+    const hh = 0;
     const arcCss = (Math.PI * denom * (1 + 3 * hh / (10 + Math.sqrt(4 - 3 * hh)))) / 4;
 
     const segments = [

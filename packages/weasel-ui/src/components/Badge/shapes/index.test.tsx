@@ -13,10 +13,11 @@ describe('shape registry', () => {
     ]);
   });
 
-  it('each shape entry has Component + insets + stretches', () => {
+  it('each shape entry has Component or compose, plus insets + stretches', () => {
     for (const name of ALL_SHAPES) {
       const m = SHAPES[name];
-      expect(m.Component).toBeDefined();
+      // A shape must provide either a legacy Component or a compose() spec.
+      expect(Boolean(m.Component) || Boolean(m.compose)).toBe(true);
       const insets = typeof m.insets === 'function' ? m.insets({}) : m.insets;
       expect(insets).toMatchObject({ top: expect.any(Number), right: expect.any(Number), bottom: expect.any(Number), left: expect.any(Number) });
       expect(typeof m.stretches).toBe('boolean');
@@ -28,6 +29,8 @@ describe('every shape renders at least one geometry element', () => {
   for (const name of ALL_SHAPES) {
     const m = SHAPES[name];
     if (m.renderMode === 'css') continue;
+    // Compose-mode shapes render through the base/effects pipeline, which needs the full Badge.
+    if (!m.Component) continue;
     it(`${name} renders content for outline variant`, () => {
       const { Component, defaults } = m;
       const { container } = render(

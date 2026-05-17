@@ -5,14 +5,15 @@ export interface ShieldParams {
   pointDepth?: number;
   shoulderY?: number;
   curveTightness?: number;
-  cornerRadius?: number;
+  /** 0..1 fraction of max top-corner rounding. */
+  erosion?: number;
 }
 
 const DEFAULTS: Required<ShieldParams> = {
   pointDepth: 100,
   shoulderY: 55,
   curveTightness: 0.7,
-  cornerRadius: 4,
+  erosion: 0.33,
 };
 
 function ShieldComponent({ variant, focused, params }: {
@@ -42,8 +43,9 @@ function ShieldComponent({ variant, focused, params }: {
   const sh = Math.max(20, Math.min(cfg.shoulderY, pd - 5));
   const cpY = sh + (pd - sh) * Math.max(0.1, Math.min(cfg.curveTightness, 1));
   // Aspect-aware top corner radii (so the rounded corners stay circular in CSS).
-  const rxC = (cfg.cornerRadius / box.w) * 100;
-  const ryC = (cfg.cornerRadius / box.h) * 100;
+  const cornerCss = Math.max(0, Math.min(cfg.erosion, 1)) * 12;
+  const rxC = (cornerCss / box.w) * 100;
+  const ryC = (cornerCss / box.h) * 100;
   const d = [
     `M ${rxC.toFixed(3)} 0`,
     `L ${(100 - rxC).toFixed(3)} 0`,

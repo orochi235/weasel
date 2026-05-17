@@ -15,6 +15,11 @@ const config: StorybookConfig = {
     '../packages/weasel-ui/src/**/*.stories.@(ts|tsx)',
     '../apps/swillustrator/src/**/*.stories.@(ts|tsx)',
   ],
+  addons: [
+    '@storybook/addon-vitest',
+    '@storybook/addon-a11y',
+    '@storybook/addon-themes',
+  ],
   framework: {
     name: '@storybook/react-vite',
     options: {},

@@ -1,11 +1,13 @@
 import type { ShapeModule } from '../types';
 
 export interface NotchedParams {
-  cornerRadius?: number;
+  /** 0..1 fraction of max corner radius. */
+  erosion?: number;
+  /** rx/ry eccentricity of the corner arcs. */
   eccentricity?: number;
 }
 
-const DEFAULTS: Required<NotchedParams> = { cornerRadius: 14, eccentricity: 1 };
+const DEFAULTS: Required<NotchedParams> = { erosion: 0.28, eccentricity: 1 };
 
 function notchedPath(r: number, ecc: number) {
   const W = 100, H = 100;
@@ -28,7 +30,8 @@ function notchedPath(r: number, ecc: number) {
 const Notched: ShapeModule<NotchedParams> = {
   Component: ({ variant, focused, params }) => {
     const cfg = { ...DEFAULTS, ...params };
-    const r = Math.max(0, Math.min(cfg.cornerRadius, 49));
+    const e = Math.max(0, Math.min(cfg.erosion, 1));
+    const r = e * 49;
     const ecc = Math.max(0.2, Math.min(cfg.eccentricity, 5));
     const d = notchedPath(r, ecc);
     return (

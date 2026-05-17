@@ -26,24 +26,38 @@ export interface BaseModule<P = Record<string, never>> {
   insets?: ShapeInsets | ((params: P) => ShapeInsets);
 }
 
+export interface EffectRenderProps<P = Record<string, never>> {
+  sampler: BaseSampler;
+  boxW: number;
+  boxH: number;
+  variant: BadgeVariant;
+  params: P;
+  phase: number;
+}
+
+export interface EffectTransformCtx<P = Record<string, never>> {
+  boxW: number;
+  boxH: number;
+  params: P;
+  phase: number;
+}
+
 /**
- * An effect that layers visual treatment on top of the base shape.
+ * An effect layers visual treatment on top of the base shape. Two modes:
  *
- * Effects can express any of: border decorations (spikes, scallops, bites),
- * face/background treatments (bevel, sheen, woodgrain), inner ornament,
- * shadows, or anything else that draws into the badge's SVG canvas.
+ * - **transform**: replace the badge's silhouette. Spikes/scallops/bites/puffs use this —
+ *   they hand back a new sampler whose `bodyPath` is the warped outline. Multiple
+ *   transforms apply in array order; each receives the previous output.
+ * - **Component + zone**: draw decoration (bevel, sheen, woodgrain, rivets, shadow)
+ *   without changing the silhouette. `zone: 'background'` draws before the body,
+ *   `'foreground'` draws after. Decorations typically clip to the current sampler.
  *
- * They receive the base's perimeter sampler so border-style effects can place
- * elements around the body's actual outline regardless of the underlying base shape.
+ * An effect may provide one, the other, or both.
  */
 export interface EffectModule<P = Record<string, never>> {
-  Component: (props: {
-    sampler: BaseSampler;
-    boxW: number;
-    boxH: number;
-    variant: BadgeVariant;
-    params: P;
-    phase: number;
-  }) => ReactNode;
+  transform?: (input: BaseSampler, ctx: EffectTransformCtx<P>) => BaseSampler;
+  Component?: (props: EffectRenderProps<P>) => ReactNode;
+  /** Where decoration sits relative to the body silhouette. Default 'foreground'. */
+  zone?: 'background' | 'foreground';
   defaults?: P;
 }
