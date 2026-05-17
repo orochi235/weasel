@@ -1,12 +1,13 @@
 import type { EffectModule } from '../bases/types';
+import { rangeMask, type RangeMaskParams } from './rangeMask';
 
-export interface BitesEffectParams {
+export interface BitesEffectParams extends RangeMaskParams {
   biteRadius?: number;
   biteSpacing?: number;
   irregularity?: number;
 }
 
-const DEFAULTS: Required<BitesEffectParams> = {
+const DEFAULTS: Required<Omit<BitesEffectParams, 'range'>> = {
   biteRadius: 3,
   biteSpacing: 8,
   irregularity: 0,
@@ -15,6 +16,8 @@ const DEFAULTS: Required<BitesEffectParams> = {
 const Bites: EffectModule<BitesEffectParams> = {
   offsetAt: (s, { params, phase, totalCss, perimeterAt }) => {
     const cfg = { ...DEFAULTS, ...params };
+    const mask = rangeMask(s, totalCss, cfg.range);
+    if (mask === 0) return { dx: 0, dy: 0 };
     const br = Math.max(0.5, cfg.biteRadius);
     const bs = Math.max(2 * br + 0.5, cfg.biteSpacing);
     const N = Math.max(2, Math.floor(totalCss / bs));
@@ -33,7 +36,7 @@ const Bites: EffectModule<BitesEffectParams> = {
     const t = 1 - Math.abs(ds) / localR;
     const inward = -localR * t;
     const pt = perimeterAt(s);
-    return { dx: pt.nx * inward, dy: pt.ny * inward };
+    return { dx: pt.nx * inward * mask, dy: pt.ny * inward * mask };
   },
   defaults: DEFAULTS,
 };

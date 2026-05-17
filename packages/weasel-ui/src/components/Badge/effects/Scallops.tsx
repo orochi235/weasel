@@ -1,12 +1,13 @@
 import type { EffectModule } from '../bases/types';
+import { rangeMask, type RangeMaskParams } from './rangeMask';
 
-export interface ScallopsEffectParams {
+export interface ScallopsEffectParams extends RangeMaskParams {
   scallopRadius?: number;
   scallopSpacing?: number;
   irregularity?: number;
 }
 
-const DEFAULTS: Required<ScallopsEffectParams> = {
+const DEFAULTS: Required<Omit<ScallopsEffectParams, 'range'>> = {
   scallopRadius: 4,
   scallopSpacing: 10,
   irregularity: 0,
@@ -15,6 +16,8 @@ const DEFAULTS: Required<ScallopsEffectParams> = {
 const Scallops: EffectModule<ScallopsEffectParams> = {
   offsetAt: (s, { params, phase, totalCss, perimeterAt }) => {
     const cfg = { ...DEFAULTS, ...params };
+    const mask = rangeMask(s, totalCss, cfg.range);
+    if (mask === 0) return { dx: 0, dy: 0 };
     const sr = Math.max(0.5, cfg.scallopRadius);
     const ss = Math.max(2 * sr + 0.5, cfg.scallopSpacing);
     const N = Math.max(2, Math.floor(totalCss / ss));
@@ -31,7 +34,7 @@ const Scallops: EffectModule<ScallopsEffectParams> = {
     if (Math.abs(ds) > localR) return { dx: 0, dy: 0 };
     // Half-circle outward: peak at ds=0 = localR; zero at ±localR.
     const t = (ds + localR) / (2 * localR);
-    const disp = localR * Math.sin(Math.PI * t);
+    const disp = localR * Math.sin(Math.PI * t) * mask;
     const pt = perimeterAt(s);
     return { dx: pt.nx * disp, dy: pt.ny * disp };
   },
