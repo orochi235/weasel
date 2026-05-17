@@ -44,6 +44,22 @@ function pointerDownAt(canvas: HTMLCanvasElement, clientX: number, clientY: numb
   fireEvent(canvas, down);
 }
 
+/** Phase 14e Task 4: with `useResizeTool` deleted, resize gestures flow
+ *  through the dispatcher-side `resizeAction`, which fires `onStart` only
+ *  after the drag threshold is crossed. Helper sends down + move + up so
+ *  affordance-driven resize behaviors actually fire. */
+function gestureAt(canvas: HTMLCanvasElement, clientX: number, clientY: number) {
+  pointerDownAt(canvas, clientX, clientY);
+  const move = createEvent.pointerMove(canvas, { pointerId: 1 });
+  Object.defineProperty(move, 'clientX', { value: clientX + 20 });
+  Object.defineProperty(move, 'clientY', { value: clientY + 20 });
+  fireEvent(canvas, move);
+  const up = createEvent.pointerUp(canvas, { pointerId: 1 });
+  Object.defineProperty(up, 'clientX', { value: clientX + 20 });
+  Object.defineProperty(up, 'clientY', { value: clientY + 20 });
+  fireEvent(canvas, up);
+}
+
 describe('SceneCanvas defaultTools selector', () => {
   it('omitted defaultTools: resize is registered (corner-drag fires resize.onStart)', () => {
     const resizeStart = vi.fn();
@@ -68,6 +84,11 @@ describe('SceneCanvas defaultTools selector', () => {
             handleHitRadius: 8,
             resize: { behaviors: [{ onStart: (ctx: { draggedIds: string[] }) => resizeStart(ctx.draggedIds[0]) }] },
           }}
+          // Phase 14e Task 4: with `useResizeTool` deleted, resize flows
+          // through the dispatcher-side `resizeAction`, which gates on
+          // `SelectionRequired` by default. Override the static placeholder
+          // so the dispatcher dispatches the gesture.
+          actions={{ resize: { enabled: () => true } }}
         />
       );
     }
@@ -75,7 +96,9 @@ describe('SceneCanvas defaultTools selector', () => {
     const canvas = container.querySelector('canvas')!;
     // Drop the pointer at the top-left corner-handle (0,0) of the selected rect.
     // jsdom's getBoundingClientRect is zero, so clientX/Y maps 1:1 to world coords.
-    pointerDownAt(canvas, 0, 0);
+    // Phase 14e Task 4: resizeAction.onStart fires after the drag threshold,
+    // so send a full down→move→up sequence.
+    gestureAt(canvas, 0, 0);
     expect(resizeStart).toHaveBeenCalled();
     expect(resizeStart.mock.calls[0][0]).toBe('a');
   });
@@ -113,8 +136,8 @@ describe('SceneCanvas defaultTools selector', () => {
     const { container } = render(<Harness />);
     const canvas = container.querySelector('canvas')!;
     // Same corner-handle world point. Without resize registered, the
-    // affordance is absent — the click falls through to body-hit move.
-    pointerDownAt(canvas, 0, 0);
+    // affordance is absent — the gesture falls through to body-hit move.
+    gestureAt(canvas, 0, 0);
     expect(resizeStart).not.toHaveBeenCalled();
   });
 });

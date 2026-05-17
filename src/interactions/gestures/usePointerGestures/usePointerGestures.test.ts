@@ -4,9 +4,19 @@ import type React from 'react';
 import { useSelection } from 'core/selection/useSelection';
 import { asNodeId } from 'core/scene/types';
 import { usePointerGestures } from './usePointerGestures';
-import type { ResizeController } from '../../actions/resize/resize';
 
-interface Pose { x: number; y: number; width: number; height: number }
+
+// Phase 14e Task 4 follow-up: `ResizeController` type was deleted along with
+// the legacy `useResize` hook. The test fakes the minimal surface; the
+// `as never` cast at the construction site lets it satisfy
+// `usePointerGestures`'s local structural type without re-declaring it here.
+type FakeResize = {
+  start: ReturnType<typeof vi.fn>;
+  move: ReturnType<typeof vi.fn>;
+  end: ReturnType<typeof vi.fn>;
+  cancel: ReturnType<typeof vi.fn>;
+  overlay: null;
+};
 
 // Phase 14e Task 4: legacy `MoveController` type is gone; mirror the
 // minimal shape needed by `usePointerGestures` locally.
@@ -28,14 +38,14 @@ function makeMove(): FakeMove {
   };
 }
 
-function makeResize(): ResizeController<{ id: string }, Pose> {
+function makeResize(): FakeResize {
   return {
     start: vi.fn(),
     move: vi.fn(),
     end: vi.fn(),
     cancel: vi.fn(),
     overlay: null,
-  } as unknown as ResizeController<{ id: string }, Pose>;
+  };
 }
 
 interface FakePointerOpts {
@@ -266,7 +276,7 @@ describe('usePointerGestures — resizeTarget derivation', () => {
     const { result } = renderHook(() =>
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
-        resize,
+        resize: resize as never,
         selection: sel.current,
         boundsOf,
         handleHitRadius: 8,
@@ -289,7 +299,7 @@ describe('usePointerGestures — resizeTarget derivation', () => {
     const { result } = renderHook(() =>
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
-        resize,
+        resize: resize as never,
         selection: sel.current,
         boundsOf,
       }),
@@ -309,7 +319,7 @@ describe('usePointerGestures — resizeTarget derivation', () => {
     const { result } = renderHook(() =>
       usePointerGestures({
         clientToWorld: c2w,
-        resize,
+        resize: resize as never,
         selection: sel.current,
         boundsOf,
         handleHitRadius: 8, // 8 screen px → 4 world px at scale=2
@@ -336,7 +346,7 @@ describe('usePointerGestures — resizeTarget derivation', () => {
     const { result } = renderHook(() =>
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
-        resize,
+        resize: resize as never,
         selection: sel.current,
         boundsOf: () => null, // selection-derived would yield null
         resizeTarget: () => ({ id: 'explicit', bounds: explicitBounds }),
@@ -365,7 +375,7 @@ describe('usePointerGestures — rotated resize handle hit-test', () => {
     const { result } = renderHook(() =>
       usePointerGestures({
         clientToWorld: IDENTITY_C2W,
-        resize,
+        resize: resize as never,
         resizeTarget: () => ({ id: 'a', bounds, rotation }),
         handleHitRadius: 8,
       }),

@@ -128,13 +128,13 @@ describe('Phase 13 integration: SceneCanvas + useSelectTool drag routes', () => 
   // --------------------------------------------------------------------------
 
   it('affordanceAt returns a handle hit near a corner of the selected node', () => {
-    // Verify the affordanceAt thunk fires when the old dispatcher's drag fires.
-    // We can detect this indirectly: resizeAction fires, which calls scene.setPose.
+    // Verify the affordanceAt thunk fires and resizeAction commits.
+    // Phase 14e Task 4: with `useResizeTool` deleted, resize flows entirely
+    // through the dispatcher-side `resizeAction`, which gates on
+    // `SelectionRequired` by default — override to bypass the static
+    // placeholder gate. resizeAction commits on `onEnd` via `scene.batch`.
     const scene = makeScene();
     const id = firstId(scene);
-
-    // Spy on scene batch to detect resize/move commits.
-    const batchSpy = vi.spyOn(scene, 'batch');
 
     // Node is at {x:0, y:0, w:50, h:50}.
     // Corner handles are at the four corners. Top-left = (0, 0) in world.
@@ -147,27 +147,29 @@ describe('Phase 13 integration: SceneCanvas + useSelectTool drag routes', () => 
         width={200}
         height={200}
         selectionOptions={{ initial: [id] }}
+        actions={{ resize: FORCE_ENABLED }}
       />,
     );
 
     const canvas = container.querySelector('canvas');
     if (!canvas) throw new Error('No canvas element');
 
+    const batchSpy = vi.spyOn(scene, 'batch');
+
     act(() => {
       gesture(canvas, { downX: 0, downY: 0, moveX: 20, moveY: 0 });
     });
 
-    // resizeAction writes to the scene via setPose on every onMove.
-    // At minimum, scene.batch should NOT have been called for 'Resize' (since
-    // resizeAction commits via batch only on onEnd with 'commit').
-    // A simpler check: the scene's pose has changed (resizeAction wrote it).
-    // Actually resizeAction writes live via setPose each frame, not via batch.
-    // So we check that setPose was called.
+    // resizeAction commits via scene.batch('Resize', ...) on onEnd.
+    const resizeCalls = batchSpy.mock.calls.filter(
+      ([label]) => label === 'Resize',
+    );
+    expect(resizeCalls.length).toBeGreaterThanOrEqual(1);
+
+    // After dragging right 20px from the top-left handle, the node should
+    // have moved its left edge right (x increased).
     const finalPose = scene.get(id)?.pose as P | undefined;
-    // After dragging right 20px from the top-left handle, the node should have
-    // moved its left edge right (x increased, width decreased).
     expect(finalPose).toBeDefined();
-    // x should have changed from 0 (we dragged the top-left handle right).
     if (finalPose) {
       expect(finalPose.x).not.toBe(0);
     }

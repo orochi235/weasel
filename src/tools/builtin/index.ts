@@ -13,7 +13,10 @@ export {
   type UseNestedSelectToolOptions,
   type NestedSelectAdapter,
 } from './useNestedSelectTool';
-export { useResizeTool, type UseResizeToolOptions } from './useResizeTool';
+// Phase 14e Task 4: `useResizeTool` and the legacy `useResize` hook are
+// deleted. Resize is dispatcher-driven via `resizeAction` + the
+// `resizePolicy` dep — consumers wire options through
+// `useResizePolicy(...)` instead of constructing an ambient tool.
 export { useRotateTool, type UseRotateToolOptions } from './useRotateTool';
 export { pickTopMostHit, type PickTopMostHitAdapter } from './pickTopMostHit';
 export { applyHitExistingGate } from './hitExistingGate';

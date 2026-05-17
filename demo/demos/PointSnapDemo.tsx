@@ -6,7 +6,6 @@ import {
   useScene,
   useSelection,
   useSelectTool,
-  useResizeTool,
   useRotateTool,
   useTools,
   pointSnapToGrid,
@@ -68,19 +67,9 @@ export function PointSnapDemo() {
     boundsOf,
     getSelection: () => selection.current,
   });
-  const resizeTool = useResizeTool(adapter, {
-    resize: {
-      geometry: ROTATED_POSE_DESCRIPTOR as PoseProjection<Rect>,
-      pointSnapBehaviors: [pointSnapToGrid({ spacing: SNAP_GRID })],
-    },
-    boundsOf,
-    getSelection: () => selection.current,
-    poseBounds: (p) => p as unknown as { x: number; y: number; width: number; height: number },
-    getNode: (id) => scene.get(asNodeId(id)) ?? null,
-  });
-  // Wires the same resize options through the dep so the dispatcher-path
-  // `resizeAction` is feature-equivalent to `useResizeTool`. Mounted as a
-  // child of `<SceneCanvas>` below so `<DepRegistryProvider>` is in scope.
+  // Resize is dispatcher-driven via the `resizePolicy` dep — see
+  // `ResizePolicyBridge` below, mounted as a child of `<SceneCanvas>` so
+  // `<DepRegistryProvider>` is in scope.
   function ResizePolicyBridge() {
     useResizePolicy<Rect>({
       projection: ROTATED_POSE_DESCRIPTOR as PoseProjection<Rect>,
@@ -96,7 +85,7 @@ export function PointSnapDemo() {
   const tools = useTools({
     active: 'select',
     registry: { select },
-    ambient: [resizeTool, rotateTool],
+    ambient: [rotateTool],
   });
 
   const canvasRef = useRef<CanvasExtensionApi | null>(null);
