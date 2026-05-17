@@ -383,7 +383,13 @@ Surfaced 2026-05-16 building the force-graph demo. Bare `<Canvas>` with a custom
       - `editAnchorsAction` flipped PARTIAL → REAL. Invoker body was already correct (Phase 14b). Status comment updated. Callers that pass `getAnchorState` to `buildAffordanceAt` and register the `editAnchors` dep now get fully working drag-to-edit-anchor behavior.
       - `SceneCanvas` wiring deferred to Phase 14e (SceneCanvas was off-limits; `getAnchorState` thunk API is ready for wiring once Phase 14e opens that file).
       - Tests: 14 new anchor/control-handle tests in `affordanceAt.clientToWorld.test.ts`; 6 new happy-path tests in `editAnchors.test.ts`. All 390 test files pass; tsc clean.
-  - Phases 14e/14f: pending. (14e legacy deletion + insert dep wiring + text-edit migration + SceneCanvas getAnchorState wiring; 14f gestureBinding rename.)
+  - Phase dep-wiring (SceneCanvas StandardActionsRegistrar dep wiring): shipped 2026-05-17.
+      - `lassoSelect` dep wired: AABB `hitTestArea` reusing the areaSelect scan; `hitTestLasso` intentionally omitted so the action falls back to `hitTestArea` per its contract.
+      - `textEdit` dep wired: `isTextNode` uses `data.kind === 'text'` convention; `startEdit` is a no-op stub with a dev warning — consumers override via their own `useDepSource('textEdit', ...)` sourcing from `useTextEdit` / `useSceneTextEdit`.
+      - `editAnchors` dep wired: `editingId` heuristic is the first selected node with a polygon pose (empty string when none); `getPose` reads scene; `applyOps` delegates to adapter. Consumers driving anchor-edit via explicit tool state should override this dep.
+      - `getAnchorState` thunk wired: `GestureDispatcherMounter` now passes a `getAnchorState` thunk as the 4th arg to `buildAffordanceAt`, enabling anchor-handle affordance classification. The thunk reads the live `editAnchors` dep from the dep registry at call time.
+      - tsc clean; all 342 test files pass.
+  - Phases 14e/14f: pending. (14e legacy deletion + text-edit migration; 14f gestureBinding rename.)
 
 ## UX recordings
 
