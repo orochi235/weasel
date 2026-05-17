@@ -181,6 +181,9 @@ describe('buildAffordanceAt at scale=2 with non-zero pan (T7 audit)', () => {
     const hit = affordanceAt(wp);
     expect(hit).not.toBeNull();
     expect(hit?.kind).toBe('handle:top-left');
+    // Phase 12: anchor is populated for handle:* hits. top-left dragged →
+    // bottom-right fixed → { x:'max', y:'max' }.
+    expect(hit?.anchor).toEqual({ x: 'max', y: 'max' });
   });
 
   it('client (200, 200) at scale=2 → world (100,100) → no handle hit', () => {

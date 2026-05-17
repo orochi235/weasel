@@ -3,6 +3,15 @@ import { resizeAction } from './resize';
 import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx } from '../invoker';
 import type { NodeId } from 'core/scene/types';
+import type { ResizeAnchor } from '../../gestures/types';
+
+// Phase 12: anchor lookup mirroring `buildAffordanceAt`'s convention.
+const ANCHOR_FOR_KIND: Record<string, ResizeAnchor> = {
+  'handle:top-left':     { x: 'max', y: 'max' },
+  'handle:top-right':    { x: 'min', y: 'max' },
+  'handle:bottom-left':  { x: 'max', y: 'min' },
+  'handle:bottom-right': { x: 'min', y: 'min' },
+};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -45,7 +54,14 @@ function makeCtx(
       current: { x: 20, y: 10 },
       delta: { x: 20, y: 10 },
       ...(affordanceKind !== undefined
-        ? { affordance: { kind: affordanceKind, fixedPoint, targetIds: selectionIds } }
+        ? {
+            affordance: {
+              kind: affordanceKind,
+              fixedPoint,
+              targetIds: selectionIds,
+              anchor: ANCHOR_FOR_KIND[affordanceKind],
+            },
+          }
         : {}),
     },
   };
@@ -148,7 +164,7 @@ describe('resizeAction descriptor', () => {
         start: { x: 100, y: 100 },  // pointer started at bottom-right corner
         current: { x: 100, y: 100 },
         delta: { x: 0, y: 0 },
-        affordance: { kind: 'handle:bottom-right', fixedPoint: { x: 0, y: 0 }, targetIds: ['a'] },
+        affordance: { kind: 'handle:bottom-right', fixedPoint: { x: 0, y: 0 }, targetIds: ['a'], anchor: { x: 'min', y: 'min' } },
       },
     };
 
@@ -184,7 +200,7 @@ describe('resizeAction descriptor', () => {
         start: { x: 0, y: 0 },  // pointer started at top-left corner
         current: { x: 0, y: 0 },
         delta: { x: 0, y: 0 },
-        affordance: { kind: 'handle:top-left', fixedPoint: { x: 100, y: 100 }, targetIds: ['a'] },
+        affordance: { kind: 'handle:top-left', fixedPoint: { x: 100, y: 100 }, targetIds: ['a'], anchor: { x: 'max', y: 'max' } },
       },
     };
 
@@ -217,7 +233,7 @@ describe('resizeAction descriptor', () => {
         start: { x: 100, y: 100 },
         current: { x: 100, y: 100 },
         delta: { x: 0, y: 0 },
-        affordance: { kind: 'handle:bottom-right', fixedPoint: { x: 0, y: 0 }, targetIds: ['a'] },
+        affordance: { kind: 'handle:bottom-right', fixedPoint: { x: 0, y: 0 }, targetIds: ['a'], anchor: { x: 'min', y: 'min' } },
       },
     };
 
@@ -254,7 +270,7 @@ describe('resizeAction descriptor', () => {
         start: { x: 100, y: 100 },
         current: { x: 100, y: 100 },
         delta: { x: 0, y: 0 },
-        affordance: { kind: 'handle:bottom-right', fixedPoint: { x: 0, y: 0 }, targetIds: ['a'] },
+        affordance: { kind: 'handle:bottom-right', fixedPoint: { x: 0, y: 0 }, targetIds: ['a'], anchor: { x: 'min', y: 'min' } },
       },
     };
 
