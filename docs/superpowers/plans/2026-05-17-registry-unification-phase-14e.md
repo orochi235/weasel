@@ -42,18 +42,20 @@ Doing any one of these without the others leaves the codebase in a half-state wh
 - `src/tools/types.ts` — once no tool uses `previewIds`/`previewPose`, decide whether to keep them on `Tool` (consumers can still need them) or remove. Lean keep.
 
 **Delete:**
-- `src/interactions/useMove.ts`
-- `src/interactions/useResize.ts`
-- `src/interactions/useRotate.ts`
-- `src/interactions/useAreaSelect.ts`
-- `src/interactions/useInsert.ts`
-- `src/interactions/useClone.ts`
-- `src/interactions/useLassoSelect.ts`
-- `src/interactions/useEditAnchors.ts`
-- `src/tools/useKeybinding.ts` (singular)
+- `src/interactions/actions/move/move.ts` (legacy hook; not the descriptor)
+- `src/interactions/actions/resize/resize.ts`
+- `src/interactions/actions/rotate/rotate.ts`
+- `src/interactions/actions/area-select/area-select.ts`
+- `src/interactions/actions/insert/insert.ts`
+- `src/interactions/actions/clone/clone.ts`
+- `src/interactions/actions/lasso-select/lasso-select.ts`
+- `src/interactions/actions/edit-anchors/edit-anchors.ts`
+- `src/interactions/actions/useKeybinding.ts` (singular)
 - `src/interactions/dispatcher/dispatcherPresence.tsx`
-- `withLegacyRunBridge` (wherever it lives)
+- `withLegacyRunBridge` (in `src/interactions/actions/useStandardActions.ts` or similar — grep)
 - The `Tool.bindingsOverrideDrag` flag if nothing sets it after the migration (audit at the end)
+
+**Note on paths:** legacy hooks live colocated with their per-feature dirs (`src/interactions/actions/{move,resize,...}/<name>.ts`); dispatcher-path action invokers live at `src/interactions/actions/defaults/{move,resize,...}.ts`. Don't confuse the two — deleting the descriptor would break the dispatcher path you just migrated everything onto.
 
 **Test updates:**
 - ~40 factory-output tests that assert on `factory(deps).defaultBinding` need to either (a) move to asserting on `gestureBinding`, or (b) delete (if redundant with the descriptor's own tests).
