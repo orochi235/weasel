@@ -37,14 +37,15 @@ function makeScene(): Scene<D, L, P> {
 }
 
 describe('SceneCanvas keydown dispatch', () => {
-  it('Cmd+A reaches the registered selectAll action without throwing', () => {
+  it('Ctrl+A reaches the registered selectAll action without throwing', () => {
     const scene = makeScene();
     const customRun = vi.fn();
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
         actions={{ selectAll: { run: customRun } }} />,
     );
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', metaKey: true, bubbles: true }));
+    // jsdom is not Mac, so `mod: true` in the gestureBinding resolves to ctrlKey.
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true }));
     expect(customRun).toHaveBeenCalledOnce();
   });
 
@@ -72,7 +73,7 @@ describe('SceneCanvas keydown dispatch', () => {
     const input = document.createElement('input');
     document.body.appendChild(input);
     input.focus();
-    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', metaKey: true, bubbles: true }));
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true }));
     expect(customRun).not.toHaveBeenCalled();
     document.body.removeChild(input);
   });
@@ -85,10 +86,13 @@ describe('SceneCanvas keydown dispatch', () => {
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
         actions={{
           selectAll: { run: () => { throw new Error('boom'); } },
-          escape: { run: next },
+          // Override `enabled` so the dispatcher's gate doesn't suppress `escape`
+          // when there is no active selection (the test doesn't set one up).
+          escape: { run: next, enabled: () => true },
         }} />,
     );
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', metaKey: true, bubbles: true }));
+    // jsdom is not Mac, so `mod: true` in the gestureBinding resolves to ctrlKey.
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true }));
     expect(errSpy).toHaveBeenCalled();
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(next).toHaveBeenCalledOnce();
