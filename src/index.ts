@@ -78,7 +78,9 @@ export type {
 export * from './core/viewport/viewTransform';
 export type { View } from './core/viewport/view';
 export { viewToTransform } from './core/viewport/view';
-export * from './features/drag-events';
+export * from './interactions/gestures/handleDrag';
+export * from './interactions/gestures/pointerDrag';
+export * from './interactions/gestures/thresholdDrag';
 export * from './core/viewport/useCanvasSize';
 export * from './core/viewport/fitToBounds';
 export { fitViewToBounds } from './core/viewport/fitViewToBounds';
