@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { defineTool, begin, claim, none } from '../../routing';
+import { defineTool, claim, none } from '../../routing';
 import { useDragRadial } from 'interactions/gestures/dragRadial';
 import { createInsertOp } from 'core/ops/create';
 import { PolygonIcon } from '../../../icons';
@@ -141,27 +141,8 @@ export function usePolygonTool<TNode extends { id: string }>(
             },
           },
         ],
-        bindingsOverrideDrag: true,
         initial: {
           overlay: () => overlay,
-          drag: (ctx) => {
-            dr.start(ctx.worldX, ctx.worldY, ctx.modifiers);
-            return begin({
-              scratch: null,
-              onMove: (c) => {
-                dr.move(c.worldX, c.worldY, c.modifiers);
-                return claim();
-              },
-              onRelease: (c) => {
-                applyOpsRef.current = c.applyOps;
-                dr.end();
-                return claim();
-              },
-              onCancel: () => {
-                dr.cancel();
-              },
-            });
-          },
           keyDown: {
             ArrowUp: () => {
               sidesRef.current = Math.min(MAX_SIDES, sidesRef.current + 1);

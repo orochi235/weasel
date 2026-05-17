@@ -4,7 +4,7 @@ import {
   isEditableTarget,
   matchesKeyBinding,
   type KeyBinding,
-} from 'interactions/actions/useKeybinding';
+} from 'interactions/keyHelpers';
 import { useActionsRegistry } from 'interactions/actions/registry';
 import { makeToolHoldAction } from 'interactions/actions/defaults/toolHold';
 import type { ToolsApi } from './useTools';

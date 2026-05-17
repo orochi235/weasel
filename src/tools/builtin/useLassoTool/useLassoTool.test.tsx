@@ -47,6 +47,5 @@ describe('useLassoTool', () => {
     expect(bindings.length).toBe(1);
     expect(bindings[0].actionId).toBe('lassoSelect');
     expect(bindings[0].spec.kind).toBe('drag');
-    expect(result.current.bindingsOverrideDrag).toBe(true);
   });
 });

@@ -41,11 +41,6 @@ import {
 } from 'core/selection/useSelection';
 import { buildChromeState, type ChromeState } from 'core/selection/chromeState';
 import { useArrayAdapter, type UseArrayAdapterOptions } from 'core/adapters/useArrayAdapter';
-import { useDelete } from 'interactions/actions/delete';
-import { useNudge } from 'interactions/actions/nudge';
-import { useDuplicate } from 'interactions/actions/duplicate';
-import { useUndoRedo } from 'interactions/actions/undo-redo';
-import type { UndoRedoAdapter } from 'interactions/actions/undo-redo';
 import type {
   MoveAdapter,
   ResizeAdapter,
@@ -219,11 +214,8 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    *  selection. Each key turns the action on; values may be `true` (defaults)
    *  or a config dict. Omitting a key leaves the action unbound. */
   /** Tool primitive substrate. Pointer/keyboard/wheel events are routed
-   *  through `tools.dispatcher`. The action-gesture hooks (delete / nudge /
-   *  undoRedo / duplicate) continue to wire from `gestures` as-is; they'll
-   *  move to always-on tools in a follow-up. */
+   *  through `tools.dispatcher`. */
   tools?: import('../tools/useTools').ToolsApi;
-  gestures?: GesturesConfig<TPose>;
 
   /** Controlled viewport. When supplied, Canvas does not own the value —
    *  the consumer must supply `onViewChange` and re-render with the new
@@ -282,41 +274,6 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * `<Canvas>` consumers don't need to wire it.
    */
   previewIdsExtra?: () => Iterable<string> | null;
-}
-
-/** Per-action config for the `gestures` prop. */
-export interface DeleteGestureConfig {
-  label?: string;
-  filter?: (ids: NodeId[]) => NodeId[];
-}
-export interface NudgeGestureConfig<TPose> {
-  step?: number;
-  shiftStep?: number;
-  label?: string;
-  /** Override pose translation. Defaults to `geometry.translate` if available,
-   *  else the rect-pose translator. */
-  translatePose?: (pose: TPose, dx: number, dy: number) => TPose;
-}
-export interface DuplicateGestureConfig {
-  cloneNode: (id: NodeId, offset: { dx: number; dy: number }) => { id: NodeId };
-  offset?: { dx: number; dy: number };
-  label?: string;
-}
-export interface UndoRedoGestureConfig {
-  /** Source of the undo/redo stack — typically a `Scene` or `History`. */
-  adapter: UndoRedoAdapter;
-}
-
-export interface GesturesConfig<TPose> {
-  /** Bind Delete/Backspace to remove the current selection. */
-  delete?: boolean | DeleteGestureConfig;
-  /** Bind arrow keys to translate the current selection (shift = larger step). */
-  nudge?: boolean | NudgeGestureConfig<TPose>;
-  /** Bind Mod+D to duplicate the current selection. Requires `cloneNode` so
-   *  always an object — there's no useful default for "what is a copy of X". */
-  duplicate?: DuplicateGestureConfig;
-  /** Bind Mod+Z / Mod+Shift+Z to undo/redo against the supplied adapter. */
-  undoRedo?: UndoRedoGestureConfig;
 }
 
 /** Live overlay-aware lookups exposed to custom layers via `helpersRef`. */
@@ -555,7 +512,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     tabIndex = 0,
     autoFocusOnPointerDown = true,
     helpersRef,
-    gestures,
     tools,
     view: viewProp,
     defaultView,
@@ -809,80 +765,10 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     };
   }, [tools]);
 
-  // selRef tracks the live effective selection for the action-gesture hooks
-  // (delete / nudge / duplicate) which read it through getSelection callbacks.
-  const selRef = useRef<SelectionApi>(effectiveSelection);
-  selRef.current = effectiveSelection;
-
-  // Action gestures (Delete/Backspace, arrow nudge, Mod+D duplicate). Hooks
-  // always run; each hook's `enableKeyboard` flag gates whether the underlying
-  // useKeybinding actually attaches a listener.
-  const deleteCfg = gestures?.delete;
-  const deleteEnabled = !!deleteCfg;
-  const deleteOpts = (typeof deleteCfg === 'object' ? deleteCfg : {}) as DeleteGestureConfig;
-  const adapterWithRemove = effectiveAdapter as typeof effectiveAdapter & {
-    removeNode?: (id: string) => void;
-  };
-  useDelete(
-    {
-      getSelection: () => selRef.current.get(),
-      getNode: (id) => effectiveAdapter.getNode?.(id) ?? { id },
-      // Derive index from the adapter's node list. The Canvas-wired
-      // adapter may not expose a typed `getNodeIndex`; the linear scan
-      // matches what the rest of this file does for similar lookups.
-      getNodeIndex: (id) => {
-        const nodes = effectiveAdapter.getNodes?.() ?? [];
-        for (let i = 0; i < nodes.length; i++) {
-          if (nodes[i].id === id) return i;
-        }
-        return -1;
-      },
-      setSelection: (ids) => selRef.current.set(ids),
-      removeNode: adapterWithRemove.removeNode,
-      applyOps: effectiveAdapter.applyOps?.bind(effectiveAdapter),
-    },
-    { enableKeyboard: deleteEnabled && !tools?.has('delete'), label: deleteOpts.label, filter: deleteOpts.filter },
-  );
-
-  const nudgeCfg = gestures?.nudge;
-  const nudgeEnabled = !!nudgeCfg;
-  const nudgeOpts = (typeof nudgeCfg === 'object' ? nudgeCfg : {}) as NudgeGestureConfig<TPose>;
-  useNudge<TPose>(
-    {
-      getSelection: () => selRef.current.get(),
-      getPose: (id) => effectiveAdapter.getPose(id),
-      applyOps: effectiveAdapter.applyOps?.bind(effectiveAdapter),
-    },
-    {
-      enableKeyboard: nudgeEnabled && !tools?.has('nudge'),
-      step: nudgeOpts.step,
-      shiftStep: nudgeOpts.shiftStep,
-      label: nudgeOpts.label,
-      translatePose: nudgeOpts.translatePose ?? geometry.translate,
-    },
-  );
-
-  const undoRedoCfg = gestures?.undoRedo;
-  const undoRedoAdapter = useMemo<UndoRedoAdapter>(
-    () => undoRedoCfg?.adapter ?? { undo: () => {}, redo: () => {}, canUndo: () => false, canRedo: () => false },
-    [undoRedoCfg?.adapter],
-  );
-  useUndoRedo(undoRedoAdapter, { bindKeyboard: !!undoRedoCfg && !tools?.has('undoRedo') });
-
-  const dupeCfg = gestures?.duplicate;
-  useDuplicate<TPose>(
-    {
-      getSelection: () => selRef.current.get(),
-      getPose: (id) => effectiveAdapter.getPose(id),
-      cloneNode: dupeCfg?.cloneNode ?? ((id) => ({ id })),
-      applyOps: effectiveAdapter.applyOps?.bind(effectiveAdapter),
-    },
-    {
-      enableKeyboard: !!dupeCfg && !tools?.has('duplicate'),
-      offset: dupeCfg?.offset,
-      label: dupeCfg?.label,
-    },
-  );
+  // Selection-driven action gestures (delete/nudge/undoRedo/duplicate) used
+  // to be wired here via legacy hooks. They now go through the Actions
+  // Registry / dispatcher path; consumers register them via the kit's
+  // standard descriptors (see `useStandardActions`).
 
   // Committed pose/bounds lookups. Live overlay state during a drag now
   // arrives via the active Tool's `previewPose`/`previewBounds`; helpersForLayers

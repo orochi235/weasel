@@ -17,10 +17,10 @@
  *   - Interactions (gesture hooks): `useResize`,
  *     `useTextEdit`, plus `useDragHandle` / `useDropZone` for
  *     ad-hoc pointer drags.
- *   - Action hooks (selection-driven, optional keybindings): `useDelete`,
- *     `useEscape`, `useSelectAll`, `useDuplicate`,
- *     `useNudge`, `useReorder`, `useClipboard`,
- *     `useGroup`, `useUngroup`, `useUndoRedo`.
+ *   - Actions: the Actions Registry (`ActionsProvider`, `useStandardActions`,
+ *     and the per-action descriptors at `interactions/actions/defaults/`).
+ *     Standalone consumer hooks (`useDelete`, `useEscape`, ...) were removed
+ *     in favor of the descriptor + dispatcher path.
  *   - Op model & history: `Op`, `createInsertOp` / `createDeleteOp` /
  *     `createTransformOp` / etc., `createHistory`, `applyOps`-style entry
  *     wired by every hook.
@@ -93,8 +93,8 @@ export type { ClampBounds, CanvasSize } from './core/viewport/clampView';
 export * from './core/viewport/useZoom';
 export * from './core/viewport/useAutoCenter';
 // ─── Keybindings: low-level key → action wiring ─────────────────────────────
-export { useKeybinding, isEditableTarget, matchesKeyBinding } from './interactions/actions/useKeybinding';
-export type { KeyBinding } from './interactions/actions/useKeybinding';
+export { isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';
+export type { KeyBinding } from './interactions/keyHelpers';
 
 // --- @experimental Actions Registry (2026-05-09) ----------------------------
 export {
@@ -104,12 +104,6 @@ export {
 export type {
   Action, ActionEntry, ActionsProp, ActionsRegistry, ActionEnabledResult,
 } from './interactions/actions/registry';
-export {
-  defaultSelectAllAction, defaultEscapeAction, defaultDuplicateAction,
-  defaultNudgeActions, defaultReorderActions, defaultFlipActions,
-  defaultAlignActions, defaultDistributeActions, defaultBooleanActions,
-  defaultDeleteAction, defaultGroupAction, defaultUngroupAction,
-} from './interactions/actions/defaults';
 export { moveAction } from './interactions/actions/defaults/move';
 export { resizeAction } from './interactions/actions/defaults/resize';
 export { rotateAction } from './interactions/actions/defaults/rotate';
@@ -125,7 +119,6 @@ export { enterTextEditAction } from './interactions/actions/defaults/enterTextEd
 export type { TextEditDep } from './interactions/actions/defaults/enterTextEdit';
 export { useStandardActions } from './interactions/actions/useStandardActions';
 export type { UseStandardActionsOptions } from './interactions/actions/useStandardActions';
-export { resolveActions } from './interactions/actions/resolveActions';
 
 // ─── Invoker / GestureBinding / ActiveToolContext (Phase 1 of registry unification) ───
 export type {
@@ -593,54 +586,11 @@ export {
 // ─── Action hooks: selection-driven keyboard / button actions ───────────────
 export {
   useClipboardOps,
-  useClipboard,
 } from './interactions/actions/clipboard';
 export type {
   UseClipboardOpsOptions,
   UseClipboardOpsReturn,
-  ClipboardAdapter,
-  UseClipboardOptions,
-  UseClipboardReturn,
 } from './interactions/actions/clipboard';
-export { useDelete } from './interactions/actions/delete';
-export type {
-  DeleteAdapter,
-  UseDeleteOptions,
-  UseDeleteReturn,
-} from './interactions/actions/delete';
-export { useEscape } from './interactions/actions/escape';
-export type {
-  EscapeAdapter,
-  UseEscapeOptions,
-  UseEscapeReturn,
-} from './interactions/actions/escape';
-export { useSelectAll } from './interactions/actions/select-all';
-export type {
-  SelectAllAdapter,
-  UseSelectAllOptions,
-  UseSelectAllReturn,
-} from './interactions/actions/select-all';
-export { useDuplicate } from './interactions/actions/duplicate';
-export type {
-  DuplicateAdapter,
-  UseDuplicateOptions,
-  UseDuplicateReturn,
-} from './interactions/actions/duplicate';
-export { useNudge } from './interactions/actions/nudge';
-export type {
-  NudgeAdapter,
-  NudgeDirection,
-  UseNudgeOptions,
-  UseNudgeReturn,
-} from './interactions/actions/nudge';
-export { useFlip, flipPoseAboutBounds, flipPoseViaDescriptor } from './interactions/actions/flip';
-export type {
-  FlipAdapter,
-  FlipAxis,
-  FlipPivot,
-  UseFlipOptions,
-  UseFlipReturn,
-} from './interactions/actions/flip';
 export { useAlign, alignDeltaFor, translatePoseViaDescriptor } from './interactions/actions/align';
 export type {
   AlignAdapter,
@@ -661,7 +611,7 @@ export type { ClonePose, CloneLayer, CloneBehavior } from './interactions/gestur
 // snapToGrid / snapToContainer / snapBackOrDelete are NOT re-exported at top level —
 // import from './move' to disambiguate from resize/insert siblings.
 
-// ─── Reorder: ops + selection-driven hook ───────────────────────────────────
+// ─── Reorder: ops ───────────────────────────────────────────────────────────
 export {
   createReorderOp,
   createMoveToIndexOp,
@@ -669,38 +619,6 @@ export {
   canSendBackward,
 } from './core/ops/reorder';
 export type { ReorderDirection } from './core/ops/reorder';
-export {
-  useReorder,
-  type ReorderAdapter,
-  type UseReorderOptions,
-  type UseReorderReturn,
-} from './interactions/actions/reorder';
-// ─── Group / nest action hooks ──────────────────────────────────────────────
-export {
-  useGroup,
-  useUngroup,
-  useNest,
-  useUnnest,
-} from './interactions/actions/group';
-export type {
-  GroupActionAdapter,
-  UseGroupOptions,
-  UseGroupReturn,
-  UseUngroupOptions,
-  UseUngroupReturn,
-  NestActionAdapter,
-  UseNestOptions,
-  UseNestReturn,
-  UseUnnestOptions,
-  UseUnnestReturn,
-} from './interactions/actions/group';
-// ─── Undo / redo action hook ────────────────────────────────────────────────
-export { useUndoRedo } from './interactions/actions/undo-redo';
-export type {
-  UndoRedoAdapter,
-  UseUndoRedoOptions,
-  UseUndoRedoReturn,
-} from './interactions/actions/undo-redo';
 
 // ─── Path boolean ops (Pathfinder) ──────────────────────────────────────────
 export { useBooleans, applyBooleanOp } from './interactions/actions/booleans';
@@ -781,11 +699,6 @@ export type {
 } from './renderer';
 export type { TextureHandle } from './renderer/textures/registerTexture';
 export type {
-  GesturesConfig,
-  DeleteGestureConfig,
-  DuplicateGestureConfig,
-  NudgeGestureConfig,
-  UndoRedoGestureConfig,
   LayersMap,
   SceneSlotConfig,
   SelectionOverlaySlotConfig,

@@ -5,7 +5,7 @@ import type { Tool } from '../../types';
 import type { UseLassoSelectOptions } from 'interactions/actions/lasso-select/options';
 import { selectFromLasso } from 'interactions/actions/lasso-select/behaviors/selectFromLasso';
 import type { LassoHitMode, LassoSelectAdapter } from 'core/adapters/types';
-import type { KeyBinding } from 'interactions/actions/useKeybinding';
+import type { KeyBinding } from 'interactions/keyHelpers';
 
 export interface UseLassoToolOptions extends Pick<UseLassoSelectOptions,
   'behaviors' | 'transient' | 'label' | 'onGestureStart' | 'onGestureEnd' |
@@ -54,7 +54,6 @@ export function useLassoTool(
       bindings: [
         { spec: { kind: 'drag', mods: { shift: 'optional' } }, actionId: 'lassoSelect' },
       ],
-      bindingsOverrideDrag: true,
       initial: {},
     });
   }, [options.keybinding]);

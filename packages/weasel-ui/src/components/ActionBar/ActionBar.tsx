@@ -88,13 +88,10 @@ export function ActionBar(props: ActionBarProps) {
             className={s.button}
             onClick={() => {
               if (disabled) return;
-              // Phase 12: prefer registry.trigger over direct action.run so
-              // dispatch goes through the registry's enabled() guard and any
-              // wrapping (e.g. error catch). Falls back to action.run when no
-              // registry is in scope (defensive — ActionBar normally renders
-              // under an ActionsProvider).
-              if (registry) registry.trigger(action.id);
-              else action.run?.();
+              // Dispatch through the registry so the enabled() guard runs.
+              // If no registry is in scope the click is a no-op — ActionBar
+              // is expected to render under an `ActionsProvider`.
+              registry?.trigger(action.id);
             }}
           >
             {icon}

@@ -66,6 +66,5 @@ describe('useCloneTool', () => {
     expect(bindings.length).toBe(1);
     expect(bindings[0].actionId).toBe('clone');
     expect(bindings[0].spec.kind).toBe('drag');
-    expect(tool.bindingsOverrideDrag).toBe(true);
   });
 });

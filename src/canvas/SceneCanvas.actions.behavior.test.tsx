@@ -42,7 +42,7 @@ describe('SceneCanvas keydown dispatch', () => {
     const customRun = vi.fn();
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
-        actions={{ selectAll: { run: customRun } }} />,
+        actions={{ selectAll: { invoker: { timing: 'immediate' as const, run: () => { customRun(); } } } }} />,
     );
     // jsdom is not Mac, so `mod: true` in the gestureBinding resolves to ctrlKey.
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true }));
@@ -68,7 +68,7 @@ describe('SceneCanvas keydown dispatch', () => {
     const customRun = vi.fn();
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
-        actions={{ selectAll: { run: customRun } }} />,
+        actions={{ selectAll: { invoker: { timing: 'immediate' as const, run: () => { customRun(); } } } }} />,
     );
     const input = document.createElement('input');
     document.body.appendChild(input);
@@ -85,10 +85,10 @@ describe('SceneCanvas keydown dispatch', () => {
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
         actions={{
-          selectAll: { run: () => { throw new Error('boom'); } },
+          selectAll: { invoker: { timing: 'immediate', run: () => { throw new Error('boom'); } } },
           // Override `enabled` so the dispatcher's gate doesn't suppress `escape`
           // when there is no active selection (the test doesn't set one up).
-          escape: { run: next, enabled: () => true },
+          escape: { invoker: { timing: 'immediate' as const, run: () => { next(); } }, enabled: () => true },
         }} />,
     );
     // jsdom is not Mac, so `mod: true` in the gestureBinding resolves to ctrlKey.

@@ -48,7 +48,6 @@ export function useInsertTool<TNode extends { id: string }, TPose>(
         bindings: [
           { spec: { kind: 'drag' }, actionId: 'insert', opts: { params: { kind: 'rect' } } },
         ],
-        bindingsOverrideDrag: true,
         initial: {},
       }),
     [],

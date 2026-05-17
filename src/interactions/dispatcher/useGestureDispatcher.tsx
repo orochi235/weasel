@@ -12,7 +12,7 @@
  */
 import { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
-import { isEditableTarget } from '../actions/useKeybinding';
+import { isEditableTarget } from '../keyHelpers';
 import { useActiveToolContext } from '../actions/activeToolContext';
 import { useDepRegistry } from '../actions/depRegistry';
 import type { ActionsRegistry } from '../actions/registry';

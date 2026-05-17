@@ -56,16 +56,10 @@ export interface Action {
    *  surfaces derive a label from `defaultBinding` via their own
    *  formatter. */
   shortcut?: string;
-  /** Legacy run thunk. Required during Phases 1-3; optional Phases 4-7
-   *  (factories construct it from `invoker` via `useStandardActions`'s
-   *  legacy bridge); removed Phase 10. */
-  run?: () => void;
-  /** Phase 1+: pluggable invocation strategy. When present, the gesture
-   *  dispatcher routes matched bindings through `invoker` rather than
-   *  calling `run`. When absent, only the legacy `run` path applies.
-   *
-   *  `run` stays required during the transition (Phases 1–8); Phase 9
-   *  deletes it once all actions have migrated to `invoker`. */
+  /** Pluggable invocation strategy. The gesture dispatcher routes matched
+   *  bindings through `invoker.start` / `invoker.run` depending on timing.
+   *  All kit-standard descriptors ship one; consumer-supplied actions
+   *  without an invoker can still register but won't be triggered. */
   invoker?: Invoker;
   /**
    * @experimental
@@ -214,10 +208,9 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   const cachedVerRef = useRef(-1);
   const listenersRef = useRef<Set<() => void>>(new Set());
 
-  // Trigger() consults the optional dep registry so kit-standard actions
-  // (which expose `invoker` but no `run`) can be fired imperatively from
-  // ActionBar / palette callers. Bare actions with only `run` keep working
-  // without a dep registry in scope.
+  // Trigger() consults the optional dep registry so actions can be fired
+  // imperatively from ActionBar / palette callers — the registered
+  // `invoker.run` receives a deps bag built fresh from the registry.
   const depReg = useOptionalDepRegistry();
   const depRegRef = useRef<DepRegistry | null>(depReg);
   depRegRef.current = depReg;
@@ -275,13 +268,10 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
         const a = actionsRef.current.get(id);
         if (!a) return false;
         try {
-          if (a.run) {
-            a.run();
-          } else if (a.invoker && a.invoker.timing === 'immediate') {
-            // Kit-standard descriptors expose `invoker` instead of `run`.
+          if (a.invoker && a.invoker.timing === 'immediate') {
             // Build a live deps bag from the dep registry (when present);
             // invokers tolerate undefined deps and default to a sensible
-            // variant when `params` is undefined (legacy/imperative path).
+            // variant when `params` is undefined (imperative path).
             const r = depRegRef.current;
             const deps = r
               ? {

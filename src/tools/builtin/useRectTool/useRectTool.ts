@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react';
 import { createElement } from 'react';
-import { defineTool, begin, claim } from '../../routing';
+import { defineTool } from '../../routing';
 import { RectIcon } from '../../../icons';
 import { useDragRect } from 'interactions/gestures/dragRect';
 import { createInsertOp } from 'core/ops/create';
@@ -95,10 +95,9 @@ export function useRectTool<TNode extends { id: string }>(
           icon: createElement(RectIcon),
           group: 'shape',
         },
-        // Phase 14c.1: declarative binding routes empty-space drags through the
-        // new dispatcher + insertAction. bindingsOverrideDrag suppresses the
-        // legacy drag channel in the dispatcher; the route-table entry below
-        // is retained as dead code until Phase 14e removes it.
+        // Declarative binding routes empty-space drags through the new
+        // dispatcher + insertAction. The legacy route-table drag channel
+        // has been removed alongside `Tool.bindingsOverrideDrag`.
         bindings: [
           {
             spec: { kind: 'drag', target: 'empty' },
@@ -106,27 +105,8 @@ export function useRectTool<TNode extends { id: string }>(
             opts: { params: { kind: 'rect' } },
           },
         ],
-        bindingsOverrideDrag: true,
         initial: {
           overlay: () => overlay,
-          drag: (ctx) => {
-            dr.start(ctx.worldX, ctx.worldY, ctx.modifiers);
-            return begin({
-              scratch: null,
-              onMove: (c) => {
-                dr.move(c.worldX, c.worldY, c.modifiers);
-                return claim();
-              },
-              onRelease: (c) => {
-                applyOpsRef.current = c.applyOps;
-                dr.end();
-                return claim();
-              },
-              onCancel: () => {
-                dr.cancel();
-              },
-            });
-          },
         },
       }),
     [dr.start, dr.move, dr.end, dr.cancel, overlay],

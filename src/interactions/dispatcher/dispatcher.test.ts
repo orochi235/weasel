@@ -54,7 +54,6 @@ function immediateAction(id: string, gestureKey: string, run = vi.fn()): Action 
     label: id,
     gestureBinding: { kind: 'key', key: gestureKey },
     invoker: { timing: 'immediate', run },
-    run,
   };
 }
 
@@ -69,7 +68,6 @@ function ongoingAction(
     label: id,
     gestureBinding: spec,
     invoker: { timing: 'ongoing', start: startFn },
-    run: vi.fn(),
   };
 }
 
@@ -386,7 +384,6 @@ describe('createDispatcher', () => {
           { spec: { kind: 'key', key: 'b' }, opts: { params: { x: 2 } } },
         ],
         invoker: { timing: 'immediate', run },
-        run,
       };
     }
 
@@ -424,7 +421,6 @@ describe('createDispatcher', () => {
           { spec: { kind: 'key', key: 'b' }, opts: { params: { x: 99 } } },
         ],
         invoker: { timing: 'immediate', run },
-        run,
       };
       const registry = makeRegistry([action]);
       const dispatcher = createDispatcher();

@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { defineTool, begin, claim } from '../../routing';
-import { createInsertOp } from 'core/ops/create';
+import { defineTool } from '../../routing';
 import { LineIcon } from '../../../icons';
 import { PathBuilder } from 'features/paths/builder';
 import { viewToTransform, type View } from 'core/viewport/view';
@@ -139,65 +138,8 @@ export function useLineTool<TNode extends { id: string }>(
             opts: { params: { kind: 'line' } },
           },
         ],
-        bindingsOverrideDrag: true,
         initial: {
           overlay: () => overlay,
-          drag: (ctx) => {
-            // `scratch` is captured by reference and mutated in place across
-            // onMove/onRelease. Each mutation is followed by writeState so
-            // the overlay redraws — same trick the imperative tool used.
-            // The start point is snapped immediately (no modifiers affect
-            // it); `current` is stored raw so the Shift-constrain branch
-            // can operate on raw coords before snap is applied at draw /
-            // commit time.
-            const sp0 = snapPointRef.current;
-            const startRaw = { x: ctx.worldX, y: ctx.worldY };
-            const startSnapped = sp0 ? sp0(startRaw) : startRaw;
-            const scratch: LineScratch = {
-              start: startSnapped,
-              current: startSnapped,
-              shift: ctx.modifiers.shift,
-              alt: ctx.modifiers.alt,
-            };
-            writeState(scratch);
-            return begin({
-              scratch,
-              onMove: (c) => {
-                scratch.current = { x: c.worldX, y: c.worldY };
-                scratch.shift = c.modifiers.shift;
-                scratch.alt = c.modifiers.alt;
-                writeState({ ...scratch });
-                return claim();
-              },
-              onRelease: (c) => {
-                let a = scratch.start;
-                let b = scratch.current;
-                // Shift constraint runs on raw coords first, then snap
-                // rounds the endpoint to the grid — keeps angle intent
-                // intact while still aligning the endpoint.
-                if (c.modifiers.shift) b = snapTo15Degrees(a, b);
-                const sp = snapPointRef.current;
-                if (sp) b = sp(b);
-                if (c.modifiers.alt) {
-                  a = { x: a.x - (b.x - a.x), y: a.y - (b.y - a.y) };
-                }
-                const len = Math.hypot(b.x - a.x, b.y - a.y);
-                if (len < minLength) {
-                  writeState(null);
-                  return claim();
-                }
-                const node = createRef.current(a, b);
-                if (node) {
-                  c.applyOps([createInsertOp({ node, label })], label);
-                }
-                writeState(null);
-                return claim();
-              },
-              onCancel: () => {
-                writeState(null);
-              },
-            });
-          },
         },
       }) as Tool<LineScratch | null>,
     [label, minLength, overlay, writeState],

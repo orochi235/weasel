@@ -43,7 +43,7 @@ export function useActionsPropResolver(actions: ActionsProp | undefined): void {
       }
 
       const isFull = (e: Partial<Action>): e is Action =>
-        typeof e.id === 'string' && typeof e.label === 'string' && typeof e.run === 'function';
+        typeof e.id === 'string' && typeof e.label === 'string' && !!e.invoker;
       const existing = reg.list().find((a) => a.id === slotId);
 
       if (!existing) {
@@ -53,7 +53,7 @@ export function useActionsPropResolver(actions: ActionsProp | undefined): void {
           warnedIds.add(slotId);
           console.warn(
             `weasel actions resolver: actions["${slotId}"] is a partial Action but no default ` +
-            `with this id exists. Pass a complete {id, label, defaultBinding, run} descriptor.`,
+            `with this id exists. Pass a complete {id, label, invoker} descriptor.`,
           );
         }
         continue;
@@ -68,17 +68,7 @@ export function useActionsPropResolver(actions: ActionsProp | undefined): void {
       }
       const { id: _drop, ...rest } = entry;
       void _drop;
-      let merged: Action = { ...existing, ...rest };
-      if (rest.run && existing.invoker?.timing === 'immediate') {
-        const customRun = rest.run;
-        merged = {
-          ...merged,
-          invoker: {
-            timing: 'immediate',
-            run: () => { customRun(); },
-          },
-        };
-      }
+      const merged: Action = { ...existing, ...rest };
       unregisters.push(reg.register(merged));
     }
 

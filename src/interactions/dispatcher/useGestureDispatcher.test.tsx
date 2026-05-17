@@ -44,7 +44,6 @@ describe('useGestureDispatcher', () => {
       id: 'demo.a',
       label: 'Demo A',
       gestureBinding: { kind: 'key', key: 'a' },
-      run: () => {},
       invoker: { timing: 'immediate', run: () => spy() },
     };
     render(<Harness><Probe actionDef={action} /></Harness>);
@@ -58,7 +57,6 @@ describe('useGestureDispatcher', () => {
       id: 'demo.a',
       label: 'Demo A',
       gestureBinding: { kind: 'key', key: 'a' },
-      run: () => {},
       invoker: { timing: 'immediate', run: () => spy() },
     };
     render(<Harness><Probe actionDef={action} /></Harness>);
@@ -72,7 +70,6 @@ describe('useGestureDispatcher', () => {
       id: 'demo.a',
       label: 'Demo A',
       gestureBinding: { kind: 'key', key: 'a' },
-      run: () => {},
       invoker: { timing: 'immediate', run: () => spy() },
     };
     render(<Harness><Probe actionDef={action} /></Harness>);
@@ -90,7 +87,6 @@ describe('useGestureDispatcher', () => {
       id: 'demo.a',
       label: 'Demo A',
       gestureBinding: { kind: 'key', key: 'a' },
-      run: () => {},
       invoker: { timing: 'immediate', run: () => spy() },
     };
     render(<Harness><Probe actionDef={action} enabled={false} /></Harness>);
@@ -104,7 +100,6 @@ describe('useGestureDispatcher', () => {
       id: 'demo.held',
       label: 'Demo held',
       gestureBinding: { kind: 'key-held', key: ' ' },
-      run: () => {},
       invoker: { timing: 'ongoing', start: () => ({ onEnd: (_c, reason) => endSpy(reason) }) },
     };
     const { unmount } = render(<Harness><Probe actionDef={action} /></Harness>);
@@ -124,7 +119,6 @@ describe('useGestureDispatcher', () => {
       id: 'demo.wheel',
       label: 'Demo wheel',
       gestureBinding: { kind: 'wheel', mods: { ctrl: true } },
-      run: () => {},
       invoker: { timing: 'immediate', run: () => spy() },
     };
     const { container } = render(<Harness><Probe actionDef={action} /></Harness>);

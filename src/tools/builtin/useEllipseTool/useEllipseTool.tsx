@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react';
-import { defineTool, begin, claim } from '../../routing';
+import { defineTool } from '../../routing';
 import { useDragRect } from 'interactions/gestures/dragRect';
 import { createInsertOp } from 'core/ops/create';
 import { type InsertOverlayStyle } from '../marquee';
@@ -145,27 +145,8 @@ export function useEllipseTool<TNode extends { id: string }>(
             opts: { params: { kind: 'ellipse' } },
           },
         ],
-        bindingsOverrideDrag: true,
         initial: {
           overlay: () => overlay,
-          drag: (ctx) => {
-            dr.start(ctx.worldX, ctx.worldY, ctx.modifiers);
-            return begin({
-              scratch: null,
-              onMove: (c) => {
-                dr.move(c.worldX, c.worldY, c.modifiers);
-                return claim();
-              },
-              onRelease: (c) => {
-                applyOpsRef.current = c.applyOps;
-                dr.end();
-                return claim();
-              },
-              onCancel: () => {
-                dr.cancel();
-              },
-            });
-          },
         },
       }),
     [dr.start, dr.move, dr.end, dr.cancel, overlay],

@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
-  defaultBooleanActions,
   pathfinderUnionAction,
   pathfinderSubtractAction,
   pathfinderIntersectAction,
@@ -175,37 +174,3 @@ describe('pathfinder descriptors (all 6)', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Legacy factory tests (bridge still produces original Action shapes)
-// ---------------------------------------------------------------------------
-
-describe('defaultBooleanActions', () => {
-  it('returns 6 actions with documented ids', () => {
-    const acts = defaultBooleanActions(makeAdapter());
-    expect(acts.map((a) => a.id).sort()).toEqual([
-      'pathfinder.crop',
-      'pathfinder.divide',
-      'pathfinder.exclude',
-      'pathfinder.intersect',
-      'pathfinder.subtract',
-      'pathfinder.union',
-    ]);
-  });
-
-  it('every action ships a default icon', () => {
-    const acts = defaultBooleanActions(makeAdapter());
-    for (const a of acts) expect(a.icon).toBeDefined();
-  });
-
-  it('enabled: SelectionRequired when <2, true when ≥2', () => {
-    const one = defaultBooleanActions(makeAdapter(1));
-    expect(one[0].enabled!()).toBe('selection-required');
-    const two = defaultBooleanActions(makeAdapter(2));
-    expect(two[0].enabled!()).toBe(true);
-  });
-
-  it('no default keybindings', () => {
-    const acts = defaultBooleanActions(makeAdapter());
-    for (const a of acts) expect(a.gestureBinding).toBeUndefined();
-  });
-});

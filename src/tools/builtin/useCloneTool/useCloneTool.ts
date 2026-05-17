@@ -97,7 +97,6 @@ export function useCloneTool<T extends { id: string }, _TPose = unknown>(
           actionId: 'clone',
         },
       ],
-      bindingsOverrideDrag: true,
       initial: {},
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps

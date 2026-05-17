@@ -4,7 +4,7 @@ import type { Op } from 'core/ops/types';
 import type { View } from 'core/viewport/view';
 import type { RenderLayer } from 'core/layers/render';
 import type { DebugSink } from '../debug/types';
-import type { KeyBinding } from 'interactions/actions/useKeybinding';
+import type { KeyBinding } from 'interactions/keyHelpers';
 import type { HitResult } from './routing/hitResult';
 import type { RouteResolvedInfo } from './routing/reflection/route-resolved';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -197,18 +197,6 @@ export interface Tool<TScratch = unknown> {
    *  legacy imperative-channel behavior. See
    *  `docs/superpowers/specs/2026-05-16-registry-unification-design.md`. */
   bindings?: GestureBinding[];
-  /**
-   * Phase 13: when `true`, the legacy tool-dispatcher's drag-slot logic is
-   * suppressed for this tool. Drag gestures are handled exclusively via
-   * `Tool.bindings` + the new gesture dispatcher instead of the old route
-   * table. Click and dblTap routes continue to fire via the old dispatcher —
-   * only the drag channel is affected.
-   *
-   * Set this on any tool that has fully migrated its drag routes to
-   * `Tool.bindings`. Leave `false` / omitted while migrating — both
-   * dispatchers co-exist safely during the transition.
-   */
-  bindingsOverrideDrag?: boolean;
   /**
    * Optional. When set, the dispatcher consults this before its built-in
    * node/empty hit-test. If it returns a value, that target replaces the

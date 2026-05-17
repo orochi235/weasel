@@ -1,20 +1,14 @@
 /**
- * `useLegacyActionBridges` — registers the 4 actions whose `DepSchema` deps are
- * not yet wired (`delete`, `duplicate`, `group`, `ungroup`) via legacy
- * factory-style descriptors.
+ * `useLegacyActionBridges` — historically registered `delete` / `duplicate` /
+ * `group` / `ungroup` via factory-style descriptors that carried a typed deps
+ * bag (selection / scene / adapter). Those factories were deleted alongside
+ * the legacy consumer hooks; the kit-standard descriptors at
+ * `interactions/actions/defaults/<name>.ts` are now the only registered shape.
  *
- * These run **after** `useStandardActions` so they win on same-id (registry is
- * last-writer-wins). Each bridge uses live refs so captures always read current
- * selection/scene/adapter state.
- *
- * Phase 4 T8 will retire this hook once the 4 actions migrate to the
- * `requires + invoker` pattern with proper dep sources.
+ * The hook is kept (as a no-op) only so that `SceneCanvas.tsx` continues to
+ * compile while the parallel registry-unification work owns that file. It
+ * will be removed in a follow-up commit that touches SceneCanvas.tsx.
  */
-import { useEffect, useRef } from 'react';
-import { useActionsRegistry } from 'interactions/actions/registry';
-import { defaultDeleteAction } from 'interactions/actions/defaults/delete';
-import { defaultDuplicateAction } from 'interactions/actions/defaults/duplicate';
-import { defaultGroupAction, defaultUngroupAction } from 'interactions/actions/defaults/group';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
@@ -31,65 +25,10 @@ export interface LegacyActionDefaults {
 }
 
 export function useLegacyActionBridges(
-  selection: SelectionApi,
-  scene: Scene<unknown, string, unknown>,
-  adapter: BridgeAdapter,
-  actionDefaults: LegacyActionDefaults | undefined,
+  _selection: SelectionApi,
+  _scene: Scene<unknown, string, unknown>,
+  _adapter: BridgeAdapter,
+  _actionDefaults: LegacyActionDefaults | undefined,
 ): void {
-  const reg = useActionsRegistry();
-  const selectionRef = useRef(selection);
-  selectionRef.current = selection;
-  const sceneRef = useRef(scene);
-  sceneRef.current = scene;
-  const adapterRef = useRef(adapter);
-  adapterRef.current = adapter;
-  const actionDefaultsRef = useRef(actionDefaults);
-  actionDefaultsRef.current = actionDefaults;
-
-  useEffect(() => {
-    if (!reg) return;
-
-    const getSelection = () => selectionRef.current.current as NodeId[];
-    const applyOps = (ops: Op[], label?: string) =>
-      adapterRef.current.applyOps(ops, label);
-    const getNodeIndex = (id: NodeId) => {
-      let i = 0;
-      for (const nodeId of sceneRef.current.renderOrder()) {
-        if (nodeId === id) return i;
-        i++;
-      }
-      return -1;
-    };
-    const getNode = (id: NodeId) => sceneRef.current.get(id) ?? null;
-    const getGroup = (id: string) => adapterRef.current.getGroup?.(id) as Group | undefined;
-
-    const unregisters: Array<() => void> = [];
-
-    unregisters.push(
-      reg.register(
-        defaultDeleteAction({ getSelection, getNodeIndex, getNode, applyOps }),
-      ),
-    );
-
-    const cloneNode = actionDefaultsRef.current?.cloneNode;
-    if (cloneNode) {
-      const offset = actionDefaultsRef.current?.duplicateOffset;
-      unregisters.push(
-        reg.register(
-          defaultDuplicateAction({ getSelection, cloneNode, applyOps, ...(offset ? { offset } : {}) }),
-        ),
-      );
-    }
-
-    unregisters.push(
-      reg.register(defaultGroupAction({ getSelection, applyOps })),
-    );
-
-    unregisters.push(
-      reg.register(defaultUngroupAction({ getSelection, getGroup, applyOps })),
-    );
-
-    return () => { for (const u of unregisters) u(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reg, actionDefaults?.cloneNode, actionDefaults?.duplicateOffset]);
+  // Intentional no-op — see file header.
 }

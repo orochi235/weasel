@@ -2,7 +2,7 @@ import { useMemo, useRef, createElement } from 'react';
 import { defineTool, claim, none } from '../../routing';
 import type { ActionFn } from '../../routing';
 import type { Tool, HotkeyTrigger } from '../../types';
-import type { KeyBinding } from 'interactions/actions/useKeybinding';
+import type { KeyBinding } from 'interactions/keyHelpers';
 import { EyedropperIcon } from '../../../icons';
 
 export interface UseEyedropperToolOptions {

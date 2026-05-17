@@ -99,7 +99,7 @@ describe('SceneCanvas actions integration', () => {
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
         actionDefaults={{ cloneNode: (id) => ({ id: asNodeId(id + "'") }) }}
-        actions={{ duplicate: { run: customRun } }}>
+        actions={{ duplicate: { invoker: { timing: 'immediate' as const, run: () => { customRun(); } } } }}>
         <Capture />
       </SceneCanvas>,
     );
@@ -107,7 +107,7 @@ describe('SceneCanvas actions integration', () => {
     expect(captured!.id).toBe('duplicate');
     expect(captured!.label).toBe('Duplicate');
     expect(captured!.gestureBinding).toEqual({ kind: 'key', key: 'd', mods: { mod: true } });
-    captured!.run!();
+    captured!.invoker!.timing === 'immediate' && (captured!.invoker as { run: (d: unknown) => void }).run({});
     expect(customRun).toHaveBeenCalledOnce();
   });
 
@@ -119,7 +119,7 @@ describe('SceneCanvas actions integration', () => {
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
         actionDefaults={{ cloneNode: (id) => ({ id: asNodeId(id + "'") }) }}
         actions={{
-          copy: { id: 'copy', label: 'Copy', gestureBinding: { kind: 'key', key: 'c', mods: { mod: true } }, run: copyRun },
+          copy: { id: 'copy', label: 'Copy', gestureBinding: { kind: 'key', key: 'c', mods: { mod: true } }, invoker: { timing: 'immediate' as const, run: () => { copyRun(); } } },
         }}>
         <Probe onReg={(ids) => seen.push(ids)} />
       </SceneCanvas>,
@@ -136,8 +136,8 @@ describe('SceneCanvas actions integration', () => {
         actionDefaults={{ cloneNode: (id) => ({ id: asNodeId(id + "'") }) }}
         actions={{
           selectAll: null,
-          duplicate: { run: vi.fn() },
-          copy: { id: 'copy', label: 'Copy', gestureBinding: { kind: 'key', key: 'c', mods: { mod: true } }, run: vi.fn() },
+          duplicate: { invoker: { timing: 'immediate' as const, run: vi.fn() } },
+          copy: { id: 'copy', label: 'Copy', gestureBinding: { kind: 'key', key: 'c', mods: { mod: true } }, invoker: { timing: 'immediate' as const, run: vi.fn() } },
         }}>
         <Probe onReg={(ids) => seen.push(ids)} />
       </SceneCanvas>,
@@ -207,7 +207,7 @@ describe('SceneCanvas actions integration', () => {
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
         actionDefaults={{ cloneNode: (id) => ({ id: asNodeId(id + "'") }) }}
-        actions={{ duplicate: { id: 'wrong', run: customRun, label: 'Replicate' } }}>
+        actions={{ duplicate: { id: 'wrong', invoker: { timing: 'immediate' as const, run: () => { customRun(); } }, label: 'Replicate' } }}>
         <Capture />
       </SceneCanvas>,
     );
