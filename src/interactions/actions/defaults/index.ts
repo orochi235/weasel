@@ -28,3 +28,6 @@ export { rotateAction } from './rotate';
 export { areaSelectAction } from './areaSelect';
 export { insertAction } from './insert';
 export { cloneAction } from './clone';
+export { editAnchorsAction } from './editAnchors';
+export { lassoSelectAction } from './lassoSelect';
+export { pinchZoomAction } from './pinchZoom';
