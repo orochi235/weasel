@@ -6,15 +6,17 @@
  *
  * ## Design notes
  * The drag delta from the dispatcher is in screen space (pixels). The pan
- * formula mirrors `useHandTool`:
+ * formula converts screen pixels to world units by dividing by zoom:
  *
- *   newView.x = startView.x - screenDx
- *   newView.y = startView.y - screenDy
+ *   newView.x = startView.x - screenDx / startView.scale.x
+ *   newView.y = startView.y - screenDy / startView.scale.y
  *
  * where `screenDx` / `screenDy` are the screen-space pixel deltas from the
- * drag origin. This keeps one screen-pixel drag equal to one screen-pixel pan
- * at any zoom level (the "camera" moves opposite to the drag direction so that
- * the scene content appears to follow the pointer).
+ * drag origin. This ensures that at any zoom level, the drag behavior is
+ * consistent: 1 screen pixel always pans the same amount relative to the
+ * viewport's zoom (e.g., at 1x zoom: 100px → 100 world units; at 2x zoom:
+ * 100px → 50 world units). The camera moves opposite to the drag direction
+ * so that the scene content appears to follow the pointer.
  *
  * The descriptor captures `startView` in its own scratch at `start` time,
  * parallel to `useHandTool`'s `startView` capture in its scratch object.
@@ -75,15 +77,15 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
       return {
         onMove(moveCtx: InvocationCtx): void {
           if (!moveCtx.drag) return;
-          // drag.delta is in screen space (pixels). Subtract directly from the
-          // start view's camera position — this matches useHandTool's convention
-          // where `view.x - screenDx` shifts the scene content in the drag direction.
+          // drag.delta is in screen space (pixels). Divide by scale to convert to world space.
+          // At any zoom level, screen-space delta must be scaled down by the zoom factor
+          // so that 1 screen pixel at 2x zoom pans 0.5 world units, not 1 world unit.
           const { x: screenDx, y: screenDy } = moveCtx.drag.delta;
           const sv = scratch.startView;
           scratch.view.set({
             ...sv,
-            x: sv.x - screenDx,
-            y: sv.y - screenDy,
+            x: sv.x - screenDx / sv.scale.x,
+            y: sv.y - screenDy / sv.scale.y,
           });
         },
         onEnd(): void {
