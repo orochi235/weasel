@@ -66,6 +66,11 @@ interface CloneScratch {
   originPoses: Map<NodeId, unknown>;
   /** Running drag delta — updated each onMove, applied once at commit. */
   currentDelta: { dx: number; dy: number };
+  /** Preview poses keyed by ORIGINAL node id (the clone targets don't have
+   *  scene ids yet; the preview-ghost layer paints the originals' silhouette
+   *  at the translated pose — original stays visible at its committed home,
+   *  ghost appears at the drag target). */
+  previews: Map<NodeId, unknown>;
 }
 
 // ---------------------------------------------------------------------------
@@ -113,6 +118,7 @@ export const cloneAction: Action & { requires: string[] } = {
         scene,
         originPoses,
         currentDelta: { dx: 0, dy: 0 },
+        previews: new Map<NodeId, unknown>(),
       };
 
       return {
@@ -122,12 +128,27 @@ export const cloneAction: Action & { requires: string[] } = {
             dx: moveCtx.drag.delta.x,
             dy: moveCtx.drag.delta.y,
           };
+          // Preview: paint each original's silhouette at the translated pose.
+          // The original stays at its committed location (we don't hide it);
+          // the ghost overlay shows where the new copy will land on commit.
+          scratch.previews.clear();
+          const { dx, dy } = scratch.currentDelta;
+          if (dx === 0 && dy === 0) return;
+          for (const [id, origin] of scratch.originPoses) {
+            scratch.previews.set(id, translatePose(origin, dx, dy));
+          }
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
-          if (reason === 'cancel') return;
+          if (reason === 'cancel') {
+            scratch.previews.clear();
+            return;
+          }
           const { dx, dy } = scratch.currentDelta;
           // Zero-delta drag — no clone.
-          if (dx === 0 && dy === 0) return;
+          if (dx === 0 && dy === 0) {
+            scratch.previews.clear();
+            return;
+          }
 
           scratch.scene.batch('Clone', () => {
             for (const id of scratch.ids) {
@@ -144,7 +165,10 @@ export const cloneAction: Action & { requires: string[] } = {
               });
             }
           });
+          scratch.previews.clear();
         },
+        previewIds: () => scratch.previews.keys(),
+        previewPose: (id: string) => scratch.previews.get(id as NodeId) ?? null,
       };
     },
   },

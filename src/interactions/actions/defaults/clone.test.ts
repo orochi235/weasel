@@ -215,6 +215,49 @@ describe('cloneAction descriptor', () => {
     expect(scene.batchLog).toHaveLength(0);
   });
 
+  it('previewIds/previewPose expose translated originals during drag; cleared on commit', () => {
+    const invoker = getOngoingInvoker(cloneAction);
+    const { ...ctx } = makeCtx({
+      selectionIds: ['a'],
+      sceneNodes: { a: { pose: { x: 10, y: 20, width: 50, height: 50 } } },
+    });
+    const handle = invoker.start(ctx as InvocationCtx, undefined);
+    expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
+
+    handle.onMove!({
+      ...(ctx as InvocationCtx),
+      drag: { start: { x: 0, y: 0 }, current: { x: 5, y: 6 }, delta: { x: 5, y: 6 } },
+    });
+    expect(Array.from(handle.previewIds!() ?? [])).toEqual(['a']);
+    expect(handle.previewPose!('a')).toEqual({ x: 15, y: 26, width: 50, height: 50 });
+
+    handle.onEnd!(
+      { ...(ctx as InvocationCtx), drag: { start: { x: 0, y: 0 }, current: { x: 5, y: 6 }, delta: { x: 5, y: 6 } } },
+      'commit',
+    );
+    expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
+  });
+
+  it('cancel discards preview state; no nodes added', () => {
+    const invoker = getOngoingInvoker(cloneAction);
+    const { scene, ...ctx } = makeCtx({
+      selectionIds: ['a'],
+      sceneNodes: { a: { pose: { x: 0, y: 0, width: 10, height: 10 } } },
+    });
+    const handle = invoker.start(ctx as InvocationCtx, undefined);
+    handle.onMove!({
+      ...(ctx as InvocationCtx),
+      drag: { start: { x: 0, y: 0 }, current: { x: 5, y: 5 }, delta: { x: 5, y: 5 } },
+    });
+    expect(Array.from(handle.previewIds!() ?? []).length).toBe(1);
+    handle.onEnd!(
+      { ...(ctx as InvocationCtx), drag: { start: { x: 0, y: 0 }, current: { x: 5, y: 5 }, delta: { x: 5, y: 5 } } },
+      'cancel',
+    );
+    expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
+    expect(scene.addLog).toHaveLength(0);
+  });
+
   it('onEnd("cancel") does not add any nodes', () => {
     const invoker = getOngoingInvoker(cloneAction);
     const { scene, ...ctx } = makeCtx({
