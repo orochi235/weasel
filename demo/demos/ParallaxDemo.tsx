@@ -1,14 +1,48 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   SceneCanvas,
   useScene,
   useSelection,
   useHandTool,
+  useTools,
   createParallaxLayer,
+  ellipsePath,
+  polygonFromPoints,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
 import type { View } from '../../src/core/viewport/view';
 import type { RenderLayer } from '../../src/core/layers/render';
+import { defineViewportTool, claim, none } from '../../src/tools/routing';
+import type { Tool } from '../../src/tools/types';
+
+// Local wheel tool: maps both vertical and horizontal wheel deltas to
+// horizontal pan. Demo-specific — the kit's `useWheelPanTool` panes on
+// both axes, which doesn't suit this side-scrolling-only scene.
+function useHorizontalWheelTool(): Tool<null> {
+  return useMemo(
+    () =>
+      defineViewportTool<null>({
+        id: 'parallax-wheel',
+        presentation: { label: 'Pan x (wheel)', group: 'view' },
+        initial: {
+          wheel: (ctx, event) => {
+            const e = event as WheelEvent;
+            if (e.ctrlKey) return none();
+            e.preventDefault();
+            const delta = (e.deltaY || 0) + (e.deltaX || 0);
+            const dx = delta / ctx.view.scale.x;
+            ctx.setView({
+              x: ctx.view.x + dx,
+              y: ctx.view.y,
+              scale: ctx.view.scale,
+            });
+            return claim();
+          },
+        },
+      }),
+    [],
+  );
+}
 
 interface NodeData { color: string }
 type LayerId = 'default';
@@ -18,23 +52,118 @@ const W = 600, H = 400;
 
 interface Shape { x: number; y: number; w: number; h: number; color: string }
 
-function paintShapes(id: string, shapes: Shape[]): RenderLayer<unknown> {
+// World→screen bbox project, used by every paint helper below. Layers are
+// `space: 'world'` but their parallax wrapper emits `space: 'screen'`, so
+// we project inline rather than letting the renderer apply a view transform.
+function project(s: Shape, v: View) {
   return {
-    id,
-    label: id,
-    space: 'world',
-    draw: (_data, v): DrawCommand[] =>
-      shapes.map((s) => ({
-        kind: 'path',
-        path: {
-          kind: 'rect',
-          x: (s.x - v.x) * v.scale.x,
-          y: (s.y - v.y) * v.scale.y,
-          width: s.w * v.scale.x,
-          height: s.h * v.scale.y,
-        },
-        fill: { fill: 'solid', color: s.color },
-      })),
+    x: (s.x - v.x) * v.scale.x,
+    y: (s.y - v.y) * v.scale.y,
+    w: s.w * v.scale.x,
+    h: s.h * v.scale.y,
+  };
+}
+
+function paintRects(id: string, shapes: Shape[]): RenderLayer<unknown> {
+  return {
+    id, label: id, space: 'world',
+    draw: (_d, v): DrawCommand[] =>
+      shapes.map((s) => {
+        const p = project(s, v);
+        return {
+          kind: 'path',
+          path: { kind: 'rect', x: p.x, y: p.y, width: p.w, height: p.h },
+          fill: { fill: 'solid', color: s.color },
+        };
+      }),
+  };
+}
+
+// Clouds: four overlapping ellipses inside the bbox — three across the
+// bottom and one smaller bump up top.
+function paintClouds(id: string, shapes: Shape[]): RenderLayer<unknown> {
+  return {
+    id, label: id, space: 'world',
+    draw: (_d, v): DrawCommand[] =>
+      shapes.flatMap((s) => {
+        const p = project(s, v);
+        const puffs = [
+          { x: p.x,                y: p.y + p.h * 0.35, width: p.w * 0.45, height: p.h * 0.65 },
+          { x: p.x + p.w * 0.55,   y: p.y + p.h * 0.30, width: p.w * 0.45, height: p.h * 0.70 },
+          { x: p.x + p.w * 0.25,   y: p.y + p.h * 0.20, width: p.w * 0.50, height: p.h * 0.80 },
+          { x: p.x + p.w * 0.30,   y: p.y,              width: p.w * 0.40, height: p.h * 0.55 },
+        ];
+        return puffs.map((b) => ({
+          kind: 'path' as const,
+          path: ellipsePath(b),
+          fill: { fill: 'solid' as const, color: s.color },
+        }));
+      }),
+  };
+}
+
+// Hills: half-sine bump across the top, flat bottom.
+function paintHills(id: string, shapes: Shape[]): RenderLayer<unknown> {
+  return {
+    id, label: id, space: 'world',
+    draw: (_d, v): DrawCommand[] =>
+      shapes.map((s) => {
+        const p = project(s, v);
+        const N = 16;
+        const pts: { x: number; y: number }[] = [];
+        for (let i = 0; i <= N; i++) {
+          const t = i / N;
+          pts.push({
+            x: p.x + t * p.w,
+            y: p.y + p.h * (1 - Math.sin(Math.PI * t)),
+          });
+        }
+        pts.push({ x: p.x + p.w, y: p.y + p.h });
+        pts.push({ x: p.x,       y: p.y + p.h });
+        return {
+          kind: 'path',
+          path: polygonFromPoints(pts),
+          fill: { fill: 'solid', color: s.color },
+        };
+      }),
+  };
+}
+
+// Trees: triangle foliage on top + small brown trunk at the bottom-center.
+// Foliage takes 75% of the bbox height; trunk fills the remaining 25%.
+const TRUNK_COLOR = '#5a3a1f';
+function paintTrees(id: string, shapes: Shape[]): RenderLayer<unknown> {
+  return {
+    id, label: id, space: 'world',
+    draw: (_d, v): DrawCommand[] =>
+      shapes.flatMap((s) => {
+        const p = project(s, v);
+        const foliageH = p.h * 0.75;
+        const trunkH = p.h - foliageH;
+        const trunkW = p.w * 0.25;
+        return [
+          {
+            kind: 'path' as const,
+            path: polygonFromPoints([
+              { x: p.x + p.w / 2, y: p.y },
+              { x: p.x,           y: p.y + foliageH },
+              { x: p.x + p.w,     y: p.y + foliageH },
+            ]),
+            fill: { fill: 'solid' as const, color: s.color },
+          },
+          {
+            kind: 'path' as const,
+            path: {
+              kind: 'rect' as const,
+              x: p.x + (p.w - trunkW) / 2,
+              y: p.y + foliageH,
+              width: trunkW,
+              height: trunkH,
+            },
+            fill: { fill: 'solid' as const, color: TRUNK_COLOR },
+          },
+        ];
+      }),
   };
 }
 
@@ -74,11 +203,20 @@ export function ParallaxDemo() {
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   const [zoomParallax, setZoomParallax] = useState(false);
   const hand = useHandTool();
+  const wheel = useHorizontalWheelTool();
+  const tools = useTools({ active: 'hand', registry: { hand }, ambient: [wheel] });
+
+  // Lock y to 0 — this is a horizontal-only side-scroller. Both the hand
+  // tool and the inline wheel tool call setView via this wrapper, so neither
+  // can drift the view vertically.
+  const setViewXOnly = useCallback((next: View) => {
+    setView({ x: next.x, y: 0, scale: next.scale });
+  }, []);
 
   const sky = useMemo(
     () => createParallaxLayer<unknown>({
       id: 'parallax-sky', label: 'Sky',
-      source: [paintShapes('sky-shapes', SKY)],
+      source: [paintClouds('sky-shapes', SKY)],
       pan: 0.1,
       ...(zoomParallax ? { zoom: 0 } : {}),
     }),
@@ -87,7 +225,7 @@ export function ParallaxDemo() {
   const hills = useMemo(
     () => createParallaxLayer<unknown>({
       id: 'parallax-hills', label: 'Hills',
-      source: [paintShapes('hills-shapes', HILLS)],
+      source: [paintHills('hills-shapes', HILLS)],
       pan: 0.4,
       ...(zoomParallax ? { zoom: 0.3 } : {}),
     }),
@@ -96,7 +234,7 @@ export function ParallaxDemo() {
   const ground = useMemo(
     () => createParallaxLayer<unknown>({
       id: 'parallax-ground', label: 'Ground',
-      source: [paintShapes('ground-shapes', GROUND)],
+      source: [paintRects('ground-shapes', GROUND)],
       pan: 1.0,
       ...(zoomParallax ? { zoom: 1 } : {}),
     }),
@@ -105,7 +243,7 @@ export function ParallaxDemo() {
   const foreground = useMemo(
     () => createParallaxLayer<unknown>({
       id: 'parallax-foreground', label: 'Foreground',
-      source: [paintShapes('fg-shapes', FOREGROUND)],
+      source: [paintTrees('fg-shapes', FOREGROUND)],
       pan: 1.3,
       ...(zoomParallax ? { zoom: 1.5 } : {}),
     }),
@@ -144,7 +282,7 @@ export function ParallaxDemo() {
           per-plane zoom
         </label>
         <span style={{ color: '#888' }}>
-          Drag to pan. Sky lags · hills slow · ground 1:1 · foreground leads. Toggle per-plane zoom to see depth-aware scaling.
+          Drag or scroll-wheel to pan (x only). Sky lags · hills slow · ground 1:1 · foreground leads. Toggle per-plane zoom to see depth-aware scaling.
         </span>
       </div>
       <SceneCanvas
@@ -154,8 +292,8 @@ export function ParallaxDemo() {
         scene={scene}
         selection={selection}
         view={view}
-        onViewChange={setView}
-        ambient={[hand]}
+        onViewChange={setViewXOnly}
+        tools={tools}
         layers={{
           scene: { drawOne: () => [] },
           selectionOverlay: { handles: false },
