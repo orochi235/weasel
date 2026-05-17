@@ -10,11 +10,15 @@ export interface DebugConfig {
    *  bounds. Pulls from the same `recordBounds` stream `bounds` uses, so
    *  no extra sink calls are required to enable. */
   ids?: boolean;
+  /** Rolling FPS counter rendered in the top-left corner of the canvas.
+   *  Tracks the rate at which the debug overlay's draw callback runs;
+   *  this matches the canvas's effective repaint rate. */
+  fps?: boolean;
   /** Optional per-feature color overrides; falls back to the default theme. */
   theme?: Partial<DebugTheme>;
 }
 
-export type DebugFeature = 'hitboxes' | 'handles' | 'bounds' | 'origins' | 'snap' | 'layers' | 'ids';
+export type DebugFeature = 'hitboxes' | 'handles' | 'bounds' | 'origins' | 'snap' | 'layers' | 'ids' | 'fps';
 
 export interface DebugTheme {
   hitboxFill: string;
@@ -27,6 +31,9 @@ export interface DebugTheme {
   layerTextBg: string;
   /** Color for the per-node id label rendered when `config.ids` is on. */
   idText: string;
+  /** Foreground / background for the FPS panel. */
+  fpsText: string;
+  fpsTextBg: string;
 }
 
 export type HandleKind = 'corner' | 'rotation' | 'anchor';

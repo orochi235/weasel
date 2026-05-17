@@ -28,6 +28,7 @@ const FEATURES: { key: DebugFeature; label: string; help: string }[] = [
   { key: 'snap',     label: 'snap',     help: 'Snap candidates considered during the most recent gesture — green ring = accepted, dim ring = considered.' },
   { key: 'layers',   label: 'layers',   help: 'Layer-id + space + draw-order labels in the corner. Use to debug layer ordering.' },
   { key: 'ids',      label: 'ids',      help: 'Per-node id label rendered at the top-left of each tracked bounds — useful for tying scene ids to what you see on the canvas.' },
+  { key: 'fps',      label: 'fps',      help: 'Rolling frames-per-second counter (top-left). Tracks the rate of the debug overlay\'s own draw callback, which matches the canvas\'s effective repaint rate.' },
 ];
 
 const btn: React.CSSProperties = {
@@ -47,19 +48,19 @@ export function DebugOverlayDemo() {
 
   const [enabled, setEnabled] = useState<Record<DebugFeature, boolean>>({
     bounds: true, origins: true, hitboxes: false,
-    handles: false, snap: false, layers: false, ids: false,
+    handles: false, snap: false, layers: false, ids: false, fps: false,
   });
 
   const toggle = (k: DebugFeature) =>
     setEnabled((e) => ({ ...e, [k]: !e[k] }));
   const allOn = () =>
-    setEnabled({ bounds: true, origins: true, hitboxes: true, handles: true, snap: true, layers: true, ids: true });
+    setEnabled({ bounds: true, origins: true, hitboxes: true, handles: true, snap: true, layers: true, ids: true, fps: true });
   const allOff = () =>
-    setEnabled({ bounds: false, origins: false, hitboxes: false, handles: false, snap: false, layers: false, ids: false });
+    setEnabled({ bounds: false, origins: false, hitboxes: false, handles: false, snap: false, layers: false, ids: false, fps: false });
 
   const debug: DebugConfig | false = (
     enabled.bounds || enabled.origins || enabled.hitboxes ||
-    enabled.handles || enabled.snap || enabled.layers || enabled.ids
+    enabled.handles || enabled.snap || enabled.layers || enabled.ids || enabled.fps
   ) ? enabled : false;
 
   return (

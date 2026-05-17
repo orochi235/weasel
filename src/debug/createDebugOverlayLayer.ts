@@ -31,6 +31,10 @@ export function createDebugOverlayLayer({
   config,
 }: CreateDebugOverlayLayerOpts): RenderLayer<unknown> {
   const theme: DebugTheme = { ...DEFAULT_DEBUG_THEME, ...(config.theme ?? {}) };
+  // Rolling timestamps for FPS — ring buffer of the last N draw-callback fires.
+  // Closure-state survives across draws within one Canvas mount.
+  const fpsHistory: number[] = [];
+  const FPS_WINDOW = 60;
   return {
     id: 'debug-overlay',
     label: 'Debug overlay',
@@ -48,6 +52,15 @@ export function createDebugOverlayLayer({
       if (config.snap) emitSnap(out, s, t, theme);
       if (config.ids) emitIds(out, s, t, theme);
       if (config.layers) emitLayersPanel(out, s, dims, theme);
+      if (config.fps) {
+        const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+        fpsHistory.push(now);
+        if (fpsHistory.length > FPS_WINDOW) fpsHistory.shift();
+        emitFps(out, fpsHistory, theme);
+      } else if (fpsHistory.length > 0) {
+        // Reset history when toggled off so re-enabling starts fresh.
+        fpsHistory.length = 0;
+      }
 
       return out;
     },
@@ -235,5 +248,35 @@ function emitLayersPanel(
       },
     ));
   }
+}
+
+function emitFps(
+  out: DrawCommand[],
+  history: readonly number[],
+  theme: DebugTheme,
+): void {
+  // Need at least two timestamps to derive a rate.
+  const text =
+    history.length < 2
+      ? 'fps —'
+      : `fps ${Math.round(((history.length - 1) * 1000) / (history[history.length - 1] - history[0]))}`;
+  const padX = 6;
+  const padY = 4;
+  const lineH = 14;
+  const charW = 6.6;
+  const boxW = text.length * charW + padX * 2;
+  const boxH = lineH + padY * 2;
+  const x = 8;
+  const y = 8;
+  out.push({
+    kind: 'path',
+    path: rectPath(x, y, boxW, boxH),
+    fill: { fill: 'solid', color: theme.fpsTextBg },
+  });
+  out.push(textCommand(x + padX, y + padY, text, {
+    fill: { fill: 'solid', color: theme.fpsText },
+    fontFamily: 'ui-monospace, Menlo, monospace',
+    fontSize: 11,
+  }));
 }
 

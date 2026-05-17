@@ -15,4 +15,6 @@ export const DEFAULT_DEBUG_THEME: DebugTheme = {
   layerText: '#e0e0e0',
   layerTextBg: 'rgba(0, 0, 0, 0.6)',
   idText: '#ffeb3b',
+  fpsText: '#e0e0e0',
+  fpsTextBg: 'rgba(0, 0, 0, 0.6)',
 };
