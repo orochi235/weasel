@@ -111,3 +111,15 @@ describe('Phase 1 registry-unification exports', () => {
     expect(Barrel.useActiveToolContext).toBeDefined();
   });
 });
+
+describe('Phase 3 registry-unification exports', () => {
+  it('exposes Phase 3 value exports on the main barrel', () => {
+    expect(Barrel.DepRegistryProvider).toBeDefined();
+    expect(Barrel.useDepRegistry).toBeDefined();
+    expect(Barrel.useDepSource).toBeDefined();
+    expect(Barrel.useGestureDispatcher).toBeDefined();
+    expect(Barrel.DispatcherPresenceProvider).toBeDefined();
+    expect(Barrel.useIsDispatcherMounted).toBeDefined();
+    expect(Barrel.createDispatcher).toBeDefined();
+  });
+});

@@ -145,6 +145,35 @@ export type {
   ActiveToolContextProviderProps,
 } from './interactions/actions/activeToolContext';
 
+// ─── Dep registry (Phase 3 of registry unification) ───
+export {
+  DepRegistryProvider,
+  useDepRegistry,
+  useDepSource,
+} from './interactions/actions/depRegistry';
+export type {
+  DepSchema,
+  DepName,
+  DepRegistry,
+} from './interactions/actions/depRegistry';
+
+// ─── Gesture dispatcher (Phase 3 of registry unification) ───
+export {
+  useGestureDispatcher,
+  DispatcherPresenceProvider,
+  useIsDispatcherMounted,
+  createDispatcher,
+} from './interactions/dispatcher';
+export type {
+  Dispatcher,
+  DispatcherContext,
+  InputEvent,
+  BindingScope,
+  ScopedBinding,
+  MatchResult,
+  UseGestureDispatcherOptions,
+} from './interactions/dispatcher';
+
 // ─── Viewport: wheel / velocity / decay / tween / pinch / animation ─────────
 export * from './core/viewport/wheelHandler';
 export { clientToCanvas } from './core/viewport/clientToCanvas';
