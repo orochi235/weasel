@@ -6,6 +6,8 @@ import { useTools } from './useTools';
 import { useKeybindings } from './useKeybindings';
 import { defineTool } from './routing/defineTool';
 import { ActiveToolContextProvider } from '../interactions/actions/activeToolContext';
+import { ActionsProvider } from '../interactions/actions/registry';
+import { useActionsRegistry } from '../interactions/actions/registry';
 
 function press(key: string, type: 'keydown' | 'keyup' = 'keydown'): void {
   document.dispatchEvent(new KeyboardEvent(type, { key, bubbles: true }));
@@ -13,7 +15,11 @@ function press(key: string, type: 'keydown' | 'keyup' = 'keydown'): void {
 
 function makeWrapper(initialActive = 'select') {
   return function Wrapper({ children }: { children: ReactNode }) {
-    return createElement(ActiveToolContextProvider, { initialActive, children });
+    return createElement(
+      ActionsProvider,
+      null,
+      createElement(ActiveToolContextProvider, { initialActive, children }),
+    );
   };
 }
 
@@ -34,20 +40,58 @@ describe('useKeybindings', () => {
     expect(result.current.active).toBe('select');
   });
 
-  it('engages modifier-slot tool on modifier-key down, disengages on key-up', () => {
+  it('registers a tool.hold.<id> action in the actions registry for each tool with a hotkey', () => {
     const select = defineTool({ id: 'select', initial: {} });
     const hand   = defineTool({ id: 'hand', hotkey: 'space', initial: {} });
     const { result } = renderHook(() => {
       const tools = useTools({ active: 'select', registry: { select, hand } });
       useKeybindings(tools);
-      return tools;
+      // Return the registry ref so tests can call .list() after effects run.
+      return useActionsRegistry();
     }, { wrapper: makeWrapper('select') });
 
-    expect(result.current.hotkeyEngaged).toBe(null);
-    act(() => press(' ', 'keydown'));
-    expect(result.current.hotkeyEngaged).toBe('hand');
-    act(() => press(' ', 'keyup'));
-    expect(result.current.hotkeyEngaged).toBe(null);
+    // Effects have run at this point (renderHook flushes them).
+    const ids = result.current?.list().map((a) => a.id) ?? [];
+    expect(ids).toContain('tool.hold.hand');
+    // No hold action for select (no hotkey)
+    expect(ids).not.toContain('tool.hold.select');
+  });
+
+  it('tool.hold action has key-held gestureBinding for the correct key', () => {
+    const select = defineTool({ id: 'select', initial: {} });
+    const hand   = defineTool({ id: 'hand', hotkey: 'space', initial: {} });
+    const { result } = renderHook(() => {
+      const tools = useTools({ active: 'select', registry: { select, hand } });
+      useKeybindings(tools);
+      return useActionsRegistry();
+    }, { wrapper: makeWrapper('select') });
+
+    const holdAction = result.current?.list().find((a) => a.id === 'tool.hold.hand');
+    expect(holdAction).toBeDefined();
+    // gestureBinding should be a key-held spec for Space (' ')
+    expect(holdAction?.gestureBinding).toMatchObject({ kind: 'key-held', key: ' ' });
+  });
+
+  it('registers hold actions for alt, ctrl, meta, shift hotkeys with correct keys', () => {
+    const select    = defineTool({ id: 'select',     initial: {} });
+    const altTool   = defineTool({ id: 'altTool',    hotkey: 'alt',   initial: {} });
+    const ctrlTool  = defineTool({ id: 'ctrlTool',   hotkey: 'ctrl',  initial: {} });
+    const metaTool  = defineTool({ id: 'metaTool',   hotkey: 'meta',  initial: {} });
+    const shiftTool = defineTool({ id: 'shiftTool',  hotkey: 'shift', initial: {} });
+    const { result } = renderHook(() => {
+      const tools = useTools({
+        active: 'select',
+        registry: { select, altTool, ctrlTool, metaTool, shiftTool },
+      });
+      useKeybindings(tools);
+      return useActionsRegistry();
+    }, { wrapper: makeWrapper('select') });
+
+    const byId = Object.fromEntries((result.current?.list() ?? []).map((a) => [a.id, a]));
+    expect(byId['tool.hold.altTool']?.gestureBinding).toMatchObject({ kind: 'key-held', key: 'Alt' });
+    expect(byId['tool.hold.ctrlTool']?.gestureBinding).toMatchObject({ kind: 'key-held', key: 'Control' });
+    expect(byId['tool.hold.metaTool']?.gestureBinding).toMatchObject({ kind: 'key-held', key: 'Meta' });
+    expect(byId['tool.hold.shiftTool']?.gestureBinding).toMatchObject({ kind: 'key-held', key: 'Shift' });
   });
 
   it('lets meta/ctrl combos through (system shortcuts like Cmd-R reload)', () => {
@@ -129,6 +173,20 @@ describe('useKeybindings', () => {
 
     act(() => press('p'));
     expect(result.current.active).toBe('select');
+  });
+
+  it('disable: true also skips tool.hold registration', () => {
+    const select = defineTool({ id: 'select', initial: {} });
+    const hand   = defineTool({ id: 'hand', hotkey: 'space', initial: {} });
+    const { result } = renderHook(() => {
+      const tools = useTools({ active: 'select', registry: { select, hand } });
+      useKeybindings(tools, { disable: true });
+      const reg = useActionsRegistry();
+      return reg?.list() ?? [];
+    }, { wrapper: makeWrapper('select') });
+
+    const ids = result.current.map((a) => a.id);
+    expect(ids).not.toContain('tool.hold.hand');
   });
 
   it('skips when focus is in an editable element', () => {

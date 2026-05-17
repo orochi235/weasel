@@ -5,6 +5,8 @@ import {
   matchesKeyBinding,
   type KeyBinding,
 } from 'interactions/actions/useKeybinding';
+import { useActionsRegistry } from 'interactions/actions/registry';
+import { makeToolHoldAction } from 'interactions/actions/defaults/toolHold';
 import type { ToolsApi } from './useTools';
 import type { HotkeyTrigger } from './types';
 
@@ -21,12 +23,14 @@ export interface UseKeybindingsOptions {
   defaultTool?: string | null;
 }
 
-const HOTKEY_TRIGGER_MAP: Record<string, HotkeyTrigger> = {
-  ' ': 'space',
-  Alt: 'alt',
-  Control: 'ctrl',
-  Meta: 'meta',
-  Shift: 'shift',
+/** Maps a tool's `hotkey` declaration to the literal key string used in a
+ *  `key-held` gesture spec. Inverse of the old HOTKEY_TRIGGER_MAP. */
+const HOTKEY_KEY: Record<HotkeyTrigger, string> = {
+  space: ' ',
+  alt: 'Alt',
+  ctrl: 'Control',
+  meta: 'Meta',
+  shift: 'Shift',
 };
 
 export function useKeybindings(
@@ -42,6 +46,7 @@ export function useKeybindings(
   // (not state) so it survives re-renders without re-syncing.
   const initialActiveRef = useRef(tools.active);
 
+  // --- Tool-activation keybindings (V/R/T/P/...) ---
   useEffect(() => {
     if (optionsRef.current.disable) return;
 
@@ -74,28 +79,8 @@ export function useKeybindings(
       return null;
     }
 
-    function resolveHotkeyEngage(key: string): string | null {
-      const trigger = HOTKEY_TRIGGER_MAP[key];
-      if (!trigger) return null;
-      const reg = toolsRef.current.registry;
-      for (const id in reg) {
-        if (reg[id].hotkey === trigger) return id;
-      }
-      return null;
-    }
-
     function onKeyDown(e: KeyboardEvent) {
       if (isEditableTarget(e.target)) return;
-
-      // Modifier engagement first — modifier keys (space, alt, etc.)
-      // never double as switch keybindings. Bare modifier keys arrive
-      // without a meta/ctrl combo, so this also bypasses the system-
-      // shortcut concern below.
-      const hotkeyTool = resolveHotkeyEngage(e.key);
-      if (hotkeyTool) {
-        toolsRef.current.engageHotkey(hotkeyTool);
-        return;
-      }
 
       // Escape: return to the default tool. The opt's `defaultTool`
       // wins; when undefined, fall back to the snapshotted initial
@@ -117,18 +102,30 @@ export function useKeybindings(
       }
     }
 
-    function onKeyUp(e: KeyboardEvent) {
-      const hotkeyTool = resolveHotkeyEngage(e.key);
-      if (hotkeyTool && toolsRef.current.hotkeyEngaged === hotkeyTool) {
-        toolsRef.current.disengageHotkey();
-      }
-    }
-
     document.addEventListener('keydown', onKeyDown);
-    document.addEventListener('keyup', onKeyUp);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
-      document.removeEventListener('keyup', onKeyUp);
     };
   }, []);
+
+  // --- Tool-hold actions: register tool.hold.<id> for each tool with a hotkey ---
+  // The gesture dispatcher handles keydown/keyup via the registered key-held
+  // bindings. No manual keydown/keyup engagement logic needed here.
+  const registry = useActionsRegistry();
+  useEffect(() => {
+    if (optionsRef.current.disable) return;
+    if (!registry) return;
+
+    const allTools = toolsRef.current.registry;
+    const unregisters: Array<() => void> = [];
+    for (const toolId in allTools) {
+      const tool = allTools[toolId];
+      if (!tool.hotkey) continue;
+      const key = HOTKEY_KEY[tool.hotkey];
+      if (!key) continue;
+      const action = makeToolHoldAction(toolId, key);
+      unregisters.push(registry.register(action));
+    }
+    return () => { for (const u of unregisters) u(); };
+  }, [registry, tools]);
 }

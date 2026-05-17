@@ -15,6 +15,7 @@ import { useEffect, useRef } from 'react';
 import type { Action } from './registry';
 import { useActionsRegistry } from './registry';
 import { useOptionalDepRegistry, type DepRegistry, type DepName, type DepSchema } from './depRegistry';
+import { useOptionalActiveToolContext } from './activeToolContext';
 
 import { escapeAction } from './defaults/escape';
 import { selectAllAction } from './defaults/selectAll';
@@ -148,6 +149,13 @@ export function useStandardActions(opts: UseStandardActionsOptions): void {
   const optsRef = useRef(opts);
   optsRef.current = opts;
 
+  // --- activeTool fallback: read from context when not supplied in opts ---
+  // Falls back to null when no <ActiveToolContextProvider> is in scope
+  // (preserves silent-no-op contract for consumers that mount without SceneCanvas).
+  const activeToolCtx = useOptionalActiveToolContext();
+  const activeToolCtxRef = useRef(activeToolCtx);
+  activeToolCtxRef.current = activeToolCtx;
+
   // --- Dep source registration ---
   // Must be unconditional (rules of hooks). Each effect only registers when a
   // provider is present (depReg !== null guard is inside the effect body).
@@ -159,12 +167,19 @@ export function useStandardActions(opts: UseStandardActionsOptions): void {
     const r = depRegRef.current;
     if (!r) return;
     const unregisters: Array<() => void> = [];
-    const keys = ['selection', 'view', 'scene', 'history', 'pointer', 'activeTool'] as const;
+    const keys = ['selection', 'view', 'scene', 'history', 'pointer'] as const;
     for (const key of keys) {
       unregisters.push(
         r.register(key as DepName, () => optsRef.current[key] as DepSchema[DepName]),
       );
     }
+    // activeTool: prefer the explicit opt; fall back to the context value so
+    // SceneCanvas doesn't need to thread it through StandardActionsRegistrar.
+    unregisters.push(
+      r.register('activeTool' as DepName, () =>
+        (optsRef.current.activeTool ?? activeToolCtxRef.current) as DepSchema[DepName],
+      ),
+    );
     return () => { for (const u of unregisters) u(); };
   }, [depReg]);
 
