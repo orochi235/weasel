@@ -11,6 +11,6 @@ export { useTextEditDepSource } from './useTextEditDepSource';
 export { useEditAnchorsDepSource } from './useEditAnchorsDepSource';
 export { useInsertDepSource } from './useInsertDepSource';
 export {
-  useResizeBehaviorsDepSource,
-  type UseResizeBehaviorsDepSourceOptions,
-} from './useResizeBehaviorsDepSource';
+  useResizePolicy,
+  type UseResizePolicyOptions,
+} from './useResizePolicy';

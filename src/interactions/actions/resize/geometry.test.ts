@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RECT_POSE_DESCRIPTOR, ROTATED_POSE_DESCRIPTOR, type PoseDescriptor } from './geometry';
+import { RECT_POSE_DESCRIPTOR, ROTATED_POSE_DESCRIPTOR, type PoseProjection } from './geometry';
 import type { ResizePose, RotatedPose } from '../../gestures/types';
 
 describe('RECT_POSE_DESCRIPTOR.getBounds', () => {
@@ -117,7 +117,7 @@ describe('RECT_POSE_DESCRIPTOR type inference', () => {
       kind: 'rect';
       meta: { tag: string };
     }
-    const geom = RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<RichPose>;
+    const geom = RECT_POSE_DESCRIPTOR as unknown as PoseProjection<RichPose>;
     const pose: RichPose = {
       x: 0,
       y: 0,

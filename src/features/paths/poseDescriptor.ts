@@ -2,11 +2,11 @@ import { boundsOfPath } from './bounds';
 import { pointInPath } from './hitTest';
 import { translatePath } from './transform';
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, type Path, type PolygonPath } from './types';
-import { aabbIntersectsRect, type PoseDescriptor } from 'interactions/actions/resize/geometry';
+import { aabbIntersectsRect, type PoseProjection } from 'interactions/actions/resize/geometry';
 import type { ResizePose } from 'interactions/gestures/types';
 
 /**
- * `PoseDescriptor` for `Path` poses — wires `useResize` to operate
+ * `PoseProjection` for `Path` poses — wires `useResize` to operate
  * on `Path` directly. `getBounds` defers to the same `boundsOfPath` kernel
  * the rest of the kit uses; `remapBounds` does an affine scale of every
  * coord against `src`/`dst`. Degenerate axes (zero src extent) collapse to
@@ -16,7 +16,7 @@ import type { ResizePose } from 'interactions/gestures/types';
  * knows the group's origin AABB and uses it for every leaf, instead of
  * each leaf scaling against its own AABB (which would ignore group context).
  */
-export const pathPoseDescriptor: PoseDescriptor<Path> = {
+export const pathPoseDescriptor: PoseProjection<Path> = {
   getBounds: (path) => boundsOfPath(path),
   remapBounds: (path, src, dst) => {
     const sx = src.width === 0 ? 0 : dst.width / src.width;

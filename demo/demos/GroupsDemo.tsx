@@ -14,7 +14,7 @@ import {
   useResizeTool,
   useRotateTool,
   useTools,
-  useResizeBehaviorsDepSource,
+  useResizePolicy,
 } from '@orochi235/weasel';
 import type { Group } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
@@ -149,10 +149,10 @@ export function GroupsDemo() {
     poseBounds: (p) => p,
     getNode,
   });
-  // Mirror `expandIds` through the dispatcher-path `resizeBehaviors` dep
+  // Mirror `expandIds` through the dispatcher-path `resizePolicy` dep
   // so the dispatcher's resize action group-expands identically.
-  function ResizeBehaviorsBridge() {
-    useResizeBehaviorsDepSource<Pose>({ expandIds: expandResizeIds });
+  function ResizePolicyBridge() {
+    useResizePolicy<Pose>({ expandIds: expandResizeIds });
     return null;
   }
   const rotateTool = useRotateTool<Rect, Pose>(adapter, {
@@ -197,7 +197,7 @@ export function GroupsDemo() {
         },
       }}
     >
-      <ResizeBehaviorsBridge />
+      <ResizePolicyBridge />
     </SceneCanvas>
   );
 }

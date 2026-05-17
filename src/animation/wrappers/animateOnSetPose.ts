@@ -1,5 +1,5 @@
 import { tweenPose, springPose } from '../poseHelpers';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseProjection } from 'interactions/actions/resize/geometry';
 import type { SceneAdapter } from 'core/adapters/types';
 import type { Animator, EasingFn, SpringPresetName } from '../types';
 
@@ -14,7 +14,7 @@ export interface AnimateOnSetPoseOptions<TPose> {
     damping?: number;
     mass?: number;
   };
-  geometry?: PoseDescriptor<TPose>;
+  geometry?: PoseProjection<TPose>;
   /** Predicate: return false to skip animation and write through immediately. */
   shouldAnimate?: (id: string, from: TPose, to: TPose) => boolean;
   /** Convenience: when true, auto-skip animation if the id is currently being

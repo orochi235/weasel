@@ -8,16 +8,16 @@
  * start poses, applies per-frame bounds remapping, and commits a single
  * `scene.batch` entry on end.
  *
- * ## Behaviors / point-snap / expandIds / geometry — via `resizeBehaviors` dep
+ * ## Behaviors / point-snap / expandIds / geometry — via `resizePolicy` dep
  *
  * Phase 14e (resize-behaviors-api) wired the four behavior options the
  * legacy `useResize` hook exposes (`behaviors`, `pointSnapBehaviors`,
- * `expandIds`, `geometry`) through the `resizeBehaviors` dep entry. When
+ * `expandIds`, `geometry`) through the `resizePolicy` dep entry. When
  * the dep is registered, this invoker:
  *
  *  - Calls `expandIds([id])` at start. When the result expands beyond the
  *    starting id, takes the group path (union-AABB origin, per-leaf remap).
- *  - Projects poses through the supplied `geometry: PoseDescriptor<TPose>`
+ *  - Projects poses through the supplied `geometry: PoseProjection<TPose>`
  *    instead of the rect-shaped `RECT_POSE_DESCRIPTOR` default.
  *  - Runs `behaviors[]` after the raw anchor-math bounds are computed.
  *    Behaviors return `{ pose? }` and rewrite the proposed bounds before
@@ -32,7 +32,7 @@
  * implemented.
  *
  * @see useResize — the React hook this descriptor mirrors.
- * @see src/interactions/actions/resize/geometry.ts — `PoseDescriptor`.
+ * @see src/interactions/actions/resize/geometry.ts — `PoseProjection`.
  */
 
 import type { Action } from '../registry';
@@ -47,43 +47,43 @@ import type {
   PointSnapContext,
   PointSnapResult,
   ResizeAnchor,
-  ResizeBehavior,
+  BoundsConstraint,
   ResizePose,
 } from '../../gestures/types';
-import type { ResizeBehaviorsDep } from '../depSchema';
-import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../resize/geometry';
+import type { ResizePolicy } from '../depSchema';
+import { RECT_POSE_DESCRIPTOR, type PoseProjection } from '../resize/geometry';
 import { fixedCornerOf } from '../resize/cornerHandles';
 import { rotatePoint } from '../rotate/geometry';
 
 // ---------------------------------------------------------------------------
-// Defaults applied when `resizeBehaviors` dep is absent. Mirrors the
+// Defaults applied when `resizePolicy` dep is absent. Mirrors the
 // destructuring defaults in `useResize`.
 // ---------------------------------------------------------------------------
 
 const IDENTITY_EXPAND = (ids: string[]) => ids;
-const EMPTY_BEHAVIORS: ResizeBehavior<ResizePose>[] = [];
+const EMPTY_BEHAVIORS: BoundsConstraint<ResizePose>[] = [];
 const EMPTY_POINT_SNAP: PointSnapBehavior<ResizePose>[] = [];
 
 function resolveDeps(ctx: InvocationCtx): {
-  behaviors: ResizeBehavior<ResizePose>[];
+  behaviors: BoundsConstraint<ResizePose>[];
   pointSnap: PointSnapBehavior<ResizePose>[];
   expandIds: (ids: string[]) => string[];
-  geometry: PoseDescriptor<unknown>;
+  geometry: PoseProjection<unknown>;
 } {
-  const dep = ctx.deps.resizeBehaviors as ResizeBehaviorsDep<unknown> | undefined;
+  const dep = ctx.deps.resizePolicy as ResizePolicy<unknown> | undefined;
   if (!dep) {
     return {
       behaviors: EMPTY_BEHAVIORS,
       pointSnap: EMPTY_POINT_SNAP,
       expandIds: IDENTITY_EXPAND,
-      geometry: RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<unknown>,
+      geometry: RECT_POSE_DESCRIPTOR as unknown as PoseProjection<unknown>,
     };
   }
   return {
-    behaviors: dep.behaviors as unknown as ResizeBehavior<ResizePose>[],
+    behaviors: dep.constraints as unknown as BoundsConstraint<ResizePose>[],
     pointSnap: dep.pointSnap as unknown as PointSnapBehavior<ResizePose>[],
     expandIds: dep.expandIds,
-    geometry: dep.geometry,
+    geometry: dep.projection,
   };
 }
 
@@ -244,8 +244,8 @@ interface ResizeScratch {
   fixedWorld: { x: number; y: number };
   /** In-flight preview poses buffered during drag. */
   previews: Map<NodeId, unknown>;
-  geometry: PoseDescriptor<unknown>;
-  behaviors: ResizeBehavior<ResizePose>[];
+  geometry: PoseProjection<unknown>;
+  behaviors: BoundsConstraint<ResizePose>[];
   pointSnap: PointSnapBehavior<ResizePose>[];
   /** Gesture context handed to behaviors. Reused across move/end. */
   gestureCtx: GestureContext<unknown>;
@@ -260,7 +260,7 @@ interface ResizeScratch {
  * Static descriptor for the `resize` Action.
  *
  * Requires dep-schema entries: `selection`, `scene`.
- * Reads optional `resizeBehaviors` dep when present.
+ * Reads optional `resizePolicy` dep when present.
  * Requires `InvocationCtx.drag.affordance` with a `handle:*` kind.
  */
 export const resizeAction: Action & { requires: string[] } = {

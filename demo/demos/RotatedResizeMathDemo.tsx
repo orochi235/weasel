@@ -12,7 +12,7 @@ import {
   asNodeId,
 } from '@orochi235/weasel';
 import type {
-  PoseDescriptor,
+  PoseProjection,
   RotatedPose,
   ResizeAnchor,
   ResizeController,
@@ -75,7 +75,7 @@ function pickEveryFor(scene: RectScene) {
 const NO_PROJECTION_DESCRIPTOR = {
   ...RECT_POSE_DESCRIPTOR,
   getRotation: () => 0,
-} as unknown as PoseDescriptor<Rect>;
+} as unknown as PoseProjection<Rect>;
 
 /** Subverted descriptor: rotation is read normally (so projection runs), but
  *  `translate` refuses to apply the position correction. Visible failure:
@@ -84,7 +84,7 @@ const NO_PROJECTION_DESCRIPTOR = {
 const NO_CORRECTION_DESCRIPTOR = {
   ...ROTATED_POSE_DESCRIPTOR,
   translate: (p: RotatedPose) => p,  // no-op
-} as unknown as PoseDescriptor<Rect>;
+} as unknown as PoseProjection<Rect>;
 
 /** Subverted descriptor: full math runs (projection + correction), but
  *  `remapBounds` couples the rotation property to the AABB diagonal angle,
@@ -95,12 +95,12 @@ const NO_CORRECTION_DESCRIPTOR = {
 const COUPLED_ROTATION_DESCRIPTOR = {
   ...ROTATED_POSE_DESCRIPTOR,
   remapBounds: (origin: Rect, originBounds: { x: number; y: number; width: number; height: number }, newBounds: { x: number; y: number; width: number; height: number }): Rect => {
-    const base = (ROTATED_POSE_DESCRIPTOR as unknown as PoseDescriptor<Rect>).remapBounds(origin, originBounds, newBounds);
+    const base = (ROTATED_POSE_DESCRIPTOR as unknown as PoseProjection<Rect>).remapBounds(origin, originBounds, newBounds);
     const originDiag = Math.atan2(originBounds.height, originBounds.width);
     const newDiag = Math.atan2(newBounds.height, newBounds.width);
     return { ...base, rotation: base.rotation + (newDiag - originDiag) };
   },
-} as unknown as PoseDescriptor<Rect>;
+} as unknown as PoseProjection<Rect>;
 
 function LedgerCaption({
   scene, anchor, title,
@@ -459,7 +459,7 @@ export function RotatedResizeMathDemo() {
   // Four controllers, one per descriptor. Each runs its own resize math
   // against its own scene; the parent drives them all from a single drag.
   const greenCtl = useResize(greenAdapter, {
-    geometry: ROTATED_POSE_DESCRIPTOR as PoseDescriptor<Rect>,
+    geometry: ROTATED_POSE_DESCRIPTOR as PoseProjection<Rect>,
   });
   const orangeCtl = useResize(orangeAdapter, {
     geometry: NO_PROJECTION_DESCRIPTOR,

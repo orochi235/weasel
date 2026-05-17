@@ -3,7 +3,7 @@ import {
   ROTATED_POSE_DESCRIPTOR,
   SceneCanvas,
 } from '@orochi235/weasel';
-import type { PoseDescriptor, RotatedPose } from '@orochi235/weasel';
+import type { PoseProjection, RotatedPose } from '@orochi235/weasel';
 import sceneJson from './data/rotate.scene.json';
 
 const W = 400, H = 300;
@@ -20,7 +20,7 @@ export function RotateDemo() {
       height={H}
       className="ckd-canvas"
       scene={sceneJson}
-      selectTool={{ resize: { geometry: ROTATED_POSE_DESCRIPTOR as PoseDescriptor<RotatedPose> } }}
+      selectTool={{ resize: { geometry: ROTATED_POSE_DESCRIPTOR as PoseProjection<RotatedPose> } }}
       selectionOptions={{ initial: [asNodeId('b')] }}
       layers={{ selectionOverlay: { rotationHandle: true } }}
     />

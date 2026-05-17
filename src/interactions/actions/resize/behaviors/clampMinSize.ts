@@ -1,9 +1,9 @@
-import type { ResizeBehavior, ResizePose } from '../../../gestures/types';
+import type { BoundsConstraint, ResizePose } from '../../../gestures/types';
 
 export function clampMinSize<TPose extends ResizePose>(args: {
   minWidth: number;
   minHeight: number;
-}): ResizeBehavior<TPose> {
+}): BoundsConstraint<TPose> {
   const { minWidth, minHeight } = args;
   return {
     onMove(_ctx, { pose, anchor }) {

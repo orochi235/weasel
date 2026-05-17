@@ -23,7 +23,7 @@ function makeDeps(poses: Record<string, Pose>, mode?: 'centers' | 'gaps') {
   return {
     getSelection: () => Object.keys(poses).map((k) => asNodeId(k)),
     getPose: (id: string): Pose => poses[id],
-    geometry: RECT_POSE_DESCRIPTOR as unknown as import('../resize/geometry').PoseDescriptor<Pose>,
+    geometry: RECT_POSE_DESCRIPTOR as unknown as import('../resize/geometry').PoseProjection<Pose>,
     applyOps: vi.fn(),
     mode,
   };

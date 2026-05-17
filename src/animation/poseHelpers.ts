@@ -1,5 +1,5 @@
 import { createTransformOp } from 'core/ops/transform';
-import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from 'interactions/actions/resize/geometry';
+import { RECT_POSE_DESCRIPTOR, type PoseProjection } from 'interactions/actions/resize/geometry';
 import type { SceneAdapter } from 'core/adapters/types';
 import type { AnimationHandle, Animator, EasingFn, SpringPresetName } from './types';
 
@@ -10,7 +10,7 @@ export interface TweenPoseOptions<TPose> {
   easing?: EasingFn;
   /** Pose descriptor with a `lerp(from, to, t)` method. Defaults to
    *  `RECT_POSE_DESCRIPTOR`, which interpolates x/y/width/height linearly. */
-  geometry?: PoseDescriptor<TPose>;
+  geometry?: PoseProjection<TPose>;
   /** When true (default), emit a transform op before the tween so undo
    *  restores the pre-animation pose. */
   recordOp?: boolean;
@@ -26,7 +26,7 @@ export interface SpringPoseOptions<TPose> {
   stiffness?: number;
   damping?: number;
   mass?: number;
-  geometry?: PoseDescriptor<TPose>;
+  geometry?: PoseProjection<TPose>;
   recordOp?: boolean;
   opLabel?: string;
   onDone?: () => void;
@@ -51,7 +51,7 @@ export function tweenPose<TNode extends { id: string }, TPose>(
   adapter: SceneAdapter<TNode, TPose>,
   opts: TweenPoseOptions<TPose>,
 ): AnimationHandle {
-  const geometry = (opts.geometry ?? (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>));
+  const geometry = (opts.geometry ?? (RECT_POSE_DESCRIPTOR as unknown as PoseProjection<TPose>));
   if (!geometry.lerp) {
     throw new Error('tweenPose: geometry has no lerp; supply geometry: { ..., lerp }');
   }
@@ -77,7 +77,7 @@ export function springPose<TNode extends { id: string }, TPose>(
   adapter: SceneAdapter<TNode, TPose>,
   opts: SpringPoseOptions<TPose>,
 ): AnimationHandle {
-  const geometry = (opts.geometry ?? (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>));
+  const geometry = (opts.geometry ?? (RECT_POSE_DESCRIPTOR as unknown as PoseProjection<TPose>));
   if (!geometry.lerp) {
     throw new Error('springPose: geometry has no lerp; supply geometry: { ..., lerp }');
   }

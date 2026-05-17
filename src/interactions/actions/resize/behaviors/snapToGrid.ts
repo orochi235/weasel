@@ -1,6 +1,6 @@
 import type {
   ModifierState,
-  ResizeBehavior,
+  BoundsConstraint,
   ResizePose,
 } from '../../../gestures/types';
 
@@ -10,7 +10,7 @@ export function snapToGrid<TPose extends ResizePose>(args: {
   spacing: number;
   bypassKey?: ModKey;
   suspendBelowDim?: boolean;
-}): ResizeBehavior<TPose> {
+}): BoundsConstraint<TPose> {
   const { spacing, bypassKey, suspendBelowDim = true } = args;
   const round = (v: number) => Math.round(v / spacing) * spacing;
 

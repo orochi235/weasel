@@ -1,6 +1,6 @@
 import type { Path } from 'features/paths/types';
 import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
-import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from './geometry';
+import { RECT_POSE_DESCRIPTOR, type PoseProjection } from './geometry';
 
 /** True for Path-shaped poses (`{kind: 'polygon' | 'rect'}`). Useful for
  *  callers that need to fork between `pathPoseDescriptor` and
@@ -18,7 +18,7 @@ export function isPathLike(p: unknown): p is Path {
  *  using rect-with-rotation shapes (e.g. `RotatedPose`) don't have to wire
  *  `geometry={ROTATED_POSE_DESCRIPTOR}` just to get rotated selection chrome
  *  and rotation-aware corner hit-tests. */
-export const AUTO_POSE_DESCRIPTOR: PoseDescriptor<unknown> = {
+export const AUTO_POSE_DESCRIPTOR: PoseProjection<unknown> = {
   getBounds: (p) => isPathLike(p)
     ? pathPoseDescriptor.getBounds(p)
     : RECT_POSE_DESCRIPTOR.getBounds(p as { x: number; y: number; width: number; height: number }),

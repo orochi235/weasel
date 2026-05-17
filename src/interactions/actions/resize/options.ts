@@ -7,10 +7,10 @@
 
 import type {
   PointSnapBehavior,
-  ResizeBehavior,
+  BoundsConstraint,
   ResizePose,
 } from '../../gestures/types';
-import type { PoseDescriptor } from './geometry';
+import type { PoseProjection } from './geometry';
 import type { DebugSink } from '../../../debug/types';
 
 export interface UseResizeOptions<TPose> {
@@ -18,7 +18,7 @@ export interface UseResizeOptions<TPose> {
    *  `TPose` is non-rect, pass `geometry` to project pose↔bounds; behaviors
    *  in that case are typed `never` because none in the kit's library would
    *  understand the pose shape. */
-  behaviors?: TPose extends ResizePose ? ResizeBehavior<TPose>[] : never;
+  behaviors?: TPose extends ResizePose ? BoundsConstraint<TPose>[] : never;
   resizeLabel?: string;
   /** Reserved; resize is never transient in practice. Ignored. */
   transient?: boolean;
@@ -41,7 +41,7 @@ export interface UseResizeOptions<TPose> {
   /** Projection from `TPose` to bounds and back. Defaults to rect identity
    *  when `TPose extends ResizePose`. Required for non-rect TPose (Path,
    *  polygon, etc.). */
-  geometry?: PoseDescriptor<TPose>;
+  geometry?: PoseProjection<TPose>;
   /** Behaviors that operate on world-space anchor points. Fire after
    *  `behaviors[]` (bounds-frame). Each behavior receives a `PointSnapContext`
    *  with world-space frame points and returns at most one `PointSnapResult`;

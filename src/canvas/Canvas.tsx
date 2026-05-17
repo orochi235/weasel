@@ -61,7 +61,7 @@ import {
   type SelectionOverlayLayerOpts,
 } from 'features/selection/overlay';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseProjection } from 'interactions/actions/resize/geometry';
 import type { DebugConfig, DebugSink, DebugSnapshot } from '../debug/types';
 import { parseDebugFlags } from '../debug/parseDebugFlags';
 import { createDebugSink } from '../debug/createDebugSink';
@@ -195,7 +195,7 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    *  `boundsOf`, and the selection-overlay bounds source so non-rect TPose
    *  (e.g. `Path`) doesn't require per-prop overrides. Defaults to the rect
    *  identity. */
-  geometry?: PoseDescriptor<TPose>;
+  geometry?: PoseProjection<TPose>;
 
   // --- Gesture overrides (escape hatches for non-rect / group-aware apps) ---
   pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
@@ -544,7 +544,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     boundsOf,
     pickEvery,
     clientToWorld,
-    geometry = AUTO_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>,
+    geometry = AUTO_POSE_DESCRIPTOR as unknown as PoseProjection<TPose>,
     onPointerDown: onPointerDownOverride,
     onPointerMove: onPointerMoveOverride,
     onPointerUp: onPointerUpOverride,

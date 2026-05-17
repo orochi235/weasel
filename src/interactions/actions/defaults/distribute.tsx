@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
-import type { PoseDescriptor } from '../resize/geometry';
+import type { PoseProjection } from '../resize/geometry';
 import { RECT_POSE_DESCRIPTOR } from '../resize/geometry';
 import { translatePoseViaDescriptor } from '../align/align';
 import type { DistributeAxis, DistributeMode } from '../distribute/distribute';
@@ -16,7 +16,7 @@ import { DistributeHorizontalIcon, DistributeVerticalIcon } from './icons/distri
 export interface DistributeDeps<TPose> {
   getSelection: () => NodeId[];
   getPose: (id: NodeId) => TPose;
-  geometry: PoseDescriptor<TPose>;
+  geometry: PoseProjection<TPose>;
   applyOps: (ops: Op[], label?: string) => void;
   /** Mode used by the registered actions. Default `'centers'`. Override per-call
    *  via direct `useDistribute(...).distribute(axis, mode)` if needed. */
@@ -106,7 +106,7 @@ function distributeSelection(
 ): void {
   const ids = selection.get();
   if (ids.length < 3) return;
-  const geom = RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<unknown>;
+  const geom = RECT_POSE_DESCRIPTOR as unknown as PoseProjection<unknown>;
 
   const items = ids.map((id, i) => {
     const node = scene.get(id);

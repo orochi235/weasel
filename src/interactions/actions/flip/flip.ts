@@ -3,7 +3,7 @@ import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import { dispatchApplyBatch } from 'core/applyOps';
 import type { NodeId } from 'core/scene/types';
-import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../resize/geometry';
+import { RECT_POSE_DESCRIPTOR, type PoseProjection } from '../resize/geometry';
 import { useKeybinding } from '../useKeybinding';
 import { useActionsRegistry } from '../registry';
 import { defaultFlipActions } from '../defaults/flip';
@@ -33,7 +33,7 @@ export interface UseFlipOptions<TPose> {
   /** Projection between `TPose` and bounds. Defaults to `RECT_POSE_DESCRIPTOR`
    *  for `{x,y,width,height}` poses. Pass `pathPoseDescriptor` for `Path`
    *  poses so polygon coords reflect correctly. */
-  geometry?: PoseDescriptor<TPose>;
+  geometry?: PoseProjection<TPose>;
   /** Multi-selection pivot. Default `'each'` (per-item own AABB). */
   pivot?: FlipPivot;
   /** Auto-bind Shift+H / Shift+V on document. Default true. */
@@ -62,7 +62,7 @@ export interface UseFlipReturn {
 export function flipPoseAboutBounds<TPose>(
   pose: TPose,
   axis: FlipAxis,
-  geometry: PoseDescriptor<TPose>,
+  geometry: PoseProjection<TPose>,
   pivotBounds: { x: number; y: number; width: number; height: number },
 ): TPose {
   const src = geometry.getBounds(pose);
@@ -84,7 +84,7 @@ export function flipPoseAboutBounds<TPose>(
 export function flipPoseViaDescriptor<TPose>(
   pose: TPose,
   axis: FlipAxis,
-  geometry: PoseDescriptor<TPose>,
+  geometry: PoseProjection<TPose>,
 ): TPose {
   return flipPoseAboutBounds(pose, axis, geometry, geometry.getBounds(pose));
 }
@@ -141,7 +141,7 @@ export function useFlip<TPose>(
     if (sel.length === 0) return;
     const geom =
       o.geometry ??
-      (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>);
+      (RECT_POSE_DESCRIPTOR as unknown as PoseProjection<TPose>);
     const pivot = o.pivot ?? 'each';
     const poses = sel.map((id) => a.getPose(id));
     const unionPivot = pivot === 'union' ? unionAabb(poses.map((p) => geom.getBounds(p))) : null;
@@ -169,7 +169,7 @@ export function useFlip<TPose>(
       getPose: (id) => adapterRef.current.getPose(id),
       geometry:
         o.geometry ??
-        (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>),
+        (RECT_POSE_DESCRIPTOR as unknown as PoseProjection<TPose>),
       pivot: () => optsRef.current.pivot ?? 'each',
       applyOps: (ops, label) =>
         dispatchApplyBatch(adapterRef.current, ops, label ?? 'Flip'),

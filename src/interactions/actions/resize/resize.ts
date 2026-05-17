@@ -10,11 +10,11 @@ import type {
   PointSnapContext,
   PointSnapResult,
   ResizeAnchor,
-  ResizeBehavior,
+  BoundsConstraint,
   ResizeOverlay,
   ResizePose,
 } from '../../gestures/types';
-import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from './geometry';
+import { RECT_POSE_DESCRIPTOR, type PoseProjection } from './geometry';
 import type { UseResizeOptions } from './options';
 export type { UseResizeOptions } from './options';
 import { cornerResizeHandles, fixedCornerOf } from './cornerHandles';
@@ -167,17 +167,17 @@ export function useResize<TNode extends { id: string }, TPose>(
   options: UseResizeOptions<TPose>,
 ): ResizeController<TNode, TPose> {
   const {
-    behaviors = [] as ResizeBehavior<ResizePose>[],
+    behaviors = [] as BoundsConstraint<ResizePose>[],
     pointSnapBehaviors = [] as PointSnapBehavior<ResizePose>[],
     resizeLabel = 'Resize',
     onGestureStart,
     onGestureEnd,
     expandIds,
-    geometry = RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>,
+    geometry = RECT_POSE_DESCRIPTOR as unknown as PoseProjection<TPose>,
     debug,
     handleHitRadius = 8,
   } = options as UseResizeOptions<TPose> & {
-    behaviors?: ResizeBehavior<ResizePose>[];
+    behaviors?: BoundsConstraint<ResizePose>[];
     pointSnapBehaviors?: PointSnapBehavior<ResizePose>[];
   };
 
@@ -337,7 +337,7 @@ export function useResize<TNode extends { id: string }, TPose>(
         dbg.recordHitbox(id, 'handle', { kind: 'circle', cx: h.cx, cy: h.cy, r });
       }
     }
-    for (const b of behaviorsRef.current) (b as ResizeBehavior<ResizePose>).onStart?.(ctx as unknown as GestureContext<ResizePose>);
+    for (const b of behaviorsRef.current) (b as BoundsConstraint<ResizePose>).onStart?.(ctx as unknown as GestureContext<ResizePose>);
     onGestureStartRef.current?.(id);
     setOverlay({ id, currentPose: originPose, targetPose: originPose, anchor });
   }, []);
@@ -404,7 +404,7 @@ export function useResize<TNode extends { id: string }, TPose>(
     // fields rewritten, which we read back as bounds.
     const ctxAsRect = s.ctx as unknown as GestureContext<ResizePose>;
     for (const b of behaviorsRef.current) {
-      const r = (b as ResizeBehavior<ResizePose>).onMove?.(ctxAsRect, {
+      const r = (b as BoundsConstraint<ResizePose>).onMove?.(ctxAsRect, {
         pose: proposedBounds,
         anchor: s.anchor,
       });
@@ -525,7 +525,7 @@ export function useResize<TNode extends { id: string }, TPose>(
 
     let ops: Op[] | null | undefined;
     for (const b of behaviorsRef.current) {
-      const r = (b as ResizeBehavior<ResizePose>).onEnd?.(ctx as unknown as GestureContext<ResizePose>);
+      const r = (b as BoundsConstraint<ResizePose>).onEnd?.(ctx as unknown as GestureContext<ResizePose>);
       if (r === undefined) continue;
       ops = r;
       break;

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type {
-  ResizeBehavior,
+  BoundsConstraint,
   InsertBehavior,
   ResizeAnchor,
   ResizePose,
@@ -9,8 +9,8 @@ import type {
 } from './types';
 
 describe('Phase 2 type shapes', () => {
-  it('ResizeBehavior.onMove receives proposed.pose and proposed.anchor', () => {
-    const b: ResizeBehavior<ResizePose> = {
+  it('BoundsConstraint.onMove receives proposed.pose and proposed.anchor', () => {
+    const b: BoundsConstraint<ResizePose> = {
       onMove(_ctx, proposed) {
         // Compile probe: these field accesses must type-check.
         const _x: number = proposed.pose.x;

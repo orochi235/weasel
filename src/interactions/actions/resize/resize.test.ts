@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useResize } from './resize';
 import { clampMinSize } from './behaviors/clampMinSize';
 import { snapToGrid } from './behaviors/snapToGrid';
-import type { ResizeBehavior, ResizePose } from '../../gestures/types';
+import type { BoundsConstraint, ResizePose } from '../../gestures/types';
 import type { Op } from 'core/ops/types';
 import type { ResizeAdapter } from 'core/adapters/types';
 
@@ -294,7 +294,7 @@ describe('useResize — group (expandIds)', () => {
       ['b', { x: 50, y: 0, width: 40, height: 40 }],
     ]);
     const expandIds = (ids: string[]) => (ids[0] === 'G' ? ['a', 'b'] : ids);
-    const snapBehavior: ResizeBehavior<P> = {
+    const snapBehavior: BoundsConstraint<P> = {
       onMove: (_ctx, { pose }) => ({ pose: { ...pose, width: 100 } }),
     };
     const { result } = renderHook(() =>
