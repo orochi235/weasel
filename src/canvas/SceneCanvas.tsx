@@ -747,35 +747,33 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   return (
     <DepRegistryProvider>
-      <ActiveToolContextProvider>
-        <DispatcherPresenceProvider>
-          <PointerProviderIfRoot>
-            <ActionsProviderIfRoot>
-              {canvas}
-              <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />
-              <StandardActionsRegistrar
-                selection={selection}
-                scene={scene as Scene<unknown, string, unknown>}
-                adapter={adapter as unknown as BridgeAdapter}
-                actionDefaults={actionDefaults}
-                actions={actions}
-                currentViewRef={currentViewRef}
-                onViewChange={handleViewChange}
-              />
-              <GestureDispatcherMounter
-                canvasRef={internalCanvasRef}
-                tools={tools}
-                enabled={enableGestureDispatcher}
-                selectionRef={selectionRef}
-                boundsOf={internalBoundsOf}
-                pickEvery={internalPickEvery}
-                viewRef={currentViewRef}
-              />
-              {children}
-            </ActionsProviderIfRoot>
-          </PointerProviderIfRoot>
-        </DispatcherPresenceProvider>
-      </ActiveToolContextProvider>
+      <DispatcherPresenceProvider>
+        <PointerProviderIfRoot>
+          <ActionsProviderIfRoot>
+            {canvas}
+            <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />
+            <StandardActionsRegistrar
+              selection={selection}
+              scene={scene as Scene<unknown, string, unknown>}
+              adapter={adapter as unknown as BridgeAdapter}
+              actionDefaults={actionDefaults}
+              actions={actions}
+              currentViewRef={currentViewRef}
+              onViewChange={handleViewChange}
+            />
+            <GestureDispatcherMounter
+              canvasRef={internalCanvasRef}
+              tools={tools}
+              enabled={enableGestureDispatcher}
+              selectionRef={selectionRef}
+              boundsOf={internalBoundsOf}
+              pickEvery={internalPickEvery}
+              viewRef={currentViewRef}
+            />
+            {children}
+          </ActionsProviderIfRoot>
+        </PointerProviderIfRoot>
+      </DispatcherPresenceProvider>
     </DepRegistryProvider>
   );
 }
@@ -1264,7 +1262,27 @@ function StandardActionsRegistrar({
   return null;
 }
 
-export const SceneCanvas = forwardRef(SceneCanvasInner) as <
+const SceneCanvasInnerForwardRef = forwardRef(SceneCanvasInner);
+
+// Wrapper that lifts `<ActiveToolContextProvider>` above `SceneCanvasInner`.
+// The inner component calls `useTools(...)`, which falls back to local state
+// when no `ActiveToolContextProvider` is in scope above it. The gesture
+// dispatcher reads the *context* value, so without this lift, keybinding-driven
+// tool switches would update local state only and the dispatcher would see a
+// stale active tool. Wrapping here keeps `useTools` and `useGestureDispatcher`
+// reading the same source of truth.
+function SceneCanvasWrapper<TData, TLayer extends string, TPose>(
+  props: SceneCanvasProps<TData, TLayer, TPose>,
+  ref: React.ForwardedRef<CanvasExtensionApi>,
+) {
+  return (
+    <ActiveToolContextProvider>
+      <SceneCanvasInnerForwardRef {...(props as SceneCanvasProps<unknown, string, unknown>)} ref={ref} />
+    </ActiveToolContextProvider>
+  );
+}
+
+export const SceneCanvas = forwardRef(SceneCanvasWrapper) as <
   TData, TLayer extends string, TPose,
 >(
   props: SceneCanvasProps<TData, TLayer, TPose> & { ref?: React.Ref<CanvasExtensionApi> },

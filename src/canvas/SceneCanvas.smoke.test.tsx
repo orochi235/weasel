@@ -21,16 +21,16 @@
  *
  * ## Skipped tests
  *
- * The following tests are wrapped in `it.skip(...)` pending parallel-track
- * dep wiring:
+ * Only three tests remain skipped:
  *
- * - useRectTool, useEllipseTool, useLineTool, usePolygonTool, useStarTool,
- *   usePencilTool — blocked on `insert` dep being wired in
- *   `<StandardActionsRegistrar>` (parallel insert-dep agent).
- * - useLassoTool — blocked on `lassoSelect` dep being wired in
- *   `<StandardActionsRegistrar>` (same agent).
- *
- * Controller: flip `it.skip` → `it` once insert-dep wiring lands and merges.
+ * - `useCloneTool` (alt-drag) — Alt key-held does not push clone onto the
+ *   hotkey stack in jsdom (real dispatch-path bug, not a harness issue).
+ * - `useHandTool` (drag-pan) — areaSelect's enabled() placeholder blocks
+ *   ambient-scope fall-through to viewport.dragPan (known dispatcher gap).
+ * - `useStarTool` (drag-insert) — star tool ships without a default
+ *   keybinding, so there's no way for the harness to activate it via
+ *   keydown. Enable once a keybinding is added or once the harness can
+ *   activate tools by another route.
  */
 
 import { describe, it, expect, vi, beforeAll } from 'vitest';
@@ -448,16 +448,20 @@ describe('useHandTool smoke', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Shape tool smoke tests — SKIPPED pending insert-dep wiring
+// Shape tool smoke tests
 //
-// TODO: enable once the parallel insert-dep agent lands and merges.
-//       Flip `it.skip` → `it` for each block below.
-//       Required: `insert` dep wired in `StandardActionsRegistrar` (SceneCanvas.tsx)
-//                 with factories for rect / ellipse / line / polygon / star / pencil.
+// Each test activates the tool via its keybinding, then drags on empty space.
+// The kit-side insert dep (wired in SceneCanvas's StandardActionsRegistrar)
+// commits a node via insertAction → adapter.applyOps.
+//
+// Line / polygon / star / pencil currently receive AABB bounds from the
+// insertAction invoker (richer geometry capture is Phase 14c.3). The
+// assertions below reflect the stub output (a rect-shaped node), not the
+// future shape.
 // ---------------------------------------------------------------------------
 
 describe('useRectTool smoke', () => {
-  it.skip('drag-empty inserts a rect node (TODO: keybindings not switching tool in jsdom)', () => {
+  it('drag-empty inserts a rect node', () => {
     const scene = emptyScene();
     const { container } = render(
       <SceneCanvas
@@ -472,18 +476,15 @@ describe('useRectTool smoke', () => {
 
     const canvas = getCanvas(container);
 
-    // Activate rect tool via 'R' keybinding (outside act to let state flush).
+    // Activate rect tool via 'R' keybinding.
     act(() => {
       document.dispatchEvent(new KeyboardEvent('keydown', {
         bubbles: true, key: 'r', code: 'KeyR',
       }));
     });
 
-    act(() => {
-      drag(canvas, 50, 50, 200, 150);
-    });
+    act(() => { drag(canvas, 50, 50, 200, 150); });
 
-    // After the drag a new rect node should exist.
     expect(nodeCount(scene)).toBe(1);
     const id = firstId(scene);
     const pose = scene.get(id)?.pose as P | undefined;
@@ -498,7 +499,7 @@ describe('useRectTool smoke', () => {
 });
 
 describe('useEllipseTool smoke', () => {
-  it.skip('drag-empty inserts an ellipse node (TODO: keybindings not switching tool in jsdom)', () => {
+  it('drag-empty inserts an ellipse node', () => {
     const scene = emptyScene();
     const { container } = render(
       <SceneCanvas
@@ -529,7 +530,7 @@ describe('useEllipseTool smoke', () => {
 });
 
 describe('useLineTool smoke', () => {
-  it.skip('drag-empty inserts a line node (TODO: keybindings not switching tool in jsdom)', () => {
+  it('drag-empty inserts a line node', () => {
     const scene = emptyScene();
     const { container } = render(
       <SceneCanvas
@@ -544,10 +545,10 @@ describe('useLineTool smoke', () => {
 
     const canvas = getCanvas(container);
 
-    // Activate line tool via 'G' keybinding (outside act to let state flush).
+    // Activate line tool via '\' keybinding.
     act(() => {
       document.dispatchEvent(new KeyboardEvent('keydown', {
-        bubbles: true, key: 'g', code: 'KeyG',
+        bubbles: true, key: '\\', code: 'Backslash',
       }));
     });
 
@@ -560,7 +561,7 @@ describe('useLineTool smoke', () => {
 });
 
 describe('usePolygonTool smoke', () => {
-  it.skip('drag-empty inserts a polygon node (TODO: keybindings not switching tool in jsdom)', () => {
+  it('drag-empty inserts a polygon node', () => {
     const scene = emptyScene();
     const { container } = render(
       <SceneCanvas
@@ -575,10 +576,10 @@ describe('usePolygonTool smoke', () => {
 
     const canvas = getCanvas(container);
 
-    // Activate polygon tool via 'N' keybinding (outside act to let state flush).
+    // Activate polygon tool via 'G' keybinding.
     act(() => {
       document.dispatchEvent(new KeyboardEvent('keydown', {
-        bubbles: true, key: 'n', code: 'KeyN',
+        bubbles: true, key: 'g', code: 'KeyG',
       }));
     });
 
@@ -591,7 +592,10 @@ describe('usePolygonTool smoke', () => {
 });
 
 describe('useStarTool smoke', () => {
-  it.skip('drag-empty inserts a star node (TODO: keybindings not switching tool in jsdom)', () => {
+  // The star tool has no built-in keybinding (see useStarTool.tsx — "No default
+  // keybinding"). Re-enable once a keybinding is added, or rework the harness
+  // to set the active tool by a non-keyboard route.
+  it.skip('drag-empty inserts a star node [TODO: star tool has no default keybinding]', () => {
     const scene = emptyScene();
     const { container } = render(
       <SceneCanvas
@@ -622,7 +626,7 @@ describe('useStarTool smoke', () => {
 });
 
 describe('usePencilTool smoke', () => {
-  it.skip('drag-empty inserts a pencil/path node (TODO: keybindings not switching tool in jsdom)', () => {
+  it('drag-empty inserts a pencil/path node', () => {
     const scene = emptyScene();
     const { container } = render(
       <SceneCanvas
@@ -637,10 +641,10 @@ describe('usePencilTool smoke', () => {
 
     const canvas = getCanvas(container);
 
-    // Activate pencil tool via 'P' keybinding (outside act to let state flush).
+    // Activate pencil tool via 'N' keybinding.
     act(() => {
       document.dispatchEvent(new KeyboardEvent('keydown', {
-        bubbles: true, key: 'p', code: 'KeyP',
+        bubbles: true, key: 'n', code: 'KeyN',
       }));
     });
 
@@ -657,7 +661,7 @@ describe('usePencilTool smoke', () => {
 });
 
 describe('useLassoTool smoke', () => {
-  it.skip('lasso drag sets selection to enclosed nodes (TODO: keybindings not switching tool in jsdom)', () => {
+  it('lasso drag sets selection to enclosed nodes', () => {
     // Node at {x:100, y:100, w:80, h:60} — lasso should enclose it.
     const scene = makeScene();
     const id = firstId(scene);
