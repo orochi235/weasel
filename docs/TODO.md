@@ -40,6 +40,25 @@ Demo: `demo/demos/BooleanOpsDemo.tsx` (`#boolean-ops`). Spec:
 - **Promote `ShaderDrawCommand` past `@experimental`.** Three real consumers now exist (plasma / ripple / voronoi panels), enough to validate the surface. Open questions before stabilization: (a) array uniform binding shape — currently consumers must pass per-slot keys (`u_ripples[0]`, `u_ripples[1]`, …); should the kit accept a flat `Float32Array` and split it? (b) hot-reload story for `registerProgram` re-registration; (c) how to expose the renderer's program registry without leaking internals (`shaders` prop is the seam, but consumers writing custom RenderLayers may want more).
 - **`extractUniformNames` regex coverage.** Currently handles scalar uniforms and `T name[N];` arrays. Doesn't handle: matrix arrays (`mat3 u_xforms[4];`), GLSL preprocessor branches, nested struct uniforms, or layout qualifiers on the LHS. Bite-the-bullet rewrite probably wants a small GLSL-prelude parser. Defer until a consumer hits a gap.
 
+## Phase 14e Task 2.6 follow-ups
+
+- **Migrate bare-`<Canvas>` demos to `<SceneCanvas>`.** As of Phase 14e
+  Task 2.6, `useSelectTool` / `useLassoTool` / `useHandTool` have
+  unconditional `bindingsOverrideDrag: true` — bare-`<Canvas>` consumers
+  no longer get the kit's built-in drag behavior. Affected in-repo
+  consumers (drag now broken):
+  - `demo/demos/ClipboardDemo.tsx` (uses `useSelectTool`)
+  - `demo/demos/GroupsDemo.tsx` (uses `useSelectTool`; non-trivial:
+    custom group adapter + composeSelectionPose chain wired through
+    `arrayAdapter` not Scene)
+  - `demo/demos/HudDemo.tsx` (uses `useHandTool`; just needs an empty
+    scene for `<SceneCanvas>`)
+  - `apps/swillustrator/src/App.tsx` (uses all three; structurally
+    blocked — App.tsx is 2400+ lines built on `items + setItems` rather
+    than `useScene`, migration is its own multi-session refactor)
+  None of these break the test suite (no current visual/integration
+  test exercises drag in these consumers); breakage is interactive.
+
 ## Known bugs
 
 Surfaced by `src/canvas/SceneCanvas.smoke.test.tsx` (2026-05-17):

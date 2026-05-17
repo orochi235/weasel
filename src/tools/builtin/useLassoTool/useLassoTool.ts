@@ -1,5 +1,4 @@
 import { useMemo, createElement } from 'react';
-import { useIsDispatcherMounted } from 'interactions/dispatcher/dispatcherPresence';
 import { defineTool, claim, begin, none } from '../../routing';
 import { LassoIcon } from '../../../icons';
 import type { Tool } from '../../types';
@@ -45,13 +44,11 @@ export function useLassoTool(
     behaviors,
   });
 
-  // When the new gesture dispatcher is mounted (inside a SceneCanvas or other
-  // DispatcherPresenceProvider), the drag bindings take over from the old
-  // route-table drag entries. When it's absent (legacy Canvas, tests that
-  // don't use SceneCanvas), the flag stays false and the old path fires as
-  // before — no double-application risk, no silent no-ops.
-  const gestureDispatcherMounted = useIsDispatcherMounted();
-
+  // Phase 14e Task 2.6: the gesture dispatcher is now unconditionally
+  // present (SceneCanvas always mounts it). The drag bindings always take
+  // over from the route-table drag entry. Consumers using bare `<Canvas>`
+  // (without SceneCanvas) no longer get the kit's built-in drag behavior —
+  // they must use `<SceneCanvas>` for lasso tool drags.
   return useMemo(() => {
     const overlay: RenderLayer<unknown> = {
       id: 'lasso-overlay',
@@ -122,7 +119,7 @@ export function useLassoTool(
       bindings: [
         { spec: { kind: 'drag', mods: { shift: 'optional' } }, actionId: 'lassoSelect' },
       ],
-      bindingsOverrideDrag: gestureDispatcherMounted,
+      bindingsOverrideDrag: true,
       initial: {
         overlay: () => overlay,
         drag: (ctx, _e) => {
@@ -151,5 +148,5 @@ export function useLassoTool(
         },
       },
     });
-  }, [ctl, options.keybinding, gestureDispatcherMounted]);
+  }, [ctl, options.keybinding]);
 }

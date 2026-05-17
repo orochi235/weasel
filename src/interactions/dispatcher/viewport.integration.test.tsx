@@ -11,7 +11,7 @@
  *
  * ## Provider tree
  *
- *   DepRegistryProvider > ActiveToolContextProvider > DispatcherPresenceProvider
+ *   DepRegistryProvider > ActiveToolContextProvider
  *     > ActionsProvider > [MountDispatcher + RegisterViewDep + RegisterViewportActions]
  */
 
@@ -22,7 +22,6 @@ import { ActionsProvider, useActionsRegistry } from '../actions/registry';
 import { DepRegistryProvider, useDepRegistry } from '../actions/depRegistry';
 import '../actions/depSchema'; // augments DepSchema
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
-import { DispatcherPresenceProvider } from './dispatcherPresence';
 import { useGestureDispatcher } from './useGestureDispatcher';
 import { viewportPanAction } from '../actions/defaults/viewportPan';
 import { viewportZoomAction } from '../actions/defaults/viewportZoom';
@@ -97,13 +96,11 @@ function buildHarness(viewApi: ViewApi) {
     return (
       <DepRegistryProvider>
         <ActiveToolContextProvider>
-          <DispatcherPresenceProvider>
             <ActionsProvider>
               <RegisterViewDep viewApi={viewApi} />
               <RegisterViewportActions />
               <MountDispatcher canvasRef={ref} />
             </ActionsProvider>
-          </DispatcherPresenceProvider>
         </ActiveToolContextProvider>
       </DepRegistryProvider>
     );

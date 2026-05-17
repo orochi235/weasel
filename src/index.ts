@@ -166,8 +166,6 @@ export type {
 // ─── Gesture dispatcher (Phase 3 of registry unification) ───
 export {
   useGestureDispatcher,
-  DispatcherPresenceProvider,
-  useIsDispatcherMounted,
   createDispatcher,
 } from './interactions/dispatcher';
 export type {

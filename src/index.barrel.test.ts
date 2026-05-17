@@ -118,8 +118,6 @@ describe('Phase 3 registry-unification exports', () => {
     expect(Barrel.useDepRegistry).toBeDefined();
     expect(Barrel.useDepSource).toBeDefined();
     expect(Barrel.useGestureDispatcher).toBeDefined();
-    expect(Barrel.DispatcherPresenceProvider).toBeDefined();
-    expect(Barrel.useIsDispatcherMounted).toBeDefined();
     expect(Barrel.createDispatcher).toBeDefined();
   });
 });

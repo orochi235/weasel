@@ -8,7 +8,7 @@
  *
  * ## Provider tree
  *
- *   DepRegistryProvider > ActiveToolContextProvider > DispatcherPresenceProvider
+ *   DepRegistryProvider > ActiveToolContextProvider
  *     > ActionsProvider > [MountDispatcher + RegisterViewDep + RegisterPinchZoom]
  */
 
@@ -19,7 +19,6 @@ import { ActionsProvider, useActionsRegistry } from '../actions/registry';
 import { DepRegistryProvider, useDepRegistry } from '../actions/depRegistry';
 import '../actions/depSchema';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
-import { DispatcherPresenceProvider } from './dispatcherPresence';
 import { useGestureDispatcher } from './useGestureDispatcher';
 import { pinchZoomAction } from '../actions/defaults/pinchZoom';
 import type { View } from 'core/viewport/view';
@@ -79,13 +78,11 @@ function buildHarness(viewApi: ViewApi) {
     return (
       <DepRegistryProvider>
         <ActiveToolContextProvider>
-          <DispatcherPresenceProvider>
             <ActionsProvider>
               <RegisterViewDep viewApi={viewApi} />
               <RegisterPinchZoom />
               <MountDispatcher canvasRef={ref} />
             </ActionsProvider>
-          </DispatcherPresenceProvider>
         </ActiveToolContextProvider>
       </DepRegistryProvider>
     );

@@ -13,7 +13,7 @@
  * ## Provider tree
  *
  * The test mounts the same provider tree used by the real app:
- *   DepRegistryProvider > ActiveToolContextProvider > DispatcherPresenceProvider
+ *   DepRegistryProvider > ActiveToolContextProvider
  *     > ActionsProvider > [MountDispatcher + RegisterDeps + RegisterMove]
  *
  * `moveAction` is registered with `enabled: () => true` to bypass the
@@ -29,7 +29,6 @@ import { ActionsProvider, useActionsRegistry } from '../actions/registry';
 import { DepRegistryProvider, useDepRegistry } from '../actions/depRegistry';
 import '../actions/depSchema'; // augments DepSchema with 'selection' and 'scene'
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
-import { DispatcherPresenceProvider } from './dispatcherPresence';
 import { useGestureDispatcher } from './useGestureDispatcher';
 import { moveAction } from '../actions/defaults/move';
 import { createScene } from 'core/scene/scene';
@@ -144,13 +143,11 @@ function buildHarness(scene: Scene<D, L, P>, selection: SelectionApi) {
     return (
       <DepRegistryProvider>
         <ActiveToolContextProvider>
-          <DispatcherPresenceProvider>
             <ActionsProvider>
               <RegisterDeps scene={scene} selection={selection} />
               <RegisterMove />
               <MountDispatcher canvasRef={ref} />
             </ActionsProvider>
-          </DispatcherPresenceProvider>
         </ActiveToolContextProvider>
       </DepRegistryProvider>
     );
