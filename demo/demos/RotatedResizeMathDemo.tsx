@@ -321,7 +321,7 @@ function StackedOverlayPanel({
               width={p.width}
               height={p.height}
               fill={p.color}
-              fillOpacity={0.6}
+              fillOpacity={0.5}
               transform={`rotate(${deg} ${cx} ${cy})`}
             />
           );
@@ -337,7 +337,7 @@ function StackedOverlayPanel({
               width={greenPose.width}
               height={greenPose.height}
               fill={greenPose.color}
-              fillOpacity={0.6}
+              fillOpacity={0.5}
               stroke="white"
               strokeWidth={1.5}
               strokeDasharray="4 3"
@@ -478,6 +478,14 @@ export function RotatedResizeMathDemo() {
   const draggingRef = useRef(false);
   const captureTargetRef = useRef<Element | null>(null);
   const capturePointerIdRef = useRef<number | null>(null);
+  // When set, the active gesture is a body-translate (not a corner resize):
+  // dx/dy from startPt apply uniformly to every scene's starting pose so all
+  // four panels stay in lockstep and the "shared starting pose" invariant
+  // survives a reposition.
+  const moveStateRef = useRef<{
+    startPt: { x: number; y: number };
+    startPoses: { scene: RectScene; pose: Rect }[];
+  } | null>(null);
   // Which panel started the active drag — drives ghost recoloring across
   // panels so non-active panels' ghosts take the active panel's color.
   const [activePanel, setActivePanel] = useState<PanelId | null>(null);
@@ -522,6 +530,15 @@ export function RotatedResizeMathDemo() {
     if (!target) return;
     const pt = localCoords(e, target);
     if (!pt) return;
+    const moveState = moveStateRef.current;
+    if (moveState) {
+      const dx = pt.x - moveState.startPt.x;
+      const dy = pt.y - moveState.startPt.y;
+      for (const { scene, pose } of moveState.startPoses) {
+        scene.setPose(asNodeId('a'), { ...pose, x: pose.x + dx, y: pose.y + dy });
+      }
+      return;
+    }
     const mods = modifiersFromEvent(e);
     for (const c of controllersRef.current) c.move(pt.x, pt.y, mods);
   }, []);
@@ -535,6 +552,7 @@ export function RotatedResizeMathDemo() {
     captureTargetRef.current = null;
     capturePointerIdRef.current = null;
     draggingRef.current = false;
+    moveStateRef.current = null;
     setActivePanel(null);
     setOriginFixed(null);
     window.removeEventListener('pointermove', handlePointerMove);
@@ -544,13 +562,17 @@ export function RotatedResizeMathDemo() {
 
   const handlePointerUp = useCallback(() => {
     if (!draggingRef.current) return;
-    for (const c of controllersRef.current) c.end();
+    if (!moveStateRef.current) {
+      for (const c of controllersRef.current) c.end();
+    }
     releaseCapture();
   }, [releaseCapture]);
 
   const handlePointerCancel = useCallback(() => {
     if (!draggingRef.current) return;
-    for (const c of controllersRef.current) c.cancel();
+    if (!moveStateRef.current) {
+      for (const c of controllersRef.current) c.cancel();
+    }
     releaseCapture();
   }, [releaseCapture]);
 
@@ -596,6 +618,30 @@ export function RotatedResizeMathDemo() {
         break;
       }
     }
+
+    // Body-translate: only the green (canonical) panel accepts a body drag.
+    // The translation is applied to every scene's starting pose so all four
+    // panels stay in lockstep — preserving the "shared starting pose"
+    // invariant the resize comparison depends on.
+    if (!hit && panel === 'green' && pointInRotatedRect(refPose, pt.x, pt.y)) {
+      draggingRef.current = true;
+      captureTargetRef.current = wrapper;
+      capturePointerIdRef.current = e.pointerId;
+      setActivePanel('green');
+      wrapper.setPointerCapture?.(e.pointerId);
+      const startPoses = [
+        { scene: greenScene, pose: greenScene.get(asNodeId('a'))!.pose as Rect },
+        { scene: orangeScene, pose: orangeScene.get(asNodeId('a'))!.pose as Rect },
+        { scene: purpleScene, pose: purpleScene.get(asNodeId('a'))!.pose as Rect },
+        { scene: tealScene, pose: tealScene.get(asNodeId('a'))!.pose as Rect },
+      ];
+      moveStateRef.current = { startPt: pt, startPoses };
+      window.addEventListener('pointermove', handlePointerMove);
+      window.addEventListener('pointerup', handlePointerUpRef.current);
+      window.addEventListener('pointercancel', handlePointerCancelRef.current);
+      return;
+    }
+
     if (!hit) return;
 
     draggingRef.current = true;
@@ -610,7 +656,7 @@ export function RotatedResizeMathDemo() {
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerUpRef.current);
     window.addEventListener('pointercancel', handlePointerCancelRef.current);
-  }, [greenScene, handlePointerMove]);
+  }, [greenScene, orangeScene, purpleScene, tealScene, handlePointerMove]);
 
   return (
     <div>
