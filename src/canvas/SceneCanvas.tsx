@@ -64,8 +64,11 @@ import { DispatcherPresenceProvider } from 'interactions/dispatcher/dispatcherPr
 import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
 import { useActionsRegistry } from 'interactions/actions/registry';
 import { buildAffordanceAt, buildClassifyTarget } from './affordanceAt';
+import type { AnchorState } from './affordanceAt';
 import type { Op } from 'core/ops/types';
-import type { ViewApi, AreaSelectDep, InsertDep } from 'interactions/actions/depSchema';
+import type { ViewApi, AreaSelectDep, InsertDep, LassoSelectDep, EditAnchorsDep } from 'interactions/actions/depSchema';
+import type { TextEditDep } from 'interactions/actions/defaults/enterTextEdit';
+import { useDepRegistry } from 'interactions/actions/depRegistry';
 import { createInsertOp } from 'core/ops/create';
 import { asNodeId } from 'core/scene/types';
 import {
@@ -809,6 +812,7 @@ function GestureDispatcherMounter({
   viewRef?: React.RefObject<View>;
 }) {
   const registry = useActionsRegistry();
+  const depRegistry = useDepRegistry();
   const toolsById = useMemo<ReadonlyMap<string, AnyTool>>(() => {
     const m = new Map<string, AnyTool>();
     for (const [id, tool] of Object.entries(tools.registry)) {
@@ -823,6 +827,22 @@ function GestureDispatcherMounter({
   boundsOfRef.current = boundsOf;
   const pickEveryRef = useRef(pickEvery);
   pickEveryRef.current = pickEvery;
+
+  // `getAnchorState` thunk for `buildAffordanceAt` (Phase 14b).
+  //
+  // Reads the live `editAnchors` dep from the registry at call time (O(1)
+  // thunk call). When the dep is absent (no polygon selected / anchor-edit
+  // tool inactive), returns `null` so affordanceAt skips anchor hit-testing.
+  const depRegistryRef = useRef(depRegistry);
+  depRegistryRef.current = depRegistry;
+  const getAnchorState = useCallback((): AnchorState | null => {
+    const dep = depRegistryRef.current.get('editAnchors');
+    if (!dep) return null;
+    return {
+      editingId: dep.editingId ?? null,
+      getPose: dep.getPose,
+    };
+  }, []);
 
   // Build the `affordanceAt` thunk. Converts client coords → world coords
   // internally, then delegates to `buildAffordanceAt` for handle hit-testing.
@@ -855,9 +875,12 @@ function GestureDispatcherMounter({
           },
         };
       },
+      undefined,
+      undefined,
+      getAnchorState,
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectionRef, boundsOf, viewRef]);
+  }, [selectionRef, boundsOf, viewRef, getAnchorState]);
 
   // Build the `classifyTarget` thunk. Converts client coords → world coords
   // internally using the canvas rect + view, then delegates to `buildClassifyTarget`.
@@ -1095,6 +1118,117 @@ function StandardActionsRegistrar({
           `Insert ${kind}`,
         );
         return id;
+      },
+    };
+  });
+
+  // Wire the `lassoSelect` dep for `lassoSelectAction` (Phase 14b).
+  //
+  // Reuses the same AABB hit-test logic as `areaSelect` for the `hitTestArea`
+  // fallback. `hitTestLasso` is intentionally omitted — the action falls back
+  // to `hitTestArea` when the predicate is absent. Both deps share the same
+  // selection read/write surface.
+  useDepSource('lassoSelect', (): LassoSelectDep => {
+    const s = selectionRef2.current;
+    const sc = sceneRef2.current;
+    return {
+      hitTestArea(bounds) {
+        const hits: NodeId[] = [];
+        for (const id of sc.renderOrder()) {
+          const node = sc.get(id);
+          if (!node || node.kind === 'container') continue;
+          const p = node.pose as unknown as Partial<{
+            x: number; y: number; width: number; height: number;
+          }>;
+          if (
+            typeof p.x === 'number' && typeof p.y === 'number' &&
+            typeof p.width === 'number' && typeof p.height === 'number'
+          ) {
+            if (
+              p.x < bounds.x + bounds.width &&
+              p.x + p.width > bounds.x &&
+              p.y < bounds.y + bounds.height &&
+              p.y + p.height > bounds.y
+            ) {
+              hits.push(id);
+            }
+          }
+        }
+        return hits;
+      },
+      getSelection: () => s.current as NodeId[],
+      setSelection: (ids) => s.set(ids as NodeId[]),
+    };
+  });
+
+  // Wire the `textEdit` dep for `enterTextEditAction` (Phase 14e).
+  //
+  // `startEdit` is a no-op stub — SceneCanvas doesn't mount `useTextEdit`
+  // internally because the hook requires consumer-supplied text-specific
+  // callbacks (getRuns, getText, getScreenPose, setText). Consumers who want
+  // real text editing should override this dep via their own `useDepSource`
+  // call, sourcing from their `useTextEdit` / `useSceneTextEdit` instance.
+  //
+  // `isTextNode` uses the convention-based default: `scene.get(id)?.kind ===
+  // 'text'`. This keeps text-tool bindings from firing on non-text nodes when
+  // a consumer hasn't yet overridden the dep. Consumers with a different node
+  // schema (e.g. `data.type === 'text'`) should supply their own predicate.
+  useDepSource('textEdit', (): TextEditDep => {
+    const sc = sceneRef2.current;
+    return {
+      startEdit(_id: string, _opts?: { caret?: number | 'all' }) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn(
+            'weasel textEditDep: startEdit called but no useTextEdit hook is mounted in SceneCanvas. ' +
+            'Override the "textEdit" dep via useDepSource("textEdit", ...) to enable in-place text editing.',
+          );
+        }
+      },
+      isTextNode(id: string) {
+        // Convention: consumers are expected to store a `kind` field on node
+        // data (e.g. `data.kind === 'text'`) to identify text nodes. This
+        // default predicate assumes that convention. Consumers with a different
+        // schema should override via their own `useDepSource('textEdit', ...)`.
+        const node = sc.get(id as NodeId);
+        return (node?.data as { kind?: string } | null | undefined)?.kind === 'text';
+      },
+    };
+  });
+
+  // Wire the `editAnchors` dep for `editAnchorsAction` (Phase 14b).
+  //
+  // `editingId` is sourced from a local state variable. When the user enters
+  // anchor-edit mode (e.g. double-clicking a polygon via `useEditAnchorsTool`),
+  // that tool drives `editingId` via the dep update — but SceneCanvas's default
+  // wiring must at minimum expose the dep so the action can read it.
+  //
+  // Default `editingId` is the first selected node with a polygon pose, or null
+  // when nothing polygon-shaped is selected. This is a heuristic — consumers
+  // that drive anchor-edit via explicit tool state should override the dep.
+  //
+  // `getPose(id)` returns the node's raw pose (actions narrow to PolygonPath).
+  // `applyOps` delegates to the adapter.
+  useDepSource('editAnchors', (): EditAnchorsDep => {
+    const s = selectionRef2.current;
+    const sc = sceneRef2.current;
+    const ad = adapterRef2.current;
+    const selection = s.current as NodeId[];
+    // Heuristic: find the first selected node with a polygon pose.
+    let editingId: string | null = null;
+    for (const id of selection) {
+      const node = sc.get(id);
+      if (node && (node.pose as { kind?: string })?.kind === 'polygon') {
+        editingId = id;
+        break;
+      }
+    }
+    return {
+      editingId: editingId ?? '',
+      getPose(id: string) {
+        return sc.get(id as NodeId)?.pose ?? null;
+      },
+      applyOps(ops, label) {
+        ad.applyOps(ops as Op[], label);
       },
     };
   });
