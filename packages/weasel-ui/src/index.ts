@@ -5,6 +5,7 @@ export * from './components/ActionBar';
 export * from './components/Badge';
 export * from './components/DataGrid';
 export * from './components/RangePicker';
+export * from './components/ToggleBar';
 export * from './components/Sidebar';
 export * from './components/SidebarPanel';
 export * from './components/ToolButton';
