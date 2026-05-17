@@ -1,10 +1,10 @@
-import { asNodeId } from '@orochi235/weasel';
-import type { NodeId, Scene } from '@orochi235/weasel';
+import { asNodeId, RECT_POSE_DESCRIPTOR } from '@orochi235/weasel';
+import type { Animator, NodeId, PoseDescriptor, Scene } from '@orochi235/weasel';
+import { createTransition } from './transition';
 import type {
   BindOptions,
   D3Binding,
   D3Selection,
-  D3Transition,
 } from './types';
 
 /**
@@ -22,7 +22,7 @@ import type {
 export function d3Bind<TData, TLayer extends string, TPose>(
   scene: Scene<unknown, TLayer, TPose>,
   data: readonly TData[],
-  options: BindOptions<TData>,
+  options: BindOptions<TData, TPose>,
 ): D3Binding<TData, TPose> {
   let poseFn: ((d: TData, i: number) => TPose) | null = null;
   let dataFn: ((d: TData, i: number) => Record<string, unknown>) | null = null;
@@ -124,6 +124,8 @@ export function d3Bind<TData, TLayer extends string, TPose>(
         dataKeys,
         [...data],
         priorPoses,
+        options.animator,
+        options.geometry,
       );
     },
   };
@@ -137,6 +139,8 @@ function createSelection<TData, TPose>(
   ids: readonly NodeId[],
   data: readonly TData[],
   priorPoses: ReadonlyMap<NodeId, TPose>,
+  animator: Animator | undefined,
+  geometry: PoseDescriptor<TPose> | undefined,
 ): D3Selection<TData, TPose> {
   const sel: D3Selection<TData, TPose> = {
     ids,
@@ -150,17 +154,37 @@ function createSelection<TData, TPose>(
           subData.push(data[i]);
         }
       }
-      return createSelection(scene, subset, subData, priorPoses);
+      return createSelection(scene, subset, subData, priorPoses, animator, geometry);
     },
     each(fn) {
       for (let i = 0; i < ids.length; i++) fn(data[i], ids[i], i);
       return sel;
     },
-    transition(_name?: string): D3Transition<TData, TPose> {
-      throw new Error('d3Bind.transition: not implemented (Phase 2 — pending)');
+    transition(name?: string) {
+      if (!animator) {
+        throw new Error(
+          'd3Bind.transition: pass `animator` in BindOptions to enable transitions',
+        );
+      }
+      const resolvedGeometry = (geometry ??
+        (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>));
+      return createTransition({
+        scene,
+        animator,
+        geometry: resolvedGeometry,
+        ids,
+        data,
+        priorPoses,
+        name: name ?? '',
+      });
     },
-    interrupt() {
-      // Phase 2 — no-op until transition lands.
+    interrupt(name?: string) {
+      if (!animator) return sel;
+      const transitionName = name ?? '';
+      // Cancel all pose tweens registered for this transition name.
+      for (const id of ids) {
+        animator.cancelKey(`d3-transition:${transitionName}:${id}`);
+      }
       return sel;
     },
   };

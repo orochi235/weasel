@@ -1,10 +1,17 @@
-import type { NodeId } from '@orochi235/weasel';
+import type { Animator, NodeId, PoseDescriptor } from '@orochi235/weasel';
 
-export interface BindOptions<TData> {
+export interface BindOptions<TData, TPose> {
   /** Stable id derivation per datum — the binding diffs old vs new state by this key. */
   key: (d: TData, i: number) => string;
   /** Which scene layer new leaves enter on. Defaults to the scene's first system layer. */
   layer?: string;
+  /** Animator used by `.transition()` chains. Optional — only required if a
+   *  transition is actually spawned. Calling `.transition()` without it throws. */
+  animator?: Animator;
+  /** Pose descriptor with `lerp(from, to, t)`. Default `RECT_POSE_DESCRIPTOR`
+   *  (interpolates x/y/width/height linearly). Override for non-rect poses
+   *  (e.g. `pathPoseDescriptor`). */
+  geometry?: PoseDescriptor<TPose>;
 }
 
 /**

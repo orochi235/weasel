@@ -236,7 +236,7 @@ describe('d3Bind selection — filter / each', () => {
     ]);
   });
 
-  it('transition() throws "not implemented" until Phase 2', () => {
+  it('transition() throws without an animator in BindOptions', () => {
     const scene = setupScene();
     let sel: ReturnType<typeof binding.join>;
     const binding = d3Bind(scene.current, [{ id: 'a', label: 'A', x: 10 }] as Datum[], {
@@ -247,6 +247,6 @@ describe('d3Bind selection — filter / each', () => {
     act(() => {
       sel = binding.join();
     });
-    expect(() => sel!.transition()).toThrow(/not implemented/);
+    expect(() => sel!.transition()).toThrow(/animator/);
   });
 });
