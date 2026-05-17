@@ -45,7 +45,7 @@ interface CustomTween<TData> {
  */
 export function createTransition<TData, TPose>(
   ctx: TransitionCtx<TData, TPose>,
-): D3Transition<TData, TPose> {
+): D3Transition<TData> {
   let duration = 250;
   let easing: EasingFn | undefined;
   let delayFn: ((d: TData, i: number) => number) | null = null;
@@ -77,7 +77,7 @@ export function createTransition<TData, TPose>(
     if (started) return;
     started = true;
 
-    const { scene, animator, geometry, ids, data, priorPoses, name } = ctx;
+    const { scene, geometry, ids, data, priorPoses, name } = ctx;
     const lerp = geometry.lerp;
     if (!lerp) {
       throw new Error(
@@ -203,7 +203,7 @@ export function createTransition<TData, TPose>(
     }
   };
 
-  const t: D3Transition<TData, TPose> = {
+  const t: D3Transition<TData> = {
     duration(ms) {
       duration = ms;
       return t;

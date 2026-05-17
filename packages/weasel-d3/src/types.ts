@@ -53,15 +53,15 @@ export interface D3Selection<TData, TPose> {
   /** Iterate. Returns this for chaining. */
   each(fn: (d: TData, id: NodeId, i: number) => void): this;
 
-  /** Spawn a transition (Phase 2 — placeholder for now; throws). */
-  transition(name?: string): D3Transition<TData, TPose>;
+  /** Spawn a transition. Throws if `BindOptions.animator` wasn't supplied. */
+  transition(name?: string): D3Transition<TData>;
 
   /** Cancel any in-flight transitions matching `name` (or all if omitted) on these nodes. */
   interrupt(name?: string): this;
 }
 
-/** Transition handle — Phase 2 contract (implementation lands later). */
-export interface D3Transition<TData, TPose> {
+/** Transition handle backed by the kit's `useAnimator`. */
+export interface D3Transition<TData> {
   duration(ms: number): this;
   ease(fn: (t: number) => number): this;
   delay(ms: number | ((d: TData, i: number) => number)): this;

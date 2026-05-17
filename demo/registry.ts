@@ -29,6 +29,7 @@ import { ViewportDemo } from './demos/ViewportDemo';
 import { ViewportLayerDemo } from './demos/ViewportLayerDemo';
 import { ParallaxDemo } from './demos/ParallaxDemo';
 import { ForceGraphDemo } from './demos/ForceGraphDemo';
+import { D3SortableDemo } from './demos/D3SortableDemo';
 import { PerceptualColorSlidersDemo } from './demos/PerceptualColorSlidersDemo';
 import { GradientPlaygroundDemo } from './demos/GradientPlaygroundDemo';
 import { VertexColorsDemo } from './demos/VertexColorsDemo';
@@ -70,6 +71,7 @@ import ViewportDemoFull from './demos/ViewportDemo.tsx?raw';
 import ViewportLayerDemoFull from './demos/ViewportLayerDemo.tsx?raw';
 import ParallaxDemoFull from './demos/ParallaxDemo.tsx?raw';
 import ForceGraphDemoFull from './demos/ForceGraphDemo.tsx?raw';
+import D3SortableDemoFull from './demos/D3SortableDemo.tsx?raw';
 import PerceptualColorSlidersDemoFull from './demos/PerceptualColorSlidersDemo.tsx?raw';
 import GradientPlaygroundDemoFull from './demos/GradientPlaygroundDemo.tsx?raw';
 import VertexColorsDemoFull from './demos/VertexColorsDemo.tsx?raw';
@@ -457,6 +459,16 @@ export const DEMOS: DemoEntry[] = [
     Component: ForceGraphDemo,
     full: ForceGraphDemoFull,
     path: 'demo/demos/ForceGraphDemo.tsx',
+  },
+  {
+    id: 'd3-sortable',
+    title: 'd3 plugin: sortable bars',
+    category: 'Viewport',
+    description: '`@orochi235/weasel-d3` proof of concept. Twelve bars bound to a data array via `d3Bind(scene, data, { key, animator }).pose(fn).data(fn).join()`. Click sort buttons to reorder the data; the join diffs against the scene and emits one batched op group, then `.transition().duration(600).ease(easeInOutCubic).delay(i × 30)` animates each bar to its new x-position with a stagger. Phase 2 of the d3 plugin (transition chain over `useAnimator`).',
+    hint: 'click sort buttons · per-item delay staggers the move',
+    Component: D3SortableDemo,
+    full: D3SortableDemoFull,
+    path: 'demo/demos/D3SortableDemo.tsx',
   },
 
   // ─── Rendering & paint ────────────────────────────────────────────────────
