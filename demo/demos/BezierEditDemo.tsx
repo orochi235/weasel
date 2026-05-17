@@ -1,24 +1,21 @@
-import { useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
-  Canvas,
+  asNodeId,
   PathBuilder,
   pathPoseDescriptor,
   PATH_C,
+  SceneCanvas,
   countPathAnchors,
   selectFromMarquee,
+  useScene,
   useSelection,
-  useSelectWithAnchorEdit,
-  useResizeTool,
-  useRotateTool,
 } from '@orochi235/weasel';
 import type {
   Path,
   PolygonPath,
+  PoseProjection,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
-
-interface PathObj { id: string }
-type Pose = Path;
 
 const W = 720, H = 360, HANDLE = 8;
 const ID = 'curve';
@@ -58,101 +55,47 @@ function hslToRgb(h: number, s: number, l: number): [number, number, number] {
 }
 
 export function BezierEditDemo() {
-  const [path, setPath] = useState<Path>(INITIAL_PATH);
-  const pathRef = useRef(path);
-  pathRef.current = path;
+  // Pose/data split (a): the Path itself is the pose; data is a degenerate
+  // tag. The demo's `Path` already encodes both shape and position, so a
+  // separate `{x,y,w,h}` pose would just duplicate work.
+  const scene = useScene<{ kind: 'path' }, 'default', Path>({
+    systemLayers: [{ id: 'default' }],
+    initial: [{
+      kind: 'leaf',
+      layer: 'default',
+      pose: INITIAL_PATH,
+      data: { kind: 'path' },
+      id: asNodeId(ID),
+    }],
+  });
+  const selection = useSelection({ initial: [asNodeId(ID)] });
+
   const [zoom, setZoom] = useState(1);
-  const zoomRef = useRef(zoom);
-  zoomRef.current = zoom;
+  // Viewport scale instead of CSS transform: SceneCanvas's `view` prop
+  // controls world→screen scale, and world coords flow through `clientToWorld`
+  // automatically. Trades the CSS-pixel-perfect blowup for honest viewport
+  // zoom (handles + line widths in screen pixels stay constant).
+  const view = useMemo(
+    () => ({ x: 0, y: 0, scale: { x: zoom, y: zoom } }),
+    [zoom],
+  );
 
-  const selection = useSelection();
-
-  const adapter = {
-    getNode: (id: string) => (id === ID ? { id } : undefined),
-    getNodes: () => [{ id: ID }],
-    getPose: () => pathRef.current,
-    setPose: (_id: string, p: Pose) => setPath(p),
-    // hitTestArea + applyOps: required for drag-marquee selection to work.
-    // useSelectTool's areaSelectCapable check requires hitTestArea AND
-    // applyOps AND getSelection AND setSelection — the demo previously had
-    // only the last two via useSelection.adapterMethods, so the marquee
-    // gesture silently dropped its selection ops. The path's pointInPath
-    // hit-test fails for open polylines, so drag-marquee is the only
-    // working selection path.
-    hitTestArea: (rect: { x: number; y: number; width: number; height: number }) => {
-      const b = pathPoseDescriptor.getBounds(pathRef.current);
-      const ix = Math.max(rect.x, b.x);
-      const iy = Math.max(rect.y, b.y);
-      const iw = Math.min(rect.x + rect.width, b.x + b.width) - ix;
-      const ih = Math.min(rect.y + rect.height, b.y + b.height) - iy;
-      return iw > 0 && ih > 0 ? [ID] : [];
-    },
-    applyOps: (ops: import('@orochi235/weasel').Op[]) => {
-      for (const op of ops) op.apply(adapter);
-    },
-    ...selection.adapterMethods,
+  // pointInPath only fills closed regions, so an S-curve has no body to hit.
+  // Approximate stroke-hit: AABB containment with an 8-px slop.
+  const pickEvery = (wx: number, wy: number): string | null => {
+    const node = scene.get(asNodeId(ID));
+    if (!node) return null;
+    const b = pathPoseDescriptor.getBounds(node.pose);
+    const slop = 8;
+    const inside = wx >= b.x - slop && wx <= b.x + b.width + slop
+      && wy >= b.y - slop && wy <= b.y + b.height + slop;
+    return inside ? ID : null;
   };
 
-  const boundsOf = (id: string) =>
-    id === ID ? pathPoseDescriptor.getBounds(pathRef.current) : null;
-
-  const resizeTool = useResizeTool<PathObj, Pose>(adapter, {
-    resize: { geometry: pathPoseDescriptor },
-    handleHitRadius: HANDLE / zoom,
-    boundsOf,
-    getSelection: () => selection.current,
-    poseBounds: (p) => pathPoseDescriptor.getBounds(p),
-    getNode: (id) => (id === ID ? { id } : null),
-  });
-  const rotateTool = useRotateTool<PathObj, Pose>(adapter, {
-    handleHitRadius: HANDLE / zoom,
-    boundsOf,
-    getSelection: () => [...selection.current],
-    getNode: (id) => (id === ID ? { id } : null),
-  });
-
-  const { tools, onDoubleClick } = useSelectWithAnchorEdit<PathObj, Pose>(adapter, {
-    // pointInPath only fills closed regions, so an S-curve has no body to
-    // hit. Approximate stroke-hit: AABB containment with an 8-px slop.
-    // Lets click + double-click work on the visible curve.
-    pickEvery: (wx, wy) => {
-      const b = pathPoseDescriptor.getBounds(pathRef.current);
-      const slop = 8;
-      const inside = wx >= b.x - slop && wx <= b.x + b.width + slop
-        && wy >= b.y - slop && wy <= b.y + b.height + slop;
-      return inside ? [ID] : [];
-    },
-    boundsOf,
-    // Marquee is opt-in at the kit level — restored here because pointInPath
-    // hit-testing fails on the open polyline, so drag-marquee is the only
-    // working selection path.
-    areaSelect: { behaviors: [selectFromMarquee()] },
-    drawGhost: (_o, p): DrawCommand[] => {
-      const colors = rainbowColors(countPathAnchors(p));
-      return [{
-        kind: 'path',
-        path: p,
-        stroke: { paint: { color: '#ffffff' }, width: 2, vertexColors: colors },
-      }];
-    },
-    getNode: (id) => (id === ID ? { id } : null),
-    editAnchors: {
-      hitRadius: HANDLE / zoom,
-      overlayStyle: { selectedAnchorFill: '#7fb069' },
-    },
-    editingFilter: (ids) => (ids.includes(ID) ? ID : null),
-    clientToWorld: (canvas, cx, cy) => {
-      const r = canvas.getBoundingClientRect();
-      const z = zoomRef.current;
-      return [(cx - r.left) / z, (cy - r.top) / z];
-    },
-    // Resize + rotate are ambient — affordance-driven, no active-slot flip.
-    ambient: [resizeTool, rotateTool],
-  });
-
-
   const appendCurve = () => {
-    const p = pathRef.current;
+    const node = scene.get(asNodeId(ID));
+    if (!node) return;
+    const p = node.pose;
     if (p.kind !== 'polygon') return;
     // Every command (M/L/C/Q) ends on (x,y), so the trailing pair of coords
     // is the current end of the path. Append a cubic ~80px to the right.
@@ -170,7 +113,7 @@ export function BezierEditDemo() {
     nextCoords.set(cs);
     nextCoords.set([c1x, c1y, c2x, c2y, nx, ny], cs.length);
     const next: PolygonPath = { kind: 'polygon', commands: nextCmds, coords: nextCoords, fillRule: p.fillRule };
-    setPath(next);
+    scene.setPose(asNodeId(ID), next);
   };
 
   return (
@@ -190,36 +133,33 @@ export function BezierEditDemo() {
           >{z}×</button>
         ))}
       </div>
-      <div onDoubleClick={onDoubleClick} style={{ width: W * zoom, height: H * zoom, overflow: 'hidden' }}>
-        <div style={{ width: W, height: H, transform: `scale(${zoom})`, transformOrigin: '0 0' }}>
-          <Canvas
-            width={W}
-            height={H}
-            className="ckd-canvas"
-            adapter={adapter}
-            selection={selection}
-            tools={tools}
-            clientToWorld={(canvas, cx, cy) => {
-              const r = canvas.getBoundingClientRect();
-              const z = zoomRef.current;
-              return [(cx - r.left) / z, (cy - r.top) / z];
-            }}
-            layers={{
-              scene: {
-                drawOne: (_o, p): DrawCommand[] => {
-                  const colors = rainbowColors(countPathAnchors(p));
-                  return [{
-                    kind: 'path',
-                    path: p,
-                    stroke: { paint: { color: '#ffffff' }, width: 2, vertexColors: colors },
-                  }];
-                },
-              },
-              selectionOverlay: { handles: { size: HANDLE } },
-            }}
-          />
-        </div>
-      </div>
+      <SceneCanvas
+        width={W * zoom}
+        height={H * zoom}
+        className="ckd-canvas"
+        scene={scene}
+        selection={selection}
+        view={view}
+        geometry={{ pickEvery }}
+        selectTool={{
+          handleHitRadius: HANDLE,
+          resize: { geometry: pathPoseDescriptor as PoseProjection<Path> },
+          areaSelect: { behaviors: [selectFromMarquee()] },
+        }}
+        layers={{
+          scene: {
+            drawOne: (_o, p): DrawCommand[] => {
+              const colors = rainbowColors(countPathAnchors(p));
+              return [{
+                kind: 'path',
+                path: p,
+                stroke: { paint: { color: '#ffffff' }, width: 2, vertexColors: colors },
+              }];
+            },
+          },
+          selectionOverlay: { handles: { size: HANDLE } },
+        }}
+      />
     </div>
   );
 }
