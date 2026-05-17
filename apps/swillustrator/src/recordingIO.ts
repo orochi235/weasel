@@ -24,9 +24,10 @@ const hasCompressionStream = (): boolean =>
 const hasDecompressionStream = (): boolean =>
   typeof DecompressionStream !== 'undefined';
 
-/** Read a Blob's bytes via FileReader. Avoids `Blob.arrayBuffer()` and
- *  `Blob.stream()`, which jsdom doesn't expose — keeps the helper
- *  testable under the existing vitest environment. */
+/** Read a user-supplied Blob's bytes via FileReader. Avoids `Blob.arrayBuffer()`
+ *  and `Blob.stream()` (which jsdom doesn't expose). Used on the deserialize side
+ *  where the input is a real DOM Blob (e.g. from `<input type="file">`), so
+ *  FileReader accepts it cleanly across both browsers and jsdom. */
 function blobToBytes(blob: Blob): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -54,7 +55,7 @@ async function pumpThrough(
     await writer.write(bytes as unknown as BufferSource);
     await writer.close();
   })();
-  const out = await blobToBytes(await new Response(stream.readable).blob());
+  const out = new Uint8Array(await new Response(stream.readable).arrayBuffer());
   await writeAndClose;
   return out;
 }
