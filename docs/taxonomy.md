@@ -209,9 +209,11 @@ the shared `shared/` snap helpers and `types.ts` carrying the cross-system base 
 ### Action
 
 A user-intent operation that modifies app state. Identified by `{ id, label,
-defaultBinding?, run(), enabled?() }`. Discoverable via the Actions Registry +
+gestureBinding?, invoker?, run?(), enabled?() }`. Discoverable via the Actions Registry +
 command palette; bindable to a key, mouse gesture, button click, or any other
-[Gesture](#gesture).
+[Gesture](#gesture). Actions with a `gestureBinding` are routed through the gesture
+dispatcher (Phase 3+, 2026-05); actions without one fall back to the legacy
+`useKeybinding` path.
 
 Actions are the *application layer* of state change — the verbs the user can
 invoke. Each one either produces an [Op](#op) batch (for undoable mutations like
@@ -220,11 +222,12 @@ invoke. Each one either produces an [Op](#op) batch (for undoable mutations like
 
 Source layout reflects this: both one-shot actions (`delete`, `align`, `escape`, …)
 and drag-based actions (`move`, `resize`, `rotate`, `insert`, `area-select`, …) live
-under `src/interactions/actions/`. The remaining shape gap is registry unification —
-drag-based actions are still invoked via direct hooks (`useMove`, `useResize`) rather
-than through the action registry; see `docs/TODO.md` "Taxonomy alignment" for the
-follow-up. The cleaner future shape: every state-changing user operation is an action
-invokable through the registry, regardless of input form.
+under `src/interactions/actions/`. All default actions are registered as descriptors
+with `gestureBinding` and dispatched through the action registry (registry
+unification Phases 1–9, 2026-05). The remaining gap: drag-based action descriptors
+(`resize`, `rotate`, `areaSelect`, `insert`, `clone`) have stub invokers — their
+real behavior still flows through `useResize`, `useRotate`, etc. via `useSelectTool`'s
+route tables; full invoker implementations are tracked in `docs/TODO.md` as Phase 11.
 
 Examples: `selectAll`, `escape`, `duplicate`, `nudge`, `reorder`, `delete`,
 `align.{left,...}`, `distribute.{horizontal,vertical}`, `flip.{x,y}`. Kit defaults
