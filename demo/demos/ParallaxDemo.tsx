@@ -72,6 +72,7 @@ export function ParallaxDemo() {
   });
   const selection = useSelection();
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+  const [zoomParallax, setZoomParallax] = useState(false);
   const hand = useHandTool();
 
   const sky = useMemo(
@@ -79,45 +80,71 @@ export function ParallaxDemo() {
       id: 'parallax-sky', label: 'Sky',
       source: [paintShapes('sky-shapes', SKY)],
       pan: 0.1,
+      ...(zoomParallax ? { zoom: 0 } : {}),
     }),
-    [],
+    [zoomParallax],
   );
   const hills = useMemo(
     () => createParallaxLayer<unknown>({
       id: 'parallax-hills', label: 'Hills',
       source: [paintShapes('hills-shapes', HILLS)],
       pan: 0.4,
+      ...(zoomParallax ? { zoom: 0.3 } : {}),
     }),
-    [],
+    [zoomParallax],
   );
   const ground = useMemo(
     () => createParallaxLayer<unknown>({
       id: 'parallax-ground', label: 'Ground',
       source: [paintShapes('ground-shapes', GROUND)],
       pan: 1.0,
+      ...(zoomParallax ? { zoom: 1 } : {}),
     }),
-    [],
+    [zoomParallax],
   );
   const foreground = useMemo(
     () => createParallaxLayer<unknown>({
       id: 'parallax-foreground', label: 'Foreground',
       source: [paintShapes('fg-shapes', FOREGROUND)],
       pan: 1.3,
+      ...(zoomParallax ? { zoom: 1.5 } : {}),
     }),
-    [],
+    [zoomParallax],
   );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
         <span style={{ fontFamily: 'monospace' }}>
-          view: ({view.x.toFixed(0)}, {view.y.toFixed(0)})
+          view: ({view.x.toFixed(0)}, {view.y.toFixed(0)}) ×{view.scale.x.toFixed(2)}
         </span>
         <button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>
           Reset view
         </button>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          zoom
+          <input
+            type="range"
+            min={0.5}
+            max={3}
+            step={0.05}
+            value={view.scale.x}
+            onChange={(e) => {
+              const z = Number(e.target.value);
+              setView({ ...view, scale: { x: z, y: z } });
+            }}
+          />
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <input
+            type="checkbox"
+            checked={zoomParallax}
+            onChange={(e) => setZoomParallax(e.target.checked)}
+          />
+          per-plane zoom
+        </label>
         <span style={{ color: '#888' }}>
-          Drag (hand tool) to pan. Sky lags · hills slow · ground 1:1 · foreground leads.
+          Drag to pan. Sky lags · hills slow · ground 1:1 · foreground leads. Toggle per-plane zoom to see depth-aware scaling.
         </span>
       </div>
       <SceneCanvas
@@ -133,9 +160,9 @@ export function ParallaxDemo() {
           scene: { drawOne: () => [] },
           selectionOverlay: { handles: false },
           paraSky:        { layer: sky,        after: 'scene' },
-          paraHills:      { layer: hills,      after: 'scene' },
-          paraGround:     { layer: ground,     after: 'scene' },
-          paraForeground: { layer: foreground, after: 'scene' },
+          paraHills:      { layer: hills,      after: 'paraSky' },
+          paraGround:     { layer: ground,     after: 'paraHills' },
+          paraForeground: { layer: foreground, after: 'paraGround' },
         }}
       />
     </div>
