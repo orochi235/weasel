@@ -1,9 +1,7 @@
 export { useInsertTool, type UseInsertToolOptions } from './useInsertTool';
-export {
-  defineDragInsertTool,
-  type DragInsertToolConfig,
-  type DragInsertToolResult,
-} from './defineDragInsertTool';
+// Phase 14e Task 3.5: `defineDragInsertTool` removed — its sole consumers
+// (`useInsertTool`, `useTextTool`) now declare their gesture via
+// `Tool.bindings` and delegate to the dispatcher's `insertAction`.
 export {
   useSelectTool,
   type UseSelectToolOptions,

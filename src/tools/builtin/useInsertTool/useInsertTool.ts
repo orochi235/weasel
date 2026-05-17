@@ -1,8 +1,8 @@
-import { createElement } from 'react';
-import { useInsert, type UseInsertOptions } from 'interactions/actions/insert/insert';
-import type { InsertAdapter } from 'core/adapters/types';
+import { useMemo, createElement } from 'react';
+import { defineTool } from '../../routing';
 import type { Tool } from '../../types';
-import { defineDragInsertTool } from '../defineDragInsertTool';
+import type { InsertAdapter } from 'core/adapters/types';
+import type { UseInsertOptions } from 'interactions/actions/insert/options';
 import { type InsertOverlayStyle } from '../marquee';
 import { RectIcon } from '../../../icons';
 
@@ -21,24 +21,36 @@ const PRESENTATION = {
   icon: createElement(RectIcon),
   group: 'shape',
 };
-const DEFAULT_STYLE = { fill: 'rgba(127, 176, 105, 0.25)', stroke: '#7fb069', dash: [4, 4], lineWidth: 1 };
 
+/** Drag-to-insert Tool. Phase 14e Task 3.5: the legacy `useInsert` hook is
+ *  no longer consumed here — the gesture is owned end-to-end by the
+ *  dispatcher's `insertAction` (see `src/interactions/actions/defaults/insert.ts`),
+ *  which requires the `insert` dep. `SceneCanvas` registers that dep via
+ *  `useInsertDepSource`; consumers using bare `<Canvas>` must wire it themselves.
+ *
+ *  Note: this tool is now a thin declarative wrapper — no local route-table
+ *  drag handler, no local insert overlay layer, no click-to-insert path.
+ *  Live-preview marquee and click-to-insert are dispatcher-side features
+ *  deferred to a later phase (see insertAction's "What this does NOT wire"
+ *  comment). The `overlayStyle` / `hitExisting` / `pointInsert` options
+ *  remain on the option surface for forward-compat but are currently
+ *  ignored. */
 export function useInsertTool<TNode extends { id: string }, TPose>(
-  adapter: InsertAdapter<TNode>,
-  options: UseInsertToolOptions<TPose, TNode> = {},
+  _adapter: InsertAdapter<TNode>,
+  _options: UseInsertToolOptions<TPose, TNode> = {},
 ): Tool<undefined> {
-  const { hitExisting, overlayStyle, ...gestureOptions } = options;
-  const controller = useInsert<TNode, TPose>(adapter, gestureOptions);
-  const { tool } = defineDragInsertTool({
-    id: 'insert',
-    cursor: 'crosshair',
-    presentation: PRESENTATION,
-    controller,
-    overlayId: 'insert-overlay',
-    overlayLabel: 'Insert overlay',
-    defaultStyle: DEFAULT_STYLE,
-    overlayStyle,
-    hitExisting,
-  });
-  return tool;
+  return useMemo<Tool<undefined>>(
+    () =>
+      defineTool<undefined>({
+        id: 'insert',
+        cursor: 'crosshair',
+        presentation: PRESENTATION,
+        bindings: [
+          { spec: { kind: 'drag' }, actionId: 'insert', opts: { params: { kind: 'rect' } } },
+        ],
+        bindingsOverrideDrag: true,
+        initial: {},
+      }),
+    [],
+  );
 }
