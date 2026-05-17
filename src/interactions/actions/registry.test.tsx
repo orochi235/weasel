@@ -228,18 +228,18 @@ describe('Action with new invoker / GestureSpec fields (Phase 1 additive)', () =
     expect(action.invoker?.timing).toBe('ongoing');
   });
 
-  it('accepts a GestureSpec on defaultBinding', () => {
+  it('accepts a GestureSpec on gestureBinding', () => {
     const gestureSpec: GestureSpec = { kind: 'wheel', mods: { ctrl: true } };
     const action: Action = {
       id: 'demo.wheel',
       label: 'Demo wheel',
-      defaultBinding: gestureSpec,
+      gestureBinding: gestureSpec,
       run: () => {},
     };
-    expect(action.defaultBinding).toEqual({ kind: 'wheel', mods: { ctrl: true } });
+    expect(action.gestureBinding).toEqual({ kind: 'wheel', mods: { ctrl: true } });
   });
 
-  it('legacy KeyBinding shape on defaultBinding still compiles', () => {
+  it('legacy KeyBinding shape on defaultBinding still compiles (unchanged from v1)', () => {
     const action: Action = {
       id: 'demo.legacy',
       label: 'Demo legacy',

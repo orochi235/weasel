@@ -26,12 +26,13 @@ export type { KeyBinding } from './useKeybinding';
 export interface Action {
   id: string;
   label: string;
-  /** v1 (legacy): KeyBinding for keydown-only dispatch.
-   *  Phase 1+: GestureSpec for the unified dispatcher.
-   *  Both forms accepted during the registry-unification transition;
-   *  the gesture dispatcher (Phase 3) reads GestureSpec; the existing
-   *  `useKeybinding` reads KeyBinding. */
-  defaultBinding?: KeyBinding | GestureSpec;
+  defaultBinding?: KeyBinding;
+  /** Phase 1+ (registry-unification): the gesture-spec form of the binding,
+   *  read by the gesture dispatcher. Coexists with `defaultBinding` (KeyBinding)
+   *  during the transition; Phase 9 deletes legacy `defaultBinding` and renames
+   *  this field to `defaultBinding`. See
+   *  `docs/superpowers/specs/2026-05-16-registry-unification-design.md`. */
+  gestureBinding?: GestureSpec;
   /** Inline-SVG icon for palette / toolbar surfaces. Mirrors
    *  `ToolPresentation.icon` so a generic `<ActionBar>` can render from
    *  action metadata the same way `<ToolPalette>` renders from tool
