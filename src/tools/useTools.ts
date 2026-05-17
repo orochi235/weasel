@@ -4,6 +4,7 @@ import { createToolsDispatcher, type ToolsDispatcher, type ToolsDispatcherOption
 import { dlog } from '../debug/flag';
 import type { AnyTool, ToolCtx } from './types';
 import type { RenderLayer } from 'core/layers/render';
+import { useOptionalActiveToolContext } from '../interactions/actions/activeToolContext';
 
 export interface UseToolsOptions {
   /** Initial active-slot tool id. Must exist in `registry`. */
@@ -40,7 +41,8 @@ export interface ToolsApi {
   active: string;
   /** Set the active-slot tool. Cancels any in-flight gesture. */
   setActive: (id: string) => void;
-  /** Currently hotkey-engaged tool id (or `null`). */
+  /** Currently hotkey-engaged tool id (or `null`). Derived as the top of
+   *  the hotkey stack for backwards compat with the pre-stack API. */
   hotkeyEngaged: string | null;
   /** Engage a hotkey-slot tool by id. No-op if a gesture is in flight. */
   engageHotkey: (id: string) => void;
@@ -82,13 +84,56 @@ const DEFAULT_CTX: Omit<ToolCtx, 'scratch'> = {
   debug: undefined,
 };
 
+/**
+ * Manages the active tool, hotkey slot, and gesture dispatcher.
+ *
+ * **Soft-fallback semantics**: when rendered inside `<ActiveToolContextProvider>`
+ * (automatically provided by `<SceneCanvas>`), active/hotkey state lives in the
+ * context (Phase 5 semantics). Without a provider, `useTools` falls back to
+ * internal `useState` (pre-Phase-5 semantics). This preserves backwards
+ * compatibility for standalone `useTools` calls outside `<SceneCanvas>`.
+ *
+ * **First-mount-wins semantics** (context path only): if `opts.active` differs
+ * from the context default (`'select'`) on first mount, `useTools` pushes
+ * `opts.active` to the context via a microtask. Subsequent mounts respect
+ * whatever the context currently holds (the first caller wins).
+ */
 export function useTools(opts: UseToolsOptions): ToolsApi {
   if (!(opts.active in opts.registry)) {
     throw new Error(`useTools: active "${opts.active}" not in registry`);
   }
 
-  const [active, setActiveState] = useState<string>(opts.active);
-  const [hotkeyEngaged, setHotkeyEngaged] = useState<string | null>(null);
+  // Soft-fallback: use context when available, otherwise fall back to local state.
+  const optionalCtx = useOptionalActiveToolContext();
+  const usingContext = optionalCtx !== null;
+
+  // Local state — used only when no context provider is in scope.
+  const [localActive, setLocalActive] = useState<string>(opts.active);
+  const [localHotkeyStack, setLocalHotkeyStack] = useState<string[]>([]);
+
+  // First-mount sync (context path only): if context is at its default ('select')
+  // and caller wants something else, push opts.active to the context via microtask
+  // so we don't setState during render.
+  const hasInitializedRef = useRef(false);
+  const isFirstRender = !hasInitializedRef.current;
+  if (isFirstRender) {
+    hasInitializedRef.current = true;
+    if (usingContext && optionalCtx.active === 'select' && opts.active !== 'select') {
+      queueMicrotask(() => optionalCtx.setActive(opts.active));
+    }
+  }
+
+  // Effective state: from context when available, otherwise local.
+  // On the very first render with context, if context hasn't yet been updated
+  // to match opts.active, use opts.active directly to avoid a flash of the wrong tool.
+  const active = usingContext
+    ? (isFirstRender && optionalCtx.active === 'select' && opts.active !== 'select'
+        ? opts.active
+        : optionalCtx.active)
+    : localActive;
+  const hotkeyStack = usingContext ? optionalCtx.hotkeyStack : localHotkeyStack;
+  const hotkeyEngaged = hotkeyStack.at(-1) ?? null;
+
   const [gestureTick, setGestureTick] = useState(0);
 
   // Refs so the dispatcher's getSlots/getCtx callbacks see latest values
@@ -134,9 +179,11 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
       }
       dlog('[tools] active:', activeRef.current, '→', id);
       dispatcher.cancelGesture();
-      setActiveState(id);
+      if (usingContext) optionalCtx.setActive(id);
+      else setLocalActive(id);
     },
-    [dispatcher],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [dispatcher, usingContext, optionalCtx],
   );
 
   const engageHotkey = useCallback(
@@ -146,15 +193,19 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
         throw new Error(`engageHotkey: "${id}" not in registry`);
       }
       dlog('[tools] hotkey engaged:', id);
-      setHotkeyEngaged(id);
+      if (usingContext) optionalCtx.pushHotkey(id);
+      else setLocalHotkeyStack((s) => [...s, id]);
     },
-    [dispatcher],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [dispatcher, usingContext, optionalCtx],
   );
 
   const disengageHotkey = useCallback(() => {
     if (hotkeyRef.current) dlog('[tools] hotkey disengaged:', hotkeyRef.current);
-    setHotkeyEngaged(null);
-  }, []);
+    if (usingContext) optionalCtx.popHotkey();
+    else setLocalHotkeyStack((s) => (s.length === 0 ? s : s.slice(0, -1)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usingContext, optionalCtx]);
 
   return {
     active,

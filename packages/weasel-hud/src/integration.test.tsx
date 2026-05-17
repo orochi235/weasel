@@ -9,6 +9,7 @@ import type { Tool } from '../../../src/tools/types';
 import { useHud } from './react';
 import { _resetFontRegistryForTests } from '../../../src/features/text/atlas/registerFont';
 import { readTokens } from './theme';
+import { ActiveToolContextProvider } from '../../../src/interactions/actions/activeToolContext';
 
 const defaultResolved = readTokens(null);
 
@@ -76,7 +77,7 @@ describe('weasel-hud integration', () => {
       press: vi.fn<() => void>(),
       hudRef: { current: null },
     };
-    const { container } = render(<Harness apiOut={api} />);
+    const { container } = render(<ActiveToolContextProvider><Harness apiOut={api} /></ActiveToolContextProvider>);
     await act(async () => {});  // let useHud's effect run
 
     expect(api.hudRef.current).not.toBeNull();
@@ -97,7 +98,7 @@ describe('weasel-hud integration', () => {
       press: vi.fn<() => void>(),
       hudRef: { current: null },
     };
-    const { container } = render(<Harness apiOut={api} />);
+    const { container } = render(<ActiveToolContextProvider><Harness apiOut={api} /></ActiveToolContextProvider>);
     await act(async () => {});
 
     api.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' });
@@ -115,7 +116,7 @@ describe('weasel-hud integration', () => {
       press: vi.fn(),
       hudRef: { current: null },
     };
-    const { container } = render(<Harness apiOut={apiOut} />);
+    const { container } = render(<ActiveToolContextProvider><Harness apiOut={apiOut} /></ActiveToolContextProvider>);
     await act(async () => {});
 
     const canvas = container.querySelector('canvas')!;

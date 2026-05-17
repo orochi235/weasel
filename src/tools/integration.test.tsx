@@ -6,6 +6,7 @@ import { useTools } from './useTools';
 import { useKeybindings } from './useKeybindings';
 import { defineTool } from './routing/defineTool';
 import { begin, claim } from './routing/result';
+import { ActiveToolContextProvider } from '../interactions/actions/activeToolContext';
 
 describe('Phase 1 integration: define → use → key → canvas', () => {
   it('keybinding switches active tool, drag routes through new tool', () => {
@@ -42,7 +43,7 @@ describe('Phase 1 integration: define → use → key → canvas', () => {
       return <Canvas width={100} height={100} adapter={{} as never} layers={{}} tools={tools} />;
     }
 
-    const { container } = render(<App />);
+    const { container } = render(<ActiveToolContextProvider initialActive="select"><App /></ActiveToolContextProvider>);
     const canvas = container.querySelector('canvas')!;
     canvas.setPointerCapture = vi.fn();
 
@@ -101,7 +102,7 @@ describe('Phase 1 integration: define → use → key → canvas', () => {
       return <Canvas width={100} height={100} adapter={{} as never} layers={{}} tools={tools} />;
     }
 
-    const { container } = render(<App />);
+    const { container } = render(<ActiveToolContextProvider initialActive="select"><App /></ActiveToolContextProvider>);
     const canvas = container.querySelector('canvas')!;
     canvas.setPointerCapture = vi.fn();
 

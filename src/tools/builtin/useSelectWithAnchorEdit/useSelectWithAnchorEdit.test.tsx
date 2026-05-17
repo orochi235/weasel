@@ -1,8 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { useSelectWithAnchorEdit } from './useSelectWithAnchorEdit';
 import { PathBuilder } from 'features/paths/builder';
 import type { Path, PolygonPath } from 'features/paths/types';
+import { ActiveToolContextProvider } from '../../../interactions/actions/activeToolContext';
+
+function makeWrapper() {
+  return function Wrapper({ children }: { children: ReactNode }) {
+    return <ActiveToolContextProvider initialActive="select">{children}</ActiveToolContextProvider>;
+  };
+}
 
 interface PathObj { id: string }
 
@@ -43,6 +51,7 @@ describe('useSelectWithAnchorEdit', () => {
         pickEvery: () => ['p'],
         boundsOf: () => ({ x: 0, y: 0, width: 100, height: 100 }),
       }),
+      { wrapper: makeWrapper() },
     );
     expect(result.current.editingId).toBe(null);
     expect(result.current.tools.active).toBe('select');
@@ -60,6 +69,7 @@ describe('useSelectWithAnchorEdit', () => {
         boundsOf: () => ({ x: 0, y: 0, width: 100, height: 100 }),
         clientToWorld: () => [10, 10],
       }),
+      { wrapper: makeWrapper() },
     );
     act(() => {
       result.current.onDoubleClick(makeDoubleClickEvent(canvas, 10, 10));
@@ -80,6 +90,7 @@ describe('useSelectWithAnchorEdit', () => {
         editingFilter: (ids) => (ids.includes('p') ? 'p' : null),
         clientToWorld: () => [0, 0],
       }),
+      { wrapper: makeWrapper() },
     );
     act(() => {
       result.current.onDoubleClick(makeDoubleClickEvent(canvas, 0, 0));
@@ -99,6 +110,7 @@ describe('useSelectWithAnchorEdit', () => {
         editingFilter: () => null,
         clientToWorld: () => [0, 0],
       }),
+      { wrapper: makeWrapper() },
     );
     act(() => {
       result.current.onDoubleClick(makeDoubleClickEvent(canvas, 0, 0));
@@ -118,6 +130,7 @@ describe('useSelectWithAnchorEdit', () => {
         boundsOf: () => null,
         clientToWorld: () => [0, 0],
       }),
+      { wrapper: makeWrapper() },
     );
     act(() => {
       result.current.onDoubleClick(makeDoubleClickEvent(canvas, 0, 0));

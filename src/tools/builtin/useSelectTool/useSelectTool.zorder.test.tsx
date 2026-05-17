@@ -13,6 +13,7 @@ import { useSelection } from 'core/selection/useSelection';
 import { useTools } from '../../useTools';
 import { useSelectTool } from './useSelectTool';
 import { asNodeId } from 'core/scene/types';
+import { ActiveToolContextProvider } from '../../../interactions/actions/activeToolContext';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number }
 interface Pose { x: number; y: number; width: number; height: number }
@@ -57,7 +58,7 @@ describe('useSelectTool — default pickEvery z-order', () => {
     let lastSel: readonly string[] = [];
     const onSel = (ids: readonly string[]) => { lastSel = ids; };
 
-    const { container, rerender } = render(<Harness onSel={onSel} />);
+    const { container, rerender } = render(<ActiveToolContextProvider initialActive="select"><Harness onSel={onSel} /></ActiveToolContextProvider>);
     const canvas = container.querySelector('canvas')!;
     canvas.setPointerCapture = () => {};
 
@@ -65,7 +66,7 @@ describe('useSelectTool — default pickEvery z-order', () => {
     fireEvent.pointerDown(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
     fireEvent.pointerUp(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
 
-    rerender(<Harness onSel={onSel} />);
+    rerender(<ActiveToolContextProvider initialActive="select"><Harness onSel={onSel} /></ActiveToolContextProvider>);
     expect(lastSel).toEqual([asNodeId('B')]); // topmost wins
   });
 
@@ -101,14 +102,14 @@ describe('useSelectTool — default pickEvery z-order', () => {
     let lastSel: readonly string[] = [];
     const onSel = (ids: readonly string[]) => { lastSel = ids; };
 
-    const { container, rerender } = render(<Harness onSel={onSel} />);
+    const { container, rerender } = render(<ActiveToolContextProvider initialActive="select"><Harness onSel={onSel} /></ActiveToolContextProvider>);
     const canvas = container.querySelector('canvas')!;
     canvas.setPointerCapture = () => {};
 
     fireEvent.pointerDown(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
     fireEvent.pointerUp(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
 
-    rerender(<Harness onSel={onSel} />);
+    rerender(<ActiveToolContextProvider initialActive="select"><Harness onSel={onSel} /></ActiveToolContextProvider>);
     expect(lastSel).toEqual([asNodeId('C')]);
   });
 });

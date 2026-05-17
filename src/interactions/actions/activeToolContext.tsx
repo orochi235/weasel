@@ -70,3 +70,13 @@ export function useActiveToolContext(): ActiveToolContextValue {
   }
   return value;
 }
+
+/**
+ * Like `useActiveToolContext`, but returns `null` when no
+ * `<ActiveToolContextProvider>` is in scope instead of throwing. Used by
+ * `useStandardActions` to preserve its silent-no-op contract when no provider
+ * is present.
+ */
+export function useOptionalActiveToolContext(): ActiveToolContextValue | null {
+  return useContext(ActiveToolContext);
+}

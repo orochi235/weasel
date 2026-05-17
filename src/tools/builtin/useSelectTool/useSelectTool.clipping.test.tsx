@@ -29,6 +29,12 @@ import { useTools } from '../../useTools';
 import { useSelectTool } from './useSelectTool';
 import { rectPath } from 'features/paths/builder';
 import { asNodeId } from 'core/scene/types';
+import { ActiveToolContextProvider } from '../../../interactions/actions/activeToolContext';
+import type { ReactElement } from 'react';
+
+function wrap(node: ReactElement) {
+  return <ActiveToolContextProvider initialActive="select">{node}</ActiveToolContextProvider>;
+}
 
 interface Item { label: string }
 type Pose = { x: number; y: number; width: number; height: number };
@@ -102,7 +108,7 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
       );
     }
 
-    const { container, rerender } = render(<Harness />);
+    const { container, rerender } = render(wrap(<Harness />));
     const canvas = container.querySelector('canvas')!;
     canvas.setPointerCapture = () => {};
     canvas.releasePointerCapture = () => {};
@@ -112,7 +118,7 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
     fireEvent.pointerDown(canvas, { clientX: 10, clientY: 10, pointerId: 1 });
     fireEvent.pointerUp(canvas, { clientX: 10, clientY: 10, pointerId: 1 });
 
-    rerender(<Harness />);
+    rerender(wrap(<Harness />));
     expect(lastSel).toEqual([]);
   });
 
@@ -173,7 +179,7 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
       );
     }
 
-    const { container, rerender } = render(<Harness />);
+    const { container, rerender } = render(wrap(<Harness />));
     const canvas = container.querySelector('canvas')!;
     canvas.setPointerCapture = () => {};
     canvas.releasePointerCapture = () => {};
@@ -183,7 +189,7 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
     fireEvent.pointerDown(canvas, { clientX: 5, clientY: 5, pointerId: 1 });
     fireEvent.pointerUp(canvas, { clientX: 5, clientY: 5, pointerId: 1 });
 
-    rerender(<Harness />);
+    rerender(wrap(<Harness />));
     expect(lastSel).toContain(asNodeId('inner'));
   });
 
@@ -224,7 +230,7 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
       );
     }
 
-    const { container, rerender } = render(<Harness />);
+    const { container, rerender } = render(wrap(<Harness />));
     const canvas = container.querySelector('canvas')!;
     canvas.setPointerCapture = () => {};
     canvas.releasePointerCapture = () => {};
@@ -233,7 +239,7 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
     fireEvent.pointerDown(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
     fireEvent.pointerUp(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
 
-    rerender(<Harness />);
+    rerender(wrap(<Harness />));
     expect(lastSel).toContain(asNodeId('bed'));
   });
 
@@ -274,7 +280,7 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
       );
     }
 
-    const { container, rerender } = render(<Harness />);
+    const { container, rerender } = render(wrap(<Harness />));
     const canvas = container.querySelector('canvas')!;
     canvas.setPointerCapture = () => {};
     canvas.releasePointerCapture = () => {};
@@ -283,7 +289,7 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
     fireEvent.pointerDown(canvas, { clientX: 5, clientY: 5, pointerId: 1 });
     fireEvent.pointerUp(canvas, { clientX: 5, clientY: 5, pointerId: 1 });
 
-    rerender(<Harness />);
+    rerender(wrap(<Harness />));
     expect(lastSel).toEqual([]);
   });
 
@@ -329,7 +335,7 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
       );
     }
 
-    const { container, rerender } = render(<Harness />);
+    const { container, rerender } = render(wrap(<Harness />));
     const canvas = container.querySelector('canvas')!;
     canvas.setPointerCapture = () => {};
     canvas.releasePointerCapture = () => {};
@@ -338,7 +344,7 @@ describe('useSelectTool default pickEvery — clip-aware', () => {
     fireEvent.pointerDown(canvas, { clientX: 25, clientY: 25, pointerId: 1 });
     fireEvent.pointerUp(canvas, { clientX: 25, clientY: 25, pointerId: 1 });
 
-    rerender(<Harness />);
+    rerender(wrap(<Harness />));
     expect(lastSel).toContain(asNodeId('A'));
     expect(lastSel).not.toContain(asNodeId('B'));
   });
