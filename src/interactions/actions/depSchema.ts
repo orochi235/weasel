@@ -34,6 +34,7 @@ import type { Scene, NodeId } from 'core/scene/types';
 import type { History } from 'core/history/history';
 import type { PointerContextValue } from 'features/pointer/PointerContext';
 import type { ActiveToolContextValue } from './activeToolContext';
+import type { TextEditDep } from './defaults/enterTextEdit';
 
 /** Minimal view API the action layer consumes. Phase 5+ may refine. */
 export interface ViewApi {
@@ -176,6 +177,18 @@ declare module './depRegistry' {
      * editing is active. If absent, `start` returns an empty handle (no-op).
      */
     editAnchors: EditAnchorsDep;
+    /**
+     * Text-edit dep — activates the in-place text editing overlay.
+     *
+     * Phase 14c.3: sourced from consumer via `useTextEdit` / `useSceneTextEdit`.
+     * The `enterTextEditAction` requires this dep to be registered by the text
+     * tool when text editing is available.
+     *
+     * The optional `isTextNode` predicate guards against entering edit mode on
+     * non-text nodes when no per-kind binding filter is available (Phase 14e
+     * follow-up will add per-kind classification to `classifyTarget`).
+     */
+    textEdit: TextEditDep;
   }
 }
 

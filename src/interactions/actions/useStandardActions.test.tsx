@@ -77,6 +77,7 @@ const KIT_IDS = [
   'viewport.pan', 'viewport.zoom',
   'viewport.dragPan', // Phase 14c.2
   'clearSelection', // Phase 14a
+  'enterTextEdit', // Phase 14c.3
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -84,7 +85,7 @@ const KIT_IDS = [
 // ---------------------------------------------------------------------------
 
 describe('useStandardActions', () => {
-  it('registers all 42 kit-standard action descriptors', () => {
+  it('registers all 43 kit-standard action descriptors', () => {
     const seen: string[][] = [];
     render(
       <Providers>
