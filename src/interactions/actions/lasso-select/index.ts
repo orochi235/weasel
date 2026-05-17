@@ -1,5 +1,1 @@
-export { useLassoSelect } from './lassoSelect';
-export type {
-  LassoSelectController,
-  UseLassoSelectOptions,
-} from './lassoSelect';
+export type { UseLassoSelectOptions } from './options';
