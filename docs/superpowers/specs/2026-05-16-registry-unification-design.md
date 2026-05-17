@@ -284,14 +284,23 @@ type GestureSpec =
   | DragSpec
   | MultiTouchSpec
 
-type KeySpec       = { kind: 'key'; key: string; mods?: ModSpec }
-type KeyHeldSpec   = { kind: 'key-held'; key: string; mods?: ModSpec }
+type KeySpec       = { kind: 'key'; key: string | string[]; mods?: ModSpec }
+type KeyHeldSpec   = { kind: 'key-held'; key: string | string[]; mods?: ModSpec }
 type WheelSpec     = { kind: 'wheel'; mods?: ModSpec }
 type ClickSpec     = { kind: 'click'; target?: TargetSpec; mods?: ModSpec }
 type DragSpec      = { kind: 'drag'; target?: TargetSpec; mods?: ModSpec }
 type MultiTouchSpec = { kind: 'multiTouch'; fingers: number; mods?: ModSpec }
 
-type ModSpec = Partial<{ alt: boolean; ctrl: boolean; meta: boolean; shift: boolean }>
+// Matching is strict: an omitted modifier MUST NOT be held. `mod` is a
+// platform-aware shorthand (meta on mac, ctrl elsewhere). `shift: 'optional'`
+// is the explicit opt-in for loose matching (shifted-or-unshifted both OK).
+type ModSpec = Partial<{
+  alt: boolean
+  ctrl: boolean
+  meta: boolean
+  mod: boolean
+  shift: boolean | 'optional'
+}>
 
 // TargetSpec uses the kit-owned object-kind registry from
 // `docs/TODO.md` Tier 1 ("Kit-owned object-kind registry") plus

@@ -9,16 +9,23 @@
  * See `docs/superpowers/specs/2026-05-16-registry-unification-design.md` § "Types".
  */
 
-/** Optional modifier-key requirement for a gesture spec. All fields are
- *  optional; an omitted field means "either is acceptable." A `true` means
- *  the modifier MUST be held; `false` means it MUST NOT be held.
+/** Optional modifier-key requirement for a gesture spec.
+ *
+ *  Matching semantics (strict): an omitted modifier field means the
+ *  modifier MUST NOT be held — i.e., a bare `{ kind: 'key', key: 'Escape' }`
+ *  matches only unmodified Escape, NOT Cmd+Escape. A `true` means the
+ *  modifier MUST be held; `false` is the same as omitted (must be absent).
+ *  This mirrors today's `KeyBinding` matcher and keeps conflict detection
+ *  coherent.
  *
  *  `mod` is a platform-aware shorthand: matches `metaKey` on mac, `ctrlKey`
  *  elsewhere (mirrors `KeyBinding.mod`).
  *
  *  `shift` additionally accepts `'optional'` meaning "shifted or unshifted
- *  both acceptable" — used by actions like nudge whose step size depends
- *  on shift but whose firing does not.
+ *  both acceptable" — the explicit opt-in for loose matching, used by
+ *  actions like nudge whose step size depends on shift but whose firing
+ *  does not. To widen other modifiers similarly, extend their type when
+ *  a real consumer needs it.
  */
 export type ModSpec = Partial<{
   alt: boolean;
