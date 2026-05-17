@@ -64,7 +64,7 @@ import {
   useLassoSelectDepSource,
   useTextEditDepSource,
   useEditAnchorsDepSource,
-  useResizeBehaviorsDepSource,
+  useResizePolicy,
 } from './deps';
 import { useLegacyActionBridges } from './SceneCanvas/useLegacyActionBridges';
 import { useActionsPropResolver } from './SceneCanvas/useActionsPropResolver';
@@ -1003,7 +1003,7 @@ function StandardActionsRegistrar({
   actions?: ActionsProp;
   currentViewRef: React.RefObject<View>;
   onViewChange: (v: View) => void;
-  /** Forwarded from `selectTool.resize` — wires the `resizeBehaviors` dep
+  /** Forwarded from `selectTool.resize` — wires the `resizePolicy` dep
    *  consumed by the dispatcher-path `resizeAction`. The legacy
    *  `useResizeTool` consumes the same options separately (both paths run
    *  in parallel during the dispatcher migration). */
@@ -1029,28 +1029,28 @@ function StandardActionsRegistrar({
   useLegacyActionBridges(selection, scene, adapter, actionDefaults);
   useActionsPropResolver(actions);
 
-  // Gate the `resizeBehaviors` dep registration on the consumer having
+  // Gate the `resizePolicy` dep registration on the consumer having
   // passed `selectTool.resize`. When absent, consumers wire it via a child
   // component (see PointSnapDemo / GroupsDemo). Registering empty defaults
   // here would race with child-component registrations — React runs child
   // effects before parent effects, so the parent's empty default would
   // overwrite the child's real value. The conditional mount avoids that.
-  return resizeOptions ? <ResizeBehaviorsDepRegistrar options={resizeOptions} /> : null;
+  return resizeOptions ? <ResizePolicyRegistrar options={resizeOptions} /> : null;
 }
 
 /** Subcomponent so we can conditionally render (and thus conditionally
- *  call) `useResizeBehaviorsDepSource`. See parent's comment for why this
+ *  call) `useResizePolicy`. See parent's comment for why this
  *  must be gated rather than always-on. */
-function ResizeBehaviorsDepRegistrar({
+function ResizePolicyRegistrar({
   options,
 }: {
   options: UseResizeOptions<unknown>;
 }) {
-  useResizeBehaviorsDepSource<unknown>({
-    behaviors: options.behaviors as never[] | undefined,
+  useResizePolicy<unknown>({
+    constraints: options.behaviors as never[] | undefined,
     pointSnap: options.pointSnapBehaviors as never[] | undefined,
     expandIds: options.expandIds,
-    geometry: options.geometry,
+    projection: options.geometry,
   });
   return null;
 }

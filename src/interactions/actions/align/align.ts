@@ -3,7 +3,7 @@ import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import { dispatchApplyBatch } from 'core/applyOps';
 import type { NodeId } from 'core/scene/types';
-import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../resize/geometry';
+import { RECT_POSE_DESCRIPTOR, type PoseProjection } from '../resize/geometry';
 import type { ResizePose } from '../../gestures/types';
 import { useActionsRegistry } from '../registry';
 import { defaultAlignActions } from '../defaults/align';
@@ -23,7 +23,7 @@ export interface UseAlignOptions<TPose> {
   /** Projection between `TPose` and bounds. Defaults to `RECT_POSE_DESCRIPTOR`
    *  for `{x,y,width,height}` poses. Pass `pathPoseDescriptor` for `Path`
    *  poses so polygon coords translate correctly. */
-  geometry?: PoseDescriptor<TPose>;
+  geometry?: PoseProjection<TPose>;
   /** Label passed to applyOps. Default 'Align'. */
   label?: string;
   /** Auto-register the six default align actions into a surrounding
@@ -68,7 +68,7 @@ export function translatePoseViaDescriptor<TPose>(
   pose: TPose,
   dx: number,
   dy: number,
-  geometry: PoseDescriptor<TPose>,
+  geometry: PoseProjection<TPose>,
 ): TPose {
   if (geometry.translate) return geometry.translate(pose, dx, dy);
   const src = geometry.getBounds(pose);
@@ -95,7 +95,7 @@ export function useAlign<TPose>(
     if (sel.length < 2) return;
     const geom =
       o.geometry ??
-      (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>);
+      (RECT_POSE_DESCRIPTOR as unknown as PoseProjection<TPose>);
     const poses = sel.map((id) => a.getPose(id));
     const bounds = poses.map((p) => geom.getBounds(p));
     const union = unionBounds(bounds);
@@ -123,7 +123,7 @@ export function useAlign<TPose>(
       getPose: (id) => adapterRef.current.getPose(id),
       geometry:
         optsRef.current.geometry ??
-        (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>),
+        (RECT_POSE_DESCRIPTOR as unknown as PoseProjection<TPose>),
       applyOps: (ops, label) =>
         dispatchApplyBatch(adapterRef.current, ops, label ?? optsRef.current.label ?? 'Align'),
     });

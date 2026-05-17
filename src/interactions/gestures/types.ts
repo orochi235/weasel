@@ -156,13 +156,15 @@ export interface ResizeProposed<TPose extends ResizePose> {
   anchor: ResizeAnchor;
 }
 
-/** Per-frame result a `ResizeBehavior.onMove` can return to override the proposed pose. */
+/** Per-frame result a `BoundsConstraint.onMove` can return to override the proposed pose. */
 export interface ResizeMoveResult<TPose extends ResizePose> {
   pose?: TPose;
 }
 
-/** A behavior plugged into `useResize`. */
-export type ResizeBehavior<TPose extends ResizePose> = ActionBehavior<
+/** A bounds-frame constraint plugged into `useResize` / `resizeAction`.
+ *  Reads/writes `{x,y,width,height}` and can override the proposed pose
+ *  on each frame (e.g. lock-aspect, clamp-min-size, snap-to-grid). */
+export type BoundsConstraint<TPose extends ResizePose> = ActionBehavior<
   TPose,
   ResizeProposed<TPose>,
   ResizeMoveResult<TPose>

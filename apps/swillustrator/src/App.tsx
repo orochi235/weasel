@@ -143,8 +143,8 @@ import {
   type ColorContextValue,
 } from './tools/colorContext/ColorContextProvider';
 import { colorActions } from './tools/colorContext/actions';
-import { useDepSource, useActionsRegistry, DepRegistryProvider, useResizeBehaviorsDepSource } from '@orochi235/weasel';
-import type { ResizeBehavior, PointSnapBehavior } from '@orochi235/weasel';
+import { useDepSource, useActionsRegistry, DepRegistryProvider, useResizePolicy } from '@orochi235/weasel';
+import type { BoundsConstraint, PointSnapBehavior } from '@orochi235/weasel';
 import {
   objsToSvgNodes,
   svgNodesToObjsWithGroups,
@@ -1162,7 +1162,7 @@ export function App() {
   // AABB as origin and remaps each leaf proportionally). Snap behaviors are
   // conditioned on the persisted `snapToGrid` pref; `Cmd` is a temporary
   // bypass so users can place off-grid without disabling the toggle.
-  const resizeBehaviors = useMemo(() => [lockAspectWithModifier()], []);
+  const resizePolicy = useMemo(() => [lockAspectWithModifier()], []);
   const resizePointSnap = useMemo(
     () => (snapToGrid
       ? [pointSnapToGrid({ spacing: snapSpacing, bypassKey: 'meta' as const })]
@@ -1171,7 +1171,7 @@ export function App() {
   );
   const resizeTool = useResizeTool<Obj, Pose>(adapter, {
     resize: {
-      behaviors: resizeBehaviors,
+      behaviors: resizePolicy,
       pointSnapBehaviors: resizePointSnap,
       expandIds: expandGroupIds,
     },
@@ -1183,8 +1183,8 @@ export function App() {
   // Stable refs for the resize bridge — keeps the bridge from re-registering
   // on every behavior/expand-fn identity change while still surfacing the
   // latest values at dispatch time.
-  const resizeBehaviorsRef = useRef(resizeBehaviors);
-  resizeBehaviorsRef.current = resizeBehaviors;
+  const resizePolicyRef = useRef(resizePolicy);
+  resizePolicyRef.current = resizePolicy;
   const resizePointSnapRef = useRef(resizePointSnap);
   resizePointSnapRef.current = resizePointSnap;
   const expandGroupIdsRef = useRef(expandGroupIds);
@@ -2209,8 +2209,8 @@ export function App() {
         fillRef={fillRef}
         strokeRef={strokeRef}
       />
-      <ResizeBehaviorsDepBridge
-        behaviorsRef={resizeBehaviorsRef}
+      <ResizePolicyBridge
+        behaviorsRef={resizePolicyRef}
         pointSnapRef={resizePointSnapRef}
         expandIdsRef={expandGroupIdsRef}
       />
@@ -2552,26 +2552,26 @@ interface ColorDepBridgeProps {
   strokeRef: MutableRefObject<string>;
 }
 
-// ResizeBehaviorsDepBridge — mounts inside <DepRegistryProvider> and
-// publishes the live `resizeBehaviors` dep so the kit's dispatcher-path
+// ResizePolicyBridge — mounts inside <DepRegistryProvider> and
+// publishes the live `resizePolicy` dep so the kit's dispatcher-path
 // `resizeAction` is feature-equivalent to the legacy `useResizeTool`
 // (which still runs in parallel for corner-handle affordance rendering).
 // All inputs are ref-backed so identity churn in the parent doesn't
 // re-register on every render; the dep factory reads `.current` at
 // dispatch time.
-interface ResizeBehaviorsDepBridgeProps {
-  behaviorsRef: MutableRefObject<ResizeBehavior<Pose>[]>;
+interface ResizePolicyBridgeProps {
+  behaviorsRef: MutableRefObject<BoundsConstraint<Pose>[]>;
   pointSnapRef: MutableRefObject<PointSnapBehavior<Pose>[]>;
   expandIdsRef: MutableRefObject<(ids: string[]) => string[]>;
 }
 
-function ResizeBehaviorsDepBridge({
+function ResizePolicyBridge({
   behaviorsRef,
   pointSnapRef,
   expandIdsRef,
-}: ResizeBehaviorsDepBridgeProps) {
-  useResizeBehaviorsDepSource<Pose>({
-    behaviors: behaviorsRef.current,
+}: ResizePolicyBridgeProps) {
+  useResizePolicy<Pose>({
+    constraints: behaviorsRef.current,
     pointSnap: pointSnapRef.current,
     expandIds: (ids) => expandIdsRef.current(ids),
   });

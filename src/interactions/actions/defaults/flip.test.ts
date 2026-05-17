@@ -18,7 +18,7 @@ function makeDeps() {
   return {
     getSelection: () => [asNodeId('a')],
     getPose: (_id: string): Pose => ({ x: 10, y: 20, width: 30, height: 40 }),
-    geometry: RECT_POSE_DESCRIPTOR as unknown as import('../resize/geometry').PoseDescriptor<Pose>,
+    geometry: RECT_POSE_DESCRIPTOR as unknown as import('../resize/geometry').PoseProjection<Pose>,
     applyOps: vi.fn(),
   };
 }

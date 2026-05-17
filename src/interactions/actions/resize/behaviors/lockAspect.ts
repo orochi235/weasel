@@ -1,6 +1,6 @@
 import type {
   ModifierState,
-  ResizeBehavior,
+  BoundsConstraint,
   ResizePose,
 } from '../../../gestures/types';
 
@@ -29,7 +29,7 @@ type ModKey = keyof ModifierState;
  */
 export function lockAspectWithModifier<TPose extends ResizePose>(opts: {
   key?: ModKey;
-} = {}): ResizeBehavior<TPose> {
+} = {}): BoundsConstraint<TPose> {
   const { key = 'shift' } = opts;
 
   return {

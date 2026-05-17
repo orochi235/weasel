@@ -1,5 +1,5 @@
 import { asNodeId, RECT_POSE_DESCRIPTOR } from '@orochi235/weasel';
-import type { Animator, NodeId, PoseDescriptor, Scene } from '@orochi235/weasel';
+import type { Animator, NodeId, PoseProjection, Scene } from '@orochi235/weasel';
 import { createTransition } from './transition';
 import type {
   BindOptions,
@@ -140,7 +140,7 @@ function createSelection<TData, TPose>(
   data: readonly TData[],
   priorPoses: ReadonlyMap<NodeId, TPose>,
   animator: Animator | undefined,
-  geometry: PoseDescriptor<TPose> | undefined,
+  geometry: PoseProjection<TPose> | undefined,
 ): D3Selection<TData, TPose> {
   const sel: D3Selection<TData, TPose> = {
     ids,
@@ -167,7 +167,7 @@ function createSelection<TData, TPose>(
         );
       }
       const resolvedGeometry = (geometry ??
-        (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>));
+        (RECT_POSE_DESCRIPTOR as unknown as PoseProjection<TPose>));
       return createTransition({
         scene,
         animator,

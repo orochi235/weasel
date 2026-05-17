@@ -12,7 +12,7 @@ import type { ResizePose, RotatedPose } from '../../gestures/types';
  * its own bounds; for Path or polygon poses the consumer supplies a
  * projection that knows how to read and rewrite the underlying geometry.
  */
-export interface PoseDescriptor<TPose> {
+export interface PoseProjection<TPose> {
   getBounds(pose: TPose): ResizePose;
   remapBounds(pose: TPose, src: ResizePose, dst: ResizePose): TPose;
   /** Translate the pose by (dx, dy). Optional — when omitted, callers fall
@@ -43,7 +43,7 @@ export function aabbIntersectsRect(b: ResizePose, r: ResizePose): boolean {
 
 /** Identity geometry for `TPose extends ResizePose`. Treats the pose as its
  *  own bounds and remaps via affine scale against `src`/`dst`. */
-export const RECT_POSE_DESCRIPTOR: PoseDescriptor<ResizePose> = {
+export const RECT_POSE_DESCRIPTOR: PoseProjection<ResizePose> = {
   getBounds: (p) => p,
   remapBounds: (p, src, dst) => {
     const sx = src.width === 0 ? 1 : dst.width / src.width;
@@ -72,11 +72,11 @@ export const RECT_POSE_DESCRIPTOR: PoseDescriptor<ResizePose> = {
  *  subtype lets the rect descriptor's methods apply directly; `remapBounds`
  *  preserves the `rotation` field via `...p` spread). Adds `getRotation` so
  *  `useResize` knows to take the rotation-aware math path. */
-export const ROTATED_POSE_DESCRIPTOR: PoseDescriptor<RotatedPose> = {
-  getBounds: RECT_POSE_DESCRIPTOR.getBounds as PoseDescriptor<RotatedPose>['getBounds'],
-  remapBounds: RECT_POSE_DESCRIPTOR.remapBounds as PoseDescriptor<RotatedPose>['remapBounds'],
-  translate: RECT_POSE_DESCRIPTOR.translate as PoseDescriptor<RotatedPose>['translate'],
-  intersectsRect: RECT_POSE_DESCRIPTOR.intersectsRect as PoseDescriptor<RotatedPose>['intersectsRect'],
-  lerp: RECT_POSE_DESCRIPTOR.lerp as PoseDescriptor<RotatedPose>['lerp'],
+export const ROTATED_POSE_DESCRIPTOR: PoseProjection<RotatedPose> = {
+  getBounds: RECT_POSE_DESCRIPTOR.getBounds as PoseProjection<RotatedPose>['getBounds'],
+  remapBounds: RECT_POSE_DESCRIPTOR.remapBounds as PoseProjection<RotatedPose>['remapBounds'],
+  translate: RECT_POSE_DESCRIPTOR.translate as PoseProjection<RotatedPose>['translate'],
+  intersectsRect: RECT_POSE_DESCRIPTOR.intersectsRect as PoseProjection<RotatedPose>['intersectsRect'],
+  lerp: RECT_POSE_DESCRIPTOR.lerp as PoseProjection<RotatedPose>['lerp'],
   getRotation: (p) => p.rotation,
 };

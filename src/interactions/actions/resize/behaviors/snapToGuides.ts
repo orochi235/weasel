@@ -1,6 +1,6 @@
 import type {
   ModifierState,
-  ResizeBehavior,
+  BoundsConstraint,
   ResizePose,
 } from '../../../gestures/types';
 import type { Guide } from 'features/guides/types';
@@ -34,7 +34,7 @@ export interface SnapToGuidesResizeArgs {
  */
 export function snapToGuides<TPose extends ResizePose>(
   args: SnapToGuidesResizeArgs,
-): ResizeBehavior<TPose> {
+): BoundsConstraint<TPose> {
   const tolerance = args.tolerance ?? DEFAULT_GUIDE_TOLERANCE_PX;
   const getView = args.getView;
   const bypassKey = args.bypassKey;

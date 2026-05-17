@@ -37,10 +37,10 @@ import type { ActiveToolContextValue } from './activeToolContext';
 import type { TextEditDep } from './defaults/enterTextEdit';
 import type {
   PointSnapBehavior,
-  ResizeBehavior,
+  BoundsConstraint,
   ResizePose,
 } from '../gestures/types';
-import type { PoseDescriptor } from './resize/geometry';
+import type { PoseProjection } from './resize/geometry';
 
 /** Minimal view API the action layer consumes. Phase 5+ may refine. */
 export interface ViewApi {
@@ -160,25 +160,25 @@ export interface InsertDep {
  *
  * Optional in `DepSchema`: when absent, `resizeAction` falls back to
  * identity defaults (no behaviors, identity expandIds, `RECT_POSE_DESCRIPTOR`
- * geometry). Consumers wire the dep via `useDepSource('resizeBehaviors', ...)`
+ * geometry). Consumers wire the dep via `useDepSource('resizePolicy', ...)`
  * from any descendant of `<DepRegistryProvider>` / `<SceneCanvas>`.
  *
  * The generic is erased to `unknown` at the schema entry; consumers cast at
  * the call site (mirrors the `scene` entry's convention).
  */
-export interface ResizeBehaviorsDep<TPose> {
-  /** Bounds-frame behaviors. Constrained to `TPose extends ResizePose` since
-   *  behaviors read/write `{x,y,width,height}`. For non-rect TPose pass `[]`. */
-  behaviors: TPose extends ResizePose ? ResizeBehavior<TPose>[] : never[];
+export interface ResizePolicy<TPose> {
+  /** Bounds-frame constraints. Constrained to `TPose extends ResizePose` since
+   *  constraints read/write `{x,y,width,height}`. For non-rect TPose pass `[]`. */
+  constraints: TPose extends ResizePose ? BoundsConstraint<TPose>[] : never[];
   /** World-space anchor-point snap behaviors. Same TPose constraint as
-   *  `behaviors`. */
+   *  `constraints`. */
   pointSnap: TPose extends ResizePose ? PointSnapBehavior<TPose>[] : never[];
   /** Group-expansion at gesture start. Identity (`ids => ids`) when group
    *  resize isn't wanted. */
   expandIds: (ids: string[]) => string[];
   /** Projection from `TPose` to bounds and back. Use `RECT_POSE_DESCRIPTOR`
    *  for plain rect poses. */
-  geometry: PoseDescriptor<TPose>;
+  projection: PoseProjection<TPose>;
 }
 
 declare module './depRegistry' {
@@ -252,15 +252,15 @@ declare module './depRegistry' {
      */
     textEdit: TextEditDep;
     /**
-     * Resize-behaviors dep — modifier-aware behaviors, point-snap behaviors,
+     * Resize-policy dep — bounds constraints, point-snap behaviors,
      * group expansion, and pose↔bounds projection for `resizeAction`.
      *
      * Optional: when omitted, `resizeAction` falls back to identity defaults
-     * (no behaviors, no snap, identity expandIds, `RECT_POSE_DESCRIPTOR`).
-     * Consumers wire via `useDepSource('resizeBehaviors', ...)` or the
-     * `useResizeBehaviorsDepSource` helper.
+     * (no constraints, no snap, identity expandIds, `RECT_POSE_DESCRIPTOR`).
+     * Consumers wire via `useDepSource('resizePolicy', ...)` or the
+     * `useResizePolicy` helper.
      */
-    resizeBehaviors?: ResizeBehaviorsDep<unknown>;
+    resizePolicy?: ResizePolicy<unknown>;
   }
 }
 

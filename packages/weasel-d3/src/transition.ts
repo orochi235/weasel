@@ -3,7 +3,7 @@ import type {
   AnimationHandle,
   EasingFn,
   NodeId,
-  PoseDescriptor,
+  PoseProjection,
   Scene,
 } from '@orochi235/weasel';
 import type { D3Transition } from './types';
@@ -11,7 +11,7 @@ import type { D3Transition } from './types';
 interface TransitionCtx<TData, TPose> {
   scene: Scene<unknown, string, TPose>;
   animator: Animator;
-  geometry: PoseDescriptor<TPose>;
+  geometry: PoseProjection<TPose>;
   ids: readonly NodeId[];
   data: readonly TData[];
   priorPoses: ReadonlyMap<NodeId, TPose>;
@@ -81,7 +81,7 @@ export function createTransition<TData, TPose>(
     const lerp = geometry.lerp;
     if (!lerp) {
       throw new Error(
-        'd3Bind.transition: provided geometry has no `lerp` — pass a PoseDescriptor with lerp in BindOptions',
+        'd3Bind.transition: provided geometry has no `lerp` — pass a PoseProjection with lerp in BindOptions',
       );
     }
 

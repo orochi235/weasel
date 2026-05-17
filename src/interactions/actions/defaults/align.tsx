@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
-import type { PoseDescriptor } from '../resize/geometry';
+import type { PoseProjection } from '../resize/geometry';
 import { RECT_POSE_DESCRIPTOR } from '../resize/geometry';
 import type { ResizePose } from '../../gestures/types';
 import { alignDeltaFor, translatePoseViaDescriptor, type AlignEdge } from '../align/align';
@@ -23,7 +23,7 @@ import {
 export interface AlignDeps<TPose> {
   getSelection: () => NodeId[];
   getPose: (id: NodeId) => TPose;
-  geometry: PoseDescriptor<TPose>;
+  geometry: PoseProjection<TPose>;
   applyOps: (ops: Op[], label?: string) => void;
 }
 
@@ -80,7 +80,7 @@ function alignSelection(
 ): void {
   const ids = selection.get();
   if (ids.length < 2) return;
-  const geom = RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<unknown>;
+  const geom = RECT_POSE_DESCRIPTOR as unknown as PoseProjection<unknown>;
   const poses = ids.map((id) => {
     const node = scene.get(id);
     return node?.pose ?? { x: 0, y: 0, width: 0, height: 0 };

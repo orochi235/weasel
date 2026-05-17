@@ -2,7 +2,7 @@ import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
-import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../resize/geometry';
+import { RECT_POSE_DESCRIPTOR, type PoseProjection } from '../resize/geometry';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
 
@@ -67,7 +67,7 @@ function nudgeSelection(
 ): void {
   const ids = selection.get();
   if (ids.length === 0) return;
-  const translate = (RECT_POSE_DESCRIPTOR as PoseDescriptor<unknown>).translate!;
+  const translate = (RECT_POSE_DESCRIPTOR as PoseProjection<unknown>).translate!;
   scene.batch('Nudge', () => {
     for (const id of ids) {
       const node = scene.get(id);

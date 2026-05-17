@@ -33,7 +33,7 @@
  * Non-rect poses (Path, polygon, custom): the kit is generic over `TPose`.
  * Plug in two small projections so the rect-flavored machinery works on any
  * shape:
- *   - `PoseDescriptor<TPose>` — read AABB + remap on resize. Default
+ *   - `PoseProjection<TPose>` — read AABB + remap on resize. Default
  *     `RECT_POSE_DESCRIPTOR` for `{x,y,width,height}`; `pathPoseDescriptor` for
  *     `Path`. Pass via `useResize(adapter, { geometry })`.
  *   - `OriginProjection<TPose>` — read snap-origin + translate by delta. Used
@@ -160,11 +160,11 @@ export type {
   DepName,
   DepRegistry,
 } from './interactions/actions/depRegistry';
-export type { ResizeBehaviorsDep } from './interactions/actions/depSchema';
+export type { ResizePolicy } from './interactions/actions/depSchema';
 export {
-  useResizeBehaviorsDepSource,
-  type UseResizeBehaviorsDepSourceOptions,
-} from './canvas/deps/useResizeBehaviorsDepSource';
+  useResizePolicy,
+  type UseResizePolicyOptions,
+} from './canvas/deps/useResizePolicy';
 
 // ─── Gesture dispatcher (Phase 3 of registry unification) ───
 export {
@@ -458,7 +458,7 @@ export type {
   ResizePose,
   ResizeProposed,
   ResizeMoveResult,
-  ResizeBehavior,
+  BoundsConstraint,
   ResizeOverlay,
   RotatedPose,
   RotateProposed,
@@ -528,7 +528,7 @@ export {
 export type {
   UseResizeOptions,
   ResizeController,
-  PoseDescriptor,
+  PoseProjection,
   CornerHandle,
 } from './interactions/actions/resize';
 export {

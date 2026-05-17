@@ -11,9 +11,9 @@ import {
   useTools,
   pointSnapToGrid,
   ROTATED_POSE_DESCRIPTOR,
-  useResizeBehaviorsDepSource,
+  useResizePolicy,
 } from '@orochi235/weasel';
-import type { RotatedPose, PoseDescriptor, CanvasExtensionApi } from '@orochi235/weasel';
+import type { RotatedPose, PoseProjection, CanvasExtensionApi } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
 
 interface Rect extends RotatedPose {
@@ -70,7 +70,7 @@ export function PointSnapDemo() {
   });
   const resizeTool = useResizeTool(adapter, {
     resize: {
-      geometry: ROTATED_POSE_DESCRIPTOR as PoseDescriptor<Rect>,
+      geometry: ROTATED_POSE_DESCRIPTOR as PoseProjection<Rect>,
       pointSnapBehaviors: [pointSnapToGrid({ spacing: SNAP_GRID })],
     },
     boundsOf,
@@ -81,9 +81,9 @@ export function PointSnapDemo() {
   // Wires the same resize options through the dep so the dispatcher-path
   // `resizeAction` is feature-equivalent to `useResizeTool`. Mounted as a
   // child of `<SceneCanvas>` below so `<DepRegistryProvider>` is in scope.
-  function ResizeBehaviorsBridge() {
-    useResizeBehaviorsDepSource<Rect>({
-      geometry: ROTATED_POSE_DESCRIPTOR as PoseDescriptor<Rect>,
+  function ResizePolicyBridge() {
+    useResizePolicy<Rect>({
+      projection: ROTATED_POSE_DESCRIPTOR as PoseProjection<Rect>,
       pointSnap: [pointSnapToGrid({ spacing: SNAP_GRID })],
     });
     return null;
@@ -149,7 +149,7 @@ export function PointSnapDemo() {
         selectionOverlay: { rotationHandle: false },
       }}
     >
-      <ResizeBehaviorsBridge />
+      <ResizePolicyBridge />
     </SceneCanvas>
   );
 }

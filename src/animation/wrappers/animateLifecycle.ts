@@ -1,5 +1,5 @@
 import { tweenPose } from '../poseHelpers';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseProjection } from 'interactions/actions/resize/geometry';
 import type { SceneAdapter } from 'core/adapters/types';
 import type { Animator, EasingFn } from '../types';
 
@@ -10,7 +10,7 @@ export interface LifecycleAnimation<TPose> {
   exitTo?: (current: TPose) => TPose;
   ms?: number;
   easing?: EasingFn;
-  geometry?: PoseDescriptor<TPose>;
+  geometry?: PoseProjection<TPose>;
 }
 
 export function animateLifecycle<TNode extends { id: string; pose?: TPose }, TPose>(

@@ -1,5 +1,5 @@
 /**
- * Coverage for the four `resizeBehaviors` dep code paths in `resizeAction`:
+ * Coverage for the four `resizePolicy` dep code paths in `resizeAction`:
  *
  *   1. `behaviors[]` — bounds-frame rewrite (test via `clampMinSize`).
  *   2. `pointSnap[]` — world-space anchor-point snap back-solve.
@@ -20,11 +20,11 @@ import type { NodeId } from 'core/scene/types';
 import type {
   PointSnapBehavior,
   ResizeAnchor,
-  ResizeBehavior,
+  BoundsConstraint,
   ResizePose,
   RotatedPose,
 } from '../../gestures/types';
-import type { PoseDescriptor } from '../resize/geometry';
+import type { PoseProjection } from '../resize/geometry';
 import { ROTATED_POSE_DESCRIPTOR } from '../resize/geometry';
 import { clampMinSize } from '../resize/behaviors/clampMinSize';
 import { pointSnapToGrid } from '../resize/behaviors/pointSnapToGrid';
@@ -89,7 +89,7 @@ function getOngoing(action: typeof resizeAction) {
 // 1. behaviors[] — clampMinSize prevents the bounds from going below a floor.
 // ---------------------------------------------------------------------------
 
-describe('resizeAction — behaviors[] via resizeBehaviors dep', () => {
+describe('resizeAction — behaviors[] via resizePolicy dep', () => {
   it('applies clampMinSize to rewrite proposed bounds before commit', () => {
     const invoker = getOngoing(resizeAction);
     const ctx = makeCtx({
@@ -98,11 +98,11 @@ describe('resizeAction — behaviors[] via resizeBehaviors dep', () => {
       anchor: ANCHOR_BR,
       start: { x: 100, y: 100 },
       deps: {
-        resizeBehaviors: {
-          behaviors: [clampMinSize<RectPose>({ minWidth: 40, minHeight: 40 })] as ResizeBehavior<ResizePose>[],
+        resizePolicy: {
+          constraints: [clampMinSize<RectPose>({ minWidth: 40, minHeight: 40 })] as BoundsConstraint<ResizePose>[],
           pointSnap: [],
           expandIds: (ids: string[]) => ids,
-          geometry: { getBounds: (p) => p, remapBounds: (_p, _s, d) => d } as PoseDescriptor<unknown>,
+          projection: { getBounds: (p) => p, remapBounds: (_p, _s, d) => d } as PoseProjection<unknown>,
         },
       },
     });
@@ -125,18 +125,18 @@ describe('resizeAction — behaviors[] via resizeBehaviors dep', () => {
   it('fires behavior onStart at gesture start', () => {
     const invoker = getOngoing(resizeAction);
     const onStart = vi_fn();
-    const behavior: ResizeBehavior<ResizePose> = { onStart };
+    const behavior: BoundsConstraint<ResizePose> = { onStart };
     const ctx = makeCtx({
       selectionIds: ['a'],
       sceneNodes: { a: { pose: { x: 0, y: 0, width: 100, height: 100 } } },
       anchor: ANCHOR_BR,
       start: { x: 100, y: 100 },
       deps: {
-        resizeBehaviors: {
-          behaviors: [behavior],
+        resizePolicy: {
+          constraints: [behavior],
           pointSnap: [],
           expandIds: (ids: string[]) => ids,
-          geometry: { getBounds: (p: ResizePose) => p, remapBounds: (_p, _s, d) => d } as PoseDescriptor<unknown>,
+          projection: { getBounds: (p: ResizePose) => p, remapBounds: (_p, _s, d) => d } as PoseProjection<unknown>,
         },
       },
     });
@@ -152,11 +152,11 @@ describe('resizeAction — behaviors[] via resizeBehaviors dep', () => {
       anchor: ANCHOR_BR,
       start: { x: 100, y: 100 },
       deps: {
-        resizeBehaviors: {
-          behaviors: [{ onEnd: () => null }],
+        resizePolicy: {
+          constraints: [{ onEnd: () => null }],
           pointSnap: [],
           expandIds: (ids: string[]) => ids,
-          geometry: { getBounds: (p: ResizePose) => p, remapBounds: (_p, _s, d) => d } as PoseDescriptor<unknown>,
+          projection: { getBounds: (p: ResizePose) => p, remapBounds: (_p, _s, d) => d } as PoseProjection<unknown>,
         },
       },
     });
@@ -177,7 +177,7 @@ describe('resizeAction — behaviors[] via resizeBehaviors dep', () => {
 // 2. pointSnap[] — world-space grid snap back-solves the pose.
 // ---------------------------------------------------------------------------
 
-describe('resizeAction — pointSnap[] via resizeBehaviors dep', () => {
+describe('resizeAction — pointSnap[] via resizePolicy dep', () => {
   it('snaps the dragged corner to a 20px grid', () => {
     const invoker = getOngoing(resizeAction);
     const ctx = makeCtx({
@@ -186,11 +186,11 @@ describe('resizeAction — pointSnap[] via resizeBehaviors dep', () => {
       anchor: ANCHOR_BR,
       start: { x: 100, y: 100 },
       deps: {
-        resizeBehaviors: {
-          behaviors: [],
+        resizePolicy: {
+          constraints: [],
           pointSnap: [pointSnapToGrid({ spacing: 20 })] as PointSnapBehavior<ResizePose>[],
           expandIds: (ids: string[]) => ids,
-          geometry: { getBounds: (p: ResizePose) => p, remapBounds: (_p, _s, d) => d } as PoseDescriptor<unknown>,
+          projection: { getBounds: (p: ResizePose) => p, remapBounds: (_p, _s, d) => d } as PoseProjection<unknown>,
         },
       },
     });
@@ -212,7 +212,7 @@ describe('resizeAction — pointSnap[] via resizeBehaviors dep', () => {
 // 3. expandIds — group expansion writes per-leaf poses.
 // ---------------------------------------------------------------------------
 
-describe('resizeAction — expandIds via resizeBehaviors dep', () => {
+describe('resizeAction — expandIds via resizePolicy dep', () => {
   it('takes the group path when expandIds returns a different id set', () => {
     const invoker = getOngoing(resizeAction);
     const ctx = makeCtx({
@@ -225,12 +225,12 @@ describe('resizeAction — expandIds via resizeBehaviors dep', () => {
       anchor: ANCHOR_BR,
       start: { x: 100, y: 100 },
       deps: {
-        resizeBehaviors: {
-          behaviors: [],
+        resizePolicy: {
+          constraints: [],
           pointSnap: [],
           // Map group id 'g' → leaf set.
           expandIds: (ids: string[]) => ids[0] === 'g' ? ['leaf1', 'leaf2'] : ids,
-          geometry: { getBounds: (p: ResizePose) => p, remapBounds: (pose: ResizePose, s: ResizePose, d: ResizePose) => {
+          projection: { getBounds: (p: ResizePose) => p, remapBounds: (pose: ResizePose, s: ResizePose, d: ResizePose) => {
             const sx = s.width === 0 ? 1 : d.width / s.width;
             const sy = s.height === 0 ? 1 : d.height / s.height;
             return {
@@ -240,7 +240,7 @@ describe('resizeAction — expandIds via resizeBehaviors dep', () => {
               width: pose.width * sx,
               height: pose.height * sy,
             } as ResizePose;
-          } } as PoseDescriptor<unknown>,
+          } } as PoseProjection<unknown>,
         },
       },
     });
@@ -277,7 +277,7 @@ describe('resizeAction — expandIds via resizeBehaviors dep', () => {
 // 4. geometry — non-identity descriptor (rotated pose passthrough).
 // ---------------------------------------------------------------------------
 
-describe('resizeAction — geometry via resizeBehaviors dep', () => {
+describe('resizeAction — geometry via resizePolicy dep', () => {
   it('uses geometry.getBounds + remapBounds when projecting poses', () => {
     const invoker = getOngoing(resizeAction);
     const initial: RotatedPose = { x: 0, y: 0, width: 100, height: 100, rotation: 0 };
@@ -287,14 +287,14 @@ describe('resizeAction — geometry via resizeBehaviors dep', () => {
       anchor: ANCHOR_BR,
       start: { x: 100, y: 100 },
       deps: {
-        resizeBehaviors: {
-          behaviors: [],
+        resizePolicy: {
+          constraints: [],
           pointSnap: [],
           expandIds: (ids: string[]) => ids,
           // `ROTATED_POSE_DESCRIPTOR` preserves the `rotation` field on
           // `remapBounds` via `...p` spread; the proposed pose should still
           // carry rotation=0 (proves the descriptor was actually consulted).
-          geometry: ROTATED_POSE_DESCRIPTOR as PoseDescriptor<unknown>,
+          projection: ROTATED_POSE_DESCRIPTOR as PoseProjection<unknown>,
         },
       },
     });
@@ -316,7 +316,7 @@ describe('resizeAction — geometry via resizeBehaviors dep', () => {
       sceneNodes: { a: { pose: { x: 0, y: 0, width: 100, height: 100 } } },
       anchor: ANCHOR_BR,
       start: { x: 100, y: 100 },
-      // no resizeBehaviors dep — exercise the defaults path.
+      // no resizePolicy dep — exercise the defaults path.
     });
     const handle = invoker.start(ctx, undefined);
     handle.onMove!({

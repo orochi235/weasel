@@ -1,7 +1,7 @@
 import type { NodeId, Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createTransformOp } from 'core/ops/transform';
-import type { PoseDescriptor } from '../resize/geometry';
+import type { PoseProjection } from '../resize/geometry';
 import { RECT_POSE_DESCRIPTOR } from '../resize/geometry';
 import {
   flipPoseAboutBounds,
@@ -17,7 +17,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 export interface FlipDeps<TPose> {
   getSelection: () => NodeId[];
   getPose: (id: NodeId) => TPose;
-  geometry: PoseDescriptor<TPose>;
+  geometry: PoseProjection<TPose>;
   /** Static value or live thunk. Default `'each'`. */
   pivot?: FlipPivot | (() => FlipPivot);
   applyOps: (ops: Op[], label?: string) => void;
@@ -59,7 +59,7 @@ function flipSelection(
   const ids = selection.get();
   if (ids.length === 0) return;
   // Use the erased rect geometry — the dep-schema scene has unknown TPose.
-  const geom = RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<unknown>;
+  const geom = RECT_POSE_DESCRIPTOR as unknown as PoseProjection<unknown>;
   scene.batch('Flip', () => {
     for (const id of ids) {
       const node = scene.get(id);
