@@ -1,16 +1,16 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import {
-  arrayAdapter,
   asNodeId,
-  Canvas,
+  SceneCanvas,
   useClipboard,
+  useScene,
+  useSceneAdapter,
   useSelection,
-  useSelectTool,
-  useTools,
 } from '@orochi235/weasel';
-import type { DrawCommand } from '../../src/renderer';
+import type { ClipboardSnapshot, SceneNode } from '@orochi235/weasel';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
+type RectNode = SceneNode<Rect, 'default', Rect>;
 
 const W = 480, H = 320;
 
@@ -21,52 +21,57 @@ const INITIAL: Rect[] = [
 ];
 
 export function ClipboardDemo() {
-  const [items, setItems] = useState<Rect[]>(INITIAL);
-  const itemsRef = useRef(items);
-  itemsRef.current = items;
+  const scene = useScene<Rect>({ items: INITIAL });
+  const selection = useSelection();
   const nextId = useRef(0);
   const dropPointRef = useRef<{ worldX: number; worldY: number } | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
-  const selection = useSelection();
+  // Scene-backed adapter for the canvas (move/resize/area-select). The
+  // clipboard adapter below extends it with cut/copy/paste plumbing — the
+  // same adapter identity is fine for both because `useClipboard` only
+  // touches snapshotSelection / commitPaste / insertNode / removeNode.
+  const sceneAdapter = useSceneAdapter(scene, { selection });
 
-  const adapter = useMemo(() => {
-    // arrayAdapter's default `commitPaste` deep-clones each clip entry,
-    // assigns a fresh id via `nextId`, and translates by `offset` — or
-    // centers the cluster bbox at `ctx.dropPoint` when supplied. The demo
-    // only overrides `nextId` to keep deterministic `clip-N` ids and
-    // `getPasteOffset` to bump from 1px to 16px so the cascade is visible.
-    const base = arrayAdapter<Rect, Rect>({
-      ref: itemsRef,
-      setItems,
-      toPose: (r) => r,
-      nextId: () => `clip-${nextId.current++}`,
-    });
-    return {
-      ...base,
-      ...selection.adapterMethods,
-      getNodeIndex: (id: string) => itemsRef.current.findIndex((o) => o.id === id),
-      getPasteOffset: () => ({ dx: 16, dy: 16 }),
-    };
-  }, [selection.adapterMethods]);
+  const clipboardAdapter = useMemo(() => ({
+    ...sceneAdapter,
+    snapshotSelection: (ids: string[]): ClipboardSnapshot => ({
+      items: ids
+        .map((id) => scene.get(asNodeId(id)))
+        .filter((n): n is RectNode => n != null)
+        .map((n) => n.data),
+    }),
+    // commitPaste rebuilds a fresh leaf Node per clipped Rect, bumping ids
+    // (deterministic `clip-N`) and translating by `offset` so each cascade is
+    // visible. Returned nodes are handed to `scene.add` via `insertNode`.
+    commitPaste: (
+      clip: ClipboardSnapshot,
+      offset: { dx: number; dy: number },
+    ): RectNode[] => {
+      const items = clip.items as Rect[];
+      return items.map((src) => {
+        const id = `clip-${nextId.current++}`;
+        const pose: Rect = { ...src, id, x: src.x + offset.dx, y: src.y + offset.dy };
+        return {
+          kind: 'leaf',
+          layer: 'default',
+          id: asNodeId(id),
+          pose,
+          data: pose,
+          parent: null,
+        };
+      });
+    },
+    getNode: (id: string) => scene.get(asNodeId(id)) ?? undefined,
+    getNodeIndex: (id: string) => [...scene.renderOrder()].indexOf(asNodeId(id)),
+    // 16 px cascade so each paste lands clearly offset from the previous.
+    getPasteOffset: () => ({ dx: 16, dy: 16 }),
+  }), [sceneAdapter, scene]);
 
-  useClipboard(adapter, {
+  useClipboard<RectNode>(clipboardAdapter, {
     getSelection: () => selection.current.map((id) => asNodeId(id)),
     getDropPoint: () => dropPointRef.current,
   });
-
-  const select = useSelectTool(adapter, {
-    pickEvery: (wx, wy) => {
-      const hits: string[] = [];
-      for (const r of itemsRef.current) {
-        if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) {
-          hits.push(r.id);
-        }
-      }
-      return hits;
-    },
-  });
-  const tools = useTools({ active: 'select', registry: { select } });
 
   const onMouseMove = (e: React.MouseEvent) => {
     const el = wrapperRef.current;
@@ -81,22 +86,13 @@ export function ClipboardDemo() {
 
   return (
     <div ref={wrapperRef} onMouseMove={onMouseMove} onMouseLeave={onMouseLeave}>
-      <Canvas
+      <SceneCanvas
         width={W}
         height={H}
         className="ckd-canvas"
-        adapter={adapter}
+        scene={scene}
         selection={selection}
-        tools={tools}
-        layers={{
-          scene: {
-            drawOne: (r: Rect, p: Rect): DrawCommand[] => [{
-              kind: 'path',
-              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { color: r.color },
-            }],
-          },
-        }}
+        defaultTools={['select']}
       />
     </div>
   );
