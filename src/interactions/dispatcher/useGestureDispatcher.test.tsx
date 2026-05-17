@@ -6,9 +6,11 @@ import {
   useActionsRegistry,
   type Action,
 } from '../actions/registry';
-import { DepRegistryProvider } from '../actions/depRegistry';
-import { ActiveToolContextProvider } from '../actions/activeToolContext';
+import { DepRegistryProvider, useDepSource } from '../actions/depRegistry';
+import { ActiveToolContextProvider, useActiveToolContext, type ActiveToolContextValue } from '../actions/activeToolContext';
+import { DispatcherPresenceProvider } from './dispatcherPresence';
 import { useGestureDispatcher } from './useGestureDispatcher';
+import { makeToolHoldAction } from '../actions/defaults/toolHold';
 
 function Probe({ actionDef, enabled = true }: { actionDef: Action; enabled?: boolean }) {
   const registry = useActionsRegistry();
@@ -132,5 +134,65 @@ describe('useGestureDispatcher', () => {
       canvas.dispatchEvent(new WheelEvent('wheel', { ctrlKey: true, bubbles: true }));
     });
     expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  describe('tool.hold integration via gesture dispatcher', () => {
+    it('Space keydown pushes hand to hotkeyStack; keyup pops it', () => {
+      let ctxValue!: ActiveToolContextValue;
+
+      function CtxCapture() {
+        ctxValue = useActiveToolContext();
+        return null;
+      }
+
+      function ActiveToolDepSource() {
+        const ctx = useActiveToolContext();
+        useDepSource('activeTool', () => ctx);
+        return null;
+      }
+
+      function RegisterToolHold() {
+        const r = useActionsRegistry();
+        r?.register(makeToolHoldAction('hand', ' '));
+        return null;
+      }
+
+      function MountDispatcher() {
+        const ref = useRef<HTMLCanvasElement | null>(null);
+        const r = useActionsRegistry();
+        useGestureDispatcher({ canvasRef: ref, actions: r!, toolsById: new Map() });
+        return <canvas ref={ref} />;
+      }
+
+      render(
+        <DepRegistryProvider>
+          <ActiveToolContextProvider>
+            <DispatcherPresenceProvider>
+              <ActionsProvider>
+                <ActiveToolDepSource />
+                <RegisterToolHold />
+                <MountDispatcher />
+                <CtxCapture />
+              </ActionsProvider>
+            </DispatcherPresenceProvider>
+          </ActiveToolContextProvider>
+        </DepRegistryProvider>,
+      );
+
+      // Initial state: no tools held
+      expect(ctxValue.hotkeyStack).toEqual([]);
+
+      // Press Space
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }));
+      });
+      expect(ctxValue.hotkeyStack).toEqual(['hand']);
+
+      // Release Space
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keyup', { key: ' ' }));
+      });
+      expect(ctxValue.hotkeyStack).toEqual([]);
+    });
   });
 });

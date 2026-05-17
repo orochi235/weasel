@@ -28,5 +28,8 @@ export function makeToolHoldAction(toolId: string, key: string | string[]): Acti
         };
       },
     },
-  };
+    // Phase 4+: declare which deps this action requires.
+    // The dispatcher uses this to assemble the ActionDeps bag.
+    requires: ['activeTool'],
+  } as Action & { requires: string[] };
 }
