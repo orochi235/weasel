@@ -4,6 +4,7 @@ import { createToolsDispatcher, type ToolsDispatcher, type ToolsDispatcherOption
 import { dlog } from '../debug/flag';
 import type { AnyTool, ToolCtx } from './types';
 import type { RenderLayer } from 'core/layers/render';
+import { useActiveToolContext } from '../interactions/actions/activeToolContext';
 
 export interface UseToolsOptions {
   /** Initial active-slot tool id. Must exist in `registry`. */
@@ -40,7 +41,8 @@ export interface ToolsApi {
   active: string;
   /** Set the active-slot tool. Cancels any in-flight gesture. */
   setActive: (id: string) => void;
-  /** Currently hotkey-engaged tool id (or `null`). */
+  /** Currently hotkey-engaged tool id (or `null`). Derived as the top of
+   *  the hotkey stack for backwards compat with the pre-stack API. */
   hotkeyEngaged: string | null;
   /** Engage a hotkey-slot tool by id. No-op if a gesture is in flight. */
   engageHotkey: (id: string) => void;
@@ -82,13 +84,49 @@ const DEFAULT_CTX: Omit<ToolCtx, 'scratch'> = {
   debug: undefined,
 };
 
+/**
+ * Manages the active tool, hotkey slot, and gesture dispatcher.
+ *
+ * **Context requirement**: must be rendered inside `<ActiveToolContextProvider>`
+ * (automatically provided by `<SceneCanvas>`). Throws otherwise.
+ *
+ * **First-mount-wins semantics**: if `opts.active` differs from the context
+ * default (`'select'`) on first mount, `useTools` pushes `opts.active` to
+ * the context via a microtask. Subsequent mounts respect whatever the context
+ * currently holds (the first caller wins).
+ */
 export function useTools(opts: UseToolsOptions): ToolsApi {
   if (!(opts.active in opts.registry)) {
     throw new Error(`useTools: active "${opts.active}" not in registry`);
   }
 
-  const [active, setActiveState] = useState<string>(opts.active);
-  const [hotkeyEngaged, setHotkeyEngaged] = useState<string | null>(null);
+  // Phase 5: active tool state lives in ActiveToolContext.
+  const activeToolCtx = useActiveToolContext();
+
+  // First-mount sync: if context is at its default ('select') and caller
+  // wants something else, push opts.active to the context via microtask so
+  // we don't setState during render. On the initial render before the
+  // microtask fires, derive `active` from opts.active to avoid a flash of
+  // the wrong tool id.
+  const hasInitializedRef = useRef(false);
+  const isFirstRender = !hasInitializedRef.current;
+  if (isFirstRender) {
+    hasInitializedRef.current = true;
+    if (activeToolCtx.active === 'select' && opts.active !== 'select') {
+      queueMicrotask(() => activeToolCtx.setActive(opts.active));
+    }
+  }
+
+  // On the very first render, if context hasn't yet been updated to match
+  // opts.active, use opts.active directly so callers see the expected value
+  // synchronously.
+  const active =
+    isFirstRender && activeToolCtx.active === 'select' && opts.active !== 'select'
+      ? opts.active
+      : activeToolCtx.active;
+  const hotkeyStack = activeToolCtx.hotkeyStack;
+  const hotkeyEngaged = hotkeyStack.at(-1) ?? null;
+
   const [gestureTick, setGestureTick] = useState(0);
 
   // Refs so the dispatcher's getSlots/getCtx callbacks see latest values
@@ -134,9 +172,9 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
       }
       dlog('[tools] active:', activeRef.current, '→', id);
       dispatcher.cancelGesture();
-      setActiveState(id);
+      activeToolCtx.setActive(id);
     },
-    [dispatcher],
+    [dispatcher, activeToolCtx],
   );
 
   const engageHotkey = useCallback(
@@ -146,15 +184,15 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
         throw new Error(`engageHotkey: "${id}" not in registry`);
       }
       dlog('[tools] hotkey engaged:', id);
-      setHotkeyEngaged(id);
+      activeToolCtx.pushHotkey(id);
     },
-    [dispatcher],
+    [dispatcher, activeToolCtx],
   );
 
   const disengageHotkey = useCallback(() => {
     if (hotkeyRef.current) dlog('[tools] hotkey disengaged:', hotkeyRef.current);
-    setHotkeyEngaged(null);
-  }, []);
+    activeToolCtx.popHotkey();
+  }, [activeToolCtx]);
 
   return {
     active,

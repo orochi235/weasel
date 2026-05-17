@@ -7,6 +7,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, fireEvent, act } from '@testing-library/react';
 import { useRef, useState } from 'react';
+import { ActiveToolContextProvider } from '../../interactions/actions/activeToolContext';
 import { useTools, useSelectTool, useDeleteTool, useKeybindings, defineTool } from '../';
 import { useResizeTool } from './useResizeTool';
 import { useRotateTool } from './useRotateTool';
@@ -113,7 +114,7 @@ describe('Phase 2a integration', () => {
       );
     }
 
-    const { container } = render(<Harness />);
+    const { container } = render(<ActiveToolContextProvider initialActive="select"><Harness /></ActiveToolContextProvider>);
     const canvas = container.querySelector('canvas')!;
     canvas.setPointerCapture = vi.fn();
 
@@ -197,7 +198,7 @@ describe('Phase 2a integration', () => {
       );
     }
 
-    render(<Harness />);
+    render(<ActiveToolContextProvider initialActive="select"><Harness /></ActiveToolContextProvider>);
 
     act(() => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
@@ -257,7 +258,7 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
       );
     }
 
-    const { container } = render(<Harness />);
+    const { container } = render(<ActiveToolContextProvider initialActive="select"><Harness /></ActiveToolContextProvider>);
     const canvas = container.querySelector('canvas')!;
 
     // Switch to hand via the H key. Wrap in act() to flush the React state update.
@@ -323,7 +324,7 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
       );
     }
 
-    render(<Harness />);
+    render(<ActiveToolContextProvider initialActive="select"><Harness /></ActiveToolContextProvider>);
 
     act(() => { fireEvent.keyDown(document, { key: ' ' }); });
     // Re-read from window after re-render (state update causes Harness to re-render
@@ -387,7 +388,7 @@ describe('Phase 2c: zoom + pan composition', () => {
 
   it('ctrl+wheel zooms about cursor anchor', () => {
     const onViewChange = vi.fn();
-    const { container } = render(<ZoomHarness onViewChange={onViewChange} />);
+    const { container } = render(<ActiveToolContextProvider initialActive="select"><ZoomHarness onViewChange={onViewChange} /></ActiveToolContextProvider>);
     const canvas = container.querySelector('canvas')!;
     const wheel = new WheelEvent('wheel', {
       deltaY: -100,
@@ -412,7 +413,7 @@ describe('Phase 2c: zoom + pan composition', () => {
   it('plain wheel pans by deltaX/scale, deltaY/scale', () => {
     const onViewChange = vi.fn();
     const { container } = render(
-      <ZoomHarness onViewChange={onViewChange} initialView={{ x: 0, y: 0, scale: { x: 2, y: 2 } }} />,
+      <ActiveToolContextProvider initialActive="select"><ZoomHarness onViewChange={onViewChange} initialView={{ x: 0, y: 0, scale: { x: 2, y: 2 } }} /></ActiveToolContextProvider>,
     );
     const canvas = container.querySelector('canvas')!;
     const wheel = new WheelEvent('wheel', {
@@ -429,10 +430,12 @@ describe('Phase 2c: zoom + pan composition', () => {
   it('Cmd+0 resets view to identity', () => {
     const onViewChange = vi.fn();
     render(
-      <ZoomHarness
-        onViewChange={onViewChange}
-        initialView={{ x: 50, y: 50, scale: { x: 4, y: 4 } }}
-      />,
+      <ActiveToolContextProvider initialActive="select">
+        <ZoomHarness
+          onViewChange={onViewChange}
+          initialView={{ x: 50, y: 50, scale: { x: 4, y: 4 } }}
+        />
+      </ActiveToolContextProvider>,
     );
     act(() => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: '0', metaKey: true, bubbles: true }));
@@ -443,7 +446,7 @@ describe('Phase 2c: zoom + pan composition', () => {
   it('hand drag still pans after a programmatic zoom', () => {
     const onViewChange = vi.fn();
     const { container } = render(
-      <ZoomHarness onViewChange={onViewChange} initialView={{ x: 0, y: 0, scale: { x: 2, y: 2 } }} />,
+      <ActiveToolContextProvider initialActive="select"><ZoomHarness onViewChange={onViewChange} initialView={{ x: 0, y: 0, scale: { x: 2, y: 2 } }} /></ActiveToolContextProvider>,
     );
     const canvas = container.querySelector('canvas')!;
     act(() => { fireEvent.keyDown(document, { key: 'H' }); });
@@ -519,7 +522,7 @@ describe('Phase 2a: off-canvas pointer release backstop', () => {
       );
     }
 
-    const { container } = render(<Harness />);
+    const { container } = render(<ActiveToolContextProvider initialActive="select"><Harness /></ActiveToolContextProvider>);
     const canvas = container.querySelector('canvas')!;
     canvas.setPointerCapture = vi.fn();
 
@@ -593,7 +596,7 @@ describe('Phase 2a integration', () => {
         />
       );
     }
-    const { container } = render(<Harness />);
+    const { container } = render(<ActiveToolContextProvider initialActive="select"><Harness /></ActiveToolContextProvider>);
     const canvas = container.querySelector('canvas')!;
     canvas.setPointerCapture = () => {};
     // Bounds (0,0,100,100). Bottom-right corner is (100, 100).
@@ -650,7 +653,7 @@ describe('Phase 2a integration', () => {
         />
       );
     }
-    const { container } = render(<Harness />);
+    const { container } = render(<ActiveToolContextProvider initialActive="select"><Harness /></ActiveToolContextProvider>);
     const canvas = container.querySelector('canvas')!;
     canvas.setPointerCapture = () => {};
     // Bounds (0,0,100,100). Top-center (50, 0). Default rotation handle
@@ -703,7 +706,7 @@ describe('Phase 2a integration', () => {
         />
       );
     }
-    const { container } = render(<Harness />);
+    const { container } = render(<ActiveToolContextProvider initialActive="select"><Harness /></ActiveToolContextProvider>);
     const canvas = container.querySelector('canvas')!;
     canvas.setPointerCapture = () => {};
     // Union AABB is (0,0,100,100). SE corner at (100, 100).
@@ -760,7 +763,7 @@ describe('Phase 2a integration', () => {
         />
       );
     }
-    const { container } = render(<Harness />);
+    const { container } = render(<ActiveToolContextProvider initialActive="select"><Harness /></ActiveToolContextProvider>);
     const canvas = container.querySelector('canvas')!;
     canvas.setPointerCapture = () => {};
     // Union AABB (0,0,100,100). SE corner at (100,100). Drag to (120,120).

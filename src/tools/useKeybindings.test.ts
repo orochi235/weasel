@@ -1,12 +1,20 @@
 // src/tools/useKeybindings.test.ts
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { createElement, type ReactNode } from 'react';
 import { useTools } from './useTools';
 import { useKeybindings } from './useKeybindings';
 import { defineTool } from './routing/defineTool';
+import { ActiveToolContextProvider } from '../interactions/actions/activeToolContext';
 
 function press(key: string, type: 'keydown' | 'keyup' = 'keydown'): void {
   document.dispatchEvent(new KeyboardEvent(type, { key, bubbles: true }));
+}
+
+function makeWrapper(initialActive = 'select') {
+  return function Wrapper({ children }: { children: ReactNode }) {
+    return createElement(ActiveToolContextProvider, { initialActive, children });
+  };
 }
 
 describe('useKeybindings', () => {
@@ -17,7 +25,7 @@ describe('useKeybindings', () => {
       const tools = useTools({ active: 'select', registry: { select, pen } });
       useKeybindings(tools);
       return tools;
-    });
+    }, { wrapper: makeWrapper('select') });
 
     expect(result.current.active).toBe('select');
     act(() => press('p'));
@@ -33,7 +41,7 @@ describe('useKeybindings', () => {
       const tools = useTools({ active: 'select', registry: { select, hand } });
       useKeybindings(tools);
       return tools;
-    });
+    }, { wrapper: makeWrapper('select') });
 
     expect(result.current.hotkeyEngaged).toBe(null);
     act(() => press(' ', 'keydown'));
@@ -49,7 +57,7 @@ describe('useKeybindings', () => {
       const tools = useTools({ active: 'select', registry: { select, insert } });
       useKeybindings(tools);
       return tools;
-    });
+    }, { wrapper: makeWrapper('select') });
 
     // Cmd-R must NOT switch tools (browser reload).
     act(() => {
@@ -77,7 +85,7 @@ describe('useKeybindings', () => {
       // because pen sits earlier in the override-aware match walk.
       useKeybindings(tools, { overrides: { pen: { key: 'v' } } });
       return tools;
-    });
+    }, { wrapper: makeWrapper('select') });
 
     act(() => press('v'));
     expect(result.current.active).toBe('pen');
@@ -90,7 +98,7 @@ describe('useKeybindings', () => {
       const tools = useTools({ active: 'select', registry: { select, pen } });
       useKeybindings(tools, { overrides: { pen: null } });
       return tools;
-    });
+    }, { wrapper: makeWrapper('select') });
     act(() => press('p'));
     expect(result.current.active).toBe('select');
   });
@@ -102,7 +110,7 @@ describe('useKeybindings', () => {
       const tools = useTools({ active: 'select', registry: { select, stylize } });
       useKeybindings(tools);
       return tools;
-    });
+    }, { wrapper: makeWrapper('select') });
 
     act(() => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', metaKey: true, bubbles: true }));
@@ -117,7 +125,7 @@ describe('useKeybindings', () => {
       const tools = useTools({ active: 'select', registry: { select, pen } });
       useKeybindings(tools, { disable: true });
       return tools;
-    });
+    }, { wrapper: makeWrapper('select') });
 
     act(() => press('p'));
     expect(result.current.active).toBe('select');
@@ -134,7 +142,7 @@ describe('useKeybindings', () => {
       const tools = useTools({ active: 'select', registry: { select, pen } });
       useKeybindings(tools);
       return tools;
-    });
+    }, { wrapper: makeWrapper('select') });
 
     act(() => {
       input.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', bubbles: true }));
@@ -152,7 +160,7 @@ describe('useKeybindings', () => {
         const tools = useTools({ active: 'select', registry: { select, pen } });
         useKeybindings(tools);
         return tools;
-      });
+      }, { wrapper: makeWrapper('select') });
 
       act(() => press('p'));
       expect(result.current.active).toBe('pen');
@@ -168,7 +176,7 @@ describe('useKeybindings', () => {
         const tools = useTools({ active: 'select', registry: { select, pen, hand } });
         useKeybindings(tools, { defaultTool: 'hand' });
         return tools;
-      });
+      }, { wrapper: makeWrapper('select') });
 
       act(() => press('p'));
       expect(result.current.active).toBe('pen');
@@ -183,7 +191,7 @@ describe('useKeybindings', () => {
         const tools = useTools({ active: 'select', registry: { select, pen } });
         useKeybindings(tools, { defaultTool: null });
         return tools;
-      });
+      }, { wrapper: makeWrapper('select') });
 
       act(() => press('p'));
       expect(result.current.active).toBe('pen');
