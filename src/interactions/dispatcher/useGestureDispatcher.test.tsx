@@ -195,4 +195,51 @@ describe('useGestureDispatcher', () => {
       expect(ctxValue.hotkeyStack).toEqual([]);
     });
   });
+
+  describe('tool-switch cancellation', () => {
+    it('in-flight ongoing handles get onEnd("cancel") when active tool changes', () => {
+      const endSpy = vi.fn();
+      const action: Action = {
+        id: 'demo.held',
+        label: 'demo',
+        gestureBinding: { kind: 'key-held', key: ' ' },
+        invoker: {
+          timing: 'ongoing',
+          start: () => ({ onEnd: (_c, reason) => endSpy(reason) }),
+        },
+      };
+      let ctxValue!: ActiveToolContextValue;
+      function CtxCapture() { ctxValue = useActiveToolContext(); return null; }
+      render(
+        <Harness>
+          <Probe actionDef={action} />
+          <CtxCapture />
+        </Harness>,
+      );
+      // Start an in-flight gesture
+      act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' })); });
+      expect(endSpy).not.toHaveBeenCalled();
+      // Tool switch
+      act(() => { ctxValue.setActive('rect'); });
+      expect(endSpy).toHaveBeenCalledWith('cancel');
+    });
+
+    it('does NOT cancel on initial mount', () => {
+      const startSpy = vi.fn();
+      const endSpy = vi.fn();
+      const action: Action = {
+        id: 'demo.start',
+        label: 'demo',
+        gestureBinding: { kind: 'key-held', key: 'x' },
+        invoker: {
+          timing: 'ongoing',
+          start: () => { startSpy(); return { onEnd: () => endSpy() }; },
+        },
+      };
+      render(<Harness><Probe actionDef={action} /></Harness>);
+      // Just mounting shouldn't fire start or end.
+      expect(startSpy).not.toHaveBeenCalled();
+      expect(endSpy).not.toHaveBeenCalled();
+    });
+  });
 });

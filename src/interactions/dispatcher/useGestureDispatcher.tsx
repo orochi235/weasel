@@ -79,6 +79,15 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     isMac: IS_MAC,
   };
 
+  // Cancel in-flight ongoing handles when active tool changes (not on initial mount).
+  const prevActiveRef = useRef(activeTool.active);
+  useEffect(() => {
+    if (prevActiveRef.current !== activeTool.active) {
+      dispatcherRef.current?.cancelAll('cancel');
+    }
+    prevActiveRef.current = activeTool.active;
+  });
+
   useEffect(() => {
     if (!enabled) return;
 
