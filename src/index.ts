@@ -122,6 +122,27 @@ export type {
 } from './interactions/actions/useStandardActions';
 export { resolveActions } from './interactions/actions/resolveActions';
 
+// ─── Invoker / GestureBinding / ActiveToolContext (Phase 1 of registry unification) ───
+export type {
+  Point2,
+  InvocationCtx,
+  BindingOpts,
+  ActionDeps,
+  OngoingHandle,
+  ImmediateInvoker,
+  OngoingInvoker,
+  Invoker,
+} from './interactions/actions/invoker';
+export type { GestureBinding } from './interactions/actions/binding';
+export {
+  ActiveToolContextProvider,
+  useActiveToolContext,
+} from './interactions/actions/activeToolContext';
+export type {
+  ActiveToolContextValue,
+  ActiveToolContextProviderProps,
+} from './interactions/actions/activeToolContext';
+
 // ─── Viewport: wheel / velocity / decay / tween / pinch / animation ─────────
 export * from './core/viewport/wheelHandler';
 export { clientToCanvas } from './core/viewport/clientToCanvas';
@@ -426,6 +447,19 @@ export type {
   PointSnapBehavior,
 } from './interactions/gestures/types';
 export type { ClipboardSnapshot } from './interactions/actions/clipboard/types';
+
+// ─── Gesture specs (Phase 1 of registry unification) ───
+export type {
+  ModSpec,
+  TargetSpec,
+  KeySpec,
+  KeyHeldSpec,
+  WheelSpec,
+  ClickSpec,
+  DragSpec,
+  MultiTouchSpec,
+  GestureSpec,
+} from './interactions/gestures/spec';
 
 // ─── Snap strategies: grid + guide-line, with pluggable origin projection ───
 export {
