@@ -29,4 +29,6 @@ jobs:
       # only to validate that stories can mount. Run the three real test projects only.
       - run: npx vitest run --project=kit --project=weasel-ui --project=swillustrator
       - run: npm run build
-      - run: npm run build-storybook
+      # `npm run build-storybook` removed — pages.yml already builds Storybook on every
+      # main-branch push that touches user-visible source, so this CI step was a slow
+      # duplicate. If a story breaks, pages.yml surfaces it.
