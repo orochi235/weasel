@@ -1,17 +1,19 @@
 /**
  * Viewport-tool wiring for `<SceneCanvas>`. Translates the consumer-facing
- * `viewport` prop into instances of `useHandTool`, `useKeyboardZoomTool`,
- * `useWheelZoomTool`, and `usePinchZoomTool`. Hooks always run (React's rules);
- * each is a no-op when its config slot is absent.
+ * `viewport` prop into a `useHandTool` instance and wires `usePinchZoomTool`.
+ * Hooks always run (React's rules); each is a no-op when its config is absent.
  *
- * Returns `{ handTool, keyZoomTool, wheelZoomTool, viewportRegistered }`. When
- * `viewport` is undefined, `viewportRegistered` is false and SceneCanvas omits
- * `keyZoom`/`wheelZoom` from the ambient tools and `hand` from the registry.
+ * Keyboard zoom (Cmd+=/-/0) and wheel zoom/pan are now handled by the
+ * `viewport.zoom` and `viewport.pan` action descriptors registered via
+ * `useStandardActions` + `useGestureDispatcher`. The former
+ * `useKeyboardZoomTool` and `useWheelZoomTool` ambient tools are dissolved
+ * (Phase 8.5).
+ *
+ * Returns `{ handTool, viewportRegistered }`. When `viewport` is undefined,
+ * `viewportRegistered` is false and SceneCanvas omits `hand` from the registry.
  */
 import { type RefObject, useMemo } from 'react';
 import { useHandTool } from 'tools/builtin/useHandTool';
-import { useKeyboardZoomTool } from 'tools/builtin/useKeyboardZoomTool';
-import { useWheelZoomTool } from 'tools/builtin/useWheelZoomTool';
 import { usePinchZoomTool } from 'tools/builtin/usePinchZoomTool';
 import type { View } from 'core/viewport/view';
 import type { PanBounds } from 'core/viewport/useDecayLoop';
@@ -22,9 +24,6 @@ export interface ViewportConfig {
     | boolean
     | { friction?: number; minSpeed?: number; boundary?: 'stop' | 'bounce' | 'spring'; bounds?: PanBounds };
   pinchZoom?: boolean | { min?: number; max?: number };
-  animatedZoom?:
-    | boolean
-    | { duration?: number; resetDuration?: number; easing?: (t: number) => number };
 }
 
 export interface UseViewportToolsArgs {
@@ -38,8 +37,6 @@ export interface UseViewportToolsArgs {
 
 export interface UseViewportToolsReturn {
   handTool: AnyTool;
-  keyZoomTool: AnyTool;
-  wheelZoomTool: AnyTool;
   /** True when the consumer enabled at least one viewport feature. */
   viewportRegistered: boolean;
 }
@@ -69,13 +66,6 @@ export function useViewportTools(args: UseViewportToolsArgs): UseViewportToolsRe
   const pinchConfig: { min?: number; max?: number } | null =
     viewport?.pinchZoom === true ? {} : (viewport?.pinchZoom || null);
 
-  const animatedZoomObj =
-    typeof viewport?.animatedZoom === 'object' ? viewport.animatedZoom : undefined;
-  const animateEnabled = !!viewport?.animatedZoom;
-  const animateDuration = animatedZoomObj?.duration;
-  const animateResetDuration = animatedZoomObj?.resetDuration;
-  const animateEasing = animatedZoomObj?.easing;
-
   const handToolInertia =
     inertiaConfig === false
       ? undefined
@@ -86,17 +76,7 @@ export function useViewportTools(args: UseViewportToolsArgs): UseViewportToolsRe
           bounds: inertiaConfig.bounds,
         };
   const handTool = useHandTool(handToolInertia ? { inertia: handToolInertia } : {});
-  const keyZoomTool = useKeyboardZoomTool(
-    animateEnabled
-      ? { animate: true, duration: animateDuration, resetDuration: animateResetDuration, easing: animateEasing }
-      : {},
-  );
-  // Plain wheel zooms (requireCtrl:false) — covers scroll wheel, Cmd+wheel,
-  // and Mac trackpad pinch (browser synthesizes pinch as ctrl+wheel).
-  // Touch pinch via pointer events is handled separately by usePinchZoomTool.
-  const wheelZoomOpts =
-    pinchConfig !== null ? { min: pinchConfig.min, max: pinchConfig.max, requireCtrl: false } : { requireCtrl: false };
-  const wheelZoomTool = useWheelZoomTool(viewport ? wheelZoomOpts : {});
+
   usePinchZoomTool(
     canvasRef,
     currentView,
@@ -106,8 +86,6 @@ export function useViewportTools(args: UseViewportToolsArgs): UseViewportToolsRe
 
   return {
     handTool,
-    keyZoomTool,
-    wheelZoomTool,
     viewportRegistered: !!viewport,
   };
 }

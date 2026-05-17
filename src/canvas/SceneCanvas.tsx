@@ -64,6 +64,7 @@ import { DispatcherPresenceProvider } from 'interactions/dispatcher/dispatcherPr
 import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
 import { useActionsRegistry } from 'interactions/actions/registry';
 import type { Op } from 'core/ops/types';
+import type { ViewApi } from 'interactions/actions/depSchema';
 
 /**
  * Minimal adapter surface the legacy bridge factories need for delete /
@@ -551,18 +552,17 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   // Viewport tools (hand / keyboard zoom / wheel zoom / pinch zoom). All
   // hooks run unconditionally; each is a no-op when its config is absent.
-  const { handTool, keyZoomTool, wheelZoomTool, viewportRegistered } = useViewportTools({
+  const { handTool, viewportRegistered } = useViewportTools({
     viewport,
     canvasRef: internalCanvasRef,
     currentView: currentViewRef.current,
     onViewChange: handleViewChange,
   });
 
-  // keyZoom and wheelZoom are always-on (ambient); handTool must be in the
-  // registry so H keybinding and space hotkey work via useKeybindings.
-  const viewportAmbient: AnyTool[] = viewportRegistered
-    ? [keyZoomTool, wheelZoomTool]
-    : [];
+  // Keyboard zoom and wheel zoom/pan are handled by the viewport.pan and
+  // viewport.zoom descriptors via the gesture dispatcher (Phase 8.5).
+  // viewportAmbient no longer includes keyZoom/wheelZoom tool instances.
+  const viewportAmbient: AnyTool[] = [];
 
   // Resolve which built-ins to mount. Precedence: explicit `defaultTools` >
   // `toolBundle` preset > legacy default (select/resize/rotate, plus hand
@@ -743,6 +743,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 adapter={adapter as unknown as BridgeAdapter}
                 actionDefaults={actionDefaults}
                 actions={actions}
+                currentViewRef={currentViewRef}
+                onViewChange={handleViewChange}
               />
               <GestureDispatcherMounter
                 canvasRef={internalCanvasRef}
@@ -808,14 +810,30 @@ function StandardActionsRegistrar({
   adapter,
   actionDefaults,
   actions,
+  currentViewRef,
+  onViewChange,
 }: {
   selection: SelectionApi;
   scene: Scene<unknown, string, unknown>;
   adapter: BridgeAdapter;
   actionDefaults?: SceneCanvasProps<unknown, string, unknown>['actionDefaults'];
   actions?: ActionsProp;
+  currentViewRef: React.RefObject<View>;
+  onViewChange: (v: View) => void;
 }) {
-  useStandardActions({ selection, scene });
+  // Build a stable ViewApi that reads from currentViewRef and writes via onViewChange.
+  // The ref ensures the api object identity is stable across renders (no useMemo needed
+  // because viewApiRef.current is re-assigned each render via the closure below).
+  const viewApiRef = useRef<ViewApi>({
+    get: () => currentViewRef.current,
+    set: (v: View) => onViewChange(v),
+  });
+  // Keep the thunks pointed at the latest props (avoid stale closures in dep registry).
+  viewApiRef.current = {
+    get: () => currentViewRef.current,
+    set: (v: View) => onViewChange(v),
+  };
+  useStandardActions({ selection, scene, view: viewApiRef.current });
 
   // Legacy bridge overrides for the 4 actions whose DepSchema deps are not
   // yet wired. Registered after useStandardActions so they win on same-id
