@@ -183,11 +183,19 @@ a scene composed of:
 4. **Foreground grass** (`pan: 1.3`) — leads the camera.
 
 Each plane renders 5–10 colored shapes via inline `RenderLayer.draw`
-functions; no scene adapter, no `useScene`. Demo's purpose is to show the
-*motion* relationship, not to be a full app.
+functions. The demo uses `<SceneCanvas>` with an empty scene (`initial: []`,
+`scene: { drawOne: () => [] }`) purely as a host for the hand tool — all paint
+comes from the parallax-wrapped custom layers in the `layers={...}` prop. Raw
+`<Canvas>` would also work but would require hand-rolling the hand-tool wiring;
+the empty-scene approach is the smaller surface today. (If this idiom recurs
+across demos, a `<Canvas ambient={[hand]}>` ergonomic could absorb it — track
+as a kit follow-up, not part of this spec.)
 
-A second demo card or section toggles `zoom` factors so the per-plane zoom
-behavior is visible.
+A per-plane-zoom checkbox + view-zoom slider on the demo's header toggles
+between uniform zoom (`zoom: 1` on every plane, the default) and depth-aware
+zoom (`zoom: 0` on sky, `0.3` on hills, `1` on ground, `1.5` on foreground).
+Drag the slider with the toggle on to see the depth effect; toggle off to see
+the uniform baseline.
 
 ## Tests
 
