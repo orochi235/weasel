@@ -31,18 +31,6 @@ export {
   type PenAnchor,
   type PenSubpath,
 } from './usePenTool';
-export {
-  useEditAnchorsTool,
-  type UseEditAnchorsToolOptions,
-  type EditAnchorsScratch,
-} from './useEditAnchorsTool';
-export {
-  useSelectWithAnchorEdit,
-  type UseSelectWithAnchorEditOptions,
-  type UseSelectWithAnchorEditReturn,
-  type SelectWithAnchorEditAdapter,
-  type SelectWithAnchorEditAnchorsOptions,
-} from './useSelectWithAnchorEdit';
 export { useRectTool, type UseRectToolOptions, type RectBounds } from './useRectTool';
 export { useEllipseTool, type UseEllipseToolOptions, type EllipseBounds } from './useEllipseTool';
 export {
