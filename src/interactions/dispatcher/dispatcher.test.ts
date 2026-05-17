@@ -435,4 +435,117 @@ describe('createDispatcher', () => {
       expect(run.mock.calls[0][1]).toBeUndefined();
     });
   });
+
+  describe('specificity-ordered fall-through', () => {
+    it('falls through to lower-precedence binding when higher action is disabled', () => {
+      const activeRun = vi.fn();
+      const ambientRun = vi.fn();
+
+      // Higher-specificity (active-scope) action: disabled.
+      const activeAction: Action = {
+        ...immediateAction('active', 'a', activeRun),
+        enabled: () => 'selection-required' as const,
+      };
+      // Lower-specificity (ambient-scope) action: enabled (default).
+      const ambientAction = immediateAction('ambient', 'a', ambientRun);
+
+      const registry = makeRegistry([activeAction, ambientAction]);
+
+      const activeTool: Tool = {
+        id: 'myTool',
+        bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'active' }],
+      };
+      const toolsById = new Map([['myTool', activeTool]]);
+
+      const dispatcher = createDispatcher();
+      const result = dispatcher.handleInput(
+        keyAEvent,
+        makeCtx({ actions: registry, activeToolId: 'myTool', toolsById }),
+      );
+
+      expect(result).toBe('handled');
+      expect(activeRun).not.toHaveBeenCalled();
+      expect(ambientRun).toHaveBeenCalledOnce();
+    });
+
+    it('returns "unhandled" when every matching action is disabled', () => {
+      const activeRun = vi.fn();
+      const ambientRun = vi.fn();
+
+      const activeAction: Action = {
+        ...immediateAction('active', 'a', activeRun),
+        enabled: () => 'selection-required' as const,
+      };
+      const ambientAction: Action = {
+        ...immediateAction('ambient', 'a', ambientRun),
+        enabled: () => 'scene-empty' as const,
+      };
+
+      const registry = makeRegistry([activeAction, ambientAction]);
+      const activeTool: Tool = {
+        id: 'myTool',
+        bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'active' }],
+      };
+      const toolsById = new Map([['myTool', activeTool]]);
+
+      const dispatcher = createDispatcher();
+      const result = dispatcher.handleInput(
+        keyAEvent,
+        makeCtx({ actions: registry, activeToolId: 'myTool', toolsById }),
+      );
+
+      expect(result).toBe('unhandled');
+      expect(activeRun).not.toHaveBeenCalled();
+      expect(ambientRun).not.toHaveBeenCalled();
+    });
+
+    it('falls through past missing actionId to next match', () => {
+      const ambientRun = vi.fn();
+      const ambientAction = immediateAction('ambient', 'a', ambientRun);
+
+      const registry = makeRegistry([ambientAction]);
+      const activeTool: Tool = {
+        id: 'myTool',
+        // References an actionId that doesn't exist in the registry.
+        bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'ghost' }],
+      };
+      const toolsById = new Map([['myTool', activeTool]]);
+
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const dispatcher = createDispatcher();
+      const result = dispatcher.handleInput(
+        keyAEvent,
+        makeCtx({ actions: registry, activeToolId: 'myTool', toolsById }),
+      );
+
+      expect(result).toBe('handled');
+      expect(ambientRun).toHaveBeenCalledOnce();
+      warn.mockRestore();
+    });
+
+    it('stops at the first enabled action (does not invoke later candidates)', () => {
+      const activeRun = vi.fn();
+      const ambientRun = vi.fn();
+
+      // Both enabled — higher precedence must win exclusively.
+      const activeAction = immediateAction('active', 'a', activeRun);
+      const ambientAction = immediateAction('ambient', 'a', ambientRun);
+
+      const registry = makeRegistry([activeAction, ambientAction]);
+      const activeTool: Tool = {
+        id: 'myTool',
+        bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'active' }],
+      };
+      const toolsById = new Map([['myTool', activeTool]]);
+
+      const dispatcher = createDispatcher();
+      dispatcher.handleInput(
+        keyAEvent,
+        makeCtx({ actions: registry, activeToolId: 'myTool', toolsById }),
+      );
+
+      expect(activeRun).toHaveBeenCalledOnce();
+      expect(ambientRun).not.toHaveBeenCalled();
+    });
+  });
 });

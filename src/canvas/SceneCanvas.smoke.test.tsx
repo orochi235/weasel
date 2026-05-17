@@ -21,12 +21,13 @@
  *
  * ## Skipped tests
  *
- * Only three tests remain skipped:
+ * Two tests remain skipped:
  *
- * - `useCloneTool` (alt-drag) — Alt key-held does not push clone onto the
- *   hotkey stack in jsdom (real dispatch-path bug, not a harness issue).
- * - `useHandTool` (drag-pan) — areaSelect's enabled() placeholder blocks
- *   ambient-scope fall-through to viewport.dragPan (known dispatcher gap).
+ * - `useCloneTool` (alt-drag) — `tool.hold.clone` is never registered in
+ *   the dispatcher's actions list because `useKeybindings` reads
+ *   `useActionsRegistry()` ABOVE the `<ActionsProviderIfRoot>` boundary;
+ *   also gated by a modifier-as-held-key matcher quirk. Provider-scope
+ *   bug, not a dispatcher bug.
  * - `useStarTool` (drag-insert) — star tool ships without a default
  *   keybinding, so there's no way for the harness to activate it via
  *   keydown. Enable once a keybinding is added or once the harness can
@@ -316,21 +317,25 @@ describe('useSelectTool smoke', () => {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// BUG SURFACED: Alt keydown on window does not push clone onto the hotkey
-// stack in the jsdom test environment. The `tool.hold.clone` action's
-// `key-held` gesture binding (registered via useKeybindings + ActionsRegistry)
-// is not being fired by a bare KeyboardEvent on window — either because
-// useGestureDispatcher's key-held path requires the event to come through
-// the canvas or because state updates from the action aren't flushing before
-// the pointer events run.
+// BUG SURFACED: `useKeybindings` calls `useActionsRegistry()` to register
+// per-tool `tool.hold.<id>` actions, but it runs in SceneCanvas's body —
+// ABOVE the `<ActionsProviderIfRoot>` boundary in the rendered tree. The
+// hook therefore receives `null`, never registers `tool.hold.clone`, and
+// the Alt key-held event has no matching binding in the dispatcher.
 //
-// This is a **real dispatch-path bug** surfaced by the smoke-test harness.
-// The clone alt-drag path through SceneCanvas does not work end-to-end.
-// Filed for investigation; keep skipped until fixed.
+// This is a provider-scope wiring bug, NOT a dispatcher fall-through bug:
+// the dispatcher would dispatch correctly if the tool.hold action were
+// registered. It also intersects with a smaller matcher quirk — bare
+// `key-held` for a modifier key (e.g. `key: 'alt'`) is rejected because
+// matchModifiers strictly requires `altKey: false` and altKey is true by
+// definition when Alt is the held key.
+//
+// Both fixes are independent of the dispatcher fall-through work; keep
+// skipped until tracked separately.
 // ---------------------------------------------------------------------------
 
 describe('useCloneTool smoke', () => {
-  it.skip('alt-drag on selected body fires cloneAction → scene.batch("Clone") [BUG: Alt key-held not reaching dispatcher]', () => {
+  it.skip('alt-drag on selected body fires cloneAction → scene.batch("Clone") [BUG: tool.hold.clone never registered + modifier-as-held-key matcher quirk]', () => {
     const scene = makeScene();
     const id = firstId(scene);
     const countBefore = nodeCount(scene);
@@ -405,7 +410,7 @@ describe('useCloneTool smoke', () => {
 // ---------------------------------------------------------------------------
 
 describe('useHandTool smoke', () => {
-  it.skip('drag while hand tool active pans the viewport (view changes) [BUG: H key does not switch active tool; dragPan blocked by areaSelect enabled() gate]', () => {
+  it('drag while hand tool active pans the viewport (view changes)', () => {
     const scene = emptyScene();
 
     // eslint-disable-next-line prefer-const
@@ -431,10 +436,15 @@ describe('useHandTool smoke', () => {
 
     const canvas = getCanvas(container);
 
+    // Switch to hand tool first (separate act() so state flushes through to
+    // the dispatcher context before the drag fires).
     act(() => {
       document.dispatchEvent(new KeyboardEvent('keydown', {
         bubbles: true, key: 'h', code: 'KeyH',
       }));
+    });
+
+    act(() => {
       drag(canvas, 200, 200, 250, 230);
     });
 

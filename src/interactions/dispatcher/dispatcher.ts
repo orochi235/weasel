@@ -2,8 +2,20 @@
  * Dispatcher orchestrator — pure module, no React, no DOM.
  *
  * Assembles `ScopedBinding[]` from the actions registry, active tool, and
- * hotkey stack; matches input events via `matchBest`; gates on `enabled()`;
- * then invokes `immediate` or `ongoing` invokers and tracks in-flight handles.
+ * hotkey stack; matches input events via `matchSorted`; gates each candidate
+ * on `enabled()`; then invokes `immediate` or `ongoing` invokers and tracks
+ * in-flight handles.
+ *
+ * ## Specificity-ordered fall-through
+ * `matchSorted` returns every matching binding in precedence order
+ * (hotkey > active > ambient, first-declared within scope). The dispatcher
+ * walks that list and fires the first action whose `enabled()` returns
+ * `true`. If every candidate's `enabled()` returns a disabled reason, the
+ * event is unhandled. This mirrors CSS-style specificity matching with a
+ * `:not(:disabled)` filter, and lets a tool declare a high-specificity
+ * binding (e.g. drag-on-empty → areaSelect) that gracefully falls through
+ * to a lower-specificity ambient binding (e.g. drag → viewport.dragPan)
+ * when its required deps aren't wired.
  *
  * ## gestureId scheme
  * - `key-held` ongoing actions: `key-held-<key>` (e.g. `key-held- ` for Space).
@@ -28,7 +40,7 @@ import type { GestureBinding } from '../actions/binding';
 import type { OngoingHandle, InvocationCtx, ActionDeps, BindingOpts } from '../actions/invoker';
 import type { Tool } from '../../tools/types';
 import type { InputEvent, BindingScope, ScopedBinding } from './matcher';
-import { matchBest } from './matcher';
+import { matchSorted } from './matcher';
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -341,74 +353,84 @@ export function createDispatcher(): Dispatcher {
     // --- Scope assembly ---
     const scopedBindings = assembleScopedBindings(ctx);
 
-    // --- Match ---
-    const match = matchBest(event, scopedBindings, ctx.isMac);
-    if (!match) return 'unhandled';
+    // --- Match: get every matching binding, best → worst ---
+    const matches = matchSorted(event, scopedBindings, ctx.isMac);
+    if (matches.length === 0) return 'unhandled';
 
     // --- Action lookup ---
     const actionMap = buildActionMap(ctx.actions);
-    const action = actionMap.get(match.binding.actionId);
-    if (!action) {
-      console.warn(
-        `weasel dispatcher: binding resolved actionId "${match.binding.actionId}" which has ` +
-        `no registered action. Skipping. (misconfiguration)`,
-      );
-      return 'unhandled';
-    }
 
-    // --- Enabled gate ---
-    if (action.enabled) {
-      const result = action.enabled();
-      if (result !== true) {
-        return 'unhandled';
+    // --- Specificity-ordered fall-through ---
+    // For each candidate, check the enabled gate. The first action that is
+    // enabled wins. If every candidate is disabled (or missing), the event
+    // is unhandled.
+    for (const match of matches) {
+      const action = actionMap.get(match.binding.actionId);
+      if (!action) {
+        console.warn(
+          `weasel dispatcher: binding resolved actionId "${match.binding.actionId}" which has ` +
+          `no registered action. Skipping. (misconfiguration)`,
+        );
+        continue;
       }
-    }
 
-    // --- Invoke ---
-    const deps = buildDeps(action, ctx.depRegistry);
+      if (action.enabled) {
+        const result = action.enabled();
+        if (result !== true) {
+          // Fall through to the next-best match.
+          continue;
+        }
+      }
 
-    if (action.invoker?.timing === 'immediate') {
+      // --- Invoke ---
+      const deps = buildDeps(action, ctx.depRegistry);
+
+      if (action.invoker?.timing === 'immediate') {
+        try {
+          // For wheel bindings, merge event-time delta/position data into params
+          // so the invoker receives both binding-declared params (e.g. `kind: 'wheel'`)
+          // and runtime event data (deltaX, deltaY, clientX, clientY). Option (a)
+          // from the design doc — simpler than extending InvocationCtx for immediate invokers.
+          const params: Record<string, unknown> | undefined =
+            event.kind === 'wheel'
+              ? { deltaX: event.deltaX, deltaY: event.deltaY, clientX: event.clientX, clientY: event.clientY, ...match.binding.opts?.params }
+              : match.binding.opts?.params;
+          action.invoker.run(deps, params);
+        } catch (err) {
+          console.error(`weasel dispatcher: action "${action.id}" invoker threw`, err);
+        }
+        return 'handled';
+      }
+
+      if (action.invoker?.timing === 'ongoing') {
+        const gestureId = gestureIdFor(event);
+        // Record the drag origin so subsequent pointermove events can compute delta.
+        if (event.kind === 'pointerdown') {
+          dragOrigins.set(gestureId, { x: event.x ?? 0, y: event.y ?? 0 });
+          // Initialize empty drag-points history for the new gesture.
+          dragPoints.set(gestureId, [{ x: event.x ?? 0, y: event.y ?? 0 }]);
+        }
+        // Record start spread for pinch-zoom gestures.
+        if (event.kind === 'multitouch' && event.spread !== undefined) {
+          pinchStartSpreads.set(gestureId, event.spread);
+        }
+        const invCtx = buildInvocationCtx(event, deps, gestureId);
+        const handle = action.invoker.start(invCtx, match.binding.opts);
+        inFlightHandles.set(gestureId, handle);
+        return 'handled';
+      }
+
+      // Fallback: legacy `run` path (no invoker).
       try {
-        // For wheel bindings, merge event-time delta/position data into params
-        // so the invoker receives both binding-declared params (e.g. `kind: 'wheel'`)
-        // and runtime event data (deltaX, deltaY, clientX, clientY). Option (a)
-        // from the design doc — simpler than extending InvocationCtx for immediate invokers.
-        const params: Record<string, unknown> | undefined =
-          event.kind === 'wheel'
-            ? { deltaX: event.deltaX, deltaY: event.deltaY, clientX: event.clientX, clientY: event.clientY, ...match.binding.opts?.params }
-            : match.binding.opts?.params;
-        action.invoker.run(deps, params);
+        action.run?.();
       } catch (err) {
-        console.error(`weasel dispatcher: action "${action.id}" invoker threw`, err);
+        console.error(`weasel dispatcher: action "${action.id}" threw`, err);
       }
       return 'handled';
     }
 
-    if (action.invoker?.timing === 'ongoing') {
-      const gestureId = gestureIdFor(event);
-      // Record the drag origin so subsequent pointermove events can compute delta.
-      if (event.kind === 'pointerdown') {
-        dragOrigins.set(gestureId, { x: event.x ?? 0, y: event.y ?? 0 });
-        // Initialize empty drag-points history for the new gesture.
-        dragPoints.set(gestureId, [{ x: event.x ?? 0, y: event.y ?? 0 }]);
-      }
-      // Record start spread for pinch-zoom gestures.
-      if (event.kind === 'multitouch' && event.spread !== undefined) {
-        pinchStartSpreads.set(gestureId, event.spread);
-      }
-      const invCtx = buildInvocationCtx(event, deps, gestureId);
-      const handle = action.invoker.start(invCtx, match.binding.opts);
-      inFlightHandles.set(gestureId, handle);
-      return 'handled';
-    }
-
-    // Fallback: legacy `run` path (no invoker).
-    try {
-      action.run?.();
-    } catch (err) {
-      console.error(`weasel dispatcher: action "${action.id}" threw`, err);
-    }
-    return 'handled';
+    // Every matching candidate was disabled or missing.
+    return 'unhandled';
   }
 
   // -------------------------------------------------------------------------

@@ -383,10 +383,17 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       }
 
       // Check whether a drag handle is in-flight BEFORE sending pointerup.
-      // If the pointer-mouse handle is in-flight, this is the end of a drag —
-      // pump it and don't synthesize a click. If no handle is in-flight, this
-      // is a sub-threshold release and we synthesize a click event afterward.
-      const hadDragInFlight = dispatcher.inFlight().has('pointer-mouse');
+      // If the pointer-mouse handle is in-flight AND the pointer moved between
+      // down and up, this is the end of a real drag — pump it and don't
+      // synthesize a click. If no handle is in-flight, or the handle was
+      // opened but the pointer never moved (sub-threshold "tap" that an
+      // over-broad ambient drag binding accepted), we still synthesize a
+      // click so click-specific bindings (e.g. clearSelection on empty) fire.
+      const downForClick = lastPointerDown.get(e.pointerId);
+      const movedDuringDrag = downForClick
+        ? (downForClick.clientX !== e.clientX || downForClick.clientY !== e.clientY)
+        : true;
+      const hadDragInFlight = dispatcher.inFlight().has('pointer-mouse') && movedDuringDrag;
 
       const ev: InputEvent = {
         kind: 'pointerup',
