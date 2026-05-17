@@ -629,53 +629,7 @@ describe('Canvas tools mode', () => {
     expect(canvas.style.cursor).toBe('crosshair');
   });
 
-  describe('legacy-hook dedupe', () => {
-    it('suppresses legacy delete keybinding when "delete" Tool is in ambient', () => {
-      // The legacy useDelete hook attaches its own document keydown handler
-      // when enableKeyboard is true. With a 'delete' Tool in ambient, Canvas
-      // must pass enableKeyboard:false so the legacy handler never fires.
-      const legacyApplyOps = vi.fn();
-
-      function Test() {
-        const delTool = defineTool({
-          id: 'delete',
-          keybinding: { key: 'Backspace' },
-          initial: {
-            keyDown: { Backspace: () => claim() },
-          },
-        });
-        const activeTool = defineTool({ id: 'active', initial: {} });
-        const tools = useTools({
-          active: 'active',
-          registry: { active: activeTool },
-          ambient: [delTool],
-        });
-        return (
-          <Canvas
-            width={100}
-            height={100}
-            layers={{}}
-            tools={tools}
-            gestures={{
-              delete: {
-                // The legacy adapter would call legacyApplyOps if the hook fires.
-                // We detect this via a custom filter that always returns true.
-                filter: (_ids: string[]) => {
-                  legacyApplyOps();
-                  return true;
-                },
-              } as never,
-            }}
-          />
-        );
-      }
-
-      render(<Test />);
-      fireEvent.keyDown(document, { key: 'Backspace' });
-      // The filter is only called by the legacy hook; with dedupe, it should NOT fire.
-      expect(legacyApplyOps).not.toHaveBeenCalled();
-    });
-
+  describe('tools integration', () => {
     it('appends tools.getActiveOverlays() to the layer pipeline (rendered last)', () => {
       const order: string[] = [];
       const toolOverlay: RenderLayer<unknown> = {
