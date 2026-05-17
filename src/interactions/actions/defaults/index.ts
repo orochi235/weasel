@@ -34,3 +34,4 @@ export { pinchZoomAction } from './pinchZoom';
 export { viewportPanAction } from './viewportPan';
 export { viewportZoomAction } from './viewportZoom';
 export { viewportDragPanAction } from './viewportDragPan';
+export { enterTextEditAction, type TextEditDep } from './enterTextEdit';

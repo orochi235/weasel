@@ -123,6 +123,8 @@ export { viewportDragPanAction } from './interactions/actions/defaults/viewportD
 export { editAnchorsAction } from './interactions/actions/defaults/editAnchors';
 export { lassoSelectAction } from './interactions/actions/defaults/lassoSelect';
 export { pinchZoomAction } from './interactions/actions/defaults/pinchZoom';
+export { enterTextEditAction } from './interactions/actions/defaults/enterTextEdit';
+export type { TextEditDep } from './interactions/actions/defaults/enterTextEdit';
 export { useStandardActions } from './interactions/actions/useStandardActions';
 export type { UseStandardActionsOptions } from './interactions/actions/useStandardActions';
 export { resolveActions } from './interactions/actions/resolveActions';
