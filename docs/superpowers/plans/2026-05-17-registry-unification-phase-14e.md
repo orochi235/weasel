@@ -45,11 +45,11 @@ Doing any one of these without the others leaves the codebase in a half-state wh
 - `src/interactions/actions/move/move.ts` (legacy hook; not the descriptor)
 - `src/interactions/actions/resize/resize.ts`
 - `src/interactions/actions/rotate/rotate.ts`
-- `src/interactions/actions/area-select/area-select.ts`
+- `src/interactions/actions/area-select/areaSelect.ts` (camelCase, not kebab)
 - `src/interactions/actions/insert/insert.ts`
 - `src/interactions/actions/clone/clone.ts`
-- `src/interactions/actions/lasso-select/lasso-select.ts`
-- `src/interactions/actions/edit-anchors/edit-anchors.ts`
+- `src/interactions/actions/lasso-select/lassoSelect.ts` (camelCase)
+- `src/interactions/actions/edit-anchors/editAnchors.ts` (camelCase)
 - `src/interactions/actions/useKeybinding.ts` (singular)
 - `src/interactions/dispatcher/dispatcherPresence.tsx`
 - `withLegacyRunBridge` (in `src/interactions/actions/useStandardActions.ts` or similar — grep)
