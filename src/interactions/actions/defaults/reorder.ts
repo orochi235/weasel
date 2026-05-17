@@ -26,6 +26,7 @@ export function defaultReorderActions(deps: ReorderDeps): Action[] {
       id: 'reorder.forward',
       label: 'Bring Forward',
       defaultBinding: { key: [']', '}'], mod: true },
+      gestureBinding: { kind: 'key', key: [']', '}'], mods: { mod: true } },
       run: () => {
         const ids = deps.getSelection();
         if (ids.length === 0) return;
@@ -37,6 +38,7 @@ export function defaultReorderActions(deps: ReorderDeps): Action[] {
       id: 'reorder.backward',
       label: 'Send Backward',
       defaultBinding: { key: ['[', '{'], mod: true },
+      gestureBinding: { kind: 'key', key: ['[', '{'], mods: { mod: true } },
       run: () => {
         const ids = deps.getSelection();
         if (ids.length === 0) return;
@@ -48,6 +50,7 @@ export function defaultReorderActions(deps: ReorderDeps): Action[] {
       id: 'reorder.front',
       label: 'Bring to Front',
       defaultBinding: { key: [']', '}'], mod: true, shift: true },
+      gestureBinding: { kind: 'key', key: [']', '}'], mods: { mod: true, shift: true } },
       run: () => {
         const ids = deps.getSelection();
         if (ids.length === 0) return;
@@ -59,6 +62,7 @@ export function defaultReorderActions(deps: ReorderDeps): Action[] {
       id: 'reorder.back',
       label: 'Send to Back',
       defaultBinding: { key: ['[', '{'], mod: true, shift: true },
+      gestureBinding: { kind: 'key', key: ['[', '{'], mods: { mod: true, shift: true } },
       run: () => {
         const ids = deps.getSelection();
         if (ids.length === 0) return;

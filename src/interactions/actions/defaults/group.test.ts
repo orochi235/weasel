@@ -25,6 +25,11 @@ describe('defaultGroupAction', () => {
     expect(action.defaultBinding).toEqual({ key: 'g', mod: true });
   });
 
+  it('emits gestureBinding = key(g, mod)', () => {
+    const action = defaultGroupAction(baseDeps());
+    expect(action.gestureBinding).toEqual({ kind: 'key', key: 'g', mods: { mod: true } });
+  });
+
   it('run() dispatches a CreateGroupOp + SetSelectionOp on a ≥2 selection', () => {
     const deps = baseDeps();
     const action = defaultGroupAction({ ...deps, newGroupId: () => 'g1' });
@@ -94,6 +99,15 @@ describe('defaultUngroupAction', () => {
     });
     expect(a.id).toBe('ungroup');
     expect(a.defaultBinding).toEqual({ key: 'g', mod: true, shift: true });
+  });
+
+  it('emits gestureBinding = key(g, mod, shift)', () => {
+    const a = defaultUngroupAction({
+      getSelection: () => [],
+      getGroup: () => undefined,
+      applyOps: vi.fn(),
+    });
+    expect(a.gestureBinding).toEqual({ kind: 'key', key: 'g', mods: { mod: true, shift: true } });
   });
 
   it('dissolves selected groups; selection becomes members + non-group ids', () => {

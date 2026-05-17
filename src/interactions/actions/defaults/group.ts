@@ -42,6 +42,7 @@ export function defaultGroupAction(deps: GroupDeps): Action {
     id: 'group',
     label: 'Group',
     defaultBinding: { key: 'g', mod: true },
+    gestureBinding: { kind: 'key', key: 'g', mods: { mod: true } },
     run: () => {
       const sel = deps.getSelection();
       if (sel.length < minMembers) return;
@@ -74,6 +75,7 @@ export function defaultUngroupAction(deps: UngroupDeps): Action {
     id: 'ungroup',
     label: 'Ungroup',
     defaultBinding: { key: 'g', mod: true, shift: true },
+    gestureBinding: { kind: 'key', key: 'g', mods: { mod: true, shift: true } },
     run: () => {
       const sel = deps.getSelection();
       if (sel.length === 0) return;
