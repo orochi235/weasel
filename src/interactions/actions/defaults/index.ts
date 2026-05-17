@@ -31,3 +31,5 @@ export { cloneAction } from './clone';
 export { editAnchorsAction } from './editAnchors';
 export { lassoSelectAction } from './lassoSelect';
 export { pinchZoomAction } from './pinchZoom';
+export { viewportPanAction } from './viewportPan';
+export { viewportZoomAction } from './viewportZoom';
