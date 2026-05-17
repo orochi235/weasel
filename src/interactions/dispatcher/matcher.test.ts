@@ -160,9 +160,17 @@ describe('matchSpec', () => {
   });
 
   it('DragSpec target predicate gates when present', () => {
-    const e: InputEvent = { kind: 'pointerdown', target: { id: 'x' }, ...noMods };
-    expect(matchSpec(e, { kind: 'drag', target: { kindOf: (t: any) => t.id === 'x' } }, false)).toBe(true);
-    expect(matchSpec(e, { kind: 'drag', target: { kindOf: (t: any) => t.id === 'y' } }, false)).toBe(false);
+    // Phase 13: for drag specs, `kindOf` receives the `affordance` field from
+    // the pointerdown event (an AffordanceHit or undefined), NOT the raw DOM target.
+    // This aligns `kindOf` with `InvocationCtx.drag.affordance` so predicates
+    // like `hit => hit?.kind.startsWith('handle:')` work without a kind registry.
+    const e: InputEvent = { kind: 'pointerdown', affordance: { kind: 'handle:top-left' }, ...noMods };
+    expect(matchSpec(e, { kind: 'drag', target: { kindOf: (t: any) => t?.kind === 'handle:top-left' } }, false)).toBe(true);
+    expect(matchSpec(e, { kind: 'drag', target: { kindOf: (t: any) => t?.kind === 'rotate-handle' } }, false)).toBe(false);
+    // When no affordance is present, kindOf receives undefined.
+    const eNoAffordance: InputEvent = { kind: 'pointerdown', ...noMods };
+    expect(matchSpec(eNoAffordance, { kind: 'drag', target: { kindOf: (t: any) => t === undefined } }, false)).toBe(true);
+    expect(matchSpec(eNoAffordance, { kind: 'drag', target: { kindOf: (t: any) => !!t } }, false)).toBe(false);
   });
 
   it('MultiTouchSpec matches when fingers count matches', () => {

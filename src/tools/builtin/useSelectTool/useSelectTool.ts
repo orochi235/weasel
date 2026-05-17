@@ -1,4 +1,5 @@
 import { useMemo, useRef, createElement } from 'react';
+import { useIsDispatcherMounted } from 'interactions/dispatcher/dispatcherPresence';
 import { SelectIcon } from '../../../icons';
 import { pathContainsPoint } from 'features/paths/pathHitTest';
 import type { Path } from 'features/paths/types';
@@ -502,6 +503,13 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     return none();
   };
 
+  // When the new gesture dispatcher is mounted (inside a SceneCanvas or other
+  // DispatcherPresenceProvider), the drag bindings take over from the old
+  // route-table drag entries. When it's absent (legacy Canvas, tests that
+  // don't use SceneCanvas), the flag stays false and the old path fires as
+  // before — no double-application risk, no silent no-ops.
+  const gestureDispatcherMounted = useIsDispatcherMounted();
+
   return useMemo(
     () => {
       // Declarative factory — every gesture surface is a route table:
@@ -613,9 +621,62 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         overlay,
         previewPose,
         previewIds,
+        // Phase 13: declarative drag bindings for the new gesture dispatcher.
+        // These replace the `drag: { '*': beginMove, empty: ... }` route table
+        // entries above (which are kept as dead code for Phase 14 cleanup).
+        // `bindingsOverrideDrag: true` suppresses the old dispatcher's drag
+        // channel so only the new dispatcher handles drag gestures.
+        //
+        // Binding priority (first match wins):
+        //   1. Handle drags (resize) — most specific, guard on AffordanceHit kind.
+        //   2. Rotate-handle drag — single-selection rotation.
+        //   3. Body drag (selected) — move the selection.
+        //   4. Empty drag — marquee area-select.
+        //
+        // The `kindOf` predicates receive the `AffordanceHit | undefined` from
+        // `buildAffordanceAt` (via `InvocationCtx.drag.affordance`), threaded
+        // through the event's `affordance` field. String-form targets
+        // ('selected-body', 'empty') are resolved by the `classifyTarget` thunk
+        // wired in `GestureDispatcherMounter`.
+        bindings: [
+          // 1. Resize handles — fire `resizeAction` (requires `handle:*` affordance).
+          {
+            spec: {
+              kind: 'drag' as const,
+              target: {
+                kindOf: (hit: unknown): boolean => {
+                  const h = hit as { kind?: string } | null | undefined;
+                  return typeof h?.kind === 'string' && h.kind.startsWith('handle:');
+                },
+              },
+            },
+            actionId: 'resize',
+          },
+          // 2. Rotation handle — fire `rotateAction`.
+          {
+            spec: {
+              kind: 'drag' as const,
+              target: {
+                kindOf: (hit: unknown): boolean => {
+                  const h = hit as { kind?: string } | null | undefined;
+                  return h?.kind === 'rotate-handle';
+                },
+              },
+            },
+            actionId: 'rotate',
+          },
+          // 3. Body drag (selected node) — move the selection.
+          { spec: { kind: 'drag' as const, target: 'selected-body' as const }, actionId: 'move' },
+          // 4. Empty drag — rubber-band area-select.
+          { spec: { kind: 'drag' as const, target: 'empty' as const }, actionId: 'areaSelect' },
+        ],
+        // Suppress the old dispatcher's drag-slot when the new gesture
+        // dispatcher is mounted (SceneCanvas context). When absent, the flag
+        // is `false` so legacy Canvas / test harnesses keep using the old path.
+        bindingsOverrideDrag: gestureDispatcherMounted,
       };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [move, areaSelect, overlay, pickEveryFn, options.pickBest, options.debug],
+    [move, areaSelect, overlay, pickEveryFn, options.pickBest, options.debug, gestureDispatcherMounted],
   );
 }
