@@ -23,3 +23,8 @@ export { groupAction, ungroupAction, defaultGroupAction, defaultUngroupAction, t
 export { undoAction, redoAction, defaultUndoRedoActions, type UndoRedoDeps } from './undoRedo';
 export { makeToolHoldAction } from './toolHold';
 export { moveAction } from './move';
+export { resizeAction } from './resize';
+export { rotateAction } from './rotate';
+export { areaSelectAction } from './areaSelect';
+export { insertAction } from './insert';
+export { cloneAction } from './clone';
