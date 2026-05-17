@@ -30,7 +30,7 @@
 
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
-import type { Scene } from 'core/scene/types';
+import type { Scene, NodeId } from 'core/scene/types';
 import type { History } from 'core/history/history';
 import type { PointerContextValue } from 'features/pointer/PointerContext';
 import type { ActiveToolContextValue } from './activeToolContext';
@@ -39,6 +39,38 @@ import type { ActiveToolContextValue } from './activeToolContext';
 export interface ViewApi {
   get(): View;
   set(v: View): void;
+}
+
+/**
+ * Adapter dep for `areaSelectAction` (Phase 11).
+ *
+ * Provided by `<SceneCanvas>` / `<StandardActionsRegistrar>` via AABB
+ * overlap over scene nodes. Consumers with custom hit-testing override this
+ * dep entry in their own registrar.
+ */
+export interface AreaSelectDep {
+  /** Return ids of all scene nodes whose AABB overlaps `bounds`. */
+  hitTestArea(bounds: { x: number; y: number; width: number; height: number }): NodeId[];
+  /** Return the current selection id list. */
+  getSelection(): NodeId[];
+  /** Replace the current selection. */
+  setSelection(ids: NodeId[]): void;
+}
+
+/**
+ * Adapter dep for `insertAction` (Phase 11).
+ *
+ * Provided by `<SceneCanvas>` / `<StandardActionsRegistrar>`. The `kind`
+ * is forwarded from the binding's `opts.params.kind` (set by the active
+ * tool). Callers that need typed data must supply a richer `insert` dep.
+ */
+export interface InsertDep {
+  /**
+   * Materialise a new node of `kind` with the given drag-rect bounds.
+   * Returns the new node's id, or `null` if the consumer rejected the insert
+   * (e.g. sub-threshold bounds, unknown kind).
+   */
+  commit(bounds: { x: number; y: number; width: number; height: number }, kind: string): NodeId | null;
 }
 
 declare module './depRegistry' {
@@ -66,6 +98,22 @@ declare module './depRegistry' {
     pointer: PointerContextValue;
     /** Currently active tool id + hotkey-hold stack. */
     activeTool: ActiveToolContextValue;
+    /**
+     * Area-select dep — AABB hit-test + selection read/write.
+     *
+     * Phase 11: sourced from `<SceneCanvas>` via AABB overlap over all scene
+     * nodes. Override per-consumer for custom hit-testing (e.g. contain-mode,
+     * lock-aware filtering).
+     */
+    areaSelect: AreaSelectDep;
+    /**
+     * Insert dep — node factory for drag-to-insert.
+     *
+     * Phase 11: sourced from `<SceneCanvas>`. The `kind` param comes from
+     * the active binding's `opts.params.kind`. Override per-consumer to
+     * provide a typed node factory (e.g. with custom data payloads).
+     */
+    insert: InsertDep;
   }
 }
 
