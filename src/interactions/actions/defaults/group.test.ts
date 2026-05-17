@@ -44,15 +44,10 @@ describe('defaultGroupAction (legacy bridge)', () => {
     applyOps: vi.fn(),
   });
 
-  it('emits id=group with Mod+G default binding', () => {
+  it('emits id=group with Mod+G gesture binding', () => {
     const action = defaultGroupAction(baseDeps());
     expect(action.id).toBe('group');
     expect(action.label).toBe('Group');
-    expect(action.defaultBinding).toEqual({ key: 'g', mod: true });
-  });
-
-  it('emits gestureBinding = key(g, mod)', () => {
-    const action = defaultGroupAction(baseDeps());
     expect(action.gestureBinding).toEqual({ kind: 'key', key: 'g', mods: { mod: true } });
   });
 
@@ -119,22 +114,13 @@ describe('defaultGroupAction (legacy bridge)', () => {
 describe('defaultUngroupAction (legacy bridge)', () => {
   const g1: Group = { id: 'g1', members: ['a', 'b', 'c'] };
 
-  it('emits id=ungroup with Mod+Shift+G binding', () => {
+  it('emits id=ungroup with Mod+Shift+G gesture binding', () => {
     const a = defaultUngroupAction({
       getSelection: () => [],
       getGroup: () => undefined,
       applyOps: vi.fn(),
     });
     expect(a.id).toBe('ungroup');
-    expect(a.defaultBinding).toEqual({ key: 'g', mod: true, shift: true });
-  });
-
-  it('emits gestureBinding = key(g, mod, shift)', () => {
-    const a = defaultUngroupAction({
-      getSelection: () => [],
-      getGroup: () => undefined,
-      applyOps: vi.fn(),
-    });
     expect(a.gestureBinding).toEqual({ kind: 'key', key: 'g', mods: { mod: true, shift: true } });
   });
 

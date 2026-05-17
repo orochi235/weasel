@@ -106,7 +106,7 @@ describe('SceneCanvas actions integration', () => {
     expect(captured).toBeDefined();
     expect(captured!.id).toBe('duplicate');
     expect(captured!.label).toBe('Duplicate');
-    expect(captured!.defaultBinding).toEqual({ key: 'd', mod: true });
+    expect(captured!.gestureBinding).toEqual({ kind: 'key', key: 'd', mods: { mod: true } });
     captured!.run!();
     expect(customRun).toHaveBeenCalledOnce();
   });
@@ -233,7 +233,7 @@ describe('SceneCanvas actions integration', () => {
       </SceneCanvas>,
     );
     expect(captured!.label).toBe('Clone');
-    expect(captured!.defaultBinding).toEqual({ key: 'd', mod: true });
+    expect(captured!.gestureBinding).toEqual({ kind: 'key', key: 'd', mods: { mod: true } });
   });
 
   it('binding-only override keeps run + label', () => {

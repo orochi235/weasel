@@ -20,11 +20,11 @@ describe('duplicateAction (descriptor)', () => {
 describe('defaultDuplicateAction (legacy bridge)', () => {
   const cloneNode = vi.fn((id: NodeId) => ({ id: asNodeId(id + "'") }));
 
-  it('id="duplicate", label="Duplicate", binding={key:"d", mod:true}', () => {
+  it('id="duplicate", label="Duplicate", binding={kind:"key", key:"d", mods:{mod:true}}', () => {
     const a = defaultDuplicateAction({ getSelection: () => [asNodeId('a')], cloneNode, applyOps: vi.fn() });
     expect(a.id).toBe('duplicate');
     expect(a.label).toBe('Duplicate');
-    expect(a.defaultBinding).toEqual({ key: 'd', mod: true });
+    expect(a.gestureBinding).toEqual({ kind: 'key', key: 'd', mods: { mod: true } });
   });
   it('run() clones each selected id and dispatches insert+select ops', () => {
     const applyOps = vi.fn();
@@ -50,10 +50,8 @@ describe('defaultDuplicateAction (legacy bridge)', () => {
     a.run!();
     expect(clone).toHaveBeenCalledWith('a', { dx: 8, dy: 8 });
   });
-  it('declares gestureBinding mirroring defaultBinding', () => {
-    const a = defaultDuplicateAction({ getSelection: () => [asNodeId('a')], cloneNode, applyOps: vi.fn() });
-    expect(a.gestureBinding).toEqual({ kind: 'key', key: 'd', mods: { mod: true } });
-  });
+  // gestureBinding shape covered by the id/label/binding test above (and by
+  // the descriptor's own test in duplicateAction).
   it('bridge does not expose invoker (legacy run path stays active)', () => {
     const a = defaultDuplicateAction({ getSelection: () => [], cloneNode, applyOps: vi.fn() });
     expect(a.invoker).toBeUndefined();

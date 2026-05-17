@@ -121,7 +121,6 @@ export function defaultFlipActions<TPose>(deps: FlipDeps<TPose>): Action[] {
   return AXES.map((axis): Action => ({
     id: ID_FOR[axis],
     label: LABEL_FOR[axis],
-    defaultBinding: { key: KEY_FOR[axis], shift: true },
     gestureBinding: { kind: 'key', key: KEY_FOR[axis], mods: { shift: true } },
     run: () => {
       const sel = deps.getSelection();

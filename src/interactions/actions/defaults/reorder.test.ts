@@ -289,17 +289,11 @@ describe('defaultReorderActions', () => {
     const acts = defaultReorderActions({ getSelection: () => [asNodeId('a')], applyOps: vi.fn() });
     expect(acts.map(a => a.id).sort()).toEqual(['reorder.back', 'reorder.backward', 'reorder.forward', 'reorder.front']);
   });
-  it('forward binding = Mod+]', () => {
-    const a = defaultReorderActions({ getSelection: () => [asNodeId('a')], applyOps: vi.fn() }).find(x => x.id === 'reorder.forward')!;
-    expect(a.defaultBinding).toEqual({ key: [']', '}'], mod: true });
-  });
+  // Per-action gestureBinding tests below cover the binding shape; the legacy
+  // `defaultBinding` assertions are redundant and were removed in phase 14e/T6.
   it('forward gestureBinding = key(]/}, mod)', () => {
     const a = defaultReorderActions({ getSelection: () => [asNodeId('a')], applyOps: vi.fn() }).find(x => x.id === 'reorder.forward')!;
     expect(a.gestureBinding).toEqual({ kind: 'key', key: [']', '}'], mods: { mod: true } });
-  });
-  it('backward binding = Mod+[', () => {
-    const a = defaultReorderActions({ getSelection: () => [asNodeId('a')], applyOps: vi.fn() }).find(x => x.id === 'reorder.backward')!;
-    expect(a.defaultBinding).toEqual({ key: ['[', '{'], mod: true });
   });
   it('backward gestureBinding = key([/{, mod)', () => {
     const a = defaultReorderActions({ getSelection: () => [asNodeId('a')], applyOps: vi.fn() }).find(x => x.id === 'reorder.backward')!;
@@ -326,17 +320,9 @@ describe('defaultReorderActions', () => {
       .find(a => a.id === 'reorder.forward')!.run!();
     expect(applyOps).not.toHaveBeenCalled();
   });
-  it('front binding = Mod+Shift+]', () => {
-    const a = defaultReorderActions({ getSelection: () => [asNodeId('a')], applyOps: vi.fn() }).find(x => x.id === 'reorder.front')!;
-    expect(a.defaultBinding).toEqual({ key: [']', '}'], mod: true, shift: true });
-  });
   it('front gestureBinding = key(]/}, mod, shift)', () => {
     const a = defaultReorderActions({ getSelection: () => [asNodeId('a')], applyOps: vi.fn() }).find(x => x.id === 'reorder.front')!;
     expect(a.gestureBinding).toEqual({ kind: 'key', key: [']', '}'], mods: { mod: true, shift: true } });
-  });
-  it('back binding = Mod+Shift+[', () => {
-    const a = defaultReorderActions({ getSelection: () => [asNodeId('a')], applyOps: vi.fn() }).find(x => x.id === 'reorder.back')!;
-    expect(a.defaultBinding).toEqual({ key: ['[', '{'], mod: true, shift: true });
   });
   it('back gestureBinding = key([/{, mod, shift)', () => {
     const a = defaultReorderActions({ getSelection: () => [asNodeId('a')], applyOps: vi.fn() }).find(x => x.id === 'reorder.back')!;

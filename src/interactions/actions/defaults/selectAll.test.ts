@@ -34,7 +34,7 @@ describe('defaultSelectAllAction (legacy bridge)', () => {
   });
 
   it('default binding is Cmd/Ctrl+A', () => {
-    expect(defaultSelectAllAction(baseDeps).defaultBinding).toEqual({ key: 'a', mod: true });
+    expect(defaultSelectAllAction(baseDeps).gestureBinding).toEqual({ kind: 'key', key: 'a', mods: { mod: true } });
   });
 
   it('run() dispatches setSelection with all ids when listAll non-empty', () => {
@@ -59,10 +59,8 @@ describe('defaultSelectAllAction (legacy bridge)', () => {
     expect(setSelection).not.toHaveBeenCalled();
   });
 
-  it('declares gestureBinding mirroring defaultBinding', () => {
-    const a = defaultSelectAllAction(baseDeps);
-    expect(a.gestureBinding).toEqual({ kind: 'key', key: 'a', mods: { mod: true } });
-  });
+  // gestureBinding shape covered by "default binding is Cmd/Ctrl+A" above
+  // (and by the descriptor's own gestureBinding test).
 
   it('bridge does not expose invoker (legacy run path stays active)', () => {
     const a = defaultSelectAllAction(baseDeps);

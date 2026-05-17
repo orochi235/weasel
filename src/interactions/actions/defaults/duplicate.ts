@@ -4,7 +4,6 @@ import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
-import { deriveDefaultBinding } from './_keyBindingFromGesture';
 
 /** @experimental */
 export interface DuplicateDeps {
@@ -53,7 +52,6 @@ export function defaultDuplicateAction(deps: DuplicateDeps): Action {
   void _enabled;
   return {
     ...descriptorFields,
-    defaultBinding: deriveDefaultBinding(duplicateAction.gestureBinding),
     run: () => {
       const sel = deps.getSelection();
       if (sel.length === 0) return;

@@ -6,7 +6,6 @@ import type { NodeId } from 'core/scene/types';
 import type { Group } from 'features/groups/types';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
-import { deriveDefaultBinding } from './_keyBindingFromGesture';
 
 /** @experimental */
 export interface GroupDeps {
@@ -84,7 +83,6 @@ export function defaultGroupAction(deps: GroupDeps): Action {
   void _enabled;
   return {
     ...descriptorFields,
-    defaultBinding: deriveDefaultBinding(groupAction.gestureBinding),
     run: () => {
       const sel = deps.getSelection();
       if (sel.length < minMembers) return;
@@ -122,7 +120,6 @@ export function defaultUngroupAction(deps: UngroupDeps): Action {
   void _enabled;
   return {
     ...descriptorFields,
-    defaultBinding: deriveDefaultBinding(ungroupAction.gestureBinding),
     run: () => {
       const sel = deps.getSelection();
       if (sel.length === 0) return;
