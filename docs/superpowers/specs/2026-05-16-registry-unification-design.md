@@ -121,6 +121,16 @@ Discriminator field is `timing`; variants are `immediate` and
 `ongoing`. New invocation kinds (long-press, modal-dialog, two-stage)
 extend `Invoker` without widening `Action`.
 
+**Interim shape during the transition.** The `Action` shape above is the
+*end state* after Phase 9. During Phases 1–8 the legacy `defaultBinding?:
+KeyBinding` field stays put (the existing `useKeybinding` machinery reads
+it), and the new `gestureBinding?: GestureSpec` field is added alongside.
+Phase 9 deletes the legacy field and renames `gestureBinding` →
+`defaultBinding`. Two parallel fields during the transition keeps every
+existing consumer that narrows `defaultBinding as KeyBinding` working
+without per-callsite type guards. See Phase 1's plan for the original
+widening attempt that surfaced this constraint.
+
 Rejected: (a) tagged-union directly on `Action` (Action's own type
 grows); (b) two parallel registries (notional unification); (c)
 register-the-commit-only (doesn't solve discoverability).
@@ -482,7 +492,7 @@ the kit green (`tsc --noEmit && vitest run && tsup build`).
    `Invoker` into the existing registry as additions (existing
    `Action.run` continues to work in this commit only — preserved for
    incremental porting, removed in phase 8).
-2. **Populate `defaultBinding` on existing immediate actions.** Pure
+2. **Populate `gestureBinding` on existing immediate actions.** Pure
    structural change: every existing one-shot action gains a typed
    `GestureSpec` for its keybinding. Existing dispatch unchanged.
 3. **Build the gesture dispatcher.** New module
