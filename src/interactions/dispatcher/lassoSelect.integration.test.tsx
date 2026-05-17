@@ -10,7 +10,7 @@
  *
  * ## Provider tree
  *
- *   DepRegistryProvider > ActiveToolContextProvider > DispatcherPresenceProvider
+ *   DepRegistryProvider > ActiveToolContextProvider
  *     > ActionsProvider > [MountDispatcher + RegisterLassoSelectDep + RegisterLassoSelect]
  */
 
@@ -21,7 +21,6 @@ import { ActionsProvider, useActionsRegistry } from '../actions/registry';
 import { DepRegistryProvider, useDepRegistry } from '../actions/depRegistry';
 import '../actions/depSchema';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
-import { DispatcherPresenceProvider } from './dispatcherPresence';
 import { useGestureDispatcher } from './useGestureDispatcher';
 import { lassoSelectAction } from '../actions/defaults/lassoSelect';
 import type { LassoSelectDep } from '../actions/depSchema';
@@ -91,13 +90,11 @@ function buildHarness(dep: LassoSelectDep, shiftHeld = false) {
     return (
       <DepRegistryProvider>
         <ActiveToolContextProvider>
-          <DispatcherPresenceProvider>
             <ActionsProvider>
               <RegisterLassoSelectDep dep={dep} />
               <RegisterLassoSelect />
               <MountDispatcher canvasRef={ref} />
             </ActionsProvider>
-          </DispatcherPresenceProvider>
         </ActiveToolContextProvider>
       </DepRegistryProvider>
     );

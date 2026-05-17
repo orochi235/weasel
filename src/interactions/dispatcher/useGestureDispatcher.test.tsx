@@ -8,7 +8,6 @@ import {
 } from '../actions/registry';
 import { DepRegistryProvider, useDepSource } from '../actions/depRegistry';
 import { ActiveToolContextProvider, useActiveToolContext, type ActiveToolContextValue } from '../actions/activeToolContext';
-import { DispatcherPresenceProvider } from './dispatcherPresence';
 import { useGestureDispatcher } from './useGestureDispatcher';
 import { makeToolHoldAction } from '../actions/defaults/toolHold';
 
@@ -167,14 +166,12 @@ describe('useGestureDispatcher', () => {
       render(
         <DepRegistryProvider>
           <ActiveToolContextProvider>
-            <DispatcherPresenceProvider>
               <ActionsProvider>
                 <ActiveToolDepSource />
                 <RegisterToolHold />
                 <MountDispatcher />
                 <CtxCapture />
               </ActionsProvider>
-            </DispatcherPresenceProvider>
           </ActiveToolContextProvider>
         </DepRegistryProvider>,
       );

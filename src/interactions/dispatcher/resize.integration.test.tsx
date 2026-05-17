@@ -16,7 +16,7 @@
  *
  * ## Provider tree
  *
- * DepRegistryProvider > ActiveToolContextProvider > DispatcherPresenceProvider
+ * DepRegistryProvider > ActiveToolContextProvider
  *   > ActionsProvider > [MountDispatcher + RegisterDeps + RegisterResize]
  *
  * `resizeAction` is registered with `enabled: () => true` to bypass the
@@ -34,7 +34,6 @@ import { ActionsProvider, useActionsRegistry } from '../actions/registry';
 import { DepRegistryProvider, useDepRegistry } from '../actions/depRegistry';
 import '../actions/depSchema'; // augments DepSchema with 'selection' and 'scene'
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
-import { DispatcherPresenceProvider } from './dispatcherPresence';
 import { useGestureDispatcher } from './useGestureDispatcher';
 import { resizeAction } from '../actions/defaults/resize';
 import { createScene } from 'core/scene/scene';
@@ -189,13 +188,11 @@ function buildHarness(
     return (
       <DepRegistryProvider>
         <ActiveToolContextProvider>
-          <DispatcherPresenceProvider>
             <ActionsProvider>
               <RegisterDeps scene={scene} selection={selection} />
               <RegisterResize />
               <MountDispatcher canvasRef={ref} affordanceAt={affordanceAt} />
             </ActionsProvider>
-          </DispatcherPresenceProvider>
         </ActiveToolContextProvider>
       </DepRegistryProvider>
     );

@@ -11,7 +11,6 @@
  */
 
 import { useEffect, useRef } from 'react';
-import { useIsDispatcherMounted } from '../dispatcher/dispatcherPresence';
 
 /** Declarative keybinding description used by `useKeybinding`. */
 export interface KeyBinding {
@@ -39,9 +38,11 @@ export interface KeyBinding {
   /** Call `preventDefault` before the handler. Default `true`. */
   preventDefault?: boolean;
   /**
-   * Phase 3+: when `true` AND the gesture dispatcher is mounted in scope,
-   * this binding does NOT attach its keydown listener — the dispatcher
-   * handles it instead. Default `false` (legacy behavior unchanged).
+   * Phase 3+: when `true`, this binding does NOT attach its keydown
+   * listener — the gesture dispatcher handles it instead. As of Phase 14e
+   * Task 2.6 the dispatcher is unconditionally present (no more presence
+   * context), so this flag effectively means "don't bind at all".
+   * Default `false` (legacy behavior: bind normally).
    */
   disabledIfDispatcherActive?: boolean;
 }
@@ -101,10 +102,11 @@ export function useKeybinding(
   const bindingRef = useRef(binding);
   bindingRef.current = binding;
 
-  const dispatcherActive = useIsDispatcherMounted();
+  // Phase 14e Task 2.6: the gesture dispatcher is unconditionally present
+  // wherever `useKeybinding` runs (inside `<SceneCanvas>`), so treat
+  // `disabledIfDispatcherActive` as always-disabling.
   const effectivelyEnabled =
-    (binding.enabled ?? true) &&
-    !(binding.disabledIfDispatcherActive && dispatcherActive);
+    (binding.enabled ?? true) && !binding.disabledIfDispatcherActive;
 
   useEffect(() => {
     if (!effectivelyEnabled) return;

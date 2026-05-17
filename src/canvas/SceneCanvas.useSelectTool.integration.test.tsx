@@ -380,7 +380,7 @@ describe('Phase 13 integration: SceneCanvas + useSelectTool drag routes', () => 
     expect(selectionState).toEqual([id]);
   });
 
-  it('bindingsOverrideDrag is true when DispatcherPresenceProvider is mounted (SceneCanvas)', () => {
+  it('bindingsOverrideDrag is true under SceneCanvas (dispatcher always mounted)', () => {
     // Indirect verification: the old dispatcher's drag channel is suppressed,
     // meaning the OLD useMove-based drag does NOT fire. Instead, moveAction does.
     // We verify this by confirming the scene.batch label is 'Move' (moveAction's

@@ -19,39 +19,23 @@ import {
 } from '../actions/registry';
 import { DepRegistryProvider } from '../actions/depRegistry';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
-import { DispatcherPresenceProvider } from './dispatcherPresence';
 import { useGestureDispatcher } from './useGestureDispatcher';
 
 // ---------------------------------------------------------------------------
 // Shared harness helpers
 // ---------------------------------------------------------------------------
 
-function BaseHarness({ children }: { children: React.ReactNode }) {
+/**
+ * Phase 14e Task 2.6: dispatcher presence is now unconditional — no
+ * provider needed. ActionsProvider always assumes the dispatcher is mounted.
+ */
+function DispatcherHarness({ children }: { children: React.ReactNode }) {
   return (
     <DepRegistryProvider>
       <ActiveToolContextProvider>
         <ActionsProvider>
           {children}
         </ActionsProvider>
-      </ActiveToolContextProvider>
-    </DepRegistryProvider>
-  );
-}
-
-/**
- * DispatcherPresenceProvider must wrap ActionsProvider so that ActionsProvider's
- * call to useIsDispatcherMounted() reads the context value correctly.
- * In production, SceneCanvas auto-wraps the entire subtree (Task 6).
- */
-function DispatcherHarness({ children }: { children: React.ReactNode }) {
-  return (
-    <DepRegistryProvider>
-      <ActiveToolContextProvider>
-        <DispatcherPresenceProvider>
-          <ActionsProvider>
-            {children}
-          </ActionsProvider>
-        </DispatcherPresenceProvider>
       </ActiveToolContextProvider>
     </DepRegistryProvider>
   );
@@ -69,32 +53,9 @@ function MountDispatcher() {
 // ---------------------------------------------------------------------------
 
 describe('legacy coexistence', () => {
-  it('without dispatcher: legacy document listener fires for action with gestureBinding', () => {
-    const legacySpy = vi.fn();
-    const action: Action = {
-      id: 'coex.a',
-      label: 'Coex A',
-      defaultBinding: { key: 'a' },
-      gestureBinding: { kind: 'key', key: 'a' },
-      run: () => legacySpy(),
-    };
-
-    function Harness() {
-      const r = useActionsRegistry();
-      r?.register(action);
-      return null;
-    }
-
-    render(
-      <BaseHarness>
-        <Harness />
-      </BaseHarness>,
-    );
-
-    // Fire on document — reaches legacy ActionsProvider listener.
-    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true })); });
-    expect(legacySpy).toHaveBeenCalledTimes(1);
-  });
+  // REMOVED (Phase 14e Task 2.6): 'without dispatcher: legacy document
+  // listener fires for action with gestureBinding'. The dispatcher is now
+  // unconditionally present — there is no "without dispatcher" path to test.
 
   it('with dispatcher mounted: legacy run is skipped; only invoker.run fires', () => {
     const legacyRunSpy = vi.fn();

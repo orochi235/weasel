@@ -61,7 +61,6 @@ import { useBuiltinShapeTools, type BuiltinShapeToolId, type BuiltinToolOptions 
 export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 import { DepRegistryProvider, useDepSource } from 'interactions/actions/depRegistry';
 import { ActiveToolContextProvider } from 'interactions/actions/activeToolContext';
-import { DispatcherPresenceProvider } from 'interactions/dispatcher/dispatcherPresence';
 import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
 import { createDispatcher, type Dispatcher } from 'interactions/dispatcher/dispatcher';
 import { useActionsRegistry } from 'interactions/actions/registry';
@@ -774,43 +773,42 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   return (
     <DepRegistryProvider>
-      <DispatcherPresenceProvider>
-        <PointerProviderIfRoot>
-          <ActionsProviderIfRoot>
-            {canvas}
-            <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />
-            <StandardActionsRegistrar
-              selection={selection}
-              scene={scene as Scene<unknown, string, unknown>}
-              adapter={adapter as unknown as BridgeAdapter}
-              actionDefaults={actionDefaults}
-              actions={actions}
-              currentViewRef={currentViewRef}
-              onViewChange={handleViewChange}
-            />
-            <GestureDispatcherMounter
-              canvasRef={internalCanvasRef}
-              tools={tools}
-              enabled={enableGestureDispatcher}
-              selectionRef={selectionRef}
-              boundsOf={internalBoundsOf}
-              pickEvery={internalPickEvery}
-              viewRef={currentViewRef}
-              dispatcher={dispatcher}
-            />
-            {children}
-          </ActionsProviderIfRoot>
-        </PointerProviderIfRoot>
-      </DispatcherPresenceProvider>
+      <PointerProviderIfRoot>
+        <ActionsProviderIfRoot>
+          {canvas}
+          <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />
+          <StandardActionsRegistrar
+            selection={selection}
+            scene={scene as Scene<unknown, string, unknown>}
+            adapter={adapter as unknown as BridgeAdapter}
+            actionDefaults={actionDefaults}
+            actions={actions}
+            currentViewRef={currentViewRef}
+            onViewChange={handleViewChange}
+          />
+          <GestureDispatcherMounter
+            canvasRef={internalCanvasRef}
+            tools={tools}
+            enabled={enableGestureDispatcher}
+            selectionRef={selectionRef}
+            boundsOf={internalBoundsOf}
+            pickEvery={internalPickEvery}
+            viewRef={currentViewRef}
+            dispatcher={dispatcher}
+          />
+          {children}
+        </ActionsProviderIfRoot>
+      </PointerProviderIfRoot>
     </DepRegistryProvider>
   );
 }
 
 /**
  * Mounts the gesture dispatcher inside `<ActionsProviderIfRoot>` so it can
- * read the live registry. `DispatcherPresenceProvider` is an ancestor (outside
- * `<ActionsProviderIfRoot>`), so `useIsDispatcherMounted()` in the registry's
- * keydown handler correctly returns `true` for this scope.
+ * read the live registry. Phase 14e Task 2.6: the dispatcher is now
+ * unconditionally present in every `<SceneCanvas>` tree; the
+ * `DispatcherPresenceProvider` context (and `useIsDispatcherMounted` hook)
+ * have been removed.
  *
  * Phase 13: accepts `selectionRef`, `boundsOf`, `pickEvery`, and `viewRef` so
  * it can wire `affordanceAt` + `classifyTarget` thunks into the dispatcher.

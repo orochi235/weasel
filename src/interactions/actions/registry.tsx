@@ -14,7 +14,6 @@ import {
 } from 'react';
 import { isEditableTarget } from './useKeybinding';
 import type { KeyBinding } from './useKeybinding';
-import { useIsDispatcherMounted } from '../dispatcher/dispatcherPresence';
 import type { GestureSpec } from '../gestures/spec';
 import type { BindingOpts, Invoker } from './invoker';
 
@@ -246,12 +245,11 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   const cachedVerRef = useRef(-1);
   const listenersRef = useRef<Set<() => void>>(new Set());
 
-  // Phase 3+: when the gesture dispatcher is mounted in scope, legacy
-  // keydown dispatch is suppressed for actions that have a gestureBinding
-  // (those are handled by the dispatcher instead).
-  const dispatcherActive = useIsDispatcherMounted();
-  const dispatcherActiveRef = useRef(dispatcherActive);
-  dispatcherActiveRef.current = dispatcherActive;
+  // Phase 14e Task 2.6: the gesture dispatcher is unconditionally present
+  // inside `<SceneCanvas>` (the only context that mounts ActionsProvider's
+  // keydown loop in practice), so legacy keydown dispatch is always
+  // suppressed for actions that have a gestureBinding — the dispatcher
+  // owns them. (Tasks 4-5 will delete the legacy keydown loop entirely.)
 
   const registry = useMemo<ActionsRegistry>(() => {
     const snapshot = (): readonly Action[] => {
@@ -321,9 +319,10 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
         if (!bindingMatches(b, e)) continue;
         const skipEditable = b.skipInEditable ?? true;
         if (skipEditable && isEditableTarget(e.target)) continue;
-        // Phase 3+: when the gesture dispatcher is mounted AND the action
-        // has a gestureBinding, skip legacy dispatch — the dispatcher owns it.
-        if (dispatcherActiveRef.current && action.gestureBinding) continue;
+        // Phase 14e Task 2.6: dispatcher is unconditionally present, so
+        // any action with a gestureBinding is always handled by the
+        // dispatcher — skip legacy dispatch for those.
+        if (action.gestureBinding) continue;
         if ((b.preventDefault ?? true)) e.preventDefault();
         try {
           action.run?.();

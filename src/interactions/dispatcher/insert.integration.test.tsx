@@ -17,7 +17,6 @@ import { ActionsProvider, useActionsRegistry } from '../actions/registry';
 import { DepRegistryProvider, useDepRegistry } from '../actions/depRegistry';
 import '../actions/depSchema'; // augments DepSchema
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
-import { DispatcherPresenceProvider } from './dispatcherPresence';
 import { useGestureDispatcher } from './useGestureDispatcher';
 import { insertAction } from '../actions/defaults/insert';
 import type { InsertDep } from '../actions/depSchema';
@@ -138,7 +137,6 @@ function buildHarness(dep: InsertDep) {
     return (
       <DepRegistryProvider>
         <ActiveToolContextProvider initialActive="rect">
-          <DispatcherPresenceProvider>
             <ActionsProvider>
               <RegisterInsertDep dep={dep} />
               <RegisterInsert />
@@ -147,7 +145,6 @@ function buildHarness(dep: InsertDep) {
                 toolBindings={[rectDragSpec]}
               />
             </ActionsProvider>
-          </DispatcherPresenceProvider>
         </ActiveToolContextProvider>
       </DepRegistryProvider>
     );

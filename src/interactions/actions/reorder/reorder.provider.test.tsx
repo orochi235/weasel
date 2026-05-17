@@ -63,16 +63,14 @@ describe('useReorder back-compat with ActionsProvider', () => {
     expect(adapter.applied).toHaveLength(1);
   });
 
-  it('inside a provider, Shift+Mod+] still bringToFront via standalone keybinding', () => {
-    // Front/back variants are deferred from the registry; the hook keeps
-    // its own keybinding for those, always-on regardless of provider.
-    const adapter = makeAdapter();
-    function Host() { useReorder(adapter); return null; }
-    render(<ActionsProvider><Host /></ActionsProvider>);
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: ']', metaKey: true, shiftKey: true, bubbles: true }));
-    // bringToFront on selection ['b'] in children ROOT=['a','b','c'] → ['a','c','b']
-    expect(adapter.children.ROOT).toEqual(['a', 'c', 'b']);
-  });
+  // REMOVED (Phase 14e Task 2.6): 'inside a provider, Shift+Mod+] still
+  // bringToFront via standalone keybinding'. This test depended on the
+  // legacy keydown loop firing for an action whose `gestureBinding` is now
+  // unconditionally owned by the (unmounted-in-this-test) gesture
+  // dispatcher. The hook-side fallback `useKeybinding` is gated on
+  // `reg == null`, so registering the action via ActionsProvider correctly
+  // disables it. The dispatcher itself is exercised by the
+  // SceneCanvas-level tests.
 
   it('imperative bringForward() return still works inside a provider', () => {
     const adapter = makeAdapter();
