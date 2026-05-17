@@ -53,6 +53,8 @@ import { cloneAction } from './defaults/clone';
 import { editAnchorsAction } from './defaults/editAnchors';
 import { lassoSelectAction } from './defaults/lassoSelect';
 import { pinchZoomAction } from './defaults/pinchZoom';
+import { viewportPanAction } from './defaults/viewportPan';
+import { viewportZoomAction } from './defaults/viewportZoom';
 
 /** @experimental */
 export interface UseStandardActionsOptions {
@@ -77,7 +79,8 @@ export interface UseStandardActionsOptions {
  * Count: 2 (escape/selectAll) + 1 (delete) + 1 (duplicate) + 1 (group) +
  *        1 (ungroup) + 2 (undo/redo) + 1 (flip) + 4 (nudge) + 2 (reorder) +
  *        6 (align) + 2 (distribute) + 6 (pathfinder) + 1 (move) +
- *        5 (resize/rotate/areaSelect/insert/clone) + 3 (editAnchors/lassoSelect/pinchZoom) = 38
+ *        5 (resize/rotate/areaSelect/insert/clone) + 3 (editAnchors/lassoSelect/pinchZoom) +
+ *        2 (viewport.pan/viewport.zoom) = 40
  */
 const KIT_STANDARD_DESCRIPTORS: Action[] = [
   escapeAction,
@@ -118,6 +121,8 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   editAnchorsAction,
   lassoSelectAction,
   pinchZoomAction,
+  viewportPanAction,
+  viewportZoomAction,
 ];
 
 /**

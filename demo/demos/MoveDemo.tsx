@@ -5,9 +5,6 @@ import {
   useScene,
   useSelection,
   useHandTool,
-  useWheelZoomTool,
-  useWheelPanTool,
-  useKeyboardZoomTool,
 } from '@orochi235/weasel';
 import type { UnitSystem } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
@@ -38,10 +35,8 @@ export function MoveDemo() {
   const selection = useSelection();
 
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+  // Wheel pan/zoom and keyboard zoom handled by viewport descriptors (Phase 8.5).
   const hand = useHandTool();
-  const wheelZoom = useWheelZoomTool();
-  const wheelPan = useWheelPanTool();
-  const keyZoom = useKeyboardZoomTool();
 
   return (
     <SceneCanvas
@@ -53,7 +48,7 @@ export function MoveDemo() {
       selectTool={{ snap: gridSnapStrategy<Pose>(CELL, UNITS) }}
       view={view}
       onViewChange={setView}
-      ambient={[hand, wheelZoom, wheelPan, keyZoom]}
+      ambient={[hand]}
       layers={{
         grid: {
           spacing: CELL,

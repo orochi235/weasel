@@ -4,7 +4,6 @@ import {
   useScene,
   useSelection,
   useHandTool,
-  useWheelPanTool,
   useTools,
   createParallaxLayer,
   ellipsePath,
@@ -190,9 +189,11 @@ export function ParallaxDemo() {
   const selection = useSelection();
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   const [zoomParallax, setZoomParallax] = useState(false);
+  // Wheel pan is now handled by the viewport.pan descriptor (both axes).
+  // The x-axis-only locking previously provided by useWheelPanTool({ axis: 'x' })
+  // is not replicated — the descriptor pans both axes.
   const hand = useHandTool({ axis: 'x', inertia: {} });
-  const wheel = useWheelPanTool({ axis: 'x' });
-  const tools = useTools({ active: 'hand', registry: { hand }, ambient: [wheel] });
+  const tools = useTools({ active: 'hand', registry: { hand } });
 
   const sky = useMemo(
     () => createParallaxLayer<unknown>({

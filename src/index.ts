@@ -829,10 +829,7 @@ export type {
   UseHandToolOptions,
   InertiaConfig as HandToolInertiaConfig,
 } from './tools/builtin/useHandTool/useHandTool';
-export type {
-  UseWheelPanToolOptions,
-  InertiaConfig as WheelPanInertiaConfig,
-} from './tools/builtin/useWheelPanTool/useWheelPanTool';
+// UseWheelPanToolOptions and WheelPanInertiaConfig removed (Phase 8.5: useWheelPanTool dissolved).
 export type { SelectAdapter } from './tools/builtin/useSelectTool/useSelectTool';
 export type { PolygonPoint } from './tools/builtin/usePolygonTool/usePolygonTool';
 export type { StarPoint } from './tools/builtin/useStarTool/useStarTool';

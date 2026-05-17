@@ -110,7 +110,7 @@ export function createDispatcher(): Dispatcher {
     } else if (event.kind === 'key-held') {
       base.key = { key: event.key, repeat: false };
     } else if (event.kind === 'wheel') {
-      base.wheel = { deltaX: 0, deltaY: 0, deltaZ: 0 };
+      base.wheel = { deltaX: event.deltaX, deltaY: event.deltaY, deltaZ: 0 };
     } else if (event.kind === 'pointerdown' || event.kind === 'click') {
       const sx = event.kind === 'pointerdown' ? (event.x ?? 0) : 0;
       const sy = event.kind === 'pointerdown' ? (event.y ?? 0) : 0;
@@ -312,7 +312,15 @@ export function createDispatcher(): Dispatcher {
 
     if (action.invoker?.timing === 'immediate') {
       try {
-        action.invoker.run(deps, match.binding.opts?.params);
+        // For wheel bindings, merge event-time delta/position data into params
+        // so the invoker receives both binding-declared params (e.g. `kind: 'wheel'`)
+        // and runtime event data (deltaX, deltaY, clientX, clientY). Option (a)
+        // from the design doc — simpler than extending InvocationCtx for immediate invokers.
+        const params: Record<string, unknown> | undefined =
+          event.kind === 'wheel'
+            ? { deltaX: event.deltaX, deltaY: event.deltaY, clientX: event.clientX, clientY: event.clientY, ...match.binding.opts?.params }
+            : match.binding.opts?.params;
+        action.invoker.run(deps, params);
       } catch (err) {
         console.error(`weasel dispatcher: action "${action.id}" invoker threw`, err);
       }

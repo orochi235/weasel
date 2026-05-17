@@ -5,9 +5,6 @@ import {
   useScene,
   useSelection,
   useHandTool,
-  useWheelZoomTool,
-  useWheelPanTool,
-  useKeyboardZoomTool,
   useSimulation,
   ellipsePath,
   linePath,
@@ -220,13 +217,11 @@ export function ForceGraphDemo() {
     [],
   );
 
+  // Wheel pan/zoom and keyboard zoom handled by viewport descriptors (Phase 8.5).
   const hand = useHandTool();
-  const wheelZoom = useWheelZoomTool();
-  const wheelPan = useWheelPanTool();
-  const keyZoom = useKeyboardZoomTool();
   const ambient = useMemo(
-    () => [hand, wheelZoom, wheelPan, keyZoom],
-    [hand, wheelZoom, wheelPan, keyZoom],
+    () => [hand],
+    [hand],
   );
 
   return (

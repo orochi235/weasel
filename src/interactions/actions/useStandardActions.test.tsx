@@ -74,6 +74,7 @@ const KIT_IDS = [
   'move',
   'resize', 'rotate', 'areaSelect', 'insert', 'clone',
   'editAnchors', 'lassoSelect', 'viewport.pinchZoom',
+  'viewport.pan', 'viewport.zoom',
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -81,7 +82,7 @@ const KIT_IDS = [
 // ---------------------------------------------------------------------------
 
 describe('useStandardActions', () => {
-  it('registers all 38 kit-standard action descriptors', () => {
+  it('registers all 40 kit-standard action descriptors', () => {
     const seen: string[][] = [];
     render(
       <Providers>

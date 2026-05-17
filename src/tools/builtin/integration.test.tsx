@@ -14,9 +14,6 @@ import { useRotateTool } from './useRotateTool';
 import { sceneToAdapter } from 'canvas/sceneAdapter';
 import { useScene } from 'core/scene/useScene';
 import { useHandTool } from './useHandTool';
-import { useWheelZoomTool } from './useWheelZoomTool';
-import { useWheelPanTool } from './useWheelPanTool';
-import { useKeyboardZoomTool } from './useKeyboardZoomTool';
 import { Canvas } from 'canvas/Canvas';
 import { arrayAdapter } from 'core/adapters/arrayAdapter';
 import { asNodeId } from 'core/scene/types';
@@ -271,129 +268,9 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
   });
 });
 
-describe('Phase 2c: zoom + pan composition', () => {
-  function ZoomHarness({
-    onViewChange,
-    initialView = { x: 0, y: 0, scale: { x: 1, y: 1 } },
-  }: {
-    onViewChange: (v: { x: number; y: number; scale: { x: number; y: number } }) => void;
-    initialView?: { x: number; y: number; scale: { x: number; y: number } };
-  }) {
-    const [view, setView] = useState(initialView);
-    const select = useSelectTool(
-      {
-        getNode: () => undefined,
-        getPose: () => null,
-        getNodes: () => [],
-        getParent: () => null,
-        setParent: () => {},
-        setPose: () => {},
-        getSelection: () => [],
-        setSelection: () => {},
-        hitTestArea: () => [],
-        applyOps: () => {},
-      },
-      { pickEvery: () => [], boundsOf: () => null },
-    );
-    const hand = useHandTool();
-    const wheelZoom = useWheelZoomTool();
-    const wheelPan = useWheelPanTool();
-    const keyZoom = useKeyboardZoomTool();
-    const tools = useTools({
-      active: 'select',
-      registry: { select, hand },
-      ambient: [wheelZoom, wheelPan, keyZoom],
-    });
-    useKeybindings(tools);
-    return (
-      <Canvas
-        width={200}
-        height={200}
-        items={[]}
-        setItems={() => {}}
-        view={view}
-        onViewChange={(v) => { setView(v); onViewChange(v); }}
-        tools={tools}
-        layers={{ scene: { drawOne: () => [] } }}
-      />
-    );
-  }
-
-  it('ctrl+wheel zooms about cursor anchor', () => {
-    const onViewChange = vi.fn();
-    const { container } = render(<ActiveToolContextProvider initialActive="select"><ZoomHarness onViewChange={onViewChange} /></ActiveToolContextProvider>);
-    const canvas = container.querySelector('canvas')!;
-    const wheel = new WheelEvent('wheel', {
-      deltaY: -100,
-      ctrlKey: true,
-      clientX: 100,
-      clientY: 50,
-      bubbles: true,
-      cancelable: true,
-    });
-    canvas.dispatchEvent(wheel);
-    expect(onViewChange).toHaveBeenCalledTimes(1);
-    const v = onViewChange.mock.calls[0][0];
-    // wheelStep default 1.1, deltaY=-100 → factor = 1.1^1 = 1.1
-    expect(v.scale.x).toBeCloseTo(1.1);
-    expect(v.scale.y).toBeCloseTo(1.1);
-    // Anchor invariance: cursor at screen (100,50) maps to same world point
-    // before and after. Pre: world = 100/1+0 = 100, 50/1+0 = 50.
-    expect(100 / v.scale.x + v.x).toBeCloseTo(100);
-    expect(50 / v.scale.y + v.y).toBeCloseTo(50);
-  });
-
-  it('plain wheel pans by deltaX/scale, deltaY/scale', () => {
-    const onViewChange = vi.fn();
-    const { container } = render(
-      <ActiveToolContextProvider initialActive="select"><ZoomHarness onViewChange={onViewChange} initialView={{ x: 0, y: 0, scale: { x: 2, y: 2 } }} /></ActiveToolContextProvider>,
-    );
-    const canvas = container.querySelector('canvas')!;
-    const wheel = new WheelEvent('wheel', {
-      deltaX: 20,
-      deltaY: 10,
-      ctrlKey: false,
-      bubbles: true,
-      cancelable: true,
-    });
-    canvas.dispatchEvent(wheel);
-    expect(onViewChange).toHaveBeenLastCalledWith({ x: 10, y: 5, scale: { x: 2, y: 2 } });
-  });
-
-  it('Cmd+0 resets view to identity', () => {
-    const onViewChange = vi.fn();
-    render(
-      <ActiveToolContextProvider initialActive="select">
-        <ZoomHarness
-          onViewChange={onViewChange}
-          initialView={{ x: 50, y: 50, scale: { x: 4, y: 4 } }}
-        />
-      </ActiveToolContextProvider>,
-    );
-    act(() => {
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: '0', metaKey: true, bubbles: true }));
-    });
-    expect(onViewChange).toHaveBeenLastCalledWith({ x: 0, y: 0, scale: { x: 1, y: 1 } });
-  });
-
-  it('hand drag still pans after a programmatic zoom', () => {
-    const onViewChange = vi.fn();
-    const { container } = render(
-      <ActiveToolContextProvider initialActive="select"><ZoomHarness onViewChange={onViewChange} initialView={{ x: 0, y: 0, scale: { x: 2, y: 2 } }} /></ActiveToolContextProvider>,
-    );
-    const canvas = container.querySelector('canvas')!;
-    act(() => { fireEvent.keyDown(document, { key: 'H' }); });
-    function mk(type: string, clientX: number, clientY: number) {
-      return new MouseEvent(type, { clientX, clientY, bubbles: true, cancelable: true });
-    }
-    canvas.dispatchEvent(mk('pointerdown', 100, 100));
-    canvas.dispatchEvent(mk('pointermove', 110, 110)); // crosses threshold; startClient=(110,110)
-    canvas.dispatchEvent(mk('pointermove', 160, 140)); // dx=50, dy=30
-    canvas.dispatchEvent(mk('pointerup', 160, 140));
-    // useHandTool subtracts dx/dy from startView (screen-px pan, ignores scale).
-    expect(onViewChange).toHaveBeenLastCalledWith({ x: -50, y: -30, scale: { x: 2, y: 2 } });
-  });
-});
+// Phase 2c: zoom + pan composition tests removed (Phase 8.5).
+// useWheelZoomTool, useWheelPanTool, useKeyboardZoomTool dissolved.
+// Equivalent behavior is tested in src/interactions/dispatcher/viewport.integration.test.tsx.
 
 describe('Phase 2a: off-canvas pointer release backstop', () => {
   // Repro: start a drag, move pointer off-canvas, release outside the canvas.

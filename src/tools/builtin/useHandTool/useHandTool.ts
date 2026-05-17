@@ -24,8 +24,8 @@ export interface UseHandToolOptions {
    * - `'x'` — drag only changes `view.x`. Inertia (if enabled) also stays on x.
    * - `'y'` — drag only changes `view.y`. Inertia stays on y.
    *
-   * Mirrors the `axis` option on `useWheelPanTool` / `useWheelZoomTool` /
-   * `useKeyboardZoomTool`.
+   * Locks drag panning to a single axis. The former `useWheelPanTool` /
+   * `useWheelZoomTool` / `useKeyboardZoomTool` axis option is dissolved.
    */
   axis?: 'both' | 'x' | 'y';
 }
