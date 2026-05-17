@@ -17,6 +17,17 @@ export interface InertiaConfig {
 
 export interface UseHandToolOptions {
   inertia?: false | InertiaConfig;
+  /**
+   * Which axes the drag responds to. Default `'both'`.
+   *
+   * - `'both'` — pan both axes (default).
+   * - `'x'` — drag only changes `view.x`. Inertia (if enabled) also stays on x.
+   * - `'y'` — drag only changes `view.y`. Inertia stays on y.
+   *
+   * Mirrors the `axis` option on `useWheelPanTool` / `useWheelZoomTool` /
+   * `useKeyboardZoomTool`.
+   */
+  axis?: 'both' | 'x' | 'y';
 }
 
 /** @internal */
@@ -40,6 +51,7 @@ interface HandScratch {
  */
 export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | null> {
   const inertia = opts.inertia === false ? false : opts.inertia;
+  const axis = opts.axis ?? 'both';
   const tracker = useVelocityTracker();
   const decay = useDecayLoop();
   // Refs keep the latest setView / current view available to the decay
@@ -73,8 +85,10 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | n
               },
               onMove: (ctx) => {
                 const screen = ctx.screenPoint ?? { x: 0, y: 0 };
-                const dx = screen.x - ctx.scratch.startScreenPoint.x;
-                const dy = screen.y - ctx.scratch.startScreenPoint.y;
+                const rawDx = screen.x - ctx.scratch.startScreenPoint.x;
+                const rawDy = screen.y - ctx.scratch.startScreenPoint.y;
+                const dx = axis === 'y' ? 0 : rawDx;
+                const dy = axis === 'x' ? 0 : rawDy;
                 const newView: View = {
                   x: ctx.scratch.startView.x - dx,
                   y: ctx.scratch.startView.y - dy,
@@ -130,6 +144,6 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | n
         },
       }) as Tool<HandScratch | null>,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [inertia, tracker, decay],
+    [inertia, axis, tracker, decay],
   );
 }

@@ -174,4 +174,46 @@ describe('useWheelPanTool', () => {
       expect(cancelled).toBeGreaterThan(cancelledBefore);
     });
   });
+
+  describe('axis option', () => {
+    it('axis="x": only x changes from horizontal trackpad delta', () => {
+      const { result } = renderHook(() => useWheelPanTool({ axis: 'x' }));
+      const setView = vi.fn();
+      const ctx = makeCtx({ x: 0, y: 0, scale: { x: 1, y: 1 } }, setView);
+      result.current.wheel!.onWheel!(wheel({ deltaX: 20, deltaY: 10 }), ctx);
+      expect(setView).toHaveBeenCalledWith({ x: 20, y: 0, scale: { x: 1, y: 1 } });
+    });
+
+    it('axis="x": vertical mousewheel falls through to pan x when deltaX=0', () => {
+      const { result } = renderHook(() => useWheelPanTool({ axis: 'x' }));
+      const setView = vi.fn();
+      const ctx = makeCtx({ x: 0, y: 0, scale: { x: 1, y: 1 } }, setView);
+      result.current.wheel!.onWheel!(wheel({ deltaX: 0, deltaY: 15 }), ctx);
+      expect(setView).toHaveBeenCalledWith({ x: 15, y: 0, scale: { x: 1, y: 1 } });
+    });
+
+    it('axis="y": only y changes from vertical wheel', () => {
+      const { result } = renderHook(() => useWheelPanTool({ axis: 'y' }));
+      const setView = vi.fn();
+      const ctx = makeCtx({ x: 0, y: 0, scale: { x: 1, y: 1 } }, setView);
+      result.current.wheel!.onWheel!(wheel({ deltaX: 20, deltaY: 10 }), ctx);
+      expect(setView).toHaveBeenCalledWith({ x: 0, y: 10, scale: { x: 1, y: 1 } });
+    });
+
+    it('axis="y": horizontal trackpad falls through to pan y when deltaY=0', () => {
+      const { result } = renderHook(() => useWheelPanTool({ axis: 'y' }));
+      const setView = vi.fn();
+      const ctx = makeCtx({ x: 0, y: 0, scale: { x: 1, y: 1 } }, setView);
+      result.current.wheel!.onWheel!(wheel({ deltaX: 15, deltaY: 0 }), ctx);
+      expect(setView).toHaveBeenCalledWith({ x: 0, y: 15, scale: { x: 1, y: 1 } });
+    });
+
+    it('axis="both" (default) matches pre-axis behavior', () => {
+      const { result } = renderHook(() => useWheelPanTool({ axis: 'both' }));
+      const setView = vi.fn();
+      const ctx = makeCtx({ x: 0, y: 0, scale: { x: 1, y: 1 } }, setView);
+      result.current.wheel!.onWheel!(wheel({ deltaX: 20, deltaY: 10 }), ctx);
+      expect(setView).toHaveBeenCalledWith({ x: 20, y: 10, scale: { x: 1, y: 1 } });
+    });
+  });
 });

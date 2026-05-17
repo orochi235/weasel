@@ -27,6 +27,18 @@ export interface UseWheelPanToolOptions {
    * kit owns the inertia model.
    */
   inertia?: false | InertiaConfig;
+  /**
+   * Which axes the pan responds to. Default `'both'`.
+   *
+   * - `'both'` — `deltaX` pans x, `deltaY` pans y. Default browser semantics.
+   * - `'x'` — only x moves. `deltaX` pans x; if `deltaX === 0` (vertical
+   *   mousewheel without horizontal swipe), `deltaY` falls through to pan x
+   *   instead so mouse-wheel users still get motion.
+   * - `'y'` — symmetric: only y moves; `deltaX` falls through when `deltaY === 0`.
+   *
+   * Mirrors the `axis` option on `useWheelZoomTool` / `useKeyboardZoomTool`.
+   */
+  axis?: 'both' | 'x' | 'y';
 }
 
 /**
@@ -40,9 +52,15 @@ export interface UseWheelPanToolOptions {
  * Pass `{ inertia: { ... } }` to continue the pan after wheel events stop.
  * Default-off: trackpads already provide OS momentum scrolling and stacking
  * a second decay loop on top feels broken.
+ *
+ * Pass `{ axis: 'x' }` or `{ axis: 'y' }` to lock to a single axis. The
+ * locked axis also enables a fallback: when the user emits only a vertical
+ * mousewheel and `axis: 'x'` is set, `deltaY` panes x (and vice versa for
+ * `'y'`).
  */
 export function useWheelPanTool(opts: UseWheelPanToolOptions = {}): Tool<null> {
   const inertia = opts.inertia === false ? false : opts.inertia;
+  const axis = opts.axis ?? 'both';
   const tracker = useVelocityTracker();
   const decay = useDecayLoop();
   // Refs keep the latest setView / current view available to the decay
@@ -73,8 +91,21 @@ export function useWheelPanTool(opts: UseWheelPanToolOptions = {}): Tool<null> {
             }
 
             const v = ctx.view;
-            const dx = e.deltaX / v.scale.x;
-            const dy = e.deltaY / v.scale.y;
+            const wheelX = e.deltaX / v.scale.x;
+            const wheelY = e.deltaY / v.scale.y;
+            let dx = 0;
+            let dy = 0;
+            if (axis === 'both') {
+              dx = wheelX;
+              dy = wheelY;
+            } else if (axis === 'x') {
+              // Trackpad horizontal swipe pans x; vertical mousewheel falls
+              // through to also pan x when no horizontal delta is present.
+              dx = wheelX !== 0 ? wheelX : wheelY;
+            } else {
+              // 'y'
+              dy = wheelY !== 0 ? wheelY : wheelX;
+            }
             const newView: View = {
               x: v.x + dx,
               y: v.y + dy,
@@ -123,6 +154,6 @@ export function useWheelPanTool(opts: UseWheelPanToolOptions = {}): Tool<null> {
         },
       }) as Tool<null>,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [inertia, tracker, decay],
+    [inertia, axis, tracker, decay],
   );
 }

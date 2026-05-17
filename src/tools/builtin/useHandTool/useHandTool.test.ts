@@ -203,4 +203,41 @@ describe('useHandTool with inertia', () => {
     // (it could be called zero times; onStart itself doesn't call setView)
     expect(setView).not.toHaveBeenCalled();
   });
+
+  describe('axis option', () => {
+    it('axis="x": drag delta only moves x; y stays at startView.y', () => {
+      const { result } = renderHook(() => useHandTool({ axis: 'x' }));
+      const tool = result.current;
+      const setView = vi.fn();
+      const ctx = makeCtx<any>({ x: 30, y: 40 }, setView);
+      tool.drag!.onStart!(fakeEvent(100, 200), syncEvent(ctx, fakeEvent(100, 200)));
+      const moveE = fakeEvent(110, 215);
+      tool.drag!.onMove!(moveE, syncEvent(ctx, moveE));
+      // dx = 10, dy = 15 — but axis='x' gates dy → y unchanged.
+      expect(setView).toHaveBeenCalledWith({ x: 20, y: 40, scale: { x: 1, y: 1 } });
+    });
+
+    it('axis="y": drag delta only moves y; x stays at startView.x', () => {
+      const { result } = renderHook(() => useHandTool({ axis: 'y' }));
+      const tool = result.current;
+      const setView = vi.fn();
+      const ctx = makeCtx<any>({ x: 30, y: 40 }, setView);
+      tool.drag!.onStart!(fakeEvent(100, 200), syncEvent(ctx, fakeEvent(100, 200)));
+      const moveE = fakeEvent(110, 215);
+      tool.drag!.onMove!(moveE, syncEvent(ctx, moveE));
+      // dx = 10, dy = 15 — axis='y' gates dx → x unchanged.
+      expect(setView).toHaveBeenCalledWith({ x: 30, y: 25, scale: { x: 1, y: 1 } });
+    });
+
+    it('axis="both" (default) moves both axes', () => {
+      const { result } = renderHook(() => useHandTool({ axis: 'both' }));
+      const tool = result.current;
+      const setView = vi.fn();
+      const ctx = makeCtx<any>({ x: 30, y: 40 }, setView);
+      tool.drag!.onStart!(fakeEvent(100, 200), syncEvent(ctx, fakeEvent(100, 200)));
+      const moveE = fakeEvent(110, 215);
+      tool.drag!.onMove!(moveE, syncEvent(ctx, moveE));
+      expect(setView).toHaveBeenCalledWith({ x: 20, y: 25, scale: { x: 1, y: 1 } });
+    });
+  });
 });
