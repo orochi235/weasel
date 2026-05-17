@@ -304,6 +304,15 @@ Without these, the kit is essentially "axis-aligned-rectangle kit."
 
 - **`gen:font` script.** Was at `packages/weasel-gl/scripts/gen-font.ts`; deleted in Step 10. If we ever regenerate the Inter MSDF atlas, restore the script under `scripts/gen-font.ts` at repo root using `msdf-bmfont-xml`. The current atlas (`assets/fonts/inter/inter.{json,png}`) was regenerated cleanly so the script is not on the critical path.
 
+## Canvas-internal-only migration
+
+Surfaced 2026-05-16 building the force-graph demo. Bare `<Canvas>` with a custom RenderLayer reading mutating refs has no scene-mutation signal — the only way to drive 60Hz repaints is forcing React re-renders (bumpTick / requestRedraw), and at 60Hz that churns the tools machinery enough to wedge the canvas after settle. Every legitimate need for bare-Canvas has a clean `<SceneCanvas>` analog. Plan: mark `Canvas` `@internal` and migrate the three remaining bare-Canvas demos.
+
+- **Migrate `GroupsDemo` to `SceneCanvas`.** Legacy from before SceneCanvas absorbed grouping. No structural reason it uses bare Canvas.
+- **Migrate `HudDemo` to `SceneCanvas`** over a minimal one-leaf scene. The demo's point is the HUD widget overlay, not "Canvas without scene." The HUD module itself is under-built — separate work, file as needed.
+- **Mark `Canvas` `@internal` in JSDoc, drop from README/docs.** Leave the export in for one minor version with a CHANGELOG deprecation note. Drop the export entirely the version after.
+- **Force-direction demo already migrated** 2026-05-16 (commit `fb357e93`) — sim ticks call `scene.setPose` so SceneCanvas redraws on scene mutations, with `scene.batch('sim-tick', ...)` coalescing the per-tick setPose calls into one history entry. This is the template for the other migrations.
+
 ## Release-gate hygiene
 
 - **Demo build not in `prepublishOnly`.** `prepublishOnly` runs `tsc --noEmit && vitest run && tsup build` but skips `build:demo`. The demo build uses vite (different resolution path: `@orochi235/weasel/<x>` aliases to `src/subpaths/<x>.ts`), and silent drift surfaced 2026-05-14 when `src/subpaths/routing.ts` was missing — tsup happily produced `dist/routing.js` via its own entry config, but vite couldn't resolve the import for the demo. Either chain `build:demo` into `prepublishOnly`, or add a separate CI gate that runs it. Cheap to wire; catches a class of breakage that's invisible to today's gates.
