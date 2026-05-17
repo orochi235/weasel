@@ -205,6 +205,43 @@ describe('rotateAction descriptor', () => {
     expect(scene.batchLog).toHaveLength(0);
   });
 
+  it('previewIds/previewPose expose in-flight rotated poses; cleared on commit', () => {
+    const invoker = getOngoingInvoker(rotateAction);
+    const { scene, ...ctx } = makeCtx({
+      selectionIds: ['a'],
+      world: { x: 135, y: 75 },
+      sceneNodes: { a: { pose: { x: 100, y: 50, width: 50, height: 50, rotation: 0 } } },
+    });
+    const handle = invoker.start(ctx as InvocationCtx, undefined);
+    expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
+    handle.onMove!({ ...(ctx as InvocationCtx), world: { x: 125, y: 65 } });
+    const preview = handle.previewPose!('a') as { rotation: number };
+    expect(typeof preview.rotation).toBe('number');
+    expect(preview.rotation).not.toBe(0);
+    expect(Array.from(handle.previewIds!() ?? [])).toEqual(['a']);
+    expect(scene.poses.get('a')).toEqual({ x: 100, y: 50, width: 50, height: 50, rotation: 0 });
+
+    handle.onEnd!({ ...(ctx as InvocationCtx), world: { x: 125, y: 65 } }, 'commit');
+    expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
+    const final = scene.poses.get('a') as { rotation: number };
+    expect(final.rotation).toBeCloseTo(preview.rotation);
+  });
+
+  it('cancel discards previews; scene unchanged', () => {
+    const invoker = getOngoingInvoker(rotateAction);
+    const { scene, ...ctx } = makeCtx({
+      selectionIds: ['a'],
+      world: { x: 135, y: 75 },
+      sceneNodes: { a: { pose: { x: 100, y: 50, width: 50, height: 50, rotation: 0 } } },
+    });
+    const handle = invoker.start(ctx as InvocationCtx, undefined);
+    handle.onMove!({ ...(ctx as InvocationCtx), world: { x: 125, y: 65 } });
+    expect(Array.from(handle.previewIds!() ?? []).length).toBe(1);
+    handle.onEnd!({ ...(ctx as InvocationCtx) }, 'cancel');
+    expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
+    expect(scene.poses.get('a')).toEqual({ x: 100, y: 50, width: 50, height: 50, rotation: 0 });
+  });
+
   it('multi-selection: commits rotation for all selected nodes (union-pivot mode)', () => {
     const invoker = getOngoingInvoker(rotateAction);
     // Two nodes: a at (0,0,10,10) center=(5,5), b at (20,0,10,10) center=(25,5).

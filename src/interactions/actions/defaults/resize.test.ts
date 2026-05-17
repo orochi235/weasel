@@ -149,7 +149,7 @@ describe('resizeAction descriptor', () => {
 
   // --- Real resize behavior ---
 
-  it('onMove resizes the node by dragging bottom-right handle', () => {
+  it('onMove buffers the resized pose in previews (no scene writes)', () => {
     const invoker = getOngoingInvoker(resizeAction);
     const scene = makeStubScene({ a: { pose: { x: 0, y: 0, width: 100, height: 100 } } });
     const ctx: InvocationCtx = {
@@ -178,14 +178,19 @@ describe('resizeAction descriptor', () => {
       drag: { start: { x: 100, y: 100 }, current: { x: 120, y: 110 }, delta: { x: 20, y: 10 } },
     });
 
+    // Scene unchanged during drag — preview buffer holds the in-flight pose.
     const pose = scene.poses.get('a') as RectPose;
-    expect(pose.x).toBeCloseTo(0);
-    expect(pose.y).toBeCloseTo(0);
-    expect(pose.width).toBeCloseTo(120);
-    expect(pose.height).toBeCloseTo(110);
+    expect(pose).toEqual({ x: 0, y: 0, width: 100, height: 100 });
+
+    const preview = handle.previewPose!('a') as RectPose;
+    expect(preview.x).toBeCloseTo(0);
+    expect(preview.y).toBeCloseTo(0);
+    expect(preview.width).toBeCloseTo(120);
+    expect(preview.height).toBeCloseTo(110);
+    expect(Array.from(handle.previewIds!() ?? [])).toEqual(['a']);
   });
 
-  it('onMove resizes the node by dragging top-left handle', () => {
+  it('previews resized pose for top-left handle drag', () => {
     const invoker = getOngoingInvoker(resizeAction);
     const scene = makeStubScene({ a: { pose: { x: 0, y: 0, width: 100, height: 100 } } });
     const ctx: InvocationCtx = {
@@ -210,15 +215,19 @@ describe('resizeAction descriptor', () => {
       drag: { start: { x: 0, y: 0 }, current: { x: 10, y: 10 }, delta: { x: 10, y: 10 } },
     });
 
-    const pose = scene.poses.get('a') as RectPose;
-    // top-left dragged right+down by (10,10): x shifts +10, width shrinks by 10
-    expect(pose.x).toBeCloseTo(10);
-    expect(pose.y).toBeCloseTo(10);
-    expect(pose.width).toBeCloseTo(90);
-    expect(pose.height).toBeCloseTo(90);
+    // Preview pose reflects top-left drag right+down by (10,10).
+    const preview = handle.previewPose!('a') as RectPose;
+    expect(preview.x).toBeCloseTo(10);
+    expect(preview.y).toBeCloseTo(10);
+    expect(preview.width).toBeCloseTo(90);
+    expect(preview.height).toBeCloseTo(90);
+
+    // Scene unmutated until commit.
+    const scenePose = scene.poses.get('a') as RectPose;
+    expect(scenePose).toEqual({ x: 0, y: 0, width: 100, height: 100 });
   });
 
-  it('onEnd cancel restores original pose', () => {
+  it('onEnd cancel leaves scene unchanged and clears previews', () => {
     const invoker = getOngoingInvoker(resizeAction);
     const scene = makeStubScene({ a: { pose: { x: 0, y: 0, width: 100, height: 100 } } });
     const ctx: InvocationCtx = {
@@ -238,24 +247,23 @@ describe('resizeAction descriptor', () => {
     };
 
     const handle = invoker.start(ctx, undefined);
-    // Move — mutates scene.
     handle.onMove!({
       ...ctx,
       drag: { start: { x: 100, y: 100 }, current: { x: 150, y: 150 }, delta: { x: 50, y: 50 } },
     });
-    const afterMove = scene.poses.get('a') as RectPose;
-    expect(afterMove.width).toBe(150);
+    // Scene unchanged during drag.
+    expect((scene.poses.get('a') as RectPose).width).toBe(100);
 
-    // Cancel — restores original pose exactly.
     handle.onEnd!({ ...ctx }, 'cancel');
     const afterCancel = scene.poses.get('a') as RectPose;
     expect(afterCancel.x).toBe(0);
     expect(afterCancel.y).toBe(0);
-    expect(afterCancel.width).toBe(100);  // restored from startPoses (exact copy)
+    expect(afterCancel.width).toBe(100);
     expect(afterCancel.height).toBe(100);
+    expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
   });
 
-  it('onEnd commit leaves final pose in place', () => {
+  it('onEnd commit writes final preview pose to scene and clears previews', () => {
     const invoker = getOngoingInvoker(resizeAction);
     const scene = makeStubScene({ a: { pose: { x: 0, y: 0, width: 100, height: 100 } } });
     const ctx: InvocationCtx = {
@@ -284,5 +292,6 @@ describe('resizeAction descriptor', () => {
     const pose = scene.poses.get('a') as RectPose;
     expect(pose.width).toBeCloseTo(130);
     expect(pose.height).toBeCloseTo(120);
+    expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
   });
 });

@@ -93,6 +93,10 @@ interface RotateScratch {
   startPointerAngle: number;
   /** Running delta — updated each onMove, applied once at commit. */
   currentDelta: number;
+  /** Use union pivot (multi-select) vs each item's own center. */
+  useUnionPivot: boolean;
+  /** In-flight preview poses keyed by node id. */
+  previews: Map<NodeId, unknown>;
 }
 
 // ---------------------------------------------------------------------------
@@ -165,9 +169,31 @@ export const rotateAction: Action & { requires: string[] } = {
         unionCenter,
         startPointerAngle,
         currentDelta: 0,
+        useUnionPivot: ids.length > 1,
+        previews: new Map<NodeId, unknown>(),
       };
 
-      const useUnionPivot = ids.length > 1;
+      const recomputePreviews = (delta: number) => {
+        scratch.previews.clear();
+        if (delta === 0) return;
+        for (const id of scratch.ids) {
+          const origin = scratch.originPoses.get(id);
+          if (origin === undefined) continue;
+          const originRotation = scratch.originRotations.get(id) ?? 0;
+          const originCenter = scratch.originCenters.get(id) ?? { x: 0, y: 0 };
+          scratch.previews.set(
+            id,
+            applyRotationDelta(
+              origin,
+              originRotation,
+              delta,
+              originCenter,
+              scratch.unionCenter,
+              scratch.useUnionPivot,
+            ),
+          );
+        }
+      };
 
       return {
         onMove(moveCtx: InvocationCtx): void {
@@ -176,30 +202,29 @@ export const rotateAction: Action & { requires: string[] } = {
             moveCtx.world.x - scratch.unionCenter.x,
           );
           scratch.currentDelta = pointerAngle - scratch.startPointerAngle;
+          recomputePreviews(scratch.currentDelta);
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
-          if (reason === 'cancel') return;
+          if (reason === 'cancel') {
+            scratch.previews.clear();
+            return;
+          }
           // No movement — no-op.
-          if (scratch.currentDelta === 0) return;
-          const delta = scratch.currentDelta;
+          if (scratch.currentDelta === 0) {
+            scratch.previews.clear();
+            return;
+          }
           scratch.scene.batch('Rotate', () => {
             for (const id of scratch.ids) {
-              const origin = scratch.originPoses.get(id);
-              if (origin === undefined) continue;
-              const originRotation = scratch.originRotations.get(id) ?? 0;
-              const originCenter = scratch.originCenters.get(id) ?? { x: 0, y: 0 };
-              const newPose = applyRotationDelta(
-                origin,
-                originRotation,
-                delta,
-                originCenter,
-                scratch.unionCenter,
-                useUnionPivot,
-              );
-              scratch.scene.setPose(id, newPose);
+              const next = scratch.previews.get(id);
+              if (next === undefined) continue;
+              scratch.scene.setPose(id, next);
             }
           });
+          scratch.previews.clear();
         },
+        previewIds: () => scratch.previews.keys(),
+        previewPose: (id: string) => scratch.previews.get(id as NodeId) ?? null,
       };
     },
   },

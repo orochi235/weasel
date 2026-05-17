@@ -63,12 +63,25 @@ function translatePoseGeneric(pose: unknown, dx: number, dy: number): unknown {
 // ---------------------------------------------------------------------------
 
 interface MoveScratch {
-  /** Origin poses captured at drag start. Key is NodeId. */
+  /** Origin poses captured at drag start. Key is NodeId. Includes both
+   *  selected roots AND their descendant ids — when a container moves, the
+   *  preview-ghost layer needs every child's pose to render the subtree at
+   *  the previewed location (clipped to the container silhouette). */
   startPoses: Map<NodeId, unknown>;
+  /** Selected ids only — the roots whose pose actually changes at commit.
+   *  Descendants follow implicitly under local-pose semantics (a child's
+   *  local pose is unchanged when its parent's local pose moves), so we
+   *  do NOT write descendant poses to scene at commit. */
   ids: NodeId[];
+  /** Descendant ids cascaded for preview only. Their preview poses are
+   *  computed each frame so container drags show children moving along. */
+  cascadeIds: NodeId[];
   scene: Scene<unknown, string, unknown>;
   /** Running drag delta — updated each onMove, applied once at commit. */
   currentDelta: { dx: number; dy: number };
+  /** In-flight preview poses keyed by node id (roots + cascaded children).
+   *  Populated on onMove; cleared on onEnd. Read by `previewIds`/`previewPose`. */
+  previews: Map<NodeId, unknown>;
 }
 
 // ---------------------------------------------------------------------------
@@ -102,18 +115,41 @@ export const moveAction: Action & { requires: string[] } = {
       const ids = selection.get() as NodeId[];
       if (ids.length === 0) return {};
 
-      // Capture origin poses once at drag start.
+      // Capture origin poses once at drag start. Walk descendants so
+      // container drags can preview every displaced child — required by
+      // `usePreviewGhostLayer.buildSubtree` which only recurses into ids
+      // present in `previewIds()`.
       const startPoses = new Map<NodeId, unknown>();
+      const cascadeIds: NodeId[] = [];
+      const seen = new Set<NodeId>();
+      const queue: NodeId[] = [];
       for (const id of ids) {
         const node = scene.get(id);
-        if (node) startPoses.set(id, node.pose);
+        if (!node) continue;
+        startPoses.set(id, node.pose);
+        seen.add(id);
+        queue.push(id);
+      }
+      while (queue.length > 0) {
+        const parent = queue.shift()!;
+        for (const childId of scene.childrenOf(parent)) {
+          if (seen.has(childId)) continue;
+          seen.add(childId);
+          const childNode = scene.get(childId);
+          if (!childNode) continue;
+          startPoses.set(childId, childNode.pose);
+          cascadeIds.push(childId);
+          queue.push(childId);
+        }
       }
 
       const scratch: MoveScratch = {
         startPoses,
         ids,
+        cascadeIds,
         scene,
         currentDelta: { dx: 0, dy: 0 },
+        previews: new Map<NodeId, unknown>(),
       };
 
       return {
@@ -124,24 +160,41 @@ export const moveAction: Action & { requires: string[] } = {
             dx: moveCtx.drag.delta.x,
             dy: moveCtx.drag.delta.y,
           };
+          // Refresh preview poses for every displaced id (roots + cascade).
+          // The preview-ghost layer reads these via `previewIds`/`previewPose`.
+          const { dx, dy } = scratch.currentDelta;
+          scratch.previews.clear();
+          for (const [id, origin] of scratch.startPoses) {
+            scratch.previews.set(id, translatePoseGeneric(origin, dx, dy));
+          }
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           if (reason === 'cancel') {
             // Scene was never mutated during drag; nothing to restore.
+            scratch.previews.clear();
             return;
           }
           // 'commit': apply final delta as a single batch → one undo entry.
           const { dx, dy } = scratch.currentDelta;
           // No-op if no movement (sub-threshold drag or zero delta).
-          if (dx === 0 && dy === 0) return;
+          if (dx === 0 && dy === 0) {
+            scratch.previews.clear();
+            return;
+          }
           scratch.scene.batch('Move', () => {
+            // Only write the selected roots — descendants follow implicitly
+            // under local-pose semantics. Children are previewed but their
+            // local poses are unchanged at commit.
             for (const id of scratch.ids) {
               const origin = scratch.startPoses.get(id);
               if (origin === undefined) continue;
               scratch.scene.setPose(id, translatePoseGeneric(origin, dx, dy));
             }
           });
+          scratch.previews.clear();
         },
+        previewIds: () => scratch.previews.keys(),
+        previewPose: (id: string) => scratch.previews.get(id as NodeId) ?? null,
       };
     },
   },

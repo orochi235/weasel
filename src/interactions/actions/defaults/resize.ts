@@ -95,6 +95,9 @@ interface ResizeScratch {
   anchor: ResizeAnchor;
   /** World-space start position from drag.start. */
   startWorld: { x: number; y: number };
+  /** In-flight preview poses buffered during drag. Committed to scene on
+   *  onEnd('commit') as a single batch; discarded on cancel. */
+  previews: Map<NodeId, unknown>;
 }
 
 // ---------------------------------------------------------------------------
@@ -166,6 +169,7 @@ export const resizeAction: Action & { requires: string[] } = {
         originBounds: ob,
         anchor,
         startWorld,
+        previews: new Map<NodeId, unknown>(),
       };
 
       return {
@@ -176,44 +180,42 @@ export const resizeAction: Action & { requires: string[] } = {
 
           const proposedBounds = computeProposedBounds(scratch.originBounds, scratch.anchor, dx, dy);
 
+          // Buffer preview poses; no scene writes during drag.
+          scratch.previews.clear();
           for (const id of scratch.ids) {
             const startPose = scratch.startPoses.get(id);
             if (startPose === undefined) continue;
-            const startBounds = RECT_POSE_DESCRIPTOR.getBounds(startPose as ResizePose);
             const nextPose = RECT_POSE_DESCRIPTOR.remapBounds(
               startPose as ResizePose,
               scratch.originBounds,
               proposedBounds,
             );
-            // Write live so the canvas renders feedback. Phase 13 TODO: switch
-            // to scratch-only + single batch commit to match moveAction.
-            // Only write if bounds actually changed (avoid no-op dirty marks).
-            const np = nextPose as ResizePose;
-            const sp = startBounds;
-            const changed =
-              np.x !== sp.x || np.y !== sp.y ||
-              np.width !== sp.width || np.height !== sp.height;
-            if (changed) {
-              scratch.scene.setPose(id, nextPose);
-            }
+            scratch.previews.set(id, nextPose);
           }
         },
 
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           if (reason === 'cancel') {
-            // Restore original poses on cancel.
-            for (const id of scratch.ids) {
-              const startPose = scratch.startPoses.get(id);
-              if (startPose !== undefined) {
-                scratch.scene.setPose(id, startPose);
-              }
-            }
+            // Scene was never mutated during drag — nothing to restore.
+            scratch.previews.clear();
             return;
           }
-          // 'commit': the scene already has the final pose from the last onMove;
-          // nothing extra to do. The undo stack has the per-frame writes — Phase 13
-          // will collapse these into a single batch entry.
+          // 'commit': apply final preview poses in a single batch → one undo entry.
+          if (scratch.previews.size === 0) {
+            // No movement (no onMove ever fired or zero-delta).
+            return;
+          }
+          scratch.scene.batch('Resize', () => {
+            for (const id of scratch.ids) {
+              const next = scratch.previews.get(id);
+              if (next === undefined) continue;
+              scratch.scene.setPose(id, next);
+            }
+          });
+          scratch.previews.clear();
         },
+        previewIds: () => scratch.previews.keys(),
+        previewPose: (id: string) => scratch.previews.get(id as NodeId) ?? null,
       };
     },
   },

@@ -35,20 +35,32 @@ function makeCtx(
 interface StubScene {
   poses: Map<string, unknown>;
   batchLog: Array<{ label: string; ops: Array<{ id: string; pose: unknown }> }>;
+  children: Map<string, NodeId[]>;
   get(id: NodeId): { pose: unknown } | undefined;
   setPose(id: NodeId, pose: unknown): void;
   batch<T>(label: string, fn: () => T): T;
+  childrenOf(id: NodeId): readonly NodeId[];
 }
 
-function makeStubScene(initial: Record<string, { pose: unknown }>): StubScene {
+function makeStubScene(
+  initial: Record<string, { pose: unknown }>,
+  childMap: Record<string, string[]> = {},
+): StubScene {
   const poses = new Map<string, unknown>(
     Object.entries(initial).map(([id, { pose }]) => [id, pose]),
   );
   const batchLog: Array<{ label: string; ops: Array<{ id: string; pose: unknown }> }> = [];
+  const children = new Map<string, NodeId[]>(
+    Object.entries(childMap).map(([id, kids]) => [id, kids as NodeId[]]),
+  );
 
   return {
     poses,
     batchLog,
+    children,
+    childrenOf(id: NodeId): readonly NodeId[] {
+      return children.get(id) ?? [];
+    },
     get(id: NodeId) {
       if (!poses.has(id)) return undefined;
       return { pose: poses.get(id) };
@@ -238,6 +250,81 @@ describe('moveAction descriptor', () => {
 
   it('enabled returns SelectionRequired', () => {
     expect(moveAction.enabled!()).toBe(ActionDisabledReason.SelectionRequired);
+  });
+
+  it('previewIds/previewPose expose in-flight buffered poses and clear on commit', () => {
+    const invoker = getOngoingInvoker(moveAction);
+    const { scene, ...ctx } = makeCtx({
+      selectionIds: ['a'],
+      sceneNodes: { a: { pose: { x: 10, y: 20, width: 50, height: 50 } } },
+    });
+
+    const handle = invoker.start(ctx as InvocationCtx, undefined);
+    // No move yet → no preview ids.
+    expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
+
+    const moveCtx: InvocationCtx = {
+      ...ctx,
+      drag: { start: { x: 0, y: 0 }, current: { x: 7, y: 3 }, delta: { x: 7, y: 3 } },
+    };
+    handle.onMove!(moveCtx);
+
+    expect(Array.from(handle.previewIds!() ?? [])).toEqual(['a']);
+    expect(handle.previewPose!('a')).toEqual({ x: 17, y: 23, width: 50, height: 50 });
+    // Scene not yet mutated.
+    expect(scene.poses.get('a')).toEqual({ x: 10, y: 20, width: 50, height: 50 });
+
+    handle.onEnd!(moveCtx, 'commit');
+    expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
+    expect(scene.poses.get('a')).toEqual({ x: 17, y: 23, width: 50, height: 50 });
+  });
+
+  it('cancel discards previews and leaves scene unchanged', () => {
+    const invoker = getOngoingInvoker(moveAction);
+    const { scene, ...ctx } = makeCtx({
+      selectionIds: ['a'],
+      sceneNodes: { a: { pose: { x: 0, y: 0, width: 10, height: 10 } } },
+    });
+    const handle = invoker.start(ctx as InvocationCtx, undefined);
+    handle.onMove!({
+      ...ctx,
+      drag: { start: { x: 0, y: 0 }, current: { x: 50, y: 50 }, delta: { x: 50, y: 50 } },
+    } as InvocationCtx);
+    expect(Array.from(handle.previewIds!() ?? []).length).toBe(1);
+    handle.onEnd!(ctx as InvocationCtx, 'cancel');
+    expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
+    expect(scene.poses.get('a')).toEqual({ x: 0, y: 0, width: 10, height: 10 });
+  });
+
+  it('cascades container descendants into preview state (container drag includes children)', () => {
+    const invoker = getOngoingInvoker(moveAction);
+    const scene = makeStubScene(
+      {
+        parent: { pose: { x: 0, y: 0, width: 100, height: 100 } },
+        child: { pose: { x: 10, y: 10, width: 20, height: 20 } },
+      },
+      { parent: ['child'] },
+    );
+    const ctx: InvocationCtx = {
+      world: { x: 0, y: 0 },
+      screen: { x: 0, y: 0 },
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      deps: { selection: makeStubSelection(['parent']), scene },
+    };
+    const handle = invoker.start(ctx, undefined);
+    handle.onMove!({
+      ...ctx,
+      drag: { start: { x: 0, y: 0 }, current: { x: 5, y: 5 }, delta: { x: 5, y: 5 } },
+    });
+    const ids = Array.from(handle.previewIds!() ?? []).sort();
+    expect(ids).toEqual(['child', 'parent']);
+    expect(handle.previewPose!('parent')).toMatchObject({ x: 5, y: 5 });
+    expect(handle.previewPose!('child')).toMatchObject({ x: 15, y: 15 });
+
+    handle.onEnd!(ctx, 'commit');
+    // Only the parent (root) is rewritten — child's local pose unchanged.
+    expect(scene.poses.get('parent')).toMatchObject({ x: 5, y: 5 });
+    expect(scene.poses.get('child')).toEqual({ x: 10, y: 10, width: 20, height: 20 });
   });
 
   it('commit applies latest delta (multiple onMove calls, last one wins)', () => {
