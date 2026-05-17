@@ -88,22 +88,6 @@ describe('<Canvas>', () => {
     expect(container.querySelector('canvas')).toBeTruthy();
   });
 
-  it('per-event override replaces the auto-built handler', () => {
-    const onPointerDown = vi.fn();
-    const { container } = render(
-      <Canvas
-        width={50}
-        height={50}
-        layers={{}}
-        pickEvery={() => 'a'}
-        onPointerDown={onPointerDown}
-      />,
-    );
-    const canvas = container.querySelector('canvas')!;
-    fireEvent.pointerDown(canvas, { clientX: 5, clientY: 5 });
-    expect(onPointerDown).toHaveBeenCalledTimes(1);
-  });
-
   it('auto-build pointer handler routes through tools.dispatcher', () => {
     interface Rect { id: string; x: number; y: number; width: number; height: number }
     interface Pose { x: number; y: number; width: number; height: number }
@@ -719,8 +703,6 @@ describe('Canvas viewport (Phase 2b)', () => {
       <Canvas
         width={100}
         height={100}
-        items={[]}
-        setItems={() => {}}
         layers={{ scene: noopScene() }}
         onViewChange={onViewChange}
       />,
@@ -736,8 +718,6 @@ describe('Canvas viewport (Phase 2b)', () => {
       <Canvas
         width={100}
         height={100}
-        items={[]}
-        setItems={() => {}}
         layers={{ scene: noopScene() }}
         defaultView={{ x: 50, y: 25, scale: { x: 1, y: 1 } }}
         onViewChange={onViewChange}
@@ -752,8 +732,6 @@ describe('Canvas viewport (Phase 2b)', () => {
       <Canvas
         width={100}
         height={100}
-        items={[]}
-        setItems={() => {}}
         layers={{ scene: noopScene() }}
         view={{ x: 10, y: 20, scale: { x: 1, y: 1 } }}
         onViewChange={onViewChange}
@@ -763,8 +741,6 @@ describe('Canvas viewport (Phase 2b)', () => {
       <Canvas
         width={100}
         height={100}
-        items={[]}
-        setItems={() => {}}
         layers={{ scene: noopScene() }}
         view={{ x: 30, y: 40, scale: { x: 1, y: 1 } }}
         onViewChange={onViewChange}
@@ -780,8 +756,6 @@ describe('Canvas viewport (Phase 2b)', () => {
       <Canvas
         width={100}
         height={100}
-        items={[]}
-        setItems={() => {}}
         layers={{ scene: noopScene() }}
         onViewChange={onViewChange}
       />,
@@ -798,8 +772,6 @@ describe('Canvas viewport (Phase 2b)', () => {
       <Canvas
         width={100}
         height={100}
-        items={[]}
-        setItems={() => {}}
         layers={{ scene: noopScene() }}
         view={{ x: 5, y: 5, scale: { x: 2, y: 2 } }}
         onViewChange={onViewChange}
@@ -824,8 +796,7 @@ describe('Canvas debug overlay', () => {
       const { container } = render(
         <Canvas
           width={100} height={100}
-          items={[]} setItems={() => {}}
-          layers={{ scene: noopScene() }}
+                    layers={{ scene: noopScene() }}
           debug={false}
         />,
       );
@@ -842,8 +813,7 @@ describe('Canvas debug overlay', () => {
     const { container } = render(
       <Canvas
         width={100} height={100}
-        items={[]} setItems={() => {}}
-        layers={{ scene: noopScene() }}
+                layers={{ scene: noopScene() }}
         debug={{ bounds: true }}
       />,
     );
@@ -860,8 +830,7 @@ describe('Canvas debug overlay', () => {
     render(
       <Canvas
         width={100} height={100}
-        items={items} setItems={() => {}}
-        layers={{ scene: { drawOne: () => [] } }}
+                layers={{ scene: { drawOne: () => [] } }}
         boundsOf={(id) => {
           const it = items.find((i) => i.id === id);
           return it ? { x: it.x, y: it.y, width: it.w, height: it.h } : null;
@@ -882,8 +851,7 @@ describe('Canvas debug overlay', () => {
     render(
       <Canvas
         width={100} height={100}
-        items={[]} setItems={() => {}}
-        layers={{ scene: noopScene() }}
+                layers={{ scene: noopScene() }}
         debug={{ layers: true }}
         debugSinkRef={sinkRef}
       />,
@@ -906,8 +874,7 @@ describe('Canvas debug overlay', () => {
       const { container } = render(
         <Canvas
           width={100} height={100}
-          items={[]} setItems={() => {}}
-          layers={{ scene: noopScene() }}
+                    layers={{ scene: noopScene() }}
         />,
       );
       expect(container.querySelector('canvas')).toBeTruthy();

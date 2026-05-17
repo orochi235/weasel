@@ -40,7 +40,6 @@ import {
   type UseSelectionOptions,
 } from 'core/selection/useSelection';
 import { buildChromeState, type ChromeState } from 'core/selection/chromeState';
-import { useArrayAdapter, type UseArrayAdapterOptions } from 'core/adapters/useArrayAdapter';
 import type {
   MoveAdapter,
   ResizeAdapter,
@@ -147,34 +146,13 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
 
   /** Combined adapter. Required for the scene slot, default pickEvery/boundsOf,
    *  and the internal move/resize/rotate controllers. Optional for trivial
-   *  canvases. Mutually exclusive with `items` — pass one or the other.
-   *  Insert and area-select live entirely in `useInsertTool` / `useSelectTool`
-   *  now; pass those via `tools={useTools(...)}` instead. */
+   *  canvases. `<SceneCanvas>` synthesizes this from a `Scene`; bare-`<Canvas>`
+   *  consumers must supply it explicitly. Insert and area-select live entirely
+   *  in `useInsertTool` / `useSelectTool` now; pass those via
+   *  `tools={useTools(...)}` instead. */
   adapter?: MoveAdapter<TNode, TPose>
     & ResizeAdapter<TNode, TPose>
     & RotateAdapter<TNode, TPose>;
-
-  /** Inline scene wiring: when `adapter` is omitted and `items`/`setItems`
-   *  are provided, Canvas synthesizes an `arrayAdapter` internally (via
-   *  `useArrayAdapter`). `toPose` defaults to identity (the item *is* the
-   *  pose) — supply it only when the pose is a sub-shape of the item.
-   *  Use the explicit `adapter` prop instead for groups, custom history,
-   *  or non-array scenes.
-   *  @deprecated Use `useScene({ items })` + `<SceneCanvas>` instead. The
-   *  inline-items props will be removed in a follow-up. */
-  items?: TNode[];
-  /** @deprecated Use `useScene({ items })` + `<SceneCanvas>`. */
-  setItems?: UseArrayAdapterOptions<TNode, TPose>['setItems'];
-  /** @deprecated Use `useScene({ items })` + `<SceneCanvas>`. */
-  toPose?: UseArrayAdapterOptions<TNode, TPose>['toPose'];
-  /** @deprecated Use `useScene({ items })` + `<SceneCanvas>`. */
-  fromPose?: UseArrayAdapterOptions<TNode, TPose>['fromPose'];
-  /** @deprecated Use `useScene({ items })` + `<SceneCanvas>`. */
-  createDefault?: UseArrayAdapterOptions<TNode, TPose>['createDefault'];
-  /** @deprecated Use `useScene({ items })` + `<SceneCanvas>`. */
-  poseBounds?: UseArrayAdapterOptions<TNode, TPose>['poseBounds'];
-  /** @deprecated Use `useScene({ items })` + `<SceneCanvas>`. */
-  intersectsRect?: UseArrayAdapterOptions<TNode, TPose>['intersectsRect'];
 
   /** Selection semantics. See {@link CanvasSelectionMode}. Default `'single'`. */
   selectionMode?: CanvasSelectionMode;
@@ -196,12 +174,6 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
   boundsOf?: (id: string) => Bounds | null;
   clientToWorld?: (canvas: HTMLCanvasElement, cx: number, cy: number) => [number, number];
-
-  // --- Per-event overrides — replace the auto-built handler entirely ---
-  onPointerDown?: React.PointerEventHandler<HTMLCanvasElement>;
-  onPointerMove?: React.PointerEventHandler<HTMLCanvasElement>;
-  onPointerUp?: React.PointerEventHandler<HTMLCanvasElement>;
-  onPointerCancel?: React.PointerEventHandler<HTMLCanvasElement>;
 
   // --- Visuals / DOM passthrough ---
   background?: string;
@@ -294,18 +266,6 @@ export interface CanvasHelpers<TPose> {
    *  debug is off — no-op for production renders. */
   getDebug(): DebugSink | null;
 }
-
-// Stable identities for the always-on useArrayAdapter call when the consumer
-// is on the explicit-`adapter` path (synthesized adapter is unused, but the
-// hook still runs).
-const EMPTY_ITEMS: { id: string }[] = [];
-const NOOP_SET_ITEMS = () => {};
-// Default `toPose` when omitted on the inline-items path: the item *is* the
-// pose. Works for the common case where TNode already carries pose fields
-// (e.g. `{ id, x, y, width, height, ... }`); supply an explicit `toPose`
-// when the pose is a sub-shape of the item or computed.
-const IDENTITY_TO_POSE = (obj: unknown) => obj as unknown;
-
 
 // Walks every registered + ambient tool: resize/rotate will register as
 // siblings of select, each publishing its own preview slice.
@@ -502,10 +462,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     pickEvery,
     clientToWorld,
     geometry = AUTO_POSE_DESCRIPTOR as unknown as PoseProjection<TPose>,
-    onPointerDown: onPointerDownOverride,
-    onPointerMove: onPointerMoveOverride,
-    onPointerUp: onPointerUpOverride,
-    onPointerCancel: onPointerCancelOverride,
     background,
     className,
     style,
@@ -517,13 +473,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     defaultView,
     onViewChange,
     viewBounds,
-    items,
-    setItems,
-    toPose,
-    fromPose,
-    createDefault,
-    poseBounds,
-    intersectsRect,
     debug: debugProp,
     debugSinkRef,
     shaders,
@@ -548,22 +497,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const debugSinkRefForCtx = useRef<DebugSink | null>(null);
   debugSinkRefForCtx.current = debugSink;
 
-  // Synthesized arrayAdapter when `adapter` is omitted but `items`/`setItems`/
-  // `toPose` are supplied. The hook always runs (rules of hooks) — when the
-  // user is on the explicit-`adapter` path, we feed it stub args and ignore
-  // the result.
-  const synthesizedAdapter = useArrayAdapter<TNode, TPose>({
-    items: items ?? (EMPTY_ITEMS as TNode[]),
-    setItems: setItems ?? NOOP_SET_ITEMS,
-    toPose: toPose ?? (IDENTITY_TO_POSE as (obj: TNode) => TPose),
-    fromPose,
-    createDefault,
-    poseBounds,
-    intersectsRect,
-  });
-  const inlineSceneSupplied =
-    adapterProp === undefined && items !== undefined && setItems !== undefined;
-  const adapter = adapterProp ?? (inlineSceneSupplied ? synthesizedAdapter : undefined);
+  const adapter = adapterProp;
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -986,18 +920,16 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // Detach on unmount (no leaked global listeners if Canvas tears down mid-drag).
   useEffect(() => detachDocListeners, [detachDocListeners]);
 
-  const handlePointerDown =
-    onPointerDownOverride ??
-    (tools
-      ? (e: React.PointerEvent<HTMLCanvasElement>) => {
-          if (autoFocusOnPointerDown) e.currentTarget.focus();
-          tools.dispatcher.onPointerDown(e.nativeEvent);
-          // Only attach if the dispatcher actually started a gesture; otherwise
-          // we'd leak a listener for every empty click on the canvas.
-          if (tools.dispatcher.hasActiveGesture()) attachDocListeners(tools.dispatcher);
-        }
-      : undefined);
-  const handlePointerMove = onPointerMoveOverride ??
+  const handlePointerDown = tools
+    ? (e: React.PointerEvent<HTMLCanvasElement>) => {
+        if (autoFocusOnPointerDown) e.currentTarget.focus();
+        tools.dispatcher.onPointerDown(e.nativeEvent);
+        // Only attach if the dispatcher actually started a gesture; otherwise
+        // we'd leak a listener for every empty click on the canvas.
+        if (tools.dispatcher.hasActiveGesture()) attachDocListeners(tools.dispatcher);
+      }
+    : undefined;
+  const handlePointerMove =
     ((e: React.PointerEvent<HTMLCanvasElement>) => {
       tools?.dispatcher.onPointerMove(e.nativeEvent);
       // Dispatch onUncapturedMove to layers when no gesture is captured.
@@ -1023,16 +955,15 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const handlePointerLeave = (_e: React.PointerEvent<HTMLCanvasElement>) => {
     for (const layer of layersWithDebug) layer.onUncapturedLeave?.();
   };
-  const handlePointerUp = onPointerUpOverride ??
-    (tools
-      ? (e: React.PointerEvent<HTMLCanvasElement>) => {
-          tools.dispatcher.onPointerUp(e.nativeEvent);
-          // The doc-listener up handler also detaches; this branch covers the
-          // common case where the release lands on the canvas itself.
-          detachDocListeners();
-        }
-      : undefined);
-  const handlePointerCancel = onPointerCancelOverride ?? undefined;
+  const handlePointerUp = tools
+    ? (e: React.PointerEvent<HTMLCanvasElement>) => {
+        tools.dispatcher.onPointerUp(e.nativeEvent);
+        // The doc-listener up handler also detaches; this branch covers the
+        // common case where the release lands on the canvas itself.
+        detachDocListeners();
+      }
+    : undefined;
+  const handlePointerCancel = undefined;
   // Native non-passive wheel listener so tools can call event.preventDefault()
   // (e.g. wheel-zoom holding Ctrl). React attaches `onWheel` as passive, which
   // would emit "Unable to preventDefault inside passive event listener" warnings.

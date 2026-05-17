@@ -183,8 +183,6 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
         <Canvas
           width={200}
           height={200}
-          items={[]}
-          setItems={() => {}}
           view={view}
           onViewChange={(v) => { setView(v); onViewChange(v); }}
           tools={tools}
@@ -249,8 +247,6 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
         <Canvas
           width={200}
           height={200}
-          items={[]}
-          setItems={() => {}}
           view={view}
           onViewChange={(v) => { setView(v); onViewChange(v); }}
           tools={tools}
