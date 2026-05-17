@@ -20,7 +20,6 @@ import Urn from './Urn';
 import Coffin, { type CoffinParams } from './Coffin';
 import Receipt, { type ReceiptParams } from './Receipt';
 import Wood from './Wood';
-import Cartouche, { type CartoucheParams } from './Cartouche';
 import Quatrefoil, { type QuatrefoilParams } from './Quatrefoil';
 
 export interface BadgeShapeParams {
@@ -45,7 +44,6 @@ export interface BadgeShapeParams {
   coffin: CoffinParams;
   receipt: ReceiptParams;
   wood: Record<string, never>;
-  cartouche: CartoucheParams;
   quatrefoil: QuatrefoilParams;
 }
 
@@ -71,7 +69,6 @@ export const SHAPES: Record<BadgeShape, ShapeModule<any>> = {
   coffin: Coffin,
   receipt: Receipt,
   wood: Wood,
-  cartouche: Cartouche,
   quatrefoil: Quatrefoil,
 };
 
@@ -80,5 +77,5 @@ export const ALL_SHAPES: BadgeShape[] = [
   'hexagon',
   'starburst', 'scalloped', 'shield', 'ribbon', 'beavis',
   'sparkler', 'postage', 'cloud', 'house', 'plaque',
-  'crest', 'urn', 'coffin', 'receipt', 'wood', 'cartouche', 'quatrefoil',
+  'crest', 'urn', 'coffin', 'receipt', 'wood', 'quatrefoil',
 ];

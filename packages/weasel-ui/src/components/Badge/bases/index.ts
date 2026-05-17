@@ -2,19 +2,17 @@ import type { BaseModule } from './types';
 import ChamferedRect, { type ChamferedRectParams } from './ChamferedRect';
 import RoundedRect, { type RoundedRectParams } from './RoundedRect';
 import Polygon, { type PolygonParams } from './Polygon';
-import Cartouche, { type CartoucheBaseParams } from './Cartouche';
 import Puzzle, { type PuzzleParams } from './Puzzle';
 import Quatrefoil, { type QuatrefoilParams } from './Quatrefoil';
 import OctantSpline, { type OctantSplineParams } from './OctantSpline';
 import OctantBSpline, { type OctantBSplineParams } from './OctantBSpline';
 
-export type BadgeBase = 'chamfered-rect' | 'rounded-rect' | 'polygon' | 'cartouche' | 'puzzle' | 'quatrefoil' | 'octant-spline' | 'octant-bspline';
+export type BadgeBase = 'chamfered-rect' | 'rounded-rect' | 'polygon' | 'puzzle' | 'quatrefoil' | 'octant-spline' | 'octant-bspline';
 
 export interface BadgeBaseParams {
   'chamfered-rect': ChamferedRectParams;
   'rounded-rect': RoundedRectParams;
   'polygon': PolygonParams;
-  'cartouche': CartoucheBaseParams;
   'puzzle': PuzzleParams;
   'quatrefoil': QuatrefoilParams;
   'octant-spline': OctantSplineParams;
@@ -25,7 +23,6 @@ export const BASES: Record<BadgeBase, BaseModule<any>> = {
   'chamfered-rect': ChamferedRect,
   'rounded-rect': RoundedRect,
   'polygon': Polygon,
-  'cartouche': Cartouche,
   'puzzle': Puzzle,
   'quatrefoil': Quatrefoil,
   'octant-spline': OctantSpline,

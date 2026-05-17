@@ -133,13 +133,6 @@ const SHAPE_CONTROLS: Partial<Record<BadgeShape, ShapeControl[]>> = {
     { key: 'topInset', kind: 'range', min: 0, max: 35, step: 1, default: 12 },
     { key: 'pointDepth', kind: 'range', min: 60, max: 110, step: 1, default: 100 },
   ],
-  cartouche: [
-    { key: 'bodyEdge', kind: 'range', min: 10, max: 45, step: 0.5, default: 22 },
-    { key: 'armTipX',  kind: 'range', min: 0,  max: 25, step: 0.5, default: 6 },
-    { key: 'pinchX',   kind: 'range', min: 2,  max: 40, step: 0.5, default: 16 },
-    { key: 'armTipY',  kind: 'range', min: 4,  max: 45, step: 0.5, default: 18 },
-    { key: 'samples',  kind: 'range', min: 4,  max: 30, step: 1,   default: 14 },
-  ],
   quatrefoil: [
     { key: '__spike__',       kind: 'header', label: 'Spike', default: '' } as never,
     { key: 'spikeR',          kind: 'range', min: 5,   max: 50,   step: 0.5,  default: 50 },
@@ -292,7 +285,7 @@ const SHAPE_CATEGORIES: { title: string; shapes: BadgeShape[] }[] = [
   },
   {
     title: 'Themed',
-    shapes: ['house', 'cloud', 'beavis', 'crest', 'urn', 'coffin', 'receipt', 'wood', 'cartouche', 'quatrefoil'],
+    shapes: ['house', 'cloud', 'beavis', 'crest', 'urn', 'coffin', 'receipt', 'wood', 'quatrefoil'],
   },
 ];
 
@@ -677,13 +670,6 @@ const BASE_LAB_CONTROLS: Record<BadgeBase, LabControl[]> = {
   ],
   'chamfered-rect': [{ key: 'chamfer', kind: 'range', min: 0, max: 25, step: 0.5, default: 6 }],
   'polygon':        [],
-  'cartouche':      [
-    { key: 'bodyEdge', kind: 'range', min: 10, max: 45, step: 0.5, default: 22 },
-    { key: 'armTipX',  kind: 'range', min: 0,  max: 25, step: 0.5, default: 6 },
-    { key: 'pinchX',   kind: 'range', min: 2,  max: 40, step: 0.5, default: 16 },
-    { key: 'armTipY',  kind: 'range', min: 4,  max: 45, step: 0.5, default: 18 },
-    { key: 'samples',  kind: 'range', min: 4,  max: 30, step: 1,   default: 14 },
-  ],
   'puzzle':         [
     { key: 'top',        kind: 'select', options: ['flat', 'out', 'in'], default: 'out' },
     { key: 'right',      kind: 'select', options: ['flat', 'out', 'in'], default: 'in' },
@@ -895,12 +881,6 @@ const LAB_PRESETS: LabPreset[] = [
     effects: [
       { type: 'perforations', params: { holeRadius: 3, holeSpacing: 11 } },
     ],
-  },
-  {
-    name: 'cartouche',
-    base: 'cartouche',
-    baseParams: { bodyEdge: 22, armTipX: 6, pinchX: 16, armTipY: 18, samples: 14 },
-    effects: [],
   },
   {
     name: 'hexagon',
@@ -1256,6 +1236,18 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
             style={{ fontFamily: 'Helvetica, Arial, sans-serif', fontSize: 11, padding: 8, width: '100%', boxSizing: 'border-box' }}
           />
         )}
+        <section style={sectionStyle}>
+          <label style={{ display: 'grid', gridTemplateColumns: '110px 1fr', alignItems: 'center', gap: 8 }}>
+            <span style={{ ...ctrlLabel, fontSize: 16 }}>base</span>
+            <select
+              value={base}
+              onChange={(e) => onPickBase(e.target.value as BadgeBase)}
+              style={{ fontSize: 27, padding: '4px 6px' }}
+            >
+              {BASE_KEYS.map((b) => <option key={b} value={b}>{b}</option>)}
+            </select>
+          </label>
+        </section>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'start' }}>
         <section style={sectionStyle}>
           <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.7, margin: '0 0 4px', fontFamily: 'Helvetica, Arial, sans-serif' }}>Appearance</h3>
@@ -1307,13 +1299,6 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
           </label>
         </section>
         <section style={sectionStyle}>
-          <h3 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.7, margin: '0 0 4px', fontFamily: 'Helvetica, Arial, sans-serif' }}>Base</h3>
-          <label style={{ display: 'grid', gridTemplateColumns: '110px 1fr', alignItems: 'center', gap: 8 }}>
-            <span style={ctrlLabel}>type</span>
-            <select value={base} onChange={(e) => onPickBase(e.target.value as BadgeBase)} style={{ fontSize: 11 }}>
-              {BASE_KEYS.map((b) => <option key={b} value={b}>{b}</option>)}
-            </select>
-          </label>
           {(base === 'octant-spline' || base === 'octant-bspline') ? (
             (() => {
               const count = Math.max(3, Math.min(12, Math.floor(Number(baseParams.count ?? 5))));
