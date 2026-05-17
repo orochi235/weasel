@@ -63,6 +63,7 @@ import { ActiveToolContextProvider } from 'interactions/actions/activeToolContex
 import { DispatcherPresenceProvider } from 'interactions/dispatcher/dispatcherPresence';
 import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
 import { useActionsRegistry } from 'interactions/actions/registry';
+import { buildAffordanceAt, buildClassifyTarget } from './affordanceAt';
 import type { Op } from 'core/ops/types';
 import type { ViewApi } from 'interactions/actions/depSchema';
 
@@ -541,7 +542,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ...selectToolOpts,
   }), [selectToolOpts]);
 
-  const { adapter, selectTool: internalSelect, resizeTool, rotateTool, pickEvery: internalPickEvery } = useSceneSelectTool({
+  // Stable ref to the live selection; updated every render so the affordanceAt
+  // and classifyTarget thunks (which live in an effect closure) always read
+  // the latest selection without causing re-renders.
+  const selectionRef = useRef(selection);
+  selectionRef.current = selection;
+
+  const { adapter, selectTool: internalSelect, resizeTool, rotateTool, pickEvery: internalPickEvery, boundsOf: internalBoundsOf } = useSceneSelectTool({
     scene,
     selection,
     geometry,
@@ -750,6 +757,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 canvasRef={internalCanvasRef}
                 tools={tools}
                 enabled={enableGestureDispatcher}
+                selectionRef={selectionRef}
+                boundsOf={internalBoundsOf}
+                pickEvery={internalPickEvery}
+                viewRef={currentViewRef}
               />
               {children}
             </ActionsProviderIfRoot>
@@ -765,15 +776,28 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
  * read the live registry. `DispatcherPresenceProvider` is an ancestor (outside
  * `<ActionsProviderIfRoot>`), so `useIsDispatcherMounted()` in the registry's
  * keydown handler correctly returns `true` for this scope.
+ *
+ * Phase 13: accepts `selectionRef`, `boundsOf`, `pickEvery`, and `viewRef` so
+ * it can wire `affordanceAt` + `classifyTarget` thunks into the dispatcher.
+ * These thunks convert client coords → world coords via the canvas rect + view,
+ * then classify the pointer position against affordances and scene bodies.
  */
 function GestureDispatcherMounter({
   canvasRef,
   tools,
   enabled,
+  selectionRef,
+  boundsOf,
+  pickEvery,
+  viewRef,
 }: {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   tools: ToolsApi;
   enabled: boolean;
+  selectionRef?: React.RefObject<import('core/selection/useSelection').SelectionApi>;
+  boundsOf?: (id: string) => import('core/viewport/fitViewToBounds').Bounds | null;
+  pickEvery?: (worldX: number, worldY: number) => string[];
+  viewRef?: React.RefObject<View>;
 }) {
   const registry = useActionsRegistry();
   const toolsById = useMemo<ReadonlyMap<string, AnyTool>>(() => {
@@ -783,11 +807,100 @@ function GestureDispatcherMounter({
     }
     return m;
   }, [tools.registry]);
+
+  // Stable refs for the optional thunk inputs so the thunks themselves are
+  // stable function identities across renders (no need to pass them as deps).
+  const boundsOfRef = useRef(boundsOf);
+  boundsOfRef.current = boundsOf;
+  const pickEveryRef = useRef(pickEvery);
+  pickEveryRef.current = pickEvery;
+
+  // Build the `affordanceAt` thunk. Converts client coords → world coords
+  // internally, then delegates to `buildAffordanceAt` for handle hit-testing.
+  const affordanceAt = useMemo(() => {
+    if (!selectionRef || !boundsOf || !viewRef) return undefined;
+    return buildAffordanceAt(
+      () => {
+        const sel = selectionRef.current;
+        const selection = sel?.current ?? [];
+        const multiActive = selection.length >= 2;
+        return {
+          selection: selection as import('core/scene/types').NodeId[],
+          multiActive,
+          boundsOf: (id: string) => boundsOfRef.current?.(id) ?? null,
+          modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+          get unionBounds() {
+            if (!multiActive) return null;
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            let any = false;
+            for (const id of selection) {
+              const b = boundsOfRef.current?.(id);
+              if (!b) continue;
+              any = true;
+              if (b.x < minX) minX = b.x;
+              if (b.y < minY) minY = b.y;
+              if (b.x + b.width > maxX) maxX = b.x + b.width;
+              if (b.y + b.height > maxY) maxY = b.y + b.height;
+            }
+            return any ? { x: minX, y: minY, width: maxX - minX, height: maxY - minY } : null;
+          },
+        };
+      },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectionRef, boundsOf, viewRef]);
+
+  // Build the `classifyTarget` thunk. Converts client coords → world coords
+  // internally using the canvas rect + view, then delegates to `buildClassifyTarget`.
+  const classifyTarget = useMemo(() => {
+    if (!selectionRef || !pickEvery || !viewRef) return undefined;
+    return buildClassifyTarget(
+      () => selectionRef.current?.current ?? [],
+      (wx: number, wy: number) => {
+        const ids = pickEveryRef.current?.(wx, wy) ?? [];
+        return ids.length > 0 ? ids[ids.length - 1] : null;
+      },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectionRef, pickEvery, viewRef]);
+
+  // Wrap `affordanceAt` and `classifyTarget` to convert client → world coords
+  // before delegating. The canvas rect is read on every call (not cached) so
+  // it stays correct after layout changes.
+  const clientToWorld = useCallback((clientX: number, clientY: number): { x: number; y: number } => {
+    const canvas = canvasRef.current;
+    const view = viewRef?.current;
+    if (!canvas || !view) return { x: clientX, y: clientY };
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (clientX - rect.left) / view.scale.x + view.x,
+      y: (clientY - rect.top) / view.scale.y + view.y,
+    };
+  }, [canvasRef, viewRef]);
+
+  const wrappedAffordanceAt = useMemo(() => {
+    if (!affordanceAt) return undefined;
+    return (screenPoint: { x: number; y: number }) => {
+      const worldPoint = clientToWorld(screenPoint.x, screenPoint.y);
+      return affordanceAt(worldPoint);
+    };
+  }, [affordanceAt, clientToWorld]);
+
+  const wrappedClassifyTarget = useMemo(() => {
+    if (!classifyTarget) return undefined;
+    return (screenPoint: { x: number; y: number }) => {
+      const worldPoint = clientToWorld(screenPoint.x, screenPoint.y);
+      return classifyTarget(worldPoint);
+    };
+  }, [classifyTarget, clientToWorld]);
+
   useGestureDispatcher({
     canvasRef,
     actions: registry!,
     toolsById,
     enabled,
+    affordanceAt: wrappedAffordanceAt,
+    classifyTarget: wrappedClassifyTarget,
   });
   return null;
 }

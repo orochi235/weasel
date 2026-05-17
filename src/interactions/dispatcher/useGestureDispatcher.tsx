@@ -60,6 +60,22 @@ export interface UseGestureDispatcherOptions {
    * will wire the full chrome→dispatcher bridge via `<SceneCanvas>`.
    */
   affordanceAt?: (worldPoint: { x: number; y: number }) => AffordanceHit | null;
+
+  /**
+   * Optional body-target classifier. Called on every pointerdown with the
+   * world-space coordinates of the pointer. Returns a classification string
+   * that `matchTarget` uses to resolve string-form `TargetSpec` values in
+   * `Tool.bindings` drag specs.
+   *
+   * Returns `'empty'` when nothing is under the pointer, `'selected-body'`
+   * when the topmost hit belongs to the current selection, or
+   * `'unselected-body'` when it belongs to a node that isn't selected.
+   *
+   * When omitted, string-form target specs (`'empty'`, `'selected-body'`,
+   * `'unselected-body'`) never match — bindings using those specs are
+   * silently skipped. Phase 13 wires this via `<SceneCanvas>`.
+   */
+  classifyTarget?: (worldPoint: { x: number; y: number }) => 'empty' | 'selected-body' | 'unselected-body';
 }
 
 // ---------------------------------------------------------------------------
@@ -67,7 +83,7 @@ export interface UseGestureDispatcherOptions {
 // ---------------------------------------------------------------------------
 
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, toolsById, enabled = true, affordanceAt } = opts;
+  const { canvasRef, actions, toolsById, enabled = true, affordanceAt, classifyTarget } = opts;
   const activeTool = useActiveToolContext();
   const depRegistry = useDepRegistry();
 
@@ -96,9 +112,11 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     isMac: IS_MAC,
   };
 
-  // Stable ref for affordanceAt so the effect closure always sees the latest version.
+  // Stable refs for optional thunks so the effect closure always sees the latest version.
   const affordanceAtRef = useRef(affordanceAt);
   affordanceAtRef.current = affordanceAt;
+  const classifyTargetRef = useRef(classifyTarget);
+  classifyTargetRef.current = classifyTarget;
 
   // Cancel in-flight ongoing handles when active tool changes (not on initial mount).
   const prevActiveRef = useRef(activeTool.active);
@@ -208,7 +226,11 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
       // Classify the affordance at the pointerdown world-space position.
       // The thunk is optional — when absent, affordance is undefined (no-op).
-      const affordance = affordanceAtRef.current?.({ x: e.clientX, y: e.clientY }) ?? undefined;
+      // Both thunks receive world-space coords; SceneCanvas supplies the
+      // client→world conversion internally via its canvas ref + view.
+      const worldPoint = { x: e.clientX, y: e.clientY };
+      const affordance = affordanceAtRef.current?.(worldPoint) ?? undefined;
+      const bodyTarget = classifyTargetRef.current?.(worldPoint) ?? undefined;
 
       const ev: InputEvent = {
         kind: 'pointerdown',
@@ -220,6 +242,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         metaKey: e.metaKey,
         shiftKey: e.shiftKey,
         ...(affordance !== undefined ? { affordance } : {}),
+        ...(bodyTarget !== undefined ? { bodyTarget } : {}),
       };
       dispatcher.handleInput(ev, ctxRef.current);
 

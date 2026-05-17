@@ -68,6 +68,10 @@ export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
    *  picked — drag routes keyed on `target.kind` then resolve to `'*'`
    *  (move) instead of `'empty'` (marquee). */
   pickEvery: (worldX: number, worldY: number) => string[];
+  /** World-space AABB of `id`, or null. Same as what the selection overlay +
+   *  affordance hit-test need. Exposed so SceneCanvas can pass it to the
+   *  `affordanceAt` thunk without re-deriving it. */
+  boundsOf: (id: string) => import('core/viewport/fitViewToBounds').Bounds | null;
 }
 
 export function useSceneSelectTool<TData, TLayer extends string, TPose>(
@@ -242,5 +246,6 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     resizeTool,
     rotateTool,
     pickEvery: wiredHitBody,
+    boundsOf: wiredBoundsOf,
   };
 }

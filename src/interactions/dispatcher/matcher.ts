@@ -39,7 +39,25 @@ export type InputEvent =
   | { kind: 'key'; key: string; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean; repeat?: boolean }
   | { kind: 'key-held'; key: string; phase: 'down' | 'up'; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
   | { kind: 'wheel'; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean; deltaX: number; deltaY: number; clientX: number; clientY: number }
-  | { kind: 'pointerdown'; target?: unknown; x?: number; y?: number; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean; affordance?: AffordanceHit }
+  | {
+      kind: 'pointerdown';
+      target?: unknown;
+      x?: number;
+      y?: number;
+      altKey: boolean;
+      ctrlKey: boolean;
+      metaKey: boolean;
+      shiftKey: boolean;
+      affordance?: AffordanceHit;
+      /**
+       * Body-target classification from the scene hit-test.
+       * Populated by `useGestureDispatcher` when a `classifyTarget` thunk is
+       * supplied to its options. Used by `matchTarget` to resolve string-form
+       * `TargetSpec` values (`'empty'`, `'selected-body'`, `'unselected-body'`).
+       * Absent when `classifyTarget` is not wired.
+       */
+      bodyTarget?: 'empty' | 'selected-body' | 'unselected-body';
+    }
   | { kind: 'pointermove'; x: number; y: number; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
   | { kind: 'pointerup'; x: number; y: number; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
   | { kind: 'pointercancel'; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
@@ -171,16 +189,22 @@ export function matchKey(eventKey: string, specKey: string | string[]): boolean 
 // ---------------------------------------------------------------------------
 
 /**
- * Match a target value against a TargetSpec.
+ * Match a target value + event against a TargetSpec.
  *
- * String-form TargetSpec values are not supported in Phase 3 (no kind registry);
- * they return false. Only `{ kindOf: predicate }` is supported.
- * When `spec.target` is absent, any target (including undefined) is accepted.
+ * - `{ kindOf: predicate }` — calls the predicate with the raw target value.
+ *   For pointerdown events this is the affordance hit (AffordanceHit | undefined);
+ *   for other events it is whatever `target` was set to.
+ * - `'empty'`, `'selected-body'`, `'unselected-body'` — compared against
+ *   `bodyTarget` on the event (populated by `useGestureDispatcher` when a
+ *   `classifyTarget` thunk is supplied). Falls back to `false` when absent
+ *   (kind registry not yet wired).
+ * - Other string-forms (`kind:*`, `affordance:*`) — not yet supported; return false.
+ * - `undefined` spec.target — any target is accepted.
  */
-function matchTarget(target: unknown, specTarget: unknown): boolean {
+function matchTarget(target: unknown, specTarget: unknown, bodyTarget?: string): boolean {
   if (specTarget === undefined) return true;
 
-  // kindOf predicate form
+  // kindOf predicate form — receives the raw target (affordance hit for drag, etc.)
   if (
     typeof specTarget === 'object' &&
     specTarget !== null &&
@@ -190,8 +214,19 @@ function matchTarget(target: unknown, specTarget: unknown): boolean {
     return (specTarget as { kindOf: (t: unknown) => boolean }).kindOf(target);
   }
 
-  // String-form — not supported until the kind registry lands (docs/TODO.md Tier 1).
-  // Return false explicitly so callers get a no-match rather than a wildcard.
+  // String-form: 'empty', 'selected-body', 'unselected-body'
+  // Resolved from the `classifyTarget` result packed into the event's `bodyTarget`.
+  if (
+    specTarget === 'empty' ||
+    specTarget === 'selected-body' ||
+    specTarget === 'unselected-body'
+  ) {
+    // When classifyTarget isn't wired, bodyTarget is absent → no match.
+    if (bodyTarget === undefined) return false;
+    return bodyTarget === specTarget;
+  }
+
+  // Other string-forms (kind:*, affordance:*) — not yet supported.
   return false;
 }
 
@@ -242,7 +277,9 @@ export function matchSpec(
       // threshold is crossed. The matcher fires on pointerdown.
       if (e.kind !== 'pointerdown') return false;
       if (!matchModifiers(e, spec.mods, isMac)) return false;
-      return matchTarget(e.target, spec.target);
+      // Pass the affordance hit as the `target` for `kindOf` predicates.
+      // Pass `bodyTarget` for string-form TargetSpec values.
+      return matchTarget(e.affordance, spec.target, e.bodyTarget);
     }
 
     case 'multiTouch': {
