@@ -1,9 +1,10 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   SceneCanvas,
   useScene,
   useSelection,
   useHandTool,
+  useWheelPanTool,
   useTools,
   createParallaxLayer,
   ellipsePath,
@@ -12,37 +13,6 @@ import {
 import type { DrawCommand } from '../../src/renderer';
 import type { View } from '../../src/core/viewport/view';
 import type { RenderLayer } from '../../src/core/layers/render';
-import { defineViewportTool, claim, none } from '../../src/tools/routing';
-import type { Tool } from '../../src/tools/types';
-
-// Local wheel tool: maps both vertical and horizontal wheel deltas to
-// horizontal pan. Demo-specific — the kit's `useWheelPanTool` panes on
-// both axes, which doesn't suit this side-scrolling-only scene.
-function useHorizontalWheelTool(): Tool<null> {
-  return useMemo(
-    () =>
-      defineViewportTool<null>({
-        id: 'parallax-wheel',
-        presentation: { label: 'Pan x (wheel)', group: 'view' },
-        initial: {
-          wheel: (ctx, event) => {
-            const e = event as WheelEvent;
-            if (e.ctrlKey) return none();
-            e.preventDefault();
-            const delta = (e.deltaY || 0) + (e.deltaX || 0);
-            const dx = delta / ctx.view.scale.x;
-            ctx.setView({
-              x: ctx.view.x + dx,
-              y: ctx.view.y,
-              scale: ctx.view.scale,
-            });
-            return claim();
-          },
-        },
-      }),
-    [],
-  );
-}
 
 interface NodeData { color: string }
 type LayerId = 'default';
@@ -220,16 +190,9 @@ export function ParallaxDemo() {
   const selection = useSelection();
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   const [zoomParallax, setZoomParallax] = useState(false);
-  const hand = useHandTool({ inertia: { friction: 0.92, minSpeed: 0.05 } });
-  const wheel = useHorizontalWheelTool();
+  const hand = useHandTool({ axis: 'x', inertia: { friction: 0.92, minSpeed: 0.05 } });
+  const wheel = useWheelPanTool({ axis: 'x' });
   const tools = useTools({ active: 'hand', registry: { hand }, ambient: [wheel] });
-
-  // Lock y to 0 — this is a horizontal-only side-scroller. Both the hand
-  // tool and the inline wheel tool call setView via this wrapper, so neither
-  // can drift the view vertically.
-  const setViewXOnly = useCallback((next: View) => {
-    setView({ x: next.x, y: 0, scale: next.scale });
-  }, []);
 
   const sky = useMemo(
     () => createParallaxLayer<unknown>({
@@ -310,7 +273,7 @@ export function ParallaxDemo() {
         scene={scene}
         selection={selection}
         view={view}
-        onViewChange={setViewXOnly}
+        onViewChange={setView}
         tools={tools}
         layers={{
           scene: { drawOne: () => [] },
