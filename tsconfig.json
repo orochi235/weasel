@@ -20,6 +20,8 @@
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "./dist",
+    "incremental": true,
+    "tsBuildInfoFile": "./.tsbuildinfo/main.tsbuildinfo",
     "types": ["vitest/globals", "node"],
     "ignoreDeprecations": "6.0",
     "paths": {

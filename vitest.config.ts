@@ -8,12 +8,13 @@ import { weaselAliases } from './scripts/vite-aliases';
 
 const storybookDir = dirname(fileURLToPath(new URL('./.storybook/main.ts', import.meta.url)));
 
-// One vitest config; three named projects. Each project owns its include
-// glob so suites can run independently (`vitest --project=weasel-ui`),
-// and the default run (`npm test`) executes all three. Shared concerns
-// (jsdom env, setup, alias map) live in the per-project block — vitest
-// doesn't currently inherit `resolve` or `test` keys from the top-level
-// config when `projects` is set.
+// One vitest config; named projects per surface. Each project owns its
+// include glob so suites can run independently (`vitest --project=weasel-ui`).
+// Default `npm test` runs the jsdom projects (kit, weasel-ui, swillustrator,
+// smoke). Heavy projects (storybook browser tests) are opt-in via
+// `npm run test:stories`. Shared concerns (jsdom env, setup, alias map) live
+// in the per-project block — vitest doesn't currently inherit `resolve` or
+// `test` keys from the top-level config when `projects` is set.
 const shared = {
   resolve: {
     alias: weaselAliases(__dirname, [
@@ -37,6 +38,23 @@ export default defineConfig({
           globals: true,
           setupFiles: ['./vitest.setup.ts'],
           include: ['src/**/*.test.{ts,tsx}', 'demo/**/*.test.{ts,tsx}'],
+          exclude: ['**/*.smoke.test.{ts,tsx}', '**/node_modules/**'],
+        },
+      },
+      {
+        ...shared,
+        test: {
+          name: 'smoke',
+          environment: 'jsdom',
+          globals: true,
+          setupFiles: ['./vitest.setup.ts'],
+          include: [
+            'src/**/*.smoke.test.{ts,tsx}',
+            'packages/**/*.smoke.test.{ts,tsx}',
+            'apps/**/*.smoke.test.{ts,tsx}',
+            'demo/**/*.smoke.test.{ts,tsx}',
+          ],
+          exclude: ['**/node_modules/**', 'dist/**', '.claude/**'],
         },
       },
       {
@@ -59,9 +77,11 @@ export default defineConfig({
           include: ['apps/swillustrator/**/*.test.{ts,tsx}'],
         },
       },
-      // Runs every CSF story as a Vitest test. Requires Playwright (`@playwright/test`
-      // + a browser install). To skip: `vitest --project=kit --project=weasel-ui --project=swillustrator`
-      // or filter explicitly.
+      // Runs every CSF story as a Vitest test. Requires Playwright
+      // (`@playwright/test` + a browser install). Opt-in via
+      // `npm run test:stories`; not included in default `npm test`
+      // because spinning up Chromium is slow and unnecessary for most
+      // dev-loop runs. CI / pre-release should still run this.
       {
         plugins: [
           react(),
@@ -76,7 +96,6 @@ export default defineConfig({
             headless: true,
             instances: [{ browser: 'chromium' }],
           },
-          setupFiles: ['./.storybook/vitest.setup.ts'],
         },
       },
     ],
