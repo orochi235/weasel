@@ -15,6 +15,7 @@ import {
 import type { KeyBinding } from './useKeybinding';
 import type { GestureSpec } from '../gestures/spec';
 import type { BindingOpts, Invoker } from './invoker';
+import { useOptionalDepRegistry, type DepRegistry, type DepName } from './depRegistry';
 
 /**
  * @experimental
@@ -222,6 +223,14 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   const cachedVerRef = useRef(-1);
   const listenersRef = useRef<Set<() => void>>(new Set());
 
+  // Trigger() consults the optional dep registry so kit-standard actions
+  // (which expose `invoker` but no `run`) can be fired imperatively from
+  // ActionBar / palette callers. Bare actions with only `run` keep working
+  // without a dep registry in scope.
+  const depReg = useOptionalDepRegistry();
+  const depRegRef = useRef<DepRegistry | null>(depReg);
+  depRegRef.current = depReg;
+
   // Phase 14e Task 7: the legacy keystroke loop that walked every action's
   // `defaultBinding: KeyBinding` and matched against keydown is gone. All
   // kit-standard descriptors now route through the gesture dispatcher via
@@ -275,7 +284,26 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
         const a = actionsRef.current.get(id);
         if (!a) return false;
         try {
-          a.run?.();
+          if (a.run) {
+            a.run();
+          } else if (a.invoker && a.invoker.timing === 'immediate') {
+            // Kit-standard descriptors expose `invoker` instead of `run`.
+            // Build a live deps bag from the dep registry (when present);
+            // invokers tolerate undefined deps and default to a sensible
+            // variant when `params` is undefined (legacy/imperative path).
+            const r = depRegRef.current;
+            const deps = r
+              ? {
+                  selection: r.get('selection' as DepName),
+                  scene: r.get('scene' as DepName),
+                  history: r.get('history' as DepName),
+                  view: r.get('view' as DepName),
+                  pointer: r.get('pointer' as DepName),
+                  activeTool: r.get('activeTool' as DepName),
+                }
+              : {};
+            a.invoker.run(deps as never, undefined);
+          }
         } catch (err) {
           console.error(`weasel ActionsRegistry: action "${id}" threw`, err);
         }
