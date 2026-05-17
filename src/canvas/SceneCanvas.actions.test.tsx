@@ -58,8 +58,8 @@ describe('SceneCanvas actions integration', () => {
     expect(last).toContain('selectAll');
     expect(last).toContain('escape');
     expect(last).toContain('duplicate');
-    expect(last.filter(i => i.startsWith('nudge.'))).toHaveLength(8);
-    expect(last.filter(i => i.startsWith('reorder.'))).toHaveLength(4);
+    expect(last.filter(i => i.startsWith('nudge.'))).toHaveLength(4);
+    expect(last.filter(i => i.startsWith('reorder.'))).toHaveLength(2);
   });
 
   it('actions={null} → registry empty', () => {
@@ -107,7 +107,7 @@ describe('SceneCanvas actions integration', () => {
     expect(captured!.id).toBe('duplicate');
     expect(captured!.label).toBe('Duplicate');
     expect(captured!.defaultBinding).toEqual({ key: 'd', mod: true });
-    captured!.run();
+    captured!.run!();
     expect(customRun).toHaveBeenCalledOnce();
   });
 

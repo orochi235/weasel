@@ -14,18 +14,45 @@ export interface DuplicateDeps {
   offset?: { dx: number; dy: number };
 }
 
+const DEFAULT_OFFSET = { dx: 8, dy: 8 };
+
+/**
+ * @experimental
+ * Static descriptor for the `duplicate` Action. Duplicates selection.
+ */
+export const duplicateAction: Action = {
+  id: 'duplicate',
+  label: 'Duplicate',
+  defaultBinding: { key: 'd', mod: true },
+  gestureBinding: { kind: 'key', key: 'd', mods: { mod: true } },
+  invoker: {
+    timing: 'immediate',
+    run: (_deps, params) => {
+      // The static descriptor's invoker is a no-op without the typed deps bag
+      // (cloneNode, applyOps) that only the factory bridge can supply.
+      // Task 8 wires this properly via useStandardActions.
+      void params;
+    },
+  },
+  enabled: () => ActionDisabledReason.SelectionRequired,
+};
+
 /**
  * @experimental
  * Factory for the default `duplicate` Action. Run is a no-op when selection
  * is empty.
+ *
+ * @deprecated Phase 4+: use `duplicateAction` directly. This wrapper is a
+ * Phase 4–7 transition shim and will be removed in Phase 8.
  */
 export function defaultDuplicateAction(deps: DuplicateDeps): Action {
-  const offset = deps.offset ?? { dx: 8, dy: 8 };
+  const offset = deps.offset ?? DEFAULT_OFFSET;
+  // Exclude `invoker` so the legacy run path stays active until Task 8.
+  const { invoker: _invoker, enabled: _enabled, ...descriptorFields } = duplicateAction;
+  void _invoker;
+  void _enabled;
   return {
-    id: 'duplicate',
-    label: 'Duplicate',
-    defaultBinding: { key: 'd', mod: true },
-    gestureBinding: { kind: 'key', key: 'd', mods: { mod: true } },
+    ...descriptorFields,
     run: () => {
       const sel = deps.getSelection();
       if (sel.length === 0) return;

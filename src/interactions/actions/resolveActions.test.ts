@@ -93,7 +93,7 @@ describe('resolveActions — overrides', () => {
     const a = out.find((x) => x.id === 'myCustom');
     expect(a).toBeDefined();
     expect(a?.label).toBe('Custom');
-    a?.run();
+    a?.run?.();
     expect(run).toHaveBeenCalledOnce();
   });
 
@@ -146,7 +146,7 @@ describe('resolveActions — defaults options', () => {
     const out = resolveActions(deps, { defaults });
     const dup = out.find((a) => a.id === 'duplicate');
     expect(dup).toBeDefined();
-    dup?.run();
+    dup?.run?.();
     // cloneNode should be invoked with the configured offset.
     expect(cloneNode).toHaveBeenCalledWith('a', { dx: 7, dy: 3 });
   });
@@ -168,9 +168,9 @@ describe('resolveActions — defaults options', () => {
     const rightShift = out.find((a) => a.id === 'nudge.right.big');
     expect(right).toBeDefined();
     expect(rightShift).toBeDefined();
-    right?.run();
+    right?.run?.();
     expect(translatePose).toHaveBeenCalledWith({ x: 0, y: 0 }, 5, 0);
-    rightShift?.run();
+    rightShift?.run?.();
     expect(translatePose).toHaveBeenCalledWith({ x: 0, y: 0 }, 50, 0);
   });
 });

@@ -32,17 +32,59 @@ function defaultMintId(): string {
 
 /**
  * @experimental
+ * Static descriptor for the `group` Action.
+ */
+export const groupAction: Action = {
+  id: 'group',
+  label: 'Group',
+  defaultBinding: { key: 'g', mod: true },
+  gestureBinding: { kind: 'key', key: 'g', mods: { mod: true } },
+  invoker: {
+    timing: 'immediate',
+    run: (_deps, params) => {
+      // Stub — applyOps/newGroupId deps only available via factory. Task 8 wires.
+      void params;
+    },
+  },
+  enabled: () => ActionDisabledReason.SelectionRequired,
+};
+
+/**
+ * @experimental
+ * Static descriptor for the `ungroup` Action.
+ */
+export const ungroupAction: Action = {
+  id: 'ungroup',
+  label: 'Ungroup',
+  defaultBinding: { key: 'g', mod: true, shift: true },
+  gestureBinding: { kind: 'key', key: 'g', mods: { mod: true, shift: true } },
+  invoker: {
+    timing: 'immediate',
+    run: (_deps, params) => {
+      // Stub — getGroup/applyOps deps only available via factory. Task 8 wires.
+      void params;
+    },
+  },
+  enabled: () => ActionDisabledReason.SelectionRequired,
+};
+
+/**
+ * @experimental
  * Factory for the default virtual-`group` Action. No-op when selection size
  * is below `minMembers`.
+ *
+ * @deprecated Phase 4+: use `groupAction` directly. This wrapper is a
+ * Phase 4–7 transition shim and will be removed in Phase 8.
  */
 export function defaultGroupAction(deps: GroupDeps): Action {
   const minMembers = deps.minMembers ?? 2;
   const mint = deps.newGroupId ?? defaultMintId;
+  // Exclude `invoker` so the legacy run path stays active until Task 8.
+  const { invoker: _invoker, enabled: _enabled, ...descriptorFields } = groupAction;
+  void _invoker;
+  void _enabled;
   return {
-    id: 'group',
-    label: 'Group',
-    defaultBinding: { key: 'g', mod: true },
-    gestureBinding: { kind: 'key', key: 'g', mods: { mod: true } },
+    ...descriptorFields,
     run: () => {
       const sel = deps.getSelection();
       if (sel.length < minMembers) return;
@@ -65,17 +107,21 @@ export function defaultGroupAction(deps: GroupDeps): Action {
  * @experimental
  * Factory for the default virtual-`ungroup` Action. No-op when no group is
  * in the selection.
+ *
+ * @deprecated Phase 4+: use `ungroupAction` directly. This wrapper is a
+ * Phase 4–7 transition shim and will be removed in Phase 8.
  */
 export function defaultUngroupAction(deps: UngroupDeps): Action {
   const hasGroup = (): boolean => {
     for (const id of deps.getSelection()) if (deps.getGroup(id) !== undefined) return true;
     return false;
   };
+  // Exclude `invoker` so the legacy run path stays active until Task 8.
+  const { invoker: _invoker, enabled: _enabled, ...descriptorFields } = ungroupAction;
+  void _invoker;
+  void _enabled;
   return {
-    id: 'ungroup',
-    label: 'Ungroup',
-    defaultBinding: { key: 'g', mod: true, shift: true },
-    gestureBinding: { kind: 'key', key: 'g', mods: { mod: true, shift: true } },
+    ...descriptorFields,
     run: () => {
       const sel = deps.getSelection();
       if (sel.length === 0) return;

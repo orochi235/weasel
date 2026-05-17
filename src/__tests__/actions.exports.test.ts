@@ -6,8 +6,11 @@ import {
 } from '../index';
 import type {
   Action, ActionEntry, ActionsProp, ActionsRegistry,
-  SelectAllDeps, EscapeDeps, DuplicateDeps, NudgeDeps, ReorderDeps,
 } from '../index';
+// XDeps interfaces (SelectAllDeps, EscapeDeps, etc.) are no longer public API
+// (removed from barrel in Phase 4 Task 8). Access them directly from their
+// defaults modules if needed for consumer-side type assertions.
+import type { SelectAllDeps, EscapeDeps, DuplicateDeps, NudgeDeps, ReorderDeps } from '../interactions/actions/defaults';
 
 describe('Actions Registry public barrel', () => {
   it('exports the documented runtime symbols', () => {

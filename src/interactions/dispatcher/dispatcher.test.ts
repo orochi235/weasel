@@ -147,7 +147,11 @@ describe('createDispatcher', () => {
       const dispatcher = createDispatcher();
 
       dispatcher.handleInput(keyAEvent, makeCtx({ actions: registry, depRegistry }));
-      expect(run).toHaveBeenCalledWith(expect.objectContaining({ selection: ['item1'] }));
+      // Second arg is opts.params — undefined for a bare GestureSpec binding.
+      expect(run).toHaveBeenCalledWith(
+        expect.objectContaining({ selection: ['item1'] }),
+        undefined,
+      );
     });
   });
 
@@ -367,6 +371,68 @@ describe('createDispatcher', () => {
       expect(result).toBe('unhandled');
       expect(warnSpy).toHaveBeenCalled();
       warnSpy.mockRestore();
+    });
+  });
+
+  describe('parametric bindings (BoundGesture[])', () => {
+    /** Build an immediate action whose gestureBinding is a BoundGesture[]
+     *  with two entries, each carrying distinct params. */
+    function parametricAction(id: string, run = vi.fn()): Action {
+      return {
+        id,
+        label: id,
+        gestureBinding: [
+          { spec: { kind: 'key', key: 'a' }, opts: { params: { x: 1 } } },
+          { spec: { kind: 'key', key: 'b' }, opts: { params: { x: 2 } } },
+        ],
+        invoker: { timing: 'immediate', run },
+        run,
+      };
+    }
+
+    it('when binding A matches, invoker.run receives params { x: 1 }', () => {
+      const run = vi.fn();
+      const action = parametricAction('paramAction', run);
+      const registry = makeRegistry([action]);
+      const dispatcher = createDispatcher();
+
+      dispatcher.handleInput(keyAEvent, makeCtx({ actions: registry }));
+      expect(run).toHaveBeenCalledOnce();
+      // Second arg to run() is the params object.
+      expect(run.mock.calls[0][1]).toEqual({ x: 1 });
+    });
+
+    it('when binding B matches, invoker.run receives params { x: 2 }', () => {
+      const run = vi.fn();
+      const action = parametricAction('paramAction', run);
+      const registry = makeRegistry([action]);
+      const dispatcher = createDispatcher();
+
+      dispatcher.handleInput(keyBEvent, makeCtx({ actions: registry }));
+      expect(run).toHaveBeenCalledOnce();
+      expect(run.mock.calls[0][1]).toEqual({ x: 2 });
+    });
+
+    it('bare GestureSpec entry in array (no opts) passes undefined params', () => {
+      const run = vi.fn();
+      const action: Action = {
+        id: 'mixedAction',
+        label: 'mixed',
+        // Array with one bare GestureSpec (no opts) and one BoundGesture.
+        gestureBinding: [
+          { kind: 'key', key: 'a' },
+          { spec: { kind: 'key', key: 'b' }, opts: { params: { x: 99 } } },
+        ],
+        invoker: { timing: 'immediate', run },
+        run,
+      };
+      const registry = makeRegistry([action]);
+      const dispatcher = createDispatcher();
+
+      // Binding A is a bare spec — params should be undefined.
+      dispatcher.handleInput(keyAEvent, makeCtx({ actions: registry }));
+      expect(run).toHaveBeenCalledOnce();
+      expect(run.mock.calls[0][1]).toBeUndefined();
     });
   });
 });

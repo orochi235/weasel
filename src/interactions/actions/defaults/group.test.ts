@@ -1,18 +1,52 @@
 /**
- * Tests for the default group / ungroup action factories. Pure factories
- * — `defaultGroupAction(deps)` and `defaultUngroupAction(deps)` — that
- * package selection-driven mutations into `Action` descriptors with
- * keyboard bindings, `run`, and `enabled`. The corresponding hook
- * (`useGroup`/`useUngroup`) tests cover the full React loop; this test
- * pins the factory-level contract.
+ * Tests for groupAction/ungroupAction descriptors and their legacy bridge
+ * factories defaultGroupAction/defaultUngroupAction.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { defaultGroupAction, defaultUngroupAction } from './group';
+import { groupAction, ungroupAction, defaultGroupAction, defaultUngroupAction } from './group';
 import type { NodeId } from 'core/scene/types';
 import type { Group } from 'features/groups/types';
 import { ActionDisabledReason } from '../registry';
 
-describe('defaultGroupAction', () => {
+describe('groupAction (descriptor)', () => {
+  it('id="group", label="Group"', () => {
+    expect(groupAction.id).toBe('group');
+    expect(groupAction.label).toBe('Group');
+  });
+
+  it('defaultBinding = { key: "g", mod: true }', () => {
+    expect(groupAction.defaultBinding).toEqual({ key: 'g', mod: true });
+  });
+
+  it('gestureBinding = { kind: "key", key: "g", mods: { mod: true } }', () => {
+    expect(groupAction.gestureBinding).toEqual({ kind: 'key', key: 'g', mods: { mod: true } });
+  });
+
+  it('invoker.timing = "immediate"', () => {
+    expect(groupAction.invoker?.timing).toBe('immediate');
+  });
+});
+
+describe('ungroupAction (descriptor)', () => {
+  it('id="ungroup", label="Ungroup"', () => {
+    expect(ungroupAction.id).toBe('ungroup');
+    expect(ungroupAction.label).toBe('Ungroup');
+  });
+
+  it('defaultBinding = { key: "g", mod: true, shift: true }', () => {
+    expect(ungroupAction.defaultBinding).toEqual({ key: 'g', mod: true, shift: true });
+  });
+
+  it('gestureBinding = { kind: "key", key: "g", mods: { mod: true, shift: true } }', () => {
+    expect(ungroupAction.gestureBinding).toEqual({ kind: 'key', key: 'g', mods: { mod: true, shift: true } });
+  });
+
+  it('invoker.timing = "immediate"', () => {
+    expect(ungroupAction.invoker?.timing).toBe('immediate');
+  });
+});
+
+describe('defaultGroupAction (legacy bridge)', () => {
   const baseDeps = () => ({
     getSelection: () => ['a' as NodeId, 'b' as NodeId],
     applyOps: vi.fn(),
@@ -33,7 +67,7 @@ describe('defaultGroupAction', () => {
   it('run() dispatches a CreateGroupOp + SetSelectionOp on a ≥2 selection', () => {
     const deps = baseDeps();
     const action = defaultGroupAction({ ...deps, newGroupId: () => 'g1' });
-    action.run();
+    action.run!();
     expect(deps.applyOps).toHaveBeenCalledOnce();
     const [ops, label] = deps.applyOps.mock.calls[0];
     expect(label).toBe('Group');
@@ -43,10 +77,7 @@ describe('defaultGroupAction', () => {
   it('uses provided newGroupId to mint the id', () => {
     const deps = baseDeps();
     const action = defaultGroupAction({ ...deps, newGroupId: () => 'custom-id' });
-    action.run();
-    // Inspect the first op's batch — it's a create-group op carrying the id.
-    // We can't introspect easily without applying; instead verify the
-    // selection-set op references custom-id.
+    action.run!();
     const [ops] = deps.applyOps.mock.calls[0];
     const mockAdapter = { setSelection: vi.fn() };
     ops[1].apply(mockAdapter);
@@ -55,7 +86,7 @@ describe('defaultGroupAction', () => {
 
   it('no-op below minMembers (default 2)', () => {
     const deps = { getSelection: () => ['only' as NodeId], applyOps: vi.fn() };
-    defaultGroupAction(deps).run();
+    defaultGroupAction(deps).run!();
     expect(deps.applyOps).not.toHaveBeenCalled();
   });
 
@@ -65,7 +96,7 @@ describe('defaultGroupAction', () => {
       applyOps: vi.fn(),
     };
     // minMembers=4 → 3 selected → no-op.
-    defaultGroupAction({ ...deps, minMembers: 4, newGroupId: () => 'g1' }).run();
+    defaultGroupAction({ ...deps, minMembers: 4, newGroupId: () => 'g1' }).run!();
     expect(deps.applyOps).not.toHaveBeenCalled();
   });
 
@@ -79,16 +110,21 @@ describe('defaultGroupAction', () => {
   it('default newGroupId mints a string with the g_ prefix', () => {
     const deps = baseDeps();
     const action = defaultGroupAction(deps);
-    action.run();
+    action.run!();
     const [ops] = deps.applyOps.mock.calls[0];
     const mockAdapter = { setSelection: vi.fn() };
     ops[1].apply(mockAdapter);
     const [[id]] = mockAdapter.setSelection.mock.calls[0];
     expect(id).toMatch(/^g_/);
   });
+
+  it('bridge does not expose invoker (legacy run path stays active)', () => {
+    const a = defaultGroupAction(baseDeps());
+    expect(a.invoker).toBeUndefined();
+  });
 });
 
-describe('defaultUngroupAction', () => {
+describe('defaultUngroupAction (legacy bridge)', () => {
   const g1: Group = { id: 'g1', members: ['a', 'b', 'c'] };
 
   it('emits id=ungroup with Mod+Shift+G binding', () => {
@@ -117,7 +153,7 @@ describe('defaultUngroupAction', () => {
       getGroup: (id) => (id === 'g1' ? g1 : undefined),
       applyOps,
     });
-    a.run();
+    a.run!();
     expect(applyOps).toHaveBeenCalledOnce();
     const [ops, label] = applyOps.mock.calls[0];
     expect(label).toBe('Ungroup');
@@ -136,7 +172,7 @@ describe('defaultUngroupAction', () => {
       getGroup: (id) => (id === 'g1' ? g1 : id === 'g2' ? g2 : undefined),
       applyOps,
     });
-    a.run();
+    a.run!();
     const [ops] = applyOps.mock.calls[0];
     const mockAdapter = { setSelection: vi.fn() };
     ops[2].apply(mockAdapter);
@@ -149,7 +185,7 @@ describe('defaultUngroupAction', () => {
       getSelection: () => ['a' as NodeId, 'b' as NodeId],
       getGroup: () => undefined,
       applyOps,
-    }).run();
+    }).run!();
     expect(applyOps).not.toHaveBeenCalled();
   });
 
@@ -159,7 +195,7 @@ describe('defaultUngroupAction', () => {
       getSelection: () => [],
       getGroup: () => undefined,
       applyOps,
-    }).run();
+    }).run!();
     expect(applyOps).not.toHaveBeenCalled();
   });
 
@@ -176,5 +212,14 @@ describe('defaultUngroupAction', () => {
       applyOps: vi.fn(),
     });
     expect(noGroup.enabled?.()).toBe(ActionDisabledReason.SelectionRequired);
+  });
+
+  it('bridge does not expose invoker (legacy run path stays active)', () => {
+    const a = defaultUngroupAction({
+      getSelection: () => [],
+      getGroup: () => undefined,
+      applyOps: vi.fn(),
+    });
+    expect(a.invoker).toBeUndefined();
   });
 });

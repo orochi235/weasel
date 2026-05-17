@@ -1,34 +1,35 @@
 import { describe, it, expect, vi } from 'vitest';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { render } from '@testing-library/react';
 import {
   ActionsProvider,
   useActionsRegistry,
   type Action,
 } from './registry';
-import {
-  useStandardActions,
-  type StandardActionsDeps,
-  type UseStandardActionsOptions,
-} from './useStandardActions';
-import { asNodeId } from 'core/scene/types';
+import { DepRegistryProvider, useDepRegistry } from './depRegistry';
+import { useStandardActions } from './useStandardActions';
+import type { UseStandardActionsOptions } from './useStandardActions';
 
-type Pose = { x: number; y: number; width: number; height: number };
+// Import depSchema augmentation so DepSchema entries are typed
+import './depSchema';
 
-function wrap({ children }: { children: ReactNode }) {
-  return <ActionsProvider>{children}</ActionsProvider>;
+// ---------------------------------------------------------------------------
+// Test wrappers
+// ---------------------------------------------------------------------------
+
+function Providers({ children }: { children: ReactNode }) {
+  return (
+    <ActionsProvider>
+      <DepRegistryProvider>
+        {children}
+      </DepRegistryProvider>
+    </ActionsProvider>
+  );
 }
 
-function makeDeps(overrides: Partial<StandardActionsDeps<Pose>> = {}): StandardActionsDeps<Pose> {
-  return {
-    getSelection: () => [],
-    setSelection: () => {},
-    listAll: () => [],
-    getPose: () => ({ x: 0, y: 0, width: 0, height: 0 }),
-    applyOps: () => {},
-    translatePose: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
-    ...overrides,
-  };
+function Host({ opts, children }: { opts?: UseStandardActionsOptions; children?: ReactNode }) {
+  useStandardActions(opts ?? {});
+  return <>{children}</>;
 }
 
 function ProbeIds({ onIds }: { onIds: (ids: string[]) => void }) {
@@ -47,207 +48,112 @@ function ProbeAction({ id, onAction }: { id: string; onAction: (a: Action | unde
   return null;
 }
 
+function ProbeDepSelection({ onValue }: { onValue: (v: unknown) => void }) {
+  const depReg = useDepRegistry();
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onValue((depReg as any).get('selection'));
+  });
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Kit-standard descriptor IDs
+// ---------------------------------------------------------------------------
+const KIT_IDS = [
+  'escape', 'selectAll', 'delete', 'duplicate',
+  'group', 'ungroup',
+  'undo', 'redo',
+  'flip',
+  'nudge.up', 'nudge.down', 'nudge.left', 'nudge.right',
+  'reorder.forward', 'reorder.backward',
+  'align.left', 'align.right', 'align.top', 'align.bottom', 'align.centerX', 'align.centerY',
+  'distribute.horizontal', 'distribute.vertical',
+  'pathfinder.union', 'pathfinder.subtract', 'pathfinder.intersect',
+  'pathfinder.exclude', 'pathfinder.divide', 'pathfinder.crop',
+] as const;
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
 describe('useStandardActions', () => {
-  function Host<TPose>({
-    deps,
-    options,
-    children,
-  }: {
-    deps: StandardActionsDeps<TPose>;
-    options?: UseStandardActionsOptions<TPose>;
-    children?: ReactNode;
-  }) {
-    useStandardActions(deps, options);
-    return <>{children}</>;
-  }
-
-  it('registers all 15 default actions when cloneNode is supplied', () => {
+  it('registers all 29 kit-standard action descriptors', () => {
     const seen: string[][] = [];
     render(
-      <ActionsProvider>
-        <Host
-          deps={makeDeps()}
-          options={{ defaults: { cloneNode: (id) => ({ id: asNodeId(id + "'") }) } }}
-        />
+      <Providers>
+        <Host />
         <ProbeIds onIds={(ids) => seen.push(ids)} />
-      </ActionsProvider>,
+      </Providers>,
     );
     const last = seen.at(-1)!;
-    expect(last).toContain('selectAll');
-    expect(last).toContain('escape');
-    expect(last).toContain('duplicate');
-    expect(last.filter((i) => i.startsWith('nudge.'))).toHaveLength(8);
-    expect(last.filter((i) => i.startsWith('reorder.'))).toHaveLength(4);
-    // 1 (selectAll) + 1 (escape) + 1 (duplicate) + 8 (nudge×8) + 4 (reorder×4) = 15
-    expect(last).toHaveLength(15);
-  });
-
-  it('actions={null} → registers nothing', () => {
-    const seen: string[][] = [];
-    render(
-      <ActionsProvider>
-        <Host deps={makeDeps()} options={{ actions: null }} />
-        <ProbeIds onIds={(ids) => seen.push(ids)} />
-      </ActionsProvider>,
-    );
-    expect(seen.at(-1)).toEqual([]);
-  });
-
-  it('actions={{ selectAll: null }} drops selectAll only', () => {
-    const seen: string[][] = [];
-    render(
-      <ActionsProvider>
-        <Host
-          deps={makeDeps()}
-          options={{
-            actions: { selectAll: null },
-            defaults: { cloneNode: (id) => ({ id: asNodeId(id + "'") }) },
-          }}
-        />
-        <ProbeIds onIds={(ids) => seen.push(ids)} />
-      </ActionsProvider>,
-    );
-    const last = seen.at(-1)!;
-    expect(last).not.toContain('selectAll');
-    expect(last).toContain('escape');
-    expect(last).toContain('duplicate');
-  });
-
-  it('partial override keeps default id/label/binding, replaces run', () => {
-    const customRun = vi.fn();
-    let captured: Action | undefined;
-    render(
-      <ActionsProvider>
-        <Host
-          deps={makeDeps()}
-          options={{
-            actions: { duplicate: { run: customRun } },
-            defaults: { cloneNode: (id) => ({ id: asNodeId(id + "'") }) },
-          }}
-        />
-        <ProbeAction id="duplicate" onAction={(a) => { captured = a; }} />
-      </ActionsProvider>,
-    );
-    expect(captured).toBeDefined();
-    expect(captured!.id).toBe('duplicate');
-    expect(captured!.label).toBe('Duplicate');
-    expect(captured!.defaultBinding).toEqual({ key: 'd', mod: true });
-    captured!.run();
-    expect(customRun).toHaveBeenCalledOnce();
-  });
-
-  it('full new id is added alongside defaults', () => {
-    const copyRun = vi.fn();
-    const seen: string[][] = [];
-    render(
-      <ActionsProvider>
-        <Host
-          deps={makeDeps()}
-          options={{
-            actions: {
-              copy: { id: 'copy', label: 'Copy', defaultBinding: { key: 'c', mod: true }, run: copyRun },
-            },
-            defaults: { cloneNode: (id) => ({ id: asNodeId(id + "'") }) },
-          }}
-        />
-        <ProbeIds onIds={(ids) => seen.push(ids)} />
-      </ActionsProvider>,
-    );
-    expect(seen.at(-1)).toContain('copy');
-    expect(seen.at(-1)).toContain('selectAll');
-  });
-
-  it('no-op when no <ActionsProvider> is in scope (does not throw)', () => {
-    expect(() => {
-      render(<Host deps={makeDeps()} />);
-    }).not.toThrow();
-  });
-
-  it('stable identity: re-rendering with the same deps does not re-resolve / re-register', () => {
-    const reg = { register: vi.fn(() => () => {}) };
-    // Fake registry exposed via context isn't trivial here; instead, use the
-    // real ActionsProvider and assert that the resolved Action references are
-    // === across re-renders.
-    let listA: readonly Action[] = [];
-    let listB: readonly Action[] = [];
-    function Capture({ snapshot }: { snapshot: 'a' | 'b' }) {
-      const r = useActionsRegistry();
-      useEffect(() => {
-        if (!r) return;
-        if (snapshot === 'a') listA = r.list();
-        else listB = r.list();
-      });
-      return null;
+    for (const id of KIT_IDS) {
+      expect(last, `expected "${id}" to be registered`).toContain(id);
     }
-    function Wrapper() {
-      const [, setN] = useState(0);
-      useEffect(() => {
-        // Trigger a re-render after first commit.
-        setN((n) => n + 1);
-      }, []);
-      return (
-        <ActionsProvider>
-          <Host
-            deps={makeDeps()}
-            options={{ defaults: { cloneNode: (id) => ({ id: asNodeId(id + "'") }) } }}
-          />
-          <Capture snapshot="a" />
-          <Capture snapshot="b" />
-        </ActionsProvider>
-      );
-    }
-    render(<Wrapper />);
-    // After mount and re-render, both probes see the same registered Action
-    // instances — we register once and never replace.
-    expect(listA.length).toBeGreaterThan(0);
-    expect(listB.length).toBeGreaterThan(0);
-    const idsA = listA.map((a) => a.id).sort();
-    const idsB = listB.map((a) => a.id).sort();
-    expect(idsA).toEqual(idsB);
-    void reg;
+    expect(last).toHaveLength(KIT_IDS.length);
   });
 
-  it('without cloneNode, duplicate is dropped', () => {
-    const seen: string[][] = [];
+  it('each registered action has a legacy run bridge (run is a function)', () => {
+    let actions: readonly Action[] = [];
     render(
-      <ActionsProvider>
-        <Host deps={makeDeps()} />
-        <ProbeIds onIds={(ids) => seen.push(ids)} />
-      </ActionsProvider>,
+      <Providers>
+        <Host />
+        <ProbeAction id="escape" onAction={(a) => { if (a) actions = [a]; }} />
+      </Providers>,
     );
-    expect(seen.at(-1)).not.toContain('duplicate');
-    expect(seen.at(-1)).toContain('selectAll');
+    const escape = actions[0];
+    expect(escape).toBeDefined();
+    expect(typeof escape?.run).toBe('function');
   });
 
-  it('keydown dispatches the consumer setSelection via deps', () => {
-    const setSelection = vi.fn();
-    const listAll = vi.fn(() => [asNodeId('a'), asNodeId('b'), asNodeId('c')]);
+  it('dep source for selection is registered and returns the provided SelectionApi', () => {
+    const fakeSelection = { get: vi.fn(() => []), set: vi.fn() };
+    let depValue: unknown = 'not-set';
     render(
-      <ActionsProvider>
-        <Host deps={makeDeps({ setSelection, listAll })} />
-      </ActionsProvider>,
+      <Providers>
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        <Host opts={{ selection: fakeSelection as any }} />
+        <ProbeDepSelection onValue={(v) => { depValue = v; }} />
+      </Providers>,
     );
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', metaKey: true, bubbles: true }));
-    expect(setSelection).toHaveBeenCalledWith(['a', 'b', 'c']);
+    expect(depValue).toBe(fakeSelection);
   });
 
-  it('keydown applyOps reaches the consumer for nudge', () => {
-    const applyOps = vi.fn();
-    const getSelection = vi.fn(() => [asNodeId('n1')]);
+  it('escape legacy bridge calls selection.set([]) when selection is non-empty', () => {
+    const mockSet = vi.fn();
+    const fakeSelection = {
+      get: vi.fn(() => ['a', 'b']),
+      set: mockSet,
+    };
+    let escapeAction: Action | undefined;
     render(
-      <ActionsProvider>
-        <Host
-          deps={makeDeps({
-            applyOps,
-            getSelection,
-            getPose: () => ({ x: 5, y: 5, width: 10, height: 10 }),
-          })}
-        />
-      </ActionsProvider>,
+      <Providers>
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        <Host opts={{ selection: fakeSelection as any }} />
+        <ProbeAction id="escape" onAction={(a) => { escapeAction = a; }} />
+      </Providers>,
     );
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
-    expect(applyOps).toHaveBeenCalled();
-    expect(applyOps.mock.calls[0][1]).toBe('Nudge');
+    expect(escapeAction).toBeDefined();
+    escapeAction!.run!();
+    expect(mockSet).toHaveBeenCalledWith([]);
+  });
+
+  it('escape legacy bridge is a no-op when selection is empty', () => {
+    const mockSet = vi.fn();
+    const fakeSelection = {
+      get: vi.fn(() => []),
+      set: mockSet,
+    };
+    let escapeAction: Action | undefined;
+    render(
+      <Providers>
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        <Host opts={{ selection: fakeSelection as any }} />
+        <ProbeAction id="escape" onAction={(a) => { escapeAction = a; }} />
+      </Providers>,
+    );
+    escapeAction!.run!();
+    expect(mockSet).not.toHaveBeenCalled();
   });
 
   it('unmount unregisters all actions', () => {
@@ -258,31 +164,85 @@ describe('useStandardActions', () => {
       return null;
     }
     const { rerender } = render(
-      <ActionsProvider>
-        <Host
-          deps={makeDeps()}
-          options={{ defaults: { cloneNode: (id) => ({ id: asNodeId(id + "'") }) } }}
-        />
+      <Providers>
+        <Host />
         <Probe />
-      </ActionsProvider>,
+      </Providers>,
     );
-    expect(seen).toContain('selectAll');
-    rerender(<ActionsProvider><Probe /></ActionsProvider>);
-    expect(seen).not.toContain('selectAll');
+    expect(seen).toContain('escape');
+    rerender(<Providers><Probe /></Providers>);
+    expect(seen).not.toContain('escape');
     expect(seen).toEqual([]);
+  });
+
+  it('no-op when no providers are in scope (does not throw)', () => {
+    expect(() => {
+      render(<Host />);
+    }).not.toThrow();
+  });
+
+  it('no-op when only ActionsProvider is in scope (no DepRegistryProvider)', () => {
+    const seen: string[][] = [];
+    expect(() => {
+      render(
+        <ActionsProvider>
+          <Host />
+          <ProbeIds onIds={(ids) => seen.push(ids)} />
+        </ActionsProvider>,
+      );
+    }).not.toThrow();
+    // Without DepRegistryProvider, no actions should be registered (bridge requires depReg).
+    expect(seen.at(-1) ?? []).toEqual([]);
+  });
+
+  it('stable identity: re-rendering with the same opts does not re-register', () => {
+    let listA: readonly Action[] = [];
+    let listB: readonly Action[] = [];
+    function CaptureA() {
+      const r = useActionsRegistry();
+      useEffect(() => { if (r) listA = r.list(); });
+      return null;
+    }
+    function CaptureB() {
+      const r = useActionsRegistry();
+      useEffect(() => { if (r) listB = r.list(); });
+      return null;
+    }
+    const { rerender } = render(
+      <Providers>
+        <Host />
+        <CaptureA />
+      </Providers>,
+    );
+    rerender(
+      <Providers>
+        <Host />
+        <CaptureB />
+      </Providers>,
+    );
+    const idsA = listA.map((a) => a.id).sort();
+    const idsB = listB.map((a) => a.id).sort();
+    expect(idsA).toEqual(idsB);
+    expect(idsA).toHaveLength(KIT_IDS.length);
   });
 });
 
-// Minimal sanity-check that wrap() produces an ActionsProvider context.
-describe('useStandardActions wrap helper', () => {
-  it('wrap renders ActionsProvider for tests', () => {
-    let saw: ReturnType<typeof useActionsRegistry> = null;
+// Minimal sanity-check that Providers supplies both registries.
+describe('useStandardActions — Providers helper', () => {
+  it('Providers renders both ActionsProvider and DepRegistryProvider', () => {
+    let sawActions = false;
+    let sawDeps = false;
     function Probe() {
       const r = useActionsRegistry();
-      useEffect(() => { saw = r; });
+      const d = useDepRegistry();
+      useEffect(() => {
+        sawActions = r !== null;
+        sawDeps = d !== null;
+      });
       return null;
     }
-    render(wrap({ children: <Probe /> }));
-    expect(saw).not.toBeNull();
+    render(<Providers><Probe /></Providers>);
+    expect(sawActions).toBe(true);
+    expect(sawDeps).toBe(true);
   });
 });

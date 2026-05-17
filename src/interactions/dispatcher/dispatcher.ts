@@ -22,10 +22,10 @@
  * the misconfiguration at dev time.
  */
 
-import type { Action, ActionsRegistry } from '../actions/registry';
+import type { Action, ActionsRegistry, BoundGesture } from '../actions/registry';
 import type { DepRegistry } from '../actions/depRegistry';
 import type { GestureBinding } from '../actions/binding';
-import type { OngoingHandle, InvocationCtx, ActionDeps } from '../actions/invoker';
+import type { OngoingHandle, InvocationCtx, ActionDeps, BindingOpts } from '../actions/invoker';
 import type { Tool } from '../../tools/types';
 import type { InputEvent, BindingScope, ScopedBinding } from './matcher';
 import { matchBest } from './matcher';
@@ -154,9 +154,21 @@ export function createDispatcher(): Dispatcher {
     for (const action of ctx.actions.list()) {
       const gs = action.gestureBinding;
       if (!gs) continue;
-      const specs = Array.isArray(gs) ? gs : [gs];
-      for (const spec of specs) {
-        const gestureBinding: GestureBinding = { spec, actionId: action.id };
+      // Normalize to a flat array of { spec, opts? } pairs.
+      // gestureBinding is GestureSpec | BoundGesture[].
+      // BoundGesture = GestureSpec | { spec: GestureSpec; opts: BindingOpts }.
+      // A bare GestureSpec has a `kind` field at top level; the object form
+      // has a `spec` field (which itself has `kind`).
+      const raw: BoundGesture[] = Array.isArray(gs) ? gs : [gs as BoundGesture];
+      for (const entry of raw) {
+        const isBoundObj = !('kind' in entry);
+        const spec = isBoundObj
+          ? (entry as { spec: import('../gestures/spec').GestureSpec; opts: BindingOpts }).spec
+          : (entry as import('../gestures/spec').GestureSpec);
+        const opts: BindingOpts | undefined = isBoundObj
+          ? (entry as { spec: import('../gestures/spec').GestureSpec; opts: BindingOpts }).opts
+          : undefined;
+        const gestureBinding: GestureBinding = { spec, actionId: action.id, ...(opts !== undefined ? { opts } : {}) };
         result.push({ binding: gestureBinding, scope: 'ambient' as BindingScope });
       }
     }
@@ -231,7 +243,7 @@ export function createDispatcher(): Dispatcher {
 
     if (action.invoker?.timing === 'immediate') {
       try {
-        action.invoker.run(deps);
+        action.invoker.run(deps, match.binding.opts?.params);
       } catch (err) {
         console.error(`weasel dispatcher: action "${action.id}" invoker threw`, err);
       }
@@ -248,7 +260,7 @@ export function createDispatcher(): Dispatcher {
 
     // Fallback: legacy `run` path (no invoker).
     try {
-      action.run();
+      action.run?.();
     } catch (err) {
       console.error(`weasel dispatcher: action "${action.id}" threw`, err);
     }

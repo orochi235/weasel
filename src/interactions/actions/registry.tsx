@@ -16,7 +16,18 @@ import { isEditableTarget } from './useKeybinding';
 import type { KeyBinding } from './useKeybinding';
 import { useIsDispatcherMounted } from '../dispatcher/dispatcherPresence';
 import type { GestureSpec } from '../gestures/spec';
-import type { Invoker } from './invoker';
+import type { BindingOpts, Invoker } from './invoker';
+
+/**
+ * @experimental
+ * A single entry in `Action.gestureBinding[]`. Either a bare `GestureSpec`
+ * (no per-binding opts) or an object form that pairs a spec with
+ * `BindingOpts` for parametric actions (e.g. `{ params: { axis: 'x' } }`).
+ * Use the object form when two bindings for the same action differ only in
+ * a runtime parameter — the dispatcher extracts `opts.params` and passes
+ * them to `ImmediateInvoker.run` as its second argument.
+ */
+export type BoundGesture = GestureSpec | { spec: GestureSpec; opts: BindingOpts };
 
 export type { KeyBinding } from './useKeybinding';
 
@@ -29,13 +40,18 @@ export interface Action {
   label: string;
   defaultBinding?: KeyBinding;
   /** Phase 1+ (registry-unification): the gesture-spec form of the binding,
-   *  read by the gesture dispatcher. May be a single `GestureSpec` or an
-   *  array (any-of semantics — any matching gesture fires the action).
+   *  read by the gesture dispatcher. May be a single `GestureSpec`, a bare
+   *  `GestureSpec[]` (any-of semantics), or a `BoundGesture[]` where each
+   *  entry is either a bare `GestureSpec` or `{ spec, opts }` — use the
+   *  object form for parametric actions where two bindings for the same
+   *  action differ only by `opts.params` (e.g. `flip` with `axis: 'x'` vs
+   *  `'y'`). The dispatcher extracts `opts.params` and passes them to
+   *  `ImmediateInvoker.run` as its second argument.
    *  Coexists with `defaultBinding` (KeyBinding) during the transition;
    *  Phase 9 deletes legacy `defaultBinding` and renames this field to
    *  `defaultBinding`. See
    *  `docs/superpowers/specs/2026-05-16-registry-unification-design.md`. */
-  gestureBinding?: GestureSpec | GestureSpec[];
+  gestureBinding?: GestureSpec | BoundGesture[];
   /** Inline-SVG icon for palette / toolbar surfaces. Mirrors
    *  `ToolPresentation.icon` so a generic `<ActionBar>` can render from
    *  action metadata the same way `<ToolPalette>` renders from tool
@@ -50,7 +66,10 @@ export interface Action {
    *  surfaces derive a label from `defaultBinding` via their own
    *  formatter. */
   shortcut?: string;
-  run: () => void;
+  /** Legacy run thunk. Required during Phases 1-3; optional Phases 4-7
+   *  (factories construct it from `invoker` via `useStandardActions`'s
+   *  legacy bridge); removed Phase 10. */
+  run?: () => void;
   /** Phase 1+: pluggable invocation strategy. When present, the gesture
    *  dispatcher routes matched bindings through `invoker` rather than
    *  calling `run`. When absent, only the legacy `run` path applies.
@@ -279,7 +298,7 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
         const a = actionsRef.current.get(id);
         if (!a) return false;
         try {
-          a.run();
+          a.run?.();
         } catch (err) {
           console.error(`weasel ActionsRegistry: action "${id}" threw`, err);
         }
@@ -307,7 +326,7 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
         if (dispatcherActiveRef.current && action.gestureBinding) continue;
         if ((b.preventDefault ?? true)) e.preventDefault();
         try {
-          action.run();
+          action.run?.();
         } catch (err) {
           console.error(`weasel ActionsRegistry: action "${action.id}" threw`, err);
         }

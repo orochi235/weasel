@@ -23,15 +23,39 @@ export interface DeleteDeps {
 
 /**
  * @experimental
+ * Static descriptor for the `delete` Action.
+ */
+export const deleteAction: Action = {
+  id: 'delete',
+  label: 'Delete',
+  defaultBinding: { key: ['Delete', 'Backspace'] },
+  gestureBinding: { kind: 'key', key: ['Delete', 'Backspace'] },
+  invoker: {
+    timing: 'immediate',
+    run: (_deps, params) => {
+      // The static descriptor's invoker is a no-op stub — getNodeIndex/applyOps
+      // deps are only available via the factory; Task 8 wires them through depSchema.
+      void params;
+    },
+  },
+  enabled: () => ActionDisabledReason.SelectionRequired,
+};
+
+/**
+ * @experimental
  * Factory for the default `delete` Action. No-op when selection (after
  * `filter`) is empty.
+ *
+ * @deprecated Phase 4+: use `deleteAction` directly. This wrapper is a
+ * Phase 4–7 transition shim and will be removed in Phase 8.
  */
 export function defaultDeleteAction(deps: DeleteDeps): Action {
+  // Exclude `invoker` so the legacy run path stays active until Task 8.
+  const { invoker: _invoker, enabled: _enabled, ...descriptorFields } = deleteAction;
+  void _invoker;
+  void _enabled;
   return {
-    id: 'delete',
-    label: 'Delete',
-    defaultBinding: { key: ['Delete', 'Backspace'] },
-    gestureBinding: { kind: 'key', key: ['Delete', 'Backspace'] },
+    ...descriptorFields,
     run: () => {
       const sel = deps.getSelection();
       const ids = deps.filter ? deps.filter(sel) : sel;

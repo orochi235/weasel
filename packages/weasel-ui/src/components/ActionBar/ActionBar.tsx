@@ -88,7 +88,7 @@ export function ActionBar(props: ActionBarProps) {
             className={s.button}
             onClick={() => {
               if (disabled) return;
-              action.run();
+              action.run?.();
             }}
           >
             {icon}

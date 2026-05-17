@@ -21,9 +21,11 @@
 import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type React from 'react';
 import type { ReactNode } from 'react';
-import { type ActionsProp } from 'interactions/actions/registry';
+import { type Action, type ActionsProp } from 'interactions/actions/registry';
 import { useStandardActions } from 'interactions/actions/useStandardActions';
-import { translateRectPose } from 'features/groups/composePose';
+import { defaultDeleteAction } from 'interactions/actions/defaults/delete';
+import { defaultDuplicateAction } from 'interactions/actions/defaults/duplicate';
+import { defaultGroupAction, defaultUngroupAction } from 'interactions/actions/defaults/group';
 import type { DrawCommand, ShaderProgramHandle } from '../renderer';
 import { textCommand } from 'features/text/textCommand';
 import { findShapePainter } from './shapePainters';
@@ -38,7 +40,6 @@ import type { View } from 'core/viewport/view';
 import type { Node, Scene, SerializedScene } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
 import { sceneFromJSON } from 'core/scene/scene';
-import type { Op } from 'core/ops/types';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
 import { usePublishSelection } from 'features/selection/SelectionContext';
 import type { Bounds } from 'tools/builtin/useSelectTool';
@@ -57,12 +58,27 @@ import { useViewportTools } from './SceneCanvas/useViewportTools';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useBuiltinShapeTools, type BuiltinShapeToolId, type BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
-import type { StandardActionsDeps, StandardActionDefaults } from 'interactions/actions/resolveActions';
 import { DepRegistryProvider } from 'interactions/actions/depRegistry';
 import { ActiveToolContextProvider } from 'interactions/actions/activeToolContext';
 import { DispatcherPresenceProvider } from 'interactions/dispatcher/dispatcherPresence';
 import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
 import { useActionsRegistry } from 'interactions/actions/registry';
+import type { Op } from 'core/ops/types';
+
+/**
+ * Minimal adapter surface the legacy bridge factories need for delete /
+ * duplicate / group / ungroup. Extracted from `SceneCanvasAdapter` to avoid
+ * threading the full generic type through `StandardActionsRegistrar` (which is
+ * non-generic). The actual adapter supplied is always a `SceneCanvasAdapter`
+ * so the cast is safe.
+ */
+interface BridgeAdapter {
+  applyOps(ops: Op[], label?: string): void;
+  insertNode(node: { id: string; [k: string]: unknown }): void;
+  removeNode(id: string): void;
+  setSelection(ids: string[]): void;
+  getGroup?(id: string): import('features/groups/types').Group | undefined;
+}
 
 /** Default size in CSS pixels for selection corner-handles AND their
  *  hit-test radius. Used by the SceneCanvas defaults; consumers override
@@ -685,40 +701,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // so the resolved actions always read current state. `useStandardActions`
   // stabilizes via refs internally — these closures are passed every render
   // but the registered Action descriptors are not re-registered.
-  const sceneRef = useRef(scene);
-  sceneRef.current = scene;
-  const adapterRef = useRef(adapter);
-  adapterRef.current = adapter;
-  const selectionRef = useRef(selection);
-  selectionRef.current = selection;
-
-  const standardActionsDeps = useMemo<StandardActionsDeps<TPose>>(() => ({
-    setSelection: (ids) => selectionRef.current.adapterMethods.setSelection(ids),
-    getSelection: () => [...selectionRef.current.current],
-    listAll: () => {
-      const out: NodeId[] = [];
-      for (const nid of sceneRef.current.renderOrder()) out.push(nid);
-      return out;
-    },
-    getPose: (id) => {
-      const n = sceneRef.current.get(id);
-      return n?.pose as TPose;
-    },
-    applyOps: (ops: Op[], label?: string) => {
-      const a = adapterRef.current;
-      if (typeof (a as { applyOps?: unknown }).applyOps === 'function') {
-        (a as { applyOps: (ops: Op[], label: string) => void }).applyOps(ops, label ?? '');
-      } else {
-        for (const op of ops) op.apply(a);
-      }
-    },
-    translatePose: (p, dx, dy) =>
-      translateRectPose(
-        p as unknown as { x: number; y: number; width: number; height: number },
-        dx, dy,
-      ) as unknown as TPose,
-  }), []);
-
   // Merge the forwarded ref with our internalCanvasRef so usePinchZoomTool
   // can read the canvas element even when the consumer also forwards a ref.
   const mergedRef = useCallback(
@@ -756,9 +738,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
               {canvas}
               <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />
               <StandardActionsRegistrar
-                deps={standardActionsDeps}
+                selection={selection}
+                scene={scene as Scene<unknown, string, unknown>}
+                adapter={adapter as unknown as BridgeAdapter}
+                actionDefaults={actionDefaults}
                 actions={actions}
-                defaults={actionDefaults}
               />
               <GestureDispatcherMounter
                 canvasRef={internalCanvasRef}
@@ -810,18 +794,191 @@ function GestureDispatcherMounter({
  * Registers the kit's default action set into whatever `<ActionsProvider>`
  * is in scope. Lives inside `<ActionsProviderIfRoot>` so it sees both
  * parent-supplied registries and SceneCanvas's auto-mounted one.
+ *
+ * For `delete`, `duplicate`, `group`, and `ungroup` the descriptor's
+ * invoker is a stub (those deps aren't in `DepSchema` yet — Phase 4 T8
+ * TODO). This component registers legacy bridge overrides for them so the
+ * consumer-facing `run` path is functional. The overrides land after the
+ * descriptor registrations (last-writer-wins) and use the same id, so the
+ * dispatcher and keybinding system see a real `run` body.
  */
-function StandardActionsRegistrar<TPose>({
-  deps, actions, defaults,
+function StandardActionsRegistrar({
+  selection,
+  scene,
+  adapter,
+  actionDefaults,
+  actions,
 }: {
-  deps: StandardActionsDeps<TPose>;
-  actions: ActionsProp | undefined;
-  defaults: StandardActionDefaults<TPose> | undefined;
+  selection: SelectionApi;
+  scene: Scene<unknown, string, unknown>;
+  adapter: BridgeAdapter;
+  actionDefaults?: SceneCanvasProps<unknown, string, unknown>['actionDefaults'];
+  actions?: ActionsProp;
 }) {
-  useStandardActions(deps, {
-    ...(actions !== undefined ? { actions } : {}),
-    ...(defaults !== undefined ? { defaults } : {}),
-  });
+  useStandardActions({ selection, scene });
+
+  // Legacy bridge overrides for the 4 actions whose DepSchema deps are not
+  // yet wired. Registered after useStandardActions so they win on same-id
+  // (registry is last-writer-wins). Each bridge uses a live ref so captures
+  // always read current selection / scene state.
+  const reg = useActionsRegistry();
+  const selectionRef = useRef(selection);
+  selectionRef.current = selection;
+  const sceneRef = useRef(scene);
+  sceneRef.current = scene;
+  const adapterRef = useRef(adapter);
+  adapterRef.current = adapter;
+  const actionDefaultsRef = useRef(actionDefaults);
+  actionDefaultsRef.current = actionDefaults;
+
+  useEffect(() => {
+    if (!reg) return;
+
+    // Shared dep accessors that always read the latest refs.
+    const getSelection = () => selectionRef.current.current as NodeId[];
+    const applyOps = (ops: Op[], label?: string) =>
+      adapterRef.current.applyOps(ops, label);
+    const getNodeIndex = (id: NodeId) => {
+      // renderOrder() returns ids in paint order — matches the index the
+      // sceneAdapter exposes and that DeleteOp uses for undo restoration.
+      let i = 0;
+      for (const nodeId of sceneRef.current.renderOrder()) {
+        if (nodeId === id) return i;
+        i++;
+      }
+      return -1;
+    };
+    const getNode = (id: NodeId) => sceneRef.current.get(id) ?? null;
+    // getGroup reads from the adapter when it exposes GroupAdapter surface.
+    // If the adapter doesn't have getGroup, every id returns undefined
+    // (ungroup becomes a no-op — consistent with groups not being wired).
+    const getGroup = (id: string) =>
+      adapterRef.current.getGroup?.(id);
+
+    const unregisters: Array<() => void> = [];
+
+    // delete — needs getNodeIndex + getNode + applyOps.
+    unregisters.push(
+      reg.register(
+        defaultDeleteAction({ getSelection, getNodeIndex, getNode, applyOps }),
+      ),
+    );
+
+    // duplicate — only registerable when cloneNode is provided.
+    const cloneNode = actionDefaultsRef.current?.cloneNode;
+    if (cloneNode) {
+      const offset = actionDefaultsRef.current?.duplicateOffset;
+      unregisters.push(
+        reg.register(
+          defaultDuplicateAction({ getSelection, cloneNode, applyOps, ...(offset ? { offset } : {}) }),
+        ),
+      );
+    }
+
+    // group — needs applyOps (no extra consumer dep required).
+    unregisters.push(
+      reg.register(defaultGroupAction({ getSelection, applyOps })),
+    );
+
+    // ungroup — needs getGroup + applyOps.
+    unregisters.push(
+      reg.register(defaultUngroupAction({ getSelection, getGroup, applyOps })),
+    );
+
+    return () => { for (const u of unregisters) u(); };
+    // `reg` identity is stable for the lifetime of the ActionsProvider scope.
+    // Re-register when actionDefaults changes so a newly-supplied cloneNode
+    // is picked up. (The live refs handle transient value changes.)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reg, actionDefaults?.cloneNode, actionDefaults?.duplicateOffset]);
+
+  // Apply `actions` prop overrides on top of whatever was registered by
+  // `useStandardActions` and the bridge effect above. Runs after both (same
+  // component, later hook). This effect is the authority on how the `actions`
+  // prop modifies the registry:
+  //
+  //   actions === null           → unregister every currently-registered action
+  //   actions[id] === null       → unregister that id
+  //   actions[id] = partial      → merge onto the existing descriptor (slot wins
+  //                                over entry.id; warns once on mismatch)
+  //   actions[id] = full (new)   → register alongside defaults
+  const actionsRef = useRef(actions);
+  actionsRef.current = actions;
+  useEffect(() => {
+    if (!reg) return;
+    const prop = actionsRef.current;
+
+    if (prop === null) {
+      // Disable-all: snapshot current ids and unregister each.
+      const ids = reg.list().map((a) => a.id);
+      for (const id of ids) reg.unregister(id);
+      // No cleanup needed — unregisters are permanent until the next render
+      // re-registers the base actions (which this effect will then clean up again).
+      return;
+    }
+
+    if (!prop) return;
+
+    const unregisters: Array<() => void> = [];
+    const warnedIds = new Set<string>();
+
+    for (const [slotId, entry] of Object.entries(prop)) {
+      if (entry === null) {
+        reg.unregister(slotId);
+        continue;
+      }
+
+      const isFull = (e: Partial<Action>): e is Action =>
+        typeof e.id === 'string' && typeof e.label === 'string' && typeof e.run === 'function';
+      const existing = reg.list().find((a) => a.id === slotId);
+
+      if (!existing) {
+        // New slot: must be a full descriptor.
+        if (isFull(entry)) {
+          unregisters.push(reg.register(entry));
+        } else if (!warnedIds.has(slotId)) {
+          warnedIds.add(slotId);
+          console.warn(
+            `weasel actions resolver: actions["${slotId}"] is a partial Action but no default ` +
+            `with this id exists. Pass a complete {id, label, defaultBinding, run} descriptor.`,
+          );
+        }
+        continue;
+      }
+
+      // Existing slot: merge, with slotId winning over entry.id.
+      if (entry.id !== undefined && entry.id !== slotId && !warnedIds.has(`mismatch:${slotId}`)) {
+        warnedIds.add(`mismatch:${slotId}`);
+        console.warn(
+          `weasel actions resolver: actions["${slotId}"].id="${entry.id as string}" mismatches the slot key. ` +
+          `Ignoring the id field; the action remains at id="${slotId}".`,
+        );
+      }
+      const { id: _drop, ...rest } = entry;
+      void _drop;
+      let merged: Action = { ...existing, ...rest };
+      // When a consumer overrides `run` on an action that has a Phase-4 `invoker`,
+      // the dispatcher would bypass `run` and call `invoker.run` instead.
+      // Synthesize a new immediate invoker that calls the custom run so the
+      // dispatcher honours the override through its `invoker` path.
+      if (rest.run && existing.invoker?.timing === 'immediate') {
+        const customRun = rest.run;
+        merged = {
+          ...merged,
+          invoker: {
+            timing: 'immediate',
+            run: () => { customRun(); },
+          },
+        };
+      }
+      unregisters.push(reg.register(merged));
+    }
+
+    return () => { for (const u of unregisters) u(); };
+  // Re-run whenever the `actions` prop reference changes or the registry changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reg, actions]);
+
   return null;
 }
 
