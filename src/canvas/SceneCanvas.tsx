@@ -21,7 +21,7 @@
 import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type React from 'react';
 import type { ReactNode } from 'react';
-import { type ActionsProp } from 'interactions/actions/registry';
+import { type Action, type ActionsProp } from 'interactions/actions/registry';
 import { useStandardActions } from 'interactions/actions/useStandardActions';
 import { defaultDeleteAction } from 'interactions/actions/defaults/delete';
 import { defaultDuplicateAction } from 'interactions/actions/defaults/duplicate';
@@ -742,6 +742,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 scene={scene as Scene<unknown, string, unknown>}
                 adapter={adapter as unknown as BridgeAdapter}
                 actionDefaults={actionDefaults}
+                actions={actions}
               />
               <GestureDispatcherMounter
                 canvasRef={internalCanvasRef}
@@ -806,11 +807,13 @@ function StandardActionsRegistrar({
   scene,
   adapter,
   actionDefaults,
+  actions,
 }: {
   selection: SelectionApi;
   scene: Scene<unknown, string, unknown>;
   adapter: BridgeAdapter;
   actionDefaults?: SceneCanvasProps<unknown, string, unknown>['actionDefaults'];
+  actions?: ActionsProp;
 }) {
   useStandardActions({ selection, scene });
 
@@ -888,6 +891,93 @@ function StandardActionsRegistrar({
     // is picked up. (The live refs handle transient value changes.)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reg, actionDefaults?.cloneNode, actionDefaults?.duplicateOffset]);
+
+  // Apply `actions` prop overrides on top of whatever was registered by
+  // `useStandardActions` and the bridge effect above. Runs after both (same
+  // component, later hook). This effect is the authority on how the `actions`
+  // prop modifies the registry:
+  //
+  //   actions === null           → unregister every currently-registered action
+  //   actions[id] === null       → unregister that id
+  //   actions[id] = partial      → merge onto the existing descriptor (slot wins
+  //                                over entry.id; warns once on mismatch)
+  //   actions[id] = full (new)   → register alongside defaults
+  const actionsRef = useRef(actions);
+  actionsRef.current = actions;
+  useEffect(() => {
+    if (!reg) return;
+    const prop = actionsRef.current;
+
+    if (prop === null) {
+      // Disable-all: snapshot current ids and unregister each.
+      const ids = reg.list().map((a) => a.id);
+      for (const id of ids) reg.unregister(id);
+      // No cleanup needed — unregisters are permanent until the next render
+      // re-registers the base actions (which this effect will then clean up again).
+      return;
+    }
+
+    if (!prop) return;
+
+    const unregisters: Array<() => void> = [];
+    const warnedIds = new Set<string>();
+
+    for (const [slotId, entry] of Object.entries(prop)) {
+      if (entry === null) {
+        reg.unregister(slotId);
+        continue;
+      }
+
+      const isFull = (e: Partial<Action>): e is Action =>
+        typeof e.id === 'string' && typeof e.label === 'string' && typeof e.run === 'function';
+      const existing = reg.list().find((a) => a.id === slotId);
+
+      if (!existing) {
+        // New slot: must be a full descriptor.
+        if (isFull(entry)) {
+          unregisters.push(reg.register(entry));
+        } else if (!warnedIds.has(slotId)) {
+          warnedIds.add(slotId);
+          console.warn(
+            `weasel actions resolver: actions["${slotId}"] is a partial Action but no default ` +
+            `with this id exists. Pass a complete {id, label, defaultBinding, run} descriptor.`,
+          );
+        }
+        continue;
+      }
+
+      // Existing slot: merge, with slotId winning over entry.id.
+      if (entry.id !== undefined && entry.id !== slotId && !warnedIds.has(`mismatch:${slotId}`)) {
+        warnedIds.add(`mismatch:${slotId}`);
+        console.warn(
+          `weasel actions resolver: actions["${slotId}"].id="${entry.id as string}" mismatches the slot key. ` +
+          `Ignoring the id field; the action remains at id="${slotId}".`,
+        );
+      }
+      const { id: _drop, ...rest } = entry;
+      void _drop;
+      let merged: Action = { ...existing, ...rest };
+      // When a consumer overrides `run` on an action that has a Phase-4 `invoker`,
+      // the dispatcher would bypass `run` and call `invoker.run` instead.
+      // Synthesize a new immediate invoker that calls the custom run so the
+      // dispatcher honours the override through its `invoker` path.
+      if (rest.run && existing.invoker?.timing === 'immediate') {
+        const customRun = rest.run;
+        merged = {
+          ...merged,
+          invoker: {
+            timing: 'immediate',
+            run: () => { customRun(); },
+          },
+        };
+      }
+      unregisters.push(reg.register(merged));
+    }
+
+    return () => { for (const u of unregisters) u(); };
+  // Re-run whenever the `actions` prop reference changes or the registry changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reg, actions]);
 
   return null;
 }
