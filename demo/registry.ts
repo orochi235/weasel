@@ -6,11 +6,6 @@ import { RotatedResizeMathDemo } from './demos/RotatedResizeMathDemo';
 import { MultiSelectDemo } from './demos/MultiSelectDemo';
 import { InsertDemo } from './demos/InsertDemo';
 import { CloneDemo } from './demos/CloneDemo';
-import { ComposeDemo } from './demos/ComposeDemo';
-import { ActionsDemo } from './demos/ActionsDemo';
-import { AlignDistributeFlipDemo } from './demos/AlignDistributeFlipDemo';
-import { GroupsDemo } from './demos/GroupsDemo';
-import { NestingDemo } from './demos/NestingDemo';
 import { TextDemo } from './demos/TextDemo';
 import { QuadtreeDemo } from './demos/QuadtreeDemo';
 import { PathPoseDemo } from './demos/PathPoseDemo';
@@ -37,7 +32,6 @@ import { VertexWidthsDemo } from './demos/VertexWidthsDemo';
 import { ColorMatrixDemo } from './demos/ColorMatrixDemo';
 import { CustomShaderDemo } from './demos/CustomShaderDemo';
 import { LassoDemo } from './demos/LassoDemo';
-import { ClipboardDemo } from './demos/ClipboardDemo';
 import { HudDemo } from './demos/HudDemo';
 import { LayerListDemo } from './demos/LayerListDemo';
 
@@ -48,11 +42,6 @@ import RotatedResizeMathDemoFull from './demos/RotatedResizeMathDemo.tsx?raw';
 import MultiSelectDemoFull from './demos/MultiSelectDemo.tsx?raw';
 import InsertDemoFull from './demos/InsertDemo.tsx?raw';
 import CloneDemoFull from './demos/CloneDemo.tsx?raw';
-import ComposeDemoFull from './demos/ComposeDemo.tsx?raw';
-import ActionsDemoFull from './demos/ActionsDemo.tsx?raw';
-import AlignDistributeFlipDemoFull from './demos/AlignDistributeFlipDemo.tsx?raw';
-import GroupsDemoFull from './demos/GroupsDemo.tsx?raw';
-import NestingDemoFull from './demos/NestingDemo.tsx?raw';
 import TextDemoFull from './demos/TextDemo.tsx?raw';
 import QuadtreeDemoFull from './demos/QuadtreeDemo.tsx?raw';
 import PathPoseDemoFull from './demos/PathPoseDemo.tsx?raw';
@@ -79,7 +68,6 @@ import VertexWidthsDemoFull from './demos/VertexWidthsDemo.tsx?raw';
 import ColorMatrixDemoFull from './demos/ColorMatrixDemo.tsx?raw';
 import CustomShaderDemoFull from './demos/CustomShaderDemo.tsx?raw';
 import LassoDemoFull from './demos/LassoDemo.tsx?raw';
-import ClipboardDemoFull from './demos/ClipboardDemo.tsx?raw';
 import HudDemoFull from './demos/HudDemo.tsx?raw';
 import LayerListDemoFull from './demos/LayerListDemo.tsx?raw';
 import { PointSnapDemo } from './demos/PointSnapDemo';
@@ -187,16 +175,6 @@ export const DEMOS: DemoEntry[] = [
     path: 'demo/demos/CloneDemo.tsx',
   },
   {
-    id: 'clipboard',
-    title: 'Clipboard',
-    category: 'Tools',
-    description: 'useClipboard with getDropPoint wired to the pointer position — Cmd+C, move the mouse, Cmd+V lands the paste at the cursor.',
-    hint: 'Click a rect, Cmd+C, move the mouse, Cmd+V.',
-    Component: ClipboardDemo,
-    full: ClipboardDemoFull,
-    path: 'demo/demos/ClipboardDemo.tsx',
-  },
-  {
     id: 'layer-list',
     title: 'Layer list',
     category: 'Tools',
@@ -249,49 +227,6 @@ export const DEMOS: DemoEntry[] = [
     full: LassoDemoFull,
     path: 'demo/demos/LassoDemo.tsx',
   },
-  {
-    id: 'actions',
-    title: 'Actions',
-    category: 'Selection & actions',
-    description: 'Five selection-driven action hooks — useEscape, useSelectAll, useDuplicate, useNudge, useReorder — wired with their default keybindings. Focus the demo (tabIndex container) to enable the shortcuts; arrows nudge by 2, shift+arrows by 20, Cmd-[/Cmd-] reorder z-order (shift sends to front/back).',
-    hint: 'Click to focus, then press Esc / Cmd-A / Cmd-D / arrows / Cmd-[ / Cmd-].',
-    Component: ActionsDemo,
-    full: ActionsDemoFull,
-    path: 'demo/demos/ActionsDemo.tsx',
-  },
-  {
-    id: 'align-distribute-flip',
-    title: 'Align / Distribute / Flip',
-    category: 'Selection & actions',
-    description: 'useAlign + useDistribute + useFlip — three multi-selection action hooks against a flat-list scene. All five rects are pre-selected; the toolbar buttons trigger the imperative API directly. Align operates on the union AABB (six edges + centers); Distribute spaces items along an axis (centers vs gaps modes); Flip mirrors each pose about its own AABB by default. Flip also auto-binds Shift+H / Shift+V on the document. Each operation emits a single batched op so undo collapses to one step.',
-    hint: 'Click a rect to drop the multi-select; shift-click to extend. Try the toolbar; ⇧H / ⇧V flip.',
-    Component: AlignDistributeFlipDemo,
-    full: AlignDistributeFlipDemoFull,
-    path: 'demo/demos/AlignDistributeFlipDemo.tsx',
-  },
-
-  // ─── Hierarchy ────────────────────────────────────────────────────────────
-  {
-    id: 'groups',
-    title: 'Groups',
-    category: 'Hierarchy',
-    description: 'A group around three rectangles — a side-record { id, members[] } that pairs N peer objects without putting them in a parent/child relationship (that\'s nesting, in the next demo). Clicking any member selects the whole group; dragging moves all members together; corner handles resize the group\'s union AABB and scale each member proportionally. Selection overlay uses the optional groupAdapter to draw a single rectangle around the group.',
-    hint: 'Click a green rect to select the group, then drag or grab a corner.',
-    Component: GroupsDemo,
-    full: GroupsDemoFull,
-    path: 'demo/demos/GroupsDemo.tsx',
-  },
-  {
-    id: 'nesting',
-    title: 'Nesting & clipping',
-    category: 'Hierarchy',
-    description: 'Two surfaces in one scene. Left: rect containers showing real parent/child containment via setParent — useNest (Mod+G) wraps the selection in a new container and rebases children\'s locals so their visual world position is preserved; useUnnest (Mod+Shift+G) reparents children back to the grandparent. Default click resolves to the outermost ancestor; Alt-click drills one level deeper. Right: an elliptical container (brown "bed") whose `data: { shape: \'ellipse\' }` triggers the kit:shape painter — the same painter supplies both the visual AND the clip silhouette, so the child rects are clipped to the ellipse during render and during drag-preview alike. Dragging a container auto-cascades its descendants in the live overlay (no extra ops — under local-pose semantics the post-commit scene is already correct). Mod+Z / Mod+Shift+Z undo and redo.',
-    hint: 'Click a leaf to grab its outermost ancestor. Alt-click to drill in. Cmd+G nests the selection at any depth; Cmd+Shift+G unnests. Drag the ellipse — the child rects stay clipped throughout the preview.',
-    Component: NestingDemo,
-    full: NestingDemoFull,
-    path: 'demo/demos/NestingDemo.tsx',
-  },
-
   // ─── Geometry ─────────────────────────────────────────────────────────────
   {
     id: 'path-pose',
@@ -344,17 +279,6 @@ export const DEMOS: DemoEntry[] = [
     path: 'demo/demos/ShapeToolsDemo.tsx',
   },
 
-  // ─── Composition ──────────────────────────────────────────────────────────
-  {
-    id: 'compose',
-    title: 'Compose',
-    category: 'Composition',
-    description: 'Four interactions on one scene — move, resize, insert, area-select all share a single adapter and rect list. A pointer-down dispatcher picks which hook owns the gesture; selection is rendered as outlines and resize handles.',
-    hint: 'Click a rect to select; drag a handle to resize; drag empty space to marquee-select; switch to Insert mode to draw new rects.',
-    Component: ComposeDemo,
-    full: ComposeDemoFull,
-    path: 'demo/demos/ComposeDemo.tsx',
-  },
   {
     id: 'layout',
     title: 'Layout',

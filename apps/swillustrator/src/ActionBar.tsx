@@ -9,8 +9,12 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type {
   AlignEdge,
   DistributeAxis,
-  FlipAxis,
 } from '@orochi235/weasel';
+
+/** FlipAxis was removed from the kit public surface in chore/legacy-hook-purge;
+ *  preserve the local alias so this stub keeps compiling until Swillustrator
+ *  is rebuilt. */
+export type FlipAxis = 'x' | 'y';
 import { ActionBar as KitActionBar } from '@orochi235/weasel-ui';
 
 /** Paper-size keys mirrored from App.tsx's `PAPER_PRESETS` map. Kept as a
