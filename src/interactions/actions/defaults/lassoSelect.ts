@@ -29,7 +29,7 @@
  */
 
 import type { Action } from '../registry';
-import type { InvocationCtx, OngoingHandle, Point2 } from '../invoker';
+import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '../invoker';
 import type { LassoSelectDep } from '../depSchema';
 
 // ---------------------------------------------------------------------------
@@ -61,6 +61,13 @@ interface LassoScratch {
   dep: LassoSelectDep;
   vertices: Point2[];
   shiftHeld: boolean;
+  /** Current pointer position — paint the live "close-line" from the last
+   *  vertex back to the start while the gesture is open. Tracked separately
+   *  from `vertices` because we throttle vertex insertion. */
+  currentX: number;
+  currentY: number;
+  /** Cleared by `onEnd` so post-commit `overlay()` returns null. */
+  open: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -93,11 +100,16 @@ export const lassoSelectAction: Action & { requires: string[] } = {
         dep,
         vertices: [{ x: ctx.world.x, y: ctx.world.y }],
         shiftHeld: ctx.modifiers.shift,
+        currentX: ctx.world.x,
+        currentY: ctx.world.y,
+        open: true,
       };
 
       return {
         onMove(moveCtx: InvocationCtx): void {
           const { x, y } = moveCtx.world;
+          scratch.currentX = x;
+          scratch.currentY = y;
           const last = scratch.vertices[scratch.vertices.length - 1];
           const dx = x - last.x;
           const dy = y - last.y;
@@ -106,7 +118,17 @@ export const lassoSelectAction: Action & { requires: string[] } = {
             scratch.vertices.push({ x, y });
           }
         },
+        overlay(): OngoingOverlay | null {
+          if (!scratch.open) return null;
+          return {
+            kind: 'lasso',
+            vertices: scratch.vertices,
+            current: { x: scratch.currentX, y: scratch.currentY },
+            shiftHeld: scratch.shiftHeld,
+          };
+        },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
+          scratch.open = false;
           if (reason === 'cancel') return;
 
           const { dep: d, vertices, shiftHeld } = scratch;

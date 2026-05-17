@@ -34,7 +34,7 @@
 
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
-import type { InvocationCtx, OngoingHandle } from '../invoker';
+import type { InvocationCtx, OngoingHandle, OngoingOverlay } from '../invoker';
 import type { NodeId } from 'core/scene/types';
 import type { AreaSelectDep } from '../depSchema';
 
@@ -49,6 +49,10 @@ interface AreaSelectScratch {
   shiftHeld: boolean;
   currentX: number;
   currentY: number;
+  /** Cleared once `onEnd` runs so subsequent `overlay()` calls report no
+   *  in-flight marquee (the dispatcher releases the handle after onEnd so
+   *  this is belt-and-suspenders for any consumer that retains a handle). */
+  open: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -86,6 +90,7 @@ export const areaSelectAction: Action & { requires: string[] } = {
         shiftHeld: ctx.modifiers.shift,
         currentX: ctx.world.x,
         currentY: ctx.world.y,
+        open: true,
       };
 
       return {
@@ -93,7 +98,17 @@ export const areaSelectAction: Action & { requires: string[] } = {
           scratch.currentX = moveCtx.world.x;
           scratch.currentY = moveCtx.world.y;
         },
+        overlay(): OngoingOverlay | null {
+          if (!scratch.open) return null;
+          return {
+            kind: 'marquee',
+            start: { x: scratch.startX, y: scratch.startY },
+            current: { x: scratch.currentX, y: scratch.currentY },
+            shiftHeld: scratch.shiftHeld,
+          };
+        },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
+          scratch.open = false;
           if (reason === 'cancel') return;
 
           const { dep: d, startX, startY, currentX, currentY, shiftHeld } = scratch;

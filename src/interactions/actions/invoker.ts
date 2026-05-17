@@ -137,6 +137,31 @@ export interface ActionDeps {
   [k: string]: unknown;
 }
 
+/**
+ * Discriminated overlay shape returned by `OngoingHandle.overlay()`.
+ * Phase 14e.2.5 — dispatcher-side chrome surface for in-flight gestures
+ * that paint non-ghost visuals (marquee rect, lasso polyline). The
+ * canvas's `useDispatcherOverlayLayer` walks every in-flight handle, calls
+ * `overlay()`, and dispatches on `kind` to draw the appropriate shape.
+ *
+ * `marquee` mirrors `AreaSelectOverlay`; `lasso` mirrors `LassoSelectOverlay`.
+ * Both shapes are world-space; the canvas converts to screen coords for
+ * stroke-weight stability.
+ */
+export type OngoingOverlay =
+  | {
+      kind: 'marquee';
+      start: { x: number; y: number };
+      current: { x: number; y: number };
+      shiftHeld: boolean;
+    }
+  | {
+      kind: 'lasso';
+      vertices: ReadonlyArray<{ x: number; y: number }>;
+      current: { x: number; y: number };
+      shiftHeld: boolean;
+    };
+
 /** Handle returned from an `OngoingInvoker.start`. The dispatcher pumps
  *  `onMove` on subsequent input events of the same gesture and calls
  *  `onEnd` exactly once (with `'commit'` on natural completion or `'cancel'`
@@ -166,6 +191,21 @@ export interface OngoingHandle {
    */
   previewIds?(): Iterable<string> | null;
   previewPose?(id: string): unknown | null;
+
+  /**
+   * Optional chrome surface — Phase 14e.2.5 dispatcher-side overlay layer.
+   *
+   * An ongoing-action implementation may populate `overlay()` to expose a
+   * non-ghost visual (marquee rectangle, lasso polyline) for the canvas's
+   * `useDispatcherOverlayLayer` to paint while the gesture is in flight.
+   * Returning `null` (or omitting the method) means "no overlay this
+   * gesture" — the canvas will skip this handle as a chrome source.
+   *
+   * Distinct from the `previewIds()`/`previewPose(id)` ghost surface,
+   * which paints displaced scene-node silhouettes. Marquee and lasso
+   * gestures don't displace any node, but still need on-screen feedback.
+   */
+  overlay?(): OngoingOverlay | null;
 }
 
 /** Fire-once invocation. Runs to completion synchronously (or fires off an

@@ -56,6 +56,7 @@ import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerPr
 import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
 import { useViewportTools } from './SceneCanvas/useViewportTools';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
+import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
 import { useBuiltinShapeTools, type BuiltinShapeToolId, type BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 import { DepRegistryProvider, useDepSource } from 'interactions/actions/depRegistry';
@@ -707,6 +708,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     dispatcher,
   });
 
+  // Dispatcher-driven chrome overlays — marquee rect + lasso polyline +
+  // any other `OngoingHandle.overlay()` shapes the in-flight actions
+  // publish. Screen-space; slotted after the preview-ghost so chrome
+  // paints on top of any displaced ghost silhouettes. Phase 14e.2.5.
+  const dispatcherOverlay = useDispatcherOverlayLayer({ dispatcher });
+
   // Background-fill layer: screen-space, emits a single full-canvas rect
   // with the configured `FillStyle`. Slotted before `'scene'` so the scene
   // draws on top. Independent of pan / zoom because backgrounds in this
@@ -729,8 +736,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({
     ...mergedLayers,
     previewGhost: { layer: previewLayer, after: 'scene' },
+    dispatcherOverlay: { layer: dispatcherOverlay, after: 'previewGhost' },
     ...(backgroundLayer ? { backgroundFill: { layer: backgroundLayer, before: 'scene' } } : {}),
-  }), [mergedLayers, previewLayer, backgroundLayer]);
+  }), [mergedLayers, previewLayer, dispatcherOverlay, backgroundLayer]);
 
   // Standard-action deps: closures over the live scene / selection / adapter
   // so the resolved actions always read current state. `useStandardActions`

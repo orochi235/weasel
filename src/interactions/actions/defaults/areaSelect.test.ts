@@ -178,6 +178,42 @@ describe('areaSelectAction descriptor', () => {
     expect(dep.calls.setSelection).toHaveLength(0);
   });
 
+  it('overlay() exposes marquee shape that updates with onMove and clears on commit/cancel', () => {
+    // Phase 14e.2.5 — dispatcher-side chrome surface for the marquee.
+    const invoker = getOngoingInvoker(areaSelectAction);
+    const dep = makeAreaSelectDep();
+    const ctx = makeCtx({ world: { x: 10, y: 20 }, shift: true, dep });
+    const handle = invoker.start(ctx, undefined);
+
+    // On start: overlay reports the start point as both corners.
+    const initial = handle.overlay!();
+    expect(initial).toEqual({
+      kind: 'marquee',
+      start: { x: 10, y: 20 },
+      current: { x: 10, y: 20 },
+      shiftHeld: true,
+    });
+
+    // After onMove: current corner tracks the cursor.
+    handle.onMove!({ ...ctx, world: { x: 70, y: 90 } });
+    expect(handle.overlay!()).toEqual({
+      kind: 'marquee',
+      start: { x: 10, y: 20 },
+      current: { x: 70, y: 90 },
+      shiftHeld: true,
+    });
+
+    // After commit: overlay clears.
+    handle.onEnd!({ ...ctx, world: { x: 70, y: 90 } }, 'commit');
+    expect(handle.overlay!()).toBeNull();
+
+    // Same for cancel — fresh handle, then cancel.
+    const handle2 = invoker.start(ctx, undefined);
+    expect(handle2.overlay!()).not.toBeNull();
+    handle2.onEnd!({ ...ctx }, 'cancel');
+    expect(handle2.overlay!()).toBeNull();
+  });
+
   it('bounds are correctly oriented when drag goes in negative direction', () => {
     const invoker = getOngoingInvoker(areaSelectAction);
     const dep = makeAreaSelectDep();

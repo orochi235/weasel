@@ -136,6 +136,7 @@ export type {
   BindingOpts,
   ActionDeps,
   OngoingHandle,
+  OngoingOverlay,
   ImmediateInvoker,
   OngoingInvoker,
   Invoker,

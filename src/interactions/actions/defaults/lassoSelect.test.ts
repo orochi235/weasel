@@ -79,6 +79,52 @@ describe('lassoSelectAction descriptor', () => {
     expect(handle).toEqual({});
   });
 
+  it('overlay() exposes lasso shape with vertices + current; updates on move; clears on end', () => {
+    // Phase 14e.2.5 — dispatcher-side chrome surface for the lasso polyline.
+    const invoker = getOngoingInvoker(lassoSelectAction);
+    const dep = makeLassoSelectDep();
+    const startCtx: InvocationCtx = {
+      world: { x: 0, y: 0 },
+      screen: { x: 0, y: 0 },
+      modifiers: { alt: false, ctrl: false, meta: false, shift: true },
+      deps: { lassoSelect: dep },
+    };
+    const handle = invoker.start(startCtx, undefined);
+
+    // Initial: single vertex at the start point; current matches.
+    const initial = handle.overlay!();
+    expect(initial?.kind).toBe('lasso');
+    expect(initial && 'vertices' in initial ? Array.from(initial.vertices) : null).toEqual([{ x: 0, y: 0 }]);
+    expect(initial && 'current' in initial ? initial.current : null).toEqual({ x: 0, y: 0 });
+    expect(initial && 'shiftHeld' in initial ? initial.shiftHeld : null).toBe(true);
+
+    const moveCtx = (wx: number, wy: number): InvocationCtx => ({
+      world: { x: wx, y: wy },
+      screen: { x: wx, y: wy },
+      modifiers: { alt: false, ctrl: false, meta: false, shift: true },
+      deps: {},
+    });
+
+    // Move past the vertex-spacing threshold — vertex appends, current tracks.
+    handle.onMove!(moveCtx(10, 0));
+    handle.onMove!(moveCtx(10, 10));
+    const mid = handle.overlay!();
+    expect(mid?.kind).toBe('lasso');
+    const midVerts = mid && 'vertices' in mid ? Array.from(mid.vertices) : [];
+    expect(midVerts).toEqual([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }]);
+    expect(mid && 'current' in mid ? mid.current : null).toEqual({ x: 10, y: 10 });
+
+    // Commit → overlay clears.
+    handle.onEnd!(moveCtx(10, 10), 'commit');
+    expect(handle.overlay!()).toBeNull();
+
+    // Cancel path on a fresh handle.
+    const handle2 = invoker.start(startCtx, undefined);
+    expect(handle2.overlay!()).not.toBeNull();
+    handle2.onEnd!(moveCtx(0, 0), 'cancel');
+    expect(handle2.overlay!()).toBeNull();
+  });
+
   it('start returns handle with onMove and onEnd when dep is present', () => {
     const invoker = getOngoingInvoker(lassoSelectAction);
     const dep = makeLassoSelectDep();
