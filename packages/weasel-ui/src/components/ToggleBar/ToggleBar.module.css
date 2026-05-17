@@ -4,7 +4,6 @@
   background: var(--wzl-track-bg);
   border: 1px solid var(--wzl-track-border);
   border-radius: 3px;
-  overflow: hidden;
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
@@ -20,7 +19,10 @@
   border: none;
   padding: 0;
   margin: 0;
-  font: 500 0.7rem/1 ui-sans-serif, system-ui, sans-serif;
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 500;
+  line-height: 1;
   color: var(--wzl-text-muted);
   cursor: pointer;
   transition: background 120ms, box-shadow 120ms, color 120ms;
@@ -28,6 +30,14 @@
 
 .segment:not(:first-child) {
   border-left: 1px solid var(--wzl-track-border);
+}
+
+.segment:first-child {
+  border-radius: 2px 0 0 2px;
+}
+
+.segment:last-child {
+  border-radius: 0 2px 2px 0;
 }
 
 .segment:focus-visible {
@@ -41,10 +51,10 @@
 }
 
 .segmentSelected {
-  background: color-mix(in srgb, var(--wzl-thumb-fill) 70%, transparent);
+  background: color-mix(in srgb, var(--wzl-accent) 78%, transparent);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
-  box-shadow: inset 0 0 0 1px var(--wzl-thumb-border), 0 1px 2px rgba(0, 0, 0, 0.2);
-  color: var(--wzl-thumb-text);
-  text-shadow: 0 0 2px rgba(255, 255, 255, 0.7);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
 }

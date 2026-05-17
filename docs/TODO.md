@@ -44,6 +44,10 @@ Demo: `demo/demos/BooleanOpsDemo.tsx` (`#boolean-ops`). Spec:
 
 (none)
 
+## Surfaced 2026-05-17
+
+- **`<ToggleBar>` polish.** Shipped to `@orochi235/weasel-ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
+
 ## Surfaced 2026-05-15 (mid-session, deferred)
 
 - [x] **Active colors as a userland tool.** *Shipped 2026-05-16.* `apps/swillustrator/src/tools/colorContext/useColorContextTool.ts` owns active fill/stroke/focus state plus the scene-write methods (`applyFillToSelection` / `applyStrokeToSelection` / `applyStrokeWidthToSelection`); registered ambient with D/X/Shift-X/`/` keybindings. UI consumers read through `ColorContextProvider` + `useColorContext`. No `setActiveFill`/`setActiveStroke` direct call sites remain. (`activeStrokeWidth` still lives in `App.tsx` as a separate concern.)
