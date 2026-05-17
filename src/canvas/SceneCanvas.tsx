@@ -23,6 +23,9 @@ import type React from 'react';
 import type { ReactNode } from 'react';
 import { type ActionsProp } from 'interactions/actions/registry';
 import { useStandardActions } from 'interactions/actions/useStandardActions';
+import { defaultDeleteAction } from 'interactions/actions/defaults/delete';
+import { defaultDuplicateAction } from 'interactions/actions/defaults/duplicate';
+import { defaultGroupAction, defaultUngroupAction } from 'interactions/actions/defaults/group';
 import type { DrawCommand, ShaderProgramHandle } from '../renderer';
 import { textCommand } from 'features/text/textCommand';
 import { findShapePainter } from './shapePainters';
@@ -60,6 +63,22 @@ import { ActiveToolContextProvider } from 'interactions/actions/activeToolContex
 import { DispatcherPresenceProvider } from 'interactions/dispatcher/dispatcherPresence';
 import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
 import { useActionsRegistry } from 'interactions/actions/registry';
+import type { Op } from 'core/ops/types';
+
+/**
+ * Minimal adapter surface the legacy bridge factories need for delete /
+ * duplicate / group / ungroup. Extracted from `SceneCanvasAdapter` to avoid
+ * threading the full generic type through `StandardActionsRegistrar` (which is
+ * non-generic). The actual adapter supplied is always a `SceneCanvasAdapter`
+ * so the cast is safe.
+ */
+interface BridgeAdapter {
+  applyOps(ops: Op[], label?: string): void;
+  insertNode(node: { id: string; [k: string]: unknown }): void;
+  removeNode(id: string): void;
+  setSelection(ids: string[]): void;
+  getGroup?(id: string): import('features/groups/types').Group | undefined;
+}
 
 /** Default size in CSS pixels for selection corner-handles AND their
  *  hit-test radius. Used by the SceneCanvas defaults; consumers override
@@ -721,6 +740,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
               <StandardActionsRegistrar
                 selection={selection}
                 scene={scene as Scene<unknown, string, unknown>}
+                adapter={adapter as unknown as BridgeAdapter}
+                actionDefaults={actionDefaults}
               />
               <GestureDispatcherMounter
                 canvasRef={internalCanvasRef}
@@ -772,16 +793,102 @@ function GestureDispatcherMounter({
  * Registers the kit's default action set into whatever `<ActionsProvider>`
  * is in scope. Lives inside `<ActionsProviderIfRoot>` so it sees both
  * parent-supplied registries and SceneCanvas's auto-mounted one.
+ *
+ * For `delete`, `duplicate`, `group`, and `ungroup` the descriptor's
+ * invoker is a stub (those deps aren't in `DepSchema` yet — Phase 4 T8
+ * TODO). This component registers legacy bridge overrides for them so the
+ * consumer-facing `run` path is functional. The overrides land after the
+ * descriptor registrations (last-writer-wins) and use the same id, so the
+ * dispatcher and keybinding system see a real `run` body.
  */
 function StandardActionsRegistrar({
-  selection, scene,
+  selection,
+  scene,
+  adapter,
+  actionDefaults,
 }: {
   selection: SelectionApi;
   scene: Scene<unknown, string, unknown>;
-  actions?: ActionsProp;
-  defaults?: unknown;
+  adapter: BridgeAdapter;
+  actionDefaults?: SceneCanvasProps<unknown, string, unknown>['actionDefaults'];
 }) {
   useStandardActions({ selection, scene });
+
+  // Legacy bridge overrides for the 4 actions whose DepSchema deps are not
+  // yet wired. Registered after useStandardActions so they win on same-id
+  // (registry is last-writer-wins). Each bridge uses a live ref so captures
+  // always read current selection / scene state.
+  const reg = useActionsRegistry();
+  const selectionRef = useRef(selection);
+  selectionRef.current = selection;
+  const sceneRef = useRef(scene);
+  sceneRef.current = scene;
+  const adapterRef = useRef(adapter);
+  adapterRef.current = adapter;
+  const actionDefaultsRef = useRef(actionDefaults);
+  actionDefaultsRef.current = actionDefaults;
+
+  useEffect(() => {
+    if (!reg) return;
+
+    // Shared dep accessors that always read the latest refs.
+    const getSelection = () => selectionRef.current.current as NodeId[];
+    const applyOps = (ops: Op[], label?: string) =>
+      adapterRef.current.applyOps(ops, label);
+    const getNodeIndex = (id: NodeId) => {
+      // renderOrder() returns ids in paint order — matches the index the
+      // sceneAdapter exposes and that DeleteOp uses for undo restoration.
+      let i = 0;
+      for (const nodeId of sceneRef.current.renderOrder()) {
+        if (nodeId === id) return i;
+        i++;
+      }
+      return -1;
+    };
+    const getNode = (id: NodeId) => sceneRef.current.get(id) ?? null;
+    // getGroup reads from the adapter when it exposes GroupAdapter surface.
+    // If the adapter doesn't have getGroup, every id returns undefined
+    // (ungroup becomes a no-op — consistent with groups not being wired).
+    const getGroup = (id: string) =>
+      adapterRef.current.getGroup?.(id);
+
+    const unregisters: Array<() => void> = [];
+
+    // delete — needs getNodeIndex + getNode + applyOps.
+    unregisters.push(
+      reg.register(
+        defaultDeleteAction({ getSelection, getNodeIndex, getNode, applyOps }),
+      ),
+    );
+
+    // duplicate — only registerable when cloneNode is provided.
+    const cloneNode = actionDefaultsRef.current?.cloneNode;
+    if (cloneNode) {
+      const offset = actionDefaultsRef.current?.duplicateOffset;
+      unregisters.push(
+        reg.register(
+          defaultDuplicateAction({ getSelection, cloneNode, applyOps, ...(offset ? { offset } : {}) }),
+        ),
+      );
+    }
+
+    // group — needs applyOps (no extra consumer dep required).
+    unregisters.push(
+      reg.register(defaultGroupAction({ getSelection, applyOps })),
+    );
+
+    // ungroup — needs getGroup + applyOps.
+    unregisters.push(
+      reg.register(defaultUngroupAction({ getSelection, getGroup, applyOps })),
+    );
+
+    return () => { for (const u of unregisters) u(); };
+    // `reg` identity is stable for the lifetime of the ActionsProvider scope.
+    // Re-register when actionDefaults changes so a newly-supplied cloneNode
+    // is picked up. (The live refs handle transient value changes.)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reg, actionDefaults?.cloneNode, actionDefaults?.duplicateOffset]);
+
   return null;
 }
 
