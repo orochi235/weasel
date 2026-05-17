@@ -14,9 +14,7 @@
  *     `createGridLayer`, `createCellHighlightLayer`, `createChildrenLayer`,
  *     `createSelectionOverlayLayer` and friends, `createTextLayer`,
  *     `createTilePattern`.
- *   - Interactions (gesture hooks): `useMove`,
- *     `useResize`, `useInsert`,
- *     `useAreaSelect`, `useClone`,
+ *   - Interactions (gesture hooks): `useResize`,
  *     `useTextEdit`, plus `useDragHandle` / `useDropZone` for
  *     ad-hoc pointer drags.
  *   - Action hooks (selection-driven, optional keybindings): `useDelete`,
@@ -513,13 +511,7 @@ export { useGuides, createGuidesLayer } from './features/guides';
 export type { Guide, UseGuidesReturn, GuidesLayerOpts } from './features/guides';
 
 // ─── Drag-action hooks: move / resize / rotate / insert / area-select / etc. ─
-export { useMove } from './interactions/actions/move';
-export type {
-  UseMoveOptions,
-  MoveController,
-  MoveStartArgs,
-  MoveMoveArgs,
-} from './interactions/actions/move';
+export type { UseMoveOptions } from './interactions/actions/move';
 export {
   useResize,
   RECT_POSE_DESCRIPTOR,
@@ -535,7 +527,6 @@ export type {
   CornerHandle,
 } from './interactions/actions/resize';
 export {
-  useRotate,
   pointInRotatedRect,
   rotatedRectCorners,
   rectCorners,
@@ -547,17 +538,10 @@ export {
 } from './interactions/actions/rotate';
 export type {
   UseRotateOptions,
-  RotateController,
-  RotateStartArgs,
-  RotateMoveArgs,
   RotateGeometry,
   RotationHandle,
 } from './interactions/actions/rotate';
-export { useInsert } from './interactions/actions/insert';
-export type {
-  UseInsertOptions,
-  InsertController,
-} from './interactions/actions/insert';
+export type { UseInsertOptions } from './interactions/actions/insert';
 export { useDragRect } from './interactions/gestures/dragRect';
 export type {
   DragRectController,
@@ -576,7 +560,6 @@ export type {
   DragGesturePoint,
   DragGesturePhase,
 } from './interactions/gestures/dragGesture';
-export { useAreaSelect } from './interactions/actions/area-select';
 export {
   useEditAnchors,
   hitAnchor,
@@ -595,16 +578,9 @@ export type {
   PathAnchor,
   AnchorEditOverlayOpts,
 } from './interactions/actions/edit-anchors';
-export type {
-  UseAreaSelectOptions,
-  AreaSelectController,
-} from './interactions/actions/area-select';
+export type { UseAreaSelectOptions } from './interactions/actions/area-select';
 export { selectFromMarquee } from './interactions/actions/area-select/behaviors';
-export { useLassoSelect } from './interactions/actions/lasso-select';
-export type {
-  UseLassoSelectOptions,
-  LassoSelectController,
-} from './interactions/actions/lasso-select';
+export type { UseLassoSelectOptions } from './interactions/actions/lasso-select';
 export {
   selectFromLasso,
   type SelectFromLassoOptions,
@@ -675,8 +651,7 @@ export type {
   UseDistributeOptions,
   UseDistributeReturn,
 } from './interactions/actions/distribute';
-export { useClone, cloneByAltDrag } from './interactions/actions/clone';
-export type { UseCloneOptions, UseCloneReturn } from './interactions/actions/clone';
+export { cloneByAltDrag } from './interactions/actions/clone';
 export type { ClonePose, CloneLayer, CloneBehavior } from './interactions/gestures/types';
 // snapToGrid / snapToContainer / snapBackOrDelete are NOT re-exported at top level —
 // import from './move' to disambiguate from resize/insert siblings.

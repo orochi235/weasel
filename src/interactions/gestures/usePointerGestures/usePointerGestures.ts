@@ -3,11 +3,45 @@ import type React from 'react';
 import { clientToCanvas } from 'core/viewport/clientToCanvas';
 import type { NodeId } from 'core/scene/types';
 import { cornerResizeHandles, hitCornerHandle } from '../../actions/resize/cornerHandles';
-import type { MoveController } from '../../actions/move/move';
 import type { ResizeController } from '../../actions/resize/resize';
-import type { RotateController } from '../../actions/rotate/rotate';
-import type { InsertController } from '../../actions/insert/insert';
-import type { AreaSelectController } from '../../actions/area-select/areaSelect';
+
+// Phase 14e Task 4: legacy hook Controller types (Move/Rotate/Insert/AreaSelect)
+// are deleted along with their hooks. `usePointerGestures` only consumes the
+// minimal start/move/end/cancel surface those controllers exposed, so define
+// local structural types here. `usePointerGestures` itself remains a public
+// barrel export for back-compat but has no internal consumers.
+interface MoveController<TNode extends { id: string } = { id: string }, TPose = unknown> {
+  start(args: { ids: string[]; worldX: number; worldY: number; clientX?: number; clientY?: number }): void;
+  move(args: { worldX: number; worldY: number; clientX?: number; clientY?: number; modifiers: ModifierState }): void;
+  end(): void;
+  cancel(): void;
+  adapter?: unknown;
+  // TPose/TNode preserved for back-compat with subpath consumers.
+  readonly __posePhantom?: TPose;
+  readonly __nodePhantom?: TNode;
+}
+interface RotateController<TNode extends { id: string } = { id: string }, TPose = unknown> {
+  start(args: { id: string; worldX: number; worldY: number }): void;
+  move(args: { worldX: number; worldY: number; modifiers: ModifierState }): void;
+  end(): void;
+  cancel(): void;
+  readonly __posePhantom?: TPose;
+  readonly __nodePhantom?: TNode;
+}
+interface InsertController<TNode extends { id: string } = { id: string }, TPose = unknown> {
+  start(worldX: number, worldY: number, modifiers: ModifierState): void;
+  move(worldX: number, worldY: number, modifiers: ModifierState): void;
+  end(): void;
+  cancel(): void;
+  readonly __posePhantom?: TPose;
+  readonly __nodePhantom?: TNode;
+}
+interface AreaSelectController {
+  start(worldX: number, worldY: number, modifiers: ModifierState): void;
+  move(worldX: number, worldY: number, modifiers: ModifierState): void;
+  end(): void;
+  cancel(): void;
+}
 import {
   rotationHandle,
   hitRotationHandle,
