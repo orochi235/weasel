@@ -248,4 +248,17 @@ describe('Action with new invoker / GestureSpec fields (Phase 1 additive)', () =
     };
     expect(action.defaultBinding).toBeDefined();
   });
+
+  it('accepts an array of GestureSpec on gestureBinding (multi-binding actions)', () => {
+    const action: Action = {
+      id: 'demo.multi',
+      label: 'Demo multi',
+      gestureBinding: [
+        { kind: 'key', key: 'z', mods: { mod: true } },
+        { kind: 'key', key: 'z', mods: { mod: true, shift: true } },
+      ],
+      run: () => {},
+    };
+    expect(Array.isArray(action.gestureBinding)).toBe(true);
+  });
 });

@@ -28,11 +28,13 @@ export interface Action {
   label: string;
   defaultBinding?: KeyBinding;
   /** Phase 1+ (registry-unification): the gesture-spec form of the binding,
-   *  read by the gesture dispatcher. Coexists with `defaultBinding` (KeyBinding)
-   *  during the transition; Phase 9 deletes legacy `defaultBinding` and renames
-   *  this field to `defaultBinding`. See
+   *  read by the gesture dispatcher. May be a single `GestureSpec` or an
+   *  array (any-of semantics — any matching gesture fires the action).
+   *  Coexists with `defaultBinding` (KeyBinding) during the transition;
+   *  Phase 9 deletes legacy `defaultBinding` and renames this field to
+   *  `defaultBinding`. See
    *  `docs/superpowers/specs/2026-05-16-registry-unification-design.md`. */
-  gestureBinding?: GestureSpec;
+  gestureBinding?: GestureSpec | GestureSpec[];
   /** Inline-SVG icon for palette / toolbar surfaces. Mirrors
    *  `ToolPresentation.icon` so a generic `<ActionBar>` can render from
    *  action metadata the same way `<ToolPalette>` renders from tool
