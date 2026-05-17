@@ -434,35 +434,12 @@ describe('<Canvas>', () => {
       expect(last).toEqual(['b']);
     });
 
-    it('multi: clicking already-selected drags the whole set', () => {
-      // Seed selection with both ids via `initial=` rather than synthesizing
-      // a shift-click extend through the dispatcher; jsdom's PointerEvent
-      // ignores modifier flags from the dict-init shorthand, so a real
-      // shift-click would need extra Object.defineProperty plumbing.
-      const moveIds: string[][] = [];
-      const { container } = render(
-        <Harness
-          mode="multi"
-          initial={['a', 'b']}
-          moveStart={(ids) => moveIds.push(ids)}
-        />,
-      );
-      const canvas = container.querySelector('canvas')!;
-      canvas.setPointerCapture = vi.fn();
-      // click on a (already selected, no shift) → drag whole set.
-      // Use defineProperty to plumb clientX/Y (jsdom's PointerEvent ignores
-      // the init dict shorthand for these fields).
-      const down = createEvent.pointerDown(canvas, { pointerId: 1 });
-      Object.defineProperty(down, 'clientX', { value: 10 });
-      Object.defineProperty(down, 'clientY', { value: 10 });
-      fireEvent(canvas, down);
-      // Cross both thresholds: the dispatcher's (4px from pointerDown) and
-      // useMove's internal threshold (4px from move.start's clientX/Y).
-      fireEvent.pointerMove(canvas, { clientX: 20, clientY: 20, pointerId: 1 });
-      fireEvent.pointerMove(canvas, { clientX: 30, clientY: 30, pointerId: 1 });
-      const lastMoveIds = moveIds[moveIds.length - 1];
-      expect(new Set(lastMoveIds)).toEqual(new Set(['a', 'b']));
-    });
+    // Removed in Phase 14e cleanup: "multi: clicking already-selected drags the
+    // whole set". Asserted legacy bare-Canvas select-tool drag semantics; after
+    // Task 2.6 made `bindingsOverrideDrag: true` unconditional on select/lasso/
+    // hand, drag routes exclusively through the gesture dispatcher (which bare
+    // <Canvas> does not mount). Equivalent multi-selection drag coverage now
+    // lives in src/interactions/dispatcher/move.integration.test.tsx.
 
   });
 });
