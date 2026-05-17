@@ -270,6 +270,18 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * defined at module scope) — the array is read at renderer init time.
    */
   shaders?: ShaderProgramHandle[];
+
+  /**
+   * Extra source of ids whose committed paint should be suppressed during the
+   * current frame (in addition to those reported by the tools' `previewIds()`).
+   *
+   * Wired by `<SceneCanvas>` to expose the new gesture-dispatcher's in-flight
+   * handles: as legacy hooks are removed from tools (Phase 14e Task 3), the
+   * source-hide for move/clone/etc. needs to follow the preview-ghost layer
+   * onto the dispatcher's `OngoingHandle.previewIds()`. Optional — bare
+   * `<Canvas>` consumers don't need to wire it.
+   */
+  previewIdsExtra?: () => Iterable<string> | null;
 }
 
 /** Per-action config for the `gestures` prop. */
@@ -559,6 +571,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     debug: debugProp,
     debugSinkRef,
     shaders,
+    previewIdsExtra,
   } = props;
 
   // Resolve debug config: explicit prop wins; `undefined` falls back to URL;
@@ -1175,6 +1188,10 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         effectiveBoundsOf,
         () => {
           const ids = aggregatePreviewIds(tools);
+          const extra = previewIdsExtra?.();
+          if (extra) {
+            for (const id of extra) ids.add(id);
+          }
           return ids.size > 0 ? ids : null;
         },
       );

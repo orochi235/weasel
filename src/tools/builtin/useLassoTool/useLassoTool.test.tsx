@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { useLassoTool } from './useLassoTool';
 import type { LassoSelectAdapter } from 'core/adapters/types';
 
@@ -14,21 +14,13 @@ function makeAdapter(hits: string[] = []): LassoSelectAdapter & { applyOps: Retu
   };
 }
 
-const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-const baseCtx = (worldX: number, worldY: number) => ({
-  worldX,
-  worldY,
-  modifiers: { alt: false, shift: false, meta: false, ctrl: false },
-  view: VIEW,
-  selection: { current: [], get: () => [], set: () => {}, add: () => {}, remove: () => {}, toggle: () => {}, contains: () => false, applyClick: () => {}, adapterMethods: {} },
-  adapter: undefined,
-  applyOps: () => {},
-  setView: () => {},
-  canvasRect: { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0 } as DOMRect,
-  scratch: undefined,
-}) as never;
-
 describe('useLassoTool', () => {
+  // Phase 14e Task 3: legacy `useLassoSelect` hook removed. Drag flows
+  // entirely through `lassoSelectAction` via the gesture dispatcher; the
+  // tool itself only declares id/keybinding/cursor/presentation + the
+  // dispatcher binding. The route-table drag entry is gone, so tests that
+  // exercised `tool.drag.onStart/onMove/onEnd` directly are also gone —
+  // those paths are covered by `lassoSelectAction`'s own tests.
   it("declares id 'lasso' and keybinding { key: 'L' } by default", () => {
     const adapter = makeAdapter();
     const { result } = renderHook(() => useLassoTool(adapter));
@@ -48,56 +40,13 @@ describe('useLassoTool', () => {
     expect(result.current.keybinding).toEqual({ key: 'L', shift: true });
   });
 
-  it('drag.onStart claims the gesture', () => {
+  it('declares the dispatcher binding for lassoSelect', () => {
     const adapter = makeAdapter();
     const { result } = renderHook(() => useLassoTool(adapter));
-    let outcome: unknown;
-    act(() => {
-      outcome = result.current.drag!.onStart!({ clientX: 0, clientY: 0 } as PointerEvent, baseCtx(0, 0));
-    });
-    expect(outcome).toBe('claim');
-  });
-
-  it('drag end commits via applyOps when behavior emits ops (intersect-default w/ a hit)', () => {
-    const adapter = makeAdapter(['a']);
-    const { result } = renderHook(() => useLassoTool(adapter, { minVertexSpacing: 0 }));
-    const tool = result.current;
-    act(() => {
-      tool.drag!.onStart!({ clientX: 0, clientY: 0 } as PointerEvent, baseCtx(0, 0));
-    });
-    act(() => {
-      tool.drag!.onMove!({ clientX: 5, clientY: 0 } as PointerEvent, baseCtx(5, 0));
-    });
-    act(() => {
-      tool.drag!.onMove!({ clientX: 5, clientY: 5 } as PointerEvent, baseCtx(5, 5));
-    });
-    act(() => {
-      tool.drag!.onEnd!({ clientX: 5, clientY: 5 } as PointerEvent, baseCtx(5, 5));
-    });
-    expect(adapter.applyOps).toHaveBeenCalledTimes(1);
-  });
-
-  it('overlay layer is published on the Tool record', () => {
-    const adapter = makeAdapter();
-    const { result } = renderHook(() => useLassoTool(adapter));
-    expect(result.current.overlay).toBeTruthy();
-    expect(result.current.overlay!.id).toBe('lasso-overlay');
-    expect(result.current.overlay!.space).toBe('screen');
-  });
-
-  it("keyboard.onDown 'Escape' cancels mid-gesture without committing", () => {
-    const adapter = makeAdapter(['a']);
-    const { result } = renderHook(() => useLassoTool(adapter, { minVertexSpacing: 0 }));
-    const tool = result.current;
-    act(() => {
-      tool.drag!.onStart!({ clientX: 0, clientY: 0 } as PointerEvent, baseCtx(0, 0));
-    });
-    act(() => {
-      tool.drag!.onMove!({ clientX: 5, clientY: 0 } as PointerEvent, baseCtx(5, 0));
-    });
-    act(() => {
-      tool.keyboard!.onDown!({ key: 'Escape' } as KeyboardEvent, baseCtx(5, 0));
-    });
-    expect(adapter.applyOps).not.toHaveBeenCalled();
+    const bindings = result.current.bindings ?? [];
+    expect(bindings.length).toBe(1);
+    expect(bindings[0].actionId).toBe('lassoSelect');
+    expect(bindings[0].spec.kind).toBe('drag');
+    expect(result.current.bindingsOverrideDrag).toBe(true);
   });
 });
