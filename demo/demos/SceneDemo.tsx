@@ -3,13 +3,12 @@ import { SceneCanvas, sceneFromJSON, useSelection } from '@orochi235/weasel';
 import type { SerializedScene } from '@orochi235/weasel';
 import sceneJson from './data/scene.scene.json';
 
-type LayerId = 'garden' | 'blueprint' | 'structures' | 'zones' | 'plantings';
 interface NodeData { color: string; label?: string }
 interface Pose { x: number; y: number; width: number; height: number }
 
 export function SceneDemo() {
   const [scene] = useState(() =>
-    sceneFromJSON(sceneJson as unknown as SerializedScene<NodeData, LayerId, Pose>, {}),
+    sceneFromJSON(sceneJson as unknown as SerializedScene<NodeData, string, Pose>, {}),
   );
   useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
 
