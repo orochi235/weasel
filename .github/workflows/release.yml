@@ -3,6 +3,9 @@ name: Release
 on:
   push:
     branches: [main]
+    paths:
+      - '.changeset/*.md'
+      - '.github/workflows/release.yml'
 
 concurrency:
   group: release-${{ github.ref }}

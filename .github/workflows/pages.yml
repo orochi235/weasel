@@ -3,6 +3,23 @@ name: Deploy demo to GitHub Pages
 on:
   push:
     branches: [main]
+    # Only redeploy when something user-visible changed. Doc-only commits and
+    # repo plumbing (CHANGELOG, .changeset/, etc.) don't need to spin up the
+    # demo + Storybook builds.
+    paths:
+      - 'src/**'
+      - 'apps/**'
+      - 'demo/**'
+      - 'packages/**'
+      - '.storybook/**'
+      - 'scripts/**'
+      - 'public/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+      - 'tsconfig.json'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
