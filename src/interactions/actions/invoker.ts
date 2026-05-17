@@ -38,6 +38,11 @@ export interface InvocationCtx {
  *  behaviors; extensible. */
 export interface BindingOpts {
   behaviors?: ActionBehavior<unknown, unknown, unknown>[];
+  /** Phase 4+: per-binding action parameters. The action's invoker reads
+   *  these via the second arg to `run` (or via InvocationCtx for ongoing
+   *  invokers, when needed). Loose typing (Record<string, unknown>) for
+   *  now; consider per-action typing later via BindingOpts<A>. */
+  params?: Record<string, unknown>;
 }
 
 /** Convention-shaped action dependencies bag. Actions declare which
@@ -67,7 +72,11 @@ export interface OngoingHandle {
  *  async side-effect; the registry doesn't wait). */
 export interface ImmediateInvoker {
   timing: 'immediate';
-  run(deps: ActionDeps): void;
+  /** `params` carries the matched binding's opts.params (Phase 4+). When
+   *  invoked via the legacy `Action.run` bridge or from the command palette
+   *  with no per-binding context, `params` is undefined; descriptors should
+   *  default to a sensible variant. */
+  run(deps: ActionDeps, params?: Record<string, unknown>): void;
 }
 
 /** Phase-machine invocation. `start` opens the phase and returns the handle

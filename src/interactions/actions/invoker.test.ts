@@ -75,3 +75,34 @@ describe('Invoker', () => {
     expectTypeOf(withBehaviors).toMatchTypeOf<BindingOpts>();
   });
 });
+
+describe('BindingOpts.params (Phase 4)', () => {
+  it('BindingOpts accepts a params bag for action-defined parameters', () => {
+    const opts: BindingOpts = {
+      behaviors: [],
+      params: { magnitude: 'big', axis: 'x' },
+    };
+    expectTypeOf(opts).toMatchTypeOf<BindingOpts>();
+  });
+
+  it('params field is optional', () => {
+    const opts: BindingOpts = {};
+    expectTypeOf(opts).toMatchTypeOf<BindingOpts>();
+  });
+
+  it('ImmediateInvoker.run accepts an optional second params arg', () => {
+    const inv: ImmediateInvoker = {
+      timing: 'immediate',
+      run: (_deps, _params) => {},
+    };
+    expectTypeOf(inv).toMatchTypeOf<ImmediateInvoker>();
+  });
+
+  it('ImmediateInvoker.run still works without params arg (back-compat)', () => {
+    const inv: ImmediateInvoker = {
+      timing: 'immediate',
+      run: (_deps) => {},
+    };
+    expectTypeOf(inv).toMatchTypeOf<ImmediateInvoker>();
+  });
+});
