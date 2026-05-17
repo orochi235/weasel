@@ -1,8 +1,27 @@
 import { describe, it, expect, vi } from 'vitest';
-import { defaultSelectAllAction } from './selectAll';
+import { selectAllAction, defaultSelectAllAction } from './selectAll';
 import { asNodeId } from 'core/scene/types';
 
-describe('defaultSelectAllAction', () => {
+describe('selectAllAction (descriptor)', () => {
+  it('id="selectAll", label="Select All"', () => {
+    expect(selectAllAction.id).toBe('selectAll');
+    expect(selectAllAction.label).toBe('Select All');
+  });
+
+  it('defaultBinding = { key: "a", mod: true }', () => {
+    expect(selectAllAction.defaultBinding).toEqual({ key: 'a', mod: true });
+  });
+
+  it('gestureBinding = { kind: "key", key: "a", mods: { mod: true } }', () => {
+    expect(selectAllAction.gestureBinding).toEqual({ kind: 'key', key: 'a', mods: { mod: true } });
+  });
+
+  it('invoker.timing = "immediate"', () => {
+    expect(selectAllAction.invoker?.timing).toBe('immediate');
+  });
+});
+
+describe('defaultSelectAllAction (legacy bridge)', () => {
   const baseDeps = {
     getSelection: () => [],
     listAll: () => [asNodeId('a'), asNodeId('b'), asNodeId('c')],
@@ -29,7 +48,7 @@ describe('defaultSelectAllAction', () => {
       listAll: () => [asNodeId('a'), asNodeId('b')],
       setSelection,
     });
-    a.run();
+    a.run!();
     expect(setSelection).toHaveBeenCalledWith(['a', 'b']);
   });
 
@@ -40,11 +59,17 @@ describe('defaultSelectAllAction', () => {
       listAll: () => [],
       setSelection,
     });
-    a.run();
+    a.run!();
     expect(setSelection).not.toHaveBeenCalled();
   });
+
   it('declares gestureBinding mirroring defaultBinding', () => {
     const a = defaultSelectAllAction(baseDeps);
     expect(a.gestureBinding).toEqual({ kind: 'key', key: 'a', mods: { mod: true } });
+  });
+
+  it('bridge does not expose invoker (legacy run path stays active)', () => {
+    const a = defaultSelectAllAction(baseDeps);
+    expect(a.invoker).toBeUndefined();
   });
 });
