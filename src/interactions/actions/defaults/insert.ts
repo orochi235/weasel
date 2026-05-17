@@ -37,7 +37,6 @@
  */
 
 import type { Action } from '../registry';
-import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
 import type { InsertDep } from '../depSchema';
 
@@ -115,11 +114,11 @@ export const insertAction: Action & { requires: string[] } = {
     },
   },
   /**
-   * Insert is always available (no selection required). Return
-   * `SelectionRequired` as the static placeholder only because `Action.enabled`
-   * has no `'none'` / always-enabled sentinel yet.
+   * Insert is always available — no selection required. Returns `true` so the
+   * dispatcher allows the action through on every drag-on-empty gesture.
    *
-   * Phase 8 TODO: add `ActionDisabledReason.None` or `true` return path.
+   * Phase 14c.2: fixed from the stale `ActionDisabledReason.SelectionRequired`
+   * placeholder that was silently blocking all dispatcher-routed inserts.
    */
-  enabled: () => ActionDisabledReason.SelectionRequired,
+  enabled: () => true as const,
 };

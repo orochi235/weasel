@@ -7,14 +7,19 @@
  *
  * Phase 8 safety tests: confirm delete/duplicate/nudge/undo keybindings fire
  * through the dispatcher path BEFORE deleting the wrapper tools.
+ *
+ * Phase 14c.2 tests: insertDep wired — drag on empty space with a shape tool
+ * active inserts a node into the scene end-to-end.
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
 import { useActionsRegistry, type Action } from 'interactions/actions/registry';
+import { useDepRegistry } from 'interactions/actions/depRegistry';
+import type { InsertDep } from 'interactions/actions/depSchema';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -222,5 +227,155 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     expect(invokerSpy).toHaveBeenCalledTimes(1);
     // `run` is the legacy fallback; with an invoker present, it must NOT fire.
     expect(runSpy).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 14c.2: insertDep end-to-end — drag on empty canvas inserts a node
+// ---------------------------------------------------------------------------
+
+describe('Phase 14c.2 — insertDep wired in SceneCanvas', () => {
+  /**
+   * These tests verify that SceneCanvas's `StandardActionsRegistrar` correctly
+   * wires the `insert` dep and that the dep's `commit` function creates scene
+   * nodes when called directly.
+   *
+   * Full end-to-end drag coverage (pointerdown → insertAction → InsertDep.commit
+   * via gesture dispatcher) is in:
+   *   `src/interactions/dispatcher/insert.integration.test.tsx`
+   *
+   * These SceneCanvas-level tests focus on the dep wiring: that `commit()`
+   * receives the correct args and inserts a node into the scene with the right
+   * data + pose shape.
+   *
+   * Implementation: a child component placed inside `<SceneCanvas>` accesses
+   * the dep registry via `useDepRegistry()` and calls the `insert` dep's
+   * `commit` method directly, then we assert the scene node was created.
+   */
+
+  type D14 = { path: unknown; fill: string };
+  type L14 = 'main';
+  type P14 = { x: number; y: number; width: number; height: number };
+
+  function makeEmptyScene() {
+    return createScene<D14, L14, P14>({ systemLayers: [{ id: 'main' }] });
+  }
+
+  /**
+   * A child component rendered inside SceneCanvas that reads the dep registry
+   * at effect time and exposes the `insert` dep's commit function via callback.
+   * Renders inside SceneCanvas's `<DepRegistryProvider>` so `useDepRegistry()`
+   * is in scope.
+   */
+  function DepHarness({ onDepReady }: { onDepReady: (commit: InsertDep['commit']) => void }) {
+    const registry = useDepRegistry();
+    const notified = useRef(false);
+    useEffect(() => {
+      if (notified.current) return;
+      notified.current = true;
+      const dep = registry.get('insert' as 'insert') as InsertDep | undefined;
+      if (dep) {
+        onDepReady(dep.commit.bind(dep));
+      }
+    });
+    return null;
+  }
+
+  it('insert dep commit creates a rect node with correct bounds in the scene', () => {
+    const scene = makeEmptyScene();
+    let capturedCommit: InsertDep['commit'] | null = null;
+
+    render(
+      <SceneCanvas<D14, L14, P14>
+        scene={scene}
+        width={200}
+        height={200}
+      >
+        <DepHarness onDepReady={(commit) => { capturedCommit = commit; }} />
+      </SceneCanvas>,
+    );
+
+    // Verify the dep was registered.
+    expect(capturedCommit).not.toBeNull();
+
+    // Call commit directly to simulate what insertAction.invoker.onEnd does.
+    act(() => {
+      capturedCommit!({ x: 10, y: 20, width: 100, height: 50 }, 'rect');
+    });
+
+    const nodes = [...scene.nodes.values()];
+    expect(nodes).toHaveLength(1);
+    const node = nodes[0];
+    const pose = node.pose as P14;
+    expect(pose.x).toBe(10);
+    expect(pose.y).toBe(20);
+    expect(pose.width).toBe(100);
+    expect(pose.height).toBe(50);
+    expect(node.kind).toBe('leaf');
+    const data = node.data as D14;
+    expect(data.fill).toBeTruthy();
+    expect(data.path).toBeTruthy();
+  });
+
+  it('insert dep commit creates an ellipse node', () => {
+    const scene = makeEmptyScene();
+    let capturedCommit: InsertDep['commit'] | null = null;
+
+    render(
+      <SceneCanvas<D14, L14, P14>
+        scene={scene}
+        width={200}
+        height={200}
+      >
+        <DepHarness onDepReady={(commit) => { capturedCommit = commit; }} />
+      </SceneCanvas>,
+    );
+
+    expect(capturedCommit).not.toBeNull();
+
+    act(() => {
+      capturedCommit!({ x: 5, y: 15, width: 80, height: 40 }, 'ellipse');
+    });
+
+    const nodes = [...scene.nodes.values()];
+    expect(nodes).toHaveLength(1);
+    const node = nodes[0];
+    const pose = node.pose as P14;
+    expect(pose.x).toBe(5);
+    expect(pose.y).toBe(15);
+    expect(pose.width).toBe(80);
+    expect(pose.height).toBe(40);
+    expect(node.kind).toBe('leaf');
+    const data = node.data as D14;
+    expect(data.fill).toBeTruthy();
+    expect(data.path).toBeTruthy();
+  });
+
+  it('insert dep commit returns null and warns for unknown kind', () => {
+    const scene = makeEmptyScene();
+    let capturedCommit: InsertDep['commit'] | null = null;
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    render(
+      <SceneCanvas<D14, L14, P14>
+        scene={scene}
+        width={200}
+        height={200}
+      >
+        <DepHarness onDepReady={(commit) => { capturedCommit = commit; }} />
+      </SceneCanvas>,
+    );
+
+    expect(capturedCommit).not.toBeNull();
+
+    let result: string | null = 'sentinel';
+    act(() => {
+      result = capturedCommit!({ x: 0, y: 0, width: 10, height: 10 }, 'unknown-kind');
+    });
+
+    expect(result).toBeNull();
+    expect([...scene.nodes.values()]).toHaveLength(0);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('unknown-kind'));
+    warnSpy.mockRestore();
   });
 });
