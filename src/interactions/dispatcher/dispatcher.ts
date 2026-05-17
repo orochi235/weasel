@@ -26,6 +26,7 @@ import type { Action, ActionsRegistry, BoundGesture } from '../actions/registry'
 import type { DepRegistry } from '../actions/depRegistry';
 import type { GestureBinding } from '../actions/binding';
 import type { OngoingHandle, InvocationCtx, ActionDeps, BindingOpts } from '../actions/invoker';
+import { resolveParams } from '../actions/invoker';
 import type { Tool } from '../../tools/types';
 import type { InputEvent, BindingScope, ScopedBinding } from './matcher';
 import { matchBest } from './matcher';
@@ -373,10 +374,11 @@ export function createDispatcher(): Dispatcher {
         // so the invoker receives both binding-declared params (e.g. `kind: 'wheel'`)
         // and runtime event data (deltaX, deltaY, clientX, clientY). Option (a)
         // from the design doc — simpler than extending InvocationCtx for immediate invokers.
+        const resolved = resolveParams(match.binding.opts?.params);
         const params: Record<string, unknown> | undefined =
           event.kind === 'wheel'
-            ? { deltaX: event.deltaX, deltaY: event.deltaY, clientX: event.clientX, clientY: event.clientY, ...match.binding.opts?.params }
-            : match.binding.opts?.params;
+            ? { deltaX: event.deltaX, deltaY: event.deltaY, clientX: event.clientX, clientY: event.clientY, ...resolved }
+            : resolved;
         action.invoker.run(deps, params);
       } catch (err) {
         console.error(`weasel dispatcher: action "${action.id}" invoker threw`, err);

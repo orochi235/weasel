@@ -104,19 +104,43 @@ export interface LassoSelectDep {
 }
 
 /**
+ * Per-kind extra geometry passed to `InsertDep.commit` (Phase 14c.3).
+ *
+ * Built-in tools populate a typed variant so the kit's default factory can
+ * render the true tool params (line endpoints, polygon side count, star
+ * geometry, pencil sample list). Consumer-defined tools may pass any
+ * `{ kind: string; ... }` payload; the kit's factory falls back to AABB
+ * inscription for unknown kinds.
+ *
+ * `bounds` is still passed alongside as a useful AABB pose hint — factories
+ * may use it as the node's pose even when richer geometry is available.
+ */
+export type InsertExtras =
+  | { kind: 'rect' }
+  | { kind: 'ellipse' }
+  | { kind: 'line'; a: { x: number; y: number }; b: { x: number; y: number } }
+  | { kind: 'polygon'; sides: number; rotation: number; center?: { x: number; y: number }; radius?: number }
+  | { kind: 'star'; points: number; innerRadiusRatio: number; rotation: number; center?: { x: number; y: number }; outerRadius?: number }
+  | { kind: 'pencil'; samples: ReadonlyArray<{ x: number; y: number }> }
+  | { kind: string; [extra: string]: unknown };
+
+/**
  * Adapter dep for `insertAction` (Phase 11).
  *
- * Provided by `<SceneCanvas>` / `<StandardActionsRegistrar>`. The `kind`
- * is forwarded from the binding's `opts.params.kind` (set by the active
- * tool). Callers that need typed data must supply a richer `insert` dep.
+ * Provided by `<SceneCanvas>` / `<StandardActionsRegistrar>`. The `extras`
+ * carry the active tool's kind + per-kind geometry (Phase 14c.3). Callers
+ * that need typed data must supply a richer `insert` dep.
  */
 export interface InsertDep {
   /**
-   * Materialise a new node of `kind` with the given drag-rect bounds.
-   * Returns the new node's id, or `null` if the consumer rejected the insert
-   * (e.g. sub-threshold bounds, unknown kind).
+   * Materialise a new node from the given drag-rect bounds and typed
+   * per-kind extras. Returns the new node's id, or `null` if the consumer
+   * rejected the insert (e.g. sub-threshold bounds, unknown kind).
    */
-  commit(bounds: { x: number; y: number; width: number; height: number }, kind: string): NodeId | null;
+  commit(
+    bounds: { x: number; y: number; width: number; height: number },
+    extras: InsertExtras,
+  ): NodeId | null;
 }
 
 declare module './depRegistry' {

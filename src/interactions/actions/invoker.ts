@@ -98,8 +98,24 @@ export interface BindingOpts {
   /** Phase 4+: per-binding action parameters. The action's invoker reads
    *  these via the second arg to `run` (or via InvocationCtx for ongoing
    *  invokers, when needed). Loose typing (Record<string, unknown>) for
-   *  now; consider per-action typing later via BindingOpts<A>. */
-  params?: Record<string, unknown>;
+   *  now; consider per-action typing later via BindingOpts<A>.
+   *
+   *  Phase 14c.3: params may also be a thunk evaluated each time the
+   *  dispatcher (or invoker) needs the value. Thunks let tools close over
+   *  refs that mutate during a gesture (e.g. polygon `sides` adjusted
+   *  mid-drag via ArrowUp). For ongoing invokers that want the latest
+   *  values at commit, the invoker can re-call the thunk inside `onEnd`
+   *  via `resolveParams(opts?.params)`. */
+  params?: Record<string, unknown> | (() => Record<string, unknown>);
+}
+
+/** Resolve `BindingOpts.params` to a concrete record (calling the thunk if
+ *  needed). Returns `undefined` for absent params. */
+export function resolveParams(
+  params: BindingOpts['params'],
+): Record<string, unknown> | undefined {
+  if (params === undefined) return undefined;
+  return typeof params === 'function' ? params() : params;
 }
 
 /** Convention-shaped action dependencies bag. Actions declare which
