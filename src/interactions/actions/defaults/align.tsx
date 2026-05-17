@@ -1,12 +1,15 @@
 import type { ReactNode } from 'react';
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
-import type { NodeId } from 'core/scene/types';
+import type { NodeId, Scene } from 'core/scene/types';
 import type { PoseDescriptor } from '../resize/geometry';
+import { RECT_POSE_DESCRIPTOR } from '../resize/geometry';
 import type { ResizePose } from '../../gestures/types';
 import { alignDeltaFor, translatePoseViaDescriptor, type AlignEdge } from '../align/align';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
+import type { SelectionApi } from 'core/selection/useSelection';
+import type { ImmediateInvoker } from '../invoker';
 import {
   AlignLeftIcon,
   AlignRightIcon,
@@ -61,33 +64,113 @@ function unionBounds(rs: ResizePose[]): ResizePose {
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
-/** @experimental
- *
- * Six align actions registered with stable ids and labels but no default
- * keybindings — six edges/centers don't fit a clean default chord set.
- * Wire bindings explicitly via the actions registry override map. */
-export function defaultAlignActions<TPose>(deps: AlignDeps<TPose>): Action[] {
-  return EDGES.map((edge): Action => ({
+// ---------------------------------------------------------------------------
+// Shared helper for descriptor invokers
+// ---------------------------------------------------------------------------
+
+/**
+ * Apply an align operation to the current selection via the Scene API.
+ * Uses the kit's default rect-pose geometry so the descriptor works for
+ * any axis-aligned rect pose without consumer geometry config.
+ */
+function alignSelection(
+  selection: SelectionApi,
+  scene: Scene<unknown, string, unknown>,
+  edge: AlignEdge,
+): void {
+  const ids = selection.get();
+  if (ids.length < 2) return;
+  const geom = RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<unknown>;
+  const poses = ids.map((id) => {
+    const node = scene.get(id);
+    return node?.pose ?? { x: 0, y: 0, width: 0, height: 0 };
+  });
+  const bounds = poses.map((p) => geom.getBounds(p) as ResizePose);
+  const union = unionBounds(bounds);
+  scene.batch('Align', () => {
+    for (let i = 0; i < ids.length; i++) {
+      const { dx, dy } = alignDeltaFor(bounds[i], union, edge);
+      if (dx === 0 && dy === 0) continue;
+      const to = translatePoseViaDescriptor(poses[i], dx, dy, geom);
+      scene.setPose(ids[i], to);
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Static descriptors (Phase 4+)
+// ---------------------------------------------------------------------------
+
+function makeAlignAction(edge: AlignEdge): Action {
+  return {
     id: ID_FOR[edge],
     label: LABEL_FOR[edge],
     icon: ICON_FOR[edge],
     group: 'align',
-    run: () => {
-      const sel = deps.getSelection();
-      if (sel.length < 2) return;
-      const poses = sel.map((id) => deps.getPose(id));
-      const bounds = poses.map((p) => deps.geometry.getBounds(p));
-      const union = unionBounds(bounds);
-      const ops: Op[] = [];
-      for (let i = 0; i < sel.length; i++) {
-        const { dx, dy } = alignDeltaFor(bounds[i], union, edge);
-        if (dx === 0 && dy === 0) continue;
-        const from = poses[i];
-        const to = translatePoseViaDescriptor(from, dx, dy, deps.geometry);
-        ops.push(createTransformOp<TPose>({ id: sel[i], from, to }));
-      }
-      if (ops.length > 0) deps.applyOps(ops, 'Align');
-    },
-    enabled: () => (deps.getSelection().length >= 2 ? true : ActionDisabledReason.SelectionRequired),
-  }));
+    // No default keybindings — six edges/centers don't fit a clean default
+    // chord set. Wire bindings explicitly via the actions registry override map.
+    invoker: {
+      timing: 'immediate',
+      run: (deps) => {
+        const selection = deps.selection as SelectionApi | undefined;
+        const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
+        if (!selection || !scene) return;
+        alignSelection(selection, scene, edge);
+      },
+    } satisfies ImmediateInvoker,
+    enabled: () => ActionDisabledReason.SelectionRequired,
+  };
+}
+
+/** @experimental Static descriptor for align-left (Phase 4+). */
+export const alignLeftAction    = makeAlignAction('left');
+/** @experimental Static descriptor for align-right (Phase 4+). */
+export const alignRightAction   = makeAlignAction('right');
+/** @experimental Static descriptor for align-top (Phase 4+). */
+export const alignTopAction     = makeAlignAction('top');
+/** @experimental Static descriptor for align-bottom (Phase 4+). */
+export const alignBottomAction  = makeAlignAction('bottom');
+/** @experimental Static descriptor for align-center-x (Phase 4+). */
+export const alignCenterXAction = makeAlignAction('center-x');
+/** @experimental Static descriptor for align-center-y (Phase 4+). */
+export const alignCenterYAction = makeAlignAction('center-y');
+
+// ---------------------------------------------------------------------------
+// Legacy bridge factory (preserves AlignDeps-based shape + per-instance config)
+// ---------------------------------------------------------------------------
+
+/** @experimental
+ *
+ * Six align actions registered with stable ids and labels but no default
+ * keybindings — six edges/centers don't fit a clean default chord set.
+ * Wire bindings explicitly via the actions registry override map.
+ *
+ * @deprecated Phase 4+: use the static descriptors (`alignLeftAction` etc.)
+ * with the `selection`/`scene` dep schema. This wrapper is a Phase 4–7
+ * transition shim and will be removed in Phase 8.
+ */
+export function defaultAlignActions<TPose>(deps: AlignDeps<TPose>): Action[] {
+  return EDGES.map((edge): Action => {
+    const { invoker: _invoker, ...rest } = makeAlignAction(edge);
+    return {
+      ...rest,
+      run: () => {
+        const sel = deps.getSelection();
+        if (sel.length < 2) return;
+        const poses = sel.map((id) => deps.getPose(id));
+        const bounds = poses.map((p) => deps.geometry.getBounds(p));
+        const union = unionBounds(bounds as ResizePose[]);
+        const ops: Op[] = [];
+        for (let i = 0; i < sel.length; i++) {
+          const { dx, dy } = alignDeltaFor(bounds[i] as ResizePose, union, edge);
+          if (dx === 0 && dy === 0) continue;
+          const from = poses[i];
+          const to = translatePoseViaDescriptor(from, dx, dy, deps.geometry);
+          ops.push(createTransformOp<TPose>({ id: sel[i], from, to }));
+        }
+        if (ops.length > 0) deps.applyOps(ops, 'Align');
+      },
+      enabled: () => (deps.getSelection().length >= 2 ? true : ActionDisabledReason.SelectionRequired),
+    };
+  });
 }
