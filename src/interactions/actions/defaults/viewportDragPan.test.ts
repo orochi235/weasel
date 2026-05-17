@@ -71,16 +71,40 @@ describe('viewportDragPanAction invoker', () => {
     expect(view._value.y).toBe(20);
   });
 
-  it('onMove pans by screen delta (subtracts delta from start view)', () => {
+  it('onMove pans by screen delta scaled by zoom (at scale 1x)', () => {
     const view = makeView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
     const invoker = getOngoingInvoker(viewportDragPanAction);
     const startCtx = makeCtx(view);
     const handle = invoker.start(startCtx);
 
-    handle.onMove!(makeCtx(view, { delta: { x: 50, y: 30 } }));
-    // new view.x = 0 - 50 = -50, new view.y = 0 - 30 = -30
+    handle.onMove!(makeCtx(view, { delta: { x: 100, y: 100 } }));
+    // new view.x = 0 - 100/1 = -100, new view.y = 0 - 100/1 = -100
+    expect(view._value.x).toBe(-100);
+    expect(view._value.y).toBe(-100);
+  });
+
+  it('onMove scales delta inversely to zoom (at scale 2x)', () => {
+    const view = makeView({ x: 0, y: 0, scale: { x: 2, y: 2 } });
+    const invoker = getOngoingInvoker(viewportDragPanAction);
+    const startCtx = makeCtx(view);
+    const handle = invoker.start(startCtx);
+
+    handle.onMove!(makeCtx(view, { delta: { x: 100, y: 100 } }));
+    // new view.x = 0 - 100/2 = -50, new view.y = 0 - 100/2 = -50
     expect(view._value.x).toBe(-50);
-    expect(view._value.y).toBe(-30);
+    expect(view._value.y).toBe(-50);
+  });
+
+  it('onMove scales delta with 0.5x zoom', () => {
+    const view = makeView({ x: 0, y: 0, scale: { x: 0.5, y: 0.5 } });
+    const invoker = getOngoingInvoker(viewportDragPanAction);
+    const startCtx = makeCtx(view);
+    const handle = invoker.start(startCtx);
+
+    handle.onMove!(makeCtx(view, { delta: { x: 100, y: 100 } }));
+    // new view.x = 0 - 100/0.5 = -200, new view.y = 0 - 100/0.5 = -200
+    expect(view._value.x).toBe(-200);
+    expect(view._value.y).toBe(-200);
   });
 
   it('onMove uses startView, not current view (absolute pan, not incremental)', () => {
@@ -90,13 +114,13 @@ describe('viewportDragPanAction invoker', () => {
     const handle = invoker.start(startCtx);
 
     handle.onMove!(makeCtx(view, { delta: { x: 10, y: 20 } }));
-    expect(view._value.x).toBe(90);  // 100 - 10
-    expect(view._value.y).toBe(180); // 200 - 20
+    expect(view._value.x).toBe(90);  // 100 - 10/1
+    expect(view._value.y).toBe(180); // 200 - 20/1
 
     // Second move: still relative to startView (not current)
     handle.onMove!(makeCtx(view, { delta: { x: 30, y: 50 } }));
-    expect(view._value.x).toBe(70);  // 100 - 30
-    expect(view._value.y).toBe(150); // 200 - 50
+    expect(view._value.x).toBe(70);  // 100 - 30/1
+    expect(view._value.y).toBe(150); // 200 - 50/1
   });
 
   it('preserves scale in updated view', () => {
