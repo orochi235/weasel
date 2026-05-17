@@ -113,6 +113,11 @@ export {
   defaultDeleteAction, defaultGroupAction, defaultUngroupAction,
 } from './interactions/actions/defaults';
 export { moveAction } from './interactions/actions/defaults/move';
+export { resizeAction } from './interactions/actions/defaults/resize';
+export { rotateAction } from './interactions/actions/defaults/rotate';
+export { areaSelectAction } from './interactions/actions/defaults/areaSelect';
+export { insertAction } from './interactions/actions/defaults/insert';
+export { cloneAction } from './interactions/actions/defaults/clone';
 export { useStandardActions } from './interactions/actions/useStandardActions';
 export type { UseStandardActionsOptions } from './interactions/actions/useStandardActions';
 export { resolveActions } from './interactions/actions/resolveActions';
