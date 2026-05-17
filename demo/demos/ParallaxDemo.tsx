@@ -64,29 +64,49 @@ function project(s: Shape, v: View) {
   };
 }
 
-function paintRects(id: string, shapes: Shape[]): RenderLayer<unknown> {
+// Yield every visible copy of `shapes`, tiled with period `period` along the
+// x axis. For a layer that wants to loop seamlessly: pan in either direction
+// keeps producing new copies because we walk every integer `k` whose copy
+// `(s.x + k*period)` overlaps the visible world range.
+function tiledProject(
+  shapes: Shape[],
+  v: View,
+  dims: { width: number; height: number },
+  period: number,
+): { s: Shape; p: ReturnType<typeof project> }[] {
+  const visStart = v.x;
+  const visEnd = v.x + dims.width / v.scale.x;
+  const out: { s: Shape; p: ReturnType<typeof project> }[] = [];
+  for (const s of shapes) {
+    const kMin = Math.ceil((visStart - s.w - s.x) / period);
+    const kMax = Math.floor((visEnd - s.x) / period);
+    for (let k = kMin; k <= kMax; k++) {
+      const shifted: Shape = { ...s, x: s.x + k * period };
+      out.push({ s, p: project(shifted, v) });
+    }
+  }
+  return out;
+}
+
+function paintRects(id: string, shapes: Shape[], period: number): RenderLayer<unknown> {
   return {
     id, label: id, space: 'world',
-    draw: (_d, v): DrawCommand[] =>
-      shapes.map((s) => {
-        const p = project(s, v);
-        return {
-          kind: 'path',
-          path: { kind: 'rect', x: p.x, y: p.y, width: p.w, height: p.h },
-          fill: { fill: 'solid', color: s.color },
-        };
-      }),
+    draw: (_d, v, dims): DrawCommand[] =>
+      tiledProject(shapes, v, dims, period).map(({ s, p }) => ({
+        kind: 'path',
+        path: { kind: 'rect', x: p.x, y: p.y, width: p.w, height: p.h },
+        fill: { fill: 'solid', color: s.color },
+      })),
   };
 }
 
 // Clouds: four overlapping ellipses inside the bbox — three across the
 // bottom and one smaller bump up top.
-function paintClouds(id: string, shapes: Shape[]): RenderLayer<unknown> {
+function paintClouds(id: string, shapes: Shape[], period: number): RenderLayer<unknown> {
   return {
     id, label: id, space: 'world',
-    draw: (_d, v): DrawCommand[] =>
-      shapes.flatMap((s) => {
-        const p = project(s, v);
+    draw: (_d, v, dims): DrawCommand[] =>
+      tiledProject(shapes, v, dims, period).flatMap(({ s, p }) => {
         const puffs = [
           { x: p.x,                y: p.y + p.h * 0.35, width: p.w * 0.45, height: p.h * 0.65 },
           { x: p.x + p.w * 0.55,   y: p.y + p.h * 0.30, width: p.w * 0.45, height: p.h * 0.70 },
@@ -103,12 +123,11 @@ function paintClouds(id: string, shapes: Shape[]): RenderLayer<unknown> {
 }
 
 // Hills: half-sine bump across the top, flat bottom.
-function paintHills(id: string, shapes: Shape[]): RenderLayer<unknown> {
+function paintHills(id: string, shapes: Shape[], period: number): RenderLayer<unknown> {
   return {
     id, label: id, space: 'world',
-    draw: (_d, v): DrawCommand[] =>
-      shapes.map((s) => {
-        const p = project(s, v);
+    draw: (_d, v, dims): DrawCommand[] =>
+      tiledProject(shapes, v, dims, period).map(({ s, p }) => {
         const N = 16;
         const pts: { x: number; y: number }[] = [];
         for (let i = 0; i <= N; i++) {
@@ -132,12 +151,11 @@ function paintHills(id: string, shapes: Shape[]): RenderLayer<unknown> {
 // Trees: triangle foliage on top + small brown trunk at the bottom-center.
 // Foliage takes 75% of the bbox height; trunk fills the remaining 25%.
 const TRUNK_COLOR = '#5a3a1f';
-function paintTrees(id: string, shapes: Shape[]): RenderLayer<unknown> {
+function paintTrees(id: string, shapes: Shape[], period: number): RenderLayer<unknown> {
   return {
     id, label: id, space: 'world',
-    draw: (_d, v): DrawCommand[] =>
-      shapes.flatMap((s) => {
-        const p = project(s, v);
+    draw: (_d, v, dims): DrawCommand[] =>
+      tiledProject(shapes, v, dims, period).flatMap(({ s, p }) => {
         const foliageH = p.h * 0.75;
         const trunkH = p.h - foliageH;
         const trunkW = p.w * 0.25;
@@ -216,7 +234,7 @@ export function ParallaxDemo() {
   const sky = useMemo(
     () => createParallaxLayer<unknown>({
       id: 'parallax-sky', label: 'Sky',
-      source: [paintClouds('sky-shapes', SKY)],
+      source: [paintClouds('sky-shapes', SKY, 1000)],
       pan: 0.1,
       ...(zoomParallax ? { zoom: 0 } : {}),
     }),
@@ -225,7 +243,7 @@ export function ParallaxDemo() {
   const hills = useMemo(
     () => createParallaxLayer<unknown>({
       id: 'parallax-hills', label: 'Hills',
-      source: [paintHills('hills-shapes', HILLS)],
+      source: [paintHills('hills-shapes', HILLS, 1140)],
       pan: 0.4,
       ...(zoomParallax ? { zoom: 0.3 } : {}),
     }),
@@ -234,7 +252,7 @@ export function ParallaxDemo() {
   const ground = useMemo(
     () => createParallaxLayer<unknown>({
       id: 'parallax-ground', label: 'Ground',
-      source: [paintRects('ground-shapes', GROUND)],
+      source: [paintRects('ground-shapes', GROUND, 1600)],
       pan: 1.0,
       ...(zoomParallax ? { zoom: 1 } : {}),
     }),
@@ -243,7 +261,7 @@ export function ParallaxDemo() {
   const foreground = useMemo(
     () => createParallaxLayer<unknown>({
       id: 'parallax-foreground', label: 'Foreground',
-      source: [paintTrees('fg-shapes', FOREGROUND)],
+      source: [paintTrees('fg-shapes', FOREGROUND, 640)],
       pan: 1.3,
       ...(zoomParallax ? { zoom: 1.5 } : {}),
     }),
@@ -282,7 +300,7 @@ export function ParallaxDemo() {
           per-plane zoom
         </label>
         <span style={{ color: '#888' }}>
-          Drag or scroll-wheel to pan (x only). Sky lags · hills slow · ground 1:1 · foreground leads. Toggle per-plane zoom to see depth-aware scaling.
+          Drag or scroll-wheel to pan (x only, loops forever). Sky lags · hills slow · ground 1:1 · foreground leads. Toggle per-plane zoom to see depth-aware scaling.
         </span>
       </div>
       <SceneCanvas
