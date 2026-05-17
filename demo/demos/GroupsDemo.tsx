@@ -1,10 +1,12 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
-  arrayAdapter,
+  asNodeId,
   resolveToOutermostGroup,
   expandToLeaves,
   composeSelectionPose,
-  Canvas,
+  SceneCanvas,
+  useScene,
+  useSceneAdapter,
   useSelection,
   useGroup,
   useUngroup,
@@ -29,23 +31,31 @@ const INITIAL_RECTS: Rect[] = [
 const INITIAL_GROUP: Group = { id: 'g1', members: ['a', 'b', 'c'] };
 
 export function GroupsDemo() {
-  const [rects, setRects] = useState<Rect[]>(INITIAL_RECTS);
-  const [groups, setGroups] = useState<Group[]>([INITIAL_GROUP]);
-  const rectsRef = useRef(rects); rectsRef.current = rects;
-  const groupsRef = useRef(groups); groupsRef.current = groups;
-
+  const scene = useScene<Rect, 'default', Pose>({
+    systemLayers: [{ id: 'default' }],
+    initial: INITIAL_RECTS.map((r) => ({
+      kind: 'leaf' as const,
+      layer: 'default' as const,
+      id: asNodeId(r.id),
+      pose: { x: r.x, y: r.y, width: r.width, height: r.height },
+      data: r,
+      parent: null,
+    })),
+  });
   const selection = useSelection();
 
-  // Adapter shares selection with <Canvas> via useSelection so Cmd-G / Cmd-Shift-G
-  // see the same ids as click-to-select.
-  const baseAdapter = arrayAdapter<Rect, Pose>({
-    ref: rectsRef,
-    setItems: setRects,
-    toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
-  });
-  const adapter = {
-    ...baseAdapter,
-    ...selection.adapterMethods,
+  // Lasso-style groups live in parallel React state — independent of scene
+  // parenting. The group adapter wraps the kit's scene adapter with the
+  // four group-mutation methods useGroup / useUngroup need.
+  const [groups, setGroups] = useState<Group[]>([INITIAL_GROUP]);
+  const groupsRef = useRef(groups); groupsRef.current = groups;
+
+  const sceneAdapter = useSceneAdapter(scene, { selection });
+  const adapter = useMemo(() => ({
+    ...sceneAdapter,
+    // useGroup / useUngroup want branded NodeId[]; sceneAdapter exposes the
+    // looser string[] form. Re-publish through the selection api.
+    getSelection: (): import('@orochi235/weasel').NodeId[] => [...selection.current],
     getGroup: (id: string) => groupsRef.current.find((g) => g.id === id),
     getGroupsForMember: (id: string) =>
       groupsRef.current.filter((g) => g.members.includes(id)).map((g) => g.id),
@@ -55,7 +65,21 @@ export function GroupsDemo() {
       setGroups((gs) => gs.map((g) => (g.id === gid ? { ...g, members: [...g.members, ...ids] } : g))),
     removeFromGroup: (gid: string, ids: string[]) =>
       setGroups((gs) => gs.map((g) => (g.id === gid ? { ...g, members: g.members.filter((m) => !ids.includes(m)) } : g))),
-  };
+    // sceneAdapter.getNode / getNodes return Node objects; select/resize/rotate
+    // tools want the per-node TData (Rect) for drawGhost / hit-test payloads.
+    getNode: (id: string): Rect | undefined => {
+      const n = scene.get(asNodeId(id));
+      return n ? n.data : undefined;
+    },
+    getNodes: (): Rect[] => {
+      const out: Rect[] = [];
+      for (const id of scene.renderOrder()) {
+        const n = scene.get(id);
+        if (n) out.push(n.data);
+      }
+      return out;
+    },
+  }), [sceneAdapter, scene, selection]);
 
   useGroup(adapter);
   useUngroup(adapter);
@@ -65,8 +89,9 @@ export function GroupsDemo() {
     if (leaves.length === 0) return null;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const lid of leaves) {
-      const r = rectsRef.current.find((x) => x.id === lid);
-      if (!r) continue;
+      const n = scene.get(asNodeId(lid));
+      if (!n) continue;
+      const r = n.pose as Pose;
       if (r.x < minX) minX = r.x;
       if (r.y < minY) minY = r.y;
       if (r.x + r.width > maxX) maxX = r.x + r.width;
@@ -76,22 +101,31 @@ export function GroupsDemo() {
   };
 
   const boundsOf = (id: string): Pose | null => {
-    return adapter.getGroup(id) ? groupBounds(id) : adapter.getPose(id);
+    return adapter.getGroup(id) ? groupBounds(id) : (sceneAdapter.getPose(id) as Pose | null);
   };
 
-  const pickEvery = (wx: number, wy: number): string | null => {
-    for (let i = rectsRef.current.length - 1; i >= 0; i--) {
-      const r = rectsRef.current[i];
+  const pickOne = (wx: number, wy: number): string | null => {
+    const order = [...scene.renderOrder()];
+    for (let i = order.length - 1; i >= 0; i--) {
+      const id = order[i];
+      const n = scene.get(id);
+      if (!n) continue;
+      const r = n.pose as Pose;
       if (wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height) {
-        return resolveToOutermostGroup(r.id, adapter);
+        return resolveToOutermostGroup(id, adapter);
       }
     }
     return null;
   };
 
+  const getNode = (id: string): Rect | null => {
+    const n = scene.get(asNodeId(id));
+    return n ? n.data : null;
+  };
+
   const select = useSelectTool<Rect, Pose>(adapter, {
     pickEvery: (wx, wy) => {
-      const id = pickEvery(wx, wy);
+      const id = pickOne(wx, wy);
       return id ? [id] : [];
     },
     boundsOf,
@@ -101,7 +135,7 @@ export function GroupsDemo() {
       path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
       fill: { color: rect.color },
     }],
-    getNode: (id) => rectsRef.current.find((r) => r.id === id) ?? null,
+    getNode,
   });
   const resizeTool = useResizeTool<Rect, Pose>(adapter, {
     resize: {
@@ -113,12 +147,12 @@ export function GroupsDemo() {
     boundsOf,
     getSelection: () => selection.current,
     poseBounds: (p) => p,
-    getNode: (id) => rectsRef.current.find((r) => r.id === id) ?? null,
+    getNode,
   });
   const rotateTool = useRotateTool<Rect, Pose>(adapter, {
     boundsOf,
     getSelection: () => [...selection.current],
-    getNode: (id) => rectsRef.current.find((r) => r.id === id) ?? null,
+    getNode,
   });
   const tools = useTools({
     active: 'select',
@@ -127,21 +161,18 @@ export function GroupsDemo() {
   });
 
   return (
-    <Canvas
+    <SceneCanvas
       width={W}
       height={H}
       className="ckd-canvas"
-      adapter={adapter}
+      scene={scene}
       selection={selection}
       tools={tools}
+      geometry={{
+        pickEvery: pickOne,
+        boundsOf,
+      }}
       layers={{
-        scene: {
-          drawOne: (r, p): DrawCommand[] => [{
-            kind: 'path',
-            path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-            fill: { color: r.color },
-          }],
-        },
         selectionOverlay: {
           groupAdapter: adapter,
           // Pose lookup composes move/resize overlays + the group-aware union
@@ -151,8 +182,9 @@ export function GroupsDemo() {
           // per-leaf resize.
           poseById: composeSelectionPose<Pose>({
             getStoredPose: (id) => {
-              const r = rects.find((x) => x.id === id);
-              return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : ({} as Pose);
+              const n = scene.get(asNodeId(id));
+              const p = n?.pose as Pose | undefined;
+              return p ? { x: p.x, y: p.y, width: p.width, height: p.height } : ({} as Pose);
             },
             groupAdapter: adapter,
           }),
