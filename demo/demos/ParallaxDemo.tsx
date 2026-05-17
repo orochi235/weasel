@@ -190,7 +190,7 @@ export function ParallaxDemo() {
   const selection = useSelection();
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   const [zoomParallax, setZoomParallax] = useState(false);
-  const hand = useHandTool({ axis: 'x', inertia: { friction: 0.92, minSpeed: 0.05 } });
+  const hand = useHandTool({ axis: 'x', inertia: {} });
   const wheel = useWheelPanTool({ axis: 'x' });
   const tools = useTools({ active: 'hand', registry: { hand }, ambient: [wheel] });
 
