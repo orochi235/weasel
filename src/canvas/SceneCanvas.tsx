@@ -23,7 +23,6 @@ import type React from 'react';
 import type { ReactNode } from 'react';
 import { type ActionsProp } from 'interactions/actions/registry';
 import { useStandardActions } from 'interactions/actions/useStandardActions';
-import { translateRectPose } from 'features/groups/composePose';
 import type { DrawCommand, ShaderProgramHandle } from '../renderer';
 import { textCommand } from 'features/text/textCommand';
 import { findShapePainter } from './shapePainters';
@@ -38,7 +37,6 @@ import type { View } from 'core/viewport/view';
 import type { Node, Scene, SerializedScene } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
 import { sceneFromJSON } from 'core/scene/scene';
-import type { Op } from 'core/ops/types';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
 import { usePublishSelection } from 'features/selection/SelectionContext';
 import type { Bounds } from 'tools/builtin/useSelectTool';
@@ -57,7 +55,6 @@ import { useViewportTools } from './SceneCanvas/useViewportTools';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useBuiltinShapeTools, type BuiltinShapeToolId, type BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
-import type { StandardActionsDeps, StandardActionDefaults } from 'interactions/actions/resolveActions';
 import { DepRegistryProvider } from 'interactions/actions/depRegistry';
 import { ActiveToolContextProvider } from 'interactions/actions/activeToolContext';
 import { DispatcherPresenceProvider } from 'interactions/dispatcher/dispatcherPresence';
@@ -685,40 +682,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // so the resolved actions always read current state. `useStandardActions`
   // stabilizes via refs internally — these closures are passed every render
   // but the registered Action descriptors are not re-registered.
-  const sceneRef = useRef(scene);
-  sceneRef.current = scene;
-  const adapterRef = useRef(adapter);
-  adapterRef.current = adapter;
-  const selectionRef = useRef(selection);
-  selectionRef.current = selection;
-
-  const standardActionsDeps = useMemo<StandardActionsDeps<TPose>>(() => ({
-    setSelection: (ids) => selectionRef.current.adapterMethods.setSelection(ids),
-    getSelection: () => [...selectionRef.current.current],
-    listAll: () => {
-      const out: NodeId[] = [];
-      for (const nid of sceneRef.current.renderOrder()) out.push(nid);
-      return out;
-    },
-    getPose: (id) => {
-      const n = sceneRef.current.get(id);
-      return n?.pose as TPose;
-    },
-    applyOps: (ops: Op[], label?: string) => {
-      const a = adapterRef.current;
-      if (typeof (a as { applyOps?: unknown }).applyOps === 'function') {
-        (a as { applyOps: (ops: Op[], label: string) => void }).applyOps(ops, label ?? '');
-      } else {
-        for (const op of ops) op.apply(a);
-      }
-    },
-    translatePose: (p, dx, dy) =>
-      translateRectPose(
-        p as unknown as { x: number; y: number; width: number; height: number },
-        dx, dy,
-      ) as unknown as TPose,
-  }), []);
-
   // Merge the forwarded ref with our internalCanvasRef so usePinchZoomTool
   // can read the canvas element even when the consumer also forwards a ref.
   const mergedRef = useCallback(
@@ -756,9 +719,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
               {canvas}
               <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />
               <StandardActionsRegistrar
-                deps={standardActionsDeps}
-                actions={actions}
-                defaults={actionDefaults}
+                selection={selection}
+                scene={scene as Scene<unknown, string, unknown>}
               />
               <GestureDispatcherMounter
                 canvasRef={internalCanvasRef}
@@ -811,17 +773,15 @@ function GestureDispatcherMounter({
  * is in scope. Lives inside `<ActionsProviderIfRoot>` so it sees both
  * parent-supplied registries and SceneCanvas's auto-mounted one.
  */
-function StandardActionsRegistrar<TPose>({
-  deps, actions, defaults,
+function StandardActionsRegistrar({
+  selection, scene,
 }: {
-  deps: StandardActionsDeps<TPose>;
-  actions: ActionsProp | undefined;
-  defaults: StandardActionDefaults<TPose> | undefined;
+  selection: SelectionApi;
+  scene: Scene<unknown, string, unknown>;
+  actions?: ActionsProp;
+  defaults?: unknown;
 }) {
-  useStandardActions(deps, {
-    ...(actions !== undefined ? { actions } : {}),
-    ...(defaults !== undefined ? { defaults } : {}),
-  });
+  useStandardActions({ selection, scene });
   return null;
 }
 

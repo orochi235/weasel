@@ -49,6 +49,15 @@ export function useDepRegistry(): DepRegistry {
   return r;
 }
 
+/**
+ * Like `useDepRegistry`, but returns `null` when no `<DepRegistryProvider>` is
+ * in scope instead of throwing. Used by `useStandardActions` to preserve its
+ * silent-no-op contract when neither provider is present.
+ */
+export function useOptionalDepRegistry(): DepRegistry | null {
+  return useContext(DepRegistryContext);
+}
+
 /** Register a live source for `name` for the lifetime of the calling
  *  component. The `source` thunk is called at dispatch time and should
  *  return the latest value. */

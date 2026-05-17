@@ -112,16 +112,8 @@ export {
   defaultAlignActions, defaultDistributeActions, defaultBooleanActions,
   defaultDeleteAction, defaultGroupAction, defaultUngroupAction,
 } from './interactions/actions/defaults';
-export type {
-  SelectAllDeps, EscapeDeps, DuplicateDeps, NudgeDeps, ReorderDeps, FlipDeps,
-  AlignDeps, DistributeDeps, DeleteDeps, GroupDeps, UngroupDeps,
-} from './interactions/actions/defaults';
 export { useStandardActions } from './interactions/actions/useStandardActions';
-export type {
-  UseStandardActionsOptions,
-  StandardActionsDeps,
-  StandardActionDefaults,
-} from './interactions/actions/useStandardActions';
+export type { UseStandardActionsOptions } from './interactions/actions/useStandardActions';
 export { resolveActions } from './interactions/actions/resolveActions';
 
 // ─── Invoker / GestureBinding / ActiveToolContext (Phase 1 of registry unification) ───
