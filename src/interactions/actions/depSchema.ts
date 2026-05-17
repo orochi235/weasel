@@ -35,6 +35,12 @@ import type { History } from 'core/history/history';
 import type { PointerContextValue } from 'features/pointer/PointerContext';
 import type { ActiveToolContextValue } from './activeToolContext';
 import type { TextEditDep } from './defaults/enterTextEdit';
+import type {
+  PointSnapBehavior,
+  ResizeBehavior,
+  ResizePose,
+} from '../gestures/types';
+import type { PoseDescriptor } from './resize/geometry';
 
 /** Minimal view API the action layer consumes. Phase 5+ may refine. */
 export interface ViewApi {
@@ -143,6 +149,38 @@ export interface InsertDep {
   ): NodeId | null;
 }
 
+/**
+ * Adapter dep for `resizeAction` (Phase 14e — resize-behaviors-api).
+ *
+ * Carries the four behavior-shaping options the legacy `useResize` hook
+ * exposes through `UseResizeOptions`: bounds-frame behaviors (e.g.
+ * `lockAspectWithModifier`), world-space anchor-point snap behaviors (e.g.
+ * `pointSnapToGrid`), group-expansion (`expandIds`), and pose↔bounds
+ * projection (`geometry`).
+ *
+ * Optional in `DepSchema`: when absent, `resizeAction` falls back to
+ * identity defaults (no behaviors, identity expandIds, `RECT_POSE_DESCRIPTOR`
+ * geometry). Consumers wire the dep via `useDepSource('resizeBehaviors', ...)`
+ * from any descendant of `<DepRegistryProvider>` / `<SceneCanvas>`.
+ *
+ * The generic is erased to `unknown` at the schema entry; consumers cast at
+ * the call site (mirrors the `scene` entry's convention).
+ */
+export interface ResizeBehaviorsDep<TPose> {
+  /** Bounds-frame behaviors. Constrained to `TPose extends ResizePose` since
+   *  behaviors read/write `{x,y,width,height}`. For non-rect TPose pass `[]`. */
+  behaviors: TPose extends ResizePose ? ResizeBehavior<TPose>[] : never[];
+  /** World-space anchor-point snap behaviors. Same TPose constraint as
+   *  `behaviors`. */
+  pointSnap: TPose extends ResizePose ? PointSnapBehavior<TPose>[] : never[];
+  /** Group-expansion at gesture start. Identity (`ids => ids`) when group
+   *  resize isn't wanted. */
+  expandIds: (ids: string[]) => string[];
+  /** Projection from `TPose` to bounds and back. Use `RECT_POSE_DESCRIPTOR`
+   *  for plain rect poses. */
+  geometry: PoseDescriptor<TPose>;
+}
+
 declare module './depRegistry' {
   interface DepSchema {
     /** Kit selection state — ids of currently selected nodes. */
@@ -213,6 +251,16 @@ declare module './depRegistry' {
      * follow-up will add per-kind classification to `classifyTarget`).
      */
     textEdit: TextEditDep;
+    /**
+     * Resize-behaviors dep — modifier-aware behaviors, point-snap behaviors,
+     * group expansion, and pose↔bounds projection for `resizeAction`.
+     *
+     * Optional: when omitted, `resizeAction` falls back to identity defaults
+     * (no behaviors, no snap, identity expandIds, `RECT_POSE_DESCRIPTOR`).
+     * Consumers wire via `useDepSource('resizeBehaviors', ...)` or the
+     * `useResizeBehaviorsDepSource` helper.
+     */
+    resizeBehaviors?: ResizeBehaviorsDep<unknown>;
   }
 }
 

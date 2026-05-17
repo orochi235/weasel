@@ -64,6 +64,7 @@ import {
   useLassoSelectDepSource,
   useTextEditDepSource,
   useEditAnchorsDepSource,
+  useResizeBehaviorsDepSource,
 } from './deps';
 import { useLegacyActionBridges } from './SceneCanvas/useLegacyActionBridges';
 import { useActionsPropResolver } from './SceneCanvas/useActionsPropResolver';
@@ -794,6 +795,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             actions={actions}
             currentViewRef={currentViewRef}
             onViewChange={handleViewChange}
+            resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
           />
           <GestureDispatcherMounter
             canvasRef={internalCanvasRef}
@@ -992,6 +994,7 @@ function StandardActionsRegistrar({
   actions,
   currentViewRef,
   onViewChange,
+  resizeOptions,
 }: {
   selection: SelectionApi;
   scene: Scene<unknown, string, unknown>;
@@ -1000,6 +1003,11 @@ function StandardActionsRegistrar({
   actions?: ActionsProp;
   currentViewRef: React.RefObject<View>;
   onViewChange: (v: View) => void;
+  /** Forwarded from `selectTool.resize` — wires the `resizeBehaviors` dep
+   *  consumed by the dispatcher-path `resizeAction`. The legacy
+   *  `useResizeTool` consumes the same options separately (both paths run
+   *  in parallel during the dispatcher migration). */
+  resizeOptions?: UseResizeOptions<unknown>;
 }) {
   // Build the ViewApi (stable identity, refreshed closures) and hand it to
   // useStandardActions (which publishes the `view` dep along with selection,
@@ -1021,6 +1029,29 @@ function StandardActionsRegistrar({
   useLegacyActionBridges(selection, scene, adapter, actionDefaults);
   useActionsPropResolver(actions);
 
+  // Gate the `resizeBehaviors` dep registration on the consumer having
+  // passed `selectTool.resize`. When absent, consumers wire it via a child
+  // component (see PointSnapDemo / GroupsDemo). Registering empty defaults
+  // here would race with child-component registrations — React runs child
+  // effects before parent effects, so the parent's empty default would
+  // overwrite the child's real value. The conditional mount avoids that.
+  return resizeOptions ? <ResizeBehaviorsDepRegistrar options={resizeOptions} /> : null;
+}
+
+/** Subcomponent so we can conditionally render (and thus conditionally
+ *  call) `useResizeBehaviorsDepSource`. See parent's comment for why this
+ *  must be gated rather than always-on. */
+function ResizeBehaviorsDepRegistrar({
+  options,
+}: {
+  options: UseResizeOptions<unknown>;
+}) {
+  useResizeBehaviorsDepSource<unknown>({
+    behaviors: options.behaviors as never[] | undefined,
+    pointSnap: options.pointSnapBehaviors as never[] | undefined,
+    expandIds: options.expandIds,
+    geometry: options.geometry,
+  });
   return null;
 }
 

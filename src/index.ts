@@ -160,6 +160,11 @@ export type {
   DepName,
   DepRegistry,
 } from './interactions/actions/depRegistry';
+export type { ResizeBehaviorsDep } from './interactions/actions/depSchema';
+export {
+  useResizeBehaviorsDepSource,
+  type UseResizeBehaviorsDepSourceOptions,
+} from './canvas/deps/useResizeBehaviorsDepSource';
 
 // ─── Gesture dispatcher (Phase 3 of registry unification) ───
 export {
