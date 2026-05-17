@@ -233,8 +233,7 @@ export const BUNDLE_TOOLS: Record<ToolBundle, readonly BuiltinToolId[]> = {
 export type SceneCanvasProps<TData, TLayer extends string, TPose> =
   Omit<
     CanvasProps<Node<TData, TLayer, TPose>, TPose>,
-    | 'adapter' | 'items' | 'setItems' | 'toPose' | 'fromPose'
-    | 'createDefault' | 'poseBounds' | 'intersectsRect'
+    | 'adapter'
     | 'moveOptions' | 'resizeOptions' | 'rotateOptions'
     | 'snap' | 'pickEvery' | 'boundsOf' | 'handleHitRadius'
     | 'selection' | 'selectionOptions' | 'tools' | 'geometry'
