@@ -14,6 +14,8 @@ import {
 } from 'react';
 import { isEditableTarget } from './useKeybinding';
 import type { KeyBinding } from './useKeybinding';
+import type { GestureSpec } from '../gestures/spec';
+import type { Invoker } from './invoker';
 
 export type { KeyBinding } from './useKeybinding';
 
@@ -24,7 +26,12 @@ export type { KeyBinding } from './useKeybinding';
 export interface Action {
   id: string;
   label: string;
-  defaultBinding?: KeyBinding;
+  /** v1 (legacy): KeyBinding for keydown-only dispatch.
+   *  Phase 1+: GestureSpec for the unified dispatcher.
+   *  Both forms accepted during the registry-unification transition;
+   *  the gesture dispatcher (Phase 3) reads GestureSpec; the existing
+   *  `useKeybinding` reads KeyBinding. */
+  defaultBinding?: KeyBinding | GestureSpec;
   /** Inline-SVG icon for palette / toolbar surfaces. Mirrors
    *  `ToolPresentation.icon` so a generic `<ActionBar>` can render from
    *  action metadata the same way `<ToolPalette>` renders from tool
@@ -40,6 +47,13 @@ export interface Action {
    *  formatter. */
   shortcut?: string;
   run: () => void;
+  /** Phase 1+: pluggable invocation strategy. When present, the gesture
+   *  dispatcher routes matched bindings through `invoker` rather than
+   *  calling `run`. When absent, only the legacy `run` path applies.
+   *
+   *  `run` stays required during the transition (Phases 1–8); Phase 9
+   *  deletes it once all actions have migrated to `invoker`. */
+  invoker?: Invoker;
   /**
    * @experimental
    * Optional predicate the command palette consults when rendering. Return
