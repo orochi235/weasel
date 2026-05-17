@@ -33,3 +33,4 @@ export { lassoSelectAction } from './lassoSelect';
 export { pinchZoomAction } from './pinchZoom';
 export { viewportPanAction } from './viewportPan';
 export { viewportZoomAction } from './viewportZoom';
+export { viewportDragPanAction } from './viewportDragPan';
