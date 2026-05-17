@@ -6,6 +6,7 @@ dist-swillustrator
 coverage
 .DS_Store
 *.tsbuildinfo
+.tsbuildinfo/
 .vite
 .changeset/*.md
 !.changeset/README.md
