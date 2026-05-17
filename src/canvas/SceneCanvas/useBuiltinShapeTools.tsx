@@ -143,11 +143,11 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
     }) as LeafNode,
   });
   const star = useStarTool<LeafNode>({
-    create: (center, outerRadius, rotation, points) => makeLeaf(freshId('st'), {
+    create: (center, outerRadius, innerRadius, rotation, points) => makeLeaf(freshId('st'), {
       x: center.x - outerRadius, y: center.y - outerRadius,
       width: outerRadius * 2, height: outerRadius * 2,
     }, {
-      path: starPath(center, outerRadius, points, undefined, rotation),
+      path: starPath(center, outerRadius, points, innerRadius, rotation),
       fill: nextFill(),
     }) as LeafNode,
   });
