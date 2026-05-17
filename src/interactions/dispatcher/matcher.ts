@@ -28,12 +28,20 @@ import type { GestureBinding } from '../actions/binding';
 
 /** Normalized input-event shape. Discriminated by `kind`. Includes only
  *  the fields the matcher cares about; the React seam (Task 4) builds
- *  these from real DOM events. */
+ *  these from real DOM events.
+ *
+ *  Pump-only events (`pointermove`, `pointerup`, `pointercancel`) are not
+ *  matched by `matchSpec` — they are routed directly to in-flight handles by
+ *  the dispatcher's pump path. They share the same type union so the
+ *  dispatcher's `handleInput` signature stays uniform. */
 export type InputEvent =
   | { kind: 'key'; key: string; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean; repeat?: boolean }
   | { kind: 'key-held'; key: string; phase: 'down' | 'up'; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
   | { kind: 'wheel'; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
-  | { kind: 'pointerdown'; target?: unknown; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
+  | { kind: 'pointerdown'; target?: unknown; x?: number; y?: number; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
+  | { kind: 'pointermove'; x: number; y: number; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
+  | { kind: 'pointerup'; x: number; y: number; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
+  | { kind: 'pointercancel'; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
   | { kind: 'click'; target?: unknown; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
   | { kind: 'multitouch'; fingers: number; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean };
 

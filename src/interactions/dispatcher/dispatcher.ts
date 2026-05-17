@@ -82,8 +82,15 @@ export function createDispatcher(): Dispatcher {
   // Helpers
   // -------------------------------------------------------------------------
 
+  /**
+   * Per-gesture drag origin, keyed by gestureId.
+   * Set when an ongoing drag handle is opened; used to compute deltas for
+   * `pointermove` pump events.
+   */
+  const dragOrigins = new Map<string, { x: number; y: number }>();
+
   /** Build a minimal InvocationCtx stub for the given event + deps. */
-  function buildInvocationCtx(event: InputEvent, deps: ActionDeps): InvocationCtx {
+  function buildInvocationCtx(event: InputEvent, deps: ActionDeps, gestureId?: string): InvocationCtx {
     const modifiers = {
       alt: event.altKey,
       ctrl: event.ctrlKey,
@@ -105,7 +112,25 @@ export function createDispatcher(): Dispatcher {
     } else if (event.kind === 'wheel') {
       base.wheel = { deltaX: 0, deltaY: 0, deltaZ: 0 };
     } else if (event.kind === 'pointerdown' || event.kind === 'click') {
-      base.drag = { start: { x: 0, y: 0 }, current: { x: 0, y: 0 }, delta: { x: 0, y: 0 } };
+      const sx = event.kind === 'pointerdown' ? (event.x ?? 0) : 0;
+      const sy = event.kind === 'pointerdown' ? (event.y ?? 0) : 0;
+      base.screen = { x: sx, y: sy };
+      base.world = { x: sx, y: sy };
+      base.drag = { start: { x: sx, y: sy }, current: { x: sx, y: sy }, delta: { x: 0, y: 0 } };
+    } else if (event.kind === 'pointermove' || event.kind === 'pointerup') {
+      const cx = event.x;
+      const cy = event.y;
+      base.screen = { x: cx, y: cy };
+      base.world = { x: cx, y: cy };
+      // Compute delta relative to drag origin if available.
+      const origin = gestureId ? dragOrigins.get(gestureId) : undefined;
+      const ox = origin?.x ?? cx;
+      const oy = origin?.y ?? cy;
+      base.drag = {
+        start: { x: ox, y: oy },
+        current: { x: cx, y: cy },
+        delta: { x: cx - ox, y: cy - oy },
+      };
     } else if (event.kind === 'multitouch') {
       base.multiTouch = { centroid: { x: 0, y: 0 }, spread: 1, rotation: 0 };
     }
@@ -121,7 +146,12 @@ export function createDispatcher(): Dispatcher {
     if (event.kind === 'key-held') {
       return `key-held-${event.key}`;
     }
-    if (event.kind === 'pointerdown') {
+    if (
+      event.kind === 'pointerdown' ||
+      event.kind === 'pointermove' ||
+      event.kind === 'pointerup' ||
+      event.kind === 'pointercancel'
+    ) {
       return `pointer-mouse`;
     }
     if (event.kind === 'multitouch') {
@@ -204,11 +234,50 @@ export function createDispatcher(): Dispatcher {
       const gestureId = gestureIdFor(event);
       const handle = inFlightHandles.get(gestureId);
       if (handle) {
-        const stubCtx = buildInvocationCtx(event, {});
+        const stubCtx = buildInvocationCtx(event, {}, gestureId);
         handle.onEnd?.(stubCtx, 'commit');
         inFlightHandles.delete(gestureId);
+        dragOrigins.delete(gestureId);
       }
       // Whether we had a handle or not, this is a follow-up event, not a new match.
+      return handle ? 'handled' : 'unhandled';
+    }
+
+    // --- Pump: pointermove → onMove on the in-flight drag handle ---
+    if (event.kind === 'pointermove') {
+      const gestureId = gestureIdFor(event);
+      const handle = inFlightHandles.get(gestureId);
+      if (handle?.onMove) {
+        const moveCtx = buildInvocationCtx(event, {}, gestureId);
+        handle.onMove(moveCtx);
+        return 'handled';
+      }
+      return 'unhandled';
+    }
+
+    // --- Pump: pointerup → onEnd('commit') on the in-flight drag handle ---
+    if (event.kind === 'pointerup') {
+      const gestureId = gestureIdFor(event);
+      const handle = inFlightHandles.get(gestureId);
+      if (handle) {
+        const endCtx = buildInvocationCtx(event, {}, gestureId);
+        handle.onEnd?.(endCtx, 'commit');
+        inFlightHandles.delete(gestureId);
+        dragOrigins.delete(gestureId);
+      }
+      return handle ? 'handled' : 'unhandled';
+    }
+
+    // --- Pump: pointercancel → onEnd('cancel') on the in-flight drag handle ---
+    if (event.kind === 'pointercancel') {
+      const gestureId = gestureIdFor(event);
+      const handle = inFlightHandles.get(gestureId);
+      if (handle) {
+        const endCtx = buildInvocationCtx(event, {}, gestureId);
+        handle.onEnd?.(endCtx, 'cancel');
+        inFlightHandles.delete(gestureId);
+        dragOrigins.delete(gestureId);
+      }
       return handle ? 'handled' : 'unhandled';
     }
 
@@ -251,9 +320,13 @@ export function createDispatcher(): Dispatcher {
     }
 
     if (action.invoker?.timing === 'ongoing') {
-      const invCtx = buildInvocationCtx(event, deps);
-      const handle = action.invoker.start(invCtx, match.binding.opts);
       const gestureId = gestureIdFor(event);
+      // Record the drag origin so subsequent pointermove events can compute delta.
+      if (event.kind === 'pointerdown') {
+        dragOrigins.set(gestureId, { x: event.x ?? 0, y: event.y ?? 0 });
+      }
+      const invCtx = buildInvocationCtx(event, deps, gestureId);
+      const handle = action.invoker.start(invCtx, match.binding.opts);
       inFlightHandles.set(gestureId, handle);
       return 'handled';
     }
@@ -282,6 +355,7 @@ export function createDispatcher(): Dispatcher {
       handle.onEnd?.(stubCtx, reason);
     }
     inFlightHandles.clear();
+    dragOrigins.clear();
   }
 
   // -------------------------------------------------------------------------

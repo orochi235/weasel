@@ -86,10 +86,11 @@ interface MoveScratch {
  *
  * @see useMove — the React hook this descriptor mirrors for the simple case.
  */
-export const moveAction: Action = {
+export const moveAction: Action & { requires: string[] } = {
   id: 'move',
   label: 'Move',
   gestureBinding: { kind: 'drag' },
+  requires: ['selection', 'scene'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
