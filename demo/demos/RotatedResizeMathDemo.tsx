@@ -102,7 +102,13 @@ const COUPLED_ROTATION_DESCRIPTOR = {
   },
 } as unknown as PoseDescriptor<Rect>;
 
-function LedgerCaption({ scene, anchor }: { scene: RectScene; anchor: { x: 'min' | 'max'; y: 'min' | 'max' } }) {
+function LedgerCaption({
+  scene, anchor, title,
+}: {
+  scene: RectScene;
+  anchor: { x: 'min' | 'max'; y: 'min' | 'max' };
+  title: string;
+}) {
   const node = scene.get(asNodeId('a'));
   if (!node) return null;
   const p = node.pose;
@@ -114,9 +120,24 @@ function LedgerCaption({ scene, anchor }: { scene: RectScene; anchor: { x: 'min'
   const localY = anchor.y === 'min' ? p.y : p.y + p.height;
   const w = rotatePoint(localX, localY, cx, cy, p.rotation);
   return (
-    <pre style={{ fontSize: 11, margin: 0, fontFamily: 'monospace' }}>
-      fixed corner world: ({w.x.toFixed(1)}, {w.y.toFixed(1)})
-    </pre>
+    <div
+      style={{
+        position: 'absolute',
+        left: 6,
+        bottom: 6,
+        padding: '4px 6px',
+        fontSize: 11,
+        fontFamily: 'monospace',
+        color: '#e8e8e8',
+        background: 'rgba(0,0,0,0.55)',
+        borderRadius: 3,
+        pointerEvents: 'none',
+        lineHeight: 1.3,
+      }}
+    >
+      <div style={{ fontWeight: 600 }}>{title}</div>
+      <div style={{ opacity: 0.85 }}>fixed corner: ({w.x.toFixed(1)}, {w.y.toFixed(1)})</div>
+    </div>
   );
 }
 
@@ -230,10 +251,12 @@ interface PanelProps {
   fixedOrigin: { x: number; y: number } | null;
   fixedCurrent: { x: number; y: number } | null;
   onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => void;
+  title: string;
+  showHandles: boolean;
 }
 
 function Panel({
-  scene, ghostPose, ghostColor, fixedOrigin, fixedCurrent, onPointerDown,
+  scene, ghostPose, ghostColor, fixedOrigin, fixedCurrent, onPointerDown, title, showHandles,
 }: PanelProps) {
   return (
     <div onPointerDownCapture={onPointerDown} style={{ touchAction: 'none', position: 'relative' }}>
@@ -243,7 +266,7 @@ function Panel({
         className="ckd-canvas"
         scene={scene}
         geometry={{ pickEvery: pickEveryFor(scene) }}
-        selectionOptions={{ initial: [asNodeId('a')] }}
+        selectionOptions={showHandles ? { initial: [asNodeId('a')] } : undefined}
         layers={{
           grid: GRID,
           scene: { drawOne: drawRect },
@@ -252,7 +275,7 @@ function Panel({
       />
       {ghostPose && <GhostRect pose={ghostPose} color={ghostColor} />}
       <FixedCornerMarkers origin={fixedOrigin} current={fixedCurrent} color={ghostColor} />
-      <LedgerCaption scene={scene} anchor={{ x: 'min', y: 'min' }} />
+      <LedgerCaption scene={scene} anchor={{ x: 'min', y: 'min' }} title={title} />
     </div>
   );
 }
@@ -280,7 +303,7 @@ function StackedOverlayPanel({
     .filter((p): p is Rect => !!p);
 
   return (
-    <div>
+    <div style={{ position: 'relative' }}>
       <svg width={W} height={H} className="ckd-canvas" style={{ display: 'block', pointerEvents: 'none', overflow: 'visible' }}>
         {poses.map((p, i) => {
           const cx = p.x + p.width / 2;
@@ -300,9 +323,30 @@ function StackedOverlayPanel({
           );
         })}
       </svg>
-      <pre style={{ fontSize: 11, margin: 0, fontFamily: 'monospace' }}>
-        live overlay (non-interactive)
-      </pre>
+      <OverlayLabel title="Live overlay" subtitle="all four stacked at 60% opacity" />
+    </div>
+  );
+}
+
+function OverlayLabel({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: 6,
+        bottom: 6,
+        padding: '4px 6px',
+        fontSize: 11,
+        fontFamily: 'monospace',
+        color: '#e8e8e8',
+        background: 'rgba(0,0,0,0.55)',
+        borderRadius: 3,
+        pointerEvents: 'none',
+        lineHeight: 1.3,
+      }}
+    >
+      <div style={{ fontWeight: 600 }}>{title}</div>
+      {subtitle && <div style={{ opacity: 0.85 }}>{subtitle}</div>}
     </div>
   );
 }
@@ -357,7 +401,7 @@ function MedianPanel({
   const cy = m.y + m.height / 2;
   const deg = (m.rotation * 180) / Math.PI;
   return (
-    <div>
+    <div style={{ position: 'relative' }}>
       <svg width={W} height={H} className="ckd-canvas" style={{ display: 'block', pointerEvents: 'none', overflow: 'visible' }}>
         <rect
           x={m.x}
@@ -372,9 +416,7 @@ function MedianPanel({
           transform={`rotate(${deg} ${cx} ${cy})`}
         />
       </svg>
-      <pre style={{ fontSize: 11, margin: 0, fontFamily: 'monospace' }}>
-        median(orange, purple, teal) = green
-      </pre>
+      <OverlayLabel title="Median(orange, purple, teal)" subtitle="per-component recovers green" />
     </div>
   );
 }
@@ -572,6 +614,8 @@ export function RotatedResizeMathDemo() {
       </header>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
         <Panel
+          title="Full math (drag me)"
+          showHandles
           scene={greenScene}
           ghostPose={greenCtl.overlay?.currentPose ?? null}
           ghostColor={ghostColorFor('green')}
@@ -580,6 +624,8 @@ export function RotatedResizeMathDemo() {
           onPointerDown={(e) => handlePointerDown('green', e)}
         />
         <Panel
+          title="No projection — world-frame delta"
+          showHandles={false}
           scene={orangeScene}
           ghostPose={orangeCtl.overlay?.currentPose ?? null}
           ghostColor={ghostColorFor('orange')}
@@ -588,6 +634,8 @@ export function RotatedResizeMathDemo() {
           onPointerDown={(e) => handlePointerDown('orange', e)}
         />
         <Panel
+          title="No correction — anchor drifts"
+          showHandles={false}
           scene={purpleScene}
           ghostPose={purpleCtl.overlay?.currentPose ?? null}
           ghostColor={ghostColorFor('purple')}
@@ -596,6 +644,8 @@ export function RotatedResizeMathDemo() {
           onPointerDown={(e) => handlePointerDown('purple', e)}
         />
         <Panel
+          title="Coupled rotation — pivot follows size"
+          showHandles={false}
           scene={tealScene}
           ghostPose={tealCtl.overlay?.currentPose ?? null}
           ghostColor={ghostColorFor('teal')}
