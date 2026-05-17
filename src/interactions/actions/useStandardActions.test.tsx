@@ -73,6 +73,7 @@ const KIT_IDS = [
   'pathfinder.exclude', 'pathfinder.divide', 'pathfinder.crop',
   'move',
   'resize', 'rotate', 'areaSelect', 'insert', 'clone',
+  'editAnchors', 'lassoSelect', 'viewport.pinchZoom',
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -80,7 +81,7 @@ const KIT_IDS = [
 // ---------------------------------------------------------------------------
 
 describe('useStandardActions', () => {
-  it('registers all 35 kit-standard action descriptors', () => {
+  it('registers all 38 kit-standard action descriptors', () => {
     const seen: string[][] = [];
     render(
       <Providers>

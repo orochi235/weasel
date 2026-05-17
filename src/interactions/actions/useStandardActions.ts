@@ -45,6 +45,9 @@ import { rotateAction } from './defaults/rotate';
 import { areaSelectAction } from './defaults/areaSelect';
 import { insertAction } from './defaults/insert';
 import { cloneAction } from './defaults/clone';
+import { editAnchorsAction } from './defaults/editAnchors';
+import { lassoSelectAction } from './defaults/lassoSelect';
+import { pinchZoomAction } from './defaults/pinchZoom';
 
 /** @experimental */
 export interface UseStandardActionsOptions {
@@ -69,7 +72,7 @@ export interface UseStandardActionsOptions {
  * Count: 2 (escape/selectAll) + 1 (delete) + 1 (duplicate) + 1 (group) +
  *        1 (ungroup) + 2 (undo/redo) + 1 (flip) + 4 (nudge) + 2 (reorder) +
  *        6 (align) + 2 (distribute) + 6 (pathfinder) + 1 (move) +
- *        5 (resize/rotate/areaSelect/insert/clone) = 35
+ *        5 (resize/rotate/areaSelect/insert/clone) + 3 (editAnchors/lassoSelect/pinchZoom) = 38
  */
 const KIT_STANDARD_DESCRIPTORS: Action[] = [
   escapeAction,
@@ -107,6 +110,9 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   areaSelectAction,
   insertAction,
   cloneAction,
+  editAnchorsAction,
+  lassoSelectAction,
+  pinchZoomAction,
 ];
 
 /**
