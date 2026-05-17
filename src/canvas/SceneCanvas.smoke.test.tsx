@@ -457,7 +457,7 @@ describe('useHandTool smoke', () => {
 // ---------------------------------------------------------------------------
 
 describe('useRectTool smoke', () => {
-  it.skip('drag-empty inserts a rect node (pending insert-dep wiring)', () => {
+  it.skip('drag-empty inserts a rect node (TODO: keybindings not switching tool in jsdom)', () => {
     const scene = emptyScene();
     const { container } = render(
       <SceneCanvas
@@ -466,11 +466,18 @@ describe('useRectTool smoke', () => {
         width={400}
         height={400}
         toolBundle="standard"
-        defaultTools={['rect']}
+        defaultTools={['select', 'rect']}
       />,
     );
 
     const canvas = getCanvas(container);
+
+    // Activate rect tool via 'R' keybinding (outside act to let state flush).
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', {
+        bubbles: true, key: 'r', code: 'KeyR',
+      }));
+    });
 
     act(() => {
       drag(canvas, 50, 50, 200, 150);
@@ -491,7 +498,7 @@ describe('useRectTool smoke', () => {
 });
 
 describe('useEllipseTool smoke', () => {
-  it.skip('drag-empty inserts an ellipse node (pending insert-dep wiring)', () => {
+  it.skip('drag-empty inserts an ellipse node (TODO: keybindings not switching tool in jsdom)', () => {
     const scene = emptyScene();
     const { container } = render(
       <SceneCanvas
@@ -500,11 +507,18 @@ describe('useEllipseTool smoke', () => {
         width={400}
         height={400}
         toolBundle="standard"
-        defaultTools={['ellipse']}
+        defaultTools={['select', 'ellipse']}
       />,
     );
 
     const canvas = getCanvas(container);
+
+    // Activate ellipse tool via 'E' keybinding (outside act to let state flush).
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', {
+        bubbles: true, key: 'e', code: 'KeyE',
+      }));
+    });
 
     act(() => {
       drag(canvas, 50, 50, 200, 150);
@@ -515,7 +529,7 @@ describe('useEllipseTool smoke', () => {
 });
 
 describe('useLineTool smoke', () => {
-  it.skip('drag-empty inserts a line node (pending insert-dep wiring)', () => {
+  it.skip('drag-empty inserts a line node (TODO: keybindings not switching tool in jsdom)', () => {
     const scene = emptyScene();
     const { container } = render(
       <SceneCanvas
@@ -524,11 +538,18 @@ describe('useLineTool smoke', () => {
         width={400}
         height={400}
         toolBundle="standard"
-        defaultTools={['line']}
+        defaultTools={['select', 'line']}
       />,
     );
 
     const canvas = getCanvas(container);
+
+    // Activate line tool via 'G' keybinding (outside act to let state flush).
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', {
+        bubbles: true, key: 'g', code: 'KeyG',
+      }));
+    });
 
     act(() => {
       drag(canvas, 50, 50, 200, 150);
@@ -539,7 +560,7 @@ describe('useLineTool smoke', () => {
 });
 
 describe('usePolygonTool smoke', () => {
-  it.skip('drag-empty inserts a polygon node (pending insert-dep wiring)', () => {
+  it.skip('drag-empty inserts a polygon node (TODO: keybindings not switching tool in jsdom)', () => {
     const scene = emptyScene();
     const { container } = render(
       <SceneCanvas
@@ -548,11 +569,18 @@ describe('usePolygonTool smoke', () => {
         width={400}
         height={400}
         toolBundle="exhaustive"
-        defaultTools={['polygon']}
+        defaultTools={['select', 'polygon']}
       />,
     );
 
     const canvas = getCanvas(container);
+
+    // Activate polygon tool via 'N' keybinding (outside act to let state flush).
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', {
+        bubbles: true, key: 'n', code: 'KeyN',
+      }));
+    });
 
     act(() => {
       drag(canvas, 50, 50, 200, 200);
@@ -563,7 +591,7 @@ describe('usePolygonTool smoke', () => {
 });
 
 describe('useStarTool smoke', () => {
-  it.skip('drag-empty inserts a star node (pending insert-dep wiring)', () => {
+  it.skip('drag-empty inserts a star node (TODO: keybindings not switching tool in jsdom)', () => {
     const scene = emptyScene();
     const { container } = render(
       <SceneCanvas
@@ -572,11 +600,18 @@ describe('useStarTool smoke', () => {
         width={400}
         height={400}
         toolBundle="exhaustive"
-        defaultTools={['star']}
+        defaultTools={['select', 'star']}
       />,
     );
 
     const canvas = getCanvas(container);
+
+    // Activate star tool via '*' keybinding (outside act to let state flush).
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', {
+        bubbles: true, key: '*', code: 'Digit8', shiftKey: true,
+      }));
+    });
 
     act(() => {
       drag(canvas, 50, 50, 200, 200);
@@ -587,7 +622,7 @@ describe('useStarTool smoke', () => {
 });
 
 describe('usePencilTool smoke', () => {
-  it.skip('drag-empty inserts a pencil/path node (pending insert-dep wiring)', () => {
+  it.skip('drag-empty inserts a pencil/path node (TODO: keybindings not switching tool in jsdom)', () => {
     const scene = emptyScene();
     const { container } = render(
       <SceneCanvas
@@ -596,11 +631,18 @@ describe('usePencilTool smoke', () => {
         width={400}
         height={400}
         toolBundle="standard"
-        defaultTools={['pencil']}
+        defaultTools={['select', 'pencil']}
       />,
     );
 
     const canvas = getCanvas(container);
+
+    // Activate pencil tool via 'P' keybinding (outside act to let state flush).
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', {
+        bubbles: true, key: 'p', code: 'KeyP',
+      }));
+    });
 
     act(() => {
       pd(canvas, 50, 50);
@@ -615,7 +657,7 @@ describe('usePencilTool smoke', () => {
 });
 
 describe('useLassoTool smoke', () => {
-  it.skip('lasso drag sets selection to enclosed nodes (pending lassoSelect-dep wiring)', () => {
+  it.skip('lasso drag sets selection to enclosed nodes (TODO: keybindings not switching tool in jsdom)', () => {
     // Node at {x:100, y:100, w:80, h:60} — lasso should enclose it.
     const scene = makeScene();
     const id = firstId(scene);
@@ -644,12 +686,19 @@ describe('useLassoTool smoke', () => {
         width={400}
         height={400}
         toolBundle="exhaustive"
-        defaultTools={['lasso']}
+        defaultTools={['select', 'lasso']}
         selection={selectionApi as Parameters<typeof SceneCanvas>[0]['selection']}
       />,
     );
 
     const canvas = getCanvas(container);
+
+    // Activate lasso tool via 'L' keybinding (outside act to let state flush).
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', {
+        bubbles: true, key: 'l', code: 'KeyL',
+      }));
+    });
 
     act(() => {
       // Draw lasso polygon enclosing node at (100..180, 100..160).
