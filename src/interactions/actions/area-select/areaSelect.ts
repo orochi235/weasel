@@ -2,33 +2,18 @@ import { useMemo, useRef } from 'react';
 import type { Op } from 'core/ops/types';
 import type { AreaSelectAdapter } from 'core/adapters/types';
 import type {
-  AreaSelectBehavior,
   AreaSelectOverlay,
   AreaSelectPose,
   GestureContext,
   ModifierState,
 } from '../../gestures/types';
-import type { DebugSink } from '../../../debug/types';
 import { useDragRect, type DragRectCtx } from '../../gestures/dragRect';
+import type { UseAreaSelectOptions } from './options';
+export type { UseAreaSelectOptions } from './options';
 import { begin, hold, cancel as cancelResult, type Result } from '../../../tools/routing';
 import type { ToolCtx } from '../../../tools/types';
 
 const GID = 'gesture';
-
-/** Options for `useAreaSelect`. */
-export interface UseAreaSelectOptions {
-  behaviors?: AreaSelectBehavior[];
-  /** When set, overrides any behavior's `defaultTransient`. Default: behaviors decide. */
-  transient?: boolean;
-  /** Label used when transient is false and the hook falls back to applyOps. Default 'Area select'. */
-  label?: string;
-  onGestureStart?: () => void;
-  onGestureEnd?: (committed: boolean) => void;
-  /** Optional debug sink. When supplied, records the in-progress marquee
-   *  rectangle as a `bounds` entry under the synthetic id `'area-select'`
-   *  on every move. Tree-shakes via optional-chain when omitted. */
-  debug?: DebugSink;
-}
 
 /** Scratch shape produced by `beginAt` — identifies this as an area-select gesture. */
 /** @internal */

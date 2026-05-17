@@ -1,13 +1,9 @@
-import { useMemo, useRef, createElement } from 'react';
-import type { Op } from 'core/ops/types';
+import { useMemo, createElement } from 'react';
+import { defineTool } from '../../routing';
 import type { Tool } from '../../types';
-import { useInsert } from 'interactions/actions/insert/insert';
 import type { InsertAdapter } from 'core/adapters/types';
-import { defineDragInsertTool } from '../defineDragInsertTool';
 import { type InsertOverlayStyle } from '../marquee';
 import { TextIcon } from '../../../icons';
-
-type ApplyBatch = (ops: Op[], label: string) => void;
 
 export interface UseTextToolOptions<TNode extends { id: string }> {
   pointInsert: (point: { x: number; y: number }) => TNode | null;
@@ -23,54 +19,37 @@ const PRESENTATION = {
   group: 'type',
 };
 const KEYBINDING = { key: 'T' };
-const DEFAULT_STYLE = { fill: 'rgba(164, 139, 212, 0.10)', stroke: '#a48bd4', dash: [3, 3], lineWidth: 1 };
 
+/** Text Tool. Phase 14e Task 3.5: legacy `useInsert` hook dropped — drag-rect
+ *  insertion is owned end-to-end by the dispatcher's `insertAction` (kind:
+ *  'text'); click-on-selected-text-node enters edit mode via the
+ *  `enterTextEdit` action.
+ *
+ *  Consumers must register both the `insert` dep (e.g. through `SceneCanvas`'s
+ *  `useInsertDepSource`) and the `textEdit` dep (`enterTextEditAction`'s
+ *  contract — see `src/interactions/actions/defaults/enterTextEdit.ts`).
+ *
+ *  Note: `pointInsert`, `hitExisting`, `marqueeStyle`, `minBounds` remain on
+ *  the option surface for forward-compat but are currently ignored — they map
+ *  onto dispatcher-side features that are wired through dep sources, not
+ *  through the tool record. */
 export function useTextTool<TNode extends { id: string }>(
-  options: UseTextToolOptions<TNode>,
+  _options: UseTextToolOptions<TNode>,
 ): Tool<undefined> {
-  const { pointInsert, commitInsert, hitExisting, minBounds, marqueeStyle } = options;
-
-  // Single ref shared between useInsert.applyOps and defineDragInsertTool's
-  // capture/clear. The primitive writes ctx.applyOps into this ref on entry
-  // and clears it on end/cancel; useInsert.applyOps reads through it.
-  const applyOpsRef = useRef<ApplyBatch | null>(null);
-
-  const adapter = useMemo<InsertAdapter<TNode>>(
-    () => ({
-      commitInsert: (b) => (commitInsert ? commitInsert(b) : null),
-      commitPaste: () => [],
-      snapshotSelection: () => ({ items: [] }),
-      insertNode: () => {},
-      setSelection: () => {},
-      getSelection: () => [],
-    }),
-    [commitInsert],
+  return useMemo<Tool<undefined>>(
+    () =>
+      defineTool<undefined>({
+        id: 'text',
+        keybinding: KEYBINDING,
+        cursor: 'text',
+        presentation: PRESENTATION,
+        bindings: [
+          { spec: { kind: 'drag' }, actionId: 'insert', opts: { params: { kind: 'text' } } },
+          { spec: { kind: 'click', target: 'selected-body' }, actionId: 'enterTextEdit' },
+        ],
+        bindingsOverrideDrag: true,
+        initial: {},
+      }),
+    [],
   );
-
-  const controller = useInsert<TNode, { x: number; y: number; width: number; height: number }>(
-    adapter,
-    {
-      pointInsert,
-      clickOnly: !commitInsert,
-      minBounds: minBounds ?? { width: 4, height: 4 },
-      insertLabel: 'Insert text',
-      applyOps: (ops, label) => applyOpsRef.current?.(ops, label),
-    },
-  );
-
-  const { tool } = defineDragInsertTool({
-    id: 'text',
-    keybinding: KEYBINDING,
-    cursor: 'text',
-    presentation: PRESENTATION,
-    controller,
-    overlayId: 'text-overlay',
-    overlayLabel: 'Text overlay',
-    defaultStyle: DEFAULT_STYLE,
-    overlayStyle: marqueeStyle,
-    hitExisting,
-    applyOpsRef,
-  });
-
-  return tool;
 }

@@ -2,9 +2,7 @@ import { useMemo, createElement } from 'react';
 import { defineTool } from '../../routing';
 import { LassoIcon } from '../../../icons';
 import type { Tool } from '../../types';
-import type {
-  UseLassoSelectOptions,
-} from 'interactions/actions/lasso-select/lassoSelect';
+import type { UseLassoSelectOptions } from 'interactions/actions/lasso-select/options';
 import { selectFromLasso } from 'interactions/actions/lasso-select/behaviors/selectFromLasso';
 import type { LassoHitMode, LassoSelectAdapter } from 'core/adapters/types';
 import type { KeyBinding } from 'interactions/actions/useKeybinding';
