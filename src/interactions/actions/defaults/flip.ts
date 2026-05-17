@@ -83,10 +83,6 @@ function flipSelection(
 export const flipAction: Action = {
   id: 'flip',
   label: 'Flip',
-  // Legacy defaultBinding (retained for ActionsProvider legacy-keydown path
-  // during the transition). Defaults to horizontal when no axis param is
-  // available through the legacy path.
-  defaultBinding: { key: ['h', 'H'], shift: true },
   gestureBinding: [
     { spec: { kind: 'key', key: ['h', 'H'], mods: { shift: true } }, opts: { params: { axis: 'x' } } },
     { spec: { kind: 'key', key: ['v', 'V'], mods: { shift: true } }, opts: { params: { axis: 'y' } } },

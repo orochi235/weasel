@@ -78,9 +78,6 @@ function reorderSelection(
 export const reorderForwardAction: Action = {
   id: 'reorder.forward',
   label: 'Bring Forward',
-  // Legacy defaultBinding used by the ActionsProvider keydown bridge.
-  // Defaults to adjacent (one step forward) to preserve pre-Phase-4 behaviour.
-  defaultBinding: { key: [']', '}'], mod: true },
   gestureBinding: [
     {
       spec: { kind: 'key', key: [']', '}'], mods: { mod: true } },
@@ -114,7 +111,6 @@ export const reorderForwardAction: Action = {
 export const reorderBackwardAction: Action = {
   id: 'reorder.backward',
   label: 'Send Backward',
-  defaultBinding: { key: ['[', '{'], mod: true },
   gestureBinding: [
     {
       spec: { kind: 'key', key: ['[', '{'], mods: { mod: true } },

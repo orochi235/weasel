@@ -76,10 +76,6 @@ describe('reorderForwardAction (descriptor)', () => {
     expect(reorderForwardAction.label).toBe('Bring Forward');
   });
 
-  it('defaultBinding is Mod+]', () => {
-    expect(reorderForwardAction.defaultBinding).toEqual({ key: [']', '}'], mod: true });
-  });
-
   it('declares two parametric gestureBinding entries', () => {
     expect(Array.isArray(reorderForwardAction.gestureBinding)).toBe(true);
     expect((reorderForwardAction.gestureBinding as unknown[]).length).toBe(2);
@@ -189,10 +185,6 @@ describe('reorderBackwardAction (descriptor)', () => {
 
   it('label is "Send Backward"', () => {
     expect(reorderBackwardAction.label).toBe('Send Backward');
-  });
-
-  it('defaultBinding is Mod+[', () => {
-    expect(reorderBackwardAction.defaultBinding).toEqual({ key: ['[', '{'], mod: true });
   });
 
   it('declares two parametric gestureBinding entries', () => {
