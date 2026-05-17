@@ -1,39 +1,55 @@
 /**
- * `areaSelectAction` — ongoing Action descriptor for marquee area selection (Phase 7).
+ * `areaSelectAction` — ongoing Action descriptor for marquee area selection (Phase 11).
  *
- * ## Status: STUBBED — Phase 7 shape only
+ * ## Status: REAL
  *
- * The descriptor is registered and structurally correct. The invoker.start
- * body is a deliberate no-op stub. Full wiring is deferred to Phase 8+.
+ * Implements the marquee selection logic from `useAreaSelect`:
+ *   - `start`: records the drag start world point and shift state.
+ *   - `onMove`: tracks the current drag corner (no scene writes).
+ *   - `onEnd('commit')`: derives the marquee bounds from start + current;
+ *     calls `deps.areaSelect.hitTestArea(bounds)` to find overlapping nodes;
+ *     calls `deps.areaSelect.setSelection(ids)` to update selection (extending
+ *     with shift held). This is a **transient** write (no undo entry) matching
+ *     `useAreaSelect`'s `defaultTransient: true` convention from
+ *     `selectFromMarquee`.
+ *   - `onEnd('cancel')`: no-op.
  *
- * ## Why stubbed
+ * ## Dependencies
  *
- * `useAreaSelect` drives area selection through:
- *   - `useDragRect` for the live marquee rectangle (start + move + end)
- *   - `AreaSelectBehavior` pipeline: behaviors receive `GestureContext<AreaSelectPose>`
- *     and emit Ops on `onEnd` (e.g. `selectFromMarquee`)
- *   - Shift-held state captured at gesture START and threaded through onMove
- *   - `AreaSelectAdapter.applyOps` for final op dispatch (transient or batched)
+ * Requires `areaSelect` dep from DepSchema (Phase 11 addition):
+ *   `{ hitTestArea(bounds): NodeId[], getSelection(): NodeId[], setSelection(ids): void }`
  *
- * The key gap: the Action descriptor's invoker works with `InvocationCtx.drag`
- * (cumulative delta from dispatcher), while `useAreaSelect` needs two absolute
- * world-space points (start and current) to render the marquee rectangle. The
- * dispatcher provides `drag.start` and `drag.current` in `InvocationCtx`, but
- * the behavior pipeline also requires an `AreaSelectAdapter` that is currently
- * not part of the `DepRegistry` surface.
+ * `<SceneCanvas>` / `<StandardActionsRegistrar>` should source this dep by
+ * iterating scene nodes and checking AABB overlap. The dep is intentionally
+ * simple — consumers override it for custom hit-testing (contain-mode,
+ * layer-aware filtering, etc.).
  *
- * Additionally, the selection-write path goes through `adapter.applyOps`, not
- * `scene.batch`, so the dep model needs an `areaSelectAdapter` or equivalent.
+ * ## What this does NOT wire (vs `useAreaSelect`)
  *
- * TODO: Phase 8+ wires the invoker body — currently a no-op stub.
- * Expected additions:
- * - `DepRegistry` entry for `AreaSelectAdapter` (or a `selectNodes` scene surface)
- * - Invoker body mirrors `useAreaSelect` drag-rect / behavior pipeline
+ * - Live marquee overlay rendering — deferred to Phase 7 overlay surface.
+ * - `AreaSelectBehavior` pipeline — omitted; only the default replace/extend
+ *   semantics are implemented.
+ * - Debug sink recording — not available in the descriptor model.
  */
 
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
+import type { NodeId } from 'core/scene/types';
+import type { AreaSelectDep } from '../depSchema';
+
+// ---------------------------------------------------------------------------
+// Internal scratch
+// ---------------------------------------------------------------------------
+
+interface AreaSelectScratch {
+  dep: AreaSelectDep;
+  startX: number;
+  startY: number;
+  shiftHeld: boolean;
+  currentX: number;
+  currentY: number;
+}
 
 // ---------------------------------------------------------------------------
 // Descriptor
@@ -43,33 +59,80 @@ import type { InvocationCtx, OngoingHandle } from '../invoker';
  * @experimental
  * Static descriptor for the `areaSelect` Action.
  *
- * Requires dep-schema entry: `selection`.
- * (No `scene` dep at this phase — selection writes go through an adapter.)
+ * Requires dep-schema entry: `areaSelect`.
  *
- * The invoker is `ongoing` but the body is a no-op stub pending Phase 8
- * dispatcher additions (AreaSelectAdapter dep, marquee world-point delivery).
+ * The invoker implements replace/extend marquee selection via the `areaSelect`
+ * dep. Hit-testing and selection writes are delegated to the dep; the invoker
+ * contains only the bounds-derivation and shift-extend logic.
  *
- * @see useAreaSelect — the React hook this descriptor will mirror.
+ * @see useAreaSelect — the React hook this descriptor mirrors for the default case.
  */
 export const areaSelectAction: Action & { requires: string[] } = {
   id: 'areaSelect',
   label: 'Area Select',
   gestureBinding: { kind: 'drag' },
-  requires: ['selection'],
+  requires: ['areaSelect'],
   invoker: {
     timing: 'ongoing',
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    start(_ctx: InvocationCtx, _opts): OngoingHandle {
-      // TODO: Phase 8+ wires the invoker body — currently a no-op stub.
-      // Requires an AreaSelectAdapter dep and marquee world-point delivery
-      // through InvocationCtx.drag.start / drag.current.
-      return {};
+    start(ctx: InvocationCtx, _opts): OngoingHandle {
+      const dep = ctx.deps.areaSelect as AreaSelectDep | undefined;
+      if (!dep) return {};
+
+      // Drag start is the world point at the moment start() is called.
+      const scratch: AreaSelectScratch = {
+        dep,
+        startX: ctx.world.x,
+        startY: ctx.world.y,
+        shiftHeld: ctx.modifiers.shift,
+        currentX: ctx.world.x,
+        currentY: ctx.world.y,
+      };
+
+      return {
+        onMove(moveCtx: InvocationCtx): void {
+          scratch.currentX = moveCtx.world.x;
+          scratch.currentY = moveCtx.world.y;
+        },
+        onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
+          if (reason === 'cancel') return;
+
+          const { dep: d, startX, startY, currentX, currentY, shiftHeld } = scratch;
+
+          // Derive the marquee AABB from the two world-space corners.
+          const x = Math.min(startX, currentX);
+          const y = Math.min(startY, currentY);
+          const width = Math.abs(currentX - startX);
+          const height = Math.abs(currentY - startY);
+
+          // Zero-size marquee (click without drag) → clear selection (or no-op with shift).
+          if (width === 0 || height === 0) {
+            if (!shiftHeld) d.setSelection([]);
+            return;
+          }
+
+          const hits = d.hitTestArea({ x, y, width, height }) as NodeId[];
+
+          if (shiftHeld) {
+            const current = d.getSelection();
+            // Extend: merge current + hits (deduplicated).
+            const merged = [...current];
+            for (const id of hits) {
+              if (!merged.includes(id)) merged.push(id);
+            }
+            d.setSelection(merged);
+          } else {
+            d.setSelection(hits);
+          }
+        },
+      };
     },
   },
   /**
    * Area select doesn't require a pre-existing selection — it creates one.
    * Return `SelectionRequired` as the static placeholder to satisfy the
-   * `Action.enabled` contract; the invoker would self-guard at runtime.
+   * `Action.enabled` contract.
+   *
+   * Phase 8 TODO: add `ActionDisabledReason.None` / always-enabled sentinel.
    */
   enabled: () => ActionDisabledReason.SelectionRequired,
 };
