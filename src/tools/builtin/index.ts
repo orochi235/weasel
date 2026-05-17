@@ -21,9 +21,9 @@ export { pickTopMostHit, type PickTopMostHitAdapter } from './pickTopMostHit';
 export { applyHitExistingGate } from './hitExistingGate';
 export { useHandTool } from './useHandTool';
 export { useTextTool, type UseTextToolOptions } from './useTextTool';
-export { useWheelZoomTool, type WheelZoomToolOpts } from './useWheelZoomTool';
-export { useWheelPanTool } from './useWheelPanTool';
-export { useKeyboardZoomTool, type KeyboardZoomToolOpts } from './useKeyboardZoomTool';
+// useWheelZoomTool, useWheelPanTool, useKeyboardZoomTool dissolved in Phase 8.5.
+// Viewport zoom and pan are now handled by the viewport.zoom and viewport.pan
+// action descriptors registered via useStandardActions + useGestureDispatcher.
 export { usePinchZoomTool, type PinchZoomToolOpts } from './usePinchZoomTool';
 export {
   usePenTool,
