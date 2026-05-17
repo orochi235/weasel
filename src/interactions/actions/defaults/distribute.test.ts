@@ -56,7 +56,7 @@ describe('defaultDistributeActions', () => {
       b: { x: 30, y: 0, width: 10, height: 10 },
       c: { x: 100, y: 0, width: 10, height: 10 },
     });
-    defaultDistributeActions(deps).find((a) => a.id === 'distribute.horizontal')!.run();
+    defaultDistributeActions(deps).find((a) => a.id === 'distribute.horizontal')!.run!();
     expect(deps.applyOps).toHaveBeenCalledOnce();
     const [ops, label] = deps.applyOps.mock.calls[0];
     expect(label).toBe('Distribute');
@@ -71,7 +71,7 @@ describe('defaultDistributeActions', () => {
       b: { x: 20, y: 0, width: 30, height: 10 },
       c: { x: 100, y: 0, width: 10, height: 10 },
     }, 'gaps');
-    defaultDistributeActions(deps).find((a) => a.id === 'distribute.horizontal')!.run();
+    defaultDistributeActions(deps).find((a) => a.id === 'distribute.horizontal')!.run!();
     const [ops] = deps.applyOps.mock.calls[0];
     // span = 110-0 = 110, sumSizes = 10+30+10 = 50, gap = (110-50)/2 = 30
     // a stays at 0; b should land at 0 + 10 + 30 = 40
@@ -83,7 +83,7 @@ describe('defaultDistributeActions', () => {
       a: { x: 0, y: 0, width: 10, height: 10 },
       b: { x: 20, y: 0, width: 10, height: 10 },
     });
-    defaultDistributeActions(deps).find((a) => a.id === 'distribute.horizontal')!.run();
+    defaultDistributeActions(deps).find((a) => a.id === 'distribute.horizontal')!.run!();
     expect(deps.applyOps).not.toHaveBeenCalled();
   });
 

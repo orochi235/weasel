@@ -44,7 +44,7 @@ describe('defaultAlignActions', () => {
       a: { x: 5, y: 0, width: 10, height: 10 },
       b: { x: 20, y: 50, width: 10, height: 10 },
     });
-    defaultAlignActions(deps).find((a) => a.id === 'align.left')!.run();
+    defaultAlignActions(deps).find((a) => a.id === 'align.left')!.run!();
     expect(deps.applyOps).toHaveBeenCalledOnce();
     const [ops, label] = deps.applyOps.mock.calls[0];
     expect(label).toBe('Align');
@@ -54,7 +54,7 @@ describe('defaultAlignActions', () => {
 
   it('run() is a no-op on <2 selection', () => {
     const deps = makeDeps({ a: { x: 0, y: 0, width: 10, height: 10 } });
-    defaultAlignActions(deps).find((a) => a.id === 'align.left')!.run();
+    defaultAlignActions(deps).find((a) => a.id === 'align.left')!.run!();
     expect(deps.applyOps).not.toHaveBeenCalled();
   });
 

@@ -132,7 +132,7 @@ describe('useStandardActions', () => {
     expect(captured!.id).toBe('duplicate');
     expect(captured!.label).toBe('Duplicate');
     expect(captured!.defaultBinding).toEqual({ key: 'd', mod: true });
-    captured!.run();
+    captured!.run!();
     expect(customRun).toHaveBeenCalledOnce();
   });
 

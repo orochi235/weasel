@@ -50,7 +50,10 @@ export interface Action {
    *  surfaces derive a label from `defaultBinding` via their own
    *  formatter. */
   shortcut?: string;
-  run: () => void;
+  /** Legacy run thunk. Required during Phases 1-3; optional Phases 4-7
+   *  (factories construct it from `invoker` via `useStandardActions`'s
+   *  legacy bridge); removed Phase 10. */
+  run?: () => void;
   /** Phase 1+: pluggable invocation strategy. When present, the gesture
    *  dispatcher routes matched bindings through `invoker` rather than
    *  calling `run`. When absent, only the legacy `run` path applies.
@@ -279,7 +282,7 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
         const a = actionsRef.current.get(id);
         if (!a) return false;
         try {
-          a.run();
+          a.run?.();
         } catch (err) {
           console.error(`weasel ActionsRegistry: action "${id}" threw`, err);
         }
@@ -307,7 +310,7 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
         if (dispatcherActiveRef.current && action.gestureBinding) continue;
         if ((b.preventDefault ?? true)) e.preventDefault();
         try {
-          action.run();
+          action.run?.();
         } catch (err) {
           console.error(`weasel ActionsRegistry: action "${action.id}" threw`, err);
         }

@@ -60,7 +60,7 @@ describe('defaultNudgeActions', () => {
   it('run() of nudge.up applies dy=-step', () => {
     const deps = makeDeps();
     const a = defaultNudgeActions(deps).find(x => x.id === 'nudge.up')!;
-    a.run();
+    a.run!();
     const ops = deps.applyOps.mock.calls[0][0];
     expect(applyOp(ops[0]).pose).toMatchObject({ x: 10, y: 9 });
   });
@@ -68,7 +68,7 @@ describe('defaultNudgeActions', () => {
   it('run() of nudge.up.big applies dy=-shiftStep', () => {
     const deps = makeDeps();
     const a = defaultNudgeActions(deps).find(x => x.id === 'nudge.up.big')!;
-    a.run();
+    a.run!();
     const ops = deps.applyOps.mock.calls[0][0];
     expect(applyOp(ops[0]).pose).toMatchObject({ x: 10, y: 0 });
   });
@@ -76,7 +76,7 @@ describe('defaultNudgeActions', () => {
   it('run() of nudge.right applies dx=+step', () => {
     const deps = makeDeps();
     const a = defaultNudgeActions(deps).find(x => x.id === 'nudge.right')!;
-    a.run();
+    a.run!();
     const ops = deps.applyOps.mock.calls[0][0];
     expect(applyOp(ops[0]).pose).toMatchObject({ x: 11, y: 10 });
   });
@@ -84,7 +84,7 @@ describe('defaultNudgeActions', () => {
   it('run() is a no-op on empty selection', () => {
     const deps = { ...makeDeps(), getSelection: () => [] };
     const a = defaultNudgeActions(deps).find(x => x.id === 'nudge.up')!;
-    a.run();
+    a.run!();
     expect(deps.applyOps).not.toHaveBeenCalled();
   });
 
@@ -96,10 +96,10 @@ describe('defaultNudgeActions', () => {
       applyOps: vi.fn(),
     };
     const acts = defaultNudgeActions<Pose>(deps);
-    acts.find(a => a.id === 'nudge.right')!.run();
+    acts.find(a => a.id === 'nudge.right')!.run!();
     expect(applyOp(deps.applyOps.mock.calls[0][0][0]).pose).toMatchObject({ x: 1 });
     deps.applyOps.mockClear();
-    acts.find(a => a.id === 'nudge.right.big')!.run();
+    acts.find(a => a.id === 'nudge.right.big')!.run!();
     expect(applyOp(deps.applyOps.mock.calls[0][0][0]).pose).toMatchObject({ x: 10 });
   });
 

@@ -50,7 +50,7 @@ describe('defaultReorderActions', () => {
     const adapter = makeAdapter();
     const applyOps = vi.fn((ops: Op[]) => { for (const op of ops) op.apply(adapter); });
     defaultReorderActions({ getSelection: () => adapter.selection, applyOps })
-      .find(a => a.id === 'reorder.forward')!.run();
+      .find(a => a.id === 'reorder.forward')!.run!();
     expect(applyOps).toHaveBeenCalledOnce();
     expect(adapter.children.ROOT).toEqual(['a', 'c', 'b']);
   });
@@ -58,13 +58,13 @@ describe('defaultReorderActions', () => {
     const adapter = makeAdapter();
     const applyOps = vi.fn((ops: Op[]) => { for (const op of ops) op.apply(adapter); });
     defaultReorderActions({ getSelection: () => adapter.selection, applyOps })
-      .find(a => a.id === 'reorder.backward')!.run();
+      .find(a => a.id === 'reorder.backward')!.run!();
     expect(adapter.children.ROOT).toEqual(['b', 'a', 'c']);
   });
   it('run() is a no-op on empty selection', () => {
     const applyOps = vi.fn();
     defaultReorderActions({ getSelection: () => [], applyOps })
-      .find(a => a.id === 'reorder.forward')!.run();
+      .find(a => a.id === 'reorder.forward')!.run!();
     expect(applyOps).not.toHaveBeenCalled();
   });
   it('front binding = Mod+Shift+]', () => {

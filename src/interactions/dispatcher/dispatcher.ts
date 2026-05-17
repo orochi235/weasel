@@ -248,7 +248,7 @@ export function createDispatcher(): Dispatcher {
 
     // Fallback: legacy `run` path (no invoker).
     try {
-      action.run();
+      action.run?.();
     } catch (err) {
       console.error(`weasel dispatcher: action "${action.id}" threw`, err);
     }

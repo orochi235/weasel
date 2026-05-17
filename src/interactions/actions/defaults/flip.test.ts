@@ -49,7 +49,7 @@ describe('defaultFlipActions', () => {
   });
   it('run() emits one transform op per selected id, label "Flip"', () => {
     const deps = makeDeps();
-    defaultFlipActions(deps).find(a => a.id === 'flip.horizontal')!.run();
+    defaultFlipActions(deps).find(a => a.id === 'flip.horizontal')!.run!();
     expect(deps.applyOps).toHaveBeenCalledOnce();
     const [ops, label] = deps.applyOps.mock.calls[0];
     expect(label).toBe('Flip');
@@ -58,7 +58,7 @@ describe('defaultFlipActions', () => {
   });
   it('run() is a no-op on empty selection', () => {
     const deps = { ...makeDeps(), getSelection: () => [] };
-    defaultFlipActions(deps).find(a => a.id === 'flip.horizontal')!.run();
+    defaultFlipActions(deps).find(a => a.id === 'flip.horizontal')!.run!();
     expect(deps.applyOps).not.toHaveBeenCalled();
   });
   it('enabled: SelectionRequired when empty, true when present', () => {
