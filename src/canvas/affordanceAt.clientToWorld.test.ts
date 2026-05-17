@@ -19,7 +19,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildAffordanceAt, buildClassifyTarget } from './affordanceAt';
+import { buildAffordanceAt, buildClassifyTarget, type AnchorState } from './affordanceAt';
+import { PATH_M, PATH_L, PATH_C, PATH_Z } from 'features/paths/types';
+import type { PolygonPath } from 'features/paths/types';
 
 // ---------------------------------------------------------------------------
 // Helper: replicate the clientToWorld formula from GestureDispatcherMounter.
@@ -233,5 +235,188 @@ describe('buildAffordanceAt at scale=2 with non-zero pan (T7 audit)', () => {
     const hit = pannedAffordanceAt(wp);
     expect(hit).not.toBeNull();
     expect(hit?.kind).toBe('handle:top-left');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildAffordanceAt — anchor and control-handle hit-testing
+// ---------------------------------------------------------------------------
+
+/** Build a simple triangle PolygonPath: M(0,0) L(10,0) L(5,10) Z
+ *  Anchors: index 0 at (0,0), index 1 at (10,0), index 2 at (5,10). */
+function makeTriangle(): PolygonPath {
+  return {
+    kind: 'polygon',
+    commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_Z]),
+    coords: new Float32Array([0, 0, 10, 0, 5, 10]),
+    fillRule: 'nonzero',
+  };
+}
+
+/** Build a two-point bezier path: M(0,0) C(5,-5, 5,15, 10,10) Z
+ *  enumerateAnchors → anchor 0 at (0,0), anchor 1 at (10,10).
+ *  anchor 0 controlOut at (5,-5); anchor 1 controlIn at (5,15). */
+function makeBezierPath(): PolygonPath {
+  return {
+    kind: 'polygon',
+    commands: new Uint8Array([PATH_M, PATH_C, PATH_Z]),
+    // M  (0,0)   C  cp1(5,-5)  cp2(5,15)  ep(10,10)
+    coords: new Float32Array([0, 0, 5, -5, 5, 15, 10, 10]),
+    fillRule: 'nonzero',
+  };
+}
+
+/** Shared chrome state with one selected path node. */
+function makeChromeState(nodeId = 'path-1') {
+  return {
+    selection: [nodeId] as string[],
+    multiActive: false,
+    boundsOf: () => null,
+    modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+    get unionBounds() { return null; },
+  };
+}
+
+describe('buildAffordanceAt — anchor hits on selected polygon paths', () => {
+  const triangle = makeTriangle();
+  const chromeState = makeChromeState();
+  // Node 'path-1' is selected and is a triangle polygon.
+  const anchorState: AnchorState = {
+    editingId: null, // not in edit mode — only anchor points hittable
+    getPose: (id) => id === 'path-1' ? triangle : undefined,
+  };
+
+  const affordanceAt = buildAffordanceAt(
+    () => chromeState as any,
+    8,   // hitRadius
+    24,  // rotateDistance
+    () => anchorState,
+  );
+
+  it('pointer near anchor 0 (0,0) returns anchor:0', () => {
+    const hit = affordanceAt({ x: 0, y: 0 });
+    expect(hit).not.toBeNull();
+    expect(hit?.kind).toBe('anchor:0');
+    expect(hit?.targetIds).toEqual(['path-1']);
+  });
+
+  it('pointer near anchor 1 (10,0) returns anchor:1', () => {
+    const hit = affordanceAt({ x: 10, y: 0 });
+    expect(hit).not.toBeNull();
+    expect(hit?.kind).toBe('anchor:1');
+  });
+
+  it('pointer near anchor 2 (5,10) returns anchor:2', () => {
+    const hit = affordanceAt({ x: 5, y: 10 });
+    expect(hit).not.toBeNull();
+    expect(hit?.kind).toBe('anchor:2');
+  });
+
+  it('pointer far from all anchors returns null', () => {
+    const hit = affordanceAt({ x: 100, y: 100 });
+    expect(hit).toBeNull();
+  });
+
+  it('control handles NOT hittable when not in edit mode', () => {
+    const bezier = makeBezierPath();
+    const noEditAnchorState: AnchorState = {
+      editingId: null,
+      getPose: (id) => id === 'path-1' ? bezier : undefined,
+    };
+    const afAt = buildAffordanceAt(
+      () => makeChromeState() as any,
+      8, 24,
+      () => noEditAnchorState,
+    );
+    // controlOut of anchor 0 is at (5,-5). Outside edit mode, only anchor
+    // points are tested. dist(5,-5 → 0,0) ≈ 7.07 < 8 so anchor:0 should hit
+    // rather than controlOut:0.
+    const hit = afAt({ x: 5, y: -5 });
+    expect(hit?.kind).toBe('anchor:0');
+  });
+});
+
+describe('buildAffordanceAt — control-handle hits when in edit mode', () => {
+  const bezier = makeBezierPath();
+  const chromeState = makeChromeState();
+  // 'path-1' is in edit mode.
+  const anchorState: AnchorState = {
+    editingId: 'path-1',
+    getPose: (id) => id === 'path-1' ? bezier : undefined,
+  };
+
+  const affordanceAt = buildAffordanceAt(
+    () => chromeState as any,
+    8, 24,
+    () => anchorState,
+  );
+
+  it('pointer near controlOut of anchor 0 (5,-5) returns controlOut:0', () => {
+    // anchor 0 controlOut at (5,-5); anchor 0 at (0,0).
+    // Controls are preferred over anchors when both are within radius.
+    const hit = affordanceAt({ x: 5, y: -5 });
+    expect(hit).not.toBeNull();
+    expect(hit?.kind).toBe('controlOut:0');
+    expect(hit?.targetIds).toEqual(['path-1']);
+  });
+
+  it('pointer near controlIn of anchor 1 (5,15) returns controlIn:1', () => {
+    const hit = affordanceAt({ x: 5, y: 15 });
+    expect(hit).not.toBeNull();
+    expect(hit?.kind).toBe('controlIn:1');
+  });
+
+  it('pointer near anchor 1 (10,10) when not near any control returns anchor:1', () => {
+    // anchor 1 is at (10,10). Its controlIn is at (5,15) — dist ≈ 7.07 < 8.
+    // hitAnchor prefers controls, so test from exact anchor 1 position:
+    // dist(10,10 → anchor1) = 0, dist(10,10 → controlIn(5,15)) = sqrt(25+25) ≈ 7.07.
+    // controlIn wins since controls are preferred. Use a point right-of anchor 1
+    // where only the anchor is in range, not the control.
+    // Anchor 1 at (10,10). controlIn at (5,15): offset (-5,+5) from anchor.
+    // Move in direction (+5, -5) from anchor 1: world (15,5).
+    // dist(15,5 → anchor1(10,10)) = sqrt(25+25) ≈ 7.07 < 8 → anchor in range.
+    // dist(15,5 → controlIn(5,15)) = sqrt(100+100) ≈ 14 > 8 → control NOT in range.
+    const hit = affordanceAt({ x: 15, y: 5 });
+    expect(hit).not.toBeNull();
+    expect(hit?.kind).toBe('anchor:1');
+  });
+
+  it('pointer far from everything returns null', () => {
+    const hit = affordanceAt({ x: 200, y: 200 });
+    expect(hit).toBeNull();
+  });
+});
+
+describe('buildAffordanceAt — no anchor state wired → no anchor hits', () => {
+  const chromeState = makeChromeState();
+
+  // No getAnchorState passed → anchors never hittable.
+  const affordanceAt = buildAffordanceAt(
+    () => chromeState as any,
+  );
+
+  it('pointer exactly on anchor 0 returns null (no anchor classifier wired)', () => {
+    // Without getAnchorState, the classifier ignores path poses.
+    const hit = affordanceAt({ x: 0, y: 0 });
+    expect(hit).toBeNull();
+  });
+});
+
+describe('buildAffordanceAt — non-polygon pose is skipped', () => {
+  const chromeState = makeChromeState();
+  const anchorState: AnchorState = {
+    editingId: null,
+    getPose: () => ({ kind: 'rect', x: 0, y: 0, width: 100, height: 100 }),
+  };
+
+  const affordanceAt = buildAffordanceAt(
+    () => chromeState as any,
+    8, 24,
+    () => anchorState,
+  );
+
+  it('rect pose returns null (not hittable as anchor)', () => {
+    const hit = affordanceAt({ x: 0, y: 0 });
+    expect(hit).toBeNull();
   });
 });

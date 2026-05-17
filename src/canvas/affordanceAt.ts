@@ -19,6 +19,9 @@ import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { AffordanceHit } from 'interactions/actions/invoker';
 import { DEFAULT_ROTATION_HANDLE_DISTANCE } from 'interactions/actions/rotate/handle';
 import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/useSelectTool';
+import { hitAnchor } from 'interactions/actions/edit-anchors/handles';
+import { enumerateAnchors } from 'interactions/actions/edit-anchors/geometry';
+import type { PolygonPath } from 'features/paths/types';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -28,6 +31,10 @@ import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/useSelectTool';
  *  SceneCanvas (8px CSS). In world units at scale=1 these are equivalent;
  *  at other scales the world-unit radius keeps affordances easy to grab. */
 export const HANDLE_HIT_RADIUS = 8;
+
+/** Hit-test radius for anchor and control-handle points in world units.
+ *  Mirrors `useEditAnchors` default (`hitRadius = 8`). */
+export const ANCHOR_HIT_RADIUS = 8;
 
 /** Default rotation-handle distance from the top edge of the selection bounds
  *  in world units. Mirrors DEFAULT_ROTATION_HANDLE_DISTANCE (24). */
@@ -111,6 +118,33 @@ function cornersFor(b: Bounds): CornerDesc[] {
 }
 
 // ---------------------------------------------------------------------------
+// Anchor state thunk
+// ---------------------------------------------------------------------------
+
+/**
+ * Optional live state for anchor-handle hit-testing. When provided to
+ * `buildAffordanceAt`, the returned classifier will also test anchor points
+ * (and, when a path is in edit mode, its control handles) on selected paths.
+ *
+ * The thunk is called on every pointer event, so it must be cheap (O(1)
+ * field reads). Pose enumeration happens inside the classifier only when
+ * the caller lands on a path node.
+ */
+export interface AnchorState {
+  /**
+   * Id of the path currently in anchor-edit mode, or `null` when no path is
+   * being edited. When non-null, control handles (controlIn / controlOut) are
+   * hit-testable in addition to anchor points.
+   */
+  editingId: string | null;
+  /**
+   * Return the current pose for the given node id. The classifier only calls
+   * this for selected polygon paths. Non-polygon return values are ignored.
+   */
+  getPose(id: string): unknown;
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -127,14 +161,20 @@ function cornersFor(b: Bounds): CornerDesc[] {
  * @param getChromeState - Returns the live ChromeState at call time.
  *   Should always reflect current selection + effective bounds (including
  *   in-flight move/resize ghost poses).
- * @param hitRadius - World-unit hit radius for corner handles (default 8).
+ * @param hitRadius - World-unit hit radius for corner handles and anchor
+ *   handles (default 8).
  * @param rotateDistance - World-unit distance above top edge for rotation
  *   handle (default DEFAULT_ROTATION_HANDLE_DISTANCE = 24).
+ * @param getAnchorState - Optional thunk returning anchor-editing state.
+ *   When provided, the classifier also walks selected polygon paths for
+ *   anchor hits. Anchors are always hittable on selected paths; control
+ *   handles are only hittable when `editingId` matches the node id.
  */
 export function buildAffordanceAt(
   getChromeState: () => ChromeState,
   hitRadius: number = HANDLE_HIT_RADIUS,
   rotateDistance: number = ROTATE_DISTANCE,
+  getAnchorState?: () => AnchorState | null,
 ): (worldPoint: { x: number; y: number }) => AffordanceHit | null {
   return function affordanceAt({ x: wx, y: wy }) {
     const state = getChromeState();
@@ -172,6 +212,52 @@ export function buildAffordanceAt(
             fixedPoint: { x: cx, y: cy }, // pivot
             targetIds: [id],
           };
+        }
+      }
+    }
+
+    // -- Anchor / control-handle hits (selected polygon paths) --
+    if (getAnchorState) {
+      const anchorState = getAnchorState();
+      if (anchorState) {
+        const { editingId } = anchorState;
+        for (const id of state.selection) {
+          const pose = anchorState.getPose(id);
+          if (!pose || (pose as { kind?: string }).kind !== 'polygon') continue;
+          const polygon = pose as PolygonPath;
+          // Control handles are only hittable when this node is in edit mode.
+          const inEditMode = editingId === id;
+          if (inEditMode) {
+            // When in edit mode, use hitAnchor which prefers control handles
+            // over anchors when both are within radius — matches visual layering
+            // (controls render on top).
+            const hit = hitAnchor(polygon, wx, wy, hitRadius);
+            if (hit) {
+              const kindStr =
+                hit.kind === 'anchor'
+                  ? `anchor:${hit.anchorIndex}`
+                  : hit.kind === 'controlIn'
+                    ? `controlIn:${hit.anchorIndex}`
+                    : `controlOut:${hit.anchorIndex}`;
+              return { kind: kindStr, targetIds: [id] };
+            }
+          } else {
+            // Outside edit mode: only test anchor points, not control handles.
+            const anchors = enumerateAnchors(polygon);
+            const r2anchor = hitRadius * hitRadius;
+            let best: { d2: number; anchorIndex: number } | null = null;
+            for (const a of anchors) {
+              const dx = a.x - wx;
+              const dy = a.y - wy;
+              const d2 = dx * dx + dy * dy;
+              if (d2 <= r2anchor && (!best || d2 < best.d2)) {
+                best = { d2, anchorIndex: a.anchorIndex };
+              }
+            }
+            if (best !== null) {
+              return { kind: `anchor:${best.anchorIndex}`, targetIds: [id] };
+            }
+          }
         }
       }
     }
