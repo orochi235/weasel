@@ -1,6 +1,6 @@
 import type { RenderLayer } from '../core/layers/render';
 import type { LayerSlotValue } from './Canvas';
-import { STANDARD_SLOTS, isCustomEntry } from './Canvas';
+import { STANDARD_SLOTS, isCustomEntry } from './layerSlots';
 
 const STANDARD_SLOT_SET = new Set<string>(STANDARD_SLOTS);
 

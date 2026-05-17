@@ -24,9 +24,14 @@ describe('Badge', () => {
     expect(container.firstElementChild?.getAttribute('data-size')).toBe('md');
   });
 
-  it('renders an svg decoration layer', () => {
-    const { container } = render(<Badge shape="pill">x</Badge>);
+  it('renders an svg decoration layer for SVG-rendered shapes', () => {
+    const { container } = render(<Badge shape="square">x</Badge>);
     expect(container.querySelector('svg')).not.toBeNull();
+  });
+
+  it('omits the svg decoration layer for CSS-rendered shapes', () => {
+    const { container } = render(<Badge shape="plain">x</Badge>);
+    expect(container.querySelector('svg')).toBeNull();
   });
 });
 
@@ -44,10 +49,10 @@ describe('Badge content slots', () => {
   });
 
   it('applies shape insets as CSS custom properties', () => {
-    const { container } = render(<Badge shape="banner">x</Badge>);
+    const { container } = render(<Badge shape="notched">x</Badge>);
     const el = container.firstElementChild as HTMLElement;
-    expect(el.style.getPropertyValue('--badge-inset-left')).toBe('10px');
-    expect(el.style.getPropertyValue('--badge-inset-right')).toBe('10px');
+    expect(el.style.getPropertyValue('--badge-inset-left')).toBe('4px');
+    expect(el.style.getPropertyValue('--badge-inset-right')).toBe('4px');
   });
 });
 

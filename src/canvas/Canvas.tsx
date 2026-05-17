@@ -15,6 +15,13 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { composeOrderedLayers } from './layerOrder';
+import {
+  STANDARD_SLOTS,
+  isCustomEntry,
+  type CustomLayerEntry,
+} from './layerSlots';
+export { STANDARD_SLOTS, isCustomEntry } from './layerSlots';
+export type { StandardSlotName, CustomLayerEntry } from './layerSlots';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { ToolsApi } from 'tools/useTools';
 import type { AnyTool } from 'tools/types';
@@ -64,18 +71,6 @@ import { buildSceneTree } from './buildSceneTree';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 
-/** Standard slot names — render in this canonical order.
- *  `cellHighlight` is internal: emitted from the `grid` slot's nested
- *  `highlight` config, not a top-level layer key. */
-/** @internal */
-export const STANDARD_SLOTS = [
-  'grid',
-  'cellHighlight',
-  'scene',
-  'selectionOverlay',
-] as const;
-/** Names of the slots `<Canvas>` supports out of the box (excluding the implicit cell-highlight overlay). */
-export type StandardSlotName = Exclude<(typeof STANDARD_SLOTS)[number], 'cellHighlight'>;
 
 /** Grid slot config — extends raw grid layer opts with an optional nested
  *  `highlight` sub-config. The cell-highlight layer is rendered immediately
@@ -107,15 +102,6 @@ export type SelectionOverlaySlotConfig<TPose> = Omit<
   poseById?: (id: string) => TPose | null;
 };
 
-/** Custom layer entry — any key not in `STANDARD_SLOTS`. The presence of
- *  `.layer` discriminates this from a slot config. */
-export interface CustomLayerEntry {
-  layer: RenderLayer<unknown>;
-  /** Insert immediately after the named standard slot or another custom-layer key. */
-  after?: StandardSlotName | (string & {});
-  /** Insert immediately before the named standard slot or another custom-layer key. */
-  before?: StandardSlotName | (string & {});
-}
 
 /** Per-slot config union. The key narrows it in practice. */
 export type StandardSlotConfig<TNode extends { id: string }, TPose> =
@@ -351,9 +337,6 @@ const NOOP_SET_ITEMS = () => {};
 // when the pose is a sub-shape of the item or computed.
 const IDENTITY_TO_POSE = (obj: unknown) => obj as unknown;
 
-export function isCustomEntry(v: unknown): v is CustomLayerEntry {
-  return !!v && typeof v === 'object' && 'layer' in (v as Record<string, unknown>);
-}
 
 // Walks every registered + ambient tool: resize/rotate will register as
 // siblings of select, each publishing its own preview slice.

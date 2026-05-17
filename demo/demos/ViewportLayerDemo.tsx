@@ -55,19 +55,22 @@ export function ViewportLayerDemo() {
       space: 'world',
       draw: (_data, v): DrawCommand[] => {
         const cmds: DrawCommand[] = [];
-        for (const item of initial) {
-          const sx = (item.pose.x - v.x) * v.scale.x;
-          const sy = (item.pose.y - v.y) * v.scale.y;
+        for (const node of scene.nodes.values()) {
+          if (node.kind !== 'leaf') continue;
+          const pose = node.pose as Pose;
+          const data = node.data as NodeData;
+          const sx = (pose.x - v.x) * v.scale.x;
+          const sy = (pose.y - v.y) * v.scale.y;
           cmds.push({
             kind: 'path',
-            path: { kind: 'rect', x: sx, y: sy, width: item.pose.width * v.scale.x, height: item.pose.height * v.scale.y },
-            fill: { fill: 'solid', color: item.data.color },
+            path: { kind: 'rect', x: sx, y: sy, width: pose.width * v.scale.x, height: pose.height * v.scale.y },
+            fill: { fill: 'solid', color: data.color },
           });
         }
         return cmds;
       },
     }),
-    [initial],
+    [scene],
   );
 
   // Source layer that draws a dashed outline showing where the main
