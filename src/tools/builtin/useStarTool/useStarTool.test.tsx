@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, expectTypeOf, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useStarTool } from './useStarTool';
+import { useStarTool, type UseStarToolOptions, type StarPoint } from './useStarTool';
 import type { Tool, ToolCtx } from '../../types';
 
 function noopCtx(): ToolCtx<null> {
@@ -20,6 +20,17 @@ function noopCtx(): ToolCtx<null> {
     scratch: null,
   };
 }
+
+// Type-level guard against the create-arity bug we hit once (a caller declared a 4-arg
+// create which TS accepts under function-arity subtyping; at runtime the 5th positional
+// argument vanishes and the star renders with bogus `points` derived from `rotation`).
+// Pinning the parameter tuple here makes any future re-ordering or arity reduction
+// surface as a typecheck failure here, even though it would still be accepted at the
+// call site itself.
+type _StarCreateParams = Parameters<NonNullable<UseStarToolOptions<{ id: string }>['create']>>;
+expectTypeOf<_StarCreateParams>().toEqualTypeOf<
+  [center: StarPoint, outerRadius: number, innerRadius: number, rotation: number, points: number]
+>();
 
 describe('useStarTool', () => {
   it('declares id and presentation (no default keybinding)', () => {

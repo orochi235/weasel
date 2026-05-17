@@ -66,10 +66,12 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -n api,swill,storybook -c green,blue,magenta \"npm:dev:api\" \"npm:dev:swill\" \"npm:dev:storybook\"",
+    "dev:api": "vite",
+    "dev:swill": "vite --config apps/swillustrator/vite.config.ts",
+    "dev:storybook": "storybook dev -p 6010 --no-open",
     "build": "tsup",
     "build:demo": "vite build && npm run build:api",
-    "dev:swill": "vite --config apps/swillustrator/vite.config.ts",
     "build:swill": "vite build --config apps/swillustrator/vite.config.ts",
     "build:api": "typedoc",
     "typecheck": "tsc --noEmit",
@@ -113,6 +115,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "@vitest/browser-playwright": "^4.1.6",
+    "concurrently": "^9.2.1",
     "d3-force": "^3.0.0",
     "eslint": "^9.39.4",
     "eslint-import-resolver-typescript": "^4.4.4",

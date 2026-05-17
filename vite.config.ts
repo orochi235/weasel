@@ -75,6 +75,21 @@ export default defineConfig({
     ]),
   },
   plugins: [react(), serveApiDocsInDev()],
+  // Proxy `/weasel/swillustrator/*` to the swill dev server (`npm run dev:swill`,
+  // port 5174) so a single localhost:5173 origin mirrors the production Pages
+  // layout where swill is copied into `dist-demo/swillustrator/`. Both servers
+  // need to be running for this to work; swill's `base: '/weasel/swillustrator/'`
+  // means we forward the path through unchanged. WebSocket forwarding is enabled
+  // so HMR + Vite's dev-server live-reload also work end-to-end via the proxy.
+  server: {
+    proxy: {
+      '/weasel/swillustrator': {
+        target: 'http://localhost:5174',
+        changeOrigin: true,
+        ws: true,
+      },
+    },
+  },
   build: {
     outDir: '../dist-demo',
     emptyOutDir: true,

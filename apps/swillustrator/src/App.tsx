@@ -143,7 +143,7 @@ import {
   type ColorContextValue,
 } from './tools/colorContext/ColorContextProvider';
 import { colorActions } from './tools/colorContext/actions';
-import { useDepSource, useActionsRegistry } from '@orochi235/weasel';
+import { useDepSource, useActionsRegistry, DepRegistryProvider } from '@orochi235/weasel';
 import {
   objsToSvgNodes,
   svgNodesToObjsWithGroups,
@@ -1440,7 +1440,10 @@ export function App() {
     create: (center, outer, inner, rotation, points) => {
       const ratio = outer > 0 ? inner / outer : 0.5;
       return pathToObj(
-        starPath(center, outer, inner, rotation, points),
+        // starPath signature is (center, outerRadius, points, innerRadius, rotation) —
+        // easy to get wrong because useStarTool's `create` callback orders the same
+        // values differently (innerRadius before rotation before points).
+        starPath(center, outer, points, inner, rotation),
         true,
         'star',
         { points, ratio },
@@ -2177,6 +2180,10 @@ export function App() {
   }, [publish]);
 
   return (
+    // Swill renders the low-level <Canvas> instead of <SceneCanvas>, so the kit's
+    // dep registry isn't auto-provided. Mount the provider explicitly here so
+    // child bridges (e.g. <ColorDepBridge>) can `useDepSource()` without throwing.
+    <DepRegistryProvider>
     <ColorContextProvider
       initialFill={{ kind: 'solid', color: '#7fb069ff' }}
       initialStroke={{ kind: 'solid', color: '#1a130dff' }}
@@ -2507,6 +2514,7 @@ export function App() {
       <Toasts toasts={toasts} onDismiss={dismissToast} />
       </div>
     </ColorContextProvider>
+    </DepRegistryProvider>
   );
 }
 
