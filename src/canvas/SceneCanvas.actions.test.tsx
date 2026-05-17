@@ -119,7 +119,7 @@ describe('SceneCanvas actions integration', () => {
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
         actionDefaults={{ cloneNode: (id) => ({ id: asNodeId(id + "'") }) }}
         actions={{
-          copy: { id: 'copy', label: 'Copy', defaultBinding: { key: 'c', mod: true }, run: copyRun },
+          copy: { id: 'copy', label: 'Copy', gestureBinding: { kind: 'key', key: 'c', mods: { mod: true } }, run: copyRun },
         }}>
         <Probe onReg={(ids) => seen.push(ids)} />
       </SceneCanvas>,
@@ -137,7 +137,7 @@ describe('SceneCanvas actions integration', () => {
         actions={{
           selectAll: null,
           duplicate: { run: vi.fn() },
-          copy: { id: 'copy', label: 'Copy', defaultBinding: { key: 'c', mod: true }, run: vi.fn() },
+          copy: { id: 'copy', label: 'Copy', gestureBinding: { kind: 'key', key: 'c', mods: { mod: true } }, run: vi.fn() },
         }}>
         <Probe onReg={(ids) => seen.push(ids)} />
       </SceneCanvas>,
@@ -247,12 +247,12 @@ describe('SceneCanvas actions integration', () => {
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
         actionDefaults={{ cloneNode: (id) => ({ id: asNodeId(id + "'") }) }}
-        actions={{ duplicate: { defaultBinding: { key: 'D', mod: true, shift: true } } }}>
+        actions={{ duplicate: { gestureBinding: { kind: 'key', key: 'D', mods: { mod: true, shift: true } } } }}>
         <Capture />
       </SceneCanvas>,
     );
     expect(captured!.label).toBe('Duplicate');
-    expect(captured!.defaultBinding).toEqual({ key: 'D', mod: true, shift: true });
+    expect(captured!.gestureBinding).toEqual({ kind: 'key', key: 'D', mods: { mod: true, shift: true } });
   });
 
   it('re-mount re-registers defaults', () => {

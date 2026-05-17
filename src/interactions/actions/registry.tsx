@@ -12,7 +12,6 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react';
-import type { KeyBinding } from './useKeybinding';
 import type { GestureSpec } from '../gestures/spec';
 import type { BindingOpts, Invoker } from './invoker';
 import { useOptionalDepRegistry, type DepRegistry, type DepName } from './depRegistry';
@@ -28,8 +27,6 @@ import { useOptionalDepRegistry, type DepRegistry, type DepName } from './depReg
  */
 export type BoundGesture = GestureSpec | { spec: GestureSpec; opts: BindingOpts };
 
-export type { KeyBinding } from './useKeybinding';
-
 /**
  * @experimental
  * Single registered action. v1: one binding per action.
@@ -37,19 +34,13 @@ export type { KeyBinding } from './useKeybinding';
 export interface Action {
   id: string;
   label: string;
-  defaultBinding?: KeyBinding;
-  /** Phase 1+ (registry-unification): the gesture-spec form of the binding,
-   *  read by the gesture dispatcher. May be a single `GestureSpec`, a bare
-   *  `GestureSpec[]` (any-of semantics), or a `BoundGesture[]` where each
-   *  entry is either a bare `GestureSpec` or `{ spec, opts }` — use the
-   *  object form for parametric actions where two bindings for the same
-   *  action differ only by `opts.params` (e.g. `flip` with `axis: 'x'` vs
-   *  `'y'`). The dispatcher extracts `opts.params` and passes them to
-   *  `ImmediateInvoker.run` as its second argument.
-   *  Coexists with `defaultBinding` (KeyBinding) during the transition;
-   *  Phase 9 deletes legacy `defaultBinding` and renames this field to
-   *  `defaultBinding`. See
-   *  `docs/superpowers/specs/2026-05-16-registry-unification-design.md`. */
+  /** The gesture-spec form of the binding, read by the gesture dispatcher.
+   *  May be a single `GestureSpec`, a bare `GestureSpec[]` (any-of semantics),
+   *  or a `BoundGesture[]` where each entry is either a bare `GestureSpec` or
+   *  `{ spec, opts }` — use the object form for parametric actions where two
+   *  bindings for the same action differ only by `opts.params` (e.g. `flip`
+   *  with `axis: 'x'` vs `'y'`). The dispatcher extracts `opts.params` and
+   *  passes them to `ImmediateInvoker.run` as its second argument. */
   gestureBinding?: GestureSpec | BoundGesture[];
   /** Inline-SVG icon for palette / toolbar surfaces. Mirrors
    *  `ToolPresentation.icon` so a generic `<ActionBar>` can render from

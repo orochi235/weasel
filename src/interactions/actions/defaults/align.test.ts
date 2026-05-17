@@ -76,8 +76,8 @@ describe('alignLeftAction descriptor', () => {
     expect(alignLeftAction.id).toBe('align.left');
   });
 
-  it('has no defaultBinding', () => {
-    expect(alignLeftAction.defaultBinding).toBeUndefined();
+  it('has no gestureBinding', () => {
+    expect(alignLeftAction.gestureBinding).toBeUndefined();
   });
 
   it('has no gestureBinding', () => {
@@ -241,7 +241,7 @@ describe('defaultAlignActions', () => {
 
   it('no default keybindings (consumer overrides)', () => {
     const acts = defaultAlignActions(makeDeps({ a: { x: 0, y: 0, width: 10, height: 10 } }));
-    for (const a of acts) expect(a.defaultBinding).toBeUndefined();
+    for (const a of acts) expect(a.gestureBinding).toBeUndefined();
   });
 
   it('every action ships a default icon', () => {

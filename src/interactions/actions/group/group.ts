@@ -78,7 +78,6 @@ export function useGroup(
     const action: Action = {
       id: 'group',
       label: 'Group',
-      defaultBinding: { key: 'g', mod: true },
       run: () => { group(); },
     };
     return reg.register(action);
@@ -161,7 +160,6 @@ export function useUngroup(
     const action: Action = {
       id: 'ungroup',
       label: 'Ungroup',
-      defaultBinding: { key: 'g', mod: true, shift: true },
       run: () => { ungroup(); },
     };
     return reg.register(action);

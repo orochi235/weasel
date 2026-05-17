@@ -73,8 +73,8 @@ describe('distributeHorizontalAction descriptor', () => {
     expect(distributeHorizontalAction.id).toBe('distribute.horizontal');
   });
 
-  it('has no defaultBinding', () => {
-    expect(distributeHorizontalAction.defaultBinding).toBeUndefined();
+  it('has no gestureBinding', () => {
+    expect(distributeHorizontalAction.gestureBinding).toBeUndefined();
   });
 
   it('has no gestureBinding', () => {
@@ -171,7 +171,7 @@ describe('defaultDistributeActions', () => {
       b: { x: 20, y: 0, width: 10, height: 10 },
       c: { x: 100, y: 0, width: 10, height: 10 },
     }));
-    for (const a of acts) expect(a.defaultBinding).toBeUndefined();
+    for (const a of acts) expect(a.gestureBinding).toBeUndefined();
   });
 
   it('every action ships a default icon', () => {

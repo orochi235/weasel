@@ -34,7 +34,6 @@ interface ColorDeps extends ActionDeps {
 export const colorResetAction: Action & { requires: string[] } = {
   id: 'color.reset',
   label: 'Reset colors',
-  defaultBinding: { key: 'd' },
   gestureBinding: { kind: 'key', key: 'd' },
   requires: ['color'],
   invoker: {
@@ -55,7 +54,6 @@ export const colorResetAction: Action & { requires: string[] } = {
 export const colorSwapAction: Action & { requires: string[] } = {
   id: 'color.swap',
   label: 'Swap fill/stroke',
-  defaultBinding: { key: 'x' },
   gestureBinding: [
     { spec: { kind: 'key', key: 'x' }, opts: { params: { kind: 'swap' } } },
     { spec: { kind: 'key', key: 'x', mods: { shift: true } }, opts: { params: { kind: 'swapFocus' } } },
@@ -76,7 +74,6 @@ export const colorSwapAction: Action & { requires: string[] } = {
 export const colorToggleFocusedNoneAction: Action & { requires: string[] } = {
   id: 'color.toggleFocusedNone',
   label: 'Toggle focused color none',
-  defaultBinding: { key: '/' },
   gestureBinding: { kind: 'key', key: '/' },
   requires: ['color'],
   invoker: {

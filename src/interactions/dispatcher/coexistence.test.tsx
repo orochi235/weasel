@@ -63,7 +63,6 @@ describe('legacy coexistence', () => {
     const action: Action = {
       id: 'coex.b',
       label: 'Coex B',
-      defaultBinding: { key: 'b' },
       gestureBinding: { kind: 'key', key: 'b' },
       run: () => legacyRunSpy(),
       invoker: { timing: 'immediate', run: () => invokerRunSpy() },

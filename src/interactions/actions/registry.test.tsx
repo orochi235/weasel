@@ -166,15 +166,9 @@ describe('Action with new invoker / GestureSpec fields (Phase 1 additive)', () =
     expect(action.gestureBinding).toEqual({ kind: 'wheel', mods: { ctrl: true } });
   });
 
-  it('legacy KeyBinding shape on defaultBinding still compiles (unchanged from v1)', () => {
-    const action: Action = {
-      id: 'demo.legacy',
-      label: 'Demo legacy',
-      defaultBinding: { key: 'a', mod: true },
-      run: () => {},
-    };
-    expect(action.defaultBinding).toBeDefined();
-  });
+  // REMOVED (Phase 14e Task 7): 'legacy KeyBinding shape on defaultBinding
+  // still compiles'. The `Action.defaultBinding` field has been deleted; all
+  // bindings live on `gestureBinding` (read by the dispatcher).
 
   it('accepts an array of GestureSpec on gestureBinding (multi-binding actions)', () => {
     const action: Action = {

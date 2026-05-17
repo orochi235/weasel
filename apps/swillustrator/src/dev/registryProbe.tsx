@@ -108,7 +108,10 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
     kind: 'action',
     id: a.id,
     label: a.label ?? a.id,
-    shortcutParts: formatShortcutParts(a.defaultBinding),
+    // Phase 14e Task 7: Action.defaultBinding removed; bindings live on
+    // gestureBinding. formatShortcutParts only consumes the legacy shape,
+    // so we pass undefined for now (TODO: gestureBinding-aware formatter).
+    shortcutParts: formatShortcutParts(undefined),
     shortcut: a.shortcut,
     group: a.group ?? idGroup(a.id),
     icon: renderPresentationIcon(a.icon),
