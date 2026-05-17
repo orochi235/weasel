@@ -117,6 +117,7 @@ export { resizeAction } from './interactions/actions/defaults/resize';
 export { rotateAction } from './interactions/actions/defaults/rotate';
 export { areaSelectAction } from './interactions/actions/defaults/areaSelect';
 export { insertAction } from './interactions/actions/defaults/insert';
+export { clearSelectionAction } from './interactions/actions/defaults/clearSelection';
 export { cloneAction } from './interactions/actions/defaults/clone';
 export { editAnchorsAction } from './interactions/actions/defaults/editAnchors';
 export { lassoSelectAction } from './interactions/actions/defaults/lassoSelect';

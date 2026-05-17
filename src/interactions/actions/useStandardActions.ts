@@ -49,6 +49,7 @@ import { resizeAction } from './defaults/resize';
 import { rotateAction } from './defaults/rotate';
 import { areaSelectAction } from './defaults/areaSelect';
 import { insertAction } from './defaults/insert';
+import { clearSelectionAction } from './defaults/clearSelection';
 import { cloneAction } from './defaults/clone';
 import { editAnchorsAction } from './defaults/editAnchors';
 import { lassoSelectAction } from './defaults/lassoSelect';
@@ -80,7 +81,7 @@ export interface UseStandardActionsOptions {
  *        1 (ungroup) + 2 (undo/redo) + 1 (flip) + 4 (nudge) + 2 (reorder) +
  *        6 (align) + 2 (distribute) + 6 (pathfinder) + 1 (move) +
  *        5 (resize/rotate/areaSelect/insert/clone) + 3 (editAnchors/lassoSelect/pinchZoom) +
- *        2 (viewport.pan/viewport.zoom) = 40
+ *        2 (viewport.pan/viewport.zoom) + 1 (clearSelection) = 41
  */
 const KIT_STANDARD_DESCRIPTORS: Action[] = [
   escapeAction,
@@ -123,6 +124,7 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   pinchZoomAction,
   viewportPanAction,
   viewportZoomAction,
+  clearSelectionAction,
 ];
 
 /**
