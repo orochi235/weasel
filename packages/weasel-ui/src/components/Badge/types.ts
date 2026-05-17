@@ -5,10 +5,10 @@ export type BadgeShape =
   | 'hexagon'
   | 'starburst' | 'scalloped' | 'shield' | 'ribbon' | 'beavis'
   | 'sparkler' | 'postage' | 'cloud' | 'house' | 'plaque'
-  | 'crest' | 'urn' | 'coffin' | 'receipt' | 'wood';
+  | 'crest' | 'urn' | 'coffin' | 'receipt' | 'wood' | 'cartouche' | 'quatrefoil';
 
 export type BadgeTone =
-  | 'accent' | 'info' | 'warn' | 'danger' | 'muted' | 'neutral';
+  | 'accent' | 'info' | 'warn' | 'danger' | 'muted' | 'neutral' | 'custom';
 
 export type BadgeVariant = 'outline' | 'solid' | 'subtle';
 export type BadgeSize = 'sm' | 'md';

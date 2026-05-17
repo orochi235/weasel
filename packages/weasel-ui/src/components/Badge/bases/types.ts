@@ -61,7 +61,11 @@ export interface EffectOffsetCtx<P = Record<string, never>> {
 export interface EffectModule<P = Record<string, never>> {
   offsetAt?: (s: number, ctx: EffectOffsetCtx<P>) => { dx: number; dy: number };
   Component?: (props: EffectRenderProps<P>) => ReactNode;
-  /** Where decoration sits relative to the body silhouette. Default 'foreground'. */
-  zone?: 'background' | 'foreground';
+  /** Where decoration sits relative to the body silhouette.
+   *  - `'background'` paints before the body (under the fill/stroke).
+   *  - `'foreground'` (default) paints after the body.
+   *  - `'mask'` contributes black shapes to an SVG mask applied to the body fill/stroke,
+   *    effectively punching holes through the silhouette. */
+  zone?: 'background' | 'foreground' | 'mask';
   defaults?: P;
 }

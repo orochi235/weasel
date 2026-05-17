@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react';
 import s from './Badge.module.css';
 import { SHAPES, type BadgeShapeParams } from './shapes';
 import { BASES, type BadgeBase, type BadgeBaseParams } from './bases';
@@ -9,7 +9,10 @@ interface BadgeBaseProps {
   tone?: BadgeTone;
   variant?: BadgeVariant;
   size?: BadgeSize;
-  strokeWidth?: number;
+  /** "Edge bloat": offset every base perimeter sample outward by N CSS px along the normal
+   *  before any compose effects run. Negative values shrink the silhouette. Photoshop-style
+   *  expand-selection on the body. */
+  bloat?: number;
   padding?: number | string;
   /**
    * For CSS-rendered shapes (pill, plain) that fragment across line wraps, controls how the
@@ -32,6 +35,9 @@ interface BadgeBaseProps {
   as?: 'span' | 'button' | 'a';
   children: ReactNode;
   className?: string;
+  /** Optional style overrides merged with the badge's own style. Useful for setting CSS
+   *  custom properties (e.g. `--badge-edge` to inject a custom tone color). */
+  style?: CSSProperties;
   'aria-label'?: string;
 }
 
@@ -61,8 +67,9 @@ export function Badge(props: BadgeProps) {
     children,
     className,
     shapeParams,
-    strokeWidth,
+    bloat,
     padding,
+    style: styleOverride,
     breakStyle,
     crawl,
     base,
@@ -134,12 +141,12 @@ export function Badge(props: BadgeProps) {
     ['--badge-inset-right' as never]: `${insets.right}px`,
     ['--badge-inset-bottom' as never]: `${insets.bottom}px`,
     ['--badge-inset-left' as never]: `${insets.left}px`,
-    ...(strokeWidth !== undefined && { ['--badge-stroke-width' as never]: `${strokeWidth}px` }),
     ...(padding !== undefined && { padding: typeof padding === 'number' ? `${padding}px` : padding }),
     ...(breakStyle !== undefined && {
       boxDecorationBreak: breakStyle,
       WebkitBoxDecorationBreak: breakStyle,
     }),
+    ...styleOverride,
   };
 
   const commonProps = {
@@ -170,35 +177,68 @@ export function Badge(props: BadgeProps) {
         return { offsetAt: mod.offsetAt, params: effParams };
       })
       .filter(Boolean) as { offsetAt: NonNullable<typeof EFFECTS[BadgeEffect]['offsetAt']>; params: Record<string, unknown> }[];
-    if (offsetMods.length === 0) return sampler;
+    const bloatCss = bloat ?? 0;
+    if (offsetMods.length === 0 && bloatCss === 0) return sampler;
     const sx = 100 / box.w;
     const sy = 100 / box.h;
-    let d = '';
-    for (let i = 0; i < COMPOSE_SAMPLES; i++) {
-      const sCss = (i / COMPOSE_SAMPLES) * sampler.totalCss;
-      const pt = sampler.perimeterAt(sCss);
-      let dx = 0, dy = 0;
+    const totalCss = sampler.totalCss;
+    // Compute the warped sample point at any CSS arc length s — base perimeter sample
+    // bloated outward by a constant CSS distance plus the sum of every offset effect's
+    // contribution at that sample.
+    const warpedXY = (sCss: number) => {
+      const sm = ((sCss % totalCss) + totalCss) % totalCss;
+      const pt = sampler.perimeterAt(sm);
+      let dx = pt.nx * bloatCss;
+      let dy = pt.ny * bloatCss;
       for (const m of offsetMods) {
-        const o = m.offsetAt(sCss, {
+        const o = m.offsetAt(sm, {
           params: m.params as never,
           phase,
-          totalCss: sampler.totalCss,
+          totalCss,
           perimeterAt: sampler.perimeterAt,
         });
         dx += o.dx;
         dy += o.dy;
       }
-      const x = pt.x + dx * sx;
-      const y = pt.y + dy * sy;
-      d += (i === 0 ? `M ${x.toFixed(3)} ${y.toFixed(3)}` : ` L ${x.toFixed(3)} ${y.toFixed(3)}`);
+      return { x: pt.x + dx * sx, y: pt.y + dy * sy };
+    };
+    let d = '';
+    for (let i = 0; i < COMPOSE_SAMPLES; i++) {
+      const sCss = (i / COMPOSE_SAMPLES) * totalCss;
+      const w = warpedXY(sCss);
+      d += (i === 0 ? `M ${w.x.toFixed(3)} ${w.y.toFixed(3)}` : ` L ${w.x.toFixed(3)} ${w.y.toFixed(3)}`);
     }
     d += ' Z';
-    return { bodyPath: d, perimeterAt: sampler.perimeterAt, totalCss: sampler.totalCss };
+    // Replace perimeterAt with a warped version: warped point + normal recomputed from
+    // the warped tangent (clockwise rotation of unit tangent). This is what decorations
+    // like Bevel and Perforations need to follow the actual bumpy outline.
+    const warpedPerimeterAt = (s: number) => {
+      const sm = ((s % totalCss) + totalCss) % totalCss;
+      const pt = warpedXY(sm);
+      const eps = totalCss / (COMPOSE_SAMPLES * 2);
+      const wA = warpedXY(sm - eps);
+      const wB = warpedXY(sm + eps);
+      // Convert finite-difference tangent back to "CSS px" by un-scaling per-axis.
+      const tx = (wB.x - wA.x) / sx;
+      const ty = (wB.y - wA.y) / sy;
+      const tl = Math.hypot(tx, ty) || 1;
+      // Outward normal: clockwise rotation of tangent (in CSS space), then renormalize
+      // for unit length in viewBox terms when returned.
+      const nxC = ty / tl;
+      const nyC = -tx / tl;
+      // Convert that CSS-space normal back to a viewBox-space unit-ish normal: the
+      // existing PerimeterPoint contract has nx/ny used multiplicatively with sx/sy in
+      // call sites, matching the convention base perimeters use.
+      return { x: pt.x, y: pt.y, nx: nxC, ny: nyC };
+    };
+    return { bodyPath: d, perimeterAt: warpedPerimeterAt, totalCss };
   })();
 
   const decoEffects = (resolvedEffects ?? []).filter((eff) => EFFECTS[eff.type as keyof typeof EFFECTS]?.Component);
   const backgroundDecorations = decoEffects.filter((eff) => (EFFECTS[eff.type as keyof typeof EFFECTS].zone ?? 'foreground') === 'background');
   const foregroundDecorations = decoEffects.filter((eff) => (EFFECTS[eff.type as keyof typeof EFFECTS].zone ?? 'foreground') === 'foreground');
+  const maskDecorations = decoEffects.filter((eff) => EFFECTS[eff.type as keyof typeof EFFECTS].zone === 'mask');
+  const bodyMaskId = `badge-mask-${useId().replace(/:/g, '')}`;
 
   const renderDecoration = (eff: EffectSpec, i: number) => {
     const mod = EFFECTS[eff.type as keyof typeof EFFECTS];
@@ -210,9 +250,19 @@ export function Badge(props: BadgeProps) {
 
   const decoSvg = composeBase && composedSampler ? (
     <svg ref={decoRef} className={s.deco} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      {maskDecorations.length > 0 && (
+        <defs>
+          <mask id={bodyMaskId} maskUnits="userSpaceOnUse" x="-10" y="-10" width="120" height="120">
+            <rect x="-10" y="-10" width="120" height="120" fill="white" />
+            {maskDecorations.map(renderDecoration)}
+          </mask>
+        </defs>
+      )}
       {backgroundDecorations.map(renderDecoration)}
-      {(variant === 'solid' || variant === 'subtle') && <path className="badge-fill" d={composedSampler.bodyPath} />}
-      {(variant === 'outline' || variant === 'solid') && <path className="badge-stroke" d={composedSampler.bodyPath} />}
+      <g {...(maskDecorations.length > 0 ? { mask: `url(#${bodyMaskId})` } : {})}>
+        {(variant === 'solid' || variant === 'subtle') && <path className="badge-fill" d={composedSampler.bodyPath} />}
+        {(variant === 'outline' || variant === 'solid') && <path className="badge-stroke" d={composedSampler.bodyPath} />}
+      </g>
       {foregroundDecorations.map(renderDecoration)}
     </svg>
   ) : shapeModule.renderMode !== 'css' && ShapeBody ? (

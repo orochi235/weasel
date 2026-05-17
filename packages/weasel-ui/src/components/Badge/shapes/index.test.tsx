@@ -9,7 +9,7 @@ describe('shape registry', () => {
       'hexagon',
       'starburst', 'scalloped', 'shield', 'ribbon', 'beavis',
       'sparkler', 'postage', 'cloud', 'house', 'plaque',
-      'crest', 'urn', 'coffin', 'receipt', 'wood',
+      'crest', 'urn', 'coffin', 'receipt', 'wood', 'cartouche', 'quatrefoil',
     ]);
   });
 
