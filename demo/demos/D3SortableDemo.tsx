@@ -133,6 +133,7 @@ export function D3SortableDemo() {
         scene={scene}
         selection={selection}
         selectionMode="none"
+        defaultTools={[]}
         layers={{
           scene: {
             drawOne: (n, p): DrawCommand[] => [{
