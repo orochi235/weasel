@@ -61,7 +61,22 @@ export type InputEvent =
   | { kind: 'pointermove'; x: number; y: number; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
   | { kind: 'pointerup'; x: number; y: number; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
   | { kind: 'pointercancel'; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
-  | { kind: 'click'; target?: unknown; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
+  | {
+      kind: 'click';
+      target?: unknown;
+      altKey: boolean;
+      ctrlKey: boolean;
+      metaKey: boolean;
+      shiftKey: boolean;
+      /**
+       * Body-target classification from the scene hit-test.
+       * Populated by `useGestureDispatcher` when a `classifyTarget` thunk is
+       * supplied. Used by `matchTarget` to resolve string-form `TargetSpec`
+       * values (`'empty'`, `'selected-body'`, `'unselected-body'`).
+       * Absent when `classifyTarget` is not wired.
+       */
+      bodyTarget?: 'empty' | 'selected-body' | 'unselected-body';
+    }
   | { kind: 'multitouch'; fingers: number; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean };
 
 // ---------------------------------------------------------------------------
@@ -269,7 +284,7 @@ export function matchSpec(
     case 'click': {
       if (e.kind !== 'click') return false;
       if (!matchModifiers(e, spec.mods, isMac)) return false;
-      return matchTarget(e.target, spec.target);
+      return matchTarget(e.target, spec.target, e.bodyTarget);
     }
 
     case 'drag': {
