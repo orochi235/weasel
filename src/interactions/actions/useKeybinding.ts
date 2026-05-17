@@ -11,6 +11,7 @@
  */
 
 import { useEffect, useRef } from 'react';
+import { useIsDispatcherMounted } from '../dispatcher/dispatcherPresence';
 
 /** Declarative keybinding description used by `useKeybinding`. */
 export interface KeyBinding {
@@ -37,6 +38,12 @@ export interface KeyBinding {
   enabled?: boolean;
   /** Call `preventDefault` before the handler. Default `true`. */
   preventDefault?: boolean;
+  /**
+   * Phase 3+: when `true` AND the gesture dispatcher is mounted in scope,
+   * this binding does NOT attach its keydown listener — the dispatcher
+   * handles it instead. Default `false` (legacy behavior unchanged).
+   */
+  disabledIfDispatcherActive?: boolean;
 }
 
 /** Returns true when the target is an input, textarea, or contenteditable element. */
@@ -94,10 +101,13 @@ export function useKeybinding(
   const bindingRef = useRef(binding);
   bindingRef.current = binding;
 
-  const enabled = binding.enabled ?? true;
+  const dispatcherActive = useIsDispatcherMounted();
+  const effectivelyEnabled =
+    (binding.enabled ?? true) &&
+    !(binding.disabledIfDispatcherActive && dispatcherActive);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!effectivelyEnabled) return;
     const onKey = (e: KeyboardEvent) => {
       const b = bindingRef.current;
       if (!matchesKeyBinding(e, b)) return;
@@ -110,5 +120,5 @@ export function useKeybinding(
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [enabled]);
+  }, [effectivelyEnabled]);
 }
