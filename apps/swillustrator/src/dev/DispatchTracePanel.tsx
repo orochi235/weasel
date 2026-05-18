@@ -110,6 +110,7 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
   const [entries, setEntries] = useState<DispatchLogEntry[]>(() => readLog().slice());
   const [expanded, setExpanded] = useState<number | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
+  const [hideUnhandled, setHideUnhandled] = useState<boolean>(false);
   const lastLenRef = useRef<number>(entries.length);
   const lastTsRef = useRef<number>(entries.length ? entries[entries.length - 1]!.ts : 0);
 
@@ -141,7 +142,10 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
     lastTsRef.current = 0;
   }, []);
 
-  const visible = entries.slice(-DISPLAY_LIMIT).reverse();
+  const filtered = hideUnhandled
+    ? entries.filter((e) => e.outcome !== 'unhandled')
+    : entries;
+  const visible = filtered.slice(-DISPLAY_LIMIT).reverse();
   const onToggleCollapse = useCallback(() => setCollapsed((c) => !c), []);
 
   if (!anchor) return null;
@@ -171,6 +175,14 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
         <span className={s.count}>
           {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
         </span>
+        <label className={s.hideUnhandled} title="Hide rows with outcome=unhandled">
+          <input
+            type="checkbox"
+            checked={hideUnhandled}
+            onChange={(e) => setHideUnhandled(e.target.checked)}
+          />
+          Hide unhandled
+        </label>
         <button
           type="button"
           className={s.clear}
@@ -184,7 +196,9 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
         <div className={s.body}>
         {visible.length === 0 ? (
           <p className={s.empty}>
-            No dispatch events recorded yet. Interact with the canvas to populate the log.
+            {entries.length > 0 && hideUnhandled
+              ? 'All recorded events were unhandled — uncheck "Hide unhandled" to see them.'
+              : 'No dispatch events recorded yet. Interact with the canvas to populate the log.'}
           </p>
         ) : (
           <table className={s.table}>

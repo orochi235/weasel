@@ -67,6 +67,19 @@
   margin-left: auto;
 }
 
+.hideUnhandled {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.85;
+  cursor: pointer;
+  user-select: none;
+}
+.hideUnhandled input {
+  margin: 0;
+  cursor: pointer;
+}
+
 .clear {
   background: rgba(255, 255, 255, 0.08);
   color: inherit;
