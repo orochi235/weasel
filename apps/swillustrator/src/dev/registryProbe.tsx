@@ -5,7 +5,7 @@ import {
   useScene,
   type ToolsApi,
 } from '@orochi235/weasel';
-import { buildActionRegistry, type RegistryEntry } from '@orochi235/weasel/routing';
+import { buildActionRegistry, formatRoute, type RegistryEntry } from '@orochi235/weasel/routing';
 import type { ToolDef } from '@orochi235/weasel/routing';
 import { isValidElement, type ReactNode } from 'react';
 import type { PhaseSummary, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryData';
@@ -145,12 +145,13 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
 }
 
 function formatRoutes(entries: readonly RegistryEntry[]): readonly string[] {
-  return entries.map((e) => {
-    const argPart = e.arg != null ? `(${e.arg})` : '';
-    const targetPart = e.target != null ? `.${e.target}` : '';
-    const base = `${e.phase}.${e.gesture}${argPart}${targetPart}`;
-    return e.modifiers === 'default' ? base : `${base}:${e.modifiers}`;
-  });
+  return entries.map((e) => formatRoute({
+    phases: [e.phase],
+    gesture: e.gesture,
+    arg: e.arg,
+    target: e.target,
+    modifiers: e.modifiers,
+  }));
 }
 
 const EMPTY_PHASE: PhaseSummary = {

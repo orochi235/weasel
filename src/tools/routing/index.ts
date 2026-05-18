@@ -20,3 +20,4 @@ export { forwardActionTo } from './forwardAction';
 
 // Reflection consumers — registry / conflict checker / debug overlay.
 export * from './reflection';
+export { canonicalModifiers } from './reflection/modifierKeyToParsed';

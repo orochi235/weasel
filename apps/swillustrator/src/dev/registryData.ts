@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 import * as Weasel from '@orochi235/weasel';
-import { parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@orochi235/weasel/routing';
+import { canonicalModifiers, parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@orochi235/weasel/routing';
 import * as ActionIcons from '../actionIcons';
 import * as KindIcons from '../kindIcons';
 
@@ -404,7 +404,10 @@ export function countForEntry(
     case 'routeTarget':
       return tools.filter((t) => t.routes.some((r) => parseRoute(r).target === entry.id)).length;
     case 'modifierSet':
-      return tools.filter((t) => t.routes.some((r) => parseRoute(r).modifiers === entry.id)).length;
+      return tools.filter((t) => t.routes.some((r) => {
+        const canonical = canonicalModifiers(parseRoute(r).modifiers) || 'default';
+        return canonical === entry.id;
+      })).length;
     case 'group':
       return entry.source === 'tool'
         ? tools.filter((t) => t.presentation?.group === entry.label).length
@@ -452,7 +455,10 @@ export function collectRouteTargets(tools: readonly ToolEntry[]): readonly Route
 
 export function collectModifierSets(tools: readonly ToolEntry[]): readonly ModifierSetEntry[] {
   const seen = new Set<string>();
-  for (const t of tools) for (const r of t.routes) seen.add(parseRoute(r).modifiers);
+  for (const t of tools) for (const r of t.routes) {
+    const canonical = canonicalModifiers(parseRoute(r).modifiers) || 'default';
+    seen.add(canonical);
+  }
   return [...seen].sort().map((id) => ({ kind: 'modifierSet', id, label: id }));
 }
 
