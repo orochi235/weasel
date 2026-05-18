@@ -1,7 +1,11 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerFont } from '@orochi235/weasel/renderer';
-import { ActionsProvider, SelectionContextProvider } from '@orochi235/weasel';
+import {
+  ActionsProvider,
+  DepRegistryProvider,
+  SelectionContextProvider,
+} from '@orochi235/weasel';
 import { App } from './App';
 import { ToolkitBuilder } from './dev/ToolkitBuilder';
 import { RegistryInspector } from './dev/RegistryInspector';
@@ -49,10 +53,12 @@ const slot = container as ContainerWithRoot;
 slot.__reactRoot ??= createRoot(slot);
 slot.__reactRoot.render(
   <StrictMode>
-    <ActionsProvider>
-      <SelectionContextProvider>
-        <Root />
-      </SelectionContextProvider>
-    </ActionsProvider>
+    <DepRegistryProvider>
+      <ActionsProvider>
+        <SelectionContextProvider>
+          <Root />
+        </SelectionContextProvider>
+      </ActionsProvider>
+    </DepRegistryProvider>
   </StrictMode>,
 );

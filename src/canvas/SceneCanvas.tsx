@@ -57,7 +57,7 @@ import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
 import { useBuiltinShapeTools, type BuiltinShapeToolId, type BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
-import { DepRegistryProvider } from 'interactions/actions/depRegistry';
+import { DepRegistryProviderIfRoot } from './SceneCanvas/DepRegistryProviderIfRoot';
 import {
   useViewDepSource,
   useAreaSelectDepSource,
@@ -836,7 +836,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   );
 
   return (
-    <DepRegistryProvider>
+    <DepRegistryProviderIfRoot>
       <PointerProviderIfRoot>
         <ActionsProviderIfRoot>
           {canvas}
@@ -868,7 +868,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
           {children}
         </ActionsProviderIfRoot>
       </PointerProviderIfRoot>
-    </DepRegistryProvider>
+    </DepRegistryProviderIfRoot>
   );
 }
 
