@@ -50,10 +50,20 @@ export function useInsertDepSource(
     return {
       commit(bounds, extras): NodeId | null {
         const kind = extras.kind;
-        const seq = ++insertSeqRef.current;
+        // Walk the seq counter forward until we land on an id that doesn't
+        // already exist in the scene. Handles two cases:
+        //   1. Fresh mount after localStorage rehydration — the scene starts
+        //      with `kit-${kind}-1` etc. already populated; bare ++seq would
+        //      collide on the first insert.
+        //   2. Hot-reload re-mounts the hook with a reset counter.
+        let seq = ++insertSeqRef.current;
+        let id = asNodeId(`kit-${kind}-${seq}`);
+        while (sc.get(id) !== undefined) {
+          seq = ++insertSeqRef.current;
+          id = asNodeId(`kit-${kind}-${seq}`);
+        }
         const fill = DEFAULT_FILLS[seq % DEFAULT_FILLS.length];
         const layer = (sc.layers[0]?.id ?? 'default') as string;
-        const id = asNodeId(`kit-${kind}-${seq}`);
 
         let data: unknown;
         let pose: unknown = { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
