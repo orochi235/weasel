@@ -14,24 +14,41 @@ import type { View } from 'core/viewport/view';
 export interface CursorCoordsHudProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   viewRef: React.RefObject<View>;
-  /** Optional visual offset from top-left (px). Default `{ top: 8, left: 8 }`. */
-  offset?: { top?: number; left?: number };
+  /** Inset from the canvas's top-right corner, in px. Default 8 on both axes. */
+  offset?: { top?: number; right?: number };
+}
+
+interface HudState {
+  client: { x: number; y: number };
+  world: { x: number; y: number } | null;
+  inCanvas: boolean;
+  /** Canvas's top-right corner in viewport coords (px from top-left).
+   *  Captured at the same moment as the pointer reading so the HUD's
+   *  position tracks the canvas through scroll / resize / pan. */
+  anchor: { top: number; right: number } | null;
 }
 
 export function CursorCoordsHud({ canvasRef, viewRef, offset }: CursorCoordsHudProps) {
-  const [coords, setCoords] = useState<{
-    client: { x: number; y: number };
-    world: { x: number; y: number } | null;
-    inCanvas: boolean;
-  }>({ client: { x: 0, y: 0 }, world: null, inCanvas: false });
+  const [state, setState] = useState<HudState>({
+    client: { x: 0, y: 0 }, world: null, inCanvas: false, anchor: null,
+  });
 
   useEffect(() => {
+    const readAnchor = (): HudState['anchor'] => {
+      const canvas = canvasRef.current;
+      if (!canvas) return null;
+      const rect = canvas.getBoundingClientRect();
+      // Right = distance from the viewport's right edge.
+      return { top: rect.top, right: window.innerWidth - rect.right };
+    };
+
     const onMove = (e: PointerEvent) => {
       const canvas = canvasRef.current;
       const view = viewRef.current;
       const client = { x: e.clientX, y: e.clientY };
+      const anchor = readAnchor();
       if (!canvas || !view) {
-        setCoords({ client, world: null, inCanvas: false });
+        setState({ client, world: null, inCanvas: false, anchor });
         return;
       }
       const rect = canvas.getBoundingClientRect();
@@ -42,20 +59,37 @@ export function CursorCoordsHud({ canvasRef, viewRef, offset }: CursorCoordsHudP
         x: (e.clientX - rect.left) / view.scale.x + view.x,
         y: (e.clientY - rect.top)  / view.scale.y + view.y,
       };
-      setCoords({ client, world, inCanvas });
+      setState({ client, world, inCanvas, anchor });
     };
+
+    // Refresh anchor on scroll/resize so the HUD sticks to the canvas's
+    // top-right corner even when the canvas itself moves.
+    const onLayout = () => setState((s) => ({ ...s, anchor: readAnchor() }));
+
     document.addEventListener('pointermove', onMove);
-    return () => document.removeEventListener('pointermove', onMove);
+    window.addEventListener('scroll', onLayout, true);
+    window.addEventListener('resize', onLayout);
+
+    // Initial anchor read so the HUD shows before the first pointermove.
+    setState((s) => ({ ...s, anchor: readAnchor() }));
+
+    return () => {
+      document.removeEventListener('pointermove', onMove);
+      window.removeEventListener('scroll', onLayout, true);
+      window.removeEventListener('resize', onLayout);
+    };
   }, [canvasRef, viewRef]);
 
-  const top = offset?.top ?? 8;
-  const left = offset?.left ?? 8;
+  if (!state.anchor) return null;
+
+  const top = state.anchor.top + (offset?.top ?? 8);
+  const right = state.anchor.right + (offset?.right ?? 8);
 
   return (
     <div
       style={{
         position: 'fixed',
-        top, left,
+        top, right,
         zIndex: 10000,
         background: 'rgba(0,0,0,0.7)',
         color: '#e8e8e8',
@@ -65,12 +99,13 @@ export function CursorCoordsHud({ canvasRef, viewRef, offset }: CursorCoordsHudP
         pointerEvents: 'none',
         lineHeight: 1.4,
         whiteSpace: 'pre',
+        textAlign: 'right',
       }}
     >
-      {`client (${coords.client.x.toFixed(0)}, ${coords.client.y.toFixed(0)})`}
+      {`client (${state.client.x.toFixed(0)}, ${state.client.y.toFixed(0)})`}
       {'\n'}
-      {coords.world
-        ? `world  (${coords.world.x.toFixed(1)}, ${coords.world.y.toFixed(1)})${coords.inCanvas ? '' : '  (off-canvas)'}`
+      {state.world
+        ? `world  (${state.world.x.toFixed(1)}, ${state.world.y.toFixed(1)})${state.inCanvas ? '' : '  (off-canvas)'}`
         : 'world  — (no canvas/view yet)'}
     </div>
   );
