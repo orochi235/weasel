@@ -103,7 +103,13 @@ describe('SceneCanvas defaultTools selector', () => {
     expect(resizeStart.mock.calls[0][0]).toBe('a');
   });
 
-  it("defaultTools=['select']: resize is NOT registered (corner-drag falls through)", () => {
+  it("defaultTools=['select']: corner-drag still routes to dispatcher-side resizeAction", () => {
+    // Resize is wired through `resizeAction` + `resizePolicy` dep — both are
+    // registered by `useStandardActions` regardless of which builtin tools the
+    // consumer mounts via `defaultTools`. With `defaultTools=['select']` the
+    // select tool's `handle:*` drag binding still fires, and the dispatcher
+    // dispatches the resize action (which is the only resize path post-Phase
+    // 14e — there is no longer a legacy `useResizeTool` to suppress).
     const resizeStart = vi.fn();
     function Harness() {
       const scene = useScene<D, L, P>({
@@ -125,9 +131,6 @@ describe('SceneCanvas defaultTools selector', () => {
           defaultTools={['select']}
           selectTool={{
             handleHitRadius: 8,
-            // Resize behavior is registered into selectTool.resize, but with
-            // defaultTools=['select'] the resize tool is never mounted — so
-            // the spy must never fire.
             resize: { behaviors: [{ onStart: (ctx: { draggedIds: string[] }) => resizeStart(ctx.draggedIds[0]) }] },
           }}
         />
@@ -135,10 +138,9 @@ describe('SceneCanvas defaultTools selector', () => {
     }
     const { container } = render(<Harness />);
     const canvas = container.querySelector('canvas')!;
-    // Same corner-handle world point. Without resize registered, the
-    // affordance is absent — the gesture falls through to body-hit move.
     gestureAt(canvas, 0, 0);
-    expect(resizeStart).not.toHaveBeenCalled();
+    expect(resizeStart).toHaveBeenCalled();
+    expect(resizeStart.mock.calls[0][0]).toBe('a');
   });
 });
 

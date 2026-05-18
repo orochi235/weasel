@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { resizeAction } from './resize';
-import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx } from '../invoker';
 import type { NodeId } from 'core/scene/types';
 import type { ResizeAnchor } from '../../gestures/types';
@@ -91,8 +90,12 @@ describe('resizeAction descriptor', () => {
     expect(resizeAction.requires).toContain('scene');
   });
 
-  it('enabled returns SelectionRequired', () => {
-    expect(resizeAction.enabled!()).toBe(ActionDisabledReason.SelectionRequired);
+  it('enabled returns true (invoker self-guards on empty selection)', () => {
+    // The dispatcher's specificity-fallthrough loop treats anything `!== true`
+    // as "skip this match" — returning a disabled reason here would silently
+    // hand the resize binding to lower-specificity ambient bindings (e.g.
+    // insertAction's bare drag). See resize.ts `enabled` JSDoc.
+    expect(resizeAction.enabled!()).toBe(true);
   });
 
   // --- Guard behavior ---
