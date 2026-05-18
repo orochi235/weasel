@@ -188,12 +188,18 @@ const PATH_PAINTER: ShapePainter = {
       color?: string;
     };
     const projected = pathAtPose(d.path, pose as RectPose);
+    const hasStroke = !!d.stroke && d.stroke !== 'none' && (d.strokeWidth ?? 0) > 0;
+    const fillColor = d.fill ?? d.color;
+    // Treat 'none' as "skip fill". When neither fill nor color is set, fall
+    // back to a default fill only if there's no stroke — otherwise the path
+    // is stroke-only (e.g. pencil) and a default fill would be wrong.
+    const hasFill = fillColor !== 'none' && (fillColor !== undefined || !hasStroke);
     const cmd: DrawCommand = {
       kind: 'path',
       path: projected,
-      fill: { color: d.fill ?? d.color ?? '#888' },
-      ...(d.stroke && (d.strokeWidth ?? 0) > 0
-        ? { stroke: { paint: { color: d.stroke }, width: d.strokeWidth ?? 1 } }
+      ...(hasFill ? { fill: { color: fillColor ?? '#888' } } : {}),
+      ...(hasStroke
+        ? { stroke: { paint: { color: d.stroke! }, width: d.strokeWidth ?? 1 } }
         : {}),
     };
     return [cmd];

@@ -118,7 +118,7 @@ export function useInsertDepSource(
             if (samples.length >= 4) {
               data = {
                 path: schneiderFit(samples as { x: number; y: number }[], 2.0),
-                fill: 'none', stroke: fill, strokeWidth: 2,
+                stroke: fill, strokeWidth: 2,
               };
               let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
               for (const s of samples) {
@@ -131,7 +131,7 @@ export function useInsertDepSource(
             } else if (samples.length >= 2) {
               data = {
                 path: polygonFromPoints(samples as { x: number; y: number }[]),
-                fill: 'none', stroke: fill, strokeWidth: 2,
+                stroke: fill, strokeWidth: 2,
               };
             } else {
               data = { path: rectPath(bounds.x, bounds.y, bounds.width, bounds.height), fill };

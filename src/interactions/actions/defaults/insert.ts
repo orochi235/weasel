@@ -51,6 +51,7 @@ import type { Action } from '../registry';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
 import { resolveParams } from '../invoker';
 import type { InsertDep, InsertExtras } from '../depSchema';
+import { PathBuilder } from '../../../features/paths/builder';
 
 // ---------------------------------------------------------------------------
 // Internal scratch
@@ -173,7 +174,30 @@ export const insertAction: Action & { requires: string[] } = {
         // materialises at commit because the descriptor doesn't have the
         // per-kind factories — the dep does — but showing the AABB is
         // enough feedback for the user to see their drag landing.
+        // Exception: pencil draws the live point trail as an open polyline
+        // so the user sees the actual stroke they're laying down, not a
+        // misleading AABB rectangle.
         overlay() {
+          // Pencil: render the captured pointer trail as an open polyline.
+          const kind = (scratch.opts?.params as { kind?: string } | undefined)?.kind;
+          if (kind === 'pencil') {
+            const pts = scratch.points;
+            if (!pts || pts.length < 2) return null;
+            const b = new PathBuilder();
+            b.moveTo(pts[0].x, pts[0].y);
+            for (let i = 1; i < pts.length; i++) b.lineTo(pts[i].x, pts[i].y);
+            return {
+              kind: 'commands',
+              space: 'world',
+              commands: [
+                {
+                  kind: 'path',
+                  path: b.build(),
+                  stroke: { paint: { color: 'rgba(164, 139, 212, 0.9)' }, width: 1 },
+                },
+              ],
+            };
+          }
           const x = Math.min(scratch.startX, scratch.currentX);
           const y = Math.min(scratch.startY, scratch.currentY);
           const w = Math.abs(scratch.currentX - scratch.startX);
