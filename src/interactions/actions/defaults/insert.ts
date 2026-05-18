@@ -28,16 +28,19 @@
  * - Live insert overlay — deferred to Phase 7 overlay surface.
  * - `clickOnly` mode — not applicable to the descriptor model.
  *
- * ## Phase 14e Task 2 note — no `previewIds`/`previewPose`
+ * ## Live preview
  *
- * Insert produces a brand-new node that has no scene id until commit. The
- * dispatcher preview-ghost layer (`usePreviewGhostLayer`) looks up each
- * previewed id via `scene.get(id)` to draw its silhouette, so it cannot
- * render a ghost for a not-yet-inserted node. A live insert preview would
- * need a separate "scratch node" overlay surface (Phase 7 territory) or
- * an extension to the preview-ghost layer that accepts synthetic
- * (node-shaped) draw entries. Left unimplemented in this phase per the
- * plan's "preview at commit-time only" allowance for insert.
+ * Insert produces a brand-new node that has no scene id until commit, so
+ * the preview-ghost layer (`usePreviewGhostLayer`, keyed by node id) can't
+ * paint a silhouette for it. Instead, the action exposes its in-flight
+ * geometry via the `overlay()` surface with `kind: 'insertPreview'`. The
+ * canvas's `useDispatcherOverlayLayer` rebuilds the shape using the same
+ * path builders the commit-time factory uses (`rectPath`, `ellipsePath`,
+ * `linePath`, `regularPolygonPath`, `starPath`, polyline / `polygonFromPoints`),
+ * so the preview is geometry-faithful to the eventual node.
+ *
+ * Consumer-defined insert kinds (kinds the kit doesn't know how to draw)
+ * skip the preview but still commit normally on release.
  *
  * ## Relationship to `useInsert`
  *
@@ -48,9 +51,18 @@
  */
 
 import type { Action } from '../registry';
-import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
+import type { InvocationCtx, OngoingHandle, BindingOpts, OngoingOverlay } from '../invoker';
 import { resolveParams } from '../invoker';
 import type { InsertDep, InsertExtras } from '../depSchema';
+
+/** The kit's built-in insert kinds — those the dispatcher overlay layer
+ *  knows how to render. Consumer-defined kinds fall through to `null`
+ *  (no live preview, but commit still works). */
+const KIT_INSERT_KINDS = new Set([
+  'rect', 'ellipse', 'line', 'polygon', 'star', 'pencil',
+]);
+
+type KitInsertShape = 'rect' | 'ellipse' | 'line' | 'polygon' | 'star' | 'pencil';
 
 // ---------------------------------------------------------------------------
 // Internal scratch
@@ -68,6 +80,9 @@ interface InsertScratch {
   /** Pointer trail accumulated by the dispatcher in world space. Same array
    *  reference as `ctx.drag.points`; pencil-kind commits read from this. */
   points: ReadonlyArray<{ x: number; y: number }> | null;
+  /** Cleared once `onEnd` runs so subsequent `overlay()` calls report no
+   *  in-flight preview (mirrors the areaSelect/lasso convention). */
+  open: boolean;
 }
 
 /** Build a typed `InsertExtras` from the static params + gesture context.
@@ -157,6 +172,7 @@ export const insertAction: Action & { requires: string[] } = {
         currentX: ctx.world.x,
         currentY: ctx.world.y,
         points: ctx.drag?.points ?? null,
+        open: true,
       };
 
       return {
@@ -168,34 +184,35 @@ export const insertAction: Action & { requires: string[] } = {
           // the latest reference in case the dispatcher swaps it.
           if (moveCtx.drag?.points) scratch.points = moveCtx.drag.points;
         },
-        // Live preview surface (Phase 7): paint the in-flight bounds as a
-        // thin outline. The actual shape (ellipse/polygon/star/etc.) only
-        // materialises at commit because the descriptor doesn't have the
-        // per-kind factories — the dep does — but showing the AABB is
-        // enough feedback for the user to see their drag landing.
-        overlay() {
+        overlay(): OngoingOverlay | null {
+          if (!scratch.open) return null;
+          // Resolve params on every overlay() so thunked params (polygon
+          // sides ticking via ArrowUp mid-drag) reflect in the live preview.
+          const resolved = resolveParams(scratch.opts?.params);
+          const extras = buildExtras(
+            resolved,
+            scratch.startX,
+            scratch.startY,
+            scratch.currentX,
+            scratch.currentY,
+            scratch.points,
+          );
+          // Consumer-defined kinds aren't renderable by the kit overlay —
+          // skip the preview rather than emit something half-faithful.
+          if (!KIT_INSERT_KINDS.has(extras.kind)) return null;
           const x = Math.min(scratch.startX, scratch.currentX);
           const y = Math.min(scratch.startY, scratch.currentY);
-          const w = Math.abs(scratch.currentX - scratch.startX);
-          const h = Math.abs(scratch.currentY - scratch.startY);
-          if (w === 0 && h === 0) return null;
+          const width = Math.abs(scratch.currentX - scratch.startX);
+          const height = Math.abs(scratch.currentY - scratch.startY);
           return {
-            kind: 'commands',
-            space: 'world',
-            commands: [
-              {
-                kind: 'path',
-                path: { kind: 'rect', x, y, width: w, height: h },
-                stroke: {
-                  paint: { color: 'rgba(164, 139, 212, 0.9)' },
-                  width: 1,
-                  dash: [3, 3],
-                },
-              },
-            ],
+            kind: 'insertPreview',
+            shape: extras.kind as KitInsertShape,
+            bounds: { x, y, width, height },
+            extras,
           };
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
+          scratch.open = false;
           if (reason === 'cancel') return;
 
           const { dep: d, opts: o, startX, startY, currentX, currentY } = scratch;

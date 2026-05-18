@@ -172,6 +172,27 @@ export type OngoingOverlay =
        *  — the layer wraps them in `viewToMat3(view)` so they track the
        *  camera. `'screen'` emits them as-is (CSS pixels). */
       space?: 'world' | 'screen';
+    }
+  | {
+      /**
+       * Live insert-drag preview — dispatched by `insertAction` while the
+       * user is dragging out a new shape. Pre-commit there is no scene node
+       * to ghost via `previewIds()`/`previewPose()`, so insert paints its
+       * preview through the dispatcher overlay layer instead.
+       *
+       * `shape` is the kit's built-in insert kind. `bounds` is the AABB of
+       * the current drag (start/current normalized). `extras` is the
+       * per-kind extras the action already collected — the overlay
+       * renderer rebuilds the shape using the same path builders the
+       * commit factory uses, so the preview matches the eventual node.
+       *
+       * `extras` is opaque (`unknown`) at the union level; the overlay
+       * renderer narrows on `shape` and casts the field shape it expects.
+       */
+      kind: 'insertPreview';
+      shape: 'rect' | 'ellipse' | 'line' | 'polygon' | 'star' | 'pencil';
+      bounds: { x: number; y: number; width: number; height: number };
+      extras: unknown;
     };
 
 /** Handle returned from an `OngoingInvoker.start`. The dispatcher pumps
