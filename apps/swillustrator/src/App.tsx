@@ -388,21 +388,23 @@ function EditorWithSharedScene({
         setSnapToGrid={setSnapToGrid}
         setPaperSize={setPaperSize}
       />
-      <div className="swill-canvas-host">
-        <SceneCanvas<SwillData, SwillLayer, SwillPose>
-          width={paper.width}
-          height={paper.height}
-          scene={scene}
-          selection={selection}
-          selectionMode="multi"
-          backgroundFill={{ fill: 'solid', color: '#ffffff' }}
-          toolBundle="exhaustive"
-          viewport={{ pinchZoom: true }}
-          onToolsCreated={setTools}
-        />
-      </div>
-      <div className="swill-sidebar right">
-        <ActiveSwatches />
+      <div className="swill-body">
+        <div className="swill-canvas-host">
+          <SceneCanvas<SwillData, SwillLayer, SwillPose>
+            width={paper.width}
+            height={paper.height}
+            scene={scene}
+            selection={selection}
+            selectionMode="multi"
+            backgroundFill={{ fill: 'solid', color: '#ffffff' }}
+            toolBundle="exhaustive"
+            viewport={{ pinchZoom: true }}
+            onToolsCreated={setTools}
+          />
+        </div>
+        <div className="swill-sidebar right">
+          <ActiveSwatches />
+        </div>
       </div>
     </div>
   );
