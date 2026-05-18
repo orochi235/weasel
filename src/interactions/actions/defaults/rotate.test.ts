@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { rotateAction } from './rotate';
-import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx } from '../invoker';
 import type { NodeId } from 'core/scene/types';
 
@@ -94,8 +93,8 @@ describe('rotateAction descriptor', () => {
     expect(rotateAction.requires).toContain('scene');
   });
 
-  it('enabled returns SelectionRequired', () => {
-    expect(rotateAction.enabled!()).toBe(ActionDisabledReason.SelectionRequired);
+  it("enabled returns true (invoker self-guards on empty selection)", () => {
+    expect(rotateAction.enabled!()).toBe(true);
   });
 
   it('start returns empty handle when selection is empty', () => {

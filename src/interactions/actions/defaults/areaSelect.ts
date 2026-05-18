@@ -33,7 +33,6 @@
  */
 
 import type { Action } from '../registry';
-import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay } from '../invoker';
 import type { NodeId } from 'core/scene/types';
 import type { AreaSelectDep } from '../depSchema';
@@ -143,11 +142,10 @@ export const areaSelectAction: Action & { requires: string[] } = {
     },
   },
   /**
-   * Area select doesn't require a pre-existing selection — it creates one.
-   * Return `SelectionRequired` as the static placeholder to satisfy the
-   * `Action.enabled` contract.
-   *
-   * Phase 8 TODO: add `ActionDisabledReason.None` / always-enabled sentinel.
+   * Always enabled at the dispatcher level. The dispatcher's
+   * specificity-fallthrough loop treats anything `!== true` as "skip this
+   * match" — returning a disabled reason would let lower-specificity
+   * ambient bindings win. The invoker has no preconditions to guard.
    */
-  enabled: () => ActionDisabledReason.SelectionRequired,
+  enabled: () => true,
 };

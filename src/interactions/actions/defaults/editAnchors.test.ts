@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { editAnchorsAction } from './editAnchors';
-import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx, AffordanceHit } from '../invoker';
 import type { EditAnchorsDep } from '../depSchema';
 
@@ -53,8 +52,8 @@ describe('editAnchorsAction descriptor', () => {
     expect(editAnchorsAction.requires).toContain('editAnchors');
   });
 
-  it('enabled returns SelectionRequired', () => {
-    expect(editAnchorsAction.enabled!()).toBe(ActionDisabledReason.SelectionRequired);
+  it("enabled returns true (invoker self-guards on empty selection)", () => {
+    expect(editAnchorsAction.enabled!()).toBe(true);
   });
 
   it('start returns empty handle when editAnchors dep is absent', () => {

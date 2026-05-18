@@ -23,7 +23,6 @@
  */
 
 import type { Action } from '../registry';
-import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
 import type { EditAnchorsDep } from '../depSchema';
 import { withCoord, enumerateAnchors } from '../edit-anchors/geometry';
@@ -177,5 +176,5 @@ export const editAnchorsAction: Action & { requires: string[] } = {
       };
     },
   },
-  enabled: () => ActionDisabledReason.SelectionRequired,
+  enabled: () => true,
 };

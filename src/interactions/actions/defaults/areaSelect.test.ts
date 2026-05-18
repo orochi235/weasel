@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { areaSelectAction } from './areaSelect';
-import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx } from '../invoker';
 import type { NodeId } from 'core/scene/types';
 import type { AreaSelectDep } from '../depSchema';
@@ -71,8 +70,8 @@ describe('areaSelectAction descriptor', () => {
     expect(areaSelectAction.requires).toContain('areaSelect');
   });
 
-  it('enabled returns SelectionRequired (static placeholder)', () => {
-    expect(areaSelectAction.enabled!()).toBe(ActionDisabledReason.SelectionRequired);
+  it("enabled returns true (invoker self-guards on empty selection)", () => {
+    expect(areaSelectAction.enabled!()).toBe(true);
   });
 
   it('start returns empty handle when dep is absent', () => {

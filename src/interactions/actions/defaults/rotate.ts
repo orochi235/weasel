@@ -25,7 +25,6 @@
  */
 
 import type { Action } from '../registry';
-import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -228,5 +227,5 @@ export const rotateAction: Action & { requires: string[] } = {
       };
     },
   },
-  enabled: () => ActionDisabledReason.SelectionRequired,
+  enabled: () => true,
 };

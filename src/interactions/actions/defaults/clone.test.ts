@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { cloneAction } from './clone';
-import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx } from '../invoker';
 import type { NodeId, AddNodeSpec } from 'core/scene/types';
 
@@ -103,8 +102,8 @@ describe('cloneAction descriptor', () => {
     expect(cloneAction.requires).toContain('scene');
   });
 
-  it('enabled returns SelectionRequired', () => {
-    expect(cloneAction.enabled!()).toBe(ActionDisabledReason.SelectionRequired);
+  it("enabled returns true (invoker self-guards on empty selection)", () => {
+    expect(cloneAction.enabled!()).toBe(true);
   });
 
   it('start returns empty handle when selection is empty', () => {
