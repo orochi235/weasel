@@ -29,6 +29,8 @@ import { textCommand } from 'features/text/textCommand';
 import type { TextStyle } from 'features/text/textStyle';
 import type { Path } from 'features/paths/types';
 import { ellipsePath, regularPolygonPath, starPath } from 'features/paths/builder';
+import { boundsOfPath } from 'features/paths/bounds';
+import { translatePath } from 'features/paths/transform';
 
 export interface ShapePainter<TData = unknown, TPose = unknown> {
   /** Stable identifier — used for unregistration and debugging. Pick
@@ -135,13 +137,49 @@ const TEXT_PAINTER: ShapePainter = {
   },
 };
 
+/**
+ * Translate a path so its AABB origin lands on `pose.x, pose.y`. The bundled
+ * shape tools (`useBuiltinShapeTools`) initialise paths in absolute world
+ * coordinates matching the initial pose, so painters that ignored pose
+ * rendered at the original location after a move/resize. By aligning the
+ * path's bounds to the live pose origin every paint, both committed pose
+ * mutations AND in-flight preview poses (Phase 14e preview-ghost layer)
+ * render at the right place without needing the actions to mutate `data.path`.
+ *
+ * Returns the path unchanged when the delta is zero so the fast-path
+ * (no allocation, no Float32Array copy for polygons) stays hot.
+ */
+function pathAtPose(path: Path, pose: RectPose): Path {
+  if (path.kind === 'rect') {
+    // Rebase the rect onto the pose. Resize updates `pose.width/height` (not
+    // the path), so we honor those too — otherwise a corner drag would
+    // translate the path's old size onto the new origin instead of growing
+    // the rendered fill to match the new pose.
+    if (
+      path.x === pose.x && path.y === pose.y
+      && path.width === pose.width && path.height === pose.height
+    ) return path;
+    return { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height };
+  }
+  // Polygon paths: translate by the AABB-origin delta. Resize on a polygon
+  // path needs a per-vertex scale; that's `pathPoseDescriptor.remapBounds`,
+  // which the resize action ALREADY applies to the pose's bounds via the
+  // configured `PoseProjection`. Here we just align the path to the pose
+  // origin — the rendered polygon then matches the new bounds.
+  const b = boundsOfPath(path);
+  const dx = pose.x - b.x;
+  const dy = pose.y - b.y;
+  if (dx === 0 && dy === 0) return path;
+  return translatePath(path, dx, dy);
+}
+
 const PATH_PAINTER: ShapePainter = {
   id: 'kit:path',
   matches: (node) => {
     const d = node.data as { path?: Path } | null;
     return d?.path != null;
   },
-  paint: (node, _pose) => {
+  paint: (node, pose) => {
     const d = node.data as {
       path: Path;
       fill?: string;
@@ -149,9 +187,10 @@ const PATH_PAINTER: ShapePainter = {
       strokeWidth?: number;
       color?: string;
     };
+    const projected = pathAtPose(d.path, pose as RectPose);
     const cmd: DrawCommand = {
       kind: 'path',
-      path: d.path,
+      path: projected,
       fill: { color: d.fill ?? d.color ?? '#888' },
       ...(d.stroke && (d.strokeWidth ?? 0) > 0
         ? { stroke: { paint: { color: d.stroke }, width: d.strokeWidth ?? 1 } }
@@ -159,9 +198,9 @@ const PATH_PAINTER: ShapePainter = {
     };
     return [cmd];
   },
-  silhouette: (node) => {
+  silhouette: (node, pose) => {
     const d = node.data as { path: Path };
-    return d.path;
+    return pathAtPose(d.path, pose as RectPose);
   },
 };
 
