@@ -307,12 +307,19 @@ html, body, #root {
   position: relative;
   background:
     repeating-linear-gradient(45deg, #5a5a5a 0 8px, #626262 8px 16px);
+  /* Center the paper-sized canvas within the host, with overflow scrolling
+     when the paper is larger than the available viewport. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
 }
 
 .swill-canvas-host canvas {
   display: block;
-  width: 100%;
-  height: 100%;
+  /* Honor the canvas's declared width/height (paper.width × paper.height).
+     Don't stretch — the canvas IS the page, centered in the gray host. */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
 
 /* Background tint applied when the pen tool is in edit mode (dblclick on a
