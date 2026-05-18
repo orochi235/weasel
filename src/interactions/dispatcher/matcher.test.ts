@@ -273,3 +273,28 @@ describe('matchBest (precedence)', () => {
     expect(matchBest(e, bs, false)?.binding.actionId).toBe('zoom');
   });
 });
+
+describe('matchSpec — wheel direction', () => {
+  const baseEvent: InputEvent = { kind: 'wheel', ...noMods, ...noWheelData };
+
+  it('direction: "up" matches deltaY < 0 only', () => {
+    const spec = { kind: 'wheel' as const, direction: 'up' as const };
+    expect(matchSpec({ ...baseEvent, deltaY: -3 }, spec, false)).toBe(true);
+    expect(matchSpec({ ...baseEvent, deltaY:  3 }, spec, false)).toBe(false);
+  });
+
+  it('direction: "down" matches deltaY > 0 only', () => {
+    const spec = { kind: 'wheel' as const, direction: 'down' as const };
+    expect(matchSpec({ ...baseEvent, deltaY:  3 }, spec, false)).toBe(true);
+    expect(matchSpec({ ...baseEvent, deltaY: -3 }, spec, false)).toBe(false);
+  });
+
+  it('direction: "both" (or absent) matches both signs', () => {
+    const specBoth = { kind: 'wheel' as const, direction: 'both' as const };
+    const specAbsent = { kind: 'wheel' as const };
+    for (const spec of [specBoth, specAbsent]) {
+      expect(matchSpec({ ...baseEvent, deltaY: -3 }, spec, false)).toBe(true);
+      expect(matchSpec({ ...baseEvent, deltaY:  3 }, spec, false)).toBe(true);
+    }
+  });
+});

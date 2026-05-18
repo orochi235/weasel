@@ -297,7 +297,11 @@ export function matchSpec(
 
     case 'wheel': {
       if (e.kind !== 'wheel') return false;
-      return matchModifiers(e, spec.mods, isMac);
+      if (!matchModifiers(e, spec.mods, isMac)) return false;
+      const direction = spec.direction ?? 'both';
+      if (direction === 'up' && !(e.deltaY < 0)) return false;
+      if (direction === 'down' && !(e.deltaY > 0)) return false;
+      return true;
     }
 
     case 'click': {
