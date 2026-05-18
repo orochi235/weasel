@@ -12,8 +12,11 @@ export const selectAllAction: Action = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      const scene = deps.scene as { listAll?: () => NodeId[] } | undefined;
-      const all = scene?.listAll?.() ?? [];
+      // Scene exposes `renderOrder()` (bottom→top iterable of NodeIds), not
+      // the never-implemented `listAll()`. Materialize once into an array
+      // and forward to selection.
+      const scene = deps.scene as { renderOrder?: () => Iterable<NodeId> } | undefined;
+      const all = scene?.renderOrder ? [...scene.renderOrder()] : [];
       if (all.length === 0) return;
       (deps.selection as { set(ids: NodeId[]): void } | undefined)?.set(all);
     },
