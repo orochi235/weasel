@@ -88,7 +88,6 @@ const LS_KEY = 'swillustrator:scene-v1';
 // ─── Toolbar host: bridges the Actions Registry into ActionBar's flat-prop API ─
 
 interface ToolbarProps {
-  tools: ToolsApi | null;
   scene: ReturnType<typeof useScene<SwillData, SwillLayer, SwillPose>>;
   selection: ReturnType<typeof useSelection>;
   gridVisible: boolean;
@@ -99,7 +98,7 @@ interface ToolbarProps {
 }
 
 function Toolbar({
-  tools, scene, selection,
+  scene, selection,
   gridVisible, setGridVisible,
   snapToGrid, setSnapToGrid,
   setPaperSize,
@@ -216,7 +215,6 @@ function Toolbar({
         onChangeRecordingProfile={() => {/* v0: recording deferred */}}
         onPlay={() => {/* v0: recording deferred */}}
       />
-      {tools && <ToolPalette tools={tools} orientation="horizontal" />}
     </>
   );
 }
@@ -379,7 +377,6 @@ function EditorWithSharedScene({
   return (
     <div className="swill-app">
       <Toolbar
-        tools={tools}
         scene={scene}
         selection={selection}
         gridVisible={gridVisible}
@@ -389,6 +386,11 @@ function EditorWithSharedScene({
         setPaperSize={setPaperSize}
       />
       <div className="swill-body">
+        {tools && (
+          <div className="swill-sidebar left">
+            <ToolPalette tools={tools} orientation="vertical" />
+          </div>
+        )}
         <div className="swill-canvas-host">
           <SceneCanvas<SwillData, SwillLayer, SwillPose>
             width={paper.width}
