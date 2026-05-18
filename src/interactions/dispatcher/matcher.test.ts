@@ -298,3 +298,29 @@ describe('matchSpec — wheel direction', () => {
     }
   });
 });
+
+describe('matchSpec — contextMenu', () => {
+  const noMods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
+
+  it('matches a bare contextmenu event', () => {
+    const spec = { kind: 'contextMenu' as const };
+    const e = { kind: 'contextmenu' as const, target: undefined, ...noMods, bodyTarget: 'empty' as const };
+    expect(matchSpec(e, spec, false)).toBe(true);
+  });
+
+  it('respects target on contextmenu', () => {
+    const spec = { kind: 'contextMenu' as const, target: 'empty' as const };
+    const onEmpty = { kind: 'contextmenu' as const, target: undefined, ...noMods, bodyTarget: 'empty' as const };
+    const onBody  = { kind: 'contextmenu' as const, target: undefined, ...noMods, bodyTarget: 'selected-body' as const };
+    expect(matchSpec(onEmpty, spec, false)).toBe(true);
+    expect(matchSpec(onBody,  spec, false)).toBe(false);
+  });
+
+  it('respects modifiers on contextmenu', () => {
+    const spec = { kind: 'contextMenu' as const, mods: { shift: true } };
+    const plain   = { kind: 'contextmenu' as const, target: undefined, ...noMods, bodyTarget: 'empty' as const };
+    const shifted = { ...plain, shiftKey: true };
+    expect(matchSpec(plain,   spec, false)).toBe(false);
+    expect(matchSpec(shifted, spec, false)).toBe(true);
+  });
+});

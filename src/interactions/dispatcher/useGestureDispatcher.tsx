@@ -519,6 +519,27 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     };
 
     // -----------------------------------------------------------------------
+    // Canvas contextmenu listener (right-click)
+    // -----------------------------------------------------------------------
+
+    const onContextMenu = (e: MouseEvent) => {
+      // Suppress native menu so tools/actions own the right-click UX.
+      e.preventDefault();
+      const worldPoint = { x: e.clientX, y: e.clientY };
+      const bodyTarget = classifyTargetRef.current?.(worldPoint) ?? undefined;
+      const ev: InputEvent = {
+        kind: 'contextmenu',
+        target: e.target,
+        altKey: e.altKey,
+        ctrlKey: e.ctrlKey,
+        metaKey: e.metaKey,
+        shiftKey: e.shiftKey,
+        ...(bodyTarget !== undefined ? { bodyTarget } : {}),
+      };
+      dispatch(ev);
+    };
+
+    // -----------------------------------------------------------------------
     // Attach
     // -----------------------------------------------------------------------
 
@@ -529,6 +550,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     canvas?.addEventListener('pointermove', onPointerMove);
     canvas?.addEventListener('pointerup', onPointerUp);
     canvas?.addEventListener('pointercancel', onPointerCancel);
+    canvas?.addEventListener('contextmenu', onContextMenu);
 
     // -----------------------------------------------------------------------
     // Cleanup
@@ -542,6 +564,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       canvas?.removeEventListener('pointermove', onPointerMove);
       canvas?.removeEventListener('pointerup', onPointerUp);
       canvas?.removeEventListener('pointercancel', onPointerCancel);
+      canvas?.removeEventListener('contextmenu', onContextMenu);
       dispatcher.cancelAll('cancel');
     };
   }, [enabled, canvasRef]);

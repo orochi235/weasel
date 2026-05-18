@@ -83,6 +83,15 @@ export interface ClickSpec {
   mods?: ModSpec;
 }
 
+/** Right-click (contextmenu) gesture. The dispatcher calls
+ *  `preventDefault()` on the underlying DOM event so the native menu
+ *  doesn't appear — tools/actions fully own the right-click UX. */
+export interface ContextMenuSpec {
+  kind: 'contextMenu';
+  target?: TargetSpec;
+  mods?: ModSpec;
+}
+
 /** Drag gesture (pointerdown + pointermove past the threshold). */
 export interface DragSpec {
   kind: 'drag';
@@ -105,5 +114,6 @@ export type GestureSpec =
   | KeyHeldSpec
   | WheelSpec
   | ClickSpec
+  | ContextMenuSpec
   | DragSpec
   | MultiTouchSpec;
