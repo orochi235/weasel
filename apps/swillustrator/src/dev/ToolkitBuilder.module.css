@@ -191,6 +191,29 @@
 .conflicts li { margin: 4px 0; }
 .conflicts code { font-size: 11px; }
 
+/* Action.defaultBinding rendering — one row per binding, key bindings
+   render as KeyCaps; non-key gestures get a compact code tag. */
+.bindingList {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+}
+.bindingItem { display: inline-flex; align-items: center; gap: 4px; }
+.bindingSep { font-size: 10px; color: var(--wzl-muted, #a59685); }
+.bindingTag {
+  display: inline-block;
+  padding: 1px 5px;
+  background: var(--wzl-panel-border, #4a3c2e);
+  border-radius: 3px;
+  font-size: 11px;
+  color: var(--wzl-fg, #d4c4a8);
+}
+.bindingMod { color: var(--wzl-muted, #a59685); }
+
+.enabledOk { color: var(--wzl-accent, #7fb069); font-weight: 600; }
+.enabledNo { color: var(--wzl-warning, #d97757); font-family: ui-monospace, monospace; font-size: 11px; }
+
 /* Resolutions widget — gesture/phase pickers + per-mod resolution table. */
 .resolutionsControls {
   display: flex;
