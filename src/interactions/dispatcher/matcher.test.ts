@@ -327,10 +327,10 @@ describe('matchSpec — wheel direction', () => {
     expect(matchSpec({ ...baseEvent, deltaY: -3 }, spec, false)).toBe(false);
   });
 
-  it('direction: "both" (or absent) matches both signs', () => {
-    const specBoth = { kind: 'wheel' as const, direction: 'both' as const };
+  it('direction: "*" (or absent) matches both signs', () => {
+    const specStar = { kind: 'wheel' as const, direction: '*' as const };
     const specAbsent = { kind: 'wheel' as const };
-    for (const spec of [specBoth, specAbsent]) {
+    for (const spec of [specStar, specAbsent]) {
       expect(matchSpec({ ...baseEvent, deltaY: -3 }, spec, false)).toBe(true);
       expect(matchSpec({ ...baseEvent, deltaY:  3 }, spec, false)).toBe(true);
     }

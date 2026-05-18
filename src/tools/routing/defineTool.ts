@@ -296,11 +296,11 @@ export function defineTool<TScratch = void>(
           onWheel: (_e: WheelEvent, ctx: ToolCtx<TScratch>) => {
             const entry = phaseOf(ctx).wheel;
             if (!entry) return 'pass';
-            // Function form is sugar for `{ both: fn }`.
+            // Function form is sugar for `{ '*': fn }`.
             const direction: 'up' | 'down' = _e.deltaY < 0 ? 'up' : 'down';
             const action = typeof entry === 'function'
               ? entry
-              : (entry[direction] ?? entry.both);
+              : (entry[direction] ?? entry['*']);
             if (!action) return 'pass';
             report(ctx, phaseNameOf(ctx), 'wheel', '*', direction);
             return applyResult(ctx, action(ctx, _e));

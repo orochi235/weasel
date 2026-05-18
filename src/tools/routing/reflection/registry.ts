@@ -106,10 +106,10 @@ function walkWheel(
   out: RegistryEntry[],
 ): void {
   if (typeof wheel === 'function') {
-    out.push({ toolId, phase, gesture: 'wheel', arg: 'both', target: undefined, modifiers: 'default' });
+    out.push({ toolId, phase, gesture: 'wheel', arg: '*', target: undefined, modifiers: 'default' });
     return;
   }
-  for (const dir of Object.keys(wheel) as Array<'up' | 'down' | 'both'>) {
+  for (const dir of Object.keys(wheel) as Array<'up' | 'down' | '*'>) {
     if (wheel[dir] == null) continue;
     out.push({ toolId, phase, gesture: 'wheel', arg: dir, target: undefined, modifiers: 'default' });
   }

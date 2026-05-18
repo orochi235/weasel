@@ -65,13 +65,13 @@ export interface KeyHeldSpec {
   mods?: ModSpec;
 }
 
-/** Wheel-event gesture. `direction` filters by deltaY sign; default 'both'.
- *  - 'up'   → matches only deltaY < 0
- *  - 'down' → matches only deltaY > 0
- *  - 'both' → matches either sign (default) */
+/** Wheel-event gesture. `direction` filters by deltaY sign; default `'*'`.
+ *  - `'up'`   → matches only deltaY < 0
+ *  - `'down'` → matches only deltaY > 0
+ *  - `'*'`    → matches either sign (default; universal-wildcard convention) */
 export interface WheelSpec {
   kind: 'wheel';
-  direction?: 'up' | 'down' | 'both';
+  direction?: 'up' | 'down' | '*';
   mods?: ModSpec;
 }
 

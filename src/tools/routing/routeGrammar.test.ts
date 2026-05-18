@@ -16,7 +16,7 @@ describe('parseRoute (v2 grammar)', () => {
 
   it('parses a wheel without arg as the descriptor default', () => {
     expect(parseRoute('initial.wheel')).toEqual({
-      phase: 'initial', gesture: 'wheel', arg: 'both', target: undefined, modifiers: 'default',
+      phase: 'initial', gesture: 'wheel', arg: '*', target: undefined, modifiers: 'default',
     });
   });
 
@@ -47,7 +47,7 @@ describe('parseRoute (v2 grammar)', () => {
   });
 
   it('rejects an unknown enumerated arg value', () => {
-    expect(() => parseRoute('initial.wheel(sideways)')).toThrow(/sideways.*not in.*up.*down.*both/);
+    expect(() => parseRoute('initial.wheel(sideways)')).toThrow(/sideways.*not in.*up.*down/);
   });
 
   it('rejects an unknown gesture name', () => {
@@ -62,7 +62,7 @@ describe('formatRoute', () => {
   });
 
   it('elides default arg for wheel', () => {
-    expect(formatRoute({ phase: 'initial', gesture: 'wheel', arg: 'both', target: undefined, modifiers: 'default' }))
+    expect(formatRoute({ phase: 'initial', gesture: 'wheel', arg: '*', target: undefined, modifiers: 'default' }))
       .toBe('initial.wheel');
   });
 

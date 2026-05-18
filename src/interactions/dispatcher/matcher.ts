@@ -304,7 +304,7 @@ export function matchSpec(
     case 'wheel': {
       if (e.kind !== 'wheel') return false;
       if (!matchModifiers(e, spec.mods, isMac)) return false;
-      const direction = spec.direction ?? 'both';
+      const direction = spec.direction ?? '*';
       if (direction === 'up' && !(e.deltaY < 0)) return false;
       if (direction === 'down' && !(e.deltaY > 0)) return false;
       return true;

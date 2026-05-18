@@ -95,7 +95,7 @@ describe('buildActionRegistry', () => {
     };
     const r = buildActionRegistry([tool]);
     expect(r).toEqual<RegistryEntry[]>([
-      { toolId: 'wheel-zoom', phase: 'initial', gesture: 'wheel', arg: 'both', target: undefined, modifiers: 'default' },
+      { toolId: 'wheel-zoom', phase: 'initial', gesture: 'wheel', arg: '*', target: undefined, modifiers: 'default' },
     ]);
   });
 

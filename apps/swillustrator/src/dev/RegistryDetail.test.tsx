@@ -90,8 +90,8 @@ describe('RouteBadge', () => {
 
   it('elides the arg chip when the route uses the default value', () => {
     render(<RouteBadge route="initial.wheel" />);
-    // Default direction is 'both' — chip should not appear.
-    expect(screen.queryByText('both')).toBeFalsy();
+    // Default direction is '*' — chip should not appear.
+    expect(screen.queryByText('*')).toBeFalsy();
   });
 
   it('renders keyDown(ArrowDown) with ArrowDown as the arg chip', () => {

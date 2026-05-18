@@ -21,9 +21,9 @@ export type RouteTable<TScratch> = Partial<Record<string, RouteEntry<TScratch>>>
  *  action. Parsed by the reflection emitter and dispatcher. */
 export type KeyRouteTable<TScratch> = Partial<Record<string, ActionFn<TScratch>>>;
 
-/** Wheel direction sub-table. Keys: `'up' | 'down' | 'both'`. Function
- *  form is sugar for `{ both: fn }`. */
-export type WheelTable<TScratch> = Partial<Record<'up' | 'down' | 'both', ActionFn<TScratch>>>;
+/** Wheel direction sub-table. Keys: `'up' | 'down' | '*'`. Function form
+ *  is sugar for `{ '*': fn }` (matches both directions). */
+export type WheelTable<TScratch> = Partial<Record<'up' | 'down' | '*', ActionFn<TScratch>>>;
 
 /** MultiTouch tap fingers sub-table. Keys: `'2' | '3' | '4'`. */
 export type MultiTouchTapTable<TScratch> = Partial<Record<'2' | '3' | '4', ActionFn<TScratch>>>;
