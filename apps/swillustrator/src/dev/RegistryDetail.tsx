@@ -1,19 +1,27 @@
 import { Fragment } from 'react';
 import { Badge, DataGrid, KeySequence, type BadgeProps, type DataGridColumn, type KeySpec } from '@orochi235/weasel-ui';
+import type { ParsedModifiers, ModName } from '@orochi235/weasel/routing';
 
 function toKeys(parts: readonly string[] | undefined) {
   return parts?.map((label) => ({ label }));
 }
 
-const MODIFIER_GLYPHS: Record<string, string> = { mod: '⌘', shift: '⇧', alt: '⌥' };
+const MOD_GLYPHS: Record<ModName, string> = { mod: '⌘', shift: '⇧', alt: '⌥', ctrl: '⌃', meta: '⌘' };
+const MOD_DISPLAY_ORDER: readonly ModName[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
 
-/** Decompose a ModifierKey (`'shift'`, `'mod+shift'`, …) into KeySpecs for
- *  KeySequence. `'default'` returns undefined (no modifiers held). */
-function modifierKeys(modifiers: string): readonly KeySpec[] | undefined {
-  if (modifiers === 'default') return undefined;
-  return modifiers
-    .split('+')
-    .map((m) => ({ label: MODIFIER_GLYPHS[m] ?? m }));
+/** Decompose a `ParsedModifiers` map into KeySpecs for KeySequence. Empty
+ *  map (no required modifiers) returns undefined; otherwise emits one chip
+ *  per modifier in canonical display order, marking optional ones inverted
+ *  so the consumer can visually distinguish `?shift` from `+shift`. */
+function modifierKeys(modifiers: ParsedModifiers): readonly KeySpec[] | undefined {
+  const keys: KeySpec[] = [];
+  for (const name of MOD_DISPLAY_ORDER) {
+    const req = modifiers[name];
+    if (req !== undefined) {
+      keys.push({ label: MOD_GLYPHS[name], optional: req === 'optional' });
+    }
+  }
+  return keys.length > 0 ? keys : undefined;
 }
 import s from './RegistryInspector.module.css';
 import type {
@@ -23,25 +31,35 @@ import type {
   MetaEntry, CallbackRef,
 } from './registryData';
 import { BOOLEAN_BADGE_PROPS, BUNDLE_BADGE_PROPS, GESTURE_BADGE_PROPS, HOTKEY_TRIGGER_GLYPHS, KIND_BADGE_PROPS, PHASE_BADGE_PROPS, TOKEN_SETS, type TokenSet } from './badgeTokens';
-import { getGestureDescriptor, type GestureName } from '@orochi235/weasel/routing';
+import { canonicalModifiers, getGestureDescriptor, type GestureName } from '@orochi235/weasel/routing';
 import { collectBundles, collectIcons, GESTURE_CHANNEL_KEYS, PHASE_OUTPUT_KEYS, parseRoute, TOOL_HOOK_NAMES } from './registryData';
 void GESTURE_CHANNEL_KEYS;
 void PHASE_OUTPUT_KEYS;
 
-/** Decomposes a `phase.gesture.target[:modifiers]` route into its constituent
- *  tokens — phase + gesture as badges, target as a code chip, modifier set
- *  appended when non-default. */
+/** Decomposes a v3 route string (`[phaseList] gesture(arg) => target +mod`)
+ *  into its constituent tokens — bracketed phase list, gesture badge,
+ *  optional arg chip, target tag, modifier sequence. Targets equal to the
+ *  wildcard `*` are elided; arg chips are elided when the gesture descriptor
+ *  has a default and the parsed arg matches it. */
 export function RouteBadge({ route }: { route: string }) {
   const parsed = parseRoute(route);
   const desc = getGestureDescriptor(parsed.gesture as GestureName);
   const modKeys = modifierKeys(parsed.modifiers);
-  const targetless = !desc.hasTarget;
   const showArg = !!desc.arg
     && parsed.arg !== undefined
     && (desc.arg.default === undefined || parsed.arg !== desc.arg.default);
+  const showTarget = desc.hasTarget && parsed.target !== undefined && parsed.target !== '*';
+  const targetless = !desc.hasTarget;
   return (
     <span className={s.routeBadge}>
-      <Badge {...(PHASE_BADGE_PROPS as BadgeProps)}>{parsed.phase}</Badge>
+      <span className={s.phaseGroup}>
+        {parsed.phases.map((p, i) => (
+          <Fragment key={i}>
+            {i > 0 && <span className={s.phaseSep}>,</span>}
+            <Badge {...(PHASE_BADGE_PROPS as BadgeProps)}>{p}</Badge>
+          </Fragment>
+        ))}
+      </span>
       <Badge
         {...(GESTURE_BADGE_PROPS as BadgeProps)}
         className={targetless && !showArg ? s.flatRight : undefined}
@@ -53,9 +71,7 @@ export function RouteBadge({ route }: { route: string }) {
           {parsed.arg}
         </code>
       )}
-      {!targetless && parsed.target !== undefined && (
-        <code className={s.tag}>{parsed.target}</code>
-      )}
+      {showTarget && <code className={s.tag}>{parsed.target}</code>}
       {modKeys && <KeySequence keys={modKeys} />}
     </span>
   );
@@ -298,7 +314,8 @@ function ModifierSetDetail({
   entry, tools, onNavigate,
 }: { entry: ModifierSetEntry; tools: readonly ToolEntry[]; onNavigate: Props['onNavigate'] }) {
   const rows = tools.flatMap((t) => {
-    const matching = t.routes.filter((r) => parseRoute(r).modifiers === entry.id);
+    const matching = t.routes.filter((r) =>
+      (canonicalModifiers(parseRoute(r).modifiers) || 'default') === entry.id);
     return matching.length === 0 ? [] : [{ id: t.id, tool: t, routes: matching }];
   });
   return (

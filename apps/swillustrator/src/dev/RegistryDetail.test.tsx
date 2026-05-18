@@ -9,7 +9,7 @@ describe('RegistryDetail', () => {
       kind: 'tool',
       id: 'rect',
       label: 'useRectTool',
-      routes: ['initial.click.empty', 'initial.drag.empty:shift'],
+      routes: ['[initial] click => empty', '[initial] drag => empty +shift'],
       slot: 'registry',
       phases: {
         initial: {
@@ -80,27 +80,36 @@ describe('RegistryDetail', () => {
   });
 });
 
-describe('RouteBadge', () => {
-  it('renders a wheel(up) route with an "up" arg chip and no target', () => {
-    render(<RouteBadge route="initial.wheel(up)" />);
-    expect(screen.getByText('up')).toBeTruthy();
-    // No ANY badge for v2 targetless gestures.
-    expect(screen.queryByText('ANY')).toBeFalsy();
-  });
-
-  it('elides the arg chip when the route uses the default value', () => {
-    render(<RouteBadge route="initial.wheel" />);
-    // Default direction is '*' — chip should not appear.
-    expect(screen.queryByText('*')).toBeFalsy();
-  });
-
-  it('renders keyDown(ArrowDown) with ArrowDown as the arg chip', () => {
-    render(<RouteBadge route="initial.keyDown(ArrowDown)" />);
-    expect(screen.getByText('ArrowDown')).toBeTruthy();
-  });
-
-  it('renders click.empty with the target chip and no arg', () => {
-    render(<RouteBadge route="initial.click.empty" />);
+describe('RouteBadge v3', () => {
+  it('renders bracketed phase + gesture + target + modifier', () => {
+    render(<RouteBadge route="[initial] click => empty +shift" />);
+    expect(screen.getByText('initial')).toBeTruthy();
+    expect(screen.getByText('click')).toBeTruthy();
     expect(screen.getByText('empty')).toBeTruthy();
+    expect(screen.getByText('⇧')).toBeTruthy();
+  });
+
+  it('renders multi-phase list', () => {
+    render(<RouteBadge route="[initial,engaged] contextMenu => empty" />);
+    expect(screen.getByText('initial')).toBeTruthy();
+    expect(screen.getByText('engaged')).toBeTruthy();
+  });
+
+  it('renders [*] as the wildcard phase', () => {
+    render(<RouteBadge route="[*] click => empty" />);
+    expect(screen.getByText('*')).toBeTruthy();
+  });
+
+  it('renders optional modifier inverted', () => {
+    const { container } = render(<RouteBadge route="[initial] keyDown(ArrowDown) ?shift" />);
+    const cap = container.querySelector('[data-inverted]');
+    expect(cap?.textContent).toBe('⇧');
+  });
+
+  it('elides "*" target — no target chip rendered', () => {
+    const { container } = render(<RouteBadge route="[initial] click" />);
+    // No target tag; only phase + gesture chips visible.
+    const tags = container.querySelectorAll('code');
+    expect(tags.length).toBe(0);
   });
 });

@@ -30,6 +30,7 @@ import {
 } from '@orochi235/weasel';
 import {
   buildActionRegistry,
+  canonicalModifiers,
   findConflicts,
   type Conflict,
   type RegistryEntry,
@@ -305,8 +306,10 @@ function RoutesWidget({ routes }: { routes: readonly RegistryEntry[] }): ReactEl
               </tr>
             </thead>
             <tbody>
-              {sorted.map((r, i) => (
-                <tr key={`${r.toolId}-${r.phase}-${r.gesture}-${r.arg ?? ''}-${r.target ?? ''}-${r.modifiers}-${i}`}>
+              {sorted.map((r, i) => {
+                const modKey = canonicalModifiers(r.modifiers);
+                return (
+                <tr key={`${r.toolId}-${r.phase}-${r.gesture}-${r.arg ?? ''}-${r.target ?? ''}-${modKey}-${i}`}>
                   <td><code>{r.toolId}</code></td>
                   <td>{r.phase}</td>
                   <td>{r.gesture}</td>
@@ -316,11 +319,12 @@ function RoutesWidget({ routes }: { routes: readonly RegistryEntry[] }): ReactEl
                   <td>{r.target == null
                     ? <span className={s.empty}>—</span>
                     : <code>{r.target}</code>}</td>
-                  <td>{r.modifiers === 'default'
+                  <td>{modKey === ''
                     ? <span className={s.empty}>—</span>
-                    : <code>{r.modifiers}</code>}</td>
+                    : <code>{modKey}</code>}</td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -342,10 +346,12 @@ function ConflictsWidget({ conflicts }: { conflicts: readonly Conflict[] }): Rea
           <p className={s.empty}>No exact-tuple route conflicts in this bundle.</p>
         ) : (
           <ul className={s.conflicts}>
-            {conflicts.map((c, i) => (
+            {conflicts.map((c, i) => {
+              const modKey = canonicalModifiers(c.modifiers);
+              return (
               <li key={i}>
                 <code>{c.phase}.{c.gesture}{c.arg != null ? `(${c.arg})` : ''}{c.target != null ? `.${c.target}` : ''}</code>
-                {c.modifiers !== 'default' && <> · <code>{c.modifiers}</code></>}
+                {modKey !== '' && <> · <code>{modKey}</code></>}
                 {' '}claimed by{' '}
                 {c.toolIds.map((id, j) => (
                   <span key={id}>
@@ -354,7 +360,8 @@ function ConflictsWidget({ conflicts }: { conflicts: readonly Conflict[] }): Rea
                   </span>
                 ))}
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </div>
