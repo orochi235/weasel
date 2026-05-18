@@ -46,6 +46,10 @@ import { ActionBar, type FlipAxis, type PaperSizeKey } from './ActionBar';
 import { ActiveSwatches, type ActivePaint } from './ActiveSwatches';
 import { PreferencesModal } from './PreferencesModal';
 import { ColorContextProvider } from './tools/colorContext/ColorContextProvider';
+import { LayerList } from './ui/LayerList';
+import { useLayerList } from './ui/LayerList/useLayerList';
+import { PropertiesPanel } from './ui/PropertiesPanel';
+import { useSceneAdapter } from '@orochi235/weasel';
 import type { Obj } from './poseUpdate';
 import type { RecordingProfile } from './recorder';
 
@@ -87,6 +91,41 @@ const PAPER_PRESETS: Record<PaperSizeKey, { width: number; height: number }> = {
 const LS_KEY = 'swillustrator:scene-v1';
 
 // ─── Toolbar host: bridges the Actions Registry into ActionBar's flat-prop API ─
+
+// ─── Right sidebar: LayerList + PropertiesPanel ─────────────────────────────
+
+interface RightSidebarProps {
+  scene: ReturnType<typeof useScene<SwillData, SwillLayer, SwillPose>>;
+  selection: ReturnType<typeof useSelection>;
+}
+
+function RightSidebar({ scene, selection }: RightSidebarProps): ReactElement {
+  const adapter = useSceneAdapter(scene, {});
+  const layerListProps = useLayerList({
+    scene,
+    selection,
+    adapter,
+    itemFor: (node) => {
+      const data = node.data as SwillData;
+      return {
+        label: data.text ?? `${node.id.slice(0, 6)}…`,
+        swatch: typeof data.fill === 'string' ? data.fill : undefined,
+      };
+    },
+  });
+
+  const selectedCount = selection.current.length;
+  return (
+    <>
+      <LayerList {...layerListProps} empty={<em style={{ opacity: 0.6 }}>No nodes</em>} />
+      <PropertiesPanel title="Properties">
+        <div style={{ padding: 8, fontSize: 12, opacity: 0.7 }}>
+          {selectedCount === 0 ? 'No selection' : `${selectedCount} selected`}
+        </div>
+      </PropertiesPanel>
+    </>
+  );
+}
 
 interface ToolbarProps {
   scene: ReturnType<typeof useScene<SwillData, SwillLayer, SwillPose>>;
@@ -391,11 +430,10 @@ function EditorWithSharedScene({
       />
       <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} />
       <div className="swill-body">
-        {tools && (
-          <div className="swill-sidebar left">
-            <ToolPalette tools={tools} orientation="vertical" />
-          </div>
-        )}
+        <div className="swill-sidebar left">
+          {tools && <ToolPalette tools={tools} orientation="vertical" />}
+          <ActiveSwatches />
+        </div>
         <div className="swill-canvas-host">
           <SceneCanvas<SwillData, SwillLayer, SwillPose>
             width={paper.width}
@@ -410,7 +448,7 @@ function EditorWithSharedScene({
           />
         </div>
         <div className="swill-sidebar right">
-          <ActiveSwatches />
+          <RightSidebar scene={scene} selection={selection} />
         </div>
       </div>
     </div>
