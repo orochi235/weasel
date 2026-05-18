@@ -497,6 +497,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Internal canvas ref so usePinchZoomTool can attach pointer listeners
   // even when the consumer passes their own forwarded ref.
   const internalCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  // Holds the full `CanvasExtensionApi` so we can call `requestRedraw` after
+  // dispatcher-side gesture pumps. Without this, dispatcher-only actions
+  // (marquee, lasso, anything driven solely by `useGestureDispatcher`) never
+  // trigger a re-paint between pointerdown and pointerup — the legacy tools
+  // dispatcher's `onGestureChange` only fires for legacy `tool.drag.*` hooks,
+  // which the migrated actions don't provide.
+  const canvasApiRef = useRef<CanvasExtensionApi | null>(null);
 
   // Stable ref tracking the latest view for usePinchZoomTool.
   // Updated synchronously on incoming controlled-prop renders AND via
@@ -735,6 +742,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const mergedRef = useCallback(
     (node: CanvasExtensionApi | null) => {
       internalCanvasRef.current = node?.element ?? null;
+      canvasApiRef.current = node;
       if (typeof ref === 'function') ref(node);
       else if (ref) (ref as React.MutableRefObject<CanvasExtensionApi | null>).current = node;
     },
@@ -790,6 +798,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
           />
           <GestureDispatcherMounter
             canvasRef={internalCanvasRef}
+            canvasApiRef={canvasApiRef}
             tools={tools}
             enabled={enableGestureDispatcher}
             selectionRef={selectionRef}
@@ -819,6 +828,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
  */
 function GestureDispatcherMounter({
   canvasRef,
+  canvasApiRef,
   tools,
   enabled,
   selectionRef,
@@ -828,6 +838,9 @@ function GestureDispatcherMounter({
   dispatcher,
 }: {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
+  /** Holds the full `CanvasExtensionApi` so the gesture dispatcher can call
+   *  `requestRedraw()` between pointer events. */
+  canvasApiRef?: React.RefObject<CanvasExtensionApi | null>;
   tools: ToolsApi;
   enabled: boolean;
   selectionRef?: React.RefObject<import('core/selection/useSelection').SelectionApi>;
@@ -953,6 +966,12 @@ function GestureDispatcherMounter({
     };
   }, [classifyTarget, clientToWorld]);
 
+  // Stable callback that asks the canvas to redraw. Reads via ref so the
+  // identity stays stable while the underlying API binds after mount.
+  const requestRedraw = useCallback(() => {
+    canvasApiRef?.current?.requestRedraw?.();
+  }, [canvasApiRef]);
+
   useGestureDispatcher({
     canvasRef,
     actions: registry!,
@@ -961,6 +980,8 @@ function GestureDispatcherMounter({
     affordanceAt: wrappedAffordanceAt,
     classifyTarget: wrappedClassifyTarget,
     dispatcher,
+    clientToWorld,
+    requestRedraw,
   });
   return null;
 }

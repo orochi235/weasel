@@ -84,6 +84,42 @@ export interface UseGestureDispatcherOptions {
    * mounter and other consumers (the preview-ghost layer in Phase 14e).
    */
   dispatcher?: Dispatcher;
+
+  /**
+   * Converts a client-space pointer position (e.g. `e.clientX`, `e.clientY`)
+   * to world-space coordinates. When supplied, every pointer/wheel event's
+   * `x`/`y` is converted before the dispatcher builds `InvocationCtx.world`.
+   *
+   * Without this, `ctx.world` is populated with the raw client coords, which
+   * silently breaks any action whose overlay/output uses absolute world
+   * positions (marquee, lasso polyline, world-space affordances). Actions
+   * that only read `drag.delta` are unaffected because client→world deltas
+   * are equal at scale 1, but as soon as a consumer pans/zooms the view the
+   * deltas diverge too.
+   *
+   * `<SceneCanvas>` always wires this via its canvas rect + current view.
+   * Tests / harnesses without a view can omit it and continue passing raw
+   * coordinates as before.
+   */
+  clientToWorld?: (clientX: number, clientY: number) => { x: number; y: number };
+
+  /**
+   * Invoked once per pump event (`pointermove`, `pointerup`, `pointercancel`,
+   * `key-held` up-phase, `multitouch` move) when a dispatcher-side handle is
+   * in flight. Lets the host canvas schedule a redraw so dispatcher-only
+   * overlays (marquee, lasso, preview-ghost) repaint on each frame.
+   *
+   * Required because dispatcher actions don't go through the legacy
+   * `tools.dispatcher.onGestureChange` redraw bump that ambient tool drags
+   * relied on. Without it, the overlay layer's `draw` never runs between
+   * pointerdown and pointerup, and the chrome flashes once at gesture start
+   * and then sits frozen until the gesture ends.
+   *
+   * `<SceneCanvas>` wires this to the canvas's `requestRedraw`. Test
+   * harnesses can omit it; their dispatchers won't paint between events but
+   * that's already the test contract.
+   */
+  requestRedraw?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -122,7 +158,7 @@ function computeMultiTouchGeometry(
 // ---------------------------------------------------------------------------
 
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, toolsById, enabled = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt } = opts;
+  const { canvasRef, actions, toolsById, enabled = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw } = opts;
   const activeTool = useActiveToolContext();
   const depRegistry = useDepRegistry();
 
@@ -157,6 +193,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   affordanceAtRef.current = affordanceAt;
   const classifyTargetRef = useRef(classifyTarget);
   classifyTargetRef.current = classifyTarget;
+  const clientToWorldRef = useRef(clientToWorld);
+  clientToWorldRef.current = clientToWorld;
+  const requestRedrawRef = useRef(requestRedraw);
+  requestRedrawRef.current = requestRedraw;
 
   // Cancel in-flight ongoing handles when active tool changes (not on initial mount).
   const prevActiveRef = useRef(activeTool.active);
@@ -172,6 +212,31 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
     const dispatcher = dispatcherRef.current!;
     const canvas = canvasRef.current;
+
+    // Convert a client-space pointer position to world-space. When no
+    // `clientToWorld` thunk is wired (legacy harnesses / tests), this is the
+    // identity — preserves pre-fix behavior for callers that pass raw event
+    // coords as if they were world. SceneCanvas always wires the thunk via
+    // its canvas rect + current view, so `ctx.world` becomes real world coords
+    // for areaSelect / lassoSelect / world-space affordance consumers.
+    const toWorld = (cx: number, cy: number): { x: number; y: number } => {
+      const fn = clientToWorldRef.current;
+      return fn ? fn(cx, cy) : { x: cx, y: cy };
+    };
+
+    // Dispatch + bump the host canvas's redraw when any handle was in flight
+    // before, during, or after the event. Without this, dispatcher-only
+    // overlays (marquee, lasso) never repaint after their initial frame.
+    // `before` captures the pre-event state so we redraw on the pump that
+    // CLOSES a gesture (e.g. pointerup-with-no-remaining-handles still needs
+    // to clear the overlay).
+    const dispatch = (ev: InputEvent): 'handled' | 'unhandled' => {
+      const before = dispatcher.inFlight().size;
+      const result = dispatcher.handleInput(ev, ctxRef.current);
+      const after = dispatcher.inFlight().size;
+      if (before > 0 || after > 0) requestRedrawRef.current?.();
+      return result;
+    };
 
     // Tracks keys that have an in-flight key-held handle so we fire the up
     // phase only when warranted.
@@ -219,7 +284,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         shiftKey: e.shiftKey,
         repeat: e.repeat,
       };
-      const keyResult = dispatcher.handleInput(keyEv, ctxRef.current);
+      const keyResult = dispatch(keyEv);
 
       const heldEv: InputEvent = {
         kind: 'key-held',
@@ -230,7 +295,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         metaKey: e.metaKey,
         shiftKey: e.shiftKey,
       };
-      const heldResult = dispatcher.handleInput(heldEv, ctxRef.current);
+      const heldResult = dispatch(heldEv);
 
       if (heldResult === 'handled') {
         heldKeys.add(e.key);
@@ -252,7 +317,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         metaKey: e.metaKey,
         shiftKey: e.shiftKey,
       };
-      dispatcher.handleInput(ev, ctxRef.current);
+      dispatch(ev);
       heldKeys.delete(e.key);
     };
 
@@ -272,7 +337,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         clientX: e.clientX,
         clientY: e.clientY,
       };
-      dispatcher.handleInput(ev, ctxRef.current);
+      dispatch(ev);
     };
 
     // -----------------------------------------------------------------------
@@ -291,11 +356,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       const affordance = affordanceAtRef.current?.(worldPoint) ?? undefined;
       const bodyTarget = classifyTargetRef.current?.(worldPoint) ?? undefined;
 
+      const w = toWorld(e.clientX, e.clientY);
       const ev: InputEvent = {
         kind: 'pointerdown',
         target: e.target,
-        x: e.clientX,
-        y: e.clientY,
+        x: w.x,
+        y: w.y,
         altKey: e.altKey,
         ctrlKey: e.ctrlKey,
         metaKey: e.metaKey,
@@ -303,7 +369,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         ...(affordance !== undefined ? { affordance } : {}),
         ...(bodyTarget !== undefined ? { bodyTarget } : {}),
       };
-      dispatcher.handleInput(ev, ctxRef.current);
+      dispatch(ev);
 
       // Store pointerdown info for click synthesis (see onPointerUp).
       lastPointerDown.set(e.pointerId, {
@@ -329,7 +395,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           centroid,
           spread,
         };
-        dispatcher.handleInput(mt, ctxRef.current);
+        dispatch(mt);
       }
     };
 
@@ -355,20 +421,21 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           centroid,
           spread,
         };
-        dispatcher.handleInput(mtEv, ctxRef.current);
+        dispatch(mtEv);
         // Also dispatch the raw pointermove so single-pointer handles can coexist.
       }
 
+      const w = toWorld(e.clientX, e.clientY);
       const ev: InputEvent = {
         kind: 'pointermove',
-        x: e.clientX,
-        y: e.clientY,
+        x: w.x,
+        y: w.y,
         altKey: e.altKey,
         ctrlKey: e.ctrlKey,
         metaKey: e.metaKey,
         shiftKey: e.shiftKey,
       };
-      dispatcher.handleInput(ev, ctxRef.current);
+      dispatch(ev);
     };
 
     const onPointerUp = (e: PointerEvent) => {
@@ -404,16 +471,17 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         : true;
       const hadDragInFlight = dispatcher.inFlight().has('pointer-mouse') && movedDuringDrag;
 
+      const wUp = toWorld(e.clientX, e.clientY);
       const ev: InputEvent = {
         kind: 'pointerup',
-        x: e.clientX,
-        y: e.clientY,
+        x: wUp.x,
+        y: wUp.y,
         altKey: e.altKey,
         ctrlKey: e.ctrlKey,
         metaKey: e.metaKey,
         shiftKey: e.shiftKey,
       };
-      dispatcher.handleInput(ev, ctxRef.current);
+      dispatch(ev);
 
       const down = lastPointerDown.get(e.pointerId);
       lastPointerDown.delete(e.pointerId);
@@ -432,7 +500,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           shiftKey: e.shiftKey,
           ...(down.bodyTarget !== undefined ? { bodyTarget: down.bodyTarget } : {}),
         };
-        dispatcher.handleInput(clickEv, ctxRef.current);
+        dispatch(clickEv);
       }
     };
 
@@ -447,7 +515,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         metaKey: e.metaKey,
         shiftKey: e.shiftKey,
       };
-      dispatcher.handleInput(ev, ctxRef.current);
+      dispatch(ev);
     };
 
     // -----------------------------------------------------------------------
