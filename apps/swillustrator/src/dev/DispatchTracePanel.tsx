@@ -18,7 +18,6 @@
  * "Show dev panels" pref) only in development.
  */
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
-import { SidebarPanel } from '@orochi235/weasel-ui';
 import s from './DispatchTracePanel.module.css';
 
 // Structural copy of `DispatchLogEntry` from
@@ -60,15 +59,13 @@ function clearLog(): void {
 }
 
 export interface DispatchTracePanelProps {
-  /** Optional collapsed/uncollapse hooks — same SidebarPanel contract
-   *  the other dev panels use. When `collapsed` is true polling pauses. */
-  collapsed?: boolean;
-  onToggleCollapse?: () => void;
-  onHide?: () => void;
+  /** Initial collapsed state. Defaults to `false` (panel open). */
+  defaultCollapsed?: boolean;
 }
 
-export function DispatchTracePanel(props: DispatchTracePanelProps): ReactElement {
-  const { collapsed = false, onToggleCollapse, onHide } = props;
+export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactElement {
+  const { defaultCollapsed = false } = props;
+  const [collapsed, setCollapsed] = useState<boolean>(defaultCollapsed);
   const [entries, setEntries] = useState<DispatchLogEntry[]>(() => readLog().slice());
   const [expanded, setExpanded] = useState<number | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
@@ -104,28 +101,36 @@ export function DispatchTracePanel(props: DispatchTracePanelProps): ReactElement
   }, []);
 
   const visible = entries.slice(-DISPLAY_LIMIT).reverse();
+  const onToggleCollapse = useCallback(() => setCollapsed((c) => !c), []);
 
   return (
-    <SidebarPanel
-      title="Dispatch trace"
-      collapsed={collapsed}
-      onToggleCollapse={onToggleCollapse}
-      onHide={onHide}
-    >
-      <div className={s.root}>
-        <div className={s.toolbar}>
-          <span className={s.count}>
-            {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
-          </span>
-          <button
-            type="button"
-            className={s.clear}
-            onClick={onClear}
-            disabled={entries.length === 0}
-          >
-            Clear
-          </button>
-        </div>
+    <aside className={`${s.widget} ${collapsed ? s.widgetCollapsed : ''}`}>
+      <div className={s.bar}>
+        <button
+          type="button"
+          className={s.toggle}
+          onClick={onToggleCollapse}
+          aria-expanded={!collapsed}
+          aria-label={collapsed ? 'Expand dispatch trace' : 'Collapse dispatch trace'}
+          title={collapsed ? 'Expand' : 'Collapse'}
+        >
+          <span className={s.chevron} aria-hidden="true">{collapsed ? '▴' : '▾'}</span>
+          <span className={s.barTitle}>Dispatch trace</span>
+        </button>
+        <span className={s.count}>
+          {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
+        </span>
+        <button
+          type="button"
+          className={s.clear}
+          onClick={onClear}
+          disabled={entries.length === 0}
+        >
+          Clear
+        </button>
+      </div>
+      {!collapsed && (
+        <div className={s.body}>
         {visible.length === 0 ? (
           <p className={s.empty}>
             No dispatch events recorded yet. Interact with the canvas to populate the log.
@@ -136,7 +141,6 @@ export function DispatchTracePanel(props: DispatchTracePanelProps): ReactElement
               <tr>
                 <th>Age</th>
                 <th>Event</th>
-                <th>Fired</th>
                 <th>Outcome</th>
                 <th>Cands</th>
               </tr>
@@ -168,8 +172,9 @@ export function DispatchTracePanel(props: DispatchTracePanelProps): ReactElement
             </tbody>
           </table>
         )}
-      </div>
-    </SidebarPanel>
+        </div>
+      )}
+    </aside>
   );
 }
 
@@ -186,13 +191,12 @@ function RowGroup(props: {
       <tr className={rowClass} onClick={onToggle}>
         <td>{formatAge(ageMs)}</td>
         <td>{entry.eventKind}</td>
-        <td>{entry.fired ?? <span className={s.none}>—</span>}</td>
-        <td>{entry.outcome}</td>
+        <td>{renderOutcome(entry)}</td>
         <td>{entry.candidates.length}</td>
       </tr>
       {isExpanded && (
         <tr className={s.detailRow}>
-          <td colSpan={5}>
+          <td colSpan={4}>
             {entry.candidates.length === 0 ? (
               <em>No candidates considered.</em>
             ) : (
@@ -223,6 +227,11 @@ function RowGroup(props: {
       )}
     </>
   );
+}
+
+function renderOutcome(entry: DispatchLogEntry): ReactElement | string {
+  if (entry.outcome === 'unhandled') return 'unhandled';
+  return entry.fired ? <code>{entry.fired}</code> : 'handled';
 }
 
 function formatAge(ms: number): string {
