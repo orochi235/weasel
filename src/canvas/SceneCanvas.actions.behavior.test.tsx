@@ -44,7 +44,7 @@ describe('SceneCanvas keydown dispatch', () => {
       <SceneCanvas scene={scene} layers={{}} width={64} height={64}
         actions={{ selectAll: { invoker: { timing: 'immediate' as const, run: () => { customRun(); } } } }} />,
     );
-    // jsdom is not Mac, so `mod: true` in the gestureBinding resolves to ctrlKey.
+    // jsdom is not Mac, so `mod: true` in the defaultBinding resolves to ctrlKey.
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true }));
     expect(customRun).toHaveBeenCalledOnce();
   });
@@ -91,7 +91,7 @@ describe('SceneCanvas keydown dispatch', () => {
           escape: { invoker: { timing: 'immediate' as const, run: () => { next(); } }, enabled: () => true },
         }} />,
     );
-    // jsdom is not Mac, so `mod: true` in the gestureBinding resolves to ctrlKey.
+    // jsdom is not Mac, so `mod: true` in the defaultBinding resolves to ctrlKey.
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true }));
     expect(errSpy).toHaveBeenCalled();
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));

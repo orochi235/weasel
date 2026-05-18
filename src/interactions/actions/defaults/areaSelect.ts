@@ -74,7 +74,7 @@ interface AreaSelectScratch {
 export const areaSelectAction: Action & { requires: string[] } = {
   id: 'areaSelect',
   label: 'Area Select',
-  gestureBinding: { kind: 'drag' },
+  defaultBinding: { kind: 'drag' },
   requires: ['areaSelect'],
   invoker: {
     timing: 'ongoing',

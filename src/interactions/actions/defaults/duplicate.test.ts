@@ -7,8 +7,8 @@ describe('duplicateAction (descriptor)', () => {
     expect(duplicateAction.label).toBe('Duplicate');
   });
 
-  it('gestureBinding = { kind: "key", key: "d", mods: { mod: true } }', () => {
-    expect(duplicateAction.gestureBinding).toEqual({ kind: 'key', key: 'd', mods: { mod: true } });
+  it('defaultBinding = { kind: "key", key: "d", mods: { mod: true } }', () => {
+    expect(duplicateAction.defaultBinding).toEqual({ kind: 'key', key: 'd', mods: { mod: true } });
   });
 
   it('invoker.timing = "immediate"', () => {

@@ -28,10 +28,10 @@ function getImmediateInvoker(action: typeof viewportZoomAction) {
 // ---------------------------------------------------------------------------
 
 describe('viewportZoomAction descriptor', () => {
-  it('declares id, label, array gestureBinding, and immediate timing', () => {
+  it('declares id, label, array defaultBinding, and immediate timing', () => {
     expect(viewportZoomAction.id).toBe('viewport.zoom');
     expect(viewportZoomAction.label).toBe('Zoom');
-    expect(Array.isArray(viewportZoomAction.gestureBinding)).toBe(true);
+    expect(Array.isArray(viewportZoomAction.defaultBinding)).toBe(true);
     expect(viewportZoomAction.invoker?.timing).toBe('immediate');
   });
 
@@ -44,7 +44,7 @@ describe('viewportZoomAction descriptor', () => {
   });
 
   it('has 4 gesture bindings: wheel+mod, key =, key -, key 0', () => {
-    const bindings = viewportZoomAction.gestureBinding as Array<{ spec: unknown; opts: { params: { kind: string } } }>;
+    const bindings = viewportZoomAction.defaultBinding as Array<{ spec: unknown; opts: { params: { kind: string } } }>;
     expect(bindings).toHaveLength(4);
     const specs = bindings.map((b) => b.spec);
     expect(specs).toContainEqual({ kind: 'wheel', mods: { mod: true } });
@@ -54,7 +54,7 @@ describe('viewportZoomAction descriptor', () => {
   });
 
   it('each binding declares a params.kind', () => {
-    const bindings = viewportZoomAction.gestureBinding as Array<{ spec: unknown; opts: { params: { kind: string } } }>;
+    const bindings = viewportZoomAction.defaultBinding as Array<{ spec: unknown; opts: { params: { kind: string } } }>;
     const kinds = bindings.map((b) => b.opts.params.kind);
     expect(kinds).toContain('wheel');
     expect(kinds).toContain('in');

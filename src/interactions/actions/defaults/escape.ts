@@ -8,7 +8,7 @@ import type { Action } from '../registry';
 export const escapeAction: Action = {
   id: 'escape',
   label: 'Escape',
-  gestureBinding: { kind: 'key', key: 'Escape' },
+  defaultBinding: { kind: 'key', key: 'Escape' },
   invoker: {
     timing: 'immediate',
     run: (deps) => {

@@ -46,7 +46,7 @@ const WHEEL_STEP = 1.1;
 export const viewportZoomAction: Action & { requires: string[] } = {
   id: 'viewport.zoom',
   label: 'Zoom',
-  gestureBinding: [
+  defaultBinding: [
     // Cmd+wheel → wheel zoom (also catches Mac trackpad pinch via ctrl+wheel)
     {
       spec: { kind: 'wheel', mods: { mod: true } },

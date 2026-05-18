@@ -47,7 +47,7 @@ function flipSelection(
 export const flipAction: Action = {
   id: 'flip',
   label: 'Flip',
-  gestureBinding: [
+  defaultBinding: [
     { spec: { kind: 'key', key: ['h', 'H'], mods: { shift: true } }, opts: { params: { axis: 'x' } } },
     { spec: { kind: 'key', key: ['v', 'V'], mods: { shift: true } }, opts: { params: { axis: 'y' } } },
   ],

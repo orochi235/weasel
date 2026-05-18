@@ -327,7 +327,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * wired — useful in tests or demos that drive actions through alternative
      * mechanisms, or that want to call `useGestureDispatcher` themselves.
      *
-     * The dispatcher reads registered actions' `gestureBinding` fields and
+     * The dispatcher reads registered actions' `defaultBinding` fields and
      * routes matching window keydown / canvas pointer / wheel events to the
      * corresponding `invoker.run` (or `invoker.start` for ongoing gestures).
      */

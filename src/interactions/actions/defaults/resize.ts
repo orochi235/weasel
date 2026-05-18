@@ -266,7 +266,7 @@ interface ResizeScratch {
 export const resizeAction: Action & { requires: string[] } = {
   id: 'resize',
   label: 'Resize',
-  gestureBinding: { kind: 'drag' },
+  defaultBinding: { kind: 'drag' },
   requires: ['selection', 'scene', 'resizePolicy'],
   invoker: {
     timing: 'ongoing',

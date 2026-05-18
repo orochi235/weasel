@@ -125,7 +125,7 @@ describe('ActionsRegistry — full coverage', () => {
   // tested the registry's legacy keydown loop, which is gone. Equivalent
   // coverage lives in the gesture dispatcher's tests
   // (`src/interactions/dispatcher/`) which is now the sole keystroke path
-  // for registered actions with `gestureBinding`.
+  // for registered actions with `defaultBinding`.
 });
 
 describe('Action with new invoker / GestureSpec fields (Phase 1 additive)', () => {
@@ -153,31 +153,31 @@ describe('Action with new invoker / GestureSpec fields (Phase 1 additive)', () =
     expect(action.invoker?.timing).toBe('ongoing');
   });
 
-  it('accepts a GestureSpec on gestureBinding', () => {
+  it('accepts a GestureSpec on defaultBinding', () => {
     const gestureSpec: GestureSpec = { kind: 'wheel', mods: { ctrl: true } };
     const action: Action = {
       id: 'demo.wheel',
       label: 'Demo wheel',
-      gestureBinding: gestureSpec,
+      defaultBinding: gestureSpec,
       invoker: { timing: 'immediate', run: () => {} },
     };
-    expect(action.gestureBinding).toEqual({ kind: 'wheel', mods: { ctrl: true } });
+    expect(action.defaultBinding).toEqual({ kind: 'wheel', mods: { ctrl: true } });
   });
 
   // REMOVED (Phase 14e Task 7): 'legacy KeyBinding shape on defaultBinding
   // still compiles'. The `Action.defaultBinding` field has been deleted; all
-  // bindings live on `gestureBinding` (read by the dispatcher).
+  // bindings live on `defaultBinding` (read by the dispatcher).
 
-  it('accepts an array of GestureSpec on gestureBinding (multi-binding actions)', () => {
+  it('accepts an array of GestureSpec on defaultBinding (multi-binding actions)', () => {
     const action: Action = {
       id: 'demo.multi',
       label: 'Demo multi',
-      gestureBinding: [
+      defaultBinding: [
         { kind: 'key', key: 'z', mods: { mod: true } },
         { kind: 'key', key: 'z', mods: { mod: true, shift: true } },
       ],
       invoker: { timing: 'immediate', run: () => {} },
     };
-    expect(Array.isArray(action.gestureBinding)).toBe(true);
+    expect(Array.isArray(action.defaultBinding)).toBe(true);
   });
 });

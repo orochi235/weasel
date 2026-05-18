@@ -91,7 +91,7 @@ interface EditAnchorsScratch {
 export const editAnchorsAction: Action & { requires: string[] } = {
   id: 'editAnchors',
   label: 'Edit Anchors',
-  gestureBinding: { kind: 'drag' },
+  defaultBinding: { kind: 'drag' },
   requires: ['selection', 'editAnchors'],
   invoker: {
     timing: 'ongoing',

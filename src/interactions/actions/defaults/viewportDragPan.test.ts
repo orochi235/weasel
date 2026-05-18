@@ -41,10 +41,10 @@ function getOngoingInvoker(action: typeof viewportDragPanAction) {
 // ---------------------------------------------------------------------------
 
 describe('viewportDragPanAction descriptor', () => {
-  it('declares id, label, drag gestureBinding, and ongoing timing', () => {
+  it('declares id, label, drag defaultBinding, and ongoing timing', () => {
     expect(viewportDragPanAction.id).toBe('viewport.dragPan');
     expect(viewportDragPanAction.label).toBe('Drag to pan viewport');
-    expect(viewportDragPanAction.gestureBinding).toEqual({ kind: 'drag' });
+    expect(viewportDragPanAction.defaultBinding).toEqual({ kind: 'drag' });
     expect(viewportDragPanAction.invoker?.timing).toBe('ongoing');
   });
 

@@ -7,9 +7,9 @@ describe('enterTextEditAction (descriptor)', () => {
     expect(enterTextEditAction.label).toBe('Enter text edit');
   });
 
-  it('has no gestureBinding or gestureBinding (fires only via Tool.bindings)', () => {
-    expect(enterTextEditAction.gestureBinding).toBeUndefined();
-    expect(enterTextEditAction.gestureBinding).toBeUndefined();
+  it('has no defaultBinding or defaultBinding (fires only via Tool.bindings)', () => {
+    expect(enterTextEditAction.defaultBinding).toBeUndefined();
+    expect(enterTextEditAction.defaultBinding).toBeUndefined();
   });
 
   it('requires = ["textEdit", "selection"]', () => {

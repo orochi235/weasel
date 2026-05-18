@@ -19,9 +19,9 @@ describe('nudgeUpAction (magnitude param)', () => {
     expect(nudgeUpAction.id).toBe('nudge.up');
   });
 
-  it('declares two parametric gestureBindings', () => {
-    expect(Array.isArray(nudgeUpAction.gestureBinding)).toBe(true);
-    const bindings = nudgeUpAction.gestureBinding as { spec: { kind: string; key: string; mods?: { shift: boolean } }; opts: { params: { magnitude: string } } }[];
+  it('declares two parametric defaultBindings', () => {
+    expect(Array.isArray(nudgeUpAction.defaultBinding)).toBe(true);
+    const bindings = nudgeUpAction.defaultBinding as { spec: { kind: string; key: string; mods?: { shift: boolean } }; opts: { params: { magnitude: string } } }[];
     expect(bindings).toHaveLength(2);
     expect(bindings[0].opts.params.magnitude).toBe('small');
     expect(bindings[1].opts.params.magnitude).toBe('big');
@@ -116,7 +116,7 @@ describe('nudgeUpAction (magnitude param)', () => {
 describe('nudgeDownAction descriptor', () => {
   it('has id nudge.down and references ArrowDown', () => {
     expect(nudgeDownAction.id).toBe('nudge.down');
-    const bindings = nudgeDownAction.gestureBinding as { spec: { key: string } }[];
+    const bindings = nudgeDownAction.defaultBinding as { spec: { key: string } }[];
     expect(bindings[0].spec.key).toBe('ArrowDown');
   });
 
@@ -142,7 +142,7 @@ describe('nudgeDownAction descriptor', () => {
 describe('nudgeLeftAction descriptor', () => {
   it('has id nudge.left and references ArrowLeft', () => {
     expect(nudgeLeftAction.id).toBe('nudge.left');
-    const bindings = nudgeLeftAction.gestureBinding as { spec: { key: string } }[];
+    const bindings = nudgeLeftAction.defaultBinding as { spec: { key: string } }[];
     expect(bindings[0].spec.key).toBe('ArrowLeft');
   });
 });
@@ -150,7 +150,7 @@ describe('nudgeLeftAction descriptor', () => {
 describe('nudgeRightAction descriptor', () => {
   it('has id nudge.right and references ArrowRight', () => {
     expect(nudgeRightAction.id).toBe('nudge.right');
-    const bindings = nudgeRightAction.gestureBinding as { spec: { key: string } }[];
+    const bindings = nudgeRightAction.defaultBinding as { spec: { key: string } }[];
     expect(bindings[0].spec.key).toBe('ArrowRight');
   });
 

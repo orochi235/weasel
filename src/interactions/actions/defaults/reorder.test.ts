@@ -49,13 +49,13 @@ describe('reorderForwardAction (descriptor)', () => {
     expect(reorderForwardAction.label).toBe('Bring Forward');
   });
 
-  it('declares two parametric gestureBinding entries', () => {
-    expect(Array.isArray(reorderForwardAction.gestureBinding)).toBe(true);
-    expect((reorderForwardAction.gestureBinding as unknown[]).length).toBe(2);
+  it('declares two parametric defaultBinding entries', () => {
+    expect(Array.isArray(reorderForwardAction.defaultBinding)).toBe(true);
+    expect((reorderForwardAction.defaultBinding as unknown[]).length).toBe(2);
   });
 
   it('first binding carries distance: "adjacent" and key Mod+]', () => {
-    const bindings = reorderForwardAction.gestureBinding as BoundGesture[];
+    const bindings = reorderForwardAction.defaultBinding as BoundGesture[];
     const first = bindings[0] as { spec: { kind: string; key: unknown; mods: unknown }; opts: { params: { distance: string } } };
     expect(first.opts.params.distance).toBe('adjacent');
     expect(first.spec.kind).toBe('key');
@@ -64,7 +64,7 @@ describe('reorderForwardAction (descriptor)', () => {
   });
 
   it('second binding carries distance: "extreme" and key Mod+Shift+]', () => {
-    const bindings = reorderForwardAction.gestureBinding as BoundGesture[];
+    const bindings = reorderForwardAction.defaultBinding as BoundGesture[];
     const second = bindings[1] as { spec: { kind: string; key: unknown; mods: unknown }; opts: { params: { distance: string } } };
     expect(second.opts.params.distance).toBe('extreme');
     expect(second.spec.kind).toBe('key');
@@ -160,13 +160,13 @@ describe('reorderBackwardAction (descriptor)', () => {
     expect(reorderBackwardAction.label).toBe('Send Backward');
   });
 
-  it('declares two parametric gestureBinding entries', () => {
-    expect(Array.isArray(reorderBackwardAction.gestureBinding)).toBe(true);
-    expect((reorderBackwardAction.gestureBinding as unknown[]).length).toBe(2);
+  it('declares two parametric defaultBinding entries', () => {
+    expect(Array.isArray(reorderBackwardAction.defaultBinding)).toBe(true);
+    expect((reorderBackwardAction.defaultBinding as unknown[]).length).toBe(2);
   });
 
   it('first binding carries distance: "adjacent" and key Mod+[', () => {
-    const bindings = reorderBackwardAction.gestureBinding as BoundGesture[];
+    const bindings = reorderBackwardAction.defaultBinding as BoundGesture[];
     const first = bindings[0] as { spec: { kind: string; key: unknown; mods: unknown }; opts: { params: { distance: string } } };
     expect(first.opts.params.distance).toBe('adjacent');
     expect(first.spec.kind).toBe('key');
@@ -175,7 +175,7 @@ describe('reorderBackwardAction (descriptor)', () => {
   });
 
   it('second binding carries distance: "extreme" and key Mod+Shift+[', () => {
-    const bindings = reorderBackwardAction.gestureBinding as BoundGesture[];
+    const bindings = reorderBackwardAction.defaultBinding as BoundGesture[];
     const second = bindings[1] as { spec: { kind: string; key: unknown; mods: unknown }; opts: { params: { distance: string } } };
     expect(second.opts.params.distance).toBe('extreme');
     expect(second.spec.kind).toBe('key');

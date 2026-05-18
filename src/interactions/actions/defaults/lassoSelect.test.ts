@@ -58,10 +58,10 @@ function getOngoingInvoker(action: typeof lassoSelectAction) {
 // ---------------------------------------------------------------------------
 
 describe('lassoSelectAction descriptor', () => {
-  it('declares id, label, drag gestureBinding, and ongoing timing', () => {
+  it('declares id, label, drag defaultBinding, and ongoing timing', () => {
     expect(lassoSelectAction.id).toBe('lassoSelect');
     expect(lassoSelectAction.label).toBe('Lasso Select');
-    expect(lassoSelectAction.gestureBinding).toEqual({ kind: 'drag', mods: { shift: 'optional' } });
+    expect(lassoSelectAction.defaultBinding).toEqual({ kind: 'drag', mods: { shift: 'optional' } });
     expect(lassoSelectAction.invoker?.timing).toBe('ongoing');
   });
 

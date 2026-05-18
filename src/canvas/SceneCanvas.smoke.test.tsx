@@ -200,7 +200,7 @@ describe('useSelectTool smoke', () => {
           areaSelect: {
             id: 'areaSelect',
             label: 'Area Select',
-            gestureBinding: { kind: 'drag' },
+            defaultBinding: { kind: 'drag' },
             enabled: () => true as true,
             invoker: {
               timing: 'ongoing',

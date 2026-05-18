@@ -58,12 +58,12 @@ describe('alignLeftAction descriptor', () => {
     expect(alignLeftAction.id).toBe('align.left');
   });
 
-  it('has no gestureBinding', () => {
-    expect(alignLeftAction.gestureBinding).toBeUndefined();
+  it('has no defaultBinding', () => {
+    expect(alignLeftAction.defaultBinding).toBeUndefined();
   });
 
-  it('has no gestureBinding', () => {
-    expect(alignLeftAction.gestureBinding).toBeUndefined();
+  it('has no defaultBinding', () => {
+    expect(alignLeftAction.defaultBinding).toBeUndefined();
   });
 
   it('has an icon', () => {

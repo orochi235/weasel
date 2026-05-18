@@ -28,10 +28,10 @@ function getImmediateInvoker(action: typeof viewportPanAction) {
 // ---------------------------------------------------------------------------
 
 describe('viewportPanAction descriptor', () => {
-  it('declares id, label, wheel gestureBinding, and immediate timing', () => {
+  it('declares id, label, wheel defaultBinding, and immediate timing', () => {
     expect(viewportPanAction.id).toBe('viewport.pan');
     expect(viewportPanAction.label).toBe('Pan');
-    expect(viewportPanAction.gestureBinding).toEqual({ kind: 'wheel' });
+    expect(viewportPanAction.defaultBinding).toEqual({ kind: 'wheel' });
     expect(viewportPanAction.invoker?.timing).toBe('immediate');
   });
 

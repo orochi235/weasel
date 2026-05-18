@@ -141,7 +141,7 @@ function buildExtras(
 export const insertAction: Action & { requires: string[] } = {
   id: 'insert',
   label: 'Insert',
-  gestureBinding: { kind: 'drag' },
+  defaultBinding: { kind: 'drag' },
   requires: ['insert'],
   invoker: {
     timing: 'ongoing',

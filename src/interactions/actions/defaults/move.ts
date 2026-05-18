@@ -102,7 +102,7 @@ interface MoveScratch {
 export const moveAction: Action & { requires: string[] } = {
   id: 'move',
   label: 'Move',
-  gestureBinding: { kind: 'drag' },
+  defaultBinding: { kind: 'drag' },
   requires: ['selection', 'scene'],
   invoker: {
     timing: 'ongoing',

@@ -35,12 +35,12 @@ describe('pathfinderUnionAction descriptor', () => {
     expect(pathfinderUnionAction.id).toBe('pathfinder.union');
   });
 
-  it('has no gestureBinding', () => {
-    expect(pathfinderUnionAction.gestureBinding).toBeUndefined();
+  it('has no defaultBinding', () => {
+    expect(pathfinderUnionAction.defaultBinding).toBeUndefined();
   });
 
-  it('has no gestureBinding', () => {
-    expect(pathfinderUnionAction.gestureBinding).toBeUndefined();
+  it('has no defaultBinding', () => {
+    expect(pathfinderUnionAction.defaultBinding).toBeUndefined();
   });
 
   it('has an icon', () => {
@@ -161,8 +161,8 @@ describe('pathfinder descriptors (all 6)', () => {
     for (const a of all) expect(a.icon).toBeDefined();
   });
 
-  it('all have no gestureBinding', () => {
-    for (const a of all) expect(a.gestureBinding).toBeUndefined();
+  it('all have no defaultBinding', () => {
+    for (const a of all) expect(a.defaultBinding).toBeUndefined();
   });
 
   it('all have timing "immediate"', () => {

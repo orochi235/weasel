@@ -8,7 +8,7 @@
  * selected text node. Calls `deps.textEdit.startEdit(id)` to activate the
  * contenteditable overlay managed by `useTextEdit` / `useSceneTextEdit`.
  *
- * ## No defaultBinding / gestureBinding
+ * ## No defaultBinding / defaultBinding
  *
  * This action has no ambient key or gesture binding — it fires ONLY via
  * `useTextTool`'s `Tool.bindings` entry:
@@ -104,13 +104,13 @@ export interface TextEditDep {
  *
  * Requires dep-schema entries: `textEdit`, `selection`.
  *
- * No `defaultBinding` / `gestureBinding` — fires only via `Tool.bindings`.
+ * No `defaultBinding` / `defaultBinding` — fires only via `Tool.bindings`.
  * Self-guards via `TextEditDep.isTextNode` when provided.
  */
 export const enterTextEditAction: Action & { requires: string[] } = {
   id: 'enterTextEdit',
   label: 'Enter text edit',
-  // No defaultBinding / gestureBinding — fires only via Tool.bindings.
+  // No defaultBinding / defaultBinding — fires only via Tool.bindings.
   requires: ['textEdit', 'selection'],
   invoker: {
     timing: 'immediate',

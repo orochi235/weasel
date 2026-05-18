@@ -48,7 +48,7 @@ import { matchSorted } from './matcher';
 // ---------------------------------------------------------------------------
 
 export interface DispatcherContext {
-  /** All registered actions; the dispatcher walks `.gestureBinding` for ambient bindings. */
+  /** All registered actions; the dispatcher walks `.defaultBinding` for ambient bindings. */
   actions: ActionsRegistry;
   /** Dep sources keyed by name. */
   depRegistry: DepRegistry;
@@ -238,10 +238,10 @@ export function createDispatcher(): Dispatcher {
 
     // Ambient scope: walk the actions registry.
     for (const action of ctx.actions.list()) {
-      const gs = action.gestureBinding;
+      const gs = action.defaultBinding;
       if (!gs) continue;
       // Normalize to a flat array of { spec, opts? } pairs.
-      // gestureBinding is GestureSpec | BoundGesture[].
+      // defaultBinding is GestureSpec | BoundGesture[].
       // BoundGesture = GestureSpec | { spec: GestureSpec; opts: BindingOpts }.
       // A bare GestureSpec has a `kind` field at top level; the object form
       // has a `spec` field (which itself has `kind`).
@@ -254,8 +254,8 @@ export function createDispatcher(): Dispatcher {
         const opts: BindingOpts | undefined = isBoundObj
           ? (entry as { spec: import('../gestures/spec').GestureSpec; opts: BindingOpts }).opts
           : undefined;
-        const gestureBinding: GestureBinding = { spec, actionId: action.id, ...(opts !== undefined ? { opts } : {}) };
-        result.push({ binding: gestureBinding, scope: 'ambient' as BindingScope });
+        const defaultBinding: GestureBinding = { spec, actionId: action.id, ...(opts !== undefined ? { opts } : {}) };
+        result.push({ binding: defaultBinding, scope: 'ambient' as BindingScope });
       }
     }
 

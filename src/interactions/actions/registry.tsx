@@ -18,7 +18,7 @@ import { useOptionalDepRegistry, type DepRegistry, type DepName } from './depReg
 
 /**
  * @experimental
- * A single entry in `Action.gestureBinding[]`. Either a bare `GestureSpec`
+ * A single entry in `Action.defaultBinding[]`. Either a bare `GestureSpec`
  * (no per-binding opts) or an object form that pairs a spec with
  * `BindingOpts` for parametric actions (e.g. `{ params: { axis: 'x' } }`).
  * Use the object form when two bindings for the same action differ only in
@@ -41,7 +41,7 @@ export interface Action {
    *  bindings for the same action differ only by `opts.params` (e.g. `flip`
    *  with `axis: 'x'` vs `'y'`). The dispatcher extracts `opts.params` and
    *  passes them to `ImmediateInvoker.run` as its second argument. */
-  gestureBinding?: GestureSpec | BoundGesture[];
+  defaultBinding?: GestureSpec | BoundGesture[];
   /** Inline-SVG icon for palette / toolbar surfaces. Mirrors
    *  `ToolPresentation.icon` so a generic `<ActionBar>` can render from
    *  action metadata the same way `<ToolPalette>` renders from tool
@@ -218,7 +218,7 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   // Phase 14e Task 7: the legacy keystroke loop that walked every action's
   // `defaultBinding: KeyBinding` and matched against keydown is gone. All
   // kit-standard descriptors now route through the gesture dispatcher via
-  // `gestureBinding`. Consumer-facing hooks (`useEscape`, `useDelete`, ...)
+  // `defaultBinding`. Consumer-facing hooks (`useEscape`, `useDelete`, ...)
   // keep their own `useKeybinding` listener (gated by `reg == null` for
   // kit-standard-covered ones; ungated for clipboard which has no kit
   // counterpart).

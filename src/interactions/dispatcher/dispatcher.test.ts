@@ -52,7 +52,7 @@ function immediateAction(id: string, gestureKey: string, run = vi.fn()): Action 
   return {
     id,
     label: id,
-    gestureBinding: { kind: 'key', key: gestureKey },
+    defaultBinding: { kind: 'key', key: gestureKey },
     invoker: { timing: 'immediate', run },
   };
 }
@@ -60,13 +60,13 @@ function immediateAction(id: string, gestureKey: string, run = vi.fn()): Action 
 /** Key-held ongoing action (pointerdown also supported via kind override). */
 function ongoingAction(
   id: string,
-  spec: Action['gestureBinding'],
+  spec: Action['defaultBinding'],
   startFn = vi.fn().mockReturnValue({}),
 ): Action {
   return {
     id,
     label: id,
-    gestureBinding: spec,
+    defaultBinding: spec,
     invoker: { timing: 'ongoing', start: startFn },
   };
 }
@@ -135,7 +135,7 @@ describe('createDispatcher', () => {
       const action = {
         id: 'actionA',
         label: 'A',
-        gestureBinding: { kind: 'key', key: 'a' } as const,
+        defaultBinding: { kind: 'key', key: 'a' } as const,
         requires: ['selection'],
         invoker: { timing: 'immediate' as const, run },
         run,
@@ -373,13 +373,13 @@ describe('createDispatcher', () => {
   });
 
   describe('parametric bindings (BoundGesture[])', () => {
-    /** Build an immediate action whose gestureBinding is a BoundGesture[]
+    /** Build an immediate action whose defaultBinding is a BoundGesture[]
      *  with two entries, each carrying distinct params. */
     function parametricAction(id: string, run = vi.fn()): Action {
       return {
         id,
         label: id,
-        gestureBinding: [
+        defaultBinding: [
           { spec: { kind: 'key', key: 'a' }, opts: { params: { x: 1 } } },
           { spec: { kind: 'key', key: 'b' }, opts: { params: { x: 2 } } },
         ],
@@ -416,7 +416,7 @@ describe('createDispatcher', () => {
         id: 'mixedAction',
         label: 'mixed',
         // Array with one bare GestureSpec (no opts) and one BoundGesture.
-        gestureBinding: [
+        defaultBinding: [
           { kind: 'key', key: 'a' },
           { spec: { kind: 'key', key: 'b' }, opts: { params: { x: 99 } } },
         ],

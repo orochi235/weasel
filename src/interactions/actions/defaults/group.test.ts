@@ -10,8 +10,8 @@ describe('groupAction (descriptor)', () => {
     expect(groupAction.label).toBe('Group');
   });
 
-  it('gestureBinding = { kind: "key", key: "g", mods: { mod: true } }', () => {
-    expect(groupAction.gestureBinding).toEqual({ kind: 'key', key: 'g', mods: { mod: true } });
+  it('defaultBinding = { kind: "key", key: "g", mods: { mod: true } }', () => {
+    expect(groupAction.defaultBinding).toEqual({ kind: 'key', key: 'g', mods: { mod: true } });
   });
 
   it('invoker.timing = "immediate"', () => {
@@ -25,8 +25,8 @@ describe('ungroupAction (descriptor)', () => {
     expect(ungroupAction.label).toBe('Ungroup');
   });
 
-  it('gestureBinding = { kind: "key", key: "g", mods: { mod: true, shift: true } }', () => {
-    expect(ungroupAction.gestureBinding).toEqual({ kind: 'key', key: 'g', mods: { mod: true, shift: true } });
+  it('defaultBinding = { kind: "key", key: "g", mods: { mod: true, shift: true } }', () => {
+    expect(ungroupAction.defaultBinding).toEqual({ kind: 'key', key: 'g', mods: { mod: true, shift: true } });
   });
 
   it('invoker.timing = "immediate"', () => {

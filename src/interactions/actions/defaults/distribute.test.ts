@@ -54,12 +54,12 @@ describe('distributeHorizontalAction descriptor', () => {
     expect(distributeHorizontalAction.id).toBe('distribute.horizontal');
   });
 
-  it('has no gestureBinding', () => {
-    expect(distributeHorizontalAction.gestureBinding).toBeUndefined();
+  it('has no defaultBinding', () => {
+    expect(distributeHorizontalAction.defaultBinding).toBeUndefined();
   });
 
-  it('has no gestureBinding', () => {
-    expect(distributeHorizontalAction.gestureBinding).toBeUndefined();
+  it('has no defaultBinding', () => {
+    expect(distributeHorizontalAction.defaultBinding).toBeUndefined();
   });
 
   it('has an icon', () => {

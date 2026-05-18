@@ -8,7 +8,7 @@ import type { Action } from '../registry';
 export const selectAllAction: Action = {
   id: 'selectAll',
   label: 'Select All',
-  gestureBinding: { kind: 'key', key: 'a', mods: { mod: true } },
+  defaultBinding: { kind: 'key', key: 'a', mods: { mod: true } },
   invoker: {
     timing: 'immediate',
     run: (deps) => {

@@ -15,25 +15,25 @@ describe('flipAction (axis param)', () => {
     expect(flipAction.id).toBe('flip');
   });
 
-  it('declares one action with two parametric gestureBinding entries', () => {
-    expect(Array.isArray(flipAction.gestureBinding)).toBe(true);
-    expect((flipAction.gestureBinding as unknown[]).length).toBe(2);
+  it('declares one action with two parametric defaultBinding entries', () => {
+    expect(Array.isArray(flipAction.defaultBinding)).toBe(true);
+    expect((flipAction.defaultBinding as unknown[]).length).toBe(2);
   });
 
   it('first binding carries axis: "x"', () => {
-    const bindings = flipAction.gestureBinding as BoundGesture[];
+    const bindings = flipAction.defaultBinding as BoundGesture[];
     const first = bindings[0] as { spec: unknown; opts: { params: { axis: string } } };
     expect(first.opts.params.axis).toBe('x');
   });
 
   it('second binding carries axis: "y"', () => {
-    const bindings = flipAction.gestureBinding as BoundGesture[];
+    const bindings = flipAction.defaultBinding as BoundGesture[];
     const second = bindings[1] as { spec: unknown; opts: { params: { axis: string } } };
     expect(second.opts.params.axis).toBe('y');
   });
 
   it('first binding key spec is h/H with shift', () => {
-    const bindings = flipAction.gestureBinding as BoundGesture[];
+    const bindings = flipAction.defaultBinding as BoundGesture[];
     const first = bindings[0] as { spec: { kind: string; key: unknown; mods: unknown }; opts: unknown };
     expect(first.spec.kind).toBe('key');
     expect(first.spec.key).toEqual(['h', 'H']);
@@ -41,7 +41,7 @@ describe('flipAction (axis param)', () => {
   });
 
   it('second binding key spec is v/V with shift', () => {
-    const bindings = flipAction.gestureBinding as BoundGesture[];
+    const bindings = flipAction.defaultBinding as BoundGesture[];
     const second = bindings[1] as { spec: { kind: string; key: unknown; mods: unknown }; opts: unknown };
     expect(second.spec.kind).toBe('key');
     expect(second.spec.key).toEqual(['v', 'V']);

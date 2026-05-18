@@ -77,7 +77,7 @@ function reorderSelection(
 export const reorderForwardAction: Action = {
   id: 'reorder.forward',
   label: 'Bring Forward',
-  gestureBinding: [
+  defaultBinding: [
     {
       spec: { kind: 'key', key: [']', '}'], mods: { mod: true } },
       opts: { params: { distance: 'adjacent' } },
@@ -110,7 +110,7 @@ export const reorderForwardAction: Action = {
 export const reorderBackwardAction: Action = {
   id: 'reorder.backward',
   label: 'Send Backward',
-  gestureBinding: [
+  defaultBinding: [
     {
       spec: { kind: 'key', key: ['[', '{'], mods: { mod: true } },
       opts: { params: { distance: 'adjacent' } },

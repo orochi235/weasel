@@ -8,7 +8,7 @@ import { ActionDisabledReason } from '../registry';
 export const deleteAction: Action = {
   id: 'delete',
   label: 'Delete',
-  gestureBinding: { kind: 'key', key: ['Delete', 'Backspace'] },
+  defaultBinding: { kind: 'key', key: ['Delete', 'Backspace'] },
   invoker: {
     timing: 'immediate',
     run: (_deps, params) => {

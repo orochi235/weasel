@@ -2,7 +2,7 @@
  * SceneCanvas — auto-mounted gesture dispatcher (Phase 3 Task 6).
  *
  * Verifies that <SceneCanvas> auto-mounts `useGestureDispatcher` so
- * registered actions with a `gestureBinding` fire on window keydown,
+ * registered actions with a `defaultBinding` fire on window keydown,
  * and that `enableGestureDispatcher={false}` opts out cleanly.
  *
  * Phase 8 safety tests: confirm delete/duplicate/nudge/undo keybindings fire
@@ -56,12 +56,12 @@ function ActionRegistrar({ action }: { action: Action }) {
 }
 
 describe('SceneCanvas auto-mounted gesture dispatcher', () => {
-  it('registered action with gestureBinding fires on window keydown when mounted inside SceneCanvas', () => {
+  it('registered action with defaultBinding fires on window keydown when mounted inside SceneCanvas', () => {
     const spy = vi.fn();
     const action: Action = {
       id: 'test.dispatcher',
       label: 'Test dispatcher',
-      gestureBinding: { kind: 'key', key: 'q' },
+      defaultBinding: { kind: 'key', key: 'q' },
       invoker: { timing: 'immediate' as const, run: () => { spy(); } },
     };
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
@@ -84,7 +84,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     const action: Action = {
       id: 'test.dispatcher.disabled',
       label: 'Test dispatcher disabled',
-      gestureBinding: { kind: 'key', key: 'q' },
+      defaultBinding: { kind: 'key', key: 'q' },
       invoker: { timing: 'immediate' as const, run: () => { spy(); } },
     };
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
@@ -208,7 +208,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     const action: Action = {
       id: 'test.invoker',
       label: 'Test invoker',
-      gestureBinding: { kind: 'key', key: 'j' },
+      defaultBinding: { kind: 'key', key: 'j' },
       invoker: { timing: 'immediate', run: () => invokerSpy() },
     };
     const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });

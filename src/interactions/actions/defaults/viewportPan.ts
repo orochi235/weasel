@@ -39,7 +39,7 @@ export const viewportPanAction: Action & { requires: string[] } = {
    * when ctrlKey is NOT held (handled by the matcher's strict modifier check:
    * omitting `mods` means no modifiers may be held).
    */
-  gestureBinding: { kind: 'wheel' },
+  defaultBinding: { kind: 'wheel' },
   requires: ['view'],
   invoker: {
     timing: 'immediate',
