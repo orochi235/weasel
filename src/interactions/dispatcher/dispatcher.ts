@@ -44,6 +44,44 @@ import type { InputEvent, BindingScope, ScopedBinding } from './matcher';
 import { matchSorted } from './matcher';
 
 // ---------------------------------------------------------------------------
+// Dev-only instrumentation
+// ---------------------------------------------------------------------------
+
+/** True in dev builds; false in production. Tree-shakes the Proxy + trace
+ *  log out of prod entirely. */
+const DEV: boolean = (() => {
+  try {
+    return Boolean((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV);
+  } catch {
+    return false;
+  }
+})();
+
+/** One entry per `handleInput` call. Populated only in DEV; exposed on
+ *  `window.__weaselDispatchLog__` so consumers / agents can `console.table`
+ *  it to diagnose "X doesn't fire" complaints without redispatching agents. */
+export interface DispatchLogEntry {
+  ts: number;
+  eventKind: string;
+  candidates: Array<{ actionId: string; scope: BindingScope; enabledResult: boolean | string }>;
+  fired: string | null;
+  outcome: 'handled' | 'unhandled';
+}
+
+const TRACE_LIMIT = 200;
+const traceLog: DispatchLogEntry[] = [];
+
+if (DEV && typeof window !== 'undefined') {
+  (window as unknown as { __weaselDispatchLog__: DispatchLogEntry[] }).__weaselDispatchLog__ = traceLog;
+}
+
+function recordTrace(entry: DispatchLogEntry): void {
+  if (!DEV) return;
+  traceLog.push(entry);
+  if (traceLog.length > TRACE_LIMIT) traceLog.shift();
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -277,7 +315,28 @@ export function createDispatcher(): Dispatcher {
     // Cast through unknown to read it if present without a type error.
     const requires = (action as unknown as { requires?: string[] }).requires ?? [];
     const entries = requires.map((name) => [name, depRegistry.get(name as never)]);
-    return Object.fromEntries(entries) as ActionDeps;
+    const deps = Object.fromEntries(entries) as ActionDeps;
+
+    // Dev-only: wrap deps in a Proxy that warns when the invoker reads a
+    // key not declared in `requires`. Catches silent-failure-by-typo or
+    // forgotten-requires (the #1 bug class in this codebase pre-Phase-14e).
+    // Production builds: bypass the Proxy entirely (zero overhead).
+    if (DEV) {
+      const declared = new Set(requires);
+      return new Proxy(deps as Record<string, unknown>, {
+        get(target, prop, receiver) {
+          if (typeof prop === 'string' && !declared.has(prop) && prop !== 'then') {
+            // eslint-disable-next-line no-console
+            console.warn(
+              `[weasel:dispatcher] action "${action.id}" read deps.${prop} but did not declare it in \`requires\`. ` +
+              `Add \`requires: [...'${prop}']\` to the descriptor or the dep will be undefined at runtime.`,
+            );
+          }
+          return Reflect.get(target, prop, receiver);
+        },
+      }) as ActionDeps;
+    }
+    return deps;
   }
 
   // -------------------------------------------------------------------------
@@ -366,7 +425,14 @@ export function createDispatcher(): Dispatcher {
 
     // --- Match: get every matching binding, best → worst ---
     const matches = matchSorted(event, scopedBindings, ctx.isMac);
-    if (matches.length === 0) return 'unhandled';
+    const traceCandidates: DispatchLogEntry['candidates'] = [];
+    const finishTrace = (fired: string | null, outcome: 'handled' | 'unhandled') => {
+      recordTrace({ ts: Date.now(), eventKind: event.kind, candidates: traceCandidates, fired, outcome });
+    };
+    if (matches.length === 0) {
+      finishTrace(null, 'unhandled');
+      return 'unhandled';
+    }
 
     // --- Action lookup ---
     const actionMap = buildActionMap(ctx.actions);
@@ -378,6 +444,7 @@ export function createDispatcher(): Dispatcher {
     for (const match of matches) {
       const action = actionMap.get(match.binding.actionId);
       if (!action) {
+        traceCandidates.push({ actionId: match.binding.actionId, scope: match.scope, enabledResult: 'no-such-action' });
         console.warn(
           `weasel dispatcher: binding resolved actionId "${match.binding.actionId}" which has ` +
           `no registered action. Skipping. (misconfiguration)`,
@@ -388,10 +455,12 @@ export function createDispatcher(): Dispatcher {
       if (action.enabled) {
         const result = action.enabled();
         if (result !== true) {
+          traceCandidates.push({ actionId: action.id, scope: match.scope, enabledResult: String(result) });
           // Fall through to the next-best match.
           continue;
         }
       }
+      traceCandidates.push({ actionId: action.id, scope: match.scope, enabledResult: true });
 
       // --- Invoke ---
       const deps = buildDeps(action, ctx.depRegistry);
@@ -411,6 +480,7 @@ export function createDispatcher(): Dispatcher {
         } catch (err) {
           console.error(`weasel dispatcher: action "${action.id}" invoker threw`, err);
         }
+        finishTrace(action.id, 'handled');
         return 'handled';
       }
 
@@ -429,16 +499,19 @@ export function createDispatcher(): Dispatcher {
         const invCtx = buildInvocationCtx(event, deps, gestureId);
         const handle = action.invoker.start(invCtx, match.binding.opts);
         inFlightHandles.set(gestureId, handle);
+        finishTrace(action.id, 'handled');
         return 'handled';
       }
 
       // No invoker — action is registered but has nothing to do for this
       // matched binding. Treat as handled (the binding consumed the gesture
       // and the no-op is intentional) to keep dispatch deterministic.
+      finishTrace(action.id, 'handled');
       return 'handled';
     }
 
     // Every matching candidate was disabled or missing.
+    finishTrace(null, 'unhandled');
     return 'unhandled';
   }
 
