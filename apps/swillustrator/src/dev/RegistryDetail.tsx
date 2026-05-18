@@ -5,7 +5,7 @@ import type {
   TreeEntry, ToolEntry, ActionEntry, BundleEntry, IconEntry, OpFactoryEntry,
   PublicExportEntry, ShapeKindEntry, PhaseSummary, PhaseEntry, GestureEntry, PhaseOutputEntry,
   OpKindEntry, HotkeyTriggerEntry, SlotEntry, RouteTargetEntry, ModifierSetEntry, GroupEntry,
-  MetaEntry,
+  MetaEntry, CallbackRef,
 } from './registryData';
 import { BOOLEAN_BADGE_PROPS, BUNDLE_BADGE_PROPS, GESTURE_BADGE_PROPS, HOTKEY_TRIGGER_GLYPHS, KIND_BADGE_PROPS, PHASE_BADGE_PROPS, TOKEN_SETS, type TokenSet } from './badgeTokens';
 import { collectBundles, collectIcons, GESTURE_CHANNEL_KEYS, PHASE_OUTPUT_KEYS, parseRoute, TOOL_HOOK_NAMES } from './registryData';
@@ -638,11 +638,48 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
           </>
         )}
         {match?.path && (<><dt>source</dt><dd><code>{match.path}</code></dd></>)}
+        {entry.callbacks && entry.callbacks.length > 0 && (
+          <>
+            <dt>callbacks</dt>
+            <dd><CallbackList callbacks={entry.callbacks} /></dd>
+          </>
+        )}
       </dl>
       {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
     </div>
   );
 }
+
+/** Renders a list of source-linked callbacks as `vscode://file/...` anchors.
+ *  Quiet (renders nothing) when the list is empty — the dev-only Vite
+ *  plugin populates these; prod builds and untouched files leave them
+ *  blank. */
+function CallbackList({ callbacks }: { callbacks: readonly CallbackRef[] }) {
+  if (callbacks.length === 0) return null;
+  const root = WEASEL_REPO_ROOT;
+  return (
+    <ul className={s.callbackList}>
+      {callbacks.map((cb) => {
+        const rel = root && cb.source.file.startsWith(root + '/')
+          ? cb.source.file.slice(root.length + 1)
+          : cb.source.file;
+        const href = `vscode://file/${cb.source.file}:${cb.source.line}:${cb.source.col + 1}`;
+        return (
+          <li key={`${cb.label}@${cb.source.file}:${cb.source.line}`}>
+            <code className={s.tag}>{cb.label}</code>
+            <a className={s.callbackLink} href={href}>
+              {rel}:{cb.source.line}
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+declare const __WEASEL_REPO_ROOT__: string | undefined;
+const WEASEL_REPO_ROOT: string | undefined =
+  typeof __WEASEL_REPO_ROOT__ === 'string' ? __WEASEL_REPO_ROOT__ : undefined;
 
 function PhaseRow({ label, phase }: { label: string; phase: PhaseSummary }) {
   const gestures = activeGestures(phase);
@@ -702,6 +739,12 @@ function ActionDetail({ entry, onNavigate }: { entry: ActionEntry; onNavigate: P
           </>
         )}
         {match?.path && (<><dt>source</dt><dd><code>{match.path}</code></dd></>)}
+        {entry.callbacks && entry.callbacks.length > 0 && (
+          <>
+            <dt>callbacks</dt>
+            <dd><CallbackList callbacks={entry.callbacks} /></dd>
+          </>
+        )}
       </dl>
       {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
     </div>

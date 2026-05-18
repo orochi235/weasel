@@ -139,6 +139,14 @@
 .iconPreviewCellLarge { width: 64px; height: 64px; }
 .iconPreviewCell > svg { width: 100%; height: 100%; }
 .sourcePath { font-size: 13px; color: var(--wzl-muted, #a59685); margin: 4px 0; }
+.callbackList { list-style: none; padding: 0; margin: 4px 0 0; display: flex; flex-direction: column; gap: 2px; }
+.callbackList li { display: flex; align-items: baseline; gap: 8px; }
+.callbackLink {
+  color: var(--wzl-accent, #c89a5e);
+  text-decoration: underline;
+  font-size: 13px;
+  font-family: var(--wzl-font-mono, ui-monospace, monospace);
+}
 .jsdoc {
   background: var(--wzl-bg, #1e1610);
   border: 1px solid var(--wzl-panel-border, #4a3c2e);

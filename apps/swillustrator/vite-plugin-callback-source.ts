@@ -32,15 +32,22 @@ export function callbackSourcePlugin(opts: Options): Plugin {
       // Cheap bail: no object literals with function values worth touching.
       if (!/=>|function\s*\(/.test(code)) return null;
 
+      const lang = id.endsWith('.tsx') ? 'tsx'
+        : id.endsWith('.ts') ? 'ts'
+        : id.endsWith('.jsx') ? 'jsx' : 'js';
       let ast: Node;
       try {
-        ast = parseAst(code, { sourceType: 'module' }) as unknown as Node;
+        ast = parseAst(code, {
+          sourceType: 'module',
+          lang,
+        } as Parameters<typeof parseAst>[1]) as unknown as Node;
       } catch {
         return null;
       }
 
       const ms = new MagicString(code);
       let mutated = false;
+      const lineOffsets = buildLineOffsets(code);
 
       walk(ast, {
         enter(node) {
@@ -54,14 +61,9 @@ export function callbackSourcePlugin(opts: Options): Plugin {
           if ((node as { method?: boolean }).method) return;
 
           const range = (v as unknown as { start?: number; end?: number });
-          const loc = (v as unknown as { loc?: { start: { line: number; column: number } } }).loc;
-          if (range.start == null || range.end == null || !loc) return;
-
-          const meta = JSON.stringify({
-            file: id,
-            line: loc.start.line,
-            col: loc.start.column,
-          });
+          if (range.start == null || range.end == null) return;
+          const { line, col } = offsetToLineCol(lineOffsets, range.start);
+          const meta = JSON.stringify({ file: id, line, col });
           ms.appendLeft(range.start, '/*#__PURE__*/Object.assign(');
           ms.appendRight(range.end, `,{__source:${meta}})`);
           mutated = true;
@@ -72,6 +74,29 @@ export function callbackSourcePlugin(opts: Options): Plugin {
       return { code: ms.toString(), map: ms.generateMap({ hires: 'boundary' }) };
     },
   };
+}
+
+function buildLineOffsets(code: string): readonly number[] {
+  const offsets: number[] = [0];
+  for (let i = 0; i < code.length; i++) {
+    if (code.charCodeAt(i) === 10) offsets.push(i + 1);
+  }
+  return offsets;
+}
+
+function offsetToLineCol(
+  lineOffsets: readonly number[],
+  offset: number,
+): { line: number; col: number } {
+  // Binary search for the greatest lineOffset <= offset.
+  let lo = 0;
+  let hi = lineOffsets.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >>> 1;
+    if (lineOffsets[mid]! <= offset) lo = mid;
+    else hi = mid - 1;
+  }
+  return { line: lo + 1, col: offset - lineOffsets[lo]! };
 }
 
 function shouldTransform(id: string, includeDirs: readonly string[]): boolean {

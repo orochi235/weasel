@@ -116,7 +116,7 @@ export interface ToolEntry {
   /** Source-linked callbacks discovered on the live ToolDef — empty when
    *  the dev `weasel:callback-source` plugin isn't active (e.g. prod
    *  builds). Inspector renders these as "open in editor" links. */
-  callbacks: readonly CallbackRef[];
+  callbacks?: readonly CallbackRef[];
 }
 
 export interface ActionEntry {
@@ -144,7 +144,7 @@ export interface ActionEntry {
   hookName?: string;
   /** Source-linked callbacks discovered on the live Action. See
    *  `ToolEntry.callbacks` for plugin/source caveats. */
-  callbacks: readonly CallbackRef[];
+  callbacks?: readonly CallbackRef[];
 }
 
 export interface ShapeKindEntry {

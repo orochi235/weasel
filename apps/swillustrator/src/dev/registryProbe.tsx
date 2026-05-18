@@ -220,3 +220,94 @@ function renderPresentationIcon(icon: unknown): ReactNode | undefined {
   return icon as ReactNode;
 }
 
+/** Reads `__source` attached to a function value by the dev-only
+ *  `weasel:callback-source` Vite plugin. Returns undefined in prod builds
+ *  or when the plugin's `include` glob misses the file. */
+function sourceOf(fn: unknown): CallbackSource | undefined {
+  if (typeof fn !== 'function') return undefined;
+  const src = (fn as { __source?: CallbackSource }).__source;
+  return src && typeof src.file === 'string' ? src : undefined;
+}
+
+function pushCallback(out: CallbackRef[], label: string, fn: unknown): void {
+  const source = sourceOf(fn);
+  if (source) out.push({ label, source });
+}
+
+/** Walks a PhaseDef and pushes a `CallbackRef` for every function-valued
+ *  leaf the dispatcher can call. Route tables fan out by target (and by
+ *  modifier when the entry is a `ModifierRoute`). */
+function collectPhaseCallbacks(
+  out: CallbackRef[],
+  phase: NonNullable<ToolDef<unknown>['initial']>,
+  phaseLabel: string,
+): void {
+  const routeChannels = ['click', 'pointerDown', 'dblTap'] as const;
+  for (const ch of routeChannels) {
+    const tbl = phase[ch];
+    if (!tbl || typeof tbl !== 'object') continue;
+    for (const [target, entry] of Object.entries(tbl)) {
+      if (typeof entry === 'function') {
+        pushCallback(out, `${phaseLabel}.${ch}.${target}`, entry);
+      } else if (entry && typeof entry === 'object') {
+        for (const [mod, fn] of Object.entries(entry)) {
+          pushCallback(out, `${phaseLabel}.${ch}.${target}:${mod}`, fn);
+        }
+      }
+    }
+  }
+  // `drag` may be a route table OR a bare ActionFn.
+  if (typeof phase.drag === 'function') {
+    pushCallback(out, `${phaseLabel}.drag`, phase.drag);
+  } else if (phase.drag && typeof phase.drag === 'object') {
+    for (const [target, entry] of Object.entries(phase.drag)) {
+      if (typeof entry === 'function') {
+        pushCallback(out, `${phaseLabel}.drag.${target}`, entry);
+      } else if (entry && typeof entry === 'object') {
+        for (const [mod, fn] of Object.entries(entry)) {
+          pushCallback(out, `${phaseLabel}.drag.${target}:${mod}`, fn);
+        }
+      }
+    }
+  }
+  pushCallback(out, `${phaseLabel}.wheel`, phase.wheel);
+  for (const ch of ['keyDown', 'keyUp'] as const) {
+    const tbl = phase[ch];
+    if (!tbl) continue;
+    for (const [key, fn] of Object.entries(tbl)) {
+      pushCallback(out, `${phaseLabel}.${ch}.${key}`, fn);
+    }
+  }
+  if (typeof phase.cursor === 'function') {
+    pushCallback(out, `${phaseLabel}.cursor`, phase.cursor);
+  }
+  pushCallback(out, `${phaseLabel}.overlay`, phase.overlay);
+  if (typeof phase.claimsAll === 'function') {
+    pushCallback(out, `${phaseLabel}.claimsAll`, phase.claimsAll);
+  }
+}
+
+function collectToolCallbacks(def: ToolDef<unknown>): readonly CallbackRef[] {
+  const out: CallbackRef[] = [];
+  pushCallback(out, 'initScratch', def.initScratch);
+  pushCallback(out, 'onActivate', def.onActivate);
+  pushCallback(out, 'onDeactivate', def.onDeactivate);
+  pushCallback(out, 'hitOverride', def.hitOverride);
+  if (typeof def.cursor === 'function') pushCallback(out, 'cursor', def.cursor);
+  if (def.initial) collectPhaseCallbacks(out, def.initial, 'initial');
+  if (def.engaged) collectPhaseCallbacks(out, def.engaged, 'engaged');
+  return out;
+}
+
+function collectActionCallbacks(action: unknown): readonly CallbackRef[] {
+  const out: CallbackRef[] = [];
+  if (!action || typeof action !== 'object') return out;
+  const a = action as { enabled?: unknown; invoker?: unknown };
+  pushCallback(out, 'enabled', a.enabled);
+  if (a.invoker && typeof a.invoker === 'object') {
+    for (const [k, v] of Object.entries(a.invoker as Record<string, unknown>)) {
+      pushCallback(out, `invoker.${k}`, v);
+    }
+  }
+  return out;
+}
