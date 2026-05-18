@@ -28,10 +28,10 @@
  *  a real consumer needs it.
  */
 export type ModSpec = Partial<{
-  alt: boolean;
-  ctrl: boolean;
-  meta: boolean;
-  mod: boolean;
+  alt: boolean | 'optional';
+  ctrl: boolean | 'optional';
+  meta: boolean | 'optional';
+  mod: boolean | 'optional';
   shift: boolean | 'optional';
 }>;
 

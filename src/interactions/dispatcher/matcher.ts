@@ -144,88 +144,70 @@ export interface MatchResult {
 
 type ModifiersEvent = { altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean };
 
+/** Per-physical-key requirement resolved from a `ModSpec`:
+ *  - `'required'`  — the key MUST be held
+ *  - `'forbidden'` — the key MUST NOT be held
+ *  - `'optional'`  — either is accepted
+ */
+type KeyRequirement = 'required' | 'forbidden' | 'optional';
+
+function resolveSpecValue(value: boolean | 'optional' | undefined): KeyRequirement {
+  if (value === true) return 'required';
+  if (value === 'optional') return 'optional';
+  return 'forbidden';
+}
+
 /**
  * Strict modifier match.
  *
  * - Omitted modifier MUST NOT be held.
- * - `true` means MUST be held.
- * - `false` means MUST NOT be held (same as omitted; both forms accepted for clarity).
- * - `shift: 'optional'` accepts either shifted or unshifted.
- * - `mod: true` matches `metaKey` on mac, `ctrlKey` elsewhere. When `mod` is set,
- *   the corresponding `meta`/`ctrl` field is implied and the *other* platform key
- *   must NOT be held. Callers should not combine `mod` with `meta`/`ctrl`.
+ * - `true`       MUST be held.
+ * - `false`      MUST NOT be held (same as omitted; both forms accepted for clarity).
+ * - `'optional'` accepts either held or unheld. Supported on every modifier
+ *   (`alt`, `ctrl`, `meta`, `mod`, `shift`).
+ * - `mod` is platform-aware: matches `metaKey` on mac, `ctrlKey` elsewhere.
+ *   When `mod` is set, the corresponding `meta`/`ctrl` field is implied AND
+ *   the *other* platform key is forbidden. Callers should not combine `mod`
+ *   with `meta`/`ctrl`.
  */
 export function matchModifiers(
   e: ModifiersEvent,
   mods: ModSpec | undefined,
   isMac: boolean,
 ): boolean {
-  // Resolve effective requirements for each of the four physical keys.
-  // We compute required/forbidden state for: alt, ctrl, meta, shift.
-
-  // Start with strict defaults: all modifiers must be absent.
-  let requireAlt = false;
-  let requireCtrl = false;
-  let requireMeta = false;
-  let requireShift: boolean | 'optional' = false;
+  // Start strict: every modifier is forbidden unless the spec opts in.
+  let alt: KeyRequirement = 'forbidden';
+  let ctrl: KeyRequirement = 'forbidden';
+  let meta: KeyRequirement = 'forbidden';
+  let shift: KeyRequirement = 'forbidden';
 
   if (mods) {
-    // alt
-    if (mods.alt === true) requireAlt = true;
-    // else: false/undefined → must be absent (requireAlt stays false)
+    alt = resolveSpecValue(mods.alt);
+    shift = resolveSpecValue(mods.shift);
 
-    // shift
-    if (mods.shift === true) requireShift = true;
-    else if (mods.shift === 'optional') requireShift = 'optional';
-    // else: false/undefined → must be absent
-
-    // mod: platform-aware shorthand for the primary command modifier
-    if (mods.mod === true) {
-      if (isMac) {
-        requireMeta = true;
-        // ctrlKey must NOT be held (handled below via strict check)
-      } else {
-        requireCtrl = true;
-        // metaKey must NOT be held (handled below via strict check)
-      }
+    // mod: platform-aware shorthand. Resolves to meta on mac, ctrl elsewhere.
+    // The *other* platform key stays forbidden (handled by the strict default).
+    if (mods.mod !== undefined) {
+      const modReq = resolveSpecValue(mods.mod);
+      if (isMac) meta = modReq;
+      else ctrl = modReq;
     } else {
-      // No mod shorthand — handle explicit meta/ctrl
-      if (mods.meta === true) requireMeta = true;
-      if (mods.ctrl === true) requireCtrl = true;
+      meta = resolveSpecValue(mods.meta);
+      ctrl = resolveSpecValue(mods.ctrl);
     }
   }
 
-  // Now validate each physical key:
+  return (
+    checkKey(alt,   e.altKey) &&
+    checkKey(ctrl,  e.ctrlKey) &&
+    checkKey(meta,  e.metaKey) &&
+    checkKey(shift, e.shiftKey)
+  );
+}
 
-  // alt
-  if (requireAlt) {
-    if (!e.altKey) return false;
-  } else {
-    if (e.altKey) return false;
-  }
-
-  // ctrl
-  if (requireCtrl) {
-    if (!e.ctrlKey) return false;
-  } else {
-    if (e.ctrlKey) return false;
-  }
-
-  // meta
-  if (requireMeta) {
-    if (!e.metaKey) return false;
-  } else {
-    if (e.metaKey) return false;
-  }
-
-  // shift
-  if (requireShift === true) {
-    if (!e.shiftKey) return false;
-  } else if (requireShift === false) {
-    if (e.shiftKey) return false;
-  }
-  // 'optional': no constraint
-
+function checkKey(req: KeyRequirement, held: boolean): boolean {
+  if (req === 'required') return held;
+  if (req === 'forbidden') return !held;
   return true;
 }
 

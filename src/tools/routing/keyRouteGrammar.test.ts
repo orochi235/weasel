@@ -49,4 +49,13 @@ describe('keyRouteToSpec', () => {
     expect(keyRouteToSpec({ key: 'Enter', optionalMods: [] }))
       .toEqual({ kind: 'key', key: 'Enter' });
   });
+
+  it('propagates every optional modifier as mods.<name>: "optional"', () => {
+    expect(keyRouteToSpec({ key: 'ArrowDown', optionalMods: ['mod', 'shift', 'alt', 'ctrl', 'meta'] }))
+      .toEqual({
+        kind: 'key',
+        key: 'ArrowDown',
+        mods: { mod: 'optional', shift: 'optional', alt: 'optional', ctrl: 'optional', meta: 'optional' },
+      });
+  });
 });

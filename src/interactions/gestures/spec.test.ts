@@ -2,9 +2,15 @@ import { expectTypeOf, describe, it } from 'vitest';
 import type { ModSpec, GestureSpec, KeySpec, KeyHeldSpec, WheelSpec, ClickSpec, DragSpec, MultiTouchSpec } from './spec';
 
 describe('ModSpec', () => {
-  it('all fields optional booleans', () => {
+  it('every modifier accepts boolean | "optional"', () => {
     expectTypeOf<ModSpec>().toEqualTypeOf<
-      Partial<{ alt: boolean; ctrl: boolean; meta: boolean; mod: boolean; shift: boolean | 'optional' }>
+      Partial<{
+        alt:   boolean | 'optional';
+        ctrl:  boolean | 'optional';
+        meta:  boolean | 'optional';
+        mod:   boolean | 'optional';
+        shift: boolean | 'optional';
+      }>
     >();
   });
 });
@@ -70,6 +76,13 @@ describe('GestureSpec Phase 2 extensions', () => {
   it('ModSpec accepts optional-shift policy', () => {
     const mods: ModSpec = { shift: 'optional' };
     expectTypeOf(mods).toMatchTypeOf<ModSpec>();
+  });
+
+  it('ModSpec accepts "optional" on every modifier', () => {
+    const allOptional: ModSpec = {
+      mod: 'optional', shift: 'optional', alt: 'optional', ctrl: 'optional', meta: 'optional',
+    };
+    expectTypeOf(allOptional).toMatchTypeOf<ModSpec>();
   });
 
   it('KeySpec composes the new ModSpec features', () => {

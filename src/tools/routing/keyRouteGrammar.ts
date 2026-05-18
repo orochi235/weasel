@@ -35,17 +35,13 @@ export function formatKeyRoute(r: ParsedKeyRoute): string {
   return r.optionalMods.length === 0 ? r.key : `${r.key}?${r.optionalMods.join('?')}`;
 }
 
-/** Build a runtime KeySpec from a parsed key route. `?shift` becomes
- *  `mods.shift: 'optional'` (which the matcher honors today). Other
- *  optional modifiers (`mod`/`alt`/`ctrl`/`meta`) are not yet supported by
- *  the matcher as 'optional' — they are recorded in `ParsedKeyRoute` but
- *  intentionally not propagated to the spec until a real use case appears.
- *  Matcher widening would mirror the shift branch in `matchModifiers`. */
+/** Build a runtime KeySpec from a parsed key route. Each optional modifier
+ *  becomes `mods.<name>: 'optional'`. The matcher's `matchModifiers`
+ *  honors `'optional'` uniformly across `mod`, `shift`, `alt`, `ctrl`,
+ *  and `meta`. */
 export function keyRouteToSpec(r: ParsedKeyRoute): KeySpec {
   const mods: ModSpec = {};
-  for (const m of r.optionalMods) {
-    if (m === 'shift') mods.shift = 'optional';
-  }
+  for (const m of r.optionalMods) mods[m] = 'optional';
   const spec: KeySpec = { kind: 'key', key: r.key };
   if (Object.keys(mods).length > 0) spec.mods = mods;
   return spec;

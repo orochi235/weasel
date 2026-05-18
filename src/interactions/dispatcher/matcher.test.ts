@@ -32,6 +32,44 @@ describe('matchModifiers (strict semantics)', () => {
     expect(matchModifiers({ ...noMods, metaKey: true }, { shift: 'optional' }, false)).toBe(false);
   });
 
+  it('alt: "optional" accepts both alt-held and unheld', () => {
+    expect(matchModifiers(noMods, { alt: 'optional' }, false)).toBe(true);
+    expect(matchModifiers({ ...noMods, altKey: true }, { alt: 'optional' }, false)).toBe(true);
+    expect(matchModifiers({ ...noMods, metaKey: true }, { alt: 'optional' }, false)).toBe(false);
+  });
+
+  it('ctrl: "optional" accepts both ctrl-held and unheld', () => {
+    expect(matchModifiers(noMods, { ctrl: 'optional' }, false)).toBe(true);
+    expect(matchModifiers({ ...noMods, ctrlKey: true }, { ctrl: 'optional' }, false)).toBe(true);
+    expect(matchModifiers({ ...noMods, altKey: true }, { ctrl: 'optional' }, false)).toBe(false);
+  });
+
+  it('meta: "optional" accepts both meta-held and unheld', () => {
+    expect(matchModifiers(noMods, { meta: 'optional' }, false)).toBe(true);
+    expect(matchModifiers({ ...noMods, metaKey: true }, { meta: 'optional' }, false)).toBe(true);
+    expect(matchModifiers({ ...noMods, ctrlKey: true }, { meta: 'optional' }, false)).toBe(false);
+  });
+
+  it('mod: "optional" resolves platform-aware — meta-optional on mac, ctrl-optional elsewhere', () => {
+    // mac
+    expect(matchModifiers(noMods, { mod: 'optional' }, true)).toBe(true);
+    expect(matchModifiers({ ...noMods, metaKey: true }, { mod: 'optional' }, true)).toBe(true);
+    expect(matchModifiers({ ...noMods, ctrlKey: true }, { mod: 'optional' }, true)).toBe(false);
+    // non-mac
+    expect(matchModifiers(noMods, { mod: 'optional' }, false)).toBe(true);
+    expect(matchModifiers({ ...noMods, ctrlKey: true }, { mod: 'optional' }, false)).toBe(true);
+    expect(matchModifiers({ ...noMods, metaKey: true }, { mod: 'optional' }, false)).toBe(false);
+  });
+
+  it('multiple optional mods compose (alt + shift both optional)', () => {
+    const spec = { alt: 'optional', shift: 'optional' } as const;
+    expect(matchModifiers(noMods, spec, false)).toBe(true);
+    expect(matchModifiers({ ...noMods, altKey: true }, spec, false)).toBe(true);
+    expect(matchModifiers({ ...noMods, shiftKey: true }, spec, false)).toBe(true);
+    expect(matchModifiers({ ...noMods, altKey: true, shiftKey: true }, spec, false)).toBe(true);
+    expect(matchModifiers({ ...noMods, metaKey: true }, spec, false)).toBe(false);
+  });
+
   it('mod: true matches metaKey on mac, ctrlKey elsewhere', () => {
     expect(matchModifiers({ ...noMods, metaKey: true }, { mod: true }, true)).toBe(true);
     expect(matchModifiers({ ...noMods, ctrlKey: true }, { mod: true }, true)).toBe(false);
