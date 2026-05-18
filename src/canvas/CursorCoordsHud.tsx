@@ -32,13 +32,37 @@ export function CursorCoordsHud({ canvasRef, viewRef, offset }: CursorCoordsHudP
   const [state, setState] = useState<HudState>({
     client: { x: 0, y: 0 }, world: null, inCanvas: false, anchor: null,
   });
+  const [fps, setFps] = useState<number>(0);
+
+  // FPS counter: tally frames per rAF tick; flush once a second.
+  useEffect(() => {
+    let frames = 0;
+    let last = performance.now();
+    let raf = 0;
+    const tick = () => {
+      frames++;
+      const now = performance.now();
+      const dt = now - last;
+      if (dt >= 1000) {
+        setFps(Math.round((frames * 1000) / dt));
+        frames = 0;
+        last = now;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   useEffect(() => {
     const readAnchor = (): HudState['anchor'] => {
       const canvas = canvasRef.current;
       if (!canvas) return null;
-      const rect = canvas.getBoundingClientRect();
-      // Right = distance from the viewport's right edge.
+      // Anchor to the canvas's container (e.g. swill's striped workspace),
+      // falling back to the canvas itself if there's no wrapping parent.
+      // The "canvas area" in editor parlance is the workspace, not the page.
+      const host = canvas.parentElement ?? canvas;
+      const rect = host.getBoundingClientRect();
       return { top: rect.top, right: window.innerWidth - rect.right };
     };
 
@@ -102,6 +126,8 @@ export function CursorCoordsHud({ canvasRef, viewRef, offset }: CursorCoordsHudP
         textAlign: 'right',
       }}
     >
+      {`fps    ${fps.toString().padStart(3)}`}
+      {'\n'}
       {`client (${state.client.x.toFixed(0)}, ${state.client.y.toFixed(0)})`}
       {'\n'}
       {state.world
