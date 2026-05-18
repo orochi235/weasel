@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseRoute, type ParsedRoute } from './routeGrammar';
+import { parseRoute, formatRoute, type ParsedRoute } from './routeGrammar';
 
 describe('parseRoute v3', () => {
   // ---- Basic shape ----
@@ -135,5 +135,91 @@ describe('parseRoute v3', () => {
 
   it('rejects unbalanced argSlot parens', () => {
     expect(() => parseRoute('[initial] keyDown(ArrowDown')).toThrow(/unbalanced|paren/i);
+  });
+});
+
+describe('formatRoute v3 (canonical form)', () => {
+  it('emits one space after "]"', () => {
+    expect(formatRoute({
+      phases: ['initial'], gesture: 'click', arg: undefined,
+      target: 'empty', modifiers: { shift: 'required' },
+    })).toBe('[initial] click => empty +shift');
+  });
+
+  it('emits two spaces around "=>"', () => {
+    expect(formatRoute({
+      phases: ['initial'], gesture: 'click', arg: undefined,
+      target: 'selected-body', modifiers: {},
+    })).toBe('[initial] click => selected-body');
+  });
+
+  it('emits space before each mod atom', () => {
+    expect(formatRoute({
+      phases: ['initial'], gesture: 'click', arg: undefined,
+      target: 'empty', modifiers: { mod: 'required', shift: 'optional' },
+    })).toBe('[initial] click => empty +mod ?shift');
+  });
+
+  it('elides "=> *" for hasTarget gestures', () => {
+    expect(formatRoute({
+      phases: ['initial'], gesture: 'click', arg: undefined,
+      target: '*', modifiers: {},
+    })).toBe('[initial] click');
+  });
+
+  it('elides default arg for wheel', () => {
+    expect(formatRoute({
+      phases: ['initial'], gesture: 'wheel', arg: '*',
+      target: undefined, modifiers: {},
+    })).toBe('[initial] wheel');
+  });
+
+  it('keeps explicit non-default arg', () => {
+    expect(formatRoute({
+      phases: ['initial'], gesture: 'wheel', arg: 'up',
+      target: undefined, modifiers: {},
+    })).toBe('[initial] wheel(up)');
+  });
+
+  it('emits no spaces in phase list commas', () => {
+    expect(formatRoute({
+      phases: ['initial', 'engaged'], gesture: 'contextMenu', arg: undefined,
+      target: '*', modifiers: {},
+    })).toBe('[initial,engaged] contextMenu');
+  });
+
+  it('emits [*] for wildcard phase', () => {
+    expect(formatRoute({
+      phases: ['*'], gesture: 'click', arg: undefined,
+      target: '*', modifiers: {},
+    })).toBe('[*] click');
+  });
+
+  it('canonical mod-atom order: mod, shift, alt, ctrl, meta', () => {
+    expect(formatRoute({
+      phases: ['initial'], gesture: 'click', arg: undefined,
+      target: 'empty',
+      modifiers: { meta: 'required', alt: 'optional', shift: 'required' },
+    })).toBe('[initial] click => empty +shift ?alt +meta');
+  });
+});
+
+describe('parseRoute / formatRoute round-trip', () => {
+  it('every canonical example round-trips', () => {
+    const examples = [
+      '[initial] click',
+      '[initial] click => empty',
+      '[initial] click => empty +shift',
+      '[initial] click => selected-body +mod',
+      '[initial] keyDown(ArrowDown) ?shift',
+      '[initial] wheel(up)',
+      '[initial] wheel',
+      '[initial,engaged] contextMenu',
+      '[*] click',
+      '[initial] click => empty +mod ?shift',
+    ];
+    for (const r of examples) {
+      expect(formatRoute(parseRoute(r))).toBe(r);
+    }
   });
 });

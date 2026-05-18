@@ -150,6 +150,38 @@ function parsePhaseList(raw: string, input: string): ParsedRoute['phases'] {
   return phases as readonly RoutePhase[];
 }
 
-export function formatRoute(_r: ParsedRoute): string {
-  throw new Error('formatRoute v3 not yet implemented (task v3-A3)');
+const MOD_ORDER: readonly ModName[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
+
+export function formatRoute(r: ParsedRoute): string {
+  const desc = getGestureDescriptor(r.gesture);
+
+  // Phase slot.
+  const phaseStr =
+    r.phases.length === 1 && r.phases[0] === '*'
+      ? '[*]'
+      : `[${r.phases.join(',')}]`;
+
+  let out = `${phaseStr} ${r.gesture}`;
+
+  // Arg slot — elide default.
+  if (desc.arg) {
+    const isDefault =
+      r.arg === undefined ||
+      (desc.arg.default !== undefined && r.arg === desc.arg.default);
+    if (!isDefault) out += `(${r.arg})`;
+  }
+
+  // Target slot — elide "*" (wildcard default for hasTarget gestures).
+  if (desc.hasTarget && r.target !== undefined && r.target !== '*') {
+    out += ` => ${r.target}`;
+  }
+
+  // Mod atoms in canonical order, space-separated.
+  for (const name of MOD_ORDER) {
+    const req = r.modifiers[name];
+    if (req === 'required') out += ` +${name}`;
+    else if (req === 'optional') out += ` ?${name}`;
+  }
+
+  return out;
 }
