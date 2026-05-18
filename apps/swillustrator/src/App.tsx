@@ -477,8 +477,8 @@ function EditorWithSharedScene({
       <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} />
       <div className="swill-body">
         <div className="swill-sidebar left">
-          {tools && <ToolPalette tools={tools} orientation="vertical" />}
           <ActiveSwatches />
+          {tools && <ToolPalette tools={tools} orientation="vertical" />}
         </div>
         <div className="swill-canvas-host">
           <SceneCanvas<SwillData, SwillLayer, SwillPose>
