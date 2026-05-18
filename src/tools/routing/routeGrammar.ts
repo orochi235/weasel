@@ -1,21 +1,23 @@
 /**
- * Route-string grammar v2:
+ * Route-string grammar v3:
  *
- *   route       = phase '.' gesture argSlot? targetSlot? modSlot?
- *   argSlot     = '(' value ')'        // present iff descriptor.arg is set
- *   targetSlot  = '.' target           // present iff descriptor.hasTarget
- *   modSlot     = ':' modifierKey      // optional; absent === 'default'
+ *   route       = phaseSlot WS gesture WS argSlot? WS targetSlot? WS modSlot?
+ *   phaseSlot   = '[' phaseList ']'
+ *   phaseList   = '*' | phase (WS ',' WS phase)*
+ *   argSlot     = '(' argValue ')'         (whitespace inside parens is significant)
+ *   targetSlot  = '=>' WS targetValue      (omitted slot defaults to '*' for hasTarget)
+ *   modSlot     = modAtom (WS modAtom)*
+ *   modAtom     = sigil modName
+ *   sigil       = '+' | '?'                (! @ # $ % ^ & reserved)
+ *   modName     = 'mod' | 'shift' | 'alt' | 'ctrl' | 'meta'
  *
  * Examples:
- *   initial.click.empty:shift
- *   initial.wheel                       (== initial.wheel(both))
- *   initial.wheel(up)
- *   initial.keyDown(ArrowDown)
- *   initial.contextMenu.empty
- *   initial.multiTouchTap(2)
+ *   [initial] click => empty +shift
+ *   [initial] wheel(up) +mod
+ *   [initial,engaged] contextMenu => empty
+ *   [*] click => empty
  */
 import { getGestureDescriptor, isKnownGestureName, type GestureName } from './gestures';
-import type { ModifierKey } from './modifiers';
 import type { RoutePhase } from './reflection/route-resolved';
 
 // ─── v3 grammar types ──────────────────────────────────────────────────────
@@ -43,18 +45,6 @@ export const VALID_MOD_NAMES: readonly ModName[] = ['mod', 'shift', 'alt', 'ctrl
 const MOD_NAME_SET = new Set<string>(VALID_MOD_NAMES);
 export { MOD_NAME_SET };
 
-/** @deprecated v2 shape — replaced by `ParsedRoute` (v3) in tasks A2/A3. */
-export interface ParsedRouteV2 {
-  phase: RoutePhase;
-  gesture: GestureName;
-  /** Resolved arg value. For a gesture with a default arg, the default is
-   *  filled in when the route omits the slot. Undefined iff descriptor.arg
-   *  is undefined OR a free-form arg slot was omitted. */
-  arg: string | undefined;
-  target: string | undefined;
-  modifiers: ModifierKey;
-}
-
 /** v3 parsed-route shape. */
 export interface ParsedRoute {
   /** One or more phases. `['*']` is the wildcard sentinel for "any
@@ -73,50 +63,93 @@ export interface ParsedRoute {
   modifiers: ParsedModifiers;
 }
 
-const ARG_RE = /^([^(]+)\(([^)]*)\)$/;
-
-export function parseRoute(route: string): ParsedRouteV2 {
-  const [body, modsPart] = route.split(':') as [string, string | undefined];
-  const segments = body.split('.');
-  if (segments.length < 2) throw new Error(`invalid route (need phase.gesture): ${route}`);
-  const [phase, gestureRaw, ...rest] = segments as [RoutePhase, string, ...string[]];
-
-  const argMatch = ARG_RE.exec(gestureRaw);
-  const gestureName = argMatch ? argMatch[1]! : gestureRaw;
-  const rawArg = argMatch ? argMatch[2] : undefined;
-
-  if (!isKnownGestureName(gestureName)) {
-    throw new Error(`invalid route (unknown gesture "${gestureName}"): ${route}`);
+export function parseRoute(input: string): ParsedRoute {
+  // 1) Extract bracketed phaseSlot from the head.
+  const trimmed = input.trim();
+  if (!trimmed.startsWith('[')) {
+    throw new Error(`invalid route (phase brackets required): ${input}`);
   }
+  const closeIdx = trimmed.indexOf(']');
+  if (closeIdx < 0) throw new Error(`invalid route (unclosed phase bracket): ${input}`);
+  const phaseListRaw = trimmed.slice(1, closeIdx).trim();
+  const phases = parsePhaseList(phaseListRaw, input);
+  let rest = trimmed.slice(closeIdx + 1).trim();
+
+  // 2) Pull off the gesture name (alphanumeric).
+  const gestureMatch = /^([A-Za-z]+)/.exec(rest);
+  if (!gestureMatch) throw new Error(`invalid route (no gesture name): ${input}`);
+  const gestureName = gestureMatch[1]!;
+  if (!isKnownGestureName(gestureName)) {
+    throw new Error(`invalid route (unknown gesture "${gestureName}"): ${input}`);
+  }
+  rest = rest.slice(gestureMatch[0].length).trimStart();
   const desc = getGestureDescriptor(gestureName);
 
-  if (rawArg !== undefined && !desc.arg) {
-    throw new Error(`invalid route (${gestureName} does not take an argument): ${route}`);
-  }
+  // 3) Optional argSlot: `(...)`. Whitespace inside parens is significant.
   let arg: string | undefined;
-  if (desc.arg) {
-    arg = rawArg ?? desc.arg.default;
-    if (arg !== undefined && desc.arg.values !== 'free' && !desc.arg.values.includes(arg)) {
-      throw new Error(`invalid route (${arg} not in [${desc.arg.values.join(', ')}]): ${route}`);
+  if (rest.startsWith('(')) {
+    const closeArg = rest.indexOf(')');
+    if (closeArg < 0) throw new Error(`invalid route (unbalanced arg parens): ${input}`);
+    const argRaw = rest.slice(1, closeArg);   // no trim — whitespace significant
+    if (!desc.arg) throw new Error(`invalid route (${gestureName} has no arg): ${input}`);
+    if (argRaw !== '*' && desc.arg.values !== 'free' && !desc.arg.values.includes(argRaw)) {
+      throw new Error(`invalid route ("${argRaw}" not in ${desc.arg.values.join('|')}): ${input}`);
     }
+    arg = argRaw;
+    rest = rest.slice(closeArg + 1).trimStart();
+  } else if (desc.arg) {
+    arg = desc.arg.default ?? '*';
   }
 
-  const target = rest.length > 0 ? rest.join('.') : undefined;
-  if (target !== undefined && !desc.hasTarget) {
-    throw new Error(`invalid route (${gestureName} does not have a target): ${route}`);
+  // 4) Optional targetSlot: `=> <target>`. Elided "=> *" defaults to '*' for hasTarget gestures.
+  let target: string | undefined;
+  if (rest.startsWith('=>')) {
+    if (!desc.hasTarget) throw new Error(`invalid route (${gestureName} has no target): ${input}`);
+    rest = rest.slice(2).trimStart();
+    const tgtMatch = /^([^\s+?!@#$%^&]+)/.exec(rest);
+    if (!tgtMatch) throw new Error(`invalid route (missing target after "=>"): ${input}`);
+    target = tgtMatch[1]!;
+    rest = rest.slice(tgtMatch[0].length).trimStart();
+  } else if (desc.hasTarget) {
+    target = '*';
   }
 
-  const modifiers = (modsPart ?? 'default') as ModifierKey;
-  return { phase, gesture: gestureName, arg, target, modifiers };
+  // 5) modSlot — zero or more sigil-prefixed atoms.
+  const modifiers: ParsedModifiers = {};
+  while (rest.length > 0) {
+    const ch = rest[0]!;
+    if (RESERVED_SIGILS.has(ch)) {
+      throw new Error(`invalid route ("${ch}" is reserved for future use): ${input}`);
+    }
+    if (!ACTIVE_SIGILS.has(ch)) {
+      throw new Error(`invalid route (unexpected "${ch}" at "${rest}"): ${input}`);
+    }
+    const sigil = ch;
+    rest = rest.slice(1);
+    const nameMatch = /^([a-z]+)/.exec(rest);
+    if (!nameMatch) throw new Error(`invalid route (sigil "${sigil}" without modifier name): ${input}`);
+    const name = nameMatch[1]!;
+    if (!MOD_NAME_SET.has(name)) {
+      throw new Error(`invalid route (unknown modifier "${name}"): ${input}`);
+    }
+    if (modifiers[name as ModName] !== undefined) {
+      throw new Error(`invalid route (duplicate modifier "${name}"): ${input}`);
+    }
+    modifiers[name as ModName] = sigil === '+' ? 'required' : 'optional';
+    rest = rest.slice(nameMatch[0].length).trimStart();
+  }
+
+  return { phases, gesture: gestureName, arg, target, modifiers };
 }
 
-export function formatRoute(r: ParsedRouteV2): string {
-  const desc = getGestureDescriptor(r.gesture);
-  let out = `${r.phase}.${r.gesture}`;
-  if (desc.arg && r.arg !== undefined && r.arg !== desc.arg.default) {
-    out += `(${r.arg})`;
-  }
-  if (r.target !== undefined) out += `.${r.target}`;
-  if (r.modifiers !== 'default') out += `:${r.modifiers}`;
-  return out;
+function parsePhaseList(raw: string, input: string): ParsedRoute['phases'] {
+  if (raw === '') throw new Error(`invalid route (empty phase list): ${input}`);
+  if (raw === '*') return ['*'];
+  const phases = raw.split(',').map((p) => p.trim()).filter((p) => p.length > 0);
+  if (phases.length === 0) throw new Error(`invalid route (empty phase list): ${input}`);
+  return phases as readonly RoutePhase[];
+}
+
+export function formatRoute(_r: ParsedRoute): string {
+  throw new Error('formatRoute v3 not yet implemented (task v3-A3)');
 }

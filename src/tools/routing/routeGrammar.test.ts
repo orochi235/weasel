@@ -1,78 +1,139 @@
 import { describe, it, expect } from 'vitest';
-import { parseRoute, formatRoute } from './routeGrammar';
+import { parseRoute, type ParsedRoute } from './routeGrammar';
 
-describe('parseRoute (v2 grammar)', () => {
-  it('parses a click with target and modifiers', () => {
-    expect(parseRoute('initial.click.empty:shift')).toEqual({
-      phase: 'initial', gesture: 'click', arg: undefined, target: 'empty', modifiers: 'shift',
+describe('parseRoute v3', () => {
+  // ---- Basic shape ----
+
+  it('parses a click with empty target and one modifier', () => {
+    expect(parseRoute('[initial] click => empty +shift')).toEqual({
+      phases: ['initial'], gesture: 'click', arg: undefined,
+      target: 'empty', modifiers: { shift: 'required' },
+    } satisfies ParsedRoute);
+  });
+
+  it('parses an optional modifier', () => {
+    expect(parseRoute('[initial] keyDown(ArrowDown) ?shift')).toEqual({
+      phases: ['initial'], gesture: 'keyDown', arg: 'ArrowDown',
+      target: undefined, modifiers: { shift: 'optional' },
     });
   });
 
-  it('parses a wheel with direction arg, no target', () => {
-    expect(parseRoute('initial.wheel(up)')).toEqual({
-      phase: 'initial', gesture: 'wheel', arg: 'up', target: undefined, modifiers: 'default',
+  it('parses multiple modifier atoms', () => {
+    expect(parseRoute('[initial] click => empty +mod ?shift')).toEqual({
+      phases: ['initial'], gesture: 'click', arg: undefined,
+      target: 'empty', modifiers: { mod: 'required', shift: 'optional' },
     });
   });
 
-  it('parses a wheel without arg as the descriptor default', () => {
-    expect(parseRoute('initial.wheel')).toEqual({
-      phase: 'initial', gesture: 'wheel', arg: '*', target: undefined, modifiers: 'default',
+  it('parses a phase list', () => {
+    expect(parseRoute('[initial,engaged] contextMenu => empty')).toEqual({
+      phases: ['initial', 'engaged'], gesture: 'contextMenu',
+      arg: undefined, target: 'empty', modifiers: {},
     });
   });
 
-  it('parses keyDown with a key arg', () => {
-    expect(parseRoute('initial.keyDown(ArrowDown)')).toEqual({
-      phase: 'initial', gesture: 'keyDown', arg: 'ArrowDown', target: undefined, modifiers: 'default',
+  it('parses [*] as the wildcard phase', () => {
+    expect(parseRoute('[*] click => empty')).toEqual({
+      phases: ['*'], gesture: 'click', arg: undefined,
+      target: 'empty', modifiers: {},
     });
   });
 
-  it('parses contextMenu like click (target slot present)', () => {
-    expect(parseRoute('initial.contextMenu.empty')).toEqual({
-      phase: 'initial', gesture: 'contextMenu', arg: undefined, target: 'empty', modifiers: 'default',
+  // ---- Wildcards & elision ----
+
+  it('omitted targetSlot resolves to "*" for hasTarget gestures', () => {
+    expect(parseRoute('[initial] click')).toEqual({
+      phases: ['initial'], gesture: 'click', arg: undefined,
+      target: '*', modifiers: {},
     });
   });
 
-  it('parses multiTouchTap with fingers arg, no target', () => {
-    expect(parseRoute('initial.multiTouchTap(2)')).toEqual({
-      phase: 'initial', gesture: 'multiTouchTap', arg: '2', target: undefined, modifiers: 'default',
+  it('explicit "=> *" parses to the same shape as omitted target', () => {
+    expect(parseRoute('[initial] click => *')).toEqual(parseRoute('[initial] click'));
+  });
+
+  it('omitted argSlot resolves to descriptor default for wheel', () => {
+    expect(parseRoute('[initial] wheel')).toEqual({
+      phases: ['initial'], gesture: 'wheel', arg: '*',
+      target: undefined, modifiers: {},
     });
   });
 
-  it('rejects an arg on a no-arg gesture', () => {
-    expect(() => parseRoute('initial.click(foo).empty')).toThrow(/click.*does not take an argument/);
+  it('explicit "wheel(*)" parses to the same shape as omitted arg', () => {
+    expect(parseRoute('[initial] wheel(*)')).toEqual(parseRoute('[initial] wheel'));
   });
 
-  it('rejects a target on a no-target gesture', () => {
-    expect(() => parseRoute('initial.wheel(up).foo')).toThrow(/wheel.*does not have a target/);
+  it('targetless gesture (wheel) accepts modifiers without a target', () => {
+    expect(parseRoute('[initial] wheel(up) +mod')).toEqual({
+      phases: ['initial'], gesture: 'wheel', arg: 'up',
+      target: undefined, modifiers: { mod: 'required' },
+    });
   });
 
-  it('rejects an unknown enumerated arg value', () => {
-    expect(() => parseRoute('initial.wheel(sideways)')).toThrow(/sideways.*not in.*up.*down/);
+  // ---- Whitespace tolerance ----
+
+  it('accepts arbitrary whitespace between tokens', () => {
+    const canonical = '[initial] click => empty +shift';
+    const messy    = '[ initial ]   click   =>   empty   +shift';
+    expect(parseRoute(messy)).toEqual(parseRoute(canonical));
   });
 
-  it('rejects an unknown gesture name', () => {
-    expect(() => parseRoute('initial.bogus.empty')).toThrow(/unknown gesture/i);
-  });
-});
-
-describe('formatRoute', () => {
-  it('round-trips click', () => {
-    const r = { phase: 'initial' as const, gesture: 'click' as const, arg: undefined, target: 'empty', modifiers: 'shift' as const };
-    expect(parseRoute(formatRoute(r))).toEqual(r);
+  it('accepts whitespace in phase list', () => {
+    expect(parseRoute('[ initial , engaged ] click')).toEqual(
+      parseRoute('[initial,engaged] click'),
+    );
   });
 
-  it('elides default arg for wheel', () => {
-    expect(formatRoute({ phase: 'initial', gesture: 'wheel', arg: '*', target: undefined, modifiers: 'default' }))
-      .toBe('initial.wheel');
+  it('preserves whitespace inside argSlot', () => {
+    expect(parseRoute('[initial] keyDown( )')).toEqual({
+      phases: ['initial'], gesture: 'keyDown', arg: ' ',
+      target: undefined, modifiers: {},
+    });
   });
 
-  it('keeps explicit arg for wheel(up)', () => {
-    expect(formatRoute({ phase: 'initial', gesture: 'wheel', arg: 'up', target: undefined, modifiers: 'default' }))
-      .toBe('initial.wheel(up)');
+  // ---- Errors ----
+
+  it('rejects empty phase list', () => {
+    expect(() => parseRoute('[] click')).toThrow(/empty phase list/i);
   });
 
-  it('round-trips keyDown(ArrowDown)', () => {
-    const r = { phase: 'initial' as const, gesture: 'keyDown' as const, arg: 'ArrowDown', target: undefined, modifiers: 'default' as const };
-    expect(parseRoute(formatRoute(r))).toEqual(r);
+  it('rejects missing phase brackets', () => {
+    expect(() => parseRoute('initial click')).toThrow(/phase.*bracket/i);
+  });
+
+  it('rejects unknown gesture name', () => {
+    expect(() => parseRoute('[initial] bogus => empty')).toThrow(/unknown gesture/i);
+  });
+
+  it('rejects target slot on a no-target gesture', () => {
+    expect(() => parseRoute('[initial] wheel(up) => foo')).toThrow(/wheel.*no target/i);
+  });
+
+  it('rejects arg slot on a no-arg gesture', () => {
+    expect(() => parseRoute('[initial] click(foo) => empty')).toThrow(/click.*no arg/i);
+  });
+
+  it('rejects unknown enum arg value', () => {
+    expect(() => parseRoute('[initial] wheel(sideways)')).toThrow(/sideways.*up.*down/i);
+  });
+
+  it('rejects unknown modifier name', () => {
+    expect(() => parseRoute('[initial] click => empty +bogus')).toThrow(/unknown modifier/i);
+  });
+
+  it('rejects duplicate modifier in modSlot', () => {
+    expect(() => parseRoute('[initial] click => empty +shift ?shift')).toThrow(/duplicate modifier/i);
+    expect(() => parseRoute('[initial] click => empty +shift +shift')).toThrow(/duplicate modifier/i);
+  });
+
+  it('rejects each reserved sigil', () => {
+    for (const sigil of ['!', '@', '#', '$', '%', '^', '&']) {
+      expect(() => parseRoute(`[initial] click => empty ${sigil}shift`))
+        .toThrow(/reserved/i);
+    }
+  });
+
+  it('rejects unbalanced argSlot parens', () => {
+    expect(() => parseRoute('[initial] keyDown(ArrowDown')).toThrow(/unbalanced|paren/i);
   });
 });
