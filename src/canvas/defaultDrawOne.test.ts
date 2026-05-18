@@ -44,7 +44,11 @@ describe('defaultDrawOne', () => {
     expect(label.y).toBe(34); // POSE.y + 14
   });
 
-  it('path branch: renders data.path with data.fill/stroke', () => {
+  it('path branch: renders data.path with data.fill/stroke, rebased to pose', () => {
+    // Path is anchored at (0, 0) with its own size; pose places + sizes the
+    // node at (10, 20, 80, 40). The painter rebases the rect onto the pose
+    // (origin + dimensions) so move + resize mutations on pose alone render
+    // at the right place + size without touching data.path.
     const path = { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 };
     const cmds = defaultDrawOne(
       node({ path, fill: '#f00', stroke: '#000', strokeWidth: 2 }),
@@ -52,9 +56,19 @@ describe('defaultDrawOne', () => {
     );
     expect(cmds).toHaveLength(1);
     const cmd = cmds[0] as PathDrawCommand;
-    expect(cmd.path).toBe(path);
+    expect(cmd.path).toEqual({ kind: 'rect', x: 10, y: 20, width: 80, height: 40 });
     expect(cmd.fill).toEqual({ color: '#f00' });
     expect(cmd.stroke).toEqual({ paint: { color: '#000' }, width: 2 });
+  });
+
+  it('path branch: identity-preserves the path when pose already matches the path', () => {
+    // No allocation when there is nothing to rebase — the painter returns
+    // the path reference unchanged. Guards the fast path against accidental
+    // regressions on the common "freshly-created node" case.
+    const path = { kind: 'rect' as const, x: 10, y: 20, width: 80, height: 40 };
+    const cmds = defaultDrawOne(node({ path, fill: '#f00' }), POSE);
+    const cmd = cmds[0] as PathDrawCommand;
+    expect(cmd.path).toBe(path);
   });
 
   it('path branch: omits stroke when strokeWidth is 0 or missing', () => {
