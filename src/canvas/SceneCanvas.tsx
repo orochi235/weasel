@@ -817,6 +817,16 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         }
         return out;
       }}
+      previewPoseExtra={(id) => {
+        // Mirror previewIdsExtra: surface dispatcher in-flight handles'
+        // `previewPose(id)` so selection chrome (resize / rotation handles,
+        // AABB outline) tracks the ghost during dispatcher-driven drags.
+        for (const handle of dispatcher.getInFlightHandles()) {
+          const p = handle.previewPose?.(id);
+          if (p != null) return p;
+        }
+        return null;
+      }}
       {...(viewProp !== undefined ? { view: viewProp } : {})}
       {...(defaultView !== undefined ? { defaultView } : {})}
       onViewChange={handleViewChange}

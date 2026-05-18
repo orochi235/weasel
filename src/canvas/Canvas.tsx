@@ -246,6 +246,23 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * `<Canvas>` consumers don't need to wire it.
    */
   previewIdsExtra?: () => Iterable<string> | null;
+
+  /**
+   * Extra preview-pose lookup checked after the active tool's `previewPose`
+   * misses. Wired by `<SceneCanvas>` to expose the gesture-dispatcher's
+   * in-flight `OngoingHandle.previewPose(id)` so selection chrome (resize/
+   * rotation handles, AABB outline) tracks the ghost during dispatcher-driven
+   * drags. Returns `null` / `undefined` when no preview is in flight.
+   */
+  previewPoseExtra?: (id: string) => unknown;
+
+  /**
+   * Extra preview-bounds lookup checked after `previewBoundsExtra`'s `previewPose`
+   * fallback. Same shape as `previewPoseExtra` but returns AABB directly,
+   * preferred when the in-flight handle can produce bounds without going
+   * through geometry.getBounds(pose).
+   */
+  previewBoundsExtra?: (id: string) => Bounds | null;
 }
 
 /** Live overlay-aware lookups exposed to custom layers via `helpersRef`. */
@@ -477,6 +494,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     debugSinkRef,
     shaders,
     previewIdsExtra,
+    previewPoseExtra,
+    previewBoundsExtra,
   } = props;
 
   // Resolve debug config: explicit prop wins; `undefined` falls back to URL;
@@ -734,6 +753,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const selectedIdsForWiring = effectiveSelection.current;
   const multiActive = selectionMode === 'multi' && selectedIdsForWiring.length > 1;
 
+  // Hold the latest dispatcher-side preview extras in a ref so chromeState's
+  // closure reads live values without forcing the memo to rebuild every render.
+  const previewExtraRef = useRef({ previewPoseExtra, previewBoundsExtra });
+  previewExtraRef.current = { previewPoseExtra, previewBoundsExtra };
+
   // boundsOf: pass-through for real ids. The synthetic multi-selection id is
   // resolved by the active tool's `previewBounds` (see `useSelectTool`'s
   // `MULTI_RESIZE_TARGET_ID` branch) — Canvas no longer special-cases it
@@ -756,6 +780,15 @@ function CanvasInner<TNode extends { id: string }, TPose>(
           const b = firstPreviewBounds(tools, id);
           if (b) return b;
           const p = firstPreviewPose(tools, id);
+          if (p != null) return geometry.getBounds(p as TPose);
+        }
+        const extras = previewExtraRef.current;
+        if (extras.previewBoundsExtra) {
+          const b = extras.previewBoundsExtra(id);
+          if (b) return b;
+        }
+        if (extras.previewPoseExtra) {
+          const p = extras.previewPoseExtra(id);
           if (p != null) return geometry.getBounds(p as TPose);
         }
         return effectiveBoundsOf ? effectiveBoundsOf(id) : null;
@@ -813,15 +846,32 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // `previewBounds` is the only overlay source post-cleanup; falls through to
   // the committed adapter pose / bounds when no tool is mid-gesture.
   const previewToolPose = (id: string): TPose | null => {
-    if (!tools) return null;
-    return (firstPreviewPose(tools, id) ?? null) as TPose | null;
+    if (tools) {
+      const p = firstPreviewPose(tools, id);
+      if (p != null) return p as TPose;
+    }
+    if (previewPoseExtra) {
+      const p = previewPoseExtra(id);
+      if (p != null) return p as TPose;
+    }
+    return null;
   };
   const previewToolBounds = (id: string): Bounds | null => {
-    if (!tools) return null;
-    const b = firstPreviewBounds(tools, id);
-    if (b) return b;
-    const p = firstPreviewPose(tools, id);
-    return p == null ? null : geometry.getBounds(p as TPose);
+    if (tools) {
+      const b = firstPreviewBounds(tools, id);
+      if (b) return b;
+      const p = firstPreviewPose(tools, id);
+      if (p != null) return geometry.getBounds(p as TPose);
+    }
+    if (previewBoundsExtra) {
+      const b = previewBoundsExtra(id);
+      if (b) return b;
+    }
+    if (previewPoseExtra) {
+      const p = previewPoseExtra(id);
+      if (p != null) return geometry.getBounds(p as TPose);
+    }
+    return null;
   };
 
   const helpersForLayers: CanvasHelpers<TPose> = {
