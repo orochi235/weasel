@@ -51,15 +51,17 @@ import { ActionBar, type FlipAxis, type PaperSizeKey } from './ActionBar';
 import { ActiveSwatches, type ActivePaint } from './ActiveSwatches';
 import { PreferencesModal } from './PreferencesModal';
 import { ColorContextProvider } from './tools/colorContext/ColorContextProvider';
-import { LayerList } from './ui/LayerList';
+import { LayerList, type LayerListItem } from './ui/LayerList';
 import { useLayerList } from './ui/LayerList/useLayerList';
 import {
   PropertiesPanel,
   PropertiesGrid,
   PropertyRow,
   PropertyNumberInput,
+  PropertyTextInput,
   PropertyColorInput,
   PropertySwatchGrid,
+  PropertySelect,
 } from './ui/PropertiesPanel';
 import { HistoryList } from './ui/HistoryList';
 import { DispatchTracePanel } from './dev/DispatchTracePanel';
@@ -106,6 +108,32 @@ const PAPER_PRESETS: Record<PaperSizeKey, { width: number; height: number }> = {
 };
 
 const LS_KEY = 'swillustrator:scene-v1';
+const DOC_KEY = 'swillustrator:doc-v1';
+const DEFAULT_FILENAME = 'untitled.svg';
+const DEFAULT_BG_COLOR = '#ffffff';
+/** Synthetic id for the locked "Background" row in the Layers panel.
+ *  Selecting this row surfaces the Document properties branch in the
+ *  Properties panel; clicking any real node clears it. */
+const BACKGROUND_ROW_ID = '__background__';
+
+interface PersistedDoc {
+  filename: string;
+  backgroundColor: string;
+}
+
+function loadDoc(): PersistedDoc {
+  try {
+    const raw = localStorage.getItem(DOC_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<PersistedDoc>;
+      return {
+        filename: typeof parsed.filename === 'string' && parsed.filename ? parsed.filename : DEFAULT_FILENAME,
+        backgroundColor: typeof parsed.backgroundColor === 'string' && parsed.backgroundColor ? parsed.backgroundColor : DEFAULT_BG_COLOR,
+      };
+    }
+  } catch { /* fall through */ }
+  return { filename: DEFAULT_FILENAME, backgroundColor: DEFAULT_BG_COLOR };
+}
 
 // 99-color palette: 9 neutrals (row 1, alongside the leading transparent
 // swatch) + 9 hue ramps × 10 shades. Renders 10 per row in the Colors
@@ -209,11 +237,30 @@ const PALETTE: { value: string; label: string }[] = [
 interface RightSidebarProps {
   scene: ReturnType<typeof useScene<SwillData, SwillLayer, SwillPose>>;
   selection: ReturnType<typeof useSelection>;
+  filename: string;
+  setFilename: (v: string) => void;
+  backgroundColor: string;
+  setBackgroundColor: (v: string) => void;
+  paperSize: PaperSizeKey;
+  setPaperSize: (v: PaperSizeKey) => void;
+  docSelected: boolean;
+  setDocSelected: (v: boolean) => void;
 }
 
-function RightSidebar({ scene, selection }: RightSidebarProps): ReactElement {
+function RightSidebar({
+  scene,
+  selection,
+  filename,
+  setFilename,
+  backgroundColor,
+  setBackgroundColor,
+  paperSize,
+  setPaperSize,
+  docSelected,
+  setDocSelected,
+}: RightSidebarProps): ReactElement {
   const adapter = useSceneAdapter(scene, {});
-  const layerListProps = useLayerList({
+  const baseLayerListProps = useLayerList({
     scene,
     selection,
     adapter,
@@ -225,6 +272,36 @@ function RightSidebar({ scene, selection }: RightSidebarProps): ReactElement {
       };
     },
   });
+
+  // Augment the kit-derived layer items with a pinned, locked virtual
+  // "Background" row. Selecting it routes to the Document properties
+  // branch instead of the kit `SelectionApi` (the synthetic id is not a
+  // real NodeId and would corrupt scene queries).
+  const backgroundRow: LayerListItem = {
+    id: BACKGROUND_ROW_ID,
+    label: 'Background',
+    swatch: backgroundColor,
+    locked: true,
+  };
+  const layerItems = [...baseLayerListProps.items, backgroundRow];
+  const layerSelectedIds = docSelected
+    ? [BACKGROUND_ROW_ID]
+    : baseLayerListProps.selectedIds;
+  const onLayerSelect = (ids: string[]): void => {
+    if (ids.includes(BACKGROUND_ROW_ID)) {
+      setDocSelected(true);
+      selection.set([]);
+    } else {
+      setDocSelected(false);
+      baseLayerListProps.onSelect(ids);
+    }
+  };
+  const layerListProps = {
+    ...baseLayerListProps,
+    items: layerItems,
+    selectedIds: layerSelectedIds,
+    onSelect: onLayerSelect,
+  };
 
   const selectedIds = selection.current;
   const selectedCount = selectedIds.length;
@@ -250,13 +327,41 @@ function RightSidebar({ scene, selection }: RightSidebarProps): ReactElement {
 
   return (
     <>
-      <PropertiesPanel title="Properties">
-        {selectedCount === 0 && (
+      <PropertiesPanel title={docSelected ? 'Document' : 'Properties'}>
+        {docSelected && (
+          <PropertiesGrid>
+            <PropertyRow label="file">
+              <PropertyTextInput
+                value={filename}
+                placeholder={DEFAULT_FILENAME}
+                onChange={setFilename}
+              />
+            </PropertyRow>
+            <PropertyRow label="paper">
+              <PropertySelect<PaperSizeKey>
+                value={paperSize}
+                options={[
+                  { value: 'letter', label: 'Letter' },
+                  { value: 'a4', label: 'A4' },
+                  { value: 'legal', label: 'Legal' },
+                ]}
+                onChange={setPaperSize}
+              />
+            </PropertyRow>
+            <PropertyRow label="bg">
+              <PropertyColorInput
+                value={backgroundColor}
+                onChange={setBackgroundColor}
+              />
+            </PropertyRow>
+          </PropertiesGrid>
+        )}
+        {!docSelected && selectedCount === 0 && (
           <div style={{ padding: 8, fontSize: 12, opacity: 0.6 }}>
             <em>No selection</em>
           </div>
         )}
-        {selectedCount > 0 && firstSelected && (
+        {!docSelected && selectedCount > 0 && firstSelected && (
           <PropertiesGrid>
             <PropertyRow label="x">
               <PropertyNumberInput
@@ -854,6 +959,31 @@ function EditorWithSharedScene({
   const [snapToGrid, setSnapToGrid] = useState(false);
   const [prefsOpen, setPrefsOpen] = useState(false);
 
+  // Document-level state (filename + background color) persisted alongside
+  // the scene under a separate LS key so a doc-shape migration doesn't
+  // have to touch the scene snapshot.
+  const initialDoc = useMemo(loadDoc, []);
+  const [filename, setFilename] = useState<string>(initialDoc.filename);
+  const [backgroundColor, setBackgroundColor] = useState<string>(initialDoc.backgroundColor);
+  const [docSelected, setDocSelected] = useState<boolean>(false);
+
+  // Doc-target selection is mutually exclusive with scene-node selection.
+  // Whenever the kit selection becomes non-empty, drop the doc-target flag
+  // so the Properties panel reverts to node properties.
+  useEffect(() => {
+    if (selection.current.length > 0 && docSelected) setDocSelected(false);
+  }, [selection.current.length, docSelected]);
+
+  // Persist filename + bg color with the same 300ms debounce as the scene.
+  useEffect(() => {
+    const id = setTimeout(() => {
+      try {
+        localStorage.setItem(DOC_KEY, JSON.stringify({ filename, backgroundColor }));
+      } catch { /* best-effort */ }
+    }, 300);
+    return () => clearTimeout(id);
+  }, [filename, backgroundColor]);
+
   const paper = PAPER_PRESETS[paperSize];
 
   return (
@@ -881,7 +1011,7 @@ function EditorWithSharedScene({
             scene={scene}
             selection={selection}
             selectionMode="multi"
-            backgroundFill={{ fill: 'solid', color: '#ffffff' }}
+            backgroundFill={{ fill: 'solid', color: backgroundColor }}
             toolBundle="exhaustive"
             viewport={{ pinchZoom: true }}
             cursorCoordsHud
@@ -902,7 +1032,18 @@ function EditorWithSharedScene({
           </SceneCanvas>
         </div>
         <div className="swill-sidebar right">
-          <RightSidebar scene={scene} selection={selection} />
+          <RightSidebar
+            scene={scene}
+            selection={selection}
+            filename={filename}
+            setFilename={setFilename}
+            backgroundColor={backgroundColor}
+            setBackgroundColor={setBackgroundColor}
+            paperSize={paperSize}
+            setPaperSize={setPaperSize}
+            docSelected={docSelected}
+            setDocSelected={setDocSelected}
+          />
         </div>
       </div>
     </div>
