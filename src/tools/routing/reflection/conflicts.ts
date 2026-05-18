@@ -3,14 +3,15 @@ import type { ModifierKey } from '../modifiers';
 import type { RoutePhase, RouteGesture } from './route-resolved';
 import { buildActionRegistry, type RegistryEntry } from './registry';
 
-/** Two or more tools declare the same exact (phase, gesture, target,
+/** Two or more tools declare the same exact (phase, gesture, arg, target,
  *  modifiers) tuple — the dispatcher's slot precedence picks one
  *  arbitrarily (well, deterministically by slot order, but the author
  *  probably didn't intend the duplication). */
 export interface Conflict {
   phase: RoutePhase;
   gesture: RouteGesture;
-  target: string;
+  arg: string | undefined;
+  target: string | undefined;
   modifiers: ModifierKey;
   /** All tool ids that registered the same tuple. At least 2 by
    *  construction. Order matches the input tools[] order. */
@@ -35,7 +36,7 @@ export function findConflicts(
   const entries = buildActionRegistry(tools);
   const groups = new Map<string, RegistryEntry[]>();
   for (const entry of entries) {
-    const key = `${entry.phase}|${entry.gesture}|${entry.target}|${entry.modifiers}`;
+    const key = `${entry.phase}|${entry.gesture}|${entry.arg ?? ''}|${entry.target ?? ''}|${entry.modifiers}`;
     const bucket = groups.get(key);
     if (bucket) bucket.push(entry);
     else groups.set(key, [entry]);
@@ -49,6 +50,7 @@ export function findConflicts(
     conflicts.push({
       phase: first.phase,
       gesture: first.gesture,
+      arg: first.arg,
       target: first.target,
       modifiers: first.modifiers,
       toolIds: bucket.map((e) => e.toolId),

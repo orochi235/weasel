@@ -146,7 +146,9 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
 
 function formatRoutes(entries: readonly RegistryEntry[]): readonly string[] {
   return entries.map((e) => {
-    const base = `${e.phase}.${e.gesture}.${e.target}`;
+    const argPart = e.arg != null ? `(${e.arg})` : '';
+    const targetPart = e.target != null ? `.${e.target}` : '';
+    const base = `${e.phase}.${e.gesture}${argPart}${targetPart}`;
     return e.modifiers === 'default' ? base : `${base}:${e.modifiers}`;
   });
 }

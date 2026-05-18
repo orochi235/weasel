@@ -284,7 +284,8 @@ function RoutesWidget({ routes }: { routes: readonly RegistryEntry[] }): ReactEl
     a.toolId.localeCompare(b.toolId)
     || a.phase.localeCompare(b.phase)
     || a.gesture.localeCompare(b.gesture)
-    || a.target.localeCompare(b.target));
+    || (a.arg ?? '').localeCompare(b.arg ?? '')
+    || (a.target ?? '').localeCompare(b.target ?? ''));
   return (
     <div className={s.widget}>
       <h2 className={s.widgetTitle}>Routes · {routes.length}</h2>
@@ -298,17 +299,23 @@ function RoutesWidget({ routes }: { routes: readonly RegistryEntry[] }): ReactEl
                 <th>Tool</th>
                 <th>Phase</th>
                 <th>Gesture</th>
+                <th>Arg</th>
                 <th>Target</th>
                 <th>Mods</th>
               </tr>
             </thead>
             <tbody>
               {sorted.map((r, i) => (
-                <tr key={`${r.toolId}-${r.phase}-${r.gesture}-${r.target}-${r.modifiers}-${i}`}>
+                <tr key={`${r.toolId}-${r.phase}-${r.gesture}-${r.arg ?? ''}-${r.target ?? ''}-${r.modifiers}-${i}`}>
                   <td><code>{r.toolId}</code></td>
                   <td>{r.phase}</td>
                   <td>{r.gesture}</td>
-                  <td><code>{r.target}</code></td>
+                  <td>{r.arg == null
+                    ? <span className={s.empty}>—</span>
+                    : <code>{r.arg}</code>}</td>
+                  <td>{r.target == null
+                    ? <span className={s.empty}>—</span>
+                    : <code>{r.target}</code>}</td>
                   <td>{r.modifiers === 'default'
                     ? <span className={s.empty}>—</span>
                     : <code>{r.modifiers}</code>}</td>
@@ -337,7 +344,7 @@ function ConflictsWidget({ conflicts }: { conflicts: readonly Conflict[] }): Rea
           <ul className={s.conflicts}>
             {conflicts.map((c, i) => (
               <li key={i}>
-                <code>{c.phase}.{c.gesture}.{c.target}</code>
+                <code>{c.phase}.{c.gesture}{c.arg != null ? `(${c.arg})` : ''}{c.target != null ? `.${c.target}` : ''}</code>
                 {c.modifiers !== 'default' && <> · <code>{c.modifiers}</code></>}
                 {' '}claimed by{' '}
                 {c.toolIds.map((id, j) => (
