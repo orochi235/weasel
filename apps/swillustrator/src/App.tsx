@@ -480,6 +480,17 @@ function EditorWithSharedScene({
             toolBundle="exhaustive"
             viewport={{ pinchZoom: true }}
             onToolsCreated={setTools}
+            layers={gridVisible ? {
+              grid: {
+                spacing: 20,
+                bounds: () => ({ x: 0, y: 0, width: paper.width, height: paper.height }),
+                accentEvery: 5,
+                style: {
+                  line:   { paint: { fill: 'solid', color: 'rgba(0, 0, 0, 0.08)' }, width: 1 },
+                  accent: { paint: { fill: 'solid', color: 'rgba(0, 0, 0, 0.18)' }, width: 1 },
+                },
+              },
+            } : {}}
           />
         </div>
         <div className="swill-sidebar right">
