@@ -40,7 +40,7 @@ import {
   type DistributeAxis,
   type SerializedScene,
 } from '@orochi235/weasel';
-import { ToolPalette } from '@orochi235/weasel-ui';
+import { SidebarPanel, ToolPalette } from '@orochi235/weasel-ui';
 
 import { ActionBar, type FlipAxis, type PaperSizeKey } from './ActionBar';
 import { ActiveSwatches, type ActivePaint } from './ActiveSwatches';
@@ -48,7 +48,14 @@ import { PreferencesModal } from './PreferencesModal';
 import { ColorContextProvider } from './tools/colorContext/ColorContextProvider';
 import { LayerList } from './ui/LayerList';
 import { useLayerList } from './ui/LayerList/useLayerList';
-import { PropertiesPanel, PropertySwatchGrid } from './ui/PropertiesPanel';
+import {
+  PropertiesPanel,
+  PropertiesGrid,
+  PropertyRow,
+  PropertyNumberInput,
+  PropertyColorInput,
+  PropertySwatchGrid,
+} from './ui/PropertiesPanel';
 import { HistoryList } from './ui/HistoryList';
 import { DispatchTracePanel } from './dev/DispatchTracePanel';
 import { useColorContext } from './tools/colorContext';
@@ -216,19 +223,87 @@ function RightSidebar({ scene, selection }: RightSidebarProps): ReactElement {
   const selectedCount = selectedIds.length;
   const firstSelected = selectedCount > 0 ? scene.get(asNodeId(selectedIds[0])) : null;
 
+  const patchSelection = useCallback(
+    (patch: Partial<SwillData>) => {
+      const ids = selection.current;
+      if (ids.length === 0) return;
+      scene.batch('Edit properties', () => {
+        for (const id of ids) {
+          const n = scene.get(asNodeId(id));
+          if (!n) continue;
+          scene.update(asNodeId(id), { data: { ...(n.data as SwillData), ...patch } as SwillData });
+        }
+      });
+    },
+    [scene, selection],
+  );
+
   return (
     <>
       <PropertiesPanel title="Properties">
-        <div style={{ padding: 8, fontSize: 12, lineHeight: 1.6 }}>
-          {selectedCount === 0 && <em style={{ opacity: 0.6 }}>No selection</em>}
-          {selectedCount > 1 && <em style={{ opacity: 0.6 }}>{selectedCount} selected</em>}
-          {selectedCount === 1 && firstSelected && (
-            <PropRows pose={firstSelected.pose as SwillPose} data={firstSelected.data as SwillData} />
-          )}
-        </div>
+        {selectedCount === 0 && (
+          <div style={{ padding: 8, fontSize: 12, opacity: 0.6 }}>
+            <em>No selection</em>
+          </div>
+        )}
+        {selectedCount > 0 && firstSelected && (
+          <PropertiesGrid>
+            <PropertyRow label="x">
+              <PropertyNumberInput
+                value={(firstSelected.pose as SwillPose).x}
+                onChange={(x) => scene.setPose(asNodeId(firstSelected.id), { ...(firstSelected.pose as SwillPose), x })}
+              />
+            </PropertyRow>
+            <PropertyRow label="y">
+              <PropertyNumberInput
+                value={(firstSelected.pose as SwillPose).y}
+                onChange={(y) => scene.setPose(asNodeId(firstSelected.id), { ...(firstSelected.pose as SwillPose), y })}
+              />
+            </PropertyRow>
+            <PropertyRow label="w">
+              <PropertyNumberInput
+                value={(firstSelected.pose as SwillPose).width}
+                onChange={(width) => scene.setPose(asNodeId(firstSelected.id), { ...(firstSelected.pose as SwillPose), width })}
+              />
+            </PropertyRow>
+            <PropertyRow label="h">
+              <PropertyNumberInput
+                value={(firstSelected.pose as SwillPose).height}
+                onChange={(height) => scene.setPose(asNodeId(firstSelected.id), { ...(firstSelected.pose as SwillPose), height })}
+              />
+            </PropertyRow>
+            <PropertyRow label="fill">
+              <PropertyColorInput
+                value={(firstSelected.data as SwillData).fill ?? '#000000'}
+                onChange={(fill) => patchSelection({ fill })}
+              />
+            </PropertyRow>
+            <PropertyRow label="stroke">
+              <PropertyColorInput
+                value={(firstSelected.data as SwillData).stroke ?? '#000000'}
+                onChange={(stroke) => patchSelection({ stroke })}
+              />
+            </PropertyRow>
+            <PropertyRow label="stroke w">
+              <PropertyNumberInput
+                value={(firstSelected.data as SwillData).strokeWidth ?? 0}
+                min={0}
+                step={0.5}
+                onChange={(strokeWidth) => patchSelection({ strokeWidth })}
+              />
+            </PropertyRow>
+            {selectedCount > 1 && (
+              <PropertyRow label="">
+                <em style={{ opacity: 0.55, fontSize: 11 }}>color/stroke apply to {selectedCount} items</em>
+              </PropertyRow>
+            )}
+          </PropertiesGrid>
+        )}
       </PropertiesPanel>
       <ColorsPanel />
-      <LayerList {...layerListProps} empty={<em style={{ opacity: 0.6 }}>No nodes</em>} />
+      <SidebarPanel title="Layers">
+        <LayerList {...layerListProps} empty={<em style={{ opacity: 0.6 }}>No nodes</em>} />
+      </SidebarPanel>
       <HistoryList
         items={[
           { id: '__initial__', label: 'Initial' },
@@ -238,22 +313,6 @@ function RightSidebar({ scene, selection }: RightSidebarProps): ReactElement {
         onJump={(index) => scene.jumpToHistoryIndex(index)}
       />
       <DispatchTracePanel />
-    </>
-  );
-}
-
-function PropRows({ pose, data }: { pose: SwillPose; data: SwillData }): ReactElement {
-  return (
-    <>
-      <Row label="x" value={pose.x.toFixed(1)} />
-      <Row label="y" value={pose.y.toFixed(1)} />
-      <Row label="w" value={pose.width.toFixed(1)} />
-      <Row label="h" value={pose.height.toFixed(1)} />
-      {pose.rotation !== undefined && <Row label="rot°" value={((pose.rotation * 180) / Math.PI).toFixed(1)} />}
-      {typeof data.fill === 'string' && <Row label="fill" value={data.fill} swatch={data.fill} />}
-      {typeof data.stroke === 'string' && <Row label="stroke" value={data.stroke} swatch={data.stroke} />}
-      {data.strokeWidth !== undefined && <Row label="strokeW" value={String(data.strokeWidth)} />}
-      {data.text !== undefined && <Row label="text" value={`"${data.text}"`} />}
     </>
   );
 }
@@ -286,17 +345,6 @@ function ColorsPanel(): ReactElement {
   );
 }
 
-function Row({ label, value, swatch }: { label: string; value: string; swatch?: string }): ReactElement {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
-      <span style={{ opacity: 0.6 }}>{label}</span>
-      <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'monospace' }}>
-        {swatch && <span style={{ width: 10, height: 10, background: swatch, border: '1px solid rgba(255,255,255,0.15)' }} />}
-        {value}
-      </span>
-    </div>
-  );
-}
 
 interface ToolbarProps {
   scene: ReturnType<typeof useScene<SwillData, SwillLayer, SwillPose>>;
