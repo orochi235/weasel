@@ -663,6 +663,7 @@ function EditorWithSharedScene({
             backgroundFill={{ fill: 'solid', color: '#ffffff' }}
             toolBundle="exhaustive"
             viewport={{ pinchZoom: true }}
+            cursorCoordsHud
             onToolsCreated={setTools}
             layers={gridVisible ? {
               grid: {

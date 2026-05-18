@@ -26,6 +26,7 @@ import { useStandardActions } from 'interactions/actions/useStandardActions';
 import type { DrawCommand, ShaderProgramHandle } from '../renderer';
 import { textCommand } from 'features/text/textCommand';
 import { findShapePainter } from './shapePainters';
+import { CursorCoordsHud } from './CursorCoordsHud';
 import type { FillStyle } from 'core/paint-types';
 import type { RenderLayer } from 'core/layers/render';
 import { Canvas } from './Canvas';
@@ -476,6 +477,13 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * before `'scene'` — independent of pan / zoom.
      */
     backgroundFill?: FillStyle;
+    /**
+     * Dev HUD: when true, mounts a fixed-position widget in the top-left
+     * of the viewport showing live cursor coords in both viewport
+     * (client) and canvas (world) frames. Useful for diagnosing pointer-
+     * coord drift / pan-zoom misalignment without instrumenting events.
+     */
+    cursorCoordsHud?: boolean;
   };
 
 function SceneCanvasInner<TData, TLayer extends string, TPose>(
@@ -506,6 +514,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     children,
     shaders,
     backgroundFill,
+    cursorCoordsHud,
     ...rest
   } = props;
 
@@ -821,6 +830,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       <PointerProviderIfRoot>
         <ActionsProviderIfRoot>
           {canvas}
+          {cursorCoordsHud && (
+            <CursorCoordsHud canvasRef={internalCanvasRef} viewRef={currentViewRef} />
+          )}
           <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />
           <StandardActionsRegistrar
             selection={selection}
