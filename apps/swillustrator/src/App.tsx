@@ -44,6 +44,7 @@ import { ToolPalette } from '@orochi235/weasel-ui';
 
 import { ActionBar, type FlipAxis, type PaperSizeKey } from './ActionBar';
 import { ActiveSwatches, type ActivePaint } from './ActiveSwatches';
+import { PreferencesModal } from './PreferencesModal';
 import { ColorContextProvider } from './tools/colorContext/ColorContextProvider';
 import type { Obj } from './poseUpdate';
 import type { RecordingProfile } from './recorder';
@@ -95,13 +96,14 @@ interface ToolbarProps {
   snapToGrid: boolean;
   setSnapToGrid: (v: boolean) => void;
   setPaperSize: (k: PaperSizeKey) => void;
+  onOpenPrefs: () => void;
 }
 
 function Toolbar({
   scene, selection,
   gridVisible, setGridVisible,
   snapToGrid, setSnapToGrid,
-  setPaperSize,
+  setPaperSize, onOpenPrefs,
 }: ToolbarProps): ReactElement {
   const registry = useActionsRegistry();
   const trigger = useCallback((id: string) => {
@@ -208,7 +210,7 @@ function Toolbar({
         onToggleSnap={() => setSnapToGrid(!snapToGrid)}
         canReleaseCompound={false}
         onReleaseCompound={() => {/* v0: compound-path release deferred */}}
-        onOpenPrefs={() => {/* v0: prefs panel deferred */}}
+        onOpenPrefs={onOpenPrefs}
         recording={false}
         onToggleRecord={() => {/* v0: recording deferred */}}
         recordingProfile={'gesture-only' as RecordingProfile}
@@ -371,6 +373,7 @@ function EditorWithSharedScene({
   const [paperSize, setPaperSize] = useState<PaperSizeKey>('letter');
   const [gridVisible, setGridVisible] = useState(false);
   const [snapToGrid, setSnapToGrid] = useState(false);
+  const [prefsOpen, setPrefsOpen] = useState(false);
 
   const paper = PAPER_PRESETS[paperSize];
 
@@ -384,7 +387,9 @@ function EditorWithSharedScene({
         snapToGrid={snapToGrid}
         setSnapToGrid={setSnapToGrid}
         setPaperSize={setPaperSize}
+        onOpenPrefs={() => setPrefsOpen(true)}
       />
+      <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} />
       <div className="swill-body">
         {tools && (
           <div className="swill-sidebar left">
