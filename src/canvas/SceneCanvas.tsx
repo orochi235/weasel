@@ -656,11 +656,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   // Surface the resolved ToolsApi to the introspection callback (the
   // toolkit-builder dev surface uses this to walk `tools.registry` for
-  // its live route table). Fires whenever the `tools` identity changes,
-  // which is stable across most renders thanks to useTools' useMemo.
+  // its live route table). Fires once on mount via a ref to avoid an
+  // identity-churn loop with consumers that `setTools(api)` from inside
+  // `onToolsCreated`: the ToolsApi reads state through refs internally,
+  // so a single mount-time snapshot is sufficient.
   const onToolsCreatedRef = useRef(onToolsCreated);
   onToolsCreatedRef.current = onToolsCreated;
-  useEffect(() => { onToolsCreatedRef.current?.(tools); }, [tools]);
+  const toolsForCallbackRef = useRef(tools);
+  toolsForCallbackRef.current = tools;
+  useEffect(() => { onToolsCreatedRef.current?.(toolsForCallbackRef.current); }, []);
 
   // (Legacy `gestures` prop removed alongside the consumer-facing action
   // hooks; undo/redo and friends now register via the Actions Registry.)
