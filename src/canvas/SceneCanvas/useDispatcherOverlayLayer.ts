@@ -15,7 +15,7 @@
  * then both run side-by-side; the visuals overlap exactly so the
  * user-visible result is identical.
  */
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useReducer, useRef } from 'react';
 import type { DrawCommand, PathDrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { viewToTransform } from 'core/viewport/view';
@@ -50,6 +50,14 @@ export function useDispatcherOverlayLayer(args: {
   dispatcherRef.current = dispatcher;
   const styleRef = useRef(style);
   styleRef.current = style;
+
+  // Re-render on every dispatcher pump so live overlay (marquee, lasso
+  // polyline) tracks pointermove instead of freezing on the first frame.
+  const [, forceRerender] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => {
+    if (!dispatcher) return;
+    return dispatcher.subscribe(forceRerender);
+  }, [dispatcher]);
 
   return useMemo<RenderLayer<unknown>>(
     () => ({

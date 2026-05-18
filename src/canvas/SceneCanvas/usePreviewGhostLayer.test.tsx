@@ -59,6 +59,7 @@ function makeDispatcher(handles: OngoingHandle[]): Dispatcher {
     cancelAll: () => {},
     inFlight: () => map,
     getInFlightHandles: () => map.values(),
+    subscribe: () => () => {},
   };
 }
 

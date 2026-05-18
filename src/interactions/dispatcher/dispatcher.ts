@@ -130,6 +130,16 @@ export interface Dispatcher {
    * external consumers must not mutate the in-flight map.
    */
   getInFlightHandles(): Iterable<OngoingHandle>;
+
+  /**
+   * Subscribe to in-flight state changes. The callback fires after every
+   * mutation that affects what the preview-ghost / dispatcher-overlay
+   * layers read — handle start, every `onMove` pump, end, cancel,
+   * cancel-all. Consumers re-read `getInFlightHandles()` and re-render.
+   *
+   * Returns an unsubscribe function.
+   */
+  subscribe(fn: () => void): () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -149,6 +159,13 @@ export function createDispatcher(): Dispatcher {
    * `pointermove` pump events.
    */
   const dragOrigins = new Map<string, { x: number; y: number }>();
+
+  /** Subscribers fired after every state mutation. Layers that read from
+   *  `getInFlightHandles()` use this to know when to re-render. */
+  const subscribers = new Set<() => void>();
+  function notify(): void {
+    for (const fn of subscribers) fn();
+  }
 
   /**
    * Per-gesture pointermove history (world-space points), keyed by gestureId.
@@ -547,5 +564,29 @@ export function createDispatcher(): Dispatcher {
     return inFlightHandles.values();
   }
 
-  return { handleInput, cancelAll, inFlight, getInFlightHandles };
+  function subscribe(fn: () => void): () => void {
+    subscribers.add(fn);
+    return () => { subscribers.delete(fn); };
+  }
+
+  // Wrap handleInput + cancelAll to notify after every invocation. Done at
+  // the boundary (not inside the match loop) so any mutation — start, pump,
+  // end, no-op — fires exactly one notify per pump tick.
+  const handleInputWithNotify: typeof handleInput = (event, ctx) => {
+    const out = handleInput(event, ctx);
+    notify();
+    return out;
+  };
+  const cancelAllWithNotify: typeof cancelAll = (reason) => {
+    cancelAll(reason);
+    notify();
+  };
+
+  return {
+    handleInput: handleInputWithNotify,
+    cancelAll: cancelAllWithNotify,
+    inFlight,
+    getInFlightHandles,
+    subscribe,
+  };
 }

@@ -8,7 +8,7 @@
  * This replaces the per-tool `drawGhost` fold-in — a single SceneCanvas
  * concern instead of every consumer wiring it.
  */
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useReducer, useRef } from 'react';
 import { viewToMat3, type DrawCommand, type GroupDrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import type { LayersMap } from '../Canvas';
@@ -51,6 +51,16 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
   sceneSlotRef.current = sceneSlot;
   const dispatcherRef = useRef(dispatcher);
   dispatcherRef.current = dispatcher;
+
+  // Subscribe to dispatcher state changes so the canvas re-renders on every
+  // ongoing-action pump (preview poses mutate silently inside handles
+  // otherwise — single-frame ghost stuck on the start pose).
+  const [, forceRerender] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => {
+    if (!dispatcher) return;
+    const unsub = dispatcher.subscribe(forceRerender);
+    return unsub;
+  }, [dispatcher]);
 
   return useMemo<RenderLayer<unknown>>(() => ({
     id: 'preview-ghost',
