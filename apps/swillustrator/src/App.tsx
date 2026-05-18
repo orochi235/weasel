@@ -114,16 +114,51 @@ function RightSidebar({ scene, selection }: RightSidebarProps): ReactElement {
     },
   });
 
-  const selectedCount = selection.current.length;
+  const selectedIds = selection.current;
+  const selectedCount = selectedIds.length;
+  const firstSelected = selectedCount > 0 ? scene.get(asNodeId(selectedIds[0])) : null;
+
   return (
     <>
       <LayerList {...layerListProps} empty={<em style={{ opacity: 0.6 }}>No nodes</em>} />
       <PropertiesPanel title="Properties">
-        <div style={{ padding: 8, fontSize: 12, opacity: 0.7 }}>
-          {selectedCount === 0 ? 'No selection' : `${selectedCount} selected`}
+        <div style={{ padding: 8, fontSize: 12, lineHeight: 1.6 }}>
+          {selectedCount === 0 && <em style={{ opacity: 0.6 }}>No selection</em>}
+          {selectedCount > 1 && <em style={{ opacity: 0.6 }}>{selectedCount} selected</em>}
+          {selectedCount === 1 && firstSelected && (
+            <PropRows pose={firstSelected.pose as SwillPose} data={firstSelected.data as SwillData} />
+          )}
         </div>
       </PropertiesPanel>
     </>
+  );
+}
+
+function PropRows({ pose, data }: { pose: SwillPose; data: SwillData }): ReactElement {
+  return (
+    <>
+      <Row label="x" value={pose.x.toFixed(1)} />
+      <Row label="y" value={pose.y.toFixed(1)} />
+      <Row label="w" value={pose.width.toFixed(1)} />
+      <Row label="h" value={pose.height.toFixed(1)} />
+      {pose.rotation !== undefined && <Row label="rot°" value={((pose.rotation * 180) / Math.PI).toFixed(1)} />}
+      {typeof data.fill === 'string' && <Row label="fill" value={data.fill} swatch={data.fill} />}
+      {typeof data.stroke === 'string' && <Row label="stroke" value={data.stroke} swatch={data.stroke} />}
+      {data.strokeWidth !== undefined && <Row label="strokeW" value={String(data.strokeWidth)} />}
+      {data.text !== undefined && <Row label="text" value={`"${data.text}"`} />}
+    </>
+  );
+}
+
+function Row({ label, value, swatch }: { label: string; value: string; swatch?: string }): ReactElement {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
+      <span style={{ opacity: 0.6 }}>{label}</span>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'monospace' }}>
+        {swatch && <span style={{ width: 10, height: 10, background: swatch, border: '1px solid rgba(255,255,255,0.15)' }} />}
+        {value}
+      </span>
+    </div>
   );
 }
 
