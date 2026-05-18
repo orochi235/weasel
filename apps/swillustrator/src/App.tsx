@@ -61,6 +61,8 @@ import { DispatchTracePanel } from './dev/DispatchTracePanel';
 import { useColorContext } from './tools/colorContext';
 import { useSceneAdapter } from '@orochi235/weasel';
 import type { Obj } from './poseUpdate';
+import { parseSvg } from '@orochi235/weasel-svg';
+import { pickSvgFile, svgNodesToObjsWithGroups, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
 import type { RecordingProfile } from './recorder';
 
 import './swillustrator.css';
@@ -223,6 +225,9 @@ function RightSidebar({ scene, selection }: RightSidebarProps): ReactElement {
   const selectedCount = selectedIds.length;
   const firstSelected = selectedCount > 0 ? scene.get(asNodeId(selectedIds[0])) : null;
 
+  const [layersCollapsed, setLayersCollapsed] = usePersistedFlag('swill:panel:layers:collapsed', false);
+  const [historyCollapsed, setHistoryCollapsed] = usePersistedFlag('swill:panel:history:collapsed', false);
+
   const patchSelection = useCallback(
     (patch: Partial<SwillData>) => {
       const ids = selection.current;
@@ -301,20 +306,58 @@ function RightSidebar({ scene, selection }: RightSidebarProps): ReactElement {
         )}
       </PropertiesPanel>
       <ColorsPanel />
-      <SidebarPanel title="Layers">
-        <LayerList {...layerListProps} empty={<em style={{ opacity: 0.6 }}>No nodes</em>} />
+      <SidebarPanel
+        title="Layers"
+        collapsed={layersCollapsed}
+        onToggleCollapse={() => setLayersCollapsed((c) => !c)}
+      >
+        <LayerList
+          {...layerListProps}
+          className="swill-layerlist-fill"
+          empty={<em style={{ opacity: 0.6 }}>No nodes</em>}
+        />
       </SidebarPanel>
-      <HistoryList
-        items={[
-          { id: '__initial__', label: 'Initial' },
-          ...scene.historyEntries().map((e) => ({ id: e.id, label: e.label })),
-        ]}
-        currentIndex={scene.historyIndex()}
-        onJump={(index) => scene.jumpToHistoryIndex(index)}
-      />
+      <SidebarPanel
+        title="History"
+        collapsed={historyCollapsed}
+        onToggleCollapse={() => setHistoryCollapsed((c) => !c)}
+      >
+        <HistoryList
+          items={[
+            { id: '__initial__', label: 'Initial' },
+            ...scene.historyEntries().map((e) => ({ id: e.id, label: e.label })),
+          ]}
+          currentIndex={scene.historyIndex()}
+          onJump={(index) => scene.jumpToHistoryIndex(index)}
+        />
+      </SidebarPanel>
       <DispatchTracePanel />
     </>
   );
+}
+
+/** localStorage-backed boolean state. Reads on mount, writes on every set.
+ *  Best-effort — storage errors silently fall back to in-memory state. */
+function usePersistedFlag(key: string, initial: boolean): [boolean, (next: boolean | ((prev: boolean) => boolean)) => void] {
+  const [value, setValue] = useState<boolean>(() => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw === '1') return true;
+      if (raw === '0') return false;
+    } catch { /* ignore */ }
+    return initial;
+  });
+  const set = useCallback(
+    (next: boolean | ((prev: boolean) => boolean)) => {
+      setValue((prev) => {
+        const resolved = typeof next === 'function' ? next(prev) : next;
+        try { localStorage.setItem(key, resolved ? '1' : '0'); } catch { /* ignore */ }
+        return resolved;
+      });
+    },
+    [key],
+  );
+  return [value, set];
 }
 
 function ColorsPanel(): ReactElement {
@@ -454,7 +497,38 @@ function Toolbar({
         onDistribute={(axis: DistributeAxis) => trigger(`distribute.${axis}`)}
         onFlip={(_axis: FlipAxis) => trigger('flip')}
         onSaveSvg={() => {/* v0: SVG export deferred (TODO.md) */}}
-        onOpenSvg={() => {/* v0: SVG import deferred (TODO.md) */}}
+        onOpenSvg={() => {
+          // Pop the file picker, parse the chosen SVG, lower its nodes back
+          // into the scene-graph as leaves. Groups recognized by the parser
+          // are flattened for v1 — restoring nested group structure needs
+          // scene.add({ kind: 'group', ... }) support and is deferred.
+          void (async () => {
+            const text = await pickSvgFile();
+            if (text === null) return;
+            const parsed = parseSvg(text, { namespaces: SWILL_NAMESPACES });
+            for (const w of parsed.warnings) console.warn('[svg import]', w);
+            const docPatch = parsedToDoc(parsed);
+            if (docPatch.paperSize) setPaperSize(docPatch.paperSize);
+            let seq = 0;
+            const { items, groups } = svgNodesToObjsWithGroups(parsed.nodes, () => `svg-${++seq}`);
+            if (groups.length > 0) {
+              console.warn(`[svg import] ${groups.length} group(s) flattened — nested groups not yet rehydrated into the scene-graph`);
+            }
+            scene.batch('Import SVG', () => {
+              for (const o of items) {
+                const pose: SwillPose = { x: o.x, y: o.y, width: o.width, height: o.height };
+                if (o.rotation) pose.rotation = o.rotation;
+                const textFill = o.tool === 'text' && o.style?.fill && (o.style.fill.fill === 'solid' || o.style.fill.fill === undefined)
+                  ? o.style.fill.color
+                  : undefined;
+                const data: SwillData = o.tool === 'text'
+                  ? { text: o.text, fill: textFill ?? '#000000' }
+                  : { path: o.path, fill: o.fill, stroke: o.stroke, strokeWidth: o.strokeWidth };
+                scene.add({ kind: 'leaf', layer: 'default', pose, data });
+              }
+            });
+          })();
+        }}
         onNew={(size) => {
           setPaperSize(size);
           // Wipe everything — `scene.batch` keeps it undoable.

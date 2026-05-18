@@ -244,6 +244,13 @@ html, body, #root {
   flex-shrink: 0;
 }
 
+/* Pull LayerList rows out to the panel edges by absorbing the parent
+   SidebarPanel's 8px body padding via negative margin. */
+.swill-layerlist-fill {
+  margin-left: -8px;
+  margin-right: -8px;
+}
+
 .swill-sidebar.left {
   /* Wider than the bare 88px default so the tool palette and the
      ActiveSwatches widget (56px square) both breathe. */
