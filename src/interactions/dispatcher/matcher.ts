@@ -112,6 +112,14 @@ export type InputEvent =
        * on move-pump events alongside `centroid`. Absent on initial event.
        */
       spread?: number;
+    }
+  | {
+      kind: 'multitouchtap';
+      fingers: number;
+      altKey: boolean;
+      ctrlKey: boolean;
+      metaKey: boolean;
+      shiftKey: boolean;
     };
 
 // ---------------------------------------------------------------------------
@@ -344,6 +352,12 @@ export function matchSpec(
 
     case 'multiTouch': {
       if (e.kind !== 'multitouch') return false;
+      if (e.fingers !== spec.fingers) return false;
+      return matchModifiers(e, spec.mods, isMac);
+    }
+
+    case 'multiTouchTap': {
+      if (e.kind !== 'multitouchtap') return false;
       if (e.fingers !== spec.fingers) return false;
       return matchModifiers(e, spec.mods, isMac);
     }

@@ -106,6 +106,15 @@ export interface MultiTouchSpec {
   mods?: ModSpec;
 }
 
+/** Multi-touch tap gesture — fires when N fingers touch down then release
+ *  together without movement past the tap threshold. Synthesized by the
+ *  dispatcher from the underlying multitouch tracking. */
+export interface MultiTouchTapSpec {
+  kind: 'multiTouchTap';
+  fingers: number;
+  mods?: ModSpec;
+}
+
 /** The full union of supported gesture spec kinds. New invocation forms
  *  (long-press, two-stage, modal-dialog) extend this union without touching
  *  the `Action` type. */
@@ -116,4 +125,5 @@ export type GestureSpec =
   | ClickSpec
   | ContextMenuSpec
   | DragSpec
-  | MultiTouchSpec;
+  | MultiTouchSpec
+  | MultiTouchTapSpec;

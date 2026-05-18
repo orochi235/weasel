@@ -324,3 +324,27 @@ describe('matchSpec — contextMenu', () => {
     expect(matchSpec(shifted, spec, false)).toBe(true);
   });
 });
+
+describe('matchSpec — multiTouchTap', () => {
+  const noMods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
+
+  it('matches a multitouchtap with the right fingers count', () => {
+    const spec = { kind: 'multiTouchTap' as const, fingers: 2 };
+    const e = { kind: 'multitouchtap' as const, fingers: 2, ...noMods };
+    expect(matchSpec(e, spec, false)).toBe(true);
+  });
+
+  it('rejects wrong fingers count', () => {
+    const spec = { kind: 'multiTouchTap' as const, fingers: 3 };
+    const e = { kind: 'multitouchtap' as const, fingers: 2, ...noMods };
+    expect(matchSpec(e, spec, false)).toBe(false);
+  });
+
+  it('respects modifiers', () => {
+    const spec = { kind: 'multiTouchTap' as const, fingers: 2, mods: { shift: true } };
+    const plain = { kind: 'multitouchtap' as const, fingers: 2, ...noMods };
+    const shifted = { ...plain, shiftKey: true };
+    expect(matchSpec(plain,   spec, false)).toBe(false);
+    expect(matchSpec(shifted, spec, false)).toBe(true);
+  });
+});

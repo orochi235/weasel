@@ -249,6 +249,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // Used to compute centroid + spread for pinch-zoom pump events.
     const pointerPositions = new Map<number, { x: number; y: number }>();
 
+    // Tracks the start state of an active multitouch episode so we can
+    // synthesize a `multitouchtap` event on release when the centroid hasn't
+    // moved past the tap threshold. `fingers` records the peak count.
+    let multiTouchStart: { fingers: number; centroid: { x: number; y: number } } | null = null;
+    const TAP_THRESHOLD_PX = 8;
+
     // Tracks the last pointerdown info for click synthesis:
     // a pointerup with no in-flight drag handle is promoted to a click event.
     // `bodyTarget` from the pointerdown is carried forward so click specs that
@@ -385,6 +391,14 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // Synthesize a multi-touch event when >= 2 pointers are active.
       if (activePointers.size >= 2) {
         const { centroid, spread } = computeMultiTouchGeometry(pointerPositions);
+        // Capture start state for tap synthesis. On the first 1→2 transition
+        // we record the centroid; subsequent pointerdowns at higher finger
+        // counts only bump the recorded peak fingers count.
+        if (!multiTouchStart) {
+          multiTouchStart = { fingers: activePointers.size, centroid: { ...centroid } };
+        } else {
+          multiTouchStart.fingers = activePointers.size;
+        }
         const mt: InputEvent = {
           kind: 'multitouch',
           fingers: activePointers.size,
@@ -443,7 +457,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       activePointers.delete(e.pointerId);
       pointerPositions.delete(e.pointerId);
 
-      // When pointer count drops below 2, commit any in-flight multitouch handle.
+      // When pointer count drops below 2, commit any in-flight multitouch handle
+      // and (if the centroid never moved past the tap threshold) synthesize a
+      // `multitouchtap` event carrying the peak fingers count.
       // The gestureId is keyed by the PREVIOUS size (before this pointer was removed)
       // because that was the handle's finger count when it was opened.
       if (prevSize >= 2 && activePointers.size < 2) {
@@ -455,6 +471,29 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           // of this gesture; only the multitouch handle should be active.
           // Use 'commit' because this is a natural lift (not a cancel).
           dispatcher.cancelAll('commit');
+        }
+        // Synthesize a tap if the centroid hasn't moved past threshold.
+        const start = multiTouchStart;
+        if (start) {
+          // Final centroid uses the pointer positions BEFORE this pointer was
+          // removed — we already deleted it above, so reconstruct it.
+          const finalPositions = new Map(pointerPositions);
+          finalPositions.set(e.pointerId, { x: e.clientX, y: e.clientY });
+          const { centroid } = computeMultiTouchGeometry(finalPositions);
+          const dx = centroid.x - start.centroid.x;
+          const dy = centroid.y - start.centroid.y;
+          if (Math.hypot(dx, dy) <= TAP_THRESHOLD_PX) {
+            const tap: InputEvent = {
+              kind: 'multitouchtap',
+              fingers: start.fingers,
+              altKey: e.altKey,
+              ctrlKey: e.ctrlKey,
+              metaKey: e.metaKey,
+              shiftKey: e.shiftKey,
+            };
+            dispatch(tap);
+          }
+          multiTouchStart = null;
         }
       }
 
@@ -508,6 +547,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       activePointers.delete(e.pointerId);
       pointerPositions.delete(e.pointerId);
       lastPointerDown.delete(e.pointerId);
+      // Drop any pending multitouch-tap start state — a cancel means we should
+      // not synthesize a tap on the subsequent up.
+      multiTouchStart = null;
       const ev: InputEvent = {
         kind: 'pointercancel',
         altKey: e.altKey,
