@@ -96,6 +96,42 @@ interface BridgeAdapter {
  *  via `selectTool.handleHitRadius` or `layers.selectionOverlay.handles.size`. */
 export const DEFAULT_HANDLE_SIZE = 8;
 
+// ---------------------------------------------------------------------------
+// Dev-only coord trace
+// ---------------------------------------------------------------------------
+
+/** Records every `clientToWorld` call so dev tools (and agents) can
+ *  reconcile cursor coords with computed world coords. Mirrors the
+ *  dispatcher's trace log. Exposed on `window.__weaselCoordLog__`. */
+export interface CoordTraceEntry {
+  ts: number;
+  clientX: number;
+  clientY: number;
+  rect: { left: number; top: number; width: number; height: number } | null;
+  view: { x: number; y: number; scaleX: number; scaleY: number } | null;
+  world: { x: number; y: number };
+  /** True when canvas/view weren't available and we returned identity. */
+  fallback: boolean;
+}
+
+const COORD_TRACE_LIMIT = 200;
+const coordTrace: CoordTraceEntry[] = [];
+const COORD_DEV: boolean = (() => {
+  try {
+    return Boolean((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV);
+  } catch {
+    return false;
+  }
+})();
+if (COORD_DEV && typeof window !== 'undefined') {
+  (window as unknown as { __weaselCoordLog__: CoordTraceEntry[] }).__weaselCoordLog__ = coordTrace;
+}
+function recordCoordTrace(entry: CoordTraceEntry): void {
+  if (!COORD_DEV) return;
+  coordTrace.push(entry);
+  if (coordTrace.length > COORD_TRACE_LIMIT) coordTrace.shift();
+}
+
 /** Default scene-slot `drawOne` — dispatches through the shape-painter
  *  registry (`./shapePainters`). The kit registers built-in painters for
  *  text (`kit:text`), paths (`kit:path`), and a rect-from-pose fallback
@@ -942,12 +978,22 @@ function GestureDispatcherMounter({
   const clientToWorld = useCallback((clientX: number, clientY: number): { x: number; y: number } => {
     const canvas = canvasRef.current;
     const view = viewRef?.current;
-    if (!canvas || !view) return { x: clientX, y: clientY };
+    if (!canvas || !view) {
+      recordCoordTrace({ ts: Date.now(), clientX, clientY, rect: null, view: null, world: { x: clientX, y: clientY }, fallback: true });
+      return { x: clientX, y: clientY };
+    }
     const rect = canvas.getBoundingClientRect();
-    return {
+    const world = {
       x: (clientX - rect.left) / view.scale.x + view.x,
       y: (clientY - rect.top) / view.scale.y + view.y,
     };
+    recordCoordTrace({
+      ts: Date.now(), clientX, clientY,
+      rect: { left: rect.left, top: rect.top, width: rect.width, height: rect.height },
+      view: { x: view.x, y: view.y, scaleX: view.scale.x, scaleY: view.scale.y },
+      world, fallback: false,
+    });
+    return world;
   }, [canvasRef, viewRef]);
 
   const wrappedAffordanceAt = useMemo(() => {
