@@ -48,9 +48,10 @@ import { PreferencesModal } from './PreferencesModal';
 import { ColorContextProvider } from './tools/colorContext/ColorContextProvider';
 import { LayerList } from './ui/LayerList';
 import { useLayerList } from './ui/LayerList/useLayerList';
-import { PropertiesPanel } from './ui/PropertiesPanel';
+import { PropertiesPanel, PropertySwatchGrid } from './ui/PropertiesPanel';
 import { HistoryList } from './ui/HistoryList';
 import { DispatchTracePanel } from './dev/DispatchTracePanel';
+import { useColorContext } from './tools/colorContext';
 import { useSceneAdapter } from '@orochi235/weasel';
 import type { Obj } from './poseUpdate';
 import type { RecordingProfile } from './recorder';
@@ -92,6 +93,101 @@ const PAPER_PRESETS: Record<PaperSizeKey, { width: number; height: number }> = {
 
 const LS_KEY = 'swillustrator:scene-v1';
 
+// 99-color palette: 9 neutrals (row 1, alongside the leading transparent
+// swatch) + 9 hue ramps × 10 shades. Renders 10 per row in the Colors
+// panel; total 100 cells including transparent.
+const PALETTE: { value: string; label: string }[] = [
+  { value: '#ffffffff', label: 'White' },
+  { value: '#e5e5e5ff', label: 'Gray 200' },
+  { value: '#d4d4d4ff', label: 'Gray 300' },
+  { value: '#a3a3a3ff', label: 'Gray 400' },
+  { value: '#737373ff', label: 'Gray 500' },
+  { value: '#525252ff', label: 'Gray 600' },
+  { value: '#404040ff', label: 'Gray 700' },
+  { value: '#262626ff', label: 'Gray 800' },
+  { value: '#000000ff', label: 'Black' },
+  { value: '#fef2f2ff', label: 'Red 50' },
+  { value: '#fee2e2ff', label: 'Red 100' },
+  { value: '#fecacaff', label: 'Red 200' },
+  { value: '#fca5a5ff', label: 'Red 300' },
+  { value: '#f87171ff', label: 'Red 400' },
+  { value: '#ef4444ff', label: 'Red 500' },
+  { value: '#dc2626ff', label: 'Red 600' },
+  { value: '#b91c1cff', label: 'Red 700' },
+  { value: '#991b1bff', label: 'Red 800' },
+  { value: '#7f1d1dff', label: 'Red 900' },
+  { value: '#fff7edff', label: 'Orange 50' },
+  { value: '#ffedd5ff', label: 'Orange 100' },
+  { value: '#fed7aaff', label: 'Orange 200' },
+  { value: '#fdba74ff', label: 'Orange 300' },
+  { value: '#fb923cff', label: 'Orange 400' },
+  { value: '#f97316ff', label: 'Orange 500' },
+  { value: '#ea580cff', label: 'Orange 600' },
+  { value: '#c2410cff', label: 'Orange 700' },
+  { value: '#9a3412ff', label: 'Orange 800' },
+  { value: '#7c2d12ff', label: 'Orange 900' },
+  { value: '#fefce8ff', label: 'Yellow 50' },
+  { value: '#fef9c3ff', label: 'Yellow 100' },
+  { value: '#fef08aff', label: 'Yellow 200' },
+  { value: '#fde047ff', label: 'Yellow 300' },
+  { value: '#facc15ff', label: 'Yellow 400' },
+  { value: '#eab308ff', label: 'Yellow 500' },
+  { value: '#ca8a04ff', label: 'Yellow 600' },
+  { value: '#a16207ff', label: 'Yellow 700' },
+  { value: '#854d0eff', label: 'Yellow 800' },
+  { value: '#713f12ff', label: 'Yellow 900' },
+  { value: '#f0fdf4ff', label: 'Green 50' },
+  { value: '#dcfce7ff', label: 'Green 100' },
+  { value: '#bbf7d0ff', label: 'Green 200' },
+  { value: '#86efacff', label: 'Green 300' },
+  { value: '#4ade80ff', label: 'Green 400' },
+  { value: '#22c55eff', label: 'Green 500' },
+  { value: '#16a34aff', label: 'Green 600' },
+  { value: '#15803dff', label: 'Green 700' },
+  { value: '#166534ff', label: 'Green 800' },
+  { value: '#14532dff', label: 'Green 900' },
+  { value: '#ecfeffff', label: 'Cyan 50' },
+  { value: '#cffafeff', label: 'Cyan 100' },
+  { value: '#a5f3fcff', label: 'Cyan 200' },
+  { value: '#67e8f9ff', label: 'Cyan 300' },
+  { value: '#22d3eeff', label: 'Cyan 400' },
+  { value: '#06b6d4ff', label: 'Cyan 500' },
+  { value: '#0891b2ff', label: 'Cyan 600' },
+  { value: '#0e7490ff', label: 'Cyan 700' },
+  { value: '#155e75ff', label: 'Cyan 800' },
+  { value: '#164e63ff', label: 'Cyan 900' },
+  { value: '#eff6ffff', label: 'Blue 50' },
+  { value: '#dbeafeff', label: 'Blue 100' },
+  { value: '#bfdbfeff', label: 'Blue 200' },
+  { value: '#93c5fdff', label: 'Blue 300' },
+  { value: '#60a5faff', label: 'Blue 400' },
+  { value: '#3b82f6ff', label: 'Blue 500' },
+  { value: '#2563ebff', label: 'Blue 600' },
+  { value: '#1d4ed8ff', label: 'Blue 700' },
+  { value: '#1e40afff', label: 'Blue 800' },
+  { value: '#1e3a8aff', label: 'Blue 900' },
+  { value: '#faf5ffff', label: 'Purple 50' },
+  { value: '#f3e8ffff', label: 'Purple 100' },
+  { value: '#e9d5ffff', label: 'Purple 200' },
+  { value: '#d8b4feff', label: 'Purple 300' },
+  { value: '#c084fcff', label: 'Purple 400' },
+  { value: '#a855f7ff', label: 'Purple 500' },
+  { value: '#9333eaff', label: 'Purple 600' },
+  { value: '#7e22ceff', label: 'Purple 700' },
+  { value: '#6b21a8ff', label: 'Purple 800' },
+  { value: '#581c87ff', label: 'Purple 900' },
+  { value: '#fdf2f8ff', label: 'Pink 50' },
+  { value: '#fce7f3ff', label: 'Pink 100' },
+  { value: '#fbcfe8ff', label: 'Pink 200' },
+  { value: '#f9a8d4ff', label: 'Pink 300' },
+  { value: '#f472b6ff', label: 'Pink 400' },
+  { value: '#ec4899ff', label: 'Pink 500' },
+  { value: '#db2777ff', label: 'Pink 600' },
+  { value: '#be185dff', label: 'Pink 700' },
+  { value: '#9d174dff', label: 'Pink 800' },
+  { value: '#831843ff', label: 'Pink 900' },
+];
+
 // ─── Toolbar host: bridges the Actions Registry into ActionBar's flat-prop API ─
 
 // ─── Right sidebar: LayerList + PropertiesPanel ─────────────────────────────
@@ -122,7 +218,6 @@ function RightSidebar({ scene, selection }: RightSidebarProps): ReactElement {
 
   return (
     <>
-      <LayerList {...layerListProps} empty={<em style={{ opacity: 0.6 }}>No nodes</em>} />
       <PropertiesPanel title="Properties">
         <div style={{ padding: 8, fontSize: 12, lineHeight: 1.6 }}>
           {selectedCount === 0 && <em style={{ opacity: 0.6 }}>No selection</em>}
@@ -132,6 +227,8 @@ function RightSidebar({ scene, selection }: RightSidebarProps): ReactElement {
           )}
         </div>
       </PropertiesPanel>
+      <ColorsPanel />
+      <LayerList {...layerListProps} empty={<em style={{ opacity: 0.6 }}>No nodes</em>} />
       <HistoryList
         items={[
           { id: '__initial__', label: 'Initial' },
@@ -158,6 +255,34 @@ function PropRows({ pose, data }: { pose: SwillPose; data: SwillData }): ReactEl
       {data.strokeWidth !== undefined && <Row label="strokeW" value={String(data.strokeWidth)} />}
       {data.text !== undefined && <Row label="text" value={`"${data.text}"`} />}
     </>
+  );
+}
+
+function ColorsPanel(): ReactElement {
+  const colors = useColorContext();
+  const current = colors.focused === 'stroke'
+    ? (colors.stroke.kind === 'solid' ? colors.stroke.color : '')
+    : (colors.fill.kind === 'solid' ? colors.fill.color : '');
+  return (
+    <PropertiesPanel title="Colors">
+      <PropertySwatchGrid
+        value={current}
+        options={PALETTE}
+        columns={10}
+        onChange={(v) => {
+          if (colors.focused === 'stroke') colors.setStroke({ kind: 'solid', color: v });
+          else colors.setFill({ kind: 'solid', color: v });
+        }}
+        leading={{
+          active: (colors.focused === 'stroke' ? colors.stroke : colors.fill).kind === 'none',
+          title: 'None',
+          onClick: () => {
+            if (colors.focused === 'stroke') colors.setStroke({ kind: 'none' });
+            else colors.setFill({ kind: 'none' });
+          },
+        }}
+      />
+    </PropertiesPanel>
   );
 }
 
