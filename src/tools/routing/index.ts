@@ -10,6 +10,8 @@ export type {
   ViewportToolDef, ViewportPhaseDef,
 } from './types';
 export { resolveRoute } from './lookup';
+export { parseRoute, formatRoute } from './routeGrammar';
+export type { ParsedRoute } from './routeGrammar';
 export { defineTool } from './defineTool';
 export { defineViewportTool } from './defineViewportTool';
 export { forwardActionTo } from './forwardAction';

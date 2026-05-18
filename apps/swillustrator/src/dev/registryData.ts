@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import * as Weasel from '@orochi235/weasel';
+import { parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@orochi235/weasel/routing';
 import * as ActionIcons from '../actionIcons';
 import * as KindIcons from '../kindIcons';
 
@@ -433,31 +434,19 @@ export function collectSlots(): readonly SlotEntry[] {
   return TOOL_SLOTS.map((id) => ({ kind: 'slot', id, label: id }));
 }
 
-/** A parsed route signature. Reverses the `${phase}.${gesture}.${target}[:mods]`
- *  encoding the probe emits, so the inspector can re-group routes along the
- *  target / modifier-set axes without re-walking ToolDefs. */
-export interface ParsedRoute {
-  phase: string;
-  gesture: string;
-  target: string;
-  modifiers: string;
-}
-
-export function parseRoute(route: string): ParsedRoute {
-  const [body, mods] = route.split(':');
-  const dot1 = body.indexOf('.');
-  const dot2 = body.indexOf('.', dot1 + 1);
-  return {
-    phase: body.slice(0, dot1),
-    gesture: body.slice(dot1 + 1, dot2),
-    target: body.slice(dot2 + 1),
-    modifiers: mods ?? 'default',
-  };
-}
+/** Re-exported from the kit's v2 route grammar.
+ *  See `src/tools/routing/routeGrammar.ts`. */
+export type ParsedRoute = KitParsedRoute;
+export const parseRoute = kitParseRoute;
 
 export function collectRouteTargets(tools: readonly ToolEntry[]): readonly RouteTargetEntry[] {
   const seen = new Set<string>();
-  for (const t of tools) for (const r of t.routes) seen.add(parseRoute(r).target);
+  for (const t of tools) {
+    for (const r of t.routes) {
+      const target = parseRoute(r).target;
+      if (target !== undefined) seen.add(target);
+    }
+  }
   return [...seen].sort().map((id) => ({ kind: 'routeTarget', id, label: id }));
 }
 
