@@ -43,7 +43,6 @@
  */
 
 import type { Action } from '../registry';
-import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -199,14 +198,20 @@ export const moveAction: Action & { requires: string[] } = {
     },
   },
   /**
-   * `enabled` is a zero-arg thunk (see `Action.enabled` JSDoc). It cannot
-   * access live deps — the predicate is evaluated by the command palette on
-   * open, not by the dispatcher at invocation time. Return a static
-   * `SelectionRequired` placeholder; the invoker's `start` self-guards by
-   * returning `{}` when selection is empty.
+   * Always enabled at the descriptor level. The dispatcher's
+   * specificity-fallthrough loop (`dispatcher.ts`) treats anything
+   * `!== true` from `enabled()` as "this match is disabled — fall through
+   * to the next-best one." Returning `ActionDisabledReason.SelectionRequired`
+   * here caused every drag-on-selected-body to silently lose to lower
+   * specificity ambient bindings (notably `insertAction`'s bare drag),
+   * inserting phantom rects on every move attempt. The invoker self-guards
+   * on empty selection by returning `{}`, so a static `true` is correct
+   * for the dispatcher gate; the command-palette enabled signal will need
+   * a deps-aware predicate when that surface is wired up.
    *
-   * Phase 7 TODO: extend `Action.enabled` to accept a deps snapshot so
-   * ongoing descriptors can report live enabled state.
+   * Phase 7 TODO (still standing): extend `Action.enabled` to accept a
+   * deps snapshot so command-palette enabled state can be selection-aware
+   * without breaking dispatcher routing.
    */
-  enabled: () => ActionDisabledReason.SelectionRequired,
+  enabled: () => true,
 };

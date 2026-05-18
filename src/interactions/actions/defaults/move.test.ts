@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { moveAction } from './move';
-import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx } from '../invoker';
 import type { NodeId } from 'core/scene/types';
 
@@ -248,8 +247,12 @@ describe('moveAction descriptor', () => {
     expect(scene.batchLog).toHaveLength(0);
   });
 
-  it('enabled returns SelectionRequired', () => {
-    expect(moveAction.enabled!()).toBe(ActionDisabledReason.SelectionRequired);
+  it('enabled returns true (invoker self-guards on empty selection)', () => {
+    // The dispatcher's specificity-fallthrough loop treats anything `!== true`
+    // as "skip this match" — returning a disabled reason here would silently
+    // hand the move binding to lower-specificity ambient bindings (e.g.
+    // insertAction's bare drag). See move.ts `enabled` JSDoc.
+    expect(moveAction.enabled!()).toBe(true);
   });
 
   it('previewIds/previewPose expose in-flight buffered poses and clear on commit', () => {

@@ -36,7 +36,6 @@
  */
 
 import type { Action } from '../registry';
-import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -505,5 +504,17 @@ export const resizeAction: Action & { requires: string[] } = {
       };
     },
   },
-  enabled: () => ActionDisabledReason.SelectionRequired,
+  /**
+   * Always enabled at the descriptor level. The dispatcher's
+   * specificity-fallthrough loop treats anything `!== true` as "skip and
+   * try the next match" — returning `ActionDisabledReason.SelectionRequired`
+   * here makes the resize binding silently lose to lower-specificity
+   * matches (e.g. ambient `insertAction`), inserting phantom nodes on
+   * every drag instead of resizing. The invoker self-guards on empty
+   * selection (returns `{}`), so a static `true` here is correct.
+   *
+   * Phase 14e fix: previously `() => ActionDisabledReason.SelectionRequired`
+   * — that broke every dispatcher-routed resize. See git blame.
+   */
+  enabled: () => true,
 };
