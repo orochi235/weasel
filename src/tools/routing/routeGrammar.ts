@@ -18,7 +18,33 @@ import { getGestureDescriptor, isKnownGestureName, type GestureName } from './ge
 import type { ModifierKey } from './modifiers';
 import type { RoutePhase } from './reflection/route-resolved';
 
-export interface ParsedRoute {
+// ─── v3 grammar types ──────────────────────────────────────────────────────
+
+/** v3 modifier requirement on a single modifier key. Absent from a
+ *  `ParsedModifiers` map means "must not be held" (the strict default). */
+export type ModRequirement = 'required' | 'optional';
+
+/** Canonical modifier names accepted in the modSlot. */
+export type ModName = 'mod' | 'shift' | 'alt' | 'ctrl' | 'meta';
+
+/** Parsed-form modifiers — structured map; absent keys are implicitly
+ *  forbidden. Empty object = "no modifiers held". */
+export type ParsedModifiers = Partial<Record<ModName, ModRequirement>>;
+
+/** Reserved sigil characters. The parser rejects any of these with a
+ *  "reserved for future use" error so introducing them later is
+ *  non-breaking. `*` is NOT in this set — it's the universal wildcard. */
+export const RESERVED_SIGILS: ReadonlySet<string> = new Set(['!', '@', '#', '$', '%', '^', '&']);
+
+/** Active (parseable) sigils today: `+` required, `?` optional. */
+export const ACTIVE_SIGILS: ReadonlySet<string> = new Set(['+', '?']);
+
+export const VALID_MOD_NAMES: readonly ModName[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
+const MOD_NAME_SET = new Set<string>(VALID_MOD_NAMES);
+export { MOD_NAME_SET };
+
+/** @deprecated v2 shape — replaced by `ParsedRoute` (v3) in tasks A2/A3. */
+export interface ParsedRouteV2 {
   phase: RoutePhase;
   gesture: GestureName;
   /** Resolved arg value. For a gesture with a default arg, the default is
@@ -29,9 +55,27 @@ export interface ParsedRoute {
   modifiers: ModifierKey;
 }
 
+/** v3 parsed-route shape. */
+export interface ParsedRoute {
+  /** One or more phases. `['*']` is the wildcard sentinel for "any
+   *  phase". Empty array is invalid. */
+  phases: readonly RoutePhase[] | readonly ['*'];
+  gesture: GestureName;
+  /** Resolved arg. For arg-bearing gestures, the descriptor's default
+   *  fills in when the slot is omitted (e.g. `wheel` → `arg: '*'`).
+   *  Undefined for gestures whose descriptor has no `arg`. */
+  arg: string | undefined;
+  /** For hasTarget gestures: target string with `'*'` as the wildcard
+   *  sentinel. Defaults to `'*'` when the slot is omitted. Undefined for
+   *  hasTarget=false gestures. */
+  target: string | undefined;
+  /** Structured modifier requirements; empty map = "no modifiers held". */
+  modifiers: ParsedModifiers;
+}
+
 const ARG_RE = /^([^(]+)\(([^)]*)\)$/;
 
-export function parseRoute(route: string): ParsedRoute {
+export function parseRoute(route: string): ParsedRouteV2 {
   const [body, modsPart] = route.split(':') as [string, string | undefined];
   const segments = body.split('.');
   if (segments.length < 2) throw new Error(`invalid route (need phase.gesture): ${route}`);
@@ -66,7 +110,7 @@ export function parseRoute(route: string): ParsedRoute {
   return { phase, gesture: gestureName, arg, target, modifiers };
 }
 
-export function formatRoute(r: ParsedRoute): string {
+export function formatRoute(r: ParsedRouteV2): string {
   const desc = getGestureDescriptor(r.gesture);
   let out = `${r.phase}.${r.gesture}`;
   if (desc.arg && r.arg !== undefined && r.arg !== desc.arg.default) {
