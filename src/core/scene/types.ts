@@ -208,6 +208,16 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   canUndo(): boolean;
   canRedo(): boolean;
   batch<T>(label: string, fn: () => T): T;
+  /** Read-only snapshot of every history entry currently reachable from
+   *  the present state. Oldest applied first, then redoable entries in
+   *  the order they'd be re-applied. Each entry id is stable. */
+  historyEntries(): readonly { id: string; label: string }[];
+  /** Index of the "current state". Equals the count of applied entries;
+   *  `0` means "nothing applied" (initial). */
+  historyIndex(): number;
+  /** Jump to the given history index by calling undo/redo repeatedly.
+   *  Clamps to [0, total]. Returns true if any movement occurred. */
+  jumpToHistoryIndex(index: number): boolean;
 
   // Serialization
   /** Snapshot the current scene state to a JSON-serializable shape.

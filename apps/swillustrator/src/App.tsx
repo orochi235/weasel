@@ -133,13 +133,13 @@ function RightSidebar({ scene, selection }: RightSidebarProps): ReactElement {
           )}
         </div>
       </PropertiesPanel>
-      {/* History: scene doesn't expose a stack-items API, so this is a
-          placeholder until that lands. */}
       <HistoryList
-        items={[{ id: '__initial__', label: 'Initial' }]}
-        currentIndex={0}
-        onJump={() => {/* TODO: needs scene history items + jump API */}}
-        empty={<em style={{ opacity: 0.6 }}>(history list pending scene API)</em>}
+        items={[
+          { id: '__initial__', label: 'Initial' },
+          ...scene.historyEntries().map((e) => ({ id: e.id, label: e.label })),
+        ]}
+        currentIndex={scene.historyIndex()}
+        onJump={(index) => scene.jumpToHistoryIndex(index)}
       />
       <RegistryInspector />
       <DispatchTracePanel />

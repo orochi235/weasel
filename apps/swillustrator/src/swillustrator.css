@@ -244,6 +244,14 @@ html, body, #root {
   flex-shrink: 0;
 }
 
+.swill-sidebar.left {
+  /* Wider than the bare 88px default so the tool palette and the
+     ActiveSwatches widget (56px square) both breathe. */
+  width: 132px;
+  align-items: center;
+  overflow-y: auto;
+}
+
 .swill-tool-button {
   display: flex;
   flex-direction: column;

@@ -16,8 +16,14 @@ import {
 } from './types';
 
 interface LogEntry {
+  id: string;
   label: string;
   ops: { kind: string; payload: unknown }[];
+}
+
+let logEntryCounter = 0;
+function nextLogEntryId(): string {
+  return `h${++logEntryCounter}`;
 }
 
 interface SceneState<TData, TLayer extends string, TPose> {
@@ -352,7 +358,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
   function executeAndLog(kind: string, payload: unknown, label: string): void {
     runOp(kind, payload);
-    pushEntry({ label, ops: [{ kind, payload }] });
+    pushEntry({ id: nextLogEntryId(), label, ops: [{ kind, payload }] });
     notify();
   }
 
@@ -590,8 +596,46 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     canUndo: () => undoStack.length > 0,
     canRedo: () => redoStack.length > 0,
 
+    /** Read-only snapshot of every history entry currently reachable from
+     *  the present state. Order: oldest applied first, then redoable
+     *  entries in the order they'd be re-applied (top of redo stack last).
+     *  Each entry's `id` is stable for the entry's lifetime. */
+    historyEntries() {
+      const out: { id: string; label: string }[] = [];
+      for (const e of undoStack) out.push({ id: e.id, label: e.label });
+      // redoStack is stored newest-first (push on undo); reverse so the
+      // list reads oldest-first (next-redo is just past currentIndex).
+      for (let i = redoStack.length - 1; i >= 0; i--) {
+        const e = redoStack[i];
+        out.push({ id: e.id, label: e.label });
+      }
+      return out;
+    },
+
+    /** Index of the "current state". `0` = nothing applied (initial);
+     *  `undoStack.length` = at the head of history. Equals the count of
+     *  entries currently on the undo stack. */
+    historyIndex: () => undoStack.length,
+
+    /** Walk to a target history index by calling undo/redo repeatedly.
+     *  Caps at the valid range; returns true if the index changed. */
+    jumpToHistoryIndex(targetIndex: number) {
+      const total = undoStack.length + redoStack.length;
+      const target = Math.max(0, Math.min(total, targetIndex));
+      let moved = false;
+      while (undoStack.length > target) {
+        if (!this.undo()) break;
+        moved = true;
+      }
+      while (undoStack.length < target) {
+        if (!this.redo()) break;
+        moved = true;
+      }
+      return moved;
+    },
+
     batch(label, fn) {
-      if (batchDepth === 0) currentBatch = { label, ops: [] };
+      if (batchDepth === 0) currentBatch = { id: nextLogEntryId(), label, ops: [] };
       batchDepth++;
       try {
         return fn();
