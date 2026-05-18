@@ -49,6 +49,9 @@ import { ColorContextProvider } from './tools/colorContext/ColorContextProvider'
 import { LayerList } from './ui/LayerList';
 import { useLayerList } from './ui/LayerList/useLayerList';
 import { PropertiesPanel } from './ui/PropertiesPanel';
+import { HistoryList } from './ui/HistoryList';
+import { RegistryInspector } from './dev/RegistryInspector';
+import { DispatchTracePanel } from './dev/DispatchTracePanel';
 import { useSceneAdapter } from '@orochi235/weasel';
 import type { Obj } from './poseUpdate';
 import type { RecordingProfile } from './recorder';
@@ -130,6 +133,16 @@ function RightSidebar({ scene, selection }: RightSidebarProps): ReactElement {
           )}
         </div>
       </PropertiesPanel>
+      {/* History: scene doesn't expose a stack-items API, so this is a
+          placeholder until that lands. */}
+      <HistoryList
+        items={[{ id: '__initial__', label: 'Initial' }]}
+        currentIndex={0}
+        onJump={() => {/* TODO: needs scene history items + jump API */}}
+        empty={<em style={{ opacity: 0.6 }}>(history list pending scene API)</em>}
+      />
+      <RegistryInspector />
+      <DispatchTracePanel />
     </>
   );
 }
