@@ -4,10 +4,11 @@ import type { Action } from '../registry';
  * @experimental
  * Static descriptor for the `undo` Action.
  */
-export const undoAction: Action = {
+export const undoAction: Action & { requires: string[] } = {
   id: 'undo',
   label: 'Undo',
   defaultBinding: { kind: 'key', key: 'z', mods: { mod: true } },
+  requires: ['history'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
@@ -20,10 +21,11 @@ export const undoAction: Action = {
  * @experimental
  * Static descriptor for the `redo` Action.
  */
-export const redoAction: Action = {
+export const redoAction: Action & { requires: string[] } = {
   id: 'redo',
   label: 'Redo',
   defaultBinding: { kind: 'key', key: 'z', mods: { mod: true, shift: true } },
+  requires: ['history'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {

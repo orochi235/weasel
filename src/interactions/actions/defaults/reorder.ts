@@ -74,7 +74,7 @@ function reorderSelection(
  * param (`'adjacent'` | `'extreme'`) is carried in `opts.params.distance`
  * and forwarded to `invoker.run` by the dispatcher.
  */
-export const reorderForwardAction: Action = {
+export const reorderForwardAction: Action & { requires: string[] } = {
   id: 'reorder.forward',
   label: 'Bring Forward',
   defaultBinding: [
@@ -87,6 +87,7 @@ export const reorderForwardAction: Action = {
       opts: { params: { distance: 'extreme' } },
     },
   ],
+  requires: ['selection', 'scene'],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
@@ -107,7 +108,7 @@ export const reorderForwardAction: Action = {
  * Collapses the old `reorder.backward` (adjacent) and `reorder.back`
  * (extreme) actions into one descriptor with two keybindings.
  */
-export const reorderBackwardAction: Action = {
+export const reorderBackwardAction: Action & { requires: string[] } = {
   id: 'reorder.backward',
   label: 'Send Backward',
   defaultBinding: [
@@ -120,6 +121,7 @@ export const reorderBackwardAction: Action = {
       opts: { params: { distance: 'extreme' } },
     },
   ],
+  requires: ['selection', 'scene'],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {

@@ -56,7 +56,7 @@ function nudgeSelection(
  *
  * Requires dep-schema entries: `selection`, `scene`.
  */
-function makeNudgeAction(dir: Direction): Action {
+function makeNudgeAction(dir: Direction): Action & { requires: string[] } {
   return {
     id: `nudge.${dir}`,
     label: `Nudge ${LABEL_FOR[dir]}`,
@@ -64,6 +64,7 @@ function makeNudgeAction(dir: Direction): Action {
       { spec: { kind: 'key', key: KEY_FOR[dir] },                              opts: { params: { magnitude: 'small' } } },
       { spec: { kind: 'key', key: KEY_FOR[dir], mods: { shift: true } }, opts: { params: { magnitude: 'big' } } },
     ],
+    requires: ['selection', 'scene'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {

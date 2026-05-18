@@ -5,10 +5,11 @@ import type { Action } from '../registry';
  * @experimental
  * Static descriptor for the `escape` Action. Clears selection.
  */
-export const escapeAction: Action = {
+export const escapeAction: Action & { requires: string[] } = {
   id: 'escape',
   label: 'Escape',
   defaultBinding: { kind: 'key', key: 'Escape' },
+  requires: ['selection'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {
