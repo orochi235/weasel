@@ -1,7 +1,8 @@
 import type { ToolDef } from '../types';
-import type { ModifierKey } from '../modifiers';
+import type { ParsedModifiers } from '../routeGrammar';
 import type { RoutePhase, RouteGesture } from './route-resolved';
 import { buildActionRegistry, type RegistryEntry } from './registry';
+import { canonicalModifiers } from './modifierKeyToParsed';
 
 /** Two or more tools declare the same exact (phase, gesture, arg, target,
  *  modifiers) tuple — the dispatcher's slot precedence picks one
@@ -12,7 +13,7 @@ export interface Conflict {
   gesture: RouteGesture;
   arg: string | undefined;
   target: string | undefined;
-  modifiers: ModifierKey;
+  modifiers: ParsedModifiers;
   /** All tool ids that registered the same tuple. At least 2 by
    *  construction. Order matches the input tools[] order. */
   toolIds: string[];
@@ -36,7 +37,7 @@ export function findConflicts(
   const entries = buildActionRegistry(tools);
   const groups = new Map<string, RegistryEntry[]>();
   for (const entry of entries) {
-    const key = `${entry.phase}|${entry.gesture}|${entry.arg ?? ''}|${entry.target ?? ''}|${entry.modifiers}`;
+    const key = `${entry.phase}|${entry.gesture}|${entry.arg ?? ''}|${entry.target ?? ''}|${canonicalModifiers(entry.modifiers)}`;
     const bucket = groups.get(key);
     if (bucket) bucket.push(entry);
     else groups.set(key, [entry]);

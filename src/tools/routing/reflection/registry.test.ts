@@ -23,10 +23,10 @@ describe('buildActionRegistry', () => {
     };
     const r = buildActionRegistry([tool]);
     expect(r).toContainEqual<RegistryEntry>({
-      toolId: 'select', phase: 'initial', gesture: 'click', arg: undefined, target: 'rect', modifiers: 'default',
+      toolId: 'select', phase: 'initial', gesture: 'click', arg: undefined, target: 'rect', modifiers: {},
     });
     expect(r).toContainEqual<RegistryEntry>({
-      toolId: 'select', phase: 'initial', gesture: 'click', arg: undefined, target: 'empty', modifiers: 'default',
+      toolId: 'select', phase: 'initial', gesture: 'click', arg: undefined, target: 'empty', modifiers: {},
     });
     expect(r).toHaveLength(2);
   });
@@ -45,7 +45,10 @@ describe('buildActionRegistry', () => {
       },
     };
     const r = buildActionRegistry([tool]);
-    const targets = r.map((e) => `${e.target}/${e.modifiers}`).sort();
+    const targets = r.map((e) => {
+      const keys = Object.keys(e.modifiers).sort().join('+');
+      return `${e.target}/${keys || 'default'}`;
+    }).sort();
     expect(targets).toEqual(['rect/alt', 'rect/default', 'rect/shift']);
   });
 
@@ -84,7 +87,7 @@ describe('buildActionRegistry', () => {
     };
     const r = buildActionRegistry([tool]);
     expect(r).toEqual<RegistryEntry[]>([
-      { toolId: 'hand', phase: 'initial', gesture: 'drag', arg: undefined, target: undefined, modifiers: 'default' },
+      { toolId: 'hand', phase: 'initial', gesture: 'drag', arg: undefined, target: undefined, modifiers: {} },
     ]);
   });
 
@@ -95,7 +98,7 @@ describe('buildActionRegistry', () => {
     };
     const r = buildActionRegistry([tool]);
     expect(r).toEqual<RegistryEntry[]>([
-      { toolId: 'wheel-zoom', phase: 'initial', gesture: 'wheel', arg: '*', target: undefined, modifiers: 'default' },
+      { toolId: 'wheel-zoom', phase: 'initial', gesture: 'wheel', arg: '*', target: undefined, modifiers: {} },
     ]);
   });
 
