@@ -207,29 +207,43 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usingContext, optionalCtx]);
 
-  return {
-    active,
-    setActive,
-    hotkeyEngaged,
-    engageHotkey,
-    disengageHotkey,
-    ambient: ambientRef.current,
-    registry: registryRef.current,
-    dispatcher,
-    gestureTick,
-    has(id: string): boolean {
-      return id in registryRef.current || ambientRef.current.some(t => t.id === id);
-    },
-    getActiveOverlays(): RenderLayer<unknown>[] {
-      const out: RenderLayer<unknown>[] = [];
-      const activeTool = registryRef.current[activeRef.current];
-      if (activeTool?.overlay) out.push(activeTool.overlay);
-      const mod = hotkeyRef.current ? registryRef.current[hotkeyRef.current] : null;
-      if (mod?.overlay) out.push(mod.overlay);
-      for (const t of ambientRef.current) {
-        if (t.overlay) out.push(t.overlay);
-      }
-      return out;
-    },
-  };
+  // `has` and `getActiveOverlays` read live state via refs, so they're
+  // safe to memoize once for the lifetime of the hook.
+  const has = useCallback(
+    (id: string): boolean =>
+      id in registryRef.current || ambientRef.current.some(t => t.id === id),
+    [],
+  );
+  const getActiveOverlays = useCallback((): RenderLayer<unknown>[] => {
+    const out: RenderLayer<unknown>[] = [];
+    const activeTool = registryRef.current[activeRef.current];
+    if (activeTool?.overlay) out.push(activeTool.overlay);
+    const mod = hotkeyRef.current ? registryRef.current[hotkeyRef.current] : null;
+    if (mod?.overlay) out.push(mod.overlay);
+    for (const t of ambientRef.current) {
+      if (t.overlay) out.push(t.overlay);
+    }
+    return out;
+  }, []);
+
+  // Memoize the returned ToolsApi so consumers using `tools` as a dep (e.g.
+  // SceneCanvas's `onToolsCreated` useEffect) don't see identity churn on
+  // every render — which otherwise loops infinitely when the consumer
+  // setStates from inside `onToolsCreated`.
+  return useMemo(
+    () => ({
+      active,
+      setActive,
+      hotkeyEngaged,
+      engageHotkey,
+      disengageHotkey,
+      ambient: ambientRef.current,
+      registry: registryRef.current,
+      dispatcher,
+      gestureTick,
+      has,
+      getActiveOverlays,
+    }),
+    [active, setActive, hotkeyEngaged, engageHotkey, disengageHotkey, dispatcher, gestureTick, has, getActiveOverlays],
+  );
 }
