@@ -50,7 +50,6 @@ import { LayerList } from './ui/LayerList';
 import { useLayerList } from './ui/LayerList/useLayerList';
 import { PropertiesPanel } from './ui/PropertiesPanel';
 import { HistoryList } from './ui/HistoryList';
-import { RegistryInspector } from './dev/RegistryInspector';
 import { DispatchTracePanel } from './dev/DispatchTracePanel';
 import { useSceneAdapter } from '@orochi235/weasel';
 import type { Obj } from './poseUpdate';
@@ -141,7 +140,6 @@ function RightSidebar({ scene, selection }: RightSidebarProps): ReactElement {
         currentIndex={scene.historyIndex()}
         onJump={(index) => scene.jumpToHistoryIndex(index)}
       />
-      <RegistryInspector />
       <DispatchTracePanel />
     </>
   );
