@@ -10,8 +10,8 @@ describe('deleteAction (descriptor)', () => {
     expect(deleteAction.label).toBe('Delete');
   });
 
-  it('gestureBinding = { kind: "key", key: ["Delete", "Backspace"] }', () => {
-    expect(deleteAction.gestureBinding).toEqual({ kind: 'key', key: ['Delete', 'Backspace'] });
+  it('defaultBinding = { kind: "key", key: ["Delete", "Backspace"] }', () => {
+    expect(deleteAction.defaultBinding).toEqual({ kind: 'key', key: ['Delete', 'Backspace'] });
   });
 
   it('invoker.timing = "immediate"', () => {

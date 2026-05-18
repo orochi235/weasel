@@ -109,11 +109,11 @@ function getOngoingInvoker(action: typeof moveAction) {
 // ---------------------------------------------------------------------------
 
 describe('moveAction descriptor', () => {
-  it('declares ongoing timing, drag gestureBinding, id and label', () => {
+  it('declares ongoing timing, drag defaultBinding, id and label', () => {
     expect(moveAction.id).toBe('move');
     expect(moveAction.label).toBe('Move');
     expect(moveAction.invoker?.timing).toBe('ongoing');
-    expect(moveAction.gestureBinding).toEqual({ kind: 'drag' });
+    expect(moveAction.defaultBinding).toEqual({ kind: 'drag' });
   });
 
   it('start returns empty handle when selection is empty', () => {

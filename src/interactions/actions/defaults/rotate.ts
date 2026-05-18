@@ -118,7 +118,7 @@ interface RotateScratch {
 export const rotateAction: Action & { requires: string[] } = {
   id: 'rotate',
   label: 'Rotate',
-  gestureBinding: { kind: 'drag' },
+  defaultBinding: { kind: 'drag' },
   requires: ['selection', 'scene'],
   invoker: {
     timing: 'ongoing',

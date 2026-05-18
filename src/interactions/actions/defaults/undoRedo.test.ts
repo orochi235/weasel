@@ -7,8 +7,8 @@ describe('undoAction (descriptor)', () => {
     expect(undoAction.label).toBe('Undo');
   });
 
-  it('gestureBinding = { kind: "key", key: "z", mods: { mod: true } }', () => {
-    expect(undoAction.gestureBinding).toEqual({ kind: 'key', key: 'z', mods: { mod: true } });
+  it('defaultBinding = { kind: "key", key: "z", mods: { mod: true } }', () => {
+    expect(undoAction.defaultBinding).toEqual({ kind: 'key', key: 'z', mods: { mod: true } });
   });
 
   it('invoker.timing = "immediate"', () => {
@@ -22,8 +22,8 @@ describe('redoAction (descriptor)', () => {
     expect(redoAction.label).toBe('Redo');
   });
 
-  it('gestureBinding = { kind: "key", key: "z", mods: { mod: true, shift: true } }', () => {
-    expect(redoAction.gestureBinding).toEqual({ kind: 'key', key: 'z', mods: { mod: true, shift: true } });
+  it('defaultBinding = { kind: "key", key: "z", mods: { mod: true, shift: true } }', () => {
+    expect(redoAction.defaultBinding).toEqual({ kind: 'key', key: 'z', mods: { mod: true, shift: true } });
   });
 
   it('invoker.timing = "immediate"', () => {

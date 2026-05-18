@@ -209,9 +209,9 @@ the shared `shared/` snap helpers and `types.ts` carrying the cross-system base 
 ### Action
 
 A user-intent operation that modifies app state. Identified by `{ id, label,
-gestureBinding?, invoker?, run?(), enabled?() }`. Discoverable via the Actions Registry +
+defaultBinding?, invoker?, run?(), enabled?() }`. Discoverable via the Actions Registry +
 command palette; bindable to a key, mouse gesture, button click, or any other
-[Gesture](#gesture). Actions with a `gestureBinding` are routed through the gesture
+[Gesture](#gesture). Actions with a `defaultBinding` are routed through the gesture
 dispatcher (Phase 3+, 2026-05); actions without one fall back to the legacy
 `useKeybinding` path.
 
@@ -223,7 +223,7 @@ invoke. Each one either produces an [Op](#op) batch (for undoable mutations like
 Source layout reflects this: both one-shot actions (`delete`, `align`, `escape`, …)
 and drag-based actions (`move`, `resize`, `rotate`, `insert`, `area-select`, …) live
 under `src/interactions/actions/`. All default actions are registered as descriptors
-with `gestureBinding` and dispatched through the action registry (registry
+with `defaultBinding` and dispatched through the action registry (registry
 unification Phases 1–9, 2026-05). The remaining gap: drag-based action descriptors
 (`resize`, `rotate`, `areaSelect`, `insert`, `clone`) have stub invokers — their
 real behavior still flows through `useResize`, `useRotate`, etc. via `useSelectTool`'s

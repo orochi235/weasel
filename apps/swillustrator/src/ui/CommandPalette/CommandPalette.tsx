@@ -40,7 +40,7 @@ const DEFAULT_REASON_LABELS: Record<string, string> = {
 
 // Phase 14e Task 7: KEY_GLYPHS / formatKey / formatBinding consumed the
 // legacy `Action.defaultBinding: KeyBinding` shape, which is now removed.
-// A gestureBinding-aware shortcut formatter is not yet implemented; the
+// A defaultBinding-aware shortcut formatter is not yet implemented; the
 // palette's binding chip is temporarily suppressed.
 
 export interface CommandPaletteProps {
@@ -213,7 +213,7 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
                     <span className={styles.reason}>{reason}</span>
                   )}
                   {/* Phase 14e Task 7: Action.defaultBinding removed; bindings
-                      now live on gestureBinding. A gestureBinding-aware shortcut
+                      now live on defaultBinding. A defaultBinding-aware shortcut
                       formatter is not yet implemented — the binding chip is
                       temporarily suppressed. */}
                 </li>

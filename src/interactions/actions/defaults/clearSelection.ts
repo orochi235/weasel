@@ -9,7 +9,7 @@
  *
  * ## No defaultBinding
  *
- * This action has no ambient `gestureBinding` / `defaultBinding` — it fires
+ * This action has no ambient `defaultBinding` / `defaultBinding` — it fires
  * ONLY via `useSelectTool`'s `Tool.bindings` entry:
  *   `{ spec: { kind: 'click', target: 'empty', mods: {} }, actionId: 'clearSelection' }`
  *
@@ -36,7 +36,7 @@ import type { NodeId } from 'core/scene/types';
 export const clearSelectionAction: Action & { requires: string[] } = {
   id: 'clearSelection',
   label: 'Clear selection',
-  // No defaultBinding / gestureBinding — fires only via Tool.bindings.
+  // No defaultBinding / defaultBinding — fires only via Tool.bindings.
   requires: ['selection'],
   invoker: {
     timing: 'immediate',

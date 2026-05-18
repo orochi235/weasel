@@ -58,10 +58,10 @@ function getOngoingInvoker(action: typeof pinchZoomAction) {
 // ---------------------------------------------------------------------------
 
 describe('pinchZoomAction descriptor', () => {
-  it('declares id, label, multiTouch gestureBinding, and ongoing timing', () => {
+  it('declares id, label, multiTouch defaultBinding, and ongoing timing', () => {
     expect(pinchZoomAction.id).toBe('viewport.pinchZoom');
     expect(pinchZoomAction.label).toBe('Pinch Zoom');
-    expect(pinchZoomAction.gestureBinding).toEqual({ kind: 'multiTouch', fingers: 2 });
+    expect(pinchZoomAction.defaultBinding).toEqual({ kind: 'multiTouch', fingers: 2 });
     expect(pinchZoomAction.invoker?.timing).toBe('ongoing');
   });
 

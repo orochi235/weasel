@@ -1,7 +1,7 @@
 /**
  * GestureSpec — describes the form of a user input event that can fire an action.
  *
- * Used by `Action.gestureBinding` (the action's preferred gesture) and by
+ * Used by `Action.defaultBinding` (the action's preferred gesture) and by
  * `GestureBinding.spec` (a tool's binding table entry). The dispatcher matches
  * incoming input events against registered specs to determine which action to
  * invoke.

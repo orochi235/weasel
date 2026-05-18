@@ -60,7 +60,7 @@ function makeNudgeAction(dir: Direction): Action {
   return {
     id: `nudge.${dir}`,
     label: `Nudge ${LABEL_FOR[dir]}`,
-    gestureBinding: [
+    defaultBinding: [
       { spec: { kind: 'key', key: KEY_FOR[dir] },                              opts: { params: { magnitude: 'small' } } },
       { spec: { kind: 'key', key: KEY_FOR[dir], mods: { shift: true } }, opts: { params: { magnitude: 'big' } } },
     ],

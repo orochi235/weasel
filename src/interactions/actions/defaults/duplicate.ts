@@ -8,7 +8,7 @@ import { ActionDisabledReason } from '../registry';
 export const duplicateAction: Action = {
   id: 'duplicate',
   label: 'Duplicate',
-  gestureBinding: { kind: 'key', key: 'd', mods: { mod: true } },
+  defaultBinding: { kind: 'key', key: 'd', mods: { mod: true } },
   invoker: {
     timing: 'immediate',
     run: (_deps, params) => {

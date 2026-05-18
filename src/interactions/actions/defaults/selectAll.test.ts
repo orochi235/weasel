@@ -7,8 +7,8 @@ describe('selectAllAction (descriptor)', () => {
     expect(selectAllAction.label).toBe('Select All');
   });
 
-  it('gestureBinding = { kind: "key", key: "a", mods: { mod: true } }', () => {
-    expect(selectAllAction.gestureBinding).toEqual({ kind: 'key', key: 'a', mods: { mod: true } });
+  it('defaultBinding = { kind: "key", key: "a", mods: { mod: true } }', () => {
+    expect(selectAllAction.defaultBinding).toEqual({ kind: 'key', key: 'a', mods: { mod: true } });
   });
 
   it('invoker.timing = "immediate"', () => {

@@ -9,9 +9,9 @@ describe('makeToolHoldAction', () => {
     expect(action.invoker?.timing).toBe('ongoing');
   });
 
-  it('gestureBinding is a key-held spec with the right key', () => {
+  it('defaultBinding is a key-held spec with the right key', () => {
     const action = makeToolHoldAction('hand', ' ');
-    expect(action.gestureBinding).toEqual({ kind: 'key-held', key: ' ' });
+    expect(action.defaultBinding).toEqual({ kind: 'key-held', key: ' ' });
   });
 
   it('start pushes the toolId; onEnd pops it', () => {
@@ -51,6 +51,6 @@ describe('makeToolHoldAction', () => {
 
   it('also supports key arrays', () => {
     const action = makeToolHoldAction('hand', [' ', 'Spacebar']);
-    expect(action.gestureBinding).toEqual({ kind: 'key-held', key: [' ', 'Spacebar'] });
+    expect(action.defaultBinding).toEqual({ kind: 'key-held', key: [' ', 'Spacebar'] });
   });
 });

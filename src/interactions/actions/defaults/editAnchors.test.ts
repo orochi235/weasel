@@ -38,10 +38,10 @@ function getOngoingInvoker(action: typeof editAnchorsAction) {
 // ---------------------------------------------------------------------------
 
 describe('editAnchorsAction descriptor', () => {
-  it('declares id, label, drag gestureBinding, and ongoing timing', () => {
+  it('declares id, label, drag defaultBinding, and ongoing timing', () => {
     expect(editAnchorsAction.id).toBe('editAnchors');
     expect(editAnchorsAction.label).toBe('Edit Anchors');
-    expect(editAnchorsAction.gestureBinding).toEqual({ kind: 'drag' });
+    expect(editAnchorsAction.defaultBinding).toEqual({ kind: 'drag' });
     expect(editAnchorsAction.invoker?.timing).toBe('ongoing');
   });
 

@@ -24,8 +24,8 @@ describe('colorResetAction', () => {
     expect(colorResetAction.label).toBe('Reset colors');
   });
 
-  it('has gestureBinding for key d', () => {
-    expect(colorResetAction.gestureBinding).toEqual({ kind: 'key', key: 'd' });
+  it('has defaultBinding for key d', () => {
+    expect(colorResetAction.defaultBinding).toEqual({ kind: 'key', key: 'd' });
   });
 
   it('requires color dep', () => {
@@ -46,7 +46,7 @@ describe('colorSwapAction', () => {
   });
 
   it('has two BoundGesture entries for x and Shift+X', () => {
-    const bindings = colorSwapAction.gestureBinding as Array<{ spec: unknown; opts: unknown }>;
+    const bindings = colorSwapAction.defaultBinding as Array<{ spec: unknown; opts: unknown }>;
     expect(bindings).toHaveLength(2);
   });
 
@@ -81,8 +81,8 @@ describe('colorToggleFocusedNoneAction', () => {
     expect(colorToggleFocusedNoneAction.label).toBe('Toggle focused color none');
   });
 
-  it('has gestureBinding for key /', () => {
-    expect(colorToggleFocusedNoneAction.gestureBinding).toEqual({ kind: 'key', key: '/' });
+  it('has defaultBinding for key /', () => {
+    expect(colorToggleFocusedNoneAction.defaultBinding).toEqual({ kind: 'key', key: '/' });
   });
 
   it('requires color dep', () => {

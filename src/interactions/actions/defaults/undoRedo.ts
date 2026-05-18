@@ -7,7 +7,7 @@ import type { Action } from '../registry';
 export const undoAction: Action = {
   id: 'undo',
   label: 'Undo',
-  gestureBinding: { kind: 'key', key: 'z', mods: { mod: true } },
+  defaultBinding: { kind: 'key', key: 'z', mods: { mod: true } },
   invoker: {
     timing: 'immediate',
     run: (deps) => {
@@ -23,7 +23,7 @@ export const undoAction: Action = {
 export const redoAction: Action = {
   id: 'redo',
   label: 'Redo',
-  gestureBinding: { kind: 'key', key: 'z', mods: { mod: true, shift: true } },
+  defaultBinding: { kind: 'key', key: 'z', mods: { mod: true, shift: true } },
   invoker: {
     timing: 'immediate',
     run: (deps) => {

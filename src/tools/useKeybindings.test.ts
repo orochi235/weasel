@@ -57,7 +57,7 @@ describe('useKeybindings', () => {
     expect(ids).not.toContain('tool.hold.select');
   });
 
-  it('tool.hold action has key-held gestureBinding for the correct key', () => {
+  it('tool.hold action has key-held defaultBinding for the correct key', () => {
     const select = defineTool({ id: 'select', initial: {} });
     const hand   = defineTool({ id: 'hand', hotkey: 'space', initial: {} });
     const { result } = renderHook(() => {
@@ -68,8 +68,8 @@ describe('useKeybindings', () => {
 
     const holdAction = result.current?.list().find((a) => a.id === 'tool.hold.hand');
     expect(holdAction).toBeDefined();
-    // gestureBinding should be a key-held spec for Space (' ')
-    expect(holdAction?.gestureBinding).toMatchObject({ kind: 'key-held', key: ' ' });
+    // defaultBinding should be a key-held spec for Space (' ')
+    expect(holdAction?.defaultBinding).toMatchObject({ kind: 'key-held', key: ' ' });
   });
 
   it('registers hold actions for alt, ctrl, meta, shift hotkeys with correct keys', () => {
@@ -88,10 +88,10 @@ describe('useKeybindings', () => {
     }, { wrapper: makeWrapper('select') });
 
     const byId = Object.fromEntries((result.current?.list() ?? []).map((a) => [a.id, a]));
-    expect(byId['tool.hold.altTool']?.gestureBinding).toMatchObject({ kind: 'key-held', key: 'Alt' });
-    expect(byId['tool.hold.ctrlTool']?.gestureBinding).toMatchObject({ kind: 'key-held', key: 'Control' });
-    expect(byId['tool.hold.metaTool']?.gestureBinding).toMatchObject({ kind: 'key-held', key: 'Meta' });
-    expect(byId['tool.hold.shiftTool']?.gestureBinding).toMatchObject({ kind: 'key-held', key: 'Shift' });
+    expect(byId['tool.hold.altTool']?.defaultBinding).toMatchObject({ kind: 'key-held', key: 'Alt' });
+    expect(byId['tool.hold.ctrlTool']?.defaultBinding).toMatchObject({ kind: 'key-held', key: 'Control' });
+    expect(byId['tool.hold.metaTool']?.defaultBinding).toMatchObject({ kind: 'key-held', key: 'Meta' });
+    expect(byId['tool.hold.shiftTool']?.defaultBinding).toMatchObject({ kind: 'key-held', key: 'Shift' });
   });
 
   it('lets meta/ctrl combos through (system shortcuts like Cmd-R reload)', () => {

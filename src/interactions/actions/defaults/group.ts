@@ -8,7 +8,7 @@ import { ActionDisabledReason } from '../registry';
 export const groupAction: Action = {
   id: 'group',
   label: 'Group',
-  gestureBinding: { kind: 'key', key: 'g', mods: { mod: true } },
+  defaultBinding: { kind: 'key', key: 'g', mods: { mod: true } },
   invoker: {
     timing: 'immediate',
     run: (_deps, params) => {
@@ -26,7 +26,7 @@ export const groupAction: Action = {
 export const ungroupAction: Action = {
   id: 'ungroup',
   label: 'Ungroup',
-  gestureBinding: { kind: 'key', key: 'g', mods: { mod: true, shift: true } },
+  defaultBinding: { kind: 'key', key: 'g', mods: { mod: true, shift: true } },
   invoker: {
     timing: 'immediate',
     run: (_deps, params) => {

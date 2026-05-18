@@ -91,7 +91,7 @@ interface CloneScratch {
 export const cloneAction: Action & { requires: string[] } = {
   id: 'clone',
   label: 'Clone',
-  gestureBinding: { kind: 'drag' },
+  defaultBinding: { kind: 'drag' },
   requires: ['selection', 'scene'],
   invoker: {
     timing: 'ongoing',
