@@ -3,6 +3,7 @@ import { applyBooleanOp, type BooleanOp, type BooleansAdapter } from '../boolean
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
 import type { ImmediateInvoker } from '../invoker';
+import type { SelectionApi } from 'core/selection/useSelection';
 import {
   UnionIcon,
   IntersectIcon,
@@ -59,7 +60,11 @@ function makePathfinderAction(op: BooleanOp): Action {
         applyBooleanOp(adapter, op);
       },
     } satisfies ImmediateInvoker,
-    enabled: () => ActionDisabledReason.SelectionRequired,
+    enabled: (deps) => {
+      const selection = deps?.selection as SelectionApi | undefined;
+      const count = selection?.get().length ?? 0;
+      return count >= 2 ? true : ActionDisabledReason.SelectionRequired;
+    },
   };
 }
 

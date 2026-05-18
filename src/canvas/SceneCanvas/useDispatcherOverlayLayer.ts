@@ -16,7 +16,7 @@
  * user-visible result is identical.
  */
 import { useEffect, useMemo, useReducer, useRef } from 'react';
-import type { DrawCommand, PathDrawCommand } from '../../renderer';
+import { viewToMat3, type DrawCommand, type PathDrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
@@ -117,6 +117,20 @@ export function useDispatcherOverlayLayer(args: {
               stroke: { paint: { color: cfg.stroke }, width: cfg.lineWidth, dash: cfg.dash },
             };
             out.push(cmd);
+            continue;
+          }
+
+          if (ov.kind === 'commands') {
+            // Generic escape hatch — actions emit arbitrary DrawCommands.
+            // World-space (default) wraps in viewToMat3 so the commands
+            // track the camera; screen-space goes through untouched.
+            if (ov.commands.length === 0) continue;
+            const space = ov.space ?? 'world';
+            if (space === 'world') {
+              out.push({ kind: 'group', transform: viewToMat3(view), children: [...ov.commands] });
+            } else {
+              for (const cmd of ov.commands) out.push(cmd);
+            }
             continue;
           }
         }

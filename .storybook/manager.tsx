@@ -1,6 +1,7 @@
 import React from 'react';
 import { addons, types, useGlobals } from 'storybook/manager-api';
 import { IconButton } from 'storybook/internal/components';
+import { BeakerIcon } from '@storybook/icons';
 
 const ADDON_ID = 'weasel/theme-toggle';
 const TOOL_ID = `${ADDON_ID}/tool`;
@@ -39,4 +40,21 @@ addons.register(ADDON_ID, () => {
     title: 'Theme',
     render: () => <ThemeToggle />,
   });
+});
+
+// Prefix lab-style stories with a beaker icon in the sidebar. Matches any
+// story whose name contains "Lab" (Button Lab, Compose Lab, etc.).
+addons.setConfig({
+  sidebar: {
+    renderLabel: (item) => {
+      const isLab = (item.type === 'story' || item.type === 'docs') && /\blab\b/i.test(item.name);
+      if (!isLab) return item.name;
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <BeakerIcon />
+          {item.name}
+        </span>
+      );
+    },
+  },
 });

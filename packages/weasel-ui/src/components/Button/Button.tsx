@@ -14,6 +14,7 @@ type ButtonBase = {
   fullWidth?: boolean;
   type?: 'button' | 'submit' | 'reset';
   className?: string;
+  style?: ButtonHTMLAttributes<HTMLButtonElement>['style'];
   children?: ReactNode;
   onClick?: ButtonHTMLAttributes<HTMLButtonElement>['onClick'];
 };
@@ -71,6 +72,7 @@ export const Button = forwardRef(function Button(
     ariaLabel,
     type = 'button',
     className,
+    style,
     children,
     onClick,
   } = props;
@@ -94,6 +96,7 @@ export const Button = forwardRef(function Button(
       ref={ref}
       type={type}
       className={cls}
+      style={style}
       disabled={disabled}
       aria-busy={loading ? true : undefined}
       aria-label={ariaLabel}

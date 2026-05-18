@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'node:path';
 import { weaselAliases } from '../../scripts/vite-aliases';
+import { callbackSourcePlugin } from './vite-plugin-callback-source';
 
 const repoRoot = resolve(__dirname, '../..');
 
@@ -21,8 +22,20 @@ export default defineConfig({
       },
     ]),
   },
-  plugins: [react()],
+  plugins: [
+    react(),
+    callbackSourcePlugin({
+      includeDirs: [
+        resolve(repoRoot, 'src/tools'),
+        resolve(repoRoot, 'src/interactions/actions'),
+        resolve(repoRoot, 'apps/swillustrator/src'),
+      ],
+    }),
+  ],
   server: { port: 5174 },
+  define: {
+    __WEASEL_REPO_ROOT__: JSON.stringify(repoRoot),
+  },
   build: {
     outDir: resolve(repoRoot, 'dist-swillustrator'),
     emptyOutDir: true,

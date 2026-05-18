@@ -8,7 +8,7 @@ import {
 import { buildActionRegistry, type RegistryEntry } from '@orochi235/weasel/routing';
 import type { ToolDef } from '@orochi235/weasel/routing';
 import { isValidElement, type ReactNode } from 'react';
-import type { PhaseSummary, ToolEntry, ActionEntry } from './registryData';
+import type { PhaseSummary, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryData';
 import { TOOL_HOOK_NAMES } from './registryData';
 import { formatShortcutParts } from '@orochi235/weasel-ui';
 import s from './RegistryInspector.module.css';
@@ -100,6 +100,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
             onDeactivate: !!def?.onDeactivate,
             hitOverride: !!def?.hitOverride,
           },
+          callbacks: def ? collectToolCallbacks(def) : [],
         };
       });
   }, [tools, toolsRegistrySig]);
@@ -116,6 +117,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
     group: a.group ?? idGroup(a.id),
     icon: renderPresentationIcon(a.icon),
     enabled: snapshotEnabled(a.enabled),
+    callbacks: collectActionCallbacks(a),
   }));
 
   const lastRef = useRef<string>('');
@@ -150,27 +152,33 @@ function formatRoutes(entries: readonly RegistryEntry[]): readonly string[] {
 }
 
 const EMPTY_PHASE: PhaseSummary = {
-  click: false, pointerDown: false, dblTap: false, drag: false,
-  wheel: false, keyDown: false, keyUp: false,
-  cursor: false, overlay: false, claimsAll: false,
+  gestures: {
+    click: false, pointerDown: false, dblTap: false, drag: false,
+    wheel: false, keyDown: false, keyUp: false,
+  },
+  outputs: { cursor: false, overlay: false, claimsAll: false },
 };
 
-/** Boolean-only digest of a `PhaseDef`. We only care which channels the def
- *  *declares* (not the contents) — the route signatures already cover the
- *  per-target dispatch detail. */
+/** Boolean-only digest of a `PhaseDef`, partitioned into gestures (what the
+ *  tool subscribes to) and outputs (what it declares / emits). Route
+ *  signatures already cover the per-target dispatch detail. */
 function summarizePhase(phase: NonNullable<ToolDef<unknown>['initial']>): PhaseSummary {
   const has = (k: keyof typeof phase): boolean => phase[k] !== undefined;
   return {
-    click: has('click'),
-    pointerDown: has('pointerDown'),
-    dblTap: has('dblTap'),
-    drag: has('drag'),
-    wheel: has('wheel'),
-    keyDown: has('keyDown'),
-    keyUp: has('keyUp'),
-    cursor: has('cursor'),
-    overlay: has('overlay'),
-    claimsAll: has('claimsAll'),
+    gestures: {
+      click: has('click'),
+      pointerDown: has('pointerDown'),
+      dblTap: has('dblTap'),
+      drag: has('drag'),
+      wheel: has('wheel'),
+      keyDown: has('keyDown'),
+      keyUp: has('keyUp'),
+    },
+    outputs: {
+      cursor: has('cursor'),
+      overlay: has('overlay'),
+      claimsAll: has('claimsAll'),
+    },
   };
 }
 

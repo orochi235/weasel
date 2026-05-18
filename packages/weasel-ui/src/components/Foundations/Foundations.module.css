@@ -81,6 +81,35 @@
   font-weight: 500;
 }
 
+.sampleSizeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 12px 0 8px;
+}
+
+.sampleSizeControl {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sampleSizeLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--wzl-fg-subtle);
+}
+
+.sampleSizeValue {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--wzl-fg-muted);
+  min-width: 38px;
+  text-align: right;
+}
+
 .familyStack {
   display: flex;
   flex-direction: column;
@@ -100,6 +129,12 @@
   align-items: baseline;
   gap: 12px;
   margin-bottom: 6px;
+}
+
+.familyTokens {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .familyLabel {
@@ -162,6 +197,81 @@
 .sizeLabel {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
+  color: var(--wzl-fg-muted);
+}
+
+.colorsIntro {
+  font-size: 12px;
+  color: var(--wzl-fg-muted);
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+  max-width: 60ch;
+}
+
+.colorsGroup {
+  margin-bottom: 18px;
+}
+
+.colorsTable {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--wzl-border);
+  padding: 1px;
+  border-radius: var(--wzl-radius-md);
+  max-width: 680px;
+}
+
+.colorsRow {
+  display: grid;
+  grid-template-columns: 220px 1fr 1fr;
+  gap: 12px;
+  align-items: center;
+  background: var(--wzl-surface);
+  padding: 6px 12px;
+  border-radius: 2px;
+}
+
+.colorsHeader {
+  background: var(--wzl-surface-raised);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--wzl-fg-subtle);
+  padding: 8px 12px;
+}
+
+.colorsTokenHead,
+.colorsThemeHead {
+  font-size: 10px;
+}
+
+.colorsToken {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--wzl-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.swatchPair {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.swatchPairChip {
+  width: 28px;
+  height: 18px;
+  border-radius: var(--wzl-radius-sm);
+  border: 1px solid var(--wzl-border-strong);
+  flex-shrink: 0;
+}
+
+.swatchPairValue {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
   color: var(--wzl-fg-muted);
 }
 

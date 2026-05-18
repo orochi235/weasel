@@ -1,18 +1,98 @@
+/* Aqua-glass button. Every visual parameter is exposed as a CSS custom
+   property so the Button Lab can override per-instance via inline style. */
 .button {
+  /* ---- Tunables (with Aqua-biased defaults) ---- */
+  /* Corner radius = 10% of the button's height (the shorter axis on every
+     realistic button shape). Using calc against --btn-height keeps the
+     corners circular rather than elliptical, which a % value would
+     otherwise produce on a wide-but-short pill. */
+  --btn-radius:       calc(var(--btn-height) * 0.1);
+  --btn-fontweight:   400;
+  --btn-fontsize:     14px;
+  --btn-height:       24px;
+  --btn-padx:         12px;
+
+  /* Body gradient — alpha-laced top, opaque bottom. Percentages are
+     "color-mix accent ratio" so 45% = 45% accent + 55% transparent. */
+  --btn-top-alpha:     45%;
+  --btn-upper-alpha:   70%;
+  --btn-equator:       52%;   /* vertical position of the bright-to-deep transition */
+  --btn-equator-spread: 12%;  /* half-width of the equator transition band */
+  --btn-equator-tint:  95%;   /* accent vs white at equator */
+  --btn-base-tint:     70%;   /* accent vs black at base */
+  --btn-blur:          6px;
+  --btn-saturate:      1.3;
+
+  /* Specular gloss (::before) */
+  --btn-gloss-top:     0.42;
+  --btn-gloss-mid:     0.12;
+  --btn-gloss-bottom:  50%;   /* inset from bottom — 50% = upper hemisphere */
+
+  /* 3D shadows */
+  --btn-rim:          0.22;
+  --btn-drop-near:    0.30;
+  --btn-drop-far:     0.18;
+  --btn-inset-hi:     0.42;
+  --btn-inset-lo:     0.3;
+
+  /* Text — main shadow + a second engraving shadow you can angle.
+     `inset-x` / `inset-y` are pre-projected offsets from `inset-angle` so
+     the lab can drive them with a single slider. */
+  --btn-text-shadow:    0.35;
+  --btn-text-inset:     0.55;
+  --btn-text-inset-x:   0px;
+  --btn-text-inset-y:   1px;
+
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border: 1px solid transparent;
-  border-radius: var(--wzl-radius-sm);
+  border: none;
+  border-radius: var(--btn-radius);
   font-family: var(--wzl-font-ui);
-  font-weight: var(--wzl-font-weight-normal);
+  font-weight: var(--btn-fontweight);
   font-style: normal;
+  font-size: var(--btn-fontsize);
+  height: var(--btn-height);
+  padding: 0 var(--btn-padx);
   line-height: 1;
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
-  transition: background 120ms, border-color 120ms, color 120ms, box-shadow 120ms;
+  isolation: isolate;
+  overflow: hidden;
+  transition: filter 120ms, box-shadow 120ms, transform 80ms;
+}
+
+/* Specular gloss — covers the upper hemisphere of the pill with a bright
+   white sheen that fades to nothing by the equator. The single detail that
+   sells the glass-cylinder illusion. */
+.button::before {
+  content: '';
+  position: absolute;
+  inset: 1px 1px var(--btn-gloss-bottom) 1px;
+  /* Top corners hug the button's outline; bottom corners are flat so the
+     gloss terminates in a straight line at the equator rather than two
+     little arcs that read as `)(` brackets at smaller radii. */
+  border-top-left-radius: var(--btn-radius);
+  border-top-right-radius: var(--btn-radius);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, var(--btn-gloss-top)) 0%,
+    rgba(255, 255, 255, var(--btn-gloss-mid)) 60%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 120ms;
+}
+
+.button > * {
+  position: relative;
+  z-index: 2;
 }
 
 .button:focus-visible {
@@ -25,87 +105,120 @@
   cursor: not-allowed;
 }
 
-/* ---------- Sizes ---------- */
+/* ---------- Sizes — set defaults for the custom props ---------- */
 
-.size_sm {
-  height: 20px;
-  padding: 0 8px;
-  font-size: 13px;
-}
+.size_sm { --btn-height: 20px; --btn-padx: 8px; --btn-fontsize: 13px; }
+.size_md { --btn-height: 24px; --btn-padx: 12px; --btn-fontsize: 14px; }
 
-.size_md {
-  height: 24px;
-  padding: 0 12px;
-  font-size: 14px;
-}
-
-.iconOnly.size_sm {
-  width: 20px;
-  padding: 0;
-}
-
-.iconOnly.size_md {
-  width: 24px;
-  padding: 0;
-}
+.iconOnly.size_sm { width: 20px; --btn-padx: 0; }
+.iconOnly.size_md { width: 24px; --btn-padx: 0; }
 
 /* ---------- Variants ---------- */
 
+/* Primary: tinted aqua glass — body uses --wzl-accent. The upper / equator
+   / lower stops are positioned around --btn-equator so dragging the equator
+   shifts the entire transition zone as one block. */
 .variant_primary {
-  background: color-mix(in srgb, var(--wzl-glass-tint) 78%, transparent);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--wzl-accent) var(--btn-top-alpha), transparent) 0%,
+    color-mix(in srgb, var(--wzl-accent) var(--btn-upper-alpha), transparent) calc(var(--btn-equator) - var(--btn-equator-spread)),
+    color-mix(in srgb, var(--wzl-accent) var(--btn-equator-tint), white) var(--btn-equator),
+    var(--wzl-accent) calc(var(--btn-equator) + var(--btn-equator-spread) * 1.6),
+    color-mix(in srgb, var(--wzl-accent) var(--btn-base-tint), black) 100%
+  );
+  backdrop-filter: blur(var(--btn-blur)) saturate(var(--btn-saturate));
+  -webkit-backdrop-filter: blur(var(--btn-blur)) saturate(var(--btn-saturate));
   color: var(--wzl-fg-on-accent);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  /* Main shadow below for legibility, then a second engraving shadow at a
+     configurable angle (defaults below) — a near-black, lower-alpha stamp
+     that sits underneath the glyphs and reads as recessed type. */
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, var(--btn-text-shadow)),
+    var(--btn-text-inset-x) var(--btn-text-inset-y) 0 rgba(0, 0, 0, var(--btn-text-inset)),
+    0 0 6px rgba(0, 0, 0, calc(var(--btn-text-shadow) * 0.5));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, var(--btn-inset-hi)),
+    inset 0 -1px 2px rgba(0, 0, 0, var(--btn-inset-lo)),
+    0 0 0 1px rgba(0, 0, 0, var(--btn-rim)),
+    0 1px 2px rgba(0, 0, 0, var(--btn-drop-near)),
+    0 3px 6px rgba(0, 0, 0, var(--btn-drop-far));
 }
 
 .variant_primary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--wzl-accent-hover) 82%, transparent);
+  filter: brightness(1.08) saturate(1.06);
 }
 
 .variant_primary:active:not(:disabled) {
-  box-shadow: none;
-  background: color-mix(in srgb, var(--wzl-accent) 90%, black);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--wzl-accent) 80%, black) 0%,
+    color-mix(in srgb, var(--wzl-accent) 95%, black) 50%,
+    color-mix(in srgb, var(--wzl-accent) 60%, white) 100%
+  );
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.35),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.25),
+    0 0 0 1px rgba(0, 0, 0, calc(var(--btn-rim) + 0.06));
+  transform: translateY(0.5px);
 }
+.variant_primary:active::before { opacity: 0.3; }
 
+/* Secondary: neutral glass — drained of color. */
 .variant_secondary {
-  background: var(--wzl-surface-sunken);
-  border-color: var(--wzl-border);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--wzl-fg) 25%, transparent) 0%,
+    color-mix(in srgb, var(--wzl-fg) 10%, transparent) calc(var(--btn-equator) - var(--btn-equator-spread)),
+    color-mix(in srgb, var(--wzl-surface-raised) 90%, white) var(--btn-equator),
+    var(--wzl-surface-raised) calc(var(--btn-equator) + var(--btn-equator-spread) * 1.6),
+    color-mix(in srgb, var(--wzl-surface-sunken) 80%, black) 100%
+  );
+  backdrop-filter: blur(var(--btn-blur)) saturate(var(--btn-saturate));
+  -webkit-backdrop-filter: blur(var(--btn-blur)) saturate(var(--btn-saturate));
   color: var(--wzl-fg);
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, calc(var(--btn-text-shadow) * 0.7)),
+    var(--btn-text-inset-x) var(--btn-text-inset-y) 0 rgba(0, 0, 0, calc(var(--btn-text-inset) * 0.7));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, calc(var(--btn-inset-hi) * 0.5)),
+    inset 0 -1px 2px rgba(0, 0, 0, calc(var(--btn-inset-lo) * 0.83)),
+    0 0 0 1px rgba(0, 0, 0, calc(var(--btn-rim) + 0.03)),
+    0 1px 2px rgba(0, 0, 0, calc(var(--btn-drop-near) * 0.93)),
+    0 3px 6px rgba(0, 0, 0, calc(var(--btn-drop-far) * 0.89));
 }
 
-.variant_secondary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--wzl-fg) 8%, var(--wzl-surface-sunken));
-  border-color: var(--wzl-border-strong);
-}
+.variant_secondary:hover:not(:disabled) { filter: brightness(1.1); }
 
 .variant_secondary:active:not(:disabled) {
-  background: color-mix(in srgb, var(--wzl-fg) 14%, var(--wzl-surface-sunken));
+  background: linear-gradient(180deg, var(--wzl-surface-sunken) 0%, var(--wzl-surface-raised) 100%);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(0, 0, 0, 0.3);
+  transform: translateY(0.5px);
 }
+.variant_secondary:active::before { opacity: 0.2; }
 
+/* Ghost: silhouette only — no glass body, no gloss. */
 .variant_ghost {
   background: transparent;
   color: var(--wzl-fg);
+  box-shadow: none;
 }
+.variant_ghost::before { display: none; }
 
 .variant_ghost:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--wzl-fg) 8%, transparent);
+  background: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
 }
 
 .variant_ghost:active:not(:disabled) {
-  background: color-mix(in srgb, var(--wzl-fg) 14%, transparent);
+  background: color-mix(in srgb, var(--wzl-fg) 18%, transparent);
 }
 
 /* ---------- Modifiers ---------- */
 
-.fullWidth {
-  width: 100%;
-}
-
-.loading .label {
-  opacity: 0.7;
-}
+.fullWidth { width: 100%; }
+.loading .label { opacity: 0.7; }
 
 /* ---------- Slots ---------- */
 
@@ -116,19 +229,10 @@
   flex: 0 0 auto;
 }
 
-.size_sm .iconSlot > svg {
-  width: 12px;
-  height: 12px;
-}
+.size_sm .iconSlot > svg { width: 12px; height: 12px; }
+.size_md .iconSlot > svg { width: 14px; height: 14px; }
 
-.size_md .iconSlot > svg {
-  width: 14px;
-  height: 14px;
-}
-
-.label {
-  display: inline-block;
-}
+.label { display: inline-block; }
 
 /* ---------- Spinner ---------- */
 
@@ -140,7 +244,5 @@
 }
 
 @keyframes wzl-btn-spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }

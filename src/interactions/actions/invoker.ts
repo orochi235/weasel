@@ -139,14 +139,18 @@ export interface ActionDeps {
 
 /**
  * Discriminated overlay shape returned by `OngoingHandle.overlay()`.
- * Phase 14e.2.5 — dispatcher-side chrome surface for in-flight gestures
- * that paint non-ghost visuals (marquee rect, lasso polyline). The
- * canvas's `useDispatcherOverlayLayer` walks every in-flight handle, calls
+ * Phase 14e.2.5 / Phase 7 — dispatcher-side chrome surface for in-flight
+ * gestures that paint non-ghost visuals. The canvas's
+ * `useDispatcherOverlayLayer` walks every in-flight handle, calls
  * `overlay()`, and dispatches on `kind` to draw the appropriate shape.
  *
  * `marquee` mirrors `AreaSelectOverlay`; `lasso` mirrors `LassoSelectOverlay`.
- * Both shapes are world-space; the canvas converts to screen coords for
- * stroke-weight stability.
+ * `commands` is the generic escape hatch — actions emit arbitrary
+ * `DrawCommand[]` for previews the typed variants can't express (insert
+ * shape outlines, paste ghosts of synthetic nodes, custom chrome). World-
+ * space is the default; the layer wraps in `viewToMat3` so commands track
+ * the camera. Set `space: 'screen'` for projections you've already done
+ * yourself (rare).
  */
 export type OngoingOverlay =
   | {
@@ -160,6 +164,14 @@ export type OngoingOverlay =
       vertices: ReadonlyArray<{ x: number; y: number }>;
       current: { x: number; y: number };
       shiftHeld: boolean;
+    }
+  | {
+      kind: 'commands';
+      commands: readonly import('../../renderer').DrawCommand[];
+      /** Coordinate space the commands are authored in. Default `'world'`
+       *  — the layer wraps them in `viewToMat3(view)` so they track the
+       *  camera. `'screen'` emits them as-is (CSS pixels). */
+      space?: 'world' | 'screen';
     };
 
 /** Handle returned from an `OngoingInvoker.start`. The dispatcher pumps

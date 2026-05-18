@@ -215,7 +215,7 @@ function RightSidebar({ scene, selection }: RightSidebarProps): ReactElement {
     itemFor: (node) => {
       const data = node.data as SwillData;
       return {
-        label: data.text ?? `${node.id.slice(0, 6)}…`,
+        label: data.text ?? data.label ?? node.id,
         swatch: typeof data.fill === 'string' ? data.fill : undefined,
       };
     },
@@ -499,9 +499,10 @@ function Toolbar({
         onSaveSvg={() => {/* v0: SVG export deferred (TODO.md) */}}
         onOpenSvg={() => {
           // Pop the file picker, parse the chosen SVG, lower its nodes back
-          // into the scene-graph as leaves. Groups recognized by the parser
-          // are flattened for v1 — restoring nested group structure needs
-          // scene.add({ kind: 'group', ... }) support and is deferred.
+          // into the scene-graph. Leaves become `kind: 'leaf'`; SVG groups
+          // become `kind: 'container'` and members are reparented under them
+          // (nested groups supported — outer groups process after their
+          // inner groups are resolved).
           void (async () => {
             const text = await pickSvgFile();
             if (text === null) return;
@@ -511,10 +512,12 @@ function Toolbar({
             if (docPatch.paperSize) setPaperSize(docPatch.paperSize);
             let seq = 0;
             const { items, groups } = svgNodesToObjsWithGroups(parsed.nodes, () => `svg-${++seq}`);
-            if (groups.length > 0) {
-              console.warn(`[svg import] ${groups.length} group(s) flattened — nested groups not yet rehydrated into the scene-graph`);
-            }
             scene.batch('Import SVG', () => {
+              // Map ObjId (from svgInterop) → scene-graph NodeId for both
+              // leaves and containers, so groups can reference their members
+              // (including nested groups) by the same key.
+              const idMap = new Map<string, ReturnType<typeof asNodeId>>();
+              // 1. Insert all leaves at root first.
               for (const o of items) {
                 const pose: SwillPose = { x: o.x, y: o.y, width: o.width, height: o.height };
                 if (o.rotation) pose.rotation = o.rotation;
@@ -524,7 +527,50 @@ function Toolbar({
                 const data: SwillData = o.tool === 'text'
                   ? { text: o.text, fill: textFill ?? '#000000' }
                   : { path: o.path, fill: o.fill, stroke: o.stroke, strokeWidth: o.strokeWidth };
-                scene.add({ kind: 'leaf', layer: 'default', pose, data });
+                const sceneId = scene.add({ kind: 'leaf', layer: 'default', pose, data });
+                idMap.set(o.id, sceneId);
+              }
+              // 2. Topologically: process groups whose members are all already
+              // in idMap. Inner groups land first; outer groups can then
+              // reparent them by reading idMap.get(innerGroupId).
+              const remaining = new Set(groups.map((g) => g.id));
+              while (remaining.size > 0) {
+                let progressed = false;
+                for (const g of groups) {
+                  if (!remaining.has(g.id)) continue;
+                  if (!g.members.every((m) => idMap.has(m))) continue;
+                  // Container pose = AABB of members so resize handles land
+                  // sensibly when the group is selected.
+                  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                  for (const m of g.members) {
+                    const member = scene.get(idMap.get(m)!);
+                    if (!member) continue;
+                    const mp = member.pose as SwillPose;
+                    if (mp.x < minX) minX = mp.x;
+                    if (mp.y < minY) minY = mp.y;
+                    if (mp.x + mp.width > maxX) maxX = mp.x + mp.width;
+                    if (mp.y + mp.height > maxY) maxY = mp.y + mp.height;
+                  }
+                  const containerPose: SwillPose = Number.isFinite(minX)
+                    ? { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
+                    : { x: 0, y: 0, width: 0, height: 0 };
+                  const containerId = scene.add({
+                    kind: 'container',
+                    layer: 'default',
+                    pose: containerPose,
+                    data: {},
+                  });
+                  idMap.set(g.id, containerId);
+                  for (const m of g.members) {
+                    scene.move(idMap.get(m)!, containerId);
+                  }
+                  remaining.delete(g.id);
+                  progressed = true;
+                }
+                if (!progressed) {
+                  console.warn(`[svg import] ${remaining.size} group(s) unresolvable — cyclic membership?`);
+                  break;
+                }
               }
             });
           })();

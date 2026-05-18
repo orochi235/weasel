@@ -23,11 +23,9 @@ export type TreeEntry =
   | GroupEntry
   | MetaEntry;
 
-/** Per-phase channel presence — `true` when the `ToolDef`'s phase declares
- *  the channel (`initial.click`, `engaged.drag`, etc.). Lets the inspector
- *  show "what gestures this tool reacts to" without rendering route signatures
- *  for every cell. */
-export interface PhaseSummary {
+/** Gesture channels — input events a `ToolDef`'s phase *subscribes to*.
+ *  `true` when the phase declares the channel (e.g. `initial.click`). */
+export interface GestureChannels {
   click: boolean;
   pointerDown: boolean;
   dblTap: boolean;
@@ -35,9 +33,39 @@ export interface PhaseSummary {
   wheel: boolean;
   keyDown: boolean;
   keyUp: boolean;
+}
+
+/** Phase outputs — things a `ToolDef`'s phase *declares or emits* rather
+ *  than reacting to. Distinct from gestures and kept partitioned to avoid
+ *  the "subscribing tools" framing misrepresenting them. */
+export interface PhaseOutputs {
   cursor: boolean;
   overlay: boolean;
   claimsAll: boolean;
+}
+
+/** Full summary of a single phase. Always split into the two partitions. */
+export interface PhaseSummary {
+  gestures: GestureChannels;
+  outputs: PhaseOutputs;
+}
+
+/** Source location attached to a callback function at build time by the
+ *  `weasel:callback-source` Vite plugin (dev only). Absolute filesystem
+ *  path so the inspector can compose a vscode:// link directly. */
+export interface CallbackSource {
+  file: string;
+  line: number;
+  col: number;
+}
+
+/** A single named callback within a tool or action, with its authoring
+ *  source location. `label` is a dotted path like `initial.drag.node` or
+ *  `engaged.click.empty:shift` for tools, or `enabled` / `invoker.run`
+ *  for actions. */
+export interface CallbackRef {
+  label: string;
+  source: CallbackSource;
 }
 
 export interface ToolEntry {
@@ -85,6 +113,10 @@ export interface ToolEntry {
     onDeactivate: boolean;
     hitOverride: boolean;
   };
+  /** Source-linked callbacks discovered on the live ToolDef — empty when
+   *  the dev `weasel:callback-source` plugin isn't active (e.g. prod
+   *  builds). Inspector renders these as "open in editor" links. */
+  callbacks: readonly CallbackRef[];
 }
 
 export interface ActionEntry {
@@ -110,6 +142,9 @@ export interface ActionEntry {
    *  view to refresh. */
   enabled?: { enabled: true } | { enabled: false; reason: string };
   hookName?: string;
+  /** Source-linked callbacks discovered on the live Action. See
+   *  `ToolEntry.callbacks` for plugin/source caveats. */
+  callbacks: readonly CallbackRef[];
 }
 
 export interface ShapeKindEntry {
@@ -167,29 +202,27 @@ export interface PhaseEntry {
 }
 
 /** Input-channel keys on `PhaseDef` — the gestures a tool *subscribes to*.
- *  Distinct from phase outputs (`cursor` / `overlay` / `claimsAll`), which
- *  the tool *declares or emits*. Drives the "Gestures" tree category. */
-export const GESTURE_CHANNEL_KEYS: readonly (keyof PhaseSummary)[] = [
+ *  Strictly typed against `GestureChannels` so phase outputs can't sneak in. */
+export const GESTURE_CHANNEL_KEYS: readonly (keyof GestureChannels)[] = [
   'click', 'pointerDown', 'dblTap', 'drag', 'wheel',
   'keyDown', 'keyUp',
 ];
 
 /** Non-gesture `PhaseDef` slots — the tool emits/declares these rather than
- *  reacting to them. Surfaced separately so the inspector framing
- *  ("subscribing tools") doesn't misrepresent them. */
-export const PHASE_OUTPUT_KEYS: readonly (keyof PhaseSummary)[] = [
+ *  reacting to them. Strictly typed against `PhaseOutputs`. */
+export const PHASE_OUTPUT_KEYS: readonly (keyof PhaseOutputs)[] = [
   'cursor', 'overlay', 'claimsAll',
 ];
 
 export interface GestureEntry {
   kind: 'gesture';
-  id: keyof PhaseSummary;
+  id: keyof GestureChannels;
   label: string;
 }
 
 export interface PhaseOutputEntry {
   kind: 'phaseOutput';
-  id: keyof PhaseSummary;
+  id: keyof PhaseOutputs;
   label: string;
 }
 
@@ -356,8 +389,13 @@ export function countForEntry(
         ? tools.length
         : tools.filter((t) => t.phases.engaged !== undefined).length;
     case 'gesture':
+      return tools.filter((t) =>
+        t.phases.initial.gestures[entry.id] || t.phases.engaged?.gestures[entry.id]
+      ).length;
     case 'phaseOutput':
-      return tools.filter((t) => t.phases.initial[entry.id] || t.phases.engaged?.[entry.id]).length;
+      return tools.filter((t) =>
+        t.phases.initial.outputs[entry.id] || t.phases.engaged?.outputs[entry.id]
+      ).length;
     case 'hotkeyTrigger':
       return tools.filter((t) => t.hotkey === entry.id).length;
     case 'slot':

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, ReactElement, ReactNode } from 'react';
 import s from './Foundations.module.css';
 
@@ -52,7 +53,7 @@ function SurfacesView(): ReactElement {
 }
 
 interface FamilySpec {
-  token: string;
+  tokens: string[];
   label: string;
   description: string;
   weights: { value: number; label: string }[];
@@ -60,27 +61,28 @@ interface FamilySpec {
 
 const FONT_FAMILIES: FamilySpec[] = [
   {
-    token: '--wzl-font-ui',
+    tokens: ['--wzl-font-ui', '--wzl-font-display'],
     label: 'UI / display',
-    description: 'Oswald — condensed display sans for kit chrome, headings, labels.',
+    description: 'Oswald — condensed sans. Default face for chrome labels, buttons, menus, and headings. Canonical weight is 300; only 200/300/400 are loaded (Oswald gets blocky above that).',
     weights: [
-      { value: 300, label: 'Light' },
-      { value: 500, label: 'Medium' },
-      { value: 700, label: 'Bold' },
+      { value: 200, label: 'ExtraLight' },
+      { value: 300, label: 'Light · canon' },
+      { value: 400, label: 'Regular' },
     ],
   },
   {
-    token: '--wzl-font-body',
-    label: 'Body / prose',
-    description: 'Inter — humanist sans for paragraphs and long-form reading.',
+    tokens: ['--wzl-font-body'],
+    label: 'Body',
+    description: 'Inter — humanist sans for paragraphs, descriptions, and long-form prose. Body text typically hardcodes its weight rather than routing through --wzl-font-weight-* (those track the UI face).',
     weights: [
+      { value: 300, label: 'Light' },
       { value: 400, label: 'Regular' },
       { value: 500, label: 'Medium' },
       { value: 700, label: 'Bold' },
     ],
   },
   {
-    token: '--wzl-font-mono',
+    tokens: ['--wzl-font-mono'],
     label: 'Mono',
     description: 'System ui-monospace — code, keystroke labels, tabular figures.',
     weights: [
@@ -93,6 +95,7 @@ const FONT_FAMILIES: FamilySpec[] = [
 const SIZE_SCALE = [10, 12, 14, 16, 20, 28, 40] as const;
 
 function TextView(): ReactElement {
+  const [sampleSize, setSampleSize] = useState(18);
   return (
     <Section title="Text">
       <h3 className={s.subhead}>Color</h3>
@@ -116,12 +119,28 @@ function TextView(): ReactElement {
         </div>
       </div>
 
-      <h3 className={s.subhead}>Families & weights</h3>
+      <div className={s.sampleSizeRow}>
+        <h3 className={s.subhead} style={{ margin: 0 }}>Families & weights</h3>
+        <label className={s.sampleSizeControl}>
+          <span className={s.sampleSizeLabel}>sample size</span>
+          <input
+            type="range"
+            min={10}
+            max={48}
+            step={1}
+            value={sampleSize}
+            onChange={(e) => setSampleSize(Number(e.target.value))}
+          />
+          <code className={s.sampleSizeValue}>{sampleSize}px</code>
+        </label>
+      </div>
       <div className={s.familyStack}>
         {FONT_FAMILIES.map((fam) => (
-          <div key={fam.token} className={s.familyCard} style={{ fontFamily: `var(${fam.token})` }}>
+          <div key={fam.tokens.join('|')} className={s.familyCard} style={{ fontFamily: `var(${fam.tokens[0]})` }}>
             <div className={s.familyHeader}>
-              <code className={s.textToken}>{fam.token}</code>
+              <span className={s.familyTokens}>
+                {fam.tokens.map((tk) => <code key={tk} className={s.textToken}>{tk}</code>)}
+              </span>
               <span className={s.familyLabel}>{fam.label}</span>
             </div>
             <p className={s.familyDescription} style={{ fontFamily: 'var(--wzl-font-body)' }}>
@@ -131,10 +150,10 @@ function TextView(): ReactElement {
               {fam.weights.map((w) => (
                 <div key={w.value} className={s.weightRow}>
                   <code className={s.weightLabel}>{w.value} {w.label}</code>
-                  <span className={s.weightSample} style={{ fontWeight: w.value }}>
+                  <span className={s.weightSample} style={{ fontWeight: w.value, fontSize: sampleSize }}>
                     The quick brown fox jumps over the lazy dog
                   </span>
-                  <span className={s.weightSampleItalic} style={{ fontWeight: w.value }}>
+                  <span className={s.weightSampleItalic} style={{ fontWeight: w.value, fontSize: Math.max(10, sampleSize - 4) }}>
                     italic
                   </span>
                 </div>
@@ -230,6 +249,112 @@ function PrimitivesView(): ReactElement {
   );
 }
 
+interface ColorGroup {
+  title: string;
+  tokens: string[];
+}
+
+const COLOR_TOKEN_GROUPS: ColorGroup[] = [
+  {
+    title: 'Primitive — grays',
+    tokens: [
+      '--wzl-gray-50', '--wzl-gray-100', '--wzl-gray-200', '--wzl-gray-300', '--wzl-gray-400',
+      '--wzl-gray-500', '--wzl-gray-600', '--wzl-gray-700', '--wzl-gray-800', '--wzl-gray-900',
+    ],
+  },
+  {
+    title: 'Primitive — accent & status',
+    tokens: ['--wzl-accent-soft', '--wzl-accent-base', '--wzl-accent-strong', '--wzl-danger-base', '--wzl-warning-base'],
+  },
+  {
+    title: 'Semantic — surfaces',
+    tokens: ['--wzl-surface', '--wzl-surface-raised', '--wzl-surface-sunken'],
+  },
+  {
+    title: 'Semantic — text',
+    tokens: ['--wzl-fg', '--wzl-fg-muted', '--wzl-fg-subtle', '--wzl-fg-on-accent'],
+  },
+  {
+    title: 'Semantic — borders',
+    tokens: ['--wzl-border', '--wzl-border-strong'],
+  },
+  {
+    title: 'Semantic — interactive',
+    tokens: ['--wzl-accent', '--wzl-accent-hover', '--wzl-danger', '--wzl-warning', '--wzl-focus-ring'],
+  },
+  {
+    title: 'Glass',
+    tokens: ['--wzl-glass-tint'],
+  },
+  {
+    title: 'Deprecated aliases',
+    tokens: [
+      '--wzl-text', '--wzl-text-muted', '--wzl-bg', '--wzl-muted',
+      '--wzl-panel-bg', '--wzl-panel-border', '--wzl-input-bg',
+      '--wzl-track-bg', '--wzl-track-border',
+      '--wzl-thumb-fill', '--wzl-thumb-border', '--wzl-thumb-text',
+      '--wzl-button-fill', '--wzl-button-fill-hover', '--wzl-button-fill-pressed', '--wzl-button-text',
+    ],
+  },
+];
+
+function rgbToHex(rgb: string): string {
+  const m = rgb.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+  if (!m) return rgb.trim();
+  const [, r, g, b] = m;
+  const toHex = (n: string) => Number(n).toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function ThemedSwatch({ token, theme }: { token: string; theme: 'dark' | 'light' }): ReactElement {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [value, setValue] = useState('');
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const cs = getComputedStyle(el);
+    setValue(cs.getPropertyValue(token).trim() || cs.backgroundColor);
+  }, [token]);
+  return (
+    <div ref={ref} data-theme={theme} className={s.swatchPair}>
+      <div className={s.swatchPairChip} style={{ background: `var(${token})` }} />
+      <code className={s.swatchPairValue}>{rgbToHex(value)}</code>
+    </div>
+  );
+}
+
+function ColorsView(): ReactElement {
+  return (
+    <Section title="Color tokens">
+      <p className={s.colorsIntro}>
+        Every semantic and primitive color token, rendered side-by-side in both themes. Hex values
+        are read from the live document — drag the theme toggle and watch only the "current" side
+        update (the opposite side reads its values from a forced data-theme override).
+      </p>
+      {COLOR_TOKEN_GROUPS.map((group) => (
+        <div key={group.title} className={s.colorsGroup}>
+          <h3 className={s.subhead}>{group.title}</h3>
+          <div className={s.colorsTable}>
+            <div className={`${s.colorsRow} ${s.colorsHeader}`}>
+              <code className={s.colorsTokenHead}>token</code>
+              <span className={s.colorsThemeHead}>night</span>
+              <span className={s.colorsThemeHead}>day</span>
+            </div>
+            {group.tokens.map((tk) => (
+              <div key={tk} className={s.colorsRow}>
+                <code className={s.colorsToken}>{tk}</code>
+                <ThemedSwatch token={tk} theme="dark" />
+                <ThemedSwatch token={tk} theme="light" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </Section>
+  );
+}
+
+export const Colors: Story = { render: () => <ColorsView /> };
 export const Surfaces: Story = { render: () => <SurfacesView /> };
 export const Text: Story = { render: () => <TextView /> };
 export const Borders: Story = { render: () => <BordersView /> };
@@ -246,6 +371,7 @@ export const All: Story = {
       <AccentsView />
       <GlassView />
       <PrimitivesView />
+      <ColorsView />
     </>
   ),
 };

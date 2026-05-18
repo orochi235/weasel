@@ -94,10 +94,12 @@ const gestureTokenSet: BadgeTokenSet = {
 // ── phase ──────────────────────────────────────────────────────────────────
 
 /** Phase badge family — applied wherever the inspector names a lifecycle
- *  phase (`initial`, `engaged`). Square chips distinguish them from the
- *  hexagonal gesture family at a glance. */
+ *  phase (`initial`, `engaged`). Ribbons with a flat left edge and an
+ *  outward-pointing right edge — reads as a "phase leading into something",
+ *  visually mirroring how routes are read left-to-right (phase → gesture → target). */
 export const PHASE_BADGE_PROPS: Omit<BadgeProps, 'children'> = {
-  shape: 'square',
+  shape: 'ribbon',
+  shapeParams: { left: 'flat', right: 'outward' },
   size: 'sm',
   tone: 'accent',
   variant: 'subtle',

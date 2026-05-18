@@ -8,10 +8,9 @@ import type {
   MetaEntry,
 } from './registryData';
 import { BOOLEAN_BADGE_PROPS, BUNDLE_BADGE_PROPS, GESTURE_BADGE_PROPS, HOTKEY_TRIGGER_GLYPHS, KIND_BADGE_PROPS, PHASE_BADGE_PROPS, TOKEN_SETS, type TokenSet } from './badgeTokens';
-import { collectBundles, collectIcons, GESTURE_CHANNEL_KEYS, parseRoute, TOOL_HOOK_NAMES } from './registryData';
-
-const GESTURE_KEY_SET = new Set<string>(GESTURE_CHANNEL_KEYS);
-function isGestureChannel(name: string): boolean { return GESTURE_KEY_SET.has(name); }
+import { collectBundles, collectIcons, GESTURE_CHANNEL_KEYS, PHASE_OUTPUT_KEYS, parseRoute, TOOL_HOOK_NAMES } from './registryData';
+void GESTURE_CHANNEL_KEYS;
+void PHASE_OUTPUT_KEYS;
 
 /** Decomposes a `phase.gesture.target[:modifiers]` route into its constituent
  *  tokens — phase + gesture as badges, target as a code chip, modifier set
@@ -353,13 +352,15 @@ function PhaseDetail({
   const declaring = tools.filter((t) =>
     entry.id === 'initial' ? true : t.phases.engaged !== undefined,
   );
-  const rows = declaring.map((t) => ({
-    id: t.id,
-    tool: t,
-    channels: activeChannels(
-      (entry.id === 'initial' ? t.phases.initial : t.phases.engaged) ?? EMPTY_PHASE,
-    ),
-  }));
+  const rows = declaring.map((t) => {
+    const phase = (entry.id === 'initial' ? t.phases.initial : t.phases.engaged) ?? EMPTY_PHASE;
+    return {
+      id: t.id,
+      tool: t,
+      gestures: activeGestures(phase),
+      outputs: activeOutputs(phase),
+    };
+  });
   return (
     <div>
       <h2 className={s.detailHeading}><Badge {...(PHASE_BADGE_PROPS as BadgeProps)}>{entry.label}</Badge></h2>
@@ -374,14 +375,24 @@ function PhaseDetail({
         columns={[
           toolNameColumn(onNavigate),
           {
-            id: 'channels',
-            header: 'channels',
+            id: 'gestures',
+            header: 'gestures',
             sortable: false,
-            render: (r) => r.channels.length === 0
+            render: (r) => r.gestures.length === 0
               ? <span className={s.empty}>—</span>
-              : <span>{r.channels.map((c) => (isGestureChannel(c)
-                  ? <Badge key={c} {...(GESTURE_BADGE_PROPS as BadgeProps)}>{c}</Badge>
-                  : <code key={c} className={s.tag}>{c}</code>))}</span>,
+              : <span>{r.gestures.map((g) => (
+                  <Badge key={g} {...(GESTURE_BADGE_PROPS as BadgeProps)}>{g}</Badge>
+                ))}</span>,
+          },
+          {
+            id: 'outputs',
+            header: 'outputs',
+            sortable: false,
+            render: (r) => r.outputs.length === 0
+              ? <span className={s.empty}>—</span>
+              : <span>{r.outputs.map((o) => (
+                  <code key={o} className={s.tag}>{o}</code>
+                ))}</span>,
           },
         ]}
         empty="No tools declare this phase."
@@ -395,8 +406,8 @@ function GestureDetail({
 }: { entry: GestureEntry; tools: readonly ToolEntry[]; onNavigate: Props['onNavigate'] }) {
   const rows = tools.flatMap((t) => {
     const phases: ('initial' | 'engaged')[] = [];
-    if (t.phases.initial[entry.id]) phases.push('initial');
-    if (t.phases.engaged?.[entry.id]) phases.push('engaged');
+    if (t.phases.initial.gestures[entry.id]) phases.push('initial');
+    if (t.phases.engaged?.gestures[entry.id]) phases.push('engaged');
     return phases.length === 0 ? [] : [{ id: t.id, tool: t, phases }];
   });
   return (
@@ -432,8 +443,8 @@ function PhaseOutputDetail({
 }: { entry: PhaseOutputEntry; tools: readonly ToolEntry[]; onNavigate: Props['onNavigate'] }) {
   const rows = tools.flatMap((t) => {
     const phases: ('initial' | 'engaged')[] = [];
-    if (t.phases.initial[entry.id]) phases.push('initial');
-    if (t.phases.engaged?.[entry.id]) phases.push('engaged');
+    if (t.phases.initial.outputs[entry.id]) phases.push('initial');
+    if (t.phases.engaged?.outputs[entry.id]) phases.push('engaged');
     return phases.length === 0 ? [] : [{ id: t.id, tool: t, phases }];
   });
   // PhaseDef docs: only `initial.overlay` is read by the runtime; the
@@ -505,9 +516,11 @@ function toolNameColumn(
 }
 
 const EMPTY_PHASE: PhaseSummary = {
-  click: false, pointerDown: false, dblTap: false, drag: false,
-  wheel: false, keyDown: false, keyUp: false,
-  cursor: false, overlay: false, claimsAll: false,
+  gestures: {
+    click: false, pointerDown: false, dblTap: false, drag: false,
+    wheel: false, keyDown: false, keyUp: false,
+  },
+  outputs: { cursor: false, overlay: false, claimsAll: false },
 };
 
 function IconDetail({ entry }: { entry: IconEntry }) {
@@ -529,13 +542,12 @@ function IconDetail({ entry }: { entry: IconEntry }) {
   );
 }
 
-const PHASE_CHANNEL_KEYS: readonly (keyof PhaseSummary)[] = [
-  'click', 'pointerDown', 'dblTap', 'drag', 'wheel',
-  'keyDown', 'keyUp', 'cursor', 'overlay', 'claimsAll',
-];
+function activeGestures(p: PhaseSummary): readonly (keyof typeof p.gestures)[] {
+  return GESTURE_CHANNEL_KEYS.filter((k) => p.gestures[k]);
+}
 
-function activeChannels(p: PhaseSummary): readonly string[] {
-  return PHASE_CHANNEL_KEYS.filter((k) => p[k]);
+function activeOutputs(p: PhaseSummary): readonly (keyof typeof p.outputs)[] {
+  return PHASE_OUTPUT_KEYS.filter((k) => p.outputs[k]);
 }
 
 function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props['onNavigate'] }) {
@@ -633,15 +645,23 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
 }
 
 function PhaseRow({ label, phase }: { label: string; phase: PhaseSummary }) {
-  const channels = activeChannels(phase);
+  const gestures = activeGestures(phase);
+  const outputs = activeOutputs(phase);
   return (
     <div className={s.phaseRow}>
       <Badge {...(PHASE_BADGE_PROPS as BadgeProps)}>{label}</Badge>
-      {channels.length === 0
+      {gestures.length === 0 && outputs.length === 0
         ? <span className={s.empty}>—</span>
-        : channels.map((c) => (isGestureChannel(c)
-            ? <Badge key={c} {...(GESTURE_BADGE_PROPS as BadgeProps)}>{c}</Badge>
-            : <code key={c} className={s.tag}>{c}</code>))}
+        : (
+          <>
+            {gestures.map((g) => (
+              <Badge key={`g-${g}`} {...(GESTURE_BADGE_PROPS as BadgeProps)}>{g}</Badge>
+            ))}
+            {outputs.map((o) => (
+              <code key={`o-${o}`} className={s.tag}>{o}</code>
+            ))}
+          </>
+        )}
     </div>
   );
 }

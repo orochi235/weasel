@@ -4,9 +4,11 @@ import { RegistryTree } from './RegistryTree';
 import type { PhaseSummary, TreeCategoryNode } from './registryData';
 
 const EMPTY_PHASE: PhaseSummary = {
-  click: false, pointerDown: false, dblTap: false, drag: false,
-  wheel: false, keyDown: false, keyUp: false,
-  cursor: false, overlay: false, claimsAll: false,
+  gestures: {
+    click: false, pointerDown: false, dblTap: false, drag: false,
+    wheel: false, keyDown: false, keyUp: false,
+  },
+  outputs: { cursor: false, overlay: false, claimsAll: false },
 };
 const EMPTY_CAPS = {
   initScratch: false, onActivate: false, onDeactivate: false, hitOverride: false,

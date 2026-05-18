@@ -12,10 +12,13 @@ import Perforations, { type PerforationsEffectParams } from './Perforations';
 import Bevel2, { type Bevel2EffectParams } from './Bevel2';
 import Outline, { type OutlineEffectParams } from './Outline';
 import Sunbeams, { type SunbeamsEffectParams } from './Sunbeams';
+import Aqua, { type AquaEffectParams } from './Aqua';
+import Metal, { type MetalEffectParams } from './Metal';
 
 export type BadgeEffect =
   | 'spikes' | 'puffs' | 'bites' | 'scallops'
-  | 'bevel' | 'bevel2' | 'sheen' | 'sunbeams' | 'rivets' | 'shadow' | 'woodgrain' | 'perforations' | 'outline';
+  | 'bevel' | 'bevel2' | 'sheen' | 'sunbeams' | 'rivets' | 'shadow' | 'woodgrain' | 'perforations' | 'outline'
+  | 'aqua' | 'metal';
 
 export interface BadgeEffectParams {
   spikes: SpikesEffectParams;
@@ -31,6 +34,8 @@ export interface BadgeEffectParams {
   perforations: PerforationsEffectParams;
   outline: OutlineEffectParams;
   sunbeams: SunbeamsEffectParams;
+  aqua: AquaEffectParams;
+  metal: MetalEffectParams;
 }
 
 export const EFFECTS: Record<BadgeEffect, EffectModule<any>> = {
@@ -47,6 +52,8 @@ export const EFFECTS: Record<BadgeEffect, EffectModule<any>> = {
   perforations: Perforations,
   outline: Outline,
   sunbeams: Sunbeams,
+  aqua: Aqua,
+  metal: Metal,
 };
 
 export interface EffectSpec<E extends BadgeEffect = BadgeEffect> {

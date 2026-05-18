@@ -133,9 +133,12 @@ function evenlySpacedThumbs(n: number, min: number, max: number): Thumb[] {
 
 function PlaygroundView({
   thumbCount,
+  setCount,
   ...sliderArgs
-}: { thumbCount: number } & Omit<Parameters<typeof Slider>[0], 'thumbs' | 'onChange'>) {
-  const [, updateArgs] = useArgs();
+}: {
+  thumbCount: number;
+  setCount: (n: number) => void;
+} & Omit<Parameters<typeof Slider>[0], 'thumbs' | 'onChange'>) {
   const [thumbs, setThumbs] = useState<Thumb[]>(() =>
     evenlySpacedThumbs(thumbCount, sliderArgs.min, sliderArgs.max),
   );
@@ -154,7 +157,6 @@ function PlaygroundView({
       return prev.slice(0, thumbCount);
     });
   }, [thumbCount, sliderArgs.min, sliderArgs.max]);
-  const setCount = (n: number) => updateArgs({ thumbCount: Math.max(1, Math.min(8, n)) });
   const btnStyle: React.CSSProperties = {
     fontSize: 11,
     padding: '3px 10px',
@@ -178,5 +180,18 @@ function PlaygroundView({
 
 export const Playground: Story = {
   args: { trackHeight: 12, readoutPlacement: 'below-thumb' } as never,
-  render: (args) => <PlaygroundView {...(args as unknown as Parameters<typeof PlaygroundView>[0])} />,
+  render: (args) => {
+    const [, updateArgs] = useArgs();
+    const { thumbCount, ...sliderArgs } = args as unknown as { thumbCount: number } & Omit<
+      Parameters<typeof Slider>[0],
+      'thumbs' | 'onChange'
+    >;
+    return (
+      <PlaygroundView
+        {...sliderArgs}
+        thumbCount={thumbCount ?? 3}
+        setCount={(n) => updateArgs({ thumbCount: Math.max(1, Math.min(8, n)) })}
+      />
+    );
+  },
 };

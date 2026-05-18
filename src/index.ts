@@ -148,6 +148,7 @@ export type {
 export {
   DepRegistryProvider,
   useDepRegistry,
+  useOptionalDepRegistry,
   useDepSource,
 } from './interactions/actions/depRegistry';
 export type {
@@ -616,7 +617,11 @@ export {
 export type { ReorderDirection } from './core/ops/reorder';
 
 // ─── Path boolean ops (Pathfinder) ──────────────────────────────────────────
-export { useBooleans, applyBooleanOp } from './interactions/actions/booleans';
+export {
+  useBooleans,
+  useBooleansAdapter,
+  applyBooleanOp,
+} from './interactions/actions/booleans';
 export type {
   BooleanOp,
   BooleansAdapter,

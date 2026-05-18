@@ -7,7 +7,7 @@
  *   2. Semantic tokens — what components reference
  *   3. Deprecated aliases — kept so older components keep rendering
  */
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@300;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200;300;400&display=swap');
 
 :root {
   /* ---------- 1. Primitive scale ---------- */
@@ -24,11 +24,12 @@
   --wzl-gray-800: #181a1e;
   --wzl-gray-900: #0e0f12;
 
-  /* Accent — neutral violet, reads as "interactive" without carrying
-   * brand connotation. Apps override at their own scope. */
-  --wzl-accent-soft:   #6e5ec4;
-  --wzl-accent-base:   #8472e0;
-  --wzl-accent-strong: #a193f0;
+  /* Accent — midnight blue-violet. Deep and saturated; carries enough
+   * weight to anchor primary actions in both light and dark surfaces.
+   * Apps override at their own scope. */
+  --wzl-accent-soft:   #1d1454;
+  --wzl-accent-base:   #2e1f7a;
+  --wzl-accent-strong: #5841b8;
 
   --wzl-danger-base:  #d94a3f;
   --wzl-warning-base: #d99a3f;
@@ -38,17 +39,24 @@
   --wzl-radius-md: 5px;
   --wzl-border-w:  1px;
 
-  /* Typography — Oswald (display sans) as the kit UI face. Weights
-   * available: 300 (light), 500 (medium), 700 (bold). Fallbacks chosen
-   * for similar metrics on systems where Oswald hasn't loaded yet. */
-  --wzl-font-ui:   'Oswald', 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif;
-  /* Body face — humanist sans for prose / long-form. Consumers must load the
-   * Inter webfont themselves (or accept the system-ui fallback). */
-  --wzl-font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --wzl-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --wzl-font-weight-light:  300;
-  --wzl-font-weight-normal: 500;
-  --wzl-font-weight-bold:   700;
+  /* Typography. UI/body defaults to Inter; display is Oswald and is loaded
+   * via the @import above (consumers either bring their own Inter or accept
+   * the system-ui fallback). */
+  /* UI / display face — Oswald condensed. Used for chrome labels, buttons,
+   * menus, and headings. Loaded weights are 200/300/400 only; the heavier
+   * cuts get too blocky for this face at any size. */
+  --wzl-font-ui:      'Oswald', 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif;
+  --wzl-font-display: 'Oswald', 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif;
+  /* Body face — Inter for paragraphs and long-form prose. Consumers must
+   * load the Inter webfont themselves (or accept the system-ui fallback). */
+  --wzl-font-body:    'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --wzl-font-mono:    ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* Weight tokens are tuned to the UI face (Oswald 200/300/400). Body /
+   * prose text using Inter will typically hardcode its own weights (e.g.
+   * 400/700) rather than route through these. */
+  --wzl-font-weight-light:  200;
+  --wzl-font-weight-normal: 300;
+  --wzl-font-weight-bold:   400;
 
   /* ---------- 2. Semantic tokens ---------- */
 
@@ -109,6 +117,25 @@
 :root {
   font-family: var(--wzl-font-ui);
   font-weight: var(--wzl-font-weight-normal);
+}
+
+/* Explicit dark-mode rules so descendants with `data-theme="dark"` reassert
+ * the dark palette even when the document root is in light mode. Mirrors the
+ * dark values in `:root` for every semantic token that has a light override. */
+[data-theme='dark'] {
+  color-scheme: dark;
+  --wzl-surface:        var(--wzl-gray-800);
+  --wzl-surface-raised: var(--wzl-gray-700);
+  --wzl-surface-sunken: var(--wzl-gray-900);
+
+  --wzl-fg:             var(--wzl-gray-100);
+  --wzl-fg-muted:       var(--wzl-gray-300);
+  --wzl-fg-subtle:      var(--wzl-gray-400);
+
+  --wzl-border:         var(--wzl-gray-700);
+  --wzl-border-strong:  var(--wzl-gray-600);
+
+  --wzl-thumb-text:     var(--wzl-gray-900);
 }
 
 /* Light-mode overrides. Only the semantic surface/text/border tokens flip;

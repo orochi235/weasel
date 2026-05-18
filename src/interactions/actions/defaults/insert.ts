@@ -168,6 +168,33 @@ export const insertAction: Action & { requires: string[] } = {
           // the latest reference in case the dispatcher swaps it.
           if (moveCtx.drag?.points) scratch.points = moveCtx.drag.points;
         },
+        // Live preview surface (Phase 7): paint the in-flight bounds as a
+        // thin outline. The actual shape (ellipse/polygon/star/etc.) only
+        // materialises at commit because the descriptor doesn't have the
+        // per-kind factories — the dep does — but showing the AABB is
+        // enough feedback for the user to see their drag landing.
+        overlay() {
+          const x = Math.min(scratch.startX, scratch.currentX);
+          const y = Math.min(scratch.startY, scratch.currentY);
+          const w = Math.abs(scratch.currentX - scratch.startX);
+          const h = Math.abs(scratch.currentY - scratch.startY);
+          if (w === 0 && h === 0) return null;
+          return {
+            kind: 'commands',
+            space: 'world',
+            commands: [
+              {
+                kind: 'path',
+                path: { kind: 'rect', x, y, width: w, height: h },
+                stroke: {
+                  paint: { color: 'rgba(164, 139, 212, 0.9)' },
+                  width: 1,
+                  dash: [3, 3],
+                },
+              },
+            ],
+          };
+        },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           if (reason === 'cancel') return;
 

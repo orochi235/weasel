@@ -261,6 +261,16 @@ declare module './depRegistry' {
      * `useResizePolicy` helper.
      */
     resizePolicy?: ResizePolicy<unknown>;
+    /**
+     * Booleans adapter — read selection ids, fetch world-space `Path`s,
+     * compare z-order, and mint result nodes for Pathfinder ops.
+     *
+     * Consumers wire via `useBooleansAdapter(adapter)` (a thin wrapper
+     * around `useDepSource('booleansAdapter', ...)`). The descriptor's
+     * `enabled` predicate reads `deps.selection` for the count check; the
+     * invoker reads `deps.booleansAdapter` to execute the op.
+     */
+    booleansAdapter?: import('./booleans/booleans').BooleansAdapter;
   }
 }
 

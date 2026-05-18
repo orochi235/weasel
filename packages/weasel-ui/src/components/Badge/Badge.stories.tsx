@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Badge } from './Badge';
+import { ToggleBar as KitToggleBar } from '../ToggleBar/ToggleBar';
 import { ALL_SHAPES, SHAPES } from './shapes';
 import type { BadgeShape, BadgeTone, BadgeVariant } from './types';
 import { BASES, type BadgeBase } from './bases';
@@ -800,6 +801,40 @@ const EFFECT_LAB_CONTROLS: Record<BadgeEffect, LabControl[]> = {
     { key: 'gradientStart', kind: 'range', min: 0,  max: 1,  step: 0.02, default: 0 },
     { key: 'gradientEnd',   kind: 'range', min: 0,  max: 1,  step: 0.02, default: 1 },
   ],
+  aqua: [
+    { key: '__body__',       kind: 'header', label: 'Body' } as never,
+    { key: 'topAlpha',       kind: 'range', min: 0, max: 1, step: 0.02, default: 0.45 },
+    { key: 'upperAlpha',     kind: 'range', min: 0, max: 1, step: 0.02, default: 0.7 },
+    { key: 'equator',        kind: 'range', min: 15, max: 85, step: 1, default: 52 },
+    { key: 'equatorSpread',  kind: 'range', min: 1, max: 40, step: 1, default: 12 },
+    { key: 'equatorTint',    kind: 'range', min: 50, max: 100, step: 1, default: 95 },
+    { key: 'baseTint',       kind: 'range', min: 20, max: 100, step: 1, default: 70 },
+    { key: '__gloss__',      kind: 'header', label: 'Gloss' } as never,
+    { key: 'glossTopAlpha',  kind: 'range', min: 0, max: 1, step: 0.02, default: 0.7 },
+    { key: 'glossMidAlpha',  kind: 'range', min: 0, max: 1, step: 0.02, default: 0.18 },
+    { key: 'glossExtent',    kind: 'range', min: 5, max: 90, step: 1, default: 50 },
+    { key: '__bezel__',      kind: 'header', label: 'Bezel & rim' } as never,
+    { key: 'bezelAlpha',     kind: 'range', min: 0, max: 1, step: 0.02, default: 0.7 },
+    { key: 'bezelWidth',     kind: 'range', min: 0, max: 4, step: 0.25, default: 1 },
+    { key: 'rimAlpha',       kind: 'range', min: 0, max: 1, step: 0.02, default: 0.22 },
+    { key: 'rimWidth',       kind: 'range', min: 0, max: 4, step: 0.25, default: 1 },
+  ],
+  metal: [
+    { key: 'specularity',    kind: 'range', min: 0, max: 1, step: 0.02, default: 0.6 },
+    { key: '__body__',       kind: 'header', label: 'Body' } as never,
+    { key: 'equator',        kind: 'range', min: 15, max: 85, step: 1, default: 50 },
+    { key: 'equatorSpread',  kind: 'range', min: 1, max: 30, step: 1, default: 8 },
+    { key: 'topDarkness',    kind: 'range', min: 0, max: 100, step: 1, default: 55 },
+    { key: 'baseDarkness',   kind: 'range', min: 0, max: 100, step: 1, default: 35 },
+    { key: '__gloss__',      kind: 'header', label: 'Gloss' } as never,
+    { key: 'glossAlphaTop',  kind: 'range', min: 0, max: 1, step: 0.02, default: 0.55 },
+    { key: 'glossExtent',    kind: 'range', min: 5, max: 90, step: 1, default: 50 },
+    { key: '__bezel__',      kind: 'header', label: 'Bezel & rim' } as never,
+    { key: 'bezelAlpha',     kind: 'range', min: 0, max: 1, step: 0.02, default: 0.85 },
+    { key: 'bezelWidth',     kind: 'range', min: 0, max: 4, step: 0.25, default: 1 },
+    { key: 'rimAlpha',       kind: 'range', min: 0, max: 1, step: 0.02, default: 0.35 },
+    { key: 'rimWidth',       kind: 'range', min: 0, max: 4, step: 0.25, default: 1 },
+  ],
 };
 
 const BASE_KEYS = Object.keys(BASES) as BadgeBase[];
@@ -1272,29 +1307,12 @@ function ComposeLabView({ tone: toneArg, variant: variantArg, label: labelArg }:
     onChange: (v: T) => void,
     labels?: readonly string[],
   ): ReactElement => (
-    <div style={{ display: 'inline-flex', borderRadius: 4, overflow: 'hidden', border: '1px solid rgba(127, 176, 105, 0.4)' }}>
-      {options.map((opt, i) => (
-        <button
-          key={opt}
-          type="button"
-          onClick={() => onChange(opt)}
-          style={{
-            flex: 1,
-            fontSize: 10,
-            fontWeight: value === opt ? 600 : 400,
-            padding: '4px 8px',
-            cursor: 'pointer',
-            background: value === opt ? '#7fb069' : 'transparent',
-            color: value === opt ? '#1e1610' : 'rgba(255,255,255,0.65)',
-            border: 'none',
-            fontFamily: 'Helvetica, Arial, sans-serif',
-            textTransform: 'capitalize',
-          }}
-        >
-          {labels?.[i] ?? opt}
-        </button>
-      ))}
-    </div>
+    <KitToggleBar<T>
+      items={options.map((opt, i) => ({ value: opt, label: labels?.[i] ?? opt }))}
+      value={value}
+      onChange={(v) => { if (v != null) onChange(v); }}
+      size="sm"
+    />
   );
   const sectionStyle: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 6, padding: 12, borderRadius: 6, background: 'rgba(127, 176, 105, 0.06)', border: '1px solid rgba(255,255,255,0.06)' };
   const effectsSectionStyle: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 6, padding: 12, borderRadius: 6, background: 'rgba(127, 176, 105, 0.18)', border: '1px solid rgba(127, 176, 105, 0.45)', boxShadow: '0 0 0 1px rgba(127, 176, 105, 0.15) inset, 0 6px 18px -8px rgba(127, 176, 105, 0.5)' };

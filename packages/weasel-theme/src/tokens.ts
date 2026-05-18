@@ -22,9 +22,9 @@ export const DEFAULT_TOKENS = {
   '--wzl-gray-900': '#0e0f12',
 
   // Primitive — accent + status
-  '--wzl-accent-soft':   '#6e5ec4',
-  '--wzl-accent-base':   '#8472e0',
-  '--wzl-accent-strong': '#a193f0',
+  '--wzl-accent-soft':   '#1d1454',
+  '--wzl-accent-base':   '#2e1f7a',
+  '--wzl-accent-strong': '#5841b8',
   '--wzl-danger-base':   '#d94a3f',
   '--wzl-warning-base':  '#d99a3f',
 
@@ -35,10 +35,12 @@ export const DEFAULT_TOKENS = {
 
   // Typography
   '--wzl-font-ui':            "'Oswald', 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
+  '--wzl-font-display':       "'Oswald', 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
+  '--wzl-font-body':          "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif",
   '--wzl-font-mono':          'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-  '--wzl-font-weight-light':  '300',
-  '--wzl-font-weight-normal': '500',
-  '--wzl-font-weight-bold':   '700',
+  '--wzl-font-weight-light':  '200',
+  '--wzl-font-weight-normal': '300',
+  '--wzl-font-weight-bold':   '400',
 
   // Semantic — surfaces
   '--wzl-surface':        '#181a1e',
@@ -56,14 +58,14 @@ export const DEFAULT_TOKENS = {
   '--wzl-border-strong': '#383b42',
 
   // Semantic — interactive
-  '--wzl-accent':       '#8472e0',
-  '--wzl-accent-hover': '#a193f0',
+  '--wzl-accent':       '#2e1f7a',
+  '--wzl-accent-hover': '#5841b8',
   '--wzl-danger':       '#d94a3f',
   '--wzl-warning':      '#d99a3f',
-  '--wzl-focus-ring':   '#a193f0',
+  '--wzl-focus-ring':   '#5841b8',
 
   // Semantic — glass
-  '--wzl-glass-tint': '#8472e0',
+  '--wzl-glass-tint': '#2e1f7a',
 
   // Deprecated aliases (kept for older consumers)
   '--wzl-text':                '#e6e7e9',

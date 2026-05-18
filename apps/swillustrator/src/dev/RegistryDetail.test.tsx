@@ -13,9 +13,11 @@ describe('RegistryDetail', () => {
       slot: 'registry',
       phases: {
         initial: {
-          click: true, pointerDown: false, dblTap: false, drag: true,
-          wheel: false, keyDown: false, keyUp: false,
-          cursor: true, overlay: false, claimsAll: false,
+          gestures: {
+            click: true, pointerDown: false, dblTap: false, drag: true,
+            wheel: false, keyDown: false, keyUp: false,
+          },
+          outputs: { cursor: true, overlay: false, claimsAll: false },
         },
       },
       capabilities: {

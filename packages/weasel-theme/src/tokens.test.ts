@@ -10,7 +10,9 @@ describe('weasel-theme tokens', () => {
   it('DEFAULT_TOKENS keys match tokens.css :root declarations', () => {
     const cssText = readFileSync(resolve(__dirname, 'tokens.css'), 'utf8');
     const matches = [...cssText.matchAll(/(--wzl-[a-z0-9-]+):\s*([^;]+);/g)];
-    const cssKeys = matches.map(([, key]) => key).sort();
+    // Dedupe: light-theme overrides legitimately redeclare some tokens under
+    // `[data-theme='light']`. We're checking key parity, not declaration count.
+    const cssKeys = [...new Set(matches.map(([, key]) => key))].sort();
     const tsKeys = Object.keys(DEFAULT_TOKENS).sort();
     expect(cssKeys).toEqual(tsKeys);
   });

@@ -21,7 +21,7 @@ if (typeof document !== 'undefined') {
     const link = document.createElement('link');
     link.id = id;
     link.rel = 'stylesheet';
-    link.href = 'https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,300;1,400;1,500;1,700;1,900&family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap';
+    link.href = 'https://fonts.googleapis.com/css2?family=Oswald:wght@200;300;400&family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,300;1,400;1,500;1,700;1,900&family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap';
     document.head.appendChild(link);
   }
 }
@@ -34,7 +34,7 @@ interface FontInfo {
 }
 
 const FONTS: Record<string, FontInfo> = {
-  oswald:     { family: 'Oswald, system-ui, sans-serif',                 weights: [300, 400, 500, 600, 700],         italics: [false],       stretches: ['normal'] },
+  oswald:     { family: 'Oswald, system-ui, sans-serif',                 weights: [200, 300, 400],                   italics: [false],       stretches: ['normal'] },
   helvetica:  { family: '"Helvetica Neue", Helvetica, Arial, sans-serif', weights: [100, 300, 400, 500, 700, 900],   italics: [false, true], stretches: ['ultra-condensed', 'condensed', 'normal'] },
   futura:     { family: 'Futura, "Trebuchet MS", Arial, sans-serif',     weights: [400, 500, 700],                   italics: [false, true], stretches: ['condensed', 'normal'] },
   inter:      { family: 'Inter, system-ui, sans-serif',                  weights: [300, 400, 500, 600, 700],         italics: [false, true], stretches: ['normal'] },
@@ -45,6 +45,7 @@ const FONTS: Record<string, FontInfo> = {
   plexSans:   { family: '"IBM Plex Sans", system-ui, sans-serif',        weights: [300, 400, 500, 600, 700],         italics: [false, true], stretches: ['normal'] },
   plexMono:   { family: '"IBM Plex Mono", ui-monospace, monospace',      weights: [300, 400, 500, 600, 700],         italics: [false, true], stretches: ['normal'] },
   jetbrains:  { family: '"JetBrains Mono", ui-monospace, monospace',     weights: [300, 400, 500, 600, 700],         italics: [false, true], stretches: ['normal'] },
+  ptSans:     { family: '"PT Sans", system-ui, sans-serif',              weights: [400, 700],                        italics: [false, true], stretches: ['normal'] },
   system:     { family: 'system-ui, -apple-system, sans-serif',          weights: [100, 300, 400, 500, 600, 700, 900], italics: [false, true], stretches: ['normal'] },
   serif:      { family: 'ui-serif, Georgia, serif',                      weights: [400, 700],                        italics: [false, true], stretches: ['normal'] },
   mono:       { family: 'ui-monospace, SFMono-Regular, Menlo, monospace', weights: [400, 700],                       italics: [false, true], stretches: ['normal'] },
@@ -89,6 +90,7 @@ const preview: Preview = {
           { value: 'plexSans',   title: 'IBM Plex Sans' },
           { value: 'plexMono',   title: 'IBM Plex Mono' },
           { value: 'jetbrains',  title: 'JetBrains Mono' },
+          { value: 'ptSans',     title: 'PT Sans' },
           { value: 'system',     title: 'System' },
           { value: 'serif',      title: 'Serif' },
           { value: 'mono',       title: 'Mono' },

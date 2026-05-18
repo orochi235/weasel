@@ -13,7 +13,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { GestureSpec } from '../gestures/spec';
-import type { BindingOpts, Invoker } from './invoker';
+import type { ActionDeps, BindingOpts, Invoker } from './invoker';
 import { useOptionalDepRegistry, type DepRegistry, type DepName } from './depRegistry';
 
 /**
@@ -81,8 +81,14 @@ export interface Action {
    *
    * The reason set is a closed enum — to add a new reason, edit
    * `ActionDisabledReason` and the consumer's display map.
+   *
+   * The optional `deps` argument is the same bag passed to
+   * `ImmediateInvoker.run`; callers (`evaluateEnabled` / the ActionBar) may
+   * synthesize it from the surrounding `DepRegistry` so predicates can
+   * inspect selection / scene / etc. Predicates that don't need deps just
+   * ignore the arg.
    */
-  enabled?: () => true | ActionDisabledReason;
+  enabled?: (deps?: ActionDeps) => true | ActionDisabledReason;
 }
 
 /**
@@ -122,7 +128,10 @@ export interface ActionEnabledResult {
 const enabledSlowWarned = new Set<string>();
 const enabledThrewWarned = new Set<string>();
 const ENABLED_BUDGET_MS = 4;
-export function evaluateEnabled(action: Action): ActionEnabledResult {
+export function evaluateEnabled(
+  action: Action,
+  deps?: ActionDeps,
+): ActionEnabledResult {
   if (!action.enabled) return { enabled: true };
   const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
   const now = (typeof performance !== 'undefined' && typeof performance.now === 'function')
@@ -130,7 +139,7 @@ export function evaluateEnabled(action: Action): ActionEnabledResult {
     : () => Date.now();
   const start = isDev ? now() : 0;
   try {
-    const result = action.enabled();
+    const result = action.enabled(deps);
     if (isDev) {
       const elapsed = now() - start;
       if (elapsed > ENABLED_BUDGET_MS && !enabledSlowWarned.has(action.id)) {
@@ -281,6 +290,7 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
                   view: r.get('view' as DepName),
                   pointer: r.get('pointer' as DepName),
                   activeTool: r.get('activeTool' as DepName),
+                  booleansAdapter: r.get('booleansAdapter' as DepName),
                 }
               : {};
             a.invoker.run(deps as never, undefined);

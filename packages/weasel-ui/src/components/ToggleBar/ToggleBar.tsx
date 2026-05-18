@@ -8,10 +8,15 @@ export type ToggleBarItem<V extends string | number = string> = {
   disabled?: boolean;
 };
 
+export type ToggleBarSize = 'sm' | 'md';
+
 type CommonProps = {
   ariaLabel?: string;
   className?: string;
   height?: number;
+  /** Size variant. `sm` is ~60% of the default height with reduced padding
+   *  and font size — sized for dense surfaces like lab control panels. */
+  size?: ToggleBarSize;
 };
 
 export type ToggleBarProps<V extends string | number = string> =
@@ -58,7 +63,7 @@ function prevEnabledIndex(items: readonly ToggleBarItem<string | number>[], from
 }
 
 export function ToggleBar<V extends string | number = string>(props: ToggleBarProps<V>): ReactElement {
-  const { items, ariaLabel, className, height } = props;
+  const { items, ariaLabel, className, height, size } = props;
   const mode = props.mode ?? 'single';
   const rootRef = useRef<HTMLDivElement | null>(null);
 
@@ -143,10 +148,12 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
     ? ({ ['--wzl-tb-height' as string]: `${height}px` } as CSSProperties)
     : undefined;
 
+  const rootCls = [s.root, size && s[`size_${size}`], className].filter(Boolean).join(' ');
+
   return (
     <div
       ref={rootRef}
-      className={className ? `${s.root} ${className}` : s.root}
+      className={rootCls}
       role={mode === 'multiple' ? 'group' : 'radiogroup'}
       aria-label={ariaLabel}
       style={style}

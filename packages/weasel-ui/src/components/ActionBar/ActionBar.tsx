@@ -1,6 +1,7 @@
 import { useSyncExternalStore, type ReactNode } from 'react';
 import {
   useActionsRegistry,
+  useOptionalDepRegistry,
   evaluateEnabled,
   type Action,
 } from '@orochi235/weasel';
@@ -57,12 +58,29 @@ function resolveTitle(label: string, shortcut: string | undefined): string {
 export function ActionBar(props: ActionBarProps) {
   const { group, orientation = 'horizontal', icons, labels, className } = props;
   const registry = useActionsRegistry();
+  const depReg = useOptionalDepRegistry();
   const all = useSyncExternalStore(
     registry ? registry.subscribe : noopSubscribe,
     registry ? registry.list : () => EMPTY_LIST,
     registry ? registry.list : () => EMPTY_LIST,
   );
   const actions = all.filter((a) => a.group === group);
+
+  // Build the deps bag fresh each render — predicates read selection / etc.
+  // from these. ActionBar relies on its parent re-rendering when the
+  // underlying state changes (e.g. the consumer reads `selection.current`
+  // somewhere above us) for `enabled` to reflect the latest values.
+  const deps = depReg
+    ? {
+        selection: depReg.get('selection'),
+        scene: depReg.get('scene'),
+        history: depReg.get('history'),
+        view: depReg.get('view'),
+        pointer: depReg.get('pointer'),
+        activeTool: depReg.get('activeTool'),
+        booleansAdapter: depReg.get('booleansAdapter'),
+      }
+    : undefined;
 
   const cls = [s.bar, orientation === 'vertical' && s.vertical, className]
     .filter(Boolean)
@@ -73,7 +91,7 @@ export function ActionBar(props: ActionBarProps) {
       {actions.map((action) => {
         const label = labels?.[action.id] ?? action.label;
         const icon = resolveIcon(action, icons?.[action.id]);
-        const { enabled } = evaluateEnabled(action);
+        const { enabled } = evaluateEnabled(action, deps);
         const disabled = !enabled;
         const title = resolveTitle(label, action.shortcut);
         return (
