@@ -121,6 +121,18 @@
    the kit's `.badge[data-shape='pill']` radius. */
 .routeBadge .flatRight { border-top-right-radius: 0; border-bottom-right-radius: 0; }
 .routeBadge .flatLeft { border-top-left-radius: 0; border-bottom-left-radius: 0; margin-left: -2px; }
+.argChip {
+  background: var(--wzl-fg, #d4c4a8);
+  color: var(--wzl-bg, #1e1610);
+  padding: 1px 6px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-right: 4px;
+  line-height: 18px;
+  display: inline-flex;
+  align-items: center;
+}
 .memberList { list-style: none; padding: 0; margin: 4px 0 12px; }
 .memberLink {
   background: transparent;

@@ -12,6 +12,8 @@ export type {
 export { resolveRoute } from './lookup';
 export { parseRoute, formatRoute } from './routeGrammar';
 export type { ParsedRoute } from './routeGrammar';
+export { getGestureDescriptor, isKnownGestureName, GESTURE_DESCRIPTORS } from './gestures';
+export type { GestureName, GestureDescriptor, GestureArgSpec } from './gestures';
 export { defineTool } from './defineTool';
 export { defineViewportTool } from './defineViewportTool';
 export { forwardActionTo } from './forwardAction';

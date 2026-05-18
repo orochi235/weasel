@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
-import { RegistryDetail } from './RegistryDetail';
+import { RegistryDetail, RouteBadge } from './RegistryDetail';
 import type { TreeEntry } from './registryData';
 
 describe('RegistryDetail', () => {
@@ -77,5 +77,30 @@ describe('RegistryDetail', () => {
     const entry: TreeEntry = { kind: 'publicExport', id: 'SceneCanvas', label: 'SceneCanvas' };
     render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
     expect(screen.getByText('SceneCanvas')).toBeTruthy();
+  });
+});
+
+describe('RouteBadge', () => {
+  it('renders a wheel(up) route with an "up" arg chip and no target', () => {
+    render(<RouteBadge route="initial.wheel(up)" />);
+    expect(screen.getByText('up')).toBeTruthy();
+    // No ANY badge for v2 targetless gestures.
+    expect(screen.queryByText('ANY')).toBeFalsy();
+  });
+
+  it('elides the arg chip when the route uses the default value', () => {
+    render(<RouteBadge route="initial.wheel" />);
+    // Default direction is 'both' — chip should not appear.
+    expect(screen.queryByText('both')).toBeFalsy();
+  });
+
+  it('renders keyDown(ArrowDown) with ArrowDown as the arg chip', () => {
+    render(<RouteBadge route="initial.keyDown(ArrowDown)" />);
+    expect(screen.getByText('ArrowDown')).toBeTruthy();
+  });
+
+  it('renders click.empty with the target chip and no arg', () => {
+    render(<RouteBadge route="initial.click.empty" />);
+    expect(screen.getByText('empty')).toBeTruthy();
   });
 });

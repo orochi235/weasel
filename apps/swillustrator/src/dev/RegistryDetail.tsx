@@ -23,6 +23,7 @@ import type {
   MetaEntry, CallbackRef,
 } from './registryData';
 import { BOOLEAN_BADGE_PROPS, BUNDLE_BADGE_PROPS, GESTURE_BADGE_PROPS, HOTKEY_TRIGGER_GLYPHS, KIND_BADGE_PROPS, PHASE_BADGE_PROPS, TOKEN_SETS, type TokenSet } from './badgeTokens';
+import { getGestureDescriptor, type GestureName } from '@orochi235/weasel/routing';
 import { collectBundles, collectIcons, GESTURE_CHANNEL_KEYS, PHASE_OUTPUT_KEYS, parseRoute, TOOL_HOOK_NAMES } from './registryData';
 void GESTURE_CHANNEL_KEYS;
 void PHASE_OUTPUT_KEYS;
@@ -30,22 +31,31 @@ void PHASE_OUTPUT_KEYS;
 /** Decomposes a `phase.gesture.target[:modifiers]` route into its constituent
  *  tokens — phase + gesture as badges, target as a code chip, modifier set
  *  appended when non-default. */
-function RouteBadge({ route }: { route: string }) {
+export function RouteBadge({ route }: { route: string }) {
   const parsed = parseRoute(route);
+  const desc = getGestureDescriptor(parsed.gesture as GestureName);
   const modKeys = modifierKeys(parsed.modifiers);
-  const targetless = parsed.target === '*';
+  const targetless = !desc.hasTarget;
+  const showArg = !!desc.arg
+    && parsed.arg !== undefined
+    && (desc.arg.default === undefined || parsed.arg !== desc.arg.default);
   return (
     <span className={s.routeBadge}>
       <Badge {...(PHASE_BADGE_PROPS as BadgeProps)}>{parsed.phase}</Badge>
       <Badge
         {...(GESTURE_BADGE_PROPS as BadgeProps)}
-        className={targetless ? s.flatRight : undefined}
+        className={targetless && !showArg ? s.flatRight : undefined}
       >
         {parsed.gesture}
       </Badge>
-      {targetless
-        ? <Badge tone="neutral" variant="outline" size="sm" className={s.flatLeft}>ANY</Badge>
-        : <code className={s.tag}>{parsed.target}</code>}
+      {showArg && (
+        <code className={[s.argChip, targetless ? s.flatLeft : undefined].filter(Boolean).join(' ')}>
+          {parsed.arg}
+        </code>
+      )}
+      {!targetless && parsed.target !== undefined && (
+        <code className={s.tag}>{parsed.target}</code>
+      )}
       {modKeys && <KeySequence keys={modKeys} />}
     </span>
   );
