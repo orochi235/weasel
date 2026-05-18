@@ -32,13 +32,18 @@ import {
   useScene,
   useSelection,
   useActionsRegistry,
+  useBooleansAdapter,
   rectPath,
   asNodeId,
+  boundsOfPath,
+  translatePath,
   type ToolsApi,
   type Path,
   type AlignEdge,
   type DistributeAxis,
   type SerializedScene,
+  type BooleansAdapter,
+  type NodeId,
 } from '@orochi235/weasel';
 import { SidebarPanel, ToolPalette } from '@orochi235/weasel-ui';
 
@@ -692,6 +697,102 @@ function buildUpdateSelected(
 
 // ─── Outer App: install the color context so swatches + actions resolve ─────
 
+/** Publishes a `BooleansAdapter` as a dep so the kit's Pathfinder
+ *  descriptors can read selection and execute boolean ops on swill nodes.
+ *  Must live inside `<SceneCanvas>` since `useBooleansAdapter` calls
+ *  `useDepSource`, which requires the surrounding `<DepRegistryProvider>`. */
+function BooleansAdapterPublisher({
+  scene,
+  selection,
+}: {
+  scene: ReturnType<typeof useScene<SwillData, SwillLayer, SwillPose>>;
+  selection: ReturnType<typeof useSelection>;
+}): null {
+  const idCounterRef = useRef(0);
+  const adapter = useMemo<BooleansAdapter>(() => {
+    const a: BooleansAdapter = {
+      getSelection: () => selection.get(),
+      getWorldPath: (id) => {
+        const node = scene.get(asNodeId(id));
+        if (!node || node.kind !== 'leaf') return undefined;
+        const data = node.data;
+        if (!data.path) return undefined;
+        // Translate the path so its bounds origin lands at pose.x/y. We
+        // intentionally do not bake `pose.rotation` into the geometry yet —
+        // rotated booleans will operate on the AABB-aligned source path.
+        const b = boundsOfPath(data.path);
+        const pose = node.pose;
+        const dx = pose.x - b.x;
+        const dy = pose.y - b.y;
+        return (dx === 0 && dy === 0) ? data.path : translatePath(data.path, dx, dy);
+      },
+      compareZ: (x, y) => {
+        const order = [...scene.renderOrder()];
+        return order.indexOf(asNodeId(x)) - order.indexOf(asNodeId(y));
+      },
+      createPathNode: (path) => {
+        // Inherit the topmost selected leaf's paint so the result reads as a
+        // continuation of the source style. Falls back to a neutral fill if
+        // no leaf is selected (shouldn't happen — `enabled` gates the op).
+        const sel = selection.get();
+        let template: SwillData | undefined;
+        for (let i = sel.length - 1; i >= 0; i--) {
+          const n = scene.get(asNodeId(sel[i]));
+          if (n && n.kind === 'leaf') { template = n.data; break; }
+        }
+        const b = boundsOfPath(path);
+        const id = `b-${idCounterRef.current++}`;
+        const node: { id: string; kind: 'leaf'; layer: SwillLayer; pose: SwillPose; data: SwillData; parent: NodeId | null } = {
+          id,
+          kind: 'leaf',
+          layer: 'default',
+          pose: { x: b.x, y: b.y, width: b.width, height: b.height },
+          data: {
+            path,
+            fill: template?.fill ?? '#888',
+            ...(template?.stroke !== undefined ? { stroke: template.stroke } : {}),
+            ...(template?.strokeWidth !== undefined ? { strokeWidth: template.strokeWidth } : {}),
+          },
+          parent: null,
+        };
+        return node;
+      },
+      getNode: (id) => {
+        const n = scene.get(asNodeId(id));
+        return n ?? undefined;
+      },
+      getZOrder: (id) => {
+        const order = [...scene.renderOrder()];
+        const idx = order.indexOf(asNodeId(id));
+        if (idx < 0) return undefined;
+        const node = scene.get(asNodeId(id));
+        return { parentId: node?.parent ?? null, index: idx };
+      },
+      setSelection: (ids) => selection.set(ids),
+      insertNode: (node) => {
+        const n = node as { id: string; kind: 'leaf' | 'container'; layer: SwillLayer; pose: SwillPose; data: SwillData; parent?: NodeId | null };
+        scene.add({
+          kind: n.kind,
+          layer: n.layer,
+          pose: n.pose,
+          data: n.data,
+          id: asNodeId(n.id),
+          ...(n.parent != null ? { parent: n.parent } : {}),
+        });
+      },
+      removeNode: (id) => { scene.remove(asNodeId(id)); },
+      applyOps: (ops, label) => {
+        scene.batch(label ?? 'Booleans', () => {
+          for (const op of ops) op.apply(a);
+        });
+      },
+    };
+    return a;
+  }, [scene, selection]);
+  useBooleansAdapter(adapter);
+  return null;
+}
+
 /** Thin wrapper that hoists the scene + selection so the
  *  `ColorContextProvider`'s `updateSelected` bridge can close over them.
  *  Both `useScene` and `useSelection` are stable across renders (their
@@ -796,7 +897,9 @@ function EditorWithSharedScene({
                 },
               },
             } : {}}
-          />
+          >
+            <BooleansAdapterPublisher scene={scene} selection={selection} />
+          </SceneCanvas>
         </div>
         <div className="swill-sidebar right">
           <RightSidebar scene={scene} selection={selection} />

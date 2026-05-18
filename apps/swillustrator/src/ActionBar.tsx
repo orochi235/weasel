@@ -94,8 +94,10 @@ export interface ActionBarProps {
   // Flip
   onFlip(axis: FlipAxis): void;
   // Booleans — rendered by the kit's <ActionBar group="pathfinder"/>, which
-  // reads the surrounding ActionsRegistry. `useBooleans(adapter)` upstream
-  // already registers the six `pathfinder.*` actions, so this component
+  // reads the surrounding ActionsRegistry. The six `pathfinder.*` descriptors
+  // are registered by `useStandardActions` inside `<SceneCanvas>`; swill
+  // publishes the `booleansAdapter` dep via `<BooleansAdapterPublisher>` so
+  // the descriptors' invoker has a concrete adapter to execute. This component
   // takes no booleans props.
   // File I/O — SVG round-trip via @orochi235/weasel-svg.
   onSaveSvg(): void;
