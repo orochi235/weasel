@@ -17,7 +17,7 @@
  * Wire it into the app sidebar (e.g. behind a `#/dev/dispatch` route or a
  * "Show dev panels" pref) only in development.
  */
-import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import s from './DispatchTracePanel.module.css';
 
 // Structural copy of `DispatchLogEntry` from
@@ -61,11 +61,52 @@ function clearLog(): void {
 export interface DispatchTracePanelProps {
   /** Initial collapsed state. Defaults to `false` (panel open). */
   defaultCollapsed?: boolean;
+  /** CSS selector for the workspace element the widget anchors to (the
+   *  striped area, not the document page). The widget pins itself to this
+   *  element's bottom-left in viewport coords and follows it on
+   *  scroll/resize. Default: `'.swill-canvas-host, canvas'` — the
+   *  swillustrator workspace if present, else any canvas. */
+  anchorSelector?: string;
 }
 
-export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactElement {
-  const { defaultCollapsed = false } = props;
+interface Anchor { left: number; bottom: number; }
+
+function readAnchor(el: Element | null): Anchor | null {
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return { left: r.left, bottom: window.innerHeight - r.bottom };
+}
+
+export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactElement | null {
+  const { defaultCollapsed = false, anchorSelector = '.swill-canvas-host, canvas' } = props;
   const [collapsed, setCollapsed] = useState<boolean>(defaultCollapsed);
+  const [anchor, setAnchor] = useState<Anchor | null>(null);
+
+  // Track the workspace element's bottom-left in viewport coords. Mirrors
+  // CursorCoordsHud's anchor-tracking so the widget sits inside the canvas
+  // even when the page scrolls or the layout reflows.
+  useEffect(() => {
+    let raf = 0;
+    const reread = () => {
+      const el = document.querySelector(anchorSelector);
+      setAnchor(readAnchor(el));
+    };
+    const schedule = () => {
+      if (raf) return;
+      raf = window.requestAnimationFrame(() => { raf = 0; reread(); });
+    };
+    reread();
+    window.addEventListener('scroll', schedule, true);
+    window.addEventListener('resize', schedule);
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(schedule) : null;
+    if (ro) ro.observe(document.body);
+    return () => {
+      window.removeEventListener('scroll', schedule, true);
+      window.removeEventListener('resize', schedule);
+      if (raf) window.cancelAnimationFrame(raf);
+      ro?.disconnect();
+    };
+  }, [anchorSelector]);
   const [entries, setEntries] = useState<DispatchLogEntry[]>(() => readLog().slice());
   const [expanded, setExpanded] = useState<number | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
@@ -103,8 +144,18 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
   const visible = entries.slice(-DISPLAY_LIMIT).reverse();
   const onToggleCollapse = useCallback(() => setCollapsed((c) => !c), []);
 
+  if (!anchor) return null;
+  const INSET = 8;
+  const style: CSSProperties = {
+    left: anchor.left + INSET,
+    bottom: anchor.bottom + INSET,
+  };
+
   return (
-    <aside className={`${s.widget} ${collapsed ? s.widgetCollapsed : ''}`}>
+    <aside
+      className={`${s.widget} ${collapsed ? s.widgetCollapsed : ''}`}
+      style={style}
+    >
       <div className={s.bar}>
         <button
           type="button"
