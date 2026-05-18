@@ -100,7 +100,7 @@ function walkKeyMap(
   toolId: string,
   phase: RoutePhase,
   gesture: 'keyDown' | 'keyUp',
-  table: Record<string, ActionFn<unknown>>,
+  table: Partial<Record<string, ActionFn<unknown>>>,
   out: RegistryEntry[],
 ): void {
   for (const key of Object.keys(table)) {

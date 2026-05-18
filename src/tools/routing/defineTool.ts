@@ -58,11 +58,13 @@ export function defineTool<TScratch = void>(
     phase: RoutePhase,
     gesture: RouteGesture,
     matchedKey: string,
+    arg: string | undefined = undefined,
   ): void => {
     const info: RouteResolvedInfo = {
       toolId: def.id,
       phase,
       gesture,
+      arg,
       matchedKey,
       modifiers: modifiersToCanonicalKey(ctx.modifiers),
       target: ctx.target ?? { category: 'empty', kind: 'empty' },
@@ -205,7 +207,7 @@ export function defineTool<TScratch = void>(
   // Keyboard / wheel handlers — straightforward route lookups.
   const buildKeyHandler = (
     gesture: 'keyDown' | 'keyUp',
-    pick: (phase: PhaseDef<TScratch>) => Record<string, ActionFn<TScratch>> | undefined,
+    pick: (phase: PhaseDef<TScratch>) => Partial<Record<string, ActionFn<TScratch>>> | undefined,
   ) => (e: KeyboardEvent, ctx: ToolCtx<TScratch>): 'claim' | 'pass' => {
     const table = pick(phaseOf(ctx));
     if (!table) return 'pass';
@@ -213,7 +215,7 @@ export function defineTool<TScratch = void>(
     if (!action) return 'pass';
     // Keyboard routes are flat string→ActionFn maps — matched key is the
     // pressed key itself ('Escape', 'Enter', ...).
-    report(ctx, phaseNameOf(ctx), gesture, e.key);
+    report(ctx, phaseNameOf(ctx), gesture, e.key, e.key);
     return applyResult(ctx, action(ctx, e));
   };
 
@@ -292,10 +294,15 @@ export function defineTool<TScratch = void>(
     wheel: def.initial.wheel || def.engaged?.wheel
       ? {
           onWheel: (_e: WheelEvent, ctx: ToolCtx<TScratch>) => {
-            const action = phaseOf(ctx).wheel;
+            const entry = phaseOf(ctx).wheel;
+            if (!entry) return 'pass';
+            // Function form is sugar for `{ both: fn }`.
+            const direction: 'up' | 'down' = _e.deltaY < 0 ? 'up' : 'down';
+            const action = typeof entry === 'function'
+              ? entry
+              : (entry[direction] ?? entry.both);
             if (!action) return 'pass';
-            // Wheel routes are a single ActionFn, no table — matched key '*'.
-            report(ctx, phaseNameOf(ctx), 'wheel', '*');
+            report(ctx, phaseNameOf(ctx), 'wheel', '*', direction);
             return applyResult(ctx, action(ctx, _e));
           },
         }

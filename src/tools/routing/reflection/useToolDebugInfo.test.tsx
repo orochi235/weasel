@@ -64,7 +64,7 @@ describe('useToolDebugInfo', () => {
     const { result } = renderHook(() => useToolDebugInfo(dispatcher));
     expect(result.current).toBeNull();
     const info: RouteResolvedInfo = {
-      toolId: 'select', phase: 'initial', gesture: 'click',
+      toolId: 'select', phase: 'initial', gesture: 'click', arg: undefined,
       matchedKey: 'rect', modifiers: 'default',
       target: { category: 'node', kind: 'rect', id: asNodeId('a'), pose: {}, data: {} },
       timestamp: 1000,
