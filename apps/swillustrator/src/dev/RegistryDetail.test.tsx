@@ -32,7 +32,8 @@ describe('RegistryDetail', () => {
     expect(screen.getAllByText('click').length).toBeGreaterThan(0);
     expect(screen.getAllByText('drag').length).toBeGreaterThan(0);
     expect(screen.getAllByText('empty').length).toBeGreaterThan(0);
-    expect(screen.getByText(':shift')).toBeTruthy();
+    // RouteBadge renders the modifier suffix as a KeySequence keycap.
+    expect(screen.getByText('⇧')).toBeTruthy();
   });
 
   it('renders an Action entry with shortcut', () => {

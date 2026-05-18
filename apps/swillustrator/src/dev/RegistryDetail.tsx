@@ -1,5 +1,20 @@
 import { Fragment } from 'react';
-import { Badge, DataGrid, Keycaps, type BadgeProps, type DataGridColumn } from '@orochi235/weasel-ui';
+import { Badge, DataGrid, KeySequence, type BadgeProps, type DataGridColumn, type KeySpec } from '@orochi235/weasel-ui';
+
+function toKeys(parts: readonly string[] | undefined) {
+  return parts?.map((label) => ({ label }));
+}
+
+const MODIFIER_GLYPHS: Record<string, string> = { mod: '⌘', shift: '⇧', alt: '⌥' };
+
+/** Decompose a ModifierKey (`'shift'`, `'mod+shift'`, …) into KeySpecs for
+ *  KeySequence. `'default'` returns undefined (no modifiers held). */
+function modifierKeys(modifiers: string): readonly KeySpec[] | undefined {
+  if (modifiers === 'default') return undefined;
+  return modifiers
+    .split('+')
+    .map((m) => ({ label: MODIFIER_GLYPHS[m] ?? m }));
+}
 import s from './RegistryInspector.module.css';
 import type {
   TreeEntry, ToolEntry, ActionEntry, BundleEntry, IconEntry, OpFactoryEntry,
@@ -17,14 +32,21 @@ void PHASE_OUTPUT_KEYS;
  *  appended when non-default. */
 function RouteBadge({ route }: { route: string }) {
   const parsed = parseRoute(route);
+  const modKeys = modifierKeys(parsed.modifiers);
+  const targetless = parsed.target === '*';
   return (
     <span className={s.routeBadge}>
       <Badge {...(PHASE_BADGE_PROPS as BadgeProps)}>{parsed.phase}</Badge>
-      <Badge {...(GESTURE_BADGE_PROPS as BadgeProps)}>{parsed.gesture}</Badge>
-      <code className={s.tag}>{parsed.target}</code>
-      {parsed.modifiers !== 'default' && (
-        <code className={s.tag}>:{parsed.modifiers}</code>
-      )}
+      <Badge
+        {...(GESTURE_BADGE_PROPS as BadgeProps)}
+        className={targetless ? s.flatRight : undefined}
+      >
+        {parsed.gesture}
+      </Badge>
+      {targetless
+        ? <Badge tone="neutral" variant="outline" size="sm" className={s.flatLeft}>ANY</Badge>
+        : <code className={s.tag}>{parsed.target}</code>}
+      {modKeys && <KeySequence keys={modKeys} />}
     </span>
   );
 }
@@ -149,7 +171,7 @@ function TokenSetTable({ set }: { set: TokenSet }) {
         rows={set.entries.map((e) => ({ id: e.value, entry: e }))}
         columns={[
           { id: 'value', header: 'value', accessor: (r) => r.entry.value, render: (r) => <code className={s.tag}>{r.entry.value}</code> },
-          { id: 'preview', header: 'preview', accessor: (r) => r.entry.value, render: (r) => <Keycaps parts={r.entry.props.parts} /> },
+          { id: 'preview', header: 'preview', accessor: (r) => r.entry.value, render: (r) => <KeySequence keys={toKeys(r.entry.props.parts)} /> },
         ]}
         empty="No entries."
       />
@@ -195,7 +217,7 @@ function HotkeyTriggerDetail({
   return (
     <div>
       <h2 className={s.detailHeading}>
-        {glyphs && <Keycaps parts={glyphs} />} {entry.id}
+        {glyphs && <KeySequence keys={toKeys(glyphs)} />} {entry.id}
       </h2>
       <p className={s.empty}>Press-and-hold trigger key for the hotkey tool slot.</p>
       <h3 className={s.subHeading}>Tools bound to this trigger</h3>
@@ -574,13 +596,13 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
         <dt>slot</dt>
         <dd><EntryLink kind="slot" id={entry.slot} onNavigate={onNavigate} /></dd>
         {entry.switchShortcutParts && (
-          <><dt>shortcut</dt><dd><Keycaps parts={entry.switchShortcutParts} /></dd></>
+          <><dt>shortcut</dt><dd><KeySequence keys={toKeys(entry.switchShortcutParts)} /></dd></>
         )}
         {entry.hotkey && (
           <>
             <dt>hotkey</dt>
             <dd>
-              <Keycaps parts={HOTKEY_TRIGGER_GLYPHS[entry.hotkey] ?? [entry.hotkey.toUpperCase()]} />
+              <KeySequence keys={toKeys(HOTKEY_TRIGGER_GLYPHS[entry.hotkey] ?? [entry.hotkey.toUpperCase()])} />
               <EntryLink kind="hotkeyTrigger" id={entry.hotkey} label={entry.hotkey} onNavigate={onNavigate} />
             </dd>
           </>
@@ -720,7 +742,7 @@ function ActionDetail({ entry, onNavigate }: { entry: ActionEntry; onNavigate: P
           </>
         )}
         {entry.shortcutParts && (
-          <><dt>binding</dt><dd><Keycaps parts={entry.shortcutParts} /></dd></>
+          <><dt>binding</dt><dd><KeySequence keys={toKeys(entry.shortcutParts)} /></dd></>
         )}
         {entry.shortcut && (
           <><dt>shortcut</dt><dd><code>{entry.shortcut}</code></dd></>
@@ -795,7 +817,7 @@ function bundleMemberColumns(
       id: 'shortcut',
       header: 'shortcut',
       sortable: false,
-      render: (r) => <Keycaps parts={r.tool?.switchShortcutParts} />,
+      render: (r) => <KeySequence keys={toKeys(r.tool?.switchShortcutParts)} />,
     },
   ];
 }

@@ -35,9 +35,7 @@ import {
   type RegistryEntry,
   type ToolDef,
 } from '@orochi235/weasel/routing';
-import { formatShortcutParts } from '@orochi235/weasel-ui';
-import { KeyCap } from './KeyCap';
-import { DispatchTracePanel } from './DispatchTracePanel';
+import { formatShortcutParts, KeySequence } from '@orochi235/weasel-ui';
 import { TOOL_HOOK_NAMES } from './registryData';
 import s from './ToolkitBuilder.module.css';
 
@@ -173,10 +171,9 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
         <RoutesWidget routes={routes} />
       </section>
 
-      {/* Right column: conflicts + live dispatch trace. */}
+      {/* Right column: conflicts. */}
       <aside className={s.reflect}>
         <ConflictsWidget conflicts={conflicts} />
-        <DispatchTracePanel />
       </aside>
     </div>
   );
@@ -217,7 +214,7 @@ function ToolsWidget({
                   <td><code>{d.id}</code></td>
                   <td>{TOOL_HOOK_NAMES[d.id] ?? <span className={s.empty}>—</span>}</td>
                   <td>{ambientSet.has(d.id) ? 'ambient' : 'registry'}</td>
-                  <td><KeyCap parts={formatShortcutParts(d.keybinding)} /></td>
+                  <td><KeySequence keys={formatShortcutParts(d.keybinding)?.map((label) => ({ label }))} /></td>
                 </tr>
               ))}
             </tbody>
@@ -396,7 +393,7 @@ function renderSpec(spec: GestureSpec): ReactNode {
       alt: !!spec.mods?.alt,
       shift: spec.mods?.shift === true ? true : undefined,
     });
-    return <KeyCap parts={parts} />;
+    return <KeySequence keys={parts?.map((label) => ({ label }))} />;
   }
   const mods = 'mods' in spec && spec.mods
     ? Object.entries(spec.mods).filter(([, v]) => v).map(([k]) => k).join('+')
