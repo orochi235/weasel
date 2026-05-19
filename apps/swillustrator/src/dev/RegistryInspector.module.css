@@ -76,7 +76,7 @@
 }
 .treeChevron { font-size: 20px; width: 18px; display: inline-flex; justify-content: center; color: var(--wzl-muted, #a59685); }
 .treeCount { color: var(--wzl-muted, #a59685); font-weight: 400; }
-.leafBadge { --badge-font-size: 9px; }
+.leafBadge { --badge-font-size: 8px; --badge-pad-y: 1px; transform: scale(0.85); transform-origin: left center; }
 .treeLeaves { list-style: none; margin: 0; padding: 0 0 0 32px; }
 .treeLeaf {
   display: block;

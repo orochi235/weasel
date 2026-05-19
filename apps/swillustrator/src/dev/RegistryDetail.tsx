@@ -215,9 +215,11 @@ function TokenSetTable({ set }: { set: TokenSet }) {
   );
 }
 
-function OpKindDetail({ entry, onNavigate }: { entry: OpKindEntry; onNavigate: Props['onNavigate'] }) {
+function OpKindDetail({ entry }: { entry: OpKindEntry; onNavigate: Props['onNavigate'] }) {
   const factoryId = `create${entry.id.charAt(0).toUpperCase()}${entry.id.slice(1)}Op`;
+  const fn = (Weasel as Record<string, unknown>)[factoryId];
   const match = findSourceMatch(factoryId);
+  const arity = typeof fn === 'function' ? fn.length : undefined;
   return (
     <div>
       <h2 className={s.detailHeading}>{entry.id}</h2>
@@ -227,10 +229,14 @@ function OpKindDetail({ entry, onNavigate }: { entry: OpKindEntry; onNavigate: P
         ops across reloads.
       </p>
       <dl className={s.detailList}>
-        <dt>factory</dt>
-        <dd><EntryLink kind="opFactory" id={factoryId} onNavigate={onNavigate} /></dd>
-        {match?.path && (<><dt>source</dt><dd><code>{match.path}</code></dd></>)}
+        <dt>factory</dt><dd><code>{factoryId}</code></dd>
+        <dt>runtime</dt><dd><code className={s.tag}>{typeof fn}</code></dd>
+        {arity !== undefined && (
+          <><dt>parameters</dt><dd>{arity}</dd></>
+        )}
+        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
       </dl>
+      {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
     </div>
   );
 }
@@ -584,7 +590,7 @@ function IconDetail({ entry }: { entry: IconEntry }) {
       </div>
       <dl className={s.detailList}>
         <dt>source</dt><dd><code className={s.tag}>{entry.source}</code></dd>
-        {match?.path && (<><dt>file</dt><dd><code>{match.path}</code></dd></>)}
+        {match?.path && (<><dt>file</dt><dd><SourceLink match={match} /></dd></>)}
       </dl>
       {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
     </div>
@@ -686,7 +692,7 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
             </dd>
           </>
         )}
-        {match?.path && (<><dt>source</dt><dd><code>{match.path}</code></dd></>)}
+        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
         {entry.callbacks && entry.callbacks.length > 0 && (
           <>
             <dt>callbacks</dt>
@@ -729,6 +735,20 @@ function CallbackList({ callbacks }: { callbacks: readonly CallbackRef[] }) {
 declare const __WEASEL_REPO_ROOT__: string | undefined;
 const WEASEL_REPO_ROOT: string | undefined =
   typeof __WEASEL_REPO_ROOT__ === 'string' ? __WEASEL_REPO_ROOT__ : undefined;
+
+/** Render a `findSourceMatch` result as a `vscode://file/...` link with
+ *  `path:line` text. Falls back to plain text when the repo root isn't
+ *  defined (e.g. test environments without Vite `define`). */
+function SourceLink({ match }: { match: { path: string; line: number } }) {
+  const root = WEASEL_REPO_ROOT;
+  if (!root) return <code>{match.path}:{match.line}</code>;
+  const abs = `${root}${match.path}`;
+  return (
+    <a className={s.callbackLink} href={`vscode://file/${abs}:${match.line}:1`}>
+      {match.path}:{match.line}
+    </a>
+  );
+}
 
 function PhaseRow({ label, phase }: { label: string; phase: PhaseSummary }) {
   const gestures = activeGestures(phase);
@@ -787,7 +807,7 @@ function ActionDetail({ entry, onNavigate }: { entry: ActionEntry; onNavigate: P
             </dd>
           </>
         )}
-        {match?.path && (<><dt>source</dt><dd><code>{match.path}</code></dd></>)}
+        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
         {entry.callbacks && entry.callbacks.length > 0 && (
           <>
             <dt>callbacks</dt>
@@ -962,7 +982,7 @@ function ShapeKindDetail({
             </dd>
           </>
         )}
-        {match?.path && (<><dt>source</dt><dd><code>{match.path}</code></dd></>)}
+        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
       </dl>
       {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
     </div>
@@ -990,7 +1010,7 @@ function OpFactoryDetail({ entry }: { entry: OpFactoryEntry }) {
         {arity !== undefined && (
           <><dt>parameters</dt><dd>{arity}</dd></>
         )}
-        {match?.path && (<><dt>source</dt><dd><code>{match.path}</code></dd></>)}
+        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
       </dl>
       {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
     </div>
@@ -1035,7 +1055,7 @@ function PublicExportDetail({
             </dd>
           </>
         )}
-        {match?.path && (<><dt>source</dt><dd><code>{match.path}</code></dd></>)}
+        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
       </dl>
       {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
     </div>

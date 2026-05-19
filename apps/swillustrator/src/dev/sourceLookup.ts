@@ -1,5 +1,7 @@
 export interface ExportInfo {
   jsdoc: string | null;
+  /** 1-based line number of the export statement. */
+  line: number;
 }
 
 /** Locate the line that exports `symbol` in the supplied source string and
@@ -31,7 +33,7 @@ export function extractExportInfo(source: string, symbol: string): ExportInfo | 
     }
   }
   if (lineIndex === -1) return null;
-  return { jsdoc: readJsdocAbove(lines, lineIndex) };
+  return { jsdoc: readJsdocAbove(lines, lineIndex), line: lineIndex + 1 };
 }
 
 function readJsdocAbove(lines: string[], exportLineIndex: number): string | null {
@@ -72,7 +74,10 @@ if (typeof (import.meta as { glob?: unknown }).glob === 'function') {
 }
 
 export interface SourceMatch {
+  /** Workspace-relative path (glob key), starting with a leading slash. */
   path: string;
+  /** 1-based line number of the export statement. */
+  line: number;
   jsdoc: string | null;
 }
 
@@ -81,7 +86,7 @@ export interface SourceMatch {
 export function findSourceMatch(symbol: string): SourceMatch | null {
   for (const [path, source] of Object.entries(rawSources)) {
     const info = extractExportInfo(source, symbol);
-    if (info) return { path, jsdoc: info.jsdoc };
+    if (info) return { path, line: info.line, jsdoc: info.jsdoc };
   }
   return null;
 }

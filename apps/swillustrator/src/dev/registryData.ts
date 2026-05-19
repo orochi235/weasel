@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import * as Weasel from '@orochi235/weasel';
+import * as WeaselUi from '@orochi235/weasel-ui';
 import { canonicalModifiers, parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@orochi235/weasel/routing';
 import * as ActionIcons from '../actionIcons';
 import * as KindIcons from '../kindIcons';
@@ -189,6 +190,10 @@ export interface PublicExportEntry {
   kind: 'publicExport';
   id: string;
   label: string;
+  /** Which library the symbol is exported from. Base = `@orochi235/weasel`;
+   *  `ui` = `@orochi235/weasel-ui`. Used by the tree to show a library
+   *  badge next to non-base entries. */
+  source: 'base' | 'ui';
 }
 
 /** Lifecycle phase a `ToolDef` can declare routes in. `initial` is the
@@ -269,9 +274,9 @@ export function collectMeta(): readonly MetaEntry[] {
 
 export type TreeCategory =
   | 'tools' | 'actions' | 'shapeKinds' | 'bundles'
-  | 'icons' | 'opFactories' | 'publicExports'
+  | 'icons' | 'ops' | 'publicExports'
   | 'phases' | 'gestures' | 'phaseOutputs'
-  | 'opKinds' | 'hotkeyTriggers' | 'slots' | 'routeTargets' | 'modifierSets' | 'groups'
+  | 'hotkeyTriggers' | 'slots' | 'routeTargets' | 'modifierSets' | 'groups'
   | 'meta';
 
 export interface TreeCategoryNode {
@@ -331,10 +336,20 @@ export function collectOpFactories(): readonly OpFactoryEntry[] {
 
 export function collectPublicExports(): readonly PublicExportEntry[] {
   const out: PublicExportEntry[] = [];
+  const seen = new Set<string>();
   for (const [id, value] of Object.entries(Weasel)) {
     if (value === undefined || value === null) continue;
     if (id === 'default') continue;
-    out.push({ kind: 'publicExport', id, label: id });
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push({ kind: 'publicExport', id, label: id, source: 'base' });
+  }
+  for (const [id, value] of Object.entries(WeaselUi)) {
+    if (value === undefined || value === null) continue;
+    if (id === 'default') continue;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push({ kind: 'publicExport', id, label: id, source: 'ui' });
   }
   return out;
 }

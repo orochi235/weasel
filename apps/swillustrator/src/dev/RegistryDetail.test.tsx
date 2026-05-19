@@ -74,7 +74,7 @@ describe('RegistryDetail', () => {
   });
 
   it('renders a PublicExport entry with id', () => {
-    const entry: TreeEntry = { kind: 'publicExport', id: 'SceneCanvas', label: 'SceneCanvas' };
+    const entry: TreeEntry = { kind: 'publicExport', id: 'SceneCanvas', label: 'SceneCanvas', source: 'base' };
     render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
     expect(screen.getByText('SceneCanvas')).toBeTruthy();
   });
