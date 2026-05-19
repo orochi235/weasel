@@ -233,6 +233,130 @@ describe('insertAction descriptor', () => {
     expect((dep.calls[0].extras as { samples: unknown[] }).samples).toEqual(trail);
   });
 
+  // -------------------------------------------------------------------------
+  // overlay() — live insert-drag preview (Phase 14e Task 2 follow-up)
+  // -------------------------------------------------------------------------
+
+  describe('overlay()', () => {
+    it('returns null when the dep is absent (empty handle)', () => {
+      const invoker = getOngoingInvoker(insertAction);
+      const ctx: InvocationCtx = {
+        world: { x: 0, y: 0 },
+        screen: { x: 0, y: 0 },
+        modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+        deps: {},
+      };
+      const handle = invoker.start(ctx, undefined);
+      // No overlay method on empty handle.
+      expect(handle.overlay).toBeUndefined();
+    });
+
+    it('returns an insertPreview with the current AABB after onMove', () => {
+      const invoker = getOngoingInvoker(insertAction);
+      const dep = makeInsertDep();
+      const ctx = makeCtx({ world: { x: 5, y: 10 }, dep });
+      const handle = invoker.start(ctx, undefined);
+      handle.onMove!({ ...ctx, world: { x: 55, y: 60 } });
+      const ov = handle.overlay!();
+      expect(ov).toMatchObject({
+        kind: 'insertPreview',
+        shape: 'rect',
+        bounds: { x: 5, y: 10, width: 50, height: 50 },
+      });
+    });
+
+    it('reports the right shape for each kit kind', () => {
+      const invoker = getOngoingInvoker(insertAction);
+      const cases: Array<[string, Record<string, unknown>?]> = [
+        ['rect'],
+        ['ellipse'],
+        ['line'],
+        ['polygon', { sides: 6, rotation: 0 }],
+        ['star', { points: 5, innerRadiusRatio: 0.5, rotation: 0 }],
+      ];
+      for (const [kind, extraParams] of cases) {
+        const dep = makeInsertDep();
+        const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
+        const handle = invoker.start(ctx, { params: { kind, ...(extraParams ?? {}) } });
+        handle.onMove!({ ...ctx, world: { x: 20, y: 30 } });
+        const ov = handle.overlay!();
+        expect(ov?.kind).toBe('insertPreview');
+        if (ov?.kind === 'insertPreview') expect(ov.shape).toBe(kind);
+      }
+    });
+
+    it('line: extras carry the live drag endpoints', () => {
+      const invoker = getOngoingInvoker(insertAction);
+      const dep = makeInsertDep();
+      const ctx = makeCtx({ world: { x: 10, y: 50 }, dep });
+      const handle = invoker.start(ctx, { params: { kind: 'line' } });
+      handle.onMove!({ ...ctx, world: { x: 100, y: 10 } });
+      const ov = handle.overlay!();
+      if (ov?.kind !== 'insertPreview') throw new Error('expected insertPreview');
+      expect(ov.extras).toMatchObject({ kind: 'line', a: { x: 10, y: 50 }, b: { x: 100, y: 10 } });
+    });
+
+    it('pencil: extras.samples reflect the growing drag trail', () => {
+      const invoker = getOngoingInvoker(insertAction);
+      const dep = makeInsertDep();
+      const trail: { x: number; y: number }[] = [{ x: 0, y: 0 }];
+      const ctx: InvocationCtx = {
+        world: { x: 0, y: 0 },
+        screen: { x: 0, y: 0 },
+        modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+        deps: { insert: dep },
+        drag: { start: { x: 0, y: 0 }, current: { x: 0, y: 0 }, delta: { x: 0, y: 0 }, points: trail },
+      };
+      const handle = invoker.start(ctx, { params: { kind: 'pencil' } });
+      // Grow the trail in-place — the dispatcher mutates the array reference.
+      trail.push({ x: 10, y: 5 });
+      trail.push({ x: 25, y: 15 });
+      handle.onMove!({ ...ctx, world: { x: 25, y: 15 } });
+      const ov = handle.overlay!();
+      if (ov?.kind !== 'insertPreview') throw new Error('expected insertPreview');
+      expect(ov.shape).toBe('pencil');
+      expect((ov.extras as { samples: unknown[] }).samples).toEqual(trail);
+    });
+
+    it('polygon: thunked params resolve at overlay() call time (live preview reflects mid-gesture ticks)', () => {
+      const invoker = getOngoingInvoker(insertAction);
+      const dep = makeInsertDep();
+      const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
+      let sides = 5;
+      const handle = invoker.start(ctx, {
+        params: () => ({ kind: 'polygon', sides, rotation: 0 }),
+      });
+      handle.onMove!({ ...ctx, world: { x: 100, y: 100 } });
+      let ov = handle.overlay!();
+      if (ov?.kind !== 'insertPreview') throw new Error('expected insertPreview');
+      expect((ov.extras as { sides: number }).sides).toBe(5);
+      sides = 9;
+      ov = handle.overlay!();
+      if (ov?.kind !== 'insertPreview') throw new Error('expected insertPreview');
+      expect((ov.extras as { sides: number }).sides).toBe(9);
+    });
+
+    it('returns null for unknown (consumer-defined) kinds — no kit-side preview', () => {
+      const invoker = getOngoingInvoker(insertAction);
+      const dep = makeInsertDep();
+      const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
+      const handle = invoker.start(ctx, { params: { kind: 'my-custom-widget' } });
+      handle.onMove!({ ...ctx, world: { x: 30, y: 30 } });
+      expect(handle.overlay!()).toBeNull();
+    });
+
+    it('returns null after onEnd (gesture closed)', () => {
+      const invoker = getOngoingInvoker(insertAction);
+      const dep = makeInsertDep();
+      const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
+      const handle = invoker.start(ctx, undefined);
+      handle.onMove!({ ...ctx, world: { x: 30, y: 30 } });
+      expect(handle.overlay!()).not.toBeNull();
+      handle.onEnd!({ ...ctx, world: { x: 30, y: 30 } }, 'commit');
+      expect(handle.overlay!()).toBeNull();
+    });
+  });
+
   it('pencil kind: commits even when start ≈ end (closed loop / sub-threshold AABB)', () => {
     const invoker = getOngoingInvoker(insertAction);
     const dep = makeInsertDep();

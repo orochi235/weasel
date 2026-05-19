@@ -21,7 +21,14 @@ import type { RenderLayer } from 'core/layers/render';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import type { Dispatcher } from 'interactions/dispatcher/dispatcher';
-import { polygonFromPoints } from 'features/paths/builder';
+import {
+  polygonFromPoints,
+  rectPath,
+  ellipsePath,
+  linePath,
+  regularPolygonPath,
+  starPath,
+} from 'features/paths/builder';
 
 /** Style knobs for the dispatcher-overlay layer's marquee + lasso paints.
  *  Defaults match the legacy `useSelectTool` `areaSelectOverlayStyle`
@@ -92,6 +99,121 @@ export function useDispatcherOverlayLayer(args: {
               kind: 'path',
               path: { kind: 'rect', x: sx, y: sy, width: sw, height: sh },
               fill: { color: cfg.fill },
+              stroke: { paint: { color: cfg.stroke }, width: cfg.lineWidth, dash: cfg.dash },
+            };
+            out.push(cmd);
+            continue;
+          }
+
+          if (ov.kind === 'insertPreview') {
+            // Build the world-space path using the same builders the
+            // commit-time insert factory uses, then project every coord
+            // through `worldToScreen` so the screen-space layer can stamp
+            // it without re-applying the view transform.
+            const b = ov.bounds;
+            // Skip zero-area previews (pointerdown before first move) for
+            // non-pencil shapes; pencil can be meaningful even at near-zero
+            // AABB (closed-loop / sub-threshold gestures — see insertAction).
+            if (b.width === 0 && b.height === 0 && ov.shape !== 'pencil') continue;
+
+            const projectPoint = (wx: number, wy: number): { x: number; y: number } => {
+              const [sx, sy] = worldToScreen(wx, wy, t);
+              return { x: sx, y: sy };
+            };
+            const projectPoints = (
+              pts: ReadonlyArray<{ x: number; y: number }>,
+            ): { x: number; y: number }[] => pts.map((p) => projectPoint(p.x, p.y));
+
+            let pathCmd: PathDrawCommand['path'] | null = null;
+            switch (ov.shape) {
+              case 'rect': {
+                const [sx, sy] = worldToScreen(b.x, b.y, t);
+                pathCmd = rectPath(sx, sy, b.width * view.scale.x, b.height * view.scale.y);
+                break;
+              }
+              case 'ellipse': {
+                const [sx, sy] = worldToScreen(b.x, b.y, t);
+                pathCmd = ellipsePath({
+                  x: sx, y: sy,
+                  width: b.width * view.scale.x,
+                  height: b.height * view.scale.y,
+                });
+                break;
+              }
+              case 'line': {
+                const e = ov.extras as Partial<{
+                  a: { x: number; y: number };
+                  b: { x: number; y: number };
+                }>;
+                const a = e.a ?? { x: b.x, y: b.y };
+                const b2 = e.b ?? { x: b.x + b.width, y: b.y + b.height };
+                pathCmd = linePath(projectPoint(a.x, a.y), projectPoint(b2.x, b2.y));
+                break;
+              }
+              case 'polygon': {
+                const e = ov.extras as Partial<{
+                  sides: number; rotation: number;
+                  center: { x: number; y: number }; radius: number;
+                }>;
+                const sides = Math.max(3, Math.floor(e.sides ?? 6));
+                const rotation = e.rotation ?? 0;
+                const cx = e.center?.x ?? b.x + b.width / 2;
+                const cy = e.center?.y ?? b.y + b.height / 2;
+                const r = e.radius ?? Math.min(b.width, b.height) / 2;
+                const center = projectPoint(cx, cy);
+                // Average the scale factors for the screen-space radius —
+                // matches how the commit-time factory inscribes a regular
+                // polygon in the AABB (square-aspect within the bounds).
+                const screenR = r * ((view.scale.x + view.scale.y) / 2);
+                pathCmd = regularPolygonPath(center, screenR, sides, rotation);
+                break;
+              }
+              case 'star': {
+                const e = ov.extras as Partial<{
+                  points: number; innerRadiusRatio: number; rotation: number;
+                  center: { x: number; y: number }; outerRadius: number;
+                }>;
+                const points = Math.max(3, Math.floor(e.points ?? 5));
+                const ratio = e.innerRadiusRatio ?? 0.5;
+                const rotation = e.rotation ?? 0;
+                const cx = e.center?.x ?? b.x + b.width / 2;
+                const cy = e.center?.y ?? b.y + b.height / 2;
+                const outerR = e.outerRadius ?? Math.min(b.width, b.height) / 2;
+                const center = projectPoint(cx, cy);
+                const screenOuter = outerR * ((view.scale.x + view.scale.y) / 2);
+                pathCmd = starPath(center, screenOuter, points, screenOuter * ratio, rotation);
+                break;
+              }
+              case 'pencil': {
+                const e = ov.extras as Partial<{
+                  samples: ReadonlyArray<{ x: number; y: number }>;
+                }>;
+                const samples = e.samples ?? [];
+                if (samples.length < 2) {
+                  pathCmd = null;
+                  break;
+                }
+                // Open polyline preview — matches the commit-time pencil
+                // factory's polygonFromPoints fallback (the schneider-fit
+                // path is post-commit refinement, not a live primitive).
+                // Use a PathBuilder directly to leave the polyline open
+                // (no Z) so the stroke doesn't visually close the trail.
+                const screenPts = projectPoints(samples);
+                // polygonFromPoints closes; for an in-flight pencil we want
+                // the path open so it doesn't auto-snap a chord from end
+                // back to start mid-drag. Build a minimal open polyline.
+                pathCmd = polygonFromPoints(screenPts);
+                break;
+              }
+            }
+
+            if (!pathCmd) continue;
+            const cmd: PathDrawCommand = {
+              kind: 'path',
+              path: pathCmd,
+              fill: ov.shape === 'line' || ov.shape === 'pencil'
+                ? undefined
+                : { color: cfg.fill },
               stroke: { paint: { color: cfg.stroke }, width: cfg.lineWidth, dash: cfg.dash },
             };
             out.push(cmd);
