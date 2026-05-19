@@ -10,6 +10,12 @@
   color: var(--wzl-muted, #9ea1a8);
 }
 
+.sep {
+  color: var(--wzl-muted, #9ea1a8);
+  font-size: 11px;
+  line-height: 1;
+}
+
 .key {
   display: inline-flex;
   align-items: center;
@@ -49,4 +55,12 @@
 .key[data-kind='wide'] {
   min-width: 32px;
   padding: 0 8px;
+}
+
+/* Inverted: dark chip face with light glyph — used by `KeySequence` to
+   mark optional keys (e.g. an optional modifier). */
+.key[data-inverted] {
+  background: var(--wzl-bg, #181a1e);
+  border-color: #0c0d10;
+  color: var(--wzl-fg, #e6e7e9);
 }

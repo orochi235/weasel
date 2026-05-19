@@ -30,14 +30,13 @@ import {
 } from '@orochi235/weasel';
 import {
   buildActionRegistry,
+  canonicalModifiers,
   findConflicts,
   type Conflict,
   type RegistryEntry,
   type ToolDef,
 } from '@orochi235/weasel/routing';
-import { formatShortcutParts } from '@orochi235/weasel-ui';
-import { KeyCap } from './KeyCap';
-import { DispatchTracePanel } from './DispatchTracePanel';
+import { formatShortcutParts, KeySequence } from '@orochi235/weasel-ui';
 import { TOOL_HOOK_NAMES } from './registryData';
 import s from './ToolkitBuilder.module.css';
 
@@ -173,10 +172,9 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
         <RoutesWidget routes={routes} />
       </section>
 
-      {/* Right column: conflicts + live dispatch trace. */}
+      {/* Right column: conflicts. */}
       <aside className={s.reflect}>
         <ConflictsWidget conflicts={conflicts} />
-        <DispatchTracePanel />
       </aside>
     </div>
   );
@@ -217,7 +215,7 @@ function ToolsWidget({
                   <td><code>{d.id}</code></td>
                   <td>{TOOL_HOOK_NAMES[d.id] ?? <span className={s.empty}>—</span>}</td>
                   <td>{ambientSet.has(d.id) ? 'ambient' : 'registry'}</td>
-                  <td><KeyCap parts={formatShortcutParts(d.keybinding)} /></td>
+                  <td><KeySequence keys={formatShortcutParts(d.keybinding)?.map((label) => ({ label }))} /></td>
                 </tr>
               ))}
             </tbody>
@@ -287,7 +285,8 @@ function RoutesWidget({ routes }: { routes: readonly RegistryEntry[] }): ReactEl
     a.toolId.localeCompare(b.toolId)
     || a.phase.localeCompare(b.phase)
     || a.gesture.localeCompare(b.gesture)
-    || a.target.localeCompare(b.target));
+    || (a.arg ?? '').localeCompare(b.arg ?? '')
+    || (a.target ?? '').localeCompare(b.target ?? ''));
   return (
     <div className={s.widget}>
       <h2 className={s.widgetTitle}>Routes · {routes.length}</h2>
@@ -301,22 +300,31 @@ function RoutesWidget({ routes }: { routes: readonly RegistryEntry[] }): ReactEl
                 <th>Tool</th>
                 <th>Phase</th>
                 <th>Gesture</th>
+                <th>Arg</th>
                 <th>Target</th>
                 <th>Mods</th>
               </tr>
             </thead>
             <tbody>
-              {sorted.map((r, i) => (
-                <tr key={`${r.toolId}-${r.phase}-${r.gesture}-${r.target}-${r.modifiers}-${i}`}>
+              {sorted.map((r, i) => {
+                const modKey = canonicalModifiers(r.modifiers);
+                return (
+                <tr key={`${r.toolId}-${r.phase}-${r.gesture}-${r.arg ?? ''}-${r.target ?? ''}-${modKey}-${i}`}>
                   <td><code>{r.toolId}</code></td>
                   <td>{r.phase}</td>
                   <td>{r.gesture}</td>
-                  <td><code>{r.target}</code></td>
-                  <td>{r.modifiers === 'default'
+                  <td>{r.arg == null
                     ? <span className={s.empty}>—</span>
-                    : <code>{r.modifiers}</code>}</td>
+                    : <code>{r.arg}</code>}</td>
+                  <td>{r.target == null
+                    ? <span className={s.empty}>—</span>
+                    : <code>{r.target}</code>}</td>
+                  <td>{modKey === ''
+                    ? <span className={s.empty}>—</span>
+                    : <code>{modKey}</code>}</td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -338,10 +346,12 @@ function ConflictsWidget({ conflicts }: { conflicts: readonly Conflict[] }): Rea
           <p className={s.empty}>No exact-tuple route conflicts in this bundle.</p>
         ) : (
           <ul className={s.conflicts}>
-            {conflicts.map((c, i) => (
+            {conflicts.map((c, i) => {
+              const modKey = canonicalModifiers(c.modifiers);
+              return (
               <li key={i}>
-                <code>{c.phase}.{c.gesture}.{c.target}</code>
-                {c.modifiers !== 'default' && <> · <code>{c.modifiers}</code></>}
+                <code>{c.phase}.{c.gesture}{c.arg != null ? `(${c.arg})` : ''}{c.target != null ? `.${c.target}` : ''}</code>
+                {modKey !== '' && <> · <code>{modKey}</code></>}
                 {' '}claimed by{' '}
                 {c.toolIds.map((id, j) => (
                   <span key={id}>
@@ -350,7 +360,8 @@ function ConflictsWidget({ conflicts }: { conflicts: readonly Conflict[] }): Rea
                   </span>
                 ))}
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </div>
@@ -396,7 +407,7 @@ function renderSpec(spec: GestureSpec): ReactNode {
       alt: !!spec.mods?.alt,
       shift: spec.mods?.shift === true ? true : undefined,
     });
-    return <KeyCap parts={parts} />;
+    return <KeySequence keys={parts?.map((label) => ({ label }))} />;
   }
   const mods = 'mods' in spec && spec.mods
     ? Object.entries(spec.mods).filter(([, v]) => v).map(([k]) => k).join('+')

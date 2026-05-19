@@ -1,5 +1,7 @@
 import type { ComponentType } from 'react';
 import * as Weasel from '@orochi235/weasel';
+import * as WeaselUi from '@orochi235/weasel-ui';
+import { canonicalModifiers, parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@orochi235/weasel/routing';
 import * as ActionIcons from '../actionIcons';
 import * as KindIcons from '../kindIcons';
 
@@ -188,6 +190,10 @@ export interface PublicExportEntry {
   kind: 'publicExport';
   id: string;
   label: string;
+  /** Which library the symbol is exported from. Base = `@orochi235/weasel`;
+   *  `ui` = `@orochi235/weasel-ui`. Used by the tree to show a library
+   *  badge next to non-base entries. */
+  source: 'base' | 'ui';
 }
 
 /** Lifecycle phase a `ToolDef` can declare routes in. `initial` is the
@@ -268,9 +274,9 @@ export function collectMeta(): readonly MetaEntry[] {
 
 export type TreeCategory =
   | 'tools' | 'actions' | 'shapeKinds' | 'bundles'
-  | 'icons' | 'opFactories' | 'publicExports'
+  | 'icons' | 'ops' | 'publicExports'
   | 'phases' | 'gestures' | 'phaseOutputs'
-  | 'opKinds' | 'hotkeyTriggers' | 'slots' | 'routeTargets' | 'modifierSets' | 'groups'
+  | 'hotkeyTriggers' | 'slots' | 'routeTargets' | 'modifierSets' | 'groups'
   | 'meta';
 
 export interface TreeCategoryNode {
@@ -330,10 +336,20 @@ export function collectOpFactories(): readonly OpFactoryEntry[] {
 
 export function collectPublicExports(): readonly PublicExportEntry[] {
   const out: PublicExportEntry[] = [];
+  const seen = new Set<string>();
   for (const [id, value] of Object.entries(Weasel)) {
     if (value === undefined || value === null) continue;
     if (id === 'default') continue;
-    out.push({ kind: 'publicExport', id, label: id });
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push({ kind: 'publicExport', id, label: id, source: 'base' });
+  }
+  for (const [id, value] of Object.entries(WeaselUi)) {
+    if (value === undefined || value === null) continue;
+    if (id === 'default') continue;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push({ kind: 'publicExport', id, label: id, source: 'ui' });
   }
   return out;
 }
@@ -403,7 +419,10 @@ export function countForEntry(
     case 'routeTarget':
       return tools.filter((t) => t.routes.some((r) => parseRoute(r).target === entry.id)).length;
     case 'modifierSet':
-      return tools.filter((t) => t.routes.some((r) => parseRoute(r).modifiers === entry.id)).length;
+      return tools.filter((t) => t.routes.some((r) => {
+        const canonical = canonicalModifiers(parseRoute(r).modifiers) || 'default';
+        return canonical === entry.id;
+      })).length;
     case 'group':
       return entry.source === 'tool'
         ? tools.filter((t) => t.presentation?.group === entry.label).length
@@ -433,37 +452,28 @@ export function collectSlots(): readonly SlotEntry[] {
   return TOOL_SLOTS.map((id) => ({ kind: 'slot', id, label: id }));
 }
 
-/** A parsed route signature. Reverses the `${phase}.${gesture}.${target}[:mods]`
- *  encoding the probe emits, so the inspector can re-group routes along the
- *  target / modifier-set axes without re-walking ToolDefs. */
-export interface ParsedRoute {
-  phase: string;
-  gesture: string;
-  target: string;
-  modifiers: string;
-}
-
-export function parseRoute(route: string): ParsedRoute {
-  const [body, mods] = route.split(':');
-  const dot1 = body.indexOf('.');
-  const dot2 = body.indexOf('.', dot1 + 1);
-  return {
-    phase: body.slice(0, dot1),
-    gesture: body.slice(dot1 + 1, dot2),
-    target: body.slice(dot2 + 1),
-    modifiers: mods ?? 'default',
-  };
-}
+/** Re-exported from the kit's v2 route grammar.
+ *  See `src/tools/routing/routeGrammar.ts`. */
+export type ParsedRoute = KitParsedRoute;
+export const parseRoute = kitParseRoute;
 
 export function collectRouteTargets(tools: readonly ToolEntry[]): readonly RouteTargetEntry[] {
   const seen = new Set<string>();
-  for (const t of tools) for (const r of t.routes) seen.add(parseRoute(r).target);
+  for (const t of tools) {
+    for (const r of t.routes) {
+      const target = parseRoute(r).target;
+      if (target !== undefined) seen.add(target);
+    }
+  }
   return [...seen].sort().map((id) => ({ kind: 'routeTarget', id, label: id }));
 }
 
 export function collectModifierSets(tools: readonly ToolEntry[]): readonly ModifierSetEntry[] {
   const seen = new Set<string>();
-  for (const t of tools) for (const r of t.routes) seen.add(parseRoute(r).modifiers);
+  for (const t of tools) for (const r of t.routes) {
+    const canonical = canonicalModifiers(parseRoute(r).modifiers) || 'default';
+    seen.add(canonical);
+  }
   return [...seen].sort().map((id) => ({ kind: 'modifierSet', id, label: id }));
 }
 

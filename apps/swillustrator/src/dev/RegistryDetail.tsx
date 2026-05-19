@@ -1,5 +1,28 @@
 import { Fragment } from 'react';
-import { Badge, DataGrid, Keycaps, type BadgeProps, type DataGridColumn } from '@orochi235/weasel-ui';
+import { Badge, DataGrid, KeySequence, type BadgeProps, type DataGridColumn, type KeySpec } from '@orochi235/weasel-ui';
+import type { ParsedModifiers, ModName } from '@orochi235/weasel/routing';
+
+function toKeys(parts: readonly string[] | undefined) {
+  return parts?.map((label) => ({ label }));
+}
+
+const MOD_GLYPHS: Record<ModName, string> = { mod: '⌘', shift: '⇧', alt: '⌥', ctrl: '⌃', meta: '⌘' };
+const MOD_DISPLAY_ORDER: readonly ModName[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
+
+/** Decompose a `ParsedModifiers` map into KeySpecs for KeySequence. Empty
+ *  map (no required modifiers) returns undefined; otherwise emits one chip
+ *  per modifier in canonical display order, marking optional ones inverted
+ *  so the consumer can visually distinguish `?shift` from `+shift`. */
+function modifierKeys(modifiers: ParsedModifiers): readonly KeySpec[] | undefined {
+  const keys: KeySpec[] = [];
+  for (const name of MOD_DISPLAY_ORDER) {
+    const req = modifiers[name];
+    if (req !== undefined) {
+      keys.push({ label: MOD_GLYPHS[name], optional: req === 'optional' });
+    }
+  }
+  return keys.length > 0 ? keys : undefined;
+}
 import s from './RegistryInspector.module.css';
 import type {
   TreeEntry, ToolEntry, ActionEntry, BundleEntry, IconEntry, OpFactoryEntry,
@@ -8,23 +31,48 @@ import type {
   MetaEntry, CallbackRef,
 } from './registryData';
 import { BOOLEAN_BADGE_PROPS, BUNDLE_BADGE_PROPS, GESTURE_BADGE_PROPS, HOTKEY_TRIGGER_GLYPHS, KIND_BADGE_PROPS, PHASE_BADGE_PROPS, TOKEN_SETS, type TokenSet } from './badgeTokens';
+import { canonicalModifiers, getGestureDescriptor, type GestureName } from '@orochi235/weasel/routing';
 import { collectBundles, collectIcons, GESTURE_CHANNEL_KEYS, PHASE_OUTPUT_KEYS, parseRoute, TOOL_HOOK_NAMES } from './registryData';
 void GESTURE_CHANNEL_KEYS;
 void PHASE_OUTPUT_KEYS;
 
-/** Decomposes a `phase.gesture.target[:modifiers]` route into its constituent
- *  tokens — phase + gesture as badges, target as a code chip, modifier set
- *  appended when non-default. */
-function RouteBadge({ route }: { route: string }) {
+/** Decomposes a v3 route string (`[phaseList] gesture(arg) => target +mod`)
+ *  into its constituent tokens — bracketed phase list, gesture badge,
+ *  optional arg chip, target tag, modifier sequence. Targets equal to the
+ *  wildcard `*` are elided; arg chips are elided when the gesture descriptor
+ *  has a default and the parsed arg matches it. */
+export function RouteBadge({ route }: { route: string }) {
   const parsed = parseRoute(route);
+  const desc = getGestureDescriptor(parsed.gesture as GestureName);
+  const modKeys = modifierKeys(parsed.modifiers);
+  const showArg = !!desc.arg
+    && parsed.arg !== undefined
+    && (desc.arg.default === undefined || parsed.arg !== desc.arg.default);
+  const showTarget = desc.hasTarget && parsed.target !== undefined && parsed.target !== '*';
+  const targetless = !desc.hasTarget;
   return (
     <span className={s.routeBadge}>
-      <Badge {...(PHASE_BADGE_PROPS as BadgeProps)}>{parsed.phase}</Badge>
-      <Badge {...(GESTURE_BADGE_PROPS as BadgeProps)}>{parsed.gesture}</Badge>
-      <code className={s.tag}>{parsed.target}</code>
-      {parsed.modifiers !== 'default' && (
-        <code className={s.tag}>:{parsed.modifiers}</code>
+      <span className={s.phaseGroup}>
+        {parsed.phases.map((p, i) => (
+          <Fragment key={i}>
+            {i > 0 && <span className={s.phaseSep}>,</span>}
+            <Badge {...(PHASE_BADGE_PROPS as BadgeProps)}>{p}</Badge>
+          </Fragment>
+        ))}
+      </span>
+      <Badge
+        {...(GESTURE_BADGE_PROPS as BadgeProps)}
+        className={targetless && !showArg ? s.flatRight : undefined}
+      >
+        {parsed.gesture}
+      </Badge>
+      {showArg && (
+        <code className={[s.argChip, targetless ? s.flatLeft : undefined].filter(Boolean).join(' ')}>
+          {parsed.arg}
+        </code>
       )}
+      {showTarget && <code className={s.tag}>{parsed.target}</code>}
+      {modKeys && <KeySequence keys={modKeys} />}
     </span>
   );
 }
@@ -149,7 +197,7 @@ function TokenSetTable({ set }: { set: TokenSet }) {
         rows={set.entries.map((e) => ({ id: e.value, entry: e }))}
         columns={[
           { id: 'value', header: 'value', accessor: (r) => r.entry.value, render: (r) => <code className={s.tag}>{r.entry.value}</code> },
-          { id: 'preview', header: 'preview', accessor: (r) => r.entry.value, render: (r) => <Keycaps parts={r.entry.props.parts} /> },
+          { id: 'preview', header: 'preview', accessor: (r) => r.entry.value, render: (r) => <KeySequence keys={toKeys(r.entry.props.parts)} /> },
         ]}
         empty="No entries."
       />
@@ -167,9 +215,11 @@ function TokenSetTable({ set }: { set: TokenSet }) {
   );
 }
 
-function OpKindDetail({ entry, onNavigate }: { entry: OpKindEntry; onNavigate: Props['onNavigate'] }) {
+function OpKindDetail({ entry }: { entry: OpKindEntry; onNavigate: Props['onNavigate'] }) {
   const factoryId = `create${entry.id.charAt(0).toUpperCase()}${entry.id.slice(1)}Op`;
+  const fn = (Weasel as Record<string, unknown>)[factoryId];
   const match = findSourceMatch(factoryId);
+  const arity = typeof fn === 'function' ? fn.length : undefined;
   return (
     <div>
       <h2 className={s.detailHeading}>{entry.id}</h2>
@@ -179,10 +229,14 @@ function OpKindDetail({ entry, onNavigate }: { entry: OpKindEntry; onNavigate: P
         ops across reloads.
       </p>
       <dl className={s.detailList}>
-        <dt>factory</dt>
-        <dd><EntryLink kind="opFactory" id={factoryId} onNavigate={onNavigate} /></dd>
-        {match?.path && (<><dt>source</dt><dd><code>{match.path}</code></dd></>)}
+        <dt>factory</dt><dd><code>{factoryId}</code></dd>
+        <dt>runtime</dt><dd><code className={s.tag}>{typeof fn}</code></dd>
+        {arity !== undefined && (
+          <><dt>parameters</dt><dd>{arity}</dd></>
+        )}
+        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
       </dl>
+      {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
     </div>
   );
 }
@@ -195,7 +249,7 @@ function HotkeyTriggerDetail({
   return (
     <div>
       <h2 className={s.detailHeading}>
-        {glyphs && <Keycaps parts={glyphs} />} {entry.id}
+        {glyphs && <KeySequence keys={toKeys(glyphs)} />} {entry.id}
       </h2>
       <p className={s.empty}>Press-and-hold trigger key for the hotkey tool slot.</p>
       <h3 className={s.subHeading}>Tools bound to this trigger</h3>
@@ -266,7 +320,8 @@ function ModifierSetDetail({
   entry, tools, onNavigate,
 }: { entry: ModifierSetEntry; tools: readonly ToolEntry[]; onNavigate: Props['onNavigate'] }) {
   const rows = tools.flatMap((t) => {
-    const matching = t.routes.filter((r) => parseRoute(r).modifiers === entry.id);
+    const matching = t.routes.filter((r) =>
+      (canonicalModifiers(parseRoute(r).modifiers) || 'default') === entry.id);
     return matching.length === 0 ? [] : [{ id: t.id, tool: t, routes: matching }];
   });
   return (
@@ -535,7 +590,7 @@ function IconDetail({ entry }: { entry: IconEntry }) {
       </div>
       <dl className={s.detailList}>
         <dt>source</dt><dd><code className={s.tag}>{entry.source}</code></dd>
-        {match?.path && (<><dt>file</dt><dd><code>{match.path}</code></dd></>)}
+        {match?.path && (<><dt>file</dt><dd><SourceLink match={match} /></dd></>)}
       </dl>
       {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
     </div>
@@ -574,13 +629,13 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
         <dt>slot</dt>
         <dd><EntryLink kind="slot" id={entry.slot} onNavigate={onNavigate} /></dd>
         {entry.switchShortcutParts && (
-          <><dt>shortcut</dt><dd><Keycaps parts={entry.switchShortcutParts} /></dd></>
+          <><dt>shortcut</dt><dd><KeySequence keys={toKeys(entry.switchShortcutParts)} /></dd></>
         )}
         {entry.hotkey && (
           <>
             <dt>hotkey</dt>
             <dd>
-              <Keycaps parts={HOTKEY_TRIGGER_GLYPHS[entry.hotkey] ?? [entry.hotkey.toUpperCase()]} />
+              <KeySequence keys={toKeys(HOTKEY_TRIGGER_GLYPHS[entry.hotkey] ?? [entry.hotkey.toUpperCase()])} />
               <EntryLink kind="hotkeyTrigger" id={entry.hotkey} label={entry.hotkey} onNavigate={onNavigate} />
             </dd>
           </>
@@ -637,7 +692,7 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
             </dd>
           </>
         )}
-        {match?.path && (<><dt>source</dt><dd><code>{match.path}</code></dd></>)}
+        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
         {entry.callbacks && entry.callbacks.length > 0 && (
           <>
             <dt>callbacks</dt>
@@ -681,6 +736,20 @@ declare const __WEASEL_REPO_ROOT__: string | undefined;
 const WEASEL_REPO_ROOT: string | undefined =
   typeof __WEASEL_REPO_ROOT__ === 'string' ? __WEASEL_REPO_ROOT__ : undefined;
 
+/** Render a `findSourceMatch` result as a `vscode://file/...` link with
+ *  `path:line` text. Falls back to plain text when the repo root isn't
+ *  defined (e.g. test environments without Vite `define`). */
+function SourceLink({ match }: { match: { path: string; line: number } }) {
+  const root = WEASEL_REPO_ROOT;
+  if (!root) return <code>{match.path}:{match.line}</code>;
+  const abs = `${root}${match.path}`;
+  return (
+    <a className={s.callbackLink} href={`vscode://file/${abs}:${match.line}:1`}>
+      {match.path}:{match.line}
+    </a>
+  );
+}
+
 function PhaseRow({ label, phase }: { label: string; phase: PhaseSummary }) {
   const gestures = activeGestures(phase);
   const outputs = activeOutputs(phase);
@@ -720,7 +789,7 @@ function ActionDetail({ entry, onNavigate }: { entry: ActionEntry; onNavigate: P
           </>
         )}
         {entry.shortcutParts && (
-          <><dt>binding</dt><dd><Keycaps parts={entry.shortcutParts} /></dd></>
+          <><dt>binding</dt><dd><KeySequence keys={toKeys(entry.shortcutParts)} /></dd></>
         )}
         {entry.shortcut && (
           <><dt>shortcut</dt><dd><code>{entry.shortcut}</code></dd></>
@@ -738,7 +807,7 @@ function ActionDetail({ entry, onNavigate }: { entry: ActionEntry; onNavigate: P
             </dd>
           </>
         )}
-        {match?.path && (<><dt>source</dt><dd><code>{match.path}</code></dd></>)}
+        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
         {entry.callbacks && entry.callbacks.length > 0 && (
           <>
             <dt>callbacks</dt>
@@ -795,7 +864,7 @@ function bundleMemberColumns(
       id: 'shortcut',
       header: 'shortcut',
       sortable: false,
-      render: (r) => <Keycaps parts={r.tool?.switchShortcutParts} />,
+      render: (r) => <KeySequence keys={toKeys(r.tool?.switchShortcutParts)} />,
     },
   ];
 }
@@ -913,7 +982,7 @@ function ShapeKindDetail({
             </dd>
           </>
         )}
-        {match?.path && (<><dt>source</dt><dd><code>{match.path}</code></dd></>)}
+        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
       </dl>
       {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
     </div>
@@ -941,7 +1010,7 @@ function OpFactoryDetail({ entry }: { entry: OpFactoryEntry }) {
         {arity !== undefined && (
           <><dt>parameters</dt><dd>{arity}</dd></>
         )}
-        {match?.path && (<><dt>source</dt><dd><code>{match.path}</code></dd></>)}
+        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
       </dl>
       {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
     </div>
@@ -986,7 +1055,7 @@ function PublicExportDetail({
             </dd>
           </>
         )}
-        {match?.path && (<><dt>source</dt><dd><code>{match.path}</code></dd></>)}
+        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
       </dl>
       {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
     </div>

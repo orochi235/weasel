@@ -11,6 +11,7 @@ import {
 } from '@orochi235/weasel';
 import {
   buildActionRegistry,
+  canonicalModifiers,
   findConflicts,
   type RegistryEntry,
   type Conflict,
@@ -108,15 +109,18 @@ function RegistryTable({ rows }: { rows: RegistryEntry[] }) {
         </tr>
       </thead>
       <tbody>
-        {rows.map((r, i) => (
-          <tr key={`${r.toolId}.${r.phase}.${r.gesture}.${r.target}.${r.modifiers}.${i}`}>
+        {rows.map((r, i) => {
+          const modKey = canonicalModifiers(r.modifiers);
+          return (
+          <tr key={`${r.toolId}.${r.phase}.${r.gesture}.${r.target}.${modKey}.${i}`}>
             <td>{r.toolId}</td>
             <td>{r.phase}</td>
             <td>{r.gesture}</td>
             <td>{r.target}</td>
-            <td>{r.modifiers}</td>
+            <td>{modKey || 'default'}</td>
           </tr>
-        ))}
+          );
+        })}
       </tbody>
     </table>
   );
@@ -128,15 +132,18 @@ function ConflictsReport({ conflicts }: { conflicts: Conflict[] }) {
   }
   return (
     <ul className={styles.conflicts}>
-      {conflicts.map((c, i) => (
+      {conflicts.map((c, i) => {
+        const modKey = canonicalModifiers(c.modifiers);
+        return (
         <li key={i}>
           <code>
             {c.phase}.{c.gesture}[{c.target}]
-            {c.modifiers !== 'default' && `:${c.modifiers}`}
+            {modKey !== '' && `:${modKey}`}
           </code>{' '}
           claimed by {c.toolIds.join(', ')}
         </li>
-      ))}
+        );
+      })}
     </ul>
   );
 }

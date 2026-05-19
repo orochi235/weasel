@@ -18,7 +18,7 @@ describe('ToolDebugOverlay', () => {
 
   it('renders all six rows when info is resolved', () => {
     const info: RouteResolvedInfo = {
-      toolId: 'select', phase: 'initial', gesture: 'click',
+      toolId: 'select', phase: 'initial', gesture: 'click', arg: undefined,
       matchedKey: 'rect', modifiers: 'shift',
       target: { category: 'node', kind: 'rect', id: asNodeId('node-42'), pose: {}, data: {} },
       timestamp: 1000,
@@ -34,7 +34,7 @@ describe('ToolDebugOverlay', () => {
 
   it('formats empty-target rows as "empty"', () => {
     const info: RouteResolvedInfo = {
-      toolId: 'select', phase: 'initial', gesture: 'click',
+      toolId: 'select', phase: 'initial', gesture: 'click', arg: undefined,
       matchedKey: 'empty', modifiers: 'default',
       target: { category: 'empty', kind: 'empty' },
       timestamp: 1000,

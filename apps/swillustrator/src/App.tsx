@@ -69,7 +69,8 @@ import { useColorContext } from './tools/colorContext';
 import { useSceneAdapter } from '@orochi235/weasel';
 import type { Obj } from './poseUpdate';
 import { parseSvg } from '@orochi235/weasel-svg';
-import { pickSvgFile, svgNodesToObjsWithGroups, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
+import { downloadSvg, pickSvgFile, svgNodesToObjsWithGroups, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
+import { sceneToSvgString } from './svgExport';
 import type { RecordingProfile } from './recorder';
 
 import './swillustrator.css';
@@ -506,7 +507,10 @@ interface ToolbarProps {
   setGridVisible: (v: boolean) => void;
   snapToGrid: boolean;
   setSnapToGrid: (v: boolean) => void;
+  paperSize: PaperSizeKey;
   setPaperSize: (k: PaperSizeKey) => void;
+  filename: string;
+  backgroundColor: string;
   onOpenPrefs: () => void;
 }
 
@@ -514,7 +518,9 @@ function Toolbar({
   scene, selection,
   gridVisible, setGridVisible,
   snapToGrid, setSnapToGrid,
-  setPaperSize, onOpenPrefs,
+  paperSize, setPaperSize,
+  filename, backgroundColor,
+  onOpenPrefs,
 }: ToolbarProps): ReactElement {
   const registry = useActionsRegistry();
   const trigger = useCallback((id: string) => {
@@ -606,7 +612,18 @@ function Toolbar({
         onAlign={(edge: AlignEdge) => trigger(`align.${edge}`)}
         onDistribute={(axis: DistributeAxis) => trigger(`distribute.${axis}`)}
         onFlip={(_axis: FlipAxis) => trigger('flip')}
-        onSaveSvg={() => {/* v0: SVG export deferred (TODO.md) */}}
+        onSaveSvg={() => {
+          const paper = PAPER_PRESETS[paperSize];
+          const svg = sceneToSvgString(scene, {
+            filename,
+            paperSize,
+            paperWidth: paper.width,
+            paperHeight: paper.height,
+            backgroundColor,
+          });
+          const safe = filename.trim() || DEFAULT_FILENAME;
+          downloadSvg(svg, /\.svg$/i.test(safe) ? safe : `${safe}.svg`);
+        }}
         onOpenSvg={() => {
           // Pop the file picker, parse the chosen SVG, lower its nodes back
           // into the scene-graph. Leaves become `kind: 'leaf'`; SVG groups
@@ -988,7 +1005,10 @@ function EditorWithSharedScene({
         setGridVisible={setGridVisible}
         snapToGrid={snapToGrid}
         setSnapToGrid={setSnapToGrid}
+        paperSize={paperSize}
         setPaperSize={setPaperSize}
+        filename={filename}
+        backgroundColor={backgroundColor}
         onOpenPrefs={() => setPrefsOpen(true)}
       />
       <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} />

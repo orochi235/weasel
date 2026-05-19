@@ -150,6 +150,7 @@
     "2d"
   ],
   "dependencies": {
+    "@orochi235/weasel-gestures": "*",
     "earcut": "2.2.4",
     "polygon-clipping": "^0.15.7"
   },

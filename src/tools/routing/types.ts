@@ -17,6 +17,17 @@ export type RouteEntry<TScratch> = ActionFn<TScratch> | ModifierRoute<TScratch>;
 
 export type RouteTable<TScratch> = Partial<Record<string, RouteEntry<TScratch>>>;
 
+/** Map from key-route string (e.g. `"ArrowDown"`, `"ArrowDown?shift"`) to
+ *  action. Parsed by the reflection emitter and dispatcher. */
+export type KeyRouteTable<TScratch> = Partial<Record<string, ActionFn<TScratch>>>;
+
+/** Wheel direction sub-table. Keys: `'up' | 'down' | '*'`. Function form
+ *  is sugar for `{ '*': fn }` (matches both directions). */
+export type WheelTable<TScratch> = Partial<Record<'up' | 'down' | '*', ActionFn<TScratch>>>;
+
+/** MultiTouch tap fingers sub-table. Keys: `'2' | '3' | '4'`. */
+export type MultiTouchTapTable<TScratch> = Partial<Record<'2' | '3' | '4', ActionFn<TScratch>>>;
+
 export interface PhaseDef<TScratch> {
   click?:   RouteTable<TScratch>;
   /** Pre-threshold classifier route. Runs synchronously on pointerdown,
@@ -40,10 +51,18 @@ export interface PhaseDef<TScratch> {
    *  `pointer.onDown` channel that useSelectTool used through Phase 3. */
   pointerDown?: RouteTable<TScratch>;
   dblTap?:  RouteTable<TScratch>;
+  /** Right-click route table. Mirrors `click` semantics — keyed by hit-test
+   *  target, modifier-aware. The dispatcher calls `preventDefault()` on the
+   *  underlying `contextmenu` DOM event so tools fully own the menu. */
+  contextMenu?: RouteTable<TScratch>;
   drag?:    RouteTable<TScratch> | ActionFn<TScratch>;
-  wheel?:   ActionFn<TScratch>;
-  keyDown?: Record<string, ActionFn<TScratch>>;
-  keyUp?:   Record<string, ActionFn<TScratch>>;
+  wheel?:   WheelTable<TScratch> | ActionFn<TScratch>;
+  keyDown?: KeyRouteTable<TScratch>;
+  keyUp?:   KeyRouteTable<TScratch>;
+  /** Multi-finger tap. Synthesized by the dispatcher when a multitouch
+   *  gesture releases without movement past the tap threshold. Keys: the
+   *  fingers count as a string (`'2'`, `'3'`, `'4'`). */
+  multiTouchTap?: MultiTouchTapTable<TScratch>;
   cursor?:  string | ((ctx: ToolCtx<TScratch>) => string);
   /** Optional overlay layer rendered while the tool is in any active slot
    *  (active, hotkey, or ambient). The factory evaluates the thunk once

@@ -20,8 +20,9 @@ describe('findConflicts', () => {
     expect(c).toEqual<Conflict[]>([{
       phase: 'initial',
       gesture: 'click',
+      arg: undefined,
       target: 'rect',
-      modifiers: 'default',
+      modifiers: {},
       toolIds: ['a', 'b'],
     }]);
   });
@@ -37,7 +38,7 @@ describe('findConflicts', () => {
     };
     const c = findConflicts([a, b]);
     expect(c).toHaveLength(1);
-    expect(c[0].modifiers).toBe('shift');
+    expect(c[0].modifiers).toEqual({ shift: 'required' });
   });
 
   it('does NOT flag wildcard-vs-specific overlap (cascading-fallback is expected)', () => {
@@ -81,6 +82,7 @@ describe('findConflicts', () => {
     expect(c).toHaveLength(1);
     expect(c[0].phase).toBe('engaged');
     expect(c[0].gesture).toBe('keyDown');
-    expect(c[0].target).toBe('Escape');
+    expect(c[0].arg).toBe('Escape');
+    expect(c[0].target).toBeUndefined();
   });
 });

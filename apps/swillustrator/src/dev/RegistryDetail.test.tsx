@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
-import { RegistryDetail } from './RegistryDetail';
+import { RegistryDetail, RouteBadge } from './RegistryDetail';
 import type { TreeEntry } from './registryData';
 
 describe('RegistryDetail', () => {
@@ -9,7 +9,7 @@ describe('RegistryDetail', () => {
       kind: 'tool',
       id: 'rect',
       label: 'useRectTool',
-      routes: ['initial.click.empty', 'initial.drag.empty:shift'],
+      routes: ['[initial] click => empty', '[initial] drag => empty +shift'],
       slot: 'registry',
       phases: {
         initial: {
@@ -32,7 +32,8 @@ describe('RegistryDetail', () => {
     expect(screen.getAllByText('click').length).toBeGreaterThan(0);
     expect(screen.getAllByText('drag').length).toBeGreaterThan(0);
     expect(screen.getAllByText('empty').length).toBeGreaterThan(0);
-    expect(screen.getByText(':shift')).toBeTruthy();
+    // RouteBadge renders the modifier suffix as a KeySequence keycap.
+    expect(screen.getByText('⇧')).toBeTruthy();
   });
 
   it('renders an Action entry with shortcut', () => {
@@ -73,8 +74,42 @@ describe('RegistryDetail', () => {
   });
 
   it('renders a PublicExport entry with id', () => {
-    const entry: TreeEntry = { kind: 'publicExport', id: 'SceneCanvas', label: 'SceneCanvas' };
+    const entry: TreeEntry = { kind: 'publicExport', id: 'SceneCanvas', label: 'SceneCanvas', source: 'base' };
     render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
     expect(screen.getByText('SceneCanvas')).toBeTruthy();
+  });
+});
+
+describe('RouteBadge v3', () => {
+  it('renders bracketed phase + gesture + target + modifier', () => {
+    render(<RouteBadge route="[initial] click => empty +shift" />);
+    expect(screen.getByText('initial')).toBeTruthy();
+    expect(screen.getByText('click')).toBeTruthy();
+    expect(screen.getByText('empty')).toBeTruthy();
+    expect(screen.getByText('⇧')).toBeTruthy();
+  });
+
+  it('renders multi-phase list', () => {
+    render(<RouteBadge route="[initial,engaged] contextMenu => empty" />);
+    expect(screen.getByText('initial')).toBeTruthy();
+    expect(screen.getByText('engaged')).toBeTruthy();
+  });
+
+  it('renders [*] as the wildcard phase', () => {
+    render(<RouteBadge route="[*] click => empty" />);
+    expect(screen.getByText('*')).toBeTruthy();
+  });
+
+  it('renders optional modifier inverted', () => {
+    const { container } = render(<RouteBadge route="[initial] keyDown(ArrowDown) ?shift" />);
+    const cap = container.querySelector('[data-inverted]');
+    expect(cap?.textContent).toBe('⇧');
+  });
+
+  it('elides "*" target — no target chip rendered', () => {
+    const { container } = render(<RouteBadge route="[initial] click" />);
+    // No target tag; only phase + gesture chips visible.
+    const tags = container.querySelectorAll('code');
+    expect(tags.length).toBe(0);
   });
 });

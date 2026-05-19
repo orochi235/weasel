@@ -23,10 +23,10 @@ describe('buildActionRegistry', () => {
     };
     const r = buildActionRegistry([tool]);
     expect(r).toContainEqual<RegistryEntry>({
-      toolId: 'select', phase: 'initial', gesture: 'click', target: 'rect', modifiers: 'default',
+      toolId: 'select', phase: 'initial', gesture: 'click', arg: undefined, target: 'rect', modifiers: {},
     });
     expect(r).toContainEqual<RegistryEntry>({
-      toolId: 'select', phase: 'initial', gesture: 'click', target: 'empty', modifiers: 'default',
+      toolId: 'select', phase: 'initial', gesture: 'click', arg: undefined, target: 'empty', modifiers: {},
     });
     expect(r).toHaveLength(2);
   });
@@ -45,7 +45,10 @@ describe('buildActionRegistry', () => {
       },
     };
     const r = buildActionRegistry([tool]);
-    const targets = r.map((e) => `${e.target}/${e.modifiers}`).sort();
+    const targets = r.map((e) => {
+      const keys = Object.keys(e.modifiers).sort().join('+');
+      return `${e.target}/${keys || 'default'}`;
+    }).sort();
     expect(targets).toEqual(['rect/alt', 'rect/default', 'rect/shift']);
   });
 
@@ -77,35 +80,36 @@ describe('buildActionRegistry', () => {
     expect(gestures).toEqual(new Set(['click', 'dblTap', 'drag', 'wheel', 'keyDown', 'keyUp']));
   });
 
-  it('function-form drag emits a single row with target=*', () => {
+  it('function-form drag emits a single targetless row', () => {
     const tool: ToolDef<unknown> = {
       id: 'hand',
       initial: { drag: () => begin<unknown>({ scratch: undefined }) },
     };
     const r = buildActionRegistry([tool]);
     expect(r).toEqual<RegistryEntry[]>([
-      { toolId: 'hand', phase: 'initial', gesture: 'drag', target: '*', modifiers: 'default' },
+      { toolId: 'hand', phase: 'initial', gesture: 'drag', arg: undefined, target: undefined, modifiers: {} },
     ]);
   });
 
-  it('wheel emits a single row with target=*', () => {
+  it('function-form wheel emits a single arg=both row', () => {
     const tool: ToolDef<unknown> = {
       id: 'wheel-zoom',
       initial: { wheel: noOp },
     };
     const r = buildActionRegistry([tool]);
     expect(r).toEqual<RegistryEntry[]>([
-      { toolId: 'wheel-zoom', phase: 'initial', gesture: 'wheel', target: '*', modifiers: 'default' },
+      { toolId: 'wheel-zoom', phase: 'initial', gesture: 'wheel', arg: '*', target: undefined, modifiers: {} },
     ]);
   });
 
-  it('keyDown/keyUp use the key name as target', () => {
+  it('keyDown/keyUp use the key name as arg', () => {
     const tool: ToolDef<unknown> = {
       id: 'test',
       initial: { keyDown: { 'Escape': noOp, 'Enter': noOp } },
     };
     const r = buildActionRegistry([tool]);
-    expect(r.map((e) => e.target).sort()).toEqual(['Enter', 'Escape']);
+    expect(r.map((e) => e.arg).sort()).toEqual(['Enter', 'Escape']);
+    for (const e of r) expect(e.target).toBeUndefined();
   });
 
   it('aggregates multiple tools', () => {

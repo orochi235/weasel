@@ -76,7 +76,7 @@
 }
 .treeChevron { font-size: 20px; width: 18px; display: inline-flex; justify-content: center; color: var(--wzl-muted, #a59685); }
 .treeCount { color: var(--wzl-muted, #a59685); font-weight: 400; }
-.leafBadge { --badge-font-size: 9px; }
+.leafBadge { --badge-font-size: 8px; --badge-pad-y: 1px; transform: scale(0.85); transform-origin: left center; }
 .treeLeaves { list-style: none; margin: 0; padding: 0 0 0 32px; }
 .treeLeaf {
   display: block;
@@ -115,6 +115,26 @@
 }
 .tag { background: var(--wzl-bg, #1e1610); padding: 2px 8px; border-radius: 3px; margin-right: 4px; font-size: 13px; }
 .routeBadge { display: inline-flex; align-items: center; gap: 2px; margin-right: 6px; }
+.phaseGroup { display: inline-flex; align-items: center; gap: 2px; }
+.phaseSep { color: var(--wzl-muted, #a59685); font-size: 11px; }
+/* When the gesture has no real target (`wheel`, function-form `drag`), the
+   gesture chip butts directly against the ANY chip to read as one fused
+   pill. Selectors are scoped under `.routeBadge` to win specificity over
+   the kit's `.badge[data-shape='pill']` radius. */
+.routeBadge .flatRight { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.routeBadge .flatLeft { border-top-left-radius: 0; border-bottom-left-radius: 0; margin-left: -2px; }
+.argChip {
+  background: var(--wzl-fg, #d4c4a8);
+  color: var(--wzl-bg, #1e1610);
+  padding: 1px 6px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-right: 4px;
+  line-height: 18px;
+  display: inline-flex;
+  align-items: center;
+}
 .memberList { list-style: none; padding: 0; margin: 4px 0 12px; }
 .memberLink {
   background: transparent;

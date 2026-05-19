@@ -1,30 +1,33 @@
 import type {
   ToolDef, PhaseDef, RouteTable, ModifierRoute, ActionFn,
+  WheelTable, KeyRouteTable, MultiTouchTapTable,
 } from '../types';
 import type { ModifierKey } from '../modifiers';
-import type { RoutePhase, RouteGesture } from './route-resolved';
+import type { ParsedModifiers } from '../routeGrammar';
+import { getGestureDescriptor, type GestureName } from '../gestures';
+import type { RoutePhase } from './route-resolved';
+import { modifierKeyToParsed } from './modifierKeyToParsed';
 
 /** One row in the action registry — uniquely identifies a routing slot
- *  on one tool. Multiple rows can share (target, modifiers, gesture) if
- *  different tools both declare them; consumers walk the list and group
+ *  on one tool. Multiple rows can share (gesture, arg, target, modifiers)
+ *  if different tools declare them; consumers walk the list and group
  *  client-side. */
 export interface RegistryEntry {
   toolId: string;
   phase: RoutePhase;
-  /** Canonical 8-key string from mods(). 'default' when the route has no
-   *  modifier sub-table. */
-  modifiers: ModifierKey;
-  gesture: RouteGesture;
-  /** Route-table key the entry was registered under. For click/dblTap/drag
-   *  route tables, this is the target kind. For wheel and function-form
-   *  drag, this is '*' (no target dimension). For keyDown/keyUp, this is
-   *  the key name (e.g., 'Escape', 'Enter'). */
-  target: string;
+  /** Structured v3 modifier requirements. Empty object = "no modifiers
+   *  held" (the strict default). */
+  modifiers: ParsedModifiers;
+  gesture: GestureName;
+  /** Resolved arg value for arg-bearing gestures (wheel direction,
+   *  keyDown/keyUp key, multiTouchTap fingers). Undefined for gestures
+   *  whose descriptor has no `arg`. */
+  arg: string | undefined;
+  /** Route-table key for hit-test gestures (click/dblTap/drag/contextMenu/
+   *  pointerDown). Undefined when the descriptor has `hasTarget: false`. */
+  target: string | undefined;
 }
 
-/** Walk a list of ToolDefs and produce a flat registry of every routed
- *  action they expose. The result is a static snapshot — call again if
- *  tools register or unregister. */
 export function buildActionRegistry(
   tools: readonly ToolDef<unknown>[],
 ): RegistryEntry[] {
@@ -42,18 +45,21 @@ function walkPhase(
   phaseDef: PhaseDef<unknown>,
   out: RegistryEntry[],
 ): void {
-  if (phaseDef.click)  walkRouteTable(toolId, phase, 'click',  phaseDef.click,  out);
-  if (phaseDef.dblTap) walkRouteTable(toolId, phase, 'dblTap', phaseDef.dblTap, out);
-  if (phaseDef.drag)   walkDrag(toolId, phase, phaseDef.drag, out);
-  if (phaseDef.wheel)  out.push({ toolId, phase, gesture: 'wheel', target: '*', modifiers: 'default' });
-  if (phaseDef.keyDown) walkKeyMap(toolId, phase, 'keyDown', phaseDef.keyDown, out);
-  if (phaseDef.keyUp)   walkKeyMap(toolId, phase, 'keyUp',   phaseDef.keyUp,   out);
+  if (phaseDef.click)         walkRouteTable(toolId, phase, 'click',       phaseDef.click,       out);
+  if (phaseDef.pointerDown)   walkRouteTable(toolId, phase, 'pointerDown', phaseDef.pointerDown, out);
+  if (phaseDef.dblTap)        walkRouteTable(toolId, phase, 'dblTap',      phaseDef.dblTap,      out);
+  if (phaseDef.contextMenu)   walkRouteTable(toolId, phase, 'contextMenu', phaseDef.contextMenu, out);
+  if (phaseDef.drag)          walkDrag(toolId, phase, phaseDef.drag, out);
+  if (phaseDef.wheel)         walkWheel(toolId, phase, phaseDef.wheel, out);
+  if (phaseDef.keyDown)       walkKeyMap(toolId, phase, 'keyDown', phaseDef.keyDown, out);
+  if (phaseDef.keyUp)         walkKeyMap(toolId, phase, 'keyUp',   phaseDef.keyUp,   out);
+  if (phaseDef.multiTouchTap) walkMultiTouchTap(toolId, phase, phaseDef.multiTouchTap, out);
 }
 
 function walkRouteTable(
   toolId: string,
   phase: RoutePhase,
-  gesture: RouteGesture,
+  gesture: GestureName,
   table: RouteTable<unknown>,
   out: RegistryEntry[],
 ): void {
@@ -61,7 +67,7 @@ function walkRouteTable(
     const entry = table[target];
     if (entry == null) continue;
     if (typeof entry === 'function') {
-      out.push({ toolId, phase, gesture, target, modifiers: 'default' });
+      out.push({ toolId, phase, gesture, arg: undefined, target, modifiers: {} });
     } else {
       walkModifierRoute(toolId, phase, gesture, target, entry, out);
     }
@@ -71,14 +77,18 @@ function walkRouteTable(
 function walkModifierRoute(
   toolId: string,
   phase: RoutePhase,
-  gesture: RouteGesture,
+  gesture: GestureName,
   target: string,
   sub: ModifierRoute<unknown>,
   out: RegistryEntry[],
 ): void {
   for (const modKey of Object.keys(sub) as ModifierKey[]) {
     if (sub[modKey] == null) continue;
-    out.push({ toolId, phase, gesture, target, modifiers: modKey });
+    out.push({
+      toolId, phase, gesture,
+      arg: undefined, target,
+      modifiers: modifierKeyToParsed(modKey),
+    });
   }
 }
 
@@ -89,10 +99,26 @@ function walkDrag(
   out: RegistryEntry[],
 ): void {
   if (typeof drag === 'function') {
-    // Function-form drag — uniform across targets, no modifier dimension.
-    out.push({ toolId, phase, gesture: 'drag', target: '*', modifiers: 'default' });
+    // Function-form drag — targetless (continues from the original pointerdown).
+    out.push({ toolId, phase, gesture: 'drag', arg: undefined, target: undefined, modifiers: {} });
   } else {
     walkRouteTable(toolId, phase, 'drag', drag, out);
+  }
+}
+
+function walkWheel(
+  toolId: string,
+  phase: RoutePhase,
+  wheel: WheelTable<unknown> | ActionFn<unknown>,
+  out: RegistryEntry[],
+): void {
+  if (typeof wheel === 'function') {
+    out.push({ toolId, phase, gesture: 'wheel', arg: '*', target: undefined, modifiers: {} });
+    return;
+  }
+  for (const dir of Object.keys(wheel) as Array<'up' | 'down' | '*'>) {
+    if (wheel[dir] == null) continue;
+    out.push({ toolId, phase, gesture: 'wheel', arg: dir, target: undefined, modifiers: {} });
   }
 }
 
@@ -100,10 +126,27 @@ function walkKeyMap(
   toolId: string,
   phase: RoutePhase,
   gesture: 'keyDown' | 'keyUp',
-  table: Record<string, ActionFn<unknown>>,
+  table: KeyRouteTable<unknown>,
   out: RegistryEntry[],
 ): void {
-  for (const key of Object.keys(table)) {
-    out.push({ toolId, phase, gesture, target: key, modifiers: 'default' });
+  for (const keyRoute of Object.keys(table)) {
+    if (table[keyRoute] == null) continue;
+    out.push({ toolId, phase, gesture, arg: keyRoute, target: undefined, modifiers: {} });
   }
 }
+
+function walkMultiTouchTap(
+  toolId: string,
+  phase: RoutePhase,
+  table: MultiTouchTapTable<unknown>,
+  out: RegistryEntry[],
+): void {
+  for (const fingers of Object.keys(table) as Array<'2' | '3' | '4'>) {
+    if (table[fingers] == null) continue;
+    out.push({ toolId, phase, gesture: 'multiTouchTap', arg: fingers, target: undefined, modifiers: {} });
+  }
+}
+
+// Re-export for downstream consumers.
+export { getGestureDescriptor };
+export type { GestureName };

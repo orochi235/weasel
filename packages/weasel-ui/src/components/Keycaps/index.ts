@@ -1,4 +1,4 @@
-export { Keycap } from './Keycap';
-export type { KeycapProps, KeycapKind } from './Keycap';
-export { Keycaps } from './Keycaps';
-export type { KeycapsProps } from './Keycaps';
+export { KeyCap, inferKeycapKind } from './Keycap';
+export type { KeyCapProps, KeycapKind } from './Keycap';
+export { KeySequence } from './Keycaps';
+export type { KeySequenceProps, KeySpec } from './Keycaps';
