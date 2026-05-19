@@ -37,7 +37,7 @@
 import type { Action, ActionsRegistry, BoundGesture } from '../actions/registry';
 import type { DepRegistry } from '../actions/depRegistry';
 import type { GestureBinding } from '../actions/binding';
-import type { OngoingHandle, InvocationCtx, ActionDeps, BindingOpts } from '../actions/invoker';
+import type { OngoingHandle, InvocationCtx, ActionDeps, BindingOpts, AffordanceHit } from '../actions/invoker';
 import { resolveParams } from '../actions/invoker';
 import type { Tool } from '../../tools/types';
 import type { InputEvent, BindingScope, ScopedBinding } from './matcher';
@@ -208,7 +208,7 @@ export function createDispatcher(): Dispatcher {
       const sy = event.kind === 'pointerdown' ? (event.y ?? 0) : 0;
       base.screen = { x: sx, y: sy };
       base.world = { x: sx, y: sy };
-      const affordance = event.kind === 'pointerdown' ? event.affordance : undefined;
+      const affordance = event.kind === 'pointerdown' ? (event.affordance as AffordanceHit | undefined) : undefined;
       base.drag = {
         start: { x: sx, y: sy },
         current: { x: sx, y: sy },
