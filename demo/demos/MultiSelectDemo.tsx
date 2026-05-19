@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import {
   SceneCanvas,
+  WeaselProvider,
   useSceneAdapter,
   selectFromMarquee,
   useScene,
@@ -22,7 +23,7 @@ const INITIAL: Rect[] = [
   { id: 'e', x: 220, y: 180, width: 90, height: 60, color: '#d47a7a' },
 ];
 
-export function MultiSelectDemo() {
+function MultiSelectDemoInner() {
   const scene = useScene({ items: INITIAL });
   const selection = useSelection({ mode: 'multi' });
 
@@ -60,4 +61,8 @@ export function MultiSelectDemo() {
       tools={tools}
     />
   );
+}
+
+export function MultiSelectDemo() {
+  return <WeaselProvider><MultiSelectDemoInner /></WeaselProvider>;
 }

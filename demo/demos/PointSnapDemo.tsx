@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import {
   asNodeId,
   SceneCanvas,
+  WeaselProvider,
   useSceneAdapter,
   useScene,
   useSelection,
@@ -27,7 +28,7 @@ const INITIAL: Rect[] = [
   { id: 'a', x: 160, y: 100, width: 100, height: 60, rotation: Math.PI / 6, color: '#7fb069' },
 ];
 
-export function PointSnapDemo() {
+function PointSnapDemoInner() {
   const scene = useScene({ items: INITIAL });
   const selection = useSelection({ mode: 'multi' });
 
@@ -141,4 +142,8 @@ export function PointSnapDemo() {
       <ResizePolicyBridge />
     </SceneCanvas>
   );
+}
+
+export function PointSnapDemo() {
+  return <WeaselProvider><PointSnapDemoInner /></WeaselProvider>;
 }

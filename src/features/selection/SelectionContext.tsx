@@ -99,6 +99,23 @@ export function useSelectionContext(): SelectionContextValue | null {
 
 /**
  * @experimental
+ * Conditional `<SelectionContextProvider>` wrapper. Mounts a provider only
+ * when no parent provider is in scope — otherwise renders children unwrapped
+ * so callers (e.g. `<WeaselProvider>`) defer to the host's existing scope.
+ * Mirrors `ActionsProviderIfRoot` / `DepRegistryProviderIfRoot`.
+ */
+export function SelectionContextProviderIfRoot({
+  children,
+}: {
+  children: ReactNode;
+}): ReactNode {
+  const parent = useContext(SelectionContext);
+  if (parent !== null) return <>{children}</>;
+  return <SelectionContextProvider>{children}</SelectionContextProvider>;
+}
+
+/**
+ * @experimental
  * Convenience hook for canvas components: publishes the supplied `ids`
  * into the surrounding `<SelectionContextProvider>` whenever the
  * content of `ids` changes. No-op when there's no provider in scope.

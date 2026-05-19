@@ -7,6 +7,7 @@ import {
   useTools,
   useSelection,
   SceneCanvas,
+  WeaselProvider,
 } from '@orochi235/weasel';
 import type {
   Path,
@@ -164,9 +165,11 @@ function PencilPanel() {
 
 export function VertexWidthsDemo() {
   return (
-    <div className="ckd-stack">
-      <StaticTaperPanel />
-      <PencilPanel />
-    </div>
+    <WeaselProvider>
+      <div className="ckd-stack">
+        <StaticTaperPanel />
+        <PencilPanel />
+      </div>
+    </WeaselProvider>
   );
 }

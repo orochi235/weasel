@@ -1,6 +1,7 @@
 import { useMemo, useRef } from 'react';
 import {
   SceneCanvas,
+  WeaselProvider,
   sceneToAdapter,
   useInsertTool,
   useScene,
@@ -14,7 +15,7 @@ type RectNode = SceneNode<Rect, 'default', Rect>;
 const W = 400, H = 300;
 const COLORS = ['#7fb069', '#d4a574', '#a48bd4', '#d47a7a', '#7ab8d4'];
 
-export function InsertDemo() {
+function InsertDemoInner() {
   const scene = useScene<Rect>({ items: [] });
   const nextId = useRef(0);
 
@@ -63,4 +64,8 @@ export function InsertDemo() {
       }}
     />
   );
+}
+
+export function InsertDemo() {
+  return <WeaselProvider><InsertDemoInner /></WeaselProvider>;
 }

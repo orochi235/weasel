@@ -69,7 +69,13 @@ describe('Phase 1 integration: define → use → key → canvas', () => {
     expect(selectDrag).toHaveBeenCalledOnce(); // not called again
   });
 
-  it('modifier-slot tool engages while space is held', () => {
+  // Soft-fallback removal (2026-05-18): `useKeybindings` no longer ships a
+  // bare-Canvas-without-ActionsRegistry path that listens to document
+  // keydown/keyup for space-held hotkeys. Hold-hotkeys now route through
+  // `tool.hold.<id>` actions + the gesture dispatcher mounted by
+  // `<SceneCanvas>`. Equivalent end-to-end coverage lives in
+  // `src/canvas/SceneCanvas.tools.test.tsx`.
+  it.skip('modifier-slot tool engages while space is held', () => {
     const handDrag = vi.fn();
     const selectDrag = vi.fn();
 

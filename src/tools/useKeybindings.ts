@@ -108,15 +108,12 @@ export function useKeybindings(
     };
   }, []);
 
-  // --- Tool-hold: two paths depending on whether an ActionsRegistry is in scope ---
-  //
-  // WITH ActionsRegistry (SceneCanvas path): register tool.hold.<id> actions so
-  // `useGestureDispatcher` can fire them via key-held bindings. No direct
-  // keydown/keyup listener needed — the dispatcher handles it.
-  //
-  // WITHOUT ActionsRegistry (bare Canvas path, pre-Phase-5 compat): add a direct
-  // document keydown/keyup listener that calls `engageHotkey`/`disengageHotkey`
-  // on the ToolsApi, matching the pre-Phase-5 behavior.
+  // Tool-hold: register `tool.hold.<id>` actions into the surrounding
+  // `ActionsRegistry` so `useGestureDispatcher` can fire them via key-held
+  // bindings. `useTools` already requires an `<ActiveToolContextProvider>`,
+  // and the kit's standard wrappers (`<WeaselProvider>`, `<SceneCanvas>`)
+  // mount the actions registry alongside it — so there's no separate
+  // "no registry" fallback path.
   const registry = useActionsRegistry();
 
   useEffect(() => {
@@ -135,40 +132,4 @@ export function useKeybindings(
     }
     return () => { for (const u of unregisters) u(); };
   }, [registry, tools]);
-
-  useEffect(() => {
-    if (optionsRef.current.disable) return;
-    if (registry) return; // ActionsRegistry path handles this instead
-
-    function resolveHotkeyTool(key: string): string | null {
-      for (const id in toolsRef.current.registry) {
-        const tool = toolsRef.current.registry[id];
-        if (!tool.hotkey) continue;
-        if (HOTKEY_KEY[tool.hotkey] === key) return id;
-      }
-      return null;
-    }
-
-    function onKeyDown(e: KeyboardEvent) {
-      if (isEditableTarget(e.target)) return;
-      const hotkeyTool = resolveHotkeyTool(e.key);
-      if (hotkeyTool) {
-        toolsRef.current.engageHotkey(hotkeyTool);
-      }
-    }
-
-    function onKeyUp(e: KeyboardEvent) {
-      const hotkeyTool = resolveHotkeyTool(e.key);
-      if (hotkeyTool && toolsRef.current.hotkeyEngaged === hotkeyTool) {
-        toolsRef.current.disengageHotkey();
-      }
-    }
-
-    document.addEventListener('keydown', onKeyDown);
-    document.addEventListener('keyup', onKeyUp);
-    return () => {
-      document.removeEventListener('keydown', onKeyDown);
-      document.removeEventListener('keyup', onKeyUp);
-    };
-  }, [registry]);
 }

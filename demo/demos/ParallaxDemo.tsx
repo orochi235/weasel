@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   SceneCanvas,
+  WeaselProvider,
   useScene,
   useSelection,
   useHandTool,
@@ -181,7 +182,7 @@ const FOREGROUND: Shape[] = [
   { x: 580, y: 348, w: 32, h: 46, color: '#3d5a3d' },
 ];
 
-export function ParallaxDemo() {
+function ParallaxDemoInner() {
   const scene = useScene<NodeData, LayerId, Pose>({
     systemLayers: [{ id: 'default' }],
     initial: [],
@@ -287,4 +288,8 @@ export function ParallaxDemo() {
       />
     </div>
   );
+}
+
+export function ParallaxDemo() {
+  return <WeaselProvider><ParallaxDemoInner /></WeaselProvider>;
 }
