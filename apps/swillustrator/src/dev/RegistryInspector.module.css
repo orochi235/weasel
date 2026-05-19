@@ -163,10 +163,11 @@
 .callbackList li { display: flex; align-items: baseline; gap: 8px; }
 .callbackLink {
   color: var(--wzl-accent, #c89a5e);
-  text-decoration: underline;
+  text-decoration: none;
   font-size: 13px;
   font-family: var(--wzl-font-mono, ui-monospace, monospace);
 }
+.callbackLink:hover { text-decoration: underline; }
 .jsdoc {
   background: var(--wzl-bg, #1e1610);
   border: 1px solid var(--wzl-panel-border, #4a3c2e);

@@ -194,12 +194,12 @@ const kindTokenSet: BadgeTokenSet = {
  *  `buildActionRegistry` — they don't live in a closed set, so this is just
  *  a representative slice. */
 const ROUTE_SAMPLES = [
-  'initial.click.empty',
-  'initial.drag.node',
-  'initial.drag.node:shift',
-  'initial.keyDown.Escape',
-  'engaged.drag.*',
-  'initial.wheel.*:meta',
+  '[initial] click => empty',
+  '[initial] drag => node',
+  '[initial] drag => node +shift',
+  '[initial] keyDown(Escape)',
+  '[engaged] drag',
+  '[initial] wheel +mod',
 ] as const;
 
 const routeTokenSet: RouteTokenSet = {

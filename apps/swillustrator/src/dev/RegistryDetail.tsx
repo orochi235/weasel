@@ -27,7 +27,7 @@ import s from './RegistryInspector.module.css';
 import type {
   TreeEntry, ToolEntry, ActionEntry, BundleEntry, IconEntry, OpFactoryEntry,
   PublicExportEntry, ShapeKindEntry, PhaseSummary, PhaseEntry, GestureEntry, PhaseOutputEntry,
-  OpKindEntry, HotkeyTriggerEntry, SlotEntry, RouteTargetEntry, ModifierSetEntry, GroupEntry,
+  OpKindEntry, HotkeyTriggerEntry, SlotEntry, RouteEntry, RouteTargetEntry, ModifierSetEntry, GroupEntry,
   MetaEntry, CallbackRef,
 } from './registryData';
 import { BOOLEAN_BADGE_PROPS, BUNDLE_BADGE_PROPS, GESTURE_BADGE_PROPS, HOTKEY_TRIGGER_GLYPHS, KIND_BADGE_PROPS, PHASE_BADGE_PROPS, TOKEN_SETS, type TokenSet } from './badgeTokens';
@@ -146,6 +146,7 @@ export function RegistryDetail({ entry, tools, actions, onNavigate }: Props) {
     case 'opKind':        return <OpKindDetail entry={entry} onNavigate={onNavigate} />;
     case 'hotkeyTrigger': return <HotkeyTriggerDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'slot':          return <SlotDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
+    case 'route':         return <RouteDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'routeTarget':   return <RouteTargetDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'modifierSet':   return <ModifierSetDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'group':         return <GroupDetail entry={entry} tools={tools} actions={actions} onNavigate={onNavigate} />;
@@ -279,6 +280,47 @@ function SlotDetail({
         rows={here.map((t) => ({ id: t.id, tool: t }))}
         columns={[toolNameColumn(onNavigate)]}
         empty="No tools mounted in this slot."
+      />
+    </div>
+  );
+}
+
+function RouteDetail({
+  entry, tools, onNavigate,
+}: { entry: RouteEntry; tools: readonly ToolEntry[]; onNavigate: Props['onNavigate'] }) {
+  const parsed = parseRoute(entry.id);
+  const rows = tools
+    .filter((t) => t.routes.includes(entry.id))
+    .map((t) => ({ id: t.id, tool: t }));
+  return (
+    <div>
+      <h2 className={s.detailHeading}><RouteBadge route={entry.id} /></h2>
+      <dl className={s.detailList}>
+        <dt>phases</dt><dd>{parsed.phases.join(', ')}</dd>
+        <dt>gesture</dt><dd><code className={s.tag}>{parsed.gesture}</code></dd>
+        {parsed.arg !== undefined && (<><dt>arg</dt><dd><code className={s.tag}>{parsed.arg}</code></dd></>)}
+        {parsed.target !== undefined && (
+          <>
+            <dt>target</dt>
+            <dd><EntryLink kind="routeTarget" id={parsed.target} onNavigate={onNavigate} /></dd>
+          </>
+        )}
+        {Object.keys(parsed.modifiers).length > 0 && (
+          <>
+            <dt>modifiers</dt>
+            <dd>
+              {Object.entries(parsed.modifiers).map(([name, req]) => (
+                <code key={name} className={s.tag}>{req === 'required' ? '+' : '?'}{name}</code>
+              ))}
+            </dd>
+          </>
+        )}
+      </dl>
+      <h3 className={s.subHeading}>Tools declaring this route</h3>
+      <DataGrid
+        rows={rows}
+        columns={[toolNameColumn(onNavigate)]}
+        empty="No tools declare this route."
       />
     </div>
   );

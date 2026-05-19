@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Badge } from '@orochi235/weasel-ui';
 import s from './RegistryInspector.module.css';
 import type { TreeCategoryNode, TreeEntry } from './registryData';
@@ -24,6 +24,31 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
   const filter = filterProp ?? filterInternal;
   const setFilter = onFilterChange ?? setFilterInternal;
   const [openIds, setOpenIds] = useState<ReadonlySet<string>>(() => new Set());
+
+  // When `selected` changes (e.g. an EntryLink in the detail panel navigates
+  // to a different entry), open the containing category so the leaf renders.
+  const selectedCategoryId = useMemo(() => {
+    if (!selected) return null;
+    const node = nodes.find((n) => n.entries.some(
+      (e) => e.kind === selected.kind && e.id === selected.id,
+    ));
+    return node?.id ?? null;
+  }, [nodes, selected]);
+
+  useEffect(() => {
+    if (!selectedCategoryId) return;
+    setOpenIds((cur) => {
+      if (cur.has(selectedCategoryId)) return cur;
+      const next = new Set(cur);
+      next.add(selectedCategoryId);
+      return next;
+    });
+  }, [selectedCategoryId]);
+
+  const selectedLeafRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    selectedLeafRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [selected]);
 
   const lower = filter.trim().toLowerCase();
 
@@ -76,6 +101,7 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
                   return (
                     <li key={`${e.kind}:${e.id}`}>
                       <button
+                        ref={isSelected ? selectedLeafRef : undefined}
                         type="button"
                         className={`${s.treeLeaf} ${isSelected ? s.treeLeafSelected : ''}`}
                         onClick={() => onSelect(e)}

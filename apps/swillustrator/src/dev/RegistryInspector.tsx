@@ -17,6 +17,7 @@ import {
   collectPhases,
   collectPhaseOutputs,
   collectPublicExports,
+  collectRoutes,
   collectRouteTargets,
   collectShapeKinds,
   collectSlots,
@@ -59,6 +60,7 @@ export function RegistryInspector() {
   const opKinds = useMemo(() => collectOpKinds(), []);
   const hotkeyTriggers = useMemo(() => collectHotkeyTriggers(), []);
   const slots = useMemo(() => collectSlots(), []);
+  const routes = useMemo(() => collectRoutes(runtime.tools), [runtime.tools]);
   const routeTargets = useMemo(() => collectRouteTargets(runtime.tools), [runtime.tools]);
   const modifierSets = useMemo(() => collectModifierSets(runtime.tools), [runtime.tools]);
   const groups = useMemo(() => collectGroups(runtime.tools, runtime.actions), [runtime.tools, runtime.actions]);
@@ -94,6 +96,7 @@ export function RegistryInspector() {
       { id: 'phaseOutputs', label: 'Phase outputs', entries: phaseOutputs },
       { id: 'hotkeyTriggers', label: 'Hotkey triggers', entries: hotkeyTriggers },
       { id: 'slots', label: 'Slots', entries: slots },
+      { id: 'routes', label: 'Routes', entries: routes },
       { id: 'routeTargets', label: 'Route targets', entries: routeTargets },
       { id: 'modifierSets', label: 'Modifier sets', entries: modifierSets },
       { id: 'groups', label: 'Action groups', entries: groups },
@@ -111,7 +114,7 @@ export function RegistryInspector() {
         if (b.id === 'meta') return -1;
         return a.label.localeCompare(b.label, undefined, { sensitivity: 'base' });
       });
-  }, [runtime, activeBundle, bundles, icons, opFactories, publicExports, shapeKinds, phases, gestures, phaseOutputs, opKinds, hotkeyTriggers, slots, routeTargets, modifierSets, groups, meta]);
+  }, [runtime, activeBundle, bundles, icons, opFactories, publicExports, shapeKinds, phases, gestures, phaseOutputs, opKinds, hotkeyTriggers, slots, routes, routeTargets, modifierSets, groups, meta]);
 
   // Clear selection when the active filters narrow past the selected entry.
   const lower = textFilter.trim().toLowerCase();

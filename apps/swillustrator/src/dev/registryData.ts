@@ -21,6 +21,7 @@ export type TreeEntry =
   | HotkeyTriggerEntry
   | SlotEntry
   | RouteTargetEntry
+  | RouteEntry
   | ModifierSetEntry
   | GroupEntry
   | MetaEntry;
@@ -79,9 +80,9 @@ export interface ToolEntry {
   hookName?: string;
   cursor?: string;
   /** Route signatures the tool exposes, derived from `buildActionRegistry`
-   *  on the live `ToolDef`. Each entry is a compact `phase.gesture.target`
-   *  string (with a trailing `:modifiers` segment when non-default), e.g.
-   *  `initial.click.empty` or `initial.drag.node:shift`. */
+   *  on the live `ToolDef`. Each entry is a v3 grammar string
+   *  `[phase] gesture(arg) => target +mod`, e.g.
+   *  `[initial] click => empty` or `[initial] drag => node +shift`. */
   routes: readonly string[];
   /** Where the tool currently sits in the mounted SceneCanvas. `registry`
    *  covers the regular active/hotkey slots; `ambient` is the always-on
@@ -255,6 +256,8 @@ export interface SlotEntry { kind: 'slot'; id: ToolEntry['slot']; label: string 
 
 export interface RouteTargetEntry { kind: 'routeTarget'; id: string; label: string }
 
+export interface RouteEntry { kind: 'route'; id: string; label: string }
+
 export interface ModifierSetEntry { kind: 'modifierSet'; id: string; label: string }
 
 export interface GroupEntry {
@@ -276,7 +279,7 @@ export type TreeCategory =
   | 'tools' | 'actions' | 'shapeKinds' | 'bundles'
   | 'icons' | 'ops' | 'publicExports'
   | 'phases' | 'gestures' | 'phaseOutputs'
-  | 'hotkeyTriggers' | 'slots' | 'routeTargets' | 'modifierSets' | 'groups'
+  | 'hotkeyTriggers' | 'slots' | 'routes' | 'routeTargets' | 'modifierSets' | 'groups'
   | 'meta';
 
 export interface TreeCategoryNode {
@@ -416,6 +419,8 @@ export function countForEntry(
       return tools.filter((t) => t.hotkey === entry.id).length;
     case 'slot':
       return tools.filter((t) => t.slot === entry.id).length;
+    case 'route':
+      return tools.filter((t) => t.routes.includes(entry.id)).length;
     case 'routeTarget':
       return tools.filter((t) => t.routes.some((r) => parseRoute(r).target === entry.id)).length;
     case 'modifierSet':
@@ -456,6 +461,12 @@ export function collectSlots(): readonly SlotEntry[] {
  *  See `src/tools/routing/routeGrammar.ts`. */
 export type ParsedRoute = KitParsedRoute;
 export const parseRoute = kitParseRoute;
+
+export function collectRoutes(tools: readonly ToolEntry[]): readonly RouteEntry[] {
+  const seen = new Set<string>();
+  for (const t of tools) for (const r of t.routes) seen.add(r);
+  return [...seen].sort().map((id) => ({ kind: 'route', id, label: id }));
+}
 
 export function collectRouteTargets(tools: readonly ToolEntry[]): readonly RouteTargetEntry[] {
   const seen = new Set<string>();
