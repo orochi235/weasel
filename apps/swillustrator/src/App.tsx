@@ -36,7 +36,7 @@ import {
   rectPath,
   asNodeId,
   boundsOfPath,
-  translatePath,
+  pathInWorld,
   type ToolsApi,
   type Path,
   type AlignEdge,
@@ -822,14 +822,7 @@ function BooleansAdapterPublisher({
         if (!node || node.kind !== 'leaf') return undefined;
         const data = node.data;
         if (!data.path) return undefined;
-        // Translate the path so its bounds origin lands at pose.x/y. We
-        // intentionally do not bake `pose.rotation` into the geometry yet —
-        // rotated booleans will operate on the AABB-aligned source path.
-        const b = boundsOfPath(data.path);
-        const pose = node.pose;
-        const dx = pose.x - b.x;
-        const dy = pose.y - b.y;
-        return (dx === 0 && dy === 0) ? data.path : translatePath(data.path, dx, dy);
+        return pathInWorld(data.path, node.pose);
       },
       compareZ: (x, y) => {
         const order = [...scene.renderOrder()];

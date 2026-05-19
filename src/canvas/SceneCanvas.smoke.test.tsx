@@ -21,13 +21,6 @@
  *
  * ## Skipped tests
  *
- * Two tests remain skipped:
- *
- * - `useCloneTool` (alt-drag) — `tool.hold.clone` is never registered in
- *   the dispatcher's actions list because `useKeybindings` reads
- *   `useActionsRegistry()` ABOVE the `<ActionsProviderIfRoot>` boundary;
- *   also gated by a modifier-as-held-key matcher quirk. Provider-scope
- *   bug, not a dispatcher bug.
  * - `useStarTool` (drag-insert) — star tool ships without a default
  *   keybinding, so there's no way for the harness to activate it via
  *   keydown. Enable once a keybinding is added or once the harness can
@@ -309,32 +302,15 @@ describe('useSelectTool smoke', () => {
 //
 // The clone tool's primary gesture binding is:
 //   { kind: 'drag', target: 'selected-body', mods: { alt: true } }
-// It is matched by the dispatcher when clone is the ACTIVE tool (not just a
-// hotkey tool), so this test activates clone explicitly via `defaultTools`.
-// The selection is pre-seeded and the node is at (100,100,80,60) — dragging
-// from its center (140,130) with altKey satisfies both target + mods constraints.
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// BUG SURFACED: `useKeybindings` calls `useActionsRegistry()` to register
-// per-tool `tool.hold.<id>` actions, but it runs in SceneCanvas's body —
-// ABOVE the `<ActionsProviderIfRoot>` boundary in the rendered tree. The
-// hook therefore receives `null`, never registers `tool.hold.clone`, and
-// the Alt key-held event has no matching binding in the dispatcher.
-//
-// This is a provider-scope wiring bug, NOT a dispatcher fall-through bug:
-// the dispatcher would dispatch correctly if the tool.hold action were
-// registered. It also intersects with a smaller matcher quirk — bare
-// `key-held` for a modifier key (e.g. `key: 'alt'`) is rejected because
-// matchModifiers strictly requires `altKey: false` and altKey is true by
-// definition when Alt is the held key.
-//
-// Both fixes are independent of the dispatcher fall-through work; keep
-// skipped until tracked separately.
+// It matches when clone is on the hotkey stack — Alt keydown pushes 'clone'
+// via `useKeybindings`' direct-engageHotkey fallback (the registry path is
+// structurally dead in SceneCanvas; see TODO.md "Known bugs"). The node is at
+// (100,100,80,60); dragging from its center (140,130) with altKey satisfies
+// both target + mods constraints.
 // ---------------------------------------------------------------------------
 
 describe('useCloneTool smoke', () => {
-  it.skip('alt-drag on selected body fires cloneAction → scene.batch("Clone") [BUG: tool.hold.clone never registered + modifier-as-held-key matcher quirk]', () => {
+  it('alt-drag on selected body fires cloneAction → scene.batch("Clone")', () => {
     const scene = makeScene();
     const id = firstId(scene);
     const countBefore = nodeCount(scene);
@@ -388,26 +364,6 @@ describe('useCloneTool smoke', () => {
 // fire H on `document` to switch the active tool to 'hand'.
 // ---------------------------------------------------------------------------
 
-// ---------------------------------------------------------------------------
-// BUG SURFACED (two issues):
-//
-// 1. H keydown on `document` does NOT switch the active tool from 'select' to
-//    'hand'. Debug probing confirmed: active tool remains 'select' after the H
-//    keydown is dispatched. `useKeybindings` attaches to `document`, the event
-//    fires, but `setActive('hand')` is either not reached or its state update
-//    doesn't flush before the pointer events run.
-//
-// 2. Even if the tool switch DID work, the select tool's ambient binding
-//    `{ kind:'drag', target:'empty' } → areaSelect` hits first in `matchBest`
-//    and — when `areaSelect.enabled()` returns non-true (disabled, waiting for
-//    `SelectionRequired`) — the dispatcher returns 'unhandled' without falling
-//    through to `viewport.dragPan`. The ambient-scope fallthrough behavior is a
-//    known design gap in `dispatcher.ts`.
-//
-// These are **real dispatch-path bugs** surfaced by the smoke-test harness.
-// Filed for investigation; keep skipped until fixed.
-// ---------------------------------------------------------------------------
-
 describe('useHandTool smoke', () => {
   it('drag while hand tool active pans the viewport (view changes)', () => {
     const scene = emptyScene();
@@ -448,11 +404,9 @@ describe('useHandTool smoke', () => {
     });
 
     expect(viewSpy).toHaveBeenCalled();
-    if (capturedView.length > 0) {
-      const last = capturedView[capturedView.length - 1];
-      const changed = last.x !== 0 || last.y !== 0;
-      expect(changed).toBe(true);
-    }
+    expect(capturedView.length).toBeGreaterThan(0);
+    const last = capturedView[capturedView.length - 1];
+    expect(last.x !== 0 || last.y !== 0).toBe(true);
   });
 });
 

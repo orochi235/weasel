@@ -9,6 +9,7 @@ import { type NodeId } from 'core/scene/types';
 import { arrayAdapter } from 'core/adapters/arrayAdapter';
 import { useSelectTool } from 'tools/builtin/useSelectTool';
 import { useTools } from 'tools/useTools';
+import { WeaselProvider } from '../WeaselProvider';
 import type { RenderLayer } from 'core/layers/render';
 import { registerProgram } from '../renderer';
 import type { DrawCommand } from '../renderer';
@@ -112,7 +113,7 @@ describe('<Canvas>', () => {
       const tools = useTools({ active: 'select', registry: { select } });
       return <Canvas width={50} height={50} layers={{}} adapter={adapter} selection={sel} tools={tools} clientToWorld={() => [5, 5]} />;
     }
-    const { container } = render(<Harness />);
+    const { container } = render(<WeaselProvider><Harness /></WeaselProvider>);
     const canvas = container.querySelector('canvas')!;
     canvas.setPointerCapture = vi.fn();
     fireEvent.pointerDown(canvas, { clientX: 5, clientY: 5 });
@@ -150,7 +151,7 @@ describe('<Canvas>', () => {
       const tools = useTools({ active: 'select', registry: { select } });
       return <Canvas width={50} height={50} layers={{}} adapter={adapter} selection={sel} tools={tools} />;
     }
-    const { container } = render(<TestHarness />);
+    const { container } = render(<WeaselProvider><TestHarness /></WeaselProvider>);
     const canvas = container.querySelector('canvas')!;
     canvas.setPointerCapture = vi.fn();
     fireEvent.pointerDown(canvas, { clientX: 5, clientY: 5 });
@@ -206,7 +207,7 @@ describe('<Canvas>', () => {
           />
         );
       }
-      const { container } = render(<Harness />);
+      const { container } = render(<WeaselProvider><Harness /></WeaselProvider>);
       const canvas = container.querySelector('canvas')!;
       canvas.setPointerCapture = vi.fn();
       nextWorld = [10, 10];
@@ -257,7 +258,7 @@ describe('<Canvas>', () => {
           />
         );
       }
-      const { container } = render(<Harness />);
+      const { container } = render(<WeaselProvider><Harness /></WeaselProvider>);
       const canvas = container.querySelector('canvas')!;
       canvas.setPointerCapture = vi.fn();
       nextWorld = [5, 5];
@@ -332,7 +333,7 @@ describe('<Canvas>', () => {
     it('single (default): click replaces selection; no shift-extend', () => {
       const seen: string[][] = [];
       const { container, rerender } = render(
-        <Harness mode="single" onSelChange={(ids) => seen.push(ids)} />,
+        <WeaselProvider><Harness mode="single" onSelChange={(ids) => seen.push(ids)} /></WeaselProvider>,
       );
       const canvas = container.querySelector('canvas')!;
       canvas.setPointerCapture = vi.fn();
@@ -351,7 +352,7 @@ describe('<Canvas>', () => {
       Object.defineProperty(downB, 'clientY', { value: 10 });
       fireEvent(canvas, downB);
       fireEvent.pointerUp(canvas, { pointerId: 2 });
-      rerender(<Harness mode="single" onSelChange={(ids) => seen.push(ids)} />);
+      rerender(<WeaselProvider><Harness mode="single" onSelChange={(ids) => seen.push(ids)} /></WeaselProvider>);
       const last = seen[seen.length - 1];
       expect(last).toEqual(['b']);
     });
@@ -491,7 +492,7 @@ describe('Canvas tools mode', () => {
       return <Canvas width={100} height={100} adapter={{} as never} layers={{}} tools={tools} />;
     }
 
-    const { container } = render(<Test />);
+    const { container } = render(<WeaselProvider><Test /></WeaselProvider>);
     const canvas = container.querySelector('canvas')!;
     canvas.setPointerCapture = vi.fn();
 
@@ -525,7 +526,7 @@ describe('Canvas tools mode', () => {
       );
     }
 
-    const { container } = render(<Test />);
+    const { container } = render(<WeaselProvider><Test /></WeaselProvider>);
     const canvas = container.querySelector('canvas')!;
     canvas.setPointerCapture = vi.fn();
 
@@ -546,7 +547,7 @@ describe('Canvas tools mode', () => {
       return <Canvas width={100} height={100} adapter={{} as never} layers={{}} tools={tools} />;
     }
 
-    const { container } = render(<Test />);
+    const { container } = render(<WeaselProvider><Test /></WeaselProvider>);
     const canvas = container.querySelector('canvas')! as HTMLCanvasElement;
     expect(canvas.style.cursor).toBe('crosshair');
   });
@@ -600,7 +601,7 @@ describe('Canvas tools mode', () => {
       // stays empty here. The authoritative layer-ordering check is the
       // Playwright smoke (canvas-gl.spec.ts). This test now just ensures the
       // composition mounts without throwing.
-      const { container } = render(<Test />);
+      const { container } = render(<WeaselProvider><Test /></WeaselProvider>);
       expect(container.querySelector('canvas')).toBeTruthy();
       // Reference the layer objects so the `order` capture stays wired —
       // a future test runner that does fire draw under jsdom would pick this up.
@@ -622,7 +623,7 @@ describe('Canvas tools mode', () => {
         return <Canvas width={50} height={50} layers={{}} tools={tools} />;
       }
 
-      render(<Test />);
+      render(<WeaselProvider><Test /></WeaselProvider>);
       expect(capturedHas?.('select')).toBe(true);
       expect(capturedHas?.('delete')).toBe(true);
       expect(capturedHas?.('nudge')).toBe(false);

@@ -1,5 +1,6 @@
 import {
   SceneCanvas,
+  WeaselProvider,
   useSceneAdapter,
   useScene,
   useSelection,
@@ -23,7 +24,7 @@ const INITIAL: Rect[] = [
   { id: 'e', x: 80,  y: 180, width: 80, height: 60, color: '#d47a7a' },
 ];
 
-export function LayerListDemo() {
+function LayerListDemoInner() {
   const scene = useScene<Rect>({ items: INITIAL });
   const selection = useSelection({ mode: 'multi' });
   const adapter = useSceneAdapter(scene, { selection });
@@ -58,4 +59,8 @@ export function LayerListDemo() {
       <LayerList {...layerList} />
     </div>
   );
+}
+
+export function LayerListDemo() {
+  return <WeaselProvider><LayerListDemoInner /></WeaselProvider>;
 }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { d3Bind } from '@orochi235/weasel-d3';
 import {
   SceneCanvas,
+  WeaselProvider,
   useScene,
   useSelection,
   useAnimator,
@@ -71,7 +72,7 @@ function poseFor(d: Item, i: number): Pose {
   };
 }
 
-export function D3SortableDemo() {
+function D3SortableDemoInner() {
   const [sortKey, setSortKey] = useState<SortKey>('index');
   const [animating, setAnimating] = useState(false);
   const items = useMemo(() => sortItems(INITIAL, sortKey), [sortKey]);
@@ -167,4 +168,8 @@ export function D3SortableDemo() {
       />
     </div>
   );
+}
+
+export function D3SortableDemo() {
+  return <WeaselProvider><D3SortableDemoInner /></WeaselProvider>;
 }

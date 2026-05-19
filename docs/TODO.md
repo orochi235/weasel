@@ -40,36 +40,14 @@ Demo: `demo/demos/BooleanOpsDemo.tsx` (`#boolean-ops`). Spec:
 - **Promote `ShaderDrawCommand` past `@experimental`.** Three real consumers now exist (plasma / ripple / voronoi panels), enough to validate the surface. Open questions before stabilization: (a) array uniform binding shape — currently consumers must pass per-slot keys (`u_ripples[0]`, `u_ripples[1]`, …); should the kit accept a flat `Float32Array` and split it? (b) hot-reload story for `registerProgram` re-registration; (c) how to expose the renderer's program registry without leaking internals (`shaders` prop is the seam, but consumers writing custom RenderLayers may want more).
 - **`extractUniformNames` regex coverage.** Currently handles scalar uniforms and `T name[N];` arrays. Doesn't handle: matrix arrays (`mat3 u_xforms[4];`), GLSL preprocessor branches, nested struct uniforms, or layout qualifiers on the LHS. Bite-the-bullet rewrite probably wants a small GLSL-prelude parser. Defer until a consumer hits a gap.
 
-## Phase 14e Task 2.6 follow-ups
-
-- **Migrate bare-`<Canvas>` demos to `<SceneCanvas>`.** As of Phase 14e
-  Task 2.6, `useSelectTool` / `useLassoTool` / `useHandTool` have
-  unconditional `bindingsOverrideDrag: true` — bare-`<Canvas>` consumers
-  no longer get the kit's built-in drag behavior. Affected in-repo
-  consumers (drag now broken):
-  - `demo/demos/ClipboardDemo.tsx` (uses `useSelectTool`)
-  - `demo/demos/GroupsDemo.tsx` (uses `useSelectTool`; non-trivial:
-    custom group adapter + composeSelectionPose chain wired through
-    `arrayAdapter` not Scene)
-  - `demo/demos/HudDemo.tsx` (uses `useHandTool`; just needs an empty
-    scene for `<SceneCanvas>`)
-  - `apps/swillustrator/src/App.tsx` (uses all three; structurally
-    blocked — App.tsx is 2400+ lines built on `items + setItems` rather
-    than `useScene`, migration is its own multi-session refactor)
-  None of these break the test suite (no current visual/integration
-  test exercises drag in these consumers); breakage is interactive.
-
 ## Known bugs
 
 Surfaced by `src/canvas/SceneCanvas.smoke.test.tsx` (2026-05-17):
 
-- **`useCloneTool`: Alt key-held not reaching dispatcher end-to-end.** The `tool.hold.clone` action's `key-held` gesture binding (registered via `useKeybindings` + `ActionsRegistry`) is not triggered by an `Alt` `KeyboardEvent` on `window` in the jsdom test environment. Whether this is a jsdom constraint or a real wiring gap in the production code is unresolved. Test: `useCloneTool smoke > alt-drag on selected body fires cloneAction → scene.batch("Clone") [BUG: ...]` (skipped).
-- **`useHandTool`: H keybinding does not switch active tool; `viewport.dragPan` blocked by `areaSelect` enabled() gate.** (a) Dispatching `{ key: 'h' }` on `document` does not change the active tool from `select` to `hand` — confirmed by debug probe. (b) Even if it did, the select tool's active-scope binding `{ kind:'drag', target:'empty' } → areaSelect` wins in `matchBest` and — when `areaSelect.enabled()` returns non-true — the dispatcher returns `'unhandled'` without trying `viewport.dragPan` (ambient scope). The ambient-scope fallthrough gap in `dispatcher.ts` is a design issue. Test: `useHandTool smoke > drag while hand tool active pans the viewport (view changes) [BUG: ...]` (skipped).
+- **`useCloneTool`: Alt key-held provider-scope concern (resolved 2026-05-18).** Original report claimed `tool.hold.clone` was never registered because `useKeybindings` calls `useActionsRegistry()` above the `<ActionsProviderIfRoot>` boundary, so the Alt key-held action path was unreachable. Investigation 2026-05-18 confirmed the registry IS null in that hook, but `useKeybindings` has a registry-null fallback (`useKeybindings.ts:139-173`) that wires a direct `document` keydown listener calling `tools.engageHotkey(...)` → `activeToolContext.pushHotkey(...)`. `ActiveToolContextProvider` is lifted above `SceneCanvasInner` (`SceneCanvas.tsx:1142-1151`), so the push lands in the same context the dispatcher reads. Smoke test `useCloneTool smoke > alt-drag on selected body fires cloneAction → scene.batch("Clone")` now passes and is unskipped. **Latent issues remain:** (a) the registry path is structurally dead in SceneCanvas (provider mounted below the hook); (b) the matcher quirk — `matchModifiers` rejects `{ kind: 'key-held', key: 'Alt' }` because altKey=true is "forbidden" by default — also remains. Both are masked by the fallback. Either fix provider scoping + matcher quirk together so the registry path actually works, or formalize "fallback is the supported SceneCanvas route" and delete the dead `tool.hold.<id>` registration branch.
 
 ## Surfaced 2026-05-17
 
-- **🔴 HIGH PRIORITY: Boolean ops on rotated leaves operate on the unrotated AABB-frame path.** Swill's `BooleansAdapterPublisher.getWorldPath` (in `apps/swillustrator/src/App.tsx`) translates the source path to its pose origin but doesn't bake `pose.rotation` into the geometry. Boolean ops over rotated leaves therefore use the source path's axis-aligned form, producing geometrically wrong results. Fix: add a public kit helper (e.g. `pathInWorld(node, pose)` in `features/paths/`) that applies translation + rotation about the pose's unrotated center, and call it from the swill adapter. The same helper would unblock the kit shipping a default scene-derived booleans adapter for `SwillData`-like scenes.
-- **🔴 HIGH PRIORITY: Remove all demo dependencies on `useTools` outside `<SceneCanvas>`.** Phase 5 of the registry-unification refactor made `useTools` context-backed (`ActiveToolContext`). To avoid breaking demos that called `useTools` outside `<SceneCanvas>` (which auto-mounts the provider), commit `a7bfdbea` ("fix(tools): useTools falls back to internal state when no ActiveToolContextProvider") added a soft fallback to internal `useState` when no provider is in scope. This soft-fallback is intentionally temporary tech debt — the long-term shape is "every `useTools` consumer is under a provider," which means every demo either uses `<SceneCanvas>` directly OR explicitly wraps with `<ActiveToolContextProvider>`. Once all demos are migrated, delete the fallback branch in `src/tools/useTools.ts` (the `usingContext ? ... : ...` branches collapse to the context path only). Also delete the `useOptionalActiveToolContext` export from `src/interactions/actions/activeToolContext.tsx` if no other consumers need it. Related: `useKeybindings` has a parallel two-path strategy (direct `engageHotkey` vs `makeToolHoldAction` registration) that should also collapse to action-registration-only once demos are migrated.
 - **Phase 14c.2 DONE: `insertDep` wired in `StandardActionsRegistrar` + `insertAction.enabled` fixed.** The 6 shape-tools (rect/ellipse/line/polygon/star/pencil) migrated in Phase 14c.1 to `Tool.bindings + insertAction` now work end-to-end. Two bugs fixed: (a) `insertAction.enabled()` wrongly returned `ActionDisabledReason.SelectionRequired` instead of `true`, blocking the gesture dispatcher; (b) `StandardActionsRegistrar` was not wiring the `insert` dep. Both are fixed on branch `registry-unification-insert-dep`. Known limitation: line/polygon/star use AABB-bounds approximation since `insertAction` only passes bounds (not center+radius+rotation) — see `TODO(Phase 14c.3)` comments in `SceneCanvas.tsx`. Pencil stubs a rect placeholder.
 - **`<ToggleBar>` polish.** Shipped to `@orochi235/weasel-ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 

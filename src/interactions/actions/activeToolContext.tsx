@@ -80,3 +80,19 @@ export function useActiveToolContext(): ActiveToolContextValue {
 export function useOptionalActiveToolContext(): ActiveToolContextValue | null {
   return useContext(ActiveToolContext);
 }
+
+/**
+ * Conditional `<ActiveToolContextProvider>` wrapper. Mounts a provider only
+ * when no parent provider is in scope — otherwise renders children unwrapped
+ * so callers (e.g. `<WeaselProvider>`, `<SceneCanvas>`) defer to the host's
+ * existing scope. Mirrors `ActionsProviderIfRoot` / `DepRegistryProviderIfRoot`.
+ */
+export function ActiveToolContextProviderIfRoot({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const parent = useContext(ActiveToolContext);
+  if (parent !== null) return <>{children}</>;
+  return <ActiveToolContextProvider>{children}</ActiveToolContextProvider>;
+}

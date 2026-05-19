@@ -137,7 +137,9 @@ export type {
 export type { GestureBinding } from './interactions/actions/binding';
 export {
   ActiveToolContextProvider,
+  ActiveToolContextProviderIfRoot,
   useActiveToolContext,
+  useOptionalActiveToolContext,
 } from './interactions/actions/activeToolContext';
 export type {
   ActiveToolContextValue,
@@ -241,6 +243,7 @@ export type {
 // --- @experimental Selection ambient context (2026-05-09) -------------------
 export {
   SelectionContextProvider,
+  SelectionContextProviderIfRoot,
   useSelectionContext,
   usePublishSelection,
 } from './features/selection/SelectionContext';
@@ -252,6 +255,12 @@ export {
   usePointerContext,
 } from './features/pointer/PointerContext';
 export type { PointerContextValue, PointerWorldPos } from './features/pointer/PointerContext';
+export { PointerProviderIfRoot } from './canvas/SceneCanvas/PointerProviderIfRoot';
+export { ActionsProviderIfRoot } from './canvas/SceneCanvas/ActionsProviderIfRoot';
+export { DepRegistryProviderIfRoot } from './canvas/SceneCanvas/DepRegistryProviderIfRoot';
+
+// ─── WeaselProvider: mounts all five kit-root contexts in one wrap ──────────
+export { WeaselProvider } from './WeaselProvider';
 
 // ─── Canvas focus & visibility gating ───────────────────────────────────────
 export {
@@ -366,6 +375,7 @@ export {
   translatePath,
   translatePolygonInPlace,
   scalePathToBounds,
+  pathInWorld,
   createPathLayer,
   flattenCubic,
   flattenQuadratic,
@@ -400,6 +410,7 @@ export type {
   CreatePathLayerOpts,
   CreatePenPreviewLayerOptions,
   PenPreviewStyle,
+  PathInWorldPose,
 } from './features/paths';
 // ─── Utility: 45° axis constraint ───────────────────────────────────────────
 export { constrainTo45 } from './util/constrainTo45';

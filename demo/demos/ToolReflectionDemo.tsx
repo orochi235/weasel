@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import {
   SceneCanvas,
+  WeaselProvider,
   useSceneAdapter,
   useScene,
   useSelection,
@@ -27,7 +28,7 @@ const INITIAL: Rect[] = [
   { id: 'c', x:  90, y: 170, width: 90, height: 70, color: '#7ab8d4' },
 ];
 
-export function ToolReflectionDemo() {
+function ToolReflectionDemoInner() {
   const scene = useScene<Rect>({ items: INITIAL });
   const selection = useSelection({ mode: 'multi' });
   const adapter = useSceneAdapter(scene, { selection });
@@ -88,6 +89,10 @@ export function ToolReflectionDemo() {
       </div>
     </div>
   );
+}
+
+export function ToolReflectionDemo() {
+  return <WeaselProvider><ToolReflectionDemoInner /></WeaselProvider>;
 }
 
 function RegistryTable({ rows }: { rows: RegistryEntry[] }) {

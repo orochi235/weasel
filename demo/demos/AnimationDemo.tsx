@@ -6,6 +6,7 @@ import {
   easeInOutSine,
   momentum,
   SceneCanvas,
+  WeaselProvider,
   sceneToAdapter,
   useAnimator,
   useScene,
@@ -49,7 +50,7 @@ function nearestGridCell(p: Vec2): Vec2 {
   };
 }
 
-export function AnimationDemo() {
+function AnimationDemoInner() {
   const scene = useScene<Card>({ items: INITIAL });
   const selection = useSelection({ mode: 'multi' });
   const animator = useAnimator();
@@ -389,4 +390,8 @@ export function AnimationDemo() {
       </div>
     </div>
   );
+}
+
+export function AnimationDemo() {
+  return <WeaselProvider><AnimationDemoInner /></WeaselProvider>;
 }

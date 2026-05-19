@@ -5,6 +5,7 @@ import { useScene } from 'core/scene/useScene';
 import { asNodeId } from 'core/scene/types';
 import { useTools } from 'tools/useTools';
 import { defineTool } from 'tools/routing/defineTool';
+import { WeaselProvider } from '../WeaselProvider';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
 beforeAll(() => {
@@ -167,7 +168,7 @@ describe('SceneCanvas consumer-tools keybindings auto-wiring', () => {
         />
       );
     }
-    render(<Harness />);
+    render(<WeaselProvider><Harness /></WeaselProvider>);
     expect(captured!.active).toBe('select');
     act(() => pressKey('p'));
     expect(captured!.active).toBe('pen');
@@ -194,7 +195,7 @@ describe('SceneCanvas consumer-tools keybindings auto-wiring', () => {
         />
       );
     }
-    render(<Harness />);
+    render(<WeaselProvider><Harness /></WeaselProvider>);
     expect(captured!.active).toBe('select');
     // No `useKeybindings` is wired anywhere; the press is ignored.
     act(() => pressKey('p'));

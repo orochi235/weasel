@@ -46,6 +46,7 @@ export {
   translatePolygonInPlace,
   scalePathToBounds,
 } from './transform';
+export { pathInWorld, type PathInWorldPose } from './pathInWorld';
 export { createPathLayer, type CreatePathLayerOpts } from './pathLayer';
 export {
   flattenCubic,
