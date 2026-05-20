@@ -64,7 +64,7 @@ function ProbeDepSelection({ onValue }: { onValue: (v: unknown) => void }) {
 // Kit-standard descriptor IDs
 // ---------------------------------------------------------------------------
 const KIT_IDS = [
-  'escape', 'selectAll', 'delete', 'duplicate',
+  'escape', 'cancelGesture', 'selectAll', 'delete', 'duplicate',
   'group', 'ungroup',
   'undo', 'redo',
   'flip',
@@ -88,7 +88,7 @@ const KIT_IDS = [
 // ---------------------------------------------------------------------------
 
 describe('useStandardActions', () => {
-  it('registers all 43 kit-standard action descriptors', () => {
+  it('registers all 44 kit-standard action descriptors', () => {
     const seen: string[][] = [];
     render(
       <Providers>

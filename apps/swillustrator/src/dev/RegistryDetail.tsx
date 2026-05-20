@@ -30,7 +30,7 @@ import type {
   OpKindEntry, HotkeyTriggerEntry, SlotEntry, RouteEntry, RouteTargetEntry, ModifierSetEntry, GroupEntry,
   MetaEntry, CallbackRef,
 } from './registryData';
-import { BOOLEAN_BADGE_PROPS, BUNDLE_BADGE_PROPS, GESTURE_BADGE_PROPS, HOTKEY_TRIGGER_GLYPHS, KIND_BADGE_PROPS, PHASE_BADGE_PROPS, TOKEN_SETS, type TokenSet } from './badgeTokens';
+import { BOOLEAN_BADGE_PROPS, BUNDLE_BADGE_PROPS, CHANNEL_BADGE_PROPS, GESTURE_BADGE_PROPS, HOTKEY_TRIGGER_GLYPHS, KIND_BADGE_PROPS, PHASE_BADGE_PROPS, TOKEN_SETS, type TokenSet } from './badgeTokens';
 import { canonicalModifiers, formatPhaseAtom, getGestureDescriptor, type GestureName } from '@orochi235/weasel/routing';
 import { collectBundles, collectIcons, GESTURE_CHANNEL_KEYS, PHASE_OUTPUT_KEYS, parseRoute, TOOL_HOOK_NAMES } from './registryData';
 void GESTURE_CHANNEL_KEYS;
@@ -56,7 +56,10 @@ export function RouteBadge({ route }: { route: string }) {
         {parsed.phases.map((p, i) => (
           <Fragment key={i}>
             {i > 0 && <span className={s.phaseSep}>,</span>}
-            <Badge {...(PHASE_BADGE_PROPS as BadgeProps)}>{formatPhaseAtom(p)}</Badge>
+            {p.channel !== '&' && (
+              <Badge {...(CHANNEL_BADGE_PROPS as BadgeProps)}>{p.channel}</Badge>
+            )}
+            <Badge {...(PHASE_BADGE_PROPS as BadgeProps)}>{p.phase}</Badge>
           </Fragment>
         ))}
       </span>

@@ -66,6 +66,7 @@ import {
   useLassoSelectDepSource,
   useTextEditDepSource,
   useEditAnchorsDepSource,
+  useDispatcherDepSource,
   useResizePolicy,
 } from './deps';
 import { useActionsPropResolver } from './SceneCanvas/useActionsPropResolver';
@@ -870,6 +871,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             currentViewRef={currentViewRef}
             onViewChange={handleViewChange}
             resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
+            dispatcher={dispatcher}
           />
           <GestureDispatcherMounter
             canvasRef={internalCanvasRef}
@@ -1091,6 +1093,7 @@ function StandardActionsRegistrar({
   currentViewRef,
   onViewChange,
   resizeOptions,
+  dispatcher,
 }: {
   selection: SelectionApi;
   scene: Scene<unknown, string, unknown>;
@@ -1104,6 +1107,9 @@ function StandardActionsRegistrar({
    *  `useResizeTool` consumes the same options separately (both paths run
    *  in parallel during the dispatcher migration). */
   resizeOptions?: UseResizeOptions<unknown>;
+  /** Forwarded so `cancelGestureAction` and other actions that need to
+   *  abort in-flight handles can read the dispatcher's control surface. */
+  dispatcher: Dispatcher;
 }) {
   // Build the ViewApi (stable identity, refreshed closures) and hand it to
   // useStandardActions (which publishes the `view` dep along with selection,
@@ -1124,6 +1130,7 @@ function StandardActionsRegistrar({
   useLassoSelectDepSource(scene, selection);
   useTextEditDepSource(scene);
   useEditAnchorsDepSource(scene, selection, adapter);
+  useDispatcherDepSource(dispatcher);
 
   useActionsPropResolver(actions);
 

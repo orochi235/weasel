@@ -10,6 +10,7 @@ export { useLassoSelectDepSource } from './useLassoSelectDepSource';
 export { useTextEditDepSource } from './useTextEditDepSource';
 export { useEditAnchorsDepSource } from './useEditAnchorsDepSource';
 export { useInsertDepSource } from './useInsertDepSource';
+export { useDispatcherDepSource } from './useDispatcherDepSource';
 export {
   useResizePolicy,
   type UseResizePolicyOptions,

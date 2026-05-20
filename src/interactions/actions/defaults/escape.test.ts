@@ -7,8 +7,12 @@ describe('escapeAction (descriptor)', () => {
     expect(escapeAction.label).toBe('Escape');
   });
 
-  it('defaultBinding = { kind: "key", key: "Escape" }', () => {
-    expect(escapeAction.defaultBinding).toEqual({ kind: 'key', key: 'Escape' });
+  it('defaultBinding = Escape, gated to [*:initial]', () => {
+    expect(escapeAction.defaultBinding).toEqual({
+      kind: 'key',
+      key: 'Escape',
+      phase: [{ channel: '*', phase: 'initial' }],
+    });
   });
 
   it('invoker.timing = "immediate"', () => {

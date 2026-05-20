@@ -105,6 +105,17 @@ export const PHASE_BADGE_PROPS: Omit<BadgeProps, 'children'> = {
   variant: 'subtle',
 };
 
+/** Channel badge — leading chip when a phase atom names a tool/wildcard
+ *  channel other than the implicit `&` ("this tool's own phase"). Muted
+ *  tone so it reads as context for the phase chip that follows it. */
+export const CHANNEL_BADGE_PROPS: Omit<BadgeProps, 'children'> = {
+  shape: 'ribbon',
+  shapeParams: { left: 'flat', right: 'flat' },
+  size: 'sm',
+  tone: 'neutral',
+  variant: 'subtle',
+};
+
 const PHASE_VALUES = ['initial', 'engaged'] as const;
 
 const phaseTokenSet: BadgeTokenSet = {
