@@ -37,6 +37,9 @@ import {
   asNodeId,
   boundsOfPath,
   pathInWorld,
+  splitSubpaths,
+  PATH_M,
+  gridSnapStrategy,
   type ToolsApi,
   type Path,
   type AlignEdge,
@@ -629,6 +632,74 @@ function Toolbar({
   const hasSelection = selection.current.length > 0;
   const selectionSize = selection.current.length;
 
+  // Any selected leaf whose path is a polygon with ≥2 `M` commands is a
+  // compound path — release explodes it into N independent leaves.
+  const canReleaseCompound = (() => {
+    for (const id of selection.current) {
+      const node = scene.get(asNodeId(id));
+      if (!node || node.kind !== 'leaf') continue;
+      const path = (node.data as SwillData).path;
+      if (path?.kind !== 'polygon') continue;
+      let mCount = 0;
+      for (let i = 0; i < path.commands.length; i++) {
+        if (path.commands[i] === PATH_M && ++mCount >= 2) return true;
+      }
+    }
+    return false;
+  })();
+
+  const onReleaseCompound = useCallback(() => {
+    const newIds: NodeId[] = [];
+    scene.batch('Release compound path', () => {
+      for (const id of selection.current) {
+        const nid = asNodeId(id);
+        const node = scene.get(nid);
+        if (!node || node.kind !== 'leaf') continue;
+        const data = node.data as SwillData;
+        const path = data.path;
+        if (path?.kind !== 'polygon') {
+          newIds.push(nid);
+          continue;
+        }
+        const pose = node.pose as SwillPose;
+        // Bake pose into the parent path so each subpath inherits world
+        // coords (including any rotation); otherwise the renderer's
+        // "translate path AABB origin to pose.x/y" step would teleport
+        // every subpath to the parent's origin and lose the inter-subpath
+        // offsets. The resulting subpaths render at rotation=0 since the
+        // rotation is now baked into their coords.
+        const worldPath = pathInWorld(path, pose);
+        if (worldPath.kind !== 'polygon') {
+          newIds.push(nid);
+          continue;
+        }
+        const worldParts = splitSubpaths(worldPath);
+        if (worldParts.length < 2) {
+          newIds.push(nid);
+          continue;
+        }
+        scene.remove(nid);
+        for (const sub of worldParts) {
+          const b = boundsOfPath(sub);
+          const subPose: SwillPose = {
+            x: b.x,
+            y: b.y,
+            width: b.width,
+            height: b.height,
+          };
+          const subData: SwillData = { ...data, path: sub };
+          newIds.push(scene.add({
+            kind: 'leaf',
+            layer: 'default',
+            pose: subPose,
+            data: subData,
+          }));
+        }
+      }
+    });
+    selection.set(newIds);
+  }, [scene, selection]);
+
   return (
     <>
       <ActionBar
@@ -758,8 +829,8 @@ function Toolbar({
         onToggleGrid={() => setGridVisible(!gridVisible)}
         snapToGrid={snapToGrid}
         onToggleSnap={() => setSnapToGrid(!snapToGrid)}
-        canReleaseCompound={false}
-        onReleaseCompound={() => {/* v0: compound-path release deferred */}}
+        canReleaseCompound={canReleaseCompound}
+        onReleaseCompound={onReleaseCompound}
         onOpenPrefs={onOpenPrefs}
         recording={false}
         onToggleRecord={() => {/* v0: recording deferred */}}
@@ -1075,6 +1146,7 @@ function EditorWithSharedScene({
             cursorCoordsHud
             pickHud
             onToolsCreated={setTools}
+            selectTool={snapToGrid ? { snap: gridSnapStrategy<SwillPose>(20) } : undefined}
             layers={gridVisible ? {
               grid: {
                 spacing: 20,
