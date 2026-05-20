@@ -67,17 +67,38 @@
   margin-left: auto;
 }
 
-.hideUnhandled {
+.filters {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  opacity: 0.85;
-  cursor: pointer;
-  user-select: none;
+  gap: 2px;
 }
-.hideUnhandled input {
-  margin: 0;
+
+.filterBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: inherit;
   cursor: pointer;
+  opacity: 0.4;
+}
+.filterBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.filterBtnActive {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+.filterIcon {
+  display: block;
+  width: 14px;
+  height: 14px;
 }
 
 .clear {

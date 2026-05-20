@@ -717,7 +717,9 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
         {entry.routes.length > 0 && (
           <>
             <dt>routes</dt>
-            <dd>{entry.routes.map((r) => <RouteBadge key={r} route={r} />)}</dd>
+            <dd className={s.routesList}>
+              {entry.routes.map((r) => <div key={r}><RouteBadge route={r} /></div>)}
+            </dd>
           </>
         )}
         {bundles.length > 0 && (

@@ -232,7 +232,7 @@ export const HOTKEY_TRIGGER_GLYPHS: Readonly<Record<string, readonly string[]>> 
   alt: ['⌥'],
   ctrl: ['⌃'],
   meta: ['⌘'],
-  shift: ['⇪'],
+  shift: ['⇧'],
 };
 
 const hotkeyTriggerTokenSet: KeycapsTokenSet = {

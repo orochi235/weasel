@@ -115,6 +115,10 @@
 }
 .tag { background: var(--wzl-bg, #1e1610); padding: 2px 8px; border-radius: 3px; margin-right: 4px; font-size: 13px; }
 .routeBadge { display: inline-flex; align-items: center; gap: 2px; margin-right: 6px; }
+
+/* Stacked route list — one badge per line. Used on the tool-detail `routes`
+   field where horizontal wrapping makes long route strings hard to scan. */
+.routesList { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .phaseGroup { display: inline-flex; align-items: center; gap: 2px; }
 .phaseSep { color: var(--wzl-muted, #a59685); font-size: 11px; }
 /* When the gesture has no real target (`wheel`, function-form `drag`), the

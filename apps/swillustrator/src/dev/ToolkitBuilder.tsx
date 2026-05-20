@@ -409,9 +409,12 @@ function renderSpec(spec: GestureSpec): ReactNode {
     });
     return <KeySequence keys={parts?.map((label) => ({ label }))} />;
   }
-  const mods = 'mods' in spec && spec.mods
-    ? Object.entries(spec.mods).filter(([, v]) => v).map(([k]) => k).join('+')
-    : '';
+  const modGlyphs: string[] = [];
+  if ('mods' in spec && spec.mods) {
+    if (spec.mods.mod) modGlyphs.push('⌘');
+    if (spec.mods.shift) modGlyphs.push('⇧');
+    if (spec.mods.alt) modGlyphs.push('⌥');
+  }
   let label: string = spec.kind;
   if (spec.kind === 'click' || spec.kind === 'drag') {
     const t = spec.target;
@@ -420,9 +423,15 @@ function renderSpec(spec: GestureSpec): ReactNode {
     label = `multiTouch(${spec.fingers})`;
   }
   return (
-    <code className={s.bindingTag}>
-      {label}{mods && <span className={s.bindingMod}> · {mods}</span>}
-    </code>
+    <>
+      <code className={s.bindingTag}>{label}</code>
+      {modGlyphs.length > 0 && (
+        <>
+          <span className={s.bindingSep}>+</span>
+          <KeySequence keys={modGlyphs.map((g) => ({ label: g }))} />
+        </>
+      )}
+    </>
   );
 }
 

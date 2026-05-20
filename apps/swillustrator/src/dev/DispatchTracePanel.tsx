@@ -18,6 +18,7 @@
  * "Show dev panels" pref) only in development.
  */
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
+import { ActionsBar } from '@orochi235/weasel-ui';
 import s from './DispatchTracePanel.module.css';
 
 // Structural copy of `DispatchLogEntry` from
@@ -110,7 +111,8 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
   const [entries, setEntries] = useState<DispatchLogEntry[]>(() => readLog().slice());
   const [expanded, setExpanded] = useState<number | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
-  const [hideUnhandled, setHideUnhandled] = useState<boolean>(false);
+  const [showHandled, setShowHandled] = useState<boolean>(true);
+  const [showUnhandled, setShowUnhandled] = useState<boolean>(true);
   const lastLenRef = useRef<number>(entries.length);
   const lastTsRef = useRef<number>(entries.length ? entries[entries.length - 1]!.ts : 0);
 
@@ -142,9 +144,9 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
     lastTsRef.current = 0;
   }, []);
 
-  const filtered = hideUnhandled
-    ? entries.filter((e) => e.outcome !== 'unhandled')
-    : entries;
+  const filtered = entries.filter((e) =>
+    e.outcome === 'unhandled' ? showUnhandled : showHandled,
+  );
   const visible = filtered.slice(-DISPLAY_LIMIT).reverse();
   const onToggleCollapse = useCallback(() => setCollapsed((c) => !c), []);
 
@@ -175,29 +177,46 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
         <span className={s.count}>
           {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
         </span>
-        <label className={s.hideUnhandled} title="Hide rows with outcome=unhandled">
-          <input
-            type="checkbox"
-            checked={hideUnhandled}
-            onChange={(e) => setHideUnhandled(e.target.checked)}
-          />
-          Hide unhandled
-        </label>
-        <button
-          type="button"
-          className={s.clear}
-          onClick={onClear}
-          disabled={entries.length === 0}
-        >
-          Clear
-        </button>
+        <div className={s.filters} role="group" aria-label="Outcome filters">
+          <button
+            type="button"
+            className={showHandled ? `${s.filterBtn} ${s.filterBtnActive}` : s.filterBtn}
+            onClick={() => setShowHandled((v) => !v)}
+            aria-pressed={showHandled}
+            title={showHandled ? 'Hide handled events' : 'Show handled events'}
+          >
+            <HandledIcon />
+          </button>
+          <button
+            type="button"
+            className={showUnhandled ? `${s.filterBtn} ${s.filterBtnActive}` : s.filterBtn}
+            onClick={() => setShowUnhandled((v) => !v)}
+            aria-pressed={showUnhandled}
+            title={showUnhandled ? 'Hide unhandled events' : 'Show unhandled events'}
+          >
+            <UnhandledIcon />
+          </button>
+        </div>
+        <ActionsBar
+          variant="minimal"
+          ariaLabel="Trace actions"
+          items={[
+            {
+              value: 'clear',
+              label: <TrashIcon />,
+              ariaLabel: 'Clear log',
+              disabled: entries.length === 0,
+              onAction: onClear,
+            },
+          ]}
+        />
       </div>
       {!collapsed && (
         <div className={s.body}>
         {visible.length === 0 ? (
           <p className={s.empty}>
-            {entries.length > 0 && hideUnhandled
-              ? 'All recorded events were unhandled — uncheck "Hide unhandled" to see them.'
+            {entries.length > 0
+              ? 'All recorded events are hidden by the current filters — toggle the icons above to show them.'
               : 'No dispatch events recorded yet. Interact with the canvas to populate the log.'}
           </p>
         ) : (
@@ -311,6 +330,53 @@ function formatEnabled(v: boolean | string): string {
   if (v === true) return 'yes';
   if (v === false) return 'no';
   return v;
+}
+
+/** Trash can — clears the log. */
+function TrashIcon(): ReactElement {
+  return (
+    <svg className={s.filterIcon} viewBox="0 0 14 14" aria-hidden="true">
+      <path
+        d="M3 4h8M5.5 4V2.75A.75.75 0 0 1 6.25 2h1.5A.75.75 0 0 1 8.5 2.75V4M4 4l.6 7.2A1 1 0 0 0 5.6 12h2.8a1 1 0 0 0 1-.8L10 4M6 6.5v3M8 6.5v3"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/** Green check — "handled" filter. */
+function HandledIcon(): ReactElement {
+  return (
+    <svg className={s.filterIcon} viewBox="0 0 14 14" aria-hidden="true">
+      <polyline
+        points="2.5,7.5 5.5,10.5 11.5,3.5"
+        fill="none"
+        stroke="#8fce8f"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/** Red bang — "unhandled" filter. Mirrors the red-tinted unhandled row style. */
+function UnhandledIcon(): ReactElement {
+  return (
+    <svg className={s.filterIcon} viewBox="0 0 14 14" aria-hidden="true">
+      <line
+        x1="7" y1="2.5" x2="7" y2="8"
+        stroke="#dc5040"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <circle cx="7" cy="11" r="1.1" fill="#dc5040" />
+    </svg>
+  );
 }
 
 export default DispatchTracePanel;
