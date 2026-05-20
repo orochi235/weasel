@@ -146,7 +146,10 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
 
 function formatRoutes(entries: readonly RegistryEntry[]): readonly string[] {
   return entries.map((e) => formatRoute({
-    phases: [e.phase],
+    // Probe entries carry tool phases ('initial' | 'engaged') as bare
+    // strings; wrap into a `&`-channel atom so the new grammar shape
+    // round-trips to the same `[initial]` / `[engaged]` shorthand.
+    phases: [{ channel: '&', phase: e.phase }],
     gesture: e.gesture,
     arg: e.arg,
     target: e.target,

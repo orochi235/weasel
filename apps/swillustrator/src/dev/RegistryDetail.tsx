@@ -31,7 +31,7 @@ import type {
   MetaEntry, CallbackRef,
 } from './registryData';
 import { BOOLEAN_BADGE_PROPS, BUNDLE_BADGE_PROPS, GESTURE_BADGE_PROPS, HOTKEY_TRIGGER_GLYPHS, KIND_BADGE_PROPS, PHASE_BADGE_PROPS, TOKEN_SETS, type TokenSet } from './badgeTokens';
-import { canonicalModifiers, getGestureDescriptor, type GestureName } from '@orochi235/weasel/routing';
+import { canonicalModifiers, formatPhaseAtom, getGestureDescriptor, type GestureName } from '@orochi235/weasel/routing';
 import { collectBundles, collectIcons, GESTURE_CHANNEL_KEYS, PHASE_OUTPUT_KEYS, parseRoute, TOOL_HOOK_NAMES } from './registryData';
 void GESTURE_CHANNEL_KEYS;
 void PHASE_OUTPUT_KEYS;
@@ -56,7 +56,7 @@ export function RouteBadge({ route }: { route: string }) {
         {parsed.phases.map((p, i) => (
           <Fragment key={i}>
             {i > 0 && <span className={s.phaseSep}>,</span>}
-            <Badge {...(PHASE_BADGE_PROPS as BadgeProps)}>{p}</Badge>
+            <Badge {...(PHASE_BADGE_PROPS as BadgeProps)}>{formatPhaseAtom(p)}</Badge>
           </Fragment>
         ))}
       </span>
@@ -296,7 +296,7 @@ function RouteDetail({
     <div>
       <h2 className={s.detailHeading}><RouteBadge route={entry.id} /></h2>
       <dl className={s.detailList}>
-        <dt>phases</dt><dd>{parsed.phases.join(', ')}</dd>
+        <dt>phases</dt><dd>{parsed.phases.map(formatPhaseAtom).join(', ')}</dd>
         <dt>gesture</dt><dd><code className={s.tag}>{parsed.gesture}</code></dd>
         {parsed.arg !== undefined && (<><dt>arg</dt><dd><code className={s.tag}>{parsed.arg}</code></dd></>)}
         {parsed.target !== undefined && (

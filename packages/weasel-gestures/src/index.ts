@@ -28,8 +28,11 @@ export type { ModifierKey } from './grammar/modifiers';
 export {
   parseRoute,
   formatRoute,
+  formatPhaseAtom,
   RESERVED_SIGILS,
   ACTIVE_SIGILS,
+  RESERVED_ID_PREFIXES,
+  RESERVED_ID_NAMES,
   VALID_MOD_NAMES,
   MOD_NAME_SET,
 } from './grammar/routeGrammar';
@@ -38,6 +41,8 @@ export type {
   ParsedModifiers,
   ModName,
   ModRequirement,
+  PhaseAtom,
+  ChannelRef,
 } from './grammar/routeGrammar';
 
 // Key-route grammar
