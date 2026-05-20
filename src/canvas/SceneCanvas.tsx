@@ -27,6 +27,7 @@ import type { DrawCommand, ShaderProgramHandle } from '../renderer';
 import { textCommand } from 'features/text/textCommand';
 import { findShapePainter } from './shapePainters';
 import { CursorCoordsHud } from './CursorCoordsHud';
+import { PickHud } from './PickHud';
 import type { FillStyle } from 'core/paint-types';
 import type { RenderLayer } from 'core/layers/render';
 import { Canvas } from './Canvas';
@@ -484,6 +485,13 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * coord drift / pan-zoom misalignment without instrumenting events.
      */
     cursorCoordsHud?: boolean;
+    /**
+     * Dev HUD: when true, mounts a fixed-position widget just below the
+     * cursor-coords HUD listing the ids returned by `pickEvery(world)`
+     * under the cursor. Useful for diagnosing hit-test order and
+     * container/leaf overlap during select-tool work.
+     */
+    pickHud?: boolean;
   };
 
 function SceneCanvasInner<TData, TLayer extends string, TPose>(
@@ -515,6 +523,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     shaders,
     backgroundFill,
     cursorCoordsHud,
+    pickHud,
     ...rest
   } = props;
 
@@ -842,6 +851,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
           {canvas}
           {cursorCoordsHud && (
             <CursorCoordsHud canvasRef={internalCanvasRef} viewRef={currentViewRef} />
+          )}
+          {pickHud && (
+            <PickHud
+              canvasRef={internalCanvasRef}
+              viewRef={currentViewRef}
+              pickEvery={internalPickEvery}
+            />
           )}
           <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />
           <StandardActionsRegistrar

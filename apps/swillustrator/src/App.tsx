@@ -1028,6 +1028,7 @@ function EditorWithSharedScene({
             toolBundle="exhaustive"
             viewport={{ pinchZoom: true }}
             cursorCoordsHud
+            pickHud
             onToolsCreated={setTools}
             layers={gridVisible ? {
               grid: {

@@ -1,0 +1,39 @@
+.hud {
+  position: fixed;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.7);
+  color: #e8e8e8;
+  font: 11px ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: 6px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  line-height: 1.4;
+  text-align: right;
+  min-width: 120px;
+  max-width: 260px;
+}
+
+.header {
+  color: #888;
+  margin-bottom: 2px;
+}
+
+.empty {
+  color: #888;
+  font-style: italic;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.item {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
