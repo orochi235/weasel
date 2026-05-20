@@ -15,8 +15,6 @@ import {
   ellipsePath,
   linePath,
   rectPath,
-  regularPolygonPath,
-  starPath,
   useCloneTool,
   useEllipseTool,
   useLassoTool,
@@ -133,24 +131,12 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
       strokeWidth: 2,
     }) as LeafNode,
   });
-  const polygon = usePolygonTool<LeafNode>({
-    create: (center, radius, rotation, sides) => makeLeaf(freshId('pg'), {
-      x: center.x - radius, y: center.y - radius,
-      width: radius * 2, height: radius * 2,
-    }, {
-      path: regularPolygonPath(center, radius, sides, rotation),
-      fill: nextFill(),
-    }) as LeafNode,
-  });
-  const star = useStarTool<LeafNode>({
-    create: (center, outerRadius, innerRadius, rotation, points) => makeLeaf(freshId('st'), {
-      x: center.x - outerRadius, y: center.y - outerRadius,
-      width: outerRadius * 2, height: outerRadius * 2,
-    }, {
-      path: starPath(center, outerRadius, points, innerRadius, rotation),
-      fill: nextFill(),
-    }) as LeafNode,
-  });
+  // Polygon and star are minted by `useInsertDepSource` (the kit's
+  // `insert` dep). Tool-side `create` callbacks were removed when the
+  // dispatcher took over the drag — consumers wanting custom node
+  // factories override the `insert` dep, not the tool.
+  const polygon = usePolygonTool();
+  const star = useStarTool();
   const pencil = usePencilTool<LeafNode>({
     create: (path: PolygonPath) => {
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;

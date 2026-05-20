@@ -99,6 +99,14 @@ export function useRectTool<TNode extends { id: string }>(
         // dispatcher + insertAction. The legacy route-table drag channel
         // has been removed alongside `Tool.bindingsOverrideDrag`.
         bindings: [
+          // Alt-drag → from center (Illustrator/Figma convention).
+          // Listed first so the strict-modifier matcher prefers it when
+          // Alt is held.
+          {
+            spec: { kind: 'drag', target: 'empty', mods: { alt: true } },
+            actionId: 'insert',
+            opts: { params: { kind: 'rect', originMode: 'center' } },
+          },
           {
             spec: { kind: 'drag', target: 'empty' },
             actionId: 'insert',

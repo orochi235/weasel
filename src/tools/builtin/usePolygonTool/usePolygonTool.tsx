@@ -1,86 +1,45 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { defineTool, claim } from '../../routing';
-import { useDragRadial } from 'interactions/gestures/dragRadial';
-import { createInsertOp } from 'core/ops/create';
 import { PolygonIcon } from '../../../icons';
-import { PathBuilder } from 'features/paths/builder';
-import { viewToTransform, type View } from 'core/viewport/view';
-import { worldToScreen } from 'core/viewport/viewTransform';
-import type { RenderLayer } from 'core/layers/render';
-import type { DrawCommand } from '../../../renderer';
-import type { Tool, ToolCtx } from '../../types';
+import type { Tool } from '../../types';
 import { useAction, type Action } from 'interactions/actions/registry';
-
-const GHOST_STROKE = '#7fb069';
-const GHOST_LINE_WIDTH = 1;
-const GHOST_DASH: number[] = [4, 4];
 
 export interface PolygonPoint { x: number; y: number }
 
-export interface UsePolygonToolOptions<TNode extends { id: string }> {
-  create: (
-    center: PolygonPoint,
-    radius: number,
-    rotation: number,
-    sides: number,
-  ) => TNode | null;
+export interface UsePolygonToolOptions {
   label?: string;
+  /** Initial side count. Side count persists across gestures
+   *  (Illustrator convention) and is adjustable mid-drag via
+   *  ArrowUp/Down or wheel (range 3–32). */
   sides?: number;
-  minRadius?: number;
-  /** Optional: snap world-space points to the active grid (or any other
-   *  snap target). Applied to both the center (on pointerdown) and the
-   *  live cursor — so the radius/rotation derived from `current - center`
-   *  lands on grid in both the live overlay and the committed geometry. */
-  snapPoint?: (p: PolygonPoint) => PolygonPoint;
 }
 
 const MIN_SIDES = 3;
 const MAX_SIDES = 32;
 
 /**
- * Drag-from-center polygon tool. Pointerdown sets center; drag determines
- * radius + rotation. Side count from `opts.sides` (default 6), adjustable
- * mid-gesture via ArrowUp/Down (range 3–32). Side count persists across
- * gestures (Illustrator convention).
+ * Drag-from-center polygon tool. Pointerdown sets center; drag
+ * determines radius + rotation; release commits via `insertAction` (the
+ * kit's standard insert dep, sourced by `<SceneCanvas>`). Side count
+ * defaults to 6, adjustable mid-gesture via ArrowUp/Down or wheel.
+ *
+ * The live preview is painted by the dispatcher overlay layer reading
+ * `insertAction.overlay()` — the action returns `{ kind:'insertPreview',
+ * shape:'polygon', bounds, extras: { sides, ... } }`. Consumers wanting
+ * a custom polygon node shape override the `insert` dep.
  */
-export function usePolygonTool<TNode extends { id: string }>(
-  options: UsePolygonToolOptions<TNode>,
+export function usePolygonTool<TNode extends { id: string } = { id: string }>(
+  options: UsePolygonToolOptions = {},
 ): Tool<null> {
-  const { create, label = 'Insert polygon', sides: initialSides = 6, minRadius, snapPoint } = options;
-  const createRef = useRef(create);
-  createRef.current = create;
-  const applyOpsRef = useRef<ToolCtx['applyOps'] | null>(null);
-  const snapPointRef = useRef(snapPoint);
-  snapPointRef.current = snapPoint;
-  // Side count in a ref so keydown / wheel mutations are visible
-  // synchronously in subsequent dr.onEnd reads. A useState tick alongside
-  // forces the overlay layer to redraw when the count changes between
-  // pointer events (e.g. user wheels without moving the cursor).
+  const { sides: initialSides = 6 } = options;
+  // Side count in a ref so keyDown / wheel mutations are visible
+  // synchronously to the insert binding's thunked params (re-resolved
+  // every frame for the live preview and at commit time). A useState
+  // tick alongside forces a render so the dispatcher overlay layer
+  // repaints when the count changes between pointer events.
   const sidesRef = useRef(initialSides);
   const [, setSidesTick] = useState(0);
   const bumpSides = useCallback(() => setSidesTick((n) => n + 1), []);
-
-  const dr = useDragRadial({
-    minRadius,
-    snapPoint: (p) => snapPointRef.current?.(p) ?? p,
-    onEnd: (ctx) => {
-      const applyOps = applyOpsRef.current;
-      if (!applyOps) return false;
-      if (ctx.isSubThreshold) return false;
-      const node = createRef.current(
-        ctx.center,
-        ctx.radius,
-        ctx.rotation,
-        sidesRef.current,
-      );
-      if (!node) return false;
-      applyOps([createInsertOp({ node, label })], label);
-      return true;
-    },
-  });
-
-  const drRef = useRef(dr);
-  drRef.current = dr;
 
   // Wheel-to-adjust-sides action. Bound to `[engaged] wheel` so it only
   // fires while a polygon insert drag is in flight — outside that window
@@ -95,7 +54,10 @@ export function usePolygonTool<TNode extends { id: string }>(
         run: (_deps, params) => {
           const deltaY = (params as { deltaY?: number } | undefined)?.deltaY ?? 0;
           if (deltaY === 0) return;
-          sidesRef.current = deltaY < 0
+          // Wheel "up" (deltaY > 0 under Mac natural scrolling /
+          // page-scrolls-up gesture) adds a side; wheel "down" removes
+          // one. Matches the user's mental model: scroll up = more.
+          sidesRef.current = deltaY > 0
             ? Math.min(MAX_SIDES, sidesRef.current + 1)
             : Math.max(MIN_SIDES, sidesRef.current - 1);
           bumpSides();
@@ -106,34 +68,10 @@ export function usePolygonTool<TNode extends { id: string }>(
   );
   useAction(adjustSidesAction);
 
-  const overlay = useMemo<RenderLayer<unknown>>(
-    () => ({
-      id: 'polygon-tool-overlay',
-      label: 'Polygon preview',
-      space: 'screen' as const,
-      draw: (_data: unknown, view: View): DrawCommand[] => {
-        const ov = drRef.current.overlay;
-        if (!ov || ov.radius === 0) return [];
-        const t = viewToTransform(view);
-        const sides = sidesRef.current;
-        const b = new PathBuilder();
-        for (let i = 0; i < sides; i++) {
-          const angle = ov.rotation + (i / sides) * Math.PI * 2;
-          const wx = ov.center.x + ov.radius * Math.cos(angle);
-          const wy = ov.center.y + ov.radius * Math.sin(angle);
-          const [sx, sy] = worldToScreen(wx, wy, t);
-          if (i === 0) b.moveTo(sx, sy); else b.lineTo(sx, sy);
-        }
-        b.close();
-        return [{
-          kind: 'path',
-          path: b.build(),
-          stroke: { paint: { color: GHOST_STROKE }, width: GHOST_LINE_WIDTH, dash: GHOST_DASH },
-        }];
-      },
-    }),
-    [],
-  );
+  // `TNode` is retained for source-compat with callers that previously
+  // threaded a node-record type through; the tool no longer mints nodes
+  // (insertAction does), so the parameter has no runtime effect.
+  void ({} as TNode);
 
   return useMemo(
     () =>
@@ -146,35 +84,37 @@ export function usePolygonTool<TNode extends { id: string }>(
           group: 'shape',
           icon: <PolygonIcon />,
         },
-        // Phase 14c.1: declarative binding routes empty-space drags through the
-        // new dispatcher + insertAction. bindingsOverrideDrag suppresses the
-        // legacy drag channel in the dispatcher; the route-table entry below
-        // is retained as dead code until Phase 14e removes it.
         bindings: [
+          // Polygon (a radial shape) drags from CENTER by default — the
+          // Illustrator/Figma convention. Drag-from-corner on a radial
+          // shape causes the polygon's center to track the cursor sweep
+          // midpoint, which looks like the shape "floats" loosely
+          // following the cursor. Rect/ellipse use corner-default
+          // because they have natural corners.
           {
             spec: { kind: 'drag', target: 'empty' },
             actionId: 'insert',
-            // Phase 14c.3: thunked params re-evaluated at commit time so
-            // mid-gesture ArrowUp/Down/wheel side-count changes are
-            // reflected in the inserted polygon's geometry.
+            // Thunked params re-evaluated at commit time (and on every
+            // overlay() call for live preview) so mid-gesture
+            // ArrowUp/Down/wheel side-count changes flow through both
+            // the ghost and the committed geometry.
             opts: {
               params: () => ({
                 kind: 'polygon',
                 sides: sidesRef.current,
-                rotation: 0,
+                originMode: 'center',
               }),
             },
           },
-          // Wheel-during-drag → adjust side count. Phase-gated to `engaged`
-          // so wheel while the tool is idle still falls through to ambient
-          // viewport.pan / viewport.zoom.
+          // Wheel-during-drag → adjust side count. Phase-gated to
+          // `engaged` so wheel while the tool is idle still falls
+          // through to ambient viewport.pan / viewport.zoom.
           {
             spec: { kind: 'wheel', phase: 'engaged' },
             actionId: 'polygon.adjustSides',
           },
         ],
         initial: {
-          overlay: () => overlay,
           keyDown: {
             ArrowUp: () => {
               sidesRef.current = Math.min(MAX_SIDES, sidesRef.current + 1);
@@ -189,6 +129,6 @@ export function usePolygonTool<TNode extends { id: string }>(
           },
         },
       }),
-    [dr.start, dr.move, dr.end, dr.cancel, overlay, bumpSides],
+    [bumpSides],
   );
 }

@@ -85,6 +85,29 @@ interface InsertScratch {
   open: boolean;
 }
 
+/** Compute the insert AABB from drag endpoints.
+ *  - `'corner'` (default): bounds = drag rect (top-left → bottom-right of cursor sweep).
+ *  - `'center'`: bounds = symmetric AABB anchored on the start point.
+ *    Used when the tool's Alt-modifier binding passes
+ *    `originMode: 'center'` (Illustrator/Figma convention). */
+function computeBounds(
+  startX: number, startY: number,
+  currentX: number, currentY: number,
+  originMode: 'corner' | 'center',
+): { x: number; y: number; width: number; height: number } {
+  if (originMode === 'center') {
+    const dx = Math.abs(currentX - startX);
+    const dy = Math.abs(currentY - startY);
+    return { x: startX - dx, y: startY - dy, width: dx * 2, height: dy * 2 };
+  }
+  return {
+    x: Math.min(startX, currentX),
+    y: Math.min(startY, currentY),
+    width: Math.abs(currentX - startX),
+    height: Math.abs(currentY - startY),
+  };
+}
+
 /** Build a typed `InsertExtras` from the static params + gesture context.
  *  Kit-built-in kinds (line / polygon / star / pencil) read kind-specific
  *  fields; unknown kinds pass the raw params through as `{ kind, ... }`. */
@@ -110,8 +133,19 @@ function buildExtras(
       const sides = Number(params?.['sides'] ?? 6);
       const rotation = Number(params?.['rotation'] ?? 0);
       const extras: InsertExtras = { kind: 'polygon', sides, rotation };
-      if (params?.['center'] !== undefined) (extras as { center?: unknown }).center = params['center'];
-      if (params?.['radius'] !== undefined) (extras as { radius?: unknown }).radius = params['radius'];
+      // Drag-from-center: tool's Alt binding passes `originMode:'center'`.
+      // Compute polygon center + radius from the drag vector so the shape
+      // anchors on the click point. Without this, the dep falls back to
+      // inscribing in the AABB (drag-from-corner default).
+      if (params?.['originMode'] === 'center') {
+        const dx = currentX - startX;
+        const dy = currentY - startY;
+        (extras as { center?: unknown }).center = { x: startX, y: startY };
+        (extras as { radius?: unknown }).radius = Math.hypot(dx, dy);
+      } else {
+        if (params?.['center'] !== undefined) (extras as { center?: unknown }).center = params['center'];
+        if (params?.['radius'] !== undefined) (extras as { radius?: unknown }).radius = params['radius'];
+      }
       return extras;
     }
     case 'star': {
@@ -119,8 +153,15 @@ function buildExtras(
       const ir = Number(params?.['innerRadiusRatio'] ?? 0.5);
       const rotation = Number(params?.['rotation'] ?? 0);
       const extras: InsertExtras = { kind: 'star', points: pts, innerRadiusRatio: ir, rotation };
-      if (params?.['center'] !== undefined) (extras as { center?: unknown }).center = params['center'];
-      if (params?.['outerRadius'] !== undefined) (extras as { outerRadius?: unknown }).outerRadius = params['outerRadius'];
+      if (params?.['originMode'] === 'center') {
+        const dx = currentX - startX;
+        const dy = currentY - startY;
+        (extras as { center?: unknown }).center = { x: startX, y: startY };
+        (extras as { outerRadius?: unknown }).outerRadius = Math.hypot(dx, dy);
+      } else {
+        if (params?.['center'] !== undefined) (extras as { center?: unknown }).center = params['center'];
+        if (params?.['outerRadius'] !== undefined) (extras as { outerRadius?: unknown }).outerRadius = params['outerRadius'];
+      }
       return extras;
     }
     case 'pencil':
@@ -200,14 +241,15 @@ export const insertAction: Action & { requires: string[] } = {
           // Consumer-defined kinds aren't renderable by the kit overlay —
           // skip the preview rather than emit something half-faithful.
           if (!KIT_INSERT_KINDS.has(extras.kind)) return null;
-          const x = Math.min(scratch.startX, scratch.currentX);
-          const y = Math.min(scratch.startY, scratch.currentY);
-          const width = Math.abs(scratch.currentX - scratch.startX);
-          const height = Math.abs(scratch.currentY - scratch.startY);
+          const bounds = computeBounds(
+            scratch.startX, scratch.startY,
+            scratch.currentX, scratch.currentY,
+            resolved?.['originMode'] === 'center' ? 'center' : 'corner',
+          );
           return {
             kind: 'insertPreview',
             shape: extras.kind as KitInsertShape,
-            bounds: { x, y, width, height },
+            bounds,
             extras,
           };
         },
@@ -218,22 +260,21 @@ export const insertAction: Action & { requires: string[] } = {
           const { dep: d, opts: o, startX, startY, currentX, currentY } = scratch;
           const points = endCtx.drag?.points ?? scratch.points;
 
-          const x = Math.min(startX, currentX);
-          const y = Math.min(startY, currentY);
-          const width = Math.abs(currentX - startX);
-          const height = Math.abs(currentY - startY);
-
           // Resolve params at commit time so thunked params (polygon
           // `sides` adjusted mid-drag, etc.) see the latest tool state.
           const resolved = resolveParams(o?.params);
+          const bounds = computeBounds(
+            startX, startY, currentX, currentY,
+            resolved?.['originMode'] === 'center' ? 'center' : 'corner',
+          );
           const extras = buildExtras(resolved, startX, startY, currentX, currentY, points);
 
           // Sub-threshold drag — no insert. Exception: pencil with a real
           // sample trail can still produce a meaningful path even when the
           // start ≈ end (e.g. a closed loop).
-          if ((width === 0 || height === 0) && extras.kind !== 'pencil') return;
+          if ((bounds.width === 0 || bounds.height === 0) && extras.kind !== 'pencil') return;
 
-          d.commit({ x, y, width, height }, extras);
+          d.commit(bounds, extras);
         },
       };
     },
