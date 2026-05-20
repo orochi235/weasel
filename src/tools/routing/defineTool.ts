@@ -4,11 +4,34 @@ import type { ToolDef, PhaseDef, ActionFn } from './types';
 import type { Result, BeginSpec } from './result';
 import { resolveRoute } from './lookup';
 import { mods, type ModifierKey } from './modifiers';
+import { RESERVED_ID_NAMES, RESERVED_ID_PREFIXES } from './routeGrammar';
 import type {
   RouteResolvedInfo,
   RoutePhase,
   RouteGesture,
 } from './reflection/route-resolved';
+
+/** Validate that `id` is usable as a tool / channel id in the route
+ *  grammar. Rejects ids that start with a reserved sigil (would shadow
+ *  future grammar extensions) and ids that collide with phase keywords
+ *  (would parse as the bare-phase shorthand). */
+function validateId(id: string, kind: 'tool' | 'action'): void {
+  if (id.length === 0) {
+    throw new Error(`weasel: ${kind} id may not be empty`);
+  }
+  if (RESERVED_ID_PREFIXES.has(id[0]!)) {
+    throw new Error(
+      `weasel: ${kind} id "${id}" starts with reserved sigil "${id[0]}" ` +
+      `(reserved set: ${[...RESERVED_ID_PREFIXES].join(' ')})`,
+    );
+  }
+  if (RESERVED_ID_NAMES.has(id)) {
+    throw new Error(
+      `weasel: ${kind} id "${id}" collides with a reserved phase keyword ` +
+      `(reserved: ${[...RESERVED_ID_NAMES].join(', ')})`,
+    );
+  }
+}
 
 /** Translate a declarative `ToolDef<TScratch>` into the existing imperative
  *  `Tool<TScratch>` shape. The dispatcher consumes the resulting Tool as
@@ -16,6 +39,7 @@ import type {
 export function defineTool<TScratch = void>(
   def: ToolDef<TScratch>,
 ): Tool<TScratch> {
+  validateId(def.id, 'tool');
   // Stores the active BeginSpec between gesture events. The factory
   // closure is per-tool-instance, and a tool can have at most one active
   // gesture at a time, so a single mutable slot is sufficient. We can't
