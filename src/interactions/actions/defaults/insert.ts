@@ -91,27 +91,16 @@ interface InsertScratch {
   open: boolean;
 }
 
-/** Shape kinds whose geometry has no meaningful "corner" anchor — the
- *  polygon's AABB top-left is just an arbitrary point on a radial
- *  shape, and dragging from it makes the polygon visually float as its
- *  center tracks the AABB midpoint. These always use center mode
- *  regardless of binding nominal or live Alt state. */
-const RADIAL_KINDS = new Set(['polygon', 'star']);
-
-/** Resolve the effective origin mode from the binding's nominal opt,
- *  the shape kind, and live Alt state.
- *
- *  - Radial shapes (polygon/star): always `'center'`. Alt is ignored.
- *  - Other shapes: Alt inverts the binding's nominal mode
- *    (`corner` ⇄ `center`). Rect/ellipse default to corner; Alt flips to
- *    center. Illustrator/Figma convention.
+/** Resolve the effective origin mode from the binding's nominal opt
+ *  and live Alt state. Alt inverts: `corner` ⇄ `center`. Applies to
+ *  every shape kind — radial shapes (polygon/star) included; the
+ *  overlay paints an `anchorPoint` dot at the click so corner mode
+ *  reads as anchored even though no polygon vertex sits there.
  */
 function effectiveOriginMode(
   paramsOrigin: unknown,
-  kind: string,
   altHeld: boolean,
 ): 'corner' | 'center' {
-  if (RADIAL_KINDS.has(kind)) return 'center';
   const nominal: 'corner' | 'center' = paramsOrigin === 'center' ? 'center' : 'corner';
   if (!altHeld) return nominal;
   return nominal === 'center' ? 'corner' : 'center';
@@ -280,8 +269,7 @@ export const insertAction: Action & { requires: string[] } = {
           // Consumer-defined kinds aren't renderable by the kit overlay —
           // skip the preview rather than emit something half-faithful.
           if (!KIT_INSERT_KINDS.has(extras.kind)) return null;
-          const kind = String(resolved?.['kind'] ?? 'rect');
-          const mode = effectiveOriginMode(resolved?.['originMode'], kind, scratch.altHeld);
+          const mode = effectiveOriginMode(resolved?.['originMode'], scratch.altHeld);
           const bounds = computeBounds(
             scratch.startX, scratch.startY,
             scratch.currentX, scratch.currentY,
@@ -301,6 +289,11 @@ export const insertAction: Action & { requires: string[] } = {
             shape: effectiveExtras.kind as KitInsertShape,
             bounds,
             extras: effectiveExtras,
+            // Anchor dot at the click point — chrome that sells "this
+            // is where the drag started." Useful for radial shapes
+            // (no vertex at click) and for center mode (dot marks the
+            // growth axis).
+            anchorPoint: { x: scratch.startX, y: scratch.startY },
           };
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
@@ -313,8 +306,7 @@ export const insertAction: Action & { requires: string[] } = {
           // Resolve params at commit time so thunked params (polygon
           // `sides` adjusted mid-drag, etc.) see the latest tool state.
           const resolved = resolveParams(o?.params);
-          const kind = String(resolved?.['kind'] ?? 'rect');
-          const mode = effectiveOriginMode(resolved?.['originMode'], kind, scratch.altHeld);
+          const mode = effectiveOriginMode(resolved?.['originMode'], scratch.altHeld);
           const bounds = computeBounds(startX, startY, currentX, currentY, mode);
           const extras = buildExtras(
             { ...(resolved ?? {}), originMode: mode },

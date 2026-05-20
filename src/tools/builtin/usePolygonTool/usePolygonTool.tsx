@@ -85,12 +85,11 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
           icon: <PolygonIcon />,
         },
         bindings: [
-          // Polygon (a radial shape) drags from CENTER by default — the
-          // Illustrator/Figma convention. Drag-from-corner on a radial
-          // shape causes the polygon's center to track the cursor sweep
-          // midpoint, which looks like the shape "floats" loosely
-          // following the cursor. Rect/ellipse use corner-default
-          // because they have natural corners.
+          // Default = drag from corner, consistent with rect/ellipse.
+          // The dispatcher overlay paints an anchorPoint dot at the
+          // click so the radial shape reads as anchored even though no
+          // polygon vertex sits at the AABB corner. Alt held flips to
+          // center mode (insertAction reads live modifier state).
           {
             spec: { kind: 'drag', target: 'empty' },
             actionId: 'insert',
@@ -102,7 +101,6 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
               params: () => ({
                 kind: 'polygon',
                 sides: sidesRef.current,
-                originMode: 'center',
               }),
             },
           },

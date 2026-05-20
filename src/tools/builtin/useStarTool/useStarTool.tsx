@@ -79,8 +79,8 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
           icon: <StarIcon />,
         },
         bindings: [
-          // Star drags from CENTER by default (Illustrator/Figma
-          // convention for radial shapes).
+          // Default = drag from corner; anchor dot in the overlay sells
+          // the click point. Alt flips to center mode (live toggle).
           {
             spec: { kind: 'drag', target: 'empty' },
             actionId: 'insert',
@@ -89,7 +89,6 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
                 kind: 'star',
                 points: pointsRef.current,
                 innerRadiusRatio: innerRatioRef.current,
-                originMode: 'center',
               }),
             },
           },

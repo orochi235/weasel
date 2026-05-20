@@ -217,6 +217,24 @@ export function useDispatcherOverlayLayer(args: {
               stroke: { paint: { color: cfg.stroke }, width: cfg.lineWidth, dash: cfg.dash },
             };
             out.push(cmd);
+            // Anchor dot at the drag's click point. Sells the anchoring
+            // visually for radial shapes (polygon/star — no vertex sits
+            // at the AABB corner) and for center mode (dot marks the
+            // growth axis). 4 CSS-px radius, same stroke color as the
+            // ghost so it reads as part of the chrome.
+            if (ov.anchorPoint) {
+              const anchorScreen = projectPoint(ov.anchorPoint.x, ov.anchorPoint.y);
+              out.push({
+                kind: 'path',
+                path: ellipsePath({
+                  x: anchorScreen.x - 4,
+                  y: anchorScreen.y - 4,
+                  width: 8,
+                  height: 8,
+                }),
+                fill: { color: cfg.stroke },
+              });
+            }
             continue;
           }
 
