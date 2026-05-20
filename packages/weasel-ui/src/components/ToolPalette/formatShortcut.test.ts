@@ -15,7 +15,7 @@ describe('formatShortcut', () => {
   });
 
   it('formats shift + key', () => {
-    expect(formatShortcut({ key: 'h', shift: true })).toBe('⇪H');
+    expect(formatShortcut({ key: 'h', shift: true })).toBe('⇧H');
   });
 
   it('formats alt + key', () => {
@@ -23,11 +23,11 @@ describe('formatShortcut', () => {
   });
 
   it('formats mod + shift + key in canonical order', () => {
-    expect(formatShortcut({ key: 'z', mod: true, shift: true })).toBe('⌘⇪Z');
+    expect(formatShortcut({ key: 'z', mod: true, shift: true })).toBe('⌘⇧Z');
   });
 
   it('formats mod + shift + alt + key', () => {
-    expect(formatShortcut({ key: 'x', mod: true, shift: true, alt: true })).toBe('⌘⇪⌥X');
+    expect(formatShortcut({ key: 'x', mod: true, shift: true, alt: true })).toBe('⌘⇧⌥X');
   });
 
   it('uppercases the key character', () => {
