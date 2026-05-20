@@ -28,8 +28,11 @@ export type { ModifierKey } from './grammar/modifiers';
 export {
   parseRoute,
   formatRoute,
+  formatPhaseAtom,
   RESERVED_SIGILS,
   ACTIVE_SIGILS,
+  RESERVED_ID_PREFIXES,
+  RESERVED_ID_NAMES,
   VALID_MOD_NAMES,
   MOD_NAME_SET,
 } from './grammar/routeGrammar';
@@ -38,6 +41,8 @@ export type {
   ParsedModifiers,
   ModName,
   ModRequirement,
+  PhaseAtom,
+  ChannelRef,
 } from './grammar/routeGrammar';
 
 // Key-route grammar
@@ -53,13 +58,14 @@ export { modifierKeyToParsed, canonicalModifiers } from './grammar/modifierKeyTo
 export type { RoutePhase } from './ui/phase';
 export type { InputEvent } from './ui/inputEvent';
 
-// GestureSpec union + sub-types + ModSpec + TargetSpec
+// GestureSpec union + sub-types + ModSpec + TargetSpec + PhaseSpec
 export type {
   GestureSpec,
   KeySpec, KeyHeldSpec, WheelSpec, ClickSpec, DragSpec,
   MultiTouchSpec, ContextMenuSpec, MultiTouchTapSpec,
-  ModSpec, TargetSpec,
+  ModSpec, TargetSpec, PhaseSpec,
 } from './ui/spec';
 
 // Pure matcher functions
-export { matchSpec, matchModifiers, matchKey, matchTarget } from './ui/match';
+export { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase } from './ui/match';
+export type { PhaseContext } from './ui/match';

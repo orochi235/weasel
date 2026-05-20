@@ -13,7 +13,7 @@ describe('matchBest (precedence)', () => {
 
   it('returns null when no bindings match', () => {
     const e: InputEvent = { kind: 'key', key: 'a', ...noMods };
-    expect(matchBest(e, [{ binding: binding({ kind: 'key', key: 'b' }), scope: 'ambient' }], false)).toBeNull();
+    expect(matchBest(e, [{ binding: binding({ kind: 'key', key: 'b' }), scope: 'ambient', ownerToolId: null }], false)).toBeNull();
   });
 
   it('returns null for empty bindings list', () => {
@@ -24,7 +24,7 @@ describe('matchBest (precedence)', () => {
   it('returns a single matching binding', () => {
     const e: InputEvent = { kind: 'key', key: 'a', ...noMods };
     const b = binding({ kind: 'key', key: 'a' }, 'select-all');
-    const result = matchBest(e, [{ binding: b, scope: 'ambient' }], false);
+    const result = matchBest(e, [{ binding: b, scope: 'ambient', ownerToolId: null }], false);
     expect(result?.binding.actionId).toBe('select-all');
     expect(result?.scope).toBe('ambient');
   });
@@ -32,9 +32,9 @@ describe('matchBest (precedence)', () => {
   it('precedence: hotkey beats active beats ambient', () => {
     const e: InputEvent = { kind: 'key', key: 'a', ...noMods };
     const bs: ScopedBinding[] = [
-      { binding: binding({ kind: 'key', key: 'a' }, 'ambient-a'), scope: 'ambient' },
-      { binding: binding({ kind: 'key', key: 'a' }, 'active-a'), scope: 'active' },
-      { binding: binding({ kind: 'key', key: 'a' }, 'hotkey-a'), scope: 'hotkey' },
+      { binding: binding({ kind: 'key', key: 'a' }, 'ambient-a'), scope: 'ambient', ownerToolId: null },
+      { binding: binding({ kind: 'key', key: 'a' }, 'active-a'), scope: 'active', ownerToolId: 'test-tool' },
+      { binding: binding({ kind: 'key', key: 'a' }, 'hotkey-a'), scope: 'hotkey', ownerToolId: 'test-tool' },
     ];
     const result = matchBest(e, bs, false);
     expect(result?.binding.actionId).toBe('hotkey-a');
@@ -43,8 +43,8 @@ describe('matchBest (precedence)', () => {
   it('within scope, first-declared wins', () => {
     const e: InputEvent = { kind: 'key', key: 'a', ...noMods };
     const bs: ScopedBinding[] = [
-      { binding: binding({ kind: 'key', key: 'a' }, 'first'), scope: 'ambient' },
-      { binding: binding({ kind: 'key', key: 'a' }, 'second'), scope: 'ambient' },
+      { binding: binding({ kind: 'key', key: 'a' }, 'first'), scope: 'ambient', ownerToolId: null },
+      { binding: binding({ kind: 'key', key: 'a' }, 'second'), scope: 'ambient', ownerToolId: null },
     ];
     const result = matchBest(e, bs, false);
     expect(result?.binding.actionId).toBe('first');
@@ -53,8 +53,8 @@ describe('matchBest (precedence)', () => {
   it('active scope wins over ambient even when both match', () => {
     const e: InputEvent = { kind: 'key', key: 'a', ...noMods };
     const bs: ScopedBinding[] = [
-      { binding: binding({ kind: 'key', key: 'a' }, 'ambient-a'), scope: 'ambient' },
-      { binding: binding({ kind: 'key', key: 'a' }, 'active-a'), scope: 'active' },
+      { binding: binding({ kind: 'key', key: 'a' }, 'ambient-a'), scope: 'ambient', ownerToolId: null },
+      { binding: binding({ kind: 'key', key: 'a' }, 'active-a'), scope: 'active', ownerToolId: 'test-tool' },
     ];
     expect(matchBest(e, bs, false)?.binding.actionId).toBe('active-a');
   });
@@ -62,8 +62,8 @@ describe('matchBest (precedence)', () => {
   it('hotkey scope wins over active', () => {
     const e: InputEvent = { kind: 'key', key: 'a', ...noMods };
     const bs: ScopedBinding[] = [
-      { binding: binding({ kind: 'key', key: 'a' }, 'active-a'), scope: 'active' },
-      { binding: binding({ kind: 'key', key: 'a' }, 'hotkey-a'), scope: 'hotkey' },
+      { binding: binding({ kind: 'key', key: 'a' }, 'active-a'), scope: 'active', ownerToolId: 'test-tool' },
+      { binding: binding({ kind: 'key', key: 'a' }, 'hotkey-a'), scope: 'hotkey', ownerToolId: 'test-tool' },
     ];
     expect(matchBest(e, bs, false)?.binding.actionId).toBe('hotkey-a');
   });
@@ -71,7 +71,7 @@ describe('matchBest (precedence)', () => {
   it('result includes correct scope', () => {
     const e: InputEvent = { kind: 'key', key: 'z', ...noMods };
     const bs: ScopedBinding[] = [
-      { binding: binding({ kind: 'key', key: 'z' }, 'z-active'), scope: 'active' },
+      { binding: binding({ kind: 'key', key: 'z' }, 'z-active'), scope: 'active', ownerToolId: 'test-tool' },
     ];
     const result = matchBest(e, bs, false);
     expect(result?.scope).toBe('active');
@@ -80,7 +80,7 @@ describe('matchBest (precedence)', () => {
   it('wheel gesture routed correctly through matchBest', () => {
     const e: InputEvent = { kind: 'wheel', ...noMods, ...noWheelData, ctrlKey: true };
     const bs: ScopedBinding[] = [
-      { binding: binding({ kind: 'wheel', mods: { ctrl: true } }, 'zoom'), scope: 'ambient' },
+      { binding: binding({ kind: 'wheel', mods: { ctrl: true } }, 'zoom'), scope: 'ambient', ownerToolId: null },
     ];
     expect(matchBest(e, bs, false)?.binding.actionId).toBe('zoom');
   });

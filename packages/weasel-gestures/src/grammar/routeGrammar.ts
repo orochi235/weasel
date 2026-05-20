@@ -3,22 +3,60 @@
  *
  *   route       = phaseSlot WS gesture WS argSlot? WS targetSlot? WS modSlot?
  *   phaseSlot   = '[' phaseList ']'
- *   phaseList   = '*' | phase (WS ',' WS phase)*
- *   argSlot     = '(' argValue ')'         (whitespace inside parens is significant)
- *   targetSlot  = '=>' WS targetValue      (omitted slot defaults to '*' for hasTarget)
+ *   phaseList   = phaseAtom (WS ',' WS phaseAtom)*
+ *   phaseAtom   = (channel ':')? phaseValue            -- bare phaseValue ≡ '&:phaseValue'
+ *   channel     = '&' | '*' | toolId                   -- '&' = the binding's own tool
+ *   phaseValue  = 'initial' | 'engaged' | '*'
+ *   argSlot     = '(' argValue ')'                     -- whitespace inside parens is significant
+ *   targetSlot  = '=>' WS targetValue                  -- omitted slot defaults to '*' for hasTarget
  *   modSlot     = modAtom (WS modAtom)*
  *   modAtom     = sigil modName
- *   sigil       = '+' | '?'                (! @ # $ % ^ & reserved)
+ *   sigil       = '+' | '?'                            -- ! @ # $ % ^ & * reserved as id-prefix
  *   modName     = 'mod' | 'shift' | 'alt' | 'ctrl' | 'meta'
  *
+ * Shorthand: a bare phaseValue (no `:`) implies channel `&` ("this tool's
+ * own phase"). `[engaged]` ≡ `[&:engaged]`; `[*]` ≡ `[&:*]`. The truly-loose
+ * form (any channel, any phase) is `[*:*]`.
+ *
  * Examples:
- *   [initial] click => empty +shift
- *   [initial] wheel(up) +mod
- *   [initial,engaged] contextMenu => empty
- *   [*] click => empty
+ *   [initial] click => empty +shift            -- self idle
+ *   [engaged] wheel                            -- self mid-gesture
+ *   [rect:engaged] wheel                        -- when rect tool is mid-gesture
+ *   [*:engaged] keyDown(Delete)                -- when any tool is mid-gesture
+ *   [initial,engaged] contextMenu => empty     -- either self phase
+ *   [*] click => empty                         -- self, any phase
  */
 import { getGestureDescriptor, isKnownGestureName, type GestureName } from './gestures';
 import type { RoutePhase } from '../ui/phase';
+
+// ─── Channel + phase atoms ────────────────────────────────────────────────
+
+/** Channel reference for a phase atom. `'&'` = the binding's own tool;
+ *  `'*'` = any tool; otherwise a registered tool id. */
+export type ChannelRef = '&' | '*' | string;
+
+/** One element of a phase list: a (channel, phase) pair. The default
+ *  channel (omitted in the shorthand) is `'&'`. `phase: '*'` means
+ *  "any phase of the given channel". */
+export interface PhaseAtom {
+  channel: ChannelRef;
+  phase: RoutePhase | '*';
+}
+
+/** Reserved id-prefix sigils. Tool ids, action ids, channel names, target
+ *  kinds, and arg values may not start with any of these — keeps the
+ *  parser unambiguous and reserves single-char prefixes for future grammar
+ *  extensions. */
+export const RESERVED_ID_PREFIXES: ReadonlySet<string> = new Set([
+  '!', '@', '#', '$', '%', '^', '&', '*',
+]);
+
+/** Reserved bareword channel/id names. These are keywords in the phase
+ *  slot — a tool may not register with one of these as its id (collides
+ *  with the bare-phase shorthand). */
+export const RESERVED_ID_NAMES: ReadonlySet<string> = new Set([
+  'initial', 'engaged',
+]);
 
 // ─── v3 grammar types ──────────────────────────────────────────────────────
 
@@ -47,9 +85,10 @@ export { MOD_NAME_SET };
 
 /** v3 parsed-route shape. */
 export interface ParsedRoute {
-  /** One or more phases. `['*']` is the wildcard sentinel for "any
-   *  phase". Empty array is invalid. */
-  phases: readonly RoutePhase[] | readonly ['*'];
+  /** One or more phase atoms (channel + phase). Empty array is invalid.
+   *  Bare-phase shorthand in the source string desugars to channel `'&'`,
+   *  so `[engaged]` parses to `[{ channel: '&', phase: 'engaged' }]`. */
+  phases: readonly PhaseAtom[];
   gesture: GestureName;
   /** Resolved arg. For arg-bearing gestures, the descriptor's default
    *  fills in when the slot is omitted (e.g. `wheel` → `arg: '*'`).
@@ -142,12 +181,58 @@ export function parseRoute(input: string): ParsedRoute {
   return { phases, gesture: gestureName, arg, target, modifiers };
 }
 
-function parsePhaseList(raw: string, input: string): ParsedRoute['phases'] {
+function parsePhaseList(raw: string, input: string): readonly PhaseAtom[] {
   if (raw === '') throw new Error(`invalid route (empty phase list): ${input}`);
-  if (raw === '*') return ['*'];
-  const phases = raw.split(',').map((p) => p.trim()).filter((p) => p.length > 0);
-  if (phases.length === 0) throw new Error(`invalid route (empty phase list): ${input}`);
-  return phases as readonly RoutePhase[];
+  const tokens = raw.split(',').map((p) => p.trim()).filter((p) => p.length > 0);
+  if (tokens.length === 0) throw new Error(`invalid route (empty phase list): ${input}`);
+  return tokens.map((t) => parsePhaseAtom(t, input));
+}
+
+const VALID_PHASES: ReadonlySet<string> = new Set(['initial', 'engaged', '*']);
+
+function parsePhaseAtom(raw: string, input: string): PhaseAtom {
+  // Split on the channel/phase separator. `parts.length === 1` is the
+  // bare-phase shorthand (channel defaults to '&').
+  const parts = raw.split(':');
+  if (parts.length > 2) {
+    throw new Error(`invalid route (phase atom "${raw}" has multiple ":"): ${input}`);
+  }
+  if (parts.length === 1) {
+    const phase = parts[0]!;
+    if (!VALID_PHASES.has(phase)) {
+      throw new Error(`invalid route (unknown phase "${phase}" in "${raw}"): ${input}`);
+    }
+    return { channel: '&', phase: phase as PhaseAtom['phase'] };
+  }
+  // parts.length === 2 — explicit channel:phase form.
+  const channel = parts[0]!;
+  const phase = parts[1]!;
+  if (channel === '') {
+    throw new Error(`invalid route (empty channel before ":" in "${raw}"): ${input}`);
+  }
+  if (!VALID_PHASES.has(phase)) {
+    throw new Error(`invalid route (unknown phase "${phase}" in "${raw}"): ${input}`);
+  }
+  if (channel !== '&' && channel !== '*') {
+    // Named tool channel. Reject the reserved-id-name keywords (they'd
+    // shadow the bare-phase shorthand on parse) and the sigil prefixes
+    // (reserved as future grammar surface).
+    if (RESERVED_ID_NAMES.has(channel)) {
+      throw new Error(`invalid route (channel "${channel}" is a reserved phase keyword): ${input}`);
+    }
+    if (RESERVED_ID_PREFIXES.has(channel[0]!)) {
+      throw new Error(`invalid route (channel "${channel}" starts with reserved sigil "${channel[0]}"): ${input}`);
+    }
+  }
+  return { channel, phase: phase as PhaseAtom['phase'] };
+}
+
+/** Render a single phase atom in canonical shorthand form. `&` channel
+ *  is elided ("`engaged`", "`*`"); other channels use the explicit
+ *  `channel:phase` form ("`rect:engaged`", "`*:*`"). */
+export function formatPhaseAtom(a: PhaseAtom): string {
+  if (a.channel === '&') return a.phase;
+  return `${a.channel}:${a.phase}`;
 }
 
 const MOD_ORDER: readonly ModName[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
@@ -155,11 +240,9 @@ const MOD_ORDER: readonly ModName[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
 export function formatRoute(r: ParsedRoute): string {
   const desc = getGestureDescriptor(r.gesture);
 
-  // Phase slot.
-  const phaseStr =
-    r.phases.length === 1 && r.phases[0] === '*'
-      ? '[*]'
-      : `[${r.phases.join(',')}]`;
+  // Phase slot — comma-separated atoms in source order; canonical
+  // shorthand per atom (`&:engaged` → `engaged`, etc.).
+  const phaseStr = `[${r.phases.map(formatPhaseAtom).join(',')}]`;
 
   let out = `${phaseStr} ${r.gesture}`;
 

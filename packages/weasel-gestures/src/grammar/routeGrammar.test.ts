@@ -1,49 +1,86 @@
 import { describe, it, expect } from 'vitest';
-import { parseRoute, formatRoute, type ParsedRoute } from './routeGrammar';
+import {
+  parseRoute, formatRoute, formatPhaseAtom,
+  type ParsedRoute, type PhaseAtom,
+} from './routeGrammar';
+
+/** Shorthand for bare-channel phase atoms in test fixtures. */
+const self = (p: PhaseAtom['phase']): PhaseAtom => ({ channel: '&', phase: p });
 
 describe('parseRoute v3', () => {
   // ---- Basic shape ----
 
   it('parses a click with empty target and one modifier', () => {
     expect(parseRoute('[initial] click => empty +shift')).toEqual({
-      phases: ['initial'], gesture: 'click', arg: undefined,
+      phases: [self('initial')], gesture: 'click', arg: undefined,
       target: 'empty', modifiers: { shift: 'required' },
     } satisfies ParsedRoute);
   });
 
   it('parses an optional modifier', () => {
     expect(parseRoute('[initial] keyDown(ArrowDown) ?shift')).toEqual({
-      phases: ['initial'], gesture: 'keyDown', arg: 'ArrowDown',
+      phases: [self('initial')], gesture: 'keyDown', arg: 'ArrowDown',
       target: undefined, modifiers: { shift: 'optional' },
     });
   });
 
   it('parses multiple modifier atoms', () => {
     expect(parseRoute('[initial] click => empty +mod ?shift')).toEqual({
-      phases: ['initial'], gesture: 'click', arg: undefined,
+      phases: [self('initial')], gesture: 'click', arg: undefined,
       target: 'empty', modifiers: { mod: 'required', shift: 'optional' },
     });
   });
 
   it('parses a phase list', () => {
     expect(parseRoute('[initial,engaged] contextMenu => empty')).toEqual({
-      phases: ['initial', 'engaged'], gesture: 'contextMenu',
+      phases: [self('initial'), self('engaged')], gesture: 'contextMenu',
       arg: undefined, target: 'empty', modifiers: {},
     });
   });
 
-  it('parses [*] as the wildcard phase', () => {
+  it('parses [*] as bare-channel wildcard phase', () => {
     expect(parseRoute('[*] click => empty')).toEqual({
-      phases: ['*'], gesture: 'click', arg: undefined,
+      phases: [self('*')], gesture: 'click', arg: undefined,
       target: 'empty', modifiers: {},
     });
+  });
+
+  // ---- Channel forms ----
+
+  it('parses explicit & channel', () => {
+    expect(parseRoute('[&:engaged] wheel').phases).toEqual([self('engaged')]);
+  });
+
+  it('parses named tool channel', () => {
+    expect(parseRoute('[rect:engaged] wheel').phases).toEqual([
+      { channel: 'rect', phase: 'engaged' },
+    ]);
+  });
+
+  it('parses wildcard channel', () => {
+    expect(parseRoute('[*:engaged] keyDown(Delete)').phases).toEqual([
+      { channel: '*', phase: 'engaged' },
+    ]);
+  });
+
+  it('parses fully loose channel:phase wildcard', () => {
+    expect(parseRoute('[*:*] click').phases).toEqual([
+      { channel: '*', phase: '*' },
+    ]);
+  });
+
+  it('parses mixed phase list (bare + named channel)', () => {
+    expect(parseRoute('[engaged,rect:engaged] wheel').phases).toEqual([
+      self('engaged'),
+      { channel: 'rect', phase: 'engaged' },
+    ]);
   });
 
   // ---- Wildcards & elision ----
 
   it('omitted targetSlot resolves to "*" for hasTarget gestures', () => {
     expect(parseRoute('[initial] click')).toEqual({
-      phases: ['initial'], gesture: 'click', arg: undefined,
+      phases: [self('initial')], gesture: 'click', arg: undefined,
       target: '*', modifiers: {},
     });
   });
@@ -54,7 +91,7 @@ describe('parseRoute v3', () => {
 
   it('omitted argSlot resolves to descriptor default for wheel', () => {
     expect(parseRoute('[initial] wheel')).toEqual({
-      phases: ['initial'], gesture: 'wheel', arg: '*',
+      phases: [self('initial')], gesture: 'wheel', arg: '*',
       target: undefined, modifiers: {},
     });
   });
@@ -65,7 +102,7 @@ describe('parseRoute v3', () => {
 
   it('targetless gesture (wheel) accepts modifiers without a target', () => {
     expect(parseRoute('[initial] wheel(up) +mod')).toEqual({
-      phases: ['initial'], gesture: 'wheel', arg: 'up',
+      phases: [self('initial')], gesture: 'wheel', arg: 'up',
       target: undefined, modifiers: { mod: 'required' },
     });
   });
@@ -86,7 +123,7 @@ describe('parseRoute v3', () => {
 
   it('preserves whitespace inside argSlot', () => {
     expect(parseRoute('[initial] keyDown( )')).toEqual({
-      phases: ['initial'], gesture: 'keyDown', arg: ' ',
+      phases: [self('initial')], gesture: 'keyDown', arg: ' ',
       target: undefined, modifiers: {},
     });
   });
@@ -136,71 +173,130 @@ describe('parseRoute v3', () => {
   it('rejects unbalanced argSlot parens', () => {
     expect(() => parseRoute('[initial] keyDown(ArrowDown')).toThrow(/unbalanced|paren/i);
   });
+
+  // ---- Channel-form errors ----
+
+  it('rejects unknown phase value', () => {
+    expect(() => parseRoute('[bogus] click')).toThrow(/unknown phase/i);
+    expect(() => parseRoute('[rect:bogus] wheel')).toThrow(/unknown phase/i);
+  });
+
+  it('rejects empty channel before ":"', () => {
+    expect(() => parseRoute('[:engaged] wheel')).toThrow(/empty channel/i);
+  });
+
+  it('rejects more than one ":" in a phase atom', () => {
+    expect(() => parseRoute('[a:b:c] wheel')).toThrow(/multiple ":"/);
+  });
+
+  it('rejects channel named with a reserved phase keyword', () => {
+    expect(() => parseRoute('[initial:engaged] wheel')).toThrow(/reserved phase keyword/i);
+    expect(() => parseRoute('[engaged:initial] wheel')).toThrow(/reserved phase keyword/i);
+  });
+
+  it('rejects channel id starting with reserved sigil', () => {
+    expect(() => parseRoute('[!foo:engaged] wheel')).toThrow(/reserved sigil/i);
+    expect(() => parseRoute('[@bar:*] wheel')).toThrow(/reserved sigil/i);
+  });
 });
 
 describe('formatRoute v3 (canonical form)', () => {
   it('emits one space after "]"', () => {
     expect(formatRoute({
-      phases: ['initial'], gesture: 'click', arg: undefined,
+      phases: [self('initial')], gesture: 'click', arg: undefined,
       target: 'empty', modifiers: { shift: 'required' },
     })).toBe('[initial] click => empty +shift');
   });
 
   it('emits two spaces around "=>"', () => {
     expect(formatRoute({
-      phases: ['initial'], gesture: 'click', arg: undefined,
+      phases: [self('initial')], gesture: 'click', arg: undefined,
       target: 'selected-body', modifiers: {},
     })).toBe('[initial] click => selected-body');
   });
 
   it('emits space before each mod atom', () => {
     expect(formatRoute({
-      phases: ['initial'], gesture: 'click', arg: undefined,
+      phases: [self('initial')], gesture: 'click', arg: undefined,
       target: 'empty', modifiers: { mod: 'required', shift: 'optional' },
     })).toBe('[initial] click => empty +mod ?shift');
   });
 
   it('elides "=> *" for hasTarget gestures', () => {
     expect(formatRoute({
-      phases: ['initial'], gesture: 'click', arg: undefined,
+      phases: [self('initial')], gesture: 'click', arg: undefined,
       target: '*', modifiers: {},
     })).toBe('[initial] click');
   });
 
   it('elides default arg for wheel', () => {
     expect(formatRoute({
-      phases: ['initial'], gesture: 'wheel', arg: '*',
+      phases: [self('initial')], gesture: 'wheel', arg: '*',
       target: undefined, modifiers: {},
     })).toBe('[initial] wheel');
   });
 
   it('keeps explicit non-default arg', () => {
     expect(formatRoute({
-      phases: ['initial'], gesture: 'wheel', arg: 'up',
+      phases: [self('initial')], gesture: 'wheel', arg: 'up',
       target: undefined, modifiers: {},
     })).toBe('[initial] wheel(up)');
   });
 
   it('emits no spaces in phase list commas', () => {
     expect(formatRoute({
-      phases: ['initial', 'engaged'], gesture: 'contextMenu', arg: undefined,
+      phases: [self('initial'), self('engaged')], gesture: 'contextMenu', arg: undefined,
       target: '*', modifiers: {},
     })).toBe('[initial,engaged] contextMenu');
   });
 
-  it('emits [*] for wildcard phase', () => {
+  it('emits [*] for bare-channel wildcard phase', () => {
     expect(formatRoute({
-      phases: ['*'], gesture: 'click', arg: undefined,
+      phases: [self('*')], gesture: 'click', arg: undefined,
       target: '*', modifiers: {},
     })).toBe('[*] click');
   });
 
+  it('emits named channels in explicit channel:phase form', () => {
+    expect(formatRoute({
+      phases: [{ channel: 'rect', phase: 'engaged' }], gesture: 'wheel',
+      arg: '*', target: undefined, modifiers: {},
+    })).toBe('[rect:engaged] wheel');
+  });
+
+  it('emits wildcard channel in explicit form', () => {
+    expect(formatRoute({
+      phases: [{ channel: '*', phase: 'engaged' }], gesture: 'keyDown',
+      arg: 'Delete', target: undefined, modifiers: {},
+    })).toBe('[*:engaged] keyDown(Delete)');
+  });
+
+  it('emits fully-loose [*:*]', () => {
+    expect(formatRoute({
+      phases: [{ channel: '*', phase: '*' }], gesture: 'click',
+      arg: undefined, target: '*', modifiers: {},
+    })).toBe('[*:*] click');
+  });
+
   it('canonical mod-atom order: mod, shift, alt, ctrl, meta', () => {
     expect(formatRoute({
-      phases: ['initial'], gesture: 'click', arg: undefined,
+      phases: [self('initial')], gesture: 'click', arg: undefined,
       target: 'empty',
       modifiers: { meta: 'required', alt: 'optional', shift: 'required' },
     })).toBe('[initial] click => empty +shift ?alt +meta');
+  });
+});
+
+describe('formatPhaseAtom', () => {
+  it('elides & channel', () => {
+    expect(formatPhaseAtom(self('engaged'))).toBe('engaged');
+    expect(formatPhaseAtom(self('initial'))).toBe('initial');
+    expect(formatPhaseAtom(self('*'))).toBe('*');
+  });
+  it('keeps named channels explicit', () => {
+    expect(formatPhaseAtom({ channel: 'rect', phase: 'engaged' })).toBe('rect:engaged');
+    expect(formatPhaseAtom({ channel: '*', phase: 'engaged' })).toBe('*:engaged');
+    expect(formatPhaseAtom({ channel: '*', phase: '*' })).toBe('*:*');
   });
 });
 
@@ -217,9 +313,20 @@ describe('parseRoute / formatRoute round-trip', () => {
       '[initial,engaged] contextMenu',
       '[*] click',
       '[initial] click => empty +mod ?shift',
+      // Channel-form examples (new in this revision):
+      '[engaged] wheel',
+      '[rect:engaged] wheel',
+      '[*:engaged] keyDown(Delete)',
+      '[*:*] click',
+      '[engaged,rect:engaged] wheel',
     ];
     for (const r of examples) {
       expect(formatRoute(parseRoute(r))).toBe(r);
     }
+  });
+
+  it('`[&:engaged]` round-trips back to shorthand `[engaged]`', () => {
+    // Source uses explicit `&:`; canonical form elides it.
+    expect(formatRoute(parseRoute('[&:engaged] wheel'))).toBe('[engaged] wheel');
   });
 });

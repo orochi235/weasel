@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { defineTool, claim, none } from '../../routing';
+import { defineTool, claim } from '../../routing';
 import { useDragRadial } from 'interactions/gestures/dragRadial';
 import { createInsertOp } from 'core/ops/create';
 import { PolygonIcon } from '../../../icons';
@@ -9,6 +9,7 @@ import { worldToScreen } from 'core/viewport/viewTransform';
 import type { RenderLayer } from 'core/layers/render';
 import type { DrawCommand } from '../../../renderer';
 import type { Tool, ToolCtx } from '../../types';
+import { useAction, type Action } from 'interactions/actions/registry';
 
 const GHOST_STROKE = '#7fb069';
 const GHOST_LINE_WIDTH = 1;
@@ -81,6 +82,30 @@ export function usePolygonTool<TNode extends { id: string }>(
   const drRef = useRef(dr);
   drRef.current = dr;
 
+  // Wheel-to-adjust-sides action. Bound to `[engaged] wheel` so it only
+  // fires while a polygon insert drag is in flight — outside that window
+  // wheel falls through to ambient viewport.pan/zoom. The action's run
+  // body reads the dispatcher-injected wheel delta from params.
+  const adjustSidesAction = useMemo<Action>(
+    () => ({
+      id: 'polygon.adjustSides',
+      label: 'Polygon — adjust sides',
+      invoker: {
+        timing: 'immediate' as const,
+        run: (_deps, params) => {
+          const deltaY = (params as { deltaY?: number } | undefined)?.deltaY ?? 0;
+          if (deltaY === 0) return;
+          sidesRef.current = deltaY < 0
+            ? Math.min(MAX_SIDES, sidesRef.current + 1)
+            : Math.max(MIN_SIDES, sidesRef.current - 1);
+          bumpSides();
+        },
+      },
+    }),
+    [bumpSides],
+  );
+  useAction(adjustSidesAction);
+
   const overlay = useMemo<RenderLayer<unknown>>(
     () => ({
       id: 'polygon-tool-overlay',
@@ -130,8 +155,8 @@ export function usePolygonTool<TNode extends { id: string }>(
             spec: { kind: 'drag', target: 'empty' },
             actionId: 'insert',
             // Phase 14c.3: thunked params re-evaluated at commit time so
-            // mid-gesture ArrowUp/Down side-count changes are reflected
-            // in the inserted polygon's geometry.
+            // mid-gesture ArrowUp/Down/wheel side-count changes are
+            // reflected in the inserted polygon's geometry.
             opts: {
               params: () => ({
                 kind: 'polygon',
@@ -139,6 +164,13 @@ export function usePolygonTool<TNode extends { id: string }>(
                 rotation: 0,
               }),
             },
+          },
+          // Wheel-during-drag → adjust side count. Phase-gated to `engaged`
+          // so wheel while the tool is idle still falls through to ambient
+          // viewport.pan / viewport.zoom.
+          {
+            spec: { kind: 'wheel', phase: 'engaged' },
+            actionId: 'polygon.adjustSides',
           },
         ],
         initial: {
@@ -154,23 +186,6 @@ export function usePolygonTool<TNode extends { id: string }>(
               bumpSides();
               return claim();
             },
-          },
-          // Adjust side count via mousewheel only while a gesture is in
-          // flight; otherwise pass so view-zoom / pan tools can claim.
-          // Convention: wheel up (deltaY < 0) adds a side, wheel down
-          // removes one. Each wheel tick is one increment regardless of
-          // delta magnitude — feels Illustrator-y.
-          wheel: (_ctx, event) => {
-            if (!drRef.current.isActive) return none();
-            const e = event as WheelEvent | undefined;
-            if (!e || e.deltaY === 0) return none();
-            if (e.deltaY < 0) {
-              sidesRef.current = Math.min(MAX_SIDES, sidesRef.current + 1);
-            } else {
-              sidesRef.current = Math.max(MIN_SIDES, sidesRef.current - 1);
-            }
-            bumpSides();
-            return claim();
           },
         },
       }),

@@ -146,8 +146,15 @@ export interface Dispatcher {
 // createDispatcher
 // ---------------------------------------------------------------------------
 
+const EMPTY_ENGAGED: ReadonlySet<string> = new Set();
+
 export function createDispatcher(): Dispatcher {
   const inFlightHandles = new Map<string, OngoingHandle>();
+  /** gestureId → tool id that owns the binding which opened this handle.
+   *  Used to compute the `engagedChannels` PhaseContext for the matcher.
+   *  `null` when the opening binding came from an ambient action with no
+   *  owning tool. */
+  const inFlightOwners = new Map<string, string | null>();
 
   // -------------------------------------------------------------------------
   // Helpers
@@ -281,17 +288,18 @@ export function createDispatcher(): Dispatcher {
     for (const toolId of ctx.hotkeyStack) {
       const tool = ctx.toolsById.get(toolId);
       for (const binding of tool?.bindings ?? []) {
-        result.push({ binding, scope: 'hotkey' as BindingScope });
+        result.push({ binding, scope: 'hotkey' as BindingScope, ownerToolId: toolId });
       }
     }
 
     // Active scope.
     const activeTool = ctx.toolsById.get(ctx.activeToolId);
     for (const binding of activeTool?.bindings ?? []) {
-      result.push({ binding, scope: 'active' as BindingScope });
+      result.push({ binding, scope: 'active' as BindingScope, ownerToolId: ctx.activeToolId });
     }
 
-    // Ambient scope: walk the actions registry.
+    // Ambient scope: walk the actions registry. Actions have no owning
+    // tool — `'&'`-channel phase atoms on their bindings won't match.
     for (const action of ctx.actions.list()) {
       const gs = action.defaultBinding;
       if (!gs) continue;
@@ -310,11 +318,22 @@ export function createDispatcher(): Dispatcher {
           ? (entry as { spec: import('../gestures/spec').GestureSpec; opts: BindingOpts }).opts
           : undefined;
         const defaultBinding: GestureBinding = { spec, actionId: action.id, ...(opts !== undefined ? { opts } : {}) };
-        result.push({ binding: defaultBinding, scope: 'ambient' as BindingScope });
+        result.push({ binding: defaultBinding, scope: 'ambient' as BindingScope, ownerToolId: null });
       }
     }
 
     return result;
+  }
+
+  /** Snapshot the set of tool ids currently owning an in-flight handle —
+   *  fed to `matchSorted` as the `engagedChannels` field of `PhaseContext`. */
+  function snapshotEngagedChannels(): ReadonlySet<string> {
+    if (inFlightOwners.size === 0) return EMPTY_ENGAGED;
+    const out = new Set<string>();
+    for (const owner of inFlightOwners.values()) {
+      if (owner != null) out.add(owner);
+    }
+    return out;
   }
 
   /** Build an actionId → Action lookup from the registry. */
@@ -369,6 +388,7 @@ export function createDispatcher(): Dispatcher {
         const stubCtx = buildInvocationCtx(event, {}, gestureId);
         handle.onEnd?.(stubCtx, 'commit');
         inFlightHandles.delete(gestureId);
+        inFlightOwners.delete(gestureId);
         dragOrigins.delete(gestureId);
       }
       // Whether we had a handle or not, this is a follow-up event, not a new match.
@@ -400,6 +420,7 @@ export function createDispatcher(): Dispatcher {
         const endCtx = buildInvocationCtx(event, {}, gestureId);
         handle.onEnd?.(endCtx, 'commit');
         inFlightHandles.delete(gestureId);
+        inFlightOwners.delete(gestureId);
         dragOrigins.delete(gestureId);
         dragPoints.delete(gestureId);
       }
@@ -414,6 +435,7 @@ export function createDispatcher(): Dispatcher {
         const endCtx = buildInvocationCtx(event, {}, gestureId);
         handle.onEnd?.(endCtx, 'cancel');
         inFlightHandles.delete(gestureId);
+        inFlightOwners.delete(gestureId);
         dragOrigins.delete(gestureId);
         dragPoints.delete(gestureId);
       }
@@ -441,7 +463,10 @@ export function createDispatcher(): Dispatcher {
     const scopedBindings = assembleScopedBindings(ctx);
 
     // --- Match: get every matching binding, best → worst ---
-    const matches = matchSorted(event, scopedBindings, ctx.isMac);
+    // Compute the engaged-channels set once per dispatch — the matcher
+    // uses it to gate `phase`-qualified specs (`[engaged] wheel`, etc.).
+    const engagedChannels = snapshotEngagedChannels();
+    const matches = matchSorted(event, scopedBindings, ctx.isMac, engagedChannels);
     const traceCandidates: DispatchLogEntry['candidates'] = [];
     const finishTrace = (fired: string | null, outcome: 'handled' | 'unhandled') => {
       recordTrace({ ts: Date.now(), eventKind: event.kind, candidates: traceCandidates, fired, outcome });
@@ -516,6 +541,7 @@ export function createDispatcher(): Dispatcher {
         const invCtx = buildInvocationCtx(event, deps, gestureId);
         const handle = action.invoker.start(invCtx, match.binding.opts);
         inFlightHandles.set(gestureId, handle);
+        inFlightOwners.set(gestureId, match.ownerToolId);
         finishTrace(action.id, 'handled');
         return 'handled';
       }
@@ -547,6 +573,7 @@ export function createDispatcher(): Dispatcher {
       handle.onEnd?.(stubCtx, reason);
     }
     inFlightHandles.clear();
+    inFlightOwners.clear();
     dragOrigins.clear();
     dragPoints.clear();
     pinchStartSpreads.clear();

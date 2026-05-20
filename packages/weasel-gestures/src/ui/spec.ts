@@ -48,12 +48,29 @@ export type TargetSpec =
   | `affordance:${string}`
   | { kindOf: (hit: unknown) => boolean };
 
+/** Phase qualifier on a gesture spec. Restricts when the spec matches based
+ *  on per-tool gesture-lifecycle state.
+ *
+ *  Shorthand forms (most common case — gate on the binding's own tool):
+ *    `'engaged'` → `[{ channel: '&', phase: 'engaged' }]`  // self mid-gesture
+ *    `'initial'` → `[{ channel: '&', phase: 'initial' }]`  // self idle
+ *    `'*'`       → `[{ channel: '&', phase: '*' }]`        // either self phase
+ *
+ *  Array form for explicit channel:phase atoms — e.g. `[{ channel: 'rect',
+ *  phase: 'engaged' }]` for "when the rect tool is mid-gesture, regardless of
+ *  which scope I'm in." See the v3 route grammar in
+ *  `@orochi235/weasel-gestures/grammar` for the full lattice.
+ *
+ *  When omitted, matches in any phase (preserves pre-phase behavior). */
+export type PhaseSpec = 'initial' | 'engaged' | '*' | readonly import('../grammar/routeGrammar').PhaseAtom[];
+
 /** Single-keystroke gesture (keydown). */
 export interface KeySpec {
   kind: 'key';
   /** A single key, or an array of acceptable keys (case-insensitive match). */
   key: string | string[];
   mods?: ModSpec;
+  phase?: PhaseSpec;
 }
 
 /** Key-held gesture (keydown opens, keyup closes). Drives "hold space for
@@ -63,6 +80,7 @@ export interface KeyHeldSpec {
   /** A single key, or an array of acceptable keys (case-insensitive match). */
   key: string | string[];
   mods?: ModSpec;
+  phase?: PhaseSpec;
 }
 
 /** Wheel-event gesture. `direction` filters by deltaY sign; default `'*'`.
@@ -73,6 +91,7 @@ export interface WheelSpec {
   kind: 'wheel';
   direction?: 'up' | 'down' | '*';
   mods?: ModSpec;
+  phase?: PhaseSpec;
 }
 
 /** Click gesture (pointerdown + pointerup without movement past the
@@ -81,6 +100,7 @@ export interface ClickSpec {
   kind: 'click';
   target?: TargetSpec;
   mods?: ModSpec;
+  phase?: PhaseSpec;
 }
 
 /** Right-click (contextmenu) gesture. The dispatcher calls
@@ -90,6 +110,7 @@ export interface ContextMenuSpec {
   kind: 'contextMenu';
   target?: TargetSpec;
   mods?: ModSpec;
+  phase?: PhaseSpec;
 }
 
 /** Drag gesture (pointerdown + pointermove past the threshold). */
@@ -97,6 +118,7 @@ export interface DragSpec {
   kind: 'drag';
   target?: TargetSpec;
   mods?: ModSpec;
+  phase?: PhaseSpec;
 }
 
 /** Multi-touch gesture. `fingers` is the required touch count. */
@@ -104,6 +126,7 @@ export interface MultiTouchSpec {
   kind: 'multiTouch';
   fingers: number;
   mods?: ModSpec;
+  phase?: PhaseSpec;
 }
 
 /** Multi-touch tap gesture — fires when N fingers touch down then release
@@ -113,6 +136,7 @@ export interface MultiTouchTapSpec {
   kind: 'multiTouchTap';
   fingers: number;
   mods?: ModSpec;
+  phase?: PhaseSpec;
 }
 
 /** The full union of supported gesture spec kinds. New invocation forms
