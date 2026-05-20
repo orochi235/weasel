@@ -80,9 +80,26 @@ interface InsertScratch {
   /** Pointer trail accumulated by the dispatcher in world space. Same array
    *  reference as `ctx.drag.points`; pencil-kind commits read from this. */
   points: ReadonlyArray<{ x: number; y: number }> | null;
+  /** Live Alt-key state from the most recent pump event. Alt INVERTS the
+   *  binding's nominal `originMode` (corner → center and vice versa), so
+   *  the user can press / release Alt mid-drag and the preview/commit
+   *  flip without needing the dispatcher to re-route to a different
+   *  binding. Captured per-onMove from `ctx.modifiers.alt`. */
+  altHeld: boolean;
   /** Cleared once `onEnd` runs so subsequent `overlay()` calls report no
    *  in-flight preview (mirrors the areaSelect/lasso convention). */
   open: boolean;
+}
+
+/** Resolve the effective origin mode from the binding's nominal opt and
+ *  live Alt state. Alt inverts: `corner` ⇄ `center`. */
+function effectiveOriginMode(
+  paramsOrigin: unknown,
+  altHeld: boolean,
+): 'corner' | 'center' {
+  const nominal: 'corner' | 'center' = paramsOrigin === 'center' ? 'center' : 'corner';
+  if (!altHeld) return nominal;
+  return nominal === 'center' ? 'corner' : 'center';
 }
 
 /** Compute the insert AABB from drag endpoints.
@@ -213,6 +230,7 @@ export const insertAction: Action & { requires: string[] } = {
         currentX: ctx.world.x,
         currentY: ctx.world.y,
         points: ctx.drag?.points ?? null,
+        altHeld: ctx.modifiers.alt,
         open: true,
       };
 
@@ -220,6 +238,12 @@ export const insertAction: Action & { requires: string[] } = {
         onMove(moveCtx: InvocationCtx): void {
           scratch.currentX = moveCtx.world.x;
           scratch.currentY = moveCtx.world.y;
+          // Track live Alt state for the corner ⇄ center toggle. Each
+          // pointermove carries fresh modifier state from the dispatcher;
+          // releasing / pressing Alt mid-drag flips the bounds mode on
+          // the next move tick (true modifier-only events don't fire
+          // without a cursor change).
+          scratch.altHeld = moveCtx.modifiers.alt;
           // The dispatcher mutates its own per-gesture trail in place but
           // attaches the array reference to each InvocationCtx.drag — keep
           // the latest reference in case the dispatcher swaps it.
@@ -241,16 +265,26 @@ export const insertAction: Action & { requires: string[] } = {
           // Consumer-defined kinds aren't renderable by the kit overlay —
           // skip the preview rather than emit something half-faithful.
           if (!KIT_INSERT_KINDS.has(extras.kind)) return null;
+          const mode = effectiveOriginMode(resolved?.['originMode'], scratch.altHeld);
           const bounds = computeBounds(
             scratch.startX, scratch.startY,
             scratch.currentX, scratch.currentY,
-            resolved?.['originMode'] === 'center' ? 'center' : 'corner',
+            mode,
+          );
+          // Re-derive extras with the *effective* mode so polygon/star
+          // center+radius reflect the live Alt toggle, not the binding's
+          // nominal originMode.
+          const effectiveExtras = buildExtras(
+            { ...(resolved ?? {}), originMode: mode },
+            scratch.startX, scratch.startY,
+            scratch.currentX, scratch.currentY,
+            scratch.points,
           );
           return {
             kind: 'insertPreview',
-            shape: extras.kind as KitInsertShape,
+            shape: effectiveExtras.kind as KitInsertShape,
             bounds,
-            extras,
+            extras: effectiveExtras,
           };
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
@@ -263,11 +297,12 @@ export const insertAction: Action & { requires: string[] } = {
           // Resolve params at commit time so thunked params (polygon
           // `sides` adjusted mid-drag, etc.) see the latest tool state.
           const resolved = resolveParams(o?.params);
-          const bounds = computeBounds(
-            startX, startY, currentX, currentY,
-            resolved?.['originMode'] === 'center' ? 'center' : 'corner',
+          const mode = effectiveOriginMode(resolved?.['originMode'], scratch.altHeld);
+          const bounds = computeBounds(startX, startY, currentX, currentY, mode);
+          const extras = buildExtras(
+            { ...(resolved ?? {}), originMode: mode },
+            startX, startY, currentX, currentY, points,
           );
-          const extras = buildExtras(resolved, startX, startY, currentX, currentY, points);
 
           // Sub-threshold drag — no insert. Exception: pencil with a real
           // sample trail can still produce a meaningful path even when the

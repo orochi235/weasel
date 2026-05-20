@@ -139,12 +139,8 @@ export function useEllipseTool<TNode extends { id: string }>(
         // legacy drag channel in the dispatcher; the route-table entry below
         // is retained as dead code until Phase 14e removes it.
         bindings: [
-          // Alt-drag → from center.
-          {
-            spec: { kind: 'drag', target: 'empty', mods: { alt: true } },
-            actionId: 'insert',
-            opts: { params: { kind: 'ellipse', originMode: 'center' } },
-          },
+          // Single binding; Alt toggles to from-center mid-drag via
+          // insertAction's live modifier read.
           {
             spec: { kind: 'drag', target: 'empty' },
             actionId: 'insert',
