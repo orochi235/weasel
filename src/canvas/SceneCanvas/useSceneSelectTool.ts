@@ -171,12 +171,14 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     return merged;
   }, [scene, moveOptions, snap]);
 
-  // Default pickEvery: walk renderOrder() back-to-front (top-most first) and
-  // return the first node whose pose contains the world point. Wraps the
-  // caller's `pickEvery` (string-or-null) into the array form `useSelectTool`
-  // expects. When the configured resize geometry exposes `getRotation`, the
-  // shared `poseContainsRotated` projects the click into the pose's local
-  // frame so rotated rects pick correctly without a per-demo override.
+  // Default pickEvery: walk renderOrder() forward (back-to-front) and collect
+  // every node whose pose contains the world point. Order matches the
+  // `useSelectTool` contract — last element is the topmost — so `pickTopMostHit`
+  // picks correctly. Wraps the caller's `pickEvery` (string-or-null) into the
+  // array form `useSelectTool` expects. When the configured resize geometry
+  // exposes `getRotation`, the shared `poseContainsRotated` projects the click
+  // into the pose's local frame so rotated rects pick correctly without a
+  // per-demo override.
   const getRotation = resizeOptions?.geometry?.getRotation;
   const wiredHitBody = useMemo(() => {
     return (wx: number, wy: number): string[] => {
@@ -184,12 +186,12 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
         const id = pickEveryProp(wx, wy);
         return id ? [id] : [];
       }
-      const ordered = [...scene.renderOrder()];
-      for (let i = ordered.length - 1; i >= 0; i--) {
-        const n = scene.get(ordered[i]);
-        if (n && poseContainsRotated(n.pose, wx, wy, getRotation)) return [n.id];
+      const out: string[] = [];
+      for (const id of scene.renderOrder()) {
+        const n = scene.get(id);
+        if (n && poseContainsRotated(n.pose, wx, wy, getRotation)) out.push(n.id);
       }
-      return [];
+      return out;
     };
   }, [scene, pickEveryProp, getRotation]);
 

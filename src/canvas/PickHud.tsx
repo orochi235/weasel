@@ -94,7 +94,8 @@ export function PickHud({ canvasRef, viewRef, pickEvery, offset }: PickHudProps)
         <div className={s.empty}>{state.inCanvas ? '—' : 'off-canvas'}</div>
       ) : (
         <ul className={s.list}>
-          {state.ids.map((id) => (
+          {/* pickEvery returns back-to-front (topmost last). Display top-first. */}
+          {state.ids.slice().reverse().map((id) => (
             <li key={id} className={s.item}>{id}</li>
           ))}
         </ul>
