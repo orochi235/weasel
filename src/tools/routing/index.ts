@@ -10,7 +10,7 @@ export type {
   ViewportToolDef, ViewportPhaseDef,
 } from './types';
 export { resolveRoute } from './lookup';
-export { parseRoute, formatRoute, formatPhaseAtom, RESERVED_ID_PREFIXES, RESERVED_ID_NAMES } from './routeGrammar';
+export { parseRoute, formatRoute, formatPhaseAtom, collapseShiftPairs, RESERVED_ID_PREFIXES, RESERVED_ID_NAMES } from './routeGrammar';
 export type { ParsedRoute, ParsedModifiers, ModName, ModRequirement, PhaseAtom, ChannelRef } from './routeGrammar';
 export { getGestureDescriptor, isKnownGestureName, GESTURE_DESCRIPTORS } from './gestures';
 export type { GestureName, GestureDescriptor, GestureArgSpec } from './gestures';

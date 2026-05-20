@@ -29,6 +29,7 @@ export {
   parseRoute,
   formatRoute,
   formatPhaseAtom,
+  collapseShiftPairs,
   RESERVED_SIGILS,
   ACTIVE_SIGILS,
   RESERVED_ID_PREFIXES,
