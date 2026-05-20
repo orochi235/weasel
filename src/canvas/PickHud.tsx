@@ -15,6 +15,9 @@ export interface PickHudProps {
   viewRef: React.RefObject<View>;
   /** World-space hit-test. Same shape as `useSelectTool`'s `pickEvery`. */
   pickEvery: (worldX: number, worldY: number) => readonly string[];
+  /** Optional single-best resolver — the id this point would select on a
+   *  bare click. When supplied, that id is rendered bold in the list. */
+  pickBest?: (worldX: number, worldY: number) => string | null;
   /** Inset from the canvas's top-right corner. Default `{ top: 76, right: 8 }`
    *  so the HUD clears `CursorCoordsHud` (~64 px tall in its 3-line form). */
   offset?: { top?: number; right?: number };
@@ -22,13 +25,14 @@ export interface PickHudProps {
 
 interface HudState {
   ids: readonly string[];
+  best: string | null;
   inCanvas: boolean;
   anchor: { top: number; right: number } | null;
 }
 
-export function PickHud({ canvasRef, viewRef, pickEvery, offset }: PickHudProps) {
+export function PickHud({ canvasRef, viewRef, pickEvery, pickBest, offset }: PickHudProps) {
   const [state, setState] = useState<HudState>({
-    ids: [], inCanvas: false, anchor: null,
+    ids: [], best: null, inCanvas: false, anchor: null,
   });
 
   useEffect(() => {
@@ -45,7 +49,7 @@ export function PickHud({ canvasRef, viewRef, pickEvery, offset }: PickHudProps)
       const view = viewRef.current;
       const anchor = readAnchor();
       if (!canvas || !view) {
-        setState({ ids: [], inCanvas: false, anchor });
+        setState({ ids: [], best: null, inCanvas: false, anchor });
         return;
       }
       const rect = canvas.getBoundingClientRect();
@@ -53,7 +57,7 @@ export function PickHud({ canvasRef, viewRef, pickEvery, offset }: PickHudProps)
         e.clientX >= rect.left && e.clientX <= rect.right &&
         e.clientY >= rect.top  && e.clientY <= rect.bottom;
       if (!inCanvas) {
-        setState({ ids: [], inCanvas: false, anchor });
+        setState({ ids: [], best: null, inCanvas: false, anchor });
         return;
       }
       const worldX = (e.clientX - rect.left) / view.scale.x + view.x;
@@ -64,7 +68,11 @@ export function PickHud({ canvasRef, viewRef, pickEvery, offset }: PickHudProps)
       } catch {
         ids = [];
       }
-      setState({ ids, inCanvas: true, anchor });
+      let best: string | null = null;
+      if (pickBest) {
+        try { best = pickBest(worldX, worldY); } catch { best = null; }
+      }
+      setState({ ids, best, inCanvas: true, anchor });
     };
 
     const onLayout = () => setState((s) => ({ ...s, anchor: readAnchor() }));
@@ -79,7 +87,7 @@ export function PickHud({ canvasRef, viewRef, pickEvery, offset }: PickHudProps)
       window.removeEventListener('scroll', onLayout, true);
       window.removeEventListener('resize', onLayout);
     };
-  }, [canvasRef, viewRef, pickEvery]);
+  }, [canvasRef, viewRef, pickEvery, pickBest]);
 
   if (!state.anchor) return null;
 
@@ -96,7 +104,12 @@ export function PickHud({ canvasRef, viewRef, pickEvery, offset }: PickHudProps)
         <ul className={s.list}>
           {/* pickEvery returns back-to-front (topmost last). Display top-first. */}
           {state.ids.slice().reverse().map((id) => (
-            <li key={id} className={s.item}>{id}</li>
+            <li
+              key={id}
+              className={id === state.best ? `${s.item} ${s.itemBest}` : s.item}
+            >
+              {id}
+            </li>
           ))}
         </ul>
       )}

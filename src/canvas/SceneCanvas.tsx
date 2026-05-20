@@ -617,7 +617,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const selectionRef = useRef(selection);
   selectionRef.current = selection;
 
-  const { adapter, selectTool: internalSelect, rotateTool, pickEvery: internalPickEvery, boundsOf: internalBoundsOf } = useSceneSelectTool({
+  const { adapter, selectTool: internalSelect, rotateTool, pickEvery: internalPickEvery, pickBest: internalPickBest, boundsOf: internalBoundsOf } = useSceneSelectTool({
     scene,
     selection,
     geometry,
@@ -857,6 +857,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
               canvasRef={internalCanvasRef}
               viewRef={currentViewRef}
               pickEvery={internalPickEvery}
+              pickBest={internalPickBest}
             />
           )}
           <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />

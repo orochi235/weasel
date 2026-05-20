@@ -14,6 +14,7 @@
 import { useMemo } from 'react';
 import { sceneToAdapter, type SceneToAdapterOptions } from '../sceneAdapter';
 import { useSelectTool, type Bounds } from 'tools/builtin/useSelectTool';
+import { pickTopMostHit } from 'tools/builtin/pickTopMostHit';
 import { useRotateTool } from 'tools/builtin/useRotateTool';
 import type { Node, Scene, NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
@@ -66,6 +67,11 @@ export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
    *  picked — drag routes keyed on `target.kind` then resolve to `'*'`
    *  (move) instead of `'empty'` (marquee). */
   pickEvery: (worldX: number, worldY: number) => string[];
+  /** Single-best hit under the world point, or null. Runs `pickEvery` then
+   *  collapses parent/child overlap via `pickTopMostHit` — matches the id
+   *  the select tool's pointerdown classifier would settle on for a bare
+   *  click. Exposed so debug HUDs can highlight the would-be selection. */
+  pickBest: (worldX: number, worldY: number) => string | null;
   /** World-space AABB of `id`, or null. Same as what the selection overlay +
    *  affordance hit-test need. Exposed so SceneCanvas can pass it to the
    *  `affordanceAt` thunk without re-deriving it. */
@@ -231,11 +237,19 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     getNode: (id) => scene.get(asNodeId(id)) ?? null,
   });
 
+  const wiredPickBest = useMemo(() => {
+    return (wx: number, wy: number): string | null => {
+      const ids = wiredHitBody(wx, wy);
+      return pickTopMostHit(ids, adapter as unknown as { getParent?: (id: string) => string | null });
+    };
+  }, [wiredHitBody, adapter]);
+
   return {
     adapter: adapter as UseSceneSelectToolReturn<TData, TLayer, TPose>['adapter'],
     selectTool,
     rotateTool,
     pickEvery: wiredHitBody,
+    pickBest: wiredPickBest,
     boundsOf: wiredBoundsOf,
   };
 }

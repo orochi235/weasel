@@ -110,6 +110,48 @@ const PAPER_PRESETS: Record<PaperSizeKey, { width: number; height: number }> = {
 
 const LS_KEY = 'swillustrator:scene-v1';
 const DOC_KEY = 'swillustrator:doc-v1';
+
+// PolygonPath stores `commands` as Uint8Array and `coords` as Float32Array.
+// JSON.stringify renders typed arrays as `{"0":1,"1":2,...}` plain objects
+// — the painter then sees a non-iterable shape and silently fails to draw.
+// Tag typed arrays on save and reconstruct them on load (with tolerance for
+// older saves that wrote the broken numeric-key object shape).
+type TaggedTypedArray = { __ta: 'u8' | 'f32'; data: number[] };
+function serializeReplacer(_key: string, value: unknown): unknown {
+  if (value instanceof Uint8Array) return { __ta: 'u8', data: Array.from(value) } satisfies TaggedTypedArray;
+  if (value instanceof Float32Array) return { __ta: 'f32', data: Array.from(value) } satisfies TaggedTypedArray;
+  return value;
+}
+function reviveTypedArrays<T>(node: T): T {
+  if (node == null || typeof node !== 'object') return node;
+  const obj = node as Record<string, unknown>;
+  const tag = obj.__ta;
+  if (tag === 'u8' && Array.isArray(obj.data)) return Uint8Array.from(obj.data as number[]) as unknown as T;
+  if (tag === 'f32' && Array.isArray(obj.data)) return Float32Array.from(obj.data as number[]) as unknown as T;
+  for (const k of Object.keys(obj)) {
+    if (k === 'commands' || k === 'coords') {
+      const v = obj[k];
+      if (v instanceof Uint8Array || v instanceof Float32Array) continue;
+      if (Array.isArray(v)) {
+        obj[k] = k === 'commands' ? Uint8Array.from(v as number[]) : Float32Array.from(v as number[]);
+        continue;
+      }
+      if (v && typeof v === 'object') {
+        // Recover from older saves that lost the typed-array shape.
+        const src = v as Record<string, unknown>;
+        if (src.__ta) { obj[k] = reviveTypedArrays(v); continue; }
+        const len = Object.keys(src).filter((kk) => /^\d+$/.test(kk)).length;
+        const arr = new Array<number>(len);
+        for (let i = 0; i < len; i++) arr[i] = Number(src[String(i)] ?? 0);
+        obj[k] = k === 'commands' ? Uint8Array.from(arr) : Float32Array.from(arr);
+        continue;
+      }
+    } else {
+      reviveTypedArrays(obj[k]);
+    }
+  }
+  return node;
+}
 const DEFAULT_FILENAME = 'untitled.svg';
 const DEFAULT_BG_COLOR = '#ffffff';
 /** Synthetic id for the locked "Background" row in the Layers panel.
@@ -473,9 +515,10 @@ function usePersistedFlag(key: string, initial: boolean): [boolean, (next: boole
 
 function ColorsPanel(): ReactElement {
   const colors = useColorContext();
-  const current = colors.focused === 'stroke'
-    ? (colors.stroke.kind === 'solid' ? colors.stroke.color : '')
-    : (colors.fill.kind === 'solid' ? colors.fill.color : '');
+  // Highlight tracks the fill swatch — left-click (the primary action)
+  // sets fill. Right-click sets stroke; the active-swatches widget
+  // reflects the stroke update.
+  const current = colors.fill.kind === 'solid' ? colors.fill.color : '';
   return (
     <PropertiesPanel title="Colors">
       <PropertySwatchGrid
@@ -483,16 +526,18 @@ function ColorsPanel(): ReactElement {
         options={PALETTE}
         columns={10}
         onChange={(v) => {
-          if (colors.focused === 'stroke') colors.setStroke({ kind: 'solid', color: v });
-          else colors.setFill({ kind: 'solid', color: v });
+          colors.setFill({ kind: 'solid', color: v });
+          colors.applyFillToSelection(v);
+        }}
+        onAltChange={(v) => {
+          colors.setStroke({ kind: 'solid', color: v });
+          colors.applyStrokeToSelection(v);
         }}
         leading={{
-          active: (colors.focused === 'stroke' ? colors.stroke : colors.fill).kind === 'none',
+          active: colors.fill.kind === 'none',
           title: 'None',
-          onClick: () => {
-            if (colors.focused === 'stroke') colors.setStroke({ kind: 'none' });
-            else colors.setFill({ kind: 'none' });
-          },
+          onClick: () => colors.setFill({ kind: 'none' }),
+          onAltClick: () => colors.setStroke({ kind: 'none' }),
         }}
       />
     </PropertiesPanel>
@@ -750,7 +795,7 @@ function loadInitial(): Array<{
             kind: 'leaf' as const,
             layer: 'default' as SwillLayer,
             pose: n.pose,
-            data: n.data,
+            data: reviveTypedArrays(n.data),
             id: asNodeId(n.id),
           }));
       }
@@ -932,7 +977,7 @@ export function App(): ReactElement {
   useEffect(() => {
     const id = setTimeout(() => {
       try {
-        localStorage.setItem(LS_KEY, JSON.stringify(scene.toJSON()));
+        localStorage.setItem(LS_KEY, JSON.stringify(scene.toJSON(), serializeReplacer));
       } catch {
         // Persistence is best-effort.
       }
