@@ -81,6 +81,13 @@ export const Tall: Story = {
   },
 };
 
+export const Minimal: Story = {
+  render: () => {
+    const [v, setV] = useState<string | null>('center');
+    return <ToggleBar items={alignItems} value={v} onChange={setV} variant="minimal" />;
+  },
+};
+
 export const AllowDeselect: Story = {
   render: () => {
     const [v, setV] = useState<string | null>('center');

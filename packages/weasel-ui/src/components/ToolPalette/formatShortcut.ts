@@ -30,7 +30,7 @@ export function formatShortcutParts(b: KeyBinding | undefined): readonly string[
   const rawKey = Array.isArray(b.key) ? b.key[0] : b.key;
   const parts: string[] = [];
   if (b.mod) parts.push('⌘');
-  if (b.shift === true) parts.push('⇪');
+  if (b.shift === true) parts.push('⇧');
   if (b.alt) parts.push('⌥');
   parts.push(keyGlyph(rawKey));
   return parts;

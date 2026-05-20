@@ -8,6 +8,8 @@ export * from './components/DataGrid';
 export * from './components/Keycaps';
 export * from './components/Slider';
 export * from './components/ToggleBar';
+export * from './components/OptionsBar';
+export * from './components/ActionsBar';
 export * from './components/Sidebar';
 export * from './components/SidebarPanel';
 export * from './components/ToolButton';

@@ -147,33 +147,25 @@
   height: auto;
   padding: 0;
   background: none;
-  border: 1px solid var(--wzl-border, rgba(255, 255, 255, 0.18));
-  border-radius: 3px;
+  border-radius: 0;
   box-shadow: none;
-  gap: 0;
+  gap: 2px;
 }
 
 .variant_minimal .segment {
-  padding: 0 6px;
+  padding: 0 4px;
   font-size: 11px;
   font-weight: 400;
   line-height: 1.4;
-  border-radius: 0;
+  border-radius: 2px;
   color: var(--wzl-fg-muted);
   transition: none;
-}
-
-/* Dividers between segments make the mutual-exclusion grouping visible
-   without a heavy track. Only the inner edges get a rule — the outer
-   border on `.variant_minimal` handles the perimeter. */
-.variant_minimal .segment + .segment {
-  border-left: 1px solid var(--wzl-border, rgba(255, 255, 255, 0.18));
 }
 
 .variant_minimal .segment:first-child,
 .variant_minimal .segment:last-child,
 .variant_minimal .segment:only-child {
-  border-radius: 0;
+  border-radius: 2px;
 }
 
 .variant_minimal .segment:hover:not(:disabled):not(.segmentSelected) {

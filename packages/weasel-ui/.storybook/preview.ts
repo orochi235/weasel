@@ -10,6 +10,12 @@ const preview: Preview = {
       },
     },
     layout: 'padded',
+    options: {
+      storySort: {
+        order: ['weasel-ui', ['Foundations', '*']],
+        method: 'alphabetical',
+      },
+    },
   },
 };
 
