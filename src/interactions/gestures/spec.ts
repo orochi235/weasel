@@ -10,4 +10,5 @@ export type {
   MultiTouchTapSpec,
   ModSpec,
   TargetSpec,
+  PhaseSpec,
 } from '@orochi235/weasel-gestures';

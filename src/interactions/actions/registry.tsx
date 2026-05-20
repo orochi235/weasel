@@ -12,9 +12,10 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react';
-import type { GestureSpec } from '../gestures/spec';
+import type { GestureSpec, PhaseSpec } from '../gestures/spec';
 import type { ActionDeps, BindingOpts, Invoker } from './invoker';
 import { useOptionalDepRegistry, type DepRegistry, type DepName } from './depRegistry';
+import { RESERVED_ID_NAMES, RESERVED_ID_PREFIXES, type PhaseAtom } from '../../tools/routing/routeGrammar';
 
 /**
  * @experimental
@@ -203,6 +204,58 @@ export interface ActionsRegistry {
   subscribe(listener: () => void): () => void;
 }
 
+// ─── Registration-time validation ─────────────────────────────────────────
+
+/** Validate that `id` is usable as an action id in the route grammar.
+ *  Rejects ids that start with a reserved sigil (would shadow future
+ *  grammar extensions) and ids that collide with phase keywords (would
+ *  parse as the bare-phase shorthand). Mirrors `defineTool`'s tool-id
+ *  validation. */
+function validateActionId(id: string): void {
+  if (id.length === 0) {
+    throw new Error(`weasel: action id may not be empty`);
+  }
+  if (RESERVED_ID_PREFIXES.has(id[0]!)) {
+    throw new Error(
+      `weasel: action id "${id}" starts with reserved sigil "${id[0]}" ` +
+      `(reserved set: ${[...RESERVED_ID_PREFIXES].join(' ')})`,
+    );
+  }
+  if (RESERVED_ID_NAMES.has(id)) {
+    throw new Error(
+      `weasel: action id "${id}" collides with a reserved phase keyword ` +
+      `(reserved: ${[...RESERVED_ID_NAMES].join(', ')})`,
+    );
+  }
+}
+
+/** Reject any '&'-channel phase atom in an Action's defaultBinding —
+ *  actions have no owning tool, so '&' can't resolve. Tool-side bindings
+ *  (Tool.bindings) are the right place for '&' atoms. */
+function validateActionDefaultBinding(action: Action): void {
+  const gs = action.defaultBinding;
+  if (!gs) return;
+  const entries: BoundGesture[] = Array.isArray(gs) ? gs : [gs as BoundGesture];
+  for (const entry of entries) {
+    const spec = ('kind' in entry ? entry : entry.spec) as GestureSpec;
+    const phase: PhaseSpec | undefined = spec.phase;
+    if (phase === undefined) continue;
+    const atoms: readonly PhaseAtom[] = Array.isArray(phase)
+      ? phase
+      : [{ channel: '&', phase: phase }];
+    for (const atom of atoms) {
+      if (atom.channel === '&') {
+        throw new Error(
+          `weasel: action "${action.id}" defaultBinding uses '&' channel ` +
+          `which has no owning tool to resolve to. Use a named tool channel ` +
+          `(e.g. '[rect:engaged]') or '*' instead, or move this binding to ` +
+          `the tool's own Tool.bindings.`,
+        );
+      }
+    }
+  }
+}
+
 const ActionsContext = createContext<ActionsRegistry | null>(null);
 
 /**
@@ -252,6 +305,8 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
     };
     return {
       register: (action: Action) => {
+        validateActionId(action.id);
+        validateActionDefaultBinding(action);
         actionsRef.current.set(action.id, action);
         versionRef.current++;
         notify();
