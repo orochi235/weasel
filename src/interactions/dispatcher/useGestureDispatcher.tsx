@@ -255,6 +255,20 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     let multiTouchStart: { fingers: number; centroid: { x: number; y: number } } | null = null;
     const TAP_THRESHOLD_PX = 8;
 
+    // Pixel distance the pointer must travel between pointerdown and the first
+    // pointermove before we treat the gesture as a drag and forward the
+    // pointerdown to the dispatcher. Below this, pointerup is treated as a
+    // click — no drag handle is ever opened, so `moveAction` (and other
+    // ongoing drag actions) don't fire on a stationary press-and-release.
+    const DRAG_THRESHOLD_PX = 4;
+
+    // Per-pointer buffered pointerdown InputEvents waiting on the drag
+    // threshold. The InputEvent is built eagerly (so `affordance` /
+    // `bodyTarget` reflect down-time classification) but withheld from the
+    // dispatcher until movement crosses the threshold. On sub-threshold
+    // pointerup the buffer is discarded.
+    const bufferedDown = new Map<number, { ev: InputEvent; clientX: number; clientY: number }>();
+
     // Tracks the last pointerdown info for click synthesis:
     // a pointerup with no in-flight drag handle is promoted to a click event.
     // `bodyTarget` from the pointerdown is carried forward so click specs that
@@ -375,7 +389,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         ...(affordance !== undefined ? { affordance } : {}),
         ...(bodyTarget !== undefined ? { bodyTarget } : {}),
       };
-      dispatch(ev);
+      // Defer dispatch until the first past-threshold pointermove. A bare
+      // press-and-release should fire `click`, not start a drag action.
+      bufferedDown.set(e.pointerId, { ev, clientX: e.clientX, clientY: e.clientY });
 
       // Store pointerdown info for click synthesis (see onPointerUp).
       lastPointerDown.set(e.pointerId, {
@@ -419,6 +435,24 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         pointerPositions.set(e.pointerId, { x: e.clientX, y: e.clientY });
       }
 
+      // Threshold gate: if a pointerdown is buffered for this pointer and
+      // the movement crossed the drag threshold, forward the buffered
+      // pointerdown to the dispatcher BEFORE the pointermove. This is what
+      // opens the ongoing drag handle (matching `kind: 'drag'` bindings);
+      // subsequent pointermoves pump it via `onMove`. Sub-threshold
+      // pointermoves are still forwarded so existing pump paths (e.g. other
+      // in-flight handles) keep working, but they're no-ops when no handle
+      // exists.
+      const buffered = bufferedDown.get(e.pointerId);
+      if (buffered) {
+        const dx = e.clientX - buffered.clientX;
+        const dy = e.clientY - buffered.clientY;
+        if (Math.hypot(dx, dy) >= DRAG_THRESHOLD_PX) {
+          bufferedDown.delete(e.pointerId);
+          dispatch(buffered.ev);
+        }
+      }
+
       // If a multitouch handle is in flight, synthesize a multitouch pump event
       // with the updated centroid + spread. The dispatcher routes this to the
       // handle's onMove (because the event carries centroid data).
@@ -456,6 +490,11 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       const prevSize = activePointers.size;
       activePointers.delete(e.pointerId);
       pointerPositions.delete(e.pointerId);
+
+      // If pointerdown was buffered (sub-threshold gesture), discard it —
+      // the dispatcher never saw it, so no drag handle is in flight. Click
+      // synthesis below picks up the bare press-and-release path.
+      bufferedDown.delete(e.pointerId);
 
       // When pointer count drops below 2, commit any in-flight multitouch handle
       // and (if the centroid never moved past the tap threshold) synthesize a
@@ -547,6 +586,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       activePointers.delete(e.pointerId);
       pointerPositions.delete(e.pointerId);
       lastPointerDown.delete(e.pointerId);
+      bufferedDown.delete(e.pointerId);
       // Drop any pending multitouch-tap start state — a cancel means we should
       // not synthesize a tap on the subsequent up.
       multiTouchStart = null;
