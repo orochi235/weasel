@@ -1109,7 +1109,13 @@ function StandardActionsRegistrar({
   // useStandardActions (which publishes the `view` dep along with selection,
   // scene, history, pointer, activeTool).
   const view = useViewDepSource(currentViewRef, onViewChange);
-  useStandardActions({ selection, scene, view });
+  // Scene owns its own undo/redo stacks via `useScene`. `undoAction` /
+  // `redoAction` only call `history.undo()` / `history.redo()`, so the scene
+  // satisfies the runtime contract — cast through `unknown` since `Scene`'s
+  // shape is wider than the formal `History` interface (entries / goto /
+  // version / subscribe live on different methods).
+  const sceneAsHistory = scene as unknown as Parameters<typeof useStandardActions>[0]['history'];
+  useStandardActions({ selection, scene, view, history: sceneAsHistory });
 
   // Per-dep wiring modules under `src/canvas/deps/`. See each file for the
   // dep's contract and trade-offs.
