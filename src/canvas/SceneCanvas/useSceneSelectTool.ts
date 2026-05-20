@@ -14,6 +14,7 @@
 import { useMemo } from 'react';
 import { sceneToAdapter, type SceneToAdapterOptions } from '../sceneAdapter';
 import { useSelectTool, type Bounds } from 'tools/builtin/useSelectTool';
+import { pickTopMostHit } from 'tools/builtin/pickTopMostHit';
 import { useRotateTool } from 'tools/builtin/useRotateTool';
 import type { Node, Scene, NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
@@ -66,6 +67,11 @@ export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
    *  picked — drag routes keyed on `target.kind` then resolve to `'*'`
    *  (move) instead of `'empty'` (marquee). */
   pickEvery: (worldX: number, worldY: number) => string[];
+  /** Single-best hit under the world point, or null. Runs `pickEvery` then
+   *  collapses parent/child overlap via `pickTopMostHit` — matches the id
+   *  the select tool's pointerdown classifier would settle on for a bare
+   *  click. Exposed so debug HUDs can highlight the would-be selection. */
+  pickBest: (worldX: number, worldY: number) => string | null;
   /** World-space AABB of `id`, or null. Same as what the selection overlay +
    *  affordance hit-test need. Exposed so SceneCanvas can pass it to the
    *  `affordanceAt` thunk without re-deriving it. */
@@ -171,12 +177,14 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     return merged;
   }, [scene, moveOptions, snap]);
 
-  // Default pickEvery: walk renderOrder() back-to-front (top-most first) and
-  // return the first node whose pose contains the world point. Wraps the
-  // caller's `pickEvery` (string-or-null) into the array form `useSelectTool`
-  // expects. When the configured resize geometry exposes `getRotation`, the
-  // shared `poseContainsRotated` projects the click into the pose's local
-  // frame so rotated rects pick correctly without a per-demo override.
+  // Default pickEvery: walk renderOrder() forward (back-to-front) and collect
+  // every node whose pose contains the world point. Order matches the
+  // `useSelectTool` contract — last element is the topmost — so `pickTopMostHit`
+  // picks correctly. Wraps the caller's `pickEvery` (string-or-null) into the
+  // array form `useSelectTool` expects. When the configured resize geometry
+  // exposes `getRotation`, the shared `poseContainsRotated` projects the click
+  // into the pose's local frame so rotated rects pick correctly without a
+  // per-demo override.
   const getRotation = resizeOptions?.geometry?.getRotation;
   const wiredHitBody = useMemo(() => {
     return (wx: number, wy: number): string[] => {
@@ -184,12 +192,12 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
         const id = pickEveryProp(wx, wy);
         return id ? [id] : [];
       }
-      const ordered = [...scene.renderOrder()];
-      for (let i = ordered.length - 1; i >= 0; i--) {
-        const n = scene.get(ordered[i]);
-        if (n && poseContainsRotated(n.pose, wx, wy, getRotation)) return [n.id];
+      const out: string[] = [];
+      for (const id of scene.renderOrder()) {
+        const n = scene.get(id);
+        if (n && poseContainsRotated(n.pose, wx, wy, getRotation)) out.push(n.id);
       }
-      return [];
+      return out;
     };
   }, [scene, pickEveryProp, getRotation]);
 
@@ -229,11 +237,19 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     getNode: (id) => scene.get(asNodeId(id)) ?? null,
   });
 
+  const wiredPickBest = useMemo(() => {
+    return (wx: number, wy: number): string | null => {
+      const ids = wiredHitBody(wx, wy);
+      return pickTopMostHit(ids, adapter as unknown as { getParent?: (id: string) => string | null });
+    };
+  }, [wiredHitBody, adapter]);
+
   return {
     adapter: adapter as UseSceneSelectToolReturn<TData, TLayer, TPose>['adapter'],
     selectTool,
     rotateTool,
     pickEvery: wiredHitBody,
+    pickBest: wiredPickBest,
     boundsOf: wiredBoundsOf,
   };
 }

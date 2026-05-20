@@ -210,6 +210,8 @@ export { SceneCanvas, DEFAULT_HANDLE_SIZE, defaultDrawOne } from './canvas/Scene
 export type { SceneCanvasProps } from './canvas/SceneCanvas';
 export { CursorCoordsHud } from './canvas/CursorCoordsHud';
 export type { CursorCoordsHudProps } from './canvas/CursorCoordsHud';
+export { PickHud } from './canvas/PickHud';
+export type { PickHudProps } from './canvas/PickHud';
 export {
   registerShapePainter,
   findShapePainter,

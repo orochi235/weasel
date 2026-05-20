@@ -27,6 +27,7 @@ import type { DrawCommand, ShaderProgramHandle } from '../renderer';
 import { textCommand } from 'features/text/textCommand';
 import { findShapePainter } from './shapePainters';
 import { CursorCoordsHud } from './CursorCoordsHud';
+import { PickHud } from './PickHud';
 import type { FillStyle } from 'core/paint-types';
 import type { RenderLayer } from 'core/layers/render';
 import { Canvas } from './Canvas';
@@ -484,6 +485,13 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * coord drift / pan-zoom misalignment without instrumenting events.
      */
     cursorCoordsHud?: boolean;
+    /**
+     * Dev HUD: when true, mounts a fixed-position widget just below the
+     * cursor-coords HUD listing the ids returned by `pickEvery(world)`
+     * under the cursor. Useful for diagnosing hit-test order and
+     * container/leaf overlap during select-tool work.
+     */
+    pickHud?: boolean;
   };
 
 function SceneCanvasInner<TData, TLayer extends string, TPose>(
@@ -515,6 +523,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     shaders,
     backgroundFill,
     cursorCoordsHud,
+    pickHud,
     ...rest
   } = props;
 
@@ -608,7 +617,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const selectionRef = useRef(selection);
   selectionRef.current = selection;
 
-  const { adapter, selectTool: internalSelect, rotateTool, pickEvery: internalPickEvery, boundsOf: internalBoundsOf } = useSceneSelectTool({
+  const { adapter, selectTool: internalSelect, rotateTool, pickEvery: internalPickEvery, pickBest: internalPickBest, boundsOf: internalBoundsOf } = useSceneSelectTool({
     scene,
     selection,
     geometry,
@@ -842,6 +851,14 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
           {canvas}
           {cursorCoordsHud && (
             <CursorCoordsHud canvasRef={internalCanvasRef} viewRef={currentViewRef} />
+          )}
+          {pickHud && (
+            <PickHud
+              canvasRef={internalCanvasRef}
+              viewRef={currentViewRef}
+              pickEvery={internalPickEvery}
+              pickBest={internalPickBest}
+            />
           )}
           <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />
           <StandardActionsRegistrar
@@ -1092,7 +1109,13 @@ function StandardActionsRegistrar({
   // useStandardActions (which publishes the `view` dep along with selection,
   // scene, history, pointer, activeTool).
   const view = useViewDepSource(currentViewRef, onViewChange);
-  useStandardActions({ selection, scene, view });
+  // Scene owns its own undo/redo stacks via `useScene`. `undoAction` /
+  // `redoAction` only call `history.undo()` / `history.redo()`, so the scene
+  // satisfies the runtime contract — cast through `unknown` since `Scene`'s
+  // shape is wider than the formal `History` interface (entries / goto /
+  // version / subscribe live on different methods).
+  const sceneAsHistory = scene as unknown as Parameters<typeof useStandardActions>[0]['history'];
+  useStandardActions({ selection, scene, view, history: sceneAsHistory });
 
   // Per-dep wiring modules under `src/canvas/deps/`. See each file for the
   // dep's contract and trade-offs.
