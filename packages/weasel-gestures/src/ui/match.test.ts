@@ -3,6 +3,8 @@ import {
   matchModifiers,
   matchKey,
   matchSpec,
+  matchPhase,
+  type PhaseContext,
 } from './match';
 import type { InputEvent } from './inputEvent';
 
@@ -297,5 +299,102 @@ describe('matchSpec — multiTouchTap', () => {
     const shifted = { ...plain, shiftKey: true };
     expect(matchSpec(plain,   spec, false)).toBe(false);
     expect(matchSpec(shifted, spec, false)).toBe(true);
+  });
+});
+
+describe('matchPhase', () => {
+  const polygonEngaged: PhaseContext = { selfChannel: 'polygon', engagedChannels: new Set(['polygon']) };
+  const polygonIdle:    PhaseContext = { selfChannel: 'polygon', engagedChannels: new Set() };
+  const otherEngaged:   PhaseContext = { selfChannel: 'polygon', engagedChannels: new Set(['rect']) };
+  const noSelf:         PhaseContext = { selfChannel: null,       engagedChannels: new Set(['polygon']) };
+
+  it('omitted spec always matches', () => {
+    expect(matchPhase(undefined, polygonEngaged)).toBe(true);
+    expect(matchPhase(undefined, polygonIdle)).toBe(true);
+  });
+
+  it('shorthand "engaged" gates on self engagement', () => {
+    expect(matchPhase('engaged', polygonEngaged)).toBe(true);
+    expect(matchPhase('engaged', polygonIdle)).toBe(false);
+    // Another tool engaged ≠ self engaged.
+    expect(matchPhase('engaged', otherEngaged)).toBe(false);
+  });
+
+  it('shorthand "initial" gates on self idle', () => {
+    expect(matchPhase('initial', polygonEngaged)).toBe(false);
+    expect(matchPhase('initial', polygonIdle)).toBe(true);
+    expect(matchPhase('initial', otherEngaged)).toBe(true);
+  });
+
+  it('shorthand "*" always matches when self is set', () => {
+    expect(matchPhase('*', polygonEngaged)).toBe(true);
+    expect(matchPhase('*', polygonIdle)).toBe(true);
+  });
+
+  it('"&" with no selfChannel never matches', () => {
+    expect(matchPhase('engaged', noSelf)).toBe(false);
+    expect(matchPhase('initial', noSelf)).toBe(false);
+    expect(matchPhase('*', noSelf)).toBe(false);
+  });
+
+  it('named channel resolves to that tool id', () => {
+    expect(matchPhase([{ channel: 'rect', phase: 'engaged' }], otherEngaged)).toBe(true);
+    expect(matchPhase([{ channel: 'rect', phase: 'engaged' }], polygonEngaged)).toBe(false);
+    expect(matchPhase([{ channel: 'polygon', phase: 'engaged' }], polygonEngaged)).toBe(true);
+  });
+
+  it('"*" channel matches any-tool engagement', () => {
+    expect(matchPhase([{ channel: '*', phase: 'engaged' }], polygonEngaged)).toBe(true);
+    expect(matchPhase([{ channel: '*', phase: 'engaged' }], otherEngaged)).toBe(true);
+    expect(matchPhase([{ channel: '*', phase: 'engaged' }], polygonIdle)).toBe(false);
+    expect(matchPhase([{ channel: '*', phase: 'initial' }], polygonIdle)).toBe(true);
+    expect(matchPhase([{ channel: '*', phase: 'initial' }], polygonEngaged)).toBe(false);
+    expect(matchPhase([{ channel: '*', phase: '*' }], noSelf)).toBe(true);
+  });
+
+  it('atom list has union (any-of) semantics', () => {
+    const spec = [
+      { channel: 'rect' as const, phase: 'engaged' as const },
+      { channel: 'ellipse' as const, phase: 'engaged' as const },
+    ];
+    expect(matchPhase(spec, otherEngaged)).toBe(true);                       // rect engaged
+    expect(matchPhase(spec, { selfChannel: null, engagedChannels: new Set(['ellipse']) })).toBe(true);
+    expect(matchPhase(spec, polygonIdle)).toBe(false);                       // neither
+  });
+});
+
+describe('matchSpec — phase gate', () => {
+  const wheelEv = { kind: 'wheel' as const, ...noMods, ...noWheelData };
+  const polygonEngaged: PhaseContext = { selfChannel: 'polygon', engagedChannels: new Set(['polygon']) };
+  const polygonIdle:    PhaseContext = { selfChannel: 'polygon', engagedChannels: new Set() };
+
+  it('spec without phase ignores the ctx', () => {
+    const spec = { kind: 'wheel' as const };
+    expect(matchSpec(wheelEv, spec, false, polygonIdle)).toBe(true);
+    expect(matchSpec(wheelEv, spec, false, polygonEngaged)).toBe(true);
+    expect(matchSpec(wheelEv, spec, false)).toBe(true);  // no ctx supplied
+  });
+
+  it('phase: "engaged" matches only when self is engaged', () => {
+    const spec = { kind: 'wheel' as const, phase: 'engaged' as const };
+    expect(matchSpec(wheelEv, spec, false, polygonEngaged)).toBe(true);
+    expect(matchSpec(wheelEv, spec, false, polygonIdle)).toBe(false);
+  });
+
+  it('phase: "initial" matches only when self is idle', () => {
+    const spec = { kind: 'wheel' as const, phase: 'initial' as const };
+    expect(matchSpec(wheelEv, spec, false, polygonEngaged)).toBe(false);
+    expect(matchSpec(wheelEv, spec, false, polygonIdle)).toBe(true);
+  });
+
+  it('phase gate runs alongside mods gate', () => {
+    const spec = { kind: 'wheel' as const, phase: 'engaged' as const, mods: { mod: true } };
+    const cmdWheel = { ...wheelEv, ctrlKey: true };
+    // Engaged + cmd held: passes both.
+    expect(matchSpec(cmdWheel, spec, false, polygonEngaged)).toBe(true);
+    // Engaged but no cmd: mod gate fails.
+    expect(matchSpec(wheelEv, spec, false, polygonEngaged)).toBe(false);
+    // Cmd held but idle: phase gate fails.
+    expect(matchSpec(cmdWheel, spec, false, polygonIdle)).toBe(false);
   });
 });

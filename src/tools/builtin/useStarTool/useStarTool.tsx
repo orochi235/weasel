@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { defineTool, claim, none } from '../../routing';
+import { defineTool, claim } from '../../routing';
 import { useDragRadial } from 'interactions/gestures/dragRadial';
 import { createInsertOp } from 'core/ops/create';
 import { StarIcon } from '../../../icons';
@@ -9,6 +9,7 @@ import { worldToScreen } from 'core/viewport/viewTransform';
 import type { RenderLayer } from 'core/layers/render';
 import type { DrawCommand } from '../../../renderer';
 import type { Tool, ToolCtx } from '../../types';
+import { useAction, type Action } from 'interactions/actions/registry';
 
 /** Default screen-space chrome for the drag-ghost overlay. */
 const GHOST_STROKE = '#7fb069';
@@ -96,6 +97,29 @@ export function useStarTool<TNode extends { id: string }>(
   const drRef = useRef(dr);
   drRef.current = dr;
 
+  // Wheel-to-adjust-points action. Bound to `[engaged] wheel` so it only
+  // fires while a star insert drag is in flight — outside that window
+  // wheel falls through to ambient viewport.pan / zoom.
+  const adjustPointsAction = useMemo<Action>(
+    () => ({
+      id: 'star.adjustPoints',
+      label: 'Star — adjust points',
+      invoker: {
+        timing: 'immediate' as const,
+        run: (_deps, params) => {
+          const deltaY = (params as { deltaY?: number } | undefined)?.deltaY ?? 0;
+          if (deltaY === 0) return;
+          pointsRef.current = deltaY < 0
+            ? Math.min(MAX_POINTS, pointsRef.current + 1)
+            : Math.max(MIN_POINTS, pointsRef.current - 1);
+          bumpPoints();
+        },
+      },
+    }),
+    [bumpPoints],
+  );
+  useAction(adjustPointsAction);
+
   const overlay = useMemo<RenderLayer<unknown>>(
     () => ({
       id: 'star-tool-overlay',
@@ -147,7 +171,7 @@ export function useStarTool<TNode extends { id: string }>(
             spec: { kind: 'drag', target: 'empty' },
             actionId: 'insert',
             // Phase 14c.3: thunked params re-evaluated at commit time so
-            // mid-gesture point-count / ratio changes flow through.
+            // mid-gesture point-count / ratio / wheel changes flow through.
             opts: {
               params: () => ({
                 kind: 'star',
@@ -156,6 +180,13 @@ export function useStarTool<TNode extends { id: string }>(
                 rotation: 0,
               }),
             },
+          },
+          // Wheel-during-drag → adjust point count. Phase-gated to `engaged`
+          // so wheel while the tool is idle still falls through to ambient
+          // viewport.pan / viewport.zoom.
+          {
+            spec: { kind: 'wheel', phase: 'engaged' },
+            actionId: 'star.adjustPoints',
           },
         ],
         initial: {
@@ -171,20 +202,6 @@ export function useStarTool<TNode extends { id: string }>(
               bumpPoints();
               return claim();
             },
-          },
-          // Mousewheel mid-drag adjusts the point count. Idle wheels pass
-          // through to view zoom / other ambient tools.
-          wheel: (_ctx, event) => {
-            if (!drRef.current.isActive) return none();
-            const e = event as WheelEvent | undefined;
-            if (!e || e.deltaY === 0) return none();
-            if (e.deltaY < 0) {
-              pointsRef.current = Math.min(MAX_POINTS, pointsRef.current + 1);
-            } else {
-              pointsRef.current = Math.max(MIN_POINTS, pointsRef.current - 1);
-            }
-            bumpPoints();
-            return claim();
           },
         },
       }),

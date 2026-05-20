@@ -58,13 +58,14 @@ export { modifierKeyToParsed, canonicalModifiers } from './grammar/modifierKeyTo
 export type { RoutePhase } from './ui/phase';
 export type { InputEvent } from './ui/inputEvent';
 
-// GestureSpec union + sub-types + ModSpec + TargetSpec
+// GestureSpec union + sub-types + ModSpec + TargetSpec + PhaseSpec
 export type {
   GestureSpec,
   KeySpec, KeyHeldSpec, WheelSpec, ClickSpec, DragSpec,
   MultiTouchSpec, ContextMenuSpec, MultiTouchTapSpec,
-  ModSpec, TargetSpec,
+  ModSpec, TargetSpec, PhaseSpec,
 } from './ui/spec';
 
 // Pure matcher functions
-export { matchSpec, matchModifiers, matchKey, matchTarget } from './ui/match';
+export { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase } from './ui/match';
+export type { PhaseContext } from './ui/match';

@@ -4,12 +4,12 @@
  * binding-scope / matchBest logic on top.
  */
 
-import { matchSpec, matchModifiers, matchKey, matchTarget } from '@orochi235/weasel-gestures';
-import type { InputEvent } from '@orochi235/weasel-gestures';
+import { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase } from '@orochi235/weasel-gestures';
+import type { InputEvent, PhaseContext } from '@orochi235/weasel-gestures';
 import type { GestureBinding } from '../actions/binding';
 
-export { matchSpec, matchModifiers, matchKey, matchTarget };
-export type { InputEvent };
+export { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase };
+export type { InputEvent, PhaseContext };
 
 // ---------------------------------------------------------------------------
 // BindingScope / ScopedBinding / MatchResult
@@ -20,11 +20,18 @@ export type BindingScope = 'ambient' | 'active' | 'hotkey';
 export interface ScopedBinding {
   binding: GestureBinding;
   scope: BindingScope;
+  /** Tool id that owns this binding — `'&'`-channel phase atoms resolve
+   *  to this. `null` for ambient bindings that came from a registered
+   *  Action with no owning tool. */
+  ownerToolId: string | null;
 }
 
 export interface MatchResult {
   binding: GestureBinding;
   scope: BindingScope;
+  /** Tool id that owns the binding — propagated from `ScopedBinding`
+   *  so the dispatcher can record it as the handle owner. */
+  ownerToolId: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -49,8 +56,9 @@ export function matchBest(
   e: InputEvent,
   bindings: readonly ScopedBinding[],
   isMac: boolean,
+  engagedChannels?: ReadonlySet<string>,
 ): MatchResult | null {
-  const sorted = matchSorted(e, bindings, isMac);
+  const sorted = matchSorted(e, bindings, isMac, engagedChannels);
   return sorted.length > 0 ? sorted[0] : null;
 }
 
@@ -67,14 +75,20 @@ export function matchSorted(
   e: InputEvent,
   bindings: readonly ScopedBinding[],
   isMac: boolean,
+  engagedChannels?: ReadonlySet<string>,
 ): MatchResult[] {
   const out: MatchResult[] = [];
+  const engaged = engagedChannels ?? EMPTY_ENGAGED;
   for (const scope of SCOPE_PRIORITY) {
     for (const sb of bindings) {
-      if (sb.scope === scope && matchSpec(e, sb.binding.spec, isMac)) {
-        out.push({ binding: sb.binding, scope });
+      if (sb.scope !== scope) continue;
+      const phaseCtx: PhaseContext = { selfChannel: sb.ownerToolId, engagedChannels: engaged };
+      if (matchSpec(e, sb.binding.spec, isMac, phaseCtx)) {
+        out.push({ binding: sb.binding, scope, ownerToolId: sb.ownerToolId });
       }
     }
   }
   return out;
 }
+
+const EMPTY_ENGAGED: ReadonlySet<string> = new Set();

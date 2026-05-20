@@ -19,8 +19,9 @@
  * wildcard or a runtime throw.
  */
 
-import type { GestureSpec, ModSpec } from './spec';
+import type { GestureSpec, ModSpec, PhaseSpec } from './spec';
 import type { InputEvent } from './inputEvent';
+import type { PhaseAtom } from '../grammar/routeGrammar';
 
 // ---------------------------------------------------------------------------
 // matchModifiers
@@ -155,6 +156,65 @@ export function matchTarget(target: unknown, specTarget: unknown, bodyTarget?: s
 }
 
 // ---------------------------------------------------------------------------
+// matchPhase
+// ---------------------------------------------------------------------------
+
+/** Per-tool gesture-lifecycle state at match time.
+ *
+ *  - `selfChannel` is the tool id `'&'` resolves to — i.e., the tool that
+ *    owns the binding being evaluated. `null` for bindings without an
+ *    owning tool (e.g. ambient actions registered without scope ties); in
+ *    that case any `phase: '&'` atom can't match.
+ *  - `engagedChannels` is the set of tool ids that currently have an
+ *    in-flight handle. Derived by the dispatcher from its `inFlight()`
+ *    map keyed by tool id at match time.
+ */
+export interface PhaseContext {
+  selfChannel: string | null;
+  engagedChannels: ReadonlySet<string>;
+}
+
+/** Normalize the `PhaseSpec` shorthand to an atom array.
+ *  Bare keywords desugar to a single `'&'`-channel atom. */
+function normalizePhase(spec: PhaseSpec): readonly PhaseAtom[] {
+  if (typeof spec === 'string') {
+    return [{ channel: '&', phase: spec }];
+  }
+  return spec;
+}
+
+/** True if the binding's `phase` spec is satisfied by the current
+ *  per-tool engagement state. Omitted spec → always true (no phase
+ *  constraint). Union semantics: a phase atom list matches when ANY
+ *  atom matches. */
+export function matchPhase(spec: PhaseSpec | undefined, ctx: PhaseContext): boolean {
+  if (spec === undefined) return true;
+  const atoms = normalizePhase(spec);
+  if (atoms.length === 0) return true;
+  for (const a of atoms) {
+    if (matchPhaseAtom(a, ctx)) return true;
+  }
+  return false;
+}
+
+function matchPhaseAtom(a: PhaseAtom, ctx: PhaseContext): boolean {
+  if (a.channel === '*') {
+    // Any-channel sentinel: 'engaged' matches when any channel is engaged;
+    // 'initial' matches when none are; '*' matches both.
+    if (a.phase === '*') return true;
+    const anyEngaged = ctx.engagedChannels.size > 0;
+    return a.phase === 'engaged' ? anyEngaged : !anyEngaged;
+  }
+  // Resolve '&' to the binding's owning tool. Without an owner, '&' atoms
+  // can't match (correct: ambient actions don't have a "self").
+  const id = a.channel === '&' ? ctx.selfChannel : a.channel;
+  if (id == null) return false;
+  if (a.phase === '*') return true;
+  const isEngaged = ctx.engagedChannels.has(id);
+  return a.phase === 'engaged' ? isEngaged : !isEngaged;
+}
+
+// ---------------------------------------------------------------------------
 // matchSpec
 // ---------------------------------------------------------------------------
 
@@ -170,7 +230,17 @@ export function matchSpec(
   e: InputEvent,
   spec: GestureSpec,
   isMac: boolean,
+  phaseCtx?: PhaseContext,
 ): boolean {
+  // Phase gate runs first — cheaper than the per-kind logic, and a failed
+  // phase rules the spec out regardless of event shape. When no phase ctx
+  // is supplied (legacy callers), treat as wildcard-engagement so existing
+  // bindings continue to behave as if phase weren't a constraint.
+  if (spec.phase !== undefined) {
+    const ctx: PhaseContext = phaseCtx ?? { selfChannel: null, engagedChannels: EMPTY_ENGAGED };
+    if (!matchPhase(spec.phase, ctx)) return false;
+  }
+
   switch (spec.kind) {
     case 'key': {
       if (e.kind !== 'key') return false;
@@ -236,3 +306,5 @@ export function matchSpec(
     }
   }
 }
+
+const EMPTY_ENGAGED: ReadonlySet<string> = new Set();
