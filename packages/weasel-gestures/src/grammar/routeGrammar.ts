@@ -235,6 +235,85 @@ export function formatPhaseAtom(a: PhaseAtom): string {
   return `${a.channel}:${a.phase}`;
 }
 
+/** Visual-collapse pass: given a list of route strings, fold pairs that
+ *  differ ONLY in `shift` presence (one has `+shift`, the other doesn't,
+ *  everything else identical) into a single route with `?shift`. Useful
+ *  for inspector / palette displays that want to show "Cmd+[" and
+ *  "Cmd+Shift+[" as one Cmd+?Shift+[ chip rather than two rows.
+ *
+ *  Preserves input order — the first member of each fold-pair holds the
+ *  position; the second is dropped. Routes that don't have a `+shift`
+ *  vs absent twin pass through unchanged. Does NOT fold other modifier
+ *  pairs (alt/ctrl/meta/mod) — those tend to carry meaning across the
+ *  same key (e.g., Cmd+Z vs Cmd+Shift+Z are usually two distinct
+ *  actions, but Cmd+] vs Cmd+Shift+] is more often parametric variation
+ *  of one action). Open the helper if a use case for the other
+ *  modifiers shows up.
+ */
+export function collapseShiftPairs(routes: readonly string[]): string[] {
+  if (routes.length < 2) return [...routes];
+  const parsed = routes.map((r) => ({ raw: r, p: parseRoute(r) }));
+  const consumed = new Set<number>();
+  const out: string[] = [];
+  for (let i = 0; i < parsed.length; i++) {
+    if (consumed.has(i)) continue;
+    const a = parsed[i]!;
+    // Look ahead for a twin: same gesture/arg/target/phases/mods-except-shift.
+    let twinIndex = -1;
+    for (let j = i + 1; j < parsed.length; j++) {
+      if (consumed.has(j)) continue;
+      const b = parsed[j]!;
+      if (isShiftTwin(a.p, b.p)) { twinIndex = j; break; }
+    }
+    if (twinIndex < 0) { out.push(a.raw); continue; }
+    consumed.add(twinIndex);
+    // Emit the union with shift marked optional.
+    const folded: ParsedRoute = {
+      ...a.p,
+      modifiers: { ...withoutShift(a.p.modifiers), shift: 'optional' },
+    };
+    out.push(formatRoute(folded));
+  }
+  return out;
+}
+
+function isShiftTwin(a: ParsedRoute, b: ParsedRoute): boolean {
+  if (a.gesture !== b.gesture) return false;
+  if (a.arg !== b.arg) return false;
+  if (a.target !== b.target) return false;
+  if (!samePhases(a.phases, b.phases)) return false;
+  // Exactly one must have shift required; the other must lack shift.
+  const aShift = a.modifiers.shift;
+  const bShift = b.modifiers.shift;
+  const aHas = aShift === 'required';
+  const bHas = bShift === 'required';
+  if (!(aHas !== bHas)) return false;       // one and only one has shift
+  if (aShift === 'optional' || bShift === 'optional') return false;  // already optional
+  // Every other modifier must match exactly.
+  for (const name of VALID_MOD_NAMES) {
+    if (name === 'shift') continue;
+    if (a.modifiers[name] !== b.modifiers[name]) return false;
+  }
+  return true;
+}
+
+function samePhases(
+  a: readonly PhaseAtom[],
+  b: readonly PhaseAtom[],
+): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i]!.channel !== b[i]!.channel || a[i]!.phase !== b[i]!.phase) return false;
+  }
+  return true;
+}
+
+function withoutShift(m: ParsedModifiers): ParsedModifiers {
+  const { shift: _shift, ...rest } = m;
+  void _shift;
+  return rest;
+}
+
 const MOD_ORDER: readonly ModName[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
 
 export function formatRoute(r: ParsedRoute): string {

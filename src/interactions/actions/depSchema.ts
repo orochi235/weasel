@@ -271,6 +271,13 @@ declare module './depRegistry' {
      * invoker reads `deps.booleansAdapter` to execute the op.
      */
     booleansAdapter?: import('./booleans/booleans').BooleansAdapter;
+    /**
+     * Gesture dispatcher control surface — exposes `cancelAll(reason)` so
+     * actions that need to abort an in-flight handle (Escape cancels a
+     * drag, etc.) can do so. Sourced by `<SceneCanvas>` from the
+     * dispatcher instance it already owns.
+     */
+    dispatcher?: { cancelAll(reason: 'commit' | 'cancel'): void };
   }
 }
 

@@ -10,7 +10,14 @@ import type { Action } from '../registry';
 export const deleteAction: Action & { requires: string[] } = {
   id: 'delete',
   label: 'Delete',
-  defaultBinding: { kind: 'key', key: ['Delete', 'Backspace'] },
+  // Suppressed while any tool is mid-gesture — accidentally hitting
+  // Delete during a drag shouldn't wipe the selection out from under
+  // the in-flight handle.
+  defaultBinding: {
+    kind: 'key',
+    key: ['Delete', 'Backspace'],
+    phase: [{ channel: '*', phase: 'initial' }],
+  },
   requires: ['scene', 'selection'],
   invoker: {
     timing: 'immediate',

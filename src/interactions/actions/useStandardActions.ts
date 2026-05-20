@@ -23,6 +23,7 @@ import './depSchema';
 import { useOptionalActiveToolContext } from './activeToolContext';
 
 import { escapeAction } from './defaults/escape';
+import { cancelGestureAction } from './defaults/cancelGesture';
 import { selectAllAction } from './defaults/selectAll';
 import { deleteAction } from './defaults/delete';
 import { duplicateAction } from './defaults/duplicate';
@@ -88,6 +89,7 @@ export interface UseStandardActionsOptions {
  */
 const KIT_STANDARD_DESCRIPTORS: Action[] = [
   escapeAction,
+  cancelGestureAction,
   selectAllAction,
   deleteAction,
   duplicateAction,

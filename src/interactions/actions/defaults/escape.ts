@@ -8,7 +8,14 @@ import type { Action } from '../registry';
 export const escapeAction: Action & { requires: string[] } = {
   id: 'escape',
   label: 'Escape',
-  defaultBinding: { kind: 'key', key: 'Escape' },
+  // Gated to "no tool is engaged" so a mid-drag Escape goes to
+  // `cancelGestureAction` (cancels the drag) instead of clearing
+  // selection.
+  defaultBinding: {
+    kind: 'key',
+    key: 'Escape',
+    phase: [{ channel: '*', phase: 'initial' }],
+  },
   requires: ['selection'],
   invoker: {
     timing: 'immediate',

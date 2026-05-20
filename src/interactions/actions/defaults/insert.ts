@@ -80,9 +80,53 @@ interface InsertScratch {
   /** Pointer trail accumulated by the dispatcher in world space. Same array
    *  reference as `ctx.drag.points`; pencil-kind commits read from this. */
   points: ReadonlyArray<{ x: number; y: number }> | null;
+  /** Live Alt-key state from the most recent pump event. Alt INVERTS the
+   *  binding's nominal `originMode` (corner → center and vice versa), so
+   *  the user can press / release Alt mid-drag and the preview/commit
+   *  flip without needing the dispatcher to re-route to a different
+   *  binding. Captured per-onMove from `ctx.modifiers.alt`. */
+  altHeld: boolean;
   /** Cleared once `onEnd` runs so subsequent `overlay()` calls report no
    *  in-flight preview (mirrors the areaSelect/lasso convention). */
   open: boolean;
+}
+
+/** Resolve the effective origin mode from the binding's nominal opt
+ *  and live Alt state. Alt inverts: `corner` ⇄ `center`. Applies to
+ *  every shape kind — radial shapes (polygon/star) included; the
+ *  overlay paints an `anchorPoint` dot at the click so corner mode
+ *  reads as anchored even though no polygon vertex sits there.
+ */
+function effectiveOriginMode(
+  paramsOrigin: unknown,
+  altHeld: boolean,
+): 'corner' | 'center' {
+  const nominal: 'corner' | 'center' = paramsOrigin === 'center' ? 'center' : 'corner';
+  if (!altHeld) return nominal;
+  return nominal === 'center' ? 'corner' : 'center';
+}
+
+/** Compute the insert AABB from drag endpoints.
+ *  - `'corner'` (default): bounds = drag rect (top-left → bottom-right of cursor sweep).
+ *  - `'center'`: bounds = symmetric AABB anchored on the start point.
+ *    Used when the tool's Alt-modifier binding passes
+ *    `originMode: 'center'` (Illustrator/Figma convention). */
+function computeBounds(
+  startX: number, startY: number,
+  currentX: number, currentY: number,
+  originMode: 'corner' | 'center',
+): { x: number; y: number; width: number; height: number } {
+  if (originMode === 'center') {
+    const dx = Math.abs(currentX - startX);
+    const dy = Math.abs(currentY - startY);
+    return { x: startX - dx, y: startY - dy, width: dx * 2, height: dy * 2 };
+  }
+  return {
+    x: Math.min(startX, currentX),
+    y: Math.min(startY, currentY),
+    width: Math.abs(currentX - startX),
+    height: Math.abs(currentY - startY),
+  };
 }
 
 /** Build a typed `InsertExtras` from the static params + gesture context.
@@ -110,8 +154,19 @@ function buildExtras(
       const sides = Number(params?.['sides'] ?? 6);
       const rotation = Number(params?.['rotation'] ?? 0);
       const extras: InsertExtras = { kind: 'polygon', sides, rotation };
-      if (params?.['center'] !== undefined) (extras as { center?: unknown }).center = params['center'];
-      if (params?.['radius'] !== undefined) (extras as { radius?: unknown }).radius = params['radius'];
+      // Drag-from-center: tool's Alt binding passes `originMode:'center'`.
+      // Compute polygon center + radius from the drag vector so the shape
+      // anchors on the click point. Without this, the dep falls back to
+      // inscribing in the AABB (drag-from-corner default).
+      if (params?.['originMode'] === 'center') {
+        const dx = currentX - startX;
+        const dy = currentY - startY;
+        (extras as { center?: unknown }).center = { x: startX, y: startY };
+        (extras as { radius?: unknown }).radius = Math.hypot(dx, dy);
+      } else {
+        if (params?.['center'] !== undefined) (extras as { center?: unknown }).center = params['center'];
+        if (params?.['radius'] !== undefined) (extras as { radius?: unknown }).radius = params['radius'];
+      }
       return extras;
     }
     case 'star': {
@@ -119,8 +174,15 @@ function buildExtras(
       const ir = Number(params?.['innerRadiusRatio'] ?? 0.5);
       const rotation = Number(params?.['rotation'] ?? 0);
       const extras: InsertExtras = { kind: 'star', points: pts, innerRadiusRatio: ir, rotation };
-      if (params?.['center'] !== undefined) (extras as { center?: unknown }).center = params['center'];
-      if (params?.['outerRadius'] !== undefined) (extras as { outerRadius?: unknown }).outerRadius = params['outerRadius'];
+      if (params?.['originMode'] === 'center') {
+        const dx = currentX - startX;
+        const dy = currentY - startY;
+        (extras as { center?: unknown }).center = { x: startX, y: startY };
+        (extras as { outerRadius?: unknown }).outerRadius = Math.hypot(dx, dy);
+      } else {
+        if (params?.['center'] !== undefined) (extras as { center?: unknown }).center = params['center'];
+        if (params?.['outerRadius'] !== undefined) (extras as { outerRadius?: unknown }).outerRadius = params['outerRadius'];
+      }
       return extras;
     }
     case 'pencil':
@@ -172,6 +234,7 @@ export const insertAction: Action & { requires: string[] } = {
         currentX: ctx.world.x,
         currentY: ctx.world.y,
         points: ctx.drag?.points ?? null,
+        altHeld: ctx.modifiers.alt,
         open: true,
       };
 
@@ -179,6 +242,12 @@ export const insertAction: Action & { requires: string[] } = {
         onMove(moveCtx: InvocationCtx): void {
           scratch.currentX = moveCtx.world.x;
           scratch.currentY = moveCtx.world.y;
+          // Track live Alt state for the corner ⇄ center toggle. Each
+          // pointermove carries fresh modifier state from the dispatcher;
+          // releasing / pressing Alt mid-drag flips the bounds mode on
+          // the next move tick (true modifier-only events don't fire
+          // without a cursor change).
+          scratch.altHeld = moveCtx.modifiers.alt;
           // The dispatcher mutates its own per-gesture trail in place but
           // attaches the array reference to each InvocationCtx.drag — keep
           // the latest reference in case the dispatcher swaps it.
@@ -200,15 +269,31 @@ export const insertAction: Action & { requires: string[] } = {
           // Consumer-defined kinds aren't renderable by the kit overlay —
           // skip the preview rather than emit something half-faithful.
           if (!KIT_INSERT_KINDS.has(extras.kind)) return null;
-          const x = Math.min(scratch.startX, scratch.currentX);
-          const y = Math.min(scratch.startY, scratch.currentY);
-          const width = Math.abs(scratch.currentX - scratch.startX);
-          const height = Math.abs(scratch.currentY - scratch.startY);
+          const mode = effectiveOriginMode(resolved?.['originMode'], scratch.altHeld);
+          const bounds = computeBounds(
+            scratch.startX, scratch.startY,
+            scratch.currentX, scratch.currentY,
+            mode,
+          );
+          // Re-derive extras with the *effective* mode so polygon/star
+          // center+radius reflect the live Alt toggle, not the binding's
+          // nominal originMode.
+          const effectiveExtras = buildExtras(
+            { ...(resolved ?? {}), originMode: mode },
+            scratch.startX, scratch.startY,
+            scratch.currentX, scratch.currentY,
+            scratch.points,
+          );
           return {
             kind: 'insertPreview',
-            shape: extras.kind as KitInsertShape,
-            bounds: { x, y, width, height },
-            extras,
+            shape: effectiveExtras.kind as KitInsertShape,
+            bounds,
+            extras: effectiveExtras,
+            // Anchor dot at the click point — chrome that sells "this
+            // is where the drag started." Useful for radial shapes
+            // (no vertex at click) and for center mode (dot marks the
+            // growth axis).
+            anchorPoint: { x: scratch.startX, y: scratch.startY },
           };
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
@@ -218,22 +303,22 @@ export const insertAction: Action & { requires: string[] } = {
           const { dep: d, opts: o, startX, startY, currentX, currentY } = scratch;
           const points = endCtx.drag?.points ?? scratch.points;
 
-          const x = Math.min(startX, currentX);
-          const y = Math.min(startY, currentY);
-          const width = Math.abs(currentX - startX);
-          const height = Math.abs(currentY - startY);
-
           // Resolve params at commit time so thunked params (polygon
           // `sides` adjusted mid-drag, etc.) see the latest tool state.
           const resolved = resolveParams(o?.params);
-          const extras = buildExtras(resolved, startX, startY, currentX, currentY, points);
+          const mode = effectiveOriginMode(resolved?.['originMode'], scratch.altHeld);
+          const bounds = computeBounds(startX, startY, currentX, currentY, mode);
+          const extras = buildExtras(
+            { ...(resolved ?? {}), originMode: mode },
+            startX, startY, currentX, currentY, points,
+          );
 
           // Sub-threshold drag — no insert. Exception: pencil with a real
           // sample trail can still produce a meaningful path even when the
           // start ≈ end (e.g. a closed loop).
-          if ((width === 0 || height === 0) && extras.kind !== 'pencil') return;
+          if ((bounds.width === 0 || bounds.height === 0) && extras.kind !== 'pencil') return;
 
-          d.commit({ x, y, width, height }, extras);
+          d.commit(bounds, extras);
         },
       };
     },

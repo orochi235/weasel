@@ -193,6 +193,12 @@ export type OngoingOverlay =
       shape: 'rect' | 'ellipse' | 'line' | 'polygon' | 'star' | 'pencil';
       bounds: { x: number; y: number; width: number; height: number };
       extras: unknown;
+      /** World-space point to paint a small "anchor" dot at. Sells the
+       *  click point as the drag's anchor — particularly useful for
+       *  radial shapes (polygon/star) where no vertex sits on the
+       *  click point, and for any shape in center mode where the dot
+       *  marks the center the shape grows around. */
+      anchorPoint?: { x: number; y: number };
     };
 
 /** Handle returned from an `OngoingInvoker.start`. The dispatcher pumps

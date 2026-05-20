@@ -99,6 +99,9 @@ export function useRectTool<TNode extends { id: string }>(
         // dispatcher + insertAction. The legacy route-table drag channel
         // has been removed alongside `Tool.bindingsOverrideDrag`.
         bindings: [
+          // Single binding; insertAction toggles corner ⇄ center based on
+          // live Alt state so users can engage/disengage Alt mid-drag and
+          // see the bounds snap between the two modes.
           {
             spec: { kind: 'drag', target: 'empty' },
             actionId: 'insert',

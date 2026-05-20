@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  parseRoute, formatRoute, formatPhaseAtom,
+  parseRoute, formatRoute, formatPhaseAtom, collapseShiftPairs,
   type ParsedRoute, type PhaseAtom,
 } from './routeGrammar';
 
@@ -297,6 +297,63 @@ describe('formatPhaseAtom', () => {
     expect(formatPhaseAtom({ channel: 'rect', phase: 'engaged' })).toBe('rect:engaged');
     expect(formatPhaseAtom({ channel: '*', phase: 'engaged' })).toBe('*:engaged');
     expect(formatPhaseAtom({ channel: '*', phase: '*' })).toBe('*:*');
+  });
+});
+
+describe('collapseShiftPairs', () => {
+  it('passes singletons through unchanged', () => {
+    expect(collapseShiftPairs([])).toEqual([]);
+    expect(collapseShiftPairs(['[initial] keyDown(z) +mod']))
+      .toEqual(['[initial] keyDown(z) +mod']);
+  });
+
+  it('folds a Cmd+] / Cmd+Shift+] pair into Cmd+?Shift+]', () => {
+    const folded = collapseShiftPairs([
+      '[initial] keyDown(]) +mod',
+      '[initial] keyDown(]) +mod +shift',
+    ]);
+    expect(folded).toEqual(['[initial] keyDown(]) +mod ?shift']);
+  });
+
+  it('preserves order — keeps the first member of the fold-pair in place', () => {
+    const folded = collapseShiftPairs([
+      '[initial] keyDown(other) +mod',
+      '[initial] keyDown(]) +mod',
+      '[initial] keyDown(]) +mod +shift',
+      '[initial] keyDown(third)',
+    ]);
+    expect(folded).toEqual([
+      '[initial] keyDown(other) +mod',
+      '[initial] keyDown(]) +mod ?shift',
+      '[initial] keyDown(third)',
+    ]);
+  });
+
+  it('does not fold pairs that differ in other modifiers (alt/ctrl/meta)', () => {
+    const folded = collapseShiftPairs([
+      '[initial] keyDown(z) +mod',
+      '[initial] keyDown(z) +mod +alt',
+    ]);
+    // Different in alt, not shift — leave untouched.
+    expect(folded).toHaveLength(2);
+  });
+
+  it('does not fold pairs that differ in gesture / arg / target / phase', () => {
+    expect(collapseShiftPairs([
+      '[initial] keyDown(a) +mod',
+      '[initial] keyDown(b) +mod +shift',
+    ])).toHaveLength(2);
+    expect(collapseShiftPairs([
+      '[initial] click => empty +mod',
+      '[engaged] click => empty +mod +shift',
+    ])).toHaveLength(2);
+  });
+
+  it('does not re-fold an already-optional shift', () => {
+    expect(collapseShiftPairs([
+      '[initial] keyDown(a) +mod ?shift',
+      '[initial] keyDown(a) +mod',
+    ])).toHaveLength(2);
   });
 });
 
