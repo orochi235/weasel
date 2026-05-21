@@ -35,6 +35,12 @@ import type { InsertAdapter } from 'core/adapters/types';
 export interface BuiltinToolOptions {
   lasso?: { mode?: LassoHitMode };
   clone?: { cloneSelection?: boolean };
+  /** Snap world-space points to the active grid (or any other snap target).
+   *  Applied by the rect / ellipse / line tools to every coord they ingest,
+   *  so both the live overlay and the committed geometry use snapped
+   *  values. polygon / star / pencil / text go through the dispatcher's
+   *  `insertAction` descriptor, which doesn't yet honor this hook. */
+  snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
 }
 
 /** Default fill palette cycled through for auto-generated shape nodes. */
@@ -108,17 +114,21 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
 
   type LeafNode = SceneNode<TData, TLayer, TPose> & { id: NodeId };
 
+  const snapPoint = options?.snapPoint;
   const rect = useRectTool<LeafNode>({
+    snapPoint,
     create: (b) => makeLeaf(freshId('rc'),
       { x: b.x, y: b.y, width: b.width, height: b.height },
       { path: rectPath(b.x, b.y, b.width, b.height), fill: nextFill() }) as LeafNode,
   });
   const ellipse = useEllipseTool<LeafNode>({
+    snapPoint,
     create: (b) => makeLeaf(freshId('el'),
       { x: b.x, y: b.y, width: b.width, height: b.height },
       { path: ellipsePath(b), fill: nextFill() }) as LeafNode,
   });
   const line = useLineTool<LeafNode>({
+    snapPoint,
     create: (a, b) => makeLeaf(freshId('ln'), {
       x: Math.min(a.x, b.x),
       y: Math.min(a.y, b.y),

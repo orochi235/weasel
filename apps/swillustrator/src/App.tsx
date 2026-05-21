@@ -1147,6 +1147,12 @@ function EditorWithSharedScene({
             pickHud
             onToolsCreated={setTools}
             selectTool={snapToGrid ? { snap: gridSnapStrategy<SwillPose>(20) } : undefined}
+            toolOptions={snapToGrid ? {
+              snapPoint: (p) => ({
+                x: Math.round(p.x / 20) * 20,
+                y: Math.round(p.y / 20) * 20,
+              }),
+            } : undefined}
             layers={gridVisible ? {
               grid: {
                 spacing: 20,
