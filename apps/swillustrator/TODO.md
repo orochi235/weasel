@@ -21,9 +21,6 @@ Subsystems intentionally deferred:
   every action with stable ids, so a palette can iterate `registry.list()`
   and trigger by id — straightforward port.
 
-- **Preferences modal.** `PreferencesModal.tsx` and `prefs.ts` still exist
-  but no UI mounts them. The ActionBar gear button calls a stub.
-
 - **In-place text editing overlay.** Text-tool creates a leaf with default
   text; no double-click-to-edit affordance yet. Kit has
   `enterTextEditAction` registered — wire its dep source to surface the
@@ -33,19 +30,9 @@ Subsystems intentionally deferred:
   but Swillustrator's `groupMembership.ts` helpers aren't connected; we
   rely on whatever the kit's default group action does.
 
-- **Custom HUD / grid layers.** Grid toggle in the ActionBar exists but
-  the SceneCanvas grid slot isn't actually wired to it — the toggle only
-  flips a useState. To honor it, pass `layers={{ grid: gridVisible ? { ... } : null }}`.
-
-- **Snap-to-grid.** Toggle present, not wired. Pass
-  `selectTool.snap = gridSnapStrategy(...)` conditionally.
-
-- **SVG round-trip.** Open / Save buttons are no-ops. `svgInterop.ts`
-  survives in src/ — needs adaptation to our `SwillData` shape (currently
-  expects the legacy `Obj`).
-
-- **Compound-path release.** Button present and disabled; wire to
-  `splitSubpaths` once the selection model surfaces a compound-path leaf.
+- **Snap-to-grid on insert.** `selectTool.snap = gridSnapStrategy(20)` is
+  wired for moves, but `useInsertTool` has no snap hook — fresh drag-inserts
+  don't round to the grid. Needs a snap slot on the insert tool.
 
 - **Paper-size background.** `paperSize` controls canvas width/height,
   but there's no paper-shaped background node or printable bleed area.
