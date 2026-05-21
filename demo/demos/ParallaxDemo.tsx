@@ -190,11 +190,13 @@ function ParallaxDemoInner() {
   const selection = useSelection();
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   const [zoomParallax, setZoomParallax] = useState(false);
-  // Wheel pan is now handled by the viewport.pan descriptor (both axes).
-  // The x-axis-only locking previously provided by useWheelPanTool({ axis: 'x' })
-  // is not replicated — the descriptor pans both axes.
-  const hand = useHandTool({ axis: 'x', inertia: {} });
+  const hand = useHandTool({ inertia: {} });
   const tools = useTools({ active: 'hand', registry: { hand } });
+  // X-only viewport: the demo wants to scroll horizontally to show off the
+  // parallax planes. Both viewport.dragPan and viewport.pan write y, so we
+  // clamp on commit instead of relying on per-action axis options (which
+  // don't exist on those descriptors yet — see TODO).
+  const setViewXOnly = (next: View) => setView({ ...next, y: 0 });
 
   const sky = useMemo(
     () => createParallaxLayer<unknown>({
@@ -275,7 +277,7 @@ function ParallaxDemoInner() {
         scene={scene}
         selection={selection}
         view={view}
-        onViewChange={setView}
+        onViewChange={setViewXOnly}
         tools={tools}
         layers={{
           scene: { drawOne: () => [] },

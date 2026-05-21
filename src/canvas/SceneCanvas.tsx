@@ -70,7 +70,7 @@ import {
   useResizePolicy,
 } from './deps';
 import { useActionsPropResolver } from './SceneCanvas/useActionsPropResolver';
-import { ActiveToolContextProvider } from 'interactions/actions/activeToolContext';
+import { ActiveToolContextProviderIfRoot } from 'interactions/actions/activeToolContext';
 import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
 import { createDispatcher, type Dispatcher } from 'interactions/dispatcher/dispatcher';
 import { useActionsRegistry } from 'interactions/actions/registry';
@@ -1162,21 +1162,21 @@ function ResizePolicyRegistrar({
 
 const SceneCanvasInnerForwardRef = forwardRef(SceneCanvasInner);
 
-// Wrapper that lifts `<ActiveToolContextProvider>` above `SceneCanvasInner`.
-// The inner component calls `useTools(...)`, which falls back to local state
-// when no `ActiveToolContextProvider` is in scope above it. The gesture
-// dispatcher reads the *context* value, so without this lift, keybinding-driven
-// tool switches would update local state only and the dispatcher would see a
-// stale active tool. Wrapping here keeps `useTools` and `useGestureDispatcher`
-// reading the same source of truth.
+// Wrapper that lifts `<ActiveToolContextProvider>` above `SceneCanvasInner`
+// — but only when none is already in scope. The `IfRoot` variant is critical:
+// a consumer wrapping in `<WeaselProvider>` (or its own
+// `<ActiveToolContextProvider>`) pushes the active tool via `useTools(...)` to
+// the OUTER context; if SceneCanvas unconditionally mounted a fresh inner
+// provider here, its dispatcher would read the inner (stale 'select') context
+// instead of the outer (live 'hand'/'select'/etc.) one.
 function SceneCanvasWrapper<TData, TLayer extends string, TPose>(
   props: SceneCanvasProps<TData, TLayer, TPose>,
   ref: React.ForwardedRef<CanvasExtensionApi>,
 ) {
   return (
-    <ActiveToolContextProvider>
+    <ActiveToolContextProviderIfRoot>
       <SceneCanvasInnerForwardRef {...(props as SceneCanvasProps<unknown, string, unknown>)} ref={ref} />
-    </ActiveToolContextProvider>
+    </ActiveToolContextProviderIfRoot>
   );
 }
 
