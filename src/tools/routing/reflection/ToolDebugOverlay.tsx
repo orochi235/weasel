@@ -25,6 +25,7 @@ export function ToolDebugOverlay({
     );
   }
   const modText = info.modifiers === 'default' ? '—' : info.modifiers;
+  const gestureText = info.arg !== undefined ? `${info.gesture}(${info.arg})` : info.gesture;
   const targetText = info.target.category === 'empty'
     ? 'empty'
     : `${info.target.kind}${'id' in info.target ? `(${String(info.target.id)})` : ''}`;
@@ -40,7 +41,7 @@ export function ToolDebugOverlay({
       </div>
       <div className={styles.row}>
         <span className={styles.label}>gesture</span>
-        <span className={styles.value}>{info.gesture}</span>
+        <span className={styles.value}>{gestureText}</span>
       </div>
       <div className={styles.row}>
         <span className={styles.label}>matched</span>

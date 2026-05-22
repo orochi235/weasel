@@ -50,6 +50,10 @@ export type {
 export { parseKeyRoute, formatKeyRoute, keyRouteToSpec } from './grammar/keyRouteGrammar';
 export type { ParsedKeyRoute, OptionalMod } from './grammar/keyRouteGrammar';
 
+// Plain-English route descriptions
+export { describeRoute, describeRouteParts, ROUTE_TERMS, ROUTE_FIELD_DEFINITIONS } from './grammar/describeRoute';
+export type { DescribeRouteOptions, RouteDescriptionPart, RouteTermLabel, RouteFieldName } from './grammar/describeRoute';
+
 // Modifier-key reflection helpers
 export { modifierKeyToParsed, canonicalModifiers } from './grammar/modifierKeyToParsed';
 

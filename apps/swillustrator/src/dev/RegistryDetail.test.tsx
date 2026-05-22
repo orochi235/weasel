@@ -111,10 +111,23 @@ describe('RouteBadge v3', () => {
     expect(cap?.textContent).toBe('⇧');
   });
 
-  it('elides "*" target — no target chip rendered', () => {
+  it('renders "*" target as a muted tag — wildcards stay visible so the route reads as the full wiring', () => {
     const { container } = render(<RouteBadge route="[initial] click" />);
-    // No target tag; only phase + gesture chips visible.
-    const tags = container.querySelectorAll('code');
-    expect(tags.length).toBe(0);
+    const tag = container.querySelector('code');
+    expect(tag?.textContent).toBe('*');
+    expect(tag?.className).toMatch(/routeMuted/);
+  });
+
+  it('renders keyDown arg as a minimal KeyCap with the canonical glyph (no parens)', () => {
+    const { container } = render(<RouteBadge route="[initial] keyDown(Escape)" />);
+    const cap = container.querySelector('kbd[data-variant="minimal"]');
+    expect(cap?.textContent).toBe('⎋');
+    // No parenthesized fallback rendering when arg is a key.
+    expect(container.textContent).not.toMatch(/\(Escape\)/);
+  });
+
+  it('keeps parens for non-key args (e.g. wheel direction)', () => {
+    const { container } = render(<RouteBadge route="[initial] wheel(up)" />);
+    expect(container.textContent).toMatch(/wheel\(up\)/);
   });
 });

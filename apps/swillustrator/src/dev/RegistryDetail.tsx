@@ -1,9 +1,25 @@
-import { Fragment } from 'react';
-import { Badge, DataGrid, KeySequence, Powerline, type BadgeProps, type DataGridColumn, type KeySpec, type PowerlineProps } from '@orochi235/weasel-ui';
+import { Fragment, type ReactNode } from 'react';
+import { Badge, DataGrid, KeyCap, KeySequence, Powerline, keyGlyph, type BadgeProps, type DataGridColumn, type KeySpec, type PowerlineProps } from '@orochi235/weasel-ui';
 import type { ParsedModifiers, ModName } from '@orochi235/weasel/routing';
 
 function toKeys(parts: readonly string[] | undefined) {
   return parts?.map((label) => ({ label }));
+}
+
+/** Minimal inline-markdown renderer — splits on backtick-delimited code
+ *  spans and wraps each in <code>. No other markdown features. Sufficient
+ *  for the route-field explanation glossary, which uses inline code only. */
+function InlineMarkdown({ text }: { text: string }) {
+  const segments = text.split(/(`[^`]+`)/g);
+  return (
+    <>
+      {segments.map((seg, i) => (
+        seg.startsWith('`') && seg.endsWith('`')
+          ? <code key={i} className={s.tag}>{seg.slice(1, -1)}</code>
+          : <Fragment key={i}>{seg}</Fragment>
+      ))}
+    </>
+  );
 }
 
 const MOD_GLYPHS: Record<ModName, string> = { mod: '⌘', shift: '⇧', alt: '⌥', ctrl: '⌃', meta: '⌘' };
@@ -31,25 +47,27 @@ import type {
   MetaEntry, CallbackRef, TreeCategoryNode,
 } from './registryData';
 import { BOOLEAN_BADGE_PROPS, BUNDLE_BADGE_PROPS, CHANNEL_BADGE_PROPS, GESTURE_BADGE_PROPS, HOTKEY_TRIGGER_GLYPHS, KIND_BADGE_PROPS, PHASE_BADGE_PROPS, TOKEN_SETS, type TokenSet } from './badgeTokens';
-import { canonicalModifiers, formatPhaseAtom, getGestureDescriptor, type GestureName } from '@orochi235/weasel/routing';
+import { canonicalModifiers, describeRoute, describeRouteParts, formatPhaseAtom, getGestureDescriptor, ROUTE_FIELD_DEFINITIONS, type GestureName, type RouteFieldName } from '@orochi235/weasel/routing';
 import { collectBundles, GESTURE_CHANNEL_KEYS, PHASE_OUTPUT_KEYS, parseRoute } from './registryData';
 void GESTURE_CHANNEL_KEYS;
 void PHASE_OUTPUT_KEYS;
 
 /** Decomposes a v3 route string (`[phaseList] gesture(arg) => target +mod`)
- *  into its constituent tokens — bracketed phase list, gesture badge,
- *  optional arg chip, target tag, modifier sequence. Targets equal to the
- *  wildcard `*` are elided; arg chips are elided when the gesture descriptor
- *  has a default and the parsed arg matches it. */
+ *  into its constituent tokens — bracketed phase list, gesture badge with
+ *  fused arg, target tag, modifier sequence. Arg is rendered inside the
+ *  gesture badge as `gesture(arg)`; descriptor defaults (e.g. `wheel(*)`)
+ *  are kept visible but muted. Target is rendered whenever the descriptor
+ *  has a target slot, with the wildcard `*` muted so specific targets
+ *  visually dominate. */
 export function RouteBadge({ route }: { route: string }) {
   const parsed = parseRoute(route);
   const desc = getGestureDescriptor(parsed.gesture as GestureName);
   const modKeys = modifierKeys(parsed.modifiers);
-  const showArg = !!desc.arg
-    && parsed.arg !== undefined
-    && (desc.arg.default === undefined || parsed.arg !== desc.arg.default);
-  const showTarget = desc.hasTarget && parsed.target !== undefined && parsed.target !== '*';
-  const targetless = !desc.hasTarget;
+  const hasArg = !!desc.arg && parsed.arg !== undefined;
+  const argIsKey = hasArg && desc.arg?.name === 'key';
+  const argIsDefault = hasArg && desc.arg?.default !== undefined && parsed.arg === desc.arg.default;
+  const hasTarget = desc.hasTarget && parsed.target !== undefined;
+  const targetIsWildcard = hasTarget && parsed.target === '*';
   return (
     <span className={s.routeBadge}>
       <span className={s.phaseGroup}>
@@ -63,33 +81,42 @@ export function RouteBadge({ route }: { route: string }) {
           </Fragment>
         ))}
       </span>
-      <Badge
-        {...(GESTURE_BADGE_PROPS as BadgeProps)}
-        className={targetless && !showArg ? s.flatRight : undefined}
-      >
+      <Badge {...(GESTURE_BADGE_PROPS as BadgeProps)}>
         {parsed.gesture}
+        {hasArg && (argIsKey ? (
+          <> <KeyCap label={keyGlyph(parsed.arg!)} variant="minimal" className={s.routeKeyCap} /></>
+        ) : (
+          <span className={argIsDefault ? s.routeMuted : undefined}>({parsed.arg})</span>
+        ))}
       </Badge>
-      {showArg && (
-        <code className={[s.argChip, targetless ? s.flatLeft : undefined].filter(Boolean).join(' ')}>
-          {parsed.arg}
+      {modKeys && (
+        <span className={s.modGroup}>
+          <span className={s.modSigil}>+</span>
+          <KeySequence keys={modKeys} />
+        </span>
+      )}
+      {hasTarget && (
+        <code className={[s.tag, targetIsWildcard ? s.routeMuted : undefined].filter(Boolean).join(' ')}>
+          {parsed.target}
         </code>
       )}
-      {showTarget && <code className={s.tag}>{parsed.target}</code>}
-      {modKeys && <KeySequence keys={modKeys} />}
     </span>
   );
 }
 
 /** Decomposes a v3 route string into a Powerline config. Mirrors RouteBadge's
- *  token order (phase atoms → gesture → arg → target → modifier keys) but
- *  emits them as tessellated powerline segments instead of standalone badges. */
-function routeToPowerline(route: string): Omit<PowerlineProps, 'className' | 'aria-label'> {
+ *  token order (phase atoms → gesture(arg) → target → modifier keys) but
+ *  emits them as tessellated powerline segments. Arg fuses into the gesture
+ *  segment as `gesture(arg)`; descriptor defaults and wildcard targets are
+ *  kept visible (muted) so the strip reads as the full wiring at a glance. */
+export function routeToPowerline(route: string): Omit<PowerlineProps, 'className' | 'aria-label'> {
   const parsed = parseRoute(route);
   const desc = getGestureDescriptor(parsed.gesture as GestureName);
-  const showArg = !!desc.arg
-    && parsed.arg !== undefined
-    && (desc.arg.default === undefined || parsed.arg !== desc.arg.default);
-  const showTarget = desc.hasTarget && parsed.target !== undefined && parsed.target !== '*';
+  const hasArg = !!desc.arg && parsed.arg !== undefined;
+  const argIsKey = hasArg && desc.arg?.name === 'key';
+  const argIsDefault = hasArg && desc.arg?.default !== undefined && parsed.arg === desc.arg.default;
+  const hasTarget = desc.hasTarget && parsed.target !== undefined;
+  const targetIsWildcard = hasTarget && parsed.target === '*';
   const modKeys = modifierKeys(parsed.modifiers);
 
   const segments: PowerlineProps['segments'] = [];
@@ -97,13 +124,37 @@ function routeToPowerline(route: string): Omit<PowerlineProps, 'className' | 'ar
     if (p.channel !== '&') segments.push({ text: p.channel, tone: 'neutral', variant: 'subtle' });
     segments.push({ text: p.phase, tone: 'accent', variant: 'subtle' });
   }
-  segments.push({ text: parsed.gesture, tone: 'info', variant: 'outline' });
-  if (showArg) segments.push({ text: parsed.arg, tone: 'muted', variant: 'subtle' });
-  if (showTarget) segments.push({ text: parsed.target, tone: 'muted', variant: 'outline' });
+  segments.push({
+    text: hasArg ? (
+      argIsKey ? (
+        <>
+          {parsed.gesture}{' '}
+          <KeyCap label={keyGlyph(parsed.arg!)} variant="minimal" className={s.routeKeyCap} />
+        </>
+      ) : (
+        <>
+          {parsed.gesture}
+          <span className={argIsDefault ? s.routeMuted : undefined}>({parsed.arg})</span>
+        </>
+      )
+    ) : parsed.gesture,
+    tone: 'info',
+    variant: 'outline',
+  });
   if (modKeys) {
-    for (const k of modKeys) {
-      segments.push({ text: k.label, tone: 'muted', variant: k.optional ? 'subtle' : 'outline' });
-    }
+    // Coalesce all modifiers into a single fused segment so the whole
+    // "held keys" group reads as one chord rather than a chain of pills.
+    // Sigils are inlined per-key: `+` for required, `?` for optional, so a
+    // mixed set like `+mod ?shift` renders as `+⌘?⇧`.
+    const text = modKeys.map((k) => `${k.optional ? '?' : '+'}${k.label}`).join('');
+    segments.push({ text, tone: 'muted', variant: 'solid' });
+  }
+  if (hasTarget) {
+    segments.push({
+      text: parsed.target,
+      tone: 'muted',
+      variant: targetIsWildcard ? 'subtle' : 'outline',
+    });
   }
   // Every cap is a chevron so the strip reads as a directional pipeline.
   for (let i = 0; i < segments.length - 1; i++) segments[i].endCap = 'chevron';
@@ -353,29 +404,57 @@ function RouteDetail({
     .filter((t) => t.routes.includes(entry.id))
     .map((t) => ({ id: t.id, tool: t }));
   return (
-    <div>
-      <h2 className={s.detailHeading}><RouteBadge route={entry.id} /></h2>
-      <dl className={s.detailList}>
-        <dt>phases</dt><dd>{parsed.phases.map(formatPhaseAtom).join(', ')}</dd>
-        <dt>gesture</dt><dd><code className={s.tag}>{parsed.gesture}</code></dd>
-        {parsed.arg !== undefined && (<><dt>arg</dt><dd><code className={s.tag}>{parsed.arg}</code></dd></>)}
-        {parsed.target !== undefined && (
-          <>
-            <dt>target</dt>
-            <dd><EntryLink kind="routeTarget" id={parsed.target} onNavigate={onNavigate} /></dd>
-          </>
+    <div className={s.routeDetailRoot}>
+      <h2 className={s.detailHeading}><Powerline {...routeToPowerline(entry.id)} /></h2>
+      <p className={s.routeDescription} title={describeRoute(parsed)}>
+        {describeRouteParts(parsed).map((part, i) =>
+          typeof part === 'string'
+            ? <Fragment key={i}>{part}</Fragment>
+            : <abbr key={i} className={s.routeTerm} title={part.definition}>{part.label}</abbr>,
         )}
-        {Object.keys(parsed.modifiers).length > 0 && (
-          <>
-            <dt>modifiers</dt>
-            <dd>
-              {Object.entries(parsed.modifiers).map(([name, req]) => (
-                <code key={name} className={s.tag}>{req === 'required' ? '+' : '?'}{name}</code>
-              ))}
-            </dd>
-          </>
-        )}
-      </dl>
+      </p>
+      {(() => {
+        type FieldRow = { id: RouteFieldName; value: ReactNode };
+        const fieldRows: FieldRow[] = [
+          { id: 'phases', value: parsed.phases.map(formatPhaseAtom).join(', ') },
+          { id: 'gesture', value: <code className={s.tag}>{parsed.gesture}</code> },
+        ];
+        if (parsed.arg !== undefined) {
+          fieldRows.push({ id: 'arg', value: <code className={s.tag}>{parsed.arg}</code> });
+        }
+        if (parsed.target !== undefined) {
+          fieldRows.push({
+            id: 'target',
+            value: <EntryLink kind="routeTarget" id={parsed.target} onNavigate={onNavigate} />,
+          });
+        }
+        if (Object.keys(parsed.modifiers).length > 0) {
+          fieldRows.push({
+            id: 'modifiers',
+            value: Object.entries(parsed.modifiers).map(([name, req]) => (
+              <code key={name} className={s.tag}>{req === 'required' ? '+' : '?'}{name}</code>
+            )),
+          });
+        }
+        return (
+          <DataGrid
+            rows={fieldRows}
+            columns={[
+              { id: 'field', header: 'field', sortable: false, render: (r) => r.id },
+              { id: 'value', header: 'value', sortable: false, render: (r) => r.value },
+              {
+                id: 'explanation',
+                header: 'what it means',
+                sortable: false,
+                className: s.routeFieldExplanation,
+                render: (r) => (r.id in ROUTE_FIELD_DEFINITIONS
+                  ? <InlineMarkdown text={ROUTE_FIELD_DEFINITIONS[r.id as RouteFieldName]} />
+                  : null),
+              },
+            ]}
+          />
+        );
+      })()}
       <h3 className={s.subHeading}>Tools declaring this route</h3>
       <DataGrid
         rows={rows}

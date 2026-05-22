@@ -1,25 +1,5 @@
 import type { KeyBinding } from '@orochi235/weasel';
-
-/** Apple-style glyph for a `KeyBinding.key` value (or returns the upper-cased
- *  key as-is if no glyph is registered). Covers escape, delete/backspace,
- *  arrow keys, enter, tab, space. */
-function keyGlyph(rawKey: string): string {
-  switch (rawKey) {
-    case 'Escape': return '⎋';
-    case 'Backspace': return '⌫';
-    case 'Delete': return '⌦';
-    case 'ArrowUp': return '↑';
-    case 'ArrowDown': return '↓';
-    case 'ArrowLeft': return '←';
-    case 'ArrowRight': return '→';
-    case 'Enter':
-    case 'Return': return '↵';
-    case 'Tab': return '⇥';
-    case ' ':
-    case 'Space': return '␣';
-    default: return rawKey.toUpperCase();
-  }
-}
+import { keyGlyph } from '../Keycaps/keyGlyph';
 
 /** Format a `KeyBinding` as an array of display chips, one per key — modifier
  *  icons (⌘, ↑, ⌥) followed by the key glyph. UIs that want a boxed
