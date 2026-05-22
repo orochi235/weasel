@@ -32,6 +32,24 @@ const BUNDLE_OPTIONS = [
   { id: 'exhaustive', label: 'Exhaustive' },
 ] as const;
 
+/** Parse the selected-entry coordinates out of the URL hash. The inspector
+ *  encodes the user's selection as `#/dev/registry?kind=<entryKind>&id=<entryId>`
+ *  so a tab + selection is shareable / reload-stable. */
+function parseSelectionFromHash(hash: string): { kind: string; id: string } | null {
+  const q = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
+  const params = new URLSearchParams(q);
+  const kind = params.get('kind');
+  const id = params.get('id');
+  return kind && id ? { kind, id } : null;
+}
+
+function writeSelectionToHash(sel: { kind: string; id: string } | null): void {
+  const next = sel
+    ? `#/dev/registry?kind=${encodeURIComponent(sel.kind)}&id=${encodeURIComponent(sel.id)}`
+    : '#/dev/registry';
+  if (window.location.hash !== next) window.history.replaceState(null, '', next);
+}
+
 /** Bundle Inspector — read-only catalog browser at `#/dev/registry`.
  *  Mounted as a sibling to ToolkitBuilder. See
  *  `docs/superpowers/specs/2026-05-16-bundle-inspector-design.md`. */
@@ -46,6 +64,12 @@ export function RegistryInspector() {
   const [bundleFilter, setBundleFilter] = useState<string>('all');
   const [textFilter, setTextFilter] = useState<string>('');
   const [selected, setSelected] = useState<TreeEntry | null>(null);
+  // Pending deep-link from the URL — the matching entry may not exist yet
+  // when the probe hasn't fired its first snapshot. Drained below once the
+  // tree nodes are populated.
+  const [pendingDeepLink, setPendingDeepLink] = useState<{ kind: string; id: string } | null>(
+    () => parseSelectionFromHash(window.location.hash),
+  );
 
   const onSnapshot = useCallback((snap: RegistrySnapshot) => setRuntime(snap), []);
 
@@ -134,6 +158,42 @@ export function RegistryInspector() {
       if (!matches) setSelected(null);
     }
   }, [nodes, lower, selected]);
+
+  // Drain any pending deep-link once the matching entry exists in the tree.
+  // The probe pushes its snapshot async on first render, so the URL-decoded
+  // selection may name an entry that won't be in `nodes` for a frame or two.
+  useEffect(() => {
+    if (!pendingDeepLink) return;
+    for (const node of nodes) {
+      const hit = node.entries.find((e) => e.kind === pendingDeepLink.kind && e.id === pendingDeepLink.id);
+      if (hit) {
+        setSelected(hit);
+        setPendingDeepLink(null);
+        return;
+      }
+    }
+  }, [pendingDeepLink, nodes]);
+
+  // Mirror the selection into the URL hash so the inspector is deep-linkable.
+  useEffect(() => {
+    writeSelectionToHash(selected ? { kind: selected.kind, id: selected.id } : null);
+  }, [selected]);
+
+  // Respond to external hash changes (browser back/forward, manual URL edits).
+  useEffect(() => {
+    const onHash = () => {
+      const parsed = parseSelectionFromHash(window.location.hash);
+      if (!parsed) { setSelected(null); return; }
+      // Resolve immediately if the entry already exists; otherwise queue.
+      for (const node of nodes) {
+        const hit = node.entries.find((e) => e.kind === parsed.kind && e.id === parsed.id);
+        if (hit) { setSelected(hit); return; }
+      }
+      setPendingDeepLink(parsed);
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, [nodes]);
 
   return (
     <div className={s.root}>
