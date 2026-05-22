@@ -24,6 +24,13 @@ describe('parseRoute v3', () => {
     });
   });
 
+  it('parses keyHeld with a key arg', () => {
+    expect(parseRoute('[initial] keyHeld(Space)')).toEqual({
+      phases: [self('initial')], gesture: 'keyHeld', arg: 'Space',
+      target: undefined, modifiers: {},
+    });
+  });
+
   it('parses multiple modifier atoms', () => {
     expect(parseRoute('[initial] click => empty +mod ?shift')).toEqual({
       phases: [self('initial')], gesture: 'click', arg: undefined,
@@ -365,6 +372,8 @@ describe('parseRoute / formatRoute round-trip', () => {
       '[initial] click => empty +shift',
       '[initial] click => selected-body +mod',
       '[initial] keyDown(ArrowDown) ?shift',
+      '[initial] keyHeld(Space)',
+      '[*:initial] keyHeld(Space) +shift',
       '[initial] wheel(up)',
       '[initial] wheel',
       '[initial,engaged] contextMenu',
@@ -385,5 +394,10 @@ describe('parseRoute / formatRoute round-trip', () => {
   it('`[&:engaged]` round-trips back to shorthand `[engaged]`', () => {
     // Source uses explicit `&:`; canonical form elides it.
     expect(formatRoute(parseRoute('[&:engaged] wheel'))).toBe('[engaged] wheel');
+  });
+
+  it('round-trips keyHeld through format → parse', () => {
+    const route = '[*:initial] keyHeld(Space) +shift';
+    expect(formatRoute(parseRoute(route))).toBe(route);
   });
 });
