@@ -49,6 +49,12 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
     layer?: TLayer;
   };
   layouts?: SceneToAdapterOptions<TData, TLayer, TPose>['layouts'];
+  /** Classifier producing a kind string from a node's `data` payload.
+   *  Forwarded verbatim to `sceneToAdapter` so `adapter.kindOf(id)` is
+   *  available to the dispatcher / Canvas read sites. Set by
+   *  `<SceneCanvas>` from its `kinds` prop; see
+   *  `docs/superpowers/specs/2026-05-21-node-kind-registry-design.md`. */
+  kindOf?: SceneToAdapterOptions<TData, TLayer, TPose>['kindOf'];
 }
 
 export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
@@ -81,7 +87,7 @@ export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
 export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   args: UseSceneSelectToolArgs<TData, TLayer, TPose>,
 ): UseSceneSelectToolReturn<TData, TLayer, TPose> {
-  const { scene, selection, geometry, selectTool: opts, insertTool, layouts } = args;
+  const { scene, selection, geometry, selectTool: opts, insertTool, layouts, kindOf } = args;
 
   const pickEveryProp = geometry?.pickEvery;
   const boundsOfProp = geometry?.boundsOf;
@@ -95,7 +101,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   const insertLayer = insertTool?.layer;
 
   const adapter = useMemo(() => {
-    const base = sceneToAdapter(scene, { commitInsert, insertLayer, layouts });
+    const base = sceneToAdapter(scene, { commitInsert, insertLayer, layouts, kindOf });
     const collectDescendants = (id: string, out: string[]): void => {
       for (const cid of scene.childrenOf(asNodeId(id))) {
         out.push(cid);
@@ -157,7 +163,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
         return hits;
       },
     };
-  }, [scene, commitInsert, insertLayer, layouts, selection]);
+  }, [scene, commitInsert, insertLayer, layouts, selection, kindOf]);
 
   // Default cascade lookup for the move overlay — reads live world pose from
   // the scene. Caller's `moveOptions.cascadeWorldPose` (if any) wins.
