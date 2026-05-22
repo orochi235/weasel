@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAnimator } from './useAnimator';
-import { tweenVertexColors, springVertexColors, cycleVertexColors } from './colorHelpers';
+import { tweenVertexColors, springVertexColors, cycleVertexColors, staggerVertexColors } from './colorHelpers';
 
 function makeClock() {
   let now = 0;
@@ -218,5 +218,107 @@ describe('cycleVertexColors', () => {
       (base: readonly number[], tMs: number) => number[];
     const t100 = fn(base, 100);
     expect(t100.slice(0, 4)).toEqual([0, 0, 255, 255]);
+  });
+});
+
+describe('staggerVertexColors', () => {
+  it('transitions anchors from origin outward', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const from = [
+      0, 0, 0, 255,
+      0, 0, 0, 255,
+      0, 0, 0, 255,
+    ];
+    const to = [
+      255, 255, 255, 255,
+      255, 255, 255, 255,
+      255, 255, 255, 255,
+    ];
+    act(() => {
+      staggerVertexColors(result.current, {
+        id: 'p',
+        channel: 'stroke',
+        from,
+        to,
+        anchorMs: 100,
+        perAnchorDelay: 50,
+        origin: 'first',
+        easing: (t) => t,
+      });
+    });
+
+    const fn = result.current.colorOverrides.get('p', 'stroke') as
+      (base: readonly number[], tMs: number) => number[];
+
+    expect(fn(from, 0)).toEqual(from);
+
+    const at50 = fn(from, 50);
+    expect(at50.slice(0, 4)).toEqual([128, 128, 128, 255]);
+    expect(at50.slice(4, 8)).toEqual([0, 0, 0, 255]);
+    expect(at50.slice(8, 12)).toEqual([0, 0, 0, 255]);
+
+    const at300 = fn(from, 300);
+    expect(at300).toEqual(to);
+  });
+
+  it('fires onDone after the slowest anchor completes and clears the override', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const onDone = vi.fn();
+    act(() => {
+      staggerVertexColors(result.current, {
+        id: 'p',
+        channel: 'fill',
+        from: [0, 0, 0, 255, 0, 0, 0, 255],
+        to: [255, 255, 255, 255, 255, 255, 255, 255],
+        anchorMs: 100,
+        perAnchorDelay: 50,
+        onDone,
+      });
+    });
+    act(() => clock.advance(0));
+    act(() => clock.advance(200));
+    expect(onDone).toHaveBeenCalled();
+    expect(result.current.colorOverrides.get('p', 'fill')).toBeUndefined();
+  });
+
+  it('origin: "last" reverses the propagation', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const from = [0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255];
+    const to = [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255];
+    act(() => {
+      staggerVertexColors(result.current, {
+        id: 'p',
+        channel: 'stroke',
+        from,
+        to,
+        anchorMs: 100,
+        perAnchorDelay: 50,
+        origin: 'last',
+        easing: (t) => t,
+      });
+    });
+    const fn = result.current.colorOverrides.get('p', 'stroke') as
+      (base: readonly number[], tMs: number) => number[];
+    const at50 = fn(from, 50);
+    expect(at50.slice(8, 12)).toEqual([128, 128, 128, 255]);
+    expect(at50.slice(0, 4)).toEqual([0, 0, 0, 255]);
+  });
+
+  it('throws on length mismatch', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    expect(() => {
+      staggerVertexColors(result.current, {
+        id: 'p',
+        channel: 'fill',
+        from: [0, 0, 0, 255],
+        to: [0, 0, 0, 255, 0, 0, 0, 255],
+        anchorMs: 100,
+        perAnchorDelay: 50,
+      });
+    }).toThrow();
   });
 });

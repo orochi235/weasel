@@ -182,3 +182,71 @@ export function cycleVertexColors(
     },
   };
 }
+
+export interface StaggerVertexColorsOptions {
+  id: string;
+  channel: VertexColorChannel;
+  to: readonly number[];
+  from: readonly number[];
+  anchorMs: number;
+  perAnchorDelay: number;
+  origin?: 'first' | 'last' | number;
+  easing?: EasingFn;
+  interpolation?: ColorSpace;
+  interpolate?: ColorInterpolate;
+  onDone?: () => void;
+}
+
+export function staggerVertexColors(
+  animator: Animator,
+  opts: StaggerVertexColorsOptions,
+): AnimationHandle {
+  validateLengths(opts.from, opts.to);
+  const interp = resolveInterpolator(opts);
+  const { id, channel, from, to, anchorMs, perAnchorDelay } = opts;
+  const n = from.length / 4;
+  const easing = opts.easing ?? ((t: number) => t);
+
+  const originIndex =
+    opts.origin === 'last' ? n - 1 :
+    typeof opts.origin === 'number' ? Math.max(0, Math.min(n - 1, opts.origin)) :
+    0;
+
+  const maxDistance = Math.max(originIndex, n - 1 - originIndex);
+  const totalMs = maxDistance * perAnchorDelay + anchorMs;
+
+  const override = (_base: readonly number[], tMs: number): number[] => {
+    const out = new Array<number>(from.length);
+    for (let i = 0; i < n; i++) {
+      const distance = Math.abs(i - originIndex);
+      const startMs = distance * perAnchorDelay;
+      const localT = Math.max(0, Math.min(1, (tMs - startMs) / anchorMs));
+      const eased = easing(localT);
+      const k = i * 4;
+      const fSlice = [from[k], from[k + 1], from[k + 2], from[k + 3]];
+      const tSlice = [to[k], to[k + 1], to[k + 2], to[k + 3]];
+      const blended = interp(fSlice, tSlice, eased);
+      out[k] = blended[0];
+      out[k + 1] = blended[1];
+      out[k + 2] = blended[2];
+      out[k + 3] = blended[3];
+    }
+    return out;
+  };
+
+  animator.colorOverrides.set(id, channel, override);
+
+  return animator.tween<number>({
+    from: 0,
+    to: 1,
+    ms: totalMs,
+    easing: (t) => t,
+    cancelKey: cancelKeyFor(id, channel),
+    interpolate: (a, b, t) => a + (b - a) * t,
+    onTick: () => {},
+    onDone: () => {
+      animator.colorOverrides.clear(id, channel);
+      opts.onDone?.();
+    },
+  });
+}
