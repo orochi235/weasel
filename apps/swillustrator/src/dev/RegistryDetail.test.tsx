@@ -26,14 +26,14 @@ describe('RegistryDetail', () => {
     };
     render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
     expect(screen.getAllByText(/rect/).length).toBeGreaterThan(0);
-    // Routes are decomposed by RouteBadge into per-segment chips; assert
-    // each segment appears at least once across both routes.
+    // Routes are rendered as a DataGrid with per-route columns; assert the
+    // expected per-row cell contents appear.
     expect(screen.getAllByText('initial').length).toBeGreaterThan(0);
     expect(screen.getAllByText('click').length).toBeGreaterThan(0);
     expect(screen.getAllByText('drag').length).toBeGreaterThan(0);
     expect(screen.getAllByText('empty').length).toBeGreaterThan(0);
-    // RouteBadge renders the modifier suffix as a KeySequence keycap.
-    expect(screen.getByText('⇧')).toBeTruthy();
+    // Modifiers cell renders required modifiers as +name chips.
+    expect(screen.getByText('+shift')).toBeTruthy();
   });
 
   it('renders an Action entry with shortcut', () => {

@@ -773,14 +773,6 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
             <dd>{caps.map((c) => <code key={c} className={s.tag}>{c}</code>)}</dd>
           </>
         )}
-        {entry.routes.length > 0 && (
-          <>
-            <dt>routes</dt>
-            <dd className={s.routesList}>
-              {entry.routes.map((r) => <div key={r}><RouteBadge route={r} /></div>)}
-            </dd>
-          </>
-        )}
         {bundles.length > 0 && (
           <>
             <dt>in bundles</dt>
@@ -806,6 +798,50 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
           </>
         )}
       </dl>
+      {entry.routes.length > 0 && (
+        <>
+          <h3 className={s.subHeading}>Routes</h3>
+          <DataGrid
+            rows={entry.routes.map((r) => {
+              const parsed = parseRoute(r);
+              return {
+                id: r,
+                phase: parsed.phases.map(formatPhaseAtom).join(', '),
+                gesture: parsed.gesture,
+                arg: parsed.arg ?? '',
+                target: parsed.target ?? '',
+                modifiers: parsed.modifiers,
+              };
+            })}
+            columns={[
+              { id: 'phase', header: 'phase', accessor: (r) => r.phase },
+              { id: 'gesture', header: 'gesture', accessor: (r) => r.gesture },
+              { id: 'arg', header: 'arg', accessor: (r) => r.arg },
+              {
+                id: 'target',
+                header: 'target',
+                accessor: (r) => r.target,
+                render: (r) => r.target
+                  ? <EntryLink kind="routeTarget" id={r.target} onNavigate={onNavigate} />
+                  : null,
+              },
+              {
+                id: 'modifiers',
+                header: 'modifiers',
+                sortable: false,
+                render: (r) => (
+                  <span>
+                    {Object.entries(r.modifiers).map(([name, req]) => (
+                      <code key={name} className={s.tag}>{(req === 'required' ? '+' : '?') + name}</code>
+                    ))}
+                  </span>
+                ),
+              },
+            ]}
+            empty="—"
+          />
+        </>
+      )}
       {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
     </div>
   );
