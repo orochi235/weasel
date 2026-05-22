@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { Powerline } from './Powerline';
+import * as PkgRoot from '../../index';
 
 describe('Powerline', () => {
   it('renders one element per segment', () => {
@@ -66,5 +67,16 @@ describe('Powerline', () => {
       />
     );
     expect(container.querySelectorAll('[data-shape="compose"]').length).toBe(2);
+  });
+});
+
+describe('package root export', () => {
+  it('re-exports Powerline from the package root', () => {
+    expect(PkgRoot.Powerline).toBeDefined();
+  });
+
+  it('re-exports EDGE_PROFILES from the package root', () => {
+    expect(PkgRoot.EDGE_PROFILES).toBeDefined();
+    expect(typeof PkgRoot.EDGE_PROFILES.chevron).toBe('function');
   });
 });
