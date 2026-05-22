@@ -2,10 +2,12 @@ import { describe, it, expect } from 'vitest';
 import {
   collectIcons,
   collectBundles,
+  collectNodeKinds,
   collectOpFactories,
   collectPublicExports,
   collectShapeKinds,
 } from './registryData';
+import { defaultNodeKinds, type NodeKind } from '@orochi235/weasel';
 
 describe('registryData static collectors', () => {
   it('collectIcons returns named entries for action and kind icons', () => {
@@ -50,5 +52,41 @@ describe('registryData static collectors', () => {
     for (const k of kinds) {
       expect(k.kind).toBe('shapeKind');
     }
+  });
+});
+
+describe('collectNodeKinds', () => {
+  it('returns every default kind marked as "default" when no live registry is supplied', () => {
+    const entries = collectNodeKinds();
+    expect(entries.length).toBe(defaultNodeKinds.length);
+    for (const entry of entries) {
+      expect(entry.kind).toBe('nodeKind');
+      expect(entry.source).toBe('default');
+      // Built-in shape kinds in defaults cross-link to a ShapeKindEntry.
+      expect(entry.shapeKindId).toBe(entry.id);
+    }
+  });
+
+  it('marks consumer-only kinds with source "consumer" at the end', () => {
+    const custom: NodeKind = { name: 'sticky', matches: (d) => (d as { kind?: string })?.kind === 'sticky' };
+    const entries = collectNodeKinds([...defaultNodeKinds, custom]);
+    const sticky = entries.find((e) => e.id === 'sticky');
+    expect(sticky?.source).toBe('consumer');
+    expect(sticky?.shapeKindId).toBeUndefined();
+    // Consumer entries trail the defaults.
+    expect(entries[entries.length - 1]?.id).toBe('sticky');
+  });
+
+  it('marks a default kind with a replaced matches as source "override"', () => {
+    const rectIndex = defaultNodeKinds.findIndex((k) => k.name === 'rect');
+    expect(rectIndex).toBeGreaterThan(-1);
+    const overridden: NodeKind = {
+      name: 'rect',
+      matches: () => false, // different matches reference
+    };
+    const live = defaultNodeKinds.map((k, i) => (i === rectIndex ? overridden : k));
+    const entries = collectNodeKinds(live);
+    const rectEntry = entries.find((e) => e.id === 'rect');
+    expect(rectEntry?.source).toBe('override');
   });
 });
