@@ -1074,3 +1074,20 @@ These came up during plan-writing and should be settled before execution (or not
 3. **Action `scope` extensibility.** I made `scope?: 'hotkey'` (the only non-default value). If we expect more scopes later (e.g. `'app-global'`), widen the type to a union now to avoid a breaking change.
 
 4. **Per-tool init ordering for action registration.** Task 9 registers `makeToolSelectAction` at the canvas-mount site. If a user reorders the tools' shortcuts (e.g. config-driven), that wiring becomes more dynamic. Acceptable for now since shortcuts have always been built-in literals — confirm.
+
+---
+
+## Post-implementation note (2026-05-22)
+
+`makeToolSelectAction` / `tool.select.<id>` was split into two layered actions:
+
+- **`makeToolActivateAction(toolId)`** → `tool.activate.<toolId>` — the effect,
+  no binding, no scope. Invoked by name from any surface.
+- **`makeToolShortcutAction(toolId, keyOpts, trigger)`** → `tool.shortcut.<toolId>` —
+  the hotkey binding; its `run` calls `trigger('tool.activate.<toolId>')` via a
+  closure over `registry.trigger`. No dep-bag required; the registry isn't in
+  `DepSchema` and wasn't added — the closure approach avoids that.
+
+`useKeybindings` now registers both actions per tool. Inspector surfaces
+(`lookupShortcutByToolId` in `keybindingsView.ts`) filter on `tool.shortcut.*`
+to read the binding. `docs/concepts.md` updated to reflect the split.

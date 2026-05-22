@@ -99,7 +99,7 @@ describe('collectRoutingKinds', () => {
 describe('collectHotkeyTriggers', () => {
   it('derives entries from tool.hold.* actions only', () => {
     const actions = [
-      { id: 'tool.select.rect', defaultBinding: { kind: 'key', key: 'r' } },
+      { id: 'tool.shortcut.rect', defaultBinding: { kind: 'key', key: 'r' } },
       { id: 'tool.hold.hand', defaultBinding: { kind: 'key-held', key: ' ' } },
       { id: 'something.else', defaultBinding: { kind: 'key-held', key: 'a' } },
     ];
