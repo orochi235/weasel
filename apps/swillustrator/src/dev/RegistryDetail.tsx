@@ -332,10 +332,11 @@ function RouteDetail({
 function RouteTargetDetail({
   entry, tools, onNavigate,
 }: { entry: RouteTargetEntry; tools: readonly ToolEntry[]; onNavigate: Props['onNavigate'] }) {
-  const rows = tools.flatMap((t) => {
-    const matching = t.routes.filter((r) => parseRoute(r).target === entry.id);
-    return matching.length === 0 ? [] : [{ id: t.id, tool: t, routes: matching }];
-  });
+  const rows = tools.flatMap((t) =>
+    t.routes
+      .filter((r) => parseRoute(r).target === entry.id)
+      .map((route) => ({ id: `${t.id}:${route}`, tool: t, route })),
+  );
   return (
     <div>
       <h2 className={s.detailHeading}>{entry.id}</h2>
@@ -349,10 +350,10 @@ function RouteTargetDetail({
         columns={[
           toolNameColumn(onNavigate),
           {
-            id: 'routes',
-            header: 'routes',
+            id: 'route',
+            header: 'route',
             sortable: false,
-            render: (r) => <span>{r.routes.map((rt) => <RouteBadge key={rt} route={rt} />)}</span>,
+            render: (r) => <RouteBadge route={r.route} />,
           },
         ]}
         empty="No tools route to this target."
@@ -364,11 +365,11 @@ function RouteTargetDetail({
 function ModifierSetDetail({
   entry, tools, onNavigate,
 }: { entry: ModifierSetEntry; tools: readonly ToolEntry[]; onNavigate: Props['onNavigate'] }) {
-  const rows = tools.flatMap((t) => {
-    const matching = t.routes.filter((r) =>
-      (canonicalModifiers(parseRoute(r).modifiers) || 'default') === entry.id);
-    return matching.length === 0 ? [] : [{ id: t.id, tool: t, routes: matching }];
-  });
+  const rows = tools.flatMap((t) =>
+    t.routes
+      .filter((r) => (canonicalModifiers(parseRoute(r).modifiers) || 'default') === entry.id)
+      .map((route) => ({ id: `${t.id}:${route}`, tool: t, route })),
+  );
   return (
     <div>
       <h2 className={s.detailHeading}>{entry.id}</h2>
@@ -382,10 +383,10 @@ function ModifierSetDetail({
         columns={[
           toolNameColumn(onNavigate),
           {
-            id: 'routes',
-            header: 'routes',
+            id: 'route',
+            header: 'route',
             sortable: false,
-            render: (r) => <span>{r.routes.map((rt) => <RouteBadge key={rt} route={rt} />)}</span>,
+            render: (r) => <RouteBadge route={r.route} />,
           },
         ]}
         empty="No tools declare routes under this modifier set."

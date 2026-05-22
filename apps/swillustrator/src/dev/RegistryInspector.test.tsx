@@ -50,7 +50,13 @@ describe('RegistryInspector', () => {
     await waitFor(() => expect(screen.queryByText('Bundles')).toBeTruthy());
     expect(screen.getByText('Tools')).toBeTruthy();
     expect(screen.getByText('Actions')).toBeTruthy();
+    // Shape kinds nests under the Facets group, which is collapsed by
+    // default — assert the group's heading instead, and expand it to
+    // confirm the child categories surface.
+    expect(screen.getByText('Facets')).toBeTruthy();
+    fireEvent.click(screen.getByText('Facets'));
     expect(screen.getByText('Shape kinds')).toBeTruthy();
+    expect(screen.getByText('Routing kinds')).toBeTruthy();
     expect(screen.getByText('Icons')).toBeTruthy();
   });
 
