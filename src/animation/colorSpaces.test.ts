@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { srgbU8ToOklab, oklabToSrgbU8, lerpOklab, lerpColorArray } from './colorSpaces';
+import { srgbU8ToOklab, oklabToSrgbU8, lerpColorArray } from './colorSpaces';
 
 describe('srgbU8 ↔ Oklab', () => {
   it('round-trips every byte triple within ±1 per channel', () => {
