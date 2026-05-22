@@ -7,7 +7,11 @@
  * consumers don't depend on its disappearance.
  */
 
-/** Declarative keybinding description used by the tool dispatcher. */
+/**
+ * @internal — runtime shape consumed by `matchesKeyBinding`. Public tool authors
+ * should use `ToolKeybinding` from `@orochi235/weasel/routing` for declaring
+ * configurable activation keys.
+ */
 export interface KeyBinding {
   /**
    * Key or list of keys to match. Compared case-insensitively against

@@ -139,12 +139,12 @@ export interface ToolDef<TScratch = void> {
    *  `useKeybindings.ts` picks this up and registers a `tool.select.<id>`
    *  action when set. */
   keybinding?: ToolKeybinding;
-  /** Hotkey-slot trigger key. While this key is held, the tool engages
-   *  in the hotkey slot regardless of the active tool. This field survives
-   *  on `ToolDef` for reflection/inspector use and for configurable-hotkey
-   *  tools (e.g. `useEyedropperTool` whose alt-hold trigger can be overridden
-   *  by the host). `useKeybindings.ts` no longer reads this dynamically for
-   *  built-in tools — hand's Space-hold is in `BUILTIN_HOLD_ACTIONS` instead. */
+  /** Declarative held-key trigger (reflection / inspector only). When set,
+   *  signals to the host that this tool can engage via a held key; the host
+   *  must register the activation via `makeToolHoldAction(toolId, key)`. Built-in
+   *  tools declare held keys in `BUILTIN_HOLD_ACTIONS`; configurable-hotkey tools
+   *  rely on the host to wire the action. Setting this field does NOT automatically
+   *  engage the held-key behavior. */
   hotkey?: HotkeyTrigger;
   onActivate?:   (ctx: ToolCtx<TScratch>) => void;
   onDeactivate?: (ctx: ToolCtx<TScratch>) => void;
