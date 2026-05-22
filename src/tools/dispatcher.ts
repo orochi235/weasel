@@ -11,12 +11,16 @@ import type { NodeId } from 'core/scene/types';
 import type { ToolDef, PhaseDef, RouteTable } from './routing/types';
 import { resolveRoute } from './routing/lookup';
 
-/** Build a HitResult for the dispatcher's context. Phase 1 classifier:
+/** Build a HitResult for the dispatcher's context.
  *  - Affordance hits → 'affordance:unknown' kind (placeholder until the
  *    affordance layer carries kind metadata).
- *  - No node hit-test in Phase 1 dispatcher — regular pointer paths yield
- *    'empty' since the dispatcher doesn't run a scene hit-test.
- *  Subsequent phases will add a scene hit-test and propagate real node ids. */
+ *  - For nodes carried on the affordance binding via `targetId`, the
+ *    kind is resolved by calling `adapter.kindOf(targetId)`. The
+ *    `<SceneCanvas>` synthesizer populates `kindOf` from its `kinds`
+ *    prop (see `docs/superpowers/specs/2026-05-21-node-kind-registry-design.md`).
+ *    Consumers using bare `<Canvas>` with a custom adapter may still set
+ *    `adapter.kindOf` directly; that escape hatch is supported but
+ *    deprecated and will be removed once all consumers migrate. */
 function buildAffordanceTarget(
   affordanceHit: AffordanceBinding,
   adapter: unknown,

@@ -712,6 +712,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       // Normalize `string | string[] | null` to topmost id (first entry).
       const id = Array.isArray(raw) ? raw[0] ?? null : raw;
       if (id == null) return null;
+      // `a.kindOf?.(id)` is populated by SceneCanvas from its `kinds` prop
+      // (see docs/superpowers/specs/2026-05-21-node-kind-registry-design.md).
+      // Bare-Canvas consumers may still set adapter.kindOf directly as a
+      // deprecated escape hatch; the field is typed on SceneCanvasAdapter
+      // as optional and reads `'unknown'` when unset.
       const a = effectiveAdapterRefForCtx.current as typeof effectiveAdapterRefForCtx.current & {
         kindOf?: (id: string) => string;
         getNode?: (id: string) => unknown;
