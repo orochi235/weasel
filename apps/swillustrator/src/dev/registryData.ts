@@ -307,6 +307,13 @@ export type TreeCategory =
 export interface TreeCategoryNode {
   id: TreeCategory;
   label: string;
+  /** Optional grouping. Categories with the same `group.id` render under a
+   *  shared parent heading in the tree (e.g. shape + routing both under
+   *  Facets). Categories with no `group` render at the top level. */
+  group?: {
+    id: string;
+    label: string;
+  };
   entries: readonly TreeEntry[];
 }
 

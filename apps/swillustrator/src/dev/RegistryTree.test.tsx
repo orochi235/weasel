@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import { RegistryTree } from './RegistryTree';
@@ -61,5 +62,31 @@ describe('RegistryTree', () => {
     fireEvent.click(screen.getByText('useRectTool'));
     expect(onSelect).toHaveBeenCalledTimes(1);
     expect(onSelect.mock.calls[0][0]).toMatchObject({ kind: 'tool', id: 'rect' });
+  });
+});
+
+describe('RegistryTree — group heading', () => {
+  it('renders a shared parent heading for categories that share a group', () => {
+    const nodes: readonly TreeCategoryNode[] = [
+      {
+        id: 'shapeKinds',
+        label: 'Shape kinds',
+        group: { id: 'facets', label: 'Facets' },
+        entries: [{ kind: 'shapeKind', facet: 'shape', id: 'rect', label: 'rect' }],
+      },
+      {
+        id: 'routingKinds',
+        label: 'Routing kinds',
+        group: { id: 'facets', label: 'Facets' },
+        entries: [{ kind: 'routingKind', facet: 'routing', id: 'rect', label: 'rect', source: 'default', shapeKindId: 'rect' }],
+      },
+    ];
+    const { getAllByText } = render(
+      <RegistryTree nodes={nodes} selected={null} onSelect={() => {}} />,
+    );
+    const facetsHeadings = getAllByText('Facets');
+    expect(facetsHeadings.length).toBe(1);
+    expect(getAllByText('Shape kinds').length).toBeGreaterThan(0);
+    expect(getAllByText('Routing kinds').length).toBeGreaterThan(0);
   });
 });
