@@ -110,10 +110,20 @@ export interface ToolDef<TScratch = void> {
    *  Read off the def via `Tool.def` (the reflection escape hatch). */
   hookName?: string;
   presentation?: ToolPresentation<TScratch>;
+  /** Optional caller-supplied activation key. Most built-in tools register
+   *  their activation key directly via `makeToolSelectAction` at canvas-mount
+   *  time (keys live in `BUILTIN_SELECT_KEYS` in `useKeybindings.ts`); this
+   *  field is for tools that want their activation key to be configurable by
+   *  the host (currently Lasso and Eyedropper). The dynamic loop in
+   *  `useKeybindings.ts` picks this up and registers a `tool.select.<id>`
+   *  action when set. */
   keybinding?: KeyBinding;
   /** Hotkey-slot trigger key. While this key is held, the tool engages
-   *  in the hotkey slot regardless of the active tool. Mirrors the
-   *  imperative `Tool.hotkey` field — see `HotkeyTrigger` in `tools/types`. */
+   *  in the hotkey slot regardless of the active tool. This field survives
+   *  on `ToolDef` for reflection/inspector use and for configurable-hotkey
+   *  tools (e.g. `useEyedropperTool` whose alt-hold trigger can be overridden
+   *  by the host). `useKeybindings.ts` no longer reads this dynamically for
+   *  built-in tools — hand's Space-hold is in `BUILTIN_HOLD_ACTIONS` instead. */
   hotkey?: HotkeyTrigger;
   onActivate?:   (ctx: ToolCtx<TScratch>) => void;
   onDeactivate?: (ctx: ToolCtx<TScratch>) => void;

@@ -139,10 +139,13 @@ export interface ToolPresentation<TScratch = unknown> {
 /** Full Tool record. */
 export interface Tool<TScratch = unknown> {
   id: string;
-  /** Structured keybinding for switching to this tool. Matched via the
-   *  shared `matchesKeyBinding` (key + modifier policy). */
+  /** Optional caller-supplied key. Most built-in tools register their
+   *  activation key directly via `makeToolSelectAction` at canvas-mount time
+   *  (keys live in `BUILTIN_SELECT_KEYS` in `useKeybindings.ts`); this field
+   *  is for tools that want their activation key to be configurable by the host
+   *  (currently Lasso and Eyedropper). The dynamic loop in `useKeybindings.ts`
+   *  picks this up and registers a `tool.select.<id>` action when set. */
   keybinding?: KeyBinding;
-  hotkey?: HotkeyTrigger;
   initScratch?: () => TScratch;
   onActivate?: (ctx: ToolCtx<TScratch>) => void;
   onDeactivate?: (ctx: ToolCtx<TScratch>) => void;

@@ -3,19 +3,13 @@ import { useEffect, useRef } from 'react';
 import {
   isEditableTarget,
   matchesKeyBinding,
-  type KeyBinding,
 } from 'interactions/keyHelpers';
 import { useActionsRegistry } from 'interactions/actions/registry';
 import { makeToolHoldAction } from 'interactions/actions/defaults/toolHold';
 import { makeToolSelectAction } from 'interactions/actions/defaults/toolSelect';
 import type { ToolsApi } from './useTools';
-import type { HotkeyTrigger } from './types';
 
 export interface UseKeybindingsOptions {
-  /** Per-tool keybinding override, keyed by tool id. Wins over the tool's
-   *  declared `keybinding`. Pass `null` as the value to unbind the tool
-   *  entirely. Tools not present in this map keep their declared binding. */
-  overrides?: Record<string, KeyBinding | null>;
   /** Skip all wiring. Useful for touch apps or test isolation. */
   disable?: boolean;
   /** Tool id Escape switches to. When omitted, defaults to whatever
@@ -24,8 +18,8 @@ export interface UseKeybindingsOptions {
   defaultTool?: string | null;
 }
 
-/** Key opts for every built-in tool that has migrated away from ToolDef.keybinding.
- *  Updated in Task 9; consumed by resolveSwitch and the tool-select registration effect. */
+/** Key opts for every built-in tool whose activation key lives here rather
+ *  than on the ToolDef. Consumed by the tool-select action-registration effect. */
 const BUILTIN_SELECT_KEYS: Record<string, { key: string }> = {
   select: { key: 'V' },
   rect: { key: 'R' },
@@ -38,14 +32,10 @@ const BUILTIN_SELECT_KEYS: Record<string, { key: string }> = {
   pen: { key: 'P' },
 };
 
-/** Maps a tool's `hotkey` declaration to the literal key string used in a
- *  `key-held` gesture spec. Inverse of the old HOTKEY_TRIGGER_MAP. */
-const HOTKEY_KEY: Record<HotkeyTrigger, string> = {
-  space: ' ',
-  alt: 'Alt',
-  ctrl: 'Control',
-  meta: 'Meta',
-  shift: 'Shift',
+/** Hold-action key bindings for built-in tools that engage while a key is held.
+ *  Each entry registers a `tool.hold.<toolId>` action via `makeToolHoldAction`. */
+const BUILTIN_HOLD_ACTIONS: Record<string, string> = {
+  hand: ' ',
 };
 
 export function useKeybindings(
@@ -61,42 +51,30 @@ export function useKeybindings(
   // (not state) so it survives re-renders without re-syncing.
   const initialActiveRef = useRef(tools.active);
 
-  // --- Tool-activation keybindings (V/R/T/P/...) ---
+  // --- Tool-activation keybindings (V/R/T/P/...) and Escape. ---
+  // Tool-switch is handled here via a document keydown listener. The
+  // `tool.select.*` actions registered below also cover this in contexts where
+  // `useGestureDispatcher` is mounted and has access to the actions registry,
+  // but this listener is the authoritative path (e.g. tests and consumers that
+  // mount Canvas without a full SceneCanvas stack).
   useEffect(() => {
     if (optionsRef.current.disable) return;
 
-    /** Resolve a keydown event to a tool id. Overrides take priority: an
-     *  overridden tool's `KeyBinding` is checked first, and an overridden
-     *  tool's *declared* binding is suppressed entirely (so remapping pen
-     *  to V silences select's declared V). Pass `null` as an override value
-     *  to unbind a tool without rebinding it. */
+    /** Resolve a keydown event to a tool id. */
     function resolveSwitch(e: KeyboardEvent): string | null {
-      const overrides = optionsRef.current.overrides;
       const reg = toolsRef.current.registry;
 
-      // Phase 1: overrides take priority.
-      if (overrides) {
-        for (const id in overrides) {
-          if (!(id in reg)) continue;
-          const ov = overrides[id];
-          if (ov && matchesKeyBinding(e, ov)) return id;
-        }
-      }
-
-      // Phase 2a: statically-migrated built-in tools (keybinding removed from
-      // ToolDef in Task 9; key lives in BUILTIN_SELECT_KEYS instead).
+      // Phase 1: statically-registered built-in tools.
       for (const id in BUILTIN_SELECT_KEYS) {
-        if (overrides && id in overrides) continue;
-        if (!(id in reg)) continue; // tool not registered with this tools instance
+        if (!(id in reg)) continue;
         const binding = BUILTIN_SELECT_KEYS[id];
         if (matchesKeyBinding(e, binding)) return id;
       }
 
-      // Phase 2b: declared bindings on the ToolDef (tools not yet migrated,
-      // e.g. useLassoTool with a configurable key).
+      // Phase 2: declared bindings on the ToolDef (configurable tools
+      // like useLassoTool, useEyedropperTool).
       for (const id in reg) {
-        if (overrides && id in overrides) continue;
-        if (id in BUILTIN_SELECT_KEYS) continue; // already handled above
+        if (id in BUILTIN_SELECT_KEYS) continue;
         const binding = reg[id].keybinding;
         if (!binding) continue;
         if (matchesKeyBinding(e, binding)) return id;
@@ -133,37 +111,30 @@ export function useKeybindings(
     };
   }, []);
 
-  // Tool-hold: register `tool.hold.<id>` actions into the surrounding
-  // `ActionsRegistry` so `useGestureDispatcher` can fire them via key-held
-  // bindings. `useTools` already requires an `<ActiveToolContextProvider>`,
-  // and the kit's standard wrappers (`<WeaselProvider>`, `<SceneCanvas>`)
-  // mount the actions registry alongside it — so there's no separate
-  // "no registry" fallback path.
+  // Tool-hold: register `tool.hold.<id>` actions for built-in tools that
+  // engage while a key is held. Keys are declared in BUILTIN_HOLD_ACTIONS
+  // rather than on the ToolDef so the registration is purely static.
+  // `useGestureDispatcher` fires these via key-held bindings.
   const registry = useActionsRegistry();
 
   useEffect(() => {
     if (optionsRef.current.disable) return;
     if (!registry) return;
 
-    const allTools = toolsRef.current.registry;
     const unregisters: Array<() => void> = [];
-    for (const toolId in allTools) {
-      const tool = allTools[toolId];
-      if (!tool.hotkey) continue;
-      const key = HOTKEY_KEY[tool.hotkey];
-      if (!key) continue;
-      const action = makeToolHoldAction(toolId, key);
-      unregisters.push(registry.register(action));
+    for (const [toolId, key] of Object.entries(BUILTIN_HOLD_ACTIONS)) {
+      if (toolsRef.current.has(toolId)) {
+        unregisters.push(registry.register(makeToolHoldAction(toolId, key)));
+      }
     }
     return () => { for (const u of unregisters) u(); };
   }, [registry, tools]);
 
   // --- Tool-select: register `tool.select.<id>` actions into the actions
   // registry. Built-in tools with static keys are registered from the
-  // BUILTIN_SELECT_KEYS map below. Tools whose key is configurable via
-  // their ToolDef (e.g. useLassoTool) are picked up dynamically from the
-  // registry. Both run alongside the legacy keydown handler (which fires
-  // until Task 10 removes it).
+  // BUILTIN_SELECT_KEYS map. Tools whose activation key is configurable via
+  // their ToolDef (e.g. useLassoTool, useEyedropperTool with a caller-provided
+  // key) are picked up dynamically from the registry.
   useEffect(() => {
     if (optionsRef.current.disable) return;
     if (!registry) return;
@@ -180,12 +151,19 @@ export function useKeybindings(
 
     // Dynamic registrations for any tool that still carries a `.keybinding`
     // field on its ToolDef (e.g. useLassoTool with a caller-provided override).
+    // Most built-in tools register their activation key via BUILTIN_SELECT_KEYS;
+    // this loop is for tools that want their key to be configurable by the host.
     const allTools = toolsRef.current.registry;
     for (const toolId in allTools) {
       if (toolId in BUILTIN_SELECT_KEYS) continue; // already registered above
       const binding = allTools[toolId].keybinding;
       if (!binding) continue;
-      unregisters.push(registry.register(makeToolSelectAction(toolId, binding)));
+      // KeyBinding.key may be an array; makeToolSelectAction expects a string.
+      // Use only the first key in the array case — multi-key aliases are rare
+      // in practice and the action system doesn't support them yet.
+      const key = typeof binding.key === 'string' ? binding.key : binding.key[0];
+      if (!key) continue;
+      unregisters.push(registry.register(makeToolSelectAction(toolId, { ...binding, key })));
     }
 
     return () => { for (const u of unregisters) u(); };

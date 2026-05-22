@@ -25,7 +25,6 @@ export function defineViewportTool<TScratch = void>(
     hookName: def.hookName,
     presentation: def.presentation,
     keybinding: def.keybinding,
-    hotkey: def.hotkey,
     onActivate: def.onActivate,
     onDeactivate: def.onDeactivate,
     cursor: def.cursor,

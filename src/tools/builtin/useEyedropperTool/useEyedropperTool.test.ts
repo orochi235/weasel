@@ -31,7 +31,10 @@ describe('useEyedropperTool', () => {
     );
     expect(result.current.id).toBe('eyedropper');
     expect(result.current.keybinding).toEqual({ key: 'I' });
-    expect(result.current.hotkey).toBe('alt');
+    // hotkey lives on the ToolDef (reflection escape hatch) rather than on
+    // the runtime Tool interface since Task 10 removed Tool.hotkey.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((result.current.def as any)?.hotkey).toBe('alt');
     // cursor is a resolver function from defineTool; call it with a minimal ctx.
     const cursor = typeof result.current.cursor === 'function'
       ? result.current.cursor(makeCtx(emptyHit()))
@@ -116,7 +119,10 @@ describe('useEyedropperTool', () => {
     const { result } = renderHook(() =>
       useEyedropperTool({ onPick: () => {}, colorOf: () => null, hotkey: null }),
     );
-    expect(result.current.hotkey).toBeUndefined();
+    // hotkey lives on the ToolDef (reflection escape hatch) rather than on
+    // the runtime Tool interface since Task 10 removed Tool.hotkey.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((result.current.def as any)?.hotkey).toBeUndefined();
   });
 
   it('keybinding: null override removes the keybinding', () => {
