@@ -37,9 +37,6 @@ Priority tags:
 - Paths hot-loop perf hardening → [Paths & booleans](#paths--booleans)
 - Generic CSS cascade for `@orochi235/weasel-svg`'s parser → [Paths & booleans](#paths--booleans)
 
-**Rendering & paint**
-- Renderer: accept CSS color formats beyond hex → [Rendering & paint](#rendering--paint)
-
 **Text**
 - Cross-browser overlay alignment → [Text](#text)
 - Text properties panel (Character + Paragraph) → [Text](#text)
@@ -160,17 +157,6 @@ Core five + Crop shipped. Remaining:
 ---
 
 ## Rendering & paint
-
-- **(P2) Renderer: accept CSS color formats beyond hex.** Surfaced 2026-05-17 building `D3SortableDemo`. `parseColor` rejects everything outside its narrow accepted set — `hsl(0, 65%, 55%)` threw `parseColor: unrecognized color`. Workaround was a precomputed hex palette in the demo, but every consumer reaching for a color library will hit the same wall. Specifically painful for the d3 plugin's `.tween()` escape (d3-interpolate produces `rgb(r, g, b)` strings).
-
-  What to support:
-  - All hex variants (`#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`)
-  - `rgb(r, g, b)` / `rgba(r, g, b, a)` (number + percent forms)
-  - `hsl(h, s%, l%)` / `hsla(...)`
-  - Named CSS colors (~140 names) — useful for quick demos
-  - Stretch: `oklch()` / `color()` function syntax
-
-  Either hand-rolled parser (~150 lines, zero deps) or `d3-color` (~30 lines wiring, complete coverage but couples kit core to a d3 package). Lean toward hand-rolled for kit independence. Cache parsed colors by string identity (`Map<string, [r, g, b, a]>`).
 
 - **(P3) Layer effects framework.** Distinct from `FillStyle` — effects modify pixels rather than choosing color. Under WebGL each effect is its own pass: drop-shadow needs a blurred render-to-texture beneath, blur needs a separable kernel, blend modes need framebuffer compositing, clipping needs stencil. Likely shape: `type Effect = { kind: 'shadow' | 'blur' | 'composite' | 'clip' | 'transform'; ... }` consumed by the renderer (not the layer) so each effect knows how to set up its own GL state. Open question on composition model: per-layer `effects?: Effect[]` option vs a wrapper layer (`withEffects(layer, effects)`). Defer until a real use case lands.
 

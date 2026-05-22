@@ -52,8 +52,90 @@ describe('parseColor', () => {
     expect(c).toEqual([0, 0, 0, 0.5]);
   });
 
+  it('parses #rgba shorthand', () => {
+    const c = parseColor('#f008');
+    expect(c[0]).toBe(1);
+    expect(c[1]).toBe(0);
+    expect(c[2]).toBe(0);
+    expect(c[3]).toBeCloseTo(0x88 / 255, 5);
+  });
+
+  it('parses rgb() with percent components', () => {
+    const c = parseColor('rgb(100%, 50%, 0%)');
+    expect(c[0]).toBe(1);
+    expect(c[1]).toBe(0.5);
+    expect(c[2]).toBe(0);
+    expect(c[3]).toBe(1);
+  });
+
+  it('parses modern space-separated rgb() with slash alpha', () => {
+    const c = parseColor('rgb(255 128 0 / 0.5)');
+    expect(c[0]).toBe(1);
+    expect(c[1]).toBeCloseTo(0.502, 2);
+    expect(c[2]).toBe(0);
+    expect(c[3]).toBe(0.5);
+  });
+
+  it('parses modern rgb() with percent alpha', () => {
+    const c = parseColor('rgb(255 0 0 / 50%)');
+    expect(c[3]).toBe(0.5);
+  });
+
+  it('parses hsl(h, s%, l%)', () => {
+    const c = parseColor('hsl(0, 100%, 50%)');
+    expect(c[0]).toBe(1);
+    expect(c[1]).toBe(0);
+    expect(c[2]).toBe(0);
+    expect(c[3]).toBe(1);
+  });
+
+  it('parses hsl with hue units', () => {
+    const fromDeg = parseColor('hsl(120deg, 100%, 50%)');
+    const fromTurn = parseColor('hsl(0.3333turn, 100%, 50%)');
+    const fromRad = parseColor(`hsl(${(120 * Math.PI) / 180}rad, 100%, 50%)`);
+    const fromGrad = parseColor('hsl(133.333grad, 100%, 50%)');
+    for (const c of [fromDeg, fromTurn, fromRad, fromGrad]) {
+      expect(c[0]).toBeCloseTo(0, 2);
+      expect(c[1]).toBeCloseTo(1, 2);
+      expect(c[2]).toBeCloseTo(0, 2);
+    }
+  });
+
+  it('parses hsla()', () => {
+    const c = parseColor('hsla(240, 100%, 50%, 0.25)');
+    expect(c[0]).toBe(0);
+    expect(c[1]).toBe(0);
+    expect(c[2]).toBe(1);
+    expect(c[3]).toBe(0.25);
+  });
+
+  it('parses modern hsl() space-separated with slash alpha', () => {
+    const c = parseColor('hsl(120 100% 50% / 0.5)');
+    expect(c[0]).toBeCloseTo(0, 5);
+    expect(c[1]).toBeCloseTo(1, 5);
+    expect(c[2]).toBeCloseTo(0, 5);
+    expect(c[3]).toBe(0.5);
+  });
+
+  it('parses named colors', () => {
+    expect(parseColor('red')).toEqual([1, 0, 0, 1]);
+    expect(parseColor('lemonchiffon')).toEqual([1, 250 / 255, 205 / 255, 1]);
+    expect(parseColor('REBECCAPURPLE')).toEqual([0x66 / 255, 0x33 / 255, 0x99 / 255, 1]);
+  });
+
+  it('parses transparent as fully transparent black', () => {
+    expect(parseColor('transparent')).toEqual([0, 0, 0, 0]);
+  });
+
   it('throws on unrecognized input', () => {
-    expect(() => parseColor('lemonchiffon')).toThrow();
+    expect(() => parseColor('not-a-color')).toThrow();
+    expect(() => parseColor('oklch(0.7 0.15 200)')).toThrow();
+  });
+
+  it('caches results: identical input returns identical reference', () => {
+    const a = parseColor('#abcdef');
+    const b = parseColor('#abcdef');
+    expect(a).toBe(b);
   });
 });
 
@@ -77,7 +159,7 @@ describe('normalizeHex', () => {
 
   it('throws on invalid input', () => {
     expect(() => normalizeHex('#xyz')).toThrow();
-    expect(() => normalizeHex('#ff00')).toThrow();
+    expect(() => normalizeHex('#ff000')).toThrow();
   });
 });
 
