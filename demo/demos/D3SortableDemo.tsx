@@ -26,16 +26,13 @@ type LayerId = 'bars';
 interface Pose { x: number; y: number; width: number; height: number }
 interface BarData { color: string; value: number }
 
-// 12-step rainbow palette spanning the hue wheel.
-const COLORS = [
-  '#e25c4c', '#e2904c', '#e2b34c', '#cce24c', '#7fc44c', '#4cc46e',
-  '#4cc4a7', '#4ca7e2', '#5c7fe2', '#7f5cd4', '#a84cd4', '#d44ca7',
-];
-
+// 12-step rainbow palette spanning the hue wheel. `parseColor` accepts
+// `hsl(...)` strings directly, so the palette is one formula rather than a
+// dozen precomputed hex values.
 const INITIAL: Item[] = Array.from({ length: 12 }, (_, i) => ({
   id: `bar-${i}`,
   value: i + 1,
-  color: COLORS[i],
+  color: `hsl(${(i * 360) / 12}, 65%, 60%)`,
 }));
 
 type SortKey = 'index' | 'asc' | 'desc' | 'shuffle';

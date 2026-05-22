@@ -10,7 +10,7 @@ import type { ShaderProgramHandle, ShaderUniform } from './shaders/registerProgr
  */
 export interface SolidPaint {
   fill?: 'solid';
-  /** Hex string `#rgb` / `#rrggbb` / CSS color keyword the renderer can parse. */
+  /** Any CSS color string accepted by `parseColor`: hex, `rgb()`/`rgba()`, `hsl()`/`hsla()`, named, or `transparent`. */
   color: string;
   opacity?: number;
 }
