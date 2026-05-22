@@ -23,6 +23,22 @@ export {
 } from './poseHelpers';
 export * from './wrappers';
 export { momentum, type MomentumOptions } from './behaviors/momentum';
+export {
+  ColorOverrideRegistry,
+  type ColorOverride, type ColorOverrideFn, type VertexColorChannel,
+} from './colorRegistry';
+export {
+  srgbU8ToOklab, oklabToSrgbU8,
+  lerpOklab, oklabToOklch, oklchToOklab, lerpOklch,
+  lerpColorArray,
+  type ColorSpace,
+} from './colorSpaces';
+export {
+  tweenVertexColors, springVertexColors, cycleVertexColors, staggerVertexColors,
+  type TweenVertexColorsOptions, type SpringVertexColorsOptions,
+  type CycleVertexColorsOptions, type StaggerVertexColorsOptions,
+  type CycleHandle, type ColorInterpolate,
+} from './colorHelpers';
 // `createLoop` / `createTweenLoop` / `createStagger` are intentionally NOT
 // re-exported. They take internal seams (supervisor factory, completion
 // watcher, timer pair) that only `useAnimator` can supply. Consumers access
