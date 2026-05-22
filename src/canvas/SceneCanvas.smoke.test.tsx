@@ -348,6 +348,42 @@ describe('clone smoke (alt-drag via select tool)', () => {
 
     batchSpy.mockRestore();
   });
+
+  // Illustrator behavior: alt-drag on a node clones it whether or not it was
+  // pre-selected. Without the unselected-body clone binding, alt-drag on a
+  // node with empty initial selection routes to areaSelect (or nothing) and
+  // no Clone batch fires.
+  it('alt-drag on UNSELECTED body fires cloneAction → scene.batch("Clone")', () => {
+    const scene = makeScene();
+    const countBefore = nodeCount(scene);
+
+    const { container } = render(
+      <SceneCanvas
+        scene={scene}
+        layers={{}}
+        width={400}
+        height={400}
+        toolBundle="exhaustive"
+        // No initial selection — the alt-drag must select-and-clone in one go.
+        actions={{
+          clone: { enabled: () => true as true },
+        }}
+      />,
+    );
+
+    const canvas = getCanvas(container);
+    const batchSpy = vi.spyOn(scene, 'batch');
+
+    act(() => {
+      drag(canvas, 140, 130, 170, 160, { altKey: true });
+    });
+
+    const cloneCalls = batchSpy.mock.calls.filter(([label]) => label === 'Clone');
+    expect(cloneCalls.length).toBeGreaterThanOrEqual(1);
+    expect(nodeCount(scene)).toBe(countBefore + 1);
+
+    batchSpy.mockRestore();
+  });
 });
 
 // ---------------------------------------------------------------------------

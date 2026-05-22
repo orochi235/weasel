@@ -338,10 +338,15 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
             },
             actionId: 'rotate',
           },
-          // Alt-drag on a selected body → clone (Illustrator convention).
+          // Alt-drag on a body → clone (Illustrator convention).
           // Listed BEFORE bare move so the strict-modifier dispatcher
           // picks this when Alt is held; bare move matches no-mod drags.
+          // Both selected and unselected bodies are valid clone targets — the
+          // pointerDown classifier calls `selection.applyClick(top, mods)` on
+          // an unselected hit before the drag fires, so cloneAction's
+          // `start` sees the hit node in `selection.get()` either way.
           { spec: { kind: 'drag' as const, target: 'selected-body' as const, mods: { alt: true } }, actionId: 'clone' },
+          { spec: { kind: 'drag' as const, target: 'unselected-body' as const, mods: { alt: true } }, actionId: 'clone' },
           {
             spec: { kind: 'drag' as const, target: 'selected-body' as const },
             actionId: 'move',
