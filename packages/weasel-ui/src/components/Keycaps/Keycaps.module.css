@@ -76,10 +76,11 @@
 
 /* Optional + minimal: the border goes dotted to read as "may be held but
    isn't required." Replaces the face-inversion the default variant uses
-   for the same signal — there's no fill to invert against here. */
+   for the same signal — there's no fill to invert against here. Bottom
+   edge keeps its thicker weight so the chip still reads as a key (its
+   characteristic baseline shadow is the cue). */
 .key[data-variant='minimal'][data-inverted] {
   border-style: dotted;
-  /* Slightly bolder so dotted dashes don't dissolve at small sizes. */
   border-width: 1.5px;
-  border-bottom-width: 1.5px;
+  border-bottom-width: 2.5px;
 }
