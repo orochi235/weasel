@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { Badge, DataGrid, KeySequence, type BadgeProps, type DataGridColumn, type KeySpec } from '@orochi235/weasel-ui';
+import { Badge, DataGrid, KeySequence, Powerline, type BadgeProps, type DataGridColumn, type KeySpec, type PowerlineProps } from '@orochi235/weasel-ui';
 import type { ParsedModifiers, ModName } from '@orochi235/weasel/routing';
 
 function toKeys(parts: readonly string[] | undefined) {
@@ -78,6 +78,36 @@ export function RouteBadge({ route }: { route: string }) {
       {modKeys && <KeySequence keys={modKeys} />}
     </span>
   );
+}
+
+/** Decomposes a v3 route string into a Powerline config. Mirrors RouteBadge's
+ *  token order (phase atoms → gesture → arg → target → modifier keys) but
+ *  emits them as tessellated powerline segments instead of standalone badges. */
+function routeToPowerline(route: string): Omit<PowerlineProps, 'className' | 'aria-label'> {
+  const parsed = parseRoute(route);
+  const desc = getGestureDescriptor(parsed.gesture as GestureName);
+  const showArg = !!desc.arg
+    && parsed.arg !== undefined
+    && (desc.arg.default === undefined || parsed.arg !== desc.arg.default);
+  const showTarget = desc.hasTarget && parsed.target !== undefined && parsed.target !== '*';
+  const modKeys = modifierKeys(parsed.modifiers);
+
+  const segments: PowerlineProps['segments'] = [];
+  for (const p of parsed.phases) {
+    if (p.channel !== '&') segments.push({ text: p.channel, tone: 'neutral', variant: 'subtle' });
+    segments.push({ text: p.phase, tone: 'accent', variant: 'subtle' });
+  }
+  segments.push({ text: parsed.gesture, tone: 'info', variant: 'outline' });
+  if (showArg) segments.push({ text: parsed.arg, tone: 'muted', variant: 'subtle' });
+  if (showTarget) segments.push({ text: parsed.target, tone: 'muted', variant: 'outline' });
+  if (modKeys) {
+    for (const k of modKeys) {
+      segments.push({ text: k.label, tone: 'muted', variant: k.optional ? 'subtle' : 'outline' });
+    }
+  }
+  // Every cap is a chevron so the strip reads as a directional pipeline.
+  for (let i = 0; i < segments.length - 1; i++) segments[i].endCap = 'chevron';
+  return { segments };
 }
 
 function KindBadge({ label }: { label: string }) {
@@ -419,7 +449,7 @@ function ModifierSetDetail({
             id: 'route',
             header: 'route',
             sortable: false,
-            render: (r) => <RouteBadge route={r.route} />,
+            render: (r) => <Powerline {...routeToPowerline(r.route)} />,
           },
         ]}
         empty="No tools declare routes under this modifier set."
