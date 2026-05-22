@@ -811,6 +811,7 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
                 arg: parsed.arg ?? '',
                 target: parsed.target ?? '',
                 modifiers: parsed.modifiers,
+                callback: findRouteCallback(parsed, entry.callbacks ?? []),
               };
             })}
             columns={[
@@ -836,6 +837,12 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
                     ))}
                   </span>
                 ),
+              },
+              {
+                id: 'action',
+                header: 'action',
+                sortable: false,
+                render: (r) => r.callback ? <CallbackSourceLink callback={r.callback} /> : null,
               },
             ]}
             empty="—"
@@ -877,6 +884,54 @@ function CallbackList({ callbacks }: { callbacks: readonly CallbackRef[] }) {
 declare const __WEASEL_REPO_ROOT__: string | undefined;
 const WEASEL_REPO_ROOT: string | undefined =
   typeof __WEASEL_REPO_ROOT__ === 'string' ? __WEASEL_REPO_ROOT__ : undefined;
+
+/** Inline source-link cell for the Tool routes DataGrid's `action` column.
+ *  Renders a `vscode://file/...` anchor at the callback's source location,
+ *  with `path:line` text trimmed to a repo-relative form when possible. */
+function CallbackSourceLink({ callback }: { callback: CallbackRef }) {
+  const root = WEASEL_REPO_ROOT;
+  const rel = root && callback.source.file.startsWith(root + '/')
+    ? callback.source.file.slice(root.length + 1)
+    : callback.source.file;
+  const href = `vscode://file/${callback.source.file}:${callback.source.line}:${callback.source.col + 1}`;
+  return (
+    <a className={s.callbackLink} href={href}>
+      {rel}:{callback.source.line}
+    </a>
+  );
+}
+
+/** Given a parsed route and a tool's `callbacks` list (populated by the
+ *  Vite source-location plugin), return the callback whose label matches
+ *  the route's coordinates. Mirrors the label-format `collectPhaseCallbacks`
+ *  uses in `registryProbe.tsx` so a route round-trips to its handler.
+ *  Returns `null` when no match (e.g. the dev plugin didn't tag this fn). */
+function findRouteCallback(
+  parsed: { phases: readonly { phase: string }[]; gesture: GestureName; target: string | undefined; arg: string | undefined; modifiers: ParsedModifiers },
+  callbacks: readonly CallbackRef[],
+): CallbackRef | null {
+  const phase = parsed.phases[0]?.phase;
+  if (!phase) return null;
+  const g = parsed.gesture;
+  const candidates: string[] = [];
+  if (g === 'wheel') {
+    candidates.push(`${phase}.wheel`);
+  } else if (g === 'keyDown' || g === 'keyUp') {
+    if (parsed.arg) candidates.push(`${phase}.${g}.${parsed.arg}`);
+  } else if (g === 'click' || g === 'pointerDown' || g === 'dblTap' || g === 'drag') {
+    const target = parsed.target ?? '*';
+    const modKey = canonicalModifiers(parsed.modifiers);
+    if (modKey) candidates.push(`${phase}.${g}.${target}:${modKey}`);
+    candidates.push(`${phase}.${g}.${target}`);
+    // Bare drag function lives at `${phase}.drag` with no target/mod suffix.
+    if (g === 'drag') candidates.push(`${phase}.drag`);
+  }
+  for (const label of candidates) {
+    const hit = callbacks.find((c) => c.label === label);
+    if (hit) return hit;
+  }
+  return null;
+}
 
 /** Render a `findSourceMatch` result as a `vscode://file/...` link with
  *  `path:line` text. Falls back to plain text when the repo root isn't
