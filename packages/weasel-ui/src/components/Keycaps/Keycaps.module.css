@@ -57,12 +57,15 @@
   padding: 0 8px;
 }
 
-/* Inverted: dark chip face with light glyph — used by `KeySequence` to
-   mark optional keys (e.g. an optional modifier). */
+/* Optional/inverted: face is unchanged; the border goes dotted and is
+   recolored to match the legend. Reads as "may be held but isn't required."
+   The dotted treatment is the universal optional signal across variants
+   (replaces the prior face-inversion the default variant used). */
 .key[data-inverted] {
-  background: var(--wzl-bg, #181a1e);
-  border-color: #0c0d10;
-  color: var(--wzl-fg, #e6e7e9);
+  border-style: dotted;
+  border-color: var(--wzl-bg, #181a1e);
+  border-width: 1.5px;
+  border-bottom-width: 1.5px;
 }
 
 /* Minimal variant — no fill, borders and legend follow currentColor.
@@ -74,13 +77,11 @@
   color: currentColor;
 }
 
-/* Optional + minimal: the border goes dotted to read as "may be held but
-   isn't required." Replaces the face-inversion the default variant uses
-   for the same signal — there's no fill to invert against here. Bottom
-   edge keeps its thicker weight so the chip still reads as a key (its
-   characteristic baseline shadow is the cue). */
+/* Optional + minimal: same dotted treatment; border and legend are
+   currentColor so they pick up the parent's color. */
 .key[data-variant='minimal'][data-inverted] {
   border-style: dotted;
+  border-color: currentColor;
   border-width: 1.5px;
-  border-bottom-width: 2.5px;
+  border-bottom-width: 1.5px;
 }
