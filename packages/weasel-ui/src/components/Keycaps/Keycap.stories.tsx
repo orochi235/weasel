@@ -37,9 +37,22 @@ interface StoryArgs extends KeyCapProps {
   /** Storybook-only — substitutes the input modifier or named-key glyph
    *  for the platform-native form via `keySpecsFromMods` / `keySpecFromKey`. */
   platform?: Platform;
-  /** Storybook-only — `auto` (default) picks symbol on macOS, text
-   *  elsewhere. `symbol` and `text` force a specific form. */
+  /** Storybook-only — `auto` (default) picks the per-entry, per-platform
+   *  label; `symbol` and `text` force one form across the board. */
   legend?: LegendStyle;
+}
+
+const FONT_PRESETS: Record<string, string> = {
+  'system sans': 'ui-sans-serif, system-ui, sans-serif',
+  'system mono': 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+  'serif':       'ui-serif, Georgia, serif',
+  'inter':       'Inter, system-ui, sans-serif',
+  'oswald':      "'Oswald', sans-serif",
+};
+const FONT_OPTIONS = Object.keys(FONT_PRESETS);
+function resolveFont(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  return FONT_PRESETS[value] ?? value;
 }
 
 const meta: Meta<StoryArgs> = {
@@ -51,6 +64,7 @@ const meta: Meta<StoryArgs> = {
     variant: 'default',
     platform: 'macos',
     legend: 'auto',
+    font: 'system sans',
   },
   argTypes: {
     label: {
@@ -75,12 +89,17 @@ const meta: Meta<StoryArgs> = {
     legend: {
       control: 'inline-radio',
       options: LEGENDS,
-      description: '`auto` (default): symbol on macOS, text elsewhere. `symbol` / `text` force a specific form.',
+      description: '`auto` (default): per-entry per-platform default. `symbol` / `text` force a specific form.',
+    },
+    font: {
+      control: 'select',
+      options: FONT_OPTIONS,
+      description: 'Forwarded to KeyCap as inline font-family. Defaults to system sans (the chip\'s native stack).',
     },
     className: { table: { disable: true } },
   },
-  render: ({ platform = 'macos', legend = 'auto', label, ...rest }) => (
-    <KeyCap {...rest} label={relabel(label, platform, legend)} />
+  render: ({ platform = 'macos', legend = 'auto', label, font, ...rest }) => (
+    <KeyCap {...rest} label={relabel(label, platform, legend)} font={resolveFont(font)} />
   ),
 };
 export default meta;
@@ -124,9 +143,9 @@ export const Minimal: Story = {
  *  `color`. */
 export const MinimalInColoredText: Story = {
   args: { label: '⌘', variant: 'minimal' },
-  render: ({ platform = 'macos', legend = 'auto', label, ...rest }) => (
+  render: ({ platform = 'macos', legend = 'auto', label, font, ...rest }) => (
     <span style={{ color: '#7fb069' }}>
-      Press <KeyCap {...rest} label={relabel(label, platform, legend)} /> to confirm.
+      Press <KeyCap {...rest} label={relabel(label, platform, legend)} font={resolveFont(font)} /> to confirm.
     </span>
   ),
 };
@@ -141,18 +160,18 @@ export const MinimalOptional: Story = {
  *  combination side by side. The `platform` and `legend` controls affect
  *  the modifier and named-key rows. */
 export const Gallery: Story = {
-  args: { platform: 'macos', legend: 'auto' },
+  args: { platform: 'macos', legend: 'auto', font: 'system sans' },
   argTypes: {
     label: { table: { disable: true } },
     inverted: { table: { disable: true } },
     variant: { table: { disable: true } },
   },
-  render: ({ platform = 'macos', legend = 'auto' }) => (
-    <KeyCapGallery platform={platform} legend={legend} />
+  render: ({ platform = 'macos', legend = 'auto', font }) => (
+    <KeyCapGallery platform={platform} legend={legend} font={resolveFont(font)} />
   ),
 };
 
-function KeyCapGallery({ platform, legend }: { platform: Platform; legend: LegendStyle }): ReactElement {
+function KeyCapGallery({ platform, legend, font }: { platform: Platform; legend: LegendStyle; font?: string }): ReactElement {
   const rows: Array<{ label: string; kind: 'square' | 'modifier' | 'wide' }> = [
     { label: 'A', kind: 'square' },
     { label: '⌘', kind: 'modifier' },
@@ -189,10 +208,10 @@ function KeyCapGallery({ platform, legend }: { platform: Platform; legend: Legen
             <tr key={r.label}>
               <td style={cell}><code>{r.label}</code></td>
               <td style={cell}>{r.kind}</td>
-              <td style={cell}><KeyCap label={rendered} /></td>
-              <td style={cell}><KeyCap label={rendered} inverted /></td>
-              <td style={cell}><KeyCap label={rendered} variant="minimal" /></td>
-              <td style={cell}><KeyCap label={rendered} variant="minimal" inverted /></td>
+              <td style={cell}><KeyCap label={rendered} font={font} /></td>
+              <td style={cell}><KeyCap label={rendered} inverted font={font} /></td>
+              <td style={cell}><KeyCap label={rendered} variant="minimal" font={font} /></td>
+              <td style={cell}><KeyCap label={rendered} variant="minimal" inverted font={font} /></td>
             </tr>
           );
         })}
@@ -206,23 +225,23 @@ function KeyCapGallery({ platform, legend }: { platform: Platform; legend: Legen
  *  control cluster — enough surface to show every OS-divergent label
  *  (Esc / Cmd / Win / Super / Option / Alt) at once. */
 export const KeyboardLayouts: Story = {
-  args: { legend: 'auto' },
+  args: { legend: 'auto', font: 'system sans' },
   argTypes: {
     label: { table: { disable: true } },
     inverted: { table: { disable: true } },
     variant: { table: { disable: true } },
     platform: { table: { disable: true } },
   },
-  render: ({ legend = 'auto' }) => (
+  render: ({ legend = 'auto', font }) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {PLATFORMS.map((p) => (
-        <KeyboardLayout key={p} platform={p} legend={legend} />
+        <KeyboardLayout key={p} platform={p} legend={legend} font={resolveFont(font)} />
       ))}
     </div>
   ),
 };
 
-function KeyboardLayout({ platform, legend }: { platform: Platform; legend: LegendStyle }): ReactElement {
+function KeyboardLayout({ platform, legend, font }: { platform: Platform; legend: LegendStyle; font?: string }): ReactElement {
   // ANSI TKL layout.
   //
   // Geometry: 1u = 18px (matches `.key[data-kind='square']` width); the
@@ -265,6 +284,7 @@ function KeyboardLayout({ platform, legend }: { platform: Platform; legend: Lege
     <KeyCap
       label={label}
       style={{ width: unit(n), minWidth: 0, padding: '0 2px' }}
+      font={font}
     />
   );
   const wide = cap;
@@ -284,7 +304,7 @@ function KeyboardLayout({ platform, legend }: { platform: Platform; legend: Lege
     // Number row.
     [
       ...['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='].map((k) => (
-        <KeyCap key={k} label={k} />
+        <span key={k}>{cap(k)}</span>
       )),
       <span key="bs">{wide(backspace, 2)}</span>,
     ],
@@ -292,7 +312,7 @@ function KeyboardLayout({ platform, legend }: { platform: Platform; legend: Lege
     [
       <span key="tab">{wide(tab, 1.5)}</span>,
       ...['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']'].map((k) => (
-        <KeyCap key={k} label={k} />
+        <span key={k}>{cap(k)}</span>
       )),
       <span key="bsl">{wide('\\', 1.5)}</span>,
     ],
@@ -300,7 +320,7 @@ function KeyboardLayout({ platform, legend }: { platform: Platform; legend: Lege
     [
       <span key="caps">{wide('Caps', 1.75)}</span>,
       ...['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', "'"].map((k) => (
-        <KeyCap key={k} label={k} />
+        <span key={k}>{cap(k)}</span>
       )),
       <span key="enter">{wide(enter, 2.25)}</span>,
     ],
@@ -308,7 +328,7 @@ function KeyboardLayout({ platform, legend }: { platform: Platform; legend: Lege
     [
       <span key="shiftL">{wide(shift, 2.25)}</span>,
       ...['Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/'].map((k) => (
-        <KeyCap key={k} label={k} />
+        <span key={k}>{cap(k)}</span>
       )),
       <span key="shiftR">{wide(shift, 2.75)}</span>,
     ],
@@ -350,9 +370,9 @@ function KeyboardLayout({ platform, legend }: { platform: Platform; legend: Lege
     // Home row alignment — empty.
     [<Spacer key="e1" width={unit(3)} />],
     // Bottom-row alignment — Up alone in the middle slot.
-    [<Spacer key="l" width={unit(1)} />, <KeyCap key="up" label="↑" />, <Spacer key="r" width={unit(1)} />],
+    [<Spacer key="l" width={unit(1)} />, <span key="up">{cap('↑')}</span>, <Spacer key="r" width={unit(1)} />],
     // Modifier-row alignment — Left / Down / Right.
-    [<KeyCap key="left" label="←" />, <KeyCap key="down" label="↓" />, <KeyCap key="right" label="→" />],
+    [<span key="left">{cap('←')}</span>, <span key="down">{cap('↓')}</span>, <span key="right">{cap('→')}</span>],
   ];
 
   return (

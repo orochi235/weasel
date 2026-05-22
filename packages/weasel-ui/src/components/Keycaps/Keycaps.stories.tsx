@@ -42,6 +42,19 @@ interface StoryArgs extends KeySequenceProps {
   legend?: LegendStyle;
 }
 
+const FONT_PRESETS: Record<string, string> = {
+  'system sans': 'ui-sans-serif, system-ui, sans-serif',
+  'system mono': 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+  'serif':       'ui-serif, Georgia, serif',
+  'inter':       'Inter, system-ui, sans-serif',
+  'oswald':      "'Oswald', sans-serif",
+};
+const FONT_OPTIONS = Object.keys(FONT_PRESETS);
+function resolveFont(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  return FONT_PRESETS[value] ?? value;
+}
+
 const meta: Meta<StoryArgs> = {
   title: 'weasel-ui/Foundations/Keycaps/KeySequence',
   component: KeySequence,
@@ -51,6 +64,7 @@ const meta: Meta<StoryArgs> = {
     variant: 'default',
     platform: 'macos',
     legend: 'auto',
+    font: 'system sans',
   },
   argTypes: {
     keys: {
@@ -76,12 +90,17 @@ const meta: Meta<StoryArgs> = {
     legend: {
       control: 'inline-radio',
       options: LEGEND_STYLES,
-      description: '`auto` (default): symbol on macOS, text elsewhere. `symbol` / `text` force a specific form.',
+      description: '`auto` (default): per-entry per-platform label. `symbol` / `text` force a specific form.',
+    },
+    font: {
+      control: 'select',
+      options: FONT_OPTIONS,
+      description: 'Forwarded to every KeyCap. Defaults to system sans (the chip\'s native stack).',
     },
     className: { table: { disable: true } },
   },
-  render: ({ platform = 'macos', legend = 'auto', keys, ...rest }) => (
-    <KeySequence {...rest} keys={relabelKeys(keys, platform, legend)} />
+  render: ({ platform = 'macos', legend = 'auto', keys, font, ...rest }) => (
+    <KeySequence {...rest} keys={relabelKeys(keys, platform, legend)} font={resolveFont(font)} />
   ),
 };
 export default meta;
@@ -145,9 +164,9 @@ export const Minimal: Story = {
     keys: [{ label: '⌘' }, { label: '⇧' }, { label: 'P' }],
     variant: 'minimal',
   },
-  render: ({ platform = 'macos', legend = 'auto', keys, ...rest }) => (
+  render: ({ platform = 'macos', legend = 'auto', keys, font, ...rest }) => (
     <span style={{ color: '#d4a574', fontSize: 14 }}>
-      Quick action: <KeySequence {...rest} keys={relabelKeys(keys, platform, legend)} />
+      Quick action: <KeySequence {...rest} keys={relabelKeys(keys, platform, legend)} font={resolveFont(font)} />
     </span>
   ),
 };
@@ -155,18 +174,18 @@ export const Minimal: Story = {
 /** Side-by-side comparison: same shortcuts in default vs minimal (under a
  *  colored container). Honors `platform` + `legend`. */
 export const Gallery: Story = {
-  args: { platform: 'macos', legend: 'auto' },
+  args: { platform: 'macos', legend: 'auto', font: 'system sans' },
   argTypes: {
     keys: { table: { disable: true } },
     separator: { table: { disable: true } },
     variant: { table: { disable: true } },
   },
-  render: ({ platform = 'macos', legend = 'auto' }) => (
-    <KeySequenceGallery platform={platform} legend={legend} />
+  render: ({ platform = 'macos', legend = 'auto', font }) => (
+    <KeySequenceGallery platform={platform} legend={legend} font={resolveFont(font)} />
   ),
 };
 
-function KeySequenceGallery({ platform, legend }: { platform: Platform; legend: LegendStyle }): ReactElement {
+function KeySequenceGallery({ platform, legend, font }: { platform: Platform; legend: LegendStyle; font?: string }): ReactElement {
   const cases: Array<{ label: string; keys: KeySpec[] }> = [
     { label: 'Cmd+K', keys: [{ label: '⌘' }, { label: 'K' }] },
     { label: 'Cmd+Shift+P', keys: [{ label: '⌘' }, { label: '⇧' }, { label: 'P' }] },
@@ -195,8 +214,8 @@ function KeySequenceGallery({ platform, legend }: { platform: Platform; legend: 
           return (
             <tr key={c.label}>
               <td style={cell}>{c.label}</td>
-              <td style={cell}><KeySequence keys={keys} /></td>
-              <td style={{ ...cell, color: '#7fb069' }}><KeySequence keys={keys} variant="minimal" /></td>
+              <td style={cell}><KeySequence keys={keys} font={font} /></td>
+              <td style={{ ...cell, color: '#7fb069' }}><KeySequence keys={keys} variant="minimal" font={font} /></td>
             </tr>
           );
         })}
