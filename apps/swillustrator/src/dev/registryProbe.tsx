@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   SceneCanvas,
+  defaultNodeKinds,
   useActionsRegistry,
   useScene,
+  type NodeKind,
   type ToolsApi,
 } from '@orochi235/weasel';
 import { buildActionRegistry, formatRoute, type RegistryEntry } from '@orochi235/weasel/routing';
@@ -16,6 +18,7 @@ import s from './RegistryInspector.module.css';
 export interface RegistrySnapshot {
   readonly tools: readonly ToolEntry[];
   readonly actions: readonly ActionEntry[];
+  readonly nodeKinds: readonly NodeKind[];
 }
 
 interface ProbeProps {
@@ -128,7 +131,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
     });
     if (sig === lastRef.current) return;
     lastRef.current = sig;
-    onSnapshot({ tools: toolEntries, actions: actionEntries });
+    onSnapshot({ tools: toolEntries, actions: actionEntries, nodeKinds: defaultNodeKinds });
   });
 
   return (
@@ -138,6 +141,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
         width={200}
         height={200}
         toolBundle="exhaustive"
+        kinds={defaultNodeKinds}
         onToolsCreated={handleToolsCreated}
       />
     </div>

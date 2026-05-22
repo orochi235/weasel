@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import * as Weasel from '@orochi235/weasel';
 import * as WeaselUi from '@orochi235/weasel-ui';
+import { defaultNodeKinds, type NodeKind } from '@orochi235/weasel';
 import { canonicalModifiers, parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@orochi235/weasel/routing';
 import * as ActionIcons from '../actionIcons';
 import * as KindIcons from '../kindIcons';
@@ -10,6 +11,7 @@ export type TreeEntry =
   | ToolEntry
   | ActionEntry
   | ShapeKindEntry
+  | NodeKindEntry
   | BundleEntry
   | IconEntry
   | OpFactoryEntry
@@ -163,6 +165,20 @@ export interface ShapeKindEntry {
   hookName?: string;
 }
 
+export interface NodeKindEntry {
+  kind: 'nodeKind';
+  id: string;          // the kind name
+  label: string;       // = name (NodeKind v1 has no separate display label)
+  /** Provenance of this entry. `'default'` = present in `defaultNodeKinds`
+   *  with the same `matches` reference. `'override'` = name present in
+   *  defaults but `matches` differs (consumer replaced it). `'consumer'`
+   *  = name not in defaults. */
+  source: 'default' | 'consumer' | 'override';
+  /** Cross-link to the matching `ShapeKindEntry` when one exists (same
+   *  name). Set for built-in shapes; absent for non-shape node kinds. */
+  shapeKindId?: string;
+}
+
 export interface BundleEntry {
   kind: 'bundle';
   id: 'minimal' | 'standard' | 'exhaustive';
@@ -276,7 +292,7 @@ export function collectMeta(): readonly MetaEntry[] {
 }
 
 export type TreeCategory =
-  | 'tools' | 'actions' | 'shapeKinds' | 'bundles'
+  | 'tools' | 'actions' | 'shapeKinds' | 'nodeKinds' | 'bundles'
   | 'icons' | 'ops' | 'publicExports'
   | 'phases' | 'gestures' | 'phaseOutputs'
   | 'hotkeyTriggers' | 'slots' | 'routes' | 'routeTargets' | 'modifierSets' | 'groups'
@@ -509,4 +525,57 @@ export function collectShapeKinds(): readonly ShapeKindEntry[] {
     tool: id,
     hookName: TOOL_HOOK_NAMES[id],
   }));
+}
+
+export function collectNodeKinds(
+  live?: readonly NodeKind[],
+): readonly NodeKindEntry[] {
+  const shapeKindSet = new Set<string>(SHAPE_KIND_IDS);
+
+  // If no live registry was supplied, every default entry is 'default'.
+  if (!live) {
+    return defaultNodeKinds.map((k) => ({
+      kind: 'nodeKind',
+      id: k.name,
+      label: k.name,
+      source: 'default',
+      ...(shapeKindSet.has(k.name) ? { shapeKindId: k.name } : {}),
+    }));
+  }
+
+  // With a live registry, classify each entry by source.
+  const out: NodeKindEntry[] = [];
+  const liveByName = new Map<string, NodeKind>();
+  for (const k of live) liveByName.set(k.name, k);
+
+  // Defaults first, in their declared order.
+  for (const def of defaultNodeKinds) {
+    const liveEntry = liveByName.get(def.name);
+    let source: NodeKindEntry['source'];
+    if (!liveEntry) source = 'default';                       // not registered live but still part of defaults; surface as 'default'
+    else if (liveEntry.matches === def.matches) source = 'default';
+    else source = 'override';
+    out.push({
+      kind: 'nodeKind',
+      id: def.name,
+      label: def.name,
+      source,
+      ...(shapeKindSet.has(def.name) ? { shapeKindId: def.name } : {}),
+    });
+  }
+
+  // Consumer-only kinds at the end.
+  const defaultNames = new Set(defaultNodeKinds.map((k) => k.name));
+  for (const liveK of live) {
+    if (defaultNames.has(liveK.name)) continue;
+    out.push({
+      kind: 'nodeKind',
+      id: liveK.name,
+      label: liveK.name,
+      source: 'consumer',
+      ...(shapeKindSet.has(liveK.name) ? { shapeKindId: liveK.name } : {}),
+    });
+  }
+
+  return out;
 }
