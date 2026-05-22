@@ -19,6 +19,7 @@ export { deleteAction } from './delete';
 export { groupAction, ungroupAction } from './group';
 export { undoAction, redoAction } from './undoRedo';
 export { makeToolHoldAction } from './toolHold';
+export { makeToolSelectAction } from './toolSelect';
 export { moveAction } from './move';
 export { resizeAction } from './resize';
 export { rotateAction } from './rotate';

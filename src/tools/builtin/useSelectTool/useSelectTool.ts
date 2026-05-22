@@ -269,7 +269,6 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
       const base = defineTool<SelectScratch>({
         id: 'select',
         hookName: 'useSelectTool',
-        keybinding: { key: 'V' },
         cursor: (ctx) => {
           if (ctx.scratch?.kind === 'move') return 'move';
           if (ctx.scratch?.kind === 'area') return 'crosshair';

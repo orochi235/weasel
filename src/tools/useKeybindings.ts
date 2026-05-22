@@ -7,6 +7,7 @@ import {
 } from 'interactions/keyHelpers';
 import { useActionsRegistry } from 'interactions/actions/registry';
 import { makeToolHoldAction } from 'interactions/actions/defaults/toolHold';
+import { makeToolSelectAction } from 'interactions/actions/defaults/toolSelect';
 import type { ToolsApi } from './useTools';
 import type { HotkeyTrigger } from './types';
 
@@ -132,4 +133,51 @@ export function useKeybindings(
     }
     return () => { for (const u of unregisters) u(); };
   }, [registry, tools]);
+
+  // --- Tool-select: register `tool.select.<id>` actions into the actions
+  // registry. Built-in tools with static keys are registered from the
+  // BUILTIN_SELECT_KEYS map below. Tools whose key is configurable via
+  // their ToolDef (e.g. useLassoTool) are picked up dynamically from the
+  // registry. Both run alongside the legacy keydown handler (which fires
+  // until Task 10 removes it).
+  useEffect(() => {
+    if (optionsRef.current.disable) return;
+    if (!registry) return;
+
+    const unregisters: Array<() => void> = [];
+
+    // Static registrations for built-in tools whose keys are now in this map
+    // rather than on the ToolDef.
+    for (const [toolId, keyOpts] of Object.entries(BUILTIN_SELECT_KEYS)) {
+      if (toolsRef.current.has(toolId)) {
+        unregisters.push(registry.register(makeToolSelectAction(toolId, keyOpts)));
+      }
+    }
+
+    // Dynamic registrations for any tool that still carries a `.keybinding`
+    // field on its ToolDef (e.g. useLassoTool with a caller-provided override).
+    const allTools = toolsRef.current.registry;
+    for (const toolId in allTools) {
+      if (toolId in BUILTIN_SELECT_KEYS) continue; // already registered above
+      const binding = allTools[toolId].keybinding;
+      if (!binding) continue;
+      unregisters.push(registry.register(makeToolSelectAction(toolId, binding)));
+    }
+
+    return () => { for (const u of unregisters) u(); };
+  }, [registry, tools]);
 }
+
+/** Key opts for every built-in tool that has migrated away from ToolDef.keybinding.
+ *  Updated in Task 9; consumed by the tool-select registration effect above. */
+const BUILTIN_SELECT_KEYS: Record<string, { key: string }> = {
+  select: { key: 'V' },
+  rect: { key: 'R' },
+  ellipse: { key: 'E' },
+  line: { key: '\\' },
+  polygon: { key: 'G' },
+  pencil: { key: 'N' },
+  text: { key: 'T' },
+  hand: { key: 'H' },
+  pen: { key: 'P' },
+};
