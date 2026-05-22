@@ -1,0 +1,61 @@
+import { describe, it, expect } from 'vitest';
+import Powerline from './Powerline';
+
+describe('Powerline base', () => {
+  const W = 120;
+  const H = 24;
+
+  it('produces a closed bodyPath for flat-flat edges', () => {
+    const s = Powerline.build({ leftEdge: 'flat', rightEdge: 'flat', depth: 6 }, W, H);
+    expect(s.bodyPath.startsWith('M ')).toBe(true);
+    expect(s.bodyPath.endsWith(' Z')).toBe(true);
+  });
+
+  it('totalCss is positive and finite', () => {
+    const s = Powerline.build({ leftEdge: 'flat', rightEdge: 'flat', depth: 6 }, W, H);
+    expect(s.totalCss).toBeGreaterThan(0);
+    expect(Number.isFinite(s.totalCss)).toBe(true);
+  });
+
+  it('perimeterAt wraps around totalCss', () => {
+    const s = Powerline.build({ leftEdge: 'flat', rightEdge: 'flat', depth: 6 }, W, H);
+    const a = s.perimeterAt(0);
+    const b = s.perimeterAt(s.totalCss);
+    expect(a.x).toBeCloseTo(b.x, 3);
+    expect(a.y).toBeCloseTo(b.y, 3);
+  });
+
+  it('flat-flat sampler returns x in [0,100] and y in [0,100] viewBox coords', () => {
+    const s = Powerline.build({ leftEdge: 'flat', rightEdge: 'flat', depth: 6 }, W, H);
+    for (let i = 0; i < 50; i++) {
+      const p = s.perimeterAt((i / 50) * s.totalCss);
+      expect(p.x).toBeGreaterThanOrEqual(0);
+      expect(p.x).toBeLessThanOrEqual(100);
+      expect(p.y).toBeGreaterThanOrEqual(0);
+      expect(p.y).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it('chevron right edge produces a body path containing the chevron tip past the rect right edge', () => {
+    const s = Powerline.build({ leftEdge: 'flat', rightEdge: 'chevron', depth: 6 }, W, H);
+    const expectedTipVb = 100 + (6 / W) * 100;
+    let maxX = 0;
+    for (let i = 0; i < 80; i++) {
+      const p = s.perimeterAt((i / 80) * s.totalCss);
+      maxX = Math.max(maxX, p.x);
+    }
+    expect(maxX).toBeGreaterThan(99);
+    expect(maxX).toBeLessThanOrEqual(expectedTipVb + 0.01);
+    expect(maxX).toBeGreaterThan(expectedTipVb - 0.5);
+  });
+
+  it('insets expand horizontally by depth in CSS px', () => {
+    const insets = typeof Powerline.insets === 'function'
+      ? Powerline.insets({ leftEdge: 'flat', rightEdge: 'chevron', depth: 8 })
+      : Powerline.insets!;
+    expect(insets.left).toBe(8);
+    expect(insets.right).toBe(8);
+    expect(insets.top).toBe(0);
+    expect(insets.bottom).toBe(0);
+  });
+});
