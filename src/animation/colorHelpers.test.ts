@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAnimator } from './useAnimator';
-import { tweenVertexColors } from './colorHelpers';
+import { tweenVertexColors, springVertexColors } from './colorHelpers';
 
 function makeClock() {
   let now = 0;
@@ -117,5 +117,43 @@ describe('tweenVertexColors', () => {
     act(() => clock.advance(50));
     expect(custom).toHaveBeenCalled();
     expect(result.current.colorOverrides.get('a', 'fill')).toEqual([42, 42, 42, 42]);
+  });
+});
+
+describe('springVertexColors', () => {
+  it('settles at the target color and clears the override', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const onDone = vi.fn();
+    act(() => {
+      springVertexColors(result.current, {
+        id: 'a',
+        channel: 'fill',
+        from: [0, 0, 0, 255],
+        to: [255, 128, 64, 255],
+        preset: 'stiff',
+        onDone,
+      });
+    });
+    act(() => clock.advance(0));
+    for (let i = 0; i < 200; i++) {
+      act(() => clock.advance(16));
+      if (onDone.mock.calls.length > 0) break;
+    }
+    expect(onDone).toHaveBeenCalled();
+    expect(result.current.colorOverrides.get('a', 'fill')).toBeUndefined();
+  });
+
+  it('throws on length mismatch', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    expect(() => {
+      springVertexColors(result.current, {
+        id: 'a',
+        channel: 'fill',
+        from: [0, 0, 0, 255],
+        to: [0, 0, 0, 255, 0, 0, 0, 255],
+      });
+    }).toThrow();
   });
 });

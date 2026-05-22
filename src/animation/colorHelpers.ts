@@ -2,6 +2,7 @@ import type {
   AnimationHandle,
   Animator,
   EasingFn,
+  SpringPresetName,
 } from './types';
 import type { VertexColorChannel } from './colorRegistry';
 import { lerpColorArray, type ColorSpace } from './colorSpaces';
@@ -64,6 +65,47 @@ export function tweenVertexColors(
     interpolate: (a, b, t) => a + (b - a) * t,
     onTick: (t) => {
       animator.colorOverrides.set(id, channel, interp(opts.from, opts.to, t));
+    },
+    onDone: () => {
+      animator.colorOverrides.clear(id, channel);
+      opts.onDone?.();
+    },
+  });
+}
+
+export interface SpringVertexColorsOptions {
+  id: string;
+  channel: VertexColorChannel;
+  to: readonly number[];
+  from: readonly number[];
+  preset?: SpringPresetName;
+  stiffness?: number;
+  damping?: number;
+  mass?: number;
+  interpolation?: ColorSpace;
+  interpolate?: ColorInterpolate;
+  onDone?: () => void;
+}
+
+export function springVertexColors(
+  animator: Animator,
+  opts: SpringVertexColorsOptions,
+): AnimationHandle {
+  validateLengths(opts.from, opts.to);
+  const interp = resolveInterpolator(opts);
+  const { id, channel } = opts;
+  return animator.spring<number>({
+    from: 0,
+    to: 1,
+    preset: opts.preset,
+    stiffness: opts.stiffness,
+    damping: opts.damping,
+    mass: opts.mass,
+    cancelKey: cancelKeyFor(id, channel),
+    interpolate: (a, b, t) => a + (b - a) * t,
+    onTick: (t) => {
+      const clamped = Math.max(0, Math.min(1, t));
+      animator.colorOverrides.set(id, channel, interp(opts.from, opts.to, clamped));
     },
     onDone: () => {
       animator.colorOverrides.clear(id, channel);
