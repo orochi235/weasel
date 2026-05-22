@@ -89,7 +89,47 @@ export function lerpOklab(
   ];
 }
 
-export type ColorSpace = 'rgb' | 'oklab';
+/** Convert OKLab (L, a, b) to OKLCh (L, C, h). h is in radians, range [-π, π]. */
+export function oklabToOklch(L: number, A: number, B: number): [number, number, number] {
+  const C = Math.hypot(A, B);
+  const h = Math.atan2(B, A);
+  return [L, C, h];
+}
+
+/** Convert OKLCh (L, C, h) to OKLab (L, a, b). h is in radians. */
+export function oklchToOklab(L: number, C: number, h: number): [number, number, number] {
+  return [L, C * Math.cos(h), C * Math.sin(h)];
+}
+
+/** Lerp OKLCh values with shortest-arc hue interpolation. Lightness and
+ *  chroma lerp linearly. When chroma is near zero on either endpoint, hue
+ *  is taken from the other endpoint (avoids hue snap-from-undefined).
+ *  h inputs are in radians. */
+export function lerpOklch(
+  from: readonly [number, number, number],
+  to: readonly [number, number, number],
+  t: number,
+): [number, number, number] {
+  const [L1, C1, h1Raw] = from;
+  const [L2, C2, h2Raw] = to;
+  const C_EPS = 1e-4;
+  // When one endpoint is near-achromatic, take hue from the other endpoint
+  // to avoid spurious arc rotation through undefined hue space.
+  const h1 = C1 < C_EPS ? h2Raw : h1Raw;
+  const h2 = C2 < C_EPS ? h1Raw : h2Raw;
+  const TWO_PI = Math.PI * 2;
+  // Shortest-arc delta in [-π, π].
+  let dh = h2 - h1;
+  while (dh > Math.PI) dh -= TWO_PI;
+  while (dh < -Math.PI) dh += TWO_PI;
+  return [
+    L1 + (L2 - L1) * t,
+    C1 + (C2 - C1) * t,
+    h1 + dh * t,
+  ];
+}
+
+export type ColorSpace = 'rgb' | 'oklab' | 'oklch';
 
 /** Lerp a flat RGBA byte array `from` toward `to`. Alpha is always linearly
  *  lerped; RGB channels are lerped in the requested color space. */
@@ -110,6 +150,23 @@ export function lerpColorArray(
   if (space === 'rgb') {
     for (let i = 0; i < from.length; i++) {
       out[i] = Math.round(from[i] + (to[i] - from[i]) * t);
+    }
+    return out;
+  }
+  if (space === 'oklch') {
+    for (let i = 0; i < n; i++) {
+      const k = i * 4;
+      const fLab = srgbU8ToOklab(from[k], from[k + 1], from[k + 2]);
+      const tLab = srgbU8ToOklab(to[k], to[k + 1], to[k + 2]);
+      const fLch = oklabToOklch(fLab[0], fLab[1], fLab[2]);
+      const tLch = oklabToOklch(tLab[0], tLab[1], tLab[2]);
+      const midLch = lerpOklch(fLch, tLch, t);
+      const midLab = oklchToOklab(midLch[0], midLch[1], midLch[2]);
+      const [r, g, b] = oklabToSrgbU8(midLab[0], midLab[1], midLab[2]);
+      out[k] = r;
+      out[k + 1] = g;
+      out[k + 2] = b;
+      out[k + 3] = Math.round(from[k + 3] + (to[k + 3] - from[k + 3]) * t);
     }
     return out;
   }
