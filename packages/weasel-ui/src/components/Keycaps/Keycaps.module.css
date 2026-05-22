@@ -57,13 +57,14 @@
   padding: 0 8px;
 }
 
-/* Optional/inverted: face is unchanged; the border goes dotted and is
-   recolored to match the legend. Reads as "may be held but isn't required."
-   The dotted treatment is the universal optional signal across variants
-   (replaces the prior face-inversion the default variant used). */
+/* Optional/inverted (default variant): face flips to dark with light
+   legend, AND the border goes dotted in the legend color. Two cues
+   reinforce the "may be held but isn't required" signal. */
 .key[data-inverted] {
+  background: var(--wzl-bg, #181a1e);
+  color: var(--wzl-fg, #e6e7e9);
   border-style: dotted;
-  border-color: var(--wzl-bg, #181a1e);
+  border-color: var(--wzl-fg, #e6e7e9);
   border-width: 1.5px;
   border-bottom-width: 1.5px;
 }
