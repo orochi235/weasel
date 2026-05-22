@@ -15,7 +15,13 @@
   border: 0;
   font: inherit;
   font-family: inherit;
+  /* Badges never carry text-decoration. Symmetric: a badge inside a link
+     suppresses the link's underline on the badge's text; a link inside a
+     badge suppresses its own underline. The chip's colored background is
+     the affordance signal. */
+  text-decoration: none;
 }
+.badge * { text-decoration: none; }
 
 .badge[data-size='md'] {
   --badge-gap: 6px;
