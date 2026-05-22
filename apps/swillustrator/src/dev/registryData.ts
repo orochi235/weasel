@@ -379,7 +379,6 @@ export function collectPublicExports(): readonly PublicExportEntry[] {
 export const TOOL_HOOK_NAMES: Readonly<Record<string, string>> = {
   select: 'useSelectTool',
   hand: 'useHandTool',
-  resize: 'useResizeTool',
   rotate: 'useRotateTool',
   rect: 'useRectTool',
   ellipse: 'useEllipseTool',

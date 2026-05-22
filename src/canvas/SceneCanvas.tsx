@@ -251,7 +251,7 @@ export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
 /** Built-in tool ids SceneCanvas knows how to mount when no `tools` prop
  *  is supplied. Pass a subset via `defaultTools` to slim the registered set. */
 export type BuiltinToolId =
-  | 'select' | 'resize' | 'rotate' | 'hand'
+  | 'select' | 'rotate' | 'hand'
   | BuiltinShapeToolId;
 
 /** Named preset tool collections for the `toolBundle` prop. Maps to a
@@ -265,9 +265,9 @@ export type ToolBundle = 'minimal' | 'standard' | 'exhaustive';
  *  non-empty tool list. */
 export const BUNDLE_TOOLS: Record<ToolBundle, readonly BuiltinToolId[]> = {
   minimal: ['select', 'hand'],
-  standard: ['select', 'resize', 'rotate', 'hand', 'rect', 'ellipse', 'line', 'pencil'],
+  standard: ['select', 'rotate', 'hand', 'rect', 'ellipse', 'line', 'pencil'],
   exhaustive: [
-    'select', 'resize', 'rotate', 'hand',
+    'select', 'rotate', 'hand',
     'rect', 'ellipse', 'line', 'polygon', 'star', 'pen', 'pencil',
     'lasso', 'text',
   ],
@@ -412,7 +412,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /**
      * Named preset for the built-in tool set: `'minimal'` (select + hand),
-     * `'standard'` (select + resize + rotate + hand + rect + ellipse +
+     * `'standard'` (select + rotate + hand + rect + ellipse +
      * line + pencil), or `'exhaustive'` (every built-in including polygon,
      * star, lasso, text, clone). When set, defines the starting set;
      * `defaultTools` (if also passed) overrides it. Ignored when the
@@ -422,7 +422,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /**
      * Which built-in tools SceneCanvas registers in its internal `useTools`.
-     * Default: `['select', 'resize', 'rotate']` (plus `'hand'` when the
+     * Default: `['select', 'rotate']` (plus `'hand'` when the
      * `viewport` feature is on). Pass a smaller array to slim — e.g.
      * `['select']` for move-only. Wins over `toolBundle` when both are
      * passed. Ignored when the consumer supplies their own `tools` prop.
@@ -684,14 +684,14 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const viewportAmbient: AnyTool[] = [];
 
   // Resolve which built-ins to mount. Precedence: explicit `defaultTools` >
-  // `toolBundle` preset > legacy default (select/resize/rotate, plus hand
+  // `toolBundle` preset > legacy default (select/rotate, plus hand
   // when viewport is engaged).
   const requestedTools: readonly BuiltinToolId[] =
     defaultTools
     ?? (toolBundle ? BUNDLE_TOOLS[toolBundle] : null)
     ?? (viewportRegistered
-      ? ['select', 'resize', 'rotate', 'hand']
-      : ['select', 'resize', 'rotate']);
+      ? ['select', 'rotate', 'hand']
+      : ['select', 'rotate']);
   const wants = (id: BuiltinToolId): boolean => requestedTools.includes(id);
 
   // Synthesize the shape/lasso/text/clone tools — always called per React
