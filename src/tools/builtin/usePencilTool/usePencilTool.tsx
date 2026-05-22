@@ -117,6 +117,7 @@ export function usePencilTool<TNode extends { id: string }>(
     () =>
       defineTool<PencilScratch>({
         id: 'pencil',
+        hookName: 'usePencilTool',
         keybinding: { key: 'N' },
         cursor: 'crosshair',
         presentation: {

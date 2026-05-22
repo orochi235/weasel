@@ -164,6 +164,7 @@ export function useRotateTool<TNode extends { id: string }, _TPose>(
     () => {
       const base = defineTool<unknown>({
         id: 'rotate',
+        hookName: 'useRotateTool',
         // No keybinding — rotate is affordance-driven, not tool-switched.
         cursor: () => 'default',
         presentation: {

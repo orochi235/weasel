@@ -120,6 +120,7 @@ export function useLineTool<TNode extends { id: string }>(
     () =>
       defineTool<LineScratch>({
         id: 'line',
+        hookName: 'useLineTool',
         keybinding: { key: '\\' },
         cursor: 'crosshair',
         presentation: {

@@ -127,6 +127,7 @@ export function useEllipseTool<TNode extends { id: string }>(
     () =>
       defineTool<null>({
         id: 'ellipse',
+        hookName: 'useEllipseTool',
         keybinding: { key: 'E' },
         cursor: 'crosshair',
         presentation: {

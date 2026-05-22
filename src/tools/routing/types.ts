@@ -103,6 +103,12 @@ export interface PhaseDef<TScratch> {
 
 export interface ToolDef<TScratch = void> {
   id: string;
+  /** Hook name as exported from the kit barrel (e.g. `'useHandTool'`).
+   *  Set by built-in hooks for inspector / debugging. Consumer-authored
+   *  tools may set this to surface their hook name; omitted is fine.
+   *  Introspection-only — do not make this load-bearing in production.
+   *  Read off the def via `Tool.def` (the reflection escape hatch). */
+  hookName?: string;
   presentation?: ToolPresentation<TScratch>;
   keybinding?: KeyBinding;
   /** Hotkey-slot trigger key. While this key is held, the tool engages

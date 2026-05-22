@@ -41,6 +41,7 @@ export function useLassoTool(
   return useMemo(() => {
     return defineTool<undefined>({
       id: 'lasso',
+      hookName: 'useLassoTool',
       ...(options.keybinding === null ? {} : { keybinding: options.keybinding ?? { key: 'L' } }),
       cursor: 'crosshair',
       presentation: {

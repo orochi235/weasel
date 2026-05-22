@@ -66,6 +66,7 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool<null> {
 
     return defineTool<null>({
       id: 'eyedropper',
+      hookName: 'useEyedropperTool',
       keybinding,
       hotkey,
       cursor: 'crosshair',

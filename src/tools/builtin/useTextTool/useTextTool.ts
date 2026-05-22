@@ -40,6 +40,7 @@ export function useTextTool<TNode extends { id: string }>(
     () =>
       defineTool<undefined>({
         id: 'text',
+        hookName: 'useTextTool',
         keybinding: KEYBINDING,
         cursor: 'text',
         presentation: PRESENTATION,
