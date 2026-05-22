@@ -82,7 +82,7 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
           // Default = drag from corner; anchor dot in the overlay sells
           // the click point. Alt flips to center mode (live toggle).
           {
-            spec: { kind: 'drag', target: 'empty' },
+            spec: { kind: 'drag' },
             actionId: 'insert',
             opts: {
               params: () => ({
@@ -95,6 +95,10 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
           {
             spec: { kind: 'wheel', phase: 'engaged' },
             actionId: 'star.adjustPoints',
+          },
+          {
+            spec: { kind: 'wheel', phase: 'engaged', mods: { shift: true } },
+            actionId: 'insert.adjustRotation',
           },
         ],
         initial: {

@@ -6,6 +6,7 @@
 export { hitTestAABB, type AABBBounds } from './aabbHitTest';
 export { useViewDepSource } from './useViewDepSource';
 export { useAreaSelectDepSource } from './useAreaSelectDepSource';
+export { useNodeAtPointDepSource } from './useNodeAtPointDepSource';
 export { useLassoSelectDepSource } from './useLassoSelectDepSource';
 export { useTextEditDepSource } from './useTextEditDepSource';
 export { useEditAnchorsDepSource } from './useEditAnchorsDepSource';

@@ -43,10 +43,20 @@
  */
 
 import type { Action } from '../registry';
-import type { InvocationCtx, OngoingHandle } from '../invoker';
+import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
+import { resolveParams } from '../invoker';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
+import type { NodeAtPointDep } from '../depSchema';
 import { RECT_POSE_DESCRIPTOR } from '../resize/geometry';
+import {
+  composeRectPose,
+  composeWorldPose,
+  decomposeRectPose,
+  rebaseLocalPose,
+  type PoseAdapter,
+  type RectPose,
+} from 'features/groups/composePose';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -55,6 +65,26 @@ import { RECT_POSE_DESCRIPTOR } from '../resize/geometry';
 /** Translate a pose by (dx, dy) using the rect-pose default. */
 function translatePoseGeneric(pose: unknown, dx: number, dy: number): unknown {
   return (RECT_POSE_DESCRIPTOR.translate as (p: unknown, dx: number, dy: number) => unknown)(pose, dx, dy);
+}
+
+/** Allowed values for the `reparentOnDrop` binding param. `'off'` (the
+ *  default) preserves the legacy translate-only commit. `'top'` lands the
+ *  moved node at the top of the container under the cursor. `'above'`
+ *  lands it immediately above the hit sibling in z-order (falls back to
+ *  `'top'` semantics when the hit is itself a container or when the hit
+ *  and moved node share no parent). */
+export type ReparentOnDrop = 'off' | 'top' | 'above';
+
+/** Build a `PoseAdapter` over a `Scene` for `composePose` helpers.
+ *  `getParent` returns the live parent at call time so mid-batch
+ *  parent updates compose correctly. */
+function scenePoseAdapter(
+  scene: Scene<unknown, string, unknown>,
+): PoseAdapter<RectPose> {
+  return {
+    getPose: (id) => scene.get(id as NodeId)!.pose as RectPose,
+    getParent: (id) => scene.get(id as NodeId)?.parent ?? null,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -83,6 +113,118 @@ interface MoveScratch {
   previews: Map<NodeId, unknown>;
 }
 
+/** Resolved drop target — the new parent + layer + (for `'above'` mode)
+ *  the hit sibling whose z-order position the moved node should land
+ *  immediately above. `newParent === null` means "land at the layer
+ *  root" (top-level node of `newLayer`). */
+interface DropTarget {
+  newParent: NodeId | null;
+  newLayer: string;
+  hitSibling: NodeId | null;
+}
+
+/** Walk the hit chain to find the appropriate drop target. Returns
+ *  `null` when no reparent should happen (drop on empty canvas, or the
+ *  only hits are the moved subtree itself). */
+function resolveDropTarget(
+  endCtx: InvocationCtx,
+  scratch: MoveScratch,
+): DropTarget | null {
+  const dep = endCtx.deps['nodeAtPoint'] as NodeAtPointDep | undefined;
+  if (!dep) return null;
+
+  // Exclude moved roots + their descendants. Otherwise we'd happily
+  // reparent a node into itself (or under one of its own children).
+  const exclude = new Set<NodeId>([...scratch.ids, ...scratch.cascadeIds]);
+  const hit = dep(endCtx.world, exclude);
+  if (!hit) return null;
+
+  const hitNode = scratch.scene.get(hit);
+  if (!hitNode) return null;
+
+  // Containers act as drop-INTO targets; leaves act as drop-NEXT-TO
+  // targets (parent = leaf's parent). When the leaf has no parent
+  // (top-level under a layer), `newParent === null` and the moved
+  // subtree lands at the layer root.
+  if (hitNode.kind === 'container') {
+    return { newParent: hit, newLayer: hitNode.layer, hitSibling: null };
+  }
+  return {
+    newParent: hitNode.parent,
+    newLayer: hitNode.layer,
+    hitSibling: hit,
+  };
+}
+
+/** Reparent + reposition each moved root. Pose math: the preview during
+ *  the drag showed the node at `originWorldPose + (dx, dy)`. To preserve
+ *  that world position after the parent swap, we compute the equivalent
+ *  local pose under `newParent`'s frame via `rebaseLocalPose`. */
+function applyReparent(
+  scratch: MoveScratch,
+  target: DropTarget,
+  mode: ReparentOnDrop,
+  dx: number,
+  dy: number,
+): void {
+  const scene = scratch.scene;
+  const poseAdapter = scenePoseAdapter(scene);
+
+  for (const id of scratch.ids) {
+    if (!scratch.startPoses.has(id)) continue;
+
+    // World pose the user dragged the node to. `composeWorldPose` folds
+    // ancestor offsets in for nested nodes; for top-level nodes it
+    // collapses to the local pose. The drag delta is in world space, so
+    // it adds in directly. Reads from the current scene state, which is
+    // unchanged from drag start because `moveAction` doesn't write
+    // during `onMove`.
+    const startWorld = composeWorldPose(poseAdapter, id, composeRectPose);
+    const draggedWorld: RectPose = {
+      ...startWorld,
+      x: startWorld.x + dx,
+      y: startWorld.y + dy,
+    };
+    const newLocal = rebaseLocalPose(
+      poseAdapter,
+      draggedWorld,
+      target.newParent as string | null,
+      composeRectPose,
+      decomposeRectPose,
+    );
+
+    // Cross-layer reparent requires orphaning before relayer (scene
+    // refuses `setLayer` on a node whose parent is on a different
+    // layer). For same-parent reorders or same-layer reparents this
+    // collapses to a single `move` + `setPose`.
+    const node = scene.get(id)!;
+    if (node.layer !== target.newLayer) {
+      if (node.parent !== null) scene.move(id, null);
+      scene.setLayer(id, target.newLayer as never);
+    }
+
+    // Destination index. `'above'` mode needs a hit sibling that shares
+    // `newParent`; otherwise fall through to `'top'` (index = undefined
+    // appends to end). `scene.move` detach-then-attaches, so the index
+    // is interpreted relative to the *post-detach* sibling list — we
+    // filter the moving id out before computing the slot or we'd land
+    // one position too far down when the moving node was previously a
+    // sibling preceding the hit.
+    let index: number | undefined;
+    if (mode === 'above' && target.hitSibling) {
+      const rawSiblings = target.newParent === null
+        ? scene.roots
+        : scene.childrenOf(target.newParent);
+      const siblings = rawSiblings.filter((sid) => sid !== id);
+      const hitIdx = siblings.indexOf(target.hitSibling);
+      if (hitIdx >= 0) index = hitIdx + 1;
+    }
+
+    scene.move(id, target.newParent, index);
+    scene.setPose(id, newLocal as never);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Descriptor
 // ---------------------------------------------------------------------------
@@ -105,7 +247,7 @@ export const moveAction: Action & { requires: string[] } = {
   requires: ['selection', 'scene'],
   invoker: {
     timing: 'ongoing',
-    start(ctx: InvocationCtx, _opts): OngoingHandle {
+    start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
       const selection = ctx.deps.selection as SelectionApi | undefined;
       const scene = ctx.deps.scene as Scene<unknown, string, unknown> | undefined;
 
@@ -167,7 +309,7 @@ export const moveAction: Action & { requires: string[] } = {
             scratch.previews.set(id, translatePoseGeneric(origin, dx, dy));
           }
         },
-        onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
+        onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           if (reason === 'cancel') {
             // Scene was never mutated during drag; nothing to restore.
             scratch.previews.clear();
@@ -180,14 +322,29 @@ export const moveAction: Action & { requires: string[] } = {
             scratch.previews.clear();
             return;
           }
+
+          // Reparent-on-drop, when opted in via `opts.params.reparentOnDrop`.
+          // Resolves the drop target via the `nodeAtPoint` dep (sourced by
+          // `<SceneCanvas>`) and reparents each moved root under it, then
+          // writes the translated pose in the new parent's frame so the
+          // visual position is preserved across the parent swap.
+          const resolved = resolveParams(opts?.params);
+          const reparentMode = ((resolved?.['reparentOnDrop'] as ReparentOnDrop | undefined) ?? 'off');
+          const dropTarget = reparentMode !== 'off'
+            ? resolveDropTarget(endCtx, scratch)
+            : null;
+
           scratch.scene.batch('Move', () => {
-            // Only write the selected roots — descendants follow implicitly
-            // under local-pose semantics. Children are previewed but their
-            // local poses are unchanged at commit.
-            for (const id of scratch.ids) {
-              const origin = scratch.startPoses.get(id);
-              if (origin === undefined) continue;
-              scratch.scene.setPose(id, translatePoseGeneric(origin, dx, dy));
+            if (dropTarget) {
+              applyReparent(scratch, dropTarget, reparentMode, dx, dy);
+            } else {
+              // No reparent — translate-only commit (legacy path). Writes
+              // local poses; descendants follow implicitly.
+              for (const id of scratch.ids) {
+                const origin = scratch.startPoses.get(id);
+                if (origin === undefined) continue;
+                scratch.scene.setPose(id, translatePoseGeneric(origin, dx, dy));
+              }
             }
           });
           scratch.previews.clear();

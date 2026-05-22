@@ -142,7 +142,7 @@ export function useEllipseTool<TNode extends { id: string }>(
           // Single binding; Alt toggles to from-center mid-drag via
           // insertAction's live modifier read.
           {
-            spec: { kind: 'drag', target: 'empty' },
+            spec: { kind: 'drag' },
             actionId: 'insert',
             opts: { params: { kind: 'ellipse' } },
           },

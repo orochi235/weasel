@@ -103,7 +103,7 @@ export function useRectTool<TNode extends { id: string }>(
           // live Alt state so users can engage/disengage Alt mid-drag and
           // see the bounds snap between the two modes.
           {
-            spec: { kind: 'drag', target: 'empty' },
+            spec: { kind: 'drag' },
             actionId: 'insert',
             opts: { params: { kind: 'rect' } },
           },

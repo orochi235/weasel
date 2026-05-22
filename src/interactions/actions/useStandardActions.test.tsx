@@ -75,7 +75,7 @@ const KIT_IDS = [
   'pathfinder.union', 'pathfinder.subtract', 'pathfinder.intersect',
   'pathfinder.exclude', 'pathfinder.divide', 'pathfinder.crop',
   'move',
-  'resize', 'rotate', 'areaSelect', 'insert', 'clone',
+  'resize', 'rotate', 'areaSelect', 'insert', 'insert.adjustRotation', 'clone',
   'editAnchors', 'lassoSelect', 'viewport.pinchZoom',
   'viewport.pan', 'viewport.zoom',
   'viewport.dragPan', // Phase 14c.2
@@ -88,7 +88,7 @@ const KIT_IDS = [
 // ---------------------------------------------------------------------------
 
 describe('useStandardActions', () => {
-  it('registers all 44 kit-standard action descriptors', () => {
+  it('registers all 45 kit-standard action descriptors', () => {
     const seen: string[][] = [];
     render(
       <Providers>

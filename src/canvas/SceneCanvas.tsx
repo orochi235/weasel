@@ -62,6 +62,7 @@ import { DepRegistryProviderIfRoot } from './SceneCanvas/DepRegistryProviderIfRo
 import {
   useViewDepSource,
   useAreaSelectDepSource,
+  useNodeAtPointDepSource,
   useInsertDepSource,
   useLassoSelectDepSource,
   useTextEditDepSource,
@@ -872,6 +873,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             onViewChange={handleViewChange}
             resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
             dispatcher={dispatcher}
+            pickEvery={internalPickEvery}
           />
           <GestureDispatcherMounter
             canvasRef={internalCanvasRef}
@@ -1094,6 +1096,7 @@ function StandardActionsRegistrar({
   onViewChange,
   resizeOptions,
   dispatcher,
+  pickEvery,
 }: {
   selection: SelectionApi;
   scene: Scene<unknown, string, unknown>;
@@ -1110,6 +1113,9 @@ function StandardActionsRegistrar({
   /** Forwarded so `cancelGestureAction` and other actions that need to
    *  abort in-flight handles can read the dispatcher's control surface. */
   dispatcher: Dispatcher;
+  /** World-space picker forwarded so the `nodeAtPoint` dep source can
+   *  reuse the same hit-test plumbing the tool dispatcher uses. */
+  pickEvery: (worldX: number, worldY: number) => string[];
 }) {
   // Build the ViewApi (stable identity, refreshed closures) and hand it to
   // useStandardActions (which publishes the `view` dep along with selection,
@@ -1126,6 +1132,7 @@ function StandardActionsRegistrar({
   // Per-dep wiring modules under `src/canvas/deps/`. See each file for the
   // dep's contract and trade-offs.
   useAreaSelectDepSource(scene, selection);
+  useNodeAtPointDepSource(pickEvery);
   useInsertDepSource(scene, adapter);
   useLassoSelectDepSource(scene, selection);
   useTextEditDepSource(scene);

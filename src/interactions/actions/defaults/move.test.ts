@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { moveAction } from './move';
-import type { InvocationCtx } from '../invoker';
-import type { NodeId } from 'core/scene/types';
+import type { InvocationCtx, BindingOpts } from '../invoker';
+import { createScene } from 'core/scene/scene';
+import type { NodeId, Scene } from 'core/scene/types';
+import { asNodeId } from 'core/scene/types';
+import type { NodeAtPointDep } from '../depSchema';
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -355,5 +358,183 @@ describe('moveAction descriptor', () => {
     expect(scene.poses.get('a')).toEqual({ x: 12, y: 8, width: 10, height: 10 });
     expect(scene.batchLog).toHaveLength(1);
     expect(scene.batchLog[0].label).toBe('Move');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Reparent-on-drop tests
+//
+// Use the real `createScene` so reparent paths exercise the actual layer /
+// parent / index semantics rather than a stub. Each test builds a small
+// scene (1 layer, a handful of nodes), wires a `nodeAtPoint` dep, and
+// runs a synthetic drag → commit.
+// ---------------------------------------------------------------------------
+
+describe('moveAction — reparentOnDrop', () => {
+  type Data = { kind: string };
+  type Layer = 'main';
+  type Pose = { x: number; y: number; width: number; height: number };
+
+  function buildScene(): Scene<Data, Layer, Pose> {
+    return createScene<Data, Layer, Pose>({
+      systemLayers: [{ id: 'main' as Layer, visible: true, locked: false }],
+    });
+  }
+
+  function runDrag(
+    scene: Scene<Data, Layer, Pose>,
+    selectionIds: string[],
+    drop: { x: number; y: number },
+    delta: { x: number; y: number },
+    opts: BindingOpts | undefined,
+    nodeAtPoint?: NodeAtPointDep,
+  ): void {
+    const invoker = moveAction.invoker;
+    if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const selection = { get: () => selectionIds as NodeId[] };
+    const baseCtx = {
+      world: { x: 0, y: 0 },
+      screen: { x: 0, y: 0 },
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      deps: {
+        selection,
+        scene: scene as Scene<unknown, string, unknown>,
+        ...(nodeAtPoint ? { nodeAtPoint } : {}),
+      },
+    };
+    const handle = invoker.start(baseCtx as InvocationCtx, opts);
+    handle.onMove!({
+      ...baseCtx,
+      drag: { start: { x: 0, y: 0 }, current: { x: delta.x, y: delta.y }, delta },
+    } as InvocationCtx);
+    handle.onEnd!(
+      {
+        ...baseCtx,
+        world: drop,
+        drag: { start: { x: 0, y: 0 }, current: { x: delta.x, y: delta.y }, delta },
+      } as InvocationCtx,
+      'commit',
+    );
+  }
+
+  it('off (default) — preserves translate-only commit even when nodeAtPoint hits something', () => {
+    const scene = buildScene();
+    const movingId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    const targetId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 100, y: 100, width: 10, height: 10 }, data: { kind: 'rect' } });
+    const nodeAtPoint: NodeAtPointDep = () => targetId;
+
+    runDrag(scene, [movingId], { x: 105, y: 105 }, { x: 105, y: 105 }, undefined, nodeAtPoint);
+
+    // Pose translated, parent unchanged.
+    expect(scene.get(movingId)!.pose).toEqual({ x: 105, y: 105, width: 10, height: 10 });
+    expect(scene.get(movingId)!.parent).toBeNull();
+    expect(scene.get(targetId)!.parent).toBeNull();
+  });
+
+  it('top — drops onto a container, reparents under it at the end of children, world position preserved', () => {
+    const scene = buildScene();
+    const movingId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    // Container at world (50, 50). Existing child at local (5, 5) → world (55, 55).
+    const containerId = scene.add({ kind: 'container', layer: 'main', pose: { x: 50, y: 50, width: 100, height: 100 }, data: { kind: 'group' } });
+    const existingChildId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 5, y: 5, width: 10, height: 10 }, data: { kind: 'rect' }, parent: containerId });
+    const nodeAtPoint: NodeAtPointDep = () => containerId;
+
+    runDrag(
+      scene,
+      [movingId],
+      { x: 80, y: 80 },
+      { x: 80, y: 80 },
+      { params: { reparentOnDrop: 'top' } },
+      nodeAtPoint,
+    );
+
+    // Now reparented under container.
+    expect(scene.get(movingId)!.parent).toBe(containerId);
+    // At the end of children (after the existing child).
+    expect(scene.childrenOf(containerId)).toEqual([existingChildId, movingId]);
+    // Local pose rebased: world (80, 80) under parent at world (50, 50) → local (30, 30).
+    expect(scene.get(movingId)!.pose).toEqual({ x: 30, y: 30, width: 10, height: 10 });
+  });
+
+  it('above — drops onto a leaf sibling, lands at sibling index + 1 with same parent', () => {
+    const scene = buildScene();
+    const movingId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    // Three top-level siblings; drop onto the middle one.
+    const aId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 50, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    const bId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 100, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    const cId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 150, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+
+    const nodeAtPoint: NodeAtPointDep = () => bId;
+
+    runDrag(
+      scene,
+      [movingId],
+      { x: 105, y: 5 },
+      { x: 105, y: 5 },
+      { params: { reparentOnDrop: 'above' } },
+      nodeAtPoint,
+    );
+
+    // Above the hit sibling → between b and c.
+    expect(scene.roots).toEqual([aId, bId, movingId, cId]);
+    // World position preserved (no parent transform to rebase against).
+    expect(scene.get(movingId)!.pose).toEqual({ x: 105, y: 5, width: 10, height: 10 });
+  });
+
+  it('top — drop on empty canvas (nodeAtPoint returns null) skips reparent, translate-only', () => {
+    const scene = buildScene();
+    const movingId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    const nodeAtPoint: NodeAtPointDep = () => null;
+
+    runDrag(scene, [movingId], { x: 50, y: 50 }, { x: 50, y: 50 }, { params: { reparentOnDrop: 'top' } }, nodeAtPoint);
+
+    expect(scene.get(movingId)!.parent).toBeNull();
+    expect(scene.get(movingId)!.pose).toEqual({ x: 50, y: 50, width: 10, height: 10 });
+  });
+
+  it('excludes the moving node and its descendants from the hit-test', () => {
+    const scene = buildScene();
+    // Moving container with a child. Both must be excluded from the hit
+    // candidate set, otherwise we'd cheerfully reparent the container
+    // into itself or under its own descendant.
+    const movingId = scene.add({ kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { kind: 'group' } });
+    const childId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 10, y: 10, width: 10, height: 10 }, data: { kind: 'rect' }, parent: movingId });
+
+    const calls: Array<{ excluded: NodeId[] }> = [];
+    const nodeAtPoint: NodeAtPointDep = (_point, exclude) => {
+      calls.push({ excluded: exclude ? Array.from(exclude) : [] });
+      return null;
+    };
+
+    runDrag(scene, [movingId], { x: 50, y: 50 }, { x: 50, y: 50 }, { params: { reparentOnDrop: 'top' } }, nodeAtPoint);
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0].excluded).toEqual(expect.arrayContaining([movingId, childId]));
+  });
+
+  it('cross-layer drop — switches layer and reparents under hit target', () => {
+    const scene = createScene<{ kind: string }, 'a' | 'b', { x: number; y: number; width: number; height: number }>({
+      systemLayers: [
+        { id: 'a', visible: true, locked: false },
+        { id: 'b', visible: true, locked: false },
+      ],
+    });
+    const movingId = scene.add({ kind: 'leaf', layer: 'a', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    const targetId = scene.add({ kind: 'container', layer: 'b', pose: { x: 100, y: 100, width: 50, height: 50 }, data: { kind: 'group' } });
+    const nodeAtPoint: NodeAtPointDep = () => asNodeId(targetId);
+
+    runDrag(
+      scene as unknown as Scene<Data, Layer, Pose>,
+      [movingId],
+      { x: 120, y: 120 },
+      { x: 120, y: 120 },
+      { params: { reparentOnDrop: 'top' } },
+      nodeAtPoint,
+    );
+
+    expect(scene.get(movingId)!.parent).toBe(targetId);
+    expect(scene.get(movingId)!.layer).toBe('b');
+    // World (120, 120) under parent at world (100, 100) → local (20, 20).
+    expect(scene.get(movingId)!.pose).toEqual({ x: 20, y: 20, width: 10, height: 10 });
   });
 });

@@ -91,7 +91,7 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
           // polygon vertex sits at the AABB corner. Alt held flips to
           // center mode (insertAction reads live modifier state).
           {
-            spec: { kind: 'drag', target: 'empty' },
+            spec: { kind: 'drag' },
             actionId: 'insert',
             // Thunked params re-evaluated at commit time (and on every
             // overlay() call for live preview) so mid-gesture
@@ -110,6 +110,13 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
           {
             spec: { kind: 'wheel', phase: 'engaged' },
             actionId: 'polygon.adjustSides',
+          },
+          // Shift+wheel during engaged drag → rotate the in-flight
+          // shape in place. Strict modifier matching means this
+          // doesn't conflict with the unmodified wheel binding above.
+          {
+            spec: { kind: 'wheel', phase: 'engaged', mods: { shift: true } },
+            actionId: 'insert.adjustRotation',
           },
         ],
         initial: {

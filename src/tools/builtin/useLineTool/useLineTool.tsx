@@ -133,7 +133,7 @@ export function useLineTool<TNode extends { id: string }>(
         // is retained as dead code until Phase 14e removes it.
         bindings: [
           {
-            spec: { kind: 'drag', target: 'empty' },
+            spec: { kind: 'drag' },
             actionId: 'insert',
             opts: { params: { kind: 'line' } },
           },

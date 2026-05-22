@@ -89,7 +89,18 @@ interface InsertScratch {
   /** Cleared once `onEnd` runs so subsequent `overlay()` calls report no
    *  in-flight preview (mirrors the areaSelect/lasso convention). */
   open: boolean;
+  /** Accumulated user-driven rotation (radians) layered on top of any
+   *  drag-direction / params rotation. Driven by `insert.adjustRotation`
+   *  (Shift+wheel during engaged phase). Only consulted for kinds that
+   *  carry a `rotation` field on their extras (star / polygon today). */
+  userRotation: number;
 }
+
+// Module-scoped pointer to the in-flight insert scratch. There is at most
+// one insert gesture at a time (single primary pointer) so a single ref
+// is sufficient. `insert.adjustRotation` reads this to mutate the live
+// scratch without needing handle-passing plumbing through the dispatcher.
+let liveInsertScratch: InsertScratch | null = null;
 
 /** Resolve the effective origin mode from the binding's nominal opt
  *  and live Alt state. Alt inverts: `corner` ⇄ `center`. Applies to
@@ -152,7 +163,15 @@ function buildExtras(
       return { kind: 'line', a: { x: startX, y: startY }, b: { x: currentX, y: currentY } };
     case 'polygon': {
       const sides = Number(params?.['sides'] ?? 6);
-      const rotation = Number(params?.['rotation'] ?? 0);
+      // When the tool omits rotation, point the first vertex along the
+      // drag vector so dragging in a direction orients the shape that
+      // way. Sub-pixel drags (no direction yet) fall back to 0.
+      const dragAngle = (currentX === startX && currentY === startY)
+        ? 0
+        : Math.atan2(currentY - startY, currentX - startX);
+      const rotation = params?.['rotation'] !== undefined
+        ? Number(params['rotation'])
+        : dragAngle;
       const extras: InsertExtras = { kind: 'polygon', sides, rotation };
       // Drag-from-center: tool's Alt binding passes `originMode:'center'`.
       // Compute polygon center + radius from the drag vector so the shape
@@ -172,7 +191,12 @@ function buildExtras(
     case 'star': {
       const pts = Number(params?.['points'] ?? 5);
       const ir = Number(params?.['innerRadiusRatio'] ?? 0.5);
-      const rotation = Number(params?.['rotation'] ?? 0);
+      const dragAngle = (currentX === startX && currentY === startY)
+        ? 0
+        : Math.atan2(currentY - startY, currentX - startX);
+      const rotation = params?.['rotation'] !== undefined
+        ? Number(params['rotation'])
+        : dragAngle;
       const extras: InsertExtras = { kind: 'star', points: pts, innerRadiusRatio: ir, rotation };
       if (params?.['originMode'] === 'center') {
         const dx = currentX - startX;
@@ -236,7 +260,9 @@ export const insertAction: Action & { requires: string[] } = {
         points: ctx.drag?.points ?? null,
         altHeld: ctx.modifiers.alt,
         open: true,
+        userRotation: 0,
       };
+      liveInsertScratch = scratch;
 
       return {
         onMove(moveCtx: InvocationCtx): void {
@@ -284,6 +310,7 @@ export const insertAction: Action & { requires: string[] } = {
             scratch.currentX, scratch.currentY,
             scratch.points,
           );
+          applyUserRotation(effectiveExtras, scratch.userRotation);
           return {
             kind: 'insertPreview',
             shape: effectiveExtras.kind as KitInsertShape,
@@ -298,6 +325,7 @@ export const insertAction: Action & { requires: string[] } = {
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           scratch.open = false;
+          if (liveInsertScratch === scratch) liveInsertScratch = null;
           if (reason === 'cancel') return;
 
           const { dep: d, opts: o, startX, startY, currentX, currentY } = scratch;
@@ -312,6 +340,7 @@ export const insertAction: Action & { requires: string[] } = {
             { ...(resolved ?? {}), originMode: mode },
             startX, startY, currentX, currentY, points,
           );
+          applyUserRotation(extras, scratch.userRotation);
 
           // Sub-threshold drag — no insert. Exception: pencil with a real
           // sample trail can still produce a meaningful path even when the
@@ -331,4 +360,41 @@ export const insertAction: Action & { requires: string[] } = {
    * placeholder that was silently blocking all dispatcher-routed inserts.
    */
   enabled: () => true as const,
+};
+
+/** Add a user-driven rotation offset onto kinds that carry rotation. Rect
+ *  / ellipse / line / pencil don't expose a rotation field on their
+ *  extras today, so they ignore the offset. */
+function applyUserRotation(extras: InsertExtras, userRotation: number): void {
+  if (userRotation === 0) return;
+  if (extras.kind === 'star' || extras.kind === 'polygon') {
+    (extras as { rotation: number }).rotation += userRotation;
+  }
+}
+
+/** Radians per unit of wheel deltaY. Tuned so a typical mouse-wheel click
+ *  (deltaY ≈ 100) yields ~25°, while a trackpad event (deltaY ≈ 1–10)
+ *  yields a smooth 0.25–2.5° increment. */
+const ROTATION_SENSITIVITY = Math.PI / 720;
+
+/**
+ * @experimental
+ * Companion to `insertAction` — adjusts the live insert gesture's
+ * `userRotation` based on wheel deltaY. Intended to be bound to
+ * Shift+wheel during the insert tool's engaged phase. No-op when no
+ * insert is in flight.
+ */
+export const insertRotateAction: Action = {
+  id: 'insert.adjustRotation',
+  label: 'Insert — rotate',
+  invoker: {
+    timing: 'immediate' as const,
+    run: (_deps, params) => {
+      const scratch = liveInsertScratch;
+      if (!scratch || !scratch.open) return;
+      const deltaY = (params as { deltaY?: number } | undefined)?.deltaY ?? 0;
+      if (deltaY === 0) return;
+      scratch.userRotation += deltaY * ROTATION_SENSITIVITY;
+    },
+  },
 };

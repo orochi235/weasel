@@ -55,6 +55,22 @@ export interface ViewApi {
  * overlap over scene nodes. Consumers with custom hit-testing override this
  * dep entry in their own registrar.
  */
+/**
+ * Topmost-node-at-world-point dep, consumed by `moveAction` for
+ * reparent-on-drop and available to any action that needs a single-best
+ * pick. Mirrors the same hit-test plumbing `<SceneCanvas>` feeds to the
+ * tool dispatcher; consumers with custom hit-testing override here.
+ *
+ * `exclude` is iterated once per call and treated as a set membership
+ * test — the dep walks hits front-to-back and returns the first id not
+ * in the exclude set. Pass moving-node roots + their descendants when
+ * the caller wants to ignore the nodes it's manipulating.
+ */
+export type NodeAtPointDep = (
+  point: { x: number; y: number },
+  exclude?: Iterable<NodeId>,
+) => NodeId | null;
+
 export interface AreaSelectDep {
   /** Return ids of all scene nodes whose AABB overlaps `bounds`. */
   hitTestArea(bounds: { x: number; y: number; width: number; height: number }): NodeId[];
@@ -214,6 +230,13 @@ declare module './depRegistry' {
      * lock-aware filtering).
      */
     areaSelect: AreaSelectDep;
+    /**
+     * Topmost node at a world-space point. Sourced by `<SceneCanvas>` from
+     * the same picker that feeds the tool dispatcher's `getNodeAtPoint`.
+     * Optional: actions that read this (e.g. `moveAction` reparent-on-drop)
+     * fall back to a no-op when the dep isn't registered.
+     */
+    nodeAtPoint?: NodeAtPointDep;
     /**
      * Insert dep — node factory for drag-to-insert.
      *

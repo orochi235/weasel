@@ -49,7 +49,7 @@ import { moveAction } from './defaults/move';
 import { resizeAction } from './defaults/resize';
 import { rotateAction } from './defaults/rotate';
 import { areaSelectAction } from './defaults/areaSelect';
-import { insertAction } from './defaults/insert';
+import { insertAction, insertRotateAction } from './defaults/insert';
 import { clearSelectionAction } from './defaults/clearSelection';
 import { cloneAction } from './defaults/clone';
 import { editAnchorsAction } from './defaults/editAnchors';
@@ -80,12 +80,12 @@ export interface UseStandardActionsOptions {
  * The ordered list of all kit-standard action descriptors. Each descriptor
  * carries an `invoker` that reads from the dep registry at dispatch time.
  *
- * Count: 2 (escape/selectAll) + 1 (delete) + 1 (duplicate) + 1 (group) +
+ * Count: 3 (escape/cancelGesture/selectAll) + 1 (delete) + 1 (duplicate) + 1 (group) +
  *        1 (ungroup) + 2 (undo/redo) + 1 (flip) + 4 (nudge) + 2 (reorder) +
  *        6 (align) + 2 (distribute) + 6 (pathfinder) + 1 (move) +
- *        5 (resize/rotate/areaSelect/insert/clone) + 3 (editAnchors/lassoSelect/pinchZoom) +
+ *        6 (resize/rotate/areaSelect/insert/insertRotate/clone) + 3 (editAnchors/lassoSelect/pinchZoom) +
  *        2 (viewport.pan/viewport.zoom) + 1 (viewport.dragPan) + 1 (clearSelection) +
- *        1 (enterTextEdit) = 43
+ *        1 (enterTextEdit) = 45
  */
 const KIT_STANDARD_DESCRIPTORS: Action[] = [
   escapeAction,
@@ -123,6 +123,7 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   rotateAction,
   areaSelectAction,
   insertAction,
+  insertRotateAction,
   cloneAction,
   editAnchorsAction,
   lassoSelectAction,

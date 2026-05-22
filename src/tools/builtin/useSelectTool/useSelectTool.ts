@@ -84,6 +84,13 @@ export interface UseSelectToolOptions<TNode extends { id: string }, TPose> {
   getNode?: (id: string) => TNode | null;
   /** Returns the live selection ids. */
   getSelection?: () => readonly string[];
+  /** Reparent-on-drop behavior for drag-to-move. `'off'` (default)
+   *  preserves translate-only commits. `'top'` lands the moved nodes at
+   *  the top of the container under the drop point. `'above'` lands them
+   *  immediately above the hit sibling in z-order (falls back to `'top'`
+   *  semantics when the hit is itself a container). Requires the
+   *  `nodeAtPoint` dep to be registered (sourced by `<SceneCanvas>`). */
+  reparentOnDrop?: 'off' | 'top' | 'above';
   /** Optional double-tap hook. */
   onDoubleTap?: (args: {
     worldX: number;
@@ -335,13 +342,19 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           // Listed BEFORE bare move so the strict-modifier dispatcher
           // picks this when Alt is held; bare move matches no-mod drags.
           { spec: { kind: 'drag' as const, target: 'selected-body' as const, mods: { alt: true } }, actionId: 'clone' },
-          { spec: { kind: 'drag' as const, target: 'selected-body' as const }, actionId: 'move' },
+          {
+            spec: { kind: 'drag' as const, target: 'selected-body' as const },
+            actionId: 'move',
+            ...(options.reparentOnDrop && options.reparentOnDrop !== 'off'
+              ? { opts: { params: { reparentOnDrop: options.reparentOnDrop } } }
+              : {}),
+          },
           { spec: { kind: 'drag' as const, target: 'empty' as const }, actionId: 'areaSelect' },
           { spec: { kind: 'click' as const, target: 'empty' as const, mods: {} }, actionId: 'clearSelection' },
         ],
       };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [pickEveryFn, options.pickBest, options.debug],
+    [pickEveryFn, options.pickBest, options.debug, options.reparentOnDrop],
   );
 }
