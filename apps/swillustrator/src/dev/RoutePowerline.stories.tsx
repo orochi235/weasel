@@ -43,30 +43,30 @@ export const AllPermutations: Story = {
       <Section
         title="Phases — channel × phase value"
         routes={[
-          '[initial] click handle',
-          '[engaged] click handle',
-          '[*] click handle',
-          '[*:engaged] click handle',
-          '[rect:engaged] click handle',
-          '[initial,engaged] click handle',
+          '[initial] click => handle',
+          '[engaged] click => handle',
+          '[*] click => handle',
+          '[*:engaged] click => handle',
+          '[rect:engaged] click => handle',
+          '[initial,engaged] click => handle',
         ]}
       />
       <Section
         title="Pointer gestures (hasTarget)"
         routes={[
-          '[initial] click handle',
-          '[initial] pointerDown handle',
-          '[initial] dblTap node',
-          '[initial] drag handle',
-          '[initial] contextMenu node',
+          '[initial] click => handle',
+          '[initial] pointerDown => handle',
+          '[initial] dblTap => node',
+          '[initial] drag => handle',
+          '[initial] contextMenu => node',
         ]}
       />
       <Section
         title="Targets — wildcard vs specific vs empty"
         routes={[
           '[initial] click',
-          '[initial] click handle',
-          '[initial] click empty',
+          '[initial] click => handle',
+          '[initial] click => empty',
         ]}
       />
       <Section
@@ -114,12 +114,12 @@ export const AllPermutations: Story = {
       <Section
         title="Modifiers — required, optional, coalesced"
         routes={[
-          '[initial] drag node +shift',
-          '[initial] drag node +mod',
-          '[initial] drag node +mod +shift',
-          '[initial] drag node ?shift',
-          '[initial] drag node +mod ?shift',
-          '[initial] drag node +mod +shift +alt',
+          '[initial] drag => node +shift',
+          '[initial] drag => node +mod',
+          '[initial] drag => node +mod +shift',
+          '[initial] drag => node ?shift',
+          '[initial] drag => node +mod ?shift',
+          '[initial] drag => node +mod +shift +alt',
           '[initial] keyDown(z) +mod',
           '[initial] keyDown(z) +mod +shift',
           '[initial] keyDown(z) +mod ?shift',
@@ -131,8 +131,8 @@ export const AllPermutations: Story = {
         routes={[
           '[*:engaged] keyDown(Delete)',
           '[rect:engaged] keyDown(Escape) +mod',
-          '[engaged] drag handle +shift',
-          '[initial,engaged] contextMenu empty',
+          '[engaged] drag => handle +shift',
+          '[initial,engaged] contextMenu => empty',
           '[*] wheel(up) +mod',
         ]}
       />
