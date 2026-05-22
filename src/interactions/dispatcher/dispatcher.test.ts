@@ -246,6 +246,32 @@ describe('createDispatcher', () => {
       );
       expect(activeRun).toHaveBeenCalledOnce();
     });
+
+    it("Action.scope:'hotkey' bindings beat active-tool bindings on the same spec", () => {
+      const activeRun = vi.fn();
+      const hotkeyRun = vi.fn();
+
+      // Active tool binds 'a' to its own action.
+      const activeAction = immediateAction('active.a', 'a', activeRun);
+      // Registry has a hotkey-scope action also bound to 'a'.
+      const hotkeyAction: Action = {
+        ...immediateAction('hotkey.a', 'a', hotkeyRun),
+        scope: 'hotkey',
+      };
+
+      const registry = makeRegistry([activeAction, hotkeyAction]);
+      const activeTool: Tool = {
+        id: 'editor',
+        bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'active.a' }],
+      };
+      const toolsById = new Map([['editor', activeTool]]);
+      const dispatcher = createDispatcher();
+      const ctx = makeCtx({ actions: registry, activeToolId: 'editor', toolsById });
+
+      expect(dispatcher.handleInput(keyAEvent, ctx)).toBe('handled');
+      expect(hotkeyRun).toHaveBeenCalledOnce();
+      expect(activeRun).not.toHaveBeenCalled();
+    });
   });
 
   describe('ongoing dispatch', () => {

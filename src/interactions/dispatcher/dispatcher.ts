@@ -318,7 +318,8 @@ export function createDispatcher(): Dispatcher {
           ? (entry as { spec: import('../gestures/spec').GestureSpec; opts: BindingOpts }).opts
           : undefined;
         const defaultBinding: GestureBinding = { spec, actionId: action.id, ...(opts !== undefined ? { opts } : {}) };
-        result.push({ binding: defaultBinding, scope: 'ambient' as BindingScope, ownerToolId: null });
+        const targetScope: BindingScope = action.scope === 'hotkey' ? 'hotkey' : 'ambient';
+        result.push({ binding: defaultBinding, scope: targetScope, ownerToolId: null });
       }
     }
 

@@ -62,6 +62,11 @@ export interface Action {
    *  All kit-standard descriptors ship one; consumer-supplied actions
    *  without an invoker can still register but won't be triggered. */
   invoker?: Invoker;
+  /** When set to `'hotkey'`, this action's `defaultBinding` rides the hotkey
+   *  `BindingScope` instead of the ambient scope — meaning it beats any
+   *  active-tool binding on the same input shape. Use for tool-switch
+   *  shortcuts and global held-key triggers. Default: ambient. */
+  scope?: 'hotkey';
   /**
    * @experimental
    * Optional predicate the command palette consults when rendering. Return
