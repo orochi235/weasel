@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import Powerline from './Powerline';
+import { BASES, type BadgeBase } from './index';
 
 describe('Powerline base', () => {
   const W = 120;
@@ -57,5 +58,13 @@ describe('Powerline base', () => {
     expect(insets.right).toBe(8);
     expect(insets.top).toBe(0);
     expect(insets.bottom).toBe(0);
+  });
+});
+
+describe('Powerline base registration', () => {
+  it('is registered under the "powerline" key', () => {
+    const key: BadgeBase = 'powerline';
+    expect(BASES[key]).toBeDefined();
+    expect(typeof BASES[key].build).toBe('function');
   });
 });

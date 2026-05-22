@@ -7,8 +7,18 @@ import Quatrefoil, { type QuatrefoilParams } from './Quatrefoil';
 import OctantSpline, { type OctantSplineParams } from './OctantSpline';
 import OctantBSpline, { type OctantBSplineParams } from './OctantBSpline';
 import Ribbon, { type RibbonParams } from './Ribbon';
+import Powerline, { type PowerlineParams } from './Powerline';
 
-export type BadgeBase = 'chamfered-rect' | 'rounded-rect' | 'polygon' | 'puzzle' | 'quatrefoil' | 'octant-spline' | 'octant-bspline' | 'ribbon';
+export type BadgeBase =
+  | 'chamfered-rect'
+  | 'rounded-rect'
+  | 'polygon'
+  | 'puzzle'
+  | 'quatrefoil'
+  | 'octant-spline'
+  | 'octant-bspline'
+  | 'ribbon'
+  | 'powerline';
 
 export interface BadgeBaseParams {
   'chamfered-rect': ChamferedRectParams;
@@ -19,6 +29,7 @@ export interface BadgeBaseParams {
   'octant-spline': OctantSplineParams;
   'octant-bspline': OctantBSplineParams;
   'ribbon': RibbonParams;
+  'powerline': PowerlineParams;
 }
 
 export const BASES: Record<BadgeBase, BaseModule<any>> = {
@@ -30,4 +41,5 @@ export const BASES: Record<BadgeBase, BaseModule<any>> = {
   'octant-spline': OctantSpline,
   'octant-bspline': OctantBSpline,
   'ribbon': Ribbon,
+  'powerline': Powerline,
 };
