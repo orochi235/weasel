@@ -24,8 +24,8 @@ describe('lerpColorArray', () => {
     expect(mid).toEqual([128, 128, 0, 255]);
   });
 
-  it('oklch midpoint between red and green is NOT gray (luminance and chroma preserved)', () => {
-    const mid = lerpColorArray([255, 0, 0, 255], [0, 255, 0, 255], 0.5, 'oklch');
+  it('oklab midpoint between red and green is NOT gray (luminance and chroma preserved)', () => {
+    const mid = lerpColorArray([255, 0, 0, 255], [0, 255, 0, 255], 0.5, 'oklab');
     expect(mid[0]).not.toBe(128);
     expect(mid[0]).toBeGreaterThan(100);
     expect(mid[1]).toBeGreaterThan(100);
@@ -40,8 +40,8 @@ describe('lerpColorArray', () => {
     expect(() => lerpColorArray([0, 0, 0], [255, 255, 255], 0.5)).toThrow();
   });
 
-  it('alpha lerps linearly even in oklch mode', () => {
-    const mid = lerpColorArray([0, 0, 0, 0], [0, 0, 0, 200], 0.5, 'oklch');
+  it('alpha lerps linearly even in oklab mode', () => {
+    const mid = lerpColorArray([0, 0, 0, 0], [0, 0, 0, 200], 0.5, 'oklab');
     expect(mid[3]).toBe(100);
   });
 });

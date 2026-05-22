@@ -62,6 +62,7 @@ function clipToGamut(L: number, A: number, B: number): [number, number, number] 
   if (inGamut(rl, gl, bl)) return [rl, gl, bl];
   let lo = 0;
   let hi = 1;
+  // 5 iterations → ~3% chroma precision; sufficient for u8 output.
   for (let i = 0; i < 5; i++) {
     const t = (lo + hi) / 2;
     [rl, gl, bl] = oklabToLinearSrgb(L, A * t, B * t);
@@ -88,7 +89,7 @@ export function lerpOklab(
   ];
 }
 
-export type ColorSpace = 'rgb' | 'oklch';
+export type ColorSpace = 'rgb' | 'oklab';
 
 /** Lerp a flat RGBA byte array `from` toward `to`. Alpha is always linearly
  *  lerped; RGB channels are lerped in the requested color space. */
@@ -118,7 +119,9 @@ export function lerpColorArray(
     const tLab = srgbU8ToOklab(to[k], to[k + 1], to[k + 2]);
     const mid = lerpOklab(fLab, tLab, t);
     const [r, g, b] = oklabToSrgbU8(mid[0], mid[1], mid[2]);
-    out[k] = r; out[k + 1] = g; out[k + 2] = b;
+    out[k] = r;
+    out[k + 1] = g;
+    out[k + 2] = b;
     out[k + 3] = Math.round(from[k + 3] + (to[k + 3] - from[k + 3]) * t);
   }
   return out;
