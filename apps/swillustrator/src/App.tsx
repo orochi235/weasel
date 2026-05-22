@@ -68,6 +68,7 @@ import {
 } from './ui/PropertiesPanel';
 import { HistoryList } from './ui/HistoryList';
 import { DispatchTracePanel } from './dev/DispatchTracePanel';
+import { lookupShortcutByToolId } from './dev/keybindingsView';
 import { useColorContext } from './tools/colorContext';
 import { useSceneAdapter } from '@orochi235/weasel';
 import type { Obj } from './poseUpdate';
@@ -1080,6 +1081,7 @@ function EditorWithSharedScene({
   selection: ReturnType<typeof useSelection>;
 }): ReactElement {
   const [tools, setTools] = useState<ToolsApi | null>(null);
+  const actionsReg = useActionsRegistry();
   const [paperSize, setPaperSize] = useState<PaperSizeKey>('letter');
   const [gridVisible, setGridVisible] = useState(false);
   const [snapToGrid, setSnapToGrid] = useState(false);
@@ -1131,7 +1133,13 @@ function EditorWithSharedScene({
       <div className="swill-body">
         <div className="swill-sidebar left">
           <ActiveSwatches />
-          {tools && <ToolPalette tools={tools} orientation="vertical" />}
+          {tools && (
+            <ToolPalette
+              tools={tools}
+              orientation="vertical"
+              lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
+            />
+          )}
         </div>
         <div className="swill-canvas-host">
           <SceneCanvas<SwillData, SwillLayer, SwillPose>

@@ -4,7 +4,7 @@ import type { AnyTool, ToolsApi } from '@orochi235/weasel';
 import { ToolButton } from '../ToolButton';
 import { ToolGroup } from '../ToolGroup';
 import s from './ToolPalette.module.css';
-import { formatShortcut } from './formatShortcut';
+import { formatShortcut, type ShortcutInput } from './formatShortcut';
 
 const DEFAULT_GROUP_ORDER = ['select', 'shape', 'draw', 'type', 'view'] as const;
 const MISC = 'misc';
@@ -51,10 +51,14 @@ export interface ToolPaletteProps {
   tools: ToolsApi;
   orientation?: 'vertical' | 'horizontal';
   className?: string;
+  /** Derive the keyboard shortcut for a tool button from the action registry.
+   *  Called with the tool's id; return `undefined` to suppress a chip. When
+   *  omitted, falls back to `tool.keybinding` (legacy path). */
+  lookupShortcut?: (toolId: string) => ShortcutInput | undefined;
 }
 
 export function ToolPalette(props: ToolPaletteProps) {
-  const { tools, orientation = 'vertical', className } = props;
+  const { tools, orientation = 'vertical', className, lookupShortcut } = props;
   const list = Object.values(tools.registry);
   const groups = partitionByGroup(list);
   const groupKeys = orderedGroupKeys(groups);
@@ -119,7 +123,8 @@ export function ToolPalette(props: ToolPaletteProps) {
           <ToolGroup orientation={orientation} groupKey={key}>
             {groups.get(key)!.map((tool) => {
               const label = tool.presentation?.label ?? tool.id;
-              const shortcut = tool.presentation?.shortcut ?? formatShortcut(tool.keybinding);
+              const shortcut = tool.presentation?.shortcut
+                ?? formatShortcut(lookupShortcut ? lookupShortcut(tool.id) : tool.keybinding);
               return (
                 <ToolButton
                   key={tool.id}

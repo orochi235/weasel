@@ -37,6 +37,7 @@ import {
   type ToolDef,
 } from '@orochi235/weasel/routing';
 import { formatShortcutParts, KeySequence } from '@orochi235/weasel-ui';
+import { lookupShortcutByToolId } from './keybindingsView';
 import s from './ToolkitBuilder.module.css';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -166,7 +167,7 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
 
       {/* Middle column: tool / action / route tables. */}
       <section className={s.catalog}>
-        <ToolsWidget defs={toolDefs} slots={toolSlots} />
+        <ToolsWidget defs={toolDefs} slots={toolSlots} actions={actions} />
         <ActionsWidget actions={actions} />
         <RoutesWidget routes={routes} />
       </section>
@@ -186,9 +187,11 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
 function ToolsWidget({
   defs,
   slots,
+  actions,
 }: {
   defs: readonly ToolDef<unknown>[];
   slots: { registry: readonly string[]; ambient: readonly string[] };
+  actions: readonly Action[];
 }): ReactElement {
   const ambientSet = new Set(slots.ambient);
   const rows = [...defs].sort((a, b) => a.id.localeCompare(b.id));
@@ -214,7 +217,7 @@ function ToolsWidget({
                   <td><code>{d.id}</code></td>
                   <td>{d.hookName ?? <span className={s.empty}>—</span>}</td>
                   <td>{ambientSet.has(d.id) ? 'ambient' : 'registry'}</td>
-                  <td><KeySequence keys={formatShortcutParts(d.keybinding)?.map((label) => ({ label }))} /></td>
+                  <td><KeySequence keys={formatShortcutParts(lookupShortcutByToolId(d.id, actions))?.map((label) => ({ label }))} /></td>
                 </tr>
               ))}
             </tbody>
