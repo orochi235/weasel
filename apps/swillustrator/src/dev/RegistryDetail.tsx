@@ -332,11 +332,14 @@ function RouteDetail({
 function RouteTargetDetail({
   entry, tools, onNavigate,
 }: { entry: RouteTargetEntry; tools: readonly ToolEntry[]; onNavigate: Props['onNavigate'] }) {
-  const rows = tools.flatMap((t) =>
-    t.routes
-      .filter((r) => parseRoute(r).target === entry.id)
-      .map((route) => ({ id: `${t.id}:${route}`, tool: t, route })),
-  );
+  const rows = tools
+    .slice()
+    .sort((a, b) => (a.label ?? a.id).localeCompare(b.label ?? b.id, undefined, { sensitivity: 'base' }))
+    .flatMap((t) =>
+      t.routes
+        .filter((r) => parseRoute(r).target === entry.id)
+        .map((route, i) => ({ id: `${t.id}:${route}`, tool: t, route, isFirstForTool: i === 0 })),
+    );
   return (
     <div>
       <h2 className={s.detailHeading}>{entry.id}</h2>
@@ -348,7 +351,7 @@ function RouteTargetDetail({
       <DataGrid
         rows={rows}
         columns={[
-          toolNameColumn(onNavigate),
+          mergedToolColumn(onNavigate),
           {
             id: 'route',
             header: 'route',
@@ -365,11 +368,14 @@ function RouteTargetDetail({
 function ModifierSetDetail({
   entry, tools, onNavigate,
 }: { entry: ModifierSetEntry; tools: readonly ToolEntry[]; onNavigate: Props['onNavigate'] }) {
-  const rows = tools.flatMap((t) =>
-    t.routes
-      .filter((r) => (canonicalModifiers(parseRoute(r).modifiers) || 'default') === entry.id)
-      .map((route) => ({ id: `${t.id}:${route}`, tool: t, route })),
-  );
+  const rows = tools
+    .slice()
+    .sort((a, b) => (a.label ?? a.id).localeCompare(b.label ?? b.id, undefined, { sensitivity: 'base' }))
+    .flatMap((t) =>
+      t.routes
+        .filter((r) => (canonicalModifiers(parseRoute(r).modifiers) || 'default') === entry.id)
+        .map((route, i) => ({ id: `${t.id}:${route}`, tool: t, route, isFirstForTool: i === 0 })),
+    );
   return (
     <div>
       <h2 className={s.detailHeading}>{entry.id}</h2>
@@ -381,7 +387,7 @@ function ModifierSetDetail({
       <DataGrid
         rows={rows}
         columns={[
-          toolNameColumn(onNavigate),
+          mergedToolColumn(onNavigate),
           {
             id: 'route',
             header: 'route',
@@ -613,6 +619,31 @@ function toolNameColumn(
         {r.tool.label ?? r.id}
       </button>
     ),
+  };
+}
+
+/** Tool column for tables that emit multiple rows per tool (e.g. one row per
+ *  (tool, route) pair). Renders the tool name only on the first row of each
+ *  group. Caller must sort/group rows by tool and tag each row with
+ *  `isFirstForTool`. The column is non-sortable — re-sorting would break the
+ *  merge-cell visual. */
+function mergedToolColumn(
+  onNavigate: Props['onNavigate'],
+): DataGridColumn<{ id: string; tool: ToolEntry; isFirstForTool: boolean }> {
+  return {
+    id: 'tool',
+    header: 'Tool',
+    sortable: false,
+    accessor: (r) => r.tool.label ?? r.tool.id,
+    render: (r) => r.isFirstForTool ? (
+      <button
+        type="button"
+        className={s.memberLink}
+        onClick={() => onNavigate({ kind: 'tool', id: r.tool.id })}
+      >
+        {r.tool.label ?? r.tool.id}
+      </button>
+    ) : null,
   };
 }
 
