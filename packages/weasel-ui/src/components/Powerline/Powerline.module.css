@@ -1,7 +1,7 @@
 .row {
   display: inline-flex;
   align-items: stretch;
-  gap: 0;
+  gap: var(--powerline-gap, 0.1em);
 }
 
 .matrix {

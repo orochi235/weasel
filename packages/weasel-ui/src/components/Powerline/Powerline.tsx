@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { Badge } from '../Badge/Badge';
 import type { BadgeSize, BadgeTone, BadgeVariant } from '../Badge/types';
 import type { EdgeCap } from '../Badge/bases/edgeProfiles';
@@ -26,6 +26,9 @@ export interface PowerlineProps {
   variant?: BadgeVariant;
   /** Protrusion depth in CSS px, passed through to every segment's base. */
   depth?: number;
+  /** Visible gap between adjacent segments. Number → px; string → literal CSS length.
+   *  Default: `0.1em` (scales with the row's font size). Pass `0` for flush. */
+  gap?: number | string;
   className?: string;
   'aria-label'?: string;
 }
@@ -36,12 +39,16 @@ export function Powerline({
   size,
   variant,
   depth,
+  gap,
   className,
   ...rest
 }: PowerlineProps) {
   const cls = [s.row, className].filter(Boolean).join(' ');
+  const style: CSSProperties | undefined = gap !== undefined
+    ? { ['--powerline-gap' as never]: typeof gap === 'number' ? `${gap}px` : gap }
+    : undefined;
   return (
-    <span className={cls} aria-label={rest['aria-label']}>
+    <span className={cls} style={style} aria-label={rest['aria-label']}>
       {segments.map((seg, i) => {
         const leftEdge: EdgeCap = i === 0 ? startCap : (segments[i - 1].endCap ?? 'flat');
         const rightEdge: EdgeCap = seg.endCap ?? 'flat';

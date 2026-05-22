@@ -23,6 +23,7 @@ const meta: Meta<typeof Powerline> = {
     variant: { control: 'inline-radio', options: ['outline', 'solid', 'subtle'] },
     size: { control: 'inline-radio', options: ['sm', 'md'] },
     depth: { control: { type: 'range', min: 0, max: 20, step: 0.5 } },
+    gap: { control: 'text', description: 'CSS length between segments. Default: 0.1em. Pass 0 for flush.' },
   },
 };
 export default meta;
@@ -83,6 +84,20 @@ export const CustomEdgeProfile: Story = {
         endCap: (t, d) => Math.sin(t * Math.PI * 4) * d * 0.6,
       },
       { text: 'next', tone: 'info' },
+    ],
+  },
+};
+
+export const FlushNoGap: Story = {
+  args: { gap: 0 },
+};
+
+export const MixedVariants: Story = {
+  args: {
+    segments: [
+      { text: 'main', tone: 'accent', variant: 'solid', endCap: 'chevron' },
+      { text: 'tracked', tone: 'info', variant: 'outline', endCap: 'chevron' },
+      { text: 'dirty', tone: 'warn', variant: 'subtle' },
     ],
   },
 };
