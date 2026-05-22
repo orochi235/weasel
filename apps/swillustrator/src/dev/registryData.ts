@@ -11,7 +11,7 @@ export type TreeEntry =
   | ToolEntry
   | ActionEntry
   | ShapeKindEntry
-  | NodeKindEntry
+  | RoutingKindEntry
   | BundleEntry
   | IconEntry
   | OpFactoryEntry
@@ -154,6 +154,10 @@ export interface ActionEntry {
 
 export interface ShapeKindEntry {
   kind: 'shapeKind';
+  /** Which facet this entry belongs to. Always `'shape'` for ShapeKindEntry —
+   *  the field exists so the inspector can group entries by facet
+   *  regardless of `kind`. */
+  facet: 'shape';
   id: string;
   label: string;
   /** Id of the tool that mints objects of this kind (`rect` → `rect`).
@@ -166,8 +170,9 @@ export interface ShapeKindEntry {
   hookName?: string;
 }
 
-export interface NodeKindEntry {
-  kind: 'nodeKind';
+export interface RoutingKindEntry {
+  kind: 'routingKind';
+  facet: 'routing';
   id: string;          // the kind name
   label: string;       // = name (NodeKind v1 has no separate display label)
   /** Provenance of this entry. `'default'` = present in `defaultNodeKinds`
@@ -293,7 +298,7 @@ export function collectMeta(): readonly MetaEntry[] {
 }
 
 export type TreeCategory =
-  | 'tools' | 'actions' | 'shapeKinds' | 'nodeKinds' | 'bundles'
+  | 'tools' | 'actions' | 'shapeKinds' | 'routingKinds' | 'bundles'
   | 'icons' | 'ops' | 'publicExports'
   | 'phases' | 'gestures' | 'phaseOutputs'
   | 'hotkeyTriggers' | 'slots' | 'routes' | 'routeTargets' | 'modifierSets' | 'groups'
@@ -302,6 +307,13 @@ export type TreeCategory =
 export interface TreeCategoryNode {
   id: TreeCategory;
   label: string;
+  /** Optional grouping. Categories with the same `group.id` render under a
+   *  shared parent heading in the tree (e.g. shape + routing both under
+   *  Facets). Categories with no `group` render at the top level. */
+  group?: {
+    id: string;
+    label: string;
+  };
   entries: readonly TreeEntry[];
 }
 
@@ -526,6 +538,7 @@ export function collectShapeKinds(
   for (const t of tools) if (t.hookName) hookByToolId.set(t.id, t.hookName);
   return SHAPE_KIND_IDS.map((id) => ({
     kind: 'shapeKind',
+    facet: 'shape',
     id,
     label: id,
     tool: id,
@@ -533,15 +546,16 @@ export function collectShapeKinds(
   }));
 }
 
-export function collectNodeKinds(
+export function collectRoutingKinds(
   live?: readonly NodeKind[],
-): readonly NodeKindEntry[] {
+): readonly RoutingKindEntry[] {
   const shapeKindSet = new Set<string>(SHAPE_KIND_IDS);
 
   // If no live registry was supplied, every default entry is 'default'.
   if (!live) {
     return defaultNodeKinds.map((k) => ({
-      kind: 'nodeKind',
+      kind: 'routingKind',
+      facet: 'routing',
       id: k.name,
       label: k.name,
       source: 'default',
@@ -550,19 +564,20 @@ export function collectNodeKinds(
   }
 
   // With a live registry, classify each entry by source.
-  const out: NodeKindEntry[] = [];
+  const out: RoutingKindEntry[] = [];
   const liveByName = new Map<string, NodeKind>();
   for (const k of live) liveByName.set(k.name, k);
 
   // Defaults first, in their declared order.
   for (const def of defaultNodeKinds) {
     const liveEntry = liveByName.get(def.name);
-    let source: NodeKindEntry['source'];
+    let source: RoutingKindEntry['source'];
     if (!liveEntry) source = 'default';                       // not registered live but still part of defaults; surface as 'default'
     else if (liveEntry.matches === def.matches) source = 'default';
     else source = 'override';
     out.push({
-      kind: 'nodeKind',
+      kind: 'routingKind',
+      facet: 'routing',
       id: def.name,
       label: def.name,
       source,
@@ -575,7 +590,8 @@ export function collectNodeKinds(
   for (const liveK of live) {
     if (defaultNames.has(liveK.name)) continue;
     out.push({
-      kind: 'nodeKind',
+      kind: 'routingKind',
+      facet: 'routing',
       id: liveK.name,
       label: liveK.name,
       source: 'consumer',

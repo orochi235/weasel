@@ -1,7 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Badge } from '@orochi235/weasel-ui';
 import s from './RegistryInspector.module.css';
 import type { TreeCategoryNode, TreeEntry } from './registryData';
+
+type RenderItem =
+  | { kind: 'category'; node: TreeCategoryNode }
+  | { kind: 'group'; id: string; label: string; nodes: readonly TreeCategoryNode[] };
 
 interface Props {
   nodes: readonly TreeCategoryNode[];
@@ -75,6 +79,59 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
     });
   };
 
+  const renderItems = useMemo<readonly RenderItem[]>(() => {
+    const out: RenderItem[] = [];
+    const groupsSeen = new Map<string, { kind: 'group'; id: string; label: string; nodes: TreeCategoryNode[] }>();
+    for (const node of filteredNodes) {
+      if (!node.group) {
+        out.push({ kind: 'category', node });
+        continue;
+      }
+      let item = groupsSeen.get(node.group.id);
+      if (!item) {
+        item = { kind: 'group', id: node.group.id, label: node.group.label, nodes: [] };
+        groupsSeen.set(node.group.id, item);
+        out.push(item);
+      }
+      item.nodes.push(node);
+    }
+    return out;
+  }, [filteredNodes]);
+
+  const renderCategory = (n: TreeCategoryNode): ReactNode => (
+    <li key={n.id} className={s.treeCategory}>
+      <button type="button" className={s.treeCategoryButton} onClick={() => toggle(n.id)}>
+        <span className={s.treeChevron}>{isOpen(n.id) ? '▾' : '▸'}</span>
+        {n.label} <Badge shape="pill" size="sm" tone="neutral" variant="solid">{n.entries.length}</Badge>
+      </button>
+      {isOpen(n.id) && (
+        <ul className={s.treeLeaves}>
+          {n.entries.map((e) => {
+            const isSelected = selected && selected.kind === e.kind && selected.id === e.id;
+            const count = getCount?.(e);
+            const libBadge = e.kind === 'publicExport' && e.source === 'ui'
+              ? <Badge className={s.leafBadge} shape="pill" size="sm" tone="info" variant="solid">UI</Badge>
+              : null;
+            return (
+              <li key={`${e.kind}:${e.id}`}>
+                <button
+                  ref={isSelected ? selectedLeafRef : undefined}
+                  type="button"
+                  className={`${s.treeLeaf} ${isSelected ? s.treeLeafSelected : ''}`}
+                  onClick={() => onSelect(e)}
+                >
+                  {e.label}
+                  {libBadge && <> {libBadge}</>}
+                  {count !== undefined && <> <Badge className={s.leafBadge} shape="pill" size="sm" tone="neutral" variant="solid">{count}</Badge></>}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </li>
+  );
+
   return (
     <div>
       <input
@@ -84,39 +141,18 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
         onChange={(e) => setFilter(e.target.value)}
       />
       <ul className={s.treeList}>
-        {filteredNodes.map((n) => (
-          <li key={n.id} className={s.treeCategory}>
-            <button type="button" className={s.treeCategoryButton} onClick={() => toggle(n.id)}>
-              <span className={s.treeChevron}>{isOpen(n.id) ? '▾' : '▸'}</span>
-              {n.label} <Badge shape="pill" size="sm" tone="neutral" variant="solid">{n.entries.length}</Badge>
-            </button>
-            {isOpen(n.id) && (
-              <ul className={s.treeLeaves}>
-                {n.entries.map((e) => {
-                  const isSelected = selected && selected.kind === e.kind && selected.id === e.id;
-                  const count = getCount?.(e);
-                  const libBadge = e.kind === 'publicExport' && e.source === 'ui'
-                    ? <Badge className={s.leafBadge} shape="pill" size="sm" tone="info" variant="solid">UI</Badge>
-                    : null;
-                  return (
-                    <li key={`${e.kind}:${e.id}`}>
-                      <button
-                        ref={isSelected ? selectedLeafRef : undefined}
-                        type="button"
-                        className={`${s.treeLeaf} ${isSelected ? s.treeLeafSelected : ''}`}
-                        onClick={() => onSelect(e)}
-                      >
-                        {e.label}
-                        {libBadge && <> {libBadge}</>}
-                        {count !== undefined && <> <Badge className={s.leafBadge} shape="pill" size="sm" tone="neutral" variant="solid">{count}</Badge></>}
-                      </button>
-                    </li>
-                  );
-                })}
+        {renderItems.map((item) =>
+          item.kind === 'group' ? (
+            <li key={`group:${item.id}`} className={s.treeGroup}>
+              <div className={s.treeGroupHeading}>{item.label}</div>
+              <ul className={s.treeList}>
+                {item.nodes.map((node) => renderCategory(node))}
               </ul>
-            )}
-          </li>
-        ))}
+            </li>
+          ) : (
+            renderCategory(item.node)
+          ),
+        )}
       </ul>
     </div>
   );

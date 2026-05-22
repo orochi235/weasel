@@ -1,15 +1,11 @@
 /**
- * NodeKind — a classifier entry registered with a `NodeKindRegistry`.
+ * NodeKind — a routing-facet classifier entry.
  *
- * The kit consults the registry to derive a kind string for each scene
- * node, which then flows into declarative tool-routing tables (e.g.
- * `{ target: 'rect', actionId: 'move' }`).
- *
- * v1 carries only the classification facet. Future kind-keyed concerns
- * (label / icon / propertyRows / bindings / serialize) land here as
- * optional fields per the convergence policy in the design spec.
- *
- * See `docs/superpowers/specs/2026-05-21-node-kind-registry-design.md`.
+ * The kit consults `NodeKindRegistry` (the routing facet's registry)
+ * to derive a kind string for each scene node. Other facets (shape,
+ * label, icon, …) are independent registries — fields like `label`
+ * or `icon` are NOT future additions to this interface. See:
+ * `docs/superpowers/specs/2026-05-22-node-facets-reframe-design.md`.
  */
 export interface NodeKind {
   /** Unique kind name. Routing tables key on this string. Consumer-defined;
@@ -21,12 +17,23 @@ export interface NodeKind {
 }
 
 /**
- * NodeKindRegistry — per-`<SceneCanvas>` collection of `NodeKind` entries.
+ * NodeKindRegistry — the **routing facet's** classifier registry.
  *
- * Instances are constructed by `<SceneCanvas>` from its `kinds` prop and
- * threaded into the synthesized adapter as a `kindOf(id)` method. Direct
- * use from consumer code is supported but not required for the common
- * SceneCanvas flow.
+ * The kit thinks about a node along several **facets** (shape,
+ * routing, label, icon, …) — independent per-axis registries. This
+ * registry covers the routing facet: it answers "what routing-kind
+ * string does this node's data map to?" The result flows into
+ * declarative tool-routing tables (`{ target: 'rect', actionId: 'move' }`).
+ *
+ * Other facets (shape painters, future label/icon/propertyRows
+ * registries) are their own registries — they are NOT optional
+ * fields on `NodeKind`. See:
+ * `docs/superpowers/specs/2026-05-22-node-facets-reframe-design.md`.
+ *
+ * Instances are constructed by `<SceneCanvas>` from its `kinds` prop
+ * and threaded into the synthesized adapter as a `kindOf(id)` method.
+ * Direct use from consumer code is supported but not required for the
+ * common SceneCanvas flow.
  */
 export interface NodeKindRegistry {
   /** Register a kind. Order matters: first match wins during `classify`.

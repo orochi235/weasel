@@ -26,7 +26,7 @@ function modifierKeys(modifiers: ParsedModifiers): readonly KeySpec[] | undefine
 import s from './RegistryInspector.module.css';
 import type {
   TreeEntry, ToolEntry, ActionEntry, BundleEntry, IconEntry, OpFactoryEntry,
-  PublicExportEntry, ShapeKindEntry, NodeKindEntry, PhaseSummary, PhaseEntry, GestureEntry, PhaseOutputEntry,
+  PublicExportEntry, ShapeKindEntry, RoutingKindEntry, PhaseSummary, PhaseEntry, GestureEntry, PhaseOutputEntry,
   OpKindEntry, HotkeyTriggerEntry, SlotEntry, RouteEntry, RouteTargetEntry, ModifierSetEntry, GroupEntry,
   MetaEntry, CallbackRef,
 } from './registryData';
@@ -140,7 +140,7 @@ export function RegistryDetail({ entry, tools, actions, onNavigate }: Props) {
     case 'action':        return <ActionDetail entry={entry} onNavigate={onNavigate} />;
     case 'bundle':        return <BundleDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'shapeKind':     return <ShapeKindDetail entry={entry} onNavigate={onNavigate} />;
-    case 'nodeKind':      return <NodeKindDetail entry={entry} onNavigate={onNavigate} />;
+    case 'routingKind':   return <RoutingKindDetail entry={entry} onNavigate={onNavigate} />;
     case 'icon':          return <IconDetail entry={entry} />;
     case 'opFactory':     return <OpFactoryDetail entry={entry} />;
     case 'publicExport':  return <PublicExportDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
@@ -1008,6 +1008,7 @@ function ShapeKindDetail({
         <h2 className={s.detailHeading}>{entry.id}</h2>
       </div>
       <dl className={s.detailList}>
+        <dt>facet</dt><dd><KindBadge label={entry.facet} /></dd>
         <dt>kind</dt><dd><KindBadge label="shape" /></dd>
         {entry.tool && (
           <>
@@ -1037,10 +1038,10 @@ function ShapeKindDetail({
   );
 }
 
-function NodeKindDetail({
+function RoutingKindDetail({
   entry, onNavigate,
 }: {
-  entry: NodeKindEntry;
+  entry: RoutingKindEntry;
   onNavigate: Props['onNavigate'];
 }) {
   return (
@@ -1049,7 +1050,8 @@ function NodeKindDetail({
         <h2 className={s.detailHeading}>{entry.id}</h2>
       </div>
       <dl className={s.detailList}>
-        <dt>kind</dt><dd><KindBadge label="node-kind" /></dd>
+        <dt>facet</dt><dd><KindBadge label={entry.facet} /></dd>
+        <dt>kind</dt><dd><KindBadge label="routing-kind" /></dd>
         <dt>source</dt><dd><KindBadge label={entry.source} /></dd>
         {entry.shapeKindId && (
           <>
