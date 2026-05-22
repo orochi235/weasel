@@ -1,3 +1,5 @@
+import type { ColorOverrideRegistry } from './colorRegistry';
+
 export type EasingFn = (t: number) => number;
 
 export type Interpolate<T> = (from: T, to: T, t: number) => T;
@@ -208,6 +210,11 @@ export interface Animator {
     factory: StaggerFactory<TItem>,
     opts?: StaggerOptions,
   ): AnimationHandle;
+  /** Per-node, per-channel color override registry consulted by the renderer's
+   *  path layer before reading consumer accessors. Used by `tweenVertexColors`,
+   *  `springVertexColors`, `cycleVertexColors`, `staggerVertexColors`. Cleared
+   *  automatically on animator unmount. */
+  colorOverrides: ColorOverrideRegistry;
 }
 
 export interface LoopOptions {

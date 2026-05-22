@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { easeOut, SPRING_PRESETS } from './easings';
 import { createLoop, createTweenLoop } from './loop';
 import { createStagger, type StaggerTimers } from './stagger';
+import { ColorOverrideRegistry } from './colorRegistry';
 import type { Supervisor, WatchCompletion } from './supervisor';
 import type {
   AnimationHandle,
@@ -53,6 +54,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
   const tickDepth = useRef(0);
   const globalTimeScale = useRef(1);
   const globalPaused = useRef(false);
+  const colorOverrides = useRef<ColorOverrideRegistry>(new ColorOverrideRegistry());
 
   // StrictMode-safe cleanup: when the component unmounts (including the
   // dev-mode double-mount that StrictMode performs), cancel every running
@@ -73,6 +75,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
     return () => {
       mountedRef.current = false;
       cleanupRef.current?.();
+      colorOverrides.current.clearAll();
     };
   }, []);
   const trippedRef = useRef(false);
@@ -451,6 +454,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
           factory as never,
           staggerOpts,
         )) as Animator['stagger'],
+      colorOverrides: colorOverrides.current,
     };
     animatorRef.current = api;
     return api;
