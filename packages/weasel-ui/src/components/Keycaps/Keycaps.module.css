@@ -57,15 +57,14 @@
   padding: 0 8px;
 }
 
-/* Optional/inverted (default variant): face flips to dark with light
-   legend, AND the border goes dotted in the legend color. The legend
-   itself drops to 60% opacity to read as "may be held but isn't
-   required" — the border stays full-strength. */
+/* Optional/inverted (default variant): face flips to dark; legend drops
+   to 60% opacity; dotted border drops to 40% opacity. Three soft cues
+   stacked for "may be held but isn't required." */
 .key[data-inverted] {
   background: var(--wzl-bg, #181a1e);
   color: color-mix(in srgb, var(--wzl-fg, #e6e7e9) 60%, transparent);
   border-style: dotted;
-  border-color: var(--wzl-fg, #e6e7e9);
+  border-color: color-mix(in srgb, var(--wzl-fg, #e6e7e9) 40%, transparent);
   border-width: 1.5px;
   border-bottom-width: 1.5px;
 }
@@ -79,12 +78,12 @@
   color: currentColor;
 }
 
-/* Optional + minimal: same dotted treatment; border stays at the
-   parent's currentColor, legend drops to 60% opacity for the same
-   "optional" cue the default variant uses. */
+/* Optional + minimal: dotted border at 40% opacity, legend at 60% —
+   both inherit from the parent's currentColor so the chip stays
+   color-tied to its surrounding text. */
 .key[data-variant='minimal'][data-inverted] {
   border-style: dotted;
-  border-color: currentColor;
+  border-color: color-mix(in srgb, currentColor 40%, transparent);
   color: color-mix(in srgb, currentColor 60%, transparent);
   border-width: 1.5px;
   border-bottom-width: 1.5px;
