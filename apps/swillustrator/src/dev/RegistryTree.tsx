@@ -31,23 +31,24 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
 
   // When `selected` changes (e.g. an EntryLink in the detail panel navigates
   // to a different entry), open the containing category so the leaf renders.
-  const selectedCategoryId = useMemo(() => {
+  const selectedCategory = useMemo(() => {
     if (!selected) return null;
-    const node = nodes.find((n) => n.entries.some(
+    return nodes.find((n) => n.entries.some(
       (e) => e.kind === selected.kind && e.id === selected.id,
-    ));
-    return node?.id ?? null;
+    )) ?? null;
   }, [nodes, selected]);
 
   useEffect(() => {
-    if (!selectedCategoryId) return;
+    if (!selectedCategory) return;
+    const idsToOpen: string[] = [selectedCategory.id];
+    if (selectedCategory.group) idsToOpen.push(`group:${selectedCategory.group.id}`);
     setOpenIds((cur) => {
-      if (cur.has(selectedCategoryId)) return cur;
+      if (idsToOpen.every((id) => cur.has(id))) return cur;
       const next = new Set(cur);
-      next.add(selectedCategoryId);
+      for (const id of idsToOpen) next.add(id);
       return next;
     });
-  }, [selectedCategoryId]);
+  }, [selectedCategory]);
 
   const selectedLeafRef = useRef<HTMLButtonElement | null>(null);
   useEffect(() => {
@@ -141,18 +142,24 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
         onChange={(e) => setFilter(e.target.value)}
       />
       <ul className={s.treeList}>
-        {renderItems.map((item) =>
-          item.kind === 'group' ? (
-            <li key={`group:${item.id}`} className={s.treeGroup}>
-              <div className={s.treeGroupHeading}>{item.label}</div>
-              <ul className={s.treeList}>
-                {item.nodes.map((node) => renderCategory(node))}
-              </ul>
+        {renderItems.map((item) => {
+          if (item.kind !== 'group') return renderCategory(item.node);
+          const groupKey = `group:${item.id}`;
+          const childCount = item.nodes.reduce((n, c) => n + c.entries.length, 0);
+          return (
+            <li key={groupKey} className={s.treeCategory}>
+              <button type="button" className={s.treeCategoryButton} onClick={() => toggle(groupKey)}>
+                <span className={s.treeChevron}>{isOpen(groupKey) ? '▾' : '▸'}</span>
+                {item.label} <Badge shape="pill" size="sm" tone="neutral" variant="solid">{childCount}</Badge>
+              </button>
+              {isOpen(groupKey) && (
+                <ul className={s.treeList}>
+                  {item.nodes.map((node) => renderCategory(node))}
+                </ul>
+              )}
             </li>
-          ) : (
-            renderCategory(item.node)
-          ),
-        )}
+          );
+        })}
       </ul>
     </div>
   );

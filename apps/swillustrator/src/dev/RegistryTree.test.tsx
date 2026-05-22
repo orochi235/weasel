@@ -65,28 +65,49 @@ describe('RegistryTree', () => {
   });
 });
 
-describe('RegistryTree — group heading', () => {
-  it('renders a shared parent heading for categories that share a group', () => {
-    const nodes: readonly TreeCategoryNode[] = [
-      {
-        id: 'shapeKinds',
-        label: 'Shape kinds',
-        group: { id: 'facets', label: 'Facets' },
-        entries: [{ kind: 'shapeKind', facet: 'shape', id: 'rect', label: 'rect' }],
-      },
-      {
-        id: 'routingKinds',
-        label: 'Routing kinds',
-        group: { id: 'facets', label: 'Facets' },
-        entries: [{ kind: 'routingKind', facet: 'routing', id: 'rect', label: 'rect', source: 'default', shapeKindId: 'rect' }],
-      },
-    ];
-    const { getAllByText } = render(
-      <RegistryTree nodes={nodes} selected={null} onSelect={() => {}} />,
+describe('RegistryTree — collapsible group', () => {
+  const groupedNodes: readonly TreeCategoryNode[] = [
+    {
+      id: 'shapeKinds',
+      label: 'Shape kinds',
+      group: { id: 'facets', label: 'Facets' },
+      entries: [{ kind: 'shapeKind', facet: 'shape', id: 'rect', label: 'rect' }],
+    },
+    {
+      id: 'routingKinds',
+      label: 'Routing kinds',
+      group: { id: 'facets', label: 'Facets' },
+      entries: [{ kind: 'routingKind', facet: 'routing', id: 'rect', label: 'rect', source: 'default', shapeKindId: 'rect' }],
+    },
+  ];
+
+  it('renders the group as a collapsible row; children hidden by default', () => {
+    render(<RegistryTree nodes={groupedNodes} selected={null} onSelect={() => {}} />);
+    expect(screen.getByText('Facets')).toBeTruthy();
+    expect(screen.queryByText('Shape kinds')).toBeNull();
+    expect(screen.queryByText('Routing kinds')).toBeNull();
+  });
+
+  it('expands the group on click and reveals its child categories', () => {
+    render(<RegistryTree nodes={groupedNodes} selected={null} onSelect={() => {}} />);
+    fireEvent.click(screen.getByText('Facets'));
+    expect(screen.getByText('Shape kinds')).toBeTruthy();
+    expect(screen.getByText('Routing kinds')).toBeTruthy();
+    // The child categories are themselves collapsible — their entries
+    // remain hidden until the child is also expanded.
+    expect(screen.queryAllByText('rect').length).toBe(0);
+  });
+
+  it('auto-expands the group and the child category when a leaf is selected inside it', () => {
+    render(
+      <RegistryTree
+        nodes={groupedNodes}
+        selected={{ kind: 'routingKind', facet: 'routing', id: 'rect', label: 'rect', source: 'default', shapeKindId: 'rect' }}
+        onSelect={() => {}}
+      />,
     );
-    const facetsHeadings = getAllByText('Facets');
-    expect(facetsHeadings.length).toBe(1);
-    expect(getAllByText('Shape kinds').length).toBeGreaterThan(0);
-    expect(getAllByText('Routing kinds').length).toBeGreaterThan(0);
+    expect(screen.getByText('Routing kinds')).toBeTruthy();
+    // The leaf itself renders since its containing category is open.
+    expect(screen.getAllByText('rect').length).toBeGreaterThan(0);
   });
 });
