@@ -206,6 +206,43 @@ so you can drive it from your own UI. Every action commits via the same
 coalescing, and `applyBatch` overrides all work uniformly. See
 [hooks.md](./hooks.md) for the full table and default keybindings.
 
+### Keyboard activations are actions
+
+Tool-switch shortcuts (`V` → Select) and held-key activations (Space → Hand)
+are registered as actions in the actions registry, not as fields on
+`ToolDef`. The factories in `src/interactions/actions/defaults/` produce
+them:
+
+- `makeToolSelectAction(toolId, { key, mod?, alt?, shift? })` — tap-to-switch.
+  Registers under id `tool.select.<toolId>` with `scope: 'hotkey'` and a
+  `keyDown(<key>)` default binding.
+- `makeToolHoldAction(toolId, key)` — hold-to-activate. Registers as
+  `tool.hold.<toolId>` with a `keyHeld(<key>)` default binding; the
+  dispatcher's existing `inFlightOwners` machinery advances the channel
+  through the same `[initial]` → `[engaged]` → `[initial]` lifecycle that
+  drag uses.
+
+Built-in tools wire these via `BUILTIN_SELECT_KEYS` and `BUILTIN_HOLD_ACTIONS`
+maps in `src/tools/useKeybindings.ts`. The `ToolKeybinding` field on `ToolDef`
+is reserved for tools whose activation key is set by the host caller
+(Lasso, Eyedropper); the same `useKeybindings` effect picks up those
+configurable keybindings and registers `tool.select.<id>` actions for them
+dynamically.
+
+Inspector surfaces (the ToolPalette's shortcut chips, the HotkeyTrigger
+detail view) read from the action registry — there is no per-tool
+keybinding field driving them. The `keyHeld` gesture has a first-class
+descriptor in the route grammar (alongside `keyDown` / `keyUp`), so route
+strings like `[*:initial] keyHeld(Space)` parse, format, and render in
+the inspector exactly like other gestures.
+
+A known carryover: the document-level `keydown` listener in
+`src/tools/useKeybindings.ts` still serves as the authoritative tap-switch
+path for the bundled `SceneCanvas` mount topology, while the action
+registry path is exercised by tests and other consumers. Unifying these
+paths is a follow-up; the action registry path is now the canonical
+source of truth for what shortcuts exist (the inspector reads from it).
+
 ## Selection mode
 
 `<Canvas selectionMode="single" | "multi" | "none">` is a single switch for
