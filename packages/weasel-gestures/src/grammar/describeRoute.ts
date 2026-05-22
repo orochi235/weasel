@@ -89,8 +89,11 @@ function actionClause(parsed: ParsedRoute, required: readonly string[]): string 
 
   switch (parsed.gesture) {
     case 'keyDown':
-    case 'keyUp': {
-      const verb = parsed.gesture === 'keyDown' ? 'presses' : 'releases';
+    case 'keyUp':
+    case 'keyHeld': {
+      const verb = parsed.gesture === 'keyDown' ? 'presses'
+        : parsed.gesture === 'keyUp' ? 'releases'
+        : 'holds';
       const key = parsed.arg ?? 'any key';
       return required.length > 0
         ? `the user holds ${joinAnd(required)} and ${verb} ${key}`
