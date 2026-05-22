@@ -50,4 +50,17 @@ describe('GESTURE_DESCRIPTORS', () => {
   it('getGestureDescriptor throws on unknown name', () => {
     expect(() => getGestureDescriptor('bogus' as GestureName)).toThrow(/unknown gesture/i);
   });
+
+  it('keyHeld is registered with the same shape as keyDown/keyUp', () => {
+    expect(getGestureDescriptor('keyHeld')).toEqual({
+      name: 'keyHeld',
+      hasTarget: false,
+      arg: { name: 'key', values: 'free' },
+    });
+  });
+
+  it('keyHeld appears in GESTURE_DESCRIPTORS exactly once', () => {
+    const matches = GESTURE_DESCRIPTORS.filter((d) => d.name === 'keyHeld');
+    expect(matches).toHaveLength(1);
+  });
 });

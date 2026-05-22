@@ -16,6 +16,7 @@ export type GestureName =
   | 'wheel'
   | 'keyDown'
   | 'keyUp'
+  | 'keyHeld'
   | 'contextMenu'
   | 'multiTouchTap';
 
@@ -47,6 +48,7 @@ export const GESTURE_DESCRIPTORS: readonly GestureDescriptor[] = [
   { name: 'wheel',         hasTarget: false, arg: { name: 'direction', values: ['up', 'down', '*'], default: '*' } },
   { name: 'keyDown',       hasTarget: false, arg: { name: 'key',       values: 'free' } },
   { name: 'keyUp',         hasTarget: false, arg: { name: 'key',       values: 'free' } },
+  { name: 'keyHeld',       hasTarget: false, arg: { name: 'key',       values: 'free' } },
   { name: 'contextMenu',   hasTarget: true  },
   { name: 'multiTouchTap', hasTarget: false, arg: { name: 'fingers',   values: ['2', '3', '4'] } },
 ];
