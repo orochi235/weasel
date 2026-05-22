@@ -115,6 +115,12 @@ export function RegistryInspector() {
       .sort((a, b) => {
         if (a.id === 'meta') return 1;
         if (b.id === 'meta') return -1;
+        // Grouped categories sort by their group label (so the group lands at
+        // its alphabetic position), then within the group by their own label.
+        const aKey = a.group?.label ?? a.label;
+        const bKey = b.group?.label ?? b.label;
+        const top = aKey.localeCompare(bKey, undefined, { sensitivity: 'base' });
+        if (top !== 0) return top;
         return a.label.localeCompare(b.label, undefined, { sensitivity: 'base' });
       });
   }, [runtime, activeBundle, bundles, icons, opFactories, publicExports, shapeKinds, routingKinds, phases, gestures, phaseOutputs, opKinds, hotkeyTriggers, slots, routes, routeTargets, modifierSets, groups, meta]);

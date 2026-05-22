@@ -145,15 +145,14 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
         {renderItems.map((item) => {
           if (item.kind !== 'group') return renderCategory(item.node);
           const groupKey = `group:${item.id}`;
-          const childCount = item.nodes.reduce((n, c) => n + c.entries.length, 0);
           return (
             <li key={groupKey} className={s.treeCategory}>
               <button type="button" className={s.treeCategoryButton} onClick={() => toggle(groupKey)}>
                 <span className={s.treeChevron}>{isOpen(groupKey) ? '▾' : '▸'}</span>
-                {item.label} <Badge shape="pill" size="sm" tone="neutral" variant="solid">{childCount}</Badge>
+                {item.label} <Badge shape="pill" size="sm" tone="neutral" variant="solid">{item.nodes.length}</Badge>
               </button>
               {isOpen(groupKey) && (
-                <ul className={s.treeList}>
+                <ul className={`${s.treeList} ${s.treeGroupChildren}`}>
                   {item.nodes.map((node) => renderCategory(node))}
                 </ul>
               )}

@@ -62,19 +62,11 @@
 }
 .treeList { list-style: none; margin: 0; padding: 0; }
 .treeCategory { margin-bottom: 4px; }
-.treeGroup {
-  /* Visual container for sibling categories that share a parent grouping
-   *  (e.g. Shape kinds + Routing kinds under Facets). */
-  padding-top: 4px;
-  margin-bottom: 4px;
-}
-.treeGroupHeading {
-  font-size: 0.78em;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  opacity: 0.65;
-  padding: 8px 12px 4px;
-  color: var(--wzl-muted, #a59685);
+.treeGroupChildren {
+  /* Child categories of a group (e.g. Shape kinds / Routing kinds under
+   *  Facets) are indented one chevron-width so the parent → child
+   *  relationship reads at a glance. */
+  padding-left: 18px;
 }
 .treeCategoryButton {
   display: flex; align-items: center; gap: 6px;
