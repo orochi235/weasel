@@ -224,6 +224,12 @@ export type {
 } from './canvas/shapePainters';
 export { sceneToAdapter, useSceneAdapter } from './canvas/sceneAdapter';
 export type { SceneCanvasAdapter } from './canvas/sceneAdapter';
+export {
+  createNodeKindRegistry,
+  type NodeKind,
+  type NodeKindRegistry,
+} from './core/scene/nodeKindRegistry';
+export { defaultNodeKinds } from './core/scene/defaultNodeKinds';
 export type {
   CanvasProps,
   CanvasHelpers,
