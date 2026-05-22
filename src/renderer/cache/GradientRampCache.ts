@@ -9,7 +9,7 @@
  */
 
 import type { GradStop } from '@orochi235/weasel';
-import { parseColor } from '../math/color';
+import { resolveColor } from '../math/color';
 
 const RAMP_SIZE = 256;
 
@@ -19,7 +19,7 @@ export function buildGradientRamp(stops: GradStop[]): Uint8ClampedArray {
 
   const sorted = [...stops].sort((a, b) => a.offset - b.offset);
   const parsed: [number, number, number, number][] = sorted.map((s) => {
-    const [r, g, b, a] = parseColor(s.color);
+    const [r, g, b, a] = resolveColor(s.color);
     return [r * 255, g * 255, b * 255, a * 255];
   });
 

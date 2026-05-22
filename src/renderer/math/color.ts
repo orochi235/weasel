@@ -25,6 +25,34 @@ export function parseColor(input: string): [number, number, number, number] {
   throw new Error(`parseColor: unrecognized color "${input}"`);
 }
 
+const RESOLVE_COLOR_CACHE_CAP = 1024;
+const resolveColorCache = new Map<string, readonly [number, number, number, number]>();
+
+/** Cached `parseColor`. Use this from renderer hot paths (per-frame draw
+ *  callbacks, gradient ramp builds) so repeated color strings — which are
+ *  common when many objects share a fill — don't re-tokenize each frame.
+ *
+ *  Cache is keyed by input-string identity, capped at ~1024 entries, and
+ *  cleared wholesale on overflow (no LRU tracking — simple is fine since
+ *  the working set in any one app is typically much smaller than the cap). */
+export function resolveColor(input: string): readonly [number, number, number, number] {
+  const hit = resolveColorCache.get(input);
+  if (hit) return hit;
+  if (resolveColorCache.size >= RESOLVE_COLOR_CACHE_CAP) {
+    resolveColorCache.clear();
+  }
+  const parsed = parseColor(input);
+  const frozen = parsed as readonly [number, number, number, number];
+  resolveColorCache.set(input, frozen);
+  return frozen;
+}
+
+/** @internal Test-only: drops the resolveColor memoization cache so tests
+ *  can assert behavior in isolation. Never call from production code. */
+export function __resetResolveColorCache(): void {
+  resolveColorCache.clear();
+}
+
 /** Same as `parseColor` but returns integer 0..255 components. */
 export function parseColorToRgba255(input: string): [number, number, number, number] {
   const [r, g, b, a] = parseColor(input);

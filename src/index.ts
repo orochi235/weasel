@@ -655,6 +655,7 @@ export * from './layout';
 export {
   parseColor,
   parseColorToRgba255,
+  resolveColor,
   normalizeHex,
   hexToRgba,
   rgbaToHex,

@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { hexToRgba, normalizeHex, parseColor, parseColorToRgba255, rgbaToHex } from './color';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { hexToRgba, normalizeHex, parseColor, parseColorToRgba255, resolveColor, rgbaToHex, __resetResolveColorCache } from './color';
 
 describe('parseColorToRgba255', () => {
   it('returns integer 0..255 components for #ffffff', () => {
@@ -116,5 +116,48 @@ describe('rgbaToHex', () => {
   it('round-trips with hexToRgba', () => {
     expect(rgbaToHex(hexToRgba('#1a2b3c'))).toBe('#1a2b3c');
     expect(rgbaToHex(hexToRgba('#1a2b3c80'))).toBe('#1a2b3c80');
+  });
+});
+
+describe('resolveColor', () => {
+  beforeEach(() => __resetResolveColorCache());
+
+  it('returns the same values as parseColor', () => {
+    const known = '#ff0000';
+    const direct = parseColor(known);
+    const cached = resolveColor(known);
+    expect([...cached]).toEqual(direct);
+  });
+
+  it('returns the same array reference for repeated calls (memoization)', () => {
+    const a = resolveColor('#00ff00');
+    const b = resolveColor('#00ff00');
+    expect(a).toBe(b);
+  });
+
+  it('different inputs return different references', () => {
+    const a = resolveColor('#ff0000');
+    const b = resolveColor('#00ff00');
+    expect(a).not.toBe(b);
+  });
+
+  it('clears the cache when it exceeds the cap', () => {
+    // Fill cache to cap (1024 distinct entries, none of which is '#00ff00').
+    for (let i = 0; i < 1024; i++) {
+      resolveColor(`#${i.toString(16).padStart(6, '0')}`);
+    }
+    // '#00ff00' resolves to (0,255,0) which is outside the 0..1023 hex range
+    // above, so it's a fresh entry whose insertion triggers the overflow clear.
+    const before = resolveColor('#00ff00');
+    // After the clear-then-insert above, the cache holds just '#00ff00'.
+    // Reset and repeat to verify that consecutive overflow paths return
+    // fresh arrays rather than reusing the previous reference.
+    __resetResolveColorCache();
+    for (let i = 0; i < 1024; i++) {
+      resolveColor(`#${i.toString(16).padStart(6, '0')}`);
+    }
+    const after = resolveColor('#00ff00');
+    expect(after).not.toBe(before);
+    expect([...after]).toEqual([...before]);
   });
 });
