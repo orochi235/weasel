@@ -130,4 +130,10 @@ describe('RouteBadge v3', () => {
     const { container } = render(<RouteBadge route="[initial] wheel(up)" />);
     expect(container.textContent).toMatch(/wheel\(up\)/);
   });
+
+  it('renders keyHeld arg as a minimal KeyCap (same path as keyDown)', () => {
+    const { container } = render(<RouteBadge route="[initial] keyHeld(Space)" />);
+    const cap = container.querySelector('kbd[data-variant="minimal"]');
+    expect(cap?.textContent).toBe('␣');
+  });
 });

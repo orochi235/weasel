@@ -95,6 +95,15 @@ export const AllPermutations: Story = {
         ]}
       />
       <Section
+        title="Held key gestures — keyHeld lifecycle (drag-shaped)"
+        routes={[
+          '[initial] keyHeld(Space)',
+          '[initial] keyHeld(Space) +mod',
+          '[*:initial] keyHeld(Space)',
+          '[engaged] keyHeld(Escape)',
+        ]}
+      />
+      <Section
         title="Multi-touch tap — finger counts"
         routes={[
           '[initial] multiTouchTap(2)',
