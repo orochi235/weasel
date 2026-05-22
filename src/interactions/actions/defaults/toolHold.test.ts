@@ -2,6 +2,11 @@ import { describe, it, expect, vi } from 'vitest';
 import { makeToolHoldAction } from './toolHold';
 
 describe('makeToolHoldAction', () => {
+  it("declares scope:'hotkey' so the hold action beats the active tool", () => {
+    const a = makeToolHoldAction('hand', ' ');
+    expect(a.scope).toBe('hotkey');
+  });
+
   it('produces an Action with the right id and timing', () => {
     const action = makeToolHoldAction('hand', ' ');
     expect(action.id).toBe('tool.hold.hand');

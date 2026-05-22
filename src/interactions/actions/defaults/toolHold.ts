@@ -17,6 +17,7 @@ export function makeToolHoldAction(toolId: string, key: string | string[]): Acti
     id: `tool.hold.${toolId}`,
     label: `Hold for ${toolId}`,
     defaultBinding: { kind: 'key-held', key },
+    scope: 'hotkey',
     invoker: {
       timing: 'ongoing',
       start: (ctx: InvocationCtx) => {
