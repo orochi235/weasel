@@ -223,12 +223,14 @@ export const KeyboardLayouts: Story = {
 };
 
 function KeyboardLayout({ platform, legend }: { platform: Platform; legend: LegendStyle }): ReactElement {
-  // ANSI-ish layout. Standard key = 18px (`.key[data-kind='square']`),
+  // ANSI TKL layout. Standard key = 18px (`.key[data-kind='square']`),
   // gap = 3px. Multi-unit keys override width inline.
   const U = 18;
   const GAP = 3;
   // n-unit width including the gaps the chip displaces.
   const unit = (n: number) => n * U + (n - 1) * GAP;
+  // Space between the main block and the nav/arrow cluster.
+  const CLUSTER_GAP = unit(0.5) + GAP;
 
   const shift = keySpecsFromMods([{ name: 'shift' }], { platform, legend })[0].label;
   const ctrl = keySpecsFromMods([{ name: 'ctrl' }], { platform, legend })[0].label;
@@ -239,8 +241,9 @@ function KeyboardLayout({ platform, legend }: { platform: Platform; legend: Lege
   const enter = keySpecFromKey('Enter', { platform, legend }).label;
   const backspace = keySpecFromKey('Backspace', { platform, legend }).label;
   const esc = keySpecFromKey('Escape', { platform, legend }).label;
+  const del = keySpecFromKey('Delete', { platform, legend }).label;
 
-  // Function row — Esc + F1..F12, grouped F1-4, F5-8, F9-12.
+  // Function row — Esc + F1..F12 grouped, plus PrtSc/ScrLk/Pause cluster.
   const fnRow: ReactElement[] = [
     <KeyCap key="esc" label={esc} />,
     <Spacer key="g1" width={unit(0.6)} />,
@@ -249,26 +252,38 @@ function KeyboardLayout({ platform, legend }: { platform: Platform; legend: Lege
     ...['F5', 'F6', 'F7', 'F8'].map((k) => <KeyCap key={k} label={k} />),
     <Spacer key="g3" width={unit(0.4)} />,
     ...['F9', 'F10', 'F11', 'F12'].map((k) => <KeyCap key={k} label={k} />),
+    <Spacer key="cluster" width={CLUSTER_GAP} />,
+    <KeyCap key="prtsc" label="PrtSc" />,
+    <KeyCap key="scrlk" label="ScrLk" />,
+    <KeyCap key="pause" label="Pause" />,
   ];
 
-  // Number row — ~13 keys + Backspace (1.5u). Total = 13 * 1u + 1.5u.
+  // Number row — backtick + 1-0 - = + Backspace (1.7u). Trailing Ins/Home/PgUp cluster.
   const numRow: ReactElement[] = [
     ...['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='].map((k) => (
       <KeyCap key={k} label={k} />
     )),
     <KeyCap key="bs" label={backspace} style={{ width: unit(1.7) }} />,
+    <Spacer key="cluster" width={CLUSTER_GAP} />,
+    <KeyCap key="ins" label="Ins" />,
+    <KeyCap key="home" label="Home" />,
+    <KeyCap key="pgup" label="PgUp" />,
   ];
 
-  // QWERTY row — Tab (1.5u) + 12 keys + \ (1u). Total matches numRow width.
+  // QWERTY row — Tab (1.7u) + 12 keys + \. Trailing Del/End/PgDn cluster.
   const qwertyRow: ReactElement[] = [
     <KeyCap key="tab" label={tab} style={{ width: unit(1.7) }} />,
     ...['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']'].map((k) => (
       <KeyCap key={k} label={k} />
     )),
     <KeyCap key="bsl" label="\\" />,
+    <Spacer key="cluster" width={CLUSTER_GAP} />,
+    <KeyCap key="del" label={del} />,
+    <KeyCap key="end" label="End" />,
+    <KeyCap key="pgdn" label="PgDn" />,
   ];
 
-  // Home row — Caps (1.75u) + 11 keys + Enter (2.25u).
+  // Home row — Caps (1.95u) + 11 keys + Enter (2.45u). No right cluster.
   const homeRow: ReactElement[] = [
     <KeyCap key="caps" label="Caps" style={{ width: unit(1.95) }} />,
     ...['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', "'"].map((k) => (
@@ -277,16 +292,19 @@ function KeyboardLayout({ platform, legend }: { platform: Platform; legend: Lege
     <KeyCap key="enter" label={enter} style={{ width: unit(2.45) }} />,
   ];
 
-  // Bottom (ZXCV) row — Shift (2.25u) + 10 keys + Shift (2.75u).
+  // Bottom (ZXCV) row — Shift (2.45u) + 10 keys + Shift (2.95u) + ↑ arrow.
   const bottomRow: ReactElement[] = [
     <KeyCap key="shiftL" label={shift} style={{ width: unit(2.45) }} />,
     ...['Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/'].map((k) => (
       <KeyCap key={k} label={k} />
     )),
     <KeyCap key="shiftR" label={shift} style={{ width: unit(2.95) }} />,
+    <Spacer key="cluster" width={CLUSTER_GAP + unit(1) + GAP} />,
+    <KeyCap key="up" label="↑" />,
   ];
 
   // Modifier row — platform-specific. Space bar is the dominant wide key.
+  // Trailing arrow cluster: ← ↓ →.
   let modifierRow: ReactElement[];
   if (platform === 'macos') {
     modifierRow = [
@@ -310,6 +328,12 @@ function KeyboardLayout({ platform, legend }: { platform: Platform; legend: Lege
       <KeyCap key="ctrl2" label={ctrl} style={{ width: unit(1.25) }} />,
     ];
   }
+  modifierRow.push(
+    <Spacer key="cluster" width={CLUSTER_GAP} />,
+    <KeyCap key="left" label="←" />,
+    <KeyCap key="down" label="↓" />,
+    <KeyCap key="right" label="→" />,
+  );
 
   return (
     <section>
