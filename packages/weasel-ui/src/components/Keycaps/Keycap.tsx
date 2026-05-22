@@ -17,9 +17,10 @@ export type KeyCapVariant = 'default' | 'minimal';
 export interface KeyCapProps {
   /** Glyph rendered in the chip (modifier or key). */
   label: string;
-  /** Swap face/glyph colors for emphasis (dark chip on light surface).
-   *  Used by `KeySequence` to mark optional keys. Ignored when
-   *  `variant === 'minimal'`. */
+  /** Marks the chip as not required to trigger the action. In the default
+   *  variant the chip face inverts (dark face / light glyph) for
+   *  emphasis. In the `'minimal'` variant the chip's border becomes
+   *  dotted to read as "may be held, but isn't required." */
   inverted?: boolean;
   /** Visual style. `'default'` (default) renders a filled chip; `'minimal'`
    *  renders an unfilled chip whose border and legend are `currentColor`
@@ -37,7 +38,7 @@ export function KeyCap({ label, inverted = false, variant = 'default', className
       className={[s.key, className].filter(Boolean).join(' ')}
       data-kind={inferKeycapKind(label)}
       data-variant={variant === 'default' ? undefined : variant}
-      data-inverted={variant === 'minimal' ? undefined : (inverted || undefined)}
+      data-inverted={inverted || undefined}
     >
       {label}
     </kbd>

@@ -44,9 +44,11 @@ describe('KeyCap', () => {
     expect(container.querySelector('kbd')?.getAttribute('data-variant')).toBe('minimal');
   });
 
-  it('suppresses data-inverted under variant="minimal" even when inverted is true', () => {
+  it('still surfaces data-inverted under variant="minimal" (rendered as dotted border)', () => {
     const { container } = render(<KeyCap label="K" variant="minimal" inverted />);
-    expect(container.querySelector('kbd')?.hasAttribute('data-inverted')).toBe(false);
+    const kbd = container.querySelector('kbd');
+    expect(kbd?.hasAttribute('data-inverted')).toBe(true);
+    expect(kbd?.getAttribute('data-variant')).toBe('minimal');
   });
 });
 

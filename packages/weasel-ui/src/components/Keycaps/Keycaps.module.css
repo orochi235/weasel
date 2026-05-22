@@ -67,10 +67,19 @@
 
 /* Minimal variant — no fill, borders and legend follow currentColor.
    Useful inline in colored prose / next to colored badges where the
-   chip should take the surrounding text color. Inversion is suppressed
-   in this variant — there's no fill to invert against. */
+   chip should take the surrounding text color. */
 .key[data-variant='minimal'] {
   background: transparent;
   border-color: currentColor;
   color: currentColor;
+}
+
+/* Optional + minimal: the border goes dotted to read as "may be held but
+   isn't required." Replaces the face-inversion the default variant uses
+   for the same signal — there's no fill to invert against here. */
+.key[data-variant='minimal'][data-inverted] {
+  border-style: dotted;
+  /* Slightly bolder so dotted dashes don't dissolve at small sizes. */
+  border-width: 1.5px;
+  border-bottom-width: 1.5px;
 }

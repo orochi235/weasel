@@ -70,6 +70,13 @@ export const MinimalInColoredText: Story = {
   ),
 };
 
+/** Optional under `minimal` — the border goes dotted to read as
+ *  "may be held but isn't required." Replaces the face-inversion the
+ *  default variant uses for the same signal. */
+export const MinimalOptional: Story = {
+  args: { label: '⇧', variant: 'minimal', inverted: true },
+};
+
 /** Every `KeycapKind` (`square` / `modifier` / `wide`) and every variant
  *  combination side by side. */
 export const Gallery: Story = {
