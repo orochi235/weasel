@@ -107,6 +107,14 @@ export interface DemoEntry {
   path: string;
   /** Additional source files (e.g. scene JSON) shown as extra tabs. */
   extras?: DemoExtra[];
+  /** ISO-8601 date of the first git commit adding this demo's source.
+   *  Auto-populated by `virtual:demo-timestamps` — leave unset in the
+   *  registry literal. */
+  created?: string;
+  /** ISO-8601 date of the most recent git commit touching this demo's
+   *  source. Auto-populated by `virtual:demo-timestamps` — leave unset
+   *  in the registry literal. */
+  lastModified?: string;
 }
 
 export const DEMOS: DemoEntry[] = [
@@ -593,6 +601,19 @@ function autoExtras(demoFull: string, demoPath: string, manual: DemoExtra[] = []
 
 for (const entry of DEMOS) {
   entry.extras = autoExtras(entry.full, entry.path, entry.extras);
+}
+
+// Merge git-derived timestamps into every entry. The vite plugin
+// `scripts/vite-demo-timestamps.ts` produces this map at build time;
+// entries whose path isn't in git yet (locally-staged new demos) are
+// silently skipped, leaving `created` / `lastModified` undefined.
+import TIMESTAMPS from 'virtual:demo-timestamps';
+for (const entry of DEMOS) {
+  const ts = TIMESTAMPS[entry.path];
+  if (ts) {
+    entry.created = ts.created;
+    entry.lastModified = ts.lastModified;
+  }
 }
 
 export const CATEGORIES = Array.from(new Set(DEMOS.map((d) => d.category)));

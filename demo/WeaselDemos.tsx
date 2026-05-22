@@ -1,6 +1,23 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Highlight, themes } from 'prism-react-renderer';
 import { CATEGORIES, DEMOS, DEMOS_BY_ID, type DemoEntry } from './registry';
+import { WhatsNew } from './WhatsNew';
+
+const WHATS_NEW_ID = '__whats_new';
+
+/** Format a git-ISO date as "3d ago" / "2w ago" / "Apr 2024" — close
+ *  in time gets a relative phrasing; older falls back to a static
+ *  month/year so the eyebrow doesn't fluctuate as the page sits. */
+function formatRelativeOrIso(iso: string): string {
+  const now = Date.now();
+  const ms = now - new Date(iso).getTime();
+  const day = 24 * 60 * 60 * 1000;
+  if (ms < day) return 'today';
+  const days = Math.floor(ms / day);
+  if (days < 7) return `${days}d ago`;
+  if (days < 30) return `${Math.floor(days / 7)}w ago`;
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+}
 // CommandPalette / useCommandPaletteShortcut live in
 // apps/swillustrator/src/ui/ after the kit/app split. The demo harness uses
 // them for its own command-palette chrome via this relative import.
@@ -16,6 +33,7 @@ import logoUrl from '../weasel-transparent@0.33x.png';
 
 function readHash(): string {
   const h = window.location.hash.replace(/^#/, '');
+  if (h === WHATS_NEW_ID) return WHATS_NEW_ID;
   return DEMOS_BY_ID.has(h) ? h : DEMOS[0].id;
 }
 
@@ -36,7 +54,7 @@ export function WeaselDemos() {
     }
   }, [activeId]);
 
-  const active = DEMOS_BY_ID.get(activeId)!;
+  const active = activeId === WHATS_NEW_ID ? null : DEMOS_BY_ID.get(activeId)!;
 
   return (
     <div className="ckd-app">
@@ -54,6 +72,17 @@ export function WeaselDemos() {
           </p>
         </header>
         <nav className="ckd-nav">
+          <section className="ckd-nav-section ckd-nav-whatsnew">
+            <ul>
+              <li>
+                <a
+                  href={`#${WHATS_NEW_ID}`}
+                  className={activeId === WHATS_NEW_ID ? 'active' : ''}
+                  onClick={(e) => { e.preventDefault(); setActiveId(WHATS_NEW_ID); }}
+                >✨ What's new</a>
+              </li>
+            </ul>
+          </section>
           {CATEGORIES.map((cat) => (
             <section key={cat} className="ckd-nav-section">
               <h2>{cat}</h2>
@@ -74,7 +103,9 @@ export function WeaselDemos() {
       </aside>
 
       <main className="ckd-main">
-        <DemoView entry={active} key={active.id} />
+        {active
+          ? <DemoView entry={active} key={active.id} />
+          : <WhatsNew onSelect={setActiveId} />}
       </main>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
@@ -101,7 +132,17 @@ function DemoView({ entry }: { entry: DemoEntry }) {
   return (
     <article className="ckd-demo">
       <header>
-        <div className="ckd-eyebrow">{entry.category}</div>
+        <div className="ckd-eyebrow">
+          {entry.category}
+          {entry.lastModified && (
+            <>
+              <span className="ckd-eyebrow-sep" aria-hidden> · </span>
+              <span className="ckd-eyebrow-date">
+                last modified <time dateTime={entry.lastModified} title={entry.lastModified}>{formatRelativeOrIso(entry.lastModified)}</time>
+              </span>
+            </>
+          )}
+        </div>
         <h2>{entry.title}</h2>
         <p className="ckd-desc">{entry.description}</p>
       </header>

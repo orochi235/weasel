@@ -182,6 +182,79 @@ a:hover { text-decoration: underline; }
   max-width: 80ch;
 }
 
+.ckd-eyebrow-sep,
+.ckd-eyebrow-date {
+  color: var(--ckd-faint);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.ckd-nav-whatsnew {
+  margin-bottom: 12px;
+}
+.ckd-nav-whatsnew ul { margin: 0; padding: 0; }
+.ckd-nav-whatsnew li { list-style: none; }
+.ckd-nav-whatsnew a {
+  display: block;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--ckd-text);
+  background: color-mix(in srgb, var(--ckd-accent, #c89a5e) 12%, transparent);
+}
+.ckd-nav-whatsnew a:hover {
+  background: color-mix(in srgb, var(--ckd-accent, #c89a5e) 20%, transparent);
+}
+.ckd-nav-whatsnew a.active {
+  background: color-mix(in srgb, var(--ckd-accent, #c89a5e) 30%, transparent);
+}
+
+.ckd-whatsnew-tablewrap { overflow-x: auto; }
+.ckd-whatsnew-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 12px;
+}
+.ckd-whatsnew-table th,
+.ckd-whatsnew-table td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ckd-muted) 18%, transparent);
+}
+.ckd-whatsnew-table th {
+  background: transparent;
+  padding: 0;
+}
+.ckd-whatsnew-th {
+  background: transparent;
+  border: 0;
+  padding: 8px 12px;
+  color: var(--ckd-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+.ckd-whatsnew-th.is-active { color: var(--ckd-text); }
+.ckd-whatsnew-table tr:hover td {
+  background: color-mix(in srgb, var(--ckd-muted) 5%, transparent);
+}
+.ckd-whatsnew-link {
+  color: var(--ckd-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+.ckd-whatsnew-link:hover { text-decoration: underline; }
+.ckd-whatsnew-empty { color: var(--ckd-faint); }
+
 .ckd-canvas-wrap {
   display: flex;
   flex-direction: column;
