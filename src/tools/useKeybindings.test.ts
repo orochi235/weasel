@@ -40,7 +40,7 @@ describe('useKeybindings', () => {
     expect(result.current.active).toBe('select');
   });
 
-  it('registers tool.select.<id> actions for built-in tools in BUILTIN_SELECT_KEYS', () => {
+  it('registers tool.activate.<id> and tool.shortcut.<id> actions for built-in tools in BUILTIN_SELECT_KEYS', () => {
     const select = defineTool({ id: 'select', initial: {} });
     const pen    = defineTool({ id: 'pen',    initial: {} });
     const { result } = renderHook(() => {
@@ -50,11 +50,13 @@ describe('useKeybindings', () => {
     }, { wrapper: makeWrapper('select') });
 
     const ids = result.current?.list().map((a) => a.id) ?? [];
-    expect(ids).toContain('tool.select.select');
-    expect(ids).toContain('tool.select.pen');
+    expect(ids).toContain('tool.activate.select');
+    expect(ids).toContain('tool.shortcut.select');
+    expect(ids).toContain('tool.activate.pen');
+    expect(ids).toContain('tool.shortcut.pen');
   });
 
-  it('registers tool.select.<id> action for tools with a ToolDef keybinding', () => {
+  it('registers tool.activate.<id> and tool.shortcut.<id> actions for tools with a ToolDef keybinding', () => {
     const select = defineTool({ id: 'select', initial: {} });
     const lasso  = defineTool({ id: 'lasso',  keybinding: { key: 'L' }, initial: {} });
     const { result } = renderHook(() => {
@@ -63,9 +65,13 @@ describe('useKeybindings', () => {
       return useActionsRegistry();
     }, { wrapper: makeWrapper('select') });
 
-    const action = result.current?.list().find((a) => a.id === 'tool.select.lasso');
-    expect(action).toBeDefined();
-    expect(action?.defaultBinding).toMatchObject({ kind: 'key', key: 'L' });
+    const shortcut = result.current?.list().find((a) => a.id === 'tool.shortcut.lasso');
+    expect(shortcut).toBeDefined();
+    expect(shortcut?.defaultBinding).toMatchObject({ kind: 'key', key: 'L' });
+
+    const activate = result.current?.list().find((a) => a.id === 'tool.activate.lasso');
+    expect(activate).toBeDefined();
+    expect(activate?.defaultBinding).toBeUndefined();
   });
 
   it('registers a tool.hold.hand action in the actions registry (static BUILTIN_HOLD_ACTIONS)', () => {
@@ -175,7 +181,8 @@ describe('useKeybindings', () => {
 
     const ids = result.current.map((a) => a.id);
     expect(ids).not.toContain('tool.hold.hand');
-    expect(ids).not.toContain('tool.select.select');
+    expect(ids).not.toContain('tool.activate.select');
+    expect(ids).not.toContain('tool.shortcut.select');
   });
 
   it('skips when focus is in an editable element', () => {

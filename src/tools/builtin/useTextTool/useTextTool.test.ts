@@ -18,7 +18,7 @@ describe('useTextTool surface', () => {
     );
     expect(result.current.id).toBe('text');
     // keybinding field removed from ToolDef; key activation is now registered
-    // as a `tool.select.text` action via useKeybindings (Task 9).
+    // as a `tool.shortcut.text` action via useKeybindings (Task 9).
     const cursor = typeof result.current.cursor === 'function'
       ? (result.current.cursor as (c: unknown) => string)(makeCtx())
       : result.current.cursor;

@@ -63,7 +63,7 @@ describe('useSelectTool', () => {
     );
     expect(result.current.id).toBe('select');
     // keybinding field removed from ToolDef; key activation is now registered
-    // as a `tool.select.select` action via useKeybindings (Task 9).
+    // as a `tool.shortcut.select` action via useKeybindings (Task 9).
     // cursor is a resolver function (Phase 3 T6 added scratch-aware override).
     // Idle scratch → 'default'.
     const cursor = result.current.cursor;

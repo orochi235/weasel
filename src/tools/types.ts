@@ -140,11 +140,12 @@ export interface ToolPresentation<TScratch = unknown> {
 export interface Tool<TScratch = unknown> {
   id: string;
   /** Optional caller-supplied key. Most built-in tools register their
-   *  activation key directly via `makeToolSelectAction` at canvas-mount time
-   *  (keys live in `BUILTIN_SELECT_KEYS` in `useKeybindings.ts`); this field
-   *  is for tools that want their activation key to be configurable by the host
-   *  (currently Lasso and Eyedropper). The dynamic loop in `useKeybindings.ts`
-   *  picks this up and registers a `tool.select.<id>` action when set. */
+   *  activation key directly via `makeToolShortcutAction` + `makeToolActivateAction`
+   *  at canvas-mount time (keys live in `BUILTIN_SELECT_KEYS` in `useKeybindings.ts`);
+   *  this field is for tools that want their activation key to be configurable by the
+   *  host (currently Lasso and Eyedropper). The dynamic loop in `useKeybindings.ts`
+   *  picks this up and registers `tool.activate.<id>` + `tool.shortcut.<id>` actions
+   *  when set. */
   keybinding?: ToolKeybinding;
   initScratch?: () => TScratch;
   onActivate?: (ctx: ToolCtx<TScratch>) => void;

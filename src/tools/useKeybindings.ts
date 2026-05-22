@@ -6,7 +6,8 @@ import {
 } from 'interactions/keyHelpers';
 import { useActionsRegistry } from 'interactions/actions/registry';
 import { makeToolHoldAction } from 'interactions/actions/defaults/toolHold';
-import { makeToolSelectAction } from 'interactions/actions/defaults/toolSelect';
+import { makeToolActivateAction } from 'interactions/actions/defaults/toolActivate';
+import { makeToolShortcutAction } from 'interactions/actions/defaults/toolShortcut';
 import type { ToolsApi } from './useTools';
 
 export interface UseKeybindingsOptions {
@@ -53,7 +54,7 @@ export function useKeybindings(
 
   // --- Tool-activation keybindings (V/R/T/P/...) and Escape. ---
   // Tool-switch is handled here via a document keydown listener. The
-  // `tool.select.*` actions registered below also cover this in contexts where
+  // `tool.shortcut.*` actions registered below also cover this in contexts where
   // `useGestureDispatcher` is mounted and has access to the actions registry,
   // but this listener is the authoritative path (e.g. tests and consumers that
   // mount Canvas without a full SceneCanvas stack).
@@ -130,22 +131,28 @@ export function useKeybindings(
     return () => { for (const u of unregisters) u(); };
   }, [registry, tools]);
 
-  // --- Tool-select: register `tool.select.<id>` actions into the actions
-  // registry. Built-in tools with static keys are registered from the
-  // BUILTIN_SELECT_KEYS map. Tools whose activation key is configurable via
-  // their ToolDef (e.g. useLassoTool, useEyedropperTool with a caller-provided
-  // key) are picked up dynamically from the registry.
+  // --- Tool-activate + tool-shortcut: register paired actions per tool.
+  // `tool.activate.<id>` owns the effect (calls setActive); it has no binding.
+  // `tool.shortcut.<id>` owns the hotkey binding and dispatches the activate
+  // action by name via the registry's trigger callback.
+  // Built-in tools with static keys come from BUILTIN_SELECT_KEYS; tools
+  // whose activation key is configurable via their ToolDef (e.g. useLassoTool)
+  // are picked up dynamically from the tools registry.
   useEffect(() => {
     if (optionsRef.current.disable) return;
     if (!registry) return;
 
     const unregisters: Array<() => void> = [];
 
-    // Static registrations for built-in tools whose keys are now in this map
-    // rather than on the ToolDef.
+    function registerToolPair(toolId: string, keyOpts: { key: string; mod?: boolean; alt?: boolean; shift?: boolean | 'optional' }) {
+      unregisters.push(registry!.register(makeToolActivateAction(toolId)));
+      unregisters.push(registry!.register(makeToolShortcutAction(toolId, keyOpts, registry!.trigger)));
+    }
+
+    // Static registrations for built-in tools whose keys live in this map.
     for (const [toolId, keyOpts] of Object.entries(BUILTIN_SELECT_KEYS)) {
       if (toolsRef.current.has(toolId)) {
-        unregisters.push(registry.register(makeToolSelectAction(toolId, keyOpts)));
+        registerToolPair(toolId, keyOpts);
       }
     }
 
@@ -158,12 +165,12 @@ export function useKeybindings(
       if (toolId in BUILTIN_SELECT_KEYS) continue; // already registered above
       const binding = allTools[toolId].keybinding;
       if (!binding) continue;
-      // KeyBinding.key may be an array; makeToolSelectAction expects a string.
+      // KeyBinding.key may be an array; makeToolShortcutAction expects a string.
       // Use only the first key in the array case — multi-key aliases are rare
       // in practice and the action system doesn't support them yet.
       const key = typeof binding.key === 'string' ? binding.key : binding.key[0];
       if (!key) continue;
-      unregisters.push(registry.register(makeToolSelectAction(toolId, { ...binding, key })));
+      registerToolPair(toolId, { ...binding, key });
     }
 
     return () => { for (const u of unregisters) u(); };
