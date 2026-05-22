@@ -64,3 +64,13 @@
   border-color: #0c0d10;
   color: var(--wzl-fg, #e6e7e9);
 }
+
+/* Minimal variant — no fill, borders and legend follow currentColor.
+   Useful inline in colored prose / next to colored badges where the
+   chip should take the surrounding text color. Inversion is suppressed
+   in this variant — there's no fill to invert against. */
+.key[data-variant='minimal'] {
+  background: transparent;
+  border-color: currentColor;
+  color: currentColor;
+}

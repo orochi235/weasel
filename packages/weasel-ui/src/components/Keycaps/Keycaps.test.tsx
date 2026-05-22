@@ -33,6 +33,21 @@ describe('KeyCap', () => {
     const { container } = render(<KeyCap label="K" />);
     expect(container.querySelector('kbd')?.hasAttribute('data-inverted')).toBe(false);
   });
+
+  it('omits data-variant for the default variant', () => {
+    const { container } = render(<KeyCap label="K" />);
+    expect(container.querySelector('kbd')?.hasAttribute('data-variant')).toBe(false);
+  });
+
+  it('tags data-variant="minimal" when variant="minimal"', () => {
+    const { container } = render(<KeyCap label="K" variant="minimal" />);
+    expect(container.querySelector('kbd')?.getAttribute('data-variant')).toBe('minimal');
+  });
+
+  it('suppresses data-inverted under variant="minimal" even when inverted is true', () => {
+    const { container } = render(<KeyCap label="K" variant="minimal" inverted />);
+    expect(container.querySelector('kbd')?.hasAttribute('data-inverted')).toBe(false);
+  });
 });
 
 describe('KeySequence', () => {
@@ -123,5 +138,14 @@ describe('KeySequence', () => {
       <KeySequence keys={[{ label: 'K' }, { label: '⌘' }]} separator="+" />,
     );
     expect(container.textContent).toBe('⌘+K');
+  });
+
+  it('forwards variant="minimal" to every KeyCap', () => {
+    const { container } = render(
+      <KeySequence keys={[{ label: '⌘' }, { label: 'K' }]} variant="minimal" />,
+    );
+    for (const chip of chips(container)) {
+      expect(chip.getAttribute('data-variant')).toBe('minimal');
+    }
   });
 });

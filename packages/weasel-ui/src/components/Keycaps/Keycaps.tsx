@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import s from './Keycaps.module.css';
-import { KeyCap, inferKeycapKind } from './Keycap';
+import { KeyCap, inferKeycapKind, type KeyCapVariant } from './Keycap';
 
 export interface KeySpec {
   /** Glyph rendered in the chip (modifier or key). */
@@ -19,12 +19,15 @@ export interface KeySequenceProps {
    *  non-modifier chip (e.g. `'+'` renders `⌘ + K`). `null` or `''`
    *  suppresses it. Defaults to `'+'`. */
   separator?: string | null;
+  /** Forwarded to every `KeyCap` in the sequence. `'minimal'` renders
+   *  unfilled chips whose border + legend are `currentColor`. */
+  variant?: KeyCapVariant;
   className?: string;
 }
 
 /** Renders a shortcut as a row of `KeyCap` chips, one per key. Optional
  *  keys render inverted to distinguish them from required ones. */
-export function KeySequence({ keys, separator = '+', className }: KeySequenceProps) {
+export function KeySequence({ keys, separator = '+', variant = 'default', className }: KeySequenceProps) {
   if (!keys || keys.length === 0) {
     return <span className={[s.keysEmpty, className].filter(Boolean).join(' ')}>—</span>;
   }
@@ -43,7 +46,7 @@ export function KeySequence({ keys, separator = '+', className }: KeySequencePro
       {ordered.map((k, i) => (
         <Fragment key={i}>
           {showSep && i === sepIdx ? <span className={s.sep}>{separator}</span> : null}
-          <KeyCap label={k.label} inverted={k.optional ?? false} />
+          <KeyCap label={k.label} inverted={k.optional ?? false} variant={variant} />
         </Fragment>
       ))}
     </span>
