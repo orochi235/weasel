@@ -17,10 +17,16 @@ describe('keySpecsFromMods — platform mapping', () => {
       .toEqual([{ label: 'Ctrl' }]);
   });
 
-  it('maps `meta` to ⌘ / ⊞ / ⊞ per OS', () => {
+  it('maps `meta` to the platform default in auto: ⌘ / ⊞ / ⊞', () => {
     expect(keySpecsFromMods([{ name: 'meta' }], { platform: 'macos' }))   .toEqual([{ label: '⌘' }]);
-    expect(keySpecsFromMods([{ name: 'meta' }], { platform: 'windows' })) .toEqual([{ label: 'Win' }]);
-    expect(keySpecsFromMods([{ name: 'meta' }], { platform: 'linux' }))   .toEqual([{ label: 'Super' }]);
+    expect(keySpecsFromMods([{ name: 'meta' }], { platform: 'windows' })) .toEqual([{ label: '⊞' }]);
+    expect(keySpecsFromMods([{ name: 'meta' }], { platform: 'linux' }))   .toEqual([{ label: '⊞' }]);
+  });
+
+  it('maps `meta` to text spellings only when legend: "text" is forced', () => {
+    expect(keySpecsFromMods([{ name: 'meta' }], { platform: 'macos',   legend: 'text' })).toEqual([{ label: 'Cmd' }]);
+    expect(keySpecsFromMods([{ name: 'meta' }], { platform: 'windows', legend: 'text' })).toEqual([{ label: 'Win' }]);
+    expect(keySpecsFromMods([{ name: 'meta' }], { platform: 'linux',   legend: 'text' })).toEqual([{ label: 'Super' }]);
   });
 
   it('maps `alt` to ⌥ on Mac, Alt elsewhere', () => {
@@ -158,5 +164,13 @@ describe('keySpecFromKey — named keys', () => {
   it('explicit legend: "auto" matches default behavior on Escape', () => {
     expect(keySpecFromKey('Escape', { platform: 'macos', legend: 'auto' })).toEqual({ label: '⎋' });
     expect(keySpecFromKey('Escape', { platform: 'windows', legend: 'auto' })).toEqual({ label: 'Esc' });
+  });
+
+  it('renders ContextMenu as ▤ on Windows/Linux in auto, plain Menu on macOS', () => {
+    expect(keySpecFromKey('ContextMenu', { platform: 'macos' })).toEqual({ label: 'Menu' });
+    expect(keySpecFromKey('ContextMenu', { platform: 'windows' })).toEqual({ label: '▤' });
+    expect(keySpecFromKey('ContextMenu', { platform: 'linux' })).toEqual({ label: '▤' });
+    // text mode collapses every platform to "Menu".
+    expect(keySpecFromKey('ContextMenu', { platform: 'windows', legend: 'text' })).toEqual({ label: 'Menu' });
   });
 });

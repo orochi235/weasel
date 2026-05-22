@@ -2,7 +2,14 @@
 .keys {
   display: inline-flex;
   gap: 3px;
-  align-items: center;
+  /* Bottom-align so chips with text labels and chips with icon glyphs
+     (arrows, modifier symbols) line up at the same bottom edge. Baseline
+     drifts because text baselines sit above icon centers. */
+  align-items: flex-end;
+  /* When this whole sequence sits inline in surrounding text (e.g.
+     "Press <KeySequence> to confirm."), the row anchors to the
+     surrounding line's bottom edge, not its baseline. */
+  vertical-align: bottom;
   flex-wrap: wrap;
 }
 

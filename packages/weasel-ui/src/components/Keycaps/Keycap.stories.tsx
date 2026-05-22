@@ -223,14 +223,27 @@ export const KeyboardLayouts: Story = {
 };
 
 function KeyboardLayout({ platform, legend }: { platform: Platform; legend: LegendStyle }): ReactElement {
-  // ANSI TKL layout. Standard key = 18px (`.key[data-kind='square']`),
-  // gap = 3px. Multi-unit keys override width inline.
+  // ANSI TKL layout.
+  //
+  // Geometry: 1u = 18px (matches `.key[data-kind='square']` width); the
+  // flex row carries `gap: 3px` between siblings. A n-unit key's width
+  // is `n * U + (n - 1) * GAP` — that's the formula `unit(n)`. Using
+  // it for both KeyCaps AND Spacers makes every element occupy exactly
+  // n slots of horizontal space, so rows of equal slot-count line up
+  // perfectly regardless of which specific keys they contain.
+  //
+  // Slot accounting per row (all should sum to 15 slots for the main
+  // block, 3 slots for the right cluster):
+  //   fn row:   1 + 1.0 + 4×1 + 0.5 + 4×1 + 0.5 + 4×1 = 15  ✓
+  //   numbers:  13×1 + 2 = 15                              ✓
+  //   qwerty:   1.5 + 12×1 + 1.5 = 15                      ✓
+  //   home:     1.75 + 11×1 + 2.25 = 15                    ✓
+  //   bottom:   2.25 + 10×1 + 2.75 = 15                    ✓
+  //   modifier: 7×1.25 + 6.25 = 15 (ANSI Win/Linux)        ✓
+  //             — macOS: trailing spacer pads the short row to 15
   const U = 18;
   const GAP = 3;
-  // n-unit width including the gaps the chip displaces.
   const unit = (n: number) => n * U + (n - 1) * GAP;
-  // Space between the main block and the nav/arrow cluster.
-  const CLUSTER_GAP = unit(0.5) + GAP;
 
   const shift = keySpecsFromMods([{ name: 'shift' }], { platform, legend })[0].label;
   const ctrl = keySpecsFromMods([{ name: 'ctrl' }], { platform, legend })[0].label;
@@ -243,120 +256,151 @@ function KeyboardLayout({ platform, legend }: { platform: Platform; legend: Lege
   const esc = keySpecFromKey('Escape', { platform, legend }).label;
   const del = keySpecFromKey('Delete', { platform, legend }).label;
 
-  // Function row — Esc + F1..F12 grouped, plus PrtSc/ScrLk/Pause cluster.
-  const fnRow: ReactElement[] = [
-    <KeyCap key="esc" label={esc} />,
-    <Spacer key="g1" width={unit(0.6)} />,
-    ...['F1', 'F2', 'F3', 'F4'].map((k) => <KeyCap key={k} label={k} />),
-    <Spacer key="g2" width={unit(0.4)} />,
-    ...['F5', 'F6', 'F7', 'F8'].map((k) => <KeyCap key={k} label={k} />),
-    <Spacer key="g3" width={unit(0.4)} />,
-    ...['F9', 'F10', 'F11', 'F12'].map((k) => <KeyCap key={k} label={k} />),
-    <Spacer key="cluster" width={CLUSTER_GAP} />,
-    <KeyCap key="prtsc" label="PrtSc" />,
-    <KeyCap key="scrlk" label="ScrLk" />,
-    <KeyCap key="pause" label="Pause" />,
-  ];
-
-  // Number row — backtick + 1-0 - = + Backspace (1.7u). Trailing Ins/Home/PgUp cluster.
-  const numRow: ReactElement[] = [
-    ...['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='].map((k) => (
-      <KeyCap key={k} label={k} />
-    )),
-    <KeyCap key="bs" label={backspace} style={{ width: unit(1.7) }} />,
-    <Spacer key="cluster" width={CLUSTER_GAP} />,
-    <KeyCap key="ins" label="Ins" />,
-    <KeyCap key="home" label="Home" />,
-    <KeyCap key="pgup" label="PgUp" />,
-  ];
-
-  // QWERTY row — Tab (1.7u) + 12 keys + \. Trailing Del/End/PgDn cluster.
-  const qwertyRow: ReactElement[] = [
-    <KeyCap key="tab" label={tab} style={{ width: unit(1.7) }} />,
-    ...['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']'].map((k) => (
-      <KeyCap key={k} label={k} />
-    )),
-    <KeyCap key="bsl" label="\\" />,
-    <Spacer key="cluster" width={CLUSTER_GAP} />,
-    <KeyCap key="del" label={del} />,
-    <KeyCap key="end" label="End" />,
-    <KeyCap key="pgdn" label="PgDn" />,
-  ];
-
-  // Home row — Caps (1.95u) + 11 keys + Enter (2.45u). No right cluster.
-  const homeRow: ReactElement[] = [
-    <KeyCap key="caps" label="Caps" style={{ width: unit(1.95) }} />,
-    ...['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', "'"].map((k) => (
-      <KeyCap key={k} label={k} />
-    )),
-    <KeyCap key="enter" label={enter} style={{ width: unit(2.45) }} />,
-  ];
-
-  // Bottom (ZXCV) row — Shift (2.45u) + 10 keys + Shift (2.95u) + ↑ arrow.
-  const bottomRow: ReactElement[] = [
-    <KeyCap key="shiftL" label={shift} style={{ width: unit(2.45) }} />,
-    ...['Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/'].map((k) => (
-      <KeyCap key={k} label={k} />
-    )),
-    <KeyCap key="shiftR" label={shift} style={{ width: unit(2.95) }} />,
-    <Spacer key="cluster" width={CLUSTER_GAP + unit(1) + GAP} />,
-    <KeyCap key="up" label="↑" />,
-  ];
-
-  // Modifier row — platform-specific. Space bar is the dominant wide key.
-  // Trailing arrow cluster: ← ↓ →.
-  let modifierRow: ReactElement[];
-  if (platform === 'macos') {
-    modifierRow = [
-      <KeyCap key="fn"     label="fn" />,
-      <KeyCap key="ctrl"   label={ctrl} />,
-      <KeyCap key="alt"    label={alt} />,
-      <KeyCap key="meta"   label={meta} style={{ width: unit(1.25) }} />,
-      <KeyCap key="space"  label={space} style={{ width: unit(5.5) }} />,
-      <KeyCap key="meta2"  label={meta} style={{ width: unit(1.25) }} />,
-      <KeyCap key="alt2"   label={alt} />,
-    ];
-  } else {
-    modifierRow = [
-      <KeyCap key="ctrl"  label={ctrl} style={{ width: unit(1.25) }} />,
-      <KeyCap key="meta"  label={meta} style={{ width: unit(1.25) }} />,
-      <KeyCap key="alt"   label={alt} style={{ width: unit(1.25) }} />,
-      <KeyCap key="space" label={space} style={{ width: unit(6.25) }} />,
-      <KeyCap key="alt2"  label={alt} style={{ width: unit(1.25) }} />,
-      <KeyCap key="meta2" label={meta} style={{ width: unit(1.25) }} />,
-      <KeyCap key="menu"  label="Menu" style={{ width: unit(1.25) }} />,
-      <KeyCap key="ctrl2" label={ctrl} style={{ width: unit(1.25) }} />,
-    ];
-  }
-  modifierRow.push(
-    <Spacer key="cluster" width={CLUSTER_GAP} />,
-    <KeyCap key="left" label="←" />,
-    <KeyCap key="down" label="↓" />,
-    <KeyCap key="right" label="→" />,
+  // Force a chip to a precise slot-width regardless of how `inferKeycapKind`
+  // would have classified its label. Multi-char labels (F1, Esc, Caps, …)
+  // default to `wide` kind (min-width 32px); without this override they'd
+  // break the slot accounting. Padding tightens so longer labels still fit
+  // their unit-cell.
+  const cap = (label: string, n = 1) => (
+    <KeyCap
+      label={label}
+      style={{ width: unit(n), minWidth: 0, padding: '0 2px' }}
+    />
   );
+  const wide = cap;
+
+  // ── Main block: 15-slot rows ──────────────────────────────────────
+  const mainRows: ReactElement[][] = [
+    // Function row.
+    [
+      <span key="esc">{cap(esc)}</span>,
+      <Spacer key="g1" width={unit(1)} />,
+      ...['F1', 'F2', 'F3', 'F4'].map((k) => <span key={k}>{cap(k)}</span>),
+      <Spacer key="g2" width={unit(0.5)} />,
+      ...['F5', 'F6', 'F7', 'F8'].map((k) => <span key={k}>{cap(k)}</span>),
+      <Spacer key="g3" width={unit(0.5)} />,
+      ...['F9', 'F10', 'F11', 'F12'].map((k) => <span key={k}>{cap(k)}</span>),
+    ],
+    // Number row.
+    [
+      ...['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='].map((k) => (
+        <KeyCap key={k} label={k} />
+      )),
+      <span key="bs">{wide(backspace, 2)}</span>,
+    ],
+    // QWERTY row.
+    [
+      <span key="tab">{wide(tab, 1.5)}</span>,
+      ...['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']'].map((k) => (
+        <KeyCap key={k} label={k} />
+      )),
+      <span key="bsl">{wide('\\', 1.5)}</span>,
+    ],
+    // Home row.
+    [
+      <span key="caps">{wide('Caps', 1.75)}</span>,
+      ...['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', "'"].map((k) => (
+        <KeyCap key={k} label={k} />
+      )),
+      <span key="enter">{wide(enter, 2.25)}</span>,
+    ],
+    // Bottom (ZXCV) row.
+    [
+      <span key="shiftL">{wide(shift, 2.25)}</span>,
+      ...['Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/'].map((k) => (
+        <KeyCap key={k} label={k} />
+      )),
+      <span key="shiftR">{wide(shift, 2.75)}</span>,
+    ],
+    // Modifier row — platform-specific.
+    platform === 'macos'
+      ? [
+          <span key="fn">{cap('fn')}</span>,
+          <span key="ctrl">{cap(ctrl)}</span>,
+          <span key="alt">{cap(alt)}</span>,
+          <span key="meta1">{wide(meta, 1.25)}</span>,
+          <span key="space">{wide(space, 6.25)}</span>,
+          <span key="meta2">{wide(meta, 1.25)}</span>,
+          <span key="alt2">{cap(alt)}</span>,
+          <Spacer key="pad" width={unit(1)} />,
+        ]
+      : [
+          <span key="ctrl1">{wide(ctrl, 1.25)}</span>,
+          <span key="meta1">{wide(meta, 1.25)}</span>,
+          <span key="alt1">{wide(alt, 1.25)}</span>,
+          <span key="space">{wide(space, 6.25)}</span>,
+          <span key="alt2">{wide(alt, 1.25)}</span>,
+          <span key="meta2">{wide(meta, 1.25)}</span>,
+          <span key="menu">{wide(keySpecFromKey('ContextMenu', { platform, legend }).label, 1.25)}</span>,
+          <span key="ctrl2">{wide(ctrl, 1.25)}</span>,
+        ],
+  ];
+
+  // ── Right cluster: 3-slot rows ────────────────────────────────────
+  // Each cluster row aligns vertically with the corresponding main row.
+  // Empty slots use Spacers of the same slot-width so alignment is
+  // pixel-perfect.
+  const clusterRows: ReactElement[][] = [
+    // Function row alignment: PrtSc / ScrLk / Pause.
+    [<span key="prtsc">{cap('PrtSc')}</span>, <span key="scrlk">{cap('ScrLk')}</span>, <span key="pause">{cap('Pause')}</span>],
+    // Number row alignment.
+    [<span key="ins">{cap('Ins')}</span>, <span key="home">{cap('Home')}</span>, <span key="pgup">{cap('PgUp')}</span>],
+    // QWERTY row alignment.
+    [<span key="del">{cap(del)}</span>, <span key="end">{cap('End')}</span>, <span key="pgdn">{cap('PgDn')}</span>],
+    // Home row alignment — empty.
+    [<Spacer key="e1" width={unit(3)} />],
+    // Bottom-row alignment — Up alone in the middle slot.
+    [<Spacer key="l" width={unit(1)} />, <KeyCap key="up" label="↑" />, <Spacer key="r" width={unit(1)} />],
+    // Modifier-row alignment — Left / Down / Right.
+    [<KeyCap key="left" label="←" />, <KeyCap key="down" label="↓" />, <KeyCap key="right" label="→" />],
+  ];
 
   return (
     <section>
       <header style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em', opacity: 0.65, marginBottom: 6 }}>
         {platform}
       </header>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: GAP }}>
-        <Row gap={GAP}>{fnRow}</Row>
-        <Spacer width={1} height={6} />
-        <Row gap={GAP}>{numRow}</Row>
-        <Row gap={GAP}>{qwertyRow}</Row>
-        <Row gap={GAP}>{homeRow}</Row>
-        <Row gap={GAP}>{bottomRow}</Row>
-        <Row gap={GAP}>{modifierRow}</Row>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: unit(1) + GAP }}>
+        <KeyboardBlock rows={mainRows} gap={GAP} fnRowSpacing />
+        <KeyboardBlock rows={clusterRows} gap={GAP} fnRowSpacing />
       </div>
     </section>
   );
 }
 
-function Row({ children, gap }: { children: ReactElement[]; gap: number }): ReactElement {
-  return <div style={{ display: 'flex', gap, alignItems: 'center' }}>{children}</div>;
+/** Stack of rows. `fnRowSpacing` inserts a small vertical gap between
+ *  the first row (function row) and the rest, matching real keyboards. */
+function KeyboardBlock({
+  rows,
+  gap,
+  fnRowSpacing,
+}: {
+  rows: readonly ReactElement[][];
+  gap: number;
+  fnRowSpacing?: boolean;
+}): ReactElement {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap }}>
+      {rows.map((row, i) => (
+        <div
+          key={i}
+          style={{
+            display: 'flex',
+            gap,
+            // Bottom-align so glyphs sitting on different baselines (icon
+            // arrows vs typeset letters vs ⌘) line up along the bottom
+            // edge of the chips rather than drifting on the baseline.
+            alignItems: 'flex-end',
+            marginTop: i === 1 && fnRowSpacing ? 6 : 0,
+          }}
+        >
+          {row}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function Spacer({ width, height }: { width: number; height?: number }): ReactElement {
-  return <span aria-hidden style={{ display: 'inline-block', width, height: height ?? 1 }} />;
+  return <span aria-hidden style={{ display: 'inline-block', width, height: height ?? 18 }} />;
 }
