@@ -58,11 +58,12 @@
 }
 
 /* Optional/inverted (default variant): face flips to dark with light
-   legend, AND the border goes dotted in the legend color. Two cues
-   reinforce the "may be held but isn't required" signal. */
+   legend, AND the border goes dotted in the legend color. The legend
+   itself drops to 60% opacity to read as "may be held but isn't
+   required" — the border stays full-strength. */
 .key[data-inverted] {
   background: var(--wzl-bg, #181a1e);
-  color: var(--wzl-fg, #e6e7e9);
+  color: color-mix(in srgb, var(--wzl-fg, #e6e7e9) 60%, transparent);
   border-style: dotted;
   border-color: var(--wzl-fg, #e6e7e9);
   border-width: 1.5px;
@@ -78,11 +79,13 @@
   color: currentColor;
 }
 
-/* Optional + minimal: same dotted treatment; border and legend are
-   currentColor so they pick up the parent's color. */
+/* Optional + minimal: same dotted treatment; border stays at the
+   parent's currentColor, legend drops to 60% opacity for the same
+   "optional" cue the default variant uses. */
 .key[data-variant='minimal'][data-inverted] {
   border-style: dotted;
   border-color: currentColor;
+  color: color-mix(in srgb, currentColor 60%, transparent);
   border-width: 1.5px;
   border-bottom-width: 1.5px;
 }
