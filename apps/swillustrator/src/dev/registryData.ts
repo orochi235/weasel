@@ -161,7 +161,8 @@ export interface ShapeKindEntry {
    *  the inspector can drill from kind → tool without re-encoding the
    *  assumption. */
   tool?: string;
-  /** Hook the authoring tool is exported as. Resolved via `TOOL_HOOK_NAMES`. */
+  /** Hook the authoring tool is exported as. Read off the live tool's
+   *  `hookName` field (set by each builtin hook on its `defineTool` spec). */
   hookName?: string;
 }
 
@@ -373,24 +374,26 @@ export function collectPublicExports(): readonly PublicExportEntry[] {
   return out;
 }
 
-/** Tool id → hook name as exported from the kit barrel. Static rather than
- *  reflected: the `ToolDef` carries no hook-name metadata. Kept in lock-step
- *  with the kit's `useXTool` exports. */
-export const TOOL_HOOK_NAMES: Readonly<Record<string, string>> = {
-  select: 'useSelectTool',
-  hand: 'useHandTool',
-  rotate: 'useRotateTool',
-  rect: 'useRectTool',
-  ellipse: 'useEllipseTool',
-  line: 'useLineTool',
-  polygon: 'usePolygonTool',
-  star: 'useStarTool',
-  pencil: 'usePencilTool',
-  lasso: 'useLassoTool',
-  text: 'useTextTool',
-  eyedropper: 'useEyedropperTool',
-  // 'wheel-zoom' dissolved in Phase 8.5; handled by viewport.zoom descriptor.
-};
+/** Names of kit-built-in tool hooks. Used by the inspector to tag matching
+ *  public exports with a `'tool hook'` badge. Per-tool `hookName` for the
+ *  Hook column comes from the live tool's `Tool.hookName` (set by each hook
+ *  on its `defineTool({ ... })` spec), not from this set. */
+export const KIT_TOOL_HOOK_NAMES: ReadonlySet<string> = new Set([
+  'useSelectTool',
+  'useHandTool',
+  'useRotateTool',
+  'useRectTool',
+  'useEllipseTool',
+  'useLineTool',
+  'usePolygonTool',
+  'useStarTool',
+  'usePenTool',
+  'usePencilTool',
+  'useLassoTool',
+  'useTextTool',
+  'useEyedropperTool',
+  'usePinchZoomTool',
+]);
 
 /** Shape-kind ids the inspector mirrors from the kit. Sourced from
  *  `Weasel.KIT_SHAPE_KINDS` so adding a new builtin shape tool to the kit
@@ -516,13 +519,17 @@ export function collectGroups(
   return out;
 }
 
-export function collectShapeKinds(): readonly ShapeKindEntry[] {
+export function collectShapeKinds(
+  tools: readonly ToolEntry[] = [],
+): readonly ShapeKindEntry[] {
+  const hookByToolId = new Map<string, string>();
+  for (const t of tools) if (t.hookName) hookByToolId.set(t.id, t.hookName);
   return SHAPE_KIND_IDS.map((id) => ({
     kind: 'shapeKind',
     id,
     label: id,
     tool: id,
-    hookName: TOOL_HOOK_NAMES[id],
+    hookName: hookByToolId.get(id),
   }));
 }
 

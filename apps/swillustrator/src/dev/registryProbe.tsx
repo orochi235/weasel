@@ -11,7 +11,6 @@ import { buildActionRegistry, formatRoute, type RegistryEntry } from '@orochi235
 import type { ToolDef } from '@orochi235/weasel/routing';
 import { isValidElement, type ReactNode } from 'react';
 import type { PhaseSummary, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryData';
-import { TOOL_HOOK_NAMES } from './registryData';
 import { formatShortcutParts } from '@orochi235/weasel-ui';
 import s from './RegistryInspector.module.css';
 
@@ -84,7 +83,10 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
           kind: 'tool',
           id: t.id,
           label: def?.presentation?.label ?? t.id,
-          hookName: TOOL_HOOK_NAMES[t.id],
+          // hookName lives on the def (reflection escape hatch). Each
+          // builtin hook sets `hookName: 'useFooTool'` on its `defineTool`
+          // spec; the inspector reads it off the def — no parallel map.
+          hookName: def?.hookName,
           cursor: typeof t.cursor === 'string' ? t.cursor : undefined,
           routes,
           slot,

@@ -37,7 +37,6 @@ import {
   type ToolDef,
 } from '@orochi235/weasel/routing';
 import { formatShortcutParts, KeySequence } from '@orochi235/weasel-ui';
-import { TOOL_HOOK_NAMES } from './registryData';
 import s from './ToolkitBuilder.module.css';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -213,7 +212,7 @@ function ToolsWidget({
               {rows.map((d) => (
                 <tr key={d.id}>
                   <td><code>{d.id}</code></td>
-                  <td>{TOOL_HOOK_NAMES[d.id] ?? <span className={s.empty}>—</span>}</td>
+                  <td>{d.hookName ?? <span className={s.empty}>—</span>}</td>
                   <td>{ambientSet.has(d.id) ? 'ambient' : 'registry'}</td>
                   <td><KeySequence keys={formatShortcutParts(d.keybinding)?.map((label) => ({ label }))} /></td>
                 </tr>

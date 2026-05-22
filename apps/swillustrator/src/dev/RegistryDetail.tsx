@@ -32,7 +32,7 @@ import type {
 } from './registryData';
 import { BOOLEAN_BADGE_PROPS, BUNDLE_BADGE_PROPS, CHANNEL_BADGE_PROPS, GESTURE_BADGE_PROPS, HOTKEY_TRIGGER_GLYPHS, KIND_BADGE_PROPS, PHASE_BADGE_PROPS, TOKEN_SETS, type TokenSet } from './badgeTokens';
 import { canonicalModifiers, formatPhaseAtom, getGestureDescriptor, type GestureName } from '@orochi235/weasel/routing';
-import { collectBundles, collectIcons, GESTURE_CHANNEL_KEYS, PHASE_OUTPUT_KEYS, parseRoute, TOOL_HOOK_NAMES } from './registryData';
+import { collectBundles, collectIcons, GESTURE_CHANNEL_KEYS, PHASE_OUTPUT_KEYS, parseRoute, KIT_TOOL_HOOK_NAMES } from './registryData';
 void GESTURE_CHANNEL_KEYS;
 void PHASE_OUTPUT_KEYS;
 
@@ -1156,7 +1156,7 @@ function classifyExport(id: string, value: unknown): readonly string[] {
   } else {
     tags.push(t);
   }
-  if (TOOL_HOOK_NAMES[id.replace(/^use/, '').replace(/Tool$/, '').toLowerCase()] === id) {
+  if (KIT_TOOL_HOOK_NAMES.has(id)) {
     tags.push('tool hook');
   }
   return tags;

@@ -54,7 +54,7 @@ export function RegistryInspector() {
   const icons = useMemo(() => collectIcons(), []);
   const opFactories = useMemo(() => collectOpFactories(), []);
   const publicExports = useMemo(() => collectPublicExports(), []);
-  const shapeKinds = useMemo(() => collectShapeKinds(), []);
+  const shapeKinds = useMemo(() => collectShapeKinds(runtime.tools), [runtime.tools]);
   const nodeKinds = useMemo(() => collectNodeKinds(runtime.nodeKinds), [runtime.nodeKinds]);
   const phases = useMemo(() => collectPhases(), []);
   const gestures = useMemo(() => collectGestures(), []);

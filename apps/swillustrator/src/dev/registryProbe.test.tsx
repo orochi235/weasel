@@ -51,4 +51,46 @@ describe('RegistryProbe', () => {
     const toolIds = last.tools.map((t) => t.id);
     expect(toolIds).toContain('rect');
   });
+
+  // Parity: every built-in tool surfaced by the probe must carry the kit
+  // barrel's hook name on its def (e.g. id 'rect' → hookName 'useRectTool').
+  // Drift here means a hook was renamed without updating the def — surfaces
+  // before it can land in the inspector's Hook column.
+  it('every probed builtin tool carries its kit barrel hookName on the def', async () => {
+    const snapshots: { tools: readonly { id: string; hookName?: string }[] }[] = [];
+    const onSnapshot = (s: { tools: readonly { id: string; hookName?: string }[] }) => {
+      snapshots.push(s);
+    };
+    render(
+      <ActionsProvider>
+        <RegistryProbe onSnapshot={onSnapshot} />
+      </ActionsProvider>,
+    );
+    const expectedByToolId: Readonly<Record<string, string>> = {
+      select: 'useSelectTool',
+      hand: 'useHandTool',
+      rotate: 'useRotateTool',
+      rect: 'useRectTool',
+      ellipse: 'useEllipseTool',
+      line: 'useLineTool',
+      polygon: 'usePolygonTool',
+      star: 'useStarTool',
+      pen: 'usePenTool',
+      pencil: 'usePencilTool',
+      lasso: 'useLassoTool',
+      text: 'useTextTool',
+      eyedropper: 'useEyedropperTool',
+    };
+    await waitFor(() => {
+      const last = snapshots[snapshots.length - 1];
+      expect(last).toBeTruthy();
+      expect(last!.tools.length).toBeGreaterThan(3);
+    });
+    const last = snapshots[snapshots.length - 1]!;
+    for (const t of last.tools) {
+      const expected = expectedByToolId[t.id];
+      if (!expected) continue; // consumer-authored / unknown tools tolerated
+      expect(t.hookName, `tool id '${t.id}' missing hookName on its def`).toBe(expected);
+    }
+  });
 });
