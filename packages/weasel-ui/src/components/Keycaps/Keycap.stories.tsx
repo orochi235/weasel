@@ -1,72 +1,44 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { CSSProperties, ReactElement } from 'react';
 import { KeyCap, type KeyCapVariant, type KeyCapProps } from './Keycap';
+import {
+  keySpecFromKey,
+  keySpecsFromMods,
+  type LegendStyle,
+  type LogicalMod,
+  type Platform,
+} from './keySpecsFromMods';
 
 const VARIANTS: KeyCapVariant[] = ['default', 'minimal'];
-
-type Platform = 'macos' | 'windows' | 'linux';
 const PLATFORMS: Platform[] = ['macos', 'windows', 'linux'];
+const LEGENDS: LegendStyle[] = ['auto', 'symbol', 'text'];
 
-type LegendStyle = 'symbol' | 'text';
-const LEGEND_STYLES: LegendStyle[] = ['symbol', 'text'];
-
-/** Per-platform × per-legend-style table for modifier labels. macOS keeps
- *  the Apple glyphs in symbol mode; Windows / Linux fall back to text since
- *  there's no widely-recognized symbol for Alt/Ctrl/Win. */
-const MODIFIER_LEGEND: Record<string, Record<Platform, Record<LegendStyle, string>>> = {
-  '⌘': {
-    macos:   { symbol: '⌘', text: 'Cmd' },
-    windows: { symbol: '⊞', text: 'Win' },
-    linux:   { symbol: '⊞', text: 'Super' },
-  },
-  '⌥': {
-    macos:   { symbol: '⌥',  text: 'Option' },
-    windows: { symbol: 'Alt', text: 'Alt' },
-    linux:   { symbol: 'Alt', text: 'Alt' },
-  },
-  '⌃': {
-    macos:   { symbol: '⌃',   text: 'Control' },
-    windows: { symbol: 'Ctrl', text: 'Ctrl' },
-    linux:   { symbol: 'Ctrl', text: 'Ctrl' },
-  },
-  '⇧': {
-    macos:   { symbol: '⇧', text: 'Shift' },
-    windows: { symbol: '⇧', text: 'Shift' },
-    linux:   { symbol: '⇧', text: 'Shift' },
-  },
-  '⇪': {
-    macos:   { symbol: '⇪', text: 'CapsLock' },
-    windows: { symbol: '⇪', text: 'CapsLock' },
-    linux:   { symbol: '⇪', text: 'CapsLock' },
-  },
-};
-
-/** Non-modifier glyph → symbol/text alternates. Arrows have no text form. */
-const KEY_LEGEND: Record<string, Record<LegendStyle, string>> = {
-  '↵': { symbol: '↵', text: 'Enter' },
-  '⇥': { symbol: '⇥', text: 'Tab' },
-  '␣': { symbol: '␣', text: 'Space' },
-  '⎋': { symbol: '⎋', text: 'Esc' },
-  '⌫': { symbol: '⌫', text: 'Backspace' },
-  '⌦': { symbol: '⌦', text: 'Delete' },
-};
-
+/** A story-only translator that picks the right label for the input glyph
+ *  given the platform + legend pair. Delegates to the production helpers
+ *  for everything they cover; passes other glyphs through unchanged. */
 function relabel(label: string, platform: Platform, legend: LegendStyle): string {
-  const mod = MODIFIER_LEGEND[label];
-  if (mod) return mod[platform][legend];
-  const key = KEY_LEGEND[label];
-  if (key) return key[legend];
+  const modByGlyph: Record<string, LogicalMod | undefined> = {
+    '⌘': 'mod', '⇧': 'shift', '⌥': 'alt', '⌃': 'ctrl', '⇪': 'meta',
+  };
+  const mod = modByGlyph[label];
+  if (mod) {
+    const [spec] = keySpecsFromMods([{ name: mod }], { platform, legend });
+    return spec.label;
+  }
+  const namedByGlyph: Record<string, string | undefined> = {
+    '⎋': 'Escape', '↵': 'Enter', '⇥': 'Tab', '␣': 'Space', '⌫': 'Backspace', '⌦': 'Delete',
+  };
+  const named = namedByGlyph[label];
+  if (named) return keySpecFromKey(named, { platform, legend }).label;
   return label;
 }
 
 interface StoryArgs extends KeyCapProps {
-  /** Storybook-only — substitutes the input modifier glyph for the
-   *  platform-native form. The KeyCap component itself is platform-agnostic;
-   *  this control lets stories preview each platform's conventions. */
+  /** Storybook-only — substitutes the input modifier or named-key glyph
+   *  for the platform-native form via `keySpecsFromMods` / `keySpecFromKey`. */
   platform?: Platform;
-  /** Storybook-only — symbol form (⌘ / ⌥ / ↵ / ⎋) vs text form
-   *  (Cmd / Option / Enter / Esc). Modifier glyphs without a recognized
-   *  platform symbol fall back to text in both modes. */
+  /** Storybook-only — `auto` (default) picks symbol on macOS, text
+   *  elsewhere. `symbol` and `text` force a specific form. */
   legend?: LegendStyle;
 }
 
@@ -78,7 +50,7 @@ const meta: Meta<StoryArgs> = {
     inverted: false,
     variant: 'default',
     platform: 'macos',
-    legend: 'symbol',
+    legend: 'auto',
   },
   argTypes: {
     label: {
@@ -98,16 +70,16 @@ const meta: Meta<StoryArgs> = {
     platform: {
       control: 'inline-radio',
       options: PLATFORMS,
-      description: 'Rewrites modifier glyphs for the platform (e.g. ⌘ → Win on Windows).',
+      description: 'Rewrites modifier and named-key glyphs for the platform.',
     },
     legend: {
       control: 'inline-radio',
-      options: LEGEND_STYLES,
-      description: '`symbol` keeps glyphs (⌘, ↵). `text` spells them out (Cmd, Enter).',
+      options: LEGENDS,
+      description: '`auto` (default): symbol on macOS, text elsewhere. `symbol` / `text` force a specific form.',
     },
     className: { table: { disable: true } },
   },
-  render: ({ platform = 'macos', legend = 'symbol', label, ...rest }) => (
+  render: ({ platform = 'macos', legend = 'auto', label, ...rest }) => (
     <KeyCap {...rest} label={relabel(label, platform, legend)} />
   ),
 };
@@ -123,13 +95,20 @@ export const Modifier: Story = {
   args: { label: '⌘' },
 };
 
-/** Wide glyphs (⇥ ↵ ␣) and multi-character labels render extra-wide. */
+/** Named keys (Esc, Enter, Tab, Space, Backspace, Delete) get a platform-
+ *  appropriate label — `⎋` on macOS, `Esc` on Windows / Linux. */
+export const NamedKey: Story = {
+  args: { label: '⎋' },
+};
+
+/** Wide glyphs and multi-character labels render extra-wide. */
 export const Wide: Story = {
   args: { label: '↵' },
 };
 
-/** Inverted chip — under the default variant, face flips and the border
- *  becomes dotted in the legend color. */
+/** Inverted chip — under the default variant, face flips, the border
+ *  becomes dotted in the legend color, and the legend drops to 60%
+ *  opacity. */
 export const Inverted: Story = {
   args: { label: '⌘', inverted: true },
 };
@@ -145,7 +124,7 @@ export const Minimal: Story = {
  *  `color`. */
 export const MinimalInColoredText: Story = {
   args: { label: '⌘', variant: 'minimal' },
-  render: ({ platform = 'macos', legend = 'symbol', label, ...rest }) => (
+  render: ({ platform = 'macos', legend = 'auto', label, ...rest }) => (
     <span style={{ color: '#7fb069' }}>
       Press <KeyCap {...rest} label={relabel(label, platform, legend)} /> to confirm.
     </span>
@@ -162,13 +141,13 @@ export const MinimalOptional: Story = {
  *  combination side by side. The `platform` and `legend` controls affect
  *  the modifier and named-key rows. */
 export const Gallery: Story = {
-  args: { platform: 'macos', legend: 'symbol' },
+  args: { platform: 'macos', legend: 'auto' },
   argTypes: {
     label: { table: { disable: true } },
     inverted: { table: { disable: true } },
     variant: { table: { disable: true } },
   },
-  render: ({ platform = 'macos', legend = 'symbol' }) => (
+  render: ({ platform = 'macos', legend = 'auto' }) => (
     <KeyCapGallery platform={platform} legend={legend} />
   ),
 };
@@ -192,13 +171,13 @@ function KeyCapGallery({ platform, legend }: { platform: Platform; legend: Legen
     verticalAlign: 'middle',
   };
   return (
-    <table style={{ borderCollapse: 'collapse', fontFamily: 'system-ui, sans-serif', fontSize: 13, color: '#d4c4a8' }}>
+    <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
       <thead>
         <tr>
           <th style={cell}>input label</th>
           <th style={cell}>kind</th>
           <th style={cell}>default</th>
-          <th style={cell}>inverted</th>
+          <th style={cell}>optional</th>
           <th style={cell}>minimal</th>
           <th style={cell}>minimal + optional</th>
         </tr>
@@ -220,4 +199,140 @@ function KeyCapGallery({ platform, legend }: { platform: Platform; legend: Legen
       </tbody>
     </table>
   );
+}
+
+/** Side-by-side keyboard layouts for macOS / Windows / Linux. Renders an
+ *  Esc + function-bar row, the symbol row, the alpha home row, and the
+ *  control cluster — enough surface to show every OS-divergent label
+ *  (Esc / Cmd / Win / Super / Option / Alt) at once. */
+export const KeyboardLayouts: Story = {
+  args: { legend: 'auto' },
+  argTypes: {
+    label: { table: { disable: true } },
+    inverted: { table: { disable: true } },
+    variant: { table: { disable: true } },
+    platform: { table: { disable: true } },
+  },
+  render: ({ legend = 'auto' }) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {PLATFORMS.map((p) => (
+        <KeyboardLayout key={p} platform={p} legend={legend} />
+      ))}
+    </div>
+  ),
+};
+
+function KeyboardLayout({ platform, legend }: { platform: Platform; legend: LegendStyle }): ReactElement {
+  // ANSI-ish layout. Standard key = 18px (`.key[data-kind='square']`),
+  // gap = 3px. Multi-unit keys override width inline.
+  const U = 18;
+  const GAP = 3;
+  // n-unit width including the gaps the chip displaces.
+  const unit = (n: number) => n * U + (n - 1) * GAP;
+
+  const shift = keySpecsFromMods([{ name: 'shift' }], { platform, legend })[0].label;
+  const ctrl = keySpecsFromMods([{ name: 'ctrl' }], { platform, legend })[0].label;
+  const alt = keySpecsFromMods([{ name: 'alt' }], { platform, legend })[0].label;
+  const meta = keySpecsFromMods([{ name: 'meta' }], { platform, legend })[0].label;
+  const space = keySpecFromKey('Space', { platform, legend }).label;
+  const tab = keySpecFromKey('Tab', { platform, legend }).label;
+  const enter = keySpecFromKey('Enter', { platform, legend }).label;
+  const backspace = keySpecFromKey('Backspace', { platform, legend }).label;
+  const esc = keySpecFromKey('Escape', { platform, legend }).label;
+
+  // Function row — Esc + F1..F12, grouped F1-4, F5-8, F9-12.
+  const fnRow: ReactElement[] = [
+    <KeyCap key="esc" label={esc} />,
+    <Spacer key="g1" width={unit(0.6)} />,
+    ...['F1', 'F2', 'F3', 'F4'].map((k) => <KeyCap key={k} label={k} />),
+    <Spacer key="g2" width={unit(0.4)} />,
+    ...['F5', 'F6', 'F7', 'F8'].map((k) => <KeyCap key={k} label={k} />),
+    <Spacer key="g3" width={unit(0.4)} />,
+    ...['F9', 'F10', 'F11', 'F12'].map((k) => <KeyCap key={k} label={k} />),
+  ];
+
+  // Number row — ~13 keys + Backspace (1.5u). Total = 13 * 1u + 1.5u.
+  const numRow: ReactElement[] = [
+    ...['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '='].map((k) => (
+      <KeyCap key={k} label={k} />
+    )),
+    <KeyCap key="bs" label={backspace} style={{ width: unit(1.7) }} />,
+  ];
+
+  // QWERTY row — Tab (1.5u) + 12 keys + \ (1u). Total matches numRow width.
+  const qwertyRow: ReactElement[] = [
+    <KeyCap key="tab" label={tab} style={{ width: unit(1.7) }} />,
+    ...['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']'].map((k) => (
+      <KeyCap key={k} label={k} />
+    )),
+    <KeyCap key="bsl" label="\\" />,
+  ];
+
+  // Home row — Caps (1.75u) + 11 keys + Enter (2.25u).
+  const homeRow: ReactElement[] = [
+    <KeyCap key="caps" label="Caps" style={{ width: unit(1.95) }} />,
+    ...['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', "'"].map((k) => (
+      <KeyCap key={k} label={k} />
+    )),
+    <KeyCap key="enter" label={enter} style={{ width: unit(2.45) }} />,
+  ];
+
+  // Bottom (ZXCV) row — Shift (2.25u) + 10 keys + Shift (2.75u).
+  const bottomRow: ReactElement[] = [
+    <KeyCap key="shiftL" label={shift} style={{ width: unit(2.45) }} />,
+    ...['Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/'].map((k) => (
+      <KeyCap key={k} label={k} />
+    )),
+    <KeyCap key="shiftR" label={shift} style={{ width: unit(2.95) }} />,
+  ];
+
+  // Modifier row — platform-specific. Space bar is the dominant wide key.
+  let modifierRow: ReactElement[];
+  if (platform === 'macos') {
+    modifierRow = [
+      <KeyCap key="fn"     label="fn" />,
+      <KeyCap key="ctrl"   label={ctrl} />,
+      <KeyCap key="alt"    label={alt} />,
+      <KeyCap key="meta"   label={meta} style={{ width: unit(1.25) }} />,
+      <KeyCap key="space"  label={space} style={{ width: unit(5.5) }} />,
+      <KeyCap key="meta2"  label={meta} style={{ width: unit(1.25) }} />,
+      <KeyCap key="alt2"   label={alt} />,
+    ];
+  } else {
+    modifierRow = [
+      <KeyCap key="ctrl"  label={ctrl} style={{ width: unit(1.25) }} />,
+      <KeyCap key="meta"  label={meta} style={{ width: unit(1.25) }} />,
+      <KeyCap key="alt"   label={alt} style={{ width: unit(1.25) }} />,
+      <KeyCap key="space" label={space} style={{ width: unit(6.25) }} />,
+      <KeyCap key="alt2"  label={alt} style={{ width: unit(1.25) }} />,
+      <KeyCap key="meta2" label={meta} style={{ width: unit(1.25) }} />,
+      <KeyCap key="menu"  label="Menu" style={{ width: unit(1.25) }} />,
+      <KeyCap key="ctrl2" label={ctrl} style={{ width: unit(1.25) }} />,
+    ];
+  }
+
+  return (
+    <section>
+      <header style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em', opacity: 0.65, marginBottom: 6 }}>
+        {platform}
+      </header>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: GAP }}>
+        <Row gap={GAP}>{fnRow}</Row>
+        <Spacer width={1} height={6} />
+        <Row gap={GAP}>{numRow}</Row>
+        <Row gap={GAP}>{qwertyRow}</Row>
+        <Row gap={GAP}>{homeRow}</Row>
+        <Row gap={GAP}>{bottomRow}</Row>
+        <Row gap={GAP}>{modifierRow}</Row>
+      </div>
+    </section>
+  );
+}
+
+function Row({ children, gap }: { children: ReactElement[]; gap: number }): ReactElement {
+  return <div style={{ display: 'flex', gap, alignItems: 'center' }}>{children}</div>;
+}
+
+function Spacer({ width, height }: { width: number; height?: number }): ReactElement {
+  return <span aria-hidden style={{ display: 'inline-block', width, height: height ?? 1 }} />;
 }

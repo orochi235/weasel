@@ -1,60 +1,31 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { CSSProperties, ReactElement } from 'react';
 import { KeySequence, type KeySpec, type KeySequenceProps } from './Keycaps';
-import type { KeyCapVariant } from './Keycap';
+import {
+  keySpecFromKey,
+  keySpecsFromMods,
+  type KeyCapVariant,
+  type LegendStyle,
+  type LogicalMod,
+  type Platform,
+} from './index';
 
 const VARIANTS: KeyCapVariant[] = ['default', 'minimal'];
-
-type Platform = 'macos' | 'windows' | 'linux';
 const PLATFORMS: Platform[] = ['macos', 'windows', 'linux'];
+const LEGEND_STYLES: LegendStyle[] = ['auto', 'symbol', 'text'];
 
-type LegendStyle = 'symbol' | 'text';
-const LEGEND_STYLES: LegendStyle[] = ['symbol', 'text'];
-
-// Mirror of the table in Keycap.stories.tsx — kept inline rather than
-// extracted so each stories file is self-contained.
-const MODIFIER_LEGEND: Record<string, Record<Platform, Record<LegendStyle, string>>> = {
-  '⌘': {
-    macos:   { symbol: '⌘', text: 'Cmd' },
-    windows: { symbol: '⊞', text: 'Win' },
-    linux:   { symbol: '⊞', text: 'Super' },
-  },
-  '⌥': {
-    macos:   { symbol: '⌥',  text: 'Option' },
-    windows: { symbol: 'Alt', text: 'Alt' },
-    linux:   { symbol: 'Alt', text: 'Alt' },
-  },
-  '⌃': {
-    macos:   { symbol: '⌃',   text: 'Control' },
-    windows: { symbol: 'Ctrl', text: 'Ctrl' },
-    linux:   { symbol: 'Ctrl', text: 'Ctrl' },
-  },
-  '⇧': {
-    macos:   { symbol: '⇧', text: 'Shift' },
-    windows: { symbol: '⇧', text: 'Shift' },
-    linux:   { symbol: '⇧', text: 'Shift' },
-  },
-  '⇪': {
-    macos:   { symbol: '⇪', text: 'CapsLock' },
-    windows: { symbol: '⇪', text: 'CapsLock' },
-    linux:   { symbol: '⇪', text: 'CapsLock' },
-  },
+const MOD_BY_GLYPH: Record<string, LogicalMod | undefined> = {
+  '⌘': 'mod', '⇧': 'shift', '⌥': 'alt', '⌃': 'ctrl', '⇪': 'meta',
 };
-
-const KEY_LEGEND: Record<string, Record<LegendStyle, string>> = {
-  '↵': { symbol: '↵', text: 'Enter' },
-  '⇥': { symbol: '⇥', text: 'Tab' },
-  '␣': { symbol: '␣', text: 'Space' },
-  '⎋': { symbol: '⎋', text: 'Esc' },
-  '⌫': { symbol: '⌫', text: 'Backspace' },
-  '⌦': { symbol: '⌦', text: 'Delete' },
+const NAMED_BY_GLYPH: Record<string, string | undefined> = {
+  '⎋': 'Escape', '↵': 'Enter', '⇥': 'Tab', '␣': 'Space', '⌫': 'Backspace', '⌦': 'Delete',
 };
 
 function relabel(label: string, platform: Platform, legend: LegendStyle): string {
-  const mod = MODIFIER_LEGEND[label];
-  if (mod) return mod[platform][legend];
-  const key = KEY_LEGEND[label];
-  if (key) return key[legend];
+  const mod = MOD_BY_GLYPH[label];
+  if (mod) return keySpecsFromMods([{ name: mod }], { platform, legend })[0].label;
+  const named = NAMED_BY_GLYPH[label];
+  if (named) return keySpecFromKey(named, { platform, legend }).label;
   return label;
 }
 
@@ -79,7 +50,7 @@ const meta: Meta<StoryArgs> = {
     separator: '+',
     variant: 'default',
     platform: 'macos',
-    legend: 'symbol',
+    legend: 'auto',
   },
   argTypes: {
     keys: {
@@ -105,11 +76,11 @@ const meta: Meta<StoryArgs> = {
     legend: {
       control: 'inline-radio',
       options: LEGEND_STYLES,
-      description: '`symbol` keeps glyphs (⌘, ↵). `text` spells them out (Cmd, Enter).',
+      description: '`auto` (default): symbol on macOS, text elsewhere. `symbol` / `text` force a specific form.',
     },
     className: { table: { disable: true } },
   },
-  render: ({ platform = 'macos', legend = 'symbol', keys, ...rest }) => (
+  render: ({ platform = 'macos', legend = 'auto', keys, ...rest }) => (
     <KeySequence {...rest} keys={relabelKeys(keys, platform, legend)} />
   ),
 };
@@ -174,7 +145,7 @@ export const Minimal: Story = {
     keys: [{ label: '⌘' }, { label: '⇧' }, { label: 'P' }],
     variant: 'minimal',
   },
-  render: ({ platform = 'macos', legend = 'symbol', keys, ...rest }) => (
+  render: ({ platform = 'macos', legend = 'auto', keys, ...rest }) => (
     <span style={{ color: '#d4a574', fontSize: 14 }}>
       Quick action: <KeySequence {...rest} keys={relabelKeys(keys, platform, legend)} />
     </span>
@@ -184,13 +155,13 @@ export const Minimal: Story = {
 /** Side-by-side comparison: same shortcuts in default vs minimal (under a
  *  colored container). Honors `platform` + `legend`. */
 export const Gallery: Story = {
-  args: { platform: 'macos', legend: 'symbol' },
+  args: { platform: 'macos', legend: 'auto' },
   argTypes: {
     keys: { table: { disable: true } },
     separator: { table: { disable: true } },
     variant: { table: { disable: true } },
   },
-  render: ({ platform = 'macos', legend = 'symbol' }) => (
+  render: ({ platform = 'macos', legend = 'auto' }) => (
     <KeySequenceGallery platform={platform} legend={legend} />
   ),
 };
@@ -210,7 +181,7 @@ function KeySequenceGallery({ platform, legend }: { platform: Platform; legend: 
     verticalAlign: 'middle',
   };
   return (
-    <table style={{ borderCollapse: 'collapse', fontFamily: 'system-ui, sans-serif', fontSize: 13, color: '#d4c4a8' }}>
+    <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
       <thead>
         <tr>
           <th style={cell}>case</th>

@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import s from './Keycaps.module.css';
 
 const MODIFIER_GLYPHS = new Set(['⌘', '⇪', '⌥', '⌃', '⇧']);
@@ -28,17 +29,23 @@ export interface KeyCapProps {
    *  chip should take the surrounding text color. */
   variant?: KeyCapVariant;
   className?: string;
+  /** Optional inline style. Useful for one-off width overrides (e.g.
+   *  building a keyboard-layout where the space bar spans several
+   *  standard-key widths). The component sets no inline styles of its
+   *  own — everything else comes from the CSS module. */
+  style?: CSSProperties;
 }
 
 /** Single bordered keycap chip for one glyph (modifier or key). Use
  *  `KeySequence` to render a full shortcut. */
-export function KeyCap({ label, inverted = false, variant = 'default', className }: KeyCapProps) {
+export function KeyCap({ label, inverted = false, variant = 'default', className, style }: KeyCapProps) {
   return (
     <kbd
       className={[s.key, className].filter(Boolean).join(' ')}
       data-kind={inferKeycapKind(label)}
       data-variant={variant === 'default' ? undefined : variant}
       data-inverted={inverted || undefined}
+      style={style}
     >
       {label}
     </kbd>
