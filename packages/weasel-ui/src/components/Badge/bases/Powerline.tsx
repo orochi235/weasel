@@ -16,6 +16,8 @@ const DEFAULTS: Required<PowerlineParams> = {
   depth: 6,
 };
 
+// Samples per vertical edge. 64 is smooth enough for chevron/round caps and
+// cheap to evaluate; the perimeter is sampled once per `build` call.
 const EDGE_SAMPLES = 64;
 
 const Powerline: BaseModule<PowerlineParams> = {
@@ -29,8 +31,11 @@ const Powerline: BaseModule<PowerlineParams> = {
 
     const pts: { x: number; y: number; nx: number; ny: number }[] = [];
 
-    pts.push({ x: 0, y: 0, nx: 0, ny: -1 });
-    pts.push({ x: 100, y: 0, nx: 0, ny: -1 });
+    // Top corners follow the same edge profiles as the rest of the verticals,
+    // so a profile that protrudes/cuts at t=0 (e.g. slant-up) doesn't introduce
+    // a corner kink between the flat top and the first vertical sample.
+    pts.push({ x: left(0, depth) * sx, y: 0, nx: 0, ny: -1 });
+    pts.push({ x: (boxW + right(0, depth)) * sx, y: 0, nx: 0, ny: -1 });
 
     for (let i = 1; i < EDGE_SAMPLES; i++) {
       const t = i / EDGE_SAMPLES;

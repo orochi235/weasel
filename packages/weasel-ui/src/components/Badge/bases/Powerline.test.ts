@@ -59,6 +59,17 @@ describe('Powerline base', () => {
     expect(insets.top).toBe(0);
     expect(insets.bottom).toBe(0);
   });
+
+  it('top corners follow the edge profiles when they are non-zero at t=0', () => {
+    // slant-up returns `depth` at t=0, so the top-right corner should sit at
+    // x = (boxW + depth) * sx and the top-left at x = depth * sx — not at the
+    // unprotruded rect corners.
+    const s = Powerline.build({ leftEdge: 'slant-up', rightEdge: 'slant-up', depth: 6 }, W, H);
+    // Sample s=0 (start of perimeter = top-left corner).
+    const start = s.perimeterAt(0);
+    expect(start.x).toBeCloseTo((6 / W) * 100, 3);
+    expect(start.y).toBeCloseTo(0, 3);
+  });
 });
 
 describe('Powerline base registration', () => {
