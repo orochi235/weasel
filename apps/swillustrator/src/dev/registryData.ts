@@ -1,6 +1,5 @@
 import type { ComponentType } from 'react';
 import * as Weasel from '@orochi235/weasel';
-import * as WeaselUi from '@orochi235/weasel-ui';
 import { defaultNodeKinds, type NodeKind } from '@orochi235/weasel';
 import { canonicalModifiers, parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@orochi235/weasel/routing';
 import * as ActionIcons from '../actionIcons';
@@ -15,7 +14,6 @@ export type TreeEntry =
   | BundleEntry
   | IconEntry
   | OpFactoryEntry
-  | PublicExportEntry
   | PhaseEntry
   | GestureEntry
   | PhaseOutputEntry
@@ -209,16 +207,6 @@ export interface OpFactoryEntry {
   label: string;
 }
 
-export interface PublicExportEntry {
-  kind: 'publicExport';
-  id: string;
-  label: string;
-  /** Which library the symbol is exported from. Base = `@orochi235/weasel`;
-   *  `ui` = `@orochi235/weasel-ui`. Used by the tree to show a library
-   *  badge next to non-base entries. */
-  source: 'base' | 'ui';
-}
-
 /** Lifecycle phase a `ToolDef` can declare routes in. `initial` is the
  *  resting phase; `engaged` is entered after a phase transition (e.g.
  *  start of a drag). */
@@ -299,7 +287,7 @@ export function collectMeta(): readonly MetaEntry[] {
 
 export type TreeCategory =
   | 'tools' | 'actions' | 'shapeKinds' | 'routingKinds' | 'bundles'
-  | 'icons' | 'ops' | 'publicExports'
+  | 'icons' | 'ops'
   | 'phases' | 'gestures' | 'phaseOutputs'
   | 'hotkeyTriggers' | 'slots' | 'routes' | 'routeTargets' | 'modifierSets' | 'groups'
   | 'meta';
@@ -366,47 +354,6 @@ export function collectOpFactories(): readonly OpFactoryEntry[] {
     .map((id) => ({ kind: 'opFactory', id, label: id }));
 }
 
-export function collectPublicExports(): readonly PublicExportEntry[] {
-  const out: PublicExportEntry[] = [];
-  const seen = new Set<string>();
-  for (const [id, value] of Object.entries(Weasel)) {
-    if (value === undefined || value === null) continue;
-    if (id === 'default') continue;
-    if (seen.has(id)) continue;
-    seen.add(id);
-    out.push({ kind: 'publicExport', id, label: id, source: 'base' });
-  }
-  for (const [id, value] of Object.entries(WeaselUi)) {
-    if (value === undefined || value === null) continue;
-    if (id === 'default') continue;
-    if (seen.has(id)) continue;
-    seen.add(id);
-    out.push({ kind: 'publicExport', id, label: id, source: 'ui' });
-  }
-  return out;
-}
-
-/** Names of kit-built-in tool hooks. Used by the inspector to tag matching
- *  public exports with a `'tool hook'` badge. Per-tool `hookName` for the
- *  Hook column comes from the live tool's `Tool.hookName` (set by each hook
- *  on its `defineTool({ ... })` spec), not from this set. */
-export const KIT_TOOL_HOOK_NAMES: ReadonlySet<string> = new Set([
-  'useSelectTool',
-  'useHandTool',
-  'useRotateTool',
-  'useRectTool',
-  'useEllipseTool',
-  'useLineTool',
-  'usePolygonTool',
-  'useStarTool',
-  'usePenTool',
-  'usePencilTool',
-  'useLassoTool',
-  'useTextTool',
-  'useEyedropperTool',
-  'usePinchZoomTool',
-]);
-
 /** Shape-kind ids the inspector mirrors from the kit. Sourced from
  *  `Weasel.KIT_SHAPE_KINDS` so adding a new builtin shape tool to the kit
  *  surfaces here automatically (parity-checked by
@@ -423,7 +370,7 @@ export function collectPhases(): readonly PhaseEntry[] {
  *  by `RegistryTree` to render `(n)` next to leaves where the count is
  *  meaningful (e.g. gestures → number of tools binding the channel).
  *  Returns `undefined` for kinds where a count would be 1:1 (icons,
- *  op factories, public exports), noisy (tools, actions), or nonsensical. */
+ *  op factories), noisy (tools, actions), or nonsensical. */
 export function countForEntry(
   entry: TreeEntry,
   tools: readonly ToolEntry[],

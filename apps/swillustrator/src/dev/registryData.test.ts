@@ -4,7 +4,6 @@ import {
   collectBundles,
   collectRoutingKinds,
   collectOpFactories,
-  collectPublicExports,
   collectShapeKinds,
 } from './registryData';
 import { defaultNodeKinds, type NodeKind } from '@orochi235/weasel';
@@ -36,11 +35,6 @@ describe('registryData static collectors', () => {
     expect(ids).toContain('createInsertOp');
     expect(ids).toContain('createDeleteOp');
     expect(ids).toContain('createTransformOp');
-  });
-
-  it('collectPublicExports returns a non-empty list', () => {
-    const exports = collectPublicExports();
-    expect(exports.length).toBeGreaterThan(20);
   });
 
   it('collectShapeKinds returns the built-in shape kind ids', () => {

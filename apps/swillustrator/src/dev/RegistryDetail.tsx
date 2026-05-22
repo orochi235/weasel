@@ -26,13 +26,13 @@ function modifierKeys(modifiers: ParsedModifiers): readonly KeySpec[] | undefine
 import s from './RegistryInspector.module.css';
 import type {
   TreeEntry, ToolEntry, ActionEntry, BundleEntry, IconEntry, OpFactoryEntry,
-  PublicExportEntry, ShapeKindEntry, RoutingKindEntry, PhaseSummary, PhaseEntry, GestureEntry, PhaseOutputEntry,
+  ShapeKindEntry, RoutingKindEntry, PhaseSummary, PhaseEntry, GestureEntry, PhaseOutputEntry,
   OpKindEntry, HotkeyTriggerEntry, SlotEntry, RouteEntry, RouteTargetEntry, ModifierSetEntry, GroupEntry,
   MetaEntry, CallbackRef,
 } from './registryData';
 import { BOOLEAN_BADGE_PROPS, BUNDLE_BADGE_PROPS, CHANNEL_BADGE_PROPS, GESTURE_BADGE_PROPS, HOTKEY_TRIGGER_GLYPHS, KIND_BADGE_PROPS, PHASE_BADGE_PROPS, TOKEN_SETS, type TokenSet } from './badgeTokens';
 import { canonicalModifiers, formatPhaseAtom, getGestureDescriptor, type GestureName } from '@orochi235/weasel/routing';
-import { collectBundles, collectIcons, GESTURE_CHANNEL_KEYS, PHASE_OUTPUT_KEYS, parseRoute, KIT_TOOL_HOOK_NAMES } from './registryData';
+import { collectBundles, GESTURE_CHANNEL_KEYS, PHASE_OUTPUT_KEYS, parseRoute } from './registryData';
 void GESTURE_CHANNEL_KEYS;
 void PHASE_OUTPUT_KEYS;
 
@@ -97,7 +97,7 @@ import { findSourceMatch } from './sourceLookup';
 
 /** Navigate to any entry in the inspector. The resolver in `RegistryInspector`
  *  walks every category node to find a `kind+id` match — so a `<Tool>` can
- *  link to a `<PublicExport>`, a `<Bundle>` can link back to `<Tool>` rows,
+ *  link back to its `<Bundle>` rows, a `<Bundle>` can link to `<Tool>` rows,
  *  etc. */
 export type NavTarget = { kind: TreeEntry['kind']; id: string };
 
@@ -143,7 +143,6 @@ export function RegistryDetail({ entry, tools, actions, onNavigate }: Props) {
     case 'routingKind':   return <RoutingKindDetail entry={entry} onNavigate={onNavigate} />;
     case 'icon':          return <IconDetail entry={entry} />;
     case 'opFactory':     return <OpFactoryDetail entry={entry} />;
-    case 'publicExport':  return <PublicExportDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'phase':         return <PhaseDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'gesture':       return <GestureDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'phaseOutput':   return <PhaseOutputDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
@@ -669,7 +668,7 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
         {entry.hookName && (
           <>
             <dt>hook</dt>
-            <dd><EntryLink kind="publicExport" id={entry.hookName} onNavigate={onNavigate} /></dd>
+            <dd><code className={s.tag}>{entry.hookName}</code></dd>
           </>
         )}
         <dt>slot</dt>
@@ -1094,72 +1093,3 @@ function OpFactoryDetail({ entry }: { entry: OpFactoryEntry }) {
   );
 }
 
-function PublicExportDetail({
-  entry, tools, onNavigate,
-}: {
-  entry: PublicExportEntry;
-  tools: readonly ToolEntry[];
-  onNavigate: Props['onNavigate'];
-}) {
-  const value = (Weasel as Record<string, unknown>)[entry.id];
-  const classification = classifyExport(entry.id, value);
-  const match = findSourceMatch(entry.id);
-  // Back-link: if a bundled icon shares this name (e.g. `RectIcon`), surface
-  // it so consumers can find the visual asset behind a public re-export.
-  const iconHit = collectIcons().find((i) => i.id === entry.id);
-  // Tool-hook back-link: `useRectTool` → tool id `rect`. Resolved via the
-  // live tools snapshot — match by `hookName` so renamed hooks still link.
-  const toolHit = tools.find((t) => t.hookName === entry.id);
-  return (
-    <div>
-      <h2 className={s.detailHeading}>{entry.id}</h2>
-      <dl className={s.detailList}>
-        <dt>classification</dt>
-        <dd>{classification.map((c) => <code key={c} className={s.tag}>{c}</code>)}</dd>
-        <dt>runtime</dt><dd><code className={s.tag}>{typeof value}</code></dd>
-        {toolHit && (
-          <>
-            <dt>tool</dt>
-            <dd><EntryLink kind="tool" id={toolHit.id} label={toolHit.label} onNavigate={onNavigate} /></dd>
-          </>
-        )}
-        {iconHit && (
-          <>
-            <dt>icon</dt>
-            <dd>
-              <span className={s.toolIcon} aria-hidden><iconHit.Component /></span>
-              <EntryLink kind="icon" id={iconHit.id} onNavigate={onNavigate} />
-            </dd>
-          </>
-        )}
-        {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
-      </dl>
-      {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
-    </div>
-  );
-}
-
-/** Classify a public export by runtime shape + naming convention. Tags are
- *  additive: a `useFoo` function gets both `hook` and `function`; an
- *  exported `Foo` function gets `component` only when the name starts with
- *  an uppercase letter (React-component convention). Types-only exports
- *  don't appear at runtime, so they aren't represented here. */
-function classifyExport(id: string, value: unknown): readonly string[] {
-  const tags: string[] = [];
-  const t = typeof value;
-  if (t === 'function') {
-    tags.push('function');
-    if (/^use[A-Z]/.test(id)) tags.push('hook');
-    else if (/^[A-Z]/.test(id)) tags.push('component');
-  } else if (t === 'object' && value !== null) {
-    tags.push('object');
-  } else if (t === 'symbol') {
-    tags.push('symbol');
-  } else {
-    tags.push(t);
-  }
-  if (KIT_TOOL_HOOK_NAMES.has(id)) {
-    tags.push('tool hook');
-  }
-  return tags;
-}

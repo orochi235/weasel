@@ -110,9 +110,6 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
           {n.entries.map((e) => {
             const isSelected = selected && selected.kind === e.kind && selected.id === e.id;
             const count = getCount?.(e);
-            const libBadge = e.kind === 'publicExport' && e.source === 'ui'
-              ? <Badge className={s.leafBadge} shape="pill" size="sm" tone="info" variant="solid">UI</Badge>
-              : null;
             return (
               <li key={`${e.kind}:${e.id}`}>
                 <button
@@ -122,7 +119,6 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
                   onClick={() => onSelect(e)}
                 >
                   {e.label}
-                  {libBadge && <> {libBadge}</>}
                   {count !== undefined && <> <Badge className={s.leafBadge} shape="pill" size="sm" tone="neutral" variant="solid">{count}</Badge></>}
                 </button>
               </li>
