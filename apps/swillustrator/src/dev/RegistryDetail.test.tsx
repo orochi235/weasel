@@ -62,19 +62,19 @@ describe('RegistryDetail', () => {
   });
 
   it('renders a ShapeKind entry with id', () => {
-    const entry: TreeEntry = { kind: 'shapeKind', id: 'rect', label: 'rect' };
+    const entry: TreeEntry = { kind: 'shapeKind', id: 'rect', label: 'rect', facet: 'shape' };
     render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
     expect(screen.getByText('rect')).toBeTruthy();
   });
 
-  it('renders a NodeKind entry with id and source', () => {
+  it('renders a RoutingKind entry with id and source', () => {
     const entry: TreeEntry = {
-      kind: 'nodeKind', id: 'rect', label: 'rect', source: 'default', shapeKindId: 'rect',
+      kind: 'routingKind', id: 'rect', label: 'rect', facet: 'routing', source: 'default', shapeKindId: 'rect',
     };
     render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
     expect(screen.getAllByText('rect').length).toBeGreaterThan(0);
     expect(screen.getByText('default')).toBeTruthy();
-    expect(screen.getByText('node-kind')).toBeTruthy();
+    expect(screen.getByText('routing-kind')).toBeTruthy();
   });
 
   it('renders an OpFactory entry with id', () => {

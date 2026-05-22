@@ -17,7 +17,7 @@ import s from './RegistryInspector.module.css';
 export interface RegistrySnapshot {
   readonly tools: readonly ToolEntry[];
   readonly actions: readonly ActionEntry[];
-  readonly nodeKinds: readonly NodeKind[];
+  readonly routingKinds: readonly NodeKind[];
 }
 
 interface ProbeProps {
@@ -133,7 +133,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
     });
     if (sig === lastRef.current) return;
     lastRef.current = sig;
-    onSnapshot({ tools: toolEntries, actions: actionEntries, nodeKinds: defaultNodeKinds });
+    onSnapshot({ tools: toolEntries, actions: actionEntries, routingKinds: defaultNodeKinds });
   });
 
   return (

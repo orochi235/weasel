@@ -298,7 +298,7 @@ export function collectMeta(): readonly MetaEntry[] {
 }
 
 export type TreeCategory =
-  | 'tools' | 'actions' | 'shapeKinds' | 'nodeKinds' | 'bundles'
+  | 'tools' | 'actions' | 'shapeKinds' | 'routingKinds' | 'bundles'
   | 'icons' | 'ops' | 'publicExports'
   | 'phases' | 'gestures' | 'phaseOutputs'
   | 'hotkeyTriggers' | 'slots' | 'routes' | 'routeTargets' | 'modifierSets' | 'groups'
