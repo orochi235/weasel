@@ -67,6 +67,16 @@ describe('RegistryDetail', () => {
     expect(screen.getByText('rect')).toBeTruthy();
   });
 
+  it('renders a NodeKind entry with id and source', () => {
+    const entry: TreeEntry = {
+      kind: 'nodeKind', id: 'rect', label: 'rect', source: 'default', shapeKindId: 'rect',
+    };
+    render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
+    expect(screen.getAllByText('rect').length).toBeGreaterThan(0);
+    expect(screen.getByText('default')).toBeTruthy();
+    expect(screen.getByText('node-kind')).toBeTruthy();
+  });
+
   it('renders an OpFactory entry with id', () => {
     const entry: TreeEntry = { kind: 'opFactory', id: 'createInsertOp', label: 'createInsertOp' };
     render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);

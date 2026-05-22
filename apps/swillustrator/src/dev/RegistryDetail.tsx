@@ -26,7 +26,7 @@ function modifierKeys(modifiers: ParsedModifiers): readonly KeySpec[] | undefine
 import s from './RegistryInspector.module.css';
 import type {
   TreeEntry, ToolEntry, ActionEntry, BundleEntry, IconEntry, OpFactoryEntry,
-  PublicExportEntry, ShapeKindEntry, PhaseSummary, PhaseEntry, GestureEntry, PhaseOutputEntry,
+  PublicExportEntry, ShapeKindEntry, NodeKindEntry, PhaseSummary, PhaseEntry, GestureEntry, PhaseOutputEntry,
   OpKindEntry, HotkeyTriggerEntry, SlotEntry, RouteEntry, RouteTargetEntry, ModifierSetEntry, GroupEntry,
   MetaEntry, CallbackRef,
 } from './registryData';
@@ -140,6 +140,7 @@ export function RegistryDetail({ entry, tools, actions, onNavigate }: Props) {
     case 'action':        return <ActionDetail entry={entry} onNavigate={onNavigate} />;
     case 'bundle':        return <BundleDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'shapeKind':     return <ShapeKindDetail entry={entry} onNavigate={onNavigate} />;
+    case 'nodeKind':      return <NodeKindDetail entry={entry} onNavigate={onNavigate} />;
     case 'icon':          return <IconDetail entry={entry} />;
     case 'opFactory':     return <OpFactoryDetail entry={entry} />;
     case 'publicExport':  return <PublicExportDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
@@ -1032,6 +1033,33 @@ function ShapeKindDetail({
         {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
       </dl>
       {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
+    </div>
+  );
+}
+
+function NodeKindDetail({
+  entry, onNavigate,
+}: {
+  entry: NodeKindEntry;
+  onNavigate: Props['onNavigate'];
+}) {
+  return (
+    <div>
+      <div className={s.toolHeader}>
+        <h2 className={s.detailHeading}>{entry.id}</h2>
+      </div>
+      <dl className={s.detailList}>
+        <dt>kind</dt><dd><KindBadge label="node-kind" /></dd>
+        <dt>source</dt><dd><KindBadge label={entry.source} /></dd>
+        {entry.shapeKindId && (
+          <>
+            <dt>shape kind</dt>
+            <dd>
+              <EntryLink kind="shapeKind" id={entry.shapeKindId} onNavigate={onNavigate} />
+            </dd>
+          </>
+        )}
+      </dl>
     </div>
   );
 }

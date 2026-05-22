@@ -12,6 +12,7 @@ import {
   collectIcons,
   collectMeta,
   collectModifierSets,
+  collectNodeKinds,
   collectOpFactories,
   collectOpKinds,
   collectPhases,
@@ -42,7 +43,7 @@ export function RegistryInspector() {
     return () => { document.title = prev; };
   }, []);
 
-  const [runtime, setRuntime] = useState<RegistrySnapshot>({ tools: [], actions: [] });
+  const [runtime, setRuntime] = useState<RegistrySnapshot>({ tools: [], actions: [], nodeKinds: [] });
   const [bundleFilter, setBundleFilter] = useState<string>('all');
   const [textFilter, setTextFilter] = useState<string>('');
   const [selected, setSelected] = useState<TreeEntry | null>(null);
@@ -54,6 +55,7 @@ export function RegistryInspector() {
   const opFactories = useMemo(() => collectOpFactories(), []);
   const publicExports = useMemo(() => collectPublicExports(), []);
   const shapeKinds = useMemo(() => collectShapeKinds(), []);
+  const nodeKinds = useMemo(() => collectNodeKinds(runtime.nodeKinds), [runtime.nodeKinds]);
   const phases = useMemo(() => collectPhases(), []);
   const gestures = useMemo(() => collectGestures(), []);
   const phaseOutputs = useMemo(() => collectPhaseOutputs(), []);
@@ -87,6 +89,7 @@ export function RegistryInspector() {
       },
       { id: 'actions', label: 'Actions', entries: runtime.actions },
       { id: 'shapeKinds', label: 'Shape kinds', entries: shapeKinds },
+      { id: 'nodeKinds', label: 'Node kinds', entries: nodeKinds },
       { id: 'bundles', label: 'Bundles', entries: bundles },
       { id: 'icons', label: 'Icons', entries: icons },
       { id: 'ops', label: 'Ops', entries: opKinds },
@@ -114,7 +117,7 @@ export function RegistryInspector() {
         if (b.id === 'meta') return -1;
         return a.label.localeCompare(b.label, undefined, { sensitivity: 'base' });
       });
-  }, [runtime, activeBundle, bundles, icons, opFactories, publicExports, shapeKinds, phases, gestures, phaseOutputs, opKinds, hotkeyTriggers, slots, routes, routeTargets, modifierSets, groups, meta]);
+  }, [runtime, activeBundle, bundles, icons, opFactories, publicExports, shapeKinds, nodeKinds, phases, gestures, phaseOutputs, opKinds, hotkeyTriggers, slots, routes, routeTargets, modifierSets, groups, meta]);
 
   // Clear selection when the active filters narrow past the selected entry.
   const lower = textFilter.trim().toLowerCase();
