@@ -82,6 +82,7 @@ import { buildAffordanceAt, buildClassifyTarget } from './affordanceAt';
 import type { AnchorState } from './affordanceAt';
 import type { Op } from 'core/ops/types';
 import { useDepRegistry } from 'interactions/actions/depRegistry';
+import { createNodeKindRegistry, type NodeKind } from '../core/scene/nodeKindRegistry';
 
 /**
  * Minimal adapter surface the legacy bridge factories need for delete /
@@ -309,6 +310,30 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  containers (reflow on enter, reparent + reflow on commit). */
     layouts?: SceneToAdapterOptions<TData, TLayer, TPose>['layouts'];
 
+    /**
+     * Node-kind classifiers — list of `NodeKind` entries. The kit constructs
+     * a `NodeKindRegistry` per-`<SceneCanvas>` from this prop, then threads
+     * the resulting classifier into `sceneToAdapter` so the synthesized
+     * adapter exposes `kindOf(id)`. Tool routing tables (e.g.
+     * `{ target: 'rect', actionId: 'move' }`) match against the produced
+     * kind strings.
+     *
+     * Pass `defaultNodeKinds` to pick up the kit's built-in shape kinds
+     * (rect, ellipse, polygon, …) for `data: { kind: '<shape>' }` nodes.
+     * Spread additional entries for consumer-defined kinds.
+     *
+     * See `docs/superpowers/specs/2026-05-21-node-kind-registry-design.md`.
+     *
+     * **Memoize the `kinds` value.** The kit memoizes the registry on the
+     * prop's reference identity. Passing a fresh array each render
+     * (e.g. `kinds={[...defaultNodeKinds, custom]}` inline) rebuilds the
+     * registry and cascades into a new adapter, churning gesture state.
+     * Define the list as a module-level constant, or wrap it in `useMemo`.
+     * (`defaultNodeKinds` alone is a stable module-level constant; spreading
+     * it with extras is what needs the memo.)
+     */
+    kinds?: readonly NodeKind[];
+
     // --- Geometry: hit-test + bounds overrides consumed by the internal
     //     `useSelectTool`. Ignored if the consumer passes their own `tools`. ---
     geometry?: {
@@ -509,6 +534,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selectTool: selectToolOpts,
     insertTool,
     layouts,
+    kinds,
     selection: selectionProp,
     selectionOptions,
     tools: toolsProp,
@@ -622,6 +648,17 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const selectionRef = useRef(selection);
   selectionRef.current = selection;
 
+  // Build a per-instance NodeKindRegistry from the `kinds` prop and expose its
+  // classify() so `sceneToAdapter` can publish `kindOf(id)`. When `kinds` is
+  // absent or empty the classifier is undefined and the adapter omits kindOf
+  // (callers without routing-by-kind needs aren't taxed).
+  const kindClassifier = useMemo(() => {
+    if (!kinds || kinds.length === 0) return undefined;
+    const registry = createNodeKindRegistry();
+    for (const k of kinds) registry.register(k);
+    return (data: TData) => registry.classify(data);
+  }, [kinds]);
+
   const { adapter, selectTool: internalSelect, rotateTool, pickEvery: internalPickEvery, pickBest: internalPickBest, boundsOf: internalBoundsOf } = useSceneSelectTool({
     scene,
     selection,
@@ -629,6 +666,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selectTool: selectToolWithDefaults,
     ...(insertTool ? { insertTool } : {}),
     ...(layouts ? { layouts } : {}),
+    ...(kindClassifier ? { kindOf: kindClassifier } : {}),
   });
 
   // Viewport tools (hand / keyboard zoom / wheel zoom / pinch zoom). All

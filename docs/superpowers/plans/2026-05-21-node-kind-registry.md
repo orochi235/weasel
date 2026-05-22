@@ -4,7 +4,7 @@
 
 **Goal:** Replace the consumer-supplied `adapter.kindOf?` placeholder with a kit-owned `NodeKindRegistry` that consumers populate via a `kinds` prop on `<SceneCanvas>`; ship default classifiers covering the kit's built-in shape kinds; reserve the registry as the convergence target for future kind-keyed facets.
 
-**Architecture:** A new module under `src/scene/` exposes `NodeKind`, `NodeKindRegistry`, `createNodeKindRegistry`, and `defaultNodeKinds`. `<SceneCanvas>` accepts a `kinds: NodeKind[]` prop, constructs a fresh registry per instance, and threads a registry-derived classifier through `sceneToAdapter` so the synthesized adapter publishes a `kindOf(id)` method. The existing dispatcher and Canvas read sites continue to read `adapter.kindOf` — no change to them on the read side. `adapter.kindOf` survives as a deprecated escape hatch for consumers passing custom adapters; new code goes through the registry.
+**Architecture:** A new module under `src/core/scene/` exposes `NodeKind`, `NodeKindRegistry`, `createNodeKindRegistry`, and `defaultNodeKinds`. `<SceneCanvas>` accepts a `kinds: NodeKind[]` prop, constructs a fresh registry per instance, and threads a registry-derived classifier through `sceneToAdapter` so the synthesized adapter publishes a `kindOf(id)` method. The existing dispatcher and Canvas read sites continue to read `adapter.kindOf` — no change to them on the read side. `adapter.kindOf` survives as a deprecated escape hatch for consumers passing custom adapters; new code goes through the registry.
 
 **Tech Stack:** TypeScript, React 18, Vitest. No new dependencies.
 
@@ -15,9 +15,9 @@
 ## File Structure
 
 **Files to create:**
-- `src/scene/nodeKindRegistry.ts` — `NodeKind`, `NodeKindRegistry`, `createNodeKindRegistry`
-- `src/scene/nodeKindRegistry.test.ts` — unit tests for the registry
-- `src/scene/defaultNodeKinds.ts` — `defaultNodeKinds: NodeKind[]` covering `KIT_SHAPE_KINDS`
+- `src/core/scene/nodeKindRegistry.ts` — `NodeKind`, `NodeKindRegistry`, `createNodeKindRegistry`
+- `src/core/scene/nodeKindRegistry.test.ts` — unit tests for the registry
+- `src/core/scene/defaultNodeKinds.ts` — `defaultNodeKinds: NodeKind[]` covering `KIT_SHAPE_KINDS`
 
 **Files to modify:**
 - `src/canvas/sceneAdapter.ts` — add `kindOf?` field to `SceneCanvasAdapter`; accept `kindOf?` (or `kinds?`) on `SceneToAdapterOptions`; populate `adapter.kindOf` from the option
@@ -33,12 +33,12 @@
 ## Task 1: NodeKindRegistry module
 
 **Files:**
-- Create: `src/scene/nodeKindRegistry.ts`
-- Test: `src/scene/nodeKindRegistry.test.ts`
+- Create: `src/core/scene/nodeKindRegistry.ts`
+- Test: `src/core/scene/nodeKindRegistry.test.ts`
 
 - [ ] **Step 1: Write the failing test file**
 
-Create `src/scene/nodeKindRegistry.test.ts`:
+Create `src/core/scene/nodeKindRegistry.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -107,12 +107,12 @@ describe('createNodeKindRegistry', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npx vitest run src/scene/nodeKindRegistry.test.ts`
+Run: `npx vitest run src/core/scene/nodeKindRegistry.test.ts`
 Expected: FAIL with module resolution error (`Cannot find module './nodeKindRegistry'`).
 
 - [ ] **Step 3: Implement the registry**
 
-Create `src/scene/nodeKindRegistry.ts`:
+Create `src/core/scene/nodeKindRegistry.ts`:
 
 ```ts
 /**
@@ -189,13 +189,13 @@ export function createNodeKindRegistry(): NodeKindRegistry {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `npx vitest run src/scene/nodeKindRegistry.test.ts`
+Run: `npx vitest run src/core/scene/nodeKindRegistry.test.ts`
 Expected: PASS — all 6 tests green.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/scene/nodeKindRegistry.ts src/scene/nodeKindRegistry.test.ts
+git add src/core/scene/nodeKindRegistry.ts src/core/scene/nodeKindRegistry.test.ts
 git commit -m "feat(scene): NodeKindRegistry + createNodeKindRegistry
 
 First-match-wins classifier registry. Replaces the adapter.kindOf
@@ -207,7 +207,7 @@ placeholder for kit-owned node classification."
 ## Task 2: defaultNodeKinds covering KIT_SHAPE_KINDS
 
 **Files:**
-- Create: `src/scene/defaultNodeKinds.ts`
+- Create: `src/core/scene/defaultNodeKinds.ts`
 - Modify: `src/index.barrel.test.ts` (add parity assertion)
 
 - [ ] **Step 1: Write the failing parity test**
@@ -238,10 +238,10 @@ Expected: FAIL — `defaultNodeKinds must be exported as an array` (Barrel.defau
 
 - [ ] **Step 3: Implement `defaultNodeKinds`**
 
-Create `src/scene/defaultNodeKinds.ts`:
+Create `src/core/scene/defaultNodeKinds.ts`:
 
 ```ts
-import { KIT_SHAPE_KINDS } from '../canvas/SceneCanvas/useBuiltinShapeTools';
+import { KIT_SHAPE_KINDS } from '../../canvas/SceneCanvas/useBuiltinShapeTools';
 import type { NodeKind } from './nodeKindRegistry';
 
 /**
@@ -277,8 +277,8 @@ export {
   createNodeKindRegistry,
   type NodeKind,
   type NodeKindRegistry,
-} from './scene/nodeKindRegistry';
-export { defaultNodeKinds } from './scene/defaultNodeKinds';
+} from './core/scene/nodeKindRegistry';
+export { defaultNodeKinds } from './core/scene/defaultNodeKinds';
 ```
 
 - [ ] **Step 5: Run barrel parity test**
@@ -289,7 +289,7 @@ Expected: PASS — both `KIT_SHAPE_KINDS` and `defaultNodeKinds` parity assertio
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/scene/defaultNodeKinds.ts src/index.ts src/index.barrel.test.ts
+git add src/core/scene/defaultNodeKinds.ts src/index.ts src/index.barrel.test.ts
 git commit -m "feat(scene): defaultNodeKinds covering KIT_SHAPE_KINDS
 
 Built-in classifiers for the kit's shape tools. Barrel parity test
@@ -452,7 +452,7 @@ from kit-owned data."
 Append to `src/canvas/SceneCanvas.smoke.test.tsx` (uses the existing `makeScene`, `getCanvas`, `pd`/`pu` helpers defined at the top of that file). A direct way to observe `target.kind` from the test surface is to mount a one-off `claimAll` Tool whose `pointerdown` records `ctx.target.kind` into a ref:
 
 ```ts
-import { defaultNodeKinds } from '../scene/defaultNodeKinds';
+import { defaultNodeKinds } from '../core/scene/defaultNodeKinds';
 
 describe('SceneCanvas — kinds prop', () => {
   it('threads kinds into the synthesized adapter so target.kind resolves to "rect"', () => {
@@ -530,7 +530,7 @@ In `src/canvas/SceneCanvas.tsx`, find the `SceneCanvasProps` type block (`export
 Add the import near the other type imports at the top of the file:
 
 ```ts
-import { createNodeKindRegistry, type NodeKind } from '../scene/nodeKindRegistry';
+import { createNodeKindRegistry, type NodeKind } from '../core/scene/nodeKindRegistry';
 ```
 
 - [ ] **Step 4: Build the registry per-instance and pass classifier to sceneToAdapter**
@@ -710,7 +710,7 @@ node -e "const m = require('./dist/index.cjs'); console.log({createNodeKindRegis
 ```
 Expected: `{ createNodeKindRegistry: 'function', defaultNodeKinds: true }`.
 
-If `dist/index.cjs` doesn't exist or is empty, the tsup build's entry config may not include the new module paths. Inspect `tsup.config.ts` — if `src/scene/nodeKindRegistry.ts` isn't reached via the existing `src/index.ts` re-export, fix the export chain rather than adding a new tsup entry (the existing barrel is the canonical seam).
+If `dist/index.cjs` doesn't exist or is empty, the tsup build's entry config may not include the new module paths. Inspect `tsup.config.ts` — if `src/core/scene/nodeKindRegistry.ts` isn't reached via the existing `src/index.ts` re-export, fix the export chain rather than adding a new tsup entry (the existing barrel is the canonical seam).
 
 - [ ] **Step 3: Hand off**
 

@@ -33,6 +33,11 @@ import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { ActionDisabledReason } from 'interactions/actions/registry';
+import { defaultNodeKinds } from '../core/scene/defaultNodeKinds';
+import type { NodeKind } from '../core/scene/nodeKindRegistry';
+import { useTools } from 'tools/useTools';
+import type { AnyTool } from 'tools/types';
+import { ActiveToolContextProvider } from 'interactions/actions/activeToolContext';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -788,5 +793,92 @@ describe('useLassoTool smoke', () => {
 
     // lassoSelectAction should call hitTestLasso + setSelection → id in selection.
     expect(selectionState).toContain(id);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SceneCanvas — kinds prop
+// ---------------------------------------------------------------------------
+
+describe('SceneCanvas — kinds prop', () => {
+  // Wrapper that builds a ToolsApi from the probe tool and renders SceneCanvas
+  // with it as the active tool. The probe's pointer.onDown captures
+  // `ctx.target.kind` so the test can assert the kind classification flowing
+  // out of the adapter that SceneCanvas synthesizes.
+  function Harness(props: {
+    scene: Scene<D, L, P>;
+    id: NodeId;
+    kinds?: readonly NodeKind[];
+    onTarget: (kind: string | undefined) => void;
+  }) {
+    const { scene, id, kinds, onTarget } = props;
+    const probe: AnyTool = {
+      id: 'kind-probe',
+      pointer: {
+        onDown: (_e, ctx) => {
+          onTarget((ctx.target as { kind?: string } | undefined)?.kind);
+          return 'claim';
+        },
+      },
+    };
+    const tools = useTools({ active: 'kind-probe', registry: { 'kind-probe': probe } });
+    return (
+      <SceneCanvas
+        scene={scene}
+        layers={{}}
+        width={400}
+        height={400}
+        {...(kinds ? { kinds } : {})}
+        selectionOptions={{ initial: [id] }}
+        tools={tools}
+      />
+    );
+  }
+
+  it('threads kinds into the synthesized adapter so target.kind resolves to "rect"', () => {
+    const scene = makeScene();
+    const id = firstId(scene);
+    let captured: string | undefined;
+
+    // useTools() reads ActiveToolContext, which SceneCanvas provides internally
+    // via IfRoot. Calling useTools at the test seam needs an explicit provider.
+    const { container } = render(
+      <ActiveToolContextProvider><Harness
+        scene={scene}
+        id={id}
+        kinds={defaultNodeKinds}
+        onTarget={(k) => { captured = k; }}
+      /></ActiveToolContextProvider>,
+    );
+
+    const canvas = getCanvas(container);
+    act(() => {
+      pd(canvas, 140, 130);
+      pu(canvas, 140, 130);
+    });
+
+    expect(captured).toBe('rect');
+  });
+
+  it('produces target.kind = "unknown" when kinds prop is omitted', () => {
+    const scene = makeScene();
+    const id = firstId(scene);
+    let captured: string | undefined;
+
+    const { container } = render(
+      <ActiveToolContextProvider><Harness
+        scene={scene}
+        id={id}
+        onTarget={(k) => { captured = k; }}
+      /></ActiveToolContextProvider>,
+    );
+
+    const canvas = getCanvas(container);
+    act(() => {
+      pd(canvas, 140, 130);
+      pu(canvas, 140, 130);
+    });
+
+    expect(captured).toBe('unknown');
   });
 });

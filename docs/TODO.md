@@ -18,7 +18,7 @@ Priority tags:
 
 ### P1 — foundational genericity gaps
 
-- Kit-owned object-kind registry → [Tools & gestures](#tools--gestures)
+(none currently open)
 
 ### P2 — broad reuse / friction-likely
 
@@ -44,6 +44,7 @@ Priority tags:
 **Scene, adapters & layout**
 - `arrayAdapter` as default Canvas adapter — full unification → [Scene, adapters & layout](#scene-adapters--layout)
 - Group resize with rotated children → [Scene, adapters & layout](#scene-adapters--layout)
+- SceneCanvas → useSceneAdapter for adapter construction → [Scene, adapters & layout](#scene-adapters--layout)
 - `useScene`: op log serialization shape → [Scene, adapters & layout](#scene-adapters--layout)
 - `useScene`: user-layer mutation methods → [Scene, adapters & layout](#scene-adapters--layout)
 - Layout strategies: AABB-fallback assumes rect-shaped TPose → [Scene, adapters & layout](#scene-adapters--layout)
@@ -81,7 +82,9 @@ Priority tags:
 
 ## Tools & gestures
 
-- **(P1) Kit-owned object-kind registry.** Surfaced 2026-05-12 by the declarative tool routing spec (`docs/superpowers/specs/2026-05-12-declarative-tool-routing-design.md`). Today the kit is intentionally domain-agnostic about node payloads (`data: unknown`), so it has no native way to know a node is a "rect" vs a "text" vs a "path". The declarative routing tables key on target kinds (`'rect'`, `'text:selected'`, `'anchor:first'`); without a registry the kit punts to `'unknown'` and consumers wire their own classifier via the adapter. That works but moves a chunk of the routing contract into consumer space — every app reinvents "what counts as a rect." Likely shape: the kit exposes `registerNodeKind(name, classifier)` (or similar) — consumers register `'rect'`/`'text'`/`'path'` once with classifier functions that inspect `data`; the dispatcher consults the registry during hit-test enrichment to produce `target.kind`. Affordance kinds (`'handle:bottom-right'`, `'anchor:first'`) come from the affordance pipeline itself, not the registry. Open: whether the registry is mutable at runtime, whether kinds carry default presentation metadata (icons for the layer panel?), and how this composes with `useScene`'s layer system. Blocks proper consumer ergonomics on the declarative routing migration — Phase 1 ships a `kindOf?: (id) => string` adapter hook as a temporary contract; the registry replaces it.
+- **(P3) Remove `adapter.kindOf` escape hatch.** Shipped 2026-05-21: kit-owned `NodeKindRegistry` per `<SceneCanvas>`, populated via the `kinds` prop, derives `adapter.kindOf` for the dispatcher and Canvas read sites. Spec: `docs/superpowers/specs/2026-05-21-node-kind-registry-design.md`. Plan: `docs/superpowers/plans/2026-05-21-node-kind-registry.md`. **Follow-up:** in the next minor, delete the deprecated `adapter.kindOf` escape hatch (the field, the back-compat read at `src/tools/dispatcher.ts:29` and `src/canvas/Canvas.tsx:716`). Audit `demo/` and `apps/` consumers for the field before deletion.
+
+- **(P3) Convergence-target facets.** As `NodeKindRegistry`'s convergence-policy facets land (label/icon, propertyRows, bindings, subkinds, serialize/deserialize), each gets its own spec referencing the 2026-05-21 design. Tracked individually under the relevant TODO sections (per-kind property-row registry, default action icons, useScene op-log serialization).
 
 - **(P2) Multi-mode chrome interaction.** Corner-resize and rotation affordances correctly hit-test for `MULTI_RESIZE_TARGET_ID` in multi-mode, but their drag wrappers return null for the synthetic id because `useResize`/`useRotate` don't natively handle the multi-target. Fix is a multi-target resize path (probably per-leaf scale via remapBounds, mirroring the existing group-resize math) — its own spec.
 
@@ -187,6 +190,8 @@ Core five + Crop shipped. Remaining:
 - **(P2) `arrayAdapter` as the default Canvas adapter — full unification.** Partial work shipped: Canvas synthesizes an adapter from `items`/`setItems`/`toPose`/`fromPose`/`createDefault`/`poseBounds`/`intersectsRect` when no explicit `adapter` is passed. It collapses the flat-list boilerplate but is array-shape specific. The deeper move — every scene is a tree rooted at one container — was taken by `useScene` (kit-owned tree with leaf/container) but the inline-props and explicit-adapter tiers still sit alongside rather than collapsed. Full unification (one adapter contract, one default wiring) remains an option for later.
 
 - **(P2) Group resize with rotated children.** Today: dev warning + AABB-frame fallback. Needs proper per-leaf scale handling in the leaf's local frame, mirroring the existing single-rotated-leaf math.
+
+- **(P3) SceneCanvas → useSceneAdapter for adapter construction.** Surfaced 2026-05-21 during the node-kind registry landing. Today `SceneCanvas` constructs its synthesized adapter inside `useSceneSelectTool` (the select-tool hook), which means every new `SceneToAdapterOptions` field (`layouts`, `cascadeContainerPose`, `kindOf`, …) has to be drilled through the hook's surface. `useSceneAdapter` already exposes the full options shape; lifting adapter construction to `SceneCanvas` and handing the result down would stop the drill-through and shrink `useSceneSelectTool`'s API. Out of scope for the registry work; file when next refactoring the SceneCanvas internals.
 
 ### `useScene` follow-ups
 
