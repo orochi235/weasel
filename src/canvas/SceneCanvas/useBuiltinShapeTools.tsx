@@ -11,6 +11,7 @@
 import { useRef } from 'react';
 import {
   asNodeId,
+  boundsOfPath,
   cloneByAltDrag,
   ellipsePath,
   linePath,
@@ -20,6 +21,7 @@ import {
   useLassoTool,
   useLineTool,
   usePencilTool,
+  usePenTool,
   usePolygonTool,
   useRectTool,
   useStarTool,
@@ -56,14 +58,14 @@ const DEFAULT_FILLS = ['#7fb069', '#d4a574', '#a48bd4', '#7ab8d4', '#d47a7a'];
  * union is present in the exported tuple.
  */
 export type BuiltinShapeToolId =
-  | 'rect' | 'ellipse' | 'line' | 'polygon' | 'star' | 'pencil'
+  | 'rect' | 'ellipse' | 'line' | 'polygon' | 'star' | 'pen' | 'pencil'
   | 'lasso' | 'text' | 'clone';
 
 /** Runtime, iterable list of the shape-tool ids in `BuiltinShapeToolId`.
  *  Surfaced so consumers (e.g. the Bundle Inspector) can enumerate the
  *  builtin shape kinds without re-encoding the union. */
 export const KIT_SHAPE_KINDS = [
-  'rect', 'ellipse', 'line', 'polygon', 'star', 'pencil',
+  'rect', 'ellipse', 'line', 'polygon', 'star', 'pen', 'pencil',
   'lasso', 'text', 'clone',
 ] as const satisfies readonly BuiltinShapeToolId[];
 
@@ -168,6 +170,34 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
       }) as LeafNode;
     },
   });
+  // Pen: takes an opaque "pose" carrier (here, the committed PolygonPath +
+  // closed flag + AABB) and an addNode/setSelection/applyOps adapter. We
+  // construct the carrier in `wrapPath` and unpack it in `addNode` into a
+  // PATH_PAINTER-shaped leaf, identical to the rect/ellipse/line factories.
+  type PenCarrier = { path: PolygonPath; closed: boolean; bounds: { x: number; y: number; width: number; height: number } };
+  const { tool: pen } = usePenTool<PenCarrier>({
+    snapPoint,
+    wrapPath: (path, { closed }): PenCarrier => {
+      const b = boundsOfPath(path);
+      return { path, closed, bounds: { x: b.x, y: b.y, width: b.width, height: b.height } };
+    },
+    adapter: {
+      addNode: (carrier) => {
+        const id = freshId('pn');
+        const stroke = nextFill();
+        const node = makeLeaf(id, carrier.bounds, {
+          path: carrier.path,
+          fill: carrier.closed ? nextFill() : 'transparent',
+          stroke,
+          strokeWidth: 2,
+        }) as LeafNode;
+        adapter.insertNode(node);
+        return String(id);
+      },
+      setSelection: (ids) => adapter.setSelection(ids),
+      applyOps: (ops, label) => adapter.applyOps(ops, label),
+    },
+  });
   const lasso = useLassoTool(adapter, options?.lasso ?? {});
   const text = useTextTool<LeafNode>({
     pointInsert: (point) => makeLeaf(freshId('tx'),
@@ -195,5 +225,5 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
       : {}),
   });
 
-  return { rect, ellipse, line, polygon, star, pencil, lasso, text, clone };
+  return { rect, ellipse, line, polygon, star, pen, pencil, lasso, text, clone };
 }

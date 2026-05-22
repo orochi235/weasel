@@ -56,6 +56,9 @@ import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
 import { useViewportTools } from './SceneCanvas/useViewportTools';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
+import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
+import type { PenScratch } from 'tools/builtin/usePenTool';
+import type { Tool } from 'tools/types';
 import { useBuiltinShapeTools, type BuiltinShapeToolId, type BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 import { DepRegistryProviderIfRoot } from './SceneCanvas/DepRegistryProviderIfRoot';
@@ -264,7 +267,7 @@ export const BUNDLE_TOOLS: Record<ToolBundle, readonly BuiltinToolId[]> = {
   standard: ['select', 'resize', 'rotate', 'hand', 'rect', 'ellipse', 'line', 'pencil'],
   exhaustive: [
     'select', 'resize', 'rotate', 'hand',
-    'rect', 'ellipse', 'line', 'polygon', 'star', 'pencil',
+    'rect', 'ellipse', 'line', 'polygon', 'star', 'pen', 'pencil',
     'lasso', 'text', 'clone',
   ],
 };
@@ -685,6 +688,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   if (wants('line'))    internalRegistry.line    = shapeTools.line;
   if (wants('polygon')) internalRegistry.polygon = shapeTools.polygon;
   if (wants('star'))    internalRegistry.star    = shapeTools.star;
+  if (wants('pen'))     internalRegistry.pen     = shapeTools.pen;
   if (wants('pencil'))  internalRegistry.pencil  = shapeTools.pencil;
   if (wants('lasso'))   internalRegistry.lasso   = shapeTools.lasso;
   if (wants('text'))    internalRegistry.text    = shapeTools.text;
@@ -782,12 +786,27 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     };
   }, [backgroundFill]);
 
+  // Pen preview overlay — reads the pen tool's persistent scratch and draws
+  // the in-progress path (anchors, handles, rubber-band, close hint). Only
+  // wired when the pen tool is actually registered; otherwise null.
+  const penPreviewLayer = useMemo(
+    () => (wants('pen')
+      ? createPenPreviewLayer({ penTool: shapeTools.pen as Tool<PenScratch> })
+      : null),
+    // shapeTools.pen identity is stable across renders (returned from a hook
+    // that memoizes via defineTool). `wants('pen')` is recomputed each render
+    // from requestedTools — capture by reading at memo time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [shapeTools.pen, requestedTools],
+  );
+
   const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({
     ...mergedLayers,
     previewGhost: { layer: previewLayer, after: 'scene' },
     dispatcherOverlay: { layer: dispatcherOverlay, after: 'previewGhost' },
+    ...(penPreviewLayer ? { penPreview: { layer: penPreviewLayer, after: 'dispatcherOverlay' } } : {}),
     ...(backgroundLayer ? { backgroundFill: { layer: backgroundLayer, before: 'scene' } } : {}),
-  }), [mergedLayers, previewLayer, dispatcherOverlay, backgroundLayer]);
+  }), [mergedLayers, previewLayer, dispatcherOverlay, penPreviewLayer, backgroundLayer]);
 
   // Standard-action deps: closures over the live scene / selection / adapter
   // so the resolved actions always read current state. `useStandardActions`
