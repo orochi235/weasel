@@ -10,6 +10,14 @@
  * The `layers` prop is a map keyed by slot name. Standard slots render at a
  * canonical position; custom entries (any other key, value carrying `.layer`)
  * insert at `after`/`before` an existing slot, defaulting to the top.
+ *
+ * @internal
+ * @deprecated Use `<SceneCanvas>` instead. Bare `<Canvas>` has no
+ * scene-mutation signal — the only way to drive 60Hz repaints is forcing
+ * React re-renders, which churns the tools machinery enough to wedge after
+ * settle. `<SceneCanvas>` over a `useScene()` tree is the consumer entry
+ * point; `<Canvas>` is retained as an internal implementation detail and
+ * will be removed from the public surface in a future release.
  */
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';

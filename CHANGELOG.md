@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Deprecated
+
+- `Canvas` is now marked `@internal` / `@deprecated` and dropped from the
+  README. Use `<SceneCanvas>` over a `useScene()` tree instead. The export
+  is retained for this minor version and will be removed in the next.
+  Bare `<Canvas>` has no scene-mutation signal, so high-frequency repaints
+  must force React re-renders, which can wedge the tools machinery.
+
 ## 0.3.0 — 2026-05-09
 
 ### Added

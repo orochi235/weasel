@@ -44,9 +44,9 @@ const move = useMove(adapter, {
 useDelete(adapter, { bindKeyboard: true });
 ```
 
-Most apps don't call the gesture hooks directly — `<Canvas>` owns useMove /
-useResize / useInsert / useAreaSelect / useSelection internally. Drop in an
-adapter and a `layers` map and you get click-to-select, drag-to-move,
+Most apps don't call the gesture hooks directly — `<SceneCanvas>` owns useMove /
+useResize / useInsert / useAreaSelect / useSelection internally. Drop in a
+`useScene()` tree and a `layers` map and you get click-to-select, drag-to-move,
 corner-handle-resize, and an `tool="insert"` mode for free.
 
 See the live demo for a full working example: <https://orochi235.github.io/weasel/>
@@ -90,7 +90,7 @@ import { ActionsProvider, SceneCanvas } from '@orochi235/weasel';
 </ActionsProvider>
 ```
 
-The `actions` prop accepts `null` (disable all defaults), a partial override of any default by id, or a full `Action` descriptor for new ids. Bare `<Canvas>` consumers can use `useStandardActions(adapter, scene, selection)` to register the same default set, or call individual hooks (`useSelectAll`, `useEscape`, `useDuplicate`, `useNudge`, `useReorder`) which auto-register into a parent provider when present and fall back to direct keybindings when not.
+The `actions` prop accepts `null` (disable all defaults), a partial override of any default by id, or a full `Action` descriptor for new ids. Consumers that need finer control can call individual hooks (`useSelectAll`, `useEscape`, `useDuplicate`, `useNudge`, `useReorder`) which auto-register into a parent provider when present and fall back to direct keybindings when not.
 
 ## Custom shaders (`@experimental`)
 
