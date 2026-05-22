@@ -82,7 +82,7 @@ export function RegistryInspector() {
   const gestures = useMemo(() => collectGestures(), []);
   const phaseOutputs = useMemo(() => collectPhaseOutputs(), []);
   const opKinds = useMemo(() => collectOpKinds(), []);
-  const hotkeyTriggers = useMemo(() => collectHotkeyTriggers(), []);
+  const hotkeyTriggers = useMemo(() => collectHotkeyTriggers(runtime.actions), [runtime.actions]);
   const slots = useMemo(() => collectSlots(), []);
   const routes = useMemo(() => collectRoutes(runtime.tools), [runtime.tools]);
   const routeTargets = useMemo(() => collectRouteTargets(runtime.tools), [runtime.tools]);

@@ -123,6 +123,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
     icon: renderPresentationIcon(a.icon),
     enabled: snapshotEnabled(a.enabled),
     callbacks: collectActionCallbacks(a),
+    defaultBinding: a.defaultBinding,
   }));
 
   const lastRef = useRef<string>('');

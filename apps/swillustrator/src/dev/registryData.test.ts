@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   collectIcons,
   collectBundles,
+  collectHotkeyTriggers,
   collectRoutingKinds,
   collectOpFactories,
   collectShapeKinds,
@@ -92,5 +93,38 @@ describe('collectRoutingKinds', () => {
     const entries = collectRoutingKinds(live);
     const rectEntry = entries.find((e) => e.id === 'rect');
     expect(rectEntry?.source).toBe('override');
+  });
+});
+
+describe('collectHotkeyTriggers', () => {
+  it('derives entries from tool.hold.* actions only', () => {
+    const actions = [
+      { id: 'tool.select.rect', defaultBinding: { kind: 'key', key: 'r' } },
+      { id: 'tool.hold.hand', defaultBinding: { kind: 'key-held', key: ' ' } },
+      { id: 'something.else', defaultBinding: { kind: 'key-held', key: 'a' } },
+    ];
+    const entries = collectHotkeyTriggers(actions);
+    expect(entries).toEqual([
+      { kind: 'hotkeyTrigger', id: 'hand', label: 'hand (Space)' },
+    ]);
+  });
+
+  it('skips tool.hold.* entries whose binding is not key-held', () => {
+    const actions = [
+      { id: 'tool.hold.hand', defaultBinding: { kind: 'key', key: 'h' } },
+    ];
+    expect(collectHotkeyTriggers(actions)).toHaveLength(0);
+  });
+
+  it('returns empty array when no actions are provided', () => {
+    expect(collectHotkeyTriggers([])).toHaveLength(0);
+  });
+
+  it('maps Space key to display label "Space"', () => {
+    const actions = [
+      { id: 'tool.hold.hand', defaultBinding: { kind: 'key-held', key: ' ' } },
+    ];
+    const [entry] = collectHotkeyTriggers(actions);
+    expect(entry?.label).toBe('hand (Space)');
   });
 });

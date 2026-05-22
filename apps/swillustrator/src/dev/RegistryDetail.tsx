@@ -255,7 +255,7 @@ function renderEntryBody(
     case 'gesture':       return <GestureDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'phaseOutput':   return <PhaseOutputDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'opKind':        return <OpKindDetail entry={entry} onNavigate={onNavigate} />;
-    case 'hotkeyTrigger': return <HotkeyTriggerDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
+    case 'hotkeyTrigger': return <HotkeyTriggerDetail entry={entry} actions={actions} />;
     case 'slot':          return <SlotDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'route':         return <RouteDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'routeTarget':   return <RouteTargetDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
@@ -354,22 +354,18 @@ function OpKindDetail({ entry }: { entry: OpKindEntry; onNavigate: Props['onNavi
 }
 
 function HotkeyTriggerDetail({
-  entry, tools, onNavigate,
-}: { entry: HotkeyTriggerEntry; tools: readonly ToolEntry[]; onNavigate: Props['onNavigate'] }) {
-  const using = tools.filter((t) => t.hotkey === entry.id);
-  const glyphs = HOTKEY_TRIGGER_GLYPHS[entry.id];
+  entry, actions,
+}: { entry: HotkeyTriggerEntry; actions: readonly ActionEntry[] }) {
+  const action = actions.find((a) => a.id === `tool.hold.${entry.id}`);
+  const spec = action?.defaultBinding as { kind: string; key?: string } | undefined;
+  const key = spec?.kind === 'key-held' ? spec.key : undefined;
+  const route = key !== undefined ? `[*:initial] keyHeld(${key})` : null;
   return (
     <div>
-      <h2 className={s.detailHeading}>
-        {glyphs && <KeySequence keys={toKeys(glyphs)} />} {entry.id}
-      </h2>
-      <p className={s.empty}>Press-and-hold trigger key for the hotkey tool slot.</p>
-      <h3 className={s.subHeading}>Tools bound to this trigger</h3>
-      <DataGrid
-        rows={using.map((t) => ({ id: t.id, tool: t }))}
-        columns={[toolNameColumn(onNavigate)]}
-        empty="No tools currently bind this trigger."
-      />
+      <h2 className={s.detailHeading}>{entry.label}</h2>
+      {route
+        ? <Powerline {...routeToPowerline(route)} />
+        : <p className={s.empty}>No action registered for this trigger.</p>}
     </div>
   );
 }

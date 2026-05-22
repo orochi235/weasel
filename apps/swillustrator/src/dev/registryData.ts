@@ -148,6 +148,11 @@ export interface ActionEntry {
   /** Source-linked callbacks discovered on the live Action. See
    *  `ToolEntry.callbacks` for plugin/source caveats. */
   callbacks?: readonly CallbackRef[];
+  /** Raw `Action.defaultBinding` snapshot — intentionally typed as `unknown`
+   *  so callers must narrow before use. Currently consumed by
+   *  `collectHotkeyTriggers` and `HotkeyTriggerDetail` to render
+   *  `tool.hold.*` routes as Powerline strips. */
+  defaultBinding?: unknown;
 }
 
 export interface ShapeKindEntry {
@@ -252,9 +257,6 @@ export const OP_KIND_NAMES: readonly string[] = [
 
 export interface OpKindEntry { kind: 'opKind'; id: string; label: string }
 
-/** Single-key trigger a `ToolDef.hotkey` can declare — mirrors the
- *  `HotkeyTrigger` union in `src/tools/types.ts`. */
-export const HOTKEY_TRIGGER_KEYS: readonly string[] = ['space', 'alt', 'ctrl', 'meta', 'shift'];
 
 export interface HotkeyTriggerEntry { kind: 'hotkeyTrigger'; id: string; label: string }
 
@@ -425,8 +427,29 @@ export function collectOpKinds(): readonly OpKindEntry[] {
   return OP_KIND_NAMES.map((id) => ({ kind: 'opKind', id, label: id }));
 }
 
-export function collectHotkeyTriggers(): readonly HotkeyTriggerEntry[] {
-  return HOTKEY_TRIGGER_KEYS.map((id) => ({ kind: 'hotkeyTrigger', id, label: id }));
+/** Best-effort display of a key string for the sidebar entry label.
+ *  The full inspector view uses routeToPowerline + Powerline for proper
+ *  rendering; this label is just the tree entry text. */
+function displayKey(key: string): string {
+  if (key === ' ') return 'Space';
+  return key;
+}
+
+export function collectHotkeyTriggers(
+  actions: readonly { id: string; defaultBinding?: unknown }[],
+): readonly HotkeyTriggerEntry[] {
+  const entries: HotkeyTriggerEntry[] = [];
+  for (const a of actions) {
+    if (!a.id.startsWith('tool.hold.')) continue;
+    const spec = a.defaultBinding as { kind: string; key?: string | readonly string[] } | undefined;
+    if (!spec || spec.kind !== 'key-held') continue;
+    const key = typeof spec.key === 'string' ? spec.key
+      : Array.isArray(spec.key) ? (spec.key as readonly string[])[0]
+      : '?';
+    const toolId = a.id.slice('tool.hold.'.length);
+    entries.push({ kind: 'hotkeyTrigger', id: toolId, label: `${toolId} (${displayKey(key ?? '?')})` });
+  }
+  return entries;
 }
 
 export function collectSlots(): readonly SlotEntry[] {
