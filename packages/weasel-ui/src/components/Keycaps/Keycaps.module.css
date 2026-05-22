@@ -78,13 +78,15 @@
   color: currentColor;
 }
 
-/* Optional + minimal: dotted border at 40% opacity, legend at 60% —
-   both inherit from the parent's currentColor so the chip stays
-   color-tied to its surrounding text. */
+/* Optional + minimal: dotted border at full currentColor, legend at full
+   currentColor. The dotted pattern alone carries the "optional" cue here
+   — minimal's whole point is to defer color to the surrounding context,
+   so dimming would fight that. (Default variant uses graded opacity as a
+   stacked cue; minimal keeps it crisp.) */
 .key[data-variant='minimal'][data-inverted] {
   border-style: dotted;
-  border-color: color-mix(in srgb, currentColor 40%, transparent);
-  color: color-mix(in srgb, currentColor 60%, transparent);
+  border-color: currentColor;
+  color: currentColor;
   border-width: 1.5px;
   border-bottom-width: 1.5px;
 }
