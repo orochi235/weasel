@@ -8,3 +8,12 @@
   display: grid;
   gap: 12px;
 }
+
+/* Reset Badge's opinionated text defaults — Powerline segments should pick up
+ * the surrounding text style instead of forcing uppercase / 10px / extra
+ * tracking. Consumers can still override via className on Powerline. */
+.segment {
+  font-size: inherit;
+  text-transform: none;
+  letter-spacing: normal;
+}

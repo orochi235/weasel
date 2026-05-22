@@ -63,6 +63,7 @@ export function Powerline({
             onClick={seg.onClick}
             href={seg.href}
             aria-label={seg['aria-label']}
+            className={s.segment}
           >
             {seg.text}
           </Badge>

@@ -106,7 +106,37 @@ const Powerline: BaseModule<PowerlineParams> = {
   defaults: DEFAULTS,
   insets: (params) => {
     const depth = params?.depth ?? DEFAULTS.depth;
-    return { top: 0, right: depth, bottom: 0, left: depth };
+    const leftCap = params?.leftEdge ?? DEFAULTS.leftEdge;
+    const rightCap = params?.rightEdge ?? DEFAULTS.rightEdge;
+    const left = resolveEdge(leftCap);
+    const right = resolveEdge(rightCap);
+    // Sample the profiles to compute (a) each side's average offset, used to
+    // shift padding so text reads centered in the visible silhouette (not the
+    // bounding rect), and (b) each side's deepest inward cut, the floor below
+    // which padding mustn't drop or text would crash into the cap.
+    // Trapezoid integration over [0, 1] — exact for piecewise-linear profiles
+    // (chevron, slant, slant-up) and accurate enough for the curved ones.
+    const N = 32;
+    let avgLeft = 0;
+    let avgRight = 0;
+    let maxLeftInward = 0;
+    let maxRightInward = 0;
+    for (let i = 0; i <= N; i++) {
+      const t = i / N;
+      const l = left(t, depth);
+      const r = right(t, depth);
+      const w = i === 0 || i === N ? 0.5 : 1;
+      avgLeft += (w * l) / N;
+      avgRight += (w * r) / N;
+      if (l > maxLeftInward) maxLeftInward = l;
+      if (-r > maxRightInward) maxRightInward = -r;
+    }
+    // Desired asymmetry: padLeft - padRight = avgLeft + avgRight (so the text
+    // centroid sits at the silhouette's centroid). Hold padLeft + padRight = 2 * depth.
+    const shift = (avgLeft + avgRight) / 2;
+    const leftPad = Math.max(maxLeftInward, depth + shift);
+    const rightPad = Math.max(maxRightInward, depth - shift);
+    return { top: 0, right: rightPad, bottom: 0, left: leftPad };
   },
 };
 

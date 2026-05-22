@@ -107,8 +107,8 @@ export const LongStripCookbook: Story = {
     segments: [
       { text: '⎈ k8s', tone: 'info', endCap: 'chevron' },
       { text: 'prod', tone: 'danger', endCap: 'chevron' },
-      { text: 'us-west-2', tone: 'warn', endCap: 'slant' },
-      { text: 'deployment/api', tone: 'muted', endCap: 'round' },
+      { text: 'us-west-2', tone: 'warn', endCap: 'chevron' },
+      { text: 'deployment/api', tone: 'muted', endCap: 'chevron' },
       { text: 'v2.3.1', tone: 'accent' },
     ],
   },

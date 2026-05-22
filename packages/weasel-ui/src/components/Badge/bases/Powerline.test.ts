@@ -50,14 +50,30 @@ describe('Powerline base', () => {
     expect(maxX).toBeGreaterThan(expectedTipVb - 0.5);
   });
 
-  it('insets expand horizontally by depth in CSS px', () => {
-    const insets = typeof Powerline.insets === 'function'
-      ? Powerline.insets({ leftEdge: 'flat', rightEdge: 'chevron', depth: 8 })
-      : Powerline.insets!;
+  it('insets are symmetric for flat-flat edges', () => {
+    const insets = (Powerline.insets as Function)({ leftEdge: 'flat', rightEdge: 'flat', depth: 8 });
     expect(insets.left).toBe(8);
     expect(insets.right).toBe(8);
     expect(insets.top).toBe(0);
     expect(insets.bottom).toBe(0);
+  });
+
+  it('insets shift text rightward when the right cap protrudes outward', () => {
+    // flat-left + chevron-right: chevron averages depth/2 outward, so visual
+    // centroid sits right of the bounding box center. To re-center text in
+    // the silhouette, padLeft must exceed padRight by avgLeft + avgRight = depth/2.
+    const insets = (Powerline.insets as Function)({ leftEdge: 'flat', rightEdge: 'chevron', depth: 8 });
+    expect(insets.left - insets.right).toBeCloseTo(4, 1);
+    expect(insets.top).toBe(0);
+    expect(insets.bottom).toBe(0);
+  });
+
+  it('insets reserve room when the left cap cuts inward into the body', () => {
+    // The previous segment's chevron endCap means this segment's left edge
+    // dips into the body by up to `depth` at t=0.5. Padding must keep text
+    // clear of that notch.
+    const insets = (Powerline.insets as Function)({ leftEdge: 'chevron', rightEdge: 'flat', depth: 8 });
+    expect(insets.left).toBeGreaterThanOrEqual(8);
   });
 
   it('top corners follow the edge profiles when they are non-zero at t=0', () => {
