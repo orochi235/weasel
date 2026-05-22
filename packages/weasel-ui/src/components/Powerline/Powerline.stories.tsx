@@ -23,7 +23,7 @@ const meta: Meta<typeof Powerline> = {
     variant: { control: 'inline-radio', options: ['outline', 'solid', 'subtle'] },
     size: { control: 'inline-radio', options: ['sm', 'md'] },
     depth: { control: { type: 'range', min: 0, max: 20, step: 0.5 } },
-    gap: { control: 'text', description: 'CSS length between segments. Default: 0.1em. Pass 0 for flush.' },
+    gap: { control: 'text', description: 'CSS length between segments. Default: 0.2em. Pass 0 for flush.' },
   },
 };
 export default meta;

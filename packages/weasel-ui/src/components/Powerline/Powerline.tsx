@@ -27,7 +27,7 @@ export interface PowerlineProps {
   /** Protrusion depth in CSS px, passed through to every segment's base. */
   depth?: number;
   /** Visible gap between adjacent segments. Number → px; string → literal CSS length.
-   *  Default: `0.1em` (scales with the row's font size). Pass `0` for flush. */
+   *  Default: `0.2em` (scales with the row's font size). Pass `0` for flush. */
   gap?: number | string;
   className?: string;
   'aria-label'?: string;
