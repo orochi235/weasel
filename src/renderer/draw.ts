@@ -18,7 +18,7 @@ import type { GradientRampCache } from './cache/GradientRampCache';
 import type { ShaderProgram } from './shaders/ShaderProgram';
 import { mat3 } from './math/mat3';
 import { getMesh } from './cache/cache';
-import { parseColor } from './math/color';
+import { resolveColor } from './math/color';
 import { tessellateStroke } from 'features/paths/tessellate/stroke';
 import { ensureFontTexture, textureCacheKey } from 'features/text/atlas/registerFont';
 import { layoutRuns, type LaidOutGroup } from 'features/text/atlas/layoutRuns';
@@ -378,7 +378,7 @@ function setSolidPaintUniforms(
   color: string, opacity: number | undefined,
 ): void {
   const gl = ctx.gl;
-  const [r, g, b, a] = parseColor(color);
+  const [r, g, b, a] = resolveColor(color);
   gl.uniform4f(prog.uniform('u_color')!, r, g, b, a * (opacity ?? 1));
   gl.uniform1f(prog.uniform('u_alpha')!, ctx.state.alpha);
 }
@@ -857,7 +857,7 @@ function drawTextGroup(ctx: DrawContext, group: LaidOutGroup): void {
   // Per-group fill (color uniform).
   let r = 0, g = 0, b = 0, a = 1;
   if ('color' in group.fill) {
-    [r, g, b, a] = parseColor(group.fill.color);
+    [r, g, b, a] = resolveColor(group.fill.color);
   }
   gl.uniform4f(ctx.textSdf.uniform('u_color')!, r, g, b, a);
 

@@ -417,6 +417,23 @@ describe('virtual clock — per-handle pause/resume/timeScale', () => {
   });
 });
 
+describe('useAnimator.colorOverrides', () => {
+  it('exposes a ColorOverrideRegistry instance', () => {
+    const { result } = renderHook(() => useAnimator());
+    expect(result.current.colorOverrides).toBeDefined();
+    result.current.colorOverrides.set('x', 'fill', [1, 2, 3, 4]);
+    expect(result.current.colorOverrides.get('x', 'fill')).toEqual([1, 2, 3, 4]);
+  });
+
+  it('clears overrides on unmount', () => {
+    const { result, unmount } = renderHook(() => useAnimator());
+    const registry = result.current.colorOverrides;
+    registry.set('x', 'fill', [1, 2, 3, 4]);
+    unmount();
+    expect(registry.get('x', 'fill')).toBeUndefined();
+  });
+});
+
 describe('useAnimator.physics', () => {
   it('with `to` set matches spring numerically (parity)', () => {
     const clockA = makeClock();

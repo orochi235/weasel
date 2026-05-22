@@ -11,9 +11,25 @@ import { type FillStyle, type Stroke } from 'core/paint-types';
 import type { RenderLayer } from 'core/layers/render';
 import type { Path } from './types';
 import { countPathAnchors } from './anchors';
+import type { ColorOverride, ColorOverrideRegistry } from '../../animation/colorRegistry';
 
 const PLACEHOLDER_FILL: FillStyle = { color: '#ffffff' };
 const PLACEHOLDER_STROKE: Stroke = { paint: { color: '#ffffff' }, width: 1 };
+
+function resolveOverride(
+  base: readonly number[] | null | undefined,
+  override: ColorOverride | undefined,
+  tMs: number,
+): readonly number[] | null | undefined {
+  if (!override) return base;
+  if (typeof override === 'function') {
+    if (!base) return base;
+    const result = override(base, tMs);
+    if (result.length !== base.length) return base;
+    return result;
+  }
+  return override;
+}
 
 /** Options for `createPathLayer`. */
 export interface CreatePathLayerOpts<T> {
@@ -49,6 +65,16 @@ export interface CreatePathLayerOpts<T> {
    * stroke is synthesized so the per-anchor widths take effect.
    */
   getStrokeVertexWidths?: (node: T) => number[] | null | undefined;
+  /**
+   * Optional color override registry, typically `animator.colorOverrides`.
+   * When set, the renderer consults it before falling back to
+   * `getVertexColors` / `getStrokeVertexColors`. Function-form overrides
+   * receive the base color array and the current animation timestamp.
+   */
+  colorOverrides?: ColorOverrideRegistry;
+  /** Clock used to timestamp function-form color overrides. Defaults to
+   *  `performance.now`. Override in tests. */
+  now?: () => number;
 }
 
 /** Build a `RenderLayer` that fills/strokes `Path` instances enumerated from a node list. */
@@ -57,6 +83,8 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
     id = 'paths', label = 'Paths',
     getNodes, getPath, getFill, getStroke, isHidden,
     getVertexColors, getStrokeVertexColors, getStrokeVertexWidths,
+    colorOverrides,
+    now = (): number => (typeof performance !== 'undefined' ? performance.now() : Date.now()),
   } = opts;
   const warned = new Set<string>();
   const isDev = typeof import.meta !== 'undefined'
@@ -75,15 +103,24 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
         const path = getPath(node);
         const fillFromHook = getFill?.(node);
         const strokeFromHook = getStroke?.(node);
-        const vColors = getVertexColors?.(node);
-        const strokeVColors = getStrokeVertexColors?.(node);
+        const baseVColors = getVertexColors?.(node);
+        const baseStrokeVColors = getStrokeVertexColors?.(node);
         const strokeVWidths = getStrokeVertexWidths?.(node);
 
-        const nodeKey = (node as { id?: string }).id ?? String(idx);
+        const nodeId = (node as { id?: string }).id ?? String(idx);
+        const tMs = colorOverrides ? now() : 0;
+
+        const fillOverride = colorOverrides?.get(nodeId, 'fill');
+        const strokeOverride = colorOverrides?.get(nodeId, 'stroke');
+
+        const vColors = resolveOverride(baseVColors, fillOverride, tMs);
+        const strokeVColors = resolveOverride(baseStrokeVColors, strokeOverride, tMs);
+
+        const nodeKey = nodeId;
         const anchorCount = countPathAnchors(path);
         const expectedLen = 4 * anchorCount;
 
-        let useVColors: number[] | null = null;
+        let useVColors: readonly number[] | null = null;
         if (vColors != null) {
           if (vColors.length === expectedLen) {
             useVColors = vColors;
@@ -99,7 +136,7 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
           }
         }
 
-        let useStrokeVColors: number[] | null = null;
+        let useStrokeVColors: readonly number[] | null = null;
         if (strokeVColors != null) {
           if (strokeVColors.length === expectedLen) {
             useStrokeVColors = strokeVColors;
@@ -146,7 +183,7 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
           baseStroke != null
             ? {
                 ...baseStroke,
-                ...(useStrokeVColors != null ? { vertexColors: useStrokeVColors } : {}),
+                ...(useStrokeVColors != null ? { vertexColors: useStrokeVColors as number[] } : {}),
                 ...(useStrokeVWidths != null ? { vertexWidths: useStrokeVWidths } : {}),
               }
             : baseStroke;
@@ -158,7 +195,7 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
           path,
           ...(fill != null ? { fill } : {}),
           ...(stroke != null ? { stroke } : {}),
-          ...(useVColors != null ? { vertexColors: useVColors } : {}),
+          ...(useVColors != null ? { vertexColors: useVColors as number[] } : {}),
         });
       }
       return [{ kind: 'group', transform: viewToMat3(view), children }];

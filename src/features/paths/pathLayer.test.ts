@@ -4,6 +4,7 @@ import { createPathLayer } from './pathLayer';
 import { polygonFromPoints, rectPath } from './builder';
 import type { Path } from './types';
 import type { FillStyle, Stroke } from 'core/paint-types';
+import { ColorOverrideRegistry } from '../../animation/colorRegistry';
 
 describe('createPathLayer', () => {
   it('emits one path command per visible node, wrapped in a world-transform group', () => {
@@ -170,5 +171,73 @@ describe('createPathLayer — getStrokeVertexColors', () => {
     expect(cmd.stroke.vertexColors).toEqual(colors);
     expect(cmd.stroke.paint).toEqual({ color: '#000' });
     expect(cmd.stroke.width).toBe(3);
+  });
+});
+
+describe('createPathLayer color overrides', () => {
+  const triangle = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 5, y: 10 }]);
+  const baseFillColors = [255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255];
+  const view = { x: 0, y: 0, scale: { x: 1, y: 1 } } as any;
+  const size = { width: 100, height: 100 };
+
+  it('falls back to the consumer accessor when no override is registered', () => {
+    const layer = createPathLayer({
+      getNodes: () => [{ id: 'tri' }],
+      getPath: () => triangle,
+      getVertexColors: () => baseFillColors,
+    });
+    const out = layer.draw(undefined, view, size);
+    const cmd = (out[0] as any).children[0];
+    expect(cmd.vertexColors).toEqual(baseFillColors);
+  });
+
+  it('uses an array override when registered for fill', () => {
+    const overrideColors = [128, 128, 128, 255, 128, 128, 128, 255, 128, 128, 128, 255];
+    const registry = new ColorOverrideRegistry();
+    registry.set('tri', 'fill', overrideColors);
+    const layer = createPathLayer({
+      getNodes: () => [{ id: 'tri' }],
+      getPath: () => triangle,
+      getVertexColors: () => baseFillColors,
+      colorOverrides: registry,
+    });
+    const out = layer.draw(undefined, view, size);
+    const cmd = (out[0] as any).children[0];
+    expect(cmd.vertexColors).toEqual(overrideColors);
+  });
+
+  it('calls a function override with base colors and tMs', () => {
+    const registry = new ColorOverrideRegistry();
+    let received: { base?: readonly number[]; tMs?: number } = {};
+    registry.set('tri', 'fill', (base, tMs) => {
+      received = { base, tMs };
+      return base.map((v) => 255 - v);
+    });
+    const layer = createPathLayer({
+      getNodes: () => [{ id: 'tri' }],
+      getPath: () => triangle,
+      getVertexColors: () => baseFillColors,
+      colorOverrides: registry,
+      now: () => 1234,
+    });
+    const out = layer.draw(undefined, view, size);
+    const cmd = (out[0] as any).children[0];
+    expect(received.base).toEqual(baseFillColors);
+    expect(received.tMs).toBe(1234);
+    expect(cmd.vertexColors[0]).toBe(0);
+  });
+
+  it('falls back to base colors if function override returns wrong length (dev guard)', () => {
+    const registry = new ColorOverrideRegistry();
+    registry.set('tri', 'fill', () => [1, 2, 3, 4]);
+    const layer = createPathLayer({
+      getNodes: () => [{ id: 'tri' }],
+      getPath: () => triangle,
+      getVertexColors: () => baseFillColors,
+      colorOverrides: registry,
+    });
+    const out = layer.draw(undefined, view, size);
+    const cmd = (out[0] as any).children[0];
+    expect(cmd.vertexColors).toEqual(baseFillColors);
   });
 });

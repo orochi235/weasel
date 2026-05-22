@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   asNodeId,
   PathBuilder,
@@ -7,10 +7,15 @@ import {
   SceneCanvas,
   countPathAnchors,
   selectFromMarquee,
+  useAnimator,
   useScene,
   useSelection,
+  tweenVertexColors,
+  cycleVertexColors,
+  staggerVertexColors,
 } from '@orochi235/weasel';
 import type {
+  CycleHandle,
   Path,
   PolygonPath,
   PoseProjection,
@@ -29,12 +34,12 @@ const INITIAL_PATH: Path = new PathBuilder()
 
 const ZOOM_LEVELS = [0.5, 0.75, 1, 1.5, 2, 3];
 
-function rainbowColors(n: number): number[] {
+function rainbowColorsByte(n: number): number[] {
   const out: number[] = [];
   for (let i = 0; i < n; i++) {
     const h = (i * 360) / Math.max(1, n);
     const [r, g, b] = hslToRgb(h, 0.8, 0.6);
-    out.push(r, g, b, 1);
+    out.push(Math.round(r * 255), Math.round(g * 255), Math.round(b * 255), 255);
   }
   return out;
 }
@@ -69,8 +74,12 @@ export function BezierEditDemo() {
     }],
   });
   const selection = useSelection({ initial: [asNodeId(ID)] });
+  const animator = useAnimator();
 
   const [zoom, setZoom] = useState(1);
+  const [cycleOklch, setCycleOklch] = useState(false);
+  const [cycling, setCycling] = useState(false);
+  const cycleHandleRef = useRef<CycleHandle | null>(null);
   // Viewport scale instead of CSS transform: SceneCanvas's `view` prop
   // controls world→screen scale, and world coords flow through `clientToWorld`
   // automatically. Trades the CSS-pixel-perfect blowup for honest viewport
@@ -116,6 +125,56 @@ export function BezierEditDemo() {
     scene.setPose(asNodeId(ID), next);
   };
 
+  const handleTweenRed = () => {
+    const node = scene.get(asNodeId(ID));
+    if (!node) return;
+    const fromColors = rainbowColorsByte(countPathAnchors(node.pose));
+    const n = fromColors.length / 4;
+    const redAll: number[] = [];
+    for (let i = 0; i < n; i++) redAll.push(255, 0, 0, 255);
+    tweenVertexColors(animator, {
+      id: ID,
+      channel: 'stroke',
+      from: fromColors,
+      to: redAll,
+      ms: 800,
+    });
+  };
+
+  const handleStaggerWhite = () => {
+    const node = scene.get(asNodeId(ID));
+    if (!node) return;
+    const fromColors = rainbowColorsByte(countPathAnchors(node.pose));
+    const n = fromColors.length / 4;
+    const whiteAll: number[] = [];
+    for (let i = 0; i < n; i++) whiteAll.push(255, 255, 255, 255);
+    staggerVertexColors(animator, {
+      id: ID,
+      channel: 'stroke',
+      from: fromColors,
+      to: whiteAll,
+      anchorMs: 400,
+      perAnchorDelay: 200,
+      origin: 'first',
+    });
+  };
+
+  const handleCycleToggle = () => {
+    if (cycleHandleRef.current) {
+      cycleHandleRef.current.cancel();
+      cycleHandleRef.current = null;
+      setCycling(false);
+    } else {
+      cycleHandleRef.current = cycleVertexColors(animator, {
+        id: ID,
+        channel: 'stroke',
+        msPerCycle: 1500,
+        interpolation: cycleOklch ? 'oklch' : 'rgb',
+      });
+      setCycling(true);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <div style={{ display: 'flex', gap: 4 }}>
@@ -133,6 +192,21 @@ export function BezierEditDemo() {
           >{z}×</button>
         ))}
       </div>
+      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+        <button onClick={handleTweenRed} style={btn}>Tween → red</button>
+        <button onClick={handleCycleToggle} style={btn}>
+          {cycling ? 'Stop cycle' : 'Cycle'}
+        </button>
+        <label style={{ fontSize: 12, color: '#d4c4a8', display: 'flex', gap: 4, alignItems: 'center' }}>
+          <input
+            type="checkbox"
+            checked={cycleOklch}
+            onChange={(e) => setCycleOklch(e.currentTarget.checked)}
+          />
+          OKLCh (cycle)
+        </label>
+        <button onClick={handleStaggerWhite} style={btn}>Stagger → white</button>
+      </div>
       <SceneCanvas
         width={W * zoom}
         height={H * zoom}
@@ -149,11 +223,16 @@ export function BezierEditDemo() {
         layers={{
           scene: {
             drawOne: (_o, p): DrawCommand[] => {
-              const colors = rainbowColors(countPathAnchors(p));
+              const baseColors = rainbowColorsByte(countPathAnchors(p));
+              const override = animator.colorOverrides.get(ID, 'stroke');
+              const colors =
+                typeof override === 'function'
+                  ? override(baseColors, performance.now())
+                  : (override as readonly number[] | undefined) ?? baseColors;
               return [{
                 kind: 'path',
                 path: p,
-                stroke: { paint: { color: '#ffffff' }, width: 2, vertexColors: colors },
+                stroke: { paint: { color: '#ffffff' }, width: 2, vertexColors: colors as number[] },
               }];
             },
           },
