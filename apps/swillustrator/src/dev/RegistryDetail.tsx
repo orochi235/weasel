@@ -1008,8 +1008,8 @@ function ShapeKindDetail({
         <h2 className={s.detailHeading}>{entry.id}</h2>
       </div>
       <dl className={s.detailList}>
-        <dt>kind</dt><dd><KindBadge label="shape" /></dd>
         <dt>facet</dt><dd><KindBadge label={entry.facet} /></dd>
+        <dt>kind</dt><dd><KindBadge label="shape" /></dd>
         {entry.tool && (
           <>
             <dt>authored by</dt>
