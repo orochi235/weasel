@@ -12,11 +12,9 @@ import { useRef } from 'react';
 import {
   asNodeId,
   boundsOfPath,
-  cloneByAltDrag,
   ellipsePath,
   linePath,
   rectPath,
-  useCloneTool,
   useEllipseTool,
   useLassoTool,
   useLineTool,
@@ -29,14 +27,12 @@ import {
 } from '@orochi235/weasel';
 import type { AnyTool, LassoHitMode, NodeId, Path, PolygonPath, Scene, SceneNode } from '@orochi235/weasel';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
-import type { InsertAdapter } from 'core/adapters/types';
 
-/** Per-tool option overrides for the built-in shape/lasso/clone tools.
+/** Per-tool option overrides for the built-in shape/lasso tools.
  *  Each entry is a narrow subset of the underlying hook's options surface
  *  — just the knobs that need consumer control under the bundle pattern. */
 export interface BuiltinToolOptions {
   lasso?: { mode?: LassoHitMode };
-  clone?: { cloneSelection?: boolean };
   /** Snap world-space points to the active grid (or any other snap target).
    *  Applied by the rect / ellipse / line tools to every coord they ingest,
    *  so both the live overlay and the committed geometry use snapped
@@ -59,20 +55,20 @@ const DEFAULT_FILLS = ['#7fb069', '#d4a574', '#a48bd4', '#7ab8d4', '#d47a7a'];
  */
 export type BuiltinShapeToolId =
   | 'rect' | 'ellipse' | 'line' | 'polygon' | 'star' | 'pen' | 'pencil'
-  | 'lasso' | 'text' | 'clone';
+  | 'lasso' | 'text';
 
 /** Runtime, iterable list of the shape-tool ids in `BuiltinShapeToolId`.
  *  Surfaced so consumers (e.g. the Bundle Inspector) can enumerate the
  *  builtin shape kinds without re-encoding the union. */
 export const KIT_SHAPE_KINDS = [
   'rect', 'ellipse', 'line', 'polygon', 'star', 'pen', 'pencil',
-  'lasso', 'text', 'clone',
+  'lasso', 'text',
 ] as const satisfies readonly BuiltinShapeToolId[];
 
 export interface UseBuiltinShapeToolsArgs<TData, TLayer extends string, TPose> {
   scene: Scene<TData, TLayer, TPose>;
   adapter: SceneCanvasAdapter<TData, TLayer, TPose>;
-  /** Per-tool option overrides (lasso mode, clone-selection, etc.). */
+  /** Per-tool option overrides (lasso mode, etc.). */
   options?: BuiltinToolOptions;
 }
 
@@ -204,26 +200,5 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
       { x: point.x, y: point.y, width: 80, height: 20 },
       { path: rectPath(point.x, point.y, 80, 20), fill: nextFill(), text: 'Text' }) as LeafNode,
   });
-  // Clone needs a complete InsertAdapter — sceneToAdapter omits commitInsert
-  // / commitPaste / snapshotSelection by default. Stub them; clone only
-  // calls snapshotSelection in practice (cloneByAltDrag handles paste via
-  // its own behavior).
-  const cloneAdapter: InsertAdapter<LeafNode> = {
-    ...(adapter as unknown as InsertAdapter<LeafNode>),
-    commitInsert: () => null,
-    commitPaste: () => [],
-    snapshotSelection: (ids) => ({
-      items: ids
-        .map((id) => scene.get(asNodeId(id)))
-        .filter((n): n is LeafNode => n != null),
-    }),
-  };
-  const clone = useCloneTool<LeafNode>(cloneAdapter, {
-    behaviors: [cloneByAltDrag()],
-    ...(options?.clone?.cloneSelection !== undefined
-      ? { cloneSelection: options.clone.cloneSelection }
-      : {}),
-  });
-
-  return { rect, ellipse, line, polygon, star, pen, pencil, lasso, text, clone };
+  return { rect, ellipse, line, polygon, star, pen, pencil, lasso, text };
 }

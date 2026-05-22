@@ -373,7 +373,6 @@ export const TOOL_HOOK_NAMES: Readonly<Record<string, string>> = {
   pencil: 'usePencilTool',
   lasso: 'useLassoTool',
   text: 'useTextTool',
-  clone: 'useCloneTool',
   eyedropper: 'useEyedropperTool',
   // 'wheel-zoom' dissolved in Phase 8.5; handled by viewport.zoom descriptor.
 };

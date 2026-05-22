@@ -168,7 +168,7 @@ export const DEMOS: DemoEntry[] = [
     id: 'clone',
     title: 'Clone',
     category: 'Tools',
-    description: 'useClone with the cloneByAltDrag behavior — hold Alt and drag a rectangle to duplicate it at the drop point.',
+    description: 'Alt+drag a selected rectangle to duplicate it at the drop point. Routed via the select tool\'s alt-drag binding to `cloneAction`.',
     hint: 'Hold Alt and drag a rectangle.',
     Component: CloneDemo,
     full: CloneDemoFull,

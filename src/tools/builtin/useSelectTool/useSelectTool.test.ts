@@ -431,14 +431,14 @@ describe('useSelectTool — declarative routing', () => {
     expect(clear).not.toHaveBeenCalled();
   });
 
-  it('alt-click on a rect falls through to plain selection (no clone — clone is alt-drag, owned by useCloneTool)', () => {
+  it('alt-click on a rect falls through to plain selection (clone is alt-drag, not alt-click)', () => {
     // useSelectTool deliberately does NOT special-case alt in its click
     // table — there's no `[mods('alt')]` sub-table on the node-kind
     // routes. The default route runs: applyClick is called with the alt
     // modifier and applyClick's own rules decide what to do. Cloning is
-    // owned by useCloneTool via alt-drag, NOT by alt-click. This test
-    // pins the absence of a clone-on-alt-click route so a future
-    // accidental addition gets flagged.
+    // alt-drag (routed via the select tool's own alt-drag→clone binding),
+    // NOT alt-click. This test pins the absence of a clone-on-alt-click
+    // route so a future accidental addition gets flagged.
     const applyClick = vi.fn();
     const ctx = ctxOver({
       target: nodeTarget('hit-id'),

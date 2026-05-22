@@ -42,12 +42,6 @@ export {
 } from './useEyedropperTool';
 export { useLineTool, type UseLineToolOptions, type LinePoint } from './useLineTool';
 export { useLassoTool, type UseLassoToolOptions } from './useLassoTool';
-export {
-  useCloneTool,
-  type UseCloneToolOptions,
-  type CloneScratch,
-  type CloneOverlayItem,
-} from './useCloneTool';
 export { usePolygonTool, type UsePolygonToolOptions } from './usePolygonTool';
 export { useStarTool, type UseStarToolOptions } from './useStarTool';
 export { usePencilTool, type UsePencilToolOptions } from './usePencilTool';

@@ -2,8 +2,8 @@ import { SceneCanvas } from '@orochi235/weasel';
 import sceneJson from './data/clone.scene.json';
 
 export function CloneDemo() {
-  // SceneCanvas's `toolBundle="exhaustive"` includes useCloneTool with the
-  // built-in `cloneByAltDrag` behavior — Alt+drag a rect to spawn a copy.
+  // The select tool's alt-drag binding routes to `cloneAction` — Alt+drag a
+  // rect to spawn a copy. No dedicated clone tool needed.
   return (
     <SceneCanvas
       width={400}

@@ -298,18 +298,17 @@ describe('useSelectTool smoke', () => {
 });
 
 // ---------------------------------------------------------------------------
-// useCloneTool — alt-drag on selected body: new node added (Clone batch)
+// Clone (alt-drag) — routed via useSelectTool's own binding
 //
-// The clone tool's primary gesture binding is:
-//   { kind: 'drag', target: 'selected-body', mods: { alt: true } }
-// It matches when clone is on the hotkey stack — Alt keydown pushes 'clone'
-// via `useKeybindings`' direct-engageHotkey fallback (the registry path is
-// structurally dead in SceneCanvas; see TODO.md "Known bugs"). The node is at
-// (100,100,80,60); dragging from its center (140,130) with altKey satisfies
-// both target + mods constraints.
+// useSelectTool declares:
+//   { kind: 'drag', target: 'selected-body', mods: { alt: true }, actionId: 'clone' }
+// The dispatcher matches active-slot bindings, so alt-drag on a selected body
+// hits cloneAction without a separate clone tool needing to be on the hotkey
+// stack. The node is at (100,100,80,60); dragging from its center (140,130)
+// with altKey satisfies both target + mods constraints.
 // ---------------------------------------------------------------------------
 
-describe('useCloneTool smoke', () => {
+describe('clone smoke (alt-drag via select tool)', () => {
   it('alt-drag on selected body fires cloneAction → scene.batch("Clone")', () => {
     const scene = makeScene();
     const id = firstId(scene);
@@ -321,9 +320,6 @@ describe('useCloneTool smoke', () => {
         layers={{}}
         width={400}
         height={400}
-        // exhaustive bundle includes clone. SceneCanvas starts active='select',
-        // but the clone tool has hotkey: 'alt'. Holding alt pushes clone onto
-        // the hotkey stack → clone's drag binding enters the active+hotkey scope.
         toolBundle="exhaustive"
         selectionOptions={{ initial: [id] }}
         actions={{
@@ -338,9 +334,6 @@ describe('useCloneTool smoke', () => {
     const batchSpy = vi.spyOn(scene, 'batch');
 
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', {
-        bubbles: true, key: 'Alt', code: 'AltLeft', altKey: true,
-      }));
       drag(canvas, 140, 130, 170, 160, { altKey: true });
     });
 

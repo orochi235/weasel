@@ -268,7 +268,7 @@ export const BUNDLE_TOOLS: Record<ToolBundle, readonly BuiltinToolId[]> = {
   exhaustive: [
     'select', 'resize', 'rotate', 'hand',
     'rect', 'ellipse', 'line', 'polygon', 'star', 'pen', 'pencil',
-    'lasso', 'text', 'clone',
+    'lasso', 'text',
   ],
 };
 
@@ -681,7 +681,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // ensures a consumer who passes `defaultTools: ['select','hand']` without
   // enabling the viewport feature still gets a clean registry (no hand entry).
   if (wants('hand') && viewportRegistered) internalRegistry.hand = handTool;
-  // Shape / lasso / text / clone tools — registry entries with built-in
+  // Shape / lasso / text tools — registry entries with built-in
   // keybindings (R/E/G/N/L/T) routed via `useKeybindings`.
   if (wants('rect'))    internalRegistry.rect    = shapeTools.rect;
   if (wants('ellipse')) internalRegistry.ellipse = shapeTools.ellipse;
@@ -692,7 +692,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   if (wants('pencil'))  internalRegistry.pencil  = shapeTools.pencil;
   if (wants('lasso'))   internalRegistry.lasso   = shapeTools.lasso;
   if (wants('text'))    internalRegistry.text    = shapeTools.text;
-  if (wants('clone'))   internalRegistry.clone   = shapeTools.clone;
 
   const internalTools = useTools({
     active: 'select',
