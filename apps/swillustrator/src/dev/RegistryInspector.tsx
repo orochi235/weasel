@@ -166,12 +166,18 @@ export function RegistryInspector() {
         </aside>
         <section className={s.detail}>
           {selected
-            ? <RegistryDetail entry={selected} tools={runtime.tools} actions={runtime.actions} onNavigate={(t) => {
-                for (const node of nodes) {
-                  const hit = node.entries.find((e) => e.kind === t.kind && e.id === t.id);
-                  if (hit) { setSelected(hit); return; }
-                }
-              }} />
+            ? <RegistryDetail
+                entry={selected}
+                tools={runtime.tools}
+                actions={runtime.actions}
+                category={nodes.find((n) => n.entries.some((e) => e.kind === selected.kind && e.id === selected.id)) ?? null}
+                onNavigate={(t) => {
+                  for (const node of nodes) {
+                    const hit = node.entries.find((e) => e.kind === t.kind && e.id === t.id);
+                    if (hit) { setSelected(hit); return; }
+                  }
+                }}
+              />
             : <p className={s.empty}>Select an entry to see details.</p>}
         </section>
       </div>

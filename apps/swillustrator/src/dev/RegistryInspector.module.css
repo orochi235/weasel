@@ -52,6 +52,18 @@
   font-family: inherit;
 }
 .empty { color: var(--wzl-muted, #a59685); font-size: 15px; font-style: italic; }
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--wzl-muted, #a59685);
+  margin-bottom: 6px;
+}
+.breadcrumbSep { opacity: 0.5; }
 .hidden {
   position: absolute;
   left: -99999px;
@@ -109,7 +121,10 @@
   letter-spacing: 0.03em;
   min-height: 30px;
   display: flex;
-  align-items: center;
+  /* Top-align labels so a tall multi-line value (e.g. a routes list) doesn't
+     leave the label floating in the middle of its row. */
+  align-items: flex-start;
+  padding-top: 8px;
 }
 .detailList dd {
   margin: 0;

@@ -28,7 +28,7 @@ import type {
   TreeEntry, ToolEntry, ActionEntry, BundleEntry, IconEntry, OpFactoryEntry,
   ShapeKindEntry, RoutingKindEntry, PhaseSummary, PhaseEntry, GestureEntry, PhaseOutputEntry,
   OpKindEntry, HotkeyTriggerEntry, SlotEntry, RouteEntry, RouteTargetEntry, ModifierSetEntry, GroupEntry,
-  MetaEntry, CallbackRef,
+  MetaEntry, CallbackRef, TreeCategoryNode,
 } from './registryData';
 import { BOOLEAN_BADGE_PROPS, BUNDLE_BADGE_PROPS, CHANNEL_BADGE_PROPS, GESTURE_BADGE_PROPS, HOTKEY_TRIGGER_GLYPHS, KIND_BADGE_PROPS, PHASE_BADGE_PROPS, TOKEN_SETS, type TokenSet } from './badgeTokens';
 import { canonicalModifiers, formatPhaseAtom, getGestureDescriptor, type GestureName } from '@orochi235/weasel/routing';
@@ -109,6 +109,9 @@ interface Props {
   /** Live action snapshot — used by `GroupDetail` to enumerate the members
    *  of an action-group bucket. */
   actions: readonly ActionEntry[];
+  /** Tree category the entry sits in. Used to render breadcrumbs above
+   *  the detail heading. Optional — omit to suppress the breadcrumb. */
+  category?: TreeCategoryNode | null;
   onNavigate(target: NavTarget): void;
 }
 
@@ -134,7 +137,31 @@ function EntryLink({
   );
 }
 
-export function RegistryDetail({ entry, tools, actions, onNavigate }: Props) {
+export function RegistryDetail({ entry, tools, actions, category, onNavigate }: Props) {
+  return (
+    <>
+      {category && (
+        <nav className={s.breadcrumb} aria-label="Breadcrumb">
+          {category.group && (
+            <>
+              <span>{category.group.label}</span>
+              <span className={s.breadcrumbSep} aria-hidden>/</span>
+            </>
+          )}
+          <span>{category.label}</span>
+        </nav>
+      )}
+      {renderEntryBody(entry, tools, actions, onNavigate)}
+    </>
+  );
+}
+
+function renderEntryBody(
+  entry: TreeEntry,
+  tools: readonly ToolEntry[],
+  actions: readonly ActionEntry[],
+  onNavigate: Props['onNavigate'],
+) {
   switch (entry.kind) {
     case 'tool':          return <ToolDetail entry={entry} onNavigate={onNavigate} />;
     case 'action':        return <ActionDetail entry={entry} onNavigate={onNavigate} />;
