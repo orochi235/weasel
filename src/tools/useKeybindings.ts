@@ -24,6 +24,20 @@ export interface UseKeybindingsOptions {
   defaultTool?: string | null;
 }
 
+/** Key opts for every built-in tool that has migrated away from ToolDef.keybinding.
+ *  Updated in Task 9; consumed by resolveSwitch and the tool-select registration effect. */
+const BUILTIN_SELECT_KEYS: Record<string, { key: string }> = {
+  select: { key: 'V' },
+  rect: { key: 'R' },
+  ellipse: { key: 'E' },
+  line: { key: '\\' },
+  polygon: { key: 'G' },
+  pencil: { key: 'N' },
+  text: { key: 'T' },
+  hand: { key: 'H' },
+  pen: { key: 'P' },
+};
+
 /** Maps a tool's `hotkey` declaration to the literal key string used in a
  *  `key-held` gesture spec. Inverse of the old HOTKEY_TRIGGER_MAP. */
 const HOTKEY_KEY: Record<HotkeyTrigger, string> = {
@@ -69,10 +83,20 @@ export function useKeybindings(
         }
       }
 
-      // Phase 2: declared bindings, skipping any tool with an override entry
-      // (whether re-binding or null-unbinding).
+      // Phase 2a: statically-migrated built-in tools (keybinding removed from
+      // ToolDef in Task 9; key lives in BUILTIN_SELECT_KEYS instead).
+      for (const id in BUILTIN_SELECT_KEYS) {
+        if (overrides && id in overrides) continue;
+        if (!(id in reg)) continue; // tool not registered with this tools instance
+        const binding = BUILTIN_SELECT_KEYS[id];
+        if (matchesKeyBinding(e, binding)) return id;
+      }
+
+      // Phase 2b: declared bindings on the ToolDef (tools not yet migrated,
+      // e.g. useLassoTool with a configurable key).
       for (const id in reg) {
         if (overrides && id in overrides) continue;
+        if (id in BUILTIN_SELECT_KEYS) continue; // already handled above
         const binding = reg[id].keybinding;
         if (!binding) continue;
         if (matchesKeyBinding(e, binding)) return id;
@@ -168,16 +192,3 @@ export function useKeybindings(
   }, [registry, tools]);
 }
 
-/** Key opts for every built-in tool that has migrated away from ToolDef.keybinding.
- *  Updated in Task 9; consumed by the tool-select registration effect above. */
-const BUILTIN_SELECT_KEYS: Record<string, { key: string }> = {
-  select: { key: 'V' },
-  rect: { key: 'R' },
-  ellipse: { key: 'E' },
-  line: { key: '\\' },
-  polygon: { key: 'G' },
-  pencil: { key: 'N' },
-  text: { key: 'T' },
-  hand: { key: 'H' },
-  pen: { key: 'P' },
-};

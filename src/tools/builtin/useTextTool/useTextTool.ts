@@ -18,8 +18,6 @@ const PRESENTATION = {
   icon: createElement(TextIcon),
   group: 'type',
 };
-const KEYBINDING = { key: 'T' };
-
 /** Text Tool. Phase 14e Task 3.5: legacy `useInsert` hook dropped — drag-rect
  *  insertion is owned end-to-end by the dispatcher's `insertAction` (kind:
  *  'text'); click-on-selected-text-node enters edit mode via the
@@ -41,7 +39,6 @@ export function useTextTool<TNode extends { id: string }>(
       defineTool<undefined>({
         id: 'text',
         hookName: 'useTextTool',
-        keybinding: KEYBINDING,
         cursor: 'text',
         presentation: PRESENTATION,
         bindings: [

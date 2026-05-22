@@ -89,7 +89,6 @@ export function useRectTool<TNode extends { id: string }>(
       defineTool<null>({
         id: 'rect',
         hookName: 'useRectTool',
-        keybinding: { key: 'R' },
         cursor: 'crosshair',
         presentation: {
           label: 'Rectangle',

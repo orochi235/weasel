@@ -72,10 +72,11 @@ function ke(key: string): KeyboardEvent {
 }
 
 describe('usePenTool', () => {
-  it('declares id "pen", keybinding P, and a cursor function', () => {
+  it('declares id "pen" and a cursor function', () => {
     const { tool } = setup();
     expect(tool.id).toBe('pen');
-    expect(tool.keybinding).toEqual({ key: 'P' });
+    // keybinding field removed from ToolDef; key activation is now registered
+    // as a `tool.select.pen` action via useKeybindings (Task 9).
     expect(typeof tool.cursor).toBe('function');
   });
 

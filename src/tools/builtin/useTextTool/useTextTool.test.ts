@@ -12,12 +12,13 @@ import { makeCtx } from '../testUtils';
  * the SceneCanvas smoke test.
  */
 describe('useTextTool surface', () => {
-  it('declares id "text", T keybinding, text cursor', () => {
+  it('declares id "text" and text cursor', () => {
     const { result } = renderHook(() =>
       useTextTool({ pointInsert: () => ({ id: 't', x: 0, y: 0, width: 0, height: 0, text: '' }) }),
     );
     expect(result.current.id).toBe('text');
-    expect(result.current.keybinding).toEqual({ key: 'T' });
+    // keybinding field removed from ToolDef; key activation is now registered
+    // as a `tool.select.text` action via useKeybindings (Task 9).
     const cursor = typeof result.current.cursor === 'function'
       ? (result.current.cursor as (c: unknown) => string)(makeCtx())
       : result.current.cursor;

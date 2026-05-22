@@ -78,7 +78,6 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
       defineTool<null>({
         id: 'polygon',
         hookName: 'usePolygonTool',
-        keybinding: { key: 'G' },
         cursor: 'crosshair',
         presentation: {
           label: 'Polygon',
