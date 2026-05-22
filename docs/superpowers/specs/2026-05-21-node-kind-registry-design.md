@@ -253,6 +253,8 @@ removal.
 
 ## Convergence policy
 
+> **Superseded by `docs/superpowers/specs/2026-05-22-node-facets-reframe-design.md` (2026-05-22):** future facets (label / icon / propertyRows / bindings / serialize) land as independent per-facet registries rather than optional fields on `NodeKind`. The convergence-policy table below describes the original intent; the facets-reframe spec is the load-bearing successor. The classifier API in the "Proposal" section above is unchanged.
+
 The registry is the named home for kind-keyed cross-cutting data.
 When a new piece of behavior or presentation needs per-kind
 variation, it lands as an optional facet on `NodeKind` rather than as
