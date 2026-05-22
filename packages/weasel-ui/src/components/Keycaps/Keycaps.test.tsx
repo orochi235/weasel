@@ -44,6 +44,18 @@ describe('KeyCap', () => {
     expect(container.querySelector('kbd')?.getAttribute('data-variant')).toBe('minimal');
   });
 
+  it('omits inline font-family by default (inherits CSS-var token)', () => {
+    const { container } = render(<KeyCap label="K" />);
+    const kbd = container.querySelector('kbd') as HTMLElement;
+    expect(kbd.style.fontFamily).toBe('');
+  });
+
+  it('applies font as inline font-family when the prop is set', () => {
+    const { container } = render(<KeyCap label="K" font="Roboto Mono" />);
+    const kbd = container.querySelector('kbd') as HTMLElement;
+    expect(kbd.style.fontFamily).toMatch(/Roboto Mono/);
+  });
+
   it('still surfaces data-inverted under variant="minimal" (rendered as dotted border)', () => {
     const { container } = render(<KeyCap label="K" variant="minimal" inverted />);
     const kbd = container.querySelector('kbd');
@@ -140,6 +152,15 @@ describe('KeySequence', () => {
       <KeySequence keys={[{ label: 'K' }, { label: '⌘' }]} separator="+" />,
     );
     expect(container.textContent).toBe('⌘+K');
+  });
+
+  it('forwards `font` to every KeyCap', () => {
+    const { container } = render(
+      <KeySequence keys={[{ label: '⌘' }, { label: 'K' }]} font="Courier" />,
+    );
+    for (const chip of chips(container)) {
+      expect(chip.style.fontFamily).toMatch(/Courier/);
+    }
   });
 
   it('forwards variant="minimal" to every KeyCap', () => {

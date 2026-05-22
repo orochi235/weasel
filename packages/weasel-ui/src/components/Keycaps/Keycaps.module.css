@@ -30,7 +30,9 @@
   border-bottom-width: 2px;
   border-radius: 3px;
   color: var(--wzl-bg, #181a1e);
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  /* Defers to the design-system UI font (tokens.css → --wzl-font-ui).
+     Apps without the tokens loaded fall back to a sensible UI face. */
+  font-family: var(--wzl-font-ui, ui-sans-serif, system-ui, sans-serif);
   font-size: 11px;
   font-weight: 700;
   line-height: 1;

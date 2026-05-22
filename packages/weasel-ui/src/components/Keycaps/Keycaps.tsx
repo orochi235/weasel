@@ -22,12 +22,15 @@ export interface KeySequenceProps {
   /** Forwarded to every `KeyCap` in the sequence. `'minimal'` renders
    *  unfilled chips whose border + legend are `currentColor`. */
   variant?: KeyCapVariant;
+  /** Forwarded to every `KeyCap` in the sequence. Overrides the design-
+   *  system UI font for that chip only. */
+  font?: string;
   className?: string;
 }
 
 /** Renders a shortcut as a row of `KeyCap` chips, one per key. Optional
  *  keys render inverted to distinguish them from required ones. */
-export function KeySequence({ keys, separator = '+', variant = 'default', className }: KeySequenceProps) {
+export function KeySequence({ keys, separator = '+', variant = 'default', font, className }: KeySequenceProps) {
   if (!keys || keys.length === 0) {
     return <span className={[s.keysEmpty, className].filter(Boolean).join(' ')}>—</span>;
   }
@@ -46,7 +49,7 @@ export function KeySequence({ keys, separator = '+', variant = 'default', classN
       {ordered.map((k, i) => (
         <Fragment key={i}>
           {showSep && i === sepIdx ? <span className={s.sep}>{separator}</span> : null}
-          <KeyCap label={k.label} inverted={k.optional ?? false} variant={variant} />
+          <KeyCap label={k.label} inverted={k.optional ?? false} variant={variant} font={font} />
         </Fragment>
       ))}
     </span>

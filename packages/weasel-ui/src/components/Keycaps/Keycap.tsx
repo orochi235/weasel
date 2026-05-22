@@ -34,18 +34,25 @@ export interface KeyCapProps {
    *  standard-key widths). The component sets no inline styles of its
    *  own — everything else comes from the CSS module. */
   style?: CSSProperties;
+  /** Override the chip's font-family. Accepts any CSS font-family
+   *  string. When omitted, the chip inherits from the design-system
+   *  UI font token (`--wzl-font-ui`). Useful for one-off cases where
+   *  a different face is desired — though the canonical move is to
+   *  override the CSS variable at the consumer's scope, not the prop. */
+  font?: string;
 }
 
 /** Single bordered keycap chip for one glyph (modifier or key). Use
  *  `KeySequence` to render a full shortcut. */
-export function KeyCap({ label, inverted = false, variant = 'default', className, style }: KeyCapProps) {
+export function KeyCap({ label, inverted = false, variant = 'default', className, style, font }: KeyCapProps) {
+  const resolvedStyle = font ? { ...style, fontFamily: font } : style;
   return (
     <kbd
       className={[s.key, className].filter(Boolean).join(' ')}
       data-kind={inferKeycapKind(label)}
       data-variant={variant === 'default' ? undefined : variant}
       data-inverted={inverted || undefined}
-      style={style}
+      style={resolvedStyle}
     >
       {label}
     </kbd>
