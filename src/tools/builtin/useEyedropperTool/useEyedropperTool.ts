@@ -2,7 +2,7 @@ import { useMemo, useRef, createElement } from 'react';
 import { defineTool, claim, none } from '../../routing';
 import type { ActionFn } from '../../routing';
 import type { Tool, HotkeyTrigger } from '../../types';
-import type { KeyBinding } from 'interactions/keyHelpers';
+import type { ToolKeybinding } from '../../routing/types';
 import { EyedropperIcon } from '../../../icons';
 
 export interface UseEyedropperToolOptions {
@@ -17,7 +17,7 @@ export interface UseEyedropperToolOptions {
 
   /** Override the default `{ key: 'I' }` keybinding. Pass `null` to omit
    *  the keybinding entirely (palette-only or hotkey-only wiring). */
-  keybinding?: KeyBinding | null;
+  keybinding?: ToolKeybinding | null;
 
   /** Override the default `'alt'` hotkey trigger. Pass `null` to omit. */
   hotkey?: HotkeyTrigger | null;

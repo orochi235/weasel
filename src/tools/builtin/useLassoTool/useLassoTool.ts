@@ -5,7 +5,7 @@ import type { Tool } from '../../types';
 import type { UseLassoSelectOptions } from 'interactions/actions/lasso-select/options';
 import { selectFromLasso } from 'interactions/actions/lasso-select/behaviors/selectFromLasso';
 import type { LassoHitMode, LassoSelectAdapter } from 'core/adapters/types';
-import type { KeyBinding } from 'interactions/keyHelpers';
+import type { ToolKeybinding } from '../../routing/types';
 
 export interface UseLassoToolOptions extends Pick<UseLassoSelectOptions,
   'behaviors' | 'transient' | 'label' | 'onGestureStart' | 'onGestureEnd' |
@@ -14,7 +14,7 @@ export interface UseLassoToolOptions extends Pick<UseLassoSelectOptions,
    *  explicit `behaviors` array is passed. Default 'intersect'. */
   mode?: LassoHitMode;
   /** Override the default keybinding (`{ key: 'L' }`). Pass `null` to omit. */
-  keybinding?: KeyBinding | null;
+  keybinding?: ToolKeybinding | null;
 }
 
 /** Free-form polygon select Tool. Drag is handled entirely by the gesture

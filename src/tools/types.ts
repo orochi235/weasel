@@ -4,7 +4,7 @@ import type { Op } from 'core/ops/types';
 import type { View } from 'core/viewport/view';
 import type { RenderLayer } from 'core/layers/render';
 import type { DebugSink } from '../debug/types';
-import type { KeyBinding } from 'interactions/keyHelpers';
+import type { ToolKeybinding } from './routing/types';
 import type { HitResult } from './routing/hitResult';
 import type { RouteResolvedInfo } from './routing/reflection/route-resolved';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -145,7 +145,7 @@ export interface Tool<TScratch = unknown> {
    *  is for tools that want their activation key to be configurable by the host
    *  (currently Lasso and Eyedropper). The dynamic loop in `useKeybindings.ts`
    *  picks this up and registers a `tool.select.<id>` action when set. */
-  keybinding?: KeyBinding;
+  keybinding?: ToolKeybinding;
   initScratch?: () => TScratch;
   onActivate?: (ctx: ToolCtx<TScratch>) => void;
   onDeactivate?: (ctx: ToolCtx<TScratch>) => void;

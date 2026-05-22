@@ -96,7 +96,7 @@ export * from './core/viewport/useZoom';
 export * from './core/viewport/useAutoCenter';
 // ─── Keybindings: low-level key → action wiring ─────────────────────────────
 export { isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';
-export type { KeyBinding } from './interactions/keyHelpers';
+export type { ToolKeybinding } from './tools/routing/types';
 
 // --- @experimental Actions Registry (2026-05-09) ----------------------------
 export {

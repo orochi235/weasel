@@ -1,10 +1,31 @@
 import type { ToolCtx, ToolPresentation, HotkeyTrigger, ToolModifiers } from '../types';
-import type { KeyBinding } from '../../interactions/keyHelpers';
 import type { RenderLayer } from '../../core/layers/render';
 import type { View } from '../../core/viewport/view';
 import type { Result } from './result';
 import type { ModifierKey } from './modifiers';
 import type { GestureBinding } from '../../interactions/actions/binding';
+
+/**
+ * Configurable activation-key descriptor for tools that expose their
+ * keybinding to the host (currently Lasso and Eyedropper). Captures
+ * only the fields meaningful to a caller-supplied tool-select key —
+ * dispatcher-internal fields (`skipInEditable`, `enabled`,
+ * `preventDefault`) live on `KeyBinding` in keyHelpers.ts and are
+ * not part of the configurable surface.
+ */
+export interface ToolKeybinding {
+  /** Key or list of keys to match (case-insensitive against `event.key`). */
+  key: string | readonly string[];
+  /** Require Cmd (mac) / Ctrl (others). Default `false`. */
+  mod?: boolean;
+  /** Require Alt. Default `false`. */
+  alt?: boolean;
+  /**
+   * Shift policy. `undefined`/`false` forbids shift, `true` requires
+   * shift, `'optional'` allows either.
+   */
+  shift?: boolean | 'optional';
+}
 
 export type ActionFn<TScratch> = (
   ctx: ToolCtx<TScratch>,
@@ -117,7 +138,7 @@ export interface ToolDef<TScratch = void> {
    *  the host (currently Lasso and Eyedropper). The dynamic loop in
    *  `useKeybindings.ts` picks this up and registers a `tool.select.<id>`
    *  action when set. */
-  keybinding?: KeyBinding;
+  keybinding?: ToolKeybinding;
   /** Hotkey-slot trigger key. While this key is held, the tool engages
    *  in the hotkey slot regardless of the active tool. This field survives
    *  on `ToolDef` for reflection/inspector use and for configurable-hotkey

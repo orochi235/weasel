@@ -7,7 +7,7 @@ export type { ModifierKey } from './modifiers';
 export { mods } from './modifiers';
 export type {
   ToolDef, PhaseDef, RouteTable, RouteEntry, ModifierRoute, ActionFn,
-  ViewportToolDef, ViewportPhaseDef,
+  ViewportToolDef, ViewportPhaseDef, ToolKeybinding,
 } from './types';
 export { resolveRoute } from './lookup';
 export { parseRoute, formatRoute, formatPhaseAtom, collapseShiftPairs, describeRoute, describeRouteParts, ROUTE_TERMS, ROUTE_FIELD_DEFINITIONS, RESERVED_ID_PREFIXES, RESERVED_ID_NAMES } from './routeGrammar';
