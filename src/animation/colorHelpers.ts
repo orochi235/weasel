@@ -113,3 +113,72 @@ export function springVertexColors(
     },
   });
 }
+
+export interface CycleVertexColorsOptions {
+  id: string;
+  channel: VertexColorChannel;
+  msPerCycle: number;
+  direction?: 1 | -1;
+  easing?: EasingFn;
+  interpolation?: ColorSpace;
+  interpolate?: ColorInterpolate;
+}
+
+export interface CycleHandle {
+  cancel(): void;
+}
+
+/** Register a function override that phase-rotates the base color array
+ *  along the path index. Returns a handle whose `cancel()` removes the
+ *  override.
+ *
+ *  No animator.loop is needed — the renderer calls the function override
+ *  on every draw with the current timestamp, and the function derives the
+ *  phase from `tMs` directly. Cycles do not appear in `animator.isActive()`
+ *  by design (they are passive renderer-driven overrides, not scheduled
+ *  animations). */
+export function cycleVertexColors(
+  animator: Animator,
+  opts: CycleVertexColorsOptions,
+): CycleHandle {
+  const interp = resolveInterpolator(opts);
+  const { id, channel } = opts;
+  const direction = opts.direction ?? 1;
+  const easing = opts.easing ?? ((t: number) => t);
+
+  const override = (base: readonly number[], tMs: number): number[] => {
+    const n = base.length / 4;
+    if (n === 0) return base.slice();
+    const raw = (tMs / opts.msPerCycle) * n * direction;
+    const cycles = raw / n;
+    const cycleFrac = cycles - Math.floor(cycles);
+    const easedFrac = easing(cycleFrac);
+    const easedRaw = (Math.floor(cycles) + easedFrac) * n;
+    const phase = ((easedRaw % n) + n) % n;
+    const phaseInt = Math.floor(phase);
+    const phaseFrac = phase - phaseInt;
+
+    const out = new Array<number>(base.length);
+    for (let i = 0; i < n; i++) {
+      const aIdx = ((i + phaseInt) % n) * 4;
+      const bIdx = ((i + phaseInt + 1) % n) * 4;
+      const a = [base[aIdx], base[aIdx + 1], base[aIdx + 2], base[aIdx + 3]];
+      const b = [base[bIdx], base[bIdx + 1], base[bIdx + 2], base[bIdx + 3]];
+      const blended = interp(a, b, phaseFrac);
+      const k = i * 4;
+      out[k] = blended[0];
+      out[k + 1] = blended[1];
+      out[k + 2] = blended[2];
+      out[k + 3] = blended[3];
+    }
+    return out;
+  };
+
+  animator.colorOverrides.set(id, channel, override);
+
+  return {
+    cancel(): void {
+      animator.colorOverrides.clear(id, channel);
+    },
+  };
+}

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAnimator } from './useAnimator';
-import { tweenVertexColors, springVertexColors } from './colorHelpers';
+import { tweenVertexColors, springVertexColors, cycleVertexColors } from './colorHelpers';
 
 function makeClock() {
   let now = 0;
@@ -155,5 +155,68 @@ describe('springVertexColors', () => {
         to: [0, 0, 0, 255, 0, 0, 0, 255],
       });
     }).toThrow();
+  });
+});
+
+describe('cycleVertexColors', () => {
+  it('registers a function override that rotates colors along the path', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const base = [
+      255, 0, 0, 255,
+      0, 255, 0, 255,
+      0, 0, 255, 255,
+    ];
+    act(() => {
+      cycleVertexColors(result.current, {
+        id: 'tri',
+        channel: 'stroke',
+        msPerCycle: 300,
+      });
+    });
+    const override = result.current.colorOverrides.get('tri', 'stroke');
+    expect(typeof override).toBe('function');
+
+    const fn = override as (base: readonly number[], tMs: number) => number[];
+    expect(fn(base, 0)).toEqual(base);
+
+    const t100 = fn(base, 100);
+    expect(t100.slice(0, 4)).toEqual([0, 255, 0, 255]);
+    expect(t100.slice(4, 8)).toEqual([0, 0, 255, 255]);
+    expect(t100.slice(8, 12)).toEqual([255, 0, 0, 255]);
+  });
+
+  it('cancel() removes the override', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    let handle: { cancel: () => void } | undefined;
+    act(() => {
+      handle = cycleVertexColors(result.current, {
+        id: 'tri',
+        channel: 'fill',
+        msPerCycle: 1000,
+      });
+    });
+    expect(result.current.colorOverrides.get('tri', 'fill')).toBeDefined();
+    act(() => { handle!.cancel(); });
+    expect(result.current.colorOverrides.get('tri', 'fill')).toBeUndefined();
+  });
+
+  it('direction: -1 rotates the other way', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const base = [255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255];
+    act(() => {
+      cycleVertexColors(result.current, {
+        id: 'tri',
+        channel: 'stroke',
+        msPerCycle: 300,
+        direction: -1,
+      });
+    });
+    const fn = result.current.colorOverrides.get('tri', 'stroke') as
+      (base: readonly number[], tMs: number) => number[];
+    const t100 = fn(base, 100);
+    expect(t100.slice(0, 4)).toEqual([0, 0, 255, 255]);
   });
 });
