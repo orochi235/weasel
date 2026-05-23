@@ -34,12 +34,15 @@ const INITIAL_PATH: Path = new PathBuilder()
 
 const ZOOM_LEVELS = [0.5, 0.75, 1, 1.5, 2, 3];
 
-function rainbowColorsByte(n: number): number[] {
+/** Per-anchor RGBA in 0..1 floats — the renderer's required color space
+ *  for `stroke.vertexColors`. Values are clamped to 0..1 on the GPU,
+ *  so emitting bytes (0..255) saturates everything to white. */
+function rainbowColorsUnit(n: number): number[] {
   const out: number[] = [];
   for (let i = 0; i < n; i++) {
     const h = (i * 360) / Math.max(1, n);
     const [r, g, b] = hslToRgb(h, 0.8, 0.6);
-    out.push(Math.round(r * 255), Math.round(g * 255), Math.round(b * 255), 255);
+    out.push(r, g, b, 1);
   }
   return out;
 }
@@ -128,10 +131,10 @@ export function BezierEditDemo() {
   const handleTweenRed = () => {
     const node = scene.get(asNodeId(ID));
     if (!node) return;
-    const fromColors = rainbowColorsByte(countPathAnchors(node.pose));
+    const fromColors = rainbowColorsUnit(countPathAnchors(node.pose));
     const n = fromColors.length / 4;
     const redAll: number[] = [];
-    for (let i = 0; i < n; i++) redAll.push(255, 0, 0, 255);
+    for (let i = 0; i < n; i++) redAll.push(1, 0, 0, 1);
     tweenVertexColors(animator, {
       id: ID,
       channel: 'stroke',
@@ -144,10 +147,10 @@ export function BezierEditDemo() {
   const handleStaggerWhite = () => {
     const node = scene.get(asNodeId(ID));
     if (!node) return;
-    const fromColors = rainbowColorsByte(countPathAnchors(node.pose));
+    const fromColors = rainbowColorsUnit(countPathAnchors(node.pose));
     const n = fromColors.length / 4;
     const whiteAll: number[] = [];
-    for (let i = 0; i < n; i++) whiteAll.push(255, 255, 255, 255);
+    for (let i = 0; i < n; i++) whiteAll.push(1, 1, 1, 1);
     staggerVertexColors(animator, {
       id: ID,
       channel: 'stroke',
@@ -223,7 +226,7 @@ export function BezierEditDemo() {
         layers={{
           scene: {
             drawOne: (_o, p): DrawCommand[] => {
-              const baseColors = rainbowColorsByte(countPathAnchors(p));
+              const baseColors = rainbowColorsUnit(countPathAnchors(p));
               const override = animator.colorOverrides.get(ID, 'stroke');
               const colors =
                 typeof override === 'function'
