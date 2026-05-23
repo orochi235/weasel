@@ -10,6 +10,7 @@ import type { Bounds } from 'tools/builtin/useSelectTool';
 import { RECT_POSE_DESCRIPTOR } from 'interactions/actions/resize/geometry';
 import { pointInRotatedRect } from 'interactions/actions/rotate/geometry';
 import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
+import { pointInPath, strokeHitTest } from 'features/paths/hitTest';
 import type { Path } from 'features/paths/types';
 
 export function isPathLike(p: unknown): p is Path {
@@ -25,9 +26,18 @@ export function aabbOfPose<TPose>(pose: TPose): Bounds {
   );
 }
 
+/** Screen-px slop applied to the stroke-distance hit-test for paths. Catches
+ *  fingertip-imprecision around thin lines / curves without depending on the
+ *  stroke's actual rendered width (which the hit-test layer doesn't know). */
+const DEFAULT_PATH_STROKE_SLOP = 4;
+
 export function poseContains<TPose>(pose: TPose, wx: number, wy: number): boolean {
-  if (isPathLike(pose) && pathPoseDescriptor.intersectsRect) {
-    return pathPoseDescriptor.intersectsRect(pose, { x: wx, y: wy, width: 0, height: 0 });
+  if (isPathLike(pose)) {
+    // Precise inside-filled-region OR within-stroke-slop. Replaces the old
+    // "AABB-conservative-fallback" path that returned true anywhere inside
+    // the path's bounding box (which over-picked on open / non-convex paths).
+    if (pointInPath(pose, wx, wy)) return true;
+    return strokeHitTest(pose, wx, wy, DEFAULT_PATH_STROKE_SLOP);
   }
   const b = aabbOfPose(pose);
   return wx >= b.x && wx <= b.x + b.width && wy >= b.y && wy <= b.y + b.height;

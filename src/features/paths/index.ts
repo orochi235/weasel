@@ -27,7 +27,7 @@ export {
 export { boundsOfPath } from './bounds';
 export { countPathAnchors, pathToAnchors, anchorsToPath, isAnchorSmooth, type PenAnchor } from './anchors';
 export { splitCubicAtT, fitCubicThroughDeletion, type Point } from './cubicMath';
-export { pointInPath, type PointInPathOptions } from './hitTest';
+export { pointInPath, strokeHitTest, type PointInPathOptions, type StrokeHitTestOptions } from './hitTest';
 export {
   pathContainsPoint,
   pathContainsRect,
