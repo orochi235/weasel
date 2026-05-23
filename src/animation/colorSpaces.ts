@@ -131,8 +131,16 @@ export function lerpOklch(
 
 export type ColorSpace = 'rgb' | 'oklab' | 'oklch';
 
-/** Lerp a flat RGBA byte array `from` toward `to`. Alpha is always linearly
- *  lerped; RGB channels are lerped in the requested color space. */
+const f2u = (v: number): number => Math.max(0, Math.min(255, Math.round(v * 255)));
+const u2f = (v: number): number => v / 255;
+
+/** Lerp a flat RGBA color array `from` toward `to`. Inputs are 0..1
+ *  floats (the renderer's color space); outputs are 0..1 floats too.
+ *  Alpha is always linearly lerped; RGB channels are lerped in the
+ *  requested color space. OKLab / OKLCh paths bounce through u8 because
+ *  the gamma-correction LUT and gamut-clip routines are byte-keyed —
+ *  the round-trip is lossy at <1% per channel, well under the visible
+ *  threshold for these animations. */
 export function lerpColorArray(
   from: readonly number[],
   to: readonly number[],
@@ -148,38 +156,40 @@ export function lerpColorArray(
   const out = new Array<number>(from.length);
   const n = from.length / 4;
   if (space === 'rgb') {
+    // Pure float lerp — no rounding (which previously discretized 0..1
+    // inputs to 0/1, giving the cycle its 'choppy 8-corner' look).
     for (let i = 0; i < from.length; i++) {
-      out[i] = Math.round(from[i] + (to[i] - from[i]) * t);
+      out[i] = from[i] + (to[i] - from[i]) * t;
     }
     return out;
   }
   if (space === 'oklch') {
     for (let i = 0; i < n; i++) {
       const k = i * 4;
-      const fLab = srgbU8ToOklab(from[k], from[k + 1], from[k + 2]);
-      const tLab = srgbU8ToOklab(to[k], to[k + 1], to[k + 2]);
+      const fLab = srgbU8ToOklab(f2u(from[k]), f2u(from[k + 1]), f2u(from[k + 2]));
+      const tLab = srgbU8ToOklab(f2u(to[k]), f2u(to[k + 1]), f2u(to[k + 2]));
       const fLch = oklabToOklch(fLab[0], fLab[1], fLab[2]);
       const tLch = oklabToOklch(tLab[0], tLab[1], tLab[2]);
       const midLch = lerpOklch(fLch, tLch, t);
       const midLab = oklchToOklab(midLch[0], midLch[1], midLch[2]);
       const [r, g, b] = oklabToSrgbU8(midLab[0], midLab[1], midLab[2]);
-      out[k] = r;
-      out[k + 1] = g;
-      out[k + 2] = b;
-      out[k + 3] = Math.round(from[k + 3] + (to[k + 3] - from[k + 3]) * t);
+      out[k] = u2f(r);
+      out[k + 1] = u2f(g);
+      out[k + 2] = u2f(b);
+      out[k + 3] = from[k + 3] + (to[k + 3] - from[k + 3]) * t;
     }
     return out;
   }
   for (let i = 0; i < n; i++) {
     const k = i * 4;
-    const fLab = srgbU8ToOklab(from[k], from[k + 1], from[k + 2]);
-    const tLab = srgbU8ToOklab(to[k], to[k + 1], to[k + 2]);
+    const fLab = srgbU8ToOklab(f2u(from[k]), f2u(from[k + 1]), f2u(from[k + 2]));
+    const tLab = srgbU8ToOklab(f2u(to[k]), f2u(to[k + 1]), f2u(to[k + 2]));
     const mid = lerpOklab(fLab, tLab, t);
     const [r, g, b] = oklabToSrgbU8(mid[0], mid[1], mid[2]);
-    out[k] = r;
-    out[k + 1] = g;
-    out[k + 2] = b;
-    out[k + 3] = Math.round(from[k + 3] + (to[k + 3] - from[k + 3]) * t);
+    out[k] = u2f(r);
+    out[k + 1] = u2f(g);
+    out[k + 2] = u2f(b);
+    out[k + 3] = from[k + 3] + (to[k + 3] - from[k + 3]) * t;
   }
   return out;
 }

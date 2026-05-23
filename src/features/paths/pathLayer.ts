@@ -44,14 +44,16 @@ export interface CreatePathLayerOpts<T> {
   /** Optional per-node hide hook (e.g., suppress while editing). */
   isHidden?: (node: T) => boolean;
   /**
-   * Per-node fill vertex-color array, flat RGBA-per-path-anchor.
+   * Per-node fill vertex-color array, flat RGBA-per-path-anchor, in
+   * 0..1 floats (same color space as `PathDrawCommand.vertexColors`).
    * Length must be `4 × countPathAnchors(getPath(node))`. When set and
    * `getFill` returns null/undefined, a white placeholder fill is
    * synthesized so the renderer's per-vertex shader path activates.
    */
   getVertexColors?: (node: T) => number[] | null | undefined;
   /**
-   * Per-node stroke vertex-color array, flat RGBA-per-path-anchor.
+   * Per-node stroke vertex-color array, flat RGBA-per-path-anchor, in
+   * 0..1 floats (same color space as `Stroke.vertexColors`).
    * Length must be `4 × countPathAnchors(getPath(node))`. When set and
    * `getStroke` returns null/undefined, a white 1px placeholder stroke
    * is synthesized.

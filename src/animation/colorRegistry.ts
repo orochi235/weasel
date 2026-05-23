@@ -1,10 +1,14 @@
 export type VertexColorChannel = 'fill' | 'stroke';
 
-/** Function-form override: receives the consumer-supplied base color array
- *  and the current animation timestamp (ms, from the animator's clock).
- *  Returns a flat RGBA byte array of the same length as `base`. */
+/** Function-form override: receives the consumer-supplied base color
+ *  array and the current animation timestamp (ms, from the animator's
+ *  clock). Returns a flat RGBA float array (values in 0..1, matching
+ *  the renderer's `stroke.vertexColors` / `PathDrawCommand.vertexColors`
+ *  color space) of the same length as `base`. */
 export type ColorOverrideFn = (base: readonly number[], tMs: number) => number[];
 
+/** Either a static per-anchor RGBA float array (0..1) or a function-form
+ *  override (see {@link ColorOverrideFn}). */
 export type ColorOverride = readonly number[] | ColorOverrideFn;
 
 interface NodeOverrides {

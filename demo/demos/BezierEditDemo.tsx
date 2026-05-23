@@ -53,6 +53,7 @@ export function BezierEditDemo() {
 
   const [cycleOklch, setCycleOklch] = useState(false);
   const [cycling, setCycling] = useState(true);
+  const [strokeWidth, setStrokeWidth] = useState(5);
   const cycleHandleRef = useRef<CycleHandle | null>(null);
 
   // Measure container width so the canvas can stretch to the same width as
@@ -134,7 +135,7 @@ export function BezierEditDemo() {
     cycleHandleRef.current = cycleVertexColors(animator, {
       id: ID,
       channel: 'stroke',
-      msPerCycle: 1500,
+      msPerCycle: 4000,
       interpolation: cycleOklch ? 'oklch' : 'rgb',
     });
     return () => {
@@ -173,6 +174,20 @@ export function BezierEditDemo() {
         <button onClick={handleStaggerWhite} style={btn} title="Staggered tween to white — each anchor transitions in sequence with a 200ms delay">
           Stagger → white
         </button>
+        <span style={sep} />
+        <label style={checkLabel} title="Stroke width in pixels">
+          Width
+          <input
+            type="range"
+            min={3}
+            max={20}
+            step={1}
+            value={strokeWidth}
+            onChange={(e) => setStrokeWidth(e.currentTarget.valueAsNumber)}
+            style={{ width: 80 }}
+          />
+          <span style={{ width: 22, textAlign: 'right' }}>{strokeWidth}px</span>
+        </label>
       </div>
       <div ref={wrapRef} style={{ width: '100%' }}>
         <SceneCanvas
@@ -200,7 +215,7 @@ export function BezierEditDemo() {
                 return [{
                   kind: 'path',
                   path: p,
-                  stroke: { paint: { color: '#ffffff' }, width: 5, vertexColors: colors as number[] },
+                  stroke: { paint: { color: '#ffffff' }, width: strokeWidth, vertexColors: colors as number[] },
                 }];
               },
             },

@@ -7,6 +7,14 @@ import type {
 import type { VertexColorChannel } from './colorRegistry';
 import { lerpColorArray, type ColorSpace } from './colorSpaces';
 
+/**
+ * Color interpolator: receives two flat RGBA float arrays (values in
+ * 0..1, the renderer's color space — same shape as
+ * `stroke.vertexColors`) and a normalized progress `t` in 0..1.
+ * Returns the same-length blended array, also in 0..1 floats. Override
+ * the default per-channel lerp via `TweenVertexColorsOptions.interpolate`
+ * when a custom color-space or shaping is needed.
+ */
 export type ColorInterpolate = (
   from: readonly number[],
   to: readonly number[],
@@ -16,7 +24,12 @@ export type ColorInterpolate = (
 export interface TweenVertexColorsOptions {
   id: string;
   channel: VertexColorChannel;
+  /** Per-anchor RGBA, flat, in 0..1 floats (matches the renderer's
+   *  `stroke.vertexColors` / `PathDrawCommand.vertexColors` color space).
+   *  Length must equal `from.length`. */
   to: readonly number[];
+  /** Per-anchor RGBA, flat, in 0..1 floats. Length must equal `to.length`
+   *  and be a positive multiple of 4. */
   from: readonly number[];
   ms: number;
   easing?: EasingFn;
@@ -76,7 +89,9 @@ export function tweenVertexColors(
 export interface SpringVertexColorsOptions {
   id: string;
   channel: VertexColorChannel;
+  /** Per-anchor RGBA in 0..1 floats. See `TweenVertexColorsOptions.to`. */
   to: readonly number[];
+  /** Per-anchor RGBA in 0..1 floats. See `TweenVertexColorsOptions.from`. */
   from: readonly number[];
   preset?: SpringPresetName;
   stiffness?: number;
@@ -121,6 +136,8 @@ export interface CycleVertexColorsOptions {
   direction?: 1 | -1;
   easing?: EasingFn;
   interpolation?: ColorSpace;
+  /** Custom interpolator. Receives two RGBA arrays in 0..1 floats and a
+   *  progress `t` in 0..1; returns the blended array in 0..1 floats. */
   interpolate?: ColorInterpolate;
 }
 
@@ -132,11 +149,12 @@ export interface CycleHandle {
  *  along the path index. Returns a handle whose `cancel()` removes the
  *  override.
  *
- *  No animator.loop is needed — the renderer calls the function override
- *  on every draw with the current timestamp, and the function derives the
- *  phase from `tMs` directly. Cycles do not appear in `animator.isActive()`
- *  by design (they are passive renderer-driven overrides, not scheduled
- *  animations). */
+ *  The override computes its value purely from `performance.now()`, so
+ *  there's no per-frame progress to register with the animator's tick
+ *  loop. To keep the loop alive (so `<SceneCanvas animator>`'s onTick
+ *  subscription continues firing redraws while the cycle is installed),
+ *  cycleVertexColors holds an `animator.keepAlive()` entry for the
+ *  lifetime of the cycle; `cancel()` releases it. */
 export function cycleVertexColors(
   animator: Animator,
   opts: CycleVertexColorsOptions,
@@ -193,7 +211,9 @@ export function cycleVertexColors(
 export interface StaggerVertexColorsOptions {
   id: string;
   channel: VertexColorChannel;
+  /** Per-anchor RGBA in 0..1 floats. See `TweenVertexColorsOptions.to`. */
   to: readonly number[];
+  /** Per-anchor RGBA in 0..1 floats. See `TweenVertexColorsOptions.from`. */
   from: readonly number[];
   anchorMs: number;
   perAnchorDelay: number;

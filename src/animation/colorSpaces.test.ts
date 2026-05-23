@@ -18,65 +18,66 @@ describe('srgbU8 ↔ Oklab', () => {
   });
 });
 
+// lerpColorArray operates on 0..1 float RGBA — same color space the
+// renderer's stroke.vertexColors / fill.vertexColors fields expect. The
+// OKLab/OKLCh paths bounce through u8 internally for the gamma-LUT, but
+// inputs and outputs stay in float space throughout.
+
 describe('lerpColorArray', () => {
-  it('rgb midpoint between red and green is muddy gray', () => {
-    const mid = lerpColorArray([255, 0, 0, 255], [0, 255, 0, 255], 0.5, 'rgb');
-    expect(mid).toEqual([128, 128, 0, 255]);
+  it('rgb midpoint between red and green is muddy gray (no rounding)', () => {
+    const mid = lerpColorArray([1, 0, 0, 1], [0, 1, 0, 1], 0.5, 'rgb');
+    expect(mid).toEqual([0.5, 0.5, 0, 1]);
   });
 
-  it('oklab midpoint between red and green is NOT gray (luminance and chroma preserved)', () => {
-    const mid = lerpColorArray([255, 0, 0, 255], [0, 255, 0, 255], 0.5, 'oklab');
-    expect(mid[0]).not.toBe(128);
-    expect(mid[0]).toBeGreaterThan(100);
-    expect(mid[1]).toBeGreaterThan(100);
-    expect(mid[2]).toBeLessThan(80);
+  it('oklab midpoint between red and green is NOT gray (chroma preserved)', () => {
+    const mid = lerpColorArray([1, 0, 0, 1], [0, 1, 0, 1], 0.5, 'oklab');
+    // Float midpoint comparable to byte > 100 → float > 100/255 ≈ 0.39.
+    expect(mid[0]).toBeGreaterThan(0.39);
+    expect(mid[1]).toBeGreaterThan(0.39);
+    expect(mid[2]).toBeLessThan(80 / 255);
   });
 
   it('throws on length mismatch', () => {
-    expect(() => lerpColorArray([0, 0, 0, 255], [0, 0, 0, 255, 0, 0, 0, 255], 0.5)).toThrow();
+    expect(() => lerpColorArray([0, 0, 0, 1], [0, 0, 0, 1, 0, 0, 0, 1], 0.5)).toThrow();
   });
 
   it('throws on length not divisible by 4', () => {
-    expect(() => lerpColorArray([0, 0, 0], [255, 255, 255], 0.5)).toThrow();
+    expect(() => lerpColorArray([0, 0, 0], [1, 1, 1], 0.5)).toThrow();
   });
 
   it('alpha lerps linearly even in oklab mode', () => {
-    const mid = lerpColorArray([0, 0, 0, 0], [0, 0, 0, 200], 0.5, 'oklab');
-    expect(mid[3]).toBe(100);
+    const mid = lerpColorArray([0, 0, 0, 0], [0, 0, 0, 0.8], 0.5, 'oklab');
+    expect(mid[3]).toBeCloseTo(0.4, 5);
   });
 });
 
 describe('lerpColorArray oklch', () => {
   it('red → green midpoint passes through yellow (not gray)', () => {
-    const mid = lerpColorArray([255, 0, 0, 255], [0, 255, 0, 255], 0.5, 'oklch');
-    // Both endpoints have high chroma — midpoint should remain chromatic.
-    // Yellow-ish: R high, G high, B low.
-    expect(mid[0]).toBeGreaterThan(150);
-    expect(mid[1]).toBeGreaterThan(120);
-    expect(mid[2]).toBeLessThan(80);
-    // Sanity: distinct from rgb midpoint [128, 128, 0, 255].
-    expect(mid[0]).not.toBe(128);
+    const mid = lerpColorArray([1, 0, 0, 1], [0, 1, 0, 1], 0.5, 'oklch');
+    // Yellow-ish: R high, G high, B low. Float thresholds parallel to the
+    // u8 (>150 / >120 / <80) tests, scaled to 0..1.
+    expect(mid[0]).toBeGreaterThan(150 / 255);
+    expect(mid[1]).toBeGreaterThan(120 / 255);
+    expect(mid[2]).toBeLessThan(80 / 255);
+    // Sanity: distinct from rgb midpoint [0.5, 0.5, 0, 1].
+    expect(mid[0]).not.toBe(0.5);
   });
 
   it('red → blue takes the short arc through magenta (not green)', () => {
-    // Red is hue~30°, blue is hue~265° in OKLab polar terms — short arc is backward through magenta.
-    const mid = lerpColorArray([255, 0, 0, 255], [0, 0, 255, 255], 0.5, 'oklch');
-    // Magenta-ish: R high-ish, G low, B high-ish (not green-ish: R low, G high, B low).
-    expect(mid[0]).toBeGreaterThan(80);
-    expect(mid[1]).toBeLessThan(60);
-    expect(mid[2]).toBeGreaterThan(80);
+    const mid = lerpColorArray([1, 0, 0, 1], [0, 0, 1, 1], 0.5, 'oklch');
+    // Magenta-ish: R high-ish, G low, B high-ish.
+    expect(mid[0]).toBeGreaterThan(80 / 255);
+    expect(mid[1]).toBeLessThan(60 / 255);
+    expect(mid[2]).toBeGreaterThan(80 / 255);
   });
 
   it('hue interpolation goes through black-axis when chroma vanishes', () => {
-    // White → black: both endpoints have C=0, so hue is undefined; interpolation
-    // should just lerp lightness without spurious hue rotation.
-    const mid = lerpColorArray([255, 255, 255, 255], [0, 0, 0, 255], 0.5, 'oklch');
-    // Should be a neutral gray.
-    expect(Math.abs(mid[0] - mid[1])).toBeLessThanOrEqual(2);
-    expect(Math.abs(mid[1] - mid[2])).toBeLessThanOrEqual(2);
+    const mid = lerpColorArray([1, 1, 1, 1], [0, 0, 0, 1], 0.5, 'oklch');
+    expect(Math.abs(mid[0] - mid[1])).toBeLessThanOrEqual(2 / 255);
+    expect(Math.abs(mid[1] - mid[2])).toBeLessThanOrEqual(2 / 255);
   });
 
   it('throws on length mismatch in oklch mode', () => {
-    expect(() => lerpColorArray([0, 0, 0, 255], [0, 0, 0, 255, 0, 0, 0, 255], 0.5, 'oklch')).toThrow();
+    expect(() => lerpColorArray([0, 0, 0, 1], [0, 0, 0, 1, 0, 0, 0, 1], 0.5, 'oklch')).toThrow();
   });
 });
