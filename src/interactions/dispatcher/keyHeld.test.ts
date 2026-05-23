@@ -145,18 +145,6 @@ function pointerDown(
   };
 }
 
-/** A pointermove event. */
-function pointerMove(x: number, y: number): InputEvent {
-  return {
-    kind: 'pointermove',
-    x,
-    y,
-    altKey: false,
-    ctrlKey: false,
-    metaKey: false,
-    shiftKey: false,
-  };
-}
 
 // ---------------------------------------------------------------------------
 // Tests
