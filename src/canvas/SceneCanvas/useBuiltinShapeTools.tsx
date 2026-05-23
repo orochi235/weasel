@@ -193,6 +193,33 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
       setSelection: (ids) => adapter.setSelection(ids),
       applyOps: (ops, label) => adapter.applyOps(ops, label),
     },
+    // Default getPathObj: walk the scene for the requested id. When the
+    // node's pose is path-shaped (`kind: 'polygon' | 'rect'`), return it as
+    // an editable path obj. Sets `tool: 'pen'` for polygons (so the editor
+    // treats anchors as freely-movable) and `tool: 'rect'` for the rect
+    // subtype (parametric — anchors are corners of an axis-aligned box).
+    // Consumers wanting fancier behavior (param overlays for stars/ellipses,
+    // tool tagging from data) can override at the SceneCanvas seam in a
+    // future iteration.
+    getPathObj: (id) => {
+      const node = scene.get(asNodeId(id));
+      if (!node) return null;
+      const pose = node.pose as unknown;
+      if (!pose || typeof pose !== 'object' || !('kind' in pose)) return null;
+      const kind = (pose as { kind?: string }).kind;
+      if (kind === 'polygon') {
+        const p = pose as PolygonPath;
+        // Polygons close themselves with a trailing `PATH_Z` (0x04) command.
+        const lastCmd = p.commands[p.commands.length - 1];
+        const closed = lastCmd === 0x04;
+        return { path: p, closed, params: undefined, tool: 'pen' };
+      }
+      if (kind === 'rect') {
+        const p = pose as { kind: 'rect'; x: number; y: number; width: number; height: number };
+        return { path: p, closed: true, params: undefined, tool: 'rect' };
+      }
+      return null;
+    },
   });
   const lasso = useLassoTool(adapter, options?.lasso ?? {});
   const text = useTextTool<LeafNode>({

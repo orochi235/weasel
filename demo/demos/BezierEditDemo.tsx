@@ -71,18 +71,6 @@ export function BezierEditDemo() {
     return () => observer.disconnect();
   }, []);
 
-  // pointInPath only fills closed regions, so an S-curve has no body to hit.
-  // Approximate stroke-hit: AABB containment with an 8-px slop.
-  const pickEvery = (wx: number, wy: number): string | null => {
-    const node = scene.get(asNodeId(ID));
-    if (!node) return null;
-    const b = pathPoseDescriptor.getBounds(node.pose);
-    const slop = 8;
-    const inside = wx >= b.x - slop && wx <= b.x + b.width + slop
-      && wy >= b.y - slop && wy <= b.y + b.height + slop;
-    return inside ? ID : null;
-  };
-
   const appendCurve = () => {
     const node = scene.get(asNodeId(ID));
     if (!node || node.pose.kind !== 'polygon') return;
@@ -197,7 +185,7 @@ export function BezierEditDemo() {
           scene={scene}
           selection={selection}
           animator={animator}
-          geometry={{ pickEvery }}
+          defaultTools={['select', 'rotate', 'pen']}
           selectTool={{
             handleHitRadius: HANDLE,
             resize: { geometry: pathPoseDescriptor as PoseProjection<Path> },
