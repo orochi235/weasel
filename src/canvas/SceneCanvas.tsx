@@ -33,6 +33,7 @@ import type { RenderLayer } from 'core/layers/render';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap } from './Canvas';
 import type { CanvasExtensionApi } from './canvasExtension';
+import type { Animator } from '../animation/types';
 import type { SceneToAdapterOptions } from './sceneAdapter';
 import type { PanBounds } from 'core/viewport/useDecayLoop';
 import type { View } from 'core/viewport/view';
@@ -489,6 +490,21 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     describeKind?: (node: Node<TData, TLayer, TPose>) => string | undefined;
 
     /**
+     * Optional animator to bind for per-frame redraws. When supplied,
+     * SceneCanvas subscribes to `animator.onTick` and requests a redraw on
+     * every active animation frame. This is the supported way to drive
+     * repaints when an animation's effect is read from a non-scene channel
+     * (e.g. a custom `drawOne` consults `animator.colorOverrides`) — scene
+     * mutations trigger repaints automatically, but `colorOverrides` writes
+     * do not.
+     *
+     * Omit when no animation channel touches the render pipeline; idle
+     * frames don't cost anything if no animations are active (the animator's
+     * subscriber list stays quiet).
+     */
+    animator?: Animator;
+
+    /**
      * Children rendered alongside the canvas. Useful for siblings that need
      * the same `<ActionsProvider>` scope (e.g. shortcuts overlays, probes).
      */
@@ -550,6 +566,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     actions,
     actionDefaults,
     describeKind,
+    animator,
     children,
     shaders,
     backgroundFill,
@@ -589,6 +606,19 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // dispatcher's `onGestureChange` only fires for legacy `tool.drag.*` hooks,
   // which the migrated actions don't provide.
   const canvasApiRef = useRef<CanvasExtensionApi | null>(null);
+
+  // Animator subscription: when an animator is provided, request a redraw
+  // on every active frame so consumer `drawOne` functions reading
+  // `animator.colorOverrides` (or any other non-scene channel the
+  // animator may mutate) reflect the latest values. The animator only
+  // ticks while animations are active, so idle frames don't repaint.
+  useEffect(() => {
+    if (!animator) return;
+    const unsubscribe = animator.onTick(() => {
+      canvasApiRef.current?.requestRedraw?.();
+    });
+    return unsubscribe;
+  }, [animator]);
 
   // Stable ref tracking the latest view for usePinchZoomTool.
   // Updated synchronously on incoming controlled-prop renders AND via

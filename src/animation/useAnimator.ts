@@ -55,6 +55,11 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
   const globalTimeScale = useRef(1);
   const globalPaused = useRef(false);
   const colorOverrides = useRef<ColorOverrideRegistry>(new ColorOverrideRegistry());
+  // Per-frame tick subscribers. Notified after each batch of animation
+  // ticks (i.e. after `colorOverrides` has settled to its latest values
+  // but before the next RAF schedules). Used by `<SceneCanvas animator>`
+  // to request a redraw on every active frame.
+  const tickSubscribers = useRef<Set<() => void>>(new Set());
 
   // StrictMode-safe cleanup: when the component unmounts (including the
   // dev-mode double-mount that StrictMode performs), cancel every running
@@ -169,6 +174,12 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         for (const id of finished) {
           animations.current.delete(id);
           fireCompletion(id);
+        }
+        // Notify every onTick subscriber AFTER the tick batch so they
+        // see the latest `colorOverrides` / pose values. Errors in one
+        // subscriber don't suppress the others.
+        for (const sub of tickSubscribers.current) {
+          try { sub(); } catch (err) { console.error('useAnimator: onTick subscriber threw', err); }
         }
         if (animations.current.size > 0) {
           rafHandle.current = requestFrame(tickAll);
@@ -455,6 +466,10 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
           staggerOpts,
         )) as Animator['stagger'],
       colorOverrides: colorOverrides.current,
+      onTick: (cb) => {
+        tickSubscribers.current.add(cb);
+        return () => { tickSubscribers.current.delete(cb); };
+      },
     };
     animatorRef.current = api;
     return api;

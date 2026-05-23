@@ -215,6 +215,19 @@ export interface Animator {
    *  `springVertexColors`, `cycleVertexColors`, `staggerVertexColors`. Cleared
    *  automatically on animator unmount. */
   colorOverrides: ColorOverrideRegistry;
+  /**
+   * Subscribe to a callback fired once per RAF frame while any animation is
+   * active. Returns an unsubscribe function. Used by consumers (typically
+   * `<SceneCanvas>`) that need to repaint when an animation's side-effect
+   * is read from a non-scene channel (e.g. `colorOverrides` consulted from
+   * a custom `drawOne`) — scene mutations naturally trigger a repaint, but
+   * `colorOverrides` writes do not.
+   *
+   * The callback fires AFTER the per-frame tick of each registered
+   * animation, so by the time it runs `colorOverrides.get(...)` returns
+   * the latest values. If no animations are active, no tick fires.
+   */
+  onTick(cb: () => void): () => void;
 }
 
 export interface LoopOptions {

@@ -1,4 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+// `useRef` retained for the wrapper-div measurement; the demo no longer
+// needs a ref into SceneCanvas — the new `animator` prop drives redraws.
 import {
   asNodeId,
   PathBuilder,
@@ -16,7 +18,6 @@ import {
   solidVertexColors,
 } from '@orochi235/weasel';
 import type {
-  CanvasExtensionApi,
   CycleHandle,
   Path,
   PoseProjection,
@@ -142,21 +143,6 @@ export function BezierEditDemo() {
     };
   }, [animator, cycling, cycleOklch]);
 
-  // The demo's `drawOne` reads `animator.colorOverrides` per call, but
-  // SceneCanvas only repaints on scene mutations — animations don't touch
-  // the scene, so without nudging the canvas we'd freeze on the first
-  // frame's colors. RAF-poll `animator.isActive()` and request a redraw
-  // each frame while any tween / cycle / stagger is in flight.
-  const canvasApiRef = useRef<CanvasExtensionApi | null>(null);
-  useEffect(() => {
-    let raf: number | null = null;
-    const tick = () => {
-      if (animator.isActive()) canvasApiRef.current?.requestRedraw?.();
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => { if (raf != null) cancelAnimationFrame(raf); };
-  }, [animator]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -190,12 +176,12 @@ export function BezierEditDemo() {
       </div>
       <div ref={wrapRef} style={{ width: '100%' }}>
         <SceneCanvas
-          ref={canvasApiRef}
           width={width}
           height={H}
           className="ckd-canvas"
           scene={scene}
           selection={selection}
+          animator={animator}
           geometry={{ pickEvery }}
           selectTool={{
             handleHitRadius: HANDLE,
