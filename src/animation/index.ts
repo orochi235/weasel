@@ -35,6 +35,7 @@ export {
 } from './colorSpaces';
 export {
   tweenVertexColors, springVertexColors, cycleVertexColors, staggerVertexColors,
+  rainbowVertexColors, solidVertexColors,
   type TweenVertexColorsOptions, type SpringVertexColorsOptions,
   type CycleVertexColorsOptions, type StaggerVertexColorsOptions,
   type CycleHandle, type ColorInterpolate,

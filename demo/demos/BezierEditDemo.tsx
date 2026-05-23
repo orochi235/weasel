@@ -1,9 +1,8 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   asNodeId,
   PathBuilder,
   pathPoseDescriptor,
-  PATH_C,
   SceneCanvas,
   countPathAnchors,
   selectFromMarquee,
@@ -13,16 +12,17 @@ import {
   tweenVertexColors,
   cycleVertexColors,
   staggerVertexColors,
+  rainbowVertexColors,
+  solidVertexColors,
 } from '@orochi235/weasel';
 import type {
   CycleHandle,
   Path,
-  PolygonPath,
   PoseProjection,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
 
-const W = 720, H = 360, HANDLE = 8;
+const H = 360, HANDLE = 8;
 const ID = 'curve';
 
 // An open S-curve: two cubic segments back to back.
@@ -31,36 +31,6 @@ const INITIAL_PATH: Path = new PathBuilder()
   .curveTo(140, 60, 220, 60, 260, 160)
   .curveTo(300, 260, 380, 260, 420, 100)
   .build();
-
-const ZOOM_LEVELS = [0.5, 0.75, 1, 1.5, 2, 3];
-
-/** Per-anchor RGBA in 0..1 floats — the renderer's required color space
- *  for `stroke.vertexColors`. Values are clamped to 0..1 on the GPU,
- *  so emitting bytes (0..255) saturates everything to white. */
-function rainbowColorsUnit(n: number): number[] {
-  const out: number[] = [];
-  for (let i = 0; i < n; i++) {
-    const h = (i * 360) / Math.max(1, n);
-    const [r, g, b] = hslToRgb(h, 0.8, 0.6);
-    out.push(r, g, b, 1);
-  }
-  return out;
-}
-
-function hslToRgb(h: number, s: number, l: number): [number, number, number] {
-  const c = (1 - Math.abs(2 * l - 1)) * s;
-  const hp = h / 60;
-  const x = c * (1 - Math.abs((hp % 2) - 1));
-  let r = 0, g = 0, b = 0;
-  if (hp < 1) { r = c; g = x; }
-  else if (hp < 2) { r = x; g = c; }
-  else if (hp < 3) { g = c; b = x; }
-  else if (hp < 4) { g = x; b = c; }
-  else if (hp < 5) { r = x; b = c; }
-  else { r = c; b = x; }
-  const m = l - c / 2;
-  return [r + m, g + m, b + m];
-}
 
 export function BezierEditDemo() {
   // Pose/data split (a): the Path itself is the pose; data is a degenerate
@@ -79,18 +49,24 @@ export function BezierEditDemo() {
   const selection = useSelection({ initial: [asNodeId(ID)] });
   const animator = useAnimator();
 
-  const [zoom, setZoom] = useState(1);
   const [cycleOklch, setCycleOklch] = useState(false);
-  const [cycling, setCycling] = useState(false);
+  const [cycling, setCycling] = useState(true);
   const cycleHandleRef = useRef<CycleHandle | null>(null);
-  // Viewport scale instead of CSS transform: SceneCanvas's `view` prop
-  // controls world→screen scale, and world coords flow through `clientToWorld`
-  // automatically. Trades the CSS-pixel-perfect blowup for honest viewport
-  // zoom (handles + line widths in screen pixels stay constant).
-  const view = useMemo(
-    () => ({ x: 0, y: 0, scale: { x: zoom, y: zoom } }),
-    [zoom],
-  );
+
+  // Measure container width so the canvas can stretch to the same width as
+  // the surrounding code-panel rather than a fixed 720px.
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const [width, setWidth] = useState(720);
+  useLayoutEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const w = Math.round(entries[0]?.contentRect.width ?? 720);
+      if (w > 0) setWidth(w);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // pointInPath only fills closed regions, so an S-curve has no body to hit.
   // Approximate stroke-hit: AABB containment with an 8-px slop.
@@ -106,40 +82,30 @@ export function BezierEditDemo() {
 
   const appendCurve = () => {
     const node = scene.get(asNodeId(ID));
-    if (!node) return;
+    if (!node || node.pose.kind !== 'polygon') return;
     const p = node.pose;
-    if (p.kind !== 'polygon') return;
-    // Every command (M/L/C/Q) ends on (x,y), so the trailing pair of coords
-    // is the current end of the path. Append a cubic ~80px to the right.
+    // The trailing pair of coords is the current end of the path
+    // (every M/L/C/Q command ends on (x,y)). Append a cubic ~80px to the right.
     const cs = p.coords;
     const ex = cs[cs.length - 2];
     const ey = cs[cs.length - 1];
     const nx = ex + 80;
     const ny = ey + (Math.random() < 0.5 ? -40 : 40);
-    const c1x = ex + 30, c1y = ey - 30;
-    const c2x = nx - 30, c2y = ny - 30;
-    const nextCmds = new Uint8Array(p.commands.length + 1);
-    nextCmds.set(p.commands);
-    nextCmds[p.commands.length] = PATH_C;
-    const nextCoords = new Float32Array(cs.length + 6);
-    nextCoords.set(cs);
-    nextCoords.set([c1x, c1y, c2x, c2y, nx, ny], cs.length);
-    const next: PolygonPath = { kind: 'polygon', commands: nextCmds, coords: nextCoords, fillRule: p.fillRule };
+    const next = PathBuilder.fromPath(p)
+      .curveTo(ex + 30, ey - 30, nx - 30, ny - 30, nx, ny)
+      .build();
     scene.setPose(asNodeId(ID), next);
   };
 
   const handleTweenRed = () => {
     const node = scene.get(asNodeId(ID));
     if (!node) return;
-    const fromColors = rainbowColorsUnit(countPathAnchors(node.pose));
-    const n = fromColors.length / 4;
-    const redAll: number[] = [];
-    for (let i = 0; i < n; i++) redAll.push(1, 0, 0, 1);
+    const n = countPathAnchors(node.pose);
     tweenVertexColors(animator, {
       id: ID,
       channel: 'stroke',
-      from: fromColors,
-      to: redAll,
+      from: rainbowVertexColors(n),
+      to: solidVertexColors(n, 1, 0, 0),
       ms: 800,
     });
   };
@@ -147,101 +113,97 @@ export function BezierEditDemo() {
   const handleStaggerWhite = () => {
     const node = scene.get(asNodeId(ID));
     if (!node) return;
-    const fromColors = rainbowColorsUnit(countPathAnchors(node.pose));
-    const n = fromColors.length / 4;
-    const whiteAll: number[] = [];
-    for (let i = 0; i < n; i++) whiteAll.push(1, 1, 1, 1);
+    const n = countPathAnchors(node.pose);
     staggerVertexColors(animator, {
       id: ID,
       channel: 'stroke',
-      from: fromColors,
-      to: whiteAll,
+      from: rainbowVertexColors(n),
+      to: solidVertexColors(n, 1, 1, 1),
       anchorMs: 400,
       perAnchorDelay: 200,
       origin: 'first',
     });
   };
 
-  const handleCycleToggle = () => {
-    if (cycleHandleRef.current) {
-      cycleHandleRef.current.cancel();
+  // Auto-start the hue cycle so the demo has motion on mount.
+  // Restarting on `cycleOklch` toggle keeps the active interpolation in sync.
+  useEffect(() => {
+    if (!cycling) return;
+    cycleHandleRef.current = cycleVertexColors(animator, {
+      id: ID,
+      channel: 'stroke',
+      msPerCycle: 1500,
+      interpolation: cycleOklch ? 'oklch' : 'rgb',
+    });
+    return () => {
+      cycleHandleRef.current?.cancel();
       cycleHandleRef.current = null;
-      setCycling(false);
-    } else {
-      cycleHandleRef.current = cycleVertexColors(animator, {
-        id: ID,
-        channel: 'stroke',
-        msPerCycle: 1500,
-        interpolation: cycleOklch ? 'oklch' : 'rgb',
-      });
-      setCycling(true);
-    }
-  };
+    };
+  }, [animator, cycling, cycleOklch]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <div style={{ display: 'flex', gap: 4 }}>
-        <button onClick={appendCurve} style={btn}>Add point</button>
-        <span style={{ width: 12 }} />
-        {ZOOM_LEVELS.map((z) => (
-          <button
-            key={z}
-            onClick={() => setZoom(z)}
-            style={{
-              ...btn,
-              background: zoom === z ? '#7fb069' : '#2a2018',
-              color: zoom === z ? '#1a130d' : '#d4c4a8',
-            }}
-          >{z}×</button>
-        ))}
-      </div>
-      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-        <button onClick={handleTweenRed} style={btn}>Tween → red</button>
-        <button onClick={handleCycleToggle} style={btn}>
-          {cycling ? 'Stop cycle' : 'Cycle'}
+      <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+        <button onClick={appendCurve} style={btn} title="Append a cubic segment to the path">
+          Add point
         </button>
-        <label style={{ fontSize: 12, color: '#d4c4a8', display: 'flex', gap: 4, alignItems: 'center' }}>
+        <span style={sep} />
+        <button
+          onClick={() => setCycling((c) => !c)}
+          style={cycling ? btnActive : btn}
+          title="Loop the rainbow palette around the hue wheel (1.5s per cycle)"
+        >
+          {cycling ? '⏸ Pause cycle' : '▶ Cycle'}
+        </button>
+        <label style={checkLabel} title="Interpolate cycle hues in OKLCh space — smoother perceived color transitions than the default RGB lerp">
           <input
             type="checkbox"
             checked={cycleOklch}
             onChange={(e) => setCycleOklch(e.currentTarget.checked)}
           />
-          OKLCh (cycle)
+          OKLCh
         </label>
-        <button onClick={handleStaggerWhite} style={btn}>Stagger → white</button>
+        <span style={sep} />
+        <button onClick={handleTweenRed} style={btn} title="One-shot tween from the current rainbow → solid red across all anchors (800ms)">
+          Tween → red
+        </button>
+        <button onClick={handleStaggerWhite} style={btn} title="Staggered tween to white — each anchor transitions in sequence with a 200ms delay">
+          Stagger → white
+        </button>
       </div>
-      <SceneCanvas
-        width={W * zoom}
-        height={H * zoom}
-        className="ckd-canvas"
-        scene={scene}
-        selection={selection}
-        view={view}
-        geometry={{ pickEvery }}
-        selectTool={{
-          handleHitRadius: HANDLE,
-          resize: { geometry: pathPoseDescriptor as PoseProjection<Path> },
-          areaSelect: { behaviors: [selectFromMarquee()] },
-        }}
-        layers={{
-          scene: {
-            drawOne: (_o, p): DrawCommand[] => {
-              const baseColors = rainbowColorsUnit(countPathAnchors(p));
-              const override = animator.colorOverrides.get(ID, 'stroke');
-              const colors =
-                typeof override === 'function'
-                  ? override(baseColors, performance.now())
-                  : (override as readonly number[] | undefined) ?? baseColors;
-              return [{
-                kind: 'path',
-                path: p,
-                stroke: { paint: { color: '#ffffff' }, width: 2, vertexColors: colors as number[] },
-              }];
+      <div ref={wrapRef} style={{ width: '100%' }}>
+        <SceneCanvas
+          width={width}
+          height={H}
+          className="ckd-canvas"
+          scene={scene}
+          selection={selection}
+          geometry={{ pickEvery }}
+          selectTool={{
+            handleHitRadius: HANDLE,
+            resize: { geometry: pathPoseDescriptor as PoseProjection<Path> },
+            areaSelect: { behaviors: [selectFromMarquee()] },
+          }}
+          layers={{
+            scene: {
+              drawOne: (_o, p): DrawCommand[] => {
+                const baseColors = rainbowVertexColors(countPathAnchors(p));
+                const override = animator.colorOverrides.get(ID, 'stroke');
+                const colors =
+                  typeof override === 'function'
+                    ? override(baseColors, performance.now())
+                    : (override as readonly number[] | undefined) ?? baseColors;
+                return [{
+                  kind: 'path',
+                  path: p,
+                  stroke: { paint: { color: '#ffffff' }, width: 5, vertexColors: colors as number[] },
+                }];
+              },
             },
-          },
-          selectionOverlay: { handles: { size: HANDLE } },
-        }}
-      />
+            selectionOverlay: { handles: { size: HANDLE } },
+          }}
+        />
+      </div>
     </div>
   );
 }
@@ -250,4 +212,14 @@ const btn: React.CSSProperties = {
   padding: '4px 10px', fontSize: 12, cursor: 'pointer',
   background: '#2a2018', color: '#d4c4a8',
   border: '1px solid #4a3c2e', borderRadius: 3,
+};
+const btnActive: React.CSSProperties = {
+  ...btn, background: '#7fb069', color: '#1a130d', borderColor: '#7fb069',
+};
+const sep: React.CSSProperties = {
+  display: 'inline-block', width: 1, height: 18,
+  background: '#4a3c2e', margin: '0 4px',
+};
+const checkLabel: React.CSSProperties = {
+  fontSize: 12, color: '#d4c4a8', display: 'flex', gap: 4, alignItems: 'center',
 };

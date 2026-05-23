@@ -27,6 +27,23 @@ export class PathBuilder {
   private xs: number[] = [];
   private fillRule: PathFillRule = 'nonzero';
 
+  /** Seed a builder with an existing `PolygonPath`. Useful for extending
+   *  an in-flight path with another segment (e.g. appending a cubic to
+   *  the end of a curve in response to a user action) without hand-
+   *  reaching into the `commands` / `coords` typed arrays.
+   *
+   *  ```ts
+   *  const next = PathBuilder.fromPath(current).curveTo(...).build();
+   *  ```
+   */
+  static fromPath(path: PolygonPath): PathBuilder {
+    const b = new PathBuilder();
+    b.cmds = Array.from(path.commands);
+    b.xs = Array.from(path.coords);
+    b.fillRule = path.fillRule;
+    return b;
+  }
+
   setFillRule(rule: PathFillRule): this {
     this.fillRule = rule;
     return this;

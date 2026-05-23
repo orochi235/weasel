@@ -250,3 +250,63 @@ export function staggerVertexColors(
     },
   });
 }
+
+// ─── Color-array constructors ───────────────────────────────────────
+//
+// Helpers that build the per-anchor RGBA arrays the tween/cycle/stagger
+// helpers above (and `stroke.vertexColors` on draw commands) consume.
+// Values are in the 0..1 range the renderer expects — emitting bytes
+// (0..255) clamps every channel to 1.0 on the GPU and renders white.
+
+/** Build an n-anchor rainbow RGBA array sweeping the hue wheel. The
+ *  output is suitable to pass directly into `stroke.vertexColors`,
+ *  `tweenVertexColors({ from: rainbowVertexColors(n) })`, or any
+ *  other API that wants per-anchor color floats. */
+export function rainbowVertexColors(
+  n: number,
+  opts: { saturation?: number; lightness?: number; alpha?: number } = {},
+): number[] {
+  const saturation = opts.saturation ?? 0.8;
+  const lightness = opts.lightness ?? 0.6;
+  const alpha = opts.alpha ?? 1;
+  const out: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const h = (i * 360) / Math.max(1, n);
+    const [r, g, b] = hslToRgbUnit(h, saturation, lightness);
+    out.push(r, g, b, alpha);
+  }
+  return out;
+}
+
+/** Build an n-anchor solid RGBA array. Shorthand for
+ *  `[r, g, b, a, r, g, b, a, …]` — the array a `tweenVertexColors`
+ *  `to`-target typically needs. */
+export function solidVertexColors(
+  n: number,
+  r: number,
+  g: number,
+  b: number,
+  a = 1,
+): number[] {
+  const out: number[] = [];
+  for (let i = 0; i < n; i++) out.push(r, g, b, a);
+  return out;
+}
+
+/** HSL → RGB in 0..1. Standard formula; mirrors the internal one in
+ *  `renderer/math/color.ts` but exported here so consumers building
+ *  hue-cycled color arrays don't have to roll their own. */
+function hslToRgbUnit(h: number, s: number, l: number): [number, number, number] {
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const hp = h / 60;
+  const x = c * (1 - Math.abs((hp % 2) - 1));
+  let r = 0, g = 0, b = 0;
+  if (hp < 1) { r = c; g = x; }
+  else if (hp < 2) { r = x; g = c; }
+  else if (hp < 3) { g = c; b = x; }
+  else if (hp < 4) { g = x; b = c; }
+  else if (hp < 5) { r = x; b = c; }
+  else { r = c; b = x; }
+  const m = l - c / 2;
+  return [r + m, g + m, b + m];
+}
