@@ -228,6 +228,16 @@ export interface Animator {
    * the latest values. If no animations are active, no tick fires.
    */
   onTick(cb: () => void): () => void;
+  /**
+   * Keep the animator's RAF loop running until the returned cancel
+   * function is called. Use for animations whose effect is read on every
+   * frame but which don't have a natural progress state (e.g.
+   * `cycleVertexColors`, which expresses its current value as a function
+   * of `performance.now()` rather than as a tween from `from` to `to`).
+   * Without a keep-alive entry the loop would idle and `onTick` would
+   * stop firing even though the override is still installed.
+   */
+  keepAlive(): () => void;
 }
 
 export interface LoopOptions {

@@ -175,10 +175,17 @@ export function cycleVertexColors(
   };
 
   animator.colorOverrides.set(id, channel, override);
+  // Cycle's "value" is a function of wall-clock time, not a tween-style
+  // progress. We don't register a per-frame ticking animation, so without
+  // an explicit keep-alive entry the animator's RAF loop would idle and
+  // SceneCanvas's onTick redraw subscription would never fire. Keep the
+  // loop running until cancel().
+  const releaseKeepAlive = animator.keepAlive();
 
   return {
     cancel(): void {
       animator.colorOverrides.clear(id, channel);
+      releaseKeepAlive();
     },
   };
 }

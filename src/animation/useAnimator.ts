@@ -470,6 +470,10 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         tickSubscribers.current.add(cb);
         return () => { tickSubscribers.current.delete(cb); };
       },
+      keepAlive: () => {
+        const sup = createSupervisor();
+        return () => sup.cancel();
+      },
     };
     animatorRef.current = api;
     return api;
