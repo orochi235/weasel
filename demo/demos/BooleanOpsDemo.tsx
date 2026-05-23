@@ -5,9 +5,11 @@ import {
   pathSubtract,
   pathExclude,
   pathDivide,
-  useBooleans,
+  useBooleansAdapter,
+  useStandardActions,
   useSelection,
   SelectionContextProvider,
+  DepRegistryProvider,
   PATH_M,
   PATH_L,
   PATH_Z,
@@ -157,12 +159,12 @@ function InteractivePanel() {
   }
   const adapter = adapterRef.current;
 
-  // useBooleans auto-registers the six `pathfinder.*` actions with the
-  // ambient ActionsProvider (see demo/main.tsx) — that's what powers the
-  // <ActionBar group="pathfinder"/> below. Return value is unused; we
-  // drive the buttons through the registry rather than calling the
-  // returned imperatives directly.
-  useBooleans(adapter);
+  // Register the kit-standard action descriptors (including pathfinder.*)
+  // with the ambient ActionsProvider, and publish the booleansAdapter dep so
+  // their invokers can reach this panel's adapter. Together these power the
+  // <ActionBar group="pathfinder"/> below.
+  useStandardActions({ selection });
+  useBooleansAdapter(adapter);
 
   const reset = useCallback(() => {
     // Remove all current nodes
@@ -242,7 +244,14 @@ export function BooleanOpsDemo() {
 
   return (
     <div className="ckd-boolops-grid">
-      <InteractivePanel />
+      {/* useBooleansAdapter / useStandardActions inside InteractivePanel both
+          publish into the dep registry, which would otherwise be auto-mounted
+          by SceneCanvas's DepRegistryProviderIfRoot. Since the hooks run
+          BEFORE InteractivePanel's SceneCanvas mounts, hoist the provider
+          here so the registry is in scope when the hooks fire. */}
+      <DepRegistryProvider>
+        <InteractivePanel />
+      </DepRegistryProvider>
 
       <div className="ckd-boolops-panel">
         <h3 className="ckd-boolops-label">Inputs</h3>
