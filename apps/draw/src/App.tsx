@@ -1322,6 +1322,7 @@ function EditorWithSharedScene({
               tools={tools}
               orientation="vertical"
               lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
+              modeRegistry={modality.machine.registry}
             />
           )}
           <ActiveSwatches />
