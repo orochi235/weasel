@@ -14,3 +14,4 @@
 {"ts":"2026-05-24T00:02:00Z","task":"1.1","event":"tests written — 3 tests failing as expected (viewportToolsRef prop not yet on Canvas)"}
 {"ts":"2026-05-24T14:38:00Z","task":"1.1","event":"implementation complete — Canvas has viewport prop + useViewportTools call; SceneCanvas removed useViewportTools, now calls useHandTool directly + computes viewportRegistered=!!viewport inline; SceneCanvas forwards viewport to Canvas"}
 {"ts":"2026-05-24T14:38:30Z","task":"1.1","event":"tests passing — 2774 kit tests pass, 523 ui tests pass, 18 smoke tests pass, 182 swill tests pass; all 15 targeted tests pass"}
+{"ts":"2026-05-24T14:39:00Z","task":"1.1","event":"committed — a9b8d81b"}
