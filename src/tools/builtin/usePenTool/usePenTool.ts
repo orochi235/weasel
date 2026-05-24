@@ -654,13 +654,14 @@ export function usePenTool<TPose>(
           commitEditAndExit(s);
           return;
         }
-        // Existing create-mode deactivate logic (preserved):
-        const cur = s.current;
-        const totalAnchors =
-          (cur ? cur.anchors.length : 0) +
-          s.finishedSubpaths.reduce((n, sp) => n + sp.anchors.length, 0);
-        if (totalAnchors >= 2) commit(s);
-        else resetScratch(s);
+        // Create mode: anything still in scratch is by definition
+        // incomplete — the user hasn't closed it (close-on-first-anchor),
+        // open-finished it (cmd-click), or pressed Enter. Switching tools
+        // mid-path should discard, not auto-commit a stub polyline that
+        // the user didn't ask for. Mirrors Escape's behavior so "stop
+        // drawing" is consistent across exits.
+        resetScratch(s);
+        forceRenderRef.current();
       },
 
       // NOTE: a future enhancement could set `claimsAll: (ctx) =>

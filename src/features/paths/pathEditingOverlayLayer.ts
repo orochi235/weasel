@@ -47,8 +47,11 @@ export interface PathEditingOverlayStyle {
 }
 
 const DEFAULT_STYLE: Required<PathEditingOverlayStyle> = {
-  anchorSizePx: 6,
-  handleDotRadiusPx: 2,
+  anchorSizePx: 8,
+  // Control-point markers were 2px radius (4px diameter) — too small to
+  // grab reliably with a mouse and visually lost against the curve.
+  // 5px radius (10px diameter) is closer to typical Figma / Illustrator.
+  handleDotRadiusPx: 5,
   anchorFill: '#ffffff',
   anchorStroke: '#3478f6',
   handleStroke: '#7da7e8',

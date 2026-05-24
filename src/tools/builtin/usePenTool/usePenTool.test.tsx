@@ -237,15 +237,19 @@ describe('usePenTool', () => {
     expect(adapter.addNode).not.toHaveBeenCalled();
   });
 
-  it('tool-switch (onDeactivate) with ≥2 anchors → commits', () => {
-    const { tool, scratch, adapter, wrapPath } = setup();
-    for (const [x, y] of [[0, 0], [50, 0]] as const) {
+  it('tool-switch (onDeactivate) discards in-progress path regardless of anchor count', () => {
+    // Mirrors the Escape contract: an in-progress path is by definition
+    // incomplete (user didn't close-on-first / cmd-click / press Enter).
+    // Switching tools should NOT auto-commit a stub polyline.
+    const { tool, scratch, adapter } = setup();
+    for (const [x, y] of [[0, 0], [50, 0], [100, 0]] as const) {
       tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
       tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
     }
     tool.onDeactivate!(makeCtx(scratch));
-    expect(adapter.addNode).toHaveBeenCalledTimes(1);
-    expect(wrapPath.mock.calls[0][1]).toEqual({ closed: false });
+    expect(adapter.addNode).not.toHaveBeenCalled();
+    expect(scratch.current).toBeNull();
+    expect(scratch.finishedSubpaths).toEqual([]);
   });
 
   it('tool-switch with <2 anchors → discards', () => {
