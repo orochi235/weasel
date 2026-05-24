@@ -980,6 +980,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     getEditingId: () => pathEditingIdRef.current,
     setEditingId: (id: string | null) => setPathEditingId(id ?? ''),
   }), []);
+  // Bump the canvas's redraw whenever edit-mode changes — the chrome layer
+  // reads `editingId` via a ref, so without an explicit redraw signal a
+  // dirty-render canvas (no animation in flight) sits with stale frames
+  // and the user sees no chrome until something else triggers a paint.
+  useEffect(() => {
+    canvasApiRef.current?.requestRedraw?.();
+  }, [pathEditingId]);
 
   // Path-editing overlay — anchor squares, tangent lines, control-point
   // dots for the polygon currently in edit mode. Reads the same state the
