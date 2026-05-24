@@ -5,6 +5,7 @@ import {
   asNodeId,
   PathBuilder,
   pathPoseDescriptor,
+  pathToAnchors,
   SceneCanvas,
   countPathAnchors,
   selectFromMarquee,
@@ -20,6 +21,7 @@ import {
 import type {
   CycleHandle,
   Path,
+  PolygonPath,
   PoseProjection,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
@@ -115,6 +117,29 @@ export function BezierEditDemo() {
       origin: 'first',
     });
   };
+
+  // E2E test probe: expose the live anchor/handle snapshot derived from the
+  // path pose. Source of truth is `scene.get(ID).pose`, so we read it lazily
+  // inside the probe (no ref mirror needed) and clone via JSON for a frozen
+  // snapshot. Flat across subpaths since the demo uses a single open path.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const hook = window.__weaselTest;
+    if (!hook) return;
+    return hook.registerProbe('handles', () => {
+      const node = scene.get(asNodeId(ID));
+      if (!node || node.pose.kind !== 'polygon') return [];
+      const { anchors } = pathToAnchors(node.pose as PolygonPath);
+      const flat = anchors.flat();
+      const out = flat.map((a, vertexIndex) => ({
+        vertexIndex,
+        anchor: [a.x, a.y] as [number, number],
+        handleIn: a.inHandle ? ([a.inHandle.x, a.inHandle.y] as [number, number]) : undefined,
+        handleOut: a.outHandle ? ([a.outHandle.x, a.outHandle.y] as [number, number]) : undefined,
+      }));
+      return JSON.parse(JSON.stringify(out));
+    });
+  }, [scene]);
 
   // Auto-start the hue cycle so the demo has motion on mount.
   // Restarting on `cycleOklch` toggle keeps the active interpolation in sync.
