@@ -348,7 +348,25 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           { spec: { kind: 'drag' as const, target: 'selected-body' as const, mods: { alt: true } }, actionId: 'clone' },
           { spec: { kind: 'drag' as const, target: 'unselected-body' as const, mods: { alt: true } }, actionId: 'clone' },
           {
-            spec: { kind: 'drag' as const, target: 'selected-body' as const },
+            // Body-drag → move, BUT defer when the pointerdown hit a path
+            // anchor / control affordance. Anchors lie on the curve so the
+            // body classifier still reports 'selected-body'; without this
+            // opt-out, move's active-scope binding beats editAnchors's
+            // ambient-scope binding on every anchor drag.
+            spec: {
+              kind: 'drag' as const,
+              target: {
+                kindOf: (afford: unknown, body?: string): boolean => {
+                  if (body !== 'selected-body') return false;
+                  if (
+                    typeof afford === 'object' && afford !== null &&
+                    typeof (afford as { kind?: unknown }).kind === 'string' &&
+                    /^(anchor|controlIn|controlOut):/.test((afford as { kind: string }).kind)
+                  ) return false;
+                  return true;
+                },
+              },
+            },
             actionId: 'move',
             ...(options.reparentOnDrop && options.reparentOnDrop !== 'off'
               ? { opts: { params: { reparentOnDrop: options.reparentOnDrop } } }

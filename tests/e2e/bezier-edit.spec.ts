@@ -68,6 +68,38 @@ test('bezier-edit — Add point extends the path with a new cubic segment', asyn
   expect(after[3].anchor[0]).toBe(after[2].anchor[0] + 80);
 });
 
+test('bezier-edit — dragging a vertex translates anchor + both attached handles', async ({ demo }) => {
+  await demo.goto('bezier-edit');
+  const before = (await demo.probe<HandleEntry[]>('handles'))!;
+  const v1 = before[1]; // anchor at (260, 160) with inHandle (220, 60), outHandle (300, 260)
+  expect(v1.handleIn).toBeTruthy();
+  expect(v1.handleOut).toBeTruthy();
+
+  // Enter edit mode.
+  await demo.dblClickScene(v1.anchor);
+
+  // Drag the anchor itself by (40, 20).
+  await demo.dragScene({ from: v1.anchor, by: [40, 20] });
+
+  const after = (await demo.probe<HandleEntry[]>('handles'))!;
+  const v1After = after[1];
+
+  // Anchor moved by the delta.
+  expect(Math.abs(v1After.anchor[0] - (v1.anchor[0] + 40))).toBeLessThanOrEqual(1);
+  expect(Math.abs(v1After.anchor[1] - (v1.anchor[1] + 20))).toBeLessThanOrEqual(1);
+  // BOTH handles moved by the same delta (translateAnchor keeps them attached).
+  expect(Math.abs(v1After.handleIn![0] - (v1.handleIn![0] + 40))).toBeLessThanOrEqual(1);
+  expect(Math.abs(v1After.handleIn![1] - (v1.handleIn![1] + 20))).toBeLessThanOrEqual(1);
+  expect(Math.abs(v1After.handleOut![0] - (v1.handleOut![0] + 40))).toBeLessThanOrEqual(1);
+  expect(Math.abs(v1After.handleOut![1] - (v1.handleOut![1] + 20))).toBeLessThanOrEqual(1);
+
+  // Other anchors are unaffected.
+  expect(after[0].anchor).toEqual(before[0].anchor);
+  expect(after[0].handleOut).toEqual(before[0].handleOut);
+  expect(after[2].anchor).toEqual(before[2].anchor);
+  expect(after[2].handleIn).toEqual(before[2].handleIn);
+});
+
 test('bezier-edit — dragging a control handle moves the handle, not the anchor', async ({ demo }) => {
   await demo.goto('bezier-edit');
 
