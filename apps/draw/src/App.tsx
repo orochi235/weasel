@@ -1144,17 +1144,30 @@ function EditorWithSharedScene({
   // refit on subsequent host resizes — that would hijack the user's pan/zoom.
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   const lastFitPaperRef = useRef<PaperSizeKey | null>(null);
+  // Stable recenter thunk wired into SceneCanvas.viewport.recenter so Cmd-0
+  // refits the page into the workspace. Reads live host dims + paper size
+  // through refs so the callback identity stays constant for SceneCanvas.
+  const hostDimsRef = useRef(hostDims);
+  hostDimsRef.current = hostDims;
+  const paperRef = useRef(paper);
+  paperRef.current = paper;
+  const recenter = useCallback(() => {
+    const dims = hostDimsRef.current;
+    if (dims.width === 0 || dims.height === 0) return;
+    const p = paperRef.current;
+    setView(fitViewToBounds(
+      { x: 0, y: 0, width: p.width, height: p.height },
+      dims,
+      { x: 0, y: 0, scale: { x: 1, y: 1 } },
+      { padding: 24 },
+    ));
+  }, []);
   useEffect(() => {
     if (hostDims.width === 0 || hostDims.height === 0) return;
     if (lastFitPaperRef.current === paperSize) return;
     lastFitPaperRef.current = paperSize;
-    setView(fitViewToBounds(
-      { x: 0, y: 0, width: paper.width, height: paper.height },
-      hostDims,
-      { x: 0, y: 0, scale: { x: 1, y: 1 } },
-      { padding: 24 },
-    ));
-  }, [paperSize, hostDims.width, hostDims.height, paper.width, paper.height]);
+    recenter();
+  }, [paperSize, hostDims.width, hostDims.height, paper.width, paper.height, recenter]);
 
   // Document-page layer — a single world-space rect at {0,0,paper.width,paper.height}
   // filled with the doc's backgroundColor. Replaces the kit-level backgroundFill
@@ -1213,7 +1226,7 @@ function EditorWithSharedScene({
             selection={selection}
             selectionMode="multi"
             toolBundle="exhaustive"
-            viewport={{ pinchZoom: true }}
+            viewport={{ pinchZoom: true, recenter }}
             cursorCoordsHud
             pickHud
             onToolsCreated={setTools}

@@ -19,15 +19,17 @@ import type { View } from 'core/viewport/view';
 export function useViewDepSource(
   currentViewRef: React.RefObject<View>,
   onViewChange: (v: View) => void,
+  recenter?: () => void,
 ): ViewApi {
   const viewApiRef = useRef<ViewApi>({
     get: () => currentViewRef.current,
     set: (v: View) => onViewChange(v),
   });
-  // Refresh closures every render so the latest onViewChange is captured.
+  // Refresh closures every render so the latest onViewChange / recenter are captured.
   viewApiRef.current = {
     get: () => currentViewRef.current,
     set: (v: View) => onViewChange(v),
+    ...(recenter ? { recenter } : {}),
   };
   return viewApiRef.current;
 }

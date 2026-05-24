@@ -46,6 +46,12 @@ import type { PoseProjection } from './resize/geometry';
 export interface ViewApi {
   get(): View;
   set(v: View): void;
+  /** Optional recenter callback. When wired, `viewportZoomAction`'s
+   *  `reset` branch (Cmd-0) calls this instead of resetting to identity —
+   *  letting consumers re-fit the page (or other reference bounds) into
+   *  the workspace. Receives no args; the consumer reads its own bounds
+   *  + host dims and dispatches `setView(...)`. */
+  recenter?(): void;
 }
 
 /**

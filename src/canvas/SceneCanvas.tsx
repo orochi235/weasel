@@ -473,6 +473,12 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
       animatedZoom?: boolean | { duration?: number; resetDuration?: number; easing?: (t: number) => number };
       pan?: boolean;
       zoom?: boolean;
+      /** Callback invoked by Cmd-0 (`viewport.zoom` action's `reset` branch).
+       *  When supplied, replaces the default reset-to-identity behavior —
+       *  consumers typically refit the document page into the workspace
+       *  via `fitViewToBounds`. The callback owns its own bounds + host
+       *  dims and dispatches the resulting view via `onViewChange`. */
+      recenter?: () => void;
     };
 
     /**
@@ -1116,6 +1122,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             pickEvery={internalPickEvery}
             viewportPanEnabled={viewport?.pan !== false}
             viewportZoomEnabled={viewport?.zoom !== false}
+            viewportRecenter={viewport?.recenter}
             editAnchorsExternalState={editAnchorsExternalState}
           />
           <GestureDispatcherMounter
@@ -1342,6 +1349,7 @@ function StandardActionsRegistrar({
   pickEvery,
   viewportPanEnabled,
   viewportZoomEnabled,
+  viewportRecenter,
   editAnchorsExternalState,
 }: {
   selection: SelectionApi;
@@ -1366,6 +1374,10 @@ function StandardActionsRegistrar({
   viewportPanEnabled: boolean;
   /** Resolved `viewport.zoom` flag — default true, false to disable. */
   viewportZoomEnabled: boolean;
+  /** Optional recenter callback. When supplied, wires through to the
+   *  `view` dep so `viewport.zoom` reset (Cmd-0) calls it instead of
+   *  snapping to identity. */
+  viewportRecenter?: () => void;
   /** Lifted edit-mode state so the `pathEditingOverlay` chrome (rendered
    *  outside this subtree) can read the same `editingId` the dep does. */
   editAnchorsExternalState: import('./deps/useEditAnchorsDepSource').EditAnchorsStateRef;
@@ -1373,7 +1385,7 @@ function StandardActionsRegistrar({
   // Build the ViewApi (stable identity, refreshed closures) and hand it to
   // useStandardActions (which publishes the `view` dep along with selection,
   // scene, history, pointer, activeTool).
-  const view = useViewDepSource(currentViewRef, onViewChange);
+  const view = useViewDepSource(currentViewRef, onViewChange, viewportRecenter);
   // Scene owns its own undo/redo stacks via `useScene`. `undoAction` /
   // `redoAction` only call `history.undo()` / `history.redo()`, so the scene
   // satisfies the runtime contract — cast through `unknown` since `Scene`'s

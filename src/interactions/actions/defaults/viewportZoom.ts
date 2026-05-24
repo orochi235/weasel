@@ -97,7 +97,14 @@ export const viewportZoomAction: Action & { requires: string[] } = {
           view.set(zoomAt(current, { x: 0, y: 0 }, 1 / KEY_STEP));
           break;
         case 'reset':
-          view.set({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+          // Prefer the consumer-supplied recenter when available — typically
+          // re-fits the document page into the workspace. Fall back to
+          // identity (origin, scale 1) when no recenter is wired.
+          if (view.recenter) {
+            view.recenter();
+          } else {
+            view.set({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+          }
           break;
         default:
           // Unknown kind — no-op. Legacy bridge calls with params=undefined;
