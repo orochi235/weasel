@@ -1,6 +1,15 @@
 import type { Op } from 'core/ops/types';
 import { createHistory, type History, type HistoryEntry } from './history';
 
+const RESUMERS = new WeakMap<Journal, () => void>();
+
+/** Called by `history.resumeJournal`. Not part of the public API. */
+export function _resumeJournalInternal(j: Journal): void {
+  const r = RESUMERS.get(j);
+  if (!r) throw new Error('Journal is not resumable (already committed or cancelled)');
+  r();
+}
+
 export interface BeginJournalOptions {
   label: string;
   targetId?: string;
@@ -35,23 +44,24 @@ export function createJournalInternal(
 ): Journal {
   const inner = createHistory(adapter);
   const forkedAtEntryId = parent.currentEntryId();
-  let active = true;
+  type State = 'active' | 'suspended' | 'closed';
+  let state: State = 'active';
   const targetId = opts.targetId;
 
-  return {
+  const journal: Journal = {
     targetId,
     forkedAtEntryId,
 
     applyBatch(ops: Op[], label: string): void {
-      if (!active) throw new Error('Journal is closed; cannot applyBatch');
+      if (state !== 'active') throw new Error('Journal is not active');
       inner.applyOps(ops, label);
     },
     undo(): void {
-      if (!active) throw new Error('Journal is closed; cannot undo');
+      if (state !== 'active') throw new Error('Journal is not active');
       inner.undo();
     },
     redo(): void {
-      if (!active) throw new Error('Journal is closed; cannot redo');
+      if (state !== 'active') throw new Error('Journal is not active');
       inner.redo();
     },
     canUndo(): boolean {
@@ -64,24 +74,33 @@ export function createJournalInternal(
       return inner.entries();
     },
     commit(label: string): void {
-      if (!active) throw new Error('Journal already closed');
+      if (state === 'closed') throw new Error('Journal already closed');
       const netOps = inner.allForwardOps();
       if (netOps.length > 0) {
         parent.recordEntry(netOps, label);
       }
-      active = false;
+      state = 'closed';
+      RESUMERS.delete(journal);
     },
     cancel(): void {
-      if (!active) throw new Error('Journal already closed');
+      if (state === 'closed') throw new Error('Journal already closed');
       inner.goto(0);
-      active = false;
+      state = 'closed';
+      RESUMERS.delete(journal);
     },
     suspend(): void {
-      if (!active) throw new Error('Journal already closed');
-      active = false;
+      if (state !== 'active') throw new Error('Journal is not active');
+      state = 'suspended';
     },
     isActive(): boolean {
-      return active;
+      return state === 'active';
     },
   };
+
+  RESUMERS.set(journal, () => {
+    if (state !== 'suspended') throw new Error('Journal is not suspended');
+    state = 'active';
+  });
+
+  return journal;
 }

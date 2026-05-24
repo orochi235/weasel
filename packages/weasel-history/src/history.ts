@@ -1,7 +1,7 @@
 import type { Op } from 'core/ops/types';
 import { rebuildOp } from 'core/ops/registry';
 import { dwarn, dlog } from 'debug/flag';
-import { createJournalInternal, type Journal, type BeginJournalOptions } from './journal';
+import { createJournalInternal, _resumeJournalInternal, type Journal, type BeginJournalOptions } from './journal';
 
 interface Entry {
   /** Monotonic id assigned at first push. Stable across coalesce merges
@@ -114,6 +114,12 @@ export interface History {
    *  flushed to this History as one entry. See spec docs/superpowers/specs/
    *  2026-05-24-modality-design.md for the full lifecycle. */
   beginJournal(opts: BeginJournalOptions): Journal;
+  /** Re-activate a suspended journal. Throws if the journal was committed or
+   *  cancelled (those are terminal). Staleness checking is the caller's
+   *  responsibility — consult `journal.forkedAtEntryId` against
+   *  `currentEntryId()` and your own op-semantic rules to decide whether
+   *  to resume or discard before calling this. */
+  resumeJournal(journal: Journal): void;
 }
 
 /** Options for `createHistory`. */
@@ -317,6 +323,9 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       // The returned History object's `this` doesn't carry it, so we pass
       // it through to the factory directly.
       return createJournalInternal(this, adapter, opts);
+    },
+    resumeJournal(journal: Journal): void {
+      _resumeJournalInternal(journal);
     },
     restore(snapshot: SerializedHistory): void {
       undoStack.length = 0;
