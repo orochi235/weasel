@@ -26,6 +26,7 @@
  */
 import {
   useCallback, useEffect, useMemo, useRef, useState, type ReactElement,
+  type MutableRefObject,
 } from 'react';
 import {
   SceneCanvas,
@@ -80,6 +81,8 @@ import { useSceneAdapter } from '@orochi235/weasel';
 import type { Obj } from './poseUpdate';
 import { parseSvg } from '@orochi235/weasel-svg';
 import { downloadSvg, pickSvgFile, svgNodesToObjsWithGroups, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
+import { useModality } from './modality/useModality';
+import type { ModeMachine } from './modality';
 import { sceneToSvgString } from './svgExport';
 import type { RecordingProfile } from './recorder';
 
@@ -1038,17 +1041,31 @@ function BooleansAdapterPublisher({
  *  underlying instances are constructed once via `useRef`), so the bridge
  *  closure created here doesn't churn between Editor renders. */
 export function App(): ReactElement {
+  // ── Cycle break: getActiveJournal needs machine, machine needs to be
+  // created after scene. Use a ref so the lazy accessor always reads the
+  // live machine without capturing a stale closure.
+  const machineRef = useRef<ModeMachine | null>(null) as MutableRefObject<ModeMachine | null>;
+
   // Lift scene + selection to share with both Editor and the color
   // context bridge. `useScene` / `useSelection` synthesize stable
   // instances internally, so re-renders here don't recreate them.
   const scene = useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({
     systemLayers: [{ id: 'default' }],
     initial: useMemo(loadInitial, []),
+    getActiveJournal: () => machineRef.current?.getActiveJournal() ?? null,
   });
   const selection = useSelection({ mode: 'multi' });
   const updateSelected = useMemo(
     () => buildUpdateSelected(scene, selection),
     [scene, selection],
+  );
+
+  // Bootstrap the mode machine, decorations, and scoping dim.
+  // machineRef is populated inside useModality so the getActiveJournal
+  // accessor above always reads the live machine.
+  const modality = useModality(
+    scene as unknown as import('@orochi235/weasel').Scene<unknown, string, unknown>,
+    machineRef,
   );
 
   // Persist on every commit. The 300ms debounce coalesces drag bursts so
@@ -1073,7 +1090,7 @@ export function App(): ReactElement {
       initialStroke={initialStroke}
       updateSelected={updateSelected}
     >
-      <EditorWithSharedScene scene={scene} selection={selection} />
+      <EditorWithSharedScene scene={scene} selection={selection} modality={modality} />
     </ColorContextProvider>
   );
 }
@@ -1083,9 +1100,11 @@ export function App(): ReactElement {
 function EditorWithSharedScene({
   scene,
   selection,
+  modality,
 }: {
   scene: ReturnType<typeof useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>;
   selection: ReturnType<typeof useSelection>;
+  modality: ReturnType<typeof useModality>;
 }): ReactElement {
   const [tools, setTools] = useState<ToolsApi | null>(null);
   const actionsReg = useActionsRegistry();
@@ -1252,6 +1271,9 @@ function EditorWithSharedScene({
                 },
               } : {}),
             }}
+            decorationLayer={modality.decorationLayer}
+            alphaFor={modality.scopingDim.alphaFor}
+            isPointerInteractive={modality.scopingDim.isPointerInteractive}
           >
             <BooleansAdapterPublisher scene={scene} selection={selection} />
           </SceneCanvas>
