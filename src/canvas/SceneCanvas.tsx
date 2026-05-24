@@ -573,6 +573,11 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
 /** Discriminate the polymorphic `tools` prop: `ToolsApi` has `setActive`
  *  / `active` / `registry`; the patch record shape has none of those. */
+/** Stable empty `Set` so `getSuppressedSelectionIds` doesn't allocate
+ *  a fresh empty Set on every read — selection-overlay's `draw` runs
+ *  every frame. */
+const EMPTY_ID_SET: ReadonlySet<string> = new Set();
+
 function isToolsApi(
   tools: ToolsApi | Record<string, AnyTool | true | false>,
 ): tools is ToolsApi {
@@ -992,12 +997,31 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // dots for the polygon currently in edit mode. Reads the same state the
   // dep does, so chrome appears exactly when (and only when) the gesture
   // path is also active.
+  //
+  // `getPose` walks the dispatcher's in-flight handles first so the chrome
+  // tracks the live `previewPose` while editAnchorsAction is dragging; only
+  // falls back to the committed scene pose between gestures. This is what
+  // makes the dragged anchor / handle move under the cursor instead of
+  // staying pinned to its committed position until the drag commits.
   const sceneRefForOverlay = useRef(scene);
   sceneRefForOverlay.current = scene;
   const pathEditingOverlayLayer = useMemo(
     () => createPathEditingOverlayLayer({
       getEditingId: () => pathEditingIdRef.current || null,
       getPose: (id) => {
+        const disp = dispatcherRef.current;
+        if (disp) {
+          for (const handle of disp.getInFlightHandles()) {
+            const previewIds = handle.previewIds?.();
+            if (!previewIds) continue;
+            for (const previewId of previewIds) {
+              if (previewId === id) {
+                const p = handle.previewPose?.(id);
+                if (p != null) return p as never;
+              }
+            }
+          }
+        }
         const node = sceneRefForOverlay.current?.get(id as never);
         return (node?.pose ?? null) as never;
       },
@@ -1006,14 +1030,31 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [],
   );
 
-  const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({
-    ...mergedLayers,
-    previewGhost: { layer: previewLayer, after: 'scene' },
-    dispatcherOverlay: { layer: dispatcherOverlay, after: 'previewGhost' },
-    ...(penPreviewLayer ? { penPreview: { layer: penPreviewLayer, after: 'dispatcherOverlay' } } : {}),
-    pathEditingOverlay: { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
-    ...(backgroundLayer ? { backgroundFill: { layer: backgroundLayer, before: 'scene' } } : {}),
-  }), [mergedLayers, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, backgroundLayer]);
+  // Suppress the standard selection overlay (outline + corner/rotate
+  // handles) on the node currently in path-edit mode — the per-anchor
+  // chrome takes over.
+  const getSuppressedSelectionIds = useCallback((): ReadonlySet<string> => {
+    const id = pathEditingIdRef.current;
+    return id ? new Set([id]) : EMPTY_ID_SET;
+  }, []);
+
+  const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => {
+    // Merge `getSuppressedIds` into whatever selectionOverlay config the
+    // user passed (or our default). Skip when the slot is explicitly null.
+    const selSlot = mergedLayers.selectionOverlay;
+    const selWithSuppress = selSlot && !(typeof selSlot === 'object' && 'layer' in selSlot)
+      ? { ...selSlot, getSuppressedIds: getSuppressedSelectionIds }
+      : selSlot;
+    return {
+      ...mergedLayers,
+      ...(selWithSuppress !== undefined ? { selectionOverlay: selWithSuppress } : {}),
+      previewGhost: { layer: previewLayer, after: 'scene' },
+      dispatcherOverlay: { layer: dispatcherOverlay, after: 'previewGhost' },
+      ...(penPreviewLayer ? { penPreview: { layer: penPreviewLayer, after: 'dispatcherOverlay' } } : {}),
+      pathEditingOverlay: { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
+      ...(backgroundLayer ? { backgroundFill: { layer: backgroundLayer, before: 'scene' } } : {}),
+    };
+  }, [mergedLayers, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, backgroundLayer, getSuppressedSelectionIds]);
 
   // Standard-action deps: closures over the live scene / selection / adapter
   // so the resolved actions always read current state. `useStandardActions`

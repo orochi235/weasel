@@ -25,7 +25,7 @@
 import type { Action } from '../registry';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
 import type { EditAnchorsDep } from '../depSchema';
-import { withCoord, enumerateAnchors } from '../edit-anchors/geometry';
+import { withCoord, enumerateAnchors, translateAnchor } from '../edit-anchors/geometry';
 import { createTransformOp } from 'core/ops/transform';
 import { dispatchApplyBatch } from 'core/applyOps';
 import type { PolygonPath } from 'features/paths/types';
@@ -64,7 +64,16 @@ interface EditAnchorsScratch {
   dep: EditAnchorsDep;
   id: string;
   anchorIndex: number;
+  /** `'anchor'` drags the on-curve point and its attached handles by the
+   *  same delta. `'controlIn'` / `'controlOut'` drag only the control
+   *  point to the new absolute world coord. */
+  part: 'anchor' | 'controlIn' | 'controlOut';
+  /** For control drags: index in `coords` of the control point. For
+   *  anchor drags: index of the anchor itself. */
   coordIndex: number;
+  /** For anchor drags: the world position of the anchor at drag start.
+   *  Used to compute the (dx, dy) translation. Unused for control drags. */
+  anchorOrigin: { x: number; y: number };
   originPose: PolygonPath;
   currentPose: PolygonPath;
 }
@@ -156,7 +165,9 @@ export const editAnchorsAction: Action & { requires: string[] } = {
         dep,
         id: editingId,
         anchorIndex: anchorInfo.anchorIndex,
+        part: anchorInfo.part,
         coordIndex,
+        anchorOrigin: { x: anchor.x, y: anchor.y },
         originPose: pose,
         currentPose: pose,
       };
@@ -165,12 +176,27 @@ export const editAnchorsAction: Action & { requires: string[] } = {
 
       return {
         onMove(moveCtx: InvocationCtx): void {
-          scratch.currentPose = withCoord(
-            scratch.originPose,
-            scratch.coordIndex,
-            moveCtx.world.x,
-            moveCtx.world.y,
-          );
+          if (scratch.part === 'anchor') {
+            // Translate the on-curve point AND its attached handles
+            // together so the surrounding bezier segments don't shear.
+            const dx = moveCtx.world.x - scratch.anchorOrigin.x;
+            const dy = moveCtx.world.y - scratch.anchorOrigin.y;
+            scratch.currentPose = translateAnchor(
+              scratch.originPose,
+              scratch.anchorIndex,
+              dx,
+              dy,
+            );
+          } else {
+            // Control-handle drag: move only the control to the absolute
+            // world coord under the cursor.
+            scratch.currentPose = withCoord(
+              scratch.originPose,
+              scratch.coordIndex,
+              moveCtx.world.x,
+              moveCtx.world.y,
+            );
+          }
           active = true;
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {

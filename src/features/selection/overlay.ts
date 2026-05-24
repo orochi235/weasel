@@ -251,6 +251,11 @@ export interface SelectionOverlayLayerOpts<TPose> extends SelectionLayerCommon<T
    *  see outlines around each real member. When omitted, the outline pass
    *  uses the same `getSelection` ids as the handle pass. */
   getOutlineIds?: () => readonly NodeId[];
+  /** Optional set of ids to suppress entirely — both outline and handles
+   *  are skipped. Used by SceneCanvas to hide the standard selection
+   *  chrome on the node currently in path-anchor edit mode, where the
+   *  per-anchor chrome takes over. */
+  getSuppressedIds?: () => ReadonlySet<string>;
 }
 
 const DEFAULT_OUTLINE: Required<Pick<Stroke, 'paint' | 'width'>> & { pad: number } = {
@@ -638,9 +643,17 @@ export function createSelectionOverlayLayer<TPose>(
     label: 'Selection',
     space: 'screen',
     draw: (_data, view) => {
-      const ids = opts.getSelection();
+      const allIds = opts.getSelection();
+      if (allIds.length === 0) return [];
+      const suppressed = opts.getSuppressedIds?.();
+      const ids = suppressed && suppressed.size > 0
+        ? allIds.filter((id) => !suppressed.has(id as unknown as string))
+        : allIds;
       if (ids.length === 0) return [];
-      const outlineIds = opts.getOutlineIds ? opts.getOutlineIds() : ids;
+      const outlineIdsRaw = opts.getOutlineIds ? opts.getOutlineIds() : ids;
+      const outlineIds = suppressed && suppressed.size > 0
+        ? outlineIdsRaw.filter((id) => !suppressed.has(id as unknown as string))
+        : outlineIdsRaw;
       const out: DrawCommand[] = [];
       for (const cmd of outlineCommandsFor(outlineIds, resolveBounds, stroke, pad, view)) out.push(cmd);
       if (!handles) return out;

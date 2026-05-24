@@ -111,3 +111,34 @@ export function withCoord(path: PolygonPath, coordIndex: number, x: number, y: n
   next[coordIndex + 1] = y;
   return { kind: 'polygon', commands: path.commands, coords: next, fillRule: path.fillRule };
 }
+
+/** Translate anchor `anchorIndex` AND its attached control handles
+ *  (`controlIn` / `controlOut`) by `(dx, dy)`. Used by `editAnchorsAction`
+ *  when the dragged affordance is the anchor itself — moving the anchor
+ *  without its handles would shear the surrounding bezier segments. */
+export function translateAnchor(
+  path: PolygonPath,
+  anchorIndex: number,
+  dx: number,
+  dy: number,
+): PolygonPath {
+  const anchors = enumerateAnchors(path);
+  const a = anchors[anchorIndex];
+  if (!a) return path;
+  const next = new Float32Array(path.coords);
+  // Anchor itself.
+  next[a.coordIndex] += dx;
+  next[a.coordIndex + 1] += dy;
+  // In-handle of THIS anchor — the trailing pair of the incoming C/Q.
+  if (a.controlIn) {
+    next[a.controlIn.coordIndex] += dx;
+    next[a.controlIn.coordIndex + 1] += dy;
+  }
+  // Out-handle: the leading pair of the OUTGOING C/Q. Owned by this
+  // anchor's segment.
+  if (a.controlOut) {
+    next[a.controlOut.coordIndex] += dx;
+    next[a.controlOut.coordIndex + 1] += dy;
+  }
+  return { kind: 'polygon', commands: path.commands, coords: next, fillRule: path.fillRule };
+}
