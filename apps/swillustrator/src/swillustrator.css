@@ -255,18 +255,16 @@ html, body, #root {
   /* Sized to the ActiveSwatches widget (56px square) — the limiting
      element. The vertical ToolPalette's 44px buttons fit comfortably
      inside. */
-  width: 64px;
+  width: 72px;
   align-items: center;
   overflow-y: auto;
-  padding: 0;
+  padding: 0 8px;
 }
 
-/* ActiveSwatches sits at the bottom of the left sidebar, below the
-   tool palette. `margin-top: auto` pushes it past any flex gap so the
-   tool buttons stay anchored to the top of the column. */
+/* ActiveSwatches sits directly below the tool palette in the left
+   sidebar — natural flex order, no `margin-top: auto` push. */
 .swill-sidebar.left .swill-active-swatches-group {
-  margin-top: auto;
-  padding-bottom: 8px;
+  margin-top: 4px;
 }
 
 .swill-tool-button {
