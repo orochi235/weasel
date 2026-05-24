@@ -49,6 +49,11 @@ export interface SerializedHistory {
    *  history matches the original's `entries().redo` ordering. */
   redoStack: SerializedHistoryEntry[];
   nextEntryId: number;
+  /** Entries dropped because at least one of their ops lacked a `name`
+   *  and therefore couldn't round-trip through the op-factory registry.
+   *  Always present (zero when nothing was dropped) so callers can detect
+   *  loss without parsing the debug log. */
+  droppedEntries: number;
 }
 
 /** Read-only view of a history entry exposed via `History.entries()`. */
@@ -307,15 +312,18 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       return () => { listeners.delete(listener); };
     },
     serialize(): SerializedHistory {
+      let dropped = 0;
+      const project = (e: Entry): SerializedHistoryEntry | null => {
+        const s = entryToSerial(e);
+        if (s === null) dropped++;
+        return s;
+      };
       return {
         version: 1,
-        undoStack: undoStack
-          .map((e) => entryToSerial(e))
-          .filter((e): e is SerializedHistoryEntry => e !== null),
-        redoStack: redoStack
-          .map((e) => entryToSerial(e))
-          .filter((e): e is SerializedHistoryEntry => e !== null),
+        undoStack: undoStack.map(project).filter((e): e is SerializedHistoryEntry => e !== null),
+        redoStack: redoStack.map(project).filter((e): e is SerializedHistoryEntry => e !== null),
         nextEntryId,
+        droppedEntries: dropped,
       };
     },
     recordEntry(ops: Op[], label: string): void {

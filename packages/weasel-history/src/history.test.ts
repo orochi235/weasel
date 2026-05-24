@@ -387,6 +387,17 @@ describe('createHistory — serialize / restore', () => {
     const snap = h1.serialize();
     expect(snap.undoStack).toHaveLength(1);
     expect(snap.undoStack[0].label).toBe(''); // transform op's default label
+    // The dropped entry is reported on the snapshot so callers can detect
+    // loss without parsing the debug log.
+    expect(snap.droppedEntries).toBe(1);
+  });
+
+  it('reports droppedEntries === 0 when nothing was dropped', () => {
+    const a = makeAdapter();
+    const h = createHistory(a as any);
+    h.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
+    const snap = h.serialize();
+    expect(snap.droppedEntries).toBe(0);
   });
 
   it('substitutes placeholder for unknown op names on restore', () => {
@@ -418,6 +429,7 @@ describe('createHistory — serialize / restore', () => {
       undoStack: [],
       redoStack: [],
       nextEntryId: 5,
+      droppedEntries: 0,
     });
     h.apply(createTransformOp<Pose>({ id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 1 } }));
     expect(h.entries().undo[0].id).toBe(5);
