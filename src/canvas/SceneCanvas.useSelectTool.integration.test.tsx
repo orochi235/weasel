@@ -239,7 +239,11 @@ describe('Phase 13 integration: SceneCanvas + useSelectTool drag routes', () => 
             defaultBinding: { kind: 'drag' },
             // Always enabled so the dispatcher doesn't gate it.
             enabled: () => true as true,
-            invoker: { timing: 'ongoing', start: () => { areaSelectSpy(); return {}; } },
+            // Return a non-empty handle so the dispatcher records the
+            // engagement instead of falling through to a sibling binding —
+            // the test asserts the spy fires once, not that the binding
+            // matched on every linked spec.
+            invoker: { timing: 'ongoing', start: () => { areaSelectSpy(); return { onEnd: () => {} }; } },
           },
         }}
       />,

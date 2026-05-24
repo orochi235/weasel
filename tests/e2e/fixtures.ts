@@ -110,7 +110,7 @@ export class Demo {
 export const test = base.extend<{ demo: Demo }>({
   demo: async ({ page }, use) => {
     const demo = new Demo(page);
-    page.on('pageerror', (err) => demo._recordError(`pageerror: ${err.message}`));
+    page.on('pageerror', (err) => demo._recordError(`pageerror: ${err.message}\n${err.stack ?? ''}`));
     page.on('console', (msg) => {
       if (msg.type() === 'error') demo._recordError(`console.error: ${msg.text()}`);
     });

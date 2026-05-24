@@ -64,11 +64,15 @@ function makeTool(
   return { tool, toolsById: new Map([[toolId, tool]]) };
 }
 
-/** Minimal ongoing action. */
+/** Minimal ongoing action. Default mock returns a non-empty handle
+ *  (`{ onEnd: () => {} }`) so the dispatcher records it as engaged — an
+ *  empty `{}` would now fall through to the next match. Tests that want
+ *  to exercise the decline-and-fall-through path should pass a startFn
+ *  that returns `{}` explicitly. */
 function ongoingAction(
   id: string,
   spec: Action['defaultBinding'],
-  startFn = vi.fn().mockReturnValue({}),
+  startFn = vi.fn().mockReturnValue({ onEnd: () => {} }),
 ): Action {
   return {
     id,
@@ -160,7 +164,8 @@ describe('keyHeld engagement', () => {
     //     [initial] key-held(Space) → ongoingAction 'space-held'
     //     [engaged] key → immediateAction 'engaged-key'
     const engagedRun = vi.fn();
-    const engageStart = vi.fn().mockReturnValue({});
+    // Non-empty handle so the dispatcher records the engagement.
+    const engageStart = vi.fn().mockReturnValue({ onEnd: () => {} });
 
     const engageAction = ongoingAction('space-held', {
       kind: 'key-held',
@@ -249,7 +254,7 @@ describe('keyHeld engagement', () => {
   // -------------------------------------------------------------------------
   it('[engaged] click route fires during the hold window', () => {
     const clickRun = vi.fn();
-    const engageStart = vi.fn().mockReturnValue({});
+    const engageStart = vi.fn().mockReturnValue({ onEnd: () => {} });
 
     const engageAction = ongoingAction('space-held', {
       kind: 'key-held',
@@ -357,9 +362,9 @@ describe('keyHeld engagement', () => {
   // Scenario 5: Mid-hold modifier hot-swaps which [engaged] route matches
   // -------------------------------------------------------------------------
   it('mid-hold modifier hot-swap: different [engaged] routes match with/without shift', () => {
-    const dragNoShiftStart = vi.fn().mockReturnValue({});
-    const dragShiftStart = vi.fn().mockReturnValue({});
-    const engageStart = vi.fn().mockReturnValue({});
+    const dragNoShiftStart = vi.fn().mockReturnValue({ onEnd: () => {} });
+    const dragShiftStart = vi.fn().mockReturnValue({ onEnd: () => {} });
+    const engageStart = vi.fn().mockReturnValue({ onEnd: () => {} });
 
     const engageAction = ongoingAction('space-held', {
       kind: 'key-held',
@@ -417,8 +422,8 @@ describe('keyHeld engagement', () => {
   it('two held keys produce independent channel engagements', () => {
     const spaceEngagedRun = vi.fn();
     const aEngagedRun = vi.fn();
-    const spaceStart = vi.fn().mockReturnValue({});
-    const aStart = vi.fn().mockReturnValue({});
+    const spaceStart = vi.fn().mockReturnValue({ onEnd: () => {} });
+    const aStart = vi.fn().mockReturnValue({ onEnd: () => {} });
 
     // Tool A: holds Space → [engaged] 'z' fires.
     const spaceHeld = ongoingAction('space-held', {

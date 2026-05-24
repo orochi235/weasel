@@ -3,30 +3,34 @@
  *   1. Probe pins the initial S-curve anchor / handle geometry.
  *   2. The "Add point" button extends the path with a new cubic.
  *   3. Dragging a control handle moves the handle, not the anchor — the
- *      canonical edit-anchors gesture (currently `test.fixme` — see below).
+ *      canonical edit-anchors gesture (currently `test.fixme`).
  *
- * On (3): all of the wiring exists. `editAnchorsAction` is registered by
- * `useStandardActions`; `buildAffordanceAt` is configured with a
- * `getAnchorState` thunk; the `editAnchors` dep's default heuristic picks
- * the first selected polygon as `editingId`; affordance hit-testing returns
- * `controlOut:N` at the exact control-point coord. But the dispatcher
- * picks the first matching binding in ambient-scope registration order and
- * does NOT fall through when `start()` returns an empty handle. Since
- * `moveAction` (registered before `editAnchorsAction` in `useStandardActions`)
- * also binds bare `{ kind: 'drag' }`, every drag — including drags on a
- * control point — short-circuits at moveAction's start, which returns a
- * real ongoing handle (it ignores affordance). `editAnchorsAction.start`
- * never runs.
+ * On (3): all of the affordance hit-test wiring works. `affordanceAt` at
+ * the control-point's world coord correctly returns `controlOut:N`.
+ * `editAnchorsAction` checks `ctx.drag.affordance` at start time and
+ * returns a real handle iff the affordance is anchor-kind. The dispatcher
+ * now falls through on empty handles (added in this branch).
  *
- * Two possible fixes, neither in scope here:
- *   (a) Give `editAnchorsAction.defaultBinding` a target predicate that
- *       matches only anchor-kind affordances — boosts its specificity past
- *       the bare `kind: 'drag'` of moveAction/areaSelectAction.
- *   (b) Have the dispatcher treat an empty `{}` start-result as
- *       "not handled" and fall through to the next match.
+ * What's still missing: every general-drag ongoing action — moveAction,
+ * areaSelectAction, rotateAction, insertAction, insertRotateAction,
+ * cloneAction, lassoSelectAction — declares a bare `{ kind: 'drag' }`
+ * binding with no affordance gating. They're all registered before
+ * editAnchorsAction in `useStandardActions`, and each returns a real
+ * (non-empty) handle whenever its preconditions are met (selection
+ * non-empty, dep present, etc.). So even with the empty-handle fallthrough,
+ * one of them claims every drag — including drags on an anchor — before
+ * editAnchorsAction is ever consulted.
+ *
+ * The systemic fix isn't to teach each action to opt out of every
+ * specific-affordance kind (brittle, scales badly). The right move is to
+ * have `matchSorted` sort matches by binding specificity within scope, so
+ * a binding with a target predicate beats a bare-kind binding regardless
+ * of registration order. Then editAnchorsAction.defaultBinding gets a
+ * `target` predicate matching anchor-kind affordances, and it wins
+ * automatically on anchor drags without any opt-outs needed.
  *
  * The probe + drag input plumbing in this spec is correct and ready —
- * `.fixme` flips back to `test` once either fix lands.
+ * `.fixme` flips to `test` once the dispatcher specificity ordering lands.
  */
 
 import { test, expect } from './fixtures';
@@ -84,7 +88,6 @@ test('bezier-edit — Add point extends the path with a new cubic segment', asyn
 });
 
 test.fixme('bezier-edit — dragging a control handle moves the handle, not the anchor', async ({ demo }) => {
-  // See file-level doc comment. Spec is ready; blocked on dispatcher precedence.
   await demo.goto('bezier-edit');
 
   const before = (await demo.probe<HandleEntry[]>('handles'))!;

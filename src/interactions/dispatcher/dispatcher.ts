@@ -563,6 +563,30 @@ export function createDispatcher(): Dispatcher {
         }
         const invCtx = buildInvocationCtx(event, deps, gestureId);
         const handle = action.invoker.start(invCtx, match.binding.opts);
+        // Empty handle = "matched at the binding level but decided at runtime
+        // not to handle this gesture" (missing dep, wrong affordance, wrong
+        // selection kind, etc.). The widely-used early-return-empty pattern
+        // depends on the dispatcher falling through to the next match —
+        // otherwise the binding silently swallows the gesture.
+        if (
+          !handle.onMove
+          && !handle.onEnd
+          && !handle.overlay
+          && !handle.previewIds
+          && !handle.previewPose
+        ) {
+          // Clean up the per-gesture state we set above so a later match
+          // (still on the same pointerdown) sees a fresh slate.
+          if (event.kind === 'pointerdown') {
+            dragOrigins.delete(gestureId);
+            dragPoints.delete(gestureId);
+          }
+          if (event.kind === 'multitouch') {
+            pinchStartSpreads.delete(gestureId);
+          }
+          traceCandidates.push({ actionId: action.id, scope: match.scope, enabledResult: 'empty-handle' });
+          continue;
+        }
         inFlightHandles.set(gestureId, handle);
         inFlightOwners.set(gestureId, match.ownerToolId);
         finishTrace(action.id, 'handled');
