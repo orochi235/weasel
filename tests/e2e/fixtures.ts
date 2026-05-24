@@ -23,7 +23,10 @@ export class Demo {
   private allowedErrors: RegExp[] = [];
   readonly errors: string[] = [];
 
-  constructor(readonly page: Page) {}
+  readonly page: Page;
+  constructor(page: Page) {
+    this.page = page;
+  }
 
   async goto(demoId: string) {
     await this.page.goto(`/?test=1#${demoId}`);
@@ -55,7 +58,7 @@ export class Demo {
     const handle = this.page.locator('canvas').last();
     const box = await handle.boundingBox();
     if (!box) throw new Error('canvas has no bounding box');
-    return box;
+    return { left: box.x, top: box.y, width: box.width, height: box.height };
   }
 
   async sceneToCss(point: readonly [number, number]): Promise<[number, number]> {
