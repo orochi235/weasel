@@ -1,11 +1,13 @@
 import { createModeRegistry, type ModeRegistry } from '@orochi235/weasel-modes';
 import type { ModeDefinition } from '@orochi235/weasel-modes';
 import type { History, Journal } from '@orochi235/weasel-history';
+import { createJournalCache, type JournalCache } from './journalCache';
 
 export interface CreateModeMachineOptions {
   modes: readonly ModeDefinition[];
   history: History;
   initial?: string;
+  cacheCapacity?: number;  // default 8
 }
 
 export interface EnterModeArgs {
@@ -25,6 +27,7 @@ export interface ModeMachine {
   commitMode(): void;     // strict modes: commit
   cancelMode(): void;     // strict modes: cancel
   discardMode(): void;    // soft modes: cancel (no resume)
+  clearJournalCache(): void;
 }
 
 export function createModeMachine(opts: CreateModeMachineOptions): ModeMachine {
@@ -32,6 +35,8 @@ export function createModeMachine(opts: CreateModeMachineOptions): ModeMachine {
     modes: opts.modes,
     initial: opts.initial ?? 'normal',
   });
+
+  const cache: JournalCache = createJournalCache({ capacity: opts.cacheCapacity ?? 8 });
 
   let activeJournal: Journal | null = null;
   let activeTargetId: string | null = null;
@@ -44,11 +49,25 @@ export function createModeMachine(opts: CreateModeMachineOptions): ModeMachine {
       );
     }
     const def = registry.byId(id);
+    const tid = args.targetId ?? null;
+
+    // Soft mode + targetId → consult cache
+    if (def.kind === 'soft' && tid !== null) {
+      const cached = cache.get(id, tid);
+      if (cached) {
+        opts.history.resumeJournal(cached);
+        activeJournal = cached;
+        activeTargetId = tid;
+        registry.setMode(id);
+        return;
+      }
+    }
+
     activeJournal = opts.history.beginJournal({
-      targetId: args.targetId ?? undefined,
+      targetId: tid ?? undefined,
       label: def.id,
     });
-    activeTargetId = args.targetId ?? null;
+    activeTargetId = tid;
     registry.setMode(id);
   }
 
@@ -60,7 +79,11 @@ export function createModeMachine(opts: CreateModeMachineOptions): ModeMachine {
 
   function exitMode(): void {
     if (!activeJournal) return;
+    const def = registry.current();
     activeJournal.suspend();
+    if (def.kind === 'soft' && activeTargetId !== null) {
+      cache.put(def.id, activeTargetId, activeJournal);
+    }
     reset();
   }
 
@@ -79,7 +102,9 @@ export function createModeMachine(opts: CreateModeMachineOptions): ModeMachine {
 
   function discardMode(): void {
     if (!activeJournal) return;
+    const def = registry.current();
     activeJournal.cancel();
+    if (activeTargetId !== null) cache.remove(def.id, activeTargetId);
     reset();
   }
 
@@ -92,5 +117,6 @@ export function createModeMachine(opts: CreateModeMachineOptions): ModeMachine {
     commitMode,
     cancelMode,
     discardMode,
+    clearJournalCache: () => cache.clear(),
   };
 }

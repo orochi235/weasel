@@ -116,3 +116,57 @@ describe('createModeMachine', () => {
     expect(m.getActiveTargetId()).toBe(null);
   });
 });
+
+describe('mode machine + cache', () => {
+  it('soft-mode exitMode caches the suspended journal by (modeId, targetId)', () => {
+    const history = fakeHistory();
+    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
+
+    m.enterMode('path-edit', { targetId: 'p1' });
+    const j1 = m.getActiveJournal();
+    m.exitMode();
+
+    m.enterMode('path-edit', { targetId: 'p1' });
+    // Re-entered same target — should NOT have called beginJournal a second time.
+    expect(history.beginJournal).toHaveBeenCalledTimes(1);
+    expect(m.getActiveJournal()).toBe(j1);
+  });
+
+  it('soft-mode exitMode does NOT cache when the target is null (non-scoping mode use)', () => {
+    const history = fakeHistory();
+    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
+    m.enterMode('text-edit', { targetId: null });
+    m.exitMode();
+    m.enterMode('text-edit', { targetId: null });
+    // No targetId means no cache key; second entry beings fresh.
+    expect(history.beginJournal).toHaveBeenCalledTimes(2);
+  });
+
+  it('strict-mode commitMode does not cache; subsequent entry is fresh', () => {
+    const history = fakeHistory();
+    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
+    m.enterMode('free-transform', { targetId: 'sel' });
+    m.commitMode();
+    m.enterMode('free-transform', { targetId: 'sel' });
+    expect(history.beginJournal).toHaveBeenCalledTimes(2);
+  });
+
+  it('discardMode removes the cache entry', () => {
+    const history = fakeHistory();
+    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
+    m.enterMode('path-edit', { targetId: 'p' });
+    m.discardMode();
+    m.enterMode('path-edit', { targetId: 'p' });
+    expect(history.beginJournal).toHaveBeenCalledTimes(2);  // fresh
+  });
+
+  it('clearJournalCache() empties the cache (called on save/load)', () => {
+    const history = fakeHistory();
+    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
+    m.enterMode('path-edit', { targetId: 'p' });
+    m.exitMode();
+    m.clearJournalCache();
+    m.enterMode('path-edit', { targetId: 'p' });
+    expect(history.beginJournal).toHaveBeenCalledTimes(2);
+  });
+});
