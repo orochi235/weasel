@@ -9,6 +9,7 @@ import type { HitResult } from './routing/hitResult';
 import type { RouteResolvedInfo } from './routing/reflection/route-resolved';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { GestureBinding } from '../interactions/actions/binding';
+import type { CapabilityTag } from '@orochi235/weasel-modes';
 
 /** Outcome of a channel handler. `'claim'` stops dispatch for this event;
  *  `'pass'` lets the next slot try. Handlers that return nothing are
@@ -147,7 +148,7 @@ export interface Tool<TScratch = unknown> {
    * ineligible by all modes except those whose `allows` list includes
    * every implicit-or-declared tag (i.e. `normal` in the default preset).
    */
-  capabilities?: import('@orochi235/weasel-modes').CapabilityTag[];
+  capabilities?: CapabilityTag[];
   /** Optional caller-supplied key. Most built-in tools have their activation
    *  key declared in `BUILTIN_SELECT_KEYS` in `useKeybindings.ts`; this field
    *  is for tools that want their activation key to be configurable by the
