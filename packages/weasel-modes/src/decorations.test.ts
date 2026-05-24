@@ -43,12 +43,12 @@ describe('createModeDecorations', () => {
     expect(isolationPainter).toHaveBeenCalledTimes(1);
   });
 
-  it('version() bumps when the active mode changes', () => {
+  it('getVersion() bumps when the active mode changes', () => {
     const registry = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
     const d = createModeDecorations({ registry });
 
-    const v0 = d.version();
+    const v0 = d.getVersion();
     registry.setMode('path-edit');
-    expect(d.version()).toBeGreaterThan(v0);
+    expect(d.getVersion()).toBeGreaterThan(v0);
   });
 });

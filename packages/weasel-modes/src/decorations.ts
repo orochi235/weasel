@@ -18,7 +18,7 @@ export interface ModeDecorations {
    *  painter is registered for the active mode. */
   paint(): ModeDrawCommand[];
   /** Monotonic version. Bumps on mode change or painter registration. */
-  version(): number;
+  getVersion(): number;
 }
 
 export function createModeDecorations(opts: CreateModeDecorationsOptions): ModeDecorations {
@@ -40,6 +40,6 @@ export function createModeDecorations(opts: CreateModeDecorationsOptions): ModeD
       if (!painter) return [];
       return painter();
     },
-    version: () => ver,
+    getVersion: () => ver,
   };
 }
