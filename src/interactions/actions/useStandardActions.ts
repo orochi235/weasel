@@ -53,6 +53,8 @@ import { insertAction, insertRotateAction } from './defaults/insert';
 import { clearSelectionAction } from './defaults/clearSelection';
 import { cloneAction } from './defaults/clone';
 import { editAnchorsAction } from './defaults/editAnchors';
+import { enterPathEditAction } from './defaults/enterPathEdit';
+import { exitPathEditAction } from './defaults/exitPathEdit';
 import { lassoSelectAction } from './defaults/lassoSelect';
 import { pinchZoomAction } from './defaults/pinchZoom';
 import { viewportDragPanAction } from './defaults/viewportDragPan';
@@ -131,6 +133,8 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   insertRotateAction,
   cloneAction,
   editAnchorsAction,
+  enterPathEditAction,
+  exitPathEditAction,
   lassoSelectAction,
   pinchZoomAction,
   viewportDragPanAction,

@@ -59,6 +59,16 @@ export type InputEvent =
       bodyTarget?: 'empty' | 'selected-body' | 'unselected-body';
     }
   | {
+      kind: 'doubleclick';
+      target?: unknown;
+      altKey: boolean;
+      ctrlKey: boolean;
+      metaKey: boolean;
+      shiftKey: boolean;
+      /** Same semantics as on `click` — populated when `classifyTarget` is wired. */
+      bodyTarget?: 'empty' | 'selected-body' | 'unselected-body';
+    }
+  | {
       kind: 'contextmenu';
       target?: unknown;
       altKey: boolean;

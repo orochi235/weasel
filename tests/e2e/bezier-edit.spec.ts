@@ -78,6 +78,10 @@ test('bezier-edit — dragging a control handle moves the handle, not the anchor
   const startHandle = v1.handleOut!;
   const startAnchor = v1.anchor;
 
+  // Enter path-edit mode by double-clicking the path body — anchor handles
+  // are not hit-testable until `editingId` is set.
+  await demo.dblClickScene(v1.anchor);
+
   await demo.dragScene({ from: startHandle, by: [25, -15] });
 
   const after = (await demo.probe<HandleEntry[]>('handles'))!;

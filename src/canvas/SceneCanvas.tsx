@@ -960,27 +960,30 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [shapeTools.pen, baseRequestedTools, trueIds],
   );
 
+  // Path-editing edit-mode state. Owned here so it's reachable from both:
+  //   - the `pathEditingOverlay` chrome layer wired below
+  //   - `useEditAnchorsDepSource`, mounted in the child StandardActionsRegistrar
+  // The state stays empty until `enterPathEditAction` (double-click on a
+  // selected polygon) sets it, and clears on `exitPathEditAction` (Escape).
+  // Until then, the chrome doesn't draw and the gesture doesn't route to
+  // `editAnchorsAction` — both gate on `editingId !== ''`.
+  const [pathEditingId, setPathEditingId] = useState<string>('');
+  const pathEditingIdRef = useRef(pathEditingId);
+  pathEditingIdRef.current = pathEditingId;
+  const editAnchorsExternalState = useMemo(() => ({
+    getEditingId: () => pathEditingIdRef.current,
+    setEditingId: (id: string | null) => setPathEditingId(id ?? ''),
+  }), []);
+
   // Path-editing overlay — anchor squares, tangent lines, control-point
-  // dots for the polygon currently in anchor-edit mode. The "edit target"
-  // is computed via the same heuristic as `useEditAnchorsDepSource`: the
-  // first selected node whose pose.kind === 'polygon'. Drawn always when
-  // such a node exists; on non-path selections the layer no-ops.
+  // dots for the polygon currently in edit mode. Reads the same state the
+  // dep does, so chrome appears exactly when (and only when) the gesture
+  // path is also active.
   const sceneRefForOverlay = useRef(scene);
   sceneRefForOverlay.current = scene;
   const pathEditingOverlayLayer = useMemo(
     () => createPathEditingOverlayLayer({
-      getEditingId: () => {
-        const sc = sceneRefForOverlay.current;
-        const sel = selectionRef.current?.current;
-        if (!sc || !sel) return null;
-        for (const id of sel) {
-          const node = sc.get(id);
-          if (node && (node.pose as { kind?: string })?.kind === 'polygon') {
-            return id;
-          }
-        }
-        return null;
-      },
+      getEditingId: () => pathEditingIdRef.current || null,
       getPose: (id) => {
         const node = sceneRefForOverlay.current?.get(id as never);
         return (node?.pose ?? null) as never;
@@ -1113,6 +1116,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             pickEvery={internalPickEvery}
             viewportPanEnabled={viewport?.pan !== false}
             viewportZoomEnabled={viewport?.zoom !== false}
+            editAnchorsExternalState={editAnchorsExternalState}
           />
           <GestureDispatcherMounter
             canvasRef={internalCanvasRef}
@@ -1338,6 +1342,7 @@ function StandardActionsRegistrar({
   pickEvery,
   viewportPanEnabled,
   viewportZoomEnabled,
+  editAnchorsExternalState,
 }: {
   selection: SelectionApi;
   scene: Scene<unknown, string, unknown>;
@@ -1361,6 +1366,9 @@ function StandardActionsRegistrar({
   viewportPanEnabled: boolean;
   /** Resolved `viewport.zoom` flag — default true, false to disable. */
   viewportZoomEnabled: boolean;
+  /** Lifted edit-mode state so the `pathEditingOverlay` chrome (rendered
+   *  outside this subtree) can read the same `editingId` the dep does. */
+  editAnchorsExternalState: import('./deps/useEditAnchorsDepSource').EditAnchorsStateRef;
 }) {
   // Build the ViewApi (stable identity, refreshed closures) and hand it to
   // useStandardActions (which publishes the `view` dep along with selection,
@@ -1387,7 +1395,7 @@ function StandardActionsRegistrar({
   useInsertDepSource(scene, adapter);
   useLassoSelectDepSource(scene, selection);
   useTextEditDepSource(scene);
-  useEditAnchorsDepSource(scene, selection, adapter);
+  useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState);
   useDispatcherDepSource(dispatcher);
 
   useActionsPropResolver(actions);

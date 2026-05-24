@@ -283,6 +283,14 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       shiftKey: boolean;
     }>();
 
+    // Double-click synthesis state. Tracks the timestamp and client coords of
+    // the most recent click; a subsequent click within DOUBLE_CLICK_MAX_MS
+    // and DOUBLE_CLICK_MAX_PX promotes to a `doubleclick` event (emitted
+    // AFTER the second click).
+    const DOUBLE_CLICK_MAX_MS = 500;
+    const DOUBLE_CLICK_MAX_PX = 5;
+    let lastClick: { t: number; clientX: number; clientY: number } | null = null;
+
     // -----------------------------------------------------------------------
     // Window key listeners
     // -----------------------------------------------------------------------
@@ -604,6 +612,31 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           ...(down.bodyTarget !== undefined ? { bodyTarget: down.bodyTarget } : {}),
         };
         dispatch(clickEv);
+
+        // Double-click synthesis: emit a `doubleclick` event AFTER the
+        // second click when two clicks land within ~500ms and ~5px of each
+        // other. Reset the tracker after a successful doubleclick so a
+        // third click doesn't compose another one (triple-click semantics
+        // are not modeled).
+        const now = Date.now();
+        const prev = lastClick;
+        const dx = e.clientX - (prev?.clientX ?? 0);
+        const dy = e.clientY - (prev?.clientY ?? 0);
+        if (prev && now - prev.t < DOUBLE_CLICK_MAX_MS && Math.hypot(dx, dy) < DOUBLE_CLICK_MAX_PX) {
+          const dblEv: InputEvent = {
+            kind: 'doubleclick',
+            target: e.target,
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            shiftKey: e.shiftKey,
+            ...(down.bodyTarget !== undefined ? { bodyTarget: down.bodyTarget } : {}),
+          };
+          dispatch(dblEv);
+          lastClick = null;
+        } else {
+          lastClick = { t: now, clientX: e.clientX, clientY: e.clientY };
+        }
       }
     };
 

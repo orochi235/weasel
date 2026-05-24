@@ -76,7 +76,8 @@ const KIT_IDS = [
   'pathfinder.exclude', 'pathfinder.divide', 'pathfinder.crop',
   'move',
   'resize', 'rotate', 'areaSelect', 'insert', 'insert.adjustRotation', 'clone',
-  'editAnchors', 'lassoSelect', 'viewport.pinchZoom',
+  'editAnchors', 'enterPathEdit', 'exitPathEdit',
+  'lassoSelect', 'viewport.pinchZoom',
   // viewport.pan / viewport.zoom are registered conditionally by SceneCanvas's
   // useViewportActions, not by useStandardActions — see useViewportActions.ts.
   'viewport.dragPan', // Phase 14c.2
@@ -89,7 +90,7 @@ const KIT_IDS = [
 // ---------------------------------------------------------------------------
 
 describe('useStandardActions', () => {
-  it('registers all 43 kit-standard action descriptors', () => {
+  it('registers all 45 kit-standard action descriptors', () => {
     const seen: string[][] = [];
     render(
       <Providers>

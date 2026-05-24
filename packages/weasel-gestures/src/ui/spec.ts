@@ -103,6 +103,17 @@ export interface ClickSpec {
   phase?: PhaseSpec;
 }
 
+/** Double-click: two `click` events within ~500ms and ~5px of each other.
+ *  Synthesized by `useGestureDispatcher`; emitted AFTER the second
+ *  `click`. Bindings that want to handle a double-click should declare
+ *  this kind rather than chasing two `click` events. */
+export interface DoubleClickSpec {
+  kind: 'doubleClick';
+  target?: TargetSpec;
+  mods?: ModSpec;
+  phase?: PhaseSpec;
+}
+
 /** Right-click (contextmenu) gesture. The dispatcher calls
  *  `preventDefault()` on the underlying DOM event so the native menu
  *  doesn't appear — tools/actions fully own the right-click UX. */
@@ -147,6 +158,7 @@ export type GestureSpec =
   | KeyHeldSpec
   | WheelSpec
   | ClickSpec
+  | DoubleClickSpec
   | ContextMenuSpec
   | DragSpec
   | MultiTouchSpec

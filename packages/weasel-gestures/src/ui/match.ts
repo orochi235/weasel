@@ -270,6 +270,12 @@ export function matchSpec(
       return matchTarget(e.target, spec.target, e.bodyTarget);
     }
 
+    case 'doubleClick': {
+      if (e.kind !== 'doubleclick') return false;
+      if (!matchModifiers(e, spec.mods, isMac)) return false;
+      return matchTarget(e.target, spec.target, e.bodyTarget);
+    }
+
     case 'contextMenu': {
       if (e.kind !== 'contextmenu') return false;
       if (!matchModifiers(e, spec.mods, isMac)) return false;

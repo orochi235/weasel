@@ -81,6 +81,7 @@ describe('editAnchorsAction descriptor', () => {
     const invoker = getOngoingInvoker(editAnchorsAction);
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
+      setEditingId: () => {},
       getPose: () => ({ kind: 'polygon', coords: [0, 0, 10, 0, 10, 10] }),
       applyOps: () => {},
     };
@@ -93,6 +94,7 @@ describe('editAnchorsAction descriptor', () => {
     const invoker = getOngoingInvoker(editAnchorsAction);
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
+      setEditingId: () => {},
       getPose: () => ({ kind: 'polygon', coords: [0, 0, 10, 0, 10, 10] }),
       applyOps: () => {},
     };
@@ -150,6 +152,7 @@ function makeRealCtx(
   let currentPose: PolygonPath = pose;
   const dep: EditAnchorsDep = {
     editingId: 'node-a',
+      setEditingId: () => {},
     getPose: () => currentPose,
     applyOps: () => {},
   };
@@ -202,6 +205,7 @@ describe('editAnchorsAction — REAL invoker (Phase 14d-anchors)', () => {
     let dispatchedCount = 0;
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
+      setEditingId: () => {},
       getPose: () => triangle,
       applyOps: (ops) => { dispatchedCount = ops.length; },
     };
@@ -231,6 +235,7 @@ describe('editAnchorsAction — REAL invoker (Phase 14d-anchors)', () => {
     let opsDispatched = false;
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
+      setEditingId: () => {},
       getPose: () => triangle,
       applyOps: () => { opsDispatched = true; },
     };
@@ -252,6 +257,7 @@ describe('editAnchorsAction — REAL invoker (Phase 14d-anchors)', () => {
     const bezier = makeBezierPath();
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
+      setEditingId: () => {},
       getPose: () => bezier,
       applyOps: () => {},
     };
@@ -272,6 +278,7 @@ describe('editAnchorsAction — REAL invoker (Phase 14d-anchors)', () => {
     const triangle = makeTriangle();
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
+      setEditingId: () => {},
       getPose: () => triangle,
       applyOps: () => {},
     };
@@ -299,6 +306,7 @@ describe('editAnchorsAction — REAL invoker (Phase 14d-anchors)', () => {
     const triangle = makeTriangle(); // only 3 anchors (0,1,2)
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
+      setEditingId: () => {},
       getPose: () => triangle,
       applyOps: () => {},
     };

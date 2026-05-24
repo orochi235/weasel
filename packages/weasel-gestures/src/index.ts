@@ -66,7 +66,7 @@ export type { InputEvent } from './ui/inputEvent';
 // GestureSpec union + sub-types + ModSpec + TargetSpec + PhaseSpec
 export type {
   GestureSpec,
-  KeySpec, KeyHeldSpec, WheelSpec, ClickSpec, DragSpec,
+  KeySpec, KeyHeldSpec, WheelSpec, ClickSpec, DoubleClickSpec, DragSpec,
   MultiTouchSpec, ContextMenuSpec, MultiTouchTapSpec,
   ModSpec, TargetSpec, PhaseSpec,
 } from './ui/spec';

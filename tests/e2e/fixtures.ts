@@ -88,6 +88,14 @@ export class Demo {
     await this.page.mouse.click(cx, cy);
   }
 
+  /** Two clicks at the same scene point within the dispatcher's double-click
+   *  window (~500ms, ~5px) — triggers a `doubleclick` event. */
+  async dblClickScene(point: readonly [number, number]) {
+    const [cx, cy] = await this.sceneToCss(point);
+    await this.page.mouse.click(cx, cy);
+    await this.page.mouse.click(cx, cy);
+  }
+
   async wheelAtScene(point: readonly [number, number], delta: { dx?: number; dy?: number }) {
     const [cx, cy] = await this.sceneToCss(point);
     await this.page.mouse.move(cx, cy);

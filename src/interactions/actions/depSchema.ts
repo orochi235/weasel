@@ -91,8 +91,13 @@ export interface AreaSelectDep {
  * `applyOps(ops, label)` commits a transform op to history.
  */
 export interface EditAnchorsDep {
-  /** Id of the node currently being edited. */
+  /** Id of the node currently being edited. Empty string means no node is
+   *  currently in edit mode — the chrome and gesture both opt out. */
   editingId: string;
+  /** Enter/exit edit mode for a specific node. Pass `null` (or an empty
+   *  string) to exit. `enterPathEditAction` and `exitPathEditAction` call
+   *  this; consumers can call it directly to drive edit mode programmatically. */
+  setEditingId(id: string | null): void;
   /** Returns the polygon path for the given node. */
   getPose(id: string): unknown;
   /** Commits ops to history (erased form; dispatchApplyBatch handles narrowing). */
