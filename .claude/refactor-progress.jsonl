@@ -26,3 +26,7 @@
 {"ts": "2026-05-24T15:12:44.524930+00:00", "task": "3.2", "event": "impl complete: Canvas.tsx refactored; SceneCanvas.tsx refactored; all tests pass"}
 {"ts": "2026-05-24T15:13:00.258437+00:00", "task": "3.2", "event": "committed: 72403dc4"}
 {"ts":"2026-05-24T11:24:30Z","task":"3.3","event":"done","notes":"selectionOverlay factory moved to SceneCanvas; Canvas accepts CustomLayerEntry in selectionOverlay slot. cellHighlight slot added to LayersMap (CustomLayerEntry|null only). toolPreview.ts extracted. All tests pass."}
+{"ts":"2026-05-24T15:27:22Z","task":"4.1","event":"start"}
+{"ts":"2026-05-24T15:31:32Z","task":"4.1","event":"done","sha":"9eefac63"}
+{"ts":"2026-05-24T15:34:55Z","task":"5.1","event":"started"}
+{"ts":"2026-05-24T15:37:50Z","task":"5.1","event":"done","sha":"c231d4fc","notes":"All props kept — no removals. background deprecated. adapter getLayers cast documented. All tests pass."}
