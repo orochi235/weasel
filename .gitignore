@@ -1,4 +1,5 @@
 node_modules
+.worktrees
 pnpm-lock.yaml
 dist
 dist-demo
