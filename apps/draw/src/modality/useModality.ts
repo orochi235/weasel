@@ -9,6 +9,7 @@
 import { useEffect, useMemo } from 'react';
 import {
   asNodeId,
+  boundsOfPath,
   enumerateAnchors,
   viewToMat3,
   type RenderLayer,
@@ -107,14 +108,27 @@ export function useModality(
         if (!path || typeof path !== 'object') return [];
         const p = path as { kind?: string; commands?: unknown; coords?: unknown };
         if (p.kind !== 'polygon' || !(p.commands instanceof Uint8Array) || !(p.coords instanceof Float32Array)) return [];
-        // PolygonPath coords are stored in WORLD space by apps/draw's
-        // pen tool (see useBuiltinShapeTools.tsx#wrapPath — pose AABB and
-        // path coords share the same frame). enumerateAnchors returns
-        // those coords directly; no pose translation needed. The
-        // decoration layer's draw() wraps emitted commands in a
-        // view-transformed group, so world coords land at the right
-        // screen position.
-        return enumerateAnchors(p as Parameters<typeof enumerateAnchors>[0]);
+        // PolygonPath coords may be stored either in local space (origin
+        // at 0,0, with the pose providing the world offset) or in world
+        // space (coords already at the path's world position, pose AABB
+        // matching). PATH_PAINTER#pathAtPose handles both by translating
+        // the path by `pose.x - b.x, pose.y - b.y` at draw time. We apply
+        // the same delta to enumerated anchors so they land at the
+        // path's actual rendered position.
+        const typedPath = p as Parameters<typeof enumerateAnchors>[0];
+        const localAnchors = enumerateAnchors(typedPath);
+        const b = boundsOfPath(typedPath);
+        const pose = node.pose as { x?: number; y?: number };
+        const dx = (pose.x ?? 0) - b.x;
+        const dy = (pose.y ?? 0) - b.y;
+        if (dx === 0 && dy === 0) return localAnchors;
+        return localAnchors.map((a) => ({
+          ...a,
+          x: a.x + dx,
+          y: a.y + dy,
+          ...(a.controlIn ? { controlIn: { ...a.controlIn, x: a.controlIn.x + dx, y: a.controlIn.y + dy } } : {}),
+          ...(a.controlOut ? { controlOut: { ...a.controlOut, x: a.controlOut.x + dx, y: a.controlOut.y + dy } } : {}),
+        }));
       },
     });
     decorations.register('path-edit', painter);
