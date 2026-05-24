@@ -607,6 +607,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // without movement. Carry the `bodyTarget` from the pointerdown so
       // click specs with string-form targets ('empty', 'selected-body') match.
       if (!hadDragInFlight && down) {
+        const wClick = toWorld(e.clientX, e.clientY);
         const clickEv: InputEvent = {
           kind: 'click',
           target: e.target,
@@ -614,6 +615,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           ctrlKey: e.ctrlKey,
           metaKey: e.metaKey,
           shiftKey: e.shiftKey,
+          worldX: wClick.x,
+          worldY: wClick.y,
           ...(down.bodyTarget !== undefined ? { bodyTarget: down.bodyTarget } : {}),
         };
         dispatch(clickEv);
@@ -635,6 +638,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
             ctrlKey: e.ctrlKey,
             metaKey: e.metaKey,
             shiftKey: e.shiftKey,
+            worldX: wClick.x,
+            worldY: wClick.y,
             ...(down.bodyTarget !== undefined ? { bodyTarget: down.bodyTarget } : {}),
           };
           dispatch(dblEv);

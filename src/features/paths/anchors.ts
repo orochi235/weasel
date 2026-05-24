@@ -166,3 +166,45 @@ export function countPathAnchors(path: Path): number {
   }
   return n;
 }
+
+/** Sample every segment in `anchors` (a decoded path) and return the
+ *  closest (subpathIndex, segmentIndex, t) to the world point (wx, wy).
+ *  Uses cubic-bezier de Casteljau sampling (segments without bezier
+ *  handles are treated as straight lines via p1 = p0, p2 = p3). Returns
+ *  `null` only when there are no segments to sample. Used by alt-click
+ *  "insert anchor on path" gestures in the pen tool and the path-edit
+ *  mode action; lives in `features/paths` so both share one implementation. */
+export function nearestSegmentT(
+  anchors: PenAnchor[][],
+  wx: number,
+  wy: number,
+): { sub: number; segIdx: number; t: number } | null {
+  const SAMPLES = 32;
+  let bestD2 = Infinity;
+  let best: { sub: number; segIdx: number; t: number } | null = null;
+  for (let s = 0; s < anchors.length; s++) {
+    const sub = anchors[s];
+    for (let i = 0; i + 1 < sub.length; i++) {
+      const a = sub[i];
+      const b = sub[i + 1];
+      const p0 = a;
+      const p1 = a.outHandle ?? a;
+      const p2 = b.inHandle ?? b;
+      const p3 = b;
+      for (let k = 1; k < SAMPLES; k++) {
+        const t = k / SAMPLES;
+        const u = 1 - t;
+        const px = u * u * u * p0.x + 3 * u * u * t * p1.x + 3 * u * t * t * p2.x + t * t * t * p3.x;
+        const py = u * u * u * p0.y + 3 * u * u * t * p1.y + 3 * u * t * t * p2.y + t * t * t * p3.y;
+        const dx = px - wx;
+        const dy = py - wy;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < bestD2) {
+          bestD2 = d2;
+          best = { sub: s, segIdx: i, t };
+        }
+      }
+    }
+  }
+  return best;
+}

@@ -68,6 +68,30 @@ test('bezier-edit — Add point extends the path with a new cubic segment', asyn
   expect(after[3].anchor[0]).toBe(after[2].anchor[0] + 80);
 });
 
+test('bezier-edit — alt-click on the curve inserts a new vertex', async ({ demo }) => {
+  await demo.goto('bezier-edit');
+  const before = (await demo.probe<HandleEntry[]>('handles'))!;
+  expect(before.length).toBe(3);
+
+  // Enter edit mode.
+  await demo.dblClickScene(before[1].anchor);
+
+  // Click somewhere on the curve between anchor 0 (60,220) and anchor 1
+  // (260,160) with alt held. World (130, 110) is a reasonable midpoint
+  // of the first cubic — exact point doesn't matter since the action
+  // snaps to the nearest curve point.
+  const [cx, cy] = await demo.sceneToCss([130, 110]);
+  await demo.page.keyboard.down('Alt');
+  await demo.page.mouse.click(cx, cy);
+  await demo.page.keyboard.up('Alt');
+
+  const after = (await demo.probe<HandleEntry[]>('handles'))!;
+  expect(after.length).toBe(4);
+  // The original 3 anchors are still present at their original positions.
+  expect(after[0].anchor).toEqual(before[0].anchor);
+  expect(after[after.length - 1].anchor).toEqual(before[2].anchor);
+});
+
 test('bezier-edit — dragging a vertex translates anchor + both attached handles', async ({ demo }) => {
   await demo.goto('bezier-edit');
   const before = (await demo.probe<HandleEntry[]>('handles'))!;

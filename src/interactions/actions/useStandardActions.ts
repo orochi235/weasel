@@ -55,6 +55,7 @@ import { cloneAction } from './defaults/clone';
 import { editAnchorsAction } from './defaults/editAnchors';
 import { enterPathEditAction } from './defaults/enterPathEdit';
 import { exitPathEditAction } from './defaults/exitPathEdit';
+import { insertPathAnchorAction } from './defaults/insertPathAnchor';
 import { lassoSelectAction } from './defaults/lassoSelect';
 import { pinchZoomAction } from './defaults/pinchZoom';
 import { viewportDragPanAction } from './defaults/viewportDragPan';
@@ -135,6 +136,7 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   editAnchorsAction,
   enterPathEditAction,
   exitPathEditAction,
+  insertPathAnchorAction,
   lassoSelectAction,
   pinchZoomAction,
   viewportDragPanAction,

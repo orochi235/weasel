@@ -49,6 +49,13 @@ export type InputEvent =
       ctrlKey: boolean;
       metaKey: boolean;
       shiftKey: boolean;
+      /** World-space coordinates of the click, derived via the
+       *  `clientToWorld` thunk supplied to the dispatcher. Absent when
+       *  the thunk isn't wired. Forwarded into action params so click
+       *  invokers can act on the click's position without their own
+       *  pointer-listener plumbing. */
+      worldX?: number;
+      worldY?: number;
       /**
        * Body-target classification from the scene hit-test.
        * Populated by `useGestureDispatcher` when a `classifyTarget` thunk is
@@ -65,6 +72,9 @@ export type InputEvent =
       ctrlKey: boolean;
       metaKey: boolean;
       shiftKey: boolean;
+      /** Same as `click.worldX/worldY`. */
+      worldX?: number;
+      worldY?: number;
       /** Same semantics as on `click` — populated when `classifyTarget` is wired. */
       bodyTarget?: 'empty' | 'selected-body' | 'unselected-body';
     }

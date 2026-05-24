@@ -25,7 +25,7 @@ export {
   linePath,
 } from './builder';
 export { boundsOfPath } from './bounds';
-export { countPathAnchors, pathToAnchors, anchorsToPath, isAnchorSmooth, type PenAnchor } from './anchors';
+export { countPathAnchors, pathToAnchors, anchorsToPath, isAnchorSmooth, nearestSegmentT, type PenAnchor } from './anchors';
 export { splitCubicAtT, fitCubicThroughDeletion, type Point } from './cubicMath';
 export { pointInPath, strokeHitTest, type PointInPathOptions, type StrokeHitTestOptions } from './hitTest';
 export {

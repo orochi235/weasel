@@ -527,15 +527,30 @@ export function createDispatcher(): Dispatcher {
 
       if (action.invoker?.timing === 'immediate') {
         try {
-          // For wheel bindings, merge event-time delta/position data into params
-          // so the invoker receives both binding-declared params (e.g. `kind: 'wheel'`)
-          // and runtime event data (deltaX, deltaY, clientX, clientY). Option (a)
-          // from the design doc — simpler than extending InvocationCtx for immediate invokers.
+          // For wheel / click / doubleclick bindings, merge event-time
+          // delta/position data into params so the immediate invoker
+          // sees both binding-declared params (e.g. `kind: 'wheel'`)
+          // and runtime event data. Option (a) from the design doc —
+          // simpler than extending InvocationCtx for immediate invokers.
           const resolved = resolveParams(match.binding.opts?.params);
-          const params: Record<string, unknown> | undefined =
-            event.kind === 'wheel'
-              ? { deltaX: event.deltaX, deltaY: event.deltaY, clientX: event.clientX, clientY: event.clientY, ...resolved }
-              : resolved;
+          let params: Record<string, unknown> | undefined;
+          if (event.kind === 'wheel') {
+            params = {
+              deltaX: event.deltaX,
+              deltaY: event.deltaY,
+              clientX: event.clientX,
+              clientY: event.clientY,
+              ...resolved,
+            };
+          } else if (event.kind === 'click' || event.kind === 'doubleclick') {
+            params = {
+              worldX: event.worldX,
+              worldY: event.worldY,
+              ...resolved,
+            };
+          } else {
+            params = resolved;
+          }
           action.invoker.run(deps, params);
         } catch (err) {
           console.error(`weasel dispatcher: action "${action.id}" invoker threw`, err);
