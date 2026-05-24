@@ -26,12 +26,9 @@ import { useStandardActions } from 'interactions/actions/useStandardActions';
 import type { DrawCommand, ShaderProgramHandle } from '../renderer';
 import { textCommand } from 'features/text/textCommand';
 import { findShapePainter } from './shapePainters';
-import { CursorCoordsHud } from './CursorCoordsHud';
-import { PickHud } from './PickHud';
 import type { FillStyle } from 'core/paint-types';
-import type { RenderLayer } from 'core/layers/render';
 import { Canvas } from './Canvas';
-import type { CanvasProps, LayersMap } from './Canvas';
+import type { CanvasProps, LayersMap, CanvasSelectionMode, SelectionOverlaySlotConfig } from './Canvas';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { Animator } from '../animation/types';
 import type { SceneToAdapterOptions } from './sceneAdapter';
@@ -43,6 +40,7 @@ import { sceneFromJSON } from 'core/scene/scene';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
 import { usePublishSelection } from 'features/selection/SelectionContext';
 import type { Bounds } from 'tools/builtin/useSelectTool';
+import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/useSelectTool';
 import { useTools, type ToolsApi } from 'tools/useTools';
 import { useKeybindings } from 'tools/useKeybindings';
 import type { AnyTool } from 'tools/types';
@@ -54,7 +52,7 @@ import type { UseAreaSelectOptions } from 'interactions/actions/area-select/opti
 import { ActionsProviderIfRoot } from './SceneCanvas/ActionsProviderIfRoot';
 import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
 import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
-import { useViewportTools } from './SceneCanvas/useViewportTools';
+import { useHandTool } from 'tools/builtin/useHandTool';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
 import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
@@ -91,6 +89,12 @@ import { useDepRegistry } from 'interactions/actions/depRegistry';
 import { createNodeKindRegistry, type NodeKind } from '../core/scene/nodeKindRegistry';
 import { installTestHookIfRequested } from '../test-hook/install';
 import type { WeaselTestHook } from '../test-hook/types';
+import {
+  createSelectionOverlayLayer,
+} from 'features/selection/overlay';
+import { firstPreviewPose, firstPreviewBounds } from './toolPreview';
+import { makeGetNodeAtPoint } from './getNodeAtPoint';
+import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 
 /**
  * Minimal adapter surface the legacy bridge factories need for delete /
@@ -288,7 +292,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     | 'moveOptions' | 'resizeOptions' | 'rotateOptions'
     | 'snap' | 'pickEvery' | 'boundsOf' | 'handleHitRadius'
     | 'selection' | 'selectionOptions' | 'tools' | 'geometry'
-    | 'layers'   // stripped so we can re-add as optional below
+    | 'layers'          // stripped so we can re-add as optional below
+    | 'onBackgroundClick' // SceneCanvas synthesizes this; not a consumer prop
   >
   & {
     /** A `Scene` (typically from `useScene`) — or a `SerializedScene`
@@ -374,6 +379,16 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     // --- Selection ---
     selection?: SelectionApi;
     selectionOptions?: UseSelectionOptions;
+
+    /**
+     * High-level selection semantics. Controls whether canvas interactions
+     * mutate selection and whether multi-select chrome (union AABB) activates.
+     *   - `'single'` (default) — click selects one id.
+     *   - `'multi'` — shift-click extends/toggles.
+     *   - `'none'` — canvas interactions never update selection.
+     * See {@link CanvasSelectionMode}.
+     */
+    selectionMode?: CanvasSelectionMode;
 
     // --- Tools: extend, override, or take over ---
     /** Extra tools or overrides keyed by id, or a full `ToolsApi` takeover.
@@ -574,13 +589,17 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     pickHud?: boolean;
     /**
      * Dev overlay flags. `slops: true` renders translucent halos at every
-     * affordance hit zone (corner resize handles, rotation handle,
-     * anchor / control-handle markers when editing) so the actual click
-     * targets — not just the visible chrome — are obvious. Off by default.
+     * affordance hit zone.
      */
     debug?: {
       slops?: boolean;
     };
+    /**
+     * Dev HUD: when true (or object), mounts a fixed-position widget below
+     * the pick HUD showing the active modality mode, active-slot tool, and
+     * hotkey stack. Pass `{ modeId }` to populate the mode line.
+     */
+    modalityHud?: boolean | { modeId?: string };
   };
 
 /** Discriminate the polymorphic `tools` prop: `ToolsApi` has `setActive`
@@ -609,6 +628,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     kinds,
     selection: selectionProp,
     selectionOptions,
+    selectionMode = 'single',
     tools: toolsProp,
     enableKeybindings = true,
     enableGestureDispatcher = true,
@@ -629,6 +649,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     cursorCoordsHud,
     pickHud,
     debug,
+    modalityHud,
     ...rest
   } = props;
 
@@ -700,8 +721,33 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Selection: caller-supplied wins; otherwise build from selectionOptions.
   // Hooks always run unconditionally — when a caller supplies `selection`,
   // the internally-built one is unused but the hook still fires.
-  const internalSelection = useSelection(selectionOptions ?? {});
-  const selection = selectionProp ?? internalSelection;
+  // When selectionMode === 'multi', forward that into the options so the
+  // internal selection hook uses multi-select semantics.
+  const derivedSelectionOptions = useMemo<UseSelectionOptions>(() => {
+    const base = selectionOptions ?? {};
+    if (base.mode !== undefined) return base;
+    if (selectionMode === 'multi') return { ...base, mode: 'multi' };
+    return base;
+  }, [selectionOptions, selectionMode]);
+  const internalSelection = useSelection(derivedSelectionOptions);
+  const baseSelection = selectionProp ?? internalSelection;
+
+  // selectionMode === 'none' wraps the selection so canvas interactions can't
+  // mutate it. The underlying api is still accessible via the `selection` prop
+  // or `useSelection` directly.
+  const selection: SelectionApi = useMemo(() => {
+    if (selectionMode !== 'none') return baseSelection;
+    const noopSet = () => {};
+    return {
+      ...baseSelection,
+      set: noopSet,
+      add: noopSet,
+      remove: noopSet,
+      toggle: noopSet,
+      clear: noopSet,
+      applyClick: noopSet,
+    };
+  }, [baseSelection, selectionMode]);
 
   // Publish the current selection (with optional per-id kind labels) into any
   // surrounding `<SelectionContextProvider>` so non-canvas UI can read it.
@@ -762,14 +808,46 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ...(kindClassifier ? { kindOf: kindClassifier } : {}),
   });
 
-  // Viewport tools (hand / keyboard zoom / wheel zoom / pinch zoom). All
-  // hooks run unconditionally; each is a no-op when its config is absent.
-  const { handTool, viewportRegistered } = useViewportTools({
-    viewport,
-    canvasRef: internalCanvasRef,
-    currentView: currentViewRef.current,
-    onViewChange: handleViewChange,
-  });
+  // Build getNodeAtPoint from the adapter + internalPickEvery. Canvas no longer
+  // synthesizes this itself — it accepts it as a prop (Phase 4.1 seam refactor).
+  // The node resolver reads adapter.kindOf (set from kindClassifier when kinds
+  // are registered), getPose, and getNode, matching the old Canvas synthesizer
+  // algorithm exactly (see src/canvas/getNodeAtPoint.ts).
+  const getNodeAtPoint = useMemo(() => {
+    if (!internalPickEvery) return undefined;
+    const nodeResolver = (id: string) => {
+      const kind = (adapter as typeof adapter & { kindOf?: (id: string) => string }).kindOf?.(id) ?? 'unknown';
+      const pose = adapter.getPose(id);
+      const data = (adapter as typeof adapter & { getNode?: (id: string) => unknown }).getNode?.(id) ?? { id };
+      return { kind, pose, data };
+    };
+    return makeGetNodeAtPoint(internalPickEvery, nodeResolver);
+  }, [adapter, internalPickEvery]);
+
+  // Viewport tools: Canvas now owns the full `useViewportTools` call (including
+  // pinch zoom via its own canvasRef). SceneCanvas only needs the hand tool for
+  // registry assembly and the `viewportRegistered` flag for the built-in tool
+  // list. Both are derived directly here without going through useViewportTools.
+  //
+  // `viewportRegistered` — same logic as useViewportTools: truthy when the
+  // viewport prop is non-undefined. SceneCanvas's default is pan+zoom enabled
+  // even when the consumer omits the viewport prop (undefined !== false).
+  const viewportRegistered = !!viewport;
+
+  // Extract inertia config for useHandTool — mirrors useViewportTools logic.
+  const inertiaEnabled = !!viewport?.inertia;
+  const inertiaObj = typeof viewport?.inertia === 'object' ? viewport.inertia : undefined;
+  const handToolInertia = inertiaEnabled && inertiaObj
+    ? {
+        friction: inertiaObj.friction,
+        minSpeed: inertiaObj.minSpeed,
+        boundary: inertiaObj.boundary,
+        bounds: inertiaObj.bounds,
+      }
+    : undefined;
+  // useHandTool must always be called (rules of hooks); it is a no-op when
+  // viewport is absent — the tool is simply not added to the registry.
+  const handTool = useHandTool(handToolInertia ? { inertia: handToolInertia } : {});
 
   // Keyboard zoom and wheel zoom/pan are handled by the viewport.pan and
   // viewport.zoom descriptors via the gesture dispatcher (Phase 8.5).
@@ -951,25 +1029,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // paints on top of any displaced ghost silhouettes. Phase 14e.2.5.
   const dispatcherOverlay = useDispatcherOverlayLayer({ dispatcher });
 
-  // Background-fill layer: screen-space, emits a single full-canvas rect
-  // with the configured `FillStyle`. Slotted before `'scene'` so the scene
-  // draws on top. Independent of pan / zoom because backgrounds in this
-  // kit are canvas chrome, not world content — consumers that want a
-  // world-space backdrop add their own scene node.
-  const backgroundLayer = useMemo<RenderLayer<unknown> | null>(() => {
-    if (!backgroundFill) return null;
-    return {
-      id: 'scene-background-fill',
-      label: 'Background fill',
-      space: 'screen',
-      draw: (_data, _view, dims) => [{
-        kind: 'path',
-        path: { kind: 'rect', x: 0, y: 0, width: dims.width, height: dims.height },
-        fill: backgroundFill,
-      }],
-    };
-  }, [backgroundFill]);
-
   // Pen preview overlay — reads the pen tool's persistent scratch and draws
   // the in-progress path (anchors, handles, rubber-band, close hint). Only
   // wired when the pen tool is actually registered; otherwise null.
@@ -1086,24 +1145,104 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     return id ? new Set([id]) : EMPTY_ID_SET;
   }, []);
 
-  const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => {
-    // Merge `getSuppressedIds` into whatever selectionOverlay config the
-    // user passed (or our default). Skip when the slot is explicitly null.
-    const selSlot = mergedLayers.selectionOverlay;
-    const selWithSuppress = selSlot && !(typeof selSlot === 'object' && 'layer' in selSlot)
-      ? { ...selSlot, getSuppressedIds: getSuppressedSelectionIds }
-      : selSlot;
-    return {
-      ...mergedLayers,
-      ...(selWithSuppress !== undefined ? { selectionOverlay: selWithSuppress } : {}),
-      previewGhost: { layer: previewLayer, after: 'scene' },
-      dispatcherOverlay: { layer: dispatcherOverlay, after: 'previewGhost' },
-      ...(penPreviewLayer ? { penPreview: { layer: penPreviewLayer, after: 'dispatcherOverlay' } } : {}),
-      pathEditingOverlay: { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
-      ...(debug?.slops ? { slopsDebug: { layer: slopsLayer, after: 'pathEditingOverlay' } } : {}),
-      ...(backgroundLayer ? { backgroundFill: { layer: backgroundLayer, before: 'scene' } } : {}),
+  // Selection overlay — constructed here (scene-aware) per main's seam refactor.
+  // Layered on top: path-edit suppression from HEAD's branch.
+  const selectedIds = selection.current;
+  const multiActive = selectedIds.length > 1;
+  const selectionOverlayLayer = useMemo(() => {
+    const selCfg = mergedLayers.selectionOverlay as
+      | SelectionOverlaySlotConfig<TPose>
+      | null
+      | undefined;
+    if (selCfg === null) return null;
+    const cfg = (selCfg ?? {}) as SelectionOverlaySlotConfig<TPose>;
+
+    const poseById =
+      cfg.poseById ??
+      ((id: string): TPose | null => {
+        const tp = firstPreviewPose(tools, id) as TPose | null;
+        if (tp != null) return tp;
+        for (const handle of dispatcher.getInFlightHandles()) {
+          const dp = handle.previewPose?.(id);
+          if (dp != null) return dp as TPose;
+        }
+        const tb = firstPreviewBounds(tools, id);
+        if (tb != null) return tb as unknown as TPose;
+        if (multiActive && id === MULTI_RESIZE_TARGET_ID && internalBoundsOf) {
+          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+          let any = false;
+          for (const sid of selectedIds) {
+            const b = internalBoundsOf(sid);
+            if (!b) continue;
+            any = true;
+            if (b.x < minX) minX = b.x;
+            if (b.y < minY) minY = b.y;
+            if (b.x + b.width > maxX) maxX = b.x + b.width;
+            if (b.y + b.height > maxY) maxY = b.y + b.height;
+          }
+          if (any) {
+            return { x: minX, y: minY, width: maxX - minX, height: maxY - minY } as unknown as TPose;
+          }
+          return null;
+        }
+        if (!adapter) {
+          if (internalBoundsOf) {
+            const b = internalBoundsOf(id);
+            return (b as unknown as TPose) ?? null;
+          }
+          return null;
+        }
+        try {
+          return adapter.getPose(id);
+        } catch {
+          return null;
+        }
+      });
+
+    const getSelection = multiActive
+      ? (): readonly NodeId[] => [MULTI_RESIZE_TARGET_ID as NodeId]
+      : (): readonly NodeId[] => selectedIds as readonly NodeId[];
+    const getOutlineIds = multiActive
+      ? (): readonly NodeId[] => selectedIds as readonly NodeId[]
+      : undefined;
+
+    const callerSuppress = cfg.getSuppressedIds;
+    const getSuppressedIds = (): ReadonlySet<string> => {
+      const own = getSuppressedSelectionIds();
+      const caller = callerSuppress?.();
+      if (!caller || caller.size === 0) return own;
+      if (own.size === 0) return caller;
+      const merged = new Set<string>(caller);
+      for (const id of own) merged.add(id);
+      return merged;
     };
-  }, [mergedLayers, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, backgroundLayer, getSuppressedSelectionIds, debug?.slops, slopsLayer]);
+
+    return createSelectionOverlayLayer<TPose>({
+      ...cfg,
+      getSelection,
+      ...(getOutlineIds ? { getOutlineIds } : {}),
+      getPose: poseById,
+      getSuppressedIds,
+      getBounds:
+        cfg.getBounds ??
+        ((p: TPose): Bounds => {
+          if (multiActive) return p as unknown as Bounds;
+          return AUTO_POSE_DESCRIPTOR.getBounds(p) as Bounds;
+        }),
+    });
+  }, [mergedLayers.selectionOverlay, selectedIds, multiActive, internalBoundsOf, tools, adapter, getSuppressedSelectionIds]);
+
+  const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({
+    ...mergedLayers,
+    selectionOverlay: selectionOverlayLayer
+      ? { layer: selectionOverlayLayer }
+      : mergedLayers.selectionOverlay === null ? null : undefined,
+    previewGhost: { layer: previewLayer, after: 'scene' },
+    dispatcherOverlay: { layer: dispatcherOverlay, after: 'previewGhost' },
+    ...(penPreviewLayer ? { penPreview: { layer: penPreviewLayer, after: 'dispatcherOverlay' } } : {}),
+    pathEditingOverlay: { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
+    ...(debug?.slops ? { slopsDebug: { layer: slopsLayer, after: 'pathEditingOverlay' } } : {}),
+  }), [mergedLayers, selectionOverlayLayer, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, debug?.slops, slopsLayer]);
 
   // Standard-action deps: closures over the live scene / selection / adapter
   // so the resolved actions always read current state. `useStandardActions`
@@ -1129,6 +1268,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       tools={tools}
       layers={wiredLayers}
       pickEvery={internalPickEvery}
+      getNodeAtPoint={getNodeAtPoint}
       previewIdsExtra={() => {
         // Mirror usePreviewGhostLayer: walk the dispatcher's in-flight
         // OngoingHandles and merge each handle's previewIds() so source
@@ -1154,9 +1294,21 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         }
         return null;
       }}
+      viewport={viewport}
+      backgroundFill={backgroundFill}
+      cursorCoordsHud={cursorCoordsHud}
+      pickHud={pickHud}
+      modalityHud={modalityHud}
+      pickBest={internalPickBest}
       view={effectiveView}
       onViewChange={handleViewChange}
       shaders={shaders}
+      // onBackgroundClick is intentionally NOT wired here. The `clearSelection`
+      // action binding in the select tool handles "click on empty background clears
+      // selection" for all SceneCanvas consumers. Wiring a separate background-click
+      // callback would interfere with the gesture dispatcher (which handles lasso,
+      // marquee, etc.) since tools.dispatcher.hasActiveGesture() only covers the
+      // legacy tool channel, not the gesture dispatcher channel.
       {...restProps}
     />
   );
@@ -1194,17 +1346,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       <PointerProviderIfRoot>
         <ActionsProviderIfRoot>
           {canvas}
-          {cursorCoordsHud && (
-            <CursorCoordsHud canvasRef={internalCanvasRef} viewRef={currentViewRef} />
-          )}
-          {pickHud && (
-            <PickHud
-              canvasRef={internalCanvasRef}
-              viewRef={currentViewRef}
-              pickEvery={internalPickEvery}
-              pickBest={internalPickBest}
-            />
-          )}
           <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />
           <StandardActionsRegistrar
             selection={selection}

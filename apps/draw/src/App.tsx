@@ -1229,6 +1229,7 @@ function EditorWithSharedScene({
             viewport={{ pinchZoom: true, recenter }}
             cursorCoordsHud
             pickHud
+            modalityHud
             onToolsCreated={setTools}
             selectTool={snapToGrid ? { snap: gridSnapStrategy<WeaselDrawPose>(20) } : undefined}
             toolOptions={snapToGrid ? {

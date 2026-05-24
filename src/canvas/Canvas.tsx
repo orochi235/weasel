@@ -1,27 +1,27 @@
 /**
- * Top-level `<Canvas>` component that wraps a single `<canvas>` element with:
- *   - WebGL renderer instantiation (`WeaselRenderer`)
- *   - background fill on every render
- *   - layer-stack composition from a map of named slots + custom layers
- *   - internal `useSelection` (overridable)
- *   - pointer/keyboard/wheel routing through `tools.dispatcher`
- *   - keyboard-focus plumbing (`tabIndex` + auto-focus on pointerdown)
+ * Low-level WebGL surface + viewport + pointer routing primitive.
+ * Composes layers into a single GL render pass, applies a view transform,
+ * routes pointer/keyboard events to the supplied `tools.dispatcher`, and
+ * exposes scene-agnostic slot props (`backgroundFill`, `cursorCoordsHud`,
+ * `pickHud`, `onBackgroundClick`, `getNodeAtPoint`).
+ *
+ * Canvas owns NO scene-shaped state — selection, picking, kind registry,
+ * scene-aware overlays — all live in `<SceneCanvas>` (the public consumer
+ * entry point) which wraps `<Canvas>`.
  *
  * The `layers` prop is a map keyed by slot name. Standard slots render at a
  * canonical position; custom entries (any other key, value carrying `.layer`)
  * insert at `after`/`before` an existing slot, defaulting to the top.
  *
  * @internal
- * @deprecated Use `<SceneCanvas>` instead. Bare `<Canvas>` has no
- * scene-mutation signal — the only way to drive 60Hz repaints is forcing
- * React re-renders, which churns the tools machinery enough to wedge after
- * settle. `<SceneCanvas>` over a `useScene()` tree is the consumer entry
- * point; `<Canvas>` is retained as an internal implementation detail and
- * will be removed from the public surface in a future release.
+ * @deprecated Bare `<Canvas>` is not a supported consumer surface.
+ *   Use `<SceneCanvas>` instead. Re-promotion is tracked in
+ *   `docs/TODO.md`.
  */
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import type React from 'react';
+import type { FillStyle } from 'core/paint-types';
 import { composeOrderedLayers } from './layerOrder';
 import {
   STANDARD_SLOTS,
@@ -32,7 +32,8 @@ export { STANDARD_SLOTS, isCustomEntry } from './layerSlots';
 export type { StandardSlotName, CustomLayerEntry } from './layerSlots';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { ToolsApi } from 'tools/useTools';
-import type { AnyTool } from 'tools/types';
+import { firstPreviewPose, firstPreviewBounds, aggregatePreviewIds } from './toolPreview';
+
 import type { ToolsDispatcher } from 'tools/dispatcher';
 import type { ToolCtx } from 'tools/types';
 import type { Op } from 'core/ops/types';
@@ -43,9 +44,7 @@ import { clampView } from 'core/viewport/clampView';
 import { drawLayers, type RenderLayer } from 'core/layers/render';
 import { WeaselRenderer, viewToMat3, type DrawCommand, type ShaderProgramHandle } from '../renderer';
 import {
-  useSelection,
   type SelectionApi,
-  type UseSelectionOptions,
 } from 'core/selection/useSelection';
 import { buildChromeState, type ChromeState } from 'core/selection/chromeState';
 import type {
@@ -71,6 +70,11 @@ import { createDebugOverlayLayer } from '../debug/createDebugOverlayLayer';
 import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/useSelectTool';
 import { buildSceneTree } from './buildSceneTree';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { usePinchZoomTool } from 'tools/builtin/usePinchZoomTool';
+import type { ViewportConfig } from './SceneCanvas/useViewportTools';
+import { CursorCoordsHud } from './CursorCoordsHud';
+import { PickHud } from './PickHud';
+import { ModalityHud } from './ModalityHud';
 
 
 
@@ -119,75 +123,146 @@ export type LayerSlotValue<TNode extends { id: string }, TPose> =
 export type LayersMap<TNode extends { id: string }, TPose> = {
   grid?: GridSlotConfig | null;
   scene?: SceneSlotConfig<TNode, TPose> | null;
-  selectionOverlay?: SelectionOverlaySlotConfig<TPose> | null;
+  /** Selection-overlay slot. Canvas constructs the layer from a
+   *  `SelectionOverlaySlotConfig`; pass a `CustomLayerEntry` (`{ layer }`) to
+   *  supply a pre-built layer (e.g. from `<SceneCanvas>`). */
+  selectionOverlay?: SelectionOverlaySlotConfig<TPose> | CustomLayerEntry | null;
+  /** Cell-highlight overlay slot. Canvas falls back to `grid.highlight` when
+   *  this slot is absent. Pass a `CustomLayerEntry` (`{ layer }`) to supply a
+   *  pre-built layer directly, or `null` to suppress even when `grid.highlight`
+   *  is set. */
+  cellHighlight?: CustomLayerEntry | null;
 } & {
   [customKey: string]: LayerSlotValue<TNode, TPose> | undefined;
 };
 
 /**
- * High-level selection semantics. A single switch the consumer flips to
- * pick the click/drag/resize behavior for the canvas:
+ * High-level selection semantics. Kept as a public type for `<SceneCanvas>`
+ * consumers — Canvas itself no longer accepts a `selectionMode` prop.
  *
- *   - `'single'` (default) — click replaces the selection with one id; drag
- *     moves it; resize handles operate on it. Shift-click does nothing extra.
- *   - `'multi'` — shift-click extends/toggles the selection. When the
- *     selection has more than one id, the overlay draws a single union AABB
- *     with corner handles, clicks inside the union (without hitting an
- *     unselected leaf) drag the whole set, and corner handles resize the
- *     union (each member is scaled via the same `geom.remapBounds` path
- *     group resize uses).
- *   - `'none'` — selection state never updates from canvas interactions;
- *     consumers can still do their own picking via the active tool.
- *
- * Escape hatches still apply: explicit `selection`, `pickEvery`, `boundsOf`,
- * or `selectionOptions.mode` override the `selectionMode`-derived defaults.
+ *   - `'single'` (default) — click replaces the selection with one id.
+ *   - `'multi'` — shift-click extends/toggles. Multi-selected objects draw a
+ *     union AABB with corner handles.
+ *   - `'none'` — canvas interactions never update selection state.
  */
 export type CanvasSelectionMode = 'single' | 'multi' | 'none';
 
-
-/** Props for the top-level `<Canvas>` component — combines viewport, scene, gesture controllers, and slot overrides. */
+/**
+ * Props for `<Canvas>` — the low-level WebGL surface + viewport +
+ * pointer routing primitive.
+ *
+ * Canvas is scene-agnostic. It owns the GL surface, view state, pointer/
+ * keyboard dispatch, and slot composition. It does NOT own selection state,
+ * picking logic, kind registries, or scene-aware overlays — those belong in
+ * `<SceneCanvas>`.
+ */
 export interface CanvasProps<TNode extends { id: string } = { id: string }, TPose = unknown> {
   /** CSS-pixel width. */
   width: number;
   /** CSS-pixel height. */
   height: number;
 
-  /** Combined adapter. Required for the scene slot, default pickEvery/boundsOf,
-   *  and the internal move/resize/rotate controllers. Optional for trivial
-   *  canvases. `<SceneCanvas>` synthesizes this from a `Scene`; bare-`<Canvas>`
-   *  consumers must supply it explicitly. Insert and area-select live entirely
-   *  in `useInsertTool` / `useSelectTool` now; pass those via
-   *  `tools={useTools(...)}` instead. */
+  /**
+   * Combined adapter for scene-slot rendering, bounds computation, and
+   * move/resize/rotate gesture math. Optional — bare-Canvas consumers that
+   * don't need a scene slot may omit it.
+   *
+   * Canvas threads this adapter into layer factories and gesture hooks. It
+   * does NOT read scene-shaped methods (`kindOf`, `getLayers`) directly from
+   * the CanvasProps type — the `buildSceneLayer` path uses an internal cast to
+   * access optional hierarchy methods (`getLayers`, `getChildren`) that are
+   * present on SceneAdapter but absent from the narrow intersection type here.
+   * That cast is a known smell documented in the Phase 5 audit; promoting those
+   * methods to this type would surface a SceneAdapter-specific concern here and
+   * is tracked in docs/TODO.md as a follow-up.
+   *
+   * `<SceneCanvas>` synthesizes this from a `Scene`; bare-`<Canvas>` consumers
+   * must supply it explicitly when using the scene or selection-overlay slots.
+   */
   adapter?: MoveAdapter<TNode, TPose>
     & ResizeAdapter<TNode, TPose>
     & RotateAdapter<TNode, TPose>;
 
-  /** Selection semantics. See {@link CanvasSelectionMode}. Default `'single'`. */
-  selectionMode?: CanvasSelectionMode;
-
   /** Layer map. See module docstring for slot semantics. */
   layers: LayersMap<TNode, TPose>;
 
-  // --- Internal hook configuration ---
+  /**
+   * Current selection state. Canvas is a pure pass-through — it owns no
+   * selection state of its own. When absent, Canvas behaves as if nothing is
+   * selected: no selection chrome, no select-on-click, no clear-on-background.
+   *
+   * `<SceneCanvas>` always supplies this from its internal `useSelection`.
+   * Bare-`<Canvas>` consumers may omit it for non-selection use cases (e.g.
+   * force-graph renderers or read-only viewers).
+   */
   selection?: SelectionApi;
-  selectionOptions?: UseSelectionOptions;
 
-  /** Pose↔bounds projection. When supplied, drives default `pickEvery`,
-   *  `boundsOf`, and the selection-overlay bounds source so non-rect TPose
-   *  (e.g. `Path`) doesn't require per-prop overrides. Defaults to the rect
-   *  identity. */
+  /**
+   * Fires when the canvas receives a pointer event that the tool dispatcher
+   * did not handle (no active gesture was started on pointerdown, or the
+   * pointer was released without a gesture). Useful for "click on background
+   * clears selection" — `<SceneCanvas>` wires this to `selection.clear()`.
+   *
+   * The listener is only installed when this callback is supplied. Omitting
+   * the prop means no background-click listener is registered.
+   */
+  onBackgroundClick?: () => void;
+
+  /**
+   * Pose↔bounds projection for non-rect `TPose` types. When supplied, drives
+   * the default `boundsOf` fallback and the selection-overlay bounds source so
+   * non-rect poses (e.g. `Path`) don't require per-prop overrides.
+   * Defaults to the rect identity (`AUTO_POSE_DESCRIPTOR`).
+   *
+   * This is a math helper, not a scene-shaped concern — it converts a pose
+   * value to an AABB and extracts rotation for the selection chrome. Bare-
+   * Canvas consumers that use a non-rect pose type should supply this.
+   */
   geometry?: PoseProjection<TPose>;
 
   // --- Gesture overrides (escape hatches for non-rect / group-aware apps) ---
+  /**
+   * Used by `PickHud` to display the list of ids under the cursor.
+   * NOT used for tool routing — see `getNodeAtPoint` for that.
+   * `<SceneCanvas>` passes its internal pick function here so the HUD
+   * stays in sync with the scene's actual hit-test order.
+   */
   pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
+  /**
+   * Override for committed bounds lookup. When supplied, takes precedence over
+   * the `geometry`-derived fallback. Used by the selection overlay, the
+   * multi-select union AABB, and `helpersRef.getEffectiveBounds`. Optional —
+   * bare-Canvas consumers that use a custom bounds shape should supply this;
+   * `<SceneCanvas>` derives it from its scene adapter and passes it via the
+   * scene-slot layer config rather than this prop.
+   */
   boundsOf?: (id: string) => Bounds | null;
+  /**
+   * Custom pointer-to-world coordinate transform. When supplied, overrides the
+   * default `(clientX - canvasRect.left) / scale + pan` calculation. Useful
+   * for consumers that apply an additional CSS transform to the canvas element.
+   */
   clientToWorld?: (canvas: HTMLCanvasElement, cx: number, cy: number) => [number, number];
 
   // --- Visuals / DOM passthrough ---
+  /**
+   * @deprecated Use `backgroundFill` instead. This prop accepts a plain CSS
+   * color string and is rendered before the scene as a screen-space rect fill.
+   * `backgroundFill` accepts the full `FillStyle` union (solid, pattern,
+   * gradient) and is the preferred API. Both props may coexist; `background`
+   * is prepended as a raw DrawCommand before `backgroundFill`'s layer.
+   */
   background?: string;
   className?: string;
   style?: React.CSSProperties;
   tabIndex?: number;
+  /**
+   * When `true` (default), the canvas element receives focus on `pointerdown`
+   * so keyboard events (tool hotkeys, undo/redo) are captured without a
+   * separate click-to-focus step. Set to `false` for canvases embedded inside
+   * a larger focus-managed layout where auto-focus would steal focus from
+   * sibling inputs.
+   */
   autoFocusOnPointerDown?: boolean;
 
   /** Opt-in keyboard-driven actions wired against the canvas's effective
@@ -206,17 +281,27 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   /** Fires whenever the viewport changes — in both controlled and
    *  uncontrolled modes. */
   onViewChange?: (next: View) => void;
-  /** Optional world-space rect that constrains pan. When supplied, every
-   *  `setView` call passes through `clampView(next, viewBounds, {width, height})`
-   *  before commit, keeping the visible rect inside `viewBounds`. If the visible
-   *  rect is larger than the bounds along an axis (zoomed out past extent), that
-   *  axis is centered. Has no effect on `scale` — wire `useZoom` bounds for that. */
+  /**
+   * Optional world-space rect that constrains pan. When supplied, every
+   * `setView` call passes through `clampView(next, viewBounds, {width, height})`
+   * before commit, keeping the visible rect inside `viewBounds`. If the visible
+   * rect is larger than the bounds along an axis (zoomed out past extent), that
+   * axis is centered. Has no effect on `scale` — wire `useZoom` bounds for that.
+   *
+   * A viewport concern, not scene-shaped. Consumers that want the pan to stay
+   * inside a document page boundary should wire this with the page dimensions.
+   */
   viewBounds?: { x: number; y: number; width: number; height: number };
-  /** Mutable ref Canvas writes overlay-aware pose/bounds lookups to on every
-   *  render. Custom layers can read it from inside their `draw` closure to
-   *  reflect in-flight gestures (move/resize/rotate) instead of the committed
-   *  scene. Both lookups apply when an id is in the active overlay; otherwise
-   *  they fall back to the adapter. */
+  /**
+   * Mutable ref Canvas writes overlay-aware pose/bounds lookups to on every
+   * render. Custom layers can read it from inside their `draw` closure to
+   * reflect in-flight gestures (move/resize/rotate) instead of the committed
+   * scene. Both lookups apply when an id is in the active overlay; otherwise
+   * they fall back to the adapter.
+   *
+   * Useful for custom layers that render scene content outside of the standard
+   * slot system and need to stay in sync with gesture previews.
+   */
   helpersRef?: React.MutableRefObject<CanvasHelpers<TPose> | null>;
 
   /**
@@ -271,6 +356,73 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * through geometry.getBounds(pose).
    */
   previewBoundsExtra?: (id: string) => Bounds | null;
+
+  /**
+   * Pinch-zoom DOM listener attachment for the canvas surface. When supplied,
+   * `<Canvas>` calls `usePinchZoomTool` with `canvasRef` so two-finger pinch
+   * events are handled directly on the canvas element.
+   *
+   * Hand tool registration, wheel pan/zoom action descriptors, and keyboard
+   * zoom shortcuts are SceneCanvas-level concerns and are NOT owned by Canvas.
+   * Those belong with the tool registry and gesture dispatcher that live in
+   * SceneCanvas.
+   *
+   * When omitted, no pinch-zoom listener is attached.
+   */
+  viewport?: ViewportConfig;
+
+  /**
+   * FillStyle applied to the full canvas surface behind the scene. Accepts the
+   * kit's `FillStyle` union (solid / pattern / linear-gradient / radial-gradient /
+   * conic-gradient) so consumers don't have to author a background node just to
+   * colorize the canvas.
+   *
+   * Rendered as a screen-space layer slotted before `'scene'` — independent of
+   * pan / zoom. Canvas owns this layer; `<SceneCanvas>` forwards its own
+   * `backgroundFill` prop verbatim so consumer apps see no breaking change.
+   */
+  backgroundFill?: FillStyle;
+
+  /**
+   * Dev HUD: when true, mounts a fixed-position widget showing live cursor
+   * coords in both viewport (client) and canvas (world) frames. Useful for
+   * diagnosing pointer-coord drift / pan-zoom misalignment without
+   * instrumenting events.
+   */
+  cursorCoordsHud?: boolean;
+
+  /**
+   * Dev HUD: when true, mounts a fixed-position widget just below the
+   * cursor-coords HUD listing the ids returned by `pickEvery(world)` under
+   * the cursor. Useful for diagnosing hit-test order and container/leaf
+   * overlap during select-tool work.
+   */
+  pickHud?: boolean;
+
+  /**
+   * Dev HUD: mounts a fixed-position widget below the pick HUD reporting
+   * the active modality mode, the active-slot tool, and the hotkey stack.
+   * Pass `true` to enable with no mode (renders `—` for the mode line —
+   * useful until the modality machine is wired). Pass an object to supply
+   * the current mode id.
+   */
+  modalityHud?: boolean | { modeId?: string };
+
+  /**
+   * Optional single-best hit resolver for the `pickHud` — the id this point
+   * would select on a bare click. When omitted the HUD skips the bold-best
+   * highlight. `<SceneCanvas>` forwards its `internalPickBest` here so the
+   * HUD shows the same best-candidate SceneCanvas would pick.
+   */
+  pickBest?: (worldX: number, worldY: number) => string | null;
+
+  /** Resolves a single hit (id + kind + pose + data) at world coords for the
+   *  tool dispatcher. `<SceneCanvas>` synthesizes this from its node-kind
+   *  registry and adapter via `makeGetNodeAtPoint`. When omitted, the
+   *  dispatcher receives no hit info and tool routing based on `target.kind`
+   *  will not fire. Bare-`<Canvas>` consumers that need kind-based routing
+   *  should build this with `makeGetNodeAtPoint`. */
+  getNodeAtPoint?: (worldX: number, worldY: number) => { id: string; kind: string; pose: unknown; data: unknown; meta?: Record<string, unknown> } | null;
 }
 
 /** Live overlay-aware lookups exposed to custom layers via `helpersRef`. */
@@ -293,51 +445,6 @@ export interface CanvasHelpers<TPose> {
 }
 
 // Walks every registered + ambient tool: resize/rotate will register as
-// siblings of select, each publishing its own preview slice.
-function* toolsInPriorityOrder(tools: ToolsApi): IterableIterator<AnyTool> {
-  const seen = new Set<AnyTool>();
-  const hotkey = tools.hotkeyEngaged ? tools.registry[tools.hotkeyEngaged] : undefined;
-  const active = tools.registry[tools.active];
-  for (const t of [hotkey, active]) {
-    if (t && !seen.has(t)) { seen.add(t); yield t; }
-  }
-  for (const t of Object.values(tools.registry)) {
-    if (t && !seen.has(t)) { seen.add(t); yield t; }
-  }
-  for (const t of tools.ambient) {
-    if (t && !seen.has(t)) { seen.add(t); yield t; }
-  }
-}
-
-function firstPreviewPose(tools: ToolsApi | undefined, id: string): unknown {
-  if (!tools) return null;
-  for (const t of toolsInPriorityOrder(tools)) {
-    const p = t.previewPose?.(id);
-    if (p != null) return p;
-  }
-  return null;
-}
-
-function firstPreviewBounds(tools: ToolsApi | undefined, id: string): Bounds | null {
-  if (!tools) return null;
-  for (const t of toolsInPriorityOrder(tools)) {
-    const b = t.previewBounds?.(id);
-    if (b) return b as Bounds;
-  }
-  return null;
-}
-
-function aggregatePreviewIds(tools: ToolsApi | undefined): Set<string> {
-  const out = new Set<string>();
-  if (!tools) return out;
-  for (const t of toolsInPriorityOrder(tools)) {
-    const ids = t.previewIds?.();
-    if (!ids) continue;
-    for (const id of ids) out.add(id);
-  }
-  return out;
-}
-
 function registerShadersOnRenderer(
   renderer: WeaselRenderer,
   shaders: ShaderProgramHandle[] | undefined,
@@ -479,10 +586,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     width,
     height,
     adapter: adapterProp,
-    selectionMode = 'single',
     layers: layersMap,
-    selection: selectionOverride,
-    selectionOptions,
+    selection,
+    onBackgroundClick,
     boundsOf,
     pickEvery,
     clientToWorld,
@@ -504,6 +610,13 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     previewIdsExtra,
     previewPoseExtra,
     previewBoundsExtra,
+    viewport,
+    backgroundFill,
+    cursorCoordsHud,
+    pickHud,
+    modalityHud,
+    pickBest,
+    getNodeAtPoint,
   } = props;
 
   // Resolve debug config: explicit prop wins; `undefined` falls back to URL;
@@ -572,6 +685,19 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const setViewRef = useRef(setView);
   setViewRef.current = setView;
 
+  // Pinch-zoom: Canvas owns the DOM listener because it needs canvasRef.
+  // usePinchZoomTool is a no-op when viewport?.pinchZoom is falsy. Hand tool,
+  // wheel pan/zoom, and keyboard zoom are SceneCanvas-level concerns (they
+  // register into the tool registry / gesture dispatcher that lives there).
+  const pinchConfig: { min?: number; max?: number } | null =
+    viewport?.pinchZoom === true ? {} : (viewport?.pinchZoom || null);
+  usePinchZoomTool(
+    canvasRef,
+    effectiveView,
+    setView,
+    { ...(pinchConfig ?? {}), enabled: pinchConfig !== null },
+  );
+
   // Internal hooks always run (rules of hooks). They consult a noop adapter
   // when none is supplied; their controllers are then unused because the
   // gesture wiring below only enables move/resize when `adapter` is present.
@@ -589,32 +715,28 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     & ResizeAdapter<TNode, TPose>
     & RotateAdapter<TNode, TPose>;
 
-  const derivedSelectionOptions = useMemo<UseSelectionOptions>(() => {
-    const base = selectionOptions ?? {};
-    if (base.mode !== undefined) return base;
-    if (selectionMode === 'multi') return { ...base, mode: 'multi' };
-    return base;
-  }, [selectionOptions, selectionMode]);
-
-  const internalSelection = useSelection(derivedSelectionOptions);
-  const baseSelection: SelectionApi = selectionOverride ?? internalSelection;
-
-  // selectionMode === 'none' wraps the selection so canvas interactions can't
-  // mutate it. Consumers that want the underlying api still use their own
-  // override or read from `useSelection` directly.
-  const effectiveSelection: SelectionApi = useMemo(() => {
-    if (selectionMode !== 'none') return baseSelection;
-    const noopSet = () => {};
-    return {
-      ...baseSelection,
-      set: noopSet,
-      add: noopSet,
-      remove: noopSet,
-      toggle: noopSet,
-      clear: noopSet,
-      applyClick: noopSet,
-    };
-  }, [baseSelection, selectionMode]);
+  // Canvas owns no selection state. The `selection` prop is the sole source.
+  // When absent, behave as if no selection exists (no chrome, no overlay).
+  // A no-op fallback keeps all downstream reads safe without branching.
+  const noopSelection = useMemo<SelectionApi>(
+    () => ({
+      current: [],
+      get: () => [],
+      contains: () => false,
+      set: () => {},
+      add: () => {},
+      remove: () => {},
+      toggle: () => {},
+      clear: () => {},
+      applyClick: () => {},
+      adapterMethods: {
+        getSelection: () => [],
+        setSelection: () => {},
+      },
+    }),
+    [],
+  );
+  const effectiveSelection: SelectionApi = selection ?? noopSelection;
 
   // Build the per-event base ctx the tools dispatcher injects into handlers.
   // Refs so identity stays stable while the underlying values update.
@@ -688,16 +810,33 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     d.__setGetCtx?.(toolsCtxBase);
   }, [tools, toolsCtxBase]);
 
-  // Wire the dispatcher's scene hit-test (ctx.target population on pointer
-  // events). Builds a NodeHit/EmptyHit from the effective pickEvery + adapter
-  // so declarative routing factories can match on `target.kind`
-  // ('rect'/'text'/'path'/'empty') from any pointer event. The closure reads
-  // refs so it always sees the latest pickEvery / adapter without re-installing
-  // the setter on every prop change.
+  // Stable wrappers for HUD props — read the ref at call time so the HUDs
+  // don't reinstall their useEffect on every render when the prop identity
+  // changes (e.g. when SceneCanvas re-renders with a new lambda reference).
+  // pickEvery and pickBest are HUD-only; tool routing uses getNodeAtPoint.
   const pickEveryRef = useRef(pickEvery);
   pickEveryRef.current = pickEvery;
+  const pickBestRef = useRef(pickBest);
+  pickBestRef.current = pickBest;
+  const stablePickEveryForHud = useCallback(
+    (wx: number, wy: number): readonly string[] => {
+      const pe = pickEveryRef.current;
+      if (!pe) return [];
+      const raw = pe(wx, wy);
+      if (!raw) return [];
+      return Array.isArray(raw) ? raw : [raw];
+    },
+    [],
+  );
+  const stablePickBestForHud = useCallback(
+    (wx: number, wy: number): string | null => pickBestRef.current?.(wx, wy) ?? null,
+    [],
+  );
+  // Wire the dispatcher's scene hit-test with the supplied getNodeAtPoint prop.
+  // SceneCanvas synthesizes this from its node-kind registry + adapter via
+  // makeGetNodeAtPoint; bare-Canvas consumers may pass their own or omit it.
   useEffect(() => {
-    if (!tools) return;
+    if (!tools || !getNodeAtPoint) return;
     const d = tools.dispatcher as ToolsDispatcher & {
       __setGetNodeAtPoint?: (
         fn: ((worldX: number, worldY: number) =>
@@ -705,31 +844,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
           | null) | undefined,
       ) => void;
     };
-    d.__setGetNodeAtPoint?.((wx, wy) => {
-      const pe = pickEveryRef.current;
-      if (!pe) return null;
-      const raw = pe(wx, wy);
-      // Normalize `string | string[] | null` to topmost id (first entry).
-      const id = Array.isArray(raw) ? raw[0] ?? null : raw;
-      if (id == null) return null;
-      // `a.kindOf?.(id)` is populated by SceneCanvas from its `kinds` prop
-      // (see docs/superpowers/specs/2026-05-21-node-kind-registry-design.md).
-      // Bare-Canvas consumers may still set adapter.kindOf directly as a
-      // deprecated escape hatch; the field is typed on SceneCanvasAdapter
-      // as optional and reads `'unknown'` when unset.
-      const a = effectiveAdapterRefForCtx.current as typeof effectiveAdapterRefForCtx.current & {
-        kindOf?: (id: string) => string;
-        getNode?: (id: string) => unknown;
-      };
-      const kind = a.kindOf?.(id) ?? 'unknown';
-      const pose = a.getPose(id);
-      const data = a.getNode?.(id) ?? { id };
-      return { id: id as NodeId, kind, pose, data };
-    });
+    d.__setGetNodeAtPoint?.(getNodeAtPoint as (wx: number, wy: number) => { id: NodeId; kind: string; pose: unknown; data: unknown; meta?: Record<string, unknown> } | null);
     return () => {
       d.__setGetNodeAtPoint?.(undefined);
     };
-  }, [tools]);
+  }, [tools, getNodeAtPoint]);
 
   // Selection-driven action gestures (delete/nudge/undoRedo/duplicate) used
   // to be wired here via legacy hooks. They now go through the Actions
@@ -764,7 +883,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   };
 
   const selectedIdsForWiring = effectiveSelection.current;
-  const multiActive = selectionMode === 'multi' && selectedIdsForWiring.length > 1;
+  // Canvas no longer owns selectionMode. Multi-selection is inferred from the
+  // selection state itself: when more than one id is selected, activate the
+  // union-AABB chrome path. SceneCanvas configures its tools for multi-mode
+  // via selectionOptions; Canvas simply reflects what arrived in the prop.
+  const multiActive = selectedIdsForWiring.length > 1;
 
   // Hold the latest dispatcher-side preview extras in a ref so chromeState's
   // closure reads live values without forcing the memo to rebuild every render.
@@ -934,6 +1057,14 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // accepted) and detached on the matching up/cancel. They forward to the
   // dispatcher exactly like the React handlers — endActiveGesture-equivalent
   // logic lives entirely inside the dispatcher's onPointerUp.
+  // Track whether the pointerdown on the canvas started a tool gesture.
+  // Used to determine whether a matching pointerup is a "background click"
+  // (no gesture was claimed → fire onBackgroundClick).
+  const downStartedGestureRef = useRef(false);
+
+  const onBackgroundClickRef = useRef(onBackgroundClick);
+  onBackgroundClickRef.current = onBackgroundClick;
+
   const docListenersRef = useRef<{
     move: (e: PointerEvent) => void;
     up: (e: PointerEvent) => void;
@@ -970,10 +1101,12 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       if (isCanvasTarget(ev)) return; // React onPointerUp already handled it
       dispatcher.onPointerUp(ev);
       detachDocListeners();
+      downStartedGestureRef.current = false;
     };
     const cancel = (_ev: PointerEvent) => {
       dispatcher.cancelGesture();
       detachDocListeners();
+      downStartedGestureRef.current = false;
     };
     document.addEventListener('pointermove', move);
     document.addEventListener('pointerup', up);
@@ -983,15 +1116,19 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // Detach on unmount (no leaked global listeners if Canvas tears down mid-drag).
   useEffect(() => detachDocListeners, [detachDocListeners]);
 
-  const handlePointerDown = tools
-    ? (e: React.PointerEvent<HTMLCanvasElement>) => {
-        if (autoFocusOnPointerDown) e.currentTarget.focus();
-        tools.dispatcher.onPointerDown(e.nativeEvent);
-        // Only attach if the dispatcher actually started a gesture; otherwise
-        // we'd leak a listener for every empty click on the canvas.
-        if (tools.dispatcher.hasActiveGesture()) attachDocListeners(tools.dispatcher);
-      }
-    : undefined;
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (autoFocusOnPointerDown) e.currentTarget.focus();
+    if (tools) {
+      tools.dispatcher.onPointerDown(e.nativeEvent);
+      const started = tools.dispatcher.hasActiveGesture();
+      downStartedGestureRef.current = started;
+      // Only attach doc listeners if the dispatcher actually started a gesture;
+      // otherwise we'd leak a listener for every empty click on the canvas.
+      if (started) attachDocListeners(tools.dispatcher);
+    } else {
+      downStartedGestureRef.current = false;
+    }
+  };
   const handlePointerMove =
     ((e: React.PointerEvent<HTMLCanvasElement>) => {
       tools?.dispatcher.onPointerMove(e.nativeEvent);
@@ -1018,14 +1155,21 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const handlePointerLeave = (_e: React.PointerEvent<HTMLCanvasElement>) => {
     for (const layer of layersWithDebug) layer.onUncapturedLeave?.();
   };
-  const handlePointerUp = tools
-    ? (e: React.PointerEvent<HTMLCanvasElement>) => {
-        tools.dispatcher.onPointerUp(e.nativeEvent);
-        // The doc-listener up handler also detaches; this branch covers the
-        // common case where the release lands on the canvas itself.
-        detachDocListeners();
-      }
-    : undefined;
+  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (tools) {
+      tools.dispatcher.onPointerUp(e.nativeEvent);
+      // The doc-listener up handler also detaches; this branch covers the
+      // common case where the release lands on the canvas itself.
+      detachDocListeners();
+    }
+    // Fire background click when no tool gesture was started on the matching
+    // pointerdown (i.e., the dispatcher didn't claim the event, or there is
+    // no dispatcher). This is the "click on empty canvas" signal.
+    if (!downStartedGestureRef.current) {
+      onBackgroundClickRef.current?.();
+    }
+    downStartedGestureRef.current = false;
+  };
   const handlePointerCancel = undefined;
   // Native non-passive wheel listener so tools can call event.preventDefault()
   // (e.g. wheel-zoom holding Ctrl). React attaches `onWheel` as passive, which
@@ -1040,6 +1184,23 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   const selectedIds = effectiveSelection.current;
 
+  // Background-fill layer: screen-space, emits a single full-canvas rect with
+  // the configured FillStyle. Slotted before 'scene' so the scene draws on top.
+  // Independent of pan / zoom — backgrounds are canvas chrome, not world content.
+  const backgroundLayer = useMemo<RenderLayer<unknown> | null>(() => {
+    if (!backgroundFill) return null;
+    return {
+      id: 'scene-background-fill',
+      label: 'Background fill',
+      space: 'screen',
+      draw: (_data, _view, dims) => [{
+        kind: 'path',
+        path: { kind: 'rect', x: 0, y: 0, width: dims.width, height: dims.height },
+        fill: backgroundFill,
+      }],
+    };
+  }, [backgroundFill]);
+
   const layers = useMemo<RenderLayer<unknown>[]>(() => {
     const standardLayers: Partial<
       Record<(typeof STANDARD_SLOTS)[number], RenderLayer<unknown>>
@@ -1052,6 +1213,22 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       standardLayers.grid = createGridLayer(gridOpts as GridLayerOpts);
       if (highlight) {
         standardLayers.cellHighlight = createCellHighlightLayer(highlight);
+      }
+    }
+
+    // Top-level `cellHighlight` slot: a pre-built CustomLayerEntry wins over
+    // the `grid.highlight` sub-config constructed above. Explicit `null`
+    // suppresses the slot (even when grid.highlight was set).
+    const cellHighlightSlot = layersMap.cellHighlight;
+    if (cellHighlightSlot !== undefined) {
+      if (cellHighlightSlot === null) {
+        standardLayers.cellHighlight = undefined;
+      } else {
+        // isCustomEntry check is redundant since the slot only accepts
+        // CustomLayerEntry | null, but kept for runtime safety.
+        standardLayers.cellHighlight = isCustomEntry(cellHighlightSlot)
+          ? cellHighlightSlot.layer
+          : undefined;
       }
     }
 
@@ -1079,9 +1256,13 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
     const selSlot = layersMap.selectionOverlay as
       | SelectionOverlaySlotConfig<TPose>
+      | CustomLayerEntry
       | null
       | undefined;
-    if (selSlot !== null) {
+    if (isCustomEntry(selSlot)) {
+      // Pre-built layer (e.g. from SceneCanvas) — pass through directly.
+      standardLayers.selectionOverlay = selSlot.layer;
+    } else if (selSlot !== null) {
       const cfg = (selSlot ?? {}) as SelectionOverlaySlotConfig<TPose>;
       // Resolver returns either a real TPose (use geometry.getBounds) or a
       // pre-projected Bounds (multi-union and the bounds-from-overlay path).
@@ -1162,12 +1343,15 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       });
     }
 
-    const out: RenderLayer<unknown>[] = composeOrderedLayers(layersMap, standardLayers);
+    const effectiveLayersMap = backgroundLayer
+      ? { ...layersMap, backgroundFill: { layer: backgroundLayer, before: 'scene' } }
+      : layersMap;
+    const out: RenderLayer<unknown>[] = composeOrderedLayers(effectiveLayersMap, standardLayers);
     if (tools) {
       out.push(...tools.getActiveOverlays());
     }
     return out;
-  }, [layersMap, adapter, selectedIds, effectiveBoundsOf, multiActive, debugSink, tools]);
+  }, [layersMap, adapter, selectedIds, effectiveBoundsOf, multiActive, debugSink, tools, backgroundLayer]);
 
   // Append the debug overlay layer at the very top of the stack when debug
   // is enabled. The layer reads from `debugSink.snapshot()` and paints in
@@ -1265,28 +1449,47 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     : style;
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={width}
-      height={height}
-      tabIndex={tabIndex}
-      className={className}
-      style={effectiveStyle}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerCancel}
-      onPointerLeave={handlePointerLeave}
-      // Suppress the browser's default right-click menu over the canvas.
-      // Canvases are interaction surfaces; the browser's context menu
-      // (Save Image / Inspect Element / etc.) is almost never what the
-      // user wants, and right-click is a useful gesture surface that
-      // tools may consume. Consumers using right-click for their own
-      // gestures should add their own onContextMenu handler — calling
-      // `e.preventDefault()` is the no-op default; calling something
-      // else still works (this handler runs before the default menu).
-      onContextMenu={(e) => e.preventDefault()}
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        width={width}
+        height={height}
+        tabIndex={tabIndex}
+        className={className}
+        style={effectiveStyle}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onPointerLeave={handlePointerLeave}
+        // Suppress the browser's default right-click menu over the canvas.
+        // Canvases are interaction surfaces; the browser's context menu
+        // (Save Image / Inspect Element / etc.) is almost never what the
+        // user wants, and right-click is a useful gesture surface that
+        // tools may consume. Consumers using right-click for their own
+        // gestures should add their own onContextMenu handler — calling
+        // `e.preventDefault()` is the no-op default; calling something
+        // else still works (this handler runs before the default menu).
+        onContextMenu={(e) => e.preventDefault()}
+      />
+      {cursorCoordsHud && (
+        <CursorCoordsHud canvasRef={canvasRef} viewRef={viewRef} />
+      )}
+      {pickHud && (
+        <PickHud
+          canvasRef={canvasRef}
+          viewRef={viewRef}
+          pickEvery={stablePickEveryForHud}
+          pickBest={stablePickBestForHud}
+        />
+      )}
+      {modalityHud && (
+        <ModalityHud
+          canvasRef={canvasRef}
+          modeId={typeof modalityHud === 'object' ? modalityHud.modeId : undefined}
+        />
+      )}
+    </>
   );
 }
 

@@ -1,0 +1,32 @@
+{"ts": "2026-05-24T10:20:00Z", "task": "0.1", "event": "started"}
+{"ts": "2026-05-24T10:22:00Z", "task": "0.1", "event": "test inventory complete: Canvas.test.tsx, SceneCanvas.test.tsx, SceneCanvas.tools.test.tsx, SceneCanvas.smoke.test.tsx, SceneCanvas.dispatcher.test.tsx, SceneCanvas.actions.test.tsx, SceneCanvas.actions.behavior.test.tsx, SceneCanvas.useSelectTool.integration.test.tsx"}
+{"ts": "2026-05-24T10:23:00Z", "task": "0.1", "event": "gap 7: SceneCanvas backgroundFill prop - no test covers pixel/layer wiring; adding test"}
+{"ts": "2026-05-24T10:23:00Z", "task": "0.1", "event": "gap 8: SceneCanvas cursorCoordsHud/pickHud - no test covers render/update on pointer move; adding test"}
+{"ts": "2026-05-24T10:23:00Z", "task": "0.1", "event": "gap 9: SceneCanvas viewport.pan/viewport.zoom register actions in registry - partially covered by smoke (hand drag pans); adding explicit action registration test"}
+{"ts": "2026-05-24T10:24:00Z", "task": "0.1", "event": "gap 3: pickEvery view-transform - no test verifies pan/zoom offsets applied to worldXY; adding test"}
+{"ts": "2026-05-24T10:24:00Z", "task": "0.1", "event": "baseline tests green: 3482 passed | 10 skipped (3492)"}
+{"ts": "2026-05-24T10:24:00Z", "task": "0.1", "event": "added covering tests: src/canvas/SceneCanvas.seam.test.tsx (12 tests, behaviors 2/3/5/7/8/9)"}
+{"ts": "2026-05-24T10:25:00Z", "task": "0.1", "event": "baseline tests green with new tests: 3494 passed | 10 skipped (3504)"}
+{"ts": "2026-05-24T10:25:00Z", "task": "0.1", "event": "committed: 5c44676e test(canvas): cover behaviors load-bearing for the seam refactor"}
+{"ts": "2026-05-24T10:25:00Z", "task": "0.1", "event": "done"}
+{"ts":"2026-05-24T00:00:00Z","task":"1.1","event":"started — reading Canvas.tsx, SceneCanvas.tsx, useViewportTools.ts for design"}
+{"ts":"2026-05-24T00:01:00Z","task":"1.1","event":"design decision: Option C — Canvas owns viewport prop and calls useViewportTools; exposes handTool+viewportRegistered back via viewportToolsRef callback so SceneCanvas can fold into its useTools registry. Rationale: Canvas cannot inject into a pre-built ToolsApi; Option B (moving useTools) is a larger refactor than scoped to this task; Option C correctly places the viewport CONFIG on Canvas while keeping the single useTools assembly point in SceneCanvas."}
+{"ts":"2026-05-24T00:02:00Z","task":"1.1","event":"tests written — 3 tests failing as expected (viewportToolsRef prop not yet on Canvas)"}
+{"ts":"2026-05-24T14:38:00Z","task":"1.1","event":"implementation complete — Canvas has viewport prop + useViewportTools call; SceneCanvas removed useViewportTools, now calls useHandTool directly + computes viewportRegistered=!!viewport inline; SceneCanvas forwards viewport to Canvas"}
+{"ts":"2026-05-24T14:38:30Z","task":"1.1","event":"tests passing — 2774 kit tests pass, 523 ui tests pass, 18 smoke tests pass, 182 swill tests pass; all 15 targeted tests pass"}
+{"ts":"2026-05-24T14:39:00Z","task":"1.1","event":"committed — a9b8d81b"}
+{"ts":"2026-05-24T10:44:00Z","task":"1.1","event":"cleanup: scoped Canvas viewport to pinch-zoom; dead useViewportTools call removed"}
+{"ts":"2026-05-24T14:47:30Z","task":"2.1","event":"test written - 1 failing as expected"}
+{"ts":"2026-05-24T14:50:10Z","task":"2.1","event":"committed - sha ba085337"}
+{"ts":"2026-05-24T00:00:00Z","task":"2.2","event":"start"}
+{"ts":"2026-05-24T00:10:00Z","task":"2.2","event":"done","sha":"f66db1b4"}
+{"ts": "2026-05-24T14:59:24.946071Z", "task": "3.1", "event": "started: audit + impl Phase 3a+3b"}
+{"ts": "2026-05-24T15:01:02.956260+00:00", "task": "3.1", "event": "audit complete: no doc-level selection.clear() listener found; multiActive inferred from selection.current.length; selectionMode and selectionOptions removed from CanvasProps; onBackgroundClick not needed (clear-on-empty-click is in tool routing table)"}
+{"ts": "2026-05-24T15:01:41.633651+00:00", "task": "3.2", "event": "failing test written; tests 1+2 pass, test 3 fails as expected"}
+{"ts": "2026-05-24T15:12:44.524930+00:00", "task": "3.2", "event": "impl complete: Canvas.tsx refactored; SceneCanvas.tsx refactored; all tests pass"}
+{"ts": "2026-05-24T15:13:00.258437+00:00", "task": "3.2", "event": "committed: 72403dc4"}
+{"ts":"2026-05-24T11:24:30Z","task":"3.3","event":"done","notes":"selectionOverlay factory moved to SceneCanvas; Canvas accepts CustomLayerEntry in selectionOverlay slot. cellHighlight slot added to LayersMap (CustomLayerEntry|null only). toolPreview.ts extracted. All tests pass."}
+{"ts":"2026-05-24T15:27:22Z","task":"4.1","event":"start"}
+{"ts":"2026-05-24T15:31:32Z","task":"4.1","event":"done","sha":"9eefac63"}
+{"ts":"2026-05-24T15:34:55Z","task":"5.1","event":"started"}
+{"ts":"2026-05-24T15:37:50Z","task":"5.1","event":"done","sha":"c231d4fc","notes":"All props kept — no removals. background deprecated. adapter getLayers cast documented. All tests pass."}
