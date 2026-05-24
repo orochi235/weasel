@@ -600,6 +600,28 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * hotkey stack. Pass `{ modeId }` to populate the mode line.
      */
     modalityHud?: boolean | { modeId?: string };
+
+    /**
+     * Optional per-id alpha multiplier for the scene-render slot. When
+     * supplied, each node's draw output is wrapped in a `GroupDrawCommand`
+     * with the returned alpha so the renderer applies the multiplier.
+     * Values equal to 1 are a no-op (no wrapper emitted). Typical use:
+     * scoping-dim integration dims non-active nodes during a mode transition.
+     *
+     * Defaults to `() => 1` (no effect).
+     */
+    alphaFor?: (id: string) => number;
+
+    /**
+     * Optional per-id pointer-interactivity predicate. When supplied, ids
+     * for which the predicate returns `false` are excluded from hit-test
+     * results — `getNodeAtPoint` returns null for those positions.
+     * Typical use: scoping-dim integration suppresses pointer events for
+     * non-active nodes during a mode transition.
+     *
+     * Defaults to `() => true` (all nodes are interactive).
+     */
+    isPointerInteractive?: (id: string) => boolean;
   };
 
 /** Discriminate the polymorphic `tools` prop: `ToolsApi` has `setActive`
@@ -650,6 +672,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     pickHud,
     debug,
     modalityHud,
+    alphaFor,
+    isPointerInteractive,
     ...rest
   } = props;
 
@@ -813,6 +837,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // The node resolver reads adapter.kindOf (set from kindClassifier when kinds
   // are registered), getPose, and getNode, matching the old Canvas synthesizer
   // algorithm exactly (see src/canvas/getNodeAtPoint.ts).
+  //
+  // When isPointerInteractive is supplied, the result is filtered: ids for
+  // which the predicate returns false cause getNodeAtPoint to return null,
+  // suppressing pointer events for non-interactive nodes (e.g. scoping-dim).
   const getNodeAtPoint = useMemo(() => {
     if (!internalPickEvery) return undefined;
     const nodeResolver = (id: string) => {
@@ -821,8 +849,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       const data = (adapter as typeof adapter & { getNode?: (id: string) => unknown }).getNode?.(id) ?? { id };
       return { kind, pose, data };
     };
-    return makeGetNodeAtPoint(internalPickEvery, nodeResolver);
-  }, [adapter, internalPickEvery]);
+    const base = makeGetNodeAtPoint(internalPickEvery, nodeResolver);
+    if (!isPointerInteractive) return base;
+    return (wx: number, wy: number) => {
+      const hit = base(wx, wy);
+      if (hit == null) return null;
+      if (isPointerInteractive(hit.id) === false) return null;
+      return hit;
+    };
+  }, [adapter, internalPickEvery, isPointerInteractive]);
 
   // Viewport tools: Canvas now owns the full `useViewportTools` call (including
   // pinch zoom via its own canvasRef). SceneCanvas only needs the hand tool for
@@ -1232,8 +1267,22 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     });
   }, [mergedLayers.selectionOverlay, selectedIds, multiActive, internalBoundsOf, tools, adapter, getSuppressedSelectionIds]);
 
+  // When alphaFor is supplied, patch it into the scene slot config so
+  // buildSceneLayer (called inside Canvas) wraps per-node commands with the
+  // returned alpha multiplier. Only non-custom, non-null slots are patched.
+  const sceneSlotWithAlpha = useMemo(() => {
+    if (!alphaFor) return mergedLayers.scene;
+    const slot = mergedLayers.scene;
+    if (!slot || 'layer' in slot) return slot; // null or CustomLayerEntry — leave alone
+    return { ...slot, alphaFor };
+  }, [mergedLayers.scene, alphaFor]);
+
   const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({
     ...mergedLayers,
+    // Inject alphaFor into the scene slot when supplied (scoping-dim).
+    ...(alphaFor != null ? { scene: sceneSlotWithAlpha } : {}),
+    // Pass the pre-built selection overlay layer so Canvas receives a
+    // CustomLayerEntry and skips its own factory construction for this slot.
     selectionOverlay: selectionOverlayLayer
       ? { layer: selectionOverlayLayer }
       : mergedLayers.selectionOverlay === null ? null : undefined,
@@ -1242,7 +1291,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ...(penPreviewLayer ? { penPreview: { layer: penPreviewLayer, after: 'dispatcherOverlay' } } : {}),
     pathEditingOverlay: { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
     ...(debug?.slops ? { slopsDebug: { layer: slopsLayer, after: 'pathEditingOverlay' } } : {}),
-  }), [mergedLayers, selectionOverlayLayer, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, debug?.slops, slopsLayer]);
+  }), [mergedLayers, sceneSlotWithAlpha, alphaFor, selectionOverlayLayer, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, debug?.slops, slopsLayer]);
 
   // Standard-action deps: closures over the live scene / selection / adapter
   // so the resolved actions always read current state. `useStandardActions`

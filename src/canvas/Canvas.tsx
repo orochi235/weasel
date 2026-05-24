@@ -96,6 +96,15 @@ export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
   drawOne: (obj: TNode, pose: TPose, view: View) => DrawCommand[];
   /** Default ghost alpha for the move-overlay slot. Default 0.85. */
   ghostAlpha?: number;
+  /**
+   * Optional per-id alpha multiplier. When supplied, each node's emitted
+   * `DrawCommand[]` is wrapped in a `{ kind: 'group', alpha }` when the
+   * returned value is not 1. The scoping-dim integration supplies this to
+   * dim non-active nodes during a mode transition.
+   *
+   * Defaults to `() => 1` (no effect).
+   */
+  alphaFor?: (id: string) => number;
 }
 
 /** Selection-overlay slot config — passed through to `createSelectionOverlayLayer`,
@@ -521,6 +530,10 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
             const oy = (pose as { y?: number }).y ?? (b ? b.y : 0);
             debugSink.recordOrigin(obj.id, { x: ox, y: oy });
           }
+          const alpha = cfg.alphaFor ? cfg.alphaFor(obj.id) : 1;
+          if (alpha !== 1 && cmds.length > 0) {
+            return [{ kind: 'group', alpha, children: cmds }];
+          }
           return cmds;
         };
         // Honor cfg.toPose on the hierarchical path by shimming getPose on the
@@ -551,7 +564,13 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
         if (hidden && hidden.has(obj.id)) continue;
         const pose: TPose = toPose(obj);
         if (drawOne) {
-          for (const cmd of drawOne(obj, pose, view)) children.push(cmd);
+          const cmds = drawOne(obj, pose, view);
+          const alpha = cfg.alphaFor ? cfg.alphaFor(obj.id) : 1;
+          if (alpha !== 1 && cmds.length > 0) {
+            children.push({ kind: 'group', alpha, children: cmds });
+          } else {
+            for (const cmd of cmds) children.push(cmd);
+          }
         }
         if (debugSink) {
           const b = boundsOfFn ? boundsOfFn(obj.id) : null;
