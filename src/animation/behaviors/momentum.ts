@@ -1,6 +1,7 @@
 import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import type { MoveBehavior, GestureContext } from 'interactions/gestures/types';
+import { scratchKey, getScratch, setScratch } from 'interactions/scratchKey';
 import type { Animator } from '../types';
 
 export interface MomentumOptions {
@@ -43,7 +44,7 @@ interface PointerSample {
 
 interface RectLike { x: number; y: number }
 
-const SAMPLES_KEY = 'momentum.samples';
+const SAMPLES = scratchKey<PointerSample[]>('momentum.samples');
 
 export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
   const friction = opts.friction ?? 0.92;
@@ -68,7 +69,11 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
   };
 
   const recordSample = (ctx: GestureContext<TPose>): void => {
-    const samples = (ctx.scratch[SAMPLES_KEY] ??= []) as PointerSample[];
+    let samples = getScratch(ctx.scratch, SAMPLES);
+    if (!samples) {
+      samples = [];
+      setScratch(ctx.scratch, SAMPLES, samples);
+    }
     samples.push({
       t: now(),
       x: ctx.pointer.worldX,
@@ -81,14 +86,14 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
 
   return {
     onStart(ctx) {
-      ctx.scratch[SAMPLES_KEY] = [];
+      setScratch(ctx.scratch, SAMPLES, []);
       recordSample(ctx);
     },
     onMove(ctx) {
       recordSample(ctx);
     },
     onEnd(ctx): Op[] | null | void {
-      const samples = (ctx.scratch[SAMPLES_KEY] ?? []) as PointerSample[];
+      const samples = getScratch(ctx.scratch, SAMPLES) ?? [];
       if (samples.length < 2) return undefined;
       const last = samples[samples.length - 1];
       // Find the oldest sample within `sampleMs` of `last`.

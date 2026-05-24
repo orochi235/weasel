@@ -5,6 +5,10 @@ import {
   RECT_ORIGIN_PROJECTION,
   type OriginProjection,
 } from '../../../gestures/shared/strategies';
+import { scratchKey, getScratch, setScratch } from '../../../scratchKey';
+
+const SNAPSHOTS = scratchKey<Map<string, { id: string }>>('snapBackOrDelete.snapshots');
+const INDEXES = scratchKey<Map<string, number>>('snapBackOrDelete.indexes');
 
 export function snapBackOrDelete<TPose extends { x: number; y: number }>(args: {
   radius: number;
@@ -40,8 +44,8 @@ export function snapBackOrDelete<TPose>(args: {
         snapshots.set(id, obj);
         indexes.set(id, nodes.findIndex((n) => n.id === id));
       }
-      ctx.scratch['snapBackOrDelete.snapshots'] = snapshots;
-      ctx.scratch['snapBackOrDelete.indexes'] = indexes;
+      setScratch(ctx.scratch, SNAPSHOTS, snapshots);
+      setScratch(ctx.scratch, INDEXES, indexes);
     },
 
     onEnd(ctx) {
@@ -56,12 +60,8 @@ export function snapBackOrDelete<TPose>(args: {
         return null;
       }
       if (onFreeRelease === 'delete') {
-        const snapshots = ctx.scratch['snapBackOrDelete.snapshots'] as
-          | Map<string, { id: string }>
-          | undefined;
-        const indexes = ctx.scratch['snapBackOrDelete.indexes'] as
-          | Map<string, number>
-          | undefined;
+        const snapshots = getScratch(ctx.scratch, SNAPSHOTS);
+        const indexes = getScratch(ctx.scratch, INDEXES);
         const obj = snapshots?.get(id) ?? { id };
         const index = indexes?.get(id) ?? -1;
         const ops: Op[] = [createDeleteOp({ node: obj, label: deleteLabel, index })];

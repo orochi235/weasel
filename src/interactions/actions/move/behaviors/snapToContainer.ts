@@ -3,6 +3,7 @@ import { createReparentOp } from 'core/ops/reparent';
 import type { Op } from 'core/ops/types';
 import type { SnapTarget } from 'core/adapters/types';
 import type { MoveBehavior, GestureContext } from '../../../gestures/types';
+import { scratchKey, getScratch, setScratch } from '../../../scratchKey';
 
 interface SnapState<TPose> {
   pendingTargetId: string | null;
@@ -10,13 +11,17 @@ interface SnapState<TPose> {
   committedSnap: SnapTarget<TPose> | null;
 }
 
-const KEY = 'snapToContainer';
+// The slot is generic over TPose; we keep the unknown-pose key at module
+// scope and project it through `as` at the read site (each consumer call
+// of `snapToContainer<TPose>` is the only writer of its own SnapState
+// instance, so the cast is safe at runtime).
+const STATE = scratchKey<SnapState<unknown>>('snapToContainer');
 
 function getState<TPose>(ctx: GestureContext<TPose>): SnapState<TPose> {
-  let s = ctx.scratch[KEY] as SnapState<TPose> | undefined;
+  let s = getScratch(ctx.scratch, STATE) as SnapState<TPose> | undefined;
   if (!s) {
     s = { pendingTargetId: null, pendingTimer: null, committedSnap: null };
-    ctx.scratch[KEY] = s;
+    setScratch(ctx.scratch, STATE, s as SnapState<unknown>);
   }
   return s;
 }

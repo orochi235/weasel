@@ -612,6 +612,15 @@ export type {
 } from './interactions/actions/edit-anchors';
 export type { UseAreaSelectOptions } from './interactions/actions/area-select';
 export { selectFromMarquee } from './interactions/actions/area-select/behaviors';
+// ─── Typed scratch keys: shared typed access to ctx.scratch (behaviors) ─────
+export {
+  scratchKey,
+  getScratch,
+  setScratch,
+  deleteScratch,
+  type ScratchKey,
+  type ScratchStore,
+} from './interactions/scratchKey';
 export type { UseLassoSelectOptions } from './interactions/actions/lasso-select';
 export {
   selectFromLasso,

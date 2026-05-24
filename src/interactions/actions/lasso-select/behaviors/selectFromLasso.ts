@@ -6,8 +6,13 @@ import type {
   LassoSelectAdapter,
 } from 'core/adapters/types';
 import type { LassoSelectBehavior } from '../../../gestures/types';
+import { scratchKey, getScratch } from '../../../scratchKey';
 
-const SCRATCH_KEY = 'lassoSelect.vertices';
+/** Typed scratch slot the lasso tool's gesture writes into for this behavior
+ *  to consume. Shared identity: tools producing the polygon for a lasso
+ *  selection write under this same key. */
+export const LASSO_VERTICES = scratchKey<ReadonlyArray<{ x: number; y: number }>>('lassoSelect.vertices');
+
 const MIN_AREA = 4;
 
 export interface SelectFromLassoOptions {
@@ -27,7 +32,7 @@ export function selectFromLasso(opts?: SelectFromLassoOptions): LassoSelectBehav
       const adapter = ctx.adapter as unknown as LassoSelectAdapter;
       if (!adapter.getSelection || !adapter.hitTestLasso) return null;
 
-      const vertices = (ctx.scratch as Record<string, ReadonlyArray<{ x: number; y: number }>>)[SCRATCH_KEY] ?? [];
+      const vertices = getScratch(ctx.scratch, LASSO_VERTICES) ?? [];
       const startPose = ctx.origin.get('gesture');
       const shiftHeld = startPose ? (startPose as { shiftHeld?: boolean }).shiftHeld === true : false;
       const from = adapter.getSelection();
