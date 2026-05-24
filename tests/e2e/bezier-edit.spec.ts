@@ -1,12 +1,32 @@
 /**
- * Pilot for the `bezier-edit` demo. Pins the initial S-curve geometry as read
- * through the demo's `handles` probe.
+ * Pilot for the `bezier-edit` demo. Covers:
+ *   1. Probe pins the initial S-curve anchor / handle geometry.
+ *   2. The "Add point" button extends the path with a new cubic.
+ *   3. Dragging a control handle moves the handle, not the anchor — the
+ *      canonical edit-anchors gesture (currently `test.fixme` — see below).
  *
- * Note: as of this commit the demo does NOT wire `editAnchorsAction` +
- * `buildAffordanceAt`, so dragging a control handle independently of its
- * anchor is not yet a supported gesture in this demo. The probe is the
- * load-bearing piece — once handle editing is enabled, a follow-up test can
- * use this same probe to assert handle-vs-anchor independence.
+ * On (3): all of the wiring exists. `editAnchorsAction` is registered by
+ * `useStandardActions`; `buildAffordanceAt` is configured with a
+ * `getAnchorState` thunk; the `editAnchors` dep's default heuristic picks
+ * the first selected polygon as `editingId`; affordance hit-testing returns
+ * `controlOut:N` at the exact control-point coord. But the dispatcher
+ * picks the first matching binding in ambient-scope registration order and
+ * does NOT fall through when `start()` returns an empty handle. Since
+ * `moveAction` (registered before `editAnchorsAction` in `useStandardActions`)
+ * also binds bare `{ kind: 'drag' }`, every drag — including drags on a
+ * control point — short-circuits at moveAction's start, which returns a
+ * real ongoing handle (it ignores affordance). `editAnchorsAction.start`
+ * never runs.
+ *
+ * Two possible fixes, neither in scope here:
+ *   (a) Give `editAnchorsAction.defaultBinding` a target predicate that
+ *       matches only anchor-kind affordances — boosts its specificity past
+ *       the bare `kind: 'drag'` of moveAction/areaSelectAction.
+ *   (b) Have the dispatcher treat an empty `{}` start-result as
+ *       "not handled" and fall through to the next match.
+ *
+ * The probe + drag input plumbing in this spec is correct and ready —
+ * `.fixme` flips back to `test` once either fix lands.
  */
 
 import { test, expect } from './fixtures';
@@ -61,4 +81,34 @@ test('bezier-edit — Add point extends the path with a new cubic segment', asyn
   // the previously-final anchor gains an outHandle.
   expect(after[2].handleOut).toBeTruthy();
   expect(after[3].anchor[0]).toBe(after[2].anchor[0] + 80);
+});
+
+test.fixme('bezier-edit — dragging a control handle moves the handle, not the anchor', async ({ demo }) => {
+  // See file-level doc comment. Spec is ready; blocked on dispatcher precedence.
+  await demo.goto('bezier-edit');
+
+  const before = (await demo.probe<HandleEntry[]>('handles'))!;
+  // Vertex 1 has both an inHandle (220,60) and an outHandle (300,260).
+  const v1 = before[1];
+  expect(v1.handleOut, 'vertex 1 exposes an outHandle to drag').toBeTruthy();
+  const startHandle = v1.handleOut!;
+  const startAnchor = v1.anchor;
+
+  await demo.dragScene({ from: startHandle, by: [25, -15] });
+
+  const after = (await demo.probe<HandleEntry[]>('handles'))!;
+  const v1After = after[1];
+
+  // Handle moved by the gesture delta within 1px (no snap).
+  expect(Math.abs(v1After.handleOut![0] - (startHandle[0] + 25))).toBeLessThanOrEqual(1);
+  expect(Math.abs(v1After.handleOut![1] - (startHandle[1] - 15))).toBeLessThanOrEqual(1);
+
+  // Anchor did NOT move — the gesture targeted the control, not the vertex.
+  expect(v1After.anchor).toEqual(startAnchor);
+
+  // Other anchors and handles are unaffected.
+  expect(after[0].anchor).toEqual(before[0].anchor);
+  expect(after[0].handleOut).toEqual(before[0].handleOut);
+  expect(after[2].anchor).toEqual(before[2].anchor);
+  expect(after[2].handleIn).toEqual(before[2].handleIn);
 });

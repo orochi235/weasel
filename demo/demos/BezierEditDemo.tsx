@@ -149,6 +149,7 @@ export function BezierEditDemo() {
       id: ID,
       channel: 'stroke',
       msPerCycle: 4000,
+      direction: -1,
       interpolation: cycleOklch ? 'oklch' : 'rgb',
     });
     return () => {
