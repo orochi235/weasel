@@ -77,7 +77,8 @@ export function createJournalInternal(
       active = false;
     },
     suspend(): void {
-      throw new Error('Journal.suspend not yet implemented');
+      if (!active) throw new Error('Journal already closed');
+      active = false;
     },
     isActive(): boolean {
       return active;
