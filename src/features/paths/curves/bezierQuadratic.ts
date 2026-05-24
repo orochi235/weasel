@@ -1,5 +1,5 @@
 import type { CurveRepresentation, Discriminator, SharedAnchor } from './types';
-import { PATH_M, PATH_Q, type PolygonPath } from '../types';
+import { PATH_M, PATH_Q } from '../types';
 
 const DEFAULT_HANDLE_FRACTION = 1 / 3;
 

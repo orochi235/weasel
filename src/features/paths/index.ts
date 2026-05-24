@@ -77,3 +77,4 @@ export {
   pathExclude,
   pathDivide,
 } from './booleans';
+export * from './curves';

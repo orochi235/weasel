@@ -1,5 +1,5 @@
 import type { CurveRepresentation, Discriminator, SharedAnchor } from './types';
-import { PATH_L, PATH_M, type PolygonPath } from '../types';
+import { PATH_L, PATH_M } from '../types';
 
 const DEGREE = 3;
 const WEIGHT_MIN = 1e-3;

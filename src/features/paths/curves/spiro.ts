@@ -4,7 +4,7 @@
 // solver — that's a global numerical iteration. v1.1 swaps the real
 // Spiro in behind this same module surface.
 import type { CurveRepresentation, Discriminator, SharedAnchor } from './types';
-import { PATH_C, PATH_M, type PolygonPath } from '../types';
+import { PATH_C, PATH_M } from '../types';
 
 const TANGENT_SCALE = 1 / 3;
 
