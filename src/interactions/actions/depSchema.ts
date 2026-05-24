@@ -31,7 +31,7 @@
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
 import type { Scene, NodeId } from 'core/scene/types';
-import type { History } from 'core/history/history';
+import type { History } from '@orochi235/weasel-history';
 import type { PointerContextValue } from 'features/pointer/PointerContext';
 import type { ActiveToolContextValue } from './activeToolContext';
 import type { TextEditDep } from './defaults/enterTextEdit';

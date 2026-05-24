@@ -450,7 +450,7 @@ export type { RectPose } from './features/groups/unionBounds';
 export { withGroupOrdering } from './features/groups/orderedGroups';
 
 // ─── Undo history: createHistory + entry shape ──────────────────────────────
-export * from './core/history';
+export * from '@orochi235/weasel-history';
 
 // ─── Adapters: contract types + reference arrayAdapter ──────────────────────
 export * from './core/adapters/types';

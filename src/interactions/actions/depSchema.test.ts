@@ -1,7 +1,7 @@
 import { describe, it, expectTypeOf } from 'vitest';
 import type { DepSchema } from './depRegistry';
 import type { SelectionApi } from 'core/selection/useSelection';
-import type { History } from 'core/history/history';
+import type { History } from '@orochi235/weasel-history';
 import type { PointerContextValue } from 'features/pointer/PointerContext';
 import type { ActiveToolContextValue } from './activeToolContext';
 // Force the side-effect import (augments DepSchema):
