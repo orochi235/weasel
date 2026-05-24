@@ -229,7 +229,7 @@ export {
   type NodeKind,
   type NodeKindRegistry,
 } from './core/scene/nodeKindRegistry';
-export { defaultNodeKinds } from './core/scene/defaultNodeKinds';
+export { defaultNodeKinds, inferredNodeKinds } from './core/scene/defaultNodeKinds';
 export type {
   CanvasProps,
   CanvasHelpers,

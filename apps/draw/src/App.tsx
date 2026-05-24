@@ -50,7 +50,6 @@ import {
   type NodeId,
   type View,
   type RenderLayer,
-  type NodeKind,
   fitViewToBounds,
   ActiveToolContextProvider,
   useActiveToolContext,
@@ -116,17 +115,6 @@ interface WeaselDrawData {
 }
 
 type WeaselDrawLayer = 'default';
-
-/** Node-kind classifier for `<SceneCanvas kinds={...}>`. The kit's
- *  hit-test pipeline reads `adapter.kindOf(id)` (built from this list)
- *  to populate `Hit.kind` — which modality's `dispatchDoubleClickEntry`
- *  consumes to route double-click to the right mode (text-edit / path-edit).
- *  Order matters: `text` matches first so a node carrying both `text` and
- *  `path` (an SVG import with a text fallback path, say) routes to text-edit. */
-const WEASELDRAW_KINDS: readonly NodeKind[] = [
-  { name: 'text', matches: (d) => (d as WeaselDrawData)?.text != null },
-  { name: 'path', matches: (d) => (d as WeaselDrawData)?.path != null },
-];
 
 /** Paper sizes — the canvas fills the workspace; the page is drawn as a
  *  world-space layer at `{0,0,paper.width,paper.height}` (see `paperLayer`
@@ -1373,7 +1361,6 @@ function EditorWithSharedScene({
             scene={scene}
             selection={selection}
             selectionMode="multi"
-            kinds={WEASELDRAW_KINDS}
             toolBundle="exhaustive"
             viewport={{ pinchZoom: true, recenter }}
             cursorCoordsHud

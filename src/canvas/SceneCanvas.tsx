@@ -87,6 +87,7 @@ import type { AnchorState } from './affordanceAt';
 import type { Op } from 'core/ops/types';
 import { useDepRegistry } from 'interactions/actions/depRegistry';
 import { createNodeKindRegistry, type NodeKind } from '../core/scene/nodeKindRegistry';
+import { inferredNodeKinds } from '../core/scene/defaultNodeKinds';
 import { installTestHookIfRequested } from '../test-hook/install';
 import type { WeaselTestHook } from '../test-hook/types';
 import {
@@ -831,14 +832,16 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const selectionRef = useRef(selection);
   selectionRef.current = selection;
 
-  // Build a per-instance NodeKindRegistry from the `kinds` prop and expose its
-  // classify() so `sceneToAdapter` can publish `kindOf(id)`. When `kinds` is
-  // absent or empty the classifier is undefined and the adapter omits kindOf
-  // (callers without routing-by-kind needs aren't taxed).
+  // Build a per-instance NodeKindRegistry. When `kinds` is unset, fall back
+  // to `inferredNodeKinds` (data-shape inference: `data.text` → `'text'`,
+  // `data.path` → `'path'`, `data.image` → `'image'`). Pass an explicit
+  // `kinds={[]}` to opt out entirely — the classifier becomes undefined and
+  // every hit comes back as `kind: 'unknown'`.
   const kindClassifier = useMemo(() => {
-    if (!kinds || kinds.length === 0) return undefined;
+    const effective = kinds === undefined ? inferredNodeKinds : kinds;
+    if (effective.length === 0) return undefined;
     const registry = createNodeKindRegistry();
-    for (const k of kinds) registry.register(k);
+    for (const k of effective) registry.register(k);
     return (data: TData) => registry.classify(data);
   }, [kinds]);
 
